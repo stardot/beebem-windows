@@ -1980,6 +1980,7 @@ void Exec6502Instruction(void) {
     AdjustTrigger(AMXTrigger);
     AdjustTrigger(PrinterTrigger);
     AdjustTrigger(VideoTriggerCount);
+    AdjustTrigger(TapeTrigger);
     if (EnableTube)
       WrapTubeCycles();
   }

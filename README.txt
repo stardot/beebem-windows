@@ -142,6 +142,8 @@ If you do not use a UK keyboard then you may want to set up your own
 mapping.  Use the 'user keyboard' mapping options in BeebEm to do this and
 remember to save it using the 'save preferences' option.
 
+The keypad +/- keys will change between the BeebEm fixed speeds.
+
 
 Using Disc Images
 -----------------
@@ -215,6 +217,48 @@ sided images then remember to format and copy both sides (the second sides
 of disc 0 and 1 are 2 and 3).
 
 
+Using Tape Images
+-----------------
+
+BeebEm emulates a cassette recorder.  You can load a tape image file using
+the File menu in BeebEm.
+
+Some useful tape commands are:
+
+  *TAPE             - Select tape filing system
+  *CAT              - List files on the tape
+  LOAD ""           - Load a BASIC program
+  CHAIN ""          - Load and run a BASIC program
+  SAVE "<file>"     - Save a BASIC program
+  *RUN              - Load and run a binary program
+
+Most tapes can be run by typing:
+
+  *TAPE
+  CH.""
+
+if that does not work, rewind the tape and try:
+
+  *TAPE
+  *RUN
+
+Tape loading can be quite slow so BeebEm has menu options to artificially
+speed up loading.  You can also use the speed menu (or keypad +/-) to speed
+up the whole emulation, which speeds up tape loading.
+
+BeebEm has a Tape Control window that enables you to move the tape position
+around by clicking on the block you want to load next.  If a block is missed
+when loading from a tape you will need to move the tape position back to
+retry the block.
+
+If you want to save files to a tape image then you can use the 'Record'
+button on the Tape Control.  If you have a tape loaded then pressing Record
+will append saved files to the end of the tape image.  If you want to create
+a new tape image then eject the current tape and press Record.  The tape
+block list will be updated when recording finishes (press Stop when the save
+completes).
+
+
 Menu Options
 ------------
 
@@ -259,8 +303,12 @@ File Menu:
 
 Comms Menu:
 
-  Tape Speed          - Select the speed at which tape software loads.
+  Tape Speed          - Select the speed at which tape software loads and 
+                        saves.
   Rewind Tape         - Reset the tape position to the start.
+  Unlock Tape         - Removed the lock flag from files as they are loaded.
+                        This enables you to *LOAD a locked file.
+  Tape Control        - Opens the tape control (see Tape section above).
 
   Printer On/Off      - Switches printer capture on or off.  To start and 
                         stop printing within BeebEm use the VDU2 and VDU3 
@@ -316,6 +364,7 @@ Speed Menu:
 
   Fixed Speed  - Runs BeebEm at a fixed speed relative to a real BBC Micro.
                  The frame rate may need to be reduced for the higher 
+                 speeds.  The keypad +/- keys will change between fixed
                  speeds.
 
   50 FPS       - Runs BeebEm at a constant frame rate.  The slower the frame
@@ -327,6 +376,9 @@ Speed Menu:
 Sound Menu:
 
   Sound On/Off   - Switch sound on or off.
+
+  Sound Chip     - Switches the sound chip on or off.  Useful when you want
+                   to hear the cassette sounds.
 
   Sound Effects  - Switches on the sound of the cassette motor and the
                    sound of tape software loading.

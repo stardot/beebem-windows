@@ -64,6 +64,7 @@ int UsePrimaryBuffer=0;
 int SoundEnabled = 1;
 int DirectSoundEnabled = 0;
 int RelaySoundEnabled = 0;
+int SoundChipEnabled = 1;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
 int SoundAutoTriggerTime;
@@ -220,195 +221,196 @@ void MuteSound(void) {
 /****************************************************************************/
 /* DestTime is in samples */
 void PlayUpTil(double DestTime) {
-  int tmptotal,channel,bufinc,tapetotal;
-  char Extras;
-  /*cerr << "PlayUpTil: DestTime=" << DestTime << " OurTime=" << OurTime << "\n";*/
-  while (DestTime>OurTime) {
-      for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
-//      for(bufptr=0;(bufptr<SoundBufferSize);bufptr++) {
-		int tt;
-        tmptotal=0;
-		Extras=4;
-		// Begin of for loop
-        for(channel=1;channel<=3;channel++) {
-		 if (ActiveChannel[channel]) {
-		  if ((GenState[channel]) && (!Speech[channel]))
-			tmptotal+=BeebState76489.ToneVolume[channel];
-		  if ((!GenState[channel]) && (!Speech[channel]))
-			tmptotal-=BeebState76489.ToneVolume[channel];
-		  if (Speech[channel])
-			tmptotal+=(BeebState76489.ToneVolume[channel]-(7<<VOLMAG));
-          GenIndex[channel]++;
-          tt=(int)CSC[channel];
-		  if (!PartSamples) tt=0;
-          if (GenIndex[channel]>=(BeebState76489.ChangeSamps[channel]+tt)) {
-			if (CSC[channel] >= 1.0)
-				CSC[channel]-=1.0;
-		    CSC[channel]+=CSA[channel];
-            GenIndex[channel]=0;
-            GenState[channel]^=1;
-          };
-		 }
-        }; /* Channel loop */
+	int tmptotal,channel,bufinc,tapetotal;
+	char Extras;
 
-        /* Now put in noise generator stuff */
-	   if (ActiveChannel[0]) { 
-        if (BeebState76489.Noise.FB) {
-          /* White noise */
-		  if (GenState[0])
-			tmptotal+=BeebState76489.ToneVolume[0];
-		  else
-			tmptotal-=BeebState76489.ToneVolume[0];
-          GenIndex[0]++;
-          switch (BeebState76489.Noise.Freq) {
-            case 0: /* Low */
-              if (GenIndex[0]>=(samplerate/10000)) {
-                GenIndex[0]=0;
-                GenState[0]=rand() & 1;
-              };
-              break;
+	while (DestTime>OurTime) {
+		for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
+			int tt;
+			tmptotal=0;
+			Extras=4;
 
-            case 1: /* Med */
-              if (GenIndex[0]>=(samplerate/5000)) {
-                GenIndex[0]=0;
-                GenState[0]=rand() & 1;
-              };
-              break;
+			if (SoundChipEnabled) {
+				// Begin of for loop
+				for(channel=1;channel<=3;channel++) {
+					if (ActiveChannel[channel]) {
+						if ((GenState[channel]) && (!Speech[channel]))
+							tmptotal+=BeebState76489.ToneVolume[channel];
+						if ((!GenState[channel]) && (!Speech[channel]))
+							tmptotal-=BeebState76489.ToneVolume[channel];
+						if (Speech[channel])
+							tmptotal+=(BeebState76489.ToneVolume[channel]-(7<<VOLMAG));
+						GenIndex[channel]++;
+						tt=(int)CSC[channel];
+						if (!PartSamples) tt=0;
+						if (GenIndex[channel]>=(BeebState76489.ChangeSamps[channel]+tt)) {
+							if (CSC[channel] >= 1.0)
+								CSC[channel]-=1.0;
+							CSC[channel]+=CSA[channel];
+							GenIndex[channel]=0;
+							GenState[channel]^=1;
+						}
+					}
+				} /* Channel loop */
 
-            case 2: /* High */
-              if (GenIndex[0]>=(samplerate/2500)) {
-                GenIndex[0]=0;
-                GenState[0]=rand() & 1;
-              };
-              break;
+				/* Now put in noise generator stuff */
+				if (ActiveChannel[0]) { 
+					if (BeebState76489.Noise.FB) {
+						/* White noise */
+						if (GenState[0])
+							tmptotal+=BeebState76489.ToneVolume[0];
+						else
+							tmptotal-=BeebState76489.ToneVolume[0];
+						GenIndex[0]++;
+						switch (BeebState76489.Noise.Freq) {
+						case 0: /* Low */
+							if (GenIndex[0]>=(samplerate/10000)) {
+								GenIndex[0]=0;
+								GenState[0]=rand() & 1;
+							}
+							break;
 
-            case 3: /* as channel 1 */
-              if (GenIndex[0]>=BeebState76489.ChangeSamps[1]) {
-                GenIndex[0]=0;
-                GenState[0]=rand() & 1;
-              };
-              break;
-          }; /* Freq type switch */
-        } else {
-          /* Periodic */
-		  if (GenState[0])
-			tmptotal+=BeebState76489.ToneVolume[0];
-		  else
-			tmptotal-=BeebState76489.ToneVolume[0];
-          GenIndex[0]++;
-          switch (BeebState76489.Noise.Freq) {
-            case 2: /* Low */
-              if (GenState[0]) {
-                if (GenIndex[0]>=(samplerate/125)) {
-                  GenIndex[0]=0;
-                  GenState[0]=0;
-                };
-              } else {
-                if (GenIndex[0]>=(samplerate/1250)) {
-                  GenIndex[0]=0;
-                  GenState[0]=1;
-                };
-              };
-              break;
+						case 1: /* Med */
+							if (GenIndex[0]>=(samplerate/5000)) {
+								GenIndex[0]=0;
+								GenState[0]=rand() & 1;
+							}
+							break;
 
-            case 1: /* Med */
-              if (GenState[0]) {
-                if (GenIndex[0]>=(samplerate/250)) {
-                  GenIndex[0]=0;
-                  GenState[0]=0;
-                };
-              } else {
-                if (GenIndex[0]>=(samplerate/2500)) {
-                  GenIndex[0]=0;
-                  GenState[0]=1;
-                };
-              };
-              break;
+						case 2: /* High */
+							if (GenIndex[0]>=(samplerate/2500)) {
+								GenIndex[0]=0;
+								GenState[0]=rand() & 1;
+							}
+							break;
 
-            case 0: /* High */
-              if (GenState[0]) {
-                if (GenIndex[0]>=(samplerate/500)) {
-                  GenIndex[0]=0;
-                  GenState[0]=0;
-                };
-              } else {
-                if (GenIndex[0]>=(samplerate/5000)) {
-                  GenIndex[0]=0;
-                  GenState[0]=1;
-                };
-              };
-              break;
+						case 3: /* as channel 1 */
+							if (GenIndex[0]>=BeebState76489.ChangeSamps[1]) {
+								GenIndex[0]=0;
+								GenState[0]=rand() & 1;
+							}
+							break;
+						} /* Freq type switch */
+					} else {
+						/* Periodic */
+						if (GenState[0])
+							tmptotal+=BeebState76489.ToneVolume[0];
+						else
+							tmptotal-=BeebState76489.ToneVolume[0];
+						GenIndex[0]++;
+						switch (BeebState76489.Noise.Freq) {
+						case 2: /* Low */
+							if (GenState[0]) {
+								if (GenIndex[0]>=(samplerate/125)) {
+									GenIndex[0]=0;
+									GenState[0]=0;
+								}
+							} else {
+								if (GenIndex[0]>=(samplerate/1250)) {
+									GenIndex[0]=0;
+									GenState[0]=1;
+								}
+							}
+							break;
 
-            case 3: /* Tone gen 1 */
-              if (GenState[0]) {
-                if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1])*31)) {
-                  GenIndex[0]=0;
-                  GenState[0]=0;
-                };
-              } else {
-                if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1]))) {
-                  GenIndex[0]=0;
-                  GenState[0]=1;
-                };
-              };
-              break;
+						case 1: /* Med */
+							if (GenState[0]) {
+								if (GenIndex[0]>=(samplerate/250)) {
+									GenIndex[0]=0;
+									GenState[0]=0;
+								}
+							} else {
+								if (GenIndex[0]>=(samplerate/2500)) {
+									GenIndex[0]=0;
+									GenState[0]=1;
+								}
+							}
+							break;
 
-          }; /* Freq type switch */
-		}
-        };
+						case 0: /* High */
+							if (GenState[0]) {
+								if (GenIndex[0]>=(samplerate/500)) {
+									GenIndex[0]=0;
+									GenState[0]=0;
+								}
+							} else {
+								if (GenIndex[0]>=(samplerate/5000)) {
+									GenIndex[0]=0;
+									GenState[0]=1;
+								}
+							}
+							break;
 
-		// Mix in relay sound here
-		if (Relay==1) tmptotal+=(RelayOffBuf[RelayPos++]-127)*10;
-		if (Relay==2) tmptotal+=(RelayOnBuf[RelayPos++]-127)*10;
-		if (TapeSoundEnabled) {
-			// Mix in tape sound here
-			tapetotal=0; 
-			if ((TapeAudio.Enabled) && (TapeAudio.Signal==2)) {
-				if (TapeAudio.Samples++>=36) TapeAudio.Samples=0;
-				tapetotal=(int)(sin(((TapeAudio.Samples*20)*3.14)/180)*80);
-				Extras++;
-			}
-			if ((TapeAudio.Enabled) && (TapeAudio.Signal==1)) {
-				tapetotal=(int)(sin(((TapeAudio.Samples*(10*(1+TapeAudio.CurrentBit)))*3.14)/180)*(80+(40*(1-TapeAudio.CurrentBit))));
-				// And if you can follow that equation, "ill give you the money meself" - Richard Gellman
-				if (TapeAudio.Samples++>=36) {
-					TapeAudio.Samples=0;
-					TapeAudio.BytePos++;
-					if (TapeAudio.BytePos<=10) TapeAudio.CurrentBit=(TapeAudio.Data & (1<<(10-TapeAudio.BytePos)))?1:0;
+						case 3: /* Tone gen 1 */
+							if (GenState[0]) {
+								if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1])*31)) {
+									GenIndex[0]=0;
+									GenState[0]=0;
+								}
+							} else {
+								if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1]))) {
+									GenIndex[0]=0;
+									GenState[0]=1;
+								}
+							}
+							break;
+						} /* Freq type switch */
+					}
 				}
-				if (TapeAudio.BytePos>10) {
-					TapeAudio.ByteCount--;
-					if (!TapeAudio.ByteCount) TapeAudio.Signal=2; else { TapeAudio.BytePos=1; TapeAudio.CurrentBit=0; }
-				}
-				Extras++;
 			}
-			tmptotal+=tapetotal;
-		}
 
-		/* Make it a bit louder under Windows */
-		if (Relay) Extras++;
-		if (TapeAudio.Enabled) Extras++;
-		if (Extras) tmptotal/=4; else tmptotal=0;
-		SoundBuf[bufptr] = (tmptotal/SoundVolume)+128;
-		// end of for loop
-		if (RelayPos>=RelayLen[Relay]) Relay=0;
-      }; /* buffer loop */
+			// Mix in relay sound here
+			if (Relay==1) tmptotal+=(RelayOffBuf[RelayPos++]-127)*10;
+			if (Relay==2) tmptotal+=(RelayOnBuf[RelayPos++]-127)*10;
+			if (TapeSoundEnabled) {
+				// Mix in tape sound here
+				tapetotal=0; 
+				if ((TapeAudio.Enabled) && (TapeAudio.Signal==2)) {
+					if (TapeAudio.Samples++>=36) TapeAudio.Samples=0;
+					tapetotal=(int)(sin(((TapeAudio.Samples*20)*3.14)/180)*80);
+					Extras++;
+				}
+				if ((TapeAudio.Enabled) && (TapeAudio.Signal==1)) {
+					tapetotal=(int)(sin(((TapeAudio.Samples*(10*(1+TapeAudio.CurrentBit)))*3.14)/180)*(80+(40*(1-TapeAudio.CurrentBit))));
+					// And if you can follow that equation, "ill give you the money meself" - Richard Gellman
+					if (TapeAudio.Samples++>=36) {
+						TapeAudio.Samples=0;
+						TapeAudio.BytePos++;
+						if (TapeAudio.BytePos<=10) TapeAudio.CurrentBit=(TapeAudio.Data & (1<<(10-TapeAudio.BytePos)))?1:0;
+					}
+					if (TapeAudio.BytePos>10) {
+						TapeAudio.ByteCount--;
+						if (!TapeAudio.ByteCount) TapeAudio.Signal=2; else { TapeAudio.BytePos=1; TapeAudio.CurrentBit=0; }
+					}
+					Extras++;
+				}
+				tmptotal+=tapetotal;
+			}
 
-	  /* Only write data when buffer is full */
-	  if (bufptr == SoundBufferSize)
-	  {
+			/* Make it a bit louder under Windows */
+			if (Relay) Extras++;
+			if (TapeAudio.Enabled) Extras++;
+			if (Extras) tmptotal/=4; else tmptotal=0;
+			SoundBuf[bufptr] = (tmptotal/SoundVolume)+128;
+			// end of for loop
+			if (RelayPos>=RelayLen[Relay]) Relay=0;
+		} /* buffer loop */
+
+		/* Only write data when buffer is full */
+		if (bufptr == SoundBufferSize)
+		{
 #ifdef DEBUGSOUNDTOFILE
-		FILE *fd = fopen("/audio.dbg", "a+b");
-		if (fd != NULL)
-		{
-			fwrite(SoundBuf, 1, SoundBufferSize, fd);
-			fclose(fd);
-		}
-		else
-		{
-			MessageBox(GETHWND,"Failed to open audio.dbg","BBC Emulator",MB_OK|MB_ICONERROR);
-			exit(1);
-		}
+			FILE *fd = fopen("/audio.dbg", "a+b");
+			if (fd != NULL)
+			{
+				fwrite(SoundBuf, 1, SoundBufferSize, fd);
+				fclose(fd);
+			}
+			else
+			{
+				MessageBox(GETHWND,"Failed to open audio.dbg","BBC Emulator",MB_OK|MB_ICONERROR);
+				exit(1);
+			}
 #else
 			//if (sndlog!=NULL)
 				//fprintf(sndlog,"Sound write at %lf Samples\n",DestTime);
@@ -416,12 +418,12 @@ void PlayUpTil(double DestTime) {
 			HRESULT hr;
 			hr = WriteToSoundBuffer(SoundBuf);
 #endif
-		// buffer swapping no longer needed
-		bufptr=0;
-	  }
+			// buffer swapping no longer needed
+			bufptr=0;
+		}
 
-	  OurTime+=bufinc;
-  }; /* While time */ 
+		OurTime+=bufinc;
+	} /* While time */ 
 }; /* PlayUpTil */
 
 /****************************************************************************/

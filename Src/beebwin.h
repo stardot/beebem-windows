@@ -137,6 +137,7 @@ class BeebWin  {
 
 	int StartOfFrame(void);
 	BOOL UpdateTiming(void);
+	void AdjustSpeed(bool up);
 	void DisplayTiming(void);
 	void ScaleJoystick(unsigned int x, unsigned int y);
 	void SetMousestickButton(int button);
@@ -152,6 +153,7 @@ class BeebWin  {
 	void ResetTiming(void);
 	int TranslateKey(int, int, int&, int&);
 	void HandleCommandLine(char *cmd);
+	void NewTapeImage(char *FileName);
 
 	unsigned char cols[9];
     HMENU		m_hMenu;
@@ -217,6 +219,8 @@ class BeebWin  {
 	int			m_CycleBase;
 	int			m_MinFrameCount;
 	DWORD		m_LastFPSCount;
+	int			m_LastStartY;
+	int			m_LastNLines;
 
 
 	// DirectX stuff

@@ -438,6 +438,13 @@ BOOL CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lPa
 			SendDlgItemMessage(hwndDlg, IDC_DEBUGCOMMAND, EM_SETLIMITTEXT, MAX_COMMAND_LEN, 0);
 			return TRUE;
 
+		case WM_ACTIVATE:
+			if (LOWORD(wParam) == WA_INACTIVE)
+				hCurrentDialog = NULL;
+			else
+				hCurrentDialog = hwndDebug;
+			return FALSE;
+
 		case WM_COMMAND:
 			switch (LOWORD(wParam))
 			{
@@ -551,6 +558,17 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 					BreakpointHit = false;
 					DebugDisplayInfo("- TUBE BREAK -");
 				}
+			}
+			break;
+		case DEBUG_SERIAL:
+			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSERIAL, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				DebugDisplayInfo(info);
+			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSERIALBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			{
+				DebugOn = TRUE;
+				InstCount = 1;
+				BreakpointHit = false;
+				DebugDisplayInfo("- SERIAL BREAK -");
 			}
 			break;
 		}

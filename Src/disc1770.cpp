@@ -303,10 +303,11 @@ void Poll1770(int NCycles) {
 		if ((Status & 2)==0) { 
 			NFDCommand=0;
 			ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2);
-			if (!feof(CurrentDisc)) { Data=fgetc(CurrentDisc); SetStatus(1); NMIStatus|=1<<nmi_floppy; } // DRQ
 			ByteCount--;
+			// On 256..1 do Read + DRQ (256x). On 0 do INTRQ
+			if (ByteCount>0 && !feof(CurrentDisc)) { Data=fgetc(CurrentDisc); SetStatus(1); NMIStatus|=1<<nmi_floppy; } // DRQ
 			if (ByteCount==0) RotSect++; if (RotSect>MaxSects[CurrentDrive]) RotSect=0;
-			if ((ByteCount==0) && (!MultiSect)) { ResetStatus(0); NMIStatus|=1<<nmi_floppy; fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET); FDCommand=10; } // End of sector
+			if ((ByteCount==0) && (!MultiSect)) { ResetStatus(0); NMIStatus|=1<<nmi_floppy; fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET); FDCommand=10; ResetStatus(1); } // End of sector
 			if ((ByteCount==0) && (MultiSect)) { ByteCount=257; Sector++; 
 				if (Sector==MaxSects[CurrentDrive]) { MultiSect=0; /* Sector=0; */ }
 			}
@@ -317,13 +318,16 @@ void Poll1770(int NCycles) {
 	if ((FDCommand==7) && (DWriteable[CurrentDrive]==1)) { // Write
 		LoadingCycles-=NCycles; if (LoadingCycles>0) return;
 		if ((Status & 2)==0) { 
+			// DRQ already issued and answered
 			NFDCommand=0;
 			ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2); 
-			if (ByteCount<257) { fputc(Data,CurrentDisc); SetStatus(1); NMIStatus|=1<<nmi_floppy; } // DRQ
 			ByteCount--;
-			if (ByteCount==0) RotSect++; if (RotSect>MaxSects[CurrentDrive]) RotSect=0;
-			if ((ByteCount==0) && (!MultiSect)) { ResetStatus(0); NMIStatus|=1<<nmi_floppy; fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET); FDCommand=10; ResetStatus(1); }
-			if ((ByteCount==0) && (MultiSect)) { ByteCount=257; Sector++; 
+			// On 256..2 do Write + next DRQ (255x). On 1 do Write + INTRQ
+			fputc(Data,CurrentDisc);
+			if (ByteCount>1) { SetStatus(1); NMIStatus|=1<<nmi_floppy; } // DRQ
+			if (ByteCount<=1) RotSect++; if (RotSect>MaxSects[CurrentDrive]) RotSect=0;
+			if ((ByteCount<=1) && (!MultiSect)) { ResetStatus(0); NMIStatus|=1<<nmi_floppy; fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET); FDCommand=10; ResetStatus(1); }
+			if ((ByteCount<=1) && (MultiSect)) { ByteCount=257; Sector++; 
 				if (Sector==MaxSects[CurrentDrive]) { MultiSect=0; /* Sector=0; */ }
 			}
 			LoadingCycles=BYTE_TIME; // Bit longer for a write

@@ -59,8 +59,7 @@ file10=C:\BeebEm\Src.zip
 SubDir4=Tapes
 file11=C:\BeebEm\Teletext.fnt
 SubDir5=Hardware
-file12=C:\BeebEm\uef.dll
-file13=C:\BeebEm\zlib.dll
+file12=C:\BeebEm\zlib1.dll
 
 [BeebFile\BPLUS]
 file0=C:\BeebEm\BeebFile\BPLUS\B+MOS.rom
@@ -70,6 +69,7 @@ file3=C:\BeebEm\BeebFile\BPLUS\wdfs.rom
 fulldirectory=
 
 [Tapes]
+file0=C:\BeebEm\Tapes\Test.uef
 fulldirectory=
 
 [Hardware]

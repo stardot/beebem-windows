@@ -237,14 +237,14 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator\0"
             VALUE "CompanyName", "-\0"
             VALUE "FileDescription", "BeebEm\0"
-            VALUE "FileVersion", "2.0\0"
+            VALUE "FileVersion", "2.2\0"
             VALUE "InternalName", "BeebEm\0"
             VALUE "LegalCopyright", "Copyright © 2004\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "BeebEm.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "BeebEm\0"
-            VALUE "ProductVersion", "2.0\0"
+            VALUE "ProductVersion", "2.2\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -314,6 +314,23 @@ BEGIN
                     BS_LEFTTEXT | WS_TABSTOP,459,182,54,10
     CONTROL         "Debug Parasite",IDC_DEBUGPARASITE,"Button",
                     BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,448,198,65,10
+    CONTROL         "Serial",IDC_DEBUGSERIAL,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,462,128,33,10
+    CONTROL         "",IDC_DEBUGSERIALBRK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,504,128,16,10
+END
+
+IDD_TAPECONTROL DIALOG DISCARDABLE  0, 0, 187, 382
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "BeebEm Tape Control"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Play",IDC_TCPLAY,7,359,40,16
+    PUSHBUTTON      "Stop",IDC_TCSTOP,51,359,40,16
+    LISTBOX         IDC_TCMAP,7,7,173,347,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | 
+                    WS_TABSTOP
+    PUSHBUTTON      "Record",IDC_TCRECORD,140,359,40,16
+    PUSHBUTTON      "Eject",IDC_TCEJECT,95,359,40,16
 END
 
 
@@ -329,6 +346,14 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 524
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 375
+    END
+
+    IDD_TAPECONTROL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
         TOPMARGIN, 7
         BOTTOMMARGIN, 375
     END
@@ -376,6 +401,9 @@ BEGIN
             MENUITEM "Normal",                      ID_TAPE_NORMAL
         END
         MENUITEM "Rewind &Tape",                ID_REWINDTAPE
+        MENUITEM "&Unlock Tape",                ID_UNLOCKTAPE
+        MENUITEM "Tape &Control",               ID_TAPECONTROL
+        MENUITEM SEPARATOR
         MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
         POPUP "Printer &Destination"
         BEGIN
@@ -385,6 +413,7 @@ BEGIN
             MENUITEM "LPT3:",                       IDM_PRINTER_LPT3
             MENUITEM "LPT4:",                       IDM_PRINTER_LPT4
         END
+        MENUITEM SEPARATOR
         MENUITEM "RS423 On/Off",                ID_SERIAL
         POPUP "&RS423 Destination"
         BEGIN
@@ -467,6 +496,7 @@ BEGIN
     POPUP "&Sound"
     BEGIN
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
+        MENUITEM "Sound Chip",                  IDM_SOUNDCHIP
         MENUITEM SEPARATOR
         POPUP "Sound &Effects"
         BEGIN

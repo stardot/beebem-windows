@@ -296,3 +296,21 @@ Version 2.0 (Mike Wyatt)
 * Floppy controller selection is now saved for each Model B type.
 * Changed default DFS for B+ to the V2.26 Acorn 1770 DFS.
 * Rearranged menus a bit as options was getting too big.
+
+Version 2.1 (Mike Wyatt)
+-----------
+* Added a tape control window for moving the tape position.
+* Added support for saving files to UEF tape images.
+* Added support for more UEF tape chunk types.
+* Added menu option to mute sound chip so tape sound can be heard.
+* Added menu option to automatically unlock tape files.
+* Tape speed can now be changed without having to reload tape.
+* Added tape settings to the UEF state.
+* Added BeebEm speed shortcut keys, keypad +/- change speed.
+
+Version 2.2 (Greg Cook & Mike Wyatt)
+-----------
+* Fixed BeebEm hang when RS432 is enabled (Acorn Basic Editor works again).
+* Fixed LED positioning in modes other than 7.
+* Integrated Greg's 1770 disc controller fixes.
+* Fixed keyboard handling so Revs works correctly.

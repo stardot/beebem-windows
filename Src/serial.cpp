@@ -29,12 +29,15 @@ can be determined under normal use".
 // order to use VC profiling.
 //#define PROFILING
 
-#include "serial.h"
 #include "6502core.h"
 #include "uef.h"
 #include "main.h"
+#include "serial.h"
 #include "beebsound.h"
 #include "beebwin.h"
+#include "beebemrc.h"
+#include "debug.h"
+#include "uefstate.h"
 #include <stdio.h>
 #include <windows.h>
 
@@ -44,11 +47,10 @@ can be determined under normal use".
 unsigned char Cass_Relay=0; // Cassette Relay state
 unsigned char SerialChannel=CASSETTE; // Device in use
 
-unsigned char RDRE=0,TDRF=0; // RX/TX Data Reg in use specifiers
 unsigned char RDR,TDR; // Receive and Transmit Data Registers
 unsigned char RDSR,TDSR; // Receive and Transmit Data Shift Registers (buffers)
-unsigned int Tx_Rate,Rx_Rate; // Recieve and Transmit baud rates.
-unsigned char Clk_Divide; // Clock divide rate
+unsigned int Tx_Rate=1200,Rx_Rate=1200; // Recieve and Transmit baud rates.
+unsigned char Clk_Divide=1; // Clock divide rate
 
 unsigned char ACIA_Status,ACIA_Control; // 6850 ACIA Status.& Control
 unsigned char SP_Control; // SERPROC Control;
@@ -59,24 +61,35 @@ unsigned char DCD=0,DCDI=1,ODCDI=1,DCDClear=0; // count to clear DCD bit
 unsigned char Parity,Stop_Bits,Data_Bits,RIE,TIE; // Receive Intterrupt Enable
 												  // and Transmit Interrupt Enable
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
-#define EVEN 0;
-#define ODD 1;
 
-UEFFILE TapeFile; // UEF Tape file handle for Thomas Harte's UEF-DLL
+char UEFTapeName[256]; // Filename of current tape file
+unsigned char UEFOpen=0;
 
 unsigned int Baud_Rates[8]={19200,1200,4800,150,9600,300,2400,75};
 
-unsigned char INTONE=0; // Dummy byte bug
 unsigned char OldRelayState=0;
-
-#define DCDLOWLIMIT 20
-#define DCDCOUNTDOWN 200
-unsigned int DCDClock=DCDCOUNTDOWN;
-unsigned char UEFOpen=0;
-unsigned int TapeCount=100;
+CycleCountT TapeTrigger=CycleCountTMax;
+#define TAPECYCLES 357 // 2000000/5600 - 5600 is normal tape speed
 
 int UEF_BUF=0,NEW_UEF_BUF=0;
 int TapeClock=0,OldClock=0;
+int TapeClockSpeed;
+int UnlockTape=1;
+
+// Tape control variables
+#define MAX_MAP_LINES 4096
+int map_lines;
+char map_desc[MAX_MAP_LINES][40];
+int map_time[MAX_MAP_LINES];
+bool TapeControlEnabled = false;
+bool TapePlaying = true;
+bool TapeRecording = false;
+static HWND hwndTapeControl;
+static HWND hwndMap;
+extern HWND hCurrentDialog;
+void TapeControlOpenFile(char *file_name);
+void TapeControlUpdateCounter(int tape_time);
+void TapeControlStopRecording(bool RefreshControl);
 
 // This bit is the Serial Port stuff
 unsigned char SerialPortEnabled;
@@ -98,7 +111,6 @@ volatile bool bWaitingForStat=FALSE;
 volatile bool bCharReady=FALSE;
 COMMTIMEOUTS ctSerialPort;
 DWORD dwClrCommError;
-int TapeClockSpeed;
 
 FILE *serlog;
 
@@ -112,6 +124,11 @@ void ResetACIAStatus(unsigned char bit) {
 
 void Write_ACIA_Control(unsigned char CReg) {
 	unsigned char bit;
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Serial: Write ACIA control %02X", (int)CReg);
+		DebugDisplayTrace(DEBUG_SERIAL, true, info);
+	}
 	ACIA_Control=CReg; // This is done for safe keeping
 	// Master reset
 	if ((CReg & 3)==3) {
@@ -121,9 +138,9 @@ void Write_ACIA_Control(unsigned char CReg) {
 			CTS=1; SetACIAStatus(3);
 			FirstReset=0; RTS=1; 
 		} // RTS High on first Master reset.
-		if (DCDI==0) ResetACIAStatus(2); // clear DCD Bit if DCD input is low
-		ResetACIAStatus(2); DCDI=0; DCDClear=0;
+		ResetACIAStatus(2); DCD=0; DCDI=0; DCDClear=0;
 		SetACIAStatus(1); // Xmit data register empty
+		TapeTrigger=TotalCycles+TAPECYCLES;
 	}
 	// Clock Divide
 	if ((CReg & 3)==0) Clk_Divide=1;
@@ -141,6 +158,11 @@ void Write_ACIA_Control(unsigned char CReg) {
 	RIE=(CReg & 128)>>7;
 	bit=(CReg & 96)>>5;
 	if (bit==3) { RTS=0; TIE=0; }
+	// Seem to need an interrupt immediately for tape writing when TIE set
+	if (SerialChannel==CASSETTE && TIE) {
+		intStatus|=1<<serial;
+		SetACIAStatus(7);
+	}
 	// Change serial port settings
 	if ((SerialChannel==RS423) && (SerialPortEnabled)) {
 		GetCommState(hSerialPort,&dcbSerialPort);
@@ -155,9 +177,21 @@ void Write_ACIA_Control(unsigned char CReg) {
 }
 
 void Write_ACIA_Tx_Data(unsigned char Data) {
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Serial: Write ACIA Tx %02X", (int)Data);
+		DebugDisplayTrace(DEBUG_SERIAL, true, info);
+	}
 	intStatus&=~(1<<serial);
 	ResetACIAStatus(7);
-	if ((SerialChannel=RS423) && (SerialPortEnabled)) {
+	if (SerialChannel==CASSETTE) {
+		ResetACIAStatus(1);
+		TDR=Data;
+		TxD=1;
+		int baud = Tx_Rate * ((Clk_Divide==1) ? 64 : (Clk_Divide==64) ? 1 : 4);
+		TapeTrigger=TotalCycles + 2000000/(baud/8) * TapeClockSpeed/5600;
+	}
+	if ((SerialChannel==RS423) && (SerialPortEnabled)) {
 		if (ACIA_Status & 2) {
 			ResetACIAStatus(1);
 			SerialWriteBuffer=Data;
@@ -169,12 +203,19 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
 
 void Write_SERPROC(unsigned char Data) {
 	unsigned int HigherRate;
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Serial: Write serial ULA %02X", (int)Data);
+		DebugDisplayTrace(DEBUG_SERIAL, true, info);
+	}
 	SP_Control=Data;
 	// Slightly easier this time.
 	// just the Rx and Tx baud rates, and the selectors.
 	Cass_Relay=(Data & 128)>>7;
-	TapeAudio.Enabled=(Cass_Relay)?TRUE:FALSE;
+	TapeAudio.Enabled=(Cass_Relay && (TapePlaying||TapeRecording))?TRUE:FALSE;
 	LEDs.Motor=(Cass_Relay==1);
+	if (Cass_Relay)
+		TapeTrigger=TotalCycles+TAPECYCLES;
 	if (Cass_Relay!=OldRelayState) {
 		OldRelayState=Cass_Relay;
 		ClickRelay(Cass_Relay);
@@ -195,7 +236,20 @@ void Write_SERPROC(unsigned char Data) {
 }
 
 unsigned char Read_ACIA_Status(void) {
-	DCDClear=2;
+//	if (DCDI==0 && DCD!=0)
+//	{
+//		DCDClear++;
+//		if (DCDClear > 1) {
+//			DCD=0; ResetACIAStatus(2);
+//			DCDClear=0;
+//		}
+//	}
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Serial: Read ACIA status %02X", (int)ACIA_Status);
+		DebugDisplayTrace(DEBUG_SERIAL, true, info);
+	}
+
 	return(ACIA_Status);
 }
 
@@ -213,71 +267,162 @@ void HandleData(unsigned char AData) {
 
 unsigned char Read_ACIA_Rx_Data(void) {
 	unsigned char TData;
+//	if (DCDI==0 && DCD!=0)
+//	{
+//		DCDClear++;
+//		if (DCDClear > 1) {
+//			DCD=0; ResetACIAStatus(2);
+//			DCDClear=0;
+//		}
+//	}
 	intStatus&=~(1<<serial);
 	ResetACIAStatus(7);
-	if (DCDI==0) { DCDClear=2; }
 	TData=RDR; RDR=RDSR; RDSR=0;
 	if (RxD>0) RxD--; 
 	if (RxD==0) ResetACIAStatus(0);
 	if ((RxD>0) && (RIE)) { intStatus|=1<<serial; SetACIAStatus(7); }
 	if (Data_Bits==7) TData&=127;
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Serial: Read ACIA Rx %02X", (int)TData);
+		DebugDisplayTrace(DEBUG_SERIAL, true, info);
+	}
 	return(TData);
 }
 
 unsigned char Read_SERPROC(void) {
-return(SP_Control);
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Serial: Read serial ULA %02X", (int)SP_Control);
+		DebugDisplayTrace(DEBUG_SERIAL, true, info);
+	}
+	return(SP_Control);
 }
 
-void Serial_Poll(void) {
-  if (SerialChannel==CASSETTE) {
-	// Cassette port
-	if (Cass_Relay==1 && UEFOpen && TapeClock!=OldClock) {
-#ifndef PROFILING
-		NEW_UEF_BUF=uef_getdata(TapeFile,TapeClock);
-#endif
-		OldClock=TapeClock;
-	}
-	if ((NEW_UEF_BUF!=UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF)==UEF_HTONE || UEFRES_TYPE(NEW_UEF_BUF)==UEF_GAP) && (Cass_Relay==1) && (UEFOpen)) {
-		UEF_BUF=NEW_UEF_BUF;
-		// New data read in, so do something about it
-		if (UEFRES_TYPE(UEF_BUF) == UEF_HTONE) { 
-			if (DCDClock<DCDLOWLIMIT) DCDI=0; else DCDI=1;
-			if (DCDClock>0) DCDClock--;
-			TapeAudio.Signal=2;
-			//TapeAudio.Samples=0;
-			TapeAudio.BytePos=11;
-		}
-		if (UEFRES_TYPE(UEF_BUF) == UEF_GAP) { DCDI=1; DCDClock=DCDCOUNTDOWN; INTONE=0; TapeAudio.Signal=0; }
-		if (UEFRES_TYPE(UEF_BUF) == UEF_DATA) {
-			HandleData(UEFRES_BYTE(UEF_BUF));
-			DCDClock=DCDCOUNTDOWN;
-				TapeAudio.Data=(UEFRES_BYTE(UEF_BUF)<<1)|1;
-				TapeAudio.BytePos=1;
-				TapeAudio.CurrentBit=0;
-				TapeAudio.Signal=1;
-				TapeAudio.ByteCount=3;
+void Serial_Poll(void)
+{
+	if (SerialChannel==CASSETTE)
+	{
+		if (TapeRecording)
+		{
+			if (Cass_Relay==1 && UEFOpen && TotalCycles >= TapeTrigger)
+			{
+				if (TxD > 0)
+				{
+					// Writing data
+					if (!uef_putdata(TDR|UEF_DATA, TapeClock))
+					{
+						char errstr[256];
+						sprintf(errstr, "Error writing to UEF file:\n  %s", UEFTapeName);
+						MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+						TapeControlStopRecording(true);
+					}
+					TxD=0;
+					SetACIAStatus(1);
+					if (TIE)
+					{
+						intStatus|=1<<serial;
+						SetACIAStatus(7);
+					}
+					TapeAudio.Data=(TDR<<1)|1;
+					TapeAudio.BytePos=1;
+					TapeAudio.CurrentBit=0;
+					TapeAudio.Signal=1;
+					TapeAudio.ByteCount=3;
+				}
+				else
+				{
+					// Tone
+					if (!uef_putdata(UEF_HTONE, TapeClock))
+					{
+						char errstr[256];
+						sprintf(errstr, "Error writing to UEF file:\n  %s", UEFTapeName);
+						MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+						TapeControlStopRecording(true);
+					}
+					TapeAudio.Signal=2;
+					TapeAudio.BytePos=11;
+
+				}
+
+				TapeTrigger=TotalCycles+TAPECYCLES;
+				TapeClock++;
 			}
-	}
-	if ((Cass_Relay==1) && (RxD<2) && UEFOpen) {
-		TapeCount--;
-		if (TapeCount==0){
-			TapeClock++;
-			TapeCount=100;
+		}
+		else // Playing or stopped
+		{
+			if (Cass_Relay==1 && UEFOpen && TapeClock!=OldClock)
+			{
+#ifndef PROFILING
+				NEW_UEF_BUF=uef_getdata(TapeClock);
+#endif
+				OldClock=TapeClock;
+			}
+
+			if ((NEW_UEF_BUF!=UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF)==UEF_HTONE || UEFRES_TYPE(NEW_UEF_BUF)==UEF_GAP) &&
+				(Cass_Relay==1) && (UEFOpen))
+			{
+				if (UEFRES_TYPE(UEF_BUF) != UEFRES_TYPE(NEW_UEF_BUF))
+					TapeControlUpdateCounter(TapeClock);
+		
+				UEF_BUF=NEW_UEF_BUF;
+
+				// New data read in, so do something about it
+				if (UEFRES_TYPE(UEF_BUF) == UEF_HTONE)
+				{
+					DCDI=1;
+					TapeAudio.Signal=2;
+					//TapeAudio.Samples=0;
+					TapeAudio.BytePos=11;
+				}
+				if (UEFRES_TYPE(UEF_BUF) == UEF_GAP)
+				{
+					DCDI=1;
+					TapeAudio.Signal=0;
+				}
+				if (UEFRES_TYPE(UEF_BUF) == UEF_DATA)
+				{
+					DCDI=0;
+					HandleData(UEFRES_BYTE(UEF_BUF));
+					TapeAudio.Data=(UEFRES_BYTE(UEF_BUF)<<1)|1;
+					TapeAudio.BytePos=1;
+					TapeAudio.CurrentBit=0;
+					TapeAudio.Signal=1;
+					TapeAudio.ByteCount=3;
+				}
+			}
+			if ((Cass_Relay==1) && (RxD<2) && UEFOpen)
+			{
+				if (TotalCycles >= TapeTrigger)
+				{
+					if (TapePlaying)
+						TapeClock++;
+					TapeTrigger=TotalCycles+TAPECYCLES;
+				}
+			}
+			if (DCDI==1 && ODCDI==0)
+			{
+				// low to high transition on the DCD line
+				if (RIE)
+				{
+					intStatus|=1<<serial;
+					SetACIAStatus(7);
+				}
+				DCD=1; SetACIAStatus(2); //ResetACIAStatus(0);
+				DCDClear=0;
+			}
+			if (DCDI==0 && ODCDI==1)
+			{
+				DCD=0; ResetACIAStatus(2);
+				DCDClear=0;
+			}
+			if (DCDI!=ODCDI)
+				ODCDI=DCDI;
 		}
 	}
-	if (DCDI==1 && ODCDI==0) {
-		// low to high transition on the DCD line
-		if (RIE) { intStatus|=1<<serial; SetACIAStatus(7); } // cause interrupt if RIE set
-		DCD=1; SetACIAStatus(2); //ResetACIAStatus(0);
-		DCDClear=0;
-	}
-	if (DCDI==0 && ODCDI==1) {
-		DCD=0; ResetACIAStatus(2);
-		DCDClear=0;
-	}
-	if (DCDI!=ODCDI) ODCDI=DCDI;
-  }
-	if ((SerialChannel==RS423) && (SerialPortEnabled)) {
+
+	if ((SerialChannel==RS423) && (SerialPortEnabled))
+	{
 		if  ((!bWaitingForStat) && (!bSerialStateChanged)) {
 			WaitCommEvent(hSerialPort,&dwCommEvent,&olStatus);
 			bWaitingForStat=TRUE;
@@ -417,33 +562,517 @@ void InitSerialPort(void) {
 	//serlog=fopen("/ser.log","wb");
 }
 
-void Kill_Serial(void) {
+void CloseUEF(void) {
 #ifndef PROFILING
-	if (UEFOpen) uef_close(TapeFile);
+	if (UEFOpen) {
+		TapeControlStopRecording(false);
+		uef_close();
+		UEFOpen=0;
+		TxD=0;
+		RxD=0;
+		if (TapeControlEnabled) 
+			SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
+	}
 #endif
-	if (SerialPortOpen) CloseHandle(hSerialPort);
+}
+
+void Kill_Serial(void) {
+	CloseUEF();
+	if (SerialPortOpen)
+		CloseHandle(hSerialPort);
 }
 
 void LoadUEF(char *UEFName) {
 #ifndef PROFILING
-	if (UEFOpen) uef_close(TapeFile);
-	uef_setmode(UEFMode_Poll);
-	uef_setclock(TapeClockSpeed);
+	CloseUEF();
+
+	strcpy(UEFTapeName, UEFName);
+
+	if (TapeControlEnabled)
+		TapeControlOpenFile(UEFName);
+
 	// Clock values:
 	// 5600 - Normal speed - anything higher is a bit slow
 	// 750 - Recommended minium settings, fastest reliable load
-	TapeFile=uef_open(UEFName);
-	if (TapeFile!=NULL) {
+	uef_setclock(TapeClockSpeed);
+	SetUnlockTape(UnlockTape);
+
+	if (uef_open(UEFName)) {
 		UEFOpen=1;
+		UEF_BUF=0;
+		TxD=0;
+		RxD=0;
 		TapeClock=0;
-		TapeCount=100;
 		OldClock=0;
+		TapeTrigger=TotalCycles+TAPECYCLES;
+		TapeControlUpdateCounter(TapeClock);
+	}
+	else {
+		UEFTapeName[0]=0;
 	}
 #endif
 }
 
 void RewindTape(void) {
+	TapeControlStopRecording(true);
+	UEF_BUF=0;
 	TapeClock=0;
 	OldClock=0;
-	TapeCount=100;
+	TapeTrigger=TotalCycles+TAPECYCLES;
+	TapeControlUpdateCounter(TapeClock);
+}
+
+void SetTapeSpeed(int speed) {
+	int NewClock = (int)((double)TapeClock * ((double)speed / TapeClockSpeed));
+	TapeClockSpeed=speed;
+	if (UEFOpen)
+		LoadUEF(UEFTapeName);
+	TapeClock=NewClock;
+}
+
+void SetUnlockTape(int unlock) {
+	uef_setunlock(unlock);
+}
+
+//*******************************************************************
+
+bool map_file(char *file_name)
+{
+	bool done=false;
+	int file;
+	int i;
+	int start_time;
+	int n;
+	int data;
+	int last_data;
+	int blk;
+	int blk_num;
+	char block[500];
+	bool std_last_block=true;
+	char name[11];
+
+	uef_setclock(TapeClockSpeed);
+
+	file = uef_open(file_name);
+	if (file == NULL)
+	{
+		return(false);
+	}
+
+	i=0;
+	start_time=0;
+	map_lines=0;
+	last_data=0;
+	blk_num=0;
+
+	while (!done && map_lines < MAX_MAP_LINES)
+	{
+		data = uef_getdata(i);
+		if (data != last_data)
+		{
+			if (UEFRES_TYPE(data) != UEFRES_TYPE(last_data))
+			{
+				if (UEFRES_TYPE(last_data) == UEF_DATA)
+				{
+					// End of block, standard header?
+					if (blk > 20 && block[0] == 0x2A)
+					{
+						if (!std_last_block)
+						{
+							// Change of block type, must be first block
+							blk_num=0;
+							if (map_lines > 0 && map_desc[map_lines-1][0] != 0)
+							{
+								strcpy(map_desc[map_lines], "");
+								map_time[map_lines]=start_time;
+								map_lines++;
+							}
+						}
+
+						// Pull file name from block
+						n = 1;
+						while (block[n] != 0 && block[n] >= 32 && block[n] <= 127 && n <= 10)
+						{
+							name[n-1] = block[n];
+							n++;
+						}
+						name[n-1] = 0;
+						if (name[0] != 0)
+							sprintf(map_desc[map_lines], "%-12s %02X  Length %04X", name, blk_num, blk);
+						else
+							sprintf(map_desc[map_lines], "<No name>    %02X  Length %04X", name, blk_num, blk);
+
+						map_time[map_lines]=start_time;
+
+						// Is this the last block for this file?
+						if (block[strlen(name) + 14] & 0x80)
+						{
+							blk_num=-1;
+							++map_lines;
+							strcpy(map_desc[map_lines], "");
+							map_time[map_lines]=start_time;
+						}
+						std_last_block=true;
+					}
+					else
+					{
+						sprintf(map_desc[map_lines], "Non-standard %02X  Length %04X", blk_num, blk);
+						map_time[map_lines]=start_time;
+						std_last_block=false;
+					}
+
+					// Replace time counter in previous blank lines
+					if (map_lines > 0 && map_desc[map_lines-1][0] == 0)
+						map_time[map_lines-1]=start_time;
+
+					// Data block recorded
+					map_lines++;
+					blk_num++;
+				}
+					
+				if (UEFRES_TYPE(data) == UEF_HTONE)
+				{
+					// strcpy(map_desc[map_lines++], "Tone");
+					start_time=i;
+				}
+				else if (UEFRES_TYPE(data) == UEF_GAP)
+				{
+					if (map_lines > 0 && map_desc[map_lines-1][0] != 0)
+						strcpy(map_desc[map_lines++], "");
+					start_time=i;
+					blk_num=0;
+				}
+				else if (UEFRES_TYPE(data) == UEF_DATA)
+				{
+					blk=0;
+					block[blk++]=UEFRES_BYTE(data);
+				}
+				else if (UEFRES_TYPE(data) == UEF_EOF)
+				{
+					done=true;
+				}
+			}
+			else
+			{
+				if (UEFRES_TYPE(data) == UEF_DATA)
+				{
+					if (blk < 500)
+						block[blk++]=UEFRES_BYTE(data);
+					else
+						blk++;
+				}
+			}
+		}
+		last_data=data;
+		i++;
+	}
+
+	uef_close();
+
+	return(true);
+}
+
+//*******************************************************************
+
+BOOL CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
+void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
+{
+	int Clock;
+
+	TapeControlEnabled = TRUE;
+
+	if (!IsWindow(hwndTapeControl)) 
+	{ 
+		hwndTapeControl = CreateDialog(hinst, MAKEINTRESOURCE(IDD_TAPECONTROL),
+										NULL, (DLGPROC)TapeControlDlgProc);
+		hCurrentDialog = hwndTapeControl;
+		ShowWindow(hwndTapeControl, SW_SHOW);
+
+		hwndMap = GetDlgItem(hwndTapeControl, IDC_TCMAP);
+		SendMessage(hwndMap, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
+						(LPARAM)MAKELPARAM(FALSE,0));
+
+		if (UEFOpen)
+		{
+			Clock = TapeClock;
+			LoadUEF(UEFTapeName);
+			TapeClock = Clock;
+			TapeControlUpdateCounter(TapeClock);
+		}
+	}
+}
+
+void TapeControlCloseDialog()
+{
+	DestroyWindow(hwndTapeControl);
+	hwndTapeControl = NULL;
+	hwndMap = NULL;
+	TapeControlEnabled = FALSE;
+	hCurrentDialog = NULL;
+	map_lines = 0;
+	TapePlaying=true;
+	TapeRecording=false;
+}
+
+void TapeControlOpenFile(char *UEFName)
+{
+	int i;
+
+	if (TapeControlEnabled) 
+	{
+		if (!map_file(UEFName))
+		{
+			char errstr[256];
+			sprintf(errstr, "Cannot open UEF file:\n  %s", UEFName);
+			MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+		}
+		else
+		{
+			SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
+			for (i = 0; i < map_lines; ++i)
+				SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)map_desc[i]);
+		}
+	}
+}
+
+void TapeControlUpdateCounter(int tape_time)
+{
+	int i;
+
+	if (TapeControlEnabled) 
+	{
+		i = 0;
+		while (i < map_lines && map_time[i] <= tape_time)
+			i++;
+
+		if (i > 0)
+			i--;
+
+		SendMessage(hwndMap, LB_SETCURSEL, (WPARAM)i, 0);
+	}
+}
+
+BOOL CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	char str[256];
+	int s;
+	int r;
+
+	switch (message)
+	{
+		case WM_INITDIALOG:
+			return TRUE;
+
+		case WM_ACTIVATE:
+			if (LOWORD(wParam) == WA_INACTIVE)
+				hCurrentDialog = NULL;
+			else
+				hCurrentDialog = hwndTapeControl;
+			return FALSE;
+
+		case WM_COMMAND:
+			switch (LOWORD(wParam))
+			{
+				case IDC_TCMAP:
+					if (HIWORD(wParam) == LBN_SELCHANGE)
+					{
+						s = SendMessage(hwndMap, LB_GETCURSEL, 0, 0);
+						if (s != LB_ERR && s >= 0 && s < map_lines)
+						{
+							TapeClock=map_time[s];
+							OldClock=0;
+							TapeTrigger=TotalCycles+TAPECYCLES;
+						}
+					}
+					return FALSE;
+
+				case IDC_TCPLAY:
+					TapePlaying=true;
+					TapeControlStopRecording(true);
+					TapeAudio.Enabled=Cass_Relay?TRUE:FALSE;
+					return TRUE;
+
+				case IDC_TCSTOP:
+					TapePlaying=false;
+					TapeControlStopRecording(true);
+					TapeAudio.Enabled=FALSE;
+					return TRUE;
+
+				case IDC_TCEJECT:
+					TapeControlStopRecording(false);
+					TapeAudio.Enabled=FALSE;
+					CloseUEF();
+					return TRUE;
+
+				case IDC_TCRECORD:
+					if (!TapeRecording)
+					{
+						r = IDCANCEL;
+						if (UEFOpen)
+						{
+							sprintf(str, "Append to current tape file:\n  %s", UEFTapeName);
+							r = MessageBox(GETHWND,str,"BeebEm",MB_ICONWARNING|MB_OKCANCEL);
+							if (r == IDOK)
+							{
+								SendMessage(hwndMap, LB_SETCURSEL, (WPARAM)map_lines-1, 0);
+							}
+						}
+						else
+						{
+							// Query for new file name
+							CloseUEF();
+							mainWin->NewTapeImage(UEFTapeName);
+							if (UEFTapeName[0])
+							{
+								r = IDOK;
+								FILE *fd = fopen(UEFTapeName,"rb");
+								if (fd != NULL)
+								{
+									fclose(fd);
+									sprintf(str, "File already exists:\n  %s\n\nOverwrite file?", UEFTapeName);
+									if (MessageBox(GETHWND,str,"BeebEm",MB_YESNO|MB_ICONQUESTION) != IDYES)
+										r = IDCANCEL;
+								}
+
+								if (r == IDOK)
+								{
+									// Create file
+									if (uef_create(UEFTapeName))
+									{
+										UEFOpen=1;
+									}
+									else
+									{
+										sprintf(str, "Error creating tape file:\n  %s", UEFTapeName);
+										MessageBox(GETHWND,str,"BeebEm",MB_ICONERROR|MB_OK);
+										UEFTapeName[0] = 0;
+										r = IDCANCEL;
+									}
+								}
+							}
+						}
+
+						if (r == IDOK)
+						{
+							TapeRecording=true;
+							TapePlaying=false;
+							TapeAudio.Enabled=Cass_Relay?TRUE:FALSE;
+						}
+					}
+					return TRUE;
+
+				case IDCANCEL:
+					TapeControlCloseDialog();
+					return TRUE;
+			}
+	}
+	return FALSE;
+}
+
+void TapeControlStopRecording(bool RefreshControl)
+{
+	if (TapeRecording)
+	{
+		uef_putdata(UEF_EOF, 0);
+		TapeRecording = false;
+
+		if (RefreshControl)
+		{
+			LoadUEF(UEFTapeName);
+		}
+	}
+}
+
+//*******************************************************************
+
+void SaveSerialUEF(FILE *SUEF)
+{
+	if (UEFOpen)
+	{
+		fput16(0x0473,SUEF);
+		fput32(293,SUEF);
+		fputc(SerialChannel,SUEF);
+		fwrite(UEFTapeName,1,256,SUEF);
+		fputc(Cass_Relay,SUEF);
+		fput32(Tx_Rate,SUEF);
+		fput32(Rx_Rate,SUEF);
+		fputc(Clk_Divide,SUEF);
+		fputc(Parity,SUEF);
+		fputc(Stop_Bits,SUEF);
+		fputc(Data_Bits,SUEF);
+		fputc(RIE,SUEF);
+		fputc(TIE,SUEF);
+		fputc(TxD,SUEF);
+		fputc(RxD,SUEF);
+		fputc(RDR,SUEF);
+		fputc(TDR,SUEF);
+		fputc(RDSR,SUEF);
+		fputc(TDSR,SUEF);
+		fputc(ACIA_Status,SUEF);
+		fputc(ACIA_Control,SUEF);
+		fputc(SP_Control,SUEF);
+		fputc(DCD,SUEF);
+		fputc(DCDI,SUEF);
+		fputc(ODCDI,SUEF);
+		fputc(DCDClear,SUEF);
+		fput32(TapeClock,SUEF);
+		fput32(TapeClockSpeed,SUEF);
+	}
+}
+
+void LoadSerialUEF(FILE *SUEF)
+{
+	char errstr[200];
+	char FileName[256];
+	int sp;
+
+	CloseUEF();
+
+	SerialChannel=fgetc(SUEF);
+	fread(FileName,1,256,SUEF);
+	if (FileName[0])
+	{
+		LoadUEF(FileName);
+		if (!UEFOpen)
+		{
+			if (!TapeControlEnabled)
+			{
+				sprintf(errstr, "Cannot open UEF file:\n  %s", FileName);
+				MessageBox(GETHWND,errstr,"BeebEm",MB_OK|MB_ICONERROR);
+			}
+		}
+		else
+		{
+			Cass_Relay=fgetc(SUEF);
+			Tx_Rate=fget32(SUEF);
+			Rx_Rate=fget32(SUEF);
+			Clk_Divide=fgetc(SUEF);
+			Parity=fgetc(SUEF);
+			Stop_Bits=fgetc(SUEF);
+			Data_Bits=fgetc(SUEF);
+			RIE=fgetc(SUEF);
+			TIE=fgetc(SUEF);
+			TxD=fgetc(SUEF);
+			RxD=fgetc(SUEF);
+			RDR=fgetc(SUEF);
+			TDR=fgetc(SUEF);
+			RDSR=fgetc(SUEF);
+			TDSR=fgetc(SUEF);
+			ACIA_Status=fgetc(SUEF);
+			ACIA_Control=fgetc(SUEF);
+			SP_Control=fgetc(SUEF);
+			DCD=fgetc(SUEF);
+			DCDI=fgetc(SUEF);
+			ODCDI=fgetc(SUEF);
+			DCDClear=fgetc(SUEF);
+			TapeClock=fget32(SUEF);
+			sp=fget32(SUEF);
+			if (sp != TapeClockSpeed)
+			{
+				TapeClock = (int)((double)TapeClock * ((double)TapeClockSpeed / sp));
+			}
+			TapeControlUpdateCounter(TapeClock);
+		}
+	}
 }

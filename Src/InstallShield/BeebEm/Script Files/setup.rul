@@ -282,6 +282,8 @@ function ProcessAfterDataMove()
   DeleteFile( "makefile.base" );
   DeleteFile( "README.1ST" );
   DeleteFile( "README.WIN" );
+  DeleteFile( "uef.dll" );
+  DeleteFile( "zlib.dll" );
 
   tmp = szTarget ^ "DAGCL";
   DeleteDir ( tmp , ALLCONTENTS );
@@ -604,6 +606,7 @@ function DialogShowSdFinishReboot()
  // --- include script file section ---
 
 #include "sddialog.rul"
+
 
 
 

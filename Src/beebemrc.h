@@ -81,6 +81,7 @@
 #define IDD_USERKYBRD                   103
 #define IDD_DIALOG1                     106
 #define IDD_DEBUG                       110
+#define IDD_TAPECONTROL                 112
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGRESTART                1011
 #define IDC_DEBUGINFO                   1015
@@ -96,10 +97,17 @@
 #define IDC_DEBUGBPS                    1029
 #define IDC_DEBUGOS                     1030
 #define IDC_DEBUGROM                    1031
+#define IDC_TCMAP                       1031
 #define IDC_DEBUGTUBE                   1032
+#define IDC_TCPLAY                      1032
 #define IDC_DEBUGTUBEBRK                1033
+#define IDC_TCSTOP                      1033
 #define IDC_DEBUGHOST                   1034
+#define IDC_TCRECORD                    1034
 #define IDC_DEBUGPARASITE               1035
+#define IDC_TCEJECT                     1035
+#define IDC_DEBUGSERIAL                 1036
+#define IDC_DEBUGSERIALBRK              1037
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -253,15 +261,18 @@
 #define ID_MODELBINT                    40170
 #define ID_MODELBP                      40171
 #define IDM_SHOWDEBUGGER                40173
+#define ID_TAPECONTROL                  40174
+#define IDM_SOUNDCHIP                   40175
+#define ID_UNLOCKTAPE                   40176
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        112
-#define _APS_NEXT_COMMAND_VALUE         40174
-#define _APS_NEXT_CONTROL_VALUE         1031
+#define _APS_NEXT_RESOURCE_VALUE        113
+#define _APS_NEXT_COMMAND_VALUE         40177
+#define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -3,6 +3,7 @@
 
 #ifndef SERIAL_HEADER
 #define SERIAL_HEADER
+extern CycleCountT TapeTrigger;
 void Write_ACIA_Control(unsigned char CReg);
 void Write_ACIA_Tx_Data(unsigned char Data);
 void Write_SERPROC(unsigned char Data);
@@ -21,4 +22,13 @@ extern void SerialThread(void *lpParam);
 void StatThread(void *lpParam);
 void InitThreads(void);
 extern volatile bool bSerialStateChanged;
+extern bool TapeControlEnabled;
+extern char UEFTapeName[256];
+extern int UnlockTape;
+void SetTapeSpeed(int speed);
+void SetUnlockTape(int unlock);
+void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain);
+void TapeControlCloseDialog(void);
+void SaveSerialUEF(FILE *SUEF);
+void LoadSerialUEF(FILE *SUEF);
 #endif

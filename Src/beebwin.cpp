@@ -90,7 +90,7 @@ char FDCDLL[256];
 static const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 static const char *AboutText = "BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
 								"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\n\n"
-								"Version 2.0, Dec 2004";
+								"Version 2.2, Feb 2005";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -164,8 +164,8 @@ static int transTable1[256][2]={
 	0,0,	6,2,	0,0,	0,0,   // 92  . SPACE ..
 	0,0,	0,0,	0,0,	0,0,   // 96
 	0,0,	0,0,	0,0,	0,0,   // 100
-	0,0,	0,0,	0,0,	0,0,   // 104
-	0,0,	0,0,	0,0,	0,0,   // 108
+	0,0,	0,0,	0,0,	-4,0,  // 104 Keypad+
+	0,0,	-4,1,	0,0,	0,0,   // 108 Keypad-
 	7,1,	7,2,	7,3,	1,4,   // 112 F1 F2 F3 F4
 	7,4,	7,5,	1,6,	7,6,   // 116 F5 F6 F7 F8
 	7,7,	2,0,	2,0,	-2,-2, // 120 F9 F10 F11 F12
@@ -217,6 +217,8 @@ BeebWin::BeebWin()
 void BeebWin::Initialise()
 {   
 	m_DXInit = FALSE;
+	m_LastStartY = 0;
+	m_LastNLines = 256;
 	m_LastTickCount = 0;
 	m_KeyMapAS = 0;
 	m_KeyMapFunc = 0;
@@ -236,6 +238,7 @@ void BeebWin::Initialise()
 
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
+	UEFTapeName[0]=0;
 
 	m_hBitmap = m_hOldObj = m_hDCBitmap = NULL;
 	m_ScreenRefreshCount = 0;
@@ -283,13 +286,10 @@ void BeebWin::Initialise()
 	UpdateModelType();
 	UpdateSFXMenu();
 	UpdateLEDMenu(m_hMenu);
-	CheckMenuItem(m_hMenu,ID_TAPESOUND,(TapeSoundEnabled)?MF_CHECKED:MF_UNCHECKED);
 	MenuOn=TRUE;
 	LoadFDC(NULL, true);
 	SetTapeSpeedMenu();
-	CheckMenuItem(m_hMenu,ID_PSAMPLES,(PartSamples)?MF_CHECKED:MF_UNCHECKED);
 	UpdateOptiMenu();
-	CheckMenuItem(m_hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
 
 	SaveWindowPos();
 }
@@ -589,6 +589,13 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, ID_COM4, (SerialPort==4)? MF_CHECKED:MF_UNCHECKED);
 
 	CheckMenuItem(hMenu, ID_HIDEMENU, HideMenuEnabled ? MF_CHECKED:MF_UNCHECKED);
+
+	CheckMenuItem(m_hMenu,ID_TAPESOUND,(TapeSoundEnabled)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,IDM_SOUNDCHIP,(SoundChipEnabled)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_PSAMPLES,(PartSamples)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+
+	CheckMenuItem(m_hMenu,ID_UNLOCKTAPE,(UnlockTape)?MF_CHECKED:MF_UNCHECKED);
 
 	UpdateMonitorMenu();
 
@@ -926,6 +933,10 @@ LRESULT CALLBACK WndProc(
 					if (col==-3) SoundTuning+=0.1; // Page Up
 					if (col==-4) SoundTuning-=0.1; // Page Down
 				}
+				else if(row==-4)
+				{
+					mainWin->AdjustSpeed(col == 0);
+				}
 			}
 			break;					  
 
@@ -1233,7 +1244,10 @@ void BeebWin::doLED(int sx,bool on) {
 	int tsy; char colbase;
 	colbase=(DiscLedColour*2)+8; // colour will be 0 for red, 1 for green.
 	if (sx<100) colbase=8; // Red leds for keyboard always
-	if (TeletextEnabled) tsy=496; else tsy=254;
+	if (TeletextEnabled)
+		tsy=496;
+	else
+		tsy=m_LastStartY+m_LastNLines-2;
 	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
 	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
 };
@@ -1241,8 +1255,6 @@ void BeebWin::doLED(int sx,bool on) {
 /****************************************************************************/
 void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 {
-	static int LastStartY = 0;
-	static int LastNLines = 256;
 	WINDOWPLACEMENT wndpl;
 	HRESULT ddrval;
 	HDC hdc;
@@ -1252,13 +1264,13 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	// Use last stored params?
 	if (starty == 0 && nlines == 0)
 	{
-		starty = LastStartY;
-		nlines = LastNLines;
+		starty = m_LastStartY;
+		nlines = m_LastNLines;
 	}
 	else
 	{
-		LastStartY = starty;
-		LastNLines = nlines;
+		m_LastStartY = starty;
+		m_LastNLines = nlines;
 	}
 
 	++m_ScreenRefreshCount;
@@ -1737,6 +1749,54 @@ void BeebWin::TranslateTiming(void)
 	ResetTiming();
 }
 
+void BeebWin::AdjustSpeed(bool up)
+{
+	static int speeds[] = {
+				IDM_FIXEDSPEED100,
+				IDM_FIXEDSPEED50,
+				IDM_FIXEDSPEED10,
+				IDM_FIXEDSPEED5,
+				IDM_FIXEDSPEED2,
+				IDM_FIXEDSPEED1_5,
+				IDM_FIXEDSPEED1_25,
+				IDM_FIXEDSPEED1_1,
+				IDM_REALTIME,
+				IDM_FIXEDSPEED0_9,
+				IDM_FIXEDSPEED0_75,
+				IDM_FIXEDSPEED0_5,
+				IDM_FIXEDSPEED0_25,
+				IDM_FIXEDSPEED0_1,
+				0};
+	int s = 0;
+	int t = m_MenuIdTiming;
+
+	while (speeds[s] != 0 && speeds[s] != m_MenuIdTiming)
+		s++;
+
+	if (speeds[s] == 0)
+	{
+		t = IDM_REALTIME;
+	}
+	else if (up)
+	{
+		if (s > 0)
+			t = speeds[s-1];
+	}
+	else
+	{
+		if (speeds[s+1] != 0)
+			t = speeds[s+1];
+	}
+
+	if (t != m_MenuIdTiming)
+	{
+		CheckMenuItem(m_hMenu, m_MenuIdTiming, MF_UNCHECKED);
+		m_MenuIdTiming = t;
+		CheckMenuItem(m_hMenu, m_MenuIdTiming, MF_CHECKED);
+		TranslateTiming();
+	}
+}
+
 /****************************************************************************/
 void BeebWin::TranslateKeyMapping(void)
 {
@@ -1925,6 +1985,54 @@ void BeebWin::LoadTape(void)
 		LoadUEF(FileName);
 	}
 }
+
+void BeebWin::NewTapeImage(char *FileName)
+{
+	char DefaultPath[_MAX_PATH];
+	OPENFILENAME ofn;
+
+	strcpy(DefaultPath, m_AppPath);
+	strcat(DefaultPath, "tapes");
+	SysReg.GetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"TapesPath",DefaultPath);
+
+	ofn.nFilterIndex = 1;
+	FileName[0] = '\0';
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.hInstance = NULL;
+	ofn.lpstrFilter = "UEF Tape File (*.uef)\0*.uef\0";
+	ofn.lpstrCustomFilter = NULL;
+	ofn.nMaxCustFilter = 0;
+	ofn.lpstrFile = FileName;
+	ofn.nMaxFile = 256;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = DefaultPath;
+	ofn.lpstrTitle = NULL;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nFileOffset = 0;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = NULL;
+	ofn.lCustData = 0;
+	ofn.lpfnHook = NULL;
+	ofn.lpTemplateName = NULL;
+
+	if (GetSaveFileName(&ofn))
+	{
+		/* Add a file extension if the user did not specify one */
+		if (strchr(FileName, '.') == NULL)
+		{
+			strcat(FileName, ".uef");
+		}
+	}
+	else
+	{
+		FileName[0] = '\0';
+	}
+}
+
+/*******************************************************************/
 
 void BeebWin::SelectFDC(void)
 {
@@ -2433,6 +2541,10 @@ void BeebWin::LoadPreferences()
 	if (!RegRes) {
 		SoundDefault=1;
 	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SoundChipEnabled",&SoundChipEnabled,binsize);
+	if (!RegRes) {
+		SoundChipEnabled=1;
+	}
 	if (SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,CFG_SOUND_DIRECT_ENABLED,&flag,binsize)) {
 		DirectSoundEnabled = flag;
 	}
@@ -2558,6 +2670,13 @@ void BeebWin::LoadPreferences()
 			}
 		}
 	}
+	if (UserKeymap[107][0]==0 && UserKeymap[107][1]==0) {
+		UserKeymap[107][0]=-4;
+	}
+	if (UserKeymap[109][0]==0 && UserKeymap[109][1]==0) {
+		UserKeymap[109][0]=-4;
+		UserKeymap[109][1]=1;
+	}
 	*binsize=1;
 
 
@@ -2629,6 +2748,13 @@ void BeebWin::LoadPreferences()
 		TapeClockSpeed=5600;
 	}
 	*binsize=1;
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"UnlockTape",&flag,binsize);
+	if (!RegRes) {
+		UnlockTape=0;
+	}
+	else {
+		UnlockTape=flag;
+	}
 	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SerialPortEnabled",&SerialPortEnabled,binsize);
 	if (!RegRes) {
 		SerialPortEnabled=0;
@@ -2711,6 +2837,8 @@ void BeebWin::SavePreferences()
 	SysReg.SetDWORDValue(HKEY_CURRENT_USER,CFG_REG_KEY, CFG_SPEED_TIMING, m_MenuIdTiming);
 
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,CFG_SOUND_ENABLED,&SoundDefault,binsize);
+	flag = SoundChipEnabled;
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SoundChipEnabled",&flag,binsize);
 	flag = DirectSoundEnabled;
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,CFG_SOUND_DIRECT_ENABLED,&flag,binsize);
 	SysReg.SetDWORDValue(HKEY_CURRENT_USER,CFG_REG_KEY, CFG_SOUND_SAMPLE_RATE, m_MenuIdSampleRate);
@@ -2756,6 +2884,8 @@ void BeebWin::SavePreferences()
 	*binsize=2;
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"Tape Clock Speed",&TapeClockSpeed,binsize);
 	*binsize=1;
+	flag=UnlockTape;
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"UnlockTape",&flag,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SerialPortEnabled",&SerialPortEnabled,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SerialPort",&SerialPort,binsize);
 
@@ -3238,7 +3368,11 @@ void BeebWin::HandleCommand(int MenuId)
 			}
 		}
 		break;
-	
+	case IDM_SOUNDCHIP:
+		SoundChipEnabled=1-SoundChipEnabled;
+		CheckMenuItem(hMenu, IDM_SOUNDCHIP, SoundChipEnabled?MF_CHECKED:MF_UNCHECKED);
+		break;
+
 	case ID_SFX_RELAY:
 		RelaySoundEnabled=1-RelaySoundEnabled;
 		CheckMenuItem(hMenu,ID_SFX_RELAY,RelaySoundEnabled?MF_CHECKED:MF_UNCHECKED);
@@ -3583,6 +3717,12 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_REWINDTAPE:
 		RewindTape();
 		break;
+	case ID_UNLOCKTAPE:
+		UnlockTape=1-UnlockTape;
+		SetUnlockTape(UnlockTape);
+		CheckMenuItem(hMenu, ID_UNLOCKTAPE, (UnlockTape)?MF_CHECKED:MF_UNCHECKED);
+		break;
+
 	case ID_HIDEMENU:
 		HideMenuEnabled=1-HideMenuEnabled;
 		CheckMenuItem(hMenu, ID_HIDEMENU, (HideMenuEnabled)?MF_CHECKED:MF_UNCHECKED);
@@ -3627,24 +3767,31 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_TAPE_FAST:
-		TapeClockSpeed=750;
+		SetTapeSpeed(750);
 		SetTapeSpeedMenu();
 		break;
 	case ID_TAPE_MFAST:
-		TapeClockSpeed=1600;
+		SetTapeSpeed(1600);
 		SetTapeSpeedMenu();
 		break;
 	case ID_TAPE_MSLOW:
-		TapeClockSpeed=3200;
+		SetTapeSpeed(3200);
 		SetTapeSpeedMenu();
 		break;
 	case ID_TAPE_NORMAL:
-		TapeClockSpeed=5600;
+		SetTapeSpeed(5600);
 		SetTapeSpeedMenu();
 		break;
 	case ID_TAPESOUND:
 		TapeSoundEnabled=!TapeSoundEnabled;
 		CheckMenuItem(m_hMenu,ID_TAPESOUND,(TapeSoundEnabled)?MF_CHECKED:MF_UNCHECKED);
+		break;
+
+	case ID_TAPECONTROL:
+		if (TapeControlEnabled)
+			TapeControlCloseDialog();
+		else
+			TapeControlOpenDialog(hInst, m_hWnd);
 		break;
 
 //	case ID_HOSTCLOCK:

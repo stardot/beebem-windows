@@ -14,7 +14,8 @@ enum DebugType {
 	DEBUG_VIDEO,
 	DEBUG_USERVIA,
 	DEBUG_SYSVIA,
-	DEBUG_TUBE
+	DEBUG_TUBE,
+	DEBUG_SERIAL
 };
 
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain);

@@ -74,6 +74,7 @@ struct AudioType {
 
 extern struct AudioType TapeAudio;
 extern bool TapeSoundEnabled;
+extern int SoundChipEnabled;
 void SoundChipReset(void);
 void SwitchOnSound(void);
 extern int UseHostClock;
