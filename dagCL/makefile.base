@@ -1,0 +1,18 @@
+SDINCLUDES = -I..
+SRCS = Err.cc
+OBJS =  Err.o
+
+.cc.o:
+	$(CC) -c $(CFLAGS) $<
+
+dagCL.a: $(OBJS)
+	rm -f dagCL.a
+	ar rc dagCL.a $(OBJS)
+
+depend:
+	makedepend -- $(DEPINCLUDES) -- $(SRCS)
+
+clean:
+	rm -f $(OBJS) dagCL.a
+
+# DO NOT DELETE
