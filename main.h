@@ -1,6 +1,6 @@
 /****************************************************************************/
-/*              Beebem - (c) David Alan Gilbert 1994                        */
-/*              ------------------------------------                        */
+/*                               Beebem                                     */
+/*                               ------                                     */
 /* This program may be distributed freely within the following restrictions:*/
 /*                                                                          */
 /* 1) You may not charge for this program or for any part of it.            */
@@ -16,12 +16,13 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
 /****************************************************************************/
+/* Mike Wyatt and NRM's port to win32 - 7/6/97 */
+
 #ifndef MAIN_HEADER
 #define MAIN_HEADER
 
-#include "beebbitmap.h"
+#include <windows.h>
 #include "beebwin.h"
 
 extern BeebWin *mainWin;

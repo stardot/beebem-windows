@@ -46,6 +46,11 @@ void BeebKeyDown(int row, int col);
 void SysVIATriggerCA1Int(int value);
 extern unsigned char IC32State;
 
+void SaveSysVIAState(unsigned char *StateData);
+void RestoreSysVIAState(unsigned char *StateData);
+
 void sysvia_dumpstate(void);
+
+extern int JoystickButton;
 
 #endif

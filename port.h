@@ -25,13 +25,18 @@
 #include <limits.h>
 
 /* Used for accelerating copies */
-//typedef long long EightByteType;
+#ifdef WIN32
 typedef __int64 EightByteType;	// $NRM for MSVC. Will it work though?
+#else
+typedef long long EightByteType;
+#endif
 
 /* Used to keep a count of total number of cycles executed */
 typedef int CycleCountT;
 
 #define CycleCountTMax INT_MAX
+
+#define DEFAULTSAMPLERATE 40000
 
 #endif
 

@@ -24,8 +24,16 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include <iostream.h>
 
 #include "6502core.h"
+#include "beebsound.h"
 #include "sysvia.h"
 #include "via.h"
+
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+/* Fire button for joystick 1, 0=not pressed, 1=pressed */
+int JoystickButton = 0;
 
 extern int DumpAfterEach;
 /* My raw VIA state */
@@ -33,6 +41,9 @@ VIAState SysVIAState;
 
 /* State of the 8bit latch IC32 - bit 0 is WE for sound gen, B1 is read select on speech proc, B2 is write select on speech proc, b4,b5 select screen start address offset , b6 is CAPS lock, b7 is shift lock */
 unsigned char IC32State=0;
+
+/* Last value written to the slow data bus - sound reads it later */
+static unsigned char SlowDataBusWriteValue=0;
 
 /* Currently selected keyboard row, column */
 static unsigned int KBDRow=0;
@@ -121,6 +132,7 @@ static int KbdOP(void) {
 /*--------------------------------------------------------------------------*/
 static void IC32Write(unsigned char Value) {
   int bit;
+  int oldval=IC32State;
 
   bit=Value & 7;
   if (Value & 8) {
@@ -128,13 +140,21 @@ static void IC32Write(unsigned char Value) {
   } else {
     IC32State&=0xff-(1<<bit);
   }
-  /*if ((bit==4) || (bit==5)) cerr << "IC32State now=" << hex << int(IC32State) << dec << "\n"; */
+  
+  /* Must do sound reg access when write line changes */
+#ifdef SOUNDSUPPORT
+  if ((!(oldval & 1)) && ((IC32State & 1)))  Sound_RegWrite(SlowDataBusWriteValue);
+#endif
+  /* cerr << "IC32State now=" << hex << int(IC32State) << dec << "\n"; */
+
   DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
 } /* IC32Write */
 
 
 /*--------------------------------------------------------------------------*/
 static void SlowDataBusWrite(unsigned char Value) {
+  SlowDataBusWriteValue=Value;
+  /*cerr << "Slow data bus write IC32State=" << int(IC32State) << " Value=" << int(Value) << "\n";*/
   if (!(IC32State & 8)) {
     KBDRow=(Value>>4) & 7;
     KBDCol=(Value & 0xf);
@@ -142,8 +162,11 @@ static void SlowDataBusWrite(unsigned char Value) {
     DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
   } /* kbd write */
 
+#ifdef SOUNDSUPPORT
   if (!(IC32State & 1)) {
+    Sound_RegWrite(SlowDataBusWriteValue);
   }
+#endif
 
   if (!(IC32State & 4)) {
   }
@@ -274,7 +297,9 @@ int SysVIARead(int Address) {
   switch (Address) {
     case 0: /* IRB read */
       tmp=SysVIAState.orb & SysVIAState.ddrb;
-      tmp |=48; /* Fire buttons released */
+      tmp |= 32;    /* Fire button 2 released */
+      if (!JoystickButton)
+        tmp |= 16;
       tmp |= 192; /* Speech system non existant */
       return(tmp);
 
@@ -330,7 +355,7 @@ int SysVIARead(int Address) {
 /* Value denotes the new value - i.e. 1 for a rising edge */
 void SysVIATriggerCA1Int(int value) {
   /*value^=1; */
-  /* cerr << "SysVIATriggerCA1Int at " << TotalCycles << "\n"; */
+  /*cerr << "SysVIATriggerCA1Int at " << TotalCycles << "\n"; */
   /* Cause interrupt on appropriate edge */
   if (!((SysVIAState.pcr & 1) ^ value)) {
     SysVIAState.ifr|=2; /* CA1 */
@@ -376,6 +401,27 @@ void SysVIAReset(void) {
     for(col=0;col<10;col++)
       SysViaKbdState[col][row]=0;
 } /* SysVIAReset */
+
+/*-------------------------------------------------------------------------*/
+void SaveSysVIAState(unsigned char *StateData) {
+	SaveVIAState(&SysVIAState, StateData);
+	StateData[24] = IC32State;
+}
+
+/*-------------------------------------------------------------------------*/
+void RestoreSysVIAState(unsigned char *StateData) {
+	RestoreVIAState(&SysVIAState, StateData);
+	IC32State = StateData[24];
+
+	/* Reset the other globals as well */
+	SlowDataBusWriteValue = 0;
+	KBDRow = 0;
+	KBDCol = 0;
+	KeysDown = 0;
+	for(int row=0;row<8;row++)
+		for(int col=0;col<10;col++)
+			SysViaKbdState[col][row]=0;
+}
 
 /*--------------------------------------------------------------------------*/
 void sysvia_dumpstate(void) {

@@ -1,4 +1,4 @@
-Readme.1st for V0.04 of Beebem
+Readme.1st for V0.7 of Beebem (see 'changes' file for history)
 
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994/1995                   */
@@ -34,6 +34,13 @@ The copyright on everything in Beebem is held by the author, David Alan Gilbert.
 
 <OK thats the formal stuff out of the way.....>
 
+MICROSOFT WINDOWS
+-----------------
+
+Beebem has been ported to Microsoft Windows.  For details of the Windows
+version see the readme.win file.  Most of this readme refers to the X
+version for UNIX systems.
+
 0) PLEASE
 ---------
 Send me suggestions for improvments - both in the emulator and the way I have
@@ -53,19 +60,32 @@ memory - this also means that you have to run the program on the workstation
 that the display is on.
 
 3) The program requires a C++ compiler which supports templates.  I haven't
-made much use of this yet.  I have used gcc 2.58 and 2.6.3 - I strongly
+made much use of this yet.  I have used gcc 2.58,2.6.3 and 2.7.0 - I strongly
 recommend 2.6.3 over 2.5.8 since 2.5.8 has a nasty habit of missing some
 errors. It actually needs to be able to handle nested templates - I think the
 Silicon Graphics compilers have problems with that.
 
-4) You will need images of the Beeb D(N)FS, OS 1.2 and BASIC and disc images
+4) It also requires the C++ iostream libraries.  The names of these vary from
+OS to OS and compiler version etc.  The Linux config file now uses -lstdc++
+which gcc 2.7.0 seems to use (or is it the latest Linux libraries???) - if
+you have earlier versions you will need to change this to -liostream .
+
+5) You will need images of the Beeb D(N)FS, OS 1.2 and BASIC and disc images
 of programs you wish to run under the beeb - more details below.
 
 Installation
 ------------
 You've presumably unpacked this tar - good!
 
-The first thing is to construct a makefile (or three!).  First have a look
+The source files are set up to compile the Microsoft Windows version so
+the first thing to do is rename a few files:
+  main.h.x11     -> main.h
+  main.cc.x11    -> main.cc
+  beebwin.h.x11  -> beebwin.h
+  beebwin.cc.x11 -> beebwin.cc
+  Rename all files with a '.cpp' extension to a '.cc' extension
+
+Next thing is to construct a makefile (or three!).  First have a look
 if there is a 'config.' file for your machine - e.g. config.linux.  If not
 create one based on one of them.  Edit the file until it matches your
 environment (includes etc.).  
@@ -82,12 +102,21 @@ Thats a keyboard table which suits PC style keyboards (and Sun 4, and some
 Sun 5) - you can change that to point at another keytable file.  If you
 want to create your own see the description below.
 
-Now type 'make' - and hope for the best!
+If you want sound you need to add -DSOUNDSUPPORT onto the CFLAGS in the top
+level makefile.  Sound has only been tested (and probably will only work) on
+Linux.  You need a lot of processing speed for it.
+
+Now type 'make' - and hope for the best! When it doesn't work look at the
+bottom of this file for some hints.
+
+NOTE: The sources contain conditional compilation for the MS Windows version
+of Beebem.  The UNIX version of Beebem has not been fully compiled since
+these changes were made.  It should still work but I may have broken it (MW)!
 
 Now you have to get three disc images from a beeb.  One of an 8271 dfs (I
 used DNFS).  Place that in beebfile/dnfs (even if its a dfs).  Put the basic
 rom in beebfile/basic and the OS in beebfile/os12.  These images are just 16KB
-binary files.
+binary files. I CAN'T SEND YOU COPIES OF THESE FILES!!!!
 
 If you are planning on reading a disc (a good idea!) you'll have to figure out
 how to make a disc image.  The present disc images are simple sector images -
@@ -209,8 +238,7 @@ and Replica 1 read discs.   I plan to add write sometime - but I'm in no rush.
 
 3) Elite - sticky explosions (bug)
 
-The explosions don't go away in Elite - I haven't got any clue why -
-suggestions willfully accepted!
+The explosions don't go away in Elite - I suspect I know why.
 
 4) Revs - screen display corrupted (bug)
 
@@ -219,9 +247,10 @@ hacking.  I intend to cure this in later releases.
 
 5) Undefined opcodes
 
-I don't emulate any of the undefined opcodes sometimes used in games.  I
-probably will in future.  At the moment I just move one instruction on and
-hope for the best.
+Many of the undocumented 6502 instructions have been implemented in V0.7 so
+games such as Zalaga and Dare Devel Denis now work.  There are quite a few
+opcodes that are still not implemented though.  The emulator treats all of
+these instructions as NOPs.
 
 6) Timing
 
@@ -231,10 +260,9 @@ accounted for.
 
 7) Missing hardware
 
-Serial, ADC, Printer port, keyboard LEDs, sound, tube, light pen, and econet
-are not yet emulated.  A lot of people keep pushing me to get sound added -
-I probably will some day. Econet holds a lot of possiblities - I quite like
-the idea of doing a socket based daemon type thing.
+Serial, ADC, Printer port, keyboard LEDs, sound, tube, light pen, and
+econet are not yet emulated.  Econet holds a lot of possiblities - I
+quite like the idea of doing a socket based daemon type thing.
 
 8) Hangs after reset
 
@@ -246,6 +274,10 @@ think thats due to not resetting VIAs correctly.
 In mode 7 you sometimes get a bit of junk at the bottom of the screen.  This
 also happens in screen modes which only use part of the display area.
 
+10) Crashes if you resize window on X
+
+Yeh - I know; I must fix that....
+
 Problems
 --------
 1) olvwm
@@ -255,6 +287,8 @@ which it needs to handle auto repeat properly.
 The solution in both cases is to use a different window manager - such as
 Fvwm.
 
+2) Can't find stdc++ during link
+Change the '-lstdc++' to '-liostream'; this depends on the compiler version.
 
 3) Lockups
 It hasn't done it for a while - but I had it happen on an older version of the
@@ -285,7 +319,7 @@ Todo
 ----
 
 1) Fix bugs
-2) Add extra hardware support (particularly sound)
+2) Add extra hardware support
 3) Speed it up!!!! (although it works fine on my Pentium-90 or an HP9000/700!)
 4) Snazzy X windows thing for setting options, key maps, selecting disc images
 and roms.

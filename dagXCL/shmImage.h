@@ -1,3 +1,4 @@
+
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994                        */
 /*              ------------------------------------                        */
@@ -18,47 +19,28 @@
 /* program.                                                                 */
 /* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
 /****************************************************************************/
-/* 6502Core - header - David Alan Gilbert 16/10/94 */
-#ifndef CORE6502_HEADER
-#define CORE6502_HEADER
+/* Class representing an X image communicating via shm - DAG */
+#ifndef DAGSHMIMAGE_HEADER
+#define DAGSHMIMAGE_HEADER
 
-#include "port.h"
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
-void DumpRegs(void);
+#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <X11/extensions/XShm.h>
 
-typedef enum {
-  sysVia,
-  userVia,
-} IRQ_Nums;
+#include "dagXCL/Drawable.h"
 
-typedef enum {
-	nmi_floppy,
-	nmi_econet,
-} NMI_Nums;
-
-extern int IgnoreIllegalInstructions;
-
-extern unsigned char intStatus;
-extern unsigned char NMIStatus;
-extern unsigned int Cycles;
-
-extern CycleCountT TotalCycles;
-
-#define SetTrigger(after,var) var=TotalCycles+after;
-#define IncTrigger(after,var) var+=(after);
-
-#define ClearTrigger(var) var=CycleCountTMax;
-
-/*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void);
-
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void);
-
-void Save6502State(unsigned char *CPUState);
-void Restore6502State(unsigned char *CPUState);
-
-void core_dumpstate(void);
+class dagShmImage {
+	XShmSegmentInfo shminfo;
+public:
+	XImage *ximage;
+	dagShmImage(int Format, int depth,
+	            unsigned int width, unsigned int height);
+	~dagShmImage();
+	void put(dagXDrawable *destination, GC gc, int srcx,int srcy,int destx,int desty,
+	    int srcwidth,int srcheight, Bool sendevent);
+	char *imageData();
+}; /* dagShmImage */
 #endif

@@ -1,0 +1,9 @@
+# hp defs
+INCLUDES = -I. -I/usr/contrib/lib/g++-include -I/usr/include/X11R5
+DEPINCLUDES = $(INCLUDES) $(SDINCLUDES) -I/usr/contrib/lib/g++-include
+
+CC = gcc
+CFLAGS = -O6 $(INCLUDES) $(SDINCLUDES) -Wall -finline-functions -DHPUX
+LINKFLAGS = -L/usr/lib/X11R5 -static
+
+

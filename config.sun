@@ -1,0 +1,7 @@
+# sun defs
+INCLUDES = -I. -I/usr/common/lib/g++-include
+DEPINCLUDES = $(INCLUDES) $(SDINCLUDES) -I/usr/common/lib/g++-include
+
+CC = gcc263
+CFLAGS = -O6 $(INCLUDES) $(SDINCLUDES) -Wall -finline-functions -DSUNOS
+LINKFLAGS =

@@ -24,6 +24,10 @@
 #define DISC8271_HEADER
 
 extern int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
+
+void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks);
+void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks);
+
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */
 int Disc8271_read(int Address);

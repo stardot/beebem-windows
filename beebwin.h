@@ -1,10 +1,30 @@
-// Port of beebwin to Win32
+/****************************************************************************/
+/*                               Beebem                                     */
+/*                               ------                                     */
+/* This program may be distributed freely within the following restrictions:*/
+/*                                                                          */
+/* 1) You may not charge for this program or for any part of it.            */
+/* 2) This copyright message must be distributed with all copies.           */
+/* 3) This program must be distributed complete with source code.  Binary   */
+/*    only distribution is not permitted.                                   */
+/* 4) The author offers no warrenties, or guarentees etc. - you use it at   */
+/*    your own risk.  If it messes something up or destroys your computer   */
+/*    thats YOUR problem.                                                   */
+/* 5) You may use small sections of code from this program in your own      */
+/*    applications - but you must acknowledge its use.  If you plan to use  */
+/*    large sections then please ask the author.                            */
+/*                                                                          */
+/* If you do not agree with any of the above then please do not use this    */
+/* program.                                                                 */
+/****************************************************************************/
+/* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 
 #ifndef BEEBWIN_HEADER
 #define BEEBWIN_HEADER
 
 #include <string.h>
-
+#include <stdlib.h>
+#include <windows.h>
 #include "port.h"
 
 typedef union {
@@ -17,44 +37,102 @@ typedef union {
   EightByteType eightbytes[2];
 } SixteenUChars;
  
-class BeebWin  {
+typedef struct
+{
+  BITMAPINFOHEADER	bmiHeader;
+  RGBQUAD			bmiColors[256];
+} bmiData;
 
-	int DataSize;
+class BeebWin  {
   
   public:
-	char * m_screen;
-	HDC    m_hDC;
-
-	BeebBitmap	beebdisplay;
-
-  private:
-  	BOOL InitClass(void);
-	void CreateBeebWindow(void);
-
-	
-	
-
-  public:
-	HWND m_hWnd;
-	unsigned char cols[8]; /* Beeb colour lookup */
-  	BeebWin();
+	unsigned char cols[8];
+  
+	BeebWin();
 	~BeebWin();
-	char *imageData();
-	int bytesPerLine();
-	void updateLines(int starty, int nlines);
+
+	void updateLines(HDC hDC, int starty, int nlines);
+	void updateLines(int starty, int nlines)
+		{ updateLines(m_hDC, starty, nlines); };
 
 	void doHorizLine(unsigned long Col, int y, int sx, int width) {
 		if (y>255) return;
-	  	memset(m_screen+ (y* 640) + sx, Col , width);
-  }; /* doHorizLine */
+		memset(m_screen+ (y* 640) + sx, Col , width);
+	};
 
 	void doHorizLine(unsigned long Col, int offset, int width) {
 		if ((offset+width)<640*256) return;
 		memset(m_screen+offset,Col,width);
-	}; /* BeebWin::doHorizLine */
+	};
 
-	EightUChars *GetLinePtr(int y);
-	SixteenUChars *GetLinePtr16(int y);
+	EightUChars *GetLinePtr(int y) {
+		if(y > 255) y=255;
+		return((EightUChars *)(m_screen + ( y * 640 )));
+	}
+
+	SixteenUChars *GetLinePtr16(int y) {
+		if(y > 255) y=255;
+		return((SixteenUChars *)(m_screen + ( y * 640 )));
+	}
+
+	char *imageData(void) {
+		return m_screen;
+	}
+
+	void RealizePalette(HDC) {};
+
+	int StartOfFrame(void);
+	BOOL UpdateTiming(void);
+	void DisplayTiming(void);
+	void ScaleJoystick(unsigned int x, unsigned int y);
+	void SetMousestickButton(int button);
+	void ScaleMousestick(unsigned int x, unsigned int y);
+	void HandleCommand(int MenuId);
+
+  private:
+	int			m_MenuIdWinSize;
+	int			m_XWinSize;
+	int			m_YWinSize;
+	BOOL		m_ShowSpeedAndFPS;
+	int			m_MenuIdSampleRate;
+	int			m_MenuIdVolume;
+	int			m_DiscTypeSelection;
+	int			m_MenuIdTiming;
+	int			m_FPSTarget;
+	double		m_RealTimeTarget;
+	JOYCAPS		m_JoystickCaps;
+	int			m_MenuIdSticks;
+	BOOL		m_HideCursor;
+	int			m_MenuIdKeyMapping;
+	char		m_AppPath[_MAX_PATH];
+
+	char*		m_screen;
+	HDC 		m_hDC;
+	HWND		m_hWnd;
+	HGDIOBJ 	m_hOldObj;
+	HDC 		m_hDCBitmap;
+	HGDIOBJ 	m_hBitmap;
+	bmiData 	m_bmi;
+	char		m_szTitle[100];
+
+	int			m_ScreenRefreshCount;
+	double		m_RelativeSpeed;
+	double		m_FramesPerSecond;
+
+	BOOL InitClass(void);
+	void CreateBeebWindow(void);
+	void CreateBitmap(void);
+	void InitMenu(void);
+	void TranslateWindowSize(void);
+	void TranslateSampleRate(void);
+	void TranslateVolume(void);
+	void TranslateTiming(void);
+	void ReadDisc(int Drive);
+	void InitJoystick(void);
+	void ResetJoystick(void);
+	void RestoreState(void);
+	void SaveState(void);
+
 }; /* BeebWin */
 
 #endif

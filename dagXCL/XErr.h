@@ -1,3 +1,4 @@
+
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994                        */
 /*              ------------------------------------                        */
@@ -18,47 +19,20 @@
 /* program.                                                                 */
 /* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
 /****************************************************************************/
-/* 6502Core - header - David Alan Gilbert 16/10/94 */
-#ifndef CORE6502_HEADER
-#define CORE6502_HEADER
+/* A class for throwing in case of an error related to X
+David Alan Gilbert 5/11/94 */
 
-#include "port.h"
+#ifndef DAGXERR_HEADER
+#define DAGXERR_HEADER
 
-void DumpRegs(void);
+#include <iostream.h>
 
-typedef enum {
-  sysVia,
-  userVia,
-} IRQ_Nums;
+#include <dagCL/Err.h>
 
-typedef enum {
-	nmi_floppy,
-	nmi_econet,
-} NMI_Nums;
+class dagXErr : private dagErr {
+public:
+  dagXErr(const char *iMessage) : dagErr("X library", iMessage) { };
+};
 
-extern int IgnoreIllegalInstructions;
-
-extern unsigned char intStatus;
-extern unsigned char NMIStatus;
-extern unsigned int Cycles;
-
-extern CycleCountT TotalCycles;
-
-#define SetTrigger(after,var) var=TotalCycles+after;
-#define IncTrigger(after,var) var+=(after);
-
-#define ClearTrigger(var) var=CycleCountTMax;
-
-/*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void);
-
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void);
-
-void Save6502State(unsigned char *CPUState);
-void Restore6502State(unsigned char *CPUState);
-
-void core_dumpstate(void);
 #endif
+

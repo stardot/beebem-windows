@@ -1,3 +1,4 @@
+
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994                        */
 /*              ------------------------------------                        */
@@ -18,47 +19,15 @@
 /* program.                                                                 */
 /* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
 /****************************************************************************/
-/* 6502Core - header - David Alan Gilbert 16/10/94 */
-#ifndef CORE6502_HEADER
-#define CORE6502_HEADER
+/* Class rpresenting an X pixmap - DAG */
+#include "dagXCL/PixMap.h"
+#include "dagXCL/Window.h"
 
-#include "port.h"
+dagPixMap::dagPixMap(dagXWindow *ref, unsigned int width, unsigned int height, unsigned int depth) {
+  myHandle=XCreatePixmap(ref->myDisplay,ref->xDrawable(),width,height,depth);
+  myDisplay=ref->myDisplay;
+}; /* Constructor */
 
-void DumpRegs(void);
-
-typedef enum {
-  sysVia,
-  userVia,
-} IRQ_Nums;
-
-typedef enum {
-	nmi_floppy,
-	nmi_econet,
-} NMI_Nums;
-
-extern int IgnoreIllegalInstructions;
-
-extern unsigned char intStatus;
-extern unsigned char NMIStatus;
-extern unsigned int Cycles;
-
-extern CycleCountT TotalCycles;
-
-#define SetTrigger(after,var) var=TotalCycles+after;
-#define IncTrigger(after,var) var+=(after);
-
-#define ClearTrigger(var) var=CycleCountTMax;
-
-/*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void);
-
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void);
-
-void Save6502State(unsigned char *CPUState);
-void Restore6502State(unsigned char *CPUState);
-
-void core_dumpstate(void);
-#endif
+dagPixMap::~dagPixMap() {
+  XFreePixmap(myDisplay,myHandle);
+}; /* Destructor */

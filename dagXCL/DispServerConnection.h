@@ -1,3 +1,4 @@
+
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994                        */
 /*              ------------------------------------                        */
@@ -18,47 +19,28 @@
 /* program.                                                                 */
 /* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
 /****************************************************************************/
-/* 6502Core - header - David Alan Gilbert 16/10/94 */
-#ifndef CORE6502_HEADER
-#define CORE6502_HEADER
+/* A class which on creation opens a connection to an X server, and neatly */
+/* closses it in its destructor */
+/* David Alan Gilbert 5/11/94 */
+#ifndef DAGXDISPSERVERCONNECTION_HEADER
+#define DAGXDISPSERVERCONNECTION_HEADER
 
-#include "port.h"
+#include "X11/Xlib.h"
 
-void DumpRegs(void);
+class dagXDispServerConnection {
+  Display *xDisplay;
+  Screen *xScreen;
+  static dagXDispServerConnection *primary;
+public:
+  dagXDispServerConnection(char *display_name=0);
+  ~dagXDispServerConnection();
+  dagXDispServerConnection* getPrimary();
+  void setPrimary();
+  Window root();
+  Display *getXDisplay();
+	inline Screen *getXScreen() { return(xScreen); };
+  GC defaultGC();
+}; /* dagXDispServerConnection */
 
-typedef enum {
-  sysVia,
-  userVia,
-} IRQ_Nums;
-
-typedef enum {
-	nmi_floppy,
-	nmi_econet,
-} NMI_Nums;
-
-extern int IgnoreIllegalInstructions;
-
-extern unsigned char intStatus;
-extern unsigned char NMIStatus;
-extern unsigned int Cycles;
-
-extern CycleCountT TotalCycles;
-
-#define SetTrigger(after,var) var=TotalCycles+after;
-#define IncTrigger(after,var) var+=(after);
-
-#define ClearTrigger(var) var=CycleCountTMax;
-
-/*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void);
-
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void);
-
-void Save6502State(unsigned char *CPUState);
-void Restore6502State(unsigned char *CPUState);
-
-void core_dumpstate(void);
+extern dagXDispServerConnection* _primaryDisplay;
 #endif

@@ -58,5 +58,7 @@ void VideoDoScanLine(void);
 
 #define VideoPoll(ncycles) if (VideoTriggerCount<=TotalCycles) VideoDoScanLine();
 
+void SaveVideoState(unsigned char *StateData);
+void RestoreVideoState(unsigned char *StateData);
 
 #endif

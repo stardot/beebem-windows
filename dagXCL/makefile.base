@@ -1,0 +1,18 @@
+SDINCLUDES = -I..
+SRCS = DispServerConnection.cc Window.cc Event.cc TopLevelWindow.cc PixMap.cc shmImage.cc
+OBJS =  DispServerConnection.o Window.o Event.o TopLevelWindow.o PixMap.o shmImage.o
+
+.cc.o:
+	$(CC) -c $(CFLAGS) $<
+
+dagXCL.a: $(OBJS)
+	rm -f dagXCL.a
+	ar rc dagXCL.a $(OBJS)
+
+depend:
+	makedepend -- $(DEPINCLUDES) -- $(SRCS)
+
+clean:
+	rm -f $(OBJS) dagXCL.a
+
+# DO NOT DELETE

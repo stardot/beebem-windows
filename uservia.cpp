@@ -72,13 +72,13 @@ void UserVIAWrite(int Address, int Value) {
 
     case 4:
     case 6:
-      /* cerr << "UserVia Reg4/6 Timer1 lo Counter Write val=0x" << hex << Value << dec << "\n"; */
+      /*cerr << "UserVia Reg4/6 Timer1 lo Counter Write val=0x " << hex << Value << dec << " at " << TotalCycles << "\n"; */
       UserVIAState.timer1l&=0xff00;
       UserVIAState.timer1l|=(Value & 0xff);
       break;
 
     case 5:
-      /* cerr << "UserVia Reg5 Timer1 hi Counter Write val=0x" << hex << Value << dec << "\n"; */
+      /*cerr << "UserVia Reg5 Timer1 hi Counter Write val=0x" << hex << Value << dec  << " at " << TotalCycles << "\n"; */
       UserVIAState.timer1l&=0xff;
       UserVIAState.timer1l|=(Value & 0xff)<<8;
       UserVIAState.timer1c=UserVIAState.timer1l * 2;
@@ -93,7 +93,7 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 7:
-      /* cerr << "UserVia Reg7 Timer1 hi latch Write val=0x" << hex << Value << dec << "\n"; */
+      /*cerr << "UserVia Reg7 Timer1 hi latch Write val=0x" << hex << Value << dec  << " at " << TotalCycles << "\n"; */
       UserVIAState.timer1l&=0xff;
       UserVIAState.timer1l|=(Value & 0xff)<<8;
       break;
@@ -213,7 +213,7 @@ void UserVIA_poll_real(void) {
     /*cerr << "UserVIA timer1c\n"; */
     UserVIAState.timer1c=UserVIAState.timer1l * 2;
     if ((UserVIAState.timer1hasshot==0) || (UserVIAState.acr & 0x40)) {
-      /* cerr << "UserVIA timer1c - int at " << TotalCycles << "\n"; */
+      /*cerr << "UserVIA timer1c - int at " << TotalCycles << "\n"; */
       UserVIAState.ifr|=0x40; /* Timer 1 interrupt */
       UpdateIFRTopBit();
       if (UserVIAState.acr & 0x80) {
@@ -240,6 +240,16 @@ void UserVIA_poll_real(void) {
 void UserVIAReset(void) {
   VIAReset(&UserVIAState);
 } /* UserVIAReset */
+
+/*-------------------------------------------------------------------------*/
+void SaveUserVIAState(unsigned char *StateData) {
+	SaveVIAState(&UserVIAState, StateData);
+}
+
+/*-------------------------------------------------------------------------*/
+void RestoreUserVIAState(unsigned char *StateData) {
+	RestoreVIAState(&UserVIAState, StateData);
+}
 
 /*--------------------------------------------------------------------------*/
 void uservia_dumpstate(void) {

@@ -1,0 +1,35 @@
+LIBS = -lg++ -lXext -lX11
+LIBFILES = dagCL/dagCL.a dagXCL/dagXCL.a
+
+SRCS = 6502core.cc beebmem.cc beebwin.cc disc8271.cc main.cc mode7font.c\
+       sysvia.cc uservia.cc via.cc video.cc beebsound.cc
+
+OBJS =  6502core.o beebmem.o beebwin.o disc8271.o main.o  mode7font.o\
+        sysvia.o uservia.o via.o video.o beebsound.o
+
+.cc.o:
+	$(CC) -c $(CFLAGS) $<
+
+beebem: $(OBJS) $(LIBFILES)
+	$(CC) -o beebem $(OBJS) $(LIBFILES) $(LIBS) $(LINKFLAGS)
+
+dagCL/dagCL.a:
+	(cd dagCL; make)
+
+dagXCL/dagXCL.a:
+	(cd dagXCL; make)
+
+depend:
+	(cd dagCL; make depend)
+	(cd dagXCL; make depend)
+	makedepend -- $(DEPINCLUDES) -- $(SRCS)
+
+clean:
+	rm -f $(OBJS) beebem
+
+reallyclean:
+	(cd dagCL; make clean)
+	(cd dagXCL; make clean)
+	make clean
+	rm makefile makefile.bak
+# DO NOT DELETE

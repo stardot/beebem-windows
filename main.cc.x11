@@ -30,6 +30,7 @@
 
 #include "6502core.h"
 #include "beebmem.h"
+#include "beebsound.h"
 #include "sysvia.h"
 #include "uservia.h"
 #include "beebwin.h"
@@ -51,7 +52,7 @@ static char *Banner=
 #include "header"
 ;
 
-static char *Version="0.04 26/01/95";
+static char *Version="0.06 26/11/95";
 
 int XErrHandler(Display *display, XErrorEvent *Err) {
   char errbuff[1024];
@@ -107,6 +108,9 @@ int main(int argc,char *argv[]) {
   BeebMemInit();
   Init6502core();
   SysVIAReset();
+#ifdef SOUNDSUPPORT
+  SoundInit();
+#endif
   UserVIAReset();
   VideoInit();
   Disc8271_reset();

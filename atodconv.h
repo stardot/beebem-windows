@@ -17,71 +17,24 @@
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
 /****************************************************************************/
-/* Mike Wyatt and NRM's port to win32 - 7/6/97 */
+/* Analogue to digital converter support file for the beeb emulator -
+   Mike Wyatt 7/6/97 */
 
-#include "windows.h"
+#ifndef ATODCONV_HEADER
+#define ATODCONV_HEADER
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
+extern int JoystickEnabled;
+extern int JoystickX;  /* 16 bit number, 0 = right */
+extern int JoystickY;  /* 16 bit number, 0 = down */
 
-#include <iostream.h>
+void AtoDWrite(int Address, int Value);
+int AtoDRead(int Address);
+void AtoDInit(void);
+void AtoDReset(void);
 
-#include "6502core.h"
-#include "beebmem.h"
-#include "beebsound.h"
-#include "sysvia.h"
-#include "uservia.h"
-#include "beebwin.h"
-#include "disc8271.h"
-#include "video.h"
-#include "via.h"
-#include "atodconv.h"
+extern int AtoDTrigger;  /* For next A to D conversion completion */
 
-extern VIAState SysVIAState;
-int DumpAfterEach=0;
+void AtoD_poll_real(void);
+#define AtoD_poll(ncycles) if (AtoDTrigger<=TotalCycles) AtoD_poll_real();
 
-BeebWin *mainWin = NULL;
-HINSTANCE hInst;
-
-int CALLBACK WinMain(HINSTANCE hInstance, 
-					HINSTANCE hPrevInstance,
-					LPSTR lpszCmdLine,
-					int nCmdShow)
-{
-	MSG msg;
-  
-	hInst = hInstance;
-  
-	BeebMemInit();
-	Init6502core();
-	SysVIAReset();
-	UserVIAReset();
-	VideoInit();
-	Disc8271_reset();
-	SoundReset();
-	AtoDReset();
-
-	mainWin=new BeebWin();
-
-	do
-	{
-		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
-		{
-			if(!GetMessage(&msg,    // message structure
-							NULL,   // handle of window receiving the message
-							0,      // lowest message to examine
-							0))
-				break;              // Quit the app on WM_QUIT
-  
-			TranslateMessage(&msg);// Translates virtual key codes
-			DispatchMessage(&msg); // Dispatches message to window
-		}
-
-		Exec6502Instruction();
-	} while(1);
-  
-	delete mainWin;
-	
-	return(0);  
-} /* main */
+#endif

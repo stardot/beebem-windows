@@ -1,0 +1,48 @@
+Version 0.5
+-----------
+Improved timing - mode 7 bodged to exactly correct cycle count
+Interlace timing accounted for in modes 0-6.
+Interrupt latency added
+fixed window.cc (took out 'virtual' on most functions) - now OK in gcc 2.7.0
+Changed default position of g++ includes to /usr/include/g++
+
+Version 0.6
+-----------
+A few fiddles with the config for linux - now compiles on 2.7.0 with the ELF-GCC
+release; but could cause probs for older releases.
+
+Stated adding sound card.
+
+Version 0.7 (Mike Wyatt)
+-----------
+Added conditional compilation for all the Microsoft Windows code. Should only
+need to maintain one set of source files for both the X and MS Win versions.
+
+Changed sound code so it does not play a sound until both the high and low
+bytes of the frequency have been set (eliminates spurious high pitch beeps).
+
+Video module now generates a cursor.
+
+Implemented a load of undocumented 6502 instructions.
+
+Directed read and writes to the 16 bytes above each VIA back down to
+the VIAs (Castle Quest uses the higher addresses).
+
+Added the atodconv module to provide Analogue to Digital support.  Added the
+beebstate module to provide Save and Restore of Beeb State files.  These two
+new modules should compile under UNIX but there is currently no code in the
+X Windows version to use them.
+
+MS Windows version now provides:
+  Load of menus to control everything
+  Dynamic disc selection
+  Beeb State save and restore
+  Various Window sizes
+  Real time and fixed frame rate modes
+  Sound support
+  Joystick support
+  Mousestick support
+  ROM write protection
+  Multiple ROM initialisation
+  Games keyboard mapping
+  Pentium optimised version

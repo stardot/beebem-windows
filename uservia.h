@@ -40,6 +40,8 @@ void UserVIA_poll_real(void);
   UserVIAState.timer2c-=ncycles; \
   if ((UserVIAState.timer1c<0) || (UserVIAState.timer2c<0)) UserVIA_poll_real();
 
+void SaveUserVIAState(unsigned char *StateData);
+void RestoreUserVIAState(unsigned char *StateData);
 
 void uservia_dumpstate(void);
 #endif

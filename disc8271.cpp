@@ -28,6 +28,9 @@
 #include "6502core.h"
 #include "disc8271.h"
 
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 static unsigned char ResultReg;
@@ -121,8 +124,14 @@ static void DoSelects(void) {
 
 /*--------------------------------------------------------------------------*/
 static void NotImp(const char *NotImpCom) {
+#ifdef WIN32
+  char errstr[200];
+  sprintf(errstr,"Disc operation '%s' not supported", NotImpCom);
+  MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
   cerr << NotImpCom << " has not been implemented in disc8271 - sorry\n";
   exit(0);
+#endif
 }; /* NotImp */
 
 /*--------------------------------------------------------------------------*/
@@ -486,7 +495,7 @@ static void DoWriteSpecialCommand(void) {
       break;
 
     default:
-      cerr << "Write to bad special register\n";
+      /* cerr << "Write to bad special register\n"; */
       return;
       break;
   }; /* Special register number switch */
@@ -621,7 +630,7 @@ int Disc8271_read(int Address) {
       break;
 
     default:
-      cerr << "8271: Read to unknown register address=" << Address << "\n";
+      /* cerr << "8271: Read to unknown register address=" << Address << "\n"; */
       break;
   }; /* Address switch */
 
@@ -651,7 +660,7 @@ static void CommandRegWrite(int Value) {
 /*--------------------------------------------------------------------------*/
 static void ParamRegWrite(int Value) {
   if (PresentParam>=NParamsInThisCommand) {
-    cerr << "8271: Unwanted parameter register write value=0x" << hex << Value << dec << "\n";
+    /* cerr << "8271: Unwanted parameter register write value=0x" << hex << Value << dec << "\n"; */
   } else {
     Params[PresentParam++]=Value;
     
@@ -665,7 +674,7 @@ static void ParamRegWrite(int Value) {
       UPDATENMISTATUS;
 
       PrimaryCommandLookupType *ptr=CommandPtrFromNumber(ThisCommand);
-    cerr << "<Disc access>";
+    /* cerr << "<Disc access>"; */
 
     /*  cerr << "8271: All parameters arrived for '" << ptr->Ident;
       
@@ -692,18 +701,18 @@ void Disc8271_write(int Address, int Value) {
       break;
 
     case 2:
-      cerr << "8271: Reset register write, value=0x" << hex << Value << dec << "\n";
+      /* cerr << "8271: Reset register write, value=0x" << hex << Value << dec << "\n"; */
       /* The caller should write a 1 and then >11 cycles later a 0 - but I'm just going
       to reset on both edges */
       Disc8271_reset();
       break;
 
     case 4:
-      cerr << "8271: data register write, value=0x" << hex << Value << dec << "\n";
+      /* cerr << "8271: data register write, value=0x" << hex << Value << dec << "\n"; */
       break;
 
     default:
-      cerr << "8271: Write to unknown register address=" << Address << ", value=0x" << hex << Value << dec << "\n";
+      /* cerr << "8271: Write to unknown register address=" << Address << ", value=0x" << hex << Value << dec << "\n"; */
       break;
   }; /* Address switch */
 }; /* Disc8271_write */
@@ -729,19 +738,27 @@ void Disc8271_poll_real(void) {
 }; /* Disc8271_poll */
 
 /*--------------------------------------------------------------------------*/
-static void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
+void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
   int CurrentTrack,CurrentSector;
   SectorType *SecPtr;
 
   if (!infile) {
+#ifdef WIN32
+    char errstr[200];
+    sprintf(errstr, "Could not open disc file:\n  %s", FileName);
+    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
     cerr << "Could not open disc file " << FileName << "\n";
+#endif
     return;
   };
 
   for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
     DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
     DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
+    if (DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors != NULL)
+      free(DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors);
     SecPtr=DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors=(SectorType*)calloc(10,sizeof(SectorType));
     DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
     DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
@@ -754,6 +771,8 @@ static void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tr
       SecPtr[CurrentSector].IDField.PhysRecLength=256;
       SecPtr[CurrentSector].Deleted=0;
 
+      if (SecPtr[CurrentSector].Data != NULL)
+        free(SecPtr[CurrentSector].Data);
       SecPtr[CurrentSector].Data=(char *)malloc(256);
       fread(SecPtr[CurrentSector].Data,1,256,infile);
     }; /* Sector */
@@ -762,13 +781,19 @@ static void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tr
   fclose(infile);
 };  /* LoadSimpleDiscImage */
 /*--------------------------------------------------------------------------*/
-static void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
+void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
   FILE *infile=fopen(FileName,"rb");
   int CurrentTrack,CurrentSector,HeadNum;
   SectorType *SecPtr;
 
   if (!infile) {
+#ifdef WIN32
+    char errstr[200];
+    sprintf(errstr, "Could not open disc file:\n  %s", FileName);
+    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
     cerr << "Could not open disc file " << FileName << "\n";
+#endif
     return;
   };
 
@@ -776,6 +801,8 @@ static void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
     for(HeadNum=0;HeadNum<2;HeadNum++) {
       DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
       DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
+      if (DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors != NULL)
+        free(DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors);
       SecPtr=DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors=(SectorType *)calloc(10,sizeof(SectorType));
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
@@ -788,6 +815,8 @@ static void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
 	SecPtr[CurrentSector].IDField.PhysRecLength=256;
 	SecPtr[CurrentSector].Deleted=0;
 
+	if (SecPtr[CurrentSector].Data != NULL)
+		free(SecPtr[CurrentSector].Data);
 	SecPtr[CurrentSector].Data=(char *)malloc(256);
 	fread(SecPtr[CurrentSector].Data,1,256,infile);
       }; /* Sector */
@@ -822,7 +851,7 @@ void Disc8271_reset(void) {
     onetime_initdisc++;
     InitDiscStore();
     if (DiscString==NULL) {
-      LoadSimpleDSDiscImage(".\\discims\\elite", 0,80);
+/*      LoadSimpleDSDiscImage("discims/elite", 0,80); */
     } else {
       char DoubleSided;
       int Tracks;
@@ -830,10 +859,15 @@ void Disc8271_reset(void) {
       int scanfres;
       if (scanfres=sscanf(DiscString,"%c:%d:%s",&DoubleSided,&Tracks,Name),
           scanfres!=3) {
+#ifdef WIN32
+		MessageBox(NULL,"Incorrect format for BeebDiscLoad, correct format is "
+			"D|S:tracks:filename", "BBC Emulator",MB_OK|MB_ICONERROR);
+#else
         cerr << "Incorrect format for BeebDiscLoad - the correct format is\n";
         cerr << "  D|S:tracks:filename\n e.g. D80discims/elite\n";
         cerr << "  for a double sided, 80 track disc image called discims/elite\n";
-        LoadSimpleDSDiscImage(".\\discims\\elite", 0,80);
+        LoadSimpleDSDiscImage("discims/elite", 0,80);
+#endif
       } else {
         switch (DoubleSided) {
           case 'd':
@@ -847,10 +881,15 @@ void Disc8271_reset(void) {
             break;
 
           default:
+#ifdef WIN32
+			MessageBox(NULL,"BeebDiscLoad disc type incorrect, use S for single sided and "
+				"D for double sided", "BBC Emulator",MB_OK|MB_ICONERROR);
+#else
             cerr << "BeebDiscLoad environment variable set wrong - the\n";
             cerr << "first character is either D or S signifying\n";
             cerr << "Single or double sided\n";
-            LoadSimpleDSDiscImage(".\\discims\\elite", 0,80);      
+            LoadSimpleDSDiscImage("discims/elite", 0,80);      
+#endif
             break;        
         }; /* Switch */
       }; /* Successful parse of env variable */

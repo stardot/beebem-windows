@@ -1,0 +1,28 @@
+#!/bin/sh
+if [  $# -eq 1 -a $# -eq 2 ]
+then
+  echo Usage $0 machinetype
+  exit 2
+fi
+
+if [ $# -eq 1 ]
+then
+  CONFIGDIR=.
+else
+  CONFIGDIR=$2
+fi
+
+mv $CONFIGDIR/makefile $CONFIGDIR/makefile.bak
+cat config.$1 $CONFIGDIR/makefile.base > $CONFIGDIR/makefile
+
+for SUBDIR in $CONFIGDIR/*
+do
+  if [ -d $SUBDIR -a -f $SUBDIR/makefile.base ]
+  then
+    echo Configuring subdirectory $SUBDIR
+    $0 $1 $SUBDIR
+  fi
+done
+
+make depend
+

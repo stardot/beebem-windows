@@ -37,6 +37,50 @@ void VIAReset(VIAState *ToReset) {
   ToReset->timer2hasshot=0;
 } /* VIAReset */
 
+/*-------------------------------------------------------------------------*/
+void SaveVIAState(VIAState *VIAData, unsigned char *StateData) {
+	StateData[0] = VIAData->orb;
+	StateData[1] = VIAData->irb;
+	StateData[2] = VIAData->ora;
+	StateData[3] = VIAData->ira;
+	StateData[4] = VIAData->ddrb;
+	StateData[5] = VIAData->ddra;
+	StateData[6] = (VIAData->timer1c / 2) & 255; /* Timers stored in 2MHz */
+	StateData[7] = (VIAData->timer1c / 2) >> 8;  /* units for speed */
+	StateData[8] = VIAData->timer1l & 255;
+	StateData[9] = VIAData->timer1l >> 8;
+	StateData[10] = (VIAData->timer2c / 2) & 255;
+	StateData[11] = (VIAData->timer2c / 2) >> 8;
+	StateData[12] = VIAData->timer2l & 255;
+	StateData[13] = VIAData->timer2l >> 8;
+	StateData[14] = 0;  /* Shift register - not currently used */
+	StateData[15] = VIAData->acr;
+	StateData[16] = VIAData->pcr;
+	StateData[17] = VIAData->ifr;
+	StateData[18] = VIAData->ier;
+}
+
+/*-------------------------------------------------------------------------*/
+void RestoreVIAState(VIAState *VIAData, unsigned char *StateData) {
+	VIAData->orb = StateData[0];
+	VIAData->irb = StateData[1];
+	VIAData->ora = StateData[2];
+	VIAData->ira = StateData[3];
+	VIAData->ddrb = StateData[4];
+	VIAData->ddra = StateData[5];
+	VIAData->timer1c = (StateData[6] + (StateData[7] << 8)) * 2;
+	VIAData->timer1l = StateData[8] + (StateData[9] << 8);
+	VIAData->timer2c = (StateData[10] + (StateData[11] << 8)) * 2;
+	VIAData->timer2l = StateData[12] + (StateData[13] << 8);
+	VIAData->acr = StateData[15];
+	VIAData->pcr = StateData[16];
+	VIAData->ifr = StateData[17];
+	VIAData->ier = StateData[18];
+	VIAData->timer1hasshot = 0;
+	VIAData->timer2hasshot = 0;
+}
+
+/*-------------------------------------------------------------------------*/
 void via_dumpstate(VIAState *ToDump) {
   cerr << "  ora=" << int(ToDump->ora) << "\n";
   cerr << "  orb="  << int(ToDump->orb) << "\n";

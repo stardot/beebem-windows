@@ -1,0 +1,148 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "beebemrc.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU MENU DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "Load Disc &0",                IDM_LOADDISC0
+        MENUITEM "Load Disc &1",                IDM_LOADDISC1
+        MENUITEM SEPARATOR
+        MENUITEM "&Load State",                 IDM_LOADSTATE
+        MENUITEM "&Save State",                 IDM_SAVESTATE
+        MENUITEM "&Quick Load",                 IDM_QUICKLOAD
+        MENUITEM "Quick Sa&ve",                 IDM_QUICKSAVE
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Speed and Frames per Second", IDM_SPEEDANDFPS
+        MENUITEM SEPARATOR
+        MENUITEM "160x128",                     IDM_160X128
+        MENUITEM "240x192",                     IDM_240X192
+        MENUITEM "320x256",                     IDM_320X256
+        MENUITEM "640x256",                     IDM_640X256
+        MENUITEM "640x512",                     IDM_640X512
+        MENUITEM "800x600",                     IDM_800X600
+        MENUITEM "1024x512",                    IDM_1024X512
+        MENUITEM "1024x768",                    IDM_1024X768
+    END
+    POPUP "S&peed"
+    BEGIN
+        MENUITEM "&Real Time",                  IDM_REALTIME
+        MENUITEM "3/4 Speed",                   IDM_3QSPEED
+        MENUITEM "1/2 Speed",                   IDM_HALFSPEED
+        MENUITEM "50 FPS",                      IDM_50FPS
+        MENUITEM "25 FPS",                      IDM_25FPS
+        MENUITEM "10 FPS",                      IDM_10FPS
+        MENUITEM "5 FPS",                       IDM_5FPS
+        MENUITEM "1 FPS",                       IDM_1FPS
+    END
+    POPUP "&Sound"
+    BEGIN
+        MENUITEM "&On/Off",                     IDM_SOUNDONOFF
+        MENUITEM SEPARATOR
+        MENUITEM "44.1 kHz",                    IDM_44100KHZ
+        MENUITEM "22.05 kHz",                   IDM_22050KHZ
+        MENUITEM "11.025 kHz",                  IDM_11025KHZ
+        MENUITEM SEPARATOR
+        MENUITEM "&Full Volume",                IDM_FULLVOLUME
+        MENUITEM "&High Volume",                IDM_HIGHVOLUME
+        MENUITEM "&Medium Volume",              IDM_MEDIUMVOLUME
+        MENUITEM "&Low Volume",                 IDM_LOWVOLUME
+    END
+    POPUP "&Options"
+    BEGIN
+        MENUITEM "&Allow ROM writes",           IDM_ROMWRITES
+        MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
+        MENUITEM SEPARATOR
+        MENUITEM "&Joystick",                   IDM_JOYSTICK
+        MENUITEM "&Mousestick",                 IDM_MOUSESTICK
+        MENUITEM SEPARATOR
+        MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
+        MENUITEM SEPARATOR
+        MENUITEM "Keyboard Mapping &1",         IDM_KEYBOARDMAPPING1
+        MENUITEM "Keyboard Mapping &2",         IDM_KEYBOARDMAPPING2
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About BBC Emulator",         IDM_ABOUT
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "beebemrc.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_BEEBEM              ICON    DISCARDABLE     "BeebEm.ico"
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

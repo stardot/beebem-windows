@@ -1,6 +1,7 @@
+
 /****************************************************************************/
-/*              Beebem - (c) David Alan Gilbert 1994                        */
-/*              ------------------------------------                        */
+/*              Beebem - (c) David Alan Gilbert 1994/1995                   */
+/*              -----------------------------------------                   */
 /* This program may be distributed freely within the following restrictions:*/
 /*                                                                          */
 /* 1) You may not charge for this program or for any part of it.            */
@@ -18,47 +19,30 @@
 /* program.                                                                 */
 /* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
 /****************************************************************************/
-/* 6502Core - header - David Alan Gilbert 16/10/94 */
-#ifndef CORE6502_HEADER
-#define CORE6502_HEADER
+/* Sound emulation for the beeb - David Alan Gilbert 26/11/94 */
 
-#include "port.h"
+#ifndef SOUND_HEADER
+#define SOUND_HEADER
 
-void DumpRegs(void);
+#ifdef WIN32
+/* Always compile sound code - it is switched on and off using SoundEnabled */
+#define SOUNDSUPPORT
+#endif
 
-typedef enum {
-  sysVia,
-  userVia,
-} IRQ_Nums;
+extern int SoundEnabled;    /* Sound on/off flag */
+extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
+extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
 
-typedef enum {
-	nmi_floppy,
-	nmi_econet,
-} NMI_Nums;
+extern int SoundTrigger; /* Cycle based trigger on sound */
 
-extern int IgnoreIllegalInstructions;
+void SoundInit();
+void SoundReset();
 
-extern unsigned char intStatus;
-extern unsigned char NMIStatus;
-extern unsigned int Cycles;
+/* Called in sysvia.cc when a write to one of the 76489's registers occurs */
+void Sound_RegWrite(int Value);
 
-extern CycleCountT TotalCycles;
+void SoundTrigger_Real(void);
 
-#define SetTrigger(after,var) var=TotalCycles+after;
-#define IncTrigger(after,var) var+=(after);
+#define Sound_Trigger(ncycles) if (SoundTrigger<=TotalCycles) SoundTrigger_Real();
 
-#define ClearTrigger(var) var=CycleCountTMax;
-
-/*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void);
-
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void);
-
-void Save6502State(unsigned char *CPUState);
-void Restore6502State(unsigned char *CPUState);
-
-void core_dumpstate(void);
 #endif

@@ -22,6 +22,8 @@
 #ifndef BEEBMEM_HEADER
 #define BEEBMEM_HEADER
 
+extern int WritableRoms;  /* Is writing to a ROM allowed */
+
 extern unsigned char WholeRam[65536];
 /* NOTE: Only to be used if 'a' doesn't change the address */
 #define BEEBREADMEM_FAST(a) ((a<0xfc00)?WholeRam[a]:BeebReadMem(a))
@@ -35,5 +37,9 @@ void BeebWriteMem(int Address, int Value);
 char *BeebMemPtrWithWrap(int a, int n);
 char *BeebMemPtrWithWrapMo7(int a, int n);
 void BeebMemInit(void);
+
+void SaveMemState(unsigned char *MemState);
+void RestoreMemState(unsigned char *MemState);
+
 void beebmem_dumpstate(void);
 #endif

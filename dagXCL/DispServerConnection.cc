@@ -1,3 +1,4 @@
+
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994                        */
 /*              ------------------------------------                        */
@@ -18,47 +19,51 @@
 /* program.                                                                 */
 /* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
 /****************************************************************************/
-/* 6502Core - header - David Alan Gilbert 16/10/94 */
-#ifndef CORE6502_HEADER
-#define CORE6502_HEADER
+/* A class which on creation opens a connection to an X server, and neatly */
+/* closses it in its destructor */
+/* David Alan Gilbert 5/11/94 */
+#include "X11/Xlib.h"
 
-#include "port.h"
+#include "iostream.h"
 
-void DumpRegs(void);
+#include "dagXCL/XErr.h"
+#include "dagXCL/DispServerConnection.h"
 
-typedef enum {
-  sysVia,
-  userVia,
-} IRQ_Nums;
+dagXDispServerConnection* dagXDispServerConnection::primary=NULL;
+dagXDispServerConnection* _primaryDisplay=NULL;
 
-typedef enum {
-	nmi_floppy,
-	nmi_econet,
-} NMI_Nums;
+dagXDispServerConnection::dagXDispServerConnection(char *display_name) {
+  cerr << "in constructor of dagXDispServerConnection\n";
 
-extern int IgnoreIllegalInstructions;
+  if (xDisplay=XOpenDisplay(display_name),xDisplay==NULL)
+    throw dagXErr("Could not open X display");
+  xScreen=XScreenOfDisplay(xDisplay,DefaultScreen(xDisplay));
+}
 
-extern unsigned char intStatus;
-extern unsigned char NMIStatus;
-extern unsigned int Cycles;
+dagXDispServerConnection::~dagXDispServerConnection() {
+  XCloseDisplay(xDisplay);
+  xDisplay=NULL;
+}
 
-extern CycleCountT TotalCycles;
+void dagXDispServerConnection::setPrimary() {
+  cerr << "in setPrimary of dagXDispServerConnection\n";
+  primary=this;
+  _primaryDisplay=this;
+}
 
-#define SetTrigger(after,var) var=TotalCycles+after;
-#define IncTrigger(after,var) var+=(after);
+dagXDispServerConnection *dagXDispServerConnection::getPrimary() {
+  return(primary);
+}
 
-#define ClearTrigger(var) var=CycleCountTMax;
+/* Return the default root of the primary connection */
+Window dagXDispServerConnection::root() {
+  return(DefaultRootWindow(xDisplay));
+}
 
-/*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void);
+Display *dagXDispServerConnection::getXDisplay() {
+  return(xDisplay);
+}
 
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void);
-
-void Save6502State(unsigned char *CPUState);
-void Restore6502State(unsigned char *CPUState);
-
-void core_dumpstate(void);
-#endif
+GC dagXDispServerConnection::defaultGC() {
+  return(DefaultGC(xDisplay,XScreenNumberOfScreen(xScreen)));
+}; /* defaultGC */

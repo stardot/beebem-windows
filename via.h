@@ -37,6 +37,8 @@ typedef struct {
 } VIAState;
 
 void VIAReset(VIAState *ToReset);
+void SaveVIAState(VIAState *VIAData, unsigned char *StateData);
+void RestoreVIAState(VIAState *VIAData, unsigned char *StateData);
 
 void via_dumpstate(VIAState *ToDump);
 #endif
