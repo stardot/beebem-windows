@@ -861,23 +861,26 @@ void VideoDoScanLine(void) {
       };
     };
   } else {
-    /* Non teletext */
-    if ((VideoState.CharLine!=-1) && (VideoState.CharLine<CRTC_VerticalDisplayed)) {
-      /* If first row of character then get the data pointer from memory */
-      if (VideoState.InCharLine==CRTC_ScanLinesPerChar) {
-        VideoState.DataPtr=BeebMemPtrWithWrap(VideoState.Addr*8,CRTC_HorizontalDisplayed*8);
-        VideoState.Addr+=CRTC_HorizontalDisplayed;
-      };
-
-      if ((VideoState.InCharLine)>(CRTC_ScanLinesPerChar-8)) {
-        if (!FrameNum) LowLevelDoScanLine();
-        VideoState.PixmapLine+=1;
-      } else {
-        if (!FrameNum) mainWin->doHorizLine(mainWin->cols[0],VideoState.PixmapLine++,0,640);
-      };
-    }; /* !=-1 and is in displayed bit */
-
-
+     /* Non teletext */
+     if (VideoState.CharLine!=-1) {
+       if (VideoState.CharLine<CRTC_VerticalDisplayed) {
+         /* If first row of character then get the data pointer from memory */
+         if (VideoState.InCharLine==CRTC_ScanLinesPerChar) {
+           VideoState.DataPtr=BeebMemPtrWithWrap(VideoState.Addr*8,CRTC_HorizontalDisplayed*8);
+           VideoState.Addr+=CRTC_HorizontalDisplayed;
+         };
+  
+         if ((VideoState.InCharLine)>(CRTC_ScanLinesPerChar-8) && !(CRTC_InterlaceAndDelay & 0x30)) {
+           if (!FrameNum) LowLevelDoScanLine();
+           VideoState.PixmapLine+=1;
+         } else {
+           if (!FrameNum) mainWin->doHorizLine(mainWin->cols[0],VideoState.PixmapLine++,0,640);
+         };
+        };
+     } else {
+       if (!FrameNum) mainWin->doHorizLine(mainWin->cols[0],VideoState.PixmapLine++,0,640);
+     }
+	
     /* Move onto next physical scanline as far as timing is concerned */
     VideoState.InCharLine-=1;
     VideoState.InCharLineUp+=1;

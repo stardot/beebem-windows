@@ -243,6 +243,7 @@ BEGIN
         MENUITEM "800x600",                     IDM_800X600
         MENUITEM "1024x512",                    IDM_1024X512
         MENUITEM "1024x768",                    IDM_1024X768
+        MENUITEM "&Full Screen",                IDM_FULLSCREEN
     END
     POPUP "S&peed"
     BEGIN
@@ -267,6 +268,23 @@ BEGIN
         MENUITEM "&High Volume",                IDM_HIGHVOLUME
         MENUITEM "&Medium Volume",              IDM_MEDIUMVOLUME
         MENUITEM "&Low Volume",                 IDM_LOWVOLUME
+    END
+    POPUP "&AMX"
+    BEGIN
+        MENUITEM "&On/Off",                     IDM_AMXONOFF
+        MENUITEM SEPARATOR
+        MENUITEM "L+R for &Middle",             IDM_AMX_LRFORMIDDLE
+        MENUITEM SEPARATOR
+        MENUITEM "Map to 160x256",              IDM_AMX_160X256
+        MENUITEM "Map to 320x256",              IDM_AMX_320X256
+        MENUITEM "Map to 640x256",              IDM_AMX_640X256
+        MENUITEM SEPARATOR
+        MENUITEM "Adjust +50%",                 IDM_AMX_ADJUSTP50
+        MENUITEM "Adjust +30%",                 IDM_AMX_ADJUSTP30
+        MENUITEM "Adjust +10%",                 IDM_AMX_ADJUSTP10
+        MENUITEM "Adjust -10%",                 IDM_AMX_ADJUSTM10
+        MENUITEM "Adjust -30%",                 IDM_AMX_ADJUSTM30
+        MENUITEM "Adjust -50%",                 IDM_AMX_ADJUSTM50
     END
     POPUP "&Options"
     BEGIN
@@ -323,7 +341,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About BBC Emulator",         IDM_ABOUT
+        MENUITEM "&About BeebEm",               IDM_ABOUT
     END
 END
 

@@ -1,4 +1,4 @@
-Readme.1st for V0.8 of Beebem (see 'changes' file for history)
+Readme.1st for V0.9 of Beebem (see 'changes' file for history)
 
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994/1995                   */

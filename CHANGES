@@ -76,3 +76,13 @@ MS Windows version only:
   User preferences (including the keyboard mapping) can be saved in an INI
     file using a new menu option.
   Added menu options for write protection and creating new disc images.
+
+
+Version 0.9 (Mike Wyatt)
+-----------
+Added AMX mouse support.
+
+Converted to use DirectX and added a full screen option.
+
+Fixed a few bugs (thanks to Piers Haken for pointing out a bug in the video
+code).

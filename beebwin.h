@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <ddraw.h>
 #include "port.h"
 
 typedef union {
@@ -46,6 +47,8 @@ typedef struct
 class BeebWin  {
   
   public:
+	void Initialise();
+
 	unsigned char cols[8];
   
 	BeebWin();
@@ -79,6 +82,8 @@ class BeebWin  {
 		return m_screen;
 	}
 
+	HWND GethWnd() { return m_hWnd; };
+	
 	void RealizePalette(HDC) {};
 
 	int StartOfFrame(void);
@@ -88,11 +93,14 @@ class BeebWin  {
 	void SetMousestickButton(int button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
 	void HandleCommand(int MenuId);
+	void SetAMXPosition(unsigned int x, unsigned int y);
 
   private:
 	int			m_MenuIdWinSize;
 	int			m_XWinSize;
 	int			m_YWinSize;
+	int			m_XWinPos;
+	int			m_YWinPos;
 	BOOL		m_ShowSpeedAndFPS;
 	int			m_MenuIdSampleRate;
 	int			m_MenuIdVolume;
@@ -106,6 +114,11 @@ class BeebWin  {
 	int			m_MenuIdKeyMapping;
 	char		m_AppPath[_MAX_PATH];
 	BOOL		m_WriteProtectDisc[2];
+	int			m_MenuIdAMXSize;
+	int			m_MenuIdAMXAdjust;
+	int			m_AMXXSize;
+	int			m_AMXYSize;
+	int			m_AMXAdjust;
 
 	char*		m_screen;
 	HDC 		m_hDC;
@@ -120,10 +133,23 @@ class BeebWin  {
 	double		m_RelativeSpeed;
 	double		m_FramesPerSecond;
 
+	// DirectX stuff
+	BOOL					m_DXInit;
+	LPDIRECTDRAW			m_DD;			// DirectDraw object
+	LPDIRECTDRAW2			m_DD2;			// DirectDraw object
+	LPDIRECTDRAWSURFACE		m_DDSPrimary;	// DirectDraw primary surface
+	LPDIRECTDRAWSURFACE2	m_DDS2Primary;	// DirectDraw primary surface
+	LPDIRECTDRAWSURFACE		m_DDSOne;		// Offscreen surface 1
+	LPDIRECTDRAWSURFACE2	m_DDS2One;		// Offscreen surface 1
+	LPDIRECTDRAWCLIPPER		m_Clipper;		// clipper for primary
+
 	BOOL InitClass(void);
 	void CreateBeebWindow(void);
 	void CreateBitmap(void);
 	void InitMenu(void);
+	void InitDirectX(void);
+	HRESULT InitSurfaces(void);
+	void ResetSurfaces(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
 	void GetRomMenu(void);				// LRW  Added for individual ROM/Ram
 	void GreyRomMenu(BOOL SetToGrey);	// LRW	Added for individual ROM/Ram
@@ -140,6 +166,8 @@ class BeebWin  {
 	void NewDiscImage(int Drive);
 	void ToggleWriteProtect(int Drive);
 	void SavePreferences(void);
+	void SetWindowAttributes(int oldSize);
+	void TranslateAMX(void);
 
 }; /* BeebWin */
 

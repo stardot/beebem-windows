@@ -1,4 +1,4 @@
-Beebem for Microsoft Windows (1 Sep 1997)
+BeebEm for Microsoft Windows (20 Jan 1998)
 ============================
 
 Beebem has been ported to MS Windows. The following people have contributed 
@@ -6,7 +6,7 @@ to the Windows port:
 
   Nigel Magnay (magnayn@cs.man.ac.uk) - original port of V0.4
   Robert Schmidt (rsc@vingmed.no) - new mode 7 font, fixed backspace key
-  Mike Wyatt (mikebuk@aol.com) - V0.7 and V0.8 features
+  Mike Wyatt (mikebuk@aol.com) - V0.7 to V0.9 features
   Laurie Whiffen - user keyboard mapping and SW Ram features
 
 Note however that the Copyright for the Emulator resides with David Gilbert,
@@ -18,10 +18,10 @@ Compiling
 
 This distribution of Beebem contains Win32 executables but if you want to
 compile it yourself then all the source files are included as well.  There
-are also a couple of files that can be used with MS Visual C++ V4.2:
+are also a couple of files that can be used with MS Visual C++ V5.0:
 
-  BeebEm.mdp  - Developer Studio Workspace
-  BeebEm.mak  - MS VC++ makefile
+  BeebEm.dsw  - Developer Studio Workspace
+  BeebEm.dsp  - VC++ Project file
 
 You should be able to compile the sources using other compilers (such as 
 Borland or Watcom) but you may need to remove some of the App Studio stuff
@@ -30,22 +30,16 @@ change the EightByteType from __int64 (which is Microsoft specific) to a
 structure of two long words.
 
 
-Executables
------------
+Executable
+----------
 
-There are two executables in this distribution, in the 'intelbin' directory:
+There is an executable in this distribution, in the 'intelbin' directory:
 
   BeebEm.exe  - Win32 version for all Intel processors
-  BeebEmP.exe - Win32 version optimised for a Pentium processor
 
-The executables run fine on Windows 95.  They should run on NT 4.0, 3.51 and
-Win 3.1 with Win32s but I have not tried them.  The executables were not
-compiled with explicit Win32s support so they may not work quite as smoothly
-on 3.1 and NT3.51 as on Win95 or NT4.
-
-NOTE: The V0.4 distribution contained a WinG version.  This version does not
-contain the WinG code as the GDI in Win95 appears to give exactly the same
-performance as the WinG library (perhaps its been built in?).
+The executables will run on Windows 95 and NT 4.0.  You will also need to
+install the Microsoft DirectX drivers if you have not already got them. 
+DirectX version 5 is available from the MS web page www.microsoft.com.
 
 
 Running BeebEm
@@ -55,14 +49,22 @@ You will need to get some ROM images from a BBC Micro to run BeebEm.  You
 will need OS1.2, Basic and DFS ROM images.  You will also need some disc
 images to use with BeebEm.
 
-You may find Robert Schmidt's Beeb web page useful.  It contains images of
-ROMS and discs and contains details of various ways to transfer ROM images
-and discs from a Beeb to a PC.  See http://www.nvg.unit.no/bbc/bbc.html
+You will find Robert Schmidt's 'BBC Lives!' web page useful.  His page is:
 
-I recommend you use the Watford DFS, you can find it here:
+  http://www.nvg.unit.no/bbc/bbc.html
+
+It contains DFS ROM images and disc images.  It also contains details of how
+to get hold of the OS1.2 and Basic ROM images.  Take a look at the 'ROM
+Images' section of the Archive page.  You will find the 'StuffIt Expander'
+route the easiest (you may also need WinZip to expand the 'hqx' file to a
+'sit' file) but if this does not work follow the 'Fools Guide to getting
+ROMs'.
+
+For the DFS I recommend you use the Watford DFS, you can find it here:
+
   ftp://ftp.nvg.unit.no/pub/bbc/rom/Watford/fs/DFS-1.44.rom
 
-There is also an example disc image in the discims directory in this
+There is an example disc image in the discims directory in this
 distribution.  It contains some simple programs to test the emulator.
 
 Once you have ROM and disc images you need to create directories to keep
@@ -74,12 +76,15 @@ in C:\Beeb:
   discims   - put the disc images in here
   beebstate - Beeb State files go in here (leave this empty for now)
 
-The OS ROM should have a file name of 'os12'.  It does not matter what the
-file names for the other ROMs are.  Beebem will read all the ROMs from the
-beebfile directory (up to 16 of them) when it starts up (8K and 16K ROMs).
+The OS ROM should have a file name of 'os12' (note: no file extension).  It
+does not matter what the file names for the other ROMs are.  Beebem will
+read all the ROMs from the beebfile directory (up to 16 of them) when it
+starts up (8K and 16K ROMs).
 
 Once all the files and directories are set up, run the emulator.  It should
-work in any graphics mode but it will run fastest in a 256 colour mode. 
+work in any graphics mode but it will run fastest in a 256 colour mode.  If
+you get an error message saying DirectX initialisation has failed then check
+your DirectX installation (or install it if you have not already).
 
 When BeebEm starts up you should see the normal 'BBC Computer 32K' message
 followed by the start up messages for all the ROMs (i.e. the DFS and BASIC).
@@ -90,25 +95,16 @@ If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
 commands to load the programs from it.
 
 
-New Features in V0.8
+New Features in V0.9
 --------------------
 
-Disc write and format support - any changes you make to files within BeebEm
-  will automatically get written back to the image file.  BeebEm also checks
-  that the disc catalogue is valid (see below).
+AMX mouse support - Simply maps your Windows mouse movements to AMX mouse
+  movements.
 
-Warnings for incorrect disc selection - BeebEm will warn you if it thinks
-  you have selected the wrong disc type when loading a disc image (it is
-  vital to get it right if you are going to write to the disc).
-
-User defined keyboard mapping - the mapping for the whole keyboard can be 
-  changed using a graphical representation of the BBC Micro keyboard.
-
-Individual sideways ROM/RAM selection - ROM slots can be changed between ROM
-  and RAM while BeebEm is running.
-
-User preferences - preferences for BeebEm start-up can be saved.  This
-  includes the user defined key mapping.
+DirectX screen updates - DirectX gives faster screen updates and makes a
+  full screen option possible.  Strangely, DirectX is not always faster than
+  standard methods when using the smaller window sizes (perhaps I've cocked
+  up the code somewhere!).
 
 
 Disc Writing
@@ -257,6 +253,7 @@ View
   800x600
   1024x512
   1024x768
+  Full Screen
 
 Speed
   Real Time    - Run Beebem at a constant speed, relative to a real BBC
@@ -282,6 +279,27 @@ Sound
   Medium Volume
   Low Volume
 
+AMX
+  On/Off          - Switch AMX mouse on or off.  Note that you may find the
+                    AMX mouse easier to use if you reduce the Beebem speed
+                    to 3/4 or 1/2 speed.  It may also be useful to hide the
+                    Windows cursor as well (see the Options menu).
+
+  L+R for Middle  - Simulates a middle button press when you press the left
+                    and right buttons together.
+
+  Map to 160x256  - Coordinate range to map the Windows mouse position to.
+  Map to 320x256    Pick the one that gives AMX mouse movements nearest to
+  Map to 640x256    your Windows mouse movements.
+
+  Adjust +50%     - Percentage to increase or decrease the AMX map sizes.
+  Adjust +30%       Pick the one that gives AMX mouse movements that are
+  Adjust +10%       slightly greater than the corresponding Windows mouse
+  Adjust -10%       movements.  You can then match up the AMX and Windows
+  Adjust -30%       pointer positions by moving the Windows pointer to the
+  Adjust -50%       edges of the BeebEm Window.  This is easiest to do in
+                    full screen mode.
+
 Options
   Allow ROM writes    - Enable/disable ROM writes for each ROM slot.
                         ROMs read at start-up are write protected by
@@ -297,7 +315,8 @@ Options
                         Beeb joystick.
 
   Hide Cursor         - Show or hide the mouse cursor while it is over the
-                        Beebem window (useful when using the Mousestick).
+                        Beebem window (useful when using the Mousestick or
+                        the AMX mouse).
 
   Define User Keyboard - Allows you to define your own keyboard mapping.
                          Click on one of the BBC Micro keys and then press
@@ -318,7 +337,7 @@ Options
                          directory.
 
 Help
-  About BBC Emulator  - Show version number and date of Beebem.
+  About BeebEm         - Show version number and date of BeebEm.
 
 
 Finally

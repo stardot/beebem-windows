@@ -63,6 +63,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	AtoDReset();
 
 	mainWin=new BeebWin();
+	mainWin->Initialise();
 
 	do
 	{

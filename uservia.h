@@ -38,10 +38,37 @@ void UserVIA_poll_real(void);
 #define UserVIA_poll(ncycles) \
   UserVIAState.timer1c-=ncycles; \
   UserVIAState.timer2c-=ncycles; \
-  if ((UserVIAState.timer1c<0) || (UserVIAState.timer2c<0)) UserVIA_poll_real();
+  if ((UserVIAState.timer1c<0) || (UserVIAState.timer2c<0)) UserVIA_poll_real(); \
+  if (AMXMouseEnabled && AMXTrigger<=TotalCycles) AMXMouseMovement();
 
 void SaveUserVIAState(unsigned char *StateData);
 void RestoreUserVIAState(unsigned char *StateData);
 
 void uservia_dumpstate(void);
+
+/* AMX mouse enabled */
+extern int AMXMouseEnabled;
+
+/* Map Left+Right button presses to a middle button press */
+extern int AMXLRForMiddle;
+
+/* Number of cycles between each mouse interrupt */
+#define AMX_TRIGGER 1000
+extern int AMXTrigger;
+
+/* Checks if a movement interrupt should be generated */
+void AMXMouseMovement();
+
+/* Target and current positions for mouse */
+extern int AMXTargetX;
+extern int AMXTargetY;
+extern int AMXCurrentX;
+extern int AMXCurrentY;
+
+/* Button states */
+#define AMX_LEFT_BUTTON 1
+#define AMX_MIDDLE_BUTTON 2
+#define AMX_RIGHT_BUTTON 4
+extern int AMXButtons;
+
 #endif

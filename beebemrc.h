@@ -144,6 +144,18 @@
 #define IDM_WPDISC0                     40064
 #define IDM_WPDISC1                     40065
 #define IDM_SAVE_PREFS                  40066
+#define IDM_FULLSCREEN                  40067
+#define IDM_AMXONOFF                    40068
+#define IDM_AMX_320X256                 40069
+#define IDM_AMX_640X256                 40070
+#define IDM_AMX_160X256                 40071
+#define IDM_AMX_ADJUSTP50               40072
+#define IDM_AMX_ADJUSTP30               40073
+#define IDM_AMX_ADJUSTP10               40074
+#define IDM_AMX_ADJUSTM10               40075
+#define IDM_AMX_ADJUSTM30               40076
+#define IDM_AMX_ADJUSTM50               40077
+#define IDM_AMX_LRFORMIDDLE             40078
 
 // Next default values for new objects
 // 
@@ -151,7 +163,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40067
+#define _APS_NEXT_COMMAND_VALUE         40079
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

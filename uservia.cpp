@@ -27,6 +27,20 @@
 #include "uservia.h"
 #include "via.h"
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+/* AMX mouse (see uservia.h) */
+int AMXMouseEnabled = 0;
+int AMXLRForMiddle = 0;
+int AMXTrigger = 0;
+int AMXButtons = 0;
+int AMXTargetX = 0;
+int AMXTargetY = 0;
+int AMXCurrentX = 0;
+int AMXCurrentY = 0;
+
 extern int DumpAfterEach;
 /* My raw VIA state */
 VIAState UserVIAState;
@@ -52,7 +66,7 @@ void UserVIAWrite(int Address, int Value) {
       UserVIAState.orb=Value & 0xff;
       if ((UserVIAState.ifr & 1) && ((UserVIAState.pcr & 2)==0)) {
         UserVIAState.ifr&=0xfe;
-	UpdateIFRTopBit();
+        UpdateIFRTopBit();
       };
       break;
 
@@ -154,7 +168,29 @@ int UserVIARead(int Address) {
   DumpRegs(); */
   switch (Address) {
     case 0: /* IRB read */
-      tmp=(UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb));;
+      tmp=(UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb));
+
+      if (AMXMouseEnabled) {
+        if (AMXLRForMiddle) {
+          if ((AMXButtons & AMX_LEFT_BUTTON) && (AMXButtons & AMX_RIGHT_BUTTON))
+            AMXButtons = AMX_MIDDLE_BUTTON;
+          else
+            AMXButtons &= ~AMX_MIDDLE_BUTTON;
+        }
+
+        tmp &= 0x1f;
+        tmp |= (AMXButtons ^ 7) << 5;
+        UserVIAState.ifr&=0xe7;
+        UpdateIFRTopBit();
+
+        /* Set up another interrupt if not at target */
+        if (AMXTargetX != AMXCurrentX || AMXTargetY != AMXCurrentY) {
+          SetTrigger(AMX_TRIGGER, AMXTrigger);
+        }
+        else {
+          ClearTrigger(AMXTrigger);
+        }
+      }
       return(tmp);
 
     case 2:
@@ -245,6 +281,7 @@ void UserVIA_poll_real(void) {
 /*--------------------------------------------------------------------------*/
 void UserVIAReset(void) {
   VIAReset(&UserVIAState);
+  ClearTrigger(AMXTrigger);
 } /* UserVIAReset */
 
 /*-------------------------------------------------------------------------*/
@@ -255,6 +292,48 @@ void SaveUserVIAState(unsigned char *StateData) {
 /*-------------------------------------------------------------------------*/
 void RestoreUserVIAState(unsigned char *StateData) {
 	RestoreVIAState(&UserVIAState, StateData);
+}
+
+/*-------------------------------------------------------------------------*/
+void AMXMouseMovement() {
+	ClearTrigger(AMXTrigger);
+
+	/* Check if there is a outstanding interrupt */
+	if (AMXMouseEnabled && (UserVIAState.ifr & 0x18) == 0)
+	{
+		if (AMXTargetX != AMXCurrentX || AMXTargetY != AMXCurrentY)
+		{
+			if (AMXTargetX != AMXCurrentX)
+			{
+				UserVIAState.ifr |= 0x10;
+				if (AMXTargetX < AMXCurrentX)
+				{
+					UserVIAState.irb &= ~0x01;
+					AMXCurrentX--;
+				}
+				else
+				{
+					UserVIAState.irb |= 0x01;
+					AMXCurrentX++;
+				}
+			}
+			if (AMXTargetY != AMXCurrentY)
+			{
+				UserVIAState.ifr |= 0x08;
+				if (AMXTargetY > AMXCurrentY)
+				{
+					UserVIAState.irb &= ~0x04;
+					AMXCurrentY++;
+				}
+				else
+				{
+					UserVIAState.irb |= 0x04;
+					AMXCurrentY--;
+				}
+			}
+			UpdateIFRTopBit();
+		}
+	}
 }
 
 /*--------------------------------------------------------------------------*/

@@ -19,6 +19,7 @@
 /* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* Win32 port - Mike Wyatt 7/6/97 */
+/* Conveted Win32 port to use DirectSound - Mike Wyatt 11/1/98 */
 
 #include "beebsound.h"
 
@@ -31,6 +32,10 @@
 #include <unistd.h>
 #else
 #include <windows.h>
+#include <windowsx.h>
+#include <mmsystem.h>
+#include <dsound.h>
+#include "main.h"
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -65,11 +70,11 @@ static unsigned char Buffer[MAXBUFSIZE];
 #define MAXBUFSIZE 8192
 static unsigned char wb1[MAXBUFSIZE];
 static unsigned char wb2[MAXBUFSIZE];
-
-static HWAVEOUT hwo;
-static WAVEHDR wh1, wh2;
-static WAVEHDR *active_wh, *inactive_wh;
 static unsigned char *active_wb, *inactive_wb;
+
+static LPDIRECTSOUND DSound = NULL;
+static LPDIRECTSOUNDBUFFER DSB1 = NULL;
+static LPDIRECTSOUNDBUFFER DSB2 = NULL;
 
 #endif
 
@@ -103,8 +108,46 @@ int SoundTrigger; /* Time to trigger a sound event */
 
 static unsigned int GenIndex[4]; /* Used by the voice generators */
 static int GenState[4];
+static int bufptr=0;
+
 /****************************************************************************/
-static  int bufptr=0;
+#ifdef WIN32
+/* Writes sound data to a DirectSound buffer */
+HRESULT WriteToSoundBuffer(LPDIRECTSOUNDBUFFER lpDsb,
+			PBYTE lpbSoundData, DWORD dwSoundBytes)
+{
+	LPVOID lpvPtr1;
+	DWORD dwBytes1; 
+	LPVOID lpvPtr2;
+	DWORD dwBytes2;
+	HRESULT hr;
+
+	// Obtain write pointer.
+	hr = lpDsb->Lock(0, dwSoundBytes, &lpvPtr1, 
+		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
+	if(hr == DSERR_BUFFERLOST)
+	{
+		hr = lpDsb->Restore();
+		if (hr == DS_OK)
+			hr = lpDsb->Lock(0, dwSoundBytes,
+				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
+	}
+	if(DS_OK == hr)
+	{
+		// Write to pointers.
+		CopyMemory(lpvPtr1, lpbSoundData, dwBytes1);
+		if(NULL != lpvPtr2)
+		{
+			CopyMemory(lpvPtr2, lpbSoundData+dwBytes1, dwBytes2);
+		}
+		// Release the data back to DirectSound.
+		hr = lpDsb->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
+	}
+	return hr;
+}
+#endif
+
+/****************************************************************************/
 /* DestTime is in samples */
 static void PlayUpTil(double DestTime) {
   int tmptotal,channel,bufinc;
@@ -279,7 +322,6 @@ static void PlayUpTil(double DestTime) {
 	  /* Only write data when buffer is full */
 	  if (bufptr == SoundBufferSize)
 	  {
-
 #ifdef DEBUGSOUNDTOFILE
 		FILE *fd = fopen("audio.dbg", "a+b");
 		if (fd != NULL)
@@ -293,60 +335,57 @@ static void PlayUpTil(double DestTime) {
 			exit(1);
 		}
 #else
-		inactive_wh->lpData = (char *)inactive_wb;
-		inactive_wh->dwBufferLength = SoundBufferSize;
-		inactive_wh->dwBytesRecorded = 0;
-		inactive_wh->dwUser = 0;
-		inactive_wh->dwFlags = 0;
-		inactive_wh->dwLoops = 0;
-		inactive_wh->lpNext = 0;
-		inactive_wh->reserved = 0;
-
-		MMRESULT mmresult = waveOutPrepareHeader(hwo, inactive_wh, sizeof(WAVEHDR));
-		if (mmresult == MMSYSERR_NOERROR)
+		HRESULT hr;
+		if (active_wb == wb1)
 		{
-			mmresult = waveOutWrite(hwo, inactive_wh, sizeof(WAVEHDR));
-			if (mmresult != MMSYSERR_NOERROR)
+			hr = WriteToSoundBuffer(DSB2, inactive_wb, SoundBufferSize);
+			if (hr == DS_OK)
 			{
-		  		MessageBox(NULL,"Sound write failed","BBC Emulator",MB_OK|MB_ICONERROR);
-				SoundReset();
-			}
-
-			if (active_wh != NULL)
-			{
-				while (!(active_wh->dwFlags & WHDR_DONE))
-					Sleep(0);
-
-				mmresult = waveOutUnprepareHeader(hwo, active_wh, sizeof(WAVEHDR));
-				if (mmresult != MMSYSERR_NOERROR)
+				hr = DSB2->Play(0,0,0);
+				if(hr == DSERR_BUFFERLOST)
 				{
-			  		MessageBox(NULL,"Sound unprepare failed","BBC Emulator",MB_OK|MB_ICONERROR);
-					SoundReset();
+					hr = DSB2->Restore();
+					if (hr == DS_OK)
+						hr = DSB2->Play(0,0,0);
 				}
 			}
 		}
 		else
 		{
-	  		MessageBox(NULL,"Sound prepare failed","BBC Emulator",MB_OK|MB_ICONERROR);
+			hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize);
+			if (hr == DS_OK)
+			{
+				hr = DSB1->Play(0,0,0);
+				if(hr == DSERR_BUFFERLOST)
+				{
+					hr = DSB1->Restore();
+					if (hr == DS_OK)
+						hr = DSB1->Play(0,0,0);
+				}
+			}
+		}
+		if (hr != DS_OK)
+		{
+			char  errstr[200];
+			sprintf(errstr,"Direct Sound write failed\nFailure code %X",hr);
+			MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 			SoundReset();
 		}
 #endif
 
 		/* Swap active and inactive buffers */
-		active_wh = inactive_wh;
 		active_wb = inactive_wb;
-		if (active_wh == &wh1)
+		if (active_wb == wb1)
 		{
-			inactive_wh = &wh2;
 			inactive_wb = wb2;
 		}
 		else
 		{
-			inactive_wh = &wh1;
 			inactive_wb = wb1;
 		}
 		bufptr=0;
 	  }
+
 	  OurTime+=bufinc;
 #endif
     }; /* If no volume */
@@ -390,6 +429,42 @@ static void PlayTilNow(void) {
 
   PlayUpTil(nowsamps);
 }; /* PlayTilNow */
+
+/****************************************************************************/
+#ifdef WIN32
+/* Creates a DirectSound buffer */
+HRESULT CreateSoundBuffer(
+		LPDIRECTSOUND lpDirectSound, LPDIRECTSOUNDBUFFER *lplpDsb)
+{
+	WAVEFORMATEX wf;
+	DSBUFFERDESC dsbdesc;
+	HRESULT hr;
+
+	// Set up wave format structure.
+	memset(&wf, 0, sizeof(WAVEFORMATEX));
+	wf.wFormatTag = WAVE_FORMAT_PCM;
+	wf.nChannels = 1;
+	wf.nSamplesPerSec = samplerate;
+	wf.wBitsPerSample = 8;
+	wf.nBlockAlign = wf.wBitsPerSample * wf.nChannels / 8;
+	wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
+	wf.cbSize = 0;
+
+	// Set up DSBUFFERDESC structure.
+	memset(&dsbdesc, 0, sizeof(DSBUFFERDESC)); // Zero it out.
+	dsbdesc.dwSize = sizeof(DSBUFFERDESC);
+
+	// Need default controls (pan, volume, frequency).
+	dsbdesc.dwFlags = DSBCAPS_CTRLDEFAULT;
+	dsbdesc.dwBufferBytes = SoundBufferSize;
+	dsbdesc.lpwfxFormat = (LPWAVEFORMATEX)&wf;
+
+	// Create buffer.
+	hr = DSound->CreateSoundBuffer(&dsbdesc, lplpDsb, NULL);
+
+	return hr;
+}
+#endif
 
 /****************************************************************************/
 static void InitAudioDev(int sampleratein) {
@@ -442,27 +517,29 @@ static void InitAudioDev(int sampleratein) {
   };
 #endif
 #else
-	MMRESULT mmresult;
-	WAVEFORMATEX wfx;
-
-	wfx.wFormatTag = WAVE_FORMAT_PCM;
-	wfx.nChannels = 1;
-	wfx.nSamplesPerSec = samplerate;
-	wfx.wBitsPerSample = 8;
-	wfx.nBlockAlign = wfx.wBitsPerSample * wfx.nChannels / 8;
-	wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
-	wfx.cbSize = 0;
-
-	mmresult = waveOutOpen(&hwo,WAVE_MAPPER,&wfx,0,0,CALLBACK_NULL);
-	if (mmresult != MMSYSERR_NOERROR)
+	HRESULT hr;
+	hr = DirectSoundCreate(NULL, &DSound, NULL);
+	if(hr == DS_OK)
 	{
-  		MessageBox(NULL,"Could not open a wave sound device","BBC Emulator",MB_OK|MB_ICONERROR);
-		SoundReset();
+		hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_NORMAL);
 	}
+	if(hr == DS_OK)
+	{
+		hr = CreateSoundBuffer(DSound, &DSB1);
+	}
+	if(hr == DS_OK)
+	{
+		hr = CreateSoundBuffer(DSound, &DSB2);
+	}
+	if (hr != DS_OK)
+	{
+		char  errstr[200];
+		sprintf(errstr,"Direct Sound initialisation failed\nFailure code %X",hr);
+		MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+		SoundReset();
+	}  
 
-	active_wh = NULL;
 	active_wb = NULL;
-	inactive_wh = &wh1;
 	inactive_wb = wb1;
 
 #endif
@@ -533,10 +610,21 @@ void SoundInit() {
 /* Called to disable sound output                                           */
 void SoundReset(void) {
 #ifdef WIN32
-  waveOutReset(hwo);
-  waveOutUnprepareHeader(hwo, &wh1, sizeof(WAVEHDR));
-  waveOutUnprepareHeader(hwo, &wh2, sizeof(WAVEHDR));
-  waveOutClose(hwo);
+	if (DSB1 != NULL)
+	{
+		DSB1->Release();
+		DSB1 = NULL;
+	}
+	if (DSB2 != NULL)
+	{
+		DSB2->Release();
+		DSB2 = NULL;
+	}
+	if (DSound != NULL)
+	{
+		DSound->Release();
+		DSound = NULL;
+	}
 #else
   close(devfd);
 #endif
@@ -656,6 +744,7 @@ void Sound_RegWrite(int value) {
   if (trigger)
     SoundTrigger_Real();
 }; /* Sound_RegWrite */
+
 #else
 void ADummyRoutine(int a) {
   cerr << "Just so the compiler doesn't get confused by an empty file!\n";

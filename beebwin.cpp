@@ -18,9 +18,11 @@
 /* program.                                                                 */
 /****************************************************************************/
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
+/* Conveted to use DirectX - Mike Wyatt 11/1/98 */
 
 #include <stdio.h>
 #include <windows.h>
+#include <initguid.h>
 #include "main.h"
 #include "beebwin.h"
 #include "port.h"
@@ -38,7 +40,7 @@
 
 static const char *WindowTitle = "BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 0.8, 1 Sep 1997\n";
+								"Version 0.9, 20 Jan 1998\n";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -61,6 +63,12 @@ static const char *CFG_OPTIONS_USER_KEY_MAP = "UserKeyMap";
 
 static const char *CFG_SPEED_SECTION = "Speed";
 static const char *CFG_SPEED_TIMING = "Timing";
+
+static const char *CFG_AMX_SECTION = "AMX";
+static const char *CFG_AMX_ENABLED = "AMXMouseEnabled";
+static const char *CFG_AMX_LRFORMIDDLE = "AMXMouseLRForMiddle";
+static const char *CFG_AMX_SIZE = "AMXMouseSize";
+static const char *CFG_AMX_ADJUST = "AMXMouseAdjust";
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -210,10 +218,17 @@ static int (*transTable)[2] = transTable1;
 /****************************************************************************/
 BeebWin::BeebWin()
 {   
+}
+
+/****************************************************************************/
+void BeebWin::Initialise()
+{   
 	char CfgName[256];
 	char CfgValue[256];
 	char DefValue[256];
 	int row, col;
+
+	m_DXInit = FALSE;
 
 	sprintf(DefValue, "%d", IDM_320X256);
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE, DefValue,
@@ -246,8 +261,6 @@ BeebWin::BeebWin()
 	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_ENABLED, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	SoundEnabled = atoi(CfgValue);
-	if (SoundEnabled)
-		SoundInit();
 
 	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
@@ -260,6 +273,25 @@ BeebWin::BeebWin()
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	m_MenuIdKeyMapping = atoi(CfgValue);
 	TranslateKeyMapping();
+
+	GetPrivateProfileString(CFG_AMX_SECTION, CFG_AMX_ENABLED, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	AMXMouseEnabled = atoi(CfgValue);
+
+	GetPrivateProfileString(CFG_AMX_SECTION, CFG_AMX_LRFORMIDDLE, "1",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	AMXLRForMiddle = atoi(CfgValue);
+
+	sprintf(DefValue, "%d", IDM_AMX_320X256);
+	GetPrivateProfileString(CFG_AMX_SECTION, CFG_AMX_SIZE, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdAMXSize = atoi(CfgValue);
+
+	sprintf(DefValue, "%d", IDM_AMX_ADJUSTP30);
+	GetPrivateProfileString(CFG_AMX_SECTION, CFG_AMX_ADJUST, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdAMXAdjust = atoi(CfgValue);
+	TranslateAMX();
 
 	for (int key=0; key<256; ++key)
 	{
@@ -293,6 +325,10 @@ BeebWin::BeebWin()
 	InitClass();
 	CreateBeebWindow(); 
 	InitMenu();
+	InitDirectX();
+
+	if (SoundEnabled)
+		SoundInit();
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
 	if (m_MenuIdSticks == IDM_JOYSTICK)
@@ -312,9 +348,13 @@ BeebWin::BeebWin()
 /****************************************************************************/
 BeebWin::~BeebWin()
 {   
+	ResetSurfaces();
+	m_DD2->Release();
+	m_DD->Release();
+
 	if (SoundEnabled)
 		SoundReset();
-	
+
 	ReleaseDC(m_hWnd, m_hDC);
 
 	if (m_hOldObj != NULL)
@@ -334,7 +374,7 @@ void BeebWin::CreateBitmap()
 	m_bmi.bmiHeader.biWidth = 640;
 	m_bmi.bmiHeader.biHeight = -256;
 	m_bmi.bmiHeader.biPlanes = 1;
-	m_bmi.bmiHeader.biBitCount = 8;     
+	m_bmi.bmiHeader.biBitCount = 8;
 	m_bmi.bmiHeader.biCompression = BI_RGB;
 	m_bmi.bmiHeader.biSizeImage = 640*256;
 	m_bmi.bmiHeader.biClrUsed = 8;
@@ -381,7 +421,7 @@ BOOL BeebWin::InitClass(void)
 	wc.cbWndExtra	 = 0;					   // No per-window extra data.
 	wc.hInstance	 = hInst;				   // Owner of this class
 	wc.hIcon		 = LoadIcon(hInst, MAKEINTRESOURCE(IDI_BEEBEM));
-	wc.hCursor		 = NULL;
+	wc.hCursor		 = LoadCursor(hInst, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);// Default color
 	wc.lpszMenuName  = MAKEINTRESOURCE(IDR_MENU); // Menu from .RC
 	wc.lpszClassName = "BEEBWIN"; //szAppName;				// Name to register as
@@ -399,22 +439,24 @@ void BeebWin::CreateBeebWindow(void)
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_XPOS, "-1",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	x=atoi(CfgValue);
+	m_XWinPos = x;
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_YPOS, "-1",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	y=atoi(CfgValue);
+	m_YWinPos = y;
 	if (x == -1 || y == -1)
 	{
 		x = CW_USEDEFAULT;
 		y = 0;
+		m_XWinPos = 0;
+		m_YWinPos = 0;
 	}
 
 	m_hWnd = CreateWindow(
 				"BEEBWIN",				// See RegisterClass() call.
 				m_szTitle, 		// Text for window title bar.
-				WS_OVERLAPPED|				  
-				WS_CAPTION|
-				WS_SYSMENU|
-				WS_MINIMIZEBOX, // Window style.			    
+				m_MenuIdWinSize == IDM_FULLSCREEN ? WS_POPUP :
+					WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, // Window style.
 				x, y,
 				m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
 				m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
@@ -451,9 +493,107 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, m_MenuIdKeyMapping, MF_CHECKED);
 	CheckMenuItem(hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_AMXONOFF, AMXMouseEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_AMX_LRFORMIDDLE, AMXLRForMiddle ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, m_MenuIdAMXSize, MF_CHECKED);
+	if (m_MenuIdAMXAdjust != 0)
+		CheckMenuItem(hMenu, m_MenuIdAMXAdjust, MF_CHECKED);
 
 	/* Initialise the ROM Menu. */
 	SetRomMenu();
+}
+
+/****************************************************************************/
+void BeebWin::InitDirectX(void)
+{
+	HRESULT ddrval;
+
+	ddrval = DirectDrawCreate( NULL, &m_DD, NULL );
+	if( ddrval == DD_OK )
+	{
+		ddrval = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID *)&m_DD2);
+	}
+	if( ddrval == DD_OK )
+	{
+		ddrval = InitSurfaces();
+	}
+	if( ddrval != DD_OK )
+	{
+		char  errstr[200];
+		sprintf(errstr,"DirectX initialisation failed\nFailure code %X",ddrval);
+		MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+	}
+}
+
+/****************************************************************************/
+HRESULT BeebWin::InitSurfaces(void)
+{
+	DDSURFACEDESC ddsd;
+	HRESULT ddrval;
+
+	if (m_MenuIdWinSize == IDM_FULLSCREEN)
+		ddrval = m_DD2->SetCooperativeLevel( m_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
+	else
+		ddrval = m_DD2->SetCooperativeLevel( m_hWnd, DDSCL_NORMAL );
+	if( ddrval == DD_OK )
+	{
+		if (m_MenuIdWinSize == IDM_FULLSCREEN)
+			ddrval = m_DD2->SetDisplayMode(640, 480, 8, 0, 0);
+	}
+	if( ddrval == DD_OK )
+	{
+		ddsd.dwSize = sizeof( ddsd );
+		ddsd.dwFlags = DDSD_CAPS;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+
+		ddrval = m_DD2->CreateSurface( &ddsd, &m_DDSPrimary, NULL );
+	}
+	if( ddrval == DD_OK )
+	{
+		ddrval = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2Primary);
+	}
+	if( ddrval == DD_OK )
+	{
+		ddrval = m_DD2->CreateClipper( 0, &m_Clipper, NULL );
+	}
+	if( ddrval == DD_OK )
+	{
+		ddrval = m_Clipper->SetHWnd( 0, m_hWnd );
+	}
+	if( ddrval == DD_OK )
+	{
+		ddrval = m_DDS2Primary->SetClipper( m_Clipper );
+	}
+	if( ddrval == DD_OK )
+	{
+		ZeroMemory(&ddsd, sizeof(ddsd));
+		ddsd.dwSize = sizeof(ddsd);
+		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		ddsd.dwWidth = 640;
+		ddsd.dwHeight = 256;
+		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
+	}
+	if( ddrval == DD_OK )
+	{
+		ddrval = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
+	}
+
+	m_DXInit = TRUE;
+
+	return ddrval;
+}
+
+/****************************************************************************/
+void BeebWin::ResetSurfaces(void)
+{
+	m_Clipper->Release();
+	m_DDS2One->Release();
+	m_DDSOne->Release();
+	m_DDS2Primary->Release();
+	m_DDSPrimary->Release();
+
+	m_DXInit = FALSE;
 }
 
 /****************************************************************************/
@@ -616,6 +756,19 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 }
 
 /****************************************************************************/
+void BeebWin::SetAMXPosition(unsigned int x, unsigned int y)
+{
+	if (AMXMouseEnabled)
+	{
+		// Scale the window coords to the beeb screen coords
+		AMXTargetX = x * m_AMXXSize * (100 + m_AMXAdjust) / 100 / m_XWinSize;
+		AMXTargetY = y * m_AMXYSize * (100 + m_AMXAdjust) / 100 / m_YWinSize;
+
+		AMXMouseMovement();
+	}
+}
+
+/****************************************************************************/
 LRESULT CALLBACK WndProc(
 				HWND hWnd,		   // window handle
 				UINT message,	   // type of message
@@ -647,7 +800,7 @@ LRESULT CALLBACK WndProc(
 				break;
 
 			hdc = GetDC(hWnd);
-			mainWin->RealizePalette(hdc);					    
+			mainWin->RealizePalette(hdc);
 			ReleaseDC(hWnd,hdc);    
 			return TRUE;							    
 			break;
@@ -695,13 +848,35 @@ LRESULT CALLBACK WndProc(
 
 		case WM_MOUSEMOVE:
 			if (mainWin)
+			{
 				mainWin->ScaleMousestick(LOWORD(lParam), HIWORD(lParam));
+				mainWin->SetAMXPosition(LOWORD(lParam), HIWORD(lParam));
+			}
 			break;
 
 		case WM_LBUTTONDOWN:
+			if (mainWin)
+				mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) ? TRUE : FALSE);
+			AMXButtons |= AMX_LEFT_BUTTON;
+			break;
 		case WM_LBUTTONUP:
 			if (mainWin)
 				mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) ? TRUE : FALSE);
+			AMXButtons &= ~AMX_LEFT_BUTTON;
+			break;
+
+		case WM_MBUTTONDOWN:
+			AMXButtons |= AMX_MIDDLE_BUTTON;
+			break;
+		case WM_MBUTTONUP:
+			AMXButtons &= ~AMX_MIDDLE_BUTTON;
+			break;
+
+		case WM_RBUTTONDOWN:
+			AMXButtons |= AMX_RIGHT_BUTTON;
+			break;
+		case WM_RBUTTONUP:
+			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
 		case WM_DESTROY:  // message: window being destroyed
@@ -737,18 +912,73 @@ int BeebWin::StartOfFrame(void)
 /****************************************************************************/
 void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 {
+	WINDOWPLACEMENT wndpl;
+	HRESULT ddrval;
+	HDC hdc;
+
 	++m_ScreenRefreshCount;
 
-	if (m_MenuIdWinSize == IDM_640X256)
+	if (m_DXInit == FALSE)
+		return;
+
+	wndpl.length = sizeof(WINDOWPLACEMENT);
+	if (GetWindowPlacement(m_hWnd, &wndpl))
 	{
-		BitBlt(hDC, 0, starty, 640, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
+		if (wndpl.showCmd == SW_SHOWMINIMIZED)
+			return;
 	}
-	else
+
+	// Blit the beeb bitbap onto the secondary buffer
+	ddrval = m_DDS2One->GetDC(&hdc);
+	if (ddrval == DDERR_SURFACELOST)
 	{
-		int win_starty = starty * m_YWinSize / 256;
-		int win_nlines = nlines * m_YWinSize / 256;
-		StretchBlt(m_hDC, 0, win_starty, m_XWinSize, win_nlines,
-				m_hDCBitmap, 0, starty, 640, nlines, SRCCOPY);
+		ddrval = m_DDS2One->Restore();
+		if (ddrval == DD_OK)
+			ddrval = m_DDS2One->GetDC(&hdc);
+	}
+	if (ddrval == DD_OK)
+	{
+		BitBlt(hdc, 0, starty, 640, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
+
+		if (m_ShowSpeedAndFPS && m_MenuIdWinSize == IDM_FULLSCREEN)
+		{
+			char fps[50];
+			sprintf(fps, "%2.2f %2.2f", m_RelativeSpeed, m_FramesPerSecond);
+			SetBkMode(hdc,TRANSPARENT);
+			SetTextColor(hdc,0x808080);
+			TextOut(hdc,560,240,fps,strlen(fps));
+		}
+
+		m_DDS2One->ReleaseDC(hdc);
+
+		// Work out where on screen to blit image
+		RECT destRect;
+		RECT srcRect;
+		POINT pt;
+		GetClientRect( m_hWnd, &destRect );
+		pt.x = pt.y = 0;
+		ClientToScreen( m_hWnd, &pt );
+		OffsetRect(&destRect, pt.x, pt.y);
+
+		// Blit the whole of the secondary buffer onto the screen
+		srcRect.left = 0;
+		srcRect.top = 0;
+		srcRect.right = 640;
+		srcRect.bottom = 256;
+		ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+		if (ddrval == DDERR_SURFACELOST)
+		{
+			ddrval = m_DDS2Primary->Restore();
+			if (ddrval == DD_OK)
+				ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+		}
+	}
+
+	if (ddrval != DD_OK && ddrval != DDERR_WASSTILLDRAWING)
+	{
+		char  errstr[200];
+		sprintf(errstr,"DirectX failure while updating screen\nFailure code %X",ddrval);
+		MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 	}
 }
 
@@ -775,83 +1005,91 @@ BOOL BeebWin::UpdateTiming(void)
 	{
 		/* Only update timings every second */
 		TickCount = GetTickCount();
-		if (TickCount >= LastTickCount + 1000)
+		Ticks = TickCount - LastTickCount;
+
+		/* Don't do anything if this is the first call after
+			a long pause due to menu commands. */
+		if (Ticks >= 1500)
 		{
-			Ticks = TickCount - LastTickCount;
-
-			/* Limit the number ticks otherwise timing gets messed up after a
-				long pause due to menu commands. */
-			if (Ticks > 1500)
-				Ticks = 1500;
-
-			if ((unsigned long)TotalCycles < LastTotalCycles)
-			{
-				/* Wrap around in cycle count */
-				Cycles = TotalCycles + (CycleCountTMax - LastTotalCycles);
-			}
-			else
-			{	
-				Cycles = TotalCycles - LastTotalCycles;
-			}
-
-			/* Ticks are in ms, Cycles are in 0.5 us (beeb runs at 2MHz) */
-			m_RelativeSpeed = (Cycles / 2000.0) / Ticks;
-			m_FramesPerSecond += (m_ScreenRefreshCount * 1000.0) / Ticks;
-			m_FramesPerSecond /= 2.0;
-			m_ScreenRefreshCount = 0;
-
-			AdjustedRelativeSpeed = m_RelativeSpeed + 1.0 - m_RealTimeTarget;
-			FrameUpdateIncrement *= AdjustedRelativeSpeed * AdjustedRelativeSpeed;
-			if (FrameUpdateIncrement < 0.05)
-				FrameUpdateIncrement = 0.05;
-
-			DisplayTiming();
-
 			LastTotalCycles = TotalCycles;
 			LastTickCount = TickCount;
 		}
-
-		if (m_FPSTarget == 0)
+		else
 		{
-			/* One of the real time speeds required */
-			if (FrameUpdateIncrement > 1.0)
+			if (Ticks >= 1000)
 			{
-				/* Sleep for a bit */
-				if (TickCount >= LastSleepCount + 200)
+				if ((unsigned long)TotalCycles < LastTotalCycles)
 				{
-					if (FrameUpdateIncrement > 201.0)
-						Sleep(200);
-					else
-						Sleep((long)(FrameUpdateIncrement - 1.0));
-					LastSleepCount = TickCount;
+					/* Wrap around in cycle count */
+					Cycles = TotalCycles + (CycleCountTMax - LastTotalCycles);
 				}
-				UpdateScreen = TRUE;
+				else
+				{	
+					Cycles = TotalCycles - LastTotalCycles;
+				}
+
+				/* Ticks are in ms, Cycles are in 0.5 us (beeb runs at 2MHz) */
+				m_RelativeSpeed = (Cycles / 2000.0) / Ticks;
+				m_FramesPerSecond += (m_ScreenRefreshCount * 1000.0) / Ticks;
+				m_FramesPerSecond /= 2.0;
+				m_ScreenRefreshCount = 0;
+
+				if (m_FPSTarget == 0)
+				{
+					AdjustedRelativeSpeed = m_RelativeSpeed + 1.0 - m_RealTimeTarget;
+					FrameUpdateIncrement *= AdjustedRelativeSpeed * AdjustedRelativeSpeed;
+					if (FrameUpdateIncrement < 0.05)
+						FrameUpdateIncrement = 0.05;
+				}
+
+				DisplayTiming();
+
+				LastTotalCycles = TotalCycles;
+				LastTickCount = TickCount;
+			}
+
+			if (m_FPSTarget == 0)
+			{
+				/* One of the real time speeds required */
+				if (FrameUpdateIncrement > 1.0)
+				{
+					/* Sleep for a bit */
+					if (TickCount >= LastSleepCount + 200)
+					{
+						if (FrameUpdateIncrement > 201.0)
+							Sleep(200);
+						else
+							Sleep((long)(FrameUpdateIncrement - 1.0));
+						LastSleepCount = TickCount;
+					}
+					UpdateScreen = TRUE;
+				}
+				else
+				{
+					FrameUpdateTotal += FrameUpdateIncrement;
+					if (FrameUpdateTotal >= 1.0)
+					{
+						UpdateScreen = TRUE;
+						FrameUpdateTotal -= 1.0;
+					}
+					else
+					{
+						UpdateScreen = FALSE;
+					}
+				}
 			}
 			else
 			{
-				FrameUpdateTotal += FrameUpdateIncrement;
-				if (FrameUpdateTotal >= 1.0)
+				/* Fast as possible with a certain frame rate */
+				if (TickCount >= LastFPSCount + (1000 / m_FPSTarget))
 				{
 					UpdateScreen = TRUE;
-					FrameUpdateTotal -= 1.0;
+					LastFPSCount = TickCount;
 				}
 				else
 				{
 					UpdateScreen = FALSE;
 				}
-			}
-		}
-		else
-		{
-			/* Fast as possible with a certain frame rate */
-			if (TickCount >= LastFPSCount + (1000 / m_FPSTarget))
-			{
-				UpdateScreen = TRUE;
-				LastFPSCount = TickCount;
-			}
-			else
-			{
-				UpdateScreen = FALSE;
 			}
 		}
 	}
@@ -862,7 +1100,7 @@ BOOL BeebWin::UpdateTiming(void)
 /****************************************************************************/
 void BeebWin::DisplayTiming(void)
 {
-	if (m_ShowSpeedAndFPS)
+	if (m_ShowSpeedAndFPS && m_MenuIdWinSize != IDM_FULLSCREEN)
 	{
 		sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2.2f",
 				WindowTitle, m_RelativeSpeed, m_FramesPerSecond);
@@ -914,6 +1152,11 @@ void BeebWin::TranslateWindowSize(void)
 	case IDM_1024X512:
 		m_XWinSize = 1024;
 		m_YWinSize = 512;
+		break;
+
+	case IDM_FULLSCREEN:
+		m_XWinSize = 640;
+		m_YWinSize = 480 - GetSystemMetrics(SM_CYMENUSIZE);
 		break;
 	}
 }
@@ -1248,13 +1491,16 @@ void BeebWin::SavePreferences()
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE,
 			CfgValue, CFG_FILE_NAME);
 
-	GetWindowRect(m_hWnd, &wndrect);
-	sprintf(CfgValue, "%d", wndrect.left);
-	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_XPOS,
-			CfgValue, CFG_FILE_NAME);
-	sprintf(CfgValue, "%d", wndrect.top);
-	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_YPOS,
-			CfgValue, CFG_FILE_NAME);
+	if (m_MenuIdWinSize != IDM_FULLSCREEN)
+	{
+		GetWindowRect(m_hWnd, &wndrect);
+		sprintf(CfgValue, "%d", wndrect.left);
+		WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_XPOS,
+				CfgValue, CFG_FILE_NAME);
+		sprintf(CfgValue, "%d", wndrect.top);
+		WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_YPOS,
+				CfgValue, CFG_FILE_NAME);
+	}
 
 	sprintf(CfgValue, "%d", m_ShowSpeedAndFPS);
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_SHOW_FPS,
@@ -1284,6 +1530,18 @@ void BeebWin::SavePreferences()
 	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS,
 			CfgValue, CFG_FILE_NAME);
 
+	sprintf(CfgValue, "%d", AMXMouseEnabled);
+	WritePrivateProfileString(CFG_AMX_SECTION, CFG_AMX_ENABLED,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_MenuIdAMXSize);
+	WritePrivateProfileString(CFG_AMX_SECTION, CFG_AMX_SIZE,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_MenuIdAMXAdjust);
+	WritePrivateProfileString(CFG_AMX_SECTION, CFG_AMX_ADJUST,
+			CfgValue, CFG_FILE_NAME);
+
 	for (int key=0; key<256; ++key)
 	{
 		if (UserKeymap[key][0] != 0 || UserKeymap[key][1] != 0)
@@ -1297,6 +1555,106 @@ void BeebWin::SavePreferences()
 }
 
 /****************************************************************************/
+void BeebWin::SetWindowAttributes(int oldSize)
+{
+	HRESULT ddrval;
+	RECT wndrect;
+	long style;
+
+	if (m_MenuIdWinSize == IDM_FULLSCREEN)
+	{
+		GetWindowRect(m_hWnd, &wndrect);
+		m_XWinPos = wndrect.left;
+		m_YWinPos = wndrect.top;
+
+		style = GetWindowLong(m_hWnd, GWL_STYLE);
+		style &= ~(WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX);
+		style |= WS_POPUP;
+		SetWindowLong(m_hWnd, GWL_STYLE, style);
+
+		ResetSurfaces();
+		ddrval = InitSurfaces();
+		if( ddrval != DD_OK )
+		{
+			char  errstr[200];
+			sprintf(errstr,"DirectX failure changing screen size\nFailure code %X",ddrval);
+			MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		}
+	}
+	else
+	{
+		ResetSurfaces();
+		ddrval = InitSurfaces();
+		if( ddrval != DD_OK )
+		{
+			char  errstr[200];
+			sprintf(errstr,"DirectX failure changing screen size\nFailure code %X",ddrval);
+			MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		}
+
+		style = GetWindowLong(m_hWnd, GWL_STYLE);
+		style &= ~WS_POPUP;
+		style |= WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+		SetWindowLong(m_hWnd, GWL_STYLE, style);
+
+		SetWindowPos(m_hWnd, HWND_TOP, m_XWinPos, m_YWinPos,
+			m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
+			m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
+				+ GetSystemMetrics(SM_CYMENUSIZE) * (m_MenuIdWinSize == IDM_160X128 ? 2:1)
+				+ GetSystemMetrics(SM_CYCAPTION)
+				+ 1,
+				oldSize != IDM_FULLSCREEN ? SWP_NOMOVE : 0);
+	}
+}
+
+/****************************************************************************/
+void BeebWin::TranslateAMX(void)
+{
+	switch (m_MenuIdAMXSize)
+	{
+	case IDM_AMX_160X256:
+		m_AMXXSize = 160;
+		m_AMXYSize = 256;
+		break;
+	default:
+	case IDM_AMX_320X256:
+		m_AMXXSize = 320;
+		m_AMXYSize = 256;
+		break;
+	case IDM_AMX_640X256:
+		m_AMXXSize = 640;
+		m_AMXYSize = 256;
+		break;
+	}
+
+	switch (m_MenuIdAMXAdjust)
+	{
+	case 0:
+		m_AMXAdjust = 0;
+		break;
+	case IDM_AMX_ADJUSTP50:
+		m_AMXAdjust = 50;
+		break;
+	default:
+	case IDM_AMX_ADJUSTP30:
+		m_AMXAdjust = 30;
+		break;
+	case IDM_AMX_ADJUSTP10:
+		m_AMXAdjust = 10;
+		break;
+	case IDM_AMX_ADJUSTM10:
+		m_AMXAdjust = -10;
+		break;
+	case IDM_AMX_ADJUSTM30:
+		m_AMXAdjust = -30;
+		break;
+	case IDM_AMX_ADJUSTM50:
+		m_AMXAdjust = -50;
+		break;
+	}
+}
+
+/***************************************************************************/
 void BeebWin::HandleCommand(int MenuId)
 {
 	HMENU hMenu = GetMenu(m_hWnd);
@@ -1352,20 +1710,15 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_800X600:
 	case IDM_1024X768:
 	case IDM_1024X512:
+	case IDM_FULLSCREEN:
 		if (MenuId != m_MenuIdWinSize)
 		{
+			int oldSize = m_MenuIdWinSize;
 			CheckMenuItem(hMenu, m_MenuIdWinSize, MF_UNCHECKED);
 			m_MenuIdWinSize = MenuId;
 			CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
 			TranslateWindowSize();
-
-			SetWindowPos(m_hWnd, HWND_TOP, 0,0,
-					m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
-					m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
-						+ GetSystemMetrics(SM_CYMENUSIZE) * (MenuId == IDM_160X128 ? 2:1)
-						+ GetSystemMetrics(SM_CYCAPTION)
-						+ 1,
-					SWP_NOMOVE);
+			SetWindowAttributes(oldSize);
    		}
 		break;
 
@@ -1575,5 +1928,67 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_SAVE_PREFS:
 		SavePreferences();
 		break;
+
+	case IDM_AMXONOFF:
+		if (AMXMouseEnabled)
+		{
+			CheckMenuItem(hMenu, IDM_AMXONOFF, MF_UNCHECKED);
+			AMXMouseEnabled = FALSE;
+		}
+		else
+		{
+			CheckMenuItem(hMenu, IDM_AMXONOFF, MF_CHECKED);
+			AMXMouseEnabled = TRUE;
+		}
+		break;
+
+	case IDM_AMX_LRFORMIDDLE:
+		if (AMXLRForMiddle)
+		{
+			CheckMenuItem(hMenu, IDM_AMX_LRFORMIDDLE, MF_UNCHECKED);
+			AMXLRForMiddle = FALSE;
+		}
+		else
+		{
+			CheckMenuItem(hMenu, IDM_AMX_LRFORMIDDLE, MF_CHECKED);
+			AMXLRForMiddle = TRUE;
+		}
+		break;
+
+	case IDM_AMX_160X256:
+	case IDM_AMX_320X256:
+	case IDM_AMX_640X256:
+		if (MenuId != m_MenuIdAMXSize)
+		{
+			CheckMenuItem(hMenu, m_MenuIdAMXSize, MF_UNCHECKED);
+			m_MenuIdAMXSize = MenuId;
+			CheckMenuItem(hMenu, m_MenuIdAMXSize, MF_CHECKED);
+   		}
+		TranslateAMX();
+		break;
+
+	case IDM_AMX_ADJUSTP50:
+	case IDM_AMX_ADJUSTP30:
+	case IDM_AMX_ADJUSTP10:
+	case IDM_AMX_ADJUSTM10:
+	case IDM_AMX_ADJUSTM30:
+	case IDM_AMX_ADJUSTM50:
+		if (m_MenuIdAMXAdjust != 0)
+		{
+			CheckMenuItem(hMenu, m_MenuIdAMXAdjust, MF_UNCHECKED);
+		}
+
+		if (MenuId != m_MenuIdAMXAdjust)
+		{
+			m_MenuIdAMXAdjust = MenuId;
+			CheckMenuItem(hMenu, m_MenuIdAMXAdjust, MF_CHECKED);
+   		}
+		else
+		{
+			m_MenuIdAMXAdjust = 0;
+		}
+		TranslateAMX();
+		break;
+
 	}
 }
