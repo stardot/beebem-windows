@@ -1,0 +1,147 @@
+[PackageForTheWeb]
+Version=2.0
+
+[Options]
+Title=BeebEm
+Company=BeebEm
+CompanyEMail=
+BasePath=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images
+ImportPath=C:\Documents and Settings\Mike\My Documents\tmp\BeebEm\BeebEm150\Src\InstallShield\BeebEm\Media\Default
+UseRTF=0
+SaveFiles=0
+SubFolders=1
+ApplicationName=BeebEm
+Description=
+Comments=
+Notice=
+Version=1.6
+OutputSpec=C:\BeebEm160.exe
+GUIDs=0
+Type=2
+Compress=1
+Sign=0
+Transfer=0
+Files=15
+
+[Engine]
+Setup=disk1\SETUP.EXE
+
+[Runtime]
+Welcome=
+License=
+Prompt=
+Password=
+DefaultPath=
+Language=English
+WindowStyle=0
+Options=18
+Execute=disk1\SETUP.EXE
+CmdLine=/SMS
+AllowChangeTarget=0
+AllowDelete=0
+LaunchEXE=1
+
+[Extension]
+Server=
+Calls=0
+
+[Code Signing]
+CompanyURL=
+SpecFile=
+KeyFile=
+Method=0
+
+; ~~~~~~~~~~ File Section ~~~~~~~~~~~
+[SubFolders]
+Count=1
+Folder1=disk1
+
+[File 1]
+Name=DATA.TAG
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 2]
+Name=data1.cab
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=2097153
+Disk=0
+
+[File 3]
+Name=lang.dat
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 4]
+Name=layout.bin
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 5]
+Name=os.dat
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 6]
+Name=setup.bmp
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 7]
+Name=SETUP.EXE
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=589825
+Disk=0
+
+[File 8]
+Name=SETUP.INI
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 9]
+Name=Setup.Ins
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 10]
+Name=setup.lid
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=1
+Disk=0
+
+[File 11]
+Name=_INST32I.EX_
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=524289
+Disk=0
+
+[File 12]
+Name=_ISDEL.EXE
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=589825
+Disk=0
+
+[File 13]
+Name=_setup.dll
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=655377
+Disk=0
+
+[File 14]
+Name=_sys1.cab
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=2097153
+Disk=0
+
+[File 15]
+Name=_user1.cab
+Path=C:\BeebEm\Src\InstallShield\BeebEm\Media\Default\Disk Images\disk1\
+Flags=2097153
+Disk=0

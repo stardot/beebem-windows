@@ -1,0 +1,80 @@
+Notes On Computech Integra-B
+----------------------------
+
+In order to use the additional RTC, Shadow, Private & Sideways RAM which the
+Integra-B offers, the IBOS ROM must first be loaded. The ROM should be
+placed in the beebfile\bbcint dirctory and will be loaded as the highest
+priority ROM, bank 15. ROM bank 14 will be loaded with BASIC, and all other
+ROMS will be loaded into ROM banks 13 downwards.  BeebEm comes
+pre-configured with this ROM setup.
+
+Integra-B comes configured with 4 16K Shadow RAM banks as standard (banks
+4,5,6 & 7), although this can be changed if required. If any ROMS are loaded
+into these banks and the ROM write protect is removed, then the contents of
+these ROMS can be overwritten.
+
+The emulators RTC will read the correct time from the PCs internal clock,
+but the emulator has not been configured to alter the PCs internal clock
+when attempting to write the time to the RTC.
+
+When the IntegraB mode is selected following will be seen:
+
+Computech INTEGRA-B 128K
+Watford DFS (If loaded)
+BASIC
+>
+
+BeebEm will default the IntegraB to select language 14 and OSMODE 4.  Typing
+'*HELP' will give a list of commands which are available under IBOS.
+
+There are a total of 6 OSMODEs available:
+
+	0	standard BBC model B without Shadow Ram
+	1	standard BBC model B with Shadow Ram
+	2	BBC models B+ and B+ 128 (Rom ids W..Z are 12..15)
+	3	BBC Master 128
+	4	BBC models B+ and B+ 128
+	5	BBC Master Compact
+
+There are two registers to support memory allocations under INTEGRA OS
+control. These are duplicated to facilitate bit changing and return to a
+prior state following an interrupt service routine. The registers and their
+locations are as follows:
+
+	ROMSEL	at $FE30	ROM select latch
+	ROMID	at $00F4	Ram copy of ROMSEL
+	RAMSEL	at $FE34	RAM select latch
+	RAMID	at $037F	Ram copy of RAMSEL
+
+Internal organisation of there registers is:
+
+ROMSEL & ROMID
+	Bits 0,1,2,3	ROMNUM	Sideways ROM/RAM select bits
+	Bits 4,5		Not used
+	Bit 6		PRVEN	Private RAM enable
+	Bit 7		MEMSEL	Shadow/Main RAM toggle
+
+RAMSEL & RAMID
+	Bits 0,1	AUX0,1	Not used but must be preserved
+	Bits 2,3		Not used
+	Bit 4		PRVS1	Private RAM 8K area select
+				(&9000-&AFFF)
+	Bit 5		PRVS4	Private RAM 4K area select
+				(&8000-&8FFF)
+	Bit 6		PRVS8	Private RAM 1K area select
+				(&8000-&83FF)
+	Bit 7		SHEN	Shadow Ram enable bit
+
+PRVEN and PRVS1,4 & 8 are used together to overlay sections sections of the
+currently selected Sideways ROM or RAM with private RAM. This means that
+Software in Sideways ROM or RAM can have direct access to the private RAM.
+
+SHEN and MEMSEL are used together to determine whether Main/Video memory or
+the Shadow Ram is paged into the area &3000 to &7FFF:
+
+	Control Bits		Memory area selected
+       SHEN    MEMSEL		 &3000-&7FFF
+
+	0	 X		 Main/Video Memory
+	1	 0		 Shadow Memory
+	1	 1		 Main/Video Memory

@@ -1,0 +1,578 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "beebemrc.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_USERKYBRD DIALOGEX 0, 0, 334, 122
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_NOPARENTNOTIFY
+CAPTION "User Defined Keyboard mapping"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,145,101,50,14
+    CONTROL         "TAB",IDK_TAB,"Button",BS_OWNERDRAW | WS_TABSTOP,28,33,
+                    25,14
+    CONTROL         "ESC",IDK_ESC,"Button",BS_OWNERDRAW | WS_TABSTOP,28,19,
+                    19,14
+    CONTROL         "1 !",IDK_1,"Button",BS_OWNERDRAW | WS_TABSTOP,47,19,17,
+                    14
+    CONTROL         "2 """,IDK_2,"Button",BS_OWNERDRAW | WS_TABSTOP,64,19,17,
+                    14
+    CONTROL         "3 #",IDK_3,"Button",BS_OWNERDRAW | WS_TABSTOP,81,19,17,
+                    14
+    CONTROL         "4 $",IDK_4,"Button",BS_OWNERDRAW | WS_TABSTOP,99,19,17,
+                    14
+    CONTROL         "5 %",IDK_5,"Button",BS_OWNERDRAW | WS_TABSTOP,117,19,17,
+                    14
+    CONTROL         "6 &",IDK_6,"Button",BS_OWNERDRAW | WS_TABSTOP,135,19,17,
+                    14
+    CONTROL         "7 '",IDK_7,"Button",BS_OWNERDRAW | WS_TABSTOP,153,19,17,
+                    14
+    CONTROL         "8 (",IDK_8,"Button",BS_OWNERDRAW | WS_TABSTOP,171,19,17,
+                    14
+    CONTROL         "9 )",IDK_9,"Button",BS_OWNERDRAW | WS_TABSTOP,189,19,17,
+                    14
+    CONTROL         "0",IDK_0,"Button",BS_OWNERDRAW | WS_TABSTOP,207,19,17,
+                    14
+    CONTROL         "Q",IDK_Q,"Button",BS_OWNERDRAW | WS_TABSTOP,53,33,17,14
+    CONTROL         "W",IDK_W,"Button",BS_OWNERDRAW | WS_TABSTOP,71,33,17,14
+    CONTROL         "E",IDK_E,"Button",BS_OWNERDRAW | WS_TABSTOP,89,33,17,14
+    CONTROL         "R",IDK_R,"Button",BS_OWNERDRAW | WS_TABSTOP,107,33,17,
+                    14
+    CONTROL         "T",IDK_T,"Button",BS_OWNERDRAW | WS_TABSTOP,125,33,17,
+                    14
+    CONTROL         "Y",IDK_Y,"Button",BS_OWNERDRAW | WS_TABSTOP,143,33,17,
+                    14
+    CONTROL         "U",IDK_U,"Button",BS_OWNERDRAW | WS_TABSTOP,161,33,17,
+                    14
+    CONTROL         "I",IDK_I,"Button",BS_OWNERDRAW | WS_TABSTOP,179,33,17,
+                    14
+    CONTROL         "O",IDK_O,"Button",BS_OWNERDRAW | WS_TABSTOP,197,33,17,
+                    14
+    CONTROL         "P",IDK_P,"Button",BS_OWNERDRAW | WS_TABSTOP,215,33,17,
+                    14
+    CONTROL         "CAPS",IDK_CAPS,"Button",BS_OWNERDRAW | WS_TABSTOP,10,48,
+                    25,14
+    CONTROL         "A",IDK_A,"Button",BS_OWNERDRAW | WS_TABSTOP,58,48,17,14
+    CONTROL         "S",IDK_S,"Button",BS_OWNERDRAW | WS_TABSTOP,76,48,17,14
+    CONTROL         "D",IDK_D,"Button",BS_OWNERDRAW | WS_TABSTOP,94,48,17,14
+    CONTROL         "F",IDK_F,"Button",BS_OWNERDRAW | WS_TABSTOP,112,48,17,
+                    14
+    CONTROL         "G",IDK_G,"Button",BS_OWNERDRAW | WS_TABSTOP,130,48,17,
+                    14
+    CONTROL         "H",IDK_H,"Button",BS_OWNERDRAW | WS_TABSTOP,148,48,17,
+                    14
+    CONTROL         "J",IDK_J,"Button",BS_OWNERDRAW | WS_TABSTOP,166,48,17,
+                    14
+    CONTROL         "K",IDK_K,"Button",BS_OWNERDRAW | WS_TABSTOP,184,48,17,
+                    14
+    CONTROL         "L",IDK_L,"Button",BS_OWNERDRAW | WS_TABSTOP,202,48,17,
+                    14
+    CONTROL         "CTRL",IDK_CTRL,"Button",BS_OWNERDRAW | WS_TABSTOP,35,48,
+                    22,14
+    CONTROL         "Z",IDK_Z,"Button",BS_OWNERDRAW | WS_TABSTOP,65,62,17,14
+    CONTROL         "X",IDK_X,"Button",BS_OWNERDRAW | WS_TABSTOP,83,62,17,14
+    CONTROL         "C",IDK_C,"Button",BS_OWNERDRAW | WS_TABSTOP,101,62,17,
+                    14
+    CONTROL         "V",IDK_V,"Button",BS_OWNERDRAW | WS_TABSTOP,119,62,17,
+                    14
+    CONTROL         "B",IDK_B,"Button",BS_OWNERDRAW | WS_TABSTOP,137,62,17,
+                    14
+    CONTROL         "N",IDK_N,"Button",BS_OWNERDRAW | WS_TABSTOP,155,62,17,
+                    14
+    CONTROL         "M",IDK_M,"Button",BS_OWNERDRAW | WS_TABSTOP,173,62,17,
+                    14
+    CONTROL         ", <",IDK_COMMA,"Button",BS_OWNERDRAW | WS_TABSTOP,191,
+                    62,17,14
+    CONTROL         ". >",IDK_DOT,"Button",BS_OWNERDRAW | WS_TABSTOP,209,62,
+                    17,14
+    CONTROL         "/ ?",IDK_FWDSLASH,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    227,62,17,14
+    CONTROL         "SHIFT",IDK_SHIFT_L,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    39,62,26,14
+    CONTROL         "LFT",IDK_LEFT,"Button",BS_OWNERDRAW | WS_TABSTOP,279,19,
+                    17,14
+    CONTROL         "RGT",IDK_RIGHT,"Button",BS_OWNERDRAW | WS_TABSTOP,297,
+                    19,19,14
+    CONTROL         "RETURN",IDK_RETURN,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    274,48,46,14
+    CONTROL         ": *",IDK_STAR,"Button",BS_OWNERDRAW | WS_TABSTOP,238,48,
+                    17,14
+    CONTROL         "DEL",IDK_DEL,"Button",BS_OWNERDRAW | WS_TABSTOP,271,62,
+                    20,14
+    CONTROL         "COPY",IDK_COPY,"Button",BS_OWNERDRAW | WS_TABSTOP,292,
+                    62,22,14
+    CONTROL         "UP",IDK_UP,"Button",BS_OWNERDRAW | WS_TABSTOP,287,33,17,
+                    14
+    CONTROL         "DN",IDK_DOWN,"Button",BS_OWNERDRAW | WS_TABSTOP,305,33,
+                    17,14
+    CONTROL         "f0",IDK_F0,"Button",BS_OWNERDRAW | WS_TABSTOP,57,4,17,
+                    14
+    CONTROL         "f1",IDK_F1,"Button",BS_OWNERDRAW | WS_TABSTOP,75,4,17,
+                    14
+    CONTROL         "f2",IDK_F2,"Button",BS_OWNERDRAW | WS_TABSTOP,93,4,17,
+                    14
+    CONTROL         "f3",IDK_F3,"Button",BS_OWNERDRAW | WS_TABSTOP,111,4,17,
+                    14
+    CONTROL         "f4",IDK_F4,"Button",BS_OWNERDRAW | WS_TABSTOP,129,4,17,
+                    14
+    CONTROL         "f5",IDK_F5,"Button",BS_OWNERDRAW | WS_TABSTOP,147,4,17,
+                    14
+    CONTROL         "f6",IDK_F6,"Button",BS_OWNERDRAW | WS_TABSTOP,165,4,17,
+                    14
+    CONTROL         "f7",IDK_F7,"Button",BS_OWNERDRAW | WS_TABSTOP,183,4,17,
+                    14
+    CONTROL         "f8",IDK_F8,"Button",BS_OWNERDRAW | WS_TABSTOP,201,4,17,
+                    14
+    CONTROL         "f9",IDK_F9,"Button",BS_OWNERDRAW | WS_TABSTOP,219,4,17,
+                    14
+    CONTROL         "",IDK_SPACE,"Button",BS_OWNERDRAW | WS_TABSTOP,80,77,
+                    145,14
+    CONTROL         "BREAK",IDK_BREAK,"Button",BS_OWNERDRAW | WS_TABSTOP,237,
+                    4,31,14
+    CONTROL         "; +",IDK_SEMI_COLON,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    220,48,17,14
+    CONTROL         "- =",IDK_EQUALS,"Button",BS_OWNERDRAW | WS_TABSTOP,225,
+                    19,17,14
+    CONTROL         "SHIFT",IDK_SHIFT_R,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    245,62,25,14
+    CONTROL         "@",IDK_AT,"Button",BS_OWNERDRAW | WS_TABSTOP,233,33,17,
+                    14
+    CONTROL         "[ {",IDK_OPEN_SQUARE,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    251,33,17,14
+    CONTROL         "] }",IDK_CLOSE_SQUARE,"Button",BS_OWNERDRAW | 
+                    WS_TABSTOP,256,48,17,14
+    CONTROL         "\\ |",IDK_BACKSLASH,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    261,19,17,14
+    CONTROL         "_ £",IDK_UNDERSCORE,"Button",BS_OWNERDRAW | WS_TABSTOP,
+                    269,33,17,14
+    CONTROL         "^ ~",IDK_CARET,"Button",BS_OWNERDRAW | WS_TABSTOP,243,
+                    19,17,14
+    CONTROL         "SFT LK",IDK_SHIFT_LOCK,"Button",BS_OWNERDRAW | 
+                    WS_TABSTOP,9,62,29,14
+END
+
+IDD_DIALOG1 DIALOG DISCARDABLE  0, 0, 160, 66
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Keyboard Links"
+CLASS "LinksDialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_USERKYBRD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 327
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 116
+    END
+
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 153
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 59
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "BeebEm - BBC Micro Emulator\0"
+            VALUE "CompanyName", "-\0"
+            VALUE "FileDescription", "BeebEm\0"
+            VALUE "FileVersion", "1.6\0"
+            VALUE "InternalName", "BeebEm\0"
+            VALUE "LegalCopyright", "Copyright © 2004\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "BeebEm.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "BeebEm\0"
+            VALUE "ProductVersion", "1.6\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+#endif    // !_MAC
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU MENU DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Run Disc",                   IDM_RUNDISC
+        MENUITEM SEPARATOR
+        MENUITEM "Load Disc &0",                IDM_LOADDISC0
+        MENUITEM "Load Disc &1",                IDM_LOADDISC1
+        MENUITEM SEPARATOR
+        MENUITEM "Load &Tape",                  ID_LOADTAPE
+        MENUITEM SEPARATOR
+        MENUITEM "New Disc 0",                  IDM_NEWDISC0
+        MENUITEM "New Disc 1",                  IDM_NEWDISC1
+        MENUITEM "Write Protect 0",             IDM_WPDISC0
+        MENUITEM "Write Protect 1",             IDM_WPDISC1
+        MENUITEM SEPARATOR
+        MENUITEM "R&eset",                      ID_FILE_RESET
+        MENUITEM "&Load State",                 IDM_LOADSTATE
+        MENUITEM "&Save State",                 IDM_SAVESTATE
+        MENUITEM "&Quick Load",                 IDM_QUICKLOAD
+        MENUITEM "Quick Sa&ve",                 IDM_QUICKSAVE
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "&Comms"
+    BEGIN
+        POPUP "Tape Speed"
+        BEGIN
+            MENUITEM "Fast",                        ID_TAPE_FAST
+            MENUITEM "Medium Fast",                 ID_TAPE_MFAST
+            MENUITEM "Medium Slow",                 ID_TAPE_MSLOW
+            MENUITEM "Normal",                      ID_TAPE_NORMAL
+        END
+        MENUITEM "Rewind &Tape",                ID_REWINDTAPE
+        MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
+        POPUP "Printer &Destination"
+        BEGIN
+            MENUITEM "File:",                       IDM_PRINTER_FILE
+            MENUITEM "LPT1:",                       IDM_PRINTER_LPT1
+            MENUITEM "LPT2:",                       IDM_PRINTER_LPT2
+            MENUITEM "LPT3:",                       IDM_PRINTER_LPT3
+            MENUITEM "LPT4:",                       IDM_PRINTER_LPT4
+        END
+        MENUITEM "RS423 On/Off",                ID_SERIAL
+        POPUP "&RS423 Destination"
+        BEGIN
+            MENUITEM "COM1",                        ID_COM1
+            MENUITEM "COM2",                        ID_COM2
+            MENUITEM "COM3",                        ID_COM3
+            MENUITEM "COM4",                        ID_COM4
+        END
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&DirectDraw On/Off",          IDM_DDRAWONOFF
+        MENUITEM "&Buffer In Video RAM",        IDM_DDINVIDEORAM
+        MENUITEM "32-bit DirectDraw On/Off",    IDM_DD32ONOFF
+        MENUITEM SEPARATOR
+        MENUITEM "&Speed and FPS On/Off",       IDM_SPEEDANDFPS
+        MENUITEM SEPARATOR
+        MENUITEM "&Full Screen",                IDM_FULLSCREEN
+        POPUP "Window Sizes"
+        BEGIN
+            MENUITEM "160x128",                     IDM_160X128
+            MENUITEM "240x192",                     IDM_240X192
+            MENUITEM "320x256",                     IDM_320X256
+            MENUITEM "640x256",                     IDM_640X256
+            MENUITEM "640x512",                     IDM_640X512
+            MENUITEM "800x600",                     IDM_800X600
+            MENUITEM "1024x512",                    IDM_1024X512
+            MENUITEM "1024x768",                    IDM_1024X768
+        END
+        POPUP "DirectDraw Full Screen Modes"
+        BEGIN
+            MENUITEM "640x480",                     ID_VIEW_DD_640X480
+            MENUITEM "1024x768",                    ID_VIEW_DD_1024X768
+            MENUITEM "1280x1024",                   ID_VIEW_DD_1280X1024
+        END
+        MENUITEM SEPARATOR
+        POPUP "Monitor type"
+        BEGIN
+            MENUITEM "RGB",                         ID_MONITOR_RGB
+            MENUITEM "B/W",                         ID_MONITOR_BW
+            MENUITEM "Amber",                       ID_MONITOR_AMBER
+            MENUITEM "Green",                       ID_MONITOR_GREEN
+        END
+        MENUITEM "&Hide Menu",                  ID_HIDEMENU
+        POPUP "&LEDs"
+        BEGIN
+            MENUITEM "&Red Disc LEDs",              ID_RED_LEDS
+            MENUITEM "&Green Disc LEDs",            ID_GREEN_LEDS
+            MENUITEM SEPARATOR
+            MENUITEM "Show &Keyboard LEDs",         ID_SHOW_KBLEDS
+            MENUITEM "Show &Disc LEDs",             ID_SHOW_DISCLEDS
+        END
+    END
+    POPUP "S&peed"
+    BEGIN
+        MENUITEM "&Real Time",                  IDM_REALTIME
+        POPUP "&Fixed Speed"
+        BEGIN
+            MENUITEM "100",                         IDM_FIXEDSPEED100
+            MENUITEM "50",                          IDM_FIXEDSPEED50
+            MENUITEM "10",                          IDM_FIXEDSPEED10
+            MENUITEM "5",                           IDM_FIXEDSPEED5
+            MENUITEM "2",                           IDM_FIXEDSPEED2
+            MENUITEM "1.5",                         IDM_FIXEDSPEED1_5
+            MENUITEM "1.25",                        IDM_FIXEDSPEED1_25
+            MENUITEM "1.1",                         IDM_FIXEDSPEED1_1
+            MENUITEM "0.9",                         IDM_FIXEDSPEED0_9
+            MENUITEM "0.75",                        IDM_FIXEDSPEED0_75
+            MENUITEM "0.5",                         IDM_FIXEDSPEED0_5
+            MENUITEM "0.25",                        IDM_FIXEDSPEED0_25
+            MENUITEM "0.1",                         IDM_FIXEDSPEED0_1
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "50 FPS",                      IDM_50FPS
+        MENUITEM "25 FPS",                      IDM_25FPS
+        MENUITEM "10 FPS",                      IDM_10FPS
+        MENUITEM "5 FPS",                       IDM_5FPS
+        MENUITEM "1 FPS",                       IDM_1FPS
+    END
+    POPUP "&Sound"
+    BEGIN
+        MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
+        MENUITEM SEPARATOR
+        POPUP "Sound &Effects"
+        BEGIN
+            MENUITEM "Cassette &Relay",             ID_SFX_RELAY
+            MENUITEM "&Cassette Input",             ID_TAPESOUND
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "44.1 kHz",                    IDM_44100KHZ
+        MENUITEM "22.05 kHz",                   IDM_22050KHZ
+        MENUITEM "11.025 kHz",                  IDM_11025KHZ
+        MENUITEM SEPARATOR
+        MENUITEM "&Full Volume",                IDM_FULLVOLUME
+        MENUITEM "&High Volume",                IDM_HIGHVOLUME
+        MENUITEM "&Medium Volume",              IDM_MEDIUMVOLUME
+        MENUITEM "&Low Volume",                 IDM_LOWVOLUME
+        MENUITEM SEPARATOR
+        MENUITEM "Use &Primary Buffer",         ID_PBUFF
+        MENUITEM "Part S&amples",               ID_PSAMPLES
+    END
+    POPUP "&AMX"
+    BEGIN
+        MENUITEM "&On/Off",                     IDM_AMXONOFF
+        MENUITEM SEPARATOR
+        MENUITEM "L+R for &Middle",             IDM_AMX_LRFORMIDDLE
+        MENUITEM SEPARATOR
+        MENUITEM "Map to 160x256",              IDM_AMX_160X256
+        MENUITEM "Map to 320x256",              IDM_AMX_320X256
+        MENUITEM "Map to 640x256",              IDM_AMX_640X256
+        MENUITEM SEPARATOR
+        MENUITEM "Adjust +50%",                 IDM_AMX_ADJUSTP50
+        MENUITEM "Adjust +30%",                 IDM_AMX_ADJUSTP30
+        MENUITEM "Adjust +10%",                 IDM_AMX_ADJUSTP10
+        MENUITEM "Adjust -10%",                 IDM_AMX_ADJUSTM10
+        MENUITEM "Adjust -30%",                 IDM_AMX_ADJUSTM30
+        MENUITEM "Adjust -50%",                 IDM_AMX_ADJUSTM50
+    END
+    POPUP "&Options"
+    BEGIN
+        POPUP "&BBC Model"
+        BEGIN
+            MENUITEM "BBC Model &B",                ID_MODELB, CHECKED
+            MENUITEM "BBC Model B + &Integra-B",    ID_MODELBINT
+            MENUITEM "BBC Model B &Plus",           ID_MODELBP
+            MENUITEM "BBC &Master 128",             ID_MASTER128
+        END
+        POPUP "Model B &Floppy Controller"
+        BEGIN
+            MENUITEM "Native &8271",                ID_8271
+            MENUITEM "&Select FDC Board...",        ID_FDC_DLL
+        END
+        POPUP "&Allow ROM writes"
+        BEGIN
+            MENUITEM "Rom &0",                      IDM_ALLOWWRITES_ROM0
+            , CHECKED
+            MENUITEM "Rom &1",                      IDM_ALLOWWRITES_ROM1
+            , CHECKED
+            MENUITEM "Rom &2",                      IDM_ALLOWWRITES_ROM2
+            , CHECKED
+            MENUITEM "Rom &3",                      IDM_ALLOWWRITES_ROM3
+            , CHECKED
+            MENUITEM "Rom &4",                      IDM_ALLOWWRITES_ROM4
+            , CHECKED
+            MENUITEM "Rom &5",                      IDM_ALLOWWRITES_ROM5
+            , CHECKED
+            MENUITEM "Rom &6",                      IDM_ALLOWWRITES_ROM6
+            , CHECKED
+            MENUITEM "Rom &7",                      IDM_ALLOWWRITES_ROM7
+            , CHECKED
+            MENUITEM "Rom &8",                      IDM_ALLOWWRITES_ROM8
+            , CHECKED
+            MENUITEM "Rom &9",                      IDM_ALLOWWRITES_ROM9
+            , CHECKED
+            MENUITEM "Rom &A",                      IDM_ALLOWWRITES_ROMA
+            , CHECKED
+            MENUITEM "Rom &B",                      IDM_ALLOWWRITES_ROMB
+            , CHECKED
+            MENUITEM "Rom &C",                      IDM_ALLOWWRITES_ROMC
+            , CHECKED
+            MENUITEM "Rom &D",                      IDM_ALLOWWRITES_ROMD
+            , CHECKED
+            MENUITEM "Rom &E",                      IDM_ALLOWWRITES_ROME
+            , CHECKED
+            MENUITEM "Rom &F",                      IDM_ALLOWWRITES_ROMF
+            , CHECKED
+        END
+        MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
+        MENUITEM SEPARATOR
+        MENUITEM "&Joystick",                   IDM_JOYSTICK
+        MENUITEM "&Mousestick",                 IDM_MOUSESTICK
+        MENUITEM SEPARATOR
+        MENUITEM "Freeze when inactive",        IDM_FREEZEINACTIVE
+        MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
+        MENUITEM SEPARATOR
+        MENUITEM "&Define User Keyboard",       IDM_DEFINEKEYMAP
+        MENUITEM SEPARATOR
+        MENUITEM "&User Defined Mapping",       IDM_USERKYBDMAPPING
+        MENUITEM "Default &Keyboard Mapping",   IDM_DEFAULTKYBDMAPPING
+        MENUITEM "&Logical Keyboard Mapping",   IDM_LOGICALKYBDMAPPING
+        MENUITEM SEPARATOR
+        MENUITEM "Map A,S to CAPS,CTRL",        IDM_MAPAS
+        MENUITEM "Map F1-F10 to f0-f9",         IDM_MAPFUNCS
+        MENUITEM SEPARATOR
+        MENUITEM "&Save Preferences",           IDM_SAVE_PREFS
+    END
+    POPUP "Opti&mise"
+    BEGIN
+        POPUP "&Undocumented Instructions"
+        BEGIN
+            MENUITEM "&Documented Only",            ID_DOCONLY
+            MENUITEM "&Common Extras",              ID_EXTRAS
+            MENUITEM "&Full Set",                   ID_FULLSET
+        END
+        MENUITEM "&Teletext Half Mode",         ID_TSTYLE
+        MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
+        POPUP "&Sound Block Size"
+        BEGIN
+            MENUITEM "&1772 Bytes",                 ID_1773
+            MENUITEM "&441 Bytes",                  ID_443
+        END
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "View &README",                IDM_VIEWREADME
+        MENUITEM "&About BeebEm",               IDM_ABOUT
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "beebemrc.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_BEEBEM              ICON    DISCARDABLE     "BeebEm.ico"
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

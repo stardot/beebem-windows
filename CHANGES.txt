@@ -1,0 +1,284 @@
+Version 0.5
+-----------
+Improved timing - mode 7 bodged to exactly correct cycle count
+Interlace timing accounted for in modes 0-6.
+Interrupt latency added
+fixed window.cc (took out 'virtual' on most functions) - now OK in gcc 2.7.0
+Changed default position of g++ includes to /usr/include/g++
+
+Version 0.6
+-----------
+A few fiddles with the config for linux - now compiles on 2.7.0 with the ELF-GCC
+release; but could cause probs for older releases.
+
+Stated adding sound card.
+
+Version 0.7 (Mike Wyatt)
+-----------
+Added conditional compilation for all the Microsoft Windows code. Should only
+need to maintain one set of source files for both the X and MS Win versions.
+
+Changed sound code so it does not play a sound until both the high and low
+bytes of the frequency have been set (eliminates spurious high pitch beeps).
+
+Video module now generates a cursor.
+
+Implemented a load of undocumented 6502 instructions.
+
+Directed read and writes to the 16 bytes above each VIA back down to
+the VIAs (Castle Quest uses the higher addresses).
+
+Added the atodconv module to provide Analogue to Digital support.  Added the
+beebstate module to provide Save and Restore of Beeb State files.  These two
+new modules should compile under UNIX but there is currently no code in the
+X Windows version to use them.
+
+MS Windows version now provides:
+  Load of menus to control everything
+  Dynamic disc selection
+  Beeb State save and restore
+  Various Window sizes
+  Real time and fixed frame rate modes
+  Sound support
+  Joystick support
+  Mousestick support
+  ROM write protection
+  Multiple ROM initialisation
+  Games keyboard mapping
+  Pentium optimised version
+
+Version 0.71 (Mike Wyatt)
+------------
+Changed VIA timer latches initial value to 0xffff (Castle Quest now works).
+
+Fixed BCD addition and substraction and prevented mode 7 code from dividing
+by zero (Exile now works).
+
+Changed VIA code so the data direction registers can be read (Codename Droid
+now works).
+
+Fixed cursor colour in UNIX version.
+
+Added sideways RAM support (so Exile can be played full screen).
+
+
+Version 0.8 (Mike Wyatt & Laurie Whiffen)
+-----------
+Added disc write and format capability.
+
+Changed disc load code to give a warning if disc image loaded looks like its
+been loaded using wrong type (single/doubled sided).
+
+MS Windows version only:
+  Fixed so all key presses are released when windows looses focus.
+  Rom slots can be individually changed between ROM and RAM using the menus.
+  Added user definable keyboard mapping options.
+  User preferences (including the keyboard mapping) can be saved in an INI
+    file using a new menu option.
+  Added menu options for write protection and creating new disc images.
+
+
+Version 0.9 (Mike Wyatt)
+-----------
+Added AMX mouse support.
+
+Converted to use DirectX and added a full screen option.
+
+Fixed a few bugs (thanks to Piers Haken for pointing out a bug in the video
+code).
+
+
+Version 1.0 (Mike Wyatt)
+-----------
+Switchable DirectDraw and DirectSound.
+Fixed Windows message boxes when using DirectDraw.
+Printer support.
+Improved ROM size checking.
+Improved speed regulation code.
+
+Version 1.01 (Mike Wyatt)
+------------
+Fixes the problem with BeebEm hanging after about 35 minutes. 
+
+Version 1.02 (Mike Wyatt)
+------------
+Added Robert's Freeze when Inactive option.
+
+Version 1.03 (Robert Schmidt)
+------------
+Windows update only:
+Monochrome monitor/B&W TV emulation
+
+Version 1.04 (Robert Schmidt)
+------------
+Windows update only:
+* Remember last used directories for disc images and emulator states.
+* Dialog for opening disc images has 3 new filters:
+	- Automatic *.ssd/*.dsd detection
+	- *.ssd only
+	- *.dsd only
+* Support for higher DirectDraw resolutions, through new sub menu.
+  (1280x1024 makes aliasing effects unnoticable, but requires a fast
+  DirectDraw implementation.)
+* Added option to use 32-bit DirectDraw modes in full screen, as opposed
+  to 8-bit. (In a window, DirectDraw uses the desktop color depth.)
+  When combined with "Buffer in video RAM", the result is a *superior*, 
+  interpolated display!  Scaling artifacts "disappear" at any resolution.
+* Made "Full Screen" a toggle, not a standalone mode/"window size".
+* Fixed a bug that didn't show speed/FPS in a windowed DirectDraw mode.
+
+Version 1.3 (Richard Gellman)
+-----------------------------
+Windows update only:
+* Added full cursor support to enable cursor on/off/blink and blink rates
+* Corrected mode 7 flashing text rate
+* Corrected minor fault in sound register write edge detect
+* Redesigned mode 7 font, looks ugly, pending further work
+  (Original font found in mode7font.alt)
+* Added reset function to file menu.
+* Added Master 128 Support:
+  8K Filing system RAM from &C000 to &DFFF
+  4K Private RAM from &8000 to &8FFF
+  20K Shadow RAM from &3000 to &7FFF (still very slightly buggy, but usable)
+  Added all documented 65C12 Opcodes extra to the 6502
+  Added _simple_ 1770 FDC - Read only at present
+  Made some hardware re-arrange to alternate locations on a Master
+  (The A to D convertor is accessed the same, but at a different location)
+* Implemented "available models" detection, only models that you have the
+  roms for will be available, if neither available, the program exits.
+* Added BBC Model Type Menu to Options Menu
+
+
+Version 1.32 (Richard Gellman)
+------------------------------
+Windows update only:
+* *All* undocumented 6502 codes implemented.
+* Almost full 1770 FDC Support (read/write track (format) and force
+  interrupt still not supported yet)
+* ADFS Discs (Single or Double sided (auto detected)) now supported.
+* Fixed cursor positioning problem in Modes 3 and 6
+* Fixed mode 7 7-bit control code handling
+* Fixed cmos.ram file open bug
+* Fixed sound menu corruption on model change/reset
+* Fixed rom menu
+* Added more flexible rom control via use of roms.cfg and optionally
+  the supplied ROM Manager
+* Fixed that ini file bug... I put my settings into the registry now
+* Supplied all required DLLs and ROMs in with the download
+* Fixed the sideways RAM bug I accidentally put in the previous version
+  Digital audio in Exile has returned!
+
+Version 1.35 (Richard Gellman)
+------------------------------
+Windows update only:
+* Fixed rom menu corruption during reset bug
+* Improved DirectSound code, makes sound smoother
+* Added hide menu option to allow the whole screen to be used for the BBC.
+* Added tape interface (and some code for the serial port)
+* Added preliminary tube support (not currently functional)
+* Added HSync and VSync handling to enable screen positioning
+* Added screen clear on Frame 0 to remove "redundant" screen data
+* Added the ability to display "Wide" screens (makes Boffin work correctly)
+* Corrected a 6502 Addressing mode bug (makes the sticky explosions in
+  Elite go away)
+* Revised 6502 Instruction/IRQ/NMI timing
+* Corrected 6522 VIA Timer reload timing (makes Revs work correctly)
+* Corrected 6522 VIA Timer pre-reload action (makes Volcano work.. ish)
+* Corrected VSync timing.. removes flicker from Revs and some versions
+  of Elite
+* Added writable option for ROMS in the roms.cfg file
+* Modified roms.cfg handling to save having to re-edit between releases
+* Minor Master 128 memory handling bug corrected
+* Added End Of Conversion to VIA emulation (allows the analogue port to
+  generate interrupts)
+
+Version 1.4 (Richard Gellman)
+*****************************
+Windows update only:
+* New teletext font
+* Teletext Aspect ratio and centering fixed.
+* Improved sound code timing
+* Sound "Part-Sample Compensation"
+* Screen displacement in Master 128 mode after CTRL-BREAK fixed
+* Shadow RAM/Other Master 128 mode memory problems fixed
+* Read Address and Force Interrupt commands added to 1770 FDC
+* Timing of disc access on 1770 FDC made more accurate
+* Option to create ADFS images with New Disc added
+* Cassette Relay Sound Effects fixed
+* Cassette Input Sound added
+* Keyboard and Disc LEDs added
+* Disc LEDs can be red or green
+* Fixed (I think) BufferInVideoRAM option
+* Implemented Teletext Half-Scan mode
+* Fixed HSync/VSync derived screen displacement
+* Added option to change Tape loading speed
+* Redid Serial Port code
+* Disc images now remain loaded between Model/FDC changes
+* Added plug-innable 1770 FDCs
+* Fixed Teletext "Hold Graphics" and Double Height bugs
+* More 6845 Registers implemented, including Cursor delay, and Sync delay
+* UEF State save/load implemented
+* Sound system tweeks implemented
+* Speed optimisations implemented
+* Non-Directsound code removed
+* BeebDiscLoad variable in Master 128 mode fixed
+* Window retains position between running
+* Re-worked HSync/VSync centering routine
+* Added option to use DirectSound primary buffer
+
+Version 1.5 (Mike Wyatt)
+-----------
+* Updated the speed regulation code again (should fix hangs).
+* Added some more fixed speed settings (you can now play Elite at a 
+  decent speed!).
+* Put quick load and save back the right way!
+* Add a link to the README file to the help menu.
+* Changed keyboard maps to default and logical layouts.  The default 
+  mapping is the same as the old mapping 1.  Logical mapping maps symbol
+  by symbol (for a UK PC keyboard at least) so you get what you press.
+* Added keyboard mapping options for A & S and function keys.
+* Changed ALT and F10 to normal keys so they no longer select the menu.
+  F10 is mapped to f0.
+* Made more of the PC keys available for the user defined keyboard.
+* Added the File -> Run Disc menu option.
+* Added ability to pass name of disc image on command line to run it
+  automatically.
+* Removed Use Host Clock option from sound menu - its not used.
+* Fixed Windows cursor when BeebEm starts up.
+* Add some sleeps to the serial comms threads so BeebEm is a bit
+  easier on CPU usage.
+* Added some extra error checking for file handling.
+* Stopped BeebEm from creating the C:\crtc.log file (you can 
+  remove this file).
+* Tidied up the BeebEm installation directory.  The source code 
+  is now kept in a zip file.
+* Moved all preference settings into the Windows registry.
+
+Version 1.6 (Ken Lowe & Mike Wyatt)
+-----------
+* Added BBC Computech IntegraB Support:
+  RTC Memory
+  Private Memory 1K from &8000 to &83FF
+  Private Memory 4K from &8000 to &8FFF
+  Private Memory 8K from &9000 to &AFFF
+  20K Shadow RAM from &3000 to &7FFF
+* Added BBC Plus (128) Support
+  20K Shadow RAM from &3000 to &7FFF
+  12K Paged RAM
+  (Level 9 graphical adventures work in IntegraB & B Plus modes)
+* Fixed various bugs in Via Timers (Volcano, Nutcraka, Pedro and Skirmish
+  now work).
+* Fixed various bugs in UEF state store/restore, particularly for SW RAM
+  usage and Master 128 mode (Elite & Exile save/restore now reliable).
+* Added disc settings to the UEF state.  When a state is restored BeebEm
+  will load the disc images that were loaded when the state was stored.
+* Fixed various bugs in the video emulation (fixes Psycastria and Level 9
+  graphical adventures, improves FireTrack).
+* Changed video emulation so that *TV255 does not move screen down (*TV254 
+  does though). Some programs do a *TV255 and the bottom line of the screen
+  is lost.
+* Fixed reload of drive 1 disc image after a File->Reset.
+* Fixed BeebDiscLoad environment variables in Model B modes.
+* Fixed ADFS boot (A+Break) in Master 128 mode.
+* Removed old BeebState stuff.
+* Removed 'Allow ROM Writes - All' option, it was not implemented.
