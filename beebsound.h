@@ -27,7 +27,13 @@
 #ifdef WIN32
 /* Always compile sound code - it is switched on and off using SoundEnabled */
 #define SOUNDSUPPORT
+#include <windows.h>
 #endif
+
+#define MUTED 0
+#define UNMUTED 1
+
+#include <stdio.h>
 
 extern int SoundDefault; // Default sound state
 extern int SoundEnabled;    /* Sound on/off flag */
@@ -36,7 +42,9 @@ extern int RelaySoundEnabled; // Relay Click noise enable
 extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
 extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
 
-extern int SoundTrigger; /* Cycle based trigger on sound */
+extern __int64 SoundTrigger; /* Cycle based trigger on sound */
+extern double SoundTuning;
+extern __int64 SoundCycles;
 
 void SoundInit();
 void SoundReset();
@@ -47,6 +55,31 @@ void DumpSound(void);
 void SoundTrigger_Real(void);
 void ClickRelay(unsigned char RState);
 
-void Sound_Trigger(void);
+void Sound_Trigger(int NCycles);
 
+extern volatile BOOL bDoSound;
+extern void AdjustSoundCycles(void);
+
+void SetSound(char State);
+
+struct AudioType {
+	char Signal; // Signal type: data, gap, or tone.
+	char BytePos; // Position in data byte
+	bool Enabled; // Enable state of audio deooder
+	int Data; // The actual data itself
+	int Samples; // Samples counted in current pattern till changepoint
+	char CurrentBit; // Current bit in data being processed
+	char ByteCount; // Byte repeat counter
+};
+
+extern struct AudioType TapeAudio;
+extern bool TapeSoundEnabled;
+void SoundChipReset(void);
+void SwitchOnSound(void);
+extern int UseHostClock;
+extern int UsePrimaryBuffer;
+void LoadSoundUEF(FILE *SUEF);
+void SaveSoundUEF(FILE *SUEF);
+extern int PartSamples;
+extern int SBSize;
 #endif

@@ -11,5 +11,8 @@ void WriteFDCControlReg(unsigned char Value);
 unsigned char ReadFDCControlReg(void);
 void Reset1770(void);
 void Kill1770(void);
-void Poll1770(void);
+void Poll1770(int NCycles);
+void CreateADFSImage(char *ImageName,unsigned char Drive,unsigned char Tracks, HMENU dmenu);
+void Close1770Disc(char Drive);
+extern bool InvertTR00;
 #endif

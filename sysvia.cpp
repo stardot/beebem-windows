@@ -30,9 +30,11 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "6502core.h"
 #include "beebsound.h"
 #include "beebmem.h"
+#include "beebwin.h"
 #include "sysvia.h"
 #include "via.h"
 #include "main.h"
+#include "viastate.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -54,6 +56,8 @@ int JoystickButton = 0;
 extern int DumpAfterEach;
 /* My raw VIA state */
 VIAState SysVIAState;
+char WECycles=0;
+char WEState=0;
 
 /* State of the 8bit latch IC32 - bit 0 is WE for sound gen, B1 is read
    select on speech proc, B2 is write select on speech proc, b4,b5 select
@@ -87,11 +91,11 @@ static void UpdateIFRTopBit(void) {
 }; /* UpdateIFRTopBit */
 
 void PulseSysViaCB1(void) {
-	// Set IFR bit 4
+/*	// Set IFR bit 4
 	if (SysVIAState.ier & 16) {
 		SysVIAState.ifr|=16;
 		UpdateIFRTopBit();
-	}
+	} */
 }
 
 /*--------------------------------------------------------------------------*/
@@ -184,7 +188,8 @@ static void IC32Write(unsigned char Value) {
   } else {
     IC32State&=0xff-(1<<bit);
   }
-  
+  LEDs.CapsLock=((IC32State&64)==0);
+  LEDs.ShiftLock=((IC32State&128)==0);
   /* hmm, CMOS RAM? */
   // Monday 5th February 2001 - Scrapped my CMOS code, and restarted as according to the bible of the god Tom Lees
   CMOS.Op=((IC32State & 2)>>1);
@@ -202,7 +207,9 @@ static void IC32Write(unsigned char Value) {
 
   /* Must do sound reg access when write line changes */
 #ifdef SOUNDSUPPORT
-  if (((oldval & 1)) && (!(IC32State & 1)))  Sound_RegWrite(SlowDataBusWriteValue);
+  if (((oldval & 1)) && (!(IC32State & 1))) { WEState=1; WECycles=1; } // That should actually be 32, but 
+  // it doesn't seem to work with 32.
+  if (((oldval & 1)) && (!(IC32State & 1))) { Sound_RegWrite(SlowDataBusWriteValue); }
   // now, this was a change from 0 to 1, but my docs say its a change from 1 to 0. might work better this way.
 #endif
   /* cerr << "IC32State now=" << hex << int(IC32State) << dec << "\n"; */
@@ -210,6 +217,12 @@ static void IC32Write(unsigned char Value) {
   DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
 } /* IC32Write */
 
+
+void ChipClock(int Cycles) {
+//	if (WECycles>0) WECycles-=Cycles;
+//	else
+//	if (WEState) Sound_RegWrite(SlowDataBusWriteValue);
+}
 
 /*--------------------------------------------------------------------------*/
 static void SlowDataBusWrite(unsigned char Value) {
@@ -225,13 +238,12 @@ static void SlowDataBusWrite(unsigned char Value) {
   if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType==1) 
   {
         CMOSWrite(CMOS.Address,Value);
-	  if (CMOSDebug) fprintf(CMDF,"Wrote %02x to %02x\n",SlowDataBusWriteValue,CMOS.Address);
   }
 
 #ifdef SOUNDSUPPORT
   if (!(IC32State & 1)) {
-    Sound_RegWrite(SlowDataBusWriteValue);
-  }
+		Sound_RegWrite(SlowDataBusWriteValue);
+  } 
 #endif
 
   if (!(IC32State & 4)) {
@@ -250,7 +262,10 @@ static int SlowDataBusRead(void) {
   result=(SysVIAState.ora & SysVIAState.ddra);
   if (CMOS.Enabled) result=(SysVIAState.ora & ~SysVIAState.ddra);
   /* I don't know this lot properly - just put in things as we figure them out */
-  if (KbdOP()) result|=128;
+  if (MachineType==0) { if (KbdOP()) result|=128; }
+  if ((MachineType==1) && (!CMOS.Enabled)) {
+	  if (KbdOP()) result|=128; 
+  }
 
   /* cerr << "SlowDataBusRead giving 0x" << hex << result << dec << "\n"; */
   return(result);
@@ -260,6 +275,7 @@ static int SlowDataBusRead(void) {
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe40 stripped out */
 void SysVIAWrite(int Address, int Value) {
+  //fprintf(vialog,"SYSTEM VIA Write of %d (%02x) to address %d\n",Value,Value,Address);
   /* cerr << "SysVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
   switch (Address) {
@@ -488,7 +504,8 @@ void SysVIA_poll_real(void) {
 
   if (SysVIAState.timer2c<0) {
   tCycles=abs(SysVIAState.timer2c);
-    SysVIAState.timer2c=(SysVIAState.timer2l * 2)-(tCycles-4);
+    SysVIAState.timer2c=(SysVIAState.timer2l * 2)-(tCycles-(3+SysVIAState.timer2adjust));
+	SysVIAState.timer2adjust=1-SysVIAState.timer2adjust;
     if (SysVIAState.timer2hasshot==0) {
       /* cerr << "SysVia timer2 int at " << TotalCycles << "\n"; */
       SysVIAState.ifr|=0x20; /* Timer 2 interrupt */
@@ -501,6 +518,7 @@ void SysVIA_poll_real(void) {
 
 void SysVIA_poll(unsigned int ncycles) {
 	// Converted to a proc to allow shift register functions
+	ChipClock(ncycles);
   SysVIAState.timer1c-=ncycles; 
   SysVIAState.timer2c-=ncycles; 
   if ((SysVIAState.timer1c<0) || (SysVIAState.timer2c<0)) SysVIA_poll_real();
@@ -515,6 +533,7 @@ void SysVIA_poll(unsigned int ncycles) {
 void SysVIAReset(void) {
   int row,col;
   VIAReset(&SysVIAState);
+  //vialog=fopen("/via.log","wt");
 
   /* Make it no keys down and no dip switches set */
   for(row=0;row<8;row++)
@@ -548,7 +567,6 @@ void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
 		for(CMA=0xe;CMA<64;CMA++) fputc(CMOSRAM[CMA],CMDF);
 		fclose(CMDF);
 	}
-
 }
 
 /*-------------------------------------------------------------------------*/
@@ -569,6 +587,7 @@ unsigned char CMOSRead(unsigned char CMOSAddr) {
 		if (CMOSAddr==0x09) return(BCD((CurTime->tm_year)-10));
 	}
 	if (CMOSAddr>0x9 && CMOSAddr<0xe) return(0);
+	return(0);
 }
 
 /*-------------------------------------------------------------------------*/

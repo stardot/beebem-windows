@@ -38,12 +38,12 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\intelbin"
+# PROP Output_Dir "\beebemrel"
 # PROP Intermediate_Dir ".\Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /Gr /MTd /W3 /GX /Ox /Ot /Og /Oi /Oy- /Ob2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Ox /Ot /Og /Oi /Oy- /Ob2 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
 # SUBTRACT CPP /Ow
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -54,8 +54,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 uef.lib .\uef.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib winmm.lib dsound.lib ddraw.lib ./uef.lib /nologo /subsystem:windows /machine:I386
-# SUBTRACT LINK32 /profile
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib winmm.lib dsound.lib ddraw.lib uef.lib /nologo /subsystem:windows /machine:I386
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "BeebEm - Win32 Debug"
 
@@ -83,7 +83,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /debug /machine:I386
-# ADD LINK32 uef.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib uef.lib dsound.lib ddraw.lib winmm.lib /nologo /subsystem:windows /debug /machine:I386 /out:"Debug/BeebEm.exe"
+# ADD LINK32 uef.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib uef.lib dsound.lib ddraw.lib winmm.lib dxguid.lib /nologo /subsystem:windows /debug /machine:I386 /out:"Debug/BeebEm.exe"
 # SUBTRACT LINK32 /verbose /profile /pdb:none /incremental:no /force
 
 !ENDIF 
@@ -141,10 +141,6 @@ SOURCE=.\main.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\mode7font.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\serial.cpp
 # End Source File
 # Begin Source File
@@ -154,6 +150,10 @@ SOURCE=.\sysvia.cpp
 # Begin Source File
 
 SOURCE=.\tube.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\uefstate.cpp
 # End Source File
 # Begin Source File
 
@@ -217,10 +217,6 @@ SOURCE=.\main.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\mode7font.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\port.h
 # End Source File
 # Begin Source File
@@ -237,6 +233,10 @@ SOURCE=.\tube.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\uefstate.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\userkybd.h
 # End Source File
 # Begin Source File
@@ -246,6 +246,10 @@ SOURCE=.\uservia.h
 # Begin Source File
 
 SOURCE=.\via.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\viastate.h
 # End Source File
 # Begin Source File
 

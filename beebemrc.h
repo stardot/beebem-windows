@@ -79,6 +79,7 @@
 #define IDR_MENU                        101
 #define IDI_BEEBEM                      102
 #define IDD_USERKYBRD                   103
+#define IDD_DIALOG1                     106
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -183,26 +184,46 @@
 #define ID_MASTER128                    40106
 #define ID_PCD                          40107
 #define ID_LOADTAPE                     40108
-#define ID_COMMS_RS423DESTINATION_THIS  40110
-#define ID_COMMS_RS423DESTINATION_MENU  40111
-#define ID_COMMS_RS423DESTINATION_ISNOT 40112
-#define ID_COMMS_RS423DESTINATION_COMPLETE 40113
-#define ID_COMMS_RS423DESTINATION_YET   40114
 #define ID_REWINDTAPE                   40116
 #define ID_SFX_RELAY                    40117
 #define IDM_TUBE                        40118
 #define IDM_TUBERESET                   40119
 #define ID_HIDEMENU                     40121
 #define ID_TAPESOUND                    40122
+#define ID_SERIAL                       40123
+#define ID_COM1                         40124
+#define ID_COM2                         40125
+#define ID_COM3                         40126
+#define ID_COM4                         40127
+#define ID_RED_LEDS                     40129
+#define ID_GREEN_LEDS                   40130
+#define ID_SHOW_KBLEDS                  40131
+#define ID_SHOW_DISCLEDS                40132
+#define ID_8271                         40133
+#define ID_FDC_DLL                      40134
+#define ID_TAPE_FAST                    40135
+#define ID_TAPE_MFAST                   40136
+#define ID_TAPE_MSLOW                   40137
+#define ID_TAPE_NORMAL                  40138
+#define ID_HOSTCLOCK                    40139
+#define ID_PBUFF                        40140
+#define ID_TSTYLE                       40141
+#define ID_BHARDWARE                    40142
+#define ID_DOCONLY                      40143
+#define ID_EXTRAS                       40144
+#define ID_FULLSET                      40145
+#define ID_PSAMPLES                     40147
+#define ID_1773                         40149
+#define ID_443                          40150
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40123
-#define _APS_NEXT_CONTROL_VALUE         1001
+#define _APS_NEXT_RESOURCE_VALUE        108
+#define _APS_NEXT_COMMAND_VALUE         40151
+#define _APS_NEXT_CONTROL_VALUE         1009
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

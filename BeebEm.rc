@@ -175,6 +175,14 @@ BEGIN
                     WS_TABSTOP,9,62,29,14
 END
 
+IDD_DIALOG1 DIALOG DISCARDABLE  0, 0, 160, 66
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Keyboard Links"
+CLASS "LinksDialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -190,6 +198,14 @@ BEGIN
         RIGHTMARGIN, 327
         TOPMARGIN, 4
         BOTTOMMARGIN, 116
+    END
+
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 153
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 59
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -273,7 +289,6 @@ BEGIN
         MENUITEM "Write Protect 1",             IDM_WPDISC1
         MENUITEM SEPARATOR
         MENUITEM "&Reset",                      ID_FILE_RESET
-        MENUITEM "Reset with T&ube",            IDM_TUBERESET
         MENUITEM "&Load State",                 IDM_LOADSTATE
         MENUITEM "&Save State",                 IDM_SAVESTATE
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
@@ -283,6 +298,15 @@ BEGIN
     END
     POPUP "&Comms"
     BEGIN
+        POPUP "Tape Speed"
+        BEGIN
+            MENUITEM "Fast",                        ID_TAPE_FAST
+            MENUITEM "Medium Fast",                 ID_TAPE_MFAST
+            MENUITEM "Medium Slow",                 ID_TAPE_MSLOW
+            MENUITEM "Normal",                      ID_TAPE_NORMAL
+        END
+        MENUITEM "Rewind &Tape",                ID_REWINDTAPE
+        MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
         POPUP "Printer &Destination"
         BEGIN
             MENUITEM "File:",                       IDM_PRINTER_FILE
@@ -290,26 +314,15 @@ BEGIN
             MENUITEM "LPT2:",                       IDM_PRINTER_LPT2
             MENUITEM "LPT3:",                       IDM_PRINTER_LPT3
             MENUITEM "LPT4:",                       IDM_PRINTER_LPT4
-            MENUITEM "COM1:",                       IDM_PRINTER_COM1
-            MENUITEM "COM2:",                       IDM_PRINTER_COM2
-            MENUITEM "COM3:",                       IDM_PRINTER_COM3
-            MENUITEM "COM4:",                       IDM_PRINTER_COM4
         END
-        MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
+        MENUITEM "RS423 On/Off",                ID_SERIAL
         POPUP "&RS423 Destination"
         BEGIN
-            MENUITEM "This",                        ID_COMMS_RS423DESTINATION_THIS
-
-            MENUITEM "Menu",                        ID_COMMS_RS423DESTINATION_MENU
-
-            MENUITEM "Is Not",                      ID_COMMS_RS423DESTINATION_ISNOT
-
-            MENUITEM "Complete",                    ID_COMMS_RS423DESTINATION_COMPLETE
-
-            MENUITEM "Yet!",                        ID_COMMS_RS423DESTINATION_YET
-
+            MENUITEM "COM1",                        ID_COM1
+            MENUITEM "COM2",                        ID_COM2
+            MENUITEM "COM3",                        ID_COM3
+            MENUITEM "COM4",                        ID_COM4
         END
-        MENUITEM "&Rewind Tape",                ID_REWINDTAPE
     END
     POPUP "&View"
     BEGIN
@@ -346,6 +359,14 @@ BEGIN
             MENUITEM "Green",                       ID_MONITOR_GREEN
         END
         MENUITEM "&Hide Menu",                  ID_HIDEMENU
+        POPUP "&LEDs"
+        BEGIN
+            MENUITEM "&Red Disc LEDs",              ID_RED_LEDS
+            MENUITEM "&Green Disc LEDs",            ID_GREEN_LEDS
+            MENUITEM SEPARATOR
+            MENUITEM "Show &Keyboard LEDs",         ID_SHOW_KBLEDS
+            MENUITEM "Show &Disc LEDs",             ID_SHOW_DISCLEDS
+        END
     END
     POPUP "S&peed"
     BEGIN
@@ -361,12 +382,11 @@ BEGIN
     POPUP "&Sound"
     BEGIN
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
-        MENUITEM "&DirectSound On/Off",         IDM_DSOUNDONOFF
         MENUITEM SEPARATOR
         POPUP "Sound &Effects"
         BEGIN
             MENUITEM "Cassette &Relay",             ID_SFX_RELAY
-            MENUITEM "&Cassette Input",             ID_TAPESOUND, GRAYED
+            MENUITEM "&Cassette Input",             ID_TAPESOUND
         END
         MENUITEM SEPARATOR
         MENUITEM "44.1 kHz",                    IDM_44100KHZ
@@ -377,6 +397,10 @@ BEGIN
         MENUITEM "&High Volume",                IDM_HIGHVOLUME
         MENUITEM "&Medium Volume",              IDM_MEDIUMVOLUME
         MENUITEM "&Low Volume",                 IDM_LOWVOLUME
+        MENUITEM SEPARATOR
+        MENUITEM "&Use Host Clock",             ID_HOSTCLOCK
+        MENUITEM "Use &Primary Buffer",         ID_PBUFF
+        MENUITEM "Part S&amples",               ID_PSAMPLES
     END
     POPUP "&AMX"
     BEGIN
@@ -401,6 +425,11 @@ BEGIN
         BEGIN
             MENUITEM "BBC Model &B",                ID_MODELB, CHECKED
             MENUITEM "BBC &Master 128",             ID_MASTER128
+        END
+        POPUP "Model B &Floppy Controller"
+        BEGIN
+            MENUITEM "Native &8271",                ID_8271
+            MENUITEM "&Select FDC Board...",        ID_FDC_DLL
         END
         POPUP "&Allow ROM writes"
         BEGIN
@@ -440,8 +469,6 @@ BEGIN
         END
         MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
         MENUITEM SEPARATOR
-        MENUITEM "&Tube",                       IDM_TUBE
-        MENUITEM SEPARATOR
         MENUITEM "&Joystick",                   IDM_JOYSTICK
         MENUITEM "&Mousestick",                 IDM_MOUSESTICK
         MENUITEM SEPARATOR
@@ -455,6 +482,22 @@ BEGIN
         MENUITEM "Keyboard Mapping &2",         IDM_KEYBOARDMAPPING2
         MENUITEM SEPARATOR
         MENUITEM "&Save Preferences",           IDM_SAVE_PREFS
+    END
+    POPUP "Opti&mise"
+    BEGIN
+        POPUP "&Undocumented Instructions"
+        BEGIN
+            MENUITEM "&Documented Only",            ID_DOCONLY
+            MENUITEM "&Common Extras",              ID_EXTRAS
+            MENUITEM "&Full Set",                   ID_FULLSET
+        END
+        MENUITEM "&Teletext Half Mode",         ID_TSTYLE
+        MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
+        POPUP "&Sound Block Size"
+        BEGIN
+            MENUITEM "&1772 Bytes",                 ID_1773
+            MENUITEM "&441 Bytes",                  ID_443
+        END
     END
     POPUP "&Help"
     BEGIN

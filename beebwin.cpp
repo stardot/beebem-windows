@@ -41,6 +41,14 @@
 #include "cRegistry.h" // David Overton's registry access code.
 #include "serial.h"
 #include "tube.h"
+#include "ext1770.h"
+#include "uefstate.h"
+
+// some LED based macros
+
+#define LED_COLOUR_TYPE (LEDByte&4)>>2
+#define LED_SHOW_KB (LEDByte&1)
+#define LED_SHOW_DISC (LEDByte&2)>>1
 
 // Registry access stuff
 cRegistry SysReg;
@@ -52,11 +60,35 @@ int *binsize=&rbs;
 FILE *CMDF2;
 unsigned char CMA2;
 
-unsigned char HideMenuEnabled,MenuOn;
+unsigned char HideMenuEnabled;
+bool MenuOn;
+
+struct LEDType LEDs;
+char DiscLedColour=0; // 0 for red, 1 for green.
+
+// FDC Board extension DLL variables
+HMODULE hFDCBoard;
+
+typedef void (*lGetBoardProperties)(struct DriveControlBlock *);
+typedef unsigned char (*lSetDriveControl)(unsigned char);
+typedef unsigned char (*lGetDriveControl)(unsigned char);
+
+
+lGetBoardProperties PGetBoardProperties;
+lSetDriveControl PSetDriveControl;
+lGetDriveControl PGetDriveControl;
+
+EDCB ExtBoard={0,0,NULL};
+bool DiscLoaded[2]={FALSE,FALSE}; // Set to TRUE when a disc image has been loaded.
+char CDiscName[2][256]; // Filename of disc current in drive 0 and 1;
+char CDiscType[2]; // Current disc types
+bool MustEnableSound=FALSE; // Set to true if the directsound must be unmuted after menu loop exit.
+char FDCDLL[256];
 
 static const char *WindowTitle = "BeebEm - BBC Model B/Master 128 Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Model B/Master 128 Emulator\n"
-								"Version 1.35, 03 May 2001\n";
+								"Version 1.4, 20 December 2001\n"
+								"Merry Christmas! - Richard Gellman :)";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -114,7 +146,7 @@ static int transTable1[256][2]={
 	4,0,	0,0,	0,0,	0,0,   // 20 CAPS...
 	0,0,	0,0,	0,0,	7,0,   // 24 ...ESC
 	0,0,	0,0,	0,0,	0,0,   // 28
-	6,2,	0,0,	0,0,	6,9,   // 32 SPACE..[End]
+	6,2,	-3,-3,	-3,-4,	6,9,   // 32 SPACE..[End]      2nd is Page Up 3rd is Page Down
 	0,0,	1,9,	3,9,	7,9,   // 36 .[Left][Up][Right]
 	2,9,	0,0,	0,0,	0,0,   // 40 [Down]...
 	0,0,	0,0,	5,9,	0,0,   // 44 ..[DEL].
@@ -186,7 +218,7 @@ static int transTable2[256][2]={
 	0,0,	0,0,	0,0,	0,0,   // 28
 	6,2,	0,0,	0,0,	6,9,   // 32 SPACE..[End]
 	0,0,	1,9,	3,9,	7,9,   // 36 .[Left][Up][Right]
-	2,9,	0,0,	0,0,	0,0,   // 40 [Down]...
+	2,9,	0,0,	0,0,	-3,-3,   // 40 [Down]...
 	0,0,	0,0,	5,9,	0,0,   // 44 ..[DEL].
 	2,7,	3,0,	3,1,	1,1,   // 48 0123   
 	1,2,	1,3,	3,4,	2,4,   // 52 4567
@@ -244,6 +276,7 @@ static int transTable2[256][2]={
 
 /* Currently selected translation table */
 static int (*transTable)[2] = transTable1;
+long WindowPos[4];
 
 /****************************************************************************/
 BeebWin::BeebWin()
@@ -257,6 +290,9 @@ void BeebWin::Initialise()
 	char CfgValue[256];
 	char DefValue[256];
 	int row, col;
+	int LEDByte=0;
+	LARGE_INTEGER Dummy_Var;
+	WINDOWPLACEMENT tWindowPlacement;
 
 	m_DXInit = FALSE;
 
@@ -311,11 +347,6 @@ void BeebWin::Initialise()
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	m_MenuIdVolume = atoi(CfgValue);
 	TranslateVolume();
-
-	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_ENABLED, "0",
-			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
-	SoundEnabled = atoi(CfgValue);
-	SoundDefault = SoundEnabled;
 
 	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_DIRECT_ENABLED, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
@@ -386,6 +417,7 @@ void BeebWin::Initialise()
 	}
 
 	// insert registry code here
+	*binsize=1;
 	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","MachineType",&MachineType,binsize);
 	if (!RegRes) {
 		MachineType=0;
@@ -407,10 +439,77 @@ void BeebWin::Initialise()
 		HideMenuEnabled=0;
 		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","HideMenuEnabled",&HideMenuEnabled,binsize);
 	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SerialPortEnabled",&SerialPortEnabled,binsize);
+	if (!RegRes) {
+		SerialPortEnabled=0;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SerialPortEnabled",&SerialPortEnabled,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SerialPort",&SerialPort,binsize);
+	if (!RegRes) {
+		SerialPort=2;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SerialPort",&SerialPort,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","LED Information",&LEDByte,binsize);
+	if (!RegRes) {
+		LEDByte=0;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","LED Information",&LEDByte,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","TapeSoundEnabled",&TapeSoundEnabled,binsize);
+	if (!RegRes) {
+		TapeSoundEnabled=0; // BBC Tapes always were a bit harsh on the ears....
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","TapeSoundEnabled",&TapeSoundEnabled,binsize);
+	}
+	*binsize=2;
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Tape Clock Speed",&TapeClockSpeed,binsize);
+	if (!RegRes) {
+		TapeClockSpeed=5600;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Tape Clock Speed",&TapeClockSpeed,binsize);
+	}
+	*binsize=1;
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","UseHostClock",&UseHostClock,binsize);
+	if (!RegRes) {
+		UseHostClock=1;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","UseHostClock",&UseHostClock,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","OpCodes",&OpCodes,binsize);
+	if (!RegRes) {
+		OpCodes=2;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","OpCodes",&OpCodes,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Basic Hardware",&BHardware,binsize);
+	if (!RegRes) {
+		BHardware=0;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Basic Hardware",&BHardware,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Teletext Half Mode",&THalfMode,binsize);
+	if (!RegRes) {
+		THalfMode=0;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Teletext Half Mode",&THalfMode,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","UsePrimaryBuffer",&UsePrimaryBuffer,binsize);
+	if (!RegRes) {
+		UsePrimaryBuffer=0;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","UsePrimaryBuffer",&UsePrimaryBuffer,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Part Samples",&PartSamples,binsize);
+	if (!RegRes) {
+		PartSamples=1;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Part Samples",&PartSamples,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SoundEnabled",&SoundDefault,binsize);
+	if (!RegRes) {
+		SoundDefault=1;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SoundEnabled",&SoundDefault,binsize);
+	}
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SoundBlockSize",&SBSize,binsize);
+	if (!RegRes) {
+		SBSize=0;
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SoundBlockSize",&SBSize,binsize);
+	}
 
-/*	GetPrivateProfileString(CFG_MODEL_SECTION, CFG_MACHINE_TYPE, 0,
-			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
-	MachineType = atoi(CfgValue); */
+	DiscLedColour=LED_COLOUR_TYPE;
+	LEDs.ShowDisc=LED_SHOW_DISC;
+	LEDs.ShowKB=LED_SHOW_KB;
 
 	IgnoreIllegalInstructions = 1;
 
@@ -423,7 +522,7 @@ void BeebWin::Initialise()
 	m_FramesPerSecond = 50;
 	strcpy(m_szTitle, WindowTitle);
 
-	for(int i=0;i<8;i++)
+	for(int i=0;i<12;i++)
 		cols[i] = i;
 
 	InitClass();
@@ -439,8 +538,8 @@ void BeebWin::Initialise()
 	if (m_DirectDrawEnabled)
 		InitDirectX();
 
-	if (SoundEnabled)
-		SoundInit();
+//	if (SoundEnabled)
+//		SoundInit();
 
 	/* Initialise printer */
 	if (PrinterEnabled)
@@ -465,9 +564,103 @@ void BeebWin::Initialise()
 	strcpy(RomPath, m_AppPath);
 	UpdateModelType();
 	UpdateSFXMenu();
+	UpdateLEDMenu(m_hMenu);
+	CheckMenuItem(m_hMenu,ID_TAPESOUND,(TapeSoundEnabled)?MF_CHECKED:MF_UNCHECKED);
 	MenuOn=TRUE;
+	RegRes=SysReg.GetStringValue(HKEY_CURRENT_USER,"Software\\BeebEm","FDCDLL",FDCDLL);
+	if (!RegRes) {
+		strcpy(FDCDLL,"None");
+		SysReg.SetStringValue(HKEY_CURRENT_USER,"Software\\BeebEm","FDCDLL",FDCDLL);
+	}
+	NativeFDC=TRUE;
+	if (strcmp(FDCDLL,"None")!=0) LoadFDC(FDCDLL);
+	if (NativeFDC) {
+		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
+		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
+	} else {
+		CheckMenuItem(m_hMenu,ID_8271,MF_UNCHECKED);
+		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_CHECKED);
+	}
+	DisplayCycles=7000000;
+	if ((NativeFDC) || (MachineType==1)) DisplayCycles=0;
+	SetTapeSpeedMenu();
+	BOOL pfr;
+	pfr=QueryPerformanceFrequency(&Dummy_Var);
+	if (!pfr) {
+		UseHostClock=0;
+		EnableMenuItem(m_hMenu,ID_HOSTCLOCK,MF_GRAYED);
+	}
+    CheckMenuItem(m_hMenu,ID_HOSTCLOCK,(UseHostClock)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_PSAMPLES,(PartSamples)?MF_CHECKED:MF_UNCHECKED);
+	UpdateOptiMenu();
+	*binsize=sizeof(tWindowPlacement);
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","WindowPos",&tWindowPlacement,binsize);
+	if (!RegRes) {
+		tWindowPlacement.length=*binsize;
+		GetWindowPlacement(GETHWND,&tWindowPlacement);
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","WindowPos",&tWindowPlacement,binsize);
+	} else {
+		if (!m_isFullScreen)
+		{
+			tWindowPlacement.length=sizeof(tWindowPlacement);
+			tWindowPlacement.showCmd=SW_RESTORE;
+			SetWindowPlacement(GETHWND,&tWindowPlacement);
+		}
+	}
 }
 
+void BeebWin::LoadFDC(char *DLLName) {
+	// Load External DLL(s)
+	if (hFDCBoard!=NULL) FreeLibrary(hFDCBoard); 
+	hFDCBoard=NULL; NativeFDC=TRUE;
+	hFDCBoard=LoadLibrary(DLLName);
+	if (hFDCBoard==NULL) {
+		MessageBox(GETHWND,"Unable to load FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR); 
+	}
+	if (hFDCBoard!=NULL) {
+		PGetBoardProperties=(lGetBoardProperties) GetProcAddress(hFDCBoard,"GetBoardProperties");
+		PSetDriveControl=(lSetDriveControl) GetProcAddress(hFDCBoard,"SetDriveControl");
+		PGetDriveControl=(lGetDriveControl) GetProcAddress(hFDCBoard,"GetDriveControl");
+		if ((PGetBoardProperties==NULL) || (PSetDriveControl==NULL) || (PGetDriveControl==NULL)) {
+			MessageBox(GETHWND,"Invalid FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR); }
+		else {
+		PGetBoardProperties(&ExtBoard);
+		EFDCAddr=ExtBoard.FDCAddress;
+		EDCAddr=ExtBoard.DCAddress;
+		NativeFDC=FALSE; // at last, a working DLL!
+		InvertTR00=ExtBoard.TR00_ActiveHigh;
+		SysReg.SetStringValue(HKEY_CURRENT_USER,"Software\\BeebEm","FDCDLL",DLLName); // Write back DLL to registry
+		}
+	} 
+	// Set menu options
+	if (NativeFDC) {
+		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
+		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
+	} else {
+		CheckMenuItem(m_hMenu,ID_8271,MF_UNCHECKED);
+		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_CHECKED);
+	}
+	DisplayCycles=7000000;
+	if ((NativeFDC) || (MachineType==1)) DisplayCycles=0;
+}
+
+void BeebWin::KillDLLs(void) {
+	if (hFDCBoard!=NULL) FreeLibrary(hFDCBoard); hFDCBoard=NULL;
+}
+
+void BeebWin::SetDriveControl(unsigned char value) {
+	// This takes a value from the mem/io decoder, as written by the cpu, runs it through the 
+	// DLL's translator, then sends it on to the 1770 FDC in master 128 form.
+	WriteFDCControlReg(PSetDriveControl(value));
+}
+
+unsigned char BeebWin::GetDriveControl(void) {
+	// Same as above, but in reverse, i.e. reading
+	unsigned char temp,temp2;
+	temp=ReadFDCControlReg();
+	temp2=PGetDriveControl(temp);
+	return(temp2);
+}
 /****************************************************************************/
 BeebWin::~BeebWin()
 {   
@@ -478,8 +671,8 @@ BeebWin::~BeebWin()
 		m_DD->Release();
 	}
 
-//	if (SoundEnabled)
-//		SoundReset();
+	if (SoundEnabled)
+		SoundReset();
 
 	ReleaseDC(m_hWnd, m_hDC);
 
@@ -489,12 +682,24 @@ BeebWin::~BeebWin()
 		DeleteObject(m_hBitmap);
 	if (m_hDCBitmap != NULL)
 		DeleteDC(m_hDCBitmap);
+	// Write back position of window for reloading
+}
+
+void SaveWindowPos(void) {
+	WINDOWPLACEMENT tWindowPlacement;
+	tWindowPlacement.length=sizeof(tWindowPlacement);
+	GetWindowPlacement(GETHWND,&tWindowPlacement);
+	*binsize=sizeof(tWindowPlacement);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","WindowPos",&tWindowPlacement,binsize);
 }
 /****************************************************************************/
 void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatus,unsigned char LoadRoms) 
 {
+	SwitchOnCycles=0; // Reset delay
 	SoundReset();
 	if (SoundDefault) SoundInit();
+	SoundChipReset();
+	SwitchOnSound();
 	EnableTube=TubeStatus;
 	memset(WholeRam,0,0x8000);
 	MachineType=NewModelType;
@@ -504,7 +709,8 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 		memset(PrivateRAM,0,0x1000);
 		ACCCON=0;
 		UseShadow=0;
-	}
+		PRAM=FRAM=Sh_Display=Sh_CPUE=Sh_CPUX=0;
+	} 
 	PagedRomReg=0xf;
 	BeebMemInit(LoadRoms);
 	Init6502core();
@@ -515,8 +721,34 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	Disc8271_reset();
 	Reset1770();
 	AtoDReset();
-	Reset_Serial();
 	SetRomMenu();
+	FreeDiscImage(0);
+	// Keep the disc images loaded
+	FreeDiscImage(1);
+	Close1770Disc(0);
+	Close1770Disc(1);
+	if (MachineType==1) InvertTR00=FALSE;
+	if ((MachineType==0) && (NativeFDC)) {
+		// 8271 disc
+		if ((DiscLoaded[0]) && (CDiscType[0]==0)) LoadSimpleDiscImage(CDiscName[0],0,0,80);
+		if ((DiscLoaded[0]) && (CDiscType[0]==1)) LoadSimpleDSDiscImage(CDiscName[0],0,80);
+		if ((DiscLoaded[1]) && (CDiscType[1]==0)) LoadSimpleDiscImage(CDiscName[1],0,0,80);
+		if ((DiscLoaded[1]) && (CDiscType[1]==1)) LoadSimpleDSDiscImage(CDiscName[1],0,80);
+	}
+	if (((MachineType==0) && (!NativeFDC)) || (MachineType==1)) {
+		// 1770 Disc
+		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0],0,CDiscType[0],m_hMenu);
+		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1],1,CDiscType[1],m_hMenu);
+	}
+	if ((MachineType==0) && (!NativeFDC)) {
+		RegRes=SysReg.GetStringValue(HKEY_CURRENT_USER,"Software\\BeebEm","FDCDLL",FDCDLL);
+		if (!RegRes) {
+			strcpy(FDCDLL,"None");
+			SysReg.SetStringValue(HKEY_CURRENT_USER,"Software\\BeebEm","FDCDLL",FDCDLL);
+		}
+		NativeFDC=TRUE;
+		if (strcmp(FDCDLL,"None")!=0) LoadFDC(FDCDLL);
+	}
 }
 /****************************************************************************/
 void BeebWin::CreateBitmap()
@@ -535,19 +767,19 @@ void BeebWin::CreateBitmap()
 	m_bmi.bmiHeader.biBitCount = 8;
 	m_bmi.bmiHeader.biCompression = BI_RGB;
 	m_bmi.bmiHeader.biSizeImage = 800*512;
-	m_bmi.bmiHeader.biClrUsed = 8;
-	m_bmi.bmiHeader.biClrImportant = 8;
+	m_bmi.bmiHeader.biClrUsed = 12;
+	m_bmi.bmiHeader.biClrImportant = 12;
 
 #ifdef USE_PALETTE
 	__int16 *pInts = (__int16 *)&m_bmi.bmiColors[0];
     
-	for(int i=0; i<8; i++)
+	for(int i=0; i<12; i++)
 		pInts[i] = i;
     
 	m_hBitmap = CreateDIBSection(m_hDCBitmap, (BITMAPINFO *)&m_bmi, DIB_PAL_COLORS,
 							(void**)&m_screen, NULL,0);
 #else
-	for (int i = 0; i < 8; ++i)
+	for (int i = 0; i < 9; ++i)
 	{
     float r,g,b;
     r = i & 1;
@@ -575,6 +807,17 @@ void BeebWin::CreateBitmap()
 		m_bmi.bmiColors[i].rgbBlue  = b * 255;
 		m_bmi.bmiColors[i].rgbReserved = 0;
 	}
+
+	// Red Leds - left is dark, right is lit.
+	m_bmi.bmiColors[8].rgbRed=80;		m_bmi.bmiColors[9].rgbRed=255;
+	m_bmi.bmiColors[8].rgbGreen=0;		m_bmi.bmiColors[9].rgbGreen=0;
+	m_bmi.bmiColors[8].rgbBlue=0;		m_bmi.bmiColors[9].rgbBlue=0;
+	m_bmi.bmiColors[8].rgbReserved=0;	m_bmi.bmiColors[9].rgbReserved=0;
+	// Green Leds - left is dark, right is lit.
+	m_bmi.bmiColors[10].rgbRed=0;		m_bmi.bmiColors[11].rgbRed=0;
+	m_bmi.bmiColors[10].rgbGreen=80;		m_bmi.bmiColors[11].rgbGreen=255;
+	m_bmi.bmiColors[10].rgbBlue=0;		m_bmi.bmiColors[11].rgbBlue=0;
+	m_bmi.bmiColors[10].rgbReserved=0;	m_bmi.bmiColors[11].rgbReserved=0;
 
 	m_hBitmap = CreateDIBSection(m_hDCBitmap, (BITMAPINFO *)&m_bmi, DIB_RGB_COLORS,
 							(void**)&m_screen, NULL,0);
@@ -723,10 +966,16 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, m_MenuIdPrinterPort, MF_CHECKED);
 	CheckMenuItem(hMenu, IDM_DDRAWONOFF, m_DirectDrawEnabled ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_DDINVIDEORAM, m_DDS2InVideoRAM ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(hMenu, IDM_DSOUNDONOFF, DirectSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
 
   CheckMenuItem(hMenu, m_DDFullScreenMode, MF_CHECKED);
 
+  CheckMenuItem(hMenu, ID_SERIAL, SerialPortEnabled ? MF_CHECKED:MF_UNCHECKED);
+  CheckMenuItem(hMenu, ID_COM1, (SerialPort==1)? MF_CHECKED:MF_UNCHECKED);
+  CheckMenuItem(hMenu, ID_COM2, (SerialPort==2)? MF_CHECKED:MF_UNCHECKED);
+  CheckMenuItem(hMenu, ID_COM3, (SerialPort==3)? MF_CHECKED:MF_UNCHECKED);
+  CheckMenuItem(hMenu, ID_COM4, (SerialPort==4)? MF_CHECKED:MF_UNCHECKED);
+
+  CheckMenuItem(hMenu, ID_HIDEMENU, HideMenuEnabled ? MF_CHECKED:MF_UNCHECKED);
 
   UpdateMonitorMenu();
 
@@ -825,7 +1074,7 @@ HRESULT BeebWin::InitSurfaces(void)
 		else
 			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 		ddsd.dwWidth = 800;
-		ddsd.dwHeight = 256;
+		ddsd.dwHeight = 512;
 		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
 	}
 	if( ddrval == DD_OK )
@@ -1024,7 +1273,7 @@ LRESULT CALLBACK WndProc(
 
 				hDC = BeginPaint(hWnd, &ps);
 				mainWin->RealizePalette(hDC);
-				mainWin->updateLines(hDC, 0, 256);
+				mainWin->updateLines(hDC, 0, (TeletextEnabled)?500:256);
 				EndPaint(hWnd, &ps);
 			}
 			break;
@@ -1041,6 +1290,13 @@ LRESULT CALLBACK WndProc(
 			{ // Must do a reset!
 				Init6502core();
 				Disc8271_reset();
+				Reset1770();
+				//SoundChipReset();
+			}
+			else if(row==-3)
+			{
+				if (col==-3) SoundTuning+=0.1; // Page Up
+				if (col==-4) SoundTuning-=0.1; // Page Down
 			}
 			break;					  
 
@@ -1113,6 +1369,14 @@ LRESULT CALLBACK WndProc(
 			PostQuitMessage(0);
 			break;
 
+		case WM_ENTERMENULOOP: // entering menu, must mute directsound
+			SetSound(MUTED);
+			break;
+
+		case WM_EXITMENULOOP:
+			SetSound(UNMUTED);
+			break;
+
 		default:		  // Passes it on if unproccessed
 			return (DefWindowProc(hWnd, message, uParam, lParam));
 		}
@@ -1136,11 +1400,20 @@ int BeebWin::StartOfFrame(void)
 	if (UpdateTiming()) {
 		FrameNum = 0;
 		// Blank screen on frame 0
-		memset(m_screen,0,800*256);
+		memset(m_screen,0,800*((TeletextEnabled)?500:256));
 	}
 
 	return FrameNum;
 }
+
+void BeebWin::doLED(int sx,bool on) {
+	int tsy; char colbase;
+	colbase=(DiscLedColour*2)+8; // colour will be 0 for red, 1 for green.
+	if (sx<100) colbase=8; // Red leds for keyboard always
+	if (TeletextEnabled) tsy=496; else tsy=254;
+	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
+	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
+};
 
 /****************************************************************************/
 void BeebWin::updateLines(HDC hDC, int starty, int nlines)
@@ -1148,21 +1421,31 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	WINDOWPLACEMENT wndpl;
 	HRESULT ddrval;
 	HDC hdc;
+	int TTLines=0;
+	int TextStart=236; 
+    
+	if (TeletextEnabled) TextStart=(480/TeletextStyle)-((TeletextStyle==2)?12:0);
 
 	++m_ScreenRefreshCount;
+	TTLines=500/TeletextStyle;
 
 	if (!m_DirectDrawEnabled)
 	{
-		if (m_MenuIdWinSize == IDM_640X256)
+		if ((m_MenuIdWinSize == IDM_640X256) && (!TeletextEnabled))
 		{
-			BitBlt(hDC, 0, starty, 800, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
+			BitBlt(hDC, 0, starty, 800, (TeletextEnabled)?TTLines:256, m_hDCBitmap, 0, starty, SRCCOPY);
 		}
 		else
 		{
 			int win_starty = starty * m_YWinSize / 256;
-			int win_nlines = nlines * m_YWinSize / 256;
+			int win_nlines = 256 * m_YWinSize / 256;
+			if ((DisplayCycles>0) && (hFDCBoard!=NULL)) {
+				SetBkMode(hDC,TRANSPARENT);
+				SetTextColor(hDC,0x808080);
+				TextOut(hDC,0,TextStart,ExtBoard.BoardName,strlen(ExtBoard.BoardName));
+			}
 			StretchBlt(hDC, 0, win_starty, m_XWinSize, win_nlines,
-					m_hDCBitmap, 0, starty, ActualScreenWidth, nlines, SRCCOPY);
+				m_hDCBitmap, 0, starty, (TeletextEnabled)?552:ActualScreenWidth, (TeletextEnabled==1)?TTLines:256, SRCCOPY);
 		}
 	}
 	else
@@ -1189,13 +1472,19 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		{
 			BitBlt(hdc, 0, starty, 800, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
 
+			if ((DisplayCycles>0) && (hFDCBoard!=NULL)) {
+				SetBkMode(hdc,TRANSPARENT);
+				SetTextColor(hdc,0x808080);
+				TextOut(hdc,0,TextStart,ExtBoard.BoardName,strlen(ExtBoard.BoardName));
+			}
+
 			if (m_ShowSpeedAndFPS && m_isFullScreen)
 			{
 				char fps[50];
-				sprintf(fps, "%2.2f %2.2f %04x %04x", m_RelativeSpeed, m_FramesPerSecond,ProgramCounter,TubeProgramCounter);
+				sprintf(fps, "%2.2f %2.2f %04x", m_RelativeSpeed, m_FramesPerSecond,ProgramCounter);
 				SetBkMode(hdc,TRANSPARENT);
 				SetTextColor(hdc,0x808080);
-				TextOut(hdc,460,240,fps,strlen(fps));
+				TextOut(hdc,400,TextStart,fps,strlen(fps));
 			}
 
 			m_DDS2One->ReleaseDC(hdc);
@@ -1212,8 +1501,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 			// Blit the whole of the secondary buffer onto the screen
 			srcRect.left = 0;
 			srcRect.top = 0;
-			srcRect.right = ActualScreenWidth;
-			srcRect.bottom = 256;
+			srcRect.right = (TeletextEnabled)?552:ActualScreenWidth;
+			srcRect.bottom = (TeletextEnabled)?TTLines:256; 
 
 			ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
 			if (ddrval == DDERR_SURFACELOST)
@@ -1542,6 +1831,12 @@ void BeebWin::TranslateKeyMapping(void)
 	}
 }
 
+void BeebWin::SetImageName(char *DiscName,char Drive,char DType) {
+	strcpy(CDiscName[Drive],DiscName);
+	CDiscType[Drive]=DType;
+	DiscLoaded[Drive]=TRUE;
+}
+
 /****************************************************************************/
 void BeebWin::ReadDisc(int Drive,HMENU dmenu)
 {
@@ -1562,7 +1857,7 @@ void BeebWin::ReadDisc(int Drive,HMENU dmenu)
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
 	ofn.lpstrFilter = "Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img\0"
-                    "ADFS Disc (*.adl)\0*.adl\0"
+                    "ADFS Disc (*.adl *.adf)\0*.adl;*.adf\0"
                     "Single Sided Disc (*.ssd)\0*.ssd\0"
                     "Double Sided Disc (*.dsd)\0*.dsd\0"
                     "Single Sided Disc (*.*)\0*.*\0"
@@ -1602,6 +1897,8 @@ void BeebWin::ReadDisc(int Drive,HMENU dmenu)
             dsd = true;
           if (stricmp(ext+1, "adl") == 0)
             adfs = true;
+          if (stricmp(ext+1, "adf") == 0)
+            adfs = true;
         break;
       }
 	case 2:
@@ -1613,10 +1910,15 @@ void BeebWin::ReadDisc(int Drive,HMENU dmenu)
     }
 	// Another Master 128 Update, brought to you by Richard Gellman
 	if (MachineType==0) {
-		if (dsd)
-			LoadSimpleDSDiscImage(FileName, Drive, 80);
-		else
-			LoadSimpleDiscImage(FileName, Drive, 0, 80);
+		if (dsd) {
+			if (NativeFDC) LoadSimpleDSDiscImage(FileName, Drive, 80);
+			else Load1770DiscImage(FileName,Drive,1,dmenu); } // 1 = dsd
+		if ((!dsd) && (!adfs)) {
+			if (NativeFDC) LoadSimpleDiscImage(FileName, Drive, 0, 80);
+			else Load1770DiscImage(FileName,Drive,0,dmenu); } // 0 = ssd
+		if (adfs) {
+			if (NativeFDC) MessageBox(GETHWND,"The native 8271 FDC cannot read ADFS discs\n","BeebEm",MB_OK|MB_ICONERROR); 
+			else Load1770DiscImage(FileName,Drive,2,dmenu); } // 2 = adfs
 	}
 
 	if (MachineType==1) {
@@ -1638,7 +1940,7 @@ void BeebWin::ReadDisc(int Drive,HMENU dmenu)
 /****************************************************************************/
 void BeebWin::LoadTape(void)
 {
-	char StartPath[_MAX_PATH], DefaultPath[_MAX_PATH];
+	char DefaultPath[_MAX_PATH];
 	char FileName[256];
 	OPENFILENAME ofn;
 
@@ -1686,6 +1988,56 @@ void BeebWin::LoadTape(void)
 	strcpy(DefaultPath, m_AppPath);
 }
 
+void BeebWin::SelectFDC(void)
+{
+	char DefaultPath[_MAX_PATH];
+	char FileName[256];
+	OPENFILENAME ofn;
+
+	strcpy(DefaultPath, m_AppPath);
+	strcat(DefaultPath, "Hardware");
+
+//  GetProfileString("BeebEm", "DiscsPath", DefaultPath, StartPath, _MAX_PATH);
+//  ofn.nFilterIndex = GetProfileInt("BeebEm", "LoadDiscFilter", 1);
+    ofn.nFilterIndex = 1;
+	FileName[0] = '\0';
+
+	/* Hmm, what do I put in all these fields! */
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.hInstance = NULL;
+	ofn.lpstrFilter = "FDC Extension Board Plugin DLL (*.dll)\0*.dll\0";
+	ofn.lpstrCustomFilter = NULL;
+	ofn.nMaxCustFilter = 0;
+	ofn.lpstrFile = FileName;
+	ofn.nMaxFile = sizeof(FileName);
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = DefaultPath;
+	ofn.lpstrTitle = NULL;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nFileOffset = 0;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = NULL;
+	ofn.lCustData = 0;
+	ofn.lpfnHook = NULL;
+	ofn.lpTemplateName = NULL;
+
+	if (GetOpenFileName(&ofn))
+	{
+    unsigned PathLength = strrchr(FileName, '\\') - FileName;
+    strncpy(DefaultPath, FileName, PathLength);
+    DefaultPath[PathLength] = 0;
+//    WriteProfileString("BeebEm", "DiscsPath", DefaultPath);
+//    WriteProfileString("BeebEm", "LoadDiscFilter", itoa(ofn.nFilterIndex, DefaultPath, _MAX_PATH));
+	LoadFDC(FileName);
+	}
+    bool dsd = false;
+	bool adfs = false;
+
+	strcpy(DefaultPath, m_AppPath);
+}
+
 /****************************************************************************/
 void BeebWin::NewDiscImage(int Drive)
 {
@@ -1707,7 +2059,9 @@ void BeebWin::NewDiscImage(int Drive)
 	ofn.lpstrFilter = "Single Sided Disc (*.ssd)\0*.ssd\0"
                     "Double Sided Disc (*.dsd)\0*.dsd\0"
                     "Single Sided Disc\0*.*\0"
-                    "Double Sided Disc\0*.*\0";
+                    "Double Sided Disc\0*.*\0"
+					"ADFS M ( 80 Track) Disc\0*.adf\0"
+					"ADFS L (160 Track) Disc\0*.adl\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = FileName;
@@ -1738,8 +2092,13 @@ void BeebWin::NewDiscImage(int Drive)
 			if (ofn.nFilterIndex == 1 ||
           ofn.nFilterIndex == 3)
 				strcat(FileName, ".ssd");
-			else
+			if (ofn.nFilterIndex == 2 ||
+          ofn.nFilterIndex == 4)
 				strcat(FileName, ".dsd");
+			if (ofn.nFilterIndex==5)
+				strcat(FileName, ".adf");
+			if (ofn.nFilterIndex==6)
+				strcat(FileName, ".adl");
 		}
 
 		if (ofn.nFilterIndex == 1 ||
@@ -1747,14 +2106,20 @@ void BeebWin::NewDiscImage(int Drive)
 		{
 			CreateDiscImage(FileName, Drive, 1, 80);
 		}
-		else
+		if (ofn.nFilterIndex == 2 ||
+        ofn.nFilterIndex == 4)
 		{
 			CreateDiscImage(FileName, Drive, 2, 80);
 		}
+		if (ofn.nFilterIndex == 5) CreateADFSImage(FileName,Drive,80,m_hMenu);
+		if (ofn.nFilterIndex == 6) CreateADFSImage(FileName,Drive,160,m_hMenu);
 
 		/* Allow disc writes */
 		if (m_WriteProtectDisc[Drive])
 			ToggleWriteProtect(Drive);
+		DWriteable[Drive]=1;
+		DiscLoaded[Drive]=TRUE;
+		strcpy(CDiscName[1],FileName);
 	}
 strcpy(DefaultPath, m_AppPath);
 }
@@ -1763,7 +2128,8 @@ strcpy(DefaultPath, m_AppPath);
 void BeebWin::SaveState()
 {
 	char StartPath[_MAX_PATH], DefaultPath[_MAX_PATH];
-	char FileName[256];
+	char FileName[260];
+	bool uef;
 	OPENFILENAME ofn;
 
 	strcpy(DefaultPath, m_AppPath);
@@ -1776,7 +2142,8 @@ void BeebWin::SaveState()
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Beeb State File\0*.*\0";
+	ofn.lpstrFilter = "UEF State File\0*.uef\0"
+					  "Beeb State File\0*.*\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.nFilterIndex = 1;
@@ -1801,8 +2168,18 @@ void BeebWin::SaveState()
     DefaultPath[PathLength] = 0;
     WriteProfileString("BeebEm", "StatesPath", DefaultPath);
 
-    BeebSaveState(FileName);
+	uef=FALSE;
+	// Add UEF extension if not already set and is UEF
+	if (ofn.nFilterIndex==1) {
+		if ((strcmp(FileName+(strlen(FileName)-4),".UEF")!=0) &&
+			(strcmp(FileName+(strlen(FileName)-4),".uef")!=0)) {
+			strcat(FileName,".uef");
+		}
+		uef=TRUE;
 	}
+    if (!uef) BeebSaveState(FileName); else SaveUEFState(FileName);
+	}
+
 strcpy(DefaultPath, m_AppPath);
 }
 
@@ -1823,7 +2200,8 @@ void BeebWin::RestoreState()
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Beeb State File\0*.*\0";
+	ofn.lpstrFilter = "UEF State File\0*.uef\0"
+					  "Beeb State File\0*.*\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.nFilterIndex = 1;
@@ -1848,7 +2226,7 @@ void BeebWin::RestoreState()
     DefaultPath[PathLength] = 0;
     WriteProfileString("BeebEm", "StatesPath", DefaultPath);
 
-		BeebRestoreState(FileName);
+		if (ofn.nFilterIndex==2) BeebRestoreState(FileName); else LoadUEFState(FileName);
 	}
 strcpy(DefaultPath, m_AppPath);
 }
@@ -2000,18 +2378,6 @@ void BeebWin::TranslatePrinterPort()
 	case IDM_PRINTER_LPT4:
 		strcpy(m_PrinterDevice, "LPT4");
 		break;
-	case IDM_PRINTER_COM1:
-		strcpy(m_PrinterDevice, "COM1");
-		break;
-	case IDM_PRINTER_COM2:
-		strcpy(m_PrinterDevice, "COM2");
-		break;
-	case IDM_PRINTER_COM3:
-		strcpy(m_PrinterDevice, "COM3");
-		break;
-	case IDM_PRINTER_COM4:
-		strcpy(m_PrinterDevice, "COM4");
-		break;
 	}
 }
 
@@ -2021,6 +2387,7 @@ void BeebWin::SavePreferences()
 	char CfgValue[256];
 	char CfgName[256];
 	RECT wndrect;
+	int LEDByte;
 
 	sprintf(CfgValue, "%d", m_DirectDrawEnabled);
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_DIRECT_ENABLED,
@@ -2129,13 +2496,34 @@ void BeebWin::SavePreferences()
 	sprintf(CfgValue, "%d", palette_type);
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_MONITOR,
 			CfgValue, CFG_FILE_NAME);
-	sprintf(CfgValue, "%d", MachineType);
+	*binsize=1;
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","MachineType",&MachineType,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","RelaySoundEnabled",&RelaySoundEnabled,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","TubeEnabled",&TubeEnabled,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","HideMenuEnabled",&HideMenuEnabled,binsize);
-/*	WritePrivateProfileString(CFG_MODEL_SECTION, CFG_MACHINE_TYPE,
-			CfgValue, CFG_FILE_NAME); */
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SerialPortEnabled",&SerialPortEnabled,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SerialPort",&SerialPort,binsize);
+	LEDByte=(DiscLedColour<<2)|((LEDs.ShowDisc?1:0)<<1)|(LEDs.ShowKB?1:0);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","LED Information",&LEDByte,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","TapeSoundEnabled",&TapeSoundEnabled,binsize);
+	*binsize=2;
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Tape Clock Speed",&TapeClockSpeed,binsize);
+	*binsize=1;
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","UseHostClock",&UseHostClock,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","OpCodes",&OpCodes,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Basic Hardware",&BHardware,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Teletext Half Mode",&THalfMode,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","UsePrimaryBuffer",&UsePrimaryBuffer,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","Part Samples",&PartSamples,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SoundEnabled",&SoundDefault,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","SoundBlockSize",&SBSize,binsize);
+}
+
+void BeebWin::SetTapeSpeedMenu(void) {
+	CheckMenuItem(m_hMenu,ID_TAPE_FAST,(TapeClockSpeed==750)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_TAPE_MFAST,(TapeClockSpeed==1600)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_TAPE_MSLOW,(TapeClockSpeed==3200)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_TAPE_NORMAL,(TapeClockSpeed==5600)?MF_CHECKED:MF_UNCHECKED);
 }
 
 /****************************************************************************/
@@ -2273,6 +2661,31 @@ void BeebWin::TranslateAMX(void)
 	}
 }
 
+void BeebWin::UpdateSerialMenu(HMENU hMenu) {
+	CheckMenuItem(hMenu, ID_SERIAL, (SerialPortEnabled)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_COM1, (SerialPort==1)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_COM2, (SerialPort==2)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_COM3, (SerialPort==3)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_COM4, (SerialPort==4)?MF_CHECKED:MF_UNCHECKED);
+}
+
+void BeebWin::UpdateLEDMenu(HMENU hMenu) {
+	// Update the LED Menu
+	CheckMenuItem(hMenu,ID_RED_LEDS,(DiscLedColour>0)?MF_UNCHECKED:MF_CHECKED);
+	CheckMenuItem(hMenu,ID_GREEN_LEDS,(DiscLedColour>0)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu,ID_SHOW_KBLEDS,(LEDs.ShowKB)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu,ID_SHOW_DISCLEDS,(LEDs.ShowDisc)?MF_CHECKED:MF_UNCHECKED);
+}
+
+void BeebWin::UpdateOptiMenu(void) {
+	CheckMenuItem(m_hMenu,ID_DOCONLY,(OpCodes==1)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_EXTRAS ,(OpCodes==2)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_FULLSET,(OpCodes==3)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_BHARDWARE,(BHardware==1)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_TSTYLE,(THalfMode==1)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_1773,(SBSize==1)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_443,(SBSize==0)?MF_CHECKED:MF_UNCHECKED);
+}
 /***************************************************************************/
 void BeebWin::HandleCommand(int MenuId)
 {
@@ -2281,14 +2694,16 @@ void BeebWin::HandleCommand(int MenuId)
 	HRESULT ddrval;
 	HMENU hMenu = m_hMenu;
   int prev_palette_type = palette_type;
-
+    SetSound(MUTED);
 	switch (MenuId)
 	{
 	case IDM_LOADSTATE:
 		RestoreState();
+		MustEnableSound=TRUE;
 		break;
 	case IDM_SAVESTATE:
 		SaveState();
+		MustEnableSound=TRUE;
 		break;
 
 	case IDM_QUICKLOAD:
@@ -2296,30 +2711,35 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			char FileName[_MAX_PATH];
 			strcpy(FileName, m_AppPath);
-			strcat(FileName, "beebstate\\quicksave");
+			strcat(FileName, "beebstate\\quicksave.uef");
 			if (MenuId == IDM_QUICKLOAD)
-				BeebRestoreState(FileName);
+				SaveUEFState(FileName);
 			else
-				BeebSaveState(FileName);
+				LoadUEFState(FileName);
 		}
 		break;
 
 	case IDM_LOADDISC0:
 		ReadDisc(0,hMenu);
+		MustEnableSound=TRUE;
 		break;
 	case IDM_LOADDISC1:
 		ReadDisc(1,hMenu);
+		MustEnableSound=TRUE;
 		break;
 	
 	case ID_LOADTAPE:
 		LoadTape();
+		MustEnableSound=TRUE;
 		break;
 
 	case IDM_NEWDISC0:
 		NewDiscImage(0);
+		MustEnableSound=TRUE;
 		break;
 	case IDM_NEWDISC1:
 		NewDiscImage(1);
+		MustEnableSound=TRUE;
 		break;
 
 	case IDM_WPDISC0:
@@ -2353,15 +2773,12 @@ void BeebWin::HandleCommand(int MenuId)
    			}
 			TranslatePrinterPort();
 		}
+		MustEnableSound=TRUE;
 		break;
 	case IDM_PRINTER_LPT1:
 	case IDM_PRINTER_LPT2:
 	case IDM_PRINTER_LPT3:
 	case IDM_PRINTER_LPT4:
-	case IDM_PRINTER_COM1:
-	case IDM_PRINTER_COM2:
-	case IDM_PRINTER_COM3:
-	case IDM_PRINTER_COM4:
 		if (MenuId != m_MenuIdPrinterPort)
 		{
 			/* If printer is enabled then need to
@@ -2378,6 +2795,20 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_PRINTERONOFF:
 		TogglePrinter();
 		break;
+
+	case ID_SERIAL:
+		SerialPortEnabled=1-SerialPortEnabled;
+		bSerialStateChanged=TRUE;
+		UpdateSerialMenu(hMenu);
+		break;
+	case ID_COM1:
+		SerialPort=1; UpdateSerialMenu(hMenu); bSerialStateChanged=TRUE; break;
+	case ID_COM2:
+		SerialPort=2; UpdateSerialMenu(hMenu); bSerialStateChanged=TRUE; break;
+	case ID_COM3:
+		SerialPort=3; UpdateSerialMenu(hMenu); bSerialStateChanged=TRUE; break;
+	case ID_COM4:
+		SerialPort=4; UpdateSerialMenu(hMenu); bSerialStateChanged=TRUE; break;
 
 	case IDM_DDRAWONOFF:
     {
@@ -2482,11 +2913,23 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_FULLSCREEN:
-    m_isFullScreen = !m_isFullScreen;
-    CheckMenuItem(hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
-    TranslateWindowSize();
-    SetWindowAttributes(!m_isFullScreen);
-    break;
+		WINDOWPLACEMENT tWindowPlacement;
+		if (!m_isFullScreen) {
+			tWindowPlacement.length=*binsize;
+			GetWindowPlacement(GETHWND,&tWindowPlacement);
+			SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","WindowPos",&tWindowPlacement,binsize);
+		}
+		m_isFullScreen = !m_isFullScreen;
+		CheckMenuItem(hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
+		TranslateWindowSize();
+		SetWindowAttributes(!m_isFullScreen);
+		if (!m_isFullScreen) {
+			RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","WindowPos",&tWindowPlacement,binsize);
+			tWindowPlacement.length=sizeof(tWindowPlacement);
+			tWindowPlacement.showCmd=SW_RESTORE;
+			SetWindowPlacement(GETHWND,&tWindowPlacement);
+		}
+	    break;
 
 	case IDM_SPEEDANDFPS:
 		if (m_ShowSpeedAndFPS)
@@ -2503,7 +2946,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 	
 	case IDM_SOUNDONOFF:
-		if (SoundEnabled)
+		if (SoundDefault)
 		{
 			CheckMenuItem(hMenu, IDM_SOUNDONOFF, MF_UNCHECKED);
 			SoundReset();
@@ -2519,22 +2962,6 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 	
-	case IDM_DSOUNDONOFF:
-		b = SoundEnabled;
-		if (SoundEnabled)
-		{
-			SoundReset();
-		}
-		DirectSoundEnabled = !DirectSoundEnabled;
-		CheckMenuItem(hMenu, IDM_DSOUNDONOFF, DirectSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
-		if (b)
-		{
-			SoundInit();
-			if (!SoundEnabled)
-				CheckMenuItem(hMenu, IDM_SOUNDONOFF, MF_UNCHECKED);
-		}
-		break;
-
 	case ID_SFX_RELAY:
 		RelaySoundEnabled=1-RelaySoundEnabled;
 		CheckMenuItem(hMenu,ID_SFX_RELAY,RelaySoundEnabled?MF_CHECKED:MF_UNCHECKED);
@@ -2706,6 +3133,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_DEFINEKEYMAP:
 		UserKeyboardDialog( m_hWnd );
+		MustEnableSound=TRUE;
 		break;
 
 	case IDM_USERKYBDMAPPING:
@@ -2730,7 +3158,7 @@ void BeebWin::HandleCommand(int MenuId)
 		CMDF2=fopen(TmpPath,"wb");
 		for(CMA2=0xe;CMA2<64;CMA2++) fputc(CMOSRAM[CMA2],CMDF2);
 		fclose(CMDF2);
-
+		if (!m_isFullScreen) SaveWindowPos(); // Save window co-ordinates
 		PostMessage(m_hWnd, WM_CLOSE, 0, 0L);
 		break;
 
@@ -2814,15 +3242,15 @@ void BeebWin::HandleCommand(int MenuId)
   case ID_MONITOR_AMBER:
     palette_type = AMBER;
     break;
-  case IDM_TUBE:
+/*  case IDM_TUBE:
 	TubeEnabled=1-TubeEnabled;
-	CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED); */
   case ID_FILE_RESET:
 	ResetBeebSystem(MachineType,TubeEnabled,0);
 	break;
-  case IDM_TUBERESET:
+/*  case IDM_TUBERESET:
 	  ResetBeebSystem(MachineType,1,0);
-	break;
+	break; */
   case ID_MODELB:
 	  if (MachineType==1) {
 		ResetBeebSystem(0,EnableTube,1);
@@ -2833,6 +3261,7 @@ void BeebWin::HandleCommand(int MenuId)
 	  if (MachineType==0) {
 		ResetBeebSystem(1,EnableTube,1);
 		UpdateModelType();
+		//BeginDump=1;
 	  }
 	  break;
   case ID_REWINDTAPE:
@@ -2842,12 +3271,110 @@ void BeebWin::HandleCommand(int MenuId)
 	  HideMenuEnabled=1-HideMenuEnabled;
       CheckMenuItem(hMenu, ID_HIDEMENU, (HideMenuEnabled)?MF_CHECKED:MF_UNCHECKED);
 	  break;
+   case ID_RED_LEDS:
+	   DiscLedColour=0;
+	   UpdateLEDMenu(hMenu);
+	   break;
+   case ID_GREEN_LEDS:
+	   DiscLedColour=1;
+	   UpdateLEDMenu(hMenu);
+	   break;
+   case ID_SHOW_KBLEDS:
+	   LEDs.ShowKB=!LEDs.ShowKB;
+	   UpdateLEDMenu(hMenu);
+	   break;
+   case ID_SHOW_DISCLEDS:
+	   LEDs.ShowDisc=!LEDs.ShowDisc;
+	   UpdateLEDMenu(hMenu);
+	   break;
+   case ID_FDC_DLL:
+	   SelectFDC();
+	   MustEnableSound=TRUE;
+	   break;
+   case ID_8271:
+	   KillDLLs();
+	   NativeFDC=TRUE;
+	   CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
+	   CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
+	   SysReg.SetStringValue(HKEY_CURRENT_USER,"Software\\BeebEm","FDCDLL","None"); // Write back DLL to registry
+	   break;
+   case ID_TAPE_FAST:
+	   TapeClockSpeed=750;
+	   SetTapeSpeedMenu();
+	   break;
+   case ID_TAPE_MFAST:
+	   TapeClockSpeed=1600;
+	   SetTapeSpeedMenu();
+	   break;
+   case ID_TAPE_MSLOW:
+	   TapeClockSpeed=3200;
+	   SetTapeSpeedMenu();
+	   break;
+   case ID_TAPE_NORMAL:
+	   TapeClockSpeed=5600;
+	   SetTapeSpeedMenu();
+	   break;
+   case ID_TAPESOUND:
+	   TapeSoundEnabled=!TapeSoundEnabled;
+	   CheckMenuItem(m_hMenu,ID_TAPESOUND,(TapeSoundEnabled)?MF_CHECKED:MF_UNCHECKED);
+	   break;
+   case ID_HOSTCLOCK:
+	   UseHostClock=1-UseHostClock;
+	   CheckMenuItem(m_hMenu,ID_HOSTCLOCK,(UseHostClock)?MF_CHECKED:MF_UNCHECKED);
+	   SoundReset();
+	   if (SoundDefault) SoundInit();
+	   break;
+   case ID_PBUFF:
+	   UsePrimaryBuffer=1-UsePrimaryBuffer;
+	   SoundReset();
+	   if (SoundDefault) SoundInit();
+	   break;
+   case ID_TSTYLE:
+	   THalfMode=1-THalfMode;
+	   UpdateOptiMenu();
+	   break;
+   case ID_DOCONLY:
+	   OpCodes=1;
+	   UpdateOptiMenu();
+	   break;
+   case ID_EXTRAS:
+	   OpCodes=2;
+	   UpdateOptiMenu();
+	   break;
+   case ID_FULLSET:
+	   OpCodes=3;
+	   UpdateOptiMenu();
+	   break;
+   case ID_BHARDWARE:
+	   BHardware=1-BHardware;
+	   UpdateOptiMenu();
+	   break;
+   case ID_PSAMPLES:
+	   PartSamples=1-PartSamples;
+	   UpdateOptiMenu();
+	   break;
+   case ID_1773:
+	   SBSize=1;
+	   UpdateOptiMenu();
+	   break;
+   case ID_443:
+	   SBSize=0;
+	   UpdateOptiMenu();
+	   break;
    }
-
+  SetSound(UNMUTED);
   if (palette_type != prev_palette_type) {
     CreateBitmap();
   	UpdateMonitorMenu();
   }
+}
+
+void BeebWin::SetPBuff(void) {
+	CheckMenuItem(m_hMenu,ID_PBUFF,(UsePrimaryBuffer)?MF_CHECKED:MF_UNCHECKED);
+}
+
+void BeebWin::SetSoundMenu(void) {
+	CheckMenuItem(m_hMenu,IDM_SOUNDONOFF,(SoundEnabled)?MF_CHECKED:MF_UNCHECKED);
 }
 
 void BeebWin::Focus(BOOL gotit)
@@ -2862,4 +3389,38 @@ void BeebWin::Focus(BOOL gotit)
 BOOL BeebWin::IsFrozen(void)
 {
 	return m_frozen;
+}
+
+void SaveEmuUEF(FILE *SUEF) {
+	char EmuName[16];
+	fput16(0x046C,SUEF);
+	fput32(16,SUEF);
+	// BeebEm Title Block
+	strcpy(EmuName,"BeebEm");
+	EmuName[14]=1;
+	EmuName[15]=4; // Version, 1.4
+	fwrite(EmuName,16,1,SUEF);
+	//
+	fput16(0x046a,SUEF);
+	fput32(16,SUEF);
+	// Emulator Specifics
+	// Note about this block: It should only be handled by beebem from uefstate.cpp if
+	// the UEF has been determined to be from BeebEm (Block 046C)
+	fputc(MachineType,SUEF);
+	fputc((NativeFDC)?0:1,SUEF);
+	fputc(TubeEnabled,SUEF);
+	fputc(0,SUEF); // Monitor type, reserved
+	fputc(0,SUEF); // Speed Setting, reserved
+	fput32(0,SUEF);
+	fput32(0,SUEF);
+	fput16(0,SUEF);
+	fputc(0,SUEF);
+}
+
+void LoadEmuUEF(FILE *SUEF) {
+	MachineType=fgetc(SUEF);
+	NativeFDC=(fgetc(SUEF)==0)?TRUE:FALSE;
+	TubeEnabled=fgetc(SUEF);
+	mainWin->ResetBeebSystem(MachineType,TubeEnabled,1);
+	mainWin->UpdateModelType();
 }

@@ -19,13 +19,12 @@
 /****************************************************************************/
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 
-#include "windows.h"
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <iostream.h>
+#include <windows.h>
 
 #include "6502core.h"
 #include "beebmem.h"
@@ -41,7 +40,9 @@
 #include "serial.h"
 #include "tube.h"
 
-//#define MULTITHREAD
+#ifdef MULTITHREAD
+#undef MULTITHREAD
+#endif
 
 extern VIAState SysVIAState;
 int DumpAfterEach=0;
@@ -49,6 +50,7 @@ int DumpAfterEach=0;
 unsigned char MachineType;
 BeebWin *mainWin = NULL;
 HINSTANCE hInst;
+DWORD iSerialThread,iStatThread; // Thread IDs
 
 int CALLBACK WinMain(HINSTANCE hInstance, 
 					HINSTANCE hPrevInstance,
@@ -56,13 +58,21 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 					int nCmdShow)
 {
 	MSG msg;
-  
+
 	hInst = hInstance;
 	mainWin=new BeebWin();
+
 	mainWin->Initialise();
+	SoundReset();
+	if (SoundDefault) SoundInit();
 	mainWin->ResetBeebSystem(MachineType,TubeEnabled,1); 
 	mainWin->SetRomMenu();
-
+	mainWin->SetSoundMenu();
+	mainWin->m_frozen=FALSE;
+	// Create serial threads
+	InitThreads();
+	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) SerialThread,NULL,0,&iSerialThread);
+    CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) StatThread,NULL,0,&iStatThread);
 	do
 	{
 		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
@@ -77,15 +87,14 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg); // Dispatches message to window
 		}
 
-		if (!mainWin->IsFrozen())
+		if (!mainWin->IsFrozen()) {
 			Exec6502Instruction();
+		}
 	} while(1);
   
+	mainWin->KillDLLs();
+
 	delete mainWin;
 	Kill_Serial();
-#ifdef MULTITHREAD
-	ReleaseMutex(hRunMutex);
-	CloseHandle(hRunMutex);
-#endif
 	return(0);  
 } /* main */

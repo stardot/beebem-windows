@@ -184,3 +184,38 @@ Windows update only:
 * Minor Master 128 memory handling bug corrected
 * Added End Of Conversion to VIA emulation (allows the analogue port to
   generate interrupts)
+
+Version 1.4 (Richard Gellman)
+*****************************
+Windows update only:
+* New teletext font
+* Teletext Aspect ratio and centering fixed.
+* Improved sound code timing
+* Sound "Part-Sample Compensation"
+* Screen displacement in Master 128 mode after CTRL-BREAK fixed
+* Shadow RAM/Other Master 128 mode memory problems fixed
+* Read Address and Force Interrupt commands added to 1770 FDC
+* Timing of disc access on 1770 FDC made more accurate
+* Option to create ADFS images with New Disc added
+* Cassette Relay Sound Effects fixed
+* Cassette Input Sound added
+* Keyboard and Disc LEDs added
+* Disc LEDs can be red or green
+* Fixed (I think) BufferInVideoRAM option
+* Implemented Teletext Half-Scan mode
+* Fixed HSync/VSync derived screen displacement
+* Added option to change Tape loading speed
+* Redid Serial Port code
+* Disc images now remain loaded between Model/FDC changes
+* Added plug-innable 1770 FDCs
+* Fixed Teletext "Hold Graphics" and Double Height bugs
+* More 6845 Registers implemented, including Cursor delay, and Sync delay
+* UEF State save/load implemented
+* Sound system tweeks implemented
+* Speed optimisations implemented
+* Non-Directsound code removed
+* BeebDiscLoad variable in Master 128 mode fixed
+* Window retains position between running
+* Re-worked HSync/VSync centering routine
+* Added option to use DirectSound primary buffer
+

@@ -27,53 +27,28 @@
 #include <iostream.h>
 #include <windows.h>
 #include <process.h>
-
-#ifdef SOUNDSUPPORT
+#include <math.h>
 
 #include <errno.h>
-#ifndef WIN32
-#include <unistd.h>
-#else
 #include <windows.h>
 #include <windowsx.h>
 #include <mmsystem.h>
 #include <dsound.h>
 #include "main.h"
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-#ifndef WIN32
-#include <sys/time.h>
-#include <sys/resource.h>
-#endif
-
 #include "6502core.h"
 #include "port.h"
 #include "beebmem.h"
+#include "beebwin.h"
+#include "uefstate.h"
 
-#ifndef WIN32
-#include <fcntl.h>
-#include <sys/soundcard.h>
-#include <sys/ioctl.h>
-#endif
-
-/*#define DEBUGSOUND*/
-/*#define DEBUGSOUNDTOFILE*/
-
-#ifndef WIN32
-
-#define PREFSAMPLERATE 40000
-#define MAXBUFSIZE 256
-
-static unsigned char Buffer[MAXBUFSIZE];
-
-#else
+// #define DEBUGSOUNDTOFILE
 
 #define PREFSAMPLERATE 22050
-#define MAXBUFSIZE 8192
-#define BUFSEGS 8
+#define MAXBUFSIZE 32768
 
 static unsigned char wb1[MAXBUFSIZE];
 static unsigned char wb2[MAXBUFSIZE];
@@ -89,11 +64,7 @@ static unsigned char *PROffBuf=RelayOffBuf;
 
 static LPDIRECTSOUND DSound = NULL;
 static LPDIRECTSOUNDBUFFER DSB1 = NULL;
-static LPDIRECTSOUNDBUFFER DSB2 = NULL;
-static LPDIRECTSOUNDBUFFER DSRelay = NULL;
-static LPDIRECTSOUNDBUFFER DSB3 = NULL;
-
-#endif
+int UsePrimaryBuffer=0;
 
 int SoundEnabled = 1;
 int DirectSoundEnabled = 0;
@@ -101,14 +72,20 @@ int RelaySoundEnabled = 0;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
 int SoundAutoTriggerTime;
-int SoundBufferSize;
-unsigned char BufSeg;
+int SoundBufferSize,TSoundBufferSize;
+double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
 
 /* Number of places to shift the volume */
 #define VOLMAG 3
+#define WRITE_ADJUST ((samplerate/50)*2)
+
+static int RelayLen[3]={0,398,297}; // Relay samples
+int UseHostClock=0;
+
+//FILE *sndlog;
 
 
-struct {
+volatile struct {
   unsigned int ToneFreq[4];
   unsigned int ChangeSamps[4]; /* How often this channel should flip its otuput */
   unsigned int ToneVolume[4]; /* In units of /dev/dsp */
@@ -119,46 +96,66 @@ struct {
   } Noise;
   int LastToneFreqSet; /* the tone generator last set - for writing the 2nd byte */
 } BeebState76489;
+int RealVolumes[4]; // Holds the real volume values for state save use
 
-static int ActiveChannels; /* Those channels with non-0 voolume */
+bool ReloadingChip;
+static int ActiveChannel[4]={FALSE,FALSE,FALSE,FALSE}; /* Those channels with non-0 voolume */
+// Set it to an array for more accurate sound generation
 static int devfd; /* Audio device id */
-static int samplerate;
+static unsigned int samplerate;
 static double OurTime=0.0; /* Time in sample periods */
 
-int SoundTrigger; /* Time to trigger a sound event */
+__int64 SoundTrigger; /* Time to trigger a sound event */
+__int64 SoundTrigger2,STCycles; // BBC's Clock count for triggering host clock adjust
+int ASoundTrigger; // CPU cycle equivalent to trigger recalculation;
 
 static unsigned int GenIndex[4]; /* Used by the voice generators */
 static int GenState[4];
 static int bufptr=0;
 int SoundDefault;
+double SoundTuning=0.0; // Tunning offset
+
+void PlayUpTil(double DestTime);
+FILE *seglog;
+BOOL bReRead=FALSE;
+volatile BOOL bDoSound=TRUE;
+int WriteOffset=0; int SampleAdjust=0;
+char Relay=0; int RelayPos=0;
+LARGE_INTEGER PFreq,LastPCount,CurrentPCount;
+__int64 SoundCycles=0; double CycleRatio;
+struct AudioType TapeAudio; // Tape audio decoder stuff
+bool TapeSoundEnabled;
+int PartSamples=1;
+int SBSize=1;
 
 /****************************************************************************/
-#ifdef WIN32
 /* Writes sound data to a DirectSound buffer */
-HRESULT WriteToSoundBuffer(LPDIRECTSOUNDBUFFER lpDsb,
-			PBYTE lpbSoundData, DWORD dwSoundBytes,unsigned char CheckPos)
+HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 {
 	LPVOID lpvPtr1;
 	DWORD dwBytes1; 
 	LPVOID lpvPtr2;
 	DWORD dwBytes2;
+	DWORD CWC;
 	HRESULT hr;
-	DWORD CPC;
-	if (CheckPos==1) {
-	    // Determine if DS is about to play what we want to write to
-		hr = lpDsb->GetCurrentPosition(&CPC,NULL);
-		if ((CPC/SoundBufferSize)==BufSeg) {
-			if (BufSeg>0) BufSeg--; else BufSeg=BUFSEGS; 
-		}
-	}
+	int CDiff;
+	if ((DSound==NULL) || (DSB1==NULL)) return DS_OK; // Don't write if DirectSound not up and running!
+	// (As when in menu loop)
+	// Correct from pointer desync
+    if (bReRead) {
+		DSB1->GetCurrentPosition(NULL,&CWC);
+		WriteOffset=CWC+WRITE_ADJUST;
+		if (WriteOffset>=TSoundBufferSize) WriteOffset-=TSoundBufferSize;
+		bReRead=FALSE;
+	} 
 	// Obtain write pointer.
-	hr = lpDsb->Lock(SoundBufferSize*BufSeg, dwSoundBytes, &lpvPtr1, 
+	hr = DSB1->Lock(WriteOffset, SoundBufferSize, &lpvPtr1, 
 		&dwBytes1, &lpvPtr2, &dwBytes2, 0);
 	if(hr == DSERR_BUFFERLOST)
 	{
-		hr = lpDsb->Restore();
+		hr = DSB1->Restore();
 		if (hr == DS_OK)
-			hr = lpDsb->Lock(SoundBufferSize*BufSeg, dwSoundBytes,
+			hr = DSB1->Lock(WriteOffset, SoundBufferSize,
 				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
 	}
 	if(DS_OK == hr)
@@ -170,95 +167,66 @@ HRESULT WriteToSoundBuffer(LPDIRECTSOUNDBUFFER lpDsb,
 			CopyMemory(lpvPtr2, lpbSoundData+dwBytes1, dwBytes2);
 		}
 		// Release the data back to DirectSound.
-		hr = lpDsb->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
+		hr = DSB1->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
 	}
+	// Update pointers
+	WriteOffset+=SoundBufferSize;
+	if (WriteOffset>=TSoundBufferSize) WriteOffset-=TSoundBufferSize;
+	// Check for pointer desync
+	DSB1->GetCurrentPosition(NULL,&CWC);
+	CDiff=WriteOffset-CWC;
+	if (CDiff<0) CDiff=(WriteOffset+TSoundBufferSize)-CWC;
+	if (abs(CDiff)>(signed)(WRITE_ADJUST*2)) bReRead=TRUE; 
+	SampleAdjust--;
+	if (SampleAdjust==0) {
+		SampleAdjust=4;
+		SoundBufferSize=(SBSize)?444:110; 
+	} else SoundBufferSize=(SBSize)?440:111;
 	return hr;
 }
-#endif
-/****************************************************************************/
-/* Writes sound data to a DirectSound buffer */
-HRESULT WriteRelaySound(LPDIRECTSOUNDBUFFER lpDsb,
-			PBYTE lpbSoundData)
-{
-	LPVOID lpvPtr1;
-	DWORD dwBytes1; 
-	LPVOID lpvPtr2;
-	DWORD dwBytes2;
-	HRESULT hr;
 
-	// Obtain write pointer.
-	hr = lpDsb->Lock(0, 2048, &lpvPtr1, 
-		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
-	if(hr == DSERR_BUFFERLOST)
-	{
-		hr = lpDsb->Restore();
-		if (hr == DS_OK)
-			hr = lpDsb->Lock(0, 2048,
-				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
-	}
-	if(DS_OK == hr)
-	{
-		// Write to pointers.
-		CopyMemory(lpvPtr1, lpbSoundData, dwBytes1);
-		if(NULL != lpvPtr2)
-		{
-			CopyMemory(lpvPtr2, lpbSoundData+dwBytes1, dwBytes2);
-		}
-		// Release the data back to DirectSound.
-		hr = lpDsb->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
-	}
-	return hr;
-}
 /****************************************************************************/
 /* DestTime is in samples */
-static void PlayUpTil(double DestTime) {
-  int tmptotal,channel,bufinc;
+void PlayUpTil(double DestTime) {
+  int tmptotal,channel,bufinc,tapetotal;
+  char Extras;
 
   /*cerr << "PlayUpTil: DestTime=" << DestTime << " OurTime=" << OurTime << "\n";*/
-
   while (DestTime>OurTime) {
-#ifdef WIN32
-//    if (bufptr == 0 && ActiveChannels == 0) {
-	  if (4==0) {
-#else
-	if ((BeebState76489.ToneVolume[0]==0) && 
-      (BeebState76489.ToneVolume[1]==0) &&
-      (BeebState76489.ToneVolume[2]==0) &&
-      (BeebState76489.ToneVolume[3]==0) && 0) {
-#endif
+	if ((!DirectSoundEnabled) && (!ActiveChannel[0]) && (!ActiveChannel[1]) && (!ActiveChannel[2]) && (!ActiveChannel[3])) {
       OurTime=DestTime;
     } else {
       for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
+		int tt;
         tmptotal=0;
+		Extras=4;
 		// Begin of for loop
         for(channel=1;channel<=3;channel++) {
-#ifdef WIN32
+		 if (ActiveChannel[channel]) {
 		  if (GenState[channel])
 			tmptotal+=BeebState76489.ToneVolume[channel];
 		  else
 			tmptotal-=BeebState76489.ToneVolume[channel];
-#else
-          tmptotal+=GenState[channel]?BeebState76489.ToneVolume[channel]:0;
-#endif
           GenIndex[channel]++;
-        
-          if (GenIndex[channel]>=BeebState76489.ChangeSamps[channel]) {
+          tt=(int)CSC[channel];
+		  if (!PartSamples) tt=0;
+          if (GenIndex[channel]>=(BeebState76489.ChangeSamps[channel]+tt)) {
+		    CSC[channel]+=CSA[channel];
+		    CSC[channel]-=tt;
             GenIndex[channel]=0;
             GenState[channel]^=1;
           };
+		 }
         }; /* Channel loop */
 
         /* Now put in noise generator stuff */
+	   if (ActiveChannel[0]) { 
         if (BeebState76489.Noise.FB) {
           /* White noise */
-#ifdef WIN32
 		  if (GenState[0])
 			tmptotal+=BeebState76489.ToneVolume[0];
 		  else
 			tmptotal-=BeebState76489.ToneVolume[0];
-#else
-          tmptotal+=GenState[0]?BeebState76489.ToneVolume[0]:0;
-#endif
           GenIndex[0]++;
           switch (BeebState76489.Noise.Freq) {
             case 0: /* Low */
@@ -291,14 +259,10 @@ static void PlayUpTil(double DestTime) {
           }; /* Freq type switch */
         } else {
           /* Periodic */
-#ifdef WIN32
 		  if (GenState[0])
 			tmptotal+=BeebState76489.ToneVolume[0];
 		  else
 			tmptotal-=BeebState76489.ToneVolume[0];
-#else
-          tmptotal+=GenState[0]?BeebState76489.ToneVolume[0]:0;
-#endif
           GenIndex[0]++;
           switch (BeebState76489.Noise.Freq) {
             case 0: /* Low */
@@ -358,37 +322,52 @@ static void PlayUpTil(double DestTime) {
               break;
 
           }; /* Freq type switch */
+		}
         };
 
-#ifndef WIN32
-        tmptotal/=(4*SoundVolume);
-        Buffer[bufptr]=tmptotal;
-#else
+		// Mix in relay sound here
+		if (Relay==1) tmptotal+=(RelayOffBuf[RelayPos++]-127)*10;
+		if (Relay==2) tmptotal+=(RelayOnBuf[RelayPos++]-127)*10;
+		if (TapeSoundEnabled) {
+			// Mix in tape sound here
+			tapetotal=0; 
+			if ((TapeAudio.Enabled) && (TapeAudio.Signal==2)) {
+				if (TapeAudio.Samples++>=36) TapeAudio.Samples=0;
+				tapetotal=(int)(sin(((TapeAudio.Samples*20)*3.14)/180)*80);
+				Extras++;
+			}
+			if ((TapeAudio.Enabled) && (TapeAudio.Signal==1)) {
+				tapetotal=(int)(sin(((TapeAudio.Samples*(10*(1+TapeAudio.CurrentBit)))*3.14)/180)*(80+(40*(1-TapeAudio.CurrentBit))));
+				// And if you can follow that equation, "ill give you the money meself" - Richard Gellman
+				if (TapeAudio.Samples++>=36) {
+					TapeAudio.Samples=0;
+					TapeAudio.BytePos++;
+					if (TapeAudio.BytePos<=10) TapeAudio.CurrentBit=(TapeAudio.Data & (1<<(10-TapeAudio.BytePos)))?1:0;
+				}
+				if (TapeAudio.BytePos>10) {
+					TapeAudio.ByteCount--;
+					if (!TapeAudio.ByteCount) TapeAudio.Signal=2; else { TapeAudio.BytePos=1; TapeAudio.CurrentBit=0; }
+				}
+				Extras++;
+			}
+			tmptotal+=tapetotal;
+		}
+
 		/* Make it a bit louder under Windows */
-		if (ActiveChannels>2)
-			tmptotal/=ActiveChannels;
-		else
-	        tmptotal/=2;
-		inactive_wb[bufptr] = tmptotal/SoundVolume + 128;
-#endif
+		if (Relay) Extras++;
+		if (TapeAudio.Enabled) Extras++;
+		if (Extras) tmptotal/=4; else tmptotal=0;
+		inactive_wb[bufptr] = (tmptotal/SoundVolume)+128;
+		//fputc(inactive_wb[bufptr],sndlog);
 		// end of for loop
+		if (RelayPos>=RelayLen[Relay]) Relay=0;
       }; /* buffer loop */
 
-#ifndef WIN32
-      if (write(devfd,Buffer,bufptr)==-1) {
-        cerr << "Write on audio device failed\n";
-      };
-
- /*   fprintf(stderr,"PlayUpTil: After write: bufptr=%d OurTime=%f\n",bufptr,OurTime);*/
-      OurTime+=bufinc;
-      bufptr=0;
-
-#else
 	  /* Only write data when buffer is full */
 	  if (bufptr == SoundBufferSize)
 	  {
 #ifdef DEBUGSOUNDTOFILE
-		FILE *fd = fopen("audio.dbg", "a+b");
+		FILE *fd = fopen("/audio.dbg", "a+b");
 		if (fd != NULL)
 		{
 			fwrite(inactive_wb, 1, SoundBufferSize, fd);
@@ -443,9 +422,7 @@ static void PlayUpTil(double DestTime) {
 		else
 		{
 			HRESULT hr;
-			hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize,1);
-        	BufSeg=BufSeg+1;
-			if (BufSeg>=BUFSEGS) BufSeg=0;
+			hr = WriteToSoundBuffer(inactive_wb);
 		} 
 #endif
 
@@ -466,17 +443,16 @@ static void PlayUpTil(double DestTime) {
 	  }
 
 	  OurTime+=bufinc;
-#endif
-    }; /* If no volume */
+   }; /* If no volume */
   }; /* While time */
 }; /* PlayUpTil */
 
 /****************************************************************************/
 /* Convert time in cycles to time in samples                                */
-static unsigned int LastBeebCycle=0; /* Last parameter to this function */
+static __int64 LastBeebCycle=0; /* Last parameter to this function */
 static double LastOurTime=0; /* Last result of this function */
 
-static double CyclesToSamples(unsigned int beebtime) {
+static double CyclesToSamples(__int64 beebtime) {
   double tmp;
 
   /* OK - beeb cycles are in 2MHz units, ours are in 1/samplerate */
@@ -495,25 +471,20 @@ static double CyclesToSamples(unsigned int beebtime) {
 
   tmp*=(samplerate);
   tmp/=2000000.0; /* Few - glad thats a double! */
-  tmp+=2;
 
   LastOurTime+=tmp;
-
   return LastOurTime;
 }; /* CyclesToSamples */
 
 /****************************************************************************/
 static void PlayTilNow(void) {
-  double nowsamps=CyclesToSamples(TotalCycles);
+  double nowsamps=CyclesToSamples(SoundCycles);
   PlayUpTil(nowsamps);
 }; /* PlayTilNow */
 
 /****************************************************************************/
-#ifdef WIN32
 /* Creates a DirectSound buffer */
-HRESULT CreateSoundBuffer(
-		LPDIRECTSOUND lpDirectSound, LPDIRECTSOUNDBUFFER *lplpDsb,
-		unsigned int NSR,unsigned int NBufSize)
+HRESULT CreateSecondarySoundBuffer(void)
 {
 	WAVEFORMATEX wf;
 	DSBUFFERDESC dsbdesc;
@@ -523,10 +494,10 @@ HRESULT CreateSoundBuffer(
 	memset(&wf, 0, sizeof(WAVEFORMATEX));
 	wf.wFormatTag = WAVE_FORMAT_PCM;
 	wf.nChannels = 1;
-	wf.nSamplesPerSec = NSR;
+	wf.nSamplesPerSec = samplerate;
 	wf.wBitsPerSample = 8;
-	wf.nBlockAlign = wf.wBitsPerSample * wf.nChannels / 8;
-	wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
+	wf.nBlockAlign = 1;
+	wf.nAvgBytesPerSec = samplerate;
 	wf.cbSize = 0;
 
 	// Set up DSBUFFERDESC structure.
@@ -534,156 +505,91 @@ HRESULT CreateSoundBuffer(
 	dsbdesc.dwSize = sizeof(DSBUFFERDESC);
 
 	// Need default controls (pan, volume, frequency).
-	dsbdesc.dwFlags = DSBCAPS_CTRLDEFAULT;
-	dsbdesc.dwBufferBytes = NBufSize;
+	dsbdesc.dwFlags = DSBCAPS_GETCURRENTPOSITION2; // | DSBCAPS_STICKYFOCUS;
+	dsbdesc.dwBufferBytes = 32768;
+	TSoundBufferSize=32768;
 	dsbdesc.lpwfxFormat = (LPWAVEFORMATEX)&wf;
 
 	// Create buffer.
-	hr = DSound->CreateSoundBuffer(&dsbdesc, lplpDsb, NULL);
+	hr = DSound->CreateSoundBuffer(&dsbdesc, &DSB1, NULL);
 
 	return hr;
 }
-#endif
 
-void Sound_Trigger(void) {
-		if (SoundTrigger<=TotalCycles) SoundTrigger_Real();
-}
-
-/****************************************************************************/
-// Yes, this is the function that fills the directsound buffer with the switch-on noise
-void FillSoundBuf(void) {
+HRESULT CreatePrimarySoundBuffer(void)
+{
+	WAVEFORMATEX wf;
+	DSBUFFERDESC dsbdesc;
 	HRESULT hr;
-	unsigned int TmpPtr,FCount;
-	unsigned char FOut=0;
-	inactive_wb=wb1; FCount=180; FOut=0;
-	for (BufSeg=0;BufSeg<BUFSEGS;BufSeg++) {
-		for (TmpPtr=0;TmpPtr<SoundBufferSize;TmpPtr++) {
-			inactive_wb[TmpPtr]=(FOut==0)?((BeebState76489.ToneVolume[3]/SoundVolume)+128):0;
-			if (FCount--==0) { FCount=180; FOut=1-FOut; }
-		}
-		hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize,0);
-	}
+	DSBCAPS dsbcaps;
+
+	// Set up wave format structure.
+	memset(&wf, 0, sizeof(WAVEFORMATEX));
+	wf.wFormatTag = WAVE_FORMAT_PCM;
+	wf.nChannels = 1;
+	wf.nSamplesPerSec = samplerate;
+	wf.wBitsPerSample = 8;
+	wf.nBlockAlign = 1;
+	wf.nAvgBytesPerSec = samplerate;
+	wf.cbSize = 0;
+
+	// Set up DSBUFFERDESC structure.
+	memset(&dsbdesc, 0, sizeof(DSBUFFERDESC)); // Zero it out.
+	dsbdesc.dwSize = sizeof(DSBUFFERDESC);
+	dsbdesc.dwFlags = DSBCAPS_PRIMARYBUFFER | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_STICKYFOCUS;
+	dsbdesc.dwBufferBytes = 0;
+	dsbdesc.lpwfxFormat = NULL;
+
+	// Create buffer.
+	hr = DSound->CreateSoundBuffer(&dsbdesc, &DSB1, NULL);
+	DSB1->SetFormat(&wf);
+	dsbcaps.dwSize=sizeof(DSBCAPS);
+	DSB1->GetCaps(&dsbcaps);
+	TSoundBufferSize=dsbcaps.dwBufferBytes;
+	return hr;
 }
-// In case your wondering "why tone channel 3?", From experimentation, I've discovered that
-// the BBC OS uses Channel 3 for generating the VDU7/CTRL+G/Copy key beep.
-// I presume this is so that it doesn't interfere with any other sound which would logically
-// be happening on channel 1.
+
 /****************************************************************************/
 static void InitAudioDev(int sampleratein) {
-  int parm;
-
   samplerate=sampleratein;
-
-#ifndef WIN32
-#ifdef DEBUGSOUNDTOFILE
-  if (devfd=open("audiodebug",O_WRONLY|O_CREAT/*|O_NONBLOCK*/),devfd<=0) {
-    perror("open audio debug");
-    cerr << "Couldn't open audiodebug\n";
-    exit(1);
-  };
-#else
-  if (devfd=open("/dev/dsp",O_WRONLY/*|O_NONBLOCK*/),devfd<=0) {
-    cerr << "Couldn't open /dev/dsp\n";
-    exit(1);
-  };
-
-  /* The following code is based on Philip VanBaren's 'freq5' */
-  parm=0x00080008; 
-  if (ioctl(devfd,SNDCTL_DSP_SETFRAGMENT,&parm)<0) {
-    cerr << "Couldn't set sound fragment size\n";
-    exit(1);
-  };
-
-  if (ioctl(devfd,SOUND_PCM_RESET,0)<0) {
-    cerr << "Couldn't reset sound dev\n";
-    exit(1);
-  };
-
-  parm=8;
-  if (ioctl(devfd,SOUND_PCM_WRITE_BITS,&parm)<0) {
-    cerr << "Couldn't set sound sample depth\n";
-    exit(1);
-  };
-
-  parm=1;
-  if (ioctl(devfd,SOUND_PCM_WRITE_CHANNELS,&parm)<0) {
-    cerr << "Couldn't set mono\n";
-    exit(1);
-  };
-
-  ioctl(devfd,SOUND_PCM_SYNC,0);
-
-  if (ioctl(devfd,SOUND_PCM_WRITE_RATE,&samplerate)<0) {
-    cerr << "Couldn't set sample rate to %d\n",samplerate;
-    exit(1);
-  };
-#endif
-#else
-	if (!DirectSoundEnabled)
-	{
-		MMRESULT mmresult;
-		WAVEFORMATEX wfx;
-
-		wfx.wFormatTag = WAVE_FORMAT_PCM;
-		wfx.nChannels = 1;
-		wfx.nSamplesPerSec = samplerate;
-		wfx.wBitsPerSample = 8;
-		wfx.nBlockAlign = wfx.wBitsPerSample * wfx.nChannels / 8;
-		wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
-		wfx.cbSize = 0;
-
-		mmresult = waveOutOpen(&hwo,WAVE_MAPPER,&wfx,0,0,CALLBACK_NULL);
-		if (mmresult != MMSYSERR_NOERROR)
-		{
-	  		MessageBox(GETHWND,"Could not open a wave sound device","BBC Emulator",MB_OK|MB_ICONERROR);
-			SoundReset();
-		}
-
-		active_wh = NULL;
-		active_wb = NULL;
-		inactive_wh = &wh1;
-		inactive_wb = wb1;
-	}
-	else
-	{
+  DirectSoundEnabled=1;
 		HRESULT hr;
-		int dsect;
-		hr = DirectSoundCreate(NULL, &DSound, NULL);
-		dsect=100;
-		if(hr == DS_OK)
-		{
-			hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_NORMAL);
+		int dsect=0;
 		dsect=1;
+ 		hr = DirectSoundCreate(NULL, &DSound, NULL);
+		if (hr != DS_OK) MessageBox(GETHWND,"Attempt to start DirectSound system failed","BeebEm",MB_ICONERROR|MB_OK);
+		if(hr == DS_OK)
+		{
+			hr=DS_OK;
+			if (UsePrimaryBuffer) {
+				hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_WRITEPRIMARY);
+				if (hr == DSERR_UNSUPPORTED) {
+					MessageBox(GETHWND,"Use of Primary DirectSound Buffer unsupported on this system. Using Secondary DirectSound Buffer instead",
+						"BBC Emulator",MB_OK|MB_ICONERROR);
+					UsePrimaryBuffer=0;
+				}
+			}
+			if (!UsePrimaryBuffer) hr=DSound->SetCooperativeLevel(mainWin->GethWnd(),DSSCL_NORMAL);
 		}
 		if(hr == DS_OK)
 		{
-			hr = CreateSoundBuffer(DSound, &DSB1,samplerate,SoundBufferSize*BUFSEGS);
-			FillSoundBuf();
-			if (hr == DS_OK) DSB1->Play(0,0,DSBPLAY_LOOPING);
 		dsect=2;
-		}
-//		if(hr == DS_OK)
-//		{
-//			hr = CreateSoundBuffer(DSound, &DSB2,samplerate,SoundBufferSize);
-//		dsect=3;
-//		}
-		if(hr == DS_OK)
-		{
-			hr = CreateSoundBuffer(DSound, &DSRelay,44100,2048);
-		}
+			if (UsePrimaryBuffer) hr = CreatePrimarySoundBuffer();
+			else hr=CreateSecondarySoundBuffer();
+		} else MessageBox(GETHWND,"Attempt to create DirectSound buffer failed","BeebEm",MB_ICONERROR|MB_OK);
 		if (hr != DS_OK)
 		{
 			char  errstr[200];
 			sprintf(errstr,"Direct Sound initialisation failed on part %i\nFailure code %X",dsect,hr);
 			MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 			SoundReset();
-		}  
+		}
+		mainWin->SetPBuff();
 		
 		active_wb = NULL;
 		inactive_wb = wb1;
-		BufSeg=0;
-	}
-#endif
+		if (hr==DS_OK) DSB1->Play(0,0,DSBPLAY_LOOPING);
+		if (hr==DS_OK) SoundEnabled=1;
 }; /* InitAudioDev */
 
 void LoadRelaySounds(void) {
@@ -691,8 +597,6 @@ void LoadRelaySounds(void) {
 	FILE *RelayFile;
 	char RelayFileName[256];
 	char *PRFN=RelayFileName;
-	memset(PROnBuf,2048,0);
-	memset(PROffBuf,2048,0);
 	strcpy(PRFN,RomPath);
 	strcat(PRFN,"RelayOn.SND");
 	RelayFile=fopen(PRFN,"rb");
@@ -722,8 +626,9 @@ void LoadRelaySounds(void) {
 /****************************************************************************/
 /* The 'freqval' variable is the value as sene by the 76489                 */
 static void SetFreq(int Channel, int freqval) {
-  int freq;
+  unsigned int freq;
   int ChangeSamps; /* Number of samples after which to change */
+  double t;
 
   if (freqval==0) {
     ChangeSamps=INT_MAX;
@@ -737,52 +642,111 @@ static void SetFreq(int Channel, int freqval) {
         // What we should be doing is moving to sine wave at 1/6 samplerate 
         ChangeSamps=2;
       } else {
-        ChangeSamps=(int)((((double)samplerate/(double)freq)/2.0)+0.5);
+        ChangeSamps=(int)( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
+		t=( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
+		CSA[Channel]=(double)(t-ChangeSamps);
+		CSC[Channel]=0;
       };
     }; // freq<=samplerate 
   }; /* Freqval!=0 */
-
   BeebState76489.ChangeSamps[Channel]=ChangeSamps;
 };
 
 /****************************************************************************/
+void AdjustSoundCycles(void) {
+	if (!UseHostClock) return;
+	if ((!DirectSoundEnabled) || (!SoundEnabled)) return; // it just lags the program if there's no sound
+	LARGE_INTEGER TickDiff;
+	__int64 CycleDiff;
+	// Get performance counter
+	QueryPerformanceCounter(&CurrentPCount);
+	TickDiff.QuadPart=CurrentPCount.QuadPart-LastPCount.QuadPart;
+	CycleDiff=(__int64)(TickDiff.QuadPart*CycleRatio);
+	if (CycleDiff>(SoundAutoTriggerTime/2)) {
+		LastPCount.QuadPart=CurrentPCount.QuadPart;
+		SoundCycles+=CycleDiff;
+	}
+}
+
 void SoundTrigger_Real(void) {
+	AdjustSoundCycles();
     PlayTilNow();
-    SetTrigger(SoundAutoTriggerTime,SoundTrigger);
+	SoundTrigger=SoundCycles+SoundAutoTriggerTime;
 }; /* SoundTrigger_Real */
+
+void Sound_Trigger(int NCycles) {
+	STCycles+=NCycles;
+	if (SoundTrigger2<=STCycles) {
+		AdjustSoundCycles();
+		SoundTrigger2+=3000;
+	}
+	if (!UseHostClock) SoundCycles+=NCycles;
+		if (SoundTrigger<=SoundCycles) SoundTrigger_Real();
+}
+
+void SoundChipReset(void) {
+  BeebState76489.LastToneFreqSet=0;
+  BeebState76489.ToneVolume[0]=0;
+  BeebState76489.ToneVolume[1]=BeebState76489.ToneVolume[2]=BeebState76489.ToneVolume[3]=15<<VOLMAG;
+  BeebState76489.ToneFreq[0]=BeebState76489.ToneFreq[1]=BeebState76489.ToneFreq[2]=1000;
+  BeebState76489.ToneFreq[3]=1000;
+  BeebState76489.Noise.FB=0;
+  BeebState76489.Noise.Freq=0;
+  ActiveChannel[0]=FALSE;
+  ActiveChannel[1]=ActiveChannel[2]=ActiveChannel[3]=FALSE;
+}
 
 /****************************************************************************/
 /* Called to enable sound output                                            */
 void SoundInit() {
-  /* I don't have any info on what this lot should be */
-  BeebState76489.LastToneFreqSet=0;
-  BeebState76489.ToneVolume[0]=BeebState76489.ToneVolume[1]=BeebState76489.ToneVolume[2]=BeebState76489.ToneVolume[3]=0;
-  BeebState76489.ToneFreq[0]=BeebState76489.ToneFreq[1]=BeebState76489.ToneFreq[2]=0x2ff;
-  BeebState76489.Noise.FB=0;
-  BeebState76489.Noise.Freq=0;
+  int pfr;
   ClearTrigger(SoundTrigger);
-  ActiveChannels=0;
-  SoundEnabled=1;
-  LastBeebCycle=TotalCycles;
+  LastBeebCycle=SoundCycles;
   LastOurTime=(double)LastBeebCycle * (double)SoundSampleRate / 2000000.0;
   OurTime=LastOurTime;
   bufptr=0;
-  if (SoundSampleRate == 44100)
-    SoundBufferSize = MAXBUFSIZE;
-  else if (SoundSampleRate == 22050)
-    SoundBufferSize = MAXBUFSIZE / 2;
-  else
-    SoundBufferSize = MAXBUFSIZE / 4;
-  if (DirectSoundEnabled) SoundBufferSize/=BUFSEGS;
-  SoundAutoTriggerTime = ((200000*SoundBufferSize)/SoundSampleRate)*10; /* Need to avoid overflow */
   InitAudioDev(SoundSampleRate);
+  if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000; 
+  if (SoundSampleRate == 22050) SoundAutoTriggerTime = 10000; 
+  if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000; 
+  SampleAdjust=4;
+  SoundBufferSize=111;
   LoadRelaySounds();
+  bReRead=TRUE;
+  if (UseHostClock) {
+	pfr=QueryPerformanceFrequency(&PFreq); // Get timer resolution
+	QueryPerformanceCounter(&LastPCount);
+	CurrentPCount.QuadPart=LastPCount.QuadPart;
+	CycleRatio=2000000.0/PFreq.QuadPart;
+  }
+  if (!DirectSoundEnabled) {
+	  // Non DX sound stuff here
+	  if (SoundSampleRate == 44100)
+		  SoundBufferSize = MAXBUFSIZE;
+	  else if (SoundSampleRate == 22050)
+		  SoundBufferSize = MAXBUFSIZE / 2;
+	  else
+		  SoundBufferSize = MAXBUFSIZE / 4;
+  }
+  //sndlog=fopen("/snd.log","wb");
 }; /* SoundInit */
+
+void SwitchOnSound(void) {
+  SetFreq(3,1000);
+  ActiveChannel[3]=TRUE;
+  BeebState76489.ToneVolume[3]=15<<VOLMAG;
+}
+
+void SetSound(char State) {
+	if (!SoundDefault) return;
+	if ((State==MUTED) && (SoundEnabled)) SoundReset();
+	if ((State==UNMUTED) && (SoundDefault)) SoundInit();
+}
+
 
 /****************************************************************************/
 /* Called to disable sound output                                           */
 void SoundReset(void) {
-#ifdef WIN32
 	if (!DirectSoundEnabled)
 	{
 		waveOutReset(hwo);
@@ -794,18 +758,9 @@ void SoundReset(void) {
 	{
 		if (DSB1 != NULL)
 		{
+			DSB1->Stop();
 			DSB1->Release();
 			DSB1 = NULL;
-		}
-		if (DSB2 != NULL)
-		{
-			DSB2->Release();
-			DSB2 = NULL;
-		}
-		if (DSRelay != NULL)
-		{
-			DSRelay->Release();
-			DSRelay = NULL;
 		}
 		if (DSound != NULL)
 		{
@@ -813,9 +768,6 @@ void SoundReset(void) {
 			DSound = NULL;
 		}
 	}
-#else
-  close(devfd);
-#endif
   ClearTrigger(SoundTrigger);
   SoundEnabled = 0;
 } /* SoundReset */
@@ -829,9 +781,6 @@ void Sound_RegWrite(int value) {
   if (!SoundEnabled)
     return;
 
-#ifdef DEBUGSOUND
-  cerr << "Sound_RegWrite - Value=" << value << "\n";
-#endif
   if (!(value & 0x80)) {
     unsigned val=BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet] & 15;
 
@@ -841,9 +790,6 @@ void Sound_RegWrite(int value) {
     /* And update */
     BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet]=val;
     SetFreq(BeebState76489.LastToneFreqSet+1,BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet]);
-#ifdef DEBUGSOUND
-    cerr << "Sound_RegWrite: Freq of tone " << (BeebState76489.LastToneFreqSet+1) << " now " << val << "\n";
-#endif
     trigger = 1;
   } else {
     /* Another register */
@@ -851,64 +797,49 @@ void Sound_RegWrite(int value) {
     switch ((value>>4) & 0x7) {
       case 0: /* Tone 3 freq */
         BeebState76489.ToneFreq[2]=(BeebState76489.ToneFreq[2] & 0x2f0) | (value & 0xf);
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Freq of tone 3 now " << BeebState76489.ToneFreq[2] << "\n";
-#endif
         SetFreq(3,BeebState76489.ToneFreq[2]);
         BeebState76489.LastToneFreqSet=2;
         break;
 
       case 1: /* Tone 3 vol */
-        if ((BeebState76489.ToneVolume[3]==0) && ((value &15)!=15)) ActiveChannels++;
-        if ((BeebState76489.ToneVolume[3]!=0) && ((value &15)==15)) ActiveChannels--;
+        RealVolumes[3]=value&15;
+		if ((BeebState76489.ToneVolume[3]==0) && ((value &15)!=15)) ActiveChannel[3]=TRUE;
+        if ((BeebState76489.ToneVolume[3]!=0) && ((value &15)==15)) ActiveChannel[3]=FALSE;
         BeebState76489.ToneVolume[3]=(15-(value & 15))<<VOLMAG;
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Vol of tone 3 now " << BeebState76489.ToneVolume[2] << "\n";
-#endif
         BeebState76489.LastToneFreqSet=2;
-        trigger = 1;
+		trigger = 1;
 		VolChange=3;
         break;
 
       case 2: /* Tone 2 freq */
         BeebState76489.ToneFreq[1]=(BeebState76489.ToneFreq[1] & 0x2f0) | (value & 0xf);
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Freq of tone 2 now " << BeebState76489.ToneFreq[1] << "\n";
-#endif
         BeebState76489.LastToneFreqSet=1;
         SetFreq(2,BeebState76489.ToneFreq[1]);
         break;
 
       case 3: /* Tone 2 vol */
-        if ((BeebState76489.ToneVolume[2]==0) && ((value &15)!=15)) ActiveChannels++;
-        if ((BeebState76489.ToneVolume[2]!=0) && ((value &15)==15)) ActiveChannels--;
+        RealVolumes[2]=value&15;
+        if ((BeebState76489.ToneVolume[2]==0) && ((value &15)!=15)) ActiveChannel[2]=TRUE;
+        if ((BeebState76489.ToneVolume[2]!=0) && ((value &15)==15)) ActiveChannel[2]=FALSE;
         BeebState76489.ToneVolume[2]=(15-(value & 15))<<VOLMAG;
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Vol of tone 2 now " << BeebState76489.ToneVolume[2] << "\n";
-#endif
         BeebState76489.LastToneFreqSet=1;
-        trigger = 1;
+		trigger = 1;
 		VolChange=2;
         break;
 
       case 4: /* Tone 1 freq (Possibly also noise!) */
         BeebState76489.ToneFreq[0]=(BeebState76489.ToneFreq[0] & 0x2f0) | (value & 0xf);
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Freq of tone 1 now " << BeebState76489.ToneFreq[0] << "\n";
-#endif
         BeebState76489.LastToneFreqSet=0;
         SetFreq(1,BeebState76489.ToneFreq[0]);
         break;
 
       case 5: /* Tone 1 vol */
-        if ((BeebState76489.ToneVolume[1]==0) && ((value &15)!=15)) ActiveChannels++;
-        if ((BeebState76489.ToneVolume[1]!=0) && ((value &15)==15)) ActiveChannels--;
+        RealVolumes[1]=value&15;
+        if ((BeebState76489.ToneVolume[1]==0) && ((value &15)!=15)) ActiveChannel[1]=TRUE;
+        if ((BeebState76489.ToneVolume[1]!=0) && ((value &15)==15)) ActiveChannel[1]=FALSE;
         BeebState76489.ToneVolume[1]=(15-(value & 15))<<VOLMAG;
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Vol of tone 1 now " << BeebState76489.ToneVolume[1] << "\n";
-#endif
         BeebState76489.LastToneFreqSet=0;
-        trigger = 1;
+		trigger = 1;
 		VolChange=1;
         break;
 
@@ -916,42 +847,91 @@ void Sound_RegWrite(int value) {
         BeebState76489.Noise.Freq=value &3;
         BeebState76489.Noise.FB=(value>>2)&1;
 
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Noise now " << (BeebState76489.Noise.FB?"Periodic":"White")  << " with Frequency setting " << BeebState76489.Noise.Freq << "\n";
-#endif
         trigger = 1;
         break;
 
       case 7: /* Noise volume */
-        if ((BeebState76489.ToneVolume[0]==0) && ((value &15)!=15)) ActiveChannels++;
-        if ((BeebState76489.ToneVolume[0]!=0) && ((value &15)==15)) ActiveChannels--;
+        if ((BeebState76489.ToneVolume[0]==0) && ((value &15)!=15)) ActiveChannel[0]=TRUE;
+        if ((BeebState76489.ToneVolume[0]!=0) && ((value &15)==15)) ActiveChannel[0]=FALSE;
+		RealVolumes[0]=value&15;
         BeebState76489.ToneVolume[0]=(15-(value & 15))<<VOLMAG;
-#ifdef DEBUGSOUND
-	cerr << "Sound_RegWrite: Vol of noise now " << BeebState76489.ToneVolume[0] << "\n";
-#endif
         trigger = 1;
 		VolChange=0;
         break;
     };
   };
-  if (trigger)
+  if ((trigger) && (!ReloadingChip))
     SoundTrigger_Real();
 }; /* Sound_RegWrite */
 
-#else
-void ADummyRoutine(int a) {
-  cerr << "Just so the compiler doesn't get confused by an empty file!\n";
-}
-#endif
 
 void DumpSound(void) {
 	
 }
 
 void ClickRelay(unsigned char RState) {
-	if (DirectSoundEnabled && RelaySoundEnabled) {
-		if (RState==0) WriteRelaySound(DSRelay,RelayOffBuf);
-		if (RState==1) WriteRelaySound(DSRelay,RelayOnBuf);
-		DSRelay->Play(0,0,0);
+  if (RelaySoundEnabled) {
+	RelayPos=0;
+	Relay=RState+1;
+  }
+}
+
+void LoadSoundUEF(FILE *SUEF) {
+	// Sound block
+	unsigned char Chan;
+	int Data;
+	int RegVal; // This will be filled in by the data processor
+	ReloadingChip=TRUE;
+	for (Chan=1;Chan<4;Chan++) {
+		Data=fget16(SUEF);
+		// Send the data direct to Sound_RegWrite()
+		RegVal=(((Chan-1)*2)<<4)|128;
+		RegVal|=(Data&15);
+		Sound_RegWrite(RegVal);
+		RegVal=(Data&1008)>>4;
+		Sound_RegWrite(RegVal);
 	}
+	for (Chan=1;Chan<4;Chan++) {
+		Data=fgetc(SUEF);
+		RegVal=((((Chan-1)*2)+1)<<4)|128;
+		RegVal|=Data&15;
+		Sound_RegWrite(RegVal);
+		BeebState76489.ToneVolume[4-Chan]=(15-Data)<<VOLMAG;
+		if (Data!=15) ActiveChannel[4-Chan]=TRUE; else ActiveChannel[4-Chan]=FALSE;
+	}
+	RegVal=224|(fgetc(SUEF)&7);
+	Sound_RegWrite(RegVal);
+	Data=fgetc(SUEF);
+	RegVal=240|(Data&15);
+	Sound_RegWrite(RegVal);
+	BeebState76489.ToneVolume[0]=(15-Data)<<VOLMAG;
+	if (Data!=15) ActiveChannel[0]=TRUE; else ActiveChannel[0]=FALSE;
+	BeebState76489.LastToneFreqSet=fgetc(SUEF);
+	GenIndex[0]=fget16(SUEF);
+	GenIndex[1]=fget16(SUEF);
+	GenIndex[2]=fget16(SUEF);
+	GenIndex[3]=fget16(SUEF);
+	ReloadingChip=FALSE;
+}
+
+void SaveSoundUEF(FILE *SUEF) {
+	unsigned char Noise;
+	fput16(0x046B,SUEF);
+	fput32(20,SUEF);
+	// Sound Block
+	fput16(BeebState76489.ToneFreq[2],SUEF);
+	fput16(BeebState76489.ToneFreq[1],SUEF);
+	fput16(BeebState76489.ToneFreq[0],SUEF);
+	fputc(RealVolumes[3],SUEF);
+	fputc(RealVolumes[2],SUEF);
+	fputc(RealVolumes[1],SUEF);
+    Noise=BeebState76489.Noise.Freq |
+          (BeebState76489.Noise.FB<<2);
+	fputc(Noise,SUEF);
+	fputc(RealVolumes[0],SUEF);
+	fputc(BeebState76489.LastToneFreqSet,SUEF);
+	fput16(GenIndex[0],SUEF);
+	fput16(GenIndex[1],SUEF);
+	fput16(GenIndex[2],SUEF);
+	fput16(GenIndex[3],SUEF);
 }

@@ -48,6 +48,17 @@ typedef struct
   RGBQUAD			bmiColors[256];
 } bmiData;
 
+struct LEDType {
+	bool ShiftLock;
+	bool CapsLock;
+	bool Motor;
+	bool Disc0;
+	bool Disc1;
+	bool ShowDisc;
+	bool ShowKB;
+};
+extern struct LEDType LEDs;
+
 class BeebWin  {
   
   public:
@@ -56,23 +67,42 @@ class BeebWin  {
 
 	void Initialise();
 
-	unsigned char cols[8];
+	unsigned char cols[9];
   
 	BeebWin();
 	~BeebWin();
-
+ 
+    HMENU   m_hMenu;
+    void UpdateModelType();
+	void SetSoundMenu(void);
+	void SetPBuff(void);
+	void SetImageName(char *DiscName,char Drive,char DType);
+	void SetTapeSpeedMenu(void);
+	void SelectFDC(void);
+	void LoadFDC(char *DLLName);
+	void KillDLLs(void);
+	void UpdateLEDMenu(HMENU hMenu);
+	void SetDriveControl(unsigned char value);
+	unsigned char GetDriveControl(void);
+	void doLED(int sx,bool on);
 	void updateLines(HDC hDC, int starty, int nlines);
 	void updateLines(int starty, int nlines)
 		{ updateLines(m_hDC, starty, nlines); };
 
 	void doHorizLine(unsigned long Col, int y, int sx, int width) {
-		unsigned int tsx;
-		float tsx2;
-		tsx2=(float)sx*1;
-		tsx=(int)tsx2;
-		if (y>255) return;
-		memset(m_screen+ (y* 800) + tsx, Col , width);
+		if (((y*800)+sx+36+ScreenAdjust+width)>(500*800)) return;
+		if ((m_screen+(y*800)+sx+ScreenAdjust+36)<m_screen) return;
+		if (TeletextEnabled) y/=TeletextStyle;
+		memset(m_screen+ (y* 800) + sx+((TeletextEnabled)?36+ScreenAdjust:ScreenAdjust), Col , width);
 	};
+
+	void doUHorizLine(unsigned long Col, int y, int sx, int width) {
+		if (y>500) return;
+		if (TeletextEnabled) y/=TeletextStyle;
+		memset(m_screen+ (y* 800) + sx, Col , width);
+	};
+
+	BOOL		m_frozen;
 
 //	void doHorizLine(unsigned long Col, int offset, int width) {
 //		unsigned int tsx;
@@ -94,7 +124,7 @@ class BeebWin  {
 	}
 
 	char *imageData(void) {
-		return m_screen+ScreenAdjust;
+		return (m_screen+ScreenAdjust>m_screen)?m_screen+ScreenAdjust:m_screen;
 	}
 
 	HWND GethWnd() { return m_hWnd; };
@@ -115,6 +145,8 @@ class BeebWin  {
   void ShowMenu(bool on);
   void TrackPopupMenu(int x, int y);
   bool IsFullScreen() { return m_isFullScreen; }
+  char*		m_screen;
+
 
   private:
 	int			m_MenuIdWinSize;
@@ -146,10 +178,8 @@ class BeebWin  {
   bool    m_isFullScreen;
   bool    m_isDD32;
 
-	char*		m_screen;
 	HDC 		m_hDC;
 	HWND		m_hWnd;
-  HMENU   m_hMenu;
 	HGDIOBJ 	m_hOldObj;
 	HDC 		m_hDCBitmap;
 	HGDIOBJ 	m_hBitmap;
@@ -164,7 +194,6 @@ class BeebWin  {
 	char		m_PrinterFileName[_MAX_PATH];
 	char		m_PrinterDevice[_MAX_PATH];
 
-	BOOL		m_frozen;
 
 	// DirectX stuff
 	BOOL					m_DXInit;
@@ -178,11 +207,12 @@ class BeebWin  {
 	LPDIRECTDRAWCLIPPER		m_Clipper;		// clipper for primary
 
 	BOOL InitClass(void);
+	void UpdateOptiMenu(void);
 	void CreateBeebWindow(void);
 	void CreateBitmap(void);
 	void InitMenu(void);
   void UpdateMonitorMenu();
-  void UpdateModelType();
+  void UpdateSerialMenu(HMENU hMenu);
   void UpdateSFXMenu();
 	void InitDirectX(void);
 	HRESULT InitSurfaces(void);
@@ -211,4 +241,6 @@ class BeebWin  {
 
 }; /* BeebWin */
 
+void SaveEmuUEF(FILE *SUEF);
+void LoadEmuUEF(FILE *SUEF);
 #endif

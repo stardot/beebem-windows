@@ -33,6 +33,8 @@
 #ifdef WIN32
 #include <windows.h>
 #include "main.h"
+#include "beebmem.h"
+#include "disc1770.h"
 #endif
 
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
@@ -1107,7 +1109,7 @@ static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void FreeDiscImage(int DriveNum) {
+void FreeDiscImage(int DriveNum) {
   int Track,Head,Sector;
   SectorType *SecPtr;
 
@@ -1135,6 +1137,7 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
   SectorType *SecPtr;
 
   FILE *infile=fopen(FileName,"rb");
+  mainWin->SetImageName(FileName,DriveNum,0);
   if (!infile) {
 #ifdef WIN32
     char errstr[200];
@@ -1194,6 +1197,8 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
   FILE *infile=fopen(FileName,"rb");
   int CurrentTrack,CurrentSector,HeadNum;
   SectorType *SecPtr;
+
+	mainWin->SetImageName(FileName,DriveNum,1);
 
   if (!infile) {
 #ifdef WIN32
@@ -1479,7 +1484,7 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
       scanfres!=3) {
 #ifdef WIN32
     MessageBox(GETHWND,"Incorrect format for BeebDiscLoad, correct format is "
-               "D|S:tracks:filename", "BBC Emulator",MB_OK|MB_ICONERROR);
+               "D|S|A:tracks:filename", "BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Incorrect format for BeebDiscLoad - the correct format is\n";
     cerr << "  D|S:tracks:filename\n e.g. D:80:discims/elite\n";
@@ -1489,14 +1494,25 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
     switch (DoubleSided) {
       case 'd':
       case 'D':
-        LoadSimpleDSDiscImage(Name,DriveNum,Tracks);
+		  if ((MachineType==1) || (!NativeFDC))
+	        LoadSimpleDSDiscImage(Name,DriveNum,Tracks);
+		  else
+			  Load1770DiscImage(Name,DriveNum,1,mainWin->m_hMenu);
         break;
 
       case 'S':
       case 's':
-        LoadSimpleDiscImage(Name,DriveNum,0,Tracks);
+		  if ((MachineType==1) || (!NativeFDC))
+			LoadSimpleDiscImage(Name,DriveNum,0,Tracks);
+		  else
+			  Load1770DiscImage(Name,DriveNum,0,mainWin->m_hMenu);
         break;
-
+	  case 'A':
+	  case 'a':
+		  if ((MachineType==1) || (!NativeFDC)) 
+			  Load1770DiscImage(Name,DriveNum,2,mainWin->m_hMenu);
+		  else
+			  MessageBox(GETHWND,"The 8271 FDC Cannot load the ADFS disc image specified in the BeebDiscLoad environment variable","BeebEm",MB_ICONERROR|MB_OK);
       default:
 #ifdef WIN32
         MessageBox(GETHWND,"BeebDiscLoad disc type incorrect, use S for single sided and "

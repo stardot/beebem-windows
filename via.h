@@ -23,22 +23,15 @@
 
 #ifndef VIA_HEADER
 #define VIA_HEADER
+#include <stdio.h>
+#include "viastate.h"
 
-typedef struct {
-  unsigned char ora,orb;
-  unsigned char ira,irb;
-  unsigned char ddra,ddrb;
-  unsigned char acr,pcr;
-  unsigned char ifr,ier;
-  int timer1c,timer2c; /* NOTE: Timers descrement at 2MHz and values are */
-  int timer1l,timer2l; /*   fixed up on read/write - latches hold 1MHz values*/
-  int timer1hasshot; /* True if we have already caused an interrupt for one shot mode */
-  int timer2hasshot; /* True if we have already caused an interrupt for one shot mode */
-} VIAState;
 
 void VIAReset(VIAState *ToReset);
 void SaveVIAState(VIAState *VIAData, unsigned char *StateData);
 void RestoreVIAState(VIAState *VIAData, unsigned char *StateData);
-
+void SaveVIAUEF(FILE *SUEF);
+void LoadViaUEF(FILE *SUEF);
 void via_dumpstate(VIAState *ToDump);
+
 #endif

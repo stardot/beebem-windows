@@ -139,6 +139,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 			RESETTUBEINT(R1);
 		}
 	}
+	return 0;
 }
 
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {

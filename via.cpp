@@ -20,8 +20,15 @@
 /****************************************************************************/
 /* Support file for 6522 via - 30/10/94 - David Alan Gilbert */
 
+#ifndef VIA_HEADER
+#define VIA_HEADER
 #include <iostream.h>
 #include "via.h"
+#include <stdio.h>
+#include "sysvia.h"
+#include "uservia.h"
+#include "uefstate.h"
+#include "viastate.h"
 
 void VIAReset(VIAState *ToReset) {
   ToReset->ora=ToReset->orb=0xff; /* ??? */
@@ -35,6 +42,7 @@ void VIAReset(VIAState *ToReset) {
   ToReset->timer1c=ToReset->timer2c=0xffff;/*0x1ffff; */
   ToReset->timer1hasshot=0;
   ToReset->timer2hasshot=0;
+  ToReset->timer2adjust=0;
 } /* VIAReset */
 
 /*-------------------------------------------------------------------------*/
@@ -99,3 +107,54 @@ void via_dumpstate(VIAState *ToDump) {
   cerr << "  timer1hasshot="  << ToDump->timer1hasshot << "\n";
   cerr << "  timer2hasshot="  << ToDump->timer2hasshot << "\n";
 }; /* via_dumpstate */
+
+void SaveVIAUEF(FILE *SUEF) {
+	VIAState *VIAPtr;
+	for (int n=0;n<2;n++) {
+		if (!n) VIAPtr=&SysVIAState; else VIAPtr=&UserVIAState;
+		fput16(0x0467,SUEF);
+		fput32(22,SUEF);
+		fputc(n,SUEF);
+		fputc(VIAPtr->orb,SUEF);
+		fputc(VIAPtr->irb,SUEF);
+		fputc(VIAPtr->ora,SUEF);
+		fputc(VIAPtr->ira,SUEF);
+		fputc(VIAPtr->ddrb,SUEF);
+		fputc(VIAPtr->ddra,SUEF);
+		fput16(VIAPtr->timer1c,SUEF);
+		fput16(VIAPtr->timer1l,SUEF);
+		fput16(VIAPtr->timer2c,SUEF);
+		fput16(VIAPtr->timer2l,SUEF);
+		fputc(VIAPtr->acr,SUEF);
+		fputc(VIAPtr->pcr,SUEF);
+		fputc(VIAPtr->ifr,SUEF);
+		fputc(VIAPtr->ier,SUEF);
+		fputc(VIAPtr->timer1hasshot,SUEF);
+		fputc(VIAPtr->timer2hasshot,SUEF);
+		if (!n) fputc(IC32State,SUEF); else fputc(0,SUEF);
+	}
+}
+
+void LoadViaUEF(FILE *SUEF) {
+	VIAState *VIAPtr;
+	int VIAType;
+	VIAType=fgetc(SUEF); if (VIAType) VIAPtr=&UserVIAState; else VIAPtr=&SysVIAState;
+	VIAPtr->orb=fgetc(SUEF);
+	VIAPtr->irb=fgetc(SUEF);
+	VIAPtr->ora=fgetc(SUEF);
+	VIAPtr->ira=fgetc(SUEF);
+	VIAPtr->ddrb=fgetc(SUEF);
+	VIAPtr->ddra=fgetc(SUEF);
+	VIAPtr->timer1c=fget16(SUEF);
+	VIAPtr->timer1l=fget16(SUEF);
+	VIAPtr->timer2c=fget16(SUEF);
+	VIAPtr->timer2l=fget16(SUEF);
+	VIAPtr->acr=fgetc(SUEF);
+	VIAPtr->pcr=fgetc(SUEF);
+	VIAPtr->ifr=fgetc(SUEF);
+	VIAPtr->ier=fgetc(SUEF);
+	VIAPtr->timer1hasshot=fgetc(SUEF);
+	VIAPtr->timer2hasshot=fgetc(SUEF);
+	if (!VIAType) IC32State=fgetc(SUEF);
+}
+#endif

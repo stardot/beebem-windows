@@ -25,6 +25,7 @@
 #ifndef USERVIA_HEADER
 #define USERVIA_HEADER
 
+#include "viastate.h"
 #include "via.h"
 
 extern VIAState UserVIAState;

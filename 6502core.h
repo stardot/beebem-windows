@@ -23,6 +23,7 @@
 #define CORE6502_HEADER
 
 #include "port.h"
+#include "stdio.h"
 
 void DumpRegs(void);
 
@@ -46,6 +47,8 @@ extern unsigned char NMIStatus;
 extern unsigned int Cycles;
 extern int ProgramCounter;
 extern CycleCountT TotalCycles;
+extern unsigned int NMILock;
+extern int DisplayCycles;
 
 #define SetTrigger(after,var) var=TotalCycles+after;
 #define IncTrigger(after,var) var+=(after);
@@ -67,4 +70,9 @@ void Restore6502State(unsigned char *CPUState);
 void DoNMI(void);
 void core_dumpstate(void);
 void DoInterrupt(void);
+void Save6502UEF(FILE *SUEF);
+void Load6502UEF(FILE *SUEF);
+extern int SwitchOnCycles; // Reset delay
+extern int OpCodes;
+extern int BHardware;
 #endif

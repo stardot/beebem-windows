@@ -36,6 +36,9 @@
 #include "serial.h"
 #include "tube.h"
 #include "errno.h"
+#include "uefstate.h"
+
+//FILE *fdclog2;
 
 int WritableRoms = 0;
 
@@ -47,20 +50,27 @@ int PagedRomReg;
 static int RomModified=0; /* Rom changed - needs copying back */
 static int SWRamModified=0; /* SW Ram changed - needs saving and restoring */
 unsigned char WholeRam[65536];
+unsigned char Roms[16][16384];
+unsigned char ROMSEL;
 /* Master 128 Specific Stuff */
 unsigned char FSRam[12228]; // 12K Filing System RAM
 unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
 int CMOSRAM[64]; // 50 Bytes CMOS RAM
 int CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x58,0xa2}; // Backup of CMOS Defaults
 unsigned char ShadowRAM[32768]; // 20K Shadow RAM
-unsigned char MOSROM[12228]; // 12K MOS Store for swapping FS ram in and out
+unsigned char MOSROM[16384]; // 12K MOS Store for swapping FS ram in and out
 unsigned char ACCCON; // ACCess CONtrol register
 unsigned char UseShadow; // 1 to use shadow ram, 0 to use main ram
 unsigned char MainRAM[32768]; // Main RAM temporary store when using shadow RAM
 // ShadowRAM and MainRAM have to be 32K for reasons to do with addressing
 struct CMOSType CMOS;
+unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
-char RomPath[256];
+char RomPath[512];
+// FDD Extension board variables
+int EFDCAddr; // 1770 FDC location
+int EDCAddr; // Drive control location
+bool NativeFDC; // TRUE for 8271, FALSE for DLL extension
 
 /*----------------------------------------------------------------------------*/
 /* Perform hardware address wrap around */
@@ -88,38 +98,25 @@ char *BeebMemPtrWithWrap(int a, int n) {
   char *tmpBufPtr;
   int EndAddr=a+n-1;
   int toCopy;
-  if (MachineType==1) {
-	  // Master Shadow RAM determination. not that simple ;)
-	  // Bit D (0) of ACCON determines ram to use
-	  // if D is 1 and UseShadow=1 then read WholeRam ; if D is 0 and UseShadow=1 then read MainRAM
-	  // if D is 1 and UseShadow=0 then read ShadowRAM ; if D is 0 and UseShadow=0 then read WholeRAM
-	  if ((ACCCON & 1) && UseShadow==0) NeedShadow=1;
-	  if (!(ACCCON & 1) && UseShadow==1) NeedShadow=2;
-  }
 
   a=WrapAddr(a);
   EndAddr=WrapAddr(EndAddr);
 
-  if (a<=EndAddr && NeedShadow==0) {
+  if (a<=EndAddr && Sh_Display==0) {
     return((char *)WholeRam+a);
   };
-  if (a<=EndAddr && NeedShadow==1) {
+  if (a<=EndAddr && Sh_Display>0) {
     return((char *)ShadowRAM+a);
-  };
-  if (a<=EndAddr && NeedShadow==2) {
-    return((char *)MainRAM+a);
   };
 
   toCopy=0x8000-a;
   if (toCopy>n) toCopy=n;
-  if (toCopy>0 && NeedShadow==0) memcpy(tmpBuf,WholeRam+a,toCopy);
-  if (toCopy>0 && NeedShadow==1) memcpy(tmpBuf,ShadowRAM+a,toCopy);
-  if (toCopy>0 && NeedShadow==2) memcpy(tmpBuf,MainRAM+a,toCopy);
+  if (toCopy>0 && Sh_Display==0) memcpy(tmpBuf,WholeRam+a,toCopy);
+  if (toCopy>0 && Sh_Display>0) memcpy(tmpBuf,ShadowRAM+a,toCopy);
   tmpBufPtr=tmpBuf+toCopy;
   toCopy=n-toCopy;
-  if (toCopy>0 && NeedShadow==0) memcpy(tmpBufPtr,WholeRam+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
-  if (toCopy>0 && NeedShadow==1) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
-  if (toCopy>0 && NeedShadow==2) memcpy(tmpBufPtr,MainRAM+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
+  if (toCopy>0 && Sh_Display==0) memcpy(tmpBufPtr,WholeRam+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
+  if (toCopy>0 && Sh_Display>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
   // Tripling is for Shadow RAM handling
   return(tmpBuf);
 }; /* BeebMemPtrWithWrap */
@@ -138,45 +135,30 @@ static unsigned int WrapAddrMo7(int in) {
 */
 
 char *BeebMemPtrWithWrapMo7(int a, int n) {
-  unsigned char NeedShadow=0; // 0 to read WholeRam, 1 to read ShadowRAM ; 2 to read MainRAM
   static char tmpBuf[1024];
   char *tmpBufPtr;
   int EndAddr=a+n-1;
   int toCopy;
 
-  if (MachineType==1) {
-	  // Master Shadow RAM determination. not that simple ;)
-	  // Bit D (0) of ACCON determines ram to use
-	  // if D is 1 and UseShadow=1 then read WholeRam ; if D is 0 and UseShadow=1 then read MainRAM
-	  // if D is 1 and UseShadow=0 then read ShadowRAM ; if D is 0 and UseShadow=0 then read WholeRAM
-	  if ((ACCCON & 1) && UseShadow==0) NeedShadow=1;
-	  if (!(ACCCON & 1) && UseShadow==1) NeedShadow=2;
-  }
   a=WrapAddrMo7(a);
   EndAddr=WrapAddrMo7(EndAddr);
 
-  if (a<=EndAddr && NeedShadow==0) {
+  if (a<=EndAddr && Sh_Display==0) {
     return((char *)WholeRam+a);
   };
-  if (a<=EndAddr && NeedShadow==1) {
+  if (a<=EndAddr && Sh_Display>0) {
     return((char *)ShadowRAM+a);
-  };
-  if (a<=EndAddr && NeedShadow==2) {
-    return((char *)MainRAM+a);
   };
 
   toCopy=0x8000-a;
-  if (toCopy>n && NeedShadow==0) return((char *)WholeRam+a);
-  if (toCopy>n && NeedShadow==1) return((char *)ShadowRAM+a);
-  if (toCopy>n && NeedShadow==2) return((char *)MainRAM+a);
-  if (toCopy>0 && NeedShadow==0) memcpy(tmpBuf,WholeRam+a,toCopy);
-  if (toCopy>0 && NeedShadow==1) memcpy(tmpBuf,ShadowRAM+a,toCopy);
-  if (toCopy>0 && NeedShadow==2) memcpy(tmpBuf,MainRAM+a,toCopy);
+  if (toCopy>n && Sh_Display==0) return((char *)WholeRam+a);
+  if (toCopy>n && Sh_Display>0) return((char *)ShadowRAM+a);
+  if (toCopy>0 && Sh_Display==0) memcpy(tmpBuf,WholeRam+a,toCopy);
+  if (toCopy>0 && Sh_Display>0) memcpy(tmpBuf,ShadowRAM+a,toCopy);
   tmpBufPtr=tmpBuf+toCopy;
   toCopy=n-toCopy;
-  if (toCopy>0 && NeedShadow==0) memcpy(tmpBufPtr,WholeRam+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
-  if (toCopy>0 && NeedShadow==1) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
-  if (toCopy>0 && NeedShadow==2) memcpy(tmpBufPtr,MainRAM+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
+  if (toCopy>0 && Sh_Display==0) memcpy(tmpBufPtr,WholeRam+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
+  if (toCopy>0 && Sh_Display>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy); /* Should that -1 be there ? */
   return(tmpBuf);
 }; /* BeebMemPtrWithWrapMo7 */
 
@@ -198,7 +180,12 @@ int BeebReadMem(int Address) {
 													correct me if im wrong. - Richard Gellman */
   if ((Address & ~3)==0xfe34 && MachineType==1) return(ACCCON);
   // In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-  if ((Address & ~0x1f)==0xfe80 && MachineType==0) return(Disc8271_read(Address & 0x7));
+  if (((Address & ~0x1f)==0xfe80) && (MachineType==0) && (NativeFDC)) return(Disc8271_read(Address & 0x7));
+  if ((MachineType==0) && (Address>=EFDCAddr) && (Address<(EFDCAddr+4)) && (!NativeFDC)) {
+	  //MessageBox(GETHWND,"Read of 1770 Extension Board\n","BeebEm",MB_OK|MB_ICONERROR);
+	  return(Read1770Register(Address-EFDCAddr));
+  }
+  if ((MachineType==0) && (Address==EDCAddr) && (!NativeFDC)) return(mainWin->GetDriveControl());
   if ((Address & ~7)==0xfe28 && MachineType==1) return(Read1770Register(Address & 0x7));
   if (Address==0xfe24 && MachineType==1) return(ReadFDCControlReg());
   if ((Address & ~0x1f)==0xfea0) return(0xfe); /* Disable econet */
@@ -209,14 +196,19 @@ int BeebReadMem(int Address) {
   if (Address==0xfe08) return(Read_ACIA_Status());
   if (Address==0xfe09) return(Read_ACIA_Rx_Data());
   if (Address==0xfe10) return(Read_SERPROC());
+  if (Address==0xfc01) {
+	  char infstr[200];
+	  sprintf(infstr,"%0X %0X\n",EFDCAddr,EDCAddr);
+	  MessageBox(GETHWND,infstr,"BeebEm",MB_OK|MB_ICONERROR); 
+  }
   return(0);
 } /* BeebReadMem */
 
 /*----------------------------------------------------------------------------*/
 static void DoRomChange(int NewBank) {
   /* Speed up hack - if we are switching to the same rom, then don't bother */
-  unsigned int StartAddr,ROMAddr;
   if (MachineType==0) NewBank&=0xf; // strip top bit if Model B
+  ROMSEL=NewBank&0xf;
   
   if (NewBank==PagedRomReg) return;
   // Master Specific stuff   
@@ -228,24 +220,8 @@ static void DoRomChange(int NewBank) {
   };
 
   if (MachineType==1) {
-	// rewrote this section as well
-	  // copy out the private ram if its switched in
-	  StartAddr=0x8000;
-	  ROMAddr=0x0000;
-	  // Rewrote this bit slightly to remove a bug whereby sideways ram wasn't being copied out again
-	  if ((PagedRomReg & 128)>>7) {
-		  memcpy(PrivateRAM,WholeRam+0x8000,0x1000);
-		  StartAddr=0x9000;
-		  ROMAddr=0x1000;
-	  }
-	  // copy out the sideway ram if thats switched in and has been written to.
-      if (RomModified) memcpy(Roms[PagedRomReg]+ROMAddr,WholeRam+StartAddr,0x4000);
-	  // Switch banks
-	  memcpy(WholeRam+0x8000,Roms[NewBank & 0xf],0x4000);
-	  // switch ram back in if need be
-	  if ((NewBank & 128)>>7)  memcpy(WholeRam+0x8000,PrivateRAM,0x1000);
 	  PagedRomReg=NewBank;
-	  RomModified=0;
+	  PRAM=(PagedRomReg & 128);
   }
 
 }; /* DoRomChange */
@@ -254,24 +230,16 @@ static void FiddleACCCON(unsigned char newValue) {
 	// Master specific, should only execute in Master128 mode
 	// ignore bits TST (6) IFJ (5) and ITU (4)
 	newValue&=143;
-	// Detect change in bit Y (3)
-	if ((ACCCON & 8)!=(newValue & 8)) {
-		if ((newValue & 8)==8) {
-			// switch ram into mos, mos into store
-			// memcpy(MOSROM,WholeRam+0xc000,0x2000); // Why am i wasting time copying
-			// the MOS ROM out again? - Richard Gellman
-			memcpy(WholeRam+0xc000,FSRam,0x2000);
-		}
-		else {
-			// ram out, mos in
-			memcpy(FSRam,WholeRam+0xc000,0x2000);
-			memcpy(WholeRam+0xc000,MOSROM,0x2000);
-		}
-	}
-    // Detect IRR Bit (7)
-	// Shadow RAM is handled differntly, see the beebreadmem functions.
+	unsigned char oldshd;
 	if ((newValue & 128)==128) DoInterrupt();
 	ACCCON=newValue & 127; // mask out the IRR bit so that interrupts dont occur repeatedly
+	//if (newValue & 128) intStatus|=128; else intStatus&=127;
+	oldshd=Sh_Display;
+	Sh_Display=ACCCON & 1;
+	if (Sh_Display!=oldshd) RedoMPTR();
+	Sh_CPUX=ACCCON & 4;
+	Sh_CPUE=ACCCON & 2;
+	FRAM=ACCCON & 8;
 }
 /*----------------------------------------------------------------------------*/
 void BeebWriteMem(int Address, int Value) {
@@ -295,17 +263,9 @@ void BeebWriteMem(int Address, int Value) {
 		  if (RomWritable[PagedRomReg]) SWRamModified=1;
 	  }
 	  // Now the Master 128
-	  if (MachineType==1) {
-		  if (((Address<0x9000) && (PagedRomReg & 128)) || (RomWritable[PagedRomReg])) {
-			  WholeRam[Address]=Value;
-			  if (!(PagedRomReg & 128)) RomModified=1;
-			  if (RomWritable[PagedRomReg]) SWRamModified=1;
-		  }
-	  }
+	  // Master 128 memory handling now done in 6502core.cpp, V.1.4 - Richard Gellman
     return;
   }
-
-  if (Address<0xe000 && (ACCCON & 8)==8 && MachineType==1 && Address>=0xc000) WholeRam[Address]=Value;
 
 /*Cycles++; <--- What on earth is all this for?
   extracycleprompt++;
@@ -348,7 +308,7 @@ void BeebWriteMem(int Address, int Value) {
       return;
     }
 
-    if ((Address & ~0x1f)==0xfe80 && MachineType==0) {
+    if (((Address & ~0x1f)==0xfe80) && (MachineType==0) && (NativeFDC)) {
       Disc8271_write((Address & 7),Value);
       return;
     }
@@ -377,8 +337,18 @@ void BeebWriteMem(int Address, int Value) {
 	if (Address==0xfe09) Write_ACIA_Tx_Data(Value);
 	if (Address==0xfe10) Write_SERPROC(Value);
 	if ((Address&~0x7)==0xfee0) WriteTubeFromHostSide(Address&7,Value);
+
+	if ((MachineType==0) && (Address==EDCAddr) && (!NativeFDC)) {
+		//fprintf(fdclog2,"FDC CONTROL write of %02X\n",Value);
+		mainWin->SetDriveControl(Value);
+	}
+	if ((MachineType==0) && (Address>=EFDCAddr) && (Address<(EFDCAddr+4)) && (!NativeFDC)) {
+		//MessageBox(GETHWND,"Write to 1770 Extension Board\n","BeebEm",MB_OK|MB_ICONERROR);
+		Write1770Register(Address-EFDCAddr,Value);
+	}
+
    // if (Address==0xfc01) exit(0); <-- ok what the hell is this?
-   // return;
+    return;
   }
 }
 
@@ -438,6 +408,7 @@ void BeebReadRoms(void) {
 	 strcat(TmpPath,"Roms.cfg");
 	 RomCfg=fopen(TmpPath,"rt"); // Retry the opem
  }
+
  if (RomCfg!=NULL) {
 	 // CFG file open, proceed to read the roms.
 	 // if machinetype=1 (i.e. master 128) we need to skip 17 lines in the file
@@ -499,7 +470,7 @@ void BeebReadRoms(void) {
 	exit(1);
 	}
  // Copy MOS to MOS Store
- memcpy(MOSROM,WholeRam+0xc000,16384);
+ //memcpy(MOSROM,WholeRam+0xc000,16384);
 }
 /*----------------------------------------------------------------------------*/
 void BeebMemInit(unsigned char LoadRoms) {
@@ -525,7 +496,7 @@ void BeebMemInit(unsigned char LoadRoms) {
   // Initialise Master stuff
   if (MachineType==1) {
 	  ACCCON=0; UseShadow=0; // Select all main memory
-	  memcpy(WholeRam+0xc000,MOSROM,0x2000); // Make sure the old MOS ROM is switched in
+//	  memcpy(WholeRam+0xc000,MOSROM,0x2000); // Make sure the old MOS ROM is switched in
   }
   // This CMOS stuff can be done anyway
   // Ah, bug with cmos.ram you say?	
@@ -538,6 +509,7 @@ void BeebMemInit(unsigned char LoadRoms) {
 	  fclose(CMDF3);
   }
   else for(CMA3=0xe;CMA3<64;CMA3++) CMOSRAM[CMA3]=CMOSDefault[CMA3-0xe];
+  //fdclog2=fopen("/fdcc.log","wb");
 } /* BeebMemInit */
 
 /*-------------------------------------------------------------------------*/
@@ -553,6 +525,68 @@ void SaveMemState(unsigned char *RomState,
 		RomState[0] = 1;
 		memcpy(SWRamState, WholeRam+0x8000, 16384);
 	}
+}
+
+
+void SaveMemUEF(FILE *SUEF) {
+	unsigned char RAMCount;
+	fput16(0x0461,SUEF); // Memory Control State
+	fput32(2,SUEF);
+	fputc(PagedRomReg,SUEF);
+	fputc(ACCCON,SUEF);
+	fput16(0x0462,SUEF); // Main Memory
+	fput32(32768,SUEF);
+	fwrite(WholeRam,1,32768,SUEF);
+	if (MachineType==1) {
+		fput16(0x0463,SUEF); // Shadow RAM
+		fput32(32770,SUEF);
+		fput16(0,SUEF);
+		fwrite(ShadowRAM,1,32768,SUEF);
+		fput16(0x0464,SUEF); // Private RAM
+		fput32(4096,SUEF);
+		fwrite(PrivateRAM,1,4096,SUEF);
+		fput16(0x0465,SUEF); // Filing System RAM
+		fput32(8192,SUEF);
+		fwrite(FSRam,1,8192,SUEF);
+	}
+	for (RAMCount=0;RAMCount<16;RAMCount++) {
+		if (RomWritable[RAMCount]) {
+			fput16(0x0466,SUEF); // ROM bank
+			fput32(16385,SUEF);
+			fputc(RAMCount,SUEF);
+			fwrite(Roms[RAMCount],1,16384,SUEF);
+		}
+	}
+}
+
+void LoadRomRegsUEF(FILE *SUEF) {
+	PagedRomReg=fgetc(SUEF);
+	ACCCON=fgetc(SUEF);
+}
+
+void LoadMainMemUEF(FILE *SUEF) {
+	fread(WholeRam,1,32768,SUEF);
+}
+
+void LoadShadMemUEF(FILE *SUEF) {
+	int SAddr;
+	SAddr=fget16(SUEF);
+	fread(ShadowRAM+SAddr,1,32768,SUEF);
+}
+
+void LoadPrivMemUEF(FILE *SUEF) {
+	fread(PrivateRAM,1,4096,SUEF);
+}
+
+void LoadFileMemUEF(FILE *SUEF) {
+	fread(FSRam,1,8192,SUEF);
+}
+
+void LoadSWRMMemUEF(FILE *SUEF) {
+	int Rom;
+	Rom=fgetc(SUEF);
+	RomWritable[Rom]=1;
+	fread(Roms[Rom],1,16384,SUEF);
 }
 
 /*-------------------------------------------------------------------------*/

@@ -32,6 +32,5 @@
 extern unsigned char MachineType;
 extern BeebWin *mainWin;
 extern HINSTANCE hInst;
-extern HANDLE hRunMutex;
 
 #endif

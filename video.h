@@ -21,6 +21,7 @@
 /****************************************************************************/
 #ifndef VIDEO_HEADER
 #define VIDEO_HEADER
+#include <stdio.h>
 
 extern int VideoTriggerCount;
 
@@ -59,9 +60,14 @@ void video_dumpstate(void);
 
 void VideoDoScanLine(void);
 
+extern unsigned char TeletextEnabled;
+
 #define VideoPoll(ncycles) if (VideoTriggerCount<=TotalCycles) VideoDoScanLine();
 
 void SaveVideoState(unsigned char *StateData);
 void RestoreVideoState(unsigned char *StateData);
-
+void SaveVideoUEF(FILE *SUEF);
+void LoadVideoUEF(FILE *SUEF);
+extern char TeletextStyle;
+extern int THalfMode;
 #endif
