@@ -35,10 +35,7 @@ void SysVIAReset(void);
 
 void SysVIA_poll_real(void);
 
-#define SysVIA_poll(ncycles) \
-  SysVIAState.timer1c-=ncycles; \
-  SysVIAState.timer2c-=ncycles; \
-  if ((SysVIAState.timer1c<0) || (SysVIAState.timer2c<0)) SysVIA_poll_real();
+void SysVIA_poll(unsigned int ncycles);
 
 void BeebKeyUp(int row, int col);
 void BeebKeyDown(int row, int col);
@@ -54,6 +51,7 @@ void SaveSysVIAState(unsigned char *StateData);
 void RestoreSysVIAState(unsigned char *StateData);
 
 void sysvia_dumpstate(void);
+void PulseSysViaCB1(void);
 
 extern int JoystickButton;
 

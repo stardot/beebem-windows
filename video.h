@@ -46,6 +46,8 @@ extern unsigned char CRTC_CursorPosHigh;       /* R14 */
 extern unsigned char CRTC_CursorPosLow;        /* R15 */
 extern unsigned char CRTC_LightPenHigh;        /* R16 */
 extern unsigned char CRTC_LightPenLow;         /* R17 */
+extern unsigned int ActualScreenWidth;
+extern long ScreenAdjust;
 
 void RedoMPTR(void);
 void CRTCWrite(int Address, int Value);

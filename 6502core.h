@@ -29,6 +29,8 @@ void DumpRegs(void);
 typedef enum {
   sysVia,
   userVia,
+  serial,
+  tube,
 } IRQ_Nums;
 
 typedef enum {
@@ -37,6 +39,7 @@ typedef enum {
 } NMI_Nums;
 
 extern int IgnoreIllegalInstructions;
+extern int BeginDump;
 
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;

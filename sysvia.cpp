@@ -42,6 +42,12 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 time_t SysTime;
 struct tm * CurTime;
 
+// Shift register stuff
+unsigned char SRMode;
+unsigned char SRCount;
+unsigned char SRData;
+unsigned char SREnabled;
+
 /* Fire button for joystick 1, 0=not pressed, 1=pressed */
 int JoystickButton = 0;
 
@@ -58,7 +64,7 @@ unsigned char OldCMOSState=0;
 // CMOS logging facilities
 unsigned char CMOSDebug=0;
 FILE *CMDF;
-
+FILE *vialog;
 /* Last value written to the slow data bus - sound reads it later */
 static unsigned char SlowDataBusWriteValue=0;
 
@@ -79,6 +85,14 @@ static void UpdateIFRTopBit(void) {
   intStatus&=~(1<<sysVia);
   intStatus|=((SysVIAState.ifr & 128)?(1<<sysVia):0);
 }; /* UpdateIFRTopBit */
+
+void PulseSysViaCB1(void) {
+	// Set IFR bit 4
+	if (SysVIAState.ier & 16) {
+		SysVIAState.ifr|=16;
+		UpdateIFRTopBit();
+	}
+}
 
 /*--------------------------------------------------------------------------*/
 void BeebKeyUp(int row,int col) {
@@ -250,6 +264,8 @@ void SysVIAWrite(int Address, int Value) {
   DumpRegs(); */
   switch (Address) {
     case 0:
+	  // Clear bit 4 of IFR from ATOD Conversion
+		SysVIAState.ifr&=~16;
       SysVIAState.orb=Value & 0xff;
       IC32Write(Value);
 	  CMOS.Enabled=((Value & 64)>>6); // CMOS Chip select
@@ -258,6 +274,8 @@ void SysVIAWrite(int Address, int Value) {
         SysVIAState.ifr&=0xfe;
         UpdateIFRTopBit();
       };
+	  SysVIAState.ifr&=~16;
+	  UpdateIFRTopBit();
       break;
 
     case 1:
@@ -315,10 +333,12 @@ void SysVIAWrite(int Address, int Value) {
       break;
 
     case 10:
+		SRData=Value;
       break;
 
     case 11:
       SysVIAState.acr=Value & 0xff;
+	  SRMode=(Value>>2)&7;
       break;
 
     case 12:
@@ -353,10 +373,13 @@ void SysVIAWrite(int Address, int Value) {
 /* Address is in the range 0-f - with the fe40 stripped out */
 int SysVIARead(int Address) {
   int tmp;
+  //fprintf(vialog,"SYSTEM VIA Read of address %02x (%d)\n",Address,Address);
   /* cerr << "SysVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
   switch (Address) {
     case 0: /* IRB read */
+	  // Clear bit 4 of IFR from ATOD Conversion
+		SysVIAState.ifr&=~16;
       tmp=SysVIAState.orb & SysVIAState.ddrb;
       tmp |= 32;    /* Fire button 2 released */
       if (!JoystickButton)
@@ -374,11 +397,17 @@ int SysVIARead(int Address) {
       tmp=SysVIAState.timer1c / 2;
       SysVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
       UpdateIFRTopBit();
+	  if (SysVIAState.timer1c<=(SysVIAState.timer1l*2))
       return(tmp & 0xff);
+	  else
+	  return(0xff);
 
     case 5: /* Timer 1 ho counter */
       tmp=SysVIAState.timer1c /512;
+	  if (SysVIAState.timer1c<=(SysVIAState.timer1l*2))
       return(tmp & 0xff);
+	  else
+	  return(0xff);
 
     case 6: /* Timer 1 lo latch */
       return(SysVIAState.timer1l & 0xff);
@@ -390,10 +419,19 @@ int SysVIARead(int Address) {
       tmp=SysVIAState.timer2c / 2;
       SysVIAState.ifr&=0xdf; /* Clear bit 5 - timer 2 */
       UpdateIFRTopBit();
+	  if (SysVIAState.timer2c<=(SysVIAState.timer2l*2))
       return(tmp & 0xff);
+      else
+	  return(0xff);
 
     case 9: /* Timer 2 ho counter */
+	  if (SysVIAState.timer1c<=(SysVIAState.timer1l*2))
       return((SysVIAState.timer2c / 512) & 0xff);
+      else
+	  return(0xff);
+
+	case 10:
+		return(SRData);
 
     case 13:
       UpdateIFRTopBit();
@@ -432,8 +470,10 @@ void SysVIATriggerCA1Int(int value) {
 
 /*--------------------------------------------------------------------------*/
 void SysVIA_poll_real(void) {
+  int tCycles;
   if (SysVIAState.timer1c<0) {
-    SysVIAState.timer1c=SysVIAState.timer1l * 2;
+  	tCycles=abs(SysVIAState.timer1c);
+    SysVIAState.timer1c=(SysVIAState.timer1l * 2)-(tCycles-4);
     if ((SysVIAState.timer1hasshot==0) || (SysVIAState.acr & 0x40)) {
       /* cerr << "SysVia timer1 int at " << TotalCycles << "\n"; */
       SysVIAState.ifr|=0x40; /* Timer 1 interrupt */
@@ -447,7 +487,8 @@ void SysVIA_poll_real(void) {
   } /* timer1c underflow */
 
   if (SysVIAState.timer2c<0) {
-    SysVIAState.timer2c=SysVIAState.timer2l * 2;
+  tCycles=abs(SysVIAState.timer2c);
+    SysVIAState.timer2c=(SysVIAState.timer2l * 2)-(tCycles-4);
     if (SysVIAState.timer2hasshot==0) {
       /* cerr << "SysVia timer2 int at " << TotalCycles << "\n"; */
       SysVIAState.ifr|=0x20; /* Timer 2 interrupt */
@@ -458,6 +499,18 @@ void SysVIA_poll_real(void) {
 
 } /* SysVIA_poll */
 
+void SysVIA_poll(unsigned int ncycles) {
+	// Converted to a proc to allow shift register functions
+  SysVIAState.timer1c-=ncycles; 
+  SysVIAState.timer2c-=ncycles; 
+  if ((SysVIAState.timer1c<0) || (SysVIAState.timer2c<0)) SysVIA_poll_real();
+  // Do Shift register stuff
+  if (SRMode==2) {
+	  // Shift IN under control of Clock 2
+	  SRCount=8-(ncycles%8);
+  }
+}
+
 /*--------------------------------------------------------------------------*/
 void SysVIAReset(void) {
   int row,col;
@@ -467,7 +520,10 @@ void SysVIAReset(void) {
   for(row=0;row<8;row++)
     for(col=0;col<10;col++)
       SysViaKbdState[col][row]=0;
-	if (CMOSDebug) CMDF=fopen("d:/cmos.log","wt");
+	SRData=0;
+	SRMode=0;
+    SRCount=0;
+	SREnabled=0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
 } /* SysVIAReset */
 
 /*-------------------------------------------------------------------------*/

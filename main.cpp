@@ -38,6 +38,10 @@
 #include "via.h"
 #include "atodconv.h"
 #include "disc1770.h"
+#include "serial.h"
+#include "tube.h"
+
+//#define MULTITHREAD
 
 extern VIAState SysVIAState;
 int DumpAfterEach=0;
@@ -56,39 +60,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	hInst = hInstance;
 	mainWin=new BeebWin();
 	mainWin->Initialise();
-    if (MachineType==0) {
-	SoundReset();
-	if (SoundDefault) SoundInit();
-	BeebMemInit();
-	Init6502core();
-	SysVIAReset();
-	UserVIAReset();
-	VideoInit();
-	Disc8271_reset();
-	AtoDReset(); 
-	}
-	if (MachineType==1) {
-//	memset(WholeRam,0,0x5000);
-//	memset(FSRam,0,0x2000);
-//	memset(ShadowRAM,0,0x5000);
-//	memset(PrivateRAM,0,0x1000);
-	ACCCON=0;
-	SoundReset();
-	if (SoundDefault) SoundInit();
-	PagedRomReg=0xf;
-	BeebMemInit();
-	Init6502core();
-	SysVIAReset();
-	UserVIAReset();
-	VideoInit();
-	Disc8271_reset();
-	Reset1770();
-	SoundReset();
-	if (SoundDefault) SoundInit();
-	AtoDReset();
-	UseShadow=0;
-	}
-
+	mainWin->ResetBeebSystem(MachineType,TubeEnabled,1); 
 	mainWin->SetRomMenu();
 
 	do
@@ -110,6 +82,10 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	} while(1);
   
 	delete mainWin;
-	
+	Kill_Serial();
+#ifdef MULTITHREAD
+	ReleaseMutex(hRunMutex);
+	CloseHandle(hRunMutex);
+#endif
 	return(0);  
 } /* main */

@@ -265,7 +265,7 @@ BEGIN
         MENUITEM "Load Disc &0",                IDM_LOADDISC0
         MENUITEM "Load Disc &1",                IDM_LOADDISC1
         MENUITEM SEPARATOR
-        MENUITEM "Load &Tape",                  ID_FILE_LOADTAPE
+        MENUITEM "Load &Tape",                  ID_LOADTAPE
         MENUITEM SEPARATOR
         MENUITEM "New Disc 0",                  IDM_NEWDISC0
         MENUITEM "New Disc 1",                  IDM_NEWDISC1
@@ -273,6 +273,7 @@ BEGIN
         MENUITEM "Write Protect 1",             IDM_WPDISC1
         MENUITEM SEPARATOR
         MENUITEM "&Reset",                      ID_FILE_RESET
+        MENUITEM "Reset with T&ube",            IDM_TUBERESET
         MENUITEM "&Load State",                 IDM_LOADSTATE
         MENUITEM "&Save State",                 IDM_SAVESTATE
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
@@ -308,6 +309,7 @@ BEGIN
             MENUITEM "Yet!",                        ID_COMMS_RS423DESTINATION_YET
 
         END
+        MENUITEM "&Rewind Tape",                ID_REWINDTAPE
     END
     POPUP "&View"
     BEGIN
@@ -343,6 +345,7 @@ BEGIN
             MENUITEM "Amber",                       ID_MONITOR_AMBER
             MENUITEM "Green",                       ID_MONITOR_GREEN
         END
+        MENUITEM "&Hide Menu",                  ID_HIDEMENU
     END
     POPUP "S&peed"
     BEGIN
@@ -359,6 +362,12 @@ BEGIN
     BEGIN
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
         MENUITEM "&DirectSound On/Off",         IDM_DSOUNDONOFF
+        MENUITEM SEPARATOR
+        POPUP "Sound &Effects"
+        BEGIN
+            MENUITEM "Cassette &Relay",             ID_SFX_RELAY
+            MENUITEM "&Cassette Input",             ID_TAPESOUND, GRAYED
+        END
         MENUITEM SEPARATOR
         MENUITEM "44.1 kHz",                    IDM_44100KHZ
         MENUITEM "22.05 kHz",                   IDM_22050KHZ
@@ -430,6 +439,8 @@ BEGIN
             , CHECKED
         END
         MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
+        MENUITEM SEPARATOR
+        MENUITEM "&Tube",                       IDM_TUBE
         MENUITEM SEPARATOR
         MENUITEM "&Joystick",                   IDM_JOYSTICK
         MENUITEM "&Mousestick",                 IDM_MOUSESTICK

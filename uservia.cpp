@@ -53,6 +53,8 @@ extern int DumpAfterEach;
 /* My raw VIA state */
 VIAState UserVIAState;
 
+unsigned char WTDelay1,WTDelay2; // Timer write delay - one cycle
+
 /*--------------------------------------------------------------------------*/
 static void UpdateIFRTopBit(void) {
   /* Update top bit of IFR */
@@ -113,6 +115,7 @@ void UserVIAWrite(int Address, int Value) {
       /*cerr << "UserVia Reg4/6 Timer1 lo Counter Write val=0x " << hex << Value << dec << " at " << TotalCycles << "\n"; */
       UserVIAState.timer1l&=0xff00;
       UserVIAState.timer1l|=(Value & 0xff);
+      WTDelay1=1-WTDelay1;
       break;
 
     case 5:
@@ -188,7 +191,6 @@ void UserVIAWrite(int Address, int Value) {
 /* Address is in the range 0-f - with the fe60 stripped out */
 int UserVIARead(int Address) {
   int tmp;
-
   /* cerr << "UserVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
   switch (Address) {
@@ -228,11 +230,17 @@ int UserVIARead(int Address) {
       tmp=UserVIAState.timer1c / 2;
       UserVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
       UpdateIFRTopBit();
+	  if (UserVIAState.timer1c<=(UserVIAState.timer1l*2)) 
       return(tmp & 0xff);
+	  else
+	  return(0xff);
 
     case 5: /* Timer 1 ho counter */
       tmp=UserVIAState.timer1c /512;
+	  if (UserVIAState.timer1c<=(UserVIAState.timer1l*2)) 
       return(tmp & 0xff);
+	  else
+	  return(0xff);
 
     case 6: /* Timer 1 lo latch */
       return(UserVIAState.timer1l & 0xff);
@@ -244,10 +252,16 @@ int UserVIARead(int Address) {
       tmp=UserVIAState.timer2c / 2;
       UserVIAState.ifr&=0xdf; /* Clear bit 5 - timer 2 */
       UpdateIFRTopBit();
-      return(tmp & 0xff);
+	  if (UserVIAState.timer2c<=(UserVIAState.timer2l*2)) 
+	      return(tmp & 0xff);
+	  else
+		  return(0xff);
 
     case 9: /* Timer 2 ho counter */
-      return((UserVIAState.timer2c / 512) & 0xff);
+	  if (UserVIAState.timer2c<=(UserVIAState.timer2l*2)) 
+		return((UserVIAState.timer2c / 512) & 0xff);
+	  else
+		  return(0xff);
 
     case 12:
       return(UserVIAState.pcr);
@@ -279,9 +293,11 @@ void UserVIATriggerCA1Int(void) {
 
 /*--------------------------------------------------------------------------*/
 void UserVIA_poll_real(void) {
+  int tCycles;
   if (UserVIAState.timer1c<0) {
+	tCycles=abs(UserVIAState.timer1c);
     /*cerr << "UserVIA timer1c\n"; */
-    UserVIAState.timer1c=UserVIAState.timer1l * 2;
+    UserVIAState.timer1c=(UserVIAState.timer1l * 2)-(tCycles-4);
     if ((UserVIAState.timer1hasshot==0) || (UserVIAState.acr & 0x40)) {
       /*cerr << "UserVIA timer1c - int at " << TotalCycles << "\n"; */
       UserVIAState.ifr|=0x40; /* Timer 1 interrupt */
@@ -295,8 +311,9 @@ void UserVIA_poll_real(void) {
   } /* timer1c underflow */
 
   if (UserVIAState.timer2c<0) {
+	tCycles=abs(UserVIAState.timer2c);
     /* cerr << "UserVIA timer2c\n"; */
-    UserVIAState.timer2c=UserVIAState.timer2l * 2;
+    UserVIAState.timer2c=(UserVIAState.timer2l * 2)-(tCycles-4);
     if (!(UserVIAState.ifr&=0x20)) {
      /* cerr << "UserVIA timer2c - int\n"; */
       UserVIAState.ifr|=0x20; /* Timer 2 interrupt */

@@ -161,3 +161,26 @@ Windows update only:
 * Fixed the sideways RAM bug I accidentally put in the previous version
   Digital audio in Exile has returned!
 
+Version 1.35 (Richard Gellman)
+------------------------------
+Windows update only:
+* Fixed rom menu corruption during reset bug
+* Improved DirectSound code, makes sound smoother
+* Added hide menu option to allow the whole screen to be used for the BBC.
+* Added tape interface (and some code for the serial port)
+* Added preliminary tube support (not currently functional)
+* Added HSync and VSync handling to enable screen positioning
+* Added screen clear on Frame 0 to remove "redundant" screen data
+* Added the ability to display "Wide" screens (makes Boffin work correctly)
+* Corrected a 6502 Addressing mode bug (makes the sticky explosions in
+  Elite go away)
+* Revised 6502 Instruction/IRQ/NMI timing
+* Corrected 6522 VIA Timer reload timing (makes Revs work correctly)
+* Corrected 6522 VIA Timer pre-reload action (makes Volcano work.. ish)
+* Corrected VSync timing.. removes flicker from Revs and some versions
+  of Elite
+* Added writable option for ROMS in the roms.cfg file
+* Modified roms.cfg handling to save having to re-edit between releases
+* Minor Master 128 memory handling bug corrected
+* Added End Of Conversion to VIA emulation (allows the analogue port to
+  generate interrupts)

@@ -33,6 +33,9 @@
 #include "atodconv.h"
 #include "beebmem.h"
 #include "disc1770.h"
+#include "serial.h"
+#include "tube.h"
+#include "errno.h"
 
 int WritableRoms = 0;
 
@@ -47,7 +50,7 @@ unsigned char WholeRam[65536];
 /* Master 128 Specific Stuff */
 unsigned char FSRam[12228]; // 12K Filing System RAM
 unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
-int CMOSRAM[64]; // = {0,0,0,0,1,0,1,1,1,153,0,132,0,0,104,0,0,0,0,12,255,0,0,7,0,30,5,0,0,0,0}; // 50 Bytes CMOS RAM
+int CMOSRAM[64]; // 50 Bytes CMOS RAM
 int CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x58,0xa2}; // Backup of CMOS Defaults
 unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 unsigned char MOSROM[12228]; // 12K MOS Store for swapping FS ram in and out
@@ -58,7 +61,6 @@ unsigned char MainRAM[32768]; // Main RAM temporary store when using shadow RAM
 struct CMOSType CMOS;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 char RomPath[256];
-// static unsigned char Roms[16][16384];
 
 /*----------------------------------------------------------------------------*/
 /* Perform hardware address wrap around */
@@ -184,11 +186,7 @@ int BeebReadMem(int Address) {
 
  /* We now presume that the caller has checked to see if the address is below fc00
     and if so does a direct read */ 
- /* if (Address<0xfc00) return(WholeRam[Address]); */
   if (Address>=0xff00) return(WholeRam[Address]);
-  Cycles++;
-  extracycleprompt++;
-  if (extracycleprompt & 8) Cycles++;
   /* OK - its IO space - lets check some system devices */
   /* VIA's first - games seem to do really heavy reaing of these */
   /* Can read from a via using either of the two 16 bytes blocks */
@@ -206,14 +204,18 @@ int BeebReadMem(int Address) {
   if ((Address & ~0x1f)==0xfea0) return(0xfe); /* Disable econet */
   if ((Address & ~0x1f)==0xfec0 && MachineType==0) return(AtoDRead(Address & 0xf));
   if (Address>=0xfe18 && Address<=0xfe20 && MachineType==1) return(AtoDRead(Address - 0xfe18));
-  if ((Address & ~0x1f)==0xfee0) return(0xfe+MachineType); /* Disable tube */
+  if ((Address & ~0x1f)==0xfee0) return(ReadTubeFromHostSide(Address&7)); //Read From Tube
   // Tube seems to return FF on a master (?)
+  if (Address==0xfe08) return(Read_ACIA_Status());
+  if (Address==0xfe09) return(Read_ACIA_Rx_Data());
+  if (Address==0xfe10) return(Read_SERPROC());
   return(0);
 } /* BeebReadMem */
 
 /*----------------------------------------------------------------------------*/
 static void DoRomChange(int NewBank) {
   /* Speed up hack - if we are switching to the same rom, then don't bother */
+  unsigned int StartAddr,ROMAddr;
   if (MachineType==0) NewBank&=0xf; // strip top bit if Model B
   
   if (NewBank==PagedRomReg) return;
@@ -228,14 +230,22 @@ static void DoRomChange(int NewBank) {
   if (MachineType==1) {
 	// rewrote this section as well
 	  // copy out the private ram if its switched in
-	  if ((PagedRomReg & 128)>>7) memcpy(PrivateRAM,WholeRam+0x8000,0x1000);
-	  // copy out the sideway ram if thats switched in
-      if ((RomModified) && (!(PagedRomReg & 128))) memcpy(Roms[PagedRomReg],WholeRam+0x8000,0x4000);
+	  StartAddr=0x8000;
+	  ROMAddr=0x0000;
+	  // Rewrote this bit slightly to remove a bug whereby sideways ram wasn't being copied out again
+	  if ((PagedRomReg & 128)>>7) {
+		  memcpy(PrivateRAM,WholeRam+0x8000,0x1000);
+		  StartAddr=0x9000;
+		  ROMAddr=0x1000;
+	  }
+	  // copy out the sideway ram if thats switched in and has been written to.
+      if (RomModified) memcpy(Roms[PagedRomReg]+ROMAddr,WholeRam+StartAddr,0x4000);
 	  // Switch banks
 	  memcpy(WholeRam+0x8000,Roms[NewBank & 0xf],0x4000);
 	  // switch ram back in if need be
 	  if ((NewBank & 128)>>7)  memcpy(WholeRam+0x8000,PrivateRAM,0x1000);
 	  PagedRomReg=NewBank;
+	  RomModified=0;
   }
 
 }; /* DoRomChange */
@@ -297,9 +307,9 @@ void BeebWriteMem(int Address, int Value) {
 
   if (Address<0xe000 && (ACCCON & 8)==8 && MachineType==1 && Address>=0xc000) WholeRam[Address]=Value;
 
-  Cycles++;
+/*Cycles++; <--- What on earth is all this for?
   extracycleprompt++;
-  if (extracycleprompt & 8) Cycles++;
+  if (extracycleprompt & 8) Cycles++;*/
 
   if ((Address>=0xfc00) && (Address<=0xfeff)) {
     /* Check for some hardware */
@@ -311,12 +321,14 @@ void BeebWriteMem(int Address, int Value) {
     /* Can write to a via using either of the two 16 bytes blocks */
     if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
       SysVIAWrite((Address & 0xf),Value);
+	  Cycles++;
       return;
     }
 
     /* Can write to a via using either of the two 16 bytes blocks */
     if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
       UserVIAWrite((Address & 0xf),Value);
+	  Cycles++;
       return;
     }
 
@@ -336,11 +348,6 @@ void BeebWriteMem(int Address, int Value) {
       return;
     }
 
-    /* Should get the serial system, now that the CRTC has been extracted */
-//    if ((Address & ~0x1f)==0xfe00) {
-//      cerr << "Write *0x" << hex << Address << "=0x" << Value << dec << "\n";
-//    };
-
     if ((Address & ~0x1f)==0xfe80 && MachineType==0) {
       Disc8271_write((Address & 7),Value);
       return;
@@ -356,66 +363,27 @@ void BeebWriteMem(int Address, int Value) {
 		return;
 	}
 
-    if ((Address & ~0x1f)==0xfec0) {
+    if ((Address & ~0x1f)==0xfec0 && MachineType==0) {
       AtoDWrite((Address & 0xf),Value);
       return;
     }
 
+    if ((Address & ~0x7)==0xfe18 && MachineType==1) {
+      AtoDWrite((Address & 0xf),Value);
+      return;
+    }
+
+	if (Address==0xfe08) Write_ACIA_Control(Value);
+	if (Address==0xfe09) Write_ACIA_Tx_Data(Value);
+	if (Address==0xfe10) Write_SERPROC(Value);
+	if ((Address&~0x7)==0xfee0) WriteTubeFromHostSide(Address&7,Value);
    // if (Address==0xfc01) exit(0); <-- ok what the hell is this?
    // return;
   }
 }
 
 /*----------------------------------------------------------------------------*/
-static void ReadRom(char *name,int bank) {
-	// Ok, im tired, its late (8pm, er late?) so this is the deal 
-	// in Master mode, the files TERMINAL,ROM, DFS,ROM MOS,ROM and BASIC4.ROM are NEEDED
-	// in Model B mode, the files OS12, BASIC.ROM and DNFS are NEEDED
-	// but we check them later
-	// in this proc, it won't return an error message if the rom is not present.
-  FILE *InFile;
-  char fullname[256];
-  long romsize;
-  strcpy(fullname,RomPath);
-  strcat(fullname,"/beebfile/");
-  strcat(fullname,name);
-/*  if (InFile=fopen(fullname,"rb"),InFile==NULL) {
-#ifdef WIN32
-    char errstr[200];
-	sprintf(errstr, "Cannot open ROM image file:\n  %s", fullname);
-    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-	exit(1);
-#else
-    fprintf(stderr,"Could not open %s rom file\n",fullname);
-    abort();
-#endif
-  } */
-if ((InFile=fopen(fullname,"rb")) !=NULL) {
-  /* Check ROM size */
-  fseek(InFile, 0L, SEEK_END);
-  romsize = ftell(InFile);
-  if (romsize!=16384 && romsize!=8192) {
-#ifdef WIN32
-    char errstr[200];
-	sprintf(errstr, "ROM image is wrong size:\n  %s", name);
-    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-	exit(1);
-#else
-    fprintf(stderr,"Could not read %s\n",name);
-    abort();
-#endif
-  }
-  fseek(InFile, 0L, SEEK_SET);
-  fread(Roms[bank],1,romsize,InFile);
-
-  fclose(InFile);
-
-  /* Write Protect the ROMS read in at startup */
-  RomWritable[bank] = 0;
-}
-
-} /* ReadRom */
-
+// ReadRom was replaced with BeebReadRoms.
 /*----------------------------------------------------------------------------*/
 char *ReadRomTitle( int bank, char *Title, int BufSize )
 {
@@ -439,12 +407,37 @@ void BeebReadRoms(void) {
  char RomNameBuf[80];
  char *RomName=RomNameBuf;
  unsigned char sc,isrom;
+ unsigned char Shortener=1; // Amount to shorten filename by
  
  /* Read all ROM files in the beebfile directory */
  // This section rewritten for V.1.32 to take account of roms.cfg file.
  strcpy(TmpPath,RomPath);
  strcat(TmpPath,"Roms.cfg");
  RomCfg=fopen(TmpPath,"rt");
+ if (RomCfg==NULL) {
+	 // Open failed, if its because of an unfound file,
+	 // try to copy example.cfg on to it, and re-open
+//	 if (errno==ENOENT) {
+		 strcpy(TmpPath,RomPath);
+		 strcat(TmpPath,"Example.cfg");
+		 InFile=fopen(TmpPath,"rt");
+		 if (InFile!=NULL) {
+			 strcpy(TmpPath,RomPath);
+			 strcat(TmpPath,"Roms.cfg");
+			 RomCfg=fopen(TmpPath,"wt");
+			 //Begin copying the file over
+			 for (romslot=0;romslot<34;romslot++) {
+				 fgets(RomName,80,InFile);
+				 fputs(RomName,RomCfg);
+			 }
+			 fclose(RomCfg);
+			 fclose(InFile);
+		 }
+//	 }
+	 strcpy(TmpPath,RomPath);
+	 strcat(TmpPath,"Roms.cfg");
+	 RomCfg=fopen(TmpPath,"rt"); // Retry the opem
+ }
  if (RomCfg!=NULL) {
 	 // CFG file open, proceed to read the roms.
 	 // if machinetype=1 (i.e. master 128) we need to skip 17 lines in the file
@@ -476,13 +469,19 @@ void BeebReadRoms(void) {
 			strcat(fullname,"/beebfile/");
 			strcat(fullname,RomName);
 		}
-		isrom=1;
+		isrom=1; RomWritable[romslot]=0; Shortener=1;
 		if (strncmp(RomName,"EMPTY",5)==0)  { RomWritable[romslot]=0; isrom=0; }
 		if (strncmp(RomName,"RAM",3)==0) { RomWritable[romslot]=1; isrom=0; }
+		if (strncmp(RomName+(strlen(RomName)-5),":RAM",4)==0) {
+			// Writable ROM (don't ask, Mark De Weger should be happy now ;) Hi Mark! )
+			RomWritable[romslot]=1; // Make it writable
+			isrom=1; // Make it a ROM still
+			Shortener=5; // Shorten filename
+		}
 		for (sc = 0; fullname[sc]; sc++) if (fullname[sc] == '\\') fullname[sc] = '/';
-		fullname[strlen(fullname)-1]=0;
+		fullname[strlen(fullname)-Shortener]=0;
 		InFile=fopen(fullname,"rb");
-		if	(InFile!=NULL) { fread(Roms[romslot],1,16384,InFile); fclose(InFile); RomWritable[romslot]=0; }
+		if	(InFile!=NULL) { fread(Roms[romslot],1,16384,InFile); fclose(InFile); }
 		else {
 			if (isrom==1) {
 				char errstr[200];
@@ -500,10 +499,10 @@ void BeebReadRoms(void) {
 	exit(1);
 	}
  // Copy MOS to MOS Store
- memcpy(MOSROM,WholeRam+0xc00,16384);
+ memcpy(MOSROM,WholeRam+0xc000,16384);
 }
 /*----------------------------------------------------------------------------*/
-void BeebMemInit(void) {
+void BeebMemInit(unsigned char LoadRoms) {
   /* Remove the non-win32 stuff here, soz, im not gonna do multi-platform master128 upgrades
   u want for linux? u do yourself! ;P - Richard Gellman */
   
@@ -512,18 +511,23 @@ void BeebMemInit(void) {
   long CMOSLength;
   FILE *CMDF3;
   unsigned char CMA3;
-  for (CMA3=0;CMA3<16;CMA3++) RomWritable[CMA3]=1;
-  for (RomBlankingSlot=0xf;RomBlankingSlot<0x10;RomBlankingSlot--) memset(Roms[RomBlankingSlot],0,0x4000);
-  
-  BeebReadRoms();
+  if (LoadRoms) {
+	  for (CMA3=0;CMA3<16;CMA3++) RomWritable[CMA3]=1;
+	  for (RomBlankingSlot=0xf;RomBlankingSlot<0x10;RomBlankingSlot--) memset(Roms[RomBlankingSlot],0,0x4000);
+	  // This shouldn't be required for sideways RAM.
+	  BeebReadRoms(); // Only load roms on start
+  }
 
   /* Put first ROM in */
   memcpy(WholeRam+0x8000,Roms[0xf],0x4000);
   PagedRomReg=0xf;
   RomModified=0;
-  /* Copy part of MOS to MOS Store for Master 128 */
-  memcpy(MOSROM,WholeRam+0xC000,0x2000);
-  ACCCON=0; UseShadow=0; // Select all main memory
+  // Initialise Master stuff
+  if (MachineType==1) {
+	  ACCCON=0; UseShadow=0; // Select all main memory
+	  memcpy(WholeRam+0xc000,MOSROM,0x2000); // Make sure the old MOS ROM is switched in
+  }
+  // This CMOS stuff can be done anyway
   // Ah, bug with cmos.ram you say?	
   strcpy(TmpPath,RomPath); strcat(TmpPath,"/beebstate/cmos.ram");
   if ((CMDF3 = fopen(TmpPath,"rb"))!=NULL) {

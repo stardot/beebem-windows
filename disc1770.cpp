@@ -64,11 +64,11 @@ unsigned int DefStart[2]; // Starting point for head 1
 unsigned int TrkLen[2]; // Track Length in bytes
 unsigned char DWriteable[2]={0,0}; // Write Protect
 
-void SetStatus(unsigned char bit) {
+static void SetStatus(unsigned char bit) {
 	Status|=1<<bit;
 }
 
-void ResetStatus(unsigned char bit) {
+static void ResetStatus(unsigned char bit) {
 	Status&=~(1<<bit);
 }
 

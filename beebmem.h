@@ -61,7 +61,7 @@ void BeebWriteMem(int Address, int Value);
 char *BeebMemPtrWithWrap(int a, int n);
 char *BeebMemPtrWithWrapMo7(int a, int n);
 void BeebReadRoms(void);
-void BeebMemInit(void);
+void BeebMemInit(unsigned char LoadRoms);
 
 void SaveMemState(unsigned char *RomState,unsigned char *MemState,unsigned char *SWRamState);
 void RestoreMemState(unsigned char *RomState,unsigned char *MemState,unsigned char *SWRamState);

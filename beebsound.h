@@ -32,6 +32,7 @@
 extern int SoundDefault; // Default sound state
 extern int SoundEnabled;    /* Sound on/off flag */
 extern int DirectSoundEnabled;  /* DirectSound enabled for Win32 */
+extern int RelaySoundEnabled; // Relay Click noise enable
 extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
 extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
 
@@ -44,7 +45,8 @@ void SoundReset();
 void Sound_RegWrite(int Value);
 void DumpSound(void);
 void SoundTrigger_Real(void);
+void ClickRelay(unsigned char RState);
 
-#define Sound_Trigger(ncycles) if (SoundTrigger<=TotalCycles) SoundTrigger_Real();
+void Sound_Trigger(void);
 
 #endif

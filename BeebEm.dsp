@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib winmm.lib ddraw.lib dsound.lib /nologo /subsystem:windows /machine:I386
+# ADD LINK32 uef.lib .\uef.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib winmm.lib dsound.lib ddraw.lib ./uef.lib /nologo /subsystem:windows /machine:I386
 # SUBTRACT LINK32 /profile
 
 !ELSEIF  "$(CFG)" == "BeebEm - Win32 Debug"
@@ -71,9 +71,11 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /G5 /MDd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /FR /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
+# SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "_DEBUG" /win32
+# SUBTRACT MTL /mktyplib203
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
 # ADD RSC /l 0x809 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -81,7 +83,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /debug /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib winmm.lib dsound.lib ddraw.lib /nologo /subsystem:windows /profile /debug /machine:I386
+# ADD LINK32 uef.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib uef.lib dsound.lib ddraw.lib winmm.lib /nologo /subsystem:windows /debug /machine:I386 /out:"Debug/BeebEm.exe"
+# SUBTRACT LINK32 /verbose /profile /pdb:none /incremental:no /force
 
 !ENDIF 
 
@@ -142,7 +145,15 @@ SOURCE=.\mode7font.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\serial.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\sysvia.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\tube.cpp
 # End Source File
 # Begin Source File
 
@@ -214,7 +225,15 @@ SOURCE=.\port.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\serial.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\sysvia.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\tube.h
 # End Source File
 # Begin Source File
 

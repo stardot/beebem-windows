@@ -27,6 +27,7 @@
 #include <windows.h>
 #include <ddraw.h>
 #include "port.h"
+#include "video.h"
 
 /* Used in message boxes */
 #define GETHWND (mainWin == NULL ? NULL : mainWin->GethWnd())
@@ -65,34 +66,41 @@ class BeebWin  {
 		{ updateLines(m_hDC, starty, nlines); };
 
 	void doHorizLine(unsigned long Col, int y, int sx, int width) {
+		unsigned int tsx;
+		float tsx2;
+		tsx2=(float)sx*1;
+		tsx=(int)tsx2;
 		if (y>255) return;
-		memset(m_screen+ (y* 640) + sx, Col , width);
+		memset(m_screen+ (y* 800) + tsx, Col , width);
 	};
 
-	void doHorizLine(unsigned long Col, int offset, int width) {
-		if ((offset+width)<640*256) return;
-		memset(m_screen+offset,Col,width);
-	};
+//	void doHorizLine(unsigned long Col, int offset, int width) {
+//		unsigned int tsx;
+//		if ((offset+width)<640*256) return;
+//		tsx=((offset/640)*640)+((offset % 640)/2);
+//		memset(m_screen+tsx,Col,width);
+//	};
 
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
 
 	EightUChars *GetLinePtr(int y) {
 		if(y > 255) y=255;
-		return((EightUChars *)(m_screen + ( y * 640 )));
+		return((EightUChars *)(m_screen + ( y * 800 )+ScreenAdjust));
 	}
 
 	SixteenUChars *GetLinePtr16(int y) {
 		if(y > 255) y=255;
-		return((SixteenUChars *)(m_screen + ( y * 640 )));
+		return((SixteenUChars *)(m_screen + ( y * 800 )+ScreenAdjust));
 	}
 
 	char *imageData(void) {
-		return m_screen;
+		return m_screen+ScreenAdjust;
 	}
 
 	HWND GethWnd() { return m_hWnd; };
 	
 	void RealizePalette(HDC) {};
+	void ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatus,unsigned char LoadRoms);
 
 	int StartOfFrame(void);
 	BOOL UpdateTiming(void);
@@ -175,6 +183,7 @@ class BeebWin  {
 	void InitMenu(void);
   void UpdateMonitorMenu();
   void UpdateModelType();
+  void UpdateSFXMenu();
 	void InitDirectX(void);
 	HRESULT InitSurfaces(void);
 	void ResetSurfaces(void);
@@ -186,6 +195,7 @@ class BeebWin  {
 	void TranslateTiming(void);
 	void TranslateKeyMapping(void);
 	void ReadDisc(int Drive,HMENU dmenu);
+	void LoadTape(void);
 	void InitJoystick(void);
 	void ResetJoystick(void);
 	void RestoreState(void);

@@ -182,13 +182,18 @@
 #define ID_MODELB                       40105
 #define ID_MASTER128                    40106
 #define ID_PCD                          40107
-#define ID_FILE_LOADTAPE                40108
+#define ID_LOADTAPE                     40108
 #define ID_COMMS_RS423DESTINATION_THIS  40110
 #define ID_COMMS_RS423DESTINATION_MENU  40111
 #define ID_COMMS_RS423DESTINATION_ISNOT 40112
 #define ID_COMMS_RS423DESTINATION_COMPLETE 40113
 #define ID_COMMS_RS423DESTINATION_YET   40114
-#define ID_DUMPSOUND                    40115
+#define ID_REWINDTAPE                   40116
+#define ID_SFX_RELAY                    40117
+#define IDM_TUBE                        40118
+#define IDM_TUBERESET                   40119
+#define ID_HIDEMENU                     40121
+#define ID_TAPESOUND                    40122
 
 // Next default values for new objects
 // 
@@ -196,7 +201,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40116
+#define _APS_NEXT_COMMAND_VALUE         40123
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

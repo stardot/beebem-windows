@@ -24,6 +24,7 @@
 
 #include "6502core.h"
 #include "atodconv.h"
+#include "sysvia.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -97,6 +98,7 @@ void AtoD_poll_real(void)
 	ClearTrigger(AtoDTrigger);
 	AtoDState.status &= 0xf;
 	AtoDState.status |= 0x40; /* not busy */
+	PulseSysViaCB1();
 
 	switch (AtoDState.status & 3)
 	{
@@ -126,6 +128,7 @@ void AtoDInit(void)
 
 	/* Not busy, conversion complete (OS1.2 will then request another conversion) */
 	AtoDState.status = 0x40;
+	PulseSysViaCB1();
 }
 
 /*--------------------------------------------------------------------------*/

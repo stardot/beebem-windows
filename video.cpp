@@ -29,6 +29,7 @@
 
 #include "iostream.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "6502core.h"
 #include "beebmem.h"
@@ -88,6 +89,12 @@ unsigned char CRTC_CursorPosHigh=0;         /* R14 */
 unsigned char CRTC_CursorPosLow=0;          /* R15 */
 unsigned char CRTC_LightPenHigh=0;          /* R16 */
 unsigned char CRTC_LightPenLow=0;           /* R17 */
+
+unsigned int ActualScreenWidth=640;
+long ScreenAdjust=0;
+int VStart,HStart;
+unsigned char HSyncModifier=9;
+FILE *crtclog;
 
 int ova,ovn; // mem ptr buffers
 
@@ -856,6 +863,7 @@ static void LowLevelDoScanLine() {
 void RedoMPTR(void) {
 	if (VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrapMo7(ova,ovn);
 	if (!VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrap(ova,ovn);
+	//FastTable_Valid=0;
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -863,11 +871,10 @@ void VideoDoScanLine(void) {
   /* cerr << "CharLine=" << VideoState.CharLine << " InCharLine=" << VideoState.InCharLine << "\n"; */
   if (VideoState.IsTeletext) {
     static int DoCA1Int=0;
-
     if (DoCA1Int) {
       SysVIATriggerCA1Int(0);
       DoCA1Int=0;
-    };
+    }; 
 
     if ((VideoState.CharLine!=-1) && (VideoState.CharLine<CRTC_VerticalDisplayed)) {
 		ova=VideoState.Addr; ovn=CRTC_HorizontalDisplayed;
@@ -900,8 +907,8 @@ void VideoDoScanLine(void) {
            lines when its on the last line of the screen so they are cleared after they
            are displayed, ready for the next screen. */
         if (VideoState.PixmapLine<256) {
-          memset(mainWin->imageData()+VideoState.PixmapLine*640,
-                 mainWin->cols[0], (256-VideoState.PixmapLine)*640);
+          memset(mainWin->imageData()+VideoState.PixmapLine*800,
+                 mainWin->cols[0], (256-VideoState.PixmapLine)*800);
         }
       }
       VideoStartOfFrame();
@@ -956,13 +963,13 @@ void VideoDoScanLine(void) {
           int CurrentLine;
           for(CurrentLine=VideoState.PixmapLine;(CurrentLine<256) && (CurrentLine<VideoState.PreviousFinalPixmapLine);
               CurrentLine++) {
-            mainWin->doHorizLine(mainWin->cols[0],CurrentLine,0,640);
+            mainWin->doHorizLine(mainWin->cols[0],CurrentLine,0,800);
           };
         };
         VideoState.PreviousFinalPixmapLine=VideoState.PixmapLine;
         VideoState.PixmapLine=0;
         SysVIATriggerCA1Int(1);
-        VideoState.VSyncState=2;
+        VideoState.VSyncState=3;
       };
 
       VideoState.InCharLine=CRTC_ScanLinesPerChar;
@@ -984,6 +991,7 @@ void VideoDoScanLine(void) {
 void VideoInit(void) {
   char *environptr;
   VideoStartOfFrame();
+  ova=0x3000; ovn=640;
   VideoState.DataPtr=BeebMemPtrWithWrap(0x3000,640);
   SetTrigger(99,VideoTriggerCount); /* Give time for OS to set mode up before doing anything silly */
   FastTable_Valid=0;
@@ -998,12 +1006,14 @@ void VideoInit(void) {
   FrameNum=Video_RefreshFrequency;
   VideoState.PixmapLine=0;
   VideoState.PreviousFinalPixmapLine=255;
+  //crtclog=fopen("crtc.log","wt");
 }; /* VideoInit */
 
 /*-------------------------------------------------------------------------------------------------------------*/
 void CRTCWrite(int Address, int Value) {
   Value&=0xff;
   if (Address & 1) {
+  //fprintf(crtclog,"CRTC Write of %d to address %d\n",Value,CRTCControlReg);
     switch (CRTCControlReg) {
       case 0:
         CRTC_HorizontalTotal=Value;
@@ -1012,14 +1022,33 @@ void CRTCWrite(int Address, int Value) {
       case 1:
         CRTC_HorizontalDisplayed=Value;
         FastTable_Valid=0;
+		ActualScreenWidth=CRTC_HorizontalDisplayed*8;
+		if (ActualScreenWidth>800) ActualScreenWidth=800;
+		if (ActualScreenWidth<640) ActualScreenWidth=640;
+		// Video position adjust here
+		VStart=(CRTC_VerticalSyncPos-CRTC_VerticalDisplayed)-3;
+		if (VStart<0) VStart=0;
+		HStart=(CRTC_HorizontalSyncPos-CRTC_HorizontalDisplayed)-HSyncModifier;
+		if (HStart<0) HStart=0;
+		ScreenAdjust=(HStart*8)+(VStart*(800*CRTC_ScanLinesPerChar));
         break;
 
       case 2:
-        CRTC_HorizontalSyncPos=Value;
+		CRTC_HorizontalSyncPos=Value;
+		// Video position adjust here
+		VStart=(CRTC_VerticalSyncPos-CRTC_VerticalDisplayed)-3;
+		if (VStart<0) VStart=0;
+		HStart=(CRTC_HorizontalSyncPos-CRTC_HorizontalDisplayed)-HSyncModifier;
+		if (HStart<0) HStart=0;
+		ScreenAdjust=(HStart*8)+(VStart*(800*CRTC_ScanLinesPerChar));
+        FastTable_Valid=0;
         break;
 
       case 3:
         CRTC_SyncWidth=Value;
+		ActualScreenWidth=CRTC_HorizontalDisplayed*8;
+		if (ActualScreenWidth>800) ActualScreenWidth=800;
+		if (ActualScreenWidth<640) ActualScreenWidth=640;
         break;
 
       case 4:
@@ -1032,10 +1061,24 @@ void CRTCWrite(int Address, int Value) {
 
       case 6:
         CRTC_VerticalDisplayed=Value;
+		// Video position adjust here
+		VStart=(CRTC_VerticalSyncPos-CRTC_VerticalDisplayed)-3;
+		if (VStart<0) VStart=0;
+		HStart=(CRTC_HorizontalSyncPos-CRTC_HorizontalDisplayed)-HSyncModifier;
+		if (HStart<0) HStart=0;
+		ScreenAdjust=(HStart*8)+(VStart*(800*CRTC_ScanLinesPerChar));
+        FastTable_Valid=0;
         break;
 
       case 7:
         CRTC_VerticalSyncPos=Value;
+		// Video position adjust here
+		VStart=(CRTC_VerticalSyncPos-CRTC_VerticalDisplayed)-3;
+		if (VStart<0) VStart=0;
+		HStart=(CRTC_HorizontalSyncPos-CRTC_HorizontalDisplayed)-HSyncModifier;
+		if (HStart<0) HStart=0;
+		ScreenAdjust=(HStart*8)+(VStart*(800*CRTC_ScanLinesPerChar));
+        FastTable_Valid=0;
         break;
 
       case 8:
@@ -1110,6 +1153,8 @@ void VideoULAWrite(int Address, int Value) {
     VideoULA_ControlReg=Value;
     FastTable_Valid=0; /* Could be more selective and only do it if no.of.cols bit changes */
     /* cerr << "VidULA Ctrl reg write " << hex << Value << "\n"; */
+	// Adjust HSyncModifier
+	if (VideoULA_ControlReg & 16) HSyncModifier=18; else HSyncModifier=9;
   };
 }; /* VidULAWrite */
 

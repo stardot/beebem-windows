@@ -20,10 +20,13 @@
 /****************************************************************************/
 /* Win32 port - Mike Wyatt 7/6/97 */
 /* Conveted Win32 port to use DirectSound - Mike Wyatt 11/1/98 */
+// 14/04/01 - Proved that I AM better than DirectSound, by fixing the code thereof ;P
 
 #include "beebsound.h"
 
 #include <iostream.h>
+#include <windows.h>
+#include <process.h>
 
 #ifdef SOUNDSUPPORT
 
@@ -48,6 +51,7 @@
 
 #include "6502core.h"
 #include "port.h"
+#include "beebmem.h"
 
 #ifndef WIN32
 #include <fcntl.h>
@@ -62,35 +66,47 @@
 
 #define PREFSAMPLERATE 40000
 #define MAXBUFSIZE 256
+
 static unsigned char Buffer[MAXBUFSIZE];
 
 #else
 
 #define PREFSAMPLERATE 22050
 #define MAXBUFSIZE 8192
+#define BUFSEGS 8
+
 static unsigned char wb1[MAXBUFSIZE];
 static unsigned char wb2[MAXBUFSIZE];
+static unsigned char RelayOnBuf[2048];
+static unsigned char RelayOffBuf[2048];
 
 static HWAVEOUT hwo;
 static WAVEHDR wh1, wh2;
 static WAVEHDR *active_wh, *inactive_wh;
 static unsigned char *active_wb, *inactive_wb;
+static unsigned char *PROnBuf=RelayOnBuf;
+static unsigned char *PROffBuf=RelayOffBuf;
 
 static LPDIRECTSOUND DSound = NULL;
 static LPDIRECTSOUNDBUFFER DSB1 = NULL;
 static LPDIRECTSOUNDBUFFER DSB2 = NULL;
+static LPDIRECTSOUNDBUFFER DSRelay = NULL;
+static LPDIRECTSOUNDBUFFER DSB3 = NULL;
 
 #endif
 
 int SoundEnabled = 1;
 int DirectSoundEnabled = 0;
+int RelaySoundEnabled = 0;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
 int SoundAutoTriggerTime;
 int SoundBufferSize;
+unsigned char BufSeg;
 
 /* Number of places to shift the volume */
 #define VOLMAG 3
+
 
 struct {
   unsigned int ToneFreq[4];
@@ -120,27 +136,30 @@ int SoundDefault;
 #ifdef WIN32
 /* Writes sound data to a DirectSound buffer */
 HRESULT WriteToSoundBuffer(LPDIRECTSOUNDBUFFER lpDsb,
-			PBYTE lpbSoundData, DWORD dwSoundBytes)
+			PBYTE lpbSoundData, DWORD dwSoundBytes,unsigned char CheckPos)
 {
 	LPVOID lpvPtr1;
 	DWORD dwBytes1; 
 	LPVOID lpvPtr2;
 	DWORD dwBytes2;
 	HRESULT hr;
-
+	DWORD CPC;
+	if (CheckPos==1) {
+	    // Determine if DS is about to play what we want to write to
+		hr = lpDsb->GetCurrentPosition(&CPC,NULL);
+		if ((CPC/SoundBufferSize)==BufSeg) {
+			if (BufSeg>0) BufSeg--; else BufSeg=BUFSEGS; 
+		}
+	}
 	// Obtain write pointer.
-	hr = lpDsb->Lock(0, dwSoundBytes, &lpvPtr1, 
-		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
-//	hr = lpDsb->Lock(0, dwSoundBytes, &lpvPtr1, 
-//		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
+	hr = lpDsb->Lock(SoundBufferSize*BufSeg, dwSoundBytes, &lpvPtr1, 
+		&dwBytes1, &lpvPtr2, &dwBytes2, 0);
 	if(hr == DSERR_BUFFERLOST)
 	{
 		hr = lpDsb->Restore();
 		if (hr == DS_OK)
-			hr = lpDsb->Lock(0, dwSoundBytes,
-				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
-//			hr = lpDsb->Lock(0, dwSoundBytes,
-//				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
+			hr = lpDsb->Lock(SoundBufferSize*BufSeg, dwSoundBytes,
+				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
 	}
 	if(DS_OK == hr)
 	{
@@ -156,7 +175,40 @@ HRESULT WriteToSoundBuffer(LPDIRECTSOUNDBUFFER lpDsb,
 	return hr;
 }
 #endif
+/****************************************************************************/
+/* Writes sound data to a DirectSound buffer */
+HRESULT WriteRelaySound(LPDIRECTSOUNDBUFFER lpDsb,
+			PBYTE lpbSoundData)
+{
+	LPVOID lpvPtr1;
+	DWORD dwBytes1; 
+	LPVOID lpvPtr2;
+	DWORD dwBytes2;
+	HRESULT hr;
 
+	// Obtain write pointer.
+	hr = lpDsb->Lock(0, 2048, &lpvPtr1, 
+		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
+	if(hr == DSERR_BUFFERLOST)
+	{
+		hr = lpDsb->Restore();
+		if (hr == DS_OK)
+			hr = lpDsb->Lock(0, 2048,
+				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
+	}
+	if(DS_OK == hr)
+	{
+		// Write to pointers.
+		CopyMemory(lpvPtr1, lpbSoundData, dwBytes1);
+		if(NULL != lpvPtr2)
+		{
+			CopyMemory(lpvPtr2, lpbSoundData+dwBytes1, dwBytes2);
+		}
+		// Release the data back to DirectSound.
+		hr = lpDsb->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
+	}
+	return hr;
+}
 /****************************************************************************/
 /* DestTime is in samples */
 static void PlayUpTil(double DestTime) {
@@ -166,8 +218,8 @@ static void PlayUpTil(double DestTime) {
 
   while (DestTime>OurTime) {
 #ifdef WIN32
-    if (bufptr == 0 && ActiveChannels == 0) {
-//	  if (4==0) {
+//    if (bufptr == 0 && ActiveChannels == 0) {
+	  if (4==0) {
 #else
 	if ((BeebState76489.ToneVolume[0]==0) && 
       (BeebState76489.ToneVolume[1]==0) &&
@@ -178,6 +230,7 @@ static void PlayUpTil(double DestTime) {
     } else {
       for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
         tmptotal=0;
+		// Begin of for loop
         for(channel=1;channel<=3;channel++) {
 #ifdef WIN32
 		  if (GenState[channel])
@@ -318,6 +371,7 @@ static void PlayUpTil(double DestTime) {
 	        tmptotal/=2;
 		inactive_wb[bufptr] = tmptotal/SoundVolume + 128;
 #endif
+		// end of for loop
       }; /* buffer loop */
 
 #ifndef WIN32
@@ -389,44 +443,10 @@ static void PlayUpTil(double DestTime) {
 		else
 		{
 			HRESULT hr;
-			if (active_wb == wb1)
-			{
-				hr = WriteToSoundBuffer(DSB2, inactive_wb, SoundBufferSize);
-				if (hr == DS_OK)
-				{
-					hr = DSB2->Play(0,0,0);
-//					hr = DSB1->Stop();
-					if(hr == DSERR_BUFFERLOST)
-					{
-						hr = DSB2->Restore();
-						if (hr == DS_OK)
-							hr = DSB2->Play(0,0,0);
-					}
-				}
-			}
-			else
-			{
-				hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize);
-				if (hr == DS_OK)
-				{
-					hr = DSB1->Play(0,0,0);
-//					hr = DSB2->Stop();
-					if(hr == DSERR_BUFFERLOST)
-					{
-						hr = DSB1->Restore();
-						if (hr == DS_OK)
-							hr = DSB1->Play(0,0,0);
-					}
-				}
-			}
-			if (hr != DS_OK)
-			{
-				char  errstr[200];
-				sprintf(errstr,"Direct Sound write failed\nFailure code %X",hr);
-				MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-				SoundReset();
-			}
-		}
+			hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize,1);
+        	BufSeg=BufSeg+1;
+			if (BufSeg>=BUFSEGS) BufSeg=0;
+		} 
 #endif
 
 		/* Swap active and inactive buffers */
@@ -449,7 +469,6 @@ static void PlayUpTil(double DestTime) {
 #endif
     }; /* If no volume */
   }; /* While time */
-
 }; /* PlayUpTil */
 
 /****************************************************************************/
@@ -474,8 +493,9 @@ static double CyclesToSamples(unsigned int beebtime) {
 /*fprintf(stderr,"Convert tmp=%f\n",tmp); */
   LastBeebCycle=beebtime;
 
-  tmp*=samplerate;
+  tmp*=(samplerate);
   tmp/=2000000.0; /* Few - glad thats a double! */
+  tmp+=2;
 
   LastOurTime+=tmp;
 
@@ -485,7 +505,6 @@ static double CyclesToSamples(unsigned int beebtime) {
 /****************************************************************************/
 static void PlayTilNow(void) {
   double nowsamps=CyclesToSamples(TotalCycles);
-
   PlayUpTil(nowsamps);
 }; /* PlayTilNow */
 
@@ -493,7 +512,8 @@ static void PlayTilNow(void) {
 #ifdef WIN32
 /* Creates a DirectSound buffer */
 HRESULT CreateSoundBuffer(
-		LPDIRECTSOUND lpDirectSound, LPDIRECTSOUNDBUFFER *lplpDsb)
+		LPDIRECTSOUND lpDirectSound, LPDIRECTSOUNDBUFFER *lplpDsb,
+		unsigned int NSR,unsigned int NBufSize)
 {
 	WAVEFORMATEX wf;
 	DSBUFFERDESC dsbdesc;
@@ -503,7 +523,7 @@ HRESULT CreateSoundBuffer(
 	memset(&wf, 0, sizeof(WAVEFORMATEX));
 	wf.wFormatTag = WAVE_FORMAT_PCM;
 	wf.nChannels = 1;
-	wf.nSamplesPerSec = samplerate;
+	wf.nSamplesPerSec = NSR;
 	wf.wBitsPerSample = 8;
 	wf.nBlockAlign = wf.wBitsPerSample * wf.nChannels / 8;
 	wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
@@ -515,7 +535,7 @@ HRESULT CreateSoundBuffer(
 
 	// Need default controls (pan, volume, frequency).
 	dsbdesc.dwFlags = DSBCAPS_CTRLDEFAULT;
-	dsbdesc.dwBufferBytes = SoundBufferSize;
+	dsbdesc.dwBufferBytes = NBufSize;
 	dsbdesc.lpwfxFormat = (LPWAVEFORMATEX)&wf;
 
 	// Create buffer.
@@ -525,6 +545,29 @@ HRESULT CreateSoundBuffer(
 }
 #endif
 
+void Sound_Trigger(void) {
+		if (SoundTrigger<=TotalCycles) SoundTrigger_Real();
+}
+
+/****************************************************************************/
+// Yes, this is the function that fills the directsound buffer with the switch-on noise
+void FillSoundBuf(void) {
+	HRESULT hr;
+	unsigned int TmpPtr,FCount;
+	unsigned char FOut=0;
+	inactive_wb=wb1; FCount=180; FOut=0;
+	for (BufSeg=0;BufSeg<BUFSEGS;BufSeg++) {
+		for (TmpPtr=0;TmpPtr<SoundBufferSize;TmpPtr++) {
+			inactive_wb[TmpPtr]=(FOut==0)?((BeebState76489.ToneVolume[3]/SoundVolume)+128):0;
+			if (FCount--==0) { FCount=180; FOut=1-FOut; }
+		}
+		hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize,0);
+	}
+}
+// In case your wondering "why tone channel 3?", From experimentation, I've discovered that
+// the BBC OS uses Channel 3 for generating the VDU7/CTRL+G/Copy key beep.
+// I presume this is so that it doesn't interfere with any other sound which would logically
+// be happening on channel 1.
 /****************************************************************************/
 static void InitAudioDev(int sampleratein) {
   int parm;
@@ -604,32 +647,77 @@ static void InitAudioDev(int sampleratein) {
 	else
 	{
 		HRESULT hr;
+		int dsect;
 		hr = DirectSoundCreate(NULL, &DSound, NULL);
+		dsect=100;
 		if(hr == DS_OK)
 		{
 			hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_NORMAL);
+		dsect=1;
 		}
 		if(hr == DS_OK)
 		{
-			hr = CreateSoundBuffer(DSound, &DSB1);
+			hr = CreateSoundBuffer(DSound, &DSB1,samplerate,SoundBufferSize*BUFSEGS);
+			FillSoundBuf();
+			if (hr == DS_OK) DSB1->Play(0,0,DSBPLAY_LOOPING);
+		dsect=2;
 		}
+//		if(hr == DS_OK)
+//		{
+//			hr = CreateSoundBuffer(DSound, &DSB2,samplerate,SoundBufferSize);
+//		dsect=3;
+//		}
 		if(hr == DS_OK)
 		{
-			hr = CreateSoundBuffer(DSound, &DSB2);
+			hr = CreateSoundBuffer(DSound, &DSRelay,44100,2048);
 		}
 		if (hr != DS_OK)
 		{
 			char  errstr[200];
-			sprintf(errstr,"Direct Sound initialisation failed\nFailure code %X",hr);
+			sprintf(errstr,"Direct Sound initialisation failed on part %i\nFailure code %X",dsect,hr);
 			MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 			SoundReset();
 		}  
-
+		
 		active_wb = NULL;
 		inactive_wb = wb1;
+		BufSeg=0;
 	}
 #endif
 }; /* InitAudioDev */
+
+void LoadRelaySounds(void) {
+	/* Loads in the relay sound effects into buffers */
+	FILE *RelayFile;
+	char RelayFileName[256];
+	char *PRFN=RelayFileName;
+	memset(PROnBuf,2048,0);
+	memset(PROffBuf,2048,0);
+	strcpy(PRFN,RomPath);
+	strcat(PRFN,"RelayOn.SND");
+	RelayFile=fopen(PRFN,"rb");
+	if (RelayFile!=NULL) {
+		fread(RelayOnBuf,1,2048,RelayFile);
+		fclose(RelayFile);
+	}
+	else {
+		char  errstr[200];
+		sprintf(errstr,"Could not open Relay ON Sound");
+		MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+	}
+	strcpy(PRFN,RomPath);
+	strcat(PRFN,"RelayOff.SND");
+	RelayFile=fopen(PRFN,"rb");
+	if (RelayFile!=NULL) {
+		fread(RelayOffBuf,1,2048,RelayFile);
+		fclose(RelayFile);
+	}
+	else {
+		char  errstr[200];
+		sprintf(errstr,"Could not open Relay OFF Sound");
+		MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+	}
+}
 
 /****************************************************************************/
 /* The 'freqval' variable is the value as sene by the 76489                 */
@@ -641,18 +729,17 @@ static void SetFreq(int Channel, int freqval) {
     ChangeSamps=INT_MAX;
   } else {
     freq=4000000/(32*freqval);
-  
     if (freq>samplerate) {
-      ChangeSamps=INT_MAX; /* Way to high frequency - shut off */
+      ChangeSamps=INT_MAX; // Way to high frequency - shut off 
     } else {
       if (freq>(samplerate/2)) {
-        /* Hmm - a bit high - make it top out - change on every sample */
-        /* What we should be doing is moving to sine wave at 1/6 samplerate */
+        // Hmm - a bit high - make it top out - change on every sample 
+        // What we should be doing is moving to sine wave at 1/6 samplerate 
         ChangeSamps=2;
       } else {
         ChangeSamps=(int)((((double)samplerate/(double)freq)/2.0)+0.5);
       };
-    }; /* freq<=samplerate */
+    }; // freq<=samplerate 
   }; /* Freqval!=0 */
 
   BeebState76489.ChangeSamps[Channel]=ChangeSamps;
@@ -660,10 +747,8 @@ static void SetFreq(int Channel, int freqval) {
 
 /****************************************************************************/
 void SoundTrigger_Real(void) {
-  if (SoundEnabled) {
     PlayTilNow();
     SetTrigger(SoundAutoTriggerTime,SoundTrigger);
-  }
 }; /* SoundTrigger_Real */
 
 /****************************************************************************/
@@ -688,8 +773,10 @@ void SoundInit() {
     SoundBufferSize = MAXBUFSIZE / 2;
   else
     SoundBufferSize = MAXBUFSIZE / 4;
+  if (DirectSoundEnabled) SoundBufferSize/=BUFSEGS;
   SoundAutoTriggerTime = ((200000*SoundBufferSize)/SoundSampleRate)*10; /* Need to avoid overflow */
   InitAudioDev(SoundSampleRate);
+  LoadRelaySounds();
 }; /* SoundInit */
 
 /****************************************************************************/
@@ -715,6 +802,11 @@ void SoundReset(void) {
 			DSB2->Release();
 			DSB2 = NULL;
 		}
+		if (DSRelay != NULL)
+		{
+			DSRelay->Release();
+			DSRelay = NULL;
+		}
 		if (DSound != NULL)
 		{
 			DSound->Release();
@@ -732,6 +824,7 @@ void SoundReset(void) {
 /* Called in sysvia.cc when a write is made to the 76489 sound chip         */
 void Sound_RegWrite(int value) {
   int trigger = 0;
+  unsigned char VolChange;
 
   if (!SoundEnabled)
     return;
@@ -739,7 +832,6 @@ void Sound_RegWrite(int value) {
 #ifdef DEBUGSOUND
   cerr << "Sound_RegWrite - Value=" << value << "\n";
 #endif
-
   if (!(value & 0x80)) {
     unsigned val=BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet] & 15;
 
@@ -755,6 +847,7 @@ void Sound_RegWrite(int value) {
     trigger = 1;
   } else {
     /* Another register */
+	VolChange=0xff;
     switch ((value>>4) & 0x7) {
       case 0: /* Tone 3 freq */
         BeebState76489.ToneFreq[2]=(BeebState76489.ToneFreq[2] & 0x2f0) | (value & 0xf);
@@ -774,6 +867,7 @@ void Sound_RegWrite(int value) {
 #endif
         BeebState76489.LastToneFreqSet=2;
         trigger = 1;
+		VolChange=3;
         break;
 
       case 2: /* Tone 2 freq */
@@ -794,6 +888,7 @@ void Sound_RegWrite(int value) {
 #endif
         BeebState76489.LastToneFreqSet=1;
         trigger = 1;
+		VolChange=2;
         break;
 
       case 4: /* Tone 1 freq (Possibly also noise!) */
@@ -814,6 +909,7 @@ void Sound_RegWrite(int value) {
 #endif
         BeebState76489.LastToneFreqSet=0;
         trigger = 1;
+		VolChange=1;
         break;
 
       case 6: /* Noise control */
@@ -834,6 +930,7 @@ void Sound_RegWrite(int value) {
 	cerr << "Sound_RegWrite: Vol of noise now " << BeebState76489.ToneVolume[0] << "\n";
 #endif
         trigger = 1;
+		VolChange=0;
         break;
     };
   };
@@ -849,4 +946,12 @@ void ADummyRoutine(int a) {
 
 void DumpSound(void) {
 	
+}
+
+void ClickRelay(unsigned char RState) {
+	if (DirectSoundEnabled && RelaySoundEnabled) {
+		if (RState==0) WriteRelaySound(DSRelay,RelayOffBuf);
+		if (RState==1) WriteRelaySound(DSRelay,RelayOnBuf);
+		DSRelay->Play(0,0,0);
+	}
 }
