@@ -40,16 +40,16 @@ class BeebWin  {
   	BeebWin();
 	~BeebWin();
 	char *imageData();
-	int bytesPerLine();
+	int bytesPerLine() const;
 	void updateLines(int starty, int nlines);
 
 	void doHorizLine(unsigned long Col, int y, int sx, int width) {
 		if (y>255) return;
-	  	memset(m_screen+ (y* 640) + sx, Col , width);
+	  	memset(m_screen+ (y* bytesPerLine()) + sx, Col , width);
   }; /* doHorizLine */
 
 	void doHorizLine(unsigned long Col, int offset, int width) {
-		if ((offset+width)<640*256) return;
+		if ((offset+width)<bytesPerLine()*256) return;
 		memset(m_screen+offset,Col,width);
 	}; /* BeebWin::doHorizLine */
 

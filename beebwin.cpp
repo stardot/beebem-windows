@@ -19,7 +19,7 @@ int TranslateKey(int, int *, int *);
 static int transTable[256][2]={
 	0,0,	0,0,	0,0,	0,0,   // 0
 	0,0,	0,0,	0,0,	0,0,   // 4
-	0,0,	0,0,	0,0,	0,0,   // 8
+	5,9,	6,0,	0,0,	0,0,   // 8 [BS][TAB]..
 	0,0,	4,9,	0,0,	0,0,   // 12 .RET..
 	0,0,	0,1,	0,0,	-2,-2,   // 16 .CTRL.BREAK
 	4,0,	0,0,	0,0,	0,0,   // 20 CAPS...
@@ -28,7 +28,7 @@ static int transTable[256][2]={
 	6,2,	0,0,	0,0,	6,9,   // 32 SPACE..[End]
 	0,0,	1,9,	3,9,	7,9,   // 36 .[Left][Up][Right]
 	2,9,	0,0,	0,0,	0,0,   // 40 [Down]...
-	0,0,	0,0,	0,0,	0,0,   // 44
+	0,0,	0,0,	5,9,	0,0,   // 44 ..[DEL].
 	2,7,	3,0,	3,1,	1,1,   // 48 0123	
 	1,2,	1,3,	3,4,	2,4,   // 52 4567
 	1,5,	2,6,	0,0,	0,0,   // 56 89
@@ -47,7 +47,7 @@ static int transTable[256][2]={
 	0,0,	0,0,	0,0,	0,0,   // 108
 	7,1,	7,2,	7,3,	1,4,   // 112 F1 F2 F3 F4
 	7,4,	7,5,	1,6,	7,6,   // 116 F5 F6 F7 F8
-	7,7,	2,0,	2,0,	-2,-2,   // 120 F9 F10 F11 F12
+	7,7,	2,0,	2,0,	-2,-2, // 120 F9 F10 F11 F12
 	0,0,	0,0,	0,0,	0,0,   // 124 
 	0,0,	0,0,	0,0,	0,0,   // 128
 	0,0,	0,0,	0,0,	0,0,   // 132
@@ -107,9 +107,9 @@ char * BeebWin::imageData()
 	return m_screen;
 }
 
-int BeebWin::bytesPerLine()
+int BeebWin::bytesPerLine() const
 {
-	return 640;
+	return 320;
 }
 
 void BeebWin::updateLines(int starty, int nlines)
@@ -126,14 +126,14 @@ void BeebWin::updateLines(int starty, int nlines)
 EightUChars * BeebWin::GetLinePtr(int y)
 {
     if(y > 255) y=255;
-	return((EightUChars *)(m_screen + ( y * 640 )) );
+	return((EightUChars *)(m_screen + ( y * bytesPerLine() )) );
 	
 }
 
 SixteenUChars * BeebWin::GetLinePtr16(int y)
 {
     if(y > 255) y=255;
-	return((SixteenUChars *)(m_screen + ( y * 640 )) );
+	return((SixteenUChars *)(m_screen + ( y * bytesPerLine() )) );
 	
 }
 
@@ -170,8 +170,8 @@ void BeebWin::CreateBeebWindow(void)
 				WS_SYSMENU|
                 WS_MINIMIZEBOX,	// Window style.                
                 CW_USEDEFAULT, 0,		// Use default positioning
-                640+2,
-                256+1+GetSystemMetrics(SM_CYCAPTION) , 
+                326,
+                261+1+GetSystemMetrics(SM_CYCAPTION) , 
                 NULL,                	// Overlapped windows have no parent.
                 NULL,                // Use the window class menu.
                 hInst,           // This instance owns this window.

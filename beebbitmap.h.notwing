@@ -1,6 +1,6 @@
 // BeebBitmap.h
 // A simple class to hold on to a bitmap & Paint it
-// WinG Edition
+
 typedef struct header
 {
   BITMAPINFOHEADER  bmiHeader;
@@ -23,7 +23,6 @@ class BeebBitmap {
 		HANDLE		m_hBitmap;
 		header		m_bmi;
 		BITMAPINFO	*m_lpbmi;
-		HANDLE		m_hpalApp;
 	public:
 		BeebBitmap();	
 		
@@ -34,5 +33,4 @@ class BeebBitmap {
 			{ return m_bitmapbits; }
 		
 		void Blit(HDC hDestDC, int srcy, int size);
-		
 };

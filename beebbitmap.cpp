@@ -1,56 +1,89 @@
 // BeebBitmap.cpp
 // A simple class to hold on to a bitmap & Paint it
+// WinG Edition
 
 #include <windows.h>
 #include <stdio.h>
+#include <wing.h>
 
 #include "BeebBitmap.h"
 
+pal LogicalPalette =
+{
+  0x300,
+  256
+};
+
 BeebBitmap::BeebBitmap()
 {
-  	__int64 *	m_pAligned;
-
-	m_pAligned = new __int64[640*32];	// Used to make sure of alignment
-	m_bitmapbits = (char *) m_pAligned;
-
-	m_hDCBitmap = CreateCompatibleDC(NULL);
-
-	m_hBitmap = CreateBitmap(640,256,1,8,NULL);//m_bitmapbits);
-	
-	if(!SelectObject(m_hDCBitmap, m_hBitmap))
-		MessageBox(NULL,"Error selecting the screen bitmap\n"
-						"Make sure you are running in a 256 colour mode","Error!",MB_OK); 
-	
 	m_lpbmi = (BITMAPINFO *)&m_bmi;	
   	m_bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);		 	
-	m_bmi.bmiHeader.biWidth = 640;
+	m_bmi.bmiHeader.biWidth = 320;
 	m_bmi.bmiHeader.biHeight = -256;
 	m_bmi.bmiHeader.biPlanes = 1;
 	m_bmi.bmiHeader.biBitCount = 8; 	
 	m_bmi.bmiHeader.biCompression = BI_RGB;
-	m_bmi.bmiHeader.biSizeImage = 640*256;
-	m_bmi.bmiHeader.biClrUsed = 8;
-	m_bmi.bmiHeader.biClrImportant = 8;
+	m_bmi.bmiHeader.biSizeImage = 320*256;
+	m_bmi.bmiHeader.biClrUsed = 0;
+	m_bmi.bmiHeader.biClrImportant = 0;
 
-	__int16 *pInts = (__int16 *)&m_bmi.aColors[0];
+	HDC	hScreenDC;
+	int Counter;
 
-	for(int i=0; i<9; i++)
-		pInts[i] = i;
+	hScreenDC = GetDC(0);
+	GetSystemPaletteEntries(hScreenDC,0,255,LogicalPalette.aEntries);
+	ReleaseDC(0,hScreenDC);
 
+
+	for(Counter = 0; Counter<8; Counter++)
+	{
+		LogicalPalette.aEntries[Counter+20].peRed =	  (Counter &1)?0xFF:0;
+		LogicalPalette.aEntries[Counter+20].peGreen = (Counter &2)?0xFF:0;
+		LogicalPalette.aEntries[Counter+20].peBlue =  (Counter &4)?0xFF:0;
+
+	}	
+	 for(Counter = 0;Counter < 256;Counter++)
+          {
+            // copy the system colors into the DIB header
+            // WinG will do this in WinGRecommendDIBFormat,
+            // but it may have failed above so do it here anyway
+            
+            m_bmi.aColors[Counter].rgbRed =
+                    LogicalPalette.aEntries[Counter].peRed;
+            m_bmi.aColors[Counter].rgbGreen =
+                    LogicalPalette.aEntries[Counter].peGreen;
+            m_bmi.aColors[Counter].rgbBlue =
+                    LogicalPalette.aEntries[Counter].peBlue;
+            m_bmi.aColors[Counter].rgbReserved = 0;
+
+            LogicalPalette.aEntries[Counter].peFlags = 0;
+		  
+          }
+
+	 m_hpalApp = CreatePalette((LOGPALETTE far *)&LogicalPalette);
+		
+	m_hDCBitmap = WinGCreateDC();
+
+	void * ptr;
+
+	m_hBitmap = WinGCreateBitmap(m_hDCBitmap,m_lpbmi,&ptr);
+	
+	m_bitmapbits = (char *)ptr;
+
+	if(!SelectObject(m_hDCBitmap, m_hBitmap))
+		MessageBox(NULL,"Error selecting the screen bitmap\n"
+						"Make sure you are running in a 256 colour mode","Error!",MB_OK); 
 }
 
 void BeebBitmap::RealizePalette(HDC hDC)
 {
-
+	SelectPalette(hDC, m_hpalApp, FALSE);
+	::RealizePalette(hDC);	
 }
 
 void BeebBitmap::Blit(HDC hDestDC, int srcy, int size)
 {
-	SetBitmapBits(m_hBitmap, 640*256, m_bitmapbits);
-		
-	//SetDIBits(m_hDCBitmap, m_hBitmap, srcy, size, m_bitmapbits, (BITMAPINFO *)&m_bmi, DIB_RGB_COLORS);
-	//SetDIBits(m_hDCBitmap, m_hBitmap, srcy, size, m_bitmapbits, m_lpbmi, DIB_RGB_COLORS);
 	SelectObject(m_hDCBitmap, m_hBitmap);
-				
-	BitBlt(hDestDC, 0, srcy, 640, size, m_hDCBitmap, 0, srcy, SRCCOPY);		
+
+	WinGBitBlt(hDestDC, 0, srcy, 320, size, m_hDCBitmap, 0, srcy);		
 }

@@ -185,16 +185,18 @@ static void DoFastTable16(void) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
       };
-      FastTable[bplvtotal].data[0]=FastTable[bplvtotal].data[1]=
-        FastTable[bplvtotal].data[2]=FastTable[bplvtotal].data[3]=mainWin->cols[tmp];
+//      FastTable[bplvtotal].data[0]=FastTable[bplvtotal].data[1]=
+//        FastTable[bplvtotal].data[2]=FastTable[bplvtotal].data[3]=mainWin->cols[tmp];
+        FastTable[bplvtotal].data[0]=FastTable[bplvtotal].data[1]=mainWin->cols[tmp];
 
       tmp=VideoULA_Palette[beebpixvr];
       if (tmp>7) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
       };
-      FastTable[bplvtotal].data[4]=FastTable[bplvtotal].data[5]=
-        FastTable[bplvtotal].data[6]=FastTable[bplvtotal].data[7]=mainWin->cols[tmp];
+//      FastTable[bplvtotal].data[4]=FastTable[bplvtotal].data[5]=
+//        FastTable[bplvtotal].data[6]=FastTable[bplvtotal].data[7]=mainWin->cols[tmp];
+        FastTable[bplvtotal].data[2]=FastTable[bplvtotal].data[3]=mainWin->cols[tmp];
     }; /* beebpixr */
   }; /* beebpixl */
 }; /* DoFastTable16 */
@@ -255,7 +257,8 @@ static void DoFastTable4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTable[beebpixv].data[0]=FastTable[beebpixv].data[1]=mainWin->cols[tmp];
+//    FastTable[beebpixv].data[0]=FastTable[beebpixv].data[1]=mainWin->cols[tmp];
+    FastTable[beebpixv].data[0]=mainWin->cols[tmp];
 
     pentry=((beebpixv & 64)?8:0)
            | ((beebpixv & 16)?4:0)
@@ -266,7 +269,8 @@ static void DoFastTable4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTable[beebpixv].data[2]=FastTable[beebpixv].data[3]=mainWin->cols[tmp];
+//    FastTable[beebpixv].data[2]=FastTable[beebpixv].data[3]=mainWin->cols[tmp];
+    FastTable[beebpixv].data[1]=mainWin->cols[tmp];
 
     pentry=((beebpixv & 32)?8:0)
            | ((beebpixv & 8)?4:0)
@@ -277,7 +281,8 @@ static void DoFastTable4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTable[beebpixv].data[4]=FastTable[beebpixv].data[5]=mainWin->cols[tmp];
+//    FastTable[beebpixv].data[4]=FastTable[beebpixv].data[5]=mainWin->cols[tmp];
+    FastTable[beebpixv].data[2]=mainWin->cols[tmp];
     pentry=((beebpixv & 16)?8:0)
            | ((beebpixv & 4)?4:0)
            | ((beebpixv & 1)?2:0)
@@ -287,7 +292,8 @@ static void DoFastTable4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTable[beebpixv].data[6]=FastTable[beebpixv].data[7]=mainWin->cols[tmp];
+//    FastTable[beebpixv].data[6]=FastTable[beebpixv].data[7]=mainWin->cols[tmp];
+    FastTable[beebpixv].data[3]=mainWin->cols[tmp];
   }; /* beebpixv */
 }; /* DoFastTable4 */
 
@@ -308,8 +314,9 @@ static void DoFastTable4XStep4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTableDWidth[beebpixv].data[0]=FastTableDWidth[beebpixv].data[1]=
-    FastTableDWidth[beebpixv].data[2]=FastTableDWidth[beebpixv].data[3]=mainWin->cols[tmp];
+//    FastTableDWidth[beebpixv].data[0]=FastTableDWidth[beebpixv].data[1]=
+//    FastTableDWidth[beebpixv].data[2]=FastTableDWidth[beebpixv].data[3]=mainWin->cols[tmp];
+    FastTableDWidth[beebpixv].data[0]=FastTableDWidth[beebpixv].data[1]=mainWin->cols[tmp];
 
     pentry=((beebpixv & 64)?8:0)
            | ((beebpixv & 16)?4:0)
@@ -320,8 +327,9 @@ static void DoFastTable4XStep4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTableDWidth[beebpixv].data[4]=FastTableDWidth[beebpixv].data[5]=
-    FastTableDWidth[beebpixv].data[6]=FastTableDWidth[beebpixv].data[7]=mainWin->cols[tmp];
+//    FastTableDWidth[beebpixv].data[4]=FastTableDWidth[beebpixv].data[5]=
+//    FastTableDWidth[beebpixv].data[6]=FastTableDWidth[beebpixv].data[7]=mainWin->cols[tmp];
+    FastTableDWidth[beebpixv].data[2]=FastTableDWidth[beebpixv].data[3]=mainWin->cols[tmp];
 
     pentry=((beebpixv & 32)?8:0)
            | ((beebpixv & 8)?4:0)
@@ -332,8 +340,9 @@ static void DoFastTable4XStep4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTableDWidth[beebpixv].data[8]=FastTableDWidth[beebpixv].data[9]=
-    FastTableDWidth[beebpixv].data[10]=FastTableDWidth[beebpixv].data[11]=mainWin->cols[tmp];
+//    FastTableDWidth[beebpixv].data[8]=FastTableDWidth[beebpixv].data[9]=
+//    FastTableDWidth[beebpixv].data[10]=FastTableDWidth[beebpixv].data[11]=mainWin->cols[tmp];
+    FastTableDWidth[beebpixv].data[4]=FastTableDWidth[beebpixv].data[5]=mainWin->cols[tmp];
     pentry=((beebpixv & 16)?8:0)
            | ((beebpixv & 4)?4:0)
            | ((beebpixv & 1)?2:0)
@@ -343,8 +352,9 @@ static void DoFastTable4XStep4(void) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     };
-    FastTableDWidth[beebpixv].data[12]=FastTableDWidth[beebpixv].data[13]=
-    FastTableDWidth[beebpixv].data[14]=FastTableDWidth[beebpixv].data[15]=mainWin->cols[tmp];
+//    FastTableDWidth[beebpixv].data[12]=FastTableDWidth[beebpixv].data[13]=
+//    FastTableDWidth[beebpixv].data[14]=FastTableDWidth[beebpixv].data[15]=mainWin->cols[tmp];
+    FastTableDWidth[beebpixv].data[6]=FastTableDWidth[beebpixv].data[7]=mainWin->cols[tmp];
   }; /* beebpixv */
 }; /* DoFastTable4XStep4 */
 
@@ -397,7 +407,7 @@ static void DoFastTable2XStep2(void) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
       };
-      FastTableDWidth[beebpixv].data[pix*2]=FastTableDWidth[beebpixv].data[pix*2+1]=mainWin->cols[tmp];
+      FastTableDWidth[beebpixv].data[pix/**2*/]/*=FastTableDWidth[beebpixv].data[pix*2+1]*/=mainWin->cols[tmp];
     }; /* pix */
   }; /* beebpixv */
 }; /* DoFastTable2XStep2 */
@@ -533,7 +543,8 @@ static void VideoStartOfFrame(void) {
 static void LowLevelDoScanLineNarrow() {
   unsigned char *CurrentPtr;
   int BytesToGo=CRTC_HorizontalDisplayed;
-  EightUChars *vidPtr=mainWin->GetLinePtr(VideoState.PixmapLine);
+  typedef unsigned long FourUChars;
+  FourUChars *vidPtr=(FourUChars*)mainWin->GetLinePtr(VideoState.PixmapLine);
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
@@ -543,10 +554,10 @@ static void LowLevelDoScanLineNarrow() {
      except every 4 entries */
   BytesToGo/=4;
   for(;BytesToGo;CurrentPtr+=32,BytesToGo--) {
-    *(vidPtr++)=FastTable[*CurrentPtr];
-    *(vidPtr++)=FastTable[*(CurrentPtr+8)];
-    *(vidPtr++)=FastTable[*(CurrentPtr+16)];
-    *(vidPtr++)=FastTable[*(CurrentPtr+24)];
+    *(vidPtr++)=(FourUChars &)FastTable[*CurrentPtr];
+    *(vidPtr++)=(FourUChars &)FastTable[*(CurrentPtr+8)];
+    *(vidPtr++)=(FourUChars &)FastTable[*(CurrentPtr+16)];
+    *(vidPtr++)=(FourUChars &)FastTable[*(CurrentPtr+24)];
   };
 }; /* LowLevelDoScanLineNarrow() */
 
@@ -572,7 +583,8 @@ static void LowLevelDoScanLineNarrowNot4Bytes() {
 static void LowLevelDoScanLineWide() {
   unsigned char *CurrentPtr;
   int BytesToGo=CRTC_HorizontalDisplayed;
-  SixteenUChars *vidPtr=mainWin->GetLinePtr16(VideoState.PixmapLine);
+//  SixteenUChars *vidPtr=mainWin->GetLinePtr16(VideoState.PixmapLine);
+  EightUChars *vidPtr=mainWin->GetLinePtr(VideoState.PixmapLine);
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
@@ -582,10 +594,10 @@ static void LowLevelDoScanLineWide() {
      except every 4 entries */
   BytesToGo/=4;
   for(;BytesToGo;CurrentPtr+=32,BytesToGo--) {
-    *(vidPtr++)=FastTableDWidth[*CurrentPtr];
-    *(vidPtr++)=FastTableDWidth[*(CurrentPtr+8)];
-    *(vidPtr++)=FastTableDWidth[*(CurrentPtr+16)];
-    *(vidPtr++)=FastTableDWidth[*(CurrentPtr+24)];
+    *(vidPtr++)=(EightUChars &)FastTableDWidth[*CurrentPtr];
+    *(vidPtr++)=(EightUChars &)FastTableDWidth[*(CurrentPtr+8)];
+    *(vidPtr++)=(EightUChars &)FastTableDWidth[*(CurrentPtr+16)];
+    *(vidPtr++)=(EightUChars &)FastTableDWidth[*(CurrentPtr+24)];
   };
 }; /* LowLevelDoScanLineWide */
 
@@ -608,7 +620,7 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 static void DoMode7Row(void) {
   char *CurrentPtr=VideoState.DataPtr;
   int CurrentChar;
-  int XStep=640/(CRTC_HorizontalDisplayed*8);
+  int XStep=320/(CRTC_HorizontalDisplayed*8);
   unsigned char byte,tmp;
 
   unsigned int Foreground=mainWin->cols[7];
@@ -843,7 +855,7 @@ void VideoDoScanLine(void) {
         if (!FrameNum) LowLevelDoScanLine();
         VideoState.PixmapLine+=1;
       } else {
-        if (!FrameNum) mainWin->doHorizLine(mainWin->cols[0],VideoState.PixmapLine++,0,640);
+        if (!FrameNum) mainWin->doHorizLine(mainWin->cols[0],VideoState.PixmapLine++,0,mainWin->bytesPerLine());
       };
     }; /* !=-1 and is in displayed bit */
 
@@ -866,7 +878,7 @@ void VideoDoScanLine(void) {
           int CurrentLine;
           for(CurrentLine=VideoState.PixmapLine;(CurrentLine<256) && (CurrentLine<VideoState.PreviousFinalPixmapLine);
               CurrentLine++) {
-            mainWin->doHorizLine(mainWin->cols[0],CurrentLine,0,640);
+            mainWin->doHorizLine(mainWin->cols[0],CurrentLine,0,mainWin->bytesPerLine());
           };
         };
         VideoState.PreviousFinalPixmapLine=VideoState.PixmapLine;
@@ -891,7 +903,7 @@ void VideoDoScanLine(void) {
 void VideoInit(void) {
   char *environptr;
   VideoStartOfFrame();
-  VideoState.DataPtr=BeebMemPtrWithWrap(0x3000,640);
+  VideoState.DataPtr=BeebMemPtrWithWrap(0x3000,320);
   SetTrigger(99,VideoTriggerCount); /* Give time for OS to set mode up before doing anything silly */
   FastTable_Valid=0;
   BuildMode7Font();
@@ -899,7 +911,7 @@ void VideoInit(void) {
 //  environptr=getenv("BeebVideoRefreshFreq");
 //  if (environptr!=NULL) Video_RefreshFrequency=atoi(environptr);
 //  if (Video_RefreshFrequency<1) 
-	Video_RefreshFrequency=1;
+	Video_RefreshFrequency=2;
 
   FrameNum=Video_RefreshFrequency;
   VideoState.PixmapLine=0;
