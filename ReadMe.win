@@ -95,6 +95,26 @@ If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
 commands to load the programs from it.
 
 
+New Features in V1.04 (Robert Schmidt)
+--------------------------------------
+See "changes" file.
+
+The recommended settings for the ultimate screen display are as follows:
+* DirectDraw ON
+* Buffer in Video RAM ON
+* 32-bit DirectDraw ON
+* Full screen ON
+
+The combination of all these settings results in a *superior* interpolated
+screen display, where artifacts otherwised caused by scaling the abnormal
+256-line BBC display to a 480/768/1024-line PC display virtually disappear.
+
+All these settings are disabled by default, so users without DirectDraw,
+or with inferior graphics cards won't get in trouble.  If these settings
+work well for you, it is recommended that you save them as your default
+(Options - Save Preferences).
+
+
 New Features in V1.03 (Robert Schmidt)
 --------------------------------------
 

@@ -102,6 +102,9 @@ class BeebWin  {
 	void SetAMXPosition(unsigned int x, unsigned int y);
 	void Focus(BOOL);
 	BOOL IsFrozen(void);
+  void ShowMenu(bool on);
+  void TrackPopupMenu(int x, int y);
+  bool IsFullScreen() { return m_isFullScreen; }
 
   private:
 	int			m_MenuIdWinSize;
@@ -129,10 +132,14 @@ class BeebWin  {
 	int			m_AMXYSize;
 	int			m_AMXAdjust;
 	BOOL		m_DirectDrawEnabled;
+  int     m_DDFullScreenMode;
+  bool    m_isFullScreen;
+  bool    m_isDD32;
 
 	char*		m_screen;
 	HDC 		m_hDC;
 	HWND		m_hWnd;
+  HMENU   m_hMenu;
 	HGDIOBJ 	m_hOldObj;
 	HDC 		m_hDCBitmap;
 	HGDIOBJ 	m_hBitmap;
@@ -184,7 +191,7 @@ class BeebWin  {
 	void NewDiscImage(int Drive);
 	void ToggleWriteProtect(int Drive);
 	void SavePreferences(void);
-	void SetWindowAttributes(int oldSize);
+	void SetWindowAttributes(bool wasFullScreen);
 	void TranslateAMX(void);
 	BOOL PrinterFile(void);
 	void TogglePrinter(void);

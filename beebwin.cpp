@@ -38,9 +38,9 @@
 #include "beebstate.h"
 #include "userkybd.h"
 
-static const char *WindowTitle = "BBC Emulator";
+static const char *WindowTitle = "BeebEm - BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 1.03, 20 Aug 2000\n";
+								"Version 1.04, 2 Dec 2000\n";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -253,6 +253,18 @@ void BeebWin::Initialise()
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE, DefValue,
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	m_MenuIdWinSize = atoi(CfgValue);
+
+  if (m_MenuIdWinSize == IDM_FULLSCREEN) {
+    // Handle old configuration
+    m_isFullScreen = true;
+    m_MenuIdWinSize = IDM_320X256;
+  }
+  else 
+    m_isFullScreen   = GetPrivateProfileInt(CFG_VIEW_SECTION, "isFullScreen", 0, CFG_FILE_NAME);
+
+  m_DDFullScreenMode = GetPrivateProfileInt(CFG_VIEW_SECTION, "DDFullScreenMode", ID_VIEW_DD_640X480, CFG_FILE_NAME);
+  m_isDD32           = GetPrivateProfileInt(CFG_VIEW_SECTION, "isDD32", 0, CFG_FILE_NAME);
+
 	TranslateWindowSize();
 
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_SHOW_FPS, "1",
@@ -353,7 +365,6 @@ void BeebWin::Initialise()
 		}
 	}
 
-	m_DiscTypeSelection = 1;
 	IgnoreIllegalInstructions = 1;
 
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
@@ -371,7 +382,10 @@ void BeebWin::Initialise()
 	InitClass();
 	CreateBeebWindow(); 
 	CreateBitmap();
-	InitMenu();
+
+  m_hMenu = GetMenu(m_hWnd);
+
+  InitMenu();
 
 	m_hDC = GetDC(m_hWnd);
 
@@ -470,9 +484,9 @@ void BeebWin::CreateBitmap()
         b *= 0.1;
         break;
       case GREEN:
-        r *= 0.0;
-        g *= 1.0;
-        b *= 0.2;
+        r *= 0.2;
+        g *= 0.9;
+        b *= 0.1;
         break;
       }
     }
@@ -539,7 +553,7 @@ void BeebWin::CreateBeebWindow(void)
 		m_YWinPos = 0;
 	}
 
-	if (!m_DirectDrawEnabled && m_MenuIdWinSize == IDM_FULLSCREEN)
+	if (!m_DirectDrawEnabled && m_isFullScreen)
 	{
 		RECT scrrect;
 		SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
@@ -547,7 +561,7 @@ void BeebWin::CreateBeebWindow(void)
 		y = scrrect.top;
 	}
 
-	if (m_DirectDrawEnabled && m_MenuIdWinSize == IDM_FULLSCREEN)
+	if (m_DirectDrawEnabled && m_isFullScreen)
 	{
 		style = WS_POPUP;
 	}
@@ -576,14 +590,31 @@ void BeebWin::CreateBeebWindow(void)
 	UpdateWindow(m_hWnd);		  // Sends WM_PAINT message
 }
 
+void BeebWin::ShowMenu(bool on) {
+  if (on)
+    SetMenu(m_hWnd, m_hMenu);
+  else
+    SetMenu(m_hWnd, NULL);
+}
+
+void BeebWin::TrackPopupMenu(int x, int y) {
+  ::TrackPopupMenu(m_hMenu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON,
+                   x, y,
+                   0,
+                   m_hWnd,
+                   NULL);
+}
+
 /****************************************************************************/
 void BeebWin::InitMenu(void)
 {
 	char menu_string[256];
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
 
 	CheckMenuItem(hMenu, IDM_SPEEDANDFPS, m_ShowSpeedAndFPS ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
+  CheckMenuItem(hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
+  CheckMenuItem(hMenu, IDM_DD32ONOFF, m_isDD32 ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_SOUNDONOFF, SoundEnabled ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, m_MenuIdSampleRate, MF_CHECKED);
 	CheckMenuItem(hMenu, m_MenuIdVolume, MF_CHECKED);
@@ -612,6 +643,9 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_DDINVIDEORAM, m_DDS2InVideoRAM ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_DSOUNDONOFF, DirectSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
 
+  CheckMenuItem(hMenu, m_DDFullScreenMode, MF_CHECKED);
+
+
   UpdateMonitorMenu();
 
 	/* Initialise the ROM Menu. */
@@ -619,7 +653,7 @@ void BeebWin::InitMenu(void)
 }
 
 void BeebWin::UpdateMonitorMenu() {
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
   CheckMenuItem(hMenu, ID_MONITOR_RGB, (palette_type == RGB) ? MF_CHECKED : MF_UNCHECKED);
   CheckMenuItem(hMenu, ID_MONITOR_BW , (palette_type == BW) ? MF_CHECKED : MF_UNCHECKED);
   CheckMenuItem(hMenu, ID_MONITOR_GREEN , (palette_type == GREEN) ? MF_CHECKED : MF_UNCHECKED);
@@ -654,14 +688,18 @@ HRESULT BeebWin::InitSurfaces(void)
 	DDSURFACEDESC ddsd;
 	HRESULT ddrval;
 
-	if (m_MenuIdWinSize == IDM_FULLSCREEN)
+	if (m_isFullScreen)
 		ddrval = m_DD2->SetCooperativeLevel( m_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
 	else
 		ddrval = m_DD2->SetCooperativeLevel( m_hWnd, DDSCL_NORMAL );
 	if( ddrval == DD_OK )
 	{
-		if (m_MenuIdWinSize == IDM_FULLSCREEN)
-			ddrval = m_DD2->SetDisplayMode(640, 480, 8, 0, 0);
+    if (m_isFullScreen) {
+      if (m_isDD32)
+  	    ddrval = m_DD2->SetDisplayMode(m_XWinSize, m_YWinSize, 32, 0, 0);
+      else
+    	  ddrval = m_DD2->SetDisplayMode(m_XWinSize, m_YWinSize, 8, 0, 0);
+    }
 	}
 	if( ddrval == DD_OK )
 	{
@@ -672,22 +710,18 @@ HRESULT BeebWin::InitSurfaces(void)
 		ddrval = m_DD2->CreateSurface( &ddsd, &m_DDSPrimary, NULL );
 	}
 	if( ddrval == DD_OK )
-	{
 		ddrval = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2Primary);
-	}
-	if( ddrval == DD_OK )
-	{
+
+  if( ddrval == DD_OK )
 		ddrval = m_DD2->CreateClipper( 0, &m_Clipper, NULL );
-	}
-	if( ddrval == DD_OK )
-	{
+
+  if( ddrval == DD_OK )
 		ddrval = m_Clipper->SetHWnd( 0, m_hWnd );
-	}
-	if( ddrval == DD_OK )
-	{
+
+  if( ddrval == DD_OK )
 		ddrval = m_DDS2Primary->SetClipper( m_Clipper );
-	}
-	if( ddrval == DD_OK )
+
+  if( ddrval == DD_OK )
 	{
 		ZeroMemory(&ddsd, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
@@ -726,7 +760,7 @@ void BeebWin::ResetSurfaces(void)
 /****************************************************************************/
 void BeebWin::SetRomMenu(void)
 {
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
 
 	// Set the ROM Titles in the ROM/RAM menu.
 	CHAR Title[19];
@@ -761,7 +795,7 @@ void BeebWin::SetRomMenu(void)
 /****************************************************************************/
 void BeebWin::GetRomMenu(void)
 {
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
 
   for (int i=0; i<16; ++i)
 	/* LRW Now uncheck the Roms as NOT writable, that have already been loaded. */
@@ -771,7 +805,7 @@ void BeebWin::GetRomMenu(void)
 /****************************************************************************/
 void BeebWin::GreyRomMenu(BOOL SetToGrey)
 {
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
 
   for (int i=1; i<16; ++i)
   	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM0 + i, SetToGrey ? MF_GRAYED : MF_ENABLED );
@@ -943,6 +977,9 @@ LRESULT CALLBACK WndProc(
 			{
 				mainWin->ScaleMousestick(LOWORD(lParam), HIWORD(lParam));
 				mainWin->SetAMXPosition(LOWORD(lParam), HIWORD(lParam));
+// Experiment: show menu in full screen when cursor moved to top of window
+//        if (HIWORD(lParam) <= 2)
+//          mainWin->ShowMenu(true);
 			}
 			break;
 
@@ -968,6 +1005,10 @@ LRESULT CALLBACK WndProc(
 			AMXButtons |= AMX_RIGHT_BUTTON;
 			break;
 		case WM_RBUTTONUP:
+// Experiment: tried popping up the main menu on right click in full screen,
+// however, it doesn't display corrently.
+//      if (mainWin && mainWin->IsFullScreen() && (!AMXMouseEnabled || (uParam & MK_SHIFT)))
+//        mainWin->TrackPopupMenu(LOWORD(lParam), HIWORD(lParam));
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
@@ -1048,7 +1089,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		{
 			BitBlt(hdc, 0, starty, 640, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
 
-			if (m_ShowSpeedAndFPS && m_MenuIdWinSize == IDM_FULLSCREEN)
+			if (m_ShowSpeedAndFPS && m_isFullScreen)
 			{
 				char fps[50];
 				sprintf(fps, "%2.2f %2.2f", m_RelativeSpeed, m_FramesPerSecond);
@@ -1073,7 +1114,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 			srcRect.top = 0;
 			srcRect.right = 640;
 			srcRect.bottom = 256;
-			ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+
+			ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
 			if (ddrval == DDERR_SURFACELOST)
 			{
 				ddrval = m_DDS2Primary->Restore();
@@ -1209,7 +1251,7 @@ BOOL BeebWin::UpdateTiming(void)
 /****************************************************************************/
 void BeebWin::DisplayTiming(void)
 {
-	if (m_ShowSpeedAndFPS && (!m_DirectDrawEnabled || m_MenuIdWinSize != IDM_FULLSCREEN))
+	if (m_ShowSpeedAndFPS && (!m_DirectDrawEnabled || !m_isFullScreen))
 	{
 		sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2.2f",
 				WindowTitle, m_RelativeSpeed, m_FramesPerSecond);
@@ -1220,54 +1262,24 @@ void BeebWin::DisplayTiming(void)
 /****************************************************************************/
 void BeebWin::TranslateWindowSize(void)
 {
-	switch (m_MenuIdWinSize)
-	{
-	case IDM_160X128:
-		m_XWinSize = 160;
-		m_YWinSize = 128;
-		break;
-
-	case IDM_240X192:
-		m_XWinSize = 240;
-		m_YWinSize = 192;
-		break;
-
-	case IDM_640X256:
-		m_XWinSize = 640;
-		m_YWinSize = 256;
-		break;
-
-	default:
-	case IDM_320X256:
-		m_XWinSize = 320;
-		m_YWinSize = 256;
-		break;
-
-	case IDM_640X512:
-		m_XWinSize = 640;
-		m_YWinSize = 512;
-		break;
-
-	case IDM_800X600:
-		m_XWinSize = 800;
-		m_YWinSize = 600;
-		break;
-
-	case IDM_1024X768:
-		m_XWinSize = 1024;
-		m_YWinSize = 768;
-		break;
-
-	case IDM_1024X512:
-		m_XWinSize = 1024;
-		m_YWinSize = 512;
-		break;
-
-	case IDM_FULLSCREEN:
+  if (m_isFullScreen) {
 		if (m_DirectDrawEnabled)
 		{
-			m_XWinSize = 640;
-			m_YWinSize = 480 - GetSystemMetrics(SM_CYMENUSIZE);
+      switch (m_DDFullScreenMode) {
+      case ID_VIEW_DD_640X480:
+			  m_XWinSize = 640;
+			  m_YWinSize = 480;
+        break;
+      case ID_VIEW_DD_1024X768:
+			  m_XWinSize = 1024;
+			  m_YWinSize = 768;
+        break;
+      case ID_VIEW_DD_1280X1024:
+			  m_XWinSize = 1280;
+			  m_YWinSize = 1024;
+        break;
+      }
+//  	  m_YWinSize -= GetSystemMetrics(SM_CYMENUSIZE);
 		}
 		else
 		{
@@ -1277,9 +1289,50 @@ void BeebWin::TranslateWindowSize(void)
 			m_YWinSize = scrrect.bottom - scrrect.top - GetSystemMetrics(SM_CYFIXEDFRAME) * 2
 					- GetSystemMetrics(SM_CYMENUSIZE) - GetSystemMetrics(SM_CYCAPTION);
 		}
-		break;
+  }
+  else switch (m_MenuIdWinSize)
+	  {
+	  case IDM_160X128:
+		  m_XWinSize = 160;
+		  m_YWinSize = 128;
+		  break;
 
-	}
+	  case IDM_240X192:
+		  m_XWinSize = 240;
+		  m_YWinSize = 192;
+		  break;
+
+	  case IDM_640X256:
+		  m_XWinSize = 640;
+		  m_YWinSize = 256;
+		  break;
+
+	  default:
+	  case IDM_320X256:
+		  m_XWinSize = 320;
+		  m_YWinSize = 256;
+		  break;
+
+	  case IDM_640X512:
+		  m_XWinSize = 640;
+		  m_YWinSize = 512;
+		  break;
+
+	  case IDM_800X600:
+		  m_XWinSize = 800;
+		  m_YWinSize = 600;
+		  break;
+
+	  case IDM_1024X768:
+		  m_XWinSize = 1024;
+		  m_YWinSize = 768;
+		  break;
+
+	  case IDM_1024X512:
+		  m_XWinSize = 1024;
+		  m_YWinSize = 512;
+		  break;
+	  }
 }
 
 /****************************************************************************/
@@ -1392,22 +1445,29 @@ void BeebWin::TranslateKeyMapping(void)
 /****************************************************************************/
 void BeebWin::ReadDisc(int Drive)
 {
-	char StartPath[_MAX_PATH];
+	char StartPath[_MAX_PATH], DefaultPath[_MAX_PATH];
 	char FileName[256];
 	OPENFILENAME ofn;
 
-	strcpy(StartPath, m_AppPath);
-	strcat(StartPath, "discims");
+	strcpy(DefaultPath, m_AppPath);
+	strcat(DefaultPath, "discims");
+
+  GetProfileString("BeebEm", "DiscsPath", DefaultPath, StartPath, _MAX_PATH);
+  ofn.nFilterIndex = GetProfileInt("BeebEm", "LoadDiscFilter", 1);
+  
 	FileName[0] = '\0';
 
 	/* Hmm, what do I put in all these fields! */
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Single Sided Disc\0*.*\0Double Sided Disc\0*.*\0";
+	ofn.lpstrFilter = "Auto (*.ssd;*.dsd)\0*.ssd;*.dsd\0"
+                    "Single Sided Disc (*.ssd)\0*.ssd\0"
+                    "Double Sided Disc (*.dsd)\0*.dsd\0"
+                    "Single Sided Disc (*.*)\0*.*\0"
+                    "Double Sided Disc (*.*)\0*.*\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = m_DiscTypeSelection;
 	ofn.lpstrFile = FileName;
 	ofn.nMaxFile = sizeof(FileName);
 	ofn.lpstrFileTitle = NULL;
@@ -1424,17 +1484,31 @@ void BeebWin::ReadDisc(int Drive)
 
 	if (GetOpenFileName(&ofn))
 	{
-		/* Default to same type of disc next time */
-		m_DiscTypeSelection = ofn.nFilterIndex;
+    unsigned PathLength = strrchr(FileName, '\\') - FileName;
+    strncpy(DefaultPath, FileName, PathLength);
+    DefaultPath[PathLength] = 0;
+    WriteProfileString("BeebEm", "DiscsPath", DefaultPath);
+    WriteProfileString("BeebEm", "LoadDiscFilter", itoa(ofn.nFilterIndex, DefaultPath, _MAX_PATH));
 
-		if (ofn.nFilterIndex == 1)
-		{
-			LoadSimpleDiscImage(FileName, Drive, 0, 80);
-		}
-		else
-		{
+    bool dsd = false;
+    switch (ofn.nFilterIndex) {
+    case 1:
+      {
+        char *ext = strrchr(FileName, '.');
+        if (ext != NULL)
+          if (stricmp(ext+1, "dsd") == 0)
+            dsd = true;
+        break;
+      }
+    case 3:
+    case 5:
+      dsd = true;
+    }
+
+		if (dsd)
 			LoadSimpleDSDiscImage(FileName, Drive, 80);
-		}
+		else
+			LoadSimpleDiscImage(FileName, Drive, 0, 80);
 
 		/* Write protect the disc */
 		if (!m_WriteProtectDisc[Drive])
@@ -1445,21 +1519,27 @@ void BeebWin::ReadDisc(int Drive)
 /****************************************************************************/
 void BeebWin::NewDiscImage(int Drive)
 {
-	char StartPath[_MAX_PATH];
+	char StartPath[_MAX_PATH], DefaultPath[_MAX_PATH];
 	char FileName[256];
 	OPENFILENAME ofn;
 
-	strcpy(StartPath, m_AppPath);
-	strcat(StartPath, "discims");
+	strcpy(DefaultPath, m_AppPath);
+	strcat(DefaultPath, "discims");
+
+  GetProfileString("BeebEm", "DiscsPath", DefaultPath, StartPath, _MAX_PATH);
+  ofn.nFilterIndex = GetProfileInt("BeebEm", "NewDiscFilter", 1);
+  
 	FileName[0] = '\0';
 
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Single Sided Disc\0*.*\0Double Sided Disc\0*.*\0";
+	ofn.lpstrFilter = "Single Sided Disc (*.ssd)\0*.ssd\0"
+                    "Double Sided Disc (*.dsd)\0*.dsd\0"
+                    "Single Sided Disc\0*.*\0"
+                    "Double Sided Disc\0*.*\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = m_DiscTypeSelection;
 	ofn.lpstrFile = FileName;
 	ofn.nMaxFile = sizeof(FileName);
 	ofn.lpstrFileTitle = NULL;
@@ -1476,19 +1556,24 @@ void BeebWin::NewDiscImage(int Drive)
 
 	if (GetSaveFileName(&ofn))
 	{
-		/* Default to same type of disc next time */
-		m_DiscTypeSelection = ofn.nFilterIndex;
+    unsigned PathLength = strrchr(FileName, '\\') - FileName;
+    strncpy(DefaultPath, FileName, PathLength);
+    DefaultPath[PathLength] = 0;
+    WriteProfileString("BeebEm", "DiscsPath", DefaultPath);
+    WriteProfileString("BeebEm", "NewDiscFilter", itoa(ofn.nFilterIndex, DefaultPath, _MAX_PATH));
 
 		/* Add a file extension if the user did not specify one */
 		if (strchr(FileName, '.') == NULL)
 		{
-			if (ofn.nFilterIndex == 1)
+			if (ofn.nFilterIndex == 1 ||
+          ofn.nFilterIndex == 3)
 				strcat(FileName, ".ssd");
 			else
 				strcat(FileName, ".dsd");
 		}
 
-		if (ofn.nFilterIndex == 1)
+		if (ofn.nFilterIndex == 1 ||
+        ofn.nFilterIndex == 3)
 		{
 			CreateDiscImage(FileName, Drive, 1, 80);
 		}
@@ -1506,12 +1591,15 @@ void BeebWin::NewDiscImage(int Drive)
 /****************************************************************************/
 void BeebWin::SaveState()
 {
-	char StartPath[_MAX_PATH];
+	char StartPath[_MAX_PATH], DefaultPath[_MAX_PATH];
 	char FileName[256];
 	OPENFILENAME ofn;
 
-	strcpy(StartPath, m_AppPath);
-	strcat(StartPath, "beebstate");
+	strcpy(DefaultPath, m_AppPath);
+	strcat(DefaultPath, "beebstate");
+
+  GetProfileString("BeebEm", "StatesPath", DefaultPath, StartPath, _MAX_PATH);
+  
 	FileName[0] = '\0';
 
 	ofn.lStructSize = sizeof(OPENFILENAME);
@@ -1537,19 +1625,27 @@ void BeebWin::SaveState()
 
 	if (GetSaveFileName(&ofn))
 	{
-		BeebSaveState(FileName);
+    unsigned PathLength = strrchr(FileName, '\\') - FileName;
+    strncpy(DefaultPath, FileName, PathLength);
+    DefaultPath[PathLength] = 0;
+    WriteProfileString("BeebEm", "StatesPath", DefaultPath);
+
+    BeebSaveState(FileName);
 	}
 }
 
 /****************************************************************************/
 void BeebWin::RestoreState()
 {
-	char StartPath[_MAX_PATH];
+	char StartPath[_MAX_PATH], DefaultPath[_MAX_PATH];
 	char FileName[256];
 	OPENFILENAME ofn;
 
-	strcpy(StartPath, m_AppPath);
-	strcat(StartPath, "beebstate");
+	strcpy(DefaultPath, m_AppPath);
+	strcat(DefaultPath, "beebstate");
+
+  GetProfileString("BeebEm", "StatesPath", DefaultPath, StartPath, _MAX_PATH);
+  
 	FileName[0] = '\0';
 
 	ofn.lStructSize = sizeof(OPENFILENAME);
@@ -1575,6 +1671,11 @@ void BeebWin::RestoreState()
 
 	if (GetOpenFileName(&ofn))
 	{
+    unsigned PathLength = strrchr(FileName, '\\') - FileName;
+    strncpy(DefaultPath, FileName, PathLength);
+    DefaultPath[PathLength] = 0;
+    WriteProfileString("BeebEm", "StatesPath", DefaultPath);
+
 		BeebRestoreState(FileName);
 	}
 }
@@ -1582,7 +1683,7 @@ void BeebWin::RestoreState()
 /****************************************************************************/
 void BeebWin::ToggleWriteProtect(int Drive)
 {
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
 
 	if (m_WriteProtectDisc[Drive])
 	{
@@ -1659,7 +1760,7 @@ BOOL BeebWin::PrinterFile()
 void BeebWin::TogglePrinter()
 {
 	BOOL FileOK = TRUE;
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
 
 	if (PrinterEnabled)
 	{
@@ -1742,17 +1843,26 @@ void BeebWin::SavePreferences()
 
 	sprintf(CfgValue, "%d", m_DirectDrawEnabled);
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_DIRECT_ENABLED,
-			CfgValue, CFG_FILE_NAME);
+      CfgValue, CFG_FILE_NAME);
 
 	sprintf(CfgValue, "%d", m_DDS2InVideoRAM);
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_BUFFER_IN_VIDEO,
 			CfgValue, CFG_FILE_NAME);
 
-	sprintf(CfgValue, "%d", m_MenuIdWinSize);
+  sprintf(CfgValue, "%d", m_DDFullScreenMode);
+  WritePrivateProfileString(CFG_VIEW_SECTION, "DDFullScreenMode", CfgValue, CFG_FILE_NAME);
+
+  sprintf(CfgValue, "%d", m_isFullScreen);
+  WritePrivateProfileString(CFG_VIEW_SECTION, "isFullScreen", CfgValue, CFG_FILE_NAME);
+
+  sprintf(CfgValue, "%d", m_isDD32);
+  WritePrivateProfileString(CFG_VIEW_SECTION, "isDD32", CfgValue, CFG_FILE_NAME);
+
+  sprintf(CfgValue, "%d", m_MenuIdWinSize);
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE,
 			CfgValue, CFG_FILE_NAME);
 
-	if (m_MenuIdWinSize != IDM_FULLSCREEN)
+	if (m_isFullScreen)
 	{
 		GetWindowRect(m_hWnd, &wndrect);
 		sprintf(CfgValue, "%d", wndrect.left);
@@ -1842,16 +1952,16 @@ void BeebWin::SavePreferences()
 }
 
 /****************************************************************************/
-void BeebWin::SetWindowAttributes(int oldSize)
+void BeebWin::SetWindowAttributes(bool wasFullScreen)
 {
 	HRESULT ddrval;
 	RECT wndrect;
 	RECT scrrect;
 	long style;
 
-	if (m_MenuIdWinSize == IDM_FULLSCREEN)
+	if (m_isFullScreen)
 	{
-		if (oldSize != IDM_FULLSCREEN)
+		if (!wasFullScreen)
 		{
 			GetWindowRect(m_hWnd, &wndrect);
 			m_XWinPos = wndrect.left;
@@ -1893,6 +2003,9 @@ void BeebWin::SetWindowAttributes(int oldSize)
 					+ 1,
 				0);
 		}
+
+// Experiment: hide menu in full screen
+//    ShowMenu(false);
 	}
 	else
 	{
@@ -1919,7 +2032,10 @@ void BeebWin::SetWindowAttributes(int oldSize)
 				+ GetSystemMetrics(SM_CYMENUSIZE) * (m_MenuIdWinSize == IDM_160X128 ? 2:1)
 				+ GetSystemMetrics(SM_CYCAPTION)
 				+ 1,
-			oldSize != IDM_FULLSCREEN ? SWP_NOMOVE : 0);
+			!wasFullScreen ? SWP_NOMOVE : 0);
+
+// Experiment: hide menu in full screen
+//    ShowMenu(true);
 	}
 }
 
@@ -1975,7 +2091,7 @@ void BeebWin::HandleCommand(int MenuId)
 {
 	BOOL b;
 	HRESULT ddrval;
-	HMENU hMenu = GetMenu(m_hWnd);
+	HMENU hMenu = m_hMenu;
   int prev_palette_type = palette_type;
 
 	switch (MenuId)
@@ -2072,24 +2188,52 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_DDRAWONOFF:
+    {
+      int enabled;
+		  if (m_DirectDrawEnabled == TRUE)
+		  {
+			  m_DirectDrawEnabled = FALSE;
+			  ResetSurfaces();
+			  m_DD2->Release();
+			  m_DD->Release();
+			  TranslateWindowSize();
+			  SetWindowAttributes(m_isFullScreen);
+    	  enabled = MF_GRAYED;
+		  }
+		  else
+		  {
+			  m_DirectDrawEnabled = TRUE;
+			  TranslateWindowSize();
+			  SetWindowAttributes(m_isFullScreen);
+			  InitDirectX();
+    	  enabled = MF_ENABLED;
+		  }
+		  CheckMenuItem(hMenu, IDM_DDRAWONOFF, m_DirectDrawEnabled ? MF_CHECKED : MF_UNCHECKED);
+    	EnableMenuItem(hMenu, ID_VIEW_DD_640X480, enabled);
+    	EnableMenuItem(hMenu, ID_VIEW_DD_1024X768, enabled);
+    	EnableMenuItem(hMenu, ID_VIEW_DD_1280X1024, enabled);
+    	EnableMenuItem(hMenu, IDM_DDINVIDEORAM, enabled);
+    	EnableMenuItem(hMenu, IDM_DD32ONOFF, enabled);
+    }
+		break;
+
+  case IDM_DD32ONOFF:
+    m_isDD32 = !m_isDD32;
 		if (m_DirectDrawEnabled == TRUE)
 		{
-			m_DirectDrawEnabled = FALSE;
 			ResetSurfaces();
-			m_DD2->Release();
-			m_DD->Release();
-			TranslateWindowSize();
-			SetWindowAttributes(m_MenuIdWinSize);
+			ddrval = InitSurfaces();
+			if( ddrval != DD_OK )
+			{
+				char  errstr[200];
+				sprintf(errstr,"DirectX failure changing buffer RAM\nFailure code %X",ddrval);
+				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+        m_isDD32 = !m_isDD32;
+			}
+			else
+				CheckMenuItem(hMenu, IDM_DD32ONOFF, m_isDD32 ? MF_CHECKED : MF_UNCHECKED);
 		}
-		else
-		{
-			m_DirectDrawEnabled = TRUE;
-			TranslateWindowSize();
-			SetWindowAttributes(m_MenuIdWinSize);
-			InitDirectX();
-		}
-		CheckMenuItem(hMenu, IDM_DDRAWONOFF, m_DirectDrawEnabled ? MF_CHECKED : MF_UNCHECKED);
-		break;
+    break;
 
 	case IDM_DDINVIDEORAM:
 		m_DDS2InVideoRAM = !m_DDS2InVideoRAM;
@@ -2105,10 +2249,7 @@ void BeebWin::HandleCommand(int MenuId)
 				m_DDS2InVideoRAM = !m_DDS2InVideoRAM;
 			}
 			else
-			{
-				CheckMenuItem(hMenu, IDM_DDINVIDEORAM,
-					m_DDS2InVideoRAM ? MF_CHECKED : MF_UNCHECKED);
-			}
+				CheckMenuItem(hMenu, IDM_DDINVIDEORAM, m_DDS2InVideoRAM ? MF_CHECKED : MF_UNCHECKED);
 		}
 		break;
 
@@ -2120,17 +2261,40 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_800X600:
 	case IDM_1024X768:
 	case IDM_1024X512:
-	case IDM_FULLSCREEN:
-		if (MenuId != m_MenuIdWinSize)
 		{
-			int oldSize = m_MenuIdWinSize;
+      if (m_isFullScreen)
+        HandleCommand(IDM_FULLSCREEN);
 			CheckMenuItem(hMenu, m_MenuIdWinSize, MF_UNCHECKED);
 			m_MenuIdWinSize = MenuId;
 			CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
 			TranslateWindowSize();
-			SetWindowAttributes(oldSize);
-   		}
+			SetWindowAttributes(m_isFullScreen);
+    }
 		break;
+
+  case ID_VIEW_DD_640X480:
+  case ID_VIEW_DD_1024X768:
+  case ID_VIEW_DD_1280X1024:
+		{
+      if (!m_isFullScreen)
+        HandleCommand(IDM_FULLSCREEN);
+      if (!m_DirectDrawEnabled) 
+        // Should not happen since the items are grayed out, but anyway...
+        HandleCommand(IDM_DDRAWONOFF);
+			CheckMenuItem(hMenu, m_DDFullScreenMode, MF_UNCHECKED);
+			m_DDFullScreenMode = MenuId;
+			CheckMenuItem(hMenu, m_DDFullScreenMode, MF_CHECKED);
+			TranslateWindowSize();
+			SetWindowAttributes(m_isFullScreen);
+    }
+		break;
+
+	case IDM_FULLSCREEN:
+    m_isFullScreen = !m_isFullScreen;
+    CheckMenuItem(hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
+    TranslateWindowSize();
+    SetWindowAttributes(!m_isFullScreen);
+    break;
 
 	case IDM_SPEEDANDFPS:
 		if (m_ShowSpeedAndFPS)

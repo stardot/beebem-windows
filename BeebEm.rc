@@ -249,18 +249,28 @@ BEGIN
     BEGIN
         MENUITEM "&DirectDraw On/Off",          IDM_DDRAWONOFF
         MENUITEM "&Buffer In Video RAM",        IDM_DDINVIDEORAM
+        MENUITEM "32-bit DirectDraw On/Off",    IDM_DD32ONOFF
         MENUITEM SEPARATOR
         MENUITEM "&Speed and FPS On/Off",       IDM_SPEEDANDFPS
         MENUITEM SEPARATOR
-        MENUITEM "160x128",                     IDM_160X128
-        MENUITEM "240x192",                     IDM_240X192
-        MENUITEM "320x256",                     IDM_320X256
-        MENUITEM "640x256",                     IDM_640X256
-        MENUITEM "640x512",                     IDM_640X512
-        MENUITEM "800x600",                     IDM_800X600
-        MENUITEM "1024x512",                    IDM_1024X512
-        MENUITEM "1024x768",                    IDM_1024X768
         MENUITEM "&Full Screen",                IDM_FULLSCREEN
+        POPUP "Window Sizes"
+        BEGIN
+            MENUITEM "160x128",                     IDM_160X128
+            MENUITEM "240x192",                     IDM_240X192
+            MENUITEM "320x256",                     IDM_320X256
+            MENUITEM "640x256",                     IDM_640X256
+            MENUITEM "640x512",                     IDM_640X512
+            MENUITEM "800x600",                     IDM_800X600
+            MENUITEM "1024x512",                    IDM_1024X512
+            MENUITEM "1024x768",                    IDM_1024X768
+        END
+        POPUP "DirectDraw Full Screen Modes"
+        BEGIN
+            MENUITEM "640x480",                     ID_VIEW_DD_640X480
+            MENUITEM "1024x768",                    ID_VIEW_DD_1024X768
+            MENUITEM "1280x1024",                   ID_VIEW_DD_1280X1024
+        END
         MENUITEM SEPARATOR
         POPUP "Monitor type"
         BEGIN

@@ -99,4 +99,23 @@ Improved speed regulation code.
 
 Version 1.03 (Robert Schmidt)
 ------------
+Windows update only:
 Monochrome monitor/B&W TV emulation
+
+Version 1.04 (Robert Schmidt)
+------------
+Windows update only:
+* Remember last used directories for disc images and emulator states.
+* Dialog for opening disc images has 3 new filters:
+	- Automatic *.ssd/*.dsd detection
+	- *.ssd only
+	- *.dsd only
+* Support for higher DirectDraw resolutions, through new sub menu.
+  (1280x1024 makes aliasing effects unnoticable, but requires a fast
+  DirectDraw implementation.)
+* Added option to use 32-bit DirectDraw modes in full screen, as opposed
+  to 8-bit. (In a window, DirectDraw uses the desktop color depth.)
+  When combined with "Buffer in video RAM", the result is a *superior*, 
+  interpolated display!  Scaling artifacts "disappear" at any resolution.
+* Made "Full Screen" a toggle, not a standalone mode/"window size".
+* Fixed a bug that didn't show speed/FPS in a windowed DirectDraw mode.

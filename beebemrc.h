@@ -174,6 +174,10 @@
 #define ID_MONITOR_BW                   40096
 #define ID_MONITOR_AMBER                40097
 #define ID_MONITOR_GREEN                40098
+#define ID_VIEW_DD_640X480              40099
+#define ID_VIEW_DD_1024X768             40100
+#define ID_VIEW_DD_1280X1024            40101
+#define IDM_DD32ONOFF                   40102
 
 // Next default values for new objects
 // 
@@ -181,7 +185,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40099
+#define _APS_NEXT_COMMAND_VALUE         40103
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
