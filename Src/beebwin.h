@@ -105,6 +105,7 @@ class BeebWin  {
   void ShowMenu(bool on);
   void TrackPopupMenu(int x, int y);
   bool IsFullScreen() { return m_isFullScreen; }
+	void ResetTiming(void);
 
   private:
 	int			m_MenuIdWinSize;
@@ -153,6 +154,15 @@ class BeebWin  {
 	int			m_MenuIdPrinterPort;
 	char		m_PrinterFileName[_MAX_PATH];
 	char		m_PrinterDevice[_MAX_PATH];
+
+	DWORD		m_LastTickCount;
+	DWORD		m_LastStatsTickCount;
+	int			m_LastTotalCycles;
+	int			m_LastStatsTotalCycles;
+	DWORD		m_TickBase;
+	int			m_CycleBase;
+	int			m_MinFrameCount;
+	DWORD		m_LastFPSCount;
 
 	BOOL		m_frozen;
 

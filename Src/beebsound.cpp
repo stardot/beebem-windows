@@ -458,7 +458,7 @@ static double CyclesToSamples(unsigned int beebtime) {
   /* Extract number of cycles since last call */
   if (beebtime<LastBeebCycle) {
     /* Wrap around in beebs time */
-    tmp=((double)CycleCountTMax-(double)LastBeebCycle)+(double)beebtime;
+    tmp=((double)CycleCountWrap-(double)LastBeebCycle)+(double)beebtime;
   } else {
     tmp=(double)beebtime-(double)LastBeebCycle;
   };

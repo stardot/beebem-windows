@@ -1,4 +1,4 @@
-BeebEm for Microsoft Windows (27 Mar 1998)
+BeebEm for Microsoft Windows (Sep 2004)
 ============================
 
 Beebem has been ported to MS Windows. The following people have contributed 
@@ -11,6 +11,20 @@ to the Windows port:
 
 Note however that the Copyright for the Emulator resides with David Gilbert,
 the original author, as described in the Readme.1st text file.
+
+
+Running BeebEm
+--------------
+
+Just run the BeebEm.exe.
+
+When BeebEm starts up you should see the normal 'BBC Computer 32K' message
+followed by the start up messages for all the ROMs (i.e. the DFS and BASIC).
+Load a disc using the File menu (remember to select the correct file type)
+and press Shift+F12 to boot it.
+
+If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
+commands to load the programs from it.
 
 
 Compiling
@@ -28,111 +42,6 @@ Borland or Watcom) but you may need to remove some of the App Studio stuff
 from the resources file (beebem.rc).  You will also need to edit port.h to
 change the EightByteType from __int64 (which is Microsoft specific) to a
 structure of two long words.
-
-
-Executable
-----------
-
-There is an executable in this distribution, in the 'intelbin' directory:
-
-  BeebEm.exe  - Win32 version for all Intel processors
-
-The executables will run on Windows 95 and NT 4.0.  You will also need to
-install the Microsoft DirectX drivers if you have not already got them. 
-DirectX version 5 is available from the MS web page www.microsoft.com.
-
-
-Running BeebEm
---------------
-
-You will need to get some ROM images from a BBC Micro to run BeebEm.  You
-will need OS1.2, Basic and DFS ROM images.  You will also need some disc
-images to use with BeebEm.
-
-You will find Robert Schmidt's 'BBC Lives!' web page useful.  His page is:
-
-  http://www.nvg.unit.no/bbc/bbc.html
-
-It contains DFS ROM images and disc images.  It also contains details of how
-to get hold of the OS1.2 and Basic ROM images.  Take a look at the 'ROM
-Images' section of the Archive page.  You will find the 'StuffIt Expander'
-route the easiest (you may also need WinZip to expand the 'hqx' file to a
-'sit' file) but if this does not work follow the 'Fools Guide to getting
-ROMs'.
-
-For the DFS I recommend you use the Watford DFS, you can find it here:
-
-  ftp://ftp.nvg.unit.no/pub/bbc/rom/Watford/fs/DFS-1.44.rom
-
-There is an example disc image in the discims directory in this
-distribution.  It contains some simple programs to test the emulator.
-
-Once you have ROM and disc images you need to create directories to keep
-them in.  First create a directory to keep the emulator in, e.g. C:\Beeb,
-and copy the executable into it.  Then create the following sub-directories
-in C:\Beeb:
-
-  beebfile  - put the ROM images in here
-  discims   - put the disc images in here
-  beebstate - Beeb State files go in here (leave this empty for now)
-
-The OS ROM should have a file name of 'os12' (note: no file extension).  It
-does not matter what the file names for the other ROMs are.  Beebem will
-read all the ROMs from the beebfile directory (up to 16 of them) when it
-starts up (8K and 16K ROMs).
-
-Once all the files and directories are set up, run the emulator.  It should
-work in any graphics mode but it will run fastest in a 256 colour mode.  If
-you get an error message saying DirectX initialisation has failed then check
-your DirectX installation (or install it if you have not already).
-
-When BeebEm starts up you should see the normal 'BBC Computer 32K' message
-followed by the start up messages for all the ROMs (i.e. the DFS and BASIC).
-Load a disc using the File menu (remember to select the correct file type)
-and press Shift+F12 to boot it.
-
-If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
-commands to load the programs from it.
-
-
-New Features in V1.04 (Robert Schmidt)
---------------------------------------
-See "changes" file.
-
-The recommended settings for the ultimate screen display are as follows:
-* DirectDraw ON
-* Buffer in Video RAM ON
-* 32-bit DirectDraw ON
-* Full screen ON
-
-The combination of all these settings results in a *superior* interpolated
-screen display, where artifacts otherwised caused by scaling the abnormal
-256-line BBC display to a 480/768/1024-line PC display virtually disappear.
-
-All these settings are disabled by default, so users without DirectDraw,
-or with inferior graphics cards won't get in trouble.  If these settings
-work well for you, it is recommended that you save them as your default
-(Options - Save Preferences).
-
-
-New Features in V1.03 (Robert Schmidt)
---------------------------------------
-
-Monochrome monitor/B&W TV emulation - In the "View" menu, open the "Monitor" 
-    submenu, then select either RGB, B&W, Amber or Green
-
-(Files modified: beebwin.h, beebwin.cpp, beebemrc.h, beebem.rc, userkeybd.cpp)
-
-
-
-New Features in V1.0
---------------------
-
-Printer support - You can print to a file or any of the LPT or COM ports.
-
-Switchable DirectX - DirectDraw screen updates and DirectSound output are
-  not always faster than conventional display and sound output.  You can 
-  switch DirectX on and off to achieve the fastest emulation.
 
 
 Disc Writing
@@ -396,12 +305,12 @@ Finally
 -------
 
 Thanks to Dave Gilbert, Nigel Magnay and Robert Schmidt for writing the
-emulator in the first place and distributing the source code with it - its
-great!
+emulator in the first place and distributing the source code with it.
 
 If there are any other features you would like to see in the Windows version
 (or the core emulator code) then send me some email.  I may be able to add
 them.
 
 Mike Wyatt
-mikebuk@aol.com
+mikebuk@dsl.pipex.com
+http://www.mikebuk.dsl.pipex.com/beebem

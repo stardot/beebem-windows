@@ -119,3 +119,8 @@ Windows update only:
   interpolated display!  Scaling artifacts "disappear" at any resolution.
 * Made "Full Screen" a toggle, not a standalone mode/"window size".
 * Fixed a bug that didn't show speed/FPS in a windowed DirectDraw mode.
+
+Version 1.05
+------------
+Fixed the problem where BeebEm hangs after about 35 minutes.
+Updated speed regulation code so it works better on fast PCs.

@@ -40,7 +40,7 @@
 
 static const char *WindowTitle = "BeebEm - BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 1.04, 2 Dec 2000\n";
+								"Version 1.05, Sep 2004\n";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -1134,116 +1134,117 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 }
 
 /****************************************************************************/
+void BeebWin::ResetTiming(void)
+{
+	m_LastTickCount = GetTickCount();
+	m_LastStatsTickCount = m_LastTickCount;
+	m_LastTotalCycles = TotalCycles;
+	m_LastStatsTotalCycles = TotalCycles;
+	m_TickBase = m_LastTickCount;
+	m_CycleBase = TotalCycles;
+	m_MinFrameCount = 0;
+	m_LastFPSCount = m_LastTickCount;
+	m_ScreenRefreshCount = 0;
+}
+
+/****************************************************************************/
 BOOL BeebWin::UpdateTiming(void)
 {
-	static unsigned long LastTotalCycles = 0;
-	static unsigned long LastTickCount = 0;
-	static unsigned long LastTimingDispCount = 0;
-	static unsigned long LastFPSCount = 0;
-	static double FrameUpdateTotal = 0.0;
-	static double FrameUpdateIncrement = 1.0;
-	double AdjustedRelativeSpeed;
-	unsigned long Cycles;
-	unsigned long Ticks, TickCount;
-	BOOL UpdateScreen = TRUE;
+	DWORD TickCount;
+	DWORD Ticks;
+	DWORD SpareTicks;
+	int Cycles;
+	int CyclesPerSec;
+	bool UpdateScreen = FALSE;
 
-	if (LastTickCount == 0)
+	TickCount = GetTickCount();
+
+	/* Don't do anything if this is the first call or there has
+	   been a long pause due to menu commands, or when something
+	   wraps. */
+	if (m_LastTickCount == 0 ||
+		TickCount < m_LastTickCount ||
+		(TickCount - m_LastTickCount) > 1000 ||
+		TotalCycles < m_LastTotalCycles)
 	{
-		LastTimingDispCount = LastTickCount = LastFPSCount = GetTickCount();
-		LastTotalCycles = TotalCycles;
+		ResetTiming();
+		return TRUE;
 	}
-	else
+
+	/* Update stats every second */
+	if (TickCount >= m_LastStatsTickCount + 1000)
 	{
-		/* Only update timings every second */
-		TickCount = GetTickCount();
-		Ticks = TickCount - LastTickCount;
+		m_FramesPerSecond = m_ScreenRefreshCount;
+		m_ScreenRefreshCount = 0;
+		m_RelativeSpeed = ((TotalCycles - m_LastStatsTotalCycles) / 2000.0) /
+								(TickCount - m_LastStatsTickCount);
+		m_LastStatsTotalCycles = TotalCycles;
+		m_LastStatsTickCount += 1000;
+		DisplayTiming();
+	}
 
-		/* Don't do anything if this is the first call after
-			a long pause due to menu commands. */
-		if (Ticks >= 1000)
+	// Now we work out if BeebEm is running too fast or not
+	if (m_RealTimeTarget > 0.0)
+	{
+		Ticks = TickCount - m_TickBase;
+		Cycles = (int)((double)(TotalCycles - m_CycleBase) / m_RealTimeTarget);
+
+		if (Ticks <= (DWORD)(Cycles / 2000))
 		{
-			LastTotalCycles = TotalCycles;
-			LastTickCount = TickCount;
-			LastFPSCount = TickCount;
-			LastTimingDispCount = TickCount;
-		}
-		else
-		{
-			if (Ticks >= 500)
+			// Need to slow down, show frame (max 50fps though) 
+			// and sleep a bit
+			if (TickCount >= m_LastFPSCount + 20)
 			{
-				if ((unsigned long)TotalCycles < LastTotalCycles)
-				{
-					/* Wrap around in cycle count */
-					Cycles = TotalCycles + (CycleCountTMax - LastTotalCycles);
-				}
-				else
-				{	
-					Cycles = TotalCycles - LastTotalCycles;
-				}
-
-				/* Ticks are in ms, Cycles are in 0.5 us (beeb runs at 2MHz) */
-				m_RelativeSpeed = (Cycles / 2000.0) / Ticks;
-				m_FramesPerSecond += (m_ScreenRefreshCount * 1000.0) / Ticks;
-				m_FramesPerSecond /= 2.0;
-				m_ScreenRefreshCount = 0;
-
-				if (m_FPSTarget == 0)
-				{
-					AdjustedRelativeSpeed = m_RelativeSpeed + 1.0 - m_RealTimeTarget;
-					FrameUpdateIncrement *= AdjustedRelativeSpeed * AdjustedRelativeSpeed;
-					if (FrameUpdateIncrement < 0.05)
-						FrameUpdateIncrement = 0.05;
-				}
-
-				/* Only update timing display every second */
-				if (TickCount > LastTimingDispCount + 1000)
-				{
-					LastTimingDispCount = TickCount;
-					DisplayTiming();
-				}
-
-				LastTotalCycles = TotalCycles;
-				LastTickCount = TickCount;
-			}
-
-			if (m_FPSTarget == 0)
-			{
-				/* One of the real time speeds required */
-				if (FrameUpdateIncrement > 1.0)
-				{
-					/* Sleep for a bit */
-					Sleep((long)(FrameUpdateIncrement - 1.0));
-					UpdateScreen = TRUE;
-				}
-				else
-				{
-					FrameUpdateTotal += FrameUpdateIncrement;
-					if (FrameUpdateTotal >= 1.0)
-					{
-						UpdateScreen = TRUE;
-						FrameUpdateTotal -= 1.0;
-					}
-					else
-					{
-						UpdateScreen = FALSE;
-					}
-				}
+				UpdateScreen = TRUE;
+				m_LastFPSCount += 20;
 			}
 			else
 			{
-				/* Fast as possible with a certain frame rate */
-				if (TickCount >= LastFPSCount + (1000 / m_FPSTarget))
-				{
-					UpdateScreen = TRUE;
-					LastFPSCount += 1000 / m_FPSTarget;
-				}
-				else
-				{
-					UpdateScreen = FALSE;
-				}
+				UpdateScreen = FALSE;
+			}
+
+			SpareTicks = (DWORD)(Cycles / 2000) - Ticks;
+			Sleep(SpareTicks);
+			m_MinFrameCount = 0;
+		}
+		else
+		{
+			// Need to speed up, skip a frame
+			UpdateScreen = FALSE;
+
+			// Make sure we show at least one in 100 frames
+			++m_MinFrameCount;
+			if (m_MinFrameCount >= 100)
+			{
+				UpdateScreen = TRUE;
+				m_MinFrameCount = 0;
 			}
 		}
+
+		/* Move counter bases forward */
+		CyclesPerSec = 2000000.0 * m_RealTimeTarget;
+		while ((TickCount - m_TickBase) > 1000 && (TotalCycles - m_CycleBase) > CyclesPerSec)
+		{
+			m_TickBase += 1000;
+			m_CycleBase += CyclesPerSec;
+		}
 	}
+	else
+	{
+		/* Fast as possible with a certain frame rate */
+		if (TickCount >= m_LastFPSCount + (1000 / m_FPSTarget))
+		{
+			UpdateScreen = TRUE;
+			m_LastFPSCount += 1000 / m_FPSTarget;
+		}
+		else
+		{
+			UpdateScreen = FALSE;
+		}
+	}
+
+	m_LastTickCount = TickCount;
+	m_LastTotalCycles = TotalCycles;
 
 	return UpdateScreen;
 }
@@ -1383,7 +1384,7 @@ void BeebWin::TranslateVolume(void)
 void BeebWin::TranslateTiming(void)
 {
 	m_FPSTarget = 0;
-	m_RealTimeTarget = 1.0;
+	m_RealTimeTarget = 0.0;
 
 	switch (m_MenuIdTiming)
 	{
@@ -1420,6 +1421,8 @@ void BeebWin::TranslateTiming(void)
 		m_FPSTarget = 1;
 		break;
 	}
+
+	ResetTiming();
 }
 
 /****************************************************************************/
