@@ -79,6 +79,8 @@ static unsigned int KBDCol=0;
 static char SysViaKbdState[10][8]; /* Col,row */
 static int KeysDown=0;
 
+unsigned char WCDelay1,WCDelay2;
+
 /*--------------------------------------------------------------------------*/
 static void UpdateIFRTopBit(void) {
   /* Update top bit of IFR */
@@ -207,8 +209,6 @@ static void IC32Write(unsigned char Value) {
 
   /* Must do sound reg access when write line changes */
 #ifdef SOUNDSUPPORT
-  if (((oldval & 1)) && (!(IC32State & 1))) { WEState=1; WECycles=1; } // That should actually be 32, but 
-  // it doesn't seem to work with 32.
   if (((oldval & 1)) && (!(IC32State & 1))) { Sound_RegWrite(SlowDataBusWriteValue); }
   // now, this was a change from 0 to 1, but my docs say its a change from 1 to 0. might work better this way.
 #endif
@@ -327,6 +327,7 @@ void SysVIAWrite(int Address, int Value) {
       };
       UpdateIFRTopBit();
       SysVIAState.timer1hasshot=0;
+	  WCDelay1=4;
       break;
 
     case 7:
@@ -346,6 +347,7 @@ void SysVIAWrite(int Address, int Value) {
       SysVIAState.ifr &=0xdf; /* clear timer 2 ifr */
       UpdateIFRTopBit();
       SysVIAState.timer2hasshot=0;
+	  WCDelay2=4;
       break;
 
     case 10:
@@ -519,8 +521,9 @@ void SysVIA_poll_real(void) {
 void SysVIA_poll(unsigned int ncycles) {
 	// Converted to a proc to allow shift register functions
 	ChipClock(ncycles);
-  SysVIAState.timer1c-=ncycles; 
-  SysVIAState.timer2c-=ncycles; 
+  SysVIAState.timer1c-=(ncycles-WCDelay1); 
+  SysVIAState.timer2c-=(ncycles-WCDelay2); 
+  WCDelay1=WCDelay2=0;
   if ((SysVIAState.timer1c<0) || (SysVIAState.timer2c<0)) SysVIA_poll_real();
   // Do Shift register stuff
   if (SRMode==2) {

@@ -29,6 +29,7 @@
 #include "via.h"
 
 extern VIAState UserVIAState;
+extern unsigned char WTDelay1,WTDelay2;
 
 void UserVIAWrite(int Address, int Value);
 int UserVIARead(int Address);
@@ -37,8 +38,9 @@ void UserVIAReset(void);
 void UserVIA_poll_real(void);
 
 #define UserVIA_poll(ncycles) \
-  UserVIAState.timer1c-=ncycles; \
-  UserVIAState.timer2c-=ncycles; \
+  UserVIAState.timer1c-=(ncycles-WTDelay1); \
+  UserVIAState.timer2c-=(ncycles-WTDelay2); \
+  WTDelay1=WTDelay2=0; \
   if ((UserVIAState.timer1c<0) || (UserVIAState.timer2c<0)) UserVIA_poll_real(); \
   if (AMXMouseEnabled && AMXTrigger<=TotalCycles) AMXMouseMovement(); \
   if (PrinterEnabled && PrinterTrigger<=TotalCycles) PrinterPoll();

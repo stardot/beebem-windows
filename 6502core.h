@@ -75,4 +75,6 @@ void Load6502UEF(FILE *SUEF);
 extern int SwitchOnCycles; // Reset delay
 extern int OpCodes;
 extern int BHardware;
+extern int SecCycles;
+extern bool HoldingCPU;
 #endif

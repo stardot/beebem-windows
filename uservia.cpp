@@ -116,7 +116,6 @@ void UserVIAWrite(int Address, int Value) {
       /*cerr << "UserVia Reg4/6 Timer1 lo Counter Write val=0x " << hex << Value << dec << " at " << TotalCycles << "\n"; */
       UserVIAState.timer1l&=0xff00;
       UserVIAState.timer1l|=(Value & 0xff);
-      WTDelay1=1-WTDelay1;
       break;
 
     case 5:
@@ -132,6 +131,7 @@ void UserVIAWrite(int Address, int Value) {
         UserVIAState.irb&=0x7f;
       };
       UpdateIFRTopBit();
+	  WTDelay1=4;
       break;
 
     case 7:
@@ -154,6 +154,7 @@ void UserVIAWrite(int Address, int Value) {
       UserVIAState.timer2c=UserVIAState.timer2l * 2;
       UserVIAState.ifr &=0xdf; /* clear timer 2 ifr */
       UpdateIFRTopBit();
+	  WTDelay2=4;
       break;
 
     case 10:

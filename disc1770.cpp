@@ -176,6 +176,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 			RotSect=Sector;
 			SetStatus(0);
 			FDCommand=8; MultiSect=(Value & 16)>>4; 
+			ResetStatus(1);
 		}
 		if (HComBits==0xa0) { // Write Sector
 			RotSect=Sector;
@@ -318,12 +319,12 @@ void Poll1770(int NCycles) {
 			if (ByteCount<257) { fputc(Data,CurrentDisc); SetStatus(1); NMIStatus|=1<<nmi_floppy; } // DRQ
 			ByteCount--;
 			if (ByteCount==0) RotSect++; if (RotSect>MaxSects[CurrentDrive]) RotSect=0;
-			if ((ByteCount==0) && (!MultiSect)) { ResetStatus(0); NMIStatus|=1<<nmi_floppy; fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET); FDCommand=10; }
+			if ((ByteCount==0) && (!MultiSect)) { ResetStatus(0); NMIStatus|=1<<nmi_floppy; fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET); FDCommand=10; ResetStatus(1); }
 			if ((ByteCount==0) && (MultiSect)) { ByteCount=257; Sector++; 
 				if (Sector==MaxSects[CurrentDrive]) { MultiSect=0; /* Sector=0; */ }
 			}
 			LoadingCycles=BYTE_TIME; // Bit longer for a write
-		}
+		} 
 		return;
 	}
 	if ((FDCommand==7) && (DWriteable[CurrentDrive]==0)) {
@@ -333,8 +334,7 @@ void Poll1770(int NCycles) {
 	}
 	if ((FDCommand>=8) && (*CDiscOpen==1) && (FDCommand<=10)) { // Read/Write Prepare
 		SetStatus(0);
-		ResetStatus(1);
-		ResetStatus(5); ResetStatus(6);
+		ResetStatus(5); ResetStatus(6); ResetStatus(2);
 		ByteCount=257; DataPos=ftell(CurrentDisc); HeadPos[CurrentDrive]=DataPos;
 		LoadingCycles=45;
 		fseek(CurrentDisc,DiscStrt[CurrentDrive]+(DiscStep[CurrentDrive]*Track)+(Sector*256),SEEK_SET);
@@ -345,7 +345,7 @@ void Poll1770(int NCycles) {
 		NMIStatus|=1<<nmi_floppy; FDCommand=0;
 	}
 	if ((FDCommand==8) && (*CDiscOpen==1)) FDCommand=6;
-	if ((FDCommand==9) && (*CDiscOpen==1)) { SetStatus(1); NMIStatus|=1<<nmi_floppy; FDCommand=7; }
+	if ((FDCommand==9) && (*CDiscOpen==1)) { FDCommand=7; SetStatus(1); NMIStatus|=1<<nmi_floppy; }
   }
   if (FDCommand==10) {
 	ResetStatus(0);

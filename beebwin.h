@@ -96,6 +96,15 @@ class BeebWin  {
 		memset(m_screen+ (y* 800) + sx+((TeletextEnabled)?36+ScreenAdjust:ScreenAdjust), Col , width);
 	};
 
+	void doInvHorizLine(unsigned long Col, int y, int sx, int width) {
+		char *vaddr;
+		if (((y*800)+sx+36+ScreenAdjust+width)>(500*800)) return;
+		if ((m_screen+(y*800)+sx+ScreenAdjust+36)<m_screen) return;
+		if (TeletextEnabled) y/=TeletextStyle;
+		vaddr=m_screen+ (y* 800) + sx+((TeletextEnabled)?36+ScreenAdjust:ScreenAdjust);
+		for (int n=0;n<width;n++) *(vaddr+n)^=Col;
+	};
+
 	void doUHorizLine(unsigned long Col, int y, int sx, int width) {
 		if (y>500) return;
 		if (TeletextEnabled) y/=TeletextStyle;
@@ -146,6 +155,7 @@ class BeebWin  {
   void TrackPopupMenu(int x, int y);
   bool IsFullScreen() { return m_isFullScreen; }
   char*		m_screen;
+  double		m_RealTimeTarget;
 
 
   private:
@@ -160,7 +170,6 @@ class BeebWin  {
 	int			m_DiscTypeSelection;
 	int			m_MenuIdTiming;
 	int			m_FPSTarget;
-	double		m_RealTimeTarget;
 	JOYCAPS		m_JoystickCaps;
 	int			m_MenuIdSticks;
 	BOOL		m_HideCursor;
@@ -203,6 +212,8 @@ class BeebWin  {
 	LPDIRECTDRAWSURFACE2	m_DDS2Primary;	// DirectDraw primary surface
 	LPDIRECTDRAWSURFACE		m_DDSOne;		// Offscreen surface 1
 	LPDIRECTDRAWSURFACE2	m_DDS2One;		// Offscreen surface 1
+	LPDIRECTDRAWSURFACE     m_BackBuffer;   // Full Screen Back Buffer
+	LPDIRECTDRAWSURFACE2	m_BackBuffer2;  // DD2 of the above
 	BOOL					m_DDS2InVideoRAM;
 	LPDIRECTDRAWCLIPPER		m_Clipper;		// clipper for primary
 

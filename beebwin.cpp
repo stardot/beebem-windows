@@ -62,6 +62,7 @@ unsigned char CMA2;
 
 unsigned char HideMenuEnabled;
 bool MenuOn;
+int LastTickCount=0;
 
 struct LEDType LEDs;
 char DiscLedColour=0; // 0 for red, 1 for green.
@@ -78,6 +79,8 @@ lGetBoardProperties PGetBoardProperties;
 lSetDriveControl PSetDriveControl;
 lGetDriveControl PGetDriveControl;
 
+bool m_PageFlipping=0;
+
 EDCB ExtBoard={0,0,NULL};
 bool DiscLoaded[2]={FALSE,FALSE}; // Set to TRUE when a disc image has been loaded.
 char CDiscName[2][256]; // Filename of disc current in drive 0 and 1;
@@ -87,8 +90,7 @@ char FDCDLL[256];
 
 static const char *WindowTitle = "BeebEm - BBC Model B/Master 128 Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Model B/Master 128 Emulator\n"
-								"Version 1.4, 20 December 2001\n"
-								"Merry Christmas! - Richard Gellman :)";
+								"Version 1.41, 19 March 2002";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -696,8 +698,6 @@ void SaveWindowPos(void) {
 void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatus,unsigned char LoadRoms) 
 {
 	SwitchOnCycles=0; // Reset delay
-	SoundReset();
-	if (SoundDefault) SoundInit();
 	SoundChipReset();
 	SwitchOnSound();
 	EnableTube=TubeStatus;
@@ -1028,6 +1028,7 @@ void BeebWin::InitDirectX(void)
 HRESULT BeebWin::InitSurfaces(void)
 {
 	DDSURFACEDESC ddsd;
+	DDSCAPS ddscaps2;
 	HRESULT ddrval;
 
 	if (m_isFullScreen)
@@ -1048,23 +1049,33 @@ HRESULT BeebWin::InitSurfaces(void)
 		ddsd.dwSize = sizeof( ddsd );
 		ddsd.dwFlags = DDSD_CAPS;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+		if (m_PageFlipping) {
+			ddsd.dwFlags|=DDSD_BACKBUFFERCOUNT;
+			ddsd.ddsCaps.dwCaps|=DDSCAPS_FLIP|DDSCAPS_COMPLEX|DDSCAPS_VIDEOMEMORY;
+			ddsd.dwBackBufferCount=1;
+		}
 
 		ddrval = m_DD2->CreateSurface( &ddsd, &m_DDSPrimary, NULL );
 	}
+
+	if (m_PageFlipping) {
+		ddscaps2.dwCaps=DDSCAPS_BACKBUFFER;
+		if (ddrval==DD_OK) 
+			ddrval=m_DDSPrimary->GetAttachedSurface(&ddscaps2,&m_BackBuffer);
+		if (ddrval==DD_OK)
+			ddrval=m_BackBuffer->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_BackBuffer2);
+	}
+
 	if( ddrval == DD_OK )
 		ddrval = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2Primary);
-
-  if( ddrval == DD_OK )
+	if( ddrval == DD_OK )
 		ddrval = m_DD2->CreateClipper( 0, &m_Clipper, NULL );
-
-  if( ddrval == DD_OK )
+	if( ddrval == DD_OK )
 		ddrval = m_Clipper->SetHWnd( 0, m_hWnd );
-
-  if( ddrval == DD_OK )
+	if( ddrval == DD_OK )
 		ddrval = m_DDS2Primary->SetClipper( m_Clipper );
-
-  if( ddrval == DD_OK )
-	{
+	if( ddrval == DD_OK )
+		{
 		ZeroMemory(&ddsd, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
@@ -1076,11 +1087,11 @@ HRESULT BeebWin::InitSurfaces(void)
 		ddsd.dwWidth = 800;
 		ddsd.dwHeight = 512;
 		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
-	}
+		}
 	if( ddrval == DD_OK )
-	{
+		{
 		ddrval = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
-	}
+		}
 
 	m_DXInit = TRUE;
 
@@ -1481,7 +1492,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 			if (m_ShowSpeedAndFPS && m_isFullScreen)
 			{
 				char fps[50];
-				sprintf(fps, "%2.2f %2.2f %04x", m_RelativeSpeed, m_FramesPerSecond,ProgramCounter);
+				sprintf(fps, "%2.2f %2d %04x", m_RelativeSpeed, (int)m_FramesPerSecond,ProgramCounter);
 				SetBkMode(hdc,TRANSPARENT);
 				SetTextColor(hdc,0x808080);
 				TextOut(hdc,400,TextStart,fps,strlen(fps));
@@ -1503,16 +1514,28 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 			srcRect.top = 0;
 			srcRect.right = (TeletextEnabled)?552:ActualScreenWidth;
 			srcRect.bottom = (TeletextEnabled)?TTLines:256; 
-
-			ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
-			if (ddrval == DDERR_SURFACELOST)
-			{
-				ddrval = m_DDS2Primary->Restore();
+			
+			if (!m_PageFlipping) {
+				ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
+				if (ddrval == DDERR_SURFACELOST)
+				{
+					ddrval = m_DDS2Primary->Restore();
+					if (ddrval == DD_OK)
+						ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+				}
+			} else {
+				ddrval = m_BackBuffer2->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
+				if (ddrval == DDERR_SURFACELOST)
+				{
+					ddrval = m_BackBuffer2->Restore();
+					if (ddrval == DD_OK)
+						ddrval = m_BackBuffer2->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+				}
 				if (ddrval == DD_OK)
-					ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+					m_DDSPrimary->Flip(NULL,NULL);
 			}
 		}
-
+		
 		if (ddrval != DD_OK && ddrval != DDERR_WASSTILLDRAWING)
 		{
 			char  errstr[200];
@@ -1525,125 +1548,50 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 /****************************************************************************/
 BOOL BeebWin::UpdateTiming(void)
 {
-	static unsigned long LastTotalCycles = 0;
-	static unsigned long LastTickCount = 0;
-	static unsigned long LastTimingDispCount = 0;
-	static unsigned long LastFPSCount = 0;
-	static double FrameUpdateTotal = 0.0;
-	static double FrameUpdateIncrement = 1.0;
-	double AdjustedRelativeSpeed;
-	unsigned long Cycles;
-	unsigned long Ticks, TickCount;
-	BOOL UpdateScreen = TRUE;
+	int Ticks;
+	bool UpdateScreen=FALSE;
+	int CycleTarget=0;
+	int CT,NT; // Ticks for waiting a millisecond
+	double TCycles;
 
-	if (LastTickCount == 0)
-	{
-		LastTimingDispCount = LastTickCount = LastFPSCount = GetTickCount();
-		LastTotalCycles = TotalCycles;
+	TCycles=(m_RealTimeTarget)?m_RealTimeTarget:1;
+
+	Ticks=GetTickCount() % 1000;
+	if (Ticks<LastTickCount) {
+		if (SecCycles>(2000000*TCycles)) SecCycles-=(2000000*TCycles);
+		else SecCycles=0;
+		m_FramesPerSecond=m_ScreenRefreshCount;
+		m_ScreenRefreshCount=0;
+		if (!m_isFullScreen) DisplayTiming();
 	}
-	else
-	{
-		/* Only update timings every second */
-		TickCount = GetTickCount();
-		Ticks = TickCount - LastTickCount;
-
-		/* Don't do anything if this is the first call after
-			a long pause due to menu commands. */
-		if (Ticks >= 1000)
-		{
-			LastTotalCycles = TotalCycles;
-			LastTickCount = TickCount;
-			LastFPSCount = TickCount;
-			LastTimingDispCount = TickCount;
-		}
-		else
-		{
-			if (Ticks >= 500)
-			{
-				if ((unsigned long)TotalCycles < LastTotalCycles)
-				{
-					/* Wrap around in cycle count */
-					Cycles = TotalCycles + (CycleCountWrap - LastTotalCycles);
-				}
-				else
-				{	
-					Cycles = TotalCycles - LastTotalCycles;
-				}
-
-				/* Ticks are in ms, Cycles are in 0.5 us (beeb runs at 2MHz) */
-				m_RelativeSpeed = (Cycles / 2000.0) / Ticks;
-				m_FramesPerSecond += (m_ScreenRefreshCount * 1000.0) / Ticks;
-				m_FramesPerSecond /= 2.0;
-				m_ScreenRefreshCount = 0;
-
-				if (m_FPSTarget == 0)
-				{
-					AdjustedRelativeSpeed = m_RelativeSpeed + 1.0 - m_RealTimeTarget;
-					FrameUpdateIncrement *= AdjustedRelativeSpeed * AdjustedRelativeSpeed;
-					if (FrameUpdateIncrement < 0.05)
-						FrameUpdateIncrement = 0.05;
-				}
-
-				/* Only update timing display every second */
-				if (TickCount > LastTimingDispCount + 1000)
-				{
-					LastTimingDispCount = TickCount;
-					DisplayTiming();
-				}
-
-				LastTotalCycles = TotalCycles;
-				LastTickCount = TickCount;
-			}
-
-			if (m_FPSTarget == 0)
-			{
-				/* One of the real time speeds required */
-				if (FrameUpdateIncrement > 1.0)
-				{
-					/* Sleep for a bit */
-					Sleep((long)(FrameUpdateIncrement - 1.0));
-					UpdateScreen = TRUE;
-				}
-				else
-				{
-					FrameUpdateTotal += FrameUpdateIncrement;
-					if (FrameUpdateTotal >= 1.0)
-					{
-						UpdateScreen = TRUE;
-						FrameUpdateTotal -= 1.0;
-					}
-					else
-					{
-						UpdateScreen = FALSE;
-					}
-				}
-			}
-			else
-			{
-				/* Fast as possible with a certain frame rate */
-				if (TickCount >= LastFPSCount + (1000 / m_FPSTarget))
-				{
-					UpdateScreen = TRUE;
-					LastFPSCount += 1000 / m_FPSTarget;
-				}
-				else
-				{
-					UpdateScreen = FALSE;
-				}
-			}
-		}
+	LastTickCount=Ticks;
+	// Now we work out if BeebEm is running too fast or not
+	CycleTarget=(Ticks*2000)*TCycles;
+	if (m_RealTimeTarget>0) {
+		UpdateScreen=FALSE;
+		if (SecCycles>=CycleTarget) {
+			UpdateScreen=TRUE;
+			CT=GetTickCount();
+			NT=(SecCycles-CycleTarget)/(2000*m_RealTimeTarget);
+			do { } while (GetTickCount()<CT+NT);
+		} 
 	}
-
+	if (m_FPSTarget>0) {
+		UpdateScreen=TRUE;
+		if (((2000000/m_FPSTarget)*m_ScreenRefreshCount)>(Ticks*2000)) UpdateScreen=FALSE;
+		if (m_ScreenRefreshCount<1) UpdateScreen=TRUE;
+	}
+	m_RelativeSpeed=(double)((float)SecCycles/(float)(CycleTarget/TCycles));
 	return UpdateScreen;
 }
 
 /****************************************************************************/
 void BeebWin::DisplayTiming(void)
 {
-	if (m_ShowSpeedAndFPS && (!m_DirectDrawEnabled || !m_isFullScreen))
+	if (m_ShowSpeedAndFPS && /*(!m_DirectDrawEnabled ||*/ !m_isFullScreen) //)
 	{
-		sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2.2f",
-				WindowTitle, m_RelativeSpeed, m_FramesPerSecond);
+		sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2d",
+				WindowTitle, m_RelativeSpeed, (int)m_FramesPerSecond);
 		SetWindowText(m_hWnd, m_szTitle);
 	}
 }
@@ -1778,35 +1726,46 @@ void BeebWin::TranslateTiming(void)
 	{
 	default:
 	case IDM_REALTIME:
+		if (m_RealTimeTarget==0) SecCycles=(GetTickCount() % 1000)*2000;
 		m_RealTimeTarget = 1.0;
+		m_FPSTarget = 0;
 		break;
 
 	case IDM_3QSPEED:
+		if (m_RealTimeTarget==0) SecCycles=(GetTickCount() % 1000)*2000;
 		m_RealTimeTarget = 0.75;
+		m_FPSTarget = 0;
 		break;
 
 	case IDM_HALFSPEED:
+		if (m_RealTimeTarget==0 )SecCycles=(GetTickCount() % 1000)*2000;
 		m_RealTimeTarget = 0.5;
+		m_FPSTarget = 0;
 		break;
 
 	case IDM_50FPS:
 		m_FPSTarget = 50;
+		m_RealTimeTarget = 0;
 		break;
 
 	case IDM_25FPS:
 		m_FPSTarget = 25;
+		m_RealTimeTarget = 0;
 		break;
 
 	case IDM_10FPS:
 		m_FPSTarget = 10;
+		m_RealTimeTarget = 0;
 		break;
 
 	case IDM_5FPS:
 		m_FPSTarget = 5;
+		m_RealTimeTarget = 0;
 		break;
 
 	case IDM_1FPS:
 		m_FPSTarget = 1;
+		m_RealTimeTarget = 0;
 		break;
 	}
 }
@@ -2685,6 +2644,7 @@ void BeebWin::UpdateOptiMenu(void) {
 	CheckMenuItem(m_hMenu,ID_TSTYLE,(THalfMode==1)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu,ID_1773,(SBSize==1)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu,ID_443,(SBSize==0)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,ID_PSAMPLES,(PartSamples)?MF_CHECKED:MF_UNCHECKED);
 }
 /***************************************************************************/
 void BeebWin::HandleCommand(int MenuId)

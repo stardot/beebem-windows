@@ -62,7 +62,7 @@ void VideoDoScanLine(void);
 
 extern unsigned char TeletextEnabled;
 
-#define VideoPoll(ncycles) if (VideoTriggerCount<=TotalCycles) VideoDoScanLine();
+#define VideoPoll(ncycles) if ((VideoTriggerCount)<=TotalCycles) VideoDoScanLine();
 
 void SaveVideoState(unsigned char *StateData);
 void RestoreVideoState(unsigned char *StateData);

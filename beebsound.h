@@ -82,4 +82,5 @@ void LoadSoundUEF(FILE *SUEF);
 void SaveSoundUEF(FILE *SUEF);
 extern int PartSamples;
 extern int SBSize;
+void MuteSound(void);
 #endif

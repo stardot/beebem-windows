@@ -45,20 +45,15 @@
 #include "beebwin.h"
 #include "uefstate.h"
 
-// #define DEBUGSOUNDTOFILE
+//  #define DEBUGSOUNDTOFILE
 
 #define PREFSAMPLERATE 22050
 #define MAXBUFSIZE 32768
 
-static unsigned char wb1[MAXBUFSIZE];
-static unsigned char wb2[MAXBUFSIZE];
+static unsigned char SoundBuf[MAXBUFSIZE];
 static unsigned char RelayOnBuf[2048];
 static unsigned char RelayOffBuf[2048];
 
-static HWAVEOUT hwo;
-static WAVEHDR wh1, wh2;
-static WAVEHDR *active_wh, *inactive_wh;
-static unsigned char *active_wb, *inactive_wb;
 static unsigned char *PROnBuf=RelayOnBuf;
 static unsigned char *PROffBuf=RelayOffBuf;
 
@@ -81,8 +76,9 @@ double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
 
 static int RelayLen[3]={0,398,297}; // Relay samples
 int UseHostClock=0;
+int Speech[3];
 
-//FILE *sndlog;
+FILE *sndlog=NULL;
 
 
 volatile struct {
@@ -116,7 +112,6 @@ int SoundDefault;
 double SoundTuning=0.0; // Tunning offset
 
 void PlayUpTil(double DestTime);
-FILE *seglog;
 BOOL bReRead=FALSE;
 volatile BOOL bDoSound=TRUE;
 int WriteOffset=0; int SampleAdjust=0;
@@ -127,6 +122,9 @@ struct AudioType TapeAudio; // Tape audio decoder stuff
 bool TapeSoundEnabled;
 int PartSamples=1;
 int SBSize=1;
+int XtraCycles=0; // Cycles to fill in the gap from the timer.
+int LastXtraCycles=0; // position in which XtraCycles ranges from
+bool Playing;
 
 /****************************************************************************/
 /* Writes sound data to a DirectSound buffer */
@@ -142,7 +140,26 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	if ((DSound==NULL) || (DSB1==NULL)) return DS_OK; // Don't write if DirectSound not up and running!
 	// (As when in menu loop)
 	// Correct from pointer desync
-    if (bReRead) {
+	if (!Playing) {
+		bReRead=FALSE;
+		// Blank off the buffer
+		hr = DSB1->Lock(0, 0, &lpvPtr1, 
+		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
+		if(hr == DSERR_BUFFERLOST)
+		{
+			hr = DSB1->Restore();
+			if (hr == DS_OK)
+				hr = DSB1->Lock(0, 0,
+					&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
+		}
+		if (lpvPtr1!=NULL) memset(lpvPtr1,128,dwBytes1);
+		if (lpvPtr2!=NULL) memset(lpvPtr2,128,dwBytes2);
+		DSB1->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
+		// Set our pointer to the beginning
+		WriteOffset=0;
+	} 
+
+	if (bReRead) {
 		DSB1->GetCurrentPosition(NULL,&CWC);
 		WriteOffset=CWC+WRITE_ADJUST;
 		if (WriteOffset>=TSoundBufferSize) WriteOffset-=TSoundBufferSize;
@@ -150,7 +167,7 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	} 
 	// Obtain write pointer.
 	hr = DSB1->Lock(WriteOffset, SoundBufferSize, &lpvPtr1, 
-		&dwBytes1, &lpvPtr2, &dwBytes2, 0);
+	&dwBytes1, &lpvPtr2, &dwBytes2, 0);
 	if(hr == DSERR_BUFFERLOST)
 	{
 		hr = DSB1->Restore();
@@ -161,7 +178,7 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	if(DS_OK == hr)
 	{
 		// Write to pointers.
-		CopyMemory(lpvPtr1, lpbSoundData, dwBytes1);
+		CopyMemory(lpvPtr1,lpbSoundData,dwBytes1);
 		if(NULL != lpvPtr2)
 		{
 			CopyMemory(lpvPtr2, lpbSoundData+dwBytes1, dwBytes2);
@@ -179,10 +196,25 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	if (abs(CDiff)>(signed)(WRITE_ADJUST*2)) bReRead=TRUE; 
 	SampleAdjust--;
 	if (SampleAdjust==0) {
-		SampleAdjust=4;
-		SoundBufferSize=(SBSize)?444:110; 
-	} else SoundBufferSize=(SBSize)?440:111;
+		SampleAdjust=2;
+		SoundBufferSize=(SBSize)?444:220; // 110
+	} else SoundBufferSize=(SBSize)?440:221; // 111
+ 	if (!Playing) {
+		DSB1->SetCurrentPosition(SoundBufferSize+1);
+		hr=DSB1->Play(0,0,DSBPLAY_LOOPING);
+		Playing=TRUE;
+		bReRead=TRUE;
+	}
 	return hr;
+}
+float bitpart(float wholepart) {
+	// return the decimal part of a sample calculation
+	return (wholepart-(int)wholepart);
+}
+
+void MuteSound(void) {
+	if (Playing) DSB1->Stop();
+	Playing=FALSE;
 }
 
 /****************************************************************************/
@@ -190,23 +222,22 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 void PlayUpTil(double DestTime) {
   int tmptotal,channel,bufinc,tapetotal;
   char Extras;
-
   /*cerr << "PlayUpTil: DestTime=" << DestTime << " OurTime=" << OurTime << "\n";*/
   while (DestTime>OurTime) {
-	if ((!DirectSoundEnabled) && (!ActiveChannel[0]) && (!ActiveChannel[1]) && (!ActiveChannel[2]) && (!ActiveChannel[3])) {
-      OurTime=DestTime;
-    } else {
       for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
+//      for(bufptr=0;(bufptr<SoundBufferSize);bufptr++) {
 		int tt;
         tmptotal=0;
 		Extras=4;
 		// Begin of for loop
         for(channel=1;channel<=3;channel++) {
 		 if (ActiveChannel[channel]) {
-		  if (GenState[channel])
+		  if ((GenState[channel]) && (!Speech[channel]))
 			tmptotal+=BeebState76489.ToneVolume[channel];
-		  else
+		  if ((!GenState[channel]) && (!Speech[channel]))
 			tmptotal-=BeebState76489.ToneVolume[channel];
+		  if (Speech[channel])
+			tmptotal+=(BeebState76489.ToneVolume[channel]-(7<<VOLMAG));
           GenIndex[channel]++;
           tt=(int)CSC[channel];
 		  if (!PartSamples) tt=0;
@@ -265,56 +296,71 @@ void PlayUpTil(double DestTime) {
 			tmptotal-=BeebState76489.ToneVolume[0];
           GenIndex[0]++;
           switch (BeebState76489.Noise.Freq) {
-            case 0: /* Low */
+            case 2: /* Low */
+				tt=(int)CSC[0];
               if (GenState[0]) {
-                if (GenIndex[0]>=(samplerate/125)) {
+                if (GenIndex[0]>=((samplerate/125)+tt)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
+				  CSC[0]+=bitpart(samplerate/125);
+				  CSC[0]-=tt;
                 };
               } else {
-                if (GenIndex[0]>=(samplerate/1250)) {
+                if (GenIndex[0]>=((samplerate/1250)+tt)) {
                   GenIndex[0]=0;
                   GenState[0]=1;
+				  CSC[0]+=bitpart(samplerate/1250);
+				  CSC[0]-=tt;
                 };
               };
               break;
 
             case 1: /* Med */
+				tt=(int)CSC[0];
               if (GenState[0]) {
-                if (GenIndex[0]>=(samplerate/250)) {
+                if (GenIndex[0]>=((samplerate/250)+tt)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
+				  CSC[0]+=bitpart(samplerate/250);
+				  CSC[0]-=tt;
                 };
               } else {
-                if (GenIndex[0]>=(samplerate/2500)) {
+                if (GenIndex[0]>=((samplerate/2500)+tt)) {
                   GenIndex[0]=0;
                   GenState[0]=1;
+				  CSC[0]+=bitpart(samplerate/2500);
+				  CSC[0]-=tt;
                 };
               };
               break;
 
-            case 2: /* High */
+            case 0: /* High */
+				tt=(int)CSC[0];
               if (GenState[0]) {
-                if (GenIndex[0]>=(samplerate/500)) {
+                if (GenIndex[0]>=((samplerate/500)+tt)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
+				  CSC[0]+=bitpart(samplerate/500);
+				  CSC[0]-=tt;
                 };
               } else {
-                if (GenIndex[0]>=(samplerate/5000)) {
+                if (GenIndex[0]>=((samplerate/5000)+tt)) {
                   GenIndex[0]=0;
                   GenState[0]=1;
+				  CSC[0]+=bitpart(samplerate/5000);
+				  CSC[0]-=tt;
                 };
               };
               break;
 
             case 3: /* Tone gen 1 */
               if (GenState[0]) {
-                if (GenIndex[0]>=(BeebState76489.ChangeSamps[1]*16)) {
+                if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1])*16)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
                 };
               } else {
-                if (GenIndex[0]>=(BeebState76489.ChangeSamps[1])) {
+                if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1]))) {
                   GenIndex[0]=0;
                   GenState[0]=1;
                 };
@@ -357,8 +403,7 @@ void PlayUpTil(double DestTime) {
 		if (Relay) Extras++;
 		if (TapeAudio.Enabled) Extras++;
 		if (Extras) tmptotal/=4; else tmptotal=0;
-		inactive_wb[bufptr] = (tmptotal/SoundVolume)+128;
-		//fputc(inactive_wb[bufptr],sndlog);
+		SoundBuf[bufptr] = (tmptotal/SoundVolume)+128;
 		// end of for loop
 		if (RelayPos>=RelayLen[Relay]) Relay=0;
       }; /* buffer loop */
@@ -370,7 +415,7 @@ void PlayUpTil(double DestTime) {
 		FILE *fd = fopen("/audio.dbg", "a+b");
 		if (fd != NULL)
 		{
-			fwrite(inactive_wb, 1, SoundBufferSize, fd);
+			fwrite(SoundBuf, 1, SoundBufferSize, fd);
 			fclose(fd);
 		}
 		else
@@ -379,72 +424,18 @@ void PlayUpTil(double DestTime) {
 			exit(1);
 		}
 #else
-		if (!DirectSoundEnabled)
-		{
-			inactive_wh->lpData = (char *)inactive_wb;
-			inactive_wh->dwBufferLength = SoundBufferSize;
-			inactive_wh->dwBytesRecorded = 0;
-			inactive_wh->dwUser = 0;
-			inactive_wh->dwFlags = 0;
-			inactive_wh->dwLoops = 0;
-			inactive_wh->lpNext = 0;
-			inactive_wh->reserved = 0;
-
-			MMRESULT mmresult = waveOutPrepareHeader(hwo, inactive_wh, sizeof(WAVEHDR));
-			if (mmresult == MMSYSERR_NOERROR)
-			{
-				mmresult = waveOutWrite(hwo, inactive_wh, sizeof(WAVEHDR));
-				if (mmresult != MMSYSERR_NOERROR)
-				{
-			  		MessageBox(GETHWND,"Sound write failed","BBC Emulator",MB_OK|MB_ICONERROR);
-					SoundReset();
-				}
-
-				if (active_wh != NULL)
-				{
-					while (!(active_wh->dwFlags & WHDR_DONE))
-						Sleep(0);
-
-					mmresult = waveOutUnprepareHeader(hwo, active_wh, sizeof(WAVEHDR));
-					if (mmresult != MMSYSERR_NOERROR)
-					{
-				  		MessageBox(GETHWND,"Sound unprepare failed","BBC Emulator",MB_OK|MB_ICONERROR);
-						SoundReset();
-					}
-				}
-			}
-			else
-			{
-		  		MessageBox(GETHWND,"Sound prepare failed","BBC Emulator",MB_OK|MB_ICONERROR);
-				SoundReset();
-			}
-		}
-		else
-		{
+			//if (sndlog!=NULL)
+				//fprintf(sndlog,"Sound write at %lf Samples\n",DestTime);
+				//fwrite(SoundBuf,1,SoundBufferSize,sndlog);
 			HRESULT hr;
-			hr = WriteToSoundBuffer(inactive_wb);
-		} 
+			hr = WriteToSoundBuffer(SoundBuf);
 #endif
-
-		/* Swap active and inactive buffers */
-		active_wh = inactive_wh;
-		active_wb = inactive_wb;
-		if (active_wb == wb1)
-		{
-			inactive_wh = &wh2;
-			inactive_wb = wb2;
-		}
-		else
-		{
-			inactive_wh = &wh1;
-			inactive_wb = wb1;
-		}
+		// buffer swapping no longer needed
 		bufptr=0;
 	  }
 
 	  OurTime+=bufinc;
-   }; /* If no volume */
-  }; /* While time */
+  }; /* While time */ 
 }; /* PlayUpTil */
 
 /****************************************************************************/
@@ -465,7 +456,7 @@ static double CyclesToSamples(__int64 beebtime) {
   } else {
     tmp=(double)beebtime-(double)LastBeebCycle;
   };
-
+  tmp/=(mainWin->m_RealTimeTarget)?mainWin->m_RealTimeTarget:1;
 /*fprintf(stderr,"Convert tmp=%f\n",tmp); */
   LastBeebCycle=beebtime;
 
@@ -478,7 +469,10 @@ static double CyclesToSamples(__int64 beebtime) {
 
 /****************************************************************************/
 static void PlayTilNow(void) {
-  double nowsamps=CyclesToSamples(SoundCycles);
+  double nowsamps;
+  XtraCycles=TotalCycles-LastXtraCycles;
+  nowsamps=CyclesToSamples(SoundCycles);
+  LastXtraCycles=TotalCycles;
   PlayUpTil(nowsamps);
 }; /* PlayTilNow */
 
@@ -586,9 +580,6 @@ static void InitAudioDev(int sampleratein) {
 		}
 		mainWin->SetPBuff();
 		
-		active_wb = NULL;
-		inactive_wb = wb1;
-		if (hr==DS_OK) DSB1->Play(0,0,DSBPLAY_LOOPING);
 		if (hr==DS_OK) SoundEnabled=1;
 }; /* InitAudioDev */
 
@@ -628,27 +619,29 @@ void LoadRelaySounds(void) {
 static void SetFreq(int Channel, int freqval) {
   unsigned int freq;
   int ChangeSamps; /* Number of samples after which to change */
+  //fprintf(sndlog,"Channel %d - Value %d\n",Channel,freqval);
   double t;
-
-  if (freqval==0) {
+  if (freqval==0) freqval=1;
+  if (freqval<5) Speech[Channel]=1; else Speech[Channel]=0;
+/*  if (freqval==0) {
     ChangeSamps=INT_MAX;
-  } else {
+  } else { */
     freq=4000000/(32*freqval);
-    if (freq>samplerate) {
+/*    if (freq>samplerate) {
       ChangeSamps=INT_MAX; // Way to high frequency - shut off 
     } else {
       if (freq>(samplerate/2)) {
         // Hmm - a bit high - make it top out - change on every sample 
         // What we should be doing is moving to sine wave at 1/6 samplerate 
         ChangeSamps=2;
-      } else {
+      } else { */
         ChangeSamps=(int)( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
 		t=( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
 		CSA[Channel]=(double)(t-ChangeSamps);
 		CSC[Channel]=0;
-      };
+      /* };
     }; // freq<=samplerate 
-  }; /* Freqval!=0 */
+  }; /* Freqval!=0 */ 
   BeebState76489.ChangeSamps[Channel]=ChangeSamps;
 };
 
@@ -669,19 +662,21 @@ void AdjustSoundCycles(void) {
 }
 
 void SoundTrigger_Real(void) {
-	AdjustSoundCycles();
-    PlayTilNow();
+//	AdjustSoundCycles();
+    PlayTilNow();  
 	SoundTrigger=SoundCycles+SoundAutoTriggerTime;
 }; /* SoundTrigger_Real */
 
 void Sound_Trigger(int NCycles) {
-	STCycles+=NCycles;
+/*	STCycles+=NCycles;
 	if (SoundTrigger2<=STCycles) {
 		AdjustSoundCycles();
-		SoundTrigger2+=3000;
+		SoundTrigger2=STCycles+100;
 	}
-	if (!UseHostClock) SoundCycles+=NCycles;
-		if (SoundTrigger<=SoundCycles) SoundTrigger_Real();
+	if (!UseHostClock) SoundCycles+=NCycles; */
+	SoundCycles=TotalCycles;
+	if (SoundTrigger<=SoundCycles) SoundTrigger_Real(); 
+	// fprintf(sndlog,"SoundTrigger_Real was called from Sound_Trigger\n"); }
 }
 
 void SoundChipReset(void) {
@@ -704,6 +699,7 @@ void SoundInit() {
   LastBeebCycle=SoundCycles;
   LastOurTime=(double)LastBeebCycle * (double)SoundSampleRate / 2000000.0;
   OurTime=LastOurTime;
+  LastXtraCycles=TotalCycles;
   bufptr=0;
   InitAudioDev(SoundSampleRate);
   if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000; 
@@ -719,16 +715,8 @@ void SoundInit() {
 	CurrentPCount.QuadPart=LastPCount.QuadPart;
 	CycleRatio=2000000.0/PFreq.QuadPart;
   }
-  if (!DirectSoundEnabled) {
-	  // Non DX sound stuff here
-	  if (SoundSampleRate == 44100)
-		  SoundBufferSize = MAXBUFSIZE;
-	  else if (SoundSampleRate == 22050)
-		  SoundBufferSize = MAXBUFSIZE / 2;
-	  else
-		  SoundBufferSize = MAXBUFSIZE / 4;
-  }
-  //sndlog=fopen("/snd.log","wb");
+  SoundCycles=0; SoundTrigger=SoundAutoTriggerTime;
+  SoundTrigger2=TotalCycles+3000;
 }; /* SoundInit */
 
 void SwitchOnSound(void) {
@@ -738,24 +726,14 @@ void SwitchOnSound(void) {
 }
 
 void SetSound(char State) {
-	if (!SoundDefault) return;
-	if ((State==MUTED) && (SoundEnabled)) SoundReset();
-	if ((State==UNMUTED) && (SoundDefault)) SoundInit();
+	if (!SoundEnabled) return;
+	if (State==MUTED) MuteSound();
 }
 
 
 /****************************************************************************/
 /* Called to disable sound output                                           */
 void SoundReset(void) {
-	if (!DirectSoundEnabled)
-	{
-		waveOutReset(hwo);
-		waveOutUnprepareHeader(hwo, &wh1, sizeof(WAVEHDR));
-		waveOutUnprepareHeader(hwo, &wh2, sizeof(WAVEHDR));
-		waveOutClose(hwo);
-	}
-	else
-	{
 		if (DSB1 != NULL)
 		{
 			DSB1->Stop();
@@ -767,7 +745,6 @@ void SoundReset(void) {
 			DSound->Release();
 			DSound = NULL;
 		}
-	}
   ClearTrigger(SoundTrigger);
   SoundEnabled = 0;
 } /* SoundReset */
@@ -780,6 +757,7 @@ void Sound_RegWrite(int value) {
 
   if (!SoundEnabled)
     return;
+  VolChange=4;
 
   if (!(value & 0x80)) {
     unsigned val=BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet] & 15;
@@ -799,6 +777,7 @@ void Sound_RegWrite(int value) {
         BeebState76489.ToneFreq[2]=(BeebState76489.ToneFreq[2] & 0x2f0) | (value & 0xf);
         SetFreq(3,BeebState76489.ToneFreq[2]);
         BeebState76489.LastToneFreqSet=2;
+	//	trigger = 1;
         break;
 
       case 1: /* Tone 3 vol */
@@ -815,6 +794,7 @@ void Sound_RegWrite(int value) {
         BeebState76489.ToneFreq[1]=(BeebState76489.ToneFreq[1] & 0x2f0) | (value & 0xf);
         BeebState76489.LastToneFreqSet=1;
         SetFreq(2,BeebState76489.ToneFreq[1]);
+	//	trigger = 1;
         break;
 
       case 3: /* Tone 2 vol */
@@ -831,6 +811,7 @@ void Sound_RegWrite(int value) {
         BeebState76489.ToneFreq[0]=(BeebState76489.ToneFreq[0] & 0x2f0) | (value & 0xf);
         BeebState76489.LastToneFreqSet=0;
         SetFreq(1,BeebState76489.ToneFreq[0]);
+	//	trigger = 1;
         break;
 
       case 5: /* Tone 1 vol */
@@ -859,8 +840,9 @@ void Sound_RegWrite(int value) {
 		VolChange=0;
         break;
     };
+   //if (VolChange<4) fprintf(sndlog,"Channel %d - Volume %d at %lu Cycles\n",VolChange,value &15,SoundCycles);
   };
-  if ((trigger) && (!ReloadingChip))
+  if /*(*/(trigger)/* && (!ReloadingChip))*/ 
     SoundTrigger_Real();
 }; /* Sound_RegWrite */
 
