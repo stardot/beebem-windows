@@ -38,6 +38,14 @@
 #include "atodconv.h"
 #include "beebstate.h"
 #include "userkybd.h"
+#include "cRegistry.h" // David Overton's registry access code.
+
+// Registry access stuff
+cRegistry SysReg;
+bool RegRes;
+int rbs=1;
+int *binsize=&rbs;
+// End of registry access stuff
 
 FILE *CMDF2;
 unsigned char CMA2;
@@ -241,10 +249,6 @@ BeebWin::BeebWin()
 /****************************************************************************/
 void BeebWin::Initialise()
 {   
-	unsigned char AvailModels;
-	FILE *TestPresence;
-	unsigned char TCount;
-	char TestPName[256];
 	char CfgName[256];
 	char CfgValue[256];
 	char DefValue[256];
@@ -307,6 +311,7 @@ void BeebWin::Initialise()
 	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_ENABLED, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	SoundEnabled = atoi(CfgValue);
+	SoundDefault = SoundEnabled;
 
 	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_DIRECT_ENABLED, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
@@ -376,9 +381,17 @@ void BeebWin::Initialise()
 		}
 	}
 
-	GetPrivateProfileString(CFG_MODEL_SECTION, CFG_MACHINE_TYPE, 0,
+	// insert registry code here
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","MachineType",&MachineType,binsize);
+	if (!RegRes) {
+		MachineType=0;
+		SysReg.CreateKey(HKEY_CURRENT_USER,"Software\\BeebEm");
+		SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","MachineType",&MachineType,binsize);
+	}
+
+/*	GetPrivateProfileString(CFG_MODEL_SECTION, CFG_MACHINE_TYPE, 0,
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
-	MachineType = atoi(CfgValue);
+	MachineType = atoi(CfgValue); */
 
 	IgnoreIllegalInstructions = 1;
 
@@ -431,56 +444,6 @@ void BeebWin::Initialise()
 
 	m_frozen = FALSE;
 	strcpy(RomPath, m_AppPath);
-	// Test ROM File Presence
-	// Model B Roms
-	AvailModels=2;
-	TCount=3;
-	strcpy(TestPName,RomPath); strcat(TestPName,"/beebfile/OS12");
-	if ((TestPresence = fopen(TestPName, "rb")) != NULL) 
-		fclose(TestPresence);
-	else TCount--;
-	strcpy(TestPName,RomPath); strcat(TestPName,"/beebfile/BASIC.ROM");
-	if ((TestPresence = fopen(TestPName, "rb")) != NULL) 
-		fclose(TestPresence); 
-	else TCount--;
-	strcpy(TestPName,RomPath); strcat(TestPName,"/beebfile/DNFS");
-	if ((TestPresence = fopen(TestPName, "rb")) != NULL) 
-		fclose(TestPresence); 
-	else TCount--;
-	if (TCount!=3) {
-		HMENU hMenu= m_hMenu;
-		AvailModels--; EnableMenuItem(hMenu,ID_MODELB,MF_GRAYED); 
-	}
-	if (MachineType==0 && TCount!=3) MachineType=1;
-	// Master 128 Roms
-	TCount=4;
-	strcpy(TestPName,RomPath); strcat(TestPName,"/beebfile/M128/MOS.ROM");
-	if ((TestPresence = fopen(TestPName, "rb")) != NULL) 
-		fclose(TestPresence); 
-	else TCount--;
-	strcpy(TestPName,RomPath); strcat(TestPName,"/beebfile/M128/DFS.ROM");
-	if ((TestPresence = fopen(TestPName, "rb")) != NULL) 
-		fclose(TestPresence); 
-	else TCount--;
-	strcpy(TestPName,RomPath); strcat(TestPName,"/beebfile/M128/BASIC4.ROM");
-	if ((TestPresence = fopen(TestPName, "rb")) != NULL) 
-		fclose(TestPresence); 
-	else TCount--;
-	strcpy(TestPName,RomPath); strcat(TestPName,"/beebfile/M128/TERMINAL.ROM");
-	if ((TestPresence = fopen(TestPName, "rb")) != NULL) 
-		fclose(TestPresence); 
-	else TCount--;
-	if (TCount!=4) { 
-		HMENU hMenu= m_hMenu;
-		AvailModels--; EnableMenuItem(hMenu,ID_MASTER128,MF_GRAYED); 
-	}
-	if (MachineType==1 && TCount!=4) MachineType=0;
-	if (AvailModels==0) {
-		char errstr[200];
-		sprintf(errstr, "Not enough ROMS to make BeebEm useful!\n");
-		MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-		exit(1);
-	} 
 	UpdateModelType();
 }
 
@@ -1248,7 +1211,7 @@ BOOL BeebWin::UpdateTiming(void)
 				if ((unsigned long)TotalCycles < LastTotalCycles)
 				{
 					/* Wrap around in cycle count */
-					Cycles = TotalCycles + (CycleCountTMax - LastTotalCycles);
+					Cycles = TotalCycles + (CycleCountWrap - LastTotalCycles);
 				}
 				else
 				{	
@@ -1517,7 +1480,7 @@ void BeebWin::TranslateKeyMapping(void)
 }
 
 /****************************************************************************/
-void BeebWin::ReadDisc(int Drive)
+void BeebWin::ReadDisc(int Drive,HMENU dmenu)
 {
 	char StartPath[_MAX_PATH], DefaultPath[_MAX_PATH];
 	char FileName[256];
@@ -1535,7 +1498,8 @@ void BeebWin::ReadDisc(int Drive)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Auto (*.ssd;*.dsd)\0*.ssd;*.dsd\0"
+	ofn.lpstrFilter = "Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img\0"
+                    "ADFS Disc (*.adl)\0*.adl\0"
                     "Single Sided Disc (*.ssd)\0*.ssd\0"
                     "Double Sided Disc (*.dsd)\0*.dsd\0"
                     "Single Sided Disc (*.*)\0*.*\0"
@@ -1565,6 +1529,7 @@ void BeebWin::ReadDisc(int Drive)
     WriteProfileString("BeebEm", "LoadDiscFilter", itoa(ofn.nFilterIndex, DefaultPath, _MAX_PATH));
 
     bool dsd = false;
+	bool adfs = false;
     switch (ofn.nFilterIndex) {
     case 1:
       {
@@ -1572,6 +1537,8 @@ void BeebWin::ReadDisc(int Drive)
         if (ext != NULL)
           if (stricmp(ext+1, "dsd") == 0)
             dsd = true;
+          if (stricmp(ext+1, "adl") == 0)
+            adfs = true;
         break;
       }
     case 3:
@@ -1588,9 +1555,11 @@ void BeebWin::ReadDisc(int Drive)
 
 	if (MachineType==1) {
 		if (dsd)
-			Load1770DiscImage(FileName,Drive,1); // 0 = ssd
-		else									 // Here we go a transposing...
-			Load1770DiscImage(FileName,Drive,0); // 1 = dsd
+			Load1770DiscImage(FileName,Drive,1,dmenu); // 0 = ssd
+		if (!dsd && !adfs)						 // Here we go a transposing...
+			Load1770DiscImage(FileName,Drive,0,dmenu); // 1 = dsd
+		if (adfs)
+			Load1770DiscImage(FileName,Drive,2,dmenu); // ADFS OO La La!
 	}
 
 		/* Write protect the disc */
@@ -1771,7 +1740,7 @@ strcpy(DefaultPath, m_AppPath);
 void BeebWin::ToggleWriteProtect(int Drive)
 {
 	HMENU hMenu = m_hMenu;
-
+  if (MachineType==0) {
 	if (m_WriteProtectDisc[Drive])
 	{
 		m_WriteProtectDisc[Drive] = 0;
@@ -1787,6 +1756,14 @@ void BeebWin::ToggleWriteProtect(int Drive)
 		CheckMenuItem(hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
 	else
 		CheckMenuItem(hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
+  }
+  if (MachineType==1) {
+	  DWriteable[Drive]=1-DWriteable[Drive];
+	if (Drive == 0)
+		CheckMenuItem(hMenu, IDM_WPDISC0, DWriteable[0] ? MF_UNCHECKED : MF_CHECKED);
+	else
+		CheckMenuItem(hMenu, IDM_WPDISC1, DWriteable[1] ? MF_UNCHECKED : MF_CHECKED);
+  }
 }
 
 /****************************************************************************/
@@ -2036,8 +2013,9 @@ void BeebWin::SavePreferences()
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_MONITOR,
 			CfgValue, CFG_FILE_NAME);
 	sprintf(CfgValue, "%d", MachineType);
-	WritePrivateProfileString(CFG_MODEL_SECTION, CFG_MACHINE_TYPE,
-			CfgValue, CFG_FILE_NAME);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,"Software\\BeebEm","MachineType",&MachineType,binsize);
+/*	WritePrivateProfileString(CFG_MODEL_SECTION, CFG_MACHINE_TYPE,
+			CfgValue, CFG_FILE_NAME); */
 }
 
 /****************************************************************************/
@@ -2207,10 +2185,10 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_LOADDISC0:
-		ReadDisc(0);
+		ReadDisc(0,hMenu);
 		break;
 	case IDM_LOADDISC1:
-		ReadDisc(1);
+		ReadDisc(1,hMenu);
 		break;
 
 	case IDM_NEWDISC0:
@@ -2405,12 +2383,15 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			CheckMenuItem(hMenu, IDM_SOUNDONOFF, MF_UNCHECKED);
 			SoundReset();
+			SoundDefault=0;
 		}
 		else
 		{
 			SoundInit();
-			if (SoundEnabled)
+			if (SoundEnabled) {
 				CheckMenuItem(hMenu, IDM_SOUNDONOFF, MF_CHECKED);
+				SoundDefault=1;
+			}
 		}
 		break;
 	
@@ -2712,11 +2693,13 @@ void BeebWin::HandleCommand(int MenuId)
 	UserVIAReset();
 	Disc8271_reset();
 	SoundReset();
+	if (SoundDefault) SoundInit();
 	AtoDReset();
 	break;
   case ID_MODELB:
 	  if (MachineType==1) {
 		MachineType=0;
+		Kill1770();
 		memset(WholeRam,0,0x8000);
 		BeebMemInit();
 		Init6502core();
@@ -2724,19 +2707,16 @@ void BeebWin::HandleCommand(int MenuId)
 		UserVIAReset();
 		Disc8271_reset();
 		SoundReset();
+		if (SoundDefault) SoundInit();
 		AtoDReset();
 		UpdateModelType();
 		SetRomMenu();
 	  }
 	break;
-  case ID_PCD:
-	char errstr[250];
-	sprintf(errstr,"Program Counter at 0x%04x ACCON:%02x ROMSEL:%02x",ProgramCounter,ACCCON,PagedRomReg);
-	MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR);
-    break;
   case ID_MASTER128:
 	  if (MachineType==0) {
 		MachineType=1;
+		Reset1770();
 		memset(WholeRam,0,0x5000);
 		memset(FSRam,0,0x2000);
 		memset(ShadowRAM,0,0x5000);
@@ -2749,10 +2729,12 @@ void BeebWin::HandleCommand(int MenuId)
 		UserVIAReset();
 		Disc8271_reset();
 		SoundReset();
+		if (SoundDefault) SoundInit();
 		AtoDReset();
 		UpdateModelType();
 		SetRomMenu();
 	  }
+	  break;
    }
 
   if (palette_type != prev_palette_type) {

@@ -1,7 +1,0 @@
-# linux defs
-INCLUDES = -I. -I/usr/include/g++
-DEPINCLUDES = $(INCLUDES) $(SDINCLUDES) -I/usr/include/linux -I/usr/include/g++
-
-CC = gcc
-CFLAGS = -O6 -m486 $(INCLUDES) $(SDINCLUDES) -Wall -finline-functions -funroll-all-loops
-LINKFLAGS = -L/usr/X11/lib -lstdc++ -lg++

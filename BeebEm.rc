@@ -265,6 +265,8 @@ BEGIN
         MENUITEM "Load Disc &0",                IDM_LOADDISC0
         MENUITEM "Load Disc &1",                IDM_LOADDISC1
         MENUITEM SEPARATOR
+        MENUITEM "Load &Tape",                  ID_FILE_LOADTAPE
+        MENUITEM SEPARATOR
         MENUITEM "New Disc 0",                  IDM_NEWDISC0
         MENUITEM "New Disc 1",                  IDM_NEWDISC1
         MENUITEM "Write Protect 0",             IDM_WPDISC0
@@ -276,6 +278,10 @@ BEGIN
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
         MENUITEM "Quick Sa&ve",                 IDM_QUICKSAVE
         MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "&Comms"
+    BEGIN
         POPUP "Printer &Destination"
         BEGIN
             MENUITEM "File:",                       IDM_PRINTER_FILE
@@ -289,9 +295,19 @@ BEGIN
             MENUITEM "COM4:",                       IDM_PRINTER_COM4
         END
         MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
-        MENUITEM SEPARATOR
-        MENUITEM "E&xit",                       IDM_EXIT
-        MENUITEM "Dump PC",                     ID_PCD
+        POPUP "&RS423 Destination"
+        BEGIN
+            MENUITEM "This",                        ID_COMMS_RS423DESTINATION_THIS
+
+            MENUITEM "Menu",                        ID_COMMS_RS423DESTINATION_MENU
+
+            MENUITEM "Is Not",                      ID_COMMS_RS423DESTINATION_ISNOT
+
+            MENUITEM "Complete",                    ID_COMMS_RS423DESTINATION_COMPLETE
+
+            MENUITEM "Yet!",                        ID_COMMS_RS423DESTINATION_YET
+
+        END
     END
     POPUP "&View"
     BEGIN

@@ -451,26 +451,14 @@ them.
 Mike Wyatt
 mikebuk@aol.com
 
-V.1.3
-Well that was fun. Several errors due to DOH! moments (like spending 3 hours
-trying to figure out why loading disc 1 was setting disc 0 to side 1, and
-then discovering array elements are numbered different to what i was told...)
-But I finally got there.
+V.1.32
+Still to come in BeebEm:
+UEF Tape file support
+Screen centering
+RS423 support
+Teletext character rounding
+Better DirectSound code (I know what to do, just give me time....)
 
-Things to look for in the future:
-* Support for ADFS discs. Currently none, for two reasons: 1. Who actually has
-  a bbc ADFS disc image to hand? 2. It involves lotsa extra code, and I
-  wanted to get this version out quickly (but stable! unlike a certain
-  OS  making company...)
-* Screen centering in non-standard modes. I kinda like playing games with the
-  display in the centre, not the top left (Exile is a good example here).
-* All undocumented (but they are if you think about it) 6502 Opcodes, even in
-  Master 128 / 65C12 mode
-* Character rounding on the presently ugly Mode 7 font.
-* Paged ROMS to insert into Slots 8, 0, 1, 2 & 3 in Master 128 Mode.
-  (Slots 4, 5, 6, and 7 will remain RAM)
-
-V.1.35 - Coming Soon!
-Richard Gellman
-BeebEm.M128.Support@rickynet.net <- use this for Master 128 related questions
+-- Richard Gellman - www.rickynet.net/beebem
+BeebEm.Support@rickynet.net
 

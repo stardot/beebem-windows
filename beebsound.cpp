@@ -114,6 +114,7 @@ int SoundTrigger; /* Time to trigger a sound event */
 static unsigned int GenIndex[4]; /* Used by the voice generators */
 static int GenState[4];
 static int bufptr=0;
+int SoundDefault;
 
 /****************************************************************************/
 #ifdef WIN32
@@ -130,12 +131,16 @@ HRESULT WriteToSoundBuffer(LPDIRECTSOUNDBUFFER lpDsb,
 	// Obtain write pointer.
 	hr = lpDsb->Lock(0, dwSoundBytes, &lpvPtr1, 
 		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
+//	hr = lpDsb->Lock(0, dwSoundBytes, &lpvPtr1, 
+//		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
 	if(hr == DSERR_BUFFERLOST)
 	{
 		hr = lpDsb->Restore();
 		if (hr == DS_OK)
 			hr = lpDsb->Lock(0, dwSoundBytes,
 				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_FROMWRITECURSOR);
+//			hr = lpDsb->Lock(0, dwSoundBytes,
+//				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
 	}
 	if(DS_OK == hr)
 	{
@@ -162,6 +167,7 @@ static void PlayUpTil(double DestTime) {
   while (DestTime>OurTime) {
 #ifdef WIN32
     if (bufptr == 0 && ActiveChannels == 0) {
+//	  if (4==0) {
 #else
 	if ((BeebState76489.ToneVolume[0]==0) && 
       (BeebState76489.ToneVolume[1]==0) &&
@@ -389,6 +395,7 @@ static void PlayUpTil(double DestTime) {
 				if (hr == DS_OK)
 				{
 					hr = DSB2->Play(0,0,0);
+//					hr = DSB1->Stop();
 					if(hr == DSERR_BUFFERLOST)
 					{
 						hr = DSB2->Restore();
@@ -403,6 +410,7 @@ static void PlayUpTil(double DestTime) {
 				if (hr == DS_OK)
 				{
 					hr = DSB1->Play(0,0,0);
+//					hr = DSB2->Stop();
 					if(hr == DSERR_BUFFERLOST)
 					{
 						hr = DSB1->Restore();
@@ -458,7 +466,7 @@ static double CyclesToSamples(unsigned int beebtime) {
   /* Extract number of cycles since last call */
   if (beebtime<LastBeebCycle) {
     /* Wrap around in beebs time */
-    tmp=((double)CycleCountTMax-(double)LastBeebCycle)+(double)beebtime;
+    tmp=((double)CycleCountWrap-(double)LastBeebCycle)+(double)beebtime;
   } else {
     tmp=(double)beebtime-(double)LastBeebCycle;
   };
@@ -838,3 +846,7 @@ void ADummyRoutine(int a) {
   cerr << "Just so the compiler doesn't get confused by an empty file!\n";
 }
 #endif
+
+void DumpSound(void) {
+	
+}

@@ -1,0 +1,104 @@
+{\rtf1\ansi\deff0\deflang1033 {\fonttbl
+{\f0\fswiss SYSTEM;}
+{\f1\fswiss ARIAL;}
+{\f2\froman TIMES NEW ROMAN;}
+}
+
+{\colortbl
+\red0\green0\blue0;\red0\green0\blue128;\red0\green128\blue0;\red0\green128\blue128;
+\red128\green0\blue0;\red128\green0\blue128;\red128\green128\blue0;\red192\green192\blue192;
+\red128\green128\blue128;\red0\green0\blue255;\red0\green255\blue0;\red0\green255\blue255;
+\red255\green0\blue0;\red255\green0\blue255;\red255\green255\blue0;\red255\green255\blue255;
+}
+\paperw30000 \margr0\margl0\margt0\ATXph0 #{\footnote # Contents}
+${\footnote $ Contents}
+\pard \plain \fs20 \ATXts720 \f1 \fs48 \ul \ATXul1024 BeebEm 1.32 User Guide\par
+\par
+\fs28 \ulnone \ATXul0 BeebEm Controls\par
+\uldb \ATXul1282 \cf2 Emulated Models\ulnone \ATXul0 \cf0 \f1 \fs28 \v \ATXv32000 Emulated_Models\v0\ATXv0  
+\par
+\uldb \ATXul1282 \cf2 Emulated hardware\ulnone \ATXul0 \cf0 \f1 \fs28 \v \ATXv32000 Emulated_Hardware\v0\ATXv0  \par
+Disk Images\par
+ROMs\par
+State Files\par
+Advanced Topics\par
+\page
+#{\footnote # Emulated_Hardware}
+${\footnote $ Emulated Hardware}
+\pard \plain \fs20 \ATXts720\fi45 \f1 \fs48 \ul \ATXul1024 Emulated Hardware\par
+\fs24 \ulnone \ATXul0 \par
+The hardware emulated by BeebEm is that of a standard BBC Micro Model B or Master 128 with a few small additions. The emulation is 
+near enough accurate to run most software. The hardware emulated is as follows:\par
+\par
+\par
+\ul \ATXul1024 Hardware common to both the Model B and Master 128\par
+\ulnone \ATXul0 \par
+74689 Sound chip with 3 tone channels and one noise channel.
+\par
+uPD7002 Analogue to Digital Convertor\par
+32K RAM\par
+6845 Cathode Ray Tube Controller (CRTC)\par
+Acorn proprietry VIDPROC (Video Processor)\par
+SAA5050 Teletext generator\par
+System and User 6522 Versatile Interface Adaptors (VIAs)\par
+"IC32" Ad
+dressable latch\par
+Full BBC MIcro keyboard\par
+ROMSELect Register\par
+\par
+\par
+\ul \ATXul1024 Model B Specific hardware\par
+\ulnone \ATXul0 \par
+Full 6502 Processor with all undocumented opcodes\par
+Sixteen 16K Paged ROM banks, with Sideways RA
+M option\par
+16K OS ROM\par
+8271 Floppy Disc Controller\par
+\par
+\par
+\ul \ATXul1024 Master 128 Specific hardware\par
+\ulnone \ATXul0 \par
+65C12 Processor with all undocumented opcodes filled in with corresponding undocumented 6502 opcodes\par
+Se
+ven 16K Paged ROMs\par
+Four 16K Sideways RAM banks\par
+16K MOS ROM\par
+20K Video Shadow RAM\par
+8K Filing System RAM\par
+4K Screen Operations RAM\par
+1770 Floppy Disc controller\par
+146818 Realtime Clock and CMOS RAM (50 bytes)\par
+ACCess CONtrol
+ register\par
+\page
+#{\footnote # Advanced_Topics_}
+${\footnote $ Advanced Topics}
++{\footnote + Browse300000000:00000000}
+\pard \plain \fs20 \ATXts720 \f2 \fs24  \page
+#{\footnote # Emulated_Models}
+${\footnote $ Contents}
+\pard \plain \fs20 \ATXts720 \f1 \fs48 \ul \ATXul1024 Emulated Models\par
+\fs24 \ulnone \ATXul0 \par
+BeebEm emulates two Acorn BBC Micro models: The Model B, and the Master 128. \par
+\par
+The Mode
+l B has 32K of RAM, 16K of Operating system ROM, and sixteen 16K Paged ROM slots. It uses a 6502 Processor, and the Intel 8271 Floppy disc controller. \par
+\par
+The Master 128 has 32K of "Main" RAM, 20K Video Shadow RAM, 8K Filing System RAM, 4K "Priva
+te" RAM, 16K Operating system ROM, seven Paged ROMs, and 4 Paged "Sideways" RAM Banks. It uses the 65C12 Processor and the 1770 Floppy disc controller.\par
+\par
+All other hardware in both models is the same in both models. The only other addition to th
+e Master 128 model is the use of 50 bytes of CMOS RAM and the Realtime Clock.\par
+\page
+#{\footnote # Model_B_Emulated_Layout}
+${\footnote $ Model B Emulated Layout}
+\pard \plain \fs20 \ATXts720 \f1 \fs24 Model B Emulated Layout\page
+#{\footnote # Master128Layout}
+${\footnote $ Master 128 Emulated Layout}
+\pard \plain \fs20 \ATXts720 \f1 \fs24 Master 128 Emulated Layout\page
+#{\footnote # Menus}
+${\footnote $ Menus}
+\pard \plain \fs20 \ATXts720 \f1 \fs48 \ul \ATXul1024 BeebEm Menus\par
+\fs24 \ulnone \ATXul0 \par
+\page
+}

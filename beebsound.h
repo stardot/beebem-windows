@@ -29,6 +29,7 @@
 #define SOUNDSUPPORT
 #endif
 
+extern int SoundDefault; // Default sound state
 extern int SoundEnabled;    /* Sound on/off flag */
 extern int DirectSoundEnabled;  /* DirectSound enabled for Win32 */
 extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
@@ -41,7 +42,7 @@ void SoundReset();
 
 /* Called in sysvia.cc when a write to one of the 76489's registers occurs */
 void Sound_RegWrite(int Value);
-
+void DumpSound(void);
 void SoundTrigger_Real(void);
 
 #define Sound_Trigger(ncycles) if (SoundTrigger<=TotalCycles) SoundTrigger_Real();

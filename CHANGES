@@ -141,3 +141,23 @@ Windows update only:
   roms for will be available, if neither available, the program exits.
 * Added BBC Model Type Menu to Options Menu
 
+
+Version 1.32 (Richard Gellman)
+------------------------------
+Windows update only:
+* *All* undocumented 6502 codes implemented.
+* Almost full 1770 FDC Support (read/write track (format) and force
+  interrupt still not supported yet)
+* ADFS Discs (Single or Double sided (auto detected)) now supported.
+* Fixed cursor positioning problem in Modes 3 and 6
+* Fixed mode 7 7-bit control code handling
+* Fixed cmos.ram file open bug
+* Fixed sound menu corruption on model change/reset
+* Fixed rom menu
+* Added more flexible rom control via use of roms.cfg and optionally
+  the supplied ROM Manager
+* Fixed that ini file bug... I put my settings into the registry now
+* Supplied all required DLLs and ROMs in with the download
+* Fixed the sideways RAM bug I accidentally put in the previous version
+  Digital audio in Exile has returned!
+

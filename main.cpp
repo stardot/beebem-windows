@@ -57,13 +57,14 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	mainWin=new BeebWin();
 	mainWin->Initialise();
     if (MachineType==0) {
+	SoundReset();
+	if (SoundDefault) SoundInit();
 	BeebMemInit();
 	Init6502core();
 	SysVIAReset();
 	UserVIAReset();
 	VideoInit();
 	Disc8271_reset();
-	SoundReset();
 	AtoDReset(); 
 	}
 	if (MachineType==1) {
@@ -72,6 +73,8 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 //	memset(ShadowRAM,0,0x5000);
 //	memset(PrivateRAM,0,0x1000);
 	ACCCON=0;
+	SoundReset();
+	if (SoundDefault) SoundInit();
 	PagedRomReg=0xf;
 	BeebMemInit();
 	Init6502core();
@@ -81,10 +84,12 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	Disc8271_reset();
 	Reset1770();
 	SoundReset();
+	if (SoundDefault) SoundInit();
 	AtoDReset();
 	UseShadow=0;
 	}
 
+	mainWin->SetRomMenu();
 
 	do
 	{

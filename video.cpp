@@ -682,9 +682,10 @@ static void DoMode7Row(void) {
 
   for(CurrentChar=0;CurrentChar<CRTC_HorizontalDisplayed;CurrentChar++) {
     byte=CurrentPtr[CurrentChar];
+    if (byte<32) byte+=128; // fix for naughty programs that use 7-bit control codes - Richard Gellman
     if ((byte>=128) && (byte<=159)) {
-      switch (byte) {
-        case 129:
+		switch (byte) {
+	    case 129:
         case 130:
         case 131:
         case 132:
@@ -758,7 +759,7 @@ static void DoMode7Row(void) {
     /* Top bit never reaches character generator */
     byte&=127;
     /* Our font table goes from character 32 up */
-    if (byte<32) byte=0; else byte-=32;
+    if (byte<32) byte=0; else byte-=32; 
 
     /* Conceal flashed text if necessary */
     ActualForeground=(Flash && !Mode7FlashOn)?Background:Foreground;
@@ -787,6 +788,25 @@ static void DoMode7Row(void) {
               CurrentStartX[CurrentScanLine]=CurrentX;
               CurrentLen[CurrentScanLine]=XStep;
             }; /* Fore/back ground */
+			// Character Rounding routine
+			// Check for diagonal pixels - Only if CurrentPixel>1 and CurrentScanLine<8
+			if (CurrentPixel>1 && CurrentScanLine<8) {
+				unsigned char ln1,ln2;
+				ln1=Mode7Font[FontTypeIndex][byte][CurrentScanLine];
+				ln2=Mode7Font[FontTypeIndex][byte][CurrentScanLine+1];
+				// Top left to bottom right diagnoal
+				if ((ln1 & CurrentPixel) && !(ln1 & (CurrentPixel>>1)) && !(ln2 & CurrentPixel) && (ln2 & (CurrentPixel>>1))) {
+					// draw half dots in top right and bottom left 'holes'
+	                mainWin->doHorizLine(ActualForeground,VideoState.PixmapLine+CurrentScanLine,CurrentX+XStep,XStep );
+					mainWin->doHorizLine(ActualForeground,VideoState.PixmapLine+CurrentScanLine+1,CurrentX+(XStep/2),XStep );
+				}
+				// Top Right to bottom left diagonal
+				if (!(ln1 & CurrentPixel) && (ln1 & (CurrentPixel>>1)) && (ln2 & CurrentPixel) && !(ln2 & (CurrentPixel>>1))) {
+					// draw half dots in top left and bottom right 'holes'
+	                mainWin->doHorizLine(ActualForeground,VideoState.PixmapLine+CurrentScanLine,CurrentX+(XStep/2),XStep );
+					mainWin->doHorizLine(ActualForeground,VideoState.PixmapLine+CurrentScanLine+1,CurrentX+XStep,XStep );
+				}
+			}
             CurrentX+=XStep;
           }; /* Pixel within byte */
           CurrentX-=8*XStep;
@@ -1110,7 +1130,7 @@ static void VideoAddCursor(void) {
 	if ((VideoULA_ControlReg & 0xe0) == 0 || (CRTC_CursorStart & 0x40) == 0)
 		return;
 
-	/* Use clock bit and cursor buts to work out size */
+	/* Use clock bit and cursor bits to work out size */
 	if (VideoULA_ControlReg & 0x80)
 		CurSize = CurSizes[(VideoULA_ControlReg & 0x70)>>4] * 8;
 	else
@@ -1143,11 +1163,11 @@ static void VideoAddCursor(void) {
 
 	/* Convert to pixel positions */
 	CurX = CurX*640/CRTC_HorizontalDisplayed;
-	CurY = CurY * (VideoState.IsTeletext ? CRTC_ScanLinesPerChar/2 : CRTC_ScanLinesPerChar + 1);
-
-	/* Limit cursor size */
-	if (CurEnd > 9)
-		CurEnd = 9;
+	CurY = CurY * (VideoState.IsTeletext ? CRTC_ScanLinesPerChar/2 :  CRTC_ScanLinesPerChar + 1);
+    if (!(VideoState.IsTeletext)) CurY+=(CRTC_ScanLinesPerChar-7);
+	/* Limit cursor size */ // This should be 11, not 9 - Richard Gellman
+	if (CurEnd > 11)
+		CurEnd = 11;
 
 	if (CurX + CurSize >= 640)
 		CurSize = 640 - CurX;

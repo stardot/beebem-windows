@@ -122,6 +122,10 @@ SOURCE=.\beebwin.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\cRegistry.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\disc1770.cpp
 # End Source File
 # Begin Source File
@@ -183,6 +187,10 @@ SOURCE=.\beebstate.h
 # Begin Source File
 
 SOURCE=.\beebwin.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\cRegistry.h
 # End Source File
 # Begin Source File
 

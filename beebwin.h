@@ -185,7 +185,7 @@ class BeebWin  {
 	void TranslateVolume(void);
 	void TranslateTiming(void);
 	void TranslateKeyMapping(void);
-	void ReadDisc(int Drive);
+	void ReadDisc(int Drive,HMENU dmenu);
 	void InitJoystick(void);
 	void ResetJoystick(void);
 	void RestoreState(void);

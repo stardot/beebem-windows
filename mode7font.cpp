@@ -19,16 +19,15 @@
 /* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 char *mode7fontRaw[12*9] = {
-"          x       x x       xx     xxx    xx        x       x        x     x        x                                           ",
-"          x       x x      x  x   x x x   xx  x    x x      x       x       x     x x x     x                                 x ",
-"          x       x x      x      x x        x     x x      x      x         x     xxx      x                                x  ",
-"          x               xxx      xxx      x       x              x         x      x     xxxxx           xxxxx             x   ",
-"          x                x        x x    x       x x x           x         x     xxx      x                              x    ",
+"            x     x x       xx     xxx    xx        x       x        x     x        x                                           ",
+"            x     x x      x  x   x x x   xx  x    x x      x       x       x     x x x     x                                 x ",
+"            x     x x      x      x x        x     x x      x      x         x     xxx      x                                x  ",
+"            x             xxx      xxx      x       x              x         x      x     xxxxx           xxxxx             x   ",
+"            x              x        x x    x       x x x           x         x     xxx      x                              x    ",
 "                           x      x x x   x  xx    x  x             x       x     x x x     x       x               x     x     ",
-"          x               xxxxx    xxx       xx     xx x             x     x        x               x               x           ",
+"            x             xxxxx    xxx       xx     xx x             x     x        x               x               x           ",
 "                                                                                                   x                            ",
 "                                                                                                                                ",
-
 /*
  01234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567*/
 "    x       x      xxx    xxxxx      x    xxxxx     xx    xxxxx    xxx     xxx                        x            x       xxx  ",

@@ -48,6 +48,7 @@ unsigned char WholeRam[65536];
 unsigned char FSRam[12228]; // 12K Filing System RAM
 unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
 int CMOSRAM[64]; // = {0,0,0,0,1,0,1,1,1,153,0,132,0,0,104,0,0,0,0,12,255,0,0,7,0,30,5,0,0,0,0}; // 50 Bytes CMOS RAM
+int CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x58,0xa2}; // Backup of CMOS Defaults
 unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 unsigned char MOSROM[12228]; // 12K MOS Store for swapping FS ram in and out
 unsigned char ACCCON; // ACCess CONtrol register
@@ -218,7 +219,7 @@ static void DoRomChange(int NewBank) {
   if (NewBank==PagedRomReg) return;
   // Master Specific stuff   
   if (MachineType==0) {
-    memcpy(Roms[PagedRomReg],WholeRam+0x8000,0x4000);
+    if (RomModified) memcpy(Roms[PagedRomReg],WholeRam+0x8000,0x4000);
     RomModified=0;
     PagedRomReg=NewBank;
     memcpy(WholeRam+0x8000,Roms[PagedRomReg],0x4000);
@@ -228,9 +229,9 @@ static void DoRomChange(int NewBank) {
 	// rewrote this section as well
 	  // copy out the private ram if its switched in
 	  if ((PagedRomReg & 128)>>7) memcpy(PrivateRAM,WholeRam+0x8000,0x1000);
+	  // copy out the sideway ram if thats switched in
+      if ((RomModified) && (!(PagedRomReg & 128))) memcpy(Roms[PagedRomReg],WholeRam+0x8000,0x4000);
 	  // Switch banks
-	  // banks >8 are rom, dont needs to switch, banks 0-3 are ignored (sorry!), 4-7 are ram
-	  if (((PagedRomReg & 0xf)>=4) && ((PagedRomReg & 0xf)<=7)) memcpy(Roms[PagedRomReg & 0xf],WholeRam+0x8000,0x4000);
 	  memcpy(WholeRam+0x8000,Roms[NewBank & 0xf],0x4000);
 	  // switch ram back in if need be
 	  if ((NewBank & 128)>>7)  memcpy(WholeRam+0x8000,PrivateRAM,0x1000);
@@ -275,13 +276,22 @@ void BeebWriteMem(int Address, int Value) {
   }
 
   /* heh, this is the fun part, with ram and ACCCON */
+  // Rewritten for V.1.32 - Richard Gellman - 11/03/2001 - 2:58pm
   if (Address<0xc000) {
-    if ((WritableRoms || RomWritable[PagedRomReg]) || (Address<0x9000 && (PagedRomReg & 128)==128 && MachineType==1)) {
-      WholeRam[Address]=Value;
-      RomModified=1;
-      if (RomWritable[PagedRomReg])
-        SWRamModified=1;
-    }
+	  // First the BBC B
+	  if ((MachineType==0) && (RomWritable[PagedRomReg])) {
+		  WholeRam[Address]=Value;
+		  RomModified=1;
+		  if (RomWritable[PagedRomReg]) SWRamModified=1;
+	  }
+	  // Now the Master 128
+	  if (MachineType==1) {
+		  if (((Address<0x9000) && (PagedRomReg & 128)) || (RomWritable[PagedRomReg])) {
+			  WholeRam[Address]=Value;
+			  if (!(PagedRomReg & 128)) RomModified=1;
+			  if (RomWritable[PagedRomReg]) SWRamModified=1;
+		  }
+	  }
     return;
   }
 
@@ -422,90 +432,75 @@ char *ReadRomTitle( int bank, char *Title, int BufSize )
 }
 /*----------------------------------------------------------------------------*/
 void BeebReadRoms(void) {
- FILE *InFile;
+ FILE *InFile,*RomCfg;
  char TmpPath[256];
  char fullname[256];
- HANDLE handle;
- WIN32_FIND_DATA filedata;
- int finished = FALSE;
  int romslot = 0xf;
+ char RomNameBuf[80];
+ char *RomName=RomNameBuf;
+ unsigned char sc,isrom;
  
- if (MachineType==0) {
-  /* Read all ROM files in the beebfile directory */
-  /* This is now only going to read the BBC roms in traditional stylee IF we're using a BBC B */
-  strcpy(TmpPath,RomPath);
-  strcat(TmpPath,"/Beebfile/*.*");
-  handle = FindFirstFile(TmpPath,&filedata);
-  if (handle != INVALID_HANDLE_VALUE)
-  {
-    while (romslot >= 0 && !finished)
-    {
-      if (!(filedata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
-          strcmp(filedata.cFileName,"OS12")!=0 && strcmp(filedata.cFileName,"os12")!=0)
-      {
-        ReadRom(filedata.cFileName,romslot);
-	    romslot--;
-      }
-      finished = !FindNextFile(handle,&filedata);
-    }
-    FindClose(handle);
-  }
-/*  if (romslot == 0xf)
-  {
-    MessageBox(GETHWND,"There are no ROMs in the 'beebfile' directory",
-                 "BBC Emulator",MB_OK|MB_ICONERROR);
-    exit(1);
-  } */ // this bit is not needed any more
-
-  /* Load OS */
-  strcpy(fullname,RomPath);
-  strcat(fullname, "/beebfile/os12");
-  if ((InFile=fopen(fullname,"rb"))!=NULL) {
-    /*char errstr[200];
-	sprintf(errstr, "Cannot open OS image file:\n  %s", fullname);
-    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-	exit(1);
-  }*/
-
-  if (fread(WholeRam+0xc000,1,16384,InFile)!=16384) {
-    char errstr[200];
-	sprintf(errstr, "OS image is wrong size:\n  %s", fullname);
-    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-	exit(1);
-  }
-  fclose(InFile); 
-  }
+ /* Read all ROM files in the beebfile directory */
+ // This section rewritten for V.1.32 to take account of roms.cfg file.
+ strcpy(TmpPath,RomPath);
+ strcat(TmpPath,"Roms.cfg");
+ RomCfg=fopen(TmpPath,"rt");
+ if (RomCfg!=NULL) {
+	 // CFG file open, proceed to read the roms.
+	 // if machinetype=1 (i.e. master 128) we need to skip 17 lines in the file
+	 if (MachineType==1) for (romslot=0;romslot<17;romslot++) fgets(RomName,80,RomCfg);
+	 // read OS ROM
+	 fgets(RomName,80,RomCfg);
+	 strcpy(fullname,RomName);
+	 if ((RomName[0]!='\\') && (RomName[1]!=':')) {
+		 strcpy(fullname,RomPath);
+		 strcat(fullname,"/beebfile/");
+		 strcat(fullname,RomName);
+	 }
+	 // for some reason, we have to change \ to /  to make C work...
+	 for (sc = 0; fullname[sc]; sc++) if (fullname[sc] == '\\') fullname[sc] = '/';
+	 fullname[strlen(fullname)-1]=0;
+	 InFile=fopen(fullname,"rb");
+	 if (InFile!=NULL) { fread(WholeRam+0xc000,1,16384,InFile); fclose(InFile); }
+  	 else {
+		 char errstr[200];
+		 sprintf(errstr, "Cannot open specified OS ROM:\n %s",fullname);
+		 MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+	 }
+	 // read paged ROMs
+	 for (romslot=15;romslot>=0;romslot--) {
+		fgets(RomName,80,RomCfg);
+		strcpy(fullname,RomName);
+		if ((RomName[0]!='\\') && (RomName[1]!=':')) {
+ 			strcpy(fullname,RomPath);
+			strcat(fullname,"/beebfile/");
+			strcat(fullname,RomName);
+		}
+		isrom=1;
+		if (strncmp(RomName,"EMPTY",5)==0)  { RomWritable[romslot]=0; isrom=0; }
+		if (strncmp(RomName,"RAM",3)==0) { RomWritable[romslot]=1; isrom=0; }
+		for (sc = 0; fullname[sc]; sc++) if (fullname[sc] == '\\') fullname[sc] = '/';
+		fullname[strlen(fullname)-1]=0;
+		InFile=fopen(fullname,"rb");
+		if	(InFile!=NULL) { fread(Roms[romslot],1,16384,InFile); fclose(InFile); RomWritable[romslot]=0; }
+		else {
+			if (isrom==1) {
+				char errstr[200];
+				sprintf(errstr, "Cannot open specified ROM:\n %s",fullname);
+				MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+			}
+		}
+	 }
+	 fclose(RomCfg);
  }
- if (MachineType==1) {
-	 /* This part reads the roms in for the Master 128
-	 Read all the roms files */
-	 ReadRom("M128/TERMINAL.rom",0xf);
-	 ReadRom("M128/VIEW.rom",0xe);
-	 ReadRom("M128/ADFS.rom",0xd);
-	 ReadRom("M128/BASIC4.rom",0xc);
-	 ReadRom("M128/EDIT.rom",0xb);
-	 ReadRom("M128/VIEWSHT.rom",0xa);
-	 ReadRom("M128/DFS.rom",0x9);
-  /* Load MOS */
-  strcpy(fullname,RomPath);
-  strcat(fullname, "/beebfile/M128/mos.rom");
-  if ((InFile=fopen(fullname,"rb")) !=NULL) {
-    /* char errstr[200];
-	sprintf(errstr, "Cannot open OS image file:\n  %s", fullname);
-    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-	exit(1);
-  } */
-
-  if (fread(WholeRam+0xc000,1,16384,InFile)!=16384) {
+ else {
     char errstr[200];
-	sprintf(errstr, "OS image is wrong size:\n  %s", fullname);
+	sprintf(errstr, "Cannot open ROM Configuration file ROMS.CFG");
     MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 	exit(1);
-  }
-  fclose(InFile);
-  }
- }
- // SetRomMenu();
+	}
+ // Copy MOS to MOS Store
+ memcpy(MOSROM,WholeRam+0xc00,16384);
 }
 /*----------------------------------------------------------------------------*/
 void BeebMemInit(void) {
@@ -513,10 +508,11 @@ void BeebMemInit(void) {
   u want for linux? u do yourself! ;P - Richard Gellman */
   
   char TmpPath[256];
-  unsigned char RomBlankingSlot,rcount;
+  unsigned char RomBlankingSlot;
+  long CMOSLength;
   FILE *CMDF3;
   unsigned char CMA3;
-
+  for (CMA3=0;CMA3<16;CMA3++) RomWritable[CMA3]=1;
   for (RomBlankingSlot=0xf;RomBlankingSlot<0x10;RomBlankingSlot--) memset(Roms[RomBlankingSlot],0,0x4000);
   
   BeebReadRoms();
@@ -528,13 +524,16 @@ void BeebMemInit(void) {
   /* Copy part of MOS to MOS Store for Master 128 */
   memcpy(MOSROM,WholeRam+0xC000,0x2000);
   ACCCON=0; UseShadow=0; // Select all main memory
-  //memset(CMOSRAM,0x44,64);
-  for (rcount=15;rcount<0x1F;rcount++) CMOSRAM[rcount]=0x00;
-	
+  // Ah, bug with cmos.ram you say?	
   strcpy(TmpPath,RomPath); strcat(TmpPath,"/beebstate/cmos.ram");
-  CMDF3=fopen(TmpPath,"rb");
-  for(CMA3=0xe;CMA3<64;CMA3++) CMOSRAM[CMA3]=fgetc(CMDF3);
-  fclose(CMDF3);
+  if ((CMDF3 = fopen(TmpPath,"rb"))!=NULL) {
+	  fseek(CMDF3,0,SEEK_END);
+	  CMOSLength=ftell(CMDF3);
+	  fseek(CMDF3,0,SEEK_SET);
+	  if (CMOSLength==50) for(CMA3=0xe;CMA3<64;CMA3++) CMOSRAM[CMA3]=fgetc(CMDF3);
+	  fclose(CMDF3);
+  }
+  else for(CMA3=0xe;CMA3<64;CMA3++) CMOSRAM[CMA3]=CMOSDefault[CMA3-0xe];
 } /* BeebMemInit */
 
 /*-------------------------------------------------------------------------*/
