@@ -76,7 +76,7 @@ dagShmImage::dagShmImage(int Format, int depth,
   XShmAttach(_primaryDisplay->getXDisplay(),&shminfo);
   XSync(_primaryDisplay->getXDisplay(),0);
 
-  cerr << "Warning (from shmImage) - should really think about byte ordering etc.\n";
+  /* cerr << "Warning (from shmImage) - should really think about byte ordering etc.\n"; */
 
 }; /* dagShmImage::dagShmImage */
 

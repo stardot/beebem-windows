@@ -60,3 +60,19 @@ now works).
 Fixed cursor colour in UNIX version.
 
 Added sideways RAM support (so Exile can be played full screen).
+
+
+Version 0.8 (Mike Wyatt & Laurie Whiffen)
+-----------
+Added disc write and format capability.
+
+Changed disc load code to give a warning if disc image loaded looks like its
+been loaded using wrong type (single/doubled sided).
+
+MS Windows version only:
+  Fixed so all key presses are released when windows looses focus.
+  Rom slots can be individually changed between ROM and RAM using the menus.
+  Added user definable keyboard mapping options.
+  User preferences (including the keyboard mapping) can be saved in an INI
+    file using a new menu option.
+  Added menu options for write protection and creating new disc images.

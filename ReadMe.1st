@@ -1,4 +1,4 @@
-Readme.1st for V0.71 of Beebem (see 'changes' file for history)
+Readme.1st for V0.8 of Beebem (see 'changes' file for history)
 
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994/1995                   */
@@ -38,7 +38,7 @@ MICROSOFT WINDOWS
 -----------------
 
 Beebem has been ported to Microsoft Windows.  For details of the Windows
-version see the readme.win file.  Most of this readme refers to the X
+version see the ReadMe.Win file.  Most of this readme refers to the X
 version for UNIX systems.
 
 0) PLEASE
@@ -77,18 +77,10 @@ Installation
 ------------
 You've presumably unpacked this tar - good!
 
-The source files are set up to compile the Microsoft Windows version so
-the first thing to do is rename a few files:
-  main.h.x11     -> main.h
-  main.cc.x11    -> main.cc
-  beebwin.h.x11  -> beebwin.h
-  beebwin.cc.x11 -> beebwin.cc
-  Rename all files with a '.cpp' extension to a '.cc' extension
-
 Next thing is to construct a makefile (or three!).  First have a look
 if there is a 'config.' file for your machine - e.g. config.linux.  If not
 create one based on one of them.  Edit the file until it matches your
-environment (includes etc.).  
+environment (includes etc.).
 
 Now type 'configure machinename' (e.g. configure linux) - that
 will build all the makefiles.  Now edit port.h - if your
@@ -104,14 +96,11 @@ want to create your own see the description below.
 
 If you want sound you need to add -DSOUNDSUPPORT onto the CFLAGS in the top
 level makefile.  Sound has only been tested (and probably will only work) on
-Linux.  You need a lot of processing speed for it.
+Linux.  You need a lot of processing speed for it (but see the
+BeebVideoRefreshFreq environment variable below).
 
 Now type 'make' - and hope for the best! When it doesn't work look at the
 bottom of this file for some hints.
-
-NOTE: The sources contain conditional compilation for the MS Windows version
-of Beebem.  The UNIX version of Beebem has not been fully compiled since
-these changes were made.  It should still work but I may have broken it (MW)!
 
 Now you have to get three disc images from a beeb.  One of an 8271 dfs (I
 used DNFS).  Place that in beebfile/dnfs (even if its a dfs).  Put the basic
@@ -123,12 +112,13 @@ how to make a disc image.  The present disc images are simple sector images -
 the format of which is described below.  I produced these using an
 Acorn Archimedes with a 5.25" drive - I suspect you can do the same with a PC
 with a suitable drive (which I do not have).
-If you can't generate a disc image that is fine - you don't need it.
 
-By default 'beebem' looks in discims/elite for the discimage (which should be
-an 80 track double sided image).  An environment variable can be used to change
+If you can't generate a disc image then you can use the test one supplied
+in the discims directory.
+
+By default 'beebem' looks in discims/test.ssd for the discimage (which is an
+80 track single sided image).  An environment variable can be used to change
 this - see below.
-
 
 OK - now type 'beebem'.  It should come up in mode 7 with the standard beeb
 start up messages.
@@ -154,20 +144,73 @@ bottom for the beebs :* key - that should let you play most games!
 
 Environment variables
 ---------------------
-1) BeebDiscLoad  (default "D:80:discims/elite")
+1) BeebDiscLoad0 and BeebDiscLoad1
 
-This allows you to load another disc image.  E.g. doing the following in
-SH loads a (D)ouble sided, 80 track disc image called 'discims/games'.
+Default value for BeebDiscLoad0 is "S:80:discims/test.ssd".
 
-BeebDiscLoad="D:80:discims/games"
-export BeebDiscLoad
+These variables allow you to load disc images into drives 0 and 1.
+Values should take the form "D|S:tracks:filename", D for double sided image
+and S for single sided.
 
-The format of these files is described below.
+E.g. doing the following in SH loads a (D)ouble sided, 80 track disc image
+     called 'discims/games' into drive 0.
+
+BeebDiscLoad0="D:80:discims/games"
+export BeebDiscLoad0
+
+The format of the disc image files is described below.
 
 2) BeebVideoRefreshFreq (default 1)
 
 This is a speed hack.  If set to 'n' then only every n'th field is rendered
 and thus the emulation is faster (but not 'n' times!!).
+
+If you have enabled the sound support but all you get is noise when you run
+BeebEm then try setting BeebVideoRefreshFreq to a larger value.  Keep
+increasing the value until sound generation works.  On a Pentium 100 try
+values between 5 and 8.  On a P200 it should run with a value of 1 (it will
+depend on your graphics card speed however).
+
+2) BeebDiscWrites
+
+Defining this variable will enable disc writes for both drives.  Any changes
+you make to the files in the disc will automatically get written back to the
+image file.
+
+WARNING - most disc images you will find on the internet or that you have
+created yourself will have an invalid catalogue (they contain just enough
+information for disc reads to work but not writes).
+
+When beebem starts up with disc writes enabled it checks the disc catalogues
+and it will display a warning message if either are invalid.  If you see a
+warning message then do NOT write to the disc image, you will loose data.
+
+To fix an invalid catalogue do the following:
+
+  1. Create a new disc image file,
+       e.g. touch discims/newdisc.ssd
+
+  2. Load the old and new images into BeebEm with writes enabled,
+       e.g. BeebDiscLoad0="S:80:discims/newdisc.ssd"
+            BeebDiscLoad1="S:80:discims/olddisc.ssd"
+            BeebDiscWrites=1
+            export BeebDiscLoad0 BeebDiscLoad1 BeebDiscWrites
+            beebem
+
+  3. Format the new disc image - you will need a DFS with a format command
+     to do this (such as the Watford DFS),
+       e.g. *ENABLE
+            *FORM80 0     (make sure you use the correct drive!)
+
+  4. Copy all the files from the old disc to the new one and set the shift
+     break option and title,
+       e.g. *COPY 1 0 *.*
+            *OPT4,3
+            *TITLE Games
+
+The new image will now have a valid catalogue.  If you are using double
+sided images then remember to format and copy both sides.
+
 
 Disc image formats
 ------------------
@@ -231,10 +274,11 @@ These two command codes aren't emulated in Mode 7- if someone can explain to
 me what they are supposed to do, I'll add them, but so far I've completely
 failed to find a decent explanation!
 
-2) Read only 8271
+2) Incomplete 8271 emulation
 
-A very limited subset of the 8271 is supported - that is enough to allow DNFS,
-and Replica 1 read discs.   I plan to add write sometime - but I'm in no rush.
+A subset of the 8271 is supported.  Enough to allow disc reads, writes and
+formatting of 'normal' BBC format discs, i.e. 40 or 80 track, single or
+double sided, 256 byte sectors, 10 sectors per track.
 
 3) Elite - sticky explosions (bug)
 
@@ -260,7 +304,7 @@ accounted for.
 
 7) Missing hardware
 
-Serial, ADC, Printer port, keyboard LEDs, sound, tube, light pen, and
+Serial, ADC, Printer port, keyboard LEDs, tube, light pen, and
 econet are not yet emulated.  Econet holds a lot of possiblities - I
 quite like the idea of doing a socket based daemon type thing.
 
@@ -305,7 +349,7 @@ Other things
 1) Other signals
 Sending a SIGUSR1 causes beebem to dump the register state after each
 instruction.
-Sending a SIGUSR2 causes beebem to dump the state of allIO registers once.
+Sending a SIGUSR2 causes beebem to dump the state of all IO registers once.
 
 2) Adding ROMS
 In beebmem.cc in the routine BeebMemInit there are a number of lines of the

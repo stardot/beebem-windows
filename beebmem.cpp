@@ -35,6 +35,9 @@
 
 int WritableRoms = 0;
 
+/* Each Rom now has a Ram/Rom flag */
+int RomWritable[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+
 static int PagedRomReg;
 
 static int RomModified=0; /* Rom changed - needs copying back */
@@ -172,16 +175,11 @@ void BeebWriteMem(int Address, int Value) {
   }
 
   if (Address<0xc000) {
-    if (WritableRoms || PagedRomReg==0) {
+    if (WritableRoms || RomWritable[PagedRomReg]) {
       WholeRam[Address]=Value;
       RomModified=1;
-      if (PagedRomReg==0)
+      if (RomWritable[PagedRomReg])
         SWRamModified=1;
-    }
-    else {
-      /* Write through to SW RAM */
-      Roms[0][Address-0x8000]=Value;
-      SWRamModified=1;
     }
     return;
   }
@@ -273,7 +271,26 @@ static void ReadRom(char *name,int bank) {
   }
 
   fclose(InFile);
+
+  /* Write Protect the ROMS read in at startup */
+  RomWritable[bank] = 0;
+
 } /* ReadRom */
+
+/*----------------------------------------------------------------------------*/
+char *ReadRomTitle( int bank, char *Title, int BufSize )
+{
+	int i;
+
+	// Copy the ROM Title to the Buffer
+	for( i=0; (( i<(BufSize-1)) && ( Roms[bank][i+9]>30)); i++ )
+		Title[i] = Roms[bank][i+9];
+
+	// Add terminating NULL.
+	Title[i] = '\0';
+
+	return Title;
+}
 
 /*----------------------------------------------------------------------------*/
 void BeebMemInit(void) {
@@ -285,7 +302,7 @@ void BeebMemInit(void) {
   /* ReadRom("exmon",0xe); 
   ReadRom("memdump_bottom",0x4); 
   ReadRom("memdump_top",0x5); */
-  ReadRom("dnfs",1);
+  ReadRom("dnfs",0xd);
 
   /* Load OS */
   strcpy(fullname, "beebfile/os12");
@@ -362,7 +379,7 @@ void SaveMemState(unsigned char *RomState,
 	memcpy(MemState, WholeRam, 32768);
 
 	/* Save SW RAM state if it is selected and it has been modified */
-	if (SWRamModified && PagedRomReg == 0)
+	if (SWRamModified && RomWritable[PagedRomReg])
 	{
 		RomState[0] = 1;
 		memcpy(SWRamState, WholeRam+0x8000, 16384);
@@ -381,7 +398,8 @@ void RestoreMemState(unsigned char *RomState,
 	{
 		RomModified = 1;
 		SWRamModified = 1;
-		PagedRomReg = 0;
+		PagedRomReg = 0;      /* Use rom slot 0 */
+		RomWritable[0] = 1;
 		memcpy(WholeRam+0x8000, SWRamState, 16384);
 	}
 }

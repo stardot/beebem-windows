@@ -52,7 +52,7 @@ static char *Banner=
 #include "header"
 ;
 
-static char *Version="0.06 26/11/95";
+static char *Version="0.8 1/9/97";
 
 int XErrHandler(Display *display, XErrorEvent *Err) {
   char errbuff[1024];
@@ -114,7 +114,7 @@ int main(int argc,char *argv[]) {
   UserVIAReset();
   VideoInit();
   Disc8271_reset();
-  DumpRegs();
+  /* DumpRegs(); */
 
   if (argc>1) DumpAfterEach=1;
   /* Initialisation for X */

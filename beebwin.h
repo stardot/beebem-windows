@@ -105,6 +105,7 @@ class BeebWin  {
 	BOOL		m_HideCursor;
 	int			m_MenuIdKeyMapping;
 	char		m_AppPath[_MAX_PATH];
+	BOOL		m_WriteProtectDisc[2];
 
 	char*		m_screen;
 	HDC 		m_hDC;
@@ -123,15 +124,22 @@ class BeebWin  {
 	void CreateBeebWindow(void);
 	void CreateBitmap(void);
 	void InitMenu(void);
+	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
+	void GetRomMenu(void);				// LRW  Added for individual ROM/Ram
+	void GreyRomMenu(BOOL SetToGrey);	// LRW	Added for individual ROM/Ram
 	void TranslateWindowSize(void);
 	void TranslateSampleRate(void);
 	void TranslateVolume(void);
 	void TranslateTiming(void);
+	void TranslateKeyMapping(void);
 	void ReadDisc(int Drive);
 	void InitJoystick(void);
 	void ResetJoystick(void);
 	void RestoreState(void);
 	void SaveState(void);
+	void NewDiscImage(int Drive);
+	void ToggleWriteProtect(int Drive);
+	void SavePreferences(void);
 
 }; /* BeebWin */
 

@@ -34,11 +34,35 @@
 #include "beebemrc.h"
 #include "atodconv.h"
 #include "beebstate.h"
+#include "userkybd.h"
 
 static const char *WindowTitle = "BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 0.71, 5 August 1997\n";
+								"Version 0.8, 1 Sep 1997\n";
 
+/* Configuration file strings */
+static const char *CFG_FILE_NAME = "BeebEm.ini";
+
+static const char *CFG_VIEW_SECTION = "View";
+static const char *CFG_VIEW_WIN_SIZE = "WinSize";
+static const char *CFG_VIEW_WIN_XPOS = "WinXPos";
+static const char *CFG_VIEW_WIN_YPOS = "WinYPos";
+static const char *CFG_VIEW_SHOW_FPS = "ShowFSP";
+
+static const char *CFG_SOUND_SECTION = "Sound";
+static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
+static const char *CFG_SOUND_VOLUME = "Volume";
+static const char *CFG_SOUND_ENABLED = "SoundEnabled";
+
+static const char *CFG_OPTIONS_SECTION = "Options";
+static const char *CFG_OPTIONS_STICKS = "Sticks";
+static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
+static const char *CFG_OPTIONS_USER_KEY_MAP = "UserKeyMap";
+
+static const char *CFG_SPEED_SECTION = "Speed";
+static const char *CFG_SPEED_TIMING = "Timing";
+
+/* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 int TranslateKey(int, int *, int *);
 
@@ -186,25 +210,75 @@ static int (*transTable)[2] = transTable1;
 /****************************************************************************/
 BeebWin::BeebWin()
 {   
-	m_MenuIdWinSize = IDM_320X256;
+	char CfgName[256];
+	char CfgValue[256];
+	char DefValue[256];
+	int row, col;
+
+	sprintf(DefValue, "%d", IDM_320X256);
+	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdWinSize = atoi(CfgValue);
 	TranslateWindowSize();
-	m_ShowSpeedAndFPS = TRUE;
 
-	m_MenuIdSampleRate = IDM_22050KHZ;
-	TranslateSampleRate();
-	m_MenuIdVolume = IDM_MEDIUMVOLUME;
-	TranslateVolume();
-	SoundEnabled = FALSE;
+	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_SHOW_FPS, "1",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_ShowSpeedAndFPS = atoi(CfgValue);
 
-	m_MenuIdSticks = 0;
-	m_HideCursor = FALSE;
-
-	m_MenuIdTiming = IDM_REALTIME;
+	sprintf(DefValue, "%d", IDM_REALTIME);
+	GetPrivateProfileString(CFG_SPEED_SECTION, CFG_SPEED_TIMING, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdTiming = atoi(CfgValue);
 	TranslateTiming();
 
-	m_MenuIdKeyMapping = IDM_KEYBOARDMAPPING1;
+	sprintf(DefValue, "%d", IDM_22050KHZ);
+	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_SAMPLE_RATE, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdSampleRate = atoi(CfgValue);
+	TranslateSampleRate();
+
+	sprintf(DefValue, "%d", IDM_MEDIUMVOLUME);
+	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_VOLUME, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdVolume = atoi(CfgValue);
+	TranslateVolume();
+
+	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_ENABLED, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	SoundEnabled = atoi(CfgValue);
+	if (SoundEnabled)
+		SoundInit();
+
+	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdSticks = atoi(CfgValue);
+
+	m_HideCursor = FALSE;
+
+	sprintf(DefValue, "%d", IDM_KEYBOARDMAPPING1);
+	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_KEY_MAPPING, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdKeyMapping = atoi(CfgValue);
+	TranslateKeyMapping();
+
+	for (int key=0; key<256; ++key)
+	{
+		sprintf(CfgName, "%s%d", CFG_OPTIONS_USER_KEY_MAP, key);
+		GetPrivateProfileString(CFG_OPTIONS_SECTION, CfgName, "-1 -1",
+				CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+		sscanf(CfgValue, "%d %d", &row, &col);
+		if (row != -1 && col != -1)
+		{
+			UserKeymap[key][0] = row;
+			UserKeymap[key][1] = col;
+		}
+	}
+
 	m_DiscTypeSelection = 1;
 	IgnoreIllegalInstructions = 1;
+
+	m_WriteProtectDisc[0] = !IsDiscWritable(0);
+	m_WriteProtectDisc[1] = !IsDiscWritable(1);
 
 	m_hBitmap = m_hOldObj = m_hDCBitmap = NULL;
 	m_ScreenRefreshCount = 0;
@@ -319,6 +393,21 @@ BOOL BeebWin::InitClass(void)
 /****************************************************************************/
 void BeebWin::CreateBeebWindow(void)
 {
+	int x,y;
+	char CfgValue[256];
+
+	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_XPOS, "-1",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	x=atoi(CfgValue);
+	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_YPOS, "-1",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	y=atoi(CfgValue);
+	if (x == -1 || y == -1)
+	{
+		x = CW_USEDEFAULT;
+		y = 0;
+	}
+
 	m_hWnd = CreateWindow(
 				"BEEBWIN",				// See RegisterClass() call.
 				m_szTitle, 		// Text for window title bar.
@@ -326,7 +415,7 @@ void BeebWin::CreateBeebWindow(void)
 				WS_CAPTION|
 				WS_SYSMENU|
 				WS_MINIMIZEBOX, // Window style.			    
-				CW_USEDEFAULT, 0,		// Use default positioning
+				x, y,
 				m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
 				m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
 					+ GetSystemMetrics(SM_CYMENUSIZE)
@@ -352,7 +441,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_SOUNDONOFF, SoundEnabled ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, m_MenuIdSampleRate, MF_CHECKED);
 	CheckMenuItem(hMenu, m_MenuIdVolume, MF_CHECKED);
-	CheckMenuItem(hMenu, IDM_ROMWRITES, WritableRoms ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_ALLOWALLROMWRITES, WritableRoms ? MF_CHECKED : MF_UNCHECKED); 
 	CheckMenuItem(hMenu, m_MenuIdTiming, MF_CHECKED);
 	if (m_MenuIdSticks != 0)
 		CheckMenuItem(hMenu, m_MenuIdSticks, MF_CHECKED);
@@ -360,6 +449,107 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_IGNOREILLEGALOPS,
 					IgnoreIllegalInstructions ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, m_MenuIdKeyMapping, MF_CHECKED);
+	CheckMenuItem(hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
+
+	/* Initialise the ROM Menu. */
+	SetRomMenu();
+}
+
+/****************************************************************************/
+void BeebWin::SetRomMenu(void)
+{
+	HMENU hMenu = GetMenu(m_hWnd);
+
+	// Set the ROM Titles in the ROM/RAM menu.
+	CHAR Title[19];
+	
+	int	 i;
+
+	for( i=0; i<16; i++ )
+	{
+		Title[0] = '&';
+		_itoa( i, &Title[1], 16 );
+		Title[2] = ' ';
+		
+		// Get the Rom Title.
+		ReadRomTitle( i, &Title[3], sizeof( Title )-4);
+	
+		if ( Title[3]== '\0' )
+			strcpy( &Title[3], "Empty" );
+
+		ModifyMenu( hMenu,	// handle of menu 
+					IDM_ALLOWWRITES_ROM0 + i,
+					MF_BYCOMMAND,	// menu item to modify
+				//	MF_STRING,	// menu item flags 
+					IDM_ALLOWWRITES_ROM0 + i,	// menu item identifier or pop-up menu handle
+					Title		// menu item content 
+					);
+	}
+
+	/* LRW Now uncheck the Roms which are NOT writable, that have already been loaded. */
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM0, RomWritable[0] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM1, RomWritable[1] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM2, RomWritable[2] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM3, RomWritable[3] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM4, RomWritable[4] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM5, RomWritable[5] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM6, RomWritable[6] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM7, RomWritable[7] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM8, RomWritable[8] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM9, RomWritable[9] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMA, RomWritable[10] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMB, RomWritable[11] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMC, RomWritable[12] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMD, RomWritable[13] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROME, RomWritable[14] ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMF, RomWritable[15] ? MF_CHECKED : MF_UNCHECKED );
+}
+
+/****************************************************************************/
+void BeebWin::GetRomMenu(void)
+{
+	HMENU hMenu = GetMenu(m_hWnd);
+
+	/* LRW Now uncheck the Roms as NOT writable, that have already been loaded. */
+	RomWritable[0] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM0, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[1] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM1, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[2] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM2, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[3] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM3, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[4] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM4, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[5] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM5, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[6] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM6, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[7] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM7, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[8] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM8, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[9] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM9, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[10] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMA, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[11] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMB, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[12] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMC, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[13] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMD, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[14] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROME, MF_BYCOMMAND ) & MF_CHECKED );
+	RomWritable[15] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMF, MF_BYCOMMAND ) & MF_CHECKED );
+}
+
+/****************************************************************************/
+void BeebWin::GreyRomMenu(BOOL SetToGrey)
+{
+	HMENU hMenu = GetMenu(m_hWnd);
+
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM1, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM2, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM3, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM4, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM5, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM6, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM7, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM8, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM9, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMA, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMB, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMC, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMD, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROME, SetToGrey ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMF, SetToGrey ? MF_GRAYED : MF_ENABLED );
 }
 
 /****************************************************************************/
@@ -487,6 +677,10 @@ LRESULT CALLBACK WndProc(
 				Init6502core();
 				Disc8271_reset();
 			}
+			break;					  
+
+		case WM_KILLFOCUS:
+			BeebReleaseAllKeys();
 			break;					  
 
 		case MM_JOY1MOVE:
@@ -696,6 +890,7 @@ void BeebWin::TranslateWindowSize(void)
 		m_YWinSize = 256;
 		break;
 
+	default:
 	case IDM_320X256:
 		m_XWinSize = 320;
 		m_YWinSize = 256;
@@ -732,6 +927,7 @@ void BeebWin::TranslateSampleRate(void)
 		SoundSampleRate = 44100;
 		break;
 
+	default:
 	case IDM_22050KHZ:
 		SoundSampleRate = 22050;
 		break;
@@ -755,6 +951,7 @@ void BeebWin::TranslateVolume(void)
 		SoundVolume = 2;
 		break;
 
+	default:
 	case IDM_MEDIUMVOLUME:
 		SoundVolume = 3;
 		break;
@@ -773,6 +970,7 @@ void BeebWin::TranslateTiming(void)
 
 	switch (m_MenuIdTiming)
 	{
+	default:
 	case IDM_REALTIME:
 		m_RealTimeTarget = 1.0;
 		break;
@@ -803,6 +1001,26 @@ void BeebWin::TranslateTiming(void)
 
 	case IDM_1FPS:
 		m_FPSTarget = 1;
+		break;
+	}
+}
+
+/****************************************************************************/
+void BeebWin::TranslateKeyMapping(void)
+{
+	switch (m_MenuIdKeyMapping )
+	{
+	default:
+	case IDM_KEYBOARDMAPPING1:
+		transTable = transTable1;
+		break;
+
+	case IDM_KEYBOARDMAPPING2:
+		transTable = transTable2;
+		break;
+
+	case IDM_USERKYBDMAPPING:
+		transTable = UserKeymap;
 		break;
 	}
 }
@@ -853,6 +1071,71 @@ void BeebWin::ReadDisc(int Drive)
 		{
 			LoadSimpleDSDiscImage(FileName, Drive, 80);
 		}
+
+		/* Write protect the disc */
+		if (!m_WriteProtectDisc[Drive])
+			ToggleWriteProtect(Drive);
+	}
+}
+
+/****************************************************************************/
+void BeebWin::NewDiscImage(int Drive)
+{
+	char StartPath[_MAX_PATH];
+	char FileName[256];
+	OPENFILENAME ofn;
+
+	strcpy(StartPath, m_AppPath);
+	strcat(StartPath, "discims");
+	FileName[0] = '\0';
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.hInstance = NULL;
+	ofn.lpstrFilter = "Single Sided Disc\0*.*\0Double Sided Disc\0*.*\0";
+	ofn.lpstrCustomFilter = NULL;
+	ofn.nMaxCustFilter = 0;
+	ofn.nFilterIndex = m_DiscTypeSelection;
+	ofn.lpstrFile = FileName;
+	ofn.nMaxFile = sizeof(FileName);
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = StartPath;
+	ofn.lpstrTitle = NULL;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nFileOffset = 0;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = NULL;
+	ofn.lCustData = 0;
+	ofn.lpfnHook = NULL;
+	ofn.lpTemplateName = NULL;
+
+	if (GetSaveFileName(&ofn))
+	{
+		/* Default to same type of disc next time */
+		m_DiscTypeSelection = ofn.nFilterIndex;
+
+		/* Add a file extension if the user did not specify one */
+		if (strchr(FileName, '.') == NULL)
+		{
+			if (ofn.nFilterIndex == 1)
+				strcat(FileName, ".ssd");
+			else
+				strcat(FileName, ".dsd");
+		}
+
+		if (ofn.nFilterIndex == 1)
+		{
+			CreateDiscImage(FileName, Drive, 1, 80);
+		}
+		else
+		{
+			CreateDiscImage(FileName, Drive, 2, 80);
+		}
+
+		/* Allow disc writes */
+		if (m_WriteProtectDisc[Drive])
+			ToggleWriteProtect(Drive);
 	}
 }
 
@@ -933,6 +1216,87 @@ void BeebWin::RestoreState()
 }
 
 /****************************************************************************/
+void BeebWin::ToggleWriteProtect(int Drive)
+{
+	HMENU hMenu = GetMenu(m_hWnd);
+
+	if (m_WriteProtectDisc[Drive])
+	{
+		m_WriteProtectDisc[Drive] = 0;
+		DiscWriteEnable(Drive, 1);
+	}
+	else
+	{
+		m_WriteProtectDisc[Drive] = 1;
+		DiscWriteEnable(Drive, 0);
+	}
+
+	if (Drive == 0)
+		CheckMenuItem(hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
+	else
+		CheckMenuItem(hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
+}
+
+/****************************************************************************/
+void BeebWin::SavePreferences()
+{
+	char CfgValue[256];
+	char CfgName[256];
+	RECT wndrect;
+
+	sprintf(CfgValue, "%d", m_MenuIdWinSize);
+	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE,
+			CfgValue, CFG_FILE_NAME);
+
+	GetWindowRect(m_hWnd, &wndrect);
+	sprintf(CfgValue, "%d", wndrect.left);
+	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_XPOS,
+			CfgValue, CFG_FILE_NAME);
+	sprintf(CfgValue, "%d", wndrect.top);
+	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_YPOS,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_ShowSpeedAndFPS);
+	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_SHOW_FPS,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", SoundEnabled);
+	WritePrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_ENABLED,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_MenuIdSampleRate);
+	WritePrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_SAMPLE_RATE,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_MenuIdVolume);
+	WritePrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_VOLUME,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_MenuIdTiming);
+	WritePrivateProfileString(CFG_SPEED_SECTION, CFG_SPEED_TIMING,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_MenuIdKeyMapping);
+	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_KEY_MAPPING,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_MenuIdSticks);
+	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS,
+			CfgValue, CFG_FILE_NAME);
+
+	for (int key=0; key<256; ++key)
+	{
+		if (UserKeymap[key][0] != 0 || UserKeymap[key][1] != 0)
+		{
+			sprintf(CfgName, "%s%d", CFG_OPTIONS_USER_KEY_MAP, key);
+			sprintf(CfgValue, "%d %d", UserKeymap[key][0], UserKeymap[key][1]);
+			WritePrivateProfileString(CFG_OPTIONS_SECTION, CfgName,
+				CfgValue, CFG_FILE_NAME);
+		}
+	}
+}
+
+/****************************************************************************/
 void BeebWin::HandleCommand(int MenuId)
 {
 	HMENU hMenu = GetMenu(m_hWnd);
@@ -964,6 +1328,20 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 	case IDM_LOADDISC1:
 		ReadDisc(1);
+		break;
+
+	case IDM_NEWDISC0:
+		NewDiscImage(0);
+		break;
+	case IDM_NEWDISC1:
+		NewDiscImage(1);
+		break;
+
+	case IDM_WPDISC0:
+		ToggleWriteProtect(0);
+		break;
+	case IDM_WPDISC1:
+		ToggleWriteProtect(1);
 		break;
 
 	case IDM_160X128:
@@ -1050,19 +1428,43 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 	
-	case IDM_ROMWRITES:
+	case IDM_ALLOWALLROMWRITES:	
 		if (WritableRoms)
 		{
 			WritableRoms = FALSE;
-			CheckMenuItem(hMenu, IDM_ROMWRITES, MF_UNCHECKED);
+			CheckMenuItem(hMenu, IDM_ALLOWALLROMWRITES, MF_UNCHECKED);
+			GreyRomMenu( FALSE );	
 		}
 		else
 		{
 			WritableRoms = TRUE;
-			CheckMenuItem(hMenu, IDM_ROMWRITES, MF_CHECKED);
+			CheckMenuItem(hMenu, IDM_ALLOWALLROMWRITES, MF_CHECKED);
+			GreyRomMenu( TRUE );	
 		}
 		break;
-	
+
+	/* LRW Added switch individual ROMS Writable ON/OFF */
+	case IDM_ALLOWWRITES_ROM0:
+	case IDM_ALLOWWRITES_ROM1:
+	case IDM_ALLOWWRITES_ROM2:
+	case IDM_ALLOWWRITES_ROM3:
+	case IDM_ALLOWWRITES_ROM4:
+	case IDM_ALLOWWRITES_ROM5:
+	case IDM_ALLOWWRITES_ROM6:
+	case IDM_ALLOWWRITES_ROM7:
+	case IDM_ALLOWWRITES_ROM8:
+	case IDM_ALLOWWRITES_ROM9:
+	case IDM_ALLOWWRITES_ROMA:
+	case IDM_ALLOWWRITES_ROMB:
+	case IDM_ALLOWWRITES_ROMC:
+	case IDM_ALLOWWRITES_ROMD:
+	case IDM_ALLOWWRITES_ROME:
+	case IDM_ALLOWWRITES_ROMF:
+
+		CheckMenuItem(hMenu,  MenuId, RomWritable[( MenuId-IDM_ALLOWWRITES_ROM0)] ? MF_UNCHECKED : MF_CHECKED );
+		GetRomMenu();	// Update the Rom/Ram state for all the roms.
+		break;				
+
 	case IDM_REALTIME:
 	case IDM_3QSPEED:
 	case IDM_HALFSPEED:
@@ -1146,6 +1548,11 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
+	case IDM_DEFINEKEYMAP:
+		UserKeyboardDialog( m_hWnd );
+		break;
+
+	case IDM_USERKYBDMAPPING:
 	case IDM_KEYBOARDMAPPING1:
 	case IDM_KEYBOARDMAPPING2:
 		if (MenuId != m_MenuIdKeyMapping)
@@ -1153,11 +1560,7 @@ void BeebWin::HandleCommand(int MenuId)
 			CheckMenuItem(hMenu, m_MenuIdKeyMapping, MF_UNCHECKED);
 			m_MenuIdKeyMapping = MenuId;
 			CheckMenuItem(hMenu, m_MenuIdKeyMapping, MF_CHECKED);
-
-			if (m_MenuIdKeyMapping == IDM_KEYBOARDMAPPING1)
-				transTable = transTable1;
-			else
-				transTable = transTable2;
+			TranslateKeyMapping();
 		}
 		break;
 
@@ -1167,6 +1570,10 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_EXIT:
 		PostMessage(m_hWnd, WM_CLOSE, 0, 0L);
+		break;
+
+	case IDM_SAVE_PREFS:
+		SavePreferences();
 		break;
 	}
 }

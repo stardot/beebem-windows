@@ -33,7 +33,7 @@ dagXDispServerConnection* dagXDispServerConnection::primary=NULL;
 dagXDispServerConnection* _primaryDisplay=NULL;
 
 dagXDispServerConnection::dagXDispServerConnection(char *display_name) {
-  cerr << "in constructor of dagXDispServerConnection\n";
+  /* cerr << "in constructor of dagXDispServerConnection\n"; */
 
   if (xDisplay=XOpenDisplay(display_name),xDisplay==NULL)
     throw dagXErr("Could not open X display");
@@ -46,7 +46,7 @@ dagXDispServerConnection::~dagXDispServerConnection() {
 }
 
 void dagXDispServerConnection::setPrimary() {
-  cerr << "in setPrimary of dagXDispServerConnection\n";
+  /* cerr << "in setPrimary of dagXDispServerConnection\n"; */
   primary=this;
   _primaryDisplay=this;
 }

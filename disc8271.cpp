@@ -18,8 +18,10 @@
 /* program.                                                                 */
 /* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
-/*--------------------------------------------------------------------------*/
 /* 8271 disc emulation - David Alan Gilbert 4/12/94 */
+
+/* Mike Wyatt 30/8/97 - Added disc write and format support */
+
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +37,7 @@
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 static unsigned char ResultReg;
 static unsigned char StatusReg;
-static unsigned char DataReadReg;
+static unsigned char DataReg;
 static unsigned char Internal_Scan_SectorNum;
 static unsigned int Internal_Scan_Count; /* Read as two bytes */
 static unsigned char Internal_ModeReg;
@@ -50,7 +52,9 @@ static int PresentParam; /* From 0 */
 static unsigned char Params[16]; /* Wildly more than we need */
 
 static int Selects[2]; /* Drive selects */
-static int Writeable[2]={1,1}; /* True if the drives are writeable - for the moment let them be */
+static int Writeable[2]={0,0}; /* True if the drives are writeable */
+
+static int FirstWriteInt; /* Indicates the start of a write operation */
 
 static int NextInterruptIsErr; /* none 0 causes error and drops this value into result reg */
 #define TRACKSPERDRIVE 80
@@ -58,7 +62,7 @@ static int NextInterruptIsErr; /* none 0 causes error and drops this value into 
 /* Note Head select is done from bit 5 of the drive output register */
 #define CURRENTHEAD ((Internal_DriveControlOutputPort>>5) & 1)
 
-/* Note: reads one byte every 80us */
+/* Note: reads/writes one byte every 80us */
 #define TIMEBETWEENBYTES (160)
 
 typedef struct {
@@ -71,7 +75,7 @@ typedef struct {
   } IDField;
 
   unsigned int Deleted:1; /* If non-zero the sector is deleted */
-  char *Data;
+  unsigned char *Data;
 } SectorType;
 
 typedef struct {
@@ -83,6 +87,14 @@ typedef struct {
 
 /* All data on the disc - first param is drive number, then head. then physical track id */
 TrackType DiscStore[2][2][TRACKSPERDRIVE];
+
+/* File names of loaded disc images */
+static char FileNames[2][256];
+
+/* Number of sides of loaded disc images */
+static int NumHeads[2];
+
+static void SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
 
 typedef void (*CommandFunc)(void);
 
@@ -98,8 +110,8 @@ static struct {
   SectorType *CurrentSectorPtr;
   TrackType *CurrentTrackPtr;
 
-  int ByteWithinSector; /* Next byte to be read in sector */
-} ReadCommandStatus;
+  int ByteWithinSector; /* Next byte in sector or ID field */
+} CommandStatus;
 
 /*--------------------------------------------------------------------------*/
 typedef struct  {
@@ -244,9 +256,96 @@ static void Do128ByteSR_WriteDataCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_WriteDataCommand(void) {
+  int Drive=-1;
+
   DoSelects();
-  NotImp("DoVarLength_WriteDataCommand");
+  DoLoadHead();
+
+  if (!CheckReady()) {
+    DoErr(0x10); /* Drive not ready */
+    return;
+  };
+
+  if (Selects[0]) Drive=0;
+  if (Selects[1]) Drive=1;
+
+  if (!Writeable[Drive]) {
+    DoErr(0x12); /* Drive write protected */
+    return;
+  };
+
+  Internal_CurrentTrack[Drive]=Params[0];
+  CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+  if (CommandStatus.CurrentTrackPtr==NULL) {
+    DoErr(0x10);
+    return;
+  };
+
+  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
+  if (CommandStatus.CurrentSectorPtr==NULL) {
+    DoErr(0x1e); /* Sector not found */
+    return;
+  };
+
+  CommandStatus.TrackAddr=Params[0];
+  CommandStatus.CurrentSector=Params[1];
+  CommandStatus.SectorsToGo=Params[2] & 31;
+  CommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
+
+  if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength)) {
+    CommandStatus.ByteWithinSector=0;
+    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    StatusReg=0x80; /* Command busy */
+    UPDATENMISTATUS;
+    CommandStatus.ByteWithinSector=0;
+    FirstWriteInt=1;
+  } else {
+    DoErr(0x1e); /* Sector not found */
+  };
 };
+
+/*--------------------------------------------------------------------------*/
+static void WriteInterrupt(void) {
+  int LastByte=0;
+
+  if (CommandStatus.SectorsToGo<0) {
+    StatusReg=0x18; /* Result and interrupt */
+    UPDATENMISTATUS;
+    return;
+  };
+
+  if (!FirstWriteInt)
+    CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++]=DataReg;
+  else
+    FirstWriteInt=0;
+
+  ResultReg=0;
+  if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
+    CommandStatus.ByteWithinSector=0;
+    if (--CommandStatus.SectorsToGo) {
+      CommandStatus.CurrentSector++;
+      CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,CommandStatus.CurrentSector,0);
+      if (CommandStatus.CurrentSectorPtr==NULL) {
+        DoErr(0x1e); /* Sector not found */
+        return;
+      }
+    } else {
+      /* Last sector done, write the track back to disc */
+      SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr);
+      StatusReg=0x10;
+      UPDATENMISTATUS;
+      LastByte=1;
+      CommandStatus.SectorsToGo=-1; /* To let us bail out */
+      SetTrigger(0,Disc8271Trigger); /* To pick up result */
+    };
+  };
+  
+  if (!LastByte) {
+    StatusReg=0x8c; /* Command busy, */
+    UPDATENMISTATUS;
+    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+  };
+}; /* WriteInterrupt */
 
 /*--------------------------------------------------------------------------*/
 static void Do128ByteSR_WriteDeletedDataCommand(void) {
@@ -271,9 +370,7 @@ static void DoVarLength_ReadDataCommand(void) {
   int Drive=-1;
 
   DoSelects();
-
   DoLoadHead();
-
 
   if (!CheckReady()) {
     DoErr(0x10); /* Drive not ready */
@@ -284,27 +381,29 @@ static void DoVarLength_ReadDataCommand(void) {
   if (Selects[1]) Drive=1;
 
   Internal_CurrentTrack[Drive]=Params[0];
-  if (ReadCommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]),ReadCommandStatus.CurrentTrackPtr==NULL) {
+  CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+  if (CommandStatus.CurrentTrackPtr==NULL) {
     DoErr(0x10);
     return;
   };
 
-  if (ReadCommandStatus.CurrentSectorPtr=GetSectorPtr(ReadCommandStatus.CurrentTrackPtr,Params[1],0),ReadCommandStatus.CurrentSectorPtr==NULL) {
+  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
+  if (CommandStatus.CurrentSectorPtr==NULL) {
     DoErr(0x1e); /* Sector not found */
     return;
   };
 
-  ReadCommandStatus.TrackAddr=Params[0];
-  ReadCommandStatus.CurrentSector=Params[1];
-  ReadCommandStatus.SectorsToGo=Params[2] & 31;
-  ReadCommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
+  CommandStatus.TrackAddr=Params[0];
+  CommandStatus.CurrentSector=Params[1];
+  CommandStatus.SectorsToGo=Params[2] & 31;
+  CommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
 
-  if (ValidateSector(ReadCommandStatus.CurrentSectorPtr,ReadCommandStatus.TrackAddr,ReadCommandStatus.SectorLength)) {
-    ReadCommandStatus.ByteWithinSector=0;
+  if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength)) {
+    CommandStatus.ByteWithinSector=0;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
     StatusReg=0x80; /* Command busy */
     UPDATENMISTATUS;
-    ReadCommandStatus.ByteWithinSector=0;
+    CommandStatus.ByteWithinSector=0;
   } else {
     DoErr(0x1e); /* Sector not found */
   };
@@ -315,33 +414,33 @@ static void ReadInterrupt(void) {
   extern int DumpAfterEach;
   int LastByte=0;
 
-  if (ReadCommandStatus.SectorsToGo<0) {
+  if (CommandStatus.SectorsToGo<0) {
     StatusReg=0x18; /* Result and interrupt */
     UPDATENMISTATUS;
     return;
   };
 
-  DataReadReg=ReadCommandStatus.CurrentSectorPtr->Data[ReadCommandStatus.ByteWithinSector++];
-  /*cerr << "ReadInterrupt called - DataReadReg=0x" << hex << int(DataReadReg) << dec << "ByteWithinSector=" << ReadCommandStatus.ByteWithinSector << "\n"; */
+  DataReg=CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++];
+  /*cerr << "ReadInterrupt called - DataReg=0x" << hex << int(DataReg) << dec << "ByteWithinSector=" << CommandStatus.ByteWithinSector << "\n"; */
 
   /* DumpAfterEach=1; */
   ResultReg=0;
-  if (ReadCommandStatus.ByteWithinSector>=ReadCommandStatus.SectorLength) {
-    ReadCommandStatus.ByteWithinSector=0;
+  if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
+    CommandStatus.ByteWithinSector=0;
     /* I don't know if this can cause the thing to step - I presume not for the moment */
-    if (--ReadCommandStatus.SectorsToGo) {
-      ReadCommandStatus.CurrentSector++;
-      if (ReadCommandStatus.CurrentSectorPtr=GetSectorPtr(ReadCommandStatus.CurrentTrackPtr,ReadCommandStatus.CurrentSector,0),
-          ReadCommandStatus.CurrentSectorPtr==NULL) {
-	DoErr(0x1e); /* Sector not found */
-	return;
-      }/* else cerr << "all ptr for sector " << ReadCommandStatus.CurrentSector << "\n"*/;
+    if (--CommandStatus.SectorsToGo) {
+      CommandStatus.CurrentSector++;
+      if (CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,CommandStatus.CurrentSector,0),
+          CommandStatus.CurrentSectorPtr==NULL) {
+        DoErr(0x1e); /* Sector not found */
+        return;
+      }/* else cerr << "all ptr for sector " << CommandStatus.CurrentSector << "\n"*/;
     } else {
       /* Last sector done */
       StatusReg=0x9c;
       UPDATENMISTATUS;
       LastByte=1;
-      ReadCommandStatus.SectorsToGo=-1; /* To let us bail out */
+      CommandStatus.SectorsToGo=-1; /* To let us bail out */
       SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
     };
   };
@@ -360,14 +459,97 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
 };
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_ReadDataAndDeldCommand(void) {
-  DoSelects();
-  NotImp("DoVarLength_ReadDataAndDeldCommand");
+  /* Use normal read command for now - deleted data not supported */
+  DoVarLength_ReadDataCommand();
 };
 /*--------------------------------------------------------------------------*/
 static void DoReadIDCommand(void) {
+  int Drive=-1;
+
   DoSelects();
-  NotImp("DoReadIDCommand");
+  DoLoadHead();
+
+  if (!CheckReady()) {
+    DoErr(0x10); /* Drive not ready */
+    return;
+  };
+
+  if (Selects[0]) Drive=0;
+  if (Selects[1]) Drive=1;
+
+  Internal_CurrentTrack[Drive]=Params[0];
+  CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+  if (CommandStatus.CurrentTrackPtr==NULL) {
+    DoErr(0x10);
+    return;
+  };
+
+  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,0,0);
+  if (CommandStatus.CurrentSectorPtr==NULL) {
+    DoErr(0x1e); /* Sector not found */
+    return;
+  };
+
+  CommandStatus.TrackAddr=Params[0];
+  CommandStatus.CurrentSector=0;
+  CommandStatus.SectorsToGo=Params[2];
+
+  CommandStatus.ByteWithinSector=0;
+  SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+  StatusReg=0x80; /* Command busy */
+  UPDATENMISTATUS;
+  CommandStatus.ByteWithinSector=0;
 };
+
+/*--------------------------------------------------------------------------*/
+static void ReadIDInterrupt(void) {
+  int LastByte=0;
+
+  if (CommandStatus.SectorsToGo<0) {
+    StatusReg=0x18; /* Result and interrupt */
+    UPDATENMISTATUS;
+    return;
+  };
+
+  if (CommandStatus.ByteWithinSector==0)
+    DataReg=CommandStatus.CurrentSectorPtr->IDField.CylinderNum;
+  else if (CommandStatus.ByteWithinSector==1)
+    DataReg=CommandStatus.CurrentSectorPtr->IDField.HeadNum;
+  else if (CommandStatus.ByteWithinSector==2)
+    DataReg=CommandStatus.CurrentSectorPtr->IDField.RecordNum;
+  else
+    DataReg=1; /* 1=256 byte sector length */
+
+  CommandStatus.ByteWithinSector++;
+
+  ResultReg=0;
+  if (CommandStatus.ByteWithinSector>=4) {
+    CommandStatus.ByteWithinSector=0;
+    if (--CommandStatus.SectorsToGo) {
+      CommandStatus.CurrentSector++;
+      CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,
+                                                      CommandStatus.CurrentSector,0);
+      if (CommandStatus.CurrentSectorPtr==NULL) {
+        DoErr(0x1e); /* Sector not found */
+        return;
+      }
+    } else {
+      /* Last sector done */
+      StatusReg=0x9c;
+      UPDATENMISTATUS;
+      LastByte=1;
+      CommandStatus.SectorsToGo=-1; /* To let us bail out */
+      SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
+    };
+  };
+  
+  if (!LastByte) {
+    StatusReg=0x8c; /* Command busy, */
+    UPDATENMISTATUS;
+    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+  };
+}; /* ReadIDInterrupt */
+
 /*--------------------------------------------------------------------------*/
 static void Do128ByteSR_VerifyDataAndDeldCommand(void) {
   DoSelects();
@@ -375,14 +557,141 @@ static void Do128ByteSR_VerifyDataAndDeldCommand(void) {
 };
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_VerifyDataAndDeldCommand(void) {
+  int Drive=-1;
+
   DoSelects();
-  NotImp("DoVarLength_VerifyDataAndDeldCommand");
+
+  if (!CheckReady()) {
+    DoErr(0x10); /* Drive not ready */
+    return;
+  };
+
+  if (Selects[0]) Drive=0;
+  if (Selects[1]) Drive=1;
+
+  Internal_CurrentTrack[Drive]=Params[0];
+  CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+  if (CommandStatus.CurrentTrackPtr==NULL) {
+    DoErr(0x10);
+    return;
+  };
+
+  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
+  if (CommandStatus.CurrentSectorPtr==NULL) {
+    DoErr(0x1e); /* Sector not found */
+    return;
+  };
+
+  StatusReg=0x80; /* Command busy */
+  UPDATENMISTATUS;
+  SetTrigger(100,Disc8271Trigger); /* A short delay to causing an interrupt */
+};
+/*--------------------------------------------------------------------------*/
+static void VerifyInterrupt(void) {
+  StatusReg=0x18; /* Result with interrupt */
+  UPDATENMISTATUS;
+  ResultReg=0; /* All OK */
 };
 /*--------------------------------------------------------------------------*/
 static void DoFormatCommand(void) {
+  int Drive=-1;
+
   DoSelects();
-  NotImp("DoFormatCommand");
+
+  DoLoadHead();
+
+  if (!CheckReady()) {
+    DoErr(0x10); /* Drive not ready */
+    return;
+  };
+
+  if (Selects[0]) Drive=0;
+  if (Selects[1]) Drive=1;
+
+  if (!Writeable[Drive]) {
+    DoErr(0x12); /* Drive write protected */
+    return;
+  };
+
+  Internal_CurrentTrack[Drive]=Params[0];
+  CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+  if (CommandStatus.CurrentTrackPtr==NULL) {
+    DoErr(0x10);
+    return;
+  };
+
+  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,0,0);
+  if (CommandStatus.CurrentSectorPtr==NULL) {
+    DoErr(0x1e); /* Sector not found */
+    return;
+  };
+
+  CommandStatus.TrackAddr=Params[0];
+  CommandStatus.CurrentSector=0;
+  CommandStatus.SectorsToGo=Params[2] & 31;
+  CommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
+
+  if (CommandStatus.SectorsToGo==10 && CommandStatus.SectorLength==256) {
+    CommandStatus.ByteWithinSector=0;
+    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    StatusReg=0x80; /* Command busy */
+    UPDATENMISTATUS;
+    CommandStatus.ByteWithinSector=0;
+    FirstWriteInt=1;
+  } else {
+    DoErr(0x1e); /* Sector not found */
+  };
 };
+
+/*--------------------------------------------------------------------------*/
+static void FormatInterrupt(void) {
+  int i;
+  int LastByte=0;
+
+  if (CommandStatus.SectorsToGo<0) {
+    StatusReg=0x18; /* Result and interrupt */
+    UPDATENMISTATUS;
+    return;
+  };
+
+  if (!FirstWriteInt) {
+    /* Ignore the ID data for now - just count the bytes */
+    CommandStatus.ByteWithinSector++;
+  }
+  else
+    FirstWriteInt=0;
+
+  ResultReg=0;
+  if (CommandStatus.ByteWithinSector>=4) {
+    /* Fill sector with 0xe5 chars */
+    for (i=0; i<256; ++i)
+      CommandStatus.CurrentSectorPtr->Data[i]=(unsigned char)0xe5;
+
+    CommandStatus.ByteWithinSector=0;
+    if (--CommandStatus.SectorsToGo) {
+      CommandStatus.CurrentSector++;
+      CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,CommandStatus.CurrentSector,0);
+      if (CommandStatus.CurrentSectorPtr==NULL) {
+        DoErr(0x1e); /* Sector not found */
+        return;
+      }
+    } else {
+      /* Last sector done, write the track back to disc */
+      SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr);
+      StatusReg=0x10;
+      UPDATENMISTATUS;
+      LastByte=1;
+      CommandStatus.SectorsToGo=-1; /* To let us bail out */
+      SetTrigger(0,Disc8271Trigger); /* To pick up result */
+    };
+  };
+  
+  if (!LastByte) {
+    StatusReg=0x8c; /* Command busy, */
+    UPDATENMISTATUS;
+    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+  };
+}; /* FormatInterrupt */
 
 /*--------------------------------------------------------------------------*/
 static void DoSeekInt(void) {
@@ -428,8 +737,6 @@ static void DoReadDriveStatusCommand(void) {
     WriteProt=(!Writeable[1]);
   };
 
-  ResultReg=0x81; /* For the moment!!! */
-
   ResultReg=0x80 | (Selects[1]?0x40:0) | (Selects[0]?0x4:0) | (Track0?2:0) | (WriteProt?8:0);
   StatusReg|=0x10; /* Result */
   UPDATENMISTATUS;
@@ -441,6 +748,7 @@ static void DoSpecifyCommand(void) {
 /*--------------------------------------------------------------------------*/
 static void DoWriteSpecialCommand(void) {
   DoSelects();
+
   switch(Params[0]) {
     case 0x06:
       Internal_Scan_SectorNum=Params[1];
@@ -505,6 +813,7 @@ static void DoWriteSpecialCommand(void) {
 /*--------------------------------------------------------------------------*/
 static void DoReadSpecialCommand(void) {
   DoSelects();
+
   switch(Params[0]) {
     case 0x06:
       ResultReg=Internal_Scan_SectorNum;
@@ -555,7 +864,7 @@ static void DoReadSpecialCommand(void) {
       break;
 
     default:
-      cerr << "Read of bad special register\n";
+      /* cerr << "Read of bad special register\n"; */
       return;
       break;
   }; /* Special register number switch */
@@ -575,17 +884,17 @@ static PrimaryCommandLookupType PrimaryCommandLookup[]={
   {0x00, 0x3f, 3, DoVarLength_ScanDataCommand, NULL,  "Scan Data (Variable Length/Multi-Record)"},
   {0x04, 0x3f, 3, DoVarLength_ScanDataAndDeldCommand, NULL,  "Scan Data & deleted data (Variable Length/Multi-Record)"},
   {0x0a, 0x3f, 2, Do128ByteSR_WriteDataCommand, NULL, "Write Data (128 byte/single record)"},
-  {0x0b, 0x3f, 3, DoVarLength_WriteDataCommand, NULL, "Write Data (Variable Length/Multi-Record)"},
+  {0x0b, 0x3f, 3, DoVarLength_WriteDataCommand, WriteInterrupt, "Write Data (Variable Length/Multi-Record)"},
   {0x0e, 0x3f, 2, Do128ByteSR_WriteDeletedDataCommand, NULL, "Write Deleted Data (128 byte/single record)"},
   {0x0f, 0x3f, 3, DoVarLength_WriteDeletedDataCommand, NULL, "Write Deleted Data (Variable Length/Multi-Record)"},
   {0x12, 0x3f, 2, Do128ByteSR_ReadDataCommand, NULL, "Read Data (128 byte/single record)"},
   {0x13, 0x3f, 3, DoVarLength_ReadDataCommand, ReadInterrupt, "Read Data (Variable Length/Multi-Record)"},
   {0x16, 0x3f, 2, Do128ByteSR_ReadDataAndDeldCommand, NULL, "Read Data & deleted data (128 byte/single record)"},
-  {0x17, 0x3f, 3, DoVarLength_ReadDataAndDeldCommand, NULL, "Read Data & deleted data (Variable Length/Multi-Record)"},
-  {0x1b, 0x3f, 3, DoReadIDCommand, NULL, "ReadID" },
+  {0x17, 0x3f, 3, DoVarLength_ReadDataAndDeldCommand, ReadInterrupt, "Read Data & deleted data (Variable Length/Multi-Record)"},
+  {0x1b, 0x3f, 3, DoReadIDCommand, ReadIDInterrupt, "ReadID" },
   {0x1e, 0x3f, 2, Do128ByteSR_VerifyDataAndDeldCommand, NULL, "Verify Data and Deleted Data (128 byte/single record)"},
-  {0x1f, 0x3f, 3, DoVarLength_VerifyDataAndDeldCommand, NULL, "Verify Data and Deleted Data (Variable Length/Multi-Record)"},
-  {0x23, 0x3f, 5, DoFormatCommand, NULL, "Format"},
+  {0x1f, 0x3f, 3, DoVarLength_VerifyDataAndDeldCommand, VerifyInterrupt, "Verify Data and Deleted Data (Variable Length/Multi-Record)"},
+  {0x23, 0x3f, 5, DoFormatCommand, FormatInterrupt, "Format"},
   {0x29, 0x3f, 1, DoSeekCommand, DoSeekInt,    "Seek"},
   {0x2c, 0x3f, 0, DoReadDriveStatusCommand, NULL, "Read drive status"},
   {0x35, 0xff, 4, DoSpecifyCommand, NULL, "Specify" },
@@ -609,24 +918,27 @@ static PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber) {
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */
 int Disc8271_read(int Address) {
+  int Value=0;
+
   switch (Address) {
     case 0:
       /*cerr << "8271 Status register read (0x" << hex << int(StatusReg) << dec << ")\n"; */
-      return(StatusReg);
+      Value=StatusReg;
       break;
 
     case 1:
       /*cerr << "8271 Result register read (0x" << hex << int(ResultReg) << dec << ")\n"; */
       StatusReg &=~18; /* Clear interrupt request  and result reg full flag*/
       UPDATENMISTATUS;
-      return(ResultReg);
+      Value=ResultReg;
+      ResultReg=0; /* Register goes to 0 after its read */
       break;
 
     case 4:
       /*cerr << "8271 data register read\n"; */
       StatusReg &= ~0xc; /* Clear interrupt and non-dma request - not stated but DFS never looks at result reg!*/
       UPDATENMISTATUS;
-      return(DataReadReg);
+      Value=DataReg;
       break;
 
     default:
@@ -634,7 +946,7 @@ int Disc8271_read(int Address) {
       break;
   }; /* Address switch */
 
-  return(0);
+  return(Value);
 }; /* Disc8271_read */
 
 /*--------------------------------------------------------------------------*/
@@ -668,19 +980,16 @@ static void ParamRegWrite(int Value) {
     UPDATENMISTATUS;
 
     if (PresentParam>=NParamsInThisCommand) {
-      int tmp;
 
       StatusReg&=0x7e; /* Observed on beeb */
       UPDATENMISTATUS;
 
       PrimaryCommandLookupType *ptr=CommandPtrFromNumber(ThisCommand);
     /* cerr << "<Disc access>"; */
-
     /*  cerr << "8271: All parameters arrived for '" << ptr->Ident;
-      
+      int tmp;
       for(tmp=0;tmp<PresentParam;tmp++)
         cerr << " 0x" << hex << int(Params[tmp]);
-
       cerr << dec << "\n"; */
 
       ptr->ToCall();
@@ -709,6 +1018,9 @@ void Disc8271_write(int Address, int Value) {
 
     case 4:
       /* cerr << "8271: data register write, value=0x" << hex << Value << dec << "\n"; */
+      StatusReg &= ~0xc;
+      UPDATENMISTATUS;
+      DataReg=Value;
       break;
 
     default:
@@ -738,11 +1050,90 @@ void Disc8271_poll_real(void) {
 }; /* Disc8271_poll */
 
 /*--------------------------------------------------------------------------*/
+/* Checks it the sectors passed in look like a valid disc catalogue. Returns:
+      1 - looks like a catalogue
+      0 - does not look like a catalogue
+     -1 - cannot tell
+*/
+static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
+  int Valid=1;
+  int CatEntries;
+  int File;
+  unsigned char c;
+
+  /* First check the number of sectors (cannot be > 0x320) */
+  if (((Sec2[6]&3)<<8)+Sec2[7] > 0x320)
+    Valid=0;
+
+  /* Check the number of catalogue entries (must be multiple of 8) */
+  if (Valid)
+  {
+    if (Sec2[5] % 8)
+      Valid=0;
+    else
+      CatEntries = Sec2[5] / 8;
+  }
+
+  /* Check that the catalogue file names are all printable characters. */
+  for (File=0; Valid && File<CatEntries; ++File) {
+    for (int i=0; Valid && i<8; ++i) {
+      c=Sec1[8+File*8+i];
+
+      if (i==7)  /* Remove lock bit */
+        c&=0x7f;
+
+      if (c<0x20 || c>0x7f)
+        Valid=0;  /* not printable */
+    }
+  }
+
+  /* Check that all the bytes after the file names are 0 */
+  for (File=CatEntries; Valid && File<31; ++File) {
+    for (int i=0; Valid && i<8; ++i) {
+      c=Sec1[8+File*8+i];
+
+      if (c!=0)
+        Valid=0;
+    }
+  }
+
+  /* If still valid but there are no catalogue entries then we cannot tell
+     if its a catalog */
+  if (Valid && CatEntries==0)
+    Valid=-1;
+
+  return Valid;
+}
+
+/*--------------------------------------------------------------------------*/
+static void FreeDiscImage(int DriveNum) {
+  int Track,Head,Sector;
+  SectorType *SecPtr;
+
+  for(Track=0; Track<TRACKSPERDRIVE; Track++) {
+    for(Head=0; Head<2; Head++) {
+      SecPtr=DiscStore[DriveNum][Head][Track].Sectors;
+      if (SecPtr != NULL) {
+        for(Sector=0; Sector<10; Sector++) {
+          if (SecPtr[Sector].Data != NULL)
+          {
+            free(SecPtr[Sector].Data);
+            SecPtr[Sector].Data=NULL;
+          }
+        }
+        free(SecPtr);
+        DiscStore[DriveNum][Head][Track].Sectors=NULL;
+      }
+    }
+  }
+}
+      
+/*--------------------------------------------------------------------------*/
 void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
-  FILE *infile=fopen(FileName,"rb");
   int CurrentTrack,CurrentSector;
   SectorType *SecPtr;
 
+  FILE *infile=fopen(FileName,"rb");
   if (!infile) {
 #ifdef WIN32
     char errstr[200];
@@ -754,11 +1145,14 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
     return;
   };
 
+  strcpy(FileNames[DriveNum], FileName);
+  NumHeads[DriveNum] = 1;
+
+  FreeDiscImage(DriveNum);
+
   for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
     DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
     DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
-    if (DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors != NULL)
-      free(DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors);
     SecPtr=DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors=(SectorType*)calloc(10,sizeof(SectorType));
     DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
     DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
@@ -770,16 +1164,30 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
       SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
       SecPtr[CurrentSector].IDField.PhysRecLength=256;
       SecPtr[CurrentSector].Deleted=0;
-
-      if (SecPtr[CurrentSector].Data != NULL)
-        free(SecPtr[CurrentSector].Data);
-      SecPtr[CurrentSector].Data=(char *)malloc(256);
+      SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
       fread(SecPtr[CurrentSector].Data,1,256,infile);
     }; /* Sector */
   }; /* Track */
 
   fclose(infile);
+
+  /* Check if the sectors that would be the disc catalogue of a double sized
+     image look like a disc catalogue - give a warning if they do. */
+  if (CheckForCatalogue(DiscStore[DriveNum][HeadNum][1].Sectors[0].Data,
+                        DiscStore[DriveNum][HeadNum][1].Sectors[1].Data) == 1) {
+#ifdef WIN32
+    MessageBox(NULL,"WARNING - Incorrect disc type selected?\n\n"
+                       "This disc file looks like a double sided\n"
+                       "disc image. Check files before copying them.\n",
+                       "BBC Emulator",MB_OK|MB_ICONWARNING);
+#else
+    cerr << "WARNING - Incorrect disc type selected(?) in drive " << DriveNum << "\n";
+    cerr << "This disc file looks like a double sided disc image.\n";
+    cerr << "Check files before copying them.\n";
+#endif
+  }
 };  /* LoadSimpleDiscImage */
+
 /*--------------------------------------------------------------------------*/
 void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
   FILE *infile=fopen(FileName,"rb");
@@ -797,37 +1205,315 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
     return;
   };
 
+  strcpy(FileNames[DriveNum], FileName);
+  NumHeads[DriveNum] = 2;
+
+  FreeDiscImage(DriveNum);
+
   for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
     for(HeadNum=0;HeadNum<2;HeadNum++) {
       DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
       DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
-      if (DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors != NULL)
-        free(DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors);
       SecPtr=DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors=(SectorType *)calloc(10,sizeof(SectorType));
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap5Size=0;
 
       for(CurrentSector=0;CurrentSector<10;CurrentSector++) {
-	SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
-	SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
-	SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
-	SecPtr[CurrentSector].IDField.PhysRecLength=256;
-	SecPtr[CurrentSector].Deleted=0;
-
-	if (SecPtr[CurrentSector].Data != NULL)
-		free(SecPtr[CurrentSector].Data);
-	SecPtr[CurrentSector].Data=(char *)malloc(256);
-	fread(SecPtr[CurrentSector].Data,1,256,infile);
+        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
+        SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
+        SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
+        SecPtr[CurrentSector].IDField.PhysRecLength=256;
+        SecPtr[CurrentSector].Deleted=0;
+        SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
+        fread(SecPtr[CurrentSector].Data,1,256,infile);
       }; /* Sector */
     }; /* Head */
   }; /* Track */
 
   fclose(infile);
+
+  /* Check if the side 2 catalogue sectors look OK - give a warning if they do not. */
+  if (CheckForCatalogue(DiscStore[DriveNum][1][0].Sectors[0].Data,
+                        DiscStore[DriveNum][1][0].Sectors[1].Data) == 0) {
+#ifdef WIN32
+    MessageBox(NULL,"WARNING - Incorrect disc type selected?\n\n"
+                       "This disc file looks like a single sided\n"
+                       "disc image. Check files before copying them.\n",
+                       "BBC Emulator",MB_OK|MB_ICONWARNING);
+#else
+    cerr << "WARNING - Incorrect disc type selected(?) in drive " << DriveNum << "\n";
+    cerr << "This disc file looks like a single sided disc image.\n";
+    cerr << "Check files before copying them.\n";
+#endif
+  }
 };  /* LoadSimpleDSDiscImage */
+
+/*--------------------------------------------------------------------------*/
+static void SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
+  int Success=1;
+  int CurrentSector;
+  long FileOffset;
+  long FileLength;
+  SectorType *SecPtr;
+
+  FILE *outfile=fopen(FileNames[DriveNum],"r+b");
+
+  if (!outfile) {
+#ifdef WIN32
+    char errstr[200];
+    sprintf(errstr, "Could not open disc file for write:\n  %s", FileNames[DriveNum]);
+    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+    cerr << "Could not open disc file for write " << FileNames[DriveNum] << "\n";
+#endif
+    return;
+  };
+
+  FileOffset=(NumHeads[DriveNum]*TrackNum+HeadNum)*2560;
+
+  /* Get the file length to check if the file needs extending */
+  Success = !fseek(outfile, 0L, SEEK_END);
+  if (Success)
+  {
+    FileLength=ftell(outfile);
+    if (FileLength == -1L)
+      Success=0;
+  }
+  while (Success && FileOffset > FileLength)
+  {
+    if (fputc(0, outfile) == EOF)
+      Success=0;
+    FileLength++;
+  }
+  if (Success)
+  {
+    Success = !fseek(outfile, FileOffset, SEEK_SET);
+
+    SecPtr=DiscStore[DriveNum][HeadNum][TrackNum].Sectors;
+    for(CurrentSector=0;Success && CurrentSector<10;CurrentSector++) {
+      if (fwrite(SecPtr[CurrentSector].Data,1,256,outfile) != 256)
+        Success=0;
+    }
+  }
+
+  if (fclose(outfile) != 0)
+    Success=0;
+
+  if (!Success) {
+#ifdef WIN32
+    char errstr[200];
+    sprintf(errstr, "Failed writing to disc file:\n  %s", FileNames[DriveNum]);
+    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+    cerr << "Failed writing to disc file " << FileNames[DriveNum] << "\n";
+#endif
+  };
+};  /* SaveTrackImage */
+
+/*--------------------------------------------------------------------------*/
+int IsDiscWritable(int DriveNum) {
+  return Writeable[DriveNum];
+}
+
+/*--------------------------------------------------------------------------*/
+void DiscWriteEnable(int DriveNum, int WriteEnable) {
+  int HeadNum;
+  SectorType *SecPtr;
+  unsigned char *Data;
+  int File;
+  int Catalogue, NumCatalogues;
+  int NumSecs;
+  int StartSec, LastSec;
+  int DiscOK=1;
+
+  Writeable[DriveNum]=WriteEnable;
+
+  /* If disc is being made writable then check that the disc catalogue will
+     not get corrupted if new files are added.  The files in the disc catalogue
+     must be in descending sector order otherwise the DFS ROMs write over
+     files at the start of the disc.  The sector count in the catalogue must
+     also be correct. */
+  if (WriteEnable) {
+    for(HeadNum=0; DiscOK && HeadNum<NumHeads[DriveNum]; HeadNum++) {
+      SecPtr=DiscStore[DriveNum][HeadNum][0].Sectors;
+      if (SecPtr==NULL)
+        return; /* No disc image! */
+
+      Data=SecPtr[1].Data;
+
+      /* Check for a Watford DFS 62 file catalogue */
+      NumCatalogues=2;
+      Data=SecPtr[2].Data;
+      for (int i=0; i<8; ++i)
+        if (Data[i]!=(unsigned char)0xaa) {
+          NumCatalogues=1;
+          break;
+        }
+
+      for (Catalogue=0; DiscOK && Catalogue<NumCatalogues; ++Catalogue) {
+        Data=SecPtr[Catalogue*2+1].Data;
+
+        /* First check the number of sectors */
+        NumSecs=((Data[6]&3)<<8)+Data[7];
+        if (NumSecs != 0x320 && NumSecs != 0x190) {
+          DiscOK=0;
+        } else {
+
+          /* Now check the start sectors of each file */
+          LastSec=0x320;
+          for (File=0; DiscOK && File<Data[5]/8; ++File) {
+            StartSec=((Data[File*8+14]&3)<<8)+Data[File*8+15];
+            if (LastSec < StartSec)
+              DiscOK=0;
+            LastSec=StartSec;
+          }
+        } /* if num sectors OK */
+      } /* for catalogue */
+    } /* for disc head */
+
+    if (!DiscOK)
+    {
+#ifdef WIN32
+      MessageBox(NULL,"WARNING - Invalid Disc Catalogue\n\n"
+                       "This disc image will get corrupted if\n"
+                       "files are written to it.  Copy all the\n"
+                       "files to a new image to fix it.",
+                       "BBC Emulator",MB_OK|MB_ICONWARNING);
+#else
+      cerr << "WARNING - Invalid Disc Catalogue in drive " << DriveNum << "\n";
+      cerr << "This disc image will get corrupted if files are written to it.\n";
+      cerr << "Copy all the files to a new image to fix it.\n";
+#endif
+    }
+
+  } /* if write enabled */
+
+} /* DiscWriteEnable */
+
+/*--------------------------------------------------------------------------*/
+void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
+  int Success=1;
+  int Sector;
+  int NumSectors;
+  int i;
+  FILE *outfile;
+  unsigned char SecData[256];
+
+  /* First check if file already exists */
+  outfile=fopen(FileName,"rb");
+  if (outfile != NULL) {
+    fclose(outfile);
+#ifdef WIN32
+    char errstr[200];
+    sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", FileName);
+    if (MessageBox(NULL,errstr,"BBC Emulator",MB_YESNO|MB_ICONQUESTION) != IDYES)
+      return;
+#else
+    cerr << "Could not create disc file " << FileName << "\n";
+    return;
+#endif
+  };
+
+  outfile=fopen(FileName,"wb");
+  if (!outfile) {
+#ifdef WIN32
+    char errstr[200];
+    sprintf(errstr, "Could not create disc file:\n  %s", FileName);
+    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+    cerr << "Could not create disc file " << FileName << "\n";
+#endif
+    return;
+  };
+
+  NumSectors=Tracks*10;
+
+  /* Create the first two secotrs on each side - the rest will get created when
+     data is written to it. */
+  for(Sector=0;Success && Sector<(Heads==1?2:12);Sector++) {
+    for (i=0;i<256;++i)
+      SecData[i]=0;
+
+    if (Sector==1 || Sector==11)
+    {
+      SecData[6]=NumSectors >> 8;
+      SecData[7]=NumSectors & 0xff;
+    }
+
+    if (fwrite(SecData,1,256,outfile) != 256)
+      Success=0;
+  } /* Sector */
+
+  if (fclose(outfile) != 0)
+    Success=0;
+
+  if (!Success) {
+#ifdef WIN32
+    char errstr[200];
+    sprintf(errstr, "Failed writing to disc file:\n  %s", FileNames);
+    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+    cerr << "Failed writing to disc file " << FileName << "\n";
+#endif
+  }
+  else
+  {
+    /* Now load the new image into the correct drive */
+    if (Heads==1)
+      LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
+    else
+      LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
+  }
+};  /* CreateDiscImage */
+
+/*--------------------------------------------------------------------------*/
+static void LoadStartupDisc(int DriveNum, char *DiscString) {
+  char DoubleSided;
+  int Tracks;
+  char Name[1024];
+  int scanfres;
+
+  if (scanfres=sscanf(DiscString,"%c:%d:%s",&DoubleSided,&Tracks,Name),
+      scanfres!=3) {
+#ifdef WIN32
+    MessageBox(NULL,"Incorrect format for BeebDiscLoad, correct format is "
+               "D|S:tracks:filename", "BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+    cerr << "Incorrect format for BeebDiscLoad - the correct format is\n";
+    cerr << "  D|S:tracks:filename\n e.g. D:80:discims/elite\n";
+    cerr << "  for a double sided, 80 track disc image called discims/elite\n";
+#endif
+  } else {
+    switch (DoubleSided) {
+      case 'd':
+      case 'D':
+        LoadSimpleDSDiscImage(Name,DriveNum,Tracks);
+        break;
+
+      case 'S':
+      case 's':
+        LoadSimpleDiscImage(Name,DriveNum,0,Tracks);
+        break;
+
+      default:
+#ifdef WIN32
+        MessageBox(NULL,"BeebDiscLoad disc type incorrect, use S for single sided and "
+                   "D for double sided", "BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+        cerr << "BeebDiscLoad environment variable set wrong - the\n";
+        cerr << "first character is either S or D signifying\n";
+        cerr << "single or double sided\n";
+#endif
+        break;        
+    }; /* Switch */
+  }; /* Successful parse of env variable */
+} /* LoadStartupDisc */
+
 /*--------------------------------------------------------------------------*/
 void Disc8271_reset(void) {
   static onetime_initdisc=0;
+  char *DiscString;
 
   ResultReg=0;
   StatusReg=0;
@@ -847,54 +1533,30 @@ void Disc8271_reset(void) {
   Selects[0]=Selects[1]=0;
 
   if (!onetime_initdisc) {
-    char *DiscString=getenv("BeebDiscLoad");
     onetime_initdisc++;
     InitDiscStore();
-    if (DiscString==NULL) {
-/*      LoadSimpleDSDiscImage("discims/elite", 0,80); */
-    } else {
-      char DoubleSided;
-      int Tracks;
-      char Name[1024];
-      int scanfres;
-      if (scanfres=sscanf(DiscString,"%c:%d:%s",&DoubleSided,&Tracks,Name),
-          scanfres!=3) {
-#ifdef WIN32
-		MessageBox(NULL,"Incorrect format for BeebDiscLoad, correct format is "
-			"D|S:tracks:filename", "BBC Emulator",MB_OK|MB_ICONERROR);
-#else
-        cerr << "Incorrect format for BeebDiscLoad - the correct format is\n";
-        cerr << "  D|S:tracks:filename\n e.g. D80discims/elite\n";
-        cerr << "  for a double sided, 80 track disc image called discims/elite\n";
-        LoadSimpleDSDiscImage("discims/elite", 0,80);
-#endif
-      } else {
-        switch (DoubleSided) {
-          case 'd':
-          case 'D':
-            LoadSimpleDSDiscImage(Name,0,Tracks);
-            break;
 
-          case 'S':
-          case 's':
-            LoadSimpleDiscImage(Name,0,0,Tracks);
-            break;
-
-          default:
-#ifdef WIN32
-			MessageBox(NULL,"BeebDiscLoad disc type incorrect, use S for single sided and "
-				"D for double sided", "BBC Emulator",MB_OK|MB_ICONERROR);
-#else
-            cerr << "BeebDiscLoad environment variable set wrong - the\n";
-            cerr << "first character is either D or S signifying\n";
-            cerr << "Single or double sided\n";
-            LoadSimpleDSDiscImage("discims/elite", 0,80);      
+    DiscString=getenv("BeebDiscLoad");
+    if (DiscString==NULL)
+      DiscString=getenv("BeebDiscLoad0");
+    if (DiscString!=NULL)
+      LoadStartupDisc(0, DiscString);
+    else {
+#ifndef WIN32
+      LoadStartupDisc(0, "S:80:discims/test.ssd");
 #endif
-            break;        
-        }; /* Switch */
-      }; /* Successful parse of env variable */
-    }; /* env variable set */
+    }
+
+    DiscString=getenv("BeebDiscLoad1");
+    if (DiscString!=NULL)
+      LoadStartupDisc(1, DiscString);
+
+    if (getenv("BeebDiscWrites")!=NULL) {
+      DiscWriteEnable(0, 1);
+      DiscWriteEnable(1, 1);
+    }
   }; /* One time discload */
+
 }; /* Disc8271_reset */
 
 /*--------------------------------------------------------------------------*/
@@ -902,7 +1564,7 @@ void disc8271_dumpstate(void) {
   cerr << "8271:\n";
   cerr << "  ResultReg=" << int(ResultReg)<< "\n";
   cerr << "  StatusReg=" << int(StatusReg)<< "\n";
-  cerr << "  DataReadReg=" << int(DataReadReg)<< "\n";
+  cerr << "  DataReg=" << int(DataReg)<< "\n";
   cerr << "  Internal_Scan_SectorNum=" << int(Internal_Scan_SectorNum)<< "\n";
   cerr << "  Internal_Scan_Count=" << Internal_Scan_Count<< "\n";
   cerr << "  Internal_ModeReg=" << int(Internal_ModeReg)<< "\n";

@@ -42,7 +42,7 @@
 #define INLINE
 #endif
 
-int IgnoreIllegalInstructions = 0;
+int IgnoreIllegalInstructions = 1;
 
 extern int DumpAfterEach;
 

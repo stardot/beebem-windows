@@ -24,6 +24,8 @@
 
 extern int WritableRoms;  /* Is writing to a ROM allowed */
 
+extern int RomWritable[16]; /* Allow writing to ROMs on an individual basis */
+
 extern unsigned char WholeRam[65536];
 /* NOTE: Only to be used if 'a' doesn't change the address */
 #define BEEBREADMEM_FAST(a) ((a<0xfc00)?WholeRam[a]:BeebReadMem(a))
@@ -40,6 +42,9 @@ void BeebMemInit(void);
 
 void SaveMemState(unsigned char *RomState,unsigned char *MemState,unsigned char *SWRamState);
 void RestoreMemState(unsigned char *RomState,unsigned char *MemState,unsigned char *SWRamState);
+
+/* Used to show the Rom titles from the options menu */
+char *ReadRomTitle( int bank, char *Title, int BufSize );
 
 void beebmem_dumpstate(void);
 #endif

@@ -31,9 +31,9 @@ NULL=nul
 ################################################################################
 # Begin Project
 # PROP Target_Last_Scanned "BeebEm - Win32 Release"
+RSC=rc.exe
 MTL=mktyplib.exe
 CPP=cl.exe
-RSC=rc.exe
 
 !IF  "$(CFG)" == "BeebEm - Win32 Release"
 
@@ -64,6 +64,7 @@ CLEAN :
 	-@erase "$(INTDIR)\main.obj"
 	-@erase "$(INTDIR)\mode7font.obj"
 	-@erase "$(INTDIR)\sysvia.obj"
+	-@erase "$(INTDIR)\userkybd.obj"
 	-@erase "$(INTDIR)\uservia.obj"
 	-@erase "$(INTDIR)\via.obj"
 	-@erase "$(INTDIR)\video.obj"
@@ -110,6 +111,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\main.obj" \
 	"$(INTDIR)\mode7font.obj" \
 	"$(INTDIR)\sysvia.obj" \
+	"$(INTDIR)\userkybd.obj" \
 	"$(INTDIR)\uservia.obj" \
 	"$(INTDIR)\via.obj" \
 	"$(INTDIR)\video.obj"
@@ -158,6 +160,8 @@ CLEAN :
 	-@erase "$(INTDIR)\mode7font.sbr"
 	-@erase "$(INTDIR)\sysvia.obj"
 	-@erase "$(INTDIR)\sysvia.sbr"
+	-@erase "$(INTDIR)\userkybd.obj"
+	-@erase "$(INTDIR)\userkybd.sbr"
 	-@erase "$(INTDIR)\uservia.obj"
 	-@erase "$(INTDIR)\uservia.sbr"
 	-@erase "$(INTDIR)\vc40.idb"
@@ -200,6 +204,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\main.sbr" \
 	"$(INTDIR)\mode7font.sbr" \
 	"$(INTDIR)\sysvia.sbr" \
+	"$(INTDIR)\userkybd.sbr" \
 	"$(INTDIR)\uservia.sbr" \
 	"$(INTDIR)\via.sbr" \
 	"$(INTDIR)\video.sbr"
@@ -227,6 +232,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\main.obj" \
 	"$(INTDIR)\mode7font.obj" \
 	"$(INTDIR)\sysvia.obj" \
+	"$(INTDIR)\userkybd.obj" \
 	"$(INTDIR)\uservia.obj" \
 	"$(INTDIR)\via.obj" \
 	"$(INTDIR)\video.obj"
@@ -377,6 +383,7 @@ DEP_CPP_BEEBW=\
 	".\main.h"\
 	".\port.h"\
 	".\sysvia.h"\
+	".\userkybd.h"\
 	".\uservia.h"\
 	".\via.h"\
 	".\video.h"\
@@ -603,8 +610,11 @@ DEP_CPP_6502C=\
 # Begin Source File
 
 SOURCE=.\BeebEm.rc
+DEP_RSC_BEEBE=\
+	".\BeebEm.ico"\
+	
 
-"$(INTDIR)\BeebEm.res" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\BeebEm.res" : $(SOURCE) $(DEP_RSC_BEEBE) "$(INTDIR)"
    $(RSC) $(RSC_PROJ) $(SOURCE)
 
 
@@ -665,6 +675,34 @@ DEP_CPP_BEEBST=\
 "$(INTDIR)\beebstate.obj" : $(SOURCE) $(DEP_CPP_BEEBST) "$(INTDIR)"
 
 "$(INTDIR)\beebstate.sbr" : $(SOURCE) $(DEP_CPP_BEEBST) "$(INTDIR)"
+
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\userkybd.cpp
+DEP_CPP_USERK=\
+	".\beebwin.h"\
+	".\main.h"\
+	".\port.h"\
+	".\userkybd.h"\
+	
+
+!IF  "$(CFG)" == "BeebEm - Win32 Release"
+
+
+"$(INTDIR)\userkybd.obj" : $(SOURCE) $(DEP_CPP_USERK) "$(INTDIR)"
+
+
+!ELSEIF  "$(CFG)" == "BeebEm - Win32 Debug"
+
+
+"$(INTDIR)\userkybd.obj" : $(SOURCE) $(DEP_CPP_USERK) "$(INTDIR)"
+
+"$(INTDIR)\userkybd.sbr" : $(SOURCE) $(DEP_CPP_USERK) "$(INTDIR)"
 
 
 !ENDIF 

@@ -39,7 +39,9 @@ extern int DumpAfterEach;
 /* My raw VIA state */
 VIAState SysVIAState;
 
-/* State of the 8bit latch IC32 - bit 0 is WE for sound gen, B1 is read select on speech proc, B2 is write select on speech proc, b4,b5 select screen start address offset , b6 is CAPS lock, b7 is shift lock */
+/* State of the 8bit latch IC32 - bit 0 is WE for sound gen, B1 is read
+   select on speech proc, B2 is write select on speech proc, b4,b5 select
+   screen start address offset , b6 is CAPS lock, b7 is shift lock */
 unsigned char IC32State=0;
 
 /* Last value written to the slow data bus - sound reads it later */
@@ -72,6 +74,14 @@ void BeebKeyUp(int row,int col) {
 }; /* BeebKeyUp */
 
 /*--------------------------------------------------------------------------*/
+void BeebReleaseAllKeys() {
+  KeysDown = 0;
+    for(int row=0;row<8;row++)
+      for(int col=0;col<10;col++)
+        SysViaKbdState[col][row]=0;
+}; /* BeebKeyUp */
+
+/*--------------------------------------------------------------------------*/
 void DoKbdIntCheck() {
   /* Now lets see if we just caused a CA2 interrupt - note we will flag
      it multiply - we aren't going to test for the edge */
@@ -87,16 +97,16 @@ void DoKbdIntCheck() {
     } else {
       if (KBDCol<10) {
         int presrow;
-	for(presrow=1;presrow<8;presrow++) {
-	  if (SysViaKbdState[KBDCol][presrow]) {
-	    SysVIAState.ifr|=1;
-	    /*cerr << "DoKbdIntCheck: Caused interrupt case 2\n"; */
-	    UpdateIFRTopBit();
-	  };
-	}; /* presrow */
-      }; /* KBDCol range */
-    }; /* WriteEnable on */
-  }; /* Keys down and CA2 input enabled */
+        for(presrow=1;presrow<8;presrow++) {
+          if (SysViaKbdState[KBDCol][presrow]) {
+            SysVIAState.ifr|=1;
+            /*cerr << "DoKbdIntCheck: Caused interrupt case 2\n"; */
+            UpdateIFRTopBit();
+          }
+        } /* presrow */
+      } /* KBDCol range */
+    } /* WriteEnable on */
+  } /* Keys down and CA2 input enabled */
 #ifdef KBDDEBUG
   cerr << "DoKbdIntCheck KeysDown=" << KeysDown << "pcr & c=" << (int)(SysVIAState.pcr & 0xc);
   cerr << " IC32State & 8=" << (int)(IC32State & 8) << " KBDRow=" << KBDRow << "KBDCol=" << KBDCol;
@@ -195,7 +205,7 @@ void SysVIAWrite(int Address, int Value) {
       IC32Write(Value);
       if ((SysVIAState.ifr & 1) && ((SysVIAState.pcr & 2)==0)) {
         SysVIAState.ifr&=0xfe;
-	UpdateIFRTopBit();
+        UpdateIFRTopBit();
       };
       break;
 

@@ -73,7 +73,7 @@ static unsigned char *active_wb, *inactive_wb;
 
 #endif
 
-int SoundEnabled = 0;
+int SoundEnabled = 1;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
 int SoundAutoTriggerTime;
