@@ -16,7 +16,7 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* Support file for 6522 via - 30/10/94 - David Alan Gilbert */
 
@@ -31,7 +31,7 @@ void VIAReset(VIAState *ToReset) {
   ToReset->pcr=0; /* Neg edge inputs for cb2,ca2 and CA1 and CB1 */
   ToReset->ifr=0; /* No interrupts presently interrupting */
   ToReset->ier=0x80; /* No interrupts enabled */
-  ToReset->timer1l=ToReset->timer2l=0x7fff;/*0xffff; */
+  ToReset->timer1l=ToReset->timer2l=0xffff;/*0xffff; */
   ToReset->timer1c=ToReset->timer2c=0xffff;/*0x1ffff; */
   ToReset->timer1hasshot=0;
   ToReset->timer2hasshot=0;

@@ -16,7 +16,7 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* 6502 core - 6502 emulator core - David Alan Gilbert 16/10/94 */
 
@@ -184,52 +184,6 @@ INLINE static int16 PopWord() {
   return(RetValue);
 } /* PopWord */
 
-/*----------------------------------------------------------------------------*/
-/* Sets 2^8 result for carry */
-static int16 BCDAdd(int16 in1,int16 in2) {
-  int16 result,hn;
-  int WasCarried=((in1 | in2) & 256)>0;
-  int TmpCarry=0;
-  result=(in1 & 0xf)+(in2 & 0xf);
-  if (result>9) {
-    result&=0xf;
-    result+=6;
-    result&=0xf;
-    TmpCarry=1;
-  }
-  hn=(in1 &0xf0)+(in2 &0xf0)+(TmpCarry?0x10:0);
-  if (hn>0x9f) {
-    hn&=0xf0;
-    hn+=0x60;
-    hn&=0xf0;
-    WasCarried|=1;
-  }
-  return(result | hn | (WasCarried*256));
-} /* BCDAdd */
-
-/*----------------------------------------------------------------------------*/
-/* Sets 2^8 result for borrow */
-static int16 BCDSubtract(int16 in1,int16 in2) {
-  int16 result,hn;
-  int WasBorrowed=((in1 | in2) & 256)>0;
-  int TmpBorrow=0;
-  result=(in1 & 0xf)-(in2 & 0xf);
-  if (result<0) {
-    result&=0xf;
-    result-=6;
-    result&=0xf;
-    TmpBorrow=1;
-  }
-  hn=(in1 &0xf0)-(in2 &0xf0)-(TmpBorrow?0x10:0);
-  if (hn <0) {
-    hn&=0xf0;
-    hn-=0x60;
-    hn&=0xf0;
-    WasBorrowed|=1;
-  }
-  return(result | hn | (WasBorrowed*256));
-} /* BCDSubtract */
-
 /*-------------------------------------------------------------------------*/
 /* Relative addressing mode handler                                        */
 INLINE static int16 RelAddrModeHandler_Data(void) {
@@ -253,10 +207,32 @@ INLINE static void ADCInstrHandler(int16 operand) {
     Accumulator=TmpResultC & 255;
     SetPSR(FlagC | FlagZ | FlagV | FlagN, (TmpResultC & 256)>0,Accumulator==0,0,0,0,((Accumulator & 128)>0) ^ (TmpResultV<0),(Accumulator & 128));
   } else {
-    TmpResultC=BCDAdd(Accumulator,operand);
-    TmpResultC=BCDAdd(TmpResultC,GETCFLAG);
-    Accumulator=TmpResultC & 255;
-    SetPSR(FlagC | FlagZ | FlagV | FlagN, (TmpResultC & 256)>0,Accumulator==0,0,0,0,((Accumulator & 128)>0) ^ ((TmpResultC & 256)>0),(Accumulator & 128));
+    int ZFlag=0,NFlag=0,CFlag=0,VFlag=0;
+    int TmpResult,TmpCarry=0;
+    int ln,hn;
+
+    /* Z flag determined from 2's compl result, not BCD result! */
+    TmpResult=Accumulator+operand+GETCFLAG;
+    ZFlag=((TmpResult & 0xff)==0);
+
+    ln=(Accumulator & 0xf)+(operand & 0xf)+GETCFLAG;
+    if (ln>9) {
+      ln += 6;
+      ln &= 0xf;
+      TmpCarry=0x10;
+    }
+    hn=(Accumulator & 0xf0)+(operand & 0xf0)+TmpCarry;
+    /* N and V flags are determined before high nibble is adjusted.
+       NOTE: V is not always correct */
+    NFlag=hn & 128;
+    VFlag=((hn & 128)==0) ^ ((Accumulator & 128)==0);
+    if (hn>0x90) {
+      hn += 0x60;
+      hn &= 0xf0;
+      CFlag=1;
+    }
+    Accumulator=hn|ln;
+    SetPSR(FlagC | FlagZ | FlagV | FlagN,CFlag,ZFlag,0,0,0,VFlag,NFlag);
   }
 } /* ADCInstrHandler */
 
@@ -498,13 +474,32 @@ INLINE static void SBCInstrHandler(int16 operand) {
     SetPSR(FlagC | FlagZ | FlagV | FlagN, TmpResultC>=0,Accumulator==0,0,0,0,
       ((Accumulator & 128)>0) ^ ((TmpResultV & 256)!=0),(Accumulator & 128));
   } else {
-    /* BCD subtract - note: V is probably duff*/
-    TmpResultC=BCDSubtract(Accumulator,operand);
-    if (!GETCFLAG) TmpResultC=BCDSubtract(TmpResultC,0x01);
-    Accumulator=TmpResultC & 0xff;
-    SetPSR(FlagC | FlagZ | FlagV | FlagN, (TmpResultC & 256)==0, Accumulator==0,
-    0,0,0,((Accumulator & 128)>0) ^ ((TmpResultC & 256)>0),
-    Accumulator & 0x80);
+    int ZFlag=0,NFlag=0,CFlag=1,VFlag=0;
+    int TmpResult,TmpCarry=0;
+    int ln,hn;
+
+    /* Z flag determined from 2's compl result, not BCD result! */
+    TmpResult=Accumulator-operand-(1-GETCFLAG);
+    ZFlag=((TmpResult & 0xff)==0);
+
+    ln=(Accumulator & 0xf)-(operand & 0xf)-(1-GETCFLAG);
+    if (ln<0) {
+      ln-=6;
+      ln&=0xf;
+      TmpCarry=0x10;
+    }
+    hn=(Accumulator & 0xf0)-(operand & 0xf0)-TmpCarry;
+    /* N and V flags are determined before high nibble is adjusted.
+       NOTE: V is not always correct */
+    NFlag=hn & 128;
+    VFlag=((hn & 128)==0) ^ ((Accumulator & 128)==0);
+    if (hn<0) {
+      hn-=0x60;
+      hn&=0xf0;
+      CFlag=0;
+    }
+    Accumulator=hn|ln;
+    SetPSR(FlagC | FlagZ | FlagV | FlagN,CFlag,ZFlag,0,0,0,VFlag,NFlag);
   }
 } /* SBCInstrHandler */
 

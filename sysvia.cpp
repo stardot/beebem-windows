@@ -16,7 +16,7 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* System VIA support file for the beeb emulator- includes things like the
 keyboard emulation - David Alan Gilbert 30/10/94 */
@@ -302,6 +302,12 @@ int SysVIARead(int Address) {
         tmp |= 16;
       tmp |= 192; /* Speech system non existant */
       return(tmp);
+
+    case 2:
+      return(SysVIAState.ddrb);
+
+    case 3:
+      return(SysVIAState.ddra);
 
     case 4: /* Timer 1 lo counter */
       tmp=SysVIAState.timer1c / 2;

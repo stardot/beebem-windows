@@ -16,7 +16,7 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* Video handling -          David Alan Gilbert */
 
@@ -622,7 +622,7 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 static void DoMode7Row(void) {
   char *CurrentPtr=VideoState.DataPtr;
   int CurrentChar;
-  int XStep=640/(CRTC_HorizontalDisplayed*8);
+  int XStep;
   unsigned char byte,tmp;
 
   unsigned int Foreground=mainWin->cols[7];
@@ -644,6 +644,11 @@ static void DoMode7Row(void) {
   int FontTypeIndex=0; /* 0=alpha, 1=continuous graphics, 2=separated graphics */
 
   if (CRTC_HorizontalDisplayed>80) return; /* Not possible on beeb - and would break the double height lookup array */
+
+  if (CRTC_HorizontalDisplayed>0)
+    XStep=640/(CRTC_HorizontalDisplayed*8);
+  else
+    XStep=1;
 
   for(CurrentChar=0;CurrentChar<CRTC_HorizontalDisplayed;CurrentChar++) {
     byte=CurrentPtr[CurrentChar];
@@ -1112,7 +1117,7 @@ static void VideoAddCursor(void) {
 		for (int y = CurStart; y <= CurEnd && CurY + y < 256; ++y)
 		{
 			if (CurY + y >= 0)
-				mainWin->doHorizLine(7, CurY + y, CurX, CurSize);
+				mainWin->doHorizLine(mainWin->cols[7], CurY + y, CurX, CurSize);
 		}
 	}
 }

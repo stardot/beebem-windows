@@ -31,9 +31,9 @@ NULL=nul
 ################################################################################
 # Begin Project
 # PROP Target_Last_Scanned "BeebEm - Win32 Release"
+MTL=mktyplib.exe
 CPP=cl.exe
 RSC=rc.exe
-MTL=mktyplib.exe
 
 !IF  "$(CFG)" == "BeebEm - Win32 Release"
 

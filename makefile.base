@@ -2,10 +2,10 @@ LIBS = -lg++ -lXext -lX11
 LIBFILES = dagCL/dagCL.a dagXCL/dagXCL.a
 
 SRCS = 6502core.cc beebmem.cc beebwin.cc disc8271.cc main.cc mode7font.c\
-       sysvia.cc uservia.cc via.cc video.cc beebsound.cc
+       sysvia.cc uservia.cc via.cc video.cc beebsound.cc atodconv.cc
 
 OBJS =  6502core.o beebmem.o beebwin.o disc8271.o main.o  mode7font.o\
-        sysvia.o uservia.o via.o video.o beebsound.o
+        sysvia.o uservia.o via.o video.o beebsound.o atodconv.o
 
 .cc.o:
 	$(CC) -c $(CFLAGS) $<

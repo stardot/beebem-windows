@@ -1,4 +1,4 @@
-Readme.1st for V0.7 of Beebem (see 'changes' file for history)
+Readme.1st for V0.71 of Beebem (see 'changes' file for history)
 
 /****************************************************************************/
 /*              Beebem - (c) David Alan Gilbert 1994/1995                   */
@@ -18,7 +18,7 @@ Readme.1st for V0.7 of Beebem (see 'changes' file for history)
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 
 This directory contains 'Beebem' a program which attempts to emulate
@@ -49,7 +49,7 @@ so any lessons on what I am doing wrong are welcome.
 If you find a bug, don't just curse at it - tell me about it and I may be able
 to fix it.
 
-Dave Gilbert - gilbertd@cs.man.ac.uk
+Dave Gilbert - beebem@treblig.org
 
 1) This program is designed to run under the X windows system on Unix
 workstations.  It has been tested on a Linux PC,Sun and HP workstations. 
@@ -342,4 +342,4 @@ so any lessons on what I am doing wrong are welcome.
 If you find a bug, don't just curse at it - tell me about it and I may be able
 to fix it.
 
-Dave Gilbert - gilbertd@cs.man.ac.uk
+Dave Gilbert - beebem@treblig.org

@@ -16,7 +16,7 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* Beebemulator - memory subsystem - David Alan Gilbert 16/10/94 */
 #include <ctype.h>
@@ -38,6 +38,7 @@ int WritableRoms = 0;
 static int PagedRomReg;
 
 static int RomModified=0; /* Rom changed - needs copying back */
+static int SWRamModified=0; /* SW Ram changed - needs saving and restoring */
 unsigned char WholeRam[65536];
 static unsigned char Roms[16][16384];
 
@@ -171,9 +172,16 @@ void BeebWriteMem(int Address, int Value) {
   }
 
   if (Address<0xc000) {
-    if (WritableRoms) {
+    if (WritableRoms || PagedRomReg==0) {
       WholeRam[Address]=Value;
       RomModified=1;
+      if (PagedRomReg==0)
+        SWRamModified=1;
+    }
+    else {
+      /* Write through to SW RAM */
+      Roms[0][Address-0x8000]=Value;
+      SWRamModified=1;
     }
     return;
   }
@@ -277,7 +285,7 @@ void BeebMemInit(void) {
   /* ReadRom("exmon",0xe); 
   ReadRom("memdump_bottom",0x4); 
   ReadRom("memdump_top",0x5); */
-  ReadRom("dnfs",0);
+  ReadRom("dnfs",1);
 
   /* Load OS */
   strcpy(fullname, "beebfile/os12");
@@ -347,13 +355,35 @@ void BeebMemInit(void) {
 } /* BeebMemInit */
 
 /*-------------------------------------------------------------------------*/
-void SaveMemState(unsigned char *MemState) {
+void SaveMemState(unsigned char *RomState,
+				  unsigned char *MemState,
+				  unsigned char *SWRamState)
+{
 	memcpy(MemState, WholeRam, 32768);
+
+	/* Save SW RAM state if it is selected and it has been modified */
+	if (SWRamModified && PagedRomReg == 0)
+	{
+		RomState[0] = 1;
+		memcpy(SWRamState, WholeRam+0x8000, 16384);
+	}
 }
 
 /*-------------------------------------------------------------------------*/
-void RestoreMemState(unsigned char *MemState) {
+void RestoreMemState(unsigned char *RomState,
+					 unsigned char *MemState,
+					 unsigned char *SWRamState)
+{
 	memcpy(WholeRam, MemState, 32768);
+
+	/* Restore SW RAM state if it is in use */
+	if (RomState[0] == 1)
+	{
+		RomModified = 1;
+		SWRamModified = 1;
+		PagedRomReg = 0;
+		memcpy(WholeRam+0x8000, SWRamState, 16384);
+	}
 }
 
 /*-------------------------------------------------------------------------*/

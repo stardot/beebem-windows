@@ -73,9 +73,14 @@
   0081-0090     ULA palette registers
   0091-009f     Not currently used  
 
-  00a0-00ff   Not currently used
+  00a0-00af   ROM and RAM state
+  00a0          Flag (0 or 1) indicating if sideways RAM is in use
+
+  00b0-00ff   Not currently used
 
   0100-80ff   32KB of memory
+
+  8100-c0ff   16KB of sideways RAM (not used if RAM flag is 0)
 
 */
 
@@ -87,12 +92,15 @@ typedef struct
 	unsigned char SysVIAState[32];
 	unsigned char UserVIAState[32];
 	unsigned char VideoState[64];
-	unsigned char UnusedState[96]; /* For future use */
+	unsigned char RomState[16];
+	unsigned char UnusedState[80]; /* For future use */
 	unsigned char MemState[32768];
+	unsigned char SWRamState[16384];
 } BeebState;
 
-#define BEEB_STATE_FILE_TAG		"BBC Micro State"
-#define BEEB_STATE_SIZE			sizeof(BeebState)
+#define BEEB_STATE_FILE_TAG			"BBC Micro State"
+#define BEEB_STATE_SIZE				sizeof(BeebState)
+#define BEEB_STATE_SIZE_NO_SWRAM	(sizeof(BeebState) - 16384)
 
 void BeebSaveState(char *FileName);
 void BeebRestoreState(char *FileName);

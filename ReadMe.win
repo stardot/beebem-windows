@@ -1,4 +1,4 @@
-Beebem for Microsoft Windows (24 June 1997)
+Beebem for Microsoft Windows (5 Aug 1997)
 ============================
 
 Beebem has been ported to MS Windows. The following people have contributed 
@@ -71,17 +71,23 @@ in C:\Beeb:
   discims   - put the disc images in here
   beebstate - Beeb State files go in here (leave this empty for now)
 
-The emulator uses the path from its executable to find these directories so
-it should always find the files as long as the executable is placed in the
-directory above them.  You do not need to worry about setting up paths if
-you create a Win95 shortcut to BeebEm.
+The OS ROM should have a file name of 'os12'.  It does not matter what the
+file names for the other ROMs are.
 
 Once all the files and directories are set up, run the emulator.  It should
 work in any graphics mode but it will run fastest in a 256 colour mode. 
 
+When BeebEm starts up you should see the normal 'BBC Computer 32K' message
+followed by the start up messages for all the ROMs (i.e. the DFS and BASIC).
+Load a disc using the File menu (remember to select the correct file type)
+and press Shift+F12 to boot it.
 
-New Features in V0.7
---------------------
+If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
+commands to load the programs from it.
+
+
+New Features in V0.7 and V0.71
+------------------------------
 
 Dynamic disc selection - select and load disc images while the emulator is
   running.  Two discs can be loaded, one each for drive 0 and 1.  Note that
@@ -133,6 +139,11 @@ Undocumented 6502 instructions - many of these have now been implemented
   (Zalaga and Dare Devil Denis now work).
 
 Screen cursor - the beeb cursor is now displayed.
+
+Sideways RAM support - ROM slot 0 is treated as RAM and any writes to memory
+  between 0x8000 and 0xBFFF will get written to the RAM (this means Exile
+  can be played full screen).  The Beeb State file has also been extended to
+  save the RAM if its in use.
 
 
 Keyboard Mappings

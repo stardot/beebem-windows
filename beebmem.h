@@ -16,7 +16,7 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* Beebemulator - memory subsystem - David Alan Gilbert 16/10/94 */
 #ifndef BEEBMEM_HEADER
@@ -38,8 +38,8 @@ char *BeebMemPtrWithWrap(int a, int n);
 char *BeebMemPtrWithWrapMo7(int a, int n);
 void BeebMemInit(void);
 
-void SaveMemState(unsigned char *MemState);
-void RestoreMemState(unsigned char *MemState);
+void SaveMemState(unsigned char *RomState,unsigned char *MemState,unsigned char *SWRamState);
+void RestoreMemState(unsigned char *RomState,unsigned char *MemState,unsigned char *SWRamState);
 
 void beebmem_dumpstate(void);
 #endif

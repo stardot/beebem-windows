@@ -41,6 +41,7 @@ void BeebSaveState(char *FileName)
 {
 	FILE *StateFile;
 	BeebState StateData;
+	size_t StateSize;
 
 	/* Get all the state data */
 	memset(&StateData, 0, BEEB_STATE_SIZE);
@@ -49,13 +50,18 @@ void BeebSaveState(char *FileName)
 	SaveSysVIAState(StateData.SysVIAState);
 	SaveUserVIAState(StateData.UserVIAState);
 	SaveVideoState(StateData.VideoState);
-	SaveMemState(StateData.MemState);
+	SaveMemState(StateData.RomState,StateData.MemState,StateData.SWRamState);
+
+	if (StateData.RomState[0] == 0)
+		StateSize = BEEB_STATE_SIZE_NO_SWRAM;
+	else
+		StateSize = BEEB_STATE_SIZE;
 
 	/* Write the data to the file */
 	StateFile = fopen(FileName,"wb");
 	if (StateFile != NULL)
 	{
-		if (fwrite(&StateData,1,BEEB_STATE_SIZE,StateFile) != BEEB_STATE_SIZE)
+		if (fwrite(&StateData,1,StateSize,StateFile) != StateSize)
 		{
 #ifdef WIN32
 			char errstr[200];
@@ -84,12 +90,17 @@ void BeebRestoreState(char *FileName)
 {
 	FILE *StateFile;
 	BeebState StateData;
+	size_t StateSize;
+
+	memset(&StateData, 0, BEEB_STATE_SIZE);
 
 	/* Read the data from the file */
 	StateFile = fopen(FileName,"rb");
 	if (StateFile != NULL)
 	{
-		if (fread(&StateData,1,BEEB_STATE_SIZE,StateFile) == BEEB_STATE_SIZE)
+		StateSize = fread(&StateData,1,BEEB_STATE_SIZE,StateFile);
+		if ((StateSize == BEEB_STATE_SIZE && StateData.RomState[0] != 0) ||
+			(StateSize == BEEB_STATE_SIZE_NO_SWRAM && StateData.RomState[0] == 0))
 		{
 			if (strcmp(StateData.Tag, BEEB_STATE_FILE_TAG) == 0)
 			{
@@ -98,7 +109,7 @@ void BeebRestoreState(char *FileName)
 				RestoreSysVIAState(StateData.SysVIAState);
 				RestoreUserVIAState(StateData.UserVIAState);
 				RestoreVideoState(StateData.VideoState);
-				RestoreMemState(StateData.MemState);
+				RestoreMemState(StateData.RomState,StateData.MemState,StateData.SWRamState);
 
 				/* Now reset parts of the emulator that are not restored */
 				AtoDInit();

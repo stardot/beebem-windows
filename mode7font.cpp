@@ -16,7 +16,7 @@
 /*                                                                          */
 /* If you do not agree with any of the above then please do not use this    */
 /* program.                                                                 */
-/* Please report any problems to the author at gilbertd@cs.man.ac.uk        */
+/* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 char *mode7fontRaw[12*9] = {
 "           xxx   xx xx     xxxx   xxxxx  xx   xx   xxx     xx       xx     xx                                                 xx",

@@ -46,3 +46,17 @@ MS Windows version now provides:
   Multiple ROM initialisation
   Games keyboard mapping
   Pentium optimised version
+
+Version 0.71 (Mike Wyatt)
+------------
+Changed VIA timer latches initial value to 0xffff (Castle Quest now works).
+
+Fixed BCD addition and substraction and prevented mode 7 code from dividing
+by zero (Exile now works).
+
+Changed VIA code so the data direction registers can be read (Codename Droid
+now works).
+
+Fixed cursor colour in UNIX version.
+
+Added sideways RAM support (so Exile can be played full screen).

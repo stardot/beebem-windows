@@ -37,7 +37,7 @@
 
 static const char *WindowTitle = "BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 0.7, 24 June 1997\n";
+								"Version 0.71, 5 August 1997\n";
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 int TranslateKey(int, int *, int *);
