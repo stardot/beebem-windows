@@ -95,3 +95,13 @@ Fixed Windows message boxes when using DirectDraw.
 Printer support.
 Improved ROM size checking.
 Improved speed regulation code.
+
+
+Version 1.01
+------------
+Fixes the problem with BeebEm hanging after about 35 minutes. 
+
+
+Version 1.02
+------------
+Added Robert's Freeze when Inactive option.

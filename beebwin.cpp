@@ -40,7 +40,7 @@
 
 static const char *WindowTitle = "BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 1.0, 2 Apr 1998\n";
+								"Version 1.02, 30 Apr 1998\n";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -63,6 +63,7 @@ static const char *CFG_OPTIONS_SECTION = "Options";
 static const char *CFG_OPTIONS_STICKS = "Sticks";
 static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
 static const char *CFG_OPTIONS_USER_KEY_MAP = "UserKeyMap";
+static const char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
 static const char *CFG_OPTIONS_HIDE_CURSOR = "HideCursor";
 
 static const char *CFG_SPEED_SECTION = "Speed";
@@ -238,6 +239,7 @@ void BeebWin::Initialise()
 	int row, col;
 
 	m_DXInit = FALSE;
+	m_frozen = FALSE;
 
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_DIRECT_ENABLED, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
@@ -286,6 +288,10 @@ void BeebWin::Initialise()
 	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	m_MenuIdSticks = atoi(CfgValue);
+
+	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_FREEZEINACTIVE, "1",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_FreezeWhenInactive = atoi(CfgValue);
 
 	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_HIDE_CURSOR, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
@@ -553,6 +559,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, m_MenuIdTiming, MF_CHECKED);
 	if (m_MenuIdSticks != 0)
 		CheckMenuItem(hMenu, m_MenuIdSticks, MF_CHECKED);
+	CheckMenuItem(hMenu, IDM_FREEZEINACTIVE, m_FreezeWhenInactive ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_HIDECURSOR, m_HideCursor ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_IGNOREILLEGALOPS,
 					IgnoreIllegalInstructions ? MF_CHECKED : MF_UNCHECKED);
@@ -910,8 +917,15 @@ LRESULT CALLBACK WndProc(
 			}
 			break;					  
 
+		case WM_SETFOCUS:
+			if (mainWin)
+				mainWin->Focus(TRUE);
+			break;
+
 		case WM_KILLFOCUS:
 			BeebReleaseAllKeys();
+			if (mainWin)
+				mainWin->Focus(FALSE);
 			break;					  
 
 		case MM_JOY1MOVE:
@@ -1118,7 +1132,7 @@ BOOL BeebWin::UpdateTiming(void)
 				if ((unsigned long)TotalCycles < LastTotalCycles)
 				{
 					/* Wrap around in cycle count */
-					Cycles = TotalCycles + (CycleCountTMax - LastTotalCycles);
+					Cycles = TotalCycles + (CycleCountWrap - LastTotalCycles);
 				}
 				else
 				{	
@@ -1780,6 +1794,10 @@ void BeebWin::SavePreferences()
 	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS,
 			CfgValue, CFG_FILE_NAME);
 
+	sprintf(CfgValue, "%d", m_FreezeWhenInactive);
+	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_FREEZEINACTIVE,
+			CfgValue, CFG_FILE_NAME);
+
 	sprintf(CfgValue, "%d", m_HideCursor);
 	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_HIDE_CURSOR,
 			CfgValue, CFG_FILE_NAME);
@@ -2276,6 +2294,19 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
+	case IDM_FREEZEINACTIVE:
+		if (m_FreezeWhenInactive)
+		{
+			m_FreezeWhenInactive = FALSE;
+			CheckMenuItem(hMenu, IDM_FREEZEINACTIVE, MF_UNCHECKED);
+		}
+		else
+		{
+			m_FreezeWhenInactive = TRUE;
+			CheckMenuItem(hMenu, IDM_FREEZEINACTIVE, MF_CHECKED);
+		}
+		break;
+
 	case IDM_HIDECURSOR:
 		if (m_HideCursor)
 		{
@@ -2392,4 +2423,18 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	}
+}
+
+void BeebWin::Focus(BOOL gotit)
+{
+	if (gotit)
+		m_frozen = FALSE;
+	else
+		if (m_FreezeWhenInactive)
+			m_frozen = TRUE;
+}
+
+BOOL BeebWin::IsFrozen(void)
+{
+	return m_frozen;
 }

@@ -79,7 +79,8 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg); // Dispatches message to window
 		}
 
-		Exec6502Instruction();
+		if (!mainWin->IsFrozen())
+			Exec6502Instruction();
 	} while(1);
   
 	delete mainWin;

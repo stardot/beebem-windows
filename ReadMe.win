@@ -1,4 +1,4 @@
-BeebEm for Microsoft Windows (27 Mar 1998)
+BeebEm for Microsoft Windows (30 Apr 1998)
 ============================
 
 Beebem has been ported to MS Windows. The following people have contributed 
@@ -95,14 +95,11 @@ If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
 commands to load the programs from it.
 
 
-New Features in V1.0
---------------------
+New Features in V1.02
+---------------------
 
-Printer support - You can print to a file or any of the LPT or COM ports.
-
-Switchable DirectX - DirectDraw screen updates and DirectSound output are
-  not always faster than conventional display and sound output.  You can 
-  switch DirectX on and off to achieve the fastest emulation.
+Freeze when Inactive - the emulator freezes when you change focus to
+                       another window.
 
 
 Disc Writing

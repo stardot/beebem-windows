@@ -97,6 +97,8 @@ class BeebWin  {
 	void ScaleMousestick(unsigned int x, unsigned int y);
 	void HandleCommand(int MenuId);
 	void SetAMXPosition(unsigned int x, unsigned int y);
+	void Focus(BOOL);
+	BOOL IsFrozen(void);
 
   private:
 	int			m_MenuIdWinSize;
@@ -113,6 +115,7 @@ class BeebWin  {
 	double		m_RealTimeTarget;
 	JOYCAPS		m_JoystickCaps;
 	int			m_MenuIdSticks;
+	BOOL		m_FreezeWhenInactive;
 	BOOL		m_HideCursor;
 	int			m_MenuIdKeyMapping;
 	char		m_AppPath[_MAX_PATH];
@@ -140,6 +143,7 @@ class BeebWin  {
 	int			m_MenuIdPrinterPort;
 	char		m_PrinterFileName[_MAX_PATH];
 	char		m_PrinterDevice[_MAX_PATH];
+	BOOL		m_frozen;
 
 	// DirectX stuff
 	BOOL					m_DXInit;

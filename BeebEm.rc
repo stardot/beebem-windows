@@ -348,6 +348,7 @@ BEGIN
         MENUITEM "&Mousestick",                 IDM_MOUSESTICK
         MENUITEM SEPARATOR
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
+        MENUITEM "&Freeze when Inactive",       IDM_FREEZEINACTIVE
         MENUITEM SEPARATOR
         MENUITEM "&Define User Keyboard",       IDM_DEFINEKEYMAP
         MENUITEM SEPARATOR
