@@ -40,7 +40,7 @@
 
 static const char *WindowTitle = "BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 0.9, 20 Jan 1998\n";
+								"Version 1.0, 2 Apr 1998\n";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -50,16 +50,20 @@ static const char *CFG_VIEW_WIN_SIZE = "WinSize";
 static const char *CFG_VIEW_WIN_XPOS = "WinXPos";
 static const char *CFG_VIEW_WIN_YPOS = "WinYPos";
 static const char *CFG_VIEW_SHOW_FPS = "ShowFSP";
+static const char *CFG_VIEW_DIRECT_ENABLED = "DirectDrawEnabled";
+static const char *CFG_VIEW_BUFFER_IN_VIDEO = "BufferInVideoRAM";
 
 static const char *CFG_SOUND_SECTION = "Sound";
 static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
 static const char *CFG_SOUND_VOLUME = "Volume";
 static const char *CFG_SOUND_ENABLED = "SoundEnabled";
+static const char *CFG_SOUND_DIRECT_ENABLED = "DirectSoundEnabled";
 
 static const char *CFG_OPTIONS_SECTION = "Options";
 static const char *CFG_OPTIONS_STICKS = "Sticks";
 static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
 static const char *CFG_OPTIONS_USER_KEY_MAP = "UserKeyMap";
+static const char *CFG_OPTIONS_HIDE_CURSOR = "HideCursor";
 
 static const char *CFG_SPEED_SECTION = "Speed";
 static const char *CFG_SPEED_TIMING = "Timing";
@@ -69,6 +73,11 @@ static const char *CFG_AMX_ENABLED = "AMXMouseEnabled";
 static const char *CFG_AMX_LRFORMIDDLE = "AMXMouseLRForMiddle";
 static const char *CFG_AMX_SIZE = "AMXMouseSize";
 static const char *CFG_AMX_ADJUST = "AMXMouseAdjust";
+
+static const char *CFG_PRINTER_SECTION = "Printer";
+static const char *CFG_PRINTER_ENABLED = "PrinterEnabled";
+static const char *CFG_PRINTER_PORT = "PrinterPort";
+static const char *CFG_PRINTER_FILE = "PrinterFile";
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -214,7 +223,7 @@ static int transTable2[256][2]={
 
 /* Currently selected translation table */
 static int (*transTable)[2] = transTable1;
-				    
+
 /****************************************************************************/
 BeebWin::BeebWin()
 {   
@@ -229,6 +238,14 @@ void BeebWin::Initialise()
 	int row, col;
 
 	m_DXInit = FALSE;
+
+	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_DIRECT_ENABLED, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_DirectDrawEnabled = atoi(CfgValue);
+
+	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_BUFFER_IN_VIDEO, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_DDS2InVideoRAM = atoi(CfgValue);
 
 	sprintf(DefValue, "%d", IDM_320X256);
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE, DefValue,
@@ -262,11 +279,17 @@ void BeebWin::Initialise()
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	SoundEnabled = atoi(CfgValue);
 
+	GetPrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_DIRECT_ENABLED, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	DirectSoundEnabled = atoi(CfgValue);
+
 	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	m_MenuIdSticks = atoi(CfgValue);
 
-	m_HideCursor = FALSE;
+	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_HIDE_CURSOR, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_HideCursor = atoi(CfgValue);
 
 	sprintf(DefValue, "%d", IDM_KEYBOARDMAPPING1);
 	GetPrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_KEY_MAPPING, DefValue,
@@ -292,6 +315,20 @@ void BeebWin::Initialise()
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	m_MenuIdAMXAdjust = atoi(CfgValue);
 	TranslateAMX();
+
+	GetPrivateProfileString(CFG_PRINTER_SECTION, CFG_PRINTER_ENABLED, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	PrinterEnabled = atoi(CfgValue);
+
+	sprintf(DefValue, "%d", IDM_PRINTER_LPT1);
+	GetPrivateProfileString(CFG_PRINTER_SECTION, CFG_PRINTER_PORT, DefValue,
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	m_MenuIdPrinterPort = atoi(CfgValue);
+
+	GetPrivateProfileString(CFG_PRINTER_SECTION, CFG_PRINTER_FILE, "",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	strcpy(m_PrinterFileName, CfgValue);
+	TranslatePrinterPort();
 
 	for (int key=0; key<256; ++key)
 	{
@@ -321,20 +358,28 @@ void BeebWin::Initialise()
 	for(int i=0;i<8;i++)
 		cols[i] = i;
 
-	CreateBitmap();
 	InitClass();
 	CreateBeebWindow(); 
+	CreateBitmap();
 	InitMenu();
-	InitDirectX();
+
+	m_hDC = GetDC(m_hWnd);
+
+	if (m_DirectDrawEnabled)
+		InitDirectX();
 
 	if (SoundEnabled)
 		SoundInit();
 
+	/* Initialise printer */
+	if (PrinterEnabled)
+		PrinterEnable(m_PrinterDevice);
+	else
+		PrinterDisable();
+
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
 	if (m_MenuIdSticks == IDM_JOYSTICK)
 		InitJoystick();
-
-	m_hDC = GetDC(m_hWnd);
 
 	/* Get the applications path - used for disc and state operations */
 	char app_path[_MAX_PATH];
@@ -348,9 +393,12 @@ void BeebWin::Initialise()
 /****************************************************************************/
 BeebWin::~BeebWin()
 {   
-	ResetSurfaces();
-	m_DD2->Release();
-	m_DD->Release();
+	if (m_DirectDrawEnabled)
+	{
+		ResetSurfaces();
+		m_DD2->Release();
+		m_DD->Release();
+	}
 
 	if (SoundEnabled)
 		SoundReset();
@@ -403,7 +451,7 @@ void BeebWin::CreateBitmap()
 
 	m_hOldObj = SelectObject(m_hDCBitmap, m_hBitmap);
 	if(m_hOldObj == NULL)
-		MessageBox(NULL,"Cannot select the screen bitmap\n"
+		MessageBox(m_hWnd,"Cannot select the screen bitmap\n"
 					"Try running in a 256 colour mode",WindowTitle,MB_OK|MB_ICONERROR);
 }
 
@@ -422,7 +470,7 @@ BOOL BeebWin::InitClass(void)
 	wc.hInstance	 = hInst;				   // Owner of this class
 	wc.hIcon		 = LoadIcon(hInst, MAKEINTRESOURCE(IDI_BEEBEM));
 	wc.hCursor		 = LoadCursor(hInst, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);// Default color
+	wc.hbrBackground = NULL; //(HBRUSH)(COLOR_WINDOW+1);// Default color
 	wc.lpszMenuName  = MAKEINTRESOURCE(IDR_MENU); // Menu from .RC
 	wc.lpszClassName = "BEEBWIN"; //szAppName;				// Name to register as
 
@@ -433,6 +481,7 @@ BOOL BeebWin::InitClass(void)
 /****************************************************************************/
 void BeebWin::CreateBeebWindow(void)
 {
+	DWORD style;
 	int x,y;
 	char CfgValue[256];
 
@@ -452,11 +501,27 @@ void BeebWin::CreateBeebWindow(void)
 		m_YWinPos = 0;
 	}
 
+	if (!m_DirectDrawEnabled && m_MenuIdWinSize == IDM_FULLSCREEN)
+	{
+		RECT scrrect;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
+		x = scrrect.left;
+		y = scrrect.top;
+	}
+
+	if (m_DirectDrawEnabled && m_MenuIdWinSize == IDM_FULLSCREEN)
+	{
+		style = WS_POPUP;
+	}
+	else
+	{
+		style = WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+	}
+
 	m_hWnd = CreateWindow(
 				"BEEBWIN",				// See RegisterClass() call.
 				m_szTitle, 		// Text for window title bar.
-				m_MenuIdWinSize == IDM_FULLSCREEN ? WS_POPUP :
-					WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, // Window style.
+				style,
 				x, y,
 				m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
 				m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
@@ -476,6 +541,7 @@ void BeebWin::CreateBeebWindow(void)
 /****************************************************************************/
 void BeebWin::InitMenu(void)
 {
+	char menu_string[256];
 	HMENU hMenu = GetMenu(m_hWnd);
 
 	CheckMenuItem(hMenu, IDM_SPEEDANDFPS, m_ShowSpeedAndFPS ? MF_CHECKED : MF_UNCHECKED);
@@ -498,6 +564,14 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, m_MenuIdAMXSize, MF_CHECKED);
 	if (m_MenuIdAMXAdjust != 0)
 		CheckMenuItem(hMenu, m_MenuIdAMXAdjust, MF_CHECKED);
+	CheckMenuItem(hMenu, IDM_PRINTERONOFF, PrinterEnabled ? MF_CHECKED : MF_UNCHECKED);
+	strcpy(menu_string, "File: ");
+	strcat(menu_string, m_PrinterFileName);
+	ModifyMenu(hMenu, IDM_PRINTER_FILE, MF_BYCOMMAND, IDM_PRINTER_FILE, menu_string);
+	CheckMenuItem(hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+	CheckMenuItem(hMenu, IDM_DDRAWONOFF, m_DirectDrawEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_DDINVIDEORAM, m_DDS2InVideoRAM ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_DSOUNDONOFF, DirectSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
 
 	/* Initialise the ROM Menu. */
 	SetRomMenu();
@@ -521,7 +595,7 @@ void BeebWin::InitDirectX(void)
 	{
 		char  errstr[200];
 		sprintf(errstr,"DirectX initialisation failed\nFailure code %X",ddrval);
-		MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 	}
 }
 
@@ -570,6 +644,10 @@ HRESULT BeebWin::InitSurfaces(void)
 		ddsd.dwSize = sizeof(ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+		if (m_DDS2InVideoRAM)
+			ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
+		else
+			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 		ddsd.dwWidth = 640;
 		ddsd.dwHeight = 256;
 		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
@@ -918,67 +996,84 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 
 	++m_ScreenRefreshCount;
 
-	if (m_DXInit == FALSE)
-		return;
-
-	wndpl.length = sizeof(WINDOWPLACEMENT);
-	if (GetWindowPlacement(m_hWnd, &wndpl))
+	if (!m_DirectDrawEnabled)
 	{
-		if (wndpl.showCmd == SW_SHOWMINIMIZED)
-			return;
-	}
-
-	// Blit the beeb bitbap onto the secondary buffer
-	ddrval = m_DDS2One->GetDC(&hdc);
-	if (ddrval == DDERR_SURFACELOST)
-	{
-		ddrval = m_DDS2One->Restore();
-		if (ddrval == DD_OK)
-			ddrval = m_DDS2One->GetDC(&hdc);
-	}
-	if (ddrval == DD_OK)
-	{
-		BitBlt(hdc, 0, starty, 640, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
-
-		if (m_ShowSpeedAndFPS && m_MenuIdWinSize == IDM_FULLSCREEN)
+		if (m_MenuIdWinSize == IDM_640X256)
 		{
-			char fps[50];
-			sprintf(fps, "%2.2f %2.2f", m_RelativeSpeed, m_FramesPerSecond);
-			SetBkMode(hdc,TRANSPARENT);
-			SetTextColor(hdc,0x808080);
-			TextOut(hdc,560,240,fps,strlen(fps));
+			BitBlt(hDC, 0, starty, 640, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
+		}
+		else
+		{
+			int win_starty = starty * m_YWinSize / 256;
+			int win_nlines = nlines * m_YWinSize / 256;
+			StretchBlt(hDC, 0, win_starty, m_XWinSize, win_nlines,
+					m_hDCBitmap, 0, starty, 640, nlines, SRCCOPY);
+		}
+	}
+	else
+	{
+		if (m_DXInit == FALSE)
+			return;
+
+		wndpl.length = sizeof(WINDOWPLACEMENT);
+		if (GetWindowPlacement(m_hWnd, &wndpl))
+		{
+			if (wndpl.showCmd == SW_SHOWMINIMIZED)
+				return;
 		}
 
-		m_DDS2One->ReleaseDC(hdc);
-
-		// Work out where on screen to blit image
-		RECT destRect;
-		RECT srcRect;
-		POINT pt;
-		GetClientRect( m_hWnd, &destRect );
-		pt.x = pt.y = 0;
-		ClientToScreen( m_hWnd, &pt );
-		OffsetRect(&destRect, pt.x, pt.y);
-
-		// Blit the whole of the secondary buffer onto the screen
-		srcRect.left = 0;
-		srcRect.top = 0;
-		srcRect.right = 640;
-		srcRect.bottom = 256;
-		ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+		// Blit the beeb bitbap onto the secondary buffer
+		ddrval = m_DDS2One->GetDC(&hdc);
 		if (ddrval == DDERR_SURFACELOST)
 		{
-			ddrval = m_DDS2Primary->Restore();
+			ddrval = m_DDS2One->Restore();
 			if (ddrval == DD_OK)
-				ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+				ddrval = m_DDS2One->GetDC(&hdc);
 		}
-	}
+		if (ddrval == DD_OK)
+		{
+			BitBlt(hdc, 0, starty, 640, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
 
-	if (ddrval != DD_OK && ddrval != DDERR_WASSTILLDRAWING)
-	{
-		char  errstr[200];
-		sprintf(errstr,"DirectX failure while updating screen\nFailure code %X",ddrval);
-		MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			if (m_ShowSpeedAndFPS && m_MenuIdWinSize == IDM_FULLSCREEN)
+			{
+				char fps[50];
+				sprintf(fps, "%2.2f %2.2f", m_RelativeSpeed, m_FramesPerSecond);
+				SetBkMode(hdc,TRANSPARENT);
+				SetTextColor(hdc,0x808080);
+				TextOut(hdc,560,240,fps,strlen(fps));
+			}
+
+			m_DDS2One->ReleaseDC(hdc);
+
+			// Work out where on screen to blit image
+			RECT destRect;
+			RECT srcRect;
+			POINT pt;
+			GetClientRect( m_hWnd, &destRect );
+			pt.x = pt.y = 0;
+			ClientToScreen( m_hWnd, &pt );
+			OffsetRect(&destRect, pt.x, pt.y);
+
+			// Blit the whole of the secondary buffer onto the screen
+			srcRect.left = 0;
+			srcRect.top = 0;
+			srcRect.right = 640;
+			srcRect.bottom = 256;
+			ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+			if (ddrval == DDERR_SURFACELOST)
+			{
+				ddrval = m_DDS2Primary->Restore();
+				if (ddrval == DD_OK)
+					ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
+			}
+		}
+
+		if (ddrval != DD_OK && ddrval != DDERR_WASSTILLDRAWING)
+		{
+			char  errstr[200];
+			sprintf(errstr,"DirectX failure while updating screen\nFailure code %X",ddrval);
+			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		}
 	}
 }
 
@@ -987,7 +1082,7 @@ BOOL BeebWin::UpdateTiming(void)
 {
 	static unsigned long LastTotalCycles = 0;
 	static unsigned long LastTickCount = 0;
-	static unsigned long LastSleepCount = 0;
+	static unsigned long LastTimingDispCount = 0;
 	static unsigned long LastFPSCount = 0;
 	static double FrameUpdateTotal = 0.0;
 	static double FrameUpdateIncrement = 1.0;
@@ -998,7 +1093,7 @@ BOOL BeebWin::UpdateTiming(void)
 
 	if (LastTickCount == 0)
 	{
-		LastSleepCount = LastTickCount = GetTickCount();
+		LastTimingDispCount = LastTickCount = LastFPSCount = GetTickCount();
 		LastTotalCycles = TotalCycles;
 	}
 	else
@@ -1009,14 +1104,16 @@ BOOL BeebWin::UpdateTiming(void)
 
 		/* Don't do anything if this is the first call after
 			a long pause due to menu commands. */
-		if (Ticks >= 1500)
+		if (Ticks >= 1000)
 		{
 			LastTotalCycles = TotalCycles;
 			LastTickCount = TickCount;
+			LastFPSCount = TickCount;
+			LastTimingDispCount = TickCount;
 		}
 		else
 		{
-			if (Ticks >= 1000)
+			if (Ticks >= 500)
 			{
 				if ((unsigned long)TotalCycles < LastTotalCycles)
 				{
@@ -1042,7 +1139,12 @@ BOOL BeebWin::UpdateTiming(void)
 						FrameUpdateIncrement = 0.05;
 				}
 
-				DisplayTiming();
+				/* Only update timing display every second */
+				if (TickCount > LastTimingDispCount + 1000)
+				{
+					LastTimingDispCount = TickCount;
+					DisplayTiming();
+				}
 
 				LastTotalCycles = TotalCycles;
 				LastTickCount = TickCount;
@@ -1054,14 +1156,7 @@ BOOL BeebWin::UpdateTiming(void)
 				if (FrameUpdateIncrement > 1.0)
 				{
 					/* Sleep for a bit */
-					if (TickCount >= LastSleepCount + 200)
-					{
-						if (FrameUpdateIncrement > 201.0)
-							Sleep(200);
-						else
-							Sleep((long)(FrameUpdateIncrement - 1.0));
-						LastSleepCount = TickCount;
-					}
+					Sleep((long)(FrameUpdateIncrement - 1.0));
 					UpdateScreen = TRUE;
 				}
 				else
@@ -1084,7 +1179,7 @@ BOOL BeebWin::UpdateTiming(void)
 				if (TickCount >= LastFPSCount + (1000 / m_FPSTarget))
 				{
 					UpdateScreen = TRUE;
-					LastFPSCount = TickCount;
+					LastFPSCount += 1000 / m_FPSTarget;
 				}
 				else
 				{
@@ -1100,7 +1195,7 @@ BOOL BeebWin::UpdateTiming(void)
 /****************************************************************************/
 void BeebWin::DisplayTiming(void)
 {
-	if (m_ShowSpeedAndFPS && m_MenuIdWinSize != IDM_FULLSCREEN)
+	if (m_ShowSpeedAndFPS && (!m_DirectDrawEnabled || m_MenuIdWinSize != IDM_FULLSCREEN))
 	{
 		sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2.2f",
 				WindowTitle, m_RelativeSpeed, m_FramesPerSecond);
@@ -1155,8 +1250,19 @@ void BeebWin::TranslateWindowSize(void)
 		break;
 
 	case IDM_FULLSCREEN:
-		m_XWinSize = 640;
-		m_YWinSize = 480 - GetSystemMetrics(SM_CYMENUSIZE);
+		if (m_DirectDrawEnabled)
+		{
+			m_XWinSize = 640;
+			m_YWinSize = 480 - GetSystemMetrics(SM_CYMENUSIZE);
+		}
+		else
+		{
+			RECT scrrect;
+			SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
+			m_XWinSize = scrrect.right - scrrect.left - GetSystemMetrics(SM_CXFIXEDFRAME) * 2;
+			m_YWinSize = scrrect.bottom - scrrect.top - GetSystemMetrics(SM_CYFIXEDFRAME) * 2
+					- GetSystemMetrics(SM_CYMENUSIZE) - GetSystemMetrics(SM_CYCAPTION);
+		}
 		break;
 	}
 }
@@ -1481,11 +1587,151 @@ void BeebWin::ToggleWriteProtect(int Drive)
 }
 
 /****************************************************************************/
+BOOL BeebWin::PrinterFile()
+{
+	char StartPath[_MAX_PATH];
+	char FileName[256];
+	OPENFILENAME ofn;
+	BOOL changed;
+
+	if (strlen(m_PrinterFileName) == 0)
+	{
+		strcpy(StartPath, m_AppPath);
+		FileName[0] = '\0';
+	}
+	else
+	{
+		char drive[_MAX_DRIVE];
+		char dir[_MAX_DIR];
+		char fname[_MAX_FNAME];
+		char ext[_MAX_EXT];
+		_splitpath(m_PrinterFileName, drive, dir, fname, ext);
+		_makepath(StartPath, drive, dir, NULL, NULL);
+		_makepath(FileName, NULL, NULL, fname, ext);
+	}
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.hInstance = NULL;
+	ofn.lpstrFilter = "Printer Output\0*\0";
+	ofn.lpstrCustomFilter = NULL;
+	ofn.nMaxCustFilter = 0;
+	ofn.nFilterIndex = 0;
+	ofn.lpstrFile = FileName;
+	ofn.nMaxFile = sizeof(FileName);
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = StartPath;
+	ofn.lpstrTitle = NULL;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nFileOffset = 0;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = NULL;
+	ofn.lCustData = 0;
+	ofn.lpfnHook = NULL;
+	ofn.lpTemplateName = NULL;
+
+	changed = GetSaveFileName(&ofn);
+	if (changed)
+	{
+		strcpy(m_PrinterFileName, FileName);
+	}
+
+	return(changed);
+}
+
+/****************************************************************************/
+void BeebWin::TogglePrinter()
+{
+	BOOL FileOK = TRUE;
+	HMENU hMenu = GetMenu(m_hWnd);
+
+	if (PrinterEnabled)
+	{
+		PrinterDisable();
+	}
+	else
+	{
+		if (m_MenuIdPrinterPort == IDM_PRINTER_FILE)
+		{
+			if (strlen(m_PrinterFileName) == 0)
+				PrinterFile();
+			if (strlen(m_PrinterFileName) != 0)
+			{
+				/* First check if file already exists */
+				FILE *outfile;
+				outfile=fopen(m_PrinterFileName,"rb");
+				if (outfile != NULL)
+				{
+					fclose(outfile);
+					char errstr[200];
+					sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", m_PrinterFileName);
+					if (MessageBox(m_hWnd,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
+						FileOK = FALSE;
+				}
+				if (FileOK == TRUE)
+					PrinterEnable(m_PrinterFileName);
+			}
+		}
+		else
+		{
+			PrinterEnable(m_PrinterDevice);
+		}
+	}
+
+	CheckMenuItem(hMenu, IDM_PRINTERONOFF, PrinterEnabled ? MF_CHECKED : MF_UNCHECKED);
+}
+
+/****************************************************************************/
+void BeebWin::TranslatePrinterPort()
+{
+	switch (m_MenuIdPrinterPort)
+	{
+	case IDM_PRINTER_FILE:
+		strcpy(m_PrinterDevice, m_PrinterFileName);
+		break;
+	default:
+	case IDM_PRINTER_LPT1:
+		strcpy(m_PrinterDevice, "LPT1");
+		break;
+	case IDM_PRINTER_LPT2:
+		strcpy(m_PrinterDevice, "LPT2");
+		break;
+	case IDM_PRINTER_LPT3:
+		strcpy(m_PrinterDevice, "LPT3");
+		break;
+	case IDM_PRINTER_LPT4:
+		strcpy(m_PrinterDevice, "LPT4");
+		break;
+	case IDM_PRINTER_COM1:
+		strcpy(m_PrinterDevice, "COM1");
+		break;
+	case IDM_PRINTER_COM2:
+		strcpy(m_PrinterDevice, "COM2");
+		break;
+	case IDM_PRINTER_COM3:
+		strcpy(m_PrinterDevice, "COM3");
+		break;
+	case IDM_PRINTER_COM4:
+		strcpy(m_PrinterDevice, "COM4");
+		break;
+	}
+}
+
+/****************************************************************************/
 void BeebWin::SavePreferences()
 {
 	char CfgValue[256];
 	char CfgName[256];
 	RECT wndrect;
+
+	sprintf(CfgValue, "%d", m_DirectDrawEnabled);
+	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_DIRECT_ENABLED,
+			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", m_DDS2InVideoRAM);
+	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_BUFFER_IN_VIDEO,
+			CfgValue, CFG_FILE_NAME);
 
 	sprintf(CfgValue, "%d", m_MenuIdWinSize);
 	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_WIN_SIZE,
@@ -1510,6 +1756,10 @@ void BeebWin::SavePreferences()
 	WritePrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_ENABLED,
 			CfgValue, CFG_FILE_NAME);
 
+	sprintf(CfgValue, "%d", DirectSoundEnabled);
+	WritePrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_DIRECT_ENABLED,
+			CfgValue, CFG_FILE_NAME);
+
 	sprintf(CfgValue, "%d", m_MenuIdSampleRate);
 	WritePrivateProfileString(CFG_SOUND_SECTION, CFG_SOUND_SAMPLE_RATE,
 			CfgValue, CFG_FILE_NAME);
@@ -1530,6 +1780,10 @@ void BeebWin::SavePreferences()
 	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_STICKS,
 			CfgValue, CFG_FILE_NAME);
 
+	sprintf(CfgValue, "%d", m_HideCursor);
+	WritePrivateProfileString(CFG_OPTIONS_SECTION, CFG_OPTIONS_HIDE_CURSOR,
+			CfgValue, CFG_FILE_NAME);
+
 	sprintf(CfgValue, "%d", AMXMouseEnabled);
 	WritePrivateProfileString(CFG_AMX_SECTION, CFG_AMX_ENABLED,
 			CfgValue, CFG_FILE_NAME);
@@ -1541,6 +1795,15 @@ void BeebWin::SavePreferences()
 	sprintf(CfgValue, "%d", m_MenuIdAMXAdjust);
 	WritePrivateProfileString(CFG_AMX_SECTION, CFG_AMX_ADJUST,
 			CfgValue, CFG_FILE_NAME);
+
+	sprintf(CfgValue, "%d", PrinterEnabled);
+	WritePrivateProfileString(CFG_PRINTER_SECTION, CFG_PRINTER_ENABLED,
+			CfgValue, CFG_FILE_NAME);
+	sprintf(CfgValue, "%d", m_MenuIdPrinterPort);
+	WritePrivateProfileString(CFG_PRINTER_SECTION, CFG_PRINTER_PORT,
+			CfgValue, CFG_FILE_NAME);
+	WritePrivateProfileString(CFG_PRINTER_SECTION, CFG_PRINTER_FILE,
+			m_PrinterFileName, CFG_FILE_NAME);
 
 	for (int key=0; key<256; ++key)
 	{
@@ -1559,37 +1822,66 @@ void BeebWin::SetWindowAttributes(int oldSize)
 {
 	HRESULT ddrval;
 	RECT wndrect;
+	RECT scrrect;
 	long style;
 
 	if (m_MenuIdWinSize == IDM_FULLSCREEN)
 	{
-		GetWindowRect(m_hWnd, &wndrect);
-		m_XWinPos = wndrect.left;
-		m_YWinPos = wndrect.top;
-
-		style = GetWindowLong(m_hWnd, GWL_STYLE);
-		style &= ~(WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX);
-		style |= WS_POPUP;
-		SetWindowLong(m_hWnd, GWL_STYLE, style);
-
-		ResetSurfaces();
-		ddrval = InitSurfaces();
-		if( ddrval != DD_OK )
+		if (oldSize != IDM_FULLSCREEN)
 		{
-			char  errstr[200];
-			sprintf(errstr,"DirectX failure changing screen size\nFailure code %X",ddrval);
-			MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			GetWindowRect(m_hWnd, &wndrect);
+			m_XWinPos = wndrect.left;
+			m_YWinPos = wndrect.top;
+		}
+
+		if (m_DirectDrawEnabled)
+		{
+			style = GetWindowLong(m_hWnd, GWL_STYLE);
+			style &= ~(WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX);
+			style |= WS_POPUP;
+			SetWindowLong(m_hWnd, GWL_STYLE, style);
+
+			if (m_DXInit == TRUE)
+			{
+				ResetSurfaces();
+				ddrval = InitSurfaces();
+				if( ddrval != DD_OK )
+				{
+					char  errstr[200];
+					sprintf(errstr,"DirectX failure changing screen size\nFailure code %X",ddrval);
+					MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				}
+			}
+		}
+		else
+		{
+			style = GetWindowLong(m_hWnd, GWL_STYLE);
+			style &= ~WS_POPUP;
+			style |= WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+			SetWindowLong(m_hWnd, GWL_STYLE, style);
+
+			SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
+			SetWindowPos(m_hWnd, HWND_TOP, scrrect.left, scrrect.top,
+				m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
+				m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
+					+ GetSystemMetrics(SM_CYMENUSIZE)
+					+ GetSystemMetrics(SM_CYCAPTION)
+					+ 1,
+				0);
 		}
 	}
 	else
 	{
-		ResetSurfaces();
-		ddrval = InitSurfaces();
-		if( ddrval != DD_OK )
+		if (m_DirectDrawEnabled && m_DXInit == TRUE)
 		{
-			char  errstr[200];
-			sprintf(errstr,"DirectX failure changing screen size\nFailure code %X",ddrval);
-			MessageBox(NULL,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			ResetSurfaces();
+			ddrval = InitSurfaces();
+			if( ddrval != DD_OK )
+			{
+				char  errstr[200];
+				sprintf(errstr,"DirectX failure changing screen size\nFailure code %X",ddrval);
+				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			}
 		}
 
 		style = GetWindowLong(m_hWnd, GWL_STYLE);
@@ -1603,7 +1895,7 @@ void BeebWin::SetWindowAttributes(int oldSize)
 				+ GetSystemMetrics(SM_CYMENUSIZE) * (m_MenuIdWinSize == IDM_160X128 ? 2:1)
 				+ GetSystemMetrics(SM_CYCAPTION)
 				+ 1,
-				oldSize != IDM_FULLSCREEN ? SWP_NOMOVE : 0);
+			oldSize != IDM_FULLSCREEN ? SWP_NOMOVE : 0);
 	}
 }
 
@@ -1657,6 +1949,8 @@ void BeebWin::TranslateAMX(void)
 /***************************************************************************/
 void BeebWin::HandleCommand(int MenuId)
 {
+	BOOL b;
+	HRESULT ddrval;
 	HMENU hMenu = GetMenu(m_hWnd);
 
 	switch (MenuId)
@@ -1700,6 +1994,97 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 	case IDM_WPDISC1:
 		ToggleWriteProtect(1);
+		break;
+
+	case IDM_PRINTER_FILE:
+		if (PrinterFile())
+		{
+			/* If printer is enabled then need to
+				disable it before changing file */
+			if (PrinterEnabled)
+				TogglePrinter();
+
+			/* Add file name to menu */
+			char menu_string[256];
+			strcpy(menu_string, "File: ");
+			strcat(menu_string, m_PrinterFileName);
+			ModifyMenu(hMenu, IDM_PRINTER_FILE,
+				MF_BYCOMMAND, IDM_PRINTER_FILE,
+				menu_string);
+
+			if (MenuId != m_MenuIdPrinterPort)
+			{
+				CheckMenuItem(hMenu, m_MenuIdPrinterPort, MF_UNCHECKED);
+				m_MenuIdPrinterPort = MenuId;
+				CheckMenuItem(hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+   			}
+			TranslatePrinterPort();
+		}
+		break;
+	case IDM_PRINTER_LPT1:
+	case IDM_PRINTER_LPT2:
+	case IDM_PRINTER_LPT3:
+	case IDM_PRINTER_LPT4:
+	case IDM_PRINTER_COM1:
+	case IDM_PRINTER_COM2:
+	case IDM_PRINTER_COM3:
+	case IDM_PRINTER_COM4:
+		if (MenuId != m_MenuIdPrinterPort)
+		{
+			/* If printer is enabled then need to
+				disable it before changing file */
+			if (PrinterEnabled)
+				TogglePrinter();
+
+			CheckMenuItem(hMenu, m_MenuIdPrinterPort, MF_UNCHECKED);
+			m_MenuIdPrinterPort = MenuId;
+			CheckMenuItem(hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+			TranslatePrinterPort();
+   		}
+		break;
+	case IDM_PRINTERONOFF:
+		TogglePrinter();
+		break;
+
+	case IDM_DDRAWONOFF:
+		if (m_DirectDrawEnabled == TRUE)
+		{
+			m_DirectDrawEnabled = FALSE;
+			ResetSurfaces();
+			m_DD2->Release();
+			m_DD->Release();
+			TranslateWindowSize();
+			SetWindowAttributes(m_MenuIdWinSize);
+		}
+		else
+		{
+			m_DirectDrawEnabled = TRUE;
+			TranslateWindowSize();
+			SetWindowAttributes(m_MenuIdWinSize);
+			InitDirectX();
+		}
+		CheckMenuItem(hMenu, IDM_DDRAWONOFF, m_DirectDrawEnabled ? MF_CHECKED : MF_UNCHECKED);
+		break;
+
+	case IDM_DDINVIDEORAM:
+		m_DDS2InVideoRAM = !m_DDS2InVideoRAM;
+		if (m_DirectDrawEnabled == TRUE)
+		{
+			ResetSurfaces();
+			ddrval = InitSurfaces();
+			if( ddrval != DD_OK )
+			{
+				char  errstr[200];
+				sprintf(errstr,"DirectX failure changing buffer RAM\nFailure code %X",ddrval);
+				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				m_DDS2InVideoRAM = !m_DDS2InVideoRAM;
+			}
+			else
+			{
+				CheckMenuItem(hMenu, IDM_DDINVIDEORAM,
+					m_DDS2InVideoRAM ? MF_CHECKED : MF_UNCHECKED);
+			}
+		}
 		break;
 
 	case IDM_160X128:
@@ -1750,6 +2135,22 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 	
+	case IDM_DSOUNDONOFF:
+		b = SoundEnabled;
+		if (SoundEnabled)
+		{
+			SoundReset();
+		}
+		DirectSoundEnabled = !DirectSoundEnabled;
+		CheckMenuItem(hMenu, IDM_DSOUNDONOFF, DirectSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
+		if (b)
+		{
+			SoundInit();
+			if (!SoundEnabled)
+				CheckMenuItem(hMenu, IDM_SOUNDONOFF, MF_UNCHECKED);
+		}
+		break;
+
 	case IDM_44100KHZ:
 	case IDM_22050KHZ:
 	case IDM_11025KHZ:
@@ -1918,7 +2319,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_ABOUT:
-		MessageBox(NULL, AboutText, WindowTitle, MB_OK);
+		MessageBox(m_hWnd, AboutText, WindowTitle, MB_OK);
 		break;
 
 	case IDM_EXIT:

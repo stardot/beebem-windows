@@ -28,6 +28,9 @@
 #include <ddraw.h>
 #include "port.h"
 
+/* Used in message boxes */
+#define GETHWND (mainWin == NULL ? NULL : mainWin->GethWnd())
+
 typedef union {
 	unsigned char data[8];
   EightByteType eightbyte;
@@ -119,6 +122,7 @@ class BeebWin  {
 	int			m_AMXXSize;
 	int			m_AMXYSize;
 	int			m_AMXAdjust;
+	BOOL		m_DirectDrawEnabled;
 
 	char*		m_screen;
 	HDC 		m_hDC;
@@ -133,6 +137,10 @@ class BeebWin  {
 	double		m_RelativeSpeed;
 	double		m_FramesPerSecond;
 
+	int			m_MenuIdPrinterPort;
+	char		m_PrinterFileName[_MAX_PATH];
+	char		m_PrinterDevice[_MAX_PATH];
+
 	// DirectX stuff
 	BOOL					m_DXInit;
 	LPDIRECTDRAW			m_DD;			// DirectDraw object
@@ -141,6 +149,7 @@ class BeebWin  {
 	LPDIRECTDRAWSURFACE2	m_DDS2Primary;	// DirectDraw primary surface
 	LPDIRECTDRAWSURFACE		m_DDSOne;		// Offscreen surface 1
 	LPDIRECTDRAWSURFACE2	m_DDS2One;		// Offscreen surface 1
+	BOOL					m_DDS2InVideoRAM;
 	LPDIRECTDRAWCLIPPER		m_Clipper;		// clipper for primary
 
 	BOOL InitClass(void);
@@ -168,6 +177,9 @@ class BeebWin  {
 	void SavePreferences(void);
 	void SetWindowAttributes(int oldSize);
 	void TranslateAMX(void);
+	BOOL PrinterFile(void);
+	void TogglePrinter(void);
+	void TranslatePrinterPort(void);
 
 }; /* BeebWin */
 

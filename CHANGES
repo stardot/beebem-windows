@@ -86,3 +86,12 @@ Converted to use DirectX and added a full screen option.
 
 Fixed a few bugs (thanks to Piers Haken for pointing out a bug in the video
 code).
+
+
+Version 1.0 (Mike Wyatt)
+-----------
+Switchable DirectDraw and DirectSound.
+Fixed Windows message boxes when using DirectDraw.
+Printer support.
+Improved ROM size checking.
+Improved speed regulation code.

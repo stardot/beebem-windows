@@ -242,14 +242,14 @@ void BeebWriteMem(int Address, int Value) {
 static void ReadRom(char *name,int bank) {
   FILE *InFile;
   char fullname[256];
-  int romsize;
+  long romsize;
 
   sprintf(fullname,"beebfile/%s",name);
   if (InFile=fopen(fullname,"rb"),InFile==NULL) {
 #ifdef WIN32
     char errstr[200];
 	sprintf(errstr, "Cannot open ROM image file:\n  %s", name);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 	exit(1);
 #else
     fprintf(stderr,"Could not open %s rom file\n",name);
@@ -257,18 +257,22 @@ static void ReadRom(char *name,int bank) {
 #endif
   }
 
-  romsize = fread(Roms[bank],1,16384,InFile);
+  /* Check ROM size */
+  fseek(InFile, 0L, SEEK_END);
+  romsize = ftell(InFile);
   if (romsize!=16384 && romsize!=8192) {
 #ifdef WIN32
     char errstr[200];
 	sprintf(errstr, "ROM image is wrong size:\n  %s", name);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 	exit(1);
 #else
     fprintf(stderr,"Could not read %s\n",name);
     abort();
 #endif
   }
+  fseek(InFile, 0L, SEEK_SET);
+  fread(Roms[bank],1,romsize,InFile);
 
   fclose(InFile);
 
@@ -341,7 +345,7 @@ void BeebMemInit(void) {
   }
   if (romslot == 0xf)
   {
-    MessageBox(NULL,"There are no ROMs in the 'beebfile' directory",
+    MessageBox(GETHWND,"There are no ROMs in the 'beebfile' directory",
                  "BBC Emulator",MB_OK|MB_ICONERROR);
     exit(1);
   }
@@ -351,14 +355,14 @@ void BeebMemInit(void) {
   if (InFile=fopen(fullname,"rb"),InFile==NULL) {
     char errstr[200];
 	sprintf(errstr, "Cannot open OS image file:\n  %s", fullname);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 	exit(1);
   }
 
   if (fread(WholeRam+0xc000,1,16384,InFile)!=16384) {
     char errstr[200];
 	sprintf(errstr, "OS image is wrong size:\n  %s", fullname);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 	exit(1);
   }
   fclose(InFile);

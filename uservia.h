@@ -39,7 +39,8 @@ void UserVIA_poll_real(void);
   UserVIAState.timer1c-=ncycles; \
   UserVIAState.timer2c-=ncycles; \
   if ((UserVIAState.timer1c<0) || (UserVIAState.timer2c<0)) UserVIA_poll_real(); \
-  if (AMXMouseEnabled && AMXTrigger<=TotalCycles) AMXMouseMovement();
+  if (AMXMouseEnabled && AMXTrigger<=TotalCycles) AMXMouseMovement(); \
+  if (PrinterEnabled && PrinterTrigger<=TotalCycles) PrinterPoll();
 
 void SaveUserVIAState(unsigned char *StateData);
 void RestoreUserVIAState(unsigned char *StateData);
@@ -70,5 +71,15 @@ extern int AMXCurrentY;
 #define AMX_MIDDLE_BUTTON 2
 #define AMX_RIGHT_BUTTON 4
 extern int AMXButtons;
+
+/* Printer enabled */
+extern int PrinterEnabled;
+void PrinterEnable(char *FileName);
+void PrinterDisable();
+
+/* Trigger for checking for printer ready. */
+#define PRINTER_TRIGGER 25
+extern int PrinterTrigger;
+void PrinterPoll();
 
 #endif

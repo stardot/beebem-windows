@@ -34,6 +34,7 @@
 #include "uservia.h"
 #include "video.h"
 #include "atodconv.h"
+#include "main.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -519,7 +520,7 @@ INLINE static void BadInstrHandler(int opcode) {
 		sprintf(errstr,"Unsupported 6502 instruction 0x%02X at 0x%04X\n"
 			"  OK - instruction will be skipped\n"
 			"  Cancel - dump memory and exit",opcode,ProgramCounter-1);
-		if (MessageBox(NULL,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR) == IDCANCEL)
+		if (MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR) == IDCANCEL)
 		{
 			beebmem_dumpstate();
 			exit(0);

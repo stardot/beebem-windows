@@ -70,6 +70,10 @@ static unsigned char Buffer[MAXBUFSIZE];
 #define MAXBUFSIZE 8192
 static unsigned char wb1[MAXBUFSIZE];
 static unsigned char wb2[MAXBUFSIZE];
+
+static HWAVEOUT hwo;
+static WAVEHDR wh1, wh2;
+static WAVEHDR *active_wh, *inactive_wh;
 static unsigned char *active_wb, *inactive_wb;
 
 static LPDIRECTSOUND DSound = NULL;
@@ -79,6 +83,7 @@ static LPDIRECTSOUNDBUFFER DSB2 = NULL;
 #endif
 
 int SoundEnabled = 1;
+int DirectSoundEnabled = 0;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
 int SoundAutoTriggerTime;
@@ -331,56 +336,102 @@ static void PlayUpTil(double DestTime) {
 		}
 		else
 		{
-			MessageBox(NULL,"Failed to open audio.dbg","BBC Emulator",MB_OK|MB_ICONERROR);
+			MessageBox(GETHWND,"Failed to open audio.dbg","BBC Emulator",MB_OK|MB_ICONERROR);
 			exit(1);
 		}
 #else
-		HRESULT hr;
-		if (active_wb == wb1)
+		if (!DirectSoundEnabled)
 		{
-			hr = WriteToSoundBuffer(DSB2, inactive_wb, SoundBufferSize);
-			if (hr == DS_OK)
+			inactive_wh->lpData = (char *)inactive_wb;
+			inactive_wh->dwBufferLength = SoundBufferSize;
+			inactive_wh->dwBytesRecorded = 0;
+			inactive_wh->dwUser = 0;
+			inactive_wh->dwFlags = 0;
+			inactive_wh->dwLoops = 0;
+			inactive_wh->lpNext = 0;
+			inactive_wh->reserved = 0;
+
+			MMRESULT mmresult = waveOutPrepareHeader(hwo, inactive_wh, sizeof(WAVEHDR));
+			if (mmresult == MMSYSERR_NOERROR)
 			{
-				hr = DSB2->Play(0,0,0);
-				if(hr == DSERR_BUFFERLOST)
+				mmresult = waveOutWrite(hwo, inactive_wh, sizeof(WAVEHDR));
+				if (mmresult != MMSYSERR_NOERROR)
 				{
-					hr = DSB2->Restore();
-					if (hr == DS_OK)
-						hr = DSB2->Play(0,0,0);
+			  		MessageBox(GETHWND,"Sound write failed","BBC Emulator",MB_OK|MB_ICONERROR);
+					SoundReset();
 				}
+
+				if (active_wh != NULL)
+				{
+					while (!(active_wh->dwFlags & WHDR_DONE))
+						Sleep(0);
+
+					mmresult = waveOutUnprepareHeader(hwo, active_wh, sizeof(WAVEHDR));
+					if (mmresult != MMSYSERR_NOERROR)
+					{
+				  		MessageBox(GETHWND,"Sound unprepare failed","BBC Emulator",MB_OK|MB_ICONERROR);
+						SoundReset();
+					}
+				}
+			}
+			else
+			{
+		  		MessageBox(GETHWND,"Sound prepare failed","BBC Emulator",MB_OK|MB_ICONERROR);
+				SoundReset();
 			}
 		}
 		else
 		{
-			hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize);
-			if (hr == DS_OK)
+			HRESULT hr;
+			if (active_wb == wb1)
 			{
-				hr = DSB1->Play(0,0,0);
-				if(hr == DSERR_BUFFERLOST)
+				hr = WriteToSoundBuffer(DSB2, inactive_wb, SoundBufferSize);
+				if (hr == DS_OK)
 				{
-					hr = DSB1->Restore();
-					if (hr == DS_OK)
-						hr = DSB1->Play(0,0,0);
+					hr = DSB2->Play(0,0,0);
+					if(hr == DSERR_BUFFERLOST)
+					{
+						hr = DSB2->Restore();
+						if (hr == DS_OK)
+							hr = DSB2->Play(0,0,0);
+					}
 				}
 			}
-		}
-		if (hr != DS_OK)
-		{
-			char  errstr[200];
-			sprintf(errstr,"Direct Sound write failed\nFailure code %X",hr);
-			MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-			SoundReset();
+			else
+			{
+				hr = WriteToSoundBuffer(DSB1, inactive_wb, SoundBufferSize);
+				if (hr == DS_OK)
+				{
+					hr = DSB1->Play(0,0,0);
+					if(hr == DSERR_BUFFERLOST)
+					{
+						hr = DSB1->Restore();
+						if (hr == DS_OK)
+							hr = DSB1->Play(0,0,0);
+					}
+				}
+			}
+			if (hr != DS_OK)
+			{
+				char  errstr[200];
+				sprintf(errstr,"Direct Sound write failed\nFailure code %X",hr);
+				MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+				SoundReset();
+			}
 		}
 #endif
 
 		/* Swap active and inactive buffers */
+		active_wh = inactive_wh;
 		active_wb = inactive_wb;
 		if (active_wb == wb1)
 		{
+			inactive_wh = &wh2;
 			inactive_wb = wb2;
 		}
 		else
 		{
+			inactive_wh = &wh1;
 			inactive_wb = wb1;
 		}
 		bufptr=0;
@@ -517,31 +568,58 @@ static void InitAudioDev(int sampleratein) {
   };
 #endif
 #else
-	HRESULT hr;
-	hr = DirectSoundCreate(NULL, &DSound, NULL);
-	if(hr == DS_OK)
+	if (!DirectSoundEnabled)
 	{
-		hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_NORMAL);
-	}
-	if(hr == DS_OK)
-	{
-		hr = CreateSoundBuffer(DSound, &DSB1);
-	}
-	if(hr == DS_OK)
-	{
-		hr = CreateSoundBuffer(DSound, &DSB2);
-	}
-	if (hr != DS_OK)
-	{
-		char  errstr[200];
-		sprintf(errstr,"Direct Sound initialisation failed\nFailure code %X",hr);
-		MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
-		SoundReset();
-	}  
+		MMRESULT mmresult;
+		WAVEFORMATEX wfx;
 
-	active_wb = NULL;
-	inactive_wb = wb1;
+		wfx.wFormatTag = WAVE_FORMAT_PCM;
+		wfx.nChannels = 1;
+		wfx.nSamplesPerSec = samplerate;
+		wfx.wBitsPerSample = 8;
+		wfx.nBlockAlign = wfx.wBitsPerSample * wfx.nChannels / 8;
+		wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
+		wfx.cbSize = 0;
 
+		mmresult = waveOutOpen(&hwo,WAVE_MAPPER,&wfx,0,0,CALLBACK_NULL);
+		if (mmresult != MMSYSERR_NOERROR)
+		{
+	  		MessageBox(GETHWND,"Could not open a wave sound device","BBC Emulator",MB_OK|MB_ICONERROR);
+			SoundReset();
+		}
+
+		active_wh = NULL;
+		active_wb = NULL;
+		inactive_wh = &wh1;
+		inactive_wb = wb1;
+	}
+	else
+	{
+		HRESULT hr;
+		hr = DirectSoundCreate(NULL, &DSound, NULL);
+		if(hr == DS_OK)
+		{
+			hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_NORMAL);
+		}
+		if(hr == DS_OK)
+		{
+			hr = CreateSoundBuffer(DSound, &DSB1);
+		}
+		if(hr == DS_OK)
+		{
+			hr = CreateSoundBuffer(DSound, &DSB2);
+		}
+		if (hr != DS_OK)
+		{
+			char  errstr[200];
+			sprintf(errstr,"Direct Sound initialisation failed\nFailure code %X",hr);
+			MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+			SoundReset();
+		}  
+
+		active_wb = NULL;
+		inactive_wb = wb1;
+	}
 #endif
 }; /* InitAudioDev */
 
@@ -610,20 +688,30 @@ void SoundInit() {
 /* Called to disable sound output                                           */
 void SoundReset(void) {
 #ifdef WIN32
-	if (DSB1 != NULL)
+	if (!DirectSoundEnabled)
 	{
-		DSB1->Release();
-		DSB1 = NULL;
+		waveOutReset(hwo);
+		waveOutUnprepareHeader(hwo, &wh1, sizeof(WAVEHDR));
+		waveOutUnprepareHeader(hwo, &wh2, sizeof(WAVEHDR));
+		waveOutClose(hwo);
 	}
-	if (DSB2 != NULL)
+	else
 	{
-		DSB2->Release();
-		DSB2 = NULL;
-	}
-	if (DSound != NULL)
-	{
-		DSound->Release();
-		DSound = NULL;
+		if (DSB1 != NULL)
+		{
+			DSB1->Release();
+			DSB1 = NULL;
+		}
+		if (DSB2 != NULL)
+		{
+			DSB2->Release();
+			DSB2 = NULL;
+		}
+		if (DSound != NULL)
+		{
+			DSound->Release();
+			DSound = NULL;
+		}
 	}
 #else
   close(devfd);

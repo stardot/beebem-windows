@@ -1,4 +1,4 @@
-BeebEm for Microsoft Windows (20 Jan 1998)
+BeebEm for Microsoft Windows (27 Mar 1998)
 ============================
 
 Beebem has been ported to MS Windows. The following people have contributed 
@@ -6,7 +6,7 @@ to the Windows port:
 
   Nigel Magnay (magnayn@cs.man.ac.uk) - original port of V0.4
   Robert Schmidt (rsc@vingmed.no) - new mode 7 font, fixed backspace key
-  Mike Wyatt (mikebuk@aol.com) - V0.7 to V0.9 features
+  Mike Wyatt (mikebuk@aol.com) - V0.7 to V1.0 features
   Laurie Whiffen - user keyboard mapping and SW Ram features
 
 Note however that the Copyright for the Emulator resides with David Gilbert,
@@ -95,16 +95,14 @@ If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
 commands to load the programs from it.
 
 
-New Features in V0.9
+New Features in V1.0
 --------------------
 
-AMX mouse support - Simply maps your Windows mouse movements to AMX mouse
-  movements.
+Printer support - You can print to a file or any of the LPT or COM ports.
 
-DirectX screen updates - DirectX gives faster screen updates and makes a
-  full screen option possible.  Strangely, DirectX is not always faster than
-  standard methods when using the smaller window sizes (perhaps I've cocked
-  up the code somewhere!).
+Switchable DirectX - DirectDraw screen updates and DirectSound output are
+  not always faster than conventional display and sound output.  You can 
+  switch DirectX on and off to achieve the fastest emulation.
 
 
 Disc Writing
@@ -239,15 +237,34 @@ File
   Quick Save     filename.  State is saved and loaded from the
                  beebstate/quicksave file.
 
+  Printer Destination - Select where to send the printer output.
+                        WARNING - if you direct printer output to an LPT or
+                        COM port that is not attached to anything BeebEm may
+                        hang.
+
+  Printer On/Off      - Switches printer capture on or off.  To start and
+                        stop printing within BeebEm use the VDU2 and VDU3
+                        commands or Ctrl B and Ctrl C.
+
   Exit         - Exit Beebem
 
 View
-  Speed and Frames per Second  - Show or hide the relative speed and the
-                                 number of frames per second.
+  DirectDraw On/Off   - Switches DirectDraw screen output on or off. 
+                        DirectDraw should be faster than GDI output but this
+                        is not always the case.  Choose whatever gives the
+                        most frames per second.
 
-  160x128                      - Set the window size.  The bigger the window
-  240x192                        the slower it gets!
-  320x256
+  Buffer In Video RAM - When using DirectDraw each frame can be prepared in
+                        either video or system RAM.  This option switches
+                        between the two.  Choose whatever gives the most
+                        frames per second.
+
+  Speed and FPS On/Off - Show or hide the relative speed and the number of
+                         frames per second.
+
+  160x128              - Set the window size.  The bigger the window the
+  240x192                slower it gets!  Full screen with DirectDraw
+  320x256                switched on will be reasonably quick though.
   640x256
   640x512
   800x600
@@ -267,8 +284,13 @@ Speed
   1 FPS
 
 Sound
-  On/Off         - Switch sound on or off.  Note that sound only really
+  Sound On/Off   - Switch sound on or off.  Note that sound only really
                    works properly when running in real time mode.
+
+  DirectSound On/Off - Switches DirectSound output on or off.  DirectSound
+                       should be faster than MM output but this may not be
+                       the case on your PC.  Choose whatever gives the most
+                       frames per second while sound is being generated.
 
   44.1 kHz       - Sets the sound sample rate.  The higher it is the better
   22.05 kHz        the sound quality but the slower Beebem runs.

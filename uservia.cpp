@@ -22,6 +22,7 @@
 /* Modified from the system via */
 
 #include <iostream.h>
+#include <stdio.h>
 
 #include "6502core.h"
 #include "uservia.h"
@@ -29,6 +30,7 @@
 
 #ifdef WIN32
 #include <windows.h>
+#include "main.h"
 #endif
 
 /* AMX mouse (see uservia.h) */
@@ -40,6 +42,12 @@ int AMXTargetX = 0;
 int AMXTargetY = 0;
 int AMXCurrentX = 0;
 int AMXCurrentY = 0;
+
+/* Printer port */
+int PrinterEnabled = 0;
+int PrinterTrigger = 0;
+static char PrinterFileName[256];
+static FILE *PrinterFileHandle = NULL;
 
 extern int DumpAfterEach;
 /* My raw VIA state */
@@ -61,6 +69,7 @@ static void UpdateIFRTopBit(void) {
 void UserVIAWrite(int Address, int Value) {
   /* cerr << "UserVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
+
   switch (Address) {
     case 0:
       UserVIAState.orb=Value & 0xff;
@@ -74,6 +83,21 @@ void UserVIAWrite(int Address, int Value) {
       UserVIAState.ora=Value & 0xff;
       UserVIAState.ifr&=0xfc;
       UpdateIFRTopBit();
+      if (PrinterEnabled) {
+        if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF) {
+#ifdef WIN32
+          char errstr[200];
+          sprintf(errstr, "Failed to write to printer file:\n  %s", PrinterFileName);
+          MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+          cerr << "Failed to write to printer file " << PrinterFileName << "\n";
+#endif
+        }
+        else {
+          fflush(PrinterFileHandle);
+          SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+        }
+      }
       break;
 
     case 2:
@@ -164,6 +188,7 @@ void UserVIAWrite(int Address, int Value) {
 /* Address is in the range 0-f - with the fe60 stripped out */
 int UserVIARead(int Address) {
   int tmp;
+
   /* cerr << "UserVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
   switch (Address) {
@@ -224,6 +249,9 @@ int UserVIARead(int Address) {
     case 9: /* Timer 2 ho counter */
       return((UserVIAState.timer2c / 512) & 0xff);
 
+    case 12:
+      return(UserVIAState.pcr);
+
     case 13:
       UpdateIFRTopBit();
       return(UserVIAState.ifr);
@@ -275,13 +303,13 @@ void UserVIA_poll_real(void) {
       UpdateIFRTopBit();
     };
   } /* timer2c underflow */
-
 } /* UserVIA_poll */
 
 /*--------------------------------------------------------------------------*/
 void UserVIAReset(void) {
   VIAReset(&UserVIAState);
   ClearTrigger(AMXTrigger);
+  ClearTrigger(PrinterTrigger);
 } /* UserVIAReset */
 
 /*-------------------------------------------------------------------------*/
@@ -334,6 +362,55 @@ void AMXMouseMovement() {
 			UpdateIFRTopBit();
 		}
 	}
+}
+
+/*-------------------------------------------------------------------------*/
+void PrinterEnable(char *FileName) {
+	/* Close file if already open */
+	if (PrinterFileHandle != NULL)
+	{
+		fclose(PrinterFileHandle);
+		PrinterFileHandle = NULL;
+	}
+
+	strcpy(PrinterFileName, FileName);
+	PrinterFileHandle = fopen(FileName, "wb");
+	if (PrinterFileHandle == NULL)
+	{
+#ifdef WIN32
+		char errstr[200];
+		sprintf(errstr, "Failed to open printer:\n  %s", PrinterFileName);
+		MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+#else
+		cerr << "Failed to open printer " << PrinterFileName << "\n";
+#endif
+	}
+	else
+	{
+		PrinterEnabled = 1;
+		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+void PrinterDisable() {
+	if (PrinterFileHandle != NULL)
+	{
+		fclose(PrinterFileHandle);
+		PrinterFileHandle = NULL;
+	}
+
+	PrinterEnabled = 0;
+	ClearTrigger(PrinterTrigger);
+}
+/*-------------------------------------------------------------------------*/
+void PrinterPoll() {
+	ClearTrigger(PrinterTrigger);
+	UserVIATriggerCA1Int();
+
+	/* The CA1 interrupt is not always picked up,
+		set up a trigger just in case. */
+	SetTrigger(100000, PrinterTrigger);
 }
 
 /*--------------------------------------------------------------------------*/

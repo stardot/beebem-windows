@@ -31,6 +31,7 @@
 #include "beebmem.h"
 #include "atodconv.h"
 #include "beebstate.h"
+#include "main.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -66,7 +67,7 @@ void BeebSaveState(char *FileName)
 #ifdef WIN32
 			char errstr[200];
 			sprintf(errstr, "Failed to write to BeebState file:\n  %s", FileName);
-			MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+			MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
 			fprintf(stderr,"Failed to write to BeebState file: %s\n",FileName);
 #endif
@@ -78,7 +79,7 @@ void BeebSaveState(char *FileName)
 #ifdef WIN32
 	char errstr[200];
 	sprintf(errstr, "Cannot open BeebState file:\n  %s", FileName);
-	MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+	MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
 	fprintf(stderr,"Cannot open BeebState file: %s\n",FileName);
 #endif
@@ -124,7 +125,7 @@ void BeebRestoreState(char *FileName)
 #ifdef WIN32
 				char errstr[200];
 				sprintf(errstr, "Not a BeebState file:\n  %s", FileName);
-				MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+				MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
 				fprintf(stderr,"Not a BeebState file: %s\n",FileName);
 #endif
@@ -135,7 +136,7 @@ void BeebRestoreState(char *FileName)
 #ifdef WIN32
 			char errstr[200];
 			sprintf(errstr, "BeebState file is wrong size:\n  %s", FileName);
-			MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+			MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
 			fprintf(stderr,"BeebState file is wrong size: %s\n",FileName);
 #endif
@@ -147,7 +148,7 @@ void BeebRestoreState(char *FileName)
 #ifdef WIN32
 	char errstr[200];
 	sprintf(errstr, "Cannot open BeebState file:\n  %s", FileName);
-	MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+	MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
 	fprintf(stderr,"Cannot open BeebState file: %s\n",FileName);
 #endif

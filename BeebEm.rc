@@ -229,11 +229,28 @@ BEGIN
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
         MENUITEM "Quick Sa&ve",                 IDM_QUICKSAVE
         MENUITEM SEPARATOR
+        POPUP "Printer &Destination"
+        BEGIN
+            MENUITEM "File:",                       IDM_PRINTER_FILE
+            MENUITEM "LPT1:",                       IDM_PRINTER_LPT1
+            MENUITEM "LPT2:",                       IDM_PRINTER_LPT2
+            MENUITEM "LPT3:",                       IDM_PRINTER_LPT3
+            MENUITEM "LPT4:",                       IDM_PRINTER_LPT4
+            MENUITEM "COM1:",                       IDM_PRINTER_COM1
+            MENUITEM "COM2:",                       IDM_PRINTER_COM2
+            MENUITEM "COM3:",                       IDM_PRINTER_COM3
+            MENUITEM "COM4:",                       IDM_PRINTER_COM4
+        END
+        MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
+        MENUITEM SEPARATOR
         MENUITEM "E&xit",                       IDM_EXIT
     END
     POPUP "&View"
     BEGIN
-        MENUITEM "&Speed and Frames per Second", IDM_SPEEDANDFPS
+        MENUITEM "&DirectDraw On/Off",          IDM_DDRAWONOFF
+        MENUITEM "&Buffer In Video RAM",        IDM_DDINVIDEORAM
+        MENUITEM SEPARATOR
+        MENUITEM "&Speed and FPS On/Off",       IDM_SPEEDANDFPS
         MENUITEM SEPARATOR
         MENUITEM "160x128",                     IDM_160X128
         MENUITEM "240x192",                     IDM_240X192
@@ -258,7 +275,8 @@ BEGIN
     END
     POPUP "&Sound"
     BEGIN
-        MENUITEM "&On/Off",                     IDM_SOUNDONOFF
+        MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
+        MENUITEM "&DirectSound On/Off",         IDM_DSOUNDONOFF
         MENUITEM SEPARATOR
         MENUITEM "44.1 kHz",                    IDM_44100KHZ
         MENUITEM "22.05 kHz",                   IDM_22050KHZ

@@ -156,6 +156,19 @@
 #define IDM_AMX_ADJUSTM30               40076
 #define IDM_AMX_ADJUSTM50               40077
 #define IDM_AMX_LRFORMIDDLE             40078
+#define IDM_PRINTERONOFF                40080
+#define IDM_PRINTER_FILE                40081
+#define IDM_PRINTER_LPT1                40082
+#define IDM_PRINTER_LPT2                40083
+#define IDM_PRINTER_LPT3                40084
+#define IDM_PRINTER_LPT4                40085
+#define IDM_PRINTER_COM1                40086
+#define IDM_PRINTER_COM2                40087
+#define IDM_PRINTER_COM3                40088
+#define IDM_PRINTER_COM4                40089
+#define IDM_DDRAWONOFF                  40090
+#define IDM_DDINVIDEORAM                40091
+#define IDM_DSOUNDONOFF                 40092
 
 // Next default values for new objects
 // 
@@ -163,7 +176,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40079
+#define _APS_NEXT_COMMAND_VALUE         40093
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

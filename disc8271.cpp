@@ -32,6 +32,7 @@
 
 #ifdef WIN32
 #include <windows.h>
+#include "main.h"
 #endif
 
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
@@ -139,7 +140,7 @@ static void NotImp(const char *NotImpCom) {
 #ifdef WIN32
   char errstr[200];
   sprintf(errstr,"Disc operation '%s' not supported", NotImpCom);
-  MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+  MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
   cerr << NotImpCom << " has not been implemented in disc8271 - sorry\n";
   exit(0);
@@ -1138,7 +1139,7 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
 #ifdef WIN32
     char errstr[200];
     sprintf(errstr, "Could not open disc file:\n  %s", FileName);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Could not open disc file " << FileName << "\n";
 #endif
@@ -1176,7 +1177,7 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
   if (CheckForCatalogue(DiscStore[DriveNum][HeadNum][1].Sectors[0].Data,
                         DiscStore[DriveNum][HeadNum][1].Sectors[1].Data) == 1) {
 #ifdef WIN32
-    MessageBox(NULL,"WARNING - Incorrect disc type selected?\n\n"
+    MessageBox(GETHWND,"WARNING - Incorrect disc type selected?\n\n"
                        "This disc file looks like a double sided\n"
                        "disc image. Check files before copying them.\n",
                        "BBC Emulator",MB_OK|MB_ICONWARNING);
@@ -1198,7 +1199,7 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
 #ifdef WIN32
     char errstr[200];
     sprintf(errstr, "Could not open disc file:\n  %s", FileName);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Could not open disc file " << FileName << "\n";
 #endif
@@ -1237,7 +1238,7 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
   if (CheckForCatalogue(DiscStore[DriveNum][1][0].Sectors[0].Data,
                         DiscStore[DriveNum][1][0].Sectors[1].Data) == 0) {
 #ifdef WIN32
-    MessageBox(NULL,"WARNING - Incorrect disc type selected?\n\n"
+    MessageBox(GETHWND,"WARNING - Incorrect disc type selected?\n\n"
                        "This disc file looks like a single sided\n"
                        "disc image. Check files before copying them.\n",
                        "BBC Emulator",MB_OK|MB_ICONWARNING);
@@ -1263,7 +1264,7 @@ static void SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
 #ifdef WIN32
     char errstr[200];
     sprintf(errstr, "Could not open disc file for write:\n  %s", FileNames[DriveNum]);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Could not open disc file for write " << FileNames[DriveNum] << "\n";
 #endif
@@ -1304,7 +1305,7 @@ static void SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
 #ifdef WIN32
     char errstr[200];
     sprintf(errstr, "Failed writing to disc file:\n  %s", FileNames[DriveNum]);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Failed writing to disc file " << FileNames[DriveNum] << "\n";
 #endif
@@ -1375,7 +1376,7 @@ void DiscWriteEnable(int DriveNum, int WriteEnable) {
     if (!DiscOK)
     {
 #ifdef WIN32
-      MessageBox(NULL,"WARNING - Invalid Disc Catalogue\n\n"
+      MessageBox(GETHWND,"WARNING - Invalid Disc Catalogue\n\n"
                        "This disc image will get corrupted if\n"
                        "files are written to it.  Copy all the\n"
                        "files to a new image to fix it.",
@@ -1407,7 +1408,7 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
 #ifdef WIN32
     char errstr[200];
     sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", FileName);
-    if (MessageBox(NULL,errstr,"BBC Emulator",MB_YESNO|MB_ICONQUESTION) != IDYES)
+    if (MessageBox(GETHWND,errstr,"BBC Emulator",MB_YESNO|MB_ICONQUESTION) != IDYES)
       return;
 #else
     cerr << "Could not create disc file " << FileName << "\n";
@@ -1420,7 +1421,7 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
 #ifdef WIN32
     char errstr[200];
     sprintf(errstr, "Could not create disc file:\n  %s", FileName);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Could not create disc file " << FileName << "\n";
 #endif
@@ -1452,7 +1453,7 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
 #ifdef WIN32
     char errstr[200];
     sprintf(errstr, "Failed writing to disc file:\n  %s", FileNames);
-    MessageBox(NULL,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Failed writing to disc file " << FileName << "\n";
 #endif
@@ -1477,7 +1478,7 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
   if (scanfres=sscanf(DiscString,"%c:%d:%s",&DoubleSided,&Tracks,Name),
       scanfres!=3) {
 #ifdef WIN32
-    MessageBox(NULL,"Incorrect format for BeebDiscLoad, correct format is "
+    MessageBox(GETHWND,"Incorrect format for BeebDiscLoad, correct format is "
                "D|S:tracks:filename", "BBC Emulator",MB_OK|MB_ICONERROR);
 #else
     cerr << "Incorrect format for BeebDiscLoad - the correct format is\n";
@@ -1498,7 +1499,7 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
 
       default:
 #ifdef WIN32
-        MessageBox(NULL,"BeebDiscLoad disc type incorrect, use S for single sided and "
+        MessageBox(GETHWND,"BeebDiscLoad disc type incorrect, use S for single sided and "
                    "D for double sided", "BBC Emulator",MB_OK|MB_ICONERROR);
 #else
         cerr << "BeebDiscLoad environment variable set wrong - the\n";
