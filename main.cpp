@@ -37,10 +37,12 @@
 #include "video.h"
 #include "via.h"
 #include "atodconv.h"
+#include "disc1770.h"
 
 extern VIAState SysVIAState;
 int DumpAfterEach=0;
 
+unsigned char MachineType;
 BeebWin *mainWin = NULL;
 HINSTANCE hInst;
 
@@ -52,7 +54,9 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	MSG msg;
   
 	hInst = hInstance;
-  
+	mainWin=new BeebWin();
+	mainWin->Initialise();
+    if (MachineType==0) {
 	BeebMemInit();
 	Init6502core();
 	SysVIAReset();
@@ -60,10 +64,27 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	VideoInit();
 	Disc8271_reset();
 	SoundReset();
+	AtoDReset(); 
+	}
+	if (MachineType==1) {
+//	memset(WholeRam,0,0x5000);
+//	memset(FSRam,0,0x2000);
+//	memset(ShadowRAM,0,0x5000);
+//	memset(PrivateRAM,0,0x1000);
+	ACCCON=0;
+	PagedRomReg=0xf;
+	BeebMemInit();
+	Init6502core();
+	SysVIAReset();
+	UserVIAReset();
+	VideoInit();
+	Disc8271_reset();
+	Reset1770();
+	SoundReset();
 	AtoDReset();
+	UseShadow=0;
+	}
 
-	mainWin=new BeebWin();
-	mainWin->Initialise();
 
 	do
 	{

@@ -41,7 +41,7 @@ extern int IgnoreIllegalInstructions;
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;
 extern unsigned int Cycles;
-
+extern int ProgramCounter;
 extern CycleCountT TotalCycles;
 
 #define SetTrigger(after,var) var=TotalCycles+after;
@@ -59,6 +59,7 @@ void Exec6502Instruction(void);
 
 void Save6502State(unsigned char *CPUState);
 void Restore6502State(unsigned char *CPUState);
-
+void DoNMI(void);
 void core_dumpstate(void);
+void DoInterrupt(void);
 #endif

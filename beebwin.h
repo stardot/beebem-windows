@@ -74,6 +74,8 @@ class BeebWin  {
 		memset(m_screen+offset,Col,width);
 	};
 
+	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
+
 	EightUChars *GetLinePtr(int y) {
 		if(y > 255) y=255;
 		return((EightUChars *)(m_screen + ( y * 640 )));
@@ -172,10 +174,10 @@ class BeebWin  {
 	void CreateBitmap(void);
 	void InitMenu(void);
   void UpdateMonitorMenu();
+  void UpdateModelType();
 	void InitDirectX(void);
 	HRESULT InitSurfaces(void);
 	void ResetSurfaces(void);
-	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
 	void GetRomMenu(void);				// LRW  Added for individual ROM/Ram
 	void GreyRomMenu(BOOL SetToGrey);	// LRW	Added for individual ROM/Ram
 	void TranslateWindowSize(void);

@@ -47,6 +47,7 @@ extern unsigned char CRTC_CursorPosLow;        /* R15 */
 extern unsigned char CRTC_LightPenHigh;        /* R16 */
 extern unsigned char CRTC_LightPenLow;         /* R17 */
 
+void RedoMPTR(void);
 void CRTCWrite(int Address, int Value);
 int CRTCRead(int Address);
 void VideoULAWrite(int Address, int Value);

@@ -119,3 +119,25 @@ Windows update only:
   interpolated display!  Scaling artifacts "disappear" at any resolution.
 * Made "Full Screen" a toggle, not a standalone mode/"window size".
 * Fixed a bug that didn't show speed/FPS in a windowed DirectDraw mode.
+
+Version 1.3 (Richard Gellman)
+-----------------------------
+Windows update only:
+* Added full cursor support to enable cursor on/off/blink and blink rates
+* Corrected mode 7 flashing text rate
+* Corrected minor fault in sound register write edge detect
+* Redesigned mode 7 font, looks ugly, pending further work
+  (Original font found in mode7font.alt)
+* Added reset function to file menu.
+* Added Master 128 Support:
+  8K Filing system RAM from &C000 to &DFFF
+  4K Private RAM from &8000 to &8FFF
+  20K Shadow RAM from &3000 to &7FFF (still very slightly buggy, but usable)
+  Added all documented 65C12 Opcodes extra to the 6502
+  Added _simple_ 1770 FDC - Read only at present
+  Made some hardware re-arrange to alternate locations on a Master
+  (The A to D convertor is accessed the same, but at a different location)
+* Implemented "available models" detection, only models that you have the
+  roms for will be available, if neither available, the program exits.
+* Added BBC Model Type Menu to Options Menu
+

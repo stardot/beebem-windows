@@ -25,6 +25,8 @@
 
 /* Mike Wyatt 7/6/97 - Added cursor display and Win32 port */
 
+/* Richard Gellman 4/2/2001 AAAARGH SHADOW RAM! HELP! */
+
 #include "iostream.h"
 #include <stdlib.h>
 
@@ -87,6 +89,8 @@ unsigned char CRTC_CursorPosLow=0;          /* R15 */
 unsigned char CRTC_LightPenHigh=0;          /* R16 */
 unsigned char CRTC_LightPenLow=0;           /* R17 */
 
+int ova,ovn; // mem ptr buffers
+
 /* CharLine counts from the 'reference point' - i.e. the point at which we reset the address pointer - NOT
 the point of the sync. If it is -ve its actually in the adjust time */
 typedef struct {
@@ -114,8 +118,15 @@ static int Mode7FlashOn=1; /* True if a flashing character in mode 7 is on */
 static int Mode7DoubleHeightFlags[80]; /* Pessimistic size for this flags - if 1 then corresponding character on NEXT line is top half */
 
 /* Flash every half second(???) i.e. 25 x 50Hz fields */
+// No. On time is longer than off time. - according to my datasheet, its 0.75Hz with 3:1 ON:OFF ratio. - Richard Gellman
+// cant see that myself.. i think it means on for 0.75 secs, off for 0.25 secs
 #define MODE7FLASHFREQUENCY 25
-int Mode7FlashTrigger=MODE7FLASHFREQUENCY;
+#define MODE7ONFIELDS 37
+#define MODE7OFFFIELDS 13
+unsigned char CursorOnFields,CursorOffFields;
+int CursorFieldCount=32;
+unsigned char CursorOnState=1;
+int Mode7FlashTrigger=MODE7ONFIELDS;
 
 /* If 1 then refresh on every display, else refresh every n'th display */
 int Video_RefreshFrequency=1;
@@ -457,6 +468,7 @@ static void DoFastTable(void) {
 static void VideoStartOfFrame(void) {
   int tmp;
   static int InterlaceFrame=0;
+  int CurStart;
 #ifdef BEEB_DOTIME
   static int Have_GotTime=0;
   static struct tms previous,now;
@@ -464,6 +476,8 @@ static void VideoStartOfFrame(void) {
 
   double frametime;
   static CycleCountT OldCycles=0;
+  
+  int CurStart;
 
   if (!Have_GotTime) {
     times(&previous);
@@ -502,6 +516,20 @@ static void VideoStartOfFrame(void) {
     FrameNum=Video_RefreshFrequency-1;
   };
 #endif
+	// Cursor update for blink. I thought I'd put it here, as this is where the mode 7 flash field thingy is too
+	// - Richard Gellman
+	CursorFieldCount--;
+	if (CursorFieldCount<0) {
+		CurStart = CRTC_CursorStart & 0x60;
+		// 0 is cursor displays, but does not blink
+		// 32 is no cursor
+		// 64 is 1/16 fast blink
+		// 96 is 1/32 slow blink
+		if (CurStart==0) { CursorFieldCount=CursorOnFields; CursorOnState=1; }
+		if (CurStart==32) { CursorFieldCount=CursorOffFields; CursorOnState=0; }
+		if (CurStart==64) { CursorFieldCount=16; CursorOnState^=1; }
+		if (CurStart==96) { CursorFieldCount=32; CursorOnState^=1; }
+	}
 
   if (CRTC_VerticalTotalAdjust==0) {
     VideoState.CharLine=0;
@@ -523,9 +551,10 @@ static void VideoStartOfFrame(void) {
     tmphigh&=255;
     VideoState.Addr=CRTC_ScreenStartLow+(tmphigh<<8);
 
+	// O aye. this is the mode 7 flash section is it? Modified for corrected flash settings - Richard Gellman
     Mode7FlashTrigger--;
     if (Mode7FlashTrigger<0) {
-      Mode7FlashTrigger=MODE7FLASHFREQUENCY;
+		Mode7FlashTrigger=(Mode7FlashOn)?MODE7OFFFIELDS:MODE7ONFIELDS;
       Mode7FlashOn^=1; /* toggle flash state */
     };
     for(tmp=0;tmp<80;tmp++) {
@@ -633,6 +662,7 @@ static void DoMode7Row(void) {
   int Graphics=0; /* I.e. alpha */
   int Separated=0; /* i.e. continuous graphics */
   int HoldGraph=0; /* I.e. don't hold graphics - I don't know what hold graphics is anyway! */
+  // That's ok. Nobody else does either, and nor do I. - Richard Gellman.
 
   unsigned int CurrentCol[9]={0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff};
   int CurrentLen[9]={0,0,0,0,0,0,0,0,0};
@@ -803,6 +833,11 @@ static void LowLevelDoScanLine() {
   if (FastTable_Valid) LineRoutine();
 }; /* LowLevelDoScanLine */
 
+void RedoMPTR(void) {
+	if (VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrapMo7(ova,ovn);
+	if (!VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrap(ova,ovn);
+}
+
 /*-------------------------------------------------------------------------------------------------------------*/
 void VideoDoScanLine(void) {
   /* cerr << "CharLine=" << VideoState.CharLine << " InCharLine=" << VideoState.InCharLine << "\n"; */
@@ -815,6 +850,7 @@ void VideoDoScanLine(void) {
     };
 
     if ((VideoState.CharLine!=-1) && (VideoState.CharLine<CRTC_VerticalDisplayed)) {
+		ova=VideoState.Addr; ovn=CRTC_HorizontalDisplayed;
       VideoState.DataPtr=BeebMemPtrWithWrapMo7(VideoState.Addr,CRTC_HorizontalDisplayed);
       VideoState.Addr+=CRTC_HorizontalDisplayed;
       if (!FrameNum) DoMode7Row();
@@ -866,6 +902,7 @@ void VideoDoScanLine(void) {
        if (VideoState.CharLine<CRTC_VerticalDisplayed) {
          /* If first row of character then get the data pointer from memory */
          if (VideoState.InCharLine==CRTC_ScanLinesPerChar) {
+			ova=VideoState.Addr*8; ovn=CRTC_HorizontalDisplayed*8;
            VideoState.DataPtr=BeebMemPtrWithWrap(VideoState.Addr*8,CRTC_HorizontalDisplayed*8);
            VideoState.Addr+=CRTC_HorizontalDisplayed;
          };
@@ -1119,7 +1156,7 @@ static void VideoAddCursor(void) {
 	{
 		for (int y = CurStart; y <= CurEnd && CurY + y < 256; ++y)
 		{
-			if (CurY + y >= 0)
+			if (CurY + y >= 0 && CursorOnState)
 				mainWin->doHorizLine(mainWin->cols[7], CurY + y, CurX, CurSize);
 		}
 	}

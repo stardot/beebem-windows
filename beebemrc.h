@@ -178,6 +178,10 @@
 #define ID_VIEW_DD_1024X768             40100
 #define ID_VIEW_DD_1280X1024            40101
 #define IDM_DD32ONOFF                   40102
+#define ID_FILE_RESET                   40103
+#define ID_MODELB                       40105
+#define ID_MASTER128                    40106
+#define ID_PCD                          40107
 
 // Next default values for new objects
 // 
@@ -185,7 +189,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40103
+#define _APS_NEXT_COMMAND_VALUE         40108
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

@@ -35,7 +35,6 @@
 #include "video.h"
 #include "atodconv.h"
 #include "main.h"
-#include "disc1770.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -112,7 +111,7 @@ static int CyclesTable[]={
 unsigned int Cycles;
 
 /* A macro to speed up writes - uses a local variable called 'tmpaddr' */
-#define FASTWRITE(addr,val) tmpaddr=addr; if (tmpaddr<0x8000) BEEBWRITEMEM_DIRECT(tmpaddr,val) else BeebWriteMem(tmpaddr,val);
+#define FASTWRITE(addr,val) tmpaddr=addr; if ((tmpaddr<0x8000 && MachineType==0) || (tmpaddr<0x3000 && MachineType==1)) BEEBWRITEMEM_DIRECT(tmpaddr,val) else BeebWriteMem(tmpaddr,val);
 
 /* Get a two byte address from the program counter, and then post inc the program counter */
 #define GETTWOBYTEFROMPC(var) \
@@ -261,8 +260,8 @@ INLINE static void TRBInstrHandler(int16 address) {
 	oldVal=BEEBREADMEM_FAST(address);
 	newVal=(Accumulator ^ 255) & oldVal;
     BEEBWRITEMEM_FAST(address,newVal);
-    PSR&=253;
-	PSR|=((Accumulator & oldVal)==0) ? 2 : 0;
+    PSR=PSR & 253;
+	PSR=PSR | (newVal==0) ? 2 : 0;
 } // TRBInstrHandler
 
 INLINE static void TSBInstrHandler(int16 address) {
@@ -270,8 +269,8 @@ INLINE static void TSBInstrHandler(int16 address) {
 	oldVal=BEEBREADMEM_FAST(address);
 	newVal=Accumulator | oldVal;
     BEEBWRITEMEM_FAST(address,newVal);
-    PSR&=253;
-	PSR|=((Accumulator & oldVal)==0) ? 2 : 0;
+    PSR=PSR & 253;
+	PSR=PSR | (newVal==0) ? 2 : 0;
 } // TSBInstrHandler
 
 INLINE static void ASLInstrHandler_Acc(void) {
@@ -575,7 +574,7 @@ INLINE static void BadInstrHandler(int opcode) {
 		DumpRegs();
 		fprintf(stderr,"Dumping main memory\n");
 		beebmem_dumpstate();
-		// abort();
+		abort();
 #endif
 	}
 
@@ -754,7 +753,7 @@ INLINE static int16 IndAddrModeHandler_Address(void) {
   According to my BBC Master Reference Manual Part 2
   the 6502 has a bug concerning this addressing mode and VectorLocation==xxFF
   so, we're going to emulate that bug -- Richard Gellman */
-  if ((VectorLocation & 0xff)!=0xff || MachineType==1) {
+  if ((VectorLocation & 0xff)!=0xff) {
    EffectiveAddress=BEEBREADMEM_FAST(VectorLocation);
    EffectiveAddress|=BEEBREADMEM_FAST(VectorLocation+1) << 8; }
   else {
@@ -767,11 +766,13 @@ INLINE static int16 IndAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Zero page Indirect addressing mode handler                                        */
 INLINE static int16 ZPIndAddrModeHandler_Address(void) {
+  /* For jump indirect only */
   int VectorLocation;
   int EffectiveAddress;
 
-  VectorLocation=WholeRam[ProgramCounter++];
-  EffectiveAddress=WholeRam[VectorLocation]+(WholeRam[VectorLocation+1]<<8);
+  GETTWOBYTEFROMPC(VectorLocation)
+  ProgramCounter--;
+  EffectiveAddress=BEEBREADMEM_FAST(VectorLocation);
 
    // EffectiveAddress|=BEEBREADMEM_FAST(VectorLocation+1) << 8; }
   return(EffectiveAddress);
@@ -780,14 +781,16 @@ INLINE static int16 ZPIndAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Zero page Indirect addressing mode handler                                        */
 INLINE static int16 ZPIndAddrModeHandler_Data(void) {
+  /* For jump indirect only */
   int VectorLocation;
   int EffectiveAddress;
 
-  VectorLocation=WholeRam[ProgramCounter++];
-  EffectiveAddress=WholeRam[VectorLocation]+(WholeRam[VectorLocation+1]<<8);
+  GETTWOBYTEFROMPC(VectorLocation)
+  ProgramCounter--;
+  EffectiveAddress=BEEBREADMEM_FAST(VectorLocation);
 
    // EffectiveAddress|=BEEBREADMEM_FAST(VectorLocation+1) << 8; }
-  return(WholeRam[EffectiveAddress]);
+  return(BEEBREADMEM_FAST(EffectiveAddress));
 } /* ZPIndAddrModeHandler */
 
 /*-------------------------------------------------------------------------*/
@@ -862,15 +865,17 @@ void Exec6502Instruction(void) {
   static int CurrentInstruction;
   static int tmpaddr;
   static int OldNMIStatus;
-  unsigned char Bit_E,Bit_X,NewShadow,OldACCCON;
+
   int loop;
   for(loop=0;loop<512;loop++) {
-  // For the Master, check Shadow Ram Presence
-  // Note, this has to be done BEFORE reading an instruction due to Bit E and the PC
+
+  if (CPUDebug) fprintf(InstrLog,"%04x ",ProgramCounter);
   /* Read an instruction and post inc program couter */
   CurrentInstruction=WholeRam[ProgramCounter++];
+  if (CPUDebug) fprintf(InstrLog,"%02x %02x %02x\n",CurrentInstruction,WholeRam[ProgramCounter],WholeRam[ProgramCounter+1]);
   // cout << "Fetch at " << hex << (ProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
   Cycles=CyclesTable[CurrentInstruction]; 
+  if (CPUDebug) InstrCount++;
   /*Stats[CurrentInstruction]++; */
   switch (CurrentInstruction) {
     case 0x00:
@@ -1480,26 +1485,7 @@ void Exec6502Instruction(void) {
       break;
 	break;
   }; /* OpCode switch */
-	  if (MachineType==1) {
-		  Bit_E=(ACCCON & 2)>>1;
-		  Bit_X=(ACCCON & 4)>>2;
-		  NewShadow=0;
-		  if (Bit_E && ProgramCounter>=0xc000 && ProgramCounter<0xe000) NewShadow=1;
-		  if (Bit_X) NewShadow=1;
-		  if (NewShadow && !UseShadow) {
-			  // switch to shadown ram
-			  memcpy(MainRAM+0x3000,WholeRam+0x3000,0x5000);
-			  memcpy(WholeRam+0x3000,ShadowRAM+0x3000,0x5000);
-		  }
-		  if (!NewShadow && UseShadow) {
-			  // switch to main ram
-			  memcpy(ShadowRAM+0x3000,WholeRam+0x3000,0x5000);
-			  memcpy(WholeRam+0x3000,MainRAM+0x3000,0x5000);
-		  }
-		  UseShadow=NewShadow;
-	  } 
-  if (MachineType==1 && ((ACCCON &7)!=(OldACCCON &7))) RedoMPTR();
-  OldACCCON=ACCCON;
+
   OldNMIStatus=NMIStatus;
   /* NOTE: Check IRQ status before polling hardware - this is essential for
      Rocket Raid to work since it polls the IFR in the sys via for start of 
@@ -1518,7 +1504,6 @@ void Exec6502Instruction(void) {
 #ifdef SOUNDSUPPORT
   Sound_Trigger(Cycles);
 #endif
-  if (MachineType==1 && NMILock==0) Poll1770(); // Do 1770 Background stuff
 
   if ((NMIStatus) && (!OldNMIStatus)) DoNMI();
   };

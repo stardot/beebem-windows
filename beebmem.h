@@ -27,6 +27,28 @@ extern int WritableRoms;  /* Is writing to a ROM allowed */
 extern int RomWritable[16]; /* Allow writing to ROMs on an individual basis */
 
 extern unsigned char WholeRam[65536];
+static unsigned char Roms[16][16384];
+extern int PagedRomReg;
+/* Master 128 Specific Stuff */
+extern unsigned char FSRam[12228]; // 12K Filing System RAM (yes ok its only 8, i misread ;P)
+extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
+extern int CMOSRAM[64]; // 50 Bytes CMOS RAM
+extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
+extern unsigned char MOSROM[12228]; // 12K MOS Store for swapping FS ram in and out
+extern unsigned char ACCCON; // ACCess CONtrol register
+extern unsigned char UseShadow; // 1 to use shadow ram, 0 to use main ram
+extern unsigned char MainRAM[32768]; // temporary store for main ram when using shadow ram
+struct CMOSType {
+	unsigned char Enabled;
+	unsigned char ChipSelect;
+	unsigned char Address;
+    unsigned char StrobedData;
+	unsigned char DataStrobe;
+	unsigned char Op;
+};
+extern struct CMOSType CMOS;
+extern char RomPath[256];
+/* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 /* NOTE: Only to be used if 'a' doesn't change the address */
 #define BEEBREADMEM_FAST(a) ((a<0xfc00)?WholeRam[a]:BeebReadMem(a))
 /* as BEEBREADMEM_FAST but then increments a */
@@ -38,6 +60,7 @@ void BeebWriteMem(int Address, int Value);
 #define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address]=Value;
 char *BeebMemPtrWithWrap(int a, int n);
 char *BeebMemPtrWithWrapMo7(int a, int n);
+void BeebReadRoms(void);
 void BeebMemInit(void);
 
 void SaveMemState(unsigned char *RomState,unsigned char *MemState,unsigned char *SWRamState);

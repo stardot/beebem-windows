@@ -64,6 +64,27 @@ For the DFS I recommend you use the Watford DFS, you can find it here:
 
   ftp://ftp.nvg.unit.no/pub/bbc/rom/Watford/fs/DFS-1.44.rom
 
+V.1.3 Notes;
+The emulator now expects the following ROMS to be present for each mode to
+be enabled:
+BBC Model B - OS12 BASIC.ROM DNFS
+BBC Master 128 - MOS.ROM TERMINAL.ROM BASIC4.ROM DFS.ROM
+
+These files are *needed* per operation mode. i.e. u dont need all 3 roms for
+BBC Model B, as long as you have the Master 128 ROMS.
+(The need for TERMINAL.ROM is because it contains part of the MOS)
+If all the required roms are not found, then the relavant mode will be
+disabled in the model menu. If neither model is available, the emulator will
+exit. If the roms present for the default model aren't available, it will
+change to the alternate model.
+
+Note: The required filenames are different to those contained in the zip
+file on The BBC Lives! site. The names needed (which should be obvious for
+renaming purposes) are:
+MOS.ROM TERMINAL.ROM ADFS.ROM VIEW.ROM VIEWSHT.ROM EDIT.ROM BASIC4.ROM DFS.ROM
+
+All Master 128 Roms must go in the Beebfile/M128 directory
+
 There is an example disc image in the discims directory in this
 distribution.  It contains some simple programs to test the emulator.
 
@@ -94,6 +115,25 @@ and press Shift+F12 to boot it.
 If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
 commands to load the programs from it.
 
+New Features in V1.3 (Richard Gellman)
+--------------------------------------
+* Added full cursor support to enable cursor on/off/blink and blink rates
+* Corrected mode 7 flashing text rate
+* Corrected minor fault in sound register write edge detect
+* Redesigned mode 7 font, looks ugly, pending further work
+  (Original font found in mode7font.alt)
+* Added reset function to file menu.
+* Added Master 128 Support:
+  8K Filing system RAM from &C000 to &DFFF
+  4K Private RAM from &8000 to &8FFF
+  20K Shadow RAM from &3000 to &7FFF (still very slightly buggy, but usable)
+  Added all documented 65C12 Opcodes extra to the 6502
+  Added _simple_ 1770 FDC - Read only at present
+  Made some hardware re-arrange to alternate locations on a Master
+  (The A to D convertor is accessed the same, but at a different location)
+* Implemented "available models" detection, only models that you have the
+  roms for will be available, if neither available, the program exits.
+* Added BBC Model Type Menu to Options Menu
 
 New Features in V1.04 (Robert Schmidt)
 --------------------------------------
@@ -137,6 +177,8 @@ Switchable DirectX - DirectDraw screen updates and DirectSound output are
 
 Disc Writing
 ------------
+
+NOTE! - Disc Writing is not supported in Master 128 Mode in V1.3!!!
 
 Disc writes and formatting works by writing data straight back to the image
 files on your PC disc.  A disc image file will get extended/enlarged as
@@ -275,7 +317,7 @@ File
   Printer On/Off      - Switches printer capture on or off.  To start and
                         stop printing within BeebEm use the VDU2 and VDU3
                         commands or Ctrl B and Ctrl C.
-
+  Reset        - "Power-On" reset for when games screw the memory up.
   Exit         - Exit Beebem
 
 View
@@ -353,6 +395,9 @@ AMX
                     full screen mode.
 
 Options
+  BBC Model Type   - Allows you to switch between BBC Model B and
+                     BBC Master 128 - Only models for which you have the roms
+                     for will be available, other models will be grayed.
   Allow ROM writes    - Enable/disable ROM writes for each ROM slot.
                         ROMs read at start-up are write protected by
                         default.  All unused slots are set up as RAM.
@@ -405,3 +450,27 @@ them.
 
 Mike Wyatt
 mikebuk@aol.com
+
+V.1.3
+Well that was fun. Several errors due to DOH! moments (like spending 3 hours
+trying to figure out why loading disc 1 was setting disc 0 to side 1, and
+then discovering array elements are numbered different to what i was told...)
+But I finally got there.
+
+Things to look for in the future:
+* Support for ADFS discs. Currently none, for two reasons: 1. Who actually has
+  a bbc ADFS disc image to hand? 2. It involves lotsa extra code, and I
+  wanted to get this version out quickly (but stable! unlike a certain
+  OS  making company...)
+* Screen centering in non-standard modes. I kinda like playing games with the
+  display in the centre, not the top left (Exile is a good example here).
+* All undocumented (but they are if you think about it) 6502 Opcodes, even in
+  Master 128 / 65C12 mode
+* Character rounding on the presently ugly Mode 7 font.
+* Paged ROMS to insert into Slots 8, 0, 1, 2 & 3 in Master 128 Mode.
+  (Slots 4, 5, 6, and 7 will remain RAM)
+
+V.1.35 - Coming Soon!
+Richard Gellman
+BeebEm.M128.Support@rickynet.net <- use this for Master 128 related questions
+

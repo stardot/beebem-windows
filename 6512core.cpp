@@ -35,7 +35,6 @@
 #include "video.h"
 #include "atodconv.h"
 #include "main.h"
-#include "disc1770.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -112,12 +111,12 @@ static int CyclesTable[]={
 unsigned int Cycles;
 
 /* A macro to speed up writes - uses a local variable called 'tmpaddr' */
-#define FASTWRITE(addr,val) tmpaddr=addr; if (tmpaddr<0x8000) BEEBWRITEMEM_DIRECT(tmpaddr,val) else BeebWriteMem(tmpaddr,val);
+#define FASTWRITE(addr,val) tmpaddr=addr; if ((tmpaddr<0x8000 && MachineType==0) || (tmpaddr<0x3000 && MachineType==1)) BEEBWRITEMEM_DIRECT(tmpaddr,val) else BeebWriteMem(tmpaddr,val);
 
 /* Get a two byte address from the program counter, and then post inc the program counter */
 #define GETTWOBYTEFROMPC(var) \
-  var=WholeRam[ProgramCounter]; \
-  var|=(WholeRam[ProgramCounter+1]<<8); \
+  var=BEEBREADMEM_FAST(ProgramCounter); \
+  var|=(BEEBREADMEM_FAST(ProgramCounter+1)<<8); \
   ProgramCounter+=2;
 
 /*----------------------------------------------------------------------------*/
@@ -196,7 +195,7 @@ INLINE static int16 RelAddrModeHandler_Data(void) {
 
   /* For branches - is this correct - i.e. is the program counter incremented
      at the correct time? */
-  EffectiveAddress=SignExtendByte((signed char)WholeRam[ProgramCounter++]);
+  EffectiveAddress=SignExtendByte((signed char)BEEBREADMEM_FAST(ProgramCounter++));
   EffectiveAddress+=ProgramCounter;
 
   return(EffectiveAddress);
@@ -261,8 +260,8 @@ INLINE static void TRBInstrHandler(int16 address) {
 	oldVal=BEEBREADMEM_FAST(address);
 	newVal=(Accumulator ^ 255) & oldVal;
     BEEBWRITEMEM_FAST(address,newVal);
-    PSR&=253;
-	PSR|=((Accumulator & oldVal)==0) ? 2 : 0;
+    PSR=PSR & 253;
+	PSR=PSR | (newVal==0) ? 2 : 0;
 } // TRBInstrHandler
 
 INLINE static void TSBInstrHandler(int16 address) {
@@ -270,8 +269,8 @@ INLINE static void TSBInstrHandler(int16 address) {
 	oldVal=BEEBREADMEM_FAST(address);
 	newVal=Accumulator | oldVal;
     BEEBWRITEMEM_FAST(address,newVal);
-    PSR&=253;
-	PSR|=((Accumulator & oldVal)==0) ? 2 : 0;
+    PSR=PSR & 253;
+	PSR=PSR | (newVal==0) ? 2 : 0;
 } // TSBInstrHandler
 
 INLINE static void ASLInstrHandler_Acc(void) {
@@ -575,7 +574,7 @@ INLINE static void BadInstrHandler(int opcode) {
 		DumpRegs();
 		fprintf(stderr,"Dumping main memory\n");
 		beebmem_dumpstate();
-		// abort();
+		abort();
 #endif
 	}
 
@@ -634,7 +633,7 @@ INLINE static int16 AbsAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Zero page addressing mode handler                                       */
 INLINE static int16 ZeroPgAddrModeHandler_Address(void) {
-  return(WholeRam[ProgramCounter++]);
+  return(BEEBREADMEM_FAST(ProgramCounter++));
 } /* ZeroPgAddrModeHandler_Address */
 
 /*-------------------------------------------------------------------------*/
@@ -643,7 +642,7 @@ INLINE static int16 IndXAddrModeHandler_Data(void) {
   unsigned char ZeroPageAddress;
   int EffectiveAddress;
 
-  ZeroPageAddress=(WholeRam[ProgramCounter++]+XReg) & 255;
+  ZeroPageAddress=(BEEBREADMEM_FAST(ProgramCounter++)+XReg) & 255;
 
   EffectiveAddress=WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress+1]<<8);
   return(BEEBREADMEM_FAST(EffectiveAddress));
@@ -655,7 +654,7 @@ INLINE static int16 IndXAddrModeHandler_Address(void) {
   unsigned char ZeroPageAddress;
   int EffectiveAddress;
 
-  ZeroPageAddress=(WholeRam[ProgramCounter++]+XReg) & 255;
+  ZeroPageAddress=(BEEBREADMEM_FAST(ProgramCounter++)+XReg) & 255;
 
   EffectiveAddress=WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress+1]<<8);
   return(EffectiveAddress);
@@ -665,9 +664,9 @@ INLINE static int16 IndXAddrModeHandler_Address(void) {
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Data(void) {
   int EffectiveAddress;
-  unsigned char ZPAddr=WholeRam[ProgramCounter++];
-  EffectiveAddress=WholeRam[ZPAddr]+YReg;
-  EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
+  unsigned char ZPAddr=BEEBREADMEM_FAST(ProgramCounter++);
+  EffectiveAddress=BEEBREADMEM_FAST(ZPAddr)+YReg;
+  EffectiveAddress+=(BEEBREADMEM_FAST(ZPAddr+1)<<8);
 
   return(BEEBREADMEM_FAST(EffectiveAddress));
 } /* IndYAddrModeHandler */
@@ -676,9 +675,9 @@ INLINE static int16 IndYAddrModeHandler_Data(void) {
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Address(void) {
   int EffectiveAddress;
-  unsigned char ZPAddr=WholeRam[ProgramCounter++];
-  EffectiveAddress=WholeRam[ZPAddr]+YReg;
-  EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
+  unsigned char ZPAddr=BEEBREADMEM_FAST(ProgramCounter++);
+  EffectiveAddress=BEEBREADMEM_FAST(ZPAddr)+YReg;
+  EffectiveAddress+=(BEEBREADMEM_FAST(ZPAddr+1)<<8);
 
   return(EffectiveAddress);
 } /* IndYAddrModeHandler */
@@ -687,7 +686,7 @@ INLINE static int16 IndYAddrModeHandler_Address(void) {
 /* Zero page wih X offset addressing mode handler                          */
 INLINE static int16 ZeroPgXAddrModeHandler_Data(void) {
   int EffectiveAddress;
-  EffectiveAddress=(WholeRam[ProgramCounter++]+XReg) & 255;
+  EffectiveAddress=(BEEBREADMEM_FAST(ProgramCounter++)+XReg) & 255;
   return(WholeRam[EffectiveAddress]);
 } /* ZeroPgXAddrModeHandler */
 
@@ -695,7 +694,7 @@ INLINE static int16 ZeroPgXAddrModeHandler_Data(void) {
 /* Zero page wih X offset addressing mode handler                          */
 INLINE static int16 ZeroPgXAddrModeHandler_Address(void) {
   int EffectiveAddress;
-  EffectiveAddress=(WholeRam[ProgramCounter++]+XReg) & 255;
+  EffectiveAddress=(BEEBREADMEM_FAST(ProgramCounter++)+XReg) & 255;
   return(EffectiveAddress);
 } /* ZeroPgXAddrModeHandler */
 
@@ -754,7 +753,7 @@ INLINE static int16 IndAddrModeHandler_Address(void) {
   According to my BBC Master Reference Manual Part 2
   the 6502 has a bug concerning this addressing mode and VectorLocation==xxFF
   so, we're going to emulate that bug -- Richard Gellman */
-  if ((VectorLocation & 0xff)!=0xff || MachineType==1) {
+  if ((VectorLocation & 0xff)!=0xff) {
    EffectiveAddress=BEEBREADMEM_FAST(VectorLocation);
    EffectiveAddress|=BEEBREADMEM_FAST(VectorLocation+1) << 8; }
   else {
@@ -767,11 +766,13 @@ INLINE static int16 IndAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Zero page Indirect addressing mode handler                                        */
 INLINE static int16 ZPIndAddrModeHandler_Address(void) {
+  /* For jump indirect only */
   int VectorLocation;
   int EffectiveAddress;
 
-  VectorLocation=WholeRam[ProgramCounter++];
-  EffectiveAddress=WholeRam[VectorLocation]+(WholeRam[VectorLocation+1]<<8);
+  GETTWOBYTEFROMPC(VectorLocation)
+  ProgramCounter--;
+  EffectiveAddress=BEEBREADMEM_FAST(VectorLocation);
 
    // EffectiveAddress|=BEEBREADMEM_FAST(VectorLocation+1) << 8; }
   return(EffectiveAddress);
@@ -780,14 +781,16 @@ INLINE static int16 ZPIndAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Zero page Indirect addressing mode handler                                        */
 INLINE static int16 ZPIndAddrModeHandler_Data(void) {
+  /* For jump indirect only */
   int VectorLocation;
   int EffectiveAddress;
 
-  VectorLocation=WholeRam[ProgramCounter++];
-  EffectiveAddress=WholeRam[VectorLocation]+(WholeRam[VectorLocation+1]<<8);
+  GETTWOBYTEFROMPC(VectorLocation)
+  ProgramCounter--;
+  EffectiveAddress=BEEBREADMEM_FAST(VectorLocation);
 
    // EffectiveAddress|=BEEBREADMEM_FAST(VectorLocation+1) << 8; }
-  return(WholeRam[EffectiveAddress]);
+  return(BEEBREADMEM_FAST(EffectiveAddress));
 } /* ZPIndAddrModeHandler */
 
 /*-------------------------------------------------------------------------*/
@@ -809,7 +812,7 @@ INLINE static int16 IndAddrXModeHandler_Address(void) {
 /* Zero page with Y offset addressing mode handler                         */
 INLINE static int16 ZeroPgYAddrModeHandler_Data(void) {
   int EffectiveAddress;
-  EffectiveAddress=(WholeRam[ProgramCounter++]+YReg) & 255;
+  EffectiveAddress=(BEEBREADMEM_FAST(ProgramCounter++)+YReg) & 255;
   return(WholeRam[EffectiveAddress]);
 } /* ZeroPgYAddrModeHandler */
 
@@ -817,7 +820,7 @@ INLINE static int16 ZeroPgYAddrModeHandler_Data(void) {
 /* Zero page with Y offset addressing mode handler                         */
 INLINE static int16 ZeroPgYAddrModeHandler_Address(void) {
   int EffectiveAddress;
-  EffectiveAddress=(WholeRam[ProgramCounter++]+YReg) & 255;
+  EffectiveAddress=(BEEBREADMEM_FAST(ProgramCounter++)+YReg) & 255;
   return(EffectiveAddress);
 } /* ZeroPgYAddrModeHandler */
 
@@ -862,15 +865,17 @@ void Exec6502Instruction(void) {
   static int CurrentInstruction;
   static int tmpaddr;
   static int OldNMIStatus;
-  unsigned char Bit_E,Bit_X,NewShadow,OldACCCON;
+
   int loop;
   for(loop=0;loop<512;loop++) {
-  // For the Master, check Shadow Ram Presence
-  // Note, this has to be done BEFORE reading an instruction due to Bit E and the PC
+
+  if (CPUDebug) fprintf(InstrLog,"%04x ",ProgramCounter);
   /* Read an instruction and post inc program couter */
   CurrentInstruction=WholeRam[ProgramCounter++];
+  if (CPUDebug) fprintf(InstrLog,"%02x %02x %02x\n",CurrentInstruction,WholeRam[ProgramCounter],WholeRam[ProgramCounter+1]);
   // cout << "Fetch at " << hex << (ProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
   Cycles=CyclesTable[CurrentInstruction]; 
+  if (CPUDebug) InstrCount++;
   /*Stats[CurrentInstruction]++; */
   switch (CurrentInstruction) {
     case 0x00:
@@ -883,7 +888,7 @@ void Exec6502Instruction(void) {
 	  if (MachineType==1) TSBInstrHandler(ZeroPgAddrModeHandler_Address());
 	  break;
     case 0x05:
-      ORAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      ORAInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0x06:
       ASLInstrHandler(ZeroPgAddrModeHandler_Address());
@@ -892,7 +897,7 @@ void Exec6502Instruction(void) {
       Push(PSR); /* PHP */
       break;
     case 0x09:
-      ORAInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      ORAInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0x0a:
       ASLInstrHandler_Acc();
@@ -973,10 +978,10 @@ void Exec6502Instruction(void) {
       ANDInstrHandler(IndXAddrModeHandler_Data());
       break;
     case 0x24:
-      BITInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      BITInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0x25:
-      ANDInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      ANDInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0x26:
       ROLInstrHandler(ZeroPgAddrModeHandler_Address());
@@ -985,7 +990,7 @@ void Exec6502Instruction(void) {
       PSR=Pop(); /* PLP */
       break;
     case 0x29:
-      ANDInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      ANDInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0x2a:
       ROLInstrHandler_Acc();
@@ -1041,7 +1046,7 @@ void Exec6502Instruction(void) {
       EORInstrHandler(IndXAddrModeHandler_Data());
       break;
     case 0x45:
-      EORInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      EORInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0x46:
       LSRInstrHandler(ZeroPgAddrModeHandler_Address());
@@ -1050,7 +1055,7 @@ void Exec6502Instruction(void) {
       Push(Accumulator); /* PHA */
       break;
     case 0x49:
-      EORInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      EORInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0x4a:
       LSRInstrHandler_Acc();
@@ -1101,7 +1106,7 @@ void Exec6502Instruction(void) {
       if (MachineType==1) BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),0); /* STZ Zero Page */
       break;
     case 0x65:
-      ADCInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      ADCInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0x66:
       RORInstrHandler(ZeroPgAddrModeHandler_Address());
@@ -1112,7 +1117,7 @@ void Exec6502Instruction(void) {
       PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
       break;
     case 0x69:
-      ADCInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      ADCInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0x6a:
       RORInstrHandler_Acc();
@@ -1235,22 +1240,22 @@ void Exec6502Instruction(void) {
       if (MachineType==1) FASTWRITE(AbsXAddrModeHandler_Address(),0); /* STZ Abs,X */
       break;
     case 0xa0:
-      LDYInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      LDYInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0xa1:
       LDAInstrHandler(IndXAddrModeHandler_Data());
       break;
     case 0xa2:
-      LDXInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      LDXInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0xa4:
-      LDYInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      LDYInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0xa5:
-      LDAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      LDAInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0xa6:
-      LDXInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      LDXInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0xa8:
       YReg=Accumulator; /* TAY */
@@ -1258,7 +1263,7 @@ void Exec6502Instruction(void) {
       PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
       break;
     case 0xa9:
-      LDAInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      LDAInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0xaa:
       XReg=Accumulator; /* TXA */
@@ -1310,16 +1315,16 @@ void Exec6502Instruction(void) {
       LDXInstrHandler(AbsYAddrModeHandler_Data());
       break;
     case 0xc0:
-      CPYInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      CPYInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0xc1:
       CMPInstrHandler(IndXAddrModeHandler_Data());
       break;
     case 0xc4:
-      CPYInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      CPYInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0xc5:
-      CMPInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      CMPInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0xc6:
       DECInstrHandler(ZeroPgAddrModeHandler_Address());
@@ -1331,7 +1336,7 @@ void Exec6502Instruction(void) {
       PSR|=((YReg==0)<<1) | (YReg & 128);
       break;
     case 0xc9:
-      CMPInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      CMPInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0xca:
       DEXInstrHandler();
@@ -1373,16 +1378,16 @@ void Exec6502Instruction(void) {
       DECInstrHandler(AbsXAddrModeHandler_Address());
       break;
     case 0xe0:
-      CPXInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      CPXInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0xe1:
       SBCInstrHandler(IndXAddrModeHandler_Data());
       break;
     case 0xe4:
-      CPXInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      CPXInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0xe5:
-      SBCInstrHandler(WholeRam[WholeRam[ProgramCounter++]]/*zp */);
+      SBCInstrHandler(BEEBREADMEM_FAST(BEEBREADMEM_FAST(ProgramCounter++))/*zp */);
       break;
     case 0xe6:
       INCInstrHandler(ZeroPgAddrModeHandler_Address());
@@ -1391,7 +1396,7 @@ void Exec6502Instruction(void) {
       INXInstrHandler();
       break;
     case 0xe9:
-      SBCInstrHandler(WholeRam[ProgramCounter++]); /* immediate */
+      SBCInstrHandler(BEEBREADMEM_FAST(ProgramCounter++)); /* immediate */
       break;
     case 0xea:
       /* NOP */
@@ -1444,7 +1449,7 @@ void Exec6502Instruction(void) {
       }
       break;
     case 0x4b: /* Undocumented Instruction: AND imm and LSR A */
-      ANDInstrHandler(WholeRam[ProgramCounter++]);
+      ANDInstrHandler(BEEBREADMEM_FAST(ProgramCounter++));
       LSRInstrHandler_Acc();
       break;
     case 0x87: /* Undocumented Instruction: SAX zp (i.e. (zp) = A & X) */
@@ -1456,7 +1461,7 @@ void Exec6502Instruction(void) {
       XReg = Accumulator;
       break;
     case 0xa7: /* Undocumented Instruction: LAX zp */
-      LDAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]);
+      LDAInstrHandler(WholeRam[BEEBREADMEM_FAST(ProgramCounter++)]);
       XReg = Accumulator;
       break;
     case 0xaf: /* Undocumented Instruction: LAX abs */
@@ -1480,26 +1485,7 @@ void Exec6502Instruction(void) {
       break;
 	break;
   }; /* OpCode switch */
-	  if (MachineType==1) {
-		  Bit_E=(ACCCON & 2)>>1;
-		  Bit_X=(ACCCON & 4)>>2;
-		  NewShadow=0;
-		  if (Bit_E && ProgramCounter>=0xc000 && ProgramCounter<0xe000) NewShadow=1;
-		  if (Bit_X) NewShadow=1;
-		  if (NewShadow && !UseShadow) {
-			  // switch to shadown ram
-			  memcpy(MainRAM+0x3000,WholeRam+0x3000,0x5000);
-			  memcpy(WholeRam+0x3000,ShadowRAM+0x3000,0x5000);
-		  }
-		  if (!NewShadow && UseShadow) {
-			  // switch to main ram
-			  memcpy(ShadowRAM+0x3000,WholeRam+0x3000,0x5000);
-			  memcpy(WholeRam+0x3000,MainRAM+0x3000,0x5000);
-		  }
-		  UseShadow=NewShadow;
-	  } 
-  if (MachineType==1 && ((ACCCON &7)!=(OldACCCON &7))) RedoMPTR();
-  OldACCCON=ACCCON;
+
   OldNMIStatus=NMIStatus;
   /* NOTE: Check IRQ status before polling hardware - this is essential for
      Rocket Raid to work since it polls the IFR in the sys via for start of 
@@ -1518,7 +1504,6 @@ void Exec6502Instruction(void) {
 #ifdef SOUNDSUPPORT
   Sound_Trigger(Cycles);
 #endif
-  if (MachineType==1 && NMILock==0) Poll1770(); // Do 1770 Background stuff
 
   if ((NMIStatus) && (!OldNMIStatus)) DoNMI();
   };

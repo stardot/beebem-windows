@@ -25,6 +25,7 @@
 #include <windows.h>
 #include "beebwin.h"
 
+extern unsigned char MachineType;
 extern BeebWin *mainWin;
 extern HINSTANCE hInst;
 
