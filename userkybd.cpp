@@ -314,16 +314,16 @@ void DrawSides( HDC hDC, RECT rect, COLORREF TopLeft, COLORREF BottomRight )
 	HPEN tl, br;
 	POINT	point;
 
-	tl = CreatePen( PS_SOLID, 1, TopLeft );
+	tl = HPEN(CreatePen( PS_SOLID, 1, TopLeft ));
 	br = CreatePen( PS_SOLID, 1, BottomRight );
 
-	tl = SelectObject( hDC, tl ); // Shadow now contains the original.
+	tl = HPEN(SelectObject( hDC, tl )); // Shadow now contains the original.
 
 	MoveToEx( hDC, rect.left, rect.bottom-1, &point );
 	LineTo( hDC, rect.left, rect.top );
 	LineTo( hDC, rect.right-1, rect.top );
 
-	br = SelectObject( hDC, br );
+	br = HPEN(SelectObject( hDC, br ));
 	LineTo( hDC, rect.right-1, rect.bottom-1 );
 	LineTo( hDC, rect.left, rect.bottom-1 );
 
@@ -421,8 +421,8 @@ void OnDrawItem( UINT CtrlID, LPDRAWITEMSTRUCT lpDrawItemStruct )
 	HPEN aPen = CreatePen( PS_NULL, 1, 0x00000000 );
 
 	// Copy into the Device Context.
-	aBrush = SelectObject( lpDrawItemStruct->hDC, aBrush );
-	aPen = SelectObject( lpDrawItemStruct->hDC, aPen );
+	aBrush = HBRUSH(SelectObject( lpDrawItemStruct->hDC, aBrush ));
+	aPen = HPEN(SelectObject( lpDrawItemStruct->hDC, aPen ));
 
 	// Draw the rectanlge.
 	SetBkColor( lpDrawItemStruct->hDC,GetKeyColour( CtrlID ) ); 

@@ -50,6 +50,9 @@ typedef struct
 class BeebWin  {
   
   public:
+
+  enum PaletteType { RGB, BW, AMBER, GREEN } palette_type;
+
 	void Initialise();
 
 	unsigned char cols[8];
@@ -115,8 +118,8 @@ class BeebWin  {
 	double		m_RealTimeTarget;
 	JOYCAPS		m_JoystickCaps;
 	int			m_MenuIdSticks;
-	BOOL		m_FreezeWhenInactive;
 	BOOL		m_HideCursor;
+	BOOL		m_FreezeWhenInactive;
 	int			m_MenuIdKeyMapping;
 	char		m_AppPath[_MAX_PATH];
 	BOOL		m_WriteProtectDisc[2];
@@ -143,6 +146,7 @@ class BeebWin  {
 	int			m_MenuIdPrinterPort;
 	char		m_PrinterFileName[_MAX_PATH];
 	char		m_PrinterDevice[_MAX_PATH];
+
 	BOOL		m_frozen;
 
 	// DirectX stuff
@@ -160,6 +164,7 @@ class BeebWin  {
 	void CreateBeebWindow(void);
 	void CreateBitmap(void);
 	void InitMenu(void);
+  void UpdateMonitorMenu();
 	void InitDirectX(void);
 	HRESULT InitSurfaces(void);
 	void ResetSurfaces(void);

@@ -47,7 +47,7 @@ int IgnoreIllegalInstructions = 1;
 
 extern int DumpAfterEach;
 
-CycleCountT TotalCycles=0;
+CycleCountT TotalCycles=0;  
 
 static int ProgramCounter;
 static int Accumulator,XReg,YReg;
@@ -1304,16 +1304,6 @@ void Exec6502Instruction(void) {
   if ((intStatus) && (!GETIFLAG)) DoInterrupt();
   
   TotalCycles+=Cycles;
-  if (TotalCycles > CycleCountWrap)
-  {
-    TotalCycles -= CycleCountWrap;
-    AdjustTrigger(AtoDTrigger);
-    AdjustTrigger(SoundTrigger);
-    AdjustTrigger(Disc8271Trigger);
-    AdjustTrigger(AMXTrigger);
-    AdjustTrigger(PrinterTrigger);
-    AdjustTrigger(VideoTriggerCount);
-  }
 
   VideoPoll(Cycles);
   SysVIA_poll(Cycles);

@@ -40,7 +40,7 @@
 
 static const char *WindowTitle = "BBC Emulator";
 static const char *AboutText = "BeebEm\nBBC Micro Emulator\n"
-								"Version 1.02, 30 Apr 1998\n";
+								"Version 1.03, 20 Aug 2000\n";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -52,6 +52,7 @@ static const char *CFG_VIEW_WIN_YPOS = "WinYPos";
 static const char *CFG_VIEW_SHOW_FPS = "ShowFSP";
 static const char *CFG_VIEW_DIRECT_ENABLED = "DirectDrawEnabled";
 static const char *CFG_VIEW_BUFFER_IN_VIDEO = "BufferInVideoRAM";
+static const char *CFG_VIEW_MONITOR = "Monitor";
 
 static const char *CFG_SOUND_SECTION = "Sound";
 static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
@@ -239,7 +240,6 @@ void BeebWin::Initialise()
 	int row, col;
 
 	m_DXInit = FALSE;
-	m_frozen = FALSE;
 
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_DIRECT_ENABLED, "0",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
@@ -258,6 +258,10 @@ void BeebWin::Initialise()
 	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_SHOW_FPS, "1",
 			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
 	m_ShowSpeedAndFPS = atoi(CfgValue);
+
+	GetPrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_MONITOR, "0",
+			CfgValue, sizeof(CfgValue), CFG_FILE_NAME);
+	palette_type = PaletteType(atoi(CfgValue));
 
 	sprintf(DefValue, "%d", IDM_REALTIME);
 	GetPrivateProfileString(CFG_SPEED_SECTION, CFG_SPEED_TIMING, DefValue,
@@ -394,6 +398,8 @@ void BeebWin::Initialise()
 	GetModuleFileName(NULL, app_path, _MAX_PATH);
 	_splitpath(app_path, app_drive, app_dir, NULL, NULL);
 	_makepath(m_AppPath, app_drive, app_dir, NULL, NULL);
+
+	m_frozen = FALSE;
 }
 
 /****************************************************************************/
@@ -422,6 +428,11 @@ BeebWin::~BeebWin()
 /****************************************************************************/
 void BeebWin::CreateBitmap()
 {
+	if (m_hBitmap != NULL)
+		DeleteObject(m_hBitmap);
+	if (m_hDCBitmap != NULL)
+		DeleteDC(m_hDCBitmap);
+
 	m_hDCBitmap = CreateCompatibleDC(NULL);
 
 	m_bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -445,9 +456,30 @@ void BeebWin::CreateBitmap()
 #else
 	for (int i = 0; i < 8; ++i)
 	{
-		m_bmi.bmiColors[i].rgbRed = (i & 1) * 255;
-		m_bmi.bmiColors[i].rgbGreen = ((i & 2) >> 1) * 255;
-		m_bmi.bmiColors[i].rgbBlue = ((i & 4) >> 1) * 255;
+    float r,g,b;
+    r = i & 1;
+    g = (i & 2) >> 1;
+    b = (i & 4) >> 2;
+
+    if (palette_type != RGB) {
+      r = g = b = 0.299 * r + 0.587 * g + 0.114 * b;
+      switch (palette_type) {
+      case AMBER:
+        r *= 1.0;
+        g *= 0.8;
+        b *= 0.1;
+        break;
+      case GREEN:
+        r *= 0.0;
+        g *= 1.0;
+        b *= 0.2;
+        break;
+      }
+    }
+
+		m_bmi.bmiColors[i].rgbRed   = r * 255;
+		m_bmi.bmiColors[i].rgbGreen = g * 255;
+		m_bmi.bmiColors[i].rgbBlue  = b * 255;
 		m_bmi.bmiColors[i].rgbReserved = 0;
 	}
 
@@ -580,8 +612,18 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_DDINVIDEORAM, m_DDS2InVideoRAM ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_DSOUNDONOFF, DirectSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
 
+  UpdateMonitorMenu();
+
 	/* Initialise the ROM Menu. */
 	SetRomMenu();
+}
+
+void BeebWin::UpdateMonitorMenu() {
+	HMENU hMenu = GetMenu(m_hWnd);
+  CheckMenuItem(hMenu, ID_MONITOR_RGB, (palette_type == RGB) ? MF_CHECKED : MF_UNCHECKED);
+  CheckMenuItem(hMenu, ID_MONITOR_BW , (palette_type == BW) ? MF_CHECKED : MF_UNCHECKED);
+  CheckMenuItem(hMenu, ID_MONITOR_GREEN , (palette_type == GREEN) ? MF_CHECKED : MF_UNCHECKED);
+  CheckMenuItem(hMenu, ID_MONITOR_AMBER , (palette_type == AMBER) ? MF_CHECKED : MF_UNCHECKED);
 }
 
 /****************************************************************************/
@@ -710,25 +752,10 @@ void BeebWin::SetRomMenu(void)
 					IDM_ALLOWWRITES_ROM0 + i,	// menu item identifier or pop-up menu handle
 					Title		// menu item content 
 					);
-	}
 
-	/* LRW Now uncheck the Roms which are NOT writable, that have already been loaded. */
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM0, RomWritable[0] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM1, RomWritable[1] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM2, RomWritable[2] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM3, RomWritable[3] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM4, RomWritable[4] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM5, RomWritable[5] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM6, RomWritable[6] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM7, RomWritable[7] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM8, RomWritable[8] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM9, RomWritable[9] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMA, RomWritable[10] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMB, RomWritable[11] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMC, RomWritable[12] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMD, RomWritable[13] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROME, RomWritable[14] ? MF_CHECKED : MF_UNCHECKED );
-	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROMF, RomWritable[15] ? MF_CHECKED : MF_UNCHECKED );
+  	/* LRW Now uncheck the Roms which are NOT writable, that have already been loaded. */
+  	CheckMenuItem(hMenu, IDM_ALLOWWRITES_ROM0 + i, RomWritable[i] ? MF_CHECKED : MF_UNCHECKED );
+  }
 }
 
 /****************************************************************************/
@@ -736,23 +763,9 @@ void BeebWin::GetRomMenu(void)
 {
 	HMENU hMenu = GetMenu(m_hWnd);
 
+  for (int i=0; i<16; ++i)
 	/* LRW Now uncheck the Roms as NOT writable, that have already been loaded. */
-	RomWritable[0] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM0, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[1] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM1, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[2] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM2, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[3] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM3, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[4] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM4, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[5] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM5, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[6] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM6, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[7] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM7, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[8] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM8, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[9] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM9, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[10] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMA, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[11] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMB, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[12] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMC, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[13] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMD, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[14] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROME, MF_BYCOMMAND ) & MF_CHECKED );
-	RomWritable[15] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROMF, MF_BYCOMMAND ) & MF_CHECKED );
+	  RomWritable[i] = ( GetMenuState(hMenu, IDM_ALLOWWRITES_ROM0 + i, MF_BYCOMMAND ) & MF_CHECKED );
 }
 
 /****************************************************************************/
@@ -760,21 +773,8 @@ void BeebWin::GreyRomMenu(BOOL SetToGrey)
 {
 	HMENU hMenu = GetMenu(m_hWnd);
 
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM1, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM2, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM3, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM4, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM5, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM6, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM7, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM8, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM9, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMA, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMB, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMC, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMD, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROME, SetToGrey ? MF_GRAYED : MF_ENABLED );
-	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROMF, SetToGrey ? MF_GRAYED : MF_ENABLED );
+  for (int i=1; i<16; ++i)
+  	EnableMenuItem(hMenu, IDM_ALLOWWRITES_ROM0 + i, SetToGrey ? MF_GRAYED : MF_ENABLED );
 }
 
 /****************************************************************************/
@@ -1132,7 +1132,7 @@ BOOL BeebWin::UpdateTiming(void)
 				if ((unsigned long)TotalCycles < LastTotalCycles)
 				{
 					/* Wrap around in cycle count */
-					Cycles = TotalCycles + (CycleCountWrap - LastTotalCycles);
+					Cycles = TotalCycles + (CycleCountTMax - LastTotalCycles);
 				}
 				else
 				{	
@@ -1278,6 +1278,7 @@ void BeebWin::TranslateWindowSize(void)
 					- GetSystemMetrics(SM_CYMENUSIZE) - GetSystemMetrics(SM_CYCAPTION);
 		}
 		break;
+
 	}
 }
 
@@ -1833,6 +1834,11 @@ void BeebWin::SavePreferences()
 				CfgValue, CFG_FILE_NAME);
 		}
 	}
+
+	sprintf(CfgValue, "%d", palette_type);
+	WritePrivateProfileString(CFG_VIEW_SECTION, CFG_VIEW_MONITOR,
+			CfgValue, CFG_FILE_NAME);
+
 }
 
 /****************************************************************************/
@@ -1970,6 +1976,7 @@ void BeebWin::HandleCommand(int MenuId)
 	BOOL b;
 	HRESULT ddrval;
 	HMENU hMenu = GetMenu(m_hWnd);
+  int prev_palette_type = palette_type;
 
 	switch (MenuId)
 	{
@@ -2422,8 +2429,29 @@ void BeebWin::HandleCommand(int MenuId)
 		TranslateAMX();
 		break;
 
+  case ID_MONITOR_RGB:
+    palette_type = RGB;
+    CreateBitmap();
+    break;
+  case ID_MONITOR_BW:
+    palette_type = BW;
+    CreateBitmap();
+    break;
+  case ID_MONITOR_GREEN:
+    palette_type = GREEN;
+    CreateBitmap();
+    break;
+  case ID_MONITOR_AMBER:
+    palette_type = AMBER;
+    break;
 	}
+
+  if (palette_type != prev_palette_type) {
+    CreateBitmap();
+  	UpdateMonitorMenu();
+  }
 }
+
 
 void BeebWin::Focus(BOOL gotit)
 {

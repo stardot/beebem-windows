@@ -49,8 +49,6 @@ extern CycleCountT TotalCycles;
 
 #define ClearTrigger(var) var=CycleCountTMax;
 
-#define AdjustTrigger(var) if (var!=CycleCountTMax) var-=CycleCountWrap;
-
 /*-------------------------------------------------------------------------*/
 /* Initialise 6502core                                                     */
 void Init6502core(void);

@@ -35,7 +35,6 @@ typedef long long EightByteType;
 typedef int CycleCountT;
 
 #define CycleCountTMax INT_MAX
-#define CycleCountWrap (INT_MAX / 2)
 
 #define DEFAULTSAMPLERATE 40000
 

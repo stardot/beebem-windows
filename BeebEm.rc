@@ -261,6 +261,14 @@ BEGIN
         MENUITEM "1024x512",                    IDM_1024X512
         MENUITEM "1024x768",                    IDM_1024X768
         MENUITEM "&Full Screen",                IDM_FULLSCREEN
+        MENUITEM SEPARATOR
+        POPUP "Monitor type"
+        BEGIN
+            MENUITEM "RGB",                         ID_MONITOR_RGB
+            MENUITEM "B/W",                         ID_MONITOR_BW
+            MENUITEM "Amber",                       ID_MONITOR_AMBER
+            MENUITEM "Green",                       ID_MONITOR_GREEN
+        END
     END
     POPUP "S&peed"
     BEGIN
@@ -347,8 +355,8 @@ BEGIN
         MENUITEM "&Joystick",                   IDM_JOYSTICK
         MENUITEM "&Mousestick",                 IDM_MOUSESTICK
         MENUITEM SEPARATOR
+        MENUITEM "Freeze when inactive",        IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
-        MENUITEM "&Freeze when Inactive",       IDM_FREEZEINACTIVE
         MENUITEM SEPARATOR
         MENUITEM "&Define User Keyboard",       IDM_DEFINEKEYMAP
         MENUITEM SEPARATOR

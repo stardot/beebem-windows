@@ -67,7 +67,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 
 	do
 	{
-		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
+		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
 		{
 			if(!GetMessage(&msg,    // message structure
 							NULL,   // handle of window receiving the message

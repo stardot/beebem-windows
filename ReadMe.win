@@ -1,4 +1,4 @@
-BeebEm for Microsoft Windows (30 Apr 1998)
+BeebEm for Microsoft Windows (27 Mar 1998)
 ============================
 
 Beebem has been ported to MS Windows. The following people have contributed 
@@ -95,11 +95,24 @@ If a disc does not boot using Shift+F12 then use '*CAT' and 'CH."filename"'
 commands to load the programs from it.
 
 
-New Features in V1.02
----------------------
+New Features in V1.03 (Robert Schmidt)
+--------------------------------------
 
-Freeze when Inactive - the emulator freezes when you change focus to
-                       another window.
+Monochrome monitor/B&W TV emulation - In the "View" menu, open the "Monitor" 
+    submenu, then select either RGB, B&W, Amber or Green
+
+(Files modified: beebwin.h, beebwin.cpp, beebemrc.h, beebem.rc, userkeybd.cpp)
+
+
+
+New Features in V1.0
+--------------------
+
+Printer support - You can print to a file or any of the LPT or COM ports.
+
+Switchable DirectX - DirectDraw screen updates and DirectSound output are
+  not always faster than conventional display and sound output.  You can 
+  switch DirectX on and off to achieve the fastest emulation.
 
 
 Disc Writing

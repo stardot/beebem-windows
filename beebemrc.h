@@ -170,6 +170,10 @@
 #define IDM_DDINVIDEORAM                40091
 #define IDM_DSOUNDONOFF                 40092
 #define IDM_FREEZEINACTIVE              40093
+#define ID_MONITOR_RGB                  40095
+#define ID_MONITOR_BW                   40096
+#define ID_MONITOR_AMBER                40097
+#define ID_MONITOR_GREEN                40098
 
 // Next default values for new objects
 // 
@@ -177,7 +181,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40094
+#define _APS_NEXT_COMMAND_VALUE         40099
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

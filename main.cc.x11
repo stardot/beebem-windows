@@ -52,7 +52,7 @@ static char *Banner=
 #include "header"
 ;
 
-static char *Version="1.02 30/4/98";
+static char *Version="1.0 2/4/98";
 
 int XErrHandler(Display *display, XErrorEvent *Err) {
   char errbuff[1024];
