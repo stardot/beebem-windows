@@ -39,8 +39,6 @@
 #include "errno.h"
 #include "uefstate.h"
 
-//FILE *fdclog2;
-
 /* Each Rom now has a Ram/Rom flag */
 int RomWritable[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
@@ -115,6 +113,25 @@ char *BeebMemPtrWithWrap(int a, int n) {
 
   a=WrapAddr(a);
   EndAddr=WrapAddr(EndAddr);
+
+  // On Master the FSRam area is displayed if start addr below shadow area
+  if (MachineType==3 && a<=EndAddr && Sh_Display>0 && a<0x3000) {
+    if (0x3000-a < n) {
+      toCopy=0x3000-a;
+      if (toCopy>n) toCopy=n;
+      if (toCopy>0) memcpy(tmpBuf,FSRam+0x2000-toCopy,toCopy);
+      tmpBufPtr=tmpBuf+toCopy;
+      toCopy=n-toCopy;
+      if (toCopy>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy);
+      return(tmpBuf);
+	}
+    else if (a<0x1000) {
+      return((char *)FSRam); // Should probably be PrivateRAM?
+    }
+    else {
+      return((char *)FSRam+a-0x1000);
+    }
+  }
 
   if (a<=EndAddr && Sh_Display==0) {
     return((char *)WholeRam+a);
@@ -319,7 +336,7 @@ int BeebReadMem(int Address) {
 /*----------------------------------------------------------------------------*/
 static void DoRomChange(int NewBank) {
   ROMSEL=NewBank&0xf;
-  
+
   if (MachineType!=3) {
     NewBank&=0xf; // strip top bit if Model B
     PagedRomReg=NewBank;
@@ -627,11 +644,9 @@ void BeebWriteMem(int Address, int Value) {
 	if ((Address&~0x7)==0xfee0) WriteTubeFromHostSide(Address&7,Value);
 
 	if ((MachineType!=3) && (Address==EDCAddr) && (!NativeFDC)) {
-		//fprintf(fdclog2,"FDC CONTROL write of %02X\n",Value);
 		mainWin->SetDriveControl(Value);
 	}
 	if ((MachineType!=3) && (Address>=EFDCAddr) && (Address<(EFDCAddr+4)) && (!NativeFDC)) {
-		//MessageBox(GETHWND,"Write to 1770 Extension Board\n","BeebEm",MB_OK|MB_ICONERROR);
 		Write1770Register(Address-EFDCAddr,Value);
 	}
 
@@ -811,7 +826,6 @@ void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
 	  fclose(CMDF3);
   }
   else for(CMA3=0xe;CMA3<64;CMA3++) CMOSRAM[CMA3]=CMOSDefault[CMA3-0xe];
-  //fdclog2=fopen("/fdcc.log","wb");
 } /* BeebMemInit */
 
 /*-------------------------------------------------------------------------*/

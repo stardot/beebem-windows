@@ -31,7 +31,6 @@ extern unsigned char EnableTube,TubeEnabled;
 
 typedef enum {
 	R1,
-	R2,
 	R4,
 } TubeIRQ;
 
@@ -50,8 +49,16 @@ void Exec65C02Instruction(void);
 
 void DoTubeNMI(void);
 void DoTubeInterrupt(void);
+void WrapTubeCycles(void);
 void SyncTubeProcessor(void);
 unsigned char ReadTubeFromHostSide(unsigned char IOAddr);
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData);
-extern int TubeProgramCounter;
+unsigned char TubeReadMem(unsigned int IOAddr);
+void DebugTubeState(void);
+void SaveTubeUEF(FILE *SUEF);
+void Save65C02UEF(FILE *SUEF);
+void Save65C02MemUEF(FILE *SUEF);
+void LoadTubeUEF(FILE *SUEF);
+void Load65C02UEF(FILE *SUEF);
+void Load65C02MemUEF(FILE *SUEF);
 #endif

@@ -242,8 +242,9 @@ void PlayUpTil(double DestTime) {
           tt=(int)CSC[channel];
 		  if (!PartSamples) tt=0;
           if (GenIndex[channel]>=(BeebState76489.ChangeSamps[channel]+tt)) {
+			if (CSC[channel] >= 1.0)
+				CSC[channel]-=1.0;
 		    CSC[channel]+=CSA[channel];
-		    CSC[channel]-=tt;
             GenIndex[channel]=0;
             GenState[channel]^=1;
           };
@@ -297,65 +298,50 @@ void PlayUpTil(double DestTime) {
           GenIndex[0]++;
           switch (BeebState76489.Noise.Freq) {
             case 2: /* Low */
-				tt=(int)CSC[0];
               if (GenState[0]) {
-                if (GenIndex[0]>=((samplerate/125)+tt)) {
+                if (GenIndex[0]>=(samplerate/125)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
-				  CSC[0]+=bitpart(samplerate/125);
-				  CSC[0]-=tt;
                 };
               } else {
-                if (GenIndex[0]>=((samplerate/1250)+tt)) {
+                if (GenIndex[0]>=(samplerate/1250)) {
                   GenIndex[0]=0;
                   GenState[0]=1;
-				  CSC[0]+=bitpart(samplerate/1250);
-				  CSC[0]-=tt;
                 };
               };
               break;
 
             case 1: /* Med */
-				tt=(int)CSC[0];
               if (GenState[0]) {
-                if (GenIndex[0]>=((samplerate/250)+tt)) {
+                if (GenIndex[0]>=(samplerate/250)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
-				  CSC[0]+=bitpart(samplerate/250);
-				  CSC[0]-=tt;
                 };
               } else {
-                if (GenIndex[0]>=((samplerate/2500)+tt)) {
+                if (GenIndex[0]>=(samplerate/2500)) {
                   GenIndex[0]=0;
                   GenState[0]=1;
-				  CSC[0]+=bitpart(samplerate/2500);
-				  CSC[0]-=tt;
                 };
               };
               break;
 
             case 0: /* High */
-				tt=(int)CSC[0];
               if (GenState[0]) {
-                if (GenIndex[0]>=((samplerate/500)+tt)) {
+                if (GenIndex[0]>=(samplerate/500)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
-				  CSC[0]+=bitpart(samplerate/500);
-				  CSC[0]-=tt;
                 };
               } else {
-                if (GenIndex[0]>=((samplerate/5000)+tt)) {
+                if (GenIndex[0]>=(samplerate/5000)) {
                   GenIndex[0]=0;
                   GenState[0]=1;
-				  CSC[0]+=bitpart(samplerate/5000);
-				  CSC[0]-=tt;
                 };
               };
               break;
 
             case 3: /* Tone gen 1 */
               if (GenState[0]) {
-                if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1])*16)) {
+                if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1])*31)) {
                   GenIndex[0]=0;
                   GenState[0]=0;
                 };

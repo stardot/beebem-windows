@@ -9,10 +9,12 @@ fulldirectory=
 file0=C:\BeebEm\DiscIms\Games.ssd
 file1=C:\BeebEm\DiscIms\Test.ssd
 file2=C:\BeebEm\DiscIms\Welcome.ssd
+file3=C:\BeebEm\DiscIms\EliteEx.ssd
 fulldirectory=
 
 [BeebFile]
 file0=C:\BeebEm\BeebFile\6502Tube.rom
+file1=C:\BeebEm\BeebFile\HiBasic3.rom
 SubDir0=BeebFile\BBC
 SubDir1=BeebFile\BBCINT
 SubDir2=BeebFile\BPLUS

@@ -50,6 +50,7 @@ int DumpAfterEach=0;
 unsigned char MachineType;
 BeebWin *mainWin = NULL;
 HINSTANCE hInst;
+HWND hCurrentDialog = NULL;
 DWORD iSerialThread,iStatThread; // Thread IDs
 
 int CALLBACK WinMain(HINSTANCE hInstance, 
@@ -72,7 +73,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	// Create serial threads
 	InitThreads();
 	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) SerialThread,NULL,0,&iSerialThread);
-    CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) StatThread,NULL,0,&iStatThread);
+	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) StatThread,NULL,0,&iStatThread);
 
 	mainWin->HandleCommandLine(lpszCmdLine);
 
@@ -86,8 +87,10 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 							0))
 				break;              // Quit the app on WM_QUIT
   
-			TranslateMessage(&msg);// Translates virtual key codes
-			DispatchMessage(&msg); // Dispatches message to window
+			if (hCurrentDialog == NULL || !IsDialogMessage(hCurrentDialog, &msg)) {
+				TranslateMessage(&msg);// Translates virtual key codes
+				DispatchMessage(&msg); // Dispatches message to window
+			}
 		}
 
 		if (!mainWin->IsFrozen()) {

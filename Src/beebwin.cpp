@@ -42,6 +42,7 @@
 #include "tube.h"
 #include "ext1770.h"
 #include "uefstate.h"
+#include "debug.h"
 
 // some LED based macros
 
@@ -88,8 +89,8 @@ char FDCDLL[256];
 
 static const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 static const char *AboutText = "BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
-								"BBC Micro Model B Plus (128)\nAcorn Master 128\n\n"
-								"Version 1.6, Oct 2004";
+								"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\n\n"
+								"Version 2.0, Dec 2004";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -284,89 +285,15 @@ void BeebWin::Initialise()
 	UpdateLEDMenu(m_hMenu);
 	CheckMenuItem(m_hMenu,ID_TAPESOUND,(TapeSoundEnabled)?MF_CHECKED:MF_UNCHECKED);
 	MenuOn=TRUE;
-	RegRes=SysReg.GetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"FDCDLL",FDCDLL);
-	if (!RegRes) {
-		strcpy(FDCDLL,"None");
-		SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"FDCDLL",FDCDLL);
-	}
-	NativeFDC=TRUE;
-	if (strcmp(FDCDLL,"None")!=0) LoadFDC(FDCDLL);
-	if (NativeFDC) {
-		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
-		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
-	} else {
-		CheckMenuItem(m_hMenu,ID_8271,MF_UNCHECKED);
-		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_CHECKED);
-	}
-	DisplayCycles=7000000;
-	if ((NativeFDC) || (MachineType==3)) DisplayCycles=0;
+	LoadFDC(NULL, true);
 	SetTapeSpeedMenu();
-//	BOOL pfr;
-//	pfr=QueryPerformanceFrequency(&Dummy_Var);
-//	if (!pfr) {
-//		UseHostClock=0;
-//		EnableMenuItem(m_hMenu,ID_HOSTCLOCK,MF_GRAYED);
-//	}
-//	CheckMenuItem(m_hMenu,ID_HOSTCLOCK,(UseHostClock)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu,ID_PSAMPLES,(PartSamples)?MF_CHECKED:MF_UNCHECKED);
 	UpdateOptiMenu();
+	CheckMenuItem(m_hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
 
 	SaveWindowPos();
 }
 
-/****************************************************************************/
-void BeebWin::LoadFDC(char *DLLName) {
-	// Load External DLL(s)
-	if (hFDCBoard!=NULL) FreeLibrary(hFDCBoard); 
-	hFDCBoard=NULL; NativeFDC=TRUE;
-	hFDCBoard=LoadLibrary(DLLName);
-	if (hFDCBoard==NULL) {
-		MessageBox(GETHWND,"Unable to load FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR); 
-	}
-	if (hFDCBoard!=NULL) {
-		PGetBoardProperties=(lGetBoardProperties) GetProcAddress(hFDCBoard,"GetBoardProperties");
-		PSetDriveControl=(lSetDriveControl) GetProcAddress(hFDCBoard,"SetDriveControl");
-		PGetDriveControl=(lGetDriveControl) GetProcAddress(hFDCBoard,"GetDriveControl");
-		if ((PGetBoardProperties==NULL) || (PSetDriveControl==NULL) || (PGetDriveControl==NULL)) {
-			MessageBox(GETHWND,"Invalid FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR); }
-		else {
-			PGetBoardProperties(&ExtBoard);
-			EFDCAddr=ExtBoard.FDCAddress;
-			EDCAddr=ExtBoard.DCAddress;
-			NativeFDC=FALSE; // at last, a working DLL!
-			InvertTR00=ExtBoard.TR00_ActiveHigh;
-			SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"FDCDLL",DLLName); // Write back DLL to registry
-		}
-	} 
-	// Set menu options
-	if (NativeFDC) {
-		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
-		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
-	} else {
-		CheckMenuItem(m_hMenu,ID_8271,MF_UNCHECKED);
-		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_CHECKED);
-	}
-	DisplayCycles=7000000;
-	if ((NativeFDC) || (MachineType==3)) DisplayCycles=0;
-}
-
-void BeebWin::KillDLLs(void) {
-	if (hFDCBoard!=NULL) FreeLibrary(hFDCBoard); hFDCBoard=NULL;
-}
-
-void BeebWin::SetDriveControl(unsigned char value) {
-	// This takes a value from the mem/io decoder, as written by the cpu, runs it through the 
-	// DLL's translator, then sends it on to the 1770 FDC in master 128 form.
-	WriteFDCControlReg(PSetDriveControl(value));
-}
-
-unsigned char BeebWin::GetDriveControl(void) {
-	// Same as above, but in reverse, i.e. reading
-	unsigned char temp,temp2;
-	temp=ReadFDCControlReg();
-	temp2=PGetDriveControl(temp);
-	return(temp2);
-}
 /****************************************************************************/
 BeebWin::~BeebWin()
 {   
@@ -423,6 +350,9 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	Close1770Disc(0);
 	Close1770Disc(1);
 	if (MachineType==3) InvertTR00=FALSE;
+	if (MachineType!=3) {
+		LoadFDC(NULL, false);
+	}
 	if ((MachineType!=3) && (NativeFDC)) {
 		// 8271 disc
 		if ((DiscLoaded[0]) && (CDiscType[0]==0)) LoadSimpleDiscImage(CDiscName[0],0,0,80);
@@ -434,24 +364,6 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 		// 1770 Disc
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0],0,CDiscType[0],m_hMenu);
 		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1],1,CDiscType[1],m_hMenu);
-	}
-	if (MachineType!=3) {
-		if (!NativeFDC) {
-			RegRes=SysReg.GetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"FDCDLL",FDCDLL);
-			if (!RegRes) {
-				strcpy(FDCDLL,"None");
-				SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"FDCDLL",FDCDLL);
-			}
-			NativeFDC=TRUE;
-			if (strcmp(FDCDLL,"None")!=0) LoadFDC(FDCDLL);
-		}
-		else
-		{
-			KillDLLs();
-			CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
-			CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
-			SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"FDCDLL","None");
-		}
 	}
 }
 /****************************************************************************/
@@ -889,9 +801,9 @@ void BeebWin::InitJoystick(void)
 void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 {
 	/* Scale and reverse the readings */
-	JoystickX = (int)((double)(m_JoystickCaps.wXmax - x) * 65536.0 /
+	JoystickX = (int)((double)(m_JoystickCaps.wXmax - x) * 65535.0 /
 						(double)(m_JoystickCaps.wXmax - m_JoystickCaps.wXmin));
-	JoystickY = (int)((double)(m_JoystickCaps.wYmax - y) * 65536.0 /
+	JoystickY = (int)((double)(m_JoystickCaps.wYmax - y) * 65535.0 /
 						(double)(m_JoystickCaps.wYmax - m_JoystickCaps.wYmin));
 }
 
@@ -914,8 +826,8 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 {
 	if (m_MenuIdSticks == IDM_MOUSESTICK)
 	{
-		JoystickX = (m_XWinSize - x - 1) * 65536 / m_XWinSize;
-		JoystickY = (m_YWinSize - y - 1) * 65536 / m_YWinSize;
+		JoystickX = (m_XWinSize - x) * 65535 / m_XWinSize;
+		JoystickY = (m_YWinSize - y) * 65535 / m_YWinSize;
 	}
 
 	if (m_HideCursor)
@@ -980,7 +892,7 @@ LRESULT CALLBACK WndProc(
 
 				hDC = BeginPaint(hWnd, &ps);
 				mainWin->RealizePalette(hDC);
-				mainWin->updateLines(hDC, 0, (TeletextEnabled)?500:256);
+				mainWin->updateLines(hDC, 0, 0);
 				EndPaint(hWnd, &ps);
 			}
 			break;
@@ -1004,6 +916,7 @@ LRESULT CALLBACK WndProc(
 				if(row==-2)
 				{ // Must do a reset!
 					Init6502core();
+					if (EnableTube) Init65C02core();
 					Disc8271_reset();
 					Reset1770();
 					//SoundChipReset();
@@ -1311,11 +1224,7 @@ int BeebWin::StartOfFrame(void)
 	int FrameNum = 1;
 
 	if (UpdateTiming())
-	{
 		FrameNum = 0;
-		// Blank screen on frame 0
-		memset(m_screen,0,800*((TeletextEnabled)?500:MAX_VIDEO_SCAN_LINES));
-	}
 
 	return FrameNum;
 }
@@ -1332,23 +1241,36 @@ void BeebWin::doLED(int sx,bool on) {
 /****************************************************************************/
 void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 {
+	static int LastStartY = 0;
+	static int LastNLines = 256;
 	WINDOWPLACEMENT wndpl;
 	HRESULT ddrval;
 	HDC hdc;
 	int TTLines=0;
-	int TextStart=240; 
-    
+	int TextStart=240;
+
+	// Use last stored params?
+	if (starty == 0 && nlines == 0)
+	{
+		starty = LastStartY;
+		nlines = LastNLines;
+	}
+	else
+	{
+		LastStartY = starty;
+		LastNLines = nlines;
+	}
+
 	++m_ScreenRefreshCount;
 	TTLines=500/TeletextStyle;
 
 	if (!m_DirectDrawEnabled)
 	{
-		int win_starty = starty * m_YWinSize / 256;
 		int win_nlines = 256 * m_YWinSize / 256;
 
 		TextStart = m_YWinSize - 20;
 
-		StretchBlt(hDC, 0, win_starty, m_XWinSize, win_nlines,
+		StretchBlt(hDC, 0, 0, m_XWinSize, win_nlines,
 			m_hDCBitmap, 0, starty, (TeletextEnabled)?552:ActualScreenWidth, (TeletextEnabled==1)?TTLines:nlines, SRCCOPY);
 
 		if ((DisplayCycles>0) && (hFDCBoard!=NULL))
@@ -1383,7 +1305,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		}
 		if (ddrval == DD_OK)
 		{
-			BitBlt(hdc, 0, starty, 800, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
+			BitBlt(hdc, 0, 0, 800, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
 
 			if ((DisplayCycles>0) && (hFDCBoard!=NULL))
 			{
@@ -2040,7 +1962,7 @@ void BeebWin::SelectFDC(void)
 	if (GetOpenFileName(&ofn))
 	{
 		strcpy(FDCDLL,FileName);
-		LoadFDC(FDCDLL);
+		LoadFDC(FDCDLL, true);
 	}
 }
 
@@ -3619,17 +3541,15 @@ void BeebWin::HandleCommand(int MenuId)
 		palette_type = AMBER;
 		break;
 
-/*	case IDM_TUBE:
+	case IDM_TUBE:
 		TubeEnabled=1-TubeEnabled;
-		CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED); */
+		CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+		ResetBeebSystem(MachineType,TubeEnabled,0);
+		break;
 
 	case ID_FILE_RESET:
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
-
-/*	case IDM_TUBERESET:
-		ResetBeebSystem(MachineType,1,0);
-		break; */
 
 	case ID_MODELB:
 		if (MachineType!=0)
@@ -3686,7 +3606,8 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_FDC_DLL:
-		SelectFDC();
+		if (MachineType != 3)
+			SelectFDC();
 		MustEnableSound=TRUE;
 		break;
 	case ID_8271:
@@ -3694,7 +3615,15 @@ void BeebWin::HandleCommand(int MenuId)
 		NativeFDC=TRUE;
 		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
 		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
-		SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,"FDCDLL","None"); // Write back DLL to registry
+		if (MachineType != 3)
+		{
+			char CfgName[20];
+			if (MachineType == 0)
+				strcpy(CfgName, "FDCDLL");
+			else
+				sprintf(CfgName, "FDCDLL%d", MachineType);
+			SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,CfgName,"None");
+		}
 		break;
 
 	case ID_TAPE_FAST:
@@ -3762,6 +3691,13 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_443:
 		SBSize=0;
 		UpdateOptiMenu();
+		break;
+
+	case IDM_SHOWDEBUGGER:
+		if (DebugEnabled)
+			DebugCloseDialog();
+		else
+			DebugOpenDialog(hInst, m_hWnd);
 		break;
 	}
 	SetSound(UNMUTED);
@@ -3930,4 +3866,93 @@ void BeebWin::HandleCommandLine(char *cmd)
 		BeebKeyDown(0, 0); // Shift key
 		m_ShiftBooted = true;
 	}
+}
+
+/****************************************************************************/
+// if DLLName is NULL then FDC setting is read from the registry
+// else the named DLL is read in
+// if save is true then DLL selection is saved in registry
+void BeebWin::LoadFDC(char *DLLName, bool save) {
+	char CfgName[20];
+
+	if (MachineType == 0)
+		strcpy(CfgName, "FDCDLL");
+	else
+		sprintf(CfgName, "FDCDLL%d", MachineType);
+
+	if (hFDCBoard!=NULL) FreeLibrary(hFDCBoard); 
+	hFDCBoard=NULL; NativeFDC=TRUE;
+
+	if (DLLName == NULL) {
+		RegRes=SysReg.GetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,CfgName,FDCDLL);
+		if (!RegRes) {
+			strcpy(FDCDLL,"None");
+			if (MachineType == 2) {
+				// Default B+ to Acorn FDC
+				sprintf(FDCDLL, "%sHardware\\Acorn1770.dll", m_AppPath);
+			}
+			SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,CfgName,FDCDLL);
+		}
+		DLLName = FDCDLL;
+	}
+
+	if (strcmp(DLLName, "None")) {
+		hFDCBoard=LoadLibrary(DLLName);
+		if (hFDCBoard==NULL) {
+			MessageBox(GETHWND,"Unable to load FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR); 
+			strcpy(DLLName, "None");
+		}
+		else {
+			PGetBoardProperties=(lGetBoardProperties) GetProcAddress(hFDCBoard,"GetBoardProperties");
+			PSetDriveControl=(lSetDriveControl) GetProcAddress(hFDCBoard,"SetDriveControl");
+			PGetDriveControl=(lGetDriveControl) GetProcAddress(hFDCBoard,"GetDriveControl");
+			if ((PGetBoardProperties==NULL) || (PSetDriveControl==NULL) || (PGetDriveControl==NULL)) {
+				MessageBox(GETHWND,"Invalid FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR);
+				strcpy(DLLName, "None");
+			}
+			else {
+				PGetBoardProperties(&ExtBoard);
+				EFDCAddr=ExtBoard.FDCAddress;
+				EDCAddr=ExtBoard.DCAddress;
+				NativeFDC=FALSE; // at last, a working DLL!
+				InvertTR00=ExtBoard.TR00_ActiveHigh;
+			}
+		} 
+	}
+
+	if (save)
+		SysReg.SetStringValue(HKEY_CURRENT_USER,CFG_REG_KEY,CfgName,DLLName);
+
+	// Set menu options
+	if (NativeFDC) {
+		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
+		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
+	} else {
+		CheckMenuItem(m_hMenu,ID_8271,MF_UNCHECKED);
+		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_CHECKED);
+	}
+
+	DisplayCycles=7000000;
+	if ((NativeFDC) || (MachineType==3))
+		DisplayCycles=0;
+}
+
+void BeebWin::KillDLLs(void) {
+	if (hFDCBoard!=NULL)
+		FreeLibrary(hFDCBoard);
+	hFDCBoard=NULL;
+}
+
+void BeebWin::SetDriveControl(unsigned char value) {
+	// This takes a value from the mem/io decoder, as written by the cpu, runs it through the 
+	// DLL's translator, then sends it on to the 1770 FDC in master 128 form.
+	WriteFDCControlReg(PSetDriveControl(value));
+}
+
+unsigned char BeebWin::GetDriveControl(void) {
+	// Same as above, but in reverse, i.e. reading
+	unsigned char temp,temp2;
+	temp=ReadFDCControlReg();
+	temp2=PGetDriveControl(temp);
+	return(temp2);
 }

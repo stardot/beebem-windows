@@ -64,7 +64,7 @@ If you have a fast PC you can also improve the sound quality by selecting
 the 44.1kHz sample rate on the Sound menu.
 
 For further information on speeding up BeebEm see the notes for the
-'Optimise' menu below.
+'Hardware' menu below.
 
 Once you have decided on a set up you can save it using 'Options - Save
 Preferences'.
@@ -369,7 +369,7 @@ AMX Menu:
   Adjust -50%       edges of the BeebEm Window.  This is easiest to do in
                     full screen mode.
 
-Options Menu:
+Hardware Menu:
 
   BBC Model           - Allows you to switch between the BBC Model B types
                         and Master 128 emulation.
@@ -380,6 +380,12 @@ Options Menu:
                         appropriate ROM (e.g. Acorn DFS2.26 for the Acorn 
                         1770 board).
 
+  65C02 Second Processor - Enables/disables the second processor emulation.
+                        Note that in Master 128 mode the second processor 
+                        may be disabled in the CMOS settings.  To enable
+                        it type this command and press break (F12):
+                            *CONFIGURE TUBE
+
   Allow ROM writes    - Enable/disable ROM writes for each ROM slot.
                         ROMs read at start-up are write protected by
                         default.  Some ROM software was supplied on 
@@ -389,18 +395,36 @@ Options Menu:
   Ignore Illegal Instructions - When disabled a dialog appears detailing
                                 the opcode and program counter.
 
-  Joystick            - Switch on or off PC/Beeb analogue joystick support.
-                        Calibrate the joystick through the control panel.
+  Undocumented Instructions - Some games use undocumented instructions so
+                        try enabling the full set if something does not 
+                        work.  Selecting documented instructions only may
+                        speed BeebEm up.
 
-  Mousestick          - Switch on or off the mapping of Mouse position to
-                        Beeb joystick.
+  Teletext Half Mode  - Uses half the number of screen lines for teletext
+                        mode 7.  May speed BeebEm up.
+
+  Basic Hardware Only - Switches off Analogue to Digital (Joystick) and 
+                        Serial (printing, comms & tape) emulation.  May 
+                        speed BeebEm up.
+
+  Sound Block Size    - Selects the amount of sound data that is written 
+                        to the sound buffers at any one time.  The smaller
+                        block size may speed BeebEm up.
+
+Options Menu:
+
+  Joystick             - Switch on or off PC/Beeb analogue joystick support.
+                         Calibrate the joystick through the control panel.
+
+  Mousestick           - Switch on or off the mapping of Mouse position to
+                         Beeb joystick.
 
   Freeze when inactive - When selected BeebEm will freeze when you switch 
                          to another Window.
 
-  Hide Cursor         - Show or hide the mouse cursor while it is over the
-                        BeebEm window (useful when using the Mousestick or
-                        the AMX mouse).
+  Hide Cursor          - Show or hide the mouse cursor while it is over the
+                         BeebEm window (useful when using the Mousestick or
+                         the AMX mouse).
 
   Define User Keyboard - Allows you to define your own keyboard mapping.
                          Click on one of the BBC Micro keys and then press
@@ -422,26 +446,10 @@ Options Menu:
   Map F1-F10 to f0-f9  - Selects a slightly different mapping for the 
                          function keys.
 
+  Debugger             - Opens the debugger window (see below).
+
   Save Preferences     - Saves the BeebEm menu options so they are preserved
                          for when you need start BeebEm.
-
-Optimise Menu:
-
-  Undocumented Instructions - Some games use undocumented instructions so
-                         so try enabling the fun set if something does not 
-                         work.  Selecting documented instructions only may
-                         speed BeebEm up.
-
-  Teletext Half Mode   - Uses half the number of screen lines for teletext
-                         mode 7.  May speed BeebEm up.
-
-  Basic Hardware Only  - Switches off Analogue to Digital (Joystick) and 
-                         Serial (printing, comms & tape) emulation.  May 
-                         speed BeebEm up.
-
-  Sound Block Size     - Selects the amount of sound data that is written 
-                         to the sound buffers at any one time.  The smaller
-                         block size may speed BeebEm up.
 
 Help Menu:
 
@@ -462,12 +470,58 @@ properties (right click the icon) you can add a disc image name to the
 target box.  Running the shortcut will then run the disc image.
 
 
+Debugger
+--------
+
+The Debugger is a 6502 disassembler and monitoring tool.  When the debug
+window is first opened it leaves BeebEm running.  Its best to switch off the
+'Freeze when inactive' option though otherwise BeebEm will only run when you
+bring the main window to the front.
+
+Debugger controls:
+
+Break Execution - Stops BeebEm running.  If currently executing in the OS or
+                  ROM area and OS/ROM debug is not enabled then BeebEm will 
+                  only stop when execution moves out of the OS/ROM.  When 
+                  execution stops the current instruction is displayed.
+Restart         - Starts BeebEm running.
+Trace           - Shows accesses to the various bits of hardware.
+Break           - Breaks execution when the hardware is accessed.
+Debug Host      - Debugs the host processor.
+Debug Parasite  - Debugs the second processor.
+Debug ROM       - Debugs the ROM code (addresses 8000-BFFF).
+Debug OS        - Debugs the OS code (addresses C000-FFFF).
+Breakpoints     - Breaks execution when the address hits one of the 
+                  configured breakpoints.
+Execute Command - Runs the debug command entered into the command box.
+
+Debug commands ([] = optional parameter):
+
+n [count]            - Execute the next [count] instructions.
+m[p] [start] [count] - Memory hex dump.  Use 'mp' to dump parasite memory.
+d[p] [start] [count] - Disassemble instructions.  Use 'dp' for parasite.
+b start [end]        - Set/clear break point.  Can be a single address or
+                       a range of addresses.
+sv                   - Show video registers.
+su                   - Show user via registers.
+ss                   - Show system via registers.
+st                   - Show tube registers.
+
+The disassembler shows the following information:
+
+  Address OPCodes Instruction A X Y Flags
+
+Parasite instructions are shifted right so it easier to follow both host and
+parasite when debugging tube code.
+
+
 Emulated Hardware
 -----------------
 
 The hardware emulated by BeebEm is that of a standard BBC Micro Model B, a
 Model B with IntegraB board, Model B Plus or Master 128 with a few small
-additions.  The emulation is near enough accurate to run most software.
+additions.  An optional 65C02 second processor is also emulated.  The
+emulation is near enough accurate to run most software.
 
 Hardware common to all the Model B types and Master 128:
 
@@ -510,6 +564,13 @@ Master 128 Specific hardware:
   1770 Floppy Disc controller
   146818 Realtime Clock and CMOS RAM (50 bytes)
   ACCess CONtrol register
+
+65C02 Second Processor:
+
+  65C12 Processor
+  64K on RAM
+  2K boot ROM
+  TUBE ULA chip
 
 For information on the IntegraB see the documentation in the 'Documents'
 directory.

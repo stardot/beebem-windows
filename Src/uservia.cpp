@@ -28,6 +28,7 @@
 #include "uservia.h"
 #include "via.h"
 #include "viastate.h"
+#include "debug.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -72,6 +73,12 @@ static void UpdateIFRTopBit(void) {
 void UserVIAWrite(int Address, int Value) {
   /* cerr << "UserVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
+
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "UsrVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
+		DebugDisplayTrace(DEBUG_USERVIA, true, info);
+	}
 
   switch (Address) {
     case 0:
@@ -202,9 +209,10 @@ void UserVIAWrite(int Address, int Value) {
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe60 stripped out */
 int UserVIARead(int Address) {
-  int tmp;
+  int tmp = 0xff;
   /* cerr << "UserVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
+
   switch (Address) {
     case 0: /* IRB read */
       tmp=(UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb));
@@ -230,45 +238,51 @@ int UserVIARead(int Address) {
           ClearTrigger(AMXTrigger);
         }
       }
-      return(tmp);
+      break;
 
     case 2:
-      return(UserVIAState.ddrb);
+      tmp = UserVIAState.ddrb;
+      break;
 
     case 3:
-      return(UserVIAState.ddra);
+      tmp = UserVIAState.ddra;
+      break;
 
     case 4: /* Timer 1 lo counter */
-      tmp=UserVIAState.timer1c / 2;
+      tmp=(UserVIAState.timer1c / 2) & 0xff;
       UserVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
       UpdateIFRTopBit();
-      return(tmp & 0xff);
+      break;
 
     case 5: /* Timer 1 hi counter */
-      tmp=UserVIAState.timer1c>>9;
-      return(tmp & 0xff);
+      tmp=(UserVIAState.timer1c>>9) & 0xff;
+      break;
 
     case 6: /* Timer 1 lo latch */
-      return(UserVIAState.timer1l & 0xff);
+      tmp = UserVIAState.timer1l & 0xff;
+      break;
 
     case 7: /* Timer 1 hi latch */
-      return((UserVIAState.timer1l>>8) & 0xff);
+      tmp = (UserVIAState.timer1l>>8) & 0xff;
+      break;
 
     case 8: /* Timer 2 lo counter */
-      tmp=UserVIAState.timer2c / 2;
+      tmp=(UserVIAState.timer2c / 2) & 0xff;
       UserVIAState.ifr&=0xdf; /* Clear bit 5 - timer 2 */
       UpdateIFRTopBit();
-      return(tmp & 0xff);
+      break;
 
     case 9: /* Timer 2 hi counter */
-      tmp=UserVIAState.timer2c>>9;
-      return(tmp & 0xff);
+      tmp=(UserVIAState.timer2c>>9) & 0xff;
+      break;
 
     case 11:
-      return(UserVIAState.acr);
+      tmp = UserVIAState.acr;
+      break;
 
     case 12:
-      return(UserVIAState.pcr);
+      tmp = UserVIAState.pcr;
+      break;
 
     case 13:
       UpdateIFRTopBit();
@@ -276,16 +290,24 @@ int UserVIARead(int Address) {
       break;
 
     case 14:
-      return(UserVIAState.ier | 0x80);
+      tmp = UserVIAState.ier | 0x80;
+      break;
 
     case 1:
       UserVIAState.ifr&=0xfc;
       UpdateIFRTopBit();
     case 15:
-      return(255);
+      tmp = 255;
       break;
   } /* Address switch */
-  return(0xff);
+
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "UsrVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
+		DebugDisplayTrace(DEBUG_USERVIA, true, info);
+	}
+
+  return(tmp);
 } /* UserVIARead */
 
 /*--------------------------------------------------------------------------*/
@@ -447,3 +469,8 @@ void uservia_dumpstate(void) {
   cerr << "Uservia:\n";
   via_dumpstate(&UserVIAState);
 }; /* uservia_dumpstate */
+
+void DebugUserViaState()
+{
+	DebugViaState("UsrVia", &UserVIAState);
+}

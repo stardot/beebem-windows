@@ -35,6 +35,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "via.h"
 #include "main.h"
 #include "viastate.h"
+#include "debug.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -278,6 +279,13 @@ void SysVIAWrite(int Address, int Value) {
   //fprintf(vialog,"SYSTEM VIA Write of %d (%02x) to address %d\n",Value,Value,Address);
   /* cerr << "SysVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
+
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "SysVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
+		DebugDisplayTrace(DEBUG_SYSVIA, true, info);
+	}
+
   switch (Address) {
     case 0:
 	  // Clear bit 4 of IFR from ATOD Conversion
@@ -392,7 +400,7 @@ void SysVIAWrite(int Address, int Value) {
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe40 stripped out */
 int SysVIARead(int Address) {
-  int tmp;
+  int tmp = 0xff;
   //fprintf(vialog,"SYSTEM VIA Read of address %02x (%d)\n",Address,Address);
   /* cerr << "SysVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
@@ -405,69 +413,84 @@ int SysVIARead(int Address) {
       if (!JoystickButton)
         tmp |= 16;
       tmp |= 192; /* Speech system non existant */
-      return(tmp);
+      break;
 
     case 2:
-      return(SysVIAState.ddrb);
+      tmp = SysVIAState.ddrb;
+      break;
 
     case 3:
-      return(SysVIAState.ddra);
+      tmp = SysVIAState.ddra;
+      break;
 
     case 4: /* Timer 1 lo counter */
-      tmp=SysVIAState.timer1c / 2;
+      tmp=(SysVIAState.timer1c / 2) & 0xff;
       SysVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
       UpdateIFRTopBit();
-      return(tmp & 0xff);
+      break;
 
     case 5: /* Timer 1 hi counter */
-      tmp=SysVIAState.timer1c>>9; //K.Lowe
-      return(tmp & 0xff);
+      tmp=(SysVIAState.timer1c>>9) & 0xff; //K.Lowe
+      break;
 
     case 6: /* Timer 1 lo latch */
-      return(SysVIAState.timer1l & 0xff);
+      tmp = SysVIAState.timer1l & 0xff;
+      break;
 
     case 7: /* Timer 1 hi latch */
-      return((SysVIAState.timer1l>>8) & 0xff); //K.Lowe
+      tmp = (SysVIAState.timer1l>>8) & 0xff; //K.Lowe
+      break;
 
     case 8: /* Timer 2 lo counter */
-      tmp=SysVIAState.timer2c / 2;
+      tmp=(SysVIAState.timer2c / 2) & 0xff;
       SysVIAState.ifr&=0xdf; /* Clear bit 5 - timer 2 */
       UpdateIFRTopBit();
-      return(tmp & 0xff);
+      break;
 
     case 9: /* Timer 2 hi counter */
-      return((SysVIAState.timer2c>>9) & 0xff); //K.Lowe
+      tmp = (SysVIAState.timer2c>>9) & 0xff; //K.Lowe
+      break;
 
 	case 10:
-		return(SRData);
+      tmp = SRData;
+      break;
 
     case 11:
-      return(SysVIAState.acr);
+      tmp = SysVIAState.acr;
+      break;
 
     case 12:
-      return(SysVIAState.pcr);
+      tmp = SysVIAState.pcr;
+      break;
 
     case 13:
       UpdateIFRTopBit();
 #ifdef KBDDEBUG
       cerr << "Read IFR got=0x" << hex << int(SysVIAState.ifr) << dec << "\n";
 #endif
-
-      return(SysVIAState.ifr);
+      tmp = SysVIAState.ifr;
       break;
 
     case 14:
-      return(SysVIAState.ier | 0x80);
+      tmp = SysVIAState.ier | 0x80;
+      break;
 
     case 1:
       SysVIAState.ifr&=0xfc;
       UpdateIFRTopBit();
     case 15:
       /* slow data bus read */
-      return(SlowDataBusRead());
+      tmp = SlowDataBusRead();
       break;
   } /* Address switch */
-  return(0xff);
+
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "SysVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
+		DebugDisplayTrace(DEBUG_SYSVIA, true, info);
+	}
+
+  return(tmp);
 } /* SysVIARead */
 
 /*--------------------------------------------------------------------------*/
@@ -598,3 +621,8 @@ void sysvia_dumpstate(void) {
   cerr << "  IC32State=" << IC32State << "\n";
   via_dumpstate(&SysVIAState);
 }; /* sysvia_dumpstate */
+
+void DebugSysViaState()
+{
+	DebugViaState("SysVia", &SysVIAState);
+}

@@ -80,6 +80,26 @@
 #define IDI_BEEBEM                      102
 #define IDD_USERKYBRD                   103
 #define IDD_DIALOG1                     106
+#define IDD_DEBUG                       110
+#define IDC_DEBUGBREAK                  1010
+#define IDC_DEBUGRESTART                1011
+#define IDC_DEBUGINFO                   1015
+#define IDC_DEBUGCOMMAND                1016
+#define IDC_DEBUGEXECUTE                1017
+#define IDC_DEBUGVIDEO                  1022
+#define IDC_DEBUGVIDEOBRK               1023
+#define IDC_DEBUGSYSVIA                 1024
+#define IDC_DEBUGSYSVIABRK              1025
+#define IDC_DEBUGUSERVIA                1026
+#define IDC_DEBUGUSERVIABRK             1027
+#define IDC_DEBUGBREAKPOINTS            1028
+#define IDC_DEBUGBPS                    1029
+#define IDC_DEBUGOS                     1030
+#define IDC_DEBUGROM                    1031
+#define IDC_DEBUGTUBE                   1032
+#define IDC_DEBUGTUBEBRK                1033
+#define IDC_DEBUGHOST                   1034
+#define IDC_DEBUGPARASITE               1035
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -186,7 +206,6 @@
 #define ID_REWINDTAPE                   40116
 #define ID_SFX_RELAY                    40117
 #define IDM_TUBE                        40118
-#define IDM_TUBERESET                   40119
 #define ID_HIDEMENU                     40121
 #define ID_TAPESOUND                    40122
 #define ID_SERIAL                       40123
@@ -233,15 +252,16 @@
 #define IDM_RUNDISC                     40169
 #define ID_MODELBINT                    40170
 #define ID_MODELBP                      40171
+#define IDM_SHOWDEBUGGER                40173
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        110
-#define _APS_NEXT_COMMAND_VALUE         40172
-#define _APS_NEXT_CONTROL_VALUE         1009
+#define _APS_NEXT_RESOURCE_VALUE        112
+#define _APS_NEXT_COMMAND_VALUE         40174
+#define _APS_NEXT_CONTROL_VALUE         1031
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

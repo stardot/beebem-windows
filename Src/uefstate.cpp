@@ -14,6 +14,7 @@
 #include "beebsound.h"
 #include "disc8271.h"
 #include "disc1770.h"
+#include "tube.h"
 
 FILE *UEFState;
 
@@ -62,6 +63,11 @@ void SaveUEFState(char *StateName) {
 			Save8271UEF(UEFState);
 		else
 			Save1770UEF(UEFState);
+		if (EnableTube) {
+			SaveTubeUEF(UEFState);
+			Save65C02UEF(UEFState);
+			Save65C02MemUEF(UEFState);
+		}
 		fclose(UEFState);
 	}
 	else
@@ -117,6 +123,9 @@ void LoadUEFState(char *StateName) {
 			if (Block==0x046D) LoadIntegraBHiddenMemUEF(UEFState);
 			if (Block==0x046E) Load8271UEF(UEFState);
 			if (Block==0x046F) Load1770UEF(UEFState);
+			if (Block==0x0470) LoadTubeUEF(UEFState);
+			if (Block==0x0471) Load65C02UEF(UEFState);
+			if (Block==0x0472) Load65C02MemUEF(UEFState);
 			fseek(UEFState,CPos+Length,SEEK_SET); // Skip unrecognised blocks (and over any gaps)
 		}
 

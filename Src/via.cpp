@@ -29,6 +29,7 @@
 #include "uservia.h"
 #include "uefstate.h"
 #include "viastate.h"
+#include "debug.h"
 
 void VIAReset(VIAState *ToReset) {
   ToReset->ora=ToReset->orb=0xff;
@@ -65,6 +66,30 @@ void via_dumpstate(VIAState *ToDump) {
   cerr << "  timer1hasshot="  << ToDump->timer1hasshot << "\n";
   cerr << "  timer2hasshot="  << ToDump->timer2hasshot << "\n";
 }; /* via_dumpstate */
+
+void DebugViaState(const char *s, VIAState *v)
+{
+	char info[200];
+
+	DebugDisplayInfo("");
+
+	sprintf(info, "%s: ora=%02X orb=%02X ira=%02X irb=%02X ddra=%02X ddrb=%02X", s,
+		(int)v->ora, (int)v->orb,
+		(int)v->ira, (int)v->irb,
+		(int)v->ddra, (int)v->ddrb);
+	DebugDisplayInfo(info);
+
+	sprintf(info, "%s: acr=%02X pcr=%02X ifr=%02X ier=%02X", s,
+		(int)v->acr, (int)v->pcr,
+		(int)v->ifr, (int)v->ier);
+	DebugDisplayInfo(info);
+
+	sprintf(info, "%s: t1=%04X t2=%04X t1l=%04X t2l=%04X t1s=%d t2s=%d", s,
+		(int)v->timer1c / 2, (int)v->timer2c / 2,
+		(int)v->timer1l, (int)v->timer2l,
+		(int)v->timer1hasshot, (int)v->timer2hasshot);
+	DebugDisplayInfo(info);
+}
 
 void SaveVIAUEF(FILE *SUEF) {
 	VIAState *VIAPtr;

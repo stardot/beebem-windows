@@ -730,9 +730,8 @@ void Load1770UEF(FILE *SUEF)
 		else
 			CDiscOpen=&Disc0Open;
 
-		if (MachineType!=3 && strcmp(FDCDLL,"None")!=0) {
-			NativeFDC=TRUE;
-			mainWin->LoadFDC(FDCDLL);
+		if (MachineType!=3) {
+			mainWin->LoadFDC(FDCDLL, false);
 		}
 	}
 }

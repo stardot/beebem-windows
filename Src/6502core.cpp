@@ -39,6 +39,7 @@
 #include "serial.h"
 #include "tube.h"
 #include "uefstate.h"
+#include "debug.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -66,7 +67,6 @@ static unsigned char StackReg,PSR;
 static unsigned char IRQCycles;
 int DisplayCycles=0;
 int SwitchOnCycles=2000000; // Reset delay
-bool HoldingCPU=FALSE; // TRUE if CPU should be temporarily suspended
 
 unsigned char intStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 unsigned char NMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
@@ -124,7 +124,6 @@ unsigned int Cycles;
 static unsigned char Branched,Carried;
 // Branched - 1 if the instruction branched
 // Carried - 1 if the instruction carried over to high byte in index calculation
-static unsigned char FirstCycle;
 int OpCodes=2; // 1 = documented only, 2 = commonoly used undocumenteds, 3 = full set
 int BHardware=0; // 0 = all hardware, 1 = basic hardware only
 // 1 if first cycle happened
@@ -271,7 +270,7 @@ INLINE static void ANDInstrHandler(int16 operand) {
 INLINE static void ASLInstrHandler(int16 address) {
   unsigned char oldVal,newVal;
   oldVal=ReadPaged(address);
-  newVal=(((unsigned int)oldVal)<<1);
+  newVal=(((unsigned int)oldVal)<<1) & 254;
   WritePaged(address,newVal);
   SetPSRCZN((oldVal & 128)>0, newVal==0,newVal & 128);
 } /* ASLInstrHandler */
@@ -298,7 +297,7 @@ INLINE static void ASLInstrHandler_Acc(void) {
   unsigned char oldVal,newVal;
   /* Accumulator */
   oldVal=Accumulator;
-  Accumulator=newVal=(((unsigned int)Accumulator)<<1);
+  Accumulator=newVal=(((unsigned int)Accumulator)<<1) & 254;
   SetPSRCZN((oldVal & 128)>0, newVal==0,newVal & 128);
 } /* ASLInstrHandler_Acc */
 
@@ -492,7 +491,7 @@ INLINE static void LDYInstrHandler(int16 operand) {
 INLINE static void LSRInstrHandler(int16 address) {
   unsigned char oldVal,newVal;
   oldVal=ReadPaged(address);
-  newVal=(((unsigned int)oldVal)>>1);
+  newVal=(((unsigned int)oldVal)>>1) & 127;
   WritePaged(address,newVal);
   SetPSRCZN((oldVal & 1)>0, newVal==0,0);
 } /* LSRInstrHandler */
@@ -501,7 +500,7 @@ INLINE static void LSRInstrHandler_Acc(void) {
   unsigned char oldVal,newVal;
   /* Accumulator */
   oldVal=Accumulator;
-  Accumulator=newVal=(((unsigned int)Accumulator)>>1) & 255;
+  Accumulator=newVal=(((unsigned int)Accumulator)>>1) & 127;
   SetPSRCZN((oldVal & 1)>0, newVal==0,0);
 } /* LSRInstrHandler_Acc */
 
@@ -890,9 +889,6 @@ void Init6502core(void) {
   intStatus=0;
   NMIStatus=0;
   NMILock=0;
-  // MachineType=MachineType;
-  // /*if (CPUDebug) */ InstrLog=fopen("/Instr.log","wt");
-  FirstCycle=40;
 } /* Init6502core */
 
 #include "via.h"
@@ -925,9 +921,14 @@ void Exec6502Instruction(void) {
   static int OldNMIStatus;
   int BadCount=0;
   int OldPC;
-  int loop;
-  for(loop=0;loop<1024;loop++) {
-	  if (!HoldingCPU) {
+  int loop,loopc;
+  loopc=(DebugEnabled ? 1 : 1024); // Makes debug window more responsive
+  for(loop=0;loop<loopc;loop++) {
+
+  /* Output debug info */
+  if (DebugEnabled && !DebugDisassembler(ProgramCounter,Accumulator,XReg,YReg,PSR,true))
+    continue;
+
   /* Read an instruction and post inc program couter */
   PrePC=ProgramCounter;
   CurrentInstruction=ReadPaged(ProgramCounter++);
@@ -1967,7 +1968,7 @@ void Exec6502Instruction(void) {
      then the interrupt handler will always be entered and rocket raid will
      never see it */
   if ((intStatus) && (!GETIFLAG)) DoInterrupt();
-  }
+
   TotalCycles+=Cycles;
   if (TotalCycles > CycleCountWrap)
   {
@@ -1979,6 +1980,8 @@ void Exec6502Instruction(void) {
     AdjustTrigger(AMXTrigger);
     AdjustTrigger(PrinterTrigger);
     AdjustTrigger(VideoTriggerCount);
+    if (EnableTube)
+      WrapTubeCycles();
   }
 
   SysVIA_poll(Cycles);
@@ -1994,7 +1997,10 @@ void Exec6502Instruction(void) {
   if ((MachineType==3) || (!NativeFDC)) Poll1770(Cycles); // Do 1770 Background stuff
 
   if ((NMIStatus) && (!OldNMIStatus)) DoNMI();
-  };
+
+  if (EnableTube)
+    SyncTubeProcessor();
+  }
 } /* Exec6502Instruction */
 
 /*-------------------------------------------------------------------------*/

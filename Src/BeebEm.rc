@@ -237,14 +237,14 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator\0"
             VALUE "CompanyName", "-\0"
             VALUE "FileDescription", "BeebEm\0"
-            VALUE "FileVersion", "1.6\0"
+            VALUE "FileVersion", "2.0\0"
             VALUE "InternalName", "BeebEm\0"
             VALUE "LegalCopyright", "Copyright © 2004\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "BeebEm.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "BeebEm\0"
-            VALUE "ProductVersion", "1.6\0"
+            VALUE "ProductVersion", "2.0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -271,6 +271,73 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Dialog
+//
+
+IDD_DEBUG DIALOG DISCARDABLE  0, 0, 532, 382
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "BeebEm Debugger"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Execute Command",IDC_DEBUGEXECUTE,449,361,75,14
+    PUSHBUTTON      "Break Execution",IDC_DEBUGBREAK,449,7,75,14
+    PUSHBUTTON      "Restart",IDC_DEBUGRESTART,449,25,75,14
+    LISTBOX         IDC_DEBUGINFO,7,7,432,347,NOT LBS_NOTIFY | 
+                    LBS_NOINTEGRALHEIGHT | LBS_NOSEL | WS_VSCROLL
+    EDITTEXT        IDC_DEBUGCOMMAND,7,362,432,13,ES_AUTOHSCROLL
+    CONTROL         "Video",IDC_DEBUGVIDEO,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,461,64,34,10
+    CONTROL         "",IDC_DEBUGVIDEOBRK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,504,64,16,10
+    LTEXT           "Trace  Break",IDC_STATIC,478,49,42,8
+    CONTROL         "System Via",IDC_DEBUGSYSVIA,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,444,80,51,10
+    CONTROL         "",IDC_DEBUGSYSVIABRK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,504,80,16,10
+    CONTROL         "User Via",IDC_DEBUGUSERVIA,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,452,96,43,10
+    CONTROL         "",IDC_DEBUGUSERVIABRK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,504,96,16,10
+    LISTBOX         IDC_DEBUGBREAKPOINTS,449,261,75,83,LBS_SORT | 
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Breakpoints",IDC_DEBUGBPS,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,460,248,53,10
+    CONTROL         "Debug OS",IDC_DEBUGOS,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,464,230,49,10
+    CONTROL         "Debug ROM",IDC_DEBUGROM,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,457,214,56,10
+    CONTROL         "Tube",IDC_DEBUGTUBE,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,462,112,33,10
+    CONTROL         "",IDC_DEBUGTUBEBRK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,504,112,16,10
+    CONTROL         "Debug Host",IDC_DEBUGHOST,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,459,182,54,10
+    CONTROL         "Debug Parasite",IDC_DEBUGPARASITE,"Button",
+                    BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,448,198,65,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_DEBUG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 524
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 375
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Menu
 //
 
@@ -291,6 +358,7 @@ BEGIN
         MENUITEM "Write Protect 1",             IDM_WPDISC1
         MENUITEM SEPARATOR
         MENUITEM "R&eset",                      ID_FILE_RESET
+        MENUITEM SEPARATOR
         MENUITEM "&Load State",                 IDM_LOADSTATE
         MENUITEM "&Save State",                 IDM_SAVESTATE
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
@@ -435,7 +503,7 @@ BEGIN
         MENUITEM "Adjust -30%",                 IDM_AMX_ADJUSTM30
         MENUITEM "Adjust -50%",                 IDM_AMX_ADJUSTM50
     END
-    POPUP "&Options"
+    POPUP "&Hardware"
     BEGIN
         POPUP "&BBC Model"
         BEGIN
@@ -449,6 +517,8 @@ BEGIN
             MENUITEM "Native &8271",                ID_8271
             MENUITEM "&Select FDC Board...",        ID_FDC_DLL
         END
+        MENUITEM "65C02 &Second Processor",     IDM_TUBE
+        MENUITEM SEPARATOR
         POPUP "&Allow ROM writes"
         BEGIN
             MENUITEM "Rom &0",                      IDM_ALLOWWRITES_ROM0
@@ -484,12 +554,29 @@ BEGIN
             MENUITEM "Rom &F",                      IDM_ALLOWWRITES_ROMF
             , CHECKED
         END
-        MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
         MENUITEM SEPARATOR
+        MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
+        POPUP "&Undocumented Instructions"
+        BEGIN
+            MENUITEM "&Documented Only",            ID_DOCONLY
+            MENUITEM "&Common Extras",              ID_EXTRAS
+            MENUITEM "&Full Set",                   ID_FULLSET
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
+        MENUITEM "&Teletext Half Mode",         ID_TSTYLE
+        POPUP "Sound Block Si&ze"
+        BEGIN
+            MENUITEM "&1772 Bytes",                 ID_1773
+            MENUITEM "&441 Bytes",                  ID_443
+        END
+    END
+    POPUP "&Options"
+    BEGIN
         MENUITEM "&Joystick",                   IDM_JOYSTICK
         MENUITEM "&Mousestick",                 IDM_MOUSESTICK
         MENUITEM SEPARATOR
-        MENUITEM "Freeze when inactive",        IDM_FREEZEINACTIVE
+        MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR
         MENUITEM "&Define User Keyboard",       IDM_DEFINEKEYMAP
@@ -501,23 +588,9 @@ BEGIN
         MENUITEM "Map A,S to CAPS,CTRL",        IDM_MAPAS
         MENUITEM "Map F1-F10 to f0-f9",         IDM_MAPFUNCS
         MENUITEM SEPARATOR
+        MENUITEM "Debu&gger",                   IDM_SHOWDEBUGGER
+        MENUITEM SEPARATOR
         MENUITEM "&Save Preferences",           IDM_SAVE_PREFS
-    END
-    POPUP "Opti&mise"
-    BEGIN
-        POPUP "&Undocumented Instructions"
-        BEGIN
-            MENUITEM "&Documented Only",            ID_DOCONLY
-            MENUITEM "&Common Extras",              ID_EXTRAS
-            MENUITEM "&Full Set",                   ID_FULLSET
-        END
-        MENUITEM "&Teletext Half Mode",         ID_TSTYLE
-        MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
-        POPUP "&Sound Block Size"
-        BEGIN
-            MENUITEM "&1772 Bytes",                 ID_1773
-            MENUITEM "&441 Bytes",                  ID_443
-        END
     END
     POPUP "&Help"
     BEGIN

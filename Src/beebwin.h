@@ -67,20 +67,18 @@ class BeebWin  {
 
 	void Initialise();
 
-	unsigned char cols[9];
-  
 	BeebWin();
 	~BeebWin();
  
-    HMENU   m_hMenu;
     void UpdateModelType();
 	void SetSoundMenu(void);
 	void SetPBuff(void);
 	void SetImageName(char *DiscName,char Drive,char DType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
+	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
 	void SelectFDC(void);
-	void LoadFDC(char *DLLName);
+	void LoadFDC(char *DLLName, bool save);
 	void KillDLLs(void);
 	void UpdateLEDMenu(HMENU hMenu);
 	void SetDriveControl(unsigned char value);
@@ -91,39 +89,41 @@ class BeebWin  {
 		{ updateLines(m_hDC, starty, nlines); };
 
 	void doHorizLine(unsigned long Col, int y, int sx, int width) {
-		if (((y*800)+sx+36+ScreenAdjust+width)>(500*800)) return;
-		if ((m_screen+(y*800)+sx+ScreenAdjust+36)<m_screen) return;
 		if (TeletextEnabled) y/=TeletextStyle;
-		memset(m_screen+ (y* 800) + sx+((TeletextEnabled)?36+ScreenAdjust:ScreenAdjust), Col , width);
+		int d = (y*800)+sx+ScreenAdjust+(TeletextEnabled?36:0);
+		if ((d+width)>(500*800)) return;
+		if (d<0) return;
+		memset(m_screen+d, Col, width);
 	};
 
 	void doInvHorizLine(unsigned long Col, int y, int sx, int width) {
-		char *vaddr;
-		if (((y*800)+sx+36+ScreenAdjust+width)>(500*800)) return;
-		if ((m_screen+(y*800)+sx+ScreenAdjust+36)<m_screen) return;
 		if (TeletextEnabled) y/=TeletextStyle;
-		vaddr=m_screen+ (y* 800) + sx+((TeletextEnabled)?36+ScreenAdjust:ScreenAdjust);
+		int d = (y*800)+sx+ScreenAdjust+(TeletextEnabled?36:0);
+		char *vaddr;
+		if ((d+width)>(500*800)) return;
+		if (d<0) return;
+		vaddr=m_screen+d;
 		for (int n=0;n<width;n++) *(vaddr+n)^=Col;
 	};
 
 	void doUHorizLine(unsigned long Col, int y, int sx, int width) {
-		if (y>500) return;
 		if (TeletextEnabled) y/=TeletextStyle;
-		memset(m_screen+ (y* 800) + sx, Col , width);
+		if (y>500) return;
+		memset(m_screen+ (y* 800) + sx, Col, width);
 	};
 
-	BOOL		m_frozen;
-
-	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
-
 	EightUChars *GetLinePtr(int y) {
-		if(y > MAX_VIDEO_SCAN_LINES) y=MAX_VIDEO_SCAN_LINES;
-		return((EightUChars *)(m_screen + ( y * 800 )+ScreenAdjust));
+		int d = (y*800)+ScreenAdjust;
+		if (d > (MAX_VIDEO_SCAN_LINES*800))
+			return((EightUChars *)(m_screen+(MAX_VIDEO_SCAN_LINES*800)));
+		return((EightUChars *)(m_screen + d));
 	}
 
 	SixteenUChars *GetLinePtr16(int y) {
-		if(y > MAX_VIDEO_SCAN_LINES) y=MAX_VIDEO_SCAN_LINES;
-		return((SixteenUChars *)(m_screen + ( y * 800 )+ScreenAdjust));
+		int d = (y*800)+ScreenAdjust;
+		if (d > (MAX_VIDEO_SCAN_LINES*800))
+			return((SixteenUChars *)(m_screen+(MAX_VIDEO_SCAN_LINES*800)));
+		return((SixteenUChars *)(m_screen + d));
 	}
 
 	char *imageData(void) {
@@ -153,6 +153,9 @@ class BeebWin  {
 	int TranslateKey(int, int, int&, int&);
 	void HandleCommandLine(char *cmd);
 
+	unsigned char cols[9];
+    HMENU		m_hMenu;
+	BOOL		m_frozen;
 	char*		m_screen;
 	double		m_RealTimeTarget;
 	int			m_ShiftBooted;

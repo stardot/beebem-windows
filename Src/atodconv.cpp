@@ -52,7 +52,7 @@ int AtoDTrigger;  /* For next A to D conversion completion */
 /* Address is in the range 0-f - with the fec0 stripped out */
 void AtoDWrite(int Address, int Value)
 {
-	if (JoystickEnabled && Address == 0)
+	if (Address == 0)
 	{
 		int timetoconvert;
 		AtoDState.datalatch = Value & 0xff;
@@ -123,7 +123,8 @@ void AtoDInit(void)
 {
 	JoystickEnabled = 1;
 	AtoDState.datalatch = 0;
-	AtoDState.high = AtoDState.high = 0;
+	AtoDState.high = 0;
+	AtoDState.low = 0;
 	ClearTrigger(AtoDTrigger);
 
 	/* Not busy, conversion complete (OS1.2 will then request another conversion) */
@@ -137,6 +138,11 @@ void AtoDReset(void)
 	JoystickEnabled = 0;
 	AtoDState.datalatch = 0;
 	AtoDState.status = 0x80; /* busy, conversion not complete */
-	AtoDState.high = AtoDState.high = 0;
+	AtoDState.high = 0;
+	AtoDState.low = 0;
 	ClearTrigger(AtoDTrigger);
+
+	/* Move joystick to middle (superpool looks at joystick even when not selected) */
+	JoystickX = 32767;
+	JoystickY = 32767;
 }

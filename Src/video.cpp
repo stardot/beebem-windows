@@ -39,6 +39,7 @@
 #include "video.h"
 #include "uefstate.h"
 #include "beebsound.h"
+#include "debug.h"
 
 #ifdef BEEB_DOTIME
 #include <sys/times.h>
@@ -100,6 +101,7 @@ unsigned char HSyncModifier=9;
 unsigned char TeletextEnabled;
 char TeletextStyle=1; // Defines wether teletext will skip intermediate lines in order to speed up
 int THalfMode=0; // 1 if to use half-mode (TeletextStyle=1 all the time)
+int CurY=-1;
 FILE *crtclog;
 
 int ova,ovn; // mem ptr buffers
@@ -109,7 +111,12 @@ the point of the sync. If it is -ve its actually in the adjust time */
 typedef struct {
   int Addr;       /* Address of start of next visible character line in beeb memory  - raw */
   int PixmapLine; /* Current line in the pixmap */
-  int PreviousFinalPixmapLine; /* The last pixmap line on the previous frame */
+  int FirstPixmapLine; /* The first pixmap line where something is visible.  Used to eliminate the 
+                          blank virtical retrace lines at the top of the screen.  */
+  int PreviousFirstPixmapLine; /* The first pixmap line on the previous frame */
+  int LastPixmapLine; /* The last pixmap line where something is visible.  Used to eliminate the 
+                          blank virtical retrace lines at the bottom of the screen.  */
+  int PreviousLastPixmapLine; /* The last pixmap line on the previous frame */
   int IsTeletext; /* This frame is a teletext frame - do things differently */
   char *DataPtr;  /* Pointer into host memory of video data */
 
@@ -900,8 +907,7 @@ void RedoMPTR(void) {
 
 /*-------------------------------------------------------------------------------------------------------------*/
 void VideoDoScanLine(void) {
-  int movedist;
-  int mempos,memdstart,memdlen;
+  int l;
   /* cerr << "CharLine=" << VideoState.CharLine << " InCharLineUp=" << VideoState.InCharLineUp << "\n"; */
   if (VideoState.IsTeletext) {
     static int DoCA1Int=0;
@@ -909,6 +915,15 @@ void VideoDoScanLine(void) {
       SysVIATriggerCA1Int(0);
       DoCA1Int=0;
     }; 
+
+    /* Clear the next 20 scan lines */
+    if (!FrameNum) {
+      if (VScreenAdjust>0 && VideoState.PixmapLine==0)
+        for (l=-VScreenAdjust; l<0; ++l)
+          mainWin->doHorizLine(0, l, -36, 800);
+      for (l=0; l<20 && VideoState.PixmapLine+l<512; ++l)
+        mainWin->doHorizLine(0, VideoState.PixmapLine+l, -36, 800);
+    }
 
     if ((VideoState.CharLine!=-1) && (VideoState.CharLine<CRTC_VerticalDisplayed)) {
       ova=VideoState.Addr; ovn=CRTC_HorizontalDisplayed;
@@ -936,7 +951,7 @@ void VideoDoScanLine(void) {
         mainWin->updateLines(0,(500/TeletextStyle));
       }
       VideoStartOfFrame();
-      VideoState.PreviousFinalPixmapLine=VideoState.PixmapLine;
+      VideoState.PreviousLastPixmapLine=VideoState.PixmapLine;
       VideoState.PixmapLine=0;
       SysVIATriggerCA1Int(1);
       DoCA1Int=1;
@@ -948,9 +963,20 @@ void VideoDoScanLine(void) {
       };
     };
   } else {
-    /* Non teletext */
+    /* Non teletext. */
+
+    /* Clear the scan line */
+    if (!FrameNum)
+      memset(mainWin->GetLinePtr(VideoState.PixmapLine),0,800);
+
     if (VideoState.CharLine!=-1) {
       if (VideoState.CharLine<CRTC_VerticalDisplayed) {
+        // Visible char line, record first line
+        if (VideoState.FirstPixmapLine==-1)
+          VideoState.FirstPixmapLine=VideoState.PixmapLine;
+        if (VideoState.LastPixmapLine<VideoState.PixmapLine)
+          VideoState.LastPixmapLine=VideoState.PixmapLine;
+
         /* If first row of character then get the data pointer from memory */
         if (VideoState.InCharLineUp==0) {
           ova=VideoState.Addr*8; ovn=CRTC_HorizontalDisplayed*8;
@@ -959,30 +985,29 @@ void VideoDoScanLine(void) {
         };
   
         if ((VideoState.InCharLineUp<8) && ((CRTC_InterlaceAndDelay & 0x30)!=48)) {
-          if (!FrameNum) {
+          if (!FrameNum)
             LowLevelDoScanLine();
-            movedist=HSyncModifier*((CRTC_InterlaceAndDelay&48)>>4);
-            if (movedist>0) {
-              mempos=(VideoState.PixmapLine*800)+ScreenAdjust;
-              memdstart=mempos+(HSyncModifier*CRTC_HorizontalDisplayed);
-              memdlen=movedist; 
-              if ((unsigned int)(HSyncModifier*CRTC_HorizontalDisplayed)>(unsigned int)((int)ActualScreenWidth-movedist)) 
-                memdstart=mempos+(ActualScreenWidth-movedist);
-              if ((mempos<(255*800)) && ((memdstart+memdlen)<(255*800)))
-                memcpy(mainWin->m_screen+memdstart,mainWin->m_screen+mempos,memdlen);
-                mainWin->doHorizLine(0,VideoState.PixmapLine,0,movedist);
-            }
-          } 
         }
         VideoState.PixmapLine++;
       }
-    } else {
+      else {
+        // Line not visible.  These are normally the virtical retrace lines:
+        //  - lines between the last displayed line and the vsync (at the bottom of the screen) 
+        //  - lines between the vsync and the last virtical total line (at the top of the screen)
+        VideoState.PixmapLine++;
+      }
+    }
+    else {
       VideoState.PixmapLine++;
     }
 
-    // Sanity check, allow a few extra lines (Level 9 adventures use 262 lines)
+    // Sanity check
     if (VideoState.PixmapLine > MAX_VIDEO_SCAN_LINES)
       VideoState.PixmapLine = MAX_VIDEO_SCAN_LINES;
+
+	// See if we are at the cursor line
+	if (CurY == -1 && VideoState.Addr >= (CRTC_CursorPosLow+(CRTC_CursorPosHigh<<8)))
+		CurY = VideoState.PixmapLine;
 
     /* Move onto next physical scanline as far as timing is concerned */
     VideoState.InCharLineUp+=1;
@@ -995,8 +1020,22 @@ void VideoDoScanLine(void) {
     if ((VideoState.CharLine!=-1 && VideoState.InCharLineUp>CRTC_ScanLinesPerChar) ||
         (VideoState.CharLine==-1 && VideoState.InCharLineUp>=CRTC_VerticalTotalAdjust)) {
       VideoState.CharLine++;
-      if ((VideoState.VSyncState==0) && (VideoState.CharLine==(CRTC_VerticalSyncPos))) {
-        VideoState.PreviousFinalPixmapLine=VideoState.PixmapLine;
+      if ((VideoState.VSyncState==0) && (VideoState.CharLine==CRTC_VerticalSyncPos)) {
+        // Nothing displayed?
+        if (VideoState.FirstPixmapLine<0)
+          VideoState.FirstPixmapLine=0;
+
+        // Limit the number of virtical retrace lines we hide otherwise 
+        // screen can get very stretched.
+        if (VideoState.FirstPixmapLine>32)
+          VideoState.FirstPixmapLine=32;
+        if ((VideoState.LastPixmapLine-VideoState.FirstPixmapLine)<256)
+          VideoState.LastPixmapLine=256+VideoState.FirstPixmapLine;
+
+        VideoState.PreviousFirstPixmapLine=VideoState.FirstPixmapLine;
+        VideoState.FirstPixmapLine=-1;
+        VideoState.PreviousLastPixmapLine=VideoState.LastPixmapLine;
+        VideoState.LastPixmapLine=0;
         VideoState.PixmapLine=0;
         SysVIATriggerCA1Int(1);
         VideoState.VSyncState=3;
@@ -1006,12 +1045,13 @@ void VideoDoScanLine(void) {
     };
 
     if (VideoState.CharLine>CRTC_VerticalTotal) {
-      // Set so that whole screen is still visible after *TV255
-      VScreenAdjust=((CRTC_VerticalTotal+1)-CRTC_VerticalSyncPos-5)*(CRTC_ScanLinesPerChar+1);
+      VScreenAdjust=0;
       if (!FrameNum) {
         VideoAddCursor();
         VideoAddLEDs();
-        mainWin->updateLines(0,VideoState.PreviousFinalPixmapLine < 256 ? 256 : VideoState.PreviousFinalPixmapLine);
+		CurY=-1;
+        mainWin->updateLines(VideoState.PreviousFirstPixmapLine,
+                             VideoState.PreviousLastPixmapLine-VideoState.PreviousFirstPixmapLine+1);
       }
       VideoStartOfFrame();
       AdjustVideo();
@@ -1027,13 +1067,7 @@ void AdjustVideo() {
 	HStart=InitialOffset+((CRTC_HorizontalTotal+1)-(CRTC_HorizontalSyncPos+(CRTC_SyncWidth&15)));
 	HStart+=(HSyncModifier==8)?2:1;
 	if (TeletextEnabled) HStart+=2;
-	// Having sorted the horizontal component [Richard] 
-	// goes on to swear at the vertical section. P.S. the
-	// author of Uridium is gonna die for that sneaky
-	// double the dot clock'd mode 5 trick....
-	// I removed the vertical bit coz its not needed no more
 	if (HStart<0) HStart=0;
-	//if (crtclog!=NULL) fprintf(crtclog,"H %d Chars - V %d Lines\n",HStart,VStart);
 	ScreenAdjust=(HStart*HSyncModifier)+((VScreenAdjust>0)?(VScreenAdjust*800):0);
 }
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -1054,7 +1088,11 @@ void VideoInit(void) {
 
   FrameNum=Video_RefreshFrequency;
   VideoState.PixmapLine=0;
-  VideoState.PreviousFinalPixmapLine=255;
+  VideoState.FirstPixmapLine=-1;
+  VideoState.PreviousFirstPixmapLine=0;
+  VideoState.LastPixmapLine=0;
+  VideoState.PreviousLastPixmapLine=256;
+  CurY=-1;
   //AdjustVideo();
 //  crtclog=fopen("/crtc.log","wb");
 }; /* VideoInit */
@@ -1064,11 +1102,18 @@ void VideoInit(void) {
 void CRTCWrite(int Address, int Value) {
   Value&=0xff;
   if (Address & 1) {
-	  //if (CRTCControlReg<14) { fputc(CRTCControlReg,crtclog); fputc(Value,crtclog); }
-/*	  if (CRTCControlReg<14) {
-		  fprintf(crtclog,"%d (%02X) Written to register %d from %04X\n",Value,Value,CRTCControlReg,ProgramCounter);
-	  }*/
-    switch (CRTCControlReg) {
+//	if (CRTCControlReg<14) { fputc(CRTCControlReg,crtclog); fputc(Value,crtclog); }
+//	if (CRTCControlReg<14) {
+//		fprintf(crtclog,"%d (%02X) Written to register %d from %04X\n",Value,Value,CRTCControlReg,ProgramCounter);
+//	}
+
+	if (DebugEnabled && CRTCControlReg<14) {
+		char info[200];
+		sprintf(info, "CRTC: Write register %X value %02X", (int)CRTCControlReg, Value);
+		DebugDisplayTrace(DEBUG_VIDEO, true, info);
+	}
+
+	switch (CRTCControlReg) {
       case 0:
         CRTC_HorizontalTotal=Value;
 		InitialOffset=0-(((CRTC_HorizontalTotal+1)/2)-((HSyncModifier==8)?40:20));
@@ -1077,6 +1122,8 @@ void CRTCWrite(int Address, int Value) {
 
       case 1:
         CRTC_HorizontalDisplayed=Value;
+		if (CRTC_HorizontalDisplayed > 127)
+			CRTC_HorizontalDisplayed = 127;
         FastTable_Valid=0;
 		ActualScreenWidth=CRTC_HorizontalDisplayed*8;
 		if (ActualScreenWidth>800) ActualScreenWidth=800;
@@ -1215,7 +1262,7 @@ int VideoULARead(int Address) {
 static void VideoAddCursor(void) {
 	static int CurSizes[] = { 2,1,0,0,4,2,0,4 };
 	int ScrAddr,CurAddr,RelAddr;
-	int CurX,CurY;
+	int CurX;
 	int CurSize;
 	int CurStart, CurEnd;
 
@@ -1253,19 +1300,23 @@ static void VideoAddCursor(void) {
 
 	/* Work out char positions */
 	CurX = RelAddr % CRTC_HorizontalDisplayed;
-	CurY = RelAddr / CRTC_HorizontalDisplayed;
 
 	/* Convert to pixel positions */
-	CurX = CurX*((VideoState.IsTeletext)?12:HSyncModifier);
-	CurY = CurY * (VideoState.IsTeletext ? 20 :  (CRTC_ScanLinesPerChar + 1));
-    if (!(VideoState.IsTeletext)) CurY+=CRTC_VerticalTotalAdjust;
-	if (VideoState.IsTeletext) CurY+=9;
+	if (VideoState.IsTeletext) {
+		CurX = CurX * 12;
+		CurY = (RelAddr / CRTC_HorizontalDisplayed) * 20 + 9;
+	}
+	else {
+		CurX = CurX * HSyncModifier;
+	}
+
 	/* Limit cursor size */ // This should be 11, not 9 - Richard Gellman
 	if (CurEnd > 11)
 		CurEnd = 11;
 
 	if (CurX + CurSize >= 640)
 		CurSize = 640 - CurX;
+
 	// Cursor delay
 	CurX+=((CRTC_InterlaceAndDelay&192)>>6)*HSyncModifier;
 	if (VideoState.IsTeletext) CurX-=2*HSyncModifier;
@@ -1391,3 +1442,32 @@ void video_dumpstate(void) {
   cerr << "  CRTC_LightPenLow=" << int(CRTC_LightPenLow)<< "\n";
 }; /* video_dumpstate */
 
+void DebugVideoState()
+{
+	char info[200];
+
+	DebugDisplayInfo("");
+
+	sprintf(info, "CRTC: HTot=%02X HDis=%02X HSyn=%02X SWid=%02X VTot=%02X VAdj=%02X VDis=%02X VSyn=%02X",
+		(int)CRTC_HorizontalTotal,
+		(int)CRTC_HorizontalDisplayed,
+		(int)CRTC_HorizontalSyncPos,
+		(int)CRTC_SyncWidth,
+		(int)CRTC_VerticalTotal,
+		(int)CRTC_VerticalTotalAdjust,
+		(int)CRTC_VerticalDisplayed,
+		(int)CRTC_VerticalSyncPos);
+	DebugDisplayInfo(info);
+
+	sprintf(info, "CRTC: IntD=%02X SLCh=%02X CurS=%02X CurE=%02X ScrS=%02X%02X CurP=%02X%02X VidULA=%02X",
+		(int)CRTC_InterlaceAndDelay,
+		(int)CRTC_ScanLinesPerChar,
+		(int)CRTC_CursorStart,
+		(int)CRTC_CursorEnd,
+		(int)CRTC_ScreenStartHigh,
+		(int)CRTC_ScreenStartLow,
+		(int)CRTC_CursorPosHigh,
+		(int)CRTC_CursorPosLow,
+		(int)VideoULA_ControlReg);
+	DebugDisplayInfo(info);
+}

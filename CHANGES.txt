@@ -282,3 +282,17 @@ Version 1.6 (Ken Lowe & Mike Wyatt)
 * Fixed ADFS boot (A+Break) in Master 128 mode.
 * Removed old BeebState stuff.
 * Removed 'Allow ROM Writes - All' option, it was not implemented.
+
+Version 2.0 (Mike Wyatt)
+-----------
+* Added tube and 65C02 second processor emulation.  It runs the Executive
+  version of Elite quite nicely but you will need a reasonably fast PC.
+* Added Debugger (see Readme.txt for details).
+* Fixed more bugs in the video emulation (fixes Uridium, improves Level 9
+  graphical adventures in Master mode).
+* Fixed bugs in the joystick and AtoD emulation (SuperPool now works and it
+  may fix problems with GamePads).
+* Tweaked sound tuning and noise generation.
+* Floppy controller selection is now saved for each Model B type.
+* Changed default DFS for B+ to the V2.26 Acorn 1770 DFS.
+* Rearranged menus a bit as options was getting too big.
