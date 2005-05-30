@@ -29,6 +29,7 @@ You can download more disc images from internet sites such as these:
   http://www.rubybay.com/users/drbeeb/
   http://www.users.waitrose.com/~sharx/beeb.htm
   http://www.nvg.ntnu.no/bbc/
+  http://www.iancgbell.clara.net/elite/
 
 Put the disc image files into the DiscIms directory where BeebEm was
 installed or unzipped.  The default location is:
@@ -217,6 +218,30 @@ sided images then remember to format and copy both sides (the second sides
 of disc 0 and 1 are 2 and 3).
 
 
+IDE Disk Support
+----------------
+
+Jon Welch has added some preliminary support for emulated IDE hard disks to
+BeebEm.  There are 4 blank IDE drive images, pre-formatted to 4MB each, in
+the discims directory.  To use the images you need to change the ADFS ROM
+used in Master 128 mode to a modified version (produced by Jonathan
+Harston).  Change "ADFS.rom" in the Roms.cfg file to "ADFS1-53.rom".
+
+After selecting Master 128 emulation, press A & F12 to boot in ADFS mode and
+type:
+     *MOUNT 0
+
+This will mount the IDE disks.  The hard disks can then be used as drives 0
+to 3.  Floppy disks can still be accessed as drives 4 to 7.
+
+For more infomation on the patched ADFS ROM see:
+     http://www.mdfsnet.f9.co.uk/Info/Comp/BBC/IDE/ADFS/
+
+Jon Welch has written a tool for building IDE drive images, its called HADFS
+Explorer and can be downloaded from Jon's web page:
+     http://www.g7jjf.com
+
+
 Using Tape Images
 -----------------
 
@@ -357,6 +382,13 @@ View Menu:
 
   LEDs                - The Beeb keyboard and disc (1770 only) LEDs can be 
                         shown at the bottom of the BeebEm window.
+
+  Motion Blur         - Fades out contents of previous frames rather than
+                        blanking them out.  Can improve flicker in some 
+                        games.  The % intensities of the 8 frames can be 
+                        edited in the following registry key:
+                        HKEY_CURRENT_USER\Software\BeebEm\
+                                                MotionBlurIntensities
 
 Speed Menu:
 

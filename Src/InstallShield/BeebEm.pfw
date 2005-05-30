@@ -1,5 +1,5 @@
 [PackageForTheWeb]
-Version=2.2
+Version=2.3
 
 [Options]
 Title=BeebEm
@@ -14,8 +14,8 @@ ApplicationName=BeebEm
 Description=
 Comments=
 Notice=
-Version=2.2
-OutputSpec=C:\BeebEm22.exe
+Version=2.3
+OutputSpec=C:\BeebEm23.exe
 GUIDs=0
 Type=2
 Compress=1

@@ -264,6 +264,10 @@
 #define ID_TAPECONTROL                  40174
 #define IDM_SOUNDCHIP                   40175
 #define ID_UNLOCKTAPE                   40176
+#define IDM_BLUR_OFF                    40177
+#define IDM_BLUR_2                      40178
+#define IDM_BLUR_4                      40179
+#define IDM_BLUR_8                      40180
 
 // Next default values for new objects
 // 
@@ -271,7 +275,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        113
-#define _APS_NEXT_COMMAND_VALUE         40177
+#define _APS_NEXT_COMMAND_VALUE         40181
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

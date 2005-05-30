@@ -154,11 +154,13 @@ class BeebWin  {
 	int TranslateKey(int, int, int&, int&);
 	void HandleCommandLine(char *cmd);
 	void NewTapeImage(char *FileName);
+	const char *GetAppPath(void) { return m_AppPath; }
 
 	unsigned char cols[9];
     HMENU		m_hMenu;
 	BOOL		m_frozen;
 	char*		m_screen;
+	char*		m_screen_blur;
 	double		m_RealTimeTarget;
 	int			m_ShiftBooted;
 
@@ -221,6 +223,8 @@ class BeebWin  {
 	DWORD		m_LastFPSCount;
 	int			m_LastStartY;
 	int			m_LastNLines;
+	int			m_MotionBlur;
+	char 		m_BlurIntensities[8];
 
 
 	// DirectX stuff

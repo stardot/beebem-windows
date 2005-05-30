@@ -237,14 +237,14 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator\0"
             VALUE "CompanyName", "-\0"
             VALUE "FileDescription", "BeebEm\0"
-            VALUE "FileVersion", "2.2\0"
+            VALUE "FileVersion", "2.3\0"
             VALUE "InternalName", "BeebEm\0"
-            VALUE "LegalCopyright", "Copyright © 2004\0"
+            VALUE "LegalCopyright", "Copyright © 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "BeebEm.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "BeebEm\0"
-            VALUE "ProductVersion", "2.2\0"
+            VALUE "ProductVersion", "2.3\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -465,6 +465,13 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Show &Keyboard LEDs",         ID_SHOW_KBLEDS
             MENUITEM "Show &Disc LEDs",             ID_SHOW_DISCLEDS
+        END
+        POPUP "&Motion Blur"
+        BEGIN
+            MENUITEM "Off",                         IDM_BLUR_OFF
+            MENUITEM "2 Frames",                    IDM_BLUR_2
+            MENUITEM "4 Frames",                    IDM_BLUR_4
+            MENUITEM "8 Frames",                    IDM_BLUR_8
         END
     END
     POPUP "S&peed"

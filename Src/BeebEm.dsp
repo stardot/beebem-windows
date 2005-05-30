@@ -134,6 +134,10 @@ SOURCE=.\disc8271.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\ide.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Main.cpp
 # End Source File
 # Begin Source File
@@ -223,6 +227,10 @@ SOURCE=.\disc8271.h
 # Begin Source File
 
 SOURCE=.\ext1770.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ide.h
 # End Source File
 # Begin Source File
 

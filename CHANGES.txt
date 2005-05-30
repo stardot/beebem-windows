@@ -314,3 +314,10 @@ Version 2.2 (Greg Cook & Mike Wyatt)
 * Fixed LED positioning in modes other than 7.
 * Integrated Greg's 1770 disc controller fixes.
 * Fixed keyboard handling so Revs works correctly.
+
+Version 2.3beta3 (Mike Wyatt, Greg Cook, Jon Welch)
+----------------
+* Added "Motion Blur" option to view menu (suggested by Ian Bell). This 
+  all but stops the spaceship flicker in Elite.  
+* More 1770 disc controller fixes from Greg.
+* Preliminary IDE hard disk support from Jon Welch.

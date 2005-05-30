@@ -43,12 +43,14 @@
 #include "ext1770.h"
 #include "uefstate.h"
 #include "debug.h"
+#include "ide.h"
 
 // some LED based macros
 
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
 #define LED_SHOW_DISC (LEDByte&2)>>1
+#define LED_COL_BASE 64
 
 // Registry access stuff
 cRegistry SysReg;
@@ -90,7 +92,7 @@ char FDCDLL[256];
 static const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 static const char *AboutText = "BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
 								"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\n\n"
-								"Version 2.2, Feb 2005";
+								"Version 2.3beta3, May 2005";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -241,6 +243,7 @@ void BeebWin::Initialise()
 	UEFTapeName[0]=0;
 
 	m_hBitmap = m_hOldObj = m_hDCBitmap = NULL;
+	m_screen = m_screen_blur = NULL;
 	m_ScreenRefreshCount = 0;
 	m_RelativeSpeed = 1;
 	m_FramesPerSecond = 50;
@@ -349,6 +352,7 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	FreeDiscImage(1);
 	Close1770Disc(0);
 	Close1770Disc(1);
+	IDEReset();
 	if (MachineType==3) InvertTR00=FALSE;
 	if (MachineType!=3) {
 		LoadFDC(NULL, false);
@@ -373,6 +377,8 @@ void BeebWin::CreateBitmap()
 		DeleteObject(m_hBitmap);
 	if (m_hDCBitmap != NULL)
 		DeleteDC(m_hDCBitmap);
+	if (m_screen_blur != NULL)
+		free(m_screen_blur);
 
 	m_hDCBitmap = CreateCompatibleDC(NULL);
 
@@ -383,8 +389,8 @@ void BeebWin::CreateBitmap()
 	m_bmi.bmiHeader.biBitCount = 8;
 	m_bmi.bmiHeader.biCompression = BI_RGB;
 	m_bmi.bmiHeader.biSizeImage = 800*512;
-	m_bmi.bmiHeader.biClrUsed = 12;
-	m_bmi.bmiHeader.biClrImportant = 12;
+	m_bmi.bmiHeader.biClrUsed = 68;
+	m_bmi.bmiHeader.biClrImportant = 68;
 
 #ifdef USE_PALETTE
 	__int16 *pInts = (__int16 *)&m_bmi.bmiColors[0];
@@ -395,7 +401,7 @@ void BeebWin::CreateBitmap()
 	m_hBitmap = CreateDIBSection(m_hDCBitmap, (BITMAPINFO *)&m_bmi, DIB_PAL_COLORS,
 							(void**)&m_screen, NULL,0);
 #else
-	for (int i = 0; i < 9; ++i)
+	for (int i = 0; i < 64; ++i)
 	{
 		float r,g,b;
 		r = i & 1;
@@ -421,26 +427,28 @@ void BeebWin::CreateBitmap()
 			}
 		}
 
-		m_bmi.bmiColors[i].rgbRed   = r * 255;
-		m_bmi.bmiColors[i].rgbGreen = g * 255;
-		m_bmi.bmiColors[i].rgbBlue  = b * 255;
+		m_bmi.bmiColors[i].rgbRed   = r * m_BlurIntensities[i >> 3] / 100.0 * 255;
+		m_bmi.bmiColors[i].rgbGreen = g * m_BlurIntensities[i >> 3] / 100.0 * 255;
+		m_bmi.bmiColors[i].rgbBlue  = b * m_BlurIntensities[i >> 3] / 100.0 * 255;
 		m_bmi.bmiColors[i].rgbReserved = 0;
 	}
 
 	// Red Leds - left is dark, right is lit.
-	m_bmi.bmiColors[8].rgbRed=80;		m_bmi.bmiColors[9].rgbRed=255;
-	m_bmi.bmiColors[8].rgbGreen=0;		m_bmi.bmiColors[9].rgbGreen=0;
-	m_bmi.bmiColors[8].rgbBlue=0;		m_bmi.bmiColors[9].rgbBlue=0;
-	m_bmi.bmiColors[8].rgbReserved=0;	m_bmi.bmiColors[9].rgbReserved=0;
+	m_bmi.bmiColors[LED_COL_BASE].rgbRed=80;		m_bmi.bmiColors[LED_COL_BASE+1].rgbRed=255;
+	m_bmi.bmiColors[LED_COL_BASE].rgbGreen=0;		m_bmi.bmiColors[LED_COL_BASE+1].rgbGreen=0;
+	m_bmi.bmiColors[LED_COL_BASE].rgbBlue=0;		m_bmi.bmiColors[LED_COL_BASE+1].rgbBlue=0;
+	m_bmi.bmiColors[LED_COL_BASE].rgbReserved=0;	m_bmi.bmiColors[LED_COL_BASE+1].rgbReserved=0;
 	// Green Leds - left is dark, right is lit.
-	m_bmi.bmiColors[10].rgbRed=0;		m_bmi.bmiColors[11].rgbRed=0;
-	m_bmi.bmiColors[10].rgbGreen=80;		m_bmi.bmiColors[11].rgbGreen=255;
-	m_bmi.bmiColors[10].rgbBlue=0;		m_bmi.bmiColors[11].rgbBlue=0;
-	m_bmi.bmiColors[10].rgbReserved=0;	m_bmi.bmiColors[11].rgbReserved=0;
+	m_bmi.bmiColors[LED_COL_BASE+2].rgbRed=0;		m_bmi.bmiColors[LED_COL_BASE+3].rgbRed=0;
+	m_bmi.bmiColors[LED_COL_BASE+2].rgbGreen=80;	m_bmi.bmiColors[LED_COL_BASE+3].rgbGreen=255;
+	m_bmi.bmiColors[LED_COL_BASE+2].rgbBlue=0;		m_bmi.bmiColors[LED_COL_BASE+3].rgbBlue=0;
+	m_bmi.bmiColors[LED_COL_BASE+2].rgbReserved=0;	m_bmi.bmiColors[LED_COL_BASE+3].rgbReserved=0;
 
 	m_hBitmap = CreateDIBSection(m_hDCBitmap, (BITMAPINFO *)&m_bmi, DIB_RGB_COLORS,
 							(void**)&m_screen, NULL,0);
 #endif
+
+	m_screen_blur = (char *)calloc(m_bmi.bmiHeader.biSizeImage,1);
 
 	m_hOldObj = SelectObject(m_hDCBitmap, m_hBitmap);
 	if(m_hOldObj == NULL)
@@ -596,6 +604,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(m_hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
 
 	CheckMenuItem(m_hMenu,ID_UNLOCKTAPE,(UnlockTape)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu,m_MotionBlur,MF_CHECKED);
 
 	UpdateMonitorMenu();
 
@@ -926,6 +935,7 @@ LRESULT CALLBACK WndProc(
 					if (EnableTube) Init65C02core();
 					Disc8271_reset();
 					Reset1770();
+					IDEReset();
 					//SoundChipReset();
 				}
 				else if(row==-3)
@@ -1242,8 +1252,8 @@ int BeebWin::StartOfFrame(void)
 
 void BeebWin::doLED(int sx,bool on) {
 	int tsy; char colbase;
-	colbase=(DiscLedColour*2)+8; // colour will be 0 for red, 1 for green.
-	if (sx<100) colbase=8; // Red leds for keyboard always
+	colbase=(DiscLedColour*2)+LED_COL_BASE; // colour will be 0 for red, 1 for green.
+	if (sx<100) colbase=LED_COL_BASE; // Red leds for keyboard always
 	if (TeletextEnabled)
 		tsy=496;
 	else
@@ -1260,7 +1270,12 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	HDC hdc;
 	int TTLines=0;
 	int TextStart=240;
+	int i,j;
 
+	// Not initialised yet?
+	if (m_screen == NULL)
+		return;
+	
 	// Use last stored params?
 	if (starty == 0 && nlines == 0)
 	{
@@ -1275,6 +1290,32 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 
 	++m_ScreenRefreshCount;
 	TTLines=500/TeletextStyle;
+
+	// Do motion blur
+	if (m_MotionBlur != IDM_BLUR_OFF)
+	{
+		if (m_MotionBlur == IDM_BLUR_2)
+			j = 32;
+		else if (m_MotionBlur == IDM_BLUR_4)
+			j = 16;
+		else // blue 8 frames
+			j = 8;
+
+		for (i = 0; i < 800*512; ++i)
+		{
+			if (m_screen[i] != 0)
+			{
+				m_screen_blur[i] = m_screen[i];
+			}
+			else if (m_screen_blur[i] != 0)
+			{
+				m_screen_blur[i] += j;
+				if (m_screen_blur[i] > 63)
+					m_screen_blur[i] = 0;
+			}
+		}
+		memcpy(m_screen, m_screen_blur, 800*512);
+	}
 
 	if (!m_DirectDrawEnabled)
 	{
@@ -2523,6 +2564,24 @@ void BeebWin::LoadPreferences()
 	DiscLedColour=LED_COLOUR_TYPE;
 	LEDs.ShowDisc=LED_SHOW_DISC;
 	LEDs.ShowKB=LED_SHOW_KB;
+	if (SysReg.GetDWORDValue(HKEY_CURRENT_USER,CFG_REG_KEY,"MotionBlur",dword)) {
+		m_MotionBlur = dword;
+	}
+	else {
+		m_MotionBlur = IDM_BLUR_OFF;
+	}
+	*binsize=8;
+	if (!SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"MotionBlurIntensities",m_BlurIntensities,binsize)) {
+		m_BlurIntensities[0]=100;
+		m_BlurIntensities[1]=88;
+		m_BlurIntensities[2]=75;
+		m_BlurIntensities[3]=62;
+		m_BlurIntensities[4]=50;
+		m_BlurIntensities[5]=38;
+		m_BlurIntensities[6]=25;
+		m_BlurIntensities[7]=12;
+	}
+	*binsize=1;
 
 
 	if (SysReg.GetDWORDValue(HKEY_CURRENT_USER,CFG_REG_KEY,CFG_SPEED_TIMING,dword)) {
@@ -2833,6 +2892,11 @@ void BeebWin::SavePreferences()
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"HideMenuEnabled",&HideMenuEnabled,binsize);
 	LEDByte=(DiscLedColour<<2)|((LEDs.ShowDisc?1:0)<<1)|(LEDs.ShowKB?1:0);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"LED Information",&LEDByte,binsize);
+	flag = m_MotionBlur;
+	SysReg.SetDWORDValue(HKEY_CURRENT_USER,CFG_REG_KEY, "MotionBlur", m_MotionBlur);
+	*binsize=8;
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"MotionBlurIntensities",m_BlurIntensities,binsize);
+	*binsize=1;
 
 	SysReg.SetDWORDValue(HKEY_CURRENT_USER,CFG_REG_KEY, CFG_SPEED_TIMING, m_MenuIdTiming);
 
@@ -3845,6 +3909,18 @@ void BeebWin::HandleCommand(int MenuId)
 			DebugCloseDialog();
 		else
 			DebugOpenDialog(hInst, m_hWnd);
+		break;
+
+	case IDM_BLUR_OFF:
+	case IDM_BLUR_2:
+	case IDM_BLUR_4:
+	case IDM_BLUR_8:
+		if (MenuId != m_MotionBlur)
+		{
+			CheckMenuItem(hMenu, m_MotionBlur, MF_UNCHECKED);
+			m_MotionBlur = MenuId;
+			CheckMenuItem(hMenu, m_MotionBlur, MF_CHECKED);
+		}
 		break;
 	}
 	SetSound(UNMUTED);

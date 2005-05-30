@@ -38,6 +38,7 @@
 #include "tube.h"
 #include "errno.h"
 #include "uefstate.h"
+#include "ide.h"
 
 /* Each Rom now has a Ram/Rom flag */
 int RomWritable[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
@@ -322,6 +323,7 @@ int BeebReadMem(int Address) {
   if (Address>=0xfe18 && Address<=0xfe20 && MachineType==3) return(AtoDRead(Address - 0xfe18));
   if ((Address & ~0x1f)==0xfee0) return(ReadTubeFromHostSide(Address&7)); //Read From Tube
   // Tube seems to return FF on a master (?)
+  if ((Address & ~0x7)==0xfc40 && MachineType==3) return(IDERead(Address & 0x7));
   if (Address==0xfe08) return(Read_ACIA_Status());
   if (Address==0xfe09) return(Read_ACIA_Rx_Data());
   if (Address==0xfe10) return(Read_SERPROC());
@@ -638,7 +640,12 @@ void BeebWriteMem(int Address, int Value) {
       return;
     }
 
-	if (Address==0xfe08) Write_ACIA_Control(Value);
+    if ((Address & ~0x7)==0xfc40 && MachineType==3) {
+      IDEWrite((Address & 0x7),Value);
+      return;
+    }
+    
+    if (Address==0xfe08) Write_ACIA_Control(Value);
 	if (Address==0xfe09) Write_ACIA_Tx_Data(Value);
 	if (Address==0xfe10) Write_SERPROC(Value);
 	if ((Address&~0x7)==0xfee0) WriteTubeFromHostSide(Address&7,Value);

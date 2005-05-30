@@ -9,7 +9,10 @@ fulldirectory=
 file0=C:\BeebEm\DiscIms\Games.ssd
 file1=C:\BeebEm\DiscIms\Test.ssd
 file2=C:\BeebEm\DiscIms\Welcome.ssd
-file3=C:\BeebEm\DiscIms\EliteEx.ssd
+file3=C:\BeebEm\DiscIms\ide3.dat
+file4=C:\BeebEm\DiscIms\ide0.dat
+file5=C:\BeebEm\DiscIms\ide1.dat
+file6=C:\BeebEm\DiscIms\ide2.dat
 fulldirectory=
 
 [BeebFile]
@@ -38,6 +41,7 @@ file4=C:\BeebEm\BeebFile\M128\mos.rom
 file5=C:\BeebEm\BeebFile\M128\terminal.rom
 file6=C:\BeebEm\BeebFile\M128\view.rom
 file7=C:\BeebEm\BeebFile\M128\viewsht.rom
+file8=C:\BeebEm\BeebFile\M128\ADFS1-53.rom
 fulldirectory=
 
 [TopDir]
