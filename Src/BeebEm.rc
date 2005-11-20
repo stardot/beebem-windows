@@ -237,14 +237,14 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator\0"
             VALUE "CompanyName", "-\0"
             VALUE "FileDescription", "BeebEm\0"
-            VALUE "FileVersion", "2.3\0"
+            VALUE "FileVersion", "3.0\0"
             VALUE "InternalName", "BeebEm\0"
             VALUE "LegalCopyright", "Copyright © 2005\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "BeebEm.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "BeebEm\0"
-            VALUE "ProductVersion", "2.3\0"
+            VALUE "ProductVersion", "3.0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -388,6 +388,22 @@ BEGIN
         MENUITEM "&Save State",                 IDM_SAVESTATE
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
         MENUITEM "Quick Sa&ve",                 IDM_QUICKSAVE
+        MENUITEM SEPARATOR
+        POPUP "Video Options"
+        BEGIN
+            MENUITEM "Record at Display Resolution", IDM_VIDEORES1
+            MENUITEM "Record at 640x512",           IDM_VIDEORES2
+            MENUITEM "Record at 320x256",           IDM_VIDEORES3
+            MENUITEM SEPARATOR
+            MENUITEM "Skip 0 Frames",               IDM_VIDEOSKIP0
+            MENUITEM "Skip 1 Frame",                IDM_VIDEOSKIP1
+            MENUITEM "Skip 2 Frames",               IDM_VIDEOSKIP2
+            MENUITEM "Skip 3 Frames",               IDM_VIDEOSKIP3
+            MENUITEM "Skip 4 Frames",               IDM_VIDEOSKIP4
+            MENUITEM "Skip 5 Frames",               IDM_VIDEOSKIP5
+        END
+        MENUITEM "Capture Video",               IDM_CAPTUREVIDEO
+        MENUITEM "End Video",                   IDM_ENDVIDEO
         MENUITEM SEPARATOR
         MENUITEM "E&xit",                       IDM_EXIT
     END
@@ -555,6 +571,7 @@ BEGIN
             MENUITEM "&Select FDC Board...",        ID_FDC_DLL
         END
         MENUITEM "65C02 &Second Processor",     IDM_TUBE
+        MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
         MENUITEM SEPARATOR
         POPUP "&Allow ROM writes"
         BEGIN

@@ -46,7 +46,8 @@ char buff[256];
         if (IDEDisc[i] == NULL)
         {
             IDEDisc[i] = fopen(buff, "wb");
-            fclose(IDEDisc[i]);
+            if (IDEDisc[i] != NULL)
+                fclose(IDEDisc[i]);
             IDEDisc[i] = fopen(buff, "rb+");
         }
     }
@@ -54,6 +55,8 @@ char buff[256];
 
 void IDEWrite(int Address, int Value) 
 {
+    if (IDEDisc[IDEDrive] == NULL)
+        return;
 
     IDERegs[Address] = Value;
 
@@ -79,7 +82,9 @@ void IDEWrite(int Address, int Value)
 
 int IDERead(int Address)
 {
-int data = 0xff;
+    int data = 0xff;
+    if (IDEDisc[IDEDrive] == NULL)
+        return data;
 
     switch (Address)
     {
@@ -141,6 +146,9 @@ int MS;
     IDEDrive = (IDERegs[6] / 16) * 2 + MS;          // Drive 0 - 3
 
     pos = (Track * 4L * 64L + Head * 64L + Sector ) * 256L;     // Absolute position within file
+
+    if (IDEDisc[IDEDrive] == NULL)
+        return;
 
     fseek(IDEDisc[IDEDrive], pos, SEEK_SET);
 

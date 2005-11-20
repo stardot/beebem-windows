@@ -40,6 +40,8 @@
 #include "tube.h"
 #include "uefstate.h"
 #include "debug.h"
+#include "mem_mmu.h"
+#include "simz80.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -55,6 +57,7 @@ FILE *osclilog; //=fopen("/oscli.log","wt");
 
 static unsigned int InstrCount;
 int IgnoreIllegalInstructions = 1;
+static int CurrentInstruction;
 
 extern int DumpAfterEach;
 
@@ -121,9 +124,8 @@ static int CyclesTable[]={
    allow fernangling by memory subsystem */
 unsigned int Cycles;
 
-static unsigned char Branched,Carried;
+static unsigned char Branched;
 // Branched - 1 if the instruction branched
-// Carried - 1 if the instruction carried over to high byte in index calculation
 int OpCodes=2; // 1 = documented only, 2 = commonoly used undocumenteds, 3 = full set
 int BHardware=0; // 0 = all hardware, 1 = basic hardware only
 // 1 if first cycle happened
@@ -136,6 +138,38 @@ int BHardware=0; // 0 = all hardware, 1 = basic hardware only
 
 #define WritePaged(addr,val) BeebWriteMem(addr,val)
 #define ReadPaged(Address) BeebReadMem(Address)
+
+/*----------------------------------------------------------------------------*/
+INLINE void Carried() {
+	// Correct cycle count for indirection across page boundary
+	if (((CurrentInstruction & 0xf)==0x1 ||
+		 (CurrentInstruction & 0xf)==0x9 ||
+		 (CurrentInstruction & 0xf)==0xd) &&
+		(CurrentInstruction & 0xf0)!=0x90)
+	{
+		Cycles++;
+	}
+	else if (CurrentInstruction==0xBC ||
+			 CurrentInstruction==0xBE)
+	{
+		Cycles++;
+	}
+}
+/*----------------------------------------------------------------------------*/
+// IO read + write take extra cycle & require sync with 1MHz clock (taken 
+// from Model-b - have not seen this documented anywhere)
+void AdjustForIORead(void)
+{
+	if ((TotalCycles+Cycles) & 1)
+		Cycles += 1;
+	Cycles += 1;
+}
+void AdjustForIOWrite(void)
+{
+	if ((TotalCycles+Cycles) & 1)
+		Cycles += 1;
+	Cycles += 1;
+}
 
 /*----------------------------------------------------------------------------*/
 INLINE int SignExtendByte(signed char in) {
@@ -715,7 +749,7 @@ INLINE static int16 IndYAddrModeHandler_Data(void) {
   int EffectiveAddress;
   unsigned char ZPAddr=ReadPaged(ProgramCounter++);
   EffectiveAddress=WholeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried=1;
+  if (EffectiveAddress>0xff) Carried();
   EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
 
   return(ReadPaged(EffectiveAddress));
@@ -727,7 +761,7 @@ INLINE static int16 IndYAddrModeHandler_Address(void) {
   int EffectiveAddress;
   unsigned char ZPAddr=ReadPaged(ProgramCounter++);
   EffectiveAddress=WholeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried=1;
+  if (EffectiveAddress>0xff) Carried();
   EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
 
   return(EffectiveAddress);
@@ -754,7 +788,7 @@ INLINE static int16 ZeroPgXAddrModeHandler_Address(void) {
 INLINE static int16 AbsXAddrModeHandler_Data(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress);
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
   EffectiveAddress+=XReg;
   EffectiveAddress&=0xffff;
 
@@ -766,7 +800,7 @@ INLINE static int16 AbsXAddrModeHandler_Data(void) {
 INLINE static int16 AbsXAddrModeHandler_Address(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress)
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
   EffectiveAddress+=XReg;
   EffectiveAddress&=0xffff;
 
@@ -778,7 +812,7 @@ INLINE static int16 AbsXAddrModeHandler_Address(void) {
 INLINE static int16 AbsYAddrModeHandler_Data(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress);
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
   EffectiveAddress+=YReg;
   EffectiveAddress&=0xffff;
 
@@ -790,7 +824,7 @@ INLINE static int16 AbsYAddrModeHandler_Data(void) {
 INLINE static int16 AbsYAddrModeHandler_Address(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress)
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
   EffectiveAddress+=YReg;
   EffectiveAddress&=0xffff;
 
@@ -916,1092 +950,1093 @@ void DoNMI(void) {
 /*-------------------------------------------------------------------------*/
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec6502Instruction(void) {
-  static int CurrentInstruction;
-  static int tmpaddr;
-  static int OldNMIStatus;
-  int BadCount=0;
-  int OldPC;
-  int loop,loopc;
-  loopc=(DebugEnabled ? 1 : 1024); // Makes debug window more responsive
-  for(loop=0;loop<loopc;loop++) {
+	static int tmpaddr;
+	static int OldNMIStatus;
+	int BadCount=0;
+	int OldPC;
+	int loop,loopc;
 
-  /* Output debug info */
-  if (DebugEnabled && !DebugDisassembler(ProgramCounter,Accumulator,XReg,YReg,PSR,true))
-    continue;
+	loopc=(DebugEnabled ? 1 : 1024); // Makes debug window more responsive
+	for(loop=0;loop<loopc;loop++)
+	{
+		z80_execute();
+      
+		/* Output debug info */
+		if (DebugEnabled && !DebugDisassembler(ProgramCounter,Accumulator,XReg,YReg,PSR,true))
+			continue;
 
-  /* Read an instruction and post inc program couter */
-  PrePC=ProgramCounter;
-  CurrentInstruction=ReadPaged(ProgramCounter++);
-  // cout << "Fetch at " << hex << (ProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
-  Cycles=CyclesTable[CurrentInstruction]; 
-  /*Stats[CurrentInstruction]++; */
-  OldPC=ProgramCounter;
-  Carried=0; Branched=0;
-//  if ((ProgramCounter>=0x0100) && (ProgramCounter<=0x0300)) {
-//	  fprintf(InstrLog,"%04x %02x %02x %02x %02x\n",ProgramCounter-1,CurrentInstruction,ReadPaged(ProgramCounter),ReadPaged(ProgramCounter+1),YReg);
-//  }
-  BadCount=0;
- if (OpCodes>=1) { // Documented opcodes
-  switch (CurrentInstruction) {
-    case 0x00:
-      BRKInstrHandler();
-      break;
-    case 0x01:
-      ORAInstrHandler(IndXAddrModeHandler_Data());
-      break;
-	case 0x04:
-	  if (MachineType==3) TSBInstrHandler(ZeroPgAddrModeHandler_Address()); else ProgramCounter+=1;
-	  break;
-    case 0x05:
-      ORAInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0x06:
-      ASLInstrHandler(ZeroPgAddrModeHandler_Address());
-      break;
-    case 0x08:
-      Push(PSR|48); /* PHP */
-      break;
-    case 0x09:
-      ORAInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0x0a:
-      ASLInstrHandler_Acc();
-      break;
-	case 0x0c:
-	  if (MachineType==3) TSBInstrHandler(AbsAddrModeHandler_Address()); else ProgramCounter+=2;
-	  break;
-    case 0x0d:
-      ORAInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0x0e:
-      ASLInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0x10:
-      BPLInstrHandler();
-      break;
-    case 0x30:
-      BMIInstrHandler();
-      break;
-    case 0x50:
-      BVCInstrHandler();
-      break;
-    case 0x70:
-      BVSInstrHandler();
-      break;
-    case 0x80:
-      BRAInstrHandler();
-      break;
-    case 0x90:
-      BCCInstrHandler();
-      break;
-    case 0xb0:
-      BCSInstrHandler();
-      break;
-    case 0xd0:
-      BNEInstrHandler();
-      break;
-    case 0xf0:
-      BEQInstrHandler();
-      break;
-    case 0x11:
-      ORAInstrHandler(IndYAddrModeHandler_Data());
-      break;
-    case 0x12:
-      if (MachineType==3) ORAInstrHandler(ZPIndAddrModeHandler_Data());
-      break;
-	case 0x14:
-	  if (MachineType==3) TRBInstrHandler(ZeroPgAddrModeHandler_Address()); else ProgramCounter+=1;
-	  break;
-    case 0x15:
-      ORAInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0x16:
-      ASLInstrHandler(ZeroPgXAddrModeHandler_Address());
-      break;
-    case 0x18:
-      PSR&=255-FlagC; /* CLC */
-      break;
-    case 0x19:
-      ORAInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0x1a:
-      if (MachineType==3) INAInstrHandler();
-      break;
-	case 0x1c:
-	  if (MachineType==3) TRBInstrHandler(AbsAddrModeHandler_Address()); else ProgramCounter+=2;
-	  break;
-    case 0x1d:
-      ORAInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0x1e:
-      ASLInstrHandler(AbsXAddrModeHandler_Address());
-      break;
-    case 0x20:
-      JSRInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0x21:
-      ANDInstrHandler(IndXAddrModeHandler_Data());
-      break;
-    case 0x24:
-      BITInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0x25:
-      ANDInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0x26:
-      ROLInstrHandler(ZeroPgAddrModeHandler_Address());
-      break;
-    case 0x28:
-      PSR=Pop(); /* PLP */
-      break;
-    case 0x29:
-      ANDInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0x2a:
-      ROLInstrHandler_Acc();
-      break;
-    case 0x2c:
-      BITInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0x2d:
-      ANDInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0x2e:
-      ROLInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0x31:
-      ANDInstrHandler(IndYAddrModeHandler_Data());
-      break;
-    case 0x32:
-      if (MachineType==3) ANDInstrHandler(ZPIndAddrModeHandler_Data());
-      break;
-    case 0x34: /* BIT Absolute,X */
-      if (MachineType==3) BITInstrHandler(ZeroPgXAddrModeHandler_Data()); else ProgramCounter+=1;
-      break;
-    case 0x35:
-      ANDInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0x36:
-      ROLInstrHandler(ZeroPgXAddrModeHandler_Address());
-      break;
-    case 0x38:
-      PSR|=FlagC; /* SEC */
-      break;
-    case 0x39:
-      ANDInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0x3a:
-      if (MachineType==3) DEAInstrHandler();
-      break;
-    case 0x3c: /* BIT Absolute,X */
-      if (MachineType==3) BITInstrHandler(AbsXAddrModeHandler_Data()); else ProgramCounter+=2;
-      break;
-    case 0x3d:
-      ANDInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0x3e:
-      ROLInstrHandler(AbsXAddrModeHandler_Address());
-      break;
-    case 0x40:
-      PSR=Pop(); /* RTI */
-      ProgramCounter=PopWord();
-      NMILock=0;
-      break;
-    case 0x41:
-      EORInstrHandler(IndXAddrModeHandler_Data());
-      break;
-    case 0x45:
-      EORInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0x46:
-      LSRInstrHandler(ZeroPgAddrModeHandler_Address());
-      break;
-    case 0x48:
-      Push(Accumulator); /* PHA */
-      break;
-    case 0x49:
-      EORInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0x4a:
-      LSRInstrHandler_Acc();
-      break;
-    case 0x4c:
-      ProgramCounter=AbsAddrModeHandler_Address(); /* JMP */
-/*    if (ProgramCounter==0xffdd) {
-	  // OSCLI logging for elite debugging
-	  unsigned char *bptr;
-	  char pcbuf[256]; char *pcptr=pcbuf;
-	  int blk=((YReg*256)+XReg);
-	  bptr=WholeRam+((WholeRam[blk+1]*256)+WholeRam[blk]);
-  	  while((*bptr != 13) && ((pcptr-pcbuf)<254)) {
-		  *pcptr=*bptr; pcptr++;bptr++; 
-	  } 
-	  *pcptr=0;
-	  fprintf(osclilog,"%s\n",pcbuf);
-  }
-  /*if (ProgramCounter==0xffdd) {
-	  char errstr[250];
-	  sprintf(errstr,"OSFILE called\n");
-	  MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR);
-  }*/
+		/* Read an instruction and post inc program couter */
+		PrePC=ProgramCounter;
+		CurrentInstruction=ReadPaged(ProgramCounter++);
+		// cout << "Fetch at " << hex << (ProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
+		Cycles=CyclesTable[CurrentInstruction]; 
+		/*Stats[CurrentInstruction]++; */
+		OldPC=ProgramCounter;
+		Branched=0;
+		//  if ((ProgramCounter>=0x0100) && (ProgramCounter<=0x0300)) {
+		//	  fprintf(InstrLog,"%04x %02x %02x %02x %02x\n",ProgramCounter-1,CurrentInstruction,ReadPaged(ProgramCounter),ReadPaged(ProgramCounter+1),YReg);
+		//  }
+		BadCount=0;
+		if (OpCodes>=1) { // Documented opcodes
+			switch (CurrentInstruction) {
+			case 0x00:
+				BRKInstrHandler();
+				break;
+			case 0x01:
+				ORAInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0x04:
+				if (MachineType==3) TSBInstrHandler(ZeroPgAddrModeHandler_Address()); else ProgramCounter+=1;
+				break;
+			case 0x05:
+				ORAInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0x06:
+				ASLInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0x08:
+				Push(PSR|48); /* PHP */
+				break;
+			case 0x09:
+				ORAInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0x0a:
+				ASLInstrHandler_Acc();
+				break;
+			case 0x0c:
+				if (MachineType==3) TSBInstrHandler(AbsAddrModeHandler_Address()); else ProgramCounter+=2;
+				break;
+			case 0x0d:
+				ORAInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0x0e:
+				ASLInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x10:
+				BPLInstrHandler();
+				break;
+			case 0x30:
+				BMIInstrHandler();
+				break;
+			case 0x50:
+				BVCInstrHandler();
+				break;
+			case 0x70:
+				BVSInstrHandler();
+				break;
+			case 0x80:
+				BRAInstrHandler();
+				break;
+			case 0x90:
+				BCCInstrHandler();
+				break;
+			case 0xb0:
+				BCSInstrHandler();
+				break;
+			case 0xd0:
+				BNEInstrHandler();
+				break;
+			case 0xf0:
+				BEQInstrHandler();
+				break;
+			case 0x11:
+				ORAInstrHandler(IndYAddrModeHandler_Data());
+				break;
+			case 0x12:
+				if (MachineType==3) ORAInstrHandler(ZPIndAddrModeHandler_Data());
+				break;
+			case 0x14:
+				if (MachineType==3) TRBInstrHandler(ZeroPgAddrModeHandler_Address()); else ProgramCounter+=1;
+				break;
+			case 0x15:
+				ORAInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0x16:
+				ASLInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0x18:
+				PSR&=255-FlagC; /* CLC */
+				break;
+			case 0x19:
+				ORAInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0x1a:
+				if (MachineType==3) INAInstrHandler();
+				break;
+			case 0x1c:
+				if (MachineType==3) TRBInstrHandler(AbsAddrModeHandler_Address()); else ProgramCounter+=2;
+				break;
+			case 0x1d:
+				ORAInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0x1e:
+				ASLInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			case 0x20:
+				JSRInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x21:
+				ANDInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0x24:
+				BITInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0x25:
+				ANDInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0x26:
+				ROLInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0x28:
+				PSR=Pop(); /* PLP */
+				break;
+			case 0x29:
+				ANDInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0x2a:
+				ROLInstrHandler_Acc();
+				break;
+			case 0x2c:
+				BITInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0x2d:
+				ANDInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0x2e:
+				ROLInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x31:
+				ANDInstrHandler(IndYAddrModeHandler_Data());
+				break;
+			case 0x32:
+				if (MachineType==3) ANDInstrHandler(ZPIndAddrModeHandler_Data());
+				break;
+			case 0x34: /* BIT Absolute,X */
+				if (MachineType==3) BITInstrHandler(ZeroPgXAddrModeHandler_Data()); else ProgramCounter+=1;
+				break;
+			case 0x35:
+				ANDInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0x36:
+				ROLInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0x38:
+				PSR|=FlagC; /* SEC */
+				break;
+			case 0x39:
+				ANDInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0x3a:
+				if (MachineType==3) DEAInstrHandler();
+				break;
+			case 0x3c: /* BIT Absolute,X */
+				if (MachineType==3) BITInstrHandler(AbsXAddrModeHandler_Data()); else ProgramCounter+=2;
+				break;
+			case 0x3d:
+				ANDInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0x3e:
+				ROLInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			case 0x40:
+				PSR=Pop(); /* RTI */
+				ProgramCounter=PopWord();
+				NMILock=0;
+				break;
+			case 0x41:
+				EORInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0x45:
+				EORInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0x46:
+				LSRInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0x48:
+				Push(Accumulator); /* PHA */
+				break;
+			case 0x49:
+				EORInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0x4a:
+				LSRInstrHandler_Acc();
+				break;
+			case 0x4c:
+				ProgramCounter=AbsAddrModeHandler_Address(); /* JMP */
+				/*    if (ProgramCounter==0xffdd) {
+				// OSCLI logging for elite debugging
+				unsigned char *bptr;
+				char pcbuf[256]; char *pcptr=pcbuf;
+				int blk=((YReg*256)+XReg);
+				bptr=WholeRam+((WholeRam[blk+1]*256)+WholeRam[blk]);
+				while((*bptr != 13) && ((pcptr-pcbuf)<254)) {
+				*pcptr=*bptr; pcptr++;bptr++; 
+				} 
+				*pcptr=0;
+				fprintf(osclilog,"%s\n",pcbuf);
+				}
+				/*if (ProgramCounter==0xffdd) {
+				char errstr[250];
+				sprintf(errstr,"OSFILE called\n");
+				MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR);
+				}*/
+				break;
+			case 0x4d:
+				EORInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0x4e:
+				LSRInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x51:
+				EORInstrHandler(IndYAddrModeHandler_Data());
+				break;
+			case 0x52:
+				if (MachineType==3) EORInstrHandler(ZPIndAddrModeHandler_Data());
+				break;
+			case 0x55:
+				EORInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0x56:
+				LSRInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0x58:
+				PSR&=255-FlagI; /* CLI */
+				break;
+			case 0x59:
+				EORInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0x5a:
+				if (MachineType==3) Push(YReg); /* PHY */
+				break;
+			case 0x5d:
+				EORInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0x5e:
+				LSRInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			case 0x60:
+				ProgramCounter=PopWord()+1; /* RTS */
+				break;
+			case 0x61:
+				ADCInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0x64:
+				if (MachineType==3) BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),0); /* STZ Zero Page */
+				break;
+			case 0x65:
+				ADCInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0x66:
+				RORInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0x68:
+				Accumulator=Pop(); /* PLA */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+				break;
+			case 0x69:
+				ADCInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0x6a:
+				RORInstrHandler_Acc();
+				break;
+			case 0x6c:
+				ProgramCounter=IndAddrModeHandler_Address(); /* JMP */
+				break;
+			case 0x6d:
+				ADCInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0x6e:
+				RORInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x71:
+				ADCInstrHandler(IndYAddrModeHandler_Data());
+				break;
+			case 0x72:
+				if (MachineType==3) ADCInstrHandler(ZPIndAddrModeHandler_Data());
+				break;
+			case 0x74:
+				if (MachineType==3) { BEEBWRITEMEM_DIRECT(ZeroPgXAddrModeHandler_Address(),0); } else ProgramCounter+=1; /* STZ Zpg,X */
+				break;
+			case 0x75:
+				ADCInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0x76:
+				RORInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0x78:
+				PSR|=FlagI; /* SEI */
+				break;
+			case 0x79:
+				ADCInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0x7a:
+				if (MachineType==3) {
+					YReg=Pop(); /* PLY */
+					PSR&=~(FlagZ | FlagN);
+					PSR|=((XReg==0)<<1) | (YReg & 128);
+				}
+				break;
+			case 0x7c:
+				if (MachineType==3) ProgramCounter=IndAddrXModeHandler_Address(); /* JMP abs,X*/ else ProgramCounter+=2;
+				break;
+			case 0x7d:
+				ADCInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0x7e:
+				RORInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			case 0x81:
+				WritePaged(IndXAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x84:
+				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),YReg);
+				break;
+			case 0x85:
+				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x86:
+				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),XReg);
+				break;
+			case 0x88:
+				YReg=(YReg-1) & 255; /* DEY */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((YReg==0)<<1) | (YReg & 128);
+				break;
+			case 0x89: /* BIT Immediate */
+				if (MachineType==3) BITInstrHandler(ReadPaged(ProgramCounter++));
+				break;
+			case 0x8a:
+				Accumulator=XReg; /* TXA */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+				break;
+			case 0x8c:
+				STYInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x8d:
+				WritePaged(AbsAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x8e:
+				STXInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x91:
+				WritePaged(IndYAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x92:
+				if (MachineType==3) WritePaged(ZPIndAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x94:
+				STYInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0x95:
+				WritePaged(ZeroPgXAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x96:
+				STXInstrHandler(ZeroPgYAddrModeHandler_Address());
+				break;
+			case 0x98:
+				Accumulator=YReg; /* TYA */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+				break;
+			case 0x99:
+				WritePaged(AbsYAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x9a:
+				StackReg=XReg; /* TXS */
+				break;
+			case 0x9c:
+				WritePaged(AbsAddrModeHandler_Address(),0); /* STZ Absolute */
+				/* here's a curiosity, STZ Absolute IS on the 6502 UNOFFICIALLY
+				   and on the 65C12 OFFICIALLY. Something we should know? - Richard Gellman */
+				break;
+			case 0x9d:
+				WritePaged(AbsXAddrModeHandler_Address(),Accumulator); /* STA */
+				break;
+			case 0x9e:
+				if (MachineType==3) { WritePaged(AbsXAddrModeHandler_Address(),0); } /* STZ Abs,X */ 
+				else WritePaged(AbsXAddrModeHandler_Address(),Accumulator & XReg);
+				break;
+			case 0xa0:
+				LDYInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0xa1:
+				LDAInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0xa2:
+				LDXInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0xa4:
+				LDYInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0xa5:
+				LDAInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0xa6:
+				LDXInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0xa8:
+				YReg=Accumulator; /* TAY */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+				break;
+			case 0xa9:
+				LDAInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0xaa:
+				XReg=Accumulator; /* TXA */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+				break;
+			case 0xac:
+				LDYInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xad:
+				LDAInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xae:
+				LDXInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xb1:
+				LDAInstrHandler(IndYAddrModeHandler_Data());
+				break;
+			case 0xb2:
+				if (MachineType==3) LDAInstrHandler(ZPIndAddrModeHandler_Data());
+				break;
+			case 0xb4:
+				LDYInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0xb5:
+				LDAInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0xb6:
+				LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
+				break;
+			case 0xb8:
+				PSR&=255-FlagV; /* CLV */
+				break;
+			case 0xb9:
+				LDAInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0xba:
+				XReg=StackReg; /* TSX */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((XReg==0)<<1) | (XReg & 128);
+				break;
+			case 0xbc:
+				LDYInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0xbd:
+				LDAInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0xbe:
+				LDXInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0xc0:
+				CPYInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0xc1:
+				CMPInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0xc4:
+				CPYInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0xc5:
+				CMPInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0xc6:
+				DECInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0xc8:
+				YReg+=1; /* INY */
+				YReg&=255;
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((YReg==0)<<1) | (YReg & 128);
+				break;
+			case 0xc9:
+				CMPInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0xca:
+				DEXInstrHandler();
+				break;
+			case 0xcc:
+				CPYInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xcd:
+				CMPInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xce:
+				DECInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0xd1:
+				CMPInstrHandler(IndYAddrModeHandler_Data());
+				break;
+			case 0xd2:
+				if (MachineType==3) CMPInstrHandler(ZPIndAddrModeHandler_Data());
+				break;
+			case 0xd5:
+				CMPInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0xd6:
+				DECInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0xd8:
+				PSR&=255-FlagD; /* CLD */
+				break;
+			case 0xd9:
+				CMPInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0xda:
+				if (MachineType==3) Push(XReg); /* PHX */
+				break;
+			case 0xdd:
+				CMPInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0xde:
+				DECInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			case 0xe0:
+				CPXInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0xe1:
+				SBCInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0xe4:
+				CPXInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0xe5:
+				SBCInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
+				break;
+			case 0xe6:
+				INCInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0xe8:
+				INXInstrHandler();
+				break;
+			case 0xe9:
+				SBCInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
+				break;
+			case 0xea:
+				/* NOP */
+				break;
+			case 0xec:
+				CPXInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xed:
+				SBCInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xee:
+				INCInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0xf1:
+				SBCInstrHandler(IndYAddrModeHandler_Data());
+				break;
+			case 0xf2:
+				if (MachineType==3) SBCInstrHandler(ZPIndAddrModeHandler_Data());
+				break;
+			case 0xf5:
+				SBCInstrHandler(ZeroPgXAddrModeHandler_Data());
+				break;
+			case 0xf6:
+				INCInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0xf8:
+				PSR|=FlagD; /* SED */
+				break;
+			case 0xf9:
+				SBCInstrHandler(AbsYAddrModeHandler_Data());
+				break;
+			case 0xfa:
+				if (MachineType==3) {
+					XReg=Pop(); /* PLX */
+					PSR&=~(FlagZ | FlagN);
+					PSR|=((XReg==0)<<1) | (XReg & 128);
+				}
+				break;
+			case 0xfd:
+				SBCInstrHandler(AbsXAddrModeHandler_Data());
+				break;
+			case 0xfe:
+				INCInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			default:
+				BadCount++;
+			}
+		}
+		if (OpCodes==3) {
+			switch (CurrentInstruction) {
+			case 0x07: /* Undocumented Instruction: ASL zp and ORA zp */
+			{
+				int16 zpaddr = ZeroPgAddrModeHandler_Address();
+				ASLInstrHandler(zpaddr);
+				ORAInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x03: /* Undocumented Instruction: ASL-ORA (zp,X) */
+			{
+				int16 zpaddr = IndXAddrModeHandler_Address();
+				ASLInstrHandler(zpaddr);
+				ORAInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x13: /* Undocumented Instruction: ASL-ORA (zp),Y */
+			{
+				int16 zpaddr = IndYAddrModeHandler_Address();
+				ASLInstrHandler(zpaddr);
+				ORAInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x0f: /* Undocumented Instruction: ASL-ORA abs */
+			{
+				int16 zpaddr = AbsAddrModeHandler_Address();
+				ASLInstrHandler(zpaddr);
+				ORAInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x17: /* Undocumented Instruction: ASL-ORA zp,X */
+			{
+				int16 zpaddr = ZeroPgXAddrModeHandler_Address();
+				ASLInstrHandler(zpaddr);
+				ORAInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x1b: /* Undocumented Instruction: ASL-ORA abs,Y */
+			{
+				int16 zpaddr = AbsYAddrModeHandler_Address();
+				ASLInstrHandler(zpaddr);
+				ORAInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x1f: /* Undocumented Instruction: ASL-ORA abs,X */
+			{
+				int16 zpaddr = AbsXAddrModeHandler_Address();
+				ASLInstrHandler(zpaddr);
+				ORAInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x23: /* Undocumented Instruction: ROL-AND (zp,X) */
+			{
+				int16 zpaddr=IndXAddrModeHandler_Address();
+				ROLInstrHandler(zpaddr);
+				ANDInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x27: /* Undocumented Instruction: ROL-AND zp */
+			{
+				int16 zpaddr=ZeroPgAddrModeHandler_Address();
+				ROLInstrHandler(zpaddr);
+				ANDInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x2f: /* Undocumented Instruction: ROL-AND abs */
+			{
+				int16 zpaddr=AbsAddrModeHandler_Address();
+				ROLInstrHandler(zpaddr);
+				ANDInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x33: /* Undocumented Instruction: ROL-AND (zp),Y */
+			{
+				int16 zpaddr=IndYAddrModeHandler_Address();
+				ROLInstrHandler(zpaddr);
+				ANDInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x37: /* Undocumented Instruction: ROL-AND zp,X */
+			{
+				int16 zpaddr=ZeroPgXAddrModeHandler_Address();
+				ROLInstrHandler(zpaddr);
+				ANDInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x3b: /* Undocumented Instruction: ROL-AND abs.Y */
+			{
+				int16 zpaddr=AbsYAddrModeHandler_Address();
+				ROLInstrHandler(zpaddr);
+				ANDInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x3f: /* Undocumented Instruction: ROL-AND abs.X */
+			{
+				int16 zpaddr=AbsXAddrModeHandler_Address();
+				ROLInstrHandler(zpaddr);
+				ANDInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x43: /* Undocumented Instruction: LSR-EOR (zp,X) */
+			{
+				int16 zpaddr=IndXAddrModeHandler_Address();
+				LSRInstrHandler(zpaddr);
+				EORInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x47: /* Undocumented Instruction: LSR-EOR zp */
+			{
+				int16 zpaddr=ZeroPgAddrModeHandler_Address();
+				LSRInstrHandler(zpaddr);
+				EORInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x4f: /* Undocumented Instruction: LSR-EOR abs */
+			{
+				int16 zpaddr=AbsAddrModeHandler_Address();
+				LSRInstrHandler(zpaddr);
+				EORInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x53: /* Undocumented Instruction: LSR-EOR (zp),Y */
+			{
+				int16 zpaddr=IndYAddrModeHandler_Address();
+				LSRInstrHandler(zpaddr);
+				EORInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x57: /* Undocumented Instruction: LSR-EOR zp,X */
+			{
+				int16 zpaddr=ZeroPgXAddrModeHandler_Address();
+				LSRInstrHandler(zpaddr);
+				EORInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x5b: /* Undocumented Instruction: LSR-EOR abs,Y */
+			{
+				int16 zpaddr=AbsYAddrModeHandler_Address();
+				LSRInstrHandler(zpaddr);
+				EORInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x5f: /* Undocumented Instruction: LSR-EOR abs,X */
+			{
+				int16 zpaddr=AbsXAddrModeHandler_Address();
+				LSRInstrHandler(zpaddr);
+				EORInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x44:
+			case 0x54:
+				ProgramCounter+=1;
+				break;
+			case 0x5c:
+				ProgramCounter+=2;
+				break;
+			case 0x63: /* Undocumented Instruction: ROR-ADC (zp,X) */
+			{
+				int16 zpaddr=IndXAddrModeHandler_Address();
+				RORInstrHandler(zpaddr);
+				ADCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x67: /* Undocumented Instruction: ROR-ADC zp */
+			{
+				int16 zpaddr=ZeroPgAddrModeHandler_Address();
+				RORInstrHandler(zpaddr);
+				ADCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x6f: /* Undocumented Instruction: ROR-ADC abs */
+			{
+				int16 zpaddr=AbsAddrModeHandler_Address();
+				RORInstrHandler(zpaddr);
+				ADCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x73: /* Undocumented Instruction: ROR-ADC (zp),Y */
+			{
+				int16 zpaddr=IndYAddrModeHandler_Address();
+				RORInstrHandler(zpaddr);
+				ADCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x77: /* Undocumented Instruction: ROR-ADC zp,X */
+			{
+				int16 zpaddr=ZeroPgXAddrModeHandler_Address();
+				RORInstrHandler(zpaddr);
+				ADCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x7b: /* Undocumented Instruction: ROR-ADC abs,Y */
+			{
+				int16 zpaddr=AbsYAddrModeHandler_Address();
+				RORInstrHandler(zpaddr);
+				ADCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0x7f: /* Undocumented Instruction: ROR-ADC abs,X */
+			{
+				int16 zpaddr=AbsXAddrModeHandler_Address();
+				RORInstrHandler(zpaddr);
+				ADCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			// Undocumented DEC-CMP and INC-SBC Instructions
+			case 0xc3: // DEC-CMP (zp,X)
+			{
+				int16 zpaddr=IndXAddrModeHandler_Address();
+				DECInstrHandler(zpaddr);
+				CMPInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xc7: // DEC-CMP zp
+			{
+				int16 zpaddr=ZeroPgAddrModeHandler_Address();
+				DECInstrHandler(zpaddr);
+				CMPInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xcf: // DEC-CMP abs
+			{
+				int16 zpaddr=AbsAddrModeHandler_Address();
+				DECInstrHandler(zpaddr);
+				CMPInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xd3: // DEC-CMP (zp),Y
+			{
+				int16 zpaddr=IndYAddrModeHandler_Address();
+				DECInstrHandler(zpaddr);
+				CMPInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xd7: // DEC-CMP zp,X
+			{
+				int16 zpaddr=ZeroPgXAddrModeHandler_Address();
+				DECInstrHandler(zpaddr);
+				CMPInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xdb: // DEC-CMP abs,Y
+			{
+				int16 zpaddr=AbsYAddrModeHandler_Address();
+				DECInstrHandler(zpaddr);
+				CMPInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xdf: // DEC-CMP abs,X
+			{
+				int16 zpaddr=AbsXAddrModeHandler_Address();
+				DECInstrHandler(zpaddr);
+				CMPInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xd4:
+			case 0xf4:
+				ProgramCounter+=1;
+				break;
+			case 0xdc:
+			case 0xfc:
+				ProgramCounter+=2;
+				break;
+			case 0xe3: // INC-SBC (zp,X)
+			{
+				int16 zpaddr=IndXAddrModeHandler_Address();
+				INCInstrHandler(zpaddr);
+				SBCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xe7: // INC-SBC zp
+			{
+				int16 zpaddr=ZeroPgAddrModeHandler_Address();
+				INCInstrHandler(zpaddr);
+				SBCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xef: // INC-SBC abs
+			{
+				int16 zpaddr=AbsAddrModeHandler_Address();
+				INCInstrHandler(zpaddr);
+				SBCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xf3: // INC-SBC (zp).Y
+			{
+				int16 zpaddr=IndYAddrModeHandler_Address();
+				INCInstrHandler(zpaddr);
+				SBCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xf7: // INC-SBC zp,X
+			{
+				int16 zpaddr=ZeroPgXAddrModeHandler_Address();
+				INCInstrHandler(zpaddr);
+				SBCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xfb: // INC-SBC abs,Y
+			{
+				int16 zpaddr=AbsYAddrModeHandler_Address();
+				INCInstrHandler(zpaddr);
+				SBCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			case 0xff: // INC-SBC abs,X
+			{
+				int16 zpaddr=AbsXAddrModeHandler_Address();
+				INCInstrHandler(zpaddr);
+				SBCInstrHandler(WholeRam[zpaddr]);
+			}
+			break;
+			// REALLY Undocumented instructions 6B, 8B and CB
+			case 0x6b:
+				ANDInstrHandler(WholeRam[ProgramCounter++]);
+				RORInstrHandler_Acc();
+				break;
+			case 0x8b:
+				Accumulator=XReg; /* TXA */
+				PSR&=~(FlagZ | FlagN);
+				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+				ANDInstrHandler(WholeRam[ProgramCounter++]);
+				break;
+			case 0xcb:
+				// SBX #n - I dont know if this uses the carry or not, i'm assuming its
+				// Subtract #n from X with carry.
+			{
+				unsigned char TmpAcc=Accumulator;
+				Accumulator=XReg;
+				SBCInstrHandler(WholeRam[ProgramCounter++]);
+				XReg=Accumulator;
+				Accumulator=TmpAcc; // Fudge so that I dont have to do the whole SBC code again
+			}
+			break;
+			default:
+				BadCount++;
+				break;
+			}
+		}
+		if (OpCodes>=2) {
+			switch (CurrentInstruction) {
+			case 0x0b:
+			case 0x2b:
+				ANDInstrHandler(WholeRam[ProgramCounter++]); /* AND-MVC #n,b7 */
+				PSR|=((Accumulator & 128)>>7);
+				break;
+			case 0x4b: /* Undocumented Instruction: AND imm and LSR A */
+				ANDInstrHandler(WholeRam[ProgramCounter++]);
+				LSRInstrHandler_Acc();
+				break;
+			case 0x87: /* Undocumented Instruction: SAX zp (i.e. (zp) = A & X) */
+				/* This one does not seem to change the processor flags */
+				WholeRam[ZeroPgAddrModeHandler_Address()] = Accumulator & XReg;
+				break;
+			case 0x83: /* Undocumented Instruction: SAX (zp,X) */
+				WholeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
+				break;
+			case 0x8f: /* Undocumented Instruction: SAX abs */
+				WholeRam[AbsAddrModeHandler_Address()] = Accumulator & XReg;
+				break;
+			case 0x93: /* Undocumented Instruction: SAX (zp),Y */
+				WholeRam[IndYAddrModeHandler_Address()] = Accumulator & XReg;
+				break;
+			case 0x97: /* Undocumented Instruction: SAX zp,Y */
+				WholeRam[ZeroPgYAddrModeHandler_Address()] = Accumulator & XReg;
+				break;
+			case 0x9b: /* Undocumented Instruction: SAX abs,Y */
+				WholeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
+				break;
+			case 0x9f: /* Undocumented Instruction: SAX abs,X */
+				WholeRam[AbsXAddrModeHandler_Address()] = Accumulator & XReg;
+				break;
+			case 0xab: /* Undocumented Instruction: LAX #n */
+				LDAInstrHandler(WholeRam[ProgramCounter++]);
+				XReg = Accumulator;
+				break;
+			case 0xa3: /* Undocumented Instruction: LAX (zp,X) */
+				LDAInstrHandler(IndXAddrModeHandler_Data());
+				XReg = Accumulator;
+				break;
+			case 0xa7: /* Undocumented Instruction: LAX zp */
+				LDAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]);
+				XReg = Accumulator;
+				break;
+			case 0xaf: /* Undocumented Instruction: LAX abs */
+				LDAInstrHandler(AbsAddrModeHandler_Data());
+				XReg = Accumulator;
+				break;
+			case 0xb3: /* Undocumented Instruction: LAX (zp),Y */
+				LDAInstrHandler(IndYAddrModeHandler_Data());
+				XReg = Accumulator;
+				break;
+			case 0xb7: /* Undocumented Instruction: LAX zp,Y */
+				LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
+				Accumulator = XReg;
+				break;
+			case 0xbb:
+			case 0xbf: /* Undocumented Instruction: LAX abs,Y */
+				LDAInstrHandler(AbsYAddrModeHandler_Data());
+				XReg = Accumulator;
+				break;
+			default:
+				BadCount++;
+			}
+		}
+		if (BadCount==OpCodes)
+			BadInstrHandler(CurrentInstruction);
 
-      break;
-    case 0x4d:
-      EORInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0x4e:
-      LSRInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0x51:
-      EORInstrHandler(IndYAddrModeHandler_Data());
-      break;
-    case 0x52:
-      if (MachineType==3) EORInstrHandler(ZPIndAddrModeHandler_Data());
-      break;
-    case 0x55:
-      EORInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0x56:
-      LSRInstrHandler(ZeroPgXAddrModeHandler_Address());
-      break;
-    case 0x58:
-      PSR&=255-FlagI; /* CLI */
-      break;
-    case 0x59:
-      EORInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0x5a:
-      if (MachineType==3) Push(YReg); /* PHY */
-      break;
-    case 0x5d:
-      EORInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0x5e:
-      LSRInstrHandler(AbsXAddrModeHandler_Address());
-      break;
-    case 0x60:
-      ProgramCounter=PopWord()+1; /* RTS */
-      break;
-    case 0x61:
-      ADCInstrHandler(IndXAddrModeHandler_Data());
-      break;
-    case 0x64:
-      if (MachineType==3) BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),0); /* STZ Zero Page */
-      break;
-    case 0x65:
-      ADCInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0x66:
-      RORInstrHandler(ZeroPgAddrModeHandler_Address());
-      break;
-    case 0x68:
-      Accumulator=Pop(); /* PLA */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
-      break;
-    case 0x69:
-      ADCInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0x6a:
-      RORInstrHandler_Acc();
-      break;
-    case 0x6c:
-      ProgramCounter=IndAddrModeHandler_Address(); /* JMP */
-      break;
-    case 0x6d:
-      ADCInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0x6e:
-      RORInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0x71:
-      ADCInstrHandler(IndYAddrModeHandler_Data());
-      break;
-    case 0x72:
-      if (MachineType==3) ADCInstrHandler(ZPIndAddrModeHandler_Data());
-      break;
-    case 0x74:
-	  if (MachineType==3) { BEEBWRITEMEM_DIRECT(ZeroPgXAddrModeHandler_Address(),0); } else ProgramCounter+=1; /* STZ Zpg,X */
-      break;
-    case 0x75:
-      ADCInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0x76:
-      RORInstrHandler(ZeroPgXAddrModeHandler_Address());
-      break;
-    case 0x78:
-      PSR|=FlagI; /* SEI */
-      break;
-    case 0x79:
-      ADCInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0x7a:
-		if (MachineType==3) {
-			YReg=Pop(); /* PLY */
-			PSR&=~(FlagZ | FlagN);
-			PSR|=((XReg==0)<<1) | (YReg & 128);
-		}
-	  break;
-    case 0x7c:
-      if (MachineType==3) ProgramCounter=IndAddrXModeHandler_Address(); /* JMP abs,X*/ else ProgramCounter+=2;
-      break;
-    case 0x7d:
-      ADCInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0x7e:
-      RORInstrHandler(AbsXAddrModeHandler_Address());
-      break;
-    case 0x81:
-      WritePaged(IndXAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x84:
-      BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),YReg);
-      break;
-    case 0x85:
-      BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x86:
-      BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),XReg);
-      break;
-    case 0x88:
-      YReg=(YReg-1) & 255; /* DEY */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((YReg==0)<<1) | (YReg & 128);
-      break;
-    case 0x89: /* BIT Immediate */
-      if (MachineType==3) BITInstrHandler(ReadPaged(ProgramCounter++));
-      break;
-    case 0x8a:
-      Accumulator=XReg; /* TXA */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
-      break;
-    case 0x8c:
-      STYInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0x8d:
-      WritePaged(AbsAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x8e:
-      STXInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0x91:
-      WritePaged(IndYAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x92:
-      if (MachineType==3) WritePaged(ZPIndAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x94:
-      STYInstrHandler(ZeroPgXAddrModeHandler_Address());
-      break;
-    case 0x95:
-      WritePaged(ZeroPgXAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x96:
-      STXInstrHandler(ZeroPgYAddrModeHandler_Address());
-      break;
-    case 0x98:
-      Accumulator=YReg; /* TYA */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
-      break;
-    case 0x99:
-      WritePaged(AbsYAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x9a:
-      StackReg=XReg; /* TXS */
-      break;
-    case 0x9c:
-      WritePaged(AbsAddrModeHandler_Address(),0); /* STZ Absolute */
-	  /* here's a curiosity, STZ Absolute IS on the 6502 UNOFFICIALLY
-	  and on the 65C12 OFFICIALLY. Something we should know? - Richard Gellman */
-      break;
-    case 0x9d:
-      WritePaged(AbsXAddrModeHandler_Address(),Accumulator); /* STA */
-      break;
-    case 0x9e:
-		if (MachineType==3) { WritePaged(AbsXAddrModeHandler_Address(),0); } /* STZ Abs,X */ 
-		else WritePaged(AbsXAddrModeHandler_Address(),Accumulator & XReg);
-      break;
-    case 0xa0:
-      LDYInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0xa1:
-      LDAInstrHandler(IndXAddrModeHandler_Data());
-      break;
-    case 0xa2:
-      LDXInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0xa4:
-      LDYInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0xa5:
-      LDAInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0xa6:
-      LDXInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0xa8:
-      YReg=Accumulator; /* TAY */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
-      break;
-    case 0xa9:
-      LDAInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0xaa:
-      XReg=Accumulator; /* TXA */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
-      break;
-    case 0xac:
-      LDYInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0xad:
-      LDAInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0xae:
-      LDXInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0xb1:
-      LDAInstrHandler(IndYAddrModeHandler_Data());
-      break;
-    case 0xb2:
-      if (MachineType==3) LDAInstrHandler(ZPIndAddrModeHandler_Data());
-      break;
-    case 0xb4:
-      LDYInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0xb5:
-      LDAInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0xb6:
-      LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
-      break;
-    case 0xb8:
-      PSR&=255-FlagV; /* CLV */
-      break;
-    case 0xb9:
-      LDAInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0xba:
-      XReg=StackReg; /* TSX */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((XReg==0)<<1) | (XReg & 128);
-      break;
-    case 0xbc:
-      LDYInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0xbd:
-      LDAInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0xbe:
-      LDXInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0xc0:
-      CPYInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0xc1:
-      CMPInstrHandler(IndXAddrModeHandler_Data());
-      break;
-    case 0xc4:
-      CPYInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0xc5:
-      CMPInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0xc6:
-      DECInstrHandler(ZeroPgAddrModeHandler_Address());
-      break;
-    case 0xc8:
-      YReg+=1; /* INY */
-      YReg&=255;
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((YReg==0)<<1) | (YReg & 128);
-      break;
-    case 0xc9:
-      CMPInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0xca:
-      DEXInstrHandler();
-      break;
-    case 0xcc:
-      CPYInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0xcd:
-      CMPInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0xce:
-      DECInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0xd1:
-      CMPInstrHandler(IndYAddrModeHandler_Data());
-      break;
-    case 0xd2:
-      if (MachineType==3) CMPInstrHandler(ZPIndAddrModeHandler_Data());
-      break;
-    case 0xd5:
-      CMPInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0xd6:
-      DECInstrHandler(ZeroPgXAddrModeHandler_Address());
-      break;
-    case 0xd8:
-      PSR&=255-FlagD; /* CLD */
-      break;
-    case 0xd9:
-      CMPInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0xda:
-      if (MachineType==3) Push(XReg); /* PHX */
-      break;
-    case 0xdd:
-      CMPInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0xde:
-      DECInstrHandler(AbsXAddrModeHandler_Address());
-      break;
-    case 0xe0:
-      CPXInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0xe1:
-      SBCInstrHandler(IndXAddrModeHandler_Data());
-      break;
-    case 0xe4:
-      CPXInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0xe5:
-      SBCInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
-      break;
-    case 0xe6:
-      INCInstrHandler(ZeroPgAddrModeHandler_Address());
-      break;
-    case 0xe8:
-      INXInstrHandler();
-      break;
-    case 0xe9:
-      SBCInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
-      break;
-    case 0xea:
-      /* NOP */
-      break;
-    case 0xec:
-      CPXInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0xed:
-      SBCInstrHandler(AbsAddrModeHandler_Data());
-      break;
-    case 0xee:
-      INCInstrHandler(AbsAddrModeHandler_Address());
-      break;
-    case 0xf1:
-      SBCInstrHandler(IndYAddrModeHandler_Data());
-      break;
-    case 0xf2:
-      if (MachineType==3) SBCInstrHandler(ZPIndAddrModeHandler_Data());
-      break;
-    case 0xf5:
-      SBCInstrHandler(ZeroPgXAddrModeHandler_Data());
-      break;
-    case 0xf6:
-      INCInstrHandler(ZeroPgXAddrModeHandler_Address());
-      break;
-    case 0xf8:
-      PSR|=FlagD; /* SED */
-      break;
-    case 0xf9:
-      SBCInstrHandler(AbsYAddrModeHandler_Data());
-      break;
-    case 0xfa:
-		if (MachineType==3) {
-	  XReg=Pop(); /* PLX */
-      PSR&=~(FlagZ | FlagN);
-      PSR|=((XReg==0)<<1) | (XReg & 128);
-		}
-		break;
-    case 0xfd:
-      SBCInstrHandler(AbsXAddrModeHandler_Data());
-      break;
-    case 0xfe:
-      INCInstrHandler(AbsXAddrModeHandler_Address());
-      break;
-	default:
-		BadCount++;
-	  }
-	  }
- if (OpCodes==3) {
-  switch (CurrentInstruction) {
-    case 0x07: /* Undocumented Instruction: ASL zp and ORA zp */
-      {
-        int16 zpaddr = ZeroPgAddrModeHandler_Address();
-        ASLInstrHandler(zpaddr);
-        ORAInstrHandler(WholeRam[zpaddr]);
-      }
-      break;
-    case 0x03: /* Undocumented Instruction: ASL-ORA (zp,X) */
-      {
-        int16 zpaddr = IndXAddrModeHandler_Address();
-        ASLInstrHandler(zpaddr);
-        ORAInstrHandler(WholeRam[zpaddr]);
-      }
-      break;
-    case 0x13: /* Undocumented Instruction: ASL-ORA (zp),Y */
-      {
-        int16 zpaddr = IndYAddrModeHandler_Address();
-        ASLInstrHandler(zpaddr);
-        ORAInstrHandler(WholeRam[zpaddr]);
-      }
-      break;
-    case 0x0f: /* Undocumented Instruction: ASL-ORA abs */
-      {
-        int16 zpaddr = AbsAddrModeHandler_Address();
-        ASLInstrHandler(zpaddr);
-        ORAInstrHandler(WholeRam[zpaddr]);
-      }
-      break;
-    case 0x17: /* Undocumented Instruction: ASL-ORA zp,X */
-      {
-        int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-        ASLInstrHandler(zpaddr);
-        ORAInstrHandler(WholeRam[zpaddr]);
-      }
-      break;
-    case 0x1b: /* Undocumented Instruction: ASL-ORA abs,Y */
-      {
-        int16 zpaddr = AbsYAddrModeHandler_Address();
-        ASLInstrHandler(zpaddr);
-        ORAInstrHandler(WholeRam[zpaddr]);
-      }
-      break;
-    case 0x1f: /* Undocumented Instruction: ASL-ORA abs,X */
-      {
-        int16 zpaddr = AbsXAddrModeHandler_Address();
-        ASLInstrHandler(zpaddr);
-        ORAInstrHandler(WholeRam[zpaddr]);
-      }
-      break;
-	case 0x23: /* Undocumented Instruction: ROL-AND (zp,X) */
+		// This block corrects the cycle count for the branch instructions
+		if ((CurrentInstruction==0x10) ||
+			(CurrentInstruction==0x30) ||
+			(CurrentInstruction==0x50) ||
+			(CurrentInstruction==0x70) ||
+			(CurrentInstruction==0x80) ||
+			(CurrentInstruction==0x90) ||
+			(CurrentInstruction==0xb0) ||
+			(CurrentInstruction==0xd0) ||
+			(CurrentInstruction==0xf0))
 		{
-		int16 zpaddr=IndXAddrModeHandler_Address();
-		ROLInstrHandler(zpaddr);
-		ANDInstrHandler(WholeRam[zpaddr]);
+			if (Branched)
+			{
+				Cycles++;
+				if ((ProgramCounter & 0xff00) != (OldPC & 0xff00))
+					Cycles+=2;
+			}
 		}
-		break;
-	case 0x27: /* Undocumented Instruction: ROL-AND zp */
+
+		Cycles+=IRQCycles;
+		IRQCycles=0; // IRQ Timing
+		// End of cycle correction
+
+		OldNMIStatus=NMIStatus;
+		/* NOTE: Check IRQ status before polling hardware - this is essential for
+		   Rocket Raid to work since it polls the IFR in the sys via for start of 
+		   frame - but with interrupts enabled.  If you do the interrupt check later
+		   then the interrupt handler will always be entered and rocket raid will
+		   never see it */
+		if ((intStatus) && (!GETIFLAG)) DoInterrupt();
+
+		TotalCycles+=Cycles;
+
+		if (TotalCycles > CycleCountWrap)
 		{
-		int16 zpaddr=ZeroPgAddrModeHandler_Address();
-		ROLInstrHandler(zpaddr);
-		ANDInstrHandler(WholeRam[zpaddr]);
+			TotalCycles -= CycleCountWrap;
+			//SoundCycles -= CycleCountWrap;
+			AdjustTrigger(AtoDTrigger);
+			if (!DirectSoundEnabled) AdjustTrigger(SoundTrigger);
+			AdjustTrigger(Disc8271Trigger);
+			AdjustTrigger(AMXTrigger);
+			AdjustTrigger(PrinterTrigger);
+			AdjustTrigger(VideoTriggerCount);
+			AdjustTrigger(TapeTrigger);
+			if (EnableTube)
+				WrapTubeCycles();
 		}
-		break;
-	case 0x2f: /* Undocumented Instruction: ROL-AND abs */
-		{
-		int16 zpaddr=AbsAddrModeHandler_Address();
-		ROLInstrHandler(zpaddr);
-		ANDInstrHandler(WholeRam[zpaddr]);
+
+		SysVIA_poll(Cycles);
+		UserVIA_poll(Cycles);
+		VideoPoll(Cycles);
+		if (!BHardware) {
+			AtoD_poll(Cycles);
+			Serial_Poll();
 		}
-		break;
-	case 0x33: /* Undocumented Instruction: ROL-AND (zp),Y */
-		{
-		int16 zpaddr=IndYAddrModeHandler_Address();
-		ROLInstrHandler(zpaddr);
-		ANDInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x37: /* Undocumented Instruction: ROL-AND zp,X */
-		{
-		int16 zpaddr=ZeroPgXAddrModeHandler_Address();
-		ROLInstrHandler(zpaddr);
-		ANDInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x3b: /* Undocumented Instruction: ROL-AND abs.Y */
-		{
-		int16 zpaddr=AbsYAddrModeHandler_Address();
-		ROLInstrHandler(zpaddr);
-		ANDInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x3f: /* Undocumented Instruction: ROL-AND abs.X */
-		{
-		int16 zpaddr=AbsXAddrModeHandler_Address();
-		ROLInstrHandler(zpaddr);
-		ANDInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x43: /* Undocumented Instruction: LSR-EOR (zp,X) */
-		{
-		int16 zpaddr=IndXAddrModeHandler_Address();
-		LSRInstrHandler(zpaddr);
-		EORInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x47: /* Undocumented Instruction: LSR-EOR zp */
-		{
-		int16 zpaddr=ZeroPgAddrModeHandler_Address();
-		LSRInstrHandler(zpaddr);
-		EORInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x4f: /* Undocumented Instruction: LSR-EOR abs */
-		{
-		int16 zpaddr=AbsAddrModeHandler_Address();
-		LSRInstrHandler(zpaddr);
-		EORInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x53: /* Undocumented Instruction: LSR-EOR (zp),Y */
-		{
-		int16 zpaddr=IndYAddrModeHandler_Address();
-		LSRInstrHandler(zpaddr);
-		EORInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x57: /* Undocumented Instruction: LSR-EOR zp,X */
-		{
-		int16 zpaddr=ZeroPgXAddrModeHandler_Address();
-		LSRInstrHandler(zpaddr);
-		EORInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x5b: /* Undocumented Instruction: LSR-EOR abs,Y */
-		{
-		int16 zpaddr=AbsYAddrModeHandler_Address();
-		LSRInstrHandler(zpaddr);
-		EORInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x5f: /* Undocumented Instruction: LSR-EOR abs,X */
-		{
-		int16 zpaddr=AbsXAddrModeHandler_Address();
-		LSRInstrHandler(zpaddr);
-		EORInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x44:
-	case 0x54:
-		ProgramCounter+=1;
-		break;
-	case 0x5c:
-		ProgramCounter+=2;
-		break;
-	case 0x63: /* Undocumented Instruction: ROR-ADC (zp,X) */
-		{
-		int16 zpaddr=IndXAddrModeHandler_Address();
-		RORInstrHandler(zpaddr);
-		ADCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x67: /* Undocumented Instruction: ROR-ADC zp */
-		{
-		int16 zpaddr=ZeroPgAddrModeHandler_Address();
-		RORInstrHandler(zpaddr);
-		ADCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x6f: /* Undocumented Instruction: ROR-ADC abs */
-		{
-		int16 zpaddr=AbsAddrModeHandler_Address();
-		RORInstrHandler(zpaddr);
-		ADCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x73: /* Undocumented Instruction: ROR-ADC (zp),Y */
-		{
-		int16 zpaddr=IndYAddrModeHandler_Address();
-		RORInstrHandler(zpaddr);
-		ADCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x77: /* Undocumented Instruction: ROR-ADC zp,X */
-		{
-		int16 zpaddr=ZeroPgXAddrModeHandler_Address();
-		RORInstrHandler(zpaddr);
-		ADCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x7b: /* Undocumented Instruction: ROR-ADC abs,Y */
-		{
-		int16 zpaddr=AbsYAddrModeHandler_Address();
-		RORInstrHandler(zpaddr);
-		ADCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0x7f: /* Undocumented Instruction: ROR-ADC abs,X */
-		{
-		int16 zpaddr=AbsXAddrModeHandler_Address();
-		RORInstrHandler(zpaddr);
-		ADCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	// Undocumented DEC-CMP and INC-SBC Instructions
-	case 0xc3: // DEC-CMP (zp,X)
-		{
-		int16 zpaddr=IndXAddrModeHandler_Address();
-		DECInstrHandler(zpaddr);
-		CMPInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xc7: // DEC-CMP zp
-		{
-		int16 zpaddr=ZeroPgAddrModeHandler_Address();
-		DECInstrHandler(zpaddr);
-		CMPInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xcf: // DEC-CMP abs
-		{
-		int16 zpaddr=AbsAddrModeHandler_Address();
-		DECInstrHandler(zpaddr);
-		CMPInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xd3: // DEC-CMP (zp),Y
-		{
-		int16 zpaddr=IndYAddrModeHandler_Address();
-		DECInstrHandler(zpaddr);
-		CMPInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xd7: // DEC-CMP zp,X
-		{
-		int16 zpaddr=ZeroPgXAddrModeHandler_Address();
-		DECInstrHandler(zpaddr);
-		CMPInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xdb: // DEC-CMP abs,Y
-		{
-		int16 zpaddr=AbsYAddrModeHandler_Address();
-		DECInstrHandler(zpaddr);
-		CMPInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xdf: // DEC-CMP abs,X
-		{
-		int16 zpaddr=AbsXAddrModeHandler_Address();
-		DECInstrHandler(zpaddr);
-		CMPInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xd4:
-	case 0xf4:
-		ProgramCounter+=1;
-		break;
-	case 0xdc:
-	case 0xfc:
-		ProgramCounter+=2;
-		break;
-	case 0xe3: // INC-SBC (zp,X)
-		{
-		int16 zpaddr=IndXAddrModeHandler_Address();
-		INCInstrHandler(zpaddr);
-		SBCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xe7: // INC-SBC zp
-		{
-		int16 zpaddr=ZeroPgAddrModeHandler_Address();
-		INCInstrHandler(zpaddr);
-		SBCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xef: // INC-SBC abs
-		{
-		int16 zpaddr=AbsAddrModeHandler_Address();
-		INCInstrHandler(zpaddr);
-		SBCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xf3: // INC-SBC (zp).Y
-		{
-		int16 zpaddr=IndYAddrModeHandler_Address();
-		INCInstrHandler(zpaddr);
-		SBCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xf7: // INC-SBC zp,X
-		{
-		int16 zpaddr=ZeroPgXAddrModeHandler_Address();
-		INCInstrHandler(zpaddr);
-		SBCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xfb: // INC-SBC abs,Y
-		{
-		int16 zpaddr=AbsYAddrModeHandler_Address();
-		INCInstrHandler(zpaddr);
-		SBCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	case 0xff: // INC-SBC abs,X
-		{
-		int16 zpaddr=AbsXAddrModeHandler_Address();
-		INCInstrHandler(zpaddr);
-		SBCInstrHandler(WholeRam[zpaddr]);
-		}
-		break;
-	// REALLY Undocumented instructions 6B, 8B and CB
-    case 0x6b:
-		ANDInstrHandler(WholeRam[ProgramCounter++]);
-		RORInstrHandler_Acc();
-		break;
-	case 0x8b:
-		Accumulator=XReg; /* TXA */
-		PSR&=~(FlagZ | FlagN);
-		PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
-		ANDInstrHandler(WholeRam[ProgramCounter++]);
-		break;
-	case 0xcb:
-		// SBX #n - I dont know if this uses the carry or not, i'm assuming its
-		// Subtract #n from X with carry.
-		{
-			unsigned char TmpAcc=Accumulator;
-			Accumulator=XReg;
-			SBCInstrHandler(WholeRam[ProgramCounter++]);
-			XReg=Accumulator;
-			Accumulator=TmpAcc; // Fudge so that I dont have to do the whole SBC code again
-		}
-		break;
-    default:
-      BadCount++;
-      break;
-  }
- }
- if (OpCodes>=2) {
-  switch (CurrentInstruction) {
-	      case 0x0b:
-	case 0x2b:
-      ANDInstrHandler(WholeRam[ProgramCounter++]); /* AND-MVC #n,b7 */
-	  PSR|=((Accumulator & 128)>>7);
-      break;
-    case 0x4b: /* Undocumented Instruction: AND imm and LSR A */
-      ANDInstrHandler(WholeRam[ProgramCounter++]);
-      LSRInstrHandler_Acc();
-      break;
-    case 0x87: /* Undocumented Instruction: SAX zp (i.e. (zp) = A & X) */
-      /* This one does not seem to change the processor flags */
-      WholeRam[ZeroPgAddrModeHandler_Address()] = Accumulator & XReg;
-      break;
-    case 0x83: /* Undocumented Instruction: SAX (zp,X) */
-      WholeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
-      break;
-    case 0x8f: /* Undocumented Instruction: SAX abs */
-      WholeRam[AbsAddrModeHandler_Address()] = Accumulator & XReg;
-      break;
-    case 0x93: /* Undocumented Instruction: SAX (zp),Y */
-      WholeRam[IndYAddrModeHandler_Address()] = Accumulator & XReg;
-      break;
-    case 0x97: /* Undocumented Instruction: SAX zp,Y */
-      WholeRam[ZeroPgYAddrModeHandler_Address()] = Accumulator & XReg;
-      break;
-    case 0x9b: /* Undocumented Instruction: SAX abs,Y */
-      WholeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
-      break;
-    case 0x9f: /* Undocumented Instruction: SAX abs,X */
-      WholeRam[AbsXAddrModeHandler_Address()] = Accumulator & XReg;
-      break;
-    case 0xab: /* Undocumented Instruction: LAX #n */
-      LDAInstrHandler(WholeRam[ProgramCounter++]);
-      XReg = Accumulator;
-      break;
-    case 0xa3: /* Undocumented Instruction: LAX (zp,X) */
-      LDAInstrHandler(IndXAddrModeHandler_Data());
-      XReg = Accumulator;
-      break;
-    case 0xa7: /* Undocumented Instruction: LAX zp */
-      LDAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]);
-      XReg = Accumulator;
-      break;
-    case 0xaf: /* Undocumented Instruction: LAX abs */
-      LDAInstrHandler(AbsAddrModeHandler_Data());
-      XReg = Accumulator;
-      break;
-    case 0xb3: /* Undocumented Instruction: LAX (zp),Y */
-      LDAInstrHandler(IndYAddrModeHandler_Data());
-      XReg = Accumulator;
-      break;
-    case 0xb7: /* Undocumented Instruction: LAX zp,Y */
-      LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
-      Accumulator = XReg;
-      break;
-	case 0xbb:
-    case 0xbf: /* Undocumented Instruction: LAX abs,Y */
-      LDAInstrHandler(AbsYAddrModeHandler_Data());
-      XReg = Accumulator;
-      break;
-	default:
-		BadCount++;
-  }
- }
- if (BadCount==OpCodes) BadInstrHandler(CurrentInstruction);
-  ; /* OpCode switch */
-	// This block corrects the cycle count for the branch instructions
-	if ((CurrentInstruction==0x10) ||
-		(CurrentInstruction==0x30) ||
-		(CurrentInstruction==0x50) ||
-		(CurrentInstruction==0x70) ||
-		(CurrentInstruction==0x80) ||
-		(CurrentInstruction==0x90) ||
-		(CurrentInstruction==0xb0) ||
-		(CurrentInstruction==0xd0) ||
-		(CurrentInstruction==0xf0)) {
-			if (((ProgramCounter & 0xff00)!=(OldPC & 0xff00)) && (Branched==1)) 
-				Cycles+=2; else Cycles++;
+		Disc8271_poll(Cycles);
+		Sound_Trigger(Cycles);
+		if (DisplayCycles>0) DisplayCycles-=Cycles; // Countdown time till end of display of info.
+		if ((MachineType==3) || (!NativeFDC)) Poll1770(Cycles); // Do 1770 Background stuff
+
+		if ((NMIStatus) && (!OldNMIStatus)) DoNMI();
+
+		if (EnableTube)
+			SyncTubeProcessor();
 	}
-	if (((CurrentInstruction & 0xf)==1) ||
-		((CurrentInstruction & 0xf)==9) ||
-		((CurrentInstruction & 0xf)==0xD)) {
-		if (((CurrentInstruction &0x10)==0) &&
-			((CurrentInstruction &0xf0)!=0x90) &&
-			(Carried==1)) Cycles++;
-	}
-	if (((CurrentInstruction==0xBC) || (CurrentInstruction==0xBE)) && (Carried==1)) Cycles++;
-	Cycles+=IRQCycles;
-	IRQCycles=0; // IRQ Timing
-	// End of cycle correction
-
-  OldNMIStatus=NMIStatus;
-  /* NOTE: Check IRQ status before polling hardware - this is essential for
-     Rocket Raid to work since it polls the IFR in the sys via for start of 
-     frame - but with interrupts enabled.  If you do the interrupt check later
-     then the interrupt handler will always be entered and rocket raid will
-     never see it */
-  if ((intStatus) && (!GETIFLAG)) DoInterrupt();
-
-  TotalCycles+=Cycles;
-  if (TotalCycles > CycleCountWrap)
-  {
-    TotalCycles -= CycleCountWrap;
-	//SoundCycles -= CycleCountWrap;
-    AdjustTrigger(AtoDTrigger);
-    if (!DirectSoundEnabled) AdjustTrigger(SoundTrigger);
-    AdjustTrigger(Disc8271Trigger);
-    AdjustTrigger(AMXTrigger);
-    AdjustTrigger(PrinterTrigger);
-    AdjustTrigger(VideoTriggerCount);
-    AdjustTrigger(TapeTrigger);
-    if (EnableTube)
-      WrapTubeCycles();
-  }
-
-  SysVIA_poll(Cycles);
-  UserVIA_poll(Cycles);
-  VideoPoll(Cycles);
-  if (!BHardware) {
-	AtoD_poll(Cycles);
-    Serial_Poll();
-  }
-  Disc8271_poll(Cycles);
-  Sound_Trigger(Cycles);
-  if (DisplayCycles>0) DisplayCycles-=Cycles; // Countdown time till end of display of info.
-  if ((MachineType==3) || (!NativeFDC)) Poll1770(Cycles); // Do 1770 Background stuff
-
-  if ((NMIStatus) && (!OldNMIStatus)) DoNMI();
-
-  if (EnableTube)
-    SyncTubeProcessor();
-  }
 } /* Exec6502Instruction */
 
 /*-------------------------------------------------------------------------*/

@@ -39,6 +39,8 @@
 #include "errno.h"
 #include "uefstate.h"
 #include "ide.h"
+#include "mem_mmu.h"
+#include "simz80.h"
 
 /* Each Rom now has a Ram/Rom flag */
 int RomWritable[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
@@ -297,42 +299,102 @@ int BeebReadMem(int Address) {
 	}
 // Master 128 End
 
+	if (Address>=0xff00)
+		return(WholeRam[Address]);
 
-  if (Address>=0xff00) return(WholeRam[Address]);
-  /* OK - its IO space - lets check some system devices */
-  /* VIA's first - games seem to do really heavy reaing of these */
-  /* Can read from a via using either of the two 16 bytes blocks */
-  if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) return(SysVIARead(Address & 0xf));
-  if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) return(UserVIARead(Address & 0xf));
-  if ((Address & ~7)==0xfe00) return(CRTCRead(Address & 0x7));
-  if ((Address & ~3)==0xfe20) return(VideoULARead(Address & 0xf)); // Master uses fe24 to fe2f for FDC
-  if ((Address & ~3)==0xfe30) return(PagedRomReg); /* report back ROMSEL - I'm sure the beeb allows ROMSEL read..
-													correct me if im wrong. - Richard Gellman */
-  if ((Address & ~3)==0xfe34 && MachineType==3) return(ACCCON);
-  // In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-  if (((Address & ~0x1f)==0xfe80) && (MachineType!=3) && (NativeFDC)) return(Disc8271_read(Address & 0x7));
-  if ((MachineType!=3) && (Address>=EFDCAddr) && (Address<(EFDCAddr+4)) && (!NativeFDC)) {
-	  //MessageBox(GETHWND,"Read of 1770 Extension Board\n","BeebEm",MB_OK|MB_ICONERROR);
-	  return(Read1770Register(Address-EFDCAddr));
-  }
-  if ((MachineType!=3) && (Address==EDCAddr) && (!NativeFDC)) return(mainWin->GetDriveControl());
-  if ((Address & ~7)==0xfe28 && MachineType==3) return(Read1770Register(Address & 0x7));
-  if (Address==0xfe24 && MachineType==3) return(ReadFDCControlReg());
-  if ((Address & ~0x1f)==0xfea0) return(0xfe); /* Disable econet */
-  if ((Address & ~0x1f)==0xfec0 && MachineType!=3) return(AtoDRead(Address & 0xf));
-  if (Address>=0xfe18 && Address<=0xfe20 && MachineType==3) return(AtoDRead(Address - 0xfe18));
-  if ((Address & ~0x1f)==0xfee0) return(ReadTubeFromHostSide(Address&7)); //Read From Tube
-  // Tube seems to return FF on a master (?)
-  if ((Address & ~0x7)==0xfc40 && MachineType==3) return(IDERead(Address & 0x7));
-  if (Address==0xfe08) return(Read_ACIA_Status());
-  if (Address==0xfe09) return(Read_ACIA_Rx_Data());
-  if (Address==0xfe10) return(Read_SERPROC());
-  if (Address==0xfc01) {
-	  char infstr[200];
-	  sprintf(infstr,"%0X %0X\n",EFDCAddr,EDCAddr);
-	  MessageBox(GETHWND,infstr,"BeebEm",MB_OK|MB_ICONERROR); 
-  }
-  return(0);
+	/* IO space */
+
+	if (Address >= 0xfc00 && Address < 0xfe00)
+		AdjustForIORead();
+
+	/* VIA's first - games seem to do really heavy reaing of these */
+	/* Can read from a via using either of the two 16 bytes blocks */
+	if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
+		AdjustForIORead();
+		return(SysVIARead(Address & 0xf));
+	}
+
+	if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
+		AdjustForIORead();
+		return(UserVIARead(Address & 0xf));
+	}
+
+	if ((Address & ~7)==0xfe00) {
+		AdjustForIORead();
+		return(CRTCRead(Address & 0x7));
+	}
+
+	if (Address==0xfe08) {
+		AdjustForIORead();
+		return(Read_ACIA_Status());
+	}
+	if (Address==0xfe09) {
+		AdjustForIORead();
+		return(Read_ACIA_Rx_Data());
+	}
+	if (Address==0xfe10) {
+		AdjustForIORead();
+		return(Read_SERPROC());
+	}
+
+	if (Address>=0xfe18 && Address<=0xfe20 && MachineType==3) {
+		return(AtoDRead(Address - 0xfe18));
+	}
+
+	if ((Address & ~3)==0xfe20) {
+		return(VideoULARead(Address & 0xf)); // Master uses fe24 to fe2f for FDC
+	}
+
+	if (Address==0xfe24 && MachineType==3) {
+		return(ReadFDCControlReg());
+	}
+	if ((Address & ~7)==0xfe28 && MachineType==3) {
+		return(Read1770Register(Address & 0x7));
+	}
+
+	if ((Address & ~3)==0xfe30) {
+		return(PagedRomReg); /* report back ROMSEL - I'm sure the beeb allows ROMSEL read..
+								correct me if im wrong. - Richard Gellman */
+	}
+	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
+	if ((Address & ~3)==0xfe34 && MachineType==3) {
+		return(ACCCON);
+	}
+
+	if (((Address & ~0x1f)==0xfe80) && (MachineType!=3) && (NativeFDC)) {
+		return(Disc8271_read(Address & 0x7));
+	}
+
+	if ((Address & ~0x1f)==0xfea0) {
+		return(0xfe); /* Disable econet */
+	}
+
+	if ((Address & ~0x1f)==0xfec0 && MachineType!=3) {
+		AdjustForIORead();
+		return(AtoDRead(Address & 0xf));
+	}
+
+	if ((Address & ~0x1f)==0xfee0)
+	{
+		if (TorchTube)
+			return(ReadTorchTubeFromHostSide(Address&0x1f)); //Read From Torch Tube
+		else
+			return(ReadTubeFromHostSide(Address&7)); //Read From Tube
+	}
+
+	if ((Address & ~0x7)==0xfc40 && MachineType==3) {
+		return(IDERead(Address & 0x7));
+	}
+
+	if ((MachineType!=3) && (Address>=EFDCAddr) && (Address<(EFDCAddr+4)) && (!NativeFDC)) {
+		//MessageBox(GETHWND,"Read of 1770 Extension Board\n","BeebEm",MB_OK|MB_ICONERROR);
+		return(Read1770Register(Address-EFDCAddr));
+	}
+	if ((MachineType!=3) && (Address==EDCAddr) && (!NativeFDC)) {
+		return(mainWin->GetDriveControl());
+	}
+
+	return(0);
 } /* BeebReadMem */
 
 /*----------------------------------------------------------------------------*/
@@ -577,78 +639,102 @@ void BeebWriteMem(int Address, int Value) {
 	}
 // Master 128 End
 
+	/* IO space */
 
-  if ((Address>=0xfc00) && (Address<=0xfeff)) {
-    /* Check for some hardware */
-    if ((Address & ~0x3)==0xfe20) {
-      VideoULAWrite(Address & 0xf, Value);
-      return;
-    }
+	if (Address >= 0xfc00 && Address < 0xfe00)
+		AdjustForIOWrite();
 
-    /* Can write to a via using either of the two 16 bytes blocks */
-    if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
-      SysVIAWrite((Address & 0xf),Value);
-	  Cycles++;
-      return;
-    }
-
-    /* Can write to a via using either of the two 16 bytes blocks */
-    if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
-      UserVIAWrite((Address & 0xf),Value);
-	  Cycles++;
-      return;
-    }
-
-    if (Address>=0xfe30 && Address<0xfe34) {
-      DoRomChange(Value);
-      return;
-    }
-
-	if (Address>=0xfe34 && Address<0xfe38 && MachineType==3) {
-		FiddleACCCON(Value);
+	/* Can write to a via using either of the two 16 bytes blocks */
+	if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
+		AdjustForIOWrite();
+		SysVIAWrite((Address & 0xf),Value);
 		return;
 	}
-	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-    /*cerr << "Write *0x" << hex << Address << "=0x" << Value << dec << "\n"; */
-    if ((Address & ~0x7)==0xfe00) {
-      CRTCWrite(Address & 0x7, Value);
-      return;
-    }
 
-    if (((Address & ~0x1f)==0xfe80) && (MachineType!=3) && (NativeFDC)) {
-      Disc8271_write((Address & 7),Value);
-      return;
-    }
-
-	if ((Address & ~0x7)==0xfe28 && MachineType==3) {
-		Write1770Register(Address & 7,Value);
+	/* Can write to a via using either of the two 16 bytes blocks */
+	if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
+		AdjustForIOWrite();
+		UserVIAWrite((Address & 0xf),Value);
 		return;
-	} 
+	}
+
+	if ((Address & ~0x7)==0xfe00) {
+		AdjustForIOWrite();
+		CRTCWrite(Address & 0x7, Value);
+		return;
+	}
+
+	if (Address==0xfe08) {
+		AdjustForIOWrite();
+		Write_ACIA_Control(Value);
+		return;
+	}
+	if (Address==0xfe09) {
+		AdjustForIOWrite();
+		Write_ACIA_Tx_Data(Value);
+		return;
+	}
+	if (Address==0xfe10) {
+		AdjustForIOWrite();
+		Write_SERPROC(Value);
+		return;
+	}
+
+	if ((Address & ~0x7)==0xfe18 && MachineType==3) {
+		AtoDWrite((Address & 0xf),Value);
+		return;
+	}
+
+	if ((Address & ~0x3)==0xfe20) {
+		VideoULAWrite(Address & 0xf, Value);
+		return;
+	}
 
 	if (Address==0xfe24 && MachineType==3) {
 		WriteFDCControlReg(Value);
 		return;
 	}
 
-    if ((Address & ~0x1f)==0xfec0 && MachineType!=3) {
-      AtoDWrite((Address & 0xf),Value);
-      return;
-    }
+	if ((Address & ~0x7)==0xfe28 && MachineType==3) {
+		Write1770Register(Address & 7,Value);
+		return;
+	} 
 
-    if ((Address & ~0x7)==0xfe18 && MachineType==3) {
-      AtoDWrite((Address & 0xf),Value);
-      return;
-    }
+	if (Address>=0xfe30 && Address<0xfe34) {
+		DoRomChange(Value);
+		return;
+	}
 
-    if ((Address & ~0x7)==0xfc40 && MachineType==3) {
-      IDEWrite((Address & 0x7),Value);
-      return;
-    }
-    
-    if (Address==0xfe08) Write_ACIA_Control(Value);
-	if (Address==0xfe09) Write_ACIA_Tx_Data(Value);
-	if (Address==0xfe10) Write_SERPROC(Value);
-	if ((Address&~0x7)==0xfee0) WriteTubeFromHostSide(Address&7,Value);
+	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
+	/*cerr << "Write *0x" << hex << Address << "=0x" << Value << dec << "\n"; */
+	if (Address>=0xfe34 && Address<0xfe38 && MachineType==3) {
+		FiddleACCCON(Value);
+		return;
+	}
+
+	if (((Address & ~0x1f)==0xfe80) && (MachineType!=3) && (NativeFDC)) {
+		Disc8271_write((Address & 7),Value);
+		return;
+	}
+
+	if ((Address & ~0x1f)==0xfec0 && MachineType!=3) {
+		AdjustForIOWrite();
+		AtoDWrite((Address & 0xf),Value);
+		return;
+	}
+
+	if ((Address&~0xf)==0xfee0)
+	{
+		if (TorchTube) 
+			WriteTorchTubeFromHostSide(Address&0xf,Value);
+		else
+			WriteTubeFromHostSide(Address&7,Value);
+	}
+
+	if ((Address & ~0x7)==0xfc40 && MachineType==3) {
+		IDEWrite((Address & 0x7),Value);
+		return;
+	}
 
 	if ((MachineType!=3) && (Address==EDCAddr) && (!NativeFDC)) {
 		mainWin->SetDriveControl(Value);
@@ -658,7 +744,6 @@ void BeebWriteMem(int Address, int Value) {
 	}
 
     return;
-  }
 }
 
 /*----------------------------------------------------------------------------*/

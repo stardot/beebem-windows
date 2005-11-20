@@ -52,6 +52,7 @@ BeebWin *mainWin = NULL;
 HINSTANCE hInst;
 HWND hCurrentDialog = NULL;
 DWORD iSerialThread,iStatThread; // Thread IDs
+FILE *tlog;
 
 int CALLBACK WinMain(HINSTANCE hInstance, 
 					HINSTANCE hPrevInstance,
@@ -77,7 +78,9 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 
 	mainWin->HandleCommandLine(lpszCmdLine);
 
-	do
+//    tlog = fopen("\\trace.log", "wt");
+
+    do
 	{
 		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
 		{
@@ -100,7 +103,9 @@ int CALLBACK WinMain(HINSTANCE hInstance,
   
 	mainWin->KillDLLs();
 
-	delete mainWin;
+//    fclose(tlog);
+
+    delete mainWin;
 	Kill_Serial();
 	return(0);  
 } /* main */

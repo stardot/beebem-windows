@@ -71,6 +71,8 @@ void core_dumpstate(void);
 void DoInterrupt(void);
 void Save6502UEF(FILE *SUEF);
 void Load6502UEF(FILE *SUEF);
+void AdjustForIORead(void);
+void AdjustForIOWrite(void);
 extern int SwitchOnCycles; // Reset delay
 extern int OpCodes;
 extern int BHardware;

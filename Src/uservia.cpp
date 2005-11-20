@@ -55,7 +55,12 @@ extern int DumpAfterEach;
 /* My raw VIA state */
 VIAState UserVIAState;
 
-unsigned char WTDelay1,WTDelay2; // Timer write delay - one cycle
+// Timer write adjustments. Compensate for two things:
+//  - write happens in last cycle of instruction so compenstate for instruction cycles 
+//    that will be subtracted from the timers
+//  - read of a timer happens 3 cycles into an instruction (more or less!) so run 
+//    timers 3 cycles ahead of CPU clock, then timer reads do not need any adjustment
+unsigned char WTDelay1,WTDelay2;
 
 /*--------------------------------------------------------------------------*/
 static void UpdateIFRTopBit(void) {
@@ -137,7 +142,7 @@ void UserVIAWrite(int Address, int Value) {
       };
       UpdateIFRTopBit();
       UserVIAState.timer1hasshot=0; //Added by K.Lowe 24/08/03
-      WTDelay1=4;
+      WTDelay1=Cycles - 3; // See comment at top of file
       break;
 
 //Added by K.Lowe 24/08/03
@@ -171,7 +176,7 @@ void UserVIAWrite(int Address, int Value) {
       UserVIAState.ifr &=0xdf; /* clear timer 2 ifr */
       UpdateIFRTopBit();
       UserVIAState.timer2hasshot=0; //Added by K.Lowe 24/08/03
-      WTDelay2=4;
+      WTDelay2=Cycles - 3; // See comment at top of file
       break;
 
     case 10:
@@ -249,7 +254,10 @@ int UserVIARead(int Address) {
       break;
 
     case 4: /* Timer 1 lo counter */
-      tmp=(UserVIAState.timer1c / 2) & 0xff;
+      if (UserVIAState.timer1c < 0) /* Adjust for dividing -ve count by 2 */
+        tmp=((UserVIAState.timer1c - 1) / 2) & 0xff;
+      else
+        tmp=(UserVIAState.timer1c / 2) & 0xff;
       UserVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
       UpdateIFRTopBit();
       break;
@@ -286,7 +294,7 @@ int UserVIARead(int Address) {
 
     case 13:
       UpdateIFRTopBit();
-      return(UserVIAState.ifr);
+      tmp = UserVIAState.ifr;
       break;
 
     case 14:
@@ -320,7 +328,7 @@ void UserVIATriggerCA1Int(void) {
 /*--------------------------------------------------------------------------*/
 void UserVIA_poll_real(void) {
   int tCycles;
-  if (UserVIAState.timer1c<0) {
+  if (UserVIAState.timer1c<-2) { // T1 goes to FF before latches reloaded
     tCycles=abs(UserVIAState.timer1c);
     /*cerr << "UserVIA timer1c\n"; */
     UserVIAState.timer1c=(UserVIAState.timer1l * 2)-(tCycles-4);

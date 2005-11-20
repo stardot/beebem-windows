@@ -268,6 +268,18 @@
 #define IDM_BLUR_2                      40178
 #define IDM_BLUR_4                      40179
 #define IDM_BLUR_8                      40180
+#define IDM_TORCH                       40181
+#define IDM_CAPTUREVIDEO                40182
+#define IDM_ENDVIDEO                    40183
+#define IDM_VIDEORES1                   40185
+#define IDM_VIDEORES2                   40186
+#define IDM_VIDEORES3                   40187
+#define IDM_VIDEOSKIP0                  40188
+#define IDM_VIDEOSKIP1                  40189
+#define IDM_VIDEOSKIP2                  40190
+#define IDM_VIDEOSKIP3                  40191
+#define IDM_VIDEOSKIP4                  40192
+#define IDM_VIDEOSKIP5                  40193
 
 // Next default values for new objects
 // 
@@ -275,7 +287,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        113
-#define _APS_NEXT_COMMAND_VALUE         40181
+#define _APS_NEXT_COMMAND_VALUE         40195
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

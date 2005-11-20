@@ -324,6 +324,19 @@ File Menu:
   Quick Save     specify the filename.  The state is saved and loaded from 
                  the 'BeebState/quicksave.uef' file.
 
+  Video Options - Select the resolution and how many frames get skipped for 
+                  video capture.  If video and audio get out of sync when
+                  playing back then try selecting a lower resolution and 
+                  lower frame rate (more skipped frames).
+  Capture Video - Start video capture.  Video is recorded at a maximum of 25
+                  frames per second at a resolution of 640x512.  Sound is
+                  captured at the sample rate selected in the sound menu. If
+                  sound is disabled when capture is started then sound is
+                  not recorded in the AVI file.  If you have Windows XP you 
+                  can edit the AVIs using Movie Maker and save them as more
+                  compact WMV files.
+  End Video     - Stops video capture.
+
   Exit         - Exit BeebEm
 
 Comms Menu:
@@ -464,11 +477,16 @@ Hardware Menu:
                         appropriate ROM (e.g. Acorn DFS2.26 for the Acorn 
                         1770 board).
 
-  65C02 Second Processor - Enables/disables the second processor emulation.
-                        Note that in Master 128 mode the second processor 
-                        may be disabled in the CMOS settings.  To enable
-                        it type this command and press break (F12):
+  65C02 Second Processor - Enables/disables the 65C02 second processor 
+                        emulation.  Note that in Master 128 mode the second 
+                        processor  may be disabled in the CMOS settings.
+                        To enable it type this command and press 
+                        break (F12):
                             *CONFIGURE TUBE
+
+  Torch Z80 Second Processor - Enables/disables the Z80 second processor 
+                        emulation.  See the README_Z80.TXT file for more
+                        details.
 
   Allow ROM writes    - Enable/disable ROM writes for each ROM slot.
                         ROMs read at start-up are write protected by
@@ -545,13 +563,18 @@ Help Menu:
 Command Line Options
 --------------------
 
-The file name of a disc image can be passed to BeebEm on the command line
-and it will be run automatically.  The name can include the full path or it
-can just be the name of a file in the 'DiscIms' directory.
+The file name of a disc image or a state file can be passed to BeebEm on the
+command line and it will be run automatically.  The name can include the
+full path or it can just be the name of a file in the 'DiscIms' or
+'BeebState' directory.
 
 If you create a shortcut to BeebEm.exe on your desktop and edit the
-properties (right click the icon) you can add a disc image name to the
-target box.  Running the shortcut will then run the disc image.
+properties (right click the icon) you can add a disc or state file name to
+the target box.  Running the shortcut will then run the file.
+
+You can also associate files with .ssd, .dsd or .uef extensions with BeebEm
+using Windows Explorer.  Double clicking on one of these files will
+automatically run it in BeebEm.
 
 
 Debugger
@@ -697,6 +720,7 @@ Thanks go to the following people for contributing to BeebEm:
   Laurie Whiffen
   Richard Gellman
   Ken Lowe
+  Jon Welch
 
 If there are any other features you would like to see in the Windows version
 of BeebEm then send me an email.  I cannot promise anything but I may find

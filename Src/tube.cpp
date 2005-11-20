@@ -32,6 +32,8 @@
 #include "tube.h"
 #include "debug.h"
 #include "uefstate.h"
+#include "mem_mmu.h"
+#include "simz80.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -45,6 +47,7 @@
 #define RESETTUBEINT(a) TubeintStatus&=~(1<<a)
 
 static unsigned int InstrCount;
+static int CurrentInstruction;
 unsigned char TubeRam[65536];
 extern int DumpAfterEach;
 unsigned char TubeEnabled,EnableTube;
@@ -111,9 +114,8 @@ static int TubeCyclesTable[]={
    allow fernangling by memory subsystem */
 unsigned int TubeCycles;
 
-static unsigned char Branched,Carried;
+static unsigned char Branched;
 // Branched - 1 if the instruction branched
-// Carried - 1 if the instruction carried over to high byte in index calculation
 
 /* A macro to speed up writes - uses a local variable called 'tmpaddr' */
 #define TUBEREADMEM_FAST(a) ((a<0xfef8)?TubeRam[a]:TubeReadMem(a))
@@ -197,6 +199,144 @@ void UpdateHostR4Interrupt(void) {
 		intStatus|=(1<<tube);
 	else
 		intStatus&=~(1<<tube);
+}
+
+
+/*-------------------------------------------------------------------*/
+// Torch tube memory/io handling functions
+
+int TorchTubeActive = 0;
+
+unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr) 
+{
+unsigned char TmpData;
+
+	TmpData = 0xff;
+	
+	if (!TorchTubeActive) 
+		return(MachineType==3 ? 0xff : 0xfe); // return ff for master else return fe
+
+	switch (IOAddr) {
+	case 0:
+		TmpData=R1HStatus | R1Status;
+		break;
+	case 1:
+		TmpData=R1PHData[0];
+		R1HStatus&=~TubeDataAv;
+		R1PStatus|=TubeNotFull;
+		break;
+
+// Data available in Z80 tube ?
+// Bit #2 says data available to read in 0xfee1
+// Bit #10 says room available to write to 0xfee1
+
+	case 0x0d:
+		TmpData = 0;
+		
+		if (R1HStatus & TubeDataAv) TmpData |= 0x02;
+		if (R1HStatus & TubeNotFull) TmpData |= 0x10;
+		
+		break;
+
+	case 0x10:
+
+//		trace = 1;
+		
+		break;
+		
+	}
+	
+//	fprintf(tlog, "ReadTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) TmpData);
+	
+	return TmpData;
+}
+
+void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) 
+{
+
+//	fprintf(tlog, "WriteTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) IOData);
+
+	if ( (IOAddr == 0x02) && (IOData == 0xff) ) TorchTubeActive = 1;
+
+	switch (IOAddr) {
+	case 1:
+		// S bit controls write of status flags
+		if (IOData & TubeS)
+			R1Status|=(IOData & 0x3f);
+		else
+			R1Status&=~IOData;
+
+		// Reset required?
+		if (R1Status & TubeP)
+			Reset65C02();
+		if (R1Status & TubeT)
+			ResetTube();
+
+		// Update interrupt flags
+		UpdateR1Interrupt();
+		UpdateR3Interrupt();
+		UpdateR4Interrupt();
+		UpdateHostR4Interrupt();
+		break;
+	case 0:
+		R1HPData = IOData;
+		R1PStatus|=TubeDataAv;
+		R1HStatus&=~TubeNotFull;
+		UpdateR1Interrupt();
+		break;
+
+// Echo back to tube ?
+
+	case 0x08 :
+//		WriteTorchTubeFromHostSide(1, IOData);
+		break;
+		
+	case 0x0c :
+		if (IOData == 0xaa)
+		{
+			init_z80();
+			Enable_Z80 = 1;
+		}
+		break;
+		
+	case 0x0e:
+		break;
+	}
+}
+
+unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr) 
+{
+	unsigned char TmpData;
+
+	switch (IOAddr) {
+	case 0:
+		TmpData=R1PStatus | R1Status;
+		break;
+	case 1:
+		TmpData = R1HPData;
+		R1PStatus&=~TubeDataAv;
+		R1HStatus|=TubeNotFull;
+		UpdateR1Interrupt();
+		break;
+	}
+
+//	fprintf(tlog, "ReadTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) TmpData);
+
+	return TmpData;
+}
+
+void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData) 
+{
+
+//	fprintf(tlog, "WriteTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) IOData);
+
+	switch (IOAddr) {
+	case 1:
+		R1PHData[0]=IOData;
+		R1HStatus|=TubeDataAv;
+		R1PStatus&=~TubeNotFull;
+		break;
+	}
 }
 
 /*-------------------------------------------------------------------*/
@@ -468,6 +608,23 @@ unsigned char TubeReadMem(unsigned int IOAddr) {
   var=TubeRam[TubeProgramCounter]; \
   var|=(TubeRam[TubeProgramCounter+1]<<8); \
   TubeProgramCounter+=2;
+
+/*----------------------------------------------------------------------------*/
+INLINE void Carried() {
+	// Correct cycle count for indirection across page boundary
+	if (((CurrentInstruction & 0xf)==0x1 ||
+		 (CurrentInstruction & 0xf)==0x9 ||
+		 (CurrentInstruction & 0xf)==0xd) &&
+		(CurrentInstruction & 0xf0)!=0x90)
+	{
+		TubeCycles++;
+	}
+	else if (CurrentInstruction==0xBC ||
+			 CurrentInstruction==0xBE)
+	{
+		TubeCycles++;
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 INLINE int SignExtendByte(signed char in) {
@@ -1010,7 +1167,7 @@ INLINE static int16 IndYAddrModeHandler_Data(void) {
   int EffectiveAddress;
   unsigned char ZPAddr=TubeRam[TubeProgramCounter++];
   EffectiveAddress=TubeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried=1;
+  if (EffectiveAddress>0xff) Carried();
   EffectiveAddress+=(TubeRam[ZPAddr+1]<<8);
 
   return(TUBEREADMEM_FAST(EffectiveAddress));
@@ -1022,7 +1179,7 @@ INLINE static int16 IndYAddrModeHandler_Address(void) {
   int EffectiveAddress;
   unsigned char ZPAddr=TubeRam[TubeProgramCounter++];
   EffectiveAddress=TubeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried=1;
+  if (EffectiveAddress>0xff) Carried();
   EffectiveAddress+=(TubeRam[ZPAddr+1]<<8);
 
   return(EffectiveAddress);
@@ -1049,7 +1206,7 @@ INLINE static int16 ZeroPgXAddrModeHandler_Address(void) {
 INLINE static int16 AbsXAddrModeHandler_Data(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress);
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
   EffectiveAddress+=XReg;
   EffectiveAddress&=0xffff;
 
@@ -1061,7 +1218,7 @@ INLINE static int16 AbsXAddrModeHandler_Data(void) {
 INLINE static int16 AbsXAddrModeHandler_Address(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress)
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
   EffectiveAddress+=XReg;
   EffectiveAddress&=0xffff;
 
@@ -1073,7 +1230,7 @@ INLINE static int16 AbsXAddrModeHandler_Address(void) {
 INLINE static int16 AbsYAddrModeHandler_Data(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress);
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
   EffectiveAddress+=YReg;
   EffectiveAddress&=0xffff;
 
@@ -1085,7 +1242,7 @@ INLINE static int16 AbsYAddrModeHandler_Data(void) {
 INLINE static int16 AbsYAddrModeHandler_Address(void) {
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress)
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried=1;
+  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
   EffectiveAddress+=YReg;
   EffectiveAddress&=0xffff;
 
@@ -1263,7 +1420,6 @@ void DoTubeNMI(void) {
 /*-------------------------------------------------------------------------*/
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec65C02Instruction(void) {
-  static int CurrentInstruction;
   static int tmpaddr;
   static int OldTubeNMIStatus;
   int OldPC;
@@ -1280,7 +1436,7 @@ void Exec65C02Instruction(void) {
   TubeCycles=TubeCyclesTable[CurrentInstruction]; 
   /*Stats[CurrentInstruction]++; */
   OldPC=TubeProgramCounter;
-  Carried=0; Branched=0;
+  Branched=0;
   switch (CurrentInstruction) {
     case 0x00:
       BRKInstrHandler();
@@ -2247,25 +2403,23 @@ void Exec65C02Instruction(void) {
 
   // This block corrects the cycle count for the branch instructions
   if ((CurrentInstruction==0x10) ||
-		(CurrentInstruction==0x30) ||
-		(CurrentInstruction==0x50) ||
-		(CurrentInstruction==0x70) ||
-		(CurrentInstruction==0x80) ||
-		(CurrentInstruction==0x90) ||
-		(CurrentInstruction==0xb0) ||
-		(CurrentInstruction==0xd0) ||
-		(CurrentInstruction==0xf0)) {
-			if (((TubeProgramCounter & 0xff00)!=(OldPC & 0xff00)) && (Branched==1)) 
-				TubeCycles+=2; else TubeCycles++;
+      (CurrentInstruction==0x30) ||
+      (CurrentInstruction==0x50) ||
+      (CurrentInstruction==0x70) ||
+      (CurrentInstruction==0x80) ||
+      (CurrentInstruction==0x90) ||
+      (CurrentInstruction==0xb0) ||
+      (CurrentInstruction==0xd0) ||
+      (CurrentInstruction==0xf0))
+  {
+    if (Branched)
+    {
+      TubeCycles++;
+      if ((TubeProgramCounter & 0xff00) != (OldPC & 0xff00))
+        TubeCycles+=2;
+    }
   }
-  if (((CurrentInstruction & 0xf)==1) ||
-		((CurrentInstruction & 0xf)==9) ||
-		((CurrentInstruction & 0xf)==0xD)) {
-		if (((CurrentInstruction &0x10)==0) &&
-			((CurrentInstruction &0xf0)!=0x90) &&
-			(Carried==1)) TubeCycles++;
-  }
-  if (((CurrentInstruction==0xBC) || (CurrentInstruction==0xBE)) && (Carried==1)) TubeCycles++;
+
   TubeCycles+=IRQCycles;
   IRQCycles=0; // IRQ Timing
   // End of cycle correction

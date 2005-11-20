@@ -315,9 +315,37 @@ Version 2.2 (Greg Cook & Mike Wyatt)
 * Integrated Greg's 1770 disc controller fixes.
 * Fixed keyboard handling so Revs works correctly.
 
-Version 2.3beta3 (Mike Wyatt, Greg Cook, Jon Welch)
-----------------
+Version 2.3 (Mike Wyatt, Greg Cook, Jon Welch)
+-----------
 * Added "Motion Blur" option to view menu (suggested by Ian Bell). This 
   all but stops the spaceship flicker in Elite.  
 * More 1770 disc controller fixes from Greg.
 * Preliminary IDE hard disk support from Jon Welch.
+* Torch Z80 second processor emulation from Jon Welch (see README_Z80.TXT).
+
+Version 3.0 (Mike Wyatt)
+-----------
+* Improved VIA timing emulation and fixed some instruction cycle counts.
+  Its still not perfect but its good enough to run various versions of the
+  infamous "Kevin Edwards" protection code!  The following tapes now load 
+  and run:
+    Knight Lore, Alien 8, Daley Thompson Supertest, Strykers Run,
+    Exile, Joust, Galaforce
+  These are the only ones I've tried, others may work as well.
+* Fixed bug in horizontal displayed register emulation.  Joust tape loading
+  screen now appears centered correctly.
+* Fixed bug in virtical sync position register emulation.  Stops DirectX 
+  errors occurring when running Micropower Roulette.
+* Fixed bug in virtical displayed/total register emulation for mode 7.
+  Screen is now cleared below lines that are displayed.
+* Added AVI video capture to the file menu (now with resolution and frame
+  skip options).
+* Changed command line parsing so it works when paths are enclosed in 
+  quotes and it now supports loading of UEF state files (thanks to Jasper
+  for this one).  Disk and state files can now be associated with BeebEm
+  and run by double clicking on them.
+* Fixed bug in IDE hard disk file access that prevented BeebEm from running
+  when logged in as an unprivileged user on Windows XP.
+* Fixed bug with window positioning when task bar is on left or top of 
+  screen.
+* Bumped version to 3.0 to keep in sync with the Mac version of BeebEm.

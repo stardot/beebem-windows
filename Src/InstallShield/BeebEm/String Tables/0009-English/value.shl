@@ -1,11 +1,11 @@
 [Data]
-TITLE_MAIN=BeebEm - BBC Model B / Master 128 Emulator for Windows - Version 2.3
+TITLE_MAIN=BeebEm - BBC Model B / Master 128 Emulator for Windows - Version 3.0
 ERROR_COMPONENT=Component:
 COMPANY_NAME=BeebEm
 COMPANY_NAME16=BeebEm
 ERROR_FILEGROUP=File Group:
 ERROR_MOVEDATA=An error occurred during the move data process: %d
-PRODUCT_VERSION=2.3
+PRODUCT_VERSION=3.0
 UNINST_KEY=BeebEm
 TITLE_CAPTIONBAR=BeebEm Setup
 PRODUCT_NAME16=BeebEm

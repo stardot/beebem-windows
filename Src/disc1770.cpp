@@ -31,7 +31,11 @@ can be determined under normal use".
 #include "main.h"
 #include "beebemrc.h"
 #include "uefstate.h"
+#include "mem_mmu.h"
+#include "simz80.h"
 
+extern FILE *tlog;
+extern int trace;
 
 // Control/Status Register, Track, Sector, and Data Registers
 unsigned char Status=0;
@@ -186,7 +190,27 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 			SetStatus(0);
 			FDCommand=9; MultiSect=(Value & 16)>>4; 
 		}
-		if (ComBits==0xD0) {
+
+        if (TorchTube)
+		{
+
+//			if (ComBits==0xe0) { // Read Track		- not implemented yet
+//				Sector = 0;
+//				Track = Data;
+//				RotSect=Sector;
+//				FDCommand=20; MultiSect = 1; 
+//				ResetStatus(1);
+//			}
+
+			if (ComBits==0xf0) { // Write Track
+				Sector = 0;
+				RotSect=Sector;
+				SetStatus(0);
+				FDCommand=21; 
+			}
+		}
+
+        if (ComBits==0xD0) {
 			// Force Interrupt - Type 4 Command
 			if (FDCommand!=0) {
 				ResetStatus(0);
@@ -345,9 +369,10 @@ void Poll1770(int NCycles) {
 		return;
 	}
 	if ((FDCommand==7) && (DWriteable[CurrentDrive]==0)) {
-		ResetStatus(0);
+ //		ResetStatus(0);
 		SetStatus(6);
-		NMIStatus|=1<<nmi_floppy; FDCommand=0;
+		NMIStatus|=1<<nmi_floppy; 
+        FDCommand=0;
 	}
 	if ((FDCommand>=8) && (*CDiscOpen==1) && (FDCommand<=10)) { // Read/Write Prepare
 		SetStatus(0);
@@ -364,6 +389,87 @@ void Poll1770(int NCycles) {
 	if ((FDCommand==8) && (*CDiscOpen==1)) FDCommand=6;
 	if ((FDCommand==9) && (*CDiscOpen==1)) { FDCommand=7; SetStatus(1); NMIStatus|=1<<nmi_floppy; }
   }
+  
+// Not implemented Read Track yet, perhaps don't really need it
+
+//	if (FDCommand==22) { // Read Track
+//		LoadingCycles-=NCycles; if (LoadingCycles>0) return;
+//		if ((dStatus & 2)==0) { 
+//			NFDCommand=0;
+//			ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2);
+//			if (!feof(CurrentDisc)) { Data=fgetc(CurrentDisc); SetStatus(1); NMIStatus|=1<<nmi_floppy; } // DRQ
+//			dByteCount--;
+//			if (dByteCount==0) RotSect++; if (RotSect>MaxSects[CurrentDrive]) RotSect=0;
+//			if ((dByteCount==0) && (!MultiSect)) { ResetStatus(0); NMIStatus|=1<<nmi_floppy; fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET); FDCommand=10; } // End of sector
+//			if ((dByteCount==0) && (MultiSect)) { dByteCount=257; Sector++; 
+//				if (Sector==MaxSects[CurrentDrive]) { MultiSect=0; /* Sector=0; */ }
+//			}
+//			LoadingCycles=BYTE_TIME; // Slow down the read a bit :)
+//		}
+//		return;
+//	}
+
+	if ((FDCommand==23) && (DWriteable[CurrentDrive]==1)) { // Write Track
+		LoadingCycles-=NCycles; if (LoadingCycles>0) return;
+		if ((Status & 2)==0) { 
+
+//            if (ByteCount == 0)
+//                fprintf(tlog, "Formatting Track %d, Sector %d\n", Track, Sector);
+
+            NFDCommand=0;
+			ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2); 
+            if ( (ByteCount >= 46) && (ByteCount <= 301) )
+            {
+                fputc(Data,CurrentDisc);
+            }
+            SetStatus(1); 
+            NMIStatus|=1<<nmi_floppy; // DRQ
+			ByteCount++;
+            if (ByteCount == 308)
+            {
+                ByteCount = 0;
+                Sector++;
+				if (Sector>MaxSects[CurrentDrive]) 
+                {
+                    ResetStatus(0);
+                    NMIStatus|=1<<nmi_floppy;
+                    fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET);
+                    FDCommand=10; 
+                    ResetStatus(1);
+                }
+            }
+			LoadingCycles=BYTE_TIME; // Bit longer for a write
+		} 
+		return;
+	}
+	if ((FDCommand==23) && (DWriteable[CurrentDrive]==0)) 
+    {
+//        fprintf(tlog, "Disc Write Protected\n");
+		SetStatus(6);
+		NMIStatus|=1<<nmi_floppy; 
+        FDCommand=0;
+	}
+
+	if ((FDCommand>=20) && (*CDiscOpen==1) && (FDCommand<=21)) { // Read/Write Track Prepare
+		SetStatus(0);
+		ResetStatus(5); ResetStatus(6); ResetStatus(2);
+		LoadingCycles=45;
+		fseek(CurrentDisc,DiscStrt[CurrentDrive]+(DiscStep[CurrentDrive]*Track),SEEK_SET);
+        Sector = 0;
+        ByteCount=0; DataPos=ftell(CurrentDisc); HeadPos[CurrentDrive]=DataPos;
+//        fprintf(tlog, "Read/Write Track Prepare - Disc = %d, Track = %d\n", CurrentDrive, Track);
+    }
+	if ((FDCommand>=20) && (*CDiscOpen==0) && (FDCommand<=21)) {
+
+//        fprintf(tlog, "ResetStatus(0) Here 8\n");
+
+        ResetStatus(0);
+		SetStatus(4);
+		NMIStatus|=1<<nmi_floppy; FDCommand=0;
+	}
+	if ((FDCommand==20) && (*CDiscOpen==1)) FDCommand=22;
+	if ((FDCommand==21) && (*CDiscOpen==1)) { FDCommand=23; SetStatus(1); NMIStatus|=1<<nmi_floppy; }
+  
   if (FDCommand==10) {
 	ResetStatus(0);
 	ResetStatus(4);
@@ -393,6 +499,7 @@ void Poll1770(int NCycles) {
 	  LightsOn[CurrentDrive]=TRUE;
 	  SpinDown[CurrentDrive]=LoadingCycles;
 	  RotSect=0; FDCommand=0;
+	  ResetStatus(0);
 	  return;
   }
   if (FDCommand==13) { // Confusion spin
@@ -404,21 +511,36 @@ void Poll1770(int NCycles) {
 	  return;
   }
   if (FDCommand==14) { // Read Address - just 6 bytes
-	  if (ByteCount==6) Data=Track;
-	  if (ByteCount==5) Data=CurrentHead[CurrentDrive];
-	  if (ByteCount==4) Data=RotSect+1;
-	  if (ByteCount==3) Data=1;
-	  if (ByteCount==2) Data=0;
-	  if (ByteCount==1) Data=0;
+	  LoadingCycles-=NCycles; if (LoadingCycles>0) return;
+      if ((Status & 2)==0) { 
+
+      NFDCommand=0;
+      ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2);
+
+      if (ByteCount==6) Data=Track;
+      if (ByteCount==5) Data=CurrentHead[CurrentDrive];
+      if (ByteCount==4) Data=RotSect+1;
+      if (ByteCount==3) Data=1;
+      if (ByteCount==2) Data=0;
+      if (ByteCount==1) Data=0;
+
 	  if (ByteCount==0) { 
-		  FDCommand=0; ResetStatus(0); RotSect++; 
+
+          FDCommand=0; 
+          ResetStatus(0); 
+          RotSect++; 
 		  if (RotSect==(MaxSects[CurrentDrive]+1)) RotSect=0; 
 		  FDCommand=10;
 		  return;
-	  }
+      }
+        
+      SetStatus(1); 
 	  ByteCount--;
 	  NMIStatus|=1<<nmi_floppy;
-	  return;
+      LoadingCycles=BYTE_TIME; // Slow down the read a bit :)
+    }
+	return;
+    
   }
 }		
 

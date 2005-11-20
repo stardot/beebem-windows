@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o"Release/BeebEm.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ddraw.lib dsound.lib winmm.lib zdll.lib /nologo /subsystem:windows /pdb:"Release/BeebEm.pdb" /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ddraw.lib dsound.lib winmm.lib zdll.lib vfw32.lib /nologo /subsystem:windows /pdb:"Release/BeebEm.pdb" /machine:I386
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "BeebEm - Win32 Debug"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o"Debug/BeebEm.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ddraw.lib dsound.lib winmm.lib zdll.lib /nologo /subsystem:windows /debug /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ddraw.lib dsound.lib winmm.lib zdll.lib vfw32.lib /nologo /subsystem:windows /debug /machine:I386
 # SUBTRACT LINK32 /profile
 
 !ENDIF 
@@ -99,6 +99,10 @@ SOURCE=.\6502core.cpp
 # Begin Source File
 
 SOURCE=.\atodconv.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\avi.cpp
 # End Source File
 # Begin Source File
 
@@ -146,6 +150,10 @@ SOURCE=.\serial.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\simz80.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\sysvia.cpp
 # End Source File
 # Begin Source File
@@ -176,6 +184,14 @@ SOURCE=.\via.cpp
 
 SOURCE=.\video.cpp
 # End Source File
+# Begin Source File
+
+SOURCE=.\z80_support.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\z80dis.cpp
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -187,6 +203,10 @@ SOURCE=.\6502core.h
 # Begin Source File
 
 SOURCE=.\atodconv.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\avi.h
 # End Source File
 # Begin Source File
 

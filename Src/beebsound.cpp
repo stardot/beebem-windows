@@ -44,6 +44,9 @@
 #include "beebmem.h"
 #include "beebwin.h"
 #include "uefstate.h"
+#include "avi.h"
+
+extern AVIWriter *aviWriter;
 
 //  #define DEBUGSOUNDTOFILE
 
@@ -206,6 +209,19 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 		Playing=TRUE;
 		bReRead=TRUE;
 	}
+
+ 	if (Playing && aviWriter)
+	{
+		HRESULT hr = aviWriter->WriteSound(lpbSoundData, SoundBufferSize);
+		if (hr != E_UNEXPECTED && FAILED(hr))
+		{
+			MessageBox(GETHWND, "Failed to write sound to AVI file",
+				"BeebEm", MB_OK|MB_ICONERROR);
+			delete aviWriter;
+			aviWriter = NULL;
+		}
+	}
+
 	return hr;
 }
 float bitpart(float wholepart) {

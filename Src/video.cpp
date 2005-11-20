@@ -948,6 +948,9 @@ void VideoDoScanLine(void) {
       if (!FrameNum) {
         VideoAddCursor();
         VideoAddLEDs();
+        // Clear rest of screen below virtical total
+        for (l=VideoState.PixmapLine; l<500/TeletextStyle; ++l)
+          mainWin->doHorizLine(0, l, -36, 800);
         mainWin->updateLines(0,(500/TeletextStyle));
       }
       VideoStartOfFrame();
@@ -1037,6 +1040,7 @@ void VideoDoScanLine(void) {
         VideoState.PreviousLastPixmapLine=VideoState.LastPixmapLine;
         VideoState.LastPixmapLine=0;
         VideoState.PixmapLine=0;
+
         SysVIATriggerCA1Int(1);
         VideoState.VSyncState=3;
       };
@@ -1050,8 +1054,10 @@ void VideoDoScanLine(void) {
         VideoAddCursor();
         VideoAddLEDs();
 		CurY=-1;
-        mainWin->updateLines(VideoState.PreviousFirstPixmapLine,
-                             VideoState.PreviousLastPixmapLine-VideoState.PreviousFirstPixmapLine+1);
+        int n = VideoState.PreviousLastPixmapLine-VideoState.PreviousFirstPixmapLine+1;
+        if (n > MAX_VIDEO_SCAN_LINES)
+          n = MAX_VIDEO_SCAN_LINES;
+        mainWin->updateLines(VideoState.PreviousFirstPixmapLine, n);
       }
       VideoStartOfFrame();
       AdjustVideo();
@@ -1063,6 +1069,10 @@ void VideoDoScanLine(void) {
 
 /*-------------------------------------------------------------------------------------------------------------*/
 void AdjustVideo() {
+	ActualScreenWidth=CRTC_HorizontalDisplayed*HSyncModifier;
+	if (ActualScreenWidth>800) ActualScreenWidth=800;
+	if (ActualScreenWidth<640) ActualScreenWidth=640;
+
 	InitialOffset=0-(((CRTC_HorizontalTotal+1)/2)-((HSyncModifier==8)?40:20));
 	HStart=InitialOffset+((CRTC_HorizontalTotal+1)-(CRTC_HorizontalSyncPos+(CRTC_SyncWidth&15)));
 	HStart+=(HSyncModifier==8)?2:1;
@@ -1125,9 +1135,6 @@ void CRTCWrite(int Address, int Value) {
 		if (CRTC_HorizontalDisplayed > 127)
 			CRTC_HorizontalDisplayed = 127;
         FastTable_Valid=0;
-		ActualScreenWidth=CRTC_HorizontalDisplayed*8;
-		if (ActualScreenWidth>800) ActualScreenWidth=800;
-		if (ActualScreenWidth<640) ActualScreenWidth=640;
 		AdjustVideo();
 		break;
 
@@ -1138,9 +1145,6 @@ void CRTCWrite(int Address, int Value) {
 
       case 3:
         CRTC_SyncWidth=Value;
-		ActualScreenWidth=CRTC_HorizontalDisplayed*8;
-		if (ActualScreenWidth>800) ActualScreenWidth=800;
-		if (ActualScreenWidth<640) ActualScreenWidth=640;
 		AdjustVideo();
 //		fprintf(crtclog,"V Sync width: %d\n",(Value>>4)&15);
         break;
@@ -1162,7 +1166,7 @@ void CRTCWrite(int Address, int Value) {
 		break;
 
       case 7:
-        CRTC_VerticalSyncPos=Value;
+        CRTC_VerticalSyncPos=(Value & 0x7f);
         AdjustVideo();
 		break;
 

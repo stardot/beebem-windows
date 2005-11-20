@@ -226,6 +226,15 @@ class BeebWin  {
 	int			m_MotionBlur;
 	char 		m_BlurIntensities[8];
 
+	// AVI vars
+	bmiData 	m_Avibmi;
+	HBITMAP		m_AviDIB;
+	HDC 		m_AviDC;
+	char*		m_AviScreen;
+	int			m_AviFrameSkip;
+	int			m_AviFrameSkipCount;
+	int			m_MenuIdAviResolution;
+	int			m_MenuIdAviSkip;
 
 	// DirectX stuff
 	BOOL					m_DXInit;
@@ -273,6 +282,7 @@ class BeebWin  {
 	void TogglePrinter(void);
 	void TranslatePrinterPort(void);
 	void SaveWindowPos(void);
+	void CaptureVideo(void);
 
 }; /* BeebWin */
 

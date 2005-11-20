@@ -13,11 +13,13 @@ file3=C:\BeebEm\DiscIms\ide3.dat
 file4=C:\BeebEm\DiscIms\ide0.dat
 file5=C:\BeebEm\DiscIms\ide1.dat
 file6=C:\BeebEm\DiscIms\ide2.dat
+file7=C:\BeebEm\DiscIms\standard_utilities_2.dsd
 fulldirectory=
 
 [BeebFile]
 file0=C:\BeebEm\BeebFile\6502Tube.rom
 file1=C:\BeebEm\BeebFile\HiBasic3.rom
+file2=C:\BeebEm\BeebFile\CCPN102.ROM
 SubDir0=BeebFile\BBC
 SubDir1=BeebFile\BBCINT
 SubDir2=BeebFile\BPLUS
@@ -42,6 +44,7 @@ file5=C:\BeebEm\BeebFile\M128\terminal.rom
 file6=C:\BeebEm\BeebFile\M128\view.rom
 file7=C:\BeebEm\BeebFile\M128\viewsht.rom
 file8=C:\BeebEm\BeebFile\M128\ADFS1-53.rom
+file9=C:\BeebEm\BeebFile\M128\MCP122.ABM
 fulldirectory=
 
 [TopDir]
@@ -64,6 +67,8 @@ SubDir4=Tapes
 file11=C:\BeebEm\Teletext.fnt
 SubDir5=Hardware
 file12=C:\BeebEm\zlib1.dll
+file13=C:\BeebEm\README_Z80.TXT
+file14=C:\BeebEm\Roms_Torch.cfg
 
 [BeebFile\BPLUS]
 file0=C:\BeebEm\BeebFile\BPLUS\B+MOS.rom

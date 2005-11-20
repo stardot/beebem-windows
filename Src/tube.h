@@ -25,6 +25,9 @@
 
 #include "port.h"
 
+extern unsigned char R1Status;
+void ResetTube(void);
+
 extern unsigned char EnableTube,TubeEnabled;
 // EnableTube - Should the tube be enabled on next start - 1=yes
 // TubeEnabled - Is the tube enabled by default - 1=yes
@@ -52,7 +55,15 @@ void DoTubeInterrupt(void);
 void WrapTubeCycles(void);
 void SyncTubeProcessor(void);
 unsigned char ReadTubeFromHostSide(unsigned char IOAddr);
+unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr);
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData);
+void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData);
+
+unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr);
+unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr);
+void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData);
+void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData);
+
 unsigned char TubeReadMem(unsigned int IOAddr);
 void DebugTubeState(void);
 void SaveTubeUEF(FILE *SUEF);

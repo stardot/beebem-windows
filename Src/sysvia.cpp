@@ -80,6 +80,11 @@ static unsigned int KBDCol=0;
 static char SysViaKbdState[10][8]; /* Col,row */
 static int KeysDown=0;
 
+// Timer write adjustments. Compensate for two things:
+//  - write happens in last cycle of instruction so compenstate for instruction cycles 
+//    that will be subtracted from the timers
+//  - read of a timer happens 3 cycles into an instruction (more or less!) so run 
+//    timers 3 cycles ahead of CPU clock, then timer reads do not need any adjustment
 unsigned char WCDelay1,WCDelay2;
 
 /*--------------------------------------------------------------------------*/
@@ -335,7 +340,7 @@ void SysVIAWrite(int Address, int Value) {
       };
       UpdateIFRTopBit();
       SysVIAState.timer1hasshot=0;
-      WCDelay1=4;
+      WCDelay1=Cycles - 3; // See comment at top of file
       break;
 
     case 7:
@@ -357,7 +362,7 @@ void SysVIAWrite(int Address, int Value) {
       SysVIAState.ifr &=0xdf; // clear timer 2 ifr 
       UpdateIFRTopBit();
       SysVIAState.timer2hasshot=0;
-	  WCDelay2=4;
+      WCDelay2=Cycles - 3; // See comment at top of file
       break;
 
     case 10:
@@ -424,7 +429,10 @@ int SysVIARead(int Address) {
       break;
 
     case 4: /* Timer 1 lo counter */
-      tmp=(SysVIAState.timer1c / 2) & 0xff;
+      if (SysVIAState.timer1c < 0) /* Adjust for dividing -ve count by 2 */
+        tmp=((SysVIAState.timer1c - 1) / 2) & 0xff;
+      else
+        tmp=(SysVIAState.timer1c / 2) & 0xff;
       SysVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
       UpdateIFRTopBit();
       break;
@@ -508,7 +516,7 @@ void SysVIATriggerCA1Int(int value) {
 /*--------------------------------------------------------------------------*/
 void SysVIA_poll_real(void) {
   int tCycles;
-  if (SysVIAState.timer1c<0) {
+  if (SysVIAState.timer1c<-2) { // T1 goes to FF before latches reloaded
     tCycles=abs(SysVIAState.timer1c);
     SysVIAState.timer1c=(SysVIAState.timer1l * 2)-(tCycles-4);
     if ((SysVIAState.timer1hasshot==0) || (SysVIAState.acr & 0x40)) {
