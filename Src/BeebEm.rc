@@ -218,8 +218,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 3,2,0,0
+ PRODUCTVERSION 3,2,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -232,25 +232,25 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "040904b0"
+        BLOCK "080904b0"
         BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator\0"
             VALUE "CompanyName", "-\0"
             VALUE "FileDescription", "BeebEm\0"
-            VALUE "FileVersion", "3.0\0"
+            VALUE "FileVersion", "3.2\0"
             VALUE "InternalName", "BeebEm\0"
-            VALUE "LegalCopyright", "Copyright © 2005\0"
+            VALUE "LegalCopyright", "Copyright © 2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "BeebEm.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "BeebEm\0"
-            VALUE "ProductVersion", "3.0\0"
+            VALUE "ProductVersion", "3.2\0"
             VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x409, 1200
+        VALUE "Translation", 0x809, 1200
     END
 END
 
@@ -318,6 +318,10 @@ BEGIN
                     BS_LEFTTEXT | WS_TABSTOP,462,128,33,10
     CONTROL         "",IDC_DEBUGSERIALBRK,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,504,128,16,10
+    CONTROL         "Econet",IDC_DEBUGECONET,"Button",BS_AUTOCHECKBOX | 
+                    BS_LEFTTEXT | WS_TABSTOP,456,144,39,10
+    CONTROL         "",IDC_DEBUGECONETBRK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,504,144,16,10
 END
 
 IDD_TAPECONTROL DIALOG DISCARDABLE  0, 0, 187, 382
@@ -519,6 +523,7 @@ BEGIN
     POPUP "&Sound"
     BEGIN
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
+        MENUITEM "Speech On/Off",               IDM_SPEECH
         MENUITEM "Sound Chip",                  IDM_SOUNDCHIP
         MENUITEM SEPARATOR
         POPUP "Sound &Effects"
@@ -571,6 +576,8 @@ BEGIN
             MENUITEM "&Select FDC Board...",        ID_FDC_DLL
         END
         MENUITEM "65C02 &Second Processor",     IDM_TUBE
+        MENUITEM "&Master 512 Second Processor", IDM_TUBE186
+        MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
         MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
         MENUITEM SEPARATOR
         POPUP "&Allow ROM writes"
@@ -624,6 +631,8 @@ BEGIN
             MENUITEM "&1772 Bytes",                 ID_1773
             MENUITEM "&441 Bytes",                  ID_443
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Econet On/Off",               ID_ECONET
     END
     POPUP "&Options"
     BEGIN

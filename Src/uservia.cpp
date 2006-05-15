@@ -21,7 +21,8 @@
 /* User VIA support file for the beeb emulator - David Alan Gilbert 11/12/94 */
 /* Modified from the system via */
 
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 
 #include "6502core.h"
@@ -29,11 +30,14 @@
 #include "via.h"
 #include "viastate.h"
 #include "debug.h"
+#include "tube.h"
 
 #ifdef WIN32
 #include <windows.h>
 #include "main.h"
 #endif
+
+using namespace std;
 
 /* AMX mouse (see uservia.h) */
 int AMXMouseEnabled = 0;
@@ -230,13 +234,22 @@ int UserVIARead(int Address) {
             AMXButtons &= ~AMX_MIDDLE_BUTTON;
         }
 
-        tmp &= 0x1f;
-        tmp |= (AMXButtons ^ 7) << 5;
-        UserVIAState.ifr&=0xe7;
+        if (Tube186Enabled)
+        {
+            tmp &= 0xf8;
+            tmp |= (AMXButtons ^ 7);
+        }
+        else
+        {
+            tmp &= 0x1f;
+            tmp |= (AMXButtons ^ 7) << 5;
+            UserVIAState.ifr&=0xe7;
+        }
+        
         UpdateIFRTopBit();
 
         /* Set up another interrupt if not at target */
-        if (AMXTargetX != AMXCurrentX || AMXTargetY != AMXCurrentY) {
+        if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) ) {
           SetTrigger(AMX_TRIGGER, AMXTrigger);
         }
         else {
@@ -381,45 +394,98 @@ void UserVIAReset(void) {
   ClearTrigger(PrinterTrigger);
 } /* UserVIAReset */
 
+
+int sgn(int number)
+{
+	if (number > 0) return 1;
+	if (number < 0) return -1;
+	return 0;
+}
+
 /*-------------------------------------------------------------------------*/
 void AMXMouseMovement() {
-	ClearTrigger(AMXTrigger);
+static int xdir = 0;
+static int ydir = 0;
+static int xpulse = 0x08;
+static int ypulse = 0x10;
+static int lastxdir = 0;
+static int lastydir = 0;
+static bool first = true;
+    
+    ClearTrigger(AMXTrigger);
 
 	/* Check if there is a outstanding interrupt */
 	if (AMXMouseEnabled && (UserVIAState.ifr & 0x18) == 0)
 	{
-		if (AMXTargetX != AMXCurrentX || AMXTargetY != AMXCurrentY)
+
+    	if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) )
 		{
-			if (AMXTargetX != AMXCurrentX)
-			{
-				UserVIAState.ifr |= 0x10;
-				if (AMXTargetX < AMXCurrentX)
-				{
-					UserVIAState.irb &= ~0x01;
-					AMXCurrentX--;
-				}
-				else
-				{
-					UserVIAState.irb |= 0x01;
-					AMXCurrentX++;
-				}
-			}
-			if (AMXTargetY != AMXCurrentY)
-			{
-				UserVIAState.ifr |= 0x08;
-				if (AMXTargetY > AMXCurrentY)
-				{
-					UserVIAState.irb &= ~0x04;
-					AMXCurrentY++;
-				}
-				else
-				{
-					UserVIAState.irb |= 0x04;
-					AMXCurrentY--;
-				}
-			}
-			UpdateIFRTopBit();
-		}
+
+            if (Tube186Enabled)
+            {
+    
+		    	xdir = sgn(AMXTargetX - AMXCurrentX);
+
+			    if (xdir != 0)
+    			{
+	    			UserVIAState.ifr |= 0x10;
+		    		if (lastxdir == xdir) UserVIAState.irb ^= xpulse;
+			    	lastxdir = xdir;
+				    AMXCurrentX += xdir;
+    			}
+
+	    		ydir = sgn(AMXTargetY - AMXCurrentY);
+
+    			if (ydir != 0)
+	    		{
+		    		UserVIAState.ifr |= 0x08;
+    
+	    			if (first)
+    				{
+	    				UserVIAState.irb &= ~ypulse;
+		    			first = false;
+				    }
+
+    				if (lastydir == ydir) UserVIAState.irb ^= ypulse;
+	    			lastydir = ydir;
+		    		AMXCurrentY += ydir;
+
+			    }
+            }
+            else
+            {
+
+		    	if (AMXTargetX != AMXCurrentX)
+			    {
+    				UserVIAState.ifr |= 0x10;
+	    			if (AMXTargetX < AMXCurrentX)
+		    		{
+			    		UserVIAState.irb &= ~0x01;
+				    	AMXCurrentX--;
+    				}
+	    			else
+		    		{
+			    		UserVIAState.irb |= 0x01;
+				    	AMXCurrentX++;
+    				}
+	    		}
+		    	if (AMXTargetY != AMXCurrentY)
+			    {
+    				UserVIAState.ifr |= 0x08;
+	    			if (AMXTargetY > AMXCurrentY)
+		    		{
+			    		UserVIAState.irb &= ~0x04;
+				    	AMXCurrentY++;
+    				}
+	    			else
+		    		{
+			    		UserVIAState.irb |= 0x04;
+    					AMXCurrentY--;
+	    			}
+		    	}
+            }
+		    UpdateIFRTopBit();
+        }
 	}
 }
 

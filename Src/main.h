@@ -32,5 +32,7 @@
 extern unsigned char MachineType;
 extern BeebWin *mainWin;
 extern HINSTANCE hInst;
+void WriteLog(char *fmt, ...);
+extern int trace_186;
 
 #endif

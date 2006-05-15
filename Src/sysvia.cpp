@@ -22,7 +22,8 @@
 keyboard emulation - David Alan Gilbert 30/10/94 */
 /* CMOS Ram finalised 06/01/2001 - Richard Gellman */
 
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <time.h>
 #include <windows.h>
@@ -36,10 +37,13 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "main.h"
 #include "viastate.h"
 #include "debug.h"
+#include "speech.h"
 
 #ifdef WIN32
 #include <windows.h>
 #endif
+
+using namespace std;
 
 /* Clock stuff for Master 128 RTC */
 time_t SysTime;
@@ -99,11 +103,11 @@ static void UpdateIFRTopBit(void) {
 }; /* UpdateIFRTopBit */
 
 void PulseSysViaCB1(void) {
-/*	// Set IFR bit 4
+/// Set IFR bit 4 - AtoD end of conversion interrupt
 	if (SysVIAState.ier & 16) {
 		SysVIAState.ifr|=16;
 		UpdateIFRTopBit();
-	} */
+	}
 }
 
 /*--------------------------------------------------------------------------*/
@@ -220,6 +224,11 @@ static void IC32Write(unsigned char Value) {
 #endif
   /* cerr << "IC32State now=" << hex << int(IC32State) << dec << "\n"; */
 
+  if ( (bit == 2) && ( (Value & 8)  == 0) && (MachineType != 3) )		//  Write Command
+  {
+	  tms5220_data_w(SlowDataBusWriteValue);
+  }
+
   DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
 } /* IC32Write */
 
@@ -252,8 +261,7 @@ static void SlowDataBusWrite(unsigned char Value) {
   } 
 #endif
 
-  if (!(IC32State & 4)) {
-  }
+
 } /* SlowDataBusWrite */
 
 
@@ -268,9 +276,17 @@ static int SlowDataBusRead(void) {
   result=(SysVIAState.ora & SysVIAState.ddra);
   if (CMOS.Enabled) result=(SysVIAState.ora & ~SysVIAState.ddra);
   /* I don't know this lot properly - just put in things as we figure them out */
-  if (MachineType!=3) { if (KbdOP()) result|=128; }
+  if (MachineType!=3) if (!(IC32State & 8)) { if (KbdOP()) result|=128; }
   if ((MachineType==3) && (!CMOS.Enabled)) {
 	  if (KbdOP()) result|=128; 
+  }
+
+  if ((!(IC32State & 2)) && (MachineType != 3) ) {
+    result = tms5220_status_r();
+  }
+
+  if ((!(IC32State & 4)) && (MachineType != 3) ) {
+	  result = 0xff;
   }
 
   /* cerr << "SlowDataBusRead giving 0x" << hex << result << dec << "\n"; */
@@ -359,6 +375,7 @@ void SysVIAWrite(int Address, int Value) {
       SysVIAState.timer2l&=0xff;
       SysVIAState.timer2l|=(Value & 0xff)<<8;
       SysVIAState.timer2c=SysVIAState.timer2l * 2;
+      if (SysVIAState.timer2c == 0) SysVIAState.timer2c = 0x20000; 
       SysVIAState.ifr &=0xdf; // clear timer 2 ifr 
       UpdateIFRTopBit();
       SysVIAState.timer2hasshot=0;
@@ -417,7 +434,23 @@ int SysVIARead(int Address) {
       tmp |= 32;    /* Fire button 2 released */
       if (!JoystickButton)
         tmp |= 16;
-      tmp |= 192; /* Speech system non existant */
+      if (MachineType == 3)
+      {
+        tmp |= 192; /* Speech system non existant */
+      }
+      else
+      {
+        if (SpeechDefault)
+        {
+          if (tms5220_int_r()) tmp |= 64;
+          if (tms5220_ready_r() == 0) tmp |= 128;
+        }
+        else
+        {
+          tmp |= 192; /* Speech system non existant */
+        }
+      }
+      UpdateIFRTopBit();
       break;
 
     case 2:

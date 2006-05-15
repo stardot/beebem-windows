@@ -27,7 +27,8 @@
 
 /* Richard Gellman 4/2/2001 AAAARGH SHADOW RAM! HELP! */
 
-#include "iostream.h"
+#include <iostream>
+#include <fstream>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -40,6 +41,7 @@
 #include "uefstate.h"
 #include "beebsound.h"
 #include "debug.h"
+#include "teletext.h"
 
 #ifdef BEEB_DOTIME
 #include <sys/times.h>
@@ -50,6 +52,8 @@
 #include <unistd.h>
 #endif
 #endif
+
+using namespace std;
 
 /* Bit assignments in control reg:
    0 - Flash colour (0=first colour, 1=second)
@@ -627,6 +631,8 @@ static void VideoStartOfFrame(void) {
     IncTrigger(((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
   };
 
+  TeleTextPoll();
+
 }; /* VideoStartOfFrame */
 
 
@@ -1032,8 +1038,8 @@ void VideoDoScanLine(void) {
         // screen can get very stretched.
         if (VideoState.FirstPixmapLine>32)
           VideoState.FirstPixmapLine=32;
-        if ((VideoState.LastPixmapLine-VideoState.FirstPixmapLine)<256)
-          VideoState.LastPixmapLine=256+VideoState.FirstPixmapLine;
+        if ((VideoState.LastPixmapLine-VideoState.FirstPixmapLine)<255)
+          VideoState.LastPixmapLine=255+VideoState.FirstPixmapLine;
 
         VideoState.PreviousFirstPixmapLine=VideoState.FirstPixmapLine;
         VideoState.FirstPixmapLine=-1;

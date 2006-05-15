@@ -339,7 +339,7 @@ function SetupFolders()
  begin
 
   // Delete old entries from BeebEm menu folder
-  DeleteProgramFolder( SHELL_OBJECT_FOLDER );
+  // DeleteProgramFolder( SHELL_OBJECT_FOLDER );
 
   svPath = TARGETDIR ^ "BeebEm.exe";
   LongPathToQuote ( svPath , TRUE );
@@ -606,6 +606,7 @@ function DialogShowSdFinishReboot()
  // --- include script file section ---
 
 #include "sddialog.rul"
+
 
 
 

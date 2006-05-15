@@ -152,11 +152,14 @@ class BeebWin  {
 	void SaveOnExit(void);
 	void ResetTiming(void);
 	int TranslateKey(int, int, int&, int&);
-	void HandleCommandLine(char *cmd);
+	void ParseCommandLine(void);
+	void HandleCommandLineFile(void);
 	void NewTapeImage(char *FileName);
 	const char *GetAppPath(void) { return m_AppPath; }
+	void QuickLoad(void);
+	void QuickSave(void);
 
-	unsigned char cols[9];
+	unsigned char cols[256];
     HMENU		m_hMenu;
 	BOOL		m_frozen;
 	char*		m_screen;
@@ -225,6 +228,7 @@ class BeebWin  {
 	int			m_LastNLines;
 	int			m_MotionBlur;
 	char 		m_BlurIntensities[8];
+	char *		m_CommandLineFileName;
 
 	// AVI vars
 	bmiData 	m_Avibmi;
@@ -256,6 +260,7 @@ class BeebWin  {
 	void InitMenu(void);
 	void UpdateMonitorMenu();
 	void UpdateSerialMenu(HMENU hMenu);
+	void UpdateEconetMenu(HMENU hMenu);
 	void UpdateSFXMenu();
 	void InitDirectX(void);
 	HRESULT InitSurfaces(void);

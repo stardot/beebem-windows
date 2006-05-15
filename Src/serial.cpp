@@ -73,7 +73,7 @@ CycleCountT TapeTrigger=CycleCountTMax;
 
 int UEF_BUF=0,NEW_UEF_BUF=0;
 int TapeClock=0,OldClock=0;
-int TapeClockSpeed;
+int TapeClockSpeed = 5600;
 int UnlockTape=1;
 
 // Tape control variables

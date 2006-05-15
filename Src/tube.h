@@ -28,7 +28,12 @@
 extern unsigned char R1Status;
 void ResetTube(void);
 
-extern unsigned char EnableTube,TubeEnabled;
+extern unsigned char EnableTube,TubeEnabled,Tube186Enabled,AcornZ80;
+extern int TorchTubeActive;
+
+extern unsigned char TubeintStatus; /* bit set (nums in IRQ_Nums) if interrupt being caused */
+extern unsigned char TubeNMIStatus; /* bit set (nums in NMI_Nums) if NMI being caused */
+
 // EnableTube - Should the tube be enabled on next start - 1=yes
 // TubeEnabled - Is the tube enabled by default - 1=yes
 

@@ -19,11 +19,13 @@
 /* Please report any problems to the author at beebem@treblig.org           */
 /****************************************************************************/
 /* Beebemulator - memory subsystem - David Alan Gilbert 16/10/94 */
+// Econet emulation: Rob O'Donnell robert@irrelevant.com 28/12/2004
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "iostream.h"
+#include <iostream>
+#include <fstream>
 
 #include "6502core.h"
 #include "disc8271.h"
@@ -37,10 +39,16 @@
 #include "serial.h"
 #include "tube.h"
 #include "errno.h"
+#include "scsi.h"
+#include "sasi.h"
 #include "uefstate.h"
-#include "ide.h"
-#include "mem_mmu.h"
-#include "simz80.h"
+#include "z80mem.h"
+#include "z80.h"
+#include "econet.h"		//Rob
+#include "debug.h"		//Rob added for INTON/OFF reporting only
+#include "teletext.h"
+
+using namespace std;
 
 /* Each Rom now has a Ram/Rom flag */
 int RomWritable[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
@@ -87,6 +95,10 @@ char RomPath[512];
 int EFDCAddr; // 1770 FDC location
 int EDCAddr; // Drive control location
 bool NativeFDC; // TRUE for 8271, FALSE for DLL extension
+
+// Econet NMI enable signals. Decoded from address bus and latched by IC97
+#define INTON	TRUE
+#define INTOFF	FALSE
 
 /*----------------------------------------------------------------------------*/
 /* Perform hardware address wrap around */
@@ -337,14 +349,48 @@ int BeebReadMem(int Address) {
 		return(Read_SERPROC());
 	}
 
+	/* Rob: BBC AUG says FE20 is econet stn no. for bbc b. [It's in cmos for a master,]
+	   This is wrong and doesn't work. Study of the circuit diagram for a model B (IC26) shows it's at 
+	   FE18-FE1F. This now works.  AUG says read station also enables Econet NMI but again the circuit 
+	   shows the read-station select line is also INTOFF. (and it's any access to FE18, not just a read.) 
+	*/ 
+	if (EconetEnabled &&
+		((MachineType!=3 && (Address & ~3)==0xfe18) ||
+		 (MachineType==3 && (Address & ~3)==0xfe38)) ) {
+		if (DebugEnabled)
+			DebugDisplayTrace(DEBUG_ECONET, true, "Econet: INTOFF");
+		EconetNMIenabled = INTOFF; 
+		return(Read_Econet_Station()); 
+	}
+
 	if (Address>=0xfe18 && Address<=0xfe20 && MachineType==3) {
 		return(AtoDRead(Address - 0xfe18));
 	}
 
-	if ((Address & ~3)==0xfe20) {
-		return(VideoULARead(Address & 0xf)); // Master uses fe24 to fe2f for FDC
+	/* Rob: BBC AUG states video ULA at FE20-21 is write-only - why support reading?
+	   The circuit diagram shows read of FE20-FE27 is INTON (maybe this is where AUG confusion came from)
+	   INTON & INTOFF enable/disable NMI from the 68B54 via flip flop IC97, IC27 & IC91.  Guess what happens
+	   if the ADLC is holding an NMI which was masked by INTOFF and you turn INTON ....!
+	   (NMI from the FDC is always enabled)
+	*/
+	if (EconetEnabled &&
+		((MachineType!=3 && (Address & ~3)==0xfe20) ||
+		 (MachineType==3 && (Address & ~3)==0xfe3c)) ) {
+		if (DebugEnabled) DebugDisplayTrace(DEBUG_ECONET, true, "Econet: INTON");
+		if (!EconetNMIenabled) {  // was off
+			EconetNMIenabled = INTON;  // turn on
+			if (ADLC.status1 & 128) {			// irq pending?
+				NMIStatus|=1<<nmi_econet; 
+				if (DebugEnabled) DebugDisplayTrace(DEBUG_ECONET, true, "Econet: delayed NMI asserted");
+			}
+		}
 	}
 
+	if ((Address & ~3)==0xfe20) {
+		return(VideoULARead(Address & 0xf));
+	}
+
+	// Master uses fe24 to fe2f for FDC
 	if (Address==0xfe24 && MachineType==3) {
 		return(ReadFDCControlReg());
 	}
@@ -366,7 +412,9 @@ int BeebReadMem(int Address) {
 	}
 
 	if ((Address & ~0x1f)==0xfea0) {
-		return(0xfe); /* Disable econet */
+		if (EconetEnabled)
+			return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
+		return(0xfe); // if not enabled
 	}
 
 	if ((Address & ~0x1f)==0xfec0 && MachineType!=3) {
@@ -382,8 +430,16 @@ int BeebReadMem(int Address) {
 			return(ReadTubeFromHostSide(Address&7)); //Read From Tube
 	}
 
-	if ((Address & ~0x7)==0xfc40 && MachineType==3) {
-		return(IDERead(Address & 0x7));
+	if ((Address & ~0x3)==0xfc40) {
+		return(SCSIRead(Address & 0x3));
+	}
+	
+	if ((Address & ~0x3)==0xfc10) {
+		return(TeleTextRead(Address & 0x3));
+	}
+    
+    if ((Address & ~0x3)==0xfdf0) {
+		return(SASIRead(Address & 0x3));
 	}
 
 	if ((MachineType!=3) && (Address>=EFDCAddr) && (Address<(EFDCAddr+4)) && (!NativeFDC)) {
@@ -394,7 +450,7 @@ int BeebReadMem(int Address) {
 		return(mainWin->GetDriveControl());
 	}
 
-	return(0);
+	return(0xFF);
 } /* BeebReadMem */
 
 /*----------------------------------------------------------------------------*/
@@ -680,6 +736,15 @@ void BeebWriteMem(int Address, int Value) {
 		return;
 	}
 
+	//Rob: econet NMI mask
+	if (EconetEnabled &&
+		((MachineType!=3 && (Address & ~8)==0xfe18) ||
+		 (MachineType==3 && (Address & ~8)==0xfe38)) ) {
+		if (DebugEnabled)
+			DebugDisplayTrace(DEBUG_ECONET, true, "Econet: INTOFF(w)");
+		EconetNMIenabled = INTOFF; 
+	}
+
 	if ((Address & ~0x7)==0xfe18 && MachineType==3) {
 		AtoDWrite((Address & 0xf),Value);
 		return;
@@ -717,6 +782,12 @@ void BeebWriteMem(int Address, int Value) {
 		return;
 	}
 
+	//Rob: add econet
+	if (Address>=0xfeA0 && Address<0xfebf && (EconetEnabled) ) {
+		WriteEconetRegister((Address & 3), Value);
+		return;
+	}
+
 	if ((Address & ~0x1f)==0xfec0 && MachineType!=3) {
 		AdjustForIOWrite();
 		AtoDWrite((Address & 0xf),Value);
@@ -731,8 +802,18 @@ void BeebWriteMem(int Address, int Value) {
 			WriteTubeFromHostSide(Address&7,Value);
 	}
 
-	if ((Address & ~0x7)==0xfc40 && MachineType==3) {
-		IDEWrite((Address & 0x7),Value);
+	if ((Address & ~0x3)==0xfc40) {
+		SCSIWrite((Address & 0x3),Value);
+		return;
+	}
+
+	if ((Address & ~0x3)==0xfc10) {
+		TeleTextWrite((Address & 0x3),Value);
+		return;
+	}
+    
+    if ((Address & ~0x3)==0xfdf0) {
+		SASIWrite((Address & 0x3),Value);
 		return;
 	}
 
@@ -773,7 +854,7 @@ void BeebReadRoms(void) {
  unsigned char sc,isrom;
  unsigned char Shortener=1; // Amount to shorten filename by
  
- /* Read all ROM files in the beebfile directory */
+ /* Read all ROM files in the BeebFile directory */
  // This section rewritten for V.1.32 to take account of roms.cfg file.
  strcpy(TmpPath,RomPath);
  strcat(TmpPath,"Roms.cfg");
@@ -813,15 +894,17 @@ void BeebReadRoms(void) {
 	 if (MachineType==3) for (romslot=0;romslot<51;romslot++) fgets(RomName,80,RomCfg);
 	 // read OS ROM
 	 fgets(RomName,80,RomCfg);
+	 if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
+	 if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
 	 strcpy(fullname,RomName);
 	 if ((RomName[0]!='\\') && (RomName[1]!=':')) {
 		 strcpy(fullname,RomPath);
-		 strcat(fullname,"/beebfile/");
+		 strcat(fullname,"/BeebFile/");
 		 strcat(fullname,RomName);
 	 }
 	 // for some reason, we have to change \ to /  to make C work...
 	 for (sc = 0; fullname[sc]; sc++) if (fullname[sc] == '\\') fullname[sc] = '/';
-	 fullname[strlen(fullname)-1]=0;
+//	 fullname[strlen(fullname)-1]=0;
 	 InFile=fopen(fullname,"rb");
 	 if (InFile!=NULL) { fread(WholeRam+0xc000,1,16384,InFile); fclose(InFile); }
   	 else {
@@ -832,20 +915,26 @@ void BeebReadRoms(void) {
 	 // read paged ROMs
 	 for (romslot=15;romslot>=0;romslot--) {
 		fgets(RomName,80,RomCfg);
+		if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
+		if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
 		strcpy(fullname,RomName);
 		if ((RomName[0]!='\\') && (RomName[1]!=':')) {
  			strcpy(fullname,RomPath);
-			strcat(fullname,"/beebfile/");
+			strcat(fullname,"/BeebFile/");
 			strcat(fullname,RomName);
 		}
-		isrom=1; RomWritable[romslot]=0; Shortener=1;
+		isrom=1; RomWritable[romslot]=0; Shortener=0;
+		while ((RomName[strlen(RomName)-1] == '\r') || (RomName[strlen(RomName)-1] == '\n'))
+		{
+			RomName[strlen(RomName)-1] = 0;
+		}
 		if (strncmp(RomName,"EMPTY",5)==0)  { RomWritable[romslot]=0; isrom=0; }
 		if (strncmp(RomName,"RAM",3)==0) { RomWritable[romslot]=1; isrom=0; }
-		if (strncmp(RomName+(strlen(RomName)-5),":RAM",4)==0) {
+		if (strncmp(RomName+(strlen(RomName)-4),":RAM",4)==0) {
 			// Writable ROM (don't ask, Mark De Weger should be happy now ;) Hi Mark! )
 			RomWritable[romslot]=1; // Make it writable
 			isrom=1; // Make it a ROM still
-			Shortener=5; // Shorten filename
+			Shortener=4; // Shorten filename
 		}
 		for (sc = 0; fullname[sc]; sc++) if (fullname[sc] == '\\') fullname[sc] = '/';
 		fullname[strlen(fullname)-Shortener]=0;

@@ -24,7 +24,8 @@
 
 #include "beebsound.h"
 
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include <windows.h>
 #include <process.h>
 #include <math.h>
@@ -45,6 +46,8 @@
 #include "beebwin.h"
 #include "uefstate.h"
 #include "avi.h"
+#include "main.h"
+#include "speech.h"
 
 extern AVIWriter *aviWriter;
 
@@ -56,6 +59,7 @@ extern AVIWriter *aviWriter;
 static unsigned char SoundBuf[MAXBUFSIZE];
 static unsigned char RelayOnBuf[2048];
 static unsigned char RelayOffBuf[2048];
+unsigned char SpeechBuf[MAXBUFSIZE];
 
 static unsigned char *PROnBuf=RelayOnBuf;
 static unsigned char *PROffBuf=RelayOffBuf;
@@ -239,8 +243,19 @@ void MuteSound(void) {
 void PlayUpTil(double DestTime) {
 	int tmptotal,channel,bufinc,tapetotal;
 	char Extras;
+	int SpeechPtr = 0;
+
+	if (MachineType != 3 && SpeechEnabled)
+	{
+		memset(SpeechBuf, 128, sizeof(SpeechBuf));
+		int len = (int) (DestTime - OurTime + 1);
+		if (len > MAXBUFSIZE)
+			len = MAXBUFSIZE;
+		tms5220_update(SpeechBuf, len);
+	}
 
 	while (DestTime>OurTime) {
+
 		for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
 			int tt;
 			tmptotal=0;
@@ -374,6 +389,9 @@ void PlayUpTil(double DestTime) {
 					}
 				}
 			}
+
+			// Mix in speech sound
+			if (SpeechEnabled) if (MachineType != 3) tmptotal += (SpeechBuf[SpeechPtr++]-128)*10;
 
 			// Mix in relay sound here
 			if (Relay==1) tmptotal+=(RelayOffBuf[RelayPos++]-127)*10;

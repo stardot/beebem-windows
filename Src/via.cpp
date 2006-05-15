@@ -22,7 +22,8 @@
 
 #ifndef VIA_HEADER
 #define VIA_HEADER
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include "via.h"
 #include <stdio.h>
 #include "sysvia.h"
@@ -30,6 +31,8 @@
 #include "uefstate.h"
 #include "viastate.h"
 #include "debug.h"
+
+using namespace std;
 
 void VIAReset(VIAState *ToReset) {
   ToReset->ora=ToReset->orb=0xff;

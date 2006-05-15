@@ -22,7 +22,8 @@
 
 /* Mike Wyatt 30/8/97 - Added disc write and format support */
 
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,10 @@
 #include "beebmem.h"
 #include "disc1770.h"
 #endif
+
+using namespace std;
+
+extern int TorchTube;
 
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 static unsigned char ResultReg;
@@ -171,9 +176,11 @@ static void InitDiscStore(void) {
 /* Given a logical track number accounts for bad tracks                     */
 static int SkipBadTracks(int Unit, int trackin) {
   int offset=0;
-  if (Internal_BadTracks[Unit][0]<=trackin) offset++;
-  if (Internal_BadTracks[Unit][1]<=trackin) offset++;
-    
+  if (!TorchTube)	// If running under Torch Z80, ignore bad tracks
+  {
+    if (Internal_BadTracks[Unit][0]<=trackin) offset++;
+    if (Internal_BadTracks[Unit][1]<=trackin) offset++;
+  }  
   return(trackin+offset);
 }; /* SkipBadTracks */
 
@@ -1061,7 +1068,7 @@ void Disc8271_poll_real(void) {
 */
 static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
   int Valid=1;
-  int CatEntries;
+  int CatEntries=0;
   int File;
   unsigned char c;
 
@@ -1469,9 +1476,19 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
   {
     /* Now load the new image into the correct drive */
     if (Heads==1)
-      LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
+	{
+      if ((MachineType==3) || (!NativeFDC))
+        Load1770DiscImage(FileName,DriveNum,0,mainWin->m_hMenu);
+      else
+        LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
+	}
     else
-      LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
+	{
+      if ((MachineType==3) || (!NativeFDC))
+        Load1770DiscImage(FileName,DriveNum,1,mainWin->m_hMenu);
+      else
+        LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
+	}
   }
 };  /* CreateDiscImage */
 

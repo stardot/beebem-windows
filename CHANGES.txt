@@ -349,3 +349,49 @@ Version 3.0 (Mike Wyatt)
 * Fixed bug with window positioning when task bar is on left or top of 
   screen.
 * Bumped version to 3.0 to keep in sync with the Mac version of BeebEm.
+
+Version 3.1 (Mike Wyatt, Rob O'Donnell, Jon Welch)
+-----------
+* Added econet emulation.  It works in Model B mode and Master 128 mode.
+  The Acorn level 1 and 2 file server software runs and stations can 
+  read/write files to the server.  Note that the default DFS ROM in Model B
+  mode has been changed to the Acorn DNFS ROM.
+  (Note also that TORCHNET works using the Torch Z80 Co-Processor)
+* Added some more command line options.  The hardware model and tube support
+  can be specified on the command line.  See the notes in readme.txt.
+* Fixed default read value for IO pages FRED and JIM.  Fixes graphics
+  corruption in tape version of Alien 8.
+* Fixed bug in video emulation where it was attempting to display one too
+  many lines causing visual artifacts (thanks to Phil Sainty for
+  highlighting this one).
+* Added SCSI ADFS Hard Disc support
+* Added SASI Torch Z80 Hard Disc support
+* Removed IDE support as no longer needed
+* Added Acorn ADFS 1.3 ROM to Model B and B Plus modes so SCSI hard disks
+  can be used.
+* Fixed problem with Alt key where certain keys get locked down
+* Fixed econet station allocation on PCs with multiple network
+  interfaces/cards (thanks to Sam Skivington).
+* Added keyboard shortcuts for Quicksave (keypad /) & Quickload (keypad *).
+  Quicksave now keeps the last 10 quicksave files so you can go back to an
+  earlier state using the load state menu option.
+* Changed to ignore DirectX errors during screen update.  Stops BeebEm 
+  reporting an error when switching between a full and non-full screen mode
+  instances of BeebEm.  DirectX appears to sort itself out after a second 
+  or two!
+* Fixed disk initialisation in the 1770 controller when creating a new disk
+  image.
+* Fixed disk formatting with the 1770 controller.
+
+Version 3.11 (Mike Wyatt)
+------------
+* Fixed random crashes
+* Fixed display of LEDs
+
+Version 3.2 (Jon Welch)
+-----------
+* Added support for Acorn Z80 Co-Processor
+* Added support for Master 512 Co-Processor
+* Added support for Acorn Teletext Adapter
+* Added some enhancements to the debugger from Thomas Horsten.  Display of
+  stack register and op codes for undocumented instructions.

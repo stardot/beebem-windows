@@ -105,7 +105,7 @@ one slot as RAM.
 Note that certain ROMs must be present for each emulation mode to work so do
 not remove these:
 
- BBC Model B          - OS12.ROM, BASIC2.ROM, WDFS.ROM
+ BBC Model B          - OS12.ROM, BASIC2.ROM, DNFS.ROM
  BBC Model B IntegraB - OS12.ROM, IBOS.ROM, BASIC2.ROM, WDFS.ROM
  BBC Model B Plus     - B+MOS.ROM, BASIC2.ROM, WDFS.ROM
  Master 128           - MOS.ROM, TERMINAL.ROM, BASIC4.ROM, DFS.ROM
@@ -145,6 +145,8 @@ remember to save it using the 'save preferences' option.
 
 The keypad +/- keys will change between the BeebEm fixed speeds.
 
+The keypad / and * keys will save and load a quickstate file.
+
 
 Using Disc Images
 -----------------
@@ -180,9 +182,12 @@ will need to make sure that 'Write Protect' is switched off on the File menu
 for the drive you are using.  Disc writes will then write data straight back
 to the image file on your PC disc.
 
-If you want to use ADFS discs in the Master 128 mode then load the ADFS disk
-image and type '*ADFS' to mount it.  You can also press A & F12 to mount an
-ADFS disc.
+If you want to use ADFS discs in the Master 128 mode then load an ADFS disk
+image (such as the MasterWelcome.adl image in discims) and type '*ADFS' to
+mount it.  You can also press A & F12 to mount an ADFS disc.
+
+ADFS is also supported in Model B and B Plus modes.  Note that in Model B
+mode you will need to select the Acorn 1770 disc controller.
 
 You can find out more information about using discs by reading the DFS (Disc
 Filing System) guides available on the internet.
@@ -218,28 +223,21 @@ sided images then remember to format and copy both sides (the second sides
 of disc 0 and 1 are 2 and 3).
 
 
-IDE Disk Support
-----------------
+SCSI & SASI Disk Support
+------------------------
 
-Jon Welch has added some preliminary support for emulated IDE hard disks to
-BeebEm.  There are 4 blank IDE drive images, pre-formatted to 4MB each, in
-the discims directory.  To use the images you need to change the ADFS ROM
-used in Master 128 mode to a modified version (produced by Jonathan
-Harston).  Change "ADFS.rom" in the Roms.cfg file to "ADFS1-53.rom".
+BeebEm supports emulated SCSI and SASI hard disks.  There are 4 10MB
+pre-formatted ADFS SCSI disk images in the discims directory (the scsi?.dat
+files).  The disks can be used in Model B, B Plus or Master 128 mode.  To
+use the disk images press A & F12 to boot in ADFS mode (ignore the error for
+drive 4 if in Master mode).  The hard disks then appear as drives 0 to 3.
+Floppy disks can still be accessed as drives 4 and 5.
 
-After selecting Master 128 emulation, press A & F12 to boot in ADFS mode and
-type:
-     *MOUNT 0
+There are some demo tunes in scsi0.dat which you can listen to with the PLAY
+program.
 
-This will mount the IDE disks.  The hard disks can then be used as drives 0
-to 3.  Floppy disks can still be accessed as drives 4 to 7.
-
-For more infomation on the patched ADFS ROM see:
-     http://www.mdfsnet.f9.co.uk/Info/Comp/BBC/IDE/ADFS/
-
-Jon Welch has written a tool for building IDE drive images, its called HADFS
-Explorer and can be downloaded from Jon's web page:
-     http://www.g7jjf.com
+There is also the sasi0.dat file which is a Torch Z80 hard disc image (see
+README_Z80.TXT).
 
 
 Using Tape Images
@@ -284,6 +282,197 @@ block list will be updated when recording finishes (press Stop when the save
 completes).
 
 
+Econet Support
+--------------
+
+BeebEm emulates an econet network.  This allows multiple instances of BeebEm
+to communicate with other.  Enable econet support from the Hardware menu in
+BeebEm.  Also switch off 'Freeze when inactive' so multiple instances of
+BeebEm can run at the same time.
+
+Each machine attached to an econet has a station number (between 1 and 254)
+associated with it.  An econet may also have a file server attached to it
+(special station number 254).
+
+BeebEm emulates an econet using IP datagrams.  Each station on the network
+needs a unique IP address and port number combination.  Each instance of
+BeebEm needs to know the address and port number of the other instances on
+the network, this information is configured in the 'Econet.cfg' file.
+
+The default Econet.cfg file has been set up so that the first 5 instances of
+BeebEm run on a single PC will get allocated unique station and port
+numbers.  The first instance will be allocated a station number 254 (file
+server) and next 4 will be allocated station numbers 101 to 104.  See the
+notes in Econet.cfg for more details.
+
+An econet file server enables a disk file system to be shared by all of the
+stations on the network.  Acorn produced various versions of file server
+software.  The level 1 and 2 file server software is included in disk images
+with BeebEm.  The server software must be run on station number 254.
+
+To run the level 1 server, load the 'econet_level_1_utils.ssd' disk image
+and run the file server by typing 'CH."FS"'.
+
+You will be prompted for:
+ - Number of files per user - enter 3
+ - Manual configuration - enter Y
+ - Directory for first station - enter A
+ - Station number - enter 101
+ - Directory for second station - enter B
+ - Station number - enter 102
+ - Directory for third station - just press enter
+
+The file server will then start running and report that it is ready.
+
+The level 2 server is a little more complicated to set up.  It requires the
+6502 second processor support to be enabled and requires a special "master"
+disk to be formatted (must be a double sided disk).  I suggest you read the
+"The Econet Level 2 Fileserver Manager's Guide" (available here
+http://www.bbcdocs.com/) if you want to set up a level 2 server.
+
+To use the econet file system from a station you will need to have a ROM
+installed that supports the econet file system (such as the Acorn DNFS ROM
+installed in Model B mode).  To switch a station into econet file system
+mode press N & F12.  The econet station number should be shown on screen.
+To switch without pressing the break key type '*NET'.  You can then use
+commands such as *CAT, LOAD, SAVE and CHAIN to access files on the server.
+
+The econet emulation in BeebEm is not perfect and is susceptible to timing
+issues.  When a message is being sent between stations BeebEm waits for a
+short time for the econet to become free again before sending the next
+message.  If the delay is too small messages can interfere with each other
+and cause a "Net Error" to be reported.  If it is too long a station can
+report "Line Jammed".  The waiting time is set by default to 100000 cycles
+(0.05s) but can be overridden by a command line option '-EcoFF'.  If you see
+"Net Error" report try a '-EcoFF 500000', for "Line Jammed" try '-EcoFF
+50000'.
+
+
+Master 512 Co Processor Support
+-------------------------------
+The software now supports the Master 512 Co-Processor board.
+
+The Master 512 board was an add-on card to the BBC computers which allowed you
+to run DOS Plus (based on CP/M but largely MS-DOS compatible) software. 
+It was 80186 based, ran at 10 MHz came with 512K of RAM (or 1MB with third 
+party upgrades) and connected to the BBC via the Tube interface.
+
+You start the Master 512 by selecting 80186 Second Processor off the hardware
+menu. This will boot off a 10MB hard disc image (ADFS Drive 0) which comes
+pre-installed with the original DOS Plus system and the GEM application software.
+The emulator will also recognise Drive A and B if a suitable DOS Plus formatted
+disc is loaded. The emulator should recognise various disc formats (look at
+the DISK program for more info) but I would only recommend using 640K ADFS .adl
+format and 800K DOS Plus .img format discs.
+
+GEM can be started by typing 'GEM' from the command prompt. GEM uses the AMX
+mouse support which much be enabled for the mouse to work. I would recommend you
+start GEM first then enable AMX Mouse support afterwards. Please note that mouse
+support works but due to the acceleration factors built into the GEM driver, 
+mouse movement can be a bit erratic. I hope to improve this in future versions 
+of the emulator.
+
+The Master 512 should run most MS-DOS 2.1 compatible software but no guarantees
+are given for what will and what won't work.
+
+I will start a library of known good disc images at :
+
+http://www.g7jjf.com/512_disc_images.htm
+
+Please feel free to send me any more you know work with the Master 512.
+
+
+Acorn Z80 Co Processor Support
+------------------------------
+The software now supports the Acorn Z80 Co-Processor board.
+
+The Acorn Z80 was a CP/M based system running with 64KB RAM on a Z80
+processor.
+
+You start the Acorn Z80 by selecting Acorn Z80 Co-Processor off the hardware
+menu. If you load a CP/M system disc in drive 0, the system will then boot
+to an A: prompt.
+
+I have included a CP/M Utilities disc in the installation which will boot
+the system. The Acorn Z80 originally came with 7 discs which can be download
+from my web site at :
+
+http://www.g7jjf.com/acornz80_disc_images.htm
+
+These discs contain the Acorn Z80 application software including :
+
+CPM Utilities
+BBC Basic
+Mallard Basic
+CIS Cobol
+MemoPlan
+GraphPlan
+FilePlan
+Accountant
+Nucleus
+
+You will also find some manuals for this software on my site as well.
+
+The Acorn Z80 should also run most CP/M compatible software but no guarantees
+are given for what will and what won't work.
+
+I will start a library of known good disc images at :
+
+http://www.g7jjf.com/acornz80_disc_images.htm
+
+Please feel free to send me any more you know work with the Acorn Z80.
+
+
+Teletext Support
+----------------
+The software now supports the Acorn Teletext Adapter. Unfortunately, I
+haven't got my teletext server software finished yet so the emulation
+can only work from teletext data captured to disc files. You can download
+some sample teletext data from :
+
+http://www.g7jjf.com/teletext.htm
+
+
+Speech Generator
+----------------
+The BBC B and B+ had the facility for installing a TMS5220 Speech Generator
+chip and associated TMS6100 PHROM containing the digitised voice of the BBC
+newsreader Kenneth Kendall. With these two chips installed, you could easily
+make the computer speak using the BASIC SOUND command. BeebEm now supports
+the TMS5220 and upto 16 different PHROM's. A new configuration file has been
+created to specify which PHROM's are available. The configuration file is
+phroms.cfg and contains a list of 16 PHROM filenames or EMPTY if a PHROM
+is not available. Two PHROM's are currently included with the emulator and
+are stored in the Phroms directory. They are PHROMA which was the original
+Kenneth Kendall voice and PHROMUS which is an American voice speaking a
+different dictionary.
+
+To say a word, you use the SOUND command, eg :
+
+SOUND -1, 179, 0, 0 would speak COMPUTER using PHROMA.
+
+The -1 specifies the PHROM number to use, from -1 to -16 which corresponds
+to each entry in the phroms.cfg file.
+
+A list of words available in PHROMSUS is included in the Phroms directory for
+reference. A list for PHROMA can be found in Appendix A and B of the manual
+detailed below.
+
+The Torch Z80 Co Processor also supports the speech system. Try the SNAKE game
+off the system utilities disc. There is also BACKCHAT.
+
+Please remember that the Master 128 doesn't support speech so you need to be
+in Model B/B+ mode for speech to work.
+
+For more information on using the Speech System you are referred to the Acorn 
+Speech System User Guide which you can download from :
+
+http://www.g7jjf.com/docs/acorn_speech_user_guide.pdf  (1202KB)
+
+If anyone has any more PHROM images, can they please email them to me so
+I can include them with the distribution.
+
+
 Menu Options
 ------------
 
@@ -322,7 +511,12 @@ File Menu:
 
   Quick Load   - Quickly load or save BeebEm state without having to 
   Quick Save     specify the filename.  The state is saved and loaded from 
-                 the 'BeebState/quicksave.uef' file.
+                 the 'BeebState/quicksave.uef' file.  Quicksave now keeps
+                 the last 10 quicksave files so you can go back to an
+                 earlier state using the load state menu option.
+                 There are keyboard shortcuts for Quicksave (keypad /) and
+                 Quickload (keypad *) so you can save and load without 
+                 having to go through the menus.
 
   Video Options - Select the resolution and how many frames get skipped for 
                   video capture.  If video and audio get out of sync when
@@ -513,6 +707,9 @@ Hardware Menu:
                         to the sound buffers at any one time.  The smaller
                         block size may speed BeebEm up.
 
+  Econet On/Off       - Switch Econet emulation on or off.  See the Econet 
+                        section above for more details.
+
 Options Menu:
 
   Joystick             - Switch on or off PC/Beeb analogue joystick support.
@@ -563,14 +760,27 @@ Help Menu:
 Command Line Options
 --------------------
 
-The file name of a disc image or a state file can be passed to BeebEm on the
-command line and it will be run automatically.  The name can include the
-full path or it can just be the name of a file in the 'DiscIms' or
-'BeebState' directory.
+The following command line options can be passed to BeebEm:
+
+  -Model <0=Model B, 1=B+IntegraB, 2=B Plus, 3=Master>
+  -Tube <0=off, 1=on>
+  -EcoStn <Econet station number>
+  -EcoFF <Econet flag fill timeout, see the econet section>
+  <disk image file name>
+  <state file name>
+
+e.g. To run elite in Master 128 mode with a second processor:
+
+  BeebEm -Model 3 -Tube 1 Elite.ssd
+
+If a disk image or a state file name is passed to BeebEm on the command line
+it will be run automatically.  The name can include the full path or it can
+just be the name of a file in the 'DiscIms' or 'BeebState' directory.
 
 If you create a shortcut to BeebEm.exe on your desktop and edit the
-properties (right click the icon) you can add a disc or state file name to
-the target box.  Running the shortcut will then run the file.
+properties (right click the icon) you can add command line options and a
+disc or state file name to the target box.  Running the shortcut will then
+run the file.
 
 You can also associate files with .ssd, .dsd or .uef extensions with BeebEm
 using Windows Explorer.  Double clicking on one of these files will
@@ -642,6 +852,7 @@ Hardware common to all the Model B types and Master 128:
   "IC32" Addressable latch
   Full BBC Micro keyboard
   ROMSELect Register
+  6854 Advanced Data-Link Controller (Econet)
 
 Model B Specific hardware:
 
@@ -721,6 +932,7 @@ Thanks go to the following people for contributing to BeebEm:
   Richard Gellman
   Ken Lowe
   Jon Welch
+  Rob O'Donnell
 
 If there are any other features you would like to see in the Windows version
 of BeebEm then send me an email.  I cannot promise anything but I may find

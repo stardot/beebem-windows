@@ -22,7 +22,8 @@
 
 /* Mike Wyatt 7/6/97 - Added undocumented instructions */
 
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -38,17 +39,21 @@
 #include "disc1770.h"
 #include "serial.h"
 #include "tube.h"
-#include "uefstate.h"
 #include "debug.h"
-#include "mem_mmu.h"
-#include "simz80.h"
+#include "uefstate.h"
+#include "z80mem.h"
+#include "z80.h"
+#include "econet.h"
+#include "scsi.h"
+#include "debug.h"
 
 #ifdef WIN32
-#include <windows.h>
 #define INLINE inline
 #else
 #define INLINE
 #endif
+
+using namespace std;
 
 int CPUDebug=0;
 int BeginDump=0;
@@ -63,6 +68,7 @@ extern int DumpAfterEach;
 
 CycleCountT TotalCycles=0;
 
+int trace = 0;
 int ProgramCounter;
 int PrePC;
 static int Accumulator,XReg,YReg;
@@ -75,8 +81,6 @@ unsigned char intStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caus
 unsigned char NMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
 unsigned int NMILock=0; /* Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done */
 typedef int int16;
-/* Stats */
-static int Stats[256];
 INLINE static void SBCInstrHandler(int16 operand);
 enum PSRFlags {
   FlagC=1,
@@ -950,22 +954,23 @@ void DoNMI(void) {
 /*-------------------------------------------------------------------------*/
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec6502Instruction(void) {
-	static int tmpaddr;
 	static int OldNMIStatus;
 	int BadCount=0;
 	int OldPC;
 	int loop,loopc;
 
 	loopc=(DebugEnabled ? 1 : 1024); // Makes debug window more responsive
-	for(loop=0;loop<loopc;loop++)
-	{
-		z80_execute();
-      
+	for(loop=0;loop<loopc;loop++) {
 		/* Output debug info */
-		if (DebugEnabled && !DebugDisassembler(ProgramCounter,Accumulator,XReg,YReg,PSR,true))
+		if (DebugEnabled && !DebugDisassembler(ProgramCounter,Accumulator,XReg,YReg,PSR,StackReg,true))
 			continue;
 
-		/* Read an instruction and post inc program couter */
+		z80_execute();
+
+		if (Tube186Enabled)
+         i186_execute(12 * 4);
+
+      /* Read an instruction and post inc program couter */
 		PrePC=ProgramCounter;
 		CurrentInstruction=ReadPaged(ProgramCounter++);
 		// cout << "Fetch at " << hex << (ProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
@@ -1995,7 +2000,6 @@ void Exec6502Instruction(void) {
 		IRQCycles=0; // IRQ Timing
 		// End of cycle correction
 
-		OldNMIStatus=NMIStatus;
 		/* NOTE: Check IRQ status before polling hardware - this is essential for
 		   Rocket Raid to work since it polls the IFR in the sys via for start of 
 		   frame - but with interrupts enabled.  If you do the interrupt check later
@@ -2016,6 +2020,8 @@ void Exec6502Instruction(void) {
 			AdjustTrigger(PrinterTrigger);
 			AdjustTrigger(VideoTriggerCount);
 			AdjustTrigger(TapeTrigger);
+			AdjustTrigger(EconetTrigger);
+			AdjustTrigger(EconetFlagFillTimeoutTrigger);
 			if (EnableTube)
 				WrapTubeCycles();
 		}
@@ -2032,7 +2038,23 @@ void Exec6502Instruction(void) {
 		if (DisplayCycles>0) DisplayCycles-=Cycles; // Countdown time till end of display of info.
 		if ((MachineType==3) || (!NativeFDC)) Poll1770(Cycles); // Do 1770 Background stuff
 
-		if ((NMIStatus) && (!OldNMIStatus)) DoNMI();
+		if (EconetEnabled && EconetPoll()) {
+			if (EconetNMIenabled ) { 
+				NMIStatus|=1<<nmi_econet;
+				if (DebugEnabled)
+					DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI asserted");
+			}
+			else {
+				if (DebugEnabled)
+					DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI requested but supressed");
+			}
+		}
+
+		if (((NMIStatus) && (!OldNMIStatus)) || (NMIStatus & 1<<nmi_econet)) {
+			NMIStatus &= ~(1<<nmi_econet);
+			DoNMI();
+		}
+		OldNMIStatus=NMIStatus;
 
 		if (EnableTube)
 			SyncTubeProcessor();

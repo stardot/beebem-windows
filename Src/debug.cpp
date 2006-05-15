@@ -2,7 +2,7 @@
 // BeebEm debugger
 //
 // Mike Wyatt - Nov 2004
-//
+// Econet added Rob O'Donnell 2004-12-28.
 
 #include <windows.h>
 #include <ctype.h>
@@ -13,6 +13,8 @@
 #include "beebemrc.h"
 #include "6502core.h"
 #include "debug.h"
+#include "z80mem.h"
+#include "z80.h"
 
 int DebugEnabled = false;        // Debug dialog visible
 
@@ -26,6 +28,7 @@ static bool BPSOn = true;
 static bool BreakpointHit = false;
 static bool DebugOS = false;
 static bool LastAddrInOS = false;
+static bool LastAddrInBIOS = false;
 static bool DebugROM = false;
 static bool LastAddrInROM = false;
 static bool DebugHost = true;
@@ -101,260 +104,260 @@ InstInfo optable[256] =
 {
 	/* 00 */	{ "BRK",  1, IMP|STOP, 0, },
 	/* 01 */	{ "ORA",  2, INX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?02",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?03",  1, ILL|NORM, 0, },
 	/* 04 */	{ "TSB",  2, ZPG|NORM, 1, },
 	/* 05 */	{ "ORA",  2, ZPG|NORM, 0, },
 	/* 06 */	{ "ASL",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?07",  1, ILL|NORM, 0, },
 	/* 08 */	{ "PHP",  1, IMP|NORM, 0, },
 	/* 09 */	{ "ORA",  2, IMM|NORM, 0, },
 	/* 0a */	{ "ASL",  1, ACC|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?0B",  1, ILL|NORM, 0, },
 	/* 0c */	{ "TSB",  3, ABS|NORM, 1, },
 	/* 0d */	{ "ORA",  3, ABS|NORM, 0, },
 	/* 0e */	{ "ASL",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?0F",  1, ILL|NORM, 0, },
 	/* 10 */	{ "BPL",  2, REL|FORK, 0, },
 	/* 11 */	{ "ORA",  2, INY|NORM, 0, },
 	/* 12 */	{ "ORA",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?13",  1, ILL|NORM, 0, },
 	/* 14 */	{ "TRB",  2, ZPG|NORM, 1, },
 	/* 15 */	{ "ORA",  2, ZPX|NORM, 0, },
 	/* 16 */	{ "ASL",  2, ZPX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?17",  1, ILL|NORM, 0, },
 	/* 18 */	{ "CLC",  1, IMP|NORM, 0, },
 	/* 19 */	{ "ORA",  3, ABY|NORM, 0, },
 	/* 1a */	{ "INC",  1, ACC|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?1B",  1, ILL|NORM, 0, },
 	/* 1c */	{ "TRB",  3, ABS|NORM, 1, },
 	/* 1d */	{ "ORA",  3, ABX|NORM, 0, },
 	/* 1e */	{ "ASL",  3, ABX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?1F",  1, ILL|NORM, 0, },
 	/* 20 */	{ "JSR",  3, ABS|FORK, 0, },
 	/* 21 */	{ "AND",  2, INX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?22",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?23",  1, ILL|NORM, 0, },
 	/* 24 */	{ "BIT",  2, ZPG|NORM, 0, },
 	/* 25 */	{ "AND",  2, ZPG|NORM, 0, },
 	/* 26 */	{ "ROL",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?27",  1, ILL|NORM, 0, },
 	/* 28 */	{ "PLP",  1, IMP|NORM, 0, },
 	/* 29 */	{ "AND",  2, IMM|NORM, 0, },
 	/* 2a */	{ "ROL",  1, ACC|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?2B",  1, ILL|NORM, 0, },
 	/* 2c */	{ "BIT",  3, ABS|NORM, 0, },
 	/* 2d */	{ "AND",  3, ABS|NORM, 0, },
 	/* 2e */	{ "ROL",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?2F",  1, ILL|NORM, 0, },
 	/* 30 */	{ "BMI",  2, REL|FORK, 0, },
 	/* 31 */	{ "AND",  2, INY|NORM, 0, },
 	/* 32 */	{ "AND",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?33",  1, ILL|NORM, 0, },
 	/* 34 */	{ "BIT",  2, ZPX|NORM, 1, },
 	/* 35 */	{ "AND",  2, ZPX|NORM, 0, },
 	/* 36 */	{ "ROL",  2, ZPX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?37",  1, ILL|NORM, 0, },
 	/* 38 */	{ "SEC",  1, IMP|NORM, 0, },
 	/* 39 */	{ "AND",  3, ABY|NORM, 0, },
 	/* 3a */	{ "DEC",  1, ACC|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?3B",  1, ILL|NORM, 0, },
 	/* 3c */	{ "BIT",  3, ABX|NORM, 1, },
 	/* 3d */	{ "AND",  3, ABX|NORM, 0, },
 	/* 3e */	{ "ROL",  3, ABX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?3F",  1, ILL|NORM, 0, },
 	/* 40 */	{ "RTI",  1, IMP|STOP, 0, },
 	/* 41 */	{ "EOR",  2, INX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?42",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?43",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?44",  1, ILL|NORM, 0, },
 	/* 45 */	{ "EOR",  2, ZPG|NORM, 0, },
 	/* 46 */	{ "LSR",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?47",  1, ILL|NORM, 0, },
 	/* 48 */	{ "PHA",  1, IMP|NORM, 0, },
 	/* 49 */	{ "EOR",  2, IMM|NORM, 0, },
 	/* 4a */	{ "LSR",  1, ACC|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?4B",  1, ILL|NORM, 0, },
 	/* 4c */	{ "JMP",  3, ABS|JUMP, 0, },
 	/* 4d */	{ "EOR",  3, ABS|NORM, 0, },
 	/* 4e */	{ "LSR",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?4F",  1, ILL|NORM, 0, },
 	/* 50 */	{ "BVC",  2, REL|FORK, 0, },
 	/* 51 */	{ "EOR",  2, INY|NORM, 0, },
 	/* 52 */	{ "EOR",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?53",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?54",  1, ILL|NORM, 0, },
 	/* 55 */	{ "EOR",  2, ZPX|NORM, 0, },
 	/* 56 */	{ "LSR",  2, ZPX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?57",  1, ILL|NORM, 0, },
 	/* 58 */	{ "CLI",  1, IMP|NORM, 0, },
 	/* 59 */	{ "EOR",  3, ABY|NORM, 0, },
 	/* 5a */	{ "PHY",  1, IMP|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?5B",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?5C",  1, ILL|NORM, 0, },
 	/* 5d */	{ "EOR",  3, ABX|NORM, 0, },
 	/* 5e */	{ "LSR",  3, ABX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?5D",  1, ILL|NORM, 0, },
 	/* 60 */	{ "RTS",  1, IMP|STOP, 0, },
 	/* 61 */	{ "ADC",  2, INX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?62",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?63",  1, ILL|NORM, 0, },
 	/* 64 */	{ "STZ",  2, ZPG|NORM, 1, },
 	/* 65 */	{ "ADC",  2, ZPG|NORM, 0, },
 	/* 66 */	{ "ROR",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?67",  1, ILL|NORM, 0, },
 	/* 68 */	{ "PLA",  1, IMP|NORM, 0, },
 	/* 69 */	{ "ADC",  2, IMM|NORM, 0, },
 	/* 6a */	{ "ROR",  1, ACC|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?6B",  1, ILL|NORM, 0, },
 	/* 6c */	{ "JMP",  3, IND|STOP, 0, },
 	/* 6d */	{ "ADC",  3, ABS|NORM, 0, },
 	/* 6e */	{ "ROR",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?6F",  1, ILL|NORM, 0, },
 	/* 70 */	{ "BVS",  2, REL|FORK, 0, },
 	/* 71 */	{ "ADC",  2, INY|NORM, 0, },
 	/* 72 */	{ "ADC",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?73",  1, ILL|NORM, 0, },
 	/* 74 */	{ "STZ",  2, ZPX|NORM, 1, },
 	/* 75 */	{ "ADC",  2, ZPX|NORM, 0, },
 	/* 76 */	{ "ROR",  2, ZPX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?77",  1, ILL|NORM, 0, },
 	/* 78 */	{ "SEI",  1, IMP|NORM, 0, },
 	/* 79 */	{ "ADC",  3, ABY|NORM, 0, },
 	/* 7a */	{ "PLY",  1, IMP|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?7B",  1, ILL|NORM, 0, },
 	/* 7c */	{ "JMP",  3, INX|NORM, 1, },
 	/* 7d */	{ "ADC",  3, ABX|NORM, 0, },
 	/* 7e */	{ "ROR",  3, ABX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?7F",  1, ILL|NORM, 0, },
 	/* 80 */	{ "BRA",  2, REL|FORK, 1, },
 	/* 81 */	{ "STA",  2, INX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?82",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?83",  1, ILL|NORM, 0, },
 	/* 84 */	{ "STY",  2, ZPG|NORM, 0, },
 	/* 85 */	{ "STA",  2, ZPG|NORM, 0, },
 	/* 86 */	{ "STX",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?87",  1, ILL|NORM, 0, },
 	/* 88 */	{ "DEY",  1, IMP|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?89",  1, ILL|NORM, 0, },
 	/* 8a */	{ "TXA",  1, IMP|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?8B",  1, ILL|NORM, 0, },
 	/* 8c */	{ "STY",  3, ABS|NORM, 0, },
 	/* 8d */	{ "STA",  3, ABS|NORM, 0, },
 	/* 8e */	{ "STX",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?8F",  1, ILL|NORM, 0, },
 	/* 90 */	{ "BCC",  2, REL|FORK, 0, },
 	/* 91 */	{ "STA",  2, INY|NORM, 0, },
 	/* 92 */	{ "STA",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?93",  1, ILL|NORM, 0, },
 	/* 94 */	{ "STY",  2, ZPX|NORM, 0, },
 	/* 95 */	{ "STA",  2, ZPX|NORM, 0, },
 	/* 96 */	{ "STX",  2, ZPY|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?97",  1, ILL|NORM, 0, },
 	/* 98 */	{ "TYA",  1, IMP|NORM, 0, },
 	/* 99 */	{ "STA",  3, ABY|NORM, 0, },
 	/* 9a */	{ "TXS",  1, IMP|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?9B",  1, ILL|NORM, 0, },
 	/* 9c */	{ "STZ",  3, ABS|NORM, 1, },
 	/* 9d */	{ "STA",  3, ABX|NORM, 0, },
 	/* 9e */	{ "STZ",  3, ABX|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?9F",  1, ILL|NORM, 0, },
 	/* a0 */	{ "LDY",  2, IMM|NORM, 0, },
 	/* a1 */	{ "LDA",  2, INX|NORM, 0, },
 	/* a2 */	{ "LDX",  2, IMM|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?A3",  1, ILL|NORM, 0, },
 	/* a4 */	{ "LDY",  2, ZPG|NORM, 0, },
 	/* a5 */	{ "LDA",  2, ZPG|NORM, 0, },
 	/* a6 */	{ "LDX",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?A7",  1, ILL|NORM, 0, },
 	/* a8 */	{ "TAY",  1, IMP|NORM, 0, },
 	/* a9 */	{ "LDA",  2, IMM|NORM, 0, },
 	/* aa */	{ "TAX",  1, IMP|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?AB",  1, ILL|NORM, 0, },
 	/* ac */	{ "LDY",  3, ABS|NORM, 0, },
 	/* ad */	{ "LDA",  3, ABS|NORM, 0, },
 	/* ae */	{ "LDX",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?AF",  1, ILL|NORM, 0, },
 	/* b0 */	{ "BCS",  2, REL|FORK, 0, },
 	/* b1 */	{ "LDA",  2, INY|NORM, 0, },
 	/* b2 */	{ "LDA",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?B3",  1, ILL|NORM, 0, },
 	/* b4 */	{ "LDY",  2, ZPX|NORM, 0, },
 	/* b5 */	{ "LDA",  2, ZPX|NORM, 0, },
 	/* b6 */	{ "LDX",  2, ZPY|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?B7",  1, ILL|NORM, 0, },
 	/* b8 */	{ "CLV",  1, IMP|NORM, 0, },
 	/* b9 */	{ "LDA",  3, ABY|NORM, 0, },
 	/* ba */	{ "TSX",  1, IMP|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?BB",  1, ILL|NORM, 0, },
 	/* bc */	{ "LDY",  3, ABX|NORM, 0, },
 	/* bd */	{ "LDA",  3, ABX|NORM, 0, },
 	/* be */	{ "LDX",  3, ABY|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?BF",  1, ILL|NORM, 0, },
 	/* c0 */	{ "CPY",  2, IMM|NORM, 0, },
 	/* c1 */	{ "CMP",  2, INX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?C2",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?C3",  1, ILL|NORM, 0, },
 	/* c4 */	{ "CPY",  2, ZPG|NORM, 0, },
 	/* c5 */	{ "CMP",  2, ZPG|NORM, 0, },
 	/* c6 */	{ "DEC",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?C7",  1, ILL|NORM, 0, },
 	/* c8 */	{ "INY",  1, IMP|NORM, 0, },
 	/* c9 */	{ "CMP",  2, IMM|NORM, 0, },
 	/* ca */	{ "DEX",  1, IMP|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?CB",  1, ILL|NORM, 0, },
 	/* cc */	{ "CPY",  3, ABS|NORM, 0, },
 	/* cd */	{ "CMP",  3, ABS|NORM, 0, },
 	/* ce */	{ "DEC",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?CF",  1, ILL|NORM, 0, },
 	/* d0 */	{ "BNE",  2, REL|FORK, 0, },
 	/* d1 */	{ "CMP",  2, INY|NORM, 0, },
 	/* d2 */	{ "CMP",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?D3",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?D4",  1, ILL|NORM, 0, },
 	/* d5 */	{ "CMP",  2, ZPX|NORM, 0, },
 	/* d6 */	{ "DEC",  2, ZPX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?D7",  1, ILL|NORM, 0, },
 	/* d8 */	{ "CLD",  1, IMP|NORM, 0, },
 	/* d9 */	{ "CMP",  3, ABY|NORM, 0, },
 	/* da */	{ "PHX",  1, IMP|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?DB",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?DC",  1, ILL|NORM, 0, },
 	/* dd */	{ "CMP",  3, ABX|NORM, 0, },
 	/* de */	{ "DEC",  3, ABX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?DF",  1, ILL|NORM, 0, },
 	/* e0 */	{ "CPX",  2, IMM|NORM, 0, },
 	/* e1 */	{ "SBC",  2, INX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?E2",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?E3",  1, ILL|NORM, 0, },
 	/* e4 */	{ "CPX",  2, ZPG|NORM, 0, },
 	/* e5 */	{ "SBC",  2, ZPG|NORM, 0, },
 	/* e6 */	{ "INC",  2, ZPG|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?E7",  1, ILL|NORM, 0, },
 	/* e8 */	{ "INX",  1, IMP|NORM, 0, },
 	/* e9 */	{ "SBC",  2, IMM|NORM, 0, },
 	/* ea */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?EB",  1, ILL|NORM, 0, },
 	/* ec */	{ "CPX",  3, ABS|NORM, 0, },
 	/* ed */	{ "SBC",  3, ABS|NORM, 0, },
 	/* ee */	{ "INC",  3, ABS|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?EF",  1, ILL|NORM, 0, },
 	/* f0 */	{ "BEQ",  2, REL|FORK, 0, },
 	/* f1 */	{ "SBC",  2, INY|NORM, 0, },
 	/* f2 */	{ "SBC",  2, IND|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?F3",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?F4",  1, ILL|NORM, 0, },
 	/* f5 */	{ "SBC",  2, ZPX|NORM, 0, },
 	/* f6 */	{ "INC",  2, ZPX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?F7",  1, ILL|NORM, 0, },
 	/* f8 */	{ "SED",  1, IMP|NORM, 0, },
 	/* f9 */	{ "SBC",  3, ABY|NORM, 0, },
 	/* fa */	{ "PLX",  1, IMP|NORM, 1, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?FB",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?FC",  1, ILL|NORM, 0, },
 	/* fd */	{ "SBC",  3, ABX|NORM, 0, },
 	/* fe */	{ "INC",  3, ABX|NORM, 0, },
-	/* 00 */	{ "???",  1, ILL|NORM, 0, }
+	/* 00 */	{ "?FF",  1, ILL|NORM, 0, }
 };
 
 //*******************************************************************
@@ -408,6 +411,7 @@ void DebugCloseDialog()
 	BPSOn = true;
 	DebugOS = false;
 	LastAddrInOS = false;
+	LastAddrInBIOS = false;
 	DebugROM = false;
 	LastAddrInROM = false;
 	DebugHost = true;
@@ -571,11 +575,22 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 				DebugDisplayInfo("- SERIAL BREAK -");
 			}
 			break;
+		case DEBUG_ECONET:
+			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGECONET, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				DebugDisplayInfo(info);
+			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGECONETBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			{
+				DebugOn = TRUE;
+				InstCount = 1;
+				BreakpointHit = false;
+				DebugDisplayInfo("- ECONET BREAK -");
+			}
+			break;
 		}
 	}
 }
 
-bool DebugDisassembler(int addr, int Accumulator, int XReg, int YReg, int PSR, bool host)
+bool DebugDisassembler(int addr, int Accumulator, int XReg, int YReg, int PSR, int StackReg, bool host)
 {
 	char str[150];
 	int i;
@@ -621,46 +636,77 @@ bool DebugDisassembler(int addr, int Accumulator, int XReg, int YReg, int PSR, b
 	if (!DebugOn)
 		return(TRUE);
 
-	if (DebugOS == false && addr >= 0xc000 && addr <= 0xffff)
+	if ( (TorchTube || AcornZ80) && !host)
 	{
-		if (!LastAddrInOS)
+		if (DebugOS == false && addr >= 0xf800 && addr <= 0xffff)
 		{
-			DebugDisplayInfo("- ENTERING OS -");
-			LastAddrInOS = true;
+			if (!LastAddrInBIOS)
+			{
+				DebugDisplayInfo("- ENTERING BIOS -");
+				LastAddrInBIOS = true;
+			}
+			return(TRUE);
 		}
-		return(TRUE);
+		LastAddrInBIOS = false;
 	}
-	LastAddrInOS = false;
+	else
+	{
+		if (DebugOS == false && addr >= 0xc000 && addr <= 0xffff)
+		{
+			if (!LastAddrInOS)
+			{
+				DebugDisplayInfo("- ENTERING OS -");
+				LastAddrInOS = true;
+			}
+			return(TRUE);
+		}
+		LastAddrInOS = false;
 
-	if (DebugROM == false && addr >= 0x8000 && addr <= 0xbfff)
-	{
-		if (!LastAddrInROM)
+		if (DebugROM == false && addr >= 0x8000 && addr <= 0xbfff)
 		{
-			DebugDisplayInfo("- ENTERING ROM -");
-			LastAddrInROM = true;
+			if (!LastAddrInROM)
+			{
+				DebugDisplayInfo("- ENTERING ROM -");
+				LastAddrInROM = true;
+			}
+			return(TRUE);
 		}
-		return(TRUE);
+		LastAddrInROM = false;
 	}
-	LastAddrInROM = false;
 
 	// Display all parasite instructions (otherwise we loose them).
 	if (host && InstCount == 0)
 		return(FALSE);
 
-	DebugDisassembleInstruction(addr, host, str);
+	if ( (TorchTube || AcornZ80) && !host)
+	{
+		char buff[128];
+		Z80_Disassemble(addr, buff);
 
-	sprintf(str + strlen(str), "%02X %02X %02X ", Accumulator, XReg, YReg);
+		Disp_RegSet1(str);
+		sprintf(str + strlen(str), " %s", buff);
+				
+		DebugDisplayInfo(str);
+		Disp_RegSet2(str);
 
-	sprintf(str + strlen(str), (PSR & FlagC) ? "C" : ".");
-	sprintf(str + strlen(str), (PSR & FlagZ) ? "Z" : ".");
-	sprintf(str + strlen(str), (PSR & FlagI) ? "I" : ".");
-	sprintf(str + strlen(str), (PSR & FlagD) ? "D" : ".");
-	sprintf(str + strlen(str), (PSR & FlagB) ? "B" : ".");
-	sprintf(str + strlen(str), (PSR & FlagV) ? "V" : ".");
-	sprintf(str + strlen(str), (PSR & FlagN) ? "N" : ".");
+	}
+	else
+	{
+		DebugDisassembleInstruction(addr, host, str);
 
-	if (!host)
-		sprintf(str + strlen(str), "  Parasite");
+		sprintf(str + strlen(str), "%02X %02X %02X %02X ", Accumulator, XReg, YReg, StackReg);
+
+		sprintf(str + strlen(str), (PSR & FlagC) ? "C" : ".");
+		sprintf(str + strlen(str), (PSR & FlagZ) ? "Z" : ".");
+		sprintf(str + strlen(str), (PSR & FlagI) ? "I" : ".");
+		sprintf(str + strlen(str), (PSR & FlagD) ? "D" : ".");
+		sprintf(str + strlen(str), (PSR & FlagB) ? "B" : ".");
+		sprintf(str + strlen(str), (PSR & FlagV) ? "V" : ".");
+		sprintf(str + strlen(str), (PSR & FlagN) ? "N" : ".");
+
+		if (!host)
+			sprintf(str + strlen(str), "  Parasite");
+	}
 
 	DebugDisplayInfo(str);
 
@@ -825,6 +871,8 @@ int DebugReadMem(int addr, bool host)
 {
 	if (host)
 		return BeebReadMem(addr);
+	if ((TorchTube || AcornZ80))
+		return ReadZ80Mem(addr);
 	return TubeReadMem(addr);
 }
 
@@ -949,7 +997,39 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 
 	while (count > 0 && addr <= 0xffff)
 	{
-		addr += DebugDisassembleInstruction(addr, host, opstr);
+		if ((TorchTube || AcornZ80) && !host)
+		{
+			int l;
+			char *s;
+			char buff[64];
+			
+			sprintf(opstr, "%04X ", addr);
+			s = opstr + strlen(opstr);
+			l = Z80_Disassemble(addr, buff);
+
+			switch (l) {
+				case 1:
+					sprintf(s, "%02X           ", DebugReadMem(addr, host));
+					break;
+				case 2:
+					sprintf(s, "%02X %02X        ", DebugReadMem(addr, host), DebugReadMem(addr+1, host));
+					break;
+				case 3:
+					sprintf(s, "%02X %02X %02X     ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host));
+					break;
+				case 4:
+					sprintf(s, "%02X %02X %02X %02X  ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host), DebugReadMem(addr+3, host));
+					break;
+			}
+			
+			strcat(opstr, buff);
+			
+			addr += l;
+		}
+		else
+		{
+			addr += DebugDisassembleInstruction(addr, host, opstr);
+		}
 		DebugDisplayInfo(opstr);
 		count--;
 	}
@@ -983,7 +1063,7 @@ void DebugMemoryDump(int addr, int count, bool host)
 		{
 			for (b = 0; b < 16; ++b)
 			{
-				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00)
+				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TorchTube || AcornZ80))
 					sprintf(info+strlen(info), "IO ");
 				else
 					sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, host));

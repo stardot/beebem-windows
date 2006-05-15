@@ -23,7 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include <windows.h>
 
 #include "6502core.h"
@@ -39,6 +40,7 @@
 #include "disc1770.h"
 #include "serial.h"
 #include "tube.h"
+#include "econet.h"	//Rob
 
 #ifdef MULTITHREAD
 #undef MULTITHREAD
@@ -62,23 +64,18 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	MSG msg;
 
 	hInst = hInstance;
-	mainWin=new BeebWin();
 
+   tlog = NULL;
+
+//    tlog = fopen("\\trace.log", "wt");
+
+   mainWin=new BeebWin();
 	mainWin->Initialise();
-	SoundReset();
-	if (SoundDefault) SoundInit();
-	mainWin->ResetBeebSystem(MachineType,TubeEnabled,1); 
-	mainWin->SetRomMenu();
-	mainWin->SetSoundMenu();
-	mainWin->m_frozen=FALSE;
+
 	// Create serial threads
 	InitThreads();
 	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) SerialThread,NULL,0,&iSerialThread);
 	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) StatThread,NULL,0,&iStatThread);
-
-	mainWin->HandleCommandLine(lpszCmdLine);
-
-//    tlog = fopen("\\trace.log", "wt");
 
     do
 	{
@@ -103,9 +100,35 @@ int CALLBACK WinMain(HINSTANCE hInstance,
   
 	mainWin->KillDLLs();
 
-//    fclose(tlog);
+   if (tlog) fclose(tlog);
 
     delete mainWin;
 	Kill_Serial();
 	return(0);  
 } /* main */
+
+char *mon[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+
+void WriteLog(char *fmt, ...)
+
+{
+va_list argptr;
+SYSTEMTIME tim;
+char buff[256];
+
+    if (tlog)
+    {
+	    va_start(argptr, fmt);
+	    vsprintf(buff, fmt, argptr);
+	    va_end(argptr);
+
+        GetLocalTime(&tim);
+        fprintf(tlog, "[%02d-%3s-%02d %02d:%02d:%02d.%03d] ", 
+	        tim.wDay, mon[tim.wMonth - 1], tim.wYear % 100, tim.wHour, tim.wMinute, tim.wSecond, tim.wMilliseconds);
+        
+        fprintf(tlog, "%s\n", buff);
+    }
+
+}

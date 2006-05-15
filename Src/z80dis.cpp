@@ -3,12 +3,12 @@
 #include "memory.h"
 #include "tube.h"
 
+#include "z80mem.h"
+#include "z80.h"
+
 typedef unsigned char UBYTE;
 typedef char * STR;
 typedef char CHAR;
-typedef char BYTE;
-
-inline unsigned char ReadZ80Mem(int pc);
 
 int Z80_Disassemble(int adr, char *s)
 {
@@ -36,19 +36,19 @@ int             size = 1;
 				break;
 			case 0x02:
 				strcpy(s,"DJNZ\t");
-				sprintf(stemp,"%4.4Xh",adr+2+(BYTE)ReadZ80Mem(adr+1));strcat(s,stemp);
+				sprintf(stemp,"%4.4Xh",adr+2+(signed char)ReadZ80Mem(adr+1));strcat(s,stemp);
                 size = 2;
                 break;
 			case 0x03:
 				strcpy(s,"JR\t");
-				sprintf(stemp,"%4.4Xh",adr+2+(BYTE)ReadZ80Mem(adr+1));strcat(s,stemp);
+				sprintf(stemp,"%4.4Xh",adr+2+(signed char)ReadZ80Mem(adr+1));strcat(s,stemp);
                 size = 2;
 				break;
 			default:
 				strcpy(s,"JR\t");
 				strcat(s,cond[d & 3]);
 				strcat(s,",");
-				sprintf(stemp,"%4.4Xh",adr+2+(BYTE)ReadZ80Mem(adr+1));strcat(s,stemp);
+				sprintf(stemp,"%4.4Xh",adr+2+(signed char)ReadZ80Mem(adr+1));strcat(s,stemp);
                 size = 2;
 				break;
 			}

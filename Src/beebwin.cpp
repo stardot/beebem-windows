@@ -19,6 +19,7 @@
 /****************************************************************************/
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 /* Conveted to use DirectX - Mike Wyatt 11/1/98 */
+// Econet added Rob O'Donnell. robert@irrelevant.com. 28/12/2004.
 
 #include <stdio.h>
 #include <windows.h>
@@ -39,13 +40,18 @@
 #include "userkybd.h"
 #include "cRegistry.h" // David Overton's registry access code.
 #include "serial.h"
+#include "econet.h"	 // Rob O'Donnell Christmas 2004.
 #include "tube.h"
 #include "ext1770.h"
 #include "uefstate.h"
 #include "debug.h"
-#include "ide.h"
-#include "mem_mmu.h"
-#include "simz80.h"
+#include "scsi.h"
+#include "sasi.h"
+#include "z80mem.h"
+#include "z80.h"
+#include "userkybd.h"
+#include "speech.h"
+#include "teletext.h"
 #include "avi.h"
 
 // some LED based macros
@@ -61,6 +67,8 @@ bool RegRes;
 int rbs=1;
 int *binsize=&rbs;
 // End of registry access stuff
+
+void i86_main(void);
 
 FILE *CMDF2;
 unsigned char CMA2;
@@ -96,8 +104,9 @@ char FDCDLL[256];
 
 static const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 static const char *AboutText = "BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
-								"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\nTorch Z80 Second Processor\n\n"
-								"Version 3.0, November 2005";
+								"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\n"
+								"Torch Z80 Second Processor\nMaster 512 Second Processor\nAcorn Z80 Second Processor\n\n"
+								"Version 3.2, April 2006";
 
 /* Configuration file strings */
 static const char *CFG_FILE_NAME = "BeebEm.ini";
@@ -241,6 +250,9 @@ void BeebWin::Initialise()
 
 	LoadPreferences();
 
+	// Parse command after reading prefs - may override settings
+	ParseCommandLine();
+
 	IgnoreIllegalInstructions = 1;
 
 	aviWriter = NULL;
@@ -259,7 +271,7 @@ void BeebWin::Initialise()
 	m_AviDC = NULL;
 	m_AviDIB = NULL;
 
-	for(int i=0;i<12;i++)
+	for(int i=0;i<256;i++)
 		cols[i] = i;
 
 	InitClass();
@@ -296,6 +308,7 @@ void BeebWin::Initialise()
 
 	m_frozen = FALSE;
 	strcpy(RomPath, m_AppPath);
+	strcpy(EconetCfgPath, m_AppPath);
 	UpdateModelType();
 	UpdateSFXMenu();
 	UpdateLEDMenu(m_hMenu);
@@ -305,6 +318,17 @@ void BeebWin::Initialise()
 	UpdateOptiMenu();
 
 	SaveWindowPos();
+
+	SoundReset();
+	if (SoundDefault) SoundInit();
+
+	if (SpeechDefault)
+		tms5220_start();
+
+	ResetBeebSystem(MachineType,TubeEnabled,1); 
+
+	// Boot file if passed on command line
+	HandleCommandLineFile();
 }
 
 /****************************************************************************/
@@ -352,18 +376,20 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	BeebMemInit(LoadRoms,m_ShiftBooted);
 	Init6502core();
 	if (EnableTube) Init65C02core();
+	if (Tube186Enabled) i86_main();
     Enable_Z80 = 0;
-    if (TorchTube)
+    if (TorchTube || AcornZ80)
     {
-        R1Status = 0;
-        ResetTube();
-        init_z80();
-        Enable_Z80 = 1;
+       R1Status = 0;
+       ResetTube();
+       init_z80();
+       Enable_Z80 = 1;
     }
     SysVIAReset();
 	UserVIAReset();
 	VideoInit();
 	Disc8271_reset();
+	if (EconetEnabled) EconetReset();	//Rob:
 	Reset1770();
 	AtoDReset();
 	SetRomMenu();
@@ -372,7 +398,9 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	FreeDiscImage(1);
 	Close1770Disc(0);
 	Close1770Disc(1);
-	IDEReset();
+	SCSIReset();
+	SASIReset();
+	TeleTextInit();
 	if (MachineType==3) InvertTR00=FALSE;
 	if (MachineType!=3) {
 		LoadFDC(NULL, false);
@@ -626,15 +654,21 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(m_hMenu,IDM_SOUNDCHIP,(SoundChipEnabled)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu,ID_PSAMPLES,(PartSamples)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 
 	CheckMenuItem(m_hMenu,ID_UNLOCKTAPE,(UnlockTape)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu,m_MotionBlur,MF_CHECKED);
+	CheckMenuItem(hMenu, ID_ECONET, EconetEnabled ? MF_CHECKED:MF_UNCHECKED);	//Rob
+	CheckMenuItem(hMenu, IDM_SPEECH, SpeechDefault ? MF_CHECKED:MF_UNCHECKED);
 
 	UpdateMonitorMenu();
 
 	/* Initialise the ROM Menu. */
 	SetRomMenu();
+
+	SetSoundMenu();
 }
 
 void BeebWin::UpdateMonitorMenu() {
@@ -939,6 +973,8 @@ LRESULT CALLBACK WndProc(
 			break;
 
 		case WM_SYSKEYDOWN:
+			if (uParam != VK_F10)
+				break;
 		case WM_KEYDOWN:
 			// Reset shift state if it was set by Run Disc
 			if (mainWin->m_ShiftBooted)
@@ -951,16 +987,44 @@ LRESULT CALLBACK WndProc(
 			break;
 
 		case WM_SYSKEYUP:
+			if (uParam != VK_F10)
+				break;
 		case WM_KEYUP:
-			if(mainWin->TranslateKey(uParam, true, row, col) < 0)
+			if (uParam == VK_DIVIDE)
+			{
+				mainWin->QuickSave();
+				// Let user know state has been saved
+				FlashWindow(GETHWND, TRUE);
+				MessageBeep(MB_ICONEXCLAMATION);
+			}
+			else if (uParam == VK_MULTIPLY)
+			{
+				mainWin->QuickLoad();
+				// Let user know state has been loaded
+				FlashWindow(GETHWND, TRUE);
+				MessageBeep(MB_ICONEXCLAMATION);
+			}
+			else if(mainWin->TranslateKey(uParam, true, row, col) < 0)
 			{
 				if(row==-2)
 				{ // Must do a reset!
 					Init6502core();
 					if (EnableTube) Init65C02core();
+					if (Tube186Enabled) i86_main();
+					Enable_Z80 = 0;
+					if (TorchTube || AcornZ80)
+					{
+						R1Status = 0;
+						ResetTube();
+						init_z80();
+						Enable_Z80 = 1;
+					}
 					Disc8271_reset();
 					Reset1770();
-					IDEReset();
+					if (EconetEnabled) EconetReset();//Rob
+					SCSIReset();
+					SASIReset();
+					TeleTextInit();
 					//SoundChipReset();
 				}
 				else if(row==-3)
@@ -1446,7 +1510,10 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		{
 			char  errstr[200];
 			sprintf(errstr,"DirectX failure while updating screen\nFailure code %X",ddrval);
-			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			// Ignore DX errors for now - swapping between full screen and windowed DX 
+			// apps causes an error while transitioning between display modes.  It
+			// appears to correct itself after a second or two though.
+			// MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 		}
 	}
 
@@ -1561,7 +1628,7 @@ BOOL BeebWin::UpdateTiming(void)
 		}
 
 		/* Move counter bases forward */
-		CyclesPerSec = 2000000.0 * m_RealTimeTarget;
+		CyclesPerSec = (int) (2000000.0 * m_RealTimeTarget);
 		while ((TickCount - m_TickBase) > 1000 && (TotalCycles - m_CycleBase) > CyclesPerSec)
 		{
 			m_TickBase += 1000;
@@ -1929,7 +1996,7 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img\0"
+	ofn.lpstrFilter = "Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos\0"
                     "ADFS Disc (*.adl *.adf)\0*.adl;*.adf\0"
                     "Single Sided Disc (*.ssd)\0*.ssd\0"
                     "Double Sided Disc (*.dsd)\0*.dsd\0"
@@ -1961,6 +2028,8 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu)
 
 		bool dsd = false;
 		bool adfs = false;
+		bool img = false;
+		bool dos = false;
 		switch (ofn.nFilterIndex)
 		{
 		case 1:
@@ -1973,6 +2042,10 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu)
 				adfs = true;
 			  if (stricmp(ext+1, "adf") == 0)
 				adfs = true;
+			  if (stricmp(ext+1, "img") == 0)
+				img = true;
+			  if (stricmp(ext+1, "dos") == 0)
+				dos = true;
 			break;
 			}
 		case 2:
@@ -1993,7 +2066,7 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu)
 				else
 					Load1770DiscImage(FileName,Drive,1,dmenu); // 1 = dsd
 			}
-			if ((!dsd) && (!adfs))
+			if ((!dsd) && (!adfs) && (!dos))
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
@@ -2013,10 +2086,14 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu)
 		{
 			if (dsd)
 				Load1770DiscImage(FileName,Drive,1,dmenu); // 0 = ssd
-			if (!dsd && !adfs)						 // Here we go a transposing...
+			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
 				Load1770DiscImage(FileName,Drive,0,dmenu); // 1 = dsd
 			if (adfs)
 				Load1770DiscImage(FileName,Drive,2,dmenu); // ADFS OO La La!
+			if (img)
+				Load1770DiscImage(FileName,Drive,3,dmenu);
+			if (dos)
+				Load1770DiscImage(FileName,Drive,4,dmenu);
 		}
 
 		/* Write protect the disc */
@@ -2869,16 +2946,41 @@ void BeebWin::LoadPreferences()
 		SerialPort=2;
 	}
 
+	//Rob
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"EconetEnabled",&EconetEnabled,binsize);
+	if (!RegRes) {
+		EconetEnabled=0;
+	}
+
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SpeechEnabled",&flag,binsize);
+	if (!RegRes) {
+		SpeechDefault=0;
+	}
+	else {
+		SpeechDefault=flag;
+	}
+
 	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"TorchTube",&TorchTube,binsize);
 	if (!RegRes) {
 		TorchTube=0;
+	}
+
+	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"AcornZ80",&AcornZ80,binsize);
+	if (!RegRes) {
+		AcornZ80=0;
 	}
 
     RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"TubeEnabled",&TubeEnabled,binsize);
 	if (!RegRes) {
 		TubeEnabled=0;
 	}
-	RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"OpCodes",&OpCodes,binsize);
+
+    RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"Tube186Enabled",&Tube186Enabled,binsize);
+	if (!RegRes) {
+		Tube186Enabled=0;
+	}
+    
+    RegRes=SysReg.GetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"OpCodes",&OpCodes,binsize);
 	if (!RegRes) {
 		OpCodes=2;
 	}
@@ -2901,6 +3003,18 @@ void BeebWin::LoadPreferences()
 	{
 		m_XWinPos = rect.left;
 		m_YWinPos = rect.top;
+
+		// Pos can get corrupted if two BeebEm's exited as same time
+		RECT scrrect;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
+		if (m_XWinPos < 0)
+			m_XWinPos = 0;
+		if (m_XWinPos > scrrect.right - 80)
+			m_XWinPos = 0;
+		if (m_YWinPos < 0)
+			m_YWinPos = 0;
+		if (m_YWinPos > scrrect.bottom - 80)
+			m_YWinPos = 0;
 	}
 	else
 	{
@@ -3014,8 +3128,13 @@ void BeebWin::SavePreferences()
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"UnlockTape",&flag,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SerialPortEnabled",&SerialPortEnabled,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SerialPort",&SerialPort,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"EconetEnabled",&EconetEnabled,binsize); //Rob
+	flag=SpeechDefault;
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"SpeechEnabled",&flag,binsize);
 
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"TorchTube",&TorchTube,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"AcornZ80",&AcornZ80,binsize);
+	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"Tube186Enabled",&Tube186Enabled,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"TubeEnabled",&TubeEnabled,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"OpCodes",&OpCodes,binsize);
 	SysReg.SetBinaryValue(HKEY_CURRENT_USER,CFG_REG_KEY,"Basic Hardware",&BHardware,binsize);
@@ -3198,6 +3317,12 @@ void BeebWin::UpdateSerialMenu(HMENU hMenu) {
 	CheckMenuItem(hMenu, ID_COM4, (SerialPort==4)?MF_CHECKED:MF_UNCHECKED);
 }
 
+//Rob
+void BeebWin::UpdateEconetMenu(HMENU hMenu) {	
+	CheckMenuItem(hMenu, ID_ECONET, (EconetEnabled)?MF_CHECKED:MF_UNCHECKED);
+
+}
+
 void BeebWin::UpdateLEDMenu(HMENU hMenu) {
 	// Update the LED Menu
 	CheckMenuItem(hMenu,ID_RED_LEDS,(DiscLedColour>0)?MF_UNCHECKED:MF_CHECKED);
@@ -3248,16 +3373,10 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_QUICKLOAD:
+		QuickLoad();
+		break;
 	case IDM_QUICKSAVE:
-		{
-			char FileName[_MAX_PATH];
-			strcpy(FileName, m_AppPath);
-			strcat(FileName, "beebstate\\quicksave.uef");
-			if (MenuId == IDM_QUICKLOAD)
-				LoadUEFState(FileName);
-			else
-				SaveUEFState(FileName);
-		}
+		QuickSave();
 		break;
 
 	case IDM_LOADDISC0:
@@ -3350,6 +3469,22 @@ void BeebWin::HandleCommand(int MenuId)
 		SerialPort=3; UpdateSerialMenu(hMenu); bSerialStateChanged=TRUE; break;
 	case ID_COM4:
 		SerialPort=4; UpdateSerialMenu(hMenu); bSerialStateChanged=TRUE; break;
+
+	//Rob
+	case ID_ECONET:
+		EconetEnabled= 1-EconetEnabled;
+		if (EconetEnabled)
+		{
+			// Need hard reset for DNFS to detect econet HW
+			ResetBeebSystem(MachineType,TubeEnabled,0);
+			EconetStateChanged=TRUE;
+		}
+		else
+		{
+			EconetReset();
+		}
+		UpdateEconetMenu(hMenu);
+		break;
 
 	case IDM_DDRAWONOFF:
 		{
@@ -3515,6 +3650,12 @@ void BeebWin::HandleCommand(int MenuId)
 			{
 				SoundReset();
 				SoundInit();
+			}
+
+			if (SpeechDefault)
+			{
+				tms5220_stop();
+				tms5220_start();
 			}
 		}
 		break;
@@ -3801,21 +3942,52 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_TUBE:
 		TubeEnabled=1-TubeEnabled;
+        Tube186Enabled = 0;
         TorchTube = 0;
+		AcornZ80 = 0;
         CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 
-	case IDM_TORCH:
+	case IDM_TUBE186:
+		Tube186Enabled=1-Tube186Enabled;
+        TubeEnabled = 0;
+        TorchTube = 0;
+		AcornZ80 = 0;
+        CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+		ResetBeebSystem(MachineType,TubeEnabled,0);
+		break;
+
+    case IDM_TORCH:
 		TorchTube=1-TorchTube;
 		TubeEnabled=0;
+		Tube186Enabled=0;
+		AcornZ80 = 0;
 		CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+		ResetBeebSystem(MachineType,TubeEnabled,0);
+		break;
+    
+    case IDM_ACORNZ80:
+		AcornZ80=1-AcornZ80;
+		TubeEnabled=0;
+		TorchTube=0;
+		Tube186Enabled=0;
+		CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 
-    
     case ID_FILE_RESET:
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
@@ -4027,6 +4199,24 @@ void BeebWin::HandleCommand(int MenuId)
 			aviWriter = NULL;
 		}
 		break;
+
+	case IDM_SPEECH:
+		if (SpeechDefault)
+		{
+			CheckMenuItem(hMenu, IDM_SPEECH, MF_UNCHECKED);
+			tms5220_stop();
+			SpeechDefault = 0;
+		}
+		else
+		{
+			tms5220_start();
+			if (SpeechEnabled)
+			{
+				CheckMenuItem(hMenu, IDM_SPEECH, MF_CHECKED);
+				SpeechDefault = 1;
+			}
+		}
+		break;
 	}
 
 	SetSound(UNMUTED);
@@ -4097,21 +4287,95 @@ void LoadEmuUEF(FILE *SUEF, int Version) {
 }
 
 /*****************************************************************************/
-// Only command line param supported is path to disc image to run.
-void BeebWin::HandleCommandLine(char *cmd)
+// Parse command line parameters
+
+void BeebWin::ParseCommandLine()
+{
+	char  errstr[200];
+	int i;
+	int a;
+	bool invalid;
+
+	m_CommandLineFileName = NULL;
+
+	i = 1;
+	while (i < __argc)
+	{
+		if (__argv[i][0] == '-' && i+1 >= __argc)
+		{
+			sprintf(errstr,"Invalid command line parameter:\n  %s", __argv[i]);
+			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		}
+		else
+		{
+			invalid = false;
+			if (stricmp(__argv[i], "-Model") == 0)
+			{
+				a = atoi(__argv[++i]);
+				if (a < 0 || a > 3)
+					invalid = true;
+				else
+					MachineType = a;
+			}
+			else if (stricmp(__argv[i], "-Tube") == 0)
+			{
+				TubeEnabled = atoi(__argv[++i]);
+			}
+			else if (stricmp(__argv[i], "-EcoStn") == 0)
+			{
+				a = atoi(__argv[++i]);
+				if (a < 1 || a > 254)
+					invalid = true;
+				else
+					EconetStationNumber = a;
+			}
+			else if (stricmp(__argv[i], "-EcoFF") == 0)
+			{
+				a = atoi(__argv[++i]);
+				if (a < 1)
+					invalid = true;
+				else
+					EconetFlagFillTimeout = a;
+			}
+			else if (__argv[i][0] == '-')
+			{
+				invalid = true;
+				++i;
+			}
+			else
+			{
+				// Assume its a file name
+				m_CommandLineFileName = __argv[i];
+			}
+
+			if (invalid)
+			{
+				sprintf(errstr,"Invalid command line parameter:\n  %s %s", __argv[i-1], __argv[i]);
+				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			}
+		}
+
+		++i;
+	}
+}
+	
+/*****************************************************************************/
+// Handle a file name passed on command line
+	
+void BeebWin::HandleCommandLineFile()
 {
 	bool ssd = false;
 	bool dsd = false;
 	bool adfs = false;
 	bool cont = false;
 	char TmpPath[256];
-	char *FileName = cmd;
+	char *FileName = NULL;
 	bool uef = false;
-
+	
 	// See if disc image is readable
-	if (__argc > 1)
+	if (m_CommandLineFileName != NULL)
 	{
-		FileName = __argv[1];
+		FileName = m_CommandLineFileName;
 
 		// Work out which type of files it is
 		char *ext = strrchr(FileName, '.');
@@ -4445,4 +4709,35 @@ void BeebWin::CaptureVideo()
 			}
 		}
 	}
+}
+
+/****************************************************************************/
+void BeebWin::QuickLoad()
+{
+	char FileName[_MAX_PATH];
+	strcpy(FileName, m_AppPath);
+	strcat(FileName, "beebstate\\quicksave.uef");
+	LoadUEFState(FileName);
+}
+
+void BeebWin::QuickSave()
+{
+	char FileName1[_MAX_PATH];
+	char FileName2[_MAX_PATH];
+	int i;
+
+	// Bump old quicksave files down
+	for (i = 1; i <= 9; ++i)
+	{
+		sprintf(FileName1, "%sbeebstate\\quicksave%d.uef", m_AppPath, i);
+
+		if (i == 9)
+			sprintf(FileName2, "%sbeebstate\\quicksave.uef", m_AppPath);
+		else
+			sprintf(FileName2, "%sbeebstate\\quicksave%d.uef", m_AppPath, i+1);
+
+		MoveFileEx(FileName2, FileName1, MOVEFILE_REPLACE_EXISTING);
+	}
+
+	SaveUEFState(FileName2);
 }

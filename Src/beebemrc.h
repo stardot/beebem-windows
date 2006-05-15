@@ -108,6 +108,8 @@
 #define IDC_TCEJECT                     1035
 #define IDC_DEBUGSERIAL                 1036
 #define IDC_DEBUGSERIALBRK              1037
+#define IDC_DEBUGECONET                 1038
+#define IDC_DEBUGECONETBRK              1039
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -280,6 +282,10 @@
 #define IDM_VIDEOSKIP3                  40191
 #define IDM_VIDEOSKIP4                  40192
 #define IDM_VIDEOSKIP5                  40193
+#define ID_ECONET                       40194
+#define IDM_SPEECH                      40196
+#define IDM_TUBE186                     40197
+#define IDM_ACORNZ80                    40198
 
 // Next default values for new objects
 // 
@@ -287,8 +293,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        113
-#define _APS_NEXT_COMMAND_VALUE         40195
-#define _APS_NEXT_CONTROL_VALUE         1034
+#define _APS_NEXT_COMMAND_VALUE         40199
+#define _APS_NEXT_CONTROL_VALUE         1040
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

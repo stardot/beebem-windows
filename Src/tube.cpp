@@ -22,7 +22,8 @@
 /* Mike Wyatt 7/6/97 - Added undocumented instructions */
 /* Copied for 65C02 Tube core - 13/04/01 */
 
-#include <iostream.h>
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -32,8 +33,8 @@
 #include "tube.h"
 #include "debug.h"
 #include "uefstate.h"
-#include "mem_mmu.h"
-#include "simz80.h"
+#include "z80mem.h"
+#include "z80.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -46,11 +47,10 @@
 #define SETTUBEINT(a) TubeintStatus|=1<<a
 #define RESETTUBEINT(a) TubeintStatus&=~(1<<a)
 
-static unsigned int InstrCount;
 static int CurrentInstruction;
 unsigned char TubeRam[65536];
 extern int DumpAfterEach;
-unsigned char TubeEnabled,EnableTube;
+unsigned char TubeEnabled,Tube186Enabled,AcornZ80,EnableTube;
 unsigned char TubeMachineType=3;
 
 CycleCountT TotalTubeCycles=0;  
@@ -65,8 +65,6 @@ unsigned char TubeNMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused
 static unsigned int NMILock=0; /* Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done */
 
 typedef int int16;
-/* Stats */
-static int Stats[256];
 
 enum PSRFlags {
   FlagC=1,
@@ -248,6 +246,12 @@ unsigned char TmpData;
 	
 //	fprintf(tlog, "ReadTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) TmpData);
 	
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Tube: Read from host, addr %X value %02X", (int)IOAddr, (int)TmpData);
+		DebugDisplayTrace(DEBUG_TUBE, true, info);
+	}
+
 	return TmpData;
 }
 
@@ -255,6 +259,12 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 {
 
 //	fprintf(tlog, "WriteTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) IOData);
+
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Tube: Write from host, addr %X value %02X", (int)IOAddr, (int)IOData);
+		DebugDisplayTrace(DEBUG_TUBE, true, info);
+	}
 
 	if ( (IOAddr == 0x02) && (IOData == 0xff) ) TorchTubeActive = 1;
 
@@ -322,6 +332,12 @@ unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr)
 
 //	fprintf(tlog, "ReadTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) TmpData);
 
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Tube: Read from para, addr %X value %02X", (int)IOAddr, (int)TmpData);
+		DebugDisplayTrace(DEBUG_TUBE, false, info);
+	}
+
 	return TmpData;
 }
 
@@ -329,6 +345,12 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 {
 
 //	fprintf(tlog, "WriteTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) IOData);
+
+	if (DebugEnabled) {
+		char info[200];
+		sprintf(info, "Tube: Write from para, addr %X value %02X", (int)IOAddr, (int)IOData);
+		DebugDisplayTrace(DEBUG_TUBE, false, info);
+	}
 
 	switch (IOAddr) {
 	case 1:
@@ -345,7 +367,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
-	if (!EnableTube) 
+	if (! (EnableTube || Tube186Enabled || AcornZ80) ) 
 		return(MachineType==3 ? 0xff : 0xfe); // return ff for master else return fe
 
 	switch (IOAddr) {
@@ -392,7 +414,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 		TmpData=R4HStatus;
 		break;
 	case 7:
-		TmpData=R2PHData;
+		TmpData=R4PHData;
 		if (R4HStatus & TubeDataAv) {
 			R4HStatus&=~TubeDataAv;
 			R4PStatus|=TubeNotFull;
@@ -411,7 +433,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 }
 
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
-	if (!EnableTube) 
+	if (! (EnableTube || Tube186Enabled || AcornZ80) ) 
 		return;
 
 	if (DebugEnabled) {
@@ -479,6 +501,10 @@ void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
 
 unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 	unsigned char TmpData;
+
+	if (TorchTube) 
+		return ReadTorchTubeFromHostSide(IOAddr);
+
 	switch (IOAddr) {
 	case 0:
 		TmpData=R1PStatus | R1Status;
@@ -538,7 +564,14 @@ unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 	return TmpData;
 }
 
-void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData) {
+void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
+{
+	if (TorchTube) 
+	{
+		WriteTorchTubeFromParasiteSide(IOAddr, IOData);
+		return;
+	}
+
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Write from para, addr %X value %02X", (int)IOAddr, (int)IOData);
@@ -1426,7 +1459,7 @@ void Exec65C02Instruction(void) {
 
   // Output debug info
   if (DebugEnabled)
-    DebugDisassembler(TubeProgramCounter,Accumulator,XReg,YReg,PSR,false);
+    DebugDisassembler(TubeProgramCounter,Accumulator,XReg,YReg,PSR,StackReg,false);
 
   // For the Master, check Shadow Ram Presence
   // Note, this has to be done BEFORE reading an instruction due to Bit E and the PC

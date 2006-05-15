@@ -32,6 +32,8 @@ typedef enum {
   userVia,
   serial,
   tube,
+  teletext,
+  hdc,
 } IRQ_Nums;
 
 typedef enum {
@@ -39,6 +41,7 @@ typedef enum {
 	nmi_econet,
 } NMI_Nums;
 
+extern int trace_186;
 extern int IgnoreIllegalInstructions;
 extern int BeginDump;
 
@@ -73,6 +76,9 @@ void Save6502UEF(FILE *SUEF);
 void Load6502UEF(FILE *SUEF);
 void AdjustForIORead(void);
 void AdjustForIOWrite(void);
+
+int i186_execute(int num_cycles);
+
 extern int SwitchOnCycles; // Reset delay
 extern int OpCodes;
 extern int BHardware;
