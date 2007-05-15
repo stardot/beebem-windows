@@ -65,11 +65,11 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 
 	hInst = hInstance;
 
-   tlog = NULL;
+    tlog = NULL;
 
-//    tlog = fopen("\\trace.log", "wt");
+//  tlog = fopen("\\trace.log", "wt");
 
-   mainWin=new BeebWin();
+    mainWin=new BeebWin();
 	mainWin->Initialise();
 
 	// Create serial threads
@@ -128,7 +128,7 @@ char buff[256];
         fprintf(tlog, "[%02d-%3s-%02d %02d:%02d:%02d.%03d] ", 
 	        tim.wDay, mon[tim.wMonth - 1], tim.wYear % 100, tim.wHour, tim.wMinute, tim.wSecond, tim.wMilliseconds);
         
-        fprintf(tlog, "%s\n", buff);
+        fprintf(tlog, "%s", buff);
     }
 
 }

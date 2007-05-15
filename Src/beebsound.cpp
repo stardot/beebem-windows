@@ -77,6 +77,7 @@ int SoundVolume = 3;
 int SoundAutoTriggerTime;
 int SoundBufferSize,TSoundBufferSize;
 double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
+char SoundExponentialVolume = 1;
 
 /* Number of places to shift the volume */
 #define VOLMAG 3
@@ -120,6 +121,7 @@ int SoundDefault;
 double SoundTuning=0.0; // Tunning offset
 
 void PlayUpTil(double DestTime);
+int GetVol(int vol);
 BOOL bReRead=FALSE;
 volatile BOOL bDoSound=TRUE;
 int WriteOffset=0; int SampleAdjust=0;
@@ -247,6 +249,7 @@ void PlayUpTil(double DestTime) {
 
 	if (MachineType != 3 && SpeechEnabled)
 	{
+		SpeechPtr = 0;
 		memset(SpeechBuf, 128, sizeof(SpeechBuf));
 		int len = (int) (DestTime - OurTime + 1);
 		if (len > MAXBUFSIZE)
@@ -270,7 +273,7 @@ void PlayUpTil(double DestTime) {
 						if ((!GenState[channel]) && (!Speech[channel]))
 							tmptotal-=BeebState76489.ToneVolume[channel];
 						if (Speech[channel])
-							tmptotal+=(BeebState76489.ToneVolume[channel]-(7<<VOLMAG));
+							tmptotal+=(BeebState76489.ToneVolume[channel]-GetVol(7));
 						GenIndex[channel]++;
 						tt=(int)CSC[channel];
 						if (!PartSamples) tt=0;
@@ -442,7 +445,7 @@ void PlayUpTil(double DestTime) {
 			}
 			else
 			{
-				MessageBox(GETHWND,"Failed to open audio.dbg","BBC Emulator",MB_OK|MB_ICONERROR);
+				MessageBox(GETHWND,"Failed to open audio.dbg",WindowTitle,MB_OK|MB_ICONERROR);
 				exit(1);
 			}
 #else
@@ -581,7 +584,7 @@ static void InitAudioDev(int sampleratein) {
 				hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_WRITEPRIMARY);
 				if (hr == DSERR_UNSUPPORTED) {
 					MessageBox(GETHWND,"Use of Primary DirectSound Buffer unsupported on this system. Using Secondary DirectSound Buffer instead",
-						"BBC Emulator",MB_OK|MB_ICONERROR);
+						WindowTitle,MB_OK|MB_ICONERROR);
 					UsePrimaryBuffer=0;
 				}
 			}
@@ -597,7 +600,7 @@ static void InitAudioDev(int sampleratein) {
 		{
 			char  errstr[200];
 			sprintf(errstr,"Direct Sound initialisation failed on part %i\nFailure code %X",dsect,hr);
-			MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+			MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 			SoundReset();
 		}
 		mainWin->SetPBuff();
@@ -610,7 +613,7 @@ void LoadRelaySounds(void) {
 	FILE *RelayFile;
 	char RelayFileName[256];
 	char *PRFN=RelayFileName;
-	strcpy(PRFN,RomPath);
+	strcpy(PRFN,mainWin->GetAppPath());
 	strcat(PRFN,"RelayOn.SND");
 	RelayFile=fopen(PRFN,"rb");
 	if (RelayFile!=NULL) {
@@ -620,9 +623,9 @@ void LoadRelaySounds(void) {
 	else {
 		char  errstr[200];
 		sprintf(errstr,"Could not open Relay ON Sound");
-		MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 	}
-	strcpy(PRFN,RomPath);
+	strcpy(PRFN,mainWin->GetAppPath());
 	strcat(PRFN,"RelayOff.SND");
 	RelayFile=fopen(PRFN,"rb");
 	if (RelayFile!=NULL) {
@@ -632,7 +635,7 @@ void LoadRelaySounds(void) {
 	else {
 		char  errstr[200];
 		sprintf(errstr,"Could not open Relay OFF Sound");
-		MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 	}
 }
 
@@ -704,7 +707,7 @@ void Sound_Trigger(int NCycles) {
 void SoundChipReset(void) {
   BeebState76489.LastToneFreqSet=0;
   BeebState76489.ToneVolume[0]=0;
-  BeebState76489.ToneVolume[1]=BeebState76489.ToneVolume[2]=BeebState76489.ToneVolume[3]=15<<VOLMAG;
+  BeebState76489.ToneVolume[1]=BeebState76489.ToneVolume[2]=BeebState76489.ToneVolume[3]=GetVol(15);
   BeebState76489.ToneFreq[0]=BeebState76489.ToneFreq[1]=BeebState76489.ToneFreq[2]=1000;
   BeebState76489.ToneFreq[3]=1000;
   BeebState76489.Noise.FB=0;
@@ -744,7 +747,7 @@ void SoundInit() {
 void SwitchOnSound(void) {
   SetFreq(3,1000);
   ActiveChannel[3]=TRUE;
-  BeebState76489.ToneVolume[3]=15<<VOLMAG;
+  BeebState76489.ToneVolume[3]=GetVol(15);
 }
 
 void SetSound(char State) {
@@ -806,7 +809,7 @@ void Sound_RegWrite(int value) {
         RealVolumes[3]=value&15;
 		if ((BeebState76489.ToneVolume[3]==0) && ((value &15)!=15)) ActiveChannel[3]=TRUE;
         if ((BeebState76489.ToneVolume[3]!=0) && ((value &15)==15)) ActiveChannel[3]=FALSE;
-        BeebState76489.ToneVolume[3]=(15-(value & 15))<<VOLMAG;
+        BeebState76489.ToneVolume[3]=GetVol(15-(value & 15));
         BeebState76489.LastToneFreqSet=2;
 		trigger = 1;
 		VolChange=3;
@@ -823,7 +826,7 @@ void Sound_RegWrite(int value) {
         RealVolumes[2]=value&15;
         if ((BeebState76489.ToneVolume[2]==0) && ((value &15)!=15)) ActiveChannel[2]=TRUE;
         if ((BeebState76489.ToneVolume[2]!=0) && ((value &15)==15)) ActiveChannel[2]=FALSE;
-        BeebState76489.ToneVolume[2]=(15-(value & 15))<<VOLMAG;
+        BeebState76489.ToneVolume[2]=GetVol(15-(value & 15));
         BeebState76489.LastToneFreqSet=1;
 		trigger = 1;
 		VolChange=2;
@@ -840,7 +843,7 @@ void Sound_RegWrite(int value) {
         RealVolumes[1]=value&15;
         if ((BeebState76489.ToneVolume[1]==0) && ((value &15)!=15)) ActiveChannel[1]=TRUE;
         if ((BeebState76489.ToneVolume[1]!=0) && ((value &15)==15)) ActiveChannel[1]=FALSE;
-        BeebState76489.ToneVolume[1]=(15-(value & 15))<<VOLMAG;
+        BeebState76489.ToneVolume[1]=GetVol(15-(value & 15));
         BeebState76489.LastToneFreqSet=0;
 		trigger = 1;
 		VolChange=1;
@@ -857,7 +860,7 @@ void Sound_RegWrite(int value) {
         if ((BeebState76489.ToneVolume[0]==0) && ((value &15)!=15)) ActiveChannel[0]=TRUE;
         if ((BeebState76489.ToneVolume[0]!=0) && ((value &15)==15)) ActiveChannel[0]=FALSE;
 		RealVolumes[0]=value&15;
-        BeebState76489.ToneVolume[0]=(15-(value & 15))<<VOLMAG;
+        BeebState76489.ToneVolume[0]=GetVol(15-(value & 15));
         trigger = 1;
 		VolChange=0;
         break;
@@ -880,6 +883,20 @@ void ClickRelay(unsigned char RState) {
   }
 }
 
+int GetVol(int vol) {
+	if (SoundExponentialVolume)	{
+//		static int expVol[] = { 0,  2,  4,  6,  9, 12, 15, 19, 24, 30, 38, 48, 60, 76,  95, 120 };
+		static int expVol[] = { 0, 11, 14, 17, 20, 24, 28, 33, 39, 46, 54, 63, 74, 87, 102, 120 };
+		if (vol >= 0 && vol <= 15)
+			return expVol[vol];
+		else
+			return 0;
+	}
+	else {
+		return vol << VOLMAG;
+	}
+}
+
 void LoadSoundUEF(FILE *SUEF) {
 	// Sound block
 	unsigned char Chan;
@@ -900,7 +917,7 @@ void LoadSoundUEF(FILE *SUEF) {
 		RegVal=((((Chan-1)*2)+1)<<4)|128;
 		RegVal|=Data&15;
 		Sound_RegWrite(RegVal);
-		BeebState76489.ToneVolume[4-Chan]=(15-Data)<<VOLMAG;
+		BeebState76489.ToneVolume[4-Chan]=GetVol(15-Data);
 		if (Data!=15) ActiveChannel[4-Chan]=TRUE; else ActiveChannel[4-Chan]=FALSE;
 	}
 	RegVal=224|(fgetc(SUEF)&7);
@@ -908,7 +925,7 @@ void LoadSoundUEF(FILE *SUEF) {
 	Data=fgetc(SUEF);
 	RegVal=240|(Data&15);
 	Sound_RegWrite(RegVal);
-	BeebState76489.ToneVolume[0]=(15-Data)<<VOLMAG;
+	BeebState76489.ToneVolume[0]=GetVol(15-Data);
 	if (Data!=15) ActiveChannel[0]=TRUE; else ActiveChannel[0]=FALSE;
 	BeebState76489.LastToneFreqSet=fgetc(SUEF);
 	GenIndex[0]=fget16(SUEF);

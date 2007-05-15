@@ -19,6 +19,7 @@ Offset  Description                 Access
 #include "main.h"
 #include "beebmem.h"
 
+char TeleTextAdapterEnabled=0;
 int TeleTextStatus = 0xef;
 bool TeleTextInts = false;
 int rowPtrOffset = 0x00;
@@ -63,7 +64,10 @@ char buff[256];
 
     if (txtFile) fclose(txtFile);
 
-    sprintf(buff, "%s/discims/txt%d.dat", RomPath, txtChnl);
+    if (!TeleTextAdapterEnabled)
+        return;
+
+    sprintf(buff, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), txtChnl);
     
     txtFile = fopen(buff, "rb");
 
@@ -82,6 +86,8 @@ char buff[256];
 
 void TeleTextWrite(int Address, int Value) 
 {
+    if (!TeleTextAdapterEnabled)
+        return;
 
     TeleTextLog("TeleTextWrite Address = 0x%02x, Value = 0x%02x, PC = 0x%04x\n", Address, Value, ProgramCounter);
 	
@@ -118,6 +124,9 @@ void TeleTextWrite(int Address, int Value)
 
 int TeleTextRead(int Address)
 {
+    if (!TeleTextAdapterEnabled)
+        return 0xff;
+
 int data = 0x00;
 
     switch (Address)
@@ -159,6 +168,9 @@ int data = 0x00;
 void TeleTextPoll(void)
 
 {
+    if (!TeleTextAdapterEnabled)
+        return;
+
 int i;
 char buff[13 * 43];
 

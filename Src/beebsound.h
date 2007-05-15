@@ -41,6 +41,7 @@ extern int DirectSoundEnabled;  /* DirectSound enabled for Win32 */
 extern int RelaySoundEnabled; // Relay Click noise enable
 extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
 extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
+extern char SoundExponentialVolume;
 
 extern __int64 SoundTrigger; /* Cycle based trigger on sound */
 extern double SoundTuning;

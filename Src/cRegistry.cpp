@@ -142,7 +142,7 @@ bool cRegistry::SetDWORDValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, DWOR
 bool cRegistry::SetStringValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, LPSTR lpData)
 {
 	HKEY hKeyResult;
-	DWORD dwLength = strlen(lpData) * sizeof(char);
+	DWORD dwLength = (DWORD)(strlen(lpData) * sizeof(char));
 	DWORD dwType = REG_SZ;
 	DWORD dwBufferSize = MAX_BUFF_LENGTH;
 	LONG  lRes;

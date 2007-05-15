@@ -4,6 +4,8 @@
 #ifndef SCSI_HEADER
 #define SCSI_HEADER
 
+extern char HardDriveEnabled;
+
 void SCSIReset(void);
 void SCSIWrite(int Address, int Value) ;
 int SCSIRead(int Address);

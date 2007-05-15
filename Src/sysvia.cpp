@@ -84,13 +84,6 @@ static unsigned int KBDCol=0;
 static char SysViaKbdState[10][8]; /* Col,row */
 static int KeysDown=0;
 
-// Timer write adjustments. Compensate for two things:
-//  - write happens in last cycle of instruction so compenstate for instruction cycles 
-//    that will be subtracted from the timers
-//  - read of a timer happens 3 cycles into an instruction (more or less!) so run 
-//    timers 3 cycles ahead of CPU clock, then timer reads do not need any adjustment
-unsigned char WCDelay1,WCDelay2;
-
 /*--------------------------------------------------------------------------*/
 static void UpdateIFRTopBit(void) {
   /* Update top bit of IFR */
@@ -112,6 +105,8 @@ void PulseSysViaCB1(void) {
 
 /*--------------------------------------------------------------------------*/
 void BeebKeyUp(int row,int col) {
+  if (row<0 || col<0) return;
+
   /* Update keys down count - unless its shift/control */
   if ((SysViaKbdState[col][row]) && (row!=0)) KeysDown--;
 
@@ -161,6 +156,8 @@ void DoKbdIntCheck() {
 
 /*--------------------------------------------------------------------------*/
 void BeebKeyDown(int row,int col) {
+  if (row<0 || col<0) return;
+
   /* Update keys down count - unless its shift/control */
   if ((!SysViaKbdState[col][row]) && (row!=0)) KeysDown++;
 
@@ -315,8 +312,8 @@ void SysVIAWrite(int Address, int Value) {
       IC32Write(Value);
 	  CMOS.Enabled=((Value & 64)>>6); // CMOS Chip select
 	  CMOS.Address=(((Value & 128)>>7)) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
-      if ((SysVIAState.ifr & 1) && ((SysVIAState.pcr & 2)==0)) {
-        SysVIAState.ifr&=0xfe;
+      if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20)==0)) {
+        SysVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
       };
 	  SysVIAState.ifr&=~16;
@@ -347,7 +344,7 @@ void SysVIAWrite(int Address, int Value) {
     case 5:
       SysVIAState.timer1l&=0xff;
       SysVIAState.timer1l|=(Value & 0xff)<<8;
-      SysVIAState.timer1c=SysVIAState.timer1l * 2;
+      SysVIAState.timer1c=SysVIAState.timer1l * 2 + 1;
       SysVIAState.ifr &=0xbf; /* clear timer 1 ifr */
       /* If PB7 toggling enabled, then lower PB7 now */
       if (SysVIAState.acr & 128) {
@@ -356,7 +353,6 @@ void SysVIAWrite(int Address, int Value) {
       };
       UpdateIFRTopBit();
       SysVIAState.timer1hasshot=0;
-      WCDelay1=Cycles - 3; // See comment at top of file
       break;
 
     case 7:
@@ -374,21 +370,20 @@ void SysVIAWrite(int Address, int Value) {
     case 9:
       SysVIAState.timer2l&=0xff;
       SysVIAState.timer2l|=(Value & 0xff)<<8;
-      SysVIAState.timer2c=SysVIAState.timer2l * 2;
+      SysVIAState.timer2c=SysVIAState.timer2l * 2 + 1;
       if (SysVIAState.timer2c == 0) SysVIAState.timer2c = 0x20000; 
       SysVIAState.ifr &=0xdf; // clear timer 2 ifr 
       UpdateIFRTopBit();
       SysVIAState.timer2hasshot=0;
-      WCDelay2=Cycles - 3; // See comment at top of file
       break;
 
     case 10:
-		SRData=Value;
+      SRData=Value;
       break;
 
     case 11:
       SysVIAState.acr=Value & 0xff;
-	  SRMode=(Value>>2)&7;
+      SRMode=(Value>>2)&7;
       break;
 
     case 12:
@@ -462,8 +457,8 @@ int SysVIARead(int Address) {
       break;
 
     case 4: /* Timer 1 lo counter */
-      if (SysVIAState.timer1c < 0) /* Adjust for dividing -ve count by 2 */
-        tmp=((SysVIAState.timer1c - 1) / 2) & 0xff;
+      if (SysVIAState.timer1c < 0)
+        tmp=0xff;
       else
         tmp=(SysVIAState.timer1c / 2) & 0xff;
       SysVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
@@ -483,7 +478,10 @@ int SysVIARead(int Address) {
       break;
 
     case 8: /* Timer 2 lo counter */
-      tmp=(SysVIAState.timer2c / 2) & 0xff;
+      if (SysVIAState.timer2c < 0) /* Adjust for dividing -ve count by 2 */
+        tmp=((SysVIAState.timer2c - 1) / 2) & 0xff;
+      else
+        tmp=(SysVIAState.timer2c / 2) & 0xff;
       SysVIAState.ifr&=0xdf; /* Clear bit 5 - timer 2 */
       UpdateIFRTopBit();
       break;
@@ -492,7 +490,7 @@ int SysVIARead(int Address) {
       tmp = (SysVIAState.timer2c>>9) & 0xff; //K.Lowe
       break;
 
-	case 10:
+    case 10:
       tmp = SRData;
       break;
 
@@ -548,10 +546,10 @@ void SysVIATriggerCA1Int(int value) {
 
 /*--------------------------------------------------------------------------*/
 void SysVIA_poll_real(void) {
-  int tCycles;
-  if (SysVIAState.timer1c<-2) { // T1 goes to FF before latches reloaded
-    tCycles=abs(SysVIAState.timer1c);
-    SysVIAState.timer1c=(SysVIAState.timer1l * 2)-(tCycles-4);
+  static bool t1int=false;
+
+  if (SysVIAState.timer1c<-2 && !t1int) {
+    t1int=true;
     if ((SysVIAState.timer1hasshot==0) || (SysVIAState.acr & 0x40)) {
       /* cerr << "SysVia timer1 int at " << TotalCycles << "\n"; */
       SysVIAState.ifr|=0x40; /* Timer 1 interrupt */
@@ -559,30 +557,43 @@ void SysVIA_poll_real(void) {
       if (SysVIAState.acr & 0x80) {
         SysVIAState.orb^=0x80; /* Toggle PB7 */
         SysVIAState.irb^=0x80; /* Toggle PB7 */
-      };
-    };
-    SysVIAState.timer1hasshot=1;
-  } /* timer1c underflow */
+      }
+      if ((SysVIAState.ier & 0x40) && CyclesToInt == NO_TIMER_INT_DUE) {
+          CyclesToInt = 3 + SysVIAState.timer1c;
+      }
+      SysVIAState.timer1hasshot=1;
+    }
+  }
 
-  if (SysVIAState.timer2c<0) {
-    tCycles=abs(SysVIAState.timer2c);
-    SysVIAState.timer2c=0x20000-tCycles; // Do not reload latches for T2
+  if (SysVIAState.timer1c<-3) {
+    SysVIAState.timer1c += (SysVIAState.timer1l * 2) + 4;
+    t1int=false;
+  }
+
+  if (SysVIAState.timer2c<-2) {
     if (SysVIAState.timer2hasshot==0) {
       /* cerr << "SysVia timer2 int at " << TotalCycles << "\n"; */
       SysVIAState.ifr|=0x20; /* Timer 2 interrupt */
       UpdateIFRTopBit();
-    };
-    SysVIAState.timer2hasshot=1;
-  } /* timer2c underflow */
+      if ((SysVIAState.ier & 0x20) && CyclesToInt == NO_TIMER_INT_DUE) {
+        CyclesToInt = 3 + SysVIAState.timer2c;
+      }
+      SysVIAState.timer2hasshot=1;
+    }
+  }
 
+  if (SysVIAState.timer2c<-3) {
+    SysVIAState.timer2c += 0x20000; // Do not reload latches for T2
+  }
 } /* SysVIA_poll */
 
 void SysVIA_poll(unsigned int ncycles) {
 	// Converted to a proc to allow shift register functions
 //	ChipClock(ncycles);
-  SysVIAState.timer1c-=(ncycles-WCDelay1); 
-  SysVIAState.timer2c-=(ncycles-WCDelay2); 
-  WCDelay1=WCDelay2=0;
+
+  SysVIAState.timer1c-=ncycles;
+  if (!(SysVIAState.acr & 0x20))
+    SysVIAState.timer2c-=ncycles;
   if ((SysVIAState.timer1c<0) || (SysVIAState.timer2c<0)) SysVIA_poll_real();
 
   // Do Shift register stuff
@@ -615,8 +626,6 @@ unsigned char BCD(unsigned char nonBCD) {
 }
 /*-------------------------------------------------------------------------*/
 void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
-	char TmpPath[256];
-	unsigned char CMA;
 	// Many thanks to Tom Lees for supplying me with info on the 146818 registers 
 	// for these two functions.
 	// Clock registers 0-0x9h shall not be writable
@@ -624,14 +633,6 @@ void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
 	// but we can leave it here for future developments
 	if (CMOSAddr>0xd) {
 		CMOSRAM[CMOSAddr]=CMOSData;
-		// write CMOS Ram
-		strcpy(TmpPath,RomPath); strcat(TmpPath,"/beebstate/cmos.ram");
-		CMDF=fopen(TmpPath,"wb");
-		if (CMDF != NULL)
-		{
-			for(CMA=0xe;CMA<64;CMA++) fputc(CMOSRAM[CMA],CMDF);
-			fclose(CMDF);
-		}
 	}
 }
 

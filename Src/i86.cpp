@@ -407,8 +407,8 @@ char path[256];
 
     memset(opcode_base, 0, 0x100000L);    
 
-	strcpy(path, RomPath);
-	strcat(path, "/BeebFile/bios.rom");
+	strcpy(path, mainWin->GetUserDataPath());
+	strcat(path, "BeebFile/bios.rom");
 
     f = fopen(path, "rb");
     fseek(f, 0, SEEK_SET);

@@ -1,5 +1,5 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by BeebEm.rc
 //
 #define IDK_TAB                         3
@@ -82,6 +82,7 @@
 #define IDD_DIALOG1                     106
 #define IDD_DEBUG                       110
 #define IDD_TAPECONTROL                 112
+#define IDD_BREAKOUT                    113
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGRESTART                1011
 #define IDC_DEBUGINFO                   1015
@@ -110,19 +111,41 @@
 #define IDC_DEBUGSERIALBRK              1037
 #define IDC_DEBUGECONET                 1038
 #define IDC_DEBUGECONETBRK              1039
+#define IDC_DEBUGTRCBRK                 1040
+#define IDC_OB7                         1041
+#define IDC_OB6                         1042
+#define IDC_OB5                         1043
+#define IDC_OB4                         1044
+#define IDC_OB3                         1045
+#define IDC_OB2                         1046
+#define IDC_OB1                         1047
+#define IDC_OB0                         1048
+#define IDC_IB7                         1049
+#define IDC_IB6                         1050
+#define IDC_IB5                         1051
+#define IDC_IB4                         1052
+#define IDC_IB3                         1053
+#define IDC_IB2                         1054
+#define IDC_IB1                         1055
+#define IDC_IB0                         1056
+#define IDK_BIT0                        1057
+#define IDK_BIT1                        1058
+#define IDK_BIT2                        1059
+#define IDK_BIT3                        1060
+#define IDK_BIT4                        1061
+#define IDK_BIT5                        1062
+#define IDK_BIT6                        1063
+#define IDK_BIT7                        1064
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
 #define IDM_EXIT                        40003
-#define IDM_640X256                     40004
 #define IDM_320X256                     40005
 #define IDM_640X512                     40006
 #define IDM_800X600                     40007
 #define IDM_1024X768                    40008
 #define IDM_1024X512                    40009
 #define IDM_SPEEDANDFPS                 40010
-#define IDM_240X192                     40011
-#define IDM_160X128                     40012
 #define IDM_SOUNDONOFF                  40013
 #define IDM_44100KHZ                    40014
 #define IDM_22050KHZ                    40015
@@ -196,8 +219,6 @@
 #define IDM_PRINTER_COM2                40087
 #define IDM_PRINTER_COM3                40088
 #define IDM_PRINTER_COM4                40089
-#define IDM_DDRAWONOFF                  40090
-#define IDM_DDINVIDEORAM                40091
 #define IDM_DSOUNDONOFF                 40092
 #define IDM_FREEZEINACTIVE              40093
 #define ID_MONITOR_RGB                  40095
@@ -207,7 +228,6 @@
 #define ID_VIEW_DD_640X480              40099
 #define ID_VIEW_DD_1024X768             40100
 #define ID_VIEW_DD_1280X1024            40101
-#define IDM_DD32ONOFF                   40102
 #define ID_FILE_RESET                   40103
 #define ID_MODELB                       40105
 #define ID_MASTER128                    40106
@@ -286,6 +306,38 @@
 #define IDM_SPEECH                      40196
 #define IDM_TUBE186                     40197
 #define IDM_ACORNZ80                    40198
+#define ID_TELETEXT                     40199
+#define ID_HARDDRIVE                    40200
+#define IDM_EJECTDISC0                  40201
+#define IDM_EJECTDISC1                  40202
+#define IDM_EXPVOLUME                   40203
+#define ID_TOUCHSCREEN                  40204
+#define IDM_AMOUSESTICK                 40205
+#define IDM_DMOUSESTICK                 40206
+#define ID_HARDWARE_USERPORTBREAKOUTBOX 40207
+#define ID_BREAKOUT                     40208
+#define IDM_TEXTTOSPEECH                40209
+#define IDM_TEXTVIEW                    40210
+#define IDM_DISABLEKEYSWINDOWS          40211
+#define IDM_DISABLEKEYSBREAK            40212
+#define IDM_DISABLEKEYSESCAPE           40213
+#define IDM_DISABLEKEYSSHORTCUT         40214
+#define IDM_DISABLEKEYSALL              40215
+#define IDM_WPONLOAD                    40216
+#define IDM_DISPGDI                     40217
+#define IDM_DISPDDRAW                   40218
+#define IDM_DISPDX9                     40219
+#define IDM_DXSMOOTHING                 40220
+#define ID_VIEW_DD_1280X768             40221
+#define ID_VIEW_DD_1280X960             40222
+#define ID_VIEW_DD_1440X900             40223
+#define ID_VIEW_DD_1600X1200            40224
+#define IDM_1280X1024                   40225
+#define IDM_1440X1080                   40226
+#define IDM_1600X1200                   40227
+#define ID_UPRM                         40228
+#define IDM_ARM                         40229
+#define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 
@@ -293,8 +345,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        113
-#define _APS_NEXT_COMMAND_VALUE         40199
-#define _APS_NEXT_CONTROL_VALUE         1040
+#define _APS_NEXT_COMMAND_VALUE         40230
+#define _APS_NEXT_CONTROL_VALUE         1065
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

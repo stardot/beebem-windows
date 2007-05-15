@@ -27,7 +27,7 @@
 
 void DumpRegs(void);
 
-typedef enum {
+typedef enum IRQ_Nums {
   sysVia,
   userVia,
   serial,
@@ -36,11 +36,12 @@ typedef enum {
   hdc,
 } IRQ_Nums;
 
-typedef enum {
+typedef enum NMI_Nums{
 	nmi_floppy,
 	nmi_econet,
 } NMI_Nums;
 
+extern int trace;
 extern int trace_186;
 extern int IgnoreIllegalInstructions;
 extern int BeginDump;
@@ -53,6 +54,9 @@ extern int PrePC;
 extern CycleCountT TotalCycles;
 extern unsigned int NMILock;
 extern int DisplayCycles;
+
+extern int CyclesToInt;
+#define NO_TIMER_INT_DUE -1000000
 
 #define SetTrigger(after,var) var=TotalCycles+after;
 #define IncTrigger(after,var) var+=(after);
@@ -74,6 +78,7 @@ void core_dumpstate(void);
 void DoInterrupt(void);
 void Save6502UEF(FILE *SUEF);
 void Load6502UEF(FILE *SUEF);
+void SyncIO(void);
 void AdjustForIORead(void);
 void AdjustForIOWrite(void);
 

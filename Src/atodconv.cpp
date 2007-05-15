@@ -20,15 +20,15 @@
 /* Analogue to digital converter support file for the beeb emulator -
    Mike Wyatt 7/6/97 */
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <stdio.h>
 
 #include "6502core.h"
 #include "atodconv.h"
 #include "sysvia.h"
-
-#ifdef WIN32
-#include <windows.h>
-#endif
 
 int JoystickEnabled = 0;
 
@@ -37,7 +37,7 @@ int JoystickX;
 int JoystickY;
 
 /* A to D state */
-typedef struct {
+typedef struct AtoDStateT{
 	unsigned char datalatch;
 	unsigned char status;
 	unsigned char high;

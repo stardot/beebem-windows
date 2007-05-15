@@ -54,7 +54,7 @@ enum PSRFlags {
 
 #define MAX_LINES 4096          // Max lines in info window
 #define LINES_IN_INFO 43        // Visible lines in info window
-#define MAX_COMMAND_LEN 20      // Max debug command length
+#define MAX_COMMAND_LEN 200     // Max debug command length
 #define MAX_BPS 50				// Max num of breakpoints
 
 // Breakpoints
@@ -724,6 +724,7 @@ bool DebugDisassembler(int addr, int Accumulator, int XReg, int YReg, int PSR, i
 void DebugExecuteCommand()
 {
 	char command[MAX_COMMAND_LEN + 1];
+	char filename[100 + 1];
 	char info[200];
 	int start, end, count;
 	int i;
@@ -798,7 +799,7 @@ void DebugExecuteCommand()
 				sprintf(info, "%04X", start);
 
 				// Check if BP in list
-				i = SendMessage(hwndBP, LB_FINDSTRING, 0, (LPARAM)info);
+				i = (int)SendMessage(hwndBP, LB_FINDSTRING, 0, (LPARAM)info);
 				if (i != LB_ERR)
 				{
 					SendMessage(hwndBP, LB_DELETESTRING, i, 0);
@@ -857,6 +858,76 @@ void DebugExecuteCommand()
 			break;
 		}
 		break;
+
+	case 'w': // Write buffer to file, params: filename [count]
+		count = 0;
+		filename[0] = '\0';
+		if (sscanf(&command[1], "%100s %x", filename, &count) >= 1 &&
+			strlen(filename) != 0)
+		{
+			ok = true;
+
+			if (count <= 0 || count > LinesDisplayed)
+				count = LinesDisplayed;
+
+			FILE *fd = fopen(filename, "w");
+			if (fd)
+			{
+				for (i = LinesDisplayed - count; i < LinesDisplayed; ++i)
+				{
+					SendMessage(hwndInfo, LB_GETTEXT, i, (LPARAM)info);
+					fprintf(fd, "%s\n", info);
+				}
+				fclose(fd);
+
+				DebugDisplayInfo("");
+				sprintf(info, "Wrote %x lines to: %s", count, filename);
+				DebugDisplayInfo(info);
+
+				SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
+			}
+			else
+			{
+				DebugDisplayInfo("");
+				sprintf(info, "Failed open for write: %s", filename);
+				DebugDisplayInfo(info);
+			}
+		}
+		break;
+
+	case 'c': // Change memory, params: start byte byte ...
+	{
+		char *param = command + 1;
+		while (*param == ' ')
+			++param;
+		if (sscanf(param, "%x", &start) == 1 && start >= 0 && start <= 0xffff)
+		{
+			ok = true;
+			i = 0;
+			int addr = start;
+			int data = 0;
+			param = strchr(param, ' ');
+			while (param != NULL)
+			{
+				while (*param == ' ')
+					++param;
+				if (sscanf(param, "%x", &data) == 1)
+				{
+					BeebWriteMem(addr, data & 0xff);
+					++addr;
+					++i;
+				}
+				param = strchr(param, ' ');
+			}
+
+			DebugDisplayInfo("");
+			sprintf(info, "Changed %x bytes starting at %x", i, start);
+			DebugDisplayInfo(info);
+
+			SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
+		}
+		break;
+	}
 	}
 
 	if (!ok)

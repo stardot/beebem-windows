@@ -56,6 +56,8 @@ typedef struct {
 sasi_t sasi;
 FILE *SASIDisc[4] = {0};
 
+extern char HardDriveEnabled;
+
 void SASIReset(void)
 {
 int i;
@@ -66,10 +68,16 @@ char buff[256];
 	
 	for (i = 0; i < 1; ++i)		// only one drive allowed under Torch Z80 ?
     {
-        sprintf(buff, "%s/discims/sasi%d.dat", RomPath, i);
+        sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), i);
 
         if (SASIDisc[i] != NULL)
+		{
 			fclose(SASIDisc[i]);
+			SASIDisc[i]=NULL;
+		}
+
+        if (!HardDriveEnabled)
+            continue;
 
         SASIDisc[i] = fopen(buff, "rb+");
     
@@ -86,6 +94,8 @@ char buff[256];
 
 void SASIWrite(int Address, int Value) 
 {
+    if (!HardDriveEnabled)
+        return;
 
 //	fprintf(stderr, "SASIWrite Address = 0x%02x, Value = 0x%02x, Phase = %d, PC = 0x%04x\n", Address, Value, sasi.phase, ProgramCounter);
 	
@@ -111,6 +121,9 @@ void SASIWrite(int Address, int Value)
 
 int SASIRead(int Address)
 {
+    if (!HardDriveEnabled)
+        return 0xff;
+
 int data = 0xff;
 
     switch (Address)
@@ -287,6 +300,12 @@ void SASIBusFree(void)
 	sasi.irq = false;
 	
 	sasi.phase = busfree;
+
+	LEDs.HDisc[0] = 0;
+	LEDs.HDisc[1] = 0;
+	LEDs.HDisc[2] = 0;
+	LEDs.HDisc[3] = 0;
+
 }
 
 void SASISelection(int data)
@@ -317,6 +336,8 @@ void SASIExecute(void)
 //			sasi.cmd[0], sasi.cmd[1], sasi.cmd[2], sasi.cmd[3], sasi.cmd[4], sasi.cmd[5], sasi.phase, ProgramCounter);
 	
 	sasi.lun = (sasi.cmd[1]) >> 5;
+
+	LEDs.HDisc[sasi.lun] = 1;
 
 	switch (sasi.cmd[0]) {
 		case 0x00 :
@@ -596,6 +617,7 @@ bool SASIDiscFormat(unsigned char *buf)
 	
 	if (SASIDisc[sasi.lun] != NULL) {
 		fclose(SASIDisc[sasi.lun]);
+		SASIDisc[sasi.lun]=NULL;
 	}
 	
 	record = buf[1] & 0x1f;
@@ -604,7 +626,7 @@ bool SASIDiscFormat(unsigned char *buf)
 	record <<= 8;
 	record |= buf[3];
 	
-	sprintf(buff, "%s/discims/sasi%d.dat", RomPath, sasi.lun);
+	sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), sasi.lun);
 	
 	SASIDisc[sasi.lun] = fopen(buff, "wb");
 	if (SASIDisc[sasi.lun] != NULL) fclose(SASIDisc[sasi.lun]);

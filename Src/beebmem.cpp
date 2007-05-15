@@ -20,6 +20,11 @@
 /****************************************************************************/
 /* Beebemulator - memory subsystem - David Alan Gilbert 16/10/94 */
 // Econet emulation: Rob O'Donnell robert@irrelevant.com 28/12/2004
+
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,14 +88,15 @@ unsigned char ROMSEL;
 /* Master 128 Specific Stuff */
 unsigned char FSRam[8192]; // 8K Filing System RAM
 unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
-int CMOSRAM[64]; // 50 Bytes CMOS RAM
-int CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x58,0xa2}; // Backup of CMOS Defaults
+unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
+unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2}; // Backup of CMOS Defaults
 unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 unsigned char ACCCON; // ACCess CONtrol register
 struct CMOSType CMOS;
 unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 char RomPath[512];
+char RomFile[512];
 // FDD Extension board variables
 int EFDCAddr; // 1770 FDC location
 int EDCAddr; // Drive control location
@@ -212,6 +218,7 @@ char *BeebMemPtrWithWrapMo7(int a, int n) {
 
 /*----------------------------------------------------------------------------*/
 int BeebReadMem(int Address) {
+	int Value = 0xff;
 
 // BBC B Start
   if (MachineType==0) {
@@ -303,7 +310,10 @@ int BeebReadMem(int Address) {
 			return(WholeRam[Address]);
 			break;
 		case 0xf:
-			if (Address<0xfc00 || Address>=0xff00) { return(WholeRam[Address]); break; }
+			if (Address<0xfc00 || Address>=0xff00) { return(WholeRam[Address]); }
+			if ((ACCCON & 0x40) && Address>=0xfc00 && Address<0xff00) { 
+				return WholeRam[Address];
+			}
 			break;
 		default:
 			return(0);
@@ -316,37 +326,51 @@ int BeebReadMem(int Address) {
 
 	/* IO space */
 
-	if (Address >= 0xfc00 && Address < 0xfe00)
+	if (Address >= 0xfc00 && Address < 0xfe00) {
+		SyncIO();
 		AdjustForIORead();
+	}
 
 	/* VIA's first - games seem to do really heavy reaing of these */
 	/* Can read from a via using either of the two 16 bytes blocks */
 	if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
+		SyncIO();
+		Value = SysVIARead(Address & 0xf);
 		AdjustForIORead();
-		return(SysVIARead(Address & 0xf));
+		return Value;
 	}
 
 	if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
+		SyncIO();
+		Value = UserVIARead(Address & 0xf);
 		AdjustForIORead();
-		return(UserVIARead(Address & 0xf));
+		return Value;
 	}
 
 	if ((Address & ~7)==0xfe00) {
+		SyncIO();
+		Value = CRTCRead(Address & 0x7);
 		AdjustForIORead();
-		return(CRTCRead(Address & 0x7));
+		return Value;
 	}
 
 	if (Address==0xfe08) {
+		SyncIO();
+		Value = Read_ACIA_Status();
 		AdjustForIORead();
-		return(Read_ACIA_Status());
+		return Value;
 	}
 	if (Address==0xfe09) {
+		SyncIO();
+		Value = Read_ACIA_Rx_Data();
 		AdjustForIORead();
-		return(Read_ACIA_Rx_Data());
+		return Value;
 	}
 	if (Address==0xfe10) {
+		SyncIO();
+		Value = Read_SERPROC();
 		AdjustForIORead();
-		return(Read_SERPROC());
+		return Value;
 	}
 
 	/* Rob: BBC AUG says FE20 is econet stn no. for bbc b. [It's in cmos for a master,]
@@ -418,8 +442,10 @@ int BeebReadMem(int Address) {
 	}
 
 	if ((Address & ~0x1f)==0xfec0 && MachineType!=3) {
+		SyncIO();
+		Value = AtoDRead(Address & 0xf);
 		AdjustForIORead();
-		return(AtoDRead(Address & 0xf));
+		return Value;
 	}
 
 	if ((Address & ~0x1f)==0xfee0)
@@ -430,15 +456,15 @@ int BeebReadMem(int Address) {
 			return(ReadTubeFromHostSide(Address&7)); //Read From Tube
 	}
 
-	if ((Address & ~0x3)==0xfc40) {
-		return(SCSIRead(Address & 0x3));
-	}
-	
 	if ((Address & ~0x3)==0xfc10) {
 		return(TeleTextRead(Address & 0x3));
 	}
     
-    if ((Address & ~0x3)==0xfdf0) {
+	if ((Address & ~0x3)==0xfc40) {
+		return(SCSIRead(Address & 0x3));
+	}
+
+	if ((Address & ~0x3)==0xfdf0) {
 		return(SASIRead(Address & 0x3));
 	}
 
@@ -474,11 +500,11 @@ static void DoRomChange(int NewBank) {
 static void FiddleACCCON(unsigned char newValue) {
 	// Master specific, should only execute in Master128 mode
 	// ignore bits TST (6) IFJ (5) and ITU (4)
-	newValue&=143;
+//	newValue&=143;
 	unsigned char oldshd;
-	if ((newValue & 128)==128) DoInterrupt();
+//	if ((newValue & 128)==128) DoInterrupt();
 	ACCCON=newValue & 127; // mask out the IRR bit so that interrupts dont occur repeatedly
-	//if (newValue & 128) intStatus|=128; else intStatus&=127;
+	if (newValue & 128) intStatus|=128; else intStatus&=127;
 	oldshd=Sh_Display;
 	Sh_Display=ACCCON & 1;
 	if (Sh_Display!=oldshd) RedoMPTR();
@@ -697,11 +723,14 @@ void BeebWriteMem(int Address, int Value) {
 
 	/* IO space */
 
-	if (Address >= 0xfc00 && Address < 0xfe00)
+	if (Address >= 0xfc00 && Address < 0xfe00) {
+		SyncIO();
 		AdjustForIOWrite();
+	}
 
 	/* Can write to a via using either of the two 16 bytes blocks */
 	if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
+		SyncIO();
 		AdjustForIOWrite();
 		SysVIAWrite((Address & 0xf),Value);
 		return;
@@ -709,28 +738,33 @@ void BeebWriteMem(int Address, int Value) {
 
 	/* Can write to a via using either of the two 16 bytes blocks */
 	if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
+		SyncIO();
 		AdjustForIOWrite();
 		UserVIAWrite((Address & 0xf),Value);
 		return;
 	}
 
 	if ((Address & ~0x7)==0xfe00) {
+		SyncIO();
 		AdjustForIOWrite();
 		CRTCWrite(Address & 0x7, Value);
 		return;
 	}
 
 	if (Address==0xfe08) {
+		SyncIO();
 		AdjustForIOWrite();
 		Write_ACIA_Control(Value);
 		return;
 	}
 	if (Address==0xfe09) {
+		SyncIO();
 		AdjustForIOWrite();
 		Write_ACIA_Tx_Data(Value);
 		return;
 	}
 	if (Address==0xfe10) {
+		SyncIO();
 		AdjustForIOWrite();
 		Write_SERPROC(Value);
 		return;
@@ -738,15 +772,15 @@ void BeebWriteMem(int Address, int Value) {
 
 	//Rob: econet NMI mask
 	if (EconetEnabled &&
-		((MachineType!=3 && (Address & ~8)==0xfe18) ||
-		 (MachineType==3 && (Address & ~8)==0xfe38)) ) {
+		((MachineType!=3 && (Address & ~3)==0xfe18) ||
+		 (MachineType==3 && (Address & ~3)==0xfe38)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DEBUG_ECONET, true, "Econet: INTOFF(w)");
 		EconetNMIenabled = INTOFF; 
 	}
 
 	if ((Address & ~0x7)==0xfe18 && MachineType==3) {
-		AtoDWrite((Address & 0xf),Value);
+		AtoDWrite((Address & 0x7),Value);
 		return;
 	}
 
@@ -789,6 +823,7 @@ void BeebWriteMem(int Address, int Value) {
 	}
 
 	if ((Address & ~0x1f)==0xfec0 && MachineType!=3) {
+		SyncIO();
 		AdjustForIOWrite();
 		AtoDWrite((Address & 0xf),Value);
 		return;
@@ -802,17 +837,17 @@ void BeebWriteMem(int Address, int Value) {
 			WriteTubeFromHostSide(Address&7,Value);
 	}
 
-	if ((Address & ~0x3)==0xfc40) {
-		SCSIWrite((Address & 0x3),Value);
-		return;
-	}
-
 	if ((Address & ~0x3)==0xfc10) {
 		TeleTextWrite((Address & 0x3),Value);
 		return;
 	}
     
-    if ((Address & ~0x3)==0xfdf0) {
+	if ((Address & ~0x3)==0xfc40) {
+		SCSIWrite((Address & 0x3),Value);
+		return;
+	}
+
+	if ((Address & ~0x3)==0xfdf0) {
 		SASIWrite((Address & 0x3),Value);
 		return;
 	}
@@ -846,8 +881,7 @@ char *ReadRomTitle( int bank, char *Title, int BufSize )
 /*----------------------------------------------------------------------------*/
 void BeebReadRoms(void) {
  FILE *InFile,*RomCfg;
- char TmpPath[256];
- char fullname[256];
+ char fullname[_MAX_PATH];
  int romslot = 0xf;
  char RomNameBuf[80];
  char *RomName=RomNameBuf;
@@ -856,34 +890,9 @@ void BeebReadRoms(void) {
  
  /* Read all ROM files in the BeebFile directory */
  // This section rewritten for V.1.32 to take account of roms.cfg file.
- strcpy(TmpPath,RomPath);
- strcat(TmpPath,"Roms.cfg");
- RomCfg=fopen(TmpPath,"rt");
- if (RomCfg==NULL) {
-	 // Open failed, if its because of an unfound file,
-	 // try to copy example.cfg on to it, and re-open
-//	 if (errno==ENOENT) {
-		 strcpy(TmpPath,RomPath);
-		 strcat(TmpPath,"Example.cfg");
-		 InFile=fopen(TmpPath,"rt");
-		 if (InFile!=NULL) {
-			 strcpy(TmpPath,RomPath);
-			 strcat(TmpPath,"Roms.cfg");
-			 RomCfg=fopen(TmpPath,"wt");
-			 //Begin copying the file over
-			 for (romslot=0;romslot<68;romslot++) {
-				 fgets(RomName,80,InFile);
-				 fputs(RomName,RomCfg);
-			 }
-			 fclose(RomCfg);
-			 fclose(InFile);
-		 }
-//	 }
-	 strcpy(TmpPath,RomPath);
-	 strcat(TmpPath,"Roms.cfg");
-	 RomCfg=fopen(TmpPath,"rt"); // Retry the opem
- }
-
+ strcpy(fullname,RomPath);
+ strcat(fullname,RomFile);
+ RomCfg=fopen(fullname,"rt");
  if (RomCfg!=NULL) {
 	 // CFG file open, proceed to read the roms.
 	 // if machinetype=1 (i.e. BBC B Integra B) we need to skip 17 lines in the file
@@ -899,7 +908,7 @@ void BeebReadRoms(void) {
 	 strcpy(fullname,RomName);
 	 if ((RomName[0]!='\\') && (RomName[1]!=':')) {
 		 strcpy(fullname,RomPath);
-		 strcat(fullname,"/BeebFile/");
+		 strcat(fullname,"BeebFile/");
 		 strcat(fullname,RomName);
 	 }
 	 // for some reason, we have to change \ to /  to make C work...
@@ -910,7 +919,7 @@ void BeebReadRoms(void) {
   	 else {
 		 char errstr[200];
 		 sprintf(errstr, "Cannot open specified OS ROM:\n %s",fullname);
-		 MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+		 MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 	 }
 	 // read paged ROMs
 	 for (romslot=15;romslot>=0;romslot--) {
@@ -920,7 +929,7 @@ void BeebReadRoms(void) {
 		strcpy(fullname,RomName);
 		if ((RomName[0]!='\\') && (RomName[1]!=':')) {
  			strcpy(fullname,RomPath);
-			strcat(fullname,"/BeebFile/");
+			strcat(fullname,"BeebFile/");
 			strcat(fullname,RomName);
 		}
 		isrom=1; RomWritable[romslot]=0; Shortener=0;
@@ -944,7 +953,7 @@ void BeebReadRoms(void) {
 			if (isrom==1) {
 				char errstr[200];
 				sprintf(errstr, "Cannot open specified ROM:\n %s",fullname);
-				MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 			}
 		}
 	 }
@@ -952,20 +961,17 @@ void BeebReadRoms(void) {
  }
  else {
     char errstr[200];
-	sprintf(errstr, "Cannot open ROM Configuration file ROMS.CFG");
-    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+	sprintf(errstr, "Cannot open ROM Configuration file:\n  %s", fullname);
+    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 	exit(1);
-	}
+ }
 }
 /*----------------------------------------------------------------------------*/
 void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
   /* Remove the non-win32 stuff here, soz, im not gonna do multi-platform master128 upgrades
   u want for linux? u do yourself! ;P - Richard Gellman */
   
-  char TmpPath[256];
   unsigned char RomBlankingSlot;
-  long CMOSLength;
-  FILE *CMDF3;
   unsigned char CMA3;
 
   // Reset everything
@@ -996,17 +1002,6 @@ void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
   memcpy(WholeRam+0x8000,Roms[0xf],0x4000);
   PagedRomReg=0xf;
 
-  // This CMOS stuff can be done anyway
-  // Ah, bug with cmos.ram you say?	
-  strcpy(TmpPath,RomPath); strcat(TmpPath,"/beebstate/cmos.ram");
-  if ((CMDF3 = fopen(TmpPath,"rb"))!=NULL) {
-	  fseek(CMDF3,0,SEEK_END);
-	  CMOSLength=ftell(CMDF3);
-	  fseek(CMDF3,0,SEEK_SET);
-	  if (CMOSLength==50) for(CMA3=0xe;CMA3<64;CMA3++) CMOSRAM[CMA3]=fgetc(CMDF3);
-	  fclose(CMDF3);
-  }
-  else for(CMA3=0xe;CMA3<64;CMA3++) CMOSRAM[CMA3]=CMOSDefault[CMA3-0xe];
 } /* BeebMemInit */
 
 /*-------------------------------------------------------------------------*/

@@ -155,7 +155,7 @@ void BeebReadPhroms(void) {
 	
 	/* Read all ROM files in the BeebFile directory */
 	// This section rewritten for V.1.32 to take account of roms.cfg file.
-	strcpy(TmpPath,RomPath);
+	strcpy(TmpPath,mainWin->GetUserDataPath());
 	strcat(TmpPath,"phroms.cfg");
 	
 	fprintf(stderr, "Opening %s\n", TmpPath);
@@ -174,7 +174,7 @@ void BeebReadPhroms(void) {
 		if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
 		strcpy(fullname,RomName);
 		if ((RomName[0]!='\\') && (RomName[1]!=':')) {
-			strcpy(fullname,RomPath);
+			strcpy(fullname,mainWin->GetUserDataPath());
 			strcat(fullname,"Phroms/");
 			strcat(fullname,RomName);
 		}

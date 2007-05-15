@@ -542,7 +542,7 @@ bool EconetPoll_real(void) {		//return NMI status
 		ADLC.status1 &= ~10;  					// clear sr2rq, FD
 		ADLC.status2 &= ~126;					// clear FV, RxIdle, RxAbt, Err, OVRN, DCD
 
-		if (ADLC.control2 & 1 && ADLC.sr2pse) {	// PSE active?
+		if ((ADLC.control2 & 1) && ADLC.sr2pse) {	// PSE active?
 			ADLC.sr2pse++;						// Advance PSE to next priority
 			if (ADLC.sr2pse > 4)
 				ADLC.sr2pse = 0;
@@ -712,7 +712,7 @@ bool EconetPoll_real(void) {		//return NMI status
 					ADLC.rxffc = (ADLC.rxffc <<1) & 7;
 					ADLC.rxap = (ADLC.rxap <<1) & 7;
 					if (EconetRxReadPointer == 0)
-						ADLC.rxap |= 1; 			// todo - 2 bytes? adr extention mode
+						ADLC.rxap |= 1; 			// 2 bytes? adr extention mode
 					EconetRxReadPointer++;
 					if (EconetRxReadPointer >= EconetRxBytesInBuffer)  { // that was last byte!
 						ADLC.rxffc |= 1;			// set FV flag (this was last byte of frame)
@@ -734,7 +734,7 @@ bool EconetPoll_real(void) {		//return NMI status
 					timeval TmOut = {0,0};
 					FD_ZERO(&RdFds);
 					FD_SET(ListenSocket, &RdFds);
-					RetVal = select(ListenSocket + 1, &RdFds, NULL, NULL, &TmOut);
+					RetVal = select((int)ListenSocket + 1, &RdFds, NULL, NULL, &TmOut);
 					if (RetVal > 0)
 					{
 						// Read the packet
@@ -922,7 +922,7 @@ bool EconetPoll_real(void) {		//return NMI status
 	// SR2b7 - RDA. As per SR1b0 - set above.
 
 
-	// Handle PSE - only for SR2 Rx bits at the moment - others todo
+	// Handle PSE - only for SR2 Rx bits at the moment
 	int sr2psetemp = ADLC.sr2pse;
 	if (ADLC.control2 & 1) {
 		if ((ADLC.sr2pse <= 1) && (ADLC.status2 & 0x7A)) {	// ERR, FV, DCD, OVRN, ABT

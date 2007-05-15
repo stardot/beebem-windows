@@ -114,6 +114,7 @@ int ova,ovn; // mem ptr buffers
 the point of the sync. If it is -ve its actually in the adjust time */
 typedef struct {
   int Addr;       /* Address of start of next visible character line in beeb memory  - raw */
+  int StartAddr;  /* Address of start of first character line in beeb memory  - raw */
   int PixmapLine; /* Current line in the pixmap */
   int FirstPixmapLine; /* The first pixmap line where something is visible.  Used to eliminate the 
                           blank virtical retrace lines at the top of the screen.  */
@@ -174,14 +175,14 @@ static void BuildMode7Font(void) {
   char TxtFnt[256];
   /* cout <<"Building mode 7 font data structures\n"; */
  // Build enhanced mode 7 font
-  strcpy(TxtFnt,RomPath);
+  strcpy(TxtFnt,mainWin->GetAppPath());
   strcat(TxtFnt,"teletext.fnt");
   m7File=fopen(TxtFnt,"rb");
   if (m7File == NULL)
   {
     char errstr[200];
     sprintf(errstr, "Cannot open Teletext font file teletext.fnt");
-    MessageBox(GETHWND,errstr,"BBC Emulator",MB_OK|MB_ICONERROR);
+    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
     exit(1);
   }
   for (m7cc=32;m7cc<=127;m7cc++) {
@@ -606,14 +607,14 @@ static void VideoStartOfFrame(void) {
   
   VideoState.IsTeletext=(VideoULA_ControlReg &2)>0;
   if (!VideoState.IsTeletext) {
-    VideoState.Addr=CRTC_ScreenStartLow+(CRTC_ScreenStartHigh<<8);
+    VideoState.Addr=VideoState.StartAddr=CRTC_ScreenStartLow+(CRTC_ScreenStartHigh<<8);
   } else {
     int tmphigh=CRTC_ScreenStartHigh;
     /* undo wrangling of start address - I don't understand why this should be - see p.372 of AUG for this info */
     tmphigh^=0x20;
     tmphigh+=0x74;
     tmphigh&=255;
-    VideoState.Addr=CRTC_ScreenStartLow+(tmphigh<<8);
+    VideoState.Addr=VideoState.StartAddr=CRTC_ScreenStartLow+(tmphigh<<8);
 
 	// O aye. this is the mode 7 flash section is it? Modified for corrected flash settings - Richard Gellman
     Mode7FlashTrigger--;
@@ -843,6 +844,7 @@ static void DoMode7Row(void) {
             CurrentCol[CurrentScanLine]=col;
             CurrentStartX[CurrentScanLine]=CurrentX;
             CurrentLen[CurrentScanLine]=12*XStep;
+
           }; /* same colour */
         } else {
           for(CurrentPixel=0x800;CurrentPixel;CurrentPixel=CurrentPixel>>1) {
@@ -1350,8 +1352,13 @@ void VideoAddLEDs(void) {
 		mainWin->doLED(24,LEDs.ShiftLock);
 	}
 	if (LEDs.ShowDisc)  {
-		mainWin->doLED((TeletextEnabled)?532:618,LEDs.Disc0);
-		mainWin->doLED((TeletextEnabled)?542:628,LEDs.Disc1);
+		int adj = (TeletextEnabled ? 86 : 0);
+		mainWin->doLED(578-adj,LEDs.HDisc[0]);
+		mainWin->doLED(588-adj,LEDs.HDisc[1]);
+		mainWin->doLED(598-adj,LEDs.HDisc[2]);
+		mainWin->doLED(608-adj,LEDs.HDisc[3]);
+		mainWin->doLED(618-adj,LEDs.Disc0);
+		mainWin->doLED(628-adj,LEDs.Disc1);
 	}
 }
 
@@ -1480,4 +1487,31 @@ void DebugVideoState()
 		(int)CRTC_CursorPosLow,
 		(int)VideoULA_ControlReg);
 	DebugDisplayInfo(info);
+}
+
+/*-------------------------------------------------------------------------*/
+void VideoGetText(char *text, int line)
+{
+	unsigned char c;
+	int x;
+
+	text[0] = 0;
+	text[1] = 0;
+
+	if (!VideoState.IsTeletext || line >= CRTC_VerticalDisplayed)
+		return;
+
+	char *dataPtr = BeebMemPtrWithWrapMo7(
+		VideoState.StartAddr + line * CRTC_HorizontalDisplayed,
+		CRTC_HorizontalDisplayed);
+
+	for (x = 0; x < CRTC_HorizontalDisplayed; ++x)
+	{
+		c = dataPtr[x];
+		if (isprint(c))
+			text[x] = c;
+		else
+			text[x] = ' ';
+	}
+	text[x] = '\0';
 }

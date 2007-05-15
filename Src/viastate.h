@@ -1,7 +1,7 @@
 #ifndef VS_HEADER
 #define VS_HEADER
 
-typedef struct {
+typedef struct VIAState {
   unsigned char ora,orb;
   unsigned char ira,irb;
   unsigned char ddra,ddrb;

@@ -3,7 +3,7 @@ BeebEm for Microsoft Windows
 
 BeebEm is a BBC Micro and Master 128 emulator.  It enables you to run BBC
 Micro software on your PC.  BeebEm should work on most PC systems running
-Windows 98 or later.
+Windows 98 or later (DirectX9 and IE6 required for Windows 98/ME).
 
 BeebEm is distributed with everything you need to get going, just run BeebEm
 from the Start menu (or run BeebEm.exe if you unzipped it).  If BeebEm does
@@ -20,21 +20,18 @@ Running BBC Micro Software
 --------------------------
 
 BeebEm runs BBC Micro software held in disc or tape image files kept on your
-PC's hard disc.  Some disc images are supplied with BeebEm, in the 'DiscIms'
-directory.  To run a disc image use the 'Run Disc' option on the File menu.
+PC's hard disc.  The image files are kept in a set of folders in your 
+'My Documents\BeebEm' area.  Some disc images are supplied with BeebEm, in
+the 'DiscIms' folder.  To run a disc image use the 'Run Disc' option on the
+File menu.
 
 You can download more disc images from internet sites such as these:
 
   http://www.stairwaytohell.com/
-  http://www.rubybay.com/users/drbeeb/
-  http://www.users.waitrose.com/~sharx/beeb.htm
-  http://www.nvg.ntnu.no/bbc/
+  http://www.bbcmicrogames.com/
   http://www.iancgbell.clara.net/elite/
 
-Put the disc image files into the DiscIms directory where BeebEm was
-installed or unzipped.  The default location is:
-
-  C:\Program Files\BeebEm
+Put the disc image files into the 'DiscIms' directory.
 
 
 Configuring BeebEm
@@ -49,17 +46,18 @@ bottom of the screen in full screen mode.
 You will usually get best performance (and best looking screen) by enabling
 the following options on the View menu:
 
-* DirectDraw ON
-* Buffer in Video RAM ON
+* Select the DirectX9 renderer
+* Switch on DirectX Smoothing
 
 You may also find that the best fps rate is achieved in full screen mode by
 selecting:
 
-* 32-bit DirectDraw ON
 * Full screen ON
 
-Choosing a high resolution DirectDraw Full Screen Mode will improve the look
-of the screen.
+Choosing a high resolution DirectX Full Screen Mode will improve the look of
+the screen.
+
+[See the Troubleshooting section for notes on menu use in full screen mode.]
 
 If you have a fast PC you can also improve the sound quality by selecting
 the 44.1kHz sample rate on the Sound menu.
@@ -109,6 +107,10 @@ not remove these:
  BBC Model B IntegraB - OS12.ROM, IBOS.ROM, BASIC2.ROM, WDFS.ROM
  BBC Model B Plus     - B+MOS.ROM, BASIC2.ROM, WDFS.ROM
  Master 128           - MOS.ROM, TERMINAL.ROM, BASIC4.ROM, DFS.ROM
+
+The default set of ROMs configured for the Master 128 mode are MOS 3.20.
+The MOS 3.50 ROMs are also included.  To use them rename the BeebFile/M128
+directory to M128-MOS3.2 and rename the M128-MOS3.5 directory M128.
 
 
 Keyboard Mappings
@@ -187,7 +189,8 @@ image (such as the MasterWelcome.adl image in discims) and type '*ADFS' to
 mount it.  You can also press A & F12 to mount an ADFS disc.
 
 ADFS is also supported in Model B and B Plus modes.  Note that in Model B
-mode you will need to select the Acorn 1770 disc controller.
+mode you will need to select the Acorn 1770 disc controller and add 
+ADFS-1.30.rom to Roms.cfg.
 
 You can find out more information about using discs by reading the DFS (Disc
 Filing System) guides available on the internet.
@@ -228,10 +231,12 @@ SCSI & SASI Disk Support
 
 BeebEm supports emulated SCSI and SASI hard disks.  There are 4 10MB
 pre-formatted ADFS SCSI disk images in the discims directory (the scsi?.dat
-files).  The disks can be used in Model B, B Plus or Master 128 mode.  To
-use the disk images press A & F12 to boot in ADFS mode (ignore the error for
-drive 4 if in Master mode).  The hard disks then appear as drives 0 to 3.
-Floppy disks can still be accessed as drives 4 and 5.
+files).  The disks can be used in Model B (need to add ADFS-1.30.rom to
+Roms.cfg), B Plus or Master 128 mode.  To use the disk images enable hard
+drive emulation on the hardware menu and press A & F12 to boot in ADFS mode
+(ignore the error for drive 4 if in Master mode).  The hard disks then
+appear as drives 0 to 3.  Floppy disks can still be accessed as drives 4 and
+5.
 
 There are some demo tunes in scsi0.dat which you can listen to with the PLAY
 program.
@@ -423,6 +428,45 @@ http://www.g7jjf.com/acornz80_disc_images.htm
 Please feel free to send me any more you know work with the Acorn Z80.
 
 
+Acorn ARM Second Processor Support
+----------------------------------
+The software now supports the Acorn ARM Second Processor board, also
+known as the ARM Evaluation System.
+
+The ARM interpreter and disassembler code is based on software written
+by David Sharp to whom I am grateful for allowing me to use it with BeebEm.
+
+The Acorn ARM Second Processor was an 8MHz system running with 4MB RAM on an
+ARM 1 RISC processor.
+
+You start the Acorn ARM by selecting ARM Second Processor off the hardware
+menu. The ARM Second Processor has no operating system but relies on a sideways
+ROM to provide a command line prompt to the user. Once you see the A* prompt, type
+*HELP SUPERVISOR to see what inbuilt commands are available.
+
+The ARM Evaluation System came with 6 discs full of software. I have included disc
+3 in the installation which contains ARM Basic. Load the armdisc3.adl disc image
+(ensuring you are in ADFS mode), type *MOUNT 4 and *AB to load ARM Basic.
+The remaining disc images plus a hard disc image containing all 6 disc images can be
+downloaded from my web site at :
+
+http://www.g7jjf.com/acornArm_disc_images.htm
+
+These discs contain the Acorn ARM application software including :
+
+TWIN - Editor
+ARM Assembler/Linker/Debugger
+ARM Basic
+Lisp
+Prolog
+Fortran 77
+General File Utilities
+
+You will also find some manuals for the ARM Second Processor on my site as well but
+if you have any manuals or other disc images I don't have, please feel free to send me 
+copies to add to the library.
+
+
 Teletext Support
 ----------------
 The software now supports the Acorn Teletext Adapter. Unfortunately, I
@@ -431,6 +475,9 @@ can only work from teletext data captured to disc files. You can download
 some sample teletext data from :
 
 http://www.g7jjf.com/teletext.htm
+
+You will need to add the ATS-3.0-1.rom to Roms.cfg and enable Teletext
+emulation on the hardware menu to get Teletext to work.
 
 
 Speech Generator
@@ -495,10 +542,16 @@ File Menu:
                  have a standard 31 file catalogue by default.  If you want 
                  a 62 file catalogue (Watford DFS) then format the disc.
 
+  Eject Disc 0 - Ejects the disc image currently loaded.  The name of the 
+  Eject Disc 1   file currently loaded is shown next to the menu option.
+
   Write Protect 0 - Toggles write protection for drive 0 or 1.  Keep discs
   Write Protect 1   write protected unless you intend to write to them.
                     Also see the WARNING above in the 'Using Disc Images'
                     section.
+
+  Protect on Load - Indicates if a disc should be write protected when it 
+                    is loaded.
 
   Reset        - "Power-On" reset for when a game crashes.
 
@@ -555,31 +608,27 @@ Comms Menu:
                         or off.
 
   RS423 Destination   - Select where to send the serial port data.
+                        Select Microvitec Touch Screen to enable touch 
+                        screen support.
 
 View Menu:
 
-  DirectDraw On/Off   - Switches DirectDraw screen output on or off. 
-                        DirectDraw should be faster than normal output but 
-                        this is not always the case.  Choose whatever gives 
-                        the best frame rate.
+  Display Renderer    - Selects how BeebEm draws to the screen.
+                        DirectX9 will probably be the fastest.
 
-  Buffer In Video RAM - When using DirectDraw each frame can be prepared in
-                        either video or system RAM.  This option switches
-                        between the two.  Choose whatever gives the best
-                        frame rate or look.
-
-  32-bit DirectDraw   - Switches between 8 bit and 32 bit full screen mode.
-                        A 32 bit mode may look better than 8 bit.
+  DirectX Smoothing   - When using DirectDraw or DirectX9 enabling smoothing
+                        will switch on bilinear interpolation.  This will
+                        blur the display slightly which will give it a 
+                        smoother look.
 
   Speed and FPS On/Off - Show or hide the relative speed and the number of
                          frames per second.
 
   Full Screen         - Switch to full screen mode.
 
-  Window Sizes        - Sets the window size.  The bigger the window the
-                        slower it gets!
+  Window Sizes        - Sets the window size.
 
-  DirectDraw Full Screen Mode - Screen resolution to use in DD full screen 
+  DirectX Full Screen Mode - Screen resolution to use in full screen 
                         mode.  The higher resolutions may look better.
 
   Monitor Type        - Selects the type of monitor to emulate.
@@ -593,9 +642,11 @@ View Menu:
   Motion Blur         - Fades out contents of previous frames rather than
                         blanking them out.  Can improve flicker in some 
                         games.  The % intensities of the 8 frames can be 
-                        edited in the following registry key:
-                        HKEY_CURRENT_USER\Software\BeebEm\
-                                                MotionBlurIntensities
+                        edited in the preferences file.
+
+  Screen Reader Text View - Switch screen reader compatible text view 
+                            on or off (see features for visually impaired 
+                            users below)
 
 Speed Menu:
 
@@ -637,6 +688,13 @@ Sound Menu:
 
   Part Samples   - Smooths sound sampling.  Using part samples usually
                    sounds better.
+
+  Exponential Volume - Enables an exponential volume scale.  Makes the 
+                       sound output better.
+
+  
+  Text To Speech - Switch text to speech generation on or off (see features
+                   for visually impaired users below)
 
 AMX Menu:
 
@@ -710,13 +768,29 @@ Hardware Menu:
   Econet On/Off       - Switch Econet emulation on or off.  See the Econet 
                         section above for more details.
 
+  Teletext On/Off     - Switch Teletext emulation on or off.  See the 
+                        Teletext section above for more details.
+
+  Hard Drive On/Off   - Switch SCSI/SASI hard drive emulation on or off.
+                        See the SCSI/SASI section above for more details.
+
+  User Port Breakout Box - Opens the user port breakout box dialog.  The 
+                        breakout box allows keys to be assigned for switch 
+                        box emulation.
+
+  User Port RTC Module - Enables the real time clock module.  This is used 
+                         by the Econet file server software.
+
 Options Menu:
 
   Joystick             - Switch on or off PC/Beeb analogue joystick support.
                          Calibrate the joystick through the control panel.
 
-  Mousestick           - Switch on or off the mapping of Mouse position to
-                         Beeb joystick.
+  Analogue Mousestick  - Switch on or off the mapping of Mouse position to
+                         analogue Beeb joystick position.
+
+  Digital Mousestick   - Switch on or off the mapping of Mouse movements to
+                         digital Beeb joystick movements.
 
   Freeze when inactive - When selected BeebEm will freeze when you switch 
                          to another Window.
@@ -745,14 +819,21 @@ Options Menu:
   Map F1-F10 to f0-f9  - Selects a slightly different mapping for the 
                          function keys.
 
+  Disable Keys         - Allows you to disable selected keys within BeebEm.
+                         The Windows (start) keys can also be disabled but
+                         note that this affects all Windows applications,
+                         not just BeebEm.
+
   Debugger             - Opens the debugger window (see below).
 
-  Save Preferences     - Saves the BeebEm menu options so they are preserved
-                         for when you need start BeebEm.
+  Save Preferences     - Saves the BeebEm settings to the current
+                         preferences file.  Settings include the selected 
+                         menu options, user defined keyboard, Window 
+                         position and CMOS RAM contents.
 
 Help Menu:
 
-  View REAME           - View this file.
+  View README          - View this file.
 
   About BeebEm         - Show version number and date of BeebEm.
 
@@ -762,16 +843,40 @@ Command Line Options
 
 The following command line options can be passed to BeebEm:
 
-  -Model <0=Model B, 1=B+IntegraB, 2=B Plus, 3=Master>
-  -Tube <0=off, 1=on>
+  -Data <data directory>
+  -Prefs <preferences file name>
+  -Roms <roms configuration file name>
   -EcoStn <Econet station number>
   -EcoFF <Econet flag fill timeout, see the econet section>
   <disk image file name>
   <state file name>
 
-e.g. To run elite in Master 128 mode with a second processor:
+Note: Command line options -Model and -Tube are no longer support.  Use
+      the -Prefs option with different preferences files instead.
 
-  BeebEm -Model 3 -Tube 1 Elite.ssd
+e.g. Run Zalaga with its own preferences:
+   BeebEm -Prefs ZalagaPrefs.cfg Zalaga.ssd
+
+e.g. Run the Torch Z80 with its own preferences:
+   BeebEm -Prefs Torch.cfg -Roms Roms_Torch.cfg
+
+e.g. Run BeebEm with an alternative set of data files:
+   BeebEm -Data \Users\Mike\Documents\BeebEmGames
+
+e.g. To run BeebEm from a USB drive and access the local USB drive data:
+   BeebEm -Data -
+
+These command lines can be put into Windows shortcuts or Windows scripts.
+See the BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.
+
+If the specified <data directory> does not exist BeebEm will offer to create
+it.  BeebEm will copy a default set of data to the data directory.  The
+default data directory is "My Documents\BeebEm".  If a data directory of "-"
+is specified BeebEm will use the "UserData" directory where the BeebEm.exe
+file exists (this is useful for running from a USB drive).
+
+The preferences and ROMs configuration file names are relative to the data
+directory.
 
 If a disk image or a state file name is passed to BeebEm on the command line
 it will be run automatically.  The name can include the full path or it can
@@ -823,10 +928,19 @@ sv                   - Show video registers.
 su                   - Show user via registers.
 ss                   - Show system via registers.
 st                   - Show tube registers.
+w file [count]       - Writes the last [count] lines of the debug window
+                       to a file.  If count is not specified the entire
+                       debug window contents are written.
+                         e.g. w /disassembly.txt 64
+c start byte [byte] ... - Change memory.  Writes bytes starting at a 
+                          particular address.
+                         e.g. c 7c00 68 65 6c 6c 6f
+
+NOTE: All values are specified in hex!
 
 The disassembler shows the following information:
 
-  Address OPCodes Instruction A X Y Flags
+  Address OPCodes Instruction A X Y SR Flags
 
 Parasite instructions are shifted right so it easier to follow both host and
 parasite when debugging tube code.
@@ -894,19 +1008,94 @@ For information on the IntegraB see the documentation in the 'Documents'
 directory.
 
 
+Features for Visually Impaired Users
+------------------------------------
+
+BeebEm provides two features for use by visually impaired users:
+
+1. A screen reader compatible text view.
+
+2. Text to speech generation.
+
+The screen reader compatible text view can be selected from the view menu.
+When enabled the text on the BeebEm screen is converted to a standard
+Windows text edit control.  Screen readers such as JAWS can move the edit
+cursor around the screen and read the text in the control.  Note that BeebEm
+can only convert text when in teletext mode 7.  In other modes the text edit
+will contain the string "Not in text mode."  A special key press, ALT + `
+(back quote) is available to synchronise the cursor position in the text
+view with the BBC Micro cursor position.
+
+The BeebEm text to speech generation can be selected from the sound menu.
+When enabled BeebEm will use the text to speech capabilities of Windows XP
+to read the text on the BeebEm screen.  Text convertion is driven using the
+numeric keypad keys 0 to 9.  The key assignments are based on the basic JAWS
+screen reading keys with some additions.  The key assignments are:
+
+  num pad 5                  read current character.
+  num pad 6                  read next character.
+  num pad 4                  read prior character.
+
+  insert + num pad 5         read current word.
+  insert + num pad 6         read next word.
+  insert + num pad 4         read prior word.
+
+  insert + num pad 8         read current line.
+  num pad 2                  read next line.
+  num pad 8                  read prior line.
+  insert + num pad 2         read entire screen (say all).
+
+  alt + num pad 5            read current sentence.
+  alt + num pad 2            read next sentence.
+  alt + num pad 8            read prior sentence.
+
+  num pad 9                  move speech cursor to top of screen.
+  insert + num pad 9         speak speech cursor position.
+
+  num pad 3                  move speech cursor to bottom of screen.
+  insert + num pad 3         toggle speaking of punctuation.
+
+  insert + num pad 1         toggle auto-read of text as it is written 
+                             to the BBC micro screen.
+  num pad 1                  read any buffered auto-read text.
+
+If you are running JAWS you may find that it intercepts some of the key
+presses listed above and stops BeebEm from receiving them.  In particular it
+may intercept num pad 5 presses, so try num pad 7 instead as BeebEm
+interprets num pad 7 in the same way as 5.  The BeebEm key assignments will
+also work when num lock is switched on so you could try that as well.  You
+may be able to configure JAWS so it does not say the num pad key names.
+
+Under normal use you may find switching on the auto-read function useful
+(insert + num pad 1).  This will read text as it gets written to the BBC
+micro screen.  This works when using the BASIC command prompt and in many of
+the text based adventure games available for the BBC micro.
+
+As with the text view support the ALT + ` (back quote) key press is
+available to synchronise the speech cursor position with the BBC Micro
+cursor position.
+
+END OF SECTION.
+
+
 Troubleshooting
 ---------------
 
-If BeebEm reports a problem with DirectX or DirectSound when starting up
-then try downloading the latest version of the DirectX software from
-Microsoft's web page:
+This version of BeebEm will work on Windows 98 or later.  If you have
+Windows 98 or ME then you will need to install DirectX9 and IE6 (available
+from http://www.microsoft.com).
 
-  http://www.microsoft.com/windows/directx/
+When using DirectX9 in full screen mode the menu bar is not visible.  The
+menus can still be opened by using the shortcut keys (such as Alt-F for the
+File menu) but you will also need to click the mouse in the menu bar area
+(top left of screen) to bring the menu in front of the BeebEm screen (some
+repeated clicking is sometimes required!)
 
-If BeebEm reports that it cannot find a file when its starting up then try
-re-installing BeebEm.
+There is a problem in Vista with AVI video file generation.  The AVI files
+are corrupted and cannot be played.  This will be fixed by Microsoft and may
+be delivered via Windows Update or appear in Vista SP1.
 
-If you have any other problems then email me and I'll try to help out:
+If you have any problems please email me and I'll try to help out:
 
   mikebuk@dsl.pipex.com
 
@@ -914,9 +1103,10 @@ If you have any other problems then email me and I'll try to help out:
 Uninstalling BeebEm
 -------------------
 
-If you wish to uninstall BeebEm then use the 'Add or Remove Programs' option
-in the Windows Control Panel/Settings.  Note that any files you have placed
-in the BeebEm directory yourself will not be removed.
+If you wish to uninstall BeebEm then select the 'Uninstall' option in the
+BeebEm start menu options or use the 'Add or Remove Programs' option in the
+Windows Control Panel/Settings.  Note that any files you have added to your
+"My Documents\BeebEm" directory will not be removed.
 
 
 Authors

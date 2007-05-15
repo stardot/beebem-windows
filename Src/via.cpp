@@ -22,6 +22,7 @@
 
 #ifndef VIA_HEADER
 #define VIA_HEADER
+#include <windows.h>
 #include <iostream>
 #include <fstream>
 #include "via.h"
@@ -87,8 +88,11 @@ void DebugViaState(const char *s, VIAState *v)
 		(int)v->ifr, (int)v->ier);
 	DebugDisplayInfo(info);
 
-	sprintf(info, "%s: t1=%04X t2=%04X t1l=%04X t2l=%04X t1s=%d t2s=%d", s,
-		(int)v->timer1c / 2, (int)v->timer2c / 2,
+	sprintf(info, "%s: t1=%04X%s t2=%04X%s t1l=%04X t2l=%04X t1s=%d t2s=%d", s,
+		(int)(v->timer1c < 0 ? ((v->timer1c - 1) / 2) & 0xffff : v->timer1c / 2),
+		v->timer1c & 1 ? "+" : " ",
+		(int)(v->timer2c < 0 ? ((v->timer2c - 1) / 2) & 0xffff : v->timer2c / 2),
+		v->timer2c & 1 ? "+" : " ",
 		(int)v->timer1l, (int)v->timer2l,
 		(int)v->timer1hasshot, (int)v->timer2hasshot);
 	DebugDisplayInfo(info);

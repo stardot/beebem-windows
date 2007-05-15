@@ -53,7 +53,7 @@ void SaveUEFState(char *StateName) {
 	{
 		fprintf(UEFState,"UEF File!");
 		fputc(0,UEFState); // UEF Header
-		fputc(9,UEFState); fputc(0,UEFState); // Version
+		fputc(10,UEFState); fputc(0,UEFState); // Version
 		SaveEmuUEF(UEFState);
 		Save6502UEF(UEFState);
 		SaveMemUEF(UEFState);
@@ -124,7 +124,7 @@ void LoadUEFState(char *StateName) {
 			if (Block==0x046B) LoadSoundUEF(UEFState);
 			if (Block==0x046D) LoadIntegraBHiddenMemUEF(UEFState);
 			if (Block==0x046E) Load8271UEF(UEFState);
-			if (Block==0x046F) Load1770UEF(UEFState);
+			if (Block==0x046F) Load1770UEF(UEFState,Version);
 			if (Block==0x0470) LoadTubeUEF(UEFState);
 			if (Block==0x0471) Load65C02UEF(UEFState);
 			if (Block==0x0472) Load65C02MemUEF(UEFState);

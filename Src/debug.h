@@ -19,6 +19,7 @@ enum DebugType {
 	DEBUG_ECONET
 };
 
+int DebugDisassembleInstruction(int addr, bool host, char *opstr);
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain);
 void DebugCloseDialog(void);
 bool DebugDisassembler(int addr, int Accumulator, int XReg, int YReg, int PSR, int StackReg, bool host);

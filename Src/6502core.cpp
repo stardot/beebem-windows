@@ -22,6 +22,10 @@
 
 /* Mike Wyatt 7/6/97 - Added undocumented instructions */
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -46,6 +50,7 @@
 #include "econet.h"
 #include "scsi.h"
 #include "debug.h"
+#include "Arm.h"
 
 #ifdef WIN32
 #define INLINE inline
@@ -65,6 +70,7 @@ int IgnoreIllegalInstructions = 1;
 static int CurrentInstruction;
 
 extern int DumpAfterEach;
+extern CArm *arm;
 
 CycleCountT TotalCycles=0;
 
@@ -106,6 +112,7 @@ typedef void (*InstrHandlerFuncType)(int16 Operand);
 typedef int16 (*AddrModeHandlerFuncType)(int WantsAddr);
 
 static int CyclesTable[]={
+/*0 1 2 3 4 5 6 7 8 9 a b c d e f */
   7,6,0,0,0,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
   6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
@@ -124,9 +131,65 @@ static int CyclesTable[]={
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
 }; /* CyclesTable */
 
+// Number of cycles to start of memory read cycle
+static int CyclesToMemRead[]={
+/*0 1 2 3 4 5 6 7 8 9 a b c d e f */
+  0,5,0,0,0,2,2,0,0,0,0,0,0,3,3,0, /* 0 */
+  0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0, /* 1 */
+  0,5,0,0,0,2,2,0,0,0,0,0,3,3,3,0, /* 2 */
+  0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0, /* 3 */
+  0,5,0,0,0,2,2,0,0,0,0,0,0,3,3,0, /* 4 */
+  0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0, /* 5 */
+  0,5,0,0,0,2,2,0,0,0,0,0,0,3,3,0, /* 6 */
+  0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0, /* 7 */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 8 */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 9 */
+  0,5,0,0,2,2,2,0,0,0,0,0,3,3,3,0, /* a */
+  0,4,0,0,3,3,3,0,0,3,0,0,3,3,4,0, /* b */
+  0,5,0,0,2,2,2,0,0,0,0,0,3,3,3,0, /* c */
+  0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0, /* d */
+  0,5,0,0,2,2,2,0,0,0,0,0,3,3,3,0, /* e */
+  0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0  /* f */
+};
+
+// Number of cycles to start of memory write cycle
+static int CyclesToMemWrite[]={
+/*0 1 2 3 4 5 6 7 8 9 a b c d e f */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 0 */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 1 */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 2 */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 3 */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 4 */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 5 */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 6 */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 7 */
+  0,5,0,0,2,2,2,0,0,0,0,0,3,3,3,0, /* 8 */
+  0,5,0,0,3,3,3,0,0,4,0,0,0,0,0,0, /* 9 */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* a */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* b */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* c */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* d */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* e */
+  0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0  /* f */
+};
+
+
 /* The number of cycles to be used by the current instruction - exported to
    allow fernangling by memory subsystem */
 unsigned int Cycles;
+
+/* Number of cycles VIAs advanced for mem read and writes */
+unsigned int ViaCycles;
+
+/* Number of additional cycles for IO read / writes */
+int IOCycles=0;
+
+/* Flag indicating if an interrupt is due */
+bool IntDue=false;
+
+/* When a timer interrupt is due this is the number of cycles 
+   to it (usually -ve) */
+int CyclesToInt = NO_TIMER_INT_DUE;
 
 static unsigned char Branched;
 // Branched - 1 if the instruction branched
@@ -142,6 +205,9 @@ int BHardware=0; // 0 = all hardware, 1 = basic hardware only
 
 #define WritePaged(addr,val) BeebWriteMem(addr,val)
 #define ReadPaged(Address) BeebReadMem(Address)
+
+void PollVIAs(unsigned int nCycles);
+void PollHardware(unsigned int Cycles);
 
 /*----------------------------------------------------------------------------*/
 INLINE void Carried() {
@@ -160,21 +226,74 @@ INLINE void Carried() {
 	}
 }
 /*----------------------------------------------------------------------------*/
+void DoIntCheck(void)
+{
+	if (!IntDue)
+	{
+		IntDue = (intStatus != 0);
+		if (!IntDue)
+		{
+			CyclesToInt = NO_TIMER_INT_DUE;
+		}
+		else if (CyclesToInt == NO_TIMER_INT_DUE)
+		{
+			// Non-timer interrupt has occurred
+			CyclesToInt = 0;
+		}
+	}
+}
+/*----------------------------------------------------------------------------*/
 // IO read + write take extra cycle & require sync with 1MHz clock (taken 
 // from Model-b - have not seen this documented anywhere)
-void AdjustForIORead(void)
+void SyncIO(void)
 {
 	if ((TotalCycles+Cycles) & 1)
-		Cycles += 1;
-	Cycles += 1;
+	{
+		Cycles++;
+		IOCycles = 1;
+		PollVIAs(1);
+	}
+	else
+	{
+		IOCycles = 0;
+	}
+}
+void AdjustForIORead(void)
+{
+	Cycles++;
+	IOCycles += 1;
+	PollVIAs(1);
 }
 void AdjustForIOWrite(void)
 {
-	if ((TotalCycles+Cycles) & 1)
-		Cycles += 1;
-	Cycles += 1;
+	Cycles++;
+	IOCycles += 1;
+	PollVIAs(1);
+	DoIntCheck();
 }
+/*----------------------------------------------------------------------------*/
+void AdvanceCyclesForMemRead(void)
+{
+	// Advance VIAs to point where mem read happens
+	Cycles += CyclesToMemRead[CurrentInstruction];
+	PollVIAs(CyclesToMemRead[CurrentInstruction]);
 
+	// Check if interrupt should be taken if instruction does
+	// a read but not a write (write instructions checked below).
+	if (CyclesToMemRead[CurrentInstruction] != 0 &&
+		CyclesToMemWrite[CurrentInstruction] == 0)
+	{
+		DoIntCheck();
+	}
+}
+void AdvanceCyclesForMemWrite(void)
+{
+	// Advance VIAs to point where mem write happens
+	Cycles += CyclesToMemWrite[CurrentInstruction];
+	PollVIAs(CyclesToMemWrite[CurrentInstruction]);
+
+	DoIntCheck();
+}
 /*----------------------------------------------------------------------------*/
 INLINE int SignExtendByte(signed char in) {
   /*if (in & 0x80) return(in | 0xffffff00); else return(in); */
@@ -308,7 +427,12 @@ INLINE static void ANDInstrHandler(int16 operand) {
 INLINE static void ASLInstrHandler(int16 address) {
   unsigned char oldVal,newVal;
   oldVal=ReadPaged(address);
+  Cycles+=1;
+  PollVIAs(1);
+  WritePaged(address,oldVal);
   newVal=(((unsigned int)oldVal)<<1) & 254;
+  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
+  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
   WritePaged(address,newVal);
   SetPSRCZN((oldVal & 128)>0, newVal==0,newVal & 128);
 } /* ASLInstrHandler */
@@ -391,7 +515,7 @@ INLINE static void BRKInstrHandler(void) {
   char errstr[250];
   if (CPUDebug) {
   sprintf(errstr,"BRK Instruction at 0x%04x after %i instructions. ACCON: 0x%02x ROMSEL: 0x%02x",ProgramCounter,InstrCount,ACCCON,PagedRomReg);
-  MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR);
+  MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR);
   //fclose(InstrLog);
   exit(1); 
   }
@@ -441,11 +565,13 @@ INLINE static void CPYInstrHandler(int16 operand) {
 
 INLINE static void DECInstrHandler(int16 address) {
   unsigned char val;
-
   val=ReadPaged(address);
-
+  Cycles+=1;
+  PollVIAs(1);
+  WritePaged(address,val);
   val=(val-1);
-
+  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
+  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
   WritePaged(address,val);
   SetPSRZN(val);
 } /* DECInstrHandler */
@@ -467,11 +593,13 @@ INLINE static void EORInstrHandler(int16 operand) {
 
 INLINE static void INCInstrHandler(int16 address) {
   unsigned char val;
-
   val=ReadPaged(address);
-
+  Cycles+=1;
+  PollVIAs(1);
+  WritePaged(address,val);
   val=(val+1) & 255;
-
+  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
+  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
   WritePaged(address,val);
   SetPSRZN(val);
 } /* INCInstrHandler */
@@ -506,7 +634,7 @@ INLINE static void JSRInstrHandler(int16 address) {
   /*if (ProgramCounter==0xffdd) {
 	  char errstr[250];
 	  sprintf(errstr,"OSFILE called\n");
-	  MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR);
+	  MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR);
   }*/
 
 } /* JSRInstrHandler */
@@ -529,7 +657,12 @@ INLINE static void LDYInstrHandler(int16 operand) {
 INLINE static void LSRInstrHandler(int16 address) {
   unsigned char oldVal,newVal;
   oldVal=ReadPaged(address);
+  Cycles+=1;
+  PollVIAs(1);
+  WritePaged(address,oldVal);
   newVal=(((unsigned int)oldVal)>>1) & 127;
+  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
+  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
   WritePaged(address,newVal);
   SetPSRCZN((oldVal & 1)>0, newVal==0,0);
 } /* LSRInstrHandler */
@@ -549,10 +682,14 @@ INLINE static void ORAInstrHandler(int16 operand) {
 
 INLINE static void ROLInstrHandler(int16 address) {
   unsigned char oldVal,newVal;
-
   oldVal=ReadPaged(address);
+  Cycles+=1;
+  PollVIAs(1);
+  WritePaged(address,oldVal);
   newVal=((unsigned int)oldVal<<1) & 254;
   newVal+=GETCFLAG;
+  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
+  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
   WritePaged(address,newVal);
   SetPSRCZN((oldVal & 128)>0,newVal==0,newVal & 128);
 } /* ROLInstrHandler */
@@ -569,10 +706,14 @@ INLINE static void ROLInstrHandler_Acc(void) {
 
 INLINE static void RORInstrHandler(int16 address) {
   unsigned char oldVal,newVal;
-
   oldVal=ReadPaged(address);
+  Cycles+=1;
+  PollVIAs(1);
+  WritePaged(address,oldVal);
   newVal=((unsigned int)oldVal>>1) & 127;
   newVal+=GETCFLAG*128;
+  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
+  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
   WritePaged(address,newVal);
   SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
 } /* RORInstrHandler */
@@ -651,7 +792,7 @@ INLINE static void BadInstrHandler(int opcode) {
 		sprintf(errstr,"Unsupported 6502 instruction 0x%02X at 0x%04X\n"
 			"  OK - instruction will be skipped\n"
 			"  Cancel - dump memory and exit",opcode,ProgramCounter-1);
-		if (MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR) == IDCANCEL)
+		if (MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR) == IDCANCEL)
 		{
 			beebmem_dumpstate();
 			exit(0);
@@ -951,6 +1092,59 @@ void DoNMI(void) {
   IRQCycles=7;
 } /* DoNMI */
 
+void Dis6502(void)
+{
+char str[256];
+
+	DebugDisassembleInstruction(ProgramCounter, true, str);
+	
+	sprintf(str + strlen(str), "%02X %02X %02X ", Accumulator, XReg, YReg);
+	
+    sprintf(str + strlen(str), (PSR & FlagC) ? "C" : ".");
+	sprintf(str + strlen(str), (PSR & FlagZ) ? "Z" : ".");
+	sprintf(str + strlen(str), (PSR & FlagI) ? "I" : ".");
+	sprintf(str + strlen(str), (PSR & FlagD) ? "D" : ".");
+	sprintf(str + strlen(str), (PSR & FlagB) ? "B" : ".");
+	sprintf(str + strlen(str), (PSR & FlagV) ? "V" : ".");
+	sprintf(str + strlen(str), (PSR & FlagN) ? "N" : ".");
+
+	WriteLog("%s\n", str);
+
+}
+
+void MemoryDump6502(int addr, int count)
+{
+	int a, b;
+	int s, e;
+	int v;
+	char info[80];
+	
+	s = addr & 0xffff0;
+	e = (addr + count - 1) | 0xf;
+	if (e > 0xfffff)
+		e = 0xfffff;
+	for (a = s; a < e; a += 16)
+	{
+		sprintf(info, "%04X  ", a);
+		
+		for (b = 0; b < 16; ++b)
+		{
+			sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, true));
+		}
+		
+		for (b = 0; b < 16; ++b)
+		{
+			v = DebugReadMem(a+b, true);
+			if (v < 32 || v > 127)
+				v = '.';
+			sprintf(info+strlen(info), "%c", v);
+		}
+		
+		WriteLog("%s\n", info);
+	}
+	
+}
+
 /*-------------------------------------------------------------------------*/
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec6502Instruction(void) {
@@ -958,6 +1152,8 @@ void Exec6502Instruction(void) {
 	int BadCount=0;
 	int OldPC;
 	int loop,loopc;
+	bool iFlagJustCleared;
+	bool iFlagJustSet;
 
 	loopc=(DebugEnabled ? 1 : 1024); // Makes debug window more responsive
 	for(loop=0;loop<loopc;loop++) {
@@ -965,23 +1161,47 @@ void Exec6502Instruction(void) {
 		if (DebugEnabled && !DebugDisassembler(ProgramCounter,Accumulator,XReg,YReg,PSR,StackReg,true))
 			continue;
 
+		if (trace == 1)
+		{
+			Dis6502();
+		}
+
 		z80_execute();
 
-		if (Tube186Enabled)
-         i186_execute(12 * 4);
+		if (Enable_Arm)
+		{
+			arm->exec(4);
+		}
 
-      /* Read an instruction and post inc program couter */
+		if (Tube186Enabled)
+			i186_execute(12 * 4);
+
+		Branched=0;
+		iFlagJustCleared=false;
+		iFlagJustSet=false;
+		Cycles=0;
+		IOCycles = 0;
+		BadCount=0;
+		IntDue = false;
+
+		// Check for WRCHV, send char to speech output
+		if (mainWin->m_TextToSpeechEnabled &&
+			ProgramCounter == (WholeRam[0x20e] + (WholeRam[0x20f] << 8)))
+			mainWin->SpeakChar(Accumulator);
+
+		/* Read an instruction and post inc program couter */
+		OldPC=ProgramCounter;
 		PrePC=ProgramCounter;
 		CurrentInstruction=ReadPaged(ProgramCounter++);
 		// cout << "Fetch at " << hex << (ProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
-		Cycles=CyclesTable[CurrentInstruction]; 
-		/*Stats[CurrentInstruction]++; */
-		OldPC=ProgramCounter;
-		Branched=0;
+
+		// Advance VIAs to point where mem read happens
+		ViaCycles=0;
+		AdvanceCyclesForMemRead();
+
 		//  if ((ProgramCounter>=0x0100) && (ProgramCounter<=0x0300)) {
 		//	  fprintf(InstrLog,"%04x %02x %02x %02x %02x\n",ProgramCounter-1,CurrentInstruction,ReadPaged(ProgramCounter),ReadPaged(ProgramCounter+1),YReg);
 		//  }
-		BadCount=0;
 		if (OpCodes>=1) { // Documented opcodes
 			switch (CurrentInstruction) {
 			case 0x00:
@@ -1093,7 +1313,17 @@ void Exec6502Instruction(void) {
 				ROLInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
 			case 0x28:
-				PSR=Pop(); /* PLP */
+				{
+					unsigned char oldPSR=PSR;
+					PSR=Pop(); /* PLP */
+					if ((oldPSR ^ PSR) & FlagI)
+					{
+						if (PSR & FlagI)
+							iFlagJustSet=true;
+						else
+							iFlagJustCleared=true;
+					}
+				}
 				break;
 			case 0x29:
 				ANDInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
@@ -1183,7 +1413,7 @@ void Exec6502Instruction(void) {
 				/*if (ProgramCounter==0xffdd) {
 				char errstr[250];
 				sprintf(errstr,"OSFILE called\n");
-				MessageBox(GETHWND,errstr,"BBC Emulator",MB_OKCANCEL|MB_ICONERROR);
+				MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR);
 				}*/
 				break;
 			case 0x4d:
@@ -1205,6 +1435,8 @@ void Exec6502Instruction(void) {
 				LSRInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0x58:
+				if (PSR & FlagI)
+					iFlagJustCleared=true;
 				PSR&=255-FlagI; /* CLI */
 				break;
 			case 0x59:
@@ -1270,6 +1502,8 @@ void Exec6502Instruction(void) {
 				RORInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0x78:
+				if (!(PSR & FlagI))
+					iFlagJustSet = true;
 				PSR|=FlagI; /* SEI */
 				break;
 			case 0x79:
@@ -1292,15 +1526,19 @@ void Exec6502Instruction(void) {
 				RORInstrHandler(AbsXAddrModeHandler_Address());
 				break;
 			case 0x81:
+				AdvanceCyclesForMemWrite();
 				WritePaged(IndXAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x84:
+				AdvanceCyclesForMemWrite();
 				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),YReg);
 				break;
 			case 0x85:
+				AdvanceCyclesForMemWrite();
 				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x86:
+				AdvanceCyclesForMemWrite();
 				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),XReg);
 				break;
 			case 0x88:
@@ -1317,27 +1555,35 @@ void Exec6502Instruction(void) {
 				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
 				break;
 			case 0x8c:
+				AdvanceCyclesForMemWrite();
 				STYInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0x8d:
+				AdvanceCyclesForMemWrite();
 				WritePaged(AbsAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x8e:
+				AdvanceCyclesForMemWrite();
 				STXInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0x91:
+				AdvanceCyclesForMemWrite();
 				WritePaged(IndYAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x92:
+				AdvanceCyclesForMemWrite();
 				if (MachineType==3) WritePaged(ZPIndAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x94:
+				AdvanceCyclesForMemWrite();
 				STYInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0x95:
+				AdvanceCyclesForMemWrite();
 				WritePaged(ZeroPgXAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x96:
+				AdvanceCyclesForMemWrite();
 				STXInstrHandler(ZeroPgYAddrModeHandler_Address());
 				break;
 			case 0x98:
@@ -1346,6 +1592,7 @@ void Exec6502Instruction(void) {
 				PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
 				break;
 			case 0x99:
+				AdvanceCyclesForMemWrite();
 				WritePaged(AbsYAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x9a:
@@ -1357,6 +1604,7 @@ void Exec6502Instruction(void) {
 				   and on the 65C12 OFFICIALLY. Something we should know? - Richard Gellman */
 				break;
 			case 0x9d:
+				AdvanceCyclesForMemWrite();
 				WritePaged(AbsXAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x9e:
@@ -1991,68 +2239,38 @@ void Exec6502Instruction(void) {
 			if (Branched)
 			{
 				Cycles++;
-				if ((ProgramCounter & 0xff00) != (OldPC & 0xff00))
-					Cycles+=2;
+				if ((ProgramCounter & 0xff00) != ((OldPC+2) & 0xff00))
+					Cycles+=1;
 			}
 		}
 
-		Cycles+=IRQCycles;
-		IRQCycles=0; // IRQ Timing
-		// End of cycle correction
+		Cycles += CyclesTable[CurrentInstruction] -
+			CyclesToMemRead[CurrentInstruction] - CyclesToMemWrite[CurrentInstruction];
 
-		/* NOTE: Check IRQ status before polling hardware - this is essential for
-		   Rocket Raid to work since it polls the IFR in the sys via for start of 
-		   frame - but with interrupts enabled.  If you do the interrupt check later
-		   then the interrupt handler will always be entered and rocket raid will
-		   never see it */
-		if ((intStatus) && (!GETIFLAG)) DoInterrupt();
+		PollVIAs(Cycles - ViaCycles);
+		PollHardware(Cycles);
 
-		TotalCycles+=Cycles;
-
-		if (TotalCycles > CycleCountWrap)
+		// Check for IRQ
+		DoIntCheck();
+		if (IntDue && (!GETIFLAG || iFlagJustSet) &&
+			(CyclesToInt <= (-2-IOCycles) && !iFlagJustCleared))
 		{
-			TotalCycles -= CycleCountWrap;
-			//SoundCycles -= CycleCountWrap;
-			AdjustTrigger(AtoDTrigger);
-			if (!DirectSoundEnabled) AdjustTrigger(SoundTrigger);
-			AdjustTrigger(Disc8271Trigger);
-			AdjustTrigger(AMXTrigger);
-			AdjustTrigger(PrinterTrigger);
-			AdjustTrigger(VideoTriggerCount);
-			AdjustTrigger(TapeTrigger);
-			AdjustTrigger(EconetTrigger);
-			AdjustTrigger(EconetFlagFillTimeoutTrigger);
-			if (EnableTube)
-				WrapTubeCycles();
+			// Int noticed 2 cycles before end of instruction - interrupt now
+			CyclesToInt = NO_TIMER_INT_DUE;
+			DoInterrupt();
+			PollHardware(IRQCycles);
+			PollVIAs(IRQCycles);
+			IRQCycles=0;
 		}
 
-		SysVIA_poll(Cycles);
-		UserVIA_poll(Cycles);
-		VideoPoll(Cycles);
-		if (!BHardware) {
-			AtoD_poll(Cycles);
-			Serial_Poll();
-		}
-		Disc8271_poll(Cycles);
-		Sound_Trigger(Cycles);
-		if (DisplayCycles>0) DisplayCycles-=Cycles; // Countdown time till end of display of info.
-		if ((MachineType==3) || (!NativeFDC)) Poll1770(Cycles); // Do 1770 Background stuff
-
-		if (EconetEnabled && EconetPoll()) {
-			if (EconetNMIenabled ) { 
-				NMIStatus|=1<<nmi_econet;
-				if (DebugEnabled)
-					DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI asserted");
-			}
-			else {
-				if (DebugEnabled)
-					DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI requested but supressed");
-			}
-		}
-
-		if (((NMIStatus) && (!OldNMIStatus)) || (NMIStatus & 1<<nmi_econet)) {
+		// Check for NMI
+		if ((NMIStatus && !OldNMIStatus) || (NMIStatus & 1<<nmi_econet))
+		{
 			NMIStatus &= ~(1<<nmi_econet);
 			DoNMI();
+			PollHardware(IRQCycles);
+			PollVIAs(IRQCycles);
+			IRQCycles=0;
 		}
 		OldNMIStatus=NMIStatus;
 
@@ -2060,6 +2278,65 @@ void Exec6502Instruction(void) {
 			SyncTubeProcessor();
 	}
 } /* Exec6502Instruction */
+
+
+void PollVIAs(unsigned int nCycles)
+{
+	if (nCycles != 0)
+	{
+		if (CyclesToInt != NO_TIMER_INT_DUE)
+			CyclesToInt -= nCycles;
+
+		SysVIA_poll(nCycles);
+		UserVIA_poll(nCycles);
+
+		ViaCycles += nCycles;
+	}
+}
+
+void PollHardware(unsigned int nCycles)
+{
+	TotalCycles+=nCycles;
+
+	if (TotalCycles > CycleCountWrap)
+	{
+		TotalCycles -= CycleCountWrap;
+		//SoundCycles -= CycleCountWrap;
+		AdjustTrigger(AtoDTrigger);
+		if (!DirectSoundEnabled) AdjustTrigger(SoundTrigger);
+		AdjustTrigger(Disc8271Trigger);
+		AdjustTrigger(AMXTrigger);
+		AdjustTrigger(PrinterTrigger);
+		AdjustTrigger(VideoTriggerCount);
+		AdjustTrigger(TapeTrigger);
+		AdjustTrigger(EconetTrigger);
+		AdjustTrigger(EconetFlagFillTimeoutTrigger);
+		if (EnableTube)
+			WrapTubeCycles();
+	}
+
+	VideoPoll(nCycles);
+	if (!BHardware) {
+		AtoD_poll(nCycles);
+		Serial_Poll();
+	}
+	Disc8271_poll(nCycles);
+	Sound_Trigger(nCycles);
+	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
+	if ((MachineType==3) || (!NativeFDC)) Poll1770(nCycles); // Do 1770 Background stuff
+
+	if (EconetEnabled && EconetPoll()) {
+		if (EconetNMIenabled ) { 
+			NMIStatus|=1<<nmi_econet;
+			if (DebugEnabled)
+				DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI asserted");
+		}
+		else {
+			if (DebugEnabled)
+				DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI requested but supressed");
+		}
+	}
+}
 
 /*-------------------------------------------------------------------------*/
 void Save6502UEF(FILE *SUEF) {

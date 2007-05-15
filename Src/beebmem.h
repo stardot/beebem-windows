@@ -33,7 +33,7 @@ extern int PagedRomReg;
 /* Master 128 Specific Stuff */
 extern unsigned char FSRam[8192]; // 8K Filing System RAM
 extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
-extern int CMOSRAM[64]; // 50 Bytes CMOS RAM
+extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
 struct CMOSType {
@@ -47,6 +47,7 @@ struct CMOSType {
 extern struct CMOSType CMOS;
 extern unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 extern char RomPath[512];
+extern char RomFile[512];
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 /* NOTE: Only to be used if 'a' doesn't change the address */
 #define BEEBREADMEM_FAST(a) ((a<0xfc00)?WholeRam[a]:BeebReadMem(a))

@@ -14,6 +14,6 @@ void Poll1770(int NCycles);
 void CreateADFSImage(char *ImageName,unsigned char Drive,unsigned char Tracks, HMENU dmenu);
 void Close1770Disc(char Drive);
 void Save1770UEF(FILE *SUEF);
-void Load1770UEF(FILE *SUEF);
+void Load1770UEF(FILE *SUEF,int Version);
 extern bool InvertTR00;
 #endif

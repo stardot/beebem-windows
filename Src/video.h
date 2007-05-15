@@ -57,8 +57,8 @@ void VideoULAWrite(int Address, int Value);
 int VideoULARead(int Address);
 void VideoInit(void);
 void video_dumpstate(void);
-
 void VideoDoScanLine(void);
+void VideoGetText(char *text, int line);
 
 extern unsigned char TeletextEnabled;
 
