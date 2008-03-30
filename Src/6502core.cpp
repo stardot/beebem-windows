@@ -1513,7 +1513,7 @@ void Exec6502Instruction(void) {
 				if (MachineType==3) {
 					YReg=Pop(); /* PLY */
 					PSR&=~(FlagZ | FlagN);
-					PSR|=((XReg==0)<<1) | (YReg & 128);
+					PSR|=((YReg==0)<<1) | (YReg & 128);
 				}
 				break;
 			case 0x7c:
@@ -2301,9 +2301,8 @@ void PollHardware(unsigned int nCycles)
 	if (TotalCycles > CycleCountWrap)
 	{
 		TotalCycles -= CycleCountWrap;
-		//SoundCycles -= CycleCountWrap;
 		AdjustTrigger(AtoDTrigger);
-		if (!DirectSoundEnabled) AdjustTrigger(SoundTrigger);
+		AdjustTrigger(SoundTrigger);
 		AdjustTrigger(Disc8271Trigger);
 		AdjustTrigger(AMXTrigger);
 		AdjustTrigger(PrinterTrigger);
@@ -2369,9 +2368,6 @@ void Load6502UEF(FILE *SUEF) {
 	NMIStatus=fgetc(SUEF);
 	NMILock=fgetc(SUEF);
 	//AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
-	//if (UseHostClock) SoundTrigger=TotalCycles+100;
-	// Make sure emulator doesn't lock up waiting for triggers.
-
 }
 
 /*-------------------------------------------------------------------------*/

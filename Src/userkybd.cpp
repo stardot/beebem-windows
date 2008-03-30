@@ -33,7 +33,7 @@
 BOOL	UserKeyboardDialog( HWND  hwndParent );
 HBRUSH	InitButtonColour( HWND hWndCtrl, HDC hDC );
 void	SetKeyColour( COLORREF aColour );
-void	SetBBCKeyForVKEY( int Key );
+void	SetBBCKeyForVKEY( int Key, int shift );
 void	ShowKeyDown( HWND hwnd, UINT ctrlID, HWND hWndCtrl );
 void	SetRowCol( UINT ctrlID );
 void	ShowKeyUp( void );
@@ -50,7 +50,7 @@ void	DrawBorder( HDC hDC, RECT rect, BOOL Depressed );
 void	DrawSides( HDC hDC, RECT rect, COLORREF TopLeft, COLORREF BottomRight );
 void	DrawText( HDC hDC, RECT rect, HWND hWndctrl, COLORREF colour, BOOL Depressed );
 COLORREF GetKeyColour( UINT ctrlID );
-HWND	PromptForInput( HWND hwndParent, UINT ctrlID );
+HWND	PromptForInput( HWND hwndParent, int doShiftedKey );
 void	GetKeysUsed( LPSTR Keys );
 LPSTR	KeyName( UINT Key );
 
@@ -63,85 +63,22 @@ static COLORREF NormalKey	= 0x00000000;	// Black
 
 COLORREF OldColour;		// Holds bkCOlor of non-highlighted key.
 HWND	hWndBBCKey;		// Holds the BBCKey control handle which is now selected.
+UINT    selectedCtrlID; // Holds ctrlId of selected key
 HWND	hwndMain;		// Holds the BeebWin window Handle.
 HWND	hwndGetkey;		// Holds the window handle of the Getkey prompt window.
 HWND	hwndText;
-HWND	hwndCancel;
+HWND	hwndCtrl;       // OK button handle
+HWND	hwndShift;      // Shift check box handle
 
 int		BBCRow;			// Used to store the Row and Col values while we wait 
 int		BBCCol;			// for a key press from the User.
 BOOL	WaitingForKey = FALSE;	// True while waiting for a key to be pressed.
 HBRUSH	hFunctionBrush;	// The brush that has to be passed back for coloured keys.
 HFONT	hGetkeyFont;	// The Font used by the Getkey prompt window.
+int		doingShifted;   // Selecting shifted or unshifted key press
 
-// Row,Col  Default values set to transTable1
-int UserKeymap[256][2]={
-	-9,0,	-9,0,	-9,0,	-9,0,   // 0
-	-9,0,	-9,0,	-9,0,	-9,0,   // 4
-	5,9,	6,0,	-9,0,	-9,0,   // 8 [BS][TAB]..
-	-9,0,	4,9,	-9,0,	-9,0,   // 12 .RET..
-	0,0,	0,1,	-9,0,	-2,-2,  // 16 .CTRL.BREAK
-	4,0,	-9,0,	-9,0,	-9,0,   // 20 CAPS...
-	-9,0,	-9,0,	-9,0,	7,0,    // 24 ...ESC
-	-9,0,	-9,0,	-9,0,	-9,0,   // 28
-	6,2,	-9,0,	-9,0,	6,9,    // 32 SPACE..[End]
-	-9,0,	1,9,	3,9,	7,9,    // 36 .[Left][Up][Right]
-	2,9,	-9,0,	-9,0,	-3,-3,  // 40 [Down]...
-	-9,0,	-9,0,	5,9,	-9,0,   // 44 ..[DEL].
-	2,7,	3,0,	3,1,	1,1,    // 48 0123   
-	1,2,	1,3,	3,4,	2,4,    // 52 4567
-	1,5,	2,6,	-9,0,	-9,0,   // 56 89
-	-9,0,	-9,0,	-9,0,	-9,0,   // 60
-	-9,0,	4,1,	6,4,	5,2,    // 64.. ABC
-	3,2,	2,2,	4,3,	5,3,    // 68  DEFG
-	5,4,	2,5,	4,5,	4,6,    // 72  HIJK
-	5,6,	6,5,	5,5,	3,6,    // 76  LMNO
-	3,7,	1,0,	3,3,	5,1,    // 80  PQRS
-	2,3,	3,5,	6,3,	2,1,    // 84  TUVW
-	4,2,	4,4,	6,1,	-9,0,   // 88  XYZ
-	-9,0,	6,2,	-9,0,	-9,0,   // 92  . SPACE ..
-	-9,0,	-9,0,	-9,0,	-9,0,   // 96
-	-9,0,	-9,0,	-9,0,	-9,0,   // 100
-	-9,0,	-9,0,	-9,0,	-4,0,   // 104 Keypad+
-	-9,0,	-4,1,	-9,0,	-9,0,   // 108 Keypad-
-	7,1,	7,2,	7,3,	1,4,    // 112 F1 F2 F3 F4
-	7,4,	7,5,	1,6,	7,6,    // 116 F5 F6 F7 F8
-	7,7,	2,0,	2,0,	-2,-2,  // 120 F9 F10 F11 F12
-	-9,0,	-9,0,	-9,0,	-9,0,   // 124 
-	-9,0,	-9,0,	-9,0,	-9,0,   // 128
-	-9,0,	-9,0,	-9,0,	-9,0,   // 132
-	-9,0,	-9,0,	-9,0,	-9,0,   // 136
-	-9,0,	-9,0,	-9,0,	-9,0,   // 140
-	-9,0,	-9,0,	-9,0,	-9,0,   // 144
-	-9,0,	-9,0,	-9,0,	-9,0,   // 148
-	-9,0,	-9,0,	-9,0,	-9,0,   // 152
-	-9,0,	-9,0,	-9,0,	-9,0,   // 156
-	-9,0,	-9,0,	-9,0,	-9,0,   // 160
-	-9,0,	-9,0,	-9,0,	-9,0,   // 164
-	-9,0,	-9,0,	-9,0,	-9,0,   // 168
-	-9,0,	-9,0,	-9,0,	-9,0,   // 172
-	-9,0,	-9,0,	-9,0,	-9,0,   // 176
-	-9,0,	-9,0,	-9,0,	-9,0,   // 180
-	-9,0,	-9,0,	5,7,	1,8,    // 184  ..;=
-	6,6,	1,7,	6,7,	6,8,    // 188  ,-./
-	4,8,	-9,0,	-9,0,	-9,0,   // 192  @ ...
-	-9,0,	-9,0,	-9,0,	-9,0,   // 196
-	-9,0,	-9,0,	-9,0,	-9,0,   // 200
-	-9,0,	-9,0,	-9,0,	-9,0,   // 204
-	-9,0,	-9,0,	-9,0,	-9,0,   // 208
-	-9,0,	-9,0,	-9,0,	-9,0,   // 212
-	-9,0,	-9,0,	-9,0,	3,8,    // 216 ...[
-	7,8,	5,8,	2,8,	4,7,    // 220 \]#`
-	-9,0,	-9,0,	-9,0,	-9,0,   // 224
-	-9,0,	-9,0,	-9,0,	-9,0,   // 228
-	-9,0,	-9,0,	-9,0,	-9,0,   // 232
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0 
-};
-
+// Initialised to defaultMapping
+KeyMap UserKeymap;
 
 /****************************************************************************/
 BOOL UserKeyboardDialog( HWND      hwndParent )
@@ -161,6 +98,7 @@ BOOL UserKeyboardDialog( HWND      hwndParent )
     // Initialise locals used during this windows life.
 	hwndMain = hwndParent;
 	hwndGetkey = NULL;
+	selectedCtrlID = 0;
 
 	fResult = (DialogBox( hInst,
                          MAKEINTRESOURCE( IDD_USERKYBRD ),
@@ -183,6 +121,8 @@ void SetKeyColour( COLORREF aColour )
 	HDC hdc = GetDC( hWndBBCKey );
 	OldColour = SetBkColor( hdc, aColour );
 	ReleaseDC( hWndBBCKey, hdc );
+	InvalidateRect(hWndBBCKey, NULL, TRUE);
+	UpdateWindow(hWndBBCKey);
 
 
 } // SetKeyColor
@@ -193,7 +133,6 @@ void ShowKeyUp( void )
 {
 	if ( WaitingForKey  )
 	{
-	
 		WaitingForKey = FALSE;
 
 		// Show the key as not depressed, ie normal.
@@ -206,40 +145,43 @@ void ShowKeyUp( void )
 
 void ShowKeyDown( HWND hwnd, UINT ctrlID, HWND hWndCtrl )
 {
-
 	// If we are already waiting for a Key then reset the bkcolor for that
 	// key.
 	if ( WaitingForKey )
 	{
-		SetKeyColour( OldColour );	
+		selectedCtrlID = 0;
+		SetKeyColour( OldColour );
 	}
 	
 	// Set the place holders.
 	SetRowCol( ctrlID );
 
 	hWndBBCKey  = hWndCtrl;
+	selectedCtrlID = ctrlID;
 	WaitingForKey = TRUE;
-
-	// Show the Key as depressed.
-	SetKeyColour( Highlight );
-
 	
 	// Now ask the user to input he PC key to assign to the BBC key.
 	if ( hwndGetkey != NULL )
 		SendMessage( hwndGetkey, WM_CLOSE, 0, 0L );
 
 	// Start the Getkey prompt window.
-	hwndGetkey = PromptForInput( hwnd, ctrlID );
+	hwndGetkey = PromptForInput( hwnd, 0 );
 
 } // ShowKeyDown
 
 /****************************************************************************/
-void SetBBCKeyForVKEY( int Key )
+void SetBBCKeyForVKEY( int Key, int shift )
 {
 	if (Key >= 0 && Key < 256)
 	{
-		UserKeymap[ Key ] [0] = BBCRow;
-		UserKeymap[ Key ] [1] = BBCCol;
+		UserKeymap[Key][shift].row = BBCRow;
+		UserKeymap[Key][shift].col = BBCCol;
+		UserKeymap[Key][shift].shift = doingShifted;
+
+		//char info[256];
+		//sprintf(info, "SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
+		//		Key, shift, BBCRow, BBCCol, doingShifted);
+		//OutputDebugString(info);
 	}
 
 } // SetBBCKeyForVKEY
@@ -280,34 +222,16 @@ int nCode = HIWORD(wParam);	             //Notification code
 		};
 		return TRUE;
 
-	case WM_SYSKEYUP:
-	case WM_KEYUP:
-		ShowKeyUp();
-		SetBBCKeyForVKEY( (UINT)wParam );
-		return TRUE;
-	
 	case WM_DRAWITEM:
 		// Draw the key.
 		OnDrawItem( (UINT)wParam, (LPDRAWITEMSTRUCT) lParam );
-
-
-/*		// After the key is drawn if the key has been pressed we can get the 
-		// VKEY value.
-		if ( ((LPDRAWITEMSTRUCT) lParam)->itemState == (ODS_FOCUS | ODS_SELECTED))
-		{
-			// Close the Getkey prompt window before starting it again.
-			if ( hwndGetkey != NULL )
-				SendMessage( hwndGetkey, WM_CLOSE, 0, 0L );
-
-			// Start the Getkey prompt window.
-			hwndGetkey = PromptForInput( hwnd, (UINT) wParam );
-		} */
 		return TRUE;
 
 	default:
 		return FALSE;
 	};		
 
+	return FALSE;
 }   // UserKeyboard_DlgProc
 
 /****************************************************************************/
@@ -396,6 +320,9 @@ void DrawText( HDC hDC, RECT rect, HWND hWndctrl, COLORREF colour, BOOL Depresse
 
 COLORREF GetKeyColour( UINT ctrlID )
 {
+	if (WaitingForKey && selectedCtrlID == ctrlID)
+		return Highlight;
+
 	switch ( ctrlID )
 	{
 	case IDK_F0:
@@ -457,13 +384,16 @@ void OnDrawItem( UINT CtrlID, LPDRAWITEMSTRUCT lpDrawItemStruct )
 
 /****************************************************************************/
 
-HWND PromptForInput( HWND hwndParent, UINT ctrlID )
+HWND PromptForInput( HWND hwndParent, int doShiftedKey )
 {
 	int Error;
-	HWND Success;
+	HWND hwnd;
 	WNDCLASS  wc;
 	CHAR	szClass[12] = "BEEBGETKEY";
-	CHAR	szTitle[35] = "Press the key you want to use..";
+	CHAR	*szTitle1 = "Press key for unshifted press...";
+	CHAR	*szTitle2 = "Press key for shifted press...";
+
+	doingShifted = doShiftedKey;
 
 	// Fill in window class structure with parameters that describe the
 	// main window, if it doesn't already exist.
@@ -485,8 +415,8 @@ HWND PromptForInput( HWND hwndParent, UINT ctrlID )
 		(RegisterClass(&wc));
 	}
 
-	Success = CreateWindow(	szClass,	// pointer to registered class name
-							szTitle,	// pointer to window name
+	hwnd = CreateWindow(	szClass,	// pointer to registered class name
+							doShiftedKey ? szTitle2 : szTitle1,	// pointer to window name
 							WS_OVERLAPPED|				  
 							WS_CAPTION| DS_MODALFRAME | DS_SYSMODAL,
 //				WS_SYSMENU|
@@ -502,12 +432,12 @@ HWND PromptForInput( HWND hwndParent, UINT ctrlID )
 							NULL // pointer to window-creation data
 
 							);
-	if ( Success == NULL )
+	if ( hwnd == NULL )
 		Error = GetLastError();
 	else
-		ShowWindow( Success, SW_SHOW );
+		ShowWindow( hwnd, SW_SHOW );
 	
-	return Success;
+	return hwnd;
 }
 
 /****************************************************************************/
@@ -518,6 +448,8 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 								LPARAM lParam)	   // additional information
 {
 #define IDI_TEXT 100
+	BOOL checkShifted = FALSE;
+	int shift;
 
 	switch( message )
 	{
@@ -525,7 +457,6 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 		// Add the parameters required for this window. ie a Stic text control
 		// and a cancel button.
 
-		HWND hwndCtrl;
 		CHAR szUsedKeys[80];
 
 		// Change Window Font.
@@ -552,33 +483,68 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 
 		// Create the OK button.
 		hwndCtrl = CreateWindow( "BUTTON", "&Ok", WS_CHILD | BS_DEFPUSHBUTTON | WS_VISIBLE, 
-								 ( gkWidth - 50 ) / 2, gkHeight - 50, 
+								 gkWidth - 80, gkHeight - 50, 
 								 60, 18,
 								 hWnd, HMENU(IDOK), 
 								 ((LPCREATESTRUCT)lParam)->hInstance, NULL );
 
 		PostMessage( hwndCtrl, WM_SETFONT, (WPARAM)GetStockObject( ANSI_VAR_FONT ), 
 					 MAKELPARAM(FALSE, 0) );
+
+		// Create the shift checkbox.
+		hwndShift = CreateWindow( "BUTTON", "&Shift", WS_CHILD | BS_AUTOCHECKBOX | WS_VISIBLE, 
+								 20, gkHeight - 50, 
+								 70, 18,
+								 hWnd, NULL, 
+								 ((LPCREATESTRUCT)lParam)->hInstance, NULL );
+
+		PostMessage( hwndShift, WM_SETFONT, (WPARAM)GetStockObject( ANSI_VAR_FONT ), 
+					 MAKELPARAM(FALSE, 0) );
 	break;
 
 	case WM_COMMAND:
-		// Respond to the Cancel button click ( the only button ).
-		PostMessage( hWnd, WM_CLOSE, 0, 0L );
+		if ((HWND)lParam == hwndCtrl)
+		{
+			// Respond to the OK button click
+			PostMessage( hWnd, WM_CLOSE, 0, 0L );
+			checkShifted = TRUE;
+		}
+		else // shift checkbox
+		{
+			// Do not let checkbox have focus
+			SetFocus( hWnd );
+		}
 		break;
 
 	case WM_SYSKEYUP:
 	case WM_KEYUP:
-		// Assign the BBC key to the PC key.
-		SetBBCKeyForVKEY( (int) uParam );
+		if (uParam != 255)
+		{
+			// Assign the BBC key to the PC key.
+			shift = (SendMessage(hwndShift, BM_GETCHECK, 0, 0) == BST_CHECKED) ? 1 : 0;
+			SetBBCKeyForVKEY( (int) uParam, shift);
 		
-		// Close the window.
-		PostMessage( hWnd, WM_CLOSE, 0, 0L );
+			// Close the window.
+			PostMessage( hWnd, WM_CLOSE, 0, 0L );
+
+			checkShifted = TRUE;
+		}
 		break;
 
 	default:
 		// Let the default procedure ehandle everything else.
 		return DefWindowProc( hWnd, message, uParam, lParam );
 	}
+
+	if (checkShifted)
+	{
+		selectedCtrlID = 0;
+
+		// Do shifted key
+		if (!doingShifted)
+			hwndGetkey = PromptForInput( GetParent(hWnd), 1 );
+	}
+
 	return FALSE; // Return zero because we have processed this message.
 }
 
@@ -587,6 +553,7 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 void GetKeysUsed( LPSTR Keys )
 {
 	int i;
+	int s;
 
 	Keys[0] = '\0';
 
@@ -597,13 +564,19 @@ void GetKeysUsed( LPSTR Keys )
 	{
 		for( i=1; i<256; i++ )
 		{
-			if ((UserKeymap[i][0] == BBCRow) &&
-				(UserKeymap[i][1] == BBCCol ))
-			{  // We have found a key that matches.
-				if (strlen( Keys ) != 0 )
-					strcat( Keys,  ", " );
-				strcat( Keys, KeyName(i) );
-
+			for ( s=0; s<2; ++s)
+			{
+				if ((UserKeymap[i][s].row == BBCRow) &&
+					(UserKeymap[i][s].col == BBCCol) &&
+					(UserKeymap[i][s].shift == doingShifted))
+				{
+					// We have found a key that matches.
+					if (strlen( Keys ) != 0 )
+						strcat( Keys,  ", " );
+					if (s == 1)
+						strcat( Keys, "Sh-" );
+					strcat( Keys, KeyName(i) );
+				}
 			}
 		}
 		if ( strlen( Keys ) == 0 )

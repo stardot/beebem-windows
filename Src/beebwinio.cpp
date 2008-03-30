@@ -18,6 +18,10 @@
 #include "avi.h"
 #include "ext1770.h"
 #include "tube.h"
+#include "userkybd.h"
+
+// Token written to start of map file
+#define KEYMAP_TOKEN "*** BeebEm Keymap ***"
 
 extern EDCB ExtBoard;
 extern bool DiscLoaded[2]; // Set to TRUE when a disc image has been loaded.
@@ -80,16 +84,13 @@ void BeebWin::EjectDiscImage(int Drive)
 	{
 		mii.dwTypeData = "Eject Disc 0";
 		SetMenuItemInfo(m_hMenu, IDM_EJECTDISC0, FALSE, &mii);
-		EnableMenuItem(m_hMenu, IDM_WPDISC0, MF_ENABLED );
-		CheckMenuItem(m_hMenu, IDM_WPDISC0, MF_CHECKED);
 	}
 	else
 	{
 		mii.dwTypeData = "Eject Disc 1";
 		SetMenuItemInfo(m_hMenu, IDM_EJECTDISC1, FALSE, &mii);
-		EnableMenuItem(m_hMenu, IDM_WPDISC1, MF_ENABLED );
-		CheckMenuItem(m_hMenu, IDM_WPDISC1, MF_CHECKED);
 	}
+	SetDiscWriteProtects();
 }
 
 /****************************************************************************/
@@ -135,6 +136,14 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu)
 	gotName = GetOpenFileName(&ofn);
 	if (gotName)
 	{
+		if (m_AutoSavePrefsFolders)
+		{
+			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+			strncpy(DefaultPath, FileName, PathLength);
+			DefaultPath[PathLength] = 0;
+			PrefsSetStringValue("DiscsPath", DefaultPath);
+		}
+
 		bool dsd = false;
 		bool adfs = false;
 		bool img = false;
@@ -252,6 +261,14 @@ void BeebWin::LoadTape(void)
 
 	if (GetOpenFileName(&ofn))
 	{
+		if (m_AutoSavePrefsFolders)
+		{
+			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+			strncpy(DefaultPath, FileName, PathLength);
+			DefaultPath[PathLength] = 0;
+			PrefsSetStringValue("TapesPath", DefaultPath);
+		}
+
 		if (strstr(FileName, ".uef")) LoadUEF(FileName);
 		if (strstr(FileName, ".csw")) LoadCSW(FileName);
 	}
@@ -397,7 +414,14 @@ void BeebWin::NewDiscImage(int Drive)
 
 	if (GetSaveFileName(&ofn))
 	{
-		PrefsSetDWORDValue("DiscsFilter",ofn.nFilterIndex);
+		if (m_AutoSavePrefsFolders)
+		{
+			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+			strncpy(DefaultPath, FileName, PathLength);
+			DefaultPath[PathLength] = 0;
+			PrefsSetStringValue("DiscsPath", DefaultPath);
+			PrefsSetDWORDValue("DiscsFilter",ofn.nFilterIndex);
+		}
 
 		/* Add a file extension if the user did not specify one */
 		if (strchr(FileName, '.') == NULL)
@@ -467,6 +491,14 @@ void BeebWin::SaveState()
 
 	if (GetSaveFileName(&ofn))
 	{
+		if (m_AutoSavePrefsFolders)
+		{
+			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+			strncpy(DefaultPath, FileName, PathLength);
+			DefaultPath[PathLength] = 0;
+			PrefsSetStringValue("StatesPath", DefaultPath);
+		}
+
 		// Add UEF extension if not already set and is UEF
 		if ((strcmp(FileName+(strlen(FileName)-4),".UEF")!=0) &&
 			(strcmp(FileName+(strlen(FileName)-4),".uef")!=0))
@@ -512,6 +544,14 @@ void BeebWin::RestoreState()
 
 	if (GetOpenFileName(&ofn))
 	{
+		if (m_AutoSavePrefsFolders)
+		{
+			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+			strncpy(DefaultPath, FileName, PathLength);
+			DefaultPath[PathLength] = 0;
+			PrefsSetStringValue("StatesPath", DefaultPath);
+		}
+
 		LoadUEFState(FileName);
 	}
 }
@@ -804,9 +844,10 @@ void BeebWin::CaptureVideo()
 			default: m_AviFrameSkip = 1; break;
 			}
 			m_AviFrameSkipCount = 0;
+			m_AviFrameCount = 0;
 
 			HRESULT hr = aviWriter->Initialise(FileName, wfp, &m_Avibmi,
-				(int)((m_FramesPerSecond > 46 ? 50 : m_FramesPerSecond) / (m_AviFrameSkip+1)), m_hWnd);
+				(int)(50 / (m_AviFrameSkip+1)), m_hWnd);
 			if (FAILED(hr))
 			{
 				MessageBox(m_hWnd, "Failed to create AVI file",
@@ -987,4 +1028,184 @@ void BeebWin::GetDataPath(const char *folder, char *path)
 		strcat(newPath, path);
 		strcpy(path, newPath);
 	}
+}
+
+/****************************************************************************/
+void BeebWin::LoadUserKeyMap()
+{
+	char FileName[_MAX_PATH];
+	OPENFILENAME ofn;
+
+	FileName[0] = '\0';
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.hInstance = NULL;
+	ofn.lpstrFilter = "Key Map File\0*.kmap\0";
+	ofn.lpstrCustomFilter = NULL;
+	ofn.nMaxCustFilter = 0;
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFile = FileName;
+	ofn.nMaxFile = sizeof(FileName);
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = m_UserDataPath;
+	ofn.lpstrTitle = NULL;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nFileOffset = 0;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = NULL;
+	ofn.lCustData = 0;
+	ofn.lpfnHook = NULL;
+	ofn.lpTemplateName = NULL;
+
+	if (GetOpenFileName(&ofn))
+	{
+		if (ReadKeyMap(FileName, &UserKeymap))
+			strcpy(m_UserKeyMapPath, FileName);
+	}
+}
+
+/****************************************************************************/
+void BeebWin::SaveUserKeyMap()
+{
+	char FileName[_MAX_PATH];
+	OPENFILENAME ofn;
+
+	FileName[0] = '\0';
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.hInstance = NULL;
+	ofn.lpstrFilter = "Key Map File\0*.kmap\0";
+	ofn.lpstrCustomFilter = NULL;
+	ofn.nMaxCustFilter = 0;
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFile = FileName;
+	ofn.nMaxFile = sizeof(FileName);
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = m_UserDataPath;
+	ofn.lpstrTitle = NULL;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nFileOffset = 0;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = NULL;
+	ofn.lCustData = 0;
+	ofn.lpfnHook = NULL;
+	ofn.lpTemplateName = NULL;
+
+	if (GetSaveFileName(&ofn))
+	{
+		if (strlen(FileName) < 4 ||
+			(strcmp(FileName+(strlen(FileName)-5),".kmap")!=0) &&
+			(strcmp(FileName+(strlen(FileName)-5),".KMAP")!=0))
+		{
+			strcat(FileName,".kmap");
+		}
+		if (WriteKeyMap(FileName, &UserKeymap))
+			strcpy(m_UserKeyMapPath, FileName);
+	}
+}
+
+/****************************************************************************/
+bool BeebWin::ReadKeyMap(char *filename, KeyMap *keymap)
+{
+	bool success = true;
+	char buf[256];
+	FILE *infile;
+
+	infile=fopen(filename,"r");
+	if (infile == NULL)
+	{
+		char errstr[500];
+		sprintf(errstr, "Failed to read key map file:\n  %s", filename);
+		MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+		success = false;
+	}
+	else
+	{
+		if (fgets(buf, 255, infile) == NULL || 
+			strcmp(buf, KEYMAP_TOKEN "\n") != 0)
+		{
+			char errstr[500];
+			sprintf(errstr, "Invalid key map file:\n  %s\n", filename);
+			MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+			success = false;
+		}
+		else
+		{
+			fgets(buf, 255, infile);
+
+			int i;
+			for (i = 0; i < 256; ++i)
+			{
+				if (fgets(buf, 255, infile) == NULL)
+				{
+					char errstr[500];
+					sprintf(errstr, "Data missing from key map file:\n  %s\n", filename);
+					MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+					success = false;
+					break;
+				}
+
+				sscanf(buf, "%d %d %d %d %d %d",
+					   &(*keymap)[i][0].row,
+					   &(*keymap)[i][0].col,
+					   &(*keymap)[i][0].shift,
+					   &(*keymap)[i][1].row,
+					   &(*keymap)[i][1].col,
+					   &(*keymap)[i][1].shift);
+			}
+		}
+		fclose(infile);
+	}
+
+	return success;
+}
+
+/****************************************************************************/
+bool BeebWin::WriteKeyMap(char *filename, KeyMap *keymap)
+{
+	bool success = true;
+	FILE *outfile;
+
+	/* First check if file already exists */
+	outfile=fopen(filename,"r");
+	if (outfile != NULL)
+	{
+		fclose(outfile);
+		char errstr[200];
+		sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", filename);
+		if (MessageBox(GETHWND,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
+			return false;
+	}
+
+	outfile=fopen(filename,"w");
+	if (outfile == NULL)
+	{
+		char errstr[500];
+		sprintf(errstr, "Failed to write key map file:\n  %s", filename);
+		MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+		success = false;
+	}
+	else
+	{
+		fprintf(outfile, KEYMAP_TOKEN "\n\n");
+
+		int i;
+		for (i = 0; i < 256; ++i)
+		{
+			fprintf(outfile, "%d %d %d %d %d %d\n",
+					(*keymap)[i][0].row,
+					(*keymap)[i][0].col,
+					(*keymap)[i][0].shift,
+					(*keymap)[i][1].row,
+					(*keymap)[i][1].col,
+					(*keymap)[i][1].shift);
+		}
+		fclose(outfile);
+	}
+
+	return success;
 }

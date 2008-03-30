@@ -49,7 +49,7 @@ static char *CFG_SOUND_VOLUME = "Volume";
 static char *CFG_SOUND_ENABLED = "SoundEnabled";
 static char *CFG_OPTIONS_STICKS = "Sticks";
 static char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
-static char *CFG_OPTIONS_USER_KEY_MAP = "UserKeyMap";
+static char *CFG_OPTIONS_USER_KEY_MAP_FILE = "UserKeyMapFile";
 static char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
 static char *CFG_OPTIONS_HIDE_CURSOR = "HideCursor";
 static char *CFG_SPEED_TIMING = "Timing";
@@ -125,6 +125,10 @@ void BeebWin::LoadPreferences()
 		}
 		fclose(fd);
 	}
+
+	// Remove obsolete prefs
+	m_Prefs.erase("UserKeyMapRow");
+	m_Prefs.erase("UserKeyMapCol");
 
 	if(!PrefsGetBinaryValue("MachineType",&MachineType,1))
 		MachineType=0;
@@ -254,6 +258,23 @@ void BeebWin::LoadPreferences()
 		m_MenuIdKeyMapping = dword;
 	else
 		m_MenuIdKeyMapping = IDM_LOGICALKYBDMAPPING;
+
+	bool readDefault = true;
+	if (PrefsGetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE,m_UserKeyMapPath))
+	{
+		strcpy(path, m_UserKeyMapPath);
+		GetDataPath(m_UserDataPath, path);
+		if (ReadKeyMap(path, &UserKeymap))
+			readDefault = false;
+	}
+	if (readDefault)
+	{
+		strcpy(m_UserKeyMapPath, "DefaultUser.kmap");
+		strcpy(path, m_UserKeyMapPath);
+		GetDataPath(m_UserDataPath, path);
+		ReadKeyMap(path, &UserKeymap);
+	}
+
 	if (PrefsGetBinaryValue("KeyMapAS",&flag,1))
 		m_KeyMapAS = flag;
 	else
@@ -271,25 +292,26 @@ void BeebWin::LoadPreferences()
 	if (!PrefsGetBinaryValue("DisableKeysShortcut",&m_DisableKeysShortcut,1))
 		m_DisableKeysShortcut=0;
 
+	if (PrefsGetBinaryValue("AutoSavePrefsCMOS",&flag,1))
+		m_AutoSavePrefsCMOS = (flag != 0);
+	else
+		m_AutoSavePrefsCMOS = false;
+
+	if (PrefsGetBinaryValue("AutoSavePrefsFolders",&flag,1))
+		m_AutoSavePrefsFolders = (flag != 0);
+	else
+		m_AutoSavePrefsFolders = false;
+
+	if (PrefsGetBinaryValue("AutoSavePrefsAll",&flag,1))
+		m_AutoSavePrefsAll = (flag != 0);
+	else
+		m_AutoSavePrefsAll = false;
+
 	sprintf(CfgName, "BitKeys");
 	if (PrefsGetBinaryValue(CfgName,keyData,8))
 	{
 		for (int key=0; key<8; ++key)
 			BitKeys[key] = keyData[key];
-	}
-
-	sprintf(CfgName, "%sRow", CFG_OPTIONS_USER_KEY_MAP);
-	if (PrefsGetBinaryValue(CfgName,keyData,256))
-	{
-		for (int key=0; key<256; ++key)
-			UserKeymap[key][0] = keyData[key];
-
-		sprintf(CfgName, "%sCol", CFG_OPTIONS_USER_KEY_MAP);
-		PrefsGetBinaryValue(CfgName,keyData,256);
-		for (int key=0; key<256; ++key)
-			UserKeymap[key][1] = keyData[key];
-
-		UserKeymap[255][0]=-9;
 	}
 
 	if (PrefsGetBinaryValue(CFG_AMX_ENABLED,&flag,1))
@@ -455,7 +477,7 @@ void BeebWin::LoadPreferences()
 	}
 
 	// Update prefs version
-	PrefsSetStringValue("PrefsVersion", "1.0");
+	PrefsSetStringValue("PrefsVersion", "1.2");
 
 	// Windows key enable/disable still comes from registry
 	int binsize = 24;
@@ -467,124 +489,130 @@ void BeebWin::LoadPreferences()
 }
 
 /****************************************************************************/
-void BeebWin::SavePreferences()
+void BeebWin::SavePreferences(bool saveAll)
 {
 	int LEDByte=0;
 	char CfgName[256];
 	unsigned char flag;
 	char keyData[256];
 
-	PrefsSetBinaryValue("MachineType",&MachineType,1);
-	PrefsSetBinaryValue("WriteProtectOnLoad",&m_WriteProtectOnLoad,1);
-	PrefsSetDWORDValue("DisplayRenderer",m_DisplayRenderer);
-	flag = m_DXSmoothing;
-	PrefsSetBinaryValue("DXSmoothing",&flag,1);
-	PrefsSetDWORDValue("DDFullScreenMode",m_DDFullScreenMode);
-	PrefsSetDWORDValue(CFG_VIEW_WIN_SIZE,m_MenuIdWinSize);
-	flag = m_isFullScreen;
-	PrefsSetBinaryValue("FullScreen",&flag,1);
-	flag = m_ShowSpeedAndFPS;
-	PrefsSetBinaryValue(CFG_VIEW_SHOW_FPS,&flag,1);
-	flag = palette_type;
-	PrefsSetBinaryValue(CFG_VIEW_MONITOR,&flag,1);
-	PrefsSetBinaryValue("HideMenuEnabled",&HideMenuEnabled,1);
-	LEDByte=(DiscLedColour<<2)|((LEDs.ShowDisc?1:0)<<1)|(LEDs.ShowKB?1:0);
-	PrefsSetBinaryValue("LED Information",&LEDByte,1);
-	flag = m_MotionBlur;
-	PrefsSetDWORDValue( "MotionBlur", m_MotionBlur);
-	PrefsSetBinaryValue("MotionBlurIntensities",m_BlurIntensities,8);
-	PrefsSetBinaryValue("TextViewEnabled",&m_TextViewEnabled,1);
+	if (saveAll)
+	{
+		PrefsSetBinaryValue("MachineType",&MachineType,1);
+		PrefsSetBinaryValue("WriteProtectOnLoad",&m_WriteProtectOnLoad,1);
+		PrefsSetDWORDValue("DisplayRenderer",m_DisplayRenderer);
+		flag = m_DXSmoothing;
+		PrefsSetBinaryValue("DXSmoothing",&flag,1);
+		PrefsSetDWORDValue("DDFullScreenMode",m_DDFullScreenMode);
+		PrefsSetDWORDValue(CFG_VIEW_WIN_SIZE,m_MenuIdWinSize);
+		flag = m_isFullScreen;
+		PrefsSetBinaryValue("FullScreen",&flag,1);
+		flag = m_ShowSpeedAndFPS;
+		PrefsSetBinaryValue(CFG_VIEW_SHOW_FPS,&flag,1);
+		flag = palette_type;
+		PrefsSetBinaryValue(CFG_VIEW_MONITOR,&flag,1);
+		PrefsSetBinaryValue("HideMenuEnabled",&HideMenuEnabled,1);
+		LEDByte=(DiscLedColour<<2)|((LEDs.ShowDisc?1:0)<<1)|(LEDs.ShowKB?1:0);
+		PrefsSetBinaryValue("LED Information",&LEDByte,1);
+		flag = m_MotionBlur;
+		PrefsSetDWORDValue( "MotionBlur", m_MotionBlur);
+		PrefsSetBinaryValue("MotionBlurIntensities",m_BlurIntensities,8);
+		PrefsSetBinaryValue("TextViewEnabled",&m_TextViewEnabled,1);
 
-	PrefsSetDWORDValue( CFG_SPEED_TIMING, m_MenuIdTiming);
+		PrefsSetDWORDValue( CFG_SPEED_TIMING, m_MenuIdTiming);
 
-	PrefsSetBinaryValue(CFG_SOUND_ENABLED,&SoundDefault,1);
-	flag = SoundChipEnabled;
-	PrefsSetBinaryValue("SoundChipEnabled",&flag,1);
-	flag = DirectSoundEnabled;
-	PrefsSetDWORDValue( CFG_SOUND_SAMPLE_RATE, m_MenuIdSampleRate);
-	PrefsSetDWORDValue( CFG_SOUND_VOLUME, m_MenuIdVolume);
-	PrefsSetBinaryValue("RelaySoundEnabled",&RelaySoundEnabled,1);
-	PrefsSetBinaryValue("TapeSoundEnabled",&TapeSoundEnabled,1);
-	PrefsSetBinaryValue("UsePrimaryBuffer",&UsePrimaryBuffer,1);
-	PrefsSetBinaryValue("Part Samples",&PartSamples,1);
-	PrefsSetBinaryValue("ExponentialVolume",&SoundExponentialVolume,1);
-	PrefsSetBinaryValue("TextToSpeechEnabled",&m_TextToSpeechEnabled,1);
+		PrefsSetBinaryValue(CFG_SOUND_ENABLED,&SoundDefault,1);
+		flag = SoundChipEnabled;
+		PrefsSetBinaryValue("SoundChipEnabled",&flag,1);
+		flag = DirectSoundEnabled;
+		PrefsSetDWORDValue( CFG_SOUND_SAMPLE_RATE, m_MenuIdSampleRate);
+		PrefsSetDWORDValue( CFG_SOUND_VOLUME, m_MenuIdVolume);
+		PrefsSetBinaryValue("RelaySoundEnabled",&RelaySoundEnabled,1);
+		PrefsSetBinaryValue("TapeSoundEnabled",&TapeSoundEnabled,1);
+		PrefsSetBinaryValue("UsePrimaryBuffer",&UsePrimaryBuffer,1);
+		PrefsSetBinaryValue("Part Samples",&PartSamples,1);
+		PrefsSetBinaryValue("ExponentialVolume",&SoundExponentialVolume,1);
+		PrefsSetBinaryValue("TextToSpeechEnabled",&m_TextToSpeechEnabled,1);
 
-	PrefsSetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
-	flag = m_FreezeWhenInactive;
-	PrefsSetBinaryValue(CFG_OPTIONS_FREEZEINACTIVE,&flag,1);
-	flag = m_HideCursor;
-	PrefsSetBinaryValue(CFG_OPTIONS_HIDE_CURSOR,&flag,1);
-	PrefsSetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIdKeyMapping);
-	flag = m_KeyMapAS;
-	PrefsSetBinaryValue("KeyMapAS",&flag,1);
-	flag = m_KeyMapFunc;
-	PrefsSetBinaryValue("KeyMapFunc",&flag,1);
+		PrefsSetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
+		flag = m_FreezeWhenInactive;
+		PrefsSetBinaryValue(CFG_OPTIONS_FREEZEINACTIVE,&flag,1);
+		flag = m_HideCursor;
+		PrefsSetBinaryValue(CFG_OPTIONS_HIDE_CURSOR,&flag,1);
+		PrefsSetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIdKeyMapping);
+		flag = m_KeyMapAS;
+		PrefsSetBinaryValue("KeyMapAS",&flag,1);
+		flag = m_KeyMapFunc;
+		PrefsSetBinaryValue("KeyMapFunc",&flag,1);
 
-	PrefsSetBinaryValue("DisableKeysBreak",&m_DisableKeysBreak,1);
-	PrefsSetBinaryValue("DisableKeysEscape",&m_DisableKeysEscape,1);
-	PrefsSetBinaryValue("DisableKeysShortcut",&m_DisableKeysShortcut,1);
+		PrefsSetBinaryValue("DisableKeysBreak",&m_DisableKeysBreak,1);
+		PrefsSetBinaryValue("DisableKeysEscape",&m_DisableKeysEscape,1);
+		PrefsSetBinaryValue("DisableKeysShortcut",&m_DisableKeysShortcut,1);
 
-	for (int key=0; key<8; ++key)
-		keyData[key] = BitKeys[key];
-	sprintf(CfgName, "BitKeys");
-	PrefsSetBinaryValue(CfgName,keyData,8);
+		for (int key=0; key<8; ++key)
+			keyData[key] = BitKeys[key];
+		sprintf(CfgName, "BitKeys");
+		PrefsSetBinaryValue(CfgName,keyData,8);
 
-	for (int key=0; key<256; ++key)
-		keyData[key] = UserKeymap[key][0];
-	sprintf(CfgName, "%sRow", CFG_OPTIONS_USER_KEY_MAP);
-	PrefsSetBinaryValue(CfgName,keyData,256);
-	for (int key=0; key<256; ++key)
-		keyData[key] = UserKeymap[key][1];
-	sprintf(CfgName, "%sCol", CFG_OPTIONS_USER_KEY_MAP);
-	PrefsSetBinaryValue(CfgName,keyData,256);
+		PrefsSetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath);
 
-	flag = AMXMouseEnabled;
-	PrefsSetBinaryValue(CFG_AMX_ENABLED,&flag,1);
-	PrefsSetDWORDValue( CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
-	PrefsSetDWORDValue( CFG_AMX_SIZE, m_MenuIdAMXSize);
-	PrefsSetDWORDValue( CFG_AMX_ADJUST, m_MenuIdAMXAdjust);
+		flag = AMXMouseEnabled;
+		PrefsSetBinaryValue(CFG_AMX_ENABLED,&flag,1);
+		PrefsSetDWORDValue( CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
+		PrefsSetDWORDValue( CFG_AMX_SIZE, m_MenuIdAMXSize);
+		PrefsSetDWORDValue( CFG_AMX_ADJUST, m_MenuIdAMXAdjust);
 
-	flag = PrinterEnabled;
-	PrefsSetBinaryValue(CFG_PRINTER_ENABLED,&flag,1);
-	PrefsSetDWORDValue( CFG_PRINTER_PORT, m_MenuIdPrinterPort);
-	PrefsSetStringValue( CFG_PRINTER_FILE, m_PrinterFileName);
+		flag = PrinterEnabled;
+		PrefsSetBinaryValue(CFG_PRINTER_ENABLED,&flag,1);
+		PrefsSetDWORDValue( CFG_PRINTER_PORT, m_MenuIdPrinterPort);
+		PrefsSetStringValue( CFG_PRINTER_FILE, m_PrinterFileName);
 
-	PrefsSetBinaryValue("Tape Clock Speed",&TapeClockSpeed,2);
-	flag=UnlockTape;
-	PrefsSetBinaryValue("UnlockTape",&flag,1);
-	PrefsSetBinaryValue("SerialPortEnabled",&SerialPortEnabled,1);
-	PrefsSetBinaryValue("TouchScreenEnabled",&TouchScreenEnabled,1);
-	PrefsSetBinaryValue("SerialPort",&SerialPort,1);
+		PrefsSetBinaryValue("Tape Clock Speed",&TapeClockSpeed,2);
+		flag=UnlockTape;
+		PrefsSetBinaryValue("UnlockTape",&flag,1);
+		PrefsSetBinaryValue("SerialPortEnabled",&SerialPortEnabled,1);
+		PrefsSetBinaryValue("TouchScreenEnabled",&TouchScreenEnabled,1);
+		PrefsSetBinaryValue("SerialPort",&SerialPort,1);
 
-	PrefsSetBinaryValue("EconetEnabled",&EconetEnabled,1); //Rob
-	flag=SpeechDefault;
-	PrefsSetBinaryValue("SpeechEnabled",&flag,1);
+		PrefsSetBinaryValue("EconetEnabled",&EconetEnabled,1); //Rob
+		flag=SpeechDefault;
+		PrefsSetBinaryValue("SpeechEnabled",&flag,1);
 
-	PrefsSetBinaryValue("ArmTube",&ArmTube,1);
-	PrefsSetBinaryValue("TorchTube",&TorchTube,1);
-	PrefsSetBinaryValue("AcornZ80",&AcornZ80,1);
-	PrefsSetBinaryValue("TubeEnabled",&TubeEnabled,1);
-	PrefsSetBinaryValue("Tube186Enabled",&Tube186Enabled,1);
+		PrefsSetBinaryValue("ArmTube",&ArmTube,1);
+		PrefsSetBinaryValue("TorchTube",&TorchTube,1);
+		PrefsSetBinaryValue("AcornZ80",&AcornZ80,1);
+		PrefsSetBinaryValue("TubeEnabled",&TubeEnabled,1);
+		PrefsSetBinaryValue("Tube186Enabled",&Tube186Enabled,1);
 
-	PrefsSetBinaryValue("OpCodes",&OpCodes,1);
-	PrefsSetBinaryValue("Basic Hardware",&BHardware,1);
-	PrefsSetBinaryValue("Teletext Half Mode",&THalfMode,1);
-	PrefsSetBinaryValue("SoundBlockSize",&SBSize,1);
-	PrefsSetBinaryValue("TeleTextAdapterEnabled",&TeleTextAdapterEnabled,1);
-	PrefsSetBinaryValue("HardDriveEnabled",&HardDriveEnabled,1);
-	flag = RTC_Enabled;
-	PrefsSetBinaryValue("RTCEnabled",&flag,1);
+		PrefsSetBinaryValue("OpCodes",&OpCodes,1);
+		PrefsSetBinaryValue("Basic Hardware",&BHardware,1);
+		PrefsSetBinaryValue("Teletext Half Mode",&THalfMode,1);
+		PrefsSetBinaryValue("SoundBlockSize",&SBSize,1);
+		PrefsSetBinaryValue("TeleTextAdapterEnabled",&TeleTextAdapterEnabled,1);
+		PrefsSetBinaryValue("HardDriveEnabled",&HardDriveEnabled,1);
+		flag = RTC_Enabled;
+		PrefsSetBinaryValue("RTCEnabled",&flag,1);
 
-	PrefsSetDWORDValue("CaptureResolution",m_MenuIdAviResolution);
-	PrefsSetDWORDValue("FrameSkip",m_MenuIdAviSkip);
+		PrefsSetDWORDValue("CaptureResolution",m_MenuIdAviResolution);
+		PrefsSetDWORDValue("FrameSkip",m_MenuIdAviSkip);
 
-	RECT rect;
-	GetWindowRect(m_hWnd,&rect);
-	PrefsSetBinaryValue("WindowPos",&rect,sizeof(rect));
+		RECT rect;
+		GetWindowRect(m_hWnd,&rect);
+		PrefsSetBinaryValue("WindowPos",&rect,sizeof(rect));
+	}
 
 	// CMOS RAM now in prefs file
-	PrefsSetBinaryValue("CMOSRam",&CMOSRAM[14],50);
+	if (saveAll || m_AutoSavePrefsCMOS)
+	{
+		PrefsSetBinaryValue("CMOSRam",&CMOSRAM[14],50);
+	}
+
+	flag = m_AutoSavePrefsCMOS;
+	PrefsSetBinaryValue("AutoSavePrefsCMOS",&flag,1);
+	flag = m_AutoSavePrefsFolders;
+	PrefsSetBinaryValue("AutoSavePrefsFolders",&flag,1);
+	flag = m_AutoSavePrefsAll;
+	PrefsSetBinaryValue("AutoSavePrefsAll",&flag,1);
 
 	// Write the file
 	FILE *fd;
@@ -610,6 +638,8 @@ void BeebWin::SavePreferences()
 			fprintf(fd, "%s=%s\n", pref.first.c_str(), pref.second.c_str());
 		}
 		fclose(fd);
+
+		m_AutoSavePrefsChanged = false;
 	}
 }
 

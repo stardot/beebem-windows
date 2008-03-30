@@ -201,8 +201,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,7,0,0
- PRODUCTVERSION 3,7,0,0
+ FILEVERSION 3,8,2,0
+ PRODUCTVERSION 3,8,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -220,12 +220,12 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator"
             VALUE "CompanyName", "Mike Wyatt"
             VALUE "FileDescription", "BeebEm"
-            VALUE "FileVersion", "3.7"
+            VALUE "FileVersion", "3.82"
             VALUE "InternalName", "BeebEm"
-            VALUE "LegalCopyright", "Copyright © 2007"
+            VALUE "LegalCopyright", "Copyright © 2008"
             VALUE "OriginalFilename", "BeebEm.exe"
             VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", "3.7"
+            VALUE "ProductVersion", "3.82"
         END
     END
     BLOCK "VarFileInfo"
@@ -609,7 +609,9 @@ BEGIN
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR
-        MENUITEM "&Define User Keyboard",       IDM_DEFINEKEYMAP
+        MENUITEM "&Define User Key Mapping",    IDM_DEFINEKEYMAP
+        MENUITEM "Load User Key Mapping",       IDM_LOADKEYMAP
+        MENUITEM "Save User Key Mapping",       IDM_SAVEKEYMAP
         MENUITEM SEPARATOR
         MENUITEM "&User Defined Mapping",       IDM_USERKYBDMAPPING
         MENUITEM "Default &Keyboard Mapping",   IDM_DEFAULTKYBDMAPPING
@@ -629,6 +631,13 @@ BEGIN
         MENUITEM "Debu&gger",                   IDM_SHOWDEBUGGER
         MENUITEM SEPARATOR
         MENUITEM "&Save Preferences",           IDM_SAVE_PREFS
+        POPUP "Preference Options"
+        BEGIN
+            MENUITEM "Autosave CMOS RAM",           IDM_AUTOSAVE_PREFS_CMOS
+            MENUITEM "Autosave All Prefs",          IDM_AUTOSAVE_PREFS_ALL
+            MENUITEM "Save Disc/Tape/State Folders",IDM_AUTOSAVE_PREFS_FOLDERS
+        END
+
     END
     POPUP "&Help"
     BEGIN

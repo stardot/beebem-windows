@@ -1,6 +1,48 @@
 BeebEm Change History
 =====================
 
+Version 3.82 (Rich Talbot-Watkins, Mike Wyatt)
+------------
+* Periodic noise emulation tweak from Rich.
+* Video emulation fixes from Rich.
+* AVI capture fix.  When AVI is enabled the video frame rate is now fixed
+  to match the capture rate.  This should stop video and sound getting out
+  of sync.
+* Changed CMOS default for print destination to the parallel port.  Printer
+  options should work correctly in Master mode now.
+* Added support for loading tape images from the command line.
+* Added -KbdCmd command line option to specify a key press sequence to run
+  at start up (can be used to run a tape image).
+
+Version 3.81 (Mike Wyatt, Jon Welch)
+------------
+* Added -DisMenu command line option to disable the menus.
+* Fixed issue where sound output stops after about 10 mins.
+* Corrected the fix in v3.8 for sound artifacts.  Sampled sound works 
+  correctly again.
+* Added periodic noise emulation tweak from Rich Talbot-Watkins.
+* Updated instructions for defining user keyboard mappings (thanks to
+  Jonathan Bluestone).
+* Bug fix - Cursor position wrong when in column 1 in editing mode.
+
+Version 3.8 (Mike Wyatt, Jon Welch)
+-----------
+* Enhanced user defined key mapping support.  Shifted and unshifted key 
+  presses can now be defined separately so custom logical mappings can be
+  defined.
+* Added load and save options for user defined key mappings.
+* Corrected emulation of PLY processor instruction.
+* Fixed bug in sound emulation that was causing sound artifacts.
+* Set root directory to $ for new ADFS images.
+* Fixed keyboard interrupt handling (can now enter name in Super Pool
+  high score table).
+* Added some preference options to autosave CMOS and all of the prefs on
+  exit.  Also, by popular demand, added a prefs option to remember the last
+  folder used for loading disc/tape/state files.
+* Fixed disc write protect menu update when ejecting a disc.
+* Increased default Econet flag fill timeout to 250000.  Improves Econet 
+  comms a bit (still not 100% though).
+
 Version 3.7 (Jon Welch)
 -----------
 * Added ARM Second Processor support.

@@ -84,7 +84,6 @@ char SoundExponentialVolume = 1;
 #define WRITE_ADJUST ((samplerate/50)*2)
 
 static int RelayLen[3]={0,398,297}; // Relay samples
-int UseHostClock=0;
 int Speech[3];
 
 FILE *sndlog=NULL;
@@ -103,16 +102,12 @@ volatile struct {
 } BeebState76489;
 int RealVolumes[4]; // Holds the real volume values for state save use
 
-bool ReloadingChip;
 static int ActiveChannel[4]={FALSE,FALSE,FALSE,FALSE}; /* Those channels with non-0 voolume */
 // Set it to an array for more accurate sound generation
-static int devfd; /* Audio device id */
 static unsigned int samplerate;
 static double OurTime=0.0; /* Time in sample periods */
 
-__int64 SoundTrigger; /* Time to trigger a sound event */
-__int64 SoundTrigger2,STCycles; // BBC's Clock count for triggering host clock adjust
-int ASoundTrigger; // CPU cycle equivalent to trigger recalculation;
+int SoundTrigger; /* Time to trigger a sound event */
 
 static unsigned int GenIndex[4]; /* Used by the voice generators */
 static int GenState[4];
@@ -127,13 +122,11 @@ volatile BOOL bDoSound=TRUE;
 int WriteOffset=0; int SampleAdjust=0;
 char Relay=0; int RelayPos=0;
 LARGE_INTEGER PFreq,LastPCount,CurrentPCount;
-__int64 SoundCycles=0; double CycleRatio;
+double CycleRatio;
 struct AudioType TapeAudio; // Tape audio decoder stuff
 bool TapeSoundEnabled;
 int PartSamples=1;
 int SBSize=1;
-int XtraCycles=0; // Cycles to fill in the gap from the timer.
-int LastXtraCycles=0; // position in which XtraCycles ranges from
 bool Playing;
 
 /****************************************************************************/
@@ -376,18 +369,18 @@ void PlayUpTil(double DestTime) {
 							break;
 
 						case 3: /* Tone gen 1 */
-							if (GenState[0]) {
-								if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1])*31)) {
-									GenIndex[0]=0;
-									GenState[0]=0;
-								}
-							} else {
-								if (GenIndex[0]>=((BeebState76489.ChangeSamps[1]+(int)CSC[1]))) {
-									GenIndex[0]=0;
-									GenState[0]=1;
+							tt=(int)CSC[0];
+							if (GenIndex[0]>=(BeebState76489.ChangeSamps[1]+tt)) {
+								static int per=0;
+								CSC[0]+=CSA[1]-tt;
+								GenIndex[0]=0;
+								GenState[0]=(per==0);
+								if (++per==30) {
+									per=0;
 								}
 							}
-							break;
+							break; 
+
 						} /* Freq type switch */
 					}
 				}
@@ -465,25 +458,25 @@ void PlayUpTil(double DestTime) {
 
 /****************************************************************************/
 /* Convert time in cycles to time in samples                                */
-static __int64 LastBeebCycle=0; /* Last parameter to this function */
+static int LastBeebCycle=0; /* Last parameter to this function */
 static double LastOurTime=0; /* Last result of this function */
 
-static double CyclesToSamples(__int64 beebtime) {
+static double CyclesToSamples(int BeebCycles) {
   double tmp;
 
   /* OK - beeb cycles are in 2MHz units, ours are in 1/samplerate */
   /* This is all done incrementally - find the number of ticks since the last call
      in both domains.  This does mean this should only be called once */
   /* Extract number of cycles since last call */
-  if (beebtime<LastBeebCycle) {
+  if (BeebCycles<LastBeebCycle) {
     /* Wrap around in beebs time */
-    tmp=((double)CycleCountWrap-(double)LastBeebCycle)+(double)beebtime;
+    tmp=((double)CycleCountWrap-(double)LastBeebCycle)+(double)BeebCycles;
   } else {
-    tmp=(double)beebtime-(double)LastBeebCycle;
+    tmp=(double)BeebCycles-(double)LastBeebCycle;
   };
   tmp/=(mainWin->m_RealTimeTarget)?mainWin->m_RealTimeTarget:1;
 /*fprintf(stderr,"Convert tmp=%f\n",tmp); */
-  LastBeebCycle=beebtime;
+  LastBeebCycle=BeebCycles;
 
   tmp*=(samplerate);
   tmp/=2000000.0; /* Few - glad thats a double! */
@@ -491,15 +484,6 @@ static double CyclesToSamples(__int64 beebtime) {
   LastOurTime+=tmp;
   return LastOurTime;
 }; /* CyclesToSamples */
-
-/****************************************************************************/
-static void PlayTilNow(void) {
-  double nowsamps;
-  XtraCycles=TotalCycles-LastXtraCycles;
-  nowsamps=CyclesToSamples(SoundCycles);
-  LastXtraCycles=TotalCycles;
-  PlayUpTil(nowsamps);
-}; /* PlayTilNow */
 
 /****************************************************************************/
 /* Creates a DirectSound buffer */
@@ -646,61 +630,32 @@ static void SetFreq(int Channel, int freqval) {
   int ChangeSamps; /* Number of samples after which to change */
   //fprintf(sndlog,"Channel %d - Value %d\n",Channel,freqval);
   double t;
+
   if (freqval==0) freqval=1;
   if (freqval<5) Speech[Channel]=1; else Speech[Channel]=0;
-/*  if (freqval==0) {
-    ChangeSamps=INT_MAX;
-  } else { */
-    freq=4000000/(32*freqval);
-/*    if (freq>samplerate) {
-      ChangeSamps=INT_MAX; // Way to high frequency - shut off 
-    } else {
-      if (freq>(samplerate/2)) {
-        // Hmm - a bit high - make it top out - change on every sample 
-        // What we should be doing is moving to sine wave at 1/6 samplerate 
-        ChangeSamps=2;
-      } else { */
-        ChangeSamps=(int)( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
-		t=( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
-		CSA[Channel]=(double)(t-ChangeSamps);
-		CSC[Channel]=0;
-      /* };
-    }; // freq<=samplerate 
-  }; /* Freqval!=0 */ 
+  freq=4000000/(32*freqval);
+
+  t=( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
+  ChangeSamps=(int)t;
+  CSA[Channel]=(double)(t-ChangeSamps);
+  CSC[Channel]=CSA[Channel];  // we look ahead, so should already include the fraction on the first update
+  if (Channel==1) {
+    CSC[0]=CSC[1];
+  }
+
   BeebState76489.ChangeSamps[Channel]=ChangeSamps;
 };
 
 /****************************************************************************/
-void AdjustSoundCycles(void) {
-	if (!UseHostClock) return;
-	if ((!DirectSoundEnabled) || (!SoundEnabled)) return; // it just lags the program if there's no sound
-	LARGE_INTEGER TickDiff;
-	__int64 CycleDiff;
-	// Get performance counter
-	QueryPerformanceCounter(&CurrentPCount);
-	TickDiff.QuadPart=CurrentPCount.QuadPart-LastPCount.QuadPart;
-	CycleDiff=(__int64)(TickDiff.QuadPart*CycleRatio);
-	if (CycleDiff>(SoundAutoTriggerTime/2)) {
-		LastPCount.QuadPart=CurrentPCount.QuadPart;
-		SoundCycles+=CycleDiff;
-	}
-}
-
-void SoundTrigger_Real(void) {
-//	AdjustSoundCycles();
-    PlayTilNow();  
-	SoundTrigger=SoundCycles+SoundAutoTriggerTime;
+static void SoundTrigger_Real(void) {
+  double nowsamps;
+  nowsamps=CyclesToSamples(TotalCycles);
+  PlayUpTil(nowsamps);
+  SoundTrigger=TotalCycles+SoundAutoTriggerTime;
 }; /* SoundTrigger_Real */
 
 void Sound_Trigger(int NCycles) {
-/*	STCycles+=NCycles;
-	if (SoundTrigger2<=STCycles) {
-		AdjustSoundCycles();
-		SoundTrigger2=STCycles+100;
-	}
-	if (!UseHostClock) SoundCycles+=NCycles; */
-	SoundCycles=TotalCycles;
-	if (SoundTrigger<=SoundCycles) SoundTrigger_Real(); 
+	if (SoundTrigger<=TotalCycles) SoundTrigger_Real(); 
 	// fprintf(sndlog,"SoundTrigger_Real was called from Sound_Trigger\n"); }
 }
 
@@ -719,12 +674,10 @@ void SoundChipReset(void) {
 /****************************************************************************/
 /* Called to enable sound output                                            */
 void SoundInit() {
-  int pfr;
   ClearTrigger(SoundTrigger);
-  LastBeebCycle=SoundCycles;
+  LastBeebCycle=TotalCycles;
   LastOurTime=(double)LastBeebCycle * (double)SoundSampleRate / 2000000.0;
   OurTime=LastOurTime;
-  LastXtraCycles=TotalCycles;
   bufptr=0;
   InitAudioDev(SoundSampleRate);
   if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000; 
@@ -734,14 +687,7 @@ void SoundInit() {
   SoundBufferSize=111;
   LoadRelaySounds();
   bReRead=TRUE;
-  if (UseHostClock) {
-	pfr=QueryPerformanceFrequency(&PFreq); // Get timer resolution
-	QueryPerformanceCounter(&LastPCount);
-	CurrentPCount.QuadPart=LastPCount.QuadPart;
-	CycleRatio=2000000.0/PFreq.QuadPart;
-  }
-  SoundCycles=0; SoundTrigger=SoundAutoTriggerTime;
-  SoundTrigger2=TotalCycles+3000;
+  SoundTrigger=TotalCycles+SoundAutoTriggerTime;
 }; /* SoundInit */
 
 void SwitchOnSound(void) {
@@ -799,7 +745,7 @@ void Sound_RegWrite(int value) {
 	VolChange=0xff;
     switch ((value>>4) & 0x7) {
       case 0: /* Tone 3 freq */
-        BeebState76489.ToneFreq[2]=(BeebState76489.ToneFreq[2] & 0x2f0) | (value & 0xf);
+        BeebState76489.ToneFreq[2]=(BeebState76489.ToneFreq[2] & 0x3f0) | (value & 0xf);
         SetFreq(3,BeebState76489.ToneFreq[2]);
         BeebState76489.LastToneFreqSet=2;
 	//	trigger = 1;
@@ -816,7 +762,7 @@ void Sound_RegWrite(int value) {
         break;
 
       case 2: /* Tone 2 freq */
-        BeebState76489.ToneFreq[1]=(BeebState76489.ToneFreq[1] & 0x2f0) | (value & 0xf);
+        BeebState76489.ToneFreq[1]=(BeebState76489.ToneFreq[1] & 0x3f0) | (value & 0xf);
         BeebState76489.LastToneFreqSet=1;
         SetFreq(2,BeebState76489.ToneFreq[1]);
 	//	trigger = 1;
@@ -833,7 +779,7 @@ void Sound_RegWrite(int value) {
         break;
 
       case 4: /* Tone 1 freq (Possibly also noise!) */
-        BeebState76489.ToneFreq[0]=(BeebState76489.ToneFreq[0] & 0x2f0) | (value & 0xf);
+        BeebState76489.ToneFreq[0]=(BeebState76489.ToneFreq[0] & 0x3f0) | (value & 0xf);
         BeebState76489.LastToneFreqSet=0;
         SetFreq(1,BeebState76489.ToneFreq[0]);
 	//	trigger = 1;
@@ -867,7 +813,7 @@ void Sound_RegWrite(int value) {
     };
    //if (VolChange<4) fprintf(sndlog,"Channel %d - Volume %d at %lu Cycles\n",VolChange,value &15,SoundCycles);
   };
-  if /*(*/(trigger)/* && (!ReloadingChip))*/ 
+  if (trigger)
     SoundTrigger_Real();
 }; /* Sound_RegWrite */
 
@@ -902,7 +848,6 @@ void LoadSoundUEF(FILE *SUEF) {
 	unsigned char Chan;
 	int Data;
 	int RegVal; // This will be filled in by the data processor
-	ReloadingChip=TRUE;
 	for (Chan=1;Chan<4;Chan++) {
 		Data=fget16(SUEF);
 		// Send the data direct to Sound_RegWrite()
@@ -932,7 +877,6 @@ void LoadSoundUEF(FILE *SUEF) {
 	GenIndex[1]=fget16(SUEF);
 	GenIndex[2]=fget16(SUEF);
 	GenIndex[3]=fget16(SUEF);
-	ReloadingChip=FALSE;
 }
 
 void SaveSoundUEF(FILE *SUEF) {

@@ -835,7 +835,13 @@ void CreateADFSImage(char *ImageName,unsigned char Drive,unsigned char Tracks, H
 			for (bcount=5; bcount<0x1e; bcount++) BPUT(0);
 			BPUT(ent);
 		}
-		for (ent=0x4cb; ent<0x4fa; ent++) BPUT(0);
+		BPUT(0);
+		BPUT('$');		// Set root directory name
+		BPUT(13);
+		for (ent=0x0; ent<11; ent++) BPUT(0);
+		BPUT('$');		// Set root title name
+		BPUT(13);
+		for (ent=0x0; ent<31; ent++) BPUT(0); 
 		BPUT(1);
 		BPUT('H'); BPUT('u'); BPUT('g'); BPUT('o'); // Hugo
 		BPUT(0);

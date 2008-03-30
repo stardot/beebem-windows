@@ -103,7 +103,7 @@ unsigned char sr1b2cause;				// flagto indicate cause of irq sr1b2
 // longer that we have to - but it will have to do for now!
 bool FlagFillActive;                    // Flag fill state
 int EconetFlagFillTimeoutTrigger;       // Trigger point for flag fill
-int EconetFlagFillTimeout = 100000;     // Cycles for flag fill timeout
+int EconetFlagFillTimeout = 250000;     // Cycles for flag fill timeout
 
 // Device and temp copy!
 volatile MC6854 ADLC;

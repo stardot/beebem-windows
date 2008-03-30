@@ -628,22 +628,17 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 
 	if (aviWriter)
 	{
-		m_AviFrameSkipCount++;
-		if (m_AviFrameSkipCount > m_AviFrameSkip)
+		StretchBlt(m_AviDC, 0, 0, m_Avibmi.bmiHeader.biWidth, m_Avibmi.bmiHeader.biHeight,
+				   m_hDCBitmap, 0, starty, (TeletextEnabled)?552:ActualScreenWidth,
+				   (TeletextEnabled==1)?TTLines:nlines, SRCCOPY);
+
+		HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
+		if (hr != E_UNEXPECTED && FAILED(hr))
 		{
-			m_AviFrameSkipCount = 0;
-
-			StretchBlt(m_AviDC, 0, 0, m_Avibmi.bmiHeader.biWidth, m_Avibmi.bmiHeader.biHeight,
-				m_hDCBitmap, 0, starty, (TeletextEnabled)?552:ActualScreenWidth, (TeletextEnabled==1)?TTLines:nlines, SRCCOPY);
-
-			HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
-			if (hr != E_UNEXPECTED && FAILED(hr))
-			{
-				MessageBox(m_hWnd, "Failed to write video to AVI file",
-					WindowTitle, MB_OK|MB_ICONERROR);
-				delete aviWriter;
-				aviWriter = NULL;
-			}
+			MessageBox(m_hWnd, "Failed to write video to AVI file",
+					   WindowTitle, MB_OK|MB_ICONERROR);
+			delete aviWriter;
+			aviWriter = NULL;
 		}
 	}
 }

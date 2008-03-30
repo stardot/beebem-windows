@@ -71,7 +71,8 @@ unsigned char CMA2;
 CArm *arm = NULL;
 
 unsigned char HideMenuEnabled;
-bool MenuOn;
+unsigned char DisableMenu = 0;
+bool MenuOn = true;
 
 struct LEDType LEDs;
 char DiscLedColour=0; // 0 for red, 1 for green.
@@ -93,81 +94,17 @@ static const char *AboutText =
 	"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\n"
 	"Torch Z80 Second Processor\nMaster 512 Second Processor\nAcorn Z80 Second Processor\n"
 	"ARM Second Processor\n\n"
-	"Version 3.7, May 2007";
+	"Version 3.82, March 2008";
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
-// Row,Col - Physical mapping
-static int transTable1[256][2]={
-	-9,0,	-9,0,	-9,0,	-9,0,   // 0
-	-9,0,	-9,0,	-9,0,	-9,0,   // 4
-	5,9,	6,0,	-9,0,	-9,0,   // 8 [BS][TAB]..
-	-9,0,	4,9,	-9,0,	-9,0,   // 12 .RET..
-	0,0,	0,1,	-9,0,	-2,-2,  // 16 .CTRL.BREAK
-	4,0,	-9,0,	-9,0,	-9,0,   // 20 CAPS...
-	-9,0,	-9,0,	-9,0,	7,0,    // 24 ...ESC
-	-9,0,	-9,0,	-9,0,	-9,0,   // 28
-	6,2,	-3,-3,	-3,-4,	6,9,    // 32 SPACE..[End]      2nd is Page Up 3rd is Page Down
-	-9,0,	1,9,	3,9,	7,9,    // 36 .[Left][Up][Right]
-	2,9,	-9,0,	-9,0,	-9,0,   // 40 [Down]...
-	-9,0,	-9,0,	5,9,	-9,0,   // 44 ..[DEL].
-	2,7,	3,0,	3,1,	1,1,    // 48 0123   
-	1,2,	1,3,	3,4,	2,4,    // 52 4567
-	1,5,	2,6,	-9,0,	-9,0,   // 56 89
-	-9,0,	-9,0,	-9,0,	-9,0,   // 60
-	-9,0,	4,1,	6,4,	5,2,    // 64.. ABC
-	3,2,	2,2,	4,3,	5,3,    // 68  DEFG
-	5,4,	2,5,	4,5,	4,6,    // 72  HIJK
-	5,6,	6,5,	5,5,	3,6,    // 76  LMNO
-	3,7,	1,0,	3,3,	5,1,    // 80  PQRS
-	2,3,	3,5,	6,3,	2,1,    // 84  TUVW
-	4,2,	4,4,	6,1,	-9,0,   // 88  XYZ
-	-9,0,	6,2,	-9,0,	-9,0,   // 92  . SPACE ..
-	-9,0,	-9,0,	-9,0,	-9,0,   // 96
-	-9,0,	-9,0,	-9,0,	-9,0,   // 100
-	-9,0,	-9,0,	-9,0,	-4,0,   // 104 Keypad+
-	-9,0,	-4,1,	-9,0,	-9,0,   // 108 Keypad-
-	7,1,	7,2,	7,3,	1,4,    // 112 F1 F2 F3 F4
-	7,4,	7,5,	1,6,	7,6,    // 116 F5 F6 F7 F8
-	7,7,	2,0,	2,0,	-2,-2,  // 120 F9 F10 F11 F12
-	-9,0,	-9,0,	-9,0,	-9,0,   // 124 
-	-9,0,	-9,0,	-9,0,	-9,0,   // 128
-	-9,0,	-9,0,	-9,0,	-9,0,   // 132
-	-9,0,	-9,0,	-9,0,	-9,0,   // 136
-	-9,0,	-9,0,	-9,0,	-9,0,   // 140
-	-9,0,	-9,0,	-9,0,	-9,0,   // 144
-	-9,0,	-9,0,	-9,0,	-9,0,   // 148
-	-9,0,	-9,0,	-9,0,	-9,0,   // 152
-	-9,0,	-9,0,	-9,0,	-9,0,   // 156
-	-9,0,	-9,0,	-9,0,	-9,0,   // 160
-	-9,0,	-9,0,	-9,0,	-9,0,   // 164
-	-9,0,	-9,0,	-9,0,	-9,0,   // 168
-	-9,0,	-9,0,	-9,0,	-9,0,   // 172
-	-9,0,	-9,0,	-9,0,	-9,0,   // 176
-	-9,0,	-9,0,	-9,0,	-9,0,   // 180
-	-9,0,	-9,0,	5,7,	1,8,    // 184  ..;=
-	6,6,	1,7,	6,7,	6,8,    // 188  ,-./
-	4,8,	-9,0,	-9,0,	-9,0,   // 192  @ ...
-	-9,0,	-9,0,	-9,0,	-9,0,   // 196
-	-9,0,	-9,0,	-9,0,	-9,0,   // 200
-	-9,0,	-9,0,	-9,0,	-9,0,   // 204
-	-9,0,	-9,0,	-9,0,	-9,0,   // 208
-	-9,0,	-9,0,	-9,0,	-9,0,   // 212
-	-9,0,	-9,0,	-9,0,	3,8,    // 216 ...[
-	7,8,	5,8,	2,8,	4,7,    // 220 \]#`
-	-9,0,	-9,0,	-9,0,	-9,0,   // 224
-	-9,0,	-9,0,	-9,0,	-9,0,   // 228
-	-9,0,	-9,0,	-9,0,	-9,0,   // 232
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0, 
-	-9,0,	-9,0,	-9,0,	-9,0 
-};
+// Keyboard mappings
+static KeyMap defaultMapping;
+static KeyMap logicalMapping;
 
 /* Currently selected translation table */
-static int (*transTable)[2] = transTable1;
+static KeyMap *transTable = &defaultMapping;
 
 /****************************************************************************/
 BeebWin::BeebWin()
@@ -192,6 +129,10 @@ BeebWin::BeebWin()
 	m_DisableKeysBreak=0;
 	m_DisableKeysEscape=0;
 	m_DisableKeysShortcut=0;
+	memset(&defaultMapping, 0, sizeof(KeyMap));
+	memset(&logicalMapping, 0, sizeof(KeyMap));
+	memset(&UserKeymap, 0, sizeof(KeyMap));
+	m_UserKeyMapPath[0] = 0;
 	m_hBitmap = m_hOldObj = m_hDCBitmap = NULL;
 	m_screen = m_screen_blur = NULL;
 	m_ScreenRefreshCount = 0;
@@ -210,6 +151,13 @@ BeebWin::BeebWin()
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
 	UEFTapeName[0]=0;
+	m_AutoSavePrefsCMOS = false;
+	m_AutoSavePrefsFolders = false;
+	m_AutoSavePrefsAll = false;
+	m_AutoSavePrefsChanged = false;
+	m_KbdCmd[0] = 0;
+	m_KbdCmdPos = -1;
+	m_KbdCmdPress = false;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -250,6 +198,15 @@ void BeebWin::Initialise()
 	strcpy(EconetCfgPath, m_UserDataPath);
 	strcpy(RomPath, m_UserDataPath);
 
+	// Load key maps
+	char keymap[_MAX_PATH];
+	strcpy(keymap, "Logical.kmap");
+	GetDataPath(m_UserDataPath, keymap);
+	ReadKeyMap(keymap, &logicalMapping);
+	strcpy(keymap, "Default.kmap");
+	GetDataPath(m_UserDataPath, keymap);
+	ReadKeyMap(keymap, &defaultMapping);
+
 	LoadPreferences();
 	TouchScreenOpen();
 
@@ -263,6 +220,9 @@ void BeebWin::Initialise()
 	m_hMenu = GetMenu(m_hWnd);
 	InitMenu();
 	m_hDC = GetDC(m_hWnd);
+
+	// Will hide menu if necessary
+	ShowMenu(TRUE);
 
 	if (m_DisplayRenderer != IDM_DISPGDI)
 		InitDX();
@@ -298,19 +258,17 @@ void BeebWin::Initialise()
 
 	// Boot file if passed on command line
 	HandleCommandLineFile();
+
+	// Schedule first key press if keyboard command supplied
+	if (m_KbdCmd[0] != 0)
+		SetTimer(m_hWnd, 1, 1000, NULL);
 }
 
 /****************************************************************************/
 BeebWin::~BeebWin()
 {   
-	if (aviWriter)
-		delete aviWriter;
-
 	if (m_DisplayRenderer != IDM_DISPGDI)
 		ExitDX();
-
-	if (SoundEnabled)
-		SoundReset();
 
 	ReleaseDC(m_hWnd, m_hDC);
 
@@ -321,13 +279,27 @@ BeebWin::~BeebWin()
 	if (m_hDCBitmap != NULL)
 		DeleteDC(m_hDCBitmap);
 
+	CoUninitialize();
+}
+
+/****************************************************************************/
+void BeebWin::Shutdown()
+{   
+	if (aviWriter)
+		delete aviWriter;
+
+	if (m_AutoSavePrefsCMOS || m_AutoSavePrefsFolders ||
+		m_AutoSavePrefsAll || m_AutoSavePrefsChanged)
+		SavePreferences(m_AutoSavePrefsAll);
+
+	if (SoundEnabled)
+		SoundReset();
+
 	if (m_SpVoice)
 	{
 		m_SpVoice->Release();
 		m_SpVoice = NULL;
 	}
-
-	CoUninitialize();
 }
 
 /****************************************************************************/
@@ -558,6 +530,9 @@ void BeebWin::CreateBeebWindow(void)
 }
 
 void BeebWin::ShowMenu(bool on) {
+ if (DisableMenu)
+  on=FALSE;
+
  if (on!=MenuOn) {
   if (on)
     SetMenu(m_hWnd, m_hMenu);
@@ -647,6 +622,10 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, ID_UPRM, RTC_Enabled ? MF_CHECKED:MF_UNCHECKED);
 
 	CheckMenuItem(hMenu, IDM_SPEECH, SpeechDefault ? MF_CHECKED:MF_UNCHECKED);
+
+	CheckMenuItem(hMenu, IDM_AUTOSAVE_PREFS_CMOS, m_AutoSavePrefsCMOS ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_AUTOSAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll ? MF_CHECKED : MF_UNCHECKED);
 
 	UpdateMonitorMenu();
 	UpdateDisableKeysMenu();
@@ -1118,6 +1097,8 @@ LRESULT CALLBACK WndProc(
 			break;
 
 		case WM_DESTROY:  // message: window being destroyed
+			if (mainWin)
+				mainWin->Shutdown();
 			PostQuitMessage(0);
 			break;
 
@@ -1135,6 +1116,10 @@ LRESULT CALLBACK WndProc(
 			mainWin->ReinitDX();
 			break;
 
+		case WM_TIMER:
+			mainWin->HandleTimer();
+			break;
+
 		default:		  // Passes it on if unproccessed
 			return (DefWindowProc(hWnd, message, uParam, lParam));
 		}
@@ -1148,12 +1133,12 @@ int BeebWin::TranslateKey(int vkey, int keyUp, int &row, int &col)
 		return -9;
 
 	// Key track of shift state
-	if (transTable[vkey][0] == 0 && transTable[vkey][1] == 0)
+	if ((*transTable)[vkey][0].row == 0 && (*transTable)[vkey][0].col == 0)
 	{
 		if (keyUp)
-			m_ShiftPressed = false;
+			m_ShiftPressed = 0;
 		else
-			m_ShiftPressed = true;
+			m_ShiftPressed = 1;
 	}
 
 	if (keyUp)
@@ -1179,8 +1164,9 @@ int BeebWin::TranslateKey(int vkey, int keyUp, int &row, int &col)
 	{
 		int needShift = m_ShiftPressed;
 
-		row = transTable[vkey][0];
-		col = transTable[vkey][1];
+		row = (*transTable)[vkey][m_ShiftPressed].row;
+		col = (*transTable)[vkey][m_ShiftPressed].col;
+		needShift = (*transTable)[vkey][m_ShiftPressed].shift;
 
 		if (m_KeyMapAS)
 		{
@@ -1202,126 +1188,13 @@ int BeebWin::TranslateKey(int vkey, int keyUp, int &row, int &col)
 			// Map F1-F10 to f0-f9
 			if (vkey >= 113 && vkey <= 121)
 			{
-				row = transTable[vkey - 1][0];
-				col = transTable[vkey - 1][1];
+				row = (*transTable)[vkey - 1][0].row;
+				col = (*transTable)[vkey - 1][0].col;
 			}
 			else if (vkey == 112)
 			{
 				row = 2;
 				col = 0;
-			}
-		}
-
-		if (m_MenuIdKeyMapping == IDM_LOGICALKYBDMAPPING)
-		{
-			switch (vkey)
-			{
-			case 187: // =
-				if (m_ShiftPressed)
-				{
-					row = 5;
-					col = 7;
-					needShift = true;
-				}
-				else
-				{
-					row = 1;
-					col = 7;
-					needShift = true;
-				}
-				break;
-			case 192: // '
-				if (m_ShiftPressed)
-				{
-					row = 4;
-					col = 7;
-					needShift = true;
-				}
-				else
-				{
-					row = 2;
-					col = 4;
-					needShift = true;
-				}
-				break;
-			case 222: // #
-				if (m_ShiftPressed)
-				{
-					row = 1;
-					col = 8;
-					needShift = true;
-				}
-				else
-				{
-					row = 1;
-					col = 1;
-					needShift = true;
-				}
-				break;
-			case 51: // 3
-				if (m_ShiftPressed)
-				{
-					row = 2;
-					col = 8;
-					needShift = true;
-				}
-				break;
-			case 54: // 6
-				if (m_ShiftPressed)
-				{
-					row = 1;
-					col = 8;
-					needShift = false;
-				}
-				break;
-			case 55: // 7
-				if (m_ShiftPressed)
-				{
-					row = 3;
-					col = 4;
-					needShift = true;
-				}
-				break;
-			case 56: // 8
-				if (m_ShiftPressed)
-				{
-					row = 4;
-					col = 8;
-					needShift = true;
-				}
-				break;
-			case 57: // 9
-				if (m_ShiftPressed)
-				{
-					row = 1;
-					col = 5;
-					needShift = true;
-				}
-				break;
-			case 48: // 0
-				if (m_ShiftPressed)
-				{
-					row = 2;
-					col = 6;
-					needShift = true;
-				}
-				break;
-			case 189: // -
-				if (m_ShiftPressed)
-				{
-					row = 2;
-					col = 8;
-					needShift = false;
-				}
-				break;
-			case 186: // ;
-				if (m_ShiftPressed)
-				{
-					row = 4;
-					col = 8;
-					needShift = false;
-				}
-				break;
 			}
 		}
 
@@ -1364,6 +1237,31 @@ int BeebWin::StartOfFrame(void)
 
 	if (UpdateTiming())
 		FrameNum = 0;
+
+	// Force video frame rate to match AVI capture rate to avoid 
+	// video and sound getting out of sync
+	if (aviWriter != NULL)
+	{
+		m_AviFrameSkipCount++;
+		if (m_AviFrameSkipCount > m_AviFrameSkip)
+		{
+			m_AviFrameSkipCount = 0;
+			FrameNum = 0;
+		}
+		else
+		{
+			FrameNum = 1;
+		}
+
+		// Ensure that frames captured each second (50 frames) matches
+		// the AVI capture FPS rate
+		m_AviFrameCount++;
+		if (m_AviFrameCount >= 50)
+		{
+			m_AviFrameCount = 0;
+			m_AviFrameSkipCount = 0;
+		}
+	}
 
 	return FrameNum;
 }
@@ -1804,15 +1702,15 @@ void BeebWin::TranslateKeyMapping(void)
 	{
 	default:
 	case IDM_DEFAULTKYBDMAPPING:
-		transTable = transTable1;
+		transTable = &defaultMapping;
 		break;
 
 	case IDM_LOGICALKYBDMAPPING:
-		transTable = transTable1;
+		transTable = &logicalMapping;
 		break;
 
 	case IDM_USERKYBDMAPPING:
-		transTable = UserKeymap;
+		transTable = &UserKeymap;
 		break;
 	}
 }
@@ -2460,6 +2358,14 @@ void BeebWin::HandleCommand(int MenuId)
 		UserKeyboardDialog( m_hWnd );
 		break;
 
+	case IDM_LOADKEYMAP:
+		LoadUserKeyMap();
+		break;
+
+	case IDM_SAVEKEYMAP:
+		SaveUserKeyMap();
+		break;
+
 	case IDM_USERKYBDMAPPING:
 	case IDM_DEFAULTKYBDMAPPING:
 	case IDM_LOGICALKYBDMAPPING:
@@ -2512,7 +2418,23 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_SAVE_PREFS:
-		SavePreferences();
+		SavePreferences(true);
+		break;
+
+	case IDM_AUTOSAVE_PREFS_CMOS:
+		m_AutoSavePrefsCMOS = !m_AutoSavePrefsCMOS;
+		CheckMenuItem(hMenu, IDM_AUTOSAVE_PREFS_CMOS, m_AutoSavePrefsCMOS ? MF_CHECKED : MF_UNCHECKED);
+		m_AutoSavePrefsChanged = true;
+		break;
+	case IDM_AUTOSAVE_PREFS_FOLDERS:
+		m_AutoSavePrefsFolders = !m_AutoSavePrefsFolders;
+		CheckMenuItem(hMenu, IDM_AUTOSAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders ? MF_CHECKED : MF_UNCHECKED);
+		m_AutoSavePrefsChanged = true;
+		break;
+	case IDM_AUTOSAVE_PREFS_ALL:
+		m_AutoSavePrefsAll = !m_AutoSavePrefsAll;
+		CheckMenuItem(hMenu, IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll ? MF_CHECKED : MF_UNCHECKED);
+		m_AutoSavePrefsChanged = true;
 		break;
 
 	case IDM_AMXONOFF:
@@ -3053,7 +2975,11 @@ void BeebWin::ParseCommandLine()
 	i = 1;
 	while (i < __argc)
 	{
-		if (__argv[i][0] == '-' && i+1 >= __argc)
+		if (_stricmp(__argv[i], "-DisMenu") == 0)
+		{
+			DisableMenu = 1;
+		}
+		else if (__argv[i][0] == '-' && i+1 >= __argc)
 		{
 			sprintf(errstr,"Invalid command line parameter:\n  %s", __argv[i]);
 			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
@@ -3104,6 +3030,10 @@ void BeebWin::ParseCommandLine()
 				else
 					EconetFlagFillTimeout = a;
 			}
+			else if (_stricmp(__argv[i], "-KbdCmd") == 0)
+			{
+				strncpy(m_KbdCmd, __argv[++i], 1024);
+			}
 			else if (__argv[i][0] == '-')
 			{
 				invalid = true;
@@ -3138,8 +3068,9 @@ void BeebWin::HandleCommandLineFile()
 	char TmpPath[_MAX_PATH];
 	char *FileName = NULL;
 	bool uef = false;
+	bool csw = false;
 	
-	// See if disc image is readable
+	// See if file is readable
 	if (m_CommandLineFileName != NULL)
 	{
 		FileName = m_CommandLineFileName;
@@ -3159,8 +3090,15 @@ void BeebWin::HandleCommandLineFile()
 				adfs = true;
 			else if (_stricmp(ext+1, "uef") == 0)
 				uef = true;
+			else if (_stricmp(ext+1, "csw") == 0)
+				csw = true;
 			else
+			{
+				char errstr[200];
+				sprintf(errstr,"Unrecognised file type:\n  %s", FileName);
+				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 				cont = false;
+			}
 		}
 	}
 
@@ -3187,6 +3125,34 @@ void BeebWin::HandleCommandLineFile()
 				FileName = TmpPath;
 				fclose(fd);
 			}
+			else
+			{
+				// Try getting it from Tapes directory
+				strcpy(TmpPath, m_UserDataPath);
+				strcat(TmpPath, "tapes/");
+				strcat(TmpPath, FileName);
+				FILE *fd = fopen(TmpPath, "rb");
+				if (fd != NULL)
+				{
+					cont = true;
+					FileName = TmpPath;
+					fclose(fd);
+				}
+			}
+		}
+		else if (csw)
+		{
+			// Try getting it from Tapes directory
+			strcpy(TmpPath, m_UserDataPath);
+			strcat(TmpPath, "tapes/");
+			strcat(TmpPath, FileName);
+			FILE *fd = fopen(TmpPath, "rb");
+			if (fd != NULL)
+			{
+				cont = true;
+				FileName = TmpPath;
+				fclose(fd);
+			}
 		}
 		else
 		{
@@ -3202,13 +3168,43 @@ void BeebWin::HandleCommandLineFile()
 				fclose(fd);
 			}
 		}
+
+		if (!cont)
+		{
+			char errstr[200];
+			sprintf(errstr,"Cannot find file:\n  %s", FileName);
+			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		}
 	}
 
 	if (cont)
 	{
 		if (uef)
 		{
-			LoadUEFState(FileName);
+			// Determine if file is a tape or a state file
+			bool stateFile = false;
+			FILE *fd = fopen(FileName, "rb");
+			if (fd != NULL)
+			{
+				char buf[14];
+				fread(buf,14,1,fd);
+				if (strcmp(buf,"UEF File!")==0 && buf[12]==0x6c && buf[13]==0x04)
+				{
+					stateFile = true;
+				}
+				fclose(fd);
+			}
+
+			if (stateFile)
+				LoadUEFState(FileName);
+			else
+				LoadUEF(FileName);
+
+			cont = false;
+		}
+		else if (csw)
+		{
+			LoadCSW(FileName);
 			cont = false;
 		}
 	}
@@ -3446,4 +3442,67 @@ bool BeebWin::CheckUserDataPath()
 	}
 
 	return success;
+}
+
+/****************************************************************************/
+void BeebWin::HandleTimer()
+{
+	int row,col;
+	
+	// Release previous key press (except shift/control)
+	if (m_KbdCmdPress &&
+		m_KbdCmdKey != VK_SHIFT && m_KbdCmdKey != VK_CONTROL)
+	{
+		TranslateKey(m_KbdCmdKey, 1, row, col);
+		m_KbdCmdPress = false;
+		SetTimer(m_hWnd, 1, 40, NULL);
+	}
+	else
+	{
+		m_KbdCmdPos++;
+		if (m_KbdCmd[m_KbdCmdPos] == 0)
+		{
+			KillTimer(m_hWnd, 1);
+		}
+		else
+		{
+			m_KbdCmdPress = true;
+			
+			switch (m_KbdCmd[m_KbdCmdPos])
+			{
+			case '\\':
+				m_KbdCmdPos++;
+				switch (m_KbdCmd[m_KbdCmdPos])
+				{
+				case '\\': m_KbdCmdKey = VK_OEM_5; break;
+				case 'n': m_KbdCmdKey = VK_RETURN; break;
+				case 's': m_KbdCmdKey = VK_SHIFT; break;
+				case 'S': m_KbdCmdKey = VK_SHIFT; m_KbdCmdPress = false; break;
+				case 'c': m_KbdCmdKey = VK_CONTROL; break;
+				case 'C': m_KbdCmdKey = VK_CONTROL; m_KbdCmdPress = false; break;
+				}
+				break;
+				
+			case '`': m_KbdCmdKey = VK_OEM_8; break;
+			case '-': m_KbdCmdKey = VK_OEM_MINUS; break;
+			case '=': m_KbdCmdKey = VK_OEM_PLUS; break;
+			case '[': m_KbdCmdKey = VK_OEM_4; break;
+			case ']': m_KbdCmdKey = VK_OEM_6; break;
+			case ';': m_KbdCmdKey = VK_OEM_1; break;
+			case '\'': m_KbdCmdKey = VK_OEM_3; break;
+			case '#': m_KbdCmdKey = VK_OEM_7; break;
+			case ',': m_KbdCmdKey = VK_OEM_COMMA; break;
+			case '.': m_KbdCmdKey = VK_OEM_PERIOD; break;
+			case '/': m_KbdCmdKey = VK_OEM_2; break;
+			default: m_KbdCmdKey = m_KbdCmd[m_KbdCmdPos]; break;
+			}
+			
+			if (m_KbdCmdPress)
+				TranslateKey(m_KbdCmdKey, 0, row, col);
+			else
+				TranslateKey(m_KbdCmdKey, 1, row, col);
+			
+			SetTimer(m_hWnd, 1, 40, NULL);
+		}
+	}
 }

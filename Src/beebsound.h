@@ -43,7 +43,7 @@ extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
 extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
 extern char SoundExponentialVolume;
 
-extern __int64 SoundTrigger; /* Cycle based trigger on sound */
+extern int SoundTrigger; /* Cycle based trigger on sound */
 extern double SoundTuning;
 extern __int64 SoundCycles;
 
@@ -53,7 +53,6 @@ void SoundReset();
 /* Called in sysvia.cc when a write to one of the 76489's registers occurs */
 void Sound_RegWrite(int Value);
 void DumpSound(void);
-void SoundTrigger_Real(void);
 void ClickRelay(unsigned char RState);
 
 void Sound_Trigger(int NCycles);
@@ -78,7 +77,6 @@ extern bool TapeSoundEnabled;
 extern int SoundChipEnabled;
 void SoundChipReset(void);
 void SwitchOnSound(void);
-extern int UseHostClock;
 extern int UsePrimaryBuffer;
 void LoadSoundUEF(FILE *SUEF);
 void SaveSoundUEF(FILE *SUEF);

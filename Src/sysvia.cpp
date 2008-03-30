@@ -596,6 +596,9 @@ void SysVIA_poll(unsigned int ncycles) {
     SysVIAState.timer2c-=ncycles;
   if ((SysVIAState.timer1c<0) || (SysVIAState.timer2c<0)) SysVIA_poll_real();
 
+  // Ensure that CA2 keyboard interrupt is asserted when key pressed
+  DoKbdIntCheck(); 
+
   // Do Shift register stuff
 //  if (SRMode==2) {
 	  // Shift IN under control of Clock 2

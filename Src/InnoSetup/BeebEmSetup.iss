@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=BeebEm
-AppVerName=BeebEm V3.7
+AppVerName=BeebEm V3.82
 AppPublisher=Mike Wyatt
 AppPublisherURL=http://www.mikebuk.dsl.pipex.com/beebem/index.html
 AppSupportURL=http://www.mikebuk.dsl.pipex.com/beebem/index.html
@@ -11,10 +11,10 @@ AppUpdatesURL=http://www.mikebuk.dsl.pipex.com/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
 OutputDir=.
-OutputBaseFilename=BeebEm37
+OutputBaseFilename=BeebEm382
 Compression=lzma
 SolidCompression=yes
-VersionInfoVersion=3.7.0.0
+VersionInfoVersion=3.8.2.0
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl

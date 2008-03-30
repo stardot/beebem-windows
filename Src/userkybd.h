@@ -31,6 +31,6 @@
 
 BOOL UserKeyboardDialog( HWND  hwndParent );
 
-extern int UserKeymap[256][2];
+extern KeyMap UserKeymap;
 
 #endif

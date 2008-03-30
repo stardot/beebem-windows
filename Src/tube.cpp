@@ -1754,7 +1754,7 @@ void Exec65C02Instruction(void) {
 		if (TubeMachineType==3) {
 			YReg=Pop(); /* PLY */
 			PSR&=~(FlagZ | FlagN);
-			PSR|=((XReg==0)<<1) | (YReg & 128);
+			PSR|=((YReg==0)<<1) | (YReg & 128);
 		}
 	  break;
     case 0x7c:

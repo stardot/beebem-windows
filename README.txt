@@ -34,6 +34,26 @@ You can download more disc images from internet sites such as these:
 Put the disc image files into the 'DiscIms' directory.
 
 
+BeebEm FAQ
+----------
+
+Some commonly asked questions:
+
+Q1. How do you change the default folder for loading disks or tapes?
+
+A1. On the Options menu, enable this option:
+
+      Preference Options -> Save Disc/Tape/State Folders
+
+    BeebEm will remember the folder you last loaded a disk or tape from
+    and default to that the next time you select load.
+
+Q2. How do you open the menus in full screen mode?
+
+A2. Move the mouse cursor to the top left of the screen and press Alt+F to
+    open the File menu.
+
+
 Configuring BeebEm
 ------------------
 
@@ -135,19 +155,58 @@ these are not:
    '@               :*
    End              Copy
 
-With logical mapping the key symbols are mapped directly (for a UK PC
-keyboard at least) so you get what you press.  Note that logical mapping
-sometimes has to change the shift key state in order to work so it can do
-some unexpected things if you use it while playing a game that uses shift.
-Its probably better to use default mapping when playing games.
-
-If you do not use a UK keyboard then you may want to set up your own
-mapping.  Use the 'user keyboard' mapping options in BeebEm to do this and
-remember to save it using the 'save preferences' option.
-
 The keypad +/- keys will change between the BeebEm fixed speeds.
 
 The keypad / and * keys will save and load a quickstate file.
+
+With a logical mapping the key symbols are mapped directly so you get what
+you press.  Note that the logical mapping sometimes has to change the shift
+key state in order to work so it can do some unexpected things if you use it
+while playing a game that uses shift.  Its probably better to use default
+mapping when playing games.
+
+Key mappings are kept in .kmap files stored in the My Documents\BeebEm area.
+BeebEm will read the Default.kmap and Logical.kmap files at start up.  These
+files contain mappings for a UK PC keyboard and they can be replaced with
+alternative mapping files if you are not using a UK keyboard (for example,
+the USLogical.kmap file for a US keyboard).
+
+You can create your own mapping to map your PC keyboard to your emulated BBC
+one.  Do this as follows:
+
+(1) If you are in full screen mode then switch back to Windowed mode.
+
+(2) Select menu item "Options -> Define User Key Mapping".  A graphic
+    showing the BBC keyboard layout will appear within the BeebEm interface.
+
+(3) Use your mouse pointer to click once on the BBC key that you are
+    attempting to map to your PC keyboard.
+      e.g. Click BBC key 8(
+
+(4) Decide which PC keys you want to map to the unshifted BBC key press and
+    which PC key you want to map to the shifted BBC key press.  It could be
+    the same PC key for both or it could be different keys.
+      e.g. For unshifted BBC key 8( press you would select PC key 8*
+           For shifted BBC key 8( press you would select PC key 9(
+
+(5) Now press the PC key you selected for the unshifted BBC key press.
+      e.g. Press PC key 8*
+
+(6) If the PC key you selected for the BBC shifted key press requires the PC
+    to be shifted then check the 'shift' box in the key dialog.  Now press
+    the PC key you selected for the shifted BBC key press (but do not press
+    shift).
+      e.g. Check the 'shift' box and press PC key 9(
+
+(7) Repeat from step 3 for other keys you want to map.
+
+(8) Save your mapping using menu item "Options -> Save User Key Mapping".
+    You can write over the default user key mapping file (DefaultUser.kmap)
+    or save a new file.
+
+(9) Select your mapping using menu item "Options -> User Defined Mapping".
+	You can also use the "Save Preferences" option to save the default user
+	key mapping file that gets loaded when BeebEm starts up.
 
 
 Using Disc Images
@@ -799,15 +858,15 @@ Options Menu:
                          BeebEm window (useful when using the Mousestick or
                          the AMX mouse).
 
-  Define User Keyboard - Allows you to define your own keyboard mapping.
-                         Click on one of the BBC Micro keys and then press
-                         the key you want mapped to it (most will already
-                         be mapped to the correct keys).  Once you have
-                         defined the keys you want select the 'user mapping'
-                         and remember to save it using the 'Save 
-                         Preferences' option.
+  Define User Key Mapping - Allows you to define your own keyboard mapping.
+                            See the Keyboard Mappings section above.
 
-  User Defined Mapping - Selects the user defined keyboard mapping.
+  Load User Key Mapping - Loads a user defined key mapping from a file.
+
+  Save User Key Mapping - Saves a user defined key mapping to a file.
+
+  User Defined Mapping - Selects the currently loaded user defined keyboard
+                         mapping.
 
   Default Keyboard Mapping - See the Keyboard Mappings section above.
   Logical Keyboard Mapping
@@ -831,6 +890,16 @@ Options Menu:
                          menu options, user defined keyboard, Window 
                          position and CMOS RAM contents.
 
+  Autosave CMOS RAM    - Automatically saves the Master 128 CMOS RAM 
+                         on exit from BeebEm.
+
+  Autosave All Prefs   - Automatically saves all preferences on exit from
+                         BeebEm.
+
+  Save Disc/Tape/State Folders - When enabled BeebEm will remember where
+                         the folders where you last loaded or saved disc,
+                         tape or state files.
+
 Help Menu:
 
   View README          - View this file.
@@ -848,11 +917,15 @@ The following command line options can be passed to BeebEm:
   -Roms <roms configuration file name>
   -EcoStn <Econet station number>
   -EcoFF <Econet flag fill timeout, see the econet section>
+  -DisMenu
+     - Disables the drop down menus
+  -KbdCmd <keyboard command string>
   <disk image file name>
+  <tape file name>
   <state file name>
 
-Note: Command line options -Model and -Tube are no longer support.  Use
-      the -Prefs option with different preferences files instead.
+Note: Command line options -Model and -Tube are no longer supported.
+      Use the -Prefs option with different preferences files instead.
 
 e.g. Run Zalaga with its own preferences:
    BeebEm -Prefs ZalagaPrefs.cfg Zalaga.ssd
@@ -865,6 +938,9 @@ e.g. Run BeebEm with an alternative set of data files:
 
 e.g. To run BeebEm from a USB drive and access the local USB drive data:
    BeebEm -Data -
+
+e.g. To load and run the test tape image:
+   BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef
 
 These command lines can be put into Windows shortcuts or Windows scripts.
 See the BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.
@@ -882,10 +958,31 @@ If a disk image or a state file name is passed to BeebEm on the command line
 it will be run automatically.  The name can include the full path or it can
 just be the name of a file in the 'DiscIms' or 'BeebState' directory.
 
+If a tape image name is passed to BeebEm on the command line it will be
+loaded.  The name can include the full path or it can just be the name of a
+file in the 'Tapes' directory.  To run the tape image use the -KbdCmd option.
+
+The -KbdCmd option allows a string of key presses to be passed to BeebEm.
+The string can include the following key sequences:
+
+  \n           - press and release of enter/return
+  \s           - press shift
+  \S           - release shift
+  \c           - press control
+  \C           - release control
+  \\           - press and release of \ key
+  0-9          - press and release of a number key
+  A-Z          - press and release of a letter key
+  '-=[];'#,./  - press and release of a symbol key
+
+So, for example, run a tape image using commands such as:
+   BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef
+   BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef
+
 If you create a shortcut to BeebEm.exe on your desktop and edit the
 properties (right click the icon) you can add command line options and a
-disc or state file name to the target box.  Running the shortcut will then
-run the file.
+disc, tape or state file name to the target box.  Running the shortcut will
+then run the file.
 
 You can also associate files with .ssd, .dsd or .uef extensions with BeebEm
 using Windows Explorer.  Double clicking on one of these files will
@@ -1123,6 +1220,9 @@ Thanks go to the following people for contributing to BeebEm:
   Ken Lowe
   Jon Welch
   Rob O'Donnell
+
+Thanks also to Jordon Russell Software for the excellent Inno Setup
+installation software: <http://www.jrsoftware.org/isinfo.php>
 
 If there are any other features you would like to see in the Windows version
 of BeebEm then send me an email.  I cannot promise anything but I may find
