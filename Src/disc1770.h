@@ -15,5 +15,6 @@ void CreateADFSImage(char *ImageName,unsigned char Drive,unsigned char Tracks, H
 void Close1770Disc(char Drive);
 void Save1770UEF(FILE *SUEF);
 void Load1770UEF(FILE *SUEF,int Version);
+void Get1770DiscInfo(int DscDrive, int *Type, char *pFileName);
 extern bool InvertTR00;
 #endif

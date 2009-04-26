@@ -53,7 +53,10 @@ unsigned char MachineType;
 BeebWin *mainWin = NULL;
 HINSTANCE hInst;
 HWND hCurrentDialog = NULL;
+HACCEL hCurrentAccelTable = NULL;
 DWORD iSerialThread,iStatThread; // Thread IDs
+DWORD mEthernetPortReadTaskID;	 // ditto
+DWORD mEthernetPortStatusTaskID;	 // ditto
 FILE *tlog;
 
 int CALLBACK WinMain(HINSTANCE hInstance, 
@@ -77,7 +80,8 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) SerialThread,NULL,0,&iSerialThread);
 	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) StatThread,NULL,0,&iStatThread);
 
-    do
+
+	    do
 	{
 		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
 		{
@@ -86,7 +90,11 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 							0,      // lowest message to examine
 							0))
 				break;              // Quit the app on WM_QUIT
-  
+
+			if (hCurrentAccelTable != NULL)
+			{
+				TranslateAccelerator(hCurrentDialog, hCurrentAccelTable, &msg);
+			}
 			if (hCurrentDialog == NULL || !IsDialogMessage(hCurrentDialog, &msg)) {
 				TranslateMessage(&msg);// Translates virtual key codes
 				DispatchMessage(&msg); // Dispatches message to window

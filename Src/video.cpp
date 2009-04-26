@@ -102,11 +102,12 @@ long ScreenAdjust=0; // Mode 7 Defaults.
 long VScreenAdjust=0;
 int VStart,HStart;
 unsigned char HSyncModifier=9;
-unsigned char TeletextEnabled;
+unsigned char TeletextEnabled=0;
 char TeletextStyle=1; // Defines wether teletext will skip intermediate lines in order to speed up
 int THalfMode=0; // 1 if to use half-mode (TeletextStyle=1 all the time)
 int CurY=-1;
 FILE *crtclog;
+unsigned char ShowCursorLine=0;
 
 int ova,ovn; // mem ptr buffers
 
@@ -1064,14 +1065,15 @@ void VideoDoScanLine(void) {
 	// of the vertical total adjust period.
 	if (VideoState.CharLine>CRTC_VerticalTotal && VideoState.InCharLineUp>=CRTC_VerticalTotalAdjust) {
       VScreenAdjust=0;
-      if (!FrameNum) {
+      if (!FrameNum && VideoState.IsNewTVFrame) {
         VideoAddCursor();
         VideoAddLEDs();
 		CurY=-1;
         int n = VideoState.PreviousLastPixmapLine-VideoState.PreviousFirstPixmapLine+1;
         if (n > MAX_VIDEO_SCAN_LINES)
           n = MAX_VIDEO_SCAN_LINES;
-        mainWin->updateLines(VideoState.PreviousFirstPixmapLine, n);
+        mainWin->updateLines(VideoState.PreviousFirstPixmapLine,
+							 n + (ShowCursorLine ? 2 : 0));
       }
       VideoStartOfFrame();
       AdjustVideo();
@@ -1468,11 +1470,9 @@ void video_dumpstate(void) {
 
 void DebugVideoState()
 {
-	char info[200];
-
 	DebugDisplayInfo("");
 
-	sprintf(info, "CRTC: HTot=%02X HDis=%02X HSyn=%02X SWid=%02X VTot=%02X VAdj=%02X VDis=%02X VSyn=%02X",
+	DebugDisplayInfoF("CRTC: HTot=%02X HDis=%02X HSyn=%02X SWid=%02X VTot=%02X VAdj=%02X VDis=%02X VSyn=%02X",
 		(int)CRTC_HorizontalTotal,
 		(int)CRTC_HorizontalDisplayed,
 		(int)CRTC_HorizontalSyncPos,
@@ -1481,9 +1481,8 @@ void DebugVideoState()
 		(int)CRTC_VerticalTotalAdjust,
 		(int)CRTC_VerticalDisplayed,
 		(int)CRTC_VerticalSyncPos);
-	DebugDisplayInfo(info);
 
-	sprintf(info, "CRTC: IntD=%02X SLCh=%02X CurS=%02X CurE=%02X ScrS=%02X%02X CurP=%02X%02X VidULA=%02X",
+	DebugDisplayInfoF("CRTC: IntD=%02X SLCh=%02X CurS=%02X CurE=%02X ScrS=%02X%02X CurP=%02X%02X VidULA=%02X",
 		(int)CRTC_InterlaceAndDelay,
 		(int)CRTC_ScanLinesPerChar,
 		(int)CRTC_CursorStart,
@@ -1493,7 +1492,6 @@ void DebugVideoState()
 		(int)CRTC_CursorPosHigh,
 		(int)CRTC_CursorPosLow,
 		(int)VideoULA_ControlReg);
-	DebugDisplayInfo(info);
 }
 
 /*-------------------------------------------------------------------------*/

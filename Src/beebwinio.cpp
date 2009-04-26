@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <initguid.h>
+#include <shlobj.h>
 #include "main.h"
 #include "6502core.h"
 #include "beebwin.h"
@@ -19,6 +20,7 @@
 #include "ext1770.h"
 #include "tube.h"
 #include "userkybd.h"
+#include "discedit.h"
 
 // Token written to start of map file
 #define KEYMAP_TOKEN "*** BeebEm Keymap ***"
@@ -30,6 +32,7 @@ extern char CDiscType[2]; // Current disc types
 extern char FDCDLL[256];
 extern HMODULE hFDCBoard;
 extern AVIWriter *aviWriter;
+extern HWND hCurrentDialog;
 
 typedef void (*lGetBoardProperties)(struct DriveControlBlock *);
 typedef unsigned char (*lSetDriveControl)(unsigned char);
@@ -94,7 +97,7 @@ void BeebWin::EjectDiscImage(int Drive)
 }
 
 /****************************************************************************/
-int BeebWin::ReadDisc(int Drive,HMENU dmenu)
+int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[256];
@@ -136,6 +139,12 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu)
 	gotName = GetOpenFileName(&ofn);
 	if (gotName)
 	{
+		if (bCheckForPrefs)
+		{
+			// Check for file specific preferences files
+			CheckForLocalPrefs(FileName, true);
+		}
+
 		if (m_AutoSavePrefsFolders)
 		{
 			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
@@ -544,6 +553,9 @@ void BeebWin::RestoreState()
 
 	if (GetOpenFileName(&ofn))
 	{
+		// Check for file specific preferences files
+		CheckForLocalPrefs(FileName, true);
+
 		if (m_AutoSavePrefsFolders)
 		{
 			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
@@ -666,6 +678,8 @@ void BeebWin::TogglePrinter()
 	BOOL FileOK = TRUE;
 	HMENU hMenu = m_hMenu;
 
+	m_printerbufferlen = 0;
+
 	if (PrinterEnabled)
 	{
 		PrinterDisable();
@@ -693,6 +707,10 @@ void BeebWin::TogglePrinter()
 					PrinterEnable(m_PrinterFileName);
 			}
 		}
+		else if (m_MenuIdPrinterPort == IDM_PRINTER_CLIPBOARD)
+		{
+			PrinterEnable(NULL);
+		}
 		else
 		{
 			PrinterEnable(m_PrinterDevice);
@@ -709,6 +727,9 @@ void BeebWin::TranslatePrinterPort()
 	{
 	case IDM_PRINTER_FILE:
 		strcpy(m_PrinterDevice, m_PrinterFileName);
+		break;
+	case IDM_PRINTER_CLIPBOARD:
+		strcpy(m_PrinterDevice, "CLIPBOARD");
 		break;
 	default:
 	case IDM_PRINTER_LPT1:
@@ -1208,4 +1229,519 @@ bool BeebWin::WriteKeyMap(char *filename, KeyMap *keymap)
 	}
 
 	return success;
+}
+
+/****************************************************************************/
+/* Clipboard support */
+
+void BeebWin::doCopy()
+{
+	if (PrinterEnabled)
+		TogglePrinter();
+
+	if (IDM_PRINTER_CLIPBOARD != m_MenuIdPrinterPort)
+	{
+		CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_UNCHECKED);
+		m_MenuIdPrinterPort = IDM_PRINTER_CLIPBOARD;
+		CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+	}
+	TranslatePrinterPort();
+	TogglePrinter();		// Turn printer back on
+
+	m_printerbufferlen = 0;
+
+	m_clipboard[0] = 2;
+	m_clipboard[1] = 'L';
+	m_clipboard[2] = '.';
+	m_clipboard[3] = 13;
+	m_clipboard[4] = 3;
+	m_clipboardlen = 5;
+	m_clipboardptr = 0;
+	m_printerbufferlen = 0;
+	SetupClipboard();
+}
+
+void BeebWin::doPaste()
+{
+    HGLOBAL   hglb;
+    LPTSTR    lptstr;
+
+	if (!IsClipboardFormatAvailable(CF_TEXT))
+		return;
+
+	if (!OpenClipboard(m_hWnd))
+		return;
+
+	hglb = GetClipboardData(CF_TEXT);
+	if (hglb != NULL)
+	{
+		lptstr = (LPTSTR)GlobalLock(hglb);
+		if (lptstr != NULL)
+		{
+			strncpy(m_clipboard, lptstr, 32767);
+			GlobalUnlock(hglb);
+			m_clipboardptr = 0;
+			m_clipboardlen = (int)strlen(m_clipboard);
+			SetupClipboard();
+		}
+	}
+	CloseClipboard();
+}
+
+void BeebWin::SetupClipboard(void)
+{
+	m_OSRDCH = BeebReadMem(0x210) + (BeebReadMem(0x211) << 8);
+
+	BeebWriteMem(0x100, 0x38);	// SEC
+	BeebWriteMem(0x101, 0xad);	// LDA &FC51
+	BeebWriteMem(0x102, 0x51);
+	BeebWriteMem(0x103, 0xfc);
+	BeebWriteMem(0x104, 0xd0);	// BNE P% + 6
+	BeebWriteMem(0x105, 0x04);
+	BeebWriteMem(0x106, 0xad);	// LDA &FC50
+	BeebWriteMem(0x107, 0x50);
+	BeebWriteMem(0x108, 0xfc);
+	BeebWriteMem(0x109, 0x18);	// CLC
+	BeebWriteMem(0x10A, 0x60);	// RTS
+
+	BeebWriteMem(0x210, 0x00);
+	BeebWriteMem(0x211, 0x01);
+
+	// Just to kick off keyboard input
+	int row, col;
+	TranslateKey(VK_RETURN, false, row, col);
+}
+
+void BeebWin::ResetClipboard(void)
+{
+	BeebWriteMem(0x210, m_OSRDCH & 255);
+	BeebWriteMem(0x211, m_OSRDCH >> 8);
+}
+
+int BeebWin::PasteKey(int addr)
+{
+	int row, col;
+	int data = 0x00;
+	
+	switch (addr)
+	{
+	case 0 :
+		TranslateKey(VK_RETURN, true, row, col);
+		if (m_clipboardlen > 0)
+		{
+			data = m_clipboard[m_clipboardptr++];
+			m_clipboardlen--;
+
+			// Drop LF after CR
+			if (m_translateCRLF &&
+				data == 0xD && m_clipboardlen > 0 &&
+				m_clipboard[m_clipboardptr] == 0xA)
+			{
+				m_clipboardlen--;
+				m_clipboardptr++;
+			}
+
+			if (m_clipboardlen <= 0)
+			{
+				ResetClipboard();
+			}
+		}
+		break;
+	case 1 :
+		data = (m_clipboardlen == 0) ? 255 : 0;
+		break;
+	}
+	return data;
+}
+
+void BeebWin::CopyKey(int Value)
+{
+    HGLOBAL hglbCopy;
+    LPTSTR  lptstrCopy;
+
+	if (m_printerbufferlen >= 1024 * 1024)
+		return;
+
+	m_printerbuffer[m_printerbufferlen++] = Value;
+	if (m_translateCRLF && Value == 0xD)
+		m_printerbuffer[m_printerbufferlen++] = 0xA;
+
+	if (!OpenClipboard(m_hWnd))
+        return;
+
+    EmptyClipboard();
+
+	hglbCopy = GlobalAlloc(GMEM_MOVEABLE, m_printerbufferlen + 1);
+	if (hglbCopy == NULL)
+	{
+		CloseClipboard();
+		return;
+	}
+
+	lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
+	memcpy(lptstrCopy, m_printerbuffer, m_printerbufferlen);
+	lptstrCopy[m_printerbufferlen] = 0;
+	GlobalUnlock(hglbCopy);
+
+	SetClipboardData(CF_TEXT, hglbCopy);
+
+	CloseClipboard();
+}
+
+/****************************************************************************/
+/* Disc Import / Export */
+
+static DFS_DISC_CATALOGUE dfsCat;
+static int filesSelected[DFS_MAX_CAT_SIZE];
+static int numSelected;
+static char szExportFolder[MAX_PATH];
+
+// File export
+int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
+{
+	switch (uMsg)
+	{
+	case BFFM_INITIALIZED:
+		if (szExportFolder[0])
+		{
+			SendMessage(hwnd, BFFM_SETEXPANDED, TRUE, (LPARAM)szExportFolder);
+			SendMessage(hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)szExportFolder);
+		}
+		break;
+	}
+	return 0;
+}
+
+BOOL CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	char str[100];
+	HWND hwndList;
+	char szDisplayName[MAX_PATH];
+	int i, j;
+
+	hwndList = GetDlgItem(hwndDlg, IDC_EXPORTFILELIST);
+
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		SendMessage(hwndList, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT), (LPARAM)MAKELPARAM(FALSE,0));
+
+		for (i = 0; i < dfsCat.numFiles; ++i)
+		{
+			sprintf(str, "%c.%-7s %06X %06X %06X",
+					dfsCat.fileAttrs[i].directory,
+					dfsCat.fileAttrs[i].filename,
+					dfsCat.fileAttrs[i].loadAddr & 0xffffff,
+					dfsCat.fileAttrs[i].execAddr & 0xffffff,
+					dfsCat.fileAttrs[i].length);
+			j = (int)SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)str);
+			// List is sorted so store catalogue index in list's item data
+			SendMessage(hwndList, LB_SETITEMDATA, j, (LPARAM)i);
+		}
+		return TRUE;
+		
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDOK:
+			numSelected = (int)SendMessage(
+				hwndList, LB_GETSELITEMS, (WPARAM)DFS_MAX_CAT_SIZE, (LPARAM)filesSelected);
+			if (numSelected)
+			{
+				// Convert list indices to catalogue indices
+				for (i = 0; i < numSelected; ++i)
+				{
+					filesSelected[i] = (int)SendMessage(hwndList, LB_GETITEMDATA, filesSelected[i], 0);
+				}
+
+				// Get folder to export to
+				BROWSEINFO bi;
+				memset(&bi, 0, sizeof(bi));
+				bi.hwndOwner = hwndDlg; // m_hWnd;
+				bi.pszDisplayName = szDisplayName;
+				bi.lpszTitle = "Select folder for exported files:";
+				bi.ulFlags = BIF_EDITBOX | BIF_NEWDIALOGSTYLE;
+				bi.lpfn = BrowseCallbackProc;
+				LPITEMIDLIST idList = SHBrowseForFolder(&bi);
+				if (idList == NULL)
+				{
+					wParam = IDCANCEL;
+				}
+				else if (SHGetPathFromIDList(idList, szExportFolder) == FALSE)
+				{
+					MessageBox(hwndDlg, "Invalid folder selected", WindowTitle, MB_OK|MB_ICONWARNING);
+					wParam = IDCANCEL;
+				}
+				if (idList != NULL)
+					CoTaskMemFree(idList);
+			}
+
+			EndDialog(hwndDlg, wParam);
+			return TRUE;
+
+		case IDCANCEL:
+			EndDialog(hwndDlg, wParam);
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+void BeebWin::ExportDiscFiles(int menuId)
+{
+	bool success = true;
+	int drive;
+	int type;
+	char szDiscFile[MAX_PATH];
+	int heads;
+	int side;
+	char szErrStr[500];
+	int i, n;
+
+	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_2)
+		drive = 0;
+	else
+		drive = 1;
+
+	if (MachineType != 3 && NativeFDC)
+	{
+		// 8271 controller
+		Get8271DiscInfo(drive, szDiscFile, &heads);
+	}
+	else
+	{
+		// 1770 controller
+		Get1770DiscInfo(drive, &type, szDiscFile);
+		if (type == 0)
+			heads = 1;
+		else if (type == 1)
+			heads = 2;
+		else
+		{
+			// ADFS - not currently supported
+			MessageBox(m_hWnd, "Export from ADFS disc not supported", WindowTitle, MB_OK|MB_ICONWARNING);
+			return;
+		}
+	}
+
+	// Check for no disk loaded
+	if (szDiscFile[0] == 0 || heads == 1 && (menuId == IDM_DISC_EXPORT_2 || menuId == IDM_DISC_EXPORT_3))
+	{
+		sprintf(szErrStr, "No disc loaded in drive %d", menuId - IDM_DISC_EXPORT_0);
+		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONWARNING);
+		return;
+	}
+
+	// Read the catalogue
+	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_1)
+		side = 0;
+	else
+		side = 1;
+
+	success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+	if (!success)
+	{
+		sprintf(szErrStr, "Failed to read catalogue from disc:\n  %s", szDiscFile);
+		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONERROR);
+		return;
+	}
+
+	// Show export dialog
+	if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DISCEXPORT), m_hWnd, (DLGPROC)DiscExportDlgProc) != IDOK ||
+		numSelected == 0)
+	{
+		return;
+	}
+
+	// Export the files
+	n = 0;
+	for (i = 0; i < numSelected; ++i)
+	{
+		success = dfs_export_file(szDiscFile, heads, side, &dfsCat,
+								  filesSelected[i], szExportFolder, szErrStr);
+		if (success)
+		{
+			n++;
+		}
+		else
+		{
+			success = true;
+			if (MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OKCANCEL|MB_ICONWARNING) == IDCANCEL)
+			{
+				success = false;
+				break;
+			}
+		}
+	}
+
+	sprintf(szErrStr, "Files successfully exported: %d", n);
+	MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONINFORMATION);
+}
+
+
+// File import
+void BeebWin::ImportDiscFiles(int menuId)
+{
+	bool success = true;
+	int drive;
+	int type;
+	char szDiscFile[MAX_PATH];
+	int heads;
+	int side;
+	char szErrStr[500];
+	char szFolder[MAX_PATH];
+	char fileSelection[4096];
+	char baseName[MAX_PATH];
+	OPENFILENAME ofn;
+	char *fileName;
+	static char fileNames[DFS_MAX_CAT_SIZE*2][MAX_PATH]; // Allow user to select > cat size
+	int numFiles;
+	int i, n;
+
+	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_2)
+		drive = 0;
+	else
+		drive = 1;
+
+	if (MachineType != 3 && NativeFDC)
+	{
+		// 8271 controller
+		Get8271DiscInfo(drive, szDiscFile, &heads);
+	}
+	else
+	{
+		// 1770 controller
+		Get1770DiscInfo(drive, &type, szDiscFile);
+		if (type == 0)
+			heads = 1;
+		else if (type == 1)
+			heads = 2;
+		else
+		{
+			// ADFS - not currently supported
+			MessageBox(m_hWnd, "Import to ADFS disc not supported", WindowTitle, MB_OK|MB_ICONWARNING);
+			return;
+		}
+	}
+
+	// Check for no disk loaded
+	if (szDiscFile[0] == 0 || heads == 1 && (menuId == IDM_DISC_IMPORT_2 || menuId == IDM_DISC_IMPORT_3))
+	{
+		sprintf(szErrStr, "No disc loaded in drive %d", menuId - IDM_DISC_IMPORT_0);
+		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONWARNING);
+		return;
+	}
+
+	// Read the catalogue
+	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_1)
+		side = 0;
+	else
+		side = 1;
+
+	success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+	if (!success)
+	{
+		sprintf(szErrStr, "Failed to read catalogue from disc:\n  %s", szDiscFile);
+		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONERROR);
+		return;
+	}
+
+	// Get list of files to import
+	memset(fileSelection, 0, sizeof(fileSelection));
+	szFolder[0] = 0;
+	GetDataPath(m_UserDataPath, szFolder);
+
+	memset(&ofn, 0, sizeof(ofn));
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.lpstrFilter = "INF files (*.inf)\0*.inf\0" "All files (*.*)\0*.*\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFile = fileSelection;
+	ofn.nMaxFile = sizeof(fileSelection);
+	ofn.lpstrInitialDir = szFolder;
+	ofn.lpstrTitle = "Select files to import";
+	ofn.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	if (!GetOpenFileName(&ofn))
+	{
+		return;
+	}
+
+	// Parse the file selection string
+	fileName = fileSelection + strlen(fileSelection) + 1;
+	if (fileName[0] == 0)
+	{
+		// Only one file selected
+		fileName = strrchr(fileSelection, '\\');
+		if (fileName != NULL)
+			*fileName = 0;
+		fileName++;
+	}
+	strcpy(szFolder, fileSelection);
+
+	numFiles = 0;
+	while (numFiles < DFS_MAX_CAT_SIZE*2 && fileName[0] != 0)
+	{
+		// Strip .INF off
+		strcpy(baseName, fileName);
+		i = (int)strlen(baseName);
+		if (i > 4 && _stricmp(baseName + i - 4, ".inf") == 0)
+			baseName[i - 4] = 0;
+
+		// Check for duplicate
+		for (i = 0; i < numFiles; ++i)
+		{
+			if (_stricmp(baseName, fileNames[i]) == 0)
+				break;
+		}
+		if (i == numFiles)
+		{
+			strcpy(fileNames[numFiles], baseName);
+			numFiles++;
+		}
+
+		fileName = fileName + strlen(fileName) + 1;
+	}
+
+	// Import the files
+	n = 0;
+	for (i = 0; i < numFiles; ++i)
+	{
+		success = dfs_import_file(szDiscFile, heads, side, &dfsCat, fileNames[i], szFolder, szErrStr);
+		if (success)
+		{
+			n++;
+		}
+		else
+		{
+			success = true;
+			if (MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OKCANCEL|MB_ICONWARNING) == IDCANCEL)
+			{
+				success = false;
+				break;
+			}
+		}
+	}
+
+	sprintf(szErrStr, "Files successfully imported: %d", n);
+	MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONINFORMATION);
+
+	// Re-read disc image
+	if (MachineType != 3 && NativeFDC)
+	{
+		// 8271 controller
+		Eject8271DiscImage(drive);
+		if (heads == 2)
+			LoadSimpleDSDiscImage(szDiscFile, drive, 80);
+		else
+			LoadSimpleDiscImage(szDiscFile, drive, 0, 80);
+	}
+	else
+	{
+		// 1770 controller
+		Close1770Disc(drive);
+		if (heads == 2)
+			Load1770DiscImage(szDiscFile, drive, 1, m_hMenu);
+		else
+			Load1770DiscImage(szDiscFile, drive, 0, m_hMenu);
+	}
 }

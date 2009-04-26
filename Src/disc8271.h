@@ -32,6 +32,7 @@ void DiscWriteEnable(int DriveNum, int WriteEnable);
 void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks);
 void FreeDiscImage(int DriveNum);
 void Eject8271DiscImage(int DriveNum);
+void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads);
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */

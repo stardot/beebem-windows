@@ -39,6 +39,7 @@ extern int SoundDefault; // Default sound state (enabled/disabled via sound menu
 extern int SoundEnabled;    /* Sound on/off flag - will be off if DirectSound init fails */
 extern int DirectSoundEnabled;  /* DirectSound enabled for Win32 */
 extern int RelaySoundEnabled; // Relay Click noise enable
+extern int DiscDriveSoundEnabled; // Disc drive sound enable
 extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
 extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
 extern char SoundExponentialVolume;
@@ -54,6 +55,19 @@ void SoundReset();
 void Sound_RegWrite(int Value);
 void DumpSound(void);
 void ClickRelay(unsigned char RState);
+
+#define SAMPLE_RELAY_ON         0
+#define SAMPLE_RELAY_OFF        1
+#define SAMPLE_DRIVE_MOTOR      2
+#define SAMPLE_HEAD_LOAD        3
+#define SAMPLE_HEAD_UNLOAD      4
+#define SAMPLE_HEAD_SEEK        5
+#define SAMPLE_HEAD_STEP        6
+#define SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK  48333  // 0.02415s per track in the sound file
+#define SAMPLE_HEAD_STEP_CYCLES           100000  // 0.05s sound file
+#define SAMPLE_HEAD_LOAD_CYCLES           400000  // 0.2s sound file
+void PlaySoundSample(int sample, bool repeat);
+void StopSoundSample(int sample);
 
 void Sound_Trigger(int NCycles);
 

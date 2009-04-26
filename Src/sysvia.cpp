@@ -47,7 +47,7 @@ using namespace std;
 
 /* Clock stuff for Master 128 RTC */
 time_t SysTime;
-struct tm * CurTime;
+time_t RTCTimeOffset=0;
 
 // Shift register stuff
 unsigned char SRMode;
@@ -627,14 +627,86 @@ unsigned char BCD(unsigned char nonBCD) {
 	// convert a decimal value to a BCD value
 	return(((nonBCD/10)*16)+nonBCD%10);
 }
+unsigned char BCDToBin(unsigned char BCD) {
+	// convert a BCD value to decimal value
+	return((BCD>>4)*10+(BCD&15));
+}
+/*-------------------------------------------------------------------------*/
+time_t CMOSConvertClock(void) {
+	time_t tim;
+	struct tm Base;
+	Base.tm_sec = BCDToBin(CMOSRAM[0]);
+	Base.tm_min = BCDToBin(CMOSRAM[2]);
+	Base.tm_hour = BCDToBin(CMOSRAM[4]);
+	Base.tm_mday = BCDToBin(CMOSRAM[7]);
+	Base.tm_mon = BCDToBin(CMOSRAM[8])-1;
+	Base.tm_year = BCDToBin(CMOSRAM[9]);
+	Base.tm_wday = -1;
+	Base.tm_yday = -1;
+	Base.tm_isdst = -1;
+	tim = mktime(&Base);
+	return tim;
+}
+/*-------------------------------------------------------------------------*/
+void RTCInit(void) {
+	struct tm *CurTime;
+	time( &SysTime );
+	CurTime = localtime( &SysTime );
+	CMOSRAM[0] = BCD(CurTime->tm_sec);
+	CMOSRAM[2] = BCD(CurTime->tm_min);
+	CMOSRAM[4] = BCD(CurTime->tm_hour);
+	CMOSRAM[6] = BCD((CurTime->tm_wday)+1);
+	CMOSRAM[7] = BCD(CurTime->tm_mday);
+	CMOSRAM[8] = BCD((CurTime->tm_mon)+1);
+	CMOSRAM[9] = BCD((CurTime->tm_year)-20);
+	RTCTimeOffset = SysTime - CMOSConvertClock();
+}
+/*-------------------------------------------------------------------------*/
+void RTCUpdate(void) {
+	struct tm *CurTime;
+	time( &SysTime );
+	SysTime -= RTCTimeOffset;
+	CurTime = localtime( &SysTime );
+	CMOSRAM[0] = BCD(CurTime->tm_sec);
+	CMOSRAM[2] = BCD(CurTime->tm_min);
+	CMOSRAM[4] = BCD(CurTime->tm_hour);
+	CMOSRAM[6] = BCD((CurTime->tm_wday)+1);
+	CMOSRAM[7] = BCD(CurTime->tm_mday);
+	CMOSRAM[8] = BCD((CurTime->tm_mon)+1);
+	CMOSRAM[9] = BCD(CurTime->tm_year);
+}
 /*-------------------------------------------------------------------------*/
 void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
 	// Many thanks to Tom Lees for supplying me with info on the 146818 registers 
 	// for these two functions.
-	// Clock registers 0-0x9h shall not be writable
-	// ignore all status registers, so this function shall just write to CMOS
-	// but we can leave it here for future developments
 	if (CMOSAddr>0xd) {
+		CMOSRAM[CMOSAddr]=CMOSData;
+	}
+	else if (CMOSAddr==0xa) {
+		// Control register A
+		CMOSRAM[CMOSAddr]=CMOSData & 0x7f; // Top bit not writable
+	}
+	else if (CMOSAddr==0xb) {
+		// Control register B
+		// Bit-7 SET - 0=clock running, 1=clock update halted
+		if (CMOSData & 0x80) {
+			RTCUpdate();
+		}
+		else if ((CMOSRAM[CMOSAddr] & 0x80) && !(CMOSData & 0x80)) {
+			// New clock settings
+			time(&SysTime);
+			RTCTimeOffset = SysTime - CMOSConvertClock();
+		}
+		CMOSRAM[CMOSAddr]=CMOSData;
+	}
+	else if (CMOSAddr==0xc) {
+		// Control register C - read only
+	}
+	else if (CMOSAddr==0xd) {
+		// Control register D - read only
+	}
+	else {
+		// Clock registers
 		CMOSRAM[CMOSAddr]=CMOSData;
 	}
 }
@@ -644,20 +716,9 @@ unsigned char CMOSRead(unsigned char CMOSAddr) {
 	// 0x0 to 0x9 - Clock
 	// 0xa to 0xd - Regs
 	// 0xe to 0x3f - RAM
-	if (CMOSAddr>0xd) return(CMOSRAM[CMOSAddr]);
-	if (CMOSAddr<0xa) {
-		time( &SysTime );
-		CurTime = localtime( &SysTime );
-		if (CMOSAddr==0x00) return(BCD(CurTime->tm_sec));
-		if (CMOSAddr==0x02) return(BCD(CurTime->tm_min));
-		if (CMOSAddr==0x04) return(BCD(CurTime->tm_hour));
-		if (CMOSAddr==0x06) return(BCD((CurTime->tm_wday)+1));
-		if (CMOSAddr==0x07) return(BCD(CurTime->tm_mday));
-		if (CMOSAddr==0x08) return(BCD((CurTime->tm_mon)+1));
-		if (CMOSAddr==0x09) return(BCD((CurTime->tm_year)-10));
-	}
-	if (CMOSAddr>0x9 && CMOSAddr<0xe) return(0);
-	return(0);
+	if (CMOSAddr<0xa)
+		RTCUpdate();
+	return(CMOSRAM[CMOSAddr]);
 }
 
 /*--------------------------------------------------------------------------*/

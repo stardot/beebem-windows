@@ -57,12 +57,28 @@ extern AVIWriter *aviWriter;
 #define MAXBUFSIZE 32768
 
 static unsigned char SoundBuf[MAXBUFSIZE];
-static unsigned char RelayOnBuf[2048];
-static unsigned char RelayOffBuf[2048];
 unsigned char SpeechBuf[MAXBUFSIZE];
 
-static unsigned char *PROnBuf=RelayOnBuf;
-static unsigned char *PROffBuf=RelayOffBuf;
+struct SoundSample
+{
+	const char *pFilename;
+	unsigned char *pBuf;
+	int len;
+	int pos;
+	bool playing;
+	bool repeat;
+};
+static SoundSample SoundSamples[] = {
+	{ "RelayOn.snd", NULL, 0, 0, false, false },
+	{ "RelayOff.snd", NULL, 0, 0, false, false },
+	{ "DriveMotor.snd", NULL, 0, 0, false, false },
+	{ "HeadLoad.snd", NULL, 0, 0, false, false },
+	{ "HeadUnload.snd", NULL, 0, 0, false, false },
+	{ "HeadSeek.snd", NULL, 0, 0, false, false },
+	{ "HeadStep.snd", NULL, 0, 0, false, false }
+};
+#define NUM_SOUND_SAMPLES (sizeof(SoundSamples)/sizeof(SoundSample))
+static bool SoundSamplesLoaded = false;
 
 static LPDIRECTSOUND DSound = NULL;
 static LPDIRECTSOUNDBUFFER DSB1 = NULL;
@@ -71,6 +87,7 @@ int UsePrimaryBuffer=0;
 int SoundEnabled = 1;
 int DirectSoundEnabled = 0;
 int RelaySoundEnabled = 0;
+int DiscDriveSoundEnabled = 0;
 int SoundChipEnabled = 1;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
@@ -83,7 +100,6 @@ char SoundExponentialVolume = 1;
 #define VOLMAG 3
 #define WRITE_ADJUST ((samplerate/50)*2)
 
-static int RelayLen[3]={0,398,297}; // Relay samples
 int Speech[3];
 
 FILE *sndlog=NULL;
@@ -120,7 +136,6 @@ int GetVol(int vol);
 BOOL bReRead=FALSE;
 volatile BOOL bDoSound=TRUE;
 int WriteOffset=0; int SampleAdjust=0;
-char Relay=0; int RelayPos=0;
 LARGE_INTEGER PFreq,LastPCount,CurrentPCount;
 double CycleRatio;
 struct AudioType TapeAudio; // Tape audio decoder stuff
@@ -239,6 +254,7 @@ void PlayUpTil(double DestTime) {
 	int tmptotal,channel,bufinc,tapetotal;
 	char Extras;
 	int SpeechPtr = 0;
+	int i;
 
 	if (MachineType != 3 && SpeechEnabled)
 	{
@@ -389,9 +405,21 @@ void PlayUpTil(double DestTime) {
 			// Mix in speech sound
 			if (SpeechEnabled) if (MachineType != 3) tmptotal += (SpeechBuf[SpeechPtr++]-128)*10;
 
-			// Mix in relay sound here
-			if (Relay==1) tmptotal+=(RelayOffBuf[RelayPos++]-127)*10;
-			if (Relay==2) tmptotal+=(RelayOnBuf[RelayPos++]-127)*10;
+			// Mix in sound samples here
+			for (i = 0; i < NUM_SOUND_SAMPLES; ++i) {
+				if (SoundSamples[i].playing) {
+					tmptotal+=(SoundSamples[i].pBuf[SoundSamples[i].pos]-128)*10;
+					Extras++;
+					SoundSamples[i].pos += (44100 / samplerate);
+					if (SoundSamples[i].pos >= SoundSamples[i].len) {
+						if (SoundSamples[i].repeat)
+							SoundSamples[i].pos = 0;
+						else
+							SoundSamples[i].playing = false;
+					}
+				}
+			}
+
 			if (TapeSoundEnabled) {
 				// Mix in tape sound here
 				tapetotal=0; 
@@ -418,12 +446,12 @@ void PlayUpTil(double DestTime) {
 			}
 
 			/* Make it a bit louder under Windows */
-			if (Relay) Extras++;
-			if (TapeAudio.Enabled) Extras++;
-			if (Extras) tmptotal/=4; else tmptotal=0;
+			if (Extras)
+				tmptotal/=Extras;
+			else
+				tmptotal=0;
+
 			SoundBuf[bufptr] = (tmptotal/SoundVolume)+128;
-			// end of for loop
-			if (RelayPos>=RelayLen[Relay]) Relay=0;
 		} /* buffer loop */
 
 		/* Only write data when buffer is full */
@@ -592,34 +620,31 @@ static void InitAudioDev(int sampleratein) {
 		if (hr==DS_OK) SoundEnabled=1;
 }; /* InitAudioDev */
 
-void LoadRelaySounds(void) {
-	/* Loads in the relay sound effects into buffers */
-	FILE *RelayFile;
-	char RelayFileName[256];
-	char *PRFN=RelayFileName;
-	strcpy(PRFN,mainWin->GetAppPath());
-	strcat(PRFN,"RelayOn.SND");
-	RelayFile=fopen(PRFN,"rb");
-	if (RelayFile!=NULL) {
-		fread(RelayOnBuf,1,2048,RelayFile);
-		fclose(RelayFile);
-	}
-	else {
-		char  errstr[200];
-		sprintf(errstr,"Could not open Relay ON Sound");
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-	}
-	strcpy(PRFN,mainWin->GetAppPath());
-	strcat(PRFN,"RelayOff.SND");
-	RelayFile=fopen(PRFN,"rb");
-	if (RelayFile!=NULL) {
-		fread(RelayOffBuf,1,2048,RelayFile);
-		fclose(RelayFile);
-	}
-	else {
-		char  errstr[200];
-		sprintf(errstr,"Could not open Relay OFF Sound");
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+void LoadSoundSamples(void) {
+	FILE *fd;
+	char FileName[256];
+	int i;
+
+	if (!SoundSamplesLoaded) {
+		for (i = 0; i < NUM_SOUND_SAMPLES; ++i) {
+			strcpy(FileName, mainWin->GetAppPath());
+			strcat(FileName, SoundSamples[i].pFilename);
+			fd = fopen(FileName, "rb");
+			if (fd != NULL) {
+				fseek(fd, 0, SEEK_END);
+				SoundSamples[i].len = ftell(fd);
+				SoundSamples[i].pBuf = (unsigned char *)malloc(SoundSamples[i].len);
+				fseek(fd, 0, SEEK_SET);
+				fread(SoundSamples[i].pBuf, 1, SoundSamples[i].len, fd);
+				fclose(fd);
+			}
+			else {
+				char errstr[200];
+				sprintf(errstr,"Could not open sound sample file:\n  %s", FileName);
+				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			}
+		}
+		SoundSamplesLoaded = true;
 	}
 }
 
@@ -685,7 +710,7 @@ void SoundInit() {
   if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000; 
   SampleAdjust=4;
   SoundBufferSize=111;
-  LoadRelaySounds();
+  LoadSoundSamples();
   bReRead=TRUE;
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;
 }; /* SoundInit */
@@ -823,10 +848,26 @@ void DumpSound(void) {
 }
 
 void ClickRelay(unsigned char RState) {
-  if (RelaySoundEnabled) {
-	RelayPos=0;
-	Relay=RState+1;
-  }
+	if (RelaySoundEnabled) {
+		if (RState) {
+			SoundSamples[SAMPLE_RELAY_ON].pos = 0;
+			SoundSamples[SAMPLE_RELAY_ON].playing = true;
+		}
+		else {
+			SoundSamples[SAMPLE_RELAY_OFF].pos = 0;
+			SoundSamples[SAMPLE_RELAY_OFF].playing = true;
+		}
+	}
+}
+
+void PlaySoundSample(int sample, bool repeat) {
+	SoundSamples[sample].pos = 0;
+	SoundSamples[sample].playing = true;
+	SoundSamples[sample].repeat = repeat;
+}
+
+void StopSoundSample(int sample) {
+	SoundSamples[sample].playing = false;
 }
 
 int GetVol(int vol) {

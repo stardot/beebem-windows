@@ -75,4 +75,7 @@ volatile extern struct MC6854 ADLC;
 extern unsigned char EconetStationNumber;
 extern unsigned int EconetListenPort;
 extern char EconetCfgPath[512];
+
+extern WSADATA WsaDat;							// Windows sockets info
+
 #endif

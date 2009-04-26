@@ -168,7 +168,7 @@ void Write_ACIA_Control(unsigned char CReg) {
 		SetACIAStatus(7);
 	}
 	// Change serial port settings
-	if ((SerialChannel==RS423) && (SerialPortEnabled) && (!TouchScreenEnabled)) {
+	if ((SerialChannel==RS423) && (SerialPortEnabled) && (!TouchScreenEnabled) && (!EthernetPortEnabled)) {
 		GetCommState(hSerialPort,&dcbSerialPort);
 		dcbSerialPort.ByteSize=Data_Bits;
 		dcbSerialPort.StopBits=(Stop_Bits==1)?ONESTOPBIT:TWOSTOPBITS;
@@ -215,11 +215,15 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
 			{
 				TouchScreenWrite(Data);
 			}
-			else
-			{
-				WriteFile(hSerialPort,&SerialWriteBuffer,1,&BytesOut,&olSerialWrite);
-			}
-
+			else if (EthernetPortEnabled)
+				{
+					IP232Write(Data);
+				} 
+				else
+				{
+					WriteFile(hSerialPort,&SerialWriteBuffer,1,&BytesOut,&olSerialWrite);
+				}
+			
 			SetACIAStatus(1);
 		}
 	}
@@ -544,6 +548,14 @@ void Serial_Poll(void)
 					HandleData(TouchScreenRead());
 			}
 		}
+		else if (EthernetPortEnabled)
+		{	
+			if (IP232Poll() == true)
+			{
+				if (RxD<2)
+					HandleData(IP232Read());
+			}
+		}
 		else
 		{
 			if  ((!bWaitingForStat) && (!bSerialStateChanged)) {
@@ -561,8 +573,8 @@ void Serial_Poll(void)
 					if (BytesIn>0) {
 						HandleData((unsigned char)SerialBuffer);
 					} else {
-					 ClearCommError(hSerialPort, &dwClrCommError,NULL);
-					 bCharReady=FALSE;
+						ClearCommError(hSerialPort, &dwClrCommError,NULL);
+						bCharReady=FALSE;
 					}
 				}
 			}
@@ -574,7 +586,7 @@ void InitThreads(void) {
 	if (hSerialPort) { CloseHandle(hSerialPort); hSerialPort=NULL; }
 	bWaitingForData=FALSE;
 	bWaitingForStat=FALSE;
-	if ( (SerialPortEnabled) && (!TouchScreenEnabled) ) {
+	if ( (SerialPortEnabled) && (SerialPort > 0)) {
 		InitSerialPort(); // Set up the serial port if its enabled.
 		if (olSerialPort.hEvent) { CloseHandle(olSerialPort.hEvent); olSerialPort.hEvent=NULL; }
 		olSerialPort.hEvent=CreateEvent(NULL,TRUE,FALSE,NULL); // Create the serial port event signal
@@ -589,7 +601,7 @@ void InitThreads(void) {
 void StatThread(void *lpParam) {
 	DWORD dwOvRes=0;
 	do {
-		if ((!TouchScreenEnabled) &&
+		if ((!TouchScreenEnabled) && (!EthernetPortEnabled) &&
 		    (WaitForSingleObject(olStatus.hEvent,10)==WAIT_OBJECT_0) && (SerialPortEnabled) ) {
 			if (GetOverlappedResult(hSerialPort,&olStatus,&dwOvRes,FALSE)) {
 				// Event waiting in dwCommEvent
@@ -624,7 +636,7 @@ void SerialThread(void *lpParam) {
 	// enable status, and doing the monitoring.
 	DWORD spResult;
 	do {
-		if ((!bSerialStateChanged) && (SerialPortEnabled) && (!TouchScreenEnabled) && (bWaitingForData)) {
+		if ((!bSerialStateChanged) && (SerialPortEnabled) && (!TouchScreenEnabled) && (!EthernetPortEnabled) && (bWaitingForData)) {
 			spResult=WaitForSingleObject(olSerialPort.hEvent,INFINITE); // 10ms to respond
 			if (spResult==WAIT_OBJECT_0) {
 				if (GetOverlappedResult(hSerialPort,&olSerialPort,&BytesIn,FALSE)) {
@@ -649,7 +661,7 @@ void SerialThread(void *lpParam) {
 void InitSerialPort(void) {
 	BOOL bPortStat;
 	// Initialise COM port
-	if ( (SerialPortEnabled) && (!TouchScreenEnabled) ) {
+	if ( (SerialPortEnabled) && (SerialPort > 0 ) ) {
 		if (SerialPort==1) pnSerialPort="Com1";
 		if (SerialPort==2) pnSerialPort="Com2";
 		if (SerialPort==3) pnSerialPort="Com3";
@@ -657,6 +669,9 @@ void InitSerialPort(void) {
 		hSerialPort=CreateFile(pnSerialPort,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,0);
 		if (hSerialPort==INVALID_HANDLE_VALUE) {
 			MessageBox(GETHWND,"Could not open specified serial port",WindowTitle,MB_OK|MB_ICONERROR);
+			bSerialStateChanged=TRUE;
+			SerialPortEnabled=FALSE;
+			mainWin->ExternUpdateSerialMenu();
 		}
 		else {
 			bPortStat=SetupComm(hSerialPort, 1280, 1280);

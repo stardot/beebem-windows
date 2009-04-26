@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib"
+				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib"
 				OutputFile="../BeebEm.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib"
+				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib"
 				OutputFile="../BeebEm.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
@@ -246,6 +246,10 @@
 			</File>
 			<File
 				RelativePath=".\disc8271.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\discedit.cpp"
 				>
 			</File>
 			<File
@@ -396,6 +400,10 @@
 			</File>
 			<File
 				RelativePath=".\disc8271.h"
+				>
+			</File>
+			<File
+				RelativePath=".\discedit.h"
 				>
 			</File>
 			<File

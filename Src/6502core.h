@@ -41,6 +41,17 @@ typedef enum NMI_Nums{
 	nmi_econet,
 } NMI_Nums;
 
+typedef enum PSR_Flags
+{
+  FlagC=1,
+  FlagZ=2,
+  FlagI=4,
+  FlagD=8,
+  FlagB=16,
+  FlagV=64,
+  FlagN=128
+} PSR_Flags;
+
 extern int trace;
 extern int trace_186;
 extern int IgnoreIllegalInstructions;

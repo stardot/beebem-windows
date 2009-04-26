@@ -83,8 +83,9 @@
 #define IDD_DEBUG                       110
 #define IDD_TAPECONTROL                 112
 #define IDD_BREAKOUT                    113
+#define IDD_DISCEXPORT                  114
+#define IDR_ACCELERATORS                115
 #define IDC_DEBUGBREAK                  1010
-#define IDC_DEBUGRESTART                1011
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
 #define IDC_DEBUGEXECUTE                1017
@@ -136,6 +137,16 @@
 #define IDK_BIT5                        1062
 #define IDK_BIT6                        1063
 #define IDK_BIT7                        1064
+#define IDC_EXPORTFILELIST              1065
+#define IDC_DEBUGREMSER                 1066
+#define IDC_DEBUGREMSERBRK              1067
+#define IDC_DEBUGWATCHES                1068
+#define IDC_DEBUGWATCHLABEL             1069
+#define IDC_BREAKLABEL                  1070
+#define IDC_WATCHDECIMAL                1071
+#define IDC_WATCHENDIAN                 1072
+#define IDC_DEBUGBRK                    1073
+#define IDC_DEBUGGRP                    1074
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -342,6 +353,27 @@
 #define IDM_AUTOSAVE_PREFS_CMOS         40232
 #define IDM_AUTOSAVE_PREFS_FOLDERS      40233
 #define IDM_AUTOSAVE_PREFS_ALL          40234
+#define ID_SHOWCURSORLINE               40235
+#define ID_IP232                        40236
+#define ID_IP232LOCALHOST               40238
+#define ID_IP232CUSTOM                  40239
+#define ID_IP232MODE                    40241
+#define IDM_EDIT_COPY                   40242
+#define IDM_EDIT_PASTE                  40243
+#define IDM_PRINTER_CLIPBOARD           40244
+#define IDM_EDIT_CRLF                   40245
+#define IDM_DISC_IMPORT_0               40246
+#define IDM_DISC_IMPORT_1               40247
+#define IDM_DISC_IMPORT_2               40248
+#define IDM_DISC_IMPORT_3               40249
+#define IDM_DISC_EXPORT_0               40250
+#define IDM_DISC_EXPORT_1               40251
+#define IDM_DISC_EXPORT_2               40252
+#define IDM_DISC_EXPORT_3               40253
+#define ID_ACCELUP                      40254
+#define ID_ACCELDOWN                    40258
+#define IDM_DXSMOOTHMODE7ONLY           40259
+#define ID_SFX_DISCDRIVES               40260
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -349,9 +381,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        113
-#define _APS_NEXT_COMMAND_VALUE         40235
-#define _APS_NEXT_CONTROL_VALUE         1065
+#define _APS_NEXT_RESOURCE_VALUE        116
+#define _APS_NEXT_COMMAND_VALUE         40261
+#define _APS_NEXT_CONTROL_VALUE         1075
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

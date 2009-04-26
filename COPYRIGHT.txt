@@ -28,4 +28,5 @@ sanctioned by either of them.  The author recognizes all trademarks etc.
 I don't want to tread on anyones toes - if there is something else I should
 say then tell me - I'll add it.
 
-The copyright on everything in Beebem is held by the author, David Alan Gilbert.
+The copyright for Beebem is held by David Alan Gilbert and the other authors
+and contributors.

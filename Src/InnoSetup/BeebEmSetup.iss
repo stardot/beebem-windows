@@ -3,18 +3,22 @@
 
 [Setup]
 AppName=BeebEm
-AppVerName=BeebEm V3.82
+AppVerName=BeebEm V4.02
 AppPublisher=Mike Wyatt
-AppPublisherURL=http://www.mikebuk.dsl.pipex.com/beebem/index.html
-AppSupportURL=http://www.mikebuk.dsl.pipex.com/beebem/index.html
-AppUpdatesURL=http://www.mikebuk.dsl.pipex.com/beebem/index.html
+AppPublisherURL=http://www.mkw.me.uk/beebem/index.html
+AppSupportURL=http://www.mkw.me.uk/beebem/index.html
+AppUpdatesURL=http://www.mkw.me.uk/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
 OutputDir=.
-OutputBaseFilename=BeebEm382
+OutputBaseFilename=BeebEm402
 Compression=lzma
 SolidCompression=yes
-VersionInfoVersion=3.8.2.0
+VersionInfoVersion=4.0.2.0
+
+[Registry]
+Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.02; ValueType: string; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: InstallPath; ValueData: {app}; ValueType: string; Flags: uninsdeletekey
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
@@ -42,6 +46,11 @@ Source: ..\..\BeebEmLocal.vbs; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\BeebEmTorch.vbs; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\CHANGES.txt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\COPYRIGHT.txt; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\DriveMotor.snd; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\HeadLoad.snd; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\HeadSeek.snd; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\HeadStep.snd; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\HeadUnload.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\README.txt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\README_Z80.TXT; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOff.snd; DestDir: {app}; Flags: ignoreversion
@@ -65,7 +74,7 @@ Name: {group}\BeebEm; Filename: {app}\BeebEm.exe
 Name: {group}\View CHANGES log; Filename: {app}\CHANGES.txt
 Name: {group}\View COPYRIGHT notice; Filename: {app}\COPYRIGHT.txt
 Name: {group}\View README; Filename: {app}\README.txt
-Name: {group}\{cm:ProgramOnTheWeb,BeebEm}; Filename: http://www.mikebuk.dsl.pipex.com/beebem/index.html
+Name: {group}\{cm:ProgramOnTheWeb,BeebEm}; Filename: http://www.mkw.me.uk/beebem/index.html
 Name: {group}\{cm:UninstallProgram,BeebEm}; Filename: {uninstallexe}
 Name: {commondesktop}\BeebEm; Filename: {app}\BeebEm.exe; Tasks: desktopicon
 Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\BeebEm; Filename: {app}\BeebEm.exe; Tasks: quicklaunchicon

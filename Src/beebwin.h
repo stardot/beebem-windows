@@ -208,6 +208,8 @@ class BeebWin  {
 	void ResetTiming(void);
 	int TranslateKey(int, int, int&, int&);
 	void ParseCommandLine(void);
+	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
+	void FindCommandLineFile(void);
 	void HandleCommandLineFile(void);
 	bool CheckUserDataPath(void);
 	void NewTapeImage(char *FileName);
@@ -222,6 +224,12 @@ class BeebWin  {
 	void TextViewSpeechSync(void);
 	void TextViewSyncWithBeebCursor(void);
 	void HandleTimer(void);
+	void doCopy(void);
+	void doPaste(void);
+	void SetupClipboard(void);
+	void ResetClipboard(void);
+	void CopyKey(int data);
+	int PasteKey(int addr);
 
 	unsigned char cols[256];
     HMENU		m_hMenu;
@@ -269,12 +277,17 @@ class BeebWin  {
 	int			m_AMXYSize;
 	int			m_AMXAdjust;
 	int			m_DisplayRenderer;
+	int			m_CurrentDisplayRenderer;
 	int			m_DDFullScreenMode;
 	bool		m_isFullScreen;
 	bool		m_AutoSavePrefsCMOS;
 	bool		m_AutoSavePrefsFolders;
 	bool		m_AutoSavePrefsAll;
 	bool		m_AutoSavePrefsChanged;
+
+	char		m_customip [20];		//IP232
+	int			m_customport;
+
 
 	HDC 		m_hDC;
 	HWND		m_hWnd;
@@ -287,6 +300,14 @@ class BeebWin  {
 	int			m_ScreenRefreshCount;
 	double		m_RelativeSpeed;
 	double		m_FramesPerSecond;
+
+	char		m_clipboard[32768];
+	int			m_clipboardlen;
+	int			m_clipboardptr;
+	char		m_printerbuffer[1024 * 1024];
+	int			m_printerbufferlen;
+	int			m_OSRDCH;
+	bool		m_translateCRLF;
 
 	int			m_MenuIdPrinterPort;
 	char		m_PrinterFileName[_MAX_PATH];
@@ -304,11 +325,15 @@ class BeebWin  {
 	int			m_LastNLines;
 	int			m_MotionBlur;
 	char 		m_BlurIntensities[8];
-	char *		m_CommandLineFileName;
+	char 		m_CommandLineFileName[_MAX_PATH];
 	char		m_KbdCmd[1024];
+	char		m_DebugScript[_MAX_PATH];
 	int			m_KbdCmdPos;
 	int			m_KbdCmdKey;
 	bool		m_KbdCmdPress;
+	int			m_KbdCmdDelay;
+	int			m_KbdCmdLastCycles;
+	bool		m_NoAutoBoot;
 
 	// AVI vars
 	bmiData 	m_Avibmi;
@@ -332,6 +357,7 @@ class BeebWin  {
 	LPDIRECTDRAWSURFACE		m_DDSOne;		// Offscreen surface 1
 	LPDIRECTDRAWSURFACE2	m_DDS2One;		// Offscreen surface 1
 	BOOL					m_DXSmoothing;
+	BOOL					m_DXSmoothMode7Only;
 	LPDIRECTDRAWCLIPPER		m_Clipper;		// clipper for primary
 
 	// Direct3D9 stuff
@@ -368,6 +394,9 @@ class BeebWin  {
 	void UpdateMonitorMenu();
 	void UpdateSerialMenu(HMENU hMenu);
 	void UpdateEconetMenu(HMENU hMenu);
+public:	
+	void ExternUpdateSerialMenu();
+private:
 	void UpdateSFXMenu();
 	void UpdateDisableKeysMenu();
 	void UpdateDisplayRendererMenu(void);
@@ -379,6 +408,7 @@ class BeebWin  {
 	void ReinitDX(void);
   private:
 	void ExitDX(void);
+	void UpdateSmoothing(void);
 
 	// DirectDraw
 	HRESULT InitDirectDraw(void);
@@ -396,7 +426,7 @@ class BeebWin  {
 	void TranslateVolume(void);
 	void TranslateTiming(void);
 	void TranslateKeyMapping(void);
-	int ReadDisc(int Drive,HMENU dmenu);
+	int ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs);
 	void LoadTape(void);
 	void InitJoystick(void);
 	void ResetJoystick(void);
@@ -404,6 +434,8 @@ class BeebWin  {
 	void SaveState(void);
 	void NewDiscImage(int Drive);
 	void EjectDiscImage(int Drive);
+	void ExportDiscFiles(int menuId);
+	void ImportDiscFiles(int menuId);
 	void ToggleWriteProtect(int Drive);
 	void SetWindowAttributes(bool wasFullScreen);
 	void TranslateAMX(void);
@@ -444,4 +476,5 @@ class BeebWin  {
 
 void SaveEmuUEF(FILE *SUEF);
 void LoadEmuUEF(FILE *SUEF,int Version);
+  
 #endif

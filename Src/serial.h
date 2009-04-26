@@ -12,7 +12,11 @@ extern char map_desc[MAX_MAP_LINES][40];
 extern int map_time[MAX_MAP_LINES];
 extern unsigned char Clk_Divide;
 
+extern unsigned char ACIA_Control;
+extern unsigned int Tx_Rate, Rx_Rate;
+
 extern CycleCountT TapeTrigger;
+extern CycleCountT IP232RxTrigger;
 void Write_ACIA_Control(unsigned char CReg);
 void Write_ACIA_Tx_Data(unsigned char Data);
 void Write_SERPROC(unsigned char Data);

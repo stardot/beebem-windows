@@ -46,6 +46,7 @@ void BeebReleaseAllKeys(void);
 void SysVIATriggerCA1Int(int value);
 extern unsigned char IC32State;
 
+void RTCInit(void);
 void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData);
 unsigned char CMOSRead(unsigned char CMOSAddr);
 

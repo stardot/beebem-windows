@@ -15,6 +15,7 @@ int Enable_Z80 = 0;
 int trace_z80 = 0;
 int debug_z80 = 0;
 int TorchTube = 0;
+int PreZPC = 0; // Previous Z80 PC
 
 unsigned char z80_rom[65536L];
 unsigned char z80_ram[65536L];
@@ -210,8 +211,9 @@ void z80_execute()
 
 		// Output debug info
 		if (DebugEnabled)
-			DebugDisassembler(pc, 0, 0, 0, 0, 0, false);
+			DebugDisassembler(pc, PreZPC, 0, 0, 0, 0, 0, false);
 		
+		PreZPC = pc;
 		pc = simz80(pc);
 
 		if (AcornZ80)

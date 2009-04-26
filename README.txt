@@ -12,8 +12,13 @@ not run see the troubleshooting section below.
 BeebEm is distributed with source code in the Src.zip file so you can
 compile and modify BeebEm yourself.
 
-The copyright on everything in BeebEm resides with David Gilbert, the
-original author, as described in COPYRIGHT.txt.
+The copyright for Beebem is held by David Alan Gilbert and the other authors
+and contributors, as described in COPYRIGHT.txt.
+
+If you have any problems, questions or suggestions for improvements please
+email me here:
+
+  beebem.support@googlemail.com
 
 
 Running BBC Micro Software
@@ -52,6 +57,18 @@ Q2. How do you open the menus in full screen mode?
 
 A2. Move the mouse cursor to the top left of the screen and press Alt+F to
     open the File menu.
+
+Q3. How do I set up different preferences for different games?
+
+A3. When a disk, tape or state file is run from the command line (or you
+    double click on one of these files) BeebEm will check for a
+    Preferences.cfg and Roms.cfg file in the same folder as the image file.
+    You can create separate folders for the games that required different
+    preferences, copy the Preferences.cfg and Roms.cfg files into these
+    folders and then setup the preferences as required in BeebEm and save
+    them.  BeebEm will also check for file specific Preference and Roms
+    files when running a disk image and loading a state file using the
+    menus.
 
 
 Configuring BeebEm
@@ -158,6 +175,8 @@ these are not:
 The keypad +/- keys will change between the BeebEm fixed speeds.
 
 The keypad / and * keys will save and load a quickstate file.
+
+The ALT-ENTER keypress will toggle fullscreen mode.
 
 With a logical mapping the key symbols are mapped directly so you get what
 you press.  Note that the logical mapping sometimes has to change the shift
@@ -579,6 +598,57 @@ If anyone has any more PHROM images, can they please email them to me so
 I can include them with the distribution.
 
 
+Serial Port IP Options
+----------------------
+
+The serial port emulation in BeebEm has options to connect via TCP/IP to a
+local or remote IP address.  You can use ROMs such as CommSoft or CommStar
+to connect to a Viewdata BBS, MUD server or any other type of server.
+
+The serial IP features are selected via the IP destinations on the RS423
+Comms menu.  The "IP: localhost:25232" option is designed for use with the
+"tcpser" package, which emulates a modem.  Download a prebuilt Windows
+binary (and RC11 sources) here:
+
+  http://www.mkw.me.uk/beebem/tcpser.zip
+  (tcpser home is: http://www.jbrain.com/pub/linux/serial)
+
+Run the "go.bat" file to fire up an instance suitable for the localhost
+setting to talk to.  This will also allow incoming connections, as that does
+all the answering business and passes the caller onto the Beeb via the
+pre-existing connection.  This handles the handshake lines if you enable
+ip232 mode, so dropping RTS will drop an outward connection.  Similarly DCD
+going up will be passed through to CTS.
+
+Add the Commstar.rom to your Roms.cfg file (see "ROM Software" above) and
+start up BeebEm.  On the Comms menu select the "IP: localhost:25232" and
+"RS432 On/Off".  Type *COMMSTAR to start CommStar.  In Commstar:
+  - Press M to switch to mode 0
+  - Press A to turn off Auto line feed
+  - Press I and then R a few times to set the receive baud to 9600
+  - Press C to enter chat mode
+You should now be able send commands to the modem (tcpser), try typing "AT",
+you should get "OK" back.  You can now "dial" into a server using the "ATD"
+command.  Try connecting to the Ishar MUD server using "ATDishar.com:9999".
+
+To make a direct connection to a server select the "IP: Custom destination"
+option.  This requires you to manually edit the "IP232customip" and
+"IP232customport" parameters in the Preferences.cfg file and reload.
+
+An additional option, "IP: IP232 mode", determines if the handshake lines
+are sent down the TCP/IP link or just generated locally from the presence of
+a valid connection.
+
+If on startup, or when ticking the "RS423 On/Off" menu option, BeebEm cannot
+connect to the specified server, or if it loses connection subsequently, it
+will pop up a messagebox and disable RS423.  Select the menu option again to
+try to re-connect and re-enable.
+
+BeebEm will emulate the correct RX baud rate.  This makes for a very
+realistic experience when talking at 1200 baud to a Viewdata host!  TX is
+just sent out as fast as it will go.
+
+
 Menu Options
 ------------
 
@@ -645,6 +715,25 @@ File Menu:
 
   Exit         - Exit BeebEm
 
+Edit Menu:
+
+  Copy              - Copy BASIC program to the clipboard. Sets the printer
+                      destination to the clipboard, enables the printer 
+                      output and lists the current program.
+  Paste             - Pastes the clipboard content into BeebEm.
+  Translate CR-LF   - Adds/removes linefeed characters as text is copied and
+                      pasted from the clipboard.
+
+  Import Files to Disc   - Allows files to be added to a DFS disc image. 
+                           BeebEm will look for a .INF file containing file 
+                           attributes but files without .INF files can also
+                           be imported.  If a file name matches one already 
+                           in the disc image the imported file will 
+                           overwrite the one in the image.
+  Export Files from Disc - Allows files to be exported from a DFS disc
+                           image. BeebEm will create a .INF file for each 
+                           file exported to hold the file attributes.
+
 Comms Menu:
 
   Tape Speed          - Select the speed at which tape software loads and 
@@ -669,6 +758,8 @@ Comms Menu:
   RS423 Destination   - Select where to send the serial port data.
                         Select Microvitec Touch Screen to enable touch 
                         screen support.
+                        Select an IP option to route data to a TCP/IP 
+                        port (see "Serial Port IP Options" above).
 
 View Menu:
 
@@ -679,6 +770,8 @@ View Menu:
                         will switch on bilinear interpolation.  This will
                         blur the display slightly which will give it a 
                         smoother look.
+
+  Smooth Teletext Only - Enable DX smoothing for mode 7 only.
 
   Speed and FPS On/Off - Show or hide the relative speed and the number of
                          frames per second.
@@ -729,8 +822,8 @@ Sound Menu:
   Sound Chip     - Switches the sound chip on or off.  Useful when you want
                    to hear the cassette sounds.
 
-  Sound Effects  - Switches on the sound of the cassette motor and the
-                   sound of tape software loading.
+  Sound Effects  - Options for switching on emulation of cassette motor, tape 
+                   software loading and disc drive noise.
 
   44.1 kHz       - Sets the sound sample rate.  The higher it is the better
   22.05 kHz        the sound quality but the slower BeebEm runs.
@@ -920,6 +1013,10 @@ The following command line options can be passed to BeebEm:
   -DisMenu
      - Disables the drop down menus
   -KbdCmd <keyboard command string>
+  -NoAutoBoot
+     - Disable auto-boot when disk image specified
+  -DebugScript <file containing debugger commands>
+     - Opens the debugger and executes the commands
   <disk image file name>
   <tape file name>
   <state file name>
@@ -955,8 +1052,9 @@ The preferences and ROMs configuration file names are relative to the data
 directory.
 
 If a disk image or a state file name is passed to BeebEm on the command line
-it will be run automatically.  The name can include the full path or it can
-just be the name of a file in the 'DiscIms' or 'BeebState' directory.
+it will be run automatically (but see -NoAutoBoot option).  The name can
+include the full path or it can just be the name of a file in the 'DiscIms'
+or 'BeebState' directory.
 
 If a tape image name is passed to BeebEm on the command line it will be
 loaded.  The name can include the full path or it can just be the name of a
@@ -974,6 +1072,8 @@ The string can include the following key sequences:
   0-9          - press and release of a number key
   A-Z          - press and release of a letter key
   '-=[];'#,./  - press and release of a symbol key
+  \dNNNN       - set inter-keypress delay to NNNN milliseconds.
+                 Note that very low delays can result in loss of presses.
 
 So, for example, run a tape image using commands such as:
    BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef
@@ -989,6 +1089,17 @@ using Windows Explorer.  Double clicking on one of these files will
 automatically run it in BeebEm.
 
 
+Registry Information
+--------------------
+
+When BeebEm is installed the following registry entries are created:
+
+  HKEY_LOCAL_MACHINE\SOFTWARE\BeebEm\InstallPath
+  HKEY_LOCAL_MACHINE\SOFTWARE\BeebEm\Version
+
+These can be used by other applications to integrate with BeebEm.
+
+
 Debugger
 --------
 
@@ -999,41 +1110,26 @@ bring the main window to the front.
 
 Debugger controls:
 
-Break Execution - Stops BeebEm running.  If currently executing in the OS or
+Break           - Stops BeebEm running.  If currently executing in the OS or
                   ROM area and OS/ROM debug is not enabled then BeebEm will 
                   only stop when execution moves out of the OS/ROM.  When 
                   execution stops the current instruction is displayed.
-Restart         - Starts BeebEm running.
+Continue/Cancel - Starts BeebEm running.
 Trace           - Shows accesses to the various bits of hardware.
 Break           - Breaks execution when the hardware is accessed.
-Debug Host      - Debugs the host processor.
-Debug Parasite  - Debugs the second processor.
-Debug ROM       - Debugs the ROM code (addresses 8000-BFFF).
-Debug OS        - Debugs the OS code (addresses C000-FFFF).
+BRK instruction - Breaks when the BRK instruction is executed.
+Attach debugger to:
+  Host          - Debugs the host processor.
+  Parasite      - Debugs the second processor.
+  ROM           - Debugs the ROM code (addresses 8000-BFFF).
+  OS            - Debugs the OS code (addresses C000-FFFF).
 Breakpoints     - Breaks execution when the address hits one of the 
                   configured breakpoints.
+Watches         - Shows contents of configured memory locations.
 Execute Command - Runs the debug command entered into the command box.
 
-Debug commands ([] = optional parameter):
-
-n [count]            - Execute the next [count] instructions.
-m[p] [start] [count] - Memory hex dump.  Use 'mp' to dump parasite memory.
-d[p] [start] [count] - Disassemble instructions.  Use 'dp' for parasite.
-b start [end]        - Set/clear break point.  Can be a single address or
-                       a range of addresses.
-sv                   - Show video registers.
-su                   - Show user via registers.
-ss                   - Show system via registers.
-st                   - Show tube registers.
-w file [count]       - Writes the last [count] lines of the debug window
-                       to a file.  If count is not specified the entire
-                       debug window contents are written.
-                         e.g. w /disassembly.txt 64
-c start byte [byte] ... - Change memory.  Writes bytes starting at a 
-                          particular address.
-                         e.g. c 7c00 68 65 6c 6c 6f
-
-NOTE: All values are specified in hex!
+To get a list of the debug commands available type ? into the Execute
+Command box.  Notes that all values are specified in hex!
 
 The disassembler shows the following information:
 
@@ -1077,8 +1173,7 @@ Model B Plus Specific hardware:
   Four 16K Sideways RAM banks
   16K B+ MOS ROM
   20K Video Shadow RAM
-  8K Filing System RAM
-  4K Screen Operations RAM
+  12K Additional RAM
 
 Master 128 Specific hardware:
 
@@ -1180,21 +1275,14 @@ Troubleshooting
 
 This version of BeebEm will work on Windows 98 or later.  If you have
 Windows 98 or ME then you will need to install DirectX9 and IE6 (available
-from http://www.microsoft.com).
+from http://www.microsoft.com).  For Windows 98 you will need to install an
+older releases of DirectX 9.0c, such as the Aug 2006 release.
 
 When using DirectX9 in full screen mode the menu bar is not visible.  The
 menus can still be opened by using the shortcut keys (such as Alt-F for the
 File menu) but you will also need to click the mouse in the menu bar area
 (top left of screen) to bring the menu in front of the BeebEm screen (some
 repeated clicking is sometimes required!)
-
-There is a problem in Vista with AVI video file generation.  The AVI files
-are corrupted and cannot be played.  This will be fixed by Microsoft and may
-be delivered via Windows Update or appear in Vista SP1.
-
-If you have any problems please email me and I'll try to help out:
-
-  mikebuk@dsl.pipex.com
 
 
 Uninstalling BeebEm
@@ -1220,6 +1308,7 @@ Thanks go to the following people for contributing to BeebEm:
   Ken Lowe
   Jon Welch
   Rob O'Donnell
+  Steve Pick
 
 Thanks also to Jordon Russell Software for the excellent Inno Setup
 installation software: <http://www.jrsoftware.org/isinfo.php>
@@ -1229,5 +1318,5 @@ of BeebEm then send me an email.  I cannot promise anything but I may find
 some time to add them.
 
 Mike Wyatt
-mikebuk@dsl.pipex.com
-http://www.mikebuk.dsl.pipex.com/beebem
+beebem.support@googlemail.com
+http://www.mkw.me.uk/beebem

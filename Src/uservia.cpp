@@ -179,25 +179,34 @@ static int last_Value = 0xff;
       break;
 
     case 1:
-      UserVIAState.ora=Value & 0xff;
-      UserVIAState.ifr&=0xfc;
-      UpdateIFRTopBit();
-      if (PrinterEnabled) {
-        if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF) {
+		UserVIAState.ora=Value & 0xff;
+		UserVIAState.ifr&=0xfc;
+		UpdateIFRTopBit();
+		if (PrinterEnabled) {
+			if (PrinterFileHandle != NULL)
+			{
+				if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF) {
 #ifdef WIN32
-          char errstr[200];
-          sprintf(errstr, "Failed to write to printer file:\n  %s", PrinterFileName);
-          MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+					char errstr[200];
+					sprintf(errstr, "Failed to write to printer file:\n  %s", PrinterFileName);
+					MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 #else
-          cerr << "Failed to write to printer file " << PrinterFileName << "\n";
+					cerr << "Failed to write to printer file " << PrinterFileName << "\n";
 #endif
-        }
-        else {
-          fflush(PrinterFileHandle);
-          SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
-        }
-      }
-      break;
+				}
+				else {
+					fflush(PrinterFileHandle);
+					SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+				}
+			}
+			else
+			{
+				// Write to clipboard
+				mainWin->CopyKey(UserVIAState.ora);
+				SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+			}
+		}
+		break;
 
     case 2:
       UserVIAState.ddrb=Value & 0xff;
@@ -594,6 +603,13 @@ void PrinterEnable(char *FileName) {
 	{
 		fclose(PrinterFileHandle);
 		PrinterFileHandle = NULL;
+	}
+
+	if (FileName == NULL)
+	{
+		PrinterEnabled = 1;
+		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+		return;
 	}
 
 	strcpy(PrinterFileName, FileName);

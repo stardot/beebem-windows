@@ -57,6 +57,7 @@ unsigned char TubeMachineType=3;
 CycleCountT TotalTubeCycles=0;  
 
 int TubeProgramCounter;
+static int PreTPC; // Previous Tube Program Counter;
 static int Accumulator,XReg,YReg;
 static unsigned char StackReg,PSR;
 static unsigned char IRQCycles;
@@ -67,15 +68,7 @@ static unsigned int NMILock=0; /* Well I think NMI's are maskable - to stop repe
 
 typedef int int16;
 
-enum PSRFlags {
-  FlagC=1,
-  FlagZ=2,
-  FlagI=4,
-  FlagD=8,
-  FlagB=16,
-  FlagV=64,
-  FlagN=128
-};
+
 
 /* Note how GETCFLAG is special since being bit 0 we don't need to test it to get a clean 0/1 */
 #define GETCFLAG ((PSR & FlagC))
@@ -1464,12 +1457,13 @@ void Exec65C02Instruction(void) {
 
   // Output debug info
   if (DebugEnabled)
-    DebugDisassembler(TubeProgramCounter,Accumulator,XReg,YReg,PSR,StackReg,false);
+    DebugDisassembler(TubeProgramCounter,PreTPC,Accumulator,XReg,YReg,PSR,StackReg,false);
 
   // For the Master, check Shadow Ram Presence
   // Note, this has to be done BEFORE reading an instruction due to Bit E and the PC
   /* Read an instruction and post inc program couter */
   OldPC=TubeProgramCounter;
+  PreTPC=TubeProgramCounter;
   CurrentInstruction=TubeRam[TubeProgramCounter++];
   // cout << "Fetch at " << hex << (TubeProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
   TubeCycles=TubeCyclesTable[CurrentInstruction]; 
@@ -2486,26 +2480,22 @@ void SyncTubeProcessor(void) {
 /*-------------------------------------------------------------------------*/
 void DebugTubeState(void)
 {
-	char info[200];
-
 	DebugDisplayInfo("");
 
-	sprintf(info, "HostTube: R1=%02X R2=%02X R3=%02X R4=%02X R1n=%02X R3n=%02X",
+	DebugDisplayInfoF("HostTube: R1=%02X R2=%02X R3=%02X R4=%02X R1n=%02X R3n=%02X",
 		(int)R1HStatus | R1Status,
 		(int)R2HStatus,
 		(int)R3HStatus,
 		(int)R4HStatus,
 		(int)R1PHPtr,
 		(int)R3PHPtr);
-	DebugDisplayInfo(info);
 
-	sprintf(info, "ParaTube: R1=%02X R2=%02X R3=%02X R4=%02X R3n=%02X",
+	DebugDisplayInfoF("ParaTube: R1=%02X R2=%02X R3=%02X R4=%02X R3n=%02X",
 		(int)R1PStatus | R1Status,
 		(int)R2PStatus,
 		(int)R3PStatus,
 		(int)R4PStatus,
 		(int)R3HPPtr);
-	DebugDisplayInfo(info);
 }
 
 /*-------------------------------------------------------------------------*/

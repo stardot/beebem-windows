@@ -61,6 +61,7 @@ void VideoDoScanLine(void);
 void VideoGetText(char *text, int line);
 
 extern unsigned char TeletextEnabled;
+extern unsigned char ShowCursorLine;
 
 #define VideoPoll(ncycles) if ((VideoTriggerCount)<=TotalCycles) VideoDoScanLine();
 

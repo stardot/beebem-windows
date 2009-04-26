@@ -36,6 +36,8 @@ extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
 extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
+extern int MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8, HidAdd;
+
 struct CMOSType {
 	unsigned char Enabled;
 	unsigned char ChipSelect;
@@ -44,6 +46,32 @@ struct CMOSType {
 	unsigned char DataStrobe;
 	unsigned char Op;
 };
+
+typedef enum RomFlags
+{
+	RomService=128,
+	RomLanguage=64,
+	RomRelocate=32,
+	RomSoftKey=16, // Electron only
+	RomFlag3=8,
+	RomFlag2=4,
+	RomFlag1=2,
+	RomFlag0=1,
+} RomFlags;
+
+typedef struct RomInfo {
+	int Slot;
+	int LanguageAddr;
+	int ServiceAddr;
+	int WorkspaceAddr;
+	RomFlags Flags;
+	int Version;
+	char Title[256];
+	char VersionStr[256];
+	char Copyright[256];
+	int RelocationAddr;
+} RomInfo;
+
 extern struct CMOSType CMOS;
 extern unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 extern char RomPath[512];
@@ -55,7 +83,7 @@ extern char RomFile[512];
 #define BEEBREADMEM_FASTINC(a) ((a<0xfc00)?WholeRam[a++]:BeebReadMem(a++))
 
 int BeebReadMem(int Address);
-void BeebWriteMem(int Address, int Value);
+void BeebWriteMem(int Address, unsigned char Value);
 #define BEEBWRITEMEM_FAST(Address, Value) if (Address<0x8000) WholeRam[Address]=Value; else BeebWriteMem(Address,Value);
 #define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address]=Value;
 char *BeebMemPtrWithWrap(int a, int n);
@@ -63,6 +91,8 @@ char *BeebMemPtrWithWrapMo7(int a, int n);
 void BeebReadRoms(void);
 void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig);
 
+/* used by debugger */
+bool ReadRomInfo(int bank, RomInfo* info);
 /* Used to show the Rom titles from the options menu */
 char *ReadRomTitle( int bank, char *Title, int BufSize );
 
@@ -78,4 +108,5 @@ void LoadPrivMemUEF(FILE *SUEF);
 void LoadFileMemUEF(FILE *SUEF);
 void LoadSWRMMemUEF(FILE *SUEF);
 void LoadIntegraBHiddenMemUEF(FILE *SUEF);
+void DebugMemoryState();
 #endif

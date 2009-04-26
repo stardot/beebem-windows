@@ -31,6 +31,7 @@
 #include "6502core.h"
 #include "disc8271.h"
 #include "uefstate.h"
+#include "beebsound.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -54,6 +55,10 @@ static unsigned char Internal_CurrentTrack[2]; /* 0/1 for surface number */
 static unsigned char Internal_DriveControlOutputPort;
 static unsigned char Internal_DriveControlInputPort;
 static unsigned char Internal_BadTracks[2][2]; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
+
+static int DriveHeadPosition[2]={0};
+static bool DriveHeadLoaded=false;
+static bool DriveHeadUnloadPending=false;
 
 static int ThisCommand;
 static int NParamsInThisCommand;
@@ -104,6 +109,7 @@ static char FileNames[2][256];
 static int NumHeads[2];
 
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
+static void DriveSoundScheduleUnload(void);
 
 typedef void (*CommandFunc)(void);
 
@@ -692,7 +698,7 @@ static void FormatInterrupt(void) {
       }
     } else {
       /* Last sector done, write the track back to disc */
-      if (!SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr)) {
+      if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr)) {
         StatusReg=0x10;
         UPDATENMISTATUS;
         LastByte=1;
@@ -708,7 +714,7 @@ static void FormatInterrupt(void) {
   if (!LastByte) {
     StatusReg=0x8c; /* Command busy, */
     UPDATENMISTATUS;
-    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    SetTrigger(TIMEBETWEENBYTES * 256,Disc8271Trigger);
   };
 }; /* FormatInterrupt */
 
@@ -1019,6 +1025,12 @@ static void ParamRegWrite(int Value) {
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */
 void Disc8271_write(int Address, int Value) {
+  // Clear a pending head unload
+  if (DriveHeadUnloadPending) {
+    DriveHeadUnloadPending = false;
+    ClearTrigger(Disc8271Trigger);
+  }
+
   switch (Address) {
     case 0:
       CommandRegWrite(Value);
@@ -1046,12 +1058,78 @@ void Disc8271_write(int Address, int Value) {
       /* cerr << "8271: Write to unknown register address=" << Address << ", value=0x" << hex << Value << dec << "\n"; */
       break;
   }; /* Address switch */
+
+  DriveSoundScheduleUnload();
 }; /* Disc8271_write */
+
+/*--------------------------------------------------------------------------*/
+static void DriveSoundScheduleUnload(void) {
+	if (DiscDriveSoundEnabled) {
+		// Schedule head unload when nothing else is pending
+		if (DriveHeadLoaded && Disc8271Trigger==CycleCountTMax) {
+			SetTrigger(4000000,Disc8271Trigger); // 2s delay to unload
+			DriveHeadUnloadPending = true;
+		}
+	}
+}
+
+/*--------------------------------------------------------------------------*/
+static bool DriveSoundUpdate(void) {
+	int Drive=0;
+	int Cycles=0;
+	int Tracks=0;
+
+	if (DriveHeadUnloadPending) {
+		DriveHeadUnloadPending = false;
+		if (DriveHeadLoaded)
+			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
+		DriveHeadLoaded = false;
+		StopSoundSample(SAMPLE_DRIVE_MOTOR);
+		return true;
+	}
+
+	if (!DiscDriveSoundEnabled)
+		return false;
+
+	if (!DriveHeadLoaded) {
+		PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
+		DriveHeadLoaded = true;
+		PlaySoundSample(SAMPLE_HEAD_LOAD, false);
+		Cycles = SAMPLE_HEAD_LOAD_CYCLES;
+		SetTrigger(Cycles,Disc8271Trigger);
+		return true;
+	}
+
+	if (Selects[0]) Drive=0;
+	if (Selects[1]) Drive=1;
+	StopSoundSample(SAMPLE_HEAD_SEEK);
+	if (DriveHeadPosition[Drive] != Internal_CurrentTrack[Drive]) {
+		Tracks = abs(DriveHeadPosition[Drive] - Internal_CurrentTrack[Drive]);
+		if (Tracks > 1) {
+			PlaySoundSample(SAMPLE_HEAD_SEEK, true);
+			Cycles = Tracks * SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK;
+		}
+		else {
+			PlaySoundSample(SAMPLE_HEAD_STEP, false);
+			Cycles = SAMPLE_HEAD_STEP_CYCLES;
+		}
+		if (DriveHeadPosition[Drive] < Internal_CurrentTrack[Drive])
+			DriveHeadPosition[Drive] += Tracks;
+		else
+			DriveHeadPosition[Drive] -= Tracks;
+		SetTrigger(Cycles,Disc8271Trigger);
+		return true;
+	}
+	return false;
+}
 
 /*--------------------------------------------------------------------------*/
 void Disc8271_poll_real(void) {
   ClearTrigger(Disc8271Trigger);
-  PrimaryCommandLookupType *comptr;
+
+  if (DriveSoundUpdate())
+    return;
+
   /* Set the interrupt flag in the status register */
   StatusReg|=8;
   UPDATENMISTATUS;
@@ -1063,9 +1141,12 @@ void Disc8271_poll_real(void) {
     NextInterruptIsErr=0;
   } else {
     /* Should only happen while a command is still active */
+    PrimaryCommandLookupType *comptr;
     comptr=CommandPtrFromNumber(ThisCommand);
     if (comptr->IntHandler!=NULL) comptr->IntHandler();
   };
+
+  DriveSoundScheduleUnload();
 }; /* Disc8271_poll */
 
 /*--------------------------------------------------------------------------*/
@@ -1079,6 +1160,7 @@ static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
   int CatEntries=0;
   int File;
   unsigned char c;
+  int Invalid;
 
   /* First check the number of sectors (cannot be > 0x320) */
   if (((Sec2[6]&3)<<8)+Sec2[7] > 0x320)
@@ -1094,6 +1176,7 @@ static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
   }
 
   /* Check that the catalogue file names are all printable characters. */
+  Invalid=0;
   for (File=0; Valid && File<CatEntries; ++File) {
     for (int i=0; Valid && i<8; ++i) {
       c=Sec1[8+File*8+i];
@@ -1102,10 +1185,14 @@ static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
         c&=0x7f;
 
       if (c<0x20 || c>0x7f)
-        Valid=0;  /* not printable */
+        Invalid++;  /* not printable */
     }
   }
+  /* Some games discs have one or two invalid names */
+  if (Invalid > 3)
+    Valid=0;
 
+#if 0
   /* Check that all the bytes after the file names are 0 */
   for (File=CatEntries; Valid && File<31; ++File) {
     for (int i=0; Valid && i<8; ++i) {
@@ -1115,6 +1202,7 @@ static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
         Valid=0;
     }
   }
+#endif
 
   /* If still valid but there are no catalogue entries then we cannot tell
      if its a catalog */
@@ -1579,6 +1667,10 @@ void Disc8271_reset(void) {
   Internal_DriveControlOutputPort=0;
   Internal_DriveControlInputPort=0;
   Internal_BadTracks[0][0]=Internal_BadTracks[0][1]=Internal_BadTracks[1][0]=Internal_BadTracks[1][1]=0xff; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
+  if (DriveHeadLoaded) {
+    DriveHeadUnloadPending = true;
+    DriveSoundUpdate();
+  }
   ClearTrigger(Disc8271Trigger); /* No Disc8271Triggered events yet */
 
   ThisCommand=-1;
@@ -1785,3 +1877,10 @@ void disc8271_dumpstate(void) {
   cerr << "  Selects=" << Selects[0] << "," << Selects[1] << "\n";
   cerr << "  NextInterruptIsErr=" << NextInterruptIsErr<< "\n";
 };
+
+/*--------------------------------------------------------------------------*/
+void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads)
+{
+	strcpy(pFileName, FileNames[DriveNum]);
+	*Heads = NumHeads[DriveNum];
+}
