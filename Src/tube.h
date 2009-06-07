@@ -28,7 +28,8 @@
 extern unsigned char R1Status;
 void ResetTube(void);
 
-extern unsigned char EnableTube,TubeEnabled,Tube186Enabled,AcornZ80;
+extern unsigned char EnableTube,TubeEnabled,Tube186Enabled;
+//extern unsigned char AcornZ80;
 extern int TorchTubeActive;
 extern int TubeProgramCounter;
 

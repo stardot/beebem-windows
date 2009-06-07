@@ -42,7 +42,7 @@
 
 using namespace std;
 
-extern int TorchTube;
+//extern int TorchTube;
 
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 static unsigned char ResultReg;
@@ -182,11 +182,11 @@ static void InitDiscStore(void) {
 /* Given a logical track number accounts for bad tracks                     */
 static int SkipBadTracks(int Unit, int trackin) {
   int offset=0;
-  if (!TorchTube)	// If running under Torch Z80, ignore bad tracks
-  {
-    if (Internal_BadTracks[Unit][0]<=trackin) offset++;
-    if (Internal_BadTracks[Unit][1]<=trackin) offset++;
-  }  
+  //if (!TorchTube)	// If running under Torch Z80, ignore bad tracks
+  //{
+  //  if (Internal_BadTracks[Unit][0]<=trackin) offset++;
+  //  if (Internal_BadTracks[Unit][1]<=trackin) offset++;
+  //}  
   return(trackin+offset);
 }; /* SkipBadTracks */
 

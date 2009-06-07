@@ -15,8 +15,8 @@
 #include "6502core.h"
 #include "tube.h"
 #include "debug.h"
-#include "z80mem.h"
-#include "z80.h"
+//#include "z80mem.h"
+//#include "z80.h"
 
 #define MAX_LINES 4096          // Max lines in info window
 #define LINES_IN_INFO 28        // Visible lines in info window
@@ -857,6 +857,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	if (DebugSource == DEBUG_NONE)
 		return(TRUE);
 
+#if 0
 	if ( (TorchTube || AcornZ80) && !host)
 	{
 		if (DebugOS == false && addr >= 0xf800 && addr <= 0xffff)
@@ -872,6 +873,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 		LastAddrInBIOS = false;
 	}
 	else
+#endif
 	{
 		if (DebugOS == false && addr >= 0xc000 && addr <= 0xfbff)
 		{
@@ -909,6 +911,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	
 	DebugAssertBreak(addr, prevAddr, host);
 	// Parasite instructions:
+#if 0
 	if ( (TorchTube || AcornZ80) && !host)
 	{
 		char buff[128];
@@ -922,6 +925,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 
 	}
 	else
+#endif
 	{
 		
 		DebugDisassembleInstruction(addr, host, str);
@@ -1998,8 +2002,8 @@ int DebugReadMem(int addr, bool host)
 {
 	if (host)
 		return BeebReadMem(addr);
-	if ((TorchTube || AcornZ80))
-		return ReadZ80Mem(addr);
+	//if ((TorchTube || AcornZ80))
+	//	return ReadZ80Mem(addr);
 	return TubeReadMem(addr);
 }
 
@@ -2007,8 +2011,8 @@ void DebugWriteMem(int addr, bool host, unsigned char data)
 {
 	if (host)
 		BeebWriteMem(addr, data);
-	if ((TorchTube || AcornZ80))
-		WriteZ80Mem(addr, data);
+	//if ((TorchTube || AcornZ80))
+	//	WriteZ80Mem(addr, data);
 	TubeWriteMem(addr, data);
 }
 
@@ -2140,6 +2144,7 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 
 	while (count > 0 && addr <= 0xffff)
 	{
+#if 0
 		if ((TorchTube || AcornZ80) && !host)
 		{
 			int l;
@@ -2170,6 +2175,7 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 			addr += l;
 		}
 		else
+#endif
 		{
 			addr += DebugDisassembleInstruction(addr, host, opstr);
 		}
@@ -2208,7 +2214,7 @@ void DebugMemoryDump(int addr, int count, bool host)
 		{
 			for (b = 0; b < 16; ++b)
 			{
-				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TorchTube || AcornZ80))
+				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 /*&& !(TorchTube || AcornZ80)*/)
 					sprintf(info+strlen(info), "IO ");
 				else
 					sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, host));

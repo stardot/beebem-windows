@@ -1,6 +1,11 @@
 BeebEm Change History
 =====================
 
+Version 4.03 (Mike Wyatt)
+------------
+* Non-GPL licensed version.
+* Removed Acorn Z80 Co-Processor and Torch Z80 second processor emulation.
+
 Version 4.02 (Mike Wyatt)
 ------------
 * Added disc drive sound emulation.

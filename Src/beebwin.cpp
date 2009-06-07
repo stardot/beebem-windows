@@ -49,8 +49,8 @@
 #include "debug.h"
 #include "scsi.h"
 #include "sasi.h"
-#include "z80mem.h"
-#include "z80.h"
+//#include "z80mem.h"
+//#include "z80.h"
 #include "userkybd.h"
 #include "speech.h"
 #include "teletext.h"
@@ -93,9 +93,10 @@ const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 static const char *AboutText =
 	"BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
 	"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\n"
-	"Torch Z80 Second Processor\nMaster 512 Second Processor\nAcorn Z80 Second Processor\n"
+	//"Torch Z80 Second Processor\nAcorn Z80 Second Processor\n"
+	"Master 512 Second Processor\n"
 	"ARM Second Processor\n\n"
-	"Version 4.02, April 2009";
+	"Version 4.03, June 2009";
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -370,14 +371,14 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	Init6502core();
 	if (EnableTube) Init65C02core();
 	if (Tube186Enabled) i86_main();
-    Enable_Z80 = 0;
-    if (TorchTube || AcornZ80)
-    {
-       R1Status = 0;
-       ResetTube();
-       init_z80();
-       Enable_Z80 = 1;
-    }
+    //Enable_Z80 = 0;
+    //if (TorchTube || AcornZ80)
+    //{
+    //   R1Status = 0;
+    //   ResetTube();
+    //   init_z80();
+    //   Enable_Z80 = 1;
+    //}
 	Enable_Arm = 0;
 	if (ArmTube)
 	{
@@ -772,8 +773,8 @@ void BeebWin::InitMenu(void)
 	// Hardware
 	CheckMenuItem(m_hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+	//CheckMenuItem(m_hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+	//CheckMenuItem(m_hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
 	SetRomMenu();
 	CheckMenuItem(hMenu, IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions ? MF_CHECKED : MF_UNCHECKED);
@@ -1163,14 +1164,14 @@ LRESULT CALLBACK WndProc(
 							Init6502core();
 							if (EnableTube) Init65C02core();
 							if (Tube186Enabled) i86_main();
-							Enable_Z80 = 0;
-							if (TorchTube || AcornZ80)
-							{
-								R1Status = 0;
-								ResetTube();
-								init_z80();
-								Enable_Z80 = 1;
-							}
+							//Enable_Z80 = 0;
+							//if (TorchTube || AcornZ80)
+							//{
+							//	R1Status = 0;
+							//	ResetTube();
+							//	init_z80();
+							//	Enable_Z80 = 1;
+							//}
 							Enable_Arm = 0;
 							if (ArmTube)
 							{
@@ -2892,71 +2893,71 @@ void BeebWin::HandleCommand(int MenuId)
 		ArmTube=1-ArmTube;
         TubeEnabled = 0;
         Tube186Enabled = 0;
-        TorchTube = 0;
-		AcornZ80 = 0;
+        //TorchTube = 0;
+		//AcornZ80 = 0;
         CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
-        CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+        //CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+		//CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 
 	case IDM_TUBE:
 		TubeEnabled=1-TubeEnabled;
         Tube186Enabled = 0;
-        TorchTube = 0;
+        //TorchTube = 0;
         ArmTube = 0;
-		AcornZ80 = 0;
+		//AcornZ80 = 0;
         CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
-        CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        //CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+		//CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 
 	case IDM_TUBE186:
 		Tube186Enabled=1-Tube186Enabled;
         TubeEnabled = 0;
-        TorchTube = 0;
-		AcornZ80 = 0;
+        //TorchTube = 0;
+		//AcornZ80 = 0;
         ArmTube = 0;
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
-        CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        //CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+		//CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 
-    case IDM_TORCH:
-		TorchTube=1-TorchTube;
-		TubeEnabled=0;
-		Tube186Enabled=0;
-		AcornZ80 = 0;
-        ArmTube = 0;
-        CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
-        CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
-        CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
-		ResetBeebSystem(MachineType,TubeEnabled,0);
-		break;
+	//case IDM_TORCH:
+	//	TorchTube=1-TorchTube;
+	//	TubeEnabled=0;
+	//	Tube186Enabled=0;
+	//  AcornZ80 = 0;
+	//  ArmTube = 0;
+    //    CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
+    //    CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+    //    CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
+	//	  CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+	//    CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+	//	  ResetBeebSystem(MachineType,TubeEnabled,0);
+	//	break;
     
-    case IDM_ACORNZ80:
-		AcornZ80=1-AcornZ80;
-		TubeEnabled=0;
-		TorchTube=0;
-		Tube186Enabled=0;
-        ArmTube = 0;
-        CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
-		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
-		ResetBeebSystem(MachineType,TubeEnabled,0);
-		break;
+	//case IDM_ACORNZ80:
+	//	AcornZ80=1-AcornZ80;
+	//	TubeEnabled=0;
+	//	TorchTube=0;
+	//	Tube186Enabled=0;
+	//	ArmTube = 0;
+    //    CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
+	//	CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+	//	CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
+	//	CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+	//	CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+	//	ResetBeebSystem(MachineType,TubeEnabled,0);
+	//	break;
 
     case ID_FILE_RESET:
 		ResetBeebSystem(MachineType,TubeEnabled,0);

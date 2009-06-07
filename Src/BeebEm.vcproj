@@ -324,18 +324,6 @@
 				RelativePath=".\video.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\z80.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\z80_support.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\z80dis.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -500,14 +488,6 @@
 			</File>
 			<File
 				RelativePath=".\video.h"
-				>
-			</File>
-			<File
-				RelativePath=".\z80.h"
-				>
-			</File>
-			<File
-				RelativePath=".\z80mem.h"
 				>
 			</File>
 			<File

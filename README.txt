@@ -319,9 +319,6 @@ appear as drives 0 to 3.  Floppy disks can still be accessed as drives 4 and
 There are some demo tunes in scsi0.dat which you can listen to with the PLAY
 program.
 
-There is also the sasi0.dat file which is a Torch Z80 hard disc image (see
-README_Z80.TXT).
-
 
 Using Tape Images
 -----------------
@@ -465,47 +462,6 @@ http://www.g7jjf.com/512_disc_images.htm
 Please feel free to send me any more you know work with the Master 512.
 
 
-Acorn Z80 Co Processor Support
-------------------------------
-The software now supports the Acorn Z80 Co-Processor board.
-
-The Acorn Z80 was a CP/M based system running with 64KB RAM on a Z80
-processor.
-
-You start the Acorn Z80 by selecting Acorn Z80 Co-Processor off the hardware
-menu. If you load a CP/M system disc in drive 0, the system will then boot
-to an A: prompt.
-
-I have included a CP/M Utilities disc in the installation which will boot
-the system. The Acorn Z80 originally came with 7 discs which can be download
-from my web site at :
-
-http://www.g7jjf.com/acornz80_disc_images.htm
-
-These discs contain the Acorn Z80 application software including :
-
-CPM Utilities
-BBC Basic
-Mallard Basic
-CIS Cobol
-MemoPlan
-GraphPlan
-FilePlan
-Accountant
-Nucleus
-
-You will also find some manuals for this software on my site as well.
-
-The Acorn Z80 should also run most CP/M compatible software but no guarantees
-are given for what will and what won't work.
-
-I will start a library of known good disc images at :
-
-http://www.g7jjf.com/acornz80_disc_images.htm
-
-Please feel free to send me any more you know work with the Acorn Z80.
-
-
 Acorn ARM Second Processor Support
 ----------------------------------
 The software now supports the Acorn ARM Second Processor board, also
@@ -582,9 +538,6 @@ to each entry in the phroms.cfg file.
 A list of words available in PHROMSUS is included in the Phroms directory for
 reference. A list for PHROMA can be found in Appendix A and B of the manual
 detailed below.
-
-The Torch Z80 Co Processor also supports the speech system. Try the SNAKE game
-off the system utilities disc. There is also BACKCHAT.
 
 Please remember that the Master 128 doesn't support speech so you need to be
 in Model B/B+ mode for speech to work.
@@ -888,10 +841,6 @@ Hardware Menu:
                         break (F12):
                             *CONFIGURE TUBE
 
-  Torch Z80 Second Processor - Enables/disables the Z80 second processor 
-                        emulation.  See the README_Z80.TXT file for more
-                        details.
-
   Allow ROM writes    - Enable/disable ROM writes for each ROM slot.
                         ROMs read at start-up are write protected by
                         default.  Some ROM software was supplied on 
@@ -1027,9 +976,6 @@ Note: Command line options -Model and -Tube are no longer supported.
 e.g. Run Zalaga with its own preferences:
    BeebEm -Prefs ZalagaPrefs.cfg Zalaga.ssd
 
-e.g. Run the Torch Z80 with its own preferences:
-   BeebEm -Prefs Torch.cfg -Roms Roms_Torch.cfg
-
 e.g. Run BeebEm with an alternative set of data files:
    BeebEm -Data \Users\Mike\Documents\BeebEmGames
 
@@ -1040,7 +986,7 @@ e.g. To load and run the test tape image:
    BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef
 
 These command lines can be put into Windows shortcuts or Windows scripts.
-See the BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.
+See the BeebEmLocal.vbs script for example.
 
 If the specified <data directory> does not exist BeebEm will offer to create
 it.  BeebEm will copy a default set of data to the data directory.  The

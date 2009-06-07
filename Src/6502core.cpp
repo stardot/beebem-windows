@@ -45,8 +45,8 @@
 #include "tube.h"
 #include "debug.h"
 #include "uefstate.h"
-#include "z80mem.h"
-#include "z80.h"
+//#include "z80mem.h"
+//#include "z80.h"
 #include "econet.h"
 #include "scsi.h"
 #include "debug.h"
@@ -1160,7 +1160,7 @@ void Exec6502Instruction(void) {
 			Dis6502();
 		}
 
-		z80_execute();
+		//z80_execute();
 
 		if (Enable_Arm)
 		{

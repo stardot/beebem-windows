@@ -201,8 +201,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,0,2,0
- PRODUCTVERSION 4,0,2,0
+ FILEVERSION 4,0,3,0
+ PRODUCTVERSION 4,0,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -220,12 +220,12 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator"
             VALUE "CompanyName", "Mike Wyatt"
             VALUE "FileDescription", "BeebEm"
-            VALUE "FileVersion", "4.02"
+            VALUE "FileVersion", "4.03"
             VALUE "InternalName", "BeebEm"
             VALUE "LegalCopyright", "Copyright © 2009"
             VALUE "OriginalFilename", "BeebEm.exe"
             VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", "4.02"
+            VALUE "ProductVersion", "4.03"
         END
     END
     BLOCK "VarFileInfo"
@@ -610,8 +610,6 @@ BEGIN
         END
         MENUITEM "65C02 &Second Processor",     IDM_TUBE
         MENUITEM "&Master 512 Second Processor", IDM_TUBE186
-        MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
-        MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
         MENUITEM "ARM Second Processor",        IDM_ARM
         MENUITEM SEPARATOR
         POPUP "&Allow ROM writes"

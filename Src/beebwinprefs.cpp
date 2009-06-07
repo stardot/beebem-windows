@@ -28,8 +28,8 @@
 #include "debug.h"
 #include "scsi.h"
 #include "sasi.h"
-#include "z80mem.h"
-#include "z80.h"
+//#include "z80mem.h"
+//#include "z80.h"
 #include "userkybd.h"
 #include "speech.h"
 #include "teletext.h"
@@ -396,11 +396,11 @@ void BeebWin::LoadPreferences()
 	if (!PrefsGetBinaryValue("ArmTube",&ArmTube,1))
 		ArmTube=0;
 
-	if (!PrefsGetBinaryValue("TorchTube",&TorchTube,1))
-		TorchTube=0;
+	//if (!PrefsGetBinaryValue("TorchTube",&TorchTube,1))
+	//	TorchTube=0;
 
-	if (!PrefsGetBinaryValue("AcornZ80",&AcornZ80,1))
-		AcornZ80=0;
+	//if (!PrefsGetBinaryValue("AcornZ80",&AcornZ80,1))
+	//	AcornZ80=0;
 
 	if (!PrefsGetBinaryValue("TubeEnabled",&TubeEnabled,1))
 		TubeEnabled=0;
@@ -620,8 +620,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		PrefsSetBinaryValue("SpeechEnabled",&flag,1);
 
 		PrefsSetBinaryValue("ArmTube",&ArmTube,1);
-		PrefsSetBinaryValue("TorchTube",&TorchTube,1);
-		PrefsSetBinaryValue("AcornZ80",&AcornZ80,1);
+		//PrefsSetBinaryValue("TorchTube",&TorchTube,1);
+		//PrefsSetBinaryValue("AcornZ80",&AcornZ80,1);
 		PrefsSetBinaryValue("TubeEnabled",&TubeEnabled,1);
 		PrefsSetBinaryValue("Tube186Enabled",&Tube186Enabled,1);
 

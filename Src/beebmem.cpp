@@ -47,8 +47,8 @@
 #include "scsi.h"
 #include "sasi.h"
 #include "uefstate.h"
-#include "z80mem.h"
-#include "z80.h"
+//#include "z80mem.h"
+//#include "z80.h"
 #include "econet.h"		//Rob
 #include "debug.h"		//Rob added for INTON/OFF reporting only
 #include "teletext.h"
@@ -450,9 +450,9 @@ int BeebReadMem(int Address) {
 
 	if ((Address & ~0x1f)==0xfee0)
 	{
-		if (TorchTube)
-			return(ReadTorchTubeFromHostSide(Address&0x1f)); //Read From Torch Tube
-		else
+		//if (TorchTube)
+		//	return(ReadTorchTubeFromHostSide(Address&0x1f)); //Read From Torch Tube
+		//else
 			return(ReadTubeFromHostSide(Address&7)); //Read From Tube
 	}
 
@@ -885,9 +885,9 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	if ((Address&~0xf)==0xfee0)
 	{
-		if (TorchTube) 
-			WriteTorchTubeFromHostSide(Address&0xf,Value);
-		else
+		//if (TorchTube) 
+		//	WriteTorchTubeFromHostSide(Address&0xf,Value);
+		//else
 			WriteTubeFromHostSide(Address&7,Value);
 	}
 

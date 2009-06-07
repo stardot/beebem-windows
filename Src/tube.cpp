@@ -33,8 +33,8 @@
 #include "tube.h"
 #include "debug.h"
 #include "uefstate.h"
-#include "z80mem.h"
-#include "z80.h"
+//#include "z80mem.h"
+//#include "z80.h"
 #include "Arm.h"
 
 #ifdef WIN32
@@ -51,7 +51,8 @@
 static int CurrentInstruction;
 unsigned char TubeRam[65536];
 extern int DumpAfterEach;
-unsigned char TubeEnabled,Tube186Enabled,AcornZ80,EnableTube;
+unsigned char TubeEnabled,Tube186Enabled,EnableTube;
+//unsigned char AcornZ80;
 unsigned char TubeMachineType=3;
 
 CycleCountT TotalTubeCycles=0;  
@@ -194,6 +195,7 @@ void UpdateHostR4Interrupt(void) {
 }
 
 
+#if 0
 /*-------------------------------------------------------------------*/
 // Torch tube memory/io handling functions
 
@@ -354,6 +356,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 		break;
 	}
 }
+#endif
 
 /*-------------------------------------------------------------------*/
 // Tube memory/io handling functions
@@ -361,7 +364,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
-	if (! (EnableTube || Tube186Enabled || AcornZ80 || ArmTube) ) 
+	if (! (EnableTube || Tube186Enabled || /*AcornZ80 ||*/ ArmTube) ) 
 		return(MachineType==3 ? 0xff : 0xfe); // return ff for master else return fe
 
 	switch (IOAddr) {
@@ -427,7 +430,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 }
 
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
-	if (! (EnableTube || Tube186Enabled || AcornZ80 || ArmTube) ) 
+	if (! (EnableTube || Tube186Enabled || /*AcornZ80 ||*/ ArmTube) ) 
 		return;
 
 	if (DebugEnabled) {
@@ -496,8 +499,8 @@ void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
 unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 	unsigned char TmpData;
 
-	if (TorchTube) 
-		return ReadTorchTubeFromHostSide(IOAddr);
+	//if (TorchTube) 
+	//	return ReadTorchTubeFromHostSide(IOAddr);
 
 	switch (IOAddr) {
 	case 0:
@@ -564,11 +567,11 @@ unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 
 void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 {
-	if (TorchTube) 
-	{
-		WriteTorchTubeFromParasiteSide(IOAddr, IOData);
-		return;
-	}
+	//if (TorchTube) 
+	//{
+	//	WriteTorchTubeFromParasiteSide(IOAddr, IOData);
+	//	return;
+	//}
 
 	if (DebugEnabled) {
 		char info[200];

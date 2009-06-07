@@ -31,8 +31,6 @@ can be determined under normal use".
 #include "main.h"
 #include "beebemrc.h"
 #include "uefstate.h"
-#include "z80mem.h"
-#include "z80.h"
 #include "beebsound.h"
 
 extern FILE *tlog;
