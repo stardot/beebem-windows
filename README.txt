@@ -13,7 +13,8 @@ BeebEm is distributed with source code in the Src.zip file so you can
 compile and modify BeebEm yourself.
 
 The copyright for Beebem is held by David Alan Gilbert and the other authors
-and contributors, as described in COPYRIGHT.txt.
+and contributors (listed below).  BeebEm is distributed under the terms of
+the GNU General Public License, as described in COPYRIGHT.txt.
 
 If you have any problems, questions or suggestions for improvements please
 email me here:
@@ -113,20 +114,19 @@ Although most games software is supplied on disc images there is a large
 selection of ROM software available for the BBC Micro.  There are
 application ROMs such as word processors and drawing packages, there are
 programing language ROMs such as FORTH and BCPL, and a whole range of other
-software.  The BBC Micro's operating system, BASIC language and disc filing
+software.  The BBC Micro operating system, BASIC language and disc filing
 system are all supplied on ROM.
 
-The BBC Micro and Master 128 (and BeebEm) support up to 16 ROM slots (plus
-one for the operating system).  The BBC Micro ROMs are kept in
-subdirectories of the 'BeebFile' directory.  The is one subdirectory for
-each of the four models emulated.
+The BBC Micro and Master 128 (and BeebEm) support up to 16 ROM slots plus
+one for the operating system.  The BBC Micro ROMs are kept in subdirectories
+of the 'BeebFile' directory.  The is one subdirectory for each of the four
+models emulated.
 
 The ROMs that BeebEm loads are configured in the 'Roms.cfg' file.  You can
-edit this file using Notepad to add a ROM.  Change one of the 'EMPTY' lines
-to the name of the ROM file you have put one of the BeebFile directories.
-The first 17 lines in Roms.cfg are for the BBC Micro Model B emulation, the
-second 17 are for the IntegraB emulation, the third for the B Plus emulation
-and the last 17 for the Master 128 emulation.
+edit the ROM configuration within BeebEm using the "Edit ROM Configuration"
+option on the Hardware menu.  Note that you usually have to press the Break
+key (F12) before a new ROM configuration is recognised.  Changes to the ROM
+configuration can be saved to the Roms.cfg file or another file.
 
 To run a ROM you will need to type a command into BeebEm.  The exact command
 will depend on the ROM itself and you may need to refer to any documentation
@@ -137,6 +137,11 @@ Any of the 16 ROM slots can be configured as RAM.  Some software
 (e.g. games) can make use of this RAM so its a good idea to leave at least
 one slot as RAM.
 
+ROMs are not normally writable but some ROM software was supplied on small
+expansion boards that had some RAM on them.  These ROMs should be marked as
+writable in the Roms.cfg file (use the "Make Writable" option in ROM
+configuration).
+
 Note that certain ROMs must be present for each emulation mode to work so do
 not remove these:
 
@@ -146,8 +151,9 @@ not remove these:
  Master 128           - MOS.ROM, TERMINAL.ROM, BASIC4.ROM, DFS.ROM
 
 The default set of ROMs configured for the Master 128 mode are MOS 3.20.
-The MOS 3.50 ROMs are also included.  To use them rename the BeebFile/M128
-directory to M128-MOS3.2 and rename the M128-MOS3.5 directory M128.
+The MOS 3.50 ROMs are also included.  To use them either rename the
+BeebFile/M128 directory to M128-MOS3.2 and rename the M128-MOS3.5 directory
+M128 or create a new configuration using the ROM Configuration option.
 
 
 Keyboard Mappings
@@ -172,11 +178,19 @@ these are not:
    '@               :*
    End              Copy
 
-The keypad +/- keys will change between the BeebEm fixed speeds.
+There are some shortcut keys for various features:
 
-The keypad / and * keys will save and load a quickstate file.
-
-The ALT-ENTER keypress will toggle fullscreen mode.
+  keypad +      Increase emulation speed
+  ALT +         Increase emulation speed
+  keypad -      Decrease emulation speed
+  ALT -         Decrease emulation speed
+  keypad /      Quick save state
+  ALT 1         Quick save state
+  keypad *      Quick load state
+  ALT 2         Quick load state
+  ALT keypad 5  Capture screen to file (with NumLock on)
+  ALT 5         Capture screen to file
+  ALT ENTER     Toggle fullscreen mode
 
 With a logical mapping the key symbols are mapped directly so you get what
 you press.  Note that the logical mapping sometimes has to change the shift
@@ -268,7 +282,7 @@ mount it.  You can also press A & F12 to mount an ADFS disc.
 
 ADFS is also supported in Model B and B Plus modes.  Note that in Model B
 mode you will need to select the Acorn 1770 disc controller and add 
-ADFS-1.30.rom to Roms.cfg.
+ADFS-1.30.rom to the ROM configuration.
 
 You can find out more information about using discs by reading the DFS (Disc
 Filing System) guides available on the internet.
@@ -309,15 +323,18 @@ SCSI & SASI Disk Support
 
 BeebEm supports emulated SCSI and SASI hard disks.  There are 4 10MB
 pre-formatted ADFS SCSI disk images in the discims directory (the scsi?.dat
-files).  The disks can be used in Model B (need to add ADFS-1.30.rom to
-Roms.cfg), B Plus or Master 128 mode.  To use the disk images enable hard
-drive emulation on the hardware menu and press A & F12 to boot in ADFS mode
-(ignore the error for drive 4 if in Master mode).  The hard disks then
-appear as drives 0 to 3.  Floppy disks can still be accessed as drives 4 and
-5.
+files).  The disks can be used in Model B (need to add ADFS-1.30.rom to the
+ROM configuration), B Plus or Master 128 mode.  To use the disk images
+enable hard drive emulation on the hardware menu and press A & F12 to boot
+in ADFS mode (ignore the error for drive 4 if in Master mode).  The hard
+disks then appear as drives 0 to 3.  Floppy disks can still be accessed as
+drives 4 and 5.
 
 There are some demo tunes in scsi0.dat which you can listen to with the PLAY
 program.
+
+There is also the sasi0.dat file which is a Torch Z80 hard disc image (see
+README_Z80.TXT).
 
 
 Using Tape Images
@@ -366,9 +383,12 @@ Econet Support
 --------------
 
 BeebEm emulates an econet network.  This allows multiple instances of BeebEm
-to communicate with other.  Enable econet support from the Hardware menu in
-BeebEm.  Also switch off 'Freeze when inactive' so multiple instances of
-BeebEm can run at the same time.
+to communicate with other.  BeebEm also supports the AUN Econet protocols
+that enable BeebEm to communicate with other AUN compatible machines.
+
+Econet support is enabled from the Hardware menu in BeebEm.  Also switch off
+'Freeze when inactive' if you intend to run multiple instances of BeebEm so
+they can all run at the same time.
 
 Each machine attached to an econet has a station number (between 1 and 254)
 associated with it.  An econet may also have a file server attached to it
@@ -377,13 +397,21 @@ associated with it.  An econet may also have a file server attached to it
 BeebEm emulates an econet using IP datagrams.  Each station on the network
 needs a unique IP address and port number combination.  Each instance of
 BeebEm needs to know the address and port number of the other instances on
-the network, this information is configured in the 'Econet.cfg' file.
+the network, this information is configured in the 'Econet.cfg' and 'AUNMap'
+files.
 
-The default Econet.cfg file has been set up so that the first 5 instances of
-BeebEm run on a single PC will get allocated unique station and port
-numbers.  The first instance will be allocated a station number 254 (file
-server) and next 4 will be allocated station numbers 101 to 104.  See the
-notes in Econet.cfg for more details.
+The default Econet.cfg file has been set up to enable AUN mode.  Read the
+notes in the Econet.cfg and AUNMap files for more information on configuring
+AUN mode.
+
+If you just want to run a few instances of BeebEm on a single PC then the
+simplest way to is to edit the Econet.cfg file and disable AUN mode (set
+AUNMODE to 0) and uncomment the example network configuration for IP
+addresses 127.0.0.1 (near the end of Econet.cfg).  With this configured the
+first 5 instances of BeebEm run on a single PC will get allocated unique
+station and port numbers.  The first instance will be allocated a station
+number 254 (file server) and next 4 will be allocated station numbers 101 to
+104.  See the notes in Econet.cfg for more details.
 
 An econet file server enables a disk file system to be shared by all of the
 stations on the network.  Acorn produced various versions of file server
@@ -428,38 +456,52 @@ report "Line Jammed".  The waiting time is set by default to 100000 cycles
 50000'.
 
 
-Master 512 Co Processor Support
+Master 512 Co-Processor Support
 -------------------------------
-The software now supports the Master 512 Co-Processor board.
+Due to code licensing issues the Master 512 Co-Processor emulation is not
+included in this version of BeebEm.  The Master 512 Co-Processor emulation
+is included in BeebEm version 4.03, available on the BeebEm website.
 
-The Master 512 board was an add-on card to the BBC computers which allowed you
-to run DOS Plus (based on CP/M but largely MS-DOS compatible) software. 
-It was 80186 based, ran at 10 MHz came with 512K of RAM (or 1MB with third 
-party upgrades) and connected to the BBC via the Tube interface.
 
-You start the Master 512 by selecting 80186 Second Processor off the hardware
-menu. This will boot off a 10MB hard disc image (ADFS Drive 0) which comes
-pre-installed with the original DOS Plus system and the GEM application software.
-The emulator will also recognise Drive A and B if a suitable DOS Plus formatted
-disc is loaded. The emulator should recognise various disc formats (look at
-the DISK program for more info) but I would only recommend using 640K ADFS .adl
-format and 800K DOS Plus .img format discs.
+Acorn Z80 Co Processor Support
+------------------------------
+The software now supports the Acorn Z80 Co-Processor board.
 
-GEM can be started by typing 'GEM' from the command prompt. GEM uses the AMX
-mouse support which much be enabled for the mouse to work. I would recommend you
-start GEM first then enable AMX Mouse support afterwards. Please note that mouse
-support works but due to the acceleration factors built into the GEM driver, 
-mouse movement can be a bit erratic. I hope to improve this in future versions 
-of the emulator.
+The Acorn Z80 was a CP/M based system running with 64KB RAM on a Z80
+processor.
 
-The Master 512 should run most MS-DOS 2.1 compatible software but no guarantees
+You start the Acorn Z80 by selecting Acorn Z80 Co-Processor off the hardware
+menu. If you load a CP/M system disc in drive 0, the system will then boot
+to an A: prompt.
+
+I have included a CP/M Utilities disc in the installation which will boot
+the system. The Acorn Z80 originally came with 7 discs which can be download
+from my web site at :
+
+http://www.g7jjf.com/acornz80_disc_images.htm
+
+These discs contain the Acorn Z80 application software including :
+
+CPM Utilities
+BBC Basic
+Mallard Basic
+CIS Cobol
+MemoPlan
+GraphPlan
+FilePlan
+Accountant
+Nucleus
+
+You will also find some manuals for this software on my site as well.
+
+The Acorn Z80 should also run most CP/M compatible software but no guarantees
 are given for what will and what won't work.
 
 I will start a library of known good disc images at :
 
-http://www.g7jjf.com/512_disc_images.htm
+http://www.g7jjf.com/acornz80_disc_images.htm
 
-Please feel free to send me any more you know work with the Master 512.
+Please feel free to send me any more you know work with the Acorn Z80.
 
 
 Acorn ARM Second Processor Support
@@ -510,45 +552,15 @@ some sample teletext data from :
 
 http://www.g7jjf.com/teletext.htm
 
-You will need to add the ATS-3.0-1.rom to Roms.cfg and enable Teletext
-emulation on the hardware menu to get Teletext to work.
+You will need to add the ATS-3.0-1.rom to the ROM configuration and enable
+Teletext emulation on the hardware menu to get Teletext to work.
 
 
 Speech Generator
 ----------------
-The BBC B and B+ had the facility for installing a TMS5220 Speech Generator
-chip and associated TMS6100 PHROM containing the digitised voice of the BBC
-newsreader Kenneth Kendall. With these two chips installed, you could easily
-make the computer speak using the BASIC SOUND command. BeebEm now supports
-the TMS5220 and upto 16 different PHROM's. A new configuration file has been
-created to specify which PHROM's are available. The configuration file is
-phroms.cfg and contains a list of 16 PHROM filenames or EMPTY if a PHROM
-is not available. Two PHROM's are currently included with the emulator and
-are stored in the Phroms directory. They are PHROMA which was the original
-Kenneth Kendall voice and PHROMUS which is an American voice speaking a
-different dictionary.
-
-To say a word, you use the SOUND command, eg :
-
-SOUND -1, 179, 0, 0 would speak COMPUTER using PHROMA.
-
-The -1 specifies the PHROM number to use, from -1 to -16 which corresponds
-to each entry in the phroms.cfg file.
-
-A list of words available in PHROMSUS is included in the Phroms directory for
-reference. A list for PHROMA can be found in Appendix A and B of the manual
-detailed below.
-
-Please remember that the Master 128 doesn't support speech so you need to be
-in Model B/B+ mode for speech to work.
-
-For more information on using the Speech System you are referred to the Acorn 
-Speech System User Guide which you can download from :
-
-http://www.g7jjf.com/docs/acorn_speech_user_guide.pdf  (1202KB)
-
-If anyone has any more PHROM images, can they please email them to me so
-I can include them with the distribution.
+Due to code licensing issues the TMS5220 Speech Generator emulation is not
+included in this version of BeebEm.  The Speech Generator emulation is
+included in BeebEm version 4.03, available on the BeebEm website.
 
 
 Serial Port IP Options
@@ -573,9 +585,9 @@ pre-existing connection.  This handles the handshake lines if you enable
 ip232 mode, so dropping RTS will drop an outward connection.  Similarly DCD
 going up will be passed through to CTS.
 
-Add the Commstar.rom to your Roms.cfg file (see "ROM Software" above) and
-start up BeebEm.  On the Comms menu select the "IP: localhost:25232" and
-"RS432 On/Off".  Type *COMMSTAR to start CommStar.  In Commstar:
+Add the Commstar.rom to your ROM configuration (see "ROM Software" above) 
+and start up BeebEm.  On the Comms menu select the "IP: localhost:25232" 
+and "RS432 On/Off".  Type *COMMSTAR to start CommStar.  In Commstar:
   - Press M to switch to mode 0
   - Press A to turn off Auto line feed
   - Press I and then R a few times to set the receive baud to 9600
@@ -592,6 +604,9 @@ An additional option, "IP: IP232 mode", determines if the handshake lines
 are sent down the TCP/IP link or just generated locally from the presence of
 a valid connection.
 
+A second additional option, "IP: RAW comms", disables special processing of
+charater 255 (used with tcpser, so leave RAW mode off when using tcpser).
+
 If on startup, or when ticking the "RS423 On/Off" menu option, BeebEm cannot
 connect to the specified server, or if it loses connection subsequently, it
 will pop up a messagebox and disable RS423.  Select the menu option again to
@@ -600,6 +615,16 @@ try to re-connect and re-enable.
 BeebEm will emulate the correct RX baud rate.  This makes for a very
 realistic experience when talking at 1200 baud to a Viewdata host!  TX is
 just sent out as fast as it will go.
+
+
+Realtime Clock Support
+----------------------
+The RTC can be used in Master 128 mode.  The BASIC TIME$ variable can be
+used to read and update the clock:
+  PRINT TIME$
+  TIME$="Mon,22 Jan 1996"
+  TIME$="23:10:42"
+  TIME$="Mon,22 Jan 1996.23:10:42"
 
 
 Menu Options
@@ -638,11 +663,8 @@ File Menu:
   Reset        - "Power-On" reset for when a game crashes.
 
   Load State   - Load or save the state of BeebEm.  This is useful for 
-  Save State     saving your position in a game for example.  Note that ROM
-                 data is not saved so if you have changed the ROMs that are
-                 loaded when BeebEm starts (in Roms.cfg) then a restored
-                 state may not work.  State files are put in the 'BeebState'
-                 directory by default.
+  Save State     saving your position in a game for example.  State files 
+                 are put in the 'BeebState' directory by default.
 
   Quick Load   - Quickly load or save BeebEm state without having to 
   Quick Save     specify the filename.  The state is saved and loaded from 
@@ -652,6 +674,12 @@ File Menu:
                  There are keyboard shortcuts for Quicksave (keypad /) and
                  Quickload (keypad *) so you can save and load without 
                  having to go through the menus.
+
+  Screen Capture Options - Select the resolution and file format for screen 
+                   capture to file.
+  Capture Screen - Capture the BeebEm screen to a file.  You will be 
+                   prompted for a file name.  Note that you can also use
+                   the ALT+keypad 5 shortcut to capture the screen to file.
 
   Video Options - Select the resolution and how many frames get skipped for 
                   video capture.  If video and audio get out of sync when
@@ -841,11 +869,23 @@ Hardware Menu:
                         break (F12):
                             *CONFIGURE TUBE
 
-  Allow ROM writes    - Enable/disable ROM writes for each ROM slot.
-                        ROMs read at start-up are write protected by
-                        default.  Some ROM software was supplied on 
-                        small expansion boards that had some RAM on them.
-                        These ROMs require write access in order to work.
+  Torch Z80 Second Processor - Enables/disables the Z80 second processor 
+                        emulation.  See the README_Z80.TXT file for more
+                        details.
+
+  Allow SW RAM Write  - Enable/disable writes for each sideways RAM slot.
+                        See the "ROM Software" section above.
+
+  SW RAM Board On/Off - Enables Solidisk SW RAM board emulation.  The RAM
+                        bank that is enabled for writing is selected via the
+                        User VIA port B.  Set port B bits 0-3 to output
+                        (e.g. ?&FE62=15) and select the bank via port B
+                        (e.g. ?&FE60=4).
+
+  Edit ROM Configuration - Allow you to edit the ROM configuration.
+                        Note that you will usually have to press the 
+                        Break key (F12) before a new ROM configuration
+                        is recognised.
 
   Ignore Illegal Instructions - When disabled a dialog appears detailing
                                 the opcode and program counter.
@@ -862,15 +902,13 @@ Hardware Menu:
                         Serial (printing, comms & tape) emulation.  May 
                         speed BeebEm up.
 
-  Sound Block Size    - Selects the amount of sound data that is written 
-                        to the sound buffers at any one time.  The smaller
-                        block size may speed BeebEm up.
-
   Econet On/Off       - Switch Econet emulation on or off.  See the Econet 
                         section above for more details.
 
   Teletext On/Off     - Switch Teletext emulation on or off.  See the 
                         Teletext section above for more details.
+
+  Floppy Drive On/Off - Switch floppy drive emulation on or off.
 
   Hard Drive On/Off   - Switch SCSI/SASI hard drive emulation on or off.
                         See the SCSI/SASI section above for more details.
@@ -881,6 +919,10 @@ Hardware Menu:
 
   User Port RTC Module - Enables the real time clock module.  This is used 
                          by the Econet file server software.
+
+  RTC Y2K Adjust On/Off - When enabled the Master 128 real time clock is 
+                          adjusted by 20 years to allow for the Y2K issues 
+                          in the MOS.
 
 Options Menu:
 
@@ -942,6 +984,12 @@ Options Menu:
                          the folders where you last loaded or saved disc,
                          tape or state files.
 
+  Select User Data Folder - Select the location for the BeebEm data files.
+                         When creating a new folder BeebEm will copy a 
+                         default set of data files into the folder.
+                         BeebEm will default to using the last folder 
+                         selected.
+
 Help Menu:
 
   View README          - View this file.
@@ -976,6 +1024,9 @@ Note: Command line options -Model and -Tube are no longer supported.
 e.g. Run Zalaga with its own preferences:
    BeebEm -Prefs ZalagaPrefs.cfg Zalaga.ssd
 
+e.g. Run the Torch Z80 with its own preferences:
+   BeebEm -Prefs Torch.cfg -Roms Roms_Torch.cfg
+
 e.g. Run BeebEm with an alternative set of data files:
    BeebEm -Data \Users\Mike\Documents\BeebEmGames
 
@@ -986,7 +1037,7 @@ e.g. To load and run the test tape image:
    BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef
 
 These command lines can be put into Windows shortcuts or Windows scripts.
-See the BeebEmLocal.vbs script for example.
+See the BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.
 
 If the specified <data directory> does not exist BeebEm will offer to create
 it.  BeebEm will copy a default set of data to the data directory.  The
@@ -1255,6 +1306,10 @@ Thanks go to the following people for contributing to BeebEm:
   Jon Welch
   Rob O'Donnell
   Steve Pick
+  Greg Cook
+  Theo Lindebaum
+  David Sharp
+  Rich Talbot-Watkins
 
 Thanks also to Jordon Russell Software for the excellent Inno Setup
 installation software: <http://www.jrsoftware.org/isinfo.php>
@@ -1266,3 +1321,5 @@ some time to add them.
 Mike Wyatt
 beebem.support@googlemail.com
 http://www.mkw.me.uk/beebem
+
+Copyright (C) 2009  Mike Wyatt

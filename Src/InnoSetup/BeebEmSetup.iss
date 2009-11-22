@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=BeebEm
-AppVerName=BeebEm V4.03
+AppVerName=BeebEm V4.12
 AppPublisher=Mike Wyatt
 AppPublisherURL=http://www.mkw.me.uk/beebem/index.html
 AppSupportURL=http://www.mkw.me.uk/beebem/index.html
@@ -11,14 +11,15 @@ AppUpdatesURL=http://www.mkw.me.uk/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
 OutputDir=.
-OutputBaseFilename=BeebEm403
+OutputBaseFilename=BeebEm412
 Compression=lzma
 SolidCompression=yes
-VersionInfoVersion=4.0.3.0
+VersionInfoVersion=4.12.0.0
 
 [Registry]
-Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.03; ValueType: string; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.12; ValueType: string; Flags: uninsdeletekey
 Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: InstallPath; ValueData: {app}; ValueType: string; Flags: uninsdeletekey
+Root: HKCU; Subkey: SOFTWARE\BeebEm; Flags: uninsdeletekey
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
@@ -32,6 +33,11 @@ Name: {app}\msvcp80.dll; Type: files
 Name: {app}\msvcr80.dll; Type: files
 Name: {app}\Documents; Type: filesandordirs
 Name: {app}\Hardware; Type: filesandordirs
+Name: {userdocs}\BeebEm\Econet.cfg; Type: files
+Name: {userdocs}\BeebEm\Default.kmap; Type: files
+Name: {userdocs}\BeebEm\DefaultUser.kmap; Type: files
+Name: {userdocs}\BeebEm\Logical.kmap; Type: files
+Name: {userdocs}\BeebEm\USLogical.kmap; Type: files
 
 [Dirs]
 Name: {userdocs}\BeebEm
@@ -43,6 +49,7 @@ Source: ..\..\Hardware\*; DestDir: {app}\Hardware; Flags: ignoreversion recurses
 Source: ..\..\UserData\*; DestDir: {app}\UserData; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\BeebEmLocal.vbs; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\BeebEmTorch.vbs; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\CHANGES.txt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\COPYRIGHT.txt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\DriveMotor.snd; DestDir: {app}; Flags: ignoreversion
@@ -51,6 +58,7 @@ Source: ..\..\HeadSeek.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\HeadStep.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\HeadUnload.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\README.txt; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\README_Z80.TXT; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOff.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOn.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\Src.zip; DestDir: {app}; Flags: ignoreversion
@@ -65,6 +73,7 @@ Source: {app}\Tapes\*; DestDir: {userdocs}\BeebEm\Tapes; AfterInstall: DeleteOld
 Source: {app}\Econet.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Econet.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
 Source: {app}\Phroms.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Phroms.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
 Source: {app}\Roms.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Roms.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
+Source: {app}\Roms_Torch.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Roms_Torch.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
 
 [Icons]
 Name: {group}\BeebEm; Filename: {app}\BeebEm.exe

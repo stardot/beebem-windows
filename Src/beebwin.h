@@ -1,22 +1,29 @@
-/****************************************************************************/
-/*                               Beebem                                     */
-/*                               ------                                     */
-/* This program may be distributed freely within the following restrictions:*/
-/*                                                                          */
-/* 1) You may not charge for this program or for any part of it.            */
-/* 2) This copyright message must be distributed with all copies.           */
-/* 3) This program must be distributed complete with source code.  Binary   */
-/*    only distribution is not permitted.                                   */
-/* 4) The author offers no warrenties, or guarentees etc. - you use it at   */
-/*    your own risk.  If it messes something up or destroys your computer   */
-/*    thats YOUR problem.                                                   */
-/* 5) You may use small sections of code from this program in your own      */
-/*    applications - but you must acknowledge its use.  If you plan to use  */
-/*    large sections then please ask the author.                            */
-/*                                                                          */
-/* If you do not agree with any of the above then please do not use this    */
-/* program.                                                                 */
-/****************************************************************************/
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  Nigel Magnay
+Copyright (C) 1997  Mike Wyatt
+Copyright (C) 1998  Robert Schmidt
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2004  Ken Lowe
+Copyright (C) 2004  Rob O'Donnell
+Copyright (C) 2005  Jon Welch
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 
 #ifndef BEEBWIN_HEADER
@@ -122,6 +129,7 @@ class BeebWin  {
 	~BeebWin();
  
 	void Initialise();
+	void ApplyPrefs();
 	void Shutdown();
 
     void UpdateModelType();
@@ -212,6 +220,8 @@ class BeebWin  {
 	void FindCommandLineFile(void);
 	void HandleCommandLineFile(void);
 	bool CheckUserDataPath(void);
+	void SelectUserDataPath(void);
+	void StoreUserDataPath(void);
 	void NewTapeImage(char *FileName);
 	const char *GetAppPath(void) { return m_AppPath; }
 	const char *GetUserDataPath(void) { return m_UserDataPath; }
@@ -230,6 +240,10 @@ class BeebWin  {
 	void ResetClipboard(void);
 	void CopyKey(int data);
 	int PasteKey(int addr);
+	void CaptureBitmapPending(bool autoFilename);
+
+	void SaveEmuUEF(FILE *SUEF);
+	void LoadEmuUEF(FILE *SUEF,int Version);
 
 	unsigned char cols[256];
     HMENU		m_hMenu;
@@ -257,6 +271,7 @@ class BeebWin  {
 	int			m_DiscTypeSelection;
 	int			m_MenuIdTiming;
 	int			m_FPSTarget;
+	BOOL		m_JoystickCaptured;
 	JOYCAPS		m_JoystickCaps;
 	int			m_MenuIdSticks;
 	BOOL		m_HideCursor;
@@ -334,6 +349,15 @@ class BeebWin  {
 	int			m_KbdCmdDelay;
 	int			m_KbdCmdLastCycles;
 	bool		m_NoAutoBoot;
+	unsigned char RomWritePrefs[16];
+
+	// Bitmap capture vars
+	ULONG_PTR   m_gdiplusToken;
+	bool        m_CaptureBitmapPending;
+	bool        m_CaptureBitmapAutoFilename;
+	char        m_CaptureFileName[MAX_PATH];
+	int			m_MenuIdCaptureResolution;
+	int			m_MenuIdCaptureFormat;
 
 	// AVI vars
 	bmiData 	m_Avibmi;
@@ -420,7 +444,6 @@ private:
 	void ExitDX9(void);
 	void RenderDX9(void);
 
-	void GetRomMenu(void);				// LRW  Added for individual ROM/Ram
 	void TranslateWindowSize(void);
 	void TranslateSampleRate(void);
 	void TranslateVolume(void);
@@ -443,6 +466,9 @@ private:
 	void TogglePrinter(void);
 	void TranslatePrinterPort(void);
 	void CaptureVideo(void);
+	void CaptureBitmap(int x, int y, int sx, int sy);
+	bool GetImageFile(char *FileName);
+	bool GetImageEncoderClsid(WCHAR *mimeType, CLSID *encoderClsid);
 	void InitTextToSpeech(void);
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 							TextToSpeechSearchType type);
@@ -459,6 +485,12 @@ private:
 	void SaveUserKeyMap(void);
 	bool ReadKeyMap(char *filename, KeyMap *keymap);
 	bool WriteKeyMap(char *filename, KeyMap *keymap);
+	bool RegCreateKey(HKEY hKeyRoot, LPSTR lpSubKey);
+	bool RegGetBinaryValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, PVOID pData, int* pnSize);
+	bool RegSetBinaryValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, PVOID pData, int* pnSize);
+	bool RegGetStringValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, LPSTR pData, DWORD dwSize);
+	bool RegSetStringValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, LPSTR pData);
+	void EditROMConfig(void);
 
 	// Preferences
 	PrefsMap m_Prefs;
@@ -474,7 +506,4 @@ private:
 
 }; /* BeebWin */
 
-void SaveEmuUEF(FILE *SUEF);
-void LoadEmuUEF(FILE *SUEF,int Version);
-  
 #endif

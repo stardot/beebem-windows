@@ -1,3 +1,23 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 2007  Mike Wyatt
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 // BeebWin preferences support
 
 #include <stdio.h>
@@ -9,7 +29,6 @@
 #include "beebwin.h"
 #include "beebemrc.h"
 #include "6502core.h"
-#include "cRegistry.h"
 #include "disc8271.h"
 #include "disc1770.h"
 #include "sysvia.h"
@@ -28,10 +47,12 @@
 #include "debug.h"
 #include "scsi.h"
 #include "sasi.h"
-//#include "z80mem.h"
-//#include "z80.h"
+#include "z80mem.h"
+#include "z80.h"
 #include "userkybd.h"
+#ifdef SPEECH_ENABLED
 #include "speech.h"
+#endif
 #include "teletext.h"
 #include "avi.h"
 #include "csw.h"
@@ -75,8 +96,6 @@ extern unsigned char HideMenuEnabled;
 extern char DiscLedColour;
 extern const char *WindowTitle;
 extern unsigned char CMOSDefault[64];
-
-cRegistry SysReg;
 
 void BeebWin::LoadPreferences()
 {
@@ -126,6 +145,7 @@ void BeebWin::LoadPreferences()
 	// Remove obsolete prefs
 	m_Prefs.erase("UserKeyMapRow");
 	m_Prefs.erase("UserKeyMapCol");
+	m_Prefs.erase("ShowBottomCursorLine");
 
 	if(!PrefsGetBinaryValue("MachineType",&MachineType,1))
 		MachineType=0;
@@ -183,8 +203,6 @@ void BeebWin::LoadPreferences()
 	DiscLedColour=LED_COLOUR_TYPE;
 	LEDs.ShowDisc=(LED_SHOW_DISC != 0);
 	LEDs.ShowKB=LED_SHOW_KB;
-
-	PrefsGetBinaryValue("ShowBottomCursorLine",&ShowCursorLine,1);
 
 	if (PrefsGetDWORDValue("MotionBlur",dword))
 		m_MotionBlur = dword;
@@ -372,6 +390,8 @@ void BeebWin::LoadPreferences()
 
 	if (!PrefsGetBinaryValue("IP232mode",&IP232mode,1))
 		IP232mode=0;
+	if (!PrefsGetBinaryValue("IP232raw",&IP232raw,1))
+		IP232raw=0;
 	if (PrefsGetDWORDValue("IP232customport",dword))
 		IP232customport = dword;
 	else
@@ -388,25 +408,38 @@ void BeebWin::LoadPreferences()
 	if (!PrefsGetBinaryValue("EconetEnabled",&EconetEnabled,1))
 		EconetEnabled=0;
 
+#ifdef SPEECH_ENABLED
 	if (!PrefsGetBinaryValue("SpeechEnabled",&flag,1))
 		SpeechDefault=0;
 	else
 		SpeechDefault=flag;
+#endif
+
+	if (!PrefsGetBinaryValue("SWRAMWritable",RomWritePrefs,16))
+	{
+		for (int slot = 0; slot < 16; ++slot)
+			RomWritePrefs[slot] = 1;
+	}
+
+	if (!PrefsGetBinaryValue("SWRAMBoard",&SWRAMBoardEnabled,1))
+		SWRAMBoardEnabled=0;
 
 	if (!PrefsGetBinaryValue("ArmTube",&ArmTube,1))
 		ArmTube=0;
 
-	//if (!PrefsGetBinaryValue("TorchTube",&TorchTube,1))
-	//	TorchTube=0;
+	if (!PrefsGetBinaryValue("TorchTube",&TorchTube,1))
+		TorchTube=0;
 
-	//if (!PrefsGetBinaryValue("AcornZ80",&AcornZ80,1))
-	//	AcornZ80=0;
+	if (!PrefsGetBinaryValue("AcornZ80",&AcornZ80,1))
+		AcornZ80=0;
 
 	if (!PrefsGetBinaryValue("TubeEnabled",&TubeEnabled,1))
 		TubeEnabled=0;
 
+#ifdef M512COPRO_ENABLED
 	if (!PrefsGetBinaryValue("Tube186Enabled",&Tube186Enabled,1))
 		Tube186Enabled=0;
+#endif
     
 	if (!PrefsGetBinaryValue("OpCodes",&OpCodes,1))
 		OpCodes=2;
@@ -414,11 +447,13 @@ void BeebWin::LoadPreferences()
 		BHardware=0;
 	if (!PrefsGetBinaryValue("Teletext Half Mode",&THalfMode,1))
 		THalfMode=0;
-	if (!PrefsGetBinaryValue("SoundBlockSize",&SBSize,1))
-		SBSize=0;
 
 	if (!PrefsGetBinaryValue("TeleTextAdapterEnabled",&TeleTextAdapterEnabled,1))
 		TeleTextAdapterEnabled=0;
+
+	if (!PrefsGetBinaryValue("FloppyDriveEnabled",&Disc8271Enabled,1))
+		Disc8271Enabled=1;
+	Disc1770Enabled=Disc8271Enabled;
 
 	if (!PrefsGetBinaryValue("HardDriveEnabled",&HardDriveEnabled,1))
 		HardDriveEnabled=0;
@@ -427,6 +462,9 @@ void BeebWin::LoadPreferences()
 		RTC_Enabled=0;
 	else
 		RTC_Enabled=flag;
+
+	if (!PrefsGetBinaryValue("RTCY2KAdjust",&RTCY2KAdjust,1))
+		RTCY2KAdjust=1;
 
 	if (PrefsGetDWORDValue("CaptureResolution",dword))
 		m_MenuIdAviResolution = dword;
@@ -437,6 +475,16 @@ void BeebWin::LoadPreferences()
 		m_MenuIdAviSkip = dword;
 	else
 		m_MenuIdAviSkip = IDM_VIDEOSKIP1;
+
+	if (PrefsGetDWORDValue("BitmapCaptureResolution",dword))
+		m_MenuIdCaptureResolution = dword;
+	else
+		m_MenuIdCaptureResolution = IDM_CAPTURERES3;
+
+	if (PrefsGetDWORDValue("BitmapCaptureFormat",dword))
+		m_MenuIdCaptureFormat = dword;
+	else
+		m_MenuIdCaptureFormat = IDM_CAPTUREBMP;
 
 	RECT rect;
 	if (PrefsGetBinaryValue("WindowPos",&rect,sizeof(rect)))
@@ -502,14 +550,18 @@ void BeebWin::LoadPreferences()
 	{
 		PrefsSetStringValue("AVIPath", "");
 	}
+	if (m_Prefs.find("ImagePath") == m_Prefs.end())
+	{
+		PrefsSetStringValue("ImagePath", "");
+	}
 
 	// Update prefs version
-	PrefsSetStringValue("PrefsVersion", "1.4");
+	PrefsSetStringValue("PrefsVersion", "1.7");
 
 	// Windows key enable/disable still comes from registry
 	int binsize = 24;
-	if (SysReg.GetBinaryValue(HKEY_LOCAL_MACHINE,CFG_KEYBOARD_LAYOUT,
-							  CFG_SCANCODE_MAP,keyData,&binsize) && binsize==24)
+	if (RegGetBinaryValue(HKEY_LOCAL_MACHINE,CFG_KEYBOARD_LAYOUT,
+						  CFG_SCANCODE_MAP,keyData,&binsize) && binsize==24)
 		m_DisableKeysWindows=1;
 	else
 		m_DisableKeysWindows=0;
@@ -544,7 +596,6 @@ void BeebWin::SavePreferences(bool saveAll)
 		PrefsSetBinaryValue("HideMenuEnabled",&HideMenuEnabled,1);
 		LEDByte=(DiscLedColour<<2)|((LEDs.ShowDisc?1:0)<<1)|(LEDs.ShowKB?1:0);
 		PrefsSetBinaryValue("LED Information",&LEDByte,1);
-		PrefsSetBinaryValue("ShowBottomCursorLine",&ShowCursorLine,1);
 		flag = m_MotionBlur;
 		PrefsSetDWORDValue( "MotionBlur", m_MotionBlur);
 		PrefsSetBinaryValue("MotionBlurIntensities",m_BlurIntensities,8);
@@ -609,33 +660,46 @@ void BeebWin::SavePreferences(bool saveAll)
 		PrefsSetBinaryValue("IP232custom",&IP232custom,1);
 		dword = IP232customport;
 		PrefsSetBinaryValue("IP232mode",&IP232mode,1);
+		PrefsSetBinaryValue("IP232raw",&IP232raw,1);
 		PrefsSetDWORDValue("IP232customport", dword);
 		PrefsSetStringValue("IP232customip", m_customip);
-
 
 		PrefsSetBinaryValue("SerialPort",&SerialPort,1);
 
 		PrefsSetBinaryValue("EconetEnabled",&EconetEnabled,1); //Rob
+#ifdef SPEECH_ENABLED
 		flag=SpeechDefault;
 		PrefsSetBinaryValue("SpeechEnabled",&flag,1);
+#endif
+
+		for (int slot = 0; slot < 16; ++slot)
+			RomWritePrefs[slot] = RomWritable[slot];
+		PrefsSetBinaryValue("SWRAMWritable",RomWritePrefs,16);
+		PrefsSetBinaryValue("SWRAMBoard",&SWRAMBoardEnabled,1);
 
 		PrefsSetBinaryValue("ArmTube",&ArmTube,1);
-		//PrefsSetBinaryValue("TorchTube",&TorchTube,1);
-		//PrefsSetBinaryValue("AcornZ80",&AcornZ80,1);
+		PrefsSetBinaryValue("TorchTube",&TorchTube,1);
+		PrefsSetBinaryValue("AcornZ80",&AcornZ80,1);
 		PrefsSetBinaryValue("TubeEnabled",&TubeEnabled,1);
+#ifdef M512COPRO_ENABLED
 		PrefsSetBinaryValue("Tube186Enabled",&Tube186Enabled,1);
+#endif
 
 		PrefsSetBinaryValue("OpCodes",&OpCodes,1);
 		PrefsSetBinaryValue("Basic Hardware",&BHardware,1);
 		PrefsSetBinaryValue("Teletext Half Mode",&THalfMode,1);
-		PrefsSetBinaryValue("SoundBlockSize",&SBSize,1);
 		PrefsSetBinaryValue("TeleTextAdapterEnabled",&TeleTextAdapterEnabled,1);
+		PrefsSetBinaryValue("FloppyDriveEnabled",&Disc8271Enabled,1);
 		PrefsSetBinaryValue("HardDriveEnabled",&HardDriveEnabled,1);
 		flag = RTC_Enabled;
 		PrefsSetBinaryValue("RTCEnabled",&flag,1);
+		PrefsSetBinaryValue("RTCY2KAdjust",&RTCY2KAdjust,1);
 
 		PrefsSetDWORDValue("CaptureResolution",m_MenuIdAviResolution);
 		PrefsSetDWORDValue("FrameSkip",m_MenuIdAviSkip);
+
+		PrefsSetDWORDValue("BitmapCaptureResolution",m_MenuIdCaptureResolution);
+		PrefsSetDWORDValue("BitmapCaptureFormat",m_MenuIdCaptureFormat);
 
 		RECT rect;
 		GetWindowRect(m_hWnd,&rect);

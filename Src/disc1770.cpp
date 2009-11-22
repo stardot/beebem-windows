@@ -1,27 +1,29 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2005  Greg Cook
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 /*
 WD1770 FDC Disc Support for BeebEm
 
 Written by Richard Gellman - Feb 2001
-
-You may not distribute this entire file separate from the whole BeebEm distribution.
-
-You may use sections or all of this code for your own uses, provided that:
-
-1) It is not a separate file in itself.
-2) This copyright message is included
-3) Acknowledgement is made to the author, and any aubsequent authors of additional code.
-
-The code may be modified as required, and freely distributed as such authors see fit,
-provided that:
-
-1) Acknowledgement is made to the author, and any subsequent authors of additional code
-2) Indication is made of modification.
-
-Absolutely no warranties/guarantees are made by using this code. You use and/or run this code
-at your own risk. The code is classed by the author as "unlikely to cause problems as far as
-can be determined under normal use".
-
--- end of legal crap - Richard Gellman :) */
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +33,8 @@ can be determined under normal use".
 #include "main.h"
 #include "beebemrc.h"
 #include "uefstate.h"
+#include "z80mem.h"
+#include "z80.h"
 #include "beebsound.h"
 
 extern FILE *tlog;
@@ -63,6 +67,7 @@ bool HeadLoaded[2]={FALSE,FALSE};
 int ByteCount=0;
 long DataPos;
 char errstr[250];
+unsigned char Disc1770Enabled=1;
 
 /* File names of loaded disc images */
 static char DscFileNames[2][256];
@@ -117,6 +122,8 @@ static void ResetStatus(unsigned char bit) {
 }
 
 unsigned char Read1770Register(unsigned char Register) {
+	if (!Disc1770Enabled)
+		return 0xFF;
 	// ResetStatus(5);
 	//fprintf(fdclog,"Read of Register %d - Status is %02X\n",Register,Status);
 	// Read 1770 Register. Note - NOT the FDC Control register @ &FE24
@@ -168,6 +175,8 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 	unsigned char ComBits,HComBits;
     int SectorCycles=0; // Number of cycles to wait for sector to come round
 
+	if (!Disc1770Enabled)
+		return;
     //fprintf(fdclog,"Write of %02X to Register %d\n",Value, Register);
 	// Write 1770 Register - NOT the FDC Control register @ &FE24
 	if (Register==0) {
@@ -808,6 +817,10 @@ void Reset1770(void) {
 	CurrentDisc=Disc0;
 	CurrentDrive=0;
 	CurrentHead[0]=CurrentHead[1]=0;
+	DiscStrt[0]=0; 
+	DiscStrt[1]=0; 
+	if (Disc0) fseek(Disc0,0,SEEK_SET);
+	if (Disc1) fseek(Disc1,0,SEEK_SET);
 	SetMotor(0,FALSE);
 	SetMotor(1,FALSE);
 	Status=0;

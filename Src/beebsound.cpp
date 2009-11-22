@@ -1,26 +1,28 @@
-/****************************************************************************/
-/*              Beebem - (c) David Alan Gilbert 1994/1995                   */
-/*              -----------------------------------------                   */
-/* This program may be distributed freely within the following restrictions:*/
-/*                                                                          */
-/* 1) You may not charge for this program or for any part of it.            */
-/* 2) This copyright message must be distributed with all copies.           */
-/* 3) This program must be distributed complete with source code.  Binary   */
-/*    only distribution is not permitted.                                   */
-/* 4) The author offers no warrenties, or guarentees etc. - you use it at   */
-/*    your own risk.  If it messes something up or destroys your computer   */
-/*    thats YOUR problem.                                                   */
-/* 5) You may use small sections of code from this program in your own      */
-/*    applications - but you must acknowledge its use.  If you plan to use  */
-/*    large sections then please ask the author.                            */
-/*                                                                          */
-/* If you do not agree with any of the above then please do not use this    */
-/* program.                                                                 */
-/* Please report any problems to the author at beebem@treblig.org           */
-/****************************************************************************/
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2008  Rich Talbot-Watkins
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 /* Win32 port - Mike Wyatt 7/6/97 */
 /* Conveted Win32 port to use DirectSound - Mike Wyatt 11/1/98 */
-// 14/04/01 - Proved that I AM better than DirectSound, by fixing the code thereof ;P
 
 #include "beebsound.h"
 
@@ -47,13 +49,15 @@
 #include "uefstate.h"
 #include "avi.h"
 #include "main.h"
+#ifdef SPEECH_ENABLED
 #include "speech.h"
+#endif
 
 extern AVIWriter *aviWriter;
 
 //  #define DEBUGSOUNDTOFILE
 
-#define PREFSAMPLERATE 22050
+#define PREFSAMPLERATE 44100
 #define MAXBUFSIZE 32768
 
 static unsigned char SoundBuf[MAXBUFSIZE];
@@ -98,7 +102,6 @@ char SoundExponentialVolume = 1;
 
 /* Number of places to shift the volume */
 #define VOLMAG 3
-#define WRITE_ADJUST ((samplerate/50)*2)
 
 int Speech[3];
 
@@ -135,13 +138,12 @@ void PlayUpTil(double DestTime);
 int GetVol(int vol);
 BOOL bReRead=FALSE;
 volatile BOOL bDoSound=TRUE;
-int WriteOffset=0; int SampleAdjust=0;
+int WriteOffset=0;
 LARGE_INTEGER PFreq,LastPCount,CurrentPCount;
 double CycleRatio;
 struct AudioType TapeAudio; // Tape audio decoder stuff
 bool TapeSoundEnabled;
 int PartSamples=1;
-int SBSize=1;
 bool Playing;
 
 /****************************************************************************/
@@ -162,7 +164,7 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 		bReRead=FALSE;
 		// Blank off the buffer
 		hr = DSB1->Lock(0, 0, &lpvPtr1, 
-		&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
+						&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
 		if(hr == DSERR_BUFFERLOST)
 		{
 			hr = DSB1->Restore();
@@ -179,19 +181,19 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 
 	if (bReRead) {
 		DSB1->GetCurrentPosition(NULL,&CWC);
-		WriteOffset=CWC+WRITE_ADJUST;
+		WriteOffset=CWC+SoundBufferSize*2;
 		if (WriteOffset>=TSoundBufferSize) WriteOffset-=TSoundBufferSize;
 		bReRead=FALSE;
 	} 
 	// Obtain write pointer.
 	hr = DSB1->Lock(WriteOffset, SoundBufferSize, &lpvPtr1, 
-	&dwBytes1, &lpvPtr2, &dwBytes2, 0);
+					&dwBytes1, &lpvPtr2, &dwBytes2, 0);
 	if(hr == DSERR_BUFFERLOST)
 	{
 		hr = DSB1->Restore();
 		if (hr == DS_OK)
 			hr = DSB1->Lock(WriteOffset, SoundBufferSize,
-				&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
+							&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
 	}
 	if(DS_OK == hr)
 	{
@@ -207,16 +209,12 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	// Update pointers
 	WriteOffset+=SoundBufferSize;
 	if (WriteOffset>=TSoundBufferSize) WriteOffset-=TSoundBufferSize;
+
 	// Check for pointer desync
 	DSB1->GetCurrentPosition(NULL,&CWC);
 	CDiff=WriteOffset-CWC;
 	if (CDiff<0) CDiff=(WriteOffset+TSoundBufferSize)-CWC;
-	if (abs(CDiff)>(signed)(WRITE_ADJUST*2)) bReRead=TRUE; 
-	SampleAdjust--;
-	if (SampleAdjust==0) {
-		SampleAdjust=2;
-		SoundBufferSize=(SBSize)?444:220; // 110
-	} else SoundBufferSize=(SBSize)?440:221; // 111
+	if (abs(CDiff)>(signed)(SoundBufferSize*4)) bReRead=TRUE; 
  	if (!Playing) {
 		DSB1->SetCurrentPosition(SoundBufferSize+1);
 		hr=DSB1->Play(0,0,DSBPLAY_LOOPING);
@@ -256,6 +254,7 @@ void PlayUpTil(double DestTime) {
 	int SpeechPtr = 0;
 	int i;
 
+#ifdef SPEECH_ENABLED
 	if (MachineType != 3 && SpeechEnabled)
 	{
 		SpeechPtr = 0;
@@ -265,6 +264,7 @@ void PlayUpTil(double DestTime) {
 			len = MAXBUFSIZE;
 		tms5220_update(SpeechBuf, len);
 	}
+#endif
 
 	while (DestTime>OurTime) {
 
@@ -402,8 +402,10 @@ void PlayUpTil(double DestTime) {
 				}
 			}
 
+#ifdef SPEECH_ENABLED
 			// Mix in speech sound
 			if (SpeechEnabled) if (MachineType != 3) tmptotal += (SpeechBuf[SpeechPtr++]-128)*10;
+#endif
 
 			// Mix in sound samples here
 			for (i = 0; i < NUM_SOUND_SAMPLES; ++i) {
@@ -537,8 +539,8 @@ HRESULT CreateSecondarySoundBuffer(void)
 
 	// Need default controls (pan, volume, frequency).
 	dsbdesc.dwFlags = DSBCAPS_GETCURRENTPOSITION2; // | DSBCAPS_STICKYFOCUS;
-	dsbdesc.dwBufferBytes = 32768;
-	TSoundBufferSize=32768;
+	dsbdesc.dwBufferBytes = MAXBUFSIZE;
+	TSoundBufferSize = MAXBUFSIZE;
 	dsbdesc.lpwfxFormat = (LPWAVEFORMATEX)&wf;
 
 	// Create buffer.
@@ -708,8 +710,7 @@ void SoundInit() {
   if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000; 
   if (SoundSampleRate == 22050) SoundAutoTriggerTime = 10000; 
   if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000; 
-  SampleAdjust=4;
-  SoundBufferSize=111;
+  SoundBufferSize=SoundSampleRate/50;
   LoadSoundSamples();
   bReRead=TRUE;
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;

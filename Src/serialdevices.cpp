@@ -1,9 +1,29 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 2006  Jon Welch
+Copyright (C) 2009  Rob O'Donnell
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 /*
  *  serialdevices.cc
  *  BeebEm3
  *
  *  Created by Jon Welch on 28/08/2006.
- *  Copyright 2006 __MyCompanyName__. All rights reserved.
  *
 
  Remote serial port & IP232 support by Rob O'Donnell Mar 2009.
@@ -53,6 +73,7 @@ unsigned char EthernetPortEnabled;
 unsigned char IP232localhost;
 unsigned char IP232custom;
 unsigned char IP232mode;
+unsigned char IP232raw;
 unsigned int IP232customport;
 char IP232customip [20];
 bool ip232_flag_received = FALSE;
@@ -521,7 +542,7 @@ int space, bufflen;
 							}
 							else
 							{
-								if (buff[j] == 255 && IP232mode)
+								if (buff[j] == 255 && IP232raw == 0)
 								{
 									ip232_flag_received = true;
 								}

@@ -1,6 +1,7 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "beebemrc.h"
+#include "version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -201,8 +202,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,0,3,0
- PRODUCTVERSION 4,0,3,0
+ FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+ PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -220,12 +221,12 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator"
             VALUE "CompanyName", "Mike Wyatt"
             VALUE "FileDescription", "BeebEm"
-            VALUE "FileVersion", "4.03"
+            VALUE "FileVersion", VERSION_STRING
             VALUE "InternalName", "BeebEm"
             VALUE "LegalCopyright", "Copyright © 2009"
             VALUE "OriginalFilename", "BeebEm.exe"
             VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", "4.03"
+            VALUE "ProductVersion", VERSION_STRING
         END
     END
     BLOCK "VarFileInfo"
@@ -314,6 +315,28 @@ BEGIN
     LTEXT           "Select the files to export:",IDC_STATIC,7,7,180,9
 END
 
+IDD_ROMCONFIG DIALOGEX 0, 0, 291, 204
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "BeebEm ROM Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,235,168,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,235,183,50,14
+    PUSHBUTTON      "BBC B",IDC_BBCB,6,7,50,14
+    PUSHBUTTON      "Integra B",IDC_INTEGRAB,58,7,50,14
+    PUSHBUTTON      "BBC B Plus",IDC_BBCBPLUS,110,7,50,14
+    PUSHBUTTON      "Master 128",IDC_MASTER128,162,7,50,14
+    EDITTEXT        IDC_MODEL,239,7,46,14,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "Model:",IDC_STATIC,216,9,22,8
+    CONTROL         "",IDC_ROMLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,25,221,172
+    PUSHBUTTON      "Select ROM",IDC_SELECTROM,235,40,50,14
+    PUSHBUTTON      "Mark Writable",IDC_MARKWRITABLE,235,56,50,14
+    PUSHBUTTON      "RAM",IDC_RAM,235,72,50,14
+    PUSHBUTTON      "Empty",IDC_EMPTY,235,88,50,14
+    PUSHBUTTON      "Load Config",IDC_LOAD,235,120,50,14
+    PUSHBUTTON      "Save Config",IDC_SAVE,235,136,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -344,6 +367,14 @@ BEGIN
         RIGHTMARGIN, 187
         TOPMARGIN, 7
         BOTTOMMARGIN, 293
+    END
+
+    IDD_ROMCONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 285
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 197
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -382,6 +413,20 @@ BEGIN
         MENUITEM "&Save State",                 IDM_SAVESTATE
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
         MENUITEM "Quick Sa&ve",                 IDM_QUICKSAVE
+        MENUITEM SEPARATOR
+        POPUP "Screen Capture Options"
+        BEGIN
+            MENUITEM "Capture at Display Resolution", IDM_CAPTURERES1
+            MENUITEM "Capture at 1280x1024",          IDM_CAPTURERES2
+            MENUITEM "Capture at 640x512",            IDM_CAPTURERES3
+            MENUITEM "Capture at 320x256",            IDM_CAPTURERES4
+            MENUITEM SEPARATOR
+            MENUITEM "BMP Format",                    IDM_CAPTUREBMP
+            MENUITEM "JPEG Format",                   IDM_CAPTUREJPEG
+            MENUITEM "GIF Format",                    IDM_CAPTUREGIF
+            MENUITEM "PNG Format",                    IDM_CAPTUREPNG
+        END
+        MENUITEM "Capture Screen",                    IDM_CAPTURESCREEN
         MENUITEM SEPARATOR
         POPUP "Video Options"
         BEGIN
@@ -457,7 +502,8 @@ BEGIN
             MENUITEM "IP: localhost:25232",         ID_IP232LOCALHOST
             MENUITEM "IP: Custom destination",      ID_IP232CUSTOM
             MENUITEM SEPARATOR
-            MENUITEM "IP: IP232 mode",              ID_IP232MODE
+            MENUITEM "IP: IP232 handshake",         ID_IP232MODE
+            MENUITEM "IP: RAW comms",               ID_IP232RAW
         END
     END
     POPUP "&View"
@@ -512,7 +558,6 @@ BEGIN
             MENUITEM "Show &Keyboard LEDs",         ID_SHOW_KBLEDS
             MENUITEM "Show &Disc LEDs",             ID_SHOW_DISCLEDS
         END
-        MENUITEM "Show Bottom Cursor Line",     ID_SHOWCURSORLINE
         POPUP "&Motion Blur"
         BEGIN
             MENUITEM "Off",                         IDM_BLUR_OFF
@@ -552,7 +597,9 @@ BEGIN
     POPUP "&Sound"
     BEGIN
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
+#ifdef SPEECH_ENABLED
         MENUITEM "Speech On/Off",               IDM_SPEECH
+#endif
         MENUITEM "Sound Chip",                  IDM_SOUNDCHIP
         MENUITEM SEPARATOR
         POPUP "Sound &Effects"
@@ -608,11 +655,18 @@ BEGIN
             MENUITEM "Native &8271",                ID_8271
             MENUITEM "&Select FDC Board...",        ID_FDC_DLL
         END
-        MENUITEM "65C02 &Second Processor",     IDM_TUBE
-        MENUITEM "&Master 512 Second Processor", IDM_TUBE186
-        MENUITEM "ARM Second Processor",        IDM_ARM
+        POPUP "&Second Processor"
+        BEGIN
+            MENUITEM "65C02 &Second Processor",     IDM_TUBE
+#ifdef M512COPRO_ENABLED
+            MENUITEM "&Master 512 Second Processor", IDM_TUBE186
+#endif
+            MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
+            MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
+            MENUITEM "ARM Second Processor",        IDM_ARM
+        END
         MENUITEM SEPARATOR
-        POPUP "&Allow ROM writes"
+        POPUP "&Allow SW RAM Write"
         BEGIN
             MENUITEM "Rom &0",                      IDM_ALLOWWRITES_ROM0, CHECKED
             MENUITEM "Rom &1",                      IDM_ALLOWWRITES_ROM1, CHECKED
@@ -631,6 +685,8 @@ BEGIN
             MENUITEM "Rom &E",                      IDM_ALLOWWRITES_ROME, CHECKED
             MENUITEM "Rom &F",                      IDM_ALLOWWRITES_ROMF, CHECKED
         END
+        MENUITEM "SW RAM Board On/Off", IDM_SWRAMBOARD
+        MENUITEM "Edit ROM Configuration", IDM_ROMCONFIG
         MENUITEM SEPARATOR
         MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
         POPUP "&Undocumented Instructions"
@@ -642,17 +698,14 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
         MENUITEM "&Teletext Half Mode",         ID_TSTYLE
-        POPUP "Sound Block Si&ze"
-        BEGIN
-            MENUITEM "&1772 Bytes",                 ID_1773
-            MENUITEM "&441 Bytes",                  ID_443
-        END
         MENUITEM SEPARATOR
         MENUITEM "Econet On/Off",               ID_ECONET
         MENUITEM "Teletext Adapter On/Off",     ID_TELETEXT
+        MENUITEM "Floppy Drive On/Off",         ID_FLOPPYDRIVE
         MENUITEM "Hard Drive On/Off",           ID_HARDDRIVE
         MENUITEM "User Port Breakout Box",      ID_BREAKOUT
         MENUITEM "User Port RTC Module",        ID_UPRM
+        MENUITEM "Master 128 RTC Y2K Adjust",   ID_RTCY2KADJUST
     END
     POPUP "&Options"
     BEGIN
@@ -689,6 +742,7 @@ BEGIN
             MENUITEM "Autosave CMOS RAM",           IDM_AUTOSAVE_PREFS_CMOS
             MENUITEM "Autosave All Prefs",          IDM_AUTOSAVE_PREFS_ALL
             MENUITEM "Save Disc/Tape/State Folders", IDM_AUTOSAVE_PREFS_FOLDERS
+            MENUITEM "Select User Data Folder",     IDM_SELECT_USER_DATA_FOLDER
         END
     END
     POPUP "&Help"

@@ -1,23 +1,27 @@
-/****************************************************************************/
-/*              Beebem - (c) David Alan Gilbert 1994                        */
-/*              ------------------------------------                        */
-/* This program may be distributed freely within the following restrictions:*/
-/*                                                                          */
-/* 1) You may not charge for this program or for any part of it.            */
-/* 2) This copyright message must be distributed with all copies.           */
-/* 3) This program must be distributed complete with source code.  Binary   */
-/*    only distribution is not permitted.                                   */
-/* 4) The author offers no warrenties, or guarentees etc. - you use it at   */
-/*    your own risk.  If it messes something up or destroys your computer   */
-/*    thats YOUR problem.                                                   */
-/* 5) You may use small sections of code from this program in your own      */
-/*    applications - but you must acknowledge its use.  If you plan to use  */
-/*    large sections then please ask the author.                            */
-/*                                                                          */
-/* If you do not agree with any of the above then please do not use this    */
-/* program.                                                                 */
-/* Please report any problems to the author at beebem@treblig.org           */
-/****************************************************************************/
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2004  Ken Lowe
+Copyright (C) 2004  Rob O'Donnell
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 /* Beebemulator - memory subsystem - David Alan Gilbert 16/10/94 */
 // Econet emulation: Rob O'Donnell robert@irrelevant.com 28/12/2004
 
@@ -47,8 +51,8 @@
 #include "scsi.h"
 #include "sasi.h"
 #include "uefstate.h"
-//#include "z80mem.h"
-//#include "z80.h"
+#include "z80mem.h"
+#include "z80.h"
 #include "econet.h"		//Rob
 #include "debug.h"		//Rob added for INTON/OFF reporting only
 #include "teletext.h"
@@ -57,6 +61,12 @@ using namespace std;
 
 /* Each Rom now has a Ram/Rom flag */
 int RomWritable[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+
+/* Identifies what is in each bank */
+BankType RomBankType[16] = {
+	BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,
+	BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty
+};
 
 int PagedRomReg;
 
@@ -95,8 +105,12 @@ unsigned char ACCCON; // ACCess CONtrol register
 struct CMOSType CMOS;
 unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
-char RomPath[512];
-char RomFile[512];
+
+/* ROM file data */
+char RomPath[_MAX_PATH];
+char RomFile[_MAX_PATH];
+ROMConfigFile RomConfig;
+
 // FDD Extension board variables
 int EFDCAddr; // 1770 FDC location
 int EDCAddr; // Drive control location
@@ -450,9 +464,9 @@ int BeebReadMem(int Address) {
 
 	if ((Address & ~0x1f)==0xfee0)
 	{
-		//if (TorchTube)
-		//	return(ReadTorchTubeFromHostSide(Address&0x1f)); //Read From Torch Tube
-		//else
+		if (TorchTube)
+			return(ReadTorchTubeFromHostSide(Address&0x1f)); //Read From Torch Tube
+		else
 			return(ReadTubeFromHostSide(Address&7)); //Read From Tube
 	}
 
@@ -567,6 +581,28 @@ static void FiddleACCCON(unsigned char newValue) {
 	FRAM=ACCCON & 8;
 }
 /*----------------------------------------------------------------------------*/
+static void RomWriteThrough(int Address, unsigned char Value) {
+	int bank = 0;
+
+	// SW RAM board - bank to write to is selected by User Via
+	if (SWRAMBoardEnabled)
+	{
+		bank = (UserVIAState.orb & UserVIAState.ddrb) & 0xf;
+		if (!RomWritable[bank])
+			bank = 16;
+	}
+	else
+	{
+		// Find first writable bank
+		while (bank < 16 && !RomWritable[bank])
+			++bank;
+	}
+
+	if (bank < 16)
+		Roms[bank][Address-0x8000]=Value;
+}
+
+/*----------------------------------------------------------------------------*/
 void BeebWriteMem(int Address, unsigned char Value) {
   	unsigned char oldshd;
 /*  fprintf(stderr,"Write %x to 0x%x\n",Value,Address); */
@@ -579,8 +615,9 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	 }
 
 	 if ((Address<0xc000) && (Address>=0x8000)) {
-		if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
-		return;
+		 if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
+		 else RomWriteThrough(Address, Value);
+		 return;
 	 }
 	}
 // BBC B End
@@ -620,6 +657,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	 if ((Address<0xc000) && (Address>=0x8000)) {
 		if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
+		else RomWriteThrough(Address, Value);
 		return;
 	 }
 
@@ -716,6 +754,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	 if ((Address<0xc000) && (Address>=0x8000)) {
 		if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
+		else RomWriteThrough(Address, Value);
 		return;
 	 }
 
@@ -758,12 +797,14 @@ void BeebWriteMem(int Address, unsigned char Value) {
 				if (PRAM) { PrivateRAM[Address-0x8000]=Value; }
 				else {
 					if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
+					else RomWriteThrough(Address, Value);
 				}
 				break;
 			case 9:
 			case 0xa:
 			case 0xb:
 				if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
+				else RomWriteThrough(Address, Value);
 				break;
 			case 0xc:
 			case 0xd:
@@ -885,9 +926,9 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	if ((Address&~0xf)==0xfee0)
 	{
-		//if (TorchTube) 
-		//	WriteTorchTubeFromHostSide(Address&0xf,Value);
-		//else
+		if (TorchTube) 
+			WriteTorchTubeFromHostSide(Address&0xf,Value);
+		else
 			WriteTubeFromHostSide(Address&7,Value);
 	}
 
@@ -975,120 +1016,173 @@ char *ReadRomTitle( int bank, char *Title, int BufSize )
 
 	return Title;
 }
+
+/*----------------------------------------------------------------------------*/
+bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
+{
+	bool success = true;
+	FILE *fd;
+	int model;
+	int bank;
+	char line[MAX_PATH];
+
+	fd = fopen(filename, "r");
+	if (!fd)
+	{
+		char errstr[200];
+		sprintf(errstr, "Cannot open ROM configuration file:\n  %s", filename);
+		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		return false;
+	}
+
+	for (model = 0; model < 4 && success; ++model)
+	{
+		for (bank = 0; bank < 17 && success; ++bank)
+		{
+			if (fgets(line, MAX_PATH, fd) == NULL)
+			{
+				success = false;
+			}
+			else
+			{
+				if (strchr(line, 13)) *strchr(line, 13) = 0;
+				if (strchr(line, 10)) *strchr(line, 10) = 0;
+				strcpy(ROMConfig[model][bank], line);
+			}
+		}
+	}
+
+	if (success && fgets(line, MAX_PATH, fd) != NULL)
+	{
+		// Too many lines
+		success = false;
+	}
+
+	fclose(fd);
+
+	if (!success)
+	{
+		char errstr[200];
+		sprintf(errstr, "Invalid ROM configuration file:\n  %s", filename);
+		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		memset(ROMConfig, 0, sizeof(ROMConfigFile));
+	}
+
+	return success;
+}
+
 /*----------------------------------------------------------------------------*/
 void BeebReadRoms(void) {
- FILE *InFile,*RomCfg;
- char fullname[_MAX_PATH];
- int romslot = 0xf;
- char RomNameBuf[80];
- char *RomName=RomNameBuf;
- char *extension;
- unsigned char sc,isrom;
- unsigned char Shortener=1; // Amount to shorten filename by
- 
- /* Read all ROM files in the BeebFile directory */
- // This section rewritten for V.1.32 to take account of roms.cfg file.
- RomCfg=fopen(RomFile,"rt");
- if (RomCfg!=NULL) {
-	 // CFG file open, proceed to read the roms.
-	 // if machinetype=1 (i.e. BBC B Integra B) we need to skip 17 lines in the file
-	 if (MachineType==1) for (romslot=0;romslot<17;romslot++) fgets(RomName,80,RomCfg);
-	 // if machinetype=2 (i.e. BBC B+) we need to skip 34 lines in the file
-	 if (MachineType==2) for (romslot=0;romslot<34;romslot++) fgets(RomName,80,RomCfg);
-	 // if machinetype=3 (i.e. Master 128) we need to skip 51 lines in the file
-	 if (MachineType==3) for (romslot=0;romslot<51;romslot++) fgets(RomName,80,RomCfg);
-	 // read OS ROM
-	 fgets(RomName,80,RomCfg);
-	 if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
-	 if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
-	 strcpy(fullname,RomName);
-	 if ((RomName[0]!='\\') && (RomName[1]!=':')) {
-		 strcpy(fullname,RomPath);
-		 strcat(fullname,"BeebFile/");
-		 strcat(fullname,RomName);
-	 }
-	 // for some reason, we have to change \ to /  to make C work...
-	 for (sc = 0; fullname[sc]; sc++) if (fullname[sc] == '\\') fullname[sc] = '/';
-	 //	 fullname[strlen(fullname)-1]=0;
-	 InFile=fopen(fullname,"rb");
-	 if (InFile!=NULL)
-	 {
-		 fread(WholeRam+0xc000,1,16384,InFile);
-		 fclose(InFile);
-		 // Try to read OS ROM memory map:
-		 if((extension = strrchr(fullname, '.')) != NULL)
-			 *extension = 0;
-		 strncat(fullname, ".map", _MAX_PATH);
-		 DebugLoadMemoryMap(fullname, 16);
-	 }
-	 else {
-		 char errstr[200];
-		 sprintf(errstr, "Cannot open specified OS ROM:\n %s",fullname);
-		 MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-	 }
-	 // read paged ROMs
-	 for (romslot=15;romslot>=0;romslot--) {
-		 fgets(RomName,80,RomCfg);
-		 if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
-		 if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
-		 strcpy(fullname,RomName);
-		 if ((RomName[0]!='\\') && (RomName[1]!=':')) {
-			 strcpy(fullname,RomPath);
-			 strcat(fullname,"BeebFile/");
-			 strcat(fullname,RomName);
-		 }
-		 isrom=1; RomWritable[romslot]=0; Shortener=0;
-		 while ((RomName[strlen(RomName)-1] == '\r') || (RomName[strlen(RomName)-1] == '\n'))
-		 {
-			 RomName[strlen(RomName)-1] = 0;
-		 }
-		 if (strncmp(RomName,"EMPTY",5)==0)  { RomWritable[romslot]=0; isrom=0; }
-		 if (strncmp(RomName,"RAM",3)==0) { RomWritable[romslot]=1; isrom=0; }
-		 if (strncmp(RomName+(strlen(RomName)-4),":RAM",4)==0) {
-			 // Writable ROM (don't ask, Mark De Weger should be happy now ;) Hi Mark! )
-			 RomWritable[romslot]=1; // Make it writable
-			 isrom=1; // Make it a ROM still
-			 Shortener=4; // Shorten filename
-		 }
-		 for (sc = 0; fullname[sc]; sc++) if (fullname[sc] == '\\') fullname[sc] = '/';
-		 fullname[strlen(fullname)-Shortener]=0;
-		 InFile=fopen(fullname,"rb");
-		 if	(InFile!=NULL)
-		 {
-			 // Read ROM:
-			 fread(Roms[romslot],1,16384,InFile);
-			 fclose(InFile);
-			 // Try to read ROM memory map:
-			 if((extension = strrchr(fullname, '.')) != NULL)
-				 *extension = 0;
-			 strncat(fullname, ".map", _MAX_PATH);
-			 DebugLoadMemoryMap(fullname, romslot);
-		 }
-		 else {
-			 if (isrom==1) {
-				 char errstr[200];
-				 sprintf(errstr, "Cannot open specified ROM:\n %s",fullname);
-				 MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-			 }
-		 }
-	 }
-	 fclose(RomCfg);
- }
- else {
-	 char errstr[200];
-	 sprintf(errstr, "Cannot open ROM Configuration file:\n  %s", fullname);
-	 MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-	 exit(1);
- }
+	FILE *InFile;
+	char fullname[_MAX_PATH];
+	int bank;
+	char *RomName;
+	char *extension;
+	int i;
+
+	// Clear ROMs
+	for (bank = 0; bank < 16; bank++)
+	{
+		RomWritable[bank] = 0;
+		RomBankType[bank] = BankEmpty;
+		memset(Roms[bank], 0, 0x4000);
+	}
+
+	// Read OS ROM
+	RomName = RomConfig[MachineType][0];
+	strcpy(fullname,RomName);
+	if ((RomName[0]!='\\') && (RomName[1]!=':')) {
+		strcpy(fullname,RomPath);
+		strcat(fullname,"BeebFile/");
+		strcat(fullname,RomName);
+	}
+
+	// for some reason, we have to change \ to /  to make C work...
+	for (i = 0; fullname[i]; i++)
+	{
+		if (fullname[i] == '\\')
+			fullname[i] = '/';
+	}
+	InFile=fopen(fullname,"rb");
+	if (InFile!=NULL)
+	{
+		fread(WholeRam+0xc000,1,16384,InFile);
+		fclose(InFile);
+		// Try to read OS ROM memory map:
+		if((extension = strrchr(fullname, '.')) != NULL)
+			*extension = 0;
+		strncat(fullname, ".map", _MAX_PATH);
+		DebugLoadMemoryMap(fullname, 16);
+	}
+	else {
+		char errstr[200];
+		sprintf(errstr, "Cannot open specified OS ROM:\n %s",fullname);
+		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+	}
+
+	// read paged ROMs
+	for (bank=15;bank>=0;bank--)
+	{
+		RomName = RomConfig[MachineType][16-bank];
+		strcpy(fullname,RomName);
+		if ((RomName[0]!='\\') && (RomName[1]!=':')) {
+			strcpy(fullname,RomPath);
+			strcat(fullname,"BeebFile/");
+			strcat(fullname,RomName);
+		}
+
+		if (strcmp(RomName,BANK_EMPTY)==0)
+		{
+			RomBankType[bank] = BankEmpty;
+			RomWritable[bank] = 0;
+		}
+		else if (strcmp(RomName,BANK_RAM)==0)
+		{
+			RomBankType[bank] = BankRam;
+			RomWritable[bank] = 1;
+		}
+		else
+		{
+			if (strncmp(RomName+(strlen(RomName)-4),ROM_WRITABLE,4)==0)
+			{
+				// Writable ROM
+				RomBankType[bank] = BankRam;
+				RomWritable[bank] = 1;
+				fullname[strlen(fullname)-4]=0;
+			}
+			else
+			{
+				RomBankType[bank] = BankRom;
+				RomWritable[bank] = 0;
+			}
+
+			for (i = 0; fullname[i]; i++)
+			{
+				if (fullname[i] == '\\')
+					fullname[i] = '/';
+			}
+			InFile=fopen(fullname,"rb");
+			if	(InFile!=NULL)
+			{
+				// Read ROM:
+				fread(Roms[bank],1,16384,InFile);
+				fclose(InFile);
+				// Try to read ROM memory map:
+				if((extension = strrchr(fullname, '.')) != NULL)
+					*extension = 0;
+				strncat(fullname, ".map", _MAX_PATH);
+				DebugLoadMemoryMap(fullname, bank);
+			}
+			else {
+				char errstr[200];
+				sprintf(errstr, "Cannot open specified ROM:\n %s",fullname);
+				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			}
+		}
+	}
 }
 /*----------------------------------------------------------------------------*/
 void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
-  /* Remove the non-win32 stuff here, soz, im not gonna do multi-platform master128 upgrades
-  u want for linux? u do yourself! ;P - Richard Gellman */
-  
-  unsigned char RomBlankingSlot;
-  unsigned char CMA3;
-
   // Reset everything
   memset(WholeRam,0,0x8000);
   memset(FSRam,0,0x2000);
@@ -1107,8 +1201,6 @@ void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
   }
 
   if (LoadRoms) {
-	  for (CMA3=0;CMA3<16;CMA3++) RomWritable[CMA3]=1;
-	  for (RomBlankingSlot=0xf;RomBlankingSlot<0x10;RomBlankingSlot--) memset(Roms[RomBlankingSlot],0,0x4000);
 	  // This shouldn't be required for sideways RAM.
 	  DebugInitMemoryMaps();
 	  BeebReadRoms(); // Only load roms on start
@@ -1122,7 +1214,7 @@ void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
 
 /*-------------------------------------------------------------------------*/
 void SaveMemUEF(FILE *SUEF) {
-	unsigned char RAMCount;
+	int bank;
 	switch (MachineType) {
 	case 0:
 	case 3:
@@ -1187,12 +1279,28 @@ void SaveMemUEF(FILE *SUEF) {
 		fwrite(FSRam,1,8192,SUEF);
 		break;
 	}
-	for (RAMCount=0;RAMCount<16;RAMCount++) {
-		if (RomWritable[RAMCount]) {
-			fput16(0x0466,SUEF); // ROM bank
+	for (bank=0;bank<16;bank++) {
+		switch (RomBankType[bank])
+		{
+		case BankRam:
+			fput16(0x0466,SUEF); // RAM bank
 			fput32(16385,SUEF);
-			fputc(RAMCount,SUEF);
-			fwrite(Roms[RAMCount],1,16384,SUEF);
+			fputc(bank,SUEF);
+			fwrite(Roms[bank],1,16384,SUEF);
+			break;
+		case BankRom:
+			fput16(0x0475,SUEF); // ROM bank
+			fput32(16386,SUEF);
+			fputc(bank,SUEF);
+			fputc(BankRom,SUEF);
+			fwrite(Roms[bank],1,16384,SUEF);
+			break;
+		case BankEmpty:
+			fput16(0x0475,SUEF); // ROM bank
+			fput32(2,SUEF);
+			fputc(bank,SUEF);
+			fputc(BankEmpty,SUEF);
+			break;
 		}
 	}
 }
@@ -1271,11 +1379,27 @@ void LoadIntegraBHiddenMemUEF(FILE *SUEF) {
 	fread(Hidden,1,256,SUEF);
 }
 
-void LoadSWRMMemUEF(FILE *SUEF) {
+void LoadSWRamMemUEF(FILE *SUEF) {
 	int Rom;
 	Rom=fgetc(SUEF);
 	RomWritable[Rom]=1;
+	RomBankType[Rom]=BankRam;
 	fread(Roms[Rom],1,16384,SUEF);
+}
+void LoadSWRomMemUEF(FILE *SUEF) {
+	int Rom;
+	Rom=fgetc(SUEF);
+	RomBankType[Rom]=(BankType)fgetc(SUEF);
+	switch (RomBankType[Rom])
+	{
+	case BankRom:
+		RomWritable[Rom]=0;
+		fread(Roms[Rom],1,16384,SUEF);
+		break;
+	case BankEmpty:
+		memset(Roms[Rom], 0, 0x4000);
+		break;
+	}
 }
 
 /*-------------------------------------------------------------------------*/

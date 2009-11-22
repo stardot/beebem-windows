@@ -1,31 +1,26 @@
-/****************************************************************************/
-/*              Beebem - (c) David Alan Gilbert 1994                        */
-/*              ------------------------------------                        */
-/* This program may be distributed freely within the following restrictions:*/
-/*                                                                          */
-/* 1) You may not charge for this program or for any part of it.            */
-/* 2) This copyright message must be distributed with all copies.           */
-/* 3) This program must be distributed complete with source code.  Binary   */
-/*    only distribution is not permitted.                                   */
-/* 4) The author offers no warrenties, or guarentees etc. - you use it at   */
-/*    your own risk.  If it messes something up or destroys your computer   */
-/*    thats YOUR problem.                                                   */
-/* 5) You may use small sections of code from this program in your own      */
-/*    applications - but you must acknowledge its use.  If you plan to use  */
-/*    large sections then please ask the author.                            */
-/*                                                                          */
-/* If you do not agree with any of the above then please do not use this    */
-/* program.                                                                 */
-/* Please report any problems to the author at beebem@treblig.org           */
-/****************************************************************************/
-/* Video handling -          David Alan Gilbert */
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 1994  Nigel Magnay
+Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2008  Rich Talbot-Watkins
 
-/* Version 2 - 24/12/94 - Designed to emulate start of frame interrupt
-   correctly */
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-/* Mike Wyatt 7/6/97 - Added cursor display and Win32 port */
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-/* Richard Gellman 4/2/2001 AAAARGH SHADOW RAM! HELP! */
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
 
 #include <iostream>
 #include <fstream>
@@ -107,7 +102,6 @@ char TeletextStyle=1; // Defines wether teletext will skip intermediate lines in
 int THalfMode=0; // 1 if to use half-mode (TeletextStyle=1 all the time)
 int CurY=-1;
 FILE *crtclog;
-unsigned char ShowCursorLine=0;
 
 int ova,ovn; // mem ptr buffers
 
@@ -574,39 +568,43 @@ static void VideoStartOfFrame(void) {
 
 #endif
 
-#ifdef WIN32
   /* FrameNum is determined by the window handler */
   if (mainWin && VideoState.IsNewTVFrame)	// RTW - only calibrate timing once per frame
   {
     VideoState.IsNewTVFrame = 0;
+#ifdef WIN32
     FrameNum = mainWin->StartOfFrame();
-  }
 #else
-  /* If FrameNum hits 0 we actually refresh */
-  if (FrameNum--==0) {
-    FrameNum=Video_RefreshFrequency-1;
-  };
+    /* If FrameNum hits 0 we actually refresh */
+    if (FrameNum--==0) {
+      FrameNum=Video_RefreshFrequency-1;
+    }
 #endif
-	// Cursor update for blink. I thought I'd put it here, as this is where the mode 7 flash field thingy is too
-	// - Richard Gellman
-	CursorFieldCount--;
-	if (CursorFieldCount<0) {
-		CurStart = CRTC_CursorStart & 0x60;
-		// 0 is cursor displays, but does not blink
-		// 32 is no cursor
-		// 64 is 1/16 fast blink
-		// 96 is 1/32 slow blink
-		if (CurStart==0) { CursorFieldCount=CursorOnFields; CursorOnState=1; }
-		if (CurStart==32) { CursorFieldCount=CursorOffFields; CursorOnState=0; }
-		if (CurStart==64) { CursorFieldCount=8; CursorOnState^=1; }
-		if (CurStart==96) { CursorFieldCount=16; CursorOnState^=1; }
-	}
 
-	// RTW - The meaning of CharLine has changed: -1 no longer means that we are in the vertical
-	// total adjust period, and this is no longer handled as if it were at the beginning of a new CRTC cycle.
-	// Hence, here we always set CharLine to 0.
-    VideoState.CharLine=0;
-    VideoState.InCharLineUp=0;
+	CursorFieldCount--;
+    Mode7FlashTrigger--;
+    InterlaceFrame^=1;
+  }
+
+  // Cursor update for blink. I thought I'd put it here, as this is where the mode 7 flash field thingy is too
+  // - Richard Gellman
+  if (CursorFieldCount<0) {
+    CurStart = CRTC_CursorStart & 0x60;
+    // 0 is cursor displays, but does not blink
+    // 32 is no cursor
+    // 64 is 1/16 fast blink
+    // 96 is 1/32 slow blink
+    if (CurStart==0) { CursorFieldCount=CursorOnFields; CursorOnState=1; }
+    if (CurStart==32) { CursorFieldCount=CursorOffFields; CursorOnState=0; }
+    if (CurStart==64) { CursorFieldCount=8; CursorOnState^=1; }
+    if (CurStart==96) { CursorFieldCount=16; CursorOnState^=1; }
+  }
+
+  // RTW - The meaning of CharLine has changed: -1 no longer means that we are in the vertical
+  // total adjust period, and this is no longer handled as if it were at the beginning of a new CRTC cycle.
+  // Hence, here we always set CharLine to 0.
+  VideoState.CharLine=0;
+  VideoState.InCharLineUp=0;
   
   VideoState.IsTeletext=(VideoULA_ControlReg &2)>0;
   if (!VideoState.IsTeletext) {
@@ -620,14 +618,12 @@ static void VideoStartOfFrame(void) {
     VideoState.Addr=VideoState.StartAddr=CRTC_ScreenStartLow+(tmphigh<<8);
 
 	// O aye. this is the mode 7 flash section is it? Modified for corrected flash settings - Richard Gellman
-    Mode7FlashTrigger--;
     if (Mode7FlashTrigger<0) {
 		Mode7FlashTrigger=(Mode7FlashOn)?MODE7OFFFIELDS:MODE7ONFIELDS;
       Mode7FlashOn^=1; /* toggle flash state */
     };
   };
 
-  InterlaceFrame^=1;
   IL_Multiplier=(CRTC_InterlaceAndDelay&1)?2:1;
   if (InterlaceFrame) {
     IncTrigger((IL_Multiplier*(CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
@@ -983,6 +979,31 @@ void VideoDoScanLine(void) {
   } else {
     /* Non teletext. */
 
+	// Handle VSync
+	// RTW - this was moved to the top so that we can correctly set R7=0,
+	// i.e. we can catch it before the line counters are incremented
+    if (VideoState.VSyncState) {
+      if (!(--VideoState.VSyncState)) {
+        SysVIATriggerCA1Int(0);
+      };
+    }
+
+	if ((VideoState.VSyncState==0) && (VideoState.CharLine==CRTC_VerticalSyncPos) && (VideoState.InCharLineUp == 0)) {
+      // Nothing displayed?
+      if (VideoState.FirstPixmapLine<0)
+        VideoState.FirstPixmapLine=0;
+
+      VideoState.PreviousFirstPixmapLine=VideoState.FirstPixmapLine;
+      VideoState.FirstPixmapLine=-1;
+      VideoState.PreviousLastPixmapLine=VideoState.LastPixmapLine;
+      VideoState.LastPixmapLine=0;
+      VideoState.PixmapLine=0;
+      VideoState.IsNewTVFrame = 1;
+
+      SysVIATriggerCA1Int(1);
+      VideoState.VSyncState=(CRTC_SyncWidth>>4);
+    };
+
     /* Clear the scan line */
     if (!FrameNum)
       memset(mainWin->GetLinePtr(VideoState.PixmapLine),0,800);
@@ -992,8 +1013,8 @@ void VideoDoScanLine(void) {
       // Visible char line, record first line
       if (VideoState.FirstPixmapLine==-1)
         VideoState.FirstPixmapLine=VideoState.PixmapLine;
-      if (VideoState.LastPixmapLine<VideoState.PixmapLine)
-        VideoState.LastPixmapLine=VideoState.PixmapLine;
+	  // Always record the last line
+      VideoState.LastPixmapLine=VideoState.PixmapLine;
 
       /* If first row of character then get the data pointer from memory */
       if (VideoState.InCharLineUp==0) {
@@ -1006,58 +1027,23 @@ void VideoDoScanLine(void) {
         if (!FrameNum)
           LowLevelDoScanLine();
       }
-      VideoState.PixmapLine++;
     }
-    else {
-      // Line not visible.  These are normally the virtical retrace lines:
-      //  - lines between the last displayed line and the vsync (at the bottom of the screen) 
-      //  - lines between the vsync and the last virtical total line (at the top of the screen)
-      VideoState.PixmapLine++;
-    }
-
-    // Sanity check
-    if (VideoState.PixmapLine > MAX_VIDEO_SCAN_LINES)
-      VideoState.PixmapLine = MAX_VIDEO_SCAN_LINES;
 
 	// See if we are at the cursor line
 	if (CurY == -1 && VideoState.Addr > (CRTC_CursorPosLow+(CRTC_CursorPosHigh<<8)))
 		CurY = VideoState.PixmapLine;
 
+    // Screen line increment and wraparound
+    if (++VideoState.PixmapLine == MAX_VIDEO_SCAN_LINES)
+      VideoState.PixmapLine = 0;
+
     /* Move onto next physical scanline as far as timing is concerned */
     VideoState.InCharLineUp+=1;
-    if (VideoState.VSyncState) {
-      if (!(--VideoState.VSyncState)) {
-        SysVIATriggerCA1Int(0);
-      };
-    };
 
 	// RTW - check whether we have reached a new character row.
 	// if CharLine>CRTC_VerticalTotal, we are in the vertical total adjust region so we don't wrap to a new row.
 	if (VideoState.CharLine<=CRTC_VerticalTotal && VideoState.InCharLineUp>CRTC_ScanLinesPerChar) {
       VideoState.CharLine++;
-      if ((VideoState.VSyncState==0) && (VideoState.CharLine==CRTC_VerticalSyncPos)) {
-        // Nothing displayed?
-        if (VideoState.FirstPixmapLine<0)
-          VideoState.FirstPixmapLine=0;
-
-        // Limit the number of virtical retrace lines we hide otherwise 
-        // screen can get very stretched.
-        if (VideoState.FirstPixmapLine>32)
-          VideoState.FirstPixmapLine=32;
-        if ((VideoState.LastPixmapLine-VideoState.FirstPixmapLine)<255)
-          VideoState.LastPixmapLine=255+VideoState.FirstPixmapLine;
-
-        VideoState.PreviousFirstPixmapLine=VideoState.FirstPixmapLine;
-        VideoState.FirstPixmapLine=-1;
-        VideoState.PreviousLastPixmapLine=VideoState.LastPixmapLine;
-        VideoState.LastPixmapLine=0;
-        VideoState.PixmapLine=0;
-		VideoState.IsNewTVFrame = 1;
-
-        SysVIATriggerCA1Int(1);
-        VideoState.VSyncState=(CRTC_SyncWidth>>4)+1;
-      };
-
       VideoState.InCharLineUp=0;
     };
 
@@ -1070,10 +1056,18 @@ void VideoDoScanLine(void) {
         VideoAddLEDs();
 		CurY=-1;
         int n = VideoState.PreviousLastPixmapLine-VideoState.PreviousFirstPixmapLine+1;
-        if (n > MAX_VIDEO_SCAN_LINES)
-          n = MAX_VIDEO_SCAN_LINES;
-        mainWin->updateLines(VideoState.PreviousFirstPixmapLine,
-							 n + (ShowCursorLine ? 2 : 0));
+		if (n < 0)
+		  n += MAX_VIDEO_SCAN_LINES;
+
+		int startLine = 32;
+		if (n > 248 && VideoState.PreviousFirstPixmapLine >= 40)
+		{
+			// RTW -
+			// This is a little hack which ensures that a fullscreen mode with *TV255 will always
+			// fit unclipped in the window in Modes 0-6
+			startLine = 40;
+		}
+		mainWin->updateLines(startLine, 256);
       }
       VideoStartOfFrame();
       AdjustVideo();
@@ -1343,7 +1337,7 @@ static void VideoAddCursor(void) {
 	if (VideoState.IsTeletext) CurX-=2*HSyncModifier;
 	if (CurSize > 0)
 	{
-		for (int y = CurStart; y <= CurEnd && CurY + y < 500; ++y)
+		for (int y = CurStart; y <= CurEnd && y <= CRTC_ScanLinesPerChar && CurY + y < 500; ++y)
 		{
 			if (CurY + y >= 0) {
 				if (CursorOnState)

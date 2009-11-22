@@ -1,9 +1,31 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  Nigel Magnay
+Copyright (C) 1997  Mike Wyatt
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 // BeebEm IO support - disk, tape, state, printer, AVI capture
 
 #include <stdio.h>
 #include <windows.h>
 #include <initguid.h>
 #include <shlobj.h>
+#include <gdiplus.h>
 #include "main.h"
 #include "6502core.h"
 #include "beebwin.h"
@@ -21,6 +43,9 @@
 #include "tube.h"
 #include "userkybd.h"
 #include "discedit.h"
+#include "version.h"
+
+using namespace Gdiplus;
 
 // Token written to start of map file
 #define KEYMAP_TOKEN "*** BeebEm Keymap ***"
@@ -571,35 +596,24 @@ void BeebWin::RestoreState()
 /****************************************************************************/
 void BeebWin::ToggleWriteProtect(int Drive)
 {
-	HMENU hMenu = m_hMenu;
-	if (MachineType!=3 && NativeFDC)
+	// Keep 8271 and 1770 write enable flags in sync
+	if (m_WriteProtectDisc[Drive])
 	{
-		if (m_WriteProtectDisc[Drive])
-		{
-			m_WriteProtectDisc[Drive] = 0;
-			DiscWriteEnable(Drive, 1);
-		}
-		else
-		{
-			m_WriteProtectDisc[Drive] = 1;
-			DiscWriteEnable(Drive, 0);
-		}
-		DWriteable[Drive]=1-m_WriteProtectDisc[Drive];
-
-		if (Drive == 0)
-			CheckMenuItem(hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
-		else
-			CheckMenuItem(hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
+		m_WriteProtectDisc[Drive] = 0;
+		DiscWriteEnable(Drive, 1);
+		DWriteable[Drive]=1;
 	}
 	else
 	{
-		DWriteable[Drive]=1-DWriteable[Drive];
-		m_WriteProtectDisc[Drive]=1-DWriteable[Drive];
-		if (Drive == 0)
-			CheckMenuItem(hMenu, IDM_WPDISC0, DWriteable[0] ? MF_UNCHECKED : MF_CHECKED);
-		else
-			CheckMenuItem(hMenu, IDM_WPDISC1, DWriteable[1] ? MF_UNCHECKED : MF_CHECKED);
+		m_WriteProtectDisc[Drive] = 1;
+		DiscWriteEnable(Drive, 0);
+		DWriteable[Drive]=0;
 	}
+
+	if (Drive == 0)
+		CheckMenuItem(m_hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
+	else
+		CheckMenuItem(m_hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
 }
 
 void BeebWin::SetDiscWriteProtects(void)
@@ -622,7 +636,7 @@ void BeebWin::SetDiscWriteProtects(void)
 BOOL BeebWin::PrinterFile()
 {
 	char StartPath[_MAX_PATH];
-	char FileName[256];
+	char FileName[_MAX_PATH];
 	OPENFILENAME ofn;
 	BOOL changed;
 
@@ -750,13 +764,13 @@ void BeebWin::TranslatePrinterPort()
 /****************************************************************************/
 void BeebWin::CaptureVideo()
 {
-	char StartPath[_MAX_PATH];
+	char DefaultPath[_MAX_PATH];
 	char FileName[256];
 	OPENFILENAME ofn;
 	BOOL changed;
 
-	PrefsGetStringValue("AVIPath",StartPath);
-	GetDataPath(m_UserDataPath, StartPath);
+	PrefsGetStringValue("AVIPath",DefaultPath);
+	GetDataPath(m_UserDataPath, DefaultPath);
 
 	FileName[0] = '\0';
 
@@ -771,7 +785,7 @@ void BeebWin::CaptureVideo()
 	ofn.nMaxFile = sizeof(FileName);
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = StartPath;
+	ofn.lpstrInitialDir = DefaultPath;
 	ofn.lpstrTitle = NULL;
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.nFileOffset = 0;
@@ -790,6 +804,14 @@ void BeebWin::CaptureVideo()
 			 (strcmp(FileName + (strlen(FileName)-4), ".avi")!=0)) )
 		{
 			strcat(FileName,".avi");
+		}
+
+		if (m_AutoSavePrefsFolders)
+		{
+			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+			strncpy(DefaultPath, FileName, PathLength);
+			DefaultPath[PathLength] = 0;
+			PrefsSetStringValue("AVIPath", DefaultPath);
 		}
 
 		// Close AVI file if currently capturing
@@ -995,38 +1017,64 @@ unsigned char BeebWin::GetDriveControl(void) {
 }
 
 /****************************************************************************/
-void SaveEmuUEF(FILE *SUEF) {
+void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	char EmuName[16];
+	char blank[256];
+	memset(blank,0,256);
+
 	fput16(0x046C,SUEF);
 	fput32(16,SUEF);
 	// BeebEm Title Block
+	memset(EmuName,0,sizeof(EmuName));
 	strcpy(EmuName,"BeebEm");
-	EmuName[14]=1;
-	EmuName[15]=4; // Version, 1.4
+	EmuName[14]=VERSION_MAJOR;
+	EmuName[15]=VERSION_MINOR;
 	fwrite(EmuName,16,1,SUEF);
-	//
+
 	fput16(0x046a,SUEF);
-	fput32(16,SUEF);
+	fput32(262,SUEF);
 	// Emulator Specifics
 	// Note about this block: It should only be handled by beebem from uefstate.cpp if
 	// the UEF has been determined to be from BeebEm (Block 046C)
 	fputc(MachineType,SUEF);
 	fputc((NativeFDC)?0:1,SUEF);
 	fputc(TubeEnabled,SUEF);
-	fputc(0,SUEF); // Monitor type, reserved
-	fputc(0,SUEF); // Speed Setting, reserved
-	fput32(0,SUEF);
-	fput32(0,SUEF);
-	fput16(0,SUEF);
+	fput16(m_MenuIdKeyMapping,SUEF);
+	if (m_MenuIdKeyMapping == IDM_USERKYBDMAPPING)
+		fwrite(m_UserKeyMapPath,1,256,SUEF);
+	else
+		fwrite(blank,1,256,SUEF);
 	fputc(0,SUEF);
 }
 
-void LoadEmuUEF(FILE *SUEF, int Version) {
+void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
+	int id;
+	char fileName[_MAX_PATH];
+
 	MachineType=fgetc(SUEF);
 	if (Version <= 8 && MachineType == 1)
 		MachineType = 3;
 	NativeFDC=(fgetc(SUEF)==0)?TRUE:FALSE;
 	TubeEnabled=fgetc(SUEF);
+
+	if (Version >= 11)
+	{
+		id = fget16(SUEF);
+		if (id == IDM_USERKYBDMAPPING)
+		{
+			fread(fileName,1,256,SUEF);
+			GetDataPath(m_UserDataPath, fileName);
+			if (ReadKeyMap(fileName, &UserKeymap))
+				strcpy(m_UserKeyMapPath, fileName);
+			else
+				id = m_MenuIdKeyMapping;
+		}
+		CheckMenuItem(m_hMenu, m_MenuIdKeyMapping, MF_UNCHECKED);
+		m_MenuIdKeyMapping = id;
+		CheckMenuItem(m_hMenu, m_MenuIdKeyMapping, MF_CHECKED);
+		TranslateKeyMapping();
+	}
+
 	mainWin->ResetBeebSystem(MachineType,TubeEnabled,1);
 	mainWin->UpdateModelType();
 }
@@ -1744,4 +1792,242 @@ void BeebWin::ImportDiscFiles(int menuId)
 		else
 			Load1770DiscImage(szDiscFile, drive, 0, m_hMenu);
 	}
+}
+
+INT GetEncoderClsid(const WCHAR* format, CLSID* pClsid);
+
+/****************************************************************************/
+/* Bitmap capture support */
+void BeebWin::CaptureBitmapPending(bool autoFilename)
+{
+	m_CaptureBitmapPending = true;
+	m_CaptureBitmapAutoFilename = autoFilename;
+}
+
+bool BeebWin::GetImageEncoderClsid(WCHAR *mimeType, CLSID *encoderClsid)
+{
+	UINT num;
+	UINT size;
+	UINT i;
+	ImageCodecInfo* pImageCodecInfo;
+
+	GetImageEncodersSize(&num, &size);
+	if (size == 0)
+		return false;
+
+	pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
+	if (pImageCodecInfo == NULL)
+		return false;
+
+	GetImageEncoders(num, size, pImageCodecInfo);
+	for(i = 0; i < num; ++i)
+	{ 
+		if (wcscmp(pImageCodecInfo[i].MimeType, mimeType) == 0)
+		{
+			*encoderClsid = pImageCodecInfo[i].Clsid;
+			break;
+		}
+	}
+	free(pImageCodecInfo);
+
+	if (i == num)
+	{
+		MessageBox(m_hWnd, "Failed to get image encoder",
+				   WindowTitle, MB_OK|MB_ICONERROR);
+		return false;
+	}
+
+	return true;
+}
+
+bool BeebWin::GetImageFile(char *FileName)
+{
+	char DefaultPath[_MAX_PATH];
+	OPENFILENAME ofn;
+	bool success = false;
+	char filter[200];
+	char *fileExt = NULL;
+
+	switch (m_MenuIdCaptureFormat)
+	{
+	default:
+	case IDM_CAPTUREBMP:
+		fileExt = ".bmp";
+		break;
+	case IDM_CAPTUREJPEG:
+		fileExt = ".jpg";
+		break;
+	case IDM_CAPTUREGIF:
+		fileExt = ".gif";
+		break;
+	case IDM_CAPTUREPNG:
+		fileExt = ".png";
+		break;
+	}
+
+	PrefsGetStringValue("ImagePath",DefaultPath);
+	GetDataPath(m_UserDataPath, DefaultPath);
+
+	FileName[0] = '\0';
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.hInstance = NULL;
+	sprintf(filter, "Image File (*%s)\0*%s\0", fileExt, fileExt);
+	ofn.lpstrFilter = filter;
+	ofn.lpstrCustomFilter = NULL;
+	ofn.nMaxCustFilter = 0;
+	ofn.nFilterIndex = 0;
+	ofn.lpstrFile = FileName;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = DefaultPath;
+	ofn.lpstrTitle = NULL;
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.nFileOffset = 0;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = NULL;
+	ofn.lCustData = 0;
+	ofn.lpfnHook = NULL;
+	ofn.lpTemplateName = NULL;
+
+	if (GetSaveFileName(&ofn))
+	{
+		// Add extension
+		if (strlen(FileName) < 5 ||
+			((strcmp(FileName + (strlen(FileName)-4), fileExt)!=0) &&
+			 (strcmp(FileName + (strlen(FileName)-4), fileExt)!=0)) )
+		{
+			strcat(FileName, fileExt);
+		}
+
+		if (m_AutoSavePrefsFolders)
+		{
+			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+			strncpy(DefaultPath, FileName, PathLength);
+			DefaultPath[PathLength] = 0;
+			PrefsSetStringValue("ImagePath", DefaultPath);
+		}
+
+		success = true;
+	}
+
+	return success;
+}
+
+void BeebWin::CaptureBitmap(int x, int y, int sx, int sy)
+{
+	WCHAR *mimeType = NULL;
+	CLSID encoderClsid;
+	HBITMAP CaptureDIB = NULL;
+	HDC CaptureDC = NULL;
+	bmiData Capturebmi;
+	char *CaptureScreen = NULL;
+	char *fileExt = NULL;
+	char AutoName[MAX_PATH];
+	WCHAR wFileName[MAX_PATH];
+
+	switch (m_MenuIdCaptureFormat)
+	{
+	default:
+	case IDM_CAPTUREBMP:
+		mimeType = L"image/bmp";
+		fileExt = ".bmp";
+		break;
+	case IDM_CAPTUREJPEG:
+		mimeType = L"image/jpeg";
+		fileExt = ".jpg";
+		break;
+	case IDM_CAPTUREGIF:
+		mimeType = L"image/gif";
+		fileExt = ".gif";
+		break;
+	case IDM_CAPTUREPNG:
+		mimeType = L"image/png";
+		fileExt = ".png";
+		break;
+	}
+
+	if (!GetImageEncoderClsid(mimeType, &encoderClsid))
+		return;
+
+	// Auto generate filename?
+	if (m_CaptureBitmapAutoFilename)
+	{
+		PrefsGetStringValue("ImagePath", m_CaptureFileName);
+		GetDataPath(m_UserDataPath, m_CaptureFileName);
+
+		SYSTEMTIME systemTime;
+		GetLocalTime(&systemTime);
+		sprintf(AutoName, "\\BeebEm_%04d%02d%02d_%02d%02d%02d_%d%s",
+				systemTime.wYear, systemTime.wMonth, systemTime.wDay,
+				systemTime.wHour, systemTime.wMinute, systemTime.wSecond,
+				systemTime.wMilliseconds/100,
+				fileExt);
+		strcat(m_CaptureFileName, AutoName);
+	}
+
+	// Capture the bitmap
+	Capturebmi = m_bmi;
+	if (m_MenuIdCaptureResolution == IDM_CAPTURERES1)
+	{
+		Capturebmi.bmiHeader.biWidth = m_XWinSize;
+		Capturebmi.bmiHeader.biHeight = m_YWinSize;
+	}
+	else if (m_MenuIdCaptureResolution == IDM_CAPTURERES2)
+	{
+		Capturebmi.bmiHeader.biWidth = 1280;
+		Capturebmi.bmiHeader.biHeight = 1024;
+	}
+	else if (m_MenuIdCaptureResolution == IDM_CAPTURERES3)
+	{
+		Capturebmi.bmiHeader.biWidth = 640;
+		Capturebmi.bmiHeader.biHeight = 512;
+	}
+	else
+	{
+		Capturebmi.bmiHeader.biWidth = 320;
+		Capturebmi.bmiHeader.biHeight = 256;
+	}
+	Capturebmi.bmiHeader.biSizeImage = Capturebmi.bmiHeader.biWidth * Capturebmi.bmiHeader.biHeight;
+	CaptureDC = CreateCompatibleDC(NULL);
+	CaptureDIB = CreateDIBSection(CaptureDC, (BITMAPINFO *)&Capturebmi,
+									DIB_RGB_COLORS, (void**)&CaptureScreen, NULL, 0);
+	HGDIOBJ prevObj = SelectObject(CaptureDC, CaptureDIB);
+	if (prevObj == NULL)
+	{
+		MessageBox(m_hWnd, "Failed to initialise capture buffers",
+				   WindowTitle, MB_OK|MB_ICONERROR);
+	}
+	else
+	{
+		StretchBlt(CaptureDC, 0, 0, Capturebmi.bmiHeader.biWidth, Capturebmi.bmiHeader.biHeight,
+				   m_hDCBitmap, x, y, sx, sy, SRCCOPY);
+		SelectObject(CaptureDC, prevObj);
+
+		// Use GDI+ Bitmap to save bitmap
+		Bitmap *bitmap = new Bitmap((HBITMAP)CaptureDIB, 0);
+
+		mbstowcs(wFileName, m_CaptureFileName, MAX_PATH);
+		Status status = bitmap->Save(wFileName, &encoderClsid, NULL);
+		if (status != Ok)
+		{
+			MessageBox(m_hWnd, "Failed to save screen capture",
+					   WindowTitle, MB_OK|MB_ICONERROR);
+		}
+		else if (m_CaptureBitmapAutoFilename)
+		{
+			// Let user know bitmap has been saved
+			FlashWindow(GETHWND, TRUE);
+			MessageBeep(MB_ICONEXCLAMATION);
+		}
+
+		delete bitmap;
+	}
+
+	if (CaptureDIB != NULL)
+		DeleteObject(CaptureDIB);
+	if (CaptureDC != NULL)
+		DeleteDC(CaptureDC);
 }

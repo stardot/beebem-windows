@@ -1,27 +1,28 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2004  Mike Wyatt
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 /*
 Serial/Cassette Support for BeebEm
-
 Written by Richard Gellman - March 2001
-
-You may not distribute this entire file separate from the whole BeebEm distribution.
-
-You may use sections or all of this code for your own uses, provided that:
-
-1) It is not a separate file in itself.
-2) This copyright message is included
-3) Acknowledgement is made to the author, and any aubsequent authors of additional code.
-
-The code may be modified as required, and freely distributed as such authors see fit,
-provided that:
-
-1) Acknowledgement is made to the author, and any subsequent authors of additional code
-2) Indication is made of modification.
-
-Absolutely no warranties/guarantees are made by using this code. You use and/or run this code
-at your own risk. The code is classed by the author as "unlikely to cause problems as far as
-can be determined under normal use".
-
--- end of legal crap - Richard Gellman :) */
+*/
 
 // P.S. If anybody knows how to emulate this, do tell me - 16/03/2001 - Richard Gellman
 
@@ -217,7 +218,12 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
 			}
 			else if (EthernetPortEnabled)
 				{
-					IP232Write(Data);
+//					if (Data_Bits==7) {
+//						IP232Write(Data & 127 );
+//					} else {
+						IP232Write(Data );
+						if (!IP232raw && Data == 255) IP232Write(Data);
+//					}
 				} 
 				else
 				{

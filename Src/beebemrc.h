@@ -1,3 +1,24 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  Nigel Magnay
+Copyright (C) 1997  Mike Wyatt
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by BeebEm.rc
@@ -85,6 +106,7 @@
 #define IDD_BREAKOUT                    113
 #define IDD_DISCEXPORT                  114
 #define IDR_ACCELERATORS                115
+#define IDD_ROMCONFIG                   116
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -147,6 +169,18 @@
 #define IDC_WATCHENDIAN                 1072
 #define IDC_DEBUGBRK                    1073
 #define IDC_DEBUGGRP                    1074
+#define IDC_BBCB                        1075
+#define IDC_INTEGRAB                    1076
+#define IDC_BBCBPLUS                    1077
+#define IDC_MASTER128                   1078
+#define IDC_MODEL                       1079
+#define IDC_ROMLIST                     1080
+#define IDC_SELECTROM                   1081
+#define IDC_MARKWRITABLE                1082
+#define IDC_RAM                         1083
+#define IDC_EMPTY                       1084
+#define IDC_SAVE                        1085
+#define IDC_LOAD                        1086
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -272,8 +306,6 @@
 #define ID_EXTRAS                       40144
 #define ID_FULLSET                      40145
 #define ID_PSAMPLES                     40147
-#define ID_1773                         40149
-#define ID_443                          40150
 #define IDM_FIXEDSPEED100               40151
 #define IDM_FIXEDSPEED5                 40154
 #define IDM_FIXEDSPEED2                 40155
@@ -353,7 +385,6 @@
 #define IDM_AUTOSAVE_PREFS_CMOS         40232
 #define IDM_AUTOSAVE_PREFS_FOLDERS      40233
 #define IDM_AUTOSAVE_PREFS_ALL          40234
-#define ID_SHOWCURSORLINE               40235
 #define ID_IP232                        40236
 #define ID_IP232LOCALHOST               40238
 #define ID_IP232CUSTOM                  40239
@@ -374,6 +405,24 @@
 #define ID_ACCELDOWN                    40258
 #define IDM_DXSMOOTHMODE7ONLY           40259
 #define ID_SFX_DISCDRIVES               40260
+#define IDM_SELECT_USER_DATA_FOLDER     40261
+#define IDM_CAPTURERES1                 40262
+#define IDM_CAPTURERES2                 40263
+#define IDM_CAPTURERES3                 40264
+#define IDM_CAPTURERES4                 40265
+#define IDM_CAPTUREBMP                  40266
+#define IDM_CAPTUREJPEG                 40267
+#define IDM_CAPTUREGIF                  40268
+#define IDM_CAPTUREPNG                  40269
+#define IDM_CAPTURESCREEN               40270
+#define ID_FLOPPYDRIVE                  40271
+#define ID_RTCY2KADJUST                 40272
+#define ID_RS423DESTINATION_IP          40273
+#define ID_IP232RAW                     40274
+#define ID_IP232RW                      40275
+#define IDM_SWRAMBOARD                  40276
+#define IDM_ROMCONFIG                   40277
+
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -381,9 +430,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        116
-#define _APS_NEXT_COMMAND_VALUE         40261
-#define _APS_NEXT_CONTROL_VALUE         1075
+#define _APS_NEXT_RESOURCE_VALUE        117
+#define _APS_NEXT_COMMAND_VALUE         40278
+#define _APS_NEXT_CONTROL_VALUE         1087
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

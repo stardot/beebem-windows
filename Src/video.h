@@ -1,24 +1,27 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 1994  Nigel Magnay
+Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2008  Rich Talbot-Watkins
 
-/****************************************************************************/
-/*              Beebem - (c) David Alan Gilbert 1994                        */
-/*              ------------------------------------                        */
-/* This program may be distributed freely within the following restrictions:*/
-/*                                                                          */
-/* 1) You may not charge for this program or for any part of it.            */
-/* 2) This copyright message must be distributed with all copies.           */
-/* 3) This program must be distributed complete with source code.  Binary   */
-/*    only distribution is not permitted.                                   */
-/* 4) The author offers no warrenties, or guarentees etc. - you use it at   */
-/*    your own risk.  If it messes something up or destroys your computer   */
-/*    thats YOUR problem.                                                   */
-/* 5) You may use small sections of code from this program in your own      */
-/*    applications - but you must acknowledge its use.  If you plan to use  */
-/*    large sections then please ask the author.                            */
-/*                                                                          */
-/* If you do not agree with any of the above then please do not use this    */
-/* program.                                                                 */
-/* Please report any problems to the author at beebem@treblig.org           */
-/****************************************************************************/
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 #ifndef VIDEO_HEADER
 #define VIDEO_HEADER
 #include <stdio.h>
@@ -61,13 +64,12 @@ void VideoDoScanLine(void);
 void VideoGetText(char *text, int line);
 
 extern unsigned char TeletextEnabled;
-extern unsigned char ShowCursorLine;
 
 #define VideoPoll(ncycles) if ((VideoTriggerCount)<=TotalCycles) VideoDoScanLine();
 
 // Allow enough lines for all modes.
-// i.e. max(virtical total * scan lines per char) = 38 * 8  (mode 7 excluded)
-#define MAX_VIDEO_SCAN_LINES 304
+// i.e. max(virtical total * scan lines per char) = 39 * 8  (mode 7 excluded)
+#define MAX_VIDEO_SCAN_LINES 312
 
 void SaveVideoUEF(FILE *SUEF);
 void LoadVideoUEF(FILE *SUEF);

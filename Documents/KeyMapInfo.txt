@@ -10,8 +10,6 @@ Special values for row, col are:
 -2      break key
 -3, -3  sound tuning key -
 -3, -4  sound tuning key +
--4, 0   speed adjustment key +
--4, 1   speed adjustment key -
 -9      ignore key press
 
 Data for default key mapping:
@@ -112,22 +110,22 @@ Data for default key mapping:
 6 2 0 6 2 1  // SPACE
 -9 0 0 -9 0 1 
 -9 0 0 -9 0 1 
--9 0 0 -9 0 1 // 96
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 // 100
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 // 104
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 
--4 0 0 -4 0 1 // Keypad+
+-9 0 0 -9 0 1 // Keypad 0
+-9 0 0 -9 0 1 // Keypad 1
+-9 0 0 -9 0 1 // Keypad 2
+-9 0 0 -9 0 1 // Keypad 3
+-9 0 0 -9 0 1 // Keypad 4
+-9 0 0 -9 0 1 // Keypad 5
+-9 0 0 -9 0 1 // Keypad 6
+-9 0 0 -9 0 1 // Keypad 7
+-9 0 0 -9 0 1 // Keypad 8
+-9 0 0 -9 0 1 // Keypad 9
+-9 0 0 -9 0 1 // Keypad *
+-4 0 0 -4 0 1 // Keypad +
 -9 0 0 -9 0 1 // 108
--4 1 0 -4 1 1 // Keypad-
--9 0 0 -9 0 1 
--9 0 0 -9 0 1 
+-4 1 0 -4 1 1 // Keypad -
+-9 0 0 -9 0 1 // Keypad .
+-9 0 0 -9 0 1 // Keypad /
 7 1 0 7 1 1  // F1
 7 2 0 7 2 1  // F2
 7 3 0 7 3 1  // F3

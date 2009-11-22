@@ -1,3 +1,23 @@
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1998  Mike Wyatt
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
+
 // BeebWin DirectX and display rendering support
 
 #include <stdio.h>
@@ -496,7 +516,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	}
 
 	++m_ScreenRefreshCount;
-	TTLines=500/TeletextStyle + (ShowCursorLine ? 2 : 0);
+	TTLines=500/TeletextStyle;
 
 	// Do motion blur
 	if (m_MotionBlur != IDM_BLUR_OFF)
@@ -526,9 +546,10 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 
 	if (m_DisplayRenderer == IDM_DISPGDI)
 	{
-		int win_nlines = 256 * m_YWinSize / 256;
-
-		TextStart = m_YWinSize - 20;
+		RECT destRect;
+		GetClientRect(m_hWnd, &destRect);
+		int win_nlines = destRect.bottom;
+		TextStart = win_nlines - 20;
 
 		StretchBlt(hDC, 0, 0, m_XWinSize, win_nlines,
 			m_hDCBitmap, 0, starty, (TeletextEnabled)?552:ActualScreenWidth, (TeletextEnabled==1)?TTLines:nlines, SRCCOPY);
@@ -653,6 +674,13 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 			delete aviWriter;
 			aviWriter = NULL;
 		}
+	}
+
+	if (m_CaptureBitmapPending)
+	{
+		CaptureBitmap(0, starty, (TeletextEnabled)?552:ActualScreenWidth,
+					  (TeletextEnabled==1)?TTLines:nlines);
+		m_CaptureBitmapPending = false;
 	}
 }
 

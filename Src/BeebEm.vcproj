@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="BeebEm"
 	ProjectGUID="{2A563DA8-9784-4AD0-935F-496CEFA5CDEC}"
 	RootNamespace="BeebEm"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -47,7 +48,6 @@
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -61,12 +61,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib"
+				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib gdiplus.lib comctl32.lib"
 				OutputFile="../BeebEm.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/BeebEm.pdb"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -86,9 +88,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -123,7 +122,6 @@
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -137,13 +135,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib"
+				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib gdiplus.lib comctl32.lib"
 				OutputFile="../BeebEm.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -163,9 +163,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -229,10 +226,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cRegistry.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\csw.cpp"
 				>
 			</File>
@@ -257,15 +250,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\i386dasm.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\i86.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\romconfig.cpp"
 				>
 			</File>
 			<File
@@ -282,10 +271,6 @@
 			</File>
 			<File
 				RelativePath=".\serialdevices.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\speech.cpp"
 				>
 			</File>
 			<File
@@ -324,6 +309,18 @@
 				RelativePath=".\video.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\z80.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\z80_support.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\z80dis.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -351,10 +348,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\BEEBEM.h"
-				>
-			</File>
-			<File
 				RelativePath=".\beebemrc.h"
 				>
 			</File>
@@ -368,10 +361,6 @@
 			</File>
 			<File
 				RelativePath=".\beebwin.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cRegistry.h"
 				>
 			</File>
 			<File
@@ -395,10 +384,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ea.h"
-				>
-			</File>
-			<File
 				RelativePath=".\econet.h"
 				>
 			</File>
@@ -407,19 +392,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\i86.h"
-				>
-			</File>
-			<File
-				RelativePath=".\instr86.h"
-				>
-			</File>
-			<File
 				RelativePath=".\main.h"
-				>
-			</File>
-			<File
-				RelativePath=".\osd_cpu.h"
 				>
 			</File>
 			<File
@@ -440,10 +413,6 @@
 			</File>
 			<File
 				RelativePath=".\serialdevices.h"
-				>
-			</File>
-			<File
-				RelativePath=".\speech.h"
 				>
 			</File>
 			<File
@@ -479,6 +448,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\version.h"
+				>
+			</File>
+			<File
 				RelativePath=".\via.h"
 				>
 			</File>
@@ -488,6 +461,14 @@
 			</File>
 			<File
 				RelativePath=".\video.h"
+				>
+			</File>
+			<File
+				RelativePath=".\z80.h"
+				>
+			</File>
+			<File
+				RelativePath=".\z80mem.h"
 				>
 			</File>
 			<File

@@ -1,25 +1,24 @@
-/****************************************************************************/
-/*              Beebem - (c) David Alan Gilbert 1994                        */
-/*              ------------------------------------                        */
-/* This program may be distributed freely within the following restrictions:*/
-/*                                                                          */
-/* 1) You may not charge for this program or for any part of it.            */
-/* 2) This copyright message must be distributed with all copies.           */
-/* 3) This program must be distributed complete with source code.  Binary   */
-/*    only distribution is not permitted.                                   */
-/* 4) The author offers no warrenties, or guarentees etc. - you use it at   */
-/*    your own risk.  If it messes something up or destroys your computer   */
-/*    thats YOUR problem.                                                   */
-/* 5) You may use small sections of code from this program in your own      */
-/*    applications - but you must acknowledge its use.  If you plan to use  */
-/*    large sections then please ask the author.                            */
-/*                                                                          */
-/* If you do not agree with any of the above then please do not use this    */
-/* program.                                                                 */
-/* Please report any problems to the author at beebem@treblig.org           */
-/****************************************************************************/
-/* User VIA support file for the beeb emulator - David Alan Gilbert 11/12/94 */
-/* Modified from the system via */
+/****************************************************************
+BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2004  Ken Lowe
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA  02110-1301, USA.
+****************************************************************/
 
 #ifdef WIN32
 #include <windows.h>
@@ -42,12 +41,13 @@
 
 using namespace std;
 
+/* Real Time Clock */
 int RTC_bit = 0;
 int RTC_cmd = 0;
 int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
 unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
-
 int RTC_Enabled = 0;
+void RTCWrite(int Value, int lastValue);
 
 bool mBreakOutWindow = false; 
 
@@ -74,6 +74,9 @@ int PrinterTrigger = 0;
 static char PrinterFileName[256];
 static FILE *PrinterFileHandle = NULL;
 
+/* SW RAM board */
+unsigned char SWRAMBoardEnabled = 0;
+
 extern int DumpAfterEach;
 /* My raw VIA state */
 VIAState UserVIAState;
@@ -93,7 +96,7 @@ static void UpdateIFRTopBit(void) {
 /* Address is in the range 0-f - with the fe60 stripped out */
 void UserVIAWrite(int Address, int Value) {
 
-static int last_Value = 0xff;
+  static int lastValue = 0xff;
 
   /* cerr << "UserVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
@@ -111,71 +114,12 @@ static int last_Value = 0xff;
         UserVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
       };
-	  if (mBreakOutWindow) ShowOutputs(UserVIAState.orb);
-			if (RTC_Enabled)
-			{
-				if ( ((last_Value & 0x02) == 0x02) && ((Value & 0x02) == 0x00) )		// falling clock edge
-				{
-					if ((Value & 0x04) == 0x04)
-					{
-						RTC_cmd = (RTC_cmd >> 1) | ((Value & 0x01) << 15);
-						RTC_bit++;
-						
-						WriteLog("RTC Shift cmd : 0x%03x, bit : %d\n", RTC_cmd, RTC_bit);
-						
-					} else {
-						
-						if (RTC_bit == 11)		// Write data
-						{
-							RTC_cmd >>= 5;
-							
-							WriteLog("RTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_cmd >> 4);
-							
-							RTC_ram[(RTC_cmd & 0x0f) >> 1] = RTC_cmd >> 4;
-						} else {
-							RTC_cmd >>= 12;
-							
-							time_t SysTime;
-							struct tm * CurTime;
-							
-							time( &SysTime );
-							CurTime = localtime( &SysTime );
-							
-							switch ((RTC_cmd & 0x0f) >> 1)
-							{
-								case 0 :
-									RTC_data = BCD((CurTime->tm_mon)+1);
-									break;
-								case 1 :
-									RTC_data = BCD((CurTime->tm_year % 100) - 1);
-									break;
-								case 2 :
-									RTC_data = BCD(CurTime->tm_mday);
-									break;
-								case 3 :
-									RTC_data = RTC_ram[3];
-									break;
-								case 4 :
-									RTC_data = BCD(CurTime->tm_hour);
-									break;
-								case 5 :
-									RTC_data = RTC_ram[5];
-									break;
-								case 6 :
-									RTC_data = BCD(CurTime->tm_min);
-									break;
-								case 7 :
-									RTC_data = RTC_ram[7];
-									break;
-							}
-							
-							WriteLog("RTC Read cmd : 0x%03x, reg : 0x%02x, data : 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
-							
-						}
-					}
-				}
-			}
-				last_Value = Value;
+	  if (mBreakOutWindow)
+		  ShowOutputs(UserVIAState.orb);
+
+	  if (RTC_Enabled)
+		  RTCWrite(Value, lastValue);
+	  lastValue = Value;
       break;
 
     case 1:
@@ -323,12 +267,14 @@ int UserVIARead(int Address) {
             AMXButtons &= ~AMX_MIDDLE_BUTTON;
         }
 
+#ifdef M512COPRO_ENABLED
         if (Tube186Enabled)
         {
             tmp &= 0xf8;
             tmp |= (AMXButtons ^ 7);
         }
         else
+#endif
         {
             tmp &= 0x1f;
             tmp |= (AMXButtons ^ 7) << 5;
@@ -528,6 +474,7 @@ static bool first = true;
     	if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) )
 		{
 
+#ifdef M512COPRO_ENABLED
             if (Tube186Enabled)
             {
     
@@ -560,6 +507,7 @@ static bool first = true;
 			    }
             }
             else
+#endif
             {
 
 		    	if (AMXTargetX != AMXCurrentX)
@@ -650,6 +598,69 @@ void PrinterPoll() {
 	/* The CA1 interrupt is not always picked up,
 		set up a trigger just in case. */
 	SetTrigger(100000, PrinterTrigger);
+}
+/*--------------------------------------------------------------------------*/
+void RTCWrite(int Value, int lastValue)
+{
+	if ( ((lastValue & 0x02) == 0x02) && ((Value & 0x02) == 0x00) )		// falling clock edge
+	{
+		if ((Value & 0x04) == 0x04)
+		{
+			RTC_cmd = (RTC_cmd >> 1) | ((Value & 0x01) << 15);
+			RTC_bit++;
+			
+			WriteLog("RTC Shift cmd : 0x%03x, bit : %d\n", RTC_cmd, RTC_bit);
+		} else {
+			
+			if (RTC_bit == 11)		// Write data
+			{
+				RTC_cmd >>= 5;
+				
+				WriteLog("RTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_cmd >> 4);
+				
+				RTC_ram[(RTC_cmd & 0x0f) >> 1] = RTC_cmd >> 4;
+			} else {
+				RTC_cmd >>= 12;
+				
+				time_t SysTime;
+				struct tm * CurTime;
+				
+				time( &SysTime );
+				CurTime = localtime( &SysTime );
+				
+				switch ((RTC_cmd & 0x0f) >> 1)
+				{
+				case 0 :
+					RTC_data = BCD((CurTime->tm_mon)+1);
+					break;
+				case 1 :
+					RTC_data = BCD((CurTime->tm_year % 100) - 1);
+					break;
+				case 2 :
+					RTC_data = BCD(CurTime->tm_mday);
+					break;
+				case 3 :
+					RTC_data = RTC_ram[3];
+					break;
+				case 4 :
+					RTC_data = BCD(CurTime->tm_hour);
+					break;
+				case 5 :
+					RTC_data = RTC_ram[5];
+					break;
+				case 6 :
+					RTC_data = BCD(CurTime->tm_min);
+					break;
+				case 7 :
+					RTC_data = RTC_ram[7];
+					break;
+				}
+				
+				WriteLog("RTC Read cmd : 0x%03x, reg : 0x%02x, data : 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
+				
+			}
+		}
+	}
 }
 
 /*--------------------------------------------------------------------------*/

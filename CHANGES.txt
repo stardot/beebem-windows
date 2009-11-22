@@ -1,10 +1,56 @@
 BeebEm Change History
 =====================
 
-Version 4.03 (Mike Wyatt)
+Version 4.12 (Mike Wyatt)
 ------------
-* Non-GPL licensed version.
-* Removed Acorn Z80 Co-Processor and Torch Z80 second processor emulation.
+* Added ROM configuration editor.
+* Updated sideways RAM support:
+  - Changed SW RAM write enable menu to show slots containing RAM and
+    disable the ROM slots.
+  - RAM slots enabled now saved in preferences.
+  - Added write through to the first RAM bank when writing to ROM address
+    range (&8000-&BFFF).
+  - Added SW RAM board emulation where the active RAM bank is selected by
+    the User VIA port B output.
+* Added AtoD to saved state. Joystick should now work after restoring a
+  state file.
+* Fixed joystick capture error when enabled for a second time.
+
+Version 4.11 (Rob O'Donnell, Rich Talbot-Watkins, Mike Wyatt)
+------------
+* Added AUN Econet support.
+* Added 'RAW comms' option for use with the serial port IP options.
+* Updated video emulation to remove screen stretching and fix cursor 
+  positioning.
+* Added some more shortcut keys, for use on laptops primarily:
+    ALT 1  Quick save state
+    ALT 2  Quick load state
+    ALT 5  Capture screen to file
+    ALT +  Increase emulation speed
+    ALT -  Decrease emulation speed
+* Added support for the Master 128 numeric keypad.
+* Added option to enable/disable floppy drive controller.
+* Added option to enable/disable the real time clock Y2K 20 year adjustment.
+* Fixed bug in M128 BIT instruction (thanks to Michael Firth).  Fixes some
+  issues when using MOS3.5 (e.g. *CONFIGURE).
+* Fixed issue with file lengths in disc import option.
+
+Version 4.10 (Mike Wyatt)
+------------
+* Added screen capture options to the file menu.  Resolution and file format
+  can be selected.  The BMP, JPEG, GIF and PNG file formats are supported.
+  ALT+keypad 5 (with NumLock on) is a shortcut key for capturing the screen 
+  to file.
+* Added option to change the User Data folder location.
+* Added keyboard mapping to the saved emulator state.
+* Fixed issue with file offsets after break key press in 1770 controller.
+* Fixed issue with disc write protection when changing Beeb model.
+* Fixed sound muting while Window is being moved.
+* Changed source code licensing to the GNU General Public License.
+* Removed the Master 512 Co-Processor and TMS5220 Speech Generator emulation
+  as the source code licensing for these features is not compatible with the
+  GPL.  These two features are still available in BeebEm version 4.03, which
+  is on the BeebEm website.
 
 Version 4.02 (Mike Wyatt)
 ------------
