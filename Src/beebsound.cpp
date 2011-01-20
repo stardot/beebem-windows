@@ -96,7 +96,7 @@ int SoundChipEnabled = 1;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
 int SoundAutoTriggerTime;
-int SoundBufferSize,TSoundBufferSize;
+int SoundBufferSize,TotalBufferSize;
 double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
 char SoundExponentialVolume = 1;
 
@@ -144,7 +144,7 @@ double CycleRatio;
 struct AudioType TapeAudio; // Tape audio decoder stuff
 bool TapeSoundEnabled;
 int PartSamples=1;
-bool Playing;
+bool Playing=0;
 
 /****************************************************************************/
 /* Writes sound data to a DirectSound buffer */
@@ -157,9 +157,10 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	DWORD CWC;
 	HRESULT hr;
 	int CDiff;
-	if ((DSound==NULL) || (DSB1==NULL)) return DS_OK; // Don't write if DirectSound not up and running!
-	// (As when in menu loop)
-	// Correct from pointer desync
+
+	if ((DSound==NULL) || (DSB1==NULL))
+		return DS_OK; // Don't write if DirectSound not up and running!
+
 	if (!Playing) {
 		bReRead=FALSE;
 		// Blank off the buffer
@@ -179,12 +180,15 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 		WriteOffset=0;
 	} 
 
+	// Correct from pointer desync
 	if (bReRead) {
 		DSB1->GetCurrentPosition(NULL,&CWC);
 		WriteOffset=CWC+SoundBufferSize*2;
-		if (WriteOffset>=TSoundBufferSize) WriteOffset-=TSoundBufferSize;
+		if (WriteOffset>=TotalBufferSize)
+			WriteOffset-=TotalBufferSize;
 		bReRead=FALSE;
 	} 
+
 	// Obtain write pointer.
 	hr = DSB1->Lock(WriteOffset, SoundBufferSize, &lpvPtr1, 
 					&dwBytes1, &lpvPtr2, &dwBytes2, 0);
@@ -206,15 +210,22 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 		// Release the data back to DirectSound.
 		hr = DSB1->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
 	}
+
 	// Update pointers
 	WriteOffset+=SoundBufferSize;
-	if (WriteOffset>=TSoundBufferSize) WriteOffset-=TSoundBufferSize;
+	if (WriteOffset>=TotalBufferSize)
+		WriteOffset-=TotalBufferSize;
 
 	// Check for pointer desync
 	DSB1->GetCurrentPosition(NULL,&CWC);
 	CDiff=WriteOffset-CWC;
-	if (CDiff<0) CDiff=(WriteOffset+TSoundBufferSize)-CWC;
-	if (abs(CDiff)>(signed)(SoundBufferSize*4)) bReRead=TRUE; 
+	if (CDiff<0)
+		CDiff+=TotalBufferSize;
+	if (CDiff < SoundBufferSize || CDiff > SoundBufferSize*4)
+	{
+		bReRead=TRUE; 
+	}
+
  	if (!Playing) {
 		DSB1->SetCurrentPosition(SoundBufferSize+1);
 		hr=DSB1->Play(0,0,DSBPLAY_LOOPING);
@@ -235,15 +246,6 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	}
 
 	return hr;
-}
-float bitpart(float wholepart) {
-	// return the decimal part of a sample calculation
-	return (wholepart-(int)wholepart);
-}
-
-void MuteSound(void) {
-	if (Playing) DSB1->Stop();
-	Playing=FALSE;
 }
 
 /****************************************************************************/
@@ -540,7 +542,7 @@ HRESULT CreateSecondarySoundBuffer(void)
 	// Need default controls (pan, volume, frequency).
 	dsbdesc.dwFlags = DSBCAPS_GETCURRENTPOSITION2; // | DSBCAPS_STICKYFOCUS;
 	dsbdesc.dwBufferBytes = MAXBUFSIZE;
-	TSoundBufferSize = MAXBUFSIZE;
+	TotalBufferSize = MAXBUFSIZE;
 	dsbdesc.lpwfxFormat = (LPWAVEFORMATEX)&wf;
 
 	// Create buffer.
@@ -578,48 +580,60 @@ HRESULT CreatePrimarySoundBuffer(void)
 	DSB1->SetFormat(&wf);
 	dsbcaps.dwSize=sizeof(DSBCAPS);
 	DSB1->GetCaps(&dsbcaps);
-	TSoundBufferSize=dsbcaps.dwBufferBytes;
+	TotalBufferSize=dsbcaps.dwBufferBytes;
 	return hr;
 }
 
 /****************************************************************************/
 static void InitAudioDev(int sampleratein) {
-  samplerate=sampleratein;
-  DirectSoundEnabled=1;
-		HRESULT hr;
-		int dsect=0;
-		dsect=1;
- 		hr = DirectSoundCreate(NULL, &DSound, NULL);
-		if (hr != DS_OK) MessageBox(GETHWND,"Attempt to start DirectSound system failed","BeebEm",MB_ICONERROR|MB_OK);
-		if(hr == DS_OK)
-		{
-			hr=DS_OK;
-			if (UsePrimaryBuffer) {
-				hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_WRITEPRIMARY);
-				if (hr == DSERR_UNSUPPORTED) {
-					MessageBox(GETHWND,"Use of Primary DirectSound Buffer unsupported on this system. Using Secondary DirectSound Buffer instead",
-						WindowTitle,MB_OK|MB_ICONERROR);
-					UsePrimaryBuffer=0;
-				}
+	samplerate=sampleratein;
+	DirectSoundEnabled=1;
+
+	HRESULT hr;
+	int dsect=0;
+	dsect=1;
+	hr = DirectSoundCreate(NULL, &DSound, NULL);
+	if (hr != DS_OK)
+		MessageBox(GETHWND,"Attempt to start DirectSound system failed","BeebEm",MB_ICONERROR|MB_OK);
+
+	if(hr == DS_OK)
+	{
+		hr=DS_OK;
+		if (UsePrimaryBuffer) {
+			hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_WRITEPRIMARY);
+			if (hr == DSERR_UNSUPPORTED) {
+				MessageBox(GETHWND,"Use of Primary DirectSound Buffer unsupported on this system. "
+						   "Using Secondary DirectSound Buffer instead",
+						   WindowTitle,MB_OK|MB_ICONERROR);
+				UsePrimaryBuffer=0;
 			}
-			if (!UsePrimaryBuffer) hr=DSound->SetCooperativeLevel(mainWin->GethWnd(),DSSCL_NORMAL);
 		}
-		if(hr == DS_OK)
-		{
+		if (!UsePrimaryBuffer)
+			hr=DSound->SetCooperativeLevel(mainWin->GethWnd(),DSSCL_NORMAL);
+	}
+
+	if(hr == DS_OK)
+	{
 		dsect=2;
-			if (UsePrimaryBuffer) hr = CreatePrimarySoundBuffer();
-			else hr=CreateSecondarySoundBuffer();
-		} else MessageBox(GETHWND,"Attempt to create DirectSound buffer failed","BeebEm",MB_ICONERROR|MB_OK);
-		if (hr != DS_OK)
-		{
-			char  errstr[200];
-			sprintf(errstr,"Direct Sound initialisation failed on part %i\nFailure code %X",dsect,hr);
-			MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-			SoundReset();
-		}
-		mainWin->SetPBuff();
-		
-		if (hr==DS_OK) SoundEnabled=1;
+		if (UsePrimaryBuffer)
+			hr = CreatePrimarySoundBuffer();
+		else
+			hr = CreateSecondarySoundBuffer();
+	}
+	else
+		MessageBox(GETHWND,"Attempt to create DirectSound buffer failed","BeebEm",MB_ICONERROR|MB_OK);
+
+	if (hr != DS_OK)
+	{
+		char  errstr[200];
+		sprintf(errstr,"Direct Sound initialisation failed on part %i\nFailure code %X",dsect,hr);
+		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		SoundReset();
+	}
+	mainWin->SetPBuff();
+	
+	if (hr==DS_OK)
+		SoundEnabled=1;
 }; /* InitAudioDev */
 
 void LoadSoundSamples(void) {
@@ -723,27 +737,34 @@ void SwitchOnSound(void) {
 }
 
 void SetSound(char State) {
-	if (!SoundEnabled) return;
-	if (State==MUTED) MuteSound();
+	if (!SoundEnabled)
+		return;
+
+	if (State==MUTED)
+	{
+		if (Playing)
+			DSB1->Stop();
+		Playing=FALSE;
+	}
 }
 
 
 /****************************************************************************/
 /* Called to disable sound output                                           */
 void SoundReset(void) {
-		if (DSB1 != NULL)
-		{
-			DSB1->Stop();
-			DSB1->Release();
-			DSB1 = NULL;
-		}
-		if (DSound != NULL)
-		{
-			DSound->Release();
-			DSound = NULL;
-		}
-  ClearTrigger(SoundTrigger);
-  SoundEnabled = 0;
+	if (DSB1 != NULL)
+	{
+		DSB1->Stop();
+		DSB1->Release();
+		DSB1 = NULL;
+	}
+	if (DSound != NULL)
+	{
+		DSound->Release();
+		DSound = NULL;
+	}
+	ClearTrigger(SoundTrigger);
+	SoundEnabled = 0;
 } /* SoundReset */
 
 /****************************************************************************/

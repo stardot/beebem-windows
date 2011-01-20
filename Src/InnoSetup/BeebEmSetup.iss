@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=BeebEm
-AppVerName=BeebEm V4.12
+AppVerName=BeebEm V4.13
 AppPublisher=Mike Wyatt
 AppPublisherURL=http://www.mkw.me.uk/beebem/index.html
 AppSupportURL=http://www.mkw.me.uk/beebem/index.html
@@ -11,13 +11,13 @@ AppUpdatesURL=http://www.mkw.me.uk/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
 OutputDir=.
-OutputBaseFilename=BeebEm412
+OutputBaseFilename=BeebEm413
 Compression=lzma
 SolidCompression=yes
-VersionInfoVersion=4.12.0.0
+VersionInfoVersion=4.13.0.0
 
 [Registry]
-Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.12; ValueType: string; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.13; ValueType: string; Flags: uninsdeletekey
 Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: InstallPath; ValueData: {app}; ValueType: string; Flags: uninsdeletekey
 Root: HKCU; Subkey: SOFTWARE\BeebEm; Flags: uninsdeletekey
 
@@ -46,6 +46,7 @@ Name: {userdocs}\BeebEm
 Source: ..\..\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\Documents\*; DestDir: {app}\Documents; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\Hardware\*; DestDir: {app}\Hardware; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Help\*; DestDir: {app}\Help; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\UserData\*; DestDir: {app}\UserData; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\BeebEmLocal.vbs; DestDir: {app}; Flags: ignoreversion
@@ -58,7 +59,6 @@ Source: ..\..\HeadSeek.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\HeadStep.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\HeadUnload.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\README.txt; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\README_Z80.TXT; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOff.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOn.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\Src.zip; DestDir: {app}; Flags: ignoreversion
@@ -79,7 +79,7 @@ Source: {app}\Roms_Torch.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOl
 Name: {group}\BeebEm; Filename: {app}\BeebEm.exe
 Name: {group}\View CHANGES log; Filename: {app}\CHANGES.txt
 Name: {group}\View COPYRIGHT notice; Filename: {app}\COPYRIGHT.txt
-Name: {group}\View README; Filename: {app}\README.txt
+Name: {group}\View Help; Filename: {app}\Help\index.html
 Name: {group}\{cm:ProgramOnTheWeb,BeebEm}; Filename: http://www.mkw.me.uk/beebem/index.html
 Name: {group}\{cm:UninstallProgram,BeebEm}; Filename: {uninstallexe}
 Name: {commondesktop}\BeebEm; Filename: {app}\BeebEm.exe; Tasks: desktopicon

@@ -1,6 +1,21 @@
 BeebEm Change History
 =====================
 
+Version 4.13 (Mike Wyatt)
+------------
+* Added indication of unplugged ROMs to the configuration editor in Master
+  128 mode.
+* Add a keyboard shortcut to exit (Alt+F4).
+* Added support for loading .img files from command line.
+* Fixed bug in 1770 controller emulation where second side of a single sided
+  disk could be accessed.
+* Fixed some character mappings in text view mode.
+* Added -FullScreen command line option.
+* Added command line support for loading second disc image into drive 1.
+* Added option to maintain a 5:4 aspect ratio output in full-screen mode.
+* Made the BeebEm window resizeable.
+* Fixed an issue in the sound code that was causing garbled output.
+
 Version 4.12 (Mike Wyatt)
 ------------
 * Added ROM configuration editor.

@@ -172,17 +172,33 @@ void BeebWin::LoadPreferences()
 		m_DDFullScreenMode = dword;
 	else
 		m_DDFullScreenMode = ID_VIEW_DD_640X480;
+	TranslateDDSize();
 
 	if (PrefsGetDWORDValue(CFG_VIEW_WIN_SIZE,dword))
 		m_MenuIdWinSize = dword;
 	else
 		m_MenuIdWinSize = IDM_640X512;
-
+	if (m_MenuIdWinSize == IDM_CUSTOMWINSIZE)
+	{
+		if (PrefsGetDWORDValue("WinSizeX",dword))
+			m_XWinSize = dword;
+		else
+			m_XWinSize = 640;
+		if (PrefsGetDWORDValue("WinSizeY",dword))
+			m_YWinSize = dword;
+		else
+			m_YWinSize = 512;
+	}
 	if (PrefsGetBinaryValue("FullScreen",&flag,1))
 		m_isFullScreen = (flag != 0);
 	else
 		m_isFullScreen = false;
 	TranslateWindowSize();
+
+	if (PrefsGetBinaryValue("MaintainAspectRatio",&flag,1))
+		m_MaintainAspectRatio = (flag != 0);
+	else
+		m_MaintainAspectRatio = true;
 
 	if (PrefsGetBinaryValue(CFG_VIEW_SHOW_FPS,&flag,1))
 		m_ShowSpeedAndFPS = flag;
@@ -556,7 +572,7 @@ void BeebWin::LoadPreferences()
 	}
 
 	// Update prefs version
-	PrefsSetStringValue("PrefsVersion", "1.7");
+	PrefsSetStringValue("PrefsVersion", "1.8");
 
 	// Windows key enable/disable still comes from registry
 	int binsize = 24;
@@ -587,8 +603,12 @@ void BeebWin::SavePreferences(bool saveAll)
 		PrefsSetBinaryValue("DXSmoothMode7Only",&flag,1);
 		PrefsSetDWORDValue("DDFullScreenMode",m_DDFullScreenMode);
 		PrefsSetDWORDValue(CFG_VIEW_WIN_SIZE,m_MenuIdWinSize);
+		PrefsSetDWORDValue("WinSizeX",m_XLastWinSize);
+		PrefsSetDWORDValue("WinSizeY",m_YLastWinSize);
 		flag = m_isFullScreen;
 		PrefsSetBinaryValue("FullScreen",&flag,1);
+		flag = m_MaintainAspectRatio;
+		PrefsSetBinaryValue("MaintainAspectRatio",&flag,1);
 		flag = m_ShowSpeedAndFPS;
 		PrefsSetBinaryValue(CFG_VIEW_SHOW_FPS,&flag,1);
 		flag = palette_type;

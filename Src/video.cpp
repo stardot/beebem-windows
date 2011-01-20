@@ -1508,9 +1508,19 @@ void VideoGetText(char *text, int line)
 	{
 		c = dataPtr[x];
 		if (isprint(c))
+		{
+			if (c == '_')
+				c = '#';
+			else if (c == '#')
+				c = '£';
+			else if (c == '`')
+				c = '_';
 			text[x] = c;
+		}
 		else
+		{
 			text[x] = ' ';
+		}
 	}
 	text[x] = '\0';
 }

@@ -1,0 +1,156 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Built in Debugger</a></h1>
+
+<p>The Debugger is a 6502/Z80/ARM disassembler and monitoring tool.  When
+the debug window is first opened it leaves BeebEm running.  Its best to
+switch off the 'Freeze when inactive' option though otherwise BeebEm will
+only run when you bring the main window to the front.</p>
+
+<p>Debugger controls:
+
+<table width="100%" border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td width="20%">Break</td>
+    <td width="80%">Stops BeebEm running.  If currently executing in the OS
+      or ROM area and OS/ROM debug is not enabled then BeebEm will only stop
+      when execution moves out of the OS/ROM.  When execution stops the
+      current instruction is displayed.</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Continue/Cancel</td>
+    <td width="80%">Starts BeebEm running</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Trace</td>
+    <td width="80%">Shows accesses to the various bits of hardware</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Break</td>
+    <td width="80%">Breaks execution when the hardware is accessed</td>
+  </tr>
+
+  <tr>
+    <td width="20%">BRK instruction</td>
+    <td width="80%">Breaks when the BRK instruction is executed</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Attach to Host</td>
+    <td width="80%">Debugs the host processor</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Attach to Parasite</td>
+    <td width="80%">Debugs the second processor</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Attach to ROM</td>
+    <td width="80%">Debugs the ROM code (addresses 8000-BFFF)</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Attach to OS</td>
+    <td width="80%">Debugs the OS code (addresses C000-FFFF)</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Breakpoints</td>
+    <td width="80%">Breaks execution when the address hits one of the configured breakpoints</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Watches</td>
+    <td width="80%">Shows contents of configured memory locations</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Execute Command</td>
+    <td width="80%">Runs the debug command entered into the command box</td>
+  </tr>
+</table>
+
+<p>To get a list of the debug commands available type ? into the Execute
+Command box.  Notes that all values are specified in hex!</p>
+
+<p>The disassembler shows the following information:</p>
+
+<p><b>&nbsp;&nbsp;Address OPCodes Instruction A X Y SR Flags</b></p>
+
+<p>Parasite instructions are shifted right so it easier to follow both host
+and parasite when debugging tube code.</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

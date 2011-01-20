@@ -23,12 +23,15 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <windows.h>
 #include <initguid.h>
+#include <ddraw.h>
 #include "main.h"
 #include "beebwin.h"
 #include "beebemrc.h"
 #include "6502core.h"
 #include "ext1770.h"
 #include "avi.h"
+
+typedef HRESULT ( WINAPI* LPDIRECTDRAWCREATE )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
 
 extern HMODULE hFDCBoard;
 extern EDCB ExtBoard;
@@ -60,8 +63,7 @@ void BeebWin::InitDX(void)
 			sprintf(errstr,
 					"DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI",hr);
 			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-			m_DisplayRenderer = IDM_DISPGDI;
-			UpdateDisplayRendererMenu();
+			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 		}
 	}
 
@@ -69,17 +71,21 @@ void BeebWin::InitDX(void)
 }
 void BeebWin::ResetDX(void)
 {
+	m_DXResetPending = false;
+
 	if (m_CurrentDisplayRenderer == IDM_DISPDX9)
 	{
 		ExitDX9();
+
+		// Need to let message loop run before re-initialising DX otherwise
+		// odd artifacts are seen when changing window size.
+		PostMessage(m_hWnd, WM_REINITDX, 0, 0);
 	}
 	else if (m_CurrentDisplayRenderer == IDM_DISPDDRAW)
 	{
 		ResetSurfaces();
+		ReinitDX();
 	}
-
-	// Need to let message loop run before re-initialising DX
-	PostMessage(m_hWnd, WM_REINITDX, 0, 0);
 }
 void BeebWin::ReinitDX(void)
 {
@@ -99,8 +105,7 @@ void BeebWin::ReinitDX(void)
 		char errstr[200];
 		sprintf(errstr,"DirectX failure re-initialising\nFailure code %X\nSwitching to GDI\n",hr);
 		MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-		m_DisplayRenderer = IDM_DISPGDI;
-		UpdateDisplayRendererMenu();
+		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 	}
 
 	m_CurrentDisplayRenderer = m_DisplayRenderer;
@@ -130,7 +135,9 @@ void BeebWin::ExitDX(void)
 /****************************************************************************/
 HRESULT BeebWin::InitDirectDraw(void)
 {
-	HRESULT ddrval;
+	HRESULT ddrval = DDERR_GENERIC;
+	HINSTANCE hInstDDraw;
+	LPDIRECTDRAWCREATE pDDCreate = NULL;
 
 	m_DD = NULL;
 	m_DD2 = NULL;
@@ -140,14 +147,22 @@ HRESULT BeebWin::InitDirectDraw(void)
 	m_DDS2Primary = NULL;
 	m_DDSPrimary = NULL;
 
-	ddrval = DirectDrawCreate( NULL, &m_DD, NULL );
-	if( ddrval == DD_OK )
+	hInstDDraw = LoadLibrary("ddraw.dll");
+	if(hInstDDraw)
 	{
-		ddrval = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID *)&m_DD2);
-	}
-	if( ddrval == DD_OK )
-	{
-		ddrval = InitSurfaces();
+		pDDCreate = (LPDIRECTDRAWCREATE)GetProcAddress(hInstDDraw, "DirectDrawCreate");
+		if( pDDCreate )
+		{
+			ddrval = pDDCreate( NULL, &m_DD, NULL );
+			if( ddrval == DD_OK )
+			{
+				ddrval = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID *)&m_DD2);
+			}
+			if( ddrval == DD_OK )
+			{
+				ddrval = InitSurfaces();
+			}
+		}
 	}
 
 	return ddrval;
@@ -167,7 +182,7 @@ HRESULT BeebWin::InitSurfaces(void)
 	{
 		if (m_isFullScreen)
 		{
-			ddrval = m_DD2->SetDisplayMode(m_XWinSize, m_YWinSize, 32, 0, 0);
+			ddrval = m_DD2->SetDisplayMode(m_XDXSize, m_YDXSize, 32, 0, 0);
 		}
 	}
 	if( ddrval == DD_OK )
@@ -261,6 +276,23 @@ HRESULT BeebWin::InitDX9(void)
 		hr = E_FAIL;
 	}
 
+#if 0
+	if (hr == D3D_OK)
+	{
+		D3DDISPLAYMODE d3dMode;
+		UINT nModes = m_pD3D->GetAdapterModeCount(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8);
+		for (UINT mode = 0; mode < nModes; ++mode)
+		{
+			hr = m_pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8,
+										  mode, &d3dMode);
+			char str[200];
+			sprintf(str, "D3D Mode: %d x %d, refresh %d\n",
+					d3dMode.Width, d3dMode.Height, d3dMode.RefreshRate);
+			OutputDebugString(str);
+		}
+	}
+#endif
+
 	if (hr == D3D_OK)
 	{
 		// Set up the structure used to create the D3DDevice.
@@ -274,8 +306,8 @@ HRESULT BeebWin::InitDX9(void)
 		}
 		else
 		{
-			d3dpp.BackBufferWidth = m_XWinSize;
-			d3dpp.BackBufferHeight = m_YWinSize;
+			d3dpp.BackBufferWidth = m_XDXSize;
+			d3dpp.BackBufferHeight = m_YDXSize;
 			d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
 		}
 		d3dpp.BackBufferCount = 1;
@@ -551,8 +583,19 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		int win_nlines = destRect.bottom;
 		TextStart = win_nlines - 20;
 
-		StretchBlt(hDC, 0, 0, m_XWinSize, win_nlines,
-			m_hDCBitmap, 0, starty, (TeletextEnabled)?552:ActualScreenWidth, (TeletextEnabled==1)?TTLines:nlines, SRCCOPY);
+		int xAdj = 0;
+		int yAdj = 0;
+		if (m_isFullScreen && m_MaintainAspectRatio)
+		{
+			// Aspect ratio adjustment
+			xAdj = (int)(m_XRatioCrop * (float)m_XWinSize);
+			yAdj = (int)(m_YRatioCrop * (float)m_YWinSize);
+		}
+
+		StretchBlt(hDC, xAdj, yAdj, m_XWinSize - xAdj * 2, win_nlines - yAdj * 2,
+				   m_hDCBitmap, 0, starty,
+				   (TeletextEnabled)?552:ActualScreenWidth, (TeletextEnabled==1)?TTLines:nlines,
+				   SRCCOPY);
 
 		if ((DisplayCycles>0) && (hFDCBoard!=NULL))
 		{
@@ -594,6 +637,21 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 					D3DXMatrixIdentity(&m_TextureMatrix);
 					m_TextureMatrix._11 = 800.0f/(float)width;
 					m_TextureMatrix._22 = 512.0f/(float)height;
+
+					if (m_isFullScreen && m_MaintainAspectRatio)
+					{
+						// Aspect ratio adjustment
+						if (m_XRatioAdj > 0.0f)
+						{
+							m_TextureMatrix._11 *= m_XRatioAdj;
+							m_TextureMatrix._41 = m_XRatioCrop * 800.0f;
+						}
+						else if (m_YRatioAdj > 0.0f)
+						{
+							m_TextureMatrix._22 *= m_YRatioAdj;
+							m_TextureMatrix._42 = m_YRatioCrop * -512.0f;
+						}
+					}
 				}
 				pSurface->Release();
 				RenderDX9();
@@ -632,6 +690,17 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 				pt.x = pt.y = 0;
 				ClientToScreen( m_hWnd, &pt );
 				OffsetRect(&destRect, pt.x, pt.y);
+
+				if (m_isFullScreen && m_MaintainAspectRatio)
+				{
+					// Aspect ratio adjustment
+					int xAdj = (int)(m_XRatioCrop * (float)(destRect.right - destRect.left));
+					int yAdj = (int)(m_YRatioCrop * (float)(destRect.bottom - destRect.top));
+					destRect.left += xAdj;
+					destRect.right -= xAdj;
+					destRect.top += yAdj;
+					destRect.bottom -= yAdj;
+				}
 
 				// Blit the whole of the secondary buffer onto the screen
 				srcRect.left = 0;

@@ -1,0 +1,130 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Serial Port</a></h1>
+
+<p>In addition to connecting to the standard serial ports on the PC the
+serial port emulation in BeebEm has options to connect via TCP/IP to a local
+or remote IP address.  You can use ROMs such as CommSoft or CommStar to
+connect to a Viewdata BBS, MUD server or any other type of server.</p>
+
+<p>The serial IP features are selected via the IP destinations on the RS423
+Comms menu.  The "IP: localhost:25232" option is designed for use with the
+"tcpser" package, which emulates a modem.  Download a prebuilt Windows
+binary (and RC11 sources) of 
+<a href="http://www.mkw.me.uk/beebem/tcpser.zip">tcpser.zip</a>.  The tcpser
+home is <a href="http://www.jbrain.com/pub/linux/serial">here</a>.</p>
+
+<p>Run the "go.bat" file to fire up an instance suitable for the localhost
+setting to talk to.  This will also allow incoming connections, as that does
+all the answering business and passes the caller onto the Beeb via the
+pre-existing connection.  This handles the handshake lines if you enable
+ip232 mode, so dropping RTS will drop an outward connection.  Similarly DCD
+going up will be passed through to CTS.</p>
+
+<p>Add the Commstar.rom to your ROM configuration (see "ROM Software" above) 
+and start up BeebEm.  On the Comms menu select the "IP: localhost:25232" 
+and "RS432 On/Off".  Type *COMMSTAR to start CommStar.  In Commstar:</p>
+
+<ul>
+<li>Press M to switch to mode 0</li>
+<li>Press A to turn off Auto line feed</li>
+<li>Press I and then R a few times to set the receive baud to 9600</li>
+<li>Press C to enter chat mode</li>
+</ul>
+
+<p>You should now be able send commands to the modem (tcpser), try typing
+"AT", you should get "OK" back.  You can now "dial" into a server using the
+"ATD" command.  Try connecting to the Ishar MUD server using
+"ATDishar.com:9999".</p>
+
+<p>To make a direct connection to a server select the "IP: Custom
+destination" option.  This requires you to manually edit the "IP232customip"
+and "IP232customport" parameters in the Preferences.cfg file and reload.</p>
+
+<p>An additional option, "IP: IP232 mode", determines if the handshake lines
+are sent down the TCP/IP link or just generated locally from the presence of
+a valid connection.</p>
+
+<p>A second additional option, "IP: RAW comms", disables special processing
+of charater 255 (used with tcpser, so leave RAW mode off when using
+tcpser).</p>
+
+<p>If on startup, or when ticking the "RS423 On/Off" menu option, BeebEm
+cannot connect to the specified server, or if it loses connection
+subsequently, it will pop up a messagebox and disable RS423.  Select the
+menu option again to try to re-connect and re-enable.</p>
+
+<p>BeebEm will emulate the correct RX baud rate.  This makes for a very
+realistic experience when talking at 1200 baud to a Viewdata host!  TX is
+just sent out as fast as it will go.</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

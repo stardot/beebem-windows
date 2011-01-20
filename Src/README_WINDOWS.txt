@@ -18,6 +18,4 @@ You will need to download and install the following SDKs:
 
 You may also need to install:
 
-- Microsoft Windows Server 2003 SP1 Platform SDK
-
-- Microsoft Speech SDK 5.1
+- Windows SDK (e.g. Microsoft Windows SDK for Windows 7 and .NET Framework 4)

@@ -1,0 +1,157 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Econet Support</a></h1>
+
+<p>BeebEm emulates an econet network.  This allows multiple instances of
+BeebEm to communicate with other.  BeebEm also supports the AUN Econet
+protocols that enable BeebEm to communicate with other AUN compatible
+machines.</p>
+
+<p>Econet support is enabled from the Hardware menu in BeebEm.  Also switch
+off 'Freeze when inactive' if you intend to run multiple instances of BeebEm
+so they can all run at the same time.</p>
+
+<p>Each machine attached to an econet has a station number (between 1 and
+254) associated with it.  An econet may also have a file server attached to
+it (special station number 254).</p>
+
+<p>BeebEm emulates an econet using IP datagrams.  Each station on the
+network needs a unique IP address and port number combination.  Each
+instance of BeebEm needs to know the address and port number of the other
+instances on the network, this information is configured in the 'Econet.cfg'
+and 'AUNMap' files.</p>
+
+<p>The default Econet.cfg file has been set up to enable AUN mode.  Read the
+notes in the Econet.cfg and AUNMap files for more information on configuring
+AUN mode.</p>
+
+<p>If you just want to run a few instances of BeebEm on a single PC then the
+simplest way to is to edit the Econet.cfg file and disable AUN mode (set
+AUNMODE to 0) and uncomment the example network configuration for IP
+addresses 127.0.0.1 (near the end of Econet.cfg).  With this configured the
+first 5 instances of BeebEm run on a single PC will get allocated unique
+station and port numbers.  The first instance will be allocated a station
+number 254 (file server) and next 4 will be allocated station numbers 101 to
+104.  See the notes in Econet.cfg for more details.</p>
+
+<h2>File Server</h2>
+
+<p>An econet file server enables a disk file system to be shared by all of
+the stations on the network.  Acorn produced various versions of file server
+software.  The level 1 and 2 file server software is included in disk images
+with BeebEm.  The server software must be run on station number 254.</p>
+
+<p>To run the level 1 server, load the 'econet_level_1_utils.ssd' disk image
+and run the file server by typing 'CH."FS"'.</p>
+
+<p>You will be prompted for:</p>
+
+<ul>
+<li>Number of files per user - enter 3</li>
+<li>Manual configuration - enter Y</li>
+<li>Directory for first station - enter A</li>
+<li>Station number - enter 101</li>
+<li>Directory for second station - enter B</li>
+<li>Station number - enter 102</li>
+<li>Directory for third station - just press enter</li>
+</ul>
+
+<p>The file server will then start running and report that it is ready.<p>
+
+<p>The level 2 server is a little more complicated to set up.  It requires
+the 6502 second processor support to be enabled and requires a special
+"master" disk to be formatted (must be a double sided disk).  I suggest you
+read the "The Econet Level 2 Fileserver Manager's Guide" (available here
+<a href="http://www.bbcdocs.com/">BBC Docs</a>) if you want to set up a
+level 2 server.</p>
+
+<p>To use the econet file system from a station you will need to have a ROM
+installed that supports the econet file system (such as the Acorn DNFS ROM
+installed in Model B mode).  To switch a station into econet file system
+mode press N & F12.  The econet station number should be shown on screen.
+To switch without pressing the break key type '*NET'.  You can then use
+commands such as *CAT, LOAD, SAVE and CHAIN to access files on the
+server.</p>
+
+<h2>Troubleshooting</h2>
+
+<p>The econet emulation in BeebEm is not perfect and is susceptible to
+timing issues.  When a message is being sent between stations BeebEm waits
+for a short time for the econet to become free again before sending the next
+message.  If the delay is too small messages can interfere with each other
+and cause a "Net Error" to be reported.  If it is too long a station can
+report "Line Jammed".  The waiting time is set by default to 100000 cycles
+(0.05s) but can be overridden by a command line option '-EcoFF'.  If you see
+"Net Error" report try a '-EcoFF 500000', for "Line Jammed" try '-EcoFF
+50000'.</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

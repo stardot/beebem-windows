@@ -1,0 +1,276 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Command Line Options</a></h1>
+
+<p>The following command line options can be passed to BeebEm:</p>
+
+<table width="100%" border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td width="20%">-Data &lt;directory&gt;</td>
+    <td width="80%">Use a specified data directory</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-Prefs &lt;file&gt;</td>
+    <td width="80%">Preferences file to load</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-Roms &lt;file&gt;</td>
+    <td width="80%">ROMs configuration file to load</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-EcoStn &lt;station&gt;</td>
+    <td width="80%">Econet station number</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-EcoFF &lt;timeout&gt;</td>
+    <td width="80%">Econet flag fill timeout, see the econet section</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-FullScreen</td>
+    <td width="80%">Start in full screen mode</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-DisMenu</td>
+    <td width="80%">Disables the drop down menus</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-KbdCmd &lt;cmd&gt;</td>
+    <td width="80%">Keyboard command string to run (see below)</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-NoAutoBoot</td>
+    <td width="80%">Disable auto-boot when disk image specified</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-DebugScript &lt;file&gt;</td>
+    <td width="80%">Open debugger and execute the commands</td>
+  </tr>
+
+  <tr>
+    <td width="20%">&lt;disk image file&gt;</td>
+    <td width="80%">Disk image file to load.  Two files can be specified for drives 0 and 1.</td>
+  </tr>
+
+  <tr>
+    <td width="20%">&lt;tape file&gt;</td>
+    <td width="80%">Tape file to load</td>
+  </tr>
+
+  <tr>
+    <td width="20%">&lt;state file&gt;</td>
+    <td width="80%">Save state file to load</td>
+  </tr>
+</table>
+
+<p>Note: Command line options -Model and -Tube are no longer supported.
+      Use the -Prefs option with different preferences files instead.</p>
+
+<p>If you create a shortcut to BeebEm.exe on your desktop and edit the
+properties (right click the icon) you can add command line options and a
+disc, tape or state file name to the target box.  Running the shortcut will
+then run the file.</p>
+
+<p>These command lines can be put into Windows scripts.  See the
+BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.</p>
+
+<p>You can also associate files with .ssd, .dsd or .uef extensions with BeebEm
+using Windows Explorer.  Double clicking on one of these files will
+automatically run it in BeebEm.</p>
+
+<h2>Command line examples:</h2>
+
+<table width="100%" border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td width="40%">Run Zalaga with its own preferences</td>
+    <td width="60%">BeebEm -Prefs ZalagaPrefs.cfg Zalaga.ssd</td>
+  </tr>
+
+  <tr>
+    <td width="40%">Run the Torch Z80 with its own preferences</td>
+    <td width="60%">BeebEm -Prefs Torch.cfg -Roms Roms_Torch.cfg</td>
+  </tr>
+
+  <tr>
+    <td width="40%">Run BeebEm with an alternative set of data files</td>
+    <td width="60%">BeebEm -Data \Users\Mike\Documents\BeebEmGames</td>
+  </tr>
+
+  <tr>
+    <td width="40%">To run BeebEm from a USB drive and access the local USB drive data</td>
+    <td width="60%">BeebEm -Data -</td>
+  </tr>
+
+  <tr>
+    <td width="40%">To load and run the test tape image</td>
+    <td width="60%">BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</td>
+  </tr>
+</table>
+
+<h2>Command Line Parameter Notes</h2>
+
+<p>If the specified &lt;data directory&gt; does not exist BeebEm will offer
+to create it.  BeebEm will copy a default set of data to the data directory.
+The default data directory is 'My Documents\BeebEm'.  If a data directory of
+"-" is specified BeebEm will use the "UserData" directory where the
+BeebEm.exe file exists (this is useful for running from a USB drive).</p>
+
+<p>The preferences and ROMs configuration file names are relative to the
+data directory.</p>
+
+<p>If a disk image or a state file name is passed to BeebEm on the command
+line it will be run automatically (but see -NoAutoBoot option).  The name
+can include the full path or it can just be the name of a file in the
+'DiscIms' or 'BeebState' directory.</p>
+
+<p>If a tape image name is passed to BeebEm on the command line it will be
+loaded.  The name can include the full path or it can just be the name of a
+file in the 'Tapes' directory.  To run the tape image use the -KbdCmd
+option.</p>
+
+<h2>Startup Key Sequence</h2>
+
+<p>The -KbdCmd option allows a string of key presses to be passed to BeebEm.
+The string can include the following key sequences:</p>
+
+<table width="60%" border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <th width="20%" align="center">String</th>
+    <th width="80%" align="center">Key Sequence</th>
+  </tr>
+  <tr>
+    <td width="20%" align="center">\n</td>
+    <td width="80%" align="center">press and release of enter/return</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">\s</td>
+    <td width="80%" align="center">press shift</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">\S</td>
+    <td width="80%" align="center">release shift</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">\c</td>
+    <td width="80%" align="center">press control</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">\C</td>
+    <td width="80%" align="center">release control</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">\\</td>
+    <td width="80%" align="center">press and release of \ key</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">0-9</td>
+    <td width="80%" align="center">press and release of a number key</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">A-Z</td>
+    <td width="80%" align="center">press and release of a letter key</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">'-=[];'#,./</td>
+    <td width="80%" align="center">press and release of a symbol key</td>
+  </tr>
+
+  <tr>
+    <td width="20%" align="center">\dNNNN</td>
+    <td width="80%" align="center">set inter-keypress delay to NNNN
+      milliseconds. Note that very low delays can result in loss of
+      presses.</td>
+  </tr>
+</table>
+                 
+<p>So, for example, run a tape image using commands such as:</p>
+
+<p>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</p>
+<p>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

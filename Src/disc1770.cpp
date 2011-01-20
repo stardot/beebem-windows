@@ -323,6 +323,13 @@ void Poll1770(int NCycles) {
 
   // This procedure is called from the 6502core to enable the chip to do stuff in the background
   if ((Status & 1) && (NMILock==0)) {
+    if (FDCommand<6 && *CDiscOpen && (DiscType[CurrentDrive] == 0 && CurrentHead[CurrentDrive] == 1)) {
+      // Single sided disk, disc not ready
+      ResetStatus(0);
+      SetStatus(4);
+      NMIStatus|=1<<nmi_floppy; FDCommand=12;
+      return;
+    }
 	if (FDCommand<6 && *CDiscOpen) {
 		int TracksPassed=0; // Holds the number of tracks passed over by the head during seek
 		unsigned char OldTrack=(Track >= 80 ? 0 : Track);

@@ -1,0 +1,195 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Accessibility Features</a></h1>
+
+<p>BeebEm provides two features for use by visually impaired users:</p>
+
+<h2>Screen Reader compatible text view</h2>
+
+<p>The screen reader compatible text view can be selected from the view
+menu.  When enabled the text on the BeebEm screen is converted to a standard
+Windows text edit control.  Screen readers such as JAWS can move the edit
+cursor around the screen and read the text in the control.  Note that BeebEm
+can only convert text when in teletext mode 7.  In other modes the text edit
+will contain the string "Not in text mode."  A special key press, ALT + `
+(back quote) is available to synchronise the cursor position in the text
+view with the BBC Micro cursor position.</p>
+
+<h2>Text to Speech Generation</h2>
+
+<p>The BeebEm text to speech generation can be selected from the sound menu.
+When enabled BeebEm will use the text to speech capabilities of Windows 
+to read the text on the BeebEm screen.  Text convertion is driven using the
+numeric keypad keys 0 to 9.  The key assignments are based on the basic JAWS
+screen reading keys with some additions.  The key assignments are:</p>
+
+<table width="60%" border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <th width="50%" align="center">PC Key Press</th>
+    <th width="50%" align="center">Function</th>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 5</td>
+    <td width="50%" align="center">read current character</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 6</td>
+    <td width="50%" align="center">read next character</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 4</td>
+    <td width="50%" align="center">read prior character</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 5</td>
+    <td width="50%" align="center">read current word</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 6</td>
+    <td width="50%" align="center">read next word</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 4</td>
+    <td width="50%" align="center">read prior word</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 8</td>
+    <td width="50%" align="center">read current line</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 2</td>
+    <td width="50%" align="center">read next line</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 8</td>
+    <td width="50%" align="center">read prior line</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 2</td>
+    <td width="50%" align="center">read entire screen (say all)</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">alt + num pad 5</td>
+    <td width="50%" align="center">read current sentence</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">alt + num pad 2</td>
+    <td width="50%" align="center">read next sentence</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">alt + num pad 8</td>
+    <td width="50%" align="center">read prior sentence</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 9</td>
+    <td width="50%" align="center">move speech cursor to top of screen</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 9</td>
+    <td width="50%" align="center">speak speech cursor position</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 3</td>
+    <td width="50%" align="center">move speech cursor to bottom of screen</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 3</td>
+    <td width="50%" align="center">toggle speaking of punctuation</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">insert + num pad 1</td>
+    <td width="50%" align="center">toggle auto-read of text as it is written 
+      to the BBC micro screen</td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">num pad 1</td>
+    <td width="50%" align="center">read any buffered auto-read text</td>
+  </tr>
+</table>
+
+<p>If you are running JAWS you may find that it intercepts some of the key
+presses listed above and stops BeebEm from receiving them.  In particular it
+may intercept num pad 5 presses, so try num pad 7 instead as BeebEm
+interprets num pad 7 in the same way as 5.  The BeebEm key assignments will
+also work when num lock is switched on so you could try that as well.  You
+may be able to configure JAWS so it does not say the num pad key names.</p>
+
+<p>Under normal use you may find switching on the auto-read function useful
+(insert + num pad 1).  This will read text as it gets written to the BBC
+micro screen.  This works when using the BASIC command prompt and in many of
+the text based adventure games available for the BBC micro.</p>
+
+<p>As with the text view support the ALT + ` (back quote) key press is
+available to synchronise the speech cursor position with the BBC Micro
+cursor position.</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

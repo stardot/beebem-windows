@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib gdiplus.lib comctl32.lib"
+				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib gdiplus.lib comctl32.lib"
 				OutputFile="../BeebEm.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -135,7 +135,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib ddraw.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib gdiplus.lib comctl32.lib"
+				AdditionalDependencies="vfw32.lib zdll.lib winmm.lib ws2_32.lib dsound.lib sapi.lib d3d9.lib shfolder.lib shlwapi.lib gdiplus.lib comctl32.lib"
 				OutputFile="../BeebEm.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"

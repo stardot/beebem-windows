@@ -209,6 +209,8 @@ class BeebWin  {
 	void SetAMXPosition(unsigned int x, unsigned int y);
 	void Activate(BOOL);
 	void Focus(BOOL);
+	void WinSizeChange(int size, int width, int height);
+	void WinPosChange(int x, int y);
 	BOOL IsFrozen(void);
 	void ShowMenu(bool on);
 	void TrackPopupMenu(int x, int y);
@@ -217,8 +219,8 @@ class BeebWin  {
 	int TranslateKey(int, int, int&, int&);
 	void ParseCommandLine(void);
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
-	void FindCommandLineFile(void);
-	void HandleCommandLineFile(void);
+	void FindCommandLineFile(char *CmdLineFile);
+	void HandleCommandLineFile(int drive, char *CmdLineFile);
 	bool CheckUserDataPath(void);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
@@ -259,12 +261,23 @@ class BeebWin  {
 	char		m_DisableKeysEscape;
 	char		m_DisableKeysShortcut;
 
-  private:
 	int			m_MenuIdWinSize;
 	int			m_XWinSize;
 	int			m_YWinSize;
+	int			m_XLastWinSize;
+	int			m_YLastWinSize;
 	int			m_XWinPos;
 	int			m_YWinPos;
+	int			m_XDXSize;
+	int			m_YDXSize;
+	int			m_XScrSize;
+	int			m_YScrSize;
+	int			m_XWinBorder;
+	int			m_YWinBorder;
+	float		m_XRatioAdj;
+	float		m_YRatioAdj;
+	float		m_XRatioCrop;
+	float		m_YRatioCrop;
 	BOOL		m_ShowSpeedAndFPS;
 	int			m_MenuIdSampleRate;
 	int			m_MenuIdVolume;
@@ -295,6 +308,8 @@ class BeebWin  {
 	int			m_CurrentDisplayRenderer;
 	int			m_DDFullScreenMode;
 	bool		m_isFullScreen;
+	bool		m_MaintainAspectRatio;
+	bool		m_startFullScreen;
 	bool		m_AutoSavePrefsCMOS;
 	bool		m_AutoSavePrefsFolders;
 	bool		m_AutoSavePrefsAll;
@@ -340,7 +355,8 @@ class BeebWin  {
 	int			m_LastNLines;
 	int			m_MotionBlur;
 	char 		m_BlurIntensities[8];
-	char 		m_CommandLineFileName[_MAX_PATH];
+	char 		m_CommandLineFileName1[_MAX_PATH];
+	char 		m_CommandLineFileName2[_MAX_PATH];
 	char		m_KbdCmd[1024];
 	char		m_DebugScript[_MAX_PATH];
 	int			m_KbdCmdPos;
@@ -372,6 +388,7 @@ class BeebWin  {
 
 	// DirectX stuff
 	BOOL					m_DXInit;
+	BOOL					m_DXResetPending;
 
 	// DirectDraw stuff
 	LPDIRECTDRAW			m_DD;			// DirectDraw object
@@ -418,9 +435,8 @@ class BeebWin  {
 	void UpdateMonitorMenu();
 	void UpdateSerialMenu(HMENU hMenu);
 	void UpdateEconetMenu(HMENU hMenu);
-public:	
 	void ExternUpdateSerialMenu();
-private:
+
 	void UpdateSFXMenu();
 	void UpdateDisableKeysMenu();
 	void UpdateDisplayRendererMenu(void);
@@ -428,9 +444,7 @@ private:
 	// DirectX - calls DDraw or DX9 fn
 	void InitDX(void);
 	void ResetDX(void);
-  public:
 	void ReinitDX(void);
-  private:
 	void ExitDX(void);
 	void UpdateSmoothing(void);
 
@@ -445,6 +459,8 @@ private:
 	void RenderDX9(void);
 
 	void TranslateWindowSize(void);
+	void TranslateDDSize(void);
+	void CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight);
 	void TranslateSampleRate(void);
 	void TranslateVolume(void);
 	void TranslateTiming(void);

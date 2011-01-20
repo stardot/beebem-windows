@@ -53,7 +53,7 @@ void BeebWin::EditROMConfig(void)
 	// Copy Rom config
 	memcpy(&ROMCfg, &RomConfig, sizeof(ROMConfigFile));
 
-	nResult = DialogBox(hInst, MAKEINTRESOURCE(IDD_ROMCONFIG), m_hWnd, ROMConfigDlgProc);
+	nResult = DialogBox(hInst, MAKEINTRESOURCE(IDD_ROMCONFIG), m_hWnd, (DLGPROC)ROMConfigDlgProc);
 	if (nResult == TRUE)
 	{
 		// Copy in new config and read ROMs
@@ -102,6 +102,28 @@ static void LVSetFocus(HWND hWnd)
 }
 
 /****************************************************************************/
+static void UpdateROMField(int row)
+{
+	char szROMFile[_MAX_PATH];
+	bool unplugged = false;
+	int bank;
+
+	if (nModel == 3)
+	{
+		bank = 16 - row;
+		if (bank >= 0 && bank <= 7)
+			unplugged = (CMOSRAM[20] & (1 << bank)) ? false : true;
+		else if (bank >= 8 && bank <= 15)
+			unplugged = (CMOSRAM[21] & (1 << (bank-8))) ? false : true;
+	}
+
+	strncpy(szROMFile, ROMCfg[nModel][row], _MAX_PATH);
+	if (unplugged)
+		strncat(szROMFile, " (unplugged)", _MAX_PATH);
+	LVSetItemText(hWndROMList, row, 1, (LPTSTR)szROMFile);
+}
+
+/****************************************************************************/
 static void FillROMList(void)
 {
 	int bank;
@@ -121,7 +143,7 @@ static void FillROMList(void)
 		bank = 16 - row;
 		sprintf(str, "%02d (%X)", bank, bank);
 		LVInsertItem(hWndROMList, row, 0, (LPTSTR)str, bank);
-		LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[nModel][row]);
+		UpdateROMField(row);
 	}
 }
 
@@ -172,7 +194,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 					if (GetROMFile(hwndDlg, szROMFile))
 					{
 						strcpy(ROMCfg[nModel][row], szROMFile);
-						LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[nModel][row]);
+						UpdateROMField(row);
 					}
 				}
 				LVSetFocus(hWndROMList);
@@ -188,7 +210,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 							cfg[strlen(cfg) - 4] = 0;
 						else
 							strcat(cfg, ROM_WRITABLE);
-						LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[nModel][row]);
+						UpdateROMField(row);
 					}
 				}
 				LVSetFocus(hWndROMList);
@@ -198,7 +220,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 				if (row >= 1 && row <= 16)
 				{
 					strcpy(ROMCfg[nModel][row], BANK_RAM);
-					LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[nModel][row]);
+					UpdateROMField(row);
 				}
 				LVSetFocus(hWndROMList);
 				break;
@@ -207,7 +229,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 				if (row >= 1 && row <= 16)
 				{
 					strcpy(ROMCfg[nModel][row], BANK_EMPTY);
-					LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[nModel][row]);
+					UpdateROMField(row);
 				}
 				LVSetFocus(hWndROMList);
 				break;
@@ -245,7 +267,7 @@ static bool LoadROMConfigFile(HWND hWnd)
 
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
-	int nROMPathLen = strlen(szROMConfigPath);
+	int nROMPathLen = (int)strlen(szROMConfigPath);
 
 	if (szDefaultROMConfigPath[0])
 		strcpy(DefaultPath, szDefaultROMConfigPath);
@@ -307,7 +329,7 @@ static bool SaveROMConfigFile(HWND hWnd)
 
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
-	int nROMPathLen = strlen(szROMConfigPath);
+	int nROMPathLen = (int)strlen(szROMConfigPath);
 
 	if (szDefaultROMConfigPath[0])
 		strcpy(DefaultPath, szDefaultROMConfigPath);
@@ -409,7 +431,7 @@ static bool GetROMFile(HWND hWnd, char *pFileName)
 
 	strcpy(szROMPath, "BeebFile");
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMPath);
-	int nROMPathLen = strlen(szROMPath);
+	int nROMPathLen = (int)strlen(szROMPath);
 
 	if (szDefaultROMPath[0])
 		strcpy(DefaultPath, szDefaultROMPath);

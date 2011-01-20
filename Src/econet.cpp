@@ -1015,7 +1015,7 @@ bool EconetPoll_real(void) {		//return NMI status
 								SendMe = TRUE;
 								network[++networkp].station = 0;
 							} else {
-								int j=0;
+								unsigned int j=0;
 								do {
 									if (aunnet[j].network == BeebTx.eh.destnet) {
 										network[i].inet_addr = aunnet[j].inet_addr | (BeebTx.eh.deststn << 24);

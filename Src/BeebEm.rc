@@ -520,6 +520,7 @@ BEGIN
         MENUITEM "&Speed and FPS On/Off",       IDM_SPEEDANDFPS
         MENUITEM SEPARATOR
         MENUITEM "&Full Screen",                IDM_FULLSCREEN
+        MENUITEM "Maintain Aspect Ratio in Full Screen", IDM_MAINTAINASPECTRATIO
         POPUP "Window Sizes"
         BEGIN
             MENUITEM "320x256",                     IDM_320X256
@@ -534,6 +535,8 @@ BEGIN
         POPUP "DirectX Full Screen Modes"
         BEGIN
             MENUITEM "640x480",                     ID_VIEW_DD_640X480
+            MENUITEM "720x576",                     ID_VIEW_DD_720X576
+            MENUITEM "800x600",                     ID_VIEW_DD_800X600
             MENUITEM "1024x768",                    ID_VIEW_DD_1024X768
             MENUITEM "1280x768",                    ID_VIEW_DD_1280X768
             MENUITEM "1280x960",                    ID_VIEW_DD_1280X960
@@ -747,7 +750,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "View &README",                IDM_VIEWREADME
+        MENUITEM "View &Help",                  IDM_VIEWREADME
         MENUITEM "&About BeebEm",               IDM_ABOUT
     END
 END

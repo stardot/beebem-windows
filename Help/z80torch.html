@@ -1,0 +1,121 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Torch Z80 Co-Processor</a></h1>
+
+<p>BeebEm emulates the Torch-Z80 co-processor board.  The Torch-Z80 board
+was an add-on card to the BBC computers which allowed you to run CPN (a
+clone of CP/M) software. It was Z80 based, came with 64K of RAM and
+connected to the BBC via the Tube interface.</p>
+
+<p>The Torch had no hardware I/O of it's own but used the display, keyboard,
+disc drives etc of the host processor.  Although it used the host disc
+drives, the disc formats were different to DFS or ADFS. It still used 80
+track, double sided discs (400K) but these discs cannot be read on the BBC
+without special disc converting software. If you wish to create your own
+disc images of original Torch Z80 software you can use the 
+<a href="http://www.g7jjf.com">XFER 5.1</a> program.
+
+<p>The emulator comes as default with Torch-Z80 support disabled (to prevent
+confusion for new users). To configure support, you need to load a sideways
+ROM image for the Host Tube support. A configuration file has already been
+created for this so the simplest thing to do is replace the Roms.cfg file
+with the Roms_Torch.cfg file (backing up Roms.cfg first of course !) This
+file simply loads the required MCP122.ABM ROM into ROM Slot 0.</p>
+
+<p>With this new configuration, running the emulator in Master 128 mode,
+will default to a blue Mode 0 screen. You need to select Torch Z80 Second
+Processor off the Hardware menu (the emulator will reboot) and type *MCP to
+enter CPN. If you try and run *MCP without enabling the Torch Z80 Second
+Processor off the Hardware menu, you will get a 'No Z80!' error message on
+screen.</p>
+
+<p>By default, the system will try and autoboot off Drive C and if you don't
+have a suitable disc image mounted, it will bring back an error. To prevent
+this, when typing *MCP, hold down the Alt key (Caps Lock) and this will
+prevent CPN from autobooting.</p>
+
+<p>I cannot give you a full overview of CPN but typing HELP is a good start
+as well as exploring the disc images found at -
+<a href="http://www.g7jjf.com/disc_images.htm">Torch Discs</a>.</p>
+
+<p>The original Torch Standard Utilities Ver 2.0 disc is included on drive C
+and the Torch Hard Disc Utilities Ver 4.0 are on Drive D and both contain
+several useful programs to get you going.</p>
+
+</p>The Torch Z80 fully supports Econet emulation which provides TORCHNET
+facilities for sharing drives amongst multiple computers or instances of
+BeebEm.</p>
+
+<p>If you have any specific questions about the Torch-Z80 support, please
+drop Jon an e-mail - see <a href="http://www.g7jjf.com">Jon's Site</a>.</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

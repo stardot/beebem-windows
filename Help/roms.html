@@ -1,0 +1,151 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">ROM Software</a></h1>
+
+<p>Although most games software is supplied on disc images there is a large
+selection of ROM software available for the BBC Micro.  There are
+application ROMs such as word processors and drawing packages, there are
+programing language ROMs such as FORTH and BCPL, and a whole range of other
+software.  The BBC Micro operating system, BASIC language and disc filing
+system are all supplied on ROM.</p>
+
+<p>The BBC Micro and Master 128 (and BeebEm) support up to 16 ROM slots plus
+one for the operating system.  The BBC Micro ROMs are kept in subdirectories
+of the 'BeebFile' directory.  The is one subdirectory for each of the four
+models emulated.</p>
+
+<h2>Configuring ROMs</h2>
+
+<p>The ROMs that BeebEm loads are configured in the 'Roms.cfg' file.  You can
+edit the ROM configuration within BeebEm using the "Edit ROM Configuration"
+option on the Hardware menu.  Note that you usually have to press the Break
+key (F12) before a new ROM configuration is recognised.  Changes to the ROM
+configuration can be saved to the Roms.cfg file or another file.</p>
+
+<p>In Master 128 mode some ROMS may be "unplugged".  This is a feature of the
+Master MOS that allows ROMs to be ignored.  The ROM Configuration editor
+will indicate which ROMs are unplugged (as will *ROMS).  Use the *INSERT
+command to enable ROMs.</p>
+
+<h2>Running a ROM</h2>
+
+<p>To run a ROM you will need to type a command into BeebEm.  The exact command
+will depend on the ROM itself and you may need to refer to any documentation
+that accompanied the ROM.  Some ROMs list the commands available when you
+type '*HELP' into BeebEm.</p>
+
+<h2>RAM Expansion</h2>
+
+<p>Any of the 16 ROM slots can be configured as RAM.  Some software
+(e.g. games) can make use of this RAM so its a good idea to leave at least
+one slot as RAM.</p>
+
+<h2>Writable ROMs</h2>
+
+<p>ROMs are not normally writable but some ROM software was supplied on small
+expansion boards that had some RAM on them.  These ROMs should be marked as
+writable in the Roms.cfg file (use the "Make Writable" option in ROM
+configuration).</p>
+
+<h2>Essential ROMs</h2>
+
+<p>Note that certain ROMs must be present for each emulation mode to work so do
+not remove these:</p>
+
+<table width="100%" border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td width="20%">BBC Model B</td>
+    <td width="80%">OS12.ROM, BASIC2.ROM, DNFS.ROM</td>
+  </tr>
+
+  <tr>
+    <td width="20%">BBC Model B IntegraB</td>
+    <td width="80%">OS12.ROM, IBOS.ROM, BASIC2.ROM, WDFS.ROM</td>
+  </tr>
+
+  <tr>
+    <td width="20%">BBC Model B Plus</td>
+    <td width="80%">B+MOS.ROM, BASIC2.ROM, WDFS.ROM</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Master 128</td>
+    <td width="80%">MOS.ROM, TERMINAL.ROM, BASIC4.ROM, DFS.ROM</p></td>
+  </tr>
+</table>
+
+<p>The default set of ROMs configured for the Master 128 mode are MOS 3.20.
+The MOS 3.50 ROMs are also included.  To use them either rename the
+BeebFile/M128 directory to M128-MOS3.2 and rename the M128-MOS3.5 directory
+M128 or create a new configuration using the ROM Configuration option.</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

@@ -1,0 +1,232 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Disc Images</a></h1>
+
+<p>BeebEm emulates two double sided floppy disc drives, know as drive 0
+(second side 2) and drive 1 (second side 3).  You can load a disc image file
+into either drive 0 or 1 using the File menu in BeebEm.</p>
+
+<p>Once a disc image is loaded you can use the BASIC interpreter and BBC
+operating system to access the files in the disc.  Some useful disc commands
+are:</p>
+
+<table width="100%" border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td width="20%">*CAT</td>
+    <td width="80%">List files on the disc</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*DRIVE &lt;drive&gt;</td>
+    <td width="80%">Change default drive number (0, 1, 2 or 3)</td>
+  </tr>
+
+  <tr>
+    <td width="20%">LOAD "&lt;file&gt;"</td>
+    <td width="80%">Load a BASIC program</td>
+  </tr>
+
+  <tr>
+    <td width="20%">CHAIN "&lt;file&gt;"</td>
+    <td width="80%">Load and run a BASIC program</td>
+  </tr>
+
+  <tr>
+    <td width="20%">SAVE "&lt;file&gt;"</td>
+    <td width="80%">Save a BASIC program</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*DELETE &lt;file&gt;</td>
+    <td width="80%">Delete a file</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*RUN &lt;file&gt;</td>
+    <td width="80%">Load and run a binary program</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*TITLE &lt;title&gt;</td>
+    <td width="80%">Put a title on the disc</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*BUILD &lt;file&gt;</td>
+    <td width="80%">Create a file on the disc containing a set of commands
+      you type in.  Press Escape to end.</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*EXEC &lt;file&gt;</td>
+    <td width="80%">Execute the commands contained in a file (created with
+      *BUILD for example).</td>
+  </tr>
+</table>
+
+<h2>Booting Discs</h2>
+
+<p>Many disc images that can be downloaded from the Internet have been setup
+to be "bootable" (i.e. configured to run a particular program).  To boot a
+disc press <b>Shift & F12</b> (i.e. hold the shift key down and press F12).
+If a disc does not boot it is probably because it has not been set up to be
+bootable.  Non-bootable disc can be accessed using the commands shown
+above.</p>
+
+<p>If you want to make a disc bootable you will need to create a file called
+!BOOT containing the commands to execute when the disc is booted.  The
+*BUILD command can be used to create the !BOOT file.  The disc image file
+also needs to be configured to run the !BOOT file when its booted.  This can
+be done by running the command <b>*OPT4,3</b>.</p>
+
+<p>If you want to write data to a disc image (e.g. save a game position) you
+will need to make sure that 'Write Protect' is switched off on the File menu
+for the drive you are using.  Disc writes will then write data straight back
+to the image file on your PC disc.</p>
+
+<p>You can find out more information about using discs by reading the DFS
+(Disc Filing System) guides available on the Internet.</p>
+
+<h2>Modifying Disc Image Files</h2>
+
+<p>The BeebEm File menu provides options to create new disc image files.
+The Edit menu provides options to export and import files from/to a disc
+image file.</p>
+
+<p>When importing and exporting files BeebEm will look for or create an
+additional file with a '.INF' extension to accompany the data file.  The
+.INF file contains load address, execution address and file length
+information for the data file.  The format of the data in the .INF file
+is:</p>
+
+<p><b>&lt;file name&gt; &lt;load address&gt; 
+&lt;execution address&gt; &lt;file length&gt;</b></p>
+
+<p>The file name must include the DFS directory prefix for the file and it
+must be 9 characters long.  The addresses and length are 6 digit hex
+numbers. e.g.</p>
+
+<pre>A.DARE    004000 006691 002700
+$.CHUCKIE 001100 0029AB 002700</pre>
+
+<h2>ADFS Discs</h2>
+
+<p>If you want to use ADFS discs in the Master 128 mode then load an ADFS
+disk image (such as the MasterWelcome.adl image in the DiscIms folder) and
+type <b>*ADFS</b> to mount it.  You can also press A & F12 to mount an ADFS
+disc.</p>
+
+<p>ADFS is also supported in Model B and B Plus modes.  Note that in Model B
+mode you will need to select the Acorn 1770 disc controller and add
+ADFS-1.30.rom to the ROM configuration.</p>
+
+<h2>Corrupted Discs Images</h2>
+
+<p>Some of the disc images you will find on the Internet or that you create
+yourself will have an invalid catalogue (they contain just enough
+information for disc reads to work but not writes).</p>
+
+<p>When you write enable a disc BeebEm checks the disc catalogues and it
+will display a warning message if either are invalid.  If you get a warning
+message then do NOT write to the disc image, you will loose data.</p>
+
+<p>To fix an invalid catalogue do the following:</p>
+
+<ol>
+<li>Start BeebEm and load the invalid image into drive 1.</li>
+
+<li>Create a new disc image file in drive 0.</li>
+
+<li>If the invalid image uses a Watford DFS 62 file catalogue then format
+the new disc image with a 62 file catalogue (you need the Watford DFS ROM
+installed), type:
+<pre>
+  *ENABLE
+  *FORM80 0
+</pre>
+</li>
+
+<li>Copy all the files from the invalid disc to the new one and set the
+shift break option and title, type:
+<pre>
+  *COPY 1 0 *.*
+  *OPT4,3
+  *TITLE &lt;title&gt;
+</pre>
+</li>
+</ol>
+
+<p>The new image will now have a valid catalogue.  If you are using double
+sided images then remember to format and copy both sides (the second sides
+of disc 0 and 1 are 2 and 3).</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

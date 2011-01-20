@@ -1,0 +1,149 @@
+<html>
+<head>
+  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+
+  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
+</head>
+
+<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+
+      <td>
+        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
+      </td>
+
+      <td width="100">
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
+                               align="middle" width="48" height="48" border="0" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <table width="100%" border="0" cellpadding="2" cellspacing="2">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="20%">
+        <p align="center"><a href="index.html">Home</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="contents.html">Help Contents</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
+      </td>
+
+      <td width="20%">
+        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+
+  <table width="100%" border="0" cellpadding="5" cellspacing="0">
+    <tr>
+      <td width="10%"></td>
+
+      <td width="80%">
+      <!-- Start of content -->
+
+<h1 align="center">Tape Images</a></h1>
+
+<p>BeebEm emulates a cassette recorder.  You can load a tape image file
+using the File menu in BeebEm.</p>
+
+<p>Once a tape image is loaded you can use the BASIC interpreter and BBC
+operating system to access the files in the tape image. Some useful tape
+commands are:</p>
+
+<table width="100%" border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td width="20%">*TAPE</td>
+    <td width="80%">Select tape filing system</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*CAT</td>
+    <td width="80%">List files on the tape image</td>
+  </tr>
+
+  <tr>
+    <td width="20%">LOAD ""</td>
+    <td width="80%">Load a BASIC program from the tape image</td>
+  </tr>
+
+  <tr>
+    <td width="20%">CHAIN ""</td>
+    <td width="80%">Load and run a BASIC program</td>
+  </tr>
+
+  <tr>
+    <td width="20%">SAVE "&lt;file&gt;"</td>
+    <td width="80%">Save a BASIC program to the tape image</td>
+  </tr>
+
+  <tr>
+    <td width="20%">*RUN</td>
+    <td width="80%">Load and run a binary program</td>
+  </tr>
+</table>
+
+<h2>Running Tapes</h2>
+
+<p>Most tapes can be run by typing:
+<pre>
+  *TAPE
+  CH.""
+</pre>
+</p>
+
+<p>If that does not work, rewind the tape and try:
+<pre>
+  *TAPE
+  *RUN
+</pre>
+</p>
+
+<p>Tape loading can be quite slow so BeebEm has menu options to artificially
+speed up loading.  You can also use the speed menu (or keypad +/-) to speed
+up the whole emulation, which speeds up tape loading.</p>
+
+<h2>Tape Position Control</h2>
+
+<p>BeebEm has a Tape Control window that enables you to move the tape
+position around by clicking on the block you want to load next.  If a block
+is missed when loading from a tape you will need to move the tape position
+back to retry the block.</p>
+
+<h2>Writing to Tape Images</h2>
+
+<p>If you want to save files to a tape image then you can use the 'Record'
+button on the Tape Control.  If you have a tape loaded then pressing Record
+will append saved files to the end of the tape image.  If you want to create
+a new tape image then eject the current tape and press Record.  The tape
+block list will be updated when recording finishes (press Stop when the save
+completes).</p>
+
+      <!-- End of content -->
+      </td>
+
+      <td width="10%"></td>
+    </tr>
+  </table>
+
+  <hr size="1" color="#004080" />
+  <p>Copyright &copy; 2011 Mike Wyatt</a></p>
+  <hr size="1" color="#004080" />
+</body>
+</html>

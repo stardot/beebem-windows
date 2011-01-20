@@ -422,6 +422,10 @@ Boston, MA  02110-1301, USA.
 #define ID_IP232RW                      40275
 #define IDM_SWRAMBOARD                  40276
 #define IDM_ROMCONFIG                   40277
+#define IDM_MAINTAINASPECTRATIO         40278
+#define ID_VIEW_DD_720X576              40279
+#define ID_VIEW_DD_800X600              40280
+#define IDM_CUSTOMWINSIZE               40281
 
 #define IDC_STATIC                      -1
 
@@ -431,7 +435,7 @@ Boston, MA  02110-1301, USA.
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        117
-#define _APS_NEXT_COMMAND_VALUE         40278
+#define _APS_NEXT_COMMAND_VALUE         40282
 #define _APS_NEXT_CONTROL_VALUE         1087
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

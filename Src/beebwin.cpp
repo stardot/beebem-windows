@@ -71,6 +71,8 @@ Boston, MA  02110-1301, USA.
 
 using namespace Gdiplus;
 
+#define WIN_STYLE (WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_SIZEBOX)
+
 // some LED based macros
 #define LED_COL_BASE 64
 
@@ -111,7 +113,7 @@ static const char *AboutText =
 	"Master 512 Second Processor\n"
 #endif
 	"ARM Second Processor\n\n"
-	"Version " VERSION_STRING ", Nov 2009";
+	"Version " VERSION_STRING ", Jan 2011";
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -187,9 +189,21 @@ BeebWin::BeebWin()
 	m_CurrentDisplayRenderer = 0;
 	m_DXSmoothing = true;
 	m_DXSmoothMode7Only = false;
+	m_DXResetPending = false;
 	m_JoystickCaptured = false;
 	m_customip[0] = 0;
 	m_customport = 0;
+	m_isFullScreen = false;
+	m_MaintainAspectRatio = true;
+	m_startFullScreen = false;
+	m_XDXSize = 640;
+	m_YDXSize = 480;
+	m_XScrSize = GetSystemMetrics(SM_CXSCREEN);
+	m_YScrSize = GetSystemMetrics(SM_CYSCREEN);
+	m_XWinBorder = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
+	m_YWinBorder = GetSystemMetrics(SM_CYSIZEFRAME) * 2 +
+		GetSystemMetrics(SM_CYMENUSIZE) +
+		GetSystemMetrics(SM_CYCAPTION) + 1;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -220,14 +234,21 @@ void BeebWin::Initialise()
 {   
 	// Parse command line
 	ParseCommandLine();
-	FindCommandLineFile();
-	CheckForLocalPrefs(m_CommandLineFileName, false);
+	FindCommandLineFile(m_CommandLineFileName1);
+	FindCommandLineFile(m_CommandLineFileName2);
+	CheckForLocalPrefs(m_CommandLineFileName1, false);
 
 	// Check that user data directory exists
 	if (CheckUserDataPath() == false)
 		exit(-1);
 
 	LoadPreferences();
+
+	// Override full screen?
+	if (m_startFullScreen)
+	{
+		m_isFullScreen = true;
+	}
 
 	if (FAILED(CoInitialize(NULL)))
 		MessageBox(m_hWnd,"Failed to initialise COM\n",WindowTitle,MB_OK|MB_ICONERROR);
@@ -258,7 +279,8 @@ void BeebWin::Initialise()
 	}
 
 	// Boot file if passed on command line
-	HandleCommandLineFile();
+	HandleCommandLineFile(1, m_CommandLineFileName2);
+	HandleCommandLineFile(0, m_CommandLineFileName1);
 
 	// Schedule first key press if keyboard command supplied
 	if (m_KbdCmd[0] != 0)
@@ -582,6 +604,7 @@ void BeebWin::CreateBeebWindow(void)
 {
 	DWORD style;
 	int x,y;
+	int show = SW_SHOW;
 
 	x = m_XWinPos;
 	y = m_YWinPos;
@@ -594,12 +617,7 @@ void BeebWin::CreateBeebWindow(void)
 	}
 
 	if (m_DisplayRenderer == IDM_DISPGDI && m_isFullScreen)
-	{
-		RECT scrrect;
-		SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
-		x = scrrect.left;
-		y = scrrect.top;
-	}
+		show = SW_MAXIMIZE;
 
 	if (m_DisplayRenderer != IDM_DISPGDI && m_isFullScreen)
 	{
@@ -607,7 +625,7 @@ void BeebWin::CreateBeebWindow(void)
 	}
 	else
 	{
-		style = WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+		style = WIN_STYLE;
 	}
 
 	m_hWnd = CreateWindow(
@@ -615,19 +633,18 @@ void BeebWin::CreateBeebWindow(void)
 				m_szTitle, 		// Text for window title bar.
 				style,
 				x, y,
-				m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
-				m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
-					+ GetSystemMetrics(SM_CYMENUSIZE)
-					+ GetSystemMetrics(SM_CYCAPTION)
-					+ 1,
+				m_XWinSize + m_XWinBorder,
+				m_YWinSize + m_YWinBorder,
 				NULL,					// Overlapped windows have no parent.
 				NULL,				 // Use the window class menu.
 				hInst,			 // This instance owns this window.
 				NULL				 // We don't use any data in our WM_CREATE
 		); 
 
-	ShowWindow(m_hWnd, SW_SHOW); // Show the window
+	ShowWindow(m_hWnd, show); // Show the window
 	UpdateWindow(m_hWnd);		  // Sends WM_PAINT message
+
+	SetWindowAttributes(false);
 }
 
 void BeebWin::ShowMenu(bool on) {
@@ -730,6 +747,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_SPEEDANDFPS, m_ShowSpeedAndFPS ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio ? MF_CHECKED : MF_UNCHECKED);
 	UpdateMonitorMenu();
 	CheckMenuItem(hMenu, ID_HIDEMENU, HideMenuEnabled ? MF_CHECKED:MF_UNCHECKED);
 	UpdateLEDMenu(hMenu);
@@ -744,10 +762,12 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_1280X1024, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_1440X1080, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_1600X1200, MF_UNCHECKED);
-	CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
+	//CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
 
 	// View -> DD mode
 	CheckMenuItem(hMenu, ID_VIEW_DD_640X480, MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_VIEW_DD_720X576, MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_VIEW_DD_800X600, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1024X768, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1280X1024, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1280X768, MF_UNCHECKED);
@@ -1009,15 +1029,16 @@ void BeebWin::SetMousestickButton(int button)
 /****************************************************************************/
 void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 {
-static int lastx = 32768;
-static int lasty = 32768;
-int dx, dy;
+	static int lastx = 32768;
+	static int lasty = 32768;
+	int dx, dy;
 
 	if (m_MenuIdSticks == IDM_AMOUSESTICK)				// Analogue mouse stick
 	{
 		JoystickX = (m_XWinSize - x) * 65535 / m_XWinSize;
 		JoystickY = (m_YWinSize - y) * 65535 / m_YWinSize;
-	} else if (m_MenuIdSticks == IDM_DMOUSESTICK)		// Digital mouse stick
+	}
+	else if (m_MenuIdSticks == IDM_DMOUSESTICK)		// Digital mouse stick
 	{
 		dx = x - lastx;
 		dy = y - lasty;
@@ -1096,7 +1117,18 @@ LRESULT CALLBACK WndProc(
 				mainWin->RealizePalette(hDC);
 				mainWin->updateLines(hDC, 0, 0);
 				EndPaint(hWnd, &ps);
+
+				if (mainWin->m_DXResetPending)
+					mainWin->ResetDX();
 			}
+			break;
+
+		case WM_SIZE:
+			mainWin->WinSizeChange(uParam, LOWORD(lParam), HIWORD(lParam));
+			break;
+
+		case WM_MOVE:
+			mainWin->WinPosChange(LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case WM_SYSKEYDOWN:
@@ -1120,6 +1152,11 @@ LRESULT CALLBACK WndProc(
 			else if (uParam == VK_RETURN && (lParam & 0x20000000))
 			{
 				mainWin->HandleCommand(IDM_FULLSCREEN);
+				break;
+			}
+			else if (uParam == VK_F4 && (lParam & 0x20000000))
+			{
+				mainWin->HandleCommand(IDM_EXIT);
 				break;
 			}
 
@@ -1703,99 +1740,96 @@ BOOL BeebWin::UpdateTiming(void)
 }
 
 /****************************************************************************/
+void BeebWin::TranslateDDSize(void)
+{
+	switch (m_DDFullScreenMode)
+	{
+	default:
+	case ID_VIEW_DD_640X480:
+		m_XDXSize = 640;
+		m_YDXSize = 480;
+		break;
+	case ID_VIEW_DD_720X576:
+		m_XDXSize = 720;
+		m_YDXSize = 576;
+		break;
+	case ID_VIEW_DD_800X600:
+		m_XDXSize = 800;
+		m_YDXSize = 600;
+		break;
+	case ID_VIEW_DD_1024X768:
+		m_XDXSize = 1024;
+		m_YDXSize = 768;
+		break;
+	case ID_VIEW_DD_1280X768:
+		m_XDXSize = 1280;
+		m_YDXSize = 768;
+		break;
+	case ID_VIEW_DD_1280X960:
+		m_XDXSize = 1280;
+		m_YDXSize = 960;
+		break;
+	case ID_VIEW_DD_1280X1024:
+		m_XDXSize = 1280;
+		m_YDXSize = 1024;
+		break;
+	case ID_VIEW_DD_1440X900:
+		m_XDXSize = 1440;
+		m_YDXSize = 900;
+		break;
+	case ID_VIEW_DD_1600X1200:
+		m_XDXSize = 1600;
+		m_YDXSize = 1200;
+		break;
+	}
+}
+	
+/****************************************************************************/
 void BeebWin::TranslateWindowSize(void)
 {
-	if (m_isFullScreen)
+	switch (m_MenuIdWinSize)
 	{
-		if (m_DisplayRenderer != IDM_DISPGDI)
-		{
-			switch (m_DDFullScreenMode)
-			{
-			case ID_VIEW_DD_640X480:
-			  m_XWinSize = 640;
-			  m_YWinSize = 480;
-			  break;
-			case ID_VIEW_DD_1024X768:
-			  m_XWinSize = 1024;
-			  m_YWinSize = 768;
-			  break;
-			case ID_VIEW_DD_1280X768:
-			  m_XWinSize = 1280;
-			  m_YWinSize = 768;
-			  break;
-			case ID_VIEW_DD_1280X960:
-			  m_XWinSize = 1280;
-			  m_YWinSize = 960;
-			  break;
-			case ID_VIEW_DD_1280X1024:
-			  m_XWinSize = 1280;
-			  m_YWinSize = 1024;
-			  break;
-			case ID_VIEW_DD_1440X900:
-			  m_XWinSize = 1440;
-			  m_YWinSize = 900;
-			  break;
-			case ID_VIEW_DD_1600X1200:
-			  m_XWinSize = 1600;
-			  m_YWinSize = 1200;
-			  break;
-			}
-		}
-		else
-		{
-			RECT scrrect;
-			SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
-			m_XWinSize = scrrect.right - scrrect.left - GetSystemMetrics(SM_CXFIXEDFRAME) * 2;
-			m_YWinSize = scrrect.bottom - scrrect.top - GetSystemMetrics(SM_CYFIXEDFRAME) * 2
-					- GetSystemMetrics(SM_CYMENUSIZE) - GetSystemMetrics(SM_CYCAPTION);
-		}
+	case IDM_320X256:
+		m_XWinSize = 320;
+		m_YWinSize = 256;
+		break;
+	default:
+	case IDM_640X512:
+		m_XWinSize = 640;
+		m_YWinSize = 512;
+		break;
+	case IDM_800X600:
+		m_XWinSize = 800;
+		m_YWinSize = 600;
+		break;
+	case IDM_1024X512:
+		m_XWinSize = 1024;
+		m_YWinSize = 512;
+		break;
+	case IDM_1024X768:
+		m_XWinSize = 1024;
+		m_YWinSize = 768;
+		break;
+	case IDM_1280X1024:
+		m_XWinSize = 1280;
+		m_YWinSize = 1024;
+		break;
+	case IDM_1440X1080:
+		m_XWinSize = 1440;
+		m_YWinSize = 1080;
+		break;
+	case IDM_1600X1200:
+		m_XWinSize = 1600;
+		m_YWinSize = 1200;
+		break;
+	case IDM_CUSTOMWINSIZE:
+		break;
 	}
-	else
-	{
-	  switch (m_MenuIdWinSize)
-	  {
-	  case IDM_320X256:
-		  m_XWinSize = 320;
-		  m_YWinSize = 256;
-		  break;
 
-	  default:
-	  case IDM_640X512:
-		  m_XWinSize = 640;
-		  m_YWinSize = 512;
-		  break;
+	m_XLastWinSize = m_XWinSize;
+	m_YLastWinSize = m_YWinSize;
 
-	  case IDM_800X600:
-		  m_XWinSize = 800;
-		  m_YWinSize = 600;
-		  break;
-
-	  case IDM_1024X512:
-		  m_XWinSize = 1024;
-		  m_YWinSize = 512;
-		  break;
-
-	  case IDM_1024X768:
-		  m_XWinSize = 1024;
-		  m_YWinSize = 768;
-		  break;
-
-	  case IDM_1280X1024:
-		  m_XWinSize = 1280;
-		  m_YWinSize = 1024;
-		  break;
-
-	  case IDM_1440X1080:
-		  m_XWinSize = 1440;
-		  m_YWinSize = 1080;
-		  break;
-
-	  case IDM_1600X1200:
-		  m_XWinSize = 1600;
-		  m_YWinSize = 1200;
-		  break;
-	  }
-	}
+	m_MenuIdWinSize = IDM_CUSTOMWINSIZE;
 }
 
 /****************************************************************************/
@@ -2032,10 +2066,36 @@ void BeebWin::SetTapeSpeedMenu(void) {
 }
 
 /****************************************************************************/
+#define ASPECT_RATIO_X 5
+#define ASPECT_RATIO_Y 4
+void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
+{
+	m_XRatioAdj = 0.0f;
+	m_YRatioAdj = 0.0f;
+	m_XRatioCrop = 0.0f;
+	m_YRatioCrop = 0.0f;
+
+	if (m_isFullScreen)
+	{
+		int w = DisplayWidth * ASPECT_RATIO_Y;
+		int h = DisplayHeight * ASPECT_RATIO_X;
+		if (w > h)
+		{
+			m_XRatioAdj = (float)DisplayHeight / (float)DisplayWidth * (float)ASPECT_RATIO_X/(float)ASPECT_RATIO_Y;
+			m_XRatioCrop = (1.0f - m_XRatioAdj) / 2.0f;
+		}
+		else if (w < h)
+		{
+			m_YRatioAdj = (float)DisplayWidth / (float)DisplayHeight * (float)ASPECT_RATIO_Y/(float)ASPECT_RATIO_X;
+			m_YRatioCrop = (1.0f - m_YRatioAdj) / 2.0f;
+		}
+	}
+}
+
+/****************************************************************************/
 void BeebWin::SetWindowAttributes(bool wasFullScreen)
 {
 	RECT wndrect;
-	RECT scrrect;
 	long style;
 
 	if (m_isFullScreen)
@@ -2049,8 +2109,12 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 
 		if (m_DisplayRenderer != IDM_DISPGDI)
 		{
+			m_XWinSize = m_XDXSize;
+			m_YWinSize = m_YDXSize;
+			CalcAspectRatioAdjustment(m_XScrSize, m_YScrSize);
+
 			style = GetWindowLong(m_hWnd, GWL_STYLE);
-			style &= ~(WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX);
+			style &= ~(WIN_STYLE);
 			style |= WS_POPUP;
 			SetWindowLong(m_hWnd, GWL_STYLE, style);
 
@@ -2061,19 +2125,14 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		}
 		else
 		{
+			CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
+
 			style = GetWindowLong(m_hWnd, GWL_STYLE);
 			style &= ~WS_POPUP;
-			style |= WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+			style |= WIN_STYLE;
 			SetWindowLong(m_hWnd, GWL_STYLE, style);
 
-			SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
-			SetWindowPos(m_hWnd, HWND_TOP, scrrect.left, scrrect.top,
-				m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
-				m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
-					+ GetSystemMetrics(SM_CYMENUSIZE)
-					+ GetSystemMetrics(SM_CYCAPTION)
-					+ 1,
-				0);
+			ShowWindow(m_hWnd, SW_MAXIMIZE);
 		}
 
 		// Experiment: hide menu in full screen
@@ -2082,28 +2141,80 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 	}
 	else
 	{
+		CalcAspectRatioAdjustment(0, 0);
+
+		if (wasFullScreen)
+			ShowWindow(m_hWnd, SW_RESTORE);
+
+		// Note: Window size gets lost in DDraw mode when DD is reset
+		int xs = m_XLastWinSize;
+		int ys = m_YLastWinSize;
+			
 		if (m_DisplayRenderer != IDM_DISPGDI && m_DXInit == TRUE)
 		{
 			ResetDX();
 		}
 
+		m_XWinSize = xs;
+		m_YWinSize = ys;
+
 		style = GetWindowLong(m_hWnd, GWL_STYLE);
 		style &= ~WS_POPUP;
-		style |= WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX;
+		style |= WIN_STYLE;
 		SetWindowLong(m_hWnd, GWL_STYLE, style);
 
 		SetWindowPos(m_hWnd, HWND_TOP, m_XWinPos, m_YWinPos,
-			m_XWinSize + GetSystemMetrics(SM_CXFIXEDFRAME) * 2,
-			m_YWinSize + GetSystemMetrics(SM_CYFIXEDFRAME) * 2
-				+ GetSystemMetrics(SM_CYMENUSIZE)
-				+ GetSystemMetrics(SM_CYCAPTION)
-				+ 1,
-			!wasFullScreen ? SWP_NOMOVE : 0);
+					 m_XWinSize + m_XWinBorder,
+					 m_YWinSize + m_YWinBorder,
+					 !wasFullScreen ? SWP_NOMOVE : 0);
 
 		// Experiment: hide menu in full screen
 		if (HideMenuEnabled)
 			ShowMenu(true);
 	}
+
+	// Clear unused areas of screen
+	RECT rc;
+	GetClientRect(m_hWnd, &rc);
+	InvalidateRect(m_hWnd, &rc, TRUE);
+}
+
+/*****************************************************************************/
+void BeebWin::WinSizeChange(int size, int width, int height)
+{
+	if (m_DisplayRenderer == IDM_DISPGDI && size == SIZE_RESTORED && m_isFullScreen)
+	{
+		m_isFullScreen = false;
+		CheckMenuItem(m_hMenu, IDM_FULLSCREEN, MF_UNCHECKED);
+	}
+
+	if (!m_isFullScreen || m_DisplayRenderer == IDM_DISPGDI)
+	{
+		m_XWinSize = width;
+		m_YWinSize = height;
+		CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
+
+		if (size != SIZE_MINIMIZED && m_DisplayRenderer != IDM_DISPGDI && m_DXInit == TRUE)
+		{
+			m_DXResetPending = true;
+		}
+	}
+
+	if (!m_isFullScreen)
+	{
+		m_XLastWinSize = m_XWinSize;
+		m_YLastWinSize = m_YWinSize;
+	}
+}
+
+/****************************************************************************/
+void BeebWin::WinPosChange(int x, int y)
+{
+#if 0
+	char str[200];
+	sprintf(str, "WM_MOVE %d, %d (%d, %d)\n", x, y, m_XWinPos, m_YWinPos);
+	OutputDebugString(str);
+#endif
 }
 
 /****************************************************************************/
@@ -2559,7 +2670,6 @@ void BeebWin::HandleCommand(int MenuId)
 		ExitDX();
 
 		m_DisplayRenderer = MenuId;
-		TranslateWindowSize();
 		SetWindowAttributes(m_isFullScreen);
 
 		if (m_DisplayRenderer != IDM_DISPGDI)
@@ -2606,15 +2716,17 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			if (m_isFullScreen)
 				HandleCommand(IDM_FULLSCREEN);
-			CheckMenuItem(hMenu, m_MenuIdWinSize, MF_UNCHECKED);
+			//CheckMenuItem(hMenu, m_MenuIdWinSize, MF_UNCHECKED);
 			m_MenuIdWinSize = MenuId;
-			CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
+			//CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
 			TranslateWindowSize();
 			SetWindowAttributes(m_isFullScreen);
 		}
 		break;
 
 	case ID_VIEW_DD_640X480:
+	case ID_VIEW_DD_720X576:
+	case ID_VIEW_DD_800X600:
 	case ID_VIEW_DD_1024X768:
 	case ID_VIEW_DD_1280X768:
 	case ID_VIEW_DD_1280X960:
@@ -2622,26 +2734,35 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_VIEW_DD_1440X900:
 	case ID_VIEW_DD_1600X1200:
 		{
-		if (!m_isFullScreen)
-			HandleCommand(IDM_FULLSCREEN);
-			if (m_DisplayRenderer == IDM_DISPGDI) 
-				// Should not happen since the items are grayed out, but anyway...
-				HandleCommand(IDM_DISPDX9);
-
 			CheckMenuItem(hMenu, m_DDFullScreenMode, MF_UNCHECKED);
 			m_DDFullScreenMode = MenuId;
 			CheckMenuItem(hMenu, m_DDFullScreenMode, MF_CHECKED);
-			TranslateWindowSize();
-			SetWindowAttributes(m_isFullScreen);
+			TranslateDDSize();
+
+			if (m_isFullScreen && m_DisplayRenderer != IDM_DISPGDI)
+			{
+				SetWindowAttributes(m_isFullScreen);
+			}
 		}
 		break;
 
 	case IDM_FULLSCREEN:
 		m_isFullScreen = !m_isFullScreen;
 		CheckMenuItem(hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
-		TranslateWindowSize();
 		SetWindowAttributes(!m_isFullScreen);
 	    break;
+
+	case IDM_MAINTAINASPECTRATIO:
+		m_MaintainAspectRatio = !m_MaintainAspectRatio;
+		CheckMenuItem(hMenu, IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio ? MF_CHECKED : MF_UNCHECKED);
+		if (m_isFullScreen)
+		{
+			// Clear unused areas of screen
+			RECT rc;
+			GetClientRect(m_hWnd, &rc);
+			InvalidateRect(m_hWnd, &rc, TRUE);
+		}
+		break;
 
 	case IDM_SPEEDANDFPS:
 		if (m_ShowSpeedAndFPS)
@@ -2924,7 +3045,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_VIEWREADME:
 		strcpy(TmpPath, m_AppPath);
-		strcat(TmpPath, "README.txt");
+		strcat(TmpPath, "Help\\index.html");
 		ShellExecute(m_hWnd, NULL, TmpPath, NULL, NULL, SW_SHOWNORMAL);;
 		break;
 
@@ -3538,7 +3659,8 @@ void BeebWin::ParseCommandLine()
 	int a;
 	bool invalid;
 
-	m_CommandLineFileName[0] = 0;
+	m_CommandLineFileName1[0] = 0;
+	m_CommandLineFileName2[0] = 0;
 
 	i = 1;
 	while (i < __argc)
@@ -3551,6 +3673,10 @@ void BeebWin::ParseCommandLine()
 		else if (_stricmp(__argv[i], "-NoAutoBoot") == 0)
 		{
 			m_NoAutoBoot = true;
+		}
+		else if (_stricmp(__argv[i], "-FullScreen") == 0)
+		{
+			m_startFullScreen = true;
 		}
 		else if (__argv[i][0] == '-' && i+1 >= __argc)
 		{
@@ -3619,7 +3745,10 @@ void BeebWin::ParseCommandLine()
 			else
 			{
 				// Assume its a file name
-				strncpy(m_CommandLineFileName, __argv[i], _MAX_PATH);
+				if (m_CommandLineFileName1[0] == 0)
+					strncpy(m_CommandLineFileName1, __argv[i], _MAX_PATH);
+				else if (m_CommandLineFileName2[0] == 0)
+					strncpy(m_CommandLineFileName2, __argv[i], _MAX_PATH);
 			}
 
 			if (invalid)
@@ -3689,7 +3818,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 /*****************************************************************************/
 // File location of a file passed on command line
 	
-void BeebWin::FindCommandLineFile()
+void BeebWin::FindCommandLineFile(char *CmdLineFile)
 {
 	bool ssd = false;
 	bool dsd = false;
@@ -3699,12 +3828,13 @@ void BeebWin::FindCommandLineFile()
 	char *FileName = NULL;
 	bool uef = false;
 	bool csw = false;
+	bool img = false;
 	
 	// See if file is readable
-	if (m_CommandLineFileName[0] != 0)
+	if (CmdLineFile[0] != 0)
 	{
-		FileName = m_CommandLineFileName;
-		strncpy(TmpPath, m_CommandLineFileName, _MAX_PATH);
+		FileName = CmdLineFile;
+		strncpy(TmpPath, CmdLineFile, _MAX_PATH);
 
 		// Work out which type of files it is
 		char *ext = strrchr(FileName, '.');
@@ -3723,6 +3853,8 @@ void BeebWin::FindCommandLineFile()
 				uef = true;
 			else if (_stricmp(ext+1, "csw") == 0)
 				csw = true;
+			else if (_stricmp(ext+1, "img") == 0)
+				img = true;
 			else
 			{
 				char errstr[200];
@@ -3811,18 +3943,18 @@ void BeebWin::FindCommandLineFile()
 
 	if (cont)
 	{
-		PathCanonicalize(m_CommandLineFileName, TmpPath);
+		PathCanonicalize(CmdLineFile, TmpPath);
 	}
 	else
 	{
-		m_CommandLineFileName[0] = 0;
+		CmdLineFile[0] = 0;
 	}
 }
 
 /*****************************************************************************/
 // Handle a file name passed on command line
 	
-void BeebWin::HandleCommandLineFile()
+void BeebWin::HandleCommandLineFile(int drive, char *CmdLineFile)
 {
 	bool ssd = false;
 	bool dsd = false;
@@ -3831,10 +3963,11 @@ void BeebWin::HandleCommandLineFile()
 	char *FileName = NULL;
 	bool uef = false;
 	bool csw = false;
+	bool img = false;
 	
-	if (m_CommandLineFileName[0] != 0)
+	if (CmdLineFile[0] != 0)
 	{
-		FileName = m_CommandLineFileName;
+		FileName = CmdLineFile;
 
 		// Work out which type of files it is
 		char *ext = strrchr(FileName, '.');
@@ -3853,6 +3986,8 @@ void BeebWin::HandleCommandLineFile()
 				uef = true;
 			else if (_stricmp(ext+1, "csw") == 0)
 				csw = true;
+			else if (_stricmp(ext+1, "img") == 0)
+				img = true;
 			else
 			{
 				char errstr[200];
@@ -3921,37 +4056,46 @@ void BeebWin::HandleCommandLineFile()
 			if (dsd)
 			{
 				if (NativeFDC)
-					LoadSimpleDSDiscImage(FileName, 0, 80);
+					LoadSimpleDSDiscImage(FileName, drive, 80);
 				else
-					Load1770DiscImage(FileName,0,1,m_hMenu); // 1 = dsd
+					Load1770DiscImage(FileName,drive,1,m_hMenu); // 1 = dsd
 			}
 			if (ssd)
 			{
 				if (NativeFDC)
-					LoadSimpleDiscImage(FileName, 0, 0, 80);
+					LoadSimpleDiscImage(FileName, drive, 0, 80);
 				else
-					Load1770DiscImage(FileName,0,0,m_hMenu); // 0 = ssd
+					Load1770DiscImage(FileName,drive,0,m_hMenu); // 0 = ssd
 			}
 			if (adfs)
 			{
 				if (!NativeFDC)
-					Load1770DiscImage(FileName,0,2,m_hMenu); // 2 = adfs
+					Load1770DiscImage(FileName,drive,2,m_hMenu); // 2 = adfs
 				else
 					cont = false;  // cannot load adfs with native DFS
+			}
+			if (img)
+			{
+				if (NativeFDC)
+					LoadSimpleDiscImage(FileName, drive, 0, 80); // Treat like an ssd
+				else
+					Load1770DiscImage(FileName,drive,3,m_hMenu); // 0 = ssd
 			}
 		}
 		else if (MachineType==3)
 		{
 			if (dsd)
-				Load1770DiscImage(FileName,0,1,m_hMenu); // 0 = ssd
+				Load1770DiscImage(FileName,drive,1,m_hMenu); // 0 = ssd
 			if (ssd)
-				Load1770DiscImage(FileName,0,0,m_hMenu); // 1 = dsd
+				Load1770DiscImage(FileName,drive,0,m_hMenu); // 1 = dsd
 			if (adfs)
-				Load1770DiscImage(FileName,0,2,m_hMenu); // 2 = adfs
+				Load1770DiscImage(FileName,drive,2,m_hMenu); // 2 = adfs
+			if (img)
+				Load1770DiscImage(FileName,drive,3,m_hMenu); // 3 = img
 		}
 	}
 
-	if (cont && !m_NoAutoBoot)
+	if (cont && !m_NoAutoBoot && drive == 0)
 	{
 		// Do a shift + break
 		ResetBeebSystem(MachineType,TubeEnabled,0);
