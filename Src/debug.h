@@ -132,4 +132,23 @@ void DebugHistoryAdd(char* command);
 void DebugInitMemoryMaps();
 bool DebugLoadMemoryMap(char* filename, int bank);
 void DebugSetCommandString(char* string);
+void DebugChompString(char* string);
+
+bool DebugCmdBreakContinue(char* args);
+bool DebugCmdToggleBreak(char* args);
+bool DebugCmdLabels(char* args);
+bool DebugCmdHelp(char* args);
+bool DebugCmdSet(char* args);
+bool DebugCmdNext(char* args);
+bool DebugCmdPeek(char* args);
+bool DebugCmdCode(char* args);
+bool DebugCmdWatch(char* args);
+bool DebugCmdState(char* args);
+bool DebugCmdSave(char* args);
+bool DebugCmdPoke(char* args);
+bool DebugCmdGoto(char* args);
+bool DebugCmdFile(char* args);
+bool DebugCmdEcho(char* args);
+bool DebugCmdScript(char *args);
+
 #endif

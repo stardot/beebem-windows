@@ -125,7 +125,7 @@ unsigned char Read1770Register(unsigned char Register) {
 	if (!Disc1770Enabled)
 		return 0xFF;
 	// ResetStatus(5);
-	//fprintf(fdclog,"Read of Register %d - Status is %02X\n",Register,Status);
+	// fprintf(fdclog,"Read of Register %d - Status is %02X\n",Register,Status);
 	// Read 1770 Register. Note - NOT the FDC Control register @ &FE24
 	if ((FDCommand<6) && (FDCommand!=0)) Status^=2; // Fool anything reading the
 	// Index pulse signal by alternating it on each read.
@@ -164,6 +164,7 @@ void SetMotor(char Drive,bool State) {
 	}
 	else {
 		StopSoundSample(SAMPLE_DRIVE_MOTOR);
+		StopSoundSample(SAMPLE_HEAD_SEEK);
 		if (DiscDriveSoundEnabled && HeadLoaded[Drive]) {
 			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
 			HeadLoaded[Drive] = FALSE;
@@ -736,7 +737,7 @@ void Load1770DiscImage(char *DscFileName,int DscDrive,unsigned char DscType,HMEN
 		DiskDensity[DscDrive]=1;
 		DiscStep[DscDrive]=2560; 
 		DiscStrt[DscDrive]=0; 
-		DefStart[DscDrive]=0; 
+		DefStart[DscDrive]=80*10*256; // 0; 
 		TrkLen[DscDrive]=2560; 
 	}
     if (DscType==1) { 

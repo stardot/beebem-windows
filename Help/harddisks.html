@@ -60,14 +60,24 @@
 
 <h1 align="center">Hard Disks</a></h1>
 
-<p>BeebEm supports emulated SCSI and SASI hard disks.  There are 4 10MB
-pre-formatted ADFS SCSI disk images in the discims directory (the scsi?.dat
-files).  The disks can be used in Model B (need to add ADFS-1.30.rom to the
-ROM configuration), B Plus or Master 128 mode.  To use the disk images
-enable hard drive emulation on the hardware menu and press A & F12 to boot
-in ADFS mode (ignore the error for drive 4 if in Master mode).  The hard
-disks then appear as drives 0 to 3.  Floppy disks can still be accessed as
-drives 4 and 5.</p>
+<p>BeebEm supports emulated SCSI, SASI and IDE hard disks.  You can only
+have one of either SCSI or IDE hard drive enabled at one time.</p>
+
+<p>There are some preformatted ADFS disk images in the discims
+directory. The disks can be used in Model B (you will need to add a suitable
+ADFS ROM to the ROM configuration, see below), B Plus or Master 128 mode.
+To use the disk images enable hard drive emulation on the hardware menu and
+press A & F12 to boot in ADFS mode (ignore the error for drive 4 if in
+Master mode).  The hard disks then appear as drives 0 to 3.  Floppy disks
+can still be accessed as drives 4 and 5.</p>
+
+<p>You need to use the ADFS 1.30 ROM (BBC) and ADFS 1.50 ROM (Master) to use
+the SCSI interface, and the ADFS 1.33 ROM (BBC) and ADFS 1.53 ROM (Master)
+to use the IDE interface. HADFS 5.30 and later use the IDE interface.</p>
+
+<p>There are 4 10MB pre-formatted ADFS SCSI disk images in the discims
+directory (the scsi?.dat files). There are 4 4MB blank IDE drive images in
+the discims directory (the ide?.dat files).</p>
 
 <p>There are some demo tunes in scsi0.dat which you can listen to with the
 PLAY program.</p>

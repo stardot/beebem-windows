@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=BeebEm
-AppVerName=BeebEm V4.13
+AppVerName=BeebEm V4.14
 AppPublisher=Mike Wyatt
 AppPublisherURL=http://www.mkw.me.uk/beebem/index.html
 AppSupportURL=http://www.mkw.me.uk/beebem/index.html
@@ -11,13 +11,13 @@ AppUpdatesURL=http://www.mkw.me.uk/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
 OutputDir=.
-OutputBaseFilename=BeebEm413
+OutputBaseFilename=BeebEm414
 Compression=lzma
 SolidCompression=yes
-VersionInfoVersion=4.13.0.0
+VersionInfoVersion=4.14.0.0
 
 [Registry]
-Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.13; ValueType: string; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.14; ValueType: string; Flags: uninsdeletekey
 Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: InstallPath; ValueData: {app}; ValueType: string; Flags: uninsdeletekey
 Root: HKCU; Subkey: SOFTWARE\BeebEm; Flags: uninsdeletekey
 

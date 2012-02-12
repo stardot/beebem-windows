@@ -36,7 +36,6 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <windowsx.h>
 #include <mmsystem.h>
-#include <dsound.h>
 #include "main.h"
 #include <stdlib.h>
 #include <string.h>
@@ -52,6 +51,12 @@ Boston, MA  02110-1301, USA.
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
+
+//#include <atlcomcli.h> // ATL not included in VS Express edition
+#include <dsound.h>
+#include <xaudio2.h>
+#include <exception>
+#include <vector>
 
 extern AVIWriter *aviWriter;
 
@@ -84,26 +89,23 @@ static SoundSample SoundSamples[] = {
 #define NUM_SOUND_SAMPLES (sizeof(SoundSamples)/sizeof(SoundSample))
 static bool SoundSamplesLoaded = false;
 
-static LPDIRECTSOUND DSound = NULL;
-static LPDIRECTSOUNDBUFFER DSB1 = NULL;
+SoundConfig::Option SoundConfig::Selection;
 int UsePrimaryBuffer=0;
-
 int SoundEnabled = 1;
-int DirectSoundEnabled = 0;
 int RelaySoundEnabled = 0;
 int DiscDriveSoundEnabled = 0;
 int SoundChipEnabled = 1;
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 3;
 int SoundAutoTriggerTime;
-int SoundBufferSize,TotalBufferSize;
+int SoundBufferSize;
 double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
 char SoundExponentialVolume = 1;
 
 /* Number of places to shift the volume */
 #define VOLMAG 3
 
-int Speech[3];
+int Speech[4];
 
 FILE *sndlog=NULL;
 
@@ -146,107 +148,308 @@ bool TapeSoundEnabled;
 int PartSamples=1;
 bool Playing=0;
 
+struct SoundStreamer
+{
+	virtual ~SoundStreamer()
+	{
+	}
+
+	virtual std::size_t BufferSize() const = 0;
+
+	virtual void Play() = 0;
+	virtual void Pause() = 0;
+
+	virtual void Stream( void const *pSamples ) = 0;
+};
+
+class DirectSoundStreamer : public SoundStreamer
+{
+public:
+	struct Fail : std::exception
+	{
+		char const *what() const throw()
+		{
+			return "DirectSoundStreamer::Fail";
+		}
+	};
+
+	struct PrimaryUnsupported : Fail
+	{
+		char const *what() const throw()
+		{
+			return "DirectSoundStreamer::PrimaryUnsupported";
+		}
+	};
+
+	DirectSoundStreamer( std::size_t rate, bool primary );
+
+	~DirectSoundStreamer()
+	{
+		if (m_pDirectSoundBuffer)
+			m_pDirectSoundBuffer->Release();
+		if (m_pDirectSound)
+			m_pDirectSound->Release();
+	}
+
+	std::size_t BufferSize() const
+	{
+		return m_stream;
+	}
+
+	void Play()
+	{
+		m_pDirectSoundBuffer->Play( 0, 0, DSBPLAY_LOOPING );
+	}
+
+	void Pause()
+	{
+		m_pDirectSoundBuffer->Stop();
+	}
+
+	void Stream( void const *pSamples );
+
+private:
+	IDirectSound* m_pDirectSound;
+	IDirectSoundBuffer* m_pDirectSoundBuffer;
+	std::size_t m_begin;
+	std::size_t m_physical;
+	std::size_t m_rate;
+	std::size_t m_stream;
+	std::size_t m_virtual;
+
+	static std::size_t const m_count = 6;
+};
+
+DirectSoundStreamer::DirectSoundStreamer( std::size_t rate, bool primary ) : m_pDirectSound(), m_pDirectSoundBuffer(), m_begin(), m_physical( rate * 100 / 1000 ), m_rate( rate ), m_stream( rate * 20 / 1000 ), m_virtual( m_count * m_stream )
+{
+	// Create DirectSound
+	if( FAILED( DirectSoundCreate( 0, &m_pDirectSound, 0 ) ) )
+		throw Fail();
+	HRESULT hResult( m_pDirectSound->SetCooperativeLevel( GETHWND, primary ? DSSCL_WRITEPRIMARY : DSSCL_PRIORITY ) );
+	if( FAILED( hResult ) )
+	{
+		if( primary && hResult == DSERR_UNSUPPORTED )
+			throw PrimaryUnsupported();
+		throw Fail();
+	}
+
+	// Create DirectSoundBuffer
+	WAVEFORMATEX wfx = {};
+	wfx.wFormatTag = WAVE_FORMAT_PCM;
+	wfx.nChannels = 1;
+	wfx.nSamplesPerSec = DWORD( m_rate );
+	wfx.wBitsPerSample = 8;
+	wfx.nBlockAlign = wfx.nChannels * wfx.wBitsPerSample / 8;
+	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
+
+	DSBUFFERDESC dsbd = { sizeof( DSBUFFERDESC ) };
+	dsbd.dwFlags = DSBCAPS_GETCURRENTPOSITION2;
+	if( primary )
+		dsbd.dwFlags |= DSBCAPS_PRIMARYBUFFER;
+	else
+	{
+		if( m_physical < m_virtual )
+			m_physical = m_virtual;
+		dsbd.dwBufferBytes = DWORD( m_physical );
+		dsbd.lpwfxFormat = &wfx;
+	}
+	dsbd.guid3DAlgorithm = DS3DALG_DEFAULT;
+	if( FAILED( m_pDirectSound->CreateSoundBuffer( &dsbd, &m_pDirectSoundBuffer, 0 ) ) )
+		throw Fail();
+
+	if( primary )
+	{
+		// Setup primary buffer
+		if( FAILED( m_pDirectSoundBuffer->SetFormat( &wfx ) ) )
+			throw Fail();
+		DSBCAPS dsbc = { sizeof( dsbc ) };
+		if( FAILED( m_pDirectSoundBuffer->GetCaps( &dsbc ) ) )
+			throw Fail();
+		m_physical = std::size_t( dsbc.dwBufferBytes );
+	}
+	else
+	{
+		// Clear buffer
+		void *p;
+		DWORD size;
+		if( FAILED( m_pDirectSoundBuffer->Lock( 0, 0, &p, &size, 0, 0, DSBLOCK_ENTIREBUFFER ) ) )
+			throw Fail();
+		using std::memset;
+		memset( p, 128, std::size_t( size ) );
+		if( FAILED( m_pDirectSoundBuffer->Unlock( p, size, 0, 0 ) ) )
+			throw Fail();
+	}
+
+	// Start source voice
+	Play();
+}
+
+void DirectSoundStreamer::Stream( void const *pSamples )
+{
+	// Verify buffer availability
+	DWORD play, write;
+	if( FAILED( m_pDirectSoundBuffer->GetCurrentPosition( &play, &write ) ) )
+		return;
+	if( write < play )
+		write += DWORD( m_physical );
+	std::size_t begin( m_begin );
+	if( begin < play )
+		begin += m_physical;
+	if( begin < write )
+		begin = std::size_t( write );
+	std::size_t end( begin + m_stream );
+	if( play + m_virtual < end )
+		return;
+	begin %= m_physical;
+
+	// Copy samples to buffer
+	void *ps[ 2 ];
+	DWORD sizes[ 2 ];
+	HRESULT hResult( m_pDirectSoundBuffer->Lock( DWORD( begin ), DWORD( m_stream ), &ps[ 0 ], &sizes[ 0 ], &ps[ 1 ], &sizes[ 1 ], 0 ) );
+	if( FAILED( hResult ) )
+	{
+		if( hResult != DSERR_BUFFERLOST )
+			return;
+		m_pDirectSoundBuffer->Restore();
+		if( FAILED( m_pDirectSoundBuffer->Lock( DWORD( begin ), DWORD( m_stream ), &ps[ 0 ], &sizes[ 0 ], &ps[ 1 ], &sizes[ 1 ], 0 ) ) )
+			return;
+	}
+	using std::memcpy;
+	memcpy( ps[ 0 ], pSamples, std::size_t( sizes[ 0 ] ) );
+	if( ps[ 1 ] )
+		memcpy( ps[ 1 ], static_cast< char const * >( pSamples ) + sizes[ 0 ], std::size_t( sizes[ 1 ] ) );
+	m_pDirectSoundBuffer->Unlock( ps[ 0 ], sizes[ 0 ], ps[ 1 ], sizes[ 1 ] );
+
+	// Select next buffer
+	m_begin = end % m_physical;
+}
+
+class XAudio2Streamer : public SoundStreamer
+{
+public:
+	struct Fail : std::exception
+	{
+		char const *what() const throw()
+		{
+			return "XAudio2Streamer::Fail";
+		}
+	};
+
+	XAudio2Streamer( std::size_t rate );
+
+	~XAudio2Streamer()
+	{
+		if (m_pXAudio2)
+			m_pXAudio2->Release();
+	}
+
+	std::size_t BufferSize() const
+	{
+		return m_size;
+	}
+
+	void Play()
+	{
+		m_pXAudio2SourceVoice->Start( 0 );
+	}
+
+	void Pause()
+	{
+		m_pXAudio2SourceVoice->Stop( 0 );
+	}
+
+	void Stream( void const *pSamples );
+
+private:
+	typedef unsigned char Sample;
+	typedef std::vector< Sample > Samples;
+	Samples m_samples;
+	IXAudio2* m_pXAudio2;
+	IXAudio2MasteringVoice *m_pXAudio2MasteringVoice;
+	IXAudio2SourceVoice *m_pXAudio2SourceVoice;
+	std::size_t m_index;
+	std::size_t m_rate;
+	std::size_t m_size;
+
+	static std::size_t const m_count = 4;
+};
+
+XAudio2Streamer::XAudio2Streamer( std::size_t rate ) : m_samples(), m_pXAudio2(), m_pXAudio2MasteringVoice(), m_pXAudio2SourceVoice(), m_index(), m_rate( rate ), m_size( rate * 20 / 1000 )
+{
+	// Allocate memory for buffers
+	m_samples.resize( m_count * m_size, 128 );
+
+	// Create XAudio2
+	if( FAILED( XAudio2Create( &m_pXAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR ) ) )
+		throw Fail();
+
+	// Create mastering voice
+	if( FAILED( m_pXAudio2->CreateMasteringVoice( &m_pXAudio2MasteringVoice ) ) )
+		throw Fail();
+
+	// Create source voice
+	WAVEFORMATEX wfx = {};
+	wfx.wFormatTag = WAVE_FORMAT_PCM;
+	wfx.nChannels = 1;
+	wfx.nSamplesPerSec = DWORD( m_rate );
+	wfx.wBitsPerSample = 8;
+	wfx.nBlockAlign = wfx.nChannels * wfx.wBitsPerSample / 8;
+	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
+	if( FAILED( m_pXAudio2->CreateSourceVoice( &m_pXAudio2SourceVoice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO ) ) )
+		throw Fail();
+
+	// Start source voice
+	Play();
+}
+
+void XAudio2Streamer::Stream( void const *pSamples )
+{
+	// Verify buffer availability
+	XAUDIO2_VOICE_STATE xa2vs;
+	m_pXAudio2SourceVoice->GetState( &xa2vs );
+	if( xa2vs.BuffersQueued == m_count )
+		return;
+
+	// Copy samples to buffer
+	Sample *pBuffer( &m_samples[ m_index * m_size ] );
+	using std::memcpy;
+	memcpy( pBuffer, pSamples, m_size );
+
+	// Submit buffer to voice
+	XAUDIO2_BUFFER xa2b = {};
+	xa2b.AudioBytes = UINT32( m_size );
+	xa2b.pAudioData = pBuffer;
+	if( FAILED( m_pXAudio2SourceVoice->SubmitSourceBuffer( &xa2b ) ) )
+		return;
+
+	// Select next buffer
+	m_index = ( m_index + 1 ) % m_count;
+}
+
+namespace
+{
+	SoundStreamer *pSoundStreamer = 0;
+}
+
 /****************************************************************************/
-/* Writes sound data to a DirectSound buffer */
+/* Writes sound data to a sound buffer */
 HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 {
-	LPVOID lpvPtr1;
-	DWORD dwBytes1; 
-	LPVOID lpvPtr2;
-	DWORD dwBytes2;
-	DWORD CWC;
-	HRESULT hr;
-	int CDiff;
-
-	if ((DSound==NULL) || (DSB1==NULL))
-		return DS_OK; // Don't write if DirectSound not up and running!
-
-	if (!Playing) {
-		bReRead=FALSE;
-		// Blank off the buffer
-		hr = DSB1->Lock(0, 0, &lpvPtr1, 
-						&dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
-		if(hr == DSERR_BUFFERLOST)
+	if( pSoundStreamer )
+		pSoundStreamer->Stream( lpbSoundData );
+	if( aviWriter )
+	{
+		HRESULT hResult( aviWriter->WriteSound( lpbSoundData, SoundBufferSize ) );
+		if( FAILED( hResult ) && hResult != E_UNEXPECTED )
 		{
-			hr = DSB1->Restore();
-			if (hr == DS_OK)
-				hr = DSB1->Lock(0, 0,
-					&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, DSBLOCK_ENTIREBUFFER);
-		}
-		if (lpvPtr1!=NULL) memset(lpvPtr1,128,dwBytes1);
-		if (lpvPtr2!=NULL) memset(lpvPtr2,128,dwBytes2);
-		DSB1->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
-		// Set our pointer to the beginning
-		WriteOffset=0;
-	} 
-
-	// Correct from pointer desync
-	if (bReRead) {
-		DSB1->GetCurrentPosition(NULL,&CWC);
-		WriteOffset=CWC+SoundBufferSize*2;
-		if (WriteOffset>=TotalBufferSize)
-			WriteOffset-=TotalBufferSize;
-		bReRead=FALSE;
-	} 
-
-	// Obtain write pointer.
-	hr = DSB1->Lock(WriteOffset, SoundBufferSize, &lpvPtr1, 
-					&dwBytes1, &lpvPtr2, &dwBytes2, 0);
-	if(hr == DSERR_BUFFERLOST)
-	{
-		hr = DSB1->Restore();
-		if (hr == DS_OK)
-			hr = DSB1->Lock(WriteOffset, SoundBufferSize,
-							&lpvPtr1, &dwBytes1, &lpvPtr2, &dwBytes2, 0);
-	}
-	if(DS_OK == hr)
-	{
-		// Write to pointers.
-		CopyMemory(lpvPtr1,lpbSoundData,dwBytes1);
-		if(NULL != lpvPtr2)
-		{
-			CopyMemory(lpvPtr2, lpbSoundData+dwBytes1, dwBytes2);
-		}
-		// Release the data back to DirectSound.
-		hr = DSB1->Unlock(lpvPtr1, dwBytes1, lpvPtr2, dwBytes2);
-	}
-
-	// Update pointers
-	WriteOffset+=SoundBufferSize;
-	if (WriteOffset>=TotalBufferSize)
-		WriteOffset-=TotalBufferSize;
-
-	// Check for pointer desync
-	DSB1->GetCurrentPosition(NULL,&CWC);
-	CDiff=WriteOffset-CWC;
-	if (CDiff<0)
-		CDiff+=TotalBufferSize;
-	if (CDiff < SoundBufferSize || CDiff > SoundBufferSize*4)
-	{
-		bReRead=TRUE; 
-	}
-
- 	if (!Playing) {
-		DSB1->SetCurrentPosition(SoundBufferSize+1);
-		hr=DSB1->Play(0,0,DSBPLAY_LOOPING);
-		Playing=TRUE;
-		bReRead=TRUE;
-	}
-
- 	if (Playing && aviWriter)
-	{
-		HRESULT hr = aviWriter->WriteSound(lpbSoundData, SoundBufferSize);
-		if (hr != E_UNEXPECTED && FAILED(hr))
-		{
-			MessageBox(GETHWND, "Failed to write sound to AVI file",
-				"BeebEm", MB_OK|MB_ICONERROR);
+			MessageBox( GETHWND, "Failed to write sound to AVI file", "BeebEm", MB_OK | MB_ICONERROR );
 			delete aviWriter;
-			aviWriter = NULL;
+			aviWriter = 0;
 		}
 	}
-
-	return hr;
+	return S_OK;
 }
+
 
 /****************************************************************************/
 /* DestTime is in samples */
@@ -518,123 +721,54 @@ static double CyclesToSamples(int BeebCycles) {
 }; /* CyclesToSamples */
 
 /****************************************************************************/
-/* Creates a DirectSound buffer */
-HRESULT CreateSecondarySoundBuffer(void)
-{
-	WAVEFORMATEX wf;
-	DSBUFFERDESC dsbdesc;
-	HRESULT hr;
-
-	// Set up wave format structure.
-	memset(&wf, 0, sizeof(WAVEFORMATEX));
-	wf.wFormatTag = WAVE_FORMAT_PCM;
-	wf.nChannels = 1;
-	wf.nSamplesPerSec = samplerate;
-	wf.wBitsPerSample = 8;
-	wf.nBlockAlign = 1;
-	wf.nAvgBytesPerSec = samplerate;
-	wf.cbSize = 0;
-
-	// Set up DSBUFFERDESC structure.
-	memset(&dsbdesc, 0, sizeof(DSBUFFERDESC)); // Zero it out.
-	dsbdesc.dwSize = sizeof(DSBUFFERDESC);
-
-	// Need default controls (pan, volume, frequency).
-	dsbdesc.dwFlags = DSBCAPS_GETCURRENTPOSITION2; // | DSBCAPS_STICKYFOCUS;
-	dsbdesc.dwBufferBytes = MAXBUFSIZE;
-	TotalBufferSize = MAXBUFSIZE;
-	dsbdesc.lpwfxFormat = (LPWAVEFORMATEX)&wf;
-
-	// Create buffer.
-	hr = DSound->CreateSoundBuffer(&dsbdesc, &DSB1, NULL);
-
-	return hr;
-}
-
-HRESULT CreatePrimarySoundBuffer(void)
-{
-	WAVEFORMATEX wf;
-	DSBUFFERDESC dsbdesc;
-	HRESULT hr;
-	DSBCAPS dsbcaps;
-
-	// Set up wave format structure.
-	memset(&wf, 0, sizeof(WAVEFORMATEX));
-	wf.wFormatTag = WAVE_FORMAT_PCM;
-	wf.nChannels = 1;
-	wf.nSamplesPerSec = samplerate;
-	wf.wBitsPerSample = 8;
-	wf.nBlockAlign = 1;
-	wf.nAvgBytesPerSec = samplerate;
-	wf.cbSize = 0;
-
-	// Set up DSBUFFERDESC structure.
-	memset(&dsbdesc, 0, sizeof(DSBUFFERDESC)); // Zero it out.
-	dsbdesc.dwSize = sizeof(DSBUFFERDESC);
-	dsbdesc.dwFlags = DSBCAPS_PRIMARYBUFFER | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_STICKYFOCUS;
-	dsbdesc.dwBufferBytes = 0;
-	dsbdesc.lpwfxFormat = NULL;
-
-	// Create buffer.
-	hr = DSound->CreateSoundBuffer(&dsbdesc, &DSB1, NULL);
-	DSB1->SetFormat(&wf);
-	dsbcaps.dwSize=sizeof(DSBCAPS);
-	DSB1->GetCaps(&dsbcaps);
-	TotalBufferSize=dsbcaps.dwBufferBytes;
-	return hr;
-}
-
-/****************************************************************************/
 static void InitAudioDev(int sampleratein) {
-	samplerate=sampleratein;
-	DirectSoundEnabled=1;
 
-	HRESULT hr;
-	int dsect=0;
-	dsect=1;
-	hr = DirectSoundCreate(NULL, &DSound, NULL);
-	if (hr != DS_OK)
-		MessageBox(GETHWND,"Attempt to start DirectSound system failed","BeebEm",MB_ICONERROR|MB_OK);
-
-	if(hr == DS_OK)
+	delete pSoundStreamer;
+	samplerate = sampleratein;
+	if( SoundConfig::Selection == SoundConfig::XAudio2 )
 	{
-		hr=DS_OK;
-		if (UsePrimaryBuffer) {
-			hr = DSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_WRITEPRIMARY);
-			if (hr == DSERR_UNSUPPORTED) {
-				MessageBox(GETHWND,"Use of Primary DirectSound Buffer unsupported on this system. "
-						   "Using Secondary DirectSound Buffer instead",
-						   WindowTitle,MB_OK|MB_ICONERROR);
-				UsePrimaryBuffer=0;
-			}
+		try
+		{
+			pSoundStreamer = new XAudio2Streamer( samplerate );
+			return;
 		}
-		if (!UsePrimaryBuffer)
-			hr=DSound->SetCooperativeLevel(mainWin->GethWnd(),DSSCL_NORMAL);
+		catch( ... )
+		{
+		}
+		SoundConfig::Selection = SoundConfig::DirectSound;
 	}
-
-	if(hr == DS_OK)
+	if( UsePrimaryBuffer )
 	{
-		dsect=2;
-		if (UsePrimaryBuffer)
-			hr = CreatePrimarySoundBuffer();
-		else
-			hr = CreateSecondarySoundBuffer();
+		try
+		{
+			pSoundStreamer = new DirectSoundStreamer( samplerate, true );
+			return;
+		}
+		catch( DirectSoundStreamer::PrimaryUnsupported const & )
+		{
+			MessageBox(GETHWND, "Use of primary DirectSound buffer unsupported on this system. Using secondary DirectSound buffer instead", WindowTitle, MB_OK | MB_ICONERROR);
+			UsePrimaryBuffer = 0;
+			mainWin->SetPBuff();
+		}
+		catch( ... )
+		{
+		}
 	}
-	else
-		MessageBox(GETHWND,"Attempt to create DirectSound buffer failed","BeebEm",MB_ICONERROR|MB_OK);
-
-	if (hr != DS_OK)
+	if( ! UsePrimaryBuffer )
 	{
-		char  errstr[200];
-		sprintf(errstr,"Direct Sound initialisation failed on part %i\nFailure code %X",dsect,hr);
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-		SoundReset();
+		try
+		{
+			pSoundStreamer = new DirectSoundStreamer( samplerate, false );
+			return;
+		}
+		catch( ... )
+		{
+		}
 	}
-	mainWin->SetPBuff();
-	
-	if (hr==DS_OK)
-		SoundEnabled=1;
-}; /* InitAudioDev */
+	SoundEnabled = 0;
+	MessageBox( GETHWND, "Attempt to start sound system failed", "BeebEm", MB_OK | MB_ICONERROR );
+
+}// InitAudioDev
 
 void LoadSoundSamples(void) {
 	FILE *fd;
@@ -724,7 +858,7 @@ void SoundInit() {
   if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000; 
   if (SoundSampleRate == 22050) SoundAutoTriggerTime = 10000; 
   if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000; 
-  SoundBufferSize=SoundSampleRate/50;
+  SoundBufferSize=pSoundStreamer?pSoundStreamer->BufferSize():SoundSampleRate/50;
   LoadSoundSamples();
   bReRead=TRUE;
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;
@@ -737,14 +871,17 @@ void SwitchOnSound(void) {
 }
 
 void SetSound(char State) {
-	if (!SoundEnabled)
-		return;
-
-	if (State==MUTED)
+	if( pSoundStreamer )
 	{
-		if (Playing)
-			DSB1->Stop();
-		Playing=FALSE;
+		switch( State )
+		{
+		case MUTED:
+			pSoundStreamer->Pause();
+			break;
+		case UNMUTED:
+			pSoundStreamer->Play();
+			break;
+		}
 	}
 }
 
@@ -752,20 +889,13 @@ void SetSound(char State) {
 /****************************************************************************/
 /* Called to disable sound output                                           */
 void SoundReset(void) {
-	if (DSB1 != NULL)
-	{
-		DSB1->Stop();
-		DSB1->Release();
-		DSB1 = NULL;
-	}
-	if (DSound != NULL)
-	{
-		DSound->Release();
-		DSound = NULL;
-	}
+
+	delete pSoundStreamer;
+	pSoundStreamer = 0;
+
 	ClearTrigger(SoundTrigger);
-	SoundEnabled = 0;
-} /* SoundReset */
+
+}//	SoundReset
 
 /****************************************************************************/
 /* Called in sysvia.cc when a write is made to the 76489 sound chip         */

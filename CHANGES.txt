@@ -1,6 +1,20 @@
 BeebEm Change History
 =====================
 
+Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
+------------
+* IDE hard drive interface.
+  - Limited IDE_Geometry command supported, allows 4 heads x 64 sectors
+    (disks up to 512M), and 16 heads x 64 sectors (disks larger than 512M).
+  - SCSI and IDE hard drives selectable/configurable.
+  - Disk images referenced by DiscsPath setting.
+* Double-sided SSD disks supported (image file>&40000 bytes long).
+* Debugger updates, bug fixes and addition of "script" command.
+* XAudio2 sound support (thanks to "bredbored").
+* Added a couple of TV resolutions to the DX video mode menu.
+* Fixed bug where disk drive sound sticks on.
+* Fixed keyboard issue for Dr Who game.
+
 Version 4.13 (Mike Wyatt)
 ------------
 * Added indication of unplugged ROMs to the configuration editor in Master

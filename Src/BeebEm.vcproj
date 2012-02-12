@@ -250,6 +250,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ide.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Main.cpp"
 				>
 			</File>
@@ -389,6 +393,10 @@
 			</File>
 			<File
 				RelativePath=".\ext1770.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ide.h"
 				>
 			</File>
 			<File

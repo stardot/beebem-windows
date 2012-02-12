@@ -37,9 +37,18 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 
+namespace SoundConfig
+{
+	extern enum Option
+	{
+		XAudio2,
+		DirectSound
+	}
+	Selection;
+}
+
 extern int SoundDefault; // Default sound state (enabled/disabled via sound menu)
 extern int SoundEnabled;    /* Sound on/off flag - will be off if DirectSound init fails */
-extern int DirectSoundEnabled;  /* DirectSound enabled for Win32 */
 extern int RelaySoundEnabled; // Relay Click noise enable
 extern int DiscDriveSoundEnabled; // Disc drive sound enable
 extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */

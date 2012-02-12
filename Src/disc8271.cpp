@@ -19,8 +19,9 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* 8271 disc emulation - David Alan Gilbert 4/12/94 */
-/* Mike Wyatt 30/8/97 - Added disc write and format support */
+/* 04/12/1994 David Alan Gilbert: 8271 disc emulation  */
+/* 30/08/1997 Mike Wyatt: Added disc write and format support */
+/* 27/12/2011 J.G.Harston: Double-sided SSD supported */
 
 #include <iostream>
 #include <fstream>
@@ -1092,6 +1093,7 @@ static bool DriveSoundUpdate(void) {
 			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
 		DriveHeadLoaded = false;
 		StopSoundSample(SAMPLE_DRIVE_MOTOR);
+		StopSoundSample(SAMPLE_HEAD_SEEK);
 		return true;
 	}
 
@@ -1243,9 +1245,11 @@ void FreeDiscImage(int DriveNum) {
 }
       
 /*--------------------------------------------------------------------------*/
-void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
+void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) {
   int CurrentTrack,CurrentSector;
   SectorType *SecPtr;
+  int Heads;
+  int Head;
 
   FILE *infile=fopen(FileName,"rb");
   if (!infile) {
@@ -1261,29 +1265,41 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks) {
 
   mainWin->SetImageName(FileName,DriveNum,0);
 
-  strcpy(FileNames[DriveNum], FileName);
-  NumHeads[DriveNum] = 1;
+  // JGH, 26-Dec-2011
+  NumHeads[DriveNum] = 1;		/* 1 = TRACKSPERDRIVE SSD image   */
+					/* 2 = 2*TRACKSPERDRIVE DSD image */
+  Heads=1;
+  fseek(infile, 0L, SEEK_END);
+  if (ftell(infile)>0x40000) {
+	Heads=2;			/* Long sequential image continues onto side 1 */
+	NumHeads[DriveNum] = 0;		/* 0 = 2*TRACKSPERDRIVE SSD image */
+	}
+  fseek(infile, 0L, SEEK_SET);
+  // JGH
 
+  strcpy(FileNames[DriveNum], FileName);
   FreeDiscImage(DriveNum);
 
-  for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
-    DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
-    DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
-    SecPtr=DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors=(SectorType*)calloc(10,sizeof(SectorType));
-    DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
-    DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
-    DiscStore[DriveNum][HeadNum][CurrentTrack].Gap5Size=0;
-
-    for(CurrentSector=0;CurrentSector<10;CurrentSector++) {
-      SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
-      SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
-      SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
-      SecPtr[CurrentSector].IDField.PhysRecLength=256;
-      SecPtr[CurrentSector].Deleted=0;
-      SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
-      fread(SecPtr[CurrentSector].Data,1,256,infile);
-    }; /* Sector */
-  }; /* Track */
+  for(Head=HeadNum;Head<Heads;Head++) {
+    for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
+      DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors=10;
+      DiscStore[DriveNum][Head][CurrentTrack].NSectors=10;
+      SecPtr=DiscStore[DriveNum][Head][CurrentTrack].Sectors=(SectorType*)calloc(10,sizeof(SectorType));
+      DiscStore[DriveNum][Head][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
+      DiscStore[DriveNum][Head][CurrentTrack].Gap3Size=0;
+      DiscStore[DriveNum][Head][CurrentTrack].Gap5Size=0;
+  
+      for(CurrentSector=0;CurrentSector<10;CurrentSector++) {
+        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
+        SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
+        SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
+        SecPtr[CurrentSector].IDField.PhysRecLength=256;
+        SecPtr[CurrentSector].Deleted=0;
+        SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
+        fread(SecPtr[CurrentSector].Data,1,256,infile);
+      }; /* Sector */
+    }; /* Track */
+  }; /* Head */
 
   fclose(infile);
 
@@ -1324,7 +1340,7 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
   mainWin->SetImageName(FileName,DriveNum,1);
 
   strcpy(FileNames[DriveNum], FileName);
-  NumHeads[DriveNum] = 2;
+  NumHeads[DriveNum] = 2;		/* 2 = 2*TRACKSPERDRIVE DSD image */
 
   FreeDiscImage(DriveNum);
 
@@ -1394,7 +1410,11 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
     return false;
   };
 
-  FileOffset=(NumHeads[DriveNum]*TrackNum+HeadNum)*2560;
+  if(NumHeads[DriveNum]) {
+	FileOffset=(NumHeads[DriveNum]*TrackNum+HeadNum)*2560;	/* 1=SSD, 2=DSD  */
+  } else {
+	FileOffset=(TrackNum+HeadNum*TRACKSPERDRIVE)*2560;	/* 0=2-sided SSD */
+  }
 
   /* Get the file length to check if the file needs extending */
   Success = !fseek(outfile, 0L, SEEK_END);
@@ -1554,7 +1574,7 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
 
   NumSectors=Tracks*10;
 
-  /* Create the first two secotrs on each side - the rest will get created when
+  /* Create the first two sectors on each side - the rest will get created when
      data is written to it. */
   for(Sector=0;Success && Sector<(Heads==1?2:12);Sector++) {
     for (i=0;i<256;++i)

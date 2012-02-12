@@ -24,9 +24,10 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* Mike Wyatt and NRM's port to win32 - 7/6/97 */
-/* Conveted to use DirectX - Mike Wyatt 11/1/98 */
-// Econet added Rob O'Donnell. robert@irrelevant.com. 28/12/2004.
+// 07/06/1997: Mike Wyatt and NRM's port to Win32
+// 11/01/1998: Conveted to use DirectX, Mike Wyatt
+// 28/12/2004: Econet added Rob O'Donnell. robert@irrelevant.com.
+// 26/12/2011: Added IDE Drive to Hardware options, JGH
 
 #include <stdio.h>
 #include <windows.h>
@@ -56,6 +57,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "scsi.h"
 #include "sasi.h"
+#include "ide.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "userkybd.h"
@@ -107,13 +109,14 @@ char FDCDLL[256]={0};
 const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 static const char *AboutText =
 	"BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
-	"BBC Micro Model B Plus (128)\nAcorn Master 128\nAcorn 65C02 Second Processor\n"
+	"BBC Micro Model B Plus (128)\nAcorn Master 128\n\n"
+	"Acorn 65C02 Second Processor\n"
 	"Torch Z80 Second Processor\nAcorn Z80 Second Processor\n"
 #ifdef M512COPRO_ENABLED
 	"Master 512 Second Processor\n"
 #endif
 	"ARM Second Processor\n\n"
-	"Version " VERSION_STRING ", Jan 2011";
+	"Version " VERSION_STRING ", Feb 2012";
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -213,7 +216,7 @@ BeebWin::BeebWin()
 	_splitpath(app_path, app_drive, app_dir, NULL, NULL);
 	_makepath(m_AppPath, app_drive, app_dir, NULL, NULL);
 
-	// Read user data path from reg
+	// Read user data path from registry
 	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "UserDataFolder",
 						   m_UserDataPath, _MAX_PATH))
 	{
@@ -222,6 +225,15 @@ BeebWin::BeebWin()
 		{
 			strcat(m_UserDataPath, "\\BeebEm\\");
 		}
+	}
+
+	// Read disc images path from registry
+	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "DiscsPath",
+						   m_DiscPath, _MAX_PATH))
+	{
+		// Default disc images path to a sub-directory of UserData path
+		strcpy(m_DiscPath, m_UserDataPath);
+		strcat(m_DiscPath, "DiscIms\\");
 	}
 
 	// Set default files, may be overridden by command line parameters.
@@ -293,6 +305,7 @@ void BeebWin::ApplyPrefs()
 	// Set up paths
 	strcpy(EconetCfgPath, m_UserDataPath);
 	strcpy(RomPath, m_UserDataPath);
+	strcpy(DiscPath, m_DiscPath);
 
 	// Load key maps
 	char keymap[_MAX_PATH];
@@ -467,8 +480,9 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	FreeDiscImage(1);
 	Close1770Disc(0);
 	Close1770Disc(1);
-	if (HardDriveEnabled) SCSIReset();
-	if (HardDriveEnabled) SASIReset();
+	if (SCSIDriveEnabled) SCSIReset();
+	if (SCSIDriveEnabled) SASIReset();
+	if (IDEDriveEnabled)  IDEReset();
 	TeleTextInit();
 	if (MachineType==3) InvertTR00=FALSE;
 	if (MachineType!=3) {
@@ -769,11 +783,13 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, ID_VIEW_DD_720X576, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_800X600, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1024X768, MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_VIEW_DD_1280X720, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1280X1024, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1280X768, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1280X960, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1440X900, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_1600X1200, MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_VIEW_DD_1920X1080, MF_UNCHECKED);
 	CheckMenuItem(hMenu, m_DDFullScreenMode, MF_CHECKED);
 
 	// View -> Motion blur
@@ -806,6 +822,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, m_MenuIdTiming, MF_CHECKED);
 
 	// Sound
+	UpdateSoundStreamerMenu();
 	SetSoundMenu();
 #ifdef SPEECH_ENABLED
 	CheckMenuItem(hMenu, IDM_SPEECH, SpeechDefault ? MF_CHECKED:MF_UNCHECKED);
@@ -861,7 +878,8 @@ void BeebWin::InitMenu(void)
 	UpdateEconetMenu(hMenu);
 	CheckMenuItem(hMenu, ID_TELETEXT, TeleTextAdapterEnabled ? MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_FLOPPYDRIVE, Disc8271Enabled ? MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(hMenu, ID_HARDDRIVE, HardDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_HARDDRIVE, SCSIDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_IDEDRIVE, IDEDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_UPRM, RTC_Enabled ? MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_RTCY2KADJUST, RTCY2KAdjust ? MF_CHECKED:MF_UNCHECKED);
 
@@ -892,6 +910,17 @@ void BeebWin::UpdateDisplayRendererMenu() {
 				  m_DisplayRenderer == IDM_DISPDDRAW ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_DISPDX9,
 				  m_DisplayRenderer == IDM_DISPDX9 ? MF_CHECKED : MF_UNCHECKED);
+}
+
+void BeebWin::UpdateSoundStreamerMenu() {
+	CheckMenuItem(m_hMenu, IDM_XAUDIO2, SoundConfig::Selection == SoundConfig::XAudio2 ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, IDM_DIRECTSOUND, SoundConfig::Selection == SoundConfig::DirectSound ? MF_CHECKED : MF_UNCHECKED);
+	if( SoundConfig::Selection == SoundConfig::XAudio2 )
+	{
+		UsePrimaryBuffer = 0;
+		SetPBuff();
+	}
+	EnableMenuItem(m_hMenu, ID_PBUFF, SoundConfig::Selection == SoundConfig::DirectSound ? MF_ENABLED : MF_GRAYED);
 }
 
 void BeebWin::UpdateMonitorMenu() {
@@ -1340,8 +1369,9 @@ LRESULT CALLBACK WndProc(
 							Disc8271_reset();
 							Reset1770();
 							if (EconetEnabled) EconetReset();//Rob
-							if (HardDriveEnabled) SCSIReset();
-							if (HardDriveEnabled) SASIReset();
+							if (SCSIDriveEnabled) SCSIReset();
+							if (SCSIDriveEnabled) SASIReset();
+							if (IDEDriveEnabled)  IDEReset();
 							TeleTextInit();
 							//SoundChipReset();
 						}
@@ -1761,6 +1791,10 @@ void BeebWin::TranslateDDSize(void)
 		m_XDXSize = 1024;
 		m_YDXSize = 768;
 		break;
+	case ID_VIEW_DD_1280X720:
+		m_XDXSize = 1280;
+		m_YDXSize = 720;
+		break;
 	case ID_VIEW_DD_1280X768:
 		m_XDXSize = 1280;
 		m_YDXSize = 768;
@@ -1780,6 +1814,10 @@ void BeebWin::TranslateDDSize(void)
 	case ID_VIEW_DD_1600X1200:
 		m_XDXSize = 1600;
 		m_YDXSize = 1200;
+		break;
+	case ID_VIEW_DD_1920X1080:
+		m_XDXSize = 1920;
+		m_YDXSize = 1080;
 		break;
 	}
 }
@@ -2728,11 +2766,13 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_VIEW_DD_720X576:
 	case ID_VIEW_DD_800X600:
 	case ID_VIEW_DD_1024X768:
+	case ID_VIEW_DD_1280X720:
 	case ID_VIEW_DD_1280X768:
 	case ID_VIEW_DD_1280X960:
 	case ID_VIEW_DD_1280X1024:
 	case ID_VIEW_DD_1440X900:
 	case ID_VIEW_DD_1600X1200:
+	case ID_VIEW_DD_1920X1080:
 		{
 			CheckMenuItem(hMenu, m_DDFullScreenMode, MF_UNCHECKED);
 			m_DDFullScreenMode = MenuId;
@@ -2777,7 +2817,28 @@ void BeebWin::HandleCommand(int MenuId)
 			CheckMenuItem(hMenu, IDM_SPEEDANDFPS, MF_CHECKED);
 		}
 		break;
-	
+
+	case IDM_XAUDIO2:
+	case IDM_DIRECTSOUND:
+		SoundConfig::Selection = MenuId == IDM_XAUDIO2 ? SoundConfig::XAudio2 : SoundConfig::DirectSound;
+
+		if (SoundEnabled)
+		{
+			SoundReset();
+			SoundInit();
+		}
+
+#ifdef SPEECH_ENABLED
+		if (SpeechDefault)
+		{
+			tms5220_stop();
+			tms5220_start();
+		}
+#endif
+
+		UpdateSoundStreamerMenu();
+		break;
+
 	case IDM_SOUNDONOFF:
 		if (SoundDefault)
 		{
@@ -3507,10 +3568,24 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_HARDDRIVE:
-		HardDriveEnabled = 1-HardDriveEnabled;
+		SCSIDriveEnabled = 1-SCSIDriveEnabled;
 		SCSIReset();
 		SASIReset();
-		CheckMenuItem(hMenu, ID_HARDDRIVE, HardDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_HARDDRIVE, SCSIDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
+		if (SCSIDriveEnabled) {
+			IDEDriveEnabled=0;
+			CheckMenuItem(hMenu, ID_IDEDRIVE, IDEDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
+			}
+		break;
+
+	case ID_IDEDRIVE:
+		IDEDriveEnabled = 1-IDEDriveEnabled;
+		IDEReset();
+		CheckMenuItem(hMenu, ID_IDEDRIVE, IDEDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
+		if (IDEDriveEnabled) {
+			SCSIDriveEnabled=0;
+			CheckMenuItem(hMenu, ID_HARDDRIVE, SCSIDriveEnabled ? MF_CHECKED:MF_UNCHECKED);
+			}
 		break;
 
 	case ID_FLOPPYDRIVE:

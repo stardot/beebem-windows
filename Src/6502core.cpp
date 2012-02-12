@@ -47,6 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "z80.h"
 #include "econet.h"
 #include "scsi.h"
+#include "ide.h"
 #include "debug.h"
 #include "Arm.h"
 

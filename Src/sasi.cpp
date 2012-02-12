@@ -20,6 +20,7 @@ Boston, MA  02110-1301, USA.
 
 /* SASI Support for Beebem */
 /* Based on code written by Y. Tanaka */
+/* 26/12/2011 JGH: Disk images at DiscsPath, not AppPath */
 
 /*
 
@@ -76,7 +77,7 @@ typedef struct {
 sasi_t sasi;
 FILE *SASIDisc[4] = {0};
 
-extern char HardDriveEnabled;
+extern char SCSIDriveEnabled;
 
 void SASIReset(void)
 {
@@ -88,7 +89,8 @@ char buff[256];
 	
 	for (i = 0; i < 1; ++i)		// only one drive allowed under Torch Z80 ?
     {
-        sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), i);
+//      sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), i);
+        sprintf(buff, "%s/sasi%d.dat", DiscPath, i);
 
         if (SASIDisc[i] != NULL)
 		{
@@ -96,7 +98,7 @@ char buff[256];
 			SASIDisc[i]=NULL;
 		}
 
-        if (!HardDriveEnabled)
+        if (!SCSIDriveEnabled)
             continue;
 
         SASIDisc[i] = fopen(buff, "rb+");
@@ -114,7 +116,7 @@ char buff[256];
 
 void SASIWrite(int Address, int Value) 
 {
-    if (!HardDriveEnabled)
+    if (!SCSIDriveEnabled)
         return;
 
 //	fprintf(stderr, "SASIWrite Address = 0x%02x, Value = 0x%02x, Phase = %d, PC = 0x%04x\n", Address, Value, sasi.phase, ProgramCounter);
@@ -141,7 +143,7 @@ void SASIWrite(int Address, int Value)
 
 int SASIRead(int Address)
 {
-    if (!HardDriveEnabled)
+    if (!SCSIDriveEnabled)
         return 0xff;
 
 int data = 0xff;
@@ -646,7 +648,8 @@ bool SASIDiscFormat(unsigned char *buf)
 	record <<= 8;
 	record |= buf[3];
 	
-	sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), sasi.lun);
+//	sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), sasi.lun);
+	sprintf(buff, "%s/sasi%d.dat", DiscPath, sasi.lun);
 	
 	SASIDisc[sasi.lun] = fopen(buff, "wb");
 	if (SASIDisc[sasi.lun] != NULL) fclose(SASIDisc[sasi.lun]);

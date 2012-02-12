@@ -234,7 +234,11 @@ static void IC32Write(unsigned char Value) {
   }
 #endif
 
-  DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
+  if (!(IC32State & 8) && (oldval & 8)) {
+    KBDRow=(SlowDataBusWriteValue>>4) & 7;
+    KBDCol=(SlowDataBusWriteValue & 0xf);
+    DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
+  }
 } /* IC32Write */
 
 

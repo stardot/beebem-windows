@@ -47,6 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "scsi.h"
 #include "sasi.h"
+#include "ide.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "userkybd.h"
@@ -245,6 +246,10 @@ void BeebWin::LoadPreferences()
 	else
 		m_MenuIdTiming = IDM_REALTIME;
 	TranslateTiming();
+
+	if (!PrefsGetDWORDValue("SoundConfig::Selection", dword))
+		dword = 0;
+	SoundConfig::Selection = SoundConfig::Option(dword);
 
 	if (!PrefsGetBinaryValue(CFG_SOUND_ENABLED,&SoundDefault,1))
 		SoundDefault=1;
@@ -471,8 +476,11 @@ void BeebWin::LoadPreferences()
 		Disc8271Enabled=1;
 	Disc1770Enabled=Disc8271Enabled;
 
-	if (!PrefsGetBinaryValue("HardDriveEnabled",&HardDriveEnabled,1))
-		HardDriveEnabled=0;
+	if (!PrefsGetBinaryValue("SCSIDriveEnabled",&SCSIDriveEnabled,1))
+		SCSIDriveEnabled=0;
+
+	if (!PrefsGetBinaryValue("IDEDriveEnabled",&IDEDriveEnabled,1))
+		IDEDriveEnabled=0;
 
 	if (!PrefsGetBinaryValue("RTCEnabled",&flag,1))
 		RTC_Enabled=0;
@@ -572,7 +580,7 @@ void BeebWin::LoadPreferences()
 	}
 
 	// Update prefs version
-	PrefsSetStringValue("PrefsVersion", "1.8");
+	PrefsSetStringValue("PrefsVersion", "1.9");
 
 	// Windows key enable/disable still comes from registry
 	int binsize = 24;
@@ -623,10 +631,10 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		PrefsSetDWORDValue( CFG_SPEED_TIMING, m_MenuIdTiming);
 
+		PrefsSetDWORDValue("SoundConfig::Selection", SoundConfig::Selection);
 		PrefsSetBinaryValue(CFG_SOUND_ENABLED,&SoundDefault,1);
 		flag = SoundChipEnabled;
 		PrefsSetBinaryValue("SoundChipEnabled",&flag,1);
-		flag = DirectSoundEnabled;
 		PrefsSetDWORDValue( CFG_SOUND_SAMPLE_RATE, m_MenuIdSampleRate);
 		PrefsSetDWORDValue( CFG_SOUND_VOLUME, m_MenuIdVolume);
 		PrefsSetBinaryValue("RelaySoundEnabled",&RelaySoundEnabled,1);
@@ -710,7 +718,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		PrefsSetBinaryValue("Teletext Half Mode",&THalfMode,1);
 		PrefsSetBinaryValue("TeleTextAdapterEnabled",&TeleTextAdapterEnabled,1);
 		PrefsSetBinaryValue("FloppyDriveEnabled",&Disc8271Enabled,1);
-		PrefsSetBinaryValue("HardDriveEnabled",&HardDriveEnabled,1);
+		PrefsSetBinaryValue("SCSIDriveEnabled",&SCSIDriveEnabled,1);
+		PrefsSetBinaryValue("IDEDriveEnabled",&IDEDriveEnabled,1);
 		flag = RTC_Enabled;
 		PrefsSetBinaryValue("RTCEnabled",&flag,1);
 		PrefsSetBinaryValue("RTCY2KAdjust",&RTCY2KAdjust,1);

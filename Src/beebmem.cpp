@@ -22,8 +22,9 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* Beebemulator - memory subsystem - David Alan Gilbert 16/10/94 */
+// Beebemulator - memory subsystem - David Alan Gilbert 16/10/1994
 // Econet emulation: Rob O'Donnell robert@irrelevant.com 28/12/2004
+// IDE Interface: JGH jgh@mdfs.net 25/12/2011
 
 #ifdef WIN32
 #include <windows.h>
@@ -50,6 +51,7 @@ Boston, MA  02110-1301, USA.
 #include "errno.h"
 #include "scsi.h"
 #include "sasi.h"
+#include "ide.h"
 #include "uefstate.h"
 #include "z80mem.h"
 #include "z80.h"
@@ -75,11 +77,11 @@ struct tm;
 time_t long_time; // Define Clock for Computech Integra-B
 
 int MemSel=0; /* Shadow/Main RAM Toggle */
-int PrvEn=0; /* Private RAM Enable */
-int ShEn=0; /* Shadow RAM Enable */
-int Prvs1=0; /* Private RAM 1K Area */
-int Prvs4=0; /* Private RAM 4K Area */
-int Prvs8=0; /* Private RAM 8K Area */
+int PrvEn=0;  /* Private RAM Enable */
+int ShEn=0;   /* Shadow RAM Enable */
+int Prvs1=0;  /* Private RAM 1K Area */
+int Prvs4=0;  /* Private RAM 4K Area */
+int Prvs8=0;  /* Private RAM 8K Area */
 int HidAdd=0;
 /* End of Computech (&B+) Specific Stuff */
 
@@ -96,12 +98,12 @@ unsigned char HiddenDefault[31] = {0,0,0,0,0,0,2,1,1,0,0xe0,0x8e,0,0,0,0,0,0,0,
 
 unsigned char ROMSEL;
 /* Master 128 Specific Stuff */
-unsigned char FSRam[8192]; // 8K Filing System RAM
-unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
-unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
+unsigned char FSRam[8192];       // 8K Filing System RAM
+unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
+unsigned char CMOSRAM[64];       // 50 Bytes CMOS RAM
 unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2}; // Backup of CMOS Defaults
-unsigned char ShadowRAM[32768]; // 20K Shadow RAM
-unsigned char ACCCON; // ACCess CONtrol register
+unsigned char ShadowRAM[32768];  // 20K Shadow RAM
+unsigned char ACCCON;            // ACCess CONtrol register
 struct CMOSType CMOS;
 unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
@@ -110,10 +112,11 @@ unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 char RomPath[_MAX_PATH];
 char RomFile[_MAX_PATH];
 ROMConfigFile RomConfig;
+char DiscPath[_MAX_PATH]; // JGH
 
 // FDD Extension board variables
-int EFDCAddr; // 1770 FDC location
-int EDCAddr; // Drive control location
+int EFDCAddr;   // 1770 FDC location
+int EDCAddr;    // Drive control location
 bool NativeFDC; // TRUE for 8271, FALSE for DLL extension
 
 // Econet NMI enable signals. Decoded from address bus and latched by IC97
@@ -345,7 +348,7 @@ int BeebReadMem(int Address) {
 		AdjustForIORead();
 	}
 
-	/* VIA's first - games seem to do really heavy reaing of these */
+	/* VIAs first - games seem to do really heavy reading of these */
 	/* Can read from a via using either of the two 16 bytes blocks */
 	if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
 		SyncIO();
@@ -475,7 +478,11 @@ int BeebReadMem(int Address) {
 	}
     
 	if ((Address & ~0x3)==0xfc40) {
-		return(SCSIRead(Address & 0x3));
+		if (SCSIDriveEnabled) return(SCSIRead(Address & 0x3));
+	}
+
+	if ((Address & ~0x7)==0xfc40) {
+		if (IDEDriveEnabled)  return(IDERead(Address & 0x7));
 	}
 
 	if ((Address & ~0x1)==0xfc50) {
@@ -938,8 +945,17 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
     
 	if ((Address & ~0x3)==0xfc40) {
-		SCSIWrite((Address & 0x3),Value);
-		return;
+		if (SCSIDriveEnabled) {
+			SCSIWrite((Address & 0x3),Value);
+			return;
+		}
+	}
+
+	if ((Address & ~0x7)==0xfc40) {
+		if (IDEDriveEnabled) {
+			IDEWrite((Address & 0x7),Value);
+			return;
+		}
 	}
 
 	if ((Address & ~0x3)==0xfdf0) {

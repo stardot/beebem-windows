@@ -20,6 +20,7 @@ Boston, MA  02110-1301, USA.
 
 /* SCSI Support for Beebem */
 /* Based on code written by Y. Tanaka */
+/* 26/12/2011 JGH: Disk images at DiscsPath, not AppPath */
 
 /*
 
@@ -77,7 +78,7 @@ scsi_t scsi;
 FILE *SCSIDisc[4] = {0};
 int SCSISize[4];
 
-char HardDriveEnabled = 0;
+char SCSIDriveEnabled = 0;
 
 void SCSIReset(void)
 {
@@ -90,7 +91,8 @@ char buff[256];
 	
 	for (i = 0; i < 4; ++i)
     {
-        sprintf(buff, "%s/discims/scsi%d.dat", mainWin->GetUserDataPath(), i);
+//      sprintf(buff, "%s/discims/scsi%d.dat", mainWin->GetUserDataPath(), i);
+        sprintf(buff, "%s/scsi%d.dat", DiscPath, i);
 
         if (SCSIDisc[i] != NULL)
 		{
@@ -98,7 +100,7 @@ char buff[256];
 			SCSIDisc[i]=NULL;
 		}
 
-        if (!HardDriveEnabled)
+        if (!SCSIDriveEnabled)
             continue;
 
         SCSIDisc[i] = fopen(buff, "rb+");
@@ -114,7 +116,8 @@ char buff[256];
         if (SCSIDisc[i] != NULL)
 		{
     
-			sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), i);
+//			sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), i);
+			sprintf(buff, "%s/scsi%d.dsc", DiscPath, i);
 			
 			f = fopen(buff, "rb");
 			
@@ -137,7 +140,7 @@ char buff[256];
 
 void SCSIWrite(int Address, int Value) 
 {
-    if (!HardDriveEnabled)
+    if (!SCSIDriveEnabled)
         return;
 
 //	SCSILog("SCSIWrite Address = 0x%02x, Value = 0x%02x, Phase = %d, PC = 0x%04x\n", Address, Value, scsi.phase, ProgramCounter);
@@ -175,7 +178,7 @@ void SCSIWrite(int Address, int Value)
 
 int SCSIRead(int Address)
 {
-    if (!HardDriveEnabled)
+    if (!SCSIDriveEnabled)
         return 0xff;
 
 int data = 0xff;
@@ -677,7 +680,8 @@ int DiscModeSense(unsigned char *cdb, unsigned char *buf)
 		
 	if (SCSIDisc[scsi.lun] == NULL) return 0;
 
-	sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
+//	sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
+	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
 			
 	f = fopen(buff, "rb");
 			
@@ -726,7 +730,8 @@ bool WriteGeometory(unsigned char *buf)
 	
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 	
-	sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
+//	sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
+	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
 	
 	f = fopen(buff, "wb");
 	
@@ -753,7 +758,8 @@ bool DiscFormat(unsigned char *buf)
 		SCSIDisc[scsi.lun]=NULL;
 	}
 	
-	sprintf(buff, "%s/discims/scsi%d.dat", mainWin->GetUserDataPath(), scsi.lun);
+//	sprintf(buff, "%s/discims/scsi%d.dat", mainWin->GetUserDataPath(), scsi.lun);
+	sprintf(buff, "%s/scsi%d.dat", DiscPath, scsi.lun);
 	
 	SCSIDisc[scsi.lun] = fopen(buff, "wb");
 	if (SCSIDisc[scsi.lun] != NULL) fclose(SCSIDisc[scsi.lun]);
@@ -761,7 +767,8 @@ bool DiscFormat(unsigned char *buf)
 	
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 
-	sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
+//	sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
+	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
 	
 	f = fopen(buff, "rb");
 	

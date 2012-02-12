@@ -24,7 +24,7 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* Mike Wyatt and NRM's port to win32 - 7/6/97 */
+/* Mike Wyatt and NRM's port to win32 - 07/06/1997 */
 
 #ifndef BEEBWIN_HEADER
 #define BEEBWIN_HEADER
@@ -62,6 +62,7 @@ typedef KeyMapping KeyMap[256][2]; // Indices are: [Virt key][shift state]
 
 
 extern const char *WindowTitle;
+extern char *CFG_REG_KEY;
 
 typedef union EightUChars {
 	unsigned char data[8];
@@ -117,7 +118,6 @@ struct CUSTOMVERTEX
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_TEX1)
 
 typedef std::map<std::string, std::string> PrefsMap;
-
 
 class BeebWin  {
   
@@ -253,7 +253,7 @@ class BeebWin  {
 	char*		m_screen;
 	char*		m_screen_blur;
 	double		m_RealTimeTarget;
-	int			m_ShiftBooted;
+	int		m_ShiftBooted;
 	char		m_TextToSpeechEnabled;
 	char		m_TextViewEnabled;
 	char		m_DisableKeysWindows;
@@ -261,52 +261,53 @@ class BeebWin  {
 	char		m_DisableKeysEscape;
 	char		m_DisableKeysShortcut;
 
-	int			m_MenuIdWinSize;
-	int			m_XWinSize;
-	int			m_YWinSize;
-	int			m_XLastWinSize;
-	int			m_YLastWinSize;
-	int			m_XWinPos;
-	int			m_YWinPos;
-	int			m_XDXSize;
-	int			m_YDXSize;
-	int			m_XScrSize;
-	int			m_YScrSize;
-	int			m_XWinBorder;
-	int			m_YWinBorder;
+	int		m_MenuIdWinSize;
+	int		m_XWinSize;
+	int		m_YWinSize;
+	int		m_XLastWinSize;
+	int		m_YLastWinSize;
+	int		m_XWinPos;
+	int		m_YWinPos;
+	int		m_XDXSize;
+	int		m_YDXSize;
+	int		m_XScrSize;
+	int		m_YScrSize;
+	int		m_XWinBorder;
+	int		m_YWinBorder;
 	float		m_XRatioAdj;
 	float		m_YRatioAdj;
 	float		m_XRatioCrop;
 	float		m_YRatioCrop;
 	BOOL		m_ShowSpeedAndFPS;
-	int			m_MenuIdSampleRate;
-	int			m_MenuIdVolume;
-	int			m_DiscTypeSelection;
-	int			m_MenuIdTiming;
-	int			m_FPSTarget;
+	int		m_MenuIdSampleRate;
+	int		m_MenuIdVolume;
+	int		m_DiscTypeSelection;
+	int		m_MenuIdTiming;
+	int		m_FPSTarget;
 	BOOL		m_JoystickCaptured;
 	JOYCAPS		m_JoystickCaps;
-	int			m_MenuIdSticks;
+	int		m_MenuIdSticks;
 	BOOL		m_HideCursor;
 	BOOL		m_FreezeWhenInactive;
-	int			m_MenuIdKeyMapping;
-	int			m_KeyMapAS;
-	int			m_KeyMapFunc;
+	int		m_MenuIdKeyMapping;
+	int		m_KeyMapAS;
+	int		m_KeyMapFunc;
 	char		m_UserKeyMapPath[_MAX_PATH];
-	int			m_ShiftPressed;
-	int			m_vkeyPressed[256][2][2];
+	int		m_ShiftPressed;
+	int		m_vkeyPressed[256][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
+	char		m_DiscPath[_MAX_PATH];	// JGH
 	BOOL		m_WriteProtectDisc[2];
 	char		m_WriteProtectOnLoad;
-	int			m_MenuIdAMXSize;
-	int			m_MenuIdAMXAdjust;
-	int			m_AMXXSize;
-	int			m_AMXYSize;
-	int			m_AMXAdjust;
-	int			m_DisplayRenderer;
-	int			m_CurrentDisplayRenderer;
-	int			m_DDFullScreenMode;
+	int		m_MenuIdAMXSize;
+	int		m_MenuIdAMXAdjust;
+	int		m_AMXXSize;
+	int		m_AMXYSize;
+	int		m_AMXAdjust;
+	int		m_DisplayRenderer;
+	int		m_CurrentDisplayRenderer;
+	int		m_DDFullScreenMode;
 	bool		m_isFullScreen;
 	bool		m_MaintainAspectRatio;
 	bool		m_startFullScreen;
@@ -316,7 +317,7 @@ class BeebWin  {
 	bool		m_AutoSavePrefsChanged;
 
 	char		m_customip [20];		//IP232
-	int			m_customport;
+	int		m_customport;
 
 
 	HDC 		m_hDC;
@@ -327,79 +328,79 @@ class BeebWin  {
 	bmiData 	m_bmi;
 	char		m_szTitle[100];
 
-	int			m_ScreenRefreshCount;
+	int		m_ScreenRefreshCount;
 	double		m_RelativeSpeed;
 	double		m_FramesPerSecond;
 
 	char		m_clipboard[32768];
-	int			m_clipboardlen;
-	int			m_clipboardptr;
+	int		m_clipboardlen;
+	int		m_clipboardptr;
 	char		m_printerbuffer[1024 * 1024];
-	int			m_printerbufferlen;
-	int			m_OSRDCH;
+	int		m_printerbufferlen;
+	int		m_OSRDCH;
 	bool		m_translateCRLF;
 
-	int			m_MenuIdPrinterPort;
+	int		m_MenuIdPrinterPort;
 	char		m_PrinterFileName[_MAX_PATH];
 	char		m_PrinterDevice[_MAX_PATH];
 
 	DWORD		m_LastTickCount;
 	DWORD		m_LastStatsTickCount;
-	int			m_LastTotalCycles;
-	int			m_LastStatsTotalCycles;
+	int		m_LastTotalCycles;
+	int		m_LastStatsTotalCycles;
 	DWORD		m_TickBase;
-	int			m_CycleBase;
-	int			m_MinFrameCount;
+	int		m_CycleBase;
+	int		m_MinFrameCount;
 	DWORD		m_LastFPSCount;
-	int			m_LastStartY;
-	int			m_LastNLines;
-	int			m_MotionBlur;
+	int		m_LastStartY;
+	int		m_LastNLines;
+	int		m_MotionBlur;
 	char 		m_BlurIntensities[8];
 	char 		m_CommandLineFileName1[_MAX_PATH];
 	char 		m_CommandLineFileName2[_MAX_PATH];
 	char		m_KbdCmd[1024];
 	char		m_DebugScript[_MAX_PATH];
-	int			m_KbdCmdPos;
-	int			m_KbdCmdKey;
+	int		m_KbdCmdPos;
+	int		m_KbdCmdKey;
 	bool		m_KbdCmdPress;
-	int			m_KbdCmdDelay;
-	int			m_KbdCmdLastCycles;
+	int		m_KbdCmdDelay;
+	int		m_KbdCmdLastCycles;
 	bool		m_NoAutoBoot;
 	unsigned char RomWritePrefs[16];
 
 	// Bitmap capture vars
-	ULONG_PTR   m_gdiplusToken;
-	bool        m_CaptureBitmapPending;
-	bool        m_CaptureBitmapAutoFilename;
-	char        m_CaptureFileName[MAX_PATH];
-	int			m_MenuIdCaptureResolution;
-	int			m_MenuIdCaptureFormat;
+	ULONG_PTR	m_gdiplusToken;
+	bool		m_CaptureBitmapPending;
+	bool		m_CaptureBitmapAutoFilename;
+	char		m_CaptureFileName[MAX_PATH];
+	int		m_MenuIdCaptureResolution;
+	int		m_MenuIdCaptureFormat;
 
 	// AVI vars
 	bmiData 	m_Avibmi;
 	HBITMAP		m_AviDIB;
 	HDC 		m_AviDC;
 	char*		m_AviScreen;
-	int			m_AviFrameSkip;
-	int			m_AviFrameSkipCount;
-	int			m_AviFrameCount;
-	int			m_MenuIdAviResolution;
-	int			m_MenuIdAviSkip;
+	int		m_AviFrameSkip;
+	int		m_AviFrameSkipCount;
+	int		m_AviFrameCount;
+	int		m_MenuIdAviResolution;
+	int		m_MenuIdAviSkip;
 
 	// DirectX stuff
-	BOOL					m_DXInit;
-	BOOL					m_DXResetPending;
+	BOOL		m_DXInit;
+	BOOL		m_DXResetPending;
 
 	// DirectDraw stuff
-	LPDIRECTDRAW			m_DD;			// DirectDraw object
-	LPDIRECTDRAW2			m_DD2;			// DirectDraw object
-	LPDIRECTDRAWSURFACE		m_DDSPrimary;	// DirectDraw primary surface
+	LPDIRECTDRAW		m_DD;			// DirectDraw object
+	LPDIRECTDRAW2		m_DD2;			// DirectDraw object
+	LPDIRECTDRAWSURFACE	m_DDSPrimary;	// DirectDraw primary surface
 	LPDIRECTDRAWSURFACE2	m_DDS2Primary;	// DirectDraw primary surface
-	LPDIRECTDRAWSURFACE		m_DDSOne;		// Offscreen surface 1
+	LPDIRECTDRAWSURFACE	m_DDSOne;		// Offscreen surface 1
 	LPDIRECTDRAWSURFACE2	m_DDS2One;		// Offscreen surface 1
-	BOOL					m_DXSmoothing;
-	BOOL					m_DXSmoothMode7Only;
-	LPDIRECTDRAWCLIPPER		m_Clipper;		// clipper for primary
+	BOOL			m_DXSmoothing;
+	BOOL			m_DXSmoothMode7Only;
+	LPDIRECTDRAWCLIPPER	m_Clipper;		// clipper for primary
 
 	// Direct3D9 stuff
 	LPDIRECT3D9             m_pD3D;
@@ -440,6 +441,8 @@ class BeebWin  {
 	void UpdateSFXMenu();
 	void UpdateDisableKeysMenu();
 	void UpdateDisplayRendererMenu(void);
+
+	void UpdateSoundStreamerMenu();
 
 	// DirectX - calls DDraw or DX9 fn
 	void InitDX(void);

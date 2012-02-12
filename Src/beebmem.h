@@ -98,6 +98,7 @@ extern unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
 extern ROMConfigFile RomConfig;
 extern char RomPath[_MAX_PATH];
 extern char RomFile[_MAX_PATH];
+extern char DiscPath[_MAX_PATH]; // JGH
 
 /* NOTE: Only to be used if 'a' doesn't change the address */
 #define BEEBREADMEM_FAST(a) ((a<0xfc00)?WholeRam[a]:BeebReadMem(a))

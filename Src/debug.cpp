@@ -112,21 +112,7 @@ BOOL CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lPa
 extern HWND hCurrentDialog;
 extern HACCEL hCurrentAccelTable;
 
-bool DebugCmdBreakContinue(char* args);
-bool DebugCmdToggleBreak(char* args);
-bool DebugCmdLabels(char* args);
-bool DebugCmdHelp(char* args);
-bool DebugCmdSet(char* args);
-bool DebugCmdNext(char* args);
-bool DebugCmdPeek(char* args);
-bool DebugCmdCode(char* args);
-bool DebugCmdWatch(char* args);
-bool DebugCmdState(char* args);
-bool DebugCmdSave(char* args);
-bool DebugCmdPoke(char* args);
-bool DebugCmdGoto(char* args);
-bool DebugCmdFile(char* args);
-bool DebugCmdEcho(char* args);
+
 
 char debugHistory[MAX_HISTORY][300];
 int debugHistoryIndex = 0;
@@ -165,7 +151,8 @@ DebugCmd DebugCmdTable[] = {
 	{ "file",	DebugCmdFile, "r/w addr [count] filename", "Read/Write memory at address from/to file." },
 	{ "f",		DebugCmdFile,"",""}, // Alias of "file"
 	{ "echo",	DebugCmdEcho, "string", "Write string to console." },
-	{ "!",	DebugCmdEcho, "","" } // Alias of "echo"
+	{ "!",	DebugCmdEcho, "","" }, // Alias of "echo"
+	{ "script",	DebugCmdScript, "[filename]", "Executes a debugger script." }
 };
 
 InstInfo optable[256] =
@@ -1141,7 +1128,7 @@ void DebugInitMemoryMaps()
 
 bool DebugLoadMemoryMap(char* filename, int bank)
 {
-	char line[512];
+	char line[1024];
 	char errstr[200];
 	AddrInfo* entry;
 	MemoryMap* map;
@@ -1163,6 +1150,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 		map->entries = NULL;
 		while(fgets(line, _countof(line), infile) != NULL)
 		{
+			DebugChompString(line);
 			buf = line;
 			while(buf[0] == ' ' || buf[0] == '\t' || buf[0] == '\r' || buf[0] == '\n')
 				buf++;
@@ -1210,7 +1198,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 
 void DebugLoadLabels(char *filename)
 {
-	char buf[512];
+	char buf[1024];
 	FILE *infile;
 	infile = fopen(filename, "r");
 	if (infile == NULL)
@@ -1222,6 +1210,7 @@ void DebugLoadLabels(char *filename)
 		LabelCount = 0;
 		while(fgets(buf, _countof(buf), infile) != NULL && LabelCount < MAX_LABELS)
 		{
+			DebugChompString(buf);
 			if(sscanf(buf,"%*s %x .%64s", &Labels[LabelCount].addr, Labels[LabelCount].name) != 2)
 			{
 				DebugDisplayInfoF("Error: Invalid labels format: %s", filename);
@@ -1238,7 +1227,7 @@ void DebugLoadLabels(char *filename)
 
 void DebugRunScript(char *filename)
 {
-	char buf[256];
+	char buf[1024];
 	FILE *infile;
 
 	infile=fopen(filename,"r");
@@ -1251,21 +1240,30 @@ void DebugRunScript(char *filename)
 		DebugDisplayInfoF("Running script %s",filename);
 		while(fgets(buf, _countof(buf), infile) != NULL)
 		{
-			if(strnlen(buf, _countof(buf)) > 0)
-			{
+			DebugChompString(buf);
+			if(strlen(buf) > 0)
 				DebugParseCommand(buf);
-			}
 		}
 		fclose(infile);
 	}
 }
 
+void DebugChompString(char *str)
+{
+	int end = strlen(str) - 1;
+	while(end > 0 && (str[end] == '\r' || str[end] == '\n' || str[end] == ' ' || str[end] == '\t'))
+	{
+		str[end] = '\0';
+		end--;
+	}
+}
+
 int DebugParseLabel(char *label)
 {
-	int addr;
+	//int addr;
 	// Check it's not simply a hex address
-	if(sscanf(label, "%x", &addr) == 1)
-		return addr;
+	//if(sscanf(label, "%x", &addr) == 1)
+	//	return addr;
 
 	for(int i = 0; i < LabelCount; i++)
 	{
@@ -1865,6 +1863,15 @@ bool DebugCmdHelp(char* args)
 		}
 		else
 			DebugDisplayInfoF("Help: Command %s was not recognised.", args);
+	}
+	return true;
+}
+
+bool DebugCmdScript(char *args)
+{
+	if(args[0] != '\0')
+	{
+		DebugRunScript(args);
 	}
 	return true;
 }
