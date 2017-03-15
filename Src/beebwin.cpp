@@ -710,6 +710,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_CAPTURERES1, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_CAPTURERES2, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_CAPTURERES3, MF_UNCHECKED);
+	CheckMenuItem(hMenu, IDM_CAPTURERES4, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_CAPTUREBMP, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_CAPTUREJPEG, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_CAPTUREGIF, MF_UNCHECKED);
@@ -3482,6 +3483,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_CAPTURERES1:
 	case IDM_CAPTURERES2:
 	case IDM_CAPTURERES3:
+	case IDM_CAPTURERES4:
 		if (MenuId != m_MenuIdCaptureResolution)
 		{
 			CheckMenuItem(hMenu, m_MenuIdCaptureResolution, MF_UNCHECKED);
