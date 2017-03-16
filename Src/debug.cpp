@@ -98,6 +98,7 @@ static bool WatchDecimal = false;
 static bool WatchRefresh = false;
 static bool WatchBigEndian = false;
 HWND hwndDebug;
+static HWND hwndInvisibleOwner;
 static HWND hwndInfo;
 static HWND hwndBP;
 static HWND hwndW;
@@ -417,12 +418,20 @@ InstInfo optable[256] =
 
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain)
 {
+	if (hwndInvisibleOwner == 0)
+	{
+		// Keep the debugger off the taskbar with an invisible owner window.
+		// This persists until the process closes.
+		hwndInvisibleOwner =
+			CreateWindowEx(0, "STATIC", 0, 0, 0, 0, 0, 0, 0, 0, hinst, 0);
+	}
+
 	DebugEnabled = TRUE;
 	if (!IsWindow(hwndDebug)) 
 	{ 
 		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
 		hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
-								 NULL, (DLGPROC)DebugDlgProc);
+								 hwndInvisibleOwner, (DLGPROC)DebugDlgProc);
 		memset(debugHistory,'\0',sizeof(debugHistory));
 		hCurrentDialog = hwndDebug;
 		hCurrentAccelTable = haccelDebug;
