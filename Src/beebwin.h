@@ -545,13 +545,13 @@ public:
 	}
 
 	// Show dialog
-	bool Open(OPENFILENAME* old_ofn)
+	bool Open()
 	{
-		return ShowDialog(old_ofn, true);
+		return ShowDialog(true);
 	}
-	bool Save(OPENFILENAME* old_ofn)
+	bool Save()
 	{
-		return ShowDialog(old_ofn, false);
+		return ShowDialog(false);
 	}
 
 	// Get results
@@ -565,7 +565,7 @@ private:
 
 	OPENFILENAME m_ofn;
 
-	bool ShowDialog(OPENFILENAME* old_ofn, bool open);
+	bool ShowDialog(bool open);
 };
 
 #endif
