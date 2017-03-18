@@ -265,6 +265,8 @@ static bool LoadROMConfigFile(HWND hWnd)
 	OPENFILENAME ofn;
 	bool success = false;
 
+	const char* filter = "ROM File (*.cfg)\0*.cfg\0";
+
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
 	int nROMPathLen = (int)strlen(szROMConfigPath);
@@ -279,10 +281,10 @@ static bool LoadROMConfigFile(HWND hWnd)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "ROM File (*.cfg)\0*.cfg\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = 0;
+	ofn.nFilterIndex = 1;
 	ofn.lpstrFile = pFileName;
 	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrFileTitle = NULL;
@@ -297,7 +299,10 @@ static bool LoadROMConfigFile(HWND hWnd)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetOpenFileName(&ofn))
+	//if (GetOpenFileName(&ofn))
+	//if (mainWin->ChooseOpenFileName(&ofn, hWnd, pFileName, MAX_PATH, DefaultPath, filter, NULL))
+	FileDialog fileDialog(hWnd, pFileName, MAX_PATH, DefaultPath, filter);
+	if (fileDialog.Open(&ofn))
 	{
 		// Save directory as default for next time
 		unsigned int PathLength = (unsigned int)(strrchr(pFileName, '\\') - pFileName);
@@ -327,6 +332,8 @@ static bool SaveROMConfigFile(HWND hWnd)
 	OPENFILENAME ofn;
 	bool success = false;
 
+	const char* filter = "ROM File (*.cfg)\0*.cfg\0";
+
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
 	int nROMPathLen = (int)strlen(szROMConfigPath);
@@ -341,10 +348,10 @@ static bool SaveROMConfigFile(HWND hWnd)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "ROM File (*.cfg)\0*.cfg\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = 0;
+	ofn.nFilterIndex = 1;
 	ofn.lpstrFile = pFileName;
 	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrFileTitle = NULL;
@@ -359,7 +366,10 @@ static bool SaveROMConfigFile(HWND hWnd)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetSaveFileName(&ofn))
+	//if (GetSaveFileName(&ofn))
+	//if (mainWin->ChooseSaveFileName(&ofn, hWnd, pFileName, MAX_PATH, DefaultPath, filter, NULL))
+	FileDialog fileDialog(hWnd, pFileName, MAX_PATH, DefaultPath, filter);
+	if (fileDialog.Save(&ofn))
 	{
 		// Save directory as default for next time
 		unsigned int PathLength = (unsigned int)(strrchr(pFileName, '\\') - pFileName);
@@ -429,6 +439,8 @@ static bool GetROMFile(HWND hWnd, char *pFileName)
 	OPENFILENAME ofn;
 	bool success = false;
 
+	const char* filter = "ROM File (*.rom)\0*.rom\0";
+
 	strcpy(szROMPath, "BeebFile");
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMPath);
 	int nROMPathLen = (int)strlen(szROMPath);
@@ -443,10 +455,10 @@ static bool GetROMFile(HWND hWnd, char *pFileName)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "ROM File (*.rom)\0*.rom\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = 0;
+	ofn.nFilterIndex = 1;
 	ofn.lpstrFile = pFileName;
 	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrFileTitle = NULL;
@@ -461,7 +473,10 @@ static bool GetROMFile(HWND hWnd, char *pFileName)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetOpenFileName(&ofn))
+	//if (GetOpenFileName(&ofn))
+	//if (mainWin->ChooseOpenFileName(&ofn, hWnd, pFileName, MAX_PATH, DefaultPath, filter, NULL))
+	FileDialog fileDialog(hWnd, pFileName, MAX_PATH, DefaultPath, filter);
+	if (fileDialog.Open(&ofn))
 	{
 		// Save directory as default for next time
 		unsigned int PathLength = (unsigned int)(strrchr(pFileName, '\\') - pFileName);

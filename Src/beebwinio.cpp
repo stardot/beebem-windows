@@ -129,6 +129,14 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 	OPENFILENAME ofn;
 	int gotName = false;
 
+	const char* filter =
+		"Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos\0"
+		"ADFS Disc (*.adl *.adf)\0*.adl;*.adf\0"
+		"Single Sided Disc (*.ssd)\0*.ssd\0"
+		"Double Sided Disc (*.dsd)\0*.dsd\0"
+		"Single Sided Disc (*.*)\0*.*\0"
+		"Double Sided Disc (*.*)\0*.*\0";
+
 	PrefsGetStringValue("DiscsPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
@@ -139,12 +147,7 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos\0"
-                    "ADFS Disc (*.adl *.adf)\0*.adl;*.adf\0"
-                    "Single Sided Disc (*.ssd)\0*.ssd\0"
-                    "Double Sided Disc (*.dsd)\0*.dsd\0"
-                    "Single Sided Disc (*.*)\0*.*\0"
-                    "Double Sided Disc (*.*)\0*.*\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = FileName;
@@ -161,7 +164,10 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	gotName = GetOpenFileName(&ofn);
+	//gotName = GetOpenFileName(&ofn);
+	//gotName = ChooseOpenFileName(&ofn, m_hWnd, FileName, sizeof(FileName), DefaultPath, filter, &filterIndex);
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	gotName = fileDialog.Open(&ofn);
 	if (gotName)
 	{
 		if (bCheckForPrefs)
@@ -182,7 +188,7 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 		bool adfs = false;
 		bool img = false;
 		bool dos = false;
-		switch (ofn.nFilterIndex)
+		switch (fileDialog.GetFilterIndex())
 		{
 		case 1:
 			{
@@ -264,6 +270,11 @@ void BeebWin::LoadTape(void)
 	char FileName[256];
 	OPENFILENAME ofn;
 
+	const char* filter =
+		"Auto (*.uef;*.csw)\0*.uef;*.csw\0"
+		"UEF Tape File (*.uef)\0*.uef\0"
+		"CSW Tape File (*.csw)\0*.csw\0";
+
 	PrefsGetStringValue("TapesPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
@@ -274,9 +285,7 @@ void BeebWin::LoadTape(void)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Auto (*.uef;*.csw)\0*.uef;*.csw\0"
-					  "UEF Tape File (*.uef)\0*.uef\0"
-					  "CSW Tape File (*.csw)\0*.csw\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = FileName;
@@ -293,7 +302,10 @@ void BeebWin::LoadTape(void)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetOpenFileName(&ofn))
+	//if (GetOpenFileName(&ofn))
+	//if (ChooseOpenFileName(&ofn, m_hWnd, FileName, sizeof(FileName), DefaultPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	if (fileDialog.Open(&ofn))
 	{
 		if (m_AutoSavePrefsFolders)
 		{
@@ -313,6 +325,8 @@ void BeebWin::NewTapeImage(char *FileName)
 	char DefaultPath[_MAX_PATH];
 	OPENFILENAME ofn;
 
+	const char* filter = "UEF Tape File (*.uef)\0*.uef\0";
+
 	PrefsGetStringValue("TapesPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
@@ -322,7 +336,7 @@ void BeebWin::NewTapeImage(char *FileName)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "UEF Tape File (*.uef)\0*.uef\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = FileName;
@@ -339,7 +353,10 @@ void BeebWin::NewTapeImage(char *FileName)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetSaveFileName(&ofn))
+	//if (GetSaveFileName(&ofn))
+	//if (ChooseSaveFileName(&ofn, m_hWnd, FileName, 256, DefaultPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, 256, DefaultPath, filter);
+	if (fileDialog.Save(&ofn))
 	{
 		/* Add a file extension if the user did not specify one */
 		if (strchr(FileName, '.') == NULL)
@@ -361,6 +378,8 @@ void BeebWin::SelectFDC(void)
 	char FileName[256];
 	OPENFILENAME ofn;
 
+	const char* filter = "FDC Extension Board Plugin DLL (*.dll)\0*.dll\0";
+
 	strcpy(DefaultPath, m_AppPath);
 	strcat(DefaultPath, "Hardware");
 
@@ -371,7 +390,7 @@ void BeebWin::SelectFDC(void)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "FDC Extension Board Plugin DLL (*.dll)\0*.dll\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = FileName;
@@ -388,7 +407,10 @@ void BeebWin::SelectFDC(void)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetOpenFileName(&ofn))
+	//if (GetOpenFileName(&ofn))
+	//if (ChooseOpenFileName(&ofn, m_hWnd, FileName, sizeof(FileName), DefaultPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	if (fileDialog.Open(&ofn))
 	{
 		// Make path relative to app path
 		if (_strnicmp(FileName, m_AppPath, strlen(m_AppPath)) == 0)
@@ -410,26 +432,30 @@ void BeebWin::NewDiscImage(int Drive)
 	char FileName[256];
 	OPENFILENAME ofn;
 
+	const char* filter =
+		"Single Sided Disc (*.ssd)\0*.ssd\0"
+		"Double Sided Disc (*.dsd)\0*.dsd\0"
+		"Single Sided Disc\0*.*\0"
+		"Double Sided Disc\0*.*\0"
+		"ADFS M ( 80 Track) Disc\0*.adf\0"
+		"ADFS L (160 Track) Disc\0*.adl\0";
+
 	PrefsGetStringValue("DiscsPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	ofn.nFilterIndex = 1;
-	PrefsGetDWORDValue("DiscsFilter",ofn.nFilterIndex);
+	DWORD filterIndex = 1;
+	PrefsGetDWORDValue("DiscsFilter",filterIndex);
 
-	if (MachineType!=3 && NativeFDC && ofn.nFilterIndex >= 5)
-		ofn.nFilterIndex = 1;
+	if (MachineType!=3 && NativeFDC && filterIndex >= 5)
+		filterIndex = 1;
 
 	FileName[0] = '\0';
 
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Single Sided Disc (*.ssd)\0*.ssd\0"
-					"Double Sided Disc (*.dsd)\0*.dsd\0"
-					"Single Sided Disc\0*.*\0"
-					"Double Sided Disc\0*.*\0"
-					"ADFS M ( 80 Track) Disc\0*.adf\0"
-					"ADFS L (160 Track) Disc\0*.adl\0";
+	ofn.lpstrFilter = filter;
+	ofn.nFilterIndex = filterIndex;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = FileName;
@@ -446,40 +472,46 @@ void BeebWin::NewDiscImage(int Drive)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetSaveFileName(&ofn))
+	//if (GetSaveFileName(&ofn))
+	//if (ChooseSaveFileName(&ofn, m_hWnd, FileName, sizeof(FileName), DefaultPath, filter, &filterIndex))
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	fileDialog.SetFilterIndex(filterIndex);
+	if (fileDialog.Save(&ofn))
 	{
+		filterIndex = fileDialog.GetFilterIndex();
+
 		if (m_AutoSavePrefsFolders)
 		{
 			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
 			strncpy(DefaultPath, FileName, PathLength);
 			DefaultPath[PathLength] = 0;
 			PrefsSetStringValue("DiscsPath", DefaultPath);
-			PrefsSetDWORDValue("DiscsFilter",ofn.nFilterIndex);
+			PrefsSetDWORDValue("DiscsFilter",filterIndex);
 		}
 
 		/* Add a file extension if the user did not specify one */
 		if (strchr(FileName, '.') == NULL)
 		{
-			if (ofn.nFilterIndex == 1 || ofn.nFilterIndex == 3)
+			if (filterIndex == 1 || filterIndex == 3)
 				strcat(FileName, ".ssd");
-			if (ofn.nFilterIndex == 2 || ofn.nFilterIndex == 4)
+			if (filterIndex == 2 || filterIndex == 4)
 				strcat(FileName, ".dsd");
-			if (ofn.nFilterIndex==5)
+			if (filterIndex==5)
 				strcat(FileName, ".adf");
-			if (ofn.nFilterIndex==6)
+			if (filterIndex==6)
 				strcat(FileName, ".adl");
 		}
 
-		if (ofn.nFilterIndex == 1 || ofn.nFilterIndex == 3)
+		if (filterIndex == 1 || filterIndex == 3)
 		{
 			CreateDiscImage(FileName, Drive, 1, 80);
 		}
-		if (ofn.nFilterIndex == 2 || ofn.nFilterIndex == 4)
+		if (filterIndex == 2 || filterIndex == 4)
 		{
 			CreateDiscImage(FileName, Drive, 2, 80);
 		}
-		if (ofn.nFilterIndex == 5) CreateADFSImage(FileName,Drive,80,m_hMenu);
-		if (ofn.nFilterIndex == 6) CreateADFSImage(FileName,Drive,160,m_hMenu);
+		if (filterIndex == 5) CreateADFSImage(FileName,Drive,80,m_hMenu);
+		if (filterIndex == 6) CreateADFSImage(FileName,Drive,160,m_hMenu);
 
 		/* Allow disc writes */
 		if (m_WriteProtectDisc[Drive])
@@ -497,6 +529,8 @@ void BeebWin::SaveState()
 	char FileName[260];
 	OPENFILENAME ofn;
 
+	const char* filter = "UEF State File\0*.uef\0";
+
 	PrefsGetStringValue("StatesPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
@@ -505,7 +539,7 @@ void BeebWin::SaveState()
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "UEF State File\0*.uef\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.nFilterIndex = 1;
@@ -523,7 +557,10 @@ void BeebWin::SaveState()
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetSaveFileName(&ofn))
+	//if (GetSaveFileName(&ofn))
+	//if (ChooseSaveFileName(&ofn, m_hWnd, FileName, sizeof(FileName), DefaultPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	if (fileDialog.Save(&ofn))
 	{
 		if (m_AutoSavePrefsFolders)
 		{
@@ -550,6 +587,8 @@ void BeebWin::RestoreState()
 	char FileName[256];
 	OPENFILENAME ofn;
 
+	const char* filter = "UEF State File\0*.uef\0";
+
 	PrefsGetStringValue("StatesPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
   
@@ -558,7 +597,7 @@ void BeebWin::RestoreState()
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "UEF State File\0*.uef\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.nFilterIndex = 1;
@@ -576,7 +615,10 @@ void BeebWin::RestoreState()
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetOpenFileName(&ofn))
+	//if (GetOpenFileName(&ofn))
+	//if (ChooseOpenFileName(&ofn, m_hWnd, FileName, sizeof(FileName), DefaultPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	if (fileDialog.Open(&ofn))
 	{
 		// Check for file specific preferences files
 		CheckForLocalPrefs(FileName, true);
@@ -640,6 +682,8 @@ BOOL BeebWin::PrinterFile()
 	OPENFILENAME ofn;
 	BOOL changed;
 
+	const char* filter = "Printer Output\0*\0";
+
 	if (strlen(m_PrinterFileName) == 0)
 	{
 		strcpy(StartPath, m_UserDataPath);
@@ -659,10 +703,10 @@ BOOL BeebWin::PrinterFile()
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Printer Output\0*\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = 0;
+	ofn.nFilterIndex = 1;
 	ofn.lpstrFile = FileName;
 	ofn.nMaxFile = sizeof(FileName);
 	ofn.lpstrFileTitle = NULL;
@@ -677,7 +721,10 @@ BOOL BeebWin::PrinterFile()
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	changed = GetSaveFileName(&ofn);
+	//changed = GetSaveFileName(&ofn);
+	//changed = ChooseSaveFileName(&ofn, m_hWnd, FileName, sizeof(FileName), StartPath, filter, NULL);
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), StartPath, filter);
+	changed = fileDialog.Save(&ofn);
 	if (changed)
 	{
 		strcpy(m_PrinterFileName, FileName);
@@ -769,6 +816,8 @@ void BeebWin::CaptureVideo()
 	OPENFILENAME ofn;
 	BOOL changed;
 
+	const char* filter = "AVI File (*.avi)\0*.avi\0";
+
 	PrefsGetStringValue("AVIPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
@@ -777,10 +826,10 @@ void BeebWin::CaptureVideo()
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "AVI File (*.avi)\0*.avi\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = 0;
+	ofn.nFilterIndex = 1;
 	ofn.lpstrFile = FileName;
 	ofn.nMaxFile = sizeof(FileName);
 	ofn.lpstrFileTitle = NULL;
@@ -795,7 +844,10 @@ void BeebWin::CaptureVideo()
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	changed = GetSaveFileName(&ofn);
+	//changed = GetSaveFileName(&ofn);
+	//changed = ChooseSaveFileName(&ofn, m_hWnd, FileName, sizeof(FileName), DefaultPath, filter, NULL);
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	changed = fileDialog.Save(&ofn);
 	if (changed)
 	{
 		// Add avi extension
@@ -1105,12 +1157,14 @@ void BeebWin::LoadUserKeyMap()
 	char FileName[_MAX_PATH];
 	OPENFILENAME ofn;
 
+	const char* filter = "Key Map File\0*.kmap\0";
+
 	FileName[0] = '\0';
 
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Key Map File\0*.kmap\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.nFilterIndex = 1;
@@ -1128,7 +1182,10 @@ void BeebWin::LoadUserKeyMap()
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetOpenFileName(&ofn))
+	//if (GetOpenFileName(&ofn))
+	//if (ChooseOpenFileName(&ofn, m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
+	if (fileDialog.Open(&ofn))
 	{
 		if (ReadKeyMap(FileName, &UserKeymap))
 			strcpy(m_UserKeyMapPath, FileName);
@@ -1141,12 +1198,14 @@ void BeebWin::SaveUserKeyMap()
 	char FileName[_MAX_PATH];
 	OPENFILENAME ofn;
 
+	const char* filter = "Key Map File\0*.kmap\0";
+
 	FileName[0] = '\0';
 
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Key Map File\0*.kmap\0";
+	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.nFilterIndex = 1;
@@ -1164,7 +1223,10 @@ void BeebWin::SaveUserKeyMap()
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetSaveFileName(&ofn))
+	//if (GetSaveFileName(&ofn)
+	//if (ChooseSaveFileName(&ofn, m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
+	if (fileDialog.Save(&ofn))
 	{
 		if (strlen(FileName) < 4 ||
 			(strcmp(FileName+(strlen(FileName)-5),".kmap")!=0) &&
@@ -1645,6 +1707,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	static char fileNames[DFS_MAX_CAT_SIZE*2][MAX_PATH]; // Allow user to select > cat size
 	int numFiles;
 	int i, n;
+	const char* filter = "INF files (*.inf)\0*.inf\0" "All files (*.*)\0*.*\0";
 
 	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_2)
 		drive = 0;
@@ -1699,17 +1762,23 @@ void BeebWin::ImportDiscFiles(int menuId)
 	szFolder[0] = 0;
 	GetDataPath(m_UserDataPath, szFolder);
 
+	const char* title = "Select files to import";
 	memset(&ofn, 0, sizeof(ofn));
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
-	ofn.lpstrFilter = "INF files (*.inf)\0*.inf\0" "All files (*.*)\0*.*\0";
+	ofn.lpstrFilter = filter;
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFile = fileSelection;
 	ofn.nMaxFile = sizeof(fileSelection);
 	ofn.lpstrInitialDir = szFolder;
-	ofn.lpstrTitle = "Select files to import";
+	ofn.lpstrTitle = title;
 	ofn.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-	if (!GetOpenFileName(&ofn))
+
+	//if (!GetOpenFileName(&ofn))
+	FileDialog fileDialog(m_hWnd, fileSelection, sizeof(fileSelection), szFolder, filter);
+	fileDialog.AllowMultiSelect();
+	fileDialog.SetTitle(title);
+	if (!fileDialog.Open(&ofn))
 	{
 		return;
 	}
@@ -1873,11 +1942,12 @@ bool BeebWin::GetImageFile(char *FileName)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = m_hWnd;
 	ofn.hInstance = NULL;
-	sprintf(filter, "Image File (*%s)\0*%s\0", fileExt, fileExt);
+	// A literal \0 in the format string terminates the string so use %c
+	sprintf(filter, "Image File (*%s)%c*%s%c", fileExt, 0, fileExt, 0);
 	ofn.lpstrFilter = filter;
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
-	ofn.nFilterIndex = 0;
+	ofn.nFilterIndex = 1;
 	ofn.lpstrFile = FileName;
 	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrFileTitle = NULL;
@@ -1892,7 +1962,10 @@ bool BeebWin::GetImageFile(char *FileName)
 	ofn.lpfnHook = NULL;
 	ofn.lpTemplateName = NULL;
 
-	if (GetSaveFileName(&ofn))
+	//if (GetSaveFileName(&ofn))
+	//if (ChooseSaveFileName(&ofn, m_hWnd, FileName, MAX_PATH, DefaultPath, filter, NULL))
+	FileDialog fileDialog(m_hWnd, FileName, MAX_PATH, DefaultPath, filter);
+	if (fileDialog.Save(&ofn))
 	{
 		// Add extension
 		if (strlen(FileName) < 5 ||
@@ -2030,4 +2103,34 @@ void BeebWin::CaptureBitmap(int x, int y, int sx, int sy)
 		DeleteObject(CaptureDIB);
 	if (CaptureDC != NULL)
 		DeleteDC(CaptureDC);
+}
+
+FileDialog::FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength, LPCTSTR initialFolder, LPCTSTR filter)
+{
+	memset(&m_ofn, 0, sizeof(m_ofn));
+
+	m_ofn.lStructSize = sizeof(OPENFILENAME);
+	m_ofn.hwndOwner = hwndOwner;
+	m_ofn.lpstrFilter = filter;
+	m_ofn.nFilterIndex = 1;
+	m_ofn.lpstrFile = result;
+	m_ofn.nMaxFile = resultLength;
+	m_ofn.lpstrInitialDir = initialFolder;
+	m_ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+}
+
+bool FileDialog::ShowDialog(OPENFILENAME* old_ofn, bool open)
+{
+	m_ofn.lpstrFile[0] = 0;
+
+	// Check this new ofn matches the original
+	if (memcmp(old_ofn, &m_ofn, offsetof(OPENFILENAME, pvReserved)) != 0)
+	{
+		::MessageBox(m_ofn.hwndOwner, "Structure fail!", "Help!", 0);
+	}
+
+	if (open)
+		return GetOpenFileName(&m_ofn) != 0;
+	else
+		return GetSaveFileName(&m_ofn) != 0;
 }
