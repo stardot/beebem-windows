@@ -263,7 +263,7 @@ static bool LoadROMConfigFile(HWND hWnd)
 	char szROMConfigPath[MAX_PATH];
 	char *pFileName = szROMConfigPath;
 	bool success = false;
-	const char* filter = "ROM File (*.cfg)\0*.cfg\0";
+	const char* filter = "ROM Config File (*.cfg)\0*.cfg\0";
 
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
@@ -303,7 +303,7 @@ static bool SaveROMConfigFile(HWND hWnd)
 	char szROMConfigPath[MAX_PATH];
 	char *pFileName = szROMConfigPath;
 	bool success = false;
-	const char* filter = "ROM File (*.cfg)\0*.cfg\0";
+	const char* filter = "ROM Config File (*.cfg)\0*.cfg\0";
 
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
