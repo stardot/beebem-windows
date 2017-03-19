@@ -129,7 +129,7 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 	int gotName = false;
 	const char* filter =
 		"Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos\0"
-		"ADFS Disc (*.adl *.adf)\0*.adl;*.adf\0"
+		"ADFS Disc (*.adl;*.adf)\0*.adl;*.adf\0"
 		"Single Sided Disc (*.ssd)\0*.ssd\0"
 		"Double Sided Disc (*.dsd)\0*.dsd\0"
 		"Single Sided Disc (*.*)\0*.*\0"
@@ -322,10 +322,10 @@ void BeebWin::NewDiscImage(int Drive)
 	const char* filter =
 		"Single Sided Disc (*.ssd)\0*.ssd\0"
 		"Double Sided Disc (*.dsd)\0*.dsd\0"
-		"Single Sided Disc\0*.*\0"
-		"Double Sided Disc\0*.*\0"
-		"ADFS M ( 80 Track) Disc\0*.adf\0"
-		"ADFS L (160 Track) Disc\0*.adl\0";
+		"Single Sided Disc (*.*)\0*.*\0"
+		"Double Sided Disc (*.*)\0*.*\0"
+		"ADFS M (80 Track) Disc (*.adf)\0*.adf\0"
+		"ADFS L (160 Track) Disc (*.adl)\0*.adl\0";
 
 	PrefsGetStringValue("DiscsPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
@@ -389,7 +389,7 @@ void BeebWin::SaveState()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[260];
-	const char* filter = "UEF State File\0*.uef\0";
+	const char* filter = "UEF State File (*.uef)\0*.uef\0";
 
 	PrefsGetStringValue("StatesPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
@@ -420,7 +420,7 @@ void BeebWin::RestoreState()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[256];
-	const char* filter = "UEF State File\0*.uef\0";
+	const char* filter = "UEF State File (*.uef)\0*.uef\0";
 
 	PrefsGetStringValue("StatesPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
@@ -488,7 +488,7 @@ BOOL BeebWin::PrinterFile()
 	char StartPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
 	BOOL changed;
-	const char* filter = "Printer Output\0*\0";
+	const char* filter = "Printer Output (*.*)\0*.*\0";
 
 	if (strlen(m_PrinterFileName) == 0)
 	{
@@ -911,7 +911,7 @@ void BeebWin::GetDataPath(const char *folder, char *path)
 void BeebWin::LoadUserKeyMap()
 {
 	char FileName[_MAX_PATH];
-	const char* filter = "Key Map File\0*.kmap\0";
+	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
 	if (fileDialog.Open())
@@ -925,7 +925,7 @@ void BeebWin::LoadUserKeyMap()
 void BeebWin::SaveUserKeyMap()
 {
 	char FileName[_MAX_PATH];
-	const char* filter = "Key Map File\0*.kmap\0";
+	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
 	if (fileDialog.Save())
