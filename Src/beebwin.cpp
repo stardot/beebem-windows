@@ -780,6 +780,7 @@ void BeebWin::InitMenu(void)
 	//CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
 
 	// View -> DD mode
+	CheckMenuItem(hMenu, ID_VIEW_DD_SCREENRES, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_640X480, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_720X576, MF_UNCHECKED);
 	CheckMenuItem(hMenu, ID_VIEW_DD_800X600, MF_UNCHECKED);
@@ -1820,6 +1821,11 @@ void BeebWin::TranslateDDSize(void)
 		m_XDXSize = 1920;
 		m_YDXSize = 1080;
 		break;
+	case ID_VIEW_DD_SCREENRES:
+		// Pixel size of default monitor
+		m_XDXSize = GetSystemMetrics(SM_CXSCREEN);
+		m_YDXSize = GetSystemMetrics(SM_CYSCREEN);
+		break;
 	}
 }
 	
@@ -2763,6 +2769,7 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
+	case ID_VIEW_DD_SCREENRES:
 	case ID_VIEW_DD_640X480:
 	case ID_VIEW_DD_720X576:
 	case ID_VIEW_DD_800X600:
@@ -2774,6 +2781,8 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_VIEW_DD_1440X900:
 	case ID_VIEW_DD_1600X1200:
 	case ID_VIEW_DD_1920X1080:
+		// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
+		if ((MenuId != ID_VIEW_DD_SCREENRES) || !m_isFullScreen)
 		{
 			CheckMenuItem(hMenu, m_DDFullScreenMode, MF_UNCHECKED);
 			m_DDFullScreenMode = MenuId;

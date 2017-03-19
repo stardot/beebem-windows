@@ -534,6 +534,7 @@ BEGIN
         END
         POPUP "DirectX Full Screen Modes"
         BEGIN
+            MENUITEM "Current Screen Resolution",   ID_VIEW_DD_SCREENRES
             MENUITEM "640x480",                     ID_VIEW_DD_640X480
             MENUITEM "720x576",                     ID_VIEW_DD_720X576
             MENUITEM "800x600",                     ID_VIEW_DD_800X600
