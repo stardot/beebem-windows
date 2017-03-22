@@ -1,7 +1,5 @@
-BeebEm.exe
-BeebEm.pdb
-Src/BeebEm.ncb
-Src/BeebEm.suo
-Src/BeebEm.vcproj.*.user
+Src/.vs
+Src/BeebEm.VC.db
+Src/BeebEm.VC.VC.opendb
 Src/Debug
 Src/Release
