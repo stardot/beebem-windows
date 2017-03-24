@@ -1002,20 +1002,20 @@ void DumpSound(void) {
 void ClickRelay(unsigned char RState) {
 	if (RelaySoundEnabled) {
 		if (RState) {
-			SoundSamples[SAMPLE_RELAY_ON].pos = 0;
-			SoundSamples[SAMPLE_RELAY_ON].playing = true;
+			PlaySoundSample(SAMPLE_RELAY_ON, false);
 		}
 		else {
-			SoundSamples[SAMPLE_RELAY_OFF].pos = 0;
-			SoundSamples[SAMPLE_RELAY_OFF].playing = true;
+			PlaySoundSample(SAMPLE_RELAY_OFF, false);
 		}
 	}
 }
 
 void PlaySoundSample(int sample, bool repeat) {
-	SoundSamples[sample].pos = 0;
-	SoundSamples[sample].playing = true;
-	SoundSamples[sample].repeat = repeat;
+	if (SoundSamples[sample].pBuf != nullptr) {
+		SoundSamples[sample].pos = 0;
+		SoundSamples[sample].playing = true;
+		SoundSamples[sample].repeat = repeat;
+	}
 }
 
 void StopSoundSample(int sample) {
