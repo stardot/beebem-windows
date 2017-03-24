@@ -33,7 +33,9 @@ AVIWriter::AVIWriter()
 	  m_pAudioStream(NULL),
 	  m_pCompressedAudioStream(NULL),
 	  m_pVideoStream(NULL),
-	  m_pCompressedVideoStream(NULL),
+	  m_videoCompressor(0),
+	  m_videoBuffer(0),
+	  m_videoBufferSize(0),
 	  m_nSampleSize(0),
 	  m_nFrame(0)
 {
@@ -47,7 +49,6 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 							  HWND hWnd)
 {
 	AVISTREAMINFO StreamInfo;
-	AVICOMPRESSOPTIONS opts;
 	HRESULT hr = S_OK;
 
 	if (WaveFormat)
@@ -120,7 +121,7 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 		hr = AVIFileCreateStream(m_pAVIFile, &m_pVideoStream, &StreamInfo);
 	}
 
-	if (SUCCEEDED(hr))
+	/*if (SUCCEEDED(hr))
 	{
 		memset(&opts, 0, sizeof(AVICOMPRESSOPTIONS));
 		opts.fccType = streamtypeVIDEO;
@@ -143,15 +144,38 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 		hr = AVIMakeCompressedStream(&m_pCompressedVideoStream, m_pVideoStream, &opts, NULL);
 
 		//AVISaveOptionsFree(1,aopts);
-	}
+	}*/
+
+	bmiData outputData = m_BitmapFormat;
+	outputData.bmiHeader.biCompression = BI_RLE8;
 
 	if (SUCCEEDED(hr))
 	{
-   		hr = AVIStreamSetFormat(m_pCompressedVideoStream,
+   		hr = AVIStreamSetFormat(m_pVideoStream,
 								0,
-								(void*)&m_BitmapFormat,
-								m_BitmapFormat.bmiHeader.biSize +
-									m_BitmapFormat.bmiHeader.biClrUsed * sizeof(RGBQUAD));
+								(void*)&outputData,
+								outputData.bmiHeader.biSize +
+									outputData.bmiHeader.biClrUsed * sizeof(RGBQUAD));
+	}
+
+	m_BitmapOutputFormat = BitmapFormat->bmiHeader;
+	m_BitmapOutputFormat.biCompression = BI_RLE8;
+
+	m_videoCompressor = ICOpen(
+		mmioFOURCC('V', 'I', 'D', 'C'),
+		mmioFOURCC('m', 'r', 'l', 'e'),
+		ICMODE_FASTCOMPRESS);
+
+	if (m_videoCompressor)
+	{
+		m_videoBufferSize = ICCompressGetSize(m_videoCompressor, &BitmapFormat->bmiHeader, &m_BitmapOutputFormat);
+		m_videoBuffer = malloc(m_videoBufferSize);
+		if (!m_videoBuffer)
+			hr = E_OUTOFMEMORY;
+	}
+	else
+	{
+		hr = E_FAIL;
 	}
 
 	if (FAILED(hr))
@@ -180,11 +204,23 @@ void AVIWriter::Close()
 		m_pAudioStream = NULL;
 	}
 
-	if (NULL != m_pCompressedVideoStream)
+	if (NULL != m_videoBuffer)
+	{
+		free(m_videoBuffer);
+		m_videoBuffer = NULL;
+	}
+
+	if (NULL != m_videoCompressor)
+	{
+		ICClose(m_videoCompressor);
+		m_videoCompressor = NULL;
+	}
+
+	/*if (NULL != m_pCompressedVideoStream)
 	{
 		AVIStreamRelease(m_pCompressedVideoStream);
 		m_pCompressedVideoStream = NULL;
-	}
+	}*/
 
 	if (NULL != m_pVideoStream)
 	{
@@ -234,20 +270,39 @@ HRESULT AVIWriter::WriteSound(BYTE *pBuffer,
 
 HRESULT AVIWriter::WriteVideo(BYTE *pBuffer)
 {
-	if (NULL == m_pCompressedVideoStream || NULL == m_pAVIFile)
+	if (NULL == m_videoCompressor || NULL == m_videoBuffer || NULL == m_pAVIFile)
 	{
 		return E_UNEXPECTED;
 	}
+
+	DWORD flags = 0;
+	DWORD result = ICCompress(
+		m_videoCompressor,
+		ICCOMPRESS_KEYFRAME,
+		&m_BitmapOutputFormat,
+		m_videoBuffer,
+		&m_BitmapFormat.bmiHeader,
+		pBuffer,
+		0,
+		&flags,
+		m_nFrame,
+		m_videoBufferSize,
+		0,
+		0,
+		0);
+
+	if (result)
+		return E_FAIL;
 
 	HRESULT hr = S_OK;
 	LONG nBytesWritten = 0;
 	LONG nSamplesWritten = 0;
 
-	hr = AVIStreamWrite(m_pCompressedVideoStream,
+	hr = AVIStreamWrite(m_pVideoStream,
 						m_nFrame,        // append at the end of the stream
 						1,               // how many samples to write
-						pBuffer,         // where the data is
-						m_BitmapFormat.bmiHeader.biSizeImage, // how much data do we have
+						m_videoBuffer,   // where the data is
+						m_BitmapOutputFormat.biSizeImage, // how much data do we have
 						AVIIF_KEYFRAME,	 // self-sufficient data 
 						&nSamplesWritten,// how many samples were written
 						&nBytesWritten); // how many bytes were written
