@@ -54,7 +54,10 @@ private:
 	LONG m_nSampleSize;
 
 	bmiData m_BitmapFormat;
+	BITMAPINFOHEADER m_BitmapOutputFormat;
 	PAVISTREAM m_pVideoStream;
-	PAVISTREAM m_pCompressedVideoStream;
+	HIC m_videoCompressor;
+	LPVOID m_videoBuffer;
+	int m_videoBufferSize;
 	LONG m_nFrame;
 };
