@@ -35,6 +35,7 @@ AVIWriter::AVIWriter()
 	  m_pVideoStream(NULL),
 	  m_videoCompressor(0),
 	  m_videoBuffer(0),
+	  m_lastVideoFrame(0),
 	  m_videoBufferSize(0),
 	  m_nSampleSize(0),
 	  m_nFrame(0)
@@ -170,7 +171,8 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 	{
 		m_videoBufferSize = ICCompressGetSize(m_videoCompressor, &BitmapFormat->bmiHeader, &m_BitmapOutputFormat);
 		m_videoBuffer = malloc(m_videoBufferSize);
-		if (!m_videoBuffer)
+		m_lastVideoFrame = malloc(BitmapFormat->bmiHeader.biSizeImage);
+		if (!m_videoBuffer || !m_lastVideoFrame)
 			hr = E_OUTOFMEMORY;
 	}
 	else
@@ -208,6 +210,12 @@ void AVIWriter::Close()
 	{
 		free(m_videoBuffer);
 		m_videoBuffer = NULL;
+	}
+
+	if (NULL != m_lastVideoFrame)
+	{
+		free(m_lastVideoFrame);
+		m_lastVideoFrame = NULL;
 	}
 
 	if (NULL != m_videoCompressor)
@@ -270,15 +278,17 @@ HRESULT AVIWriter::WriteSound(BYTE *pBuffer,
 
 HRESULT AVIWriter::WriteVideo(BYTE *pBuffer)
 {
-	if (NULL == m_videoCompressor || NULL == m_videoBuffer || NULL == m_pAVIFile)
+	if (NULL == m_videoCompressor || NULL == m_videoBuffer || NULL == m_lastVideoFrame || NULL == m_pAVIFile)
 	{
 		return E_UNEXPECTED;
 	}
 
+	bool keyFrame = m_nFrame % 25 == 0;
+
 	DWORD flags = 0;
 	DWORD result = ICCompress(
 		m_videoCompressor,
-		ICCOMPRESS_KEYFRAME,
+		keyFrame ? ICCOMPRESS_KEYFRAME : 0,
 		&m_BitmapOutputFormat,
 		m_videoBuffer,
 		&m_BitmapFormat.bmiHeader,
@@ -288,8 +298,11 @@ HRESULT AVIWriter::WriteVideo(BYTE *pBuffer)
 		m_nFrame,
 		m_videoBufferSize,
 		0,
-		0,
-		0);
+		keyFrame ? 0 : &m_BitmapFormat.bmiHeader,
+		keyFrame ? 0 : m_lastVideoFrame);
+
+	// Save the frame for next time
+	memcpy(m_lastVideoFrame, pBuffer, m_BitmapFormat.bmiHeader.biSizeImage);
 
 	if (result)
 		return E_FAIL;
@@ -303,7 +316,7 @@ HRESULT AVIWriter::WriteVideo(BYTE *pBuffer)
 						1,               // how many samples to write
 						m_videoBuffer,   // where the data is
 						m_BitmapOutputFormat.biSizeImage, // how much data do we have
-						AVIIF_KEYFRAME,	 // self-sufficient data 
+						keyFrame ? AVIIF_KEYFRAME : 0,    // is this a key frame?
 						&nSamplesWritten,// how many samples were written
 						&nBytesWritten); // how many bytes were written
 	if (SUCCEEDED(hr))

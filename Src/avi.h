@@ -58,6 +58,7 @@ private:
 	PAVISTREAM m_pVideoStream;
 	HIC m_videoCompressor;
 	LPVOID m_videoBuffer;
+	LPVOID m_lastVideoFrame;
 	int m_videoBufferSize;
 	LONG m_nFrame;
 };
