@@ -3,3 +3,4 @@ Src/BeebEm.VC.db
 Src/BeebEm.VC.VC.opendb
 Src/Debug
 Src/Release
+Src/InnoSetup/*.exe
