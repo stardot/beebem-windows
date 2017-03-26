@@ -31,7 +31,10 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "disc8271.h"
 #include "disc1770.h"
+extern "C"
+{
 #include "tube.h"
+}
 #include "serial.h"
 #include "atodconv.h"
 

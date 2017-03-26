@@ -36,7 +36,10 @@ Boston, MA  02110-1301, USA.
 #include "via.h"
 #include "viastate.h"
 #include "debug.h"
+extern "C"
+{
 #include "tube.h"
+}
 #include "beebemrc.h"
 
 using namespace std;
