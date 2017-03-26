@@ -447,3 +447,5 @@ Boston, MA  02110-1301, USA.
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
+
+#define IDM_ARMCOPRO                    40291

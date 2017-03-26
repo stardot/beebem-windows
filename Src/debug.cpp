@@ -733,6 +733,9 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 				if (SendDlgItemMessage(hwndDebug, IDC_DEBUGTUBEBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
 					DebugBreakExecution(type);
 			}
+#if _DEBUG
+            OutputDebugString(info);
+#endif
 			break;
 		case DEBUG_SERIAL:
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSERIAL, BM_GETCHECK, 0, 0) == BST_CHECKED)

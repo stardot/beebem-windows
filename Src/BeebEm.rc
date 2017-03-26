@@ -674,6 +674,7 @@ BEGIN
             MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
             MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
             MENUITEM "ARM Second Processor",        IDM_ARM
+            MENUITEM "ARM7TDMI Co-Processor",        IDM_ARMCOPRO
         END
         MENUITEM SEPARATOR
         POPUP "&Allow SW RAM Write"
