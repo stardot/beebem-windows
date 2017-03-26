@@ -70,6 +70,7 @@ Boston, MA  02110-1301, USA.
 #include "serialdevices.h"
 #include "Arm.h"
 #include "version.h"
+#include "sprowcopro.h"
 
 using namespace Gdiplus;
 
@@ -87,6 +88,7 @@ void i86_main(void);
 FILE *CMDF2;
 unsigned char CMA2;
 CArm *arm = NULL;
+CSprowCoPro *sprow = NULL;
 
 unsigned char HideMenuEnabled;
 unsigned char DisableMenu = 0;
@@ -115,8 +117,9 @@ static const char *AboutText =
 #ifdef M512COPRO_ENABLED
 	"Master 512 Second Processor\n"
 #endif
-	"ARM Second Processor\n\n"
-	"Version " VERSION_STRING ", Feb 2012";
+	"ARM Second Processor\n"
+        "Sprow ARM7TDMI 64MB\n\n"
+	"Version " VERSION_STRING ", Feb 2017";
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -384,6 +387,7 @@ void BeebWin::ApplyPrefs()
 			RomWritable[slot] = 0;
 	}
 	SetRomMenu();
+    SetTubeMenu();
 }
 
 /****************************************************************************/
@@ -465,6 +469,16 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 		arm = new CArm;
 		Enable_Arm = 1;
 	}
+    Enable_ArmCoPro = 0;
+	if (ArmCoProTube)
+	{
+		R1Status = 0;
+		ResetTube();
+		if (sprow) delete sprow;
+
+        sprow = new CSprowCoPro();
+		Enable_ArmCoPro = 1;
+	}
 
 	SysVIAReset();
 	UserVIAReset();
@@ -475,6 +489,7 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	Reset1770();
 	AtoDInit();
 	SetRomMenu();
+    SetTubeMenu();
 	FreeDiscImage(0);
 	// Keep the disc images loaded
 	FreeDiscImage(1);
@@ -873,6 +888,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(m_hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
+    SetTubeMenu();
+
 	SetRomMenu();
 	CheckMenuItem(hMenu, IDM_SWRAMBOARD, SWRAMBoardEnabled ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions ? MF_CHECKED : MF_UNCHECKED);
@@ -955,6 +972,27 @@ void BeebWin::UpdateDisableKeysMenu() {
 }
 
 /****************************************************************************/
+void BeebWin::SetTubeMenu(void)
+{
+    FILE *testFile;
+    char path[MAX_PATH];
+    strcpy(path, RomPath);
+    strcat(path, "BeebFile/Sprow.ROM");
+    testFile = fopen(path, "rb");
+
+    if( testFile != NULL )
+    {
+        fclose(testFile);
+        EnableMenuItem(m_hMenu, IDM_ARMCOPRO,  MF_ENABLED);
+    }
+    else
+    {
+        ArmCoProTube = 0;
+        EnableMenuItem(m_hMenu, IDM_ARMCOPRO,  MF_GRAYED);
+    }
+    CheckMenuItem(m_hMenu, IDM_ARMCOPRO, (ArmCoProTube)?MF_CHECKED:MF_UNCHECKED);
+}
+
 void BeebWin::SetRomMenu(void)
 {
 	HMENU hMenu = m_hMenu;
@@ -1367,6 +1405,16 @@ LRESULT CALLBACK WndProc(
 								if (arm) delete arm;
 								arm = new CArm;
 								Enable_Arm = 1;
+							}
+							Enable_ArmCoPro = 0;
+							if (ArmCoProTube)
+							{
+								R1Status = 0;
+								ResetTube();
+                                // We don't want to throw the contents of memory away
+                                // just tell the co-pro to reset itself.
+                                sprow->reset();
+								Enable_ArmCoPro = 1;
 							}
 							Disc8271_reset();
 							Reset1770();
@@ -3227,6 +3275,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_ARM:
 		ArmTube=1-ArmTube;
+        ArmCoProTube = 0;
         TubeEnabled = 0;
 #ifdef M512COPRO_ENABLED
         Tube186Enabled = 0;
@@ -3240,6 +3289,27 @@ void BeebWin::HandleCommand(int MenuId)
         CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_ARMCOPRO, (ArmCoProTube)?MF_CHECKED:MF_UNCHECKED);
+		ResetBeebSystem(MachineType,TubeEnabled,0);
+		break;
+
+	case IDM_ARMCOPRO:
+		ArmCoProTube=1-ArmCoProTube;
+        ArmTube=0;
+        TubeEnabled = 0;
+#ifdef M512COPRO_ENABLED
+        Tube186Enabled = 0;
+#endif
+        TorchTube = 0;
+		AcornZ80 = 0;
+        CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
+#ifdef M512COPRO_ENABLED
+        CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
+#endif
+        CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_ARMCOPRO, (ArmCoProTube)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 
@@ -3250,6 +3320,7 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
         TorchTube = 0;
         ArmTube = 0;
+        ArmCoProTube = 0;
 		AcornZ80 = 0;
         CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
@@ -3258,6 +3329,7 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
         CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_ARMCOPRO, (ArmCoProTube)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 
@@ -3268,11 +3340,13 @@ void BeebWin::HandleCommand(int MenuId)
         TorchTube = 0;
 		AcornZ80 = 0;
         ArmTube = 0;
+        ArmCoProTube = 0;
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TUBE186, (Tube186Enabled)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_ARMCOPRO, (ArmCoProTube)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 #endif
@@ -3285,6 +3359,7 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
 		AcornZ80 = 0;
         ArmTube = 0;
+        ArmCoProTube = 0;
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
         CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
 #ifdef M512COPRO_ENABLED
@@ -3292,6 +3367,7 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
 		CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_ARMCOPRO, (ArmCoProTube)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
     
@@ -3302,7 +3378,7 @@ void BeebWin::HandleCommand(int MenuId)
 #ifdef M512COPRO_ENABLED
 		Tube186Enabled=0;
 #endif
-        ArmTube = 0;
+        ArmCoProTube = 0;
         CheckMenuItem(hMenu, IDM_ARM, (ArmTube)?MF_CHECKED:MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_TUBE, (TubeEnabled)?MF_CHECKED:MF_UNCHECKED);
 #ifdef M512COPRO_ENABLED
@@ -3310,6 +3386,7 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
 		CheckMenuItem(hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
 		CheckMenuItem(hMenu, IDM_ACORNZ80, (AcornZ80)?MF_CHECKED:MF_UNCHECKED);
+        CheckMenuItem(hMenu, IDM_ARMCOPRO, (ArmCoProTube)?MF_CHECKED:MF_UNCHECKED);
 		ResetBeebSystem(MachineType,TubeEnabled,0);
 		break;
 

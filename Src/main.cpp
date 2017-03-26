@@ -42,7 +42,10 @@ Boston, MA  02110-1301, USA.
 #include "atodconv.h"
 #include "disc1770.h"
 #include "serial.h"
+extern "C"
+{
 #include "tube.h"
+}
 #include "econet.h"	//Rob
 
 #ifdef MULTITHREAD
