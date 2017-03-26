@@ -273,6 +273,7 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_640X480              40099
 #define ID_VIEW_DD_1024X768             40100
 #define ID_VIEW_DD_1280X1024            40101
+#define ID_VIEW_DD_SCREENRES            40102
 #define ID_FILE_RESET                   40103
 #define ID_MODELB                       40105
 #define ID_MASTER128                    40106

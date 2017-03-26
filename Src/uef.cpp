@@ -267,7 +267,7 @@ int uef_getdata(int time)
 	int i, j;
 	int data;
 	int found = 0;
-	uef_chunk_info *ch;
+	uef_chunk_info *ch = nullptr;
 
 	if (uef_last_chunk != NULL &&
 		time >= uef_last_chunk->start_time && time < uef_last_chunk->end_time)
@@ -465,7 +465,7 @@ void uef_close(void)
 
 static int uef_write_chunk(void)
 {
-	gzFile uef_file;
+	gzFile uef_file = nullptr;
 	int ok = 1;
 	int l;
 
@@ -517,7 +517,7 @@ static int uef_write_chunk(void)
 
 static void uef_unlock_offset_and_crc(uef_chunk_info *ch)
 {
-	unsigned char *data;
+	unsigned char *data = nullptr;
 	int len;
 	int n;
 	int i;

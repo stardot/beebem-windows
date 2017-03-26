@@ -67,7 +67,7 @@ struct Breakpoint
 struct Watch
 {
 	int start;
-	int type;
+	char type;
 	int value;
 	bool host;
 	char name[50 + 1];

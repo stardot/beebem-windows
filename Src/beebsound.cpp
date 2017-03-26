@@ -898,102 +898,54 @@ void SoundReset(void) {
 }//	SoundReset
 
 /****************************************************************************/
-/* Called in sysvia.cc when a write is made to the 76489 sound chip         */
-void Sound_RegWrite(int value) {
-  int trigger = 0;
-  unsigned char VolChange;
+/* Called in sysvia.cpp when a write is made to the 76489 sound chip        */
+void Sound_RegWrite(int value)
+{
+	unsigned int reg, tone, channel; // may not be tone, why not index volume and tone with the same index?
 
-  if (!SoundEnabled)
-    return;
-  VolChange=4;
+	if (!SoundEnabled) return;
 
-  if (!(value & 0x80)) {
-    unsigned val=BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet] & 15;
+	if (value & 0x80)
+	{
+		reg = (value >> 4) & 7;
+		BeebState76489.LastToneFreqSet = (2 - (reg >> 1)) & 3; // use 3 for noise (0,1->2, 2,3->1, 4,5->0, 6,7->3)
+		tone = (BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet] & ~15) | (value & 15);
+	}
+	else
+	{
+		reg = ((2 - BeebState76489.LastToneFreqSet) & 3) << 1; // (0->4, 1->2, 2->0, 3->6)
+		tone = (BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet] & 15) | ((value & 0x3F) << 4);
+	}
 
-    /* Its changing the top half of the frequency */
-    val |= (value & 0x3f)<<4;
+	channel = (1 + BeebState76489.LastToneFreqSet) & 3; // (0->1, 1->2, 2->3, 3->0)
 
-    /* And update */
-    BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet]=val;
-    SetFreq(BeebState76489.LastToneFreqSet+1,BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet]);
-    trigger = 1;
-  } else {
-    /* Another register */
-	VolChange=0xff;
-    switch ((value>>4) & 0x7) {
-      case 0: /* Tone 3 freq */
-        BeebState76489.ToneFreq[2]=(BeebState76489.ToneFreq[2] & 0x3f0) | (value & 0xf);
-        SetFreq(3,BeebState76489.ToneFreq[2]);
-        BeebState76489.LastToneFreqSet=2;
-	//	trigger = 1;
-        break;
+	switch (reg)
+	{
+	case 0: // Tone 3 freq
+	case 2: // Tone 2 freq
+	case 4: // Tone 1 freq
+		BeebState76489.ToneFreq[BeebState76489.LastToneFreqSet] = tone;
+		SetFreq(channel, tone);
+		break;
 
-      case 1: /* Tone 3 vol */
-        RealVolumes[3]=value&15;
-		if ((BeebState76489.ToneVolume[3]==0) && ((value &15)!=15)) ActiveChannel[3]=TRUE;
-        if ((BeebState76489.ToneVolume[3]!=0) && ((value &15)==15)) ActiveChannel[3]=FALSE;
-        BeebState76489.ToneVolume[3]=GetVol(15-(value & 15));
-        BeebState76489.LastToneFreqSet=2;
-		trigger = 1;
-		VolChange=3;
-        break;
+	case 6: // Noise control
+		BeebState76489.Noise.Freq = value & 3;
+		BeebState76489.Noise.FB = (value >> 2) & 1;
+		break;
 
-      case 2: /* Tone 2 freq */
-        BeebState76489.ToneFreq[1]=(BeebState76489.ToneFreq[1] & 0x3f0) | (value & 0xf);
-        BeebState76489.LastToneFreqSet=1;
-        SetFreq(2,BeebState76489.ToneFreq[1]);
-	//	trigger = 1;
-        break;
+	case 1: // Tone 3 vol
+	case 3: // Tone 2 vol
+	case 5: // Tone 1 vol
+	case 7: // Tone 0 vol
+		RealVolumes[channel] = value & 15;
+		if ((BeebState76489.ToneVolume[channel] == 0) && ((value & 15) != 15)) ActiveChannel[channel] = TRUE;
+		if ((BeebState76489.ToneVolume[channel] != 0) && ((value & 15) == 15)) ActiveChannel[channel] = FALSE;
+		BeebState76489.ToneVolume[channel] = GetVol(15 - (value & 15));
+		break;
+	}
 
-      case 3: /* Tone 2 vol */
-        RealVolumes[2]=value&15;
-        if ((BeebState76489.ToneVolume[2]==0) && ((value &15)!=15)) ActiveChannel[2]=TRUE;
-        if ((BeebState76489.ToneVolume[2]!=0) && ((value &15)==15)) ActiveChannel[2]=FALSE;
-        BeebState76489.ToneVolume[2]=GetVol(15-(value & 15));
-        BeebState76489.LastToneFreqSet=1;
-		trigger = 1;
-		VolChange=2;
-        break;
-
-      case 4: /* Tone 1 freq (Possibly also noise!) */
-        BeebState76489.ToneFreq[0]=(BeebState76489.ToneFreq[0] & 0x3f0) | (value & 0xf);
-        BeebState76489.LastToneFreqSet=0;
-        SetFreq(1,BeebState76489.ToneFreq[0]);
-	//	trigger = 1;
-        break;
-
-      case 5: /* Tone 1 vol */
-        RealVolumes[1]=value&15;
-        if ((BeebState76489.ToneVolume[1]==0) && ((value &15)!=15)) ActiveChannel[1]=TRUE;
-        if ((BeebState76489.ToneVolume[1]!=0) && ((value &15)==15)) ActiveChannel[1]=FALSE;
-        BeebState76489.ToneVolume[1]=GetVol(15-(value & 15));
-        BeebState76489.LastToneFreqSet=0;
-		trigger = 1;
-		VolChange=1;
-        break;
-
-      case 6: /* Noise control */
-        BeebState76489.Noise.Freq=value &3;
-        BeebState76489.Noise.FB=(value>>2)&1;
-
-        trigger = 1;
-        break;
-
-      case 7: /* Noise volume */
-        if ((BeebState76489.ToneVolume[0]==0) && ((value &15)!=15)) ActiveChannel[0]=TRUE;
-        if ((BeebState76489.ToneVolume[0]!=0) && ((value &15)==15)) ActiveChannel[0]=FALSE;
-		RealVolumes[0]=value&15;
-        BeebState76489.ToneVolume[0]=GetVol(15-(value & 15));
-        trigger = 1;
-		VolChange=0;
-        break;
-    };
-   //if (VolChange<4) fprintf(sndlog,"Channel %d - Volume %d at %lu Cycles\n",VolChange,value &15,SoundCycles);
-  };
-  if (trigger)
-    SoundTrigger_Real();
-}; /* Sound_RegWrite */
-
+	SoundTrigger_Real();
+}
 
 void DumpSound(void) {
 	
@@ -1002,20 +954,20 @@ void DumpSound(void) {
 void ClickRelay(unsigned char RState) {
 	if (RelaySoundEnabled) {
 		if (RState) {
-			SoundSamples[SAMPLE_RELAY_ON].pos = 0;
-			SoundSamples[SAMPLE_RELAY_ON].playing = true;
+			PlaySoundSample(SAMPLE_RELAY_ON, false);
 		}
 		else {
-			SoundSamples[SAMPLE_RELAY_OFF].pos = 0;
-			SoundSamples[SAMPLE_RELAY_OFF].playing = true;
+			PlaySoundSample(SAMPLE_RELAY_OFF, false);
 		}
 	}
 }
 
 void PlaySoundSample(int sample, bool repeat) {
-	SoundSamples[sample].pos = 0;
-	SoundSamples[sample].playing = true;
-	SoundSamples[sample].repeat = repeat;
+	if (SoundSamples[sample].pBuf != nullptr) {
+		SoundSamples[sample].pos = 0;
+		SoundSamples[sample].playing = true;
+		SoundSamples[sample].repeat = repeat;
+	}
 }
 
 void StopSoundSample(int sample) {
@@ -1025,7 +977,7 @@ void StopSoundSample(int sample) {
 int GetVol(int vol) {
 	if (SoundExponentialVolume)	{
 //		static int expVol[] = { 0,  2,  4,  6,  9, 12, 15, 19, 24, 30, 38, 48, 60, 76,  95, 120 };
-		static int expVol[] = { 0, 11, 14, 17, 20, 24, 28, 33, 39, 46, 54, 63, 74, 87, 102, 120 };
+		static const int expVol[] = { 0, 11, 14, 17, 20, 24, 28, 33, 39, 46, 54, 63, 74, 87, 102, 120 };
 		if (vol >= 0 && vol <= 15)
 			return expVol[vol];
 		else

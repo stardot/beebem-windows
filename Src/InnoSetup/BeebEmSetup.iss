@@ -43,12 +43,11 @@ Name: {userdocs}\BeebEm\USLogical.kmap; Type: files
 Name: {userdocs}\BeebEm
 
 [Files]
-Source: ..\..\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
+Source: ..\Release\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\Documents\*; DestDir: {app}\Documents; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\Hardware\*; DestDir: {app}\Hardware; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\Help\*; DestDir: {app}\Help; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\UserData\*; DestDir: {app}\UserData; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\BeebEmLocal.vbs; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\BeebEmTorch.vbs; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\CHANGES.txt; DestDir: {app}; Flags: ignoreversion

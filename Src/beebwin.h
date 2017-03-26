@@ -526,4 +526,47 @@ class BeebWin  {
 
 }; /* BeebWin */
 
+class FileDialog
+{
+public:
+	FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength, LPCTSTR initialFolder, LPCTSTR filter);
+
+	// Prepare dialog
+	void SetFilterIndex(DWORD index)
+	{
+		m_ofn.nFilterIndex = index;
+	}
+	void AllowMultiSelect()
+	{
+		m_ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+	}
+	void SetTitle(LPCTSTR title)
+	{
+		m_ofn.lpstrTitle = title;
+	}
+
+	// Show dialog
+	bool Open()
+	{
+		return ShowDialog(true);
+	}
+	bool Save()
+	{
+		return ShowDialog(false);
+	}
+
+	// Get results
+	DWORD GetFilterIndex() const
+	{
+		return m_ofn.nFilterIndex;
+	}
+private:
+	FileDialog(const FileDialog&);
+	FileDialog& operator=(FileDialog&);
+
+	OPENFILENAME m_ofn;
+
+	bool ShowDialog(bool open);
+};
+
 #endif

@@ -98,6 +98,7 @@ static bool WatchDecimal = false;
 static bool WatchRefresh = false;
 static bool WatchBigEndian = false;
 HWND hwndDebug;
+static HWND hwndInvisibleOwner;
 static HWND hwndInfo;
 static HWND hwndBP;
 static HWND hwndW;
@@ -417,12 +418,20 @@ InstInfo optable[256] =
 
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain)
 {
+	if (hwndInvisibleOwner == 0)
+	{
+		// Keep the debugger off the taskbar with an invisible owner window.
+		// This persists until the process closes.
+		hwndInvisibleOwner =
+			CreateWindowEx(0, "STATIC", 0, 0, 0, 0, 0, 0, 0, 0, hinst, 0);
+	}
+
 	DebugEnabled = TRUE;
 	if (!IsWindow(hwndDebug)) 
 	{ 
 		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
 		hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
-								 NULL, (DLGPROC)DebugDlgProc);
+								 hwndInvisibleOwner, (DLGPROC)DebugDlgProc);
 		memset(debugHistory,'\0',sizeof(debugHistory));
 		hCurrentDialog = hwndDebug;
 		hCurrentAccelTable = haccelDebug;
@@ -977,7 +986,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = MemoryMaps[ROMSEL].entries[i].start;
 				addrInfo->end = MemoryMaps[ROMSEL].entries[i].end;
-				sprintf(addrInfo->desc,"%s: %s", ReadRomInfo(ROMSEL, &rom) ? "ROM" : rom.Title);
+				sprintf(addrInfo->desc, "%s", ReadRomInfo(ROMSEL, &rom) ? rom.Title : "ROM");
 				return true;
 			}
 		}
@@ -1008,7 +1017,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = 0xFC00;
 				addrInfo->end = 0xFDFF;
-				sprintf(addrInfo->desc,"Cartridge (ACCCON bit 5 set)",ROMSEL);
+				sprintf(addrInfo->desc,"Cartridge (ACCCON bit 5 set)");
 				return true;
 			}
 			// Master private and shadow RAM.
@@ -1182,7 +1191,12 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 			entry = &map->entries[map->count];
 
 			memset(entry->desc, 0, _countof(entry->desc));
-			if(sscanf(buf, " %x %x %99c", &entry->start, &entry->end, &entry->desc) != 3)
+			int result = sscanf(buf, "%x %x %99c", &entry->start, &entry->end, &entry->desc);
+			if (result >= 2 && strlen(entry->desc) > 0)
+			{
+				map->count++;
+			}
+			else
 			{
 				sprintf(errstr, "Invalid memory map format!");
 				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
@@ -1192,7 +1206,6 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 				fclose(infile);
 				return false;
 			}
-			map->count++;
 		}
 		fclose(infile);
 	}
@@ -1914,7 +1927,7 @@ bool DebugCmdWatch(char *args)
 		}
 
 		if (sscanf(args, "%x %c %50c", &w.start, &w.type, w.name) >= 2 ||
-			sscanf(args, "%x", &w.start, w.name) >= 1)
+			sscanf(args, "%x %50c", &w.start, w.name) >= 1)
 		{
 			// Check type is valid
 			w.type = tolower(w.type);
