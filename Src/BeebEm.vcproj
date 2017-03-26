@@ -5,6 +5,10 @@
 	Name="BeebEm"
 	ProjectGUID="{2A563DA8-9784-4AD0-935F-496CEFA5CDEC}"
 	RootNamespace="BeebEm"
+	SccProjectName="SAK"
+	SccAuxPath="SAK"
+	SccLocalPath="SAK"
+	SccProvider="SAK"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -42,7 +46,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Microsoft DirectX SDK (March 2009)\Include&quot;"
+				PreprocessorDefinitions="MODET;MODE32;BEEBEM;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -118,7 +123,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE"
+				Optimization="3"
+				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Microsoft DirectX SDK (March 2009)\Include&quot;"
+				PreprocessorDefinitions="MODET;MODE32;BEEBEM;WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -278,6 +285,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SprowCoPro.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\sysvia.cpp"
 				>
 			</File>
@@ -344,6 +355,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ARMulator.h"
+				>
+			</File>
+			<File
 				RelativePath=".\atodconv.h"
 				>
 			</File>
@@ -404,6 +419,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ml675001.h"
+				>
+			</File>
+			<File
 				RelativePath=".\port.h"
 				>
 			</File>
@@ -421,6 +440,10 @@
 			</File>
 			<File
 				RelativePath=".\serialdevices.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SprowCoPro.h"
 				>
 			</File>
 			<File
@@ -502,6 +525,126 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="ARMulator"
+			>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath=".\ARMulator\acconfig.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\ansidecl.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armdefs.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armdis.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armemu.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armfpe.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armopts.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armos.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\bag.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\config.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\dbg_conf.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\dbg_cp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\dbg_hif.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\dbg_rdi.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\gdbhost.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\iwmmxt.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath=".\ARMulator\armdis.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armemu.c"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\arminit.c"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\armsupp.c"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\bag.c"
+					>
+				</File>
+				<File
+					RelativePath=".\ARMulator\thumbemu.c"
+					>
+				</File>
+			</Filter>
+		</Filter>
+		<File
+			RelativePath="..\RelayOff.snd"
+			DeploymentContent="true"
+			>
+		</File>
+		<File
+			RelativePath="..\RelayOn.snd"
+			DeploymentContent="true"
+			>
+		</File>
+		<File
+			RelativePath="..\Teletext.fnt"
+			DeploymentContent="true"
+			>
+		</File>
+		<File
+			RelativePath="..\zlib1.dll"
+			DeploymentContent="true"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
