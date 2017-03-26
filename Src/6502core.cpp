@@ -26,6 +26,7 @@ Boston, MA  02110-1301, USA.
 
 #include <iostream>
 #include <fstream>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -887,11 +888,10 @@ INLINE static int16 IndXAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Data(void) {
-  int EffectiveAddress;
-  unsigned char ZPAddr=ReadPaged(ProgramCounter++);
-  EffectiveAddress=WholeRam[ZPAddr]+YReg;
+  uint8_t ZPAddr=ReadPaged(ProgramCounter++);
+  uint16_t EffectiveAddress=WholeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
+  EffectiveAddress+=(WholeRam[(uint8_t)(ZPAddr+1)]<<8);
 
   return(ReadPaged(EffectiveAddress));
 } /* IndYAddrModeHandler */
@@ -899,11 +899,10 @@ INLINE static int16 IndYAddrModeHandler_Data(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Address(void) {
-  int EffectiveAddress;
-  unsigned char ZPAddr=ReadPaged(ProgramCounter++);
-  EffectiveAddress=WholeRam[ZPAddr]+YReg;
+  uint8_t ZPAddr=ReadPaged(ProgramCounter++);
+  uint16_t EffectiveAddress=WholeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
+  EffectiveAddress+=(WholeRam[(uint8_t)(ZPAddr+1)]<<8);
 
   return(EffectiveAddress);
 } /* IndYAddrModeHandler */

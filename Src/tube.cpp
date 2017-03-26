@@ -26,6 +26,7 @@ Boston, MA  02110-1301, USA.
 
 #include <iostream>
 #include <fstream>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -1208,11 +1209,10 @@ INLINE static int16 IndXAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Data(void) {
-  int EffectiveAddress;
-  unsigned char ZPAddr=TubeRam[TubeProgramCounter++];
-  EffectiveAddress=TubeRam[ZPAddr]+YReg;
+  uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
+  uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(TubeRam[ZPAddr+1]<<8);
+  EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
 
   return(TUBEREADMEM_FAST(EffectiveAddress));
 } /* IndYAddrModeHandler */
@@ -1220,11 +1220,10 @@ INLINE static int16 IndYAddrModeHandler_Data(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Address(void) {
-  int EffectiveAddress;
-  unsigned char ZPAddr=TubeRam[TubeProgramCounter++];
-  EffectiveAddress=TubeRam[ZPAddr]+YReg;
+  uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
+  uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(TubeRam[ZPAddr+1]<<8);
+  EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
 
   return(EffectiveAddress);
 } /* IndYAddrModeHandler */
