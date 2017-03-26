@@ -3,15 +3,24 @@
   <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="ARMulator">
+      <UniqueIdentifier>{6b4084a3-e7d0-4b08-b27d-64b53d7de611}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ARMulator\Header Files">
+      <UniqueIdentifier>{2a6fd9bd-fd8b-45dc-a096-013d8775e013}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ARMulator\Source Files">
+      <UniqueIdentifier>{da3f855c-7598-44c5-812f-56a2489a190b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -69,10 +78,7 @@
     <ClCompile Include="econet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ide.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="romconfig.cpp">
@@ -88,6 +94,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="serialdevices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SprowCoPro.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sysvia.cpp">
@@ -126,6 +135,27 @@
     <ClCompile Include="z80dis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ARMulator\armdis.cpp">
+      <Filter>ARMulator\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\armemu.c">
+      <Filter>ARMulator\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\arminit.c">
+      <Filter>ARMulator\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\armsupp.c">
+      <Filter>ARMulator\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\bag.c">
+      <Filter>ARMulator\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\thumbemu.c">
+      <Filter>ARMulator\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ide.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h">
@@ -135,6 +165,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ArmDisassembler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="atodconv.h">
@@ -176,10 +209,10 @@
     <ClInclude Include="ext1770.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ide.h">
+    <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="main.h">
+    <ClInclude Include="ml675001.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="port.h">
@@ -195,6 +228,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="serialdevices.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SprowCoPro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sysvia.h">
@@ -245,6 +281,57 @@
     <ClInclude Include="zlib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ARMulator\acconfig.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\ansidecl.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armdefs.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armdis.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armemu.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armfpe.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armopts.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armos.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\bag.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\config.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_conf.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_cp.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_hif.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_rdi.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\gdbhost.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\iwmmxt.h">
+      <Filter>ARMulator\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ide.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="BeebEm.ico">
@@ -255,5 +342,11 @@
     <ResourceCompile Include="BeebEm.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RelayOff.snd" />
+    <None Include="RelayOn.snd" />
+    <None Include="Teletext.fnt" />
+    <None Include="zlib1.dll" />
   </ItemGroup>
 </Project>
