@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\ARMulator">
+      <UniqueIdentifier>{907f08fd-6e8c-4872-89b8-9c2bd92fc8ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ARMulator">
+      <UniqueIdentifier>{7e7d31fc-0dbe-457f-854e-2c4bb8f1216e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="6502core.cpp">
@@ -90,6 +96,9 @@
     <ClCompile Include="serialdevices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SprowCoPro.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="sysvia.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -125,6 +134,24 @@
     </ClCompile>
     <ClCompile Include="z80dis.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\armemu.c">
+      <Filter>Source Files\ARMulator</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\arminit.c">
+      <Filter>Source Files\ARMulator</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\armsupp.c">
+      <Filter>Source Files\ARMulator</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\bag.c">
+      <Filter>Source Files\ARMulator</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\armdis.cpp">
+      <Filter>Source Files\ARMulator</Filter>
+    </ClCompile>
+    <ClCompile Include="ARMulator\thumbemu.c">
+      <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +209,9 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ml675001.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="port.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -196,6 +226,9 @@
     </ClInclude>
     <ClInclude Include="serialdevices.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SprowCoPro.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="sysvia.h">
       <Filter>Header Files</Filter>
@@ -244,6 +277,54 @@
     </ClInclude>
     <ClInclude Include="zlib.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\acconfig.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\ansidecl.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armdefs.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armdis.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armemu.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armfpe.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armopts.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\armos.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\bag.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\config.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_conf.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_cp.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_hif.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\dbg_rdi.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\gdbhost.h">
+      <Filter>Header Files\ARMulator</Filter>
+    </ClInclude>
+    <ClInclude Include="ARMulator\iwmmxt.h">
+      <Filter>Header Files\ARMulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
