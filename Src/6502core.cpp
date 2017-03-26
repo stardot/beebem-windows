@@ -50,6 +50,7 @@ Boston, MA  02110-1301, USA.
 #include "ide.h"
 #include "debug.h"
 #include "Arm.h"
+#include "sprowcopro.h"
 
 #ifdef WIN32
 #define INLINE inline
@@ -70,6 +71,7 @@ static int CurrentInstruction;
 
 extern int DumpAfterEach;
 extern CArm *arm;
+extern CSprowCoPro *sprow;
 
 CycleCountT TotalCycles=0;
 
@@ -1172,6 +1174,14 @@ void Exec6502Instruction(void) {
 			arm->exec(4);
 		}
 
+        if (Enable_ArmCoPro)
+        {            
+#if _DEBUG
+            sprow->exec(2);
+#else
+            sprow->exec(8);
+#endif
+        }
 #ifdef M512COPRO_ENABLED
 		if (Tube186Enabled)
 			i186_execute(12 * 4);

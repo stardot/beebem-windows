@@ -59,6 +59,7 @@ Boston, MA  02110-1301, USA.
 #include "csw.h"
 #include "serialdevices.h"
 #include "Arm.h"
+#include "sprowcopro.h"
 
 using namespace std;
 
@@ -448,6 +449,9 @@ void BeebWin::LoadPreferences()
 	if (!PrefsGetBinaryValue("ArmTube",&ArmTube,1))
 		ArmTube=0;
 
+	if (!PrefsGetBinaryValue("ArmCoProTube",&ArmCoProTube,1))
+		ArmCoProTube=0;
+
 	if (!PrefsGetBinaryValue("TorchTube",&TorchTube,1))
 		TorchTube=0;
 
@@ -706,6 +710,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		PrefsSetBinaryValue("SWRAMBoard",&SWRAMBoardEnabled,1);
 
 		PrefsSetBinaryValue("ArmTube",&ArmTube,1);
+		PrefsSetBinaryValue("ArmCoProTube",&ArmCoProTube,1);
 		PrefsSetBinaryValue("TorchTube",&TorchTube,1);
 		PrefsSetBinaryValue("AcornZ80",&AcornZ80,1);
 		PrefsSetBinaryValue("TubeEnabled",&TubeEnabled,1);
