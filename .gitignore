@@ -1,4 +1,5 @@
 Src/.vs
+Src/*.user
 Src/BeebEm.VC.db
 Src/BeebEm.VC.VC.opendb
 Src/Debug
