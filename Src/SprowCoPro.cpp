@@ -68,7 +68,7 @@ CSprowCoPro::CSprowCoPro()
     state = ARMul_NewState();
     state->ROMDataPtr = romMemory;
 
-    ARMul_MemoryInit(state, 0x4000000); // 32mb
+    ARMul_MemoryInit(state, 0x4000000); // 64mb
     ticks = GetTickCount();
 }
 
