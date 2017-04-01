@@ -89,7 +89,7 @@ v0.1a: 20th May 2010
 
 Sprow rom image added with permission of Robert Sprowson
 
-For more information and purchase of the ARM7TDMI co-processor as wel as further support
+For more information and purchase of the ARM7TDMI co-processor as well as further support
 material please visit http://www.sprow.co.uk/bbc/armcopro.htm
 
 
