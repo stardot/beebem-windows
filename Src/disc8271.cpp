@@ -67,6 +67,8 @@ static int NParamsInThisCommand;
 static int PresentParam; /* From 0 */
 static unsigned char Params[16]; /* Wildly more than we need */
 
+// These bools indicate which drives the last command selected.
+// They also act as "drive ready" bits which are reset when the motor stops.
 static int Selects[2]; /* Drive selects */
 static int Writeable[2]={0,0}; /* True if the drives are writeable */
 
@@ -111,7 +113,7 @@ static char FileNames[2][256];
 static int NumHeads[2];
 
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
-static void DriveSoundScheduleUnload(void);
+static void DriveHeadScheduleUnload(void);
 
 typedef void (*CommandFunc)(void);
 
@@ -750,16 +752,15 @@ static void DoSeekCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoReadDriveStatusCommand(void) {
-  int Track0,WriteProt;
+  int Track0 = 0;
+  int WriteProt = 0;
 
-  DoSelects();
-
-  if (Selects[0]) {
+  if (ThisCommand & 0x40) {
     Track0=(Internal_CurrentTrack[0]==0);
     WriteProt=(!Writeable[0]);
   };
 
-  if (Selects[1]) {
+  if (ThisCommand & 0x80) {
     Track0=(Internal_CurrentTrack[1]==0);
     WriteProt=(!Writeable[1]);
   };
@@ -1067,29 +1068,34 @@ void Disc8271_write(int Address, int Value) {
       break;
   }; /* Address switch */
 
-  DriveSoundScheduleUnload();
+  DriveHeadScheduleUnload();
 }; /* Disc8271_write */
 
 /*--------------------------------------------------------------------------*/
-static void DriveSoundScheduleUnload(void) {
-	if (DiscDriveSoundEnabled) {
-		// Schedule head unload when nothing else is pending
-		if (DriveHeadLoaded && Disc8271Trigger==CycleCountTMax) {
-			SetTrigger(4000000,Disc8271Trigger); // 2s delay to unload
-			DriveHeadUnloadPending = true;
-		}
+static void DriveHeadScheduleUnload(void) {
+	// Schedule head unload when nothing else is pending.
+	// This is mainly for the sound effects, but it also marks the drives as
+	// not ready when the motor stops.
+	if (DriveHeadLoaded && Disc8271Trigger==CycleCountTMax) {
+		SetTrigger(4000000,Disc8271Trigger); // 2s delay to unload
+		DriveHeadUnloadPending = true;
 	}
 }
 
 /*--------------------------------------------------------------------------*/
-static bool DriveSoundUpdate(void) {
+static bool DriveHeadMotorUpdate(void) {
+	// This is mainly for the sound effects, but it also marks the drives as
+	// not ready when the motor stops.
 	int Drive=0;
 	int Cycles=0;
 	int Tracks=0;
 
 	if (DriveHeadUnloadPending) {
+		// Mark drives as not ready
+		Selects[0] = 0;
+		Selects[1] = 0;
 		DriveHeadUnloadPending = false;
-		if (DriveHeadLoaded)
+		if (DriveHeadLoaded && DiscDriveSoundEnabled)
 			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
 		DriveHeadLoaded = false;
 		StopSoundSample(SAMPLE_DRIVE_MOTOR);
@@ -1098,7 +1104,10 @@ static bool DriveSoundUpdate(void) {
 	}
 
 	if (!DiscDriveSoundEnabled)
+	{
+		DriveHeadLoaded = true;
 		return false;
+	}
 
 	if (!DriveHeadLoaded) {
 		PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
@@ -1136,7 +1145,7 @@ static bool DriveSoundUpdate(void) {
 void Disc8271_poll_real(void) {
   ClearTrigger(Disc8271Trigger);
 
-  if (DriveSoundUpdate())
+  if (DriveHeadMotorUpdate())
     return;
 
   /* Set the interrupt flag in the status register */
@@ -1155,7 +1164,7 @@ void Disc8271_poll_real(void) {
     if (comptr->IntHandler!=NULL) comptr->IntHandler();
   };
 
-  DriveSoundScheduleUnload();
+  DriveHeadScheduleUnload();
 }; /* Disc8271_poll */
 
 /*--------------------------------------------------------------------------*/
@@ -1696,7 +1705,7 @@ void Disc8271_reset(void) {
   Internal_BadTracks[0][0]=Internal_BadTracks[0][1]=Internal_BadTracks[1][0]=Internal_BadTracks[1][1]=0xff; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
   if (DriveHeadLoaded) {
     DriveHeadUnloadPending = true;
-    DriveSoundUpdate();
+	DriveHeadMotorUpdate();
   }
   ClearTrigger(Disc8271Trigger); /* No Disc8271Triggered events yet */
 
