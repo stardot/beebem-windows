@@ -69,8 +69,8 @@ static unsigned char Params[16]; /* Wildly more than we need */
 
 // These bools indicate which drives the last command selected.
 // They also act as "drive ready" bits which are reset when the motor stops.
-static int Selects[2]; /* Drive selects */
-static int Writeable[2]={0,0}; /* True if the drives are writeable */
+static bool Selects[2]; /* Drive selects */
+static bool Writeable[2]={false,false}; /* True if the drives are writeable */
 
 static int FirstWriteInt; /* Indicates the start of a write operation */
 
@@ -232,11 +232,8 @@ static SectorType *GetSectorPtr(TrackType *Track, int LogicalSectorID, int FindD
 
 /*--------------------------------------------------------------------------*/
 /* Returns true if the drive signified by the current selects is ready      */
-static int CheckReady(void) {
-  if (Selects[0]) return(1);
-  if (Selects[1]) return(1);
-
-  return(0);
+static bool CheckReady(void) {
+  return Selects[0] || Selects[1];
 };  /* CheckReady */
 
 /*--------------------------------------------------------------------------*/
@@ -752,8 +749,8 @@ static void DoSeekCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoReadDriveStatusCommand(void) {
-  int Track0 = 0;
-  int WriteProt = 0;
+  bool Track0 = false;
+  bool WriteProt = false;
 
   if (ThisCommand & 0x40) {
     Track0=(Internal_CurrentTrack[0]==0);
@@ -1092,8 +1089,8 @@ static bool DriveHeadMotorUpdate(void) {
 
 	if (DriveHeadUnloadPending) {
 		// Mark drives as not ready
-		Selects[0] = 0;
-		Selects[1] = 0;
+		Selects[0] = false;
+		Selects[1] = false;
 		DriveHeadUnloadPending = false;
 		if (DriveHeadLoaded && DiscDriveSoundEnabled)
 			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
@@ -1481,7 +1478,7 @@ void DiscWriteEnable(int DriveNum, int WriteEnable) {
   int StartSec, LastSec;
   int DiscOK=1;
 
-  Writeable[DriveNum]=WriteEnable;
+  Writeable[DriveNum]=WriteEnable != 0;
 
   /* If disc is being made writable then check that the disc catalogue will
      not get corrupted if new files are added.  The files in the disc catalogue
@@ -1712,7 +1709,7 @@ void Disc8271_reset(void) {
   ThisCommand=-1;
   NParamsInThisCommand=0;
   PresentParam=0;
-  Selects[0]=Selects[1]=0;
+  Selects[0]=Selects[1]=false;
 
   if (!onetime_initdisc) {
     onetime_initdisc++;
@@ -1790,10 +1787,10 @@ void Save8271UEF(FILE *SUEF)
 	fwrite(Params,1,16,SUEF);
 	fput32(NumHeads[0],SUEF);
 	fput32(NumHeads[1],SUEF);
-	fput32(Selects[0],SUEF);
-	fput32(Selects[1],SUEF);
-	fput32(Writeable[0],SUEF);
-	fput32(Writeable[1],SUEF);
+	fput32(Selects[0]?1:0,SUEF);
+	fput32(Selects[1]?1:0,SUEF);
+	fput32(Writeable[0]?1:0,SUEF);
+	fput32(Writeable[1]?1:0,SUEF);
 	fput32(FirstWriteInt,SUEF);
 	fput32(NextInterruptIsErr,SUEF);
 	fput32(CommandStatus.TrackAddr,SUEF);
@@ -1872,10 +1869,10 @@ void Load8271UEF(FILE *SUEF)
 		fread(Params,1,16,SUEF);
 		NumHeads[0]=fget32(SUEF);
 		NumHeads[1]=fget32(SUEF);
-		Selects[0]=fget32(SUEF);
-		Selects[1]=fget32(SUEF);
-		Writeable[0]=fget32(SUEF);
-		Writeable[1]=fget32(SUEF);
+		Selects[0]=fget32(SUEF) != 0;
+		Selects[1]=fget32(SUEF) != 0;
+		Writeable[0]=fget32(SUEF) != 0;
+		Writeable[1]=fget32(SUEF) != 0;
 		FirstWriteInt=fget32(SUEF);
 		NextInterruptIsErr=fget32(SUEF);
 		CommandStatus.TrackAddr=fget32(SUEF);
