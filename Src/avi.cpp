@@ -77,24 +77,6 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 		hr = AVIFileCreateStream(m_pAVIFile, &m_pAudioStream, &StreamInfo);
 	}
 
-	//if (SUCCEEDED(hr) && WaveFormat)
-	//{
-	//	memset(&opts, 0, sizeof(AVICOMPRESSOPTIONS));
-	//	opts.fccType = streamtypeAUDIO;
-	//	opts.fccHandler = 0;
-	//	opts.dwKeyFrameEvery = 0;
-	//	opts.dwQuality = 0;
-	//	opts.dwBytesPerSecond = 0;
-	//	opts.dwFlags = 0;
-	//	opts.lpFormat = &m_WaveFormat;
-	//	opts.cbFormat = sizeof(WAVEFORMATEX);
-	//	opts.lpParms = 0;
-	//	opts.cbParms = 0;
-	//	opts.dwInterleaveEvery = 0;
-	//
-	//	hr = AVIMakeCompressedStream(&m_pCompressedAudioStream, m_pAudioStream, &opts, NULL);
-	//}
-
 	if (SUCCEEDED(hr) && WaveFormat)
 	{
 		hr = AVIStreamSetFormat(m_pAudioStream,
@@ -121,31 +103,6 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 		
 		hr = AVIFileCreateStream(m_pAVIFile, &m_pVideoStream, &StreamInfo);
 	}
-
-	/*if (SUCCEEDED(hr))
-	{
-		memset(&opts, 0, sizeof(AVICOMPRESSOPTIONS));
-		opts.fccType = streamtypeVIDEO;
-		opts.fccHandler = mmioFOURCC('m', 'r', 'l', 'e'); // Microsoft RLE
-		//opts.fccHandler = mmioFOURCC('m', 's', 'v', 'c'); // Microsoft Video 1
-		opts.dwKeyFrameEvery = 100;
-		opts.dwQuality = 0;
-		opts.dwBytesPerSecond = 0;
-		opts.dwFlags = AVICOMPRESSF_KEYFRAMES;
-		opts.lpFormat = 0;
-		opts.cbFormat = 0;
-		opts.lpParms = 0;
-		opts.cbParms = 0;
-		opts.dwInterleaveEvery = 0;
-
-		//AVICOMPRESSOPTIONS *aopts[1];
-		//aopts[0]=&opts;
-		//AVISaveOptions(hWnd, 0, 1, &m_pVideoStream, aopts);
-
-		hr = AVIMakeCompressedStream(&m_pCompressedVideoStream, m_pVideoStream, &opts, NULL);
-
-		//AVISaveOptionsFree(1,aopts);
-	}*/
 
 	bmiData outputData = m_BitmapFormat;
 	outputData.bmiHeader.biCompression = BI_RLE8;
@@ -223,12 +180,6 @@ void AVIWriter::Close()
 		ICClose(m_videoCompressor);
 		m_videoCompressor = NULL;
 	}
-
-	/*if (NULL != m_pCompressedVideoStream)
-	{
-		AVIStreamRelease(m_pCompressedVideoStream);
-		m_pCompressedVideoStream = NULL;
-	}*/
 
 	if (NULL != m_pVideoStream)
 	{
