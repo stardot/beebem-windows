@@ -1,5 +1,5 @@
+*.user
 Src/.vs
-Src/*.user
 Src/BeebEm.VC.db
 Src/BeebEm.VC.VC.opendb
 Src/Debug
@@ -10,4 +10,4 @@ Src/Hardware/OpusDDOS/Debug
 Src/Hardware/OpusDDOS/Release
 Src/Hardware/Watford/Debug
 Src/Hardware/Watford/Release
-Src/InnoSetup/*.exe
+Src/InnoSetup/Release

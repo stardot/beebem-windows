@@ -10,7 +10,7 @@ AppSupportURL=http://www.mkw.me.uk/beebem/index.html
 AppUpdatesURL=http://www.mkw.me.uk/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
-OutputDir=.
+OutputDir=Release
 OutputBaseFilename=BeebEm414
 Compression=lzma
 SolidCompression=yes
@@ -41,6 +41,7 @@ Name: {userdocs}\BeebEm\USLogical.kmap; Type: files
 
 [Dirs]
 Name: {userdocs}\BeebEm
+Name: {userdocs}\BeebEm\BeebState; Flags: uninsneveruninstall
 
 [Files]
 Source: ..\Release\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
@@ -62,12 +63,10 @@ Source: ..\..\HeadUnload.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\README.txt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOff.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOn.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\Src.zip; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\Teletext.fnt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\zlib1.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\UserData\*; DestDir: {userdocs}\BeebEm; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 Source: {app}\BeebFile\*; DestDir: {userdocs}\BeebEm\BeebFile; AfterInstall: DeleteOldDataDir('{app}\BeebFile'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
-Source: {app}\BeebState\*; DestDir: {userdocs}\BeebEm\BeebState; AfterInstall: DeleteOldDataDir('{app}\BeebState'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
 Source: {app}\DiscIms\*; DestDir: {userdocs}\BeebEm\DiscIms; AfterInstall: DeleteOldDataDir('{app}\DiscIms'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
 Source: {app}\Phroms\*; DestDir: {userdocs}\BeebEm\Phroms; AfterInstall: DeleteOldDataDir('{app}\Phroms'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
 Source: {app}\Tapes\*; DestDir: {userdocs}\BeebEm\Tapes; AfterInstall: DeleteOldDataDir('{app}\Tapes'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
