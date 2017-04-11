@@ -50,6 +50,9 @@ typedef unsigned long	FASTWORK;
 /* Some important macros. They are the interface between an access from
    the simz80-/yaze-Modules and the method of the memory access: */
 
+extern unsigned char z80_rom[65536L];
+extern unsigned char z80_ram[65536L];
+
 #define GetBYTE(a)		ReadZ80Mem(a)
 #define GetBYTE_pp(a)	ReadZ80Mem( (a++) )
 #define GetBYTE_mm(a)	ReadZ80Mem( (a--) )

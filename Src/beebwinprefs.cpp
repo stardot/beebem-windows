@@ -40,6 +40,7 @@ Boston, MA  02110-1301, USA.
 #include "tube.h"
 #include "scsi.h"
 #include "ide.h"
+#include "host.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "userkybd.h"
@@ -430,6 +431,9 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
 		IDEDriveEnabled = false;
 
+	if (!m_Preferences.GetBoolValue("EmulatorTrap", EmulatorTrap))
+		EmulatorTrap = false;
+
 	if (!m_Preferences.GetBoolValue("RTCEnabled", RTC_Enabled))
 		RTC_Enabled = false;
 
@@ -653,6 +657,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
+		m_Preferences.SetBoolValue("EmulatorTrap", EmulatorTrap);
 		m_Preferences.SetBoolValue("RTCEnabled", RTC_Enabled);
 		m_Preferences.SetBoolValue("RTCY2KAdjust", RTCY2KAdjust);
 

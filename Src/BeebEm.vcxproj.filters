@@ -90,6 +90,9 @@
     <ClCompile Include="filedialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="host.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ide.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -285,6 +288,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="filedialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="host.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ide.h">

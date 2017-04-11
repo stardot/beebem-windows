@@ -69,6 +69,7 @@ void Init65C02core(void);
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec65C02Instruction(void);
 
+extern unsigned char TubeRam[65536];
 void DoTubeNMI(void);
 void DoTubeInterrupt(void);
 void WrapTubeCycles(void);

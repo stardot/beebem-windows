@@ -307,6 +307,9 @@ Boston, MA  02110-1301, USA.
 #define ID_EXTRAS                       40144
 #define ID_FULLSET                      40145
 #define ID_PSAMPLES                     40147
+#define ID_EMTACN                       40148
+#define ID_EMTWSS                       40149
+#define ID_EMTBAS                       40150
 #define IDM_FIXEDSPEED100               40151
 #define IDM_FIXEDSPEED5                 40154
 #define IDM_FIXEDSPEED2                 40155
