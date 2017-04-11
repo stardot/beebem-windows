@@ -1200,7 +1200,7 @@ void Exec6502Instruction(void) {
 			ProgramCounter == (WholeRam[0x20e] + (WholeRam[0x20f] << 8)))
 			mainWin->SpeakChar(Accumulator);
 
-		/* Read an instruction and post inc program couter */
+		/* Read an instruction and post inc program counter */
 		OldPC=ProgramCounter;
 		PrePC=ProgramCounter;
 		CurrentInstruction=ReadPaged(ProgramCounter++);
@@ -1828,6 +1828,7 @@ void Exec6502Instruction(void) {
 				BadCount++;
 			}
 		}
+
 		if (OpCodes==3) {
 			switch (CurrentInstruction) {
 			case 0x07: /* Undocumented Instruction: ASL zp and ORA zp */
