@@ -119,9 +119,9 @@ static const char *AboutText =
 #ifdef M512COPRO_ENABLED
 	"Master 512 Second Processor\n"
 #endif
-	"ARM Second Processor\n"
-        "Sprow ARM7TDMI 64MB\n\n"
-	"Version " VERSION_STRING ", Feb 2017";
+	"ARM Second Processor\n\n"
+	"Sprow ARM7TDMI 64MB\n\n"
+	"Version " VERSION_STRING ", " VERSION_DATE;
 
 /* Prototypes */
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -3549,6 +3549,7 @@ void BeebWin::HandleCommand(int MenuId)
 		BHardware=1-BHardware;
 		UpdateOptiMenu();
 		break;
+
 	case ID_PSAMPLES:
 		PartSamples=1-PartSamples;
 		UpdateOptiMenu();
