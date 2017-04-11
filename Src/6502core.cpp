@@ -26,7 +26,6 @@ Boston, MA  02110-1301, USA.
 
 #include <iostream>
 #include <fstream>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -49,9 +48,9 @@ Boston, MA  02110-1301, USA.
 #include "econet.h"
 #include "scsi.h"
 #include "ide.h"
+#include "host.h"
 #include "debug.h"
 #include "Arm.h"
-#include "sprowcopro.h"
 
 #ifdef WIN32
 #define INLINE inline
@@ -72,15 +71,16 @@ static int CurrentInstruction;
 
 extern int DumpAfterEach;
 extern CArm *arm;
-extern CSprowCoPro *sprow;
 
 CycleCountT TotalCycles=0;
 
 int trace = 0;
 int ProgramCounter;
 int PrePC;
-static int Accumulator,XReg,YReg;
-static unsigned char StackReg,PSR;
+// static int Accumulator,XReg,YReg;
+// static unsigned char StackReg,PSR;
+int Accumulator,XReg,YReg;
+unsigned char StackReg,PSR;
 static unsigned char IRQCycles;
 int DisplayCycles=0;
 int SwitchOnCycles=2000000; // Reset delay
@@ -890,10 +890,11 @@ INLINE static int16 IndXAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Data(void) {
-  uint8_t ZPAddr=ReadPaged(ProgramCounter++);
-  uint16_t EffectiveAddress=WholeRam[ZPAddr]+YReg;
+  int EffectiveAddress;
+  unsigned char ZPAddr=ReadPaged(ProgramCounter++);
+  EffectiveAddress=WholeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(WholeRam[(uint8_t)(ZPAddr+1)]<<8);
+  EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
 
   return(ReadPaged(EffectiveAddress));
 } /* IndYAddrModeHandler */
@@ -901,10 +902,11 @@ INLINE static int16 IndYAddrModeHandler_Data(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Address(void) {
-  uint8_t ZPAddr=ReadPaged(ProgramCounter++);
-  uint16_t EffectiveAddress=WholeRam[ZPAddr]+YReg;
+  int EffectiveAddress;
+  unsigned char ZPAddr=ReadPaged(ProgramCounter++);
+  EffectiveAddress=WholeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(WholeRam[(uint8_t)(ZPAddr+1)]<<8);
+  EffectiveAddress+=(WholeRam[ZPAddr+1]<<8);
 
   return(EffectiveAddress);
 } /* IndYAddrModeHandler */
@@ -1173,14 +1175,6 @@ void Exec6502Instruction(void) {
 			arm->exec(4);
 		}
 
-        if (Enable_ArmCoPro)
-        {            
-#if _DEBUG
-            sprow->exec(2);
-#else
-            sprow->exec(8);
-#endif
-        }
 #ifdef M512COPRO_ENABLED
 		if (Tube186Enabled)
 			i186_execute(12 * 4);
@@ -1199,7 +1193,7 @@ void Exec6502Instruction(void) {
 			ProgramCounter == (WholeRam[0x20e] + (WholeRam[0x20f] << 8)))
 			mainWin->SpeakChar(Accumulator);
 
-		/* Read an instruction and post inc program couter */
+		/* Read an instruction and post inc program counter */
 		OldPC=ProgramCounter;
 		PrePC=ProgramCounter;
 		CurrentInstruction=ReadPaged(ProgramCounter++);
@@ -1827,6 +1821,31 @@ void Exec6502Instruction(void) {
 				BadCount++;
 			}
 		}
+
+// JGH: Host interface opcodes
+		if ( ((CurrentInstruction & 0x0F) == 0x03)	// Opcode &x3
+			&& ((ProgramCounter & 0xC000)==0x8000)	// In sideways ROM/RAM
+			&& ((EmulatorTrap & 15)!=0) ) {		// EmulatorTrap enabled
+			switch (CurrentInstruction) {
+				case 0x03: host_emt(0);  return; // MOS_CLI, WSS_EMT
+				case 0x13: host_byte(0); return; // MOS_BYTE
+				case 0x23: host_word(0); return; // MOS_WORD, WSS_RDCH
+				case 0x33: host_wrch(0); return; // MOS_WRCH
+				case 0x43: host_rdch(0); return; // MOS_RDCH
+				case 0x53: host_file(0); return; // MOS_FILE
+				case 0x63: host_args(0); return; // MOS_ARGS
+				case 0x73: host_bget(0); return; // MOS_BGET
+				case 0x83: host_bput(0); return; // MOS_BPUT
+				case 0x93: host_gbpb(0); return; // MOS_GBPB
+				case 0xa3: host_find(0); return; // MOS_FIND
+				case 0xb3: host_quit(0); return; // MOS_QUIT
+				case 0xc3: host_lang(0); return; // MOS_LANG
+				case 0xd3: host_D3(0);   return; // MOS_D
+				case 0xe3: host_E3(0);   return; // MOS_E
+				case 0xf3: host_F3(0);   return; // MOS_F
+			}
+		}
+//
 		if (OpCodes==3) {
 			switch (CurrentInstruction) {
 			case 0x07: /* Undocumented Instruction: ASL zp and ORA zp */

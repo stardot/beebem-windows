@@ -26,10 +26,6 @@ Boston, MA  02110-1301, USA.
 #ifndef TUBE6502_HEADER
 #define TUBE6502_HEADER
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "port.h"
 
 extern unsigned char R1Status;
@@ -41,7 +37,7 @@ extern unsigned char Tube186Enabled;
 #endif
 extern int TorchTubeActive;
 extern int TubeProgramCounter;
-extern int TubeBufferLength;
+
 extern unsigned char TubeintStatus; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 extern unsigned char TubeNMIStatus; /* bit set (nums in NMI_Nums) if NMI being caused */
 
@@ -66,6 +62,7 @@ void Init65C02core(void);
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec65C02Instruction(void);
 
+extern unsigned char TubeRam[65536];
 void DoTubeNMI(void);
 void DoTubeInterrupt(void);
 void WrapTubeCycles(void);
@@ -89,12 +86,4 @@ void Save65C02MemUEF(FILE *SUEF);
 void LoadTubeUEF(FILE *SUEF);
 void Load65C02UEF(FILE *SUEF);
 void Load65C02MemUEF(FILE *SUEF);
-
-void UpdateR1Interrupt(void);
-void UpdateR3Interrupt(void);
-void UpdateR4Interrupt(void);
-#ifdef __cplusplus
-}
-#endif
-
 #endif
