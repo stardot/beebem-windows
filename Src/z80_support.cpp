@@ -27,10 +27,7 @@ Boston, MA  02110-1301, USA.
 #include "z80.h"
 #include "beebmem.h"
 
-extern "C"
-{
 #include "tube.h"
-}
 
 extern int trace;
 
@@ -58,7 +55,7 @@ unsigned char t;
 		if (pc >= 0x8000) inROM = 0;
 	}
 	
-    t = (inROM) ? z80_rom[pc & 0xffff] : z80_ram[pc & 0xffff];
+    t = (inROM) ? z80_rom[pc & 0x1fff] : z80_ram[pc & 0xffff];
 
 //    if (trace_z80)
 //        WriteLog("Read %02x from %04x in %s\n", t, pc, (inROM) ? "ROM" : "RAM");
@@ -195,9 +192,7 @@ int tmp;
 			value = tmp;
 		}
 
-		if (addr == 0x02) inROM = 1;
-
-		if (addr == 0x06) inROM = 0;
+		if (addr & 4) inROM = 0; else inROM = 1;
     }
 	
     return value;
@@ -218,6 +213,7 @@ void out(unsigned int addr, unsigned char value)
 		{
 			WriteTorchTubeFromParasiteSide(1, value);
 		}
+		if (addr & 4) inROM = 0; else inROM = 1;
 	}
 }
 
@@ -263,6 +259,7 @@ void init_z80()
 {
 char path[256];
 FILE *f;
+int addr, count;
 
     WriteLog("init_z80()\n");
 
@@ -286,7 +283,29 @@ FILE *f;
 		f = fopen(path, "rb");
 		if (f != NULL)
 		{
-			fread(z80_rom, 8192, 1, f);
+			addr=0;
+			fseek(f, 0, SEEK_END);
+			count=ftell(f);
+			if (count > 4096) {
+				fseek(f, 0, SEEK_SET);
+				addr=addr+fread(z80_rom+0, 8192, 1, f);
+			} else {
+				if (count > 2048) {
+					fseek(f, 0, SEEK_SET);
+					addr=addr+fread(z80_rom+0, 4096, 1, f);
+					fseek(f, 0, SEEK_SET);
+					addr=addr+fread(z80_rom+4096, 4096, 1, f);
+				} else {
+					fseek(f, 0, SEEK_SET);
+					addr=addr+fread(z80_rom+0, 2048, 1, f);
+					fseek(f, 0, SEEK_SET);
+					addr=addr+fread(z80_rom+2048, 2048, 1, f);
+					fseek(f, 0, SEEK_SET);
+					addr=addr+fread(z80_rom+4096, 2048, 1, f);
+					fseek(f, 0, SEEK_SET);
+					addr=addr+fread(z80_rom+6144, 2048, 1, f);
+				}
+			}
 			fclose(f);
 		}
 	}

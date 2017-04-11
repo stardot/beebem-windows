@@ -27,6 +27,9 @@ Boston, MA  02110-1301, USA.
 
 #include "TarmacGlobals.h"
 
+// extern int ArmTube;
+// extern uint8 ramMemory[0x400000];
+
 // define constants
 
 // PSR flags
@@ -50,13 +53,13 @@ Boston, MA  02110-1301, USA.
 #define SVC_MODE	3		// supervisor
 
 // hardware vector addresses
-#define RESET_VECTOR					0x0000000
+#define RESET_VECTOR			0x0000000
 #define UNDEFINED_INSTRUCTION_VECTOR	0x0000004
-#define SOFTWARE_INTERRUPT_VECTOR		0x0000008
-#define PREFETCH_ABORT_VECTOR			0x000000c
-#define DATA_ABORT_VECTOR				0x0000010
-#define ADDRESS_EXCEPTION_VECTOR		0x0000014
-#define INTERRUPT_REQUEST_VECTOR		0x0000018
+#define SOFTWARE_INTERRUPT_VECTOR	0x0000008
+#define PREFETCH_ABORT_VECTOR		0x000000c
+#define DATA_ABORT_VECTOR		0x0000010
+#define ADDRESS_EXCEPTION_VECTOR	0x0000014
+#define INTERRUPT_REQUEST_VECTOR	0x0000018
 #define FAST_INTERRUPT_REQUEST_VECTOR	0x000001c
 
 // ARM shift types operand fields
@@ -260,7 +263,7 @@ private:
 	// variables
 	uint processorMode;				// in bits 0-1
 	uint interruptDisableFlag;		// in bit 26
-	uint fastInterruptDisableFlag;	// in bit 27
+	uint fastInterruptDisableFlag;		// in bit 27
 	uint conditionFlags;			// store NZCV flags in bits 0-3
 	uint trace;
 	
@@ -281,7 +284,7 @@ private:
 	// TEST ENVIRONMENT VARIABLES
 	uint8 romMemory[0x4000];		// 16 KBytes of rom memory
 	uint8 ramMemory[0x400000];		// 4 MBytes of ram memory
-	bool keepRunning;				// keep calling run()
+	bool keepRunning;			// keep calling run()
 //	CArmDecoder decoder;			// create instance of disassembler
 	uint32 executionCount;
 	uint32 executionCountThresh;	// executionCount value to start dumping diss at

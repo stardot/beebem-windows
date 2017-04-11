@@ -273,7 +273,6 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_640X480              40099
 #define ID_VIEW_DD_1024X768             40100
 #define ID_VIEW_DD_1280X1024            40101
-#define ID_VIEW_DD_SCREENRES            40102
 #define ID_FILE_RESET                   40103
 #define ID_MODELB                       40105
 #define ID_MASTER128                    40106
@@ -307,6 +306,11 @@ Boston, MA  02110-1301, USA.
 #define ID_EXTRAS                       40144
 #define ID_FULLSET                      40145
 #define ID_PSAMPLES                     40147
+// JGH:
+#define ID_EMTACN                       40148
+#define ID_EMTWSS                       40149
+#define ID_EMTBAS                       40150
+
 #define IDM_FIXEDSPEED100               40151
 #define IDM_FIXEDSPEED5                 40154
 #define IDM_FIXEDSPEED2                 40155
@@ -448,5 +452,3 @@ Boston, MA  02110-1301, USA.
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
-
-#define IDM_ARMCOPRO                    40291

@@ -1008,9 +1008,11 @@ bool ReadRomInfo(int bank, RomInfo* info)
 
 	info->WorkspaceAddr = (BeebReadMem(0xDF0 + bank) * 0x100);
 
-	// Some ROMs (e.g. DNFS) use bit 1 of this as an activity flag.
-	// on Master 128 this is apparently not done and the address points into
-	// the FSRAM.
+	// Some ROMs use bit 7 of this as an enabled flag. DNFS uses bit 7 for the DFS
+	// half and bit 6 for the NFS half.
+	// On Master 128 this is done with bit 7 and bit 6 with %00 (pointing to low
+	// memory) and %11 (pointing to FSRAM) being active and %01 (pointing to
+	// screen memory) and %10 (pointing to SROM) being inactive.
 	if(MachineType < 3)
 		info->WorkspaceAddr &= 0x7FFF;
 	return true;

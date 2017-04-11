@@ -55,6 +55,9 @@ typedef enum PSR_Flags
   FlagN=128
 } PSR_Flags;
 
+// static int Accumulator,XReg,YReg;
+// static unsigned char StackReg,PSR;
+
 extern int trace;
 extern int trace_186;
 extern int IgnoreIllegalInstructions;
@@ -95,6 +98,8 @@ void Load6502UEF(FILE *SUEF);
 void SyncIO(void);
 void AdjustForIORead(void);
 void AdjustForIOWrite(void);
+#define WritePaged(addr,val) BeebWriteMem(addr,val)
+#define ReadPaged(Address) BeebReadMem(Address)
 
 #ifdef M512COPRO_ENABLED
 int i186_execute(int num_cycles);

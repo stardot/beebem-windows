@@ -26,23 +26,18 @@ Boston, MA  02110-1301, USA.
 
 #include <iostream>
 #include <fstream>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "6502core.h"
 #include "main.h"
 #include "beebmem.h"
-extern "C"
-{
 #include "tube.h"
-}
 #include "debug.h"
 #include "uefstate.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "Arm.h"
-#include "sprowcopro.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -55,29 +50,16 @@ extern "C"
 #define SETTUBEINT(a) TubeintStatus|=1<<a
 #define RESETTUBEINT(a) TubeintStatus&=~(1<<a)
 
-static int CurrentInstruction;
 unsigned char TubeRam[65536];
+static int CurrentInstruction;
 extern int DumpAfterEach;
 unsigned char TubeEnabled,AcornZ80,EnableTube;
 #ifdef M512COPRO_ENABLED
 unsigned char Tube186Enabled;
 #endif
 unsigned char TubeMachineType=3;
-int TubeBufferLength = 24;
 
 CycleCountT TotalTubeCycles=0;  
-
-unsigned char old_readHIOAddr = 0;
-unsigned char old_readHTmpData = 0;
-
-unsigned char old_readPIOAddr = 0;
-unsigned char old_readPTmpData = 0;
-
-unsigned char old_writeHIOAddr = 0;
-unsigned char old_writeHTmpData = 0;
-
-unsigned char old_writePIOAddr = 0;
-unsigned char old_writePTmpData = 0;
 
 int TubeProgramCounter;
 static int PreTPC; // Previous Tube Program Counter;
@@ -159,8 +141,8 @@ enum TubeFlags {
 // Tube registers
 unsigned char R1Status; // Q,I,J,M,V,P flags
 
-unsigned char* R1PHData = NULL;
-int R1PHPtr;
+unsigned char R1PHData[24];
+unsigned char R1PHPtr;
 unsigned char R1HStatus;
 unsigned char R1HPData;
 unsigned char R1PStatus;
@@ -222,15 +204,6 @@ void UpdateHostR4Interrupt(void) {
 
 int TorchTubeActive = 0;
 
-
-void UpdateInterrupts()
-{
-	UpdateR1Interrupt();
-	UpdateR3Interrupt();
-    UpdateR4Interrupt();
-    UpdateHostR4Interrupt();
-}
-
 unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr) 
 {
 unsigned char TmpData;
@@ -274,7 +247,7 @@ unsigned char TmpData;
 	
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Read from host, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
+		sprintf(info, "Tube: Read from host, addr %X value %02X", (int)IOAddr, (int)TmpData);
 		DebugDisplayTrace(DEBUG_TUBE, true, info);
 	}
 
@@ -288,7 +261,7 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Write from host, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
+		sprintf(info, "Tube: Write from host, addr %X value %02X", (int)IOAddr, (int)IOData);
 		DebugDisplayTrace(DEBUG_TUBE, true, info);
 	}
 
@@ -360,7 +333,7 @@ unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr)
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Read from para, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
+		sprintf(info, "Tube: Read from para, addr %X value %02X", (int)IOAddr, (int)TmpData);
 		DebugDisplayTrace(DEBUG_TUBE, false, info);
 	}
 
@@ -374,7 +347,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Write from para, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
+		sprintf(info, "Tube: Write from para, addr %X value %02X", (int)IOAddr, (int)IOData);
 		DebugDisplayTrace(DEBUG_TUBE, false, info);
 	}
 
@@ -397,7 +370,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 #ifdef M512COPRO_ENABLED
 		   Tube186Enabled ||
 #endif
-		   AcornZ80 || ArmTube || ArmCoProTube) ) 
+		   AcornZ80 || ArmTube) ) 
 		return(MachineType==3 ? 0xff : 0xfe); // return ff for master else return fe
 
 	switch (IOAddr) {
@@ -407,7 +380,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 	case 1:
 		TmpData=R1PHData[0];
 		if (R1PHPtr>0) {
-			for (TmpCntr=1;TmpCntr<TubeBufferLength;TmpCntr++)
+			for (TmpCntr=1;TmpCntr<24;TmpCntr++)
 				R1PHData[TmpCntr-1]=R1PHData[TmpCntr]; // Shift FIFO Buffer
 			R1PHPtr--; // Shift FIFO Pointer
 			if (R1PHPtr == 0)
@@ -453,16 +426,13 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 		break;
 	}
 
-	if (DebugEnabled && (old_readHIOAddr != IOAddr || old_readHTmpData != TmpData)) {
+	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Read from host, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
+		sprintf(info, "Tube: Read from host, addr %X value %02X", (int)IOAddr, (int)TmpData);
 		DebugDisplayTrace(DEBUG_TUBE, true, info);
 	}
 
-    old_readHTmpData = TmpData;
-    old_readHIOAddr = IOAddr;
-    
-    return TmpData;
+	return TmpData;
 }
 
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
@@ -470,12 +440,12 @@ void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
 #ifdef M512COPRO_ENABLED
 		   Tube186Enabled ||
 #endif
-		   AcornZ80 || ArmTube || ArmCoProTube) ) 
+		   AcornZ80 || ArmTube) ) 
 		return;
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Write from host, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
+		sprintf(info, "Tube: Write from host, addr %X value %02X", (int)IOAddr, (int)IOData);
 		DebugDisplayTrace(DEBUG_TUBE, true, info);
 	}
 
@@ -534,7 +504,6 @@ void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
 		UpdateR4Interrupt();
 		break;
 	}
-    //UpdateInterrupts();
 }
 
 unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
@@ -596,17 +565,13 @@ unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 		UpdateR4Interrupt();
 		break;
 	}
-//UpdateInterrupts();
-	if (DebugEnabled && (old_readPIOAddr != IOAddr || old_readPTmpData != TmpData)) {
+
+	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Read from para, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
+		sprintf(info, "Tube: Read from para, addr %X value %02X", (int)IOAddr, (int)TmpData);
 		DebugDisplayTrace(DEBUG_TUBE, false, info);
 	}
 
-    old_readPTmpData = TmpData;
-    old_readPIOAddr = IOAddr;
-
-    //UpdateInterrupts();
 	return TmpData;
 }
 
@@ -620,7 +585,7 @@ void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Write from para, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
+		sprintf(info, "Tube: Write from para, addr %X value %02X", (int)IOAddr, (int)IOData);
 		DebugDisplayTrace(DEBUG_TUBE, false, info);
 	}
 
@@ -629,10 +594,10 @@ void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 		// Cannot write status flags from parasite
 		break;
 	case 1:
-		if (R1PHPtr<TubeBufferLength) {
+		if (R1PHPtr<24) {
 			R1PHData[R1PHPtr++]=IOData;
 			R1HStatus|=TubeDataAv;
-			if (R1PHPtr==TubeBufferLength)
+			if (R1PHPtr==24)
 				R1PStatus&=~TubeNotFull;
 		}
 		break;
@@ -665,7 +630,6 @@ void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 		UpdateHostR4Interrupt();
 		break;
 	}
-    //UpdateInterrupts();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1244,10 +1208,11 @@ INLINE static int16 IndXAddrModeHandler_Address(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Data(void) {
-  uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
-  uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
+  int EffectiveAddress;
+  unsigned char ZPAddr=TubeRam[TubeProgramCounter++];
+  EffectiveAddress=TubeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
+  EffectiveAddress+=(TubeRam[ZPAddr+1]<<8);
 
   return(TUBEREADMEM_FAST(EffectiveAddress));
 } /* IndYAddrModeHandler */
@@ -1255,10 +1220,11 @@ INLINE static int16 IndYAddrModeHandler_Data(void) {
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
 INLINE static int16 IndYAddrModeHandler_Address(void) {
-  uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
-  uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
+  int EffectiveAddress;
+  unsigned char ZPAddr=TubeRam[TubeProgramCounter++];
+  EffectiveAddress=TubeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
+  EffectiveAddress+=(TubeRam[ZPAddr+1]<<8);
 
   return(EffectiveAddress);
 } /* IndYAddrModeHandler */
@@ -1436,13 +1402,8 @@ void Reset65C02(void) {
 }
 
 /* Reset Tube */
-void ResetTube(void) 
-{
-    if (R1PHData == NULL)
-    {
-        R1PHData = new unsigned char[TubeBufferLength * 2];
-    }
-  memset(R1PHData,0,TubeBufferLength * 2);
+void ResetTube(void) {
+  memset(R1PHData,0,sizeof(R1PHData));
   R1PHPtr=0;
   R1HStatus=TubeNotFull;
   R1HPData=0;
@@ -2555,7 +2516,7 @@ void SaveTubeUEF(FILE *SUEF) {
 	fput16(0x0470,SUEF);
 	fput32(45,SUEF);
 	fputc(R1Status,SUEF);
-	fwrite(R1PHData,1,TubeBufferLength,SUEF);
+	fwrite(R1PHData,1,24,SUEF);
 	fputc(R1PHPtr,SUEF);
 	fputc(R1HStatus,SUEF);
 	fputc(R1HPData,SUEF);
@@ -2602,7 +2563,7 @@ void Save65C02MemUEF(FILE *SUEF) {
 
 void LoadTubeUEF(FILE *SUEF) {
 	R1Status=fgetc(SUEF);
-	fread(R1PHData,1,TubeBufferLength,SUEF);
+	fread(R1PHData,1,24,SUEF);
 	R1PHPtr=fgetc(SUEF);
 	R1HStatus=fgetc(SUEF);
 	R1HPData=fgetc(SUEF);

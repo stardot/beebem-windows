@@ -49,6 +49,7 @@ extern unsigned char WholeRam[65536];
 extern unsigned char Roms[16][16384];
 extern unsigned char ROMSEL;
 extern int PagedRomReg;
+extern unsigned char ShadowRam[20480]; // Integrex shadow RAM
 /* Master 128 Specific Stuff */
 extern unsigned char FSRam[8192]; // 8K Filing System RAM
 extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
