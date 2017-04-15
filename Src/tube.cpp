@@ -60,7 +60,6 @@ unsigned char TubeEnabled,AcornZ80,EnableTube;
 unsigned char Tube186Enabled;
 #endif
 unsigned char TubeMachineType=3;
-int TubeBufferLength = 24;
 
 CycleCountT TotalTubeCycles=0;  
 
@@ -156,7 +155,7 @@ enum TubeFlags {
 // Tube registers
 unsigned char R1Status; // Q,I,J,M,V,P flags
 
-unsigned char* R1PHData = NULL;
+unsigned char R1PHData[TubeBufferLength * 2];
 int R1PHPtr;
 unsigned char R1HStatus;
 unsigned char R1HPData;
@@ -1435,10 +1434,6 @@ void Reset65C02(void) {
 /* Reset Tube */
 void ResetTube(void) 
 {
-    if (R1PHData == NULL)
-    {
-        R1PHData = new unsigned char[TubeBufferLength * 2];
-    }
   memset(R1PHData,0,TubeBufferLength * 2);
   R1PHPtr=0;
   R1HStatus=TubeNotFull;

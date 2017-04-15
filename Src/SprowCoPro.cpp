@@ -45,7 +45,7 @@ CSprowCoPro::CSprowCoPro()
     // load file into test memory
     FILE *testFile;
     char path[MAX_PATH];
-    TubeBufferLength = 24;
+
     strcpy(path, RomPath);
     strcat(path, "BeebFile/Sprow.ROM");
 

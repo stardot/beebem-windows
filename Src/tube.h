@@ -37,7 +37,7 @@ extern unsigned char Tube186Enabled;
 #endif
 extern int TorchTubeActive;
 extern int TubeProgramCounter;
-extern int TubeBufferLength;
+const int TubeBufferLength = 24;
 extern unsigned char TubeintStatus; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 extern unsigned char TubeNMIStatus; /* bit set (nums in NMI_Nums) if NMI being caused */
 
