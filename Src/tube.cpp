@@ -33,10 +33,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "main.h"
 #include "beebmem.h"
-extern "C"
-{
 #include "tube.h"
-}
 #include "debug.h"
 #include "uefstate.h"
 #include "z80mem.h"

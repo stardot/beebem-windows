@@ -26,11 +26,7 @@ Boston, MA  02110-1301, USA.
 #include "z80mem.h"
 #include "z80.h"
 #include "beebmem.h"
-
-extern "C"
-{
 #include "tube.h"
-}
 
 extern int trace;
 

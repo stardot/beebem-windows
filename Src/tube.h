@@ -26,10 +26,6 @@ Boston, MA  02110-1301, USA.
 #ifndef TUBE6502_HEADER
 #define TUBE6502_HEADER
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "port.h"
 
 extern unsigned char R1Status;
@@ -93,8 +89,5 @@ void Load65C02MemUEF(FILE *SUEF);
 void UpdateR1Interrupt(void);
 void UpdateR3Interrupt(void);
 void UpdateR4Interrupt(void);
-#ifdef __cplusplus
-}
-#endif
 
 #endif
