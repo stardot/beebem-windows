@@ -31,8 +31,8 @@ Boston, MA  02110-1301, USA.
 
 extern VIAState UserVIAState;
 extern unsigned char WTDelay1,WTDelay2;
-extern int RTC_Enabled;
-extern unsigned char SWRAMBoardEnabled;
+extern bool RTC_Enabled;
+extern bool SWRAMBoardEnabled;
 
 void UserVIAWrite(int Address, int Value);
 int UserVIARead(int Address);
@@ -42,10 +42,10 @@ void UserVIA_poll(unsigned int ncycles);
 void uservia_dumpstate(void);
 
 /* AMX mouse enabled */
-extern int AMXMouseEnabled;
+extern bool AMXMouseEnabled;
 
 /* Map Left+Right button presses to a middle button press */
-extern int AMXLRForMiddle;
+extern bool AMXLRForMiddle;
 
 /* Number of cycles between each mouse interrupt */
 #define AMX_TRIGGER 1000
@@ -67,7 +67,7 @@ extern int AMXCurrentY;
 extern int AMXButtons;
 
 /* Printer enabled */
-extern int PrinterEnabled;
+extern bool PrinterEnabled;
 void PrinterEnable(char *FileName);
 void PrinterDisable();
 

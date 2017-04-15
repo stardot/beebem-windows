@@ -75,16 +75,17 @@ static SoundSample SoundSamples[] = {
 static bool SoundSamplesLoaded = false;
 
 SoundConfig::Option SoundConfig::Selection;
-int SoundEnabled = 1;
-int RelaySoundEnabled = 0;
-int DiscDriveSoundEnabled = 0;
-int SoundChipEnabled = 1;
+bool SoundEnabled = true;
+bool RelaySoundEnabled = false;
+bool DiscDriveSoundEnabled = false;
+bool SoundChipEnabled = true;
+
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 100; //Percentage
 int SoundAutoTriggerTime;
 int SoundBufferSize;
 double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
-char SoundExponentialVolume = 1;
+bool SoundExponentialVolume = true;
 
 /* Number of places to shift the volume */
 #define VOLMAG 3
@@ -107,7 +108,7 @@ static struct {
 
 static int RealVolumes[4]; // Holds the real volume values for state save use
 
-static int ActiveChannel[4]={FALSE,FALSE,FALSE,FALSE}; /* Those channels with non-0 voolume */
+static bool ActiveChannel[4] = {false, false, false, false}; // Those channels with non-0 volume
 // Set it to an array for more accurate sound generation
 static unsigned int samplerate;
 static double OurTime=0.0; /* Time in sample periods */
@@ -117,7 +118,7 @@ int SoundTrigger; /* Time to trigger a sound event */
 static unsigned int GenIndex[4]; /* Used by the voice generators */
 static int GenState[4];
 static int bufptr=0;
-int SoundDefault;
+bool SoundDefault;
 double SoundTuning=0.0; // Tunning offset
 
 void PlayUpTil(double DestTime);
@@ -125,7 +126,7 @@ int GetVol(int vol);
 
 struct AudioType TapeAudio; // Tape audio decoder stuff
 bool TapeSoundEnabled;
-int PartSamples=1;
+bool PartSamples = true;
 
 SoundStreamer *pSoundStreamer = 0;
 
@@ -422,16 +423,15 @@ static double CyclesToSamples(int BeebCycles) {
 }
 
 /****************************************************************************/
-static void InitAudioDev(int sampleratein) {
 
+static void InitAudioDev(int sampleratein) {
 	delete pSoundStreamer;
 	samplerate = sampleratein;
 
 	pSoundStreamer = CreateSoundStreamer(samplerate, 8, 1);
 	if (!pSoundStreamer)
-		SoundEnabled = 0;
-
-}// InitAudioDev
+		SoundEnabled = false;
+}
 
 void LoadSoundSamples(void) {
 	FILE *fd;
@@ -505,8 +505,10 @@ void SoundChipReset(void) {
   BeebState76489.ToneFreq[3]=1000;
   BeebState76489.Noise.FB=0;
   BeebState76489.Noise.Freq=0;
-  ActiveChannel[0]=FALSE;
-  ActiveChannel[1]=ActiveChannel[2]=ActiveChannel[3]=FALSE;
+  ActiveChannel[0] = false;
+  ActiveChannel[1] = false;
+  ActiveChannel[2] = false;
+  ActiveChannel[3] = false;
 }
 
 /****************************************************************************/
@@ -528,7 +530,7 @@ void SoundInit() {
 
 void SwitchOnSound(void) {
   SetFreq(3,1000);
-  ActiveChannel[3]=TRUE;
+  ActiveChannel[3] = true;
   BeebState76489.ToneVolume[3]=GetVol(15);
 }
 
@@ -598,8 +600,8 @@ void Sound_RegWrite(int value)
 	case 5: // Tone 1 vol
 	case 7: // Tone 0 vol
 		RealVolumes[channel] = value & 15;
-		if ((BeebState76489.ToneVolume[channel] == 0) && ((value & 15) != 15)) ActiveChannel[channel] = TRUE;
-		if ((BeebState76489.ToneVolume[channel] != 0) && ((value & 15) == 15)) ActiveChannel[channel] = FALSE;
+		if ((BeebState76489.ToneVolume[channel] == 0) && ((value & 15) != 15)) ActiveChannel[channel] = true;
+		if ((BeebState76489.ToneVolume[channel] != 0) && ((value & 15) == 15)) ActiveChannel[channel] = false;
 		BeebState76489.ToneVolume[channel] = GetVol(15 - (value & 15));
 		break;
 	}
@@ -611,9 +613,9 @@ void DumpSound(void) {
 	
 }
 
-void ClickRelay(unsigned char RState) {
+void ClickRelay(bool RelayState) {
 	if (RelaySoundEnabled) {
-		if (RState) {
+		if (RelayState) {
 			PlaySoundSample(SAMPLE_RELAY_ON, false);
 		}
 		else {
@@ -668,7 +670,7 @@ void LoadSoundUEF(FILE *SUEF) {
 		RegVal|=Data&15;
 		Sound_RegWrite(RegVal);
 		BeebState76489.ToneVolume[4-Chan]=GetVol(15-Data);
-		if (Data!=15) ActiveChannel[4-Chan]=TRUE; else ActiveChannel[4-Chan]=FALSE;
+		ActiveChannel[4 - Chan] = Data != 15;
 	}
 	RegVal=224|(fgetc(SUEF)&7);
 	Sound_RegWrite(RegVal);
@@ -676,7 +678,7 @@ void LoadSoundUEF(FILE *SUEF) {
 	RegVal=240|(Data&15);
 	Sound_RegWrite(RegVal);
 	BeebState76489.ToneVolume[0]=GetVol(15-Data);
-	if (Data!=15) ActiveChannel[0]=TRUE; else ActiveChannel[0]=FALSE;
+	ActiveChannel[0] = Data != 15;
 	BeebState76489.LastToneFreqSet=fgetc(SUEF);
 	GenIndex[0]=fget16(SUEF);
 	GenIndex[1]=fget16(SUEF);

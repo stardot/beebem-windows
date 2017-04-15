@@ -66,20 +66,20 @@ Boston, MA  02110-1301, USA.
 extern WSADATA WsaDat;							// Windows sockets info
 SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
 
-// bool bEthernetSocketsCreated = FALSE;
+// bool bEthernetSocketsCreated = false;
 
 struct sockaddr_in ip232_serv_addr; 
 
 // This bit is the Serial Port stuff
-unsigned char TouchScreenEnabled;
-unsigned char EthernetPortEnabled;
-unsigned char IP232localhost;
-unsigned char IP232custom;
-unsigned char IP232mode;
-unsigned char IP232raw;
+bool TouchScreenEnabled;
+bool EthernetPortEnabled;
+bool IP232localhost;
+bool IP232custom;
+bool IP232mode;
+bool IP232raw;
 unsigned int IP232customport;
 char IP232customip [20];
-bool ip232_flag_received = FALSE;
+bool ip232_flag_received = false;
 char IPAddress[256];
 int PortNo;
 
@@ -236,15 +236,13 @@ void TouchScreenStore(unsigned char data)
 
 void TouchScreenReadScreen(bool check)
 {
-int x, y;
-static int last_x = -1, last_y = -1, last_m = -1;
+	static int last_x = -1, last_y = -1, last_m = -1;
 
-	x = (65535 - JoystickX) / (65536 / 120) + 1;
-	y = JoystickY / (65536 / 90) + 1;
+	int x = (65535 - JoystickX) / (65536 / 120) + 1;
+	int y = JoystickY / (65536 / 90) + 1;
 
-	if ( (last_x != x) || (last_y != y) || (last_m != AMXButtons) || (check == false))
+	if (last_x != x || last_y != y || last_m != AMXButtons || !check)
 	{
-
 //		WriteLog("JoystickX = %d, JoystickY = %d, last_x = %d, last_y = %d\n", JoystickX, JoystickY, last_x, last_y);
 		
 		if (AMXButtons & AMX_LEFT_BUTTON)
@@ -364,8 +362,8 @@ bool IP232Poll(void)
 				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Comms Close");
 //		mStartAgain = false;
 //		MessageBox(GETHWND,"Could not connect to specified address",WindowTitle,MB_OK|MB_ICONERROR);
-		bSerialStateChanged=TRUE;
-		SerialPortEnabled=FALSE;
+		bSerialStateChanged = true;
+		SerialPortEnabled = false;
 		mainWin->ExternUpdateSerialMenu();
 		
 		IP232Close();
@@ -540,7 +538,7 @@ int space, bufflen;
 							}
 							else
 							{
-								if (buff[j] == 255 && IP232raw == 0)
+								if (buff[j] == 255 && !IP232raw)
 								{
 									ip232_flag_received = true;
 								}
@@ -562,8 +560,8 @@ int space, bufflen;
 						if (DebugEnabled) 
 							DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Remote session disconnected");
 //						mEthernetPortReadTaskID = NULL;
-						bSerialStateChanged=TRUE;
-						SerialPortEnabled=FALSE;
+						bSerialStateChanged = true;
+						SerialPortEnabled = false;
 						mainWin->ExternUpdateSerialMenu();
 						IP232Close();
 						MessageBox(GETHWND,"Lost connection; serial port has been disabled.",WindowTitle,MB_OK|MB_ICONERROR);
@@ -612,19 +610,17 @@ int space, bufflen;
 						WriteLog("Send Error %i\n", i);
 						if (DebugEnabled) 
 								DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Send Error");
-						bSerialStateChanged=TRUE;
-						SerialPortEnabled=FALSE;
+						bSerialStateChanged = true;
+						SerialPortEnabled = false;
 						mainWin->ExternUpdateSerialMenu();
 						
 						IP232Close();
 						MessageBox(GETHWND,"Lost connection; serial port has been disabled",WindowTitle,MB_OK|MB_ICONERROR);
-
 					}
-					
 				}
 			}
 		}
-			
+
 		//		Sleep(1000 * 50);		// sleep for 50 msec
 		Sleep (50); //+10*J); //100ms
 	}
@@ -680,7 +676,7 @@ unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 
 	while (1)
 	{
-		if (IP232mode == 0) {
+		if (!IP232mode) {
 			if (mEthernetHandle != INVALID_SOCKET)
 			{
 				dcd = 1;
@@ -709,7 +705,7 @@ unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 					DebugDisplayTrace(DEBUG_REMSER, true, "IP232: StatusThread lost DCD, set CTS high");
 			}
 		}
-		else //IP232mode == 1
+		else // IP232mode == true
 		{
 			if ((ACIA_Control & 96) == 64) {
 				rts = 1;

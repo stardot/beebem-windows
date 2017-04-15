@@ -53,7 +53,7 @@ using namespace std;
 /* Clock stuff for Master 128 RTC */
 time_t SysTime;
 time_t RTCTimeOffset=0;
-unsigned char RTCY2KAdjust=1;
+bool RTCY2KAdjust = true;
 
 // Shift register stuff
 unsigned char SRMode;
@@ -61,10 +61,10 @@ unsigned char SRCount;
 unsigned char SRData;
 unsigned char SREnabled;
 
-/* Fire button for joystick 1, 0=not pressed, 1=pressed */
-int JoystickButton = 0;
+/* Fire button for joystick 1, false=not pressed, true=pressed */
+bool JoystickButton = false;
 
-extern int DumpAfterEach;
+extern bool DumpAfterEach;
 /* My raw VIA state */
 VIAState SysVIAState;
 char WECycles=0;
@@ -171,7 +171,7 @@ void BeebKeyDown(int row,int col) {
 
   DoKbdIntCheck();
 #ifdef KBDDEBUG
-  DumpAfterEach=1;
+  DumpAfterEach = true;
 #endif
 }
 
@@ -317,7 +317,7 @@ void SysVIAWrite(int Address, int Value) {
       SysVIAState.ifr&=~16;
       SysVIAState.orb=Value & 0xff;
       IC32Write(Value);
-	  CMOS.Enabled=((Value & 64)>>6); // CMOS Chip select
+      CMOS.Enabled = (Value & 64) != 0; // CMOS Chip select
 	  CMOS.Address=(((Value & 128)>>7)) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
       if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20)==0)) {
         SysVIAState.ifr&=0xf7;
@@ -359,7 +359,7 @@ void SysVIAWrite(int Address, int Value) {
         SysVIAState.irb&=0x7f;
       }
       UpdateIFRTopBit();
-      SysVIAState.timer1hasshot=0;
+      SysVIAState.timer1hasshot = false;
       break;
 
     case 7:
@@ -381,7 +381,7 @@ void SysVIAWrite(int Address, int Value) {
       if (SysVIAState.timer2c == 0) SysVIAState.timer2c = 0x20000; 
       SysVIAState.ifr &=0xdf; // clear timer 2 ifr 
       UpdateIFRTopBit();
-      SysVIAState.timer2hasshot=0;
+      SysVIAState.timer2hasshot = false;
       break;
 
     case 10:
@@ -559,7 +559,7 @@ void SysVIA_poll_real(void) {
 
   if (SysVIAState.timer1c<-2 && !t1int) {
     t1int=true;
-    if ((SysVIAState.timer1hasshot==0) || (SysVIAState.acr & 0x40)) {
+    if (!SysVIAState.timer1hasshot || (SysVIAState.acr & 0x40)) {
       /* cerr << "SysVia timer1 int at " << TotalCycles << "\n"; */
       SysVIAState.ifr|=0x40; /* Timer 1 interrupt */
       UpdateIFRTopBit();
@@ -570,7 +570,7 @@ void SysVIA_poll_real(void) {
       if ((SysVIAState.ier & 0x40) && CyclesToInt == NO_TIMER_INT_DUE) {
           CyclesToInt = 3 + SysVIAState.timer1c;
       }
-      SysVIAState.timer1hasshot=1;
+      SysVIAState.timer1hasshot = true;
     }
   }
 
@@ -580,14 +580,14 @@ void SysVIA_poll_real(void) {
   }
 
   if (SysVIAState.timer2c<-2) {
-    if (SysVIAState.timer2hasshot==0) {
+    if (!SysVIAState.timer2hasshot) {
       /* cerr << "SysVia timer2 int at " << TotalCycles << "\n"; */
       SysVIAState.ifr|=0x20; /* Timer 2 interrupt */
       UpdateIFRTopBit();
       if ((SysVIAState.ier & 0x20) && CyclesToInt == NO_TIMER_INT_DUE) {
         CyclesToInt = 3 + SysVIAState.timer2c;
       }
-      SysVIAState.timer2hasshot=1;
+      SysVIAState.timer2hasshot = true;
     }
   }
 

@@ -63,7 +63,10 @@ Boston, MA  02110-1301, USA.
 using namespace std;
 
 /* Each Rom now has a Ram/Rom flag */
-int RomWritable[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+bool RomWritable[16] = {
+	true, true, true, true, true, true, true, true,
+	true, true, true, true, true, true, true, true
+};
 
 /* Identifies what is in each bank */
 BankType RomBankType[16] = {
@@ -73,15 +76,15 @@ BankType RomBankType[16] = {
 
 int PagedRomReg;
 
-/* Computech (&B+) Specific Stuff Added by K.Lowe 18/08/03 */
-int MemSel=0; /* Shadow/Main RAM Toggle */
-int PrvEn=0;  /* Private RAM Enable */
-int ShEn=0;   /* Shadow RAM Enable */
-int Prvs1=0;  /* Private RAM 1K Area */
-int Prvs4=0;  /* Private RAM 4K Area */
-int Prvs8=0;  /* Private RAM 8K Area */
-int HidAdd=0;
-/* End of Computech (&B+) Specific Stuff */
+// Computech (&B+) Specific Stuff Added by K.Lowe 18/08/03
+bool MemSel = false; // Shadow/Main RAM Toggle
+bool PrvEn = false;  // Private RAM Enable
+bool ShEn = false;   // Shadow RAM Enable
+bool Prvs1 = false;  // Private RAM 1K Area
+bool Prvs4 = false;  // Private RAM 4K Area
+bool Prvs8 = false;  // Private RAM 8K Area
+int HidAdd = 0;
+// End of Computech (&B+) Specific Stuff
 
 unsigned char WholeRam[65536];
 unsigned char Roms[16][16384];
@@ -116,11 +119,11 @@ char DiscPath[_MAX_PATH]; // JGH
 // FDD Extension board variables
 int EFDCAddr;   // 1770 FDC location
 int EDCAddr;    // Drive control location
-bool NativeFDC; // TRUE for 8271, FALSE for DLL extension
+bool NativeFDC; // true for 8271, false for DLL extension
 
 // Econet NMI enable signals. Decoded from address bus and latched by IC97
-#define INTON	TRUE
-#define INTOFF	FALSE
+#define INTON	true
+#define INTOFF	false
 
 /*----------------------------------------------------------------------------*/
 /* Perform hardware address wrap around */
@@ -241,15 +244,15 @@ int BeebReadMem(int Address) {
 	}
 	else if (MachineType == Model::IntegraB) {
 		if (Address < 0x3000) return WholeRam[Address];
-		if ((Address>=0x8000) && (Address<0x8400) && (Prvs8==1) && (PrvEn==1)) return(Private[Address-0x8000]);
-		if ((Address>=0x8000) && (Address<0x9000) && (Prvs4==1) && (PrvEn==1)) return(Private[Address-0x8000]);
-		if ((Address>=0x9000) && (Address<0xb000) && (Prvs1==1) && (PrvEn==1)) return(Private[Address-0x8000]);
-		if ((Address<0x8000) && (ShEn==1) && (MemSel==0)) return(ShadowRam[Address-0x3000]);
-		if ((Address<0x8000) && (ShEn==0)) return(WholeRam[Address]);
-		if ((Address<0x8000) && (ShEn==1) && (MemSel==1)) return(WholeRam[Address]);
-		if (Address>=0x8000 && Address<0xc000) return(Roms[ROMSEL][Address-0x8000]);
-		if (Address<0xfc00) return(WholeRam[Address]);
-		if (Address>=0xff00) return(WholeRam[Address]);
+		if (Address >= 0x8000 && Address < 0x8400 && Prvs8 && PrvEn) return Private[Address-0x8000];
+		if (Address >= 0x8000 && Address < 0x9000 && Prvs4 && PrvEn) return Private[Address-0x8000];
+		if (Address >= 0x9000 && Address < 0xb000 && Prvs1 && PrvEn) return Private[Address-0x8000];
+		if (Address < 0x8000 && ShEn && !MemSel) return ShadowRam[Address-0x3000];
+		if (Address < 0x8000 && !ShEn) return WholeRam[Address];
+		if (Address < 0x8000 && ShEn && MemSel) return WholeRam[Address];
+		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address-0x8000];
+		if (Address < 0xfc00) return WholeRam[Address];
+		if (Address >= 0xff00) return WholeRam[Address];
 
 		if (Address==0xfe3c) {
 			time_t long_time; // Clock for Computech Integra-B
@@ -267,13 +270,13 @@ int BeebReadMem(int Address) {
 	}
 	else if (MachineType == Model::BPlus) {
 		if (Address < 0x3000) return WholeRam[Address];
-		if ((Address<0x8000) && (Sh_Display==1) && (PrePC>=0xC000) && (PrePC<0xE000)) return(ShadowRAM[Address]);
-		if ((Address<0x8000) && (Sh_Display==1) && (MemSel==1) && (PrePC>=0xA000) && (PrePC<0xB000)) return(ShadowRAM[Address]);
-		if (Address<0x8000) return(WholeRam[Address]);
-		if ((Address<0xB000) && (MemSel==1)) return(Private[Address-0x8000]);
-		if (Address>=0x8000 && Address<0xc000) return(Roms[ROMSEL][Address-0x8000]);
-		if (Address<0xfc00) return(WholeRam[Address]);
-		if (Address>=0xff00) return(WholeRam[Address]);
+		if (Address < 0x8000 && Sh_Display == 1 && PrePC >= 0xc000 && PrePC < 0xe000) return ShadowRAM[Address];
+		if (Address < 0x8000 && Sh_Display == 1 && MemSel && PrePC >= 0xa000 && PrePC < 0xb000) return ShadowRAM[Address];
+		if (Address < 0x8000) return WholeRam[Address];
+		if (Address < 0xB000 && MemSel) return Private[Address-0x8000];
+		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address-0x8000];
+		if (Address < 0xfc00) return WholeRam[Address];
+		if (Address >= 0xff00) return WholeRam[Address];
 	}
 	else if (MachineType == Model::Master128) {
 		switch ((Address&0xf000)>>12) {
@@ -528,13 +531,13 @@ void DebugMemoryState()
 		case Model::B:
 			break;
 		case Model::IntegraB:
-			DebugDisplayInfoF("Shadow RAM: %s, %s",ShEn == 1 ? "enabled" : "disabled", MemSel == 0 && ShEn == 1 ? "selected" : "not selected");
-			DebugDisplayInfoF("Private areas: %s; 1K %s, 4K %s, 8K %s",PrvEn == 1 ? "enabled" : "disabled", Prvs1 == 1 ? "on" : "off", Prvs4 == 1 ? "on" : "off", Prvs8 == 1 ? "on" : "off");
+			DebugDisplayInfoF("Shadow RAM: %s, %s",ShEn ? "enabled" : "disabled", !MemSel && ShEn ? "selected" : "not selected");
+			DebugDisplayInfoF("Private areas: %s; 1K %s, 4K %s, 8K %s",PrvEn ? "enabled" : "disabled", Prvs1 ? "on" : "off", Prvs4 ? "on" : "off", Prvs8 ? "on" : "off");
 			DebugDisplayInfoF("Hidden area address: 0x%01X", HidAdd);
 			break;
 		case Model::BPlus:
 			DebugDisplayInfoF("Shadow RAM: %s, %s", Sh_Display == 1 ? "enabled" : "disabled", Sh_Display == 1 && ((PrePC>=0xC000 && PrePC<0xE000) || (MemSel==1 && PrePC>=0xA000 && PrePC <0xB000)) ? "selected" : "not selected");
-			DebugDisplayInfoF("Private RAM: %s", MemSel==1 ? "enabled" : "disabled");
+			DebugDisplayInfoF("Private RAM: %s", MemSel ? "enabled" : "disabled");
 			break;
 		case Model::Master128:
 			DebugDisplayInfoF("ACCCON: IRR:%s TST:%s IFJ:%s ITU:%s Y:%s X:%s E:%s D:%s",
@@ -629,7 +632,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		}
 
 		if (Address < 0x8000) {
-			if (ShEn == 1 && MemSel == 0) {
+			if (ShEn && !MemSel) {
 				ShadowRam[Address - 0x3000] = Value;
 				return;
 			} else {
@@ -638,17 +641,17 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			}
 		}
 
-		if (Address >= 0x8000 && Address < 0x8400 && Prvs8 == 1 && PrvEn == 1) {
+		if (Address >= 0x8000 && Address < 0x8400 && Prvs8 && PrvEn) {
 			Private[Address - 0x8000] = Value;
 			return;
 		}
 
-		if (Address >= 0x8000 && Address < 0x9000 && Prvs4 == 1 && PrvEn == 1) {
+		if (Address >= 0x8000 && Address < 0x9000 && Prvs4 && PrvEn) {
 			Private[Address - 0x8000] = Value;
 			return;
 		}
 
-		if (Address >= 0x9000 && Address < 0xb000 && Prvs1 == 1 && PrvEn == 1) {
+		if (Address >= 0x9000 && Address < 0xb000 && Prvs1 && PrvEn) {
 			Private[Address - 0x8000] = Value;
 			return;
 		}
@@ -721,28 +724,27 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 	else if (MachineType == Model::BPlus) {
 		if (Address<0x3000) {
-			 WholeRam[Address]=Value;
-			 return;
+			WholeRam[Address]=Value;
+			return;
 		}
 
 		if (Address<0x8000) {
-			if ((Sh_Display==1) && (PrePC>=0xC000) && (PrePC<0xE000)) {
+			if (Sh_Display == 1 && PrePC >= 0xC000 && PrePC < 0xE000) {
 				ShadowRAM[Address]=Value;
 				return;
-			 } else
+			}
+			else if (Sh_Display == 1 && MemSel && PrePC >= 0xA000 && PrePC < 0xB000) {
+				ShadowRAM[Address]=Value;
+				return;
+			} else {
+				WholeRam[Address]=Value;
+				return;
+			}
+		}
 
-			if ((Sh_Display==1) && (MemSel==1) && (PrePC>=0xA000) && (PrePC<0xB000)) {
-				 ShadowRAM[Address]=Value;
-				 return;
-			 } else {
-				 WholeRam[Address]=Value;
-				 return;
-			 }
-		 }
-
-		 if ((Address < 0xb000) && (MemSel == 1)) {
-			 Private[Address - 0x8000] = Value;
-			 return;
+		if (Address < 0xb000 && MemSel) {
+			Private[Address - 0x8000] = Value;
+			return;
 		 }
 
 		if ((Address < 0xc000) && (Address >= 0x8000)) {
@@ -753,13 +755,13 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 		 if (Address>=0xfe30 && Address<0xfe34) {
 			DoRomChange(Value);
-			MemSel = ((Value & 0x80)/0x80);
+			MemSel = (Value & 0x80) != 0;
 			return;
 		}
 
 		 if (Address>=0xfe34 && Address<0xfe38) {
 			oldshd=Sh_Display;
-			Sh_Display=((Value &0x80)/0x80);
+			Sh_Display = (Value & 0x80) != 0;
 			if (Sh_Display!=oldshd) RedoMPTR();
 			return;
 		}
@@ -902,7 +904,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 
 	//Rob: add econet
-	if (Address>=0xfeA0 && Address<0xfebf && (EconetEnabled) ) {
+	if (Address >= 0xfea0 && Address < 0xfebf && EconetEnabled) {
 		WriteEconetRegister((Address & 3), Value);
 		return;
 	}
@@ -964,7 +966,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		Write1770Register(Address-EFDCAddr,Value);
 	}
 
-    return;
+	return;
 }
 
 bool ReadRomInfo(int bank, RomInfo* info)
@@ -1095,7 +1097,7 @@ void BeebReadRoms(void) {
 	// Clear ROMs
 	for (bank = 0; bank < 16; bank++)
 	{
-		RomWritable[bank] = 0;
+		RomWritable[bank] = false;
 		RomBankType[bank] = BankEmpty;
 		memset(Roms[bank], 0, 0x4000);
 	}
@@ -1146,12 +1148,12 @@ void BeebReadRoms(void) {
 		if (strcmp(RomName,BANK_EMPTY)==0)
 		{
 			RomBankType[bank] = BankEmpty;
-			RomWritable[bank] = 0;
+			RomWritable[bank] = false;
 		}
 		else if (strcmp(RomName,BANK_RAM)==0)
 		{
 			RomBankType[bank] = BankRam;
-			RomWritable[bank] = 1;
+			RomWritable[bank] = true;
 		}
 		else
 		{
@@ -1159,13 +1161,13 @@ void BeebReadRoms(void) {
 			{
 				// Writable ROM
 				RomBankType[bank] = BankRam;
-				RomWritable[bank] = 1;
+				RomWritable[bank] = true;
 				fullname[strlen(fullname)-4]=0;
 			}
 			else
 			{
 				RomBankType[bank] = BankRom;
-				RomWritable[bank] = 0;
+				RomWritable[bank] = false;
 			}
 
 			for (i = 0; fullname[i]; i++)
@@ -1194,7 +1196,7 @@ void BeebReadRoms(void) {
 	}
 }
 /*----------------------------------------------------------------------------*/
-void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
+void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
   // Reset everything
   memset(WholeRam,0,0x8000);
   memset(FSRam,0,0x2000);
@@ -1205,7 +1207,9 @@ void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
   memset(Private,0,0x3000);
   Private[0x3b2]=4; // Default OSMODE to 4
   memset(ShadowRam,0,0x5000);
-  MemSel=PrvEn=ShEn=Prvs1=Prvs4=Prvs8=HidAdd=0;
+  MemSel = PrvEn = ShEn = Prvs1 = Prvs4 = Prvs8 = false;
+  HidAdd = 0;
+
   if (!SkipIntegraBConfig)
   {
 	  memset(Hidden,0,256);
@@ -1221,8 +1225,7 @@ void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig) {
   /* Put first ROM in */
   memcpy(WholeRam+0x8000,Roms[0xf],0x4000);
   PagedRomReg=0xf;
-
-} /* BeebMemInit */
+}
 
 /*-------------------------------------------------------------------------*/
 void SaveMemUEF(FILE *SUEF) {
@@ -1334,7 +1337,7 @@ void LoadRomRegsUEF(FILE *SUEF) {
 		Prvs8=(ACCCON>>6) & 1;
 		Prvs4=(ACCCON>>5) & 1;
 		Prvs1=(ACCCON>>4) & 1;
-		HidAdd=fgetc(SUEF);
+		HidAdd=fgetc(SUEF) != 0;
 		break;
 
 	case Model::BPlus:
@@ -1398,8 +1401,8 @@ void LoadIntegraBHiddenMemUEF(FILE *SUEF) {
 void LoadSWRamMemUEF(FILE *SUEF) {
 	int Rom;
 	Rom=fgetc(SUEF);
-	RomWritable[Rom]=1;
-	RomBankType[Rom]=BankRam;
+	RomWritable[Rom] = true;
+	RomBankType[Rom] = BankRam;
 	fread(Roms[Rom],1,16384,SUEF);
 }
 void LoadSWRomMemUEF(FILE *SUEF) {
@@ -1409,7 +1412,7 @@ void LoadSWRomMemUEF(FILE *SUEF) {
 	switch (RomBankType[Rom])
 	{
 	case BankRom:
-		RomWritable[Rom]=0;
+		RomWritable[Rom] = false;
 		fread(Roms[Rom],1,16384,SUEF);
 		break;
 	case BankEmpty:

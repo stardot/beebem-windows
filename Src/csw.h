@@ -49,7 +49,7 @@ extern unsigned long csw_bufflen;
 extern int csw_byte;
 extern int csw_pulsecount;
 extern int bit_count;
-extern unsigned char CSWOpen;
+extern bool CSWOpen;
 extern int CSW_BUF;
 extern int CSW_CYCLES;
 

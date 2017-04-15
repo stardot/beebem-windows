@@ -75,7 +75,7 @@ Boston, MA  02110-1301, USA.
 
 #define MAX_BUFFER 65536
 
-int DebugEnabled = false;        // Debug dialog visible
+bool DebugEnabled = false; // Debug dialog visible
 static int DebugSource = DEBUG_NONE; // Debugging active?
 static int LinesDisplayed = 0;  // Lines in info window
 static int InstCount = 0;       // Instructions to execute before breaking
@@ -426,7 +426,7 @@ void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain)
 			CreateWindowEx(0, "STATIC", 0, 0, 0, 0, 0, 0, 0, 0, hinst, 0);
 	}
 
-	DebugEnabled = TRUE;
+	DebugEnabled = true;
 	if (!IsWindow(hwndDebug)) 
 	{ 
 		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
@@ -459,7 +459,7 @@ void DebugCloseDialog()
 	DestroyWindow(hwndDebug);
 	hwndDebug = NULL;
 	hwndInfo = NULL;
-	DebugEnabled = FALSE;
+	DebugEnabled = false;
 	hCurrentDialog = NULL;
 	hCurrentAccelTable = NULL;
 	DebugSource = DEBUG_NONE;
@@ -876,11 +876,11 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	}
 
 	if (DebugSource == DEBUG_NONE)
-		return(TRUE);
+		return true;
 
 	if ( (TorchTube || AcornZ80) && !host)
 	{
-		if (DebugOS == false && addr >= 0xf800 && addr <= 0xffff)
+		if (!DebugOS && addr >= 0xf800 && addr <= 0xffff)
 		{
 			if (!LastAddrInBIOS)
 			{
@@ -888,13 +888,13 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 				LastAddrInBIOS = true;
 				LastAddrInOS = LastAddrInROM = false;
 			}
-			return(TRUE);
+			return true;
 		}
 		LastAddrInBIOS = false;
 	}
 	else
 	{
-		if (DebugOS == false && addr >= 0xc000 && addr <= 0xfbff)
+		if (!DebugOS && addr >= 0xc000 && addr <= 0xfbff)
 		{
 			if (!LastAddrInOS)
 			{
@@ -902,11 +902,11 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 				LastAddrInOS = true;
 				LastAddrInBIOS = LastAddrInROM = false;
 			}
-			return(TRUE);
+			return true;
 		}
 		LastAddrInOS = false;
 
-		if (DebugROM == false && addr >= 0x8000 && addr <= 0xbfff)
+		if (!DebugROM && addr >= 0x8000 && addr <= 0xbfff)
 		{
 			if (!LastAddrInROM)
 			{
@@ -917,17 +917,16 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 				LastAddrInROM = true;
 				LastAddrInOS = LastAddrInBIOS = false;
 			}
-			return(TRUE);
+			return true;
 		}
 		LastAddrInROM = false;
 	}
 
 	if (host && InstCount == 0)
 	{
-		return(FALSE);
+		return false;
 	}
 
-	
 	DebugAssertBreak(addr, prevAddr, host);
 	// Parasite instructions:
 	if ( (TorchTube || AcornZ80) && !host)
@@ -940,11 +939,9 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 				
 		DebugDisplayInfo(str);
 		Disp_RegSet2(str);
-
 	}
 	else
 	{
-		
 		DebugDisassembleInstruction(addr, host, str);
 
 		sprintf(str + strlen(str), "A=%02X X=%02X Y=%02X S=%02X ", Accumulator, XReg, YReg, StackReg);
@@ -969,7 +966,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 		if (InstCount > 0)
 			InstCount--;
 
-	return(TRUE);
+	return true;
 }
 
 bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
@@ -1072,7 +1069,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		}
 		else if (MachineType == Model::IntegraB)
 		{
-			if(ShEn==1 && MemSel==0 && addr >= 0x3000 && addr <= 0x7FFF)
+			if(ShEn && !MemSel && addr >= 0x3000 && addr <= 0x7FFF)
 			{
 				addrInfo->start = 0x3000;
 				addrInfo->end = 0x7FFF;

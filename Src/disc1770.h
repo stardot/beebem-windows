@@ -24,8 +24,8 @@ Boston, MA  02110-1301, USA.
 
 #ifndef DISC1770_HEADER
 #define DISC1770_HEADER
-extern unsigned char DWriteable[2]; // Write Protect
-extern unsigned char Disc1770Enabled;
+extern bool DWriteable[2]; // Write Protect
+extern bool Disc1770Enabled;
 unsigned char Read1770Register(unsigned char Register1770);
 void Write1770Register(unsigned char Register1770, unsigned char Value);
 void Load1770DiscImage(char *DscFileName, int DscDrive, char DscType, HMENU dmenu);

@@ -93,13 +93,13 @@ union Signals
 };
 
 // dynamic profiling options
-const bool dynamicProfilingExceptionFreq = FALSE;
-const bool dynamicProfilingRegisterUse = FALSE;
-const bool dynamicProfilingConditionalExecution = FALSE;
-const bool dynamicProfilingCoprocessorUse = TRUE;
+const bool dynamicProfilingExceptionFreq = false;
+const bool dynamicProfilingRegisterUse = false;
+const bool dynamicProfilingConditionalExecution = false;
+const bool dynamicProfilingCoprocessorUse = true;
 
-extern int Enable_Arm;
-extern int ArmTube;
+extern bool Enable_Arm;
+extern bool ArmTube;
 
 class CArm 
 {

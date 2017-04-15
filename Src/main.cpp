@@ -51,7 +51,7 @@ Boston, MA  02110-1301, USA.
 #endif
 
 extern VIAState SysVIAState;
-int DumpAfterEach=0;
+bool DumpAfterEach = false;
 
 Model MachineType;
 BeebWin *mainWin = NULL;

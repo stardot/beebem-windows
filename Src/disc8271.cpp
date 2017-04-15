@@ -43,9 +43,9 @@ Boston, MA  02110-1301, USA.
 
 using namespace std;
 
-extern int TorchTube;
+extern bool TorchTube;
 
-unsigned char Disc8271Enabled=1;
+bool Disc8271Enabled = true;
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 static unsigned char ResultReg;
 static unsigned char StatusReg;
@@ -72,7 +72,7 @@ static unsigned char Params[16]; /* Wildly more than we need */
 static bool Selects[2]; /* Drive selects */
 static bool Writeable[2]={false,false}; /* True if the drives are writeable */
 
-static int FirstWriteInt; /* Indicates the start of a write operation */
+static bool FirstWriteInt; // Indicates the start of a write operation
 
 static int NextInterruptIsErr; /* none 0 causes error and drops this value into result reg */
 #define TRACKSPERDRIVE 80
@@ -92,7 +92,7 @@ typedef struct {
     unsigned int PhysRecLength;
   } IDField;
 
-  unsigned int Deleted:1; /* If non-zero the sector is deleted */
+  bool Deleted; // If true the sector is deleted
   unsigned char *Data;
 } SectorType;
 
@@ -316,7 +316,7 @@ static void DoVarLength_WriteDataCommand(void) {
     StatusReg=0x80; /* Command busy */
     UPDATENMISTATUS;
     CommandStatus.ByteWithinSector=0;
-    FirstWriteInt=1;
+    FirstWriteInt = true;
   } else {
     DoErr(0x1e); /* Sector not found */
   }
@@ -335,7 +335,7 @@ static void WriteInterrupt(void) {
   if (!FirstWriteInt)
     CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++]=DataReg;
   else
-    FirstWriteInt=0;
+    FirstWriteInt = false;
 
   ResultReg=0;
   if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
@@ -433,7 +433,7 @@ static void DoVarLength_ReadDataCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void ReadInterrupt(void) {
-  extern int DumpAfterEach;
+  extern bool DumpAfterEach;
   int LastByte=0;
 
   if (CommandStatus.SectorsToGo<0) {
@@ -445,7 +445,7 @@ static void ReadInterrupt(void) {
   DataReg=CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++];
   /*cerr << "ReadInterrupt called - DataReg=0x" << hex << int(DataReg) << dec << "ByteWithinSector=" << CommandStatus.ByteWithinSector << "\n"; */
 
-  /* DumpAfterEach=1; */
+  // DumpAfterEach = true;
   ResultReg=0;
   if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
     CommandStatus.ByteWithinSector=0;
@@ -664,7 +664,7 @@ static void DoFormatCommand(void) {
     StatusReg=0x80; /* Command busy */
     UPDATENMISTATUS;
     CommandStatus.ByteWithinSector=0;
-    FirstWriteInt=1;
+    FirstWriteInt = true;
   } else {
     DoErr(0x1e); /* Sector not found */
   }
@@ -686,7 +686,7 @@ static void FormatInterrupt(void) {
     CommandStatus.ByteWithinSector++;
   }
   else
-    FirstWriteInt=0;
+    FirstWriteInt = false;
 
   ResultReg=0;
   if (CommandStatus.ByteWithinSector>=4) {
@@ -1315,7 +1315,7 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) 
         SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
         SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
         SecPtr[CurrentSector].IDField.PhysRecLength=256;
-        SecPtr[CurrentSector].Deleted=0;
+        SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data,1,256,infile);
       }
@@ -1379,7 +1379,7 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
         SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
         SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
         SecPtr[CurrentSector].IDField.PhysRecLength=256;
-        SecPtr[CurrentSector].Deleted=0;
+        SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data,1,256,infile);
       }
@@ -1478,12 +1478,12 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
 }
 
 /*--------------------------------------------------------------------------*/
-int IsDiscWritable(int DriveNum) {
+bool IsDiscWritable(int DriveNum) {
   return Writeable[DriveNum];
 }
 
 /*--------------------------------------------------------------------------*/
-void DiscWriteEnable(int DriveNum, int WriteEnable) {
+void DiscWriteEnable(int DriveNum, bool WriteEnable) {
   int HeadNum;
   SectorType *SecPtr;
   unsigned char *Data;
@@ -1493,7 +1493,7 @@ void DiscWriteEnable(int DriveNum, int WriteEnable) {
   int StartSec, LastSec;
   int DiscOK=1;
 
-  Writeable[DriveNum]=WriteEnable != 0;
+  Writeable[DriveNum] = WriteEnable;
 
   /* If disc is being made writable then check that the disc catalogue will
      not get corrupted if new files are added.  The files in the disc catalogue
@@ -1628,14 +1628,14 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
     /* Now load the new image into the correct drive */
     if (Heads==1)
     {
-      if ((MachineType == Model::Master128) || !NativeFDC)
+      if (MachineType == Model::Master128 || !NativeFDC)
         Load1770DiscImage(FileName,DriveNum,0,mainWin->m_hMenu);
       else
         LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
     }
     else
     {
-      if ((MachineType == Model::Master128) || !NativeFDC)
+      if (MachineType == Model::Master128 || !NativeFDC)
         Load1770DiscImage(FileName,DriveNum,1,mainWin->m_hMenu);
       else
         LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
@@ -1746,8 +1746,8 @@ void Disc8271_reset(void) {
       LoadStartupDisc(1, DiscString);
 
     if (getenv("BeebDiscWrites")!=NULL) {
-      DiscWriteEnable(0, 1);
-      DiscWriteEnable(1, 1);
+      DiscWriteEnable(0, true);
+      DiscWriteEnable(1, true);
     }
   }
 }
@@ -1805,7 +1805,7 @@ void Save8271UEF(FILE *SUEF)
 	fput32(Selects[1]?1:0,SUEF);
 	fput32(Writeable[0]?1:0,SUEF);
 	fput32(Writeable[1]?1:0,SUEF);
-	fput32(FirstWriteInt,SUEF);
+	fput32(FirstWriteInt ? 1 : 0,SUEF);
 	fput32(NextInterruptIsErr,SUEF);
 	fput32(CommandStatus.TrackAddr,SUEF);
 	fput32(CommandStatus.CurrentSector,SUEF);
@@ -1826,8 +1826,8 @@ void Load8271UEF(FILE *SUEF)
 	// saved state was in middle of writing to disc.
 	FreeDiscImage(0);
 	FreeDiscImage(1);
-	DiscLoaded[0]=FALSE;
-	DiscLoaded[1]=FALSE;
+	DiscLoaded[0] = false;
+	DiscLoaded[1] = false;
 
 	fread(FileName,1,256,SUEF);
 	if (FileName[0]) {
@@ -1887,7 +1887,7 @@ void Load8271UEF(FILE *SUEF)
 		Selects[1]=fget32(SUEF) != 0;
 		Writeable[0]=fget32(SUEF) != 0;
 		Writeable[1]=fget32(SUEF) != 0;
-		FirstWriteInt=fget32(SUEF);
+		FirstWriteInt=fget32(SUEF) != 0;
 		NextInterruptIsErr=fget32(SUEF);
 		CommandStatus.TrackAddr=fget32(SUEF);
 		CommandStatus.CurrentSector=fget32(SUEF);

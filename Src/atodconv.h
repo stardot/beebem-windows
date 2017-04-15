@@ -24,7 +24,7 @@ Boston, MA  02110-1301, USA.
 #ifndef ATODCONV_HEADER
 #define ATODCONV_HEADER
 
-extern int JoystickEnabled;
+extern bool JoystickEnabled;
 extern int JoystickX;  /* 16 bit number, 0 = right */
 extern int JoystickY;  /* 16 bit number, 0 = down */
 

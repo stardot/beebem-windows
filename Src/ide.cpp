@@ -57,7 +57,7 @@ int IDEError;
 int IDEData;
 FILE *IDEDisc[8]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 int IDEDrive;
-char IDEDriveEnabled = 0;
+bool IDEDriveEnabled = false;
 int IDEnumSectors = 64;
 int IDEnumHeads = 4;
 int IDEDriveMax = 4;

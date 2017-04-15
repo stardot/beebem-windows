@@ -35,8 +35,8 @@ Boston, MA  02110-1301, USA.
 #include "Arm.h"
 #include "ArmDisassembler.h"	// gives access to disassembler
 
-int Enable_Arm = 0;
-int ArmTube = 0;
+bool Enable_Arm = false;
+bool ArmTube = false;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -137,7 +137,7 @@ CArm::CArm()
 	processorMode = USR_MODE;
 	processorMode = SVC_MODE;
 	r[15] = 0;
-	prefetchInvalid = TRUE;
+	prefetchInvalid = true;
 	conditionFlags = 0;
 
 	WriteLog("init_arm()\n");
@@ -189,7 +189,7 @@ void CArm::exec(int count)
 			uint32 val;
 			readWord(0xc50c, val);
 		
-			if (prefetchInvalid	== TRUE)
+			if (prefetchInvalid)
 			{
 				(void) readWord(pc, ci);
 
@@ -276,7 +276,7 @@ void CArm::run()
 
 		// increment r15 by 8 to account for pipelining effect
 		setRegisterWithPrefetch(15, getRegister(15) + 8 );
-		prefetchInvalid = FALSE;
+		prefetchInvalid = false;
 
 		// refill the pipeline by fetching into the prefetch instruction
 		if( !readWord(pc, prefetchInstruction) )
@@ -590,7 +590,7 @@ void CArm::run()
 				// ??? remove keepRunning - for simple code only
 				// checks for mov pc,r14
 				//if(currentInstruction == 0xE1A0F00E)
-				//	keepRunning = FALSE;
+				//	keepRunning = false;
 				break;
 			}
 			// movS rd, rn, rm
@@ -2729,7 +2729,7 @@ void CArm::run()
 		// adjust PC but don't change prefetch
 		setRegister( 15, (getRegister(15) + 8) & PC_MASK );
 		
-		prefetchInvalid = FALSE;
+		prefetchInvalid = false;
 
 		if( !readWord(pc, prefetchInstruction) )
 		{
@@ -2801,12 +2801,12 @@ inline bool CArm::isExtendedInstruction(uint32 instruction)
 	return ((instruction & 0x90) == 0x90);
 }
 
-// returns TRUE if we should execute the instruction, false otherwise
+// returns true if we should execute the instruction, false otherwise
 inline bool CArm::executeConditionally(uint32 instruction)
 {
 	// implements a look up table taking the arguments of
 	// the current PSR and the instruction's condition field and
-	// returning TRUE if the instruction should be executed, FALSE otherwise
+	// returning true if the instruction should be executed, false otherwise
 
 	/*
 	// Graeme Barnes code from RS.
@@ -3008,7 +3008,7 @@ inline void CArm::performBranch()
 	// note, offset is stored >>2 since bits 0-1 are always clear (word-aligned memory)
 	setRegisterWithPrefetch(15, getRegister(15) + (offset<<2) );
 
-	prefetchInvalid = TRUE;
+	prefetchInvalid = true;
 }
 
 // single data swap for 32bit word
@@ -3623,19 +3623,19 @@ inline bool CArm::performDataTransferStoreWord(uint32 address, uint32 data)
 		{
 			// if can't write word throw data abort
 			exceptionDataAbort();
-			return FALSE;
+			return false;
 		}
 		else
 		{
 			// else word written ok
-			return TRUE;
+			return true;
 		}
 	}
 	else
 	{
 		// if invalid address then throw address exception
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
 }
 
@@ -3648,7 +3648,7 @@ inline bool CArm::performDataTransferLoadWord(uint32 address, uint32 &destinatio
 		if( !readWord(address, destination) )
 		{
 			exceptionDataAbort();
-			return FALSE;
+			return false;
 		}
 		else
 		{
@@ -3662,13 +3662,13 @@ inline bool CArm::performDataTransferLoadWord(uint32 address, uint32 &destinatio
 			}
 
 			// loaded ok
-			return TRUE;
+			return true;
 		}
 	}
 	else
 	{
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
 }
 
@@ -3681,17 +3681,17 @@ inline bool CArm::performDataTransferStoreByte(uint32 address, uint8 value)
 		{
 			// ???
 			exceptionDataAbort();
-			return FALSE;
+			return false;
 		}
 		else
 		{
-			return TRUE;
+			return true;
 		}
 	}
 	else
 	{
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
 }
 
@@ -3703,17 +3703,17 @@ inline bool CArm::performDataTransferLoadByte(uint32 address, uint8 &location)
 		if( !readByte(address, location) )
 		{
 			exceptionDataAbort();
-			return FALSE;
+			return false;
 		}
 		else
 		{
-			return TRUE;
+			return true;
 		}
 	}
 	else
 	{
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
 }
 
@@ -3739,14 +3739,14 @@ inline bool CArm::readWord(uint32 address, uint32& destination)
 		value |= ramMemory[(address & 0x3fffff) +2]<<16;
 		value |= ramMemory[(address & 0x3fffff) +3]<<24;
 		destination = value;
-		return TRUE;
+		return true;
 	}
 
 	if ((address & ~0x1f) == 0x1000000)
 	{
 //		WriteLog("Read word from tube %08x, reg %d\n", address, (address & 0x1c) >> 2);
 		destination = 0xff;
-		return TRUE;
+		return true;
 	}
 
 	if ( (address >= 0x3000000) && (address < 0x3004000) )
@@ -3756,40 +3756,37 @@ inline bool CArm::readWord(uint32 address, uint32& destination)
 		value |= romMemory[(address & 0x3fff) +2]<<16;
 		value |= romMemory[(address & 0x3fff) +3]<<24;
 		destination = value;
-		return TRUE;
+		return true;
 	}
 
 	WriteLog("Bad ARM read word from %08x\n", address);
 	destination = 0xff;
-	return FALSE;
+	return false;
 }
 
 inline bool CArm::writeWord(uint32 address, uint32 data)
 {
-
 	if (address < 0x1000000)
 	{
 		ramMemory[(address & 0x3fffff)] = data & 0xff;
 		ramMemory[(address & 0x3fffff)+1] = (data >> 8) & 0xff;
 		ramMemory[(address & 0x3fffff)+2] = (data >> 16) & 0xff;
 		ramMemory[(address & 0x3fffff)+3] = (data >> 24) & 0xff;
-		return TRUE;
+		return true;
 	}
 
 	if ((address & ~0x1f) == 0x1000000)
 	{
 //		WriteLog("Write word %08x to tube %08x, reg %d\n", data, address, (address & 0x1c) >> 2);
-		return TRUE;
+		return true;
 	}
 
 	WriteLog("Bad ARM write word %08x to %08x\n", data, address);
-	return FALSE;
-
+	return false;
 }
 
 inline bool CArm::readByte(uint32 address, uint8 &destination)
 {
-
 	// read word at address into destination, return TRUE if ok
 	uint32 value = 0;
 	
@@ -3797,26 +3794,26 @@ inline bool CArm::readByte(uint32 address, uint8 &destination)
 	{
 		value |= ramMemory[(address & 0x3fffff)];
 		destination = value;
-		return TRUE;
+		return true;
 	}
 
 	if ((address & ~0x1f) == 0x1000000)
 	{
 		destination = ReadTubeFromParasiteSide((address & 0x1c) >> 2);
 //		WriteLog("Read byte from tube %08x, reg %d returned %d\n", address, (address & 0x1c) >> 2, destination);
-		return TRUE;
+		return true;
 	}
 
 	if ( (address >= 0x3000000) && (address < 0x3004000) )
 	{
 		value |= romMemory[(address & 0x3fff)];
 		destination = value;
-		return TRUE;
+		return true;
 	}
 
 	WriteLog("Bad ARM read byte from %08x\n", address);
 	destination = 0xff;
-	return FALSE;
+	return false;
 }
 
 inline bool CArm::writeByte(uint32 address, uint8 value)
@@ -3844,7 +3841,7 @@ inline bool CArm::writeByte(uint32 address, uint8 value)
 //			trace = 1;
 //		}
 
-		return TRUE;
+		return true;
 	}
 
 	if ((address & ~0x1f) == 0x1000000)
@@ -3857,8 +3854,7 @@ inline bool CArm::writeByte(uint32 address, uint8 value)
 	}
 
 	WriteLog("Bad ARM write byte %02x to %08x\n", value, address);
-	return FALSE;
-
+	return false;
 }
 
 // set the TRANS line low so that MEMC does a logical-to-physical translation even when the
@@ -3878,7 +3874,7 @@ inline void CArm::setTrans()
 //		rn             - register containing base address (so writeback to it can occur)
 //		initialAddress - address to start loading to/storing from
 //		finalAddress   - last address to be loaded to/storing from
-// returns TRUE if successful, FALSE otherwise
+// returns true if successful, false otherwise
 
 // perform STM no writeback
 inline bool CArm::performBlockDataTransferStore(uint rn, uint32 initialAddress, uint32 finalAddress)
@@ -3903,7 +3899,7 @@ inline bool CArm::performBlockDataTransferStore(uint rn, uint32 initialAddress, 
 						setRegister(rn, finalAddress);
 
 					exceptionDataAbort();
-					return FALSE;
+					return false;
 				}
 				initialAddress += 4;
 				break; // get out of loop
@@ -3925,7 +3921,7 @@ inline bool CArm::performBlockDataTransferStore(uint rn, uint32 initialAddress, 
 				if( !writeWord(initialAddress, getRegister(index) ) )
 				{
 					exceptionDataAbort();
-					return FALSE;
+					return false;
 				}
 				initialAddress += 4;
 			}
@@ -3937,11 +3933,11 @@ inline bool CArm::performBlockDataTransferStore(uint rn, uint32 initialAddress, 
 			if( !writeWord(initialAddress, getRegisterWithPSRAndPipelining(15) ) )
 			{
 				exceptionDataAbort();
-				return FALSE;
+				return false;
 			}
 		}
 		// successful
-		return TRUE;
+		return true;
 	}
 	else
 	{
@@ -3952,7 +3948,7 @@ inline bool CArm::performBlockDataTransferStore(uint rn, uint32 initialAddress, 
 		//	setRegister(rn, finalAddress);
 		
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
 }
 
@@ -3964,7 +3960,7 @@ inline bool CArm::performBlockDataTransferStoreS(uint rn, uint32 initialAddress,
 		// since we're faking adjusting the processor mode in order to store user mode banked
 		// registers, data aborts are thrown at the end of the method once the proper
 		// registers have been restored, so just flag them for now.
-		bool dataAbortOccurred = FALSE;
+		bool dataAbortOccurred = false;
 
 		// register list is in bits 0-15 of the current instruction
 
@@ -4025,7 +4021,7 @@ inline bool CArm::performBlockDataTransferStoreS(uint rn, uint32 initialAddress,
 		{
 			if( !writeWord(initialAddress, getRegisterWithPSRAndPipelining(15) ) )
 			{
-				dataAbortOccurred = TRUE;
+				dataAbortOccurred = true;
 			}
 		}
 
@@ -4036,11 +4032,11 @@ inline bool CArm::performBlockDataTransferStoreS(uint rn, uint32 initialAddress,
 		if(dataAbortOccurred)
 		{
 			exceptionDataAbort();
-			return FALSE;
+			return false;
 		}
 
 		// otherwise successful
-		return TRUE;
+		return true;
 	}
 	else
 	{
@@ -4051,9 +4047,8 @@ inline bool CArm::performBlockDataTransferStoreS(uint rn, uint32 initialAddress,
 		//	setRegister(rn, finalAddress);
 		
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
-
 }
 
 // LDM no S flag
@@ -4081,7 +4076,7 @@ inline bool CArm::performBlockDataTransferLoad(uint rn, uint32 initialAddress, u
 
 					exceptionDataAbort();
 
-					return FALSE;
+					return false;
 				}
 				// if load was ok then update value read to appropriate register
 				setRegister(index, location);
@@ -4094,10 +4089,10 @@ inline bool CArm::performBlockDataTransferLoad(uint rn, uint32 initialAddress, u
 		if( getBit(currentInstruction, 15) )
 		{
 			setRegister(15, getRegister(15) & PCMASK );
-			prefetchInvalid = TRUE;
+			prefetchInvalid = true;
 		}
 		// successful
-		return TRUE;
+		return true;
 	}
 	else
 	{
@@ -4108,7 +4103,7 @@ inline bool CArm::performBlockDataTransferLoad(uint rn, uint32 initialAddress, u
 		//	setRegister(rn, finalAddress);
 		
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
 }
 
@@ -4118,14 +4113,14 @@ inline bool CArm::performBlockDataTransferLoad(uint rn, uint32 initialAddress, u
 // have been used in this method and are configurable on or off
 inline bool CArm::performBlockDataTransferLoadS(uint rn, uint32 initialAddress, uint32 finalAddress)
 {
-	const bool fixRISCOS = TRUE;
+	const bool fixRISCOS = true;
 
 	if( isValidAddress(initialAddress) )
 	{
 		// since we're faking adjusting the processor mode in order to store user mode banked
 		// registers, data aborts are thrown at the end of the method once the proper
 		// registers have been restored, so just flag them for now.
-		bool dataAbortOccurred = FALSE;
+		bool dataAbortOccurred = false;
 
 		if(fixRISCOS)
 		{
@@ -4162,7 +4157,7 @@ inline bool CArm::performBlockDataTransferLoadS(uint rn, uint32 initialAddress, 
 				uint32 location;
 				if( !readWord(initialAddress, location) )
 				{
-					dataAbortOccurred = TRUE;
+					dataAbortOccurred = true;
 
 					if(fixRISCOS)
 					{
@@ -4236,11 +4231,11 @@ inline bool CArm::performBlockDataTransferLoadS(uint rn, uint32 initialAddress, 
 			}
 
 			exceptionDataAbort();
-			return FALSE;
+			return false;
 		}
 
 		// otherwise successful
-		return TRUE;
+		return true;
 	}
 	else
 	{
@@ -4250,7 +4245,7 @@ inline bool CArm::performBlockDataTransferLoadS(uint rn, uint32 initialAddress, 
 		//	setRegister(rn, finalAddress);
 
 		exceptionAddress();
-		return FALSE;
+		return false;
 	}
 }
 
@@ -4420,14 +4415,14 @@ inline void CArm::setProcessorStatusFlags(uint32 mask, uint32 value)
 inline void CArm::setRegisterWithPrefetch(uint regNumber, uint32 value)
 {
 	if(dynamicProfilingRegisterUse)
-		dynamicProfilingRegisterUsage(regNumber, FALSE);
+		dynamicProfilingRegisterUsage(regNumber, false);
 
 	// if r15 then only adjust PC (not PSR as well)
 	if(regNumber == 15)
 	{
 		r[15] = value & PC_MASK;
 		// prefetched instruction is invalidated
-		prefetchInvalid = TRUE;
+		prefetchInvalid = true;
 	}
 	else
 	{
@@ -4439,7 +4434,7 @@ inline void CArm::setRegisterWithPrefetch(uint regNumber, uint32 value)
 inline void CArm::setRegister(uint regNumber, uint32 value)
 {
 	if(dynamicProfilingRegisterUse)
-		dynamicProfilingRegisterUsage(regNumber, FALSE);
+		dynamicProfilingRegisterUsage(regNumber, false);
 
 	r[regNumber] = value;
 }
@@ -4448,7 +4443,7 @@ inline void CArm::setRegister(uint regNumber, uint32 value)
 inline uint32 CArm::getRegister(uint regNumber)
 {
 	if(dynamicProfilingRegisterUse)
-		dynamicProfilingRegisterUsage(regNumber, TRUE);
+		dynamicProfilingRegisterUsage(regNumber, true);
 
 	return r[regNumber];
 }
@@ -4457,7 +4452,7 @@ inline uint32 CArm::getRegister(uint regNumber)
 inline uint32 CArm::getRegisterWithPSR(uint regNumber)
 {
 	if(dynamicProfilingRegisterUse)
-		dynamicProfilingRegisterUsage(regNumber, TRUE);
+		dynamicProfilingRegisterUsage(regNumber, true);
 
 	if(regNumber == 15)
 	{
@@ -4473,7 +4468,7 @@ inline uint32 CArm::getRegisterWithPSR(uint regNumber)
 inline uint32 CArm::getRegisterWithPipelining(uint regNumber)
 {
 	if(dynamicProfilingRegisterUse)
-		dynamicProfilingRegisterUsage(regNumber, TRUE);
+		dynamicProfilingRegisterUsage(regNumber, true);
 
 	if(regNumber == 15)
 	{
@@ -4489,7 +4484,7 @@ inline uint32 CArm::getRegisterWithPipelining(uint regNumber)
 inline uint32 CArm::getRegisterWithPSRAndPipelining(uint regNumber)
 {
 	if(dynamicProfilingRegisterUse)
-		dynamicProfilingRegisterUsage(regNumber, TRUE);
+		dynamicProfilingRegisterUsage(regNumber, true);
 
 	if(regNumber == 15)
 	{
@@ -4624,12 +4619,12 @@ inline void CArm::updateAddFlags(uint32 operand1, uint32 operand2, uint32 result
 void CArm::reset()
 {
 	// invalidate prefetch
-	prefetchInvalid = TRUE;
+	prefetchInvalid = true;
 
 	// clear all interrupts signals
 	signals.all = 0;
-	pending_interrupt = FALSE;
-	pending_fast_interrupt = FALSE;
+	pending_interrupt = false;
+	pending_fast_interrupt = false;
 
 	// clear all registers in all banks
 	for(int rNum = 0; rNum<16; rNum++)
@@ -4830,14 +4825,14 @@ inline void CArm::exceptionAddress()
 inline bool CArm::coprocessorDataTransferStore(uint32 address)
 {
 	exceptionAddress();
-	return FALSE;
+	return false;
 }
 
 // copy data from coprocessor memory to ARM memory
 inline bool CArm::coprocessorDataTransferLoad(uint32 address)
 {
 	exceptionAddress();
-	return FALSE;
+	return false;
 }
 
 // copy from ARM register to coprocessor register
@@ -4848,7 +4843,7 @@ inline bool CArm::coprocessorRegisterTransferWrite()
 	uint coprocessorNumber = getField(currentInstruction, 8, 11);
 
 	exceptionUndefinedInstruction();
-	return FALSE;
+	return false;
 }
 
 // copy from coprocessor register to ARM register
@@ -4862,7 +4857,7 @@ inline bool CArm::coprocessorRegisterTransferRead()
 		dynamicProfilingCoprocessorUsage(currentInstruction);
 
 	exceptionUndefinedInstruction();
-	return FALSE;
+	return false;
 }
 
 // perform a data operation (e.g. logic/arithmetic) on the coprocessor 
@@ -4874,7 +4869,7 @@ inline bool CArm::coprocessorDataOperation()
 		dynamicProfilingCoprocessorUsage(currentInstruction);
 
 	exceptionUndefinedInstruction();
-	return FALSE;
+	return false;
 }
 
 // get the coprocessor data transfer immediate offset from the current instruction

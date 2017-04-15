@@ -49,7 +49,7 @@ Written by Richard Gellman - March 2001
 #define CASSETTE 0  // Device in 
 #define RS423 1		// use defines
 
-unsigned char Cass_Relay=0; // Cassette Relay state
+bool Cass_Relay = false; // Cassette Relay state
 unsigned char SerialChannel=CASSETTE; // Device in use
 
 unsigned char RDR,TDR; // Receive and Transmit Data Registers
@@ -60,7 +60,8 @@ unsigned char Clk_Divide=1; // Clock divide rate
 unsigned char ACIA_Status,ACIA_Control; // 6850 ACIA Status.& Control
 unsigned char SP_Control; // SERPROC Control;
 
-unsigned char CTS,RTS,FirstReset=1;
+unsigned char CTS, RTS;
+bool FirstReset = true;
 unsigned char DCD=0,DCDI=1,ODCDI=1,DCDClear=0; // count to clear DCD bit
 
 unsigned char Parity,Stop_Bits,Data_Bits,RIE,TIE; // Receive Intterrupt Enable
@@ -68,18 +69,18 @@ unsigned char Parity,Stop_Bits,Data_Bits,RIE,TIE; // Receive Intterrupt Enable
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
 
 char UEFTapeName[256]; // Filename of current tape file
-unsigned char UEFOpen=0;
+bool UEFOpen = false;
 
 unsigned int Baud_Rates[8]={19200,1200,4800,150,9600,300,2400,75};
 
-unsigned char OldRelayState=0;
+bool OldRelayState = false;
 CycleCountT TapeTrigger=CycleCountTMax;
 #define TAPECYCLES 357 // 2000000/5600 - 5600 is normal tape speed
 
 int UEF_BUF=0,NEW_UEF_BUF=0;
 int TapeClock=0,OldClock=0;
 int TapeClockSpeed = 5600;
-int UnlockTape=1;
+bool UnlockTape = true;
 
 // Tape control variables
 int map_lines;
@@ -96,23 +97,23 @@ void TapeControlUpdateCounter(int tape_time);
 void TapeControlStopRecording(bool RefreshControl);
 
 // This bit is the Serial Port stuff
-unsigned char SerialPortEnabled;
+bool SerialPortEnabled;
 unsigned char SerialPort;
 
 HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
 DCB dcbSerialPort; // Serial port device control block
 char nSerialPort[5]; // Serial port name
 char *pnSerialPort=nSerialPort;
-unsigned char SerialPortOpen=0; // Indicates status of serial port (on the host)
+bool SerialPortOpen = false; // Indicates status of serial port (on the host)
 unsigned int SerialBuffer=0,SerialWriteBuffer=0;
 DWORD BytesIn,BytesOut;
 DWORD LineStat;
 DWORD dwCommEvent;
 OVERLAPPED olSerialPort={0},olSerialWrite={0},olStatus={0};
-volatile bool bSerialStateChanged=FALSE;
-volatile bool bWaitingForData=FALSE;
-volatile bool bWaitingForStat=FALSE;
-volatile bool bCharReady=FALSE;
+volatile bool bSerialStateChanged = false;
+volatile bool bWaitingForData = false;
+volatile bool bWaitingForStat = false;
+volatile bool bCharReady = false;
 COMMTIMEOUTS ctSerialPort;
 DWORD dwClrCommError;
 
@@ -139,9 +140,9 @@ void Write_ACIA_Control(unsigned char CReg) {
 	if ((CReg & 3)==3) {
 		ACIA_Status&=8; ResetACIAStatus(7); SetACIAStatus(2);
 		intStatus&=~(1<<serial); // Master reset clears IRQ
-		if (FirstReset==1) { 
+		if (FirstReset) {
 			CTS=1; SetACIAStatus(3);
-			FirstReset=0; RTS=1; 
+			FirstReset = false; RTS=1;
 		} // RTS High on first Master reset.
 		ResetACIAStatus(2); DCD=0; DCDI=0; DCDClear=0;
 		SetACIAStatus(1); // Xmit data register empty
@@ -164,12 +165,12 @@ void Write_ACIA_Control(unsigned char CReg) {
 	bit=(CReg & 96)>>5;
 	if (bit==3) { RTS=0; TIE=0; }
 	// Seem to need an interrupt immediately for tape writing when TIE set
-	if ( (SerialChannel==CASSETTE) && TIE && (Cass_Relay == 1) ) {
+	if (SerialChannel == CASSETTE && TIE && Cass_Relay) {
 		intStatus|=1<<serial;
 		SetACIAStatus(7);
 	}
 	// Change serial port settings
-	if ((SerialChannel==RS423) && (SerialPortEnabled) && (!TouchScreenEnabled) && (!EthernetPortEnabled)) {
+	if (SerialChannel == RS423 && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled) {
 		GetCommState(hSerialPort,&dcbSerialPort);
 		dcbSerialPort.ByteSize=Data_Bits;
 		dcbSerialPort.StopBits=(Stop_Bits==1)?ONESTOPBIT:TWOSTOPBITS;
@@ -199,15 +200,15 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
  * Unless we do something with the data, the loader hangs so just swallow it (see below)
  */
 
-	if ( (SerialChannel==CASSETTE) || ((SerialChannel==RS423) && (!SerialPortEnabled)) )
-	{
+	if (SerialChannel == CASSETTE || ((SerialChannel == RS423) && !SerialPortEnabled)) {
 		ResetACIAStatus(1);
 		TDR=Data;
 		TxD=1;
 		int baud = Tx_Rate * ((Clk_Divide==1) ? 64 : (Clk_Divide==64) ? 1 : 4);
 		TapeTrigger=TotalCycles + 2000000/(baud/8) * TapeClockSpeed/5600;
 	}
-	if ((SerialChannel==RS423) && (SerialPortEnabled)) {
+
+	if (SerialChannel == RS423 && SerialPortEnabled) {
 		if (ACIA_Status & 2) {
 			ResetACIAStatus(1);
 			SerialWriteBuffer=Data;
@@ -246,9 +247,9 @@ void Write_SERPROC(unsigned char Data) {
 	SP_Control=Data;
 	// Slightly easier this time.
 	// just the Rx and Tx baud rates, and the selectors.
-	Cass_Relay=(Data & 128)>>7;
-	TapeAudio.Enabled=(Cass_Relay && (TapePlaying||TapeRecording))?TRUE:FALSE;
-	LEDs.Motor=(Cass_Relay==1);
+	Cass_Relay = (Data & 128) != 0;
+	TapeAudio.Enabled = Cass_Relay && (TapePlaying || TapeRecording);
+	LEDs.Motor = Cass_Relay;
 	if (Cass_Relay)
 		TapeTrigger=TotalCycles+TAPECYCLES;
 	if (Cass_Relay!=OldRelayState) {
@@ -353,7 +354,7 @@ void Serial_Poll(void)
 		
 //			if (trace == 1) WriteLog("Here - TapeRecording\n");
 
-			if (Cass_Relay==1 && UEFOpen && TotalCycles >= TapeTrigger)
+			if (Cass_Relay && UEFOpen && TotalCycles >= TapeTrigger)
 			{
 				if (TxD > 0)
 				{
@@ -421,7 +422,7 @@ void Serial_Poll(void)
 				}
 			}
 
-			if (Cass_Relay==1 && UEFOpen && TapeClock!=OldClock)
+			if (Cass_Relay && UEFOpen && TapeClock != OldClock)
 			{
 #ifndef PROFILING
 
@@ -432,7 +433,7 @@ void Serial_Poll(void)
 			}
 
 			if ((NEW_UEF_BUF!=UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF)==UEF_HTONE || UEFRES_TYPE(NEW_UEF_BUF)==UEF_GAP) &&
-				(Cass_Relay==1) && (UEFOpen))
+				Cass_Relay && UEFOpen)
 			{
 				if (UEFRES_TYPE(UEF_BUF) != UEFRES_TYPE(NEW_UEF_BUF))
 					TapeControlUpdateCounter(TapeClock);
@@ -463,7 +464,7 @@ void Serial_Poll(void)
 					TapeAudio.ByteCount=3;
 				}
 			}
-			if ((Cass_Relay==1) && (RxD<2) && UEFOpen)
+			if (Cass_Relay && (RxD < 2) && UEFOpen)
 			{
 				if (TotalCycles >= TapeTrigger)
 				{
@@ -475,7 +476,7 @@ void Serial_Poll(void)
 
 // CSW stuff			
 
-			if (Cass_Relay == 1 && CSWOpen && TapeClock != OldClock)
+			if (Cass_Relay && CSWOpen && TapeClock != OldClock)
 			{
 				int last_state = csw_state;
 				
@@ -510,7 +511,7 @@ void Serial_Poll(void)
 					TapeAudio.ByteCount=3;
 				}
 			}
-			if ((Cass_Relay==1) && (RxD<2) && CSWOpen)
+			if (Cass_Relay && (RxD < 2) && CSWOpen)
 			{
 				if (TotalCycles >= TapeTrigger)
 				{
@@ -543,12 +544,11 @@ void Serial_Poll(void)
 		}
 	}
 
-	if ((SerialChannel==RS423) && (SerialPortEnabled))
+	if (SerialChannel == RS423 && SerialPortEnabled)
 	{
-
 		if (TouchScreenEnabled)
 		{
-			if (TouchScreenPoll() == true)
+			if (TouchScreenPoll())
 			{
 				if (RxD<2)
 					HandleData(TouchScreenRead());
@@ -556,7 +556,7 @@ void Serial_Poll(void)
 		}
 		else if (EthernetPortEnabled)
 		{	
-			if (IP232Poll() == true)
+			if (IP232Poll())
 			{
 				if (RxD<2)
 					HandleData(IP232Read());
@@ -564,14 +564,14 @@ void Serial_Poll(void)
 		}
 		else
 		{
-			if  ((!bWaitingForStat) && (!bSerialStateChanged)) {
+			if (!bWaitingForStat && !bSerialStateChanged) {
 				WaitCommEvent(hSerialPort,&dwCommEvent,&olStatus);
-				bWaitingForStat=TRUE;
+				bWaitingForStat = true;
 			}
-			if ((!bSerialStateChanged) && (bCharReady) && (!bWaitingForData) && (RxD<2)) {
+			if (!bSerialStateChanged && bCharReady && !bWaitingForData && RxD < 2) {
 				if (!ReadFile(hSerialPort,&SerialBuffer,1,&BytesIn,&olSerialPort)) {
 					if (GetLastError()==ERROR_IO_PENDING) {
-						bWaitingForData=TRUE;
+						bWaitingForData = true;
 					} else {
 						MessageBox(GETHWND,"Serial Port Error",WindowTitle,MB_OK|MB_ICONERROR);
 					}
@@ -580,7 +580,7 @@ void Serial_Poll(void)
 						HandleData((unsigned char)SerialBuffer);
 					} else {
 						ClearCommError(hSerialPort, &dwClrCommError,NULL);
-						bCharReady=FALSE;
+						bCharReady = false;
 					}
 				}
 			}
@@ -594,8 +594,8 @@ void InitThreads(void) {
 		hSerialPort = INVALID_HANDLE_VALUE;
 	}
 
-	bWaitingForData=FALSE;
-	bWaitingForStat=FALSE;
+	bWaitingForData = false;
+	bWaitingForStat = false;
 
 	if ( (SerialPortEnabled) && (SerialPort > 0)) {
 		InitSerialPort(); // Set up the serial port if its enabled.
@@ -607,18 +607,18 @@ void InitThreads(void) {
 		olStatus.hEvent=CreateEvent(NULL,TRUE,FALSE,NULL); // Status event, for WaitCommEvent
 	}
 
-	bSerialStateChanged=FALSE;
+	bSerialStateChanged = false;
 }
 
 unsigned int __stdcall StatThread(void * /* lpParam */) {
 	DWORD dwOvRes=0;
 	do {
-		if ((!TouchScreenEnabled) && (!EthernetPortEnabled) &&
-		    (WaitForSingleObject(olStatus.hEvent,10)==WAIT_OBJECT_0) && (SerialPortEnabled) ) {
+		if (!TouchScreenEnabled && !EthernetPortEnabled &&
+		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled) {
 			if (GetOverlappedResult(hSerialPort,&olStatus,&dwOvRes,FALSE)) {
 				// Event waiting in dwCommEvent
 				if ((dwCommEvent & EV_RXCHAR) && (!bWaitingForData)) { 
-					bCharReady=TRUE;
+					bCharReady = true;
 				}
 				if (dwCommEvent & EV_CTS) {
 					// CTS line change
@@ -627,7 +627,7 @@ unsigned int __stdcall StatThread(void * /* lpParam */) {
 					if (LineStat & MS_CTS_ON) SetACIAStatus(1); else ResetACIAStatus(1); // Keep for TDRE bit
 				}
 			}
-			bWaitingForStat=FALSE;
+			bWaitingForStat = false;
 		}
 		else
 		{
@@ -636,7 +636,7 @@ unsigned int __stdcall StatThread(void * /* lpParam */) {
 		if ((bSerialStateChanged) && (!bWaitingForData)) {
 			// Shut off serial port, and re-initialise
 			InitThreads();
-			bSerialStateChanged=FALSE;
+			bSerialStateChanged = false;
 		}
 		Sleep(0);
 	} while(1);
@@ -650,17 +650,17 @@ unsigned int __stdcall SerialThread(void * /* lpParam */) {
 	// enable status, and doing the monitoring.
 	DWORD spResult;
 	do {
-		if ((!bSerialStateChanged) && (SerialPortEnabled) && (!TouchScreenEnabled) && (!EthernetPortEnabled) && (bWaitingForData)) {
+		if (!bSerialStateChanged && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled && bWaitingForData) {
 			spResult=WaitForSingleObject(olSerialPort.hEvent,INFINITE); // 10ms to respond
 			if (spResult==WAIT_OBJECT_0) {
 				if (GetOverlappedResult(hSerialPort,&olSerialPort,&BytesIn,FALSE)) {
 					// sucessful read, screw any errors.
 					if ((SerialChannel==RS423) && (BytesIn>0)) HandleData((unsigned char)SerialBuffer);
 					if (BytesIn==0) {
-						bCharReady=FALSE;
+						bCharReady = false;
 						ClearCommError(hSerialPort, &dwClrCommError,NULL);
 					}
-					bWaitingForData=FALSE;
+					bWaitingForData = false;
 				}
 			}
 		}
@@ -677,7 +677,7 @@ unsigned int __stdcall SerialThread(void * /* lpParam */) {
 void InitSerialPort(void) {
 	BOOL bPortStat;
 	// Initialise COM port
-	if ( (SerialPortEnabled) && (SerialPort > 0 ) ) {
+	if (SerialPortEnabled && SerialPort > 0) {
 		if (SerialPort==1) pnSerialPort="Com1";
 		if (SerialPort==2) pnSerialPort="Com2";
 		if (SerialPort==3) pnSerialPort="Com3";
@@ -685,8 +685,8 @@ void InitSerialPort(void) {
 		hSerialPort=CreateFile(pnSerialPort,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,0);
 		if (hSerialPort==INVALID_HANDLE_VALUE) {
 			MessageBox(GETHWND,"Could not open specified serial port",WindowTitle,MB_OK|MB_ICONERROR);
-			bSerialStateChanged=TRUE;
-			SerialPortEnabled=FALSE;
+			bSerialStateChanged = true;
+			SerialPortEnabled = false;
 			mainWin->ExternUpdateSerialMenu();
 		}
 		else {
@@ -723,7 +723,7 @@ void CloseUEF(void) {
 	if (UEFOpen) {
 		TapeControlStopRecording(false);
 		uef_close();
-		UEFOpen=0;
+		UEFOpen = false;
 		TxD=0;
 		RxD=0;
 		if (TapeControlEnabled) 
@@ -757,7 +757,7 @@ void LoadUEF(char *UEFName) {
 	SetUnlockTape(UnlockTape);
 
 	if (uef_open(UEFName)) {
-		UEFOpen=1;
+		UEFOpen = true;
 		UEF_BUF=0;
 		TxD=0;
 		RxD=0;
@@ -796,8 +796,8 @@ void SetTapeSpeed(int speed) {
 	TapeClock=NewClock;
 }
 
-void SetUnlockTape(int unlock) {
-	uef_setunlock(unlock);
+void SetUnlockTape(bool unlock) {
+	uef_setunlock(static_cast<int>(unlock));
 }
 
 //*******************************************************************
@@ -949,7 +949,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
 {
 	int Clock;
 
-	TapeControlEnabled = TRUE;
+	TapeControlEnabled = true;
 
 	if (!IsWindow(hwndTapeControl)) 
 	{ 
@@ -985,7 +985,7 @@ void TapeControlCloseDialog()
 	DestroyWindow(hwndTapeControl);
 	hwndTapeControl = NULL;
 	hwndMap = NULL;
-	TapeControlEnabled = FALSE;
+	TapeControlEnabled = false;
 	hCurrentDialog = NULL;
 	map_lines = 0;
 	TapePlaying=true;
@@ -998,7 +998,7 @@ void TapeControlOpenFile(char *UEFName)
 
 	if (TapeControlEnabled) 
 	{
-		if (CSWOpen == 0)
+		if (!CSWOpen)
 		{
 			if (!map_file(UEFName))
 			{
@@ -1078,18 +1078,18 @@ BOOL CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 				case IDC_TCPLAY:
 					TapePlaying=true;
 					TapeControlStopRecording(true);
-					TapeAudio.Enabled=Cass_Relay?TRUE:FALSE;
+					TapeAudio.Enabled = Cass_Relay;
 					return TRUE;
 
 				case IDC_TCSTOP:
 					TapePlaying=false;
 					TapeControlStopRecording(true);
-					TapeAudio.Enabled=FALSE;
+					TapeAudio.Enabled = false;
 					return TRUE;
 
 				case IDC_TCEJECT:
 					TapeControlStopRecording(false);
-					TapeAudio.Enabled=FALSE;
+					TapeAudio.Enabled = false;
 					CloseUEF();
 					CloseCSW();
 					return TRUE;
@@ -1130,7 +1130,7 @@ BOOL CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 									// Create file
 									if (uef_create(UEFTapeName))
 									{
-										UEFOpen=1;
+										UEFOpen = true;
 									}
 									else
 									{
@@ -1147,7 +1147,7 @@ BOOL CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPAR
 						{
 							TapeRecording=true;
 							TapePlaying=false;
-							TapeAudio.Enabled=Cass_Relay?TRUE:FALSE;
+							TapeAudio.Enabled = Cass_Relay;
 						}
 					}
 					return TRUE;
@@ -1234,7 +1234,7 @@ void LoadSerialUEF(FILE *SUEF)
 		}
 		else
 		{
-			Cass_Relay=fgetc(SUEF);
+			Cass_Relay=fgetc(SUEF) != 0;
 			Tx_Rate=fget32(SUEF);
 			Rx_Rate=fget32(SUEF);
 			Clk_Divide=fgetc(SUEF);

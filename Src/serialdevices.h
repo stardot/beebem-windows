@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
  *
  */
 
-extern unsigned char TouchScreenEnabled;
+extern bool TouchScreenEnabled;
 void TouchScreenOpen(void);
 bool TouchScreenPoll(void);
 void TouchScreenClose(void);
@@ -37,11 +37,11 @@ void TouchScreenReadScreen(bool check);
 
 
 
-extern unsigned char EthernetPortEnabled;
-extern unsigned char IP232localhost;
-extern unsigned char IP232custom;
-extern unsigned char IP232mode;
-extern unsigned char IP232raw;
+extern bool EthernetPortEnabled;
+extern bool IP232localhost;
+extern bool IP232custom;
+extern bool IP232mode;
+extern bool IP232raw;
 extern unsigned int IP232customport;
 extern char IP232customip [20];
 

@@ -27,7 +27,7 @@ Boston, MA  02110-1301, USA.
 #ifndef _MUSIC5000_H
 #define _MUSIC5000_H
 
-extern BOOL Music5000Enabled;
+extern bool Music5000Enabled;
 
 #define Music5000Poll(cycles) { if (Music5000Enabled) Music5000Update(cycles); }
 

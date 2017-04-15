@@ -4,7 +4,7 @@
 
 #ifndef IDE_HEADER
 #define IDE_HEADER
-extern char IDEDriveEnabled;
+extern bool IDEDriveEnabled;
 void IDEWrite(int Address, int Value);
 int IDERead(int Address);
 void IDEReset(void);

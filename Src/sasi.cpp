@@ -77,7 +77,7 @@ typedef struct {
 sasi_t sasi;
 FILE *SASIDisc[4] = {0};
 
-extern char SCSIDriveEnabled;
+extern bool SCSIDriveEnabled;
 
 void SASIReset(void)
 {
@@ -157,15 +157,15 @@ int data = 0xff;
 	case 0x02:
 		data = 0x01;
 
-		if (sasi.sel == false) data |= 0x80;
-		if (sasi.req == false) data |= 0x40;
-		if (sasi.cd == true) data |= 0x20;
-		if (sasi.io == true) data |= 0x10;
+		if (!sasi.sel) data |= 0x80;
+		if (!sasi.req) data |= 0x40;
+		if (sasi.cd) data |= 0x20;
+		if (sasi.io) data |= 0x10;
 		if (sasi.irq) data |= 0x08;
-		if (sasi.msg == false) data |= 0x04;
-		if (sasi.bsy == false) data |= 0x02;
-			
+		if (!sasi.msg) data |= 0x04;
+		if (!sasi.bsy) data |= 0x02;
 		break;
+
     case 0x03:
         break;
     }

@@ -30,7 +30,7 @@ Boston, MA  02110-1301, USA.
 #include "music5000.h"
 #include "uefstate.h"
 
-BOOL Music5000Enabled = FALSE;
+bool Music5000Enabled = false;
 extern int SoundVolume;
 
 #define RAM_SIZE              2048
@@ -134,7 +134,7 @@ void Music5000Init()
 	pSoundStreamer = CreateSoundStreamer(46875, 16, 2);
 	if (!pSoundStreamer)
 	{
-		Music5000Enabled = FALSE;
+		Music5000Enabled = false;
 	}
 	else
 	{
@@ -145,7 +145,7 @@ void Music5000Init()
 		SampleBuf = (INT16*)malloc(SampleBufSize * 4);
 		if (SampleBuf == NULL)
 		{
-			Music5000Enabled = FALSE;
+			Music5000Enabled = false;
 		}
 	}
 }

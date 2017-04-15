@@ -26,8 +26,8 @@ extern "C"
 }
 typedef	unsigned char uint8;
 
-extern int Enable_ArmCoPro;
-extern int ArmCoProTube;
+extern bool Enable_ArmCoPro;
+extern bool ArmCoProTube;
 
 class CSprowCoPro 
 {

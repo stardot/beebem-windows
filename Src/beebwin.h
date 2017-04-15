@@ -56,7 +56,7 @@ static unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
 typedef struct KeyMapping {
 	int row;    // Beeb row
 	int col;    // Beeb col
-	int shift;  // Beeb shift state
+	bool shift; // Beeb shift state
 } KeyMapping;
 
 typedef KeyMapping KeyMap[256][2]; // Indices are: [Virt key][shift state]
@@ -65,18 +65,18 @@ extern const char *WindowTitle;
 
 typedef union EightUChars {
 	unsigned char data[8];
-  EightByteType eightbyte;
+	EightByteType eightbyte;
 } EightUChars;
 
 typedef union SixteenUChars {
 	unsigned char data[16];
-  EightByteType eightbytes[2];
+	EightByteType eightbytes[2];
 } SixteenUChars;
  
 typedef struct bmiData
 {
-  BITMAPINFOHEADER	bmiHeader;
-  RGBQUAD			bmiColors[256];
+	BITMAPINFOHEADER	bmiHeader;
+	RGBQUAD			bmiColors[256];
 } bmiData;
 
 struct LEDType {
@@ -144,8 +144,8 @@ class BeebWin  {
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
-    void SetTubeMenu(void);
-    void SelectFDC(void);
+	void SetTubeMenu();
+	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
 	void KillDLLs(void);
 	void UpdateLEDMenu(HMENU hMenu);
@@ -201,23 +201,23 @@ class BeebWin  {
 	HWND GethWnd() { return m_hWnd; };
 	
 	void RealizePalette(HDC) {};
-	void ResetBeebSystem(Model NewModelType, unsigned char TubeStatus, unsigned char LoadRoms);
+	void ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms);
 
 	int StartOfFrame(void);
-	BOOL UpdateTiming(void);
+	bool UpdateTiming();
 	void AdjustSpeed(bool up);
 	void DisplayTiming(void);
 	void DisplayClientAreaText(HDC hdc);
 	void ScaleJoystick(unsigned int x, unsigned int y);
-	void SetMousestickButton(int button);
+	void SetMousestickButton(bool button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
 	void HandleCommand(int MenuId);
 	void SetAMXPosition(unsigned int x, unsigned int y);
-	void Activate(BOOL);
-	void Focus(BOOL);
+	void Activate(bool active);
+	void Focus(bool gotit);
 	void WinSizeChange(int size, int width, int height);
 	void WinPosChange(int x, int y);
-	BOOL IsFrozen(void);
+	bool IsFrozen();
 	void ShowMenu(bool on);
 	void TrackPopupMenu(int x, int y);
 	bool IsFullScreen() { return m_isFullScreen; }
@@ -254,18 +254,18 @@ class BeebWin  {
 	void LoadEmuUEF(FILE *SUEF,int Version);
 
 	unsigned char cols[256];
-    HMENU		m_hMenu;
-	BOOL		m_frozen;
+	HMENU		m_hMenu;
+	bool		m_frozen;
 	char*		m_screen;
 	char*		m_screen_blur;
 	double		m_RealTimeTarget;
-	int		m_ShiftBooted;
-	char		m_TextToSpeechEnabled;
-	char		m_TextViewEnabled;
-	char		m_DisableKeysWindows;
-	char		m_DisableKeysBreak;
-	char		m_DisableKeysEscape;
-	char		m_DisableKeysShortcut;
+	bool		m_ShiftBooted;
+	bool		m_TextToSpeechEnabled;
+	bool		m_TextViewEnabled;
+	bool		m_DisableKeysWindows;
+	bool		m_DisableKeysBreak;
+	bool		m_DisableKeysEscape;
+	bool		m_DisableKeysShortcut;
 
 	int		m_MenuIdWinSize;
 	int		m_XWinSize;
@@ -284,28 +284,28 @@ class BeebWin  {
 	float		m_YRatioAdj;
 	float		m_XRatioCrop;
 	float		m_YRatioCrop;
-	BOOL		m_ShowSpeedAndFPS;
+	bool		m_ShowSpeedAndFPS;
 	int		m_MenuIdSampleRate;
 	int		m_MenuIdVolume;
 	int		m_DiscTypeSelection;
 	int		m_MenuIdTiming;
 	int		m_FPSTarget;
-	BOOL		m_JoystickCaptured;
+	bool		m_JoystickCaptured;
 	JOYCAPS		m_JoystickCaps;
 	int		m_MenuIdSticks;
-	BOOL		m_HideCursor;
-	BOOL		m_FreezeWhenInactive;
+	bool		m_HideCursor;
+	bool		m_FreezeWhenInactive;
 	int		m_MenuIdKeyMapping;
-	int		m_KeyMapAS;
-	int		m_KeyMapFunc;
+	bool		m_KeyMapAS;
+	bool		m_KeyMapFunc;
 	char		m_UserKeyMapPath[_MAX_PATH];
-	int		m_ShiftPressed;
+	bool		m_ShiftPressed;
 	int		m_vkeyPressed[256][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
 	char		m_DiscPath[_MAX_PATH];	// JGH
-	BOOL		m_WriteProtectDisc[2];
-	char		m_WriteProtectOnLoad;
+	bool		m_WriteProtectDisc[2];
+	bool		m_WriteProtectOnLoad;
 	int		m_MenuIdAMXSize;
 	int		m_MenuIdAMXAdjust;
 	int		m_AMXXSize;
@@ -394,8 +394,8 @@ class BeebWin  {
 	int		m_MenuIdAviSkip;
 
 	// DirectX stuff
-	BOOL		m_DXInit;
-	BOOL		m_DXResetPending;
+	bool		m_DXInit;
+	bool		m_DXResetPending;
 
 	// DirectDraw stuff
 	LPDIRECTDRAW		m_DD;			// DirectDraw object
@@ -404,8 +404,8 @@ class BeebWin  {
 	LPDIRECTDRAWSURFACE2	m_DDS2Primary;	// DirectDraw primary surface
 	LPDIRECTDRAWSURFACE	m_DDSOne;		// Offscreen surface 1
 	LPDIRECTDRAWSURFACE2	m_DDS2One;		// Offscreen surface 1
-	BOOL			m_DXSmoothing;
-	BOOL			m_DXSmoothMode7Only;
+	bool			m_DXSmoothing;
+	bool			m_DXSmoothMode7Only;
 	LPDIRECTDRAWCLIPPER	m_Clipper;		// clipper for primary
 
 	// Direct3D9 stuff
@@ -434,12 +434,13 @@ class BeebWin  {
 	static const int MAX_TEXTVIEW_SCREEN_LEN = 128*32;
 	char m_TextViewScreen[MAX_TEXTVIEW_SCREEN_LEN+1];
 
-	BOOL InitClass(void);
+	bool InitClass();
 	void UpdateOptiMenu(void);
 	void CreateBeebWindow(void);
 	void CreateBitmap(void);
 	void InitMenu(void);
 	void UpdateMonitorMenu();
+	void SelectSerialPort(unsigned char PortNumber);
 	void UpdateSerialMenu(HMENU hMenu);
 	void UpdateEconetMenu(HMENU hMenu);
 	void ExternUpdateSerialMenu();
@@ -487,7 +488,7 @@ class BeebWin  {
 	void ToggleWriteProtect(int Drive);
 	void SetWindowAttributes(bool wasFullScreen);
 	void TranslateAMX(void);
-	BOOL PrinterFile(void);
+	bool PrinterFile();
 	void TogglePrinter(void);
 	void TranslatePrinterPort(void);
 	void CaptureVideo(void);
@@ -505,7 +506,7 @@ class BeebWin  {
 	void InitTextView(void);
 	void TextView(void);
 	void TextViewSetCursorPos(int line, int col);
-	BOOL RebootSystem(void);
+	bool RebootSystem();
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);
 	bool ReadKeyMap(char *filename, KeyMap *keymap);
@@ -528,6 +529,8 @@ class BeebWin  {
 	void PrefsSetStringValue(const char *id, const char *str);
 	bool PrefsGetDWORDValue(const char *id, DWORD &dw);
 	void PrefsSetDWORDValue(const char *id, DWORD dw);
+	bool PrefsGetBoolValue(const char *id, bool &b);
+	void PrefsSetBoolValue(const char *id, bool b);
 
 }; /* BeebWin */
 

@@ -96,7 +96,7 @@ char *decodeSingleDataSwapOrDataProcessing(uint32 address, uint32 instruction, c
 char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff)
 {
 	// table of opcode names
-	char *opcodeNames[16] =
+	static const char *opcodeNames[16] =
 	{
 		"and", "eor", "sub", "rsb",
 		"add", "adc", "sbc", "rsc",
@@ -104,20 +104,20 @@ char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff)
 		"orr", "mov", "bic", "mvn"
 	};
 
-	bool useRd[16] =
+	static const bool useRd[16] =
 	{
-		TRUE, TRUE, TRUE, TRUE,
-		TRUE, TRUE, TRUE, TRUE,
-		FALSE, FALSE, FALSE, FALSE,
-		TRUE, TRUE, TRUE, TRUE
+		true,  true,  true,  true,
+		true,  true,  true,  true,
+		false, false, false, false,
+		true,  true,  true,  true
 	};
 
-	bool useRn[16] =
+	static const bool useRn[16] =
 	{
-		TRUE, TRUE, TRUE, TRUE,
-		TRUE, TRUE, TRUE, TRUE,
-		TRUE, TRUE, TRUE, TRUE,
-		TRUE, FALSE, TRUE, FALSE
+		true,  true,  true,  true,
+		true,  true,  true,  true,
+		true,  true,  true,  true,
+		true,  false, true,  false
 	};
 
 	// deduce opcode for specific data processing instruction
@@ -130,12 +130,12 @@ char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff)
 
 	// table of which flags don't need explicit S adding
 	// so that S is not added for tst, teq, cmp and cmn
-	bool opcodeSetsFlagsExplicitly[16] =
+	static const bool opcodeSetsFlagsExplicitly[16] =
 	{
-		TRUE, TRUE, TRUE, TRUE,
-		TRUE, TRUE, TRUE, TRUE,
-		FALSE, FALSE, FALSE, FALSE,
-		TRUE, TRUE, TRUE, TRUE
+		true,  true,  true,  true,
+		true,  true,  true,  true,
+		false, false, false, false,
+		true,  true,  true,  true,
 	};
 
 	// test S flag (set PSR flags), based on bit 20 and whether this is implicit in the opcode
@@ -676,13 +676,12 @@ char *decodeRegisterList(uint32 instruction)
 	uint8 run = 0;
 	char registerNumber[12];
 
-	bool commaNeeded = FALSE;	// comman not needed
+	bool commaNeeded = false;	// comma not needed
 	strcpy(registerList, "");
 	
 	// for each of the 16 registers, r0 to r15
 	for(uint8 regNumber=0; regNumber<16; regNumber++)
 	{
-
 		if(run)
 		{
 			if(getBit(instruction, regNumber) )
@@ -706,7 +705,7 @@ char *decodeRegisterList(uint32 instruction)
 					sprintf(registerNumber, "r%d",regNumber);
 					strcat(registerList, registerNumber);
 
-					commaNeeded = TRUE;
+					commaNeeded = true;
 					run = 0;
 				}
 			}
@@ -716,7 +715,7 @@ char *decodeRegisterList(uint32 instruction)
 				sprintf(registerNumber, "r%d",regNumber);
 				strcat(registerList, registerNumber);
 				run = 0;
-				commaNeeded =TRUE;
+				commaNeeded = true;
 			}
 		}
 		else
@@ -747,7 +746,7 @@ char *decodeRegisterList(uint32 instruction)
 					strcat(registerList, registerNumber);
 					
 					run = 0;
-					commaNeeded = TRUE;
+					commaNeeded = true;
 				}
 			}
 		}
@@ -882,14 +881,14 @@ char *decodeSoftwareInterrupt(uint32 address, uint32 instruction, char *buff)
 
 char *decodeMultiply(uint32 address, uint32 instruction, char *buff)
 {
-	bool accumulate = FALSE;
+	bool accumulate = false;
 
 	// decide whether additional accumulate function from bit 21
 	if( getBit(instruction, 21) )
 	{
 		// multiply and accumulate
 		strcpy(buff, "mla");
-		accumulate = TRUE;		
+		accumulate = true;
 	}
 	else
 	{

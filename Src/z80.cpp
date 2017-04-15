@@ -3051,7 +3051,7 @@ simz80(FASTREG PC)
     return (PC&0xffff)|0x10000;	/* flag non-bios stop */
 }
 
-extern int inROM;
+extern bool inROM;
 
 void z80_NMI_Interrupt(void)
 {
@@ -3060,7 +3060,7 @@ void z80_NMI_Interrupt(void)
     PUSH(pc);
     pc = 0x0066;
     sp = SP;
-    inROM = 1;
+    inROM = true;
 }
 
 void z80_IRQ_Interrupt(void)

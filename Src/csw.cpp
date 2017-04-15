@@ -56,7 +56,7 @@ unsigned long csw_bufflen;
 int csw_byte;
 int csw_pulsecount;
 int bit_count;
-unsigned char CSWOpen = 0;
+bool CSWOpen = false;
 int CSW_BUF;
 int CSW_CYCLES;
 
@@ -142,7 +142,7 @@ void LoadCSW(char *file)
 	
 	strcpy(UEFTapeName, file);
 	
-	CSWOpen = 1;
+	CSWOpen = true;
 	CSW_BUF = 0;
 	TxD = 0;
 	RxD = 0;
@@ -162,7 +162,7 @@ void CloseCSW(void)
 	if (CSWOpen) 
 	{
 		free(csw_buff);
-		CSWOpen = 0;
+		CSWOpen = false;
 		TxD = 0;
 		RxD = 0;
 	}

@@ -78,7 +78,7 @@ scsi_t scsi;
 FILE *SCSIDisc[4] = {0};
 int SCSISize[4];
 
-char SCSIDriveEnabled = 0;
+bool SCSIDriveEnabled = false;
 
 void SCSIReset(void)
 {
@@ -515,8 +515,8 @@ void RequestSense(void)
 		scsi.offset = 0;
 		scsi.blocks = 1;
 		scsi.phase = read;
-		scsi.io = TRUE;
-		scsi.cd = FALSE;
+		scsi.io = true;
+		scsi.cd = false;
 		
 		scsi.status = (scsi.lun << 5) | 0x00;
 		scsi.message = 0x00;
@@ -646,20 +646,19 @@ void Write6(void)
 }
 
 void ModeSense(void)
-
 {
 	scsi.length = DiscModeSense(scsi.cmd, scsi.buffer);
-	
+
 	if (scsi.length > 0) {
 		scsi.offset = 0;
 		scsi.blocks = 1;
 		scsi.phase = read;
-		scsi.io = TRUE;
-		scsi.cd = FALSE;
-		
+		scsi.io = true;
+		scsi.cd = false;
+
 		scsi.status = (scsi.lun << 5) | 0x00;
 		scsi.message = 0x00;
-		
+
 		scsi.req = true;
 	}
 	else
@@ -859,8 +858,8 @@ void Translate(void)
 	scsi.offset = 0;
 	scsi.blocks = 1;
 	scsi.phase = read;
-	scsi.io = TRUE;
-	scsi.cd = FALSE;
+	scsi.io = true;
+	scsi.cd = false;
 	
 	scsi.status = (scsi.lun << 5) | 0x00;
 	scsi.message = 0x00;

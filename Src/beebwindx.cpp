@@ -221,7 +221,7 @@ HRESULT BeebWin::InitSurfaces(void)
 	}
 
 	if (ddrval == DD_OK)
-		m_DXInit = TRUE;
+		m_DXInit = true;
 
 	return ddrval;
 }
@@ -255,7 +255,7 @@ void BeebWin::ResetSurfaces(void)
 		m_DDSPrimary = NULL;
 	}
 
-	m_DXInit = FALSE;
+	m_DXInit = false;
 }
 
 /****************************************************************************/
@@ -417,7 +417,7 @@ HRESULT BeebWin::InitDX9(void)
 
 	if (hr == D3D_OK)
 	{
-		m_DXInit = TRUE;
+		m_DXInit = true;
 	}
 	else
 	{
@@ -454,7 +454,7 @@ void BeebWin::ExitDX9(void)
 		m_pD3D = NULL;
 	}
 
-	m_DXInit = FALSE;
+	m_DXInit = false;
 }
 
 /****************************************************************************/
@@ -508,7 +508,9 @@ void BeebWin::RenderDX9(void)
 /****************************************************************************/
 void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 {
-	static unsigned char LastTeletextEnabled = 255;
+	static bool LastTeletextEnabled = false;
+	static bool First = true;
+
 	WINDOWPLACEMENT wndpl;
 	HRESULT ddrval;
 	HDC hdc;
@@ -528,11 +530,12 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	}
 
 	// Changed to/from teletext mode?
-	if (LastTeletextEnabled != TeletextEnabled)
+	if (LastTeletextEnabled != TeletextEnabled || First)
 	{
 		if (m_DXSmoothing && m_DXSmoothMode7Only)
 			UpdateSmoothing();
 		LastTeletextEnabled = TeletextEnabled;
+		First = false;
 	}
 
 	// Use last stored params?
@@ -593,9 +596,10 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		}
 
 		StretchBlt(hDC, xAdj, yAdj, m_XWinSize - xAdj * 2, win_nlines - yAdj * 2,
-				   m_hDCBitmap, 0, starty,
-				   (TeletextEnabled)?552:ActualScreenWidth, (TeletextEnabled==1)?TTLines:nlines,
-				   SRCCOPY);
+		           m_hDCBitmap, 0, starty,
+		           TeletextEnabled ? 552 : ActualScreenWidth,
+		           TeletextEnabled ? TTLines : nlines,
+		           SRCCOPY);
 
 		if ((DisplayCycles>0) && (hFDCBoard!=NULL))
 		{
@@ -606,7 +610,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	}
 	else
 	{
-		if (m_DXInit == FALSE)
+		if (!m_DXInit)
 			return;
 
 		wndpl.length = sizeof(WINDOWPLACEMENT);
@@ -630,8 +634,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 					pSurface->ReleaseDC(hdc);
 
 					// Scale beeb screen to fill the D3D texture
-					int width = (TeletextEnabled)?552:ActualScreenWidth;
-					int height = (TeletextEnabled)?TTLines:nlines;
+					int width = TeletextEnabled ? 552 : ActualScreenWidth;
+					int height = TeletextEnabled ? TTLines : nlines;
 					//D3DXMatrixScaling(&m_TextureMatrix,
 					//				  800.0f/(float)width, 512.0f/(float)height, 1.0f);
 					D3DXMatrixIdentity(&m_TextureMatrix);
@@ -705,8 +709,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 				// Blit the whole of the secondary buffer onto the screen
 				srcRect.left = 0;
 				srcRect.top = 0;
-				srcRect.right = (TeletextEnabled)?552:ActualScreenWidth;
-				srcRect.bottom = (TeletextEnabled)?TTLines:nlines;
+				srcRect.right = TeletextEnabled ? 552 : ActualScreenWidth;
+				srcRect.bottom = TeletextEnabled ? TTLines : nlines;
 			
 				ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
 				if (ddrval == DDERR_SURFACELOST)
@@ -732,8 +736,9 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	if (aviWriter)
 	{
 		StretchBlt(m_AviDC, 0, 0, m_Avibmi.bmiHeader.biWidth, m_Avibmi.bmiHeader.biHeight,
-				   m_hDCBitmap, 0, starty, (TeletextEnabled)?552:ActualScreenWidth,
-				   (TeletextEnabled==1)?TTLines:nlines, SRCCOPY);
+		           m_hDCBitmap, 0, starty,
+		           TeletextEnabled ? 552 : ActualScreenWidth,
+		           TeletextEnabled ? TTLines : nlines, SRCCOPY);
 
 		HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
 		if (hr != E_UNEXPECTED && FAILED(hr))
@@ -747,8 +752,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 
 	if (m_CaptureBitmapPending)
 	{
-		CaptureBitmap(0, starty, (TeletextEnabled)?552:ActualScreenWidth,
-					  (TeletextEnabled==1)?TTLines:nlines);
+		CaptureBitmap(0, starty, TeletextEnabled ? 552 : ActualScreenWidth,
+		              TeletextEnabled ? TTLines : nlines);
 		m_CaptureBitmapPending = false;
 	}
 }
@@ -773,7 +778,7 @@ void BeebWin::DisplayClientAreaText(HDC hdc)
 		sprintf(fps, "%2.2f %2d", m_RelativeSpeed, (int)m_FramesPerSecond);
 		SetBkMode(hdc,TRANSPARENT);
 		SetTextColor(hdc,0x808080);
-		TextOut(hdc,(TeletextEnabled)?490:580,TextStart,fps,(int)strlen(fps));
+		TextOut(hdc, TeletextEnabled ? 490 : 580, TextStart, fps, (int)strlen(fps));
 	}
 }
 

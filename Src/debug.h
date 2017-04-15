@@ -30,7 +30,7 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include "viastate.h"
 
-extern int DebugEnabled;
+extern bool DebugEnabled;
 
 enum DebugType {
 	DEBUG_NONE,

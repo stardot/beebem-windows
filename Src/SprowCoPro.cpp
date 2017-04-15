@@ -30,8 +30,8 @@ Boston, MA  02110-1301, USA.
 #include "armulator.h"
 #include "SprowCoPro.h"
 
-int Enable_ArmCoPro = 0;
-int ArmCoProTube = 0;
+bool Enable_ArmCoPro = false;
+bool ArmCoProTube = false;
 std::map<int, int> registers;
 DWORD ticks = 0;
 

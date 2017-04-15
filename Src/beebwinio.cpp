@@ -51,7 +51,7 @@ using namespace Gdiplus;
 #define KEYMAP_TOKEN "*** BeebEm Keymap ***"
 
 extern EDCB ExtBoard;
-extern bool DiscLoaded[2]; // Set to TRUE when a disc image has been loaded.
+extern bool DiscLoaded[2]; // Set to true when a disc image has been loaded.
 extern char CDiscName[2][256]; // Filename of disc current in drive 0 and 1;
 extern char CDiscType[2]; // Current disc types
 extern char FDCDLL[256];
@@ -79,7 +79,7 @@ static bool hasFileExt(const char* fileName, const char* fileExt)
 void BeebWin::SetImageName(char *DiscName, int Drive, char DType) {
 	strcpy(CDiscName[Drive],DiscName);
 	CDiscType[Drive]=DType;
-	DiscLoaded[Drive]=TRUE;
+	DiscLoaded[Drive] = true;
 
 	const int maxMenuItemLen = 100;
 	char menuStr[maxMenuItemLen+1];
@@ -110,7 +110,7 @@ void BeebWin::EjectDiscImage(int Drive)
 
 	strcpy(CDiscName[Drive], "");
 	CDiscType[Drive] = 0;
-	DiscLoaded[Drive] = FALSE;
+	DiscLoaded[Drive] = false;
 
 	MENUITEMINFO mii = {0};
 	mii.cbSize = sizeof(mii);
@@ -298,7 +298,7 @@ void BeebWin::NewTapeImage(char *FileName)
 
 /*******************************************************************/
 
-void BeebWin::SelectFDC(void)
+void BeebWin::SelectFDC()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[256];
@@ -387,8 +387,8 @@ void BeebWin::NewDiscImage(int Drive)
 		/* Allow disc writes */
 		if (m_WriteProtectDisc[Drive])
 			ToggleWriteProtect(Drive);
-		DWriteable[Drive]=1;
-		DiscLoaded[Drive]=TRUE;
+		DWriteable[Drive] = true;
+		DiscLoaded[Drive] = true;
 		strcpy(CDiscName[1],FileName);
 	}
 }
@@ -457,15 +457,15 @@ void BeebWin::ToggleWriteProtect(int Drive)
 	// Keep 8271 and 1770 write enable flags in sync
 	if (m_WriteProtectDisc[Drive])
 	{
-		m_WriteProtectDisc[Drive] = 0;
-		DiscWriteEnable(Drive, 1);
-		DWriteable[Drive]=1;
+		m_WriteProtectDisc[Drive] = false;
+		DiscWriteEnable(Drive, true);
+		DWriteable[Drive] = true;
 	}
 	else
 	{
-		m_WriteProtectDisc[Drive] = 1;
-		DiscWriteEnable(Drive, 0);
-		DWriteable[Drive]=0;
+		m_WriteProtectDisc[Drive] = true;
+		DiscWriteEnable(Drive, false);
+		DWriteable[Drive] = false;
 	}
 
 	if (Drive == 0)
@@ -491,11 +491,11 @@ void BeebWin::SetDiscWriteProtects(void)
 }
 
 /****************************************************************************/
-BOOL BeebWin::PrinterFile()
+bool BeebWin::PrinterFile()
 {
 	char StartPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
-	BOOL changed;
+	bool changed;
 	const char* filter = "Printer Output (*.*)\0*.*\0";
 
 	if (strlen(m_PrinterFileName) == 0)
@@ -527,7 +527,7 @@ BOOL BeebWin::PrinterFile()
 /****************************************************************************/
 void BeebWin::TogglePrinter()
 {
-	BOOL FileOK = TRUE;
+	bool FileOK = true;
 	HMENU hMenu = m_hMenu;
 
 	m_printerbufferlen = 0;
@@ -553,9 +553,9 @@ void BeebWin::TogglePrinter()
 					char errstr[200];
 					sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", m_PrinterFileName);
 					if (MessageBox(m_hWnd,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
-						FileOK = FALSE;
+						FileOK = false;
 				}
-				if (FileOK == TRUE)
+				if (FileOK)
 					PrinterEnable(m_PrinterFileName);
 			}
 		}
@@ -604,14 +604,13 @@ void BeebWin::CaptureVideo()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[256];
-	BOOL changed;
 	const char* filter = "AVI File (*.avi)\0*.avi\0";
 
 	PrefsGetStringValue("AVIPath",DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-	changed = fileDialog.Save();
+	bool changed = fileDialog.Save();
 	if (changed)
 	{
 		// Add avi extension
@@ -758,7 +757,8 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 	sprintf(CfgName, "FDCDLL%d", MachineType);
 
 	if (hFDCBoard!=NULL) FreeLibrary(hFDCBoard); 
-	hFDCBoard=NULL; NativeFDC=TRUE;
+	hFDCBoard = NULL;
+	NativeFDC = true;
 
 	if (DLLName == NULL) {
 		if (!PrefsGetStringValue(CfgName,FDCDLL))
@@ -788,7 +788,7 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 				PGetBoardProperties(&ExtBoard);
 				EFDCAddr=ExtBoard.FDCAddress;
 				EDCAddr=ExtBoard.DCAddress;
-				NativeFDC=FALSE; // at last, a working DLL!
+				NativeFDC = false; // at last, a working DLL!
 				InvertTR00=ExtBoard.TR00_ActiveHigh;
 			}
 		} 
@@ -825,9 +825,8 @@ void BeebWin::SetDriveControl(unsigned char value) {
 
 unsigned char BeebWin::GetDriveControl(void) {
 	// Same as above, but in reverse, i.e. reading
-	unsigned char temp,temp2;
-	temp=ReadFDCControlReg();
-	temp2=PGetDriveControl(temp);
+	unsigned char temp=ReadFDCControlReg();
+	unsigned char temp2=PGetDriveControl(temp);
 	return(temp2);
 }
 
@@ -852,7 +851,7 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	// Note about this block: It should only be handled by beebem from uefstate.cpp if
 	// the UEF has been determined to be from BeebEm (Block 046C)
 	fputc(static_cast<unsigned char>(MachineType), SUEF);
-	fputc((NativeFDC)?0:1,SUEF);
+	fputc(NativeFDC ? 0 : 1, SUEF);
 	fputc(TubeEnabled,SUEF);
 	fput16(m_MenuIdKeyMapping,SUEF);
 	if (m_MenuIdKeyMapping == IDM_USERKYBDMAPPING)
@@ -872,8 +871,8 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 	else
 		MachineType = static_cast<Model>(type);
 
-	NativeFDC=(fgetc(SUEF)==0)?TRUE:FALSE;
-	TubeEnabled=fgetc(SUEF);
+	NativeFDC = fgetc(SUEF) == 0;
+	TubeEnabled = fgetc(SUEF) != 0;
 
 	if (Version >= 11)
 	{
@@ -893,7 +892,7 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 		TranslateKeyMapping();
 	}
 
-	mainWin->ResetBeebSystem(MachineType,TubeEnabled,1);
+	mainWin->ResetBeebSystem(MachineType, TubeEnabled, true);
 	mainWin->UpdateModelType();
 }
 
@@ -1287,7 +1286,7 @@ BOOL CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARA
 				{
 					wParam = IDCANCEL;
 				}
-				else if (SHGetPathFromIDList(idList, szExportFolder) == FALSE)
+				else if (!SHGetPathFromIDList(idList, szExportFolder))
 				{
 					MessageBox(hwndDlg, "Invalid folder selected", WindowTitle, MB_OK|MB_ICONWARNING);
 					wParam = IDCANCEL;

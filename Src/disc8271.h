@@ -25,12 +25,12 @@ Boston, MA  02110-1301, USA.
 #define DISC8271_HEADER
 
 extern int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
-extern unsigned char Disc8271Enabled;
+extern bool Disc8271Enabled;
 
 void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks);
 void LoadSimpleDiscImage(char *FileName, int DriveNum,int HeadNum, int Tracks);
-int IsDiscWritable(int DriveNum);
-void DiscWriteEnable(int DriveNum, int WriteEnable);
+bool IsDiscWritable(int DriveNum);
+void DiscWriteEnable(int DriveNum, bool WriteEnable);
 void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks);
 void FreeDiscImage(int DriveNum);
 void Eject8271DiscImage(int DriveNum);

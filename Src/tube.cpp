@@ -54,14 +54,14 @@ Boston, MA  02110-1301, USA.
 
 static int CurrentInstruction;
 unsigned char TubeRam[65536];
-extern int DumpAfterEach;
-unsigned char TubeEnabled,AcornZ80,EnableTube;
+extern bool DumpAfterEach;
+bool TubeEnabled, AcornZ80, EnableTube;
 #ifdef M512COPRO_ENABLED
-unsigned char Tube186Enabled;
+bool Tube186Enabled;
 #endif
 unsigned char TubeMachineType=3;
 
-CycleCountT TotalTubeCycles=0;  
+CycleCountT TotalTubeCycles = 0;
 
 unsigned char old_readHIOAddr = 0;
 unsigned char old_readHTmpData = 0;
@@ -83,7 +83,7 @@ static unsigned char IRQCycles;
 
 unsigned char TubeintStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 unsigned char TubeNMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
-static unsigned int NMILock=0; /* Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done */
+static bool NMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
 
 typedef int int16;
 
@@ -125,8 +125,7 @@ static int TubeCyclesTable[]={
    allow fernangling by memory subsystem */
 unsigned int TubeCycles;
 
-static unsigned char Branched;
-// Branched - 1 if the instruction branched
+static bool Branched; // true if the instruction branched
 
 /* A macro to speed up writes - uses a local variable called 'tmpaddr' */
 #define TUBEREADMEM_FAST(a) ((a<0xfef8)?TubeRam[a]:TubeReadMem(a))
@@ -216,20 +215,19 @@ void UpdateHostR4Interrupt(void) {
 /*-------------------------------------------------------------------*/
 // Torch tube memory/io handling functions
 
-int TorchTubeActive = 0;
-
+bool TorchTubeActive = false;
 
 void UpdateInterrupts()
 {
 	UpdateR1Interrupt();
 	UpdateR3Interrupt();
-    UpdateR4Interrupt();
-    UpdateHostR4Interrupt();
+	UpdateR4Interrupt();
+	UpdateHostR4Interrupt();
 }
 
 unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr) 
 {
-unsigned char TmpData;
+	unsigned char TmpData;
 
 	TmpData = 0xff;
 	
@@ -288,7 +286,7 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 		DebugDisplayTrace(DEBUG_TUBE, true, info);
 	}
 
-	if ( (IOAddr == 0x02) && (IOData == 0xff) ) TorchTubeActive = 1;
+	if (IOAddr == 0x02 && IOData == 0xff) TorchTubeActive = true;
 
 	switch (IOAddr) {
 	case 1:
@@ -327,7 +325,7 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 		if (IOData == 0xaa)
 		{
 			init_z80();
-			Enable_Z80 = 1;
+			Enable_Z80 = true;
 		}
 		break;
 		
@@ -857,21 +855,21 @@ INLINE static void ASLInstrHandler_Acc(void) {
 INLINE static void BCCInstrHandler(void) {
   if (!GETCFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 } /* BCCInstrHandler */
 
 INLINE static void BCSInstrHandler(void) {
   if (GETCFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 } /* BCSInstrHandler */
 
 INLINE static void BEQInstrHandler(void) {
   if (GETZFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 } /* BEQInstrHandler */
 
@@ -884,21 +882,21 @@ INLINE static void BITInstrHandler(int16 operand) {
 INLINE static void BMIInstrHandler(void) {
   if (GETNFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 } /* BMIInstrHandler */
 
 INLINE static void BNEInstrHandler(void) {
   if (!GETZFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 } /* BNEInstrHandler */
 
 INLINE static void BPLInstrHandler(void) {
   if (!GETNFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 }
 
@@ -913,20 +911,20 @@ INLINE static void BRKInstrHandler(void) {
 INLINE static void BVCInstrHandler(void) {
   if (!GETVFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 } /* BVCInstrHandler */
 
 INLINE static void BVSInstrHandler(void) {
   if (GETVFLAG) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else TubeProgramCounter++;
 } /* BVSInstrHandler */
 
 INLINE static void BRAInstrHandler(void) {
     TubeProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
 } /* BRAnstrHandler */
 
 INLINE static void CMPInstrHandler(int16 operand) {
@@ -1413,7 +1411,7 @@ void Reset65C02(void) {
 
   TubeintStatus=0;
   TubeNMIStatus=0;
-  NMILock=0;
+  NMILock = false;
 
   //The fun part, the tube OS is copied from ROM to tube RAM before the processor starts processing
   //This makes the OS "ROM" writable in effect, but must be restored on each reset.
@@ -1482,7 +1480,7 @@ void DoTubeInterrupt(void) {
 /*-------------------------------------------------------------------------*/
 void DoTubeNMI(void) {
   /*cerr << "Doing NMI\n"; */
-  NMILock=1;
+  NMILock = true;
   PushWord(TubeProgramCounter);
   Push(PSR);
   TubeProgramCounter=TubeReadMem(0xfffa) | (TubeReadMem(0xfffb)<<8);
@@ -1494,7 +1492,7 @@ void DoTubeNMI(void) {
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec65C02Instruction(void) {
   static int tmpaddr;
-  static int OldTubeNMIStatus;
+  static unsigned char OldTubeNMIStatus;
   int OldPC;
 
   // Output debug info
@@ -1510,7 +1508,7 @@ void Exec65C02Instruction(void) {
   // cout << "Fetch at " << hex << (TubeProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
   TubeCycles=TubeCyclesTable[CurrentInstruction]; 
   /*Stats[CurrentInstruction]++; */
-  Branched=0;
+  Branched = false;
   switch (CurrentInstruction) {
     case 0x00:
       BRKInstrHandler();
@@ -1674,7 +1672,7 @@ void Exec65C02Instruction(void) {
     case 0x40:
       PSR=Pop(); /* RTI */
       TubeProgramCounter=PopWord();
-      NMILock=0;
+      NMILock = false;
       break;
     case 0x41:
       EORInstrHandler(IndXAddrModeHandler_Data());
@@ -2626,7 +2624,7 @@ void Load65C02UEF(FILE *SUEF) {
 	Dlong=fget32(SUEF);
 	TubeintStatus=fgetc(SUEF);
 	TubeNMIStatus=fgetc(SUEF);
-	NMILock=fgetc(SUEF);
+	NMILock=fgetc(SUEF) != 0;
 }
 
 void Load65C02MemUEF(FILE *SUEF) {

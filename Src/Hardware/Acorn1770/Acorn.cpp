@@ -55,5 +55,5 @@ EXPORT void GetBoardProperties(struct DriveControlBlock *FDBoard) {
 	FDBoard->FDCAddress=0xfe84;
 	FDBoard->DCAddress=0xfe80;
 	FDBoard->BoardName=AcornName;
-	FDBoard->TR00_ActiveHigh=FALSE;
+	FDBoard->TR00_ActiveHigh = false;
 }

@@ -30,19 +30,16 @@ Boston, MA  02110-1301, USA.
 
 extern int trace;
 
-int Enable_Z80 = 0;
-int trace_z80 = 0;
-int debug_z80 = 0;
-int TorchTube = 0;
+bool Enable_Z80 = false;
+bool trace_z80 = false;
+bool debug_z80 = false;
+bool TorchTube = false;
 int PreZPC = 0; // Previous Z80 PC
 
 unsigned char z80_rom[65536L];
 unsigned char z80_ram[65536L];
 
-#define TRUE 1
-#define FALSE 0
-
-int inROM = 1;
+bool inROM = true;
 
 unsigned char ReadZ80Mem(int pc)
 
@@ -51,7 +48,7 @@ unsigned char t;
 
 	if (AcornZ80)
 	{
-		if (pc >= 0x8000) inROM = 0;
+		if (pc >= 0x8000) inROM = false;
 	}
 	
     t = (inROM) ? z80_rom[pc & 0x1fff] : z80_ram[pc & 0xffff];
@@ -162,49 +159,46 @@ WriteLog("%s\n", str);
 }
 
 int in(unsigned int addr)
-
 {
-int value = 0xff;
-int tmp;
-// int c;
+	int value = 0xff;
+	int tmp;
+	// int c;
 
-    addr &= 255;
+	addr &= 255;
 
 	if (AcornZ80)
 	{
-        value = ReadTubeFromParasiteSide(addr);
+		value = ReadTubeFromParasiteSide(addr);
 	}
 	else
 	{
 		if ( (addr == 0x05) || (addr == 0x01) )
 		{
-			value = ReadTorchTubeFromParasiteSide(1);        // Data Port
-
+			value = ReadTorchTubeFromParasiteSide(1); // Data Port
 		}
 
 		if ( (addr == 0x06) || (addr == 0x02) )
 		{
-			value = ReadTorchTubeFromParasiteSide(0);        // Status Port
+			value = ReadTorchTubeFromParasiteSide(0); // Status Port
 			tmp = 0x00;
 			if (value & 128) tmp |= 2;      // Tube data available
 			if (value & 64) tmp |= 128;     // Tube not full
 			value = tmp;
 		}
 
-		if (addr & 4) inROM = 0; else inROM = 1;
-    }
+		inROM = (addr & 4) == 0;
+	}
 	
-    return value;
+	return value;
 }
 
 void out(unsigned int addr, unsigned char value)
-
 {
-    addr &= 255;
-    
+	addr &= 255;
+
 	if (AcornZ80)
 	{
-        WriteTubeFromParasiteSide(addr, value);
+		WriteTubeFromParasiteSide(addr, value);
 	}
 	else
 	{
@@ -212,7 +206,8 @@ void out(unsigned int addr, unsigned char value)
 		{
 			WriteTorchTubeFromParasiteSide(1, value);
 		}
-		if (addr & 4) inROM = 0; else inROM = 1;
+
+		inROM = (addr & 4) == 0;
 	}
 }
 
@@ -254,13 +249,12 @@ void z80_execute()
 }
 
 void init_z80()
-
 {
-char path[256];
-FILE *f;
-int addr, count;
+	char path[256];
+	FILE *f;
+	int addr, count;
 
-    WriteLog("init_z80()\n");
+	WriteLog("init_z80()\n");
 
 	if (AcornZ80)
 	{
@@ -309,16 +303,15 @@ int addr, count;
 		}
 	}
 	
-    inROM = 1;
+	inROM = true;
 
-    sp = 0x00;
-    pc = 0x00;
-    
-/* Clear all registers, PC and SP have already been set			*/
-    af[0]=0; regs[0].bc=0; regs[0].de=0; regs[0].hl=0;
-    af[1]=0; regs[1].bc=0; regs[1].de=0; regs[1].hl=0;
-    ix=0; iy=0; ir=0; regs_sel = 0;
+	sp = 0x00;
+	pc = 0x00;
 
+	// Clear all registers, PC and SP have already been set
+	af[0]=0; regs[0].bc=0; regs[0].de=0; regs[0].hl=0;
+	af[1]=0; regs[1].bc=0; regs[1].de=0; regs[1].hl=0;
+	ix=0; iy=0; ir=0; regs_sel = 0;
 }
 
 void Debug_Z80()
@@ -336,7 +329,7 @@ int s, t, a;
         t += s;
     }
             
-    trace_z80 = 1;
+    trace_z80 = true;
 
     for (a = 0; a < 32; ++a)
     {

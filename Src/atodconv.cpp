@@ -32,7 +32,7 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "uefstate.h"
 
-int JoystickEnabled = 0;
+bool JoystickEnabled = false;
 
 /* X and Y positions for joystick 1 */
 int JoystickX;
@@ -140,14 +140,14 @@ void AtoDInit(void)
 /*--------------------------------------------------------------------------*/
 void AtoDEnable(void)
 {
-	JoystickEnabled = 1;
+	JoystickEnabled = true;
 	AtoDInit();
 }
 
 /*--------------------------------------------------------------------------*/
 void AtoDDisable(void)
 {
-	JoystickEnabled = 0;
+	JoystickEnabled = false;
 	AtoDState.datalatch = 0;
 	AtoDState.status = 0x80; /* busy, conversion not complete */
 	AtoDState.high = 0;

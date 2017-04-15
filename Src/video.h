@@ -63,7 +63,7 @@ void video_dumpstate(void);
 void VideoDoScanLine(void);
 void VideoGetText(char *text, int line);
 
-extern unsigned char TeletextEnabled;
+extern bool TeletextEnabled;
 
 #define VideoPoll(ncycles) if ((VideoTriggerCount)<=TotalCycles) VideoDoScanLine();
 
@@ -74,5 +74,5 @@ extern unsigned char TeletextEnabled;
 void SaveVideoUEF(FILE *SUEF);
 void LoadVideoUEF(FILE *SUEF);
 extern char TeletextStyle;
-extern int THalfMode;
+extern bool THalfMode;
 #endif

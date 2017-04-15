@@ -46,7 +46,7 @@ void BeebWin::InitTextToSpeech(void)
 		if( FAILED( hr ) )
 		{
 			m_SpVoice = NULL;
-			m_TextToSpeechEnabled = 0;
+			m_TextToSpeechEnabled = false;
 			MessageBox(m_hWnd,"Failed to initialise text-to-speech engine\n",
 					   WindowTitle,MB_OK|MB_ICONERROR);
 		}
@@ -577,7 +577,7 @@ void BeebWin::InitTextView(void)
 			NULL, hInst, NULL);
 		if (m_hTextView == NULL)
 		{
-			m_TextViewEnabled = 0;
+			m_TextViewEnabled = false;
 		}
 		else
 		{

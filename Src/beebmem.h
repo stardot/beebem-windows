@@ -42,8 +42,8 @@ typedef enum BankType
 	BankEmpty
 } BankType;
 
-extern int RomWritable[16]; /* Allow writing to banks on an individual basis */
-extern BankType RomBankType[16]; /* Identifies what is in each bank */
+extern bool RomWritable[16]; // Allow writing to banks on an individual basis
+extern BankType RomBankType[16]; // Identifies what is in each bank
 
 extern unsigned char WholeRam[65536];
 extern unsigned char Roms[16][16384];
@@ -56,13 +56,14 @@ extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
 extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
-extern int MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8, HidAdd;
+extern bool MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8;
+extern int HidAdd;
 
 struct CMOSType {
-	unsigned char Enabled;
+	bool Enabled;
 	unsigned char ChipSelect;
 	unsigned char Address;
-    unsigned char StrobedData;
+	unsigned char StrobedData;
 	unsigned char DataStrobe;
 	unsigned char Op;
 };
@@ -108,7 +109,7 @@ unsigned char *BeebMemPtrWithWrap(int a, int n);
 unsigned char *BeebMemPtrWithWrapMo7(int a, int n);
 bool ReadROMFile(const char *filename, ROMConfigFile RomConfig);
 void BeebReadRoms(void);
-void BeebMemInit(unsigned char LoadRoms,unsigned char SkipIntegraBConfig);
+void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);
 
 /* used by debugger */
 bool ReadRomInfo(int bank, RomInfo* info);

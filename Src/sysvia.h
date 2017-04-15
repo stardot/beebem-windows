@@ -32,7 +32,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 
 extern VIAState SysVIAState;
 extern unsigned char IC32State;
-extern unsigned char RTCY2KAdjust;
+extern bool RTCY2KAdjust;
 
 void SysVIAWrite(int Address, int Value);
 int SysVIARead(int Address);
@@ -58,6 +58,6 @@ void PulseSysViaCB1(void);
 
 unsigned char BCD(unsigned char nonBCD);
 
-extern int JoystickButton;
+extern bool JoystickButton;
 
 #endif

@@ -85,7 +85,7 @@ void EconetError(const char *errstr);
 bool EconetPoll(void);
 bool EconetPoll_real(void);
 
-extern char EconetEnabled;
+extern bool EconetEnabled;
 extern bool EconetNMIenabled;
 extern bool EconetStateChanged;
 extern int EconetTrigger;

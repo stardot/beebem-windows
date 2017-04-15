@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "music5000.h"
 #include "disc8271.h"
+#include "via.h"
 #include "sysvia.h"
 #include "uservia.h"
 #include "video.h"
@@ -62,12 +63,12 @@ Boston, MA  02110-1301, USA.
 
 using namespace std;
 
-int CPUDebug=0;
+bool CPUDebug = false;
 // FILE *InstrLog;
 // FILE *osclilog; //=fopen("/oscli.log","wt");
 
 static unsigned int InstrCount;
-int IgnoreIllegalInstructions = 1;
+bool IgnoreIllegalInstructions = true;
 static int CurrentInstruction;
 
 extern CArm *arm;
@@ -85,7 +86,7 @@ int DisplayCycles=0;
 
 unsigned char intStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 unsigned char NMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
-unsigned int NMILock=0; /* Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done */
+bool NMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
 typedef int int16;
 INLINE static void SBCInstrHandler(int16 operand);
 
@@ -182,10 +183,9 @@ bool IntDue=false;
    to it (usually -ve) */
 int CyclesToInt = NO_TIMER_INT_DUE;
 
-static unsigned char Branched;
-// Branched - 1 if the instruction branched
+static bool Branched; // true if the instruction branched
 int OpCodes=2; // 1 = documented only, 2 = commonoly used undocumenteds, 3 = full set
-int BHardware=0; // 0 = all hardware, 1 = basic hardware only
+bool BHardware = false; // false = all hardware, true = basic hardware only
 // 1 if first cycle happened
 
 /* Get a two byte address from the program counter, and then post inc the program counter */
@@ -457,21 +457,21 @@ INLINE static void ASLInstrHandler_Acc(void) {
 INLINE static void BCCInstrHandler(void) {
   if (!GETCFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 } /* BCCInstrHandler */
 
 INLINE static void BCSInstrHandler(void) {
   if (GETCFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 } /* BCSInstrHandler */
 
 INLINE static void BEQInstrHandler(void) {
   if (GETZFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 } /* BEQInstrHandler */
 
@@ -490,21 +490,21 @@ INLINE static void BITImmedInstrHandler(int16 operand) {
 INLINE static void BMIInstrHandler(void) {
   if (GETNFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 } /* BMIInstrHandler */
 
 INLINE static void BNEInstrHandler(void) {
   if (!GETZFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 } /* BNEInstrHandler */
 
 INLINE static void BPLInstrHandler(void) {
   if (!GETNFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 }
 
@@ -526,20 +526,20 @@ INLINE static void BRKInstrHandler(void) {
 INLINE static void BVCInstrHandler(void) {
   if (!GETVFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 } /* BVCInstrHandler */
 
 INLINE static void BVSInstrHandler(void) {
   if (GETVFLAG) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
   } else ProgramCounter++;
 } /* BVSInstrHandler */
 
 INLINE static void BRAInstrHandler(void) {
     ProgramCounter=RelAddrModeHandler_Data();
-    Branched=1;
+    Branched = true;
 } /* BRAnstrHandler */
 
 INLINE static void CMPInstrHandler(int16 operand) {
@@ -1063,10 +1063,8 @@ void Init6502core(void) {
 
   intStatus=0;
   NMIStatus=0;
-  NMILock=0;
-} /* Init6502core */
-
-#include "via.h"
+  NMILock = false;
+}
 
 /*-------------------------------------------------------------------------*/
 void DoInterrupt(void) {
@@ -1080,7 +1078,7 @@ void DoInterrupt(void) {
 /*-------------------------------------------------------------------------*/
 void DoNMI(void) {
   /*cerr << "Doing NMI\n"; */
-  NMILock=1;
+  NMILock = true;
   PushWord(ProgramCounter);
   Push(PSR);
   ProgramCounter=BeebReadMem(0xfffa) | (BeebReadMem(0xfffb)<<8);
@@ -1144,7 +1142,7 @@ void MemoryDump6502(int addr, int count)
 /*-------------------------------------------------------------------------*/
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec6502Instruction(void) {
-	static int OldNMIStatus;
+	static unsigned char OldNMIStatus;
 	int BadCount=0;
 	int OldPC;
 	int loop,loopc;
@@ -1185,7 +1183,7 @@ void Exec6502Instruction(void) {
 			i186_execute(12 * 4);
 #endif
 
-		Branched=0;
+		Branched = false;
 		iFlagJustCleared=false;
 		iFlagJustSet=false;
 		Cycles=0;
@@ -1421,7 +1419,7 @@ void Exec6502Instruction(void) {
 			case 0x40:
 				PSR=Pop(); /* RTI */
 				ProgramCounter=PopWord();
-				NMILock=0;
+				NMILock = false;
 				break;
 			case 0x41:
 				EORInstrHandler(IndXAddrModeHandler_Data());
@@ -2446,7 +2444,7 @@ void Load6502UEF(FILE *SUEF) {
 	Dlong=fget32(SUEF);
 	intStatus=fgetc(SUEF);
 	NMIStatus=fgetc(SUEF);
-	NMILock=fgetc(SUEF);
+	NMILock=fgetc(SUEF) != 0;
 	//AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
 }
 

@@ -57,7 +57,7 @@ typedef enum PSR_Flags
 
 extern int trace;
 extern int trace_186;
-extern int IgnoreIllegalInstructions;
+extern bool IgnoreIllegalInstructions;
 
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;
@@ -65,7 +65,7 @@ extern unsigned int Cycles;
 extern int ProgramCounter;
 extern int PrePC;
 extern CycleCountT TotalCycles;
-extern unsigned int NMILock;
+extern bool NMILock;
 extern int DisplayCycles;
 
 extern int CyclesToInt;
@@ -100,5 +100,5 @@ int i186_execute(int num_cycles);
 #endif
 
 extern int OpCodes;
-extern int BHardware;
+extern bool BHardware;
 #endif

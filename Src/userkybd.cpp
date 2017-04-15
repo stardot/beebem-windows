@@ -49,9 +49,9 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,
 void	OnDrawItem( UINT CtrlID, LPDRAWITEMSTRUCT lpDrawItemStruct );
 void	DrawBorder( HDC hDC, RECT rect, BOOL Depressed );
 void	DrawSides( HDC hDC, RECT rect, COLORREF TopLeft, COLORREF BottomRight );
-void	DrawText( HDC hDC, RECT rect, HWND hWndctrl, COLORREF colour, BOOL Depressed );
+void	DrawText(HDC hDC, RECT rect, HWND hWndctrl, COLORREF colour, bool Depressed);
 COLORREF GetKeyColour( UINT ctrlID );
-HWND	PromptForInput( HWND hwndParent, int doShiftedKey );
+HWND	PromptForInput(HWND hwndParent, bool doShiftedKey);
 void	GetKeysUsed( LPSTR Keys );
 LPSTR	KeyName( UINT Key );
 
@@ -73,10 +73,10 @@ HWND	hwndShift;      // Shift check box handle
 
 int		BBCRow;			// Used to store the Row and Col values while we wait 
 int		BBCCol;			// for a key press from the User.
-BOOL	WaitingForKey = FALSE;	// True while waiting for a key to be pressed.
+bool	WaitingForKey = false; // true while waiting for a key to be pressed.
 HBRUSH	hFunctionBrush;	// The brush that has to be passed back for coloured keys.
 HFONT	hGetkeyFont;	// The Font used by the Getkey prompt window.
-int		doingShifted;   // Selecting shifted or unshifted key press
+bool	doingShifted;   // Selecting shifted or unshifted key press
 
 // Initialised to defaultMapping
 KeyMap UserKeymap;
@@ -121,14 +121,13 @@ void SetKeyColour( COLORREF aColour )
 
 void ShowKeyUp( void )
 {
-	if ( WaitingForKey  )
+	if (WaitingForKey)
 	{
-		WaitingForKey = FALSE;
+		WaitingForKey = false;
 
 		// Show the key as not depressed, ie normal.
 		SetKeyColour( OldColour );
-    }
-
+	}
 } // ShowKeyUp.
 
 /****************************************************************************/
@@ -148,34 +147,32 @@ void ShowKeyDown( HWND hwnd, UINT ctrlID, HWND hWndCtrl )
 
 	hWndBBCKey  = hWndCtrl;
 	selectedCtrlID = ctrlID;
-	WaitingForKey = TRUE;
+	WaitingForKey = true;
 	
 	// Now ask the user to input he PC key to assign to the BBC key.
 	if ( hwndGetkey != NULL )
 		SendMessage( hwndGetkey, WM_CLOSE, 0, 0L );
 
 	// Start the Getkey prompt window.
-	hwndGetkey = PromptForInput( hwnd, 0 );
+	hwndGetkey = PromptForInput(hwnd, false);
 
 } // ShowKeyDown
 
 /****************************************************************************/
-void SetBBCKeyForVKEY( int Key, int shift )
+void SetBBCKeyForVKEY(int Key, bool shift)
 {
 	if (Key >= 0 && Key < 256)
 	{
-		UserKeymap[Key][shift].row = BBCRow;
-		UserKeymap[Key][shift].col = BBCCol;
-		UserKeymap[Key][shift].shift = doingShifted;
+		UserKeymap[Key][static_cast<int>(shift)].row = BBCRow;
+		UserKeymap[Key][static_cast<int>(shift)].col = BBCCol;
+		UserKeymap[Key][static_cast<int>(shift)].shift = doingShifted;
 
 		//char info[256];
 		//sprintf(info, "SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
 		//		Key, shift, BBCRow, BBCCol, doingShifted);
 		//OutputDebugString(info);
 	}
-
-} // SetBBCKeyForVKEY
-
+}
 
 /****************************************************************************/
 
@@ -277,7 +274,7 @@ void DrawBorder( HDC hDC, RECT rect, BOOL Depressed )
 
 /****************************************************************************/
 
-void DrawText( HDC hDC, RECT rect, HWND hWndctrl, COLORREF colour, BOOL Depressed )
+void DrawText(HDC hDC, RECT rect, HWND hWndctrl, COLORREF colour, bool Depressed)
 {
 	SIZE Size;
 	CHAR text[10];
@@ -374,7 +371,7 @@ void OnDrawItem( UINT CtrlID, LPDRAWITEMSTRUCT lpDrawItemStruct )
 
 /****************************************************************************/
 
-HWND PromptForInput( HWND hwndParent, int doShiftedKey )
+HWND PromptForInput(HWND hwndParent, bool doShiftedKey)
 {
 	int Error;
 	HWND hwnd;
@@ -437,8 +434,7 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 								LPARAM lParam)	   // additional information
 {
 #define IDI_TEXT 100
-	BOOL checkShifted = FALSE;
-	int shift;
+	bool checkShifted = false;
 
 	switch( message )
 	{
@@ -496,7 +492,7 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 		{
 			// Respond to the OK button click
 			PostMessage( hWnd, WM_CLOSE, 0, 0L );
-			checkShifted = TRUE;
+			checkShifted = true;
 		}
 		else // shift checkbox
 		{
@@ -510,13 +506,13 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 		if (uParam != 255)
 		{
 			// Assign the BBC key to the PC key.
-			shift = (SendMessage(hwndShift, BM_GETCHECK, 0, 0) == BST_CHECKED) ? 1 : 0;
+			bool shift = SendMessage(hwndShift, BM_GETCHECK, 0, 0) == BST_CHECKED;
 			SetBBCKeyForVKEY( (int) uParam, shift);
 		
 			// Close the window.
 			PostMessage( hWnd, WM_CLOSE, 0, 0L );
 
-			checkShifted = TRUE;
+			checkShifted = true;
 		}
 		break;
 
@@ -531,7 +527,7 @@ LRESULT CALLBACK GetKeyWndProc( HWND hWnd,		   // window handle
 
 		// Do shifted key
 		if (!doingShifted)
-			hwndGetkey = PromptForInput( GetParent(hWnd), 1 );
+			hwndGetkey = PromptForInput(GetParent(hWnd), true);
 	}
 
 	return FALSE; // Return zero because we have processed this message.

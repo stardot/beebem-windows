@@ -46,7 +46,7 @@ int RTC_bit = 0;
 int RTC_cmd = 0;
 int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
 unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
-int RTC_Enabled = 0;
+bool RTC_Enabled = false;
 void RTCWrite(int Value, int lastValue);
 
 bool mBreakOutWindow = false; 
@@ -59,8 +59,8 @@ static HWND hwndGetBitKey;
 extern HWND hCurrentDialog;
 
 /* AMX mouse (see uservia.h) */
-int AMXMouseEnabled = 0;
-int AMXLRForMiddle = 0;
+bool AMXMouseEnabled = false;
+bool AMXLRForMiddle = false;
 int AMXTrigger = 0;
 int AMXButtons = 0;
 int AMXTargetX = 0;
@@ -69,7 +69,7 @@ int AMXCurrentX = 0;
 int AMXCurrentY = 0;
 
 /* Printer port */
-int PrinterEnabled = 0;
+bool PrinterEnabled = false;
 int PrinterTrigger = 0;
 static char PrinterFileName[256];
 static FILE *PrinterFileHandle = NULL;
@@ -80,9 +80,9 @@ static void SRPoll();
 static void UpdateSRState(bool SRrw);
 
 /* SW RAM board */
-unsigned char SWRAMBoardEnabled = 0;
+bool SWRAMBoardEnabled = false;
 
-extern int DumpAfterEach;
+extern bool DumpAfterEach;
 /* My raw VIA state */
 VIAState UserVIAState;
 
@@ -185,7 +185,7 @@ void UserVIAWrite(int Address, int Value) {
         UserVIAState.irb&=0x7f;
       }
       UpdateIFRTopBit();
-      UserVIAState.timer1hasshot=0; //Added by K.Lowe 24/08/03
+      UserVIAState.timer1hasshot = false; // Added by K.Lowe 24/08/03
       break;
 
     case 7:
@@ -210,7 +210,7 @@ void UserVIAWrite(int Address, int Value) {
       UserVIAState.timer2c=UserVIAState.timer2l * 2 + 1;
       UserVIAState.ifr &=0xdf; /* clear timer 2 ifr */
       UpdateIFRTopBit();
-      UserVIAState.timer2hasshot=0; //Added by K.Lowe 24/08/03
+      UserVIAState.timer2hasshot = false; // Added by K.Lowe 24/08/03
       break;
 
     case 10:
@@ -395,7 +395,7 @@ void UserVIA_poll_real(void) {
 
   if (UserVIAState.timer1c<-2 && !t1int) {
     t1int=true;
-    if ((UserVIAState.timer1hasshot==0) || (UserVIAState.acr & 0x40)) {
+    if (!UserVIAState.timer1hasshot || (UserVIAState.acr & 0x40)) {
       /*cerr << "UserVIA timer1c - int at " << TotalCycles << "\n"; */
       UserVIAState.ifr|=0x40; /* Timer 1 interrupt */
       UpdateIFRTopBit();
@@ -406,8 +406,8 @@ void UserVIA_poll_real(void) {
       if ((UserVIAState.ier & 0x40) && CyclesToInt == NO_TIMER_INT_DUE) {
         CyclesToInt = 3 + UserVIAState.timer1c;
       }
-      UserVIAState.timer1hasshot=1;
-	}
+      UserVIAState.timer1hasshot = true;
+    }
   }
 
   if (UserVIAState.timer1c<-3) {
@@ -417,14 +417,14 @@ void UserVIA_poll_real(void) {
   }
 
   if (UserVIAState.timer2c<-2) {
-    if (UserVIAState.timer2hasshot==0) {
+    if (!UserVIAState.timer2hasshot) {
       /* cerr << "UserVIA timer2c - int\n"; */
       UserVIAState.ifr|=0x20; /* Timer 2 interrupt */
       UpdateIFRTopBit();
       if ((UserVIAState.ier & 0x20) && CyclesToInt == NO_TIMER_INT_DUE) {
         CyclesToInt = 3 + UserVIAState.timer2c;
       }
-      UserVIAState.timer2hasshot=1; // Added by K.Lowe 24/08/03
+      UserVIAState.timer2hasshot = true; // Added by K.Lowe 24/08/03
     }
   }
 
@@ -602,7 +602,7 @@ void PrinterEnable(char *FileName) {
 
 	if (FileName == NULL)
 	{
-		PrinterEnabled = 1;
+		PrinterEnabled = true;
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
 		return;
 	}
@@ -621,7 +621,7 @@ void PrinterEnable(char *FileName) {
 	}
 	else
 	{
-		PrinterEnabled = 1;
+		PrinterEnabled = true;
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
 	}
 }
@@ -634,7 +634,7 @@ void PrinterDisable() {
 		PrinterFileHandle = NULL;
 	}
 
-	PrinterEnabled = 0;
+	PrinterEnabled = false;
 	ClearTrigger(PrinterTrigger);
 }
 /*-------------------------------------------------------------------------*/

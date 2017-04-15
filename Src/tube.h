@@ -31,11 +31,11 @@ Boston, MA  02110-1301, USA.
 extern unsigned char R1Status;
 void ResetTube(void);
 
-extern unsigned char EnableTube,TubeEnabled,AcornZ80;
+extern bool EnableTube, TubeEnabled, AcornZ80;
 #ifdef M512COPRO_ENABLED
-extern unsigned char Tube186Enabled;
+extern bool Tube186Enabled;
 #endif
-extern int TorchTubeActive;
+extern bool TorchTubeActive;
 extern int TubeProgramCounter;
 const int TubeBufferLength = 24;
 extern unsigned char TubeintStatus; /* bit set (nums in IRQ_Nums) if interrupt being caused */

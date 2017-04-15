@@ -39,7 +39,7 @@ Offset  Description                 Access
 #include "main.h"
 #include "beebmem.h"
 
-char TeleTextAdapterEnabled=0;
+bool TeleTextAdapterEnabled = false;
 int TeleTextStatus = 0xef;
 bool TeleTextInts = false;
 int rowPtrOffset = 0x00;

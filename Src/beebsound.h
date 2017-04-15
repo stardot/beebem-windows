@@ -37,13 +37,13 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 
-extern int SoundDefault; // Default sound state (enabled/disabled via sound menu)
-extern int SoundEnabled;    /* Sound on/off flag - will be off if DirectSound init fails */
-extern int RelaySoundEnabled; // Relay Click noise enable
-extern int DiscDriveSoundEnabled; // Disc drive sound enable
+extern bool SoundDefault; // Default sound state (enabled/disabled via sound menu)
+extern bool SoundEnabled; // Sound on/off flag - will be off if DirectSound init fails
+extern bool RelaySoundEnabled; // Relay Click noise enable
+extern bool DiscDriveSoundEnabled; // Disc drive sound enable
 extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
 extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
-extern char SoundExponentialVolume;
+extern bool SoundExponentialVolume;
 
 extern int SoundTrigger; /* Cycle based trigger on sound */
 extern double SoundTuning;
@@ -51,10 +51,10 @@ extern double SoundTuning;
 void SoundInit();
 void SoundReset();
 
-/* Called in sysvia.cc when a write to one of the 76489's registers occurs */
+// Called in sysvia.cpp when a write to one of the 76489's registers occurs
 void Sound_RegWrite(int Value);
 void DumpSound(void);
-void ClickRelay(unsigned char RState);
+void ClickRelay(bool RelayState);
 
 #define SAMPLE_RELAY_ON         0
 #define SAMPLE_RELAY_OFF        1
@@ -85,12 +85,12 @@ struct AudioType {
 
 extern struct AudioType TapeAudio;
 extern bool TapeSoundEnabled;
-extern int SoundChipEnabled;
+extern bool SoundChipEnabled;
 void SoundChipReset(void);
 void SwitchOnSound(void);
 void LoadSoundUEF(FILE *SUEF);
 void SaveSoundUEF(FILE *SUEF);
-extern int PartSamples;
+extern bool PartSamples;
 extern int SBSize;
 
 #endif

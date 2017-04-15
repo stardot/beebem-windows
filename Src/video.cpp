@@ -60,7 +60,7 @@ using namespace std;
 */
 EightUChars FastTable[256];
 SixteenUChars FastTableDWidth[256]; /* For mode 4,5,6 */
-int FastTable_Valid=0;
+bool FastTable_Valid = false;
 
 typedef void (*LineRoutinePtr)(void);
 LineRoutinePtr LineRoutine;
@@ -97,9 +97,9 @@ long ScreenAdjust=0; // Mode 7 Defaults.
 long VScreenAdjust=0;
 int VStart,HStart;
 unsigned char HSyncModifier=9;
-unsigned char TeletextEnabled=0;
+bool TeletextEnabled = false;
 char TeletextStyle=1; // Defines wether teletext will skip intermediate lines in order to speed up
-int THalfMode=0; // 1 if to use half-mode (TeletextStyle=1 all the time)
+bool THalfMode = false; // set true to use half-mode (TeletextStyle=1 all the time)
 int CurY=-1;
 FILE *crtclog;
 
@@ -117,13 +117,13 @@ typedef struct {
   int LastPixmapLine; /* The last pixmap line where something is visible.  Used to eliminate the 
                           blank virtical retrace lines at the bottom of the screen.  */
   int PreviousLastPixmapLine; /* The last pixmap line on the previous frame */
-  int IsTeletext; /* This frame is a teletext frame - do things differently */
+  bool IsTeletext; /* This frame is a teletext frame - do things differently */
   unsigned char *DataPtr;  /* Pointer into host memory of video data */
 
   int CharLine;   /* 6845 counts in characters vertically - 0 at the top , incs by 1 - -1 means we are in the bit before the actual display starts */
   int InCharLineUp; /* Scanline within a character line - counts up*/
   int VSyncState; // Cannot =0 in MSVC $NRM; /* When >0 VSync is high */
-  int IsNewTVFrame; /* Specifies the start of a new TV frame, following VSync (used so we only calibrate speed once per frame) */
+  bool IsNewTVFrame; // Specifies the start of a new TV frame, following VSync (used so we only calibrate speed once per frame)
 } VideoStateT;
 
 static  VideoStateT VideoState;
@@ -134,10 +134,10 @@ int VideoTriggerCount=9999; /* Number of cycles before next scanline service */
 /* character is (valu &127)-32 */
 static unsigned int EM7Font[3][96][20]; // 20 rows to account for "half pixels"
 
-static int Mode7FlashOn=1; /* True if a flashing character in mode 7 is on */
-static int Mode7DoubleHeightFlags[80]; /* Pessimistic size for this flags - if 1 then corresponding character on NEXT line is top half */
-static int CurrentLineBottom=0;
-static int NextLineBottom=0; // 1 if the next line of double height should be bottoms only
+static bool Mode7FlashOn = true; // true if a flashing character in mode 7 is on
+static bool Mode7DoubleHeightFlags[80]; // Pessimistic size for this flags - if true then corresponding character on NEXT line is top half
+static bool CurrentLineBottom = false;
+static bool NextLineBottom = false; // true if the next line of double height should be bottoms only
 
 /* Flash every half second(?) i.e. 25 x 50Hz fields */
 // No. On time is longer than off time. - according to my datasheet, its 0.75Hz with 3:1 ON:OFF ratio. - Richard Gellman
@@ -147,7 +147,7 @@ static int NextLineBottom=0; // 1 if the next line of double height should be bo
 #define MODE7OFFFIELDS 13
 unsigned char CursorOnFields,CursorOffFields;
 int CursorFieldCount=32;
-unsigned char CursorOnState=1;
+bool CursorOnState = true;
 int Mode7FlashTrigger=MODE7ONFIELDS;
 
 /* If 1 then refresh on every display, else refresh every n'th display */
@@ -499,7 +499,7 @@ static void DoFastTable(void) {
       } else {
         DoFastTable2XStep2();
       }
-      FastTable_Valid=1;     
+      FastTable_Valid = true;
       break;
 
     case 4:
@@ -508,7 +508,7 @@ static void DoFastTable(void) {
       } else {
         DoFastTable4XStep4();
       }
-      FastTable_Valid=1;     
+      FastTable_Valid = true;
       break;
 
     case 16:
@@ -517,7 +517,7 @@ static void DoFastTable(void) {
       } else {
         DoFastTable16XStep8();
       }
-      FastTable_Valid=1;
+      FastTable_Valid = true;
       break;
 
     default:
@@ -529,7 +529,7 @@ static void DoFastTable(void) {
 #define BEEB_DOTIME_SAMPLESIZE 50
 
 static void VideoStartOfFrame(void) {
-  static int InterlaceFrame=0;
+  static bool InterlaceFrame = false;
   int CurStart;
   int IL_Multiplier;
 #ifdef BEEB_DOTIME
@@ -573,7 +573,7 @@ static void VideoStartOfFrame(void) {
   /* FrameNum is determined by the window handler */
   if (mainWin && VideoState.IsNewTVFrame)	// RTW - only calibrate timing once per frame
   {
-    VideoState.IsNewTVFrame = 0;
+    VideoState.IsNewTVFrame = false;
 #ifdef WIN32
     FrameNum = mainWin->StartOfFrame();
 #else
@@ -583,23 +583,36 @@ static void VideoStartOfFrame(void) {
     }
 #endif
 
-	CursorFieldCount--;
+    CursorFieldCount--;
     Mode7FlashTrigger--;
-    InterlaceFrame^=1;
+    InterlaceFrame = !InterlaceFrame;
   }
 
   // Cursor update for blink. I thought I'd put it here, as this is where the mode 7 flash field thingy is too
   // - Richard Gellman
   if (CursorFieldCount<0) {
     CurStart = CRTC_CursorStart & 0x60;
-    // 0 is cursor displays, but does not blink
-    // 32 is no cursor
-    // 64 is 1/16 fast blink
-    // 96 is 1/32 slow blink
-    if (CurStart==0) { CursorFieldCount=CursorOnFields; CursorOnState=1; }
-    if (CurStart==32) { CursorFieldCount=CursorOffFields; CursorOnState=0; }
-    if (CurStart==64) { CursorFieldCount=8; CursorOnState^=1; }
-    if (CurStart==96) { CursorFieldCount=16; CursorOnState^=1; }
+
+    if (CurStart == 0) {
+      // 0 is cursor displays, but does not blink
+      CursorFieldCount = CursorOnFields;
+      CursorOnState = true;
+    }
+    else if (CurStart == 32) {
+      // 32 is no cursor
+      CursorFieldCount = CursorOffFields;
+      CursorOnState = false;
+    }
+    else if (CurStart == 64) {
+      // 64 is 1/16 fast blink
+      CursorFieldCount = 8;
+      CursorOnState = !CursorOnState;
+    }
+    else if (CurStart == 96) {
+      // 96 is 1/32 slow blink
+      CursorFieldCount = 16;
+      CursorOnState = !CursorOnState;
+    }
   }
 
   // RTW - The meaning of CharLine has changed: -1 no longer means that we are in the vertical
@@ -608,7 +621,7 @@ static void VideoStartOfFrame(void) {
   VideoState.CharLine=0;
   VideoState.InCharLineUp=0;
   
-  VideoState.IsTeletext=(VideoULA_ControlReg &2)>0;
+  VideoState.IsTeletext = (VideoULA_ControlReg & 2) != 0;
   if (!VideoState.IsTeletext) {
     VideoState.Addr=VideoState.StartAddr=CRTC_ScreenStartLow+(CRTC_ScreenStartHigh<<8);
   } else {
@@ -619,10 +632,10 @@ static void VideoStartOfFrame(void) {
     tmphigh&=255;
     VideoState.Addr=VideoState.StartAddr=CRTC_ScreenStartLow+(tmphigh<<8);
 
-	// O aye. this is the mode 7 flash section is it? Modified for corrected flash settings - Richard Gellman
+    // O aye. this is the mode 7 flash section is it? Modified for corrected flash settings - Richard Gellman
     if (Mode7FlashTrigger<0) {
-		Mode7FlashTrigger=(Mode7FlashOn)?MODE7OFFFIELDS:MODE7ONFIELDS;
-      Mode7FlashOn^=1; /* toggle flash state */
+      Mode7FlashTrigger = Mode7FlashOn ? MODE7OFFFIELDS : MODE7ONFIELDS;
+      Mode7FlashOn = !Mode7FlashOn; // toggle flash state
     }
   }
 
@@ -721,17 +734,17 @@ static void DoMode7Row(void) {
   unsigned int ForegroundPending=Foreground;
   unsigned int ActualForeground;
   unsigned int Background=mainWin->cols[0];
-  int Flash=0; /* i.e. steady */
-  int DoubleHeight=0; /* Normal */
-  int Graphics;
-  int NextGraphics=0; /* I.e. alpha */
-  int Separated=0; /* i.e. continuous graphics */
-  int HoldGraph;
-  int NextHoldGraph=0; /* I.e. don't hold graphics */
+  bool Flash = false; // i.e. steady
+  bool DoubleHeight = false; // Normal
+  bool Graphics;
+  bool NextGraphics = false; // i.e. alpha
+  bool Separated = false; // i.e. continuous graphics
+  bool HoldGraph;
+  bool NextHoldGraph = false; // i.e. don't hold graphics
   int HoldGraphChar;
   int NextHoldGraphChar=32; // the character to "hold" during control codes
-  int HoldSeparated;
-  int NextHoldSeparated=0; // Separated graphics mode in force when grapics held
+  bool HoldSeparated;
+  bool NextHoldSeparated = false; // Separated graphics mode in force when grapics held
   unsigned int CurrentCol[20]={0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff
   ,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff};
   int CurrentLen[20]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -753,12 +766,12 @@ static void DoMode7Row(void) {
     Graphics=NextGraphics;
     byte=CurrentPtr[CurrentChar]; 
     if (byte<32) byte+=128; // fix for naughty programs that use 7-bit control codes - Richard Gellman
-    if ((byte & 32) && (Graphics)){
+    if ((byte & 32) && Graphics) {
       NextHoldGraphChar=byte;
       NextHoldSeparated=Separated;
     }
     if ((byte>=128) && (byte<=159)) {
-      if (HoldGraph!=1 && byte!=158) NextHoldGraphChar=32; // SAA5050 teletext rendering bug
+      if (!HoldGraph && byte != 158) NextHoldGraphChar = 32; // SAA5050 teletext rendering bug
       switch (byte) {
         case 129:
         case 130:
@@ -768,25 +781,25 @@ static void DoMode7Row(void) {
         case 134:
         case 135:
           ForegroundPending=mainWin->cols[byte-128];
-          NextGraphics=0;
+          NextGraphics = false;
           NextHoldGraphChar=32;
           break;
 
         case 136:
-          Flash=1;
+          Flash = true;
           break;
 
         case 137:
-          Flash=0;
+          Flash = false;
           break;
 
         case 140:
-          DoubleHeight=0;
+          DoubleHeight = false;
           break;
 
         case 141:
-          if (!CurrentLineBottom) NextLineBottom=1;
-          DoubleHeight=1;
+          if (!CurrentLineBottom) NextLineBottom = true;
+          DoubleHeight = true;
           break;
 
         case 145:
@@ -797,7 +810,7 @@ static void DoMode7Row(void) {
         case 150:
         case 151:
           ForegroundPending=mainWin->cols[byte-144];
-          NextGraphics=1;
+          NextGraphics = true;
           break;
 
         case 152: /* Conceal display - not sure about this */
@@ -806,11 +819,11 @@ static void DoMode7Row(void) {
           break;
 
         case 153:
-          Separated=0;
+          Separated = false;
           break;
 
         case 154:
-          Separated=1;
+          Separated = true;
           break;
 
         case 156:
@@ -822,17 +835,17 @@ static void DoMode7Row(void) {
           break;
 
         case 158:
-          NextHoldGraph=1;
-          HoldGraph=1;
+          NextHoldGraph = true;
+          HoldGraph = true;
           break;
 
         case 159:
-          NextHoldGraph=0;
+          NextHoldGraph = false;
           break;
       } /* Special character switch */
       // This next line hides any non double height characters on the bottom line
-      /* Fudge so that the special character is just displayed in background */
-      if ((HoldGraph==1) && (Graphics==1)){
+      // Fudge so that the special character is just displayed in background
+      if (HoldGraph && Graphics) {
         byte=HoldGraphChar;
         FontTypeIndex=HoldSeparated?2:1;
       } else {
@@ -882,7 +895,7 @@ static void DoMode7Row(void) {
         }
       } /* Scanline for */
       CurrentX+=12*XStep;
-      Mode7DoubleHeightFlags[CurrentChar]=1; /* Not double height - so if the next line is double height it will be top half */
+      Mode7DoubleHeightFlags[CurrentChar] = true; // Not double height - so if the next line is double height it will be top half
     } else {
       int ActualScanLine;
       /* Double height! */
@@ -904,7 +917,7 @@ static void DoMode7Row(void) {
         } /* Scanline for */
         CurrentX+=XStep;
       } /* Pixel within byte */
-      Mode7DoubleHeightFlags[CurrentChar]^=1; /* Not double height - so if the next line is double height it will be top half */
+      Mode7DoubleHeightFlags[CurrentChar] = !Mode7DoubleHeightFlags[CurrentChar]; // Not double height - so if the next line is double height it will be top half
     }
     Foreground=ForegroundPending;
   } /* character loop */
@@ -915,7 +928,7 @@ static void DoMode7Row(void) {
       mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
   }
   CurrentLineBottom=NextLineBottom;
-  NextLineBottom=0;
+  NextLineBottom = false;
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -929,7 +942,7 @@ static void LowLevelDoScanLine() {
 void RedoMPTR(void) {
 	if (VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrapMo7(ova,ovn);
 	if (!VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrap(ova,ovn);
-	//FastTable_Valid=0;
+	// FastTable_Valid = false;
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -986,7 +999,7 @@ void VideoDoScanLine(void) {
           mainWin->doHorizLine(0, l, -36, 800);
         mainWin->updateLines(0,(500/TeletextStyle));
       }
-	  VideoState.IsNewTVFrame = 1;
+      VideoState.IsNewTVFrame = true;
       VideoStartOfFrame();
       VideoState.PreviousLastPixmapLine=VideoState.PixmapLine;
       VideoState.PixmapLine=0;
@@ -1018,7 +1031,7 @@ void VideoDoScanLine(void) {
       VideoState.PreviousLastPixmapLine=VideoState.LastPixmapLine;
       VideoState.LastPixmapLine=0;
       VideoState.PixmapLine=0;
-      VideoState.IsNewTVFrame = 1;
+      VideoState.IsNewTVFrame = true;
 
       SysVIATriggerCA1Int(1);
       VideoState.VSyncState=(CRTC_SyncWidth>>4);
@@ -1112,16 +1125,15 @@ void AdjustVideo() {
 }
 /*-------------------------------------------------------------------------------------------------------------*/
 void VideoInit(void) {
-//  char *environptr;
   VideoStartOfFrame();
   ova=0x3000; ovn=640;
   VideoState.DataPtr=BeebMemPtrWithWrap(0x3000,640);
   SetTrigger(99,VideoTriggerCount); /* Give time for OS to set mode up before doing anything silly */
-  FastTable_Valid=0;
+  FastTable_Valid = false;
   BuildMode7Font();
 
 #ifndef WIN32
-  environptr=getenv("BeebVideoRefreshFreq");
+  char *environptr=getenv("BeebVideoRefreshFreq");
   if (environptr!=NULL) Video_RefreshFrequency=atoi(environptr);
   if (Video_RefreshFrequency<1) Video_RefreshFrequency=1;
 #endif
@@ -1132,7 +1144,7 @@ void VideoInit(void) {
   VideoState.PreviousFirstPixmapLine=0;
   VideoState.LastPixmapLine=0;
   VideoState.PreviousLastPixmapLine=256;
-  VideoState.IsNewTVFrame=0;
+  VideoState.IsNewTVFrame = false;
   CurY=-1;
   //AdjustVideo();
 //  crtclog=fopen("/crtc.log","wb");
@@ -1163,7 +1175,7 @@ void CRTCWrite(int Address, unsigned char Value) {
         CRTC_HorizontalDisplayed = Value;
         if (CRTC_HorizontalDisplayed > 127)
             CRTC_HorizontalDisplayed = 127;
-        FastTable_Valid=0;
+        FastTable_Valid = false;
         AdjustVideo();
         break;
 
@@ -1267,19 +1279,19 @@ return(0);	// Keeep MSVC happy $NRM
 void VideoULAWrite(int Address, unsigned char Value) {
   if (Address & 1) {
     VideoULA_Palette[(Value & 0xf0)>>4]=(Value & 0xf) ^ 7;
-    FastTable_Valid=0;
+    FastTable_Valid = false;
     /* cerr << "Palette reg " << ((Value & 0xf0)>>4) << " now has value " << ((Value & 0xf) ^ 7) << "\n"; */
     //fprintf(crtclog,"Pallette written to at line %d\n",VideoState.PixmapLine);
   } else {
     unsigned char oldValue = VideoULA_ControlReg;
     VideoULA_ControlReg=Value;
-    FastTable_Valid=0; /* Could be more selective and only do it if no.of.cols bit changes */
+    FastTable_Valid = false; /* Could be more selective and only do it if no.of.cols bit changes */
     /* cerr << "VidULA Ctrl reg write " << hex << Value << "\n"; */
     // Adjust HSyncModifier
     if (VideoULA_ControlReg & 16) HSyncModifier=8; else HSyncModifier=16;
     if (VideoULA_ControlReg & 2) HSyncModifier=12;
     // number of pixels per CRTC character (on our screen)
-    if (Value & 2) TeletextEnabled=1; else TeletextEnabled=0;
+    TeletextEnabled = (Value & 2) != 0;
     if ((Value&2)^(oldValue&2)) { ScreenAdjust=0; }
     AdjustVideo();
   }
@@ -1368,7 +1380,7 @@ void VideoAddLEDs(void) {
 	// now add some keyboard leds
 	if (LEDs.ShowKB) {
 		if (MachineType == Model::Master128) {
-			mainWin->doLED(4, TRUE);
+			mainWin->doLED(4, true);
 		}
 		else {
 			mainWin->doLED(4, LEDs.Motor);
@@ -1376,8 +1388,9 @@ void VideoAddLEDs(void) {
 		mainWin->doLED(14,LEDs.CapsLock);
 		mainWin->doLED(24,LEDs.ShiftLock);
 	}
-	if (LEDs.ShowDisc)  {
-		int adj = (TeletextEnabled ? 86 : 0);
+
+	if (LEDs.ShowDisc) {
+		int adj = TeletextEnabled ? 86 : 0;
 		mainWin->doLED(578-adj,LEDs.HDisc[0]);
 		mainWin->doLED(588-adj,LEDs.HDisc[1]);
 		mainWin->doLED(598-adj,LEDs.HDisc[2]);
@@ -1449,7 +1462,7 @@ void LoadVideoUEF(FILE *SUEF) {
 	CRTCControlReg=fgetc(SUEF);
 	TeletextStyle=fgetc(SUEF);
 	VideoInit();
-	if (VideoULA_ControlReg & 2) TeletextEnabled=1; else TeletextEnabled=0;
+	TeletextEnabled = (VideoULA_ControlReg & 2) != 0;
 	if (VideoULA_ControlReg & 16) HSyncModifier=8; else HSyncModifier=16;
 	if (VideoULA_ControlReg & 2) HSyncModifier=12;
 	//SetTrigger(99,VideoTriggerCount);
