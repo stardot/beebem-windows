@@ -39,7 +39,6 @@ handle_v6_thumb_insn (ARMul_State * state,
 		      ARMword       tinstr,
 		      tdstate *     pvalid)
 {
-  ARMword Rd;
   ARMword Rm;
 
   if (! state->is_v6)

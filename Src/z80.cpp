@@ -75,9 +75,9 @@ volatile int stopsim;
 	x = y + (GetBYTE_pp(SP) << 8);					\
 } while (0)
 
-#define PUSH(x) do {							\
-	mm_PutBYTE(SP, (x) >> 8);						\
-	mm_PutBYTE(SP, x);							\
+#define PUSH(x) do { \
+	mm_PutBYTE(SP, (unsigned char)((x) >> 8)); \
+	mm_PutBYTE(SP, (unsigned char)(x)); \
 } while (0)
 
 #define JPC(cond) PC = cond ? GetWORD(PC) : PC+2
@@ -2003,7 +2003,7 @@ simz80(FASTREG PC)
 			break;
 		case 0x44:			/* NEG */
 			temp = hreg(AF);
-			AF = (-(AF & 0xff00) & 0xff00);
+			AF = (-(int)(AF & 0xff00) & 0xff00);
 			AF |= ((AF >> 8) & 0xa8) | (((AF & 0xff00) == 0) << 6) |
 				(((temp & 0x0f) != 0) << 4) | ((temp == 0x80) << 2) |
 				2 | (temp != 0);

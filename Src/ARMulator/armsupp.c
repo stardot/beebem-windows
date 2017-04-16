@@ -637,7 +637,7 @@ ARMul_MRC (ARMul_State * state, ARMword instr)
     if (! CP_ACCESS_ALLOWED (state, CPNum))
     {
         ARMul_UndefInstr (state, instr);
-        return;
+        return 0;
     }
 
     cpab = (state->MRC[CPNum]) (state, ARMul_FIRST, instr, &result);

@@ -1618,11 +1618,11 @@ mainswitch:
                         {
                             ARMword Rn = state->Reg[BITS (12, 15)];
 
-                            if (AddOverflow (result, Rn, result + Rn))
+                            if (AddOverflow ((ARMword)result, Rn, (ARMword)(result + Rn)))
                                 SETS;
                             result += Rn;
                         }
-                        state->Reg[BITS (16, 19)] = result;
+                        state->Reg[BITS (16, 19)] = (ARMword)result;
                         break;
                     }
 
@@ -1671,7 +1671,6 @@ mainswitch:
                 {
                     if (BITS (4, 7) == 0x7)
                     {
-                        ARMword value;
                         extern int SWI_vector_installed;
 
                         /* Hardware is allowed to optionally override this
@@ -1754,7 +1753,6 @@ mainswitch:
                         ARMdword op1 = state->Reg[BITS (0, 3)];
                         ARMdword op2 = state->Reg[BITS (8, 11)];
                         ARMdword dest;
-                        ARMdword result;
 
                         if (BIT (5))
                             op1 >>= 16;
@@ -1770,8 +1768,8 @@ mainswitch:
                         dest = (ARMdword) state->Reg[BITS (16, 19)] << 32;
                         dest |= state->Reg[BITS (12, 15)];
                         dest += op1 * op2;
-                        state->Reg[BITS (12, 15)] = dest;
-                        state->Reg[BITS (16, 19)] = dest >> 32;
+                        state->Reg[BITS (12, 15)] = (ARMword)dest;
+                        state->Reg[BITS (16, 19)] = (ARMword)(dest >> 32);
                         break;
                     }
 
@@ -3585,7 +3583,7 @@ mainswitch:
                             if (t1 & 128)
                                 t1 -= 256;
 
-                            state->Reg[BITS (12, 15)] = state->Accumulator;
+                            state->Reg[BITS (12, 15)] = (ARMword)state->Accumulator;
                             state->Reg[BITS (16, 19)] = t1;
                             break;
                         }
@@ -5123,10 +5121,10 @@ Multiply64 (ARMul_State * state, ARMword instr, int msigned, int scc)
             sign = (Rm ^ Rs) & 0x80000000;
 
             if (((ARMsword) Rm) < 0)
-                Rm = -Rm;
+                Rm = -(ARMsword)Rm;
 
             if (((ARMsword) Rs) < 0)
-                Rs = -Rs;
+                Rs = -(ARMsword)Rs;
         }
 
         /* We can split the 32x32 into four 16x16 operations. This
