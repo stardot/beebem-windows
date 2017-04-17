@@ -19,6 +19,8 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #include "armemu.h"
 #include "dbg_rdi.h"
 
+#include <string.h>
+
 /***************************************************************************\
 *                 Definitions for the emulator architecture                 *
 \***************************************************************************/
