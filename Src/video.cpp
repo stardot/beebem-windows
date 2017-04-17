@@ -1116,77 +1116,76 @@ void VideoInit(void) {
 
 
 /*-------------------------------------------------------------------------------------------------------------*/
-void CRTCWrite(int Address, int Value) {
-  Value&=0xff;
+void CRTCWrite(int Address, unsigned char Value) {
   if (Address & 1) {
-//	if (CRTCControlReg<14) { fputc(CRTCControlReg,crtclog); fputc(Value,crtclog); }
-//	if (CRTCControlReg<14) {
-//		fprintf(crtclog,"%d (%02X) Written to register %d from %04X\n",Value,Value,CRTCControlReg,ProgramCounter);
-//	}
+    // if (CRTCControlReg<14) { fputc(CRTCControlReg,crtclog); fputc(Value,crtclog); }
+    // if (CRTCControlReg<14) {
+    //     fprintf(crtclog,"%d (%02X) Written to register %d from %04X\n",Value,Value,CRTCControlReg,ProgramCounter);
+    // }
 
-	if (DebugEnabled && CRTCControlReg<14) {
-		char info[200];
-		sprintf(info, "CRTC: Write register %X value %02X", (int)CRTCControlReg, Value);
-		DebugDisplayTrace(DEBUG_VIDEO, true, info);
-	}
+    if (DebugEnabled && CRTCControlReg<14) {
+        char info[200];
+        sprintf(info, "CRTC: Write register %X value %02X", (int)CRTCControlReg, Value);
+        DebugDisplayTrace(DEBUG_VIDEO, true, info);
+    }
 
-	switch (CRTCControlReg) {
+    switch (CRTCControlReg) {
       case 0:
-        CRTC_HorizontalTotal=Value;
-		InitialOffset=0-(((CRTC_HorizontalTotal+1)/2)-((HSyncModifier==8)?40:20));
-		AdjustVideo();
+        CRTC_HorizontalTotal = Value;
+        InitialOffset = 0 - (((CRTC_HorizontalTotal + 1) / 2) - (HSyncModifier == 8 ? 40 : 20));
+        AdjustVideo();
         break;
 
       case 1:
-        CRTC_HorizontalDisplayed=Value;
-		if (CRTC_HorizontalDisplayed > 127)
-			CRTC_HorizontalDisplayed = 127;
+        CRTC_HorizontalDisplayed = Value;
+        if (CRTC_HorizontalDisplayed > 127)
+            CRTC_HorizontalDisplayed = 127;
         FastTable_Valid=0;
-		AdjustVideo();
-		break;
+        AdjustVideo();
+        break;
 
       case 2:
-		CRTC_HorizontalSyncPos=Value;
-		AdjustVideo();
+        CRTC_HorizontalSyncPos = Value;
+        AdjustVideo();
         break;
 
       case 3:
-        CRTC_SyncWidth=Value;
-		AdjustVideo();
-//		fprintf(crtclog,"V Sync width: %d\n",(Value>>4)&15);
+        CRTC_SyncWidth = Value;
+        AdjustVideo();
+        // fprintf(crtclog,"V Sync width: %d\n",(Value>>4)&15);
         break;
 
       case 4:
-        CRTC_VerticalTotal=Value;
-		AdjustVideo();
+        CRTC_VerticalTotal = Value;
+        AdjustVideo();
         break;
 
       case 5:
-        CRTC_VerticalTotalAdjust=Value & 0x1f;  // 5 bit register
-//		fprintf(crtclog,"Vertical Total Adjust: %d\n",Value);
-		AdjustVideo();
+        CRTC_VerticalTotalAdjust = Value & 0x1f;  // 5 bit register
+        // fprintf(crtclog,"Vertical Total Adjust: %d\n",Value);
+        AdjustVideo();
         break;
 
       case 6:
-        CRTC_VerticalDisplayed=Value;
-		AdjustVideo();
-		break;
+        CRTC_VerticalDisplayed = Value;
+        AdjustVideo();
+        break;
 
       case 7:
-        CRTC_VerticalSyncPos=(Value & 0x7f);
+        CRTC_VerticalSyncPos = Value & 0x7f;
         AdjustVideo();
-		break;
+        break;
 
       case 8:
-        CRTC_InterlaceAndDelay=Value;
+        CRTC_InterlaceAndDelay = Value;
         break;
 
       case 9:
-        CRTC_ScanLinesPerChar=Value;
+        CRTC_ScanLinesPerChar = Value;
         break;
 
       case 10:
-        CRTC_CursorStart=Value;
+        CRTC_CursorStart = Value;
         break;
 
       case 11:
@@ -1194,31 +1193,31 @@ void CRTCWrite(int Address, int Value) {
         break;
 
       case 12:
-        CRTC_ScreenStartHigh=Value;
-//		fprintf(crtclog,"Screen now at &%02x%02x\n",Value,CRTC_ScreenStartLow);
+        CRTC_ScreenStartHigh = Value;
+        // fprintf(crtclog,"Screen now at &%02x%02x\n",Value,CRTC_ScreenStartLow);
         break;
 
       case 13:
-        CRTC_ScreenStartLow=Value;
-//		fprintf(crtclog,"Screen now at &%02x%02x\n",CRTC_ScreenStartHigh,Value);
+        CRTC_ScreenStartLow = Value;
+        // fprintf(crtclog,"Screen now at &%02x%02x\n",CRTC_ScreenStartHigh,Value);
         break;
 
       case 14:
-        CRTC_CursorPosHigh=Value & 0x3f; /* Cursor high only has 6 bits */
+        CRTC_CursorPosHigh = Value & 0x3f; /* Cursor high only has 6 bits */
         break;
 
       case 15:
-        CRTC_CursorPosLow=Value & 0xff;
+        CRTC_CursorPosLow = Value & 0xff;
         break;
 
       default: /* In case the user wrote a duff control register value */
         break;
-    }; /* CRTCWrite switch */
+    }
     /* cerr << "CRTCWrite RegNum=" << int(CRTCControlReg) << " Value=" << Value << "\n"; */
   } else {
-    CRTCControlReg=Value & 0x1f;
-  };
-}; /* CRTCWrite */
+    CRTCControlReg = Value & 0x1f;
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 int CRTCRead(int Address) {
