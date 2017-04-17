@@ -143,9 +143,9 @@ static unsigned int WrapAddr(int in) {
    See 'BeebMemPtrWithWrapMo7' for use in Mode 7 - its a special case.
 */
 
-char *BeebMemPtrWithWrap(int a, int n) {
-  static char tmpBuf[1024];
-  char *tmpBufPtr;
+unsigned char *BeebMemPtrWithWrap(int a, int n) {
+  static unsigned char tmpBuf[1024];
+  unsigned char *tmpBufPtr;
   int EndAddr=a+n-1;
   int toCopy;
 
@@ -162,20 +162,20 @@ char *BeebMemPtrWithWrap(int a, int n) {
       toCopy=n-toCopy;
       if (toCopy>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy);
       return(tmpBuf);
-	}
+    }
     else if (a<0x1000) {
-      return((char *)FSRam); // Should probably be PrivateRAM?
+      return FSRam; // Should probably be PrivateRAM?
     }
     else {
-      return((char *)FSRam+a-0x1000);
+      return FSRam + a - 0x1000;
     }
   }
 
   if (a<=EndAddr && Sh_Display==0) {
-    return((char *)WholeRam+a);
+    return WholeRam + a;
   };
   if (a<=EndAddr && Sh_Display>0) {
-    return((char *)ShadowRAM+a);
+    return ShadowRAM + a;
   };
 
   toCopy=0x8000-a;
@@ -204,9 +204,9 @@ static unsigned int WrapAddrMo7(int in) {
 /* Special case of BeebMemPtrWithWrap for use in mode 7
 */
 
-char *BeebMemPtrWithWrapMo7(int a, int n) {
-  static char tmpBuf[1024];
-  char *tmpBufPtr;
+unsigned char *BeebMemPtrWithWrapMo7(int a, int n) {
+  static unsigned char tmpBuf[1024];
+  unsigned char *tmpBufPtr;
   int EndAddr=a+n-1;
   int toCopy;
 
@@ -214,15 +214,15 @@ char *BeebMemPtrWithWrapMo7(int a, int n) {
   EndAddr=WrapAddrMo7(EndAddr);
 
   if (a<=EndAddr && Sh_Display==0) {
-    return((char *)WholeRam+a);
+    return WholeRam + a;
   };
   if (a<=EndAddr && Sh_Display>0) {
-    return((char *)ShadowRAM+a);
+    return ShadowRAM + a;
   };
 
   toCopy=0x8000-a;
-  if (toCopy>n && Sh_Display==0) return((char *)WholeRam+a);
-  if (toCopy>n && Sh_Display>0) return((char *)ShadowRAM+a);
+  if (toCopy>n && Sh_Display==0) return WholeRam + a;
+  if (toCopy>n && Sh_Display>0) return ShadowRAM + a;
   if (toCopy>0 && Sh_Display==0) memcpy(tmpBuf,WholeRam+a,toCopy);
   if (toCopy>0 && Sh_Display>0) memcpy(tmpBuf,ShadowRAM+a,toCopy);
   tmpBufPtr=tmpBuf+toCopy;

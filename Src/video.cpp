@@ -118,7 +118,7 @@ typedef struct {
                           blank virtical retrace lines at the bottom of the screen.  */
   int PreviousLastPixmapLine; /* The last pixmap line on the previous frame */
   int IsTeletext; /* This frame is a teletext frame - do things differently */
-  char *DataPtr;  /* Pointer into host memory of video data */
+  unsigned char *DataPtr;  /* Pointer into host memory of video data */
 
   int CharLine;   /* 6845 counts in characters vertically - 0 at the top , incs by 1 - -1 means we are in the bit before the actual display starts */
   int InCharLineUp; /* Scanline within a character line - counts up*/
@@ -639,13 +639,12 @@ static void VideoStartOfFrame(void) {
 /*--------------------------------------------------------------------------*/
 /* Scanline processing for modes with fast 6845 clock - i.e. narrow pixels  */
 static void LowLevelDoScanLineNarrow() {
-  unsigned char *CurrentPtr;
   int BytesToGo=CRTC_HorizontalDisplayed;
   EightUChars *vidPtr=mainWin->GetLinePtr(VideoState.PixmapLine);
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
-  CurrentPtr=(unsigned char *)VideoState.DataPtr+VideoState.InCharLineUp;
+  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   /* This should help the compiler - it doesn't need to test for end of loop
      except every 4 entries */
@@ -663,13 +662,12 @@ static void LowLevelDoScanLineNarrow() {
 /* This version handles screen modes where there is not a multiple of 4     */
 /* bytes per scanline.                                                      */
 static void LowLevelDoScanLineNarrowNot4Bytes() {
-  unsigned char *CurrentPtr;
   int BytesToGo=CRTC_HorizontalDisplayed;
   EightUChars *vidPtr=mainWin->GetLinePtr(VideoState.PixmapLine);
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
-    CurrentPtr=(unsigned char *)VideoState.DataPtr+VideoState.InCharLineUp;
+  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   for(;BytesToGo;CurrentPtr+=8,BytesToGo--)
     (vidPtr++)->eightbyte=FastTable[*CurrentPtr].eightbyte;
@@ -678,13 +676,12 @@ static void LowLevelDoScanLineNarrowNot4Bytes() {
 /*-----------------------------------------------------------------------------*/
 /* Scanline processing for the low clock rate modes                            */
 static void LowLevelDoScanLineWide() {
-  unsigned char *CurrentPtr;
   int BytesToGo=CRTC_HorizontalDisplayed;
   SixteenUChars *vidPtr=mainWin->GetLinePtr16(VideoState.PixmapLine);
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
-    CurrentPtr=(unsigned char *)VideoState.DataPtr+VideoState.InCharLineUp;
+  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   /* This should help the compiler - it doesn't need to test for end of loop
      except every 4 entries */
@@ -701,11 +698,10 @@ static void LowLevelDoScanLineWide() {
 /* Scanline processing for the low clock rate modes                            */
 /* This version handles cases where the screen width is not divisible by 4     */
 static void LowLevelDoScanLineWideNot4Bytes() {
-  unsigned char *CurrentPtr;
   int BytesToGo=CRTC_HorizontalDisplayed;
   SixteenUChars *vidPtr=mainWin->GetLinePtr16(VideoState.PixmapLine);
 
-  CurrentPtr=(unsigned char *)VideoState.DataPtr+VideoState.InCharLineUp;
+  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   for(;BytesToGo;CurrentPtr+=8,BytesToGo--)
     *(vidPtr++)=FastTableDWidth[*CurrentPtr];
@@ -714,7 +710,7 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Do all the pixel rows for one row of teletext characters                                                    */
 static void DoMode7Row(void) {
-  char *CurrentPtr=VideoState.DataPtr;
+  unsigned char *CurrentPtr = VideoState.DataPtr;
   int CurrentChar;
   int XStep;
   unsigned char byte;
@@ -749,8 +745,8 @@ static void DoMode7Row(void) {
     if (byte<32) byte+=128; // fix for naughty programs that use 7-bit control codes - Richard Gellman
     if ((byte & 32) && (Graphics)) HoldGraphChar=byte;
     if ((byte>=128) && (byte<=159)) {
-		switch (byte) {
-	    case 129:
+      switch (byte) {
+        case 129:
         case 130:
         case 131:
         case 132:
@@ -774,7 +770,7 @@ static void DoMode7Row(void) {
           break;
 
         case 141:
-		  if (!CurrentLineBottom) NextLineBottom=1;
+          if (!CurrentLineBottom) NextLineBottom=1;
           DoubleHeight=1;
           break;
 
@@ -816,14 +812,14 @@ static void DoMode7Row(void) {
         case 159:
           HoldGraph=0;
           break;
-      }; /* Special character switch */
-	  // This next line hides any non double height characters on the bottom line
+      } /* Special character switch */
+      // This next line hides any non double height characters on the bottom line
       /* Fudge so that the special character is just displayed in background */
       if ((HoldGraph==1) && (Graphics==1)) byte=HoldGraphChar; else byte=32;
       FontTypeIndex=Graphics?(Separated?2:1):0;
-    }; /* test for special character */
-	if ((CurrentLineBottom) && ((byte&127)>31) && (!DoubleHeight)) byte=32;
-	if ((CRTC_ScanLinesPerChar<=9) || (THalfMode)) TeletextStyle=2; else TeletextStyle=1;
+    } /* test for special character */
+    if (CurrentLineBottom && ((byte & 127) > 31) && !DoubleHeight) byte = 32;
+    if ((CRTC_ScanLinesPerChar <= 9) || THalfMode) TeletextStyle = 2; else TeletextStyle = 1;
     /* Top bit never reaches character generator */
     byte&=127;
     /* Our font table goes from character 32 up */
@@ -834,7 +830,7 @@ static void DoMode7Row(void) {
     if (!DoubleHeight) {
       for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
         tmp=EM7Font[FontTypeIndex][byte][CurrentScanLine];
-		//tmp=1365;
+        //tmp=1365;
         if ((tmp==0) || (tmp==255)) {
           col=(tmp==0)?Background:ActualForeground;
           if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=12*XStep; else {
@@ -887,7 +883,7 @@ static void DoMode7Row(void) {
         CurrentX+=XStep;
       }; /* Pixel within byte */
       Mode7DoubleHeightFlags[CurrentChar]^=1; /* Not double height - so if the next line is double height it will be top half */
-	};
+    }
   }; /* character loop */
 
   /* Finish off right bits of scan line */
@@ -1500,7 +1496,7 @@ void VideoGetText(char *text, int line)
 	if (!VideoState.IsTeletext || line >= CRTC_VerticalDisplayed)
 		return;
 
-	char *dataPtr = BeebMemPtrWithWrapMo7(
+	unsigned char *dataPtr = BeebMemPtrWithWrapMo7(
 		VideoState.StartAddr + line * CRTC_HorizontalDisplayed,
 		CRTC_HorizontalDisplayed);
 
