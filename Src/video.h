@@ -54,7 +54,7 @@ extern unsigned int ActualScreenWidth;
 extern long ScreenAdjust;
 
 void RedoMPTR(void);
-void CRTCWrite(int Address, int Value);
+void CRTCWrite(int Address, unsigned char Value);
 int CRTCRead(int Address);
 void VideoULAWrite(int Address, int Value);
 int VideoULARead(int Address);
