@@ -1244,27 +1244,26 @@ return(0);	// Keeep MSVC happy $NRM
 }; /* CRTCRead */
 
 /*-------------------------------------------------------------------------------------------------------------*/
-void VideoULAWrite(int Address, int Value) {
-  int oldValue;
+void VideoULAWrite(int Address, unsigned char Value) {
   if (Address & 1) {
     VideoULA_Palette[(Value & 0xf0)>>4]=(Value & 0xf) ^ 7;
     FastTable_Valid=0;
     /* cerr << "Palette reg " << ((Value & 0xf0)>>4) << " now has value " << ((Value & 0xf) ^ 7) << "\n"; */
-	//fprintf(crtclog,"Pallette written to at line %d\n",VideoState.PixmapLine);
+    //fprintf(crtclog,"Pallette written to at line %d\n",VideoState.PixmapLine);
   } else {
-	oldValue=VideoULA_ControlReg;
+    unsigned char oldValue = VideoULA_ControlReg;
     VideoULA_ControlReg=Value;
     FastTable_Valid=0; /* Could be more selective and only do it if no.of.cols bit changes */
     /* cerr << "VidULA Ctrl reg write " << hex << Value << "\n"; */
-	// Adjust HSyncModifier
-	if (VideoULA_ControlReg & 16) HSyncModifier=8; else HSyncModifier=16;
-	if (VideoULA_ControlReg & 2) HSyncModifier=12;
-	// number of pixels per CRTC character (on our screen)
-	if (Value & 2) TeletextEnabled=1; else TeletextEnabled=0;
-	if ((Value&2)^(oldValue&2)) { ScreenAdjust=0; }
-	AdjustVideo();
-  };
-}; /* VidULAWrite */
+    // Adjust HSyncModifier
+    if (VideoULA_ControlReg & 16) HSyncModifier=8; else HSyncModifier=16;
+    if (VideoULA_ControlReg & 2) HSyncModifier=12;
+    // number of pixels per CRTC character (on our screen)
+    if (Value & 2) TeletextEnabled=1; else TeletextEnabled=0;
+    if ((Value&2)^(oldValue&2)) { ScreenAdjust=0; }
+    AdjustVideo();
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 int VideoULARead(int Address) {

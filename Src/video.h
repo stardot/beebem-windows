@@ -56,7 +56,7 @@ extern long ScreenAdjust;
 void RedoMPTR(void);
 void CRTCWrite(int Address, unsigned char Value);
 int CRTCRead(int Address);
-void VideoULAWrite(int Address, int Value);
+void VideoULAWrite(int Address, unsigned char Value);
 int VideoULARead(int Address);
 void VideoInit(void);
 void video_dumpstate(void);
@@ -68,7 +68,7 @@ extern unsigned char TeletextEnabled;
 #define VideoPoll(ncycles) if ((VideoTriggerCount)<=TotalCycles) VideoDoScanLine();
 
 // Allow enough lines for all modes.
-// i.e. max(virtical total * scan lines per char) = 39 * 8  (mode 7 excluded)
+// i.e. max(vertical total * scan lines per char) = 39 * 8  (mode 7 excluded)
 #define MAX_VIDEO_SCAN_LINES 312
 
 void SaveVideoUEF(FILE *SUEF);
