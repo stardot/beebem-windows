@@ -693,6 +693,12 @@ BEGIN
             MENUITEM "&Common Extras",              ID_EXTRAS
             MENUITEM "&Full Set",                   ID_FULLSET
         END
+        POPUP "&Emulator Traps"
+        BEGIN
+            MENUITEM "&Acorn/65Tube traps",         ID_EMTACN
+            MENUITEM "&WSS/VDFS traps",             ID_EMTWSS
+            MENUITEM "&Translate BASIC files",      ID_EMTBAS
+        END
         MENUITEM SEPARATOR
         MENUITEM "Basic &Hardware Only",        ID_BASIC_HARDWARE_ONLY
         MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE
