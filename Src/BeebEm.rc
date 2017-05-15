@@ -255,7 +255,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 
 IDD_DEBUG DIALOGEX 0, 0, 529, 387
 STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-EXSTYLE WS_EX_WINDOWEDGE
+EXSTYLE WS_EX_TOOLWINDOW | WS_EX_WINDOWEDGE
 CAPTION "BeebEm Debugger"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
@@ -520,7 +520,6 @@ BEGIN
         MENUITEM "&Speed and FPS On/Off",       IDM_SPEEDANDFPS
         MENUITEM SEPARATOR
         MENUITEM "&Full Screen",                IDM_FULLSCREEN
-        MENUITEM "Maintain Aspect Ratio in Full Screen", IDM_MAINTAINASPECTRATIO
         POPUP "Window Sizes"
         BEGIN
             MENUITEM "320x256",                     IDM_320X256
@@ -534,18 +533,13 @@ BEGIN
         END
         POPUP "DirectX Full Screen Modes"
         BEGIN
-            MENUITEM "Current Screen Resolution",   ID_VIEW_DD_SCREENRES
             MENUITEM "640x480",                     ID_VIEW_DD_640X480
-            MENUITEM "720x576",                     ID_VIEW_DD_720X576
-            MENUITEM "800x600",                     ID_VIEW_DD_800X600
             MENUITEM "1024x768",                    ID_VIEW_DD_1024X768
-            MENUITEM "1280x720 (720p)",             ID_VIEW_DD_1280X720
             MENUITEM "1280x768",                    ID_VIEW_DD_1280X768
             MENUITEM "1280x960",                    ID_VIEW_DD_1280X960
             MENUITEM "1280x1024",                   ID_VIEW_DD_1280X1024
             MENUITEM "1440x900",                    ID_VIEW_DD_1440X900
             MENUITEM "1600x1200",                   ID_VIEW_DD_1600X1200
-            MENUITEM "1920x1080 (1080p)",           ID_VIEW_DD_1920X1080
         END
         MENUITEM SEPARATOR
         POPUP "Monitor type"
@@ -602,11 +596,6 @@ BEGIN
     END
     POPUP "&Sound"
     BEGIN
-        POPUP "Sound Streamer"
-        BEGIN
-            MENUITEM "XAudio 2",                    IDM_XAUDIO2
-            MENUITEM "DirectSound",                 IDM_DIRECTSOUND
-        END
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
 #ifdef SPEECH_ENABLED
         MENUITEM "Speech On/Off",               IDM_SPEECH
@@ -675,27 +664,26 @@ BEGIN
             MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
             MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
             MENUITEM "ARM Second Processor",        IDM_ARM
-            MENUITEM "ARM7TDMI Co-Processor",        IDM_ARMCOPRO
         END
         MENUITEM SEPARATOR
         POPUP "&Allow SW RAM Write"
         BEGIN
-            MENUITEM "Rom &0",                      IDM_ALLOWWRITES_ROM0, CHECKED
-            MENUITEM "Rom &1",                      IDM_ALLOWWRITES_ROM1, CHECKED
-            MENUITEM "Rom &2",                      IDM_ALLOWWRITES_ROM2, CHECKED
-            MENUITEM "Rom &3",                      IDM_ALLOWWRITES_ROM3, CHECKED
-            MENUITEM "Rom &4",                      IDM_ALLOWWRITES_ROM4, CHECKED
-            MENUITEM "Rom &5",                      IDM_ALLOWWRITES_ROM5, CHECKED
-            MENUITEM "Rom &6",                      IDM_ALLOWWRITES_ROM6, CHECKED
-            MENUITEM "Rom &7",                      IDM_ALLOWWRITES_ROM7, CHECKED
-            MENUITEM "Rom &8",                      IDM_ALLOWWRITES_ROM8, CHECKED
-            MENUITEM "Rom &9",                      IDM_ALLOWWRITES_ROM9, CHECKED
-            MENUITEM "Rom &A",                      IDM_ALLOWWRITES_ROMA, CHECKED
-            MENUITEM "Rom &B",                      IDM_ALLOWWRITES_ROMB, CHECKED
-            MENUITEM "Rom &C",                      IDM_ALLOWWRITES_ROMC, CHECKED
-            MENUITEM "Rom &D",                      IDM_ALLOWWRITES_ROMD, CHECKED
-            MENUITEM "Rom &E",                      IDM_ALLOWWRITES_ROME, CHECKED
-            MENUITEM "Rom &F",                      IDM_ALLOWWRITES_ROMF, CHECKED
+            MENUITEM "ROM &0",                      IDM_ALLOWWRITES_ROM0, CHECKED
+            MENUITEM "ROM &1",                      IDM_ALLOWWRITES_ROM1, CHECKED
+            MENUITEM "ROM &2",                      IDM_ALLOWWRITES_ROM2, CHECKED
+            MENUITEM "ROM &3",                      IDM_ALLOWWRITES_ROM3, CHECKED
+            MENUITEM "ROM &4",                      IDM_ALLOWWRITES_ROM4, CHECKED
+            MENUITEM "ROM &5",                      IDM_ALLOWWRITES_ROM5, CHECKED
+            MENUITEM "ROM &6",                      IDM_ALLOWWRITES_ROM6, CHECKED
+            MENUITEM "ROM &7",                      IDM_ALLOWWRITES_ROM7, CHECKED
+            MENUITEM "ROM &8",                      IDM_ALLOWWRITES_ROM8, CHECKED
+            MENUITEM "ROM &9",                      IDM_ALLOWWRITES_ROM9, CHECKED
+            MENUITEM "ROM &A",                      IDM_ALLOWWRITES_ROMA, CHECKED
+            MENUITEM "ROM &B",                      IDM_ALLOWWRITES_ROMB, CHECKED
+            MENUITEM "ROM &C",                      IDM_ALLOWWRITES_ROMC, CHECKED
+            MENUITEM "ROM &D",                      IDM_ALLOWWRITES_ROMD, CHECKED
+            MENUITEM "ROM &E",                      IDM_ALLOWWRITES_ROME, CHECKED
+            MENUITEM "ROM &F",                      IDM_ALLOWWRITES_ROMF, CHECKED
         END
         MENUITEM "SW RAM Board On/Off", IDM_SWRAMBOARD
         MENUITEM "Edit ROM Configuration", IDM_ROMCONFIG
@@ -706,6 +694,12 @@ BEGIN
             MENUITEM "&Documented Only",            ID_DOCONLY
             MENUITEM "&Common Extras",              ID_EXTRAS
             MENUITEM "&Full Set",                   ID_FULLSET
+        END
+        POPUP "&Emulator Traps"
+        BEGIN
+            MENUITEM "&Acorn/65Tube traps",         ID_EMTACN
+            MENUITEM "&WSS/VDFS traps",             ID_EMTWSS
+            MENUITEM "&Translate BASIC files",      ID_EMTBAS
         END
         MENUITEM SEPARATOR
         MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
@@ -760,7 +754,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "View &Help",                  IDM_VIEWREADME
+        MENUITEM "View &README",                IDM_VIEWREADME
         MENUITEM "&About BeebEm",               IDM_ABOUT
     END
 END
