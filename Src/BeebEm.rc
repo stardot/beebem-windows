@@ -629,11 +629,12 @@ BEGIN
         MENUITEM "&Medium Volume",              IDM_MEDIUMVOLUME
         MENUITEM "&Low Volume",                 IDM_LOWVOLUME
         MENUITEM SEPARATOR
-        MENUITEM "Use &Primary Buffer",         ID_PBUFF
         MENUITEM "Part S&amples",               ID_PSAMPLES
         MENUITEM "Exponential Volume",          IDM_EXPVOLUME
         MENUITEM SEPARATOR
         MENUITEM "&Text To Speech",             IDM_TEXTTOSPEECH
+        MENUITEM SEPARATOR
+        MENUITEM "Music &5000",                 IDM_MUSIC5000
     END
     POPUP "&AMX"
     BEGIN

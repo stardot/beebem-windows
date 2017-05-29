@@ -74,6 +74,11 @@ int PrinterTrigger = 0;
 static char PrinterFileName[256];
 static FILE *PrinterFileHandle = NULL;
 
+// Shift Register
+int SRTrigger = 0;
+static void SRPoll();
+static void UpdateSRState(bool SRrw);
+
 /* SW RAM board */
 unsigned char SWRAMBoardEnabled = 0;
 
@@ -209,10 +214,13 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 10:
+      UserVIAState.sr=Value & 0xff;
+      UpdateSRState(true);
       break;
 
     case 11:
       UserVIAState.acr=Value & 0xff;
+      UpdateSRState(false);
       break;
 
     case 12:
@@ -335,6 +343,11 @@ int UserVIARead(int Address) {
       tmp=(UserVIAState.timer2c>>9) & 0xff;
       break;
 
+    case 10:
+      tmp=UserVIAState.sr;
+      UpdateSRState(true);
+      break;
+
     case 11:
       tmp = UserVIAState.acr;
       break;
@@ -431,12 +444,7 @@ void UserVIA_poll(unsigned int ncycles) {
 
   if (AMXMouseEnabled && AMXTrigger<=TotalCycles) AMXMouseMovement();
   if (PrinterEnabled && PrinterTrigger<=TotalCycles) PrinterPoll();
-
-  // Do Shift register stuff
-//  if (SRMode==2) {
-	  // Shift IN under control of Clock 2
-//	  SRCount=8-(ncycles%8);
-//  }
+  if (SRTrigger<=TotalCycles) SRPoll();
 }
 
 
@@ -445,6 +453,7 @@ void UserVIAReset(void) {
   VIAReset(&UserVIAState);
   ClearTrigger(AMXTrigger);
   ClearTrigger(PrinterTrigger);
+  SRTrigger=0;
 } /* UserVIAReset */
 
 
@@ -453,6 +462,45 @@ int sgn(int number)
 	if (number > 0) return 1;
 	if (number < 0) return -1;
 	return 0;
+}
+
+/*--------------------------------------------------------------------------*/
+static int SRMode = 0;
+static void SRPoll()
+{
+	if (SRTrigger == 0)
+	{
+		ClearTrigger(SRTrigger);
+		UpdateSRState(false);
+	}
+	else if (SRMode == 6)
+	{
+		if (!(UserVIAState.ifr & 0x04))
+		{
+			// Shift complete
+			UserVIAState.ifr|=0x04;
+			UpdateIFRTopBit();
+		}
+		ClearTrigger(SRTrigger);
+	}
+}
+
+static void UpdateSRState(bool SRrw)
+{
+	SRMode = ((UserVIAState.acr >> 2) & 7);
+	if (SRMode == 6 && SRTrigger == CycleCountTMax)
+	{
+		SetTrigger(16, SRTrigger);
+	}
+
+	if (SRrw)
+	{
+		if (UserVIAState.ifr & 0x04)
+		{
+			UserVIAState.ifr &= 0xfb;
+			UpdateIFRTopBit();
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------*/

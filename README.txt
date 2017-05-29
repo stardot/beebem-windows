@@ -17,4 +17,4 @@ Mike Wyatt
 beebem.support@googlemail.com
 http://www.mkw.me.uk/beebem
 
-Copyright (C) 2011  Mike Wyatt
+Copyright (C) 2017  Mike Wyatt

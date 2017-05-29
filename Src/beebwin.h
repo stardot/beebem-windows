@@ -134,7 +134,6 @@ class BeebWin  {
 
     void UpdateModelType();
 	void SetSoundMenu(void);
-	void SetPBuff(void);
 	void SetImageName(char *DiscName,char Drive,char DType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);

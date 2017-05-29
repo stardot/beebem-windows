@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 2016  Mike Wyatt
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,22 +18,25 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef VS_HEADER
-#define VS_HEADER
+//
+// BeebEm Music 5000 emulation
+//
+// Mike Wyatt - Jan 2016
+//
 
-typedef struct VIAState {
-  unsigned char ora,orb;
-  unsigned char ira,irb;
-  unsigned char ddra,ddrb;
-  unsigned char acr,pcr;
-  unsigned char ifr,ier;
-  int timer1c,timer2c; /* NOTE: Timers descrement at 2MHz and values are */
-  int timer1l,timer2l; /*   fixed up on read/write - latches hold 1MHz values*/
-  int timer1hasshot; /* True if we have already caused an interrupt for one shot mode */
-  int timer2hasshot; /* True if we have already caused an interrupt for one shot mode */
-  int timer1adjust; // Adjustment for 1.5 cycle counts, every other interrupt, it becomes 2 cycles instead of one
-  int timer2adjust; // Adjustment for 1.5 cycle counts, every other interrupt, it becomes 2 cycles instead of one
-  unsigned char sr;
-} VIAState;
+#ifndef _MUSIC5000_H
+#define _MUSIC5000_H
+
+extern BOOL Music5000Enabled;
+
+#define Music5000Poll(cycles) { if (Music5000Enabled) Music5000Update(cycles); }
+
+void Music5000Init();
+void Music5000Reset();
+void Music5000Write(UINT8 page, UINT8 address, UINT8 value);
+UINT8 Music5000Read(UINT8 page, UINT8 address);
+void Music5000Update(UINT cycles);
+void SaveMusic5000UEF(FILE *SUEF);
+void LoadMusic5000UEF(FILE *SUEF);
 
 #endif

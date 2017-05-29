@@ -33,6 +33,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "beebmem.h"
 #include "beebsound.h"
+#include "music5000.h"
 #include "disc8271.h"
 #include "sysvia.h"
 #include "uservia.h"
@@ -2331,6 +2332,7 @@ void PollHardware(unsigned int nCycles)
 		Serial_Poll();
 	}
 	Disc8271_poll(nCycles);
+	Music5000Poll(nCycles);
 	Sound_Trigger(nCycles);
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
 	if ((MachineType==3) || (!NativeFDC)) Poll1770(nCycles); // Do 1770 Background stuff

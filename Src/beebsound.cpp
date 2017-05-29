@@ -51,6 +51,7 @@ Boston, MA  02110-1301, USA.
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
+#include "soundstream.h"
 
 //#include <atlcomcli.h> // ATL not included in VS Express edition
 #include <dsound.h>
@@ -90,13 +91,12 @@ static SoundSample SoundSamples[] = {
 static bool SoundSamplesLoaded = false;
 
 SoundConfig::Option SoundConfig::Selection;
-int UsePrimaryBuffer=0;
 int SoundEnabled = 1;
 int RelaySoundEnabled = 0;
 int DiscDriveSoundEnabled = 0;
 int SoundChipEnabled = 1;
 int SoundSampleRate = PREFSAMPLERATE;
-int SoundVolume = 3;
+int SoundVolume = 100; //Percentage
 int SoundAutoTriggerTime;
 int SoundBufferSize;
 double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
@@ -148,288 +148,7 @@ bool TapeSoundEnabled;
 int PartSamples=1;
 bool Playing=0;
 
-struct SoundStreamer
-{
-	virtual ~SoundStreamer()
-	{
-	}
-
-	virtual std::size_t BufferSize() const = 0;
-
-	virtual void Play() = 0;
-	virtual void Pause() = 0;
-
-	virtual void Stream( void const *pSamples ) = 0;
-};
-
-class DirectSoundStreamer : public SoundStreamer
-{
-public:
-	struct Fail : std::exception
-	{
-		char const *what() const throw()
-		{
-			return "DirectSoundStreamer::Fail";
-		}
-	};
-
-	struct PrimaryUnsupported : Fail
-	{
-		char const *what() const throw()
-		{
-			return "DirectSoundStreamer::PrimaryUnsupported";
-		}
-	};
-
-	DirectSoundStreamer( std::size_t rate, bool primary );
-
-	~DirectSoundStreamer()
-	{
-		if (m_pDirectSoundBuffer)
-			m_pDirectSoundBuffer->Release();
-		if (m_pDirectSound)
-			m_pDirectSound->Release();
-	}
-
-	std::size_t BufferSize() const
-	{
-		return m_stream;
-	}
-
-	void Play()
-	{
-		m_pDirectSoundBuffer->Play( 0, 0, DSBPLAY_LOOPING );
-	}
-
-	void Pause()
-	{
-		m_pDirectSoundBuffer->Stop();
-	}
-
-	void Stream( void const *pSamples );
-
-private:
-	IDirectSound* m_pDirectSound;
-	IDirectSoundBuffer* m_pDirectSoundBuffer;
-	std::size_t m_begin;
-	std::size_t m_physical;
-	std::size_t m_rate;
-	std::size_t m_stream;
-	std::size_t m_virtual;
-
-	static std::size_t const m_count = 6;
-};
-
-DirectSoundStreamer::DirectSoundStreamer( std::size_t rate, bool primary ) : m_pDirectSound(), m_pDirectSoundBuffer(), m_begin(), m_physical( rate * 100 / 1000 ), m_rate( rate ), m_stream( rate * 20 / 1000 ), m_virtual( m_count * m_stream )
-{
-	// Create DirectSound
-	if( FAILED( DirectSoundCreate( 0, &m_pDirectSound, 0 ) ) )
-		throw Fail();
-	HRESULT hResult( m_pDirectSound->SetCooperativeLevel( GETHWND, primary ? DSSCL_WRITEPRIMARY : DSSCL_PRIORITY ) );
-	if( FAILED( hResult ) )
-	{
-		if( primary && hResult == DSERR_UNSUPPORTED )
-			throw PrimaryUnsupported();
-		throw Fail();
-	}
-
-	// Create DirectSoundBuffer
-	WAVEFORMATEX wfx = {};
-	wfx.wFormatTag = WAVE_FORMAT_PCM;
-	wfx.nChannels = 1;
-	wfx.nSamplesPerSec = DWORD( m_rate );
-	wfx.wBitsPerSample = 8;
-	wfx.nBlockAlign = wfx.nChannels * wfx.wBitsPerSample / 8;
-	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
-
-	DSBUFFERDESC dsbd = { sizeof( DSBUFFERDESC ) };
-	dsbd.dwFlags = DSBCAPS_GETCURRENTPOSITION2;
-	if( primary )
-		dsbd.dwFlags |= DSBCAPS_PRIMARYBUFFER;
-	else
-	{
-		if( m_physical < m_virtual )
-			m_physical = m_virtual;
-		dsbd.dwBufferBytes = DWORD( m_physical );
-		dsbd.lpwfxFormat = &wfx;
-	}
-	dsbd.guid3DAlgorithm = DS3DALG_DEFAULT;
-	if( FAILED( m_pDirectSound->CreateSoundBuffer( &dsbd, &m_pDirectSoundBuffer, 0 ) ) )
-		throw Fail();
-
-	if( primary )
-	{
-		// Setup primary buffer
-		if( FAILED( m_pDirectSoundBuffer->SetFormat( &wfx ) ) )
-			throw Fail();
-		DSBCAPS dsbc = { sizeof( dsbc ) };
-		if( FAILED( m_pDirectSoundBuffer->GetCaps( &dsbc ) ) )
-			throw Fail();
-		m_physical = std::size_t( dsbc.dwBufferBytes );
-	}
-	else
-	{
-		// Clear buffer
-		void *p;
-		DWORD size;
-		if( FAILED( m_pDirectSoundBuffer->Lock( 0, 0, &p, &size, 0, 0, DSBLOCK_ENTIREBUFFER ) ) )
-			throw Fail();
-		using std::memset;
-		memset( p, 128, std::size_t( size ) );
-		if( FAILED( m_pDirectSoundBuffer->Unlock( p, size, 0, 0 ) ) )
-			throw Fail();
-	}
-
-	// Start source voice
-	Play();
-}
-
-void DirectSoundStreamer::Stream( void const *pSamples )
-{
-	// Verify buffer availability
-	DWORD play, write;
-	if( FAILED( m_pDirectSoundBuffer->GetCurrentPosition( &play, &write ) ) )
-		return;
-	if( write < play )
-		write += DWORD( m_physical );
-	std::size_t begin( m_begin );
-	if( begin < play )
-		begin += m_physical;
-	if( begin < write )
-		begin = std::size_t( write );
-	std::size_t end( begin + m_stream );
-	if( play + m_virtual < end )
-		return;
-	begin %= m_physical;
-
-	// Copy samples to buffer
-	void *ps[ 2 ];
-	DWORD sizes[ 2 ];
-	HRESULT hResult( m_pDirectSoundBuffer->Lock( DWORD( begin ), DWORD( m_stream ), &ps[ 0 ], &sizes[ 0 ], &ps[ 1 ], &sizes[ 1 ], 0 ) );
-	if( FAILED( hResult ) )
-	{
-		if( hResult != DSERR_BUFFERLOST )
-			return;
-		m_pDirectSoundBuffer->Restore();
-		if( FAILED( m_pDirectSoundBuffer->Lock( DWORD( begin ), DWORD( m_stream ), &ps[ 0 ], &sizes[ 0 ], &ps[ 1 ], &sizes[ 1 ], 0 ) ) )
-			return;
-	}
-	using std::memcpy;
-	memcpy( ps[ 0 ], pSamples, std::size_t( sizes[ 0 ] ) );
-	if( ps[ 1 ] )
-		memcpy( ps[ 1 ], static_cast< char const * >( pSamples ) + sizes[ 0 ], std::size_t( sizes[ 1 ] ) );
-	m_pDirectSoundBuffer->Unlock( ps[ 0 ], sizes[ 0 ], ps[ 1 ], sizes[ 1 ] );
-
-	// Select next buffer
-	m_begin = end % m_physical;
-}
-
-class XAudio2Streamer : public SoundStreamer
-{
-public:
-	struct Fail : std::exception
-	{
-		char const *what() const throw()
-		{
-			return "XAudio2Streamer::Fail";
-		}
-	};
-
-	XAudio2Streamer( std::size_t rate );
-
-	~XAudio2Streamer()
-	{
-		if (m_pXAudio2)
-			m_pXAudio2->Release();
-	}
-
-	std::size_t BufferSize() const
-	{
-		return m_size;
-	}
-
-	void Play()
-	{
-		m_pXAudio2SourceVoice->Start( 0 );
-	}
-
-	void Pause()
-	{
-		m_pXAudio2SourceVoice->Stop( 0 );
-	}
-
-	void Stream( void const *pSamples );
-
-private:
-	typedef unsigned char Sample;
-	typedef std::vector< Sample > Samples;
-	Samples m_samples;
-	IXAudio2* m_pXAudio2;
-	IXAudio2MasteringVoice *m_pXAudio2MasteringVoice;
-	IXAudio2SourceVoice *m_pXAudio2SourceVoice;
-	std::size_t m_index;
-	std::size_t m_rate;
-	std::size_t m_size;
-
-	static std::size_t const m_count = 4;
-};
-
-XAudio2Streamer::XAudio2Streamer( std::size_t rate ) : m_samples(), m_pXAudio2(), m_pXAudio2MasteringVoice(), m_pXAudio2SourceVoice(), m_index(), m_rate( rate ), m_size( rate * 20 / 1000 )
-{
-	// Allocate memory for buffers
-	m_samples.resize( m_count * m_size, 128 );
-
-	// Create XAudio2
-	if( FAILED( XAudio2Create( &m_pXAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR ) ) )
-		throw Fail();
-
-	// Create mastering voice
-	if( FAILED( m_pXAudio2->CreateMasteringVoice( &m_pXAudio2MasteringVoice ) ) )
-		throw Fail();
-
-	// Create source voice
-	WAVEFORMATEX wfx = {};
-	wfx.wFormatTag = WAVE_FORMAT_PCM;
-	wfx.nChannels = 1;
-	wfx.nSamplesPerSec = DWORD( m_rate );
-	wfx.wBitsPerSample = 8;
-	wfx.nBlockAlign = wfx.nChannels * wfx.wBitsPerSample / 8;
-	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
-	if( FAILED( m_pXAudio2->CreateSourceVoice( &m_pXAudio2SourceVoice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO ) ) )
-		throw Fail();
-
-	// Start source voice
-	Play();
-}
-
-void XAudio2Streamer::Stream( void const *pSamples )
-{
-	// Verify buffer availability
-	XAUDIO2_VOICE_STATE xa2vs;
-	m_pXAudio2SourceVoice->GetState( &xa2vs );
-	if( xa2vs.BuffersQueued == m_count )
-		return;
-
-	// Copy samples to buffer
-	Sample *pBuffer( &m_samples[ m_index * m_size ] );
-	using std::memcpy;
-	memcpy( pBuffer, pSamples, m_size );
-
-	// Submit buffer to voice
-	XAUDIO2_BUFFER xa2b = {};
-	xa2b.AudioBytes = UINT32( m_size );
-	xa2b.pAudioData = pBuffer;
-	if( FAILED( m_pXAudio2SourceVoice->SubmitSourceBuffer( &xa2b ) ) )
-		return;
-
-	// Select next buffer
-	m_index = ( m_index + 1 ) % m_count;
-}
-
-namespace
-{
-	SoundStreamer *pSoundStreamer = 0;
-}
+SoundStreamer *pSoundStreamer = 0;
 
 /****************************************************************************/
 /* Writes sound data to a sound buffer */
@@ -455,7 +174,6 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 /* DestTime is in samples */
 void PlayUpTil(double DestTime) {
 	int tmptotal,channel,bufinc,tapetotal;
-	char Extras;
 	int SpeechPtr = 0;
 	int i;
 
@@ -476,7 +194,6 @@ void PlayUpTil(double DestTime) {
 		for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
 			int tt;
 			tmptotal=0;
-			Extras=4;
 
 			if (SoundChipEnabled) {
 				// Begin of for loop
@@ -606,17 +323,17 @@ void PlayUpTil(double DestTime) {
 					}
 				}
 			}
+			tmptotal/=4;
 
 #ifdef SPEECH_ENABLED
 			// Mix in speech sound
-			if (SpeechEnabled) if (MachineType != 3) tmptotal += (SpeechBuf[SpeechPtr++]-128)*10;
+			if (SpeechEnabled) if (MachineType != 3) tmptotal += (SpeechBuf[SpeechPtr++]-128)*2;
 #endif
 
 			// Mix in sound samples here
 			for (i = 0; i < NUM_SOUND_SAMPLES; ++i) {
 				if (SoundSamples[i].playing) {
-					tmptotal+=(SoundSamples[i].pBuf[SoundSamples[i].pos]-128)*10;
-					Extras++;
+					tmptotal+=(SoundSamples[i].pBuf[SoundSamples[i].pos]-128)*2;
 					SoundSamples[i].pos += (44100 / samplerate);
 					if (SoundSamples[i].pos >= SoundSamples[i].len) {
 						if (SoundSamples[i].repeat)
@@ -632,11 +349,10 @@ void PlayUpTil(double DestTime) {
 				tapetotal=0; 
 				if ((TapeAudio.Enabled) && (TapeAudio.Signal==2)) {
 					if (TapeAudio.Samples++>=36) TapeAudio.Samples=0;
-					tapetotal=(int)(sin(((TapeAudio.Samples*20)*3.14)/180)*80);
-					Extras++;
+					tapetotal=(int)(sin(((TapeAudio.Samples*20)*3.14)/180)*20);
 				}
 				if ((TapeAudio.Enabled) && (TapeAudio.Signal==1)) {
-					tapetotal=(int)(sin(((TapeAudio.Samples*(10*(1+TapeAudio.CurrentBit)))*3.14)/180)*(80+(40*(1-TapeAudio.CurrentBit))));
+					tapetotal=(int)(sin(((TapeAudio.Samples*(10*(1+TapeAudio.CurrentBit)))*3.14)/180)*(20+(10*(1-TapeAudio.CurrentBit))));
 					// And if you can follow that equation, "ill give you the money meself" - Richard Gellman
 					if (TapeAudio.Samples++>=36) {
 						TapeAudio.Samples=0;
@@ -647,18 +363,24 @@ void PlayUpTil(double DestTime) {
 						TapeAudio.ByteCount--;
 						if (!TapeAudio.ByteCount) TapeAudio.Signal=2; else { TapeAudio.BytePos=1; TapeAudio.CurrentBit=0; }
 					}
-					Extras++;
 				}
 				tmptotal+=tapetotal;
 			}
 
-			/* Make it a bit louder under Windows */
-			if (Extras)
-				tmptotal/=Extras;
-			else
-				tmptotal=0;
+			// Reduce amplitude to reduce clipping
+			tmptotal/=2;
 
-			SoundBuf[bufptr] = (tmptotal/SoundVolume)+128;
+			// Apply volume
+			tmptotal = (tmptotal * SoundVolume)/100;
+
+			// Range check
+			if (tmptotal > 127)
+				tmptotal = 127;
+			if (tmptotal < -127)
+				tmptotal = -127;
+
+			SoundBuf[bufptr] = tmptotal + 128;
+
 		} /* buffer loop */
 
 		/* Only write data when buffer is full */
@@ -725,48 +447,10 @@ static void InitAudioDev(int sampleratein) {
 
 	delete pSoundStreamer;
 	samplerate = sampleratein;
-	if( SoundConfig::Selection == SoundConfig::XAudio2 )
-	{
-		try
-		{
-			pSoundStreamer = new XAudio2Streamer( samplerate );
-			return;
-		}
-		catch( ... )
-		{
-		}
-		SoundConfig::Selection = SoundConfig::DirectSound;
-	}
-	if( UsePrimaryBuffer )
-	{
-		try
-		{
-			pSoundStreamer = new DirectSoundStreamer( samplerate, true );
-			return;
-		}
-		catch( DirectSoundStreamer::PrimaryUnsupported const & )
-		{
-			MessageBox(GETHWND, "Use of primary DirectSound buffer unsupported on this system. Using secondary DirectSound buffer instead", WindowTitle, MB_OK | MB_ICONERROR);
-			UsePrimaryBuffer = 0;
-			mainWin->SetPBuff();
-		}
-		catch( ... )
-		{
-		}
-	}
-	if( ! UsePrimaryBuffer )
-	{
-		try
-		{
-			pSoundStreamer = new DirectSoundStreamer( samplerate, false );
-			return;
-		}
-		catch( ... )
-		{
-		}
-	}
-	SoundEnabled = 0;
-	MessageBox( GETHWND, "Attempt to start sound system failed", "BeebEm", MB_OK | MB_ICONERROR );
+
+	pSoundStreamer = CreateSoundStreamer(samplerate, 8, 1);
+	if (!pSoundStreamer)
+		SoundEnabled = 0;
 
 }// InitAudioDev
 
@@ -870,18 +554,16 @@ void SwitchOnSound(void) {
   BeebState76489.ToneVolume[3]=GetVol(15);
 }
 
-void SetSound(char State) {
-	if( pSoundStreamer )
+void SetSound(char State)
+{
+	switch( State )
 	{
-		switch( State )
-		{
-		case MUTED:
-			pSoundStreamer->Pause();
-			break;
-		case UNMUTED:
-			pSoundStreamer->Play();
-			break;
-		}
+	case MUTED:
+		SoundStreamer::PauseAll();
+		break;
+	case UNMUTED:
+		SoundStreamer::PlayAll();
+		break;
 	}
 }
 
