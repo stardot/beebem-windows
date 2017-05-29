@@ -45,6 +45,8 @@ Boston, MA  02110-1301, USA.
 #include "uservia.h"
 #include "video.h"
 #include "beebsound.h"
+#include "soundstream.h"
+#include "music5000.h"
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "atodconv.h"
@@ -344,6 +346,9 @@ void BeebWin::ApplyPrefs()
 
 	SoundReset();
 	if (SoundDefault) SoundInit();
+	Music5000Reset();
+	if (Music5000Enabled)
+		Music5000Init();
 	SetSoundMenu();
 #ifdef SPEECH_ENABLED
 	if (SpeechDefault)
@@ -423,6 +428,8 @@ void BeebWin::Shutdown()
 	if (SoundEnabled)
 		SoundReset();
 
+	Music5000Reset();
+
 	if (m_SpVoice)
 	{
 		m_SpVoice->Release();
@@ -444,6 +451,9 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	if (SoundDefault)
 		SoundInit();
 	SwitchOnSound();
+	Music5000Reset();
+	if (Music5000Enabled)
+		Music5000Init();
 	EnableTube=TubeStatus;
 	MachineType=NewModelType;
 	BeebMemInit(LoadRoms,m_ShiftBooted);
@@ -856,7 +866,6 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(hMenu, IDM_LOWVOLUME, MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_FULLVOLUME, MF_UNCHECKED);
 	CheckMenuItem(hMenu, m_MenuIdVolume, MF_CHECKED);
-	SetPBuff();
 	CheckMenuItem(m_hMenu,ID_PSAMPLES,(PartSamples)?MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_EXPVOLUME, SoundExponentialVolume ? MF_CHECKED:MF_UNCHECKED);
 	CheckMenuItem(hMenu, IDM_TEXTTOSPEECH, m_TextToSpeechEnabled ? MF_CHECKED:MF_UNCHECKED);
@@ -934,12 +943,6 @@ void BeebWin::UpdateDisplayRendererMenu() {
 void BeebWin::UpdateSoundStreamerMenu() {
 	CheckMenuItem(m_hMenu, IDM_XAUDIO2, SoundConfig::Selection == SoundConfig::XAudio2 ? MF_CHECKED : MF_UNCHECKED);
 	CheckMenuItem(m_hMenu, IDM_DIRECTSOUND, SoundConfig::Selection == SoundConfig::DirectSound ? MF_CHECKED : MF_UNCHECKED);
-	if( SoundConfig::Selection == SoundConfig::XAudio2 )
-	{
-		UsePrimaryBuffer = 0;
-		SetPBuff();
-	}
-	EnableMenuItem(m_hMenu, ID_PBUFF, SoundConfig::Selection == SoundConfig::DirectSound ? MF_ENABLED : MF_GRAYED);
 }
 
 void BeebWin::UpdateMonitorMenu() {
@@ -1930,11 +1933,11 @@ void BeebWin::TranslateSampleRate(void)
 {
 	switch (m_MenuIdSampleRate)
 	{
+	default:
 	case IDM_44100KHZ:
 		SoundSampleRate = 44100;
 		break;
 
-	default:
 	case IDM_22050KHZ:
 		SoundSampleRate = 22050;
 		break;
@@ -1950,21 +1953,21 @@ void BeebWin::TranslateVolume(void)
 {
 	switch (m_MenuIdVolume)
 	{
+	default:
 	case IDM_FULLVOLUME:
-		SoundVolume = 1;
+		SoundVolume = 100;
 		break;
 
 	case IDM_HIGHVOLUME:
-		SoundVolume = 2;
+		SoundVolume = 75;
 		break;
 
-	default:
 	case IDM_MEDIUMVOLUME:
-		SoundVolume = 3;
+		SoundVolume = 50;
 		break;
 
 	case IDM_LOWVOLUME:
-		SoundVolume = 4;
+		SoundVolume = 25;
 		break;
 	}
 }
@@ -2885,6 +2888,11 @@ void BeebWin::HandleCommand(int MenuId)
 			SoundReset();
 			SoundInit();
 		}
+		if (Music5000Enabled)
+		{
+			Music5000Reset();
+			Music5000Init();
+		}
 
 #ifdef SPEECH_ENABLED
 		if (SpeechDefault)
@@ -2967,6 +2975,14 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 	
+	case IDM_MUSIC5000:
+		Music5000Enabled = !Music5000Enabled;
+		Music5000Reset();
+		if (Music5000Enabled)
+			Music5000Init();
+		CheckMenuItem(hMenu, IDM_MUSIC5000, Music5000Enabled?MF_CHECKED:MF_UNCHECKED);
+		break;
+
 	/* LRW Added switch individual ROMS Writable ON/OFF */
 	case IDM_ALLOWWRITES_ROM0:
 	case IDM_ALLOWWRITES_ROM1:
@@ -3111,6 +3127,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_DEFINEKEYMAP:
 		UserKeyboardDialog( m_hWnd );
+		SetFocus( m_hWnd );
 		break;
 
 	case IDM_LOADKEYMAP:
@@ -3511,12 +3528,6 @@ void BeebWin::HandleCommand(int MenuId)
 		CheckMenuItem(m_hMenu, ID_UPRM, RTC_Enabled ? MF_CHECKED:MF_UNCHECKED);
 		break;
 
-	case ID_PBUFF:
-		UsePrimaryBuffer=1-UsePrimaryBuffer;
-		SetPBuff();
-		SoundReset();
-		if (SoundDefault) SoundInit();
-		break;
 	case ID_TSTYLE:
 		THalfMode=1-THalfMode;
 		UpdateOptiMenu();
@@ -3782,13 +3793,9 @@ void BeebWin::HandleCommand(int MenuId)
 	}
 }
 
-void BeebWin::SetPBuff(void) {
-	CheckMenuItem(m_hMenu,ID_PBUFF,(UsePrimaryBuffer)?MF_CHECKED:MF_UNCHECKED);
-}
-
 void BeebWin::SetSoundMenu(void) {
 	CheckMenuItem(m_hMenu,IDM_SOUNDONOFF,(SoundEnabled && SoundDefault)?MF_CHECKED:MF_UNCHECKED);
-	SetPBuff();
+	CheckMenuItem(m_hMenu, IDM_MUSIC5000, Music5000Enabled?MF_CHECKED:MF_UNCHECKED);
 }
 
 void BeebWin::Activate(BOOL active)

@@ -657,7 +657,8 @@ void BeebWin::CaptureVideo()
 		m_Avibmi = m_bmi;
 		if (m_MenuIdAviResolution == IDM_VIDEORES1)
 		{
-			m_Avibmi.bmiHeader.biWidth = m_XWinSize;
+			// Must be multiple of 4
+			m_Avibmi.bmiHeader.biWidth = m_XWinSize & (~3);
 			m_Avibmi.bmiHeader.biHeight = m_YWinSize;
 		}
 		else if (m_MenuIdAviResolution == IDM_VIDEORES2)

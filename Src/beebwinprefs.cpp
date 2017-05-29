@@ -35,6 +35,8 @@ Boston, MA  02110-1301, USA.
 #include "uservia.h"
 #include "video.h"
 #include "beebsound.h"
+#include "soundstream.h"
+#include "music5000.h"
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "atodconv.h"
@@ -68,7 +70,7 @@ static char *CFG_VIEW_WIN_SIZE = "WinSize";
 static char *CFG_VIEW_SHOW_FPS = "ShowFSP";
 static char *CFG_VIEW_MONITOR = "Monitor";
 static char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
-static char *CFG_SOUND_VOLUME = "Volume";
+static char *CFG_SOUND_VOLUME = "SoundVolume";
 static char *CFG_SOUND_ENABLED = "SoundEnabled";
 static char *CFG_OPTIONS_STICKS = "Sticks";
 static char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
@@ -148,6 +150,8 @@ void BeebWin::LoadPreferences()
 	m_Prefs.erase("UserKeyMapRow");
 	m_Prefs.erase("UserKeyMapCol");
 	m_Prefs.erase("ShowBottomCursorLine");
+	m_Prefs.erase("Volume");
+	m_Prefs.erase("UsePrimaryBuffer");
 
 	if(!PrefsGetBinaryValue("MachineType",&MachineType,1))
 		MachineType=0;
@@ -267,7 +271,7 @@ void BeebWin::LoadPreferences()
 	if (PrefsGetDWORDValue(CFG_SOUND_VOLUME,dword))
 		m_MenuIdVolume = dword;
 	else
-		m_MenuIdVolume = IDM_MEDIUMVOLUME;
+		m_MenuIdVolume = IDM_FULLVOLUME;
 	TranslateVolume();
 
 	if (!PrefsGetBinaryValue("RelaySoundEnabled",&RelaySoundEnabled,1))
@@ -276,14 +280,17 @@ void BeebWin::LoadPreferences()
 		TapeSoundEnabled=0;
 	if (!PrefsGetBinaryValue("DiscDriveSoundEnabled",&DiscDriveSoundEnabled,1))
 		DiscDriveSoundEnabled=1;
-	if (!PrefsGetBinaryValue("UsePrimaryBuffer",&UsePrimaryBuffer,1))
-		UsePrimaryBuffer=0;
 	if (!PrefsGetBinaryValue("Part Samples",&PartSamples,1))
 		PartSamples=1;
 	if (!PrefsGetBinaryValue("ExponentialVolume",&SoundExponentialVolume,1))
 		SoundExponentialVolume=1;
 	if (!PrefsGetBinaryValue("TextToSpeechEnabled",&m_TextToSpeechEnabled,1))
 		m_TextToSpeechEnabled=0;
+
+	if (PrefsGetBinaryValue("Music5000Enabled",&flag,1))
+		Music5000Enabled = flag;
+	else
+		Music5000Enabled = FALSE;
 
 	if (PrefsGetDWORDValue(CFG_OPTIONS_STICKS,dword))
 		m_MenuIdSticks = dword;
@@ -584,7 +591,7 @@ void BeebWin::LoadPreferences()
 	}
 
 	// Update prefs version
-	PrefsSetStringValue("PrefsVersion", "1.9");
+	PrefsSetStringValue("PrefsVersion", "2.1");
 
 	// Windows key enable/disable still comes from registry
 	int binsize = 24;
@@ -644,10 +651,11 @@ void BeebWin::SavePreferences(bool saveAll)
 		PrefsSetBinaryValue("RelaySoundEnabled",&RelaySoundEnabled,1);
 		PrefsSetBinaryValue("TapeSoundEnabled",&TapeSoundEnabled,1);
 		PrefsSetBinaryValue("DiscDriveSoundEnabled",&DiscDriveSoundEnabled,1);
-		PrefsSetBinaryValue("UsePrimaryBuffer",&UsePrimaryBuffer,1);
 		PrefsSetBinaryValue("Part Samples",&PartSamples,1);
 		PrefsSetBinaryValue("ExponentialVolume",&SoundExponentialVolume,1);
 		PrefsSetBinaryValue("TextToSpeechEnabled",&m_TextToSpeechEnabled,1);
+		flag = Music5000Enabled ? 1 : 0;
+		PrefsSetBinaryValue("Music5000Enabled",&flag,1);
 
 		PrefsSetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
 		flag = m_FreezeWhenInactive;

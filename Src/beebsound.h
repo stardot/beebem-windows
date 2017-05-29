@@ -37,16 +37,6 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 
-namespace SoundConfig
-{
-	extern enum Option
-	{
-		XAudio2,
-		DirectSound
-	}
-	Selection;
-}
-
 extern int SoundDefault; // Default sound state (enabled/disabled via sound menu)
 extern int SoundEnabled;    /* Sound on/off flag - will be off if DirectSound init fails */
 extern int RelaySoundEnabled; // Relay Click noise enable
@@ -102,7 +92,6 @@ extern bool TapeSoundEnabled;
 extern int SoundChipEnabled;
 void SoundChipReset(void);
 void SwitchOnSound(void);
-extern int UsePrimaryBuffer;
 void LoadSoundUEF(FILE *SUEF);
 void SaveSoundUEF(FILE *SUEF);
 extern int PartSamples;

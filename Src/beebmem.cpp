@@ -58,6 +58,7 @@ Boston, MA  02110-1301, USA.
 #include "econet.h"		//Rob
 #include "debug.h"		//Rob added for INTON/OFF reporting only
 #include "teletext.h"
+#include "music5000.h"
 
 using namespace std;
 
@@ -97,6 +98,7 @@ unsigned char HiddenDefault[31] = {0,0,0,0,0,0,2,1,1,0,0xe0,0x8e,0,0,0,0,0,0,0,
 /* End of Computech (&B+) Specific Stuff */
 
 unsigned char ROMSEL;
+unsigned char JimPageSel;
 /* Master 128 Specific Stuff */
 unsigned char FSRam[8192];       // 8K Filing System RAM
 unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
@@ -489,6 +491,16 @@ int BeebReadMem(int Address) {
 		return(mainWin->PasteKey(Address & 0x1));
 	}
 
+	if (Address == 0xfcff) {
+		return(JimPageSel);
+	}
+
+	if ((JimPageSel & 0xf0) == 0x30 &&
+		Address >= 0xfd00 && Address <= 0xfdff)
+	{
+		return(Music5000Read(JimPageSel, Address));
+	}
+
 	if ((Address & ~0x3)==0xfdf0) {
 		return(SASIRead(Address & 0x3));
 	}
@@ -761,7 +773,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	 if ((Address<0xc000) && (Address>=0x8000)) {
 		if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
-		else RomWriteThrough(Address, Value);
+		//else RomWriteThrough(Address, Value); //Not supported on B+
 		return;
 	 }
 
@@ -804,14 +816,14 @@ void BeebWriteMem(int Address, unsigned char Value) {
 				if (PRAM) { PrivateRAM[Address-0x8000]=Value; }
 				else {
 					if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
-					else RomWriteThrough(Address, Value);
+					//else RomWriteThrough(Address, Value); //Not supported on Master
 				}
 				break;
 			case 9:
 			case 0xa:
 			case 0xb:
 				if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
-				else RomWriteThrough(Address, Value);
+				//else RomWriteThrough(Address, Value); //Not supported on Master
 				break;
 			case 0xc:
 			case 0xd:
@@ -956,6 +968,17 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			IDEWrite((Address & 0x7),Value);
 			return;
 		}
+	}
+
+	if (Address == 0xfcff) {
+		JimPageSel = Value;
+	}
+
+	if ((JimPageSel & 0xf0) == 0x30 &&
+		Address >= 0xfd00 && Address <= 0xfdff)
+	{
+		Music5000Write(JimPageSel, Address, Value);
+		return;
 	}
 
 	if ((Address & ~0x3)==0xfdf0) {
@@ -1319,6 +1342,10 @@ void SaveMemUEF(FILE *SUEF) {
 			break;
 		}
 	}
+
+	fput16(0x0476,SUEF); // JIM Page Reg
+	fput32(1,SUEF);
+	fputc(JimPageSel,SUEF);
 }
 
 void LoadRomRegsUEF(FILE *SUEF) {
@@ -1416,6 +1443,10 @@ void LoadSWRomMemUEF(FILE *SUEF) {
 		memset(Roms[Rom], 0, 0x4000);
 		break;
 	}
+}
+
+void LoadJIMPageRegUEF(FILE *SUEF) {
+	JimPageSel=fgetc(SUEF);
 }
 
 /*-------------------------------------------------------------------------*/

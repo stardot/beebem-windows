@@ -1,6 +1,11 @@
 BeebEm Change History
 =====================
 
+Version 4.15 (Mike Wyatt)
+------------
+* Music 5000 Synthesiser emulation.
+* General sound emulation improvements.
+
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------
 * IDE hard drive interface.

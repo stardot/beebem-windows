@@ -29,6 +29,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "main.h"
 #include "beebsound.h"
+#include "music5000.h"
 #include "disc8271.h"
 #include "disc1770.h"
 #include "tube.h"
@@ -89,6 +90,7 @@ void SaveUEFState(char *StateName) {
 		}
 		SaveSerialUEF(UEFState);
 		SaveAtoDUEF(UEFState);
+		SaveMusic5000UEF(UEFState);
 		fclose(UEFState);
 	}
 	else
@@ -150,6 +152,8 @@ void LoadUEFState(char *StateName) {
 			if (Block==0x0473) LoadSerialUEF(UEFState);
 			if (Block==0x0474) LoadAtoDUEF(UEFState);
 			if (Block==0x0475) LoadSWRomMemUEF(UEFState);
+			if (Block==0x0476) LoadJIMPageRegUEF(UEFState);
+			if (Block==0x0477) LoadMusic5000UEF(UEFState);
 			fseek(UEFState,CPos+Length,SEEK_SET); // Skip unrecognised blocks (and over any gaps)
 		}
 
