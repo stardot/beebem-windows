@@ -200,6 +200,7 @@ void Music5000Update(UINT cycles)
 {
 	CHANNELREGS *pChRegs;
 	UINT32 freq;
+	UINT c4d;
 	UINT wavetable, offset;
 	UINT amplitude;
 	UINT control;
@@ -217,9 +218,19 @@ void Music5000Update(UINT cycles)
 		// Update phase for active register set
 		pChRegs = &pWaveRam->ChannelRegs[ActiveRegSet];
 
-		freq = (pChRegs->FreqHi[CurCh] << 16) +
-			(pChRegs->FreqMed[CurCh] << 8) + (pChRegs->FreqLo[CurCh] & ~FREQ_DISABLE);
-		PhaseRam[CurCh] += freq;
+		if (pChRegs->FreqLo[CurCh] & FREQ_DISABLE)
+		{
+			PhaseRam[CurCh] = 0;
+			c4d = 0;
+		}
+		else
+		{
+			freq = (pChRegs->FreqHi[CurCh] << 16) +
+				(pChRegs->FreqMed[CurCh] << 8) + (pChRegs->FreqLo[CurCh] & ~FREQ_DISABLE);
+			PhaseRam[CurCh] += freq;
+			c4d = PhaseRam[CurCh] & (1<<24);
+			PhaseRam[CurCh] &= 0xffffff;
+		}
 
 		// Pull wave sample out for the active register set
 		offset = (PhaseRam[CurCh] >> 17) & 0x7f;
@@ -230,39 +241,35 @@ void Music5000Update(UINT cycles)
 		sign = data & DATA_SIGN;
 		data &= DATA_VALUE;
 
-		if (control & CTRL_INVERT_WAVE)
-			sign ^= DATA_SIGN;
-
-		if (!(pChRegs->FreqLo[CurCh] & FREQ_DISABLE))
-		{
-			if (amplitude > 0x80)
-				amplitude = 0x80;
-			data = data * amplitude / 0x80;
-
-			sample = D2ATable[data];
-			if (sign)
-				sample = -sample;
-
-#if 0
-			if (sample > 0)
-			{
-				char str[200];
-				sprintf(str, "S %d, amplitude %d, data %d\n", sample, amplitude, data);
-				OutputDebugString(str);
-			}
-#endif
-
-			// Stereo
-			pos = (control & CTRL_STEREO_POS);
-			SampleLeft += sample * StereoLeft[pos] / 100;
-			SampleRight += sample * StereoRight[pos] / 100;
-		}
-
 		// Modulate the next channel?
-		if ((control & CTRL_MODULATE_ADJ) && (sign))
+		if ((control & CTRL_MODULATE_ADJ) && (sign || c4d))
 			ActiveRegSet = REG_SET_ALT;
 		else
 			ActiveRegSet = REG_SET_NORMAL;
+
+		if (amplitude > 0x80)
+			amplitude = 0x80;
+		data = data * amplitude / 0x80;
+
+		sample = D2ATable[data];
+		if (control & CTRL_INVERT_WAVE)
+			sign ^= DATA_SIGN;
+		if (sign)
+			sample = -sample;
+
+#if 0
+		if (sample > 0)
+		{
+			char str[200];
+			sprintf(str, "S %d, amplitude %d, data %d\n", sample, amplitude, data);
+			OutputDebugString(str);
+		}
+#endif
+
+		// Stereo
+		pos = (control & CTRL_STEREO_POS);
+		SampleLeft += sample * StereoLeft[pos] / 100;
+		SampleRight += sample * StereoRight[pos] / 100;
 
 		CurCh++;
 		if (CurCh == NUM_CHANNELS)
