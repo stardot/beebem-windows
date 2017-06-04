@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -18,6 +18,9 @@
     </Filter>
     <Filter Include="Header Files\ARMulator">
       <UniqueIdentifier>{7e7d31fc-0dbe-457f-854e-2c4bb8f1216e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Help Files">
+      <UniqueIdentifier>{2c6e9544-5499-4544-b881-236d1aba643a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -343,10 +346,111 @@
     <Image Include="BeebEm.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="..\Help\bbcmicro.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\beeb.gif">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\keyboard.jpg">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\startup.jpg">
+      <Filter>Help Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BeebEm.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Help\65c02copro.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\accessiblity.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\armcopro.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\commandline.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\contents.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\debugger.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\disks.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\econet.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\emulation.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\faq.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\gettingstarted.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\harddisks.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\index.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\keyboard.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\m5000.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\mastercopro.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\menus.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\roms.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\rtc.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\serial.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\sources.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\speech.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\state.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\tapes.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\teletext.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\troubleshooting.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\uninstall.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\z80copro.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\z80torch.html">
+      <Filter>Help Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

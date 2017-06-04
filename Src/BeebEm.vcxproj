@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -267,6 +267,10 @@
     <ClInclude Include="zlib.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\Help\bbcmicro.png" />
+    <Image Include="..\Help\beeb.gif" />
+    <Image Include="..\Help\keyboard.jpg" />
+    <Image Include="..\Help\startup.jpg" />
     <Image Include="BeebEm.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -300,6 +304,37 @@
     <Content Include="..\zlib1.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Help\65c02copro.html" />
+    <None Include="..\Help\accessiblity.html" />
+    <None Include="..\Help\armcopro.html" />
+    <None Include="..\Help\commandline.html" />
+    <None Include="..\Help\contents.html" />
+    <None Include="..\Help\debugger.html" />
+    <None Include="..\Help\disks.html" />
+    <None Include="..\Help\econet.html" />
+    <None Include="..\Help\emulation.html" />
+    <None Include="..\Help\faq.html" />
+    <None Include="..\Help\gettingstarted.html" />
+    <None Include="..\Help\harddisks.html" />
+    <None Include="..\Help\index.html" />
+    <None Include="..\Help\keyboard.html" />
+    <None Include="..\Help\m5000.html" />
+    <None Include="..\Help\mastercopro.html" />
+    <None Include="..\Help\menus.html" />
+    <None Include="..\Help\roms.html" />
+    <None Include="..\Help\rtc.html" />
+    <None Include="..\Help\serial.html" />
+    <None Include="..\Help\sources.html" />
+    <None Include="..\Help\speech.html" />
+    <None Include="..\Help\state.html" />
+    <None Include="..\Help\tapes.html" />
+    <None Include="..\Help\teletext.html" />
+    <None Include="..\Help\troubleshooting.html" />
+    <None Include="..\Help\uninstall.html" />
+    <None Include="..\Help\z80copro.html" />
+    <None Include="..\Help\z80torch.html" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
