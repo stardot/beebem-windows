@@ -65,8 +65,10 @@ extern unsigned char StackReg, PSR;
 extern int Accumulator, XReg, YReg;
 int XYReg, CommandLine;
 char EmulatorTrap = 0;				// b0=Acorn, b1=WSS, b4=TransBasic
-FILE *handles[16]={NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+FILE *handles[16] = {
+  nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+  nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
+};
 #define VDFS_HANDMIN 0xF0
 #define VDFS_HANDMAX 0xFF
 
@@ -258,11 +260,13 @@ int host_isrussell(char *pathname, FILE *handle) {
 
 // Check if valid channel
 int host_channel(int handle) {
-  if (handle<VDFS_HANDMIN || handle>VDFS_HANDMAX) return host_error(222, "Channel");
-							// Not one of our channels
-  if (handles[handle-VDFS_HANDMIN]==NULL)         return host_error(222, "Channel not open");
-							// Our channel, but not open
-  return handle-VDFS_HANDMIN;				// Return index into translation table
+  if (handle<VDFS_HANDMIN || handle>VDFS_HANDMAX)
+    return host_error(222, "Channel"); // Not one of our channels
+
+  if (handles[handle-VDFS_HANDMIN]==nullptr)
+    return host_error(222, "Channel not open"); // Our channel, but not open
+
+  return handle-VDFS_HANDMIN; // Return index into translation table
 }
 
 
@@ -463,6 +467,7 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
     memset(buffer, 0, 256);
     fread(buffer, 1, 256, handle);
     fclose(handle);
+    handle = nullptr;
     off=buffer[7];
     if (buffer[off+0]==0 && buffer[off+1]=='(' && buffer[off+2]=='C' && buffer[off+3]==')') {
       type=buffer[6];
@@ -482,6 +487,7 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
       memset(buffer, 0, 256);
       fread(buffer, 1, 256, handle);
       fclose(handle);
+      handle = nullptr;
       off=0;
       while(buffer[off]>' ') off++;		// Step past filename
       while(buffer[off]==' ') off++;		// Skip spaces
@@ -532,7 +538,7 @@ void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) 
       while((buffer[inp]==' ') || (buffer[inp]==9)) inp++; // Step past SPC/TABs
 	// inp now points to any remaining trailing metadata
     } else {
-      if((handle=fopen(buffer, "w"))==NULL) return;	// Couldn't create .inf file
+      if((handle=fopen(buffer, "w"))==nullptr) return;	// Couldn't create .inf file
       inp=0; outp=0;
       while(pathname[inp]>' ') {
         buffer[outp++]=pathname[inp];			// Copy filename to buffer
@@ -562,6 +568,7 @@ void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) 
     fseek(handle, 0, SEEK_SET);
     fwrite(buffer, 1, outp, handle);
     fclose(handle);
+    handle = nullptr;
   }
 }
 
@@ -582,7 +589,7 @@ void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) 
 int host_run(int FSCAction, int XYReg) {
   int FileType, Load, Exec, Length, Attr;
   char pathname[256];
-  FILE *handle;
+  FILE *handle = nullptr;
 
   CommandLine=XYReg;
   while(ReadPaged(CommandLine) > ' ') CommandLine++;
@@ -598,7 +605,7 @@ int host_run(int FSCAction, int XYReg) {
 						// Can only do '*RUN file' if file has a load address
 						// and load/exec both refer to same memory
   }
-  if (FileType) if ((handle=fopen(pathname, "rb"))==NULL) FileType=0;
+  if (FileType) if ((handle=fopen(pathname, "rb"))==nullptr) FileType=0;
   if (FileType==0) {
     if (FSCAction==3) {
       return host_error(254, "Bad command");
@@ -607,7 +614,10 @@ int host_run(int FSCAction, int XYReg) {
     }
   }
   host_memload(handle, Load, Length);
+
   fclose(handle);
+  handle = nullptr;
+
   if(WholeRam[0x27A]==0) Exec|=0xFF000000;	// No Tube
   if ((Exec & 0xFF000000)==0xFF000000) {	// I/O memory
     ProgramCounter=Exec & 0xFFFF;
@@ -633,7 +643,7 @@ int host_run(int FSCAction, int XYReg) {
 int host_cdir(char *hostpath) {
 
 #ifdef WIN32
-  if ((CreateDirectory(hostpath,NULL)) == 0) {
+  if ((CreateDirectory(hostpath,nullptr)) == 0) {
     if (GetLastError() != ERROR_ALREADY_EXISTS) {
       return host_error(214, "Not found");
     }
@@ -837,7 +847,7 @@ int host_file(int dorts) {
   union { int Attr;   int End;   };
   int addr, num;
   char pathname[256];
-  FILE *handle;
+  FILE *handle = nullptr;
 
   XYReg =XReg | (YReg<<8);
   host_pathtrans(ReadPaged(XYReg+0) | (ReadPaged(XYReg+1)<<8), pathname);
@@ -859,7 +869,7 @@ int host_file(int dorts) {
           return host_error(252, "Bad address");	// Can only do '*LOAD file' if file has a load address
         }
       }
-      if (Accumulator) if ((handle=fopen(pathname, "rb"))==NULL) Accumulator=0;
+      if (Accumulator) if ((handle=fopen(pathname, "rb"))==nullptr) Accumulator=0;
       if (Accumulator==0) return host_error(214, "File not found");
       if (host_isrussell(pathname, handle)) {
         Length=host_basload(handle, addr, Length);
@@ -867,12 +877,14 @@ int host_file(int dorts) {
         Length=host_memload(handle, addr, Length);
       }
       fclose(handle);
+      handle = nullptr;
       break;
     case 0:					// Save
       handle=fopen(pathname, "wb");
-      if (handle == NULL) return host_error(192, "Can't save file");
+      if (handle == nullptr) return host_error(192, "Can't save file");
       host_memsave(handle, Start, End-Start);
       fclose(handle);
+      handle = nullptr;
       Length=End-Start;
       Accumulator=1;				// Return A=file
       Attr=0x33;				// Attr=WR/wr
@@ -929,11 +941,11 @@ int host_file(int dorts) {
 
 // Opcode 63 - MOS_ARGS
 int host_args(int dorts) {
-  int Data, idx;
-  FILE *handle;
+  int idx;
+  FILE *handle = nullptr;
 
   // Data will always be in zero page I/O memory
-  Data=WholeRam[XReg+0] | (WholeRam[XReg+1]<<8) | (WholeRam[XReg+2]<<16) | (WholeRam[XReg+3]<<24);
+  int Data=WholeRam[XReg+0] | (WholeRam[XReg+1]<<8) | (WholeRam[XReg+2]<<16) | (WholeRam[XReg+3]<<24);
   if (YReg) {
     if (Accumulator==0xFF || Accumulator<=6) {
       if ((idx=host_channel(YReg))<0) return -1;
@@ -975,7 +987,7 @@ int host_args(int dorts) {
       case 0xFE:			// Last drive used
         break;
       case 0xFF:			// Ensure all files
-        fflush(NULL);
+        fflush(nullptr);
         break;
       case 0:				// Read selected filing system
         Accumulator=17;			// 17=VDFS
@@ -1004,9 +1016,9 @@ int host_args(int dorts) {
 
 // Opcode 73 - MOS_BGET
 int host_bget(int dorts) {
-  int idx;
+  int idx = host_channel(YReg);
 
-  if ((idx=host_channel(YReg))<0) return -1;
+  if (idx<0) return -1;
   if (feof(handles[idx])) return host_error(223, "EOF");
   if ((Accumulator=fgetc(handles[idx]))==EOF) {
     Accumulator=0xFE;
@@ -1021,9 +1033,9 @@ int host_bget(int dorts) {
 
 // Opcode 83 - MOS_BPUT
 int host_bput(int dorts) {
-  int idx;
+  int idx = host_channel(YReg);
 
-  if ((idx=host_channel(YReg))<0) return -1;
+  if (idx<0) return -1;
   fputc(Accumulator, handles[idx]);
   if(dorts) rts();
   return 0;
@@ -1032,17 +1044,17 @@ int host_bput(int dorts) {
 
 // Opcode 93 - MOS_GBPB
 int host_gbpb(int dorts) {
-  int Channel, Addr, Count, Offset;		// Control block info
-  int idx, res, num;
-  FILE *handle;
+  int idx = 0, res = 0;
+  FILE *handle = nullptr;
 
-  XYReg  =XReg | (YReg<<8);
-  Channel=ReadPaged(XYReg+0);
-  Addr   =ReadPaged(XYReg+1) | (ReadPaged(XYReg+2)<<8)  | (ReadPaged(XYReg+3)<<16)  | (ReadPaged(XYReg+4)<<24);
-  Count  =ReadPaged(XYReg+5) | (ReadPaged(XYReg+6)<<8)  | (ReadPaged(XYReg+7)<<16)  | (ReadPaged(XYReg+8)<<24);
-  Offset =ReadPaged(XYReg+9) | (ReadPaged(XYReg+10)<<8) | (ReadPaged(XYReg+11)<<16) | (ReadPaged(XYReg+12)<<24);
+  XYReg = XReg | (YReg<<8);
+  // Control block info
+  int Channel=ReadPaged(XYReg+0);
+  int Addr   =ReadPaged(XYReg+1) | (ReadPaged(XYReg+2)<<8)  | (ReadPaged(XYReg+3)<<16)  | (ReadPaged(XYReg+4)<<24);
+  int Count  =ReadPaged(XYReg+5) | (ReadPaged(XYReg+6)<<8)  | (ReadPaged(XYReg+7)<<16)  | (ReadPaged(XYReg+8)<<24);
+  int Offset =ReadPaged(XYReg+9) | (ReadPaged(XYReg+10)<<8) | (ReadPaged(XYReg+11)<<16) | (ReadPaged(XYReg+12)<<24);
   PSR &= 0xFE;					// Clear carry flag, not EOF
-  num=Count;
+  int num=Count;
 
   if (Accumulator>=1 && Accumulator<=4) {	// Write/read from open channel
 
@@ -1166,7 +1178,7 @@ int host_gbpb(int dorts) {
 // Opcode A3 - MOS_FIND
 int host_find(int dorts) {
   char pathname[256];
-  FILE *handle;
+  FILE *handle = nullptr;
   int idx, lp;
 
   if (Accumulator) {				// Open
@@ -1189,20 +1201,20 @@ int host_find(int dorts) {
       handles[idx]=handle;
       Accumulator=idx+VDFS_HANDMIN;
     } else {
-      Accumulator=0;				// Not found
+      Accumulator=0; // Not found
     }
-  } else {					// Close
+  } else {
+    // Close
     if (YReg) {
       if ((idx=host_channel(YReg))<0) return -1; // Bad channel
-      handle=handles[idx];
-      handles[idx]=NULL;
-      fclose(handle);
-    } else {					// Close all
+      fclose(handles[idx]);
+      handles[idx]=nullptr;
+    } else {
+      // Close all
       for(idx=0; idx<(VDFS_HANDMAX-VDFS_HANDMIN+1); idx++) {
         if (handles[idx]) {
-          handle=handles[idx];
-          handles[idx]=NULL;
-          fclose(handle);
+          fclose(handles[idx]);
+          handles[idx]=nullptr;
         }
       }
     }
@@ -1245,4 +1257,3 @@ int host_wrch(int dorts) { if(dorts) rts(); return 0;  }
 
 // Opcode 43 - MOS_RDCH
 int host_rdch(int dorts) { if(dorts) rts(); return 0;  }
-
