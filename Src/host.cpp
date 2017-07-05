@@ -682,12 +682,12 @@ int host_delete(char *hostpath, int hint) {
     else				 return host_error(189, "Access denied");
   }
   DeleteFile(host_inf(hostpath, hostpath));	// Remove any .inf file
-  return hint;					// OK
+  return 1;					// OK
 #else
   remove(hostpath);
   rmdir(hostpath);
   remove(host_inf(hostpath, hostpath));
-  return hint;				// OK
+  return 1;				// OK
 #endif
 }
 
