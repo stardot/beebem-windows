@@ -94,7 +94,7 @@ void rts() {
 
 // Generate an error - string must be < 253 characters
 // ***NOTE*** Ensure you use the correct error numbers
-int host_error(int num, char *string) {
+int host_error(int num, const char* string) {
   WholeRam[0x100]=0;				// BRK
   WholeRam[0x101]=(char) num;			// Error number
   strcpy((char *)(WholeRam+0x102), string);	// Error string, &00
@@ -166,11 +166,9 @@ int host_memload(FILE *handle, int addr, int count) {
 
 // Save from BBC memory to open file, return length actually saved
 int host_memsave(FILE *handle, int addr, int count) {
-  int num, byte, io;
-
   if(WholeRam[0x27a]==0) addr|=0xff000000;		// No Tube
   if((addr & 0xff000000) == 0xff000000) {		// I/O memory
-    io = addr & 0xFFFF0000;
+    int io = addr & 0xFFFF0000;
     addr &= 0xFFFF;
     if (io == 0xFFFE0000) {				// Save current screen memory
       if (MachineType == 2) { if (ShEn==1)             io=0xFFFD0000; else io=0xFFFF0000; }
@@ -183,9 +181,9 @@ int host_memsave(FILE *handle, int addr, int count) {
       return count;
     }
     if (count>0xFF00-addr) count=0xFF00-addr;		// Prevent wrapround
-    num=count;
+    int num = count;
     while (num--) {
-      byte=ReadPaged(addr);				// Need to do this way to access banked memory
+      int byte = ReadPaged(addr);			// Need to do this way to access banked memory
       fputc(byte, handle);
       addr++;
     }
@@ -212,19 +210,17 @@ int host_memsave(FILE *handle, int addr, int count) {
 // Acorn format:
 // cr hi lo len text cr
 int host_basload(FILE *handle, int addr, int count) {
-  char len, lo;
-
-  count=0;
+  count = 0;
   host_bytewr(addr++, 13);
   while (!feof(handle)) {
-    len=fgetc(handle);			// len
-    lo =fgetc(handle);			// lo
+    int len = fgetc(handle);		// len
+    int lo  = fgetc(handle);		// lo
     host_bytewr(addr++, fgetc(handle));	// hi
     host_bytewr(addr++, lo);
     host_bytewr(addr++, len);
-    lo=0;
+    lo = 0;
     while(!feof(handle) && lo!=13) host_bytewr(addr++, lo=fgetc(handle));
-    count=count+len;
+    count += len;
   }
   return count+2;
 }
@@ -276,11 +272,9 @@ int host_channel(int handle) {
 // We only ever read leafnames from the host system, so we
 // don't have to attempt to translate full path symantics.
 int host_strwr(int addr, char *str, int max) {
-  char b;
-
   if(WholeRam[0x27a]==0) addr|=0xff000000;	// No Tube
   while(*str && max>0) {
-    b=*str++; max--;
+    char b = *str++; max--;
 #if defined(WIN32) || defined(MSDOS) || defined(UNIX) || defined(MACOS)
     switch(b) {					// Convert foreign chars to BBC chars
       case '.': b='/'; break;
@@ -318,10 +312,9 @@ int host_strwr(int addr, char *str, int max) {
 // eg :H.fred.jim -> <mount point for H>\fred\jim
 //
 char *host_pathtrans(int src, char *dst) {
-  char *dstpath;
   char b;
 
-  dstpath=dst;
+  char* dstpath = dst;
   do {
     if ((b=ReadPaged(src))==' ') src++;	// Skip leading spaces
   } while (b==' ');
@@ -381,10 +374,10 @@ char *host_pathtrans(int src, char *dst) {
 
 // Add .inf to pathname
 char *host_inf(char *hostpath, char *buffer) {
-  int off, len;
+  int len;
 
   if((len=strlen(hostpath)) > 251) return hostpath;
-  off=len;
+  int off = len;
 #ifdef WIN32
   while ((hostpath[off] != '.') && (hostpath[off] != '\\') && (hostpath[off] != ':') && (off > 1)) off--;
 #endif
@@ -413,7 +406,7 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
 
 #ifdef WIN32
   hFind = FindFirstFile(pathname, &infobuf);	// Look for object
-  if ((int)hFind == -1) return 0;		// Not found
+  if (hFind == INVALID_HANDLE_VALUE) return 0;	// Not found
   FindClose(hFind);
   *ld=0; *ex=0;					// Only update info if object exists
   *ln=infobuf.nFileSizeLow;
@@ -507,12 +500,12 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
 
 // Write object info
 void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) {
-  int FileType, Load, Exec, Length, Attr;
+  int Load, Exec, Length, Attr;
   char buffer[256];
   int inp, outp;
   FILE *handle;
 
-  FileType=host_readinfo(pathname, &Load, &Exec, &Length, &Attr);
+  int FileType=host_readinfo(pathname, &Load, &Exec, &Length, &Attr);
   if (action == 2) { ex=Exec; at=Attr; }		// Set load
   if (action == 3) { ld=Load; at=Attr; }		// Set exec
   if (action == 4) { ld=Load; ex=Exec; }		// Set attr
@@ -639,7 +632,7 @@ int host_run(int FSCAction, int XYReg) {
 
 
 // Create a directory, no error if exists
-int host_cdir(char *hostpath) {
+int host_cdir(const char *hostpath) {
 
 #ifdef WIN32
   if ((CreateDirectory(hostpath,nullptr)) == 0) {
@@ -657,10 +650,8 @@ int host_cdir(char *hostpath) {
 
 // Delete an object
 int host_delete(char *hostpath, int hint) {
-  int result;
-
 #ifdef WIN32
-  result=0;
+  int result = 0;
   switch (hint) {
     case 0:
       if (DeleteFile(hostpath) == 0) {
@@ -697,12 +688,12 @@ int host_delete(char *hostpath, int hint) {
 // Match with filing system command
 int cmd_lookup(int *XYReg) {
   static const char commands[]=":ACCESS:CDIR:COPY:CREATE:DELETE:DIR:DRIVE:FREE:GO:LIB:MOUNT:RENAME:WIPE::";
-  int  cptr, lptr, num;
+  int  lptr;
   char b;
 
   if (ReadPaged(*XYReg)<'A') return 0;		// Doesn't start with letter
-  num=0;
-  cptr=0;
+  int num=0;
+  int cptr=0;
   do {
     num++;
     lptr=*XYReg;
@@ -1112,7 +1103,7 @@ int host_gbpb(int dorts) {
 #ifdef WIN32
       PSR |= 1; Channel=0;			// Prepare result=no objects returned
       hFind = FindFirstFile("*.*", &infobuf);	// Initialise search
-      if ((int)hFind != -1) {
+      if (hFind != INVALID_HANDLE_VALUE) {
         idx++;
         res=-1;
         while((idx != 0) && (res != 0)) {
