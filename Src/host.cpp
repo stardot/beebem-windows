@@ -152,12 +152,12 @@ int host_memload(FILE *handle, int addr, int count) {
       addr&=0xFFFF;
       if (count>0xFF00-addr) count=0xFF00-addr;		// Prevent wrapround
     }
-    if (TubeEnabled)     fread((void *)(TubeRam+addr),   1, count, handle);
-    if (TorchTubeActive) fread((void *)(z80_ram+addr),   1, count, handle);
-    if (AcornZ80)        fread((void *)(z80_ram+addr),   1, count, handle);
-//    if (ArmTube)         fread((void *)(ramMemory+addr), 1, count, handle);
+    if (TubeEnabled)     fread(TubeRam + addr, 1, count, handle);
+    if (TorchTubeActive) fread(z80_ram + addr, 1, count, handle);
+    if (AcornZ80)        fread(z80_ram + addr, 1, count, handle);
+//    if (ArmTube)         fread(ramMemory + addr, 1, count, handle);
 //#ifdef M512COPRO_ENABLED
-//    if (Tube186Enabled)  fread((void *)(Tube186+addr), 1, count, handle);
+//    if (Tube186Enabled)  fread(Tube186 + addr, 1, count, handle);
 //#endif
   }
   return count;
@@ -194,12 +194,12 @@ int host_memsave(FILE *handle, int addr, int count) {
       addr &= 0xFFFF;
       if (count>0xFF00-addr) count=0xFF00-addr;		// Prevent wrapround
     }
-    if (TubeEnabled)     fwrite((void *)(TubeRam+addr),   1, count, handle);
-    if (TorchTubeActive) fwrite((void *)(z80_ram+addr),   1, count, handle);
-    if (AcornZ80)        fwrite((void *)(z80_ram+addr),   1, count, handle);
-//    if (ArmTube)         fwrite((void *)(ramMemory+addr), 1, count, handle);
+    if (TubeEnabled)     fwrite(TubeRam + addr, 1, count, handle);
+    if (TorchTubeActive) fwrite(z80_ram + addr, 1, count, handle);
+    if (AcornZ80)        fwrite(z80_ram + addr, 1, count, handle);
+//    if (ArmTube)         fwrite(ramMemory + addr, 1, count, handle);
 //#ifdef M512COPRO_ENABLED
-//    if (Tube186Enabled)  fwrite((void *)(Tube186+addr), 1, count, handle);
+//    if (Tube186Enabled)  fwrite(Tube186 + addr, 1, count, handle);
 //#endif
   }
   return count;
@@ -231,10 +231,9 @@ int host_basload(FILE *handle, int addr, int count) {
 
 
 // Test if file is Russell format BASIC
-int host_isrussell(char *pathname, FILE *handle) {
-  int num;
+int host_isrussell(FILE *handle) {
+  int num = 0;
 
-  num=0;
   if (EmulatorTrap & 16) {
     fseek(handle, 0, SEEK_END);
     num=ftell(handle);
@@ -251,7 +250,7 @@ int host_isrussell(char *pathname, FILE *handle) {
           }
         }
       }
-    fseek(handle, 0, SEEK_SET);
+      fseek(handle, 0, SEEK_SET);
     }
   }
   return num;
@@ -697,7 +696,7 @@ int host_delete(char *hostpath, int hint) {
 
 // Match with filing system command
 int cmd_lookup(int *XYReg) {
-  char commands[]=":ACCESS:CDIR:COPY:CREATE:DELETE:DIR:DRIVE:FREE:GO:LIB:MOUNT:RENAME:WIPE::";
+  static const char commands[]=":ACCESS:CDIR:COPY:CREATE:DELETE:DIR:DRIVE:FREE:GO:LIB:MOUNT:RENAME:WIPE::";
   int  cptr, lptr, num;
   char b;
 
@@ -871,7 +870,7 @@ int host_file(int dorts) {
       }
       if (Accumulator) if ((handle=fopen(pathname, "rb"))==nullptr) Accumulator=0;
       if (Accumulator==0) return host_error(214, "File not found");
-      if (host_isrussell(pathname, handle)) {
+      if (host_isrussell(handle)) {
         Length=host_basload(handle, addr, Length);
       } else {
         Length=host_memload(handle, addr, Length);
@@ -1122,9 +1121,8 @@ int host_gbpb(int dorts) {
           if (infobuf.cFileName[0] == '.') {
             idx++;				// Skip '.' and '..' (and '.xxxx')
           }
-          if ((num=strlen(infobuf.cFileName))>4) {
-            if (infobuf.cFileName[num-4]=='.' && (infobuf.cFileName[num-3]|0x20)=='i' && 
-                 (infobuf.cFileName[num-2]|0x20)=='n' && (infobuf.cFileName[num-1]|0x20)=='f') {
+          if ((num = strlen(infobuf.cFileName)) > 4) {
+            if (_stricmp(&infobuf.cFileName[num - 4], ".inf") == 0) {
               idx++;				// Skip '*.inf'
             }
           }
