@@ -717,6 +717,8 @@ static void DoMode7Row(void) {
   unsigned int tmp;
 
   unsigned int Foreground=mainWin->cols[7];
+  /* The foreground colour changes after the current character; only relevant for hold graphics */
+  unsigned int ForegroundPending=Foreground;
   unsigned int ActualForeground;
   unsigned int Background=mainWin->cols[0];
   int Flash=0; /* i.e. steady */
@@ -753,7 +755,7 @@ static void DoMode7Row(void) {
         case 133:
         case 134:
         case 135:
-          Foreground=mainWin->cols[byte-128];
+          ForegroundPending=mainWin->cols[byte-128];
           Graphics=0;
           break;
 
@@ -781,7 +783,7 @@ static void DoMode7Row(void) {
         case 149:
         case 150:
         case 151:
-          Foreground=mainWin->cols[byte-144];
+          ForegroundPending=mainWin->cols[byte-144];
           Graphics=1;
           break;
 
@@ -884,6 +886,7 @@ static void DoMode7Row(void) {
       }; /* Pixel within byte */
       Mode7DoubleHeightFlags[CurrentChar]^=1; /* Not double height - so if the next line is double height it will be top half */
     }
+	Foreground=ForegroundPending;
   }; /* character loop */
 
   /* Finish off right bits of scan line */
