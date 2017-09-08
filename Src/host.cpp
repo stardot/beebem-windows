@@ -1173,7 +1173,7 @@ int host_find(int dorts) {
   if (Accumulator) {				// Open
     idx=-1;					// Look for free handle
     for (lp=0; lp<=(VDFS_HANDMAX-VDFS_HANDMIN); lp++) {
-      if (handles[lp]==NULL) idx=lp;
+      if (handles[lp] == nullptr) idx=lp;
     }
     if (idx<0) return host_error(192, "Too many open files");
     XYReg=XReg | (YReg<<8);
