@@ -16,23 +16,6 @@ Richard Broadhurst, J.G.Harston, Mike Wyatt)
 * Fixed crash if sound sample files are missing.
 * Fixed 8271 disk emulation to show disks as not ready after motor stops.
 * Fixed video recording on Windows 8.
-* Emulator filing system traps:
-  - Added &x3 and &03 emulator filing system traps.
-  - Added dialogue to enable/disable emulator traps.
-  - Emulator trap status saved in configuration.
-  - Read/write I/O memory and 6502/Z80 CoPro memory implemented.
-  - Filing system actions implemented:
-    - OSFILE load, save, info, writing file information via .inf file.
-    - LOAD translates Russell-format BASIC files on loading.
-    - OSGBPB read, write, dirscan 8, dirscan 9.
-    - OSARGS FF-06,channel FF-01,0.
-    - OSFIND, OSBGET, OSBPUT.
-    - OSFSC =EOF, *RUN, Handles.
-    - OSQUIT just minimises window.
-    - *DIR, *CDIR/OSFILE 8, *DELETE/OSFILE 6.
-    - To do: *COPY *MOUNT *RENAME *OPT BOOT, Memory read/write to ARM,
-      80x86 copro.
-    - Bugs: *MOVE selects memory mapping that causes emulator to crash.
 * IDE support:
   - If invalid drive selected can still access IDE command register to select a
     different drive.
