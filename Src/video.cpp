@@ -723,11 +723,15 @@ static void DoMode7Row(void) {
   unsigned int Background=mainWin->cols[0];
   int Flash=0; /* i.e. steady */
   int DoubleHeight=0; /* Normal */
-  int Graphics=0; /* I.e. alpha */
+  int Graphics;
+  int NextGraphics=0; /* I.e. alpha */
   int Separated=0; /* i.e. continuous graphics */
-  int HoldGraph=0; /* I.e. don't hold graphics - I don't know what hold graphics is anyway! */
-  // That's ok. Nobody else does either, and nor do I. - Richard Gellman.
-  int HoldGraphChar=32; // AHA! we know what it is now, this is the character to "hold" during control codes
+  int HoldGraph;
+  int NextHoldGraph=0; /* I.e. don't hold graphics */
+  int HoldGraphChar;
+  int NextHoldGraphChar=32; // the character to "hold" during control codes
+  int HoldSeparated;
+  int NextHoldSeparated=0; // Separated graphics mode in force when grapics held
   unsigned int CurrentCol[20]={0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff
   ,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff};
   int CurrentLen[20]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -743,10 +747,18 @@ static void DoMode7Row(void) {
   XStep=1;
 
   for(CurrentChar=0;CurrentChar<CRTC_HorizontalDisplayed;CurrentChar++) {
+    HoldGraph=NextHoldGraph;
+    HoldGraphChar=NextHoldGraphChar;
+    HoldSeparated=NextHoldSeparated;
+    Graphics=NextGraphics;
     byte=CurrentPtr[CurrentChar]; 
     if (byte<32) byte+=128; // fix for naughty programs that use 7-bit control codes - Richard Gellman
-    if ((byte & 32) && (Graphics)) HoldGraphChar=byte;
+    if ((byte & 32) && (Graphics)){
+      NextHoldGraphChar=byte;
+      NextHoldSeparated=Separated;
+    }
     if ((byte>=128) && (byte<=159)) {
+      if (HoldGraph!=1 && byte!=158) NextHoldGraphChar=32; // SAA5050 teletext rendering bug
       switch (byte) {
         case 129:
         case 130:
@@ -756,7 +768,8 @@ static void DoMode7Row(void) {
         case 134:
         case 135:
           ForegroundPending=mainWin->cols[byte-128];
-          Graphics=0;
+          NextGraphics=0;
+          NextHoldGraphChar=32;
           break;
 
         case 136:
@@ -784,11 +797,12 @@ static void DoMode7Row(void) {
         case 150:
         case 151:
           ForegroundPending=mainWin->cols[byte-144];
-          Graphics=1;
+          NextGraphics=1;
           break;
 
         case 152: /* Conceal display - not sure about this */
           Foreground=Background;
+          ForegroundPending=Background;
           break;
 
         case 153:
@@ -808,18 +822,25 @@ static void DoMode7Row(void) {
           break;
 
         case 158:
+          NextHoldGraph=1;
           HoldGraph=1;
           break;
 
         case 159:
-          HoldGraph=0;
+          NextHoldGraph=0;
           break;
       } /* Special character switch */
       // This next line hides any non double height characters on the bottom line
       /* Fudge so that the special character is just displayed in background */
-      if ((HoldGraph==1) && (Graphics==1)) byte=HoldGraphChar; else byte=32;
-      FontTypeIndex=Graphics?(Separated?2:1):0;
+      if ((HoldGraph==1) && (Graphics==1)){
+        byte=HoldGraphChar;
+        FontTypeIndex=HoldSeparated?2:1;
+      } else {
+        byte=32;
+        FontTypeIndex=Graphics?(Separated?2:1):0;
+      }
     } /* test for special character */
+    else FontTypeIndex=Graphics?(Separated?2:1):0;
     if (CurrentLineBottom && ((byte & 127) > 31) && !DoubleHeight) byte = 32;
     if ((CRTC_ScanLinesPerChar <= 9) || THalfMode) TeletextStyle = 2; else TeletextStyle = 1;
     /* Top bit never reaches character generator */

@@ -2,7 +2,7 @@ BeebEm Change History
 =====================
 
 Version 4.15 (Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
-Richard Broadhurst, J.G.Harston, Mike Wyatt)
+Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree)
 ------------
 * Fixed 320x256 screen capture.
 * Enabled DirectX full screen display at current desktop screen resolution.
