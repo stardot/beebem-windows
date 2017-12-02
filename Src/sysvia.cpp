@@ -211,13 +211,13 @@ static void IC32Write(unsigned char Value) {
   tmpCMOSState=(IC32State & 4)>>1;
   CMOS.DataStrobe=(tmpCMOSState==OldCMOSState)?0:1;
   OldCMOSState=tmpCMOSState;
-  if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType==3) {
-	  CMOSWrite(CMOS.Address,SlowDataBusWriteValue);
-	  if (CMOSDebug) fprintf(CMDF,"Wrote %02x to %02x\n",SlowDataBusWriteValue,CMOS.Address);
+  if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType == Model::Master128) {
+    CMOSWrite(CMOS.Address, SlowDataBusWriteValue);
+    if (CMOSDebug) fprintf(CMDF,"Wrote %02x to %02x\n",SlowDataBusWriteValue,CMOS.Address);
   }
-  if (CMOS.Enabled && CMOS.Op && MachineType==3) {
-	  SysVIAState.ora=CMOSRead(CMOS.Address);
-	  if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
+  if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128) {
+    SysVIAState.ora = CMOSRead(CMOS.Address);
+    if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
   }
 
   /* Must do sound reg access when write line changes */
@@ -259,9 +259,9 @@ static void SlowDataBusWrite(unsigned char Value) {
     DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
   } /* kbd write */
 
-  if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType==3) 
+  if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType == Model::Master128)
   {
-        CMOSWrite(CMOS.Address,Value);
+    CMOSWrite(CMOS.Address,Value);
   }
 
 #ifdef SOUNDSUPPORT
@@ -277,16 +277,16 @@ static void SlowDataBusWrite(unsigned char Value) {
 /*--------------------------------------------------------------------------*/
 static int SlowDataBusRead(void) {
   int result;
-  if (CMOS.Enabled && CMOS.Op && MachineType==3) 
+  if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128)
   {
-       SysVIAState.ora=CMOSRead(CMOS.Address); //SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
-	  if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
+    SysVIAState.ora=CMOSRead(CMOS.Address); //SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
+    if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
   }
   result=(SysVIAState.ora & SysVIAState.ddra);
   if (CMOS.Enabled) result=(SysVIAState.ora & ~SysVIAState.ddra);
   /* I don't know this lot properly - just put in things as we figure them out */
-  if (MachineType!=3) if (!(IC32State & 8)) { if (KbdOP()) result|=128; }
-  if ((MachineType==3) && (!CMOS.Enabled)) {
+  if (MachineType != Model::Master128) if (!(IC32State & 8)) { if (KbdOP()) result|=128; }
+  if ((MachineType == Model::Master128) && !CMOS.Enabled) {
 	  if (KbdOP()) result|=128; 
   }
 
@@ -296,14 +296,13 @@ static int SlowDataBusRead(void) {
   }
 #endif
 
-  if ((!(IC32State & 4)) && (MachineType != 3) ) {
-	  result = 0xff;
+  if ((!(IC32State & 4)) && (MachineType != Model::Master128) ) {
+    result = 0xff;
   }
 
   /* cerr << "SlowDataBusRead giving 0x" << hex << result << dec << "\n"; */
   return(result);
-} /* SlowDataBusRead */
-
+}
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe40 stripped out */
@@ -443,7 +442,7 @@ int SysVIARead(int Address) {
       tmp |= 32;    /* Fire button 2 released */
       if (!JoystickButton)
         tmp |= 16;
-      if (MachineType == 3)
+      if (MachineType == Model::Master128)
       {
         tmp |= 192; /* Speech system non existant */
       }

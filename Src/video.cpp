@@ -1368,7 +1368,12 @@ static void VideoAddCursor(void) {
 void VideoAddLEDs(void) {
 	// now add some keyboard leds
 	if (LEDs.ShowKB) {
-		if (MachineType==3) mainWin->doLED(4,TRUE); else mainWin->doLED(4,LEDs.Motor);
+		if (MachineType == Model::Master128) {
+			mainWin->doLED(4, TRUE);
+		}
+		else {
+			mainWin->doLED(4, LEDs.Motor);
+		}
 		mainWin->doLED(14,LEDs.CapsLock);
 		mainWin->doLED(24,LEDs.ShiftLock);
 	}

@@ -987,9 +987,10 @@ INLINE static int16 IndAddrModeHandler_Address(void) {
   According to my BBC Master Reference Manual Part 2
   the 6502 has a bug concerning this addressing mode and VectorLocation==xxFF
   so, we're going to emulate that bug -- Richard Gellman */
-  if ((VectorLocation & 0xff)!=0xff || MachineType==3) {
+  if ((VectorLocation & 0xff) != 0xff || MachineType == Model::Master128) {
    EffectiveAddress=ReadPaged(VectorLocation);
-   EffectiveAddress|=ReadPaged(VectorLocation+1) << 8; }
+   EffectiveAddress|=ReadPaged(VectorLocation+1) << 8;
+  }
   else {
    EffectiveAddress=ReadPaged(VectorLocation);
    EffectiveAddress|=ReadPaged(VectorLocation-255) << 8;
@@ -1222,7 +1223,12 @@ void Exec6502Instruction(void) {
 				ORAInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0x04:
-				if (MachineType==3) TSBInstrHandler(ZeroPgAddrModeHandler_Address()); else ProgramCounter+=1;
+				if (MachineType == Model::Master128) {
+					TSBInstrHandler(ZeroPgAddrModeHandler_Address());
+				}
+				else {
+					ProgramCounter += 1;
+				}
 				break;
 			case 0x05:
 				ORAInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
@@ -1240,7 +1246,12 @@ void Exec6502Instruction(void) {
 				ASLInstrHandler_Acc();
 				break;
 			case 0x0c:
-				if (MachineType==3) TSBInstrHandler(AbsAddrModeHandler_Address()); else ProgramCounter+=2;
+				if (MachineType == Model::Master128) {
+					TSBInstrHandler(AbsAddrModeHandler_Address());
+				}
+				else {
+					ProgramCounter += 2;
+				}
 				break;
 			case 0x0d:
 				ORAInstrHandler(AbsAddrModeHandler_Data());
@@ -1279,10 +1290,17 @@ void Exec6502Instruction(void) {
 				ORAInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x12:
-				if (MachineType==3) ORAInstrHandler(ZPIndAddrModeHandler_Data());
+				if (MachineType == Model::Master128) {
+					ORAInstrHandler(ZPIndAddrModeHandler_Data());
+				}
 				break;
 			case 0x14:
-				if (MachineType==3) TRBInstrHandler(ZeroPgAddrModeHandler_Address()); else ProgramCounter+=1;
+				if (MachineType == Model::Master128) {
+					TRBInstrHandler(ZeroPgAddrModeHandler_Address());
+				}
+				else {
+					ProgramCounter += 1;
+				}
 				break;
 			case 0x15:
 				ORAInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1297,10 +1315,15 @@ void Exec6502Instruction(void) {
 				ORAInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x1a:
-				if (MachineType==3) INAInstrHandler();
+				if (MachineType == Model::Master128) INAInstrHandler();
 				break;
 			case 0x1c:
-				if (MachineType==3) TRBInstrHandler(AbsAddrModeHandler_Address()); else ProgramCounter+=2;
+				if (MachineType == Model::Master128) {
+					TRBInstrHandler(AbsAddrModeHandler_Address());
+				}
+				else {
+					ProgramCounter += 2;
+				}
 				break;
 			case 0x1d:
 				ORAInstrHandler(AbsXAddrModeHandler_Data());
@@ -1355,10 +1378,17 @@ void Exec6502Instruction(void) {
 				ANDInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x32:
-				if (MachineType==3) ANDInstrHandler(ZPIndAddrModeHandler_Data());
+				if (MachineType == Model::Master128) {
+					ANDInstrHandler(ZPIndAddrModeHandler_Data());
+				}
 				break;
 			case 0x34: /* BIT Absolute,X */
-				if (MachineType==3) BITInstrHandler(ZeroPgXAddrModeHandler_Data()); else ProgramCounter+=1;
+				if (MachineType == Model::Master128) {
+					BITInstrHandler(ZeroPgXAddrModeHandler_Data());
+				}
+				else {
+					ProgramCounter += 1;
+				}
 				break;
 			case 0x35:
 				ANDInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1373,10 +1403,17 @@ void Exec6502Instruction(void) {
 				ANDInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x3a:
-				if (MachineType==3) DEAInstrHandler();
+				if (MachineType == Model::Master128) {
+					DEAInstrHandler();
+				}
 				break;
 			case 0x3c: /* BIT Absolute,X */
-				if (MachineType==3) BITInstrHandler(AbsXAddrModeHandler_Data()); else ProgramCounter+=2;
+				if (MachineType == Model::Master128) {
+					BITInstrHandler(AbsXAddrModeHandler_Data());
+				}
+				else {
+					ProgramCounter += 2;
+				}
 				break;
 			case 0x3d:
 				ANDInstrHandler(AbsXAddrModeHandler_Data());
@@ -1437,7 +1474,9 @@ void Exec6502Instruction(void) {
 				EORInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x52:
-				if (MachineType==3) EORInstrHandler(ZPIndAddrModeHandler_Data());
+				if (MachineType == Model::Master128) {
+					EORInstrHandler(ZPIndAddrModeHandler_Data());
+				}
 				break;
 			case 0x55:
 				EORInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1454,7 +1493,9 @@ void Exec6502Instruction(void) {
 				EORInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x5a:
-				if (MachineType==3) Push(YReg); /* PHY */
+				if (MachineType == Model::Master128) {
+					Push(YReg); /* PHY */
+				}
 				break;
 			case 0x5d:
 				EORInstrHandler(AbsXAddrModeHandler_Data());
@@ -1469,7 +1510,9 @@ void Exec6502Instruction(void) {
 				ADCInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0x64:
-				if (MachineType==3) BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(),0); /* STZ Zero Page */
+				if (MachineType == Model::Master128) {
+					BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(), 0); /* STZ Zero Page */
+				}
 				break;
 			case 0x65:
 				ADCInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
@@ -1501,10 +1544,17 @@ void Exec6502Instruction(void) {
 				ADCInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x72:
-				if (MachineType==3) ADCInstrHandler(ZPIndAddrModeHandler_Data());
+				if (MachineType == Model::Master128) {
+					ADCInstrHandler(ZPIndAddrModeHandler_Data());
+				}
 				break;
 			case 0x74:
-				if (MachineType==3) { BEEBWRITEMEM_DIRECT(ZeroPgXAddrModeHandler_Address(),0); } else ProgramCounter+=1; /* STZ Zpg,X */
+				if (MachineType == Model::Master128) {
+					BEEBWRITEMEM_DIRECT(ZeroPgXAddrModeHandler_Address(), 0); /* STZ Zpg,X */
+				}
+				else {
+					ProgramCounter += 1;
+				}
 				break;
 			case 0x75:
 				ADCInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1521,14 +1571,19 @@ void Exec6502Instruction(void) {
 				ADCInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x7a:
-				if (MachineType==3) {
+				if (MachineType == Model::Master128) {
 					YReg=Pop(); /* PLY */
 					PSR&=~(FlagZ | FlagN);
 					PSR|=((YReg==0)<<1) | (YReg & 128);
 				}
 				break;
 			case 0x7c:
-				if (MachineType==3) ProgramCounter=IndAddrXModeHandler_Address(); /* JMP abs,X*/ else ProgramCounter+=2;
+				if (MachineType == Model::Master128) {
+					ProgramCounter=IndAddrXModeHandler_Address(); /* JMP abs,X */
+				}
+				else {
+					ProgramCounter += 2;
+				}
 				break;
 			case 0x7d:
 				ADCInstrHandler(AbsXAddrModeHandler_Data());
@@ -1558,7 +1613,9 @@ void Exec6502Instruction(void) {
 				PSR|=((YReg==0)<<1) | (YReg & 128);
 				break;
 			case 0x89: /* BIT Immediate */
-				if (MachineType==3) BITImmedInstrHandler(ReadPaged(ProgramCounter++));
+				if (MachineType == Model::Master128) {
+					BITImmedInstrHandler(ReadPaged(ProgramCounter++));
+				}
 				break;
 			case 0x8a:
 				Accumulator=XReg; /* TXA */
@@ -1583,7 +1640,9 @@ void Exec6502Instruction(void) {
 				break;
 			case 0x92:
 				AdvanceCyclesForMemWrite();
-				if (MachineType==3) WritePaged(ZPIndAddrModeHandler_Address(),Accumulator); /* STA */
+				if (MachineType == Model::Master128) {
+					WritePaged(ZPIndAddrModeHandler_Address(), Accumulator); /* STA */
+				}
 				break;
 			case 0x94:
 				AdvanceCyclesForMemWrite();
@@ -1619,8 +1678,12 @@ void Exec6502Instruction(void) {
 				WritePaged(AbsXAddrModeHandler_Address(),Accumulator); /* STA */
 				break;
 			case 0x9e:
-				if (MachineType==3) { WritePaged(AbsXAddrModeHandler_Address(),0); } /* STZ Abs,X */ 
-				else WritePaged(AbsXAddrModeHandler_Address(),Accumulator & XReg);
+				if (MachineType == Model::Master128) {
+					WritePaged(AbsXAddrModeHandler_Address(), 0); /* STZ Abs,X */ 
+				}
+				else {
+					WritePaged(AbsXAddrModeHandler_Address(), Accumulator & XReg);
+				}
 				break;
 			case 0xa0:
 				LDYInstrHandler(ReadPaged(ProgramCounter++)); /* immediate */
@@ -1666,7 +1729,9 @@ void Exec6502Instruction(void) {
 				LDAInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0xb2:
-				if (MachineType==3) LDAInstrHandler(ZPIndAddrModeHandler_Data());
+				if (MachineType == Model::Master128) {
+					LDAInstrHandler(ZPIndAddrModeHandler_Data());
+				}
 				break;
 			case 0xb4:
 				LDYInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1737,7 +1802,9 @@ void Exec6502Instruction(void) {
 				CMPInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0xd2:
-				if (MachineType==3) CMPInstrHandler(ZPIndAddrModeHandler_Data());
+				if (MachineType == Model::Master128) {
+					CMPInstrHandler(ZPIndAddrModeHandler_Data());
+				}
 				break;
 			case 0xd5:
 				CMPInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1752,7 +1819,7 @@ void Exec6502Instruction(void) {
 				CMPInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0xda:
-				if (MachineType==3) Push(XReg); /* PHX */
+				if (MachineType == Model::Master128) Push(XReg); /* PHX */
 				break;
 			case 0xdd:
 				CMPInstrHandler(AbsXAddrModeHandler_Data());
@@ -1797,7 +1864,9 @@ void Exec6502Instruction(void) {
 				SBCInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0xf2:
-				if (MachineType==3) SBCInstrHandler(ZPIndAddrModeHandler_Data());
+				if (MachineType == Model::Master128) {
+					SBCInstrHandler(ZPIndAddrModeHandler_Data());
+				}
 				break;
 			case 0xf5:
 				SBCInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1812,7 +1881,7 @@ void Exec6502Instruction(void) {
 				SBCInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0xfa:
-				if (MachineType==3) {
+				if (MachineType == Model::Master128) {
 					XReg=Pop(); /* PLX */
 					PSR&=~(FlagZ | FlagN);
 					PSR|=((XReg==0)<<1) | (XReg & 128);
@@ -2336,7 +2405,7 @@ void PollHardware(unsigned int nCycles)
 	Music5000Poll(nCycles);
 	Sound_Trigger(nCycles);
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
-	if ((MachineType==3) || (!NativeFDC)) Poll1770(nCycles); // Do 1770 Background stuff
+	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 
 	if (EconetEnabled && EconetPoll()) {
 		if (EconetNMIenabled ) { 

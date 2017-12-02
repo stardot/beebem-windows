@@ -1010,7 +1010,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 	else
 	{
 		// Some custom machine related stuff
-		if(MachineType == 3)
+		if (MachineType == Model::Master128)
 		{
 			// Master cartridge (not implemented in BeebEm yet)
 			if((ACCCON & 0x20) && addr >= 0xFC00 && addr <= 0xFDFF)
@@ -1043,9 +1043,8 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 				return true;
 			}
 		}
-		else if(MachineType == 2)
+		else if (MachineType == Model::BPlus)
 		{
-			// BBC B+
 			if(addr >= 0x3000 && addr <= 0x7FFF)
 			{
 				addrInfo->start = 0x3000;
@@ -1071,9 +1070,8 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 				return true;
 			}
 		}
-		else if(MachineType == 1)
+		else if (MachineType == Model::IntegraB)
 		{
-			// Integra B
 			if(ShEn==1 && MemSel==0 && addr >= 0x3000 && addr <= 0x7FFF)
 			{
 				addrInfo->start = 0x3000;
@@ -2089,7 +2087,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 		sprintf(opstr + strlen(opstr), "            ");
 
 	// Deal with 65C02 instructions
-	if (!ip->c6502 || !host || MachineType==3)
+	if (!ip->c6502 || !host || MachineType == Model::Master128)
 	{
 		sprintf(opstr + strlen(opstr), "%s ", ip->opn);
 		addr++;

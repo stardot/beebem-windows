@@ -1,8 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 1994  David Alan Gilbert
-Copyright (C) 1994  Nigel Magnay
-Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2017  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -14,30 +12,20 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* Mike Wyatt and NRM's port to win32 - 7/6/97 */
+#ifndef MODEL_HEADER
+#define MODEL_HEADER
 
-#ifndef MAIN_HEADER
-#define MAIN_HEADER
-
-#ifdef MULTITHREAD
-#undef MULTITHREAD
-#endif
-//#define MULTITHREAD
-
-#include <windows.h>
-#include "beebwin.h"
-#include "model.h"
-
-extern Model MachineType;
-extern BeebWin *mainWin;
-extern HINSTANCE hInst;
-void WriteLog(char *fmt, ...);
-extern int trace_186;
+enum class Model : unsigned char {
+	B,         // 0: BBC B
+	IntegraB,  // 1: BBC B with Integra B
+	BPlus,     // 2: BBC B+
+	Master128, // 3: BBC Master 128
+};
 
 #endif

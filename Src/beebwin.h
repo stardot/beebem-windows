@@ -37,6 +37,7 @@ Boston, MA  02110-1301, USA.
 #include <d3dx9.h>
 #include <ddraw.h>
 #include <sapi.h>
+#include "model.h"
 #include "port.h"
 #include "video.h"
 
@@ -195,7 +196,7 @@ class BeebWin  {
 	HWND GethWnd() { return m_hWnd; };
 	
 	void RealizePalette(HDC) {};
-	void ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatus,unsigned char LoadRoms);
+	void ResetBeebSystem(Model NewModelType, unsigned char TubeStatus, unsigned char LoadRoms);
 
 	int StartOfFrame(void);
 	BOOL UpdateTiming(void);

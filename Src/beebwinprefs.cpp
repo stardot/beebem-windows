@@ -153,8 +153,11 @@ void BeebWin::LoadPreferences()
 	m_Prefs.erase("Volume");
 	m_Prefs.erase("UsePrimaryBuffer");
 
-	if(!PrefsGetBinaryValue("MachineType",&MachineType,1))
-		MachineType=0;
+	unsigned char type = 0;
+	if(!PrefsGetBinaryValue("MachineType", &type, 1))
+		MachineType = Model::B;
+	else
+		MachineType = static_cast<Model>(type);
 
 	if (!PrefsGetBinaryValue("WriteProtectOnLoad", &m_WriteProtectOnLoad,1))
 		m_WriteProtectOnLoad=1;

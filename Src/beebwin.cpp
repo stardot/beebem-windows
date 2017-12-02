@@ -444,7 +444,7 @@ void BeebWin::Shutdown()
 }
 
 /****************************************************************************/
-void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatus,unsigned char LoadRoms) 
+void BeebWin::ResetBeebSystem(Model NewModelType, unsigned char TubeStatus, unsigned char LoadRoms)
 {
 	SwitchOnCycles=0; // Reset delay
 	SoundReset();
@@ -499,7 +499,7 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	Reset1770();
 	AtoDInit();
 	SetRomMenu();
-    SetTubeMenu();
+	SetTubeMenu();
 	FreeDiscImage(0);
 	// Keep the disc images loaded
 	FreeDiscImage(1);
@@ -509,18 +509,20 @@ void BeebWin::ResetBeebSystem(unsigned char NewModelType,unsigned char TubeStatu
 	if (SCSIDriveEnabled) SASIReset();
 	if (IDEDriveEnabled)  IDEReset();
 	TeleTextInit();
-	if (MachineType==3) InvertTR00=FALSE;
-	if (MachineType!=3) {
+	if (MachineType == Model::Master128) {
+		InvertTR00 = FALSE;
+	}
+	else {
 		LoadFDC(NULL, false);
 	}
-	if ((MachineType!=3) && (NativeFDC)) {
+	if ((MachineType != Model::Master128) && NativeFDC) {
 		// 8271 disc
 		if ((DiscLoaded[0]) && (CDiscType[0]==0)) LoadSimpleDiscImage(CDiscName[0],0,0,80);
 		if ((DiscLoaded[0]) && (CDiscType[0]==1)) LoadSimpleDSDiscImage(CDiscName[0],0,80);
 		if ((DiscLoaded[1]) && (CDiscType[1]==0)) LoadSimpleDiscImage(CDiscName[1],1,0,80);
 		if ((DiscLoaded[1]) && (CDiscType[1]==1)) LoadSimpleDSDiscImage(CDiscName[1],1,80);
 	}
-	if (((MachineType!=3) && (!NativeFDC)) || (MachineType==3)) {
+	if (((MachineType != Model::Master128) && !NativeFDC) || (MachineType == Model::Master128)) {
 		// 1770 Disc
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0],0,CDiscType[0],m_hMenu);
 		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1],1,CDiscType[1],m_hMenu);
@@ -954,11 +956,10 @@ void BeebWin::UpdateMonitorMenu() {
 }
 
 void BeebWin::UpdateModelType() {
-	HMENU hMenu= m_hMenu;
-	CheckMenuItem(hMenu, ID_MODELB, (MachineType == 0) ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(hMenu, ID_MODELBINT, (MachineType == 1) ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(hMenu, ID_MODELBP, (MachineType == 2) ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(hMenu, ID_MASTER128, (MachineType == 3) ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, ID_MODELB, (MachineType == Model::B) ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, ID_MODELBINT, (MachineType == Model::IntegraB) ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, ID_MODELBP, (MachineType == Model::BPlus) ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, ID_MASTER128, (MachineType == Model::Master128) ? MF_CHECKED : MF_UNCHECKED);
 }
 
 void BeebWin::UpdateSFXMenu() {
@@ -3412,30 +3413,30 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_MODELB:
-		if (MachineType!=0)
+		if (MachineType != Model::B)
 		{
-			ResetBeebSystem(0,EnableTube,1);
+			ResetBeebSystem(Model::B, EnableTube, 1);
 			UpdateModelType();
 		}
 		break;
 	case ID_MODELBINT:
-		if (MachineType!=1)
+		if (MachineType != Model::IntegraB)
 		{
-			ResetBeebSystem(1,EnableTube,1);
+			ResetBeebSystem(Model::IntegraB, EnableTube, 1);
 			UpdateModelType();
 		}
 		break;
 	case ID_MODELBP:
-		if (MachineType!=2)
+		if (MachineType != Model::BPlus)
 		{
-			ResetBeebSystem(2,EnableTube,1);
+			ResetBeebSystem(Model::BPlus, EnableTube, 1);
 			UpdateModelType();
 		}
 		break;
 	case ID_MASTER128:
-		if (MachineType!=3)
+		if (MachineType != Model::Master128)
 		{
-			ResetBeebSystem(3,EnableTube,1);
+			ResetBeebSystem(Model::Master128, EnableTube, 1);
 			UpdateModelType();
 		}
 		break;
@@ -3472,7 +3473,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_FDC_DLL:
-		if (MachineType != 3)
+		if (MachineType != Model::Master128)
 			SelectFDC();
 		break;
 	case ID_8271:
@@ -3480,7 +3481,7 @@ void BeebWin::HandleCommand(int MenuId)
 		NativeFDC=TRUE;
 		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
 		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
-		if (MachineType != 3)
+		if (MachineType != Model::Master128)
 		{
 			char CfgName[20];
 			sprintf(CfgName, "FDCDLL%d", MachineType);
@@ -4222,7 +4223,7 @@ void BeebWin::HandleCommandLineFile(int drive, char *CmdLineFile)
 
 	if (cont)
 	{
-		if (MachineType!=3)
+		if (MachineType != Model::Master128)
 		{
 			if (dsd)
 			{
@@ -4253,7 +4254,7 @@ void BeebWin::HandleCommandLineFile(int drive, char *CmdLineFile)
 					Load1770DiscImage(FileName,drive,3,m_hMenu); // 0 = ssd
 			}
 		}
-		else if (MachineType==3)
+		else // Model::Master128
 		{
 			if (dsd)
 				Load1770DiscImage(FileName,drive,1,m_hMenu); // 0 = ssd

@@ -187,7 +187,7 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 		}
 
 		// Another Master 128 Update, brought to you by Richard Gellman
-		if (MachineType!=3)
+		if (MachineType != Model::Master128)
 		{
 			if (dsd)
 			{
@@ -212,9 +212,9 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 					Load1770DiscImage(FileName,Drive,2,dmenu); // 2 = adfs
 			}
 		}
-
-		if (MachineType==3)
+		else
 		{
+			// Master 128
 			if (dsd)
 				Load1770DiscImage(FileName,Drive,1,dmenu); // 0 = ssd
 			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
@@ -333,7 +333,7 @@ void BeebWin::NewDiscImage(int Drive)
 	DWORD filterIndex = 1;
 	PrefsGetDWORDValue("DiscsFilter",filterIndex);
 
-	if (MachineType!=3 && NativeFDC && filterIndex >= 5)
+	if (MachineType != Model::Master128 && NativeFDC && filterIndex >= 5)
 		filterIndex = 1;
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
@@ -468,7 +468,7 @@ void BeebWin::ToggleWriteProtect(int Drive)
 
 void BeebWin::SetDiscWriteProtects(void)
 {
-	if (MachineType!=3 && NativeFDC)
+	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		m_WriteProtectDisc[0] = !IsDiscWritable(0);
 		m_WriteProtectDisc[1] = !IsDiscWritable(1);
@@ -801,7 +801,7 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 	}
 
 	DisplayCycles=7000000;
-	if ((NativeFDC) || (MachineType==3))
+	if (NativeFDC || MachineType == Model::Master128)
 		DisplayCycles=0;
 }
 
@@ -845,7 +845,7 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	// Emulator Specifics
 	// Note about this block: It should only be handled by beebem from uefstate.cpp if
 	// the UEF has been determined to be from BeebEm (Block 046C)
-	fputc(MachineType,SUEF);
+	fputc(static_cast<unsigned char>(MachineType), SUEF);
 	fputc((NativeFDC)?0:1,SUEF);
 	fputc(TubeEnabled,SUEF);
 	fput16(m_MenuIdKeyMapping,SUEF);
@@ -860,9 +860,12 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 	int id;
 	char fileName[_MAX_PATH];
 
-	MachineType=fgetc(SUEF);
-	if (Version <= 8 && MachineType == 1)
-		MachineType = 3;
+	int type = fgetc(SUEF);
+	if (Version <= 8 && type == 1)
+		MachineType = Model::Master128;
+	else
+		MachineType = static_cast<Model>(type);
+
 	NativeFDC=(fgetc(SUEF)==0)?TRUE:FALSE;
 	TubeEnabled=fgetc(SUEF);
 
@@ -1316,7 +1319,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	else
 		drive = 1;
 
-	if (MachineType != 3 && NativeFDC)
+	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
 		Get8271DiscInfo(drive, szDiscFile, &heads);
@@ -1416,7 +1419,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	else
 		drive = 1;
 
-	if (MachineType != 3 && NativeFDC)
+	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
 		Get8271DiscInfo(drive, szDiscFile, &heads);
@@ -1532,7 +1535,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONINFORMATION);
 
 	// Re-read disc image
-	if (MachineType != 3 && NativeFDC)
+	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
 		Eject8271DiscImage(drive);

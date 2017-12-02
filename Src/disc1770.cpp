@@ -1065,7 +1065,7 @@ void Load1770UEF(FILE *SUEF,int Version)
 		else
 			CDiscOpen=&Disc0Open;
 
-		if (MachineType!=3) {
+		if (MachineType != Model::Master128) {
 			mainWin->LoadFDC(FDCDLL, false);
 		}
 	}

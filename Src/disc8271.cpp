@@ -1612,21 +1612,21 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
   {
     /* Now load the new image into the correct drive */
     if (Heads==1)
-	{
-      if ((MachineType==3) || (!NativeFDC))
+    {
+      if ((MachineType == Model::Master128) || !NativeFDC)
         Load1770DiscImage(FileName,DriveNum,0,mainWin->m_hMenu);
       else
         LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
-	}
+    }
     else
-	{
-      if ((MachineType==3) || (!NativeFDC))
+    {
+      if ((MachineType == Model::Master128) || !NativeFDC)
         Load1770DiscImage(FileName,DriveNum,1,mainWin->m_hMenu);
       else
         LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
-	}
+    }
   }
-};  /* CreateDiscImage */
+}
 
 /*--------------------------------------------------------------------------*/
 static void LoadStartupDisc(int DriveNum, char *DiscString) {
@@ -1649,7 +1649,7 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
     switch (DoubleSided) {
       case 'd':
       case 'D':
-        if ((MachineType==3) || (!NativeFDC))
+        if (MachineType == Model::Master128 || !NativeFDC)
           Load1770DiscImage(Name,DriveNum,1,mainWin->m_hMenu);
         else
           LoadSimpleDSDiscImage(Name,DriveNum,Tracks);
@@ -1657,7 +1657,7 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
 
       case 'S':
       case 's':
-        if ((MachineType==3) || (!NativeFDC))
+        if (MachineType == Model::Master128 || !NativeFDC)
           Load1770DiscImage(Name,DriveNum,0,mainWin->m_hMenu);
         else
           LoadSimpleDiscImage(Name,DriveNum,0,Tracks);
@@ -1665,7 +1665,7 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
 
       case 'A':
       case 'a':
-        if ((MachineType==3) || (!NativeFDC)) 
+        if (MachineType == Model::Master128 || !NativeFDC)
           Load1770DiscImage(Name,DriveNum,2,mainWin->m_hMenu);
         else
           MessageBox(GETHWND,"The 8271 FDC Cannot load the ADFS disc image specified in the BeebDiscLoad environment variable","BeebEm",MB_ICONERROR|MB_OK);

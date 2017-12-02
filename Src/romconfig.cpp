@@ -32,7 +32,7 @@ Boston, MA  02110-1301, USA.
 
 static HWND hWndROMList = NULL;
 static HWND hWndModel = NULL;
-static int nModel = 0;
+static Model nModel = Model::B;
 static const LPCSTR szModel[] = { "BBC B", "Integra-B", "B Plus", "Master 128" };
 static ROMConfigFile ROMCfg;
 static char szDefaultROMPath[MAX_PATH] = {0};
@@ -108,7 +108,7 @@ static void UpdateROMField(int row)
 	bool unplugged = false;
 	int bank;
 
-	if (nModel == 3)
+	if (nModel == Model::Master128)
 	{
 		bank = 16 - row;
 		if (bank >= 0 && bank <= 7)
@@ -117,7 +117,7 @@ static void UpdateROMField(int row)
 			unplugged = (CMOSRAM[21] & (1 << (bank-8))) ? false : true;
 	}
 
-	strncpy(szROMFile, ROMCfg[nModel][row], _MAX_PATH);
+	strncpy(szROMFile, ROMCfg[static_cast<int>(nModel)][row], _MAX_PATH);
 	if (unplugged)
 		strncat(szROMFile, " (unplugged)", _MAX_PATH);
 	LVSetItemText(hWndROMList, row, 1, (LPTSTR)szROMFile);
@@ -130,13 +130,13 @@ static void FillROMList(void)
 	int row;
 	char str[20];
 
-	Edit_SetText(hWndModel, szModel[nModel]);
+	Edit_SetText(hWndModel, szModel[static_cast<int>(nModel)]);
 
 	ListView_DeleteAllItems(hWndROMList);
 
 	row = 0;
 	LVInsertItem(hWndROMList, row, 0, (LPTSTR)"OS", 16);
-	LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[nModel][0]);
+	LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[static_cast<int>(nModel)][0]);
 
 	for (row = 1; row <= 16; ++row)
 	{
@@ -170,19 +170,19 @@ static BOOL CALLBACK ROMConfigDlgProc(
 			switch (LOWORD(wParam))
 			{
 			case IDC_BBCB:
-				nModel = 0;
+				nModel = Model::B;
 				FillROMList();
 				return TRUE;
 			case IDC_INTEGRAB:
-				nModel = 1;
+				nModel = Model::IntegraB;
 				FillROMList();
 				return TRUE;
 			case IDC_BBCBPLUS:
-				nModel = 2;
+				nModel = Model::BPlus;
 				FillROMList();
 				return TRUE;
 			case IDC_MASTER128:
-				nModel = 3;
+				nModel = Model::Master128;
 				FillROMList();
 				return TRUE;
 				
@@ -193,7 +193,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 					char szROMFile[MAX_PATH];
 					if (GetROMFile(hwndDlg, szROMFile))
 					{
-						strcpy(ROMCfg[nModel][row], szROMFile);
+						strcpy(ROMCfg[static_cast<int>(nModel)][row], szROMFile);
 						UpdateROMField(row);
 					}
 				}
@@ -203,7 +203,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 				row = ListView_GetSelectionMark(hWndROMList);
 				if (row >= 1 && row <= 16)
 				{
-					cfg = ROMCfg[nModel][row];
+					cfg = ROMCfg[static_cast<int>(nModel)][row];
 					if (strcmp(cfg, BANK_EMPTY) != 0 && strcmp(cfg, BANK_RAM) != 0)
 					{
 						if (strlen(cfg) > 4 && strcmp(cfg + strlen(cfg) - 4, ROM_WRITABLE) == 0)
@@ -219,7 +219,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 				row = ListView_GetSelectionMark(hWndROMList);
 				if (row >= 1 && row <= 16)
 				{
-					strcpy(ROMCfg[nModel][row], BANK_RAM);
+					strcpy(ROMCfg[static_cast<int>(nModel)][row], BANK_RAM);
 					UpdateROMField(row);
 				}
 				LVSetFocus(hWndROMList);
@@ -228,7 +228,7 @@ static BOOL CALLBACK ROMConfigDlgProc(
 				row = ListView_GetSelectionMark(hWndROMList);
 				if (row >= 1 && row <= 16)
 				{
-					strcpy(ROMCfg[nModel][row], BANK_EMPTY);
+					strcpy(ROMCfg[static_cast<int>(nModel)][row], BANK_EMPTY);
 					UpdateROMField(row);
 				}
 				LVSetFocus(hWndROMList);
