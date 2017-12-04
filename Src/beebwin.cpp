@@ -1428,6 +1428,9 @@ LRESULT CALLBACK WndProc(
 							if (IDEDriveEnabled)  IDEReset();
 							TeleTextInit();
 							//SoundChipReset();
+							Music5000Reset();
+							if (Music5000Enabled)
+								Music5000Init();
 						}
 						else if(row==-3)
 						{
