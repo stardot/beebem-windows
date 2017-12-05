@@ -28,15 +28,12 @@ Boston, MA  02110-1301, USA.
 
 #include <iostream>
 #include <fstream>
-#include <windows.h>
 #include <process.h>
 #include <math.h>
 
 #include <errno.h>
 #include <windows.h>
 #include <windowsx.h>
-#include <mmsystem.h>
-#include "main.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -53,12 +50,6 @@ Boston, MA  02110-1301, USA.
 #endif
 #include "soundstream.h"
 
-//#include <atlcomcli.h> // ATL not included in VS Express edition
-#include <dsound.h>
-#include <xaudio2.h>
-#include <exception>
-#include <vector>
-
 extern AVIWriter *aviWriter;
 
 //  #define DEBUGSOUNDTOFILE
@@ -67,7 +58,10 @@ extern AVIWriter *aviWriter;
 #define MAXBUFSIZE 32768
 
 static unsigned char SoundBuf[MAXBUFSIZE];
+
+#ifdef SPEECH_ENABLED
 unsigned char SpeechBuf[MAXBUFSIZE];
+#endif
 
 struct SoundSample
 {
@@ -109,7 +103,6 @@ int Speech[4];
 
 FILE *sndlog=NULL;
 
-
 volatile struct {
   unsigned int ToneFreq[4];
   unsigned int ChangeSamps[4]; /* How often this channel should flip its otuput */
@@ -138,15 +131,10 @@ double SoundTuning=0.0; // Tunning offset
 
 void PlayUpTil(double DestTime);
 int GetVol(int vol);
-BOOL bReRead=FALSE;
-volatile BOOL bDoSound=TRUE;
-int WriteOffset=0;
-LARGE_INTEGER PFreq,LastPCount,CurrentPCount;
-double CycleRatio;
+
 struct AudioType TapeAudio; // Tape audio decoder stuff
 bool TapeSoundEnabled;
 int PartSamples=1;
-bool Playing=0;
 
 SoundStreamer *pSoundStreamer = 0;
 
@@ -544,7 +532,6 @@ void SoundInit() {
   if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000; 
   SoundBufferSize=pSoundStreamer?pSoundStreamer->BufferSize():SoundSampleRate/50;
   LoadSoundSamples();
-  bReRead=TRUE;
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;
 }; /* SoundInit */
 

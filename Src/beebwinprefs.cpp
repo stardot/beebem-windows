@@ -98,7 +98,6 @@ static char *CFG_MACHINE_TYPE = "MachineType";
 
 extern unsigned char HideMenuEnabled;
 extern char DiscLedColour;
-extern const char *WindowTitle;
 extern unsigned char CMOSDefault[64];
 
 void BeebWin::LoadPreferences()

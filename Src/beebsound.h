@@ -47,7 +47,6 @@ extern char SoundExponentialVolume;
 
 extern int SoundTrigger; /* Cycle based trigger on sound */
 extern double SoundTuning;
-extern __int64 SoundCycles;
 
 void SoundInit();
 void SoundReset();
@@ -72,9 +71,6 @@ void StopSoundSample(int sample);
 
 void Sound_Trigger(int NCycles);
 
-extern volatile BOOL bDoSound;
-extern void AdjustSoundCycles(void);
-
 void SetSound(char State);
 
 struct AudioType {
@@ -96,5 +92,5 @@ void LoadSoundUEF(FILE *SUEF);
 void SaveSoundUEF(FILE *SUEF);
 extern int PartSamples;
 extern int SBSize;
-void MuteSound(void);
+
 #endif
