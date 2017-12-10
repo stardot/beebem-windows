@@ -99,7 +99,7 @@ void TapeControlStopRecording(bool RefreshControl);
 unsigned char SerialPortEnabled;
 unsigned char SerialPort;
 
-HANDLE hSerialPort=NULL; // Serial port handle
+HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
 DCB dcbSerialPort; // Serial port device control block
 char nSerialPort[5]; // Serial port name
 char *pnSerialPort=nSerialPort;
@@ -589,9 +589,14 @@ void Serial_Poll(void)
 }
 
 void InitThreads(void) {
-	if (hSerialPort) { CloseHandle(hSerialPort); hSerialPort=NULL; }
+	if (hSerialPort != INVALID_HANDLE_VALUE) {
+		CloseHandle(hSerialPort);
+		hSerialPort = INVALID_HANDLE_VALUE;
+	}
+
 	bWaitingForData=FALSE;
 	bWaitingForStat=FALSE;
+
 	if ( (SerialPortEnabled) && (SerialPort > 0)) {
 		InitSerialPort(); // Set up the serial port if its enabled.
 		if (olSerialPort.hEvent) { CloseHandle(olSerialPort.hEvent); olSerialPort.hEvent=NULL; }
@@ -601,6 +606,7 @@ void InitThreads(void) {
 		if (olStatus.hEvent) { CloseHandle(olStatus.hEvent); olStatus.hEvent=NULL; }
 		olStatus.hEvent=CreateEvent(NULL,TRUE,FALSE,NULL); // Status event, for WaitCommEvent
 	}
+
 	bSerialStateChanged=FALSE;
 }
 
@@ -725,8 +731,10 @@ void CloseUEF(void) {
 void Kill_Serial(void) {
 	CloseUEF();
 	CloseCSW();
-	if (SerialPortOpen)
+	if (SerialPortOpen) {
 		CloseHandle(hSerialPort);
+		hSerialPort = INVALID_HANDLE_VALUE;
+	}
 }
 
 void LoadUEF(char *UEFName) {
