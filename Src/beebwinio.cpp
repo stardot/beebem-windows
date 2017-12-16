@@ -66,6 +66,15 @@ lGetBoardProperties PGetBoardProperties;
 lSetDriveControl PSetDriveControl;
 lGetDriveControl PGetDriveControl;
 
+static bool hasFileExt(const char* fileName, const char* fileExt)
+{
+	const size_t fileExtLen = strlen(fileExt);
+	const size_t fileNameLen = strlen(fileName);
+
+	return fileNameLen >= fileExtLen &&
+	       _stricmp(fileName + fileNameLen - fileExtLen, fileExt) == 0;
+}
+
 /****************************************************************************/
 void BeebWin::SetImageName(char *DiscName,char Drive,char DType) {
 	strcpy(CDiscName[Drive],DiscName);
@@ -406,8 +415,7 @@ void BeebWin::SaveState()
 		}
 
 		// Add UEF extension if not already set and is UEF
-		if ((strcmp(FileName+(strlen(FileName)-4),".UEF")!=0) &&
-			(strcmp(FileName+(strlen(FileName)-4),".uef")!=0))
+		if (!hasFileExt(FileName, ".uef"))
 		{
 			strcat(FileName,".uef");
 		}
@@ -607,9 +615,7 @@ void BeebWin::CaptureVideo()
 	if (changed)
 	{
 		// Add avi extension
-		if (strlen(FileName) < 5 ||
-			((strcmp(FileName + (strlen(FileName)-4), ".AVI")!=0) &&
-			 (strcmp(FileName + (strlen(FileName)-4), ".avi")!=0)) )
+		if (!hasFileExt(FileName, ".avi"))
 		{
 			strcat(FileName,".avi");
 		}
@@ -934,9 +940,7 @@ void BeebWin::SaveUserKeyMap()
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
 	if (fileDialog.Save())
 	{
-		if (strlen(FileName) < 4 ||
-			(strcmp(FileName+(strlen(FileName)-5),".kmap")!=0) &&
-			(strcmp(FileName+(strlen(FileName)-5),".KMAP")!=0))
+		if (!hasFileExt(FileName, ".kmap"))
 		{
 			strcat(FileName,".kmap");
 		}
@@ -1635,9 +1639,7 @@ bool BeebWin::GetImageFile(char *FileName)
 	if (fileDialog.Save())
 	{
 		// Add extension
-		if (strlen(FileName) < 5 ||
-			((strcmp(FileName + (strlen(FileName)-4), fileExt)!=0) &&
-			 (strcmp(FileName + (strlen(FileName)-4), fileExt)!=0)) )
+		if (!hasFileExt(FileName, fileExt))
 		{
 			strcat(FileName, fileExt);
 		}
