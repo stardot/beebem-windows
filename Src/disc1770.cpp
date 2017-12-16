@@ -66,7 +66,6 @@ bool HeadLoaded[2]={FALSE,FALSE};
 // End of control bits
 int ByteCount=0;
 long DataPos;
-char errstr[250];
 unsigned char Disc1770Enabled=1;
 
 /* File names of loaded disc images */
@@ -83,13 +82,13 @@ unsigned char Disc1Open=0; // Disc open status markers
 unsigned char *CDiscOpen=&Disc0Open; // Current Disc Open
 
 unsigned char ExtControl; // FDC External Control Register
-unsigned char CurrentDrive=0; // FDC Control drive setting
+int CurrentDrive = 0; // FDC Control drive setting
 long HeadPos[2]; // Position of Head on each drive for swapping
 unsigned char CurrentHead[2]; // Current Head on any drive
 int DiscStep[2]; // Single/Double sided disc step
 int DiscStrt[2]; // Single/Double sided disc start
 unsigned int SecSize[2]; 
-unsigned char DiscType[2];
+char DiscType[2];
 unsigned char MaxSects[2]; // Maximum sectors per track
 unsigned int DefStart[2]; // Starting point for head 1
 unsigned int TrkLen[2]; // Track Length in bytes
@@ -152,7 +151,7 @@ unsigned char Read1770Register(unsigned char Register) {
 	return(0);
 }
 
-void SetMotor(char Drive,bool State) {
+static void SetMotor(int Drive, bool State) {
 	if (Drive==0) LEDs.Disc0=State; else LEDs.Disc1=State;
 	if (State) SetStatus(7);
 	if (State) {
@@ -675,7 +674,7 @@ void Poll1770(int NCycles) {
   }
 }		
 
-void Load1770DiscImage(char *DscFileName,int DscDrive,unsigned char DscType,HMENU dmenu) {
+void Load1770DiscImage(char *DscFileName, int DscDrive, char DscType, HMENU dmenu) {
 	long int TotalSectors;
 	long HeadStore;
 	bool openFailure=false;
@@ -841,7 +840,7 @@ void Reset1770(void) {
 	if (DiscType[1] == 4) MaxSects[1] = 8;
 }
 
-void Close1770Disc(char Drive) {
+void Close1770Disc(int Drive) {
 	if ((Drive==0) && (Disc0Open)) {
 		fclose(Disc0);
 		Disc0=NULL;
@@ -858,7 +857,7 @@ void Close1770Disc(char Drive) {
 
 #define BPUT(a) fputc(a,NewImage); CheckSum=(CheckSum+a)&255
 
-void CreateADFSImage(char *ImageName,unsigned char Drive,unsigned char Tracks, HMENU dmenu) {
+void CreateADFSImage(char *ImageName, int Drive, int Tracks, HMENU dmenu) {
 	// This function creates a blank ADFS disc image, and then loads it.
 	FILE *NewImage;
 	int CheckSum;

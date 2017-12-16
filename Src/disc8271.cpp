@@ -85,7 +85,7 @@ static int NextInterruptIsErr; /* none 0 causes error and drops this value into 
 
 typedef struct {
 
-  struct {       
+  struct {
     unsigned int CylinderNum:7;
     unsigned int RecordNum:5;
     unsigned int HeadNum:1;
@@ -1027,7 +1027,7 @@ static void ParamRegWrite(int Value) {
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */
-void Disc8271_write(int Address, int Value) {
+void Disc8271_write(int Address, unsigned char Value) {
   if (!Disc8271Enabled)
     return;
 
@@ -1702,7 +1702,7 @@ void Disc8271_reset(void) {
   Internal_BadTracks[0][0]=Internal_BadTracks[0][1]=Internal_BadTracks[1][0]=Internal_BadTracks[1][1]=0xff; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
   if (DriveHeadLoaded) {
     DriveHeadUnloadPending = true;
-	DriveHeadMotorUpdate();
+    DriveHeadMotorUpdate();
   }
   ClearTrigger(Disc8271Trigger); /* No Disc8271Triggered events yet */
 

@@ -76,7 +76,7 @@ static bool hasFileExt(const char* fileName, const char* fileExt)
 }
 
 /****************************************************************************/
-void BeebWin::SetImageName(char *DiscName,char Drive,char DType) {
+void BeebWin::SetImageName(char *DiscName, int Drive, char DType) {
 	strcpy(CDiscName[Drive],DiscName);
 	CDiscType[Drive]=DType;
 	DiscLoaded[Drive]=TRUE;

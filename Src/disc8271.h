@@ -42,7 +42,7 @@ int Disc8271_read(int Address);
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */
-void Disc8271_write(int Address, int Value);
+void Disc8271_write(int Address, unsigned char Value);
 
 /*--------------------------------------------------------------------------*/
 void Disc8271_poll_real(void);

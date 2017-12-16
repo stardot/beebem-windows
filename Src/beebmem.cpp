@@ -901,7 +901,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 
 	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128) && NativeFDC) {
-		Disc8271_write((Address & 7),Value);
+		Disc8271_write((Address & 7), Value);
 		return;
 	}
 

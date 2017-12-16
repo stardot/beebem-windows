@@ -133,9 +133,9 @@ class BeebWin  {
 	void ApplyPrefs();
 	void Shutdown();
 
-    void UpdateModelType();
+	void UpdateModelType();
 	void SetSoundMenu(void);
-	void SetImageName(char *DiscName,char Drive,char DType);
+	void SetImageName(char *DiscName, int Drive, char DType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
