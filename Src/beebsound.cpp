@@ -26,22 +26,12 @@ Boston, MA  02110-1301, USA.
 
 #include "beebsound.h"
 
-#include <iostream>
-#include <fstream>
-#include <process.h>
 #include <math.h>
-
-#include <errno.h>
-#include <windows.h>
-#include <windowsx.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 #include "6502core.h"
-#include "port.h"
-#include "beebmem.h"
-#include "beebwin.h"
 #include "uefstate.h"
 #include "avi.h"
 #include "main.h"
@@ -99,11 +89,11 @@ char SoundExponentialVolume = 1;
 /* Number of places to shift the volume */
 #define VOLMAG 3
 
-int Speech[4];
+static int Speech[4];
 
-FILE *sndlog=NULL;
+// static FILE *sndlog = NULL;
 
-volatile struct {
+static struct {
   unsigned int ToneFreq[4];
   unsigned int ChangeSamps[4]; /* How often this channel should flip its otuput */
   unsigned int ToneVolume[4]; /* In units of /dev/dsp */
@@ -114,7 +104,8 @@ volatile struct {
   } Noise;
   int LastToneFreqSet; /* the tone generator last set - for writing the 2nd byte */
 } BeebState76489;
-int RealVolumes[4]; // Holds the real volume values for state save use
+
+static int RealVolumes[4]; // Holds the real volume values for state save use
 
 static int ActiveChannel[4]={FALSE,FALSE,FALSE,FALSE}; /* Those channels with non-0 voolume */
 // Set it to an array for more accurate sound generation
