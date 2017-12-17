@@ -1708,7 +1708,7 @@ void BeebWin::doLED(int sx,bool on) {
 		tsy=m_LastStartY+m_LastNLines-2;
 	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
 	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
-};
+}
 
 /****************************************************************************/
 void BeebWin::ResetTiming(void)

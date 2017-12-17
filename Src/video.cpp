@@ -235,7 +235,8 @@ static void BuildMode7Font(void) {
 		  EM7Font[2][m7cc][17]=row3; EM7Font[2][m7cc][18]=EM7Font[2][m7cc][19]=0;
 	  } // check for valid char to modify
   } // character loop.
-}; /* BuildMode7Font */
+}
+
 /*-------------------------------------------------------------------------------------------------------------*/
 static void DoFastTable16(void) {
   unsigned int beebpixvl,beebpixvr;
@@ -257,7 +258,7 @@ static void DoFastTable16(void) {
       if (tmp>7) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
-      };
+      }
       FastTable[bplvtotal].data[0]=FastTable[bplvtotal].data[1]=
         FastTable[bplvtotal].data[2]=FastTable[bplvtotal].data[3]=mainWin->cols[tmp];
 
@@ -265,12 +266,12 @@ static void DoFastTable16(void) {
       if (tmp>7) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
-      };
+      }
       FastTable[bplvtotal].data[4]=FastTable[bplvtotal].data[5]=
         FastTable[bplvtotal].data[6]=FastTable[bplvtotal].data[7]=mainWin->cols[tmp];
-    }; /* beebpixr */
-  }; /* beebpixl */
-}; /* DoFastTable16 */
+    }
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 static void DoFastTable16XStep8(void) {
@@ -293,7 +294,7 @@ static void DoFastTable16XStep8(void) {
       if (tmp>7) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
-      };
+      }
       FastTableDWidth[bplvtotal].data[0]=FastTableDWidth[bplvtotal].data[1]=
         FastTableDWidth[bplvtotal].data[2]=FastTableDWidth[bplvtotal].data[3]=
       FastTableDWidth[bplvtotal].data[4]=FastTableDWidth[bplvtotal].data[5]=
@@ -303,14 +304,15 @@ static void DoFastTable16XStep8(void) {
       if (tmp>7) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
-      };
+      }
       FastTableDWidth[bplvtotal].data[8]=FastTableDWidth[bplvtotal].data[9]=
         FastTableDWidth[bplvtotal].data[10]=FastTableDWidth[bplvtotal].data[11]=
       FastTableDWidth[bplvtotal].data[12]=FastTableDWidth[bplvtotal].data[13]=
         FastTableDWidth[bplvtotal].data[14]=FastTableDWidth[bplvtotal].data[15]=mainWin->cols[tmp];
-    }; /* beebpixr */
-  }; /* beebpixl */
-}; /* DoFastTable16XStep8 */
+    }
+  }
+}
+
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Some guess work and experimentation has determined that the left most pixel uses bits 7,5,3,1 for the       */
 /* palette address, the next uses 6,4,2,0, the next uses 5,3,1,H (H=High), then 5,2,0,H                        */
@@ -327,7 +329,7 @@ static void DoFastTable4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTable[beebpixv].data[0]=FastTable[beebpixv].data[1]=mainWin->cols[tmp];
 
     pentry=((beebpixv & 64)?8:0)
@@ -338,7 +340,7 @@ static void DoFastTable4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTable[beebpixv].data[2]=FastTable[beebpixv].data[3]=mainWin->cols[tmp];
 
     pentry=((beebpixv & 32)?8:0)
@@ -349,7 +351,7 @@ static void DoFastTable4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTable[beebpixv].data[4]=FastTable[beebpixv].data[5]=mainWin->cols[tmp];
     pentry=((beebpixv & 16)?8:0)
            | ((beebpixv & 4)?4:0)
@@ -359,10 +361,10 @@ static void DoFastTable4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTable[beebpixv].data[6]=FastTable[beebpixv].data[7]=mainWin->cols[tmp];
-  }; /* beebpixv */
-}; /* DoFastTable4 */
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Some guess work and experimentation has determined that the left most pixel uses bits 7,5,3,1 for the       */
@@ -380,7 +382,7 @@ static void DoFastTable4XStep4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTableDWidth[beebpixv].data[0]=FastTableDWidth[beebpixv].data[1]=
     FastTableDWidth[beebpixv].data[2]=FastTableDWidth[beebpixv].data[3]=mainWin->cols[tmp];
 
@@ -392,7 +394,7 @@ static void DoFastTable4XStep4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTableDWidth[beebpixv].data[4]=FastTableDWidth[beebpixv].data[5]=
     FastTableDWidth[beebpixv].data[6]=FastTableDWidth[beebpixv].data[7]=mainWin->cols[tmp];
 
@@ -404,7 +406,7 @@ static void DoFastTable4XStep4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTableDWidth[beebpixv].data[8]=FastTableDWidth[beebpixv].data[9]=
     FastTableDWidth[beebpixv].data[10]=FastTableDWidth[beebpixv].data[11]=mainWin->cols[tmp];
     pentry=((beebpixv & 16)?8:0)
@@ -415,11 +417,11 @@ static void DoFastTable4XStep4(void) {
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
-    };
+    }
     FastTableDWidth[beebpixv].data[12]=FastTableDWidth[beebpixv].data[13]=
     FastTableDWidth[beebpixv].data[14]=FastTableDWidth[beebpixv].data[15]=mainWin->cols[tmp];
-  }; /* beebpixv */
-}; /* DoFastTable4XStep4 */
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Some guess work and experimentation has determined that the left most pixel uses the same pattern as mode 1 */
@@ -442,11 +444,11 @@ static void DoFastTable2(void) {
       if (tmp>7) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
-      };
+      }
       FastTable[beebpixv].data[pix]=mainWin->cols[tmp];
-    }; /* pix */
-  }; /* beebpixv */
-}; /* DoFastTable2 */
+    }
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Some guess work and experimentation has determined that the left most pixel uses the same pattern as mode 1 */
@@ -469,11 +471,11 @@ static void DoFastTable2XStep2(void) {
       if (tmp>7) {
         tmp&=7;
         if (VideoULA_ControlReg & 1) tmp^=7;
-      };
+      }
       FastTableDWidth[beebpixv].data[pix*2]=FastTableDWidth[beebpixv].data[pix*2+1]=mainWin->cols[tmp];
-    }; /* pix */
-  }; /* beebpixv */
-}; /* DoFastTable2XStep2 */
+    }
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Check validity of fast table, and if invalid rebuild.
@@ -487,7 +489,7 @@ static void DoFastTable(void) {
     LineRoutine=(VideoULA_ControlReg & 0x10)?LowLevelDoScanLineNarrow:LowLevelDoScanLineWide;
   } else {
     LineRoutine=(VideoULA_ControlReg & 0x10)?LowLevelDoScanLineNarrowNot4Bytes:LowLevelDoScanLineWideNot4Bytes;
-  };
+  }
 
   /* What happens next dpends on the number of colours */
   switch (NColsLookup[(VideoULA_ControlReg & 0x1c) >> 2]) {
@@ -496,7 +498,7 @@ static void DoFastTable(void) {
         DoFastTable2();
       } else {
         DoFastTable2XStep2();
-      };
+      }
       FastTable_Valid=1;     
       break;
 
@@ -505,7 +507,7 @@ static void DoFastTable(void) {
         DoFastTable4();
       } else {
         DoFastTable4XStep4();
-      };
+      }
       FastTable_Valid=1;     
       break;
 
@@ -514,14 +516,14 @@ static void DoFastTable(void) {
         DoFastTable16();
       } else {
         DoFastTable16XStep8();
-      };
+      }
       FastTable_Valid=1;
       break;
 
     default:
       break;
-  }; /* Colours/pixel switch */
-}; /* DoFastTable */
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 #define BEEB_DOTIME_SAMPLESIZE 50
@@ -545,7 +547,7 @@ static void VideoStartOfFrame(void) {
     times(&previous);
     Time_FrameCount=-1;
     Have_GotTime=1;
-  };
+  }
 
   if (Time_FrameCount==(BEEB_DOTIME_SAMPLESIZE-1)) {
     times(&now);
@@ -621,20 +623,18 @@ static void VideoStartOfFrame(void) {
     if (Mode7FlashTrigger<0) {
 		Mode7FlashTrigger=(Mode7FlashOn)?MODE7OFFFIELDS:MODE7ONFIELDS;
       Mode7FlashOn^=1; /* toggle flash state */
-    };
-  };
+    }
+  }
 
   IL_Multiplier=(CRTC_InterlaceAndDelay&1)?2:1;
   if (InterlaceFrame) {
     IncTrigger((IL_Multiplier*(CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
   } else {
     IncTrigger(((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
-  };
+  }
 
   TeleTextPoll();
-
-}; /* VideoStartOfFrame */
-
+}
 
 /*--------------------------------------------------------------------------*/
 /* Scanline processing for modes with fast 6845 clock - i.e. narrow pixels  */
@@ -654,8 +654,8 @@ static void LowLevelDoScanLineNarrow() {
     *(vidPtr++)=FastTable[*(CurrentPtr+8)];
     *(vidPtr++)=FastTable[*(CurrentPtr+16)];
     *(vidPtr++)=FastTable[*(CurrentPtr+24)];
-  };
-}; /* LowLevelDoScanLineNarrow() */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 /* Scanline processing for modes with fast 6845 clock - i.e. narrow pixels  */
@@ -671,7 +671,7 @@ static void LowLevelDoScanLineNarrowNot4Bytes() {
 
   for(;BytesToGo;CurrentPtr+=8,BytesToGo--)
     (vidPtr++)->eightbyte=FastTable[*CurrentPtr].eightbyte;
-}; /* LowLevelDoScanLineNarrowNot4Bytes() */
+}
 
 /*-----------------------------------------------------------------------------*/
 /* Scanline processing for the low clock rate modes                            */
@@ -691,8 +691,8 @@ static void LowLevelDoScanLineWide() {
     *(vidPtr++)=FastTableDWidth[*(CurrentPtr+8)];
     *(vidPtr++)=FastTableDWidth[*(CurrentPtr+16)];
     *(vidPtr++)=FastTableDWidth[*(CurrentPtr+24)];
-  };
-}; /* LowLevelDoScanLineWide */
+  }
+}
 
 /*-----------------------------------------------------------------------------*/
 /* Scanline processing for the low clock rate modes                            */
@@ -705,7 +705,7 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 
   for(;BytesToGo;CurrentPtr+=8,BytesToGo--)
     *(vidPtr++)=FastTableDWidth[*CurrentPtr];
-}; /* LowLevelDoScanLineWideNot4Bytes */
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Do all the pixel rows for one row of teletext characters                                                    */
@@ -862,8 +862,7 @@ static void DoMode7Row(void) {
             CurrentCol[CurrentScanLine]=col;
             CurrentStartX[CurrentScanLine]=CurrentX;
             CurrentLen[CurrentScanLine]=12*XStep;
-
-          }; /* same colour */
+          } /* same colour */
         } else {
           for(CurrentPixel=0x800;CurrentPixel;CurrentPixel=CurrentPixel>>1) {
             /* Background or foreground ? */
@@ -876,12 +875,12 @@ static void DoMode7Row(void) {
               CurrentCol[CurrentScanLine]=col;
               CurrentStartX[CurrentScanLine]=CurrentX;
               CurrentLen[CurrentScanLine]=XStep;
-            }; /* Fore/back ground */
+            } /* Fore/back ground */
             CurrentX+=XStep;
-          }; /* Pixel within byte */
+          } /* Pixel within byte */
           CurrentX-=12*XStep;
-        }; /* tmp!=0 */
-      }; /* Scanline for */
+        }
+      } /* Scanline for */
       CurrentX+=12*XStep;
       Mode7DoubleHeightFlags[CurrentChar]=1; /* Not double height - so if the next line is double height it will be top half */
     } else {
@@ -897,34 +896,35 @@ static void DoMode7Row(void) {
           if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=XStep; else {
             if (CurrentLen[CurrentScanLine])  {
               mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
-            };
+            }
             CurrentCol[CurrentScanLine]=col;
             CurrentStartX[CurrentScanLine]=CurrentX;
             CurrentLen[CurrentScanLine]=XStep;
-          }; /* Fore/back ground */
-        }; /* Scanline for */
+          } /* Fore/back ground */
+        } /* Scanline for */
         CurrentX+=XStep;
-      }; /* Pixel within byte */
+      } /* Pixel within byte */
       Mode7DoubleHeightFlags[CurrentChar]^=1; /* Not double height - so if the next line is double height it will be top half */
     }
-	Foreground=ForegroundPending;
-  }; /* character loop */
+    Foreground=ForegroundPending;
+  } /* character loop */
 
   /* Finish off right bits of scan line */
   for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
     if (CurrentLen[CurrentScanLine])
       mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
-  };
+  }
   CurrentLineBottom=NextLineBottom;
   NextLineBottom=0;
-}; /* DoMode7Row */
+}
+
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Actually does the work of decoding beeb memory and plotting the line to X */
 static void LowLevelDoScanLine() {
   /* Update acceleration tables */
   DoFastTable();
   if (FastTable_Valid) LineRoutine();
-}; /* LowLevelDoScanLine */
+}
 
 void RedoMPTR(void) {
 	if (VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrapMo7(ova,ovn);
@@ -941,7 +941,7 @@ void VideoDoScanLine(void) {
     if (DoCA1Int) {
       SysVIATriggerCA1Int(0);
       DoCA1Int=0;
-    }; 
+    }
 
     /* Clear the next 20 scan lines */
     if (!FrameNum) {
@@ -962,7 +962,7 @@ void VideoDoScanLine(void) {
       VideoState.Addr+=CRTC_HorizontalDisplayed;
       if (!FrameNum) DoMode7Row();
       VideoState.PixmapLine+=20;
-    };
+    }
 
     /* Move onto next physical scanline as far as timing is concerned */
     VideoState.InCharLineUp+=1;
@@ -995,7 +995,7 @@ void VideoDoScanLine(void) {
     } else {
 	  // RTW- set timer till the next scanline update (this is now nice and simple)
       IncTrigger((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2),VideoTriggerCount);
-    };
+    }
   } else {
     /* Non teletext. */
 
@@ -1005,7 +1005,7 @@ void VideoDoScanLine(void) {
     if (VideoState.VSyncState) {
       if (!(--VideoState.VSyncState)) {
         SysVIATriggerCA1Int(0);
-      };
+      }
     }
 
 	if ((VideoState.VSyncState==0) && (VideoState.CharLine==CRTC_VerticalSyncPos) && (VideoState.InCharLineUp == 0)) {
@@ -1022,7 +1022,7 @@ void VideoDoScanLine(void) {
 
       SysVIATriggerCA1Int(1);
       VideoState.VSyncState=(CRTC_SyncWidth>>4);
-    };
+    }
 
     /* Clear the scan line */
     if (!FrameNum)
@@ -1041,7 +1041,7 @@ void VideoDoScanLine(void) {
         ova=VideoState.Addr*8; ovn=CRTC_HorizontalDisplayed*8;
         VideoState.DataPtr=BeebMemPtrWithWrap(VideoState.Addr*8,CRTC_HorizontalDisplayed*8);
         VideoState.Addr+=CRTC_HorizontalDisplayed;
-      };
+      }
   
       if ((VideoState.InCharLineUp<8) && ((CRTC_InterlaceAndDelay & 0x30)!=48)) {
         if (!FrameNum)
@@ -1065,7 +1065,7 @@ void VideoDoScanLine(void) {
 	if (VideoState.CharLine<=CRTC_VerticalTotal && VideoState.InCharLineUp>CRTC_ScanLinesPerChar) {
       VideoState.CharLine++;
       VideoState.InCharLineUp=0;
-    };
+    }
 
 	// RTW - neater way of detecting the end of the PAL frame, which doesn't require making a special case
 	// of the vertical total adjust period.
@@ -1094,8 +1094,8 @@ void VideoDoScanLine(void) {
     } else {
       IncTrigger((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2),VideoTriggerCount);
     }
-  }; /* Teletext if */
-}; /* VideoDoScanLine */
+  } /* Teletext if */
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 void AdjustVideo() {
@@ -1136,8 +1136,7 @@ void VideoInit(void) {
   CurY=-1;
   //AdjustVideo();
 //  crtclog=fopen("/crtc.log","wb");
-}; /* VideoInit */
-
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 void CRTCWrite(int Address, unsigned char Value) {
@@ -1257,12 +1256,12 @@ int CRTCRead(int Address) {
         return(CRTC_LightPenLow);
       default:
         break;
-    }; /* CRTC Read switch */
+    } /* CRTC Read switch */
   } else {
     return(0); /* Rockwell part has bits 5,6,7 used - bit 6 is set when LPEN is received, bit 5 when in vertical retrace */
   }
 return(0);	// Keeep MSVC happy $NRM
-}; /* CRTCRead */
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 void VideoULAWrite(int Address, unsigned char Value) {
@@ -1289,7 +1288,7 @@ void VideoULAWrite(int Address, unsigned char Value) {
 /*-------------------------------------------------------------------------------------------------------------*/
 int VideoULARead(int Address) {
   return(Address); /* Read not defined from Video ULA */
-}; /* VidULARead */
+}
 
 /*-------------------------------------------------------------------------------------------------------------*/
 static void VideoAddCursor(void) {
@@ -1483,7 +1482,7 @@ void video_dumpstate(void) {
   cerr << "  CRTC_CursorPosLow=" << int(CRTC_CursorPosLow)<< "\n";
   cerr << "  CRTC_LightPenHigh=" << int(CRTC_LightPenHigh)<< "\n";
   cerr << "  CRTC_LightPenLow=" << int(CRTC_LightPenLow)<< "\n";
-}; /* video_dumpstate */
+}
 
 void DebugVideoState()
 {

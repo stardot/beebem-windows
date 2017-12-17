@@ -151,7 +151,7 @@ static void DoSelects(void) {
   Internal_DriveControlOutputPort&=0x3f;
   if (Selects[0]) Internal_DriveControlOutputPort|=0x40;
   if (Selects[1]) Internal_DriveControlOutputPort|=0x80;
-}; /* DoSelects */
+}
 
 /*--------------------------------------------------------------------------*/
 static void NotImp(const char *NotImpCom) {
@@ -163,12 +163,12 @@ static void NotImp(const char *NotImpCom) {
   cerr << NotImpCom << " has not been implemented in disc8271 - sorry\n";
   exit(0);
 #endif
-}; /* NotImp */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Load the head - ignore for the moment                                    */
 static void DoLoadHead(void) {
-}; /* DoLoadHead */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Initialise our disc structures                                           */
@@ -180,7 +180,7 @@ static void InitDiscStore(void) {
     for(head=0;head<2;head++)
       for(track=0;track<TRACKSPERDRIVE;track++)
         DiscStore[drive][head][track]=blank;
-}; /* InitDiscStore */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Given a logical track number accounts for bad tracks                     */
@@ -192,7 +192,7 @@ static int SkipBadTracks(int Unit, int trackin) {
     if (Internal_BadTracks[Unit][1]<=trackin) offset++;
   }  
   return(trackin+offset);
-}; /* SkipBadTracks */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Returns a pointer to the data structure for a particular track.  You     */
@@ -213,7 +213,7 @@ static TrackType *GetTrackPtr(int LogicalTrackID) {
   if (LogicalTrackID>=TRACKSPERDRIVE) LogicalTrackID=TRACKSPERDRIVE-1;
 
   return(&(DiscStore[UnitID][CURRENTHEAD][LogicalTrackID]));
-}; /* GetTrackPtr */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Returns a pointer to the data structure for a particular sector. Returns */
@@ -228,13 +228,13 @@ static SectorType *GetSectorPtr(TrackType *Track, int LogicalSectorID, int FindD
       return(&(Track->Sectors[CurrentSector]));
 
   return(NULL);
-}; /* GetSectorPtr */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Returns true if the drive signified by the current selects is ready      */
 static bool CheckReady(void) {
   return Selects[0] || Selects[1];
-};  /* CheckReady */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Cause an error - pass err num                                            */
@@ -243,7 +243,7 @@ static void DoErr(int ErrNum) {
   NextInterruptIsErr=ErrNum;
   StatusReg=0x80; /* Command is busy - come back when I have an interrupt */
   UPDATENMISTATUS;
-}; /* DoErr */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Checks a few things in the sector - returns true if OK                   */
@@ -252,25 +252,25 @@ static int ValidateSector(SectorType *SecToVal,int Track,int SecLength) {
   if (SecToVal->IDField.PhysRecLength!=SecLength) return(0);
  
   return(1);
-}; /* ValidateSector */
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_ScanDataCommand(void) {
   DoSelects();
-
   NotImp("DoVarLength_ScanDataCommand");
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_ScanDataAndDeldCommand(void) {
   DoSelects();
   NotImp("DoVarLength_ScanDataAndDeldCommand");
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void Do128ByteSR_WriteDataCommand(void) {
   DoSelects();
   NotImp("Do128ByteSR_WriteDataCommand");
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_WriteDataCommand(void) {
@@ -282,7 +282,7 @@ static void DoVarLength_WriteDataCommand(void) {
   if (!CheckReady()) {
     DoErr(0x10); /* Drive not ready */
     return;
-  };
+  }
 
   if (Selects[0]) Drive=0;
   if (Selects[1]) Drive=1;
@@ -290,20 +290,20 @@ static void DoVarLength_WriteDataCommand(void) {
   if (!Writeable[Drive]) {
     DoErr(0x12); /* Drive write protected */
     return;
-  };
+  }
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
   if (CommandStatus.CurrentTrackPtr==NULL) {
     DoErr(0x10);
     return;
-  };
+  }
 
   CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
   if (CommandStatus.CurrentSectorPtr==NULL) {
     DoErr(0x1e); /* Sector not found */
     return;
-  };
+  }
 
   CommandStatus.TrackAddr=Params[0];
   CommandStatus.CurrentSector=Params[1];
@@ -319,8 +319,8 @@ static void DoVarLength_WriteDataCommand(void) {
     FirstWriteInt=1;
   } else {
     DoErr(0x1e); /* Sector not found */
-  };
-};
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void WriteInterrupt(void) {
@@ -330,7 +330,7 @@ static void WriteInterrupt(void) {
     StatusReg=0x18; /* Result and interrupt */
     UPDATENMISTATUS;
     return;
-  };
+  }
 
   if (!FirstWriteInt)
     CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++]=DataReg;
@@ -359,33 +359,33 @@ static void WriteInterrupt(void) {
       else {
         DoErr(0x12);
       }
-    };
-  };
+    }
+  }
   
   if (!LastByte) {
     StatusReg=0x8c; /* Command busy, */
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
-  };
-}; /* WriteInterrupt */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void Do128ByteSR_WriteDeletedDataCommand(void) {
   DoSelects();
   NotImp("Do128ByteSR_WriteDeletedDataCommand");
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_WriteDeletedDataCommand(void) {
   DoSelects();
   NotImp("DoVarLength_WriteDeletedDataCommand");
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void Do128ByteSR_ReadDataCommand(void) {
   DoSelects();
   NotImp("Do128ByteSR_ReadDataCommand");
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_ReadDataCommand(void) {
@@ -397,7 +397,7 @@ static void DoVarLength_ReadDataCommand(void) {
   if (!CheckReady()) {
     DoErr(0x10); /* Drive not ready */
     return;
-  };
+  }
 
   if (Selects[0]) Drive=0;
   if (Selects[1]) Drive=1;
@@ -407,13 +407,13 @@ static void DoVarLength_ReadDataCommand(void) {
   if (CommandStatus.CurrentTrackPtr==NULL) {
     DoErr(0x10);
     return;
-  };
+  }
 
   CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
   if (CommandStatus.CurrentSectorPtr==NULL) {
     DoErr(0x1e); /* Sector not found */
     return;
-  };
+  }
 
   CommandStatus.TrackAddr=Params[0];
   CommandStatus.CurrentSector=Params[1];
@@ -428,8 +428,8 @@ static void DoVarLength_ReadDataCommand(void) {
     CommandStatus.ByteWithinSector=0;
   } else {
     DoErr(0x1e); /* Sector not found */
-  };
-};
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void ReadInterrupt(void) {
@@ -440,7 +440,7 @@ static void ReadInterrupt(void) {
     StatusReg=0x18; /* Result and interrupt */
     UPDATENMISTATUS;
     return;
-  };
+  }
 
   DataReg=CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++];
   /*cerr << "ReadInterrupt called - DataReg=0x" << hex << int(DataReg) << dec << "ByteWithinSector=" << CommandStatus.ByteWithinSector << "\n"; */
@@ -464,26 +464,28 @@ static void ReadInterrupt(void) {
       LastByte=1;
       CommandStatus.SectorsToGo=-1; /* To let us bail out */
       SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
-    };
-  };
+    }
+  }
   
   if (!LastByte) {
     StatusReg=0x8c; /* Command busy, */
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
-  };
-}; /* ReadInterrupt */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void Do128ByteSR_ReadDataAndDeldCommand(void) {
   DoSelects();
   NotImp("Do128ByteSR_ReadDataAndDeldCommand");
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_ReadDataAndDeldCommand(void) {
   /* Use normal read command for now - deleted data not supported */
   DoVarLength_ReadDataCommand();
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoReadIDCommand(void) {
   int Drive=-1;
@@ -494,7 +496,7 @@ static void DoReadIDCommand(void) {
   if (!CheckReady()) {
     DoErr(0x10); /* Drive not ready */
     return;
-  };
+  }
 
   if (Selects[0]) Drive=0;
   if (Selects[1]) Drive=1;
@@ -504,13 +506,13 @@ static void DoReadIDCommand(void) {
   if (CommandStatus.CurrentTrackPtr==NULL) {
     DoErr(0x10);
     return;
-  };
+  }
 
   CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,0,0);
   if (CommandStatus.CurrentSectorPtr==NULL) {
     DoErr(0x1e); /* Sector not found */
     return;
-  };
+  }
 
   CommandStatus.TrackAddr=Params[0];
   CommandStatus.CurrentSector=0;
@@ -521,7 +523,7 @@ static void DoReadIDCommand(void) {
   StatusReg=0x80; /* Command busy */
   UPDATENMISTATUS;
   CommandStatus.ByteWithinSector=0;
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void ReadIDInterrupt(void) {
@@ -531,7 +533,7 @@ static void ReadIDInterrupt(void) {
     StatusReg=0x18; /* Result and interrupt */
     UPDATENMISTATUS;
     return;
-  };
+  }
 
   if (CommandStatus.ByteWithinSector==0)
     DataReg=CommandStatus.CurrentSectorPtr->IDField.CylinderNum;
@@ -562,21 +564,22 @@ static void ReadIDInterrupt(void) {
       LastByte=1;
       CommandStatus.SectorsToGo=-1; /* To let us bail out */
       SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
-    };
-  };
+    }
+  }
   
   if (!LastByte) {
     StatusReg=0x8c; /* Command busy, */
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
-  };
-}; /* ReadIDInterrupt */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void Do128ByteSR_VerifyDataAndDeldCommand(void) {
   DoSelects();
   NotImp("Do128ByteSR_VerifyDataAndDeldCommand");
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_VerifyDataAndDeldCommand(void) {
   int Drive=-1;
@@ -586,7 +589,7 @@ static void DoVarLength_VerifyDataAndDeldCommand(void) {
   if (!CheckReady()) {
     DoErr(0x10); /* Drive not ready */
     return;
-  };
+  }
 
   if (Selects[0]) Drive=0;
   if (Selects[1]) Drive=1;
@@ -596,24 +599,26 @@ static void DoVarLength_VerifyDataAndDeldCommand(void) {
   if (CommandStatus.CurrentTrackPtr==NULL) {
     DoErr(0x10);
     return;
-  };
+  }
 
   CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
   if (CommandStatus.CurrentSectorPtr==NULL) {
     DoErr(0x1e); /* Sector not found */
     return;
-  };
+  }
 
   StatusReg=0x80; /* Command busy */
   UPDATENMISTATUS;
   SetTrigger(100,Disc8271Trigger); /* A short delay to causing an interrupt */
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void VerifyInterrupt(void) {
   StatusReg=0x18; /* Result with interrupt */
   UPDATENMISTATUS;
   ResultReg=0; /* All OK */
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoFormatCommand(void) {
   int Drive=-1;
@@ -625,7 +630,7 @@ static void DoFormatCommand(void) {
   if (!CheckReady()) {
     DoErr(0x10); /* Drive not ready */
     return;
-  };
+  }
 
   if (Selects[0]) Drive=0;
   if (Selects[1]) Drive=1;
@@ -633,20 +638,20 @@ static void DoFormatCommand(void) {
   if (!Writeable[Drive]) {
     DoErr(0x12); /* Drive write protected */
     return;
-  };
+  }
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
   if (CommandStatus.CurrentTrackPtr==NULL) {
     DoErr(0x10);
     return;
-  };
+  }
 
   CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,0,0);
   if (CommandStatus.CurrentSectorPtr==NULL) {
     DoErr(0x1e); /* Sector not found */
     return;
-  };
+  }
 
   CommandStatus.TrackAddr=Params[0];
   CommandStatus.CurrentSector=0;
@@ -662,8 +667,8 @@ static void DoFormatCommand(void) {
     FirstWriteInt=1;
   } else {
     DoErr(0x1e); /* Sector not found */
-  };
-};
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void FormatInterrupt(void) {
@@ -674,7 +679,7 @@ static void FormatInterrupt(void) {
     StatusReg=0x18; /* Result and interrupt */
     UPDATENMISTATUS;
     return;
-  };
+  }
 
   if (!FirstWriteInt) {
     /* Ignore the ID data for now - just count the bytes */
@@ -709,22 +714,23 @@ static void FormatInterrupt(void) {
       else {
         DoErr(0x12);
       }
-    };
-  };
+    }
+  }
   
   if (!LastByte) {
     StatusReg=0x8c; /* Command busy, */
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES * 256,Disc8271Trigger);
-  };
-}; /* FormatInterrupt */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void DoSeekInt(void) {
   StatusReg=0x18; /* Result with interrupt */
   UPDATENMISTATUS;
   ResultReg=0; /* All OK */
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoSeekCommand(void) {
   int Drive=-1;
@@ -738,14 +744,14 @@ static void DoSeekCommand(void) {
   if (Drive<0) {
     DoErr(0x10);
     return;
-  };
-  
+  }
+
   Internal_CurrentTrack[Drive]=Params[0];
 
   StatusReg=0x80; /* Command busy */
   UPDATENMISTATUS;
   SetTrigger(100,Disc8271Trigger); /* A short delay to causing an interrupt */
-};
+}
 
 /*--------------------------------------------------------------------------*/
 static void DoReadDriveStatusCommand(void) {
@@ -755,21 +761,23 @@ static void DoReadDriveStatusCommand(void) {
   if (ThisCommand & 0x40) {
     Track0=(Internal_CurrentTrack[0]==0);
     WriteProt=(!Writeable[0]);
-  };
+  }
 
   if (ThisCommand & 0x80) {
     Track0=(Internal_CurrentTrack[1]==0);
     WriteProt=(!Writeable[1]);
-  };
+  }
 
   ResultReg=0x80 | (Selects[1]?0x40:0) | (Selects[0]?0x4:0) | (Track0?2:0) | (WriteProt?8:0);
   StatusReg|=0x10; /* Result */
   UPDATENMISTATUS;
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoSpecifyCommand(void) {
   /* Should set stuff up here */
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoWriteSpecialCommand(void) {
   DoSelects();
@@ -829,11 +837,9 @@ static void DoWriteSpecialCommand(void) {
 
     default:
       /* cerr << "Write to bad special register\n"; */
-      return;
       break;
-  }; /* Special register number switch */
-
-}; /* DoWriteSpecialCommand */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void DoReadSpecialCommand(void) {
@@ -891,15 +897,15 @@ static void DoReadSpecialCommand(void) {
     default:
       /* cerr << "Read of bad special register\n"; */
       return;
-      break;
-  }; /* Special register number switch */
+  }
 
   StatusReg |= 16; /* Result reg full */
   UPDATENMISTATUS;
-};
+}
+
 /*--------------------------------------------------------------------------*/
 static void DoBadCommand(void) {
-};
+}
 
 /*--------------------------------------------------------------------------*/
 /* The following table is used to parse commands from the command number written into
@@ -926,7 +932,7 @@ static PrimaryCommandLookupType PrimaryCommandLookup[]={
   {0x3a, 0x3f, 2, DoWriteSpecialCommand, NULL, "Write special registers" },
   {0x3d, 0x3f, 1, DoReadSpecialCommand, NULL, "Read special registers" },
   {0,    0,    0, DoBadCommand, NULL, "Unknown command"} /* Terminator due to 0 mask matching all */
-}; /* PrimaryCommandLookup */
+};
 
 /*--------------------------------------------------------------------------*/
 /* returns a pointer to the data structure for the given command            */
@@ -938,7 +944,7 @@ static PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber) {
   for(;presptr->CommandNum!=(presptr->Mask & CommandNumber);presptr++);
 
   return(presptr);
-}; /* CommandPtrFromNumber */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */
@@ -972,10 +978,10 @@ int Disc8271_read(int Address) {
     default:
       /* cerr << "8271: Read to unknown register address=" << Address << "\n"; */
       break;
-  }; /* Address switch */
+  }
 
   return(Value);
-}; /* Disc8271_read */
+}
 
 /*--------------------------------------------------------------------------*/
 static void CommandRegWrite(int Value) {
@@ -993,12 +999,12 @@ static void CommandRegWrite(int Value) {
     StatusReg&=0x7e;
     UPDATENMISTATUS;
     ptr->ToCall();
-  };
-
-}; /* CommandRegWrite */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 static void ParamRegWrite(int Value) {
+  // Parameter wanted ?
   if (PresentParam>=NParamsInThisCommand) {
     /* cerr << "8271: Unwanted parameter register write value=0x" << hex << Value << dec << "\n"; */
   } else {
@@ -1007,6 +1013,7 @@ static void ParamRegWrite(int Value) {
     StatusReg&=0xfe; /* Observed on beeb */
     UPDATENMISTATUS;
 
+    // Got all params yet?
     if (PresentParam>=NParamsInThisCommand) {
 
       StatusReg&=0x7e; /* Observed on beeb */
@@ -1021,9 +1028,9 @@ static void ParamRegWrite(int Value) {
       cerr << dec << "\n"; */
 
       ptr->ToCall();
-    }; /* Got all params yet? */
-  } /* Parameter wanted ? */
-}; /* ParamRegWrite */
+    }
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-7 - with the fe80 etc stripped out */
@@ -1063,10 +1070,10 @@ void Disc8271_write(int Address, unsigned char Value) {
     default:
       /* cerr << "8271: Write to unknown register address=" << Address << ", value=0x" << hex << Value << dec << "\n"; */
       break;
-  }; /* Address switch */
+  }
 
   DriveHeadScheduleUnload();
-}; /* Disc8271_write */
+}
 
 /*--------------------------------------------------------------------------*/
 static void DriveHeadScheduleUnload(void) {
@@ -1159,10 +1166,10 @@ void Disc8271_poll_real(void) {
     PrimaryCommandLookupType *comptr;
     comptr=CommandPtrFromNumber(ThisCommand);
     if (comptr->IntHandler!=NULL) comptr->IntHandler();
-  };
+  }
 
   DriveHeadScheduleUnload();
-}; /* Disc8271_poll */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Checks it the sectors passed in look like a valid disc catalogue. Returns:
@@ -1249,7 +1256,7 @@ void FreeDiscImage(int DriveNum) {
     }
   }
 }
-      
+
 /*--------------------------------------------------------------------------*/
 void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) {
   int CurrentTrack,CurrentSector;
@@ -1267,7 +1274,7 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) 
     cerr << "Could not open disc file " << FileName << "\n";
 #endif
     return;
-  };
+  }
 
   mainWin->SetImageName(FileName,DriveNum,0);
 
@@ -1303,9 +1310,9 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) 
         SecPtr[CurrentSector].Deleted=0;
         SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data,1,256,infile);
-      }; /* Sector */
-    }; /* Track */
-  }; /* Head */
+      }
+    }
+  }
 
   fclose(infile);
 
@@ -1324,7 +1331,7 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) 
     cerr << "Check files before copying them.\n";
 #endif
   }
-};  /* LoadSimpleDiscImage */
+}
 
 /*--------------------------------------------------------------------------*/
 void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
@@ -1341,7 +1348,7 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
     cerr << "Could not open disc file " << FileName << "\n";
 #endif
     return;
-  };
+  }
 
   mainWin->SetImageName(FileName,DriveNum,1);
 
@@ -1367,9 +1374,9 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
         SecPtr[CurrentSector].Deleted=0;
         SecPtr[CurrentSector].Data=(unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data,1,256,infile);
-      }; /* Sector */
-    }; /* Head */
-  }; /* Track */
+      }
+    }
+  }
 
   fclose(infile);
 
@@ -1387,7 +1394,7 @@ void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
     cerr << "Check files before copying them.\n";
 #endif
   }
-};  /* LoadSimpleDSDiscImage */
+}
 
 /*--------------------------------------------------------------------------*/
 void Eject8271DiscImage(int DriveNum) {
@@ -1414,7 +1421,7 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
     cerr << "Could not open disc file for write " << FileNames[DriveNum] << "\n";
 #endif
     return false;
-  };
+  }
 
   if(NumHeads[DriveNum]) {
 	FileOffset=(NumHeads[DriveNum]*TrackNum+HeadNum)*2560;	/* 1=SSD, 2=DSD  */
@@ -1458,9 +1465,9 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
 #else
     cerr << "Failed writing to disc file " << FileNames[DriveNum] << "\n";
 #endif
-  };
+  }
   return Success!=0;
-};  /* SaveTrackImage */
+}
 
 /*--------------------------------------------------------------------------*/
 int IsDiscWritable(int DriveNum) {
@@ -1564,7 +1571,7 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
     cerr << "Could not create disc file " << FileName << "\n";
     return;
 #endif
-  };
+  }
 
   outfile=fopen(FileName,"wb");
   if (!outfile) {
@@ -1576,7 +1583,7 @@ void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
     cerr << "Could not create disc file " << FileName << "\n";
 #endif
     return;
-  };
+  }
 
   NumSectors=Tracks*10;
 
@@ -1681,9 +1688,9 @@ static void LoadStartupDisc(int DriveNum, char *DiscString) {
         cerr << "single or double sided\n";
 #endif
         break;        
-    }; /* Switch */
-  }; /* Successful parse of env variable */
-} /* LoadStartupDisc */
+    }
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 void Disc8271_reset(void) {
@@ -1734,9 +1741,8 @@ void Disc8271_reset(void) {
       DiscWriteEnable(0, 1);
       DiscWriteEnable(1, 1);
     }
-  }; /* One time discload */
-
-}; /* Disc8271_reset */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 
@@ -1909,7 +1915,7 @@ void disc8271_dumpstate(void) {
   cerr << "  PresentParam=" << PresentParam<< "\n";
   cerr << "  Selects=" << Selects[0] << "," << Selects[1] << "\n";
   cerr << "  NextInterruptIsErr=" << NextInterruptIsErr<< "\n";
-};
+}
 
 /*--------------------------------------------------------------------------*/
 void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads)

@@ -69,7 +69,7 @@ void via_dumpstate(VIAState *ToDump) {
   cerr << "  timer2l="  << ToDump->timer2l << "\n";
   cerr << "  timer1hasshot="  << ToDump->timer1hasshot << "\n";
   cerr << "  timer2hasshot="  << ToDump->timer2hasshot << "\n";
-}; /* via_dumpstate */
+}
 
 void DebugViaState(const char *s, VIAState *v)
 {

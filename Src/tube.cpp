@@ -716,23 +716,21 @@ INLINE int SignExtendByte(signed char in) {
 INLINE static void SetPSRZN(const unsigned char in) {
   PSR&=~(FlagZ | FlagN);
   PSR|=((in==0)<<1) | (in & 128);
-}; /* SetPSRZN */
+}
 
 /*----------------------------------------------------------------------------*/
 /* Note: n is 128 for true - not 1                                            */
 INLINE static void SetPSR(int mask,int c,int z,int i,int d,int b, int v, int n) {
   PSR&=~mask;
   PSR|=c | (z<<1) | (i<<2) | (d<<3) | (b<<4) | (v<<6) | n;
-} /* SetPSR */
+}
 
 /*----------------------------------------------------------------------------*/
 /* NOTE!!!!! n is 128 or 0 - not 1 or 0                                       */
 INLINE static void SetPSRCZN(int c,int z, int n) {
   PSR&=~(FlagC | FlagZ | FlagN);
   PSR|=c | (z<<1) | n;
-} /* SetPSRCZN */
-
-/*----------------------------------------------------------------------------*/
+}
 
 /*----------------------------------------------------------------------------*/
 INLINE static void Push(unsigned char ToPush) {
@@ -902,7 +900,7 @@ INLINE static void BPLInstrHandler(void) {
     TubeProgramCounter=RelAddrModeHandler_Data();
     Branched=1;
   } else TubeProgramCounter++;
-}; /* BPLInstrHandler */
+}
 
 INLINE static void BRKInstrHandler(void) {
   PushWord(TubeProgramCounter+1);
@@ -2474,8 +2472,7 @@ void Exec65C02Instruction(void) {
       BadInstrHandler(CurrentInstruction);
       break;
 	break;
-
-  }; /* OpCode switch */
+  }
 
   // This block corrects the cycle count for the branch instructions
   if ((CurrentInstruction==0x10) ||

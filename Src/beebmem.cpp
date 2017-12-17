@@ -133,7 +133,7 @@ static unsigned int WrapAddr(int in) {
   in+=offsets[(IC32State & 0x30)>>4];
   in&=0x7fff;
   return(in);
-}; /* WrapAddr */
+ }
 
 /*----------------------------------------------------------------------------*/
 /* This is for the use of the video routines.  It returns a pointer to
@@ -175,10 +175,10 @@ unsigned char *BeebMemPtrWithWrap(int a, int n) {
 
   if (a<=EndAddr && Sh_Display==0) {
     return WholeRam + a;
-  };
+  }
   if (a<=EndAddr && Sh_Display>0) {
     return ShadowRAM + a;
-  };
+  }
 
   toCopy=0x8000-a;
   if (toCopy>n) toCopy=n;
@@ -190,8 +190,7 @@ unsigned char *BeebMemPtrWithWrap(int a, int n) {
   if (toCopy>0 && Sh_Display>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy);
   // Tripling is for Shadow RAM handling
   return(tmpBuf);
-}; // BeebMemPtrWithWrap
-
+}
 
 /*----------------------------------------------------------------------------*/
 /* Perform hardware address wrap around - for mode 7*/
@@ -200,7 +199,7 @@ static unsigned int WrapAddrMo7(int in) {
   in+=0x7c00;
   in&=0x7fff;
   return(in);
-}; /* WrapAddrMo7 */
+}
 
 /*----------------------------------------------------------------------------*/
 /* Special case of BeebMemPtrWithWrap for use in mode 7
@@ -217,10 +216,10 @@ unsigned char *BeebMemPtrWithWrapMo7(int a, int n) {
 
   if (a<=EndAddr && Sh_Display==0) {
     return WholeRam + a;
-  };
+  }
   if (a<=EndAddr && Sh_Display>0) {
     return ShadowRAM + a;
-  };
+  }
 
   toCopy=0x8000-a;
   if (toCopy>n && Sh_Display==0) return WholeRam + a;
@@ -232,8 +231,7 @@ unsigned char *BeebMemPtrWithWrapMo7(int a, int n) {
   if (toCopy>0 && Sh_Display==0) memcpy(tmpBufPtr,WholeRam+EndAddr-(toCopy-1),toCopy);
   if (toCopy>0 && Sh_Display>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy);
   return(tmpBuf);
-}; // BeebMemPtrWithWrapMo7
-
+}
 
 /*----------------------------------------------------------------------------*/
 int BeebReadMem(int Address) {
@@ -562,7 +560,7 @@ static void DoRomChange(int NewBank) {
     NewBank&=0xf; // strip top bit if Model B
     PagedRomReg=NewBank;
     return;
-  };
+  }
 
   // Master Specific stuff   
   if (MachineType == Model::Master128) {
@@ -1436,10 +1434,10 @@ void beebmem_dumpstate(void) {
   if ((bottom==NULL) || (top==NULL)) {
     cerr << "Couldn't open memory dump files\n";
     return;
-  };
+  }
 
   fwrite(WholeRam,1,16384,bottom);
   fwrite(WholeRam+16384,1,16384,top);
   fclose(bottom);
   fclose(top);
-}; /* beebmem_dumpstate */
+}

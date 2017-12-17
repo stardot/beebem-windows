@@ -99,7 +99,7 @@ static void UpdateIFRTopBit(void) {
     SysVIAState.ifr&=0x7f;
   intStatus&=~(1<<sysVia);
   intStatus|=((SysVIAState.ifr & 128)?(1<<sysVia):0);
-}; /* UpdateIFRTopBit */
+}
 
 void PulseSysViaCB1(void) {
 /// Set IFR bit 4 - AtoD end of conversion interrupt
@@ -117,7 +117,7 @@ void BeebKeyUp(int row,int col) {
   if ((SysViaKbdState[col][row]) && (row!=0)) KeysDown--;
 
   SysViaKbdState[col][row]=0;
-}; /* BeebKeyUp */
+}
 
 /*--------------------------------------------------------------------------*/
 void BeebReleaseAllKeys() {
@@ -125,7 +125,7 @@ void BeebReleaseAllKeys() {
     for(int row=0;row<8;row++)
       for(int col=0;col<16;col++)
         SysViaKbdState[col][row]=0;
-}; /* BeebKeyUp */
+}
 
 /*--------------------------------------------------------------------------*/
 void DoKbdIntCheck() {
@@ -173,8 +173,7 @@ void BeebKeyDown(int row,int col) {
 #ifdef KBDDEBUG
   DumpAfterEach=1;
 #endif
-}; /* BeebKeyDown */
-
+}
 
 /*--------------------------------------------------------------------------*/
 /* Return current state of the single bi output of the keyboard matrix - NOT the
@@ -184,8 +183,7 @@ static int KbdOP(void) {
   if ((KBDCol>14) || (KBDRow>7)) return(0); /* Key not down if overrange - perhaps we should do something more? */
 
   return(SysViaKbdState[KBDCol][KBDRow]);
-} /* KbdOP */
-
+}
 
 /*--------------------------------------------------------------------------*/
 static void IC32Write(unsigned char Value) {
@@ -195,7 +193,6 @@ static void IC32Write(unsigned char Value) {
   int bit;
   int oldval=IC32State;
   unsigned char tmpCMOSState;
-
 
   bit=Value & 7;
   if (Value & 8) {
@@ -239,8 +236,7 @@ static void IC32Write(unsigned char Value) {
     KBDCol=(SlowDataBusWriteValue & 0xf);
     DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
   }
-} /* IC32Write */
-
+}
 
 void ChipClock(int Cycles) {
 //	if (WECycles>0) WECycles-=Cycles;
@@ -270,9 +266,7 @@ static void SlowDataBusWrite(unsigned char Value) {
   } 
 #endif
 
-
-} /* SlowDataBusWrite */
-
+}
 
 /*--------------------------------------------------------------------------*/
 static int SlowDataBusRead(void) {
@@ -328,7 +322,7 @@ void SysVIAWrite(int Address, int Value) {
       if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20)==0)) {
         SysVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
-      };
+      }
 	  SysVIAState.ifr&=~16;
 	  UpdateIFRTopBit();
       break;
@@ -363,7 +357,7 @@ void SysVIAWrite(int Address, int Value) {
       if (SysVIAState.acr & 128) {
         SysVIAState.orb&=0x7f;
         SysVIAState.irb&=0x7f;
-      };
+      }
       UpdateIFRTopBit();
       SysVIAState.timer1hasshot=0;
       break;
@@ -556,8 +550,8 @@ void SysVIATriggerCA1Int(int value) {
   if (!((SysVIAState.pcr & 1) ^ value)) {
     SysVIAState.ifr|=2; /* CA1 */
     UpdateIFRTopBit();
-  };
-}; /* SysVIATriggerCA1Int */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 void SysVIA_poll_real(void) {
@@ -635,7 +629,7 @@ void SysVIAReset(void) {
 	SRMode=0;
     SRCount=0;
 	SREnabled=0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
-} /* SysVIAReset */
+}
 
 /*-------------------------------------------------------------------------*/
 unsigned char BCD(unsigned char nonBCD) {
@@ -741,7 +735,7 @@ void sysvia_dumpstate(void) {
   cerr << "Sysvia:\n";
   cerr << "  IC32State=" << IC32State << "\n";
   via_dumpstate(&SysVIAState);
-}; /* sysvia_dumpstate */
+}
 
 void DebugSysViaState()
 {

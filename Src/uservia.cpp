@@ -95,7 +95,7 @@ static void UpdateIFRTopBit(void) {
     UserVIAState.ifr&=0x7f;
   intStatus&=~(1<<userVia);
   intStatus|=((UserVIAState.ifr & 128)?(1<<userVia):0);
-}; /* UpdateIFRTopBit */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe60 stripped out */
@@ -118,7 +118,7 @@ void UserVIAWrite(int Address, int Value) {
       if ((UserVIAState.ifr & 8) && ((UserVIAState.pcr & 0x20)==0)) {
         UserVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
-      };
+      }
 	  if (mBreakOutWindow)
 		  ShowOutputs(UserVIAState.orb);
 
@@ -183,7 +183,7 @@ void UserVIAWrite(int Address, int Value) {
       if (UserVIAState.acr & 128) {
         UserVIAState.orb&=0x7f;
         UserVIAState.irb&=0x7f;
-      };
+      }
       UpdateIFRTopBit();
       UserVIAState.timer1hasshot=0; //Added by K.Lowe 24/08/03
       break;
@@ -245,8 +245,8 @@ void UserVIAWrite(int Address, int Value) {
     case 15:
       UserVIAState.ora=Value & 0xff;
       break;
-  } /* Address switch */
-} /* UserVIAWrite */
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe60 stripped out */
@@ -380,14 +380,14 @@ int UserVIARead(int Address) {
 	}
 
   return(tmp);
-} /* UserVIARead */
+}
 
 /*--------------------------------------------------------------------------*/
 void UserVIATriggerCA1Int(void) {
   /* We should be concerned with active edges etc. */
   UserVIAState.ifr|=2; /* CA1 */
   UpdateIFRTopBit();
-}; /* UserVIATriggerCA1Int */
+}
 
 /*--------------------------------------------------------------------------*/
 void UserVIA_poll_real(void) {
@@ -432,7 +432,7 @@ void UserVIA_poll_real(void) {
     /* cerr << "UserVIA timer2c\n"; */
     UserVIAState.timer2c += 0x20000; // Do not reload latches for T2
   }
-} /* UserVIA_poll */
+}
 
 void UserVIA_poll(unsigned int ncycles) {
   // Converted to a proc to allow shift register functions
@@ -446,7 +446,6 @@ void UserVIA_poll(unsigned int ncycles) {
   if (PrinterEnabled && PrinterTrigger<=TotalCycles) PrinterPoll();
   if (SRTrigger<=TotalCycles) SRPoll();
 }
-
 
 /*--------------------------------------------------------------------------*/
 void UserVIAReset(void) {
@@ -715,13 +714,12 @@ void RTCWrite(int Value, int lastValue)
 void uservia_dumpstate(void) {
   cerr << "Uservia:\n";
   via_dumpstate(&UserVIAState);
-}; /* uservia_dumpstate */
+}
 
 void DebugUserViaState()
 {
 	DebugViaState("UsrVia", &UserVIAState);
 }
-
 
 /*
  * Breakout box stuff
@@ -942,8 +940,7 @@ int bit;
 
 	default:
 		return FALSE;
-	};		
-
+	}
 }
 
 char *BitKeyName( int Key )

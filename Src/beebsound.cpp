@@ -390,7 +390,7 @@ void PlayUpTil(double DestTime) {
 
 		OurTime+=bufinc;
 	} /* While time */ 
-}; /* PlayUpTil */
+}
 
 /****************************************************************************/
 /* Convert time in cycles to time in samples                                */
@@ -409,7 +409,7 @@ static double CyclesToSamples(int BeebCycles) {
     tmp=((double)CycleCountWrap-(double)LastBeebCycle)+(double)BeebCycles;
   } else {
     tmp=(double)BeebCycles-(double)LastBeebCycle;
-  };
+  }
   tmp/=(mainWin->m_RealTimeTarget)?mainWin->m_RealTimeTarget:1;
 /*fprintf(stderr,"Convert tmp=%f\n",tmp); */
   LastBeebCycle=BeebCycles;
@@ -419,7 +419,7 @@ static double CyclesToSamples(int BeebCycles) {
 
   LastOurTime+=tmp;
   return LastOurTime;
-}; /* CyclesToSamples */
+}
 
 /****************************************************************************/
 static void InitAudioDev(int sampleratein) {
@@ -482,7 +482,7 @@ static void SetFreq(int Channel, int freqval) {
   }
 
   BeebState76489.ChangeSamps[Channel]=ChangeSamps;
-};
+}
 
 /****************************************************************************/
 static void SoundTrigger_Real(void) {
@@ -490,7 +490,7 @@ static void SoundTrigger_Real(void) {
   nowsamps=CyclesToSamples(TotalCycles);
   PlayUpTil(nowsamps);
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;
-}; /* SoundTrigger_Real */
+}
 
 void Sound_Trigger(int NCycles) {
 	if (SoundTrigger<=TotalCycles) SoundTrigger_Real(); 
@@ -524,7 +524,7 @@ void SoundInit() {
   SoundBufferSize=pSoundStreamer?pSoundStreamer->BufferSize():SoundSampleRate/50;
   LoadSoundSamples();
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;
-}; /* SoundInit */
+}
 
 void SwitchOnSound(void) {
   SetFreq(3,1000);

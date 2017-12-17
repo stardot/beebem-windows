@@ -302,7 +302,7 @@ INLINE int SignExtendByte(signed char in) {
 INLINE static void SetPSRZN(const unsigned char in) {
   PSR&=~(FlagZ | FlagN);
   PSR|=((in==0)<<1) | (in & 128);
-}; /* SetPSRZN */
+}
 
 /*----------------------------------------------------------------------------*/
 /* Note: n is 128 for true - not 1                                            */
@@ -509,7 +509,7 @@ INLINE static void BPLInstrHandler(void) {
     ProgramCounter=RelAddrModeHandler_Data();
     Branched=1;
   } else ProgramCounter++;
-}; /* BPLInstrHandler */
+}
 
 INLINE static void BRKInstrHandler(void) {
   char errstr[250];
@@ -2458,4 +2458,4 @@ void Load6502UEF(FILE *SUEF) {
 void core_dumpstate(void) {
   cerr << "core:\n";
   DumpRegs();
-}; /* core_dumpstate */
+}
