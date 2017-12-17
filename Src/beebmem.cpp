@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 #endif
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -48,7 +49,6 @@ Boston, MA  02110-1301, USA.
 #include "disc1770.h"
 #include "serial.h"
 #include "tube.h"
-#include "errno.h"
 #include "scsi.h"
 #include "sasi.h"
 #include "ide.h"
@@ -74,9 +74,6 @@ BankType RomBankType[16] = {
 int PagedRomReg;
 
 /* Computech (&B+) Specific Stuff Added by K.Lowe 18/08/03 */
-struct tm;
-time_t long_time; // Define Clock for Computech Integra-B
-
 int MemSel=0; /* Shadow/Main RAM Toggle */
 int PrvEn=0;  /* Private RAM Enable */
 int ShEn=0;   /* Shadow RAM Enable */
@@ -255,6 +252,7 @@ int BeebReadMem(int Address) {
 		if (Address>=0xff00) return(WholeRam[Address]);
 
 		if (Address==0xfe3c) {
+			time_t long_time; // Clock for Computech Integra-B
 			time( &long_time );
 			if (HidAdd==0) return(localtime(&long_time)->tm_sec);
 			if (HidAdd==2) return(localtime(&long_time)->tm_min);
