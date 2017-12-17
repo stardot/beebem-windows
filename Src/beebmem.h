@@ -101,14 +101,8 @@ extern char RomPath[_MAX_PATH];
 extern char RomFile[_MAX_PATH];
 extern char DiscPath[_MAX_PATH]; // JGH
 
-/* NOTE: Only to be used if 'a' doesn't change the address */
-#define BEEBREADMEM_FAST(a) ((a<0xfc00)?WholeRam[a]:BeebReadMem(a))
-/* as BEEBREADMEM_FAST but then increments a */
-#define BEEBREADMEM_FASTINC(a) ((a<0xfc00)?WholeRam[a++]:BeebReadMem(a++))
-
 int BeebReadMem(int Address);
 void BeebWriteMem(int Address, unsigned char Value);
-#define BEEBWRITEMEM_FAST(Address, Value) if (Address<0x8000) WholeRam[Address]=Value; else BeebWriteMem(Address,Value);
 #define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address]=Value;
 unsigned char *BeebMemPtrWithWrap(int a, int n);
 unsigned char *BeebMemPtrWithWrapMo7(int a, int n);
