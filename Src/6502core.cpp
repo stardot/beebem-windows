@@ -63,15 +63,13 @@ Boston, MA  02110-1301, USA.
 using namespace std;
 
 int CPUDebug=0;
-int BeginDump=0;
-FILE *InstrLog;
-FILE *osclilog; //=fopen("/oscli.log","wt");
+// FILE *InstrLog;
+// FILE *osclilog; //=fopen("/oscli.log","wt");
 
 static unsigned int InstrCount;
 int IgnoreIllegalInstructions = 1;
 static int CurrentInstruction;
 
-extern int DumpAfterEach;
 extern CArm *arm;
 extern CSprowCoPro *sprow;
 
@@ -84,7 +82,6 @@ static int Accumulator,XReg,YReg;
 static unsigned char StackReg,PSR;
 static unsigned char IRQCycles;
 int DisplayCycles=0;
-int SwitchOnCycles=2000000; // Reset delay
 
 unsigned char intStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 unsigned char NMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */

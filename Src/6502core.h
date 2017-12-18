@@ -58,7 +58,6 @@ typedef enum PSR_Flags
 extern int trace;
 extern int trace_186;
 extern int IgnoreIllegalInstructions;
-extern int BeginDump;
 
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;
@@ -100,7 +99,6 @@ void AdjustForIOWrite(void);
 int i186_execute(int num_cycles);
 #endif
 
-extern int SwitchOnCycles; // Reset delay
 extern int OpCodes;
 extern int BHardware;
 #endif

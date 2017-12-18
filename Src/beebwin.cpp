@@ -446,7 +446,6 @@ void BeebWin::Shutdown()
 /****************************************************************************/
 void BeebWin::ResetBeebSystem(Model NewModelType, unsigned char TubeStatus, unsigned char LoadRoms)
 {
-	SwitchOnCycles=0; // Reset delay
 	SoundReset();
 	if (SoundDefault)
 		SoundInit();
