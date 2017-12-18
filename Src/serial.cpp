@@ -610,7 +610,7 @@ void InitThreads(void) {
 	bSerialStateChanged=FALSE;
 }
 
-void StatThread(void *lpParam) {
+unsigned int __stdcall StatThread(void * /* lpParam */) {
 	DWORD dwOvRes=0;
 	do {
 		if ((!TouchScreenEnabled) && (!EthernetPortEnabled) &&
@@ -640,9 +640,11 @@ void StatThread(void *lpParam) {
 		}
 		Sleep(0);
 	} while(1);
+
+	return 0;
 }
 
-void SerialThread(void *lpParam) {
+unsigned int __stdcall SerialThread(void * /* lpParam */) {
 	// New Serial port thread - 7:35pm 16/10/2001 GMT
 	// This sorta runs as a seperate process in effect, checking
 	// enable status, and doing the monitoring.
@@ -668,6 +670,8 @@ void SerialThread(void *lpParam) {
 		}
 		Sleep(0);
 	} while (1);
+
+	return 0;
 }
 
 void InitSerialPort(void) {

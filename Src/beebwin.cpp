@@ -436,10 +436,10 @@ void BeebWin::Shutdown()
 		m_SpVoice = NULL;
 	}
 
-	if (mEthernetHandle > 0) 
+	if (mEthernetHandle != INVALID_SOCKET)
 	{
 		IP232Close();
-		mEthernetHandle = 0;
+		mEthernetHandle = INVALID_SOCKET;
 	}
 }
 

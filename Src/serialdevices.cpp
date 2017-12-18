@@ -37,8 +37,11 @@ Boston, MA  02110-1301, USA.
 
  */
 
-#include <windows.h>
+#include <process.h>
 #include <stdio.h>
+
+#include <windows.h>
+
 #include "serialdevices.h"
 #include "6502core.h"
 #include "uef.h"
@@ -61,7 +64,7 @@ Boston, MA  02110-1301, USA.
 
 // IP232
 extern WSADATA WsaDat;							// Windows sockets info
-SOCKET mEthernetHandle = SOCKET_ERROR;		// Listen socket
+SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
 
 // bool bEthernetSocketsCreated = FALSE;
 
@@ -325,10 +328,11 @@ bool IP232Open(void)
 			DebugDisplayTrace(DEBUG_REMSER, true, info);
 		}
 		IP232Close();
-		mEthernetHandle = 0;
+		mEthernetHandle = INVALID_SOCKET;
 
 		return false; //Couldn't connect
 	}
+
 	if (DebugEnabled)
 		DebugDisplayTrace(DEBUG_REMSER, true, "IP232: connected to server");
 
@@ -338,11 +342,10 @@ bool IP232Open(void)
 	if (DebugEnabled) 
 		DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Init, CTS low");
 
-
-	if (mEthernetPortReadTaskID == NULL)
+	if (mEthernetPortReadTaskID == 0)
 	{
-		CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) MyEthernetPortReadThread,NULL,0,&mEthernetPortReadTaskID);
-		CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) MyEthernetPortStatusThread,NULL,0,&mEthernetPortStatusTaskID);
+		_beginthreadex(nullptr, 0, MyEthernetPortReadThread, nullptr, 0, &mEthernetPortReadTaskID);
+		_beginthreadex(nullptr, 0, MyEthernetPortStatusThread, nullptr, 0, &mEthernetPortStatusTaskID);
 	}
 	return true;
 }
@@ -381,14 +384,14 @@ bool IP232Poll(void)
 
 void IP232Close(void)
 {
-	if (mEthernetHandle > 0) {
+	if (mEthernetHandle != INVALID_SOCKET) {
 		WriteLog("Closing IP232 socket");
 		if (DebugEnabled) 
 				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Closing Sockets");
 
 		closesocket(mEthernetHandle);
 		WSACleanup();
-		mEthernetHandle = 0;
+		mEthernetHandle = INVALID_SOCKET;
 //		bEthernetSocketsCreated = false;
 	}
 
@@ -459,10 +462,7 @@ unsigned char IP232Read(void)
 	return data;
 }
 
-
-
-
-void MyEthernetPortReadThread(void *parameter)
+unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 { // Much taken from Mac version by Jon Welch
 
 fd_set	fds;
@@ -475,10 +475,8 @@ int space, bufflen;
 
 	while (1)
 	{
-		
-		if (mEthernetHandle > 0)
+		if (mEthernetHandle != INVALID_SOCKET)
 		{
-			
 			space = TS_BUFF_SIZE - ts_inlen;
 
 			if (space > 256)
@@ -569,8 +567,7 @@ int space, bufflen;
 						mainWin->ExternUpdateSerialMenu();
 						IP232Close();
 						MessageBox(GETHWND,"Lost connection; serial port has been disabled.",WindowTitle,MB_OK|MB_ICONERROR);
-						return ; // noErr;
-						
+						return 0;
 					}
 				}
 				else
@@ -580,7 +577,7 @@ int space, bufflen;
 			}		
 
 
-			if (ts_outlen > 0 && mEthernetHandle > 0)
+			if (ts_outlen > 0 && mEthernetHandle != INVALID_SOCKET)
 			{
 				WriteLog("Sending to IP232 server");
 				if (DebugEnabled) 
@@ -632,7 +629,7 @@ int space, bufflen;
 		Sleep (50); //+10*J); //100ms
 	}
 	
-	return ; //noErr;
+	return 0;
 }
 
 
@@ -669,7 +666,7 @@ unsigned char EthernetPortGet(void)
 }
 
 
-void MyEthernetPortStatusThread(void *parameter)
+unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 { // much taken from Mac version by Jon Welch
 	int dcd, odcd, rts, orts;
 
@@ -683,11 +680,10 @@ void MyEthernetPortStatusThread(void *parameter)
 
 	while (1)
 	{
-		if (IP232mode == 0) {  
-			if (mEthernetHandle > 0)
+		if (IP232mode == 0) {
+			if (mEthernetHandle != INVALID_SOCKET)
 			{
 				dcd = 1;
-
 			}
 			else
 			{
@@ -724,7 +720,7 @@ void MyEthernetPortStatusThread(void *parameter)
 			}
 			if (rts != orts)
 			{
-				if (mEthernetHandle > 0)
+				if (mEthernetHandle != INVALID_SOCKET)
 				{
 					if (DebugEnabled) {
 						char info[200];
@@ -737,12 +733,8 @@ void MyEthernetPortStatusThread(void *parameter)
 				}
 				orts = rts;
 			}
-
-
 		}
 
-
-		
 		if (dcd != odcd)
 			odcd = dcd;
 		
@@ -752,5 +744,5 @@ void MyEthernetPortStatusThread(void *parameter)
 	
 	//	fprintf(stderr, "Exited MySerialStatusThread\n");
 	
-	return; // noErr;
+	return 0;
 }

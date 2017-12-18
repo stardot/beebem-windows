@@ -53,10 +53,10 @@ unsigned char IP232Read(void);
 extern char IPAddress[256];
 extern int PortNo;
 
-extern DWORD mEthernetPortReadTaskID;
-void MyEthernetPortReadThread(void *parameter);
-extern DWORD mEthernetPortStatusTaskID;
-void MyEthernetPortStatusThread(void *parameter);
+extern unsigned int mEthernetPortReadTaskID;
+unsigned int __stdcall MyEthernetPortReadThread(void *parameter);
+extern unsigned int mEthernetPortStatusTaskID;
+unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
 unsigned char EthernetPortGet(void);
 void EthernetPortStore(unsigned char data);
 extern SOCKET mEthernetHandle;

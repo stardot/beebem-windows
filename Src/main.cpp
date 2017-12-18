@@ -22,6 +22,7 @@ Boston, MA  02110-1301, USA.
 
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 
+#include <process.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,9 +58,8 @@ BeebWin *mainWin = NULL;
 HINSTANCE hInst;
 HWND hCurrentDialog = NULL;
 HACCEL hCurrentAccelTable = NULL;
-DWORD iSerialThread,iStatThread; // Thread IDs
-DWORD mEthernetPortReadTaskID;	 // ditto
-DWORD mEthernetPortStatusTaskID;	 // ditto
+unsigned int mEthernetPortReadTaskID; // Thread ID
+unsigned int mEthernetPortStatusTaskID; // Thread ID
 FILE *tlog;
 
 int CALLBACK WinMain(HINSTANCE hInstance, 
@@ -75,14 +75,15 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 
 //  tlog = fopen("\\trace.log", "wt");
 
-    mainWin=new BeebWin();
+	mainWin = new BeebWin();
 	mainWin->Initialise();
 
 	// Create serial threads
 	InitThreads();
-	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) SerialThread,NULL,0,&iSerialThread);
-	CreateThread(NULL,0,(LPTHREAD_START_ROUTINE) StatThread,NULL,0,&iStatThread);
 
+	unsigned int iSerialThread, iStatThread; // Thread IDs
+	_beginthreadex(nullptr, 0, SerialThread, nullptr, 0, &iSerialThread);
+	_beginthreadex(nullptr, 0, StatThread, nullptr, 0, &iStatThread);
 
 	do
 	{
