@@ -954,7 +954,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
 	if (!IsWindow(hwndTapeControl)) 
 	{ 
 		hwndTapeControl = CreateDialog(hinst, MAKEINTRESOURCE(IDD_TAPECONTROL),
-										NULL, (DLGPROC)TapeControlDlgProc);
+		                               NULL, TapeControlDlgProc);
 		hCurrentDialog = hwndTapeControl;
 		ShowWindow(hwndTapeControl, SW_SHOW);
 

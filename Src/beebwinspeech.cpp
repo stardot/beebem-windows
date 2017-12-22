@@ -587,7 +587,6 @@ void BeebWin::InitTextView(void)
 			LONG_PTR lPtr = GetWindowLongPtr(m_hTextView, GWLP_WNDPROC);
 			TextViewPrevWndProc = (WNDPROC)lPtr;
 			lPtr = reinterpret_cast<LONG_PTR>(TextViewWndProc);
-			#pragma warning (disable:4244)
 			SetWindowLongPtr(m_hTextView, GWLP_WNDPROC, lPtr);
 			SetFocus(m_hTextView);
 		}

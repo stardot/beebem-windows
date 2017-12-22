@@ -625,7 +625,7 @@ BOOL BeebWin::InitClass(void)
 	// main window.
 
 	wc.style		 = CS_HREDRAW | CS_VREDRAW;// Class style(s).
-	wc.lpfnWndProc	 = (WNDPROC)WndProc;	   // Window Procedure
+	wc.lpfnWndProc	 = WndProc; // Window Procedure
 	wc.cbClsExtra	 = 0;					   // No per-class extra data.
 	wc.cbWndExtra	 = 0;					   // No per-window extra data.
 	wc.hInstance	 = hInst;				   // Owner of this class
@@ -1176,8 +1176,7 @@ LRESULT CALLBACK WndProc(
 			hdc = GetDC(hWnd);
 			mainWin->RealizePalette(hdc);
 			ReleaseDC(hWnd,hdc);    
-			return TRUE;							    
-			break;
+			return TRUE;
 
 		case WM_PAINT:
 			if(mainWin != NULL)

@@ -431,7 +431,7 @@ void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain)
 	{ 
 		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
 		hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
-								 hwndInvisibleOwner, (DLGPROC)DebugDlgProc);
+		                         hwndInvisibleOwner, DebugDlgProc);
 		memset(debugHistory,'\0',sizeof(debugHistory));
 		hCurrentDialog = hwndDebug;
 		hCurrentAccelTable = haccelDebug;

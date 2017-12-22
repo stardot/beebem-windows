@@ -733,7 +733,7 @@ void BreakOutOpenDialog(HINSTANCE hinst, HWND hwndMain)
 	if (!IsWindow(hwndBreakOut)) 
 	{ 
 		hwndBreakOut = CreateDialog(hinst, MAKEINTRESOURCE(IDD_BREAKOUT),
-										NULL, (DLGPROC)BreakOutDlgProc);
+		                            NULL, BreakOutDlgProc);
 		hCurrentDialog = hwndBreakOut;
 		ShowWindow(hwndBreakOut, SW_SHOW);
 
@@ -1116,9 +1116,8 @@ HWND PromptForBitKeyInput( HWND hwndParent, UINT ctrlID )
 	// main window, if it doesn't already exist.
 	if (!GetClassInfo( hInst, szClass, &wc ))
 	{
-
 		wc.style		 = CS_HREDRAW | CS_VREDRAW;// Class style(s).
-		wc.lpfnWndProc	 = (WNDPROC)GetBitKeyWndProc;	   // Window Procedure
+		wc.lpfnWndProc   = GetBitKeyWndProc; // Window Procedure
 		wc.cbClsExtra	 = 0;					   // No per-class extra data.
 		wc.cbWndExtra	 = 0;					   // No per-window extra data.
 		wc.hInstance	 = hInst;				   // Owner of this class

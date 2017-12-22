@@ -83,37 +83,26 @@ KeyMap UserKeymap;
 
 /****************************************************************************/
 BOOL UserKeyboardDialog( HWND      hwndParent )
-
 {
-    FARPROC pfnDlg;
-    BOOL    fResult;
-
 	// Set up Function key Brush.
-
 	hFunctionBrush = CreateSolidBrush( FunctionKey );
-    
-	//  Invoke the dialog.
 
-    pfnDlg = MakeProcInstance( (FARPROC)UserKeyboard_DlgProc, hInst );
+	// Invoke the dialog.
 
-    // Initialise locals used during this windows life.
+	// Initialise locals used during this windows life.
 	hwndMain = hwndParent;
 	hwndGetkey = NULL;
 	selectedCtrlID = 0;
 
-	fResult = (DialogBox( hInst,
-                         MAKEINTRESOURCE( IDD_USERKYBRD ),
-                         hwndParent,
-                         (DLGPROC)pfnDlg ) <= 0);
+	BOOL fResult = DialogBox(hInst, MAKEINTRESOURCE(IDD_USERKYBRD),
+	                         hwndParent, UserKeyboard_DlgProc) <= 0;
 
-    //  Cleanup & exit.
-
-    FreeProcInstance( pfnDlg );
+	//  Cleanup & exit.
 	DeleteObject( hFunctionBrush );
 
-    return fResult;
+	return fResult;
+}
 
-}   // UserKeyboardDialog
 /****************************************************************************/
 
 void SetKeyColour( COLORREF aColour )
@@ -400,9 +389,8 @@ HWND PromptForInput( HWND hwndParent, int doShiftedKey )
 	// main window, if it doesn't already exist.
 	if (!GetClassInfo( hInst, szClass, &wc ))
 	{
-
 		wc.style		 = CS_HREDRAW | CS_VREDRAW;// Class style(s).
-		wc.lpfnWndProc	 = (WNDPROC)GetKeyWndProc;	   // Window Procedure
+		wc.lpfnWndProc   = GetKeyWndProc; // Window Procedure
 		wc.cbClsExtra	 = 0;					   // No per-class extra data.
 		wc.cbWndExtra	 = 0;					   // No per-window extra data.
 		wc.hInstance	 = hInst;				   // Owner of this class

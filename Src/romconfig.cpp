@@ -53,7 +53,7 @@ void BeebWin::EditROMConfig(void)
 	// Copy Rom config
 	memcpy(&ROMCfg, &RomConfig, sizeof(ROMConfigFile));
 
-	nResult = DialogBox(hInst, MAKEINTRESOURCE(IDD_ROMCONFIG), m_hWnd, (DLGPROC)ROMConfigDlgProc);
+	nResult = DialogBox(hInst, MAKEINTRESOURCE(IDD_ROMCONFIG), m_hWnd, ROMConfigDlgProc);
 	if (nResult == TRUE)
 	{
 		// Copy in new config and read ROMs

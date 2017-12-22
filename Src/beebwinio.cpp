@@ -1367,7 +1367,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	}
 
 	// Show export dialog
-	if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DISCEXPORT), m_hWnd, (DLGPROC)DiscExportDlgProc) != IDOK ||
+	if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DISCEXPORT), m_hWnd, DiscExportDlgProc) != IDOK ||
 		numSelected == 0)
 	{
 		return;
