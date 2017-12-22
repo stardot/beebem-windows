@@ -1104,6 +1104,9 @@ static bool DriveHeadMotorUpdate(void) {
 		DriveHeadLoaded = false;
 		StopSoundSample(SAMPLE_DRIVE_MOTOR);
 		StopSoundSample(SAMPLE_HEAD_SEEK);
+
+		LEDs.Disc0 = false;
+		LEDs.Disc1 = false;
 		return true;
 	}
 
@@ -1114,6 +1117,9 @@ static bool DriveHeadMotorUpdate(void) {
 	}
 
 	if (!DriveHeadLoaded) {
+		if (Selects[0]) LEDs.Disc0 = true;
+		if (Selects[1]) LEDs.Disc1 = true;
+
 		PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
 		DriveHeadLoaded = true;
 		PlaySoundSample(SAMPLE_HEAD_LOAD, false);
@@ -1122,9 +1128,11 @@ static bool DriveHeadMotorUpdate(void) {
 		return true;
 	}
 
-	if (Selects[0]) Drive=0;
-	if (Selects[1]) Drive=1;
+	if (Selects[0]) Drive = 0;
+	if (Selects[1]) Drive = 1;
+
 	StopSoundSample(SAMPLE_HEAD_SEEK);
+
 	if (DriveHeadPosition[Drive] != Internal_CurrentTrack[Drive]) {
 		Tracks = abs(DriveHeadPosition[Drive] - Internal_CurrentTrack[Drive]);
 		if (Tracks > 1) {

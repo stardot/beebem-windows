@@ -95,7 +95,8 @@ unsigned char DisableMenu = 0;
 bool MenuOn = true;
 
 struct LEDType LEDs;
-char DiscLedColour=0; // 0 for red, 1 for green.
+
+LEDColour DiscLedColour = LEDColour::Red;
 
 AVIWriter *aviWriter = NULL;
 
@@ -1695,8 +1696,8 @@ int BeebWin::StartOfFrame(void)
 }
 
 void BeebWin::doLED(int sx,bool on) {
-	int tsy; char colbase;
-	colbase=(DiscLedColour*2)+LED_COL_BASE; // colour will be 0 for red, 1 for green.
+	int tsy;
+	char colbase = static_cast<int>(DiscLedColour) * 2 + LED_COL_BASE; // colour will be 0 for red, 1 for green.
 	if (sx<100) colbase=LED_COL_BASE; // Red leds for keyboard always
 	if (TeletextEnabled)
 		tsy=496;
@@ -2388,10 +2389,10 @@ void BeebWin::UpdateEconetMenu(HMENU hMenu) {
 
 void BeebWin::UpdateLEDMenu(HMENU hMenu) {
 	// Update the LED Menu
-	CheckMenuItem(hMenu,ID_RED_LEDS,(DiscLedColour>0)?MF_UNCHECKED:MF_CHECKED);
-	CheckMenuItem(hMenu,ID_GREEN_LEDS,(DiscLedColour>0)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(hMenu,ID_SHOW_KBLEDS,(LEDs.ShowKB)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(hMenu,ID_SHOW_DISCLEDS,(LEDs.ShowDisc)?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_RED_LEDS, DiscLedColour == LEDColour::Red ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_GREEN_LEDS, DiscLedColour == LEDColour::Green ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_SHOW_KBLEDS, LEDs.ShowKB ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(hMenu, ID_SHOW_DISCLEDS, LEDs.ShowDisc ? MF_CHECKED : MF_UNCHECKED);
 }
 
 void BeebWin::UpdateOptiMenu(void) {
@@ -2761,7 +2762,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_DISPDDRAW:
 	case IDM_DISPDX9:
 	{
-		int enabled;
+		UINT enabled;
 		ExitDX();
 
 		m_DisplayRenderer = MenuId;
@@ -3454,11 +3455,11 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_RED_LEDS:
-		DiscLedColour=0;
+		DiscLedColour = LEDColour::Red;
 		UpdateLEDMenu(hMenu);
 		break;
 	case ID_GREEN_LEDS:
-		DiscLedColour=1;
+		DiscLedColour = LEDColour::Green;
 		UpdateLEDMenu(hMenu);
 		break;
 	case ID_SHOW_KBLEDS:

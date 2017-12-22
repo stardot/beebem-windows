@@ -61,9 +61,7 @@ typedef struct KeyMapping {
 
 typedef KeyMapping KeyMap[256][2]; // Indices are: [Virt key][shift state]
 
-
 extern const char *WindowTitle;
-extern char *CFG_REG_KEY;
 
 typedef union EightUChars {
 	unsigned char data[8];
@@ -92,6 +90,13 @@ struct LEDType {
 	bool ShowKB;
 };
 extern struct LEDType LEDs;
+
+enum class LEDColour {
+	Red,
+	Green
+};
+
+extern LEDColour DiscLedColour;
 
 enum TextToSpeechSearchDirection
 {

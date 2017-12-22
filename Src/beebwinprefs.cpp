@@ -97,7 +97,6 @@ static char *CFG_MACHINE_TYPE = "MachineType";
 #define LED_SHOW_DISC (LEDByte&2)>>1
 
 extern unsigned char HideMenuEnabled;
-extern char DiscLedColour;
 extern unsigned char CMOSDefault[64];
 
 void BeebWin::LoadPreferences()
@@ -221,10 +220,10 @@ void BeebWin::LoadPreferences()
 	if (!PrefsGetBinaryValue("HideMenuEnabled",&HideMenuEnabled,1))
 		HideMenuEnabled=0;
 
-	int LEDByte=0;
+	unsigned char LEDByte = 0;
 	if (!PrefsGetBinaryValue("LED Information",&LEDByte,1))
 		LEDByte=0;
-	DiscLedColour=LED_COLOUR_TYPE;
+	DiscLedColour=static_cast<LEDColour>(LED_COLOUR_TYPE);
 	LEDs.ShowDisc=(LED_SHOW_DISC != 0);
 	LEDs.ShowKB=LED_SHOW_KB;
 
@@ -635,7 +634,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		flag = palette_type;
 		PrefsSetBinaryValue(CFG_VIEW_MONITOR,&flag,1);
 		PrefsSetBinaryValue("HideMenuEnabled",&HideMenuEnabled,1);
-		LEDByte=(DiscLedColour<<2)|((LEDs.ShowDisc?1:0)<<1)|(LEDs.ShowKB?1:0);
+		LEDByte=(static_cast<int>(DiscLedColour) << 2) | ((LEDs.ShowDisc ? 1 : 0) << 1) | (LEDs.ShowKB ? 1 : 0);
 		PrefsSetBinaryValue("LED Information",&LEDByte,1);
 		flag = m_MotionBlur;
 		PrefsSetDWORDValue( "MotionBlur", m_MotionBlur);
