@@ -87,8 +87,6 @@ static char *CFG_REG_KEY = "Software\\BeebEm";
 void i86_main(void);
 #endif
 
-FILE *CMDF2;
-unsigned char CMA2;
 CArm *arm = NULL;
 CSprowCoPro *sprow = NULL;
 
@@ -2410,7 +2408,6 @@ void BeebWin::HandleCommand(int MenuId)
 	char TmpPath[256];
 	HMENU hMenu = m_hMenu;
 	int prev_palette_type = palette_type;
-	int binsize = 0;
 
 	SetSound(MUTED);
 
