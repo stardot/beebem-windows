@@ -103,9 +103,6 @@ extern int ArmTube;
 
 class CArm 
 {
-
-	void outputSomeNonsenseCPP();
-
 // functions
 public:
 	void dynamicProfilingCoprocessorUsage(uint32 currentInstruction);
@@ -255,8 +252,6 @@ private:
 	void dynamicProfilingRegisterUsageReport();
 	void dynamicProfilingRegisterUsage(uint regNumber, bool get);
 	
-	
-	
 	// variables
 	uint processorMode;				// in bits 0-1
 	uint interruptDisableFlag;		// in bit 26
@@ -303,5 +298,4 @@ private:
 	uint32 conditionallyNotExecuted[16];
 	int iocounter;
 	// END OF TEST ENVIRONMENT VARIABLES
-
 };
