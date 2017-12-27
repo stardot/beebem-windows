@@ -1818,8 +1818,8 @@ void Load8271UEF(FILE *SUEF)
 	extern bool DiscLoaded[2];
 	char FileName[256];
 	char *ext;
-	int Loaded=0;
-	int LoadFailed=0;
+	bool Loaded = false;
+	bool LoadFailed = false;
 
 	// Clear out current images, don't want them corrupted if
 	// saved state was in middle of writing to disc.
@@ -1831,7 +1831,7 @@ void Load8271UEF(FILE *SUEF)
 	fread(FileName,1,256,SUEF);
 	if (FileName[0]) {
 		// Load drive 0
-		Loaded=1;
+		Loaded = true;
 		ext = strrchr(FileName, '.');
 		if (ext != NULL && _stricmp(ext+1, "dsd") == 0)
 			LoadSimpleDSDiscImage(FileName, 0, 80);
@@ -1839,13 +1839,13 @@ void Load8271UEF(FILE *SUEF)
 			LoadSimpleDiscImage(FileName, 0, 0, 80);
 
 		if (DiscStore[0][0][0].Sectors == NULL)
-			LoadFailed=1;
+			LoadFailed = true;
 	}
 
 	fread(FileName,1,256,SUEF);
 	if (FileName[0]) {
 		// Load drive 1
-		Loaded=1;
+		Loaded = true;
 		ext = strrchr(FileName, '.');
 		if (ext != NULL && _stricmp(ext+1, "dsd") == 0)
 			LoadSimpleDSDiscImage(FileName, 1, 80);
@@ -1853,7 +1853,7 @@ void Load8271UEF(FILE *SUEF)
 			LoadSimpleDiscImage(FileName, 1, 0, 80);
 
 		if (DiscStore[1][0][0].Sectors == NULL)
-			LoadFailed=1;
+			LoadFailed = true;
 	}
 
 	if (Loaded && !LoadFailed)
