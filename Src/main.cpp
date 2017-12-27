@@ -23,34 +23,15 @@ Boston, MA  02110-1301, USA.
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 
 #include <process.h>
-#include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdarg.h>
 
-#include <iostream>
-#include <fstream>
 #include <windows.h>
 
 #include "6502core.h"
-#include "beebmem.h"
-#include "beebsound.h"
-#include "sysvia.h"
-#include "uservia.h"
 #include "beebwin.h"
-#include "disc8271.h"
-#include "video.h"
-#include "via.h"
-#include "atodconv.h"
-#include "disc1770.h"
 #include "serial.h"
-#include "tube.h"
-#include "econet.h"	//Rob
 
-#ifdef MULTITHREAD
-#undef MULTITHREAD
-#endif
-
-extern VIAState SysVIAState;
 bool DumpAfterEach = false;
 
 Model MachineType;
@@ -58,8 +39,6 @@ BeebWin *mainWin = NULL;
 HINSTANCE hInst;
 HWND hCurrentDialog = NULL;
 HACCEL hCurrentAccelTable = NULL;
-unsigned int mEthernetPortReadTaskID; // Thread ID
-unsigned int mEthernetPortStatusTaskID; // Thread ID
 FILE *tlog;
 
 int CALLBACK WinMain(HINSTANCE hInstance, 

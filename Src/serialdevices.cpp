@@ -64,7 +64,12 @@ Boston, MA  02110-1301, USA.
 
 // IP232
 extern WSADATA WsaDat;							// Windows sockets info
-SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
+static SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
+static unsigned int mEthernetPortReadTaskID; // Thread ID
+static unsigned int mEthernetPortStatusTaskID; // Thread ID
+
+static unsigned int __stdcall MyEthernetPortReadThread(void *parameter);
+static unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
 
 // bool bEthernetSocketsCreated = false;
 
@@ -412,8 +417,6 @@ void IP232Close(void)
 	mEthernetPortStatusTaskID = NULL;
 	mEthernetPortReadTaskID = NULL;
 */
-	
-
 }
 
 void IP232Write(unsigned char data)
@@ -460,7 +463,7 @@ unsigned char IP232Read(void)
 	return data;
 }
 
-unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
+static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 { // Much taken from Mac version by Jon Welch
 
 fd_set	fds;
@@ -662,7 +665,7 @@ unsigned char EthernetPortGet(void)
 }
 
 
-unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
+static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 { // much taken from Mac version by Jon Welch
 	int dcd, odcd, rts, orts;
 

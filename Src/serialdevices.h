@@ -18,13 +18,16 @@ License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
+
 /*
  *  serialdevices.h
  *  BeebEm3
  *
  *  Created by Jon Welch on 28/08/2006.
- *
  */
+
+#ifndef SERIALDEVICES_HEADER
+#define SERIALDEVICES_HEADER
 
 extern bool TouchScreenEnabled;
 void TouchScreenOpen(void);
@@ -34,8 +37,6 @@ void TouchScreenWrite(unsigned char data);
 unsigned char TouchScreenRead(void);
 void TouchScreenStore(unsigned char data);
 void TouchScreenReadScreen(bool check);
-
-
 
 extern bool EthernetPortEnabled;
 extern bool IP232localhost;
@@ -53,10 +54,7 @@ unsigned char IP232Read(void);
 extern char IPAddress[256];
 extern int PortNo;
 
-extern unsigned int mEthernetPortReadTaskID;
-unsigned int __stdcall MyEthernetPortReadThread(void *parameter);
-extern unsigned int mEthernetPortStatusTaskID;
-unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
 unsigned char EthernetPortGet(void);
 void EthernetPortStore(unsigned char data);
-extern SOCKET mEthernetHandle;
+
+#endif

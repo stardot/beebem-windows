@@ -25,11 +25,6 @@ Boston, MA  02110-1301, USA.
 #ifndef MAIN_HEADER
 #define MAIN_HEADER
 
-#ifdef MULTITHREAD
-#undef MULTITHREAD
-#endif
-//#define MULTITHREAD
-
 #include <windows.h>
 #include "beebwin.h"
 #include "model.h"
@@ -38,6 +33,5 @@ extern Model MachineType;
 extern BeebWin *mainWin;
 extern HINSTANCE hInst;
 void WriteLog(char *fmt, ...);
-extern int trace_186;
 
 #endif
