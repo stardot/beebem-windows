@@ -102,7 +102,7 @@ typedef int int16;
 typedef void (*InstrHandlerFuncType)(int16 Operand);
 typedef int16 (*AddrModeHandlerFuncType)(int WantsAddr);
 
-static int TubeCyclesTable[]={
+static const int TubeCyclesTable[]={
   7,6,0,0,0,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
   6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */

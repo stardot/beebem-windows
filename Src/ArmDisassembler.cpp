@@ -96,7 +96,7 @@ char *decodeSingleDataSwapOrDataProcessing(uint32 address, uint32 instruction, c
 char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff)
 {
 	// table of opcode names
-	static const char *opcodeNames[16] =
+	static const char* const opcodeNames[16] =
 	{
 		"and", "eor", "sub", "rsb",
 		"add", "adc", "sbc", "rsc",
@@ -209,7 +209,7 @@ char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff)
 			strcat(buff, ",");
 
 			// table of shift mnemonics
-			char *shiftMnemonic[4] =
+			static const char* const shiftMnemonic[4] =
 			{
 				"lsl", "lsr", "asr", "ror"
 			};
@@ -422,12 +422,12 @@ char *decodeSingleDTRegOffsetPostIndex(uint32 address, uint32 instruction, char 
 	uint32 imm = getField(instruction, 7,11);
 
 	// table of shift mnemonics
-	char *shiftMnemonic[4] =
+	static const char* const shiftMnemonic[4] =
 	{
 		"lsl", "lsr", "asr", "ror"
 	};
 
-	char *shiftType = shiftMnemonic[ getField(instruction, 5,6) ];
+	const char *shiftType = shiftMnemonic[ getField(instruction, 5,6) ];
 
 	// if not LSL #0
 	if( !( (strcmp(shiftType, "lsl") == 0) && imm ==0) )

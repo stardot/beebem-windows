@@ -1109,8 +1109,8 @@ HWND PromptForBitKeyInput( HWND hwndParent, UINT ctrlID )
 	int Error;
 	HWND Success;
 	WNDCLASS  wc;
-	CHAR	szClass[12] = "BEEBGETKEY";
-	CHAR	szTitle[35] = "Press the key to use..";
+	const char* szClass = "BEEBGETKEY";
+	const char* szTitle = "Press the key to use..";
 
 	// Fill in window class structure with parameters that describe the
 	// main window, if it doesn't already exist.
@@ -1125,10 +1125,10 @@ HWND PromptForBitKeyInput( HWND hwndParent, UINT ctrlID )
 		wc.hCursor		 = NULL;
 		wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);// Default color
 		wc.lpszMenuName  = NULL; // Menu from .RC
-		wc.lpszClassName = "BEEBGETKEY"; //szAppName;				// Name to register as
+		wc.lpszClassName = szClass; //szAppName;				// Name to register as
 
 		// Register the window class and return success/failure code.
-		(RegisterClass(&wc));
+		RegisterClass(&wc);
 	}
 
 	Success = CreateWindow(	szClass,	// pointer to registered class name
@@ -1146,7 +1146,6 @@ HWND PromptForBitKeyInput( HWND hwndParent, UINT ctrlID )
 							NULL,//HMENU(IDD_GETKEY),	// handle to menu or child-window identifier
 							hInst,	// handle to application instance
 							NULL // pointer to window-creation data
-
 							);
 	if ( Success == NULL )
 		Error = GetLastError();

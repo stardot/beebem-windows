@@ -75,12 +75,12 @@ static UINT8 WaveRam[RAM_SIZE];
 static WAVERAM* pWaveRam = (WAVERAM*)WaveRam;
 static UINT32 PhaseRam[NUM_CHANNELS];
 
-static double ChordBase[8] = { 0, 8.25, 24.75, 57.75, 123.75, 255.75, 519.75, 1047.75 };
-static double StepInc[8] = { 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0 };
+static const double ChordBase[8] = { 0, 8.25, 24.75, 57.75, 123.75, 255.75, 519.75, 1047.75 };
+static const double StepInc[8] = { 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0 };
 static INT D2ATable[128];
 
-static INT StereoLeft[16]  = { 100,100,100,100,100,100,100,100,  0,  0,  0, 17, 33, 50, 67, 83 };
-static INT StereoRight[16] = {   0,  0,  0,  0,  0,  0,  0,  0,100,100,100, 83, 67, 50, 33, 17 };
+static const INT StereoLeft[16]  = { 100,100,100,100,100,100,100,100,  0,  0,  0, 17, 33, 50, 67, 83 };
+static const INT StereoRight[16] = {   0,  0,  0,  0,  0,  0,  0,  0,100,100,100, 83, 67, 50, 33, 17 };
 
 // 6MHz clock, 128 cycles to update all channels
 static UINT CycleCount = 0;

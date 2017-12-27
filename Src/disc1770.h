@@ -28,12 +28,12 @@ extern bool DWriteable[2]; // Write Protect
 extern bool Disc1770Enabled;
 unsigned char Read1770Register(unsigned char Register1770);
 void Write1770Register(unsigned char Register1770, unsigned char Value);
-void Load1770DiscImage(char *DscFileName, int DscDrive, char DscType, HMENU dmenu);
+void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMENU dmenu);
 void WriteFDCControlReg(unsigned char Value);
 unsigned char ReadFDCControlReg(void);
 void Reset1770(void);
 void Poll1770(int NCycles);
-void CreateADFSImage(char *ImageName, int Drive, int Tracks, HMENU dmenu);
+void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU dmenu);
 void Close1770Disc(int Drive);
 void Save1770UEF(FILE *SUEF);
 void Load1770UEF(FILE *SUEF,int Version);

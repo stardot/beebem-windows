@@ -140,7 +140,7 @@ class BeebWin  {
 
 	void UpdateModelType();
 	void SetSoundMenu(void);
-	void SetImageName(char *DiscName, int Drive, char DType);
+	void SetImageName(const char *DiscName, int Drive, char DType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
@@ -511,11 +511,11 @@ class BeebWin  {
 	void SaveUserKeyMap(void);
 	bool ReadKeyMap(char *filename, KeyMap *keymap);
 	bool WriteKeyMap(char *filename, KeyMap *keymap);
-	bool RegCreateKey(HKEY hKeyRoot, LPSTR lpSubKey);
-	bool RegGetBinaryValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, PVOID pData, int* pnSize);
-	bool RegSetBinaryValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, PVOID pData, int* pnSize);
-	bool RegGetStringValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, LPSTR pData, DWORD dwSize);
-	bool RegSetStringValue(HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, LPSTR pData);
+	bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
+	bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, void* pData, int* pnSize);
+	bool RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, const void* pData, int* pnSize);
+	bool RegGetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, LPSTR pData, DWORD dwSize);
+	bool RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, LPCSTR pData);
 	void EditROMConfig(void);
 
 	// Preferences

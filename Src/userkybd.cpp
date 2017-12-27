@@ -32,9 +32,8 @@ Boston, MA  02110-1301, USA.
 #define	gkHeight	90
 
 BOOL	UserKeyboardDialog( HWND  hwndParent );
-HBRUSH	InitButtonColour( HWND hWndCtrl, HDC hDC );
 void	SetKeyColour( COLORREF aColour );
-void	SetBBCKeyForVKEY( int Key, int shift );
+void	SetBBCKeyForVKEY(int Key, bool shift);
 void	ShowKeyDown( HWND hwnd, UINT ctrlID, HWND hWndCtrl );
 void	SetRowCol( UINT ctrlID );
 void	ShowKeyUp( void );
@@ -55,12 +54,10 @@ HWND	PromptForInput(HWND hwndParent, bool doShiftedKey);
 void	GetKeysUsed( LPSTR Keys );
 LPSTR	KeyName( UINT Key );
 
-
 // Colour used to highlight the selected key.
-static COLORREF Highlight	= 0x00FF0080;	// Purple.
-static COLORREF FunctionKey = 0x000000FF;	// Red
-static COLORREF NormalKey	= 0x00000000;	// Black
-
+static const COLORREF Highlight	= 0x00FF0080;	// Purple.
+static const COLORREF FunctionKey = 0x000000FF;	// Red
+static const COLORREF NormalKey	= 0x00000000;	// Black
 
 COLORREF OldColour;		// Holds bkCOlor of non-highlighted key.
 HWND	hWndBBCKey;		// Holds the BBCKey control handle which is now selected.

@@ -119,12 +119,13 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	return(0);  
 } /* main */
 
-char *mon[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+static const char* const mon[] = {
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
 
 
 void WriteLog(char *fmt, ...)
-
 {
 va_list argptr;
 SYSTEMTIME tim;

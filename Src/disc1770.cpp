@@ -110,8 +110,6 @@ bool InvertTR00; // Needed because the bloody stupid watford board inverts the i
 
 // Density selects on the disk image, and the actual chip
 
-FILE *sectlog;
-
 static void SetStatus(unsigned char bit) {
 	Status|=1<<bit;
 }
@@ -676,7 +674,7 @@ void Poll1770(int NCycles) {
   }
 }		
 
-void Load1770DiscImage(char *DscFileName, int DscDrive, char DscType, HMENU dmenu) {
+void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMENU dmenu) {
 	long int TotalSectors;
 	long HeadStore;
 	bool openFailure=false;
@@ -859,7 +857,7 @@ void Close1770Disc(int Drive) {
 
 #define BPUT(a) fputc(a,NewImage); CheckSum=(CheckSum+a)&255
 
-void CreateADFSImage(char *ImageName, int Drive, int Tracks, HMENU dmenu) {
+void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU dmenu) {
 	// This function creates a blank ADFS disc image, and then loads it.
 	FILE *NewImage;
 	int CheckSum;

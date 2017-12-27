@@ -65,8 +65,10 @@ bool FastTable_Valid = false;
 typedef void (*LineRoutinePtr)(void);
 LineRoutinePtr LineRoutine;
 
-/* Translates middle bits of VideoULA_ControlReg to number of colours */
-static int NColsLookup[]={16, 4, 2, 0 /* Not supported 16? */, 0, 16, 4, 2}; /* Based on AUG 379 */
+// Translates middle bits of VideoULA_ControlReg to number of colours
+static const int NColsLookup[] = {
+	16, 4, 2, 0 /* Not supported 16? */, 0, 16, 4, 2 // Based on AUG 379
+};
 
 unsigned char VideoULA_ControlReg=0x9c;
 unsigned char VideoULA_Palette[16];

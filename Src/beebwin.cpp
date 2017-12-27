@@ -4664,7 +4664,7 @@ void BeebWin::HandleTimer()
 }
 
 /****************************************************************************/
-bool BeebWin::RegCreateKey(HKEY hKeyRoot, LPSTR lpSubKey)
+bool BeebWin::RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey)
 {
 	bool rc = false;
 	HKEY hKeyResult;
@@ -4677,8 +4677,8 @@ bool BeebWin::RegCreateKey(HKEY hKeyRoot, LPSTR lpSubKey)
 	return rc;
 }
 
-bool BeebWin::RegGetBinaryValue(
-	HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, PVOID pData, int* pnSize)
+bool BeebWin::RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                                void* pData, int* pnSize)
 {
 	bool rc = false;
 	HKEY hKeyResult;
@@ -4700,8 +4700,8 @@ bool BeebWin::RegGetBinaryValue(
 	return rc;
 }
 
-bool BeebWin::RegSetBinaryValue(
-	HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, PVOID pData, int* pnSize)
+bool BeebWin::RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                                const void* pData, int* pnSize)
 {
 	bool rc = false;
 	HKEY hKeyResult;
@@ -4710,7 +4710,7 @@ bool BeebWin::RegSetBinaryValue(
 
 	if ((RegOpenKeyEx(hKeyRoot, lpSubKey, 0, KEY_ALL_ACCESS, &hKeyResult)) == ERROR_SUCCESS)
 	{
-		lRes = RegSetValueEx(hKeyResult, lpValue, 0, REG_BINARY, reinterpret_cast<BYTE*>(pData), dwSize);
+		lRes = RegSetValueEx(hKeyResult, lpValue, 0, REG_BINARY, reinterpret_cast<const BYTE*>(pData), dwSize);
 		if (lRes == ERROR_SUCCESS)
 		{
 			*pnSize = dwSize;
@@ -4722,8 +4722,8 @@ bool BeebWin::RegSetBinaryValue(
 	return rc;
 }
 
-bool BeebWin::RegGetStringValue(
-	HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, LPSTR pData, DWORD dwSize)
+bool BeebWin::RegGetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                                LPSTR pData, DWORD dwSize)
 {
 	bool rc = false;
 	HKEY hKeyResult;
@@ -4743,8 +4743,8 @@ bool BeebWin::RegGetStringValue(
 	return rc;
 }
 
-bool BeebWin::RegSetStringValue(
-	HKEY hKeyRoot, LPSTR lpSubKey, LPSTR lpValue, LPSTR pData)
+bool BeebWin::RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                                LPCSTR pData)
 {
 	bool rc = false;
 	HKEY hKeyResult;
@@ -4753,7 +4753,7 @@ bool BeebWin::RegSetStringValue(
 
 	if ((RegOpenKeyEx(hKeyRoot, lpSubKey, 0, KEY_ALL_ACCESS, &hKeyResult)) == ERROR_SUCCESS)
 	{
-		lRes = RegSetValueEx(hKeyResult, lpValue, 0, REG_SZ, reinterpret_cast<BYTE*>(pData), dwSize);
+		lRes = RegSetValueEx(hKeyResult, lpValue, 0, REG_SZ, reinterpret_cast<const BYTE*>(pData), dwSize);
 		if (lRes == ERROR_SUCCESS)
 		{
 			rc = true;

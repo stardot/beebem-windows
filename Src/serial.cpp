@@ -71,7 +71,9 @@ unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift regis
 char UEFTapeName[256]; // Filename of current tape file
 bool UEFOpen = false;
 
-unsigned int Baud_Rates[8]={19200,1200,4800,150,9600,300,2400,75};
+static const unsigned int Baud_Rates[8] = {
+	19200, 1200, 4800, 150, 9600, 300, 2400, 75
+};
 
 bool OldRelayState = false;
 CycleCountT TapeTrigger=CycleCountTMax;

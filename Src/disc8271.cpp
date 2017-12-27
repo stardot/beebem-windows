@@ -139,7 +139,7 @@ typedef struct  {
   int NParams; /* Number of parameters to follow */
   CommandFunc ToCall; /* Called after all paameters have arrived */
   CommandFunc IntHandler; /* Called when interrupt requested by command is about to happen */
-  char *Ident; /* Mainly for debugging */
+  const char *Ident; /* Mainly for debugging */
 } PrimaryCommandLookupType; 
 
 /*--------------------------------------------------------------------------*/
@@ -911,7 +911,7 @@ static void DoBadCommand(void) {
 /* The following table is used to parse commands from the command number written into
 the command register - it can't distinguish between subcommands selected from the
 first parameter */
-static PrimaryCommandLookupType PrimaryCommandLookup[]={
+static const PrimaryCommandLookupType PrimaryCommandLookup[]={
   {0x00, 0x3f, 3, DoVarLength_ScanDataCommand, NULL,  "Scan Data (Variable Length/Multi-Record)"},
   {0x04, 0x3f, 3, DoVarLength_ScanDataAndDeldCommand, NULL,  "Scan Data & deleted data (Variable Length/Multi-Record)"},
   {0x0a, 0x3f, 2, Do128ByteSR_WriteDataCommand, NULL, "Write Data (128 byte/single record)"},
@@ -938,8 +938,8 @@ static PrimaryCommandLookupType PrimaryCommandLookup[]={
 /* returns a pointer to the data structure for the given command            */
 /* If no matching command is given, the pointer points to an entry with a 0 */
 /* mask, with a sensible function to call.                                  */
-static PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber) {
-  PrimaryCommandLookupType *presptr=PrimaryCommandLookup;
+static const PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber) {
+  const PrimaryCommandLookupType *presptr=PrimaryCommandLookup;
 
   for(;presptr->CommandNum!=(presptr->Mask & CommandNumber);presptr++);
 
@@ -985,7 +985,7 @@ int Disc8271_read(int Address) {
 
 /*--------------------------------------------------------------------------*/
 static void CommandRegWrite(int Value) {
-  PrimaryCommandLookupType *ptr=CommandPtrFromNumber(Value);
+  const PrimaryCommandLookupType *ptr = CommandPtrFromNumber(Value);
   /*cerr << "8271: Command register write value=0x" << hex << Value << dec << "(Name=" << ptr->Ident << ")\n"; */
   ThisCommand=Value;
   NParamsInThisCommand=ptr->NParams;
@@ -1019,7 +1019,7 @@ static void ParamRegWrite(int Value) {
       StatusReg&=0x7e; /* Observed on beeb */
       UPDATENMISTATUS;
 
-      PrimaryCommandLookupType *ptr=CommandPtrFromNumber(ThisCommand);
+      const PrimaryCommandLookupType *ptr = CommandPtrFromNumber(ThisCommand);
     /* cerr << "<Disc access>"; */
     /*  cerr << "8271: All parameters arrived for '" << ptr->Ident;
       int tmp;
@@ -1171,8 +1171,7 @@ void Disc8271_poll_real(void) {
     NextInterruptIsErr=0;
   } else {
     /* Should only happen while a command is still active */
-    PrimaryCommandLookupType *comptr;
-    comptr=CommandPtrFromNumber(ThisCommand);
+    const PrimaryCommandLookupType *comptr = CommandPtrFromNumber(ThisCommand);
     if (comptr->IntHandler!=NULL) comptr->IntHandler();
   }
 
@@ -1185,7 +1184,7 @@ void Disc8271_poll_real(void) {
       0 - does not look like a catalogue
      -1 - cannot tell
 */
-static int CheckForCatalogue(unsigned char *Sec1, unsigned char *Sec2) {
+static int CheckForCatalogue(const unsigned char *Sec1, const unsigned char *Sec2) {
   int Valid=1;
   int CatEntries=0;
   int File;
@@ -1266,7 +1265,7 @@ void FreeDiscImage(int DriveNum) {
 }
 
 /*--------------------------------------------------------------------------*/
-void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) {
+void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks) {
   int CurrentTrack,CurrentSector;
   SectorType *SecPtr;
   int Heads;
@@ -1342,7 +1341,7 @@ void LoadSimpleDiscImage(char *FileName, int DriveNum, int HeadNum, int Tracks) 
 }
 
 /*--------------------------------------------------------------------------*/
-void LoadSimpleDSDiscImage(char *FileName, int DriveNum,int Tracks) {
+void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
   int CurrentTrack,CurrentSector,HeadNum;
   SectorType *SecPtr;
@@ -1558,7 +1557,7 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
 } /* DiscWriteEnable */
 
 /*--------------------------------------------------------------------------*/
-void CreateDiscImage(char *FileName, int DriveNum, int Heads, int Tracks) {
+void CreateDiscImage(const char *FileName, int DriveNum, int Heads, int Tracks) {
   int Success=1;
   int Sector;
   int NumSectors;
