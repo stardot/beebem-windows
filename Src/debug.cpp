@@ -1046,7 +1046,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = 0x3000;
 				addrInfo->end = 0x7FFF;
-				if(Sh_Display && PrePC>=0xC000 && PrePC<=0xDFFF)
+				if (Sh_Display && PrePC>=0xC000 && PrePC<=0xDFFF)
 				{
 					sprintf(addrInfo->desc,"Shadow RAM (PC in VDU driver)");
 					return true;

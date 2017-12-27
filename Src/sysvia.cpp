@@ -74,10 +74,10 @@ char WEState=0;
    select on speech proc, B2 is write select on speech proc, b4,b5 select
    screen start address offset , b6 is CAPS lock, b7 is shift lock */
 unsigned char IC32State=0;
-unsigned char OldCMOSState=0;
+bool OldCMOSState = false;
 
 // CMOS logging facilities
-unsigned char CMOSDebug=0;
+bool CMOSDebug = false;
 FILE *CMDF;
 FILE *vialog;
 /* Last value written to the slow data bus - sound reads it later */
@@ -192,7 +192,7 @@ static void IC32Write(unsigned char Value) {
   // Additional, Sunday 4th February 2001. I must have been potty. the line above did read January 2000.
   int bit;
   int oldval=IC32State;
-  unsigned char tmpCMOSState;
+  bool tmpCMOSState;
 
   bit=Value & 7;
   if (Value & 8) {
@@ -204,10 +204,10 @@ static void IC32Write(unsigned char Value) {
   LEDs.ShiftLock=((IC32State&128)==0);
   /* hmm, CMOS RAM? */
   // Monday 5th February 2001 - Scrapped my CMOS code, and restarted as according to the bible of the god Tom Lees
-  CMOS.Op=((IC32State & 2)>>1);
-  tmpCMOSState=(IC32State & 4)>>1;
-  CMOS.DataStrobe=(tmpCMOSState==OldCMOSState)?0:1;
-  OldCMOSState=tmpCMOSState;
+  CMOS.Op = (IC32State & 2) != 0;
+  tmpCMOSState = (IC32State & 4) != 0;
+  CMOS.DataStrobe = (tmpCMOSState == OldCMOSState) ? false : true;
+  OldCMOSState = tmpCMOSState;
   if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType == Model::Master128) {
     CMOSWrite(CMOS.Address, SlowDataBusWriteValue);
     if (CMOSDebug) fprintf(CMDF,"Wrote %02x to %02x\n",SlowDataBusWriteValue,CMOS.Address);

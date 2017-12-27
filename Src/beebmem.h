@@ -61,11 +61,11 @@ extern int HidAdd;
 
 struct CMOSType {
 	bool Enabled;
-	unsigned char ChipSelect;
+	// unsigned char ChipSelect;
 	unsigned char Address;
-	unsigned char StrobedData;
-	unsigned char DataStrobe;
-	unsigned char Op;
+	// unsigned char StrobedData;
+	bool DataStrobe;
+	bool Op;
 };
 
 typedef enum RomFlags
@@ -94,7 +94,7 @@ typedef struct RomInfo {
 } RomInfo;
 
 extern struct CMOSType CMOS;
-extern unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
+extern bool Sh_Display;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 
 extern ROMConfigFile RomConfig;

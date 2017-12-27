@@ -107,7 +107,9 @@ unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0
 unsigned char ShadowRAM[32768];  // 20K Shadow RAM
 unsigned char ACCCON;            // ACCess CONtrol register
 struct CMOSType CMOS;
-unsigned char Sh_Display,Sh_CPUX,Sh_CPUE,PRAM,FRAM;
+bool Sh_Display;
+static bool PRAM, FRAM;
+static bool Sh_CPUX, Sh_CPUE;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 
 /* ROM file data */
@@ -155,7 +157,7 @@ unsigned char *BeebMemPtrWithWrap(int a, int n) {
   EndAddr=WrapAddr(EndAddr);
 
   // On Master the FSRam area is displayed if start addr below shadow area
-  if (MachineType == Model::Master128 && a <= EndAddr && Sh_Display > 0 && a < 0x3000) {
+  if (MachineType == Model::Master128 && a <= EndAddr && Sh_Display && a < 0x3000) {
     if (0x3000-a < n) {
       toCopy=0x3000-a;
       if (toCopy>n) toCopy=n;
@@ -173,21 +175,21 @@ unsigned char *BeebMemPtrWithWrap(int a, int n) {
     }
   }
 
-  if (a<=EndAddr && Sh_Display==0) {
+  if (a <= EndAddr && !Sh_Display) {
     return WholeRam + a;
   }
-  if (a<=EndAddr && Sh_Display>0) {
+  if (a <= EndAddr && Sh_Display) {
     return ShadowRAM + a;
   }
 
   toCopy=0x8000-a;
   if (toCopy>n) toCopy=n;
-  if (toCopy>0 && Sh_Display==0) memcpy(tmpBuf,WholeRam+a,toCopy);
-  if (toCopy>0 && Sh_Display>0) memcpy(tmpBuf,ShadowRAM+a,toCopy);
+  if (toCopy > 0 && !Sh_Display) memcpy(tmpBuf, WholeRam + a, toCopy);
+  if (toCopy > 0 && Sh_Display) memcpy(tmpBuf, ShadowRAM + a, toCopy);
   tmpBufPtr=tmpBuf+toCopy;
   toCopy=n-toCopy;
-  if (toCopy>0 && Sh_Display==0) memcpy(tmpBufPtr,WholeRam+EndAddr-(toCopy-1),toCopy);
-  if (toCopy>0 && Sh_Display>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy);
+  if (toCopy > 0 && !Sh_Display) memcpy(tmpBufPtr, WholeRam + EndAddr - (toCopy - 1), toCopy);
+  if (toCopy > 0 && Sh_Display) memcpy(tmpBufPtr, ShadowRAM + EndAddr - (toCopy - 1), toCopy);
   // Tripling is for Shadow RAM handling
   return(tmpBuf);
 }
@@ -214,22 +216,22 @@ unsigned char *BeebMemPtrWithWrapMo7(int a, int n) {
   a=WrapAddrMo7(a);
   EndAddr=WrapAddrMo7(EndAddr);
 
-  if (a<=EndAddr && Sh_Display==0) {
+  if (a <= EndAddr && !Sh_Display) {
     return WholeRam + a;
   }
-  if (a<=EndAddr && Sh_Display>0) {
+  if (a <= EndAddr && Sh_Display) {
     return ShadowRAM + a;
   }
 
   toCopy=0x8000-a;
-  if (toCopy>n && Sh_Display==0) return WholeRam + a;
-  if (toCopy>n && Sh_Display>0) return ShadowRAM + a;
-  if (toCopy>0 && Sh_Display==0) memcpy(tmpBuf,WholeRam+a,toCopy);
-  if (toCopy>0 && Sh_Display>0) memcpy(tmpBuf,ShadowRAM+a,toCopy);
+  if (toCopy > n && !Sh_Display) return WholeRam + a;
+  if (toCopy > n && Sh_Display) return ShadowRAM + a;
+  if (toCopy > 0 && !Sh_Display) memcpy(tmpBuf, WholeRam + a, toCopy);
+  if (toCopy > 0 && Sh_Display) memcpy(tmpBuf, ShadowRAM + a, toCopy);
   tmpBufPtr=tmpBuf+toCopy;
   toCopy=n-toCopy;
-  if (toCopy>0 && Sh_Display==0) memcpy(tmpBufPtr,WholeRam+EndAddr-(toCopy-1),toCopy);
-  if (toCopy>0 && Sh_Display>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy);
+  if (toCopy > 0 && !Sh_Display) memcpy(tmpBufPtr, WholeRam + EndAddr - (toCopy - 1), toCopy);
+  if (toCopy > 0 && Sh_Display) memcpy(tmpBufPtr, ShadowRAM + EndAddr - (toCopy - 1), toCopy);
   return(tmpBuf);
 }
 
@@ -270,8 +272,8 @@ int BeebReadMem(int Address) {
 	}
 	else if (MachineType == Model::BPlus) {
 		if (Address < 0x3000) return WholeRam[Address];
-		if (Address < 0x8000 && Sh_Display == 1 && PrePC >= 0xc000 && PrePC < 0xe000) return ShadowRAM[Address];
-		if (Address < 0x8000 && Sh_Display == 1 && MemSel && PrePC >= 0xa000 && PrePC < 0xb000) return ShadowRAM[Address];
+		if (Address < 0x8000 && Sh_Display && PrePC >= 0xc000 && PrePC < 0xe000) return ShadowRAM[Address];
+		if (Address < 0x8000 && Sh_Display && MemSel && PrePC >= 0xa000 && PrePC < 0xb000) return ShadowRAM[Address];
 		if (Address < 0x8000) return WholeRam[Address];
 		if (Address < 0xB000 && MemSel) return Private[Address-0x8000];
 		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address-0x8000];
@@ -290,14 +292,19 @@ int BeebReadMem(int Address) {
 		case 5:
 		case 6:
 		case 7:
-			if ((!Sh_CPUX) && (!Sh_CPUE)) return(WholeRam[Address]);
-			if (Sh_CPUX) return(ShadowRAM[Address]);
-			if ((Sh_CPUE)  && (!Sh_CPUX)) {
-				if ((PrePC>=0xc000) && (PrePC<0xe000)) return(ShadowRAM[Address]); else return(WholeRam[Address]);
+			if (!Sh_CPUX && !Sh_CPUE) return WholeRam[Address];
+			if (Sh_CPUX) return ShadowRAM[Address];
+			if (Sh_CPUE && !Sh_CPUX) {
+				if (PrePC >= 0xc000 && PrePC < 0xe000) {
+					return ShadowRAM[Address];
+				}
+				else {
+					return WholeRam[Address];
+				}
 			}
 			break;
 		case 8:
-			if (PRAM>0) { 
+			if (PRAM) {
 				return(PrivateRAM[Address-0x8000]); 
 			} else { 
 				return(Roms[ROMSEL][Address-0x8000]);
@@ -536,7 +543,7 @@ void DebugMemoryState()
 			DebugDisplayInfoF("Hidden area address: 0x%01X", HidAdd);
 			break;
 		case Model::BPlus:
-			DebugDisplayInfoF("Shadow RAM: %s, %s", Sh_Display == 1 ? "enabled" : "disabled", Sh_Display == 1 && ((PrePC>=0xC000 && PrePC<0xE000) || (MemSel==1 && PrePC>=0xA000 && PrePC <0xB000)) ? "selected" : "not selected");
+			DebugDisplayInfoF("Shadow RAM: %s, %s", Sh_Display ? "enabled" : "disabled", Sh_Display && ((PrePC >= 0xC000 && PrePC < 0xE000) || (MemSel && PrePC >= 0xA000 && PrePC < 0xB000)) ? "selected" : "not selected");
 			DebugDisplayInfoF("Private RAM: %s", MemSel ? "enabled" : "disabled");
 			break;
 		case Model::Master128:
@@ -565,8 +572,8 @@ static void DoRomChange(int NewBank) {
 
   // Master Specific stuff   
   if (MachineType == Model::Master128) {
-    PagedRomReg=NewBank;
-    PRAM=(PagedRomReg & 128);
+    PagedRomReg = NewBank;
+    PRAM = (PagedRomReg & 128) != 0;
   }
 }
 
@@ -575,17 +582,17 @@ static void FiddleACCCON(unsigned char newValue) {
 	// Master specific, should only execute in Master128 mode
 	// ignore bits TST (6) IFJ (5) and ITU (4)
 //	newValue&=143;
-	unsigned char oldshd;
 //	if ((newValue & 128)==128) DoInterrupt();
 	ACCCON=newValue & 127; // mask out the IRR bit so that interrupts dont occur repeatedly
 	if (newValue & 128) intStatus|=128; else intStatus&=127;
-	oldshd=Sh_Display;
-	Sh_Display=ACCCON & 1;
-	if (Sh_Display!=oldshd) RedoMPTR();
-	Sh_CPUX=ACCCON & 4;
-	Sh_CPUE=ACCCON & 2;
-	FRAM=ACCCON & 8;
+	bool oldshd = Sh_Display;
+	Sh_Display = (ACCCON & 1) != 0;
+	if (Sh_Display != oldshd) RedoMPTR();
+	Sh_CPUX = (ACCCON & 4) != 0;
+	Sh_CPUE = (ACCCON & 2) != 0;
+	FRAM = (ACCCON & 8) != 0;
 }
+
 /*----------------------------------------------------------------------------*/
 static void RomWriteThrough(int Address, unsigned char Value) {
 	int bank = 0;
@@ -610,7 +617,6 @@ static void RomWriteThrough(int Address, unsigned char Value) {
 
 /*----------------------------------------------------------------------------*/
 void BeebWriteMem(int Address, unsigned char Value) {
-	unsigned char oldshd;
 /*  fprintf(stderr,"Write %x to 0x%x\n",Value,Address); */
 
 	if (MachineType == Model::B) {
@@ -729,11 +735,11 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		}
 
 		if (Address<0x8000) {
-			if (Sh_Display == 1 && PrePC >= 0xC000 && PrePC < 0xE000) {
+			if (Sh_Display && PrePC >= 0xC000 && PrePC < 0xE000) {
 				ShadowRAM[Address]=Value;
 				return;
 			}
-			else if (Sh_Display == 1 && MemSel && PrePC >= 0xA000 && PrePC < 0xB000) {
+			else if (Sh_Display && MemSel && PrePC >= 0xA000 && PrePC < 0xB000) {
 				ShadowRAM[Address]=Value;
 				return;
 			} else {
@@ -759,8 +765,8 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			return;
 		}
 
-		 if (Address>=0xfe34 && Address<0xfe38) {
-			oldshd=Sh_Display;
+		if (Address>=0xfe34 && Address<0xfe38) {
+			bool oldshd = Sh_Display;
 			Sh_Display = (Value & 0x80) != 0;
 			if (Sh_Display!=oldshd) RedoMPTR();
 			return;
@@ -779,9 +785,9 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			case 5:
 			case 6:
 			case 7:
-				if ((!Sh_CPUX) && (!Sh_CPUE)) WholeRam[Address]=Value;
-				if (Sh_CPUX) ShadowRAM[Address]=Value;
-				if ((Sh_CPUE) && (!Sh_CPUX)) { 
+				if (!Sh_CPUX && !Sh_CPUE) WholeRam[Address] = Value;
+				if (Sh_CPUX) ShadowRAM[Address] = Value;
+				if (Sh_CPUE && !Sh_CPUX) {
 					if ((PrePC>=0xc000) && (PrePC<0xe000)) ShadowRAM[Address]=Value; else WholeRam[Address]=Value;
 				} 
 				break;
@@ -1202,8 +1208,12 @@ void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
   memset(FSRam,0,0x2000);
   memset(ShadowRAM,0,0x8000);
   memset(PrivateRAM,0,0x1000);
-  ACCCON=0;
-  PRAM=FRAM=Sh_Display=Sh_CPUE=Sh_CPUX=0;
+  ACCCON = 0;
+  Sh_Display = false;
+  FRAM = false;
+  PRAM = false;
+  Sh_CPUE = false;
+  Sh_CPUX = false;
   memset(Private,0,0x3000);
   Private[0x3b2]=4; // Default OSMODE to 4
   memset(ShadowRam,0,0x5000);
@@ -1242,16 +1252,17 @@ void SaveMemUEF(FILE *SUEF) {
 	case Model::IntegraB:
 		fput16(0x0461,SUEF); // Memory Control State
 		fput32(3,SUEF);
-		fputc(PagedRomReg|(MemSel<<7)|(PrvEn<<6),SUEF);
-		fputc((ShEn<<7)|(Prvs8<<6)|(Prvs4<<5)|(Prvs1<<4),SUEF);
+		fputc(PagedRomReg | (static_cast<int>(MemSel) << 7) | (static_cast<int>(PrvEn) << 6), SUEF);
+		fputc((static_cast<int>(ShEn) << 7) | (static_cast<int>(Prvs8) << 6) |
+		      (static_cast<int>(Prvs4) << 5) | (static_cast<int>(Prvs1) << 4), SUEF);
 		fputc(HidAdd,SUEF);
 		break;
 
 	case Model::BPlus:
 		fput16(0x0461,SUEF); // Memory Control State
 		fput32(2,SUEF);
-		fputc(PagedRomReg|(MemSel<<7),SUEF);
-		fputc((Sh_Display<<7),SUEF);
+		fputc(PagedRomReg | (static_cast<int>(MemSel) << 7), SUEF);
+		fputc((static_cast<int>(Sh_Display) << 7), SUEF);
 		break;
 	}
 
@@ -1330,28 +1341,28 @@ void LoadRomRegsUEF(FILE *SUEF) {
 	ACCCON=fgetc(SUEF);
 	switch (MachineType) {
 	case Model::IntegraB:
-		MemSel=(PagedRomReg >> 7) & 1;
-		PrvEn=(PagedRomReg >> 6) & 1;
-		PagedRomReg&=0xf;
-		ShEn=(ACCCON>>7) & 1;
-		Prvs8=(ACCCON>>6) & 1;
-		Prvs4=(ACCCON>>5) & 1;
-		Prvs1=(ACCCON>>4) & 1;
-		HidAdd=fgetc(SUEF) != 0;
+		MemSel = (PagedRomReg & 0x80) != 0;
+		PrvEn = (PagedRomReg & 0x40) != 0;
+		PagedRomReg &= 0xf;
+		ShEn = (ACCCON & 0x80) != 0;
+		Prvs8 = (ACCCON & 0x40) != 0;
+		Prvs4 = (ACCCON & 0x20) != 0;
+		Prvs1 = (ACCCON & 0x10) != 0;
+		HidAdd = fgetc(SUEF) != 0;
 		break;
 
 	case Model::BPlus:
-		MemSel=(PagedRomReg >> 7) & 1;
-		PagedRomReg&=0xf;
-		Sh_Display=(ACCCON>>7) & 1;
+		MemSel = (PagedRomReg & 0x80) != 0;
+		PagedRomReg &= 0xf;
+		Sh_Display = (ACCCON & 0x80) != 0;
 		break;
 
 	case Model::Master128:
-		PRAM=PagedRomReg & 128;
-		Sh_Display=ACCCON & 1;
-		Sh_CPUX=ACCCON & 4;
-		Sh_CPUE=ACCCON & 2;
-		FRAM=ACCCON & 8;
+		PRAM = (PagedRomReg & 0x80) != 0;
+		Sh_Display = (ACCCON & 1) != 0;
+		Sh_CPUX = (ACCCON & 4) != 0;
+		Sh_CPUE = (ACCCON & 2) != 0;
+		FRAM = (ACCCON & 8) != 0;
 		break;
 	}
 }

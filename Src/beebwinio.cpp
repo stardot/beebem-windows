@@ -989,13 +989,18 @@ bool BeebWin::ReadKeyMap(char *filename, KeyMap *keymap)
 					break;
 				}
 
+				int shift0 = 0, shift1 = 0;
+
 				sscanf(buf, "%d %d %d %d %d %d",
-					   &(*keymap)[i][0].row,
-					   &(*keymap)[i][0].col,
-					   &(*keymap)[i][0].shift,
-					   &(*keymap)[i][1].row,
-					   &(*keymap)[i][1].col,
-					   &(*keymap)[i][1].shift);
+				       &(*keymap)[i][0].row,
+				       &(*keymap)[i][0].col,
+				       &shift0,
+				       &(*keymap)[i][1].row,
+				       &(*keymap)[i][1].col,
+				       &shift1);
+
+				(*keymap)[i][0].shift = shift0 != 0;
+				(*keymap)[i][1].shift = shift1 != 0;
 			}
 		}
 		fclose(infile);
