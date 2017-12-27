@@ -83,7 +83,7 @@ static unsigned char IRQCycles;
 
 unsigned char TubeintStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 unsigned char TubeNMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
-static bool NMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
+static bool TubeNMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
 
 typedef int int16;
 
@@ -1411,7 +1411,7 @@ void Reset65C02(void) {
 
   TubeintStatus=0;
   TubeNMIStatus=0;
-  NMILock = false;
+  TubeNMILock = false;
 
   //The fun part, the tube OS is copied from ROM to tube RAM before the processor starts processing
   //This makes the OS "ROM" writable in effect, but must be restored on each reset.
@@ -1480,7 +1480,7 @@ void DoTubeInterrupt(void) {
 /*-------------------------------------------------------------------------*/
 void DoTubeNMI(void) {
   /*cerr << "Doing NMI\n"; */
-  NMILock = true;
+  TubeNMILock = true;
   PushWord(TubeProgramCounter);
   Push(PSR);
   TubeProgramCounter=TubeReadMem(0xfffa) | (TubeReadMem(0xfffb)<<8);
@@ -1672,7 +1672,7 @@ void Exec65C02Instruction(void) {
     case 0x40:
       PSR=Pop(); /* RTI */
       TubeProgramCounter=PopWord();
-      NMILock = false;
+      TubeNMILock = false;
       break;
     case 0x41:
       EORInstrHandler(IndXAddrModeHandler_Data());
@@ -2577,7 +2577,7 @@ void Save65C02UEF(FILE *SUEF) {
 	fput32(TotalTubeCycles,SUEF);
 	fputc(TubeintStatus,SUEF);
 	fputc(TubeNMIStatus,SUEF);
-	fputc(NMILock,SUEF);
+	fputc(TubeNMILock,SUEF);
 	fput16(0,SUEF);
 }
 
@@ -2624,7 +2624,7 @@ void Load65C02UEF(FILE *SUEF) {
 	Dlong=fget32(SUEF);
 	TubeintStatus=fgetc(SUEF);
 	TubeNMIStatus=fgetc(SUEF);
-	NMILock=fgetc(SUEF) != 0;
+	TubeNMILock=fgetc(SUEF) != 0;
 }
 
 void Load65C02MemUEF(FILE *SUEF) {
