@@ -53,13 +53,13 @@ static int uef_unlock = 0;
 static int uef_last_put_data=UEF_EOF;
 static uef_chunk_info uef_put_chunk;
 
-int uef_write_chunk(void);
-float uef_decode_float(unsigned char *Float);
-void uef_unlock_offset_and_crc(uef_chunk_info *ch);
-int gzget16(gzFile f);
-int gzget32(gzFile f);
-void gzput16(gzFile f, int b);
-void gzput32(gzFile f, int b);
+static int uef_write_chunk(void);
+static float uef_decode_float(unsigned char *Float);
+static void uef_unlock_offset_and_crc(uef_chunk_info *ch);
+static int gzget16(gzFile f);
+static int gzget32(gzFile f);
+static void gzput16(gzFile f, int b);
+static void gzput32(gzFile f, int b);
 
 void uef_setclock(int beats)
 {
