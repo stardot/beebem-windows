@@ -196,7 +196,6 @@ int nCode = HIWORD(wParam);	             //Notification code
 */
 	switch( nMessage )
 	{
-	// 
 	case WM_COMMAND:
 		switch( wParam )
 		{
@@ -206,7 +205,8 @@ int nCode = HIWORD(wParam);	             //Notification code
 			break;
 		default:
 			ShowKeyDown( hwnd, (UINT)wParam, (HWND)lParam );
-		};
+			break;
+		}
 		return TRUE;
 
 	case WM_DRAWITEM:
@@ -215,11 +215,11 @@ int nCode = HIWORD(wParam);	             //Notification code
 		return TRUE;
 
 	default:
-		return FALSE;
-	};		
+		break;
+	}
 
 	return FALSE;
-}   // UserKeyboard_DlgProc
+}
 
 /****************************************************************************/
 
