@@ -29,6 +29,7 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #include "beebwin.h"
 #include "beebmem.h"
+#include "filedialog.h"
 
 static HWND hWndROMList = NULL;
 static HWND hWndModel = NULL;

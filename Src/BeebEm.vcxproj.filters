@@ -78,6 +78,9 @@
     <ClCompile Include="econet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="filedialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ide.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -212,6 +215,9 @@
     <ClInclude Include="ext1770.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="filedialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -219,6 +225,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ml675001.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="port.h">
@@ -339,9 +348,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SprowCoPro.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

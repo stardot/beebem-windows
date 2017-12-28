@@ -182,6 +182,7 @@
     <ClCompile Include="disc8271.cpp" />
     <ClCompile Include="discedit.cpp" />
     <ClCompile Include="econet.cpp" />
+    <ClCompile Include="filedialog.cpp" />
     <ClCompile Include="ide.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="music5000.cpp" />
@@ -238,6 +239,7 @@
     <ClInclude Include="discedit.h" />
     <ClInclude Include="econet.h" />
     <ClInclude Include="ext1770.h" />
+    <ClInclude Include="filedialog.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="ml675001.h" />

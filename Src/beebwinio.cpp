@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "beebmem.h"
 #include "beebemrc.h"
+#include "filedialog.h"
 #include "uservia.h"
 #include "beebsound.h"
 #include "disc8271.h"
@@ -1776,28 +1777,4 @@ void BeebWin::CaptureBitmap(int x, int y, int sx, int sy)
 		DeleteObject(CaptureDIB);
 	if (CaptureDC != NULL)
 		DeleteDC(CaptureDC);
-}
-
-FileDialog::FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength, LPCTSTR initialFolder, LPCTSTR filter)
-{
-	memset(&m_ofn, 0, sizeof(m_ofn));
-
-	m_ofn.lStructSize = sizeof(OPENFILENAME);
-	m_ofn.hwndOwner = hwndOwner;
-	m_ofn.lpstrFilter = filter;
-	m_ofn.nFilterIndex = 1;
-	m_ofn.lpstrFile = result;
-	m_ofn.nMaxFile = resultLength;
-	m_ofn.lpstrInitialDir = initialFolder;
-	m_ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-}
-
-bool FileDialog::ShowDialog(bool open)
-{
-	m_ofn.lpstrFile[0] = 0;
-
-	if (open)
-		return GetOpenFileName(&m_ofn) != 0;
-	else
-		return GetSaveFileName(&m_ofn) != 0;
 }
