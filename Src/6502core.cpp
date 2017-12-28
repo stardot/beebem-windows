@@ -198,7 +198,7 @@ bool BHardware = false; // false = all hardware, true = basic hardware only
 #define ReadPaged(Address) BeebReadMem(Address)
 
 void PollVIAs(unsigned int nCycles);
-void PollHardware(unsigned int Cycles);
+void PollHardware(unsigned int nCycles);
 
 /*----------------------------------------------------------------------------*/
 INLINE void Carried() {

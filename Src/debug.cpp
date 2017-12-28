@@ -770,11 +770,11 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 
 void DebugUpdateWatches(bool all)
 {
-	int i, value;
+	int value = 0;
 	char str[200];
 	if(WCount > 0)
 	{
-		for(i = 0; i < WCount; ++i)
+		for(int i = 0; i < WCount; ++i)
 		{
 			switch(Watches[i].type)
 			{

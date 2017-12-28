@@ -173,8 +173,8 @@ BeebWin::BeebWin()
 	m_frozen = false;
 	IgnoreIllegalInstructions = true;
 	aviWriter = NULL;
-	for(int i=0;i<256;i++)
-		cols[i] = i;
+	for(int i = 0; i < 256; i++)
+		cols[i] = static_cast<unsigned char>(i);
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
 	UEFTapeName[0]=0;
@@ -1259,7 +1259,7 @@ LRESULT CALLBACK WndProc(
 				{
 					for (int i = 0; i < 8; ++i)
 					{
-						if (BitKeys[i] == uParam)
+						if (BitKeys[i] == static_cast<int>(uParam))
 						{
 							if ((UserVIAState.ddrb & mask) == 0x00)
 							{
@@ -1360,7 +1360,7 @@ LRESULT CALLBACK WndProc(
 				{
 					for (i = 0; i < 8; ++i)
 					{
-						if (BitKeys[i] == uParam)
+						if (BitKeys[i] == static_cast<int>(uParam))
 						{
 							if ((UserVIAState.ddrb & mask) == 0x00)
 							{
@@ -1686,7 +1686,7 @@ int BeebWin::StartOfFrame(void)
 
 void BeebWin::doLED(int sx,bool on) {
 	int tsy;
-	char colbase = static_cast<int>(DiscLedColour) * 2 + LED_COL_BASE; // colour will be 0 for red, 1 for green.
+	int colbase = static_cast<int>(DiscLedColour) * 2 + LED_COL_BASE; // colour will be 0 for red, 1 for green.
 	if (sx<100) colbase=LED_COL_BASE; // Red leds for keyboard always
 	if (TeletextEnabled)
 		tsy=496;
@@ -1716,7 +1716,6 @@ bool BeebWin::UpdateTiming()
 	DWORD TickCount;
 	DWORD Ticks;
 	DWORD SpareTicks;
-	int Cycles;
 	int CyclesPerSec;
 	bool UpdateScreen = false;
 
@@ -1750,9 +1749,9 @@ bool BeebWin::UpdateTiming()
 	if (m_RealTimeTarget > 0.0)
 	{
 		Ticks = TickCount - m_TickBase;
-		Cycles = (int)((double)(TotalCycles - m_CycleBase) / m_RealTimeTarget);
+		int nCycles = (int)((double)(TotalCycles - m_CycleBase) / m_RealTimeTarget);
 
-		if (Ticks <= (DWORD)(Cycles / 2000))
+		if (Ticks <= (DWORD)(nCycles / 2000))
 		{
 			// Need to slow down, show frame (max 50fps though) 
 			// and sleep a bit
@@ -1766,7 +1765,7 @@ bool BeebWin::UpdateTiming()
 				UpdateScreen = false;
 			}
 
-			SpareTicks = (DWORD)(Cycles / 2000) - Ticks;
+			SpareTicks = (DWORD)(nCycles / 2000) - Ticks;
 			Sleep(SpareTicks);
 			m_MinFrameCount = 0;
 		}
@@ -1785,7 +1784,7 @@ bool BeebWin::UpdateTiming()
 		}
 
 		/* Move counter bases forward */
-		CyclesPerSec = (int) (2000000.0 * m_RealTimeTarget);
+		CyclesPerSec = (int)(2000000.0 * m_RealTimeTarget);
 		while ((TickCount - m_TickBase) > 1000 && (TotalCycles - m_CycleBase) > CyclesPerSec)
 		{
 			m_TickBase += 1000;
@@ -2294,7 +2293,7 @@ void BeebWin::WinSizeChange(int size, int width, int height)
 }
 
 /****************************************************************************/
-void BeebWin::WinPosChange(int x, int y)
+void BeebWin::WinPosChange(int /* x */, int /* y */)
 {
 #if 0
 	char str[200];
@@ -3893,7 +3892,7 @@ void BeebWin::ParseCommandLine()
 				if (a < 1 || a > 254)
 					invalid = true;
 				else
-					EconetStationNumber = a;
+					EconetStationNumber = static_cast<unsigned char>(a);
 			}
 			else if (_stricmp(__argv[i], "-EcoFF") == 0)
 			{
@@ -4055,7 +4054,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 			strcpy(TmpPath, m_UserDataPath);
 			strcat(TmpPath, "beebstate/");
 			strcat(TmpPath, FileName);
-			FILE *fd = fopen(TmpPath, "rb");
+			fd = fopen(TmpPath, "rb");
 			if (fd != NULL)
 			{
 				cont = true;
@@ -4068,7 +4067,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 				strcpy(TmpPath, m_UserDataPath);
 				strcat(TmpPath, "tapes/");
 				strcat(TmpPath, FileName);
-				FILE *fd = fopen(TmpPath, "rb");
+				fd = fopen(TmpPath, "rb");
 				if (fd != NULL)
 				{
 					cont = true;
@@ -4083,7 +4082,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 			strcpy(TmpPath, m_UserDataPath);
 			strcat(TmpPath, "tapes/");
 			strcat(TmpPath, FileName);
-			FILE *fd = fopen(TmpPath, "rb");
+			fd = fopen(TmpPath, "rb");
 			if (fd != NULL)
 			{
 				cont = true;
@@ -4097,7 +4096,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 			strcpy(TmpPath, m_UserDataPath);
 			strcat(TmpPath, "discims/");
 			strcat(TmpPath, FileName);
-			FILE *fd = fopen(TmpPath, "rb");
+			fd = fopen(TmpPath, "rb");
 			if (fd != NULL)
 			{
 				cont = true;
@@ -4506,7 +4505,7 @@ void BeebWin::StoreUserDataPath()
 /* Selection of User Data Folder */
 static char szExportUserDataPath[MAX_PATH];
 
-int CALLBACK BrowseUserDataCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
+int CALLBACK BrowseUserDataCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lParam */, LPARAM /* lpData */)
 {
 	switch (uMsg)
 	{
