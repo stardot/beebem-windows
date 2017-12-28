@@ -31,6 +31,7 @@ Written by Richard Gellman - March 2001
 //#define PROFILING
 
 #include <windows.h>
+#include <process.h>
 #include <stdio.h>
 
 #include "6502core.h"
@@ -103,6 +104,8 @@ void TapeControlStopRecording(bool RefreshControl);
 bool SerialPortEnabled;
 unsigned char SerialPort;
 
+HANDLE hSerialThread = nullptr;
+HANDLE hStatThread = nullptr;
 HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
 DCB dcbSerialPort; // Serial port device control block
 char nSerialPort[5]; // Serial port name
@@ -733,6 +736,14 @@ void CloseUEF(void) {
 			SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
 	}
 #endif
+}
+
+void SerialInit()
+{
+	InitThreads();
+
+	hSerialThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, SerialThread, nullptr, 0, nullptr));
+	hStatThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, StatThread, nullptr, 0, nullptr));
 }
 
 void Kill_Serial(void) {

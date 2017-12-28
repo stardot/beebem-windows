@@ -45,6 +45,7 @@ unsigned char Read_ACIA_Rx_Data(void);
 unsigned char Read_SERPROC(void);
 extern bool SerialPortEnabled;
 extern unsigned char SerialPort;
+void SerialInit();
 void Serial_Poll(void);
 void InitSerialPort(void);
 void Kill_Serial(void);

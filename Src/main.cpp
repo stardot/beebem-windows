@@ -22,7 +22,6 @@ Boston, MA  02110-1301, USA.
 
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 
-#include <process.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -41,8 +40,8 @@ HINSTANCE hInst;
 HWND hCurrentDialog = NULL;
 HACCEL hCurrentAccelTable = NULL;
 
-int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                     LPSTR lpszCmdLine, int nCmdShow)
+int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
+                     LPSTR /* lpszCmdLine */, int /* nCmdShow */)
 {
 	MSG msg;
 
@@ -54,11 +53,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	mainWin->Initialise();
 
 	// Create serial threads
-	InitThreads();
-
-	unsigned int iSerialThread, iStatThread; // Thread IDs
-	_beginthreadex(nullptr, 0, SerialThread, nullptr, 0, &iSerialThread);
-	_beginthreadex(nullptr, 0, StatThread, nullptr, 0, &iStatThread);
+	SerialInit();
 
 	do
 	{
