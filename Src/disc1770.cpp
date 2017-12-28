@@ -30,6 +30,7 @@ Written by Richard Gellman - Feb 2001
 #include <windows.h>
 #include "disc1770.h"
 #include "6502core.h"
+#include "log.h"
 #include "main.h"
 #include "beebemrc.h"
 #include "uefstate.h"
@@ -37,7 +38,6 @@ Written by Richard Gellman - Feb 2001
 #include "z80.h"
 #include "beebsound.h"
 
-extern FILE *tlog;
 extern int trace;
 
 // Control/Status Register, Track, Sector, and Data Registers
@@ -473,10 +473,10 @@ void Poll1770(int NCycles) {
 		LoadingCycles-=NCycles; if (LoadingCycles>0) return;
 		if ((Status & 2)==0) { 
 
-//            if (ByteCount == 0)
-//                fprintf(tlog, "Formatting Track %d, Sector %d\n", Track, Sector);
+			// if (ByteCount == 0)
+			//	WriteLog("Formatting Track %d, Sector %d\n", Track, Sector);
 
-            NFDCommand=0;
+			NFDCommand = 0;
 			ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2); 
 
             SetStatus(1);
@@ -566,12 +566,12 @@ void Poll1770(int NCycles) {
 		} 
 		return;
 	}
-            
+
 	if (FDCommand == 23 && !DWriteable[CurrentDrive]) {
-//        fprintf(tlog, "Disc Write Protected\n");
+		// WriteLog(tlog, "Disc Write Protected\n");
 		SetStatus(6);
 		NMIStatus|=1<<nmi_floppy; 
-        FDCommand=0;
+		FDCommand = 0;
 	}
 
 	if ((FDCommand>=20) && (*CDiscOpen==1) && (FDCommand<=21)) { // Read/Write Track Prepare
@@ -579,18 +579,18 @@ void Poll1770(int NCycles) {
 		ResetStatus(5); ResetStatus(6); ResetStatus(2);
 		LoadingCycles=45;
 		fseek(CurrentDisc,DiscStrt[CurrentDrive]+(DiscStep[CurrentDrive]*Track),SEEK_SET);
-        Sector = 0;
-        ByteCount=0; DataPos=ftell(CurrentDisc); HeadPos[CurrentDrive]=DataPos;
-//        fprintf(tlog, "Read/Write Track Prepare - Disc = %d, Track = %d\n", CurrentDrive, Track);
-    }
+		Sector = 0;
+		ByteCount=0; DataPos=ftell(CurrentDisc); HeadPos[CurrentDrive]=DataPos;
+		// WriteLog("Read/Write Track Prepare - Disc = %d, Track = %d\n", CurrentDrive, Track);
+	}
+
 	if ((FDCommand>=20) && (*CDiscOpen==0) && (FDCommand<=21)) {
-
-//        fprintf(tlog, "ResetStatus(0) Here 8\n");
-
-        ResetStatus(0);
+		// WriteLog("ResetStatus(0) Here 8\n");
+		ResetStatus(0);
 		SetStatus(4);
 		NMIStatus|=1<<nmi_floppy; FDCommand=0;
 	}
+
 	if ((FDCommand==20) && (*CDiscOpen==1)) FDCommand=22;
 	if ((FDCommand==21) && (*CDiscOpen==1)) { FDCommand=23; FormatState = 0; SetStatus(1); NMIStatus|=1<<nmi_floppy; }
   

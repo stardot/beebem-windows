@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 #include <stdlib.h>
 
 #include "6502core.h"
+#include "log.h"
 #include "main.h"
 #include "beebmem.h"
 #include "tube.h"
@@ -261,11 +262,10 @@ unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr)
 //		trace = 1;
 		
 		break;
-		
 	}
-	
-//	fprintf(tlog, "ReadTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) TmpData);
-	
+
+	// WriteLog("ReadTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int)IOAddr, (int)TmpData);
+
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Read from host, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
@@ -277,8 +277,7 @@ unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr)
 
 void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) 
 {
-
-//	fprintf(tlog, "WriteTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) IOData);
+	// WriteLog("WriteTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int)IOAddr, (int)IOData);
 
 	if (DebugEnabled) {
 		char info[200];
@@ -350,7 +349,7 @@ unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr)
 		break;
 	}
 
-//	fprintf(tlog, "ReadTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) TmpData);
+	// WriteLog("ReadTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int)IOAddr, (int)TmpData);
 
 	if (DebugEnabled) {
 		char info[200];
@@ -363,8 +362,7 @@ unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr)
 
 void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData) 
 {
-
-//	fprintf(tlog, "WriteTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int) IOAddr, (int) IOData);
+	// WriteLog("WriteTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int)IOAddr, (int)IOData);
 
 	if (DebugEnabled) {
 		char info[200];
