@@ -30,6 +30,7 @@ Boston, MA  02110-1301, USA.
 
 #include "6502core.h"
 #include "beebwin.h"
+#include "log.h"
 #include "serial.h"
 
 bool DumpAfterEach = false;
@@ -39,20 +40,15 @@ BeebWin *mainWin = NULL;
 HINSTANCE hInst;
 HWND hCurrentDialog = NULL;
 HACCEL hCurrentAccelTable = NULL;
-FILE *tlog;
 
-int CALLBACK WinMain(HINSTANCE hInstance, 
-					HINSTANCE hPrevInstance,
-					LPSTR lpszCmdLine,
-					int nCmdShow)
+int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+                     LPSTR lpszCmdLine, int nCmdShow)
 {
 	MSG msg;
 
 	hInst = hInstance;
 
-    tlog = NULL;
-
-//  tlog = fopen("\\trace.log", "wt");
+	OpenLog();
 
 	mainWin = new BeebWin();
 	mainWin->Initialise();
@@ -66,18 +62,19 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 
 	do
 	{
-		if(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
+		if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
 		{
-			if(!GetMessage(&msg,    // message structure
-							NULL,   // handle of window receiving the message
-							0,      // lowest message to examine
-							0))
-				break;              // Quit the app on WM_QUIT
+			if (!GetMessage(&msg,   // message structure
+			                NULL,   // handle of window receiving the message
+			                0,      // lowest message to examine
+			                0))
+				break; // Quit the app on WM_QUIT
 
 			if (hCurrentAccelTable != NULL)
 			{
 				TranslateAccelerator(hCurrentDialog, hCurrentAccelTable, &msg);
 			}
+
 			if (hCurrentDialog == NULL || !IsDialogMessage(hCurrentDialog, &msg)) {
 				TranslateMessage(&msg);// Translates virtual key codes
 				DispatchMessage(&msg); // Dispatches message to window
@@ -88,39 +85,14 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 			Exec6502Instruction();
 		}
 	} while(1);
-  
+
 	mainWin->KillDLLs();
 
-   if (tlog) fclose(tlog);
+	CloseLog();
 
-    delete mainWin;
+	delete mainWin;
+
 	Kill_Serial();
-	return(0);  
-} /* main */
 
-static const char* const mon[] = {
-	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-};
-
-
-void WriteLog(char *fmt, ...)
-{
-va_list argptr;
-SYSTEMTIME tim;
-char buff[256];
-
-    if (tlog)
-    {
-	    va_start(argptr, fmt);
-	    vsprintf(buff, fmt, argptr);
-	    va_end(argptr);
-
-        GetLocalTime(&tim);
-        fprintf(tlog, "[%02d-%3s-%02d %02d:%02d:%02d.%03d] ", 
-	        tim.wDay, mon[tim.wMonth - 1], tim.wYear % 100, tim.wHour, tim.wMinute, tim.wSecond, tim.wMilliseconds);
-        
-        fprintf(tlog, "%s", buff);
-    }
-
+	return 0;
 }

@@ -40,6 +40,7 @@ Boston, MA  02110-1301, USA.
 #include "uservia.h"
 #include "video.h"
 #include "atodconv.h"
+#include "log.h"
 #include "main.h"
 #include "disc1770.h"
 #include "serial.h"

@@ -26,11 +26,13 @@ Boston, MA  02110-1301, USA.
  *
  */
 
+#include <windows.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "zlib.h"
-#include "main.h"
+#include "log.h"
 #include "csw.h"
 
 #include "6502core.h"

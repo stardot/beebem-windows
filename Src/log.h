@@ -14,23 +14,17 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* Mike Wyatt and NRM's port to win32 - 7/6/97 */
+#ifndef LOG_HEADER
+#define LOG_HEADER
 
-#ifndef MAIN_HEADER
-#define MAIN_HEADER
-
-#include <windows.h>
-#include "beebwin.h"
-#include "model.h"
-
-extern Model MachineType;
-extern BeebWin *mainWin;
-extern HINSTANCE hInst;
+void OpenLog();
+void WriteLog(char *fmt, ...);
+void CloseLog();
 
 #endif

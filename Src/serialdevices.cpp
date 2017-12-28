@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "serialdevices.h"
 #include "6502core.h"
 #include "uef.h"
+#include "log.h"
 #include "main.h"
 #include "serial.h"
 #include "beebsound.h"

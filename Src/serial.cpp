@@ -45,6 +45,7 @@ Written by Richard Gellman - March 2001
 #include "csw.h"
 #include "serialdevices.h"
 #include "debug.h"
+#include "log.h"
 
 #define CASSETTE 0  // Device in 
 #define RS423 1		// use defines

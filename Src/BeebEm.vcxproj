@@ -184,6 +184,7 @@
     <ClCompile Include="econet.cpp" />
     <ClCompile Include="filedialog.cpp" />
     <ClCompile Include="ide.cpp" />
+    <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="music5000.cpp" />
     <ClCompile Include="romconfig.cpp" />
@@ -241,6 +242,7 @@
     <ClInclude Include="ext1770.h" />
     <ClInclude Include="filedialog.h" />
     <ClInclude Include="ide.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="ml675001.h" />
     <ClInclude Include="model.h" />

@@ -20,10 +20,13 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
+#include <windows.h>
+
+#include <map>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "main.h"
+#include "log.h"
 #include "tube.h"
 
 #include "beebmem.h"
