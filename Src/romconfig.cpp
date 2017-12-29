@@ -149,8 +149,8 @@ static void FillROMList(void)
 }
 
 /****************************************************************************/
-static BOOL CALLBACK ROMConfigDlgProc(
-	HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+static BOOL CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
+                                      WPARAM wParam, LPARAM /* lParam */)
 {
 	int row;
 	char *cfg;
@@ -268,7 +268,6 @@ static bool LoadROMConfigFile(HWND hWnd)
 
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
-	int nROMPathLen = (int)strlen(szROMConfigPath);
 
 	if (szDefaultROMConfigPath[0])
 		strcpy(DefaultPath, szDefaultROMConfigPath);
@@ -308,7 +307,6 @@ static bool SaveROMConfigFile(HWND hWnd)
 
 	szROMConfigPath[0] = 0;
 	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
-	int nROMPathLen = (int)strlen(szROMConfigPath);
 
 	if (szDefaultROMConfigPath[0])
 		strcpy(DefaultPath, szDefaultROMConfigPath);
