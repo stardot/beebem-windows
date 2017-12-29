@@ -64,7 +64,6 @@ unsigned char SREnabled;
 /* Fire button for joystick 1, false=not pressed, true=pressed */
 bool JoystickButton = false;
 
-extern bool DumpAfterEach;
 /* My raw VIA state */
 VIAState SysVIAState;
 char WECycles=0;
@@ -170,9 +169,6 @@ void BeebKeyDown(int row,int col) {
   SysViaKbdState[col][row]=1;
 
   DoKbdIntCheck();
-#ifdef KBDDEBUG
-  DumpAfterEach = true;
-#endif
 }
 
 /*--------------------------------------------------------------------------*/

@@ -433,7 +433,6 @@ static void DoVarLength_ReadDataCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void ReadInterrupt(void) {
-  extern bool DumpAfterEach;
   int LastByte=0;
 
   if (CommandStatus.SectorsToGo<0) {
@@ -445,7 +444,6 @@ static void ReadInterrupt(void) {
   DataReg=CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++];
   /*cerr << "ReadInterrupt called - DataReg=0x" << hex << int(DataReg) << dec << "ByteWithinSector=" << CommandStatus.ByteWithinSector << "\n"; */
 
-  // DumpAfterEach = true;
   ResultReg=0;
   if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
     CommandStatus.ByteWithinSector=0;

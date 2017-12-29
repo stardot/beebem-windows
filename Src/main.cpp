@@ -32,8 +32,6 @@ Boston, MA  02110-1301, USA.
 #include "log.h"
 #include "serial.h"
 
-bool DumpAfterEach = false;
-
 Model MachineType;
 BeebWin *mainWin = NULL;
 HINSTANCE hInst;

@@ -55,7 +55,6 @@ Boston, MA  02110-1301, USA.
 
 static int CurrentInstruction;
 unsigned char TubeRam[65536];
-extern bool DumpAfterEach;
 bool TubeEnabled, AcornZ80, EnableTube;
 #ifdef M512COPRO_ENABLED
 bool Tube186Enabled;

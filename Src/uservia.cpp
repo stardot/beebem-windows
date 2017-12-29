@@ -82,7 +82,6 @@ static void UpdateSRState(bool SRrw);
 /* SW RAM board */
 bool SWRAMBoardEnabled = false;
 
-extern bool DumpAfterEach;
 /* My raw VIA state */
 VIAState UserVIAState;
 
