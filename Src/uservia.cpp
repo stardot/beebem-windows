@@ -942,7 +942,7 @@ int bit;
 	}
 }
 
-char *BitKeyName( int Key )
+const char *BitKeyName( int Key )
 {
 	static CHAR Character[2]; // Used to return single characters.
 

@@ -28,7 +28,7 @@ Boston, MA  02110-1301, USA.
 
 #define BUFFER_LEN	256
 
-void LoadCSW(char *file);
+void LoadCSW(const char *file);
 void CloseCSW(void);
 int csw_data(void);
 int csw_poll(int clock);

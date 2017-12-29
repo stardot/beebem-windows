@@ -81,7 +81,7 @@ void PrinterPoll();
 void GetBitKeysUsed( char *Keys );
 extern int	BitKey;			// Used to store the bit key pressed while we wait 
 void ShowBitKey(int key, int ctrlID);
-char *BitKeyName( int Key );
+const char *BitKeyName(int Key);
 void SetBitKey( int ctrlID );
 int GetValue(int ctrlID);
 void SetValue(int ctrlID, int State);

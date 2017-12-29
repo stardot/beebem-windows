@@ -62,7 +62,7 @@ bool CSWOpen = false;
 int CSW_BUF;
 int CSW_CYCLES;
 
-void LoadCSW(char *file)
+void LoadCSW(const char *file)
 {
 	int end;
 	int sourcesize;
@@ -170,7 +170,7 @@ void CloseCSW(void)
 	}
 }
 
-void HexDump(char *buff, int count)
+void HexDump(const char *buff, int count)
 {
 int a, b;
 int v;

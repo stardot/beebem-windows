@@ -72,7 +72,7 @@ void uef_setunlock(int unlock)
 	uef_unlock = unlock;
 }
 
-int uef_create(char *name)
+int uef_create(const char *name)
 {
 	gzFile uef_file;
 
@@ -84,7 +84,6 @@ int uef_create(char *name)
 		uef_errno = UEF_OPEN_NOFILE;
 		return(0);
 	}
-
 
 	gzwrite(uef_file, "UEF File!", 10);
 	gzput16(uef_file, 0x000a); /* V0.10 */
@@ -98,7 +97,7 @@ int uef_create(char *name)
 	return(1);
 }
 
-int uef_open(char *name)
+int uef_open(const char *name)
 {
 	gzFile uef_file;
 	char UEFId[10];
