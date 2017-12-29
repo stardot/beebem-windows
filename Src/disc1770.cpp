@@ -38,8 +38,6 @@ Written by Richard Gellman - Feb 2001
 #include "z80.h"
 #include "beebsound.h"
 
-extern int trace;
-
 // Control/Status Register, Track, Sector, and Data Registers
 unsigned char FormatBuffer[2048];
 unsigned char *FormatPtr;
