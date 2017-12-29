@@ -86,7 +86,7 @@ static unsigned char SlowDataBusWriteValue=0;
 static unsigned int KBDRow=0;
 static unsigned int KBDCol=0;
 
-static char SysViaKbdState[16][8]; /* Col,row */
+static bool SysViaKbdState[16][8]; // Col, row
 static int KeysDown=0;
 
 /*--------------------------------------------------------------------------*/
@@ -115,15 +115,18 @@ void BeebKeyUp(int row,int col) {
   /* Update keys down count - unless its shift/control */
   if ((SysViaKbdState[col][row]) && (row!=0)) KeysDown--;
 
-  SysViaKbdState[col][row]=0;
+  SysViaKbdState[col][row] = false;
 }
 
 /*--------------------------------------------------------------------------*/
 void BeebReleaseAllKeys() {
   KeysDown = 0;
-    for(int row=0;row<8;row++)
-      for(int col=0;col<16;col++)
-        SysViaKbdState[col][row]=0;
+
+  for (int row = 0;row < 8; row++) {
+    for (int col = 0; col < 16; col++) {
+      SysViaKbdState[col][row] = false;
+    }
+  }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -166,7 +169,7 @@ void BeebKeyDown(int row,int col) {
   /* Update keys down count - unless its shift/control */
   if ((!SysViaKbdState[col][row]) && (row!=0)) KeysDown++;
 
-  SysViaKbdState[col][row]=1;
+  SysViaKbdState[col][row] = true;
 
   DoKbdIntCheck();
 }
@@ -174,11 +177,11 @@ void BeebKeyDown(int row,int col) {
 /*--------------------------------------------------------------------------*/
 /* Return current state of the single bi output of the keyboard matrix - NOT the
   any keypressed interrupt */
-static int KbdOP(void) {
-  /* Check range validity */
-  if ((KBDCol>14) || (KBDRow>7)) return(0); /* Key not down if overrange - perhaps we should do something more? */
+static bool KbdOP() {
+  // Check range validity
+  if (KBDCol > 14 || KBDRow > 7) return false; // Key not down if overrange - perhaps we should do something more?
 
-  return(SysViaKbdState[KBDCol][KBDRow]);
+  return SysViaKbdState[KBDCol][KBDRow];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -234,8 +237,8 @@ static void IC32Write(unsigned char Value) {
   }
 }
 
-void ChipClock(int Cycles) {
-//	if (WECycles>0) WECycles-=Cycles;
+void ChipClock(int nCycles) {
+//	if (WECycles > 0) WECycles -= nCycles;
 //	else
 //	if (WEState) Sound_RegWrite(SlowDataBusWriteValue);
 }
@@ -277,7 +280,7 @@ static int SlowDataBusRead(void) {
   /* I don't know this lot properly - just put in things as we figure them out */
   if (MachineType != Model::Master128) if (!(IC32State & 8)) { if (KbdOP()) result|=128; }
   if ((MachineType == Model::Master128) && !CMOS.Enabled) {
-	  if (KbdOP()) result|=128; 
+    if (KbdOP()) result |= 128;
   }
 
 #ifdef SPEECH_ENABLED
@@ -613,18 +616,16 @@ void SysVIA_poll(unsigned int ncycles) {
 
 /*--------------------------------------------------------------------------*/
 void SysVIAReset(void) {
-  int row,col;
   VIAReset(&SysVIAState);
   //vialog=fopen("/via.log","wt");
 
   /* Make it no keys down and no dip switches set */
-  for(row=0;row<8;row++)
-    for(col=0;col<16;col++)
-      SysViaKbdState[col][row]=0;
-	SRData=0;
-	SRMode=0;
-    SRCount=0;
-	SREnabled=0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
+  BeebReleaseAllKeys();
+
+  SRData = 0;
+  SRMode = 0;
+  SRCount = 0;
+  SREnabled = 0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
 }
 
 /*-------------------------------------------------------------------------*/
