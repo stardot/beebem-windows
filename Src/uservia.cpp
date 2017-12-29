@@ -57,7 +57,6 @@ int BitKeys[8] = {48, 49, 50, 51, 52, 53, 54, 55};
 int LastBitButton = 0;
 static HWND hwndBreakOut;
 static HWND hwndGetBitKey;
-extern HWND hCurrentDialog;
 
 /* AMX mouse (see uservia.h) */
 bool AMXMouseEnabled = false;

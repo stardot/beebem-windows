@@ -95,7 +95,6 @@ bool TapePlaying = true;
 bool TapeRecording = false;
 static HWND hwndTapeControl;
 static HWND hwndMap;
-extern HWND hCurrentDialog;
 void TapeControlOpenFile(char *file_name);
 void TapeControlUpdateCounter(int tape_time);
 void TapeControlStopRecording(bool RefreshControl);

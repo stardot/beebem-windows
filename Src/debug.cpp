@@ -110,10 +110,6 @@ static Watch Watches[MAX_BPS];
 static unsigned char buffer[MAX_BUFFER];
 static MemoryMap MemoryMaps[17];
 BOOL CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
-extern HWND hCurrentDialog;
-extern HACCEL hCurrentAccelTable;
-
-
 
 char debugHistory[MAX_HISTORY][300];
 int debugHistoryIndex = 0;

@@ -58,7 +58,6 @@ extern char CDiscType[2]; // Current disc types
 extern char FDCDLL[256];
 extern HMODULE hFDCBoard;
 extern AVIWriter *aviWriter;
-extern HWND hCurrentDialog;
 
 typedef void (*lGetBoardProperties)(struct DriveControlBlock *);
 typedef unsigned char (*lSetDriveControl)(unsigned char);

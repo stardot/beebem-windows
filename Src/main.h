@@ -32,5 +32,7 @@ Boston, MA  02110-1301, USA.
 extern Model MachineType;
 extern BeebWin *mainWin;
 extern HINSTANCE hInst;
+extern HWND hCurrentDialog;
+extern HACCEL hCurrentAccelTable;
 
 #endif
