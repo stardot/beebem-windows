@@ -566,7 +566,7 @@ int space, bufflen;
 //						mEthernetPortReadTaskID = NULL;
 						bSerialStateChanged = true;
 						SerialPortEnabled = false;
-						mainWin->ExternUpdateSerialMenu();
+						mainWin->UpdateSerialMenu();
 						IP232Close();
 						MessageBox(GETHWND,"Lost connection; serial port has been disabled.",WindowTitle,MB_OK|MB_ICONERROR);
 						return 0;
@@ -616,7 +616,7 @@ int space, bufflen;
 								DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Send Error");
 						bSerialStateChanged = true;
 						SerialPortEnabled = false;
-						mainWin->ExternUpdateSerialMenu();
+						mainWin->UpdateSerialMenu();
 						
 						IP232Close();
 						MessageBox(GETHWND,"Lost connection; serial port has been disabled",WindowTitle,MB_OK|MB_ICONERROR);

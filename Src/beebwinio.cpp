@@ -131,7 +131,7 @@ void BeebWin::EjectDiscImage(int Drive)
 }
 
 /****************************************************************************/
-int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
+int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[256];
@@ -203,14 +203,14 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 				if (NativeFDC)
 					LoadSimpleDSDiscImage(FileName, Drive, 80);
 				else
-					Load1770DiscImage(FileName,Drive,1,dmenu); // 1 = dsd
+					Load1770DiscImage(FileName, Drive, 1, m_hMenu); // 1 = dsd
 			}
 			if ((!dsd) && (!adfs) && (!dos))
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
 				else
-					Load1770DiscImage(FileName,Drive,0,dmenu); // 0 = ssd
+					Load1770DiscImage(FileName, Drive, 0, m_hMenu); // 0 = ssd
 			}
 			if (adfs)
 			{
@@ -218,22 +218,22 @@ int BeebWin::ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs)
 					MessageBox(GETHWND,"The native 8271 FDC cannot read ADFS discs\n","BeebEm",
 							   MB_OK|MB_ICONERROR);
 				else
-					Load1770DiscImage(FileName,Drive,2,dmenu); // 2 = adfs
+					Load1770DiscImage(FileName, Drive, 2, m_hMenu); // 2 = adfs
 			}
 		}
 		else
 		{
 			// Master 128
 			if (dsd)
-				Load1770DiscImage(FileName,Drive,1,dmenu); // 0 = ssd
+				Load1770DiscImage(FileName, Drive, 1, m_hMenu); // 0 = ssd
 			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
-				Load1770DiscImage(FileName,Drive,0,dmenu); // 1 = dsd
+				Load1770DiscImage(FileName, Drive, 0, m_hMenu); // 1 = dsd
 			if (adfs)
-				Load1770DiscImage(FileName,Drive,2,dmenu); // ADFS OO La La!
+				Load1770DiscImage(FileName, Drive, 2, m_hMenu); // ADFS OO La La!
 			if (img)
-				Load1770DiscImage(FileName,Drive,3,dmenu);
+				Load1770DiscImage(FileName, Drive, 3, m_hMenu);
 			if (dos)
-				Load1770DiscImage(FileName,Drive,4,dmenu);
+				Load1770DiscImage(FileName, Drive, 4, m_hMenu);
 		}
 
 		/* Write protect the disc */
@@ -528,7 +528,6 @@ bool BeebWin::PrinterFile()
 void BeebWin::TogglePrinter()
 {
 	bool FileOK = true;
-	HMENU hMenu = m_hMenu;
 
 	m_printerbufferlen = 0;
 
@@ -545,8 +544,7 @@ void BeebWin::TogglePrinter()
 			if (strlen(m_PrinterFileName) != 0)
 			{
 				/* First check if file already exists */
-				FILE *outfile;
-				outfile=fopen(m_PrinterFileName,"rb");
+				FILE *outfile = fopen(m_PrinterFileName,"rb");
 				if (outfile != NULL)
 				{
 					fclose(outfile);
@@ -569,7 +567,7 @@ void BeebWin::TogglePrinter()
 		}
 	}
 
-	CheckMenuItem(hMenu, IDM_PRINTERONOFF, PrinterEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(m_hMenu, IDM_PRINTERONOFF, PrinterEnabled ? MF_CHECKED : MF_UNCHECKED);
 }
 
 /****************************************************************************/

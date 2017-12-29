@@ -126,9 +126,8 @@ struct CUSTOMVERTEX
 typedef std::map<std::string, std::string> PrefsMap;
 
 class BeebWin  {
-  
-  public:
 
+public:
 	enum PaletteType { RGB, BW, AMBER, GREEN } palette_type;
 
 	BeebWin();
@@ -148,7 +147,7 @@ class BeebWin  {
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
 	void KillDLLs(void);
-	void UpdateLEDMenu(HMENU hMenu);
+	void UpdateLEDMenu();
 	void SetDriveControl(unsigned char value);
 	unsigned char GetDriveControl(void);
 	void doLED(int sx,bool on);
@@ -435,15 +434,14 @@ class BeebWin  {
 	char m_TextViewScreen[MAX_TEXTVIEW_SCREEN_LEN+1];
 
 	bool InitClass();
-	void UpdateOptiMenu(void);
+	void UpdateOptiMenu();
 	void CreateBeebWindow(void);
 	void CreateBitmap(void);
 	void InitMenu(void);
 	void UpdateMonitorMenu();
 	void SelectSerialPort(unsigned char PortNumber);
-	void UpdateSerialMenu(HMENU hMenu);
-	void UpdateEconetMenu(HMENU hMenu);
-	void ExternUpdateSerialMenu();
+	void UpdateSerialMenu();
+	void UpdateEconetMenu();
 
 	void UpdateSFXMenu();
 	void UpdateDisableKeysMenu();
@@ -475,7 +473,7 @@ class BeebWin  {
 	void TranslateVolume(void);
 	void TranslateTiming(void);
 	void TranslateKeyMapping(void);
-	int ReadDisc(int Drive,HMENU dmenu, bool bCheckForPrefs);
+	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void LoadTape(void);
 	void InitJoystick(void);
 	void ResetJoystick(void);

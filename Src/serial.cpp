@@ -692,7 +692,7 @@ void InitSerialPort(void) {
 			MessageBox(GETHWND,"Could not open specified serial port",WindowTitle,MB_OK|MB_ICONERROR);
 			bSerialStateChanged = true;
 			SerialPortEnabled = false;
-			mainWin->ExternUpdateSerialMenu();
+			mainWin->UpdateSerialMenu();
 		}
 		else {
 			bPortStat=SetupComm(hSerialPort, 1280, 1280);
