@@ -1137,8 +1137,8 @@ void BeebWin::SetupClipboard(void)
 
 void BeebWin::ResetClipboard(void)
 {
-	BeebWriteMem(0x210, m_OSRDCH & 255);
-	BeebWriteMem(0x211, m_OSRDCH >> 8);
+	BeebWriteMem(0x210, m_OSRDCH & 0xff);
+	BeebWriteMem(0x211, (m_OSRDCH >> 8) & 0xff);
 }
 
 int BeebWin::PasteKey(int addr)
