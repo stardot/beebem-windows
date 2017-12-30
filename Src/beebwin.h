@@ -126,8 +126,6 @@ struct CUSTOMVERTEX
 class BeebWin {
 
 public:
-	enum PaletteType { RGB, BW, AMBER, GREEN } palette_type;
-
 	BeebWin();
 	~BeebWin();
  
@@ -522,6 +520,15 @@ public:
 	void SavePreferences(bool saveAll);
 
 private:
+	enum class PaletteType : char {
+		RGB,
+		BW,
+		Amber,
+		Green
+	};
+
+	PaletteType m_PaletteType;
+
 	char m_PrefsFile[_MAX_PATH];
 	Preferences m_Preferences;
 };

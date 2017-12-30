@@ -172,9 +172,9 @@ void BeebWin::LoadPreferences()
 		m_ShowSpeedAndFPS = true;
 
 	if (m_Preferences.GetBinaryValue(CFG_VIEW_MONITOR, &flag, 1))
-		palette_type = (PaletteType)flag;
+		m_PaletteType = static_cast<PaletteType>(flag);
 	else
-		palette_type = (PaletteType)0;
+		m_PaletteType = PaletteType::RGB;
 
 	if (!m_Preferences.GetBoolValue("HideMenuEnabled", HideMenuEnabled))
 		HideMenuEnabled = false;
@@ -563,12 +563,10 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("FullScreen", m_isFullScreen);
 		m_Preferences.SetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio);
 		m_Preferences.SetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS);
-		flag = palette_type;
-		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &flag, 1);
+		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &m_PaletteType, 1);
 		m_Preferences.SetBoolValue("HideMenuEnabled", HideMenuEnabled);
 		LEDByte=(static_cast<int>(DiscLedColour) << 2) | ((LEDs.ShowDisc ? 1 : 0) << 1) | (LEDs.ShowKB ? 1 : 0);
 		m_Preferences.SetBinaryValue("LED Information", &LEDByte, 1);
-		flag = m_MotionBlur;
 		m_Preferences.SetDWORDValue("MotionBlur", m_MotionBlur);
 		m_Preferences.SetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8);
 		m_Preferences.SetBoolValue("TextViewEnabled", m_TextViewEnabled);

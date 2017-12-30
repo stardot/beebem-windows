@@ -565,18 +565,18 @@ void BeebWin::CreateBitmap()
 		g = (float) ((i & 2) >> 1);
 		b = (float) ((i & 4) >> 2);
 
-		if (palette_type != RGB)
+		if (m_PaletteType != PaletteType::RGB)
 		{
 			r = g = b = (float) (0.299 * r + 0.587 * g + 0.114 * b);
 
-			switch (palette_type)
+			switch (m_PaletteType)
 			{
-			case AMBER:
+			case PaletteType::Amber:
 				r *= (float) 1.0;
 				g *= (float) 0.8;
 				b *= (float) 0.1;
 				break;
-			case GREEN:
+			case PaletteType::Green:
 				r *= (float) 0.2;
 				g *= (float) 0.9;
 				b *= (float) 0.1;
@@ -950,10 +950,10 @@ void BeebWin::UpdateSoundStreamerMenu() {
 }
 
 void BeebWin::UpdateMonitorMenu() {
-	CheckMenuItem(ID_MONITOR_RGB, palette_type == RGB);
-	CheckMenuItem(ID_MONITOR_BW , palette_type == BW);
-	CheckMenuItem(ID_MONITOR_GREEN , palette_type == GREEN);
-	CheckMenuItem(ID_MONITOR_AMBER , palette_type == AMBER);
+	CheckMenuItem(ID_MONITOR_RGB, m_PaletteType == PaletteType::RGB);
+	CheckMenuItem(ID_MONITOR_BW, m_PaletteType == PaletteType::BW);
+	CheckMenuItem(ID_MONITOR_GREEN, m_PaletteType == PaletteType::Green);
+	CheckMenuItem(ID_MONITOR_AMBER, m_PaletteType == PaletteType::Amber);
 }
 
 void BeebWin::UpdateModelType() {
@@ -2401,7 +2401,7 @@ void BeebWin::UpdateOptiMenu() {
 void BeebWin::HandleCommand(int MenuId)
 {
 	char TmpPath[256];
-	int prev_palette_type = palette_type;
+	PaletteType PrevPaletteType = m_PaletteType;
 
 	SetSound(MUTED);
 
@@ -3228,22 +3228,22 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_MONITOR_RGB:
-		palette_type = RGB;
+		m_PaletteType = PaletteType::RGB;
 		CreateBitmap();
 		break;
 
 	case ID_MONITOR_BW:
-		palette_type = BW;
+		m_PaletteType = PaletteType::BW;
 		CreateBitmap();
 		break;
 
 	case ID_MONITOR_GREEN:
-		palette_type = GREEN;
+		m_PaletteType = PaletteType::Green;
 		CreateBitmap();
 		break;
 
 	case ID_MONITOR_AMBER:
-		palette_type = AMBER;
+		m_PaletteType = PaletteType::Amber;
 		CreateBitmap();
 		break;
 
@@ -3770,7 +3770,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	SetSound(UNMUTED);
 
-	if (palette_type != prev_palette_type)
+	if (m_PaletteType != PrevPaletteType)
 	{
 		CreateBitmap();
 		UpdateMonitorMenu();
