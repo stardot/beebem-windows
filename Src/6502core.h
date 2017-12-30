@@ -55,7 +55,6 @@ typedef enum PSR_Flags
   FlagN=128
 } PSR_Flags;
 
-extern int trace;
 extern bool IgnoreIllegalInstructions;
 
 extern unsigned char intStatus;

@@ -77,7 +77,7 @@ extern CSprowCoPro *sprow;
 
 CycleCountT TotalCycles=0;
 
-int trace = 0;
+static bool trace = false;
 int ProgramCounter;
 int PrePC;
 static int Accumulator,XReg,YReg;
@@ -1159,7 +1159,7 @@ void Exec6502Instruction(void) {
 			continue;
 		}
 
-		if (trace == 1)
+		if (trace)
 		{
 			Dis6502();
 		}
