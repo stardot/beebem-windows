@@ -32,13 +32,13 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <stdlib.h>
 #include <string>
-#include <map>
 #include <windows.h>
 #include <d3dx9.h>
 #include <ddraw.h>
 #include <sapi.h>
 #include "model.h"
 #include "port.h"
+#include "preferences.h"
 #include "video.h"
 
 /* Used in message boxes */
@@ -122,8 +122,6 @@ struct CUSTOMVERTEX
 
 // Our custom FVF, which describes our custom vertex structure
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_TEX1)
-
-typedef std::map<std::string, std::string> PrefsMap;
 
 class BeebWin {
 
@@ -520,18 +518,12 @@ public:
 	void EditROMConfig(void);
 
 	// Preferences
-	PrefsMap m_Prefs;
-	char m_PrefsFile[_MAX_PATH];
-	void LoadPreferences(void);
+	void LoadPreferences();
 	void SavePreferences(bool saveAll);
-	bool PrefsGetBinaryValue(const char *id, void *bin, int binsize);
-	void PrefsSetBinaryValue(const char *id, void *bin, int binsize);
-	bool PrefsGetStringValue(const char *id, char *str);
-	void PrefsSetStringValue(const char *id, const char *str);
-	bool PrefsGetDWORDValue(const char *id, DWORD &dw);
-	void PrefsSetDWORDValue(const char *id, DWORD dw);
-	bool PrefsGetBoolValue(const char *id, bool &b);
-	void PrefsSetBoolValue(const char *id, bool b);
+
+private:
+	char m_PrefsFile[_MAX_PATH];
+	Preferences m_Preferences;
 };
 
 #endif

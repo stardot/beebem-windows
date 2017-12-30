@@ -3449,7 +3449,7 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			char CfgName[20];
 			sprintf(CfgName, "FDCDLL%d", static_cast<int>(MachineType));
-			PrefsSetStringValue(CfgName,"None");
+			m_Preferences.SetStringValue(CfgName, "None");
 		}
 		break;
 

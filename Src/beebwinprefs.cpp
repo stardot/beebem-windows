@@ -21,8 +21,6 @@ Boston, MA  02110-1301, USA.
 // BeebWin preferences support
 
 #include <stdio.h>
-#include <string>
-#include <map>
 #include <windows.h>
 #include <initguid.h>
 #include "main.h"
@@ -63,34 +61,27 @@ Boston, MA  02110-1301, USA.
 #include "Arm.h"
 #include "sprowcopro.h"
 
-using namespace std;
-
 /* Configuration file strings */
-static char *CFG_VIEW_WIN_SIZE = "WinSize";
-static char *CFG_VIEW_SHOW_FPS = "ShowFSP";
-static char *CFG_VIEW_MONITOR = "Monitor";
-static char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
-static char *CFG_SOUND_VOLUME = "SoundVolume";
-static char *CFG_SOUND_ENABLED = "SoundEnabled";
-static char *CFG_OPTIONS_STICKS = "Sticks";
-static char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
-static char *CFG_OPTIONS_USER_KEY_MAP_FILE = "UserKeyMapFile";
-static char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
-static char *CFG_OPTIONS_HIDE_CURSOR = "HideCursor";
-static char *CFG_SPEED_TIMING = "Timing";
-static char *CFG_AMX_ENABLED = "AMXMouseEnabled";
-static char *CFG_AMX_LRFORMIDDLE = "AMXMouseLRForMiddle";
-static char *CFG_AMX_SIZE = "AMXMouseSize";
-static char *CFG_AMX_ADJUST = "AMXMouseAdjust";
-static char *CFG_PRINTER_ENABLED = "PrinterEnabled";
-static char *CFG_PRINTER_PORT = "PrinterPort";
-static char *CFG_PRINTER_FILE = "PrinterFile";
-static char *CFG_MACHINE_TYPE = "MachineType";
-
-// Token written to start of pref files
-#define PREFS_TOKEN "*** BeebEm Preferences ***"
-
-#define MAX_PREFS_LINE_LEN 1024
+static const char *CFG_VIEW_WIN_SIZE = "WinSize";
+static const char *CFG_VIEW_SHOW_FPS = "ShowFSP";
+static const char *CFG_VIEW_MONITOR = "Monitor";
+static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
+static const char *CFG_SOUND_VOLUME = "SoundVolume";
+static const char *CFG_SOUND_ENABLED = "SoundEnabled";
+static const char *CFG_OPTIONS_STICKS = "Sticks";
+static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
+static const char *CFG_OPTIONS_USER_KEY_MAP_FILE = "UserKeyMapFile";
+static const char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
+static const char *CFG_OPTIONS_HIDE_CURSOR = "HideCursor";
+static const char *CFG_SPEED_TIMING = "Timing";
+static const char *CFG_AMX_ENABLED = "AMXMouseEnabled";
+static const char *CFG_AMX_LRFORMIDDLE = "AMXMouseLRForMiddle";
+static const char *CFG_AMX_SIZE = "AMXMouseSize";
+static const char *CFG_AMX_ADJUST = "AMXMouseAdjust";
+static const char *CFG_PRINTER_ENABLED = "PrinterEnabled";
+static const char *CFG_PRINTER_PORT = "PrinterPort";
+static const char *CFG_PRINTER_FILE = "PrinterFile";
+static const char *CFG_MACHINE_TYPE = "MachineType";
 
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
@@ -101,130 +92,106 @@ extern unsigned char CMOSDefault[64];
 
 void BeebWin::LoadPreferences()
 {
-	FILE *fd;
-	char buf[MAX_PREFS_LINE_LEN];
-	char *val;
-	char CfgName[256];
+	Preferences::Result result = m_Preferences.Load(m_PrefsFile);
+
+	if (result == Preferences::Result::Failed) {
+		// No prefs file, will use defaults
+		char errstr[500];
+		sprintf(errstr, "Cannot open preferences file:\n  %s\n\nUsing default preferences", m_PrefsFile);
+		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+	}
+	else if (result == Preferences::Result::InvalidFormat) {
+		char errstr[500];
+		sprintf(errstr, "Invalid preferences file:\n  %s\n\nUsing default preferences", m_PrefsFile);
+		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+	}
+
 	char path[_MAX_PATH];
 	char keyData[256];
 	unsigned char flag;
 	DWORD dword;
 
-	fd = fopen(m_PrefsFile, "r");
-	if (fd == NULL)
-	{
-		// No prefs file, will use defaults
-		char errstr[500];
-		sprintf(errstr, "Cannot open preferences file:\n  %s\n\nUsing default preferences", m_PrefsFile);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK|MB_ICONERROR);
-	}
-	else if (fgets(buf, MAX_PREFS_LINE_LEN-1, fd) != NULL)
-	{
-		if (strcmp(buf, PREFS_TOKEN "\n") != 0)
-		{
-			char errstr[500];
-			sprintf(errstr, "Invalid preferences file:\n  %s\n\nUsing default preferences", m_PrefsFile);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK|MB_ICONERROR);
-		}
-		else
-		{
-			while (fgets(buf, MAX_PREFS_LINE_LEN-1, fd) != NULL)
-			{
-				val = strchr(buf, '=');
-				if (val)
-				{
-					*val = 0;
-					++val;
-					if (val[strlen(val)-1] == '\n')
-						val[strlen(val)-1] = 0;
-					m_Prefs[buf] = val;
-				}
-			}
-		}
-		fclose(fd);
-	}
-
 	// Remove obsolete prefs
-	m_Prefs.erase("UserKeyMapRow");
-	m_Prefs.erase("UserKeyMapCol");
-	m_Prefs.erase("ShowBottomCursorLine");
-	m_Prefs.erase("Volume");
-	m_Prefs.erase("UsePrimaryBuffer");
+	m_Preferences.EraseValue("UserKeyMapRow");
+	m_Preferences.EraseValue("UserKeyMapCol");
+	m_Preferences.EraseValue("ShowBottomCursorLine");
+	m_Preferences.EraseValue("Volume");
+	m_Preferences.EraseValue("UsePrimaryBuffer");
 
 	unsigned char type = 0;
-	if(!PrefsGetBinaryValue("MachineType", &type, 1))
+	if (!m_Preferences.GetBinaryValue(CFG_MACHINE_TYPE, &type, 1))
 		MachineType = Model::B;
 	else
 		MachineType = static_cast<Model>(type);
 
-	if (!PrefsGetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad))
+	if (!m_Preferences.GetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad))
 		m_WriteProtectOnLoad = true;
 
-	if (PrefsGetDWORDValue("DisplayRenderer",dword))
+	if (m_Preferences.GetDWORDValue("DisplayRenderer", dword))
 		m_DisplayRenderer = dword;
 	else
 		m_DisplayRenderer = IDM_DISPDX9;
 
-	if (!PrefsGetBoolValue("DXSmoothing", m_DXSmoothing))
+	if (!m_Preferences.GetBoolValue("DXSmoothing", m_DXSmoothing))
 		m_DXSmoothing = true;
 
-	if (!PrefsGetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only))
+	if (!m_Preferences.GetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only))
 		m_DXSmoothMode7Only = false;
 
-	if (PrefsGetDWORDValue("DDFullScreenMode",dword))
+	if (m_Preferences.GetDWORDValue("DDFullScreenMode", dword))
 		m_DDFullScreenMode = dword;
 	else
 		m_DDFullScreenMode = ID_VIEW_DD_640X480;
 	TranslateDDSize();
 
-	if (PrefsGetDWORDValue(CFG_VIEW_WIN_SIZE,dword))
+	if (m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, dword))
 		m_MenuIdWinSize = dword;
 	else
 		m_MenuIdWinSize = IDM_640X512;
 	if (m_MenuIdWinSize == IDM_CUSTOMWINSIZE)
 	{
-		if (PrefsGetDWORDValue("WinSizeX",dword))
+		if (m_Preferences.GetDWORDValue("WinSizeX", dword))
 			m_XWinSize = dword;
 		else
 			m_XWinSize = 640;
-		if (PrefsGetDWORDValue("WinSizeY",dword))
+		if (m_Preferences.GetDWORDValue("WinSizeY", dword))
 			m_YWinSize = dword;
 		else
 			m_YWinSize = 512;
 	}
 
-	if (!PrefsGetBoolValue("FullScreen", m_isFullScreen))
+	if (!m_Preferences.GetBoolValue("FullScreen", m_isFullScreen))
 		m_isFullScreen = false;
 
 	TranslateWindowSize();
 
-	if (!PrefsGetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio))
+	if (!m_Preferences.GetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio))
 		m_MaintainAspectRatio = true;
 
-	if (!PrefsGetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS))
+	if (!m_Preferences.GetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS))
 		m_ShowSpeedAndFPS = true;
 
-	if (PrefsGetBinaryValue(CFG_VIEW_MONITOR,&flag,1))
+	if (m_Preferences.GetBinaryValue(CFG_VIEW_MONITOR, &flag, 1))
 		palette_type = (PaletteType)flag;
 	else
 		palette_type = (PaletteType)0;
 
-	if (!PrefsGetBoolValue("HideMenuEnabled", HideMenuEnabled))
+	if (!m_Preferences.GetBoolValue("HideMenuEnabled", HideMenuEnabled))
 		HideMenuEnabled = false;
 
 	unsigned char LEDByte = 0;
-	if (!PrefsGetBinaryValue("LED Information",&LEDByte,1))
+	if (!m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
 		LEDByte=0;
 	DiscLedColour=static_cast<LEDColour>(LED_COLOUR_TYPE);
 	LEDs.ShowDisc=(LED_SHOW_DISC != 0);
 	LEDs.ShowKB=LED_SHOW_KB;
 
-	if (PrefsGetDWORDValue("MotionBlur",dword))
+	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
 		m_MotionBlur = dword;
 	else
 		m_MotionBlur = IDM_BLUR_OFF;
 
-	if (!PrefsGetBinaryValue("MotionBlurIntensities",m_BlurIntensities,8))
+	if (!m_Preferences.GetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8))
 	{
 		m_BlurIntensities[0]=100;
 		m_BlurIntensities[1]=88;
@@ -236,71 +203,71 @@ void BeebWin::LoadPreferences()
 		m_BlurIntensities[7]=12;
 	}
 
-	if (!PrefsGetBoolValue("TextViewEnabled",m_TextViewEnabled))
+	if (!m_Preferences.GetBoolValue("TextViewEnabled", m_TextViewEnabled))
 		m_TextViewEnabled = false;
 
-	if (PrefsGetDWORDValue(CFG_SPEED_TIMING,dword))
+	if (m_Preferences.GetDWORDValue(CFG_SPEED_TIMING, dword))
 		m_MenuIdTiming = dword;
 	else
 		m_MenuIdTiming = IDM_REALTIME;
 	TranslateTiming();
 
-	if (!PrefsGetDWORDValue("SoundConfig::Selection", dword))
+	if (!m_Preferences.GetDWORDValue("SoundConfig::Selection", dword))
 		dword = 0;
 	SoundConfig::Selection = SoundConfig::Option(dword);
 
-	if (!PrefsGetBoolValue(CFG_SOUND_ENABLED, SoundDefault))
+	if (!m_Preferences.GetBoolValue(CFG_SOUND_ENABLED, SoundDefault))
 		SoundDefault = true;
 
-	if (!PrefsGetBoolValue("SoundChipEnabled", SoundChipEnabled))
+	if (!m_Preferences.GetBoolValue("SoundChipEnabled", SoundChipEnabled))
 		SoundChipEnabled = true;
 
-	if (PrefsGetDWORDValue(CFG_SOUND_SAMPLE_RATE,dword))
+	if (m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, dword))
 		m_MenuIdSampleRate = dword;
 	else
 		m_MenuIdSampleRate = IDM_44100KHZ;
 	TranslateSampleRate();
 
-	if (PrefsGetDWORDValue(CFG_SOUND_VOLUME,dword))
+	if (m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, dword))
 		m_MenuIdVolume = dword;
 	else
 		m_MenuIdVolume = IDM_FULLVOLUME;
 	TranslateVolume();
 
-	if (!PrefsGetBoolValue("RelaySoundEnabled", RelaySoundEnabled))
+	if (!m_Preferences.GetBoolValue("RelaySoundEnabled", RelaySoundEnabled))
 		RelaySoundEnabled = false;
-	if (!PrefsGetBoolValue("TapeSoundEnabled", TapeSoundEnabled))
+	if (!m_Preferences.GetBoolValue("TapeSoundEnabled", TapeSoundEnabled))
 		TapeSoundEnabled = false;
-	if (!PrefsGetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled))
+	if (!m_Preferences.GetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled))
 		DiscDriveSoundEnabled = true;
-	if (!PrefsGetBoolValue("Part Samples", PartSamples))
+	if (!m_Preferences.GetBoolValue("Part Samples", PartSamples))
 		PartSamples = true;
-	if (!PrefsGetBoolValue("ExponentialVolume", SoundExponentialVolume))
+	if (!m_Preferences.GetBoolValue("ExponentialVolume", SoundExponentialVolume))
 		SoundExponentialVolume = true;
-	if (!PrefsGetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled))
+	if (!m_Preferences.GetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled))
 		m_TextToSpeechEnabled = false;
 
-	if (!PrefsGetBoolValue("Music5000Enabled",Music5000Enabled))
+	if (!m_Preferences.GetBoolValue("Music5000Enabled", Music5000Enabled))
 		Music5000Enabled = false;
 
-	if (PrefsGetDWORDValue(CFG_OPTIONS_STICKS,dword))
+	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
 		m_MenuIdSticks = dword;
 	else
 		m_MenuIdSticks = 0;
 
-	if (!PrefsGetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
+	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
 
-	if (!PrefsGetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor))
+	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor))
 		m_HideCursor = false;
 
-	if (PrefsGetDWORDValue(CFG_OPTIONS_KEY_MAPPING,dword))
+	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING,dword))
 		m_MenuIdKeyMapping = dword;
 	else
 		m_MenuIdKeyMapping = IDM_LOGICALKYBDMAPPING;
 
 	bool readDefault = true;
-	if (PrefsGetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE,m_UserKeyMapPath))
+	if (m_Preferences.GetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath))
 	{
 		strcpy(path, m_UserKeyMapPath);
 		GetDataPath(m_UserDataPath, path);
@@ -315,186 +282,185 @@ void BeebWin::LoadPreferences()
 		ReadKeyMap(path, &UserKeymap);
 	}
 
-	if (!PrefsGetBoolValue("KeyMapAS", m_KeyMapAS))
+	if (!m_Preferences.GetBoolValue("KeyMapAS", m_KeyMapAS))
 		m_KeyMapAS = false;
 
-	if (!PrefsGetBoolValue("KeyMapFunc", m_KeyMapFunc))
+	if (!m_Preferences.GetBoolValue("KeyMapFunc", m_KeyMapFunc))
 		m_KeyMapFunc = false;
 
 	TranslateKeyMapping();
 
-	if (!PrefsGetBoolValue("DisableKeysBreak", m_DisableKeysBreak))
+	if (!m_Preferences.GetBoolValue("DisableKeysBreak", m_DisableKeysBreak))
 		m_DisableKeysBreak = false;
 
-	if (!PrefsGetBoolValue("DisableKeysEscape", m_DisableKeysEscape))
+	if (!m_Preferences.GetBoolValue("DisableKeysEscape", m_DisableKeysEscape))
 		m_DisableKeysEscape = false;
 
-	if (!PrefsGetBoolValue("DisableKeysShortcut", m_DisableKeysShortcut))
+	if (!m_Preferences.GetBoolValue("DisableKeysShortcut", m_DisableKeysShortcut))
 		m_DisableKeysShortcut = false;
 
-	if (!PrefsGetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS))
+	if (!m_Preferences.GetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS))
 		m_AutoSavePrefsCMOS = false;
 
-	if (!PrefsGetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders))
+	if (!m_Preferences.GetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders))
 		m_AutoSavePrefsFolders = false;
 
-	if (!PrefsGetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll))
+	if (!m_Preferences.GetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll))
 		m_AutoSavePrefsAll = false;
 
-	sprintf(CfgName, "BitKeys");
-	if (PrefsGetBinaryValue(CfgName,keyData,8))
+	if (m_Preferences.GetBinaryValue("BitKeys", keyData, 8))
 	{
 		for (int key=0; key<8; ++key)
 			BitKeys[key] = keyData[key];
 	}
 
-	if (!PrefsGetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled))
+	if (!m_Preferences.GetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled))
 		AMXMouseEnabled = false;
 
-	if (PrefsGetDWORDValue(CFG_AMX_LRFORMIDDLE, dword))
+	if (m_Preferences.GetDWORDValue(CFG_AMX_LRFORMIDDLE, dword))
 		AMXLRForMiddle = dword != 0;
 	else
 		AMXLRForMiddle = true;
-	if (PrefsGetDWORDValue(CFG_AMX_SIZE,dword))
+	if (m_Preferences.GetDWORDValue(CFG_AMX_SIZE, dword))
 		m_MenuIdAMXSize = dword;
 	else
 		m_MenuIdAMXSize = IDM_AMX_320X256;
-	if (PrefsGetDWORDValue(CFG_AMX_ADJUST,dword))
+	if (m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, dword))
 		m_MenuIdAMXAdjust = dword;
 	else
 		m_MenuIdAMXAdjust = IDM_AMX_ADJUSTP30;
 	TranslateAMX();
 
-	if (PrefsGetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
+	if (m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
 		PrinterEnabled = false;
-	if (PrefsGetDWORDValue(CFG_PRINTER_PORT,dword))
+	if (m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, dword))
 		m_MenuIdPrinterPort = dword;
 	else
 		m_MenuIdPrinterPort = IDM_PRINTER_LPT1;
-	if (!PrefsGetStringValue(CFG_PRINTER_FILE,m_PrinterFileName))
+	if (!m_Preferences.GetStringValue(CFG_PRINTER_FILE, m_PrinterFileName))
 		m_PrinterFileName[0] = 0;
 	TranslatePrinterPort();
 
-	if (!PrefsGetBinaryValue("Tape Clock Speed",&TapeClockSpeed,2))
+	if (!m_Preferences.GetBinaryValue("Tape Clock Speed", &TapeClockSpeed, 2))
 		TapeClockSpeed=5600;
-	if (!PrefsGetBoolValue("UnlockTape", UnlockTape))
+	if (!m_Preferences.GetBoolValue("UnlockTape", UnlockTape))
 		UnlockTape = false;
 
-	if (!PrefsGetBoolValue("SerialPortEnabled", SerialPortEnabled))
+	if (!m_Preferences.GetBoolValue("SerialPortEnabled", SerialPortEnabled))
 		SerialPortEnabled = false;
-	if (!PrefsGetBoolValue("TouchScreenEnabled", TouchScreenEnabled))
+	if (!m_Preferences.GetBoolValue("TouchScreenEnabled", TouchScreenEnabled))
 		TouchScreenEnabled = false;
-//	if (!PrefsGetBoolValue("EthernetPortEnabled", EthernetPortEnabled))
+//	if (!m_Preferences.GetBoolValue("EthernetPortEnabled", EthernetPortEnabled))
 //		EthernetPortEnabled = false;
-	if (!PrefsGetBoolValue("IP232localhost", IP232localhost))
+	if (!m_Preferences.GetBoolValue("IP232localhost", IP232localhost))
 		IP232localhost = false;
-	if (!PrefsGetBoolValue("IP232custom", IP232custom))
+	if (!m_Preferences.GetBoolValue("IP232custom", IP232custom))
 		IP232custom = false;
 		
 	EthernetPortEnabled = IP232localhost || IP232custom;
 
-	if (!PrefsGetBoolValue("IP232mode", IP232mode))
+	if (!m_Preferences.GetBoolValue("IP232mode", IP232mode))
 		IP232mode = false;
-	if (!PrefsGetBoolValue("IP232raw", IP232raw))
+	if (!m_Preferences.GetBoolValue("IP232raw", IP232raw))
 		IP232raw = false;
-	if (PrefsGetDWORDValue("IP232customport",dword))
+	if (m_Preferences.GetDWORDValue("IP232customport",dword))
 		IP232customport = dword;
 	else
 		IP232customport = 25232;
 	m_customport = IP232customport;
-	if (PrefsGetStringValue("IP232customip",m_customip))
+	if (m_Preferences.GetStringValue("IP232customip", m_customip))
 		strcpy(IP232customip, m_customip);
 	else 
 		IP232customip[0] = 0;
 
-	if (!PrefsGetBinaryValue("SerialPort",&SerialPort,1))
+	if (!m_Preferences.GetBinaryValue("SerialPort", &SerialPort, 1))
 		SerialPort=2;
 
-	if (!PrefsGetBoolValue("EconetEnabled", EconetEnabled))
+	if (!m_Preferences.GetBoolValue("EconetEnabled", EconetEnabled))
 		EconetEnabled = false;
 
 #ifdef SPEECH_ENABLED
-	if (!PrefsGetBoolValue("SpeechEnabled", SpeechDefault))
+	if (!m_Preferences.GetBoolValue("SpeechEnabled", SpeechDefault))
 		SpeechDefault = false;
 #endif
 
-	if (!PrefsGetBinaryValue("SWRAMWritable",RomWritePrefs,16))
+	if (!m_Preferences.GetBinaryValue("SWRAMWritable", RomWritePrefs, 16))
 	{
 		for (int slot = 0; slot < 16; ++slot)
 			RomWritePrefs[slot] = 1;
 	}
 
-	if (!PrefsGetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
+	if (!m_Preferences.GetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
 		SWRAMBoardEnabled = false;
 
-	if (!PrefsGetBoolValue("ArmTube", ArmTube))
+	if (!m_Preferences.GetBoolValue("ArmTube", ArmTube))
 		ArmTube = false;
 
-	if (!PrefsGetBoolValue("ArmCoProTube", ArmCoProTube))
+	if (!m_Preferences.GetBoolValue("ArmCoProTube", ArmCoProTube))
 		ArmCoProTube = false;
 
-	if (!PrefsGetBoolValue("TorchTube", TorchTube))
+	if (!m_Preferences.GetBoolValue("TorchTube", TorchTube))
 		TorchTube = false;
 
-	if (!PrefsGetBoolValue("AcornZ80", AcornZ80))
+	if (!m_Preferences.GetBoolValue("AcornZ80", AcornZ80))
 		AcornZ80 = false;
 
-	if (!PrefsGetBoolValue("TubeEnabled", TubeEnabled))
+	if (!m_Preferences.GetBoolValue("TubeEnabled", TubeEnabled))
 		TubeEnabled = false;
 
 #ifdef M512COPRO_ENABLED
-	if (!PrefsGetBoolValue("Tube186Enabled", Tube186Enabled))
+	if (!m_Preferences.GetBoolValue("Tube186Enabled", Tube186Enabled))
 		Tube186Enabled = false;
 #endif
     
-	if (!PrefsGetBinaryValue("OpCodes",&OpCodes,1))
+	if (!m_Preferences.GetBinaryValue("OpCodes", &OpCodes, 1))
 		OpCodes=2;
-	if (!PrefsGetBoolValue("Basic Hardware", BHardware))
+	if (!m_Preferences.GetBoolValue("Basic Hardware", BHardware))
 		BHardware = false;
-	if (!PrefsGetBoolValue("Teletext Half Mode", THalfMode))
+	if (!m_Preferences.GetBoolValue("Teletext Half Mode", THalfMode))
 		THalfMode = false;
 
-	if (!PrefsGetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled))
+	if (!m_Preferences.GetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled))
 		TeleTextAdapterEnabled = false;
 
-	if (!PrefsGetBoolValue("FloppyDriveEnabled", Disc8271Enabled))
+	if (!m_Preferences.GetBoolValue("FloppyDriveEnabled", Disc8271Enabled))
 		Disc8271Enabled = true;
 	Disc1770Enabled = Disc8271Enabled;
 
-	if (!PrefsGetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled))
+	if (!m_Preferences.GetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled))
 		SCSIDriveEnabled = false;
 
-	if (!PrefsGetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
+	if (!m_Preferences.GetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
 		IDEDriveEnabled = false;
 
-	if (!PrefsGetBoolValue("RTCEnabled", RTC_Enabled))
+	if (!m_Preferences.GetBoolValue("RTCEnabled", RTC_Enabled))
 		RTC_Enabled = false;
 
-	if (!PrefsGetBoolValue("RTCY2KAdjust", RTCY2KAdjust))
+	if (!m_Preferences.GetBoolValue("RTCY2KAdjust", RTCY2KAdjust))
 		RTCY2KAdjust = true;
 
-	if (PrefsGetDWORDValue("CaptureResolution",dword))
+	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
 		m_MenuIdAviResolution = dword;
 	else
 		m_MenuIdAviResolution = IDM_VIDEORES2;
 
-	if (PrefsGetDWORDValue("FrameSkip",dword))
+	if (m_Preferences.GetDWORDValue("FrameSkip", dword))
 		m_MenuIdAviSkip = dword;
 	else
 		m_MenuIdAviSkip = IDM_VIDEOSKIP1;
 
-	if (PrefsGetDWORDValue("BitmapCaptureResolution",dword))
+	if (m_Preferences.GetDWORDValue("BitmapCaptureResolution", dword))
 		m_MenuIdCaptureResolution = dword;
 	else
 		m_MenuIdCaptureResolution = IDM_CAPTURERES3;
 
-	if (PrefsGetDWORDValue("BitmapCaptureFormat",dword))
+	if (m_Preferences.GetDWORDValue("BitmapCaptureFormat", dword))
 		m_MenuIdCaptureFormat = dword;
 	else
 		m_MenuIdCaptureFormat = IDM_CAPTUREBMP;
 
 	RECT rect;
-	if (PrefsGetBinaryValue("WindowPos",&rect,sizeof(rect)))
+	if (m_Preferences.GetBinaryValue("WindowPos", &rect, sizeof(rect)))
 	{
 		m_XWinPos = rect.left;
 		m_YWinPos = rect.top;
@@ -518,52 +484,53 @@ void BeebWin::LoadPreferences()
 	}
 
 	// CMOS RAM now in prefs file
-	if (!PrefsGetBinaryValue("CMOSRam",&CMOSRAM[14],50))
+	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[14], 50))
 		memcpy(&CMOSRAM[14], CMOSDefault, 50);
 
 	// Set FDC defaults if not already set
 	for (int machine = 0; machine < 3; ++machine)
 	{
+		char CfgName[256];
 		sprintf(CfgName, "FDCDLL%d", machine);
-		if (m_Prefs.find(CfgName) == m_Prefs.end())
+
+		if (!m_Preferences.HasValue(CfgName))
 		{
 			// Default B+ to Acorn FDC
-			if (machine == 2)
+			if (machine == static_cast<int>(Model::BPlus))
 				strcpy(path, "Hardware\\Acorn1770.dll");
 			else
 				strcpy(path, "None");
-			PrefsSetStringValue(CfgName, path);
+			m_Preferences.SetStringValue(CfgName, path);
 		}
 	}
 
 	// Set file path defaults
-	if (m_Prefs.find("DiscsPath") == m_Prefs.end())
-	{
-		PrefsSetStringValue("DiscsPath", "DiscIms");
+	if (!m_Preferences.HasValue("DiscPath")) {
+		m_Preferences.SetStringValue("DiscsPath", "DiscIms");
 	}
-	if (m_Prefs.find("DiscsFilter") == m_Prefs.end())
-	{
-		PrefsSetDWORDValue("DiscsFilter",0);
+
+	if (!m_Preferences.HasValue("DiscsFilter")) {
+		m_Preferences.SetDWORDValue("DiscsFilter", 0);
 	}
-	if (m_Prefs.find("TapesPath") == m_Prefs.end())
-	{
-		PrefsSetStringValue("TapesPath", "Tapes");
+
+	if (!m_Preferences.HasValue("TapesPath")) {
+		m_Preferences.SetStringValue("TapesPath", "Tapes");
 	}
-	if (m_Prefs.find("StatesPath") == m_Prefs.end())
-	{
-		PrefsSetStringValue("StatesPath", "BeebState");
+
+	if (!m_Preferences.HasValue("StatesPath")) {
+		m_Preferences.SetStringValue("StatesPath", "BeebState");
 	}
-	if (m_Prefs.find("AVIPath") == m_Prefs.end())
-	{
-		PrefsSetStringValue("AVIPath", "");
+
+	if (!m_Preferences.HasValue("AVIPath")) {
+		m_Preferences.SetStringValue("AVIPath", "");
 	}
-	if (m_Prefs.find("ImagePath") == m_Prefs.end())
-	{
-		PrefsSetStringValue("ImagePath", "");
+
+	if (!m_Preferences.HasValue("ImagePath")) {
+		m_Preferences.SetStringValue("ImagePath", "");
 	}
 
 	// Update prefs version
-	PrefsSetStringValue("PrefsVersion", "2.1");
+	m_Preferences.SetStringValue("PrefsVersion", "2.1");
 
 	// Windows key enable/disable still comes from registry
 	int binsize = 24;
@@ -578,252 +545,147 @@ void BeebWin::LoadPreferences()
 void BeebWin::SavePreferences(bool saveAll)
 {
 	unsigned char LEDByte = 0;
-	char CfgName[256];
 	unsigned char flag;
 	char keyData[256];
 	DWORD dword;
 
 	if (saveAll)
 	{
-		PrefsSetBinaryValue("MachineType",&MachineType,1);
-		PrefsSetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad);
-		PrefsSetDWORDValue("DisplayRenderer",m_DisplayRenderer);
-		PrefsSetBoolValue("DXSmoothing", m_DXSmoothing);
-		PrefsSetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only);
-		PrefsSetDWORDValue("DDFullScreenMode",m_DDFullScreenMode);
-		PrefsSetDWORDValue(CFG_VIEW_WIN_SIZE,m_MenuIdWinSize);
-		PrefsSetDWORDValue("WinSizeX",m_XLastWinSize);
-		PrefsSetDWORDValue("WinSizeY",m_YLastWinSize);
-		PrefsSetBoolValue("FullScreen", m_isFullScreen);
-		PrefsSetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio);
-		PrefsSetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS);
+		m_Preferences.SetBinaryValue(CFG_MACHINE_TYPE, &MachineType, 1);
+		m_Preferences.SetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad);
+		m_Preferences.SetDWORDValue("DisplayRenderer", m_DisplayRenderer);
+		m_Preferences.SetBoolValue("DXSmoothing", m_DXSmoothing);
+		m_Preferences.SetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only);
+		m_Preferences.SetDWORDValue("DDFullScreenMode", m_DDFullScreenMode);
+		m_Preferences.SetDWORDValue(CFG_VIEW_WIN_SIZE, m_MenuIdWinSize);
+		m_Preferences.SetDWORDValue("WinSizeX", m_XLastWinSize);
+		m_Preferences.SetDWORDValue("WinSizeY", m_YLastWinSize);
+		m_Preferences.SetBoolValue("FullScreen", m_isFullScreen);
+		m_Preferences.SetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio);
+		m_Preferences.SetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS);
 		flag = palette_type;
-		PrefsSetBinaryValue(CFG_VIEW_MONITOR,&flag,1);
-		PrefsSetBoolValue("HideMenuEnabled", HideMenuEnabled);
+		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &flag, 1);
+		m_Preferences.SetBoolValue("HideMenuEnabled", HideMenuEnabled);
 		LEDByte=(static_cast<int>(DiscLedColour) << 2) | ((LEDs.ShowDisc ? 1 : 0) << 1) | (LEDs.ShowKB ? 1 : 0);
-		PrefsSetBinaryValue("LED Information",&LEDByte,1);
+		m_Preferences.SetBinaryValue("LED Information", &LEDByte, 1);
 		flag = m_MotionBlur;
-		PrefsSetDWORDValue( "MotionBlur", m_MotionBlur);
-		PrefsSetBinaryValue("MotionBlurIntensities",m_BlurIntensities,8);
-		PrefsSetBoolValue("TextViewEnabled", m_TextViewEnabled);
+		m_Preferences.SetDWORDValue("MotionBlur", m_MotionBlur);
+		m_Preferences.SetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8);
+		m_Preferences.SetBoolValue("TextViewEnabled", m_TextViewEnabled);
 
-		PrefsSetDWORDValue( CFG_SPEED_TIMING, m_MenuIdTiming);
+		m_Preferences.SetDWORDValue(CFG_SPEED_TIMING, m_MenuIdTiming);
 
-		PrefsSetDWORDValue("SoundConfig::Selection", SoundConfig::Selection);
-		PrefsSetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
-		PrefsSetBoolValue("SoundChipEnabled", SoundChipEnabled);
-		PrefsSetDWORDValue( CFG_SOUND_SAMPLE_RATE, m_MenuIdSampleRate);
-		PrefsSetDWORDValue( CFG_SOUND_VOLUME, m_MenuIdVolume);
-		PrefsSetBoolValue("RelaySoundEnabled", RelaySoundEnabled);
-		PrefsSetBoolValue("TapeSoundEnabled", TapeSoundEnabled);
-		PrefsSetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled);
-		PrefsSetBoolValue("Part Samples", PartSamples);
-		PrefsSetBoolValue("ExponentialVolume", SoundExponentialVolume);
-		PrefsSetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
-		PrefsSetBoolValue("Music5000Enabled", Music5000Enabled);
+		m_Preferences.SetDWORDValue("SoundConfig::Selection", SoundConfig::Selection);
+		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
+		m_Preferences.SetBoolValue("SoundChipEnabled", SoundChipEnabled);
+		m_Preferences.SetDWORDValue(CFG_SOUND_SAMPLE_RATE, m_MenuIdSampleRate);
+		m_Preferences.SetDWORDValue(CFG_SOUND_VOLUME, m_MenuIdVolume);
+		m_Preferences.SetBoolValue("RelaySoundEnabled", RelaySoundEnabled);
+		m_Preferences.SetBoolValue("TapeSoundEnabled", TapeSoundEnabled);
+		m_Preferences.SetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled);
+		m_Preferences.SetBoolValue("Part Samples", PartSamples);
+		m_Preferences.SetBoolValue("ExponentialVolume", SoundExponentialVolume);
+		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
+		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
-		PrefsSetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
-		PrefsSetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
-		PrefsSetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
-		PrefsSetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIdKeyMapping);
-		PrefsSetBoolValue("KeyMapAS", m_KeyMapAS);
+		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
+		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
+		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
+		m_Preferences.SetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIdKeyMapping);
+		m_Preferences.SetBoolValue("KeyMapAS", m_KeyMapAS);
 		flag = m_KeyMapFunc;
-		PrefsSetBinaryValue("KeyMapFunc",&flag,1);
+		m_Preferences.SetBinaryValue("KeyMapFunc", &flag, 1);
 
-		PrefsSetBoolValue("DisableKeysBreak", m_DisableKeysBreak);
-		PrefsSetBoolValue("DisableKeysEscape", m_DisableKeysEscape);
-		PrefsSetBoolValue("DisableKeysShortcut", m_DisableKeysShortcut);
+		m_Preferences.SetBoolValue("DisableKeysBreak", m_DisableKeysBreak);
+		m_Preferences.SetBoolValue("DisableKeysEscape", m_DisableKeysEscape);
+		m_Preferences.SetBoolValue("DisableKeysShortcut", m_DisableKeysShortcut);
 
 		for (int key=0; key<8; ++key)
 			keyData[key] = BitKeys[key];
-		sprintf(CfgName, "BitKeys");
-		PrefsSetBinaryValue(CfgName,keyData,8);
+		m_Preferences.SetBinaryValue("BitKeys", keyData, 8);
 
-		PrefsSetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath);
+		m_Preferences.SetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath);
 
-		PrefsSetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
-		PrefsSetDWORDValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
-		PrefsSetDWORDValue(CFG_AMX_SIZE, m_MenuIdAMXSize);
-		PrefsSetDWORDValue(CFG_AMX_ADJUST, m_MenuIdAMXAdjust);
+		m_Preferences.SetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
+		m_Preferences.SetDWORDValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
+		m_Preferences.SetDWORDValue(CFG_AMX_SIZE, m_MenuIdAMXSize);
+		m_Preferences.SetDWORDValue(CFG_AMX_ADJUST, m_MenuIdAMXAdjust);
 
-		PrefsSetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
-		PrefsSetDWORDValue(CFG_PRINTER_PORT, m_MenuIdPrinterPort);
-		PrefsSetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
+		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
+		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, m_MenuIdPrinterPort);
+		m_Preferences.SetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
 
-		PrefsSetBinaryValue("Tape Clock Speed",&TapeClockSpeed,2);
-		PrefsSetBoolValue("UnlockTape", UnlockTape);
-		PrefsSetBoolValue("SerialPortEnabled", SerialPortEnabled);
-		PrefsSetBoolValue("TouchScreenEnabled", TouchScreenEnabled);
-//		PrefsSetBoolValue("EthernetPortEnabled", EthernetPortEnabled);
-		PrefsSetBoolValue("IP232localhost", IP232localhost);
-		PrefsSetBoolValue("IP232custom", IP232custom);
+		m_Preferences.SetBinaryValue("Tape Clock Speed", &TapeClockSpeed, 2);
+		m_Preferences.SetBoolValue("UnlockTape", UnlockTape);
+		m_Preferences.SetBoolValue("SerialPortEnabled", SerialPortEnabled);
+		m_Preferences.SetBoolValue("TouchScreenEnabled", TouchScreenEnabled);
+		// m_Preferences.SetBoolValue("EthernetPortEnabled", EthernetPortEnabled);
+		m_Preferences.SetBoolValue("IP232localhost", IP232localhost);
+		m_Preferences.SetBoolValue("IP232custom", IP232custom);
 		dword = IP232customport;
-		PrefsSetBoolValue("IP232mode", IP232mode);
-		PrefsSetBoolValue("IP232raw", IP232raw);
-		PrefsSetDWORDValue("IP232customport", dword);
-		PrefsSetStringValue("IP232customip", m_customip);
+		m_Preferences.SetBoolValue("IP232mode", IP232mode);
+		m_Preferences.SetBoolValue("IP232raw", IP232raw);
+		m_Preferences.SetDWORDValue("IP232customport", dword);
+		m_Preferences.SetStringValue("IP232customip", m_customip);
 
-		PrefsSetBinaryValue("SerialPort",&SerialPort,1);
+		m_Preferences.SetBinaryValue("SerialPort", &SerialPort, 1);
 
-		PrefsSetBoolValue("EconetEnabled", EconetEnabled); //Rob
+		m_Preferences.SetBoolValue("EconetEnabled", EconetEnabled); // Rob
 #ifdef SPEECH_ENABLED
-		PrefsSetBoolValue("SpeechEnabled", SpeechDefault);
+		m_Preferences.SetBoolValue("SpeechEnabled", SpeechDefault);
 #endif
 
 		for (int slot = 0; slot < 16; ++slot)
 			RomWritePrefs[slot] = RomWritable[slot];
-		PrefsSetBinaryValue("SWRAMWritable",RomWritePrefs,16);
-		PrefsSetBoolValue("SWRAMBoard", SWRAMBoardEnabled);
+		m_Preferences.SetBinaryValue("SWRAMWritable", RomWritePrefs, 16);
+		m_Preferences.SetBoolValue("SWRAMBoard", SWRAMBoardEnabled);
 
-		PrefsSetBoolValue("ArmTube", ArmTube);
-		PrefsSetBoolValue("ArmCoProTube", ArmCoProTube);
-		PrefsSetBoolValue("TorchTube", TorchTube);
-		PrefsSetBoolValue("AcornZ80", AcornZ80);
-		PrefsSetBoolValue("TubeEnabled", TubeEnabled);
+		m_Preferences.SetBoolValue("ArmTube", ArmTube);
+		m_Preferences.SetBoolValue("ArmCoProTube", ArmCoProTube);
+		m_Preferences.SetBoolValue("TorchTube", TorchTube);
+		m_Preferences.SetBoolValue("AcornZ80", AcornZ80);
+		m_Preferences.SetBoolValue("TubeEnabled", TubeEnabled);
 #ifdef M512COPRO_ENABLED
-		PrefsSetBoolValue("Tube186Enabled", Tube186Enabled);
+		m_Preferences.SetBoolValue("Tube186Enabled", Tube186Enabled);
 #endif
 
-		PrefsSetBinaryValue("OpCodes",&OpCodes,1);
-		PrefsSetBoolValue("Basic Hardware", BHardware);
-		PrefsSetBoolValue("Teletext Half Mode", THalfMode);
-		PrefsSetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled);
-		PrefsSetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
-		PrefsSetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
-		PrefsSetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
-		PrefsSetBoolValue("RTCEnabled", RTC_Enabled);
-		PrefsSetBoolValue("RTCY2KAdjust", RTCY2KAdjust);
+		m_Preferences.SetBinaryValue("OpCodes", &OpCodes, 1);
+		m_Preferences.SetBoolValue("Basic Hardware", BHardware);
+		m_Preferences.SetBoolValue("Teletext Half Mode", THalfMode);
+		m_Preferences.SetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled);
+		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
+		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
+		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
+		m_Preferences.SetBoolValue("RTCEnabled", RTC_Enabled);
+		m_Preferences.SetBoolValue("RTCY2KAdjust", RTCY2KAdjust);
 
-		PrefsSetDWORDValue("CaptureResolution",m_MenuIdAviResolution);
-		PrefsSetDWORDValue("FrameSkip",m_MenuIdAviSkip);
+		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIdAviResolution);
+		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIdAviSkip);
 
-		PrefsSetDWORDValue("BitmapCaptureResolution",m_MenuIdCaptureResolution);
-		PrefsSetDWORDValue("BitmapCaptureFormat",m_MenuIdCaptureFormat);
+		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIdCaptureResolution);
+		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIdCaptureFormat);
 
 		RECT rect;
 		GetWindowRect(m_hWnd,&rect);
-		PrefsSetBinaryValue("WindowPos",&rect,sizeof(rect));
+		m_Preferences.SetBinaryValue("WindowPos", &rect, sizeof(rect));
 	}
 
 	// CMOS RAM now in prefs file
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
-		PrefsSetBinaryValue("CMOSRam",&CMOSRAM[14],50);
+		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[14], 50);
 	}
 
-	PrefsSetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
-	PrefsSetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders);
-	PrefsSetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll);
+	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
+	m_Preferences.SetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders);
+	m_Preferences.SetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll);
 
-	// Write the file
-	FILE *fd;
-
-	fd = fopen(m_PrefsFile, "w");
-	if (fd == NULL)
-	{
-		char errstr[500];
-		sprintf(errstr, "Failed to write preferences file:\n  %s", m_PrefsFile);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK|MB_ICONERROR);
-	}
-	else
-	{
-		fprintf(fd, PREFS_TOKEN "\n\n");
-
-		for (PrefsMap::iterator ii = m_Prefs.begin(); ii != m_Prefs.end(); ii++)
-		{
-			fprintf(fd, "%s=%s\n", ii->first.c_str(), ii->second.c_str());
-		}
-		fclose(fd);
-
+	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success) {
 		m_AutoSavePrefsChanged = false;
 	}
-}
-
-/****************************************************************************/
-bool BeebWin::PrefsGetBinaryValue(const char *id, void *bin, int binsize)
-{
-	bool found = true;
-	PrefsMap::iterator ii = m_Prefs.find(id);
-	if (ii != m_Prefs.end())
-	{
-		char val[MAX_PREFS_LINE_LEN];
-		strcpy(val, ii->second.c_str());
-		if (strlen(val) == binsize * 2)
-		{
-			unsigned char *binc = (unsigned char *)bin;
-			int x;
-			char hx[3];
-			hx[2] = 0;
-			for (int b = 0; b < binsize; ++b)
-			{
-				hx[0] = val[b*2];
-				hx[1] = val[b*2+1];
-				sscanf(hx, "%x", &x);
-				binc[b] = x;
-			}
-		}
-		else
-		{
-			found = false;
-		}
+	else {
+		char errstr[500];
+		sprintf(errstr, "Failed to write preferences file:\n  %s", m_PrefsFile);
+		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
 	}
-	else
-	{
-		found = false;
-	}
-	return found;
-}
-void BeebWin::PrefsSetBinaryValue(const char *id, void *bin, int binsize)
-{
-	char hx[MAX_PREFS_LINE_LEN];
-	unsigned char *binc = (unsigned char *)bin;
-	for (int b = 0; b < binsize; ++b)
-		sprintf(hx+b*2, "%02x", (int)binc[b]);
-	m_Prefs[id] = hx;
-}
-bool BeebWin::PrefsGetStringValue(const char *id, char *str)
-{
-	bool found = true;
-	PrefsMap::iterator ii = m_Prefs.find(id);
-	if (ii != m_Prefs.end())
-		strcpy(str, ii->second.c_str());
-	else
-		found = false;
-	return found;
-}
-void BeebWin::PrefsSetStringValue(const char *id, const char *str)
-{
-	m_Prefs[id] = str;
-}
-bool BeebWin::PrefsGetDWORDValue(const char *id, DWORD &dw)
-{
-	bool found = true;
-	PrefsMap::iterator ii = m_Prefs.find(id);
-	if (ii != m_Prefs.end())
-		sscanf(ii->second.c_str(), "%x", &dw);
-	else
-		found = false;
-	return found;
-}
-void BeebWin::PrefsSetDWORDValue(const char *id, DWORD dw)
-{
-	char hx[MAX_PREFS_LINE_LEN];
-	sprintf(hx, "%08x", dw);
-	m_Prefs[id] = hx;
-}
-
-bool BeebWin::PrefsGetBoolValue(const char *id, bool &b)
-{
-	unsigned char c = 0;
-	bool found = PrefsGetBinaryValue(id, &c, sizeof(c));
-
-	b = c != 0;
-
-	return found;
-}
-
-void BeebWin::PrefsSetBoolValue(const char *id, bool b)
-{
-	unsigned char c = b;
-	PrefsSetBinaryValue(id, &c, sizeof(c));
 }

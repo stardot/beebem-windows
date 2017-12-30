@@ -90,6 +90,12 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="music5000.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="preferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="romconfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -103,6 +109,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="serialdevices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="soundstream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SprowCoPro.cpp">
@@ -161,12 +170,6 @@
     </ClCompile>
     <ClCompile Include="ARMulator\thumbemu.c">
       <Filter>Source Files\ARMulator</Filter>
-    </ClCompile>
-    <ClCompile Include="music5000.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="soundstream.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -236,7 +239,13 @@
     <ClInclude Include="model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="music5000.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="port.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="preferences.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sasi.h">
@@ -249,6 +258,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="serialdevices.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soundstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SprowCoPro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sysvia.h">
@@ -346,15 +361,6 @@
     </ClInclude>
     <ClInclude Include="ARMulator\iwmmxt.h">
       <Filter>Header Files\ARMulator</Filter>
-    </ClInclude>
-    <ClInclude Include="music5000.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="soundstream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SprowCoPro.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
