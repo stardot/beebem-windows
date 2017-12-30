@@ -90,10 +90,6 @@ void i86_main(void);
 CArm *arm = NULL;
 CSprowCoPro *sprow = NULL;
 
-bool HideMenuEnabled;
-unsigned char DisableMenu = 0;
-bool MenuOn = true;
-
 struct LEDType LEDs;
 
 LEDColour DiscLedColour = LEDColour::Red;
@@ -211,6 +207,9 @@ BeebWin::BeebWin()
 	m_YWinBorder = GetSystemMetrics(SM_CYSIZEFRAME) * 2 +
 		GetSystemMetrics(SM_CYMENUSIZE) +
 		GetSystemMetrics(SM_CYCAPTION) + 1;
+	m_HideMenuEnabled = false;
+	m_DisableMenu = false;
+	m_MenuOn = true;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -687,16 +686,21 @@ void BeebWin::CreateBeebWindow(void)
 }
 
 void BeebWin::ShowMenu(bool on) {
- if (DisableMenu)
-  on = false;
+	if (m_DisableMenu) {
+		on = false;
+	}
 
- if (on!=MenuOn) {
-  if (on)
-    SetMenu(m_hWnd, m_hMenu);
-  else
-    SetMenu(m_hWnd, NULL);
- }
-  MenuOn=on;
+	if (on != m_MenuOn) {
+		SetMenu(m_hWnd, on ? m_hMenu : nullptr);
+	}
+
+	m_MenuOn = on;
+}
+
+void BeebWin::HideMenu(bool hide) {
+	if (m_HideMenuEnabled) {
+		ShowMenu(!hide);
+	}
 }
 
 void BeebWin::TrackPopupMenu(int x, int y) {
@@ -798,7 +802,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
 	CheckMenuItem(IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio);
 	UpdateMonitorMenu();
-	CheckMenuItem(ID_HIDEMENU, HideMenuEnabled);
+	CheckMenuItem(ID_HIDEMENU, m_HideMenuEnabled);
 	UpdateLEDMenu();
 	CheckMenuItem(IDM_TEXTVIEW, m_TextViewEnabled);
 
@@ -1473,16 +1477,14 @@ LRESULT CALLBACK WndProc(
 		case WM_MOUSEMOVE:
 			if (mainWin)
 			{
-				mainWin->ScaleMousestick(LOWORD(lParam), HIWORD(lParam));
-				mainWin->SetAMXPosition(LOWORD(lParam), HIWORD(lParam));
+				int xPos = GET_X_LPARAM(lParam);
+				int yPos = GET_Y_LPARAM(lParam);
+
+				mainWin->ScaleMousestick(xPos, yPos);
+				mainWin->SetAMXPosition(xPos, yPos);
+
 				// Experiment: show menu in full screen when cursor moved to top of window
-				if (HideMenuEnabled)
-				{
-					if (HIWORD(lParam) <= 2)
-						mainWin->ShowMenu(true);
-					else
-						mainWin->ShowMenu(false);
-				}
+				mainWin->HideMenu(yPos > 2);
 			}
 			break;
 
@@ -2221,8 +2223,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		}
 
 		// Experiment: hide menu in full screen
-		if (HideMenuEnabled)
-			ShowMenu(false);
+		HideMenu(true);
 	}
 	else
 	{
@@ -2254,8 +2255,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 					 !wasFullScreen ? SWP_NOMOVE : 0);
 
 		// Experiment: hide menu in full screen
-		if (HideMenuEnabled)
-			ShowMenu(true);
+		HideMenu(false);
 	}
 
 	// Clear unused areas of screen
@@ -3413,8 +3413,8 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_HIDEMENU:
-		HideMenuEnabled = !HideMenuEnabled;
-		CheckMenuItem(ID_HIDEMENU, HideMenuEnabled);
+		m_HideMenuEnabled = !m_HideMenuEnabled;
+		CheckMenuItem(ID_HIDEMENU, m_HideMenuEnabled);
 		break;
 
 	case ID_RED_LEDS:
@@ -3824,7 +3824,7 @@ void BeebWin::ParseCommandLine()
 		// Params with no arguments
 		if (_stricmp(__argv[i], "-DisMenu") == 0)
 		{
-			DisableMenu = 1;
+			m_DisableMenu = true;
 		}
 		else if (_stricmp(__argv[i], "-NoAutoBoot") == 0)
 		{

@@ -87,7 +87,6 @@ static const char *CFG_MACHINE_TYPE = "MachineType";
 #define LED_SHOW_KB (LEDByte&1)
 #define LED_SHOW_DISC (LEDByte&2)>>1
 
-extern bool HideMenuEnabled;
 extern unsigned char CMOSDefault[64];
 
 void BeebWin::LoadPreferences()
@@ -176,8 +175,8 @@ void BeebWin::LoadPreferences()
 	else
 		m_PaletteType = PaletteType::RGB;
 
-	if (!m_Preferences.GetBoolValue("HideMenuEnabled", HideMenuEnabled))
-		HideMenuEnabled = false;
+	if (!m_Preferences.GetBoolValue("HideMenuEnabled", m_HideMenuEnabled))
+		m_HideMenuEnabled = false;
 
 	unsigned char LEDByte = 0;
 	if (!m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
@@ -564,7 +563,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio);
 		m_Preferences.SetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS);
 		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &m_PaletteType, 1);
-		m_Preferences.SetBoolValue("HideMenuEnabled", HideMenuEnabled);
+		m_Preferences.SetBoolValue("HideMenuEnabled", m_HideMenuEnabled);
 		LEDByte=(static_cast<int>(DiscLedColour) << 2) | ((LEDs.ShowDisc ? 1 : 0) << 1) | (LEDs.ShowKB ? 1 : 0);
 		m_Preferences.SetBinaryValue("LED Information", &LEDByte, 1);
 		m_Preferences.SetDWORDValue("MotionBlur", m_MotionBlur);

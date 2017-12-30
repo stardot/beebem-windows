@@ -49,9 +49,6 @@ Boston, MA  02110-1301, USA.
 // Registry defs for disabling windows keys
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
-static unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
-	00,00,00,00,00,00,00,00,03,00,00,00,00,00,0x5B,0xE0,00,00,0x5C,0xE0,00,00,00,00
-};
 
 typedef struct KeyMapping {
 	int row;    // Beeb row
@@ -215,6 +212,7 @@ public:
 	void WinPosChange(int x, int y);
 	bool IsFrozen();
 	void ShowMenu(bool on);
+	void HideMenu(bool hide);
 	void TrackPopupMenu(int x, int y);
 	bool IsFullScreen() { return m_isFullScreen; }
 	void ResetTiming(void);
@@ -319,6 +317,9 @@ public:
 	bool		m_AutoSavePrefsFolders;
 	bool		m_AutoSavePrefsAll;
 	bool		m_AutoSavePrefsChanged;
+	bool m_HideMenuEnabled;
+	bool m_DisableMenu;
+	bool m_MenuOn;
 
 	char		m_customip [20];		//IP232
 	int		m_customport;
