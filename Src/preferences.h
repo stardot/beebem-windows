@@ -42,8 +42,8 @@ class Preferences {
 		Result Load(const char *fileName);
 		Result Save(const char *fileName);
 
-		bool GetBinaryValue(const char *id, void *bin, int binsize);
-		void SetBinaryValue(const char *id, void *bin, int binsize);
+		bool GetBinaryValue(const char *id, void *bin, size_t binsize);
+		void SetBinaryValue(const char *id, const void *bin, size_t binsize);
 		bool GetStringValue(const char *id, char *str);
 		void SetStringValue(const char *id, const char *str);
 		bool GetDWORDValue(const char *id, DWORD &dw);

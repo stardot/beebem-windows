@@ -22,10 +22,14 @@ Boston, MA  02110-1301, USA.
 
 #include "preferences.h"
 
+//-----------------------------------------------------------------------------
+
 static const int MAX_PREFS_LINE_LEN = 1024;
 
 // Token written to start of pref files
 #define PREFS_TOKEN "*** BeebEm Preferences ***"
+
+//-----------------------------------------------------------------------------
 
 Preferences::Result Preferences::Load(const char *fileName)
 {
@@ -61,6 +65,8 @@ Preferences::Result Preferences::Load(const char *fileName)
 	return Result::Success;
 }
 
+//-----------------------------------------------------------------------------
+
 Preferences::Result Preferences::Save(const char *fileName)
 {
 	// Write the file
@@ -81,23 +87,25 @@ Preferences::Result Preferences::Save(const char *fileName)
 	return Result::Success;
 }
 
-bool Preferences::GetBinaryValue(const char *id, void *bin, int binsize)
+//-----------------------------------------------------------------------------
+
+bool Preferences::GetBinaryValue(const char *id, void *bin, size_t binsize)
 {
 	bool found = true;
 
-	PrefsMap::iterator i = m_Prefs.find(id);
+	PrefsMap::const_iterator i = m_Prefs.find(id);
 
 	if (i != m_Prefs.end()) {
 		char val[MAX_PREFS_LINE_LEN];
 		strcpy(val, i->second.c_str());
 
 		if (strlen(val) == binsize * 2) {
-			unsigned char *binc = (unsigned char *)bin;
+			unsigned char *binc = reinterpret_cast<unsigned char *>(bin);
 			int x;
 			char hx[3];
 			hx[2] = 0;
 
-			for (int b = 0; b < binsize; ++b) {
+			for (size_t b = 0; b < binsize; ++b) {
 				hx[0] = val[b * 2];
 				hx[1] = val[b * 2 + 1];
 				sscanf(hx, "%x", &x);
@@ -115,23 +123,27 @@ bool Preferences::GetBinaryValue(const char *id, void *bin, int binsize)
 	return found;
 }
 
-void Preferences::SetBinaryValue(const char *id, void *bin, int binsize)
+//-----------------------------------------------------------------------------
+
+void Preferences::SetBinaryValue(const char *id, const void *bin, size_t binsize)
 {
 	char hx[MAX_PREFS_LINE_LEN];
-	unsigned char *binc = (unsigned char *)bin;
+	const unsigned char *binc = reinterpret_cast<const unsigned char *>(bin);
 
-	for (int b = 0; b < binsize; ++b) {
-		sprintf(hx + b * 2, "%02x", (int)binc[b]);
+	for (size_t b = 0; b < binsize; ++b) {
+		sprintf(hx + b * 2, "%02x", static_cast<int>(binc[b]));
 	}
 
 	m_Prefs[id] = hx;
 }
 
+//-----------------------------------------------------------------------------
+
 bool Preferences::GetStringValue(const char *id, char *str)
 {
 	bool found = true;
 
-	PrefsMap::iterator i = m_Prefs.find(id);
+	PrefsMap::const_iterator i = m_Prefs.find(id);
 
 	if (i != m_Prefs.end()) {
 		strcpy(str, i->second.c_str());
@@ -143,10 +155,14 @@ bool Preferences::GetStringValue(const char *id, char *str)
 	return found;
 }
 
+//-----------------------------------------------------------------------------
+
 void Preferences::SetStringValue(const char *id, const char *str)
 {
 	m_Prefs[id] = str;
 }
+
+//-----------------------------------------------------------------------------
 
 bool Preferences::GetDWORDValue(const char *id, DWORD &dw)
 {
@@ -164,12 +180,16 @@ bool Preferences::GetDWORDValue(const char *id, DWORD &dw)
 	return found;
 }
 
+//-----------------------------------------------------------------------------
+
 void Preferences::SetDWORDValue(const char *id, DWORD dw)
 {
 	char hx[MAX_PREFS_LINE_LEN];
 	sprintf(hx, "%08x", dw);
 	m_Prefs[id] = hx;
 }
+
+//-----------------------------------------------------------------------------
 
 bool Preferences::GetBoolValue(const char *id, bool &b)
 {
@@ -181,18 +201,26 @@ bool Preferences::GetBoolValue(const char *id, bool &b)
 	return found;
 }
 
+//-----------------------------------------------------------------------------
+
 void Preferences::SetBoolValue(const char *id, bool b)
 {
 	unsigned char c = b;
 	SetBinaryValue(id, &c, sizeof(c));
 }
 
+//-----------------------------------------------------------------------------
+
 void Preferences::EraseValue(const char* id)
 {
 	m_Prefs.erase(id);
 }
 
+//-----------------------------------------------------------------------------
+
 bool Preferences::HasValue(const char* id)
 {
 	return m_Prefs.find(id) != m_Prefs.end();
 }
+
+//-----------------------------------------------------------------------------
