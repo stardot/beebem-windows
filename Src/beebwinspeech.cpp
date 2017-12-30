@@ -329,7 +329,6 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 	}
 	else
 	{
-		int s = GetKeyState(VK_MENU);
 		bool altPressed = (GetKeyState(VK_MENU) < 0);
 		bool insPressed = (GetKeyState(VK_INSERT) < 0) || (GetKeyState(VK_NUMPAD0) < 0);
 
