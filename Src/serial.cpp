@@ -815,10 +815,9 @@ void SetUnlockTape(bool unlock) {
 
 //*******************************************************************
 
-bool map_file(char *file_name)
+bool map_file(const char *file_name)
 {
 	bool done=false;
-	int file;
 	int i;
 	int start_time;
 	int n;
@@ -832,8 +831,8 @@ bool map_file(char *file_name)
 
 	uef_setclock(TapeClockSpeed);
 
-	file = uef_open(file_name);
-	if (file == NULL)
+	int file = uef_open(file_name);
+	if (file == 0)
 	{
 		return(false);
 	}
