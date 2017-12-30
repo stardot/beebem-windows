@@ -394,6 +394,80 @@ void BeebWin::NewDiscImage(int Drive)
 }
 
 /****************************************************************************/
+void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
+                              int Heads, int Tracks) {
+	bool Success = true;
+
+	// First check if file already exists
+	FILE *outfile = fopen(FileName, "rb");
+	if (outfile != nullptr) {
+		fclose(outfile);
+
+		char errstr[200];
+		sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", FileName);
+		if (MessageBox(m_hWnd, errstr, WindowTitle, MB_YESNO | MB_ICONQUESTION) != IDYES)
+			return;
+	}
+
+	outfile = fopen(FileName, "wb");
+	if (outfile == nullptr) {
+		char errstr[200];
+		sprintf(errstr, "Could not create disc file:\n  %s", FileName);
+		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+		return;
+	}
+
+	const int NumSectors = Tracks * 10;
+
+	// Create the first two sectors on each side - the rest will get created when
+	// data is written to it
+	for (int Sector = 0; Success && Sector < (Heads == 1 ? 2 : 12); Sector++) {
+		unsigned char SecData[256];
+		memset(SecData, 0, sizeof(SecData));
+
+		if (Sector == 1 || Sector == 11)
+		{
+			SecData[6] = (NumSectors >> 8) & 0xff;
+			SecData[7] = NumSectors & 0xff;
+		}
+
+		if (fwrite(SecData, 1, 256, outfile) != 256)
+			Success = false;
+	}
+
+	if (fclose(outfile) != 0)
+		Success = false;
+
+	if (!Success) {
+		char errstr[200];
+		sprintf(errstr, "Failed writing to disc file:\n  %s", FileName);
+		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+	}
+	else
+	{
+		// Now load the new image into the correct drive
+		if (Heads == 1)
+		{
+			if (MachineType == Model::Master128 || !NativeFDC) {
+				Load1770DiscImage(FileName, DriveNum, 0, mainWin->m_hMenu);
+			}
+			else {
+				LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
+			}
+		}
+		else
+		{
+			if (MachineType == Model::Master128 || !NativeFDC) {
+				Load1770DiscImage(FileName, DriveNum, 1, mainWin->m_hMenu);
+			}
+			else {
+				LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
+			}
+		}
+	}
+}
+
+/****************************************************************************/
 void BeebWin::SaveState()
 {
 	char DefaultPath[_MAX_PATH];

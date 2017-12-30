@@ -37,8 +37,6 @@ Boston, MA  02110-1301, USA.
 #ifdef WIN32
 #include <windows.h>
 #include "main.h"
-#include "beebmem.h"
-#include "disc1770.h"
 #endif
 
 using namespace std;
@@ -1549,158 +1547,12 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
       cerr << "Copy all the files to a new image to fix it.\n";
 #endif
     }
-
-  } /* if write enabled */
-
-} /* DiscWriteEnable */
-
-/*--------------------------------------------------------------------------*/
-void CreateDiscImage(const char *FileName, int DriveNum, int Heads, int Tracks) {
-  int Success=1;
-  int Sector;
-  int NumSectors;
-  int i;
-  FILE *outfile;
-  unsigned char SecData[256];
-
-  /* First check if file already exists */
-  outfile=fopen(FileName,"rb");
-  if (outfile != NULL) {
-    fclose(outfile);
-#ifdef WIN32
-    char errstr[200];
-    sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", FileName);
-    if (MessageBox(GETHWND,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
-      return;
-#else
-    cerr << "Could not create disc file " << FileName << "\n";
-    return;
-#endif
-  }
-
-  outfile=fopen(FileName,"wb");
-  if (!outfile) {
-#ifdef WIN32
-    char errstr[200];
-    sprintf(errstr, "Could not create disc file:\n  %s", FileName);
-    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-    cerr << "Could not create disc file " << FileName << "\n";
-#endif
-    return;
-  }
-
-  NumSectors=Tracks*10;
-
-  /* Create the first two sectors on each side - the rest will get created when
-     data is written to it. */
-  for(Sector=0;Success && Sector<(Heads==1?2:12);Sector++) {
-    for (i=0;i<256;++i)
-      SecData[i]=0;
-
-    if (Sector==1 || Sector==11)
-    {
-      SecData[6]=NumSectors >> 8;
-      SecData[7]=NumSectors & 0xff;
-    }
-
-    if (fwrite(SecData,1,256,outfile) != 256)
-      Success=0;
-  } /* Sector */
-
-  if (fclose(outfile) != 0)
-    Success=0;
-
-  if (!Success) {
-#ifdef WIN32
-    char errstr[200];
-    sprintf(errstr, "Failed writing to disc file:\n  %s", FileNames);
-    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-    cerr << "Failed writing to disc file " << FileName << "\n";
-#endif
-  }
-  else
-  {
-    /* Now load the new image into the correct drive */
-    if (Heads==1)
-    {
-      if (MachineType == Model::Master128 || !NativeFDC)
-        Load1770DiscImage(FileName,DriveNum,0,mainWin->m_hMenu);
-      else
-        LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
-    }
-    else
-    {
-      if (MachineType == Model::Master128 || !NativeFDC)
-        Load1770DiscImage(FileName,DriveNum,1,mainWin->m_hMenu);
-      else
-        LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
-    }
-  }
-}
-
-/*--------------------------------------------------------------------------*/
-static void LoadStartupDisc(int DriveNum, char *DiscString) {
-  char DoubleSided;
-  int Tracks;
-  char Name[1024];
-  int scanfres;
-
-  if (scanfres=sscanf(DiscString,"%c:%d:%s",&DoubleSided,&Tracks,Name),
-      scanfres!=3) {
-#ifdef WIN32
-    MessageBox(GETHWND,"Incorrect format for BeebDiscLoad, correct format is "
-               "D|S|A:tracks:filename", WindowTitle,MB_OK|MB_ICONERROR);
-#else
-    cerr << "Incorrect format for BeebDiscLoad - the correct format is\n";
-    cerr << "  D|S:tracks:filename\n e.g. D:80:discims/elite\n";
-    cerr << "  for a double sided, 80 track disc image called discims/elite\n";
-#endif
-  } else {
-    switch (DoubleSided) {
-      case 'd':
-      case 'D':
-        if (MachineType == Model::Master128 || !NativeFDC)
-          Load1770DiscImage(Name,DriveNum,1,mainWin->m_hMenu);
-        else
-          LoadSimpleDSDiscImage(Name,DriveNum,Tracks);
-        break;
-
-      case 'S':
-      case 's':
-        if (MachineType == Model::Master128 || !NativeFDC)
-          Load1770DiscImage(Name,DriveNum,0,mainWin->m_hMenu);
-        else
-          LoadSimpleDiscImage(Name,DriveNum,0,Tracks);
-        break;
-
-      case 'A':
-      case 'a':
-        if (MachineType == Model::Master128 || !NativeFDC)
-          Load1770DiscImage(Name,DriveNum,2,mainWin->m_hMenu);
-        else
-          MessageBox(GETHWND,"The 8271 FDC Cannot load the ADFS disc image specified in the BeebDiscLoad environment variable","BeebEm",MB_ICONERROR|MB_OK);
-        break;
-
-      default:
-#ifdef WIN32
-        MessageBox(GETHWND,"BeebDiscLoad disc type incorrect, use S for single sided, "
-                   "D for double sided and A for ADFS", WindowTitle,MB_OK|MB_ICONERROR);
-#else
-        cerr << "BeebDiscLoad environment variable set wrong - the\n";
-        cerr << "first character is either S or D signifying\n";
-        cerr << "single or double sided\n";
-#endif
-        break;        
-    }
   }
 }
 
 /*--------------------------------------------------------------------------*/
 void Disc8271_reset(void) {
-  static int onetime_initdisc=0;
-  char *DiscString;
+  static bool InitialInit = true;
 
   ResultReg=0;
   StatusReg=0;
@@ -1723,29 +1575,9 @@ void Disc8271_reset(void) {
   PresentParam=0;
   Selects[0]=Selects[1]=false;
 
-  if (!onetime_initdisc) {
-    onetime_initdisc++;
+  if (InitialInit) {
+    InitialInit = false;
     InitDiscStore();
-
-    DiscString=getenv("BeebDiscLoad");
-    if (DiscString==NULL)
-      DiscString=getenv("BeebDiscLoad0");
-    if (DiscString!=NULL)
-      LoadStartupDisc(0, DiscString);
-    else {
-#ifndef WIN32
-      LoadStartupDisc(0, "S:80:discims/test.ssd");
-#endif
-    }
-
-    DiscString=getenv("BeebDiscLoad1");
-    if (DiscString!=NULL)
-      LoadStartupDisc(1, DiscString);
-
-    if (getenv("BeebDiscWrites")!=NULL) {
-      DiscWriteEnable(0, true);
-      DiscWriteEnable(1, true);
-    }
   }
 }
 

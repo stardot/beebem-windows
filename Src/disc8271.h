@@ -31,7 +31,6 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks);
 void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks);
 bool IsDiscWritable(int DriveNum);
 void DiscWriteEnable(int DriveNum, bool WriteEnable);
-void CreateDiscImage(const char *FileName, int DriveNum, int Heads, int Tracks);
 void FreeDiscImage(int DriveNum);
 void Eject8271DiscImage(int DriveNum);
 void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads);

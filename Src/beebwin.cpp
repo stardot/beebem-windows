@@ -247,7 +247,7 @@ BeebWin::BeebWin()
 
 /****************************************************************************/
 void BeebWin::Initialise()
-{   
+{
 	// Parse command line
 	ParseCommandLine();
 	FindCommandLineFile(m_CommandLineFileName1);
@@ -297,6 +297,8 @@ void BeebWin::Initialise()
 	// Boot file if passed on command line
 	HandleCommandLineFile(1, m_CommandLineFileName2);
 	HandleCommandLineFile(0, m_CommandLineFileName1);
+
+	HandleEnvironmentVariables();
 
 	// Schedule first key press if keyboard command supplied
 	if (m_KbdCmd[0] != 0)
@@ -4107,7 +4109,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 
 /*****************************************************************************/
 // Handle a file name passed on command line
-	
+
 void BeebWin::HandleCommandLineFile(int drive, char *CmdLineFile)
 {
 	bool ssd = false;
@@ -4255,6 +4257,83 @@ void BeebWin::HandleCommandLineFile(int drive, char *CmdLineFile)
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		BeebKeyDown(0, 0); // Shift key
 		m_ShiftBooted = true;
+	}
+}
+
+/****************************************************************************/
+void BeebWin::HandleEnvironmentVariables()
+{
+	const char *DiscString = getenv("BeebDiscLoad");
+	if (DiscString == nullptr)
+		DiscString = getenv("BeebDiscLoad0");
+	if (DiscString != nullptr)
+		LoadStartupDisc(0, DiscString);
+	else {
+#ifndef WIN32
+		LoadStartupDisc(0, "S:80:discims/test.ssd");
+#endif
+	}
+
+	DiscString = getenv("BeebDiscLoad1");
+	if (DiscString != nullptr)
+		LoadStartupDisc(1, DiscString);
+
+	if (getenv("BeebDiscWrites") != nullptr) {
+		DiscWriteEnable(0, true);
+		DiscWriteEnable(1, true);
+	}
+}
+
+/****************************************************************************/
+void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
+{
+	char DoubleSided;
+	int Tracks;
+	char Name[1024];
+	int scanfres;
+
+	if (scanfres = sscanf(DiscString, "%c:%d:%s", &DoubleSided, &Tracks, Name),
+		scanfres != 3) {
+		MessageBox(m_hWnd, "Incorrect format for BeebDiscLoad, correct format is "
+			"D|S|A:tracks:filename", WindowTitle, MB_OK | MB_ICONERROR);
+	}
+	else {
+		switch (DoubleSided) {
+		case 'd':
+		case 'D':
+			if (MachineType == Model::Master128 || !NativeFDC) {
+				Load1770DiscImage(Name, DriveNum, 1, m_hMenu);
+			}
+			else {
+				LoadSimpleDSDiscImage(Name, DriveNum, Tracks);
+			}
+			break;
+
+		case 'S':
+		case 's':
+			if (MachineType == Model::Master128 || !NativeFDC) {
+				Load1770DiscImage(Name, DriveNum, 0, m_hMenu);
+			}
+			else {
+				LoadSimpleDiscImage(Name, DriveNum, 0, Tracks);
+			}
+			break;
+
+		case 'A':
+		case 'a':
+			if (MachineType == Model::Master128 || !NativeFDC) {
+				Load1770DiscImage(Name, DriveNum, 2, m_hMenu);
+			}
+			else {
+				MessageBox(m_hWnd, "The 8271 FDC Cannot load the ADFS disc image specified in the BeebDiscLoad environment variable", "BeebEm", MB_ICONERROR | MB_OK);
+			}
+			break;
+
+		default:
+			MessageBox(m_hWnd, "BeebDiscLoad disc type incorrect, use S for single sided, "
+				"D for double sided and A for ADFS", WindowTitle, MB_OK | MB_ICONERROR);
+			break;
+		}
 	}
 }
 

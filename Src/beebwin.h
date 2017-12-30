@@ -223,6 +223,8 @@ public:
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
 	void FindCommandLineFile(char *CmdLineFile);
 	void HandleCommandLineFile(int drive, char *CmdLineFile);
+	void HandleEnvironmentVariables();
+	void LoadStartupDisc(int DriveNum, const char *DiscString);
 	bool CheckUserDataPath(void);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
@@ -479,6 +481,7 @@ public:
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);
+	void CreateDiscImage(const char *FileName, int DriveNum, int Heads, int Tracks);
 	void EjectDiscImage(int Drive);
 	void ExportDiscFiles(int menuId);
 	void ImportDiscFiles(int menuId);
