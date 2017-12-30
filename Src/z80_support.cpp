@@ -28,8 +28,6 @@ Boston, MA  02110-1301, USA.
 #include "beebmem.h"
 #include "tube.h"
 
-extern int trace;
-
 bool Enable_Z80 = false;
 bool trace_z80 = false;
 bool debug_z80 = false;
