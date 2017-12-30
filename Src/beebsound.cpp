@@ -158,7 +158,7 @@ void PlayUpTil(double DestTime) {
 	int i;
 
 #ifdef SPEECH_ENABLED
-	if (MachineType != 3 && SpeechEnabled)
+	if (MachineType != Model::Master128 && SpeechEnabled)
 	{
 		SpeechPtr = 0;
 		memset(SpeechBuf, 128, sizeof(SpeechBuf));

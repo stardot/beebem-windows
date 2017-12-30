@@ -3448,7 +3448,7 @@ void BeebWin::HandleCommand(int MenuId)
 		if (MachineType != Model::Master128)
 		{
 			char CfgName[20];
-			sprintf(CfgName, "FDCDLL%d", MachineType);
+			sprintf(CfgName, "FDCDLL%d", static_cast<int>(MachineType));
 			PrefsSetStringValue(CfgName,"None");
 		}
 		break;

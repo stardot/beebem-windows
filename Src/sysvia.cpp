@@ -224,7 +224,7 @@ static void IC32Write(unsigned char Value) {
   /* cerr << "IC32State now=" << hex << int(IC32State) << dec << "\n"; */
 
 #ifdef SPEECH_ENABLED
-  if ( (bit == 2) && ( (Value & 8)  == 0) && (MachineType != 3) )		//  Write Command
+  if (bit == 2 && (Value & 8) == 0 && MachineType != Model::Master128) // Write Command
   {
 	  tms5220_data_w(SlowDataBusWriteValue);
   }
@@ -284,7 +284,7 @@ static int SlowDataBusRead(void) {
   }
 
 #ifdef SPEECH_ENABLED
-  if ((!(IC32State & 2)) && (MachineType != 3) ) {
+  if (!(IC32State & 2) && Model::Master128) {
     result = tms5220_status_r();
   }
 #endif
