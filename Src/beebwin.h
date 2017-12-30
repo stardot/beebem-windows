@@ -125,7 +125,7 @@ struct CUSTOMVERTEX
 
 typedef std::map<std::string, std::string> PrefsMap;
 
-class BeebWin  {
+class BeebWin {
 
 public:
 	enum PaletteType { RGB, BW, AMBER, GREEN } palette_type;
@@ -152,8 +152,9 @@ public:
 	unsigned char GetDriveControl(void);
 	void doLED(int sx,bool on);
 	void updateLines(HDC hDC, int starty, int nlines);
-	void updateLines(int starty, int nlines)
-		{ updateLines(m_hDC, starty, nlines); };
+	void updateLines(int starty, int nlines) {
+		updateLines(m_hDC, starty, nlines);
+	}
 
 	void doHorizLine(unsigned long Col, int y, int sx, int width) {
 		if (TeletextEnabled) y/=TeletextStyle;
@@ -161,7 +162,7 @@ public:
 		if ((d+width)>(500*800)) return;
 		if (d<0) return;
 		memset(m_screen+d, Col, width);
-	};
+	}
 
 	void doInvHorizLine(unsigned long Col, int y, int sx, int width) {
 		if (TeletextEnabled) y/=TeletextStyle;
@@ -171,13 +172,13 @@ public:
 		if (d<0) return;
 		vaddr=m_screen+d;
 		for (int n=0;n<width;n++) *(vaddr+n)^=Col;
-	};
+	}
 
 	void doUHorizLine(unsigned long Col, int y, int sx, int width) {
 		if (TeletextEnabled) y/=TeletextStyle;
 		if (y>500) return;
 		memset(m_screen+ (y* 800) + sx, Col, width);
-	};
+	}
 
 	EightUChars *GetLinePtr(int y) {
 		int d = (y*800)+ScreenAdjust;
@@ -324,7 +325,6 @@ public:
 	char		m_customip [20];		//IP232
 	int		m_customport;
 
-
 	HDC 		m_hDC;
 	HWND		m_hWnd;
 	HGDIOBJ 	m_hOldObj;
@@ -437,7 +437,7 @@ public:
 	void UpdateOptiMenu();
 	void CreateBeebWindow(void);
 	void CreateBitmap(void);
-	void InitMenu(void);
+	void InitMenu();
 	void UpdateMonitorMenu();
 	void SelectSerialPort(unsigned char PortNumber);
 	void UpdateSerialMenu();
@@ -445,9 +445,12 @@ public:
 
 	void UpdateSFXMenu();
 	void UpdateDisableKeysMenu();
-	void UpdateDisplayRendererMenu(void);
+	void UpdateDisplayRendererMenu();
 
 	void UpdateSoundStreamerMenu();
+
+	void CheckMenuItem(UINT id, bool checked);
+	void EnableMenuItem(UINT id, bool enabled);
 
 	// DirectX - calls DDraw or DX9 fn
 	void InitDX(void);

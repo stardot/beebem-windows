@@ -706,266 +706,273 @@ void BeebWin::TrackPopupMenu(int x, int y) {
 }
 
 /****************************************************************************/
+void BeebWin::CheckMenuItem(UINT id, bool checked)
+{
+	::CheckMenuItem(m_hMenu, id, checked ? MF_CHECKED : MF_UNCHECKED);
+}
+
+void BeebWin::EnableMenuItem(UINT id, bool enabled)
+{
+	::EnableMenuItem(m_hMenu, id, enabled ? MF_ENABLED : MF_GRAYED);
+}
+
 void BeebWin::InitMenu(void)
 {
 	char menu_string[256];
 
 	// File -> Video Options
-	CheckMenuItem(m_hMenu, IDM_VIDEORES1, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEORES2, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEORES3, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEOSKIP0, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEOSKIP1, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEOSKIP2, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEOSKIP3, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEOSKIP4, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_VIDEOSKIP5, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdAviResolution, MF_CHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdAviSkip, MF_CHECKED);
+	CheckMenuItem(IDM_VIDEORES1, false);
+	CheckMenuItem(IDM_VIDEORES2, false);
+	CheckMenuItem(IDM_VIDEORES3, false);
+	CheckMenuItem(IDM_VIDEOSKIP0, false);
+	CheckMenuItem(IDM_VIDEOSKIP1, false);
+	CheckMenuItem(IDM_VIDEOSKIP2, false);
+	CheckMenuItem(IDM_VIDEOSKIP3, false);
+	CheckMenuItem(IDM_VIDEOSKIP4, false);
+	CheckMenuItem(IDM_VIDEOSKIP5, false);
+	CheckMenuItem(m_MenuIdAviResolution, true);
+	CheckMenuItem(m_MenuIdAviSkip, true);
 
 	// File -> Disc Options
-	CheckMenuItem(m_hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_WPONLOAD, m_WriteProtectOnLoad ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_WPDISC0, m_WriteProtectDisc[0]);
+	CheckMenuItem(IDM_WPDISC1, m_WriteProtectDisc[1]);
+	CheckMenuItem(IDM_WPONLOAD, m_WriteProtectOnLoad);
 
 	// File -> Capture Options
-	CheckMenuItem(m_hMenu, IDM_CAPTURERES1, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_CAPTURERES2, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_CAPTURERES3, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_CAPTURERES4, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_CAPTUREBMP, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_CAPTUREJPEG, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_CAPTUREGIF, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_CAPTUREPNG, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdCaptureResolution, MF_CHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdCaptureFormat, MF_CHECKED);
+	CheckMenuItem(IDM_CAPTURERES1, false);
+	CheckMenuItem(IDM_CAPTURERES2, false);
+	CheckMenuItem(IDM_CAPTURERES3, false);
+	CheckMenuItem(IDM_CAPTURERES4, false);
+	CheckMenuItem(IDM_CAPTUREBMP, false);
+	CheckMenuItem(IDM_CAPTUREJPEG, false);
+	CheckMenuItem(IDM_CAPTUREGIF, false);
+	CheckMenuItem(IDM_CAPTUREPNG, false);
+	CheckMenuItem(m_MenuIdCaptureResolution, true);
+	CheckMenuItem(m_MenuIdCaptureFormat, true);
 
 	// Edit
-	CheckMenuItem(m_hMenu, IDM_EDIT_CRLF, m_translateCRLF ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_EDIT_CRLF, m_translateCRLF);
 
 	// Comms -> Tape Speed
 	SetTapeSpeedMenu();
 
 	// Comms
-	CheckMenuItem(m_hMenu,ID_UNLOCKTAPE, UnlockTape ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTERONOFF, PrinterEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_UNLOCKTAPE, UnlockTape);
+	CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
 
 	// Comms -> Printer
-	CheckMenuItem(m_hMenu, IDM_PRINTER_FILE, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_LPT1, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_LPT2, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_LPT3, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_LPT4, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_COM1, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_COM2, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_COM3, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_PRINTER_COM4, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+	CheckMenuItem(IDM_PRINTER_FILE, false);
+	CheckMenuItem(IDM_PRINTER_LPT1, false);
+	CheckMenuItem(IDM_PRINTER_LPT2, false);
+	CheckMenuItem(IDM_PRINTER_LPT3, false);
+	CheckMenuItem(IDM_PRINTER_LPT4, false);
+	CheckMenuItem(IDM_PRINTER_COM1, false);
+	CheckMenuItem(IDM_PRINTER_COM2, false);
+	CheckMenuItem(IDM_PRINTER_COM3, false);
+	CheckMenuItem(IDM_PRINTER_COM4, false);
+	CheckMenuItem(m_MenuIdPrinterPort, true);
 	strcpy(menu_string, "File: ");
 	strcat(menu_string, m_PrinterFileName);
 	ModifyMenu(m_hMenu, IDM_PRINTER_FILE, MF_BYCOMMAND, IDM_PRINTER_FILE, menu_string);
 
 	// Comms -> RS423
-	CheckMenuItem(m_hMenu, ID_SERIAL, SerialPortEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_COM1, SerialPort == 1 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_COM2, SerialPort == 2 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_COM3, SerialPort == 3 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_COM4, SerialPort == 4 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_TOUCHSCREEN, TouchScreenEnabled ? MF_CHECKED : MF_UNCHECKED);
-	// CheckMenuItem(m_hMenu, ID_IP232, EthernetPortEnabled ? MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232LOCALHOST, IP232localhost ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232CUSTOM, IP232custom ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232MODE, IP232mode ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232RAW, IP232raw ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_SERIAL, SerialPortEnabled);
+	CheckMenuItem(ID_COM1, SerialPort == 1);
+	CheckMenuItem(ID_COM2, SerialPort == 2);
+	CheckMenuItem(ID_COM3, SerialPort == 3);
+	CheckMenuItem(ID_COM4, SerialPort == 4);
+	CheckMenuItem(ID_TOUCHSCREEN, TouchScreenEnabled);
+	// CheckMenuItem(ID_IP232, EthernetPortEnabled);
+	CheckMenuItem(ID_IP232LOCALHOST, IP232localhost);
+	CheckMenuItem(ID_IP232CUSTOM, IP232custom);
+	CheckMenuItem(ID_IP232MODE, IP232mode);
+	CheckMenuItem(ID_IP232RAW, IP232raw);
 
 	// View
 	UpdateDisplayRendererMenu();
-	CheckMenuItem(m_hMenu, IDM_DXSMOOTHING, m_DXSmoothing ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_SPEEDANDFPS, m_ShowSpeedAndFPS ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_DXSMOOTHING, m_DXSmoothing);
+	CheckMenuItem(IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only);
+	CheckMenuItem(IDM_SPEEDANDFPS, m_ShowSpeedAndFPS);
+	CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
+	CheckMenuItem(IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio);
 	UpdateMonitorMenu();
-	CheckMenuItem(m_hMenu, ID_HIDEMENU, HideMenuEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_HIDEMENU, HideMenuEnabled);
 	UpdateLEDMenu();
-	CheckMenuItem(m_hMenu, IDM_TEXTVIEW, m_TextViewEnabled ? MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(IDM_TEXTVIEW, m_TextViewEnabled);
 
 	// View -> Win size
-	CheckMenuItem(m_hMenu, IDM_320X256, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_640X512, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_800X600, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_1024X768, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_1024X512, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_1280X1024, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_1440X1080, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_1600X1200, MF_UNCHECKED);
-	// CheckMenuItem(m_hMenu, m_MenuIdWinSize, MF_CHECKED);
+	CheckMenuItem(IDM_320X256, false);
+	CheckMenuItem(IDM_640X512, false);
+	CheckMenuItem(IDM_800X600, false);
+	CheckMenuItem(IDM_1024X768, false);
+	CheckMenuItem(IDM_1024X512, false);
+	CheckMenuItem(IDM_1280X1024, false);
+	CheckMenuItem(IDM_1440X1080, false);
+	CheckMenuItem(IDM_1600X1200, false);
+	// CheckMenuItem(m_MenuIdWinSize, true);
 
 	// View -> DD mode
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_SCREENRES, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_640X480, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_720X576, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_800X600, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1024X768, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1280X720, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1280X1024, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1280X768, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1280X960, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1440X900, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1600X1200, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_VIEW_DD_1920X1080, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_DDFullScreenMode, MF_CHECKED);
+	CheckMenuItem(ID_VIEW_DD_SCREENRES, false);
+	CheckMenuItem(ID_VIEW_DD_640X480, false);
+	CheckMenuItem(ID_VIEW_DD_720X576, false);
+	CheckMenuItem(ID_VIEW_DD_800X600, false);
+	CheckMenuItem(ID_VIEW_DD_1024X768, false);
+	CheckMenuItem(ID_VIEW_DD_1280X720, false);
+	CheckMenuItem(ID_VIEW_DD_1280X1024, false);
+	CheckMenuItem(ID_VIEW_DD_1280X768, false);
+	CheckMenuItem(ID_VIEW_DD_1280X960, false);
+	CheckMenuItem(ID_VIEW_DD_1440X900, false);
+	CheckMenuItem(ID_VIEW_DD_1600X1200, false);
+	CheckMenuItem(ID_VIEW_DD_1920X1080, false);
+	CheckMenuItem(m_DDFullScreenMode, true);
 
 	// View -> Motion blur
-	CheckMenuItem(m_hMenu, IDM_BLUR_OFF, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_BLUR_2, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_BLUR_4, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_BLUR_8, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MotionBlur, MF_CHECKED);
+	CheckMenuItem(IDM_BLUR_OFF, false);
+	CheckMenuItem(IDM_BLUR_2, false);
+	CheckMenuItem(IDM_BLUR_4, false);
+	CheckMenuItem(IDM_BLUR_8, false);
+	CheckMenuItem(m_MotionBlur, true);
 
 	// Speed
-	CheckMenuItem(m_hMenu, IDM_REALTIME, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED100, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED50, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED10, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED5, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED2, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED1_5, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED1_25, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED1_1, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED0_9, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED0_5, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED0_75, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED0_25, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FIXEDSPEED0_1, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_50FPS, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_25FPS, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_10FPS, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_5FPS, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_1FPS, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdTiming, MF_CHECKED);
+	CheckMenuItem(IDM_REALTIME, false);
+	CheckMenuItem(IDM_FIXEDSPEED100, false);
+	CheckMenuItem(IDM_FIXEDSPEED50, false);
+	CheckMenuItem(IDM_FIXEDSPEED10, false);
+	CheckMenuItem(IDM_FIXEDSPEED5, false);
+	CheckMenuItem(IDM_FIXEDSPEED2, false);
+	CheckMenuItem(IDM_FIXEDSPEED1_5, false);
+	CheckMenuItem(IDM_FIXEDSPEED1_25, false);
+	CheckMenuItem(IDM_FIXEDSPEED1_1, false);
+	CheckMenuItem(IDM_FIXEDSPEED0_9, false);
+	CheckMenuItem(IDM_FIXEDSPEED0_5, false);
+	CheckMenuItem(IDM_FIXEDSPEED0_75, false);
+	CheckMenuItem(IDM_FIXEDSPEED0_25, false);
+	CheckMenuItem(IDM_FIXEDSPEED0_1, false);
+	CheckMenuItem(IDM_50FPS, false);
+	CheckMenuItem(IDM_25FPS, false);
+	CheckMenuItem(IDM_10FPS, false);
+	CheckMenuItem(IDM_5FPS, false);
+	CheckMenuItem(IDM_1FPS, false);
+	CheckMenuItem(m_MenuIdTiming, true);
 
 	// Sound
 	UpdateSoundStreamerMenu();
 	SetSoundMenu();
 #ifdef SPEECH_ENABLED
-	CheckMenuItem(hMenu, IDM_SPEECH, SpeechDefault ? MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(IDM_SPEECH, SpeechDefault);
 #endif
-	CheckMenuItem(m_hMenu, IDM_SOUNDCHIP, SoundChipEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_SOUNDCHIP, SoundChipEnabled);
 	UpdateSFXMenu();
-	CheckMenuItem(m_hMenu, ID_TAPESOUND, TapeSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_44100KHZ, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_22050KHZ, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_11025KHZ, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdSampleRate, MF_CHECKED);
-	CheckMenuItem(m_hMenu, IDM_HIGHVOLUME, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_MEDIUMVOLUME, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_LOWVOLUME, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_FULLVOLUME, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdVolume, MF_CHECKED);
-	CheckMenuItem(m_hMenu, ID_PSAMPLES, PartSamples ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_EXPVOLUME, SoundExponentialVolume ? MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_TEXTTOSPEECH, m_TextToSpeechEnabled ? MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(ID_TAPESOUND, TapeSoundEnabled);
+	CheckMenuItem(IDM_44100KHZ, false);
+	CheckMenuItem(IDM_22050KHZ, false);
+	CheckMenuItem(IDM_11025KHZ, false);
+	CheckMenuItem(m_MenuIdSampleRate, true);
+	CheckMenuItem(IDM_HIGHVOLUME, false);
+	CheckMenuItem(IDM_MEDIUMVOLUME, false);
+	CheckMenuItem(IDM_LOWVOLUME, false);
+	CheckMenuItem(IDM_FULLVOLUME, false);
+	CheckMenuItem(m_MenuIdVolume, true);
+	CheckMenuItem(ID_PSAMPLES, PartSamples);
+	CheckMenuItem(IDM_EXPVOLUME, SoundExponentialVolume);
+	CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
 
 	// AMX
-	CheckMenuItem(m_hMenu, IDM_AMXONOFF, AMXMouseEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_LRFORMIDDLE, AMXLRForMiddle ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_320X256, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_640X256, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_160X256, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdAMXSize, MF_CHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_ADJUSTP50, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_ADJUSTP30, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_ADJUSTP10, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_ADJUSTM10, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_ADJUSTM30, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMX_ADJUSTM50, MF_UNCHECKED);
+	CheckMenuItem(IDM_AMXONOFF, AMXMouseEnabled);
+	CheckMenuItem(IDM_AMX_LRFORMIDDLE, AMXLRForMiddle);
+	CheckMenuItem(IDM_AMX_320X256, false);
+	CheckMenuItem(IDM_AMX_640X256, false);
+	CheckMenuItem(IDM_AMX_160X256, false);
+	CheckMenuItem(m_MenuIdAMXSize, true);
+	CheckMenuItem(IDM_AMX_ADJUSTP50, false);
+	CheckMenuItem(IDM_AMX_ADJUSTP30, false);
+	CheckMenuItem(IDM_AMX_ADJUSTP10, false);
+	CheckMenuItem(IDM_AMX_ADJUSTM10, false);
+	CheckMenuItem(IDM_AMX_ADJUSTM30, false);
+	CheckMenuItem(IDM_AMX_ADJUSTM50, false);
 	if (m_MenuIdAMXAdjust != 0)
-		CheckMenuItem(m_hMenu, m_MenuIdAMXAdjust, MF_CHECKED);
+		CheckMenuItem(m_MenuIdAMXAdjust, true);
 
 	// Hardware -> Model
 	UpdateModelType();
 
 	// Hardware
-	CheckMenuItem(m_hMenu, IDM_TUBE, TubeEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_TUBE, TubeEnabled);
 #ifdef M512COPRO_ENABLED
-	CheckMenuItem(m_hMenu, IDM_TUBE186, Tube186Enabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_TUBE186, Tube186Enabled);
 #endif
-	CheckMenuItem(m_hMenu, IDM_TORCH, (TorchTube)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_ACORNZ80, AcornZ80 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_ARM, ArmTube ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_TORCH, TorchTube);
+	CheckMenuItem(IDM_ACORNZ80, AcornZ80);
+	CheckMenuItem(IDM_ARM, ArmTube);
 	SetTubeMenu();
 
 	SetRomMenu();
-	CheckMenuItem(m_hMenu, IDM_SWRAMBOARD, SWRAMBoardEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_SWRAMBOARD, SWRAMBoardEnabled);
+	CheckMenuItem(IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions);
 	UpdateOptiMenu();
 	UpdateEconetMenu();
-	CheckMenuItem(m_hMenu, ID_TELETEXT, TeleTextAdapterEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_FLOPPYDRIVE, Disc8271Enabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_HARDDRIVE, SCSIDriveEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IDEDRIVE, IDEDriveEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_UPRM, RTC_Enabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_RTCY2KADJUST, RTCY2KAdjust ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_TELETEXT, TeleTextAdapterEnabled);
+	CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
+	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
+	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
+	CheckMenuItem(ID_UPRM, RTC_Enabled);
+	CheckMenuItem(ID_RTCY2KADJUST, RTCY2KAdjust);
 
 	// Options
-	CheckMenuItem(m_hMenu, IDM_JOYSTICK, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AMOUSESTICK, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DMOUSESTICK, MF_UNCHECKED);
+	CheckMenuItem(IDM_JOYSTICK, false);
+	CheckMenuItem(IDM_AMOUSESTICK, false);
+	CheckMenuItem(IDM_DMOUSESTICK, false);
 	if (m_MenuIdSticks != 0)
-		CheckMenuItem(m_hMenu, m_MenuIdSticks, MF_CHECKED);
-	CheckMenuItem(m_hMenu, IDM_FREEZEINACTIVE, m_FreezeWhenInactive ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_HIDECURSOR, m_HideCursor ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DEFAULTKYBDMAPPING, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_LOGICALKYBDMAPPING, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_USERKYBDMAPPING, MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, m_MenuIdKeyMapping, MF_CHECKED);
-	CheckMenuItem(m_hMenu, IDM_MAPAS, m_KeyMapAS ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_MAPFUNCS, m_KeyMapFunc ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(m_MenuIdSticks, true);
+	CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
+	CheckMenuItem(IDM_HIDECURSOR, m_HideCursor);
+	CheckMenuItem(IDM_DEFAULTKYBDMAPPING, false);
+	CheckMenuItem(IDM_LOGICALKYBDMAPPING, false);
+	CheckMenuItem(IDM_USERKYBDMAPPING, false);
+	CheckMenuItem(m_MenuIdKeyMapping, true);
+	CheckMenuItem(IDM_MAPAS, m_KeyMapAS);
+	CheckMenuItem(IDM_MAPFUNCS, m_KeyMapFunc);
 	UpdateDisableKeysMenu();
-	CheckMenuItem(m_hMenu, IDM_AUTOSAVE_PREFS_CMOS, m_AutoSavePrefsCMOS ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AUTOSAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_AUTOSAVE_PREFS_CMOS, m_AutoSavePrefsCMOS);
+	CheckMenuItem(IDM_AUTOSAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders);
+	CheckMenuItem(IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll);
 }
 
 void BeebWin::UpdateDisplayRendererMenu() {
-	CheckMenuItem(m_hMenu, IDM_DISPGDI,
-				  m_DisplayRenderer == IDM_DISPGDI ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DISPDDRAW,
-				  m_DisplayRenderer == IDM_DISPDDRAW ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DISPDX9,
-				  m_DisplayRenderer == IDM_DISPDX9 ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_DISPGDI, m_DisplayRenderer == IDM_DISPGDI);
+	CheckMenuItem(IDM_DISPDDRAW, m_DisplayRenderer == IDM_DISPDDRAW);
+	CheckMenuItem(IDM_DISPDX9, m_DisplayRenderer == IDM_DISPDX9);
 }
 
 void BeebWin::UpdateSoundStreamerMenu() {
-	CheckMenuItem(m_hMenu, IDM_XAUDIO2, SoundConfig::Selection == SoundConfig::XAudio2 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DIRECTSOUND, SoundConfig::Selection == SoundConfig::DirectSound ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_XAUDIO2, SoundConfig::Selection == SoundConfig::XAudio2);
+	CheckMenuItem(IDM_DIRECTSOUND, SoundConfig::Selection == SoundConfig::DirectSound);
 }
 
 void BeebWin::UpdateMonitorMenu() {
-	CheckMenuItem(m_hMenu, ID_MONITOR_RGB, palette_type == RGB ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_MONITOR_BW , palette_type == BW ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_MONITOR_GREEN , palette_type == GREEN ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_MONITOR_AMBER , palette_type == AMBER ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_MONITOR_RGB, palette_type == RGB);
+	CheckMenuItem(ID_MONITOR_BW , palette_type == BW);
+	CheckMenuItem(ID_MONITOR_GREEN , palette_type == GREEN);
+	CheckMenuItem(ID_MONITOR_AMBER , palette_type == AMBER);
 }
 
 void BeebWin::UpdateModelType() {
-	CheckMenuItem(m_hMenu, ID_MODELB, MachineType == Model::B ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_MODELBINT, MachineType == Model::IntegraB ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_MODELBP, MachineType == Model::BPlus ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_MASTER128, MachineType == Model::Master128 ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_MODELB, MachineType == Model::B);
+	CheckMenuItem(ID_MODELBINT, MachineType == Model::IntegraB);
+	CheckMenuItem(ID_MODELBP, MachineType == Model::BPlus);
+	CheckMenuItem(ID_MASTER128, MachineType == Model::Master128);
 }
 
 void BeebWin::UpdateSFXMenu() {
-	CheckMenuItem(m_hMenu, ID_SFX_RELAY, RelaySoundEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_SFX_DISCDRIVES, DiscDriveSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_SFX_RELAY, RelaySoundEnabled);
+	CheckMenuItem(ID_SFX_DISCDRIVES, DiscDriveSoundEnabled);
 }
 
 void BeebWin::UpdateDisableKeysMenu() {
-	CheckMenuItem(m_hMenu, IDM_DISABLEKEYSWINDOWS, m_DisableKeysWindows?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DISABLEKEYSBREAK, m_DisableKeysBreak?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DISABLEKEYSESCAPE, m_DisableKeysEscape?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_DISABLEKEYSSHORTCUT, m_DisableKeysShortcut?MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(IDM_DISABLEKEYSWINDOWS, m_DisableKeysWindows);
+	CheckMenuItem(IDM_DISABLEKEYSBREAK, m_DisableKeysBreak);
+	CheckMenuItem(IDM_DISABLEKEYSESCAPE, m_DisableKeysEscape);
+	CheckMenuItem(IDM_DISABLEKEYSSHORTCUT, m_DisableKeysShortcut);
 }
 
 /****************************************************************************/
@@ -980,14 +987,14 @@ void BeebWin::SetTubeMenu()
     if( testFile != NULL )
     {
         fclose(testFile);
-        EnableMenuItem(m_hMenu, IDM_ARMCOPRO,  MF_ENABLED);
+        EnableMenuItem(IDM_ARMCOPRO, true);
     }
     else
     {
         ArmCoProTube = false;
-        EnableMenuItem(m_hMenu, IDM_ARMCOPRO,  MF_GRAYED);
+        EnableMenuItem(IDM_ARMCOPRO, false);
     }
-    CheckMenuItem(m_hMenu, IDM_ARMCOPRO, ArmCoProTube ? MF_CHECKED :MF_UNCHECKED);
+    CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 }
 
 void BeebWin::SetRomMenu(void)
@@ -1021,10 +1028,8 @@ void BeebWin::SetRomMenu(void)
 		           Title); // menu item content
 
 		/* Disable ROM and uncheck the Rom/RAM which are NOT writable */
-		EnableMenuItem(m_hMenu, IDM_ALLOWWRITES_ROM0 + i,
-		               RomBankType[i] == BankRam ? MF_ENABLED : MF_GRAYED);
-		CheckMenuItem(m_hMenu, IDM_ALLOWWRITES_ROM0 + i,
-		              RomBankType[i] == BankRam ? (RomWritable[i] ? MF_CHECKED : MF_UNCHECKED) : MF_UNCHECKED);
+		EnableMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankRam);
+		CheckMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankRam && RomWritable[i]);
 	}
 }
 
@@ -2108,9 +2113,9 @@ void BeebWin::AdjustSpeed(bool up)
 
 	if (t != m_MenuIdTiming)
 	{
-		CheckMenuItem(m_hMenu, m_MenuIdTiming, MF_UNCHECKED);
+		CheckMenuItem(m_MenuIdTiming, false);
 		m_MenuIdTiming = t;
-		CheckMenuItem(m_hMenu, m_MenuIdTiming, MF_CHECKED);
+		CheckMenuItem(m_MenuIdTiming, true);
 		TranslateTiming();
 	}
 }
@@ -2136,11 +2141,11 @@ void BeebWin::TranslateKeyMapping(void)
 }
 
 /****************************************************************************/
-void BeebWin::SetTapeSpeedMenu(void) {
-	CheckMenuItem(m_hMenu,ID_TAPE_FAST,(TapeClockSpeed==750)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu,ID_TAPE_MFAST,(TapeClockSpeed==1600)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu,ID_TAPE_MSLOW,(TapeClockSpeed==3200)?MF_CHECKED:MF_UNCHECKED);
-	CheckMenuItem(m_hMenu,ID_TAPE_NORMAL,(TapeClockSpeed==5600)?MF_CHECKED:MF_UNCHECKED);
+void BeebWin::SetTapeSpeedMenu() {
+	CheckMenuItem(ID_TAPE_FAST, TapeClockSpeed == 750);
+	CheckMenuItem(ID_TAPE_MFAST, TapeClockSpeed == 1600);
+	CheckMenuItem(ID_TAPE_MSLOW, TapeClockSpeed == 3200);
+	CheckMenuItem(ID_TAPE_NORMAL, TapeClockSpeed == 5600);
 }
 
 /****************************************************************************/
@@ -2263,7 +2268,7 @@ void BeebWin::WinSizeChange(int size, int width, int height)
 	if (m_DisplayRenderer == IDM_DISPGDI && size == SIZE_RESTORED && m_isFullScreen)
 	{
 		m_isFullScreen = false;
-		CheckMenuItem(m_hMenu, IDM_FULLSCREEN, MF_UNCHECKED);
+		CheckMenuItem(IDM_FULLSCREEN, false);
 	}
 
 	if (!m_isFullScreen || m_DisplayRenderer == IDM_DISPGDI)
@@ -2356,40 +2361,40 @@ void BeebWin::SelectSerialPort(unsigned char PortNumber)
 }
 
 void BeebWin::UpdateSerialMenu() {
-	CheckMenuItem(m_hMenu, ID_SERIAL, SerialPortEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_TOUCHSCREEN, TouchScreenEnabled ? MF_CHECKED : MF_UNCHECKED);
-	// CheckMenuItem(m_hMenu, ID_IP232, EthernetPortEnabled ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232LOCALHOST, IP232localhost ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232CUSTOM, IP232custom ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232MODE, IP232mode ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_IP232RAW, IP232raw ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_SERIAL, SerialPortEnabled);
+	CheckMenuItem(ID_TOUCHSCREEN, TouchScreenEnabled);
+	// CheckMenuItem(ID_IP232, EthernetPortEnabled);
+	CheckMenuItem(ID_IP232LOCALHOST, IP232localhost);
+	CheckMenuItem(ID_IP232CUSTOM, IP232custom);
+	CheckMenuItem(ID_IP232MODE, IP232mode);
+	CheckMenuItem(ID_IP232RAW, IP232raw);
 
-	CheckMenuItem(m_hMenu, ID_COM1, SerialPort == 1 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_COM2, SerialPort == 2 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_COM3, SerialPort == 3 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_COM4, SerialPort == 4 ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_COM1, SerialPort == 1);
+	CheckMenuItem(ID_COM2, SerialPort == 2);
+	CheckMenuItem(ID_COM3, SerialPort == 3);
+	CheckMenuItem(ID_COM4, SerialPort == 4);
 }
 
 //Rob
 void BeebWin::UpdateEconetMenu() {
-	CheckMenuItem(m_hMenu, ID_ECONET, EconetEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_ECONET, EconetEnabled);
 }
 
 void BeebWin::UpdateLEDMenu() {
 	// Update the LED Menu
-	CheckMenuItem(m_hMenu, ID_RED_LEDS, DiscLedColour == LEDColour::Red ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_GREEN_LEDS, DiscLedColour == LEDColour::Green ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_SHOW_KBLEDS, LEDs.ShowKB ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_SHOW_DISCLEDS, LEDs.ShowDisc ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_RED_LEDS, DiscLedColour == LEDColour::Red);
+	CheckMenuItem(ID_GREEN_LEDS, DiscLedColour == LEDColour::Green);
+	CheckMenuItem(ID_SHOW_KBLEDS, LEDs.ShowKB);
+	CheckMenuItem(ID_SHOW_DISCLEDS, LEDs.ShowDisc);
 }
 
 void BeebWin::UpdateOptiMenu() {
-	CheckMenuItem(m_hMenu, ID_DOCONLY, OpCodes == 1 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_EXTRAS, OpCodes == 2 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_FULLSET, OpCodes == 3 ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_BHARDWARE, BHardware ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_TSTYLE, THalfMode ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, ID_PSAMPLES, PartSamples ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(ID_DOCONLY, OpCodes == 1);
+	CheckMenuItem(ID_EXTRAS, OpCodes == 2);
+	CheckMenuItem(ID_FULLSET, OpCodes == 3);
+	CheckMenuItem(ID_BHARDWARE, BHardware);
+	CheckMenuItem(ID_TSTYLE, THalfMode);
+	CheckMenuItem(ID_PSAMPLES, PartSamples);
 }
 
 /***************************************************************************/
@@ -2465,7 +2470,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_WPONLOAD:
 		m_WriteProtectOnLoad = !m_WriteProtectOnLoad;
-		CheckMenuItem(m_hMenu, IDM_WPONLOAD, m_WriteProtectOnLoad ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_WPONLOAD, m_WriteProtectOnLoad);
 		break;
 
 	case IDM_EDIT_COPY:
@@ -2478,7 +2483,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_EDIT_CRLF:
 		m_translateCRLF = !m_translateCRLF;
-		CheckMenuItem(m_hMenu, IDM_EDIT_CRLF, m_translateCRLF ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_EDIT_CRLF, m_translateCRLF);
 		break;
 
 	case IDM_DISC_EXPORT_0:
@@ -2513,9 +2518,9 @@ void BeebWin::HandleCommand(int MenuId)
 
 			if (MenuId != m_MenuIdPrinterPort)
 			{
-				CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_UNCHECKED);
+				CheckMenuItem(m_MenuIdPrinterPort, false);
 				m_MenuIdPrinterPort = MenuId;
-				CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+				CheckMenuItem(m_MenuIdPrinterPort, true);
 			}
 			TranslatePrinterPort();
 		}
@@ -2527,9 +2532,9 @@ void BeebWin::HandleCommand(int MenuId)
 
 		if (MenuId != m_MenuIdPrinterPort)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdPrinterPort, false);
 			m_MenuIdPrinterPort = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+			CheckMenuItem(m_MenuIdPrinterPort, true);
 		}
 		TranslatePrinterPort();
 		break;
@@ -2545,9 +2550,9 @@ void BeebWin::HandleCommand(int MenuId)
 			if (PrinterEnabled)
 				TogglePrinter();
 
-			CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdPrinterPort, false);
 			m_MenuIdPrinterPort = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+			CheckMenuItem(m_MenuIdPrinterPort, true);
 			TranslatePrinterPort();
 		}
 		break;
@@ -2759,7 +2764,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_DISPDDRAW:
 	case IDM_DISPDX9:
 	{
-		UINT enabled;
+		bool enabled;
 		ExitDX();
 
 		m_DisplayRenderer = MenuId;
@@ -2768,21 +2773,21 @@ void BeebWin::HandleCommand(int MenuId)
 		if (m_DisplayRenderer != IDM_DISPGDI)
 		{
 			InitDX();
-			enabled = MF_ENABLED;
+			enabled = true;
 		}
 		else
 		{
-			enabled = MF_GRAYED;
+			enabled = false;
 		}
 		UpdateDisplayRendererMenu();
-		EnableMenuItem(m_hMenu, IDM_DXSMOOTHING, enabled);
-		EnableMenuItem(m_hMenu, IDM_DXSMOOTHMODE7ONLY, enabled);
+		EnableMenuItem(IDM_DXSMOOTHING, enabled);
+		EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, enabled);
 		break;
 	}
 
 	case IDM_DXSMOOTHING:
 		m_DXSmoothing = !m_DXSmoothing;
-		CheckMenuItem(m_hMenu, IDM_DXSMOOTHING, m_DXSmoothing ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_DXSMOOTHING, m_DXSmoothing);
 		if (m_DisplayRenderer != IDM_DISPGDI)
 		{
 			UpdateSmoothing();
@@ -2791,7 +2796,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_DXSMOOTHMODE7ONLY:
 		m_DXSmoothMode7Only = !m_DXSmoothMode7Only;
-		CheckMenuItem(m_hMenu, IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only);
 		if (m_DisplayRenderer != IDM_DISPGDI)
 		{
 			UpdateSmoothing();
@@ -2809,9 +2814,9 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			if (m_isFullScreen)
 				HandleCommand(IDM_FULLSCREEN);
-			//CheckMenuItem(hMenu, m_MenuIdWinSize, MF_UNCHECKED);
+			// CheckMenuItem(m_MenuIdWinSize, false);
 			m_MenuIdWinSize = MenuId;
-			//CheckMenuItem(hMenu, m_MenuIdWinSize, MF_CHECKED);
+			// CheckMenuItem(m_MenuIdWinSize, true);
 			TranslateWindowSize();
 			SetWindowAttributes(m_isFullScreen);
 		}
@@ -2832,9 +2837,9 @@ void BeebWin::HandleCommand(int MenuId)
 		// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
 		if ((MenuId != ID_VIEW_DD_SCREENRES) || !m_isFullScreen)
 		{
-			CheckMenuItem(m_hMenu, m_DDFullScreenMode, MF_UNCHECKED);
+			CheckMenuItem(m_DDFullScreenMode, false);
 			m_DDFullScreenMode = MenuId;
-			CheckMenuItem(m_hMenu, m_DDFullScreenMode, MF_CHECKED);
+			CheckMenuItem(m_DDFullScreenMode, true);
 			TranslateDDSize();
 
 			if (m_isFullScreen && m_DisplayRenderer != IDM_DISPGDI)
@@ -2846,13 +2851,13 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_FULLSCREEN:
 		m_isFullScreen = !m_isFullScreen;
-		CheckMenuItem(m_hMenu, IDM_FULLSCREEN, m_isFullScreen ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
 		SetWindowAttributes(!m_isFullScreen);
 		break;
 
 	case IDM_MAINTAINASPECTRATIO:
 		m_MaintainAspectRatio = !m_MaintainAspectRatio;
-		CheckMenuItem(m_hMenu, IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio);
 		if (m_isFullScreen)
 		{
 			// Clear unused areas of screen
@@ -2866,14 +2871,14 @@ void BeebWin::HandleCommand(int MenuId)
 		if (m_ShowSpeedAndFPS)
 		{
 			m_ShowSpeedAndFPS = false;
-			CheckMenuItem(m_hMenu, IDM_SPEEDANDFPS, MF_UNCHECKED);
 			SetWindowText(m_hWnd, WindowTitle);
 		}
 		else
 		{
 			m_ShowSpeedAndFPS = true;
-			CheckMenuItem(m_hMenu, IDM_SPEEDANDFPS, MF_CHECKED);
 		}
+
+		CheckMenuItem(IDM_SPEEDANDFPS, m_ShowSpeedAndFPS);
 		break;
 
 	case IDM_XAUDIO2:
@@ -2905,7 +2910,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_SOUNDONOFF:
 		if (SoundDefault)
 		{
-			CheckMenuItem(m_hMenu, IDM_SOUNDONOFF, MF_UNCHECKED);
+			CheckMenuItem(IDM_SOUNDONOFF, false);
 			SoundReset();
 			SoundDefault = false;
 		}
@@ -2913,7 +2918,7 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			SoundInit();
 			if (SoundEnabled) {
-				CheckMenuItem(m_hMenu, IDM_SOUNDONOFF, MF_CHECKED);
+				CheckMenuItem(IDM_SOUNDONOFF, true);
 				SoundDefault = true;
 			}
 		}
@@ -2921,17 +2926,17 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_SOUNDCHIP:
 		SoundChipEnabled = !SoundChipEnabled;
-		CheckMenuItem(m_hMenu, IDM_SOUNDCHIP, SoundChipEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_SOUNDCHIP, SoundChipEnabled);
 		break;
 
 	case ID_SFX_RELAY:
 		RelaySoundEnabled = !RelaySoundEnabled;
-		CheckMenuItem(m_hMenu, ID_SFX_RELAY, RelaySoundEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_SFX_RELAY, RelaySoundEnabled);
 		break;
 
 	case ID_SFX_DISCDRIVES:
 		DiscDriveSoundEnabled = !DiscDriveSoundEnabled;
-		CheckMenuItem(m_hMenu, ID_SFX_DISCDRIVES, DiscDriveSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_SFX_DISCDRIVES, DiscDriveSoundEnabled);
 		break;
 
 	case IDM_44100KHZ:
@@ -2939,9 +2944,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_11025KHZ:
 		if (MenuId != m_MenuIdSampleRate)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdSampleRate, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdSampleRate, false);
 			m_MenuIdSampleRate = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdSampleRate, MF_CHECKED);
+			CheckMenuItem(m_MenuIdSampleRate, true);
 			TranslateSampleRate();
 
 			if (SoundEnabled)
@@ -2966,9 +2971,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_LOWVOLUME:
 		if (MenuId != m_MenuIdVolume)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdVolume, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdVolume, false);
 			m_MenuIdVolume = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdVolume, MF_CHECKED);
+			CheckMenuItem(m_MenuIdVolume, true);
 			TranslateVolume();
 		}
 		break;
@@ -2978,7 +2983,7 @@ void BeebWin::HandleCommand(int MenuId)
 		Music5000Reset();
 		if (Music5000Enabled)
 			Music5000Init();
-		CheckMenuItem(m_hMenu, IDM_MUSIC5000, Music5000Enabled?MF_CHECKED:MF_UNCHECKED);
+		CheckMenuItem(IDM_MUSIC5000, Music5000Enabled);
 		break;
 
 	/* LRW Added switch individual ROMS Writable ON/OFF */
@@ -3001,13 +3006,13 @@ void BeebWin::HandleCommand(int MenuId)
 	{
 		int slot = MenuId-IDM_ALLOWWRITES_ROM0;
 		RomWritable[slot] = !RomWritable[slot];
-		CheckMenuItem(m_hMenu, MenuId, RomWritable[slot] ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(MenuId, RomWritable[slot]);
 		break;				
 	}
 
 	case IDM_SWRAMBOARD:
 		SWRAMBoardEnabled = !SWRAMBoardEnabled;
-		CheckMenuItem(m_hMenu, IDM_SWRAMBOARD, SWRAMBoardEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_SWRAMBOARD, SWRAMBoardEnabled);
 		break;
 
 	case IDM_ROMCONFIG:
@@ -3036,9 +3041,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_1FPS:
 		if (MenuId != m_MenuIdTiming)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdTiming, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdTiming, false);
 			m_MenuIdTiming = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdTiming, MF_CHECKED);
+			CheckMenuItem(m_MenuIdTiming, true);
 			TranslateTiming();
 		}
 		break;
@@ -3049,7 +3054,8 @@ void BeebWin::HandleCommand(int MenuId)
 		/* Disable current selection */
 		if (m_MenuIdSticks != 0)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdSticks, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdSticks, false);
+
 			if (m_MenuIdSticks == IDM_JOYSTICK)
 			{
 				ResetJoystick();
@@ -3069,6 +3075,7 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			/* Initialise new selection */
 			m_MenuIdSticks = MenuId;
+
 			if (m_MenuIdSticks == IDM_JOYSTICK)
 			{
 				InitJoystick();
@@ -3077,50 +3084,27 @@ void BeebWin::HandleCommand(int MenuId)
 			{
 				AtoDEnable();
 			}
+
 			if (JoystickEnabled)
-				CheckMenuItem(m_hMenu, m_MenuIdSticks, MF_CHECKED);
+				CheckMenuItem(m_MenuIdSticks, true);
 			else
 				m_MenuIdSticks = 0;
 		}
 		break;
 
 	case IDM_FREEZEINACTIVE:
-		if (m_FreezeWhenInactive)
-		{
-			m_FreezeWhenInactive = false;
-			CheckMenuItem(m_hMenu, IDM_FREEZEINACTIVE, MF_UNCHECKED);
-		}
-		else
-		{
-			m_FreezeWhenInactive = true;
-			CheckMenuItem(m_hMenu, IDM_FREEZEINACTIVE, MF_CHECKED);
-		}
+		m_FreezeWhenInactive = !m_FreezeWhenInactive;
+		CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
 		break;
 
 	case IDM_HIDECURSOR:
-		if (m_HideCursor)
-		{
-			m_HideCursor = false;
-			CheckMenuItem(m_hMenu, IDM_HIDECURSOR, MF_UNCHECKED);
-		}
-		else
-		{
-			m_HideCursor = true;
-			CheckMenuItem(m_hMenu, IDM_HIDECURSOR, MF_CHECKED);
-		}
+		m_HideCursor = !m_HideCursor;
+		CheckMenuItem(IDM_HIDECURSOR, m_HideCursor);
 		break;
 
 	case IDM_IGNOREILLEGALOPS:
-		if (IgnoreIllegalInstructions)
-		{
-			IgnoreIllegalInstructions = false;
-			CheckMenuItem(m_hMenu, IDM_IGNOREILLEGALOPS, MF_UNCHECKED);
-		}
-		else
-		{
-			IgnoreIllegalInstructions = true;
-			CheckMenuItem(m_hMenu, IDM_IGNOREILLEGALOPS, MF_CHECKED);
-		}
+		IgnoreIllegalInstructions = !IgnoreIllegalInstructions;
+		CheckMenuItem(IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions);
 		break;
 
 	case IDM_DEFINEKEYMAP:
@@ -3141,36 +3125,21 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_LOGICALKYBDMAPPING:
 		if (MenuId != m_MenuIdKeyMapping)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdKeyMapping, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdKeyMapping, false);
 			m_MenuIdKeyMapping = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdKeyMapping, MF_CHECKED);
+			CheckMenuItem(m_MenuIdKeyMapping, true);
 			TranslateKeyMapping();
 		}
 		break;
 
 	case IDM_MAPAS:
-		if (m_KeyMapAS)
-		{
-			m_KeyMapAS = false;
-			CheckMenuItem(m_hMenu, IDM_MAPAS, MF_UNCHECKED);
-		}
-		else
-		{
-			m_KeyMapAS = true;
-			CheckMenuItem(m_hMenu, IDM_MAPAS, MF_CHECKED);
-		}
+		m_KeyMapAS = !m_KeyMapAS;
+		CheckMenuItem(IDM_MAPAS, m_KeyMapAS);
 		break;
+
 	case IDM_MAPFUNCS:
-		if (m_KeyMapFunc)
-		{
-			m_KeyMapFunc = false;
-			CheckMenuItem(m_hMenu, IDM_MAPFUNCS, MF_UNCHECKED);
-		}
-		else
-		{
-			m_KeyMapFunc = true;
-			CheckMenuItem(m_hMenu, IDM_MAPFUNCS, MF_CHECKED);
-		}
+		m_KeyMapFunc = !m_KeyMapFunc;
+		CheckMenuItem(IDM_MAPFUNCS, m_KeyMapFunc);
 		break;
 
 	case IDM_ABOUT:
@@ -3193,19 +3162,19 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_AUTOSAVE_PREFS_CMOS:
 		m_AutoSavePrefsCMOS = !m_AutoSavePrefsCMOS;
-		CheckMenuItem(m_hMenu, IDM_AUTOSAVE_PREFS_CMOS, m_AutoSavePrefsCMOS ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_AUTOSAVE_PREFS_CMOS, m_AutoSavePrefsCMOS);
 		m_AutoSavePrefsChanged = true;
 		break;
 
 	case IDM_AUTOSAVE_PREFS_FOLDERS:
 		m_AutoSavePrefsFolders = !m_AutoSavePrefsFolders;
-		CheckMenuItem(m_hMenu, IDM_AUTOSAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_AUTOSAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders);
 		m_AutoSavePrefsChanged = true;
 		break;
 
 	case IDM_AUTOSAVE_PREFS_ALL:
 		m_AutoSavePrefsAll = !m_AutoSavePrefsAll;
-		CheckMenuItem(m_hMenu, IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll);
 		m_AutoSavePrefsChanged = true;
 		break;
 
@@ -3214,29 +3183,13 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_AMXONOFF:
-		if (AMXMouseEnabled)
-		{
-			CheckMenuItem(m_hMenu, IDM_AMXONOFF, MF_UNCHECKED);
-			AMXMouseEnabled = false;
-		}
-		else
-		{
-			CheckMenuItem(m_hMenu, IDM_AMXONOFF, MF_CHECKED);
-			AMXMouseEnabled = true;
-		}
+		AMXMouseEnabled = !AMXMouseEnabled;
+		CheckMenuItem(IDM_AMXONOFF, AMXMouseEnabled);
 		break;
 
 	case IDM_AMX_LRFORMIDDLE:
-		if (AMXLRForMiddle)
-		{
-			CheckMenuItem(m_hMenu, IDM_AMX_LRFORMIDDLE, MF_UNCHECKED);
-			AMXLRForMiddle = false;
-		}
-		else
-		{
-			CheckMenuItem(m_hMenu, IDM_AMX_LRFORMIDDLE, MF_CHECKED);
-			AMXLRForMiddle = true;
-		}
+		AMXLRForMiddle = !AMXLRForMiddle;
+		CheckMenuItem(IDM_AMX_LRFORMIDDLE, AMXLRForMiddle);
 		break;
 
 	case IDM_AMX_160X256:
@@ -3244,9 +3197,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_AMX_640X256:
 		if (MenuId != m_MenuIdAMXSize)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdAMXSize, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdAMXSize, false);
 			m_MenuIdAMXSize = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdAMXSize, MF_CHECKED);
+			CheckMenuItem(m_MenuIdAMXSize, true);
 		}
 		TranslateAMX();
 		break;
@@ -3259,13 +3212,13 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_AMX_ADJUSTM50:
 		if (m_MenuIdAMXAdjust != 0)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdAMXAdjust, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdAMXAdjust, false);
 		}
 
 		if (MenuId != m_MenuIdAMXAdjust)
 		{
 			m_MenuIdAMXAdjust = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdAMXAdjust, MF_CHECKED);
+			CheckMenuItem(m_MenuIdAMXAdjust, true);
 		}
 		else
 		{
@@ -3303,14 +3256,14 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
 		TorchTube = false;
 		AcornZ80 = false;
-		CheckMenuItem(m_hMenu, IDM_TUBE, TubeEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE, TubeEnabled);
 #ifdef M512COPRO_ENABLED
-		CheckMenuItem(m_hMenu, IDM_TUBE186, Tube186Enabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
 #endif
-		CheckMenuItem(m_hMenu, IDM_TORCH, TorchTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARM, ArmTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ACORNZ80, AcornZ80 ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARMCOPRO, ArmCoProTube ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TORCH, TorchTube);
+		CheckMenuItem(IDM_ARM, ArmTube);
+		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
+		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
 
@@ -3323,14 +3276,14 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
 		TorchTube = false;
 		AcornZ80 = false;
-		CheckMenuItem(m_hMenu, IDM_TUBE, TubeEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE, TubeEnabled);
 #ifdef M512COPRO_ENABLED
-		CheckMenuItem(m_hMenu, IDM_TUBE186, Tube186Enabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
 #endif
-		CheckMenuItem(m_hMenu, IDM_TORCH, TorchTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARM, ArmTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ACORNZ80, AcornZ80 ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARMCOPRO, ArmCoProTube ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TORCH, TorchTube);
+		CheckMenuItem(IDM_ARM, ArmTube);
+		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
+		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
 
@@ -3343,14 +3296,14 @@ void BeebWin::HandleCommand(int MenuId)
 		ArmTube = false;
 		ArmCoProTube = false;
 		AcornZ80 = false;
-		CheckMenuItem(m_hMenu, IDM_TUBE, TubeEnabled ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARM, ArmTube ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE, TubeEnabled);
+		CheckMenuItem(IDM_ARM, ArmTube);
 #ifdef M512COPRO_ENABLED
-		CheckMenuItem(hMenu, IDM_TUBE186, Tube186Enabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
 #endif
-		CheckMenuItem(m_hMenu, IDM_TORCH, TorchTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ACORNZ80, AcornZ80 ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARMCOPRO, ArmCoProTube ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TORCH, TorchTube);
+		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
+		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
 
@@ -3362,12 +3315,12 @@ void BeebWin::HandleCommand(int MenuId)
 		AcornZ80 = false;
 		ArmTube = false;
 		ArmCoProTube = false;
-		CheckMenuItem(m_hMenu, IDM_ARM, ArmTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_TUBE, TubeEnabled ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_TUBE186, Tube186Enabled ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_TORCH, TorchTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ACORNZ80, AcornZ80 ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARMCOPRO, ArmCoProTube ? MF_CHECKED :MF_UNCHECKED);
+		CheckMenuItem(IDM_ARM, ArmTube);
+		CheckMenuItem(IDM_TUBE, TubeEnabled);
+		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
+		CheckMenuItem(IDM_TORCH, TorchTube);
+		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
+		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
 #endif
@@ -3381,14 +3334,14 @@ void BeebWin::HandleCommand(int MenuId)
 		AcornZ80 = false;
 		ArmTube = false;
 		ArmCoProTube = false;
-		CheckMenuItem(m_hMenu, IDM_ARM, ArmTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_TUBE, TubeEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_ARM, ArmTube);
+		CheckMenuItem(IDM_TUBE, TubeEnabled);
 #ifdef M512COPRO_ENABLED
-		CheckMenuItem(m_hMenu, IDM_TUBE186, Tube186Enabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
 #endif
-		CheckMenuItem(m_hMenu, IDM_TORCH, TorchTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ACORNZ80, AcornZ80 ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARMCOPRO, ArmCoProTube ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TORCH, TorchTube);
+		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
+		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
 
@@ -3400,14 +3353,14 @@ void BeebWin::HandleCommand(int MenuId)
 		Tube186Enabled = false;
 #endif
 		ArmCoProTube = false;
-		CheckMenuItem(m_hMenu, IDM_ARM, ArmTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_TUBE, TubeEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_ARM, ArmTube);
+		CheckMenuItem(IDM_TUBE, TubeEnabled);
 #ifdef M512COPRO_ENABLED
-		CheckMenuItem(m_hMenu, IDM_TUBE186, Tube186Enabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
 #endif
-		CheckMenuItem(m_hMenu, IDM_TORCH, TorchTube ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ACORNZ80, AcornZ80 ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_ARMCOPRO, ArmCoProTube ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_TORCH, TorchTube);
+		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
+		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
 
@@ -3454,12 +3407,12 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_UNLOCKTAPE:
 		UnlockTape = !UnlockTape;
 		SetUnlockTape(UnlockTape);
-		CheckMenuItem(m_hMenu, ID_UNLOCKTAPE, UnlockTape ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_UNLOCKTAPE, UnlockTape);
 		break;
 
 	case ID_HIDEMENU:
 		HideMenuEnabled = !HideMenuEnabled;
-		CheckMenuItem(m_hMenu, ID_HIDEMENU, HideMenuEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_HIDEMENU, HideMenuEnabled);
 		break;
 
 	case ID_RED_LEDS:
@@ -3490,8 +3443,8 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_8271:
 		KillDLLs();
 		NativeFDC = true;
-		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
-		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
+		CheckMenuItem(ID_8271, true);
+		CheckMenuItem(ID_FDC_DLL, false);
 		if (MachineType != Model::Master128)
 		{
 			char CfgName[20];
@@ -3522,7 +3475,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case ID_TAPESOUND:
 		TapeSoundEnabled = !TapeSoundEnabled;
-		CheckMenuItem(m_hMenu, ID_TAPESOUND, TapeSoundEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_TAPESOUND, TapeSoundEnabled);
 		break;
 
 	case ID_TAPECONTROL:
@@ -3541,7 +3494,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case ID_UPRM:
 		RTC_Enabled = !RTC_Enabled;
-		CheckMenuItem(m_hMenu, ID_UPRM, RTC_Enabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_UPRM, RTC_Enabled);
 		break;
 
 	case ID_TSTYLE:
@@ -3576,7 +3529,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_EXPVOLUME:
 		SoundExponentialVolume = !SoundExponentialVolume;
-		CheckMenuItem(m_hMenu, IDM_EXPVOLUME, SoundExponentialVolume ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_EXPVOLUME, SoundExponentialVolume);
 		break;
 
 	case IDM_SHOWDEBUGGER:
@@ -3592,9 +3545,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_BLUR_8:
 		if (MenuId != m_MotionBlur)
 		{
-			CheckMenuItem(m_hMenu, m_MotionBlur, MF_UNCHECKED);
+			CheckMenuItem(m_MotionBlur, false);
 			m_MotionBlur = MenuId;
-			CheckMenuItem(m_hMenu, m_MotionBlur, MF_CHECKED);
+			CheckMenuItem(m_MotionBlur, true);
 		}
 		break;
 
@@ -3604,9 +3557,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_CAPTURERES4:
 		if (MenuId != m_MenuIdCaptureResolution)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdCaptureResolution, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdCaptureResolution, false);
 			m_MenuIdCaptureResolution = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdCaptureResolution, MF_CHECKED);
+			CheckMenuItem(m_MenuIdCaptureResolution, true);
 		}
 		break;
 
@@ -3616,9 +3569,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_CAPTUREPNG:
 		if (MenuId != m_MenuIdCaptureFormat)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdCaptureFormat, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdCaptureFormat, false);
 			m_MenuIdCaptureFormat = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdCaptureFormat, MF_CHECKED);
+			CheckMenuItem(m_MenuIdCaptureFormat, true);
 		}
 		break;
 
@@ -3634,9 +3587,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_VIDEORES3:
 		if (MenuId != m_MenuIdAviResolution)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdAviResolution, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdAviResolution, false);
 			m_MenuIdAviResolution = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdAviResolution, MF_CHECKED);
+			CheckMenuItem(m_MenuIdAviResolution, true);
 		}
 		break;
 
@@ -3648,9 +3601,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_VIDEOSKIP5:
 		if (MenuId != m_MenuIdAviSkip)
 		{
-			CheckMenuItem(m_hMenu, m_MenuIdAviSkip, MF_UNCHECKED);
+			CheckMenuItem(m_MenuIdAviSkip, false);
 			m_MenuIdAviSkip = MenuId;
-			CheckMenuItem(m_hMenu, m_MenuIdAviSkip, MF_CHECKED);
+			CheckMenuItem(m_MenuIdAviSkip, true);
 		}
 		break;
 
@@ -3670,7 +3623,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_SPEECH:
 		if (SpeechDefault)
 		{
-			CheckMenuItem(m_hMenu, IDM_SPEECH, MF_UNCHECKED);
+			CheckMenuItem(IDM_SPEECH, false);
 			tms5220_stop();
 			SpeechDefault = false;
 		}
@@ -3679,7 +3632,7 @@ void BeebWin::HandleCommand(int MenuId)
 			tms5220_start();
 			if (SpeechEnabled)
 			{
-				CheckMenuItem(m_hMenu, IDM_SPEECH, MF_CHECKED);
+				CheckMenuItem(IDM_SPEECH, true);
 				SpeechDefault = true;
 			}
 		}
@@ -3689,40 +3642,40 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_TELETEXT:
 		TeleTextAdapterEnabled = !TeleTextAdapterEnabled;
 		TeleTextInit();
-		CheckMenuItem(m_hMenu, ID_TELETEXT, TeleTextAdapterEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_TELETEXT, TeleTextAdapterEnabled);
 		break;
 
 	case ID_HARDDRIVE:
 		SCSIDriveEnabled = !SCSIDriveEnabled;
 		SCSIReset();
 		SASIReset();
-		CheckMenuItem(m_hMenu, ID_HARDDRIVE, SCSIDriveEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 		if (SCSIDriveEnabled) {
 			IDEDriveEnabled = false;
-			CheckMenuItem(m_hMenu, ID_IDEDRIVE, IDEDriveEnabled ? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
 		}
 		break;
 
 	case ID_IDEDRIVE:
 		IDEDriveEnabled = !IDEDriveEnabled;
 		IDEReset();
-		CheckMenuItem(m_hMenu, ID_IDEDRIVE, IDEDriveEnabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
 		if (IDEDriveEnabled) {
 			SCSIDriveEnabled = false;
-			CheckMenuItem(m_hMenu, ID_HARDDRIVE, SCSIDriveEnabled ? MF_CHECKED : MF_UNCHECKED);
+			CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 		}
 		break;
 
 	case ID_FLOPPYDRIVE:
 		Disc8271Enabled = !Disc8271Enabled;
 		Disc1770Enabled = !Disc1770Enabled;
-		CheckMenuItem(m_hMenu, ID_FLOPPYDRIVE, Disc8271Enabled ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 		break;
 
 	case ID_RTCY2KADJUST:
 		RTCY2KAdjust = !RTCY2KAdjust;
 		RTCInit();
-		CheckMenuItem(m_hMenu, ID_RTCY2KADJUST, RTCY2KAdjust ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(ID_RTCY2KADJUST, RTCY2KAdjust);
 		break;
 
 	case IDM_TEXTTOSPEECH:
@@ -3824,9 +3777,9 @@ void BeebWin::HandleCommand(int MenuId)
 	}
 }
 
-void BeebWin::SetSoundMenu(void) {
-	CheckMenuItem(m_hMenu, IDM_SOUNDONOFF, SoundEnabled && SoundDefault ? MF_CHECKED : MF_UNCHECKED);
-	CheckMenuItem(m_hMenu, IDM_MUSIC5000, Music5000Enabled ? MF_CHECKED : MF_UNCHECKED);
+void BeebWin::SetSoundMenu() {
+	CheckMenuItem(IDM_SOUNDONOFF, SoundEnabled && SoundDefault);
+	CheckMenuItem(IDM_MUSIC5000, Music5000Enabled);
 }
 
 void BeebWin::Activate(bool active)

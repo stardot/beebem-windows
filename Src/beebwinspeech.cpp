@@ -51,7 +51,7 @@ void BeebWin::InitTextToSpeech(void)
 					   WindowTitle,MB_OK|MB_ICONERROR);
 		}
 	}
-	CheckMenuItem(m_hMenu, IDM_TEXTTOSPEECH, m_TextToSpeechEnabled ? MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
 
 	if (m_TextToSpeechEnabled)
 	{
@@ -592,7 +592,7 @@ void BeebWin::InitTextView(void)
 		}
 	}
 
-	CheckMenuItem(m_hMenu, IDM_TEXTVIEW, m_TextViewEnabled ? MF_CHECKED:MF_UNCHECKED);
+	CheckMenuItem(IDM_TEXTVIEW, m_TextViewEnabled);
 }
 
 void BeebWin::TextView(void)

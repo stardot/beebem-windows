@@ -469,9 +469,9 @@ void BeebWin::ToggleWriteProtect(int Drive)
 	}
 
 	if (Drive == 0)
-		CheckMenuItem(m_hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_WPDISC0, m_WriteProtectDisc[0]);
 	else
-		CheckMenuItem(m_hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(IDM_WPDISC1, m_WriteProtectDisc[1]);
 }
 
 void BeebWin::SetDiscWriteProtects(void)
@@ -480,13 +480,14 @@ void BeebWin::SetDiscWriteProtects(void)
 	{
 		m_WriteProtectDisc[0] = !IsDiscWritable(0);
 		m_WriteProtectDisc[1] = !IsDiscWritable(1);
-		CheckMenuItem(m_hMenu, IDM_WPDISC0, m_WriteProtectDisc[0] ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(m_hMenu, IDM_WPDISC1, m_WriteProtectDisc[1] ? MF_CHECKED : MF_UNCHECKED);
+
+		CheckMenuItem(IDM_WPDISC0, m_WriteProtectDisc[0]);
+		CheckMenuItem(IDM_WPDISC1, m_WriteProtectDisc[1]);
 	}
 	else
 	{
-		CheckMenuItem(m_hMenu, IDM_WPDISC0, DWriteable[0] ? MF_UNCHECKED : MF_CHECKED);
-		CheckMenuItem(m_hMenu, IDM_WPDISC1, DWriteable[1] ? MF_UNCHECKED : MF_CHECKED);
+		CheckMenuItem(IDM_WPDISC0, !DWriteable[0]);
+		CheckMenuItem(IDM_WPDISC1, !DWriteable[1]);
 	}
 }
 
@@ -567,7 +568,7 @@ void BeebWin::TogglePrinter()
 		}
 	}
 
-	CheckMenuItem(m_hMenu, IDM_PRINTERONOFF, PrinterEnabled ? MF_CHECKED : MF_UNCHECKED);
+	CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
 }
 
 /****************************************************************************/
@@ -797,11 +798,11 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 
 	// Set menu options
 	if (NativeFDC) {
-		CheckMenuItem(m_hMenu,ID_8271,MF_CHECKED);
-		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_UNCHECKED);
+		CheckMenuItem(ID_8271, true);
+		CheckMenuItem(ID_FDC_DLL, false);
 	} else {
-		CheckMenuItem(m_hMenu,ID_8271,MF_UNCHECKED);
-		CheckMenuItem(m_hMenu,ID_FDC_DLL,MF_CHECKED);
+		CheckMenuItem(ID_8271, false);
+		CheckMenuItem(ID_FDC_DLL, true);
 	}
 
 	DisplayCycles=7000000;
@@ -884,9 +885,9 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 			else
 				id = m_MenuIdKeyMapping;
 		}
-		CheckMenuItem(m_hMenu, m_MenuIdKeyMapping, MF_UNCHECKED);
+		CheckMenuItem(m_MenuIdKeyMapping, false);
 		m_MenuIdKeyMapping = id;
-		CheckMenuItem(m_hMenu, m_MenuIdKeyMapping, MF_CHECKED);
+		CheckMenuItem(m_MenuIdKeyMapping, true);
 		TranslateKeyMapping();
 	}
 
@@ -1063,9 +1064,9 @@ void BeebWin::doCopy()
 
 	if (IDM_PRINTER_CLIPBOARD != m_MenuIdPrinterPort)
 	{
-		CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_UNCHECKED);
+		CheckMenuItem(m_MenuIdPrinterPort, false);
 		m_MenuIdPrinterPort = IDM_PRINTER_CLIPBOARD;
-		CheckMenuItem(m_hMenu, m_MenuIdPrinterPort, MF_CHECKED);
+		CheckMenuItem(m_MenuIdPrinterPort, true);
 	}
 	TranslatePrinterPort();
 	TogglePrinter();		// Turn printer back on
