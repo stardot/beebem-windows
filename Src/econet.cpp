@@ -76,8 +76,8 @@ unsigned char EconetStationNumber=0;	// default Station Number
 unsigned int EconetListenPort=0;		// default Listen port
 unsigned long EconetListenIP=0x0100007f;		
 // IP settings:
-SOCKET ListenSocket = SOCKET_ERROR;		// Listen socket
-SOCKET SendSocket;
+SOCKET ListenSocket = INVALID_SOCKET;		// Listen socket
+SOCKET SendSocket = INVALID_SOCKET;
 WSADATA WsaDat;							// Windows sockets info
 bool ReceiverSocketsOpen = false; // Used to flag line up and clock running
 
