@@ -83,6 +83,10 @@ using namespace Gdiplus;
 
 static char *CFG_REG_KEY = "Software\\BeebEm";
 
+static unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
+	00,00,00,00,00,00,00,00,03,00,00,00,00,00,0x5B,0xE0,00,00,0x5C,0xE0,00,00,00,00
+};
+
 #ifdef M512COPRO_ENABLED
 void i86_main(void);
 #endif
