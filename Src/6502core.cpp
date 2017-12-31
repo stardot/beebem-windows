@@ -318,12 +318,11 @@ INLINE static void SetPSRCZN(int c,int z, int n) {
 
 /*----------------------------------------------------------------------------*/
 void DumpRegs(void) {
-  static char FlagNames[]="CZIDB-VNczidb-vn";
-  int FlagNum;
+  static const char FlagNames[]="CZIDB-VNczidb-vn";
 
   fprintf(stderr,"  PC=0x%x A=0x%x X=0x%x Y=0x%x S=0x%x PSR=0x%x=",
     ProgramCounter,Accumulator,XReg,YReg,StackReg,PSR);
-  for(FlagNum=0;FlagNum<8;FlagNum++)
+  for (int FlagNum = 0; FlagNum < 8; FlagNum++)
     fputc(FlagNames[FlagNum+8*((PSR & (1<<FlagNum))==0)],stderr);
   fputc('\n',stderr);
 } /* DumpRegs */
@@ -1089,13 +1088,12 @@ void DoNMI(void) {
 
 void Dis6502(void)
 {
-char str[256];
-
+	char str[256];
 	DebugDisassembleInstruction(ProgramCounter, true, str);
 	
 	sprintf(str + strlen(str), "%02X %02X %02X ", Accumulator, XReg, YReg);
 	
-    sprintf(str + strlen(str), (PSR & FlagC) ? "C" : ".");
+	sprintf(str + strlen(str), (PSR & FlagC) ? "C" : ".");
 	sprintf(str + strlen(str), (PSR & FlagZ) ? "Z" : ".");
 	sprintf(str + strlen(str), (PSR & FlagI) ? "I" : ".");
 	sprintf(str + strlen(str), (PSR & FlagD) ? "D" : ".");
@@ -1104,7 +1102,6 @@ char str[256];
 	sprintf(str + strlen(str), (PSR & FlagN) ? "N" : ".");
 
 	WriteLog("%s\n", str);
-
 }
 
 void MemoryDump6502(int addr, int count)
