@@ -546,7 +546,6 @@ void BeebWin::SavePreferences(bool saveAll)
 	unsigned char LEDByte = 0;
 	unsigned char flag;
 	char keyData[256];
-	DWORD dword;
 
 	if (saveAll)
 	{
@@ -619,10 +618,9 @@ void BeebWin::SavePreferences(bool saveAll)
 		// m_Preferences.SetBoolValue("EthernetPortEnabled", EthernetPortEnabled);
 		m_Preferences.SetBoolValue("IP232localhost", IP232localhost);
 		m_Preferences.SetBoolValue("IP232custom", IP232custom);
-		dword = IP232customport;
 		m_Preferences.SetBoolValue("IP232mode", IP232mode);
 		m_Preferences.SetBoolValue("IP232raw", IP232raw);
-		m_Preferences.SetDWORDValue("IP232customport", dword);
+		m_Preferences.SetDWORDValue("IP232customport", IP232customport);
 		m_Preferences.SetStringValue("IP232customip", m_customip);
 
 		m_Preferences.SetBinaryValue("SerialPort", &SerialPort, 1);
