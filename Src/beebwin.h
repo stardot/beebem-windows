@@ -187,11 +187,7 @@ public:
 		return((SixteenUChars *)(m_screen + d));
 	}
 
-	char *imageData(void) {
-		return (m_screen+ScreenAdjust>m_screen)?m_screen+ScreenAdjust:m_screen;
-	}
-
-	HWND GethWnd() { return m_hWnd; };
+	HWND GethWnd() { return m_hWnd; }
 	
 	void RealizePalette(HDC) {};
 	void ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms);
