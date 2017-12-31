@@ -977,8 +977,8 @@ void Load1770UEF(FILE *SUEF,int Version)
 	extern bool DiscLoaded[2];
 	extern bool NativeFDC;
 	char FileName[256];
-	int Loaded=0;
-	int LoadFailed=0;
+	bool Loaded = false;
+	bool LoadFailed = false;
 
 	// Close current images, don't want them corrupted if
 	// saved state was in middle of writing to disc.
@@ -993,23 +993,22 @@ void Load1770UEF(FILE *SUEF,int Version)
 	fread(FileName,1,256,SUEF);
 	if (FileName[0]) {
 		// Load drive 0
-		Loaded=1;
+		Loaded = true;
 		Load1770DiscImage(FileName, 0, DiscType[0], mainWin->m_hMenu);
 		if (!Disc0Open)
-			LoadFailed=1;
+			LoadFailed = true;
 	}
 
 	fread(FileName,1,256,SUEF);
 	if (FileName[0]) {
 		// Load drive 1
-		Loaded=1;
+		Loaded = true;
 		Load1770DiscImage(FileName, 1, DiscType[1], mainWin->m_hMenu);
 		if (!Disc1Open)
-			LoadFailed=1;
+			LoadFailed = true;
 	}
 
-	if (Loaded && !LoadFailed)
-	{
+	if (Loaded && !LoadFailed) {
 		Status=fgetc(SUEF);
 		Data=fgetc(SUEF);
 		Track=fgetc(SUEF);
