@@ -66,7 +66,7 @@ unsigned int fget16(FILE *fileptr) {
 	return(tmpvar);
 }
 
-void SaveUEFState(char *StateName) {
+void SaveUEFState(const char *StateName) {
 	UEFState=fopen(StateName,"wb");
 	if (UEFState != NULL)
 	{
@@ -101,8 +101,8 @@ void SaveUEFState(char *StateName) {
 	}
 }
 
-void LoadUEFState(char *StateName) {
-	char errmsg[256];
+void LoadUEFState(const char *StateName) {
+	// char errmsg[256];
 	char UEFId[10];
 	int CompletionBits=0; // These bits should be filled in
 	long RPos=0,FLength,CPos;
@@ -122,16 +122,16 @@ void LoadUEFState(char *StateName) {
 			return;
 		}
 		Version=fget16(UEFState);
-		sprintf(errmsg,"UEF Version %x",Version);
-		//MessageBox(GETHWND,errmsg,"BeebEm",MB_OK);
+		// sprintf(errmsg,"UEF Version %x",Version);
+		// MessageBox(GETHWND,errmsg,"BeebEm",MB_OK);
 		RPos=ftell(UEFState);
 
 		while (ftell(UEFState)<FLength) {
 			Block=fget16(UEFState);
 			Length=fget32(UEFState);
 			CPos=ftell(UEFState);
-			sprintf(errmsg,"Block %04X - Length %d (%04X)",Block,Length,Length);
-			//MessageBox(GETHWND,errmsg,"BeebEm",MB_ICONERROR|MB_OK);
+			// sprintf(errmsg,"Block %04X - Length %d (%04X)",Block,Length,Length);
+			// MessageBox(GETHWND,errmsg,"BeebEm",MB_ICONERROR|MB_OK);
 			if (Block==0x046A) mainWin->LoadEmuUEF(UEFState,Version);
 			if (Block==0x0460) Load6502UEF(UEFState);
 			if (Block==0x0461) LoadRomRegsUEF(UEFState);
@@ -169,5 +169,3 @@ void LoadUEFState(char *StateName) {
 		MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
 	}
 }
-
-

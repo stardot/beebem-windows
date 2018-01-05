@@ -95,7 +95,6 @@ bool TapePlaying = true;
 bool TapeRecording = false;
 static HWND hwndTapeControl;
 static HWND hwndMap;
-void TapeControlOpenFile(char *file_name);
 void TapeControlUpdateCounter(int tape_time);
 void TapeControlStopRecording(bool RefreshControl);
 
@@ -754,7 +753,7 @@ void Kill_Serial(void) {
 	}
 }
 
-void LoadUEF(char *UEFName) {
+void LoadUEF(const char *UEFName) {
 #ifndef PROFILING
 	CloseUEF();
 
@@ -1004,7 +1003,7 @@ void TapeControlCloseDialog()
 	TapeRecording=false;
 }
 
-void TapeControlOpenFile(char *UEFName)
+void TapeControlOpenFile(const char *UEFName)
 {
 	int i;
 

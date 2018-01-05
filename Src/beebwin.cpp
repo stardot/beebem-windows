@@ -4114,13 +4114,13 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 /*****************************************************************************/
 // Handle a file name passed on command line
 
-void BeebWin::HandleCommandLineFile(int drive, char *CmdLineFile)
+void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 {
 	bool ssd = false;
 	bool dsd = false;
 	bool adfs = false;
 	bool cont = false;
-	char *FileName = NULL;
+	const char *FileName = NULL;
 	bool uef = false;
 	bool csw = false;
 	bool img = false;
@@ -4130,7 +4130,7 @@ void BeebWin::HandleCommandLineFile(int drive, char *CmdLineFile)
 		FileName = CmdLineFile;
 
 		// Work out which type of files it is
-		char *ext = strrchr(FileName, '.');
+		const char *ext = strrchr(FileName, '.');
 		if (ext != NULL)
 		{
 			cont = true;

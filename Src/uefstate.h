@@ -18,12 +18,15 @@ License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
+
 #ifndef UEFSTATE_HEADER
 #define UEFSTATE_HEADER
+
 void fput32(unsigned int word32,FILE *fileptr);
 void fput16(unsigned int word16,FILE *fileptr);
 unsigned int fget32(FILE *fileptr);
 unsigned int fget16(FILE *fileptr);
-void SaveUEFState(char *StateName);
-void LoadUEFState(char *StateName);
+void SaveUEFState(const char *StateName);
+void LoadUEFState(const char *StateName);
+
 #endif
