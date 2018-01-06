@@ -1160,19 +1160,16 @@ void BeebWin::doCopy()
 
 void BeebWin::doPaste()
 {
-    HGLOBAL   hglb;
-    LPTSTR    lptstr;
-
 	if (!IsClipboardFormatAvailable(CF_TEXT))
 		return;
 
 	if (!OpenClipboard(m_hWnd))
 		return;
 
-	hglb = GetClipboardData(CF_TEXT);
+	HGLOBAL hglb = GetClipboardData(CF_TEXT);
 	if (hglb != NULL)
 	{
-		lptstr = (LPTSTR)GlobalLock(hglb);
+		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
 		if (lptstr != NULL)
 		{
 			strncpy(m_clipboard, lptstr, 32767);
@@ -1253,9 +1250,6 @@ int BeebWin::PasteKey(int addr)
 
 void BeebWin::CopyKey(int Value)
 {
-    HGLOBAL hglbCopy;
-    LPTSTR  lptstrCopy;
-
 	if (m_printerbufferlen >= 1024 * 1024)
 		return;
 
@@ -1264,18 +1258,18 @@ void BeebWin::CopyKey(int Value)
 		m_printerbuffer[m_printerbufferlen++] = 0xA;
 
 	if (!OpenClipboard(m_hWnd))
-        return;
+		return;
 
-    EmptyClipboard();
+	EmptyClipboard();
 
-	hglbCopy = GlobalAlloc(GMEM_MOVEABLE, m_printerbufferlen + 1);
+	HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, m_printerbufferlen + 1);
 	if (hglbCopy == NULL)
 	{
 		CloseClipboard();
 		return;
 	}
 
-	lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
+	LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 	memcpy(lptstrCopy, m_printerbuffer, m_printerbufferlen);
 	lptstrCopy[m_printerbufferlen] = 0;
 	GlobalUnlock(hglbCopy);
@@ -1635,8 +1629,6 @@ void BeebWin::ImportDiscFiles(int menuId)
 			Load1770DiscImage(szDiscFile, drive, 0, m_hMenu);
 	}
 }
-
-INT GetEncoderClsid(const WCHAR* format, CLSID* pClsid);
 
 /****************************************************************************/
 /* Bitmap capture support */
