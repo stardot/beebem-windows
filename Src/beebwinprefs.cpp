@@ -21,8 +21,7 @@ Boston, MA  02110-1301, USA.
 // BeebWin preferences support
 
 #include <stdio.h>
-#include <windows.h>
-#include <initguid.h>
+
 #include "main.h"
 #include "beebwin.h"
 #include "beebemrc.h"
@@ -36,17 +35,10 @@ Boston, MA  02110-1301, USA.
 #include "soundstream.h"
 #include "music5000.h"
 #include "beebmem.h"
-#include "beebemrc.h"
-#include "atodconv.h"
-#include "userkybd.h"
 #include "serial.h"
 #include "econet.h"
 #include "tube.h"
-#include "ext1770.h"
-#include "uefstate.h"
-#include "debug.h"
 #include "scsi.h"
-#include "sasi.h"
 #include "ide.h"
 #include "z80mem.h"
 #include "z80.h"
@@ -55,8 +47,6 @@ Boston, MA  02110-1301, USA.
 #include "speech.h"
 #endif
 #include "teletext.h"
-#include "avi.h"
-#include "csw.h"
 #include "serialdevices.h"
 #include "Arm.h"
 #include "sprowcopro.h"
