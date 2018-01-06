@@ -215,6 +215,9 @@
     <ClInclude Include="discedit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="disctype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="econet.h">
       <Filter>Header Files</Filter>
     </ClInclude>

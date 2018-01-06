@@ -31,11 +31,12 @@ Boston, MA  02110-1301, USA.
 
 #include <string.h>
 #include <stdlib.h>
-#include <string>
 #include <windows.h>
 #include <d3dx9.h>
 #include <ddraw.h>
 #include <sapi.h>
+
+#include "disctype.h"
 #include "model.h"
 #include "port.h"
 #include "preferences.h"
@@ -132,7 +133,7 @@ public:
 
 	void UpdateModelType();
 	void SetSoundMenu(void);
-	void SetImageName(const char *DiscName, int Drive, char DType);
+	void SetImageName(const char *DiscName, int Drive, DiscType DscType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
@@ -278,7 +279,6 @@ public:
 	bool		m_ShowSpeedAndFPS;
 	int		m_MenuIdSampleRate;
 	int		m_MenuIdVolume;
-	int		m_DiscTypeSelection;
 	int		m_MenuIdTiming;
 	int		m_FPSTarget;
 	bool		m_JoystickCaptured;

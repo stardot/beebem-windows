@@ -1358,7 +1358,7 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
     return;
   }
 
-  mainWin->SetImageName(FileName,DriveNum,0);
+  mainWin->SetImageName(FileName, DriveNum, DiscType::SSD);
 
   // JGH, 26-Dec-2011
   NumHeads[DriveNum] = 1;		/* 1 = TRACKSPERDRIVE SSD image   */
@@ -1432,7 +1432,7 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
     return;
   }
 
-  mainWin->SetImageName(FileName,DriveNum,1);
+  mainWin->SetImageName(FileName, DriveNum, DiscType::DSD);
 
   strcpy(FileNames[DriveNum], FileName);
   NumHeads[DriveNum] = 2;		/* 2 = 2*TRACKSPERDRIVE DSD image */

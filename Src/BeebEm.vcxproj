@@ -239,6 +239,7 @@
     <ClInclude Include="disc1770.h" />
     <ClInclude Include="disc8271.h" />
     <ClInclude Include="discedit.h" />
+    <ClInclude Include="disctype.h" />
     <ClInclude Include="econet.h" />
     <ClInclude Include="ext1770.h" />
     <ClInclude Include="filedialog.h" />

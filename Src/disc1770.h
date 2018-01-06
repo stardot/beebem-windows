@@ -19,16 +19,19 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* !770 FDC Support for Beebem */
+/* 1770 FDC Support for Beebem */
 /* Written by Richard Gellman */
 
 #ifndef DISC1770_HEADER
 #define DISC1770_HEADER
+
+#include "disctype.h"
+
 extern bool DWriteable[2]; // Write Protect
 extern bool Disc1770Enabled;
 unsigned char Read1770Register(unsigned char Register1770);
 void Write1770Register(unsigned char Register1770, unsigned char Value);
-void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMENU dmenu);
+void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HMENU dmenu);
 void WriteFDCControlReg(unsigned char Value);
 unsigned char ReadFDCControlReg(void);
 void Reset1770(void);
@@ -37,6 +40,7 @@ void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU dmenu);
 void Close1770Disc(int Drive);
 void Save1770UEF(FILE *SUEF);
 void Load1770UEF(FILE *SUEF,int Version);
-void Get1770DiscInfo(int DscDrive, int *Type, char *pFileName);
+void Get1770DiscInfo(int DscDrive, DiscType *Type, char *pFileName);
 extern bool InvertTR00;
+
 #endif

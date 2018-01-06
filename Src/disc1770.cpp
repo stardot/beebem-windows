@@ -87,12 +87,13 @@ unsigned char CurrentHead[2]; // Current Head on any drive
 int DiscStep[2]; // Single/Double sided disc step
 int DiscStrt[2]; // Single/Double sided disc start
 unsigned int SecSize[2]; 
-char DiscType[2];
+DiscType DscType[2];
 unsigned char MaxSects[2]; // Maximum sectors per track
 unsigned int DefStart[2]; // Starting point for head 1
 unsigned int TrkLen[2]; // Track Length in bytes
 bool DWriteable[2]={ false, false }; // Write Protect
 char DiskDensity[2];
+
 char SelectedDensity;
 unsigned char RotSect=0; // Sector counter to fool Opus DDOS on read address
 bool InvertTR00; // Needed because the bloody stupid watford board inverts the input.
@@ -129,22 +130,24 @@ unsigned char Read1770Register(unsigned char Register) {
 		NMIStatus &= ~(1<<nmi_floppy);
 		return(Status);
 	}
-	if (Register==1) return(ATrack); 
-	if (Register==2)
-    {
-      if ( (DiscType[CurrentDrive] == 3) || (DiscType[CurrentDrive] == 4) )
-         return(Sector + 1);
-      else
-         return(Sector);
-    }
 
-	if (Register==3) {
+	if (Register == 1) {
+		return ATrack;
+	}
+	else if (Register == 2) {
+		if (DscType[CurrentDrive] == DiscType::IMG || DscType[CurrentDrive] == DiscType::DOS)
+			return Sector + 1;
+		else
+			return Sector;
+	}
+	else if (Register == 3) {
 		if (FDCommand>5) 
 		{
 			ResetStatus(1); NMIStatus &= ~(1<<nmi_floppy); 
 		}
 		return(Data);
 	}
+
 	return(0);
 }
 
@@ -170,11 +173,11 @@ static void SetMotor(int Drive, bool State) {
 
 void Write1770Register(unsigned char Register, unsigned char Value) {
 	unsigned char ComBits,HComBits;
-    int SectorCycles=0; // Number of cycles to wait for sector to come round
+	int SectorCycles = 0; // Number of cycles to wait for sector to come round
 
 	if (!Disc1770Enabled)
 		return;
-    //fprintf(fdclog,"Write of %02X to Register %d\n",Value, Register);
+	//fprintf(fdclog,"Write of %02X to Register %d\n",Value, Register);
 	// Write 1770 Register - NOT the FDC Control register @ &FE24
 	if (Register==0) {
 		NMIStatus &= ~(1<<nmi_floppy); // reset INTRQ
@@ -243,7 +246,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 			FDCommand=21; 
 		}
 
-        if (ComBits==0xD0) {
+		if (ComBits == 0xD0) {
 			// Force Interrupt - Type 4 Command
 			if (FDCommand!=0) {
 				ResetStatus(0);
@@ -289,18 +292,17 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 			}
 		}
 	}
-	if (Register==1) {
+	else if (Register == 1) {
 		Track=Value; 
 		ATrack=Value;
 	}
-	if (Register==2)
-    {
-        if ( (DiscType[CurrentDrive] == 3) || (DiscType[CurrentDrive] == 4) )
-		   Sector=Value - 1;
+	else if (Register == 2) {
+		if (DscType[CurrentDrive] == DiscType::IMG || DscType[CurrentDrive] == DiscType::DOS)
+			Sector = Value - 1;
 		else
-           Sector=Value;
-    }
-	if (Register==3) {
+			Sector = Value;
+	}
+	else if (Register == 3) {
 		Data=Value;
 		if (FDCommand>5) { ResetStatus(1); NMIStatus &= ~(1<<nmi_floppy); }
 	}
@@ -320,13 +322,14 @@ void Poll1770(int NCycles) {
 
   // This procedure is called from the 6502core to enable the chip to do stuff in the background
   if ((Status & 1) && !NMILock) {
-    if (FDCommand<6 && *CDiscOpen && (DiscType[CurrentDrive] == 0 && CurrentHead[CurrentDrive] == 1)) {
+    if (FDCommand < 6 && *CDiscOpen && (DscType[CurrentDrive] == DiscType::SSD && CurrentHead[CurrentDrive] == 1)) {
       // Single sided disk, disc not ready
       ResetStatus(0);
       SetStatus(4);
       NMIStatus|=1<<nmi_floppy; FDCommand=12;
       return;
     }
+
 	if (FDCommand<6 && *CDiscOpen) {
 		int TracksPassed=0; // Holds the number of tracks passed over by the head during seek
 		unsigned char OldTrack=(Track >= 80 ? 0 : Track);
@@ -522,7 +525,7 @@ void Poll1770(int NCycles) {
                 		DiscStrt[CurrentDrive]=ptr[1] * 512 * 9;       // Head number 0 or 1
                 		DefStart[CurrentDrive]=512 * 9;
                 		TrkLen[CurrentDrive]=512 * 9; 
-                        DiscType[CurrentDrive] = 4;
+                        DscType[CurrentDrive] = DiscType::DOS;
                         break;
                     case 3 :
                         FormatSize = 1024;
@@ -533,7 +536,7 @@ void Poll1770(int NCycles) {
                 		DiscStrt[CurrentDrive]=ptr[1] * 1024 * 5;       // Head number 0 or 1
                 		DefStart[CurrentDrive]=1024 * 5;
                 		TrkLen[CurrentDrive]=1024 * 5; 
-                        DiscType[CurrentDrive] = 3;
+                        DscType[CurrentDrive] = DiscType::IMG;
                         break;
                     }
                 }
@@ -650,11 +653,11 @@ void Poll1770(int NCycles) {
       if (ByteCount==5) Data=CurrentHead[CurrentDrive];
       if (ByteCount==4) Data=RotSect+1;
       if (ByteCount==3) {
-          if (DiscType[CurrentDrive] == 0) Data = 1;        // 256
-          if (DiscType[CurrentDrive] == 1) Data = 1;        // 256
-          if (DiscType[CurrentDrive] == 2) Data = 1;        // 256
-          if (DiscType[CurrentDrive] == 3) Data = 3;        // 1024
-          if (DiscType[CurrentDrive] == 4) Data = 2;        // 512
+          if (DscType[CurrentDrive] == DiscType::SSD)  Data = 1; // 256
+          if (DscType[CurrentDrive] == DiscType::DSD)  Data = 1; // 256
+          if (DscType[CurrentDrive] == DiscType::ADFS) Data = 1; // 256
+          if (DscType[CurrentDrive] == DiscType::IMG)  Data = 3; // 1024
+          if (DscType[CurrentDrive] == DiscType::DOS)  Data = 2; // 512
       }
       if (ByteCount==2) Data=0;
       if (ByteCount==1) Data=0;
@@ -679,7 +682,7 @@ void Poll1770(int NCycles) {
   }
 }		
 
-void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMENU dmenu) {
+void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HMENU dmenu) {
 	long int TotalSectors;
 	long HeadStore;
 	bool openFailure=false;
@@ -734,9 +737,9 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMEN
 
 	strcpy(DscFileNames[DscDrive], DscFileName);
 
-//	if (DscType=0) CurrentHead[DscDrive]=0;
-//  Feb 14th 2001 - Valentines Day - Bah Humbug - ADFS Support added here
-    if (DscType==0) { 
+	// if (discType = DiscType::SSD) CurrentHead[DscDrive]=0;
+	// Feb 14th 2001 - Valentines Day - Bah Humbug - ADFS Support added here
+	if (Type == DiscType::SSD) {
 		SecSize[DscDrive]=256; 
 		DiskDensity[DscDrive]=1;
 		DiscStep[DscDrive]=2560; 
@@ -744,7 +747,7 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMEN
 		DefStart[DscDrive]=80*10*256; // 0; 
 		TrkLen[DscDrive]=2560; 
 	}
-    if (DscType==1) { 
+	else if (Type == DiscType::DSD) {
 		SecSize[DscDrive]=256; 
 		DiskDensity[DscDrive]=1;
 		DiscStep[DscDrive]=5120; 
@@ -752,7 +755,7 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMEN
 		DefStart[DscDrive]=2560; 
 		TrkLen[DscDrive]=2560; 
 	}
-    if (DscType==3) { 
+	else if (Type == DiscType::IMG) {
 		SecSize[DscDrive]=1024; 
 		DiskDensity[DscDrive]=0;
 		DiscStep[DscDrive]=1024 * 5 * 2; 
@@ -760,7 +763,7 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMEN
 		DefStart[DscDrive]=1024 * 5;
 		TrkLen[DscDrive]=1024 * 5; 
 	}
-    if (DscType==4) { 
+	else if (Type == DiscType::DOS) {
 		SecSize[DscDrive]=512; 
 		DiskDensity[DscDrive]=0;
 		DiscStep[DscDrive]=512 * 9 * 2; 
@@ -768,7 +771,7 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMEN
 		DefStart[DscDrive]=512 * 9;
 		TrkLen[DscDrive]=512 * 9; 
 	}
-    if (DscType==2) { 
+	else if (Type == DiscType::ADFS) {
 		SecSize[DscDrive]=256; 
 		DiskDensity[DscDrive]=0;
 		DiscStep[DscDrive]=8192; 
@@ -793,11 +796,11 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, char DscType, HMEN
 			TrkLen[DscDrive]=4096;
 		}
 	}
-	DiscType[DscDrive]=DscType;
-	MaxSects[DscDrive]=(DscType<2)?9:15;
-	if (DscType == 3) MaxSects[DscDrive] = 4;
-	if (DscType == 4) MaxSects[DscDrive] = 8;
-	mainWin->SetImageName(DscFileName,DscDrive,DscType);
+	DscType[DscDrive] = Type;
+	MaxSects[DscDrive] = (Type == DiscType::SSD || Type == DiscType::DSD) ? 9 : 15;
+	if (Type == DiscType::IMG) MaxSects[DscDrive] = 4;
+	if (Type == DiscType::DOS) MaxSects[DscDrive] = 8;
+	mainWin->SetImageName(DscFileName, DscDrive, Type);
 }
 
 void WriteFDCControlReg(unsigned char Value) {
@@ -837,12 +840,12 @@ void Reset1770(void) {
 	SetMotor(1, false);
 	Status=0;
 	ExtControl=1; // Drive 0 selected, single density, side 0
-	MaxSects[0]=(DiscType[0]<2)?9:15;
-	MaxSects[1]=(DiscType[1]<2)?9:15;
-	if (DiscType[0] == 3) MaxSects[0] = 4;
-	if (DiscType[1] == 3) MaxSects[1] = 4;
-	if (DiscType[0] == 4) MaxSects[0] = 8;
-	if (DiscType[1] == 4) MaxSects[1] = 8;
+	MaxSects[0] = (DscType[0] == DiscType::SSD || DscType[0] == DiscType::DSD) ? 9 : 15;
+	MaxSects[1] = (DscType[1] == DiscType::SSD || DscType[1] == DiscType::DSD) ? 9 : 15;
+	if (DscType[0] == DiscType::IMG) MaxSects[0] = 4;
+	if (DscType[1] == DiscType::IMG) MaxSects[1] = 4;
+	if (DscType[0] == DiscType::DOS) MaxSects[0] = 8;
+	if (DscType[1] == DiscType::DOS) MaxSects[1] = 8;
 }
 
 void Close1770Disc(int Drive) {
@@ -862,7 +865,7 @@ void Close1770Disc(int Drive) {
 
 #define BPUT(a) fputc(a,NewImage); CheckSum=(CheckSum+a)&255
 
-void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU dmenu) {
+void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU hMenu) {
 	// This function creates a blank ADFS disc image, and then loads it.
 	FILE *NewImage;
 	int CheckSum;
@@ -902,7 +905,7 @@ void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU dmenu) 
 		BPUT('H'); BPUT('u'); BPUT('g'); BPUT('o'); // Hugo
 		BPUT(0);
 		fclose(NewImage);
-		Load1770DiscImage(ImageName,Drive,2,dmenu);
+		Load1770DiscImage(ImageName, Drive, DiscType::ADFS, hMenu);
 	}
 }
 
@@ -915,8 +918,8 @@ void Save1770UEF(FILE *SUEF)
 
 	fput16(0x046F,SUEF);
 	fput32(857,SUEF);
-	fputc(DiscType[0],SUEF);
-	fputc(DiscType[1],SUEF);
+	fputc(static_cast<int>(DscType[0]), SUEF);
+	fputc(static_cast<int>(DscType[1]), SUEF);
 
 	if (!Disc0Open) {
 		// No disc in drive 0
@@ -982,7 +985,6 @@ void Load1770UEF(FILE *SUEF,int Version)
 {
 	extern char FDCDLL[256];
 	extern bool DiscLoaded[2];
-	extern bool NativeFDC;
 	char FileName[256];
 	bool Loaded = false;
 	bool LoadFailed = false;
@@ -994,14 +996,14 @@ void Load1770UEF(FILE *SUEF,int Version)
 	DiscLoaded[0] = false;
 	DiscLoaded[1] = false;
 
-	DiscType[0]=fgetc(SUEF);
-	DiscType[1]=fgetc(SUEF);
+	DscType[0] = static_cast<DiscType>(fgetc(SUEF));
+	DscType[1] = static_cast<DiscType>(fgetc(SUEF));
 
 	fread(FileName,1,256,SUEF);
 	if (FileName[0]) {
 		// Load drive 0
 		Loaded = true;
-		Load1770DiscImage(FileName, 0, DiscType[0], mainWin->m_hMenu);
+		Load1770DiscImage(FileName, 0, DscType[0], mainWin->m_hMenu);
 		if (!Disc0Open)
 			LoadFailed = true;
 	}
@@ -1010,7 +1012,7 @@ void Load1770UEF(FILE *SUEF,int Version)
 	if (FileName[0]) {
 		// Load drive 1
 		Loaded = true;
-		Load1770DiscImage(FileName, 1, DiscType[1], mainWin->m_hMenu);
+		Load1770DiscImage(FileName, 1, DscType[1], mainWin->m_hMenu);
 		if (!Disc1Open)
 			LoadFailed = true;
 	}
@@ -1075,8 +1077,8 @@ void Load1770UEF(FILE *SUEF,int Version)
 }
 
 /*--------------------------------------------------------------------------*/
-void Get1770DiscInfo(int DscDrive, int *Type, char *pFileName)
+void Get1770DiscInfo(int DscDrive, DiscType *Type, char *pFileName)
 {
-	*Type = DiscType[DscDrive];
+	*Type = DscType[DscDrive];
 	strcpy(pFileName, DscFileNames[DscDrive]);
 }
