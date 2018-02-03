@@ -1524,20 +1524,20 @@ LRESULT CALLBACK WndProc(
 			break;
 
 		case WM_ENTERMENULOOP: // entering menu, must mute directsound
-			SetSound(MUTED);
+			SetSound(SoundState::Muted);
 			break;
 
 		case WM_EXITMENULOOP:
-			SetSound(UNMUTED);
+			SetSound(SoundState::Unmuted);
 			if (mainWin)
 				mainWin->ResetTiming();
 			break;
 
 		case WM_ENTERSIZEMOVE: // Window being moved
-			SetSound(MUTED);
+			SetSound(SoundState::Muted);
 			break;
 		case WM_EXITSIZEMOVE:
-			SetSound(UNMUTED);
+			SetSound(SoundState::Unmuted);
 			break;
 
 		case WM_REINITDX:
@@ -2409,7 +2409,7 @@ void BeebWin::HandleCommand(int MenuId)
 	char TmpPath[256];
 	PaletteType PrevPaletteType = m_PaletteType;
 
-	SetSound(MUTED);
+	SetSound(SoundState::Muted);
 
 	switch (MenuId)
 	{
@@ -3774,7 +3774,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 	}
 
-	SetSound(UNMUTED);
+	SetSound(SoundState::Unmuted);
 
 	if (m_PaletteType != PrevPaletteType)
 	{

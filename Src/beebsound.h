@@ -32,8 +32,10 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #endif
 
-#define MUTED 0
-#define UNMUTED 1
+enum class SoundState : char {
+	Muted,
+	Unmuted
+};
 
 #include <stdio.h>
 
@@ -71,7 +73,7 @@ void StopSoundSample(int sample);
 
 void Sound_Trigger(int NCycles);
 
-void SetSound(char State);
+void SetSound(SoundState state);
 
 struct AudioType {
 	char Signal; // Signal type: data, gap, or tone.

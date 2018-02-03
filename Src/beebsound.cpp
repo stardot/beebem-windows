@@ -534,14 +534,14 @@ void SwitchOnSound(void) {
   BeebState76489.ToneVolume[3]=GetVol(15);
 }
 
-void SetSound(char State)
+void SetSound(SoundState state)
 {
-	switch( State )
+	switch (state)
 	{
-	case MUTED:
+	case SoundState::Muted:
 		SoundStreamer::PauseAll();
 		break;
-	case UNMUTED:
+	case SoundState::Unmuted:
 		SoundStreamer::PlayAll();
 		break;
 	}
