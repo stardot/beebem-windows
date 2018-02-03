@@ -32,12 +32,12 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #endif
 
+#include <stdio.h>
+
 enum class SoundState : char {
 	Muted,
 	Unmuted
 };
-
-#include <stdio.h>
 
 extern bool SoundDefault; // Default sound state (enabled/disabled via sound menu)
 extern bool SoundEnabled; // Sound on/off flag - will be off if DirectSound init fails
@@ -65,9 +65,11 @@ void ClickRelay(bool RelayState);
 #define SAMPLE_HEAD_UNLOAD      4
 #define SAMPLE_HEAD_SEEK        5
 #define SAMPLE_HEAD_STEP        6
+
 #define SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK  48333  // 0.02415s per track in the sound file
 #define SAMPLE_HEAD_STEP_CYCLES           100000  // 0.05s sound file
 #define SAMPLE_HEAD_LOAD_CYCLES           400000  // 0.2s sound file
+
 void PlaySoundSample(int sample, bool repeat);
 void StopSoundSample(int sample);
 
@@ -88,11 +90,11 @@ struct AudioType {
 extern struct AudioType TapeAudio;
 extern bool TapeSoundEnabled;
 extern bool SoundChipEnabled;
+extern bool PartSamples;
+
 void SoundChipReset(void);
 void SwitchOnSound(void);
 void LoadSoundUEF(FILE *SUEF);
 void SaveSoundUEF(FILE *SUEF);
-extern bool PartSamples;
-extern int SBSize;
 
 #endif
