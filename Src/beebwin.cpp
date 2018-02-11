@@ -1024,7 +1024,7 @@ void BeebWin::SetRomMenu(void)
 	
 		if ( Title[3]== '\0' )
 		{
-			if (RomBankType[i]==BankRam)
+			if (RomBankType[i] == BankType::Ram)
 				strcpy( &Title[3], "RAM" );
 			else
 				strcpy( &Title[3], "Empty" );
@@ -1038,8 +1038,8 @@ void BeebWin::SetRomMenu(void)
 		           Title); // menu item content
 
 		/* Disable ROM and uncheck the Rom/RAM which are NOT writable */
-		EnableMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankRam);
-		CheckMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankRam && RomWritable[i]);
+		EnableMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankType::Ram);
+		CheckMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankType::Ram && RomWritable[i]);
 	}
 }
 

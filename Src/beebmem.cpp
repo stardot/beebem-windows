@@ -70,8 +70,10 @@ bool RomWritable[16] = {
 
 /* Identifies what is in each bank */
 BankType RomBankType[16] = {
-	BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,
-	BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty,BankEmpty
+	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty,
+	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty,
+	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty,
+	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty
 };
 
 int PagedRomReg;
@@ -1104,7 +1106,7 @@ void BeebReadRoms(void) {
 	for (bank = 0; bank < 16; bank++)
 	{
 		RomWritable[bank] = false;
-		RomBankType[bank] = BankEmpty;
+		RomBankType[bank] = BankType::Empty;
 		memset(Roms[bank], 0, 0x4000);
 	}
 
@@ -1153,12 +1155,12 @@ void BeebReadRoms(void) {
 
 		if (strcmp(RomName,BANK_EMPTY)==0)
 		{
-			RomBankType[bank] = BankEmpty;
+			RomBankType[bank] = BankType::Empty;
 			RomWritable[bank] = false;
 		}
 		else if (strcmp(RomName,BANK_RAM)==0)
 		{
-			RomBankType[bank] = BankRam;
+			RomBankType[bank] = BankType::Ram;
 			RomWritable[bank] = true;
 		}
 		else
@@ -1166,13 +1168,13 @@ void BeebReadRoms(void) {
 			if (strncmp(RomName+(strlen(RomName)-4),ROM_WRITABLE,4)==0)
 			{
 				// Writable ROM
-				RomBankType[bank] = BankRam;
+				RomBankType[bank] = BankType::Ram;
 				RomWritable[bank] = true;
 				fullname[strlen(fullname)-4]=0;
 			}
 			else
 			{
-				RomBankType[bank] = BankRom;
+				RomBankType[bank] = BankType::Rom;
 				RomWritable[bank] = false;
 			}
 
@@ -1308,24 +1310,24 @@ void SaveMemUEF(FILE *SUEF) {
 	for (bank=0;bank<16;bank++) {
 		switch (RomBankType[bank])
 		{
-		case BankRam:
+		case BankType::Ram:
 			fput16(0x0466,SUEF); // RAM bank
 			fput32(16385,SUEF);
 			fputc(bank,SUEF);
 			fwrite(Roms[bank],1,16384,SUEF);
 			break;
-		case BankRom:
+		case BankType::Rom:
 			fput16(0x0475,SUEF); // ROM bank
 			fput32(16386,SUEF);
 			fputc(bank,SUEF);
-			fputc(BankRom,SUEF);
+			fputc(static_cast<int>(BankType::Rom),SUEF);
 			fwrite(Roms[bank],1,16384,SUEF);
 			break;
-		case BankEmpty:
+		case BankType::Empty:
 			fput16(0x0475,SUEF); // ROM bank
 			fput32(2,SUEF);
 			fputc(bank,SUEF);
-			fputc(BankEmpty,SUEF);
+			fputc(static_cast<int>(BankType::Empty),SUEF);
 			break;
 		}
 	}
@@ -1413,20 +1415,20 @@ void LoadSWRamMemUEF(FILE *SUEF) {
 	int Rom;
 	Rom=fgetc(SUEF);
 	RomWritable[Rom] = true;
-	RomBankType[Rom] = BankRam;
+	RomBankType[Rom] = BankType::Ram;
 	fread(Roms[Rom],1,16384,SUEF);
 }
 void LoadSWRomMemUEF(FILE *SUEF) {
 	int Rom;
 	Rom=fgetc(SUEF);
-	RomBankType[Rom]=(BankType)fgetc(SUEF);
+	RomBankType[Rom] = static_cast<BankType>(fgetc(SUEF));
 	switch (RomBankType[Rom])
 	{
-	case BankRom:
+	case BankType::Rom:
 		RomWritable[Rom] = false;
 		fread(Roms[Rom],1,16384,SUEF);
 		break;
-	case BankEmpty:
+	case BankType::Empty:
 		memset(Roms[Rom], 0, 0x4000);
 		break;
 	}

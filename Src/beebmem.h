@@ -35,12 +35,12 @@ static const char *BANK_EMPTY = "EMPTY";
 static const char *BANK_RAM = "RAM";
 static const char *ROM_WRITABLE = ":RAM";
 
-typedef enum BankType
+enum class BankType
 {
-	BankRom,
-	BankRam,
-	BankEmpty
-} BankType;
+	Rom,
+	Ram,
+	Empty
+};
 
 extern bool RomWritable[16]; // Allow writing to banks on an individual basis
 extern BankType RomBankType[16]; // Identifies what is in each bank
