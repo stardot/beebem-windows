@@ -199,7 +199,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_MEDIUMVOLUME                40018
 #define IDM_LOWVOLUME                   40019
 #define IDM_FULLVOLUME                  40021
-#define IDM_ROMWRITES                   40022
 #define IDM_LOADDISC1                   40023
 #define IDM_REALTIME                    40024
 #define IDM_50FPS                       40025
@@ -208,7 +207,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_5FPS                        40028
 #define IDM_1FPS                        40029
 #define IDM_JOYSTICK                    40030
-#define IDM_MOUSESTICK                  40031
 #define IDM_HIDECURSOR                  40032
 #define IDM_IGNOREILLEGALOPS            40033
 #define IDM_DEFAULTKYBDMAPPING          40034
@@ -264,7 +262,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_PRINTER_COM2                40087
 #define IDM_PRINTER_COM3                40088
 #define IDM_PRINTER_COM4                40089
-#define IDM_DSOUNDONOFF                 40092
 #define IDM_FREEZEINACTIVE              40093
 #define ID_MONITOR_RGB                  40095
 #define ID_MONITOR_BW                   40096
@@ -277,7 +274,6 @@ Boston, MA  02110-1301, USA.
 #define ID_FILE_RESET                   40103
 #define ID_MODELB                       40105
 #define ID_MASTER128                    40106
-#define ID_PCD                          40107
 #define ID_LOADTAPE                     40108
 #define ID_REWINDTAPE                   40116
 #define ID_SFX_RELAY                    40117
@@ -299,7 +295,6 @@ Boston, MA  02110-1301, USA.
 #define ID_TAPE_MFAST                   40136
 #define ID_TAPE_MSLOW                   40137
 #define ID_TAPE_NORMAL                  40138
-#define ID_HOSTCLOCK                    40139
 #define IDM_MUSIC5000                   40140
 #define ID_TSTYLE                       40141
 #define ID_BHARDWARE                    40142
@@ -358,7 +353,6 @@ Boston, MA  02110-1301, USA.
 #define ID_TOUCHSCREEN                  40204
 #define IDM_AMOUSESTICK                 40205
 #define IDM_DMOUSESTICK                 40206
-#define ID_HARDWARE_USERPORTBREAKOUTBOX 40207
 #define ID_BREAKOUT                     40208
 #define IDM_TEXTTOSPEECH                40209
 #define IDM_TEXTVIEW                    40210
@@ -418,18 +412,13 @@ Boston, MA  02110-1301, USA.
 #define IDM_CAPTURESCREEN               40270
 #define ID_FLOPPYDRIVE                  40271
 #define ID_RTCY2KADJUST                 40272
-#define ID_RS423DESTINATION_IP          40273
 #define ID_IP232RAW                     40274
-#define ID_IP232RW                      40275
 #define IDM_SWRAMBOARD                  40276
 #define IDM_ROMCONFIG                   40277
 #define IDM_MAINTAINASPECTRATIO         40278
 #define ID_VIEW_DD_720X576              40279
 #define ID_VIEW_DD_800X600              40280
 #define IDM_CUSTOMWINSIZE               40281
-#define ID_SOUND_SOUNDSTREAMER          40282
-#define ID_SOUNDSTREAMER_XAUDIO2        40283
-#define ID_SOUNDSTREAMER_DIRECTSOUND    40284
 #define IDM_XAUDIO2                     40285
 #define IDM_DIRECTSOUND                 40286
 #define ID_IDEDRIVE                     40287
