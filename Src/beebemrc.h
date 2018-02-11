@@ -100,7 +100,7 @@ Boston, MA  02110-1301, USA.
 #define IDR_MENU                        101
 #define IDI_BEEBEM                      102
 #define IDD_USERKYBRD                   103
-#define IDD_DIALOG1                     106
+#define IDD_KEYBOARD_LINKS              106
 #define IDD_DEBUG                       110
 #define IDD_TAPECONTROL                 112
 #define IDD_BREAKOUT                    113
