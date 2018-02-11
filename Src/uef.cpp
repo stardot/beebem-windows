@@ -49,11 +49,11 @@ static uef_chunk_info *uef_chunk = NULL;
 static int uef_chunks = 0;
 static int uef_clock_speed = 5600;
 static uef_chunk_info *uef_last_chunk = NULL;
-static int uef_unlock = 0;
+static bool uef_unlock = false;
 static int uef_last_put_data=UEF_EOF;
 static uef_chunk_info uef_put_chunk;
 
-static int uef_write_chunk(void);
+static bool uef_write_chunk();
 static float uef_decode_float(unsigned char *Float);
 static void uef_unlock_offset_and_crc(uef_chunk_info *ch);
 static int gzget16(gzFile f);
@@ -67,22 +67,20 @@ void uef_setclock(int beats)
 	uef_clock_speed = beats;
 }
 
-void uef_setunlock(int unlock)
+void uef_setunlock(bool unlock)
 {
 	uef_unlock = unlock;
 }
 
-int uef_create(const char *name)
+bool uef_create(const char *name)
 {
-	gzFile uef_file;
-
 	uef_close();
 
-	uef_file = gzopen(name, "wb");
+	gzFile uef_file = gzopen(name, "wb");
 	if (uef_file == NULL)
 	{
 		uef_errno = UEF_OPEN_NOFILE;
-		return(0);
+		return false;
 	}
 
 	gzwrite(uef_file, "UEF File!", 10);
@@ -94,7 +92,7 @@ int uef_create(const char *name)
 	gzclose(uef_file);
 	strcpy(uef_file_name, name);
 
-	return(1);
+	return true;
 }
 
 int uef_open(const char *name)
@@ -102,7 +100,7 @@ int uef_open(const char *name)
 	gzFile uef_file;
 	char UEFId[10];
 	int ver;
-	int error = 0;
+	bool error = false;
 	int i;
 	int clock;
 	int baud;
@@ -115,7 +113,7 @@ int uef_open(const char *name)
 	if (uef_file == NULL)
 	{
 		uef_errno = UEF_OPEN_NOFILE;
-		return(0);
+		return false;
 	}
 
 	gzread(uef_file, UEFId, 10);
@@ -123,7 +121,7 @@ int uef_open(const char *name)
 	{
 		uef_close();
 		uef_errno = UEF_OPEN_NOTUEF;
-		return(0);
+		return false;
 	}
 
 	ver = gzget16(uef_file);
@@ -134,7 +132,7 @@ int uef_open(const char *name)
 	{
 		uef_close();
 		uef_errno = UEF_OPEN_MEMERR;
-		return(0);
+		return false;
 	}
 
 	while (!error && !gzeof(uef_file))
@@ -151,12 +149,12 @@ int uef_open(const char *name)
 				if (ch->data == NULL)
 				{
 					uef_errno = UEF_OPEN_MEMERR;
-					error = 1;
+					error = true;
 				}
 				else if (gzread(uef_file, ch->data, ch->len) != ch->len)
 				{
 					uef_errno = UEF_OPEN_NOTTAPE;
-					error = 1;
+					error = true;
 				}
 				else
 				{
@@ -165,7 +163,7 @@ int uef_open(const char *name)
 					if (ch == NULL)
 					{
 						uef_errno = UEF_OPEN_MEMERR;
-						error = 1;
+						error = true;
 					}
 					else
 					{
@@ -181,21 +179,23 @@ int uef_open(const char *name)
 		else if (ch->type >= 0x200)
 		{
 			uef_errno = UEF_OPEN_NOTTAPE;
-			error = 1;
+			error = true;
 		}
 		else if (ch->len > 0)
 		{
 			gzseek(uef_file, ch->len, SEEK_CUR);
 		}
 	}
+
 	if (error)
 	{
 		uef_close();
-		return(0);
+		return false;
 	}
 
 	clock = 0;
 	baud = 1200;
+
 	for (i = 0; i < uef_chunks; ++i)
 	{
 		ch = &uef_chunk[i];
@@ -258,21 +258,21 @@ int uef_open(const char *name)
 	gzclose(uef_file);
 	strcpy(uef_file_name, name);
 
-	return(1);
+	return true;
 }
 
 int uef_getdata(int time)
 {
 	int i, j;
 	int data;
-	int found = 0;
+	bool found = false;
 	uef_chunk_info *ch = nullptr;
 
 	if (uef_last_chunk != NULL &&
 		time >= uef_last_chunk->start_time && time < uef_last_chunk->end_time)
 	{
 		ch = uef_last_chunk;
-		found = 1;
+		found = true;
 	}
 	else
 	{
@@ -280,7 +280,7 @@ int uef_getdata(int time)
 		{
 			ch = &uef_chunk[i];
 			if (time >= ch->start_time && time < ch->end_time)
-				found = 1;
+				found = true;
 		}
 	}
 
@@ -361,9 +361,9 @@ int uef_getdata(int time)
 	return(data);
 }
 
-int uef_putdata(int data, int time)
+bool uef_putdata(int data, int time)
 {
-	int ok = 1;
+	bool ok = true;
 	unsigned char *datap;
 
 	if (UEFRES_TYPE(data) != UEFRES_TYPE(uef_last_put_data))
@@ -421,7 +421,7 @@ int uef_putdata(int data, int time)
 		if (datap == NULL)
 		{
 			uef_errno = UEF_OPEN_MEMERR;
-			ok = 0;
+			ok = false;
 		}
 		else
 		{
@@ -433,7 +433,7 @@ int uef_putdata(int data, int time)
 
 	uef_last_put_data = data;
 
-	return(ok);
+	return ok;
 }
 
 void uef_close(void)
@@ -462,10 +462,10 @@ void uef_close(void)
 	uef_put_chunk.start_time = -1;
 }
 
-static int uef_write_chunk(void)
+static bool uef_write_chunk()
 {
 	gzFile uef_file = nullptr;
-	int ok = 1;
+	bool ok = true;
 	int l;
 
 	if (uef_file_name[0])
@@ -475,13 +475,13 @@ static int uef_write_chunk(void)
 		if (uef_file == NULL)
 		{
 			uef_errno = UEF_OPEN_NOFILE;
-			ok = 0;
+			ok = false;
 		}
 	}
 	else
 	{
 		uef_errno = UEF_OPEN_NOFILE;
-		ok = 0;
+		ok = false;
 	}
 
 	if (ok)
@@ -511,7 +511,7 @@ static int uef_write_chunk(void)
 		gzclose(uef_file);
 	}
 
-	return(ok);
+	return ok;
 }
 
 static void uef_unlock_offset_and_crc(uef_chunk_info *ch)

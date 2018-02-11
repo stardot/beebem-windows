@@ -17,6 +17,7 @@ License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
+
 #ifndef _UEF_H
 #define _UEF_H
 
@@ -50,18 +51,18 @@ extern int uef_errno;
 #define UEF_OPEN_MEMERR		-4
 
 /* setup */
-extern "C" void uef_setclock(int beats);
-extern "C" void uef_setunlock(int unlock);
+void uef_setclock(int beats);
+void uef_setunlock(bool unlock);
 
 /* poll mode */
-extern "C" int uef_getdata(int time);
+int uef_getdata(int time);
 
 /* open & close */
-extern "C" int uef_open(const char *name);
-extern "C" void uef_close(void);
+int uef_open(const char *name);
+void uef_close(void);
 
 /* writing */
-extern "C" int uef_create(const char *name);
-extern "C" int uef_putdata(int data, int time);
+bool uef_create(const char *name);
+bool uef_putdata(int data, int time);
 
 #endif

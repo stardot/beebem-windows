@@ -809,7 +809,7 @@ void SetTapeSpeed(int speed) {
 }
 
 void SetUnlockTape(bool unlock) {
-	uef_setunlock(static_cast<int>(unlock));
+	uef_setunlock(unlock);
 }
 
 //*******************************************************************
