@@ -48,11 +48,13 @@ Written by Richard Gellman - March 2001
 #include "debug.h"
 #include "log.h"
 
-#define CASSETTE 0  // Device in 
-#define RS423 1		// use defines
+enum class SerialDevice : unsigned char {
+	Cassette,
+	RS423
+};
 
 bool Cass_Relay = false; // Cassette Relay state
-unsigned char SerialChannel=CASSETTE; // Device in use
+SerialDevice SerialChannel = SerialDevice::Cassette; // Device in use
 
 unsigned char RDR,TDR; // Receive and Transmit Data Registers
 unsigned char RDSR,TDSR; // Receive and Transmit Data Shift Registers (buffers)
@@ -66,8 +68,8 @@ unsigned char CTS, RTS;
 bool FirstReset = true;
 unsigned char DCD=0,DCDI=1,ODCDI=1,DCDClear=0; // count to clear DCD bit
 
-unsigned char Parity,Stop_Bits,Data_Bits,RIE,TIE; // Receive Intterrupt Enable
-												  // and Transmit Interrupt Enable
+unsigned char Parity, Stop_Bits, Data_Bits, RIE, TIE; // Receive Interrupt Enable
+                                                      // and Transmit Interrupt Enable
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
 
 char UEFTapeName[256]; // Filename of current tape file
@@ -169,12 +171,12 @@ void Write_ACIA_Control(unsigned char CReg) {
 	bit=(CReg & 96)>>5;
 	if (bit==3) { RTS=0; TIE=0; }
 	// Seem to need an interrupt immediately for tape writing when TIE set
-	if (SerialChannel == CASSETTE && TIE && Cass_Relay) {
+	if (SerialChannel == SerialDevice::Cassette && TIE && Cass_Relay) {
 		intStatus|=1<<serial;
 		SetACIAStatus(7);
 	}
 	// Change serial port settings
-	if (SerialChannel == RS423 && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled) {
+	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled) {
 		GetCommState(hSerialPort,&dcbSerialPort);
 		dcbSerialPort.ByteSize=Data_Bits;
 		dcbSerialPort.StopBits=(Stop_Bits==1)?ONESTOPBIT:TWOSTOPBITS;
@@ -204,7 +206,7 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
  * Unless we do something with the data, the loader hangs so just swallow it (see below)
  */
 
-	if (SerialChannel == CASSETTE || ((SerialChannel == RS423) && !SerialPortEnabled)) {
+	if (SerialChannel == SerialDevice::Cassette || (SerialChannel == SerialDevice::RS423 && !SerialPortEnabled)) {
 		ResetACIAStatus(1);
 		TDR=Data;
 		TxD=1;
@@ -212,7 +214,7 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
 		TapeTrigger=TotalCycles + 2000000/(baud/8) * TapeClockSpeed/5600;
 	}
 
-	if (SerialChannel == RS423 && SerialPortEnabled) {
+	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled) {
 		if (ACIA_Status & 2) {
 			ResetACIAStatus(1);
 			SerialWriteBuffer=Data;
@@ -260,12 +262,12 @@ void Write_SERPROC(unsigned char Data) {
 		OldRelayState=Cass_Relay;
 		ClickRelay(Cass_Relay);
 	}
-	SerialChannel=(Data & 64)>>6;
+	SerialChannel = (Data & 64) != 0 ? SerialDevice::RS423 : SerialDevice::Cassette;
 	Tx_Rate=Baud_Rates[(Data & 7)];
 	Rx_Rate=Baud_Rates[(Data & 56)>>3];
 	// Note, the PC serial port (or at least win32) does not allow different transmit/receive rates
 	// So we will use the higher of the two
-	if (SerialChannel==RS423) {
+	if (SerialChannel == SerialDevice::RS423) {
 		HigherRate=Tx_Rate;
 		if (Rx_Rate>Tx_Rate) HigherRate=Rx_Rate;
 		GetCommState(hSerialPort,&dcbSerialPort);
@@ -351,7 +353,7 @@ void Serial_Poll(void)
 
 //	if (trace == 1) WriteLog("Here - SerialChannel = %d, TapeRecording = %d\n", SerialChannel, TapeRecording);
 
-	if (SerialChannel==CASSETTE)
+	if (SerialChannel == SerialDevice::Cassette)
 	{
 		if (TapeRecording)
 		{
@@ -548,7 +550,7 @@ void Serial_Poll(void)
 		}
 	}
 
-	if (SerialChannel == RS423 && SerialPortEnabled)
+	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
 	{
 		if (TouchScreenEnabled)
 		{
@@ -659,7 +661,10 @@ unsigned int __stdcall SerialThread(void * /* lpParam */) {
 			if (spResult==WAIT_OBJECT_0) {
 				if (GetOverlappedResult(hSerialPort,&olSerialPort,&BytesIn,FALSE)) {
 					// sucessful read, screw any errors.
-					if ((SerialChannel==RS423) && (BytesIn>0)) HandleData((unsigned char)SerialBuffer);
+					if (SerialChannel == SerialDevice::RS423 && BytesIn > 0) {
+						HandleData((unsigned char)SerialBuffer);
+					}
+
 					if (BytesIn==0) {
 						bCharReady = false;
 						ClearCommError(hSerialPort, &dwClrCommError,NULL);
@@ -1193,7 +1198,7 @@ void SaveSerialUEF(FILE *SUEF)
 	{
 		fput16(0x0473,SUEF);
 		fput32(293,SUEF);
-		fputc(SerialChannel,SUEF);
+		fputc(static_cast<int>(SerialChannel),SUEF);
 		fwrite(UEFTapeName,1,256,SUEF);
 		fputc(Cass_Relay,SUEF);
 		fput32(Tx_Rate,SUEF);
@@ -1230,7 +1235,7 @@ void LoadSerialUEF(FILE *SUEF)
 
 	CloseUEF();
 
-	SerialChannel=fgetc(SUEF);
+	SerialChannel = static_cast<SerialDevice>(fgetc(SUEF));
 	fread(FileName,1,256,SUEF);
 	if (FileName[0])
 	{

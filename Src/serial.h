@@ -51,10 +51,11 @@ void InitSerialPort(void);
 void Kill_Serial(void);
 void LoadUEF(const char *UEFName);
 void RewindTape(void);
-extern int TapeClockSpeed;
+
 unsigned int __stdcall SerialThread(void *lpParam);
 unsigned int __stdcall StatThread(void *lpParam);
 void InitThreads(void);
+
 extern volatile bool bSerialStateChanged;
 extern bool TapeControlEnabled;
 extern char UEFTapeName[256];
@@ -72,4 +73,5 @@ void SaveSerialUEF(FILE *SUEF);
 void LoadSerialUEF(FILE *SUEF);
 void SetACIAStatus(unsigned char bit);
 void ResetACIAStatus(unsigned char bit);
+
 #endif
