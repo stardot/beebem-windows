@@ -596,7 +596,6 @@ ARMword ARMul_ReadByte (ARMul_State * state, ARMword address)
             unsigned char data = ReadTubeFromParasiteSide(addr);
             return data;
         }
-        return 0;
     }
 
     temp = ARMul_ReadWord (state, address);
