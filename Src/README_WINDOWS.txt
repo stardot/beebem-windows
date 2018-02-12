@@ -4,10 +4,13 @@ BeebEm for Microsoft Windows
 Compiling
 ---------
 
-This distribution of BeebEm contains Windows executables but if you want to
-compile BeebEm yourself then you will need Microsoft Visual Studio 2015 or
-later (the free VS2015 Community edition will compile BeebEm). The following
-project files are included:
+The source code for BeebEm is available at:
+
+  https://github.com/stardot/beebem-windows
+
+If you want to compile BeebEm yourself then you will need Microsoft Visual
+Studio 2015 or later (the free VS2015 Community edition will compile BeebEm).
+The following project files are included:
 
   BeebEm.sln                         - Solution file
   BeebEm.vcxproj                     - BeebEm project file
@@ -19,8 +22,8 @@ project files are included:
 You will need to download and install the Microsoft DirectX 9.0 SDK, then
 configure the project to find it.
 
-To build the installer from within Visual, you'll need to download and install
-Inno Setup from http://www.jrsoftware.org/isinfo.php.
+To build the installer from within Visual Studio, you'll need to download
+and install Inno Setup from http://www.jrsoftware.org/isinfo.php.
 
 Select the View menu, then Other Windows, then Property Manager. In the
 Property Manager window, open the BeebEm\Release | Win32\Microsoft.Cpp.Win32.user

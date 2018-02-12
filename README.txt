@@ -13,8 +13,12 @@ For more information see the BeebEm help:
 
   Help\index.html
 
+The source code for BeebEm is available at:
+
+  https://github.com/stardot/beebem-windows
+
 Mike Wyatt
 beebem.support@googlemail.com
 http://www.mkw.me.uk/beebem
 
-Copyright (C) 2017  Mike Wyatt
+Copyright (C) 2018  Mike Wyatt
