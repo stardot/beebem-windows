@@ -131,13 +131,18 @@ bool NativeFDC; // true for 8271, false for DLL extension
 
 /*----------------------------------------------------------------------------*/
 /* Perform hardware address wrap around */
-static unsigned int WrapAddr(int in) {
-  unsigned int offsets[]={0x4000,0x6000,0x3000,0x5800}; // page 419 of AUG is wrong
-  if (in<0x8000) return(in);
-  in+=offsets[(IC32State & 0x30)>>4];
-  in&=0x7fff;
-  return(in);
- }
+static int WrapAddr(int Address) {
+  static const int offsets[] = {0x4000, 0x6000, 0x3000, 0x5800}; // page 419 of AUG is wrong
+
+  if (Address < 0x8000) {
+    return Address;
+  }
+
+  Address += offsets[(IC32State & 0x30) >> 4];
+  Address &= 0x7fff;
+
+  return Address;
+}
 
 /*----------------------------------------------------------------------------*/
 /* This is for the use of the video routines.  It returns a pointer to
@@ -146,7 +151,7 @@ static unsigned int WrapAddr(int in) {
    at 0x8000.  Potentially this routine may return a pointer into  a static
    buffer - so use the contents before recalling it
    'n' must be less than 1K in length.
-   See 'BeebMemPtrWithWrapMo7' for use in Mode 7 - its a special case.
+   See 'BeebMemPtrWithWrapMo7' for use in Mode 7 - it's a special case.
 */
 
 unsigned char *BeebMemPtrWithWrap(int a, int n) {
@@ -197,12 +202,16 @@ unsigned char *BeebMemPtrWithWrap(int a, int n) {
 }
 
 /*----------------------------------------------------------------------------*/
-/* Perform hardware address wrap around - for mode 7*/
-static unsigned int WrapAddrMo7(int in) {
-  if (in<0x8000) return(in);
-  in+=0x7c00;
-  in&=0x7fff;
-  return(in);
+/* Perform hardware address wrap around - for mode 7 */
+static int WrapAddrMo7(int Address) {
+  if (Address < 0x8000) {
+    return Address;
+  }
+
+  Address += 0x7c00;
+  Address &= 0x7fff;
+
+  return Address;
 }
 
 /*----------------------------------------------------------------------------*/
