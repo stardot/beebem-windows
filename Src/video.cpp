@@ -128,12 +128,12 @@ typedef struct {
   bool IsNewTVFrame; // Specifies the start of a new TV frame, following VSync (used so we only calibrate speed once per frame)
 } VideoStateT;
 
-static  VideoStateT VideoState;
+static VideoStateT VideoState;
 
 int VideoTriggerCount=9999; /* Number of cycles before next scanline service */
 
 /* first subscript is graphics flag (1 for graphics,2 for separated graphics), next is character, then scanline */
-/* character is (valu &127)-32 */
+/* character is (value & 127)-32 */
 static unsigned int EM7Font[3][96][20]; // 20 rows to account for "half pixels"
 
 static bool Mode7FlashOn = true; // true if a flashing character in mode 7 is on
@@ -240,241 +240,291 @@ static void BuildMode7Font(void) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-static void DoFastTable16(void) {
-  unsigned int beebpixvl,beebpixvr;
-  unsigned int bplvopen,bplvtotal;
-  unsigned char tmp;
+static void DoFastTable16() {
+  for(unsigned int beebpixvl = 0; beebpixvl < 16; beebpixvl++) {
+    unsigned int bplvopen = ((beebpixvl & 8) ? 128 : 0) |
+                            ((beebpixvl & 4) ? 32 : 0) |
+                            ((beebpixvl & 2) ? 8 : 0) |
+                            ((beebpixvl & 1) ? 2 : 0);
 
-  for(beebpixvl=0;beebpixvl<16;beebpixvl++) {
-    bplvopen=((beebpixvl & 8)?128:0) |
-             ((beebpixvl & 4)?32:0) |
-             ((beebpixvl & 2)?8:0) |
-             ((beebpixvl & 1)?2:0);
-    for(beebpixvr=0;beebpixvr<16;beebpixvr++) {
-      bplvtotal=bplvopen |
-             ((beebpixvr & 8)?64:0) |
-             ((beebpixvr & 4)?16:0) |
-             ((beebpixvr & 2)?4:0) |
-             ((beebpixvr & 1)?1:0);
-      tmp=VideoULA_Palette[beebpixvl];
-      if (tmp>7) {
-        tmp&=7;
-        if (VideoULA_ControlReg & 1) tmp^=7;
-      }
-      FastTable[bplvtotal].data[0]=FastTable[bplvtotal].data[1]=
-        FastTable[bplvtotal].data[2]=FastTable[bplvtotal].data[3]=mainWin->cols[tmp];
+    for (unsigned int beebpixvr = 0; beebpixvr < 16; beebpixvr++) {
+      unsigned int bplvtotal = bplvopen |
+                               ((beebpixvr & 8) ? 64 : 0) |
+                               ((beebpixvr & 4) ? 16 : 0) |
+                               ((beebpixvr & 2) ? 4 : 0) |
+                               ((beebpixvr & 1) ? 1 : 0);
 
-      tmp=VideoULA_Palette[beebpixvr];
-      if (tmp>7) {
-        tmp&=7;
-        if (VideoULA_ControlReg & 1) tmp^=7;
+      unsigned char tmp = VideoULA_Palette[beebpixvl];
+
+      if (tmp > 7) {
+        tmp &= 7;
+        if (VideoULA_ControlReg & 1) tmp ^= 7;
       }
-      FastTable[bplvtotal].data[4]=FastTable[bplvtotal].data[5]=
-        FastTable[bplvtotal].data[6]=FastTable[bplvtotal].data[7]=mainWin->cols[tmp];
+
+      FastTable[bplvtotal].data[0] =
+        FastTable[bplvtotal].data[1] =
+        FastTable[bplvtotal].data[2] =
+        FastTable[bplvtotal].data[3] = tmp;
+
+      tmp = VideoULA_Palette[beebpixvr];
+
+      if (tmp > 7) {
+        tmp &= 7;
+        if (VideoULA_ControlReg & 1) tmp ^= 7;
+      }
+
+      FastTable[bplvtotal].data[4] =
+        FastTable[bplvtotal].data[5] =
+        FastTable[bplvtotal].data[6] =
+        FastTable[bplvtotal].data[7] = tmp;
     }
   }
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-static void DoFastTable16XStep8(void) {
-  unsigned int beebpixvl,beebpixvr;
-  unsigned int bplvopen,bplvtotal;
-  unsigned char tmp;
+static void DoFastTable16XStep8() {
+  for (unsigned int beebpixvl = 0; beebpixvl < 16; beebpixvl++) {
+    unsigned int bplvopen = ((beebpixvl & 8) ? 128 : 0) |
+                            ((beebpixvl & 4) ? 32 : 0) |
+                            ((beebpixvl & 2) ? 8 : 0) |
+                            ((beebpixvl & 1) ? 2 : 0);
 
-  for(beebpixvl=0;beebpixvl<16;beebpixvl++) {
-    bplvopen=((beebpixvl & 8)?128:0) |
-             ((beebpixvl & 4)?32:0) |
-             ((beebpixvl & 2)?8:0) |
-             ((beebpixvl & 1)?2:0);
-    for(beebpixvr=0;beebpixvr<16;beebpixvr++) {
-      bplvtotal=bplvopen |
-             ((beebpixvr & 8)?64:0) |
-             ((beebpixvr & 4)?16:0) |
-             ((beebpixvr & 2)?4:0) |
-             ((beebpixvr & 1)?1:0);
-      tmp=VideoULA_Palette[beebpixvl];
-      if (tmp>7) {
-        tmp&=7;
-        if (VideoULA_ControlReg & 1) tmp^=7;
+    for (unsigned int beebpixvr = 0;beebpixvr < 16; beebpixvr++) {
+      unsigned int bplvtotal = bplvopen |
+                               ((beebpixvr & 8) ? 64 : 0) |
+                               ((beebpixvr & 4) ? 16 : 0) |
+                               ((beebpixvr & 2) ? 4 : 0) |
+                               ((beebpixvr & 1) ? 1 : 0);
+
+      unsigned char tmp = VideoULA_Palette[beebpixvl];
+
+      if (tmp > 7) {
+        tmp &= 7;
+        if (VideoULA_ControlReg & 1) tmp ^= 7;
       }
-      FastTableDWidth[bplvtotal].data[0]=FastTableDWidth[bplvtotal].data[1]=
-        FastTableDWidth[bplvtotal].data[2]=FastTableDWidth[bplvtotal].data[3]=
-      FastTableDWidth[bplvtotal].data[4]=FastTableDWidth[bplvtotal].data[5]=
-        FastTableDWidth[bplvtotal].data[6]=FastTableDWidth[bplvtotal].data[7]=mainWin->cols[tmp];
 
-      tmp=VideoULA_Palette[beebpixvr];
-      if (tmp>7) {
-        tmp&=7;
-        if (VideoULA_ControlReg & 1) tmp^=7;
+      FastTableDWidth[bplvtotal].data[0] =
+        FastTableDWidth[bplvtotal].data[1] =
+        FastTableDWidth[bplvtotal].data[2] =
+        FastTableDWidth[bplvtotal].data[3] =
+        FastTableDWidth[bplvtotal].data[4] =
+        FastTableDWidth[bplvtotal].data[5] =
+        FastTableDWidth[bplvtotal].data[6] =
+        FastTableDWidth[bplvtotal].data[7] = tmp;
+
+      tmp = VideoULA_Palette[beebpixvr];
+
+      if (tmp > 7) {
+        tmp &= 7;
+        if (VideoULA_ControlReg & 1) tmp ^= 7;
       }
-      FastTableDWidth[bplvtotal].data[8]=FastTableDWidth[bplvtotal].data[9]=
-        FastTableDWidth[bplvtotal].data[10]=FastTableDWidth[bplvtotal].data[11]=
-      FastTableDWidth[bplvtotal].data[12]=FastTableDWidth[bplvtotal].data[13]=
-        FastTableDWidth[bplvtotal].data[14]=FastTableDWidth[bplvtotal].data[15]=mainWin->cols[tmp];
-    }
-  }
-}
 
-/*-------------------------------------------------------------------------------------------------------------*/
-/* Some guess work and experimentation has determined that the left most pixel uses bits 7,5,3,1 for the       */
-/* palette address, the next uses 6,4,2,0, the next uses 5,3,1,H (H=High), then 5,2,0,H                        */
-static void DoFastTable4(void) {
-  unsigned char tmp;
-  unsigned long beebpixv,pentry;
-
-  for(beebpixv=0;beebpixv<256;beebpixv++) {
-    pentry=((beebpixv & 128)?8:0)
-           | ((beebpixv & 32)?4:0)
-           | ((beebpixv & 8)?2:0)
-           | ((beebpixv & 2)?1:0);
-    tmp=VideoULA_Palette[pentry];
-    if (tmp>7) {
-      tmp&=7;
-      if (VideoULA_ControlReg & 1) tmp^=7;
+      FastTableDWidth[bplvtotal].data[8] =
+        FastTableDWidth[bplvtotal].data[9] =
+        FastTableDWidth[bplvtotal].data[10] =
+        FastTableDWidth[bplvtotal].data[11] =
+        FastTableDWidth[bplvtotal].data[12] =
+        FastTableDWidth[bplvtotal].data[13] =
+        FastTableDWidth[bplvtotal].data[14] =
+        FastTableDWidth[bplvtotal].data[15] = tmp;
     }
-    FastTable[beebpixv].data[0]=FastTable[beebpixv].data[1]=mainWin->cols[tmp];
-
-    pentry=((beebpixv & 64)?8:0)
-           | ((beebpixv & 16)?4:0)
-           | ((beebpixv & 4)?2:0)
-           | ((beebpixv & 1)?1:0);
-    tmp=VideoULA_Palette[pentry];
-    if (tmp>7) {
-      tmp&=7;
-      if (VideoULA_ControlReg & 1) tmp^=7;
-    }
-    FastTable[beebpixv].data[2]=FastTable[beebpixv].data[3]=mainWin->cols[tmp];
-
-    pentry=((beebpixv & 32)?8:0)
-           | ((beebpixv & 8)?4:0)
-           | ((beebpixv & 2)?2:0)
-           | 1;
-    tmp=VideoULA_Palette[pentry];
-    if (tmp>7) {
-      tmp&=7;
-      if (VideoULA_ControlReg & 1) tmp^=7;
-    }
-    FastTable[beebpixv].data[4]=FastTable[beebpixv].data[5]=mainWin->cols[tmp];
-    pentry=((beebpixv & 16)?8:0)
-           | ((beebpixv & 4)?4:0)
-           | ((beebpixv & 1)?2:0)
-           | 1;
-    tmp=VideoULA_Palette[pentry];
-    if (tmp>7) {
-      tmp&=7;
-      if (VideoULA_ControlReg & 1) tmp^=7;
-    }
-    FastTable[beebpixv].data[6]=FastTable[beebpixv].data[7]=mainWin->cols[tmp];
   }
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Some guess work and experimentation has determined that the left most pixel uses bits 7,5,3,1 for the       */
 /* palette address, the next uses 6,4,2,0, the next uses 5,3,1,H (H=High), then 5,2,0,H                        */
-static void DoFastTable4XStep4(void) {
-  unsigned char tmp;
-  unsigned long beebpixv,pentry;
+static void DoFastTable4() {
+  for (unsigned long beebpixv = 0; beebpixv < 256; beebpixv++) {
+    unsigned long pentry = ((beebpixv & 128) ? 8 : 0) |
+                           ((beebpixv & 32)  ? 4 : 0) |
+                           ((beebpixv & 8)   ? 2 : 0) |
+                           ((beebpixv & 2)   ? 1 : 0);
 
-  for(beebpixv=0;beebpixv<256;beebpixv++) {
-    pentry=((beebpixv & 128)?8:0)
-           | ((beebpixv & 32)?4:0)
-           | ((beebpixv & 8)?2:0)
-           | ((beebpixv & 2)?1:0);
-    tmp=VideoULA_Palette[pentry];
-    if (tmp>7) {
-      tmp&=7;
-      if (VideoULA_ControlReg & 1) tmp^=7;
-    }
-    FastTableDWidth[beebpixv].data[0]=FastTableDWidth[beebpixv].data[1]=
-    FastTableDWidth[beebpixv].data[2]=FastTableDWidth[beebpixv].data[3]=mainWin->cols[tmp];
+    unsigned char tmp = VideoULA_Palette[pentry];
 
-    pentry=((beebpixv & 64)?8:0)
-           | ((beebpixv & 16)?4:0)
-           | ((beebpixv & 4)?2:0)
-           | ((beebpixv & 1)?1:0);
-    tmp=VideoULA_Palette[pentry];
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     }
-    FastTableDWidth[beebpixv].data[4]=FastTableDWidth[beebpixv].data[5]=
-    FastTableDWidth[beebpixv].data[6]=FastTableDWidth[beebpixv].data[7]=mainWin->cols[tmp];
 
-    pentry=((beebpixv & 32)?8:0)
-           | ((beebpixv & 8)?4:0)
-           | ((beebpixv & 2)?2:0)
-           | 1;
+    FastTable[beebpixv].data[0] =
+      FastTable[beebpixv].data[1] = tmp;
+
+    pentry = ((beebpixv & 64) ? 8 : 0) |
+             ((beebpixv & 16) ? 4 : 0) |
+             ((beebpixv & 4)  ? 2 : 0) |
+             ((beebpixv & 1)  ? 1 : 0);
+
     tmp=VideoULA_Palette[pentry];
+
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     }
-    FastTableDWidth[beebpixv].data[8]=FastTableDWidth[beebpixv].data[9]=
-    FastTableDWidth[beebpixv].data[10]=FastTableDWidth[beebpixv].data[11]=mainWin->cols[tmp];
-    pentry=((beebpixv & 16)?8:0)
-           | ((beebpixv & 4)?4:0)
-           | ((beebpixv & 1)?2:0)
-           | 1;
-    tmp=VideoULA_Palette[pentry];
+
+    FastTable[beebpixv].data[2] =
+      FastTable[beebpixv].data[3] = tmp;
+
+    pentry = ((beebpixv & 32) ? 8 : 0) |
+             ((beebpixv & 8)  ? 4 : 0) |
+             ((beebpixv & 2)  ? 2 : 0) |
+             1;
+
+    tmp = VideoULA_Palette[pentry];
+
     if (tmp>7) {
       tmp&=7;
       if (VideoULA_ControlReg & 1) tmp^=7;
     }
-    FastTableDWidth[beebpixv].data[12]=FastTableDWidth[beebpixv].data[13]=
-    FastTableDWidth[beebpixv].data[14]=FastTableDWidth[beebpixv].data[15]=mainWin->cols[tmp];
+
+    FastTable[beebpixv].data[4] =
+      FastTable[beebpixv].data[5] = tmp;
+
+    pentry = ((beebpixv & 16) ? 8 : 0) |
+             ((beebpixv & 4)  ? 4 : 0) |
+             ((beebpixv & 1)  ? 2 : 0) |
+             1;
+
+    tmp = VideoULA_Palette[pentry];
+
+    if (tmp>7) {
+      tmp&=7;
+      if (VideoULA_ControlReg & 1) tmp^=7;
+    }
+
+    FastTable[beebpixv].data[6] =
+      FastTable[beebpixv].data[7] = tmp;
+  }
+}
+
+/*-------------------------------------------------------------------------------------------------------------*/
+/* Some guess work and experimentation has determined that the left most pixel uses bits 7,5,3,1 for the       */
+/* palette address, the next uses 6,4,2,0, the next uses 5,3,1,H (H=High), then 5,2,0,H                        */
+static void DoFastTable4XStep4() {
+  for (unsigned long beebpixv = 0; beebpixv < 256; beebpixv++) {
+    unsigned long pentry = ((beebpixv & 128) ? 8 : 0) |
+                           ((beebpixv & 32)  ? 4 : 0) |
+                           ((beebpixv & 8)   ? 2 : 0) |
+                           ((beebpixv & 2)   ? 1 : 0);
+
+    unsigned char tmp = VideoULA_Palette[pentry];
+
+    if (tmp>7) {
+      tmp&=7;
+      if (VideoULA_ControlReg & 1) tmp^=7;
+    }
+
+    FastTableDWidth[beebpixv].data[0] =
+      FastTableDWidth[beebpixv].data[1] =
+      FastTableDWidth[beebpixv].data[2] =
+      FastTableDWidth[beebpixv].data[3] = tmp;
+
+    pentry = ((beebpixv & 64) ? 8 : 0) |
+             ((beebpixv & 16) ? 4 : 0) |
+             ((beebpixv & 4)  ? 2 : 0) |
+             ((beebpixv & 1)  ? 1 : 0);
+
+    tmp = VideoULA_Palette[pentry];
+
+    if (tmp > 7) {
+      tmp &= 7;
+      if (VideoULA_ControlReg & 1) tmp ^= 7;
+    }
+
+    FastTableDWidth[beebpixv].data[4] =
+      FastTableDWidth[beebpixv].data[5] =
+      FastTableDWidth[beebpixv].data[6] =
+      FastTableDWidth[beebpixv].data[7] = tmp;
+
+    pentry = ((beebpixv & 32) ? 8 : 0) |
+             ((beebpixv & 8)  ? 4 : 0) |
+             ((beebpixv & 2)  ? 2 : 0) |
+             1;
+
+    tmp = VideoULA_Palette[pentry];
+
+    if (tmp > 7) {
+      tmp &= 7;
+      if (VideoULA_ControlReg & 1) tmp ^= 7;
+    }
+
+    FastTableDWidth[beebpixv].data[8] =
+      FastTableDWidth[beebpixv].data[9] =
+      FastTableDWidth[beebpixv].data[10] =
+      FastTableDWidth[beebpixv].data[11] = tmp;
+
+    pentry = ((beebpixv & 16) ? 8 :0 ) |
+             ((beebpixv & 4)  ? 4 : 0) |
+             ((beebpixv & 1)  ? 2 : 0) |
+             1;
+
+    tmp = VideoULA_Palette[pentry];
+
+    if (tmp > 7) {
+      tmp &= 7;
+      if (VideoULA_ControlReg & 1) tmp ^= 7;
+    }
+
+    FastTableDWidth[beebpixv].data[12] =
+      FastTableDWidth[beebpixv].data[13] =
+      FastTableDWidth[beebpixv].data[14] =
+      FastTableDWidth[beebpixv].data[15] = tmp;
+  }
+}
+
+/*-------------------------------------------------------------------------------------------------------------*/
+/* Some guess work and experimentation has determined that the left most pixel uses the same pattern as mode 1 */
+/* all the way upto the 5th pixel which uses 31hh then 20hh and then 1hhh then 0hhhh                           */
+static void DoFastTable2() {
+  for (unsigned long beebpixv = 0; beebpixv < 256; beebpixv++) {
+    unsigned long beebpixvt = beebpixv;
+
+    for (int pix = 0; pix < 8; pix++) {
+      unsigned long pentry = ((beebpixvt & 128) ? 8 : 0) |
+                             ((beebpixvt & 32)  ? 4 : 0) |
+                             ((beebpixvt & 8)   ? 2 : 0) |
+                             ((beebpixvt & 2)   ? 1 : 0);
+
+      beebpixvt <<= 1;
+      beebpixvt |= 1;
+
+      unsigned char tmp = VideoULA_Palette[pentry];
+
+      if (tmp > 7) {
+        tmp &= 7;
+        if (VideoULA_ControlReg & 1) tmp ^= 7;
+      }
+
+      FastTable[beebpixv].data[pix] = tmp;
+    }
   }
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Some guess work and experimentation has determined that the left most pixel uses the same pattern as mode 1 */
 /* all the way upto the 5th pixel which uses 31hh then 20hh and hten 1hhh then 0hhhh                           */
-static void DoFastTable2(void) {
-  unsigned char tmp;
-  unsigned long beebpixv,beebpixvt,pentry;
-  int pix;
+static void DoFastTable2XStep2() {
+  for(unsigned long beebpixv = 0; beebpixv < 256; beebpixv++) {
+    unsigned long beebpixvt = beebpixv;
 
-  for(beebpixv=0;beebpixv<256;beebpixv++) {
-    beebpixvt=beebpixv;
-    for(pix=0;pix<8;pix++) {
-      pentry=((beebpixvt & 128)?8:0)
-             | ((beebpixvt & 32)?4:0)
-             | ((beebpixvt & 8)?2:0)
-             | ((beebpixvt & 2)?1:0);
+    for (int pix = 0; pix < 8; pix++) {
+      unsigned long pentry = ((beebpixvt & 128) ? 8 : 0) |
+                             ((beebpixvt & 32)  ? 4 : 0) |
+                             ((beebpixvt & 8)   ? 2 : 0) |
+                             ((beebpixvt & 2)   ? 1 : 0);
       beebpixvt<<=1;
       beebpixvt|=1;
-      tmp=VideoULA_Palette[pentry];
-      if (tmp>7) {
-        tmp&=7;
-        if (VideoULA_ControlReg & 1) tmp^=7;
-      }
-      FastTable[beebpixv].data[pix]=mainWin->cols[tmp];
-    }
-  }
-}
 
-/*-------------------------------------------------------------------------------------------------------------*/
-/* Some guess work and experimentation has determined that the left most pixel uses the same pattern as mode 1 */
-/* all the way upto the 5th pixel which uses 31hh then 20hh and hten 1hhh then 0hhhh                           */
-static void DoFastTable2XStep2(void) {
-  unsigned char tmp;
-  unsigned long beebpixv,beebpixvt,pentry;
-  int pix;
+      unsigned char tmp = VideoULA_Palette[pentry];
 
-  for(beebpixv=0;beebpixv<256;beebpixv++) {
-    beebpixvt=beebpixv;
-    for(pix=0;pix<8;pix++) {
-      pentry=((beebpixvt & 128)?8:0)
-             | ((beebpixvt & 32)?4:0)
-             | ((beebpixvt & 8)?2:0)
-             | ((beebpixvt & 2)?1:0);
-      beebpixvt<<=1;
-      beebpixvt|=1;
-      tmp=VideoULA_Palette[pentry];
-      if (tmp>7) {
-        tmp&=7;
-        if (VideoULA_ControlReg & 1) tmp^=7;
+      if (tmp > 7) {
+        tmp &= 7;
+        if (VideoULA_ControlReg & 1) tmp ^= 7;
       }
-      FastTableDWidth[beebpixv].data[pix*2]=FastTableDWidth[beebpixv].data[pix*2+1]=mainWin->cols[tmp];
+
+      FastTableDWidth[beebpixv].data[pix * 2] =
+        FastTableDWidth[beebpixv].data[pix * 2 + 1] = tmp;
     }
   }
 }
@@ -725,17 +775,17 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Do all the pixel rows for one row of teletext characters                                                    */
 static void DoMode7Row(void) {
-  unsigned char *CurrentPtr = VideoState.DataPtr;
+  const unsigned char *CurrentPtr = VideoState.DataPtr;
   int CurrentChar;
   int XStep;
   unsigned char byte;
   unsigned int tmp;
 
-  unsigned int Foreground=mainWin->cols[7];
+  unsigned int Foreground = 7;
   /* The foreground colour changes after the current character; only relevant for hold graphics */
   unsigned int ForegroundPending=Foreground;
   unsigned int ActualForeground;
-  unsigned int Background=mainWin->cols[0];
+  unsigned int Background = 0;
   bool Flash = false; // i.e. steady
   bool DoubleHeight = false; // Normal
   bool Graphics;
@@ -782,7 +832,7 @@ static void DoMode7Row(void) {
         case 133:
         case 134:
         case 135:
-          ForegroundPending=mainWin->cols[byte-128];
+          ForegroundPending = byte - 128;
           NextGraphics = false;
           NextHoldGraphChar=32;
           break;
@@ -804,14 +854,14 @@ static void DoMode7Row(void) {
           DoubleHeight = true;
           break;
 
-        case 145:
-        case 146:
-        case 147:
-        case 148:
-        case 149:
-        case 150:
-        case 151:
-          ForegroundPending=mainWin->cols[byte-144];
+        case 145: // Graphics red
+        case 146: // Graphics green
+        case 147: // Graphics yellow
+        case 148: // Graphics blue
+        case 149: // Graphics magenta
+        case 150: // Graphics cyan
+        case 151: // Graphics white
+          ForegroundPending = byte - 144;
           NextGraphics = true;
           break;
 
@@ -829,7 +879,7 @@ static void DoMode7Row(void) {
           break;
 
         case 156:
-          Background=mainWin->cols[0];
+          Background = 0;
           break;
 
         case 157:
@@ -868,7 +918,7 @@ static void DoMode7Row(void) {
     if (!DoubleHeight) {
       for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
         tmp=EM7Font[FontTypeIndex][byte][CurrentScanLine];
-        //tmp=1365;
+
         if ((tmp==0) || (tmp==255)) {
           col=(tmp==0)?Background:ActualForeground;
           if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=12*XStep; else {
@@ -1372,7 +1422,7 @@ static void VideoAddCursor(void) {
 		{
 			if (CurY + y >= 0) {
 				if (CursorOnState)
-				 mainWin->doInvHorizLine(mainWin->cols[7], CurY + y, CurX, CurSize);
+				 mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
 			}
 		}
 	}

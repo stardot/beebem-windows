@@ -173,8 +173,6 @@ BeebWin::BeebWin()
 	m_frozen = false;
 	IgnoreIllegalInstructions = true;
 	aviWriter = NULL;
-	for(int i = 0; i < 256; i++)
-		cols[i] = static_cast<unsigned char>(i);
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
 	UEFTapeName[0]=0;
@@ -1698,8 +1696,8 @@ void BeebWin::doLED(int sx,bool on) {
 		tsy=496;
 	else
 		tsy=m_LastStartY+m_LastNLines-2;
-	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
-	doUHorizLine(mainWin->cols[((on)?1:0)+colbase],tsy,sx,8);
+	doUHorizLine((on ? 1 : 0) + colbase, tsy, sx, 8);
+	doUHorizLine((on ? 1 : 0) + colbase, tsy, sx, 8);
 }
 
 /****************************************************************************/

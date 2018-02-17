@@ -245,7 +245,6 @@ public:
 	void SaveEmuUEF(FILE *SUEF);
 	void LoadEmuUEF(FILE *SUEF,int Version);
 
-	unsigned char cols[256];
 	HMENU		m_hMenu;
 	bool		m_frozen;
 	char*		m_screen;
