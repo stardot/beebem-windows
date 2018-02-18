@@ -1355,8 +1355,8 @@ int VideoULARead(int Address) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-static void VideoAddCursor(void) {
-	static int CurSizes[] = { 2,1,0,0,4,2,0,4 };
+static void VideoAddCursor() {
+	static const int CurSizes[] = { 2,1,0,0,4,2,0,4 };
 	int ScrAddr,CurAddr,RelAddr;
 	int CurX;
 	int CurSize;
