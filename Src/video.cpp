@@ -109,24 +109,24 @@ int ova,ovn; // mem ptr buffers
 
 /* CharLine counts from the 'reference point' - i.e. the point at which we reset the address pointer - NOT
 the point of the sync. If it is -ve its actually in the adjust time */
-typedef struct {
+struct VideoStateT {
   int Addr;       /* Address of start of next visible character line in beeb memory  - raw */
   int StartAddr;  /* Address of start of first character line in beeb memory  - raw */
   int PixmapLine; /* Current line in the pixmap */
   int FirstPixmapLine; /* The first pixmap line where something is visible.  Used to eliminate the 
-                          blank virtical retrace lines at the top of the screen.  */
+                          blank vertical retrace lines at the top of the screen. */
   int PreviousFirstPixmapLine; /* The first pixmap line on the previous frame */
   int LastPixmapLine; /* The last pixmap line where something is visible.  Used to eliminate the 
-                          blank virtical retrace lines at the bottom of the screen.  */
+                          blank vertical retrace lines at the bottom of the screen. */
   int PreviousLastPixmapLine; /* The last pixmap line on the previous frame */
   bool IsTeletext; /* This frame is a teletext frame - do things differently */
-  unsigned char *DataPtr;  /* Pointer into host memory of video data */
+  const unsigned char *DataPtr;  /* Pointer into host memory of video data */
 
   int CharLine;   /* 6845 counts in characters vertically - 0 at the top , incs by 1 - -1 means we are in the bit before the actual display starts */
   int InCharLineUp; /* Scanline within a character line - counts up*/
   int VSyncState; // Cannot =0 in MSVC $NRM; /* When >0 VSync is high */
   bool IsNewTVFrame; // Specifies the start of a new TV frame, following VSync (used so we only calibrate speed once per frame)
-} VideoStateT;
+};
 
 static VideoStateT VideoState;
 
@@ -709,7 +709,7 @@ static void LowLevelDoScanLineNarrow() {
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
-  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
+  const unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   /* This should help the compiler - it doesn't need to test for end of loop
      except every 4 entries */
@@ -732,7 +732,7 @@ static void LowLevelDoScanLineNarrowNot4Bytes() {
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
-  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
+  const unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   for(;BytesToGo;CurrentPtr+=8,BytesToGo--)
     (vidPtr++)->eightbyte=FastTable[*CurrentPtr].eightbyte;
@@ -746,7 +746,7 @@ static void LowLevelDoScanLineWide() {
 
   /* If the step is 4 then each byte corresponds to one entry in the fasttable
      and thus we can copy it really easily (and fast!) */
-  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
+  const unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   /* This should help the compiler - it doesn't need to test for end of loop
      except every 4 entries */
@@ -1587,7 +1587,7 @@ void VideoGetText(char *text, int line)
 	if (!VideoState.IsTeletext || line >= CRTC_VerticalDisplayed)
 		return;
 
-	unsigned char *dataPtr = BeebMemPtrWithWrapMo7(
+	const unsigned char *dataPtr = BeebMemPtrWithWrapMo7(
 		VideoState.StartAddr + line * CRTC_HorizontalDisplayed,
 		CRTC_HorizontalDisplayed);
 

@@ -154,51 +154,68 @@ static int WrapAddr(int Address) {
    See 'BeebMemPtrWithWrapMo7' for use in Mode 7 - it's a special case.
 */
 
-unsigned char *BeebMemPtrWithWrap(int a, int n) {
+const unsigned char *BeebMemPtrWithWrap(int Address, int Length) {
   static unsigned char tmpBuf[1024];
   unsigned char *tmpBufPtr;
-  int EndAddr=a+n-1;
-  int toCopy;
 
-  a=WrapAddr(a);
-  EndAddr=WrapAddr(EndAddr);
+  Address = WrapAddr(Address);
+  int EndAddress = WrapAddr(Address + Length - 1);
 
   // On Master the FSRam area is displayed if start addr below shadow area
-  if (MachineType == Model::Master128 && a <= EndAddr && Sh_Display && a < 0x3000) {
-    if (0x3000-a < n) {
-      toCopy=0x3000-a;
-      if (toCopy>n) toCopy=n;
-      if (toCopy>0) memcpy(tmpBuf,FSRam+0x2000-toCopy,toCopy);
-      tmpBufPtr=tmpBuf+toCopy;
-      toCopy=n-toCopy;
-      if (toCopy>0) memcpy(tmpBufPtr,ShadowRAM+EndAddr-(toCopy-1),toCopy);
-      return(tmpBuf);
+  if (MachineType == Model::Master128 && Address <= EndAddress && Sh_Display && Address < 0x3000) {
+    if (0x3000 - Address < Length) {
+      int toCopy = 0x3000 - Address;
+      if (toCopy > Length) toCopy = Length;
+      if (toCopy > 0) memcpy(tmpBuf, FSRam + 0x2000 - toCopy, toCopy);
+      tmpBufPtr = tmpBuf + toCopy;
+      toCopy = Length - toCopy;
+      if (toCopy > 0) memcpy(tmpBufPtr, ShadowRAM + EndAddress - (toCopy - 1), toCopy);
+      return tmpBuf;
     }
-    else if (a<0x1000) {
+    else if (Address < 0x1000) {
       return FSRam; // Should probably be PrivateRAM?
     }
     else {
-      return FSRam + a - 0x1000;
+      return FSRam + Address - 0x1000;
     }
   }
 
-  if (a <= EndAddr && !Sh_Display) {
-    return WholeRam + a;
-  }
-  if (a <= EndAddr && Sh_Display) {
-    return ShadowRAM + a;
+  if (Address <= EndAddress) {
+    if (Sh_Display) {
+      return ShadowRAM + Address;
+    }
+    else {
+      return WholeRam + Address;
+    }
   }
 
-  toCopy=0x8000-a;
-  if (toCopy>n) toCopy=n;
-  if (toCopy > 0 && !Sh_Display) memcpy(tmpBuf, WholeRam + a, toCopy);
-  if (toCopy > 0 && Sh_Display) memcpy(tmpBuf, ShadowRAM + a, toCopy);
-  tmpBufPtr=tmpBuf+toCopy;
-  toCopy=n-toCopy;
-  if (toCopy > 0 && !Sh_Display) memcpy(tmpBufPtr, WholeRam + EndAddr - (toCopy - 1), toCopy);
-  if (toCopy > 0 && Sh_Display) memcpy(tmpBufPtr, ShadowRAM + EndAddr - (toCopy - 1), toCopy);
+  int toCopy = 0x8000 - Address;
+
+  if (toCopy > Length) toCopy = Length;
+
+  if (toCopy > 0) {
+    if (Sh_Display) {
+      memcpy(tmpBuf, ShadowRAM + Address, toCopy);
+    }
+    else {
+      memcpy(tmpBuf, WholeRam + Address, toCopy);
+    }
+  }
+
+  tmpBufPtr = tmpBuf + toCopy;
+  toCopy = Length - toCopy;
+
+  if (toCopy > 0) {
+    if (Sh_Display) {
+      memcpy(tmpBufPtr, ShadowRAM + EndAddress - (toCopy - 1), toCopy);
+    }
+    else {
+      memcpy(tmpBufPtr, WholeRam + EndAddress - (toCopy - 1), toCopy);
+    }
+  }
+
   // Tripling is for Shadow RAM handling
-  return(tmpBuf);
+  return tmpBuf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -215,35 +232,56 @@ static int WrapAddrMo7(int Address) {
 }
 
 /*----------------------------------------------------------------------------*/
-/* Special case of BeebMemPtrWithWrap for use in mode 7
-*/
+/* Special case of BeebMemPtrWithWrap for use in mode 7 */
 
-unsigned char *BeebMemPtrWithWrapMo7(int a, int n) {
+const unsigned char *BeebMemPtrWithWrapMo7(int Address, int Length) {
   static unsigned char tmpBuf[1024];
-  unsigned char *tmpBufPtr;
-  int EndAddr=a+n-1;
-  int toCopy;
 
-  a=WrapAddrMo7(a);
-  EndAddr=WrapAddrMo7(EndAddr);
+  Address = WrapAddrMo7(Address);
+  int EndAddress = WrapAddrMo7(Address + Length - 1);
 
-  if (a <= EndAddr && !Sh_Display) {
-    return WholeRam + a;
+  if (Address <= EndAddress) {
+    if (Sh_Display) {
+      return ShadowRAM + Address;
+    }
+    else {
+      return WholeRam + Address;
+    }
   }
-  if (a <= EndAddr && Sh_Display) {
-    return ShadowRAM + a;
+
+  int toCopy = 0x8000 - Address;
+
+  if (toCopy > Length) {
+    if (Sh_Display) {
+      return ShadowRAM + Address;
+    }
+    else {
+      return WholeRam + Address;
+    }
   }
 
-  toCopy=0x8000-a;
-  if (toCopy > n && !Sh_Display) return WholeRam + a;
-  if (toCopy > n && Sh_Display) return ShadowRAM + a;
-  if (toCopy > 0 && !Sh_Display) memcpy(tmpBuf, WholeRam + a, toCopy);
-  if (toCopy > 0 && Sh_Display) memcpy(tmpBuf, ShadowRAM + a, toCopy);
-  tmpBufPtr=tmpBuf+toCopy;
-  toCopy=n-toCopy;
-  if (toCopy > 0 && !Sh_Display) memcpy(tmpBufPtr, WholeRam + EndAddr - (toCopy - 1), toCopy);
-  if (toCopy > 0 && Sh_Display) memcpy(tmpBufPtr, ShadowRAM + EndAddr - (toCopy - 1), toCopy);
-  return(tmpBuf);
+  if (toCopy > 0) {
+    if (Sh_Display) {
+      memcpy(tmpBuf, ShadowRAM + Address, toCopy);
+    }
+    else {
+      memcpy(tmpBuf, WholeRam + Address, toCopy);
+    }
+  }
+
+  unsigned char *tmpBufPtr = tmpBuf + toCopy;
+  toCopy = Length - toCopy;
+
+  if (toCopy > 0) {
+    if (Sh_Display) {
+      memcpy(tmpBufPtr, ShadowRAM + EndAddress - (toCopy - 1), toCopy);
+    }
+    else {
+      memcpy(tmpBufPtr, WholeRam + EndAddress - (toCopy - 1), toCopy);
+    }
+  }
+
+  return tmpBuf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -260,9 +298,19 @@ int BeebReadMem(int Address) {
 		if (Address >= 0x8000 && Address < 0x8400 && Prvs8 && PrvEn) return Private[Address-0x8000];
 		if (Address >= 0x8000 && Address < 0x9000 && Prvs4 && PrvEn) return Private[Address-0x8000];
 		if (Address >= 0x9000 && Address < 0xb000 && Prvs1 && PrvEn) return Private[Address-0x8000];
-		if (Address < 0x8000 && ShEn && !MemSel) return ShadowRam[Address-0x3000];
-		if (Address < 0x8000 && !ShEn) return WholeRam[Address];
-		if (Address < 0x8000 && ShEn && MemSel) return WholeRam[Address];
+		if (Address < 0x8000) {
+			if (ShEn) {
+				if (MemSel) {
+					return WholeRam[Address];
+				}
+				else {
+					return ShadowRam[Address - 0x3000];
+				}
+			}
+			else {
+				return WholeRam[Address];
+			}
+		}
 		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address-0x8000];
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
@@ -383,12 +431,14 @@ int BeebReadMem(int Address) {
 		AdjustForIORead();
 		return Value;
 	}
+
 	if (Address==0xfe09) {
 		SyncIO();
 		Value = Read_ACIA_Rx_Data();
 		AdjustForIORead();
 		return Value;
 	}
+
 	if (Address==0xfe10) {
 		SyncIO();
 		Value = Read_SERPROC();
@@ -483,7 +533,7 @@ int BeebReadMem(int Address) {
 	if ((Address & ~0x3)==0xfc10) {
 		return(TeleTextRead(Address & 0x3));
 	}
-    
+
 	if ((Address & ~0x3)==0xfc40) {
 		if (SCSIDriveEnabled) return(SCSIRead(Address & 0x3));
 	}
