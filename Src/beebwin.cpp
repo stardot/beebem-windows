@@ -3616,11 +3616,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_ENDVIDEO:
-		if (aviWriter != NULL)
-		{
-			delete aviWriter;
-			aviWriter = NULL;
-		}
+		EndVideo();
 		break;
 
 #ifdef SPEECH_ENABLED

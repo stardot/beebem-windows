@@ -487,7 +487,8 @@ public:
 	bool PrinterFile();
 	void TogglePrinter(void);
 	void TranslatePrinterPort(void);
-	void CaptureVideo(void);
+	void CaptureVideo();
+	void EndVideo();
 	void CaptureBitmap(int x, int y, int sx, int sy);
 	bool GetImageFile(char *FileName);
 	bool GetImageEncoderClsid(WCHAR *mimeType, CLSID *encoderClsid);

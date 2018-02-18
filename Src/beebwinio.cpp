@@ -701,11 +701,7 @@ void BeebWin::CaptureVideo()
 		}
 
 		// Close AVI file if currently capturing
-		if (aviWriter != NULL)
-		{
-			delete aviWriter;
-			aviWriter = NULL;
-		}
+		EndVideo();
 
 		aviWriter = new AVIWriter();
 
@@ -786,6 +782,15 @@ void BeebWin::CaptureVideo()
 				aviWriter = NULL;
 			}
 		}
+	}
+}
+
+void BeebWin::EndVideo()
+{
+	if (aviWriter != nullptr)
+	{
+		delete aviWriter;
+		aviWriter = nullptr;
 	}
 }
 
