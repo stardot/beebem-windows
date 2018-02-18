@@ -825,31 +825,31 @@ static void DoMode7Row(void) {
     if ((byte>=128) && (byte<=159)) {
       if (!HoldGraph && byte != 158) NextHoldGraphChar = 32; // SAA5050 teletext rendering bug
       switch (byte) {
-        case 129:
-        case 130:
-        case 131:
-        case 132:
-        case 133:
-        case 134:
-        case 135:
+        case 129: // Alphanumeric red
+        case 130: // Alphanumeric green
+        case 131: // Alphanumeric yellow
+        case 132: // Alphanumeric blue
+        case 133: // Alphanumeric magenta
+        case 134: // Alphanumeric cyan
+        case 135: // Alphanumeric white
           ForegroundPending = byte - 128;
           NextGraphics = false;
           NextHoldGraphChar=32;
           break;
 
-        case 136:
+        case 136: // Flash
           Flash = true;
           break;
 
-        case 137:
+        case 137: // Steady
           Flash = false;
           break;
 
-        case 140:
+        case 140: // Normal height
           DoubleHeight = false;
           break;
 
-        case 141:
+        case 141: // Double height
           if (!CurrentLineBottom) NextLineBottom = true;
           DoubleHeight = true;
           break;
@@ -865,36 +865,37 @@ static void DoMode7Row(void) {
           NextGraphics = true;
           break;
 
-        case 152: /* Conceal display - not sure about this */
+        case 152: // Conceal display - not sure about this
           Foreground=Background;
           ForegroundPending=Background;
           break;
 
-        case 153:
+        case 153: // Contiguous graphics
           Separated = false;
           break;
 
-        case 154:
+        case 154: // Separated graphics
           Separated = true;
           break;
 
-        case 156:
+        case 156: // Black background
           Background = 0;
           break;
 
-        case 157:
-          Background=Foreground;
+        case 157: // New background
+          Background = Foreground;
           break;
 
-        case 158:
+        case 158: // Hold graphics
           NextHoldGraph = true;
           HoldGraph = true;
           break;
 
-        case 159:
+        case 159: // Release graphics
           NextHoldGraph = false;
           break;
-      } /* Special character switch */
+      }
+
       // This next line hides any non double height characters on the bottom line
       // Fudge so that the special character is just displayed in background
       if (HoldGraph && Graphics) {
