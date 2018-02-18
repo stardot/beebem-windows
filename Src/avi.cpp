@@ -44,10 +44,9 @@ AVIWriter::AVIWriter()
 }
 
 HRESULT AVIWriter::Initialise(const CHAR *pszFileName, 
-							  const WAVEFORMATEX *WaveFormat,
-							  const bmiData *BitmapFormat,
-							  int fps,
-							  HWND hWnd)
+                              const WAVEFORMATEX *WaveFormat,
+                              const bmiData *BitmapFormat,
+                              int fps)
 {
 	AVISTREAMINFO StreamInfo;
 	HRESULT hr = S_OK;
@@ -73,7 +72,7 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 		strcpy(&StreamInfo.szName[0], "BeebEm Audio Capture");
 
 		m_nSampleSize = StreamInfo.dwSampleSize;
-		
+
 		hr = AVIFileCreateStream(m_pAVIFile, &m_pAudioStream, &StreamInfo);
 	}
 
@@ -100,7 +99,7 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 		StreamInfo.rcFrame.right = m_BitmapFormat.bmiHeader.biWidth;
 		StreamInfo.rcFrame.bottom = m_BitmapFormat.bmiHeader.biHeight;
 		strcpy(&StreamInfo.szName[0], "BeebEm Video Capture");
-		
+
 		hr = AVIFileCreateStream(m_pAVIFile, &m_pVideoStream, &StreamInfo);
 	}
 
@@ -109,7 +108,7 @@ HRESULT AVIWriter::Initialise(const CHAR *pszFileName,
 
 	if (SUCCEEDED(hr))
 	{
-   		hr = AVIStreamSetFormat(m_pVideoStream,
+		hr = AVIStreamSetFormat(m_pVideoStream,
 								0,
 								(void*)&outputData,
 								outputData.bmiHeader.biSize +

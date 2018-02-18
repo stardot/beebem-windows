@@ -777,7 +777,7 @@ void BeebWin::CaptureVideo()
 			m_AviFrameCount = 0;
 
 			HRESULT hr = aviWriter->Initialise(FileName, wfp, &m_Avibmi,
-				(int)(50 / (m_AviFrameSkip+1)), m_hWnd);
+				(int)(50 / (m_AviFrameSkip + 1)));
 			if (FAILED(hr))
 			{
 				MessageBox(m_hWnd, "Failed to create AVI file",

@@ -35,10 +35,9 @@ public:
 
 	// Open file
 	HRESULT Initialise(const CHAR *psFileName, 
-					   const WAVEFORMATEX *WaveFormat,
-					   const bmiData *BitmapFormat,
-					   int fps,
-					   HWND hWnd);
+	                   const WAVEFORMATEX *WaveFormat,
+	                   const bmiData *BitmapFormat,
+	                   int fps);
 	void Close(void);
 
 	HRESULT WriteSound(BYTE *pBuffer,
