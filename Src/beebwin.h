@@ -149,28 +149,28 @@ public:
 		updateLines(m_hDC, starty, nlines);
 	}
 
-	void doHorizLine(unsigned long Col, int y, int sx, int width) {
+	void doHorizLine(int Colour, int y, int sx, int width) {
 		if (TeletextEnabled) y/=TeletextStyle;
 		int d = (y*800)+sx+ScreenAdjust+(TeletextEnabled?36:0);
 		if ((d+width)>(500*800)) return;
 		if (d<0) return;
-		memset(m_screen+d, Col, width);
+		memset(m_screen+d, Colour, width);
 	}
 
-	void doInvHorizLine(unsigned long Col, int y, int sx, int width) {
+	void doInvHorizLine(int Colour, int y, int sx, int width) {
 		if (TeletextEnabled) y/=TeletextStyle;
 		int d = (y*800)+sx+ScreenAdjust+(TeletextEnabled?36:0);
 		char *vaddr;
 		if ((d+width)>(500*800)) return;
 		if (d<0) return;
 		vaddr=m_screen+d;
-		for (int n=0;n<width;n++) *(vaddr+n)^=Col;
+		for (int n = 0; n < width; n++) *(vaddr+n) ^= Colour;
 	}
 
-	void doUHorizLine(unsigned long Col, int y, int sx, int width) {
+	void doUHorizLine(int Colour, int y, int sx, int width) {
 		if (TeletextEnabled) y/=TeletextStyle;
 		if (y>500) return;
-		memset(m_screen+ (y* 800) + sx, Col, width);
+		memset(m_screen+ (y* 800) + sx, Colour, width);
 	}
 
 	EightUChars *GetLinePtr(int y) {
