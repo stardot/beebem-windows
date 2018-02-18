@@ -62,7 +62,7 @@ EightUChars FastTable[256];
 SixteenUChars FastTableDWidth[256]; /* For mode 4,5,6 */
 bool FastTable_Valid = false;
 
-typedef void (*LineRoutinePtr)(void);
+typedef void (*LineRoutinePtr)();
 LineRoutinePtr LineRoutine;
 
 // Translates middle bits of VideoULA_ControlReg to number of colours
@@ -530,20 +530,20 @@ static void DoFastTable2XStep2() {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-/* Check validity of fast table, and if invalid rebuild.
+
+/* Rebuild fast table.
    The fast table accelerates the translation of beeb video memory
    values into X pixel values */
-static void DoFastTable(void) {
-  /* if it's already OK then quit */
-  if (FastTable_Valid) return;
 
-  if (!(CRTC_HorizontalDisplayed & 3)) {
-    LineRoutine=(VideoULA_ControlReg & 0x10)?LowLevelDoScanLineNarrow:LowLevelDoScanLineWide;
-  } else {
-    LineRoutine=(VideoULA_ControlReg & 0x10)?LowLevelDoScanLineNarrowNot4Bytes:LowLevelDoScanLineWideNot4Bytes;
+static void DoFastTable() {
+  if ((CRTC_HorizontalDisplayed & 3) == 0) {
+    LineRoutine = (VideoULA_ControlReg & 0x10) ? LowLevelDoScanLineNarrow : LowLevelDoScanLineWide;
+  }
+  else {
+    LineRoutine = (VideoULA_ControlReg & 0x10) ? LowLevelDoScanLineNarrowNot4Bytes : LowLevelDoScanLineWideNot4Bytes;
   }
 
-  /* What happens next dpends on the number of colours */
+  // What happens next depends on the number of colours
   switch (NColsLookup[(VideoULA_ControlReg & 0x1c) >> 2]) {
     case 2:
       if (VideoULA_ControlReg & 0x10) {
@@ -987,14 +987,24 @@ static void DoMode7Row(void) {
 /*-------------------------------------------------------------------------------------------------------------*/
 /* Actually does the work of decoding beeb memory and plotting the line to X */
 static void LowLevelDoScanLine() {
-  /* Update acceleration tables */
-  DoFastTable();
-  if (FastTable_Valid) LineRoutine();
+  if (!FastTable_Valid) {
+    // Update acceleration tables
+    DoFastTable();
+  }
+
+  if (FastTable_Valid) {
+    LineRoutine();
+  }
 }
 
 void RedoMPTR(void) {
-	if (VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrapMo7(ova,ovn);
-	if (!VideoState.IsTeletext) VideoState.DataPtr=BeebMemPtrWithWrap(ova,ovn);
+	if (VideoState.IsTeletext) {
+		VideoState.DataPtr = BeebMemPtrWithWrapMo7(ova, ovn);
+	}
+	else {
+		VideoState.DataPtr = BeebMemPtrWithWrap(ova, ovn);
+	}
+
 	// FastTable_Valid = false;
 }
 
