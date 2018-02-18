@@ -1288,7 +1288,7 @@ static int numSelected;
 static char szExportFolder[MAX_PATH];
 
 // File export
-int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
+int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lParam */, LPARAM /* lpData */)
 {
 	switch (uMsg)
 	{
@@ -1303,7 +1303,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpDa
 	return 0;
 }
 
-BOOL CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
 	char str[100];
 	HWND hwndList;
