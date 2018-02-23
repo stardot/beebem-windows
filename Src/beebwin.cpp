@@ -1277,6 +1277,7 @@ LRESULT CALLBACK WndProc(
 						mask <<= 1;
 					}
 				}
+
 				if (!bit)
 				{
 					// Reset shift state if it was set by Run Disc
@@ -1554,7 +1555,7 @@ LRESULT CALLBACK WndProc(
 }
 
 /****************************************************************************/
-int BeebWin::TranslateKey(int vkey, int keyUp, int &row, int &col)
+int BeebWin::TranslateKey(int vkey, bool keyUp, int &row, int &col)
 {
 	if (vkey < 0 || vkey > 255)
 		return -9;
@@ -1562,7 +1563,7 @@ int BeebWin::TranslateKey(int vkey, int keyUp, int &row, int &col)
 	// Key track of shift state
 	if ((*transTable)[vkey][0].row == 0 && (*transTable)[vkey][0].col == 0)
 	{
-		m_ShiftPressed = keyUp ? false : true;
+		m_ShiftPressed = !keyUp;
 	}
 
 	if (keyUp)
@@ -4645,7 +4646,7 @@ void BeebWin::HandleTimer()
 	if (m_KbdCmdPress &&
 		m_KbdCmdKey != VK_SHIFT && m_KbdCmdKey != VK_CONTROL)
 	{
-		TranslateKey(m_KbdCmdKey, 1, row, col);
+		TranslateKey(m_KbdCmdKey, true, row, col);
 		m_KbdCmdPress = false;
 		SetTimer(m_hWnd, 1, m_KbdCmdDelay, NULL);
 	}
@@ -4706,9 +4707,9 @@ void BeebWin::HandleTimer()
 			if (m_KbdCmdKey != 0)
 			{
 				if (m_KbdCmdPress)
-					TranslateKey(m_KbdCmdKey, 0, row, col);
+					TranslateKey(m_KbdCmdKey, false, row, col);
 				else
-					TranslateKey(m_KbdCmdKey, 1, row, col);
+					TranslateKey(m_KbdCmdKey, true, row, col);
 			}
 
 			SetTimer(m_hWnd, 1, m_KbdCmdDelay, NULL);

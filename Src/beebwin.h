@@ -212,7 +212,7 @@ public:
 	void TrackPopupMenu(int x, int y);
 	bool IsFullScreen() { return m_isFullScreen; }
 	void ResetTiming(void);
-	int TranslateKey(int, int, int&, int&);
+	int TranslateKey(int vkey, bool keyUp, int &row, int &col);
 	void ParseCommandLine(void);
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
 	void FindCommandLineFile(char *CmdLineFile);
