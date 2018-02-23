@@ -31,6 +31,7 @@ Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree)
 * Music 5000 Synthesiser emulation.
 * General sound emulation improvements.
 * Fixed graphics hold in teletext mode.
+* Release Shift key on disk read after auto-booting.
 
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------

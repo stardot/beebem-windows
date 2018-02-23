@@ -33,6 +33,7 @@ Boston, MA  02110-1301, USA.
 #include "disc8271.h"
 #include "uefstate.h"
 #include "beebsound.h"
+#include "sysvia.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -399,6 +400,12 @@ static void DoVarLength_ReadDataCommand(void) {
 
   if (Selects[0]) Drive=0;
   if (Selects[1]) Drive=1;
+
+  // Reset shift state if it was set by Run Disc
+  if (mainWin->m_ShiftBooted) {
+    mainWin->m_ShiftBooted = false;
+    BeebKeyUp(0, 0);
+  }
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);

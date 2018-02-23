@@ -37,6 +37,7 @@ Written by Richard Gellman - Feb 2001
 #include "z80mem.h"
 #include "z80.h"
 #include "beebsound.h"
+#include "sysvia.h"
 
 // Control/Status Register, Track, Sector, and Data Registers
 unsigned char FormatBuffer[2048];
@@ -397,6 +398,12 @@ void Poll1770(int NCycles) {
 				if (Sector == MaxSects[CurrentDrive]) { MultiSect = false; /* Sector = 0; */ }
 			}
 			LoadingCycles=BYTE_TIME; // Slow down the read a bit :)
+
+			// Reset shift state if it was set by Run Disc
+			if (mainWin->m_ShiftBooted) {
+				mainWin->m_ShiftBooted = false;
+				BeebKeyUp(0, 0);
+			}
 		}
 		return;
 	}
