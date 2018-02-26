@@ -40,6 +40,31 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #endif
 
+// 8271 Status register
+const unsigned char STATUS_REG_COMMAND_BUSY       = 0x80;
+const unsigned char STATUS_REG_COMMAND_FULL       = 0x40;
+const unsigned char STATUS_REG_PARAMETER_FULL     = 0x20;
+const unsigned char STATUS_REG_RESULT_FULL        = 0x10;
+const unsigned char STATUS_REG_INTERRUPT_REQUEST  = 0x08;
+const unsigned char STATUS_REG_NON_DMA_MODE       = 0x04;
+
+// 8271 Result register
+const unsigned char RESULT_REG_SUCCESS            = 0x00;
+const unsigned char RESULT_REG_SCAN_NOT_MET       = 0x00;
+const unsigned char RESULT_REG_SCAN_MET_EQUAL     = 0x02;
+const unsigned char RESULT_REG_SCAN_MET_NOT_EQUAL = 0x04;
+const unsigned char RESULT_REG_CLOCK_ERROR        = 0x08;
+const unsigned char RESULT_REG_LATE_DMA           = 0x0A;
+const unsigned char RESULT_REG_ID_CRC_ERROR       = 0x0C;
+const unsigned char RESULT_REG_DATA_CRC_ERROR     = 0x0E;
+const unsigned char RESULT_REG_DRIVE_NOT_READY    = 0x10;
+const unsigned char RESULT_REG_WRITE_PROTECT      = 0x12;
+const unsigned char RESULT_REG_TRACK_0_NOT_FOUND  = 0x14;
+const unsigned char RESULT_REG_WRITE_FAULT        = 0x16;
+const unsigned char RESULT_REG_SECTOR_NOT_FOUND   = 0x18;
+const unsigned char RESULT_REG_DRIVE_NOT_PRESENT  = 0x1E; // Undocumented, see http://beebwiki.mdfs.net/OSWORD_%267F
+const unsigned char RESULT_REG_DELETED_DATA_FOUND = 0x20;
+
 using namespace std;
 
 extern bool TorchTube;
@@ -73,7 +98,8 @@ static bool Writeable[2]={false,false}; /* True if the drives are writeable */
 
 static bool FirstWriteInt; // Indicates the start of a write operation
 
-static int NextInterruptIsErr; /* none 0 causes error and drops this value into result reg */
+static unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
+
 #define TRACKSPERDRIVE 80
 
 /* Note Head select is done from bit 5 of the drive output register */
@@ -116,7 +142,13 @@ static void DriveHeadScheduleUnload(void);
 
 typedef void (*CommandFunc)(void);
 
-#define UPDATENMISTATUS if (StatusReg & 8) NMIStatus |=1<<nmi_floppy; else NMIStatus &= ~(1<<nmi_floppy);
+#define UPDATENMISTATUS                           \
+  if (StatusReg & STATUS_REG_INTERRUPT_REQUEST) { \
+    NMIStatus |= 1 << nmi_floppy;                 \
+  }                                               \
+  else {                                          \
+    NMIStatus &= ~(1 << nmi_floppy);              \
+  }
 
 /*--------------------------------------------------------------------------*/
 static struct {
@@ -217,7 +249,7 @@ static TrackType *GetTrackPtr(int LogicalTrackID) {
 /*--------------------------------------------------------------------------*/
 /* Returns a pointer to the data structure for a particular sector. Returns */
 /* NULL for Sector not found. Doesn't check cylinder/head ID                */
-static SectorType *GetSectorPtr(TrackType *Track, int LogicalSectorID, int FindDeleted) {
+static SectorType *GetSectorPtr(const TrackType *Track, int LogicalSectorID, bool FindDeleted) {
   int CurrentSector;
 
   if (Track->Sectors==NULL) return(NULL);
@@ -236,21 +268,44 @@ static bool CheckReady(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Cause an error - pass err num                                            */
-static void DoErr(int ErrNum) {
-  SetTrigger(50,Disc8271Trigger); /* Give it a bit of time */
-  NextInterruptIsErr=ErrNum;
-  StatusReg=0x80; /* Command is busy - come back when I have an interrupt */
+
+static int GetSelectedDrive() {
+  if (Selects[0]) {
+    return 0;
+  }
+
+  if (Selects[1]) {
+    return 1;
+  }
+
+  return -1;
+}
+
+/*--------------------------------------------------------------------------*/
+
+// Cause an error - pass err num
+
+static void DoErr(unsigned char ErrNum) {
+  SetTrigger(50, Disc8271Trigger); // Give it a bit of time
+  NextInterruptIsErr = ErrNum;
+  StatusReg = STATUS_REG_COMMAND_BUSY; // Command is busy - come back when I have an interrupt
   UPDATENMISTATUS;
 }
 
 /*--------------------------------------------------------------------------*/
-/* Checks a few things in the sector - returns true if OK                   */
-static int ValidateSector(SectorType *SecToVal,int Track,int SecLength) {
-  if (SecToVal->IDField.CylinderNum!=Track) return(0);
-  if (SecToVal->IDField.PhysRecLength!=SecLength) return(0);
- 
-  return(1);
+
+// Checks a few things in the sector - returns true if OK
+
+static bool ValidateSector(const SectorType *Sector, int Track, int SecLength) {
+  if (Sector->IDField.CylinderNum != Track) {
+    return false;
+  }
+
+  if (Sector->IDField.PhysRecLength != SecLength) {
+    return false;
+  }
+
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -273,34 +328,31 @@ static void Do128ByteSR_WriteDataCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_WriteDataCommand(void) {
-  int Drive=-1;
-
   DoSelects();
   DoLoadHead();
 
   if (!CheckReady()) {
-    DoErr(0x10); /* Drive not ready */
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  if (Selects[0]) Drive=0;
-  if (Selects[1]) Drive=1;
+  int Drive = GetSelectedDrive();
 
   if (!Writeable[Drive]) {
-    DoErr(0x12); /* Drive write protected */
+    DoErr(RESULT_REG_WRITE_PROTECT);
     return;
   }
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
   if (CommandStatus.CurrentTrackPtr==NULL) {
-    DoErr(0x10);
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
   if (CommandStatus.CurrentSectorPtr==NULL) {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
     return;
   }
 
@@ -312,21 +364,21 @@ static void DoVarLength_WriteDataCommand(void) {
   if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength)) {
     CommandStatus.ByteWithinSector=0;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
-    StatusReg=0x80; /* Command busy */
+    StatusReg = STATUS_REG_COMMAND_BUSY;
     UPDATENMISTATUS;
     CommandStatus.ByteWithinSector=0;
     FirstWriteInt = true;
   } else {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
   }
 }
 
 /*--------------------------------------------------------------------------*/
 static void WriteInterrupt(void) {
-  int LastByte=0;
+  bool LastByte = false;
 
-  if (CommandStatus.SectorsToGo<0) {
-    StatusReg=0x18; /* Result and interrupt */
+  if (CommandStatus.SectorsToGo < 0) {
+    StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
     UPDATENMISTATUS;
     return;
   }
@@ -341,28 +393,32 @@ static void WriteInterrupt(void) {
     CommandStatus.ByteWithinSector=0;
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
-      CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,CommandStatus.CurrentSector,0);
+      CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
+                                                    CommandStatus.CurrentSector,
+                                                    false);
       if (CommandStatus.CurrentSectorPtr==NULL) {
-        DoErr(0x1e); /* Sector not found */
+        DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
       }
     } else {
       /* Last sector done, write the track back to disc */
       if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr)) {
-        StatusReg=0x10;
+        StatusReg = STATUS_REG_RESULT_FULL;
         UPDATENMISTATUS;
-        LastByte=1;
+        LastByte = true;
         CommandStatus.SectorsToGo=-1; /* To let us bail out */
         SetTrigger(0,Disc8271Trigger); /* To pick up result */
       }
       else {
-        DoErr(0x12);
+        DoErr(RESULT_REG_WRITE_PROTECT);
       }
     }
   }
   
   if (!LastByte) {
-    StatusReg=0x8c; /* Command busy, */
+    StatusReg = STATUS_REG_COMMAND_BUSY |
+                STATUS_REG_INTERRUPT_REQUEST |
+                STATUS_REG_NON_DMA_MODE;
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
   }
@@ -388,18 +444,15 @@ static void Do128ByteSR_ReadDataCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_ReadDataCommand(void) {
-  int Drive=-1;
-
   DoSelects();
   DoLoadHead();
 
   if (!CheckReady()) {
-    DoErr(0x10); /* Drive not ready */
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  if (Selects[0]) Drive=0;
-  if (Selects[1]) Drive=1;
+  int Drive = GetSelectedDrive();
 
   // Reset shift state if it was set by Run Disc
   if (mainWin->m_ShiftBooted) {
@@ -410,13 +463,13 @@ static void DoVarLength_ReadDataCommand(void) {
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
   if (CommandStatus.CurrentTrackPtr==NULL) {
-    DoErr(0x10);
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
   if (CommandStatus.CurrentSectorPtr==NULL) {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT);
     return;
   }
 
@@ -428,20 +481,20 @@ static void DoVarLength_ReadDataCommand(void) {
   if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength)) {
     CommandStatus.ByteWithinSector=0;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
-    StatusReg=0x80; /* Command busy */
+    StatusReg = STATUS_REG_COMMAND_BUSY;
     UPDATENMISTATUS;
     CommandStatus.ByteWithinSector=0;
   } else {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT);
   }
 }
 
 /*--------------------------------------------------------------------------*/
 static void ReadInterrupt(void) {
-  int LastByte=0;
+  bool LastByte = false;
 
-  if (CommandStatus.SectorsToGo<0) {
-    StatusReg=0x18; /* Result and interrupt */
+  if (CommandStatus.SectorsToGo < 0) {
+    StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
     UPDATENMISTATUS;
     return;
   }
@@ -455,23 +508,30 @@ static void ReadInterrupt(void) {
     /* I don't know if this can cause the thing to step - I presume not for the moment */
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
-      if (CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,CommandStatus.CurrentSector,0),
-          CommandStatus.CurrentSectorPtr==NULL) {
-        DoErr(0x1e); /* Sector not found */
+      CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
+                                                    CommandStatus.CurrentSector,
+                                                    false);
+      if (CommandStatus.CurrentSectorPtr == NULL) {
+        DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
       }/* else cerr << "all ptr for sector " << CommandStatus.CurrentSector << "\n"*/;
     } else {
       /* Last sector done */
-      StatusReg=0x9c;
+      StatusReg = STATUS_REG_COMMAND_BUSY |
+                  STATUS_REG_RESULT_FULL |
+                  STATUS_REG_INTERRUPT_REQUEST |
+                  STATUS_REG_NON_DMA_MODE;
       UPDATENMISTATUS;
-      LastByte=1;
+      LastByte = true;
       CommandStatus.SectorsToGo=-1; /* To let us bail out */
       SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
     }
   }
   
   if (!LastByte) {
-    StatusReg=0x8c; /* Command busy, */
+    StatusReg = STATUS_REG_COMMAND_BUSY |
+                STATUS_REG_INTERRUPT_REQUEST |
+                STATUS_REG_NON_DMA_MODE;
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
   }
@@ -491,29 +551,26 @@ static void DoVarLength_ReadDataAndDeldCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoReadIDCommand(void) {
-  int Drive=-1;
-
   DoSelects();
   DoLoadHead();
 
   if (!CheckReady()) {
-    DoErr(0x10); /* Drive not ready */
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  if (Selects[0]) Drive=0;
-  if (Selects[1]) Drive=1;
+  int Drive = GetSelectedDrive();
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
   if (CommandStatus.CurrentTrackPtr==NULL) {
-    DoErr(0x10);
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,0,0);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, 0, false);
   if (CommandStatus.CurrentSectorPtr==NULL) {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
     return;
   }
 
@@ -523,17 +580,17 @@ static void DoReadIDCommand(void) {
 
   CommandStatus.ByteWithinSector=0;
   SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
-  StatusReg=0x80; /* Command busy */
+  StatusReg = STATUS_REG_COMMAND_BUSY;
   UPDATENMISTATUS;
   CommandStatus.ByteWithinSector=0;
 }
 
 /*--------------------------------------------------------------------------*/
 static void ReadIDInterrupt(void) {
-  int LastByte=0;
+  bool LastByte = false;
 
   if (CommandStatus.SectorsToGo<0) {
-    StatusReg=0x18; /* Result and interrupt */
+    StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
     UPDATENMISTATUS;
     return;
   }
@@ -554,24 +611,29 @@ static void ReadIDInterrupt(void) {
     CommandStatus.ByteWithinSector=0;
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
-      CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,
-                                                      CommandStatus.CurrentSector,0);
+      CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
+                                                    CommandStatus.CurrentSector,
+                                                    false);
       if (CommandStatus.CurrentSectorPtr==NULL) {
-        DoErr(0x1e); /* Sector not found */
+        DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
       }
     } else {
       /* Last sector done */
-      StatusReg=0x9c;
+      StatusReg = STATUS_REG_COMMAND_BUSY |
+                  STATUS_REG_INTERRUPT_REQUEST |
+                  STATUS_REG_NON_DMA_MODE;
       UPDATENMISTATUS;
-      LastByte=1;
+      LastByte = true;
       CommandStatus.SectorsToGo=-1; /* To let us bail out */
       SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
     }
   }
   
   if (!LastByte) {
-    StatusReg=0x8c; /* Command busy, */
+    StatusReg = STATUS_REG_COMMAND_BUSY |
+                STATUS_REG_INTERRUPT_REQUEST |
+                STATUS_REG_NON_DMA_MODE;
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
   }
@@ -585,74 +647,69 @@ static void Do128ByteSR_VerifyDataAndDeldCommand(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoVarLength_VerifyDataAndDeldCommand(void) {
-  int Drive=-1;
-
   DoSelects();
 
   if (!CheckReady()) {
-    DoErr(0x10); /* Drive not ready */
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  if (Selects[0]) Drive=0;
-  if (Selects[1]) Drive=1;
+  int Drive = GetSelectedDrive();
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
   if (CommandStatus.CurrentTrackPtr==NULL) {
-    DoErr(0x10);
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,Params[1],0);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
   if (CommandStatus.CurrentSectorPtr==NULL) {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
     return;
   }
 
-  StatusReg=0x80; /* Command busy */
+  StatusReg = STATUS_REG_COMMAND_BUSY;
   UPDATENMISTATUS;
   SetTrigger(100,Disc8271Trigger); /* A short delay to causing an interrupt */
 }
 
 /*--------------------------------------------------------------------------*/
 static void VerifyInterrupt(void) {
-  StatusReg=0x18; /* Result with interrupt */
+  StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
   UPDATENMISTATUS;
-  ResultReg=0; /* All OK */
+  ResultReg = RESULT_REG_SUCCESS; // All OK
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoFormatCommand(void) {
-  int Drive=-1;
 
+static void DoFormatCommand(void) {
   DoSelects();
 
   DoLoadHead();
 
   if (!CheckReady()) {
-    DoErr(0x10); /* Drive not ready */
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  if (Selects[0]) Drive=0;
-  if (Selects[1]) Drive=1;
+  int Drive = GetSelectedDrive();
 
   if (!Writeable[Drive]) {
-    DoErr(0x12); /* Drive write protected */
+    DoErr(RESULT_REG_WRITE_PROTECT);
     return;
   }
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
   if (CommandStatus.CurrentTrackPtr==NULL) {
-    DoErr(0x10);
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
-  CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,0,0);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, 0, false);
   if (CommandStatus.CurrentSectorPtr==NULL) {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
     return;
   }
 
@@ -664,22 +721,21 @@ static void DoFormatCommand(void) {
   if (CommandStatus.SectorsToGo==10 && CommandStatus.SectorLength==256) {
     CommandStatus.ByteWithinSector=0;
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
-    StatusReg=0x80; /* Command busy */
+    StatusReg = STATUS_REG_COMMAND_BUSY;
     UPDATENMISTATUS;
     CommandStatus.ByteWithinSector=0;
     FirstWriteInt = true;
   } else {
-    DoErr(0x1e); /* Sector not found */
+    DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
   }
 }
 
 /*--------------------------------------------------------------------------*/
 static void FormatInterrupt(void) {
-  int i;
-  int LastByte=0;
+  bool LastByte = false;
 
   if (CommandStatus.SectorsToGo<0) {
-    StatusReg=0x18; /* Result and interrupt */
+    StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
     UPDATENMISTATUS;
     return;
   }
@@ -694,34 +750,39 @@ static void FormatInterrupt(void) {
   ResultReg=0;
   if (CommandStatus.ByteWithinSector>=4) {
     /* Fill sector with 0xe5 chars */
-    for (i=0; i<256; ++i)
+    for (int i = 0; i < 256; ++i) {
       CommandStatus.CurrentSectorPtr->Data[i]=(unsigned char)0xe5;
+    }
 
     CommandStatus.ByteWithinSector=0;
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
-      CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,CommandStatus.CurrentSector,0);
+      CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
+                                                    CommandStatus.CurrentSector,
+                                                    false);
       if (CommandStatus.CurrentSectorPtr==NULL) {
-        DoErr(0x1e); /* Sector not found */
+        DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
       }
     } else {
       /* Last sector done, write the track back to disc */
       if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr)) {
-        StatusReg=0x10;
+        StatusReg = STATUS_REG_RESULT_FULL;
         UPDATENMISTATUS;
-        LastByte=1;
+        LastByte = true;
         CommandStatus.SectorsToGo=-1; /* To let us bail out */
         SetTrigger(0,Disc8271Trigger); /* To pick up result */
       }
       else {
-        DoErr(0x12);
+        DoErr(RESULT_REG_WRITE_PROTECT);
       }
     }
   }
   
   if (!LastByte) {
-    StatusReg=0x8c; /* Command busy, */
+    StatusReg = STATUS_REG_COMMAND_BUSY |
+                STATUS_REG_INTERRUPT_REQUEST |
+                STATUS_REG_NON_DMA_MODE;
     UPDATENMISTATUS;
     SetTrigger(TIMEBETWEENBYTES * 256,Disc8271Trigger);
   }
@@ -729,29 +790,27 @@ static void FormatInterrupt(void) {
 
 /*--------------------------------------------------------------------------*/
 static void DoSeekInt(void) {
-  StatusReg=0x18; /* Result with interrupt */
+  StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
   UPDATENMISTATUS;
   ResultReg=0; /* All OK */
 }
 
 /*--------------------------------------------------------------------------*/
 static void DoSeekCommand(void) {
-  int Drive=-1;
   DoSelects();
 
   DoLoadHead();
 
-  if (Selects[0]) Drive=0;
-  if (Selects[1]) Drive=1;
+  int Drive = GetSelectedDrive();
 
   if (Drive<0) {
-    DoErr(0x10);
+    DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
   Internal_CurrentTrack[Drive]=Params[0];
 
-  StatusReg=0x80; /* Command busy */
+  StatusReg = STATUS_REG_COMMAND_BUSY;
   UPDATENMISTATUS;
   SetTrigger(100,Disc8271Trigger); /* A short delay to causing an interrupt */
 }
@@ -772,7 +831,7 @@ static void DoReadDriveStatusCommand(void) {
   }
 
   ResultReg=0x80 | (Selects[1]?0x40:0) | (Selects[0]?0x4:0) | (Track0?2:0) | (WriteProt?8:0);
-  StatusReg|=0x10; /* Result */
+  StatusReg |= STATUS_REG_RESULT_FULL;
   UPDATENMISTATUS;
 }
 
@@ -902,7 +961,7 @@ static void DoReadSpecialCommand(void) {
       return;
   }
 
-  StatusReg |= 16; /* Result reg full */
+  StatusReg |= STATUS_REG_RESULT_FULL;
   UPDATENMISTATUS;
 }
 
@@ -965,15 +1024,17 @@ int Disc8271_read(int Address) {
 
     case 1:
       /*cerr << "8271 Result register read (0x" << hex << int(ResultReg) << dec << ")\n"; */
-      StatusReg &=~0x18; /* Clear interrupt request  and result reg full flag*/
+      // Clear interrupt request and result reg full flag
+      StatusReg &= ~(STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST);
       UPDATENMISTATUS;
       Value=ResultReg;
-      ResultReg=0; /* Register goes to 0 after its read */
+      ResultReg = RESULT_REG_SUCCESS; // Register goes to 0 after its read
       break;
 
     case 4:
       /*cerr << "8271 data register read\n"; */
-      StatusReg &= ~0xc; /* Clear interrupt and non-dma request - not stated but DFS never looks at result reg!*/
+      // Clear interrupt and non-dma request - not stated but DFS never looks at result reg!
+      StatusReg &= ~(STATUS_REG_INTERRUPT_REQUEST | STATUS_REG_NON_DMA_MODE);
       UPDATENMISTATUS;
       Value=DataReg;
       break;
@@ -994,10 +1055,10 @@ static void CommandRegWrite(int Value) {
   NParamsInThisCommand=ptr->NParams;
   PresentParam=0;
 
-  StatusReg|=0x90; /* Observed on beeb for read special */
+  StatusReg |= STATUS_REG_COMMAND_BUSY | STATUS_REG_RESULT_FULL; // Observed on beeb for read special
   UPDATENMISTATUS;
 
-  /* No parameters then call routine immediatly */
+  // No parameters then call routine immediately
   if (NParamsInThisCommand==0) {
     StatusReg&=0x7e;
     UPDATENMISTATUS;
@@ -1006,7 +1067,8 @@ static void CommandRegWrite(int Value) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void ParamRegWrite(int Value) {
+
+static void ParamRegWrite(unsigned char Value) {
   // Parameter wanted ?
   if (PresentParam>=NParamsInThisCommand) {
     /* cerr << "8271: Unwanted parameter register write value=0x" << hex << Value << dec << "\n"; */
@@ -1065,7 +1127,7 @@ void Disc8271_write(int Address, unsigned char Value) {
 
     case 4:
       /* cerr << "8271: data register write, value=0x" << hex << Value << dec << "\n"; */
-      StatusReg &= ~0xc;
+      StatusReg &= ~(STATUS_REG_INTERRUPT_REQUEST | STATUS_REG_NON_DMA_MODE);
       UPDATENMISTATUS;
       DataReg=Value;
       break;
@@ -1094,7 +1156,6 @@ static bool DriveHeadMotorUpdate(void) {
 	// This is mainly for the sound effects, but it also marks the drives as
 	// not ready when the motor stops.
 	int Drive=0;
-	int Cycles=0;
 	int Tracks=0;
 
 	if (DriveHeadUnloadPending) {
@@ -1126,8 +1187,7 @@ static bool DriveHeadMotorUpdate(void) {
 		PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
 		DriveHeadLoaded = true;
 		PlaySoundSample(SAMPLE_HEAD_LOAD, false);
-		Cycles = SAMPLE_HEAD_LOAD_CYCLES;
-		SetTrigger(Cycles,Disc8271Trigger);
+		SetTrigger(SAMPLE_HEAD_LOAD_CYCLES, Disc8271Trigger);
 		return true;
 	}
 
@@ -1140,17 +1200,17 @@ static bool DriveHeadMotorUpdate(void) {
 		Tracks = abs(DriveHeadPosition[Drive] - Internal_CurrentTrack[Drive]);
 		if (Tracks > 1) {
 			PlaySoundSample(SAMPLE_HEAD_SEEK, true);
-			Cycles = Tracks * SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK;
+			SetTrigger(Tracks * SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK, Disc8271Trigger);
 		}
 		else {
 			PlaySoundSample(SAMPLE_HEAD_STEP, false);
-			Cycles = SAMPLE_HEAD_STEP_CYCLES;
+			SetTrigger(SAMPLE_HEAD_STEP_CYCLES, Disc8271Trigger);
 		}
 		if (DriveHeadPosition[Drive] < Internal_CurrentTrack[Drive])
 			DriveHeadPosition[Drive] += Tracks;
 		else
 			DriveHeadPosition[Drive] -= Tracks;
-		SetTrigger(Cycles,Disc8271Trigger);
+
 		return true;
 	}
 	return false;
@@ -1163,13 +1223,13 @@ void Disc8271_poll_real(void) {
   if (DriveHeadMotorUpdate())
     return;
 
-  /* Set the interrupt flag in the status register */
-  StatusReg|=8;
+  // Set the interrupt flag in the status register
+  StatusReg |= STATUS_REG_INTERRUPT_REQUEST;
   UPDATENMISTATUS;
 
-  if (NextInterruptIsErr) {
+  if (NextInterruptIsErr != 0) {
     ResultReg=NextInterruptIsErr;
-    StatusReg=0x18; /* ResultReg full and interrupt */
+    StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
     UPDATENMISTATUS;
     NextInterruptIsErr=0;
   } else {
@@ -1245,23 +1305,21 @@ static int CheckForCatalogue(const unsigned char *Sec1, const unsigned char *Sec
 }
 
 /*--------------------------------------------------------------------------*/
-void FreeDiscImage(int DriveNum) {
-  int Track,Head,Sector;
-  SectorType *SecPtr;
 
-  for(Track=0; Track<TRACKSPERDRIVE; Track++) {
-    for(Head=0; Head<2; Head++) {
-      SecPtr=DiscStore[DriveNum][Head][Track].Sectors;
+void FreeDiscImage(int DriveNum) {
+  for (int Track = 0; Track < TRACKSPERDRIVE; Track++) {
+    for (int Head = 0; Head < 2; Head++) {
+      SectorType *SecPtr = DiscStore[DriveNum][Head][Track].Sectors;
+
       if (SecPtr != NULL) {
-        for(Sector=0; Sector<10; Sector++) {
-          if (SecPtr[Sector].Data != NULL)
-          {
+        for (int Sector = 0; Sector < 10; Sector++) {
+          if (SecPtr[Sector].Data != NULL) {
             free(SecPtr[Sector].Data);
-            SecPtr[Sector].Data=NULL;
+            SecPtr[Sector].Data = NULL;
           }
         }
         free(SecPtr);
-        DiscStore[DriveNum][Head][Track].Sectors=NULL;
+        DiscStore[DriveNum][Head][Track].Sectors = NULL;
       }
     }
   }
@@ -1413,12 +1471,9 @@ void Eject8271DiscImage(int DriveNum) {
 }
 
 /*--------------------------------------------------------------------------*/
+
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
-  int Success=1;
-  int CurrentSector;
-  long FileOffset;
-  long FileLength;
-  SectorType *SecPtr;
+  bool Success = true;
 
   FILE *outfile=fopen(FileNames[DriveNum],"r+b");
 
@@ -1433,39 +1488,50 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
     return false;
   }
 
+  long FileOffset;
+
   if(NumHeads[DriveNum]) {
-	FileOffset=(NumHeads[DriveNum]*TrackNum+HeadNum)*2560;	/* 1=SSD, 2=DSD  */
-  } else {
-	FileOffset=(TrackNum+HeadNum*TRACKSPERDRIVE)*2560;	/* 0=2-sided SSD */
+    FileOffset = (NumHeads[DriveNum] * TrackNum + HeadNum) * 2560; /* 1=SSD, 2=DSD */
+  }
+  else {
+    FileOffset = (TrackNum + HeadNum * TRACKSPERDRIVE) * 2560; /* 0=2-sided SSD */
   }
 
   /* Get the file length to check if the file needs extending */
-  Success = !fseek(outfile, 0L, SEEK_END);
+  long FileLength = 0;
+
+  Success = fseek(outfile, 0L, SEEK_END) == 0;
   if (Success)
   {
     FileLength=ftell(outfile);
-    if (FileLength == -1L)
-      Success=0;
-  }
-  while (Success && FileOffset > FileLength)
-  {
-    if (fputc(0, outfile) == EOF)
-      Success=0;
-    FileLength++;
-  }
-  if (Success)
-  {
-    Success = !fseek(outfile, FileOffset, SEEK_SET);
-
-    SecPtr=DiscStore[DriveNum][HeadNum][TrackNum].Sectors;
-    for(CurrentSector=0;Success && CurrentSector<10;CurrentSector++) {
-      if (fwrite(SecPtr[CurrentSector].Data,1,256,outfile) != 256)
-        Success=0;
+    if (FileLength == -1L) {
+      Success = false;
     }
   }
 
-  if (fclose(outfile) != 0)
-    Success=0;
+  while (Success && FileOffset > FileLength)
+  {
+    if (fputc(0, outfile) == EOF)
+      Success = false;
+    FileLength++;
+  }
+
+  if (Success)
+  {
+    Success = fseek(outfile, FileOffset, SEEK_SET) == 0;
+
+    SectorType *SecPtr = DiscStore[DriveNum][HeadNum][TrackNum].Sectors;
+
+    for (int CurrentSector = 0; Success && CurrentSector < 10; CurrentSector++) {
+      if (fwrite(SecPtr[CurrentSector].Data,1,256,outfile) != 256) {
+        Success = false;
+      }
+    }
+  }
+
+  if (fclose(outfile) != 0) {
+    Success = false;
+  }
 
   if (!Success) {
 #ifdef WIN32
@@ -1476,7 +1542,8 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
     cerr << "Failed writing to disc file " << FileNames[DriveNum] << "\n";
 #endif
   }
-  return Success!=0;
+
+  return Success;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1493,7 +1560,7 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
   int Catalogue, NumCatalogues;
   int NumSecs;
   int StartSec, LastSec;
-  int DiscOK=1;
+  bool DiscOK = true;
 
   Writeable[DriveNum] = WriteEnable;
 
@@ -1525,7 +1592,7 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
         /* First check the number of sectors */
         NumSecs=((Data[6]&3)<<8)+Data[7];
         if (NumSecs != 0x320 && NumSecs != 0x190) {
-          DiscOK=0;
+          DiscOK = false;
         } else {
 
           /* Now check the start sectors of each file */
@@ -1533,7 +1600,7 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
           for (File=0; DiscOK && File<Data[5]/8; ++File) {
             StartSec=((Data[File*8+14]&3)<<8)+Data[File*8+15];
             if (LastSec < StartSec)
-              DiscOK=0;
+              DiscOK = false;
             LastSec=StartSec;
           }
         } /* if num sectors OK */
@@ -1733,7 +1800,9 @@ void Load8271UEF(FILE *SUEF)
 
 		CommandStatus.CurrentTrackPtr=GetTrackPtr(CommandStatus.TrackAddr);
 		if (CommandStatus.CurrentTrackPtr!=NULL)
-			CommandStatus.CurrentSectorPtr=GetSectorPtr(CommandStatus.CurrentTrackPtr,CommandStatus.CurrentSector,0);
+			CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
+			                                              CommandStatus.CurrentSector,
+			                                              false);
 		else
 			CommandStatus.CurrentSectorPtr=NULL;
 	}
@@ -1758,7 +1827,7 @@ void disc8271_dumpstate(void) {
   cerr << "  NParamsInThisCommand=" << NParamsInThisCommand<< "\n";
   cerr << "  PresentParam=" << PresentParam<< "\n";
   cerr << "  Selects=" << Selects[0] << "," << Selects[1] << "\n";
-  cerr << "  NextInterruptIsErr=" << NextInterruptIsErr<< "\n";
+  cerr << "  NextInterruptIsErr=" << int(NextInterruptIsErr) << "\n";
 }
 
 /*--------------------------------------------------------------------------*/

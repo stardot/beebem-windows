@@ -69,8 +69,8 @@ extern int DisplayCycles;
 extern int CyclesToInt;
 #define NO_TIMER_INT_DUE -1000000
 
-#define SetTrigger(after,var) var=TotalCycles+after;
-#define IncTrigger(after,var) var+=(after);
+#define SetTrigger(after, var) var = TotalCycles + (after)
+#define IncTrigger(after, var) var += (after)
 
 #define ClearTrigger(var) var=CycleCountTMax;
 
