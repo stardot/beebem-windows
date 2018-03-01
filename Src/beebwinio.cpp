@@ -145,7 +145,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 	FileName[0] = '\0';
 
 	const char* filter =
-		"Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos\0"
+		"Auto (*.ssd;*.dsd;*.ad*;*.img;*.dos;*.fsd)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos;*.fsd\0"
 		"ADFS Disc (*.adl;*.adf)\0*.adl;*.adf\0"
 		"Single Sided Disc (*.ssd)\0*.ssd\0"
 		"Double Sided Disc (*.dsd)\0*.dsd\0"
@@ -179,6 +179,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		bool adfs = false;
 		bool img = false;
 		bool dos = false;
+		bool fsd = false;
 
 		switch (fileDialog.GetFilterIndex())
 		{
@@ -197,6 +198,8 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 						img = true;
 					else if (_stricmp(ext+1, "dos") == 0)
 						dos = true;
+					else if (_stricmp(ext+1, "fsd") == 0)
+						fsd = true;
 				}
 				break;
 			}
@@ -218,7 +221,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				else
 					Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			}
-			if (!dsd && !adfs && !dos)
+			if (!dsd && !adfs && !dos && !fsd)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
@@ -231,6 +234,13 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 					Report(MessageType::Error, "The native 8271 FDC cannot read ADFS discs");
 				else
 					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
+			}
+			if (fsd)
+			{
+				if (NativeFDC)
+					LoadFSDDiscImage(FileName, Drive);
+				else
+					MessageBox(m_hWnd, "FSD images are only supported with the 8271 FDC", "BeebEm", MB_ICONERROR | MB_OK);
 			}
 		}
 		else

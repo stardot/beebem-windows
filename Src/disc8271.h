@@ -29,6 +29,7 @@ extern bool Disc8271Enabled;
 
 void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks);
 void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks);
+void LoadFSDDiscImage(const char *FileName, int DriveNum);
 bool IsDiscWritable(int DriveNum);
 void DiscWriteEnable(int DriveNum, bool WriteEnable);
 void FreeDiscImage(int DriveNum);
