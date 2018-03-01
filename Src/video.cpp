@@ -766,7 +766,7 @@ static void LowLevelDoScanLineWideNot4Bytes() {
   int BytesToGo=CRTC_HorizontalDisplayed;
   SixteenUChars *vidPtr=mainWin->GetLinePtr16(VideoState.PixmapLine);
 
-  unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
+  const unsigned char *CurrentPtr = VideoState.DataPtr + VideoState.InCharLineUp;
 
   for(;BytesToGo;CurrentPtr+=8,BytesToGo--)
     *(vidPtr++)=FastTableDWidth[*CurrentPtr];
