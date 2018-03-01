@@ -39,7 +39,7 @@ Boston, MA  02110-1301, USA.
 #include <ddraw.h>
 #include <sapi.h>
 
-#include "disctype.h"
+#include "DiscType.h"
 #include "KeyMap.h"
 #include "model.h"
 #include "port.h"

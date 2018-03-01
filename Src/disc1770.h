@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 #ifndef DISC1770_HEADER
 #define DISC1770_HEADER
 
-#include "disctype.h"
+#include "DiscType.h"
 
 extern bool DWriteable[2]; // Write Protect
 extern bool Disc1770Enabled;

@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "tube.h"
 #include "Log.h"
 #include "DebugTrace.h"
+#include "DiscType.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -126,7 +127,7 @@ static unsigned char DRDSC; // FSD
 
 static unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
 
-#define TRACKSPERDRIVE 40 // 80
+#define TRACKSPERDRIVE (40 + 1) // 80
 
 /* Note Head select is done from bit 5 of the drive output register */
 #define CURRENTHEAD ((Internal_DriveControlOutputPort>>5) & 1)
@@ -145,13 +146,13 @@ struct SectorType {
     unsigned char LogicalTrack; // FSD - renamed to track ID names
     unsigned char HeadNum; // FSD
     unsigned char LogicalSector; // FSD
-    unsigned char SLength; // FSD
+    unsigned char SectorLength; // FSD
   } IDField;
 
   unsigned char CylinderNum; // FSD - moved from IDField
   unsigned char RecordNum; // FSD - moved from IDField
   int IDSiz; // FSD - 2 bytes for size, could be calculated automatically?
-  int RESiz; // FSD - moved from IDField, PhysRecLength
+  int RealSectorSize; // FSD - moved from IDField, PhysRecLength
   int Error; // FSD - error code when sector was read, 20 for deleted data
 
   bool Deleted; // If true the sector is deleted - not needed with FSD error code recorded?
@@ -341,7 +342,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
 /* Returns a pointer to the data structure for a particular sector. Returns */
 /* NULL for Sector not found. Doesn't check cylinder/head ID              */
 
-static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID, int FindDeleted) {
+static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID, bool FindDeleted) {
 
   // if (Track->Sectors == NULL) return NULL;
 
@@ -377,7 +378,7 @@ static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID,
 /* NULL for Sector not found. Doesn't check cylinder/head ID                */
 /* FSD - returns the sector IDs */
 
-static SectorType *GetSectorPtrForTrackID(TrackType *Track, unsigned char LogicalSectorID, int FindDeleted) {
+static SectorType *GetSectorPtrForTrackID(TrackType *Track, unsigned char LogicalSectorID, bool FindDeleted) {
   if (Track->Sectors == NULL) {
     return NULL;
   }
@@ -617,7 +618,7 @@ static void DoVarLength_ReadDataCommand(void) {
   // (Over)Reading Track 2, Sector 9 on 3D Pool should result in Sector Not Found
   if ((CommandStatus.CurrentSectorPtr->Error == 0xE0) &&
       (CommandStatus.CurrentSectorPtr->IDField.LogicalSector == 0x09) &&
-      (CommandStatus.SectorLength > CommandStatus.CurrentSectorPtr->RESiz)) {
+      (CommandStatus.SectorLength > CommandStatus.CurrentSectorPtr->RealSectorSize)) {
     DoErr(RESULT_REG_SECTOR_NOT_FOUND);
     return;
   }
@@ -628,8 +629,8 @@ static void DoVarLength_ReadDataCommand(void) {
   CommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
 
   // FSD - if trying to read more data than is stored, Disc Duplicator 3
-  if (CommandStatus.SectorLength > CommandStatus.CurrentSectorPtr->RESiz) {
-    CommandStatus.SectorLength = CommandStatus.CurrentSectorPtr->RESiz;
+  if (CommandStatus.SectorLength > CommandStatus.CurrentSectorPtr->RealSectorSize) {
+    CommandStatus.SectorLength = CommandStatus.CurrentSectorPtr->RealSectorSize;
     SectorOverRead = true;
   }
 
@@ -662,8 +663,8 @@ static void ReadInterrupt(void) {
   ResultReg = CommandStatus.CurrentSectorPtr->Error; // FSD - used to be 0
 
   // If track has no error, but the "real" size has not been read
-  if ((CommandStatus.CurrentSectorPtr->Error == 0) &&
-      (CommandStatus.CurrentSectorPtr->RESiz != CommandStatus.SectorLength)) {
+  if (CommandStatus.CurrentSectorPtr->Error == 0 &&
+      CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength) {
     ResultReg = RESULT_REG_DATA_CRC_ERROR;
   }
 
@@ -671,19 +672,17 @@ static void ReadInterrupt(void) {
     if (CommandStatus.CurrentSectorPtr->Error == 0x00) {
       ResultReg = RESULT_REG_DATA_CRC_ERROR;
     }
-
-    if (CommandStatus.CurrentSectorPtr->Error == 0x20) {
+    else if (CommandStatus.CurrentSectorPtr->Error == 0x20) {
       ResultReg = 0x2e;
     }
-
-    if (CommandStatus.CurrentSectorPtr->Error == 0x2e) {
+    else if (CommandStatus.CurrentSectorPtr->Error == 0x2e) {
       ResultReg = 0x2e;
     }
   }
 
   // Same as above, but for deleted data
-  if ((CommandStatus.CurrentSectorPtr->Error == 0x20) &&
-      (CommandStatus.CurrentSectorPtr->RESiz != CommandStatus.SectorLength)) {
+  if (CommandStatus.CurrentSectorPtr->Error == 0x20 &&
+      CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength) {
     ResultReg = 0x2E;
   }
 
@@ -692,23 +691,23 @@ static void ReadInterrupt(void) {
     ResultReg = 0x20;
   }
 
-  /* If track has deliberate error, but the id field sector size has been read) */
-  if ((CommandStatus.CurrentSectorPtr->Error == 0xE1) && (CommandStatus.SectorLength != 0x100)) {
+  // If track has deliberate error, but the id field sector size has been read)
+  if (CommandStatus.CurrentSectorPtr->Error == 0xE1 && CommandStatus.SectorLength != 0x100) {
     ResultReg = RESULT_REG_DATA_CRC_ERROR;
   }
-  else if ((CommandStatus.CurrentSectorPtr->Error == 0xE1) && (CommandStatus.SectorLength == 0x100)) {
+  else if (CommandStatus.CurrentSectorPtr->Error == 0xE1 && CommandStatus.SectorLength == 0x100) {
     ResultReg = RESULT_REG_SUCCESS;
   }
 
-  if ((CommandStatus.CurrentSectorPtr->Error == 0xE0) && (CommandStatus.SectorLength != 0x80)) {
+  if (CommandStatus.CurrentSectorPtr->Error == 0xE0 && CommandStatus.SectorLength != 0x80) {
     ResultReg = RESULT_REG_DATA_CRC_ERROR;
   }
-  else if ((CommandStatus.CurrentSectorPtr->Error == 0xE0) && (CommandStatus.SectorLength == 0x80)) {
+  else if (CommandStatus.CurrentSectorPtr->Error == 0xE0 && CommandStatus.SectorLength == 0x80) {
     ResultReg = RESULT_REG_SUCCESS;
   }
 
-  if ((CommandStatus.CurrentSectorPtr->Error == 0x0E) &&
-      (CommandStatus.CurrentSectorPtr->RESiz == CommandStatus.CurrentSectorPtr->IDSiz)) {
+  if (CommandStatus.CurrentSectorPtr->Error == 0x0E &&
+      CommandStatus.CurrentSectorPtr->RealSectorSize == CommandStatus.CurrentSectorPtr->IDSiz) {
     ResultReg = RESULT_REG_DATA_CRC_ERROR;
 
     if (CommandStatus.ByteWithinSector % 5 == 0) {
@@ -716,8 +715,8 @@ static void ReadInterrupt(void) {
     }
   }
 
-  if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
-    CommandStatus.ByteWithinSector=0;
+  if (CommandStatus.ByteWithinSector >= CommandStatus.SectorLength) {
+    CommandStatus.ByteWithinSector = 0;
     /* I don't know if this can cause the thing to step - I presume not for the moment */
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
@@ -786,7 +785,7 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
     return;
   }
 
-  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], 0);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
   if (CommandStatus.CurrentSectorPtr == NULL) {
      DoErr(RESULT_REG_SECTOR_NOT_FOUND);
     return;
@@ -830,7 +829,7 @@ static void Read128Interrupt(void) {
 
   // If track has no error, but the "real" size has not been read
   if ((CommandStatus.CurrentSectorPtr->Error == 0) &&
-      (CommandStatus.CurrentSectorPtr->RESiz != CommandStatus.SectorLength)) {
+      (CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength)) {
     ResultReg = RESULT_REG_DATA_CRC_ERROR;
   }
 
@@ -840,7 +839,7 @@ static void Read128Interrupt(void) {
 
   // Same as above, but for deleted data
   if ((CommandStatus.CurrentSectorPtr->Error == 0x20) &&
-      (CommandStatus.CurrentSectorPtr->RESiz != CommandStatus.SectorLength)) {
+      (CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength)) {
     ResultReg = RESULT_REG_DELETED_DATA_FOUND | RESULT_REG_DATA_CRC_ERROR;
   }
 
@@ -859,7 +858,7 @@ static void Read128Interrupt(void) {
     /* I don't know if this can cause the thing to step - I presume not for the moment */
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
-      CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, CommandStatus.CurrentSector, 0);
+      CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, CommandStatus.CurrentSector, false);
       if (CommandStatus.CurrentSectorPtr==NULL) {
         DoErr(RESULT_REG_SECTOR_NOT_FOUND);
         return;
@@ -954,7 +953,7 @@ static void ReadIDInterrupt(void) {
   else if (CommandStatus.ByteWithinSector == 2)
     DataReg = CommandStatus.CurrentSectorPtr->IDField.LogicalSector; // RecordNum
   else if (CommandStatus.ByteWithinSector == 3)
-    DataReg = CommandStatus.CurrentSectorPtr->IDField.SLength; // was 1, for 256 byte
+    DataReg = CommandStatus.CurrentSectorPtr->IDField.SectorLength; // was 1, for 256 byte
 
   CommandStatus.ByteWithinSector++;
 
@@ -1685,20 +1684,23 @@ void Disc8271_poll_real() {
 // FSD - could be causing crashes, because of different sized tracks / sectors
 
 void FreeDiscImage(int DriveNum) {
-  for (int Track = 0; Track < TRACKSPERDRIVE; Track++) {
-    for (int Head = 0; Head < 2; Head++) {
-      SectorType *SecPtr = DiscStore[DriveNum][Head][Track].Sectors;
+  const int Head = 0;
 
-      if (SecPtr != NULL) {
-        for (int Sector = 0; Sector < 10; Sector++) {
-          if (SecPtr[Sector].Data != NULL) {
-            free(SecPtr[Sector].Data);
-            SecPtr[Sector].Data = NULL;
-          }
+  for (int Track = 0; Track < TRACKSPERDRIVE; Track++) {
+    const int SectorsPerTrack = DiscStore[DriveNum][Head][Track].LogicalSectors;
+
+    SectorType *SecPtr = DiscStore[DriveNum][Head][Track].Sectors;
+
+    if (SecPtr != NULL) {
+      for (int Sector = 0; Sector < SectorsPerTrack; Sector++) {
+        if (SecPtr[Sector].Data != NULL) {
+          free(SecPtr[Sector].Data);
+          SecPtr[Sector].Data = NULL;
         }
-        free(SecPtr);
-        DiscStore[DriveNum][Head][Track].Sectors = NULL;
       }
+
+      free(SecPtr);
+      DiscStore[DriveNum][Head][Track].Sectors = NULL;
     }
   }
 }
@@ -1743,7 +1745,7 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
         SecPtr[CurrentSector].IDField.LogicalTrack = CurrentTrack; // was CylinderNum
         SecPtr[CurrentSector].IDField.LogicalSector = CurrentSector; // was RecordNum
         SecPtr[CurrentSector].IDField.HeadNum = HeadNum;
-        SecPtr[CurrentSector].IDField.SLength = 256; // was PhysRecLength
+        SecPtr[CurrentSector].IDField.SectorLength = 256; // was PhysRecLength
         SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data,1,256,infile);
@@ -1809,7 +1811,7 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
     return;
   }
 
-  mainWin->SetImageName(FileName, DriveNum, DiscType::SSD);
+  mainWin->SetImageName(FileName, DriveNum, DiscType::FSD);
 
   // JGH, 26-Dec-2011
   NumHeads[DriveNum] = 1; // 1 = TRACKSPERDRIVE SSD image
@@ -1830,9 +1832,18 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
     disctitle = disctitle + dtchar;
   }
 
-  TotalTracks = fgetc(infile); // Read number of tracks on disk image
+  int LastTrack = fgetc(infile) ; // Read number of last track on disk image
+  TotalTracks = LastTrack + 1;
 
-  for (int CurrentTrack = 0; CurrentTrack < TotalTracks + 1; CurrentTrack++) {
+  if (TotalTracks > TRACKSPERDRIVE) {
+    mainWin->Report(MessageType::Error,
+                    "Could not open disc file:\n  %s\n\nExpected a maximum of %d tracks, found %d",
+                    FileName, TRACKSPERDRIVE, TotalTracks);
+
+    return;
+  }
+
+  for (int CurrentTrack = 0; CurrentTrack < TotalTracks; CurrentTrack++) {
     unsigned char fctrack = fgetc(infile); // Read current track details
     unsigned char SectorsPerTrack = fgetc(infile); // Read number of sectors on track
     DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors = SectorsPerTrack;
@@ -1847,18 +1858,18 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
       for (int CurrentSector = 0; CurrentSector < SectorsPerTrack; CurrentSector++) {
         SecPtr[CurrentSector].CylinderNum = CurrentTrack;
 
-        unsigned char LTrack = fgetc(infile); // Logical track ID
-        SecPtr[CurrentSector].IDField.LogicalTrack=LTrack;
+        unsigned char LogicalTrack = fgetc(infile); // Logical track ID
+        SecPtr[CurrentSector].IDField.LogicalTrack = LogicalTrack;
 
-        unsigned char FHeadNum = fgetc(infile); // Head number
-        SecPtr[CurrentSector].IDField.HeadNum=FHeadNum;
+        unsigned char HeadNum = fgetc(infile); // Head number
+        SecPtr[CurrentSector].IDField.HeadNum = HeadNum;
 
-        unsigned char LSector = fgetc(infile); // Logical sector ID
-        SecPtr[CurrentSector].IDField.LogicalSector = LSector;
+        unsigned char LogicalSector = fgetc(infile); // Logical sector ID
+        SecPtr[CurrentSector].IDField.LogicalSector = LogicalSector;
         SecPtr[CurrentSector].RecordNum = CurrentSector;
 
         unsigned short FRecLength = fgetc(infile); // Reported length of sector
-        SecPtr[CurrentSector].IDField.SLength = FRecLength;
+        SecPtr[CurrentSector].IDField.SectorLength = FRecLength;
 
         if (TrackIsReadable == 255) {
           switch (FRecLength) {
@@ -1914,11 +1925,11 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
               break;
           }
 
-          SecPtr[CurrentSector].RESiz = FSectorSize;
+          SecPtr[CurrentSector].RealSectorSize = FSectorSize;
 
           unsigned char FErr = fgetc(infile); // Error code when sector was read
           SecPtr[CurrentSector].Error = FErr;
-          SecPtr[CurrentSector].Data =(unsigned char *)calloc(1, FSectorSize);
+          SecPtr[CurrentSector].Data = (unsigned char *)calloc(1, FSectorSize);
           fread(SecPtr[CurrentSector].Data, 1, FSectorSize, infile);
         }
       } // if sectors per track > 0, ie formatted

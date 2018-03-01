@@ -47,7 +47,7 @@ using std::max;
 #include "beebsound.h"
 #include "disc8271.h"
 #include "disc1770.h"
-#include "disctype.h"
+#include "DiscType.h"
 #include "UEFState.h"
 #include "Serial.h"
 #include "ext1770.h"

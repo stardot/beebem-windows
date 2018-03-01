@@ -338,7 +338,7 @@
     <ClInclude Include="DiscEdit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="disctype.h">
+    <ClInclude Include="DiscType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Econet.h">
