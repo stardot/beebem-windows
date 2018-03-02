@@ -506,8 +506,8 @@ public:
 	bool RebootSystem();
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);
-	bool ReadKeyMap(char *filename, KeyMap *keymap);
-	bool WriteKeyMap(char *filename, KeyMap *keymap);
+	bool ReadKeyMap(const char *filename, KeyMap *keymap);
+	bool WriteKeyMap(const char *filename, KeyMap *keymap);
 	bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
 	bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, void* pData, int* pnSize);
 	bool RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, const void* pData, int* pnSize);

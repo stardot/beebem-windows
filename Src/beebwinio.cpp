@@ -1027,7 +1027,7 @@ void BeebWin::SaveUserKeyMap()
 }
 
 /****************************************************************************/
-bool BeebWin::ReadKeyMap(char *filename, KeyMap *keymap)
+bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 {
 	bool success = true;
 	char buf[256];
@@ -1088,7 +1088,7 @@ bool BeebWin::ReadKeyMap(char *filename, KeyMap *keymap)
 }
 
 /****************************************************************************/
-bool BeebWin::WriteKeyMap(char *filename, KeyMap *keymap)
+bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 {
 	bool success = true;
 	FILE *outfile;
