@@ -65,6 +65,20 @@ const unsigned char RESULT_REG_SECTOR_NOT_FOUND   = 0x18;
 const unsigned char RESULT_REG_DRIVE_NOT_PRESENT  = 0x1E; // Undocumented, see http://beebwiki.mdfs.net/OSWORD_%267F
 const unsigned char RESULT_REG_DELETED_DATA_FOUND = 0x20;
 
+// 8271 special registers
+const unsigned char SPECIAL_REG_SCAN_SECTOR_NUMBER        = 0x06;
+const unsigned char SPECIAL_REG_SCAN_COUNT_MSB            = 0x14;
+const unsigned char SPECIAL_REG_SCAN_COUNT_LSB            = 0x13;
+const unsigned char SPECIAL_REG_SURFACE_0_CURRENT_TRACK   = 0x12;
+const unsigned char SPECIAL_REG_SURFACE_1_CURRENT_TRACK   = 0x1A;
+const unsigned char SPECIAL_REG_MODE_REGISTER             = 0x17;
+const unsigned char SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT = 0x23;
+const unsigned char SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT  = 0x22;
+const unsigned char SPECIAL_REG_SURFACE_0_BAD_TRACK_1     = 0x10;
+const unsigned char SPECIAL_REG_SURFACE_0_BAD_TRACK_2     = 0x11;
+const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_1     = 0x18;
+const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2     = 0x19;
+
 using namespace std;
 
 extern bool TorchTube;
@@ -844,57 +858,57 @@ static void DoSpecifyCommand(void) {
 static void DoWriteSpecialCommand(void) {
   DoSelects();
 
-  switch(Params[0]) {
-    case 0x06:
-      Internal_Scan_SectorNum=Params[1];
+  switch (Params[0]) {
+    case SPECIAL_REG_SCAN_SECTOR_NUMBER:
+      Internal_Scan_SectorNum = Params[1];
       break;
 
-    case 0x14:
-      Internal_Scan_Count&=0xff;
-      Internal_Scan_Count|=Params[1]<<8;
+    case SPECIAL_REG_SCAN_COUNT_MSB:
+      Internal_Scan_Count &= 0xff;
+      Internal_Scan_Count |= Params[1] << 8;
       break;
 
-    case 0x13:
-      Internal_Scan_Count&=0xff00;
-      Internal_Scan_Count|=Params[1];
+    case SPECIAL_REG_SCAN_COUNT_LSB:
+      Internal_Scan_Count &= 0xff00;
+      Internal_Scan_Count |= Params[1];
       break;
 
-    case 0x12:
-      Internal_CurrentTrack[0]=Params[1];
+    case SPECIAL_REG_SURFACE_0_CURRENT_TRACK:
+      Internal_CurrentTrack[0] = Params[1];
       break;
 
-    case 0x1a:
-      Internal_CurrentTrack[1]=Params[1];
+    case SPECIAL_REG_SURFACE_1_CURRENT_TRACK:
+      Internal_CurrentTrack[1] = Params[1];
       break;
 
-    case 0x17:
-      Internal_ModeReg=Params[1];
+    case SPECIAL_REG_MODE_REGISTER:
+      Internal_ModeReg = Params[1];
       break;
 
-    case 0x23:
-      Internal_DriveControlOutputPort=Params[1];
-      Selects[0]=(Params[1] & 0x40)!=0;
-      Selects[1]=(Params[1] & 0x80)!=0;
+    case SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT:
+      Internal_DriveControlOutputPort = Params[1];
+      Selects[0] = (Params[1] & 0x40) != 0;
+      Selects[1] = (Params[1] & 0x80) != 0;
       break;
 
-    case 0x22:
-      Internal_DriveControlInputPort=Params[1];
+    case SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT:
+      Internal_DriveControlInputPort = Params[1];
       break;
 
-    case 0x10:
-      Internal_BadTracks[0][0]=Params[1];
+    case SPECIAL_REG_SURFACE_0_BAD_TRACK_1:
+      Internal_BadTracks[0][0] = Params[1];
       break;
 
-    case 0x11:
-      Internal_BadTracks[0][1]=Params[1];
+    case SPECIAL_REG_SURFACE_0_BAD_TRACK_2:
+      Internal_BadTracks[0][1] = Params[1];
       break;
 
-    case 0x18:
-      Internal_BadTracks[1][0]=Params[1];
+    case SPECIAL_REG_SURFACE_1_BAD_TRACK_1:
+      Internal_BadTracks[1][0] = Params[1];
       break;
 
-    case 0x19:
-      Internal_BadTracks[1][1]=Params[1];
+    case SPECIAL_REG_SURFACE_1_BAD_TRACK_2:
+      Internal_BadTracks[1][1] = Params[1];
       break;
 
     default:
@@ -907,53 +921,53 @@ static void DoWriteSpecialCommand(void) {
 static void DoReadSpecialCommand(void) {
   DoSelects();
 
-  switch(Params[0]) {
-    case 0x06:
-      ResultReg=Internal_Scan_SectorNum;
+  switch (Params[0]) {
+    case SPECIAL_REG_SCAN_SECTOR_NUMBER:
+      ResultReg = Internal_Scan_SectorNum;
       break;
 
-    case 0x14:
-      ResultReg=(Internal_Scan_Count>>8) & 255;
+    case SPECIAL_REG_SCAN_COUNT_MSB:
+      ResultReg = (Internal_Scan_Count >> 8) & 0xff;
       break;
 
-    case 0x13:
-      ResultReg=Internal_Scan_Count & 255;
+    case SPECIAL_REG_SCAN_COUNT_LSB:
+      ResultReg = Internal_Scan_Count & 0xff;
       break;
 
-    case 0x12:
-      ResultReg=Internal_CurrentTrack[0];
+    case SPECIAL_REG_SURFACE_0_CURRENT_TRACK:
+      ResultReg = Internal_CurrentTrack[0];
       break;
 
-    case 0x1a:
-      ResultReg=Internal_CurrentTrack[1];
+    case SPECIAL_REG_SURFACE_1_CURRENT_TRACK:
+      ResultReg = Internal_CurrentTrack[1];
       break;
 
-    case 0x17:
-      ResultReg=Internal_ModeReg;
+    case SPECIAL_REG_MODE_REGISTER:
+      ResultReg = Internal_ModeReg;
       break;
 
-    case 0x23:
-      ResultReg=Internal_DriveControlOutputPort;
+    case SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT:
+      ResultReg = Internal_DriveControlOutputPort;
       break;
 
-    case 0x22:
-      ResultReg=Internal_DriveControlInputPort;
+    case SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT:
+      ResultReg = Internal_DriveControlInputPort;
       break;
 
-    case 0x10:
-      ResultReg=Internal_BadTracks[0][0];
+    case SPECIAL_REG_SURFACE_0_BAD_TRACK_1:
+      ResultReg = Internal_BadTracks[0][0];
       break;
 
-    case 0x11:
-      ResultReg=Internal_BadTracks[0][1];
+    case SPECIAL_REG_SURFACE_0_BAD_TRACK_2:
+      ResultReg = Internal_BadTracks[0][1];
       break;
 
-    case 0x18:
-      ResultReg=Internal_BadTracks[1][0];
+    case SPECIAL_REG_SURFACE_1_BAD_TRACK_1:
+      ResultReg = Internal_BadTracks[1][0];
       break;
 
-    case 0x19:
-      ResultReg=Internal_BadTracks[1][1];
+    case SPECIAL_REG_SURFACE_1_BAD_TRACK_2:
+      ResultReg = Internal_BadTracks[1][1];
       break;
 
     default:
