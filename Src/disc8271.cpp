@@ -122,9 +122,9 @@ static unsigned char NextInterruptIsErr; // non-zero causes error and drops this
 /* Note: reads/writes one byte every 80us */
 #define TIMEBETWEENBYTES (160)
 
-typedef struct {
+struct SectorType {
 
-  struct {
+  struct IDFieldType {
     unsigned int CylinderNum:7;
     unsigned int RecordNum:5;
     unsigned int HeadNum:1;
@@ -133,14 +133,14 @@ typedef struct {
 
   bool Deleted; // If true the sector is deleted
   unsigned char *Data;
-} SectorType;
+};
 
-typedef struct {
+struct TrackType {
   int LogicalSectors; /* Number of sectors stated in format command */
   int NSectors; /* i.e. the number of records we have - not anything physical */
   SectorType *Sectors;
   int Gap1Size,Gap3Size,Gap5Size; /* From format command */
-} TrackType;
+};
 
 /* All data on the disc - first param is drive number, then head. then physical track id */
 TrackType DiscStore[2][2][TRACKSPERDRIVE];
@@ -165,7 +165,8 @@ typedef void (*CommandFunc)(void);
   }
 
 /*--------------------------------------------------------------------------*/
-static struct {
+
+struct CommandStatusType {
   int TrackAddr;
   int CurrentSector;
   int SectorLength; /* In bytes */
@@ -175,17 +176,20 @@ static struct {
   TrackType *CurrentTrackPtr;
 
   int ByteWithinSector; /* Next byte in sector or ID field */
-} CommandStatus;
+};
+
+static CommandStatusType CommandStatus;
 
 /*--------------------------------------------------------------------------*/
-typedef struct  {
+
+struct PrimaryCommandLookupType {
   unsigned char CommandNum;
   unsigned char Mask; /* Mask command with this before comparing with CommandNum - allows drive ID to be removed */
   int NParams; /* Number of parameters to follow */
   CommandFunc ToCall; /* Called after all paameters have arrived */
   CommandFunc IntHandler; /* Called when interrupt requested by command is about to happen */
   const char *Ident; /* Mainly for debugging */
-} PrimaryCommandLookupType; 
+};
 
 /*--------------------------------------------------------------------------*/
 /* For appropriate commands checks the select bits in the command code and  */
