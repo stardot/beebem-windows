@@ -1718,13 +1718,9 @@ void BeebWin::ResetTiming(void)
 /****************************************************************************/
 bool BeebWin::UpdateTiming()
 {
-	DWORD TickCount;
-	DWORD Ticks;
-	DWORD SpareTicks;
-	int CyclesPerSec;
 	bool UpdateScreen = false;
 
-	TickCount = GetTickCount();
+	DWORD TickCount = GetTickCount();
 
 	/* Don't do anything if this is the first call or there has
 	   been a long pause due to menu commands, or when something
@@ -1753,7 +1749,7 @@ bool BeebWin::UpdateTiming()
 	// Now we work out if BeebEm is running too fast or not
 	if (m_RealTimeTarget > 0.0)
 	{
-		Ticks = TickCount - m_TickBase;
+		DWORD Ticks = TickCount - m_TickBase;
 		int nCycles = (int)((double)(TotalCycles - m_CycleBase) / m_RealTimeTarget);
 
 		if (Ticks <= (DWORD)(nCycles / 2000))
@@ -1770,7 +1766,7 @@ bool BeebWin::UpdateTiming()
 				UpdateScreen = false;
 			}
 
-			SpareTicks = (DWORD)(nCycles / 2000) - Ticks;
+			DWORD SpareTicks = (DWORD)(nCycles / 2000) - Ticks;
 			Sleep(SpareTicks);
 			m_MinFrameCount = 0;
 		}
@@ -1789,7 +1785,7 @@ bool BeebWin::UpdateTiming()
 		}
 
 		/* Move counter bases forward */
-		CyclesPerSec = (int)(2000000.0 * m_RealTimeTarget);
+		int CyclesPerSec = (int)(2000000.0 * m_RealTimeTarget);
 		while ((TickCount - m_TickBase) > 1000 && (TotalCycles - m_CycleBase) > CyclesPerSec)
 		{
 			m_TickBase += 1000;
