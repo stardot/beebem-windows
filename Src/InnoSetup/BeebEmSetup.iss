@@ -74,6 +74,7 @@ Source: {app}\Econet.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDat
 Source: {app}\Phroms.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Phroms.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
 Source: {app}\Roms.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Roms.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
 Source: {app}\Roms_Torch.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Roms_Torch.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
+Source: ..\..\VCRedist\vc_redist.x86.exe; DestDir: {app}; Flags: deleteafterinstall
 
 [Icons]
 Name: {group}\BeebEm; Filename: {app}\BeebEm.exe
@@ -86,6 +87,7 @@ Name: {commondesktop}\BeebEm; Filename: {app}\BeebEm.exe; Tasks: desktopicon
 Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\BeebEm; Filename: {app}\BeebEm.exe; Tasks: quicklaunchicon
 
 [Run]
+Filename: {app}\vc_redist.x86.exe; Parameters: "/quiet /norestart"; StatusMsg: Installing Visual C++ Redistributable for Visual Studio 2015...
 Filename: {app}\BeebEm.exe; Description: {cm:LaunchProgram,BeebEm}; Flags: nowait postinstall skipifsilent
 
 [Code]
