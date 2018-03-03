@@ -110,3 +110,6 @@ begin
     DeleteFile(fullFileName);
   end;
 end;
+
+[Messages]
+ConfirmUninstall=Are you sure you want to completely remove %1 and all of its components?%n%nYour local config files, disk and tape images, and saved states will not be removed.
