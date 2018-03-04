@@ -501,7 +501,6 @@ static void DoVarLength_ReadDataCommand(void) {
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
     StatusReg = STATUS_REG_COMMAND_BUSY;
     UPDATENMISTATUS;
-    CommandStatus.ByteWithinSector=0;
   } else {
     DoErr(RESULT_REG_DRIVE_NOT_PRESENT);
   }
@@ -532,7 +531,7 @@ static void ReadInterrupt(void) {
       if (CommandStatus.CurrentSectorPtr == NULL) {
         DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
-      }/* else cerr << "all ptr for sector " << CommandStatus.CurrentSector << "\n"*/;
+      }
     } else {
       /* Last sector done */
       StatusReg = STATUS_REG_COMMAND_BUSY |
@@ -600,7 +599,6 @@ static void DoReadIDCommand(void) {
   SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
   StatusReg = STATUS_REG_COMMAND_BUSY;
   UPDATENMISTATUS;
-  CommandStatus.ByteWithinSector=0;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -741,7 +739,6 @@ static void DoFormatCommand(void) {
     SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
     StatusReg = STATUS_REG_COMMAND_BUSY;
     UPDATENMISTATUS;
-    CommandStatus.ByteWithinSector=0;
     FirstWriteInt = true;
   } else {
     DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
