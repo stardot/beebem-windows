@@ -96,6 +96,13 @@ static unsigned char Internal_DriveControlOutputPort;
 static unsigned char Internal_DriveControlInputPort;
 static unsigned char Internal_BadTracks[2][2]; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
 
+// State set by the Specify (initialisation) command
+// See Intel 8271 data sheet, page 15, ADUG page 39-40
+static int StepRate; // In 2ms steps
+static int HeadSettlingTime; // In 2ms steps
+static int IndexCountBeforeHeadUnload; // Number of revolutions (0 to 14), or 15 to keep loaded
+static int HeadLoadTime; // In 8ms steps
+
 static int DriveHeadPosition[2]={0};
 static bool DriveHeadLoaded=false;
 static bool DriveHeadUnloadPending=false;
@@ -850,8 +857,30 @@ static void DoReadDriveStatusCommand(void) {
 }
 
 /*--------------------------------------------------------------------------*/
+
+// See Intel 8271 data sheet, page 15, ADUG page 39-40
+
 static void DoSpecifyCommand(void) {
-  /* Should set stuff up here */
+  switch (Params[0]) {
+    case 0x0D: // Initialisation
+      StepRate = Params[1];
+      HeadSettlingTime = Params[2];
+      IndexCountBeforeHeadUnload = (Params[3] & 0xf0) >> 4;
+      HeadLoadTime = Params[3] & 0x0f;
+      break;
+
+    case 0x10: // Load bad tracks, surface 0
+      Internal_BadTracks[0][0] = Params[1];
+      Internal_BadTracks[0][1] = Params[2];
+      Internal_CurrentTrack[0] = Params[3];
+      break;
+
+    case 0x18: // Load bad tracks, surface 1
+      Internal_BadTracks[1][0] = Params[1];
+      Internal_BadTracks[1][1] = Params[2];
+      Internal_CurrentTrack[1] = Params[3];
+      break;
+  }
 }
 
 /*--------------------------------------------------------------------------*/
