@@ -804,10 +804,11 @@ static void FormatInterrupt(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoSeekInt(void) {
+
+static void SeekInterrupt() {
   StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
   UPDATENMISTATUS;
-  ResultReg=0; /* All OK */
+  ResultReg = RESULT_REG_SUCCESS; // All OK
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1025,7 +1026,7 @@ static const PrimaryCommandLookupType PrimaryCommandLookup[]={
   {0x1e, 0x3f, 2, Do128ByteSR_VerifyDataAndDeldCommand, NULL, "Verify Data and Deleted Data (128 byte/single record)"},
   {0x1f, 0x3f, 3, DoVarLength_VerifyDataAndDeldCommand, VerifyInterrupt, "Verify Data and Deleted Data (Variable Length/Multi-Record)"},
   {0x23, 0x3f, 5, DoFormatCommand, FormatInterrupt, "Format"},
-  {0x29, 0x3f, 1, DoSeekCommand, DoSeekInt,    "Seek"},
+  {0x29, 0x3f, 1, DoSeekCommand, SeekInterrupt, "Seek"},
   {0x2c, 0x3f, 0, DoReadDriveStatusCommand, NULL, "Read drive status"},
   {0x35, 0xff, 4, DoSpecifyCommand, NULL, "Specify" },
   {0x3a, 0x3f, 2, DoWriteSpecialCommand, NULL, "Write special registers" },
