@@ -1673,7 +1673,9 @@ void Disc8271_reset(void) {
 
   ResultReg=0;
   StatusReg=0;
+
   UPDATENMISTATUS;
+
   Internal_Scan_SectorNum=0;
   Internal_Scan_Count=0; /* Read as two bytes */
   Internal_ModeReg=0;
@@ -1681,10 +1683,18 @@ void Disc8271_reset(void) {
   Internal_DriveControlOutputPort=0;
   Internal_DriveControlInputPort=0;
   Internal_BadTracks[0][0]=Internal_BadTracks[0][1]=Internal_BadTracks[1][0]=Internal_BadTracks[1][1]=0xff; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
+
+  // Default values set by Acorn DFS:
+  StepRate = 12;
+  HeadSettlingTime = 10;
+  IndexCountBeforeHeadUnload = 12;
+  HeadLoadTime = 8;
+
   if (DriveHeadLoaded) {
     DriveHeadUnloadPending = true;
     DriveHeadMotorUpdate();
   }
+
   ClearTrigger(Disc8271Trigger); /* No Disc8271Triggered events yet */
 
   ThisCommand=-1;
