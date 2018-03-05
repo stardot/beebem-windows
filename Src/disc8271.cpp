@@ -244,24 +244,37 @@ static int SkipBadTracks(int Unit, int trackin) {
 }
 
 /*--------------------------------------------------------------------------*/
+
+static int GetSelectedDrive() {
+  if (Selects[0]) {
+    return 0;
+  }
+
+  if (Selects[1]) {
+    return 1;
+  }
+
+  return -1;
+}
+
+/*--------------------------------------------------------------------------*/
 /* Returns a pointer to the data structure for a particular track.  You     */
 /* pass the logical track number, it takes into account bad tracks and the  */
 /* drive select and head select etc.  It always returns a valid ptr - if    */
 /* there aren't that many tracks then it uses the last one.                 */
 /* The one exception!!!! is that if no drives are selected it returns NULL  */
 static TrackType *GetTrackPtr(int LogicalTrackID) {
-  int UnitID=-1;
+  int Drive = GetSelectedDrive();
 
-  if (Selects[0]) UnitID=0;
-  if (Selects[1]) UnitID=1;
+  if (Drive < 0) {
+    return nullptr;
+  }
 
-  if (UnitID<0) return(NULL);
-
-  LogicalTrackID=SkipBadTracks(UnitID,LogicalTrackID);
+  LogicalTrackID = SkipBadTracks(Drive, LogicalTrackID);
 
   if (LogicalTrackID>=TRACKSPERDRIVE) LogicalTrackID=TRACKSPERDRIVE-1;
 
-  return(&(DiscStore[UnitID][CURRENTHEAD][LogicalTrackID]));
+  return &DiscStore[Drive][CURRENTHEAD][LogicalTrackID];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -283,20 +296,6 @@ static SectorType *GetSectorPtr(const TrackType *Track, int LogicalSectorID, boo
 /* Returns true if the drive signified by the current selects is ready      */
 static bool CheckReady(void) {
   return Selects[0] || Selects[1];
-}
-
-/*--------------------------------------------------------------------------*/
-
-static int GetSelectedDrive() {
-  if (Selects[0]) {
-    return 0;
-  }
-
-  if (Selects[1]) {
-    return 1;
-  }
-
-  return -1;
 }
 
 /*--------------------------------------------------------------------------*/
