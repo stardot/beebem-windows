@@ -300,12 +300,6 @@ static SectorType *GetSectorPtr(const TrackType *Track, int LogicalSectorID, boo
 }
 
 /*--------------------------------------------------------------------------*/
-/* Returns true if the drive signified by the current selects is ready      */
-static bool CheckReady(void) {
-  return Selects[0] || Selects[1];
-}
-
-/*--------------------------------------------------------------------------*/
 
 // Cause an error - pass err num
 
@@ -355,12 +349,12 @@ static void DoVarLength_WriteDataCommand(void) {
   DoSelects();
   DoLoadHead();
 
-  if (!CheckReady()) {
+  const int Drive = GetSelectedDrive();
+
+  if (Drive < 0) {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
-
-  int Drive = GetSelectedDrive();
 
   if (!Writeable[Drive]) {
     DoErr(RESULT_REG_WRITE_PROTECT);
@@ -471,12 +465,12 @@ static void DoVarLength_ReadDataCommand(void) {
   DoSelects();
   DoLoadHead();
 
-  if (!CheckReady()) {
+  const int Drive = GetSelectedDrive();
+
+  if (Drive < 0) {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
-
-  int Drive = GetSelectedDrive();
 
   // Reset shift state if it was set by Run Disc
   if (mainWin->m_ShiftBooted) {
@@ -577,12 +571,12 @@ static void DoReadIDCommand(void) {
   DoSelects();
   DoLoadHead();
 
-  if (!CheckReady()) {
+  const int Drive = GetSelectedDrive();
+
+  if (Drive < 0) {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
-
-  int Drive = GetSelectedDrive();
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
@@ -671,12 +665,12 @@ static void Do128ByteSR_VerifyDataAndDeldCommand(void) {
 static void DoVarLength_VerifyDataAndDeldCommand(void) {
   DoSelects();
 
-  if (!CheckReady()) {
+  const int Drive = GetSelectedDrive();
+
+  if (Drive < 0) {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
-
-  int Drive = GetSelectedDrive();
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
@@ -710,12 +704,12 @@ static void DoFormatCommand(void) {
 
   DoLoadHead();
 
-  if (!CheckReady()) {
+  const int Drive = GetSelectedDrive();
+
+  if (Drive < 0) {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
-
-  int Drive = GetSelectedDrive();
 
   if (!Writeable[Drive]) {
     DoErr(RESULT_REG_WRITE_PROTECT);
