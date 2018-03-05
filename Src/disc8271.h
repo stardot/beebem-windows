@@ -35,25 +35,18 @@ void FreeDiscImage(int DriveNum);
 void Eject8271DiscImage(int DriveNum);
 void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads);
 
-/*--------------------------------------------------------------------------*/
-/* Address is in the range 0-7 - with the fe80 etc stripped out */
-int Disc8271_read(int Address);
+unsigned char Disc8271Read(int Address);
+void Disc8271Write(int Address, unsigned char Value);
 
-/*--------------------------------------------------------------------------*/
-/* Address is in the range 0-7 - with the fe80 etc stripped out */
-void Disc8271_write(int Address, unsigned char Value);
-
-/*--------------------------------------------------------------------------*/
 void Disc8271_poll_real(void);
 
-#define Disc8271_poll(ncycles) if (Disc8271Trigger<=TotalCycles) Disc8271_poll_real();
+#define Disc8271Poll() if (Disc8271Trigger <= TotalCycles) Disc8271_poll_real();
 
-/*--------------------------------------------------------------------------*/
-void Disc8271_reset(void);
+void Disc8271Reset();
 
 void Save8271UEF(FILE *SUEF);
 void Load8271UEF(FILE *SUEF);
 
-/*--------------------------------------------------------------------------*/
 void disc8271_dumpstate(void);
+
 #endif

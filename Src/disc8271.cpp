@@ -1046,9 +1046,11 @@ static const PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Address is in the range 0-7 - with the fe80 etc stripped out */
-int Disc8271_read(int Address) {
-  int Value=0;
+
+// Address is in the range 0-7 - with the fe80 etc stripped out
+
+unsigned char Disc8271Read(int Address) {
+  unsigned char Value = 0;
 
   if (!Disc8271Enabled)
     return 0xFF;
@@ -1135,8 +1137,10 @@ static void ParamRegWrite(unsigned char Value) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Address is in the range 0-7 - with the fe80 etc stripped out */
-void Disc8271_write(int Address, unsigned char Value) {
+
+// Address is in the range 0-7 - with the fe80 etc stripped out
+
+void Disc8271Write(int Address, unsigned char Value) {
   if (!Disc8271Enabled)
     return;
 
@@ -1159,7 +1163,7 @@ void Disc8271_write(int Address, unsigned char Value) {
       /* cerr << "8271: Reset register write, value=0x" << hex << Value << dec << "\n"; */
       /* The caller should write a 1 and then >11 cycles later a 0 - but I'm just going
       to reset on both edges */
-      Disc8271_reset();
+      Disc8271Reset();
       break;
 
     case 4:
@@ -1662,7 +1666,8 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
 }
 
 /*--------------------------------------------------------------------------*/
-void Disc8271_reset(void) {
+
+void Disc8271Reset() {
   static bool InitialInit = true;
 
   ResultReg=0;

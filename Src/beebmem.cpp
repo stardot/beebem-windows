@@ -506,7 +506,7 @@ int BeebReadMem(int Address) {
 	}
 
 	if ((Address & ~0x1f) == 0xfe80 && MachineType != Model::Master128 && NativeFDC) {
-		return(Disc8271_read(Address & 0x7));
+		return Disc8271Read(Address & 0x7);
 	}
 
 	if ((Address & ~0x1f)==0xfea0) {
@@ -966,7 +966,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 
 	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128) && NativeFDC) {
-		Disc8271_write((Address & 7), Value);
+		Disc8271Write((Address & 7), Value);
 		return;
 	}
 

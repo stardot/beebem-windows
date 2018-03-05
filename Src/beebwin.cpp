@@ -492,7 +492,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms
 	UserVIAReset();
 	VideoInit();
 	SetDiscWriteProtects();
-	Disc8271_reset();
+	Disc8271Reset();
 	if (EconetEnabled) EconetReset();	//Rob:
 	Reset1770();
 	AtoDInit();
@@ -1418,7 +1418,7 @@ LRESULT CALLBACK WndProc(
 								sprow->reset();
 								Enable_ArmCoPro = true;
 							}
-							Disc8271_reset();
+							Disc8271Reset();
 							Reset1770();
 							if (EconetEnabled) EconetReset();//Rob
 							if (SCSIDriveEnabled) SCSIReset();

@@ -2394,7 +2394,7 @@ void PollHardware(unsigned int nCycles)
 		AtoD_poll(nCycles);
 		Serial_Poll();
 	}
-	Disc8271_poll(nCycles);
+	Disc8271Poll();
 	Music5000Poll(nCycles);
 	Sound_Trigger(nCycles);
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
