@@ -798,8 +798,14 @@ void BeebWin::InitMenu(void)
 
 	// View
 	UpdateDisplayRendererMenu();
+
+	const bool DirectXEnabled = m_DisplayRenderer != IDM_DISPGDI;
+	EnableMenuItem(IDM_DXSMOOTHING, DirectXEnabled);
+	EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, DirectXEnabled);
+
 	CheckMenuItem(IDM_DXSMOOTHING, m_DXSmoothing);
 	CheckMenuItem(IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only);
+
 	CheckMenuItem(IDM_SPEEDANDFPS, m_ShowSpeedAndFPS);
 	CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
 	CheckMenuItem(IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio);
@@ -2765,24 +2771,21 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_DISPDDRAW:
 	case IDM_DISPDX9:
 	{
-		bool enabled;
 		ExitDX();
 
 		m_DisplayRenderer = MenuId;
 		SetWindowAttributes(m_isFullScreen);
 
-		if (m_DisplayRenderer != IDM_DISPGDI)
+		bool DirectXEnabled = m_DisplayRenderer != IDM_DISPGDI;
+
+		if (DirectXEnabled)
 		{
 			InitDX();
-			enabled = true;
 		}
-		else
-		{
-			enabled = false;
-		}
+
 		UpdateDisplayRendererMenu();
-		EnableMenuItem(IDM_DXSMOOTHING, enabled);
-		EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, enabled);
+		EnableMenuItem(IDM_DXSMOOTHING, DirectXEnabled);
+		EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, DirectXEnabled);
 		break;
 	}
 

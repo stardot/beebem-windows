@@ -69,6 +69,7 @@ void BeebWin::InitDX(void)
 
 	m_CurrentDisplayRenderer = m_DisplayRenderer;
 }
+
 void BeebWin::ResetDX(void)
 {
 	m_DXResetPending = false;
@@ -87,6 +88,7 @@ void BeebWin::ResetDX(void)
 		ReinitDX();
 	}
 }
+
 void BeebWin::ReinitDX(void)
 {
 	HRESULT hr = DD_OK;
@@ -110,6 +112,7 @@ void BeebWin::ReinitDX(void)
 
 	m_CurrentDisplayRenderer = m_DisplayRenderer;
 }
+
 void BeebWin::ExitDX(void)
 {
 	if (m_CurrentDisplayRenderer == IDM_DISPDX9)
@@ -136,8 +139,6 @@ void BeebWin::ExitDX(void)
 HRESULT BeebWin::InitDirectDraw(void)
 {
 	HRESULT ddrval = DDERR_GENERIC;
-	HINSTANCE hInstDDraw;
-	LPDIRECTDRAWCREATE pDDCreate = NULL;
 
 	m_DD = NULL;
 	m_DD2 = NULL;
@@ -147,17 +148,21 @@ HRESULT BeebWin::InitDirectDraw(void)
 	m_DDS2Primary = NULL;
 	m_DDSPrimary = NULL;
 
-	hInstDDraw = LoadLibrary("ddraw.dll");
+	HINSTANCE hInstDDraw = LoadLibrary("ddraw.dll");
+
 	if(hInstDDraw)
 	{
-		pDDCreate = (LPDIRECTDRAWCREATE)GetProcAddress(hInstDDraw, "DirectDrawCreate");
+		LPDIRECTDRAWCREATE pDDCreate = (LPDIRECTDRAWCREATE)GetProcAddress(hInstDDraw, "DirectDrawCreate");
+
 		if( pDDCreate )
 		{
 			ddrval = pDDCreate( NULL, &m_DD, NULL );
+
 			if( ddrval == DD_OK )
 			{
 				ddrval = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID *)&m_DD2);
 			}
+
 			if( ddrval == DD_OK )
 			{
 				ddrval = InitSurfaces();
@@ -532,8 +537,11 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	// Changed to/from teletext mode?
 	if (LastTeletextEnabled != TeletextEnabled || First)
 	{
-		if (m_DXSmoothing && m_DXSmoothMode7Only)
+		if (m_DisplayRenderer != IDM_DISPGDI && m_DXSmoothing && m_DXSmoothMode7Only)
+		{
 			UpdateSmoothing();
+		}
+
 		LastTeletextEnabled = TeletextEnabled;
 		First = false;
 	}
@@ -796,9 +804,6 @@ void BeebWin::DisplayTiming(void)
 /****************************************************************************/
 void BeebWin::UpdateSmoothing(void)
 {
-	DDSURFACEDESC ddsd;
-	HRESULT ddrval;
-
 	if (m_DisplayRenderer == IDM_DISPDX9)
 	{
 		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
@@ -821,22 +826,28 @@ void BeebWin::UpdateSmoothing(void)
 			m_DDS2One->Release();
 			m_DDS2One = NULL;
 		}
+
 		if (m_DDSOne)
 		{
 			m_DDSOne->Release();
 			m_DDSOne = NULL;
 		}
+
+		DDSURFACEDESC ddsd;
 		ZeroMemory(&ddsd, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+
 		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
 			ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
 		else
 			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 		ddsd.dwWidth = 800;
 		ddsd.dwHeight = 512;
-		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
+
+		HRESULT ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
+
 		if( ddrval == DD_OK )
 		{
 			ddrval = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
