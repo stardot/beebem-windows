@@ -607,12 +607,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		           TeletextEnabled ? TTLines : nlines,
 		           SRCCOPY);
 
-		if ((DisplayCycles>0) && (hFDCBoard!=NULL))
-		{
-			SetBkMode(hDC,TRANSPARENT);
-			SetTextColor(hDC,0x808080);
-			TextOut(hDC,0,TextStart,ExtBoard.BoardName,(int)strlen(ExtBoard.BoardName));
-		}
+		DisplayFDCBoardInfo(hDC, 0, TextStart);
 	}
 	else
 	{
@@ -782,12 +777,7 @@ void BeebWin::DisplayClientAreaText(HDC hdc)
 	if (TeletextEnabled)
 		TextStart=(480/TeletextStyle)-((TeletextStyle==2)?12:0);
 
-	if ((DisplayCycles>0) && (hFDCBoard!=NULL))
-	{
-		SetBkMode(hdc,TRANSPARENT);
-		SetTextColor(hdc,0x808080);
-		TextOut(hdc,0,TextStart,ExtBoard.BoardName,(int)strlen(ExtBoard.BoardName));
-	}
+	DisplayFDCBoardInfo(hdc, 0, TextStart);
 
 	if (m_ShowSpeedAndFPS && m_isFullScreen)
 	{
@@ -796,6 +786,17 @@ void BeebWin::DisplayClientAreaText(HDC hdc)
 		SetBkMode(hdc,TRANSPARENT);
 		SetTextColor(hdc,0x808080);
 		TextOut(hdc, TeletextEnabled ? 490 : 580, TextStart, fps, (int)strlen(fps));
+	}
+}
+
+/****************************************************************************/
+void BeebWin::DisplayFDCBoardInfo(HDC hDC, int x, int y)
+{
+	if (DisplayCycles > 0 && hFDCBoard != NULL)
+	{
+		SetBkMode(hDC, TRANSPARENT);
+		SetTextColor(hDC, 0x808080);
+		TextOut(hDC, x, y, ExtBoard.BoardName, (int)strlen(ExtBoard.BoardName));
 	}
 }
 

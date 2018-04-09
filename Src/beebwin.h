@@ -199,6 +199,7 @@ public:
 	void DisplayTiming(void);
 	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
+	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
 	void ScaleJoystick(unsigned int x, unsigned int y);
 	void SetMousestickButton(bool button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
