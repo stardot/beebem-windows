@@ -53,8 +53,7 @@ void BeebWin::InitDX(void)
 			UpdateDisplayRendererMenu();
 		}
 	}
-
-	if (m_DisplayRenderer == IDM_DISPDDRAW)
+	else if (m_DisplayRenderer == IDM_DISPDDRAW)
 	{
 		HRESULT hr = InitDirectDraw();
 		if (hr != DD_OK)
@@ -122,11 +121,13 @@ void BeebWin::ExitDX(void)
 	else if (m_CurrentDisplayRenderer == IDM_DISPDDRAW)
 	{
 		ResetSurfaces();
+
 		if (m_DD2)
 		{
 			m_DD2->Release();
 			m_DD2 = NULL;
 		}
+
 		if (m_DD)
 		{
 			m_DD->Release();
@@ -465,11 +466,9 @@ void BeebWin::ExitDX9(void)
 /****************************************************************************/
 void BeebWin::RenderDX9(void)
 {
-	HRESULT hr;
-
 	// Clear the backbuffer
-	hr = m_pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET,
-						 D3DCOLOR_XRGB(0,0,0), 1.0f, 0 );
+	HRESULT hr = m_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET,
+	                                 D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
 
 	// Begin the scene
 	hr = m_pd3dDevice->BeginScene();
@@ -516,7 +515,6 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	static bool LastTeletextEnabled = false;
 	static bool First = true;
 
-	WINDOWPLACEMENT wndpl;
 	HRESULT ddrval;
 	HDC hdc;
 	int TTLines=0;
@@ -621,12 +619,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		if (!m_DXInit)
 			return;
 
-		wndpl.length = sizeof(WINDOWPLACEMENT);
-		if (GetWindowPlacement(m_hWnd, &wndpl))
-		{
-			if (wndpl.showCmd == SW_SHOWMINIMIZED)
-				return;
-		}
+		if (IsWindowMinimized())
+			return;
 
 		if (m_DisplayRenderer == IDM_DISPDX9)
 		{
@@ -764,6 +758,21 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		              TeletextEnabled ? TTLines : nlines);
 		m_CaptureBitmapPending = false;
 	}
+}
+
+/****************************************************************************/
+bool BeebWin::IsWindowMinimized() const
+{
+	WINDOWPLACEMENT wndpl;
+
+	wndpl.length = sizeof(WINDOWPLACEMENT);
+	if (GetWindowPlacement(m_hWnd, &wndpl))
+	{
+		if (wndpl.showCmd == SW_SHOWMINIMIZED)
+			return true;
+	}
+
+	return false;
 }
 
 /****************************************************************************/

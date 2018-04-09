@@ -197,6 +197,7 @@ public:
 	bool UpdateTiming();
 	void AdjustSpeed(bool up);
 	void DisplayTiming(void);
+	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
 	void ScaleJoystick(unsigned int x, unsigned int y);
 	void SetMousestickButton(bool button);
