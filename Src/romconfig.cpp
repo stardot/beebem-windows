@@ -39,7 +39,7 @@ static ROMConfigFile ROMCfg;
 static char szDefaultROMPath[MAX_PATH] = {0};
 static char szDefaultROMConfigPath[MAX_PATH] = {0};
 
-static BOOL CALLBACK ROMConfigDlgProc(
+static INT_PTR CALLBACK ROMConfigDlgProc(
 	HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 static bool LoadROMConfigFile(HWND hWnd);
 static bool SaveROMConfigFile(HWND hWnd);
@@ -149,8 +149,8 @@ static void FillROMList(void)
 }
 
 /****************************************************************************/
-static BOOL CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
-                                      WPARAM wParam, LPARAM /* lParam */)
+static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
+                                         WPARAM wParam, LPARAM /* lParam */)
 {
 	int row;
 	char *cfg;

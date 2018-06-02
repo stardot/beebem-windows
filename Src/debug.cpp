@@ -109,7 +109,7 @@ static Breakpoint Breakpoints[MAX_BPS];
 static Watch Watches[MAX_BPS];
 static unsigned char buffer[MAX_BUFFER];
 static MemoryMap MemoryMaps[17];
-BOOL CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 char debugHistory[MAX_HISTORY][300];
 int debugHistoryIndex = 0;
@@ -524,7 +524,7 @@ void DebugDisplayInfo(const char *info)
 		SendMessage(hwndInfo, LB_SETTOPINDEX, LinesDisplayed - LINES_IN_INFO, 0);
 }
 
-BOOL CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{

@@ -959,7 +959,7 @@ bool map_file(const char *file_name)
 
 //*******************************************************************
 
-BOOL CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
 {
@@ -1050,7 +1050,7 @@ void TapeControlUpdateCounter(int tape_time)
 	}
 }
 
-BOOL CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	char str[256];
 	int s;

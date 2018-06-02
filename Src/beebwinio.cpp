@@ -1309,7 +1309,7 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lParam */, LPARA
 	return 0;
 }
 
-BOOL CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM /* lParam */)
+INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
 	char str[100];
 	HWND hwndList;

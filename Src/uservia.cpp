@@ -756,12 +756,12 @@ void BreakOutCloseDialog()
 	hCurrentDialog = NULL;
 }
 
-BOOL CALLBACK BreakOutDlgProc( HWND   hwnd,
-									UINT   nMessage,
-									WPARAM wParam,
-									LPARAM lParam )
+INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
+                                 UINT   nMessage,
+                                 WPARAM wParam,
+                                 LPARAM lParam)
 {
-int bit;
+	int bit;
 
 	switch( nMessage )
 	{
@@ -782,7 +782,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDK_BIT1:
@@ -794,7 +793,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDK_BIT2:
@@ -806,7 +804,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDK_BIT3:
@@ -818,7 +815,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDK_BIT4:
@@ -830,7 +826,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDK_BIT5:
@@ -842,7 +837,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDK_BIT6:
@@ -854,7 +848,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDK_BIT7:
@@ -866,7 +859,6 @@ int bit;
 				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
 
 			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
-
 			break;
 
 		case IDC_IB7:
@@ -934,7 +926,7 @@ int bit;
 			break;
 
 		default:
-		return TRUE;
+			return TRUE;
 		}
 
 	default:

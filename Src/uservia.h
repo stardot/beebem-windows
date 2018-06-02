@@ -95,10 +95,10 @@ void ShowOutputs(unsigned char data);
 void BreakOutOpenDialog(HINSTANCE hinst, HWND hwndMain);
 void BreakOutCloseDialog();
 HWND	PromptForBitKeyInput( HWND hwndParent, UINT ctrlID );
-BOOL	CALLBACK BreakOutDlgProc( HWND   hwnd,
-									   UINT   nMessage,
-									   WPARAM wParam,
-									   LPARAM lParam );
+INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
+                                 UINT   nMessage,
+                                 WPARAM wParam,
+                                 LPARAM lParam);
 LRESULT CALLBACK GetBitKeyWndProc( HWND hWnd,	
 								UINT message,
 								WPARAM uParam,

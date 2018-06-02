@@ -37,10 +37,10 @@ void	SetBBCKeyForVKEY(int Key, bool shift);
 void	ShowKeyDown( HWND hwnd, UINT ctrlID, HWND hWndCtrl );
 void	SetRowCol( UINT ctrlID );
 void	ShowKeyUp( void );
-BOOL	CALLBACK UserKeyboard_DlgProc( HWND   hwnd,
-									   UINT   nMessage,
-									   WPARAM wParam,
-									   LPARAM lParam );
+INT_PTR CALLBACK UserKeyboard_DlgProc(HWND   hwnd,
+                                      UINT   nMessage,
+                                      WPARAM wParam,
+                                      LPARAM lParam);
 LRESULT CALLBACK GetKeyWndProc( HWND hWnd,	
 								UINT message,
 								WPARAM uParam,
@@ -173,10 +173,10 @@ void SetBBCKeyForVKEY(int Key, bool shift)
 
 /****************************************************************************/
 
-BOOL CALLBACK UserKeyboard_DlgProc( HWND   hwnd,
-									UINT   nMessage,
-									WPARAM wParam,
-									LPARAM lParam )
+INT_PTR CALLBACK UserKeyboard_DlgProc(HWND   hwnd,
+                                      UINT   nMessage,
+                                      WPARAM wParam,
+                                      LPARAM lParam)
 {
 /*
  UINT nID = LOWORD(wParam);
