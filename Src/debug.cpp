@@ -1134,15 +1134,13 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 	char line[1024];
 	char errstr[200];
 	AddrInfo* entry;
-	MemoryMap* map;
-	FILE *infile;
 	char *buf;
 
 	if(bank < 0 || bank > 16)
 		return false;
 
-	map = &MemoryMaps[bank];
-	infile = fopen(filename, "r");
+	MemoryMap* map = &MemoryMaps[bank];
+	FILE *infile = fopen(filename, "r");
 	if (infile == NULL)
 	{
 		return false;
@@ -1161,8 +1159,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 				continue;
 			if(map->count % 256 == 0)
 			{
-				AddrInfo* newAddrInfo;
-				newAddrInfo = (AddrInfo*)realloc(map->entries, (map->count + 256) * sizeof(AddrInfo));
+				AddrInfo* newAddrInfo = (AddrInfo*)realloc(map->entries, (map->count + 256) * sizeof(AddrInfo));
 				if(newAddrInfo == NULL)
 				{
 					fclose(infile);
@@ -1206,8 +1203,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 void DebugLoadLabels(char *filename)
 {
 	char buf[1024];
-	FILE *infile;
-	infile = fopen(filename, "r");
+	FILE *infile = fopen(filename, "r");
 	if (infile == NULL)
 	{
 		DebugDisplayInfoF("Error: Failed to open labels from %s", filename);
@@ -1218,6 +1214,8 @@ void DebugLoadLabels(char *filename)
 		while(fgets(buf, _countof(buf), infile) != NULL && LabelCount < MAX_LABELS)
 		{
 			DebugChompString(buf);
+
+			// Example: al FFEE .oswrch
 			if(sscanf(buf,"%*s %x .%64s", &Labels[LabelCount].addr, Labels[LabelCount].name) != 2)
 			{
 				DebugDisplayInfoF("Error: Invalid labels format: %s", filename);
@@ -1235,9 +1233,7 @@ void DebugLoadLabels(char *filename)
 void DebugRunScript(char *filename)
 {
 	char buf[1024];
-	FILE *infile;
-
-	infile=fopen(filename,"r");
+	FILE *infile = fopen(filename,"r");
 	if (infile == NULL)
 	{
 		DebugDisplayInfoF("Failed to read script file:\n  %s", filename);
