@@ -296,7 +296,7 @@ bool IP232Open(void)
 	if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
 		WriteLog("IP232: WSA initialisation failed");
 		if (DebugEnabled) 
-			DebugDisplayTrace(DEBUG_REMSER, true, "IP232: WSA initialisation failed");
+			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: WSA initialisation failed");
 		
 
 //		return false;
@@ -307,13 +307,13 @@ bool IP232Open(void)
 	{
 		WriteLog("Unable to create IP232 socket");
 		if (DebugEnabled)
-			DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Unable to create socket");
+			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Unable to create socket");
 
 		return false ; //Couldn't create the socket
 
 	}
 	if (DebugEnabled)
-		DebugDisplayTrace(DEBUG_REMSER, true, "IP232: socket created");
+		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: socket created");
 
 //	bEthernetSocketsCreated = true;
 	
@@ -329,7 +329,7 @@ bool IP232Open(void)
 		if (DebugEnabled) {
 			char info[200];
 			sprintf(info, "IP232: Unable to connect to server  %s",IPAddress);
-			DebugDisplayTrace(DEBUG_REMSER, true, info);
+			DebugDisplayTrace(DebugType::RemoteServer, true, info);
 		}
 		IP232Close();
 		mEthernetHandle = INVALID_SOCKET;
@@ -338,13 +338,13 @@ bool IP232Open(void)
 	}
 
 	if (DebugEnabled)
-		DebugDisplayTrace(DEBUG_REMSER, true, "IP232: connected to server");
+		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: connected to server");
 
 	// TEMP! 
 	ResetACIAStatus(3); // CTS input low,
 	SetACIAStatus(1); // TDRE high
 	if (DebugEnabled) 
-		DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Init, CTS low");
+		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Init, CTS low");
 
 	if (mEthernetPortReadTaskID == 0)
 	{
@@ -391,7 +391,7 @@ void IP232Close(void)
 	if (mEthernetHandle != INVALID_SOCKET) {
 		WriteLog("Closing IP232 socket");
 		if (DebugEnabled) 
-				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Closing Sockets");
+			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Closing Sockets");
 
 		closesocket(mEthernetHandle);
 		WSACleanup();
@@ -435,8 +435,7 @@ void IP232Write(unsigned char data)
 	{
 		WriteLog("IP232Write send buffer full\n");
 		if (DebugEnabled) 
-				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Write send Buffer Full");
-
+			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Write send Buffer Full");
 	}
 }
 
@@ -456,9 +455,8 @@ unsigned char IP232Read(void)
 	else
 	{
 		WriteLog("IP23 receive buffer empty\n");
-		if (DebugEnabled) 
-				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: receive buffer empty");
-
+		if (DebugEnabled)
+			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: receive buffer empty");
 	}
 	
 	return data;
@@ -503,15 +501,14 @@ int space, bufflen;
 						if (DebugEnabled) {
 							char info[514];
 							sprintf(info, "IP232: Read %d bytes from server",i);
-							DebugDisplayTrace(DEBUG_REMSER, true, info);
+							DebugDisplayTrace(DebugType::RemoteServer, true, info);
 							char hexval[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 							for(j = 0; j < i; j++){
 								info[j*2] = hexval[((buff[j] >> 4) & 0xF)];
 								info[(j*2) + 1] = hexval[(buff[j]) & 0x0F];
 							}
 							info[j*2] = 0;
-							DebugDisplayTrace(DEBUG_REMSER, true, info);
-
+							DebugDisplayTrace(DebugType::RemoteServer, true, info);
 						}
 					
 						for (j = 0; j < i; j++)
@@ -521,21 +518,21 @@ int space, bufflen;
 								ip232_flag_received = false;
 								if (buff[j] == 1) {
 										if (DebugEnabled) 
-											DebugDisplayTrace(DEBUG_REMSER, true, "Flag,1 DCD True, CTS");
+											DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
 										// dtr on modem high
 										ResetACIAStatus(3);  // CTS goes active low
 										SetACIAStatus(1);  // so TDRE goes high ??
 								}
 								else if (buff[j] == 0) {
-										if (DebugEnabled) 
-											DebugDisplayTrace(DEBUG_REMSER, true, "Flag,0 DCD False, clear CTS");
+										if (DebugEnabled)
+											DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
 										// dtr on modem low
 										SetACIAStatus(3);  // CTS goes inactive high
 										ResetACIAStatus(1);  // so TDRE goes low
 								}
 								else if (buff[j] == 255) {
-										if (DebugEnabled) 
-											DebugDisplayTrace(DEBUG_REMSER, true, "Flag,Flag =255");
+										if (DebugEnabled)
+											DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,Flag =255");
 
 										EthernetPortStore(255);
 								}
@@ -561,8 +558,8 @@ int space, bufflen;
 //						WriteLog("Read error %d\n", i);
 
 						WriteLog("Remote session disconnected\n");
-						if (DebugEnabled) 
-							DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Remote session disconnected");
+						if (DebugEnabled)
+							DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Remote session disconnected");
 //						mEthernetPortReadTaskID = NULL;
 						bSerialStateChanged = true;
 						SerialPortEnabled = false;
@@ -582,8 +579,8 @@ int space, bufflen;
 			if (ts_outlen > 0 && mEthernetHandle != INVALID_SOCKET)
 			{
 				WriteLog("Sending to IP232 server");
-				if (DebugEnabled) 
-					DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Sending to remote server");
+				if (DebugEnabled)
+					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Sending to remote server");
 
 				bufflen=0;
 				while (ts_outlen)
@@ -602,7 +599,7 @@ int space, bufflen;
 				{
 					WriteLog("Select Error %i\n", i);
 					if (DebugEnabled) 
-						DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Select error on send");
+						DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Select error on send");
 				}
 				else
 				{
@@ -613,7 +610,7 @@ int space, bufflen;
 						// Should really check what the error was ...
 						WriteLog("Send Error %i\n", i);
 						if (DebugEnabled) 
-								DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Send Error");
+								DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Send Error");
 						bSerialStateChanged = true;
 						SerialPortEnabled = false;
 						mainWin->UpdateSerialMenu();
@@ -644,8 +641,8 @@ void EthernetPortStore(unsigned char data)
 	else
 	{
 		WriteLog("EthernetPortStore output buffer full\n");
-		if (DebugEnabled) 
-			DebugDisplayTrace(DEBUG_REMSER, true, "IP232: EthernetPortStore output buffer full");
+		if (DebugEnabled)
+			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: EthernetPortStore output buffer full");
 	}
 }
 unsigned char EthernetPortGet(void)
@@ -696,8 +693,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 				ResetACIAStatus(3);  // CTS goes Low
 				SetACIAStatus(1);  // so TDRE goes high
 				if (DebugEnabled) 
-					DebugDisplayTrace(DEBUG_REMSER, true, "IP232: StatusThread DCD up, set CTS low");
-
+					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: StatusThread DCD up, set CTS low");
 			}
 
 			if ( (dcd == 0) && (odcd == 1) )
@@ -706,7 +702,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 				SetACIAStatus(3);  // CTS goes Hgh
 				ResetACIAStatus(1);  // so TDRE goes low
 				if (DebugEnabled) 
-					DebugDisplayTrace(DEBUG_REMSER, true, "IP232: StatusThread lost DCD, set CTS high");
+					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: StatusThread lost DCD, set CTS high");
 			}
 		}
 		else // IP232mode == true
@@ -725,7 +721,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 					if (DebugEnabled) {
 						char info[200];
 						sprintf(info, "IP232: Sending RTS status of %i",rts);
-						DebugDisplayTrace(DEBUG_REMSER, true, info);
+						DebugDisplayTrace(DebugType::RemoteServer, true, info);
 					}
 					
 					IP232Write(255);

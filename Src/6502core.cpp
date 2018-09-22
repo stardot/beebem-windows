@@ -2404,11 +2404,11 @@ void PollHardware(unsigned int nCycles)
 		if (EconetNMIenabled ) { 
 			NMIStatus|=1<<nmi_econet;
 			if (DebugEnabled)
-				DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI asserted");
+				DebugDisplayTrace(DebugType::Econet, true, "Econet: NMI asserted");
 		}
 		else {
 			if (DebugEnabled)
-				DebugDisplayTrace(DEBUG_ECONET, true, "Econet: NMI requested but supressed");
+				DebugDisplayTrace(DebugType::Econet, true, "Econet: NMI requested but supressed");
 		}
 	}
 }

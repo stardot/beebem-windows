@@ -32,23 +32,22 @@ Boston, MA  02110-1301, USA.
 
 extern bool DebugEnabled;
 
-enum DebugType {
-	DEBUG_NONE,
-	DEBUG_VIDEO,
-	DEBUG_USERVIA,
-	DEBUG_SYSVIA,
-	DEBUG_TUBE,
-	DEBUG_SERIAL,
-	DEBUG_ECONET,
-	DEBUG_REMSER,
-	DEBUG_MANUAL,
-	DEBUG_BREAKPOINT,
-	DEBUG_BRK
+enum class DebugType {
+	None,
+	Video,
+	UserVIA,
+	SysVIA,
+	Tube,
+	Serial,
+	Econet,
+	RemoteServer,
+	Manual,
+	Breakpoint,
+	BRK
 };
 
 //*******************************************************************
 // Data structs
-
 
 struct Label
 {

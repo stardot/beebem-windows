@@ -268,7 +268,7 @@ unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr)
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Read from host, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
-		DebugDisplayTrace(DEBUG_TUBE, true, info);
+		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
 	return TmpData;
@@ -281,7 +281,7 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Write from host, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
-		DebugDisplayTrace(DEBUG_TUBE, true, info);
+		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
 	if (IOAddr == 0x02 && IOData == 0xff) TorchTubeActive = true;
@@ -353,7 +353,7 @@ unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr)
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Read from para, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
-		DebugDisplayTrace(DEBUG_TUBE, false, info);
+		DebugDisplayTrace(DebugType::Tube, false, info);
 	}
 
 	return TmpData;
@@ -366,7 +366,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Write from para, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
-		DebugDisplayTrace(DEBUG_TUBE, false, info);
+		DebugDisplayTrace(DebugType::Tube, false, info);
 	}
 
 	switch (IOAddr) {
@@ -447,13 +447,13 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 	if (DebugEnabled && (old_readHIOAddr != IOAddr || old_readHTmpData != TmpData)) {
 		char info[200];
 		sprintf(info, "Tube: Read from host, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
-		DebugDisplayTrace(DEBUG_TUBE, true, info);
+		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
-    old_readHTmpData = TmpData;
-    old_readHIOAddr = IOAddr;
-    
-    return TmpData;
+	old_readHTmpData = TmpData;
+	old_readHIOAddr = IOAddr;
+
+	return TmpData;
 }
 
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
@@ -467,7 +467,7 @@ void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Write from host, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
-		DebugDisplayTrace(DEBUG_TUBE, true, info);
+		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
 	switch (IOAddr) {
@@ -591,13 +591,13 @@ unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 	if (DebugEnabled && (old_readPIOAddr != IOAddr || old_readPTmpData != TmpData)) {
 		char info[200];
 		sprintf(info, "Tube: Read from para, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
-		DebugDisplayTrace(DEBUG_TUBE, false, info);
+		DebugDisplayTrace(DebugType::Tube, false, info);
 	}
 
-    old_readPTmpData = TmpData;
-    old_readPIOAddr = IOAddr;
+	old_readPTmpData = TmpData;
+	old_readPIOAddr = IOAddr;
 
-    //UpdateInterrupts();
+	// UpdateInterrupts();
 	return TmpData;
 }
 
@@ -612,7 +612,7 @@ void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 	if (DebugEnabled) {
 		char info[200];
 		sprintf(info, "Tube: Write from para, addr %X value %02X\r\n", (int)IOAddr, (int)IOData);
-		DebugDisplayTrace(DEBUG_TUBE, false, info);
+		DebugDisplayTrace(DebugType::Tube, false, info);
 	}
 
 	switch (IOAddr) {

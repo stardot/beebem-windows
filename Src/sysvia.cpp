@@ -304,26 +304,26 @@ void SysVIAWrite(int Address, int Value) {
   /* cerr << "SysVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
 
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "SysVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
-		DebugDisplayTrace(DEBUG_SYSVIA, true, info);
-	}
+  if (DebugEnabled) {
+    char info[200];
+    sprintf(info, "SysVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
+    DebugDisplayTrace(DebugType::SysVIA, true, info);
+  }
 
   switch (Address) {
     case 0:
-	  // Clear bit 4 of IFR from ATOD Conversion
+      // Clear bit 4 of IFR from ATOD Conversion
       SysVIAState.ifr&=~16;
       SysVIAState.orb=Value & 0xff;
       IC32Write(Value);
       CMOS.Enabled = (Value & 64) != 0; // CMOS Chip select
-	  CMOS.Address=(((Value & 128)>>7)) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
+      CMOS.Address=(((Value & 128)>>7)) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
       if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20)==0)) {
         SysVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
       }
-	  SysVIAState.ifr&=~16;
-	  UpdateIFRTopBit();
+      SysVIAState.ifr&=~16;
+      UpdateIFRTopBit();
       break;
 
     case 1:
@@ -415,10 +415,8 @@ void SysVIAWrite(int Address, int Value) {
       SysVIAState.ora=Value & 0xff;
       SlowDataBusWrite(Value & 0xff);
       break;
-  } /* Address switch */
-} /* SysVIAWrite */
-
-
+  }
+}
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe40 stripped out */
@@ -531,14 +529,14 @@ int SysVIARead(int Address) {
       break;
   } /* Address switch */
 
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "SysVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
-		DebugDisplayTrace(DEBUG_SYSVIA, true, info);
-	}
+  if (DebugEnabled) {
+    char info[200];
+    sprintf(info, "SysVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
+    DebugDisplayTrace(DebugType::SysVIA, true, info);
+  }
 
   return(tmp);
-} /* SysVIARead */
+}
 
 /*--------------------------------------------------------------------------*/
 /* Value denotes the new value - i.e. 1 for a rising edge */

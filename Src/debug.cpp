@@ -76,7 +76,7 @@ Boston, MA  02110-1301, USA.
 #define MAX_BUFFER 65536
 
 bool DebugEnabled = false; // Debug dialog visible
-static int DebugSource = DEBUG_NONE; // Debugging active?
+static DebugType DebugSource = DebugType::None; // Debugging active?
 static int LinesDisplayed = 0;  // Lines in info window
 static int InstCount = 0;       // Instructions to execute before breaking
 static int DumpAddress = 0;     // Next address for memory dump command
@@ -458,7 +458,7 @@ void DebugCloseDialog()
 	DebugEnabled = false;
 	hCurrentDialog = NULL;
 	hCurrentAccelTable = NULL;
-	DebugSource = DEBUG_NONE;
+	DebugSource = DebugType::None;
 	LinesDisplayed = 0;
 	InstCount = 0;
 	DumpAddress = 0;
@@ -609,22 +609,22 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 
 void DebugToggleRun()
 {
-	if(DebugSource != DEBUG_NONE)
+	if(DebugSource != DebugType::None)
 	{
 		// Resume execution
-		DebugBreakExecution(DEBUG_NONE);
+		DebugBreakExecution(DebugType::None);
 	}
 	else
 	{
 		// Cause manual break
-		DebugBreakExecution(DEBUG_MANUAL);
+		DebugBreakExecution(DebugType::Manual);
 	}
 }
 
 void DebugBreakExecution(DebugType type)
 {
 	DebugSource = type;
-	if(type == DEBUG_NONE)
+	if(type == DebugType::None)
 	{
 		InstCount = 0;
 		LastBreakAddr = 0;
@@ -641,7 +641,7 @@ void DebugBreakExecution(DebugType type)
 void DebugAssertBreak(int addr, int prevAddr, bool host)
 {
 	AddrInfo addrInfo;
-	char* source = "Unknown";
+	const char* source = "Unknown";
 
 	DebugUpdateWatches(false);
 	SetDlgItemText(hwndDebug, IDC_DEBUGBREAK, "Continue");
@@ -653,41 +653,41 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 	
 	switch(DebugSource)
 	{
-	case DEBUG_NONE:
+	case DebugType::None:
 		break;
-	case DEBUG_VIDEO:
+	case DebugType::Video:
 		source = "Video";
 		break;
-	case DEBUG_SERIAL:
+	case DebugType::Serial:
 		source = "Serial";
 		break;
-	case DEBUG_ECONET:
+	case DebugType::Econet:
 		source = "Econet";
 		break;
-	case DEBUG_TUBE:
+	case DebugType::Tube:
 		source = "Tube";
 		break;
-	case DEBUG_SYSVIA:
+	case DebugType::SysVIA:
 		source = "System VIA";
 		break;
-	case DEBUG_USERVIA:
+	case DebugType::UserVIA:
 		source = "User VIA";
 		break;
-	case DEBUG_MANUAL:
+	case DebugType::Manual:
 		source = "Manual";
 		break;
-	case DEBUG_BREAKPOINT:
+	case DebugType::Breakpoint:
 		source = "Breakpoint";
 		break;
-	case DEBUG_BRK:
+	case DebugType::BRK:
 		source = "BRK instruction";
 		break;
-	case DEBUG_REMSER:
+	case DebugType::RemoteServer:
 		source = "Remote server";
 		break;
 	}
 
-	if(DebugSource == DEBUG_BREAKPOINT)
+	if (DebugSource == DebugType::Breakpoint)
 	{
 		for(int i = 0; i < BPCount; i++)
 		{
@@ -712,25 +712,25 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 	{
 		switch (type)
 		{
-		case DEBUG_VIDEO:
+		case DebugType::Video:
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGVIDEO, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugDisplayInfo(info);
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGVIDEOBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugBreakExecution(type);
 			break;
-		case DEBUG_USERVIA:
+		case DebugType::UserVIA:
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGUSERVIA, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugDisplayInfo(info);
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGUSERVIABRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugBreakExecution(type);
 			break;
-		case DEBUG_SYSVIA:
+		case DebugType::SysVIA:
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSYSVIA, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugDisplayInfo(info);
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSYSVIABRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugBreakExecution(type);
 			break;
-		case DEBUG_TUBE:
+		case DebugType::Tube:
 			if ((DebugHost && host) || (DebugParasite && !host))
 			{
 				if (SendDlgItemMessage(hwndDebug, IDC_DEBUGTUBE, BM_GETCHECK, 0, 0) == BST_CHECKED)
@@ -742,19 +742,19 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
             OutputDebugString(info);
 #endif
 			break;
-		case DEBUG_SERIAL:
+		case DebugType::Serial:
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSERIAL, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugDisplayInfo(info);
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSERIALBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugBreakExecution(type);
 			break;
-		case DEBUG_REMSER:
+		case DebugType::RemoteServer:
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGREMSER, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugDisplayInfo(info);
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGREMSERBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugBreakExecution(type);
 			break;
-		case DEBUG_ECONET:
+		case DebugType::Econet:
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGECONET, BM_GETCHECK, 0, 0) == BST_CHECKED)
 				DebugDisplayInfo(info);
 			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGECONETBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
@@ -834,7 +834,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 
 	// If this is the host and we're debugging that and have no further
 	// instructions to execute, halt.
-	if (host && DebugHost && DebugSource != DEBUG_NONE && InstCount == 0)
+	if (host && DebugHost && DebugSource != DebugType::None && InstCount == 0)
 	{
 		return(FALSE);
 	}
@@ -845,33 +845,33 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 
 	if (BRKOn && DebugReadMem(addr, host) == 0)
 	{
-		DebugBreakExecution(DEBUG_BRK);
+		DebugBreakExecution(DebugType::BRK);
 		ProgramCounter++;
 	}
 
 	// Check breakpoints
 	if (BPSOn)
 	{
-		for (i = 0; i < BPCount && DebugSource != DEBUG_BREAKPOINT; ++i)
+		for (i = 0; i < BPCount && DebugSource != DebugType::Breakpoint; ++i)
 		{
 			if (Breakpoints[i].end == -1)
 			{
 				if (addr == Breakpoints[i].start)
 				{
-					DebugBreakExecution(DEBUG_BREAKPOINT);
+					DebugBreakExecution(DebugType::Breakpoint);
 				}
 			}
 			else
 			{
 				if (addr >= Breakpoints[i].start && addr <= Breakpoints[i].end)
 				{
-					DebugBreakExecution(DEBUG_BREAKPOINT);
+					DebugBreakExecution(DebugType::Breakpoint);
 				}
 			}
 		}
 	}
 
-	if (DebugSource == DEBUG_NONE)
+	if (DebugSource == DebugType::None)
 		return true;
 
 	if ( (TorchTube || AcornZ80) && !host)

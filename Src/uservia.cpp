@@ -105,11 +105,11 @@ void UserVIAWrite(int Address, int Value) {
   /* cerr << "UserVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
 
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "UsrVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
-		DebugDisplayTrace(DEBUG_USERVIA, true, info);
-	}
+  if (DebugEnabled) {
+    char info[200];
+    sprintf(info, "UsrVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
+    DebugDisplayTrace(DebugType::UserVIA, true, info);
+  }
 
   switch (Address) {
     case 0:
@@ -372,11 +372,11 @@ int UserVIARead(int Address) {
       break;
   } /* Address switch */
 
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "UsrVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
-		DebugDisplayTrace(DEBUG_USERVIA, true, info);
-	}
+  if (DebugEnabled) {
+    char info[200];
+    sprintf(info, "UsrVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
+    DebugDisplayTrace(DebugType::UserVIA, true, info);
+  }
 
   return(tmp);
 }
