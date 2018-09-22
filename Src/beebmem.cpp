@@ -1178,12 +1178,6 @@ void BeebReadRoms(void) {
 		strcat(fullname,RomName);
 	}
 
-	// for some reason, we have to change \ to /  to make C work...
-	for (i = 0; fullname[i]; i++)
-	{
-		if (fullname[i] == '\\')
-			fullname[i] = '/';
-	}
 	InFile=fopen(fullname,"rb");
 	if (InFile!=NULL)
 	{
@@ -1237,11 +1231,6 @@ void BeebReadRoms(void) {
 				RomWritable[bank] = false;
 			}
 
-			for (i = 0; fullname[i]; i++)
-			{
-				if (fullname[i] == '\\')
-					fullname[i] = '/';
-			}
 			InFile=fopen(fullname,"rb");
 			if	(InFile!=NULL)
 			{
