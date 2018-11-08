@@ -33,11 +33,13 @@ Offset  Description                 Access
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <windows.h>
 #include "teletext.h"
 #include "debug.h"
 #include "6502core.h"
 #include "main.h"
 #include "beebmem.h"
+#include "log.h"
 
 bool TeleTextAdapterEnabled = false;
 int TeleTextStatus = 0xef;
@@ -52,6 +54,13 @@ long txtCurFrame = 0;
 int txtChnl = -1;
 
 unsigned char row[16][43];
+
+// TODO: proper configuration instead of hardcoded values
+char TeletextIP[4][256] = { "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1" };
+int TeletextPort[4] = { 9991, 9992, 9993, 9994 };
+
+extern WSADATA WsaDat;
+static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
 
 void TeleTextLog(char *text, ...)
 {
@@ -72,16 +81,91 @@ va_list argptr;
 	va_end(argptr);
 }
 
-void TeleTextInit(void)
+typedef struct threadData {
+    int ch;
+} THREADDATA, *PTHREADDATA;
 
+DWORD WINAPI TeleTextConnect(void* data)
 {
-char buff[256];
+    struct sockaddr_in teletext_serv_addr;
+    PTHREADDATA pDataArray;
+    pDataArray = (PTHREADDATA)data;
+    int ch = pDataArray->ch;
+    u_long iMode;
+    char info[200];
+    closesocket(TeletextSocket[ch]);
+    TeletextSocket[ch] = socket(AF_INET, SOCK_STREAM, 0);
+    if (TeletextSocket[ch] == INVALID_SOCKET)
+    {
+        if (DebugEnabled)
+        {
+            sprintf(info, "Teletext: Unable to create socket %d", ch);
+            DebugDisplayTrace(DEBUG_REMSER, true, info);
+        }
+        return -1;
+    }
+    if (DebugEnabled)
+    {
+        sprintf(info, "Teletext: socket %d created", ch);
+        DebugDisplayTrace(DEBUG_REMSER, true, info);
+    }
+    
+    teletext_serv_addr.sin_family = AF_INET; // address family Internet
+    teletext_serv_addr.sin_port = htons (TeletextPort[ch]); //Port to connect on
+    teletext_serv_addr.sin_addr.s_addr = inet_addr (TeletextIP[ch]); //Target IP
+    
+    if (connect(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)) == SOCKET_ERROR)
+    {
+        if (DebugEnabled) {
+            sprintf(info, "Teletext: Socket %d unable to connect to server %s %d",ch,TeletextIP[ch], WSAGetLastError());
+            DebugDisplayTrace(DEBUG_REMSER, true, info);
+        }
+        closesocket(TeletextSocket[ch]);
+        TeletextSocket[ch] = INVALID_SOCKET;
+        return -1;
+    }
+
+    if (DebugEnabled)
+    {
+        sprintf(info, "Teletext: socket %d connected to server",ch);
+        DebugDisplayTrace(DEBUG_REMSER, true, info);
+    }
+    
+    iMode = 1;
+    ioctlsocket(TeletextSocket[ch], FIONBIO, &iMode); // non blocking
+    
+    return 0;
+}
+
+void TeleTextInit(void)
+{
+    int i;
+    char info[200];
 
     TeleTextStatus = 0xef;
-
+    
+    if (!TeleTextAdapterEnabled)
+        return;
+    
+    WSACleanup();
+    if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
+        WriteLog("Teletext: WSA initialisation failed");
+        if (DebugEnabled) 
+            DebugDisplayTrace(DEBUG_REMSER, true, "Teletext: WSA initialisation failed");
+        
+        return;
+    }
+    
+    PTHREADDATA pDataArray[4];
+    for (i=0; i<4; i++){
+        pDataArray[i] = (PTHREADDATA) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(THREADDATA));
+        pDataArray[i]->ch = i;
+        CreateThread(NULL,0,TeleTextConnect,pDataArray[i],0,NULL);
+    }
+    /*
     rowPtr = 0x00;
     colPtr = 0x00;
-
+    
     if (txtFile) fclose(txtFile);
 
     if (!TeleTextAdapterEnabled)
@@ -101,11 +185,26 @@ char buff[256];
     txtCurFrame = 0;
 
     TeleTextLog("TeleTextInit Frames = %ld\n", txtFrames);
+    */
+}
 
+void TeleTextClose(int ch)
+{
+	if (TeletextSocket[ch] != INVALID_SOCKET) {
+		if (DebugEnabled)
+        {
+            char info[200];
+            sprintf(info, "Teletext: closing socket %d", ch);
+            DebugDisplayTrace(DEBUG_REMSER, true, info);
+        }
+		closesocket(TeletextSocket[ch]);
+		TeletextSocket[ch] = INVALID_SOCKET;
+	}
 }
 
 void TeleTextWrite(int Address, int Value) 
 {
+    char foo[256];
     if (!TeleTextAdapterEnabled)
         return;
 
@@ -124,7 +223,7 @@ void TeleTextWrite(int Address, int Value)
             if ( (Value & 0x03) != txtChnl)
             {
                 txtChnl = Value & 0x03;
-                TeleTextInit();
+                //TeleTextInit();
             }
 
             break;
@@ -192,10 +291,40 @@ void TeleTextPoll(void)
         return;
 
 int i;
-char buff[13 * 43];
+//char buff[16 * 43];
+char socketBuff[4][672];
+int ret;
 
     TeleTextStatus |= 0x10;       // teletext data available
 
+    for (i=0;i<4;i++)
+    {
+        if (TeletextSocket[i] != INVALID_SOCKET)
+        {
+            ret = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+            // todo: something sensible with ret
+        }
+    }
+    
+    
+    if (TeleTextInts == true)
+    {
+        intStatus|=1<<teletext;
+        for (i = 0; i < 16; ++i)
+        {
+            if (socketBuff[txtChnl][i*42] != 0)
+            {
+                row[i][0] = 0x67;
+                memcpy(&(row[i][1]), socketBuff[txtChnl] + i * 42, 42);
+            }
+            else
+            {
+                row[i][0] = 0x00;
+            }
+        }
+    }
+    
+    /*
     if (txtFile)
     {
 
@@ -212,19 +341,17 @@ char buff[13 * 43];
             TeleTextLog("TeleTextPoll Reading Frame %ld, PC = 0x%04x\n", txtCurFrame, ProgramCounter);
 
             fseek(txtFile, txtCurFrame * 860L + 3L * 43L, SEEK_SET);
-            fread(buff, 13 * 43, 1, txtFile);
+            fread(buff, 16 * 43, 1, txtFile);
             for (i = 0; i < 16; ++i)
             {
-                switch(i)
+                if (buff[i*43] != 0)
                 {
-                case 0 :
-                case 14 :
-                case 15 :
-                    row[i][0] = 0x00;
-                    break;
-                default :
                     row[i][0] = 0x67;
-                    memcpy(&(row[i][1]), buff + (i - 1) * 43, 42);
+                    memcpy(&(row[i][1]), buff + i * 43, 42);
+                }
+                else
+                {
+                    row[i][0] = 0x00;
                 }
             }
         
@@ -232,5 +359,6 @@ char buff[13 * 43];
             if (txtCurFrame >= txtFrames) txtCurFrame = 0;
         }
     }
+    */
 
 }
