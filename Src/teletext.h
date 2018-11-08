@@ -26,3 +26,4 @@ int TeleTextRead(int Address);
 void TeleTextPoll(void);
 void TeleTextLog(char *text, ...);
 void TeleTextInit(void);
+void TeleTextClose(int);
