@@ -57,7 +57,7 @@ unsigned char row[16][43];
 
 // TODO: proper configuration instead of hardcoded values
 char TeletextIP[4][256] = { "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1" };
-int TeletextPort[4] = { 9991, 9992, 9993, 9994 };
+u_short TeletextPort[4] = { 9991, 9992, 9993, 9994 };
 
 extern WSADATA WsaDat;
 static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
@@ -102,7 +102,7 @@ DWORD WINAPI TeleTextConnect(void* data)
             sprintf(info, "Teletext: Unable to create socket %d", ch);
             DebugDisplayTrace(DEBUG_REMSER, true, info);
         }
-        return -1;
+        return 1;
     }
     if (DebugEnabled)
     {
@@ -122,7 +122,7 @@ DWORD WINAPI TeleTextConnect(void* data)
         }
         closesocket(TeletextSocket[ch]);
         TeletextSocket[ch] = INVALID_SOCKET;
-        return -1;
+        return 1;
     }
 
     if (DebugEnabled)
@@ -140,8 +140,6 @@ DWORD WINAPI TeleTextConnect(void* data)
 void TeleTextInit(void)
 {
     int i;
-    char info[200];
-
     TeleTextStatus = 0xef;
     
     if (!TeleTextAdapterEnabled)
@@ -204,7 +202,6 @@ void TeleTextClose(int ch)
 
 void TeleTextWrite(int Address, int Value) 
 {
-    char foo[256];
     if (!TeleTextAdapterEnabled)
         return;
 
@@ -223,7 +220,6 @@ void TeleTextWrite(int Address, int Value)
             if ( (Value & 0x03) != txtChnl)
             {
                 txtChnl = Value & 0x03;
-                //TeleTextInit();
             }
 
             break;
@@ -233,7 +229,7 @@ void TeleTextWrite(int Address, int Value)
             colPtr = 0x00;
             break;
 		case 0x02:
-            row[rowPtr][colPtr++] = Value;
+            row[rowPtr][colPtr++] = Value & 0xFF;
             break;
 		case 0x03:
             TeleTextStatus &= ~0x10;       // Clear data available
