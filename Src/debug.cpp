@@ -30,6 +30,7 @@ Boston, MA  02110-1301, USA.
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
+
 #include "main.h"
 #include "beebmem.h"
 #include "tube.h"
@@ -43,9 +44,10 @@ Boston, MA  02110-1301, USA.
 #define MAX_LINES 4096          // Max lines in info window
 #define LINES_IN_INFO 28        // Visible lines in info window
 #define MAX_COMMAND_LEN 200     // Max debug command length
-#define MAX_BPS 50				// Max num of breakpoints/watches
-#define MAX_LABELS 500			// Max num labels.
-#define MAX_HISTORY 20			// Number of commands in the command history.
+#define MAX_BPS 50              // Max num of breakpoints/watches
+#define MAX_LABELS 500          // Max num labels.
+#define MAX_HISTORY 20          // Number of commands in the command history.
+
 // Where control goes
 #define NORM 1
 #define JUMP 2
@@ -83,8 +85,8 @@ static int DumpAddress = 0;     // Next address for memory dump command
 static int DisAddress = 0;      // Next address for disassemble command
 static int BPCount = 0;         // Num of breakpoints
 static int WCount = 0;          // Num of watches
-static int LastBreakAddr = 0;	// Address of last break
-static int DebugInfoWidth = 0;	// Width of debug info window
+static int LastBreakAddr = 0;   // Address of last break
+static int DebugInfoWidth = 0;  // Width of debug info window
 static bool BPSOn = true;
 static bool BRKOn = false;
 static bool DebugOS = false;
@@ -117,7 +119,7 @@ int debugHistoryIndex = 0;
 // Debugger commands go here. Format is COMMAND, HANDLER, ARGSPEC, HELPSTRING
 // Aliases are supported, put these below the command they reference and leave argspec/help
 // empty.
-DebugCmd DebugCmdTable[] = {
+static const DebugCmd DebugCmdTable[] = {
 	{ "bp",		DebugCmdToggleBreak, "start[-end] [name]", "Sets/Clears a breakpoint or break range." },
 	{ "b",		DebugCmdToggleBreak, "", ""}, // Alias of "bp"
 	{ "breakpoint", DebugCmdToggleBreak, "", ""}, // Alias of "bp"
@@ -152,7 +154,7 @@ DebugCmd DebugCmdTable[] = {
 	{ "script",	DebugCmdScript, "[filename]", "Executes a debugger script." }
 };
 
-InstInfo optable[256] =
+static const InstInfo optable[256] =
 {
 	/* 00 */	{ "BRK",  1, IMP|STOP, 0, },
 	/* 01 */	{ "ORA",  2, INX|NORM, 0, },
@@ -412,6 +414,16 @@ InstInfo optable[256] =
 	/* 00 */	{ "?FF",  1, ILL|NORM, 0, }
 };
 
+static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
+{
+	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
+}
+
+static void SetDlgItemChecked(HWND hDlg, int nIDDlgItem, bool checked)
+{
+	SendDlgItemMessage(hDlg, nIDDlgItem, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
+}
+
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain)
 {
 	if (hwndInvisibleOwner == 0)
@@ -435,18 +447,18 @@ void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain)
 
 		hwndInfo = GetDlgItem(hwndDebug, IDC_DEBUGINFO);
 		SendMessage(hwndInfo, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
-					(LPARAM)MAKELPARAM(FALSE,0));
+		            (LPARAM)MAKELPARAM(FALSE,0));
 
 		hwndBP = GetDlgItem(hwndDebug, IDC_DEBUGBREAKPOINTS);
 		SendMessage(hwndBP, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
-					(LPARAM)MAKELPARAM(FALSE,0));
+		            (LPARAM)MAKELPARAM(FALSE,0));
 
 		hwndW = GetDlgItem(hwndDebug, IDC_DEBUGWATCHES);
 		SendMessage(hwndW, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
-					(LPARAM)MAKELPARAM(FALSE,0));
+		            (LPARAM)MAKELPARAM(FALSE,0));
 
-		SendDlgItemMessage(hwndDebug, IDC_DEBUGBPS, BM_SETCHECK, BST_CHECKED, 0);
-		SendDlgItemMessage(hwndDebug, IDC_DEBUGHOST, BM_SETCHECK, BST_CHECKED, 0);
+		SetDlgItemChecked(hwndDebug, IDC_DEBUGBPS, true);
+		SetDlgItemChecked(hwndDebug, IDC_DEBUGHOST, true);
 	}
 }
 
@@ -480,21 +492,18 @@ void DebugCloseDialog()
 //*******************************************************************
 void DebugDisplayInfoF(const char *format, ...)
 {
-    va_list args;
-    int len;
-    char *buffer;
+	va_list args;
+	va_start(args, format);
 
-    va_start(args, format);
-    
-    len = _vscprintf( format, args ) // _vscprintf doesn't count
-                                + 1; // terminating '\0'
-    
-    buffer = (char*)malloc( len * sizeof(char) );
+	// _vscprintf doesn't count terminating '\0'
+	int len = _vscprintf(format, args) + 1;
 
-    vsprintf_s(buffer, len * sizeof(char), format, args );
+	char *buffer = (char*)malloc(len * sizeof(char));
+
+	vsprintf_s(buffer, len * sizeof(char), format, args);
 
 	DebugDisplayInfo(buffer);
-    free( buffer );
+	free(buffer);
 }
 
 void DebugDisplayInfo(const char *info)
@@ -524,7 +533,7 @@ void DebugDisplayInfo(const char *info)
 		SendMessage(hwndInfo, LB_SETTOPINDEX, LinesDisplayed - LINES_IN_INFO, 0);
 }
 
-INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
 	switch (message)
 	{
@@ -553,10 +562,12 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 					if(GetFocus() == GetDlgItem(hwndDebug, IDC_DEBUGCOMMAND))
 						DebugHistoryMove(-1);
 					return TRUE;
+
 				case ID_ACCELDOWN:
 					if(GetFocus() == GetDlgItem(hwndDebug, IDC_DEBUGCOMMAND))
 						DebugHistoryMove(1);
 					return TRUE;
+
 				case IDC_DEBUGBREAK:
 					DebugToggleRun();
 					return TRUE;
@@ -567,33 +578,33 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 					return TRUE;
 
 				case IDC_DEBUGBPS:
-					BPSOn = (SendDlgItemMessage(hwndDebug, IDC_DEBUGBPS, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					BPSOn = IsDlgItemChecked(hwndDebug, IDC_DEBUGBPS);
 					break;
 
 				case IDC_DEBUGBRK:
-					BRKOn = (SendDlgItemMessage(hwndDebug, IDC_DEBUGBRK, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					BRKOn = IsDlgItemChecked(hwndDebug, IDC_DEBUGBRK);
 					break;
 
 				case IDC_DEBUGOS:
-					DebugOS = (SendDlgItemMessage(hwndDebug, IDC_DEBUGOS, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					DebugOS = IsDlgItemChecked(hwndDebug, IDC_DEBUGOS);
 					break;
 
 				case IDC_DEBUGROM:
-					DebugROM = (SendDlgItemMessage(hwndDebug, IDC_DEBUGROM, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					DebugROM = IsDlgItemChecked(hwndDebug, IDC_DEBUGROM);
 					break;
 
 				case IDC_DEBUGHOST:
-					DebugHost = (SendDlgItemMessage(hwndDebug, IDC_DEBUGHOST, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					DebugHost = IsDlgItemChecked(hwndDebug, IDC_DEBUGHOST);
 					break;
 
 				case IDC_DEBUGPARASITE:
-					DebugParasite = (SendDlgItemMessage(hwndDebug, IDC_DEBUGPARASITE, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					DebugParasite = IsDlgItemChecked(hwndDebug, IDC_DEBUGPARASITE);
 					break;
 
 				case IDC_WATCHDECIMAL:
 				case IDC_WATCHENDIAN:
-					WatchDecimal = (SendDlgItemMessage(hwndDebug, IDC_WATCHDECIMAL, BM_GETCHECK, 0, 0) == BST_CHECKED);
-					WatchBigEndian = (SendDlgItemMessage(hwndDebug, IDC_WATCHENDIAN, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					WatchDecimal = IsDlgItemChecked(hwndDebug, IDC_WATCHDECIMAL);
+					WatchBigEndian = IsDlgItemChecked(hwndDebug, IDC_WATCHENDIAN);
 					DebugUpdateWatches(true);
 					break;
 
@@ -602,6 +613,7 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 					return TRUE;
 			}
 	}
+
 	return FALSE;
 }
 
@@ -624,7 +636,8 @@ void DebugToggleRun()
 void DebugBreakExecution(DebugType type)
 {
 	DebugSource = type;
-	if(type == DebugType::None)
+
+	if (type == DebugType::None)
 	{
 		InstCount = 0;
 		LastBreakAddr = 0;
@@ -635,6 +648,8 @@ void DebugBreakExecution(DebugType type)
 		InstCount = 1;
 		SetDlgItemText(hwndDebug, IDC_DEBUGBREAK, "Cancel");
 		LastAddrInBIOS = LastAddrInOS = LastAddrInROM = false;
+
+		DebugUpdateWatches(true);
 	}
 }
 
@@ -708,56 +723,63 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 
 void DebugDisplayTrace(DebugType type, bool host, const char *info)
 {
-	if (DebugEnabled && ( (DebugHost && host) || (DebugParasite && !host) ))
+	if (DebugEnabled && ((DebugHost && host) || (DebugParasite && !host)))
 	{
 		switch (type)
 		{
 		case DebugType::Video:
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGVIDEO, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGVIDEO))
 				DebugDisplayInfo(info);
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGVIDEOBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGVIDEOBRK))
 				DebugBreakExecution(type);
 			break;
+
 		case DebugType::UserVIA:
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGUSERVIA, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGUSERVIA))
 				DebugDisplayInfo(info);
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGUSERVIABRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGUSERVIABRK))
 				DebugBreakExecution(type);
 			break;
+
 		case DebugType::SysVIA:
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSYSVIA, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSYSVIA))
 				DebugDisplayInfo(info);
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSYSVIABRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSYSVIABRK))
 				DebugBreakExecution(type);
 			break;
+
 		case DebugType::Tube:
 			if ((DebugHost && host) || (DebugParasite && !host))
 			{
-				if (SendDlgItemMessage(hwndDebug, IDC_DEBUGTUBE, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTUBE))
 					DebugDisplayInfo(info);
-				if (SendDlgItemMessage(hwndDebug, IDC_DEBUGTUBEBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+				if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTUBEBRK))
 					DebugBreakExecution(type);
 			}
+
 #if _DEBUG
-            OutputDebugString(info);
+			OutputDebugString(info);
 #endif
 			break;
+
 		case DebugType::Serial:
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSERIAL, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSERIAL))
 				DebugDisplayInfo(info);
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGSERIALBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSERIALBRK))
 				DebugBreakExecution(type);
 			break;
+
 		case DebugType::RemoteServer:
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGREMSER, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGREMSER))
 				DebugDisplayInfo(info);
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGREMSERBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGREMSERBRK))
 				DebugBreakExecution(type);
 			break;
+
 		case DebugType::Econet:
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGECONET, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGECONET))
 				DebugDisplayInfo(info);
-			if (SendDlgItemMessage(hwndDebug, IDC_DEBUGECONETBRK, BM_GETCHECK, 0, 0) == BST_CHECKED)
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGECONETBRK))
 				DebugBreakExecution(type);
 			break;
 		}
@@ -830,7 +852,6 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	char str[150];
 	AddrInfo addrInfo;
 	RomInfo romInfo;
-	int i;
 
 	// If this is the host and we're debugging that and have no further
 	// instructions to execute, halt.
@@ -852,7 +873,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	// Check breakpoints
 	if (BPSOn)
 	{
-		for (i = 0; i < BPCount && DebugSource != DebugType::Breakpoint; ++i)
+		for (int i = 0; i < BPCount && DebugSource != DebugType::Breakpoint; ++i)
 		{
 			if (Breakpoints[i].end == -1)
 			{
@@ -967,13 +988,12 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 
 bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 {
-	int i;
 	RomInfo rom;
 
 	if(MemoryMaps[ROMSEL].count > 0)
 	{
 		// Try current ROM's map
-		for(i = 0; i < MemoryMaps[ROMSEL].count; i++)
+		for (int i = 0; i < MemoryMaps[ROMSEL].count; i++)
 		{
 			if(addr >= MemoryMaps[ROMSEL].entries[i].start && addr <= MemoryMaps[ROMSEL].entries[i].end)
 			{
@@ -988,6 +1008,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 	{
 		addrInfo->start = 0x8000;
 		addrInfo->end = 0xBFFF;
+
 		// Try ROM info:
 		if(ReadRomInfo(ROMSEL, &rom))
 		{
@@ -1101,7 +1122,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		// Try OS map:
 		if(MemoryMaps[16].count > 0)
 		{
-			for(i = 0; i < MemoryMaps[16].count; i++)
+			for (int i = 0; i < MemoryMaps[16].count; i++)
 			{
 				if(addr >= MemoryMaps[16].entries[i].start && addr <= MemoryMaps[16].entries[i].end)
 				{
@@ -1131,10 +1152,7 @@ void DebugInitMemoryMaps()
 
 bool DebugLoadMemoryMap(char* filename, int bank)
 {
-	char line[1024];
 	char errstr[200];
-	AddrInfo* entry;
-	char *buf;
 
 	if(bank < 0 || bank > 16)
 		return false;
@@ -1149,10 +1167,13 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 	{
 		map->count = 0;
 		map->entries = NULL;
+
+		char line[1024];
+
 		while(fgets(line, _countof(line), infile) != NULL)
 		{
 			DebugChompString(line);
-			buf = line;
+			char *buf = line;
 			while(buf[0] == ' ' || buf[0] == '\t' || buf[0] == '\r' || buf[0] == '\n')
 				buf++;
 			if(buf[0] == ';' || buf[0] == '\0')	// Skip comments and empty lines
@@ -1176,7 +1197,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 				map->entries = newAddrInfo;
 			}
 
-			entry = &map->entries[map->count];
+			AddrInfo* entry = &map->entries[map->count];
 
 			memset(entry->desc, 0, _countof(entry->desc));
 			int result = sscanf(buf, "%x %x %99c", &entry->start, &entry->end, &entry->desc);
@@ -1202,7 +1223,6 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 
 void DebugLoadLabels(char *filename)
 {
-	char buf[1024];
 	FILE *infile = fopen(filename, "r");
 	if (infile == NULL)
 	{
@@ -1211,6 +1231,9 @@ void DebugLoadLabels(char *filename)
 	else
 	{
 		LabelCount = 0;
+
+		char buf[1024];
+
 		while(fgets(buf, _countof(buf), infile) != NULL && LabelCount < MAX_LABELS)
 		{
 			DebugChompString(buf);
@@ -1232,7 +1255,6 @@ void DebugLoadLabels(char *filename)
 
 void DebugRunScript(char *filename)
 {
-	char buf[1024];
 	FILE *infile = fopen(filename,"r");
 	if (infile == NULL)
 	{
@@ -1241,6 +1263,9 @@ void DebugRunScript(char *filename)
 	else
 	{
 		DebugDisplayInfoF("Running script %s",filename);
+
+		char buf[1024];
+
 		while(fgets(buf, _countof(buf), infile) != NULL)
 		{
 			DebugChompString(buf);
@@ -1278,13 +1303,12 @@ int DebugParseLabel(char *label)
 
 void DebugHistoryAdd(char *command)
 {
-	int i;
 	// Do nothing if this is the same as the last
 	// command
 	if(_stricmp(debugHistory[0], command) != 0)
 	{
 		// Otherwise insert command string at index 0.
-		for(i = MAX_HISTORY - 2; i >= 0; i--)
+		for (int i = MAX_HISTORY - 2; i >= 0; i--)
 			memcpy(debugHistory[i + 1],debugHistory[i],300);
 		strncpy(debugHistory[0], command, 300);
 	}
@@ -1331,8 +1355,6 @@ void DebugParseCommand(char *command)
 {
 	char label[65], addrStr[6];
 	char info[MAX_PATH + 100];
-	int end, i, addr;
-	char* args;
 
 	while(command[0] == '\n' || command[0] == '\r' || command[0] == '\t' || command[0] == ' ')
 		command++;
@@ -1343,7 +1365,7 @@ void DebugParseCommand(char *command)
 	DebugHistoryAdd(command);
 
 	info[0] = '\0';
-	args = strchr(command, ' ');
+	char *args = strchr(command, ' ');
 	if(args == NULL)
 	{
 		args = "";
@@ -1359,7 +1381,7 @@ void DebugParseCommand(char *command)
 				if(sscanf(&args[2], "%64s", label) == 1)
 				{
 					// Try to resolve label:
-					addr = DebugParseLabel(label);
+					int addr = DebugParseLabel(label);
 					if(addr == -1)
 					{
 						DebugDisplayInfoF("Error: Label %s not found", label);
@@ -1372,7 +1394,7 @@ void DebugParseCommand(char *command)
 			}
 			else
 			{
-				end = (int)strnlen(info, _countof(info));
+				size_t end = strnlen(info, _countof(info));
 				info[end] = args[0];
 				info[end+1] = '\0';
 			}
@@ -1388,7 +1410,7 @@ void DebugParseCommand(char *command)
 
 	SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
 
-	for(i = 0; i < _countof(DebugCmdTable); i++)
+	for(int i = 0; i < _countof(DebugCmdTable); i++)
 	{
 		if(_stricmp(DebugCmdTable[i].name, command) == 0)
 		{
@@ -1469,11 +1491,14 @@ bool DebugCmdFile(char* args)
 					BeebWriteMem((addr + i) & 0xffff, buffer[i] & 0xff);
 
 				DebugDisplayInfoF("Read %d bytes from %s to address 0x%04X", count,filename, addr);
+
+				DebugUpdateWatches(true);
 			}
 			else
 			{
 				DebugDisplayInfoF("Failed to open file: %s", filename);
 			}
+
 			return true;
 		}
 		else if(tolower(mode) == 'w')
@@ -1494,18 +1519,20 @@ bool DebugCmdFile(char* args)
 			{
 				DebugDisplayInfoF("Failed to open file: %s", filename);
 			}
+
 			return true;
 		}
 	}
+
 	return false;
 }
 
 bool DebugCmdPoke(char* args)
 {
 	int addr, data;
-	int start;
 	int i = 0;
 	bool host = true;
+
 	if (tolower(args[0]) == 'p') // Parasite
 	{
 		host = false;
@@ -1513,16 +1540,18 @@ bool DebugCmdPoke(char* args)
 		while(args[0] == ' ')
 			args++;
 	}
+
 	if (sscanf(args, "%x", &addr) == 1)
 	{
 		args = strchr(args, ' ');
-		start = addr = addr & 0xFFFF;
+		int start = addr = addr & 0xFFFF;
 		if(args == NULL)
 			return false;
 		while (args[0] != '\0')
 		{
 			while (args[0] == ' ')
 				args++;
+
 			if (sscanf(args, "%x", &data) == 1)
 			{
 				DebugWriteMem(addr, host, (unsigned char)(data & 0xff));
@@ -1538,7 +1567,8 @@ bool DebugCmdPoke(char* args)
 			return false;
 		else
 		{
-			DebugDisplayInfoF("Changed %d bytes starting at 0x%04X", i, addr);
+			DebugUpdateWatches(true);
+			DebugDisplayInfoF("Changed %d bytes starting at 0x%04X", i, start);
 			return true;
 		}
 	}
@@ -1549,11 +1579,9 @@ bool DebugCmdPoke(char* args)
 bool DebugCmdSave(char* args)
 {
 	int count = 0;
-	int i;
 	char filename[MAX_PATH];
 	char* info = NULL;
 	int infoSize = 0;
-	int len = 0;
 	memset(filename, 0, MAX_PATH);
 
 	int result = sscanf(args, "%u %259c", &count, filename);
@@ -1570,9 +1598,10 @@ bool DebugCmdSave(char* args)
 		FILE *fd = fopen(filename, "w");
 		if (fd)
 		{
-			for (i = LinesDisplayed - count; i < LinesDisplayed; ++i)
+			for (int i = LinesDisplayed - count; i < LinesDisplayed; ++i)
 			{
-				len = (int)(SendMessage(hwndInfo, LB_GETTEXTLEN, i, NULL) + 1) * sizeof(TCHAR);
+				int len = (int)(SendMessage(hwndInfo, LB_GETTEXTLEN, i, NULL) + 1) * sizeof(TCHAR);
+
 				if(len > infoSize)
 				{
 					infoSize = len;
@@ -1605,7 +1634,6 @@ bool DebugCmdSave(char* args)
 
 bool DebugCmdState(char* args)
 {
-	int i;
 	RomInfo rom;
 	char flags[50] = "";
 	switch (tolower(args[0]))
@@ -1627,7 +1655,7 @@ bool DebugCmdState(char* args)
 			break;
 		case 'r': // ROM state
 			DebugDisplayInfo("ROMs by priority:");
-			for(i = 15; i >= 0; i--)
+			for (int i = 15; i >= 0; i--)
 			{
 				flags[0] = '\0';
 				if(ReadRomInfo(i, &rom))
@@ -1686,7 +1714,6 @@ bool DebugCmdCode(char* args)
 
 bool DebugCmdPeek(char* args)
 {
-	int start = DumpAddress;
 	int count = 256;
 	bool host = true;
 
@@ -1711,7 +1738,7 @@ bool DebugCmdNext(char* args)
 	if(args[0] != '\0' && sscanf(args, "%u", &count) == 0)
 		return false;
 	if (count > MAX_LINES)
-	count = MAX_LINES;
+		count = MAX_LINES;
 	InstCount = count;
 	DebugSetCommandString("next");
 	return true;
@@ -1721,59 +1748,60 @@ bool DebugCmdSet(char* args)
 {
 	char name[20];
 	char state[4];
-	int checkState = BST_UNCHECKED;
+	bool checked = false;
 	int dlgItem = 0;
 
 	if(sscanf(args,"%s %s",name,state) == 2)
 	{
 		//host/parasite/rom/os/bigendian/breakpoint/decimal/brk
 		if(_stricmp(state, "on") == 0)
-			checkState = BST_CHECKED;
+			checked = true;
 
 		if(_stricmp(name, "host") == 0)
 		{
 			dlgItem = IDC_DEBUGHOST;
-			DebugHost = (checkState == BST_CHECKED);
+			DebugHost = checked;
 		}
 		else if(_stricmp(name, "parasite") == 0)
 		{
 			dlgItem = IDC_DEBUGPARASITE;
-			DebugParasite = (checkState == BST_CHECKED);
+			DebugParasite = checked;
 		}
 		else if(_stricmp(name, "rom") == 0)
 		{
 			dlgItem = IDC_DEBUGROM;
-			DebugROM = (checkState == BST_CHECKED);
+			DebugROM = checked;
 		}
 		else if(_stricmp(name, "os") == 0)
 		{
 			dlgItem = IDC_DEBUGOS;
-			DebugOS = (checkState == BST_CHECKED);
+			DebugOS = checked;
 		}
 		else if(_stricmp(name, "endian") == 0)
 		{
 			dlgItem = IDC_WATCHENDIAN;
-			WatchBigEndian = (checkState == BST_CHECKED);
+			WatchBigEndian = checked;
 			DebugUpdateWatches(true);
 		}
 		else if(_stricmp(name, "breakpoints") == 0)
 		{
 			dlgItem = IDC_DEBUGBPS;
-			BPSOn = (checkState == BST_CHECKED);
+			BPSOn = checked;
 		}
 		else if(_stricmp(name, "decimal") == 0)
 		{
 			dlgItem = IDC_WATCHDECIMAL;
-			WatchDecimal = (checkState == BST_CHECKED);
+			WatchDecimal = checked;
 		}
 		else if(_stricmp(name, "brk") == 0)
 		{
 			dlgItem = IDC_DEBUGBRK;
-			BRKOn = (checkState == BST_CHECKED);
+			BRKOn = checked;
 		}
 		else
 			return false;
-		SendDlgItemMessage(hwndDebug, dlgItem, BM_SETCHECK, checkState, 0);
+
+		SetDlgItemChecked(hwndDebug, dlgItem, checked);
 		return true;
 	}
 	else
@@ -1789,7 +1817,7 @@ bool DebugCmdBreakContinue(char* args)
 
 bool DebugCmdHelp(char* args)
 {
-	int i, addr;
+	int addr;
 	int li = 0;
 	AddrInfo addrInfo;
 	char aliasInfo[300];
@@ -1802,7 +1830,7 @@ bool DebugCmdHelp(char* args)
 		DebugDisplayInfo("  to specify parasite processor. Words preceded with a . will be");
 		DebugDisplayInfo("  interpreted as labels and may be used in place of addresses.");
 		// Display help for basic commands:
-		for(i = 0; i < _countof(DebugCmdTable); i++)
+		for (int i = 0; i < _countof(DebugCmdTable); i++)
 		{
 			if(strlen(DebugCmdTable[i].help) > 0 && strlen(DebugCmdTable[i].argdesc) > 0)
 			{
@@ -1815,7 +1843,7 @@ bool DebugCmdHelp(char* args)
 		DebugDisplayInfo("");
 		DebugDisplayInfo("Command aliases:");
 		// Display help for aliases
-		for(i = 0; i < _countof(DebugCmdTable); i++)
+		for (int i = 0; i < _countof(DebugCmdTable); i++)
 		{
 			if(strlen(DebugCmdTable[i].help) > 0 && strlen(DebugCmdTable[i].argdesc) > 0)
 			{
@@ -1827,8 +1855,8 @@ bool DebugCmdHelp(char* args)
 				aliasInfo[0] = 0;
 				li = i;
 			}
-			else if(strlen(DebugCmdTable[i].help) == 0 && strlen(DebugCmdTable[i].argdesc) == 0
-					&& DebugCmdTable[li].handler == DebugCmdTable[i].handler)
+			else if (strlen(DebugCmdTable[i].help) == 0 && strlen(DebugCmdTable[i].argdesc) == 0 &&
+			         DebugCmdTable[li].handler == DebugCmdTable[i].handler)
 			{
 				strcat(aliasInfo, DebugCmdTable[i].name);
 				strcat(aliasInfo, ", ");
@@ -1845,7 +1873,7 @@ bool DebugCmdHelp(char* args)
 	else
 	{
 		// Display help for specific command/alias
-		for(i = 0; i < _countof(DebugCmdTable); i++)
+		for (int i = 0; i < _countof(DebugCmdTable); i++)
 		{
 			// Remember the last index with args and help so we can support aliases.
 			if(strlen(DebugCmdTable[i].help) > 0 && strlen(DebugCmdTable[i].argdesc) > 0)
@@ -1892,15 +1920,15 @@ bool DebugCmdScript(char *args)
 
 bool DebugCmdLabels(char *args)
 {
-	int i;
 	if(args[0] != '\0')
 		DebugLoadLabels(args);
+
 	if(LabelCount == 0)
 		DebugDisplayInfo("No labels defined.");
 	else
 	{
 		DebugDisplayInfoF("%d known labels:", LabelCount);
-		for(i = 0; i < LabelCount; i++)
+		for(int i = 0; i < LabelCount; i++)
 			DebugDisplayInfoF("%04X %s", Labels[i].addr, Labels[i].name);
 	}
 	return true;
@@ -1978,9 +2006,9 @@ bool DebugCmdWatch(char *args)
 
 bool DebugCmdToggleBreak(char *args)
 {
+	int i;
 	Breakpoint bp;
 	char info[64];
-	int i;
 
 	memset(bp.name, 0, _countof(bp.name));
 	bp.start = bp.end = -1;
@@ -2046,7 +2074,7 @@ int DebugReadMem(int addr, bool host)
 {
 	if (host)
 		return BeebReadMem(addr);
-	if ((TorchTube || AcornZ80))
+	if (TorchTube || AcornZ80)
 		return ReadZ80Mem(addr);
 	return TubeReadMem(addr);
 }
@@ -2055,26 +2083,22 @@ void DebugWriteMem(int addr, bool host, unsigned char data)
 {
 	if (host)
 		BeebWriteMem(addr, data);
-	if ((TorchTube || AcornZ80))
+	if (TorchTube || AcornZ80)
 		WriteZ80Mem(addr, data);
 	TubeWriteMem(addr, data);
 }
 
-
 int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 {
-	char *s;
-	int opcode;
-	InstInfo *ip; 
 	int operand;
 	int l;
 
 	sprintf(opstr, "%04X ", addr);
 
-	opcode = DebugReadMem(addr, host);
-	ip = &optable[opcode];
+	int opcode = DebugReadMem(addr, host);
+	const InstInfo *ip = &optable[opcode];
 
-	s=opstr+strlen(opstr);
+	char *s = opstr + strlen(opstr);
 
 	switch (ip->nb) {
 		case 1:
@@ -2190,13 +2214,11 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 	{
 		if ((TorchTube || AcornZ80) && !host)
 		{
-			int l;
-			char *s;
 			char buff[64];
 			
 			sprintf(opstr, "%04X ", addr);
-			s = opstr + strlen(opstr);
-			l = Z80_Disassemble(addr, buff);
+			char *s = opstr + strlen(opstr);
+			int l = Z80_Disassemble(addr, buff);
 
 			switch (l) {
 				case 1:
@@ -2230,22 +2252,18 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 
 void DebugMemoryDump(int addr, int count, bool host)
 {
-	int a, b;
-	int s, e;
-	int v;
-	char info[80];
-
 	if (count > MAX_LINES * 16)
 		count = MAX_LINES * 16;
 
-	s = addr & 0xfff0;
-	e = (addr + count - 1) | 0xf;
+	int s = addr & 0xfff0;
+	int e = (addr + count - 1) | 0xf;
 
 	if (e > 0xffff)
 		e = 0xffff;
 	DebugDisplayInfo("       0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F 0123456789ABCDEF");
-	for (a = s; a < e; a += 16)
+	for (int a = s; a < e; a += 16)
 	{
+		char info[80];
 		sprintf(info, "%04X  ", a);
 
 		if (host && a >= 0xfc00 && a < 0xff00)
@@ -2254,7 +2272,7 @@ void DebugMemoryDump(int addr, int count, bool host)
 		}
 		else
 		{
-			for (b = 0; b < 16; ++b)
+			for (int b = 0; b < 16; ++b)
 			{
 				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TorchTube || AcornZ80))
 					sprintf(info+strlen(info), "IO ");
@@ -2262,11 +2280,11 @@ void DebugMemoryDump(int addr, int count, bool host)
 					sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, host));
 			}
 
-			for (b = 0; b < 16; ++b)
+			for (int b = 0; b < 16; ++b)
 			{
 				if (host || (a+b) < 0xfef8 || (a+b) >= 0xff00)
 				{
-					v = DebugReadMem(a+b, host);
+					int v = DebugReadMem(a+b, host);
 					if (v < 32 || v > 127)
 						v = '.';
 					sprintf(info+strlen(info), "%c", v);
@@ -2276,5 +2294,4 @@ void DebugMemoryDump(int addr, int count, bool host)
 
 		DebugDisplayInfo(info);
 	}
-
 }
