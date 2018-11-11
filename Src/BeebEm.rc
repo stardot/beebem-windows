@@ -716,6 +716,12 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Econet On/Off",               ID_ECONET
         MENUITEM "Teletext Adapter On/Off",     ID_TELETEXT
+        POPUP "&Teletext Data"
+        BEGIN
+            MENUITEM "Capture files",               ID_TELETEXTFILES
+            MENUITEM "IP: localhost:19761-19764",   ID_TELETEXTLOCALHOST
+            MENUITEM "IP: Custom destination",      ID_TELETEXTCUSTOM
+        END
         MENUITEM "Floppy Drive On/Off",         ID_FLOPPYDRIVE
         MENUITEM "SCSI Hard Drive On/Off",      ID_HARDDRIVE
         MENUITEM "IDE Hard Drive On/Off",       ID_IDEDRIVE

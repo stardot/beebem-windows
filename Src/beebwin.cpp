@@ -930,6 +930,9 @@ void BeebWin::InitMenu(void)
 	UpdateOptiMenu();
 	UpdateEconetMenu();
 	CheckMenuItem(ID_TELETEXT, TeleTextAdapterEnabled);
+	CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
+	CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
+	CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
 	CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
@@ -3645,6 +3648,55 @@ void BeebWin::HandleCommand(int MenuId)
 		TeleTextAdapterEnabled = !TeleTextAdapterEnabled;
 		TeleTextInit();
 		CheckMenuItem(ID_TELETEXT, TeleTextAdapterEnabled);
+		break;
+		
+	case ID_TELETEXTFILES:
+		if (!TeletextFiles)
+		{
+			TeletextFiles = true;
+			TeletextLocalhost = false;
+			TeletextCustom = false;
+			TeleTextInit();
+		}
+		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
+		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
+		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
+		break;
+		
+	case ID_TELETEXTLOCALHOST:
+		if (!TeletextLocalhost)
+		{
+			TeletextFiles = false;
+			TeletextLocalhost = true;
+			TeletextCustom = false;
+			for (int ch=0; ch<4; ch++)
+			{
+				strcpy(TeletextIP[ch],"127.0.0.1");
+				TeletextPort[ch] = (u_short)(19761 + ch);
+			}
+			TeleTextInit();
+		}
+		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
+		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
+		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
+		break;
+		
+	case ID_TELETEXTCUSTOM:
+		if (!TeletextCustom)
+		{
+			TeletextFiles = false;
+			TeletextLocalhost = false;
+			TeletextCustom = true;
+			for (int ch=0; ch<4; ch++)
+			{
+				strcpy(TeletextIP[ch],TeletextCustomIP[ch]);
+				TeletextPort[ch] = TeletextCustomPort[ch];
+			}
+			TeleTextInit();
+		}
+		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
+		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
+		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
 		break;
 
 	case ID_HARDDRIVE:
