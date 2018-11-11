@@ -181,6 +181,8 @@ Boston, MA  02110-1301, USA.
 #define IDC_EMPTY                       1084
 #define IDC_SAVE                        1085
 #define IDC_LOAD                        1086
+#define IDC_DEBUGTELETEXT               1087
+#define IDC_DEBUGTELETEXTBRK            1088
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002

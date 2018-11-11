@@ -40,6 +40,7 @@ enum class DebugType {
 	Tube,
 	Serial,
 	Econet,
+	Teletext,
 	RemoteServer,
 	Manual,
 	Breakpoint,
