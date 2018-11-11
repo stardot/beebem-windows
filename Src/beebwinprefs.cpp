@@ -411,6 +411,27 @@ void BeebWin::LoadPreferences()
 
 	if (!m_Preferences.GetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled))
 		TeleTextAdapterEnabled = false;
+	if (!m_Preferences.GetBoolValue("TeletextLocalhost", TeletextLocalhost))
+		TeletextLocalhost = false;
+	if (!m_Preferences.GetBoolValue("TeletextCustom", TeletextCustom))
+		TeletextCustom = false;
+	if (!(TeletextLocalhost && TeletextCustom))
+		TeletextFiles = true; // default to Files
+	
+	char key[20];
+	for (int ch=0; ch<4; ch++)
+	{
+		snprintf(key,20,"TeletextCustomPort%d",ch);
+		if (m_Preferences.GetDWORDValue(key,dword))
+			TeletextCustomPort[ch] = (u_short)dword;
+		else
+			TeletextCustomPort[ch] = (u_short)(19761 + ch);
+		snprintf(key,20,"TeletextCustomIP%d",ch);
+		if (m_Preferences.GetStringValue(key, keyData))
+			strncpy(TeletextCustomIP[ch], keyData, 16);
+		else
+			strcpy(TeletextCustomIP[ch], "127.0.0.1");
+	}
 
 	if (!m_Preferences.GetBoolValue("FloppyDriveEnabled", Disc8271Enabled))
 		Disc8271Enabled = true;
@@ -638,6 +659,17 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("Basic Hardware", BHardware);
 		m_Preferences.SetBoolValue("Teletext Half Mode", THalfMode);
 		m_Preferences.SetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled);
+		m_Preferences.SetBoolValue("TeletextLocalhost", TeletextLocalhost);
+		m_Preferences.SetBoolValue("TeletextCustom", TeletextCustom);
+		char key[20];
+		for (int ch=0; ch<4; ch++)
+		{
+			snprintf(key,20,"TeletextCustomPort%d",ch);
+			m_Preferences.SetDWORDValue(key, TeletextCustomPort[ch]);
+			snprintf(key,20,"TeletextCustomIP%d",ch);
+			m_Preferences.SetStringValue(key, TeletextCustomIP[ch]);
+		}
+		
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);

@@ -42,6 +42,10 @@ Offset  Description                 Access
 #include "log.h"
 
 bool TeleTextAdapterEnabled = false;
+bool TeletextFiles;
+bool TeletextLocalhost;
+bool TeletextCustom;
+
 int TeleTextStatus = 0xef;
 bool TeleTextInts = false;
 int rowPtrOffset = 0x00;
@@ -55,9 +59,12 @@ int txtChnl = -1;
 
 unsigned char row[16][43];
 
-// TODO: proper configuration instead of hardcoded values
-char TeletextIP[4][256] = { "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1" };
-u_short TeletextPort[4] = { 9991, 9992, 9993, 9994 };
+char info[200];
+
+char TeletextIP[4][20];
+u_short TeletextPort[4];
+char TeletextCustomIP[4][20];
+u_short TeletextCustomPort[4];
 
 extern WSADATA WsaDat;
 static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
@@ -92,8 +99,6 @@ DWORD WINAPI TeleTextConnect(void* data)
     pDataArray = (PTHREADDATA)data;
     int ch = pDataArray->ch;
     u_long iMode;
-    char info[200];
-    closesocket(TeletextSocket[ch]);
     TeletextSocket[ch] = socket(AF_INET, SOCK_STREAM, 0);
     if (TeletextSocket[ch] == INVALID_SOCKET)
     {
@@ -146,19 +151,29 @@ void TeleTextInit(void)
         return;
     
     WSACleanup();
-    if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
-        WriteLog("Teletext: WSA initialisation failed");
-        if (DebugEnabled) 
-            DebugDisplayTrace(DebugType::Teletext, true, "Teletext: WSA initialisation failed");
-        
-        return;
-    }
-    
-    PTHREADDATA pDataArray[4];
     for (i=0; i<4; i++){
-        pDataArray[i] = (PTHREADDATA) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(THREADDATA));
-        pDataArray[i]->ch = i;
-        CreateThread(NULL,0,TeleTextConnect,pDataArray[i],0,NULL);
+        TeleTextClose(i);
+    }
+    if (TeletextLocalhost || TeletextCustom)
+    {
+        if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
+            WriteLog("Teletext: WSA initialisation failed");
+            if (DebugEnabled) 
+                DebugDisplayTrace(DebugType::Teletext, true, "Teletext: WSA initialisation failed");
+            
+            return;
+        }
+        
+        PTHREADDATA pDataArray[4];
+        for (i=0; i<4; i++){
+            pDataArray[i] = (PTHREADDATA) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(THREADDATA));
+            pDataArray[i]->ch = i;
+            CreateThread(NULL,0,TeleTextConnect,pDataArray[i],0,NULL);
+        }
+    }
+    else
+    {
+        // TODO: reimplement capture files
     }
     /*
     rowPtr = 0x00;
@@ -191,7 +206,6 @@ void TeleTextClose(int ch)
 	if (TeletextSocket[ch] != INVALID_SOCKET) {
 		if (DebugEnabled)
         {
-            char info[200];
             sprintf(info, "Teletext: closing socket %d", ch);
             DebugDisplayTrace(DebugType::Teletext, true, info);
         }
@@ -255,8 +269,7 @@ int data = 0x00;
     case 0x02:
 
         if (colPtr == 0x00)
-            TeleTextLog("TeleTextRead Reading Row %d, PC = 0x%04x\n", 
-                rowPtr, ProgramCounter);
+            TeleTextLog("TeleTextRead Reading Row %d, PC = 0x%04x\n", rowPtr, ProgramCounter);
 
         if (colPtr >= 43)
         {
@@ -264,8 +277,7 @@ int data = 0x00;
             colPtr = 0;
         }
 
-//        TeleTextLog("TeleTextRead Returning Row %d, Col %d, Data %d, PC = 0x%04x\n", 
-//            rowPtr, colPtr, row[rowPtr][colPtr], ProgramCounter);
+//        TeleTextLog("TeleTextRead Returning Row %d, Col %d, Data %d, PC = 0x%04x\n", rowPtr, colPtr, row[rowPtr][colPtr], ProgramCounter);
         
         data = row[rowPtr][colPtr++];
 
@@ -286,38 +298,45 @@ void TeleTextPoll(void)
     if (!TeleTextAdapterEnabled)
         return;
 
-int i;
-//char buff[16 * 43];
-char socketBuff[4][672];
-int ret;
+    int i;
+    //char buff[16 * 43];
+    char socketBuff[4][672];
+    int ret;
 
     TeleTextStatus |= 0x10;       // teletext data available
 
-    for (i=0;i<4;i++)
+    if (TeletextLocalhost || TeletextCustom)
     {
-        if (TeletextSocket[i] != INVALID_SOCKET)
+        for (i=0;i<4;i++)
         {
-            ret = recv(TeletextSocket[i], socketBuff[i], 672, 0);
-            // todo: something sensible with ret
+            if (TeletextSocket[i] != INVALID_SOCKET)
+            {
+                ret = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+                // todo: something sensible with ret
+            }
+        }
+        
+        
+        if (TeleTextInts == true)
+        {
+            intStatus|=1<<teletext;
+            for (i = 0; i < 16; ++i)
+            {
+                if (socketBuff[txtChnl][i*42] != 0)
+                {
+                    row[i][0] = 0x67;
+                    memcpy(&(row[i][1]), socketBuff[txtChnl] + i * 42, 42);
+                }
+                else
+                {
+                    row[i][0] = 0x00;
+                }
+            }
         }
     }
-    
-    
-    if (TeleTextInts == true)
+    else
     {
-        intStatus|=1<<teletext;
-        for (i = 0; i < 16; ++i)
-        {
-            if (socketBuff[txtChnl][i*42] != 0)
-            {
-                row[i][0] = 0x67;
-                memcpy(&(row[i][1]), socketBuff[txtChnl] + i * 42, 42);
-            }
-            else
-            {
-                row[i][0] = 0x00;
-            }
-        }
+        // TODO: reimplement capture files
     }
     
     /*
