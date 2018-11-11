@@ -100,14 +100,14 @@ DWORD WINAPI TeleTextConnect(void* data)
         if (DebugEnabled)
         {
             sprintf(info, "Teletext: Unable to create socket %d", ch);
-            DebugDisplayTrace(DEBUG_REMSER, true, info);
+            DebugDisplayTrace(DebugType::Teletext, true, info);
         }
         return 1;
     }
     if (DebugEnabled)
     {
         sprintf(info, "Teletext: socket %d created", ch);
-        DebugDisplayTrace(DEBUG_REMSER, true, info);
+        DebugDisplayTrace(DebugType::Teletext, true, info);
     }
     
     teletext_serv_addr.sin_family = AF_INET; // address family Internet
@@ -118,7 +118,7 @@ DWORD WINAPI TeleTextConnect(void* data)
     {
         if (DebugEnabled) {
             sprintf(info, "Teletext: Socket %d unable to connect to server %s %d",ch,TeletextIP[ch], WSAGetLastError());
-            DebugDisplayTrace(DEBUG_REMSER, true, info);
+            DebugDisplayTrace(DebugType::Teletext, true, info);
         }
         closesocket(TeletextSocket[ch]);
         TeletextSocket[ch] = INVALID_SOCKET;
@@ -128,7 +128,7 @@ DWORD WINAPI TeleTextConnect(void* data)
     if (DebugEnabled)
     {
         sprintf(info, "Teletext: socket %d connected to server",ch);
-        DebugDisplayTrace(DEBUG_REMSER, true, info);
+        DebugDisplayTrace(DebugType::Teletext, true, info);
     }
     
     iMode = 1;
@@ -149,7 +149,7 @@ void TeleTextInit(void)
     if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
         WriteLog("Teletext: WSA initialisation failed");
         if (DebugEnabled) 
-            DebugDisplayTrace(DEBUG_REMSER, true, "Teletext: WSA initialisation failed");
+            DebugDisplayTrace(DebugType::Teletext, true, "Teletext: WSA initialisation failed");
         
         return;
     }
@@ -193,7 +193,7 @@ void TeleTextClose(int ch)
         {
             char info[200];
             sprintf(info, "Teletext: closing socket %d", ch);
-            DebugDisplayTrace(DEBUG_REMSER, true, info);
+            DebugDisplayTrace(DebugType::Teletext, true, info);
         }
 		closesocket(TeletextSocket[ch]);
 		TeletextSocket[ch] = INVALID_SOCKET;

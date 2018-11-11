@@ -700,6 +700,9 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 	case DebugType::RemoteServer:
 		source = "Remote server";
 		break;
+	case DebugType::Teletext:
+		source = "Teletext";
+		break;
 	}
 
 	if (DebugSource == DebugType::Breakpoint)
@@ -780,6 +783,12 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGECONET))
 				DebugDisplayInfo(info);
 			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGECONETBRK))
+				DebugBreakExecution(type);
+			break;
+		case DebugType::Teletext:
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTELETEXT))
+				DebugDisplayInfo(info);
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTELETEXTBRK))
 				DebugBreakExecution(type);
 			break;
 		}
