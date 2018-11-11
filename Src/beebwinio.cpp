@@ -1032,9 +1032,9 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 {
 	bool success = true;
 	char buf[256];
-	FILE *infile;
 
-	infile=fopen(filename,"r");
+	FILE *infile = fopen(filename,"r");
+
 	if (infile == NULL)
 	{
 		char errstr[500];
@@ -1056,8 +1056,7 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 		{
 			fgets(buf, 255, infile);
 
-			int i;
-			for (i = 0; i < 256; ++i)
+			for (int i = 0; i < 256; ++i)
 			{
 				if (fgets(buf, 255, infile) == NULL)
 				{
@@ -1082,6 +1081,7 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 				(*keymap)[i][1].shift = shift1 != 0;
 			}
 		}
+
 		fclose(infile);
 	}
 
@@ -1092,10 +1092,10 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 {
 	bool success = true;
-	FILE *outfile;
 
 	/* First check if file already exists */
-	outfile=fopen(filename,"r");
+	FILE *outfile = fopen(filename,"r");
+
 	if (outfile != NULL)
 	{
 		fclose(outfile);
@@ -1117,8 +1117,7 @@ bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 	{
 		fprintf(outfile, KEYMAP_TOKEN "\n\n");
 
-		int i;
-		for (i = 0; i < 256; ++i)
+		for (int i = 0; i < 256; ++i)
 		{
 			fprintf(outfile, "%d %d %d %d %d %d\n",
 					(*keymap)[i][0].row,
@@ -1128,6 +1127,7 @@ bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 					(*keymap)[i][1].col,
 					(*keymap)[i][1].shift);
 		}
+
 		fclose(outfile);
 	}
 

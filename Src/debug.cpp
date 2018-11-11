@@ -1445,8 +1445,14 @@ bool DebugCmdFile(char* args)
 	int count = MAX_BUFFER;
 	char filename[MAX_PATH];
 	memset(filename, 0, MAX_PATH);
-	if(sscanf(args,"%c %x %u %259c", &mode, &addr, &count, filename) == 4 ||
-		sscanf(args,"%c %x %259c", &mode, &addr, filename) == 3)
+
+	int result = sscanf(args,"%c %x %u %259c", &mode, &addr, &count, filename);
+
+	if (result < 3) {
+		sscanf(args,"%c %x %259c", &mode, &addr, filename);
+	}
+
+	if (strlen(filename) > 0)
 	{
 		addr &= 0xFFFF;
 		if(tolower(mode) == 'r')
@@ -1550,8 +1556,13 @@ bool DebugCmdSave(char* args)
 	int len = 0;
 	memset(filename, 0, MAX_PATH);
 
-	if (sscanf(args, "%u %259c", &count, filename) == 2 ||
-		sscanf(args, "%259c", filename) == 1)
+	int result = sscanf(args, "%u %259c", &count, filename);
+
+	if (result < 1) {
+		sscanf(args, "%259c", filename);
+	}
+
+	if (strlen(filename) > 0)
 	{
 		if (count <= 0 || count > LinesDisplayed)
 			count = LinesDisplayed;
@@ -1913,8 +1924,13 @@ bool DebugCmdWatch(char *args)
 			args++;
 		}
 
-		if (sscanf(args, "%x %c %50c", &w.start, &w.type, w.name) >= 2 ||
-			sscanf(args, "%x %50c", &w.start, w.name) >= 1)
+		int result = sscanf(args, "%x %c %50c", &w.start, &w.type, w.name);
+
+		if (result < 2) {
+			result = sscanf(args, "%x %50c", &w.start, w.name);
+		}
+
+		if (result != EOF)
 		{
 			// Check type is valid
 			w.type = tolower(w.type);
