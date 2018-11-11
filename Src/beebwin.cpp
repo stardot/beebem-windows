@@ -3667,11 +3667,6 @@ void BeebWin::HandleCommand(int MenuId)
 			TeletextFiles = false;
 			TeletextLocalhost = true;
 			TeletextCustom = false;
-			for (int ch=0; ch<4; ch++)
-			{
-				strcpy(TeletextIP[ch],"127.0.0.1");
-				TeletextPort[ch] = (u_short)(19761 + ch);
-			}
 			TeleTextInit();
 		}
 		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);

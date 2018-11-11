@@ -415,7 +415,7 @@ void BeebWin::LoadPreferences()
 		TeletextLocalhost = false;
 	if (!m_Preferences.GetBoolValue("TeletextCustom", TeletextCustom))
 		TeletextCustom = false;
-	if (!(TeletextLocalhost && TeletextCustom))
+	if (!(TeletextLocalhost || TeletextCustom))
 		TeletextFiles = true; // default to Files
 	
 	char key[20];

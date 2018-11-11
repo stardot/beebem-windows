@@ -59,10 +59,8 @@ int txtChnl = -1;
 
 unsigned char row[16][43];
 
-char info[200];
-
-char TeletextIP[4][20];
-u_short TeletextPort[4];
+char TeletextIP[4][20] = { "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1" };
+u_short TeletextPort[4] = { 19761, 19762, 19763, 19764 };
 char TeletextCustomIP[4][20];
 u_short TeletextCustomPort[4];
 
@@ -94,6 +92,7 @@ typedef struct threadData {
 
 DWORD WINAPI TeleTextConnect(void* data)
 {
+    char info[200];
     struct sockaddr_in teletext_serv_addr;
     PTHREADDATA pDataArray;
     pDataArray = (PTHREADDATA)data;
@@ -122,7 +121,8 @@ DWORD WINAPI TeleTextConnect(void* data)
     if (connect(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)) == SOCKET_ERROR)
     {
         if (DebugEnabled) {
-            sprintf(info, "Teletext: Socket %d unable to connect to server %s %d",ch,TeletextIP[ch], WSAGetLastError());
+            
+            sprintf(info, "Teletext: Socket %d unable to connect to server %s:%d %d",ch,TeletextIP[ch], TeletextPort[ch], WSAGetLastError());
             DebugDisplayTrace(DebugType::Teletext, true, info);
         }
         closesocket(TeletextSocket[ch]);
@@ -153,6 +153,11 @@ void TeleTextInit(void)
     WSACleanup();
     for (i=0; i<4; i++){
         TeleTextClose(i);
+        if (TeletextCustom)
+        {
+            strcpy(TeletextIP[i], TeletextCustomIP[i]);
+            TeletextPort[i] = TeletextCustomPort[i];
+        }
     }
     if (TeletextLocalhost || TeletextCustom)
     {
@@ -206,6 +211,7 @@ void TeleTextClose(int ch)
 	if (TeletextSocket[ch] != INVALID_SOCKET) {
 		if (DebugEnabled)
         {
+            char info[200];
             sprintf(info, "Teletext: closing socket %d", ch);
             DebugDisplayTrace(DebugType::Teletext, true, info);
         }
