@@ -33,6 +33,7 @@ Offset  Description                 Access
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <process.h>
 #include <windows.h>
 #include "teletext.h"
 #include "debug.h"
@@ -66,6 +67,9 @@ u_short TeletextCustomPort[4];
 
 extern WSADATA WsaDat;
 static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
+static unsigned int TeletextConnectThreadID[4];
+const int TeletextConnectThreadCh[4] = {0,1,2,3}; // dumb way to get fixed channel numbers into TeletextConnect threads
+static unsigned int __stdcall TeletextConnect(void *chparam);
 
 void TeleTextLog(char *text, ...)
 {
@@ -86,17 +90,13 @@ va_list argptr;
 	va_end(argptr);
 }
 
-typedef struct threadData {
-    int ch;
-} THREADDATA, *PTHREADDATA;
-
-DWORD WINAPI TeleTextConnect(void* data)
+static unsigned int __stdcall TeletextConnect(void *chparam)
 {
+    /* initiate connection on socket */
     char info[200];
+    int ch = *((int *)chparam);
+    
     struct sockaddr_in teletext_serv_addr;
-    PTHREADDATA pDataArray;
-    pDataArray = (PTHREADDATA)data;
-    int ch = pDataArray->ch;
     u_long iMode;
     TeletextSocket[ch] = socket(AF_INET, SOCK_STREAM, 0);
     if (TeletextSocket[ch] == INVALID_SOCKET)
@@ -106,6 +106,7 @@ DWORD WINAPI TeleTextConnect(void* data)
             sprintf(info, "Teletext: Unable to create socket %d", ch);
             DebugDisplayTrace(DebugType::Teletext, true, info);
         }
+        _endthreadex(0);
         return 1;
     }
     if (DebugEnabled)
@@ -127,6 +128,7 @@ DWORD WINAPI TeleTextConnect(void* data)
         }
         closesocket(TeletextSocket[ch]);
         TeletextSocket[ch] = INVALID_SOCKET;
+        _endthreadex(0);
         return 1;
     }
 
@@ -139,6 +141,7 @@ DWORD WINAPI TeleTextConnect(void* data)
     iMode = 1;
     ioctlsocket(TeletextSocket[ch], FIONBIO, &iMode); // non blocking
     
+    _endthreadex(0);
     return 0;
 }
 
@@ -151,8 +154,8 @@ void TeleTextInit(void)
         return;
     
     WSACleanup();
+    TeleTextClose();
     for (i=0; i<4; i++){
-        TeleTextClose(i);
         if (TeletextCustom)
         {
             strcpy(TeletextIP[i], TeletextCustomIP[i]);
@@ -169,11 +172,9 @@ void TeleTextInit(void)
             return;
         }
         
-        PTHREADDATA pDataArray[4];
         for (i=0; i<4; i++){
-            pDataArray[i] = (PTHREADDATA) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(THREADDATA));
-            pDataArray[i]->ch = i;
-            CreateThread(NULL,0,TeleTextConnect,pDataArray[i],0,NULL);
+            /* start thread to handle connecting each socket to avoid holding up main thread */
+            _beginthreadex(nullptr, 0, TeletextConnect, (void *)(&TeletextConnectThreadCh[i]), 0, &TeletextConnectThreadID[i]);
         }
     }
     else
@@ -206,18 +207,23 @@ void TeleTextInit(void)
     */
 }
 
-void TeleTextClose(int ch)
+void TeleTextClose()
 {
-	if (TeletextSocket[ch] != INVALID_SOCKET) {
-		if (DebugEnabled)
-        {
-            char info[200];
-            sprintf(info, "Teletext: closing socket %d", ch);
-            DebugDisplayTrace(DebugType::Teletext, true, info);
+    /* close all connected teletext sockets */
+    int ch;
+    for (ch=0; ch<4; ch++)
+    {
+        if (TeletextSocket[ch] != INVALID_SOCKET) {
+            if (DebugEnabled)
+            {
+                char info[200];
+                sprintf(info, "Teletext: closing socket %d", ch);
+                DebugDisplayTrace(DebugType::Teletext, true, info);
+            }
+            closesocket(TeletextSocket[ch]);
+            TeletextSocket[ch] = INVALID_SOCKET;
         }
-		closesocket(TeletextSocket[ch]);
-		TeletextSocket[ch] = INVALID_SOCKET;
-	}
+    }
 }
 
 void TeleTextWrite(int Address, int Value) 
