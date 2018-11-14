@@ -698,7 +698,7 @@ static void VideoStartOfFrame(void) {
     IncTrigger(((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
   }
 
-  TeleTextPoll();
+  TeletextPoll();
 }
 
 /*--------------------------------------------------------------------------*/
