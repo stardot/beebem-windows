@@ -409,8 +409,8 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("Teletext Half Mode", THalfMode))
 		THalfMode = false;
 
-	if (!m_Preferences.GetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled))
-		TeleTextAdapterEnabled = false;
+	if (!m_Preferences.GetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled))
+		TeletextAdapterEnabled = false;
 	if (!m_Preferences.GetBoolValue("TeletextLocalhost", TeletextLocalhost))
 		TeletextLocalhost = false;
 	if (!m_Preferences.GetBoolValue("TeletextCustom", TeletextCustom))
@@ -658,7 +658,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue("OpCodes", &OpCodes, 1);
 		m_Preferences.SetBoolValue("Basic Hardware", BHardware);
 		m_Preferences.SetBoolValue("Teletext Half Mode", THalfMode);
-		m_Preferences.SetBoolValue("TeleTextAdapterEnabled", TeleTextAdapterEnabled);
+		m_Preferences.SetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled);
 		m_Preferences.SetBoolValue("TeletextLocalhost", TeletextLocalhost);
 		m_Preferences.SetBoolValue("TeletextCustom", TeletextCustom);
 		char key[20];

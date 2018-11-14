@@ -531,7 +531,7 @@ int BeebReadMem(int Address) {
 	}
 
 	if ((Address & ~0x3)==0xfc10) {
-		return(TeleTextRead(Address & 0x3));
+		return(TeletextRead(Address & 0x3));
 	}
 
 	if ((Address & ~0x3)==0xfc40) {
@@ -992,7 +992,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 
 	if ((Address & ~0x3)==0xfc10) {
-		TeleTextWrite((Address & 0x3),Value);
+		TeletextWrite((Address & 0x3),Value);
 		return;
 	}
     

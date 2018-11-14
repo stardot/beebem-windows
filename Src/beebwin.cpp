@@ -506,7 +506,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms
 	if (SCSIDriveEnabled) SCSIReset();
 	if (SCSIDriveEnabled) SASIReset();
 	if (IDEDriveEnabled)  IDEReset();
-	TeleTextInit();
+	TeletextInit();
 	if (MachineType == Model::Master128) {
 		InvertTR00 = false;
 	}
@@ -925,7 +925,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions);
 	UpdateOptiMenu();
 	UpdateEconetMenu();
-	CheckMenuItem(ID_TELETEXT, TeleTextAdapterEnabled);
+	CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
 	CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
 	CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
 	CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
@@ -1433,7 +1433,7 @@ LRESULT CALLBACK WndProc(
 							if (SCSIDriveEnabled) SCSIReset();
 							if (SCSIDriveEnabled) SASIReset();
 							if (IDEDriveEnabled)  IDEReset();
-							TeleTextInit();
+							TeletextInit();
 							//SoundChipReset();
 							Music5000Reset();
 							if (Music5000Enabled)
@@ -3643,9 +3643,9 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
 
 	case ID_TELETEXT:
-		TeleTextAdapterEnabled = !TeleTextAdapterEnabled;
-		TeleTextInit();
-		CheckMenuItem(ID_TELETEXT, TeleTextAdapterEnabled);
+		TeletextAdapterEnabled = !TeletextAdapterEnabled;
+		TeletextInit();
+		CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
 		break;
 		
 	case ID_TELETEXTFILES:
@@ -3654,7 +3654,7 @@ void BeebWin::HandleCommand(int MenuId)
 			TeletextFiles = true;
 			TeletextLocalhost = false;
 			TeletextCustom = false;
-			TeleTextInit();
+			TeletextInit();
 		}
 		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
 		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
@@ -3667,7 +3667,7 @@ void BeebWin::HandleCommand(int MenuId)
 			TeletextFiles = false;
 			TeletextLocalhost = true;
 			TeletextCustom = false;
-			TeleTextInit();
+			TeletextInit();
 		}
 		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
 		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
@@ -3685,7 +3685,7 @@ void BeebWin::HandleCommand(int MenuId)
 				strcpy(TeletextIP[ch],TeletextCustomIP[ch]);
 				TeletextPort[ch] = TeletextCustomPort[ch];
 			}
-			TeleTextInit();
+			TeletextInit();
 		}
 		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
 		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
