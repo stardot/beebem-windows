@@ -71,8 +71,8 @@ int rowPtrOffset = 0x00;
 int rowPtr = 0x00;
 int colPtr = 0x00;
 
-FILE *txtFile = NULL;
-long txtFrames = 0;
+FILE *TeletextFile[4] = { NULL, NULL, NULL, NULL };
+long txtFrames[4] = { 0, 0, 0, 0 };
 long txtCurFrame = 0;
 
 unsigned char row[16][64] = {0};
@@ -84,8 +84,8 @@ u_short TeletextCustomPort[4];
 
 extern WSADATA WsaDat;
 static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
-static unsigned int TeletextConnectThreadID[4];
 const int TeletextConnectThreadCh[4] = {0,1,2,3}; // dumb way to get fixed channel numbers into TeletextConnect threads
+static HANDLE hTeletextConnectThread[4] = { nullptr, nullptr, nullptr, nullptr };
 static unsigned int __stdcall TeletextConnect(void *chparam);
 
 void TeletextLog(char *text, ...)
@@ -164,10 +164,13 @@ static unsigned int __stdcall TeletextConnect(void *chparam)
 void TeletextInit(void)
 {
     int i;
+    char buff[256];
     TeletextStatus = 0x0f; /* low nibble comes from LK4-7 and mystery links which are left floating */
     TeletextInts = false;
     TeletextEnable = false;
     txtChnl = 0;
+    rowPtr = 0x00;
+    colPtr = 0x00;
     
     if (!TeletextAdapterEnabled)
         return;
@@ -192,42 +195,31 @@ void TeletextInit(void)
         
         for (i=0; i<4; i++){
             /* start thread to handle connecting each socket to avoid holding up main thread */
-            _beginthreadex(nullptr, 0, TeletextConnect, (void *)(&TeletextConnectThreadCh[i]), 0, &TeletextConnectThreadID[i]);
+            hTeletextConnectThread[i] = (HANDLE)_beginthreadex(nullptr, 0, TeletextConnect, (void *)(&TeletextConnectThreadCh[i]), 0, nullptr);
         }
     }
     else
     {
-        // TODO: reimplement capture files
+        for (i=0; i<4; i++){
+            sprintf(buff, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), i);
+            
+            TeletextFile[i] = fopen(buff, "rb");
+            
+            if (TeletextFile[i])
+            {
+                fseek(TeletextFile[i], 0L, SEEK_END);
+                txtFrames[i] = ftell(TeletextFile[i]) / 860L;
+                fseek(TeletextFile[i], 0L, SEEK_SET);
+            }
+        }
+        
+        txtCurFrame = 0;
     }
-    /*
-    rowPtr = 0x00;
-    colPtr = 0x00;
-    
-    if (txtFile) fclose(txtFile);
-
-    if (!TeletextAdapterEnabled)
-        return;
-
-    sprintf(buff, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), txtChnl);
-    
-    txtFile = fopen(buff, "rb");
-
-    if (txtFile)
-    {
-        fseek(txtFile, 0L, SEEK_END);
-        txtFrames = ftell(txtFile) / 860L;
-        fseek(txtFile, 0L, SEEK_SET);
-    }
-
-    txtCurFrame = 0;
-
-    TeletextLog("TeletextInit Frames = %ld\n", txtFrames);
-    */
 }
 
 void TeletextClose()
 {
-    /* close all connected teletext sockets */
+    /* close any connected teletext sockets or files */
     int ch;
     for (ch=0; ch<4; ch++)
     {
@@ -240,6 +232,10 @@ void TeletextClose()
             }
             closesocket(TeletextSocket[ch]);
             TeletextSocket[ch] = INVALID_SOCKET;
+        }
+        if (TeletextFile[ch])
+        {
+            fclose(TeletextFile[ch]);
         }
     }
     WSACleanup();
@@ -326,12 +322,11 @@ void TeletextPoll(void)
         return;
 
     int i;
-    //char buff[16 * 43];
-    char socketBuff[4][672] = {0};
-    int ret;
     
     if (TeletextLocalhost || TeletextCustom)
     {
+        int ret;
+        char socketBuff[4][672] = {0};
         for (i=0;i<4;i++)
         {
             if (TeletextSocket[i] != INVALID_SOCKET)
@@ -357,30 +352,21 @@ void TeletextPoll(void)
     }
     else
     {
-        // TODO: reimplement capture files
-    }
-    
-    if (TeletextInts == true)
-        intStatus|=1<<teletext;
-    
-    /*
-    if (txtFile)
-    {
-
-        if (TeletextInts == true)
+        char buff[16 * 43] = {0};
+        
+        if (TeletextFile[txtChnl])
         {
-
-
-            intStatus|=1<<teletext;
-
-//            TeletextStatus = 0xef;
-            rowPtr = 0x00;
-            colPtr = 0x00;
-
-            TeletextLog("TeletextPoll Reading Frame %ld, PC = 0x%04x\n", txtCurFrame, ProgramCounter);
-
-            fseek(txtFile, txtCurFrame * 860L + 3L * 43L, SEEK_SET);
-            fread(buff, 16 * 43, 1, txtFile);
+            if (txtCurFrame >= txtFrames[txtChnl]) txtCurFrame = 0;
+            
+            fseek(TeletextFile[txtChnl], txtCurFrame * 860L + 3L * 43L, SEEK_SET);
+            fread(buff, 16 * 43, 1, TeletextFile[txtChnl]);
+            
+            TeletextStatus &= 0x0F;
+            TeletextStatus |= 0xD0;       // data ready so latch INT, DOR, and FSYN
+        }
+        
+        if (TeletextEnable == true)
+        {
             for (i = 0; i < 16; ++i)
             {
                 if (buff[i*43] != 0)
@@ -393,11 +379,14 @@ void TeletextPoll(void)
                     row[i][0] = 0x00;
                 }
             }
-        
-            txtCurFrame++;
-            if (txtCurFrame >= txtFrames) txtCurFrame = 0;
         }
+        
+        txtCurFrame++;
     }
-    */
-
+    
+    rowPtr = 0x00;
+    colPtr = 0x00;
+    
+    if (TeletextInts == true)
+        intStatus|=1<<teletext;
 }
