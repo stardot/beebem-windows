@@ -187,6 +187,11 @@ BeebWin::BeebWin()
 	m_KbdCmdDelay = 40;
 	m_KbdCmdLastCycles = 0;
 	m_NoAutoBoot = false;
+	m_AutoBootDelay = 0;
+	m_EmuPaused = false;
+	m_StartPaused = false;
+	m_KeyboardTimerElapsed = false;
+	m_BootDiscTimerElapsed = false;
 	m_clipboardlen = 0;
 	m_clipboardptr = 0;
 	m_printerbufferlen = 0;
@@ -312,9 +317,14 @@ bool BeebWin::Initialise()
 
 	HandleEnvironmentVariables();
 
-	// Schedule first key press if keyboard command supplied
-	if (m_KbdCmd[0] != 0)
-		SetTimer(m_hWnd, 1, 1000, NULL);
+	if (!m_StartPaused)
+	{
+		// Schedule first key press if keyboard command supplied
+		if (HasKbdCmd())
+		{
+			SetKeyboardTimer();
+		}
+	}
 
 	return true;
 }
@@ -887,6 +897,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_5FPS, false);
 	CheckMenuItem(IDM_1FPS, false);
 	CheckMenuItem(m_MenuIdTiming, true);
+	// Check menu based on m_EmuPaused to take into account -StartPaused arg
+	CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
 
 	// Sound
 	UpdateSoundStreamerMenu();
@@ -1249,6 +1261,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				mainWin->HandleCommand(IDM_EXIT);
 				break;
 			}
+			// Alt+F5 pauses the emulation
+			else if (uParam == VK_F5 && (lParam & 0x20000000))
+			{
+				mainWin->HandleCommand(IDM_EMUPAUSED);
+				break;
+			}
 
 			if (uParam != VK_F10 && uParam != VK_CONTROL)
 				break;
@@ -1553,8 +1571,14 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_TIMER:
-			if (uParam == 1) {
+			if (uParam == 1)
+			{
 				mainWin->HandleTimer();
+			}
+			else if (uParam == 2) // Handle timer for automatic disc boot delay
+			{
+				mainWin->KillBootDiscTimer();
+				mainWin->DoShiftBreak();
 			}
 			break;
 
@@ -3080,6 +3104,34 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
+	case IDM_EMUPAUSED:
+		m_EmuPaused = !m_EmuPaused;
+		CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
+		if (m_ShowSpeedAndFPS && m_EmuPaused)
+		{
+			sprintf(m_szTitle, "%s  Paused", WindowTitle);
+			SetWindowText(m_hWnd, m_szTitle);
+		}
+
+		if (m_EmuPaused)
+		{
+			KillTimer(m_hWnd, 1);
+			KillTimer(m_hWnd, 2);
+		}
+		else
+		{
+			if (HasKbdCmd() && !m_KeyboardTimerElapsed)
+			{
+				SetKeyboardTimer();
+			}
+
+			if (m_AutoBootDisc && !m_BootDiscTimerElapsed)
+			{
+				SetBootDiscTimer();
+			}
+		}
+		break;
+
 	case IDM_JOYSTICK:
 	case IDM_AMOUSESTICK:
 	case IDM_DMOUSESTICK:
@@ -3875,6 +3927,11 @@ bool BeebWin::IsFrozen()
 	return m_frozen;
 }
 
+bool BeebWin::IsPaused()
+{
+	return m_EmuPaused;
+}
+
 /*****************************************************************************/
 // Parse command line parameters
 
@@ -3899,6 +3956,11 @@ void BeebWin::ParseCommandLine()
 		else if (_stricmp(__argv[i], "-NoAutoBoot") == 0)
 		{
 			m_NoAutoBoot = true;
+		}
+		else if (_stricmp(__argv[i], "-StartPaused") == 0)
+		{
+			m_StartPaused = true;
+			m_EmuPaused = true;
 		}
 		else if (_stricmp(__argv[i], "-FullScreen") == 0)
 		{
@@ -3962,6 +4024,14 @@ void BeebWin::ParseCommandLine()
 			else if (_stricmp(__argv[i], "-DebugScript") == 0)
 			{
 				strncpy(m_DebugScript, __argv[++i], sizeof(m_DebugScript));
+			}
+			else if (_stricmp(__argv[i], "-AutoBootDelay") == 0)
+			{
+				a = atoi(__argv[++i]);
+				if (a < 1)
+					invalid = true;
+				else
+					m_AutoBootDelay = a;
 			}
 			else if (__argv[i][0] == '-')
 			{
@@ -4190,6 +4260,8 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 	bool uef = false;
 	bool csw = false;
 	bool img = false;
+
+	m_AutoBootDisc = false;
 	
 	if (CmdLineFile[0] != 0)
 	{
@@ -4323,12 +4395,39 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 
 	if (cont && !m_NoAutoBoot && drive == 0)
 	{
-		// Do a shift + break
-		ResetBeebSystem(MachineType, TubeEnabled, false);
-		BeebKeyDown(0, 0); // Shift key
-		m_ShiftBooted = true;
+		m_AutoBootDisc = true;
 	}
 }
+
+void BeebWin::DoShiftBreak()
+{
+	// Do a shift + break
+	ResetBeebSystem(MachineType, TubeEnabled, false);
+	BeebKeyDown(0, 0); // Shift key
+	m_ShiftBooted = true;
+}
+
+bool BeebWin::HasKbdCmd() const
+{
+	return m_KbdCmd[0] != '\0';
+}
+
+void BeebWin::SetKeyboardTimer()
+{
+	SetTimer(m_hWnd, 1, 1000, NULL);
+}
+
+void BeebWin::SetBootDiscTimer()
+{
+	SetTimer(m_hWnd, 2, m_AutoBootDelay, NULL);
+}
+
+void BeebWin::KillBootDiscTimer()
+{
+	m_BootDiscTimerElapsed = true;
+	KillTimer(m_hWnd, 2);
+}
+
 
 /****************************************************************************/
 void BeebWin::HandleEnvironmentVariables()
@@ -4704,6 +4803,8 @@ void BeebWin::HandleTimer()
 {
 	int row,col;
 	char delay[10];
+
+	m_KeyboardTimerElapsed = true;
 
 	// Do nothing if emulation is not running (e.g. if Window is being moved)
 	if ((TotalCycles - m_KbdCmdLastCycles) / 2000 < m_KbdCmdDelay)

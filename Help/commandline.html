@@ -109,6 +109,16 @@
   </tr>
 
   <tr>
+      <td width="20%">-AutoBootDelay &lt;milliseconds&gt;</td>
+      <td width="80%">Sets a delay between initial boot and Shift+Break to boot disk if disk image file specified</td>
+  </tr>
+
+  <tr>
+      <td width="20%">-StartPaused</td>
+      <td width="80%">Starts BeebEm with the emulation paused.  Other boot actions occur after emulation is unpaused.</td>
+  </tr>
+
+  <tr>
     <td width="20%">-DebugScript &lt;file&gt;</td>
     <td width="80%">Open debugger and execute the commands</td>
   </tr>
@@ -194,6 +204,19 @@ loaded.  The name can include the full path or it can just be the name of a
 file in the 'Tapes' directory.  To run the tape image use the -KbdCmd
 option.</p>
 
+<p>-StartPaused is useful if you are scripting the launch of BeebEm and you
+want to manipulate the window, its position or perform other tasks before
+the emulated machine boots. In this kind of script, launch BeebEm, then
+send an Alt+F5 keypress when you are ready to un-pause. E.g., if using
+AutoHotKey, including the following in your script will toggle the pause
+state:</p>
+
+<blockquote><code>SendInput !{F5}</code></blockquote>
+
+<p>If -StartPaused is used, the timer for -AutoBootDelay will start after
+unpausing, but will reset if paused again. The -KbdCmd option will also
+only apply when the emulator is unpaused for the first time.</p>
+
 <h2>Startup Key Sequence</h2>
 
 <p>The -KbdCmd option allows a string of key presses to be passed to BeebEm.
@@ -256,11 +279,13 @@ The string can include the following key sequences:</p>
       presses.</td>
   </tr>
 </table>
-                 
+
 <p>So, for example, run a tape image using commands such as:</p>
 
-<p>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</p>
-<p>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef</p>
+<blockquote>
+  <p><code>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</code></p>
+  <p><code>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef</code></p>
+</blockquote>
 
       <!-- End of content -->
       </td>

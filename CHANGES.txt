@@ -2,7 +2,7 @@ BeebEm Change History
 =====================
 
 Version 4.15 (Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
-Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree)
+Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley)
 ------------
 * Fixed 320x256 screen capture.
 * Enabled DirectX full screen display at current desktop screen resolution.
@@ -41,6 +41,18 @@ Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree)
     DX9 applications, this works best when "Maintain Desktop Resolultion" is
     selected.
 * Changed the default fullscreen resolution to "Maintain Desktop Resolution".
+* Added -AutoBootDelay CLI argument taking a delay parameter set in
+  milliseconds creates a delay between initial boot and auto-boot of disk image
+  if supplied in arguments. If used with -StartPaused, the timer starts after
+  un-pausing.
+* Added ability to pause the emulation, distinct from freezing when focus lost.
+  - Menu item on Speed menu.
+  - Alt+F5 will pause/unpause.
+  - The -StartPaused CLI argument can be used to prevent the emulation from
+    starting until unpaused. Implemented to better support
+    HyperSpin/RocketLauncher configurations where you want to defer boot until
+    the BeebEm window and bezels are shown, and any Fade screen has been removed.
+  - If in windowed mode and showing fps, pause state is shown in window title.
 
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------
