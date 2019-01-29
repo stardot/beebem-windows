@@ -32,6 +32,13 @@ Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree)
 * General sound emulation improvements.
 * Fixed graphics hold in teletext mode.
 * Release Shift key on disk read after auto-booting.
+* Added new DX video modes for full-screen (1440p and 4K).
+* Fixed issue where BeebEm would always use the primary monitor when going 
+  fullscreen.
+  - Now uses monitor on which the BeebEm window is positioned.  As with all
+    DX9 applications, this works best when "Maintain Desktop Resolultion" is
+    selected.
+* Changed the default fullscreen resolution to "Maintain Desktop Resolution".
 
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------
