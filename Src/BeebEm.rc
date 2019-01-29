@@ -548,6 +548,8 @@ BEGIN
             MENUITEM "1440x900",                    ID_VIEW_DD_1440X900
             MENUITEM "1600x1200",                   ID_VIEW_DD_1600X1200
             MENUITEM "1920x1080 (1080p)",           ID_VIEW_DD_1920X1080
+            MENUITEM "2560x1440",                   ID_VIEW_DD_2560X1440
+            MENUITEM "3840x2160 (4K)",              ID_VIEW_DD_3840X2160
         END
         MENUITEM SEPARATOR
         POPUP "Monitor type"
