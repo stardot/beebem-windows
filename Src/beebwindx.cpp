@@ -321,9 +321,26 @@ HRESULT BeebWin::InitDX9(void)
 		d3dpp.hDeviceWindow = m_hWnd;
 		d3dpp.EnableAutoDepthStencil = FALSE;
 
+		/* Find the monitor index based on the window BeebEm is currently on
+		   as needed to pass to CreateDevice(). */
+		HMONITOR monitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+		MONITORINFO info;
+		info.cbSize = sizeof(MONITORINFO);
+		GetMonitorInfo(monitor, &info);
+
+		int currentMonitorIndex;
+		unsigned int adapterCount = m_pD3D->GetAdapterCount();
+
+		for (unsigned int i = 0; i < adapterCount; i++)
+		{
+			HMONITOR monToCheck = m_pD3D->GetAdapterMonitor(i);
+			if (monitor == monToCheck)
+				currentMonitorIndex = i;
+		}
+
 		// Create the D3DDevice
 		hr = m_pD3D->CreateDevice(
-			D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, m_hWnd,
+			currentMonitorIndex, D3DDEVTYPE_HAL, m_hWnd,
 			D3DCREATE_SOFTWARE_VERTEXPROCESSING,
 			&d3dpp, &m_pd3dDevice );
 	}

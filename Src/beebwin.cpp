@@ -203,6 +203,8 @@ BeebWin::BeebWin()
 	m_startFullScreen = false;
 	m_XDXSize = 640;
 	m_YDXSize = 480;
+	m_XDXPos = 0;
+	m_YDXPos = 0;
 	m_XScrSize = GetSystemMetrics(SM_CXSCREEN);
 	m_YScrSize = GetSystemMetrics(SM_CYSCREEN);
 	m_XWinBorder = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
@@ -838,6 +840,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(ID_VIEW_DD_1440X900, false);
 	CheckMenuItem(ID_VIEW_DD_1600X1200, false);
 	CheckMenuItem(ID_VIEW_DD_1920X1080, false);
+	CheckMenuItem(ID_VIEW_DD_2560X1440, false);
+	CheckMenuItem(ID_VIEW_DD_3840X2160, false);
 	CheckMenuItem(m_DDFullScreenMode, true);
 
 	// View -> Motion blur
@@ -1868,6 +1872,14 @@ void BeebWin::TranslateDDSize(void)
 		m_XDXSize = 1920;
 		m_YDXSize = 1080;
 		break;
+	case ID_VIEW_DD_2560X1440:
+		m_XDXSize = 2560;
+		m_YDXSize = 1440;
+		break;
+	case ID_VIEW_DD_3840X2160:
+		m_XDXSize = 3840;
+		m_YDXSize = 2160;
+		break;
 	case ID_VIEW_DD_SCREENRES:
 		// Pixel size of default monitor
 		m_XDXSize = GetSystemMetrics(SM_CXSCREEN);
@@ -2192,6 +2204,21 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 
 	if (m_isFullScreen)
 	{
+		// Get the monitor that the BeebEm window is on to account for multiple monitors
+		if (m_DDFullScreenMode == ID_VIEW_DD_SCREENRES)
+		{
+			HMONITOR monitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+			MONITORINFO info;
+			info.cbSize = sizeof(MONITORINFO);
+			GetMonitorInfo(monitor, &info);
+
+			// Get current resolution of the monitor
+			m_XDXSize = info.rcMonitor.right - info.rcMonitor.left;
+			m_YDXSize = info.rcMonitor.bottom - info.rcMonitor.top;
+			m_XDXPos = info.rcMonitor.left;
+			m_YDXPos = info.rcMonitor.top;
+		}
+
 		if (!wasFullScreen)
 		{
 			GetWindowRect(m_hWnd, &wndrect);
@@ -2203,7 +2230,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		{
 			m_XWinSize = m_XDXSize;
 			m_YWinSize = m_YDXSize;
-			CalcAspectRatioAdjustment(m_XScrSize, m_YScrSize);
+			CalcAspectRatioAdjustment(m_XDXSize, m_YDXSize);
 
 			style = GetWindowLong(m_hWnd, GWL_STYLE);
 			style &= ~(WIN_STYLE);
@@ -2838,6 +2865,8 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_VIEW_DD_1440X900:
 	case ID_VIEW_DD_1600X1200:
 	case ID_VIEW_DD_1920X1080:
+	case ID_VIEW_DD_2560X1440:
+	case ID_VIEW_DD_3840X2160:
 		// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
 		if ((MenuId != ID_VIEW_DD_SCREENRES) || !m_isFullScreen)
 		{

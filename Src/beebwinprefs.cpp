@@ -130,7 +130,7 @@ void BeebWin::LoadPreferences()
 	if (m_Preferences.GetDWORDValue("DDFullScreenMode", dword))
 		m_DDFullScreenMode = dword;
 	else
-		m_DDFullScreenMode = ID_VIEW_DD_640X480;
+		m_DDFullScreenMode = ID_VIEW_DD_SCREENRES;
 	TranslateDDSize();
 
 	if (m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, dword))
