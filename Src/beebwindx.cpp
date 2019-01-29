@@ -782,7 +782,10 @@ void BeebWin::DisplayClientAreaText(HDC hdc)
 	if (m_ShowSpeedAndFPS && m_isFullScreen)
 	{
 		char fps[50];
-		sprintf(fps, "%2.2f %2d", m_RelativeSpeed, (int)m_FramesPerSecond);
+		if (!m_EmuPaused)
+			sprintf(fps, "%2.2f %2d", m_RelativeSpeed, (int)m_FramesPerSecond);
+		else
+			sprintf(fps, "Paused");
 		SetBkMode(hdc,TRANSPARENT);
 		SetTextColor(hdc,0x808080);
 		TextOut(hdc, TeletextEnabled ? 490 : 580, TextStart, fps, (int)strlen(fps));

@@ -109,6 +109,16 @@
   </tr>
 
   <tr>
+      <td width="20%">-AutoBootDelay &lt;milliseconds&gt;</td>
+      <td width="80%">Sets a delay between initial boot and Shift+Break to boot disk if disk image file specified</td>
+  </tr>
+
+  <tr>
+      <td width="20%">-StartPaused</td>
+      <td width="80%">Starts BeebEm with the emulation paused.  Other boot actions occur after emulation is unpaused.</td>
+  </tr>
+
+  <tr>
     <td width="20%">-DebugScript &lt;file&gt;</td>
     <td width="80%">Open debugger and execute the commands</td>
   </tr>
@@ -193,6 +203,18 @@ can include the full path or it can just be the name of a file in the
 loaded.  The name can include the full path or it can just be the name of a
 file in the 'Tapes' directory.  To run the tape image use the -KbdCmd
 option.</p>
+
+<p>-StartPaused is useful if you are scripting the launch of BeebEm and you
+want to manipulate the window, its position or perform other tasks before
+the emulated machine boots.  In this kind of script, launch BeebEm, then 
+send a message to the BeebEm window with wParam = 40293.  E.g. if using
+AutoHotKey, including the following in your script will toggle the pause
+state:</p>
+<p><blockquote><pre>PostMessage, 0x111, 40293,,,ahk_class BEEBWIN</pre></blockquote></p>
+
+<p>If -StartPaused is used, the timer for -AutoBootDelay will start after
+unpausing, but will continue if paused again.  If the timer expires while
+paused, the boot will occur immediately after unpausing for the second time.</p>
 
 <h2>Startup Key Sequence</h2>
 

@@ -53,6 +53,42 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 	// Create serial threads
 	SerialInit();
 
+	// Loop while 
+	do
+	{
+		if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
+		{
+			if (!GetMessage(&msg,   // message structure
+				NULL,   // handle of window receiving the message
+				0,      // lowest message to examine
+				0))
+				break; // Quit the app on WM_QUIT
+
+			if (hCurrentAccelTable != NULL)
+			{
+				TranslateAccelerator(hCurrentDialog, hCurrentAccelTable, &msg);
+			}
+
+			if (hCurrentDialog == NULL || !IsDialogMessage(hCurrentDialog, &msg)) {
+				TranslateMessage(&msg);// Translates virtual key codes
+				DispatchMessage(&msg); // Dispatches message to window
+			}
+		}
+	} while (mainWin->IsPaused());
+
+	/*  Processing of post-power-on actions moved from being set up in-line with
+	 *  checks to after all initialisation completes to allow for the case where
+	 *  BeebEm starts with the emulation paused.
+	 */
+
+	// Schedule first key press if keyboard command supplied
+	if (mainWin->m_KbdCmd[0] != 0)
+		SetTimer(mainWin->m_hWnd, 1, 1000, NULL);
+
+	// If command line file in state to boot, trigger the timer
+	if (mainWin->m_AutoBootDisc)
+		mainWin->SetBootDiscTimer();
+
 	do
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
@@ -74,7 +110,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 			}
 		}
 
-		if (!mainWin->IsFrozen()) {
+		if (!mainWin->IsFrozen() && !mainWin->IsPaused()) {
 			Exec6502Instruction();
 		}
 	} while(1);

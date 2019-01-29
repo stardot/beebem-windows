@@ -425,6 +425,7 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_1280X720             40288
 #define ID_VIEW_DD_1920X1080            40289
 #define IDM_ARMCOPRO                    40290
+#define IDM_EMUPAUSED                   40293 // Must not be changed to maintain support for external messaging
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -433,7 +434,7 @@ Boston, MA  02110-1301, USA.
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        117
-#define _APS_NEXT_COMMAND_VALUE         40291
+#define _APS_NEXT_COMMAND_VALUE         40294
 #define _APS_NEXT_CONTROL_VALUE         1087
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
