@@ -155,6 +155,8 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		if (bCheckForPrefs)
 		{
 			// Check for file specific preferences files
+			m_ExtraPrefsFile[0] = '\0';
+			m_OverrideKeyMapPath = false;
 			CheckForLocalPrefs(FileName, true);
 		}
 
@@ -540,6 +542,8 @@ void BeebWin::RestoreState()
 	if (fileDialog.Open())
 	{
 		// Check for file specific preferences files
+		m_ExtraPrefsFile[0] = '\0';
+		m_OverrideKeyMapPath = false;
 		CheckForLocalPrefs(FileName, true);
 
 		if (m_AutoSavePrefsFolders)
@@ -1090,15 +1094,19 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 		{
 			fgets(buf, 255, infile);
 
-			for (int i = 0; i < 256; ++i)
+			for (int i = 0; i < BEEB_VKEY_COUNT; ++i)
 			{
 				if (fgets(buf, 255, infile) == NULL)
 				{
-					char errstr[500];
-					sprintf(errstr, "Data missing from key map file:\n  %s\n", filename);
-					MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
-					success = false;
-					break;
+					/* Ignore missing joystrick binding */
+					if (i < 256)
+					{
+						char errstr[500];
+						sprintf(errstr, "Data missing from key map file:\n  %s\n", filename);
+						MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+						success = false;
+						break;
+					}
 				}
 
 				int shift0 = 0, shift1 = 0;
@@ -1151,7 +1159,7 @@ bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 	{
 		fprintf(outfile, KEYMAP_TOKEN "\n\n");
 
-		for (int i = 0; i < 256; ++i)
+		for (int i = 0; i < BEEB_VKEY_COUNT; ++i)
 		{
 			fprintf(outfile, "%d %d %d %d %d %d\n",
 					(*keymap)[i][0].row,

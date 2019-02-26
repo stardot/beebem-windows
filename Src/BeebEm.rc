@@ -718,6 +718,7 @@ BEGIN
         MENUITEM "&Joystick",                   IDM_JOYSTICK
         MENUITEM "&Analogue Mousestick",        IDM_AMOUSESTICK
         MENUITEM "&Digital Mousestick",         IDM_DMOUSESTICK
+		MENUITEM "Joystick To Key Mapping"      IDM_JOYSTICK_TO_KEYS
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR

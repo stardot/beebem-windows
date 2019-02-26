@@ -107,10 +107,12 @@ INT_PTR SelectKeyDialog::DlgProc(
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			hCurrentDialog = nullptr;
+			mainWin->m_JoystickTarget = nullptr;
 		}
 		else
 		{
 			hCurrentDialog = m_hwnd;
+			mainWin->m_JoystickTarget = m_hwnd;
 			hCurrentAccelTable = nullptr;
 		}
 		break;
@@ -196,6 +198,51 @@ static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
 LPCSTR SelectKeyDialog::KeyName(int Key)
 {
 	static CHAR Character[2]; // Used to return single characters.
+
+	if (Key >= 256 && Key < BEEB_VKEY_COUNT)
+	{
+		static CHAR Name[16]; // Buffer for joystick button or axis name
+		Key -= 256;
+		if (Key > BEEB_VKEY_JOY2_AXES - BEEB_VKEY_JOY1_AXES)
+		{
+			strcpy(Name, "Joy2");
+			Key -= BEEB_VKEY_JOY2_AXES - BEEB_VKEY_JOY1_AXES;
+		}
+		else
+		{
+			strcpy(Name, "Joy1");
+		}
+
+		if (Key < BEEB_VKEY_JOY1_BTN1 - BEEB_VKEY_JOY1_AXES)
+		{
+			if (Key == BEEB_JOY_AX_UP)
+			{
+				strcat(Name, "Up");
+			}
+			else if (Key == BEEB_JOY_AX_DOWN)
+			{
+				strcat(Name, "Down");
+			}
+			else if (Key == BEEB_JOY_AX_LEFT)
+			{
+				strcat(Name, "Left");
+			}
+			else if (Key == BEEB_JOY_AX_RIGHT)
+			{
+				strcat(Name, "Right");
+			}
+			else
+			{
+				sprintf(Name + strlen(Name), "Axis%d", (Key / 2) + 1);
+				strcat(Name, (Key & 1) ? "+" : "-");
+			}
+		}
+		else
+		{
+			sprintf(Name + strlen(Name), "Btn%d", Key - (BEEB_VKEY_JOY1_BTN1 - BEEB_VKEY_JOY1_AXES) + 1);
+		}
+		return Name;
+	}
 
 	switch (Key)
 	{

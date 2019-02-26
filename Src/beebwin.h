@@ -51,13 +51,40 @@ Boston, MA  02110-1301, USA.
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
 
+#define BEEB_JOY_MAX_AXES    16
+#define BEEB_JOY_MAX_BTNS    16
+
+#define BEEB_JOY_AX_UP        0
+#define BEEB_JOY_AX_DOWN      1
+#define BEEB_JOY_AX_LEFT      2
+#define BEEB_JOY_AX_RIGHT     3
+#define BEEB_JOY_AX_Z_N       4
+#define BEEB_JOY_AX_Z_P       5
+#define BEEB_JOY_AX_R_N       6
+#define BEEB_JOY_AX_R_P       7
+#define BEEB_JOY_AX_U_N       8
+#define BEEB_JOY_AX_U_P       9
+#define BEEB_JOY_AX_V_N       10
+#define BEEB_JOY_AX_V_P       11
+#define BEEB_JOY_AX_HAT_UP    12
+#define BEEB_JOY_AX_HAT_DOWN  13
+#define BEEB_JOY_AX_HAT_LEFT  14
+#define BEEB_JOY_AX_HAT_RIGHT 15
+#define BEEB_JOY_AXES_COUNT   16
+
+#define BEEB_VKEY_JOY1_AXES  256
+#define BEEB_VKEY_JOY1_BTN1  BEEB_VKEY_JOY1_AXES + BEEB_JOY_MAX_AXES // 256+16 = 272
+#define BEEB_VKEY_JOY2_AXES  BEEB_VKEY_JOY1_BTN1 + BEEB_JOY_MAX_BTNS // 272+16 = 288
+#define BEEB_VKEY_JOY2_BTN1  BEEB_VKEY_JOY2_AXES + BEEB_JOY_MAX_AXES // 288+16 = 304
+#define BEEB_VKEY_COUNT      BEEB_VKEY_JOY2_BTN1 + BEEB_JOY_MAX_BTNS // 304+16 = 320
+
 typedef struct KeyMapping {
 	int row;    // Beeb row
 	int col;    // Beeb col
 	bool shift; // Beeb shift state
 } KeyMapping;
 
-typedef KeyMapping KeyMap[256][2]; // Indices are: [Virt key][shift state]
+typedef KeyMapping KeyMap[BEEB_VKEY_COUNT][2]; // Indices are: [Virt key][shift state]
 
 extern const char *WindowTitle;
 
@@ -201,7 +228,13 @@ public:
 	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
+	void SetJoystickButton(bool button);
 	void ScaleJoystick(unsigned int x, unsigned int y);
+	unsigned int GetJoystickAxes(JOYCAPS& caps, unsigned int deadband, JOYINFOEX& joyInfoEx);
+	void TranslateOrSendKey(int vkey, bool keyUp);
+	void TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx);
+	void TranslateJoystickButtons(int joyId, unsigned int buttons);
+	void TranslateJoystick(int joyId);
 	void SetMousestickButton(bool button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
 	void HandleCommand(int MenuId);
@@ -295,15 +328,26 @@ public:
 	int		m_FPSTarget;
 	bool		m_JoystickCaptured;
 	JOYCAPS		m_JoystickCaps;
+	unsigned int     m_Joystick1Deadband;
+	int     m_Joystick1PrevAxes;
+	int     m_Joystick1PrevBtns;
+	bool        m_Joystick2Captured;
+	JOYCAPS     m_Joystick2Caps;
+	unsigned int     m_Joystick2Deadband;
+	int     m_Joystick2PrevAxes;
+	int     m_Joystick2PrevBtns;
 	int		m_MenuIdSticks;
+	bool        m_JoystickToKeys;
+	HWND	m_JoystickTarget;
 	bool		m_HideCursor;
 	bool		m_FreezeWhenInactive;
 	int		m_MenuIdKeyMapping;
 	bool		m_KeyMapAS;
 	bool		m_KeyMapFunc;
 	char		m_UserKeyMapPath[_MAX_PATH];
+	bool		m_OverrideKeyMapPath;
 	bool		m_ShiftPressed;
-	int		m_vkeyPressed[256][2][2];
+	int		m_vkeyPressed[BEEB_VKEY_COUNT][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
 	char		m_DiscPath[_MAX_PATH];	// JGH
@@ -551,6 +595,7 @@ private:
 	PaletteType m_PaletteType;
 
 	char m_PrefsFile[_MAX_PATH];
+	char m_ExtraPrefsFile[_MAX_PATH];
 	Preferences m_Preferences;
 };
 

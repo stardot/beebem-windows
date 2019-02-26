@@ -137,7 +137,7 @@ static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl)
 
 static void SetBBCKeyForVKEY(int Key, bool Shift)
 {
-	if (Key >= 0 && Key < 256)
+	if (Key >= 0 && Key < BEEB_VKEY_COUNT)
 	{
 		UserKeymap[Key][static_cast<int>(Shift)].row = BBCRow;
 		UserKeymap[Key][static_cast<int>(Shift)].col = BBCCol;
@@ -466,7 +466,7 @@ static std::string GetKeysUsed()
 	// First see if this key is defined.
 	if (BBCRow != 0 || BBCCol != 0)
 	{
-		for (int i = 1; i < 256; i++)
+		for (int i = 1; i < BEEB_VKEY_COUNT; i++)
 		{
 			for (int s = 0; s < 2; ++s)
 			{

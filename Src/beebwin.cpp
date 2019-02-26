@@ -156,6 +156,7 @@ BeebWin::BeebWin()
 	memset(&logicalMapping, 0, sizeof(KeyMap));
 	memset(&UserKeymap, 0, sizeof(KeyMap));
 	memset(m_UserKeyMapPath, 0, sizeof(m_UserKeyMapPath));
+	m_OverrideKeyMapPath = false;
 	m_hBitmap = m_hOldObj = m_hDCBitmap = NULL;
 	m_screen = m_screen_blur = NULL;
 	m_ScreenRefreshCount = 0;
@@ -200,6 +201,12 @@ BeebWin::BeebWin()
 	m_DXResetPending = false;
 
 	m_JoystickCaptured = false;
+	m_Joystick2Captured = false;
+	m_JoystickTarget = NULL;
+	m_Joystick1PrevAxes = 0;
+	m_Joystick1PrevBtns = 0;
+	m_Joystick2PrevAxes = 0;
+	m_Joystick2PrevBtns = 0;
 	m_customip[0] = 0;
 	m_customport = 0;
 	m_isFullScreen = false;
@@ -247,6 +254,7 @@ BeebWin::BeebWin()
 
 	// Set default files, may be overridden by command line parameters.
 	strcpy(m_PrefsFile, "Preferences.cfg");
+	m_ExtraPrefsFile[0] = '\0';
 	strcpy(RomFile, "Roms.cfg");
 }
 
@@ -347,6 +355,17 @@ void BeebWin::ApplyPrefs()
 	strcpy(RomPath, m_UserDataPath);
 	strcpy(DiscPath, m_DiscPath);
 
+	// Initialize all joystick buttons and axes binding to empty
+	for (int i = 256; i < BEEB_VKEY_COUNT; ++i)
+	{
+		logicalMapping[i][0].row = defaultMapping[i][0].row = -9;
+		logicalMapping[i][0].col = defaultMapping[i][0].col = 0;
+		logicalMapping[i][0].shift = defaultMapping[i][0].shift = 0;
+		logicalMapping[i][1].row = defaultMapping[i][1].row = -9;
+		logicalMapping[i][1].col = defaultMapping[i][1].col = 0;
+		logicalMapping[i][1].shift = defaultMapping[i][1].shift = 1;
+	}
+
 	// Load key maps
 	char keymap[_MAX_PATH];
 	strcpy(keymap, "Logical.kmap");
@@ -373,8 +392,7 @@ void BeebWin::ApplyPrefs()
 		PrinterDisable();
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
-	if (m_MenuIdSticks == IDM_JOYSTICK)
-		InitJoystick();
+	InitJoystick();
 
 	LoadFDC(NULL, true);
 	RTCInit();
@@ -973,6 +991,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_DMOUSESTICK, false);
 	if (m_MenuIdSticks != 0)
 		CheckMenuItem(m_MenuIdSticks, true);
+	CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
 	CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
 	CheckMenuItem(IDM_HIDECURSOR, m_HideCursor);
 	CheckMenuItem(IDM_DEFAULTKYBDMAPPING, false);
@@ -1136,7 +1155,7 @@ void BeebWin::InitJoystick(void)
 {
 	MMRESULT mmresult = JOYERR_NOERROR;
 
-	if (!m_JoystickCaptured)
+	if ((m_MenuIdSticks == IDM_JOYSTICK || m_JoystickToKeys) && !m_JoystickCaptured)
 	{
 		/* Get joystick updates 10 times a second */
 		mmresult = joySetCapture(m_hWnd, JOYSTICKID1, 100, FALSE);
@@ -1146,9 +1165,20 @@ void BeebWin::InitJoystick(void)
 			m_JoystickCaptured = true;
 	}
 
+	if (m_JoystickToKeys && !m_Joystick2Captured)
+	{
+		/* Get joystick updates 10 times a second */
+		mmresult = joySetCapture(m_hWnd, JOYSTICKID2, 100, FALSE);
+		if (mmresult == JOYERR_NOERROR)
+			mmresult = joyGetDevCaps(JOYSTICKID2, &m_Joystick2Caps, sizeof(JOYCAPS));
+		if (mmresult == JOYERR_NOERROR)
+			m_Joystick2Captured = true;
+	}
+
 	if (mmresult == JOYERR_NOERROR)
 	{
-		AtoDEnable();
+		if (m_MenuIdSticks == IDM_JOYSTICK)
+			AtoDEnable();
 	}
 	else if (mmresult == JOYERR_UNPLUGGED)
 	{
@@ -1160,6 +1190,13 @@ void BeebWin::InitJoystick(void)
 		MessageBox(m_hWnd, "Failed to initialise the joystick",
 					WindowTitle, MB_OK|MB_ICONERROR);
 	}
+}
+
+/****************************************************************************/
+void BeebWin::SetJoystickButton(bool button)
+{
+	if (m_MenuIdSticks == IDM_JOYSTICK)
+		JoystickButton = button;
 }
 
 /****************************************************************************/
@@ -1176,11 +1213,171 @@ void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 }
 
 /****************************************************************************/
+unsigned int BeebWin::GetJoystickAxes(JOYCAPS& caps, unsigned int deadband, JOYINFOEX& joyInfoEx)
+{
+	unsigned int axes = 0;
+
+	int tx = (int)((double)(joyInfoEx.dwXpos - caps.wXmin) * 65535.0 /
+		(double)(caps.wXmax - caps.wXmin));
+	int ty = (int)((double)(joyInfoEx.dwYpos - caps.wYmin) * 65535.0 /
+		(double)(caps.wYmax - caps.wYmin));
+	int tz = (int)((double)(joyInfoEx.dwZpos - caps.wZmin) * 65535.0 /
+		(double)(caps.wZmax - caps.wZmin));
+	int tr = (int)((double)(joyInfoEx.dwRpos - caps.wRmin) * 65535.0 /
+		(double)(caps.wRmax - caps.wRmin));
+	int tu = (int)((double)(joyInfoEx.dwUpos - caps.wUmin) * 65535.0 /
+		(double)(caps.wUmax - caps.wUmin));
+	int tv = (int)((double)(joyInfoEx.dwVpos - caps.wVmin) * 65535.0 /
+		(double)(caps.wVmax - caps.wVmin));
+
+	if (ty < 32768 - deadband)
+		axes |= (1 << BEEB_JOY_AX_UP);
+	else if (ty > 32768 + deadband)
+		axes |= (1 << BEEB_JOY_AX_DOWN);
+
+	if (tx < 32768 - deadband)
+		axes |= (1 << BEEB_JOY_AX_LEFT);
+	else if (tx > 32768 + deadband)
+		axes |= (1 << BEEB_JOY_AX_RIGHT);
+
+	if (tz < 32768 - deadband)
+		axes |= (1 << BEEB_JOY_AX_Z_N);
+	else if (tz > 32768 + deadband)
+		axes |= (1 << BEEB_JOY_AX_Z_P);
+
+	if (tr < 32768 - deadband)
+		axes |= (1 << BEEB_JOY_AX_R_N);
+	else if (tr > 32768 + deadband)
+		axes |= (1 << BEEB_JOY_AX_R_P);
+
+	if (tu < 32768 - deadband)
+		axes |= (1 << BEEB_JOY_AX_U_N);
+	else if (tu > 32768 + deadband)
+		axes |= (1 << BEEB_JOY_AX_U_P);
+
+	if (tv < 32768 - deadband)
+		axes |= (1 << BEEB_JOY_AX_V_N);
+	else if (tv > 32768 + deadband)
+		axes |= (1 << BEEB_JOY_AX_V_P);
+
+	if (joyInfoEx.dwPOV != JOY_POVCENTERED)
+	{
+		if (joyInfoEx.dwPOV >= 29250 || joyInfoEx.dwPOV < 6750)
+			axes |= (1 << BEEB_JOY_AX_HAT_UP);
+		if (joyInfoEx.dwPOV >= 2250 && joyInfoEx.dwPOV < 15750)
+			axes |= (1 << BEEB_JOY_AX_HAT_RIGHT);
+		if (joyInfoEx.dwPOV >= 11250 && joyInfoEx.dwPOV < 24750)
+			axes |= (1 << BEEB_JOY_AX_HAT_DOWN);
+		if (joyInfoEx.dwPOV >= 20250 && joyInfoEx.dwPOV < 33750)
+			axes |= (1 << BEEB_JOY_AX_HAT_LEFT);
+	}
+
+	return axes;
+}
+
+/****************************************************************************/
+void BeebWin::TranslateOrSendKey(int vkey, bool keyUp)
+{
+	int row, col;
+	if (m_JoystickTarget == NULL)
+	{
+		TranslateKey(vkey, keyUp, row, col);
+	}
+	else if (!keyUp)
+	{
+		/* Keyboard input dialog is visible - translate button down to key up and send to dialog */
+		PostMessage(m_JoystickTarget, WM_KEYUP, vkey, 0);
+	}
+}
+
+/****************************************************************************/
+void BeebWin::TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx)
+{
+	const int axNum = BEEB_JOY_AXES_COUNT;
+
+	JOYCAPS& caps = (joyId == 1) ? m_Joystick2Caps : m_JoystickCaps;
+	unsigned int deadband = (joyId == 1) ? m_Joystick2Deadband : m_Joystick1Deadband;
+	int& prevAxes = (joyId == 1) ? m_Joystick2PrevAxes : m_Joystick1PrevAxes;
+	int vkeys = (joyId == 1) ? BEEB_VKEY_JOY2_AXES : BEEB_VKEY_JOY1_AXES;
+
+	unsigned int axes = mainWin->GetJoystickAxes(caps, deadband, joyInfoEx);
+
+	if (axes != prevAxes)
+	{
+		for (int axId = 0; axId < axNum; ++axId)
+		{
+			if ((axes & ~prevAxes) & (1 << axId))
+			{
+				TranslateOrSendKey(vkeys + axId, false);
+			}
+			else if ((~axes & prevAxes) & (1 << axId))
+			{
+				TranslateOrSendKey(vkeys + axId, true);
+			}
+		}
+		prevAxes = axes;
+	}
+}
+
+/****************************************************************************/
+void BeebWin::TranslateJoystickButtons(int joyId, unsigned int buttons)
+{
+	const int btnNum = 32;
+
+	int& prevBtns = (joyId == 1) ? m_Joystick2PrevBtns : m_Joystick1PrevBtns;
+	int vkeys = (joyId == 1) ? BEEB_VKEY_JOY2_BTN1 : BEEB_VKEY_JOY1_BTN1;
+
+	if (buttons != prevBtns)
+	{
+		for (int btnId = 0; btnId < btnNum; ++btnId)
+		{
+			if ((buttons & ~prevBtns) & (1 << btnId))
+			{
+				TranslateOrSendKey(vkeys + btnId, false);
+			}
+			else if ((~buttons & prevBtns) & (1 << btnId))
+			{
+				TranslateOrSendKey(vkeys + btnId, true);
+			}
+		}
+		prevBtns = buttons;
+	}
+}
+
+/****************************************************************************/
+void BeebWin::TranslateJoystick(int joyId)
+{
+	if (mainWin->m_JoystickToKeys)
+	{
+		JOYINFOEX joyInfoEx;
+		joyInfoEx.dwSize = sizeof(joyInfoEx);
+		joyInfoEx.dwFlags = JOY_RETURNALL | JOY_RETURNPOVCTS;
+		if (!joyGetPosEx(0, &joyInfoEx))
+		{
+			mainWin->TranslateJoystickMove(0, joyInfoEx);
+			mainWin->TranslateJoystickButtons(0, joyInfoEx.dwButtons);
+		}
+	}
+}
+
+/****************************************************************************/
 void BeebWin::ResetJoystick(void)
 {
 	// joySetCapture() fails after a joyReleaseCapture() call (not sure why)
 	// so leave joystick captured.
 	// joyReleaseCapture(JOYSTICKID1);
+
+	// Yep, it still doesn't work
+	//if (m_JoystickCaptured)
+	//{
+	//	if (joyReleaseCapture(JOYSTICKID1) == JOYERR_NOERROR)
+	//		m_JoystickCaptured = false;
+	//}
+	//if (m_Joystick2Captured)
+	//{
+	//	if (joyReleaseCapture(JOYSTICKID2) == JOYERR_NOERROR)
+	//		m_Joystick2Captured = false;
+	//}
 	AtoDDisable();
 }
 
@@ -1243,6 +1440,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 	int wmId, wmEvent;
 	HDC hdc;
 	int row, col;
+	JOYINFOEX joyInfoEx;
 
 	switch (message)
 	{
@@ -1524,12 +1722,28 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 		case MM_JOY1MOVE:
 			mainWin->ScaleJoystick(LOWORD(lParam), HIWORD(lParam));
+			mainWin->TranslateJoystick(0);
 			break;
 
 		case MM_JOY1BUTTONDOWN:
 		case MM_JOY1BUTTONUP:
-			JoystickButton = ((UINT)uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0;
+			mainWin->SetJoystickButton(((UINT)uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0);
+
+			// There is no need to call TranslateJoystickButtons here,
+			// because MM_JOY1MOVE is sent together with MM_JOY1BUTTONUP/DOWN
+			// mainWin->TranslateJoystickButtons(0, (UINT)uParam);
 			break;
+
+		case MM_JOY2MOVE:
+			mainWin->TranslateJoystick(1);
+			break;
+
+		// There is no need to call TranslateJoystickButtons here,
+		// because MM_JOY2MOVE is sent together with MM_JOY2BUTTONUP/DOWN
+		//case MM_JOY2BUTTONDOWN:
+		//case MM_JOY2BUTTONUP:
+		//	mainWin->TranslateJoystickButtons(1, (UINT)uParam);
+		//	break;
 
 		case WM_MOUSEMOVE:
 			{
@@ -1627,7 +1841,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 /****************************************************************************/
 int BeebWin::TranslateKey(int vkey, bool keyUp, int &row, int &col)
 {
-	if (vkey < 0 || vkey > 255)
+	if (vkey < 0 || vkey >= BEEB_VKEY_COUNT)
 		return -9;
 
 	// Key track of shift state
@@ -3158,7 +3372,7 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			CheckMenuItem(m_MenuIdSticks, false);
 
-			if (m_MenuIdSticks == IDM_JOYSTICK)
+			if (m_MenuIdSticks == IDM_JOYSTICK && !m_JoystickToKeys)
 			{
 				ResetJoystick();
 			}
@@ -3192,6 +3406,19 @@ void BeebWin::HandleCommand(int MenuId)
 			else
 				m_MenuIdSticks = 0;
 		}
+		break;
+
+	case IDM_JOYSTICK_TO_KEYS:
+		m_JoystickToKeys = !m_JoystickToKeys;
+		if (m_JoystickToKeys)
+		{
+			InitJoystick();
+		}
+		else if (m_MenuIdSticks != IDM_JOYSTICK)
+		{
+			ResetJoystick();
+		}
+		CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
 		break;
 
 	case IDM_FREEZEINACTIVE:
@@ -4100,33 +4327,76 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 	char file[_MAX_PATH];
 	char drive[_MAX_DRIVE];
 	char dir[_MAX_DIR];
+	char filename[_MAX_FNAME];
+	char ext[_MAX_EXT];
 	FILE *fd;
+	bool prefFound = false;
 
 	if (path[0] == 0)
 		return;
 
-	_splitpath(path, drive, dir, NULL, NULL);
+	_splitpath(path, drive, dir, filename, ext);
 
-	// Look for prefs file
+	if (filename[0])
+	{
+		// Look for games specific prefs file
+		strcat_s(ext, ".cfg");
+		_makepath(file, drive, dir, filename, ext);
+		fd = fopen(file, "r");
+		if (fd != NULL)
+		{
+			fclose(fd);
+			strcpy(m_ExtraPrefsFile, file);
+			prefFound = true;
+		}
+	}
+
+	// Look for directory specific prefs file
 	_makepath(file, drive, dir, "Preferences", "cfg");
 	fd = fopen(file, "r");
 	if (fd != NULL)
 	{
 		fclose(fd);
-		// File exists, use it
 		strcpy(m_PrefsFile, file);
+		prefFound = true;
+	}
+
+	if (prefFound)
+	{
+		// File exists, use it
 		if (bLoadPrefs)
 		{
 			LoadPreferences();
 
 			// Reinit with new prefs
 			SetWindowPos(m_hWnd, HWND_TOP, m_XWinPos, m_YWinPos,
-						 0, 0, SWP_NOSIZE);
+				0, 0, SWP_NOSIZE);
 			HandleCommand(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
-			if (m_MenuIdSticks == IDM_JOYSTICK)
-				InitJoystick();
+			InitJoystick();
+		}
+	}
+
+	// Look for game specific keymap
+	_splitpath(path, drive, dir, filename, ext);
+
+	if (filename[0])
+	{
+		// Look for prefs file with the same name + ".kmap"
+		strcat_s(ext, ".kmap");
+		_makepath(file, drive, dir, filename, ext);
+		fd = fopen(file, "r");
+		if (fd != NULL)
+		{
+			fclose(fd);
+			strcpy(m_UserKeyMapPath, file);
+			m_OverrideKeyMapPath = true;
+
+			if (bLoadPrefs)
+			{
+				ReadKeyMap(m_UserKeyMapPath, &UserKeymap);
+			}
 		}
 	}
 
