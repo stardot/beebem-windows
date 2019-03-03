@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 /****************************************************************************/
 
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem);
+static void DlgItemCheck(HWND hDlg, int nIDDlgItem, bool checked);
 
 SelectKeyDialog* selectKeyDialog;
 
@@ -40,14 +41,15 @@ SelectKeyDialog::SelectKeyDialog(
 	HINSTANCE hInstance,
 	HWND hwndParent,
 	const std::string& Title,
-	const std::string& SelectedKey) :
+	const std::string& SelectedKey,
+	bool doingShifted) :
 	m_hInstance(hInstance),
 	m_hwnd(nullptr),
 	m_hwndParent(hwndParent),
 	m_Title(Title),
 	m_SelectedKey(SelectedKey),
 	m_Key(-1),
-	m_Shift(false)
+	m_Shift(doingShifted)
 {
 }
 
@@ -101,6 +103,11 @@ INT_PTR SelectKeyDialog::DlgProc(
 		SetWindowText(m_hwnd, m_Title.c_str());
 
 		SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS, m_SelectedKey.c_str());
+
+		// If doing shifted key, start with Shift checkbox checked because that's most likely
+		// what the user wants
+		DlgItemCheck(m_hwnd, IDC_SHIFT, m_Shift);
+
 		return TRUE;
 
 	case WM_ACTIVATE:
@@ -188,9 +195,23 @@ int SelectKeyDialog::Key() const
 
 /****************************************************************************/
 
+bool SelectKeyDialog::Shift() const
+{
+	return m_Shift;
+}
+
+/****************************************************************************/
+
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
 {
 	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
+}
+
+/****************************************************************************/
+
+static void DlgItemCheck(HWND hDlg, int nIDDlgItem, bool checked)
+{
+	SendDlgItemMessage(hDlg, nIDDlgItem, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
 }
 
 /****************************************************************************/

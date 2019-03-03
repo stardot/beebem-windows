@@ -283,7 +283,7 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 			// Assign the BBC key to the PC key.
 			SetBBCKeyForVKEY(
 				selectKeyDialog->Key(),
-				doingShifted
+				selectKeyDialog->Shift()
 			);
 		}
 
@@ -300,7 +300,8 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 				hInst,
 				hwndUserKeyboard,
 				szSelectKeyDialogTitle[doingShifted ? 1 : 0],
-				UsedKeys
+				UsedKeys,
+				doingShifted
 			);
 
 			selectKeyDialog->Open();

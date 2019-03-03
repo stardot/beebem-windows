@@ -1154,6 +1154,7 @@ void BeebWin::SetRomMenu(void)
 void BeebWin::InitJoystick(void)
 {
 	MMRESULT mmresult = JOYERR_NOERROR;
+	MMRESULT mmresult2;
 
 	if ((m_MenuIdSticks == IDM_JOYSTICK || m_JoystickToKeys) && !m_JoystickCaptured)
 	{
@@ -1168,10 +1169,10 @@ void BeebWin::InitJoystick(void)
 	if (m_JoystickToKeys && !m_Joystick2Captured)
 	{
 		/* Get joystick updates 10 times a second */
-		mmresult = joySetCapture(m_hWnd, JOYSTICKID2, 100, FALSE);
-		if (mmresult == JOYERR_NOERROR)
-			mmresult = joyGetDevCaps(JOYSTICKID2, &m_Joystick2Caps, sizeof(JOYCAPS));
-		if (mmresult == JOYERR_NOERROR)
+		mmresult2 = joySetCapture(m_hWnd, JOYSTICKID2, 100, FALSE);
+		if (mmresult2 == JOYERR_NOERROR)
+			mmresult2 = joyGetDevCaps(JOYSTICKID2, &m_Joystick2Caps, sizeof(JOYCAPS));
+		if (mmresult2 == JOYERR_NOERROR)
 			m_Joystick2Captured = true;
 	}
 
@@ -1285,8 +1286,8 @@ void BeebWin::TranslateOrSendKey(int vkey, bool keyUp)
 	}
 	else if (!keyUp)
 	{
-		/* Keyboard input dialog is visible - translate button down to key up and send to dialog */
-		PostMessage(m_JoystickTarget, WM_KEYUP, vkey, 0);
+		// Keyboard input dialog is visible - translate button down to key down message and send to dialog
+		PostMessage(m_JoystickTarget, WM_KEYDOWN, vkey, 0);
 	}
 }
 
@@ -1352,10 +1353,10 @@ void BeebWin::TranslateJoystick(int joyId)
 		JOYINFOEX joyInfoEx;
 		joyInfoEx.dwSize = sizeof(joyInfoEx);
 		joyInfoEx.dwFlags = JOY_RETURNALL | JOY_RETURNPOVCTS;
-		if (!joyGetPosEx(0, &joyInfoEx))
+		if (!joyGetPosEx(joyId, &joyInfoEx))
 		{
-			mainWin->TranslateJoystickMove(0, joyInfoEx);
-			mainWin->TranslateJoystickButtons(0, joyInfoEx.dwButtons);
+			mainWin->TranslateJoystickMove(joyId, joyInfoEx);
+			mainWin->TranslateJoystickButtons(joyId, joyInfoEx.dwButtons);
 		}
 	}
 }
@@ -1440,7 +1441,6 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 	int wmId, wmEvent;
 	HDC hdc;
 	int row, col;
-	JOYINFOEX joyInfoEx;
 
 	switch (message)
 	{

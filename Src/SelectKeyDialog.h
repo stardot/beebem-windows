@@ -30,7 +30,8 @@ class SelectKeyDialog
 			HINSTANCE hInstance,
 			HWND hwndParent,
 			const std::string& Title,
-			const std::string& SelectedKey
+			const std::string& SelectedKey,
+			bool doingShifted = false
 		);
 
 		bool Open();
@@ -39,6 +40,7 @@ class SelectKeyDialog
 		bool HandleMessage(const MSG& msg);
 
 		int Key() const;
+		bool Shift() const;
 
 		static LPCSTR KeyName(int Key);
 
