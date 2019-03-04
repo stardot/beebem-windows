@@ -59,13 +59,15 @@ static HWND hwndUserKeyboard;
 static int BBCRow; // Used to store the Row and Col values while we wait
 static int BBCCol; // for a key press from the User.
 static bool doingShifted; // Selecting shifted or unshifted key press
+static bool doingUnassign; // Removing key assignment
 
 // Initialised to defaultMapping.
 KeyMap UserKeymap;
 
-static const char* szSelectKeyDialogTitle[2] = {
+static const char* szSelectKeyDialogTitle[3] = {
 	"Press key for unshifted press...",
-	"Press key for shifted press..."
+	"Press key for shifted press...",
+	"Press key to unassign..."
 };
 
 /****************************************************************************/
@@ -119,15 +121,17 @@ static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl)
 	selectedCtrlID = ctrlID;
 
 	doingShifted = false;
+	doingUnassign = (BBCRow == -9);
 
-	std::string UsedKeys = GetKeysUsed();
+	std::string UsedKeys = doingUnassign ? "" : GetKeysUsed();
 
 	// Now ask the user to input the PC key to assign to the BBC key.
 	selectKeyDialog = new SelectKeyDialog(
 		hInst,
 		hwnd,
-		szSelectKeyDialogTitle[doingShifted ? 1 : 0],
-		UsedKeys
+		szSelectKeyDialogTitle[doingUnassign ? 2 : doingShifted ? 1 : 0],
+		UsedKeys,
+		doingShifted
 	);
 
 	selectKeyDialog->Open();
@@ -240,8 +244,9 @@ static void SetRowCol(UINT ctrlID)
 	case IDK_AT:           BBCRow = 4; BBCCol = 7; break;
 	case IDK_UNDERSCORE:   BBCRow = 2; BBCCol = 8; break;
 
+	case IDK_UNASSIGN:
 	default:
-		BBCRow = 0; BBCCol = 0;
+		BBCRow = -9; BBCCol = 0;
 	}
 }
 
@@ -290,7 +295,7 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 		delete selectKeyDialog;
 		selectKeyDialog = nullptr;
 
-		if ((wParam == IDOK || wParam == IDCONTINUE) && !doingShifted)
+		if ((wParam == IDOK || wParam == IDCONTINUE) && !doingShifted && !doingUnassign)
 		{
 			doingShifted = true;
 
@@ -465,7 +470,8 @@ static std::string GetKeysUsed()
 	std::string Keys;
 
 	// First see if this key is defined.
-	if (BBCRow != 0 || BBCCol != 0)
+	// Row 0 is Shift key, row -2 is Break, row -9 is unassigned
+	if (BBCRow != -9)
 	{
 		for (int i = 1; i < BEEB_VKEY_COUNT; i++)
 		{

@@ -104,7 +104,12 @@ INT_PTR SelectKeyDialog::DlgProc(
 
 		SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS, m_SelectedKey.c_str());
 
-		// If doing shifted key, start with Shift checkbox checked because that's most likely
+		// If the selected keys is empty (as opposed to "Not assigned"), we are currently unassigning.
+		// Hide the "Assigned to:" label
+		if (m_SelectedKey.empty())
+			SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS_LBL, "");
+
+		// If doing shifted key, start with the Shift checkbox checked because that's most likely
 		// what the user wants
 		DlgItemCheck(m_hwnd, IDC_SHIFT, m_Shift);
 
@@ -270,6 +275,7 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 	case   8: return "Backspace";
 	case   9: return "Tab";
 	case  13: return "Enter";
+	case  16: return "Shift";
 	case  17: return "Ctrl";
 	case  18: return "Alt";
 	case  19: return "Break";

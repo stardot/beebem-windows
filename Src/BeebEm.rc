@@ -108,6 +108,7 @@ BEGIN
     CONTROL         "_ £",IDK_UNDERSCORE,"Button",BS_OWNERDRAW | WS_TABSTOP,269,33,17,14
     CONTROL         "^ ~",IDK_CARET,"Button",BS_OWNERDRAW | WS_TABSTOP,243,19,17,14
     CONTROL         "SFT LK",IDK_SHIFT_LOCK,"Button",BS_OWNERDRAW | WS_TABSTOP,9,62,29,14
+    CONTROL         "Unassign",IDK_UNASSIGN,"Button",BS_OWNERDRAW | WS_TABSTOP,9,101,36,14
 END
 
 IDD_KEYBOARD_LINKS DIALOG  0, 0, 160, 66
@@ -165,7 +166,7 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPT
 CAPTION "Press key for unshifted press..."
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    LTEXT           "Assigned to PC key(s):",IDC_STATIC,7,7,74,8
+    LTEXT           "Assigned to PC key(s):",IDC_ASSIGNED_KEYS_LBL,7,7,74,8
     LTEXT           "Static",IDC_ASSIGNED_KEYS,15,21,127,8
     CONTROL         "Shift",IDC_SHIFT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,40,31,10
     PUSHBUTTON      "OK",IDOK,92,39,50,14
@@ -330,9 +331,9 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
- PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
- FILEFLAGSMASK 0x3fL
+FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
 #else
@@ -354,8 +355,8 @@ BEGIN
             VALUE "LegalCopyright", "Copyright © 2009"
             VALUE "OriginalFilename", "BeebEm.exe"
             VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", VERSION_STRING
-        END
+			VALUE "ProductVersion", VERSION_STRING
+		END
     END
     BLOCK "VarFileInfo"
     BEGIN
@@ -718,7 +719,7 @@ BEGIN
         MENUITEM "&Joystick",                   IDM_JOYSTICK
         MENUITEM "&Analogue Mousestick",        IDM_AMOUSESTICK
         MENUITEM "&Digital Mousestick",         IDM_DMOUSESTICK
-		MENUITEM "Joystick To Key Mapping"      IDM_JOYSTICK_TO_KEYS
+        MENUITEM "Joystick To Key Mapping",     IDM_JOYSTICK_TO_KEYS
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR
@@ -766,18 +767,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE
+1 TEXTINCLUDE 
 BEGIN
     "beebemrc.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
     "#include ""winresrc.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
