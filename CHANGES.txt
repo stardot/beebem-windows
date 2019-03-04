@@ -60,6 +60,7 @@ Ken Lowe, Dominic Beesley)
 * Fixed BCD mode in ADC and SBC instructions.
 * Fixed key selection dialog box layout for Windows 10.
 * Added -DebugLabels command line option to load BeebAsm compatible debug labels.
+* Added PC joystick to BBC keyboard mapping.
 
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------

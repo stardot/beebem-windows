@@ -233,11 +233,62 @@ BBC one.  Do this as follows:</p>
     or save a new file.</li>
 
 <li>Select your mapping using menu item "Options -> User Defined Mapping".
-	You can also use the "Save Preferences" option to save the default user
-	key mapping file that gets loaded when BeebEm starts up.</li>
+	  You can also use the "Save Preferences" option to save the default user
+	  key mapping file that gets loaded when BeebEm starts up.</li>
 </ol>
 
-      <!-- End of content -->
+<h2>Mappings PC Joystick to BBC Keys</h2>
+
+<p>To enable PC joystick to BBC keys mapping, use menu item "Options ->
+   Joystick To Key Mapping". Most likely you will also need to switch to
+   user defined keyboard mapping using menu item "Option -> User Defined
+   Mapping". This will allow you to use your own PC joystick to BBC keys
+   assignments.</p>
+
+<p>Mapping PC joystick axes and buttons to BBC keys is very similar to
+    mapping PC keys, as described above.  Instead of pressing PC key, press
+    the joystick button or move the joystick in the direction that you want
+    to map to the selected BBC key.  Just make sure that the "Joystick To
+    Key Mapping" option is enabled.</p>
+
+<p>As with PC keys, you can map joystick actions to BBC keys in shifted and
+    unshifted state separately.  The most common scenario is to assign a 
+    joystick action to the same BBC key in both shifted and unshifted state.
+    To do that, just click on the BBC key that you want to map, and move
+    joystick or press button twice - once for unshifted and second time for
+    shifted state.</p>
+
+<p>Additionally, you can assign some joystick button to the SHIFT key itself.
+    This can be exploited to assign one joystick button as a modifier for
+    other joystick actions - useful for games which have a lot of keyboard
+    contols such as Elite.</p>
+
+<p>PC joystick to BBC keyboard mapping is independed from enabling PC joystick
+    acting as BBC joystick.  If you enable both, primary PC joystick axes
+    (primary stick up, down, left and right) and first two buttons are mapped
+    to BBC joystick.  You can map other axes and buttons to BBC keys. You can
+    even map those axes and buttons which are acting as BBC joystick to BBC
+    keys. In that case, the PC joystick action will be seen as both BBC
+    joystick action and BBC key press.</p>
+
+<p>To remove mapping from previously mapped joystick action, click on the
+    'Unassign' button.  It will display small window and wait for the
+    joystick action.  Press the joystick button or move the joystick in the
+    direction that you want to unmap.  The same window will be displayed again,
+    giving you opportunity to unmap the joystick action in both unshifted and
+    shifted state at one go.  You can press 'OK' button at this moment to
+    skip the second unassignment.</p>
+
+<p>Joystick mappings are kept together with keyboard mappings in .kmap files.
+    Once joystick mapping for a game is ready, click menu item "Options ->
+    Save User Key Mapping". Save the mapping in the directory where the disk
+    image is located and with the same name as disk image, but with additional
+    '.kmap' extension. For example, if the game's disk image is 'game.ssd',
+    save the mapping as 'game.ssd.kmap'. Next time you open this image with
+    BeebEm, it will automatically load keyboard and joystick mapping from that
+    mapping file.</p>
+
+         <!-- End of content -->
       </td>
 
       <td width="10%"></td>

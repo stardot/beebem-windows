@@ -270,3 +270,67 @@ Data for default key mapping:
 -9 0 0 -9 0 1 
 -9 0 0 -9 0 1 
 -9 0 0 -9 0 1 // 255
+-9 0 0 -9 0 1 // 256 - Joystick 1 Up
+-9 0 0 -9 0 1 // Joystick 1 Down
+-9 0 0 -9 0 1 // Joystick 1 Left
+-9 0 0 -9 0 1 // Joystick 1 Right
+-9 0 0 -9 0 1 // Joystick 1 Axis 3 - (Z-)
+-9 0 0 -9 0 1 // Joystick 1 Axis 3 + (Z+)
+-9 0 0 -9 0 1 // Joystick 1 Axis 4 - (R-)
+-9 0 0 -9 0 1 // Joystick 1 Axis 4 + (R+)
+-9 0 0 -9 0 1 // Joystick 1 Axis 5 - (U-)
+-9 0 0 -9 0 1 // Joystick 1 Axis 5 + (U+)
+-9 0 0 -9 0 1 // Joystick 1 Axis 6 - (V-)
+-9 0 0 -9 0 1 // Joystick 1 Axis 6 + (V+)
+-9 0 0 -9 0 1 // Joystick 1 Axis 7 - (Hat Up)
+-9 0 0 -9 0 1 // Joystick 1 Axis 7 + (Hat Down)
+-9 0 0 -9 0 1 // Joystick 1 Axis 8 - (Hat Left)
+-9 0 0 -9 0 1 // Joystick 1 Axis 8 + (Hat Right)
+-9 0 0 -9 0 1 // 272 - Joystick 1 Button 1
+-9 0 0 -9 0 1 // Joystick 1 Button 2
+-9 0 0 -9 0 1 // Joystick 1 Button 3
+-9 0 0 -9 0 1 // Joystick 1 Button 4
+-9 0 0 -9 0 1 // Joystick 1 Button 5
+-9 0 0 -9 0 1 // Joystick 1 Button 6
+-9 0 0 -9 0 1 // Joystick 1 Button 7
+-9 0 0 -9 0 1 // Joystick 1 Button 8
+-9 0 0 -9 0 1 // Joystick 1 Button 9
+-9 0 0 -9 0 1 // Joystick 1 Button 10
+-9 0 0 -9 0 1 // Joystick 1 Button 11
+-9 0 0 -9 0 1 // Joystick 1 Button 12
+-9 0 0 -9 0 1 // Joystick 1 Button 13
+-9 0 0 -9 0 1 // Joystick 1 Button 14
+-9 0 0 -9 0 1 // Joystick 1 Button 15
+-9 0 0 -9 0 1 // Joystick 1 Button 16
+-9 0 0 -9 0 1 // 288 - Joystick 2 Up
+-9 0 0 -9 0 1 // Joystick 2 Down
+-9 0 0 -9 0 1 // Joystick 2 Left
+-9 0 0 -9 0 1 // Joystick 2 Right
+-9 0 0 -9 0 1 // Joystick 2 Axis 3 - (Z-)
+-9 0 0 -9 0 1 // Joystick 2 Axis 3 + (Z+)
+-9 0 0 -9 0 1 // Joystick 2 Axis 4 - (R-)
+-9 0 0 -9 0 1 // Joystick 2 Axis 4 + (R+)
+-9 0 0 -9 0 1 // Joystick 2 Axis 5 - (U-)
+-9 0 0 -9 0 1 // Joystick 2 Axis 5 + (U+)
+-9 0 0 -9 0 1 // Joystick 2 Axis 6 - (V-)
+-9 0 0 -9 0 1 // Joystick 2 Axis 6 + (V+)
+-9 0 0 -9 0 1 // Joystick 2 Axis 7 - (Hat Up)
+-9 0 0 -9 0 1 // Joystick 2 Axis 7 + (Hat Down)
+-9 0 0 -9 0 1 // Joystick 2 Axis 8 - (Hat Left)
+-9 0 0 -9 0 1 // Joystick 2 Axis 8 + (Hat Right)
+-9 0 0 -9 0 1 // 304 - Joystick 2 Button 1
+-9 0 0 -9 0 1 // Joystick 2 Button 2
+-9 0 0 -9 0 1 // Joystick 2 Button 3
+-9 0 0 -9 0 1 // Joystick 2 Button 4
+-9 0 0 -9 0 1 // Joystick 2 Button 5
+-9 0 0 -9 0 1 // Joystick 2 Button 6
+-9 0 0 -9 0 1 // Joystick 2 Button 7
+-9 0 0 -9 0 1 // Joystick 2 Button 8
+-9 0 0 -9 0 1 // Joystick 2 Button 9
+-9 0 0 -9 0 1 // Joystick 2 Button 10
+-9 0 0 -9 0 1 // Joystick 2 Button 11
+-9 0 0 -9 0 1 // Joystick 2 Button 12
+-9 0 0 -9 0 1 // Joystick 2 Button 13
+-9 0 0 -9 0 1 // Joystick 2 Button 14
+-9 0 0 -9 0 1 // Joystick 2 Button 15
+-9 0 0 -9 0 1 // 319 - Joystick 2 Button 16
