@@ -1,6 +1,7 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
 Copyright (C) 2006  Jon Welch
+Copyright (C) 2019  Alistair Cree
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
