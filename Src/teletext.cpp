@@ -1,6 +1,7 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
 Copyright (C) 2006  Jon Welch
+Copyright (C) 2019  Alistair Cree
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -84,6 +85,7 @@ u_short TeletextCustomPort[4];
 
 extern WSADATA WsaDat;
 static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
+bool TeletextSocketConnected[4] = {false, false, false, false};
 const int TeletextConnectThreadCh[4] = {0,1,2,3}; // dumb way to get fixed channel numbers into TeletextConnect threads
 static HANDLE hTeletextConnectThread[4] = { nullptr, nullptr, nullptr, nullptr };
 static unsigned int __stdcall TeletextConnect(void *chparam);
@@ -112,6 +114,7 @@ static unsigned int __stdcall TeletextConnect(void *chparam)
     /* initiate connection on socket */
     char info[200];
     int ch = *((int *)chparam);
+    TeletextSocketConnected[ch] = false;
     
     struct sockaddr_in teletext_serv_addr;
     u_long iMode;
@@ -123,7 +126,6 @@ static unsigned int __stdcall TeletextConnect(void *chparam)
             sprintf(info, "Teletext: Unable to create socket %d", ch);
             DebugDisplayTrace(DebugType::Teletext, true, info);
         }
-        _endthreadex(0);
         return 1;
     }
     if (DebugEnabled)
@@ -144,7 +146,6 @@ static unsigned int __stdcall TeletextConnect(void *chparam)
         }
         closesocket(TeletextSocket[ch]);
         TeletextSocket[ch] = INVALID_SOCKET;
-        _endthreadex(0);
         return 1;
     }
 
@@ -156,8 +157,7 @@ static unsigned int __stdcall TeletextConnect(void *chparam)
     
     iMode = 1;
     ioctlsocket(TeletextSocket[ch], FIONBIO, &iMode); // non blocking
-    
-    _endthreadex(0);
+    TeletextSocketConnected[ch] = true;
     return 0;
 }
 
@@ -223,7 +223,7 @@ void TeletextClose()
     int ch;
     for (ch=0; ch<4; ch++)
     {
-        if (TeletextSocket[ch] != INVALID_SOCKET) {
+        if (TeletextSocket[ch] != INVALID_SOCKET && TeletextSocketConnected[ch] == true) {
             if (DebugEnabled)
             {
                 char info[200];
@@ -232,6 +232,7 @@ void TeletextClose()
             }
             closesocket(TeletextSocket[ch]);
             TeletextSocket[ch] = INVALID_SOCKET;
+            TeletextSocketConnected[ch] = false;
         }
         if (TeletextFile[ch])
         {
@@ -322,21 +323,35 @@ void TeletextPoll(void)
         return;
 
     int i;
+    char info[200];
     
     if (TeletextLocalhost || TeletextCustom)
     {
-        int ret;
+        int ret[4];
         char socketBuff[4][672] = {0};
+        
         for (i=0;i<4;i++)
         {
-            if (TeletextSocket[i] != INVALID_SOCKET)
+            if (TeletextSocket[i] != INVALID_SOCKET && TeletextSocketConnected[i] == true)
             {
-                ret = recv(TeletextSocket[i], socketBuff[i], 672, 0);
-                // todo: something sensible with ret
-                TeletextStatus &= 0x0F;
-                TeletextStatus |= 0xD0;       // data ready so latch INT, DOR, and FSYN
+                ret[i] = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+                if (ret[i] < 0){
+                    if (WSAGetLastError() == WSAEWOULDBLOCK)
+                        break; // not fatal, ignore
+                    if (DebugEnabled)
+                    {
+                        sprintf(info, "Teletext: recv error %d. Closing socket %d", WSAGetLastError(), i);
+                        DebugDisplayTrace(DebugType::Teletext, true, info);
+                    }
+                    closesocket(TeletextSocket[i]);
+                    TeletextSocketConnected[i] = false;
+                    TeletextSocket[i] = INVALID_SOCKET;
+                }
             }
         }
+        
+        TeletextStatus &= 0x0F;
+        TeletextStatus |= 0xD0;       // data ready so latch INT, DOR, and FSYN
         
         if (TeletextEnable == true)
         {
