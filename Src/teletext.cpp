@@ -86,9 +86,6 @@ u_short TeletextCustomPort[4];
 extern WSADATA WsaDat;
 static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
 bool TeletextSocketConnected[4] = {false, false, false, false};
-const int TeletextConnectThreadCh[4] = {0,1,2,3}; // dumb way to get fixed channel numbers into TeletextConnect threads
-static HANDLE hTeletextConnectThread[4] = { nullptr, nullptr, nullptr, nullptr };
-static unsigned int __stdcall TeletextConnect(void *chparam);
 
 void TeletextLog(char *text, ...)
 {
@@ -109,11 +106,11 @@ va_list argptr;
     va_end(argptr);
 }
 
-static unsigned int __stdcall TeletextConnect(void *chparam)
+static int TeletextConnect(int ch)
 {
     /* initiate connection on socket */
     char info[200];
-    int ch = *((int *)chparam);
+    
     TeletextSocketConnected[ch] = false;
     
     struct sockaddr_in teletext_serv_addr;
@@ -130,9 +127,12 @@ static unsigned int __stdcall TeletextConnect(void *chparam)
     }
     if (DebugEnabled)
     {
-        sprintf(info, "Teletext: socket %d created", ch);
+        sprintf(info, "Teletext: socket %d created, connecting to server", ch);
         DebugDisplayTrace(DebugType::Teletext, true, info);
     }
+    
+    iMode = 1;
+    ioctlsocket(TeletextSocket[ch], FIONBIO, &iMode); // non blocking
     
     teletext_serv_addr.sin_family = AF_INET; // address family Internet
     teletext_serv_addr.sin_port = htons (TeletextPort[ch]); //Port to connect on
@@ -140,23 +140,17 @@ static unsigned int __stdcall TeletextConnect(void *chparam)
     
     if (connect(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)) == SOCKET_ERROR)
     {
-        if (DebugEnabled) {
-            sprintf(info, "Teletext: Socket %d unable to connect to server %s:%d %d",ch,TeletextIP[ch], TeletextPort[ch], WSAGetLastError());
-            DebugDisplayTrace(DebugType::Teletext, true, info);
+        if (WSAGetLastError() != WSAEWOULDBLOCK) { /* WSAEWOULDBLOCK is expected */
+            if (DebugEnabled) {
+                sprintf(info, "Teletext: Socket %d unable to connect to server %s:%d %d",ch,TeletextIP[ch], TeletextPort[ch], WSAGetLastError());
+                DebugDisplayTrace(DebugType::Teletext, true, info);
+            }
+            closesocket(TeletextSocket[ch]);
+            TeletextSocket[ch] = INVALID_SOCKET;
+            return 1;
         }
-        closesocket(TeletextSocket[ch]);
-        TeletextSocket[ch] = INVALID_SOCKET;
-        return 1;
-    }
-
-    if (DebugEnabled)
-    {
-        sprintf(info, "Teletext: socket %d connected to server",ch);
-        DebugDisplayTrace(DebugType::Teletext, true, info);
     }
     
-    iMode = 1;
-    ioctlsocket(TeletextSocket[ch], FIONBIO, &iMode); // non blocking
     TeletextSocketConnected[ch] = true;
     return 0;
 }
@@ -194,8 +188,7 @@ void TeletextInit(void)
         }
         
         for (i=0; i<4; i++){
-            /* start thread to handle connecting each socket to avoid holding up main thread */
-            hTeletextConnectThread[i] = (HANDLE)_beginthreadex(nullptr, 0, TeletextConnect, (void *)(&TeletextConnectThreadCh[i]), 0, nullptr);
+            TeletextConnect(i);
         }
     }
     else
@@ -336,11 +329,12 @@ void TeletextPoll(void)
             {
                 ret[i] = recv(TeletextSocket[i], socketBuff[i], 672, 0);
                 if (ret[i] < 0){
-                    if (WSAGetLastError() == WSAEWOULDBLOCK)
+                    int err = WSAGetLastError();
+                    if (err == WSAEWOULDBLOCK)
                         break; // not fatal, ignore
                     if (DebugEnabled)
                     {
-                        sprintf(info, "Teletext: recv error %d. Closing socket %d", WSAGetLastError(), i);
+                        sprintf(info, "Teletext: recv error %d. Closing socket %d", err, i);
                         DebugDisplayTrace(DebugType::Teletext, true, info);
                     }
                     closesocket(TeletextSocket[i]);
