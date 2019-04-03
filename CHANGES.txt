@@ -32,6 +32,7 @@ Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree)
 * General sound emulation improvements.
 * Fixed graphics hold in teletext mode.
 * Release Shift key on disk read after auto-booting.
+* Rework teletext adapter emulation and add support for real-time packet streams.
 
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------
