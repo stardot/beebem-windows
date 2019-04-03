@@ -60,14 +60,16 @@
 
 <h1 align="center">Acorn Teletext Adapter</a></h1>
 
-<p>The software now supports the Acorn Teletext Adapter. Unfortunately, I
-haven't got my teletext server software finished yet so the emulation can
-only work from teletext data captured to disc files. You can download some
-sample teletext data from Jon Welch's site -
-<a href="http://www.g7jjf.com/teletext.htm">teletext data</a>.</p>
+<p>BeebEm emulates the Acorn ANE01 Teletext Adapter. It can be used in two ways;
+Either by loading files containing captured teletext signals, or by connecting to
+packet servers providing real-time teletext signals.</p>
 
-<p>You will need to add the ATS-3.0-1.rom to the ROM configuration and
-enable Teletext emulation on the hardware menu to get Teletext to work.</p>
+<p>Teletext capture files, named <em>txt0.dat</em>, <em>txt1.dat</em>, <em>txt2.dat</em>, and <em>txt3.dat</em>, are read from your <em>discimg</em> directory when <em>Capture files</em> is selected in <em>Hardware->Teletext data</em>. You can download some sample teletext data from Jon Welch's site - <a href="http://www.g7jjf.com/teletext.htm">teletext data</a>.</p>
+
+<p>Real-time teletext packet input is supported using a simple tcp stream interface. An example packet server written in python is available <a href="https://github.com/ZXGuesser/teletext-packet-server">on github</a>. By default BeebEm will attempt four connections to ports 19761 to 19764 on the host PC for the four tuner presets respectively when selecting <em>Hardware->Teletext data->IP: localhost</em>.</p>
+<p>Alternative addresses and ports set via the <em>Preferences.cfg</em> file can be used by selecting <em>Hardware->Teletext data->IP: Custom destination</em> (this is only intended for use over high bandwidth local network connections).</p>
+
+<p>The ATS-3.0-1.rom must be added to the ROM configuration and <em>Hardware->Teletext Adapter On/Off</em> enabled.</p>
 
       <!-- End of content -->
       </td>
