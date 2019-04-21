@@ -64,7 +64,6 @@ Boston, MA  02110-1301, USA.
 #define IP232_CXDELAY	8192			// Cycles to wait after connection
 
 // IP232
-extern WSADATA WsaDat;							// Windows sockets info
 static SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
 static unsigned int mEthernetPortReadTaskID; // Thread ID
 static unsigned int mEthernetPortStatusTaskID; // Thread ID
@@ -291,16 +290,7 @@ bool IP232Open(void)
 	ts_inhead = ts_intail = ts_outlen = 0;
 	ts_outhead = ts_outtail = ts_inlen = 0;
 
-	//----------------------
 	// Let's prepare some IP sockets
-	if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
-		WriteLog("IP232: WSA initialisation failed");
-		if (DebugEnabled) 
-			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: WSA initialisation failed");
-		
-
-//		return false;
-	}
 
 	mEthernetHandle = socket(AF_INET, SOCK_STREAM, 0);
 	if (mEthernetHandle == INVALID_SOCKET)
@@ -309,9 +299,9 @@ bool IP232Open(void)
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Unable to create socket");
 
-		return false ; //Couldn't create the socket
-
+		return false; // Couldn't create the socket
 	}
+
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: socket created");
 
@@ -351,6 +341,7 @@ bool IP232Open(void)
 		_beginthreadex(nullptr, 0, MyEthernetPortReadThread, nullptr, 0, &mEthernetPortReadTaskID);
 		_beginthreadex(nullptr, 0, MyEthernetPortStatusThread, nullptr, 0, &mEthernetPortStatusTaskID);
 	}
+
 	return true;
 }
 
@@ -394,7 +385,6 @@ void IP232Close(void)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Closing Sockets");
 
 		closesocket(mEthernetHandle);
-		WSACleanup();
 		mEthernetHandle = INVALID_SOCKET;
 //		bEthernetSocketsCreated = false;
 	}

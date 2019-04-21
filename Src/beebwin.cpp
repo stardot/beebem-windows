@@ -247,7 +247,7 @@ BeebWin::BeebWin()
 }
 
 /****************************************************************************/
-void BeebWin::Initialise()
+bool BeebWin::Initialise()
 {
 	// Parse command line
 	ParseCommandLine();
@@ -279,6 +279,14 @@ void BeebWin::Initialise()
 	GdiplusStartupInput gdiplusStartupInput;
 	GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL);
 
+	WSADATA WsaData;
+
+	if (WSAStartup(MAKEWORD(1, 1), &WsaData) != 0)
+	{
+		MessageBox(m_hWnd, "WSA initialisation failed", WindowTitle, MB_OK | MB_ICONERROR);
+		return false;
+	}
+
 	InitClass();
 	CreateBeebWindow(); 
 	CreateBitmap();
@@ -304,6 +312,8 @@ void BeebWin::Initialise()
 	// Schedule first key press if keyboard command supplied
 	if (m_KbdCmd[0] != 0)
 		SetTimer(m_hWnd, 1, 1000, NULL);
+
+	return true;
 }
 
 /****************************************************************************/
@@ -421,7 +431,10 @@ BeebWin::~BeebWin()
 void BeebWin::Shutdown()
 {
 	if (aviWriter)
+	{
 		delete aviWriter;
+		aviWriter = nullptr;
+	}
 
 	if (m_AutoSavePrefsCMOS || m_AutoSavePrefsFolders ||
 		m_AutoSavePrefsAll || m_AutoSavePrefsChanged)
@@ -435,10 +448,12 @@ void BeebWin::Shutdown()
 	if (m_SpVoice)
 	{
 		m_SpVoice->Release();
-		m_SpVoice = NULL;
+		m_SpVoice = nullptr;
 	}
 
 	IP232Close();
+
+	WSACleanup();
 }
 
 /****************************************************************************/

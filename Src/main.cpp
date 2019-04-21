@@ -48,7 +48,10 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 	OpenLog();
 
 	mainWin = new BeebWin();
-	mainWin->Initialise();
+	if (!mainWin->Initialise())
+	{
+		return 1;
+	}
 
 	// Create serial threads
 	SerialInit();
@@ -83,9 +86,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
 	CloseLog();
 
-	delete mainWin;
-
 	Kill_Serial();
+
+	delete mainWin;
 
 	return 0;
 }
