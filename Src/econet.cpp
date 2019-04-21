@@ -78,7 +78,6 @@ unsigned long EconetListenIP=0x0100007f;
 // IP settings:
 SOCKET ListenSocket = INVALID_SOCKET;		// Listen socket
 SOCKET SendSocket = INVALID_SOCKET;
-WSADATA WsaDat;							// Windows sockets info
 bool ReceiverSocketsOpen = false; // Used to flag line up and clock running
 
 // Written in 2004:
@@ -325,7 +324,6 @@ void EconetReset(void) {
 	if (ReceiverSocketsOpen) {
 		if (!confSingleSocket) closesocket(SendSocket);
 		closesocket(ListenSocket);
-		WSACleanup();
 		ReceiverSocketsOpen = false;
 	}
 
@@ -335,13 +333,6 @@ void EconetReset(void) {
 
 	// Read in econet.cfg.  Done here so can refresh it on Break.
 	ReadNetwork();
-
-	//----------------------
-	// Let's prepare some IP sockets
-	if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
-		EconetError("Econet: WSA initialisation failed");
-		return;
-	}
 
 	//----------------------
 	// Create a SOCKET for listening for incoming connection requests.

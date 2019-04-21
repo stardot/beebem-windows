@@ -83,7 +83,6 @@ u_short TeletextPort[4] = { 19761, 19762, 19763, 19764 };
 char TeletextCustomIP[4][20];
 u_short TeletextCustomPort[4];
 
-extern WSADATA WsaDat;
 static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
 bool TeletextSocketConnected[4] = {false, false, false, false};
 
@@ -179,21 +178,15 @@ void TeletextInit(void)
     }
     if (TeletextLocalhost || TeletextCustom)
     {
-        if (WSAStartup(MAKEWORD(1, 1), &WsaDat) != 0) {
-            WriteLog("Teletext: WSA initialisation failed");
-            if (DebugEnabled) 
-                DebugDisplayTrace(DebugType::Teletext, true, "Teletext: WSA initialisation failed");
-            
-            return;
-        }
-        
-        for (i=0; i<4; i++){
+        for (i = 0; i < 4; i++)
+        {
             TeletextConnect(i);
         }
     }
     else
     {
-        for (i=0; i<4; i++){
+        for (i = 0; i < 4; i++)
+        {
             sprintf(buff, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), i);
             
             TeletextFile[i] = fopen(buff, "rb");
@@ -213,8 +206,7 @@ void TeletextInit(void)
 void TeletextClose()
 {
     /* close any connected teletext sockets or files */
-    int ch;
-    for (ch=0; ch<4; ch++)
+    for (int ch = 0; ch < 4; ch++)
     {
         if (TeletextSocket[ch] != INVALID_SOCKET && TeletextSocketConnected[ch] == true) {
             if (DebugEnabled)
@@ -232,7 +224,6 @@ void TeletextClose()
             fclose(TeletextFile[ch]);
         }
     }
-    WSACleanup();
 }
 
 void TeletextWrite(int Address, int Value) 

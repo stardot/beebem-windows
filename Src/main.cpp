@@ -88,9 +88,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
 	CloseLog();
 
-	delete mainWin;
-
 	Kill_Serial();
+
+	delete mainWin;
 
 	return 0;
 }
