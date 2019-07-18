@@ -50,8 +50,8 @@ Status register:
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <process.h>
 #include <windows.h>
+
 #include "teletext.h"
 #include "debug.h"
 #include "6502core.h"
@@ -67,14 +67,15 @@ bool TeletextCustom;
 int TeletextStatus = 0x0f;
 bool TeletextInts = false;
 bool TeletextEnable = false;
-int txtChnl = 0;
+int TeletextChannel = 0;
 int rowPtrOffset = 0x00;
 int rowPtr = 0x00;
 int colPtr = 0x00;
 
-FILE *TeletextFile[4] = { NULL, NULL, NULL, NULL };
-long txtFrames[4] = { 0, 0, 0, 0 };
-long txtCurFrame = 0;
+FILE *TeletextFile[4] = { nullptr, nullptr, nullptr, nullptr };
+int TeletextFrameCount[4] = { 0, 0, 0, 0 };
+const int TELETEXT_FRAME_SIZE = 860;
+int TeletextCurrentFrame = 0;
 
 unsigned char row[16][64] = {0};
 
@@ -83,19 +84,17 @@ u_short TeletextPort[4] = { 19761, 19762, 19763, 19764 };
 char TeletextCustomIP[4][20];
 u_short TeletextCustomPort[4];
 
-static SOCKET TeletextSocket[4] = {INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET};
-bool TeletextSocketConnected[4] = {false, false, false, false};
+static SOCKET TeletextSocket[4] = { INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET };
+bool TeletextSocketConnected[4] = { false, false, false, false };
 
 void TeletextLog(char *text, ...)
 {
-FILE *f;
-va_list argptr;
-
     return;
 
+    va_list argptr;
     va_start(argptr, text);
 
-    f = fopen("teletext.log", "at");
+    FILE *f = fopen("teletext.log", "at");
     if (f)
     {
         vfprintf(f, text, argptr);
@@ -109,11 +108,9 @@ static int TeletextConnect(int ch)
 {
     /* initiate connection on socket */
     char info[200];
-    
+
     TeletextSocketConnected[ch] = false;
-    
-    struct sockaddr_in teletext_serv_addr;
-    u_long iMode;
+
     TeletextSocket[ch] = socket(AF_INET, SOCK_STREAM, 0);
     if (TeletextSocket[ch] == INVALID_SOCKET)
     {
@@ -124,22 +121,25 @@ static int TeletextConnect(int ch)
         }
         return 1;
     }
+
     if (DebugEnabled)
     {
         sprintf(info, "Teletext: socket %d created, connecting to server", ch);
         DebugDisplayTrace(DebugType::Teletext, true, info);
     }
-    
-    iMode = 1;
+
+    u_long iMode = 1;
     ioctlsocket(TeletextSocket[ch], FIONBIO, &iMode); // non blocking
-    
+
+    struct sockaddr_in teletext_serv_addr;
     teletext_serv_addr.sin_family = AF_INET; // address family Internet
     teletext_serv_addr.sin_port = htons (TeletextPort[ch]); //Port to connect on
     teletext_serv_addr.sin_addr.s_addr = inet_addr (TeletextIP[ch]); //Target IP
-    
+
     if (connect(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)) == SOCKET_ERROR)
     {
-        if (WSAGetLastError() != WSAEWOULDBLOCK) { /* WSAEWOULDBLOCK is expected */
+        if (WSAGetLastError() != WSAEWOULDBLOCK) // WSAEWOULDBLOCK is expected
+        {
             if (DebugEnabled) {
                 sprintf(info, "Teletext: Socket %d unable to connect to server %s:%d %d",ch,TeletextIP[ch], TeletextPort[ch], WSAGetLastError());
                 DebugDisplayTrace(DebugType::Teletext, true, info);
@@ -149,7 +149,7 @@ static int TeletextConnect(int ch)
             return 1;
         }
     }
-    
+
     TeletextSocketConnected[ch] = true;
     return 0;
 }
@@ -157,25 +157,27 @@ static int TeletextConnect(int ch)
 void TeletextInit(void)
 {
     int i;
-    char buff[256];
     TeletextStatus = 0x0f; /* low nibble comes from LK4-7 and mystery links which are left floating */
     TeletextInts = false;
     TeletextEnable = false;
-    txtChnl = 0;
+    TeletextChannel = 0;
     rowPtr = 0x00;
     colPtr = 0x00;
-    
+
     if (!TeletextAdapterEnabled)
         return;
-    
+
     TeletextClose();
-    for (i=0; i<4; i++){
+
+    for (i = 0; i < 4; i++)
+    {
         if (TeletextCustom)
         {
             strcpy(TeletextIP[i], TeletextCustomIP[i]);
             TeletextPort[i] = TeletextCustomPort[i];
         }
     }
+
     if (TeletextLocalhost || TeletextCustom)
     {
         for (i = 0; i < 4; i++)
@@ -187,19 +189,20 @@ void TeletextInit(void)
     {
         for (i = 0; i < 4; i++)
         {
-            sprintf(buff, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), i);
-            
-            TeletextFile[i] = fopen(buff, "rb");
-            
-            if (TeletextFile[i])
+            char pathname[256];
+            sprintf(pathname, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), i);
+
+            TeletextFile[i] = fopen(pathname, "rb");
+
+            if (TeletextFile[i] != nullptr)
             {
                 fseek(TeletextFile[i], 0L, SEEK_END);
-                txtFrames[i] = ftell(TeletextFile[i]) / 860L;
+                TeletextFrameCount[i] = ftell(TeletextFile[i]) / TELETEXT_FRAME_SIZE;
                 fseek(TeletextFile[i], 0L, SEEK_SET);
             }
         }
-        
-        txtCurFrame = 0;
+
+        TeletextCurrentFrame = 0;
     }
 }
 
@@ -208,20 +211,24 @@ void TeletextClose()
     /* close any connected teletext sockets or files */
     for (int ch = 0; ch < 4; ch++)
     {
-        if (TeletextSocket[ch] != INVALID_SOCKET && TeletextSocketConnected[ch] == true) {
+        if (TeletextSocket[ch] != INVALID_SOCKET)
+        {
             if (DebugEnabled)
             {
                 char info[200];
                 sprintf(info, "Teletext: closing socket %d", ch);
                 DebugDisplayTrace(DebugType::Teletext, true, info);
             }
+
             closesocket(TeletextSocket[ch]);
             TeletextSocket[ch] = INVALID_SOCKET;
             TeletextSocketConnected[ch] = false;
         }
+
         if (TeletextFile[ch])
         {
             fclose(TeletextFile[ch]);
+            TeletextFile[ch] = nullptr;
         }
     }
 }
@@ -232,38 +239,40 @@ void TeletextWrite(int Address, int Value)
         return;
 
     TeletextLog("TeletextWrite Address = 0x%02x, Value = 0x%02x, PC = 0x%04x\n", Address, Value, ProgramCounter);
-    
+
     switch (Address)
     {
         case 0x00:
             // Status register
             // if (Value * 0x20) mystery links
             // if (Value * 0x10) enable AFC and mystery links
-            
+
             TeletextInts = (Value & 0x08) == 0x08;
             if (TeletextInts && (TeletextStatus & 0x80))
-                intStatus|=(1<<teletext);   // interupt if INT and interrupts enabled
+                intStatus |= (1 << teletext); // Interrupt if INT and interrupts enabled
             else
-                intStatus&=~(1<<teletext);  // Clear interrupt
-            
+                intStatus &= ~(1 << teletext); // Clear interrupt
+
             TeletextEnable = (Value & 0x04) == 0x04;
-            
-            if ( (Value & 0x03) != txtChnl)
+
+            if ((Value & 0x03) != TeletextChannel)
             {
-                txtChnl = Value & 0x03;
+                TeletextChannel = Value & 0x03;
             }
             break;
-            
+
         case 0x01:
             rowPtr = Value;
             colPtr = 0x00;
             break;
+
         case 0x02:
             row[rowPtr][colPtr++] = Value & 0xFF;
             break;
+
         case 0x03:
-            TeletextStatus &= ~0xD0;       // Clear INT, DOR, and FSYN latches
-            intStatus&=~(1<<teletext);     // Clear interrupt
+            TeletextStatus &= ~0xD0; // Clear INT, DOR, and FSYN latches
+            intStatus &= ~(1 << teletext); // Clear interrupt
             break;
     }
 }
@@ -286,18 +295,18 @@ int TeletextRead(int Address)
         if (colPtr == 0x00)
             TeletextLog("TeletextRead Reading Row %d, PC = 0x%04x\n", rowPtr, ProgramCounter);
         // TeletextLog("TeletextRead Returning Row %d, Col %d, Data %d, PC = 0x%04x\n", rowPtr, colPtr, row[rowPtr][colPtr], ProgramCounter);
-        
+
         data = row[rowPtr][colPtr++];
         break;
 
     case 0x03:
         TeletextStatus &= ~0xD0;       // Clear INT, DOR, and FSYN latches
-        intStatus&=~(1<<teletext);
+        intStatus &= ~(1 << teletext);
         break;
     }
 
     TeletextLog("TeletextRead Address = 0x%02x, Value = 0x%02x, PC = 0x%04x\n", Address, data, ProgramCounter);
-    
+
     return data;
 }
 
@@ -311,41 +320,44 @@ void TeletextPoll(void)
     
     if (TeletextLocalhost || TeletextCustom)
     {
-        int ret[4];
         char socketBuff[4][672] = {0};
-        
-        for (i=0;i<4;i++)
+
+        for (i = 0; i < 4; i++)
         {
-            if (TeletextSocket[i] != INVALID_SOCKET && TeletextSocketConnected[i] == true)
+            if (TeletextSocket[i] != INVALID_SOCKET)
             {
-                ret[i] = recv(TeletextSocket[i], socketBuff[i], 672, 0);
-                if (ret[i] < 0){
+                int result = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+
+                if (result == SOCKET_ERROR)
+                {
                     int err = WSAGetLastError();
                     if (err == WSAEWOULDBLOCK)
                         break; // not fatal, ignore
+
                     if (DebugEnabled)
                     {
                         sprintf(info, "Teletext: recv error %d. Closing socket %d", err, i);
                         DebugDisplayTrace(DebugType::Teletext, true, info);
                     }
+
                     closesocket(TeletextSocket[i]);
                     TeletextSocketConnected[i] = false;
                     TeletextSocket[i] = INVALID_SOCKET;
                 }
             }
         }
-        
+
         TeletextStatus &= 0x0F;
-        TeletextStatus |= 0xD0;       // data ready so latch INT, DOR, and FSYN
-        
-        if (TeletextEnable == true)
+        TeletextStatus |= 0xD0; // data ready so latch INT, DOR, and FSYN
+
+        if (TeletextEnable)
         {
             for (i = 0; i < 16; ++i)
             {
-                if (socketBuff[txtChnl][i*42] != 0)
+                if (socketBuff[TeletextChannel][i * 42] != 0)
                 {
                     row[i][0] = 0x27;
-                    memcpy(&(row[i][1]), socketBuff[txtChnl] + i * 42, 42);
+                    memcpy(&(row[i][1]), socketBuff[TeletextChannel] + i * 42, 42);
                 }
             }
         }
@@ -353,19 +365,22 @@ void TeletextPoll(void)
     else
     {
         char buff[16 * 43] = {0};
-        
-        if (TeletextFile[txtChnl])
+
+        if (TeletextFile[TeletextChannel] != nullptr)
         {
-            if (txtCurFrame >= txtFrames[txtChnl]) txtCurFrame = 0;
-            
-            fseek(TeletextFile[txtChnl], txtCurFrame * 860L + 3L * 43L, SEEK_SET);
-            fread(buff, 16 * 43, 1, TeletextFile[txtChnl]);
-            
+            if (TeletextCurrentFrame >= TeletextFrameCount[TeletextChannel])
+            {
+                TeletextCurrentFrame = 0;
+            }
+
+            fseek(TeletextFile[TeletextChannel], TeletextCurrentFrame * TELETEXT_FRAME_SIZE + 3L * 43L, SEEK_SET);
+            fread(buff, 16 * 43, 1, TeletextFile[TeletextChannel]);
+
             TeletextStatus &= 0x0F;
             TeletextStatus |= 0xD0;       // data ready so latch INT, DOR, and FSYN
         }
-        
-        if (TeletextEnable == true)
+
+        if (TeletextEnable)
         {
             for (i = 0; i < 16; ++i)
             {
@@ -380,13 +395,13 @@ void TeletextPoll(void)
                 }
             }
         }
-        
-        txtCurFrame++;
+
+        TeletextCurrentFrame++;
     }
-    
+
     rowPtr = 0x00;
     colPtr = 0x00;
-    
-    if (TeletextInts == true)
-        intStatus|=1<<teletext;
+
+    if (TeletextInts)
+        intStatus |= 1 << teletext;
 }
