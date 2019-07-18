@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 #define CORE6502_HEADER
 
 #include "port.h"
-#include "stdio.h"
+#include <stdio.h>
 
 void DumpRegs(void);
 
