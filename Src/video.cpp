@@ -1321,21 +1321,28 @@ void CRTCWrite(int Address, unsigned char Value) {
 int CRTCRead(int Address) {
   if (Address & 1) {
     switch (CRTCControlReg) {
+      case 12:
+        return CRTC_ScreenStartHigh;
+      case 13:
+        return CRTC_ScreenStartLow;
       case 14:
-        return(CRTC_CursorPosHigh);
+        return CRTC_CursorPosHigh;
       case 15:
-        return(CRTC_CursorPosLow);
+        return CRTC_CursorPosLow;
       case 16:
-        return(CRTC_LightPenHigh); /* Perhaps tie to mouse pointer ? */
+        return CRTC_LightPenHigh; // Perhaps tie to mouse pointer?
       case 17:
-        return(CRTC_LightPenLow);
+        return CRTC_LightPenLow;
       default:
         break;
-    } /* CRTC Read switch */
-  } else {
-    return(0); /* Rockwell part has bits 5,6,7 used - bit 6 is set when LPEN is received, bit 5 when in vertical retrace */
+    }
   }
-return(0);	// Keeep MSVC happy $NRM
+  else {
+    // Rockwell part has bits 5,6,7 used - bit 6 is set when LPEN is received, bit 5 when in vertical retrace
+    return 0;
+  }
+
+  return 0; // Keeep MSVC happy $NRM
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -1389,7 +1396,7 @@ static void VideoAddCursor() {
 		CurAddr=CRTC_CursorPosLow+(((CRTC_CursorPosHigh ^ 0x20) + 0x74 & 0xff)<<8);
 
 		CurStart = (CRTC_CursorStart & 0x1f) / 2;
-		CurEnd = CRTC_CursorEnd ;
+		CurEnd = CRTC_CursorEnd;
 		CurSize-=4;
 	}
 	else
