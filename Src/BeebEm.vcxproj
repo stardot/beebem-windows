@@ -344,6 +344,12 @@
     <None Include="..\Help\z80copro.html" />
     <None Include="..\Help\z80torch.html" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\CHANGES.txt" />
+    <Text Include="..\COPYRIGHT.txt" />
+    <Text Include="..\README-SPROW.txt" />
+    <Text Include="..\README.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -22,6 +22,9 @@
     <Filter Include="Help Files">
       <UniqueIdentifier>{2c6e9544-5499-4544-b881-236d1aba643a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Documents">
+      <UniqueIdentifier>{4459d047-6d52-4030-8bc7-6af92e18bdc3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="6502core.cpp">
@@ -476,5 +479,19 @@
     <None Include="..\Help\z80torch.html">
       <Filter>Help Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\CHANGES.txt">
+      <Filter>Documents</Filter>
+    </Text>
+    <Text Include="..\COPYRIGHT.txt">
+      <Filter>Documents</Filter>
+    </Text>
+    <Text Include="..\README.txt">
+      <Filter>Documents</Filter>
+    </Text>
+    <Text Include="..\README-SPROW.txt">
+      <Filter>Documents</Filter>
+    </Text>
   </ItemGroup>
 </Project>
