@@ -648,11 +648,10 @@ bool BeebWin::InitClass()
 void BeebWin::CreateBeebWindow(void)
 {
 	DWORD style;
-	int x,y;
 	int show = SW_SHOW;
 
-	x = m_XWinPos;
-	y = m_YWinPos;
+	int x = m_XWinPos;
+	int y = m_YWinPos;
 	if (x == -1 || y == -1)
 	{
 		x = CW_USEDEFAULT;
@@ -997,11 +996,10 @@ void BeebWin::UpdateDisableKeysMenu() {
 /****************************************************************************/
 void BeebWin::SetTubeMenu()
 {
-    FILE *testFile;
     char path[MAX_PATH];
     strcpy(path, RomPath);
     strcat(path, "BeebFile/Sprow.ROM");
-    testFile = fopen(path, "rb");
+    FILE *testFile = fopen(path, "rb");
 
     if( testFile != NULL )
     {
@@ -1117,7 +1115,6 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 {
 	static int lastx = 32768;
 	static int lasty = 32768;
-	int dx, dy;
 
 	if (m_MenuIdSticks == IDM_AMOUSESTICK)				// Analogue mouse stick
 	{
@@ -1126,8 +1123,8 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 	}
 	else if (m_MenuIdSticks == IDM_DMOUSESTICK)		// Digital mouse stick
 	{
-		dx = x - lastx;
-		dy = y - lasty;
+		int dx = x - lastx;
+		int dy = y - lasty;
 		
 		if (dx > 4) JoystickX = 0;
 		if (dx < -4) JoystickX = 65535;
@@ -1174,7 +1171,7 @@ LRESULT CALLBACK WndProc(
 			wmEvent = HIWORD(uParam);
 			if (mainWin)
 				mainWin->HandleCommand(wmId);
-			break;						  
+			break;
 
 		case WM_PALETTECHANGED:
 			if(!mainWin)
@@ -3996,7 +3993,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 		strncpy(TmpPath, CmdLineFile, _MAX_PATH);
 
 		// Work out which type of files it is
-		char *ext = strrchr(FileName, '.');
+		const char *ext = strrchr(FileName, '.');
 		if (ext != NULL)
 		{
 			cont = true;
