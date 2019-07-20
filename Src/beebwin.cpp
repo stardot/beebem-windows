@@ -247,7 +247,7 @@ BeebWin::BeebWin()
 }
 
 /****************************************************************************/
-void BeebWin::Initialise()
+bool BeebWin::Initialise()
 {
 	// Parse command line
 	ParseCommandLine();
@@ -268,7 +268,10 @@ void BeebWin::Initialise()
 	}
 
 	if (FAILED(CoInitialize(NULL)))
+	{
 		MessageBox(m_hWnd,"Failed to initialise COM\n",WindowTitle,MB_OK|MB_ICONERROR);
+		return false;
+	}
 
 	// Init Windows controls
 	INITCOMMONCONTROLSEX cc;
@@ -304,6 +307,8 @@ void BeebWin::Initialise()
 	// Schedule first key press if keyboard command supplied
 	if (m_KbdCmd[0] != 0)
 		SetTimer(m_hWnd, 1, 1000, NULL);
+
+	return true;
 }
 
 /****************************************************************************/
