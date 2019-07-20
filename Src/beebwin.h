@@ -126,7 +126,7 @@ class BeebWin {
 public:
 	BeebWin();
 	~BeebWin();
- 
+
 	bool Initialise();
 	void ApplyPrefs();
 	void Shutdown();

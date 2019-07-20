@@ -48,8 +48,10 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 	OpenLog();
 
 	mainWin = new BeebWin();
+
 	if (!mainWin->Initialise())
 	{
+		delete mainWin;
 		return 1;
 	}
 
