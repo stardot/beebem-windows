@@ -43,7 +43,7 @@ Boston, MA  02110-1301, USA.
 #include "video.h"
 
 /* Used in message boxes */
-#define GETHWND (mainWin == NULL ? NULL : mainWin->GethWnd())
+#define GETHWND (mainWin->GethWnd())
 
 #define WM_REINITDX (WM_APP+1)
 

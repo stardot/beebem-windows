@@ -1170,11 +1170,10 @@ void BeebWin::SetAMXPosition(unsigned int x, unsigned int y)
 }
 
 /****************************************************************************/
-LRESULT CALLBACK WndProc(
-				HWND hWnd,		   // window handle
-				UINT message,	   // type of message
-				WPARAM uParam,	   // additional information
-				LPARAM lParam)	   // additional information
+LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
+                         UINT message,  // type of message
+                         WPARAM uParam, // additional information
+                         LPARAM lParam) // additional information
 {
 	int wmId, wmEvent;
 	HDC hdc;
@@ -1185,33 +1184,24 @@ LRESULT CALLBACK WndProc(
 		case WM_COMMAND:  // message: command from application menu
 			wmId	= LOWORD(uParam);
 			wmEvent = HIWORD(uParam);
-			if (mainWin)
-				mainWin->HandleCommand(wmId);
+			mainWin->HandleCommand(wmId);
 			break;
 
 		case WM_PALETTECHANGED:
-			if(!mainWin)
-				break;
 			if ((HWND)uParam == hWnd)
 				break;
 
 			// fall through to WM_QUERYNEWPALETTE
 		case WM_QUERYNEWPALETTE:
-			if(!mainWin)
-				break;
-
 			hdc = GetDC(hWnd);
 			mainWin->RealizePalette(hdc);
 			ReleaseDC(hWnd, hdc);
 			return TRUE;
 
 		case WM_PAINT:
-			if(mainWin != NULL)
 			{
 				PAINTSTRUCT ps;
-				HDC 		hDC;
-
-				hDC = BeginPaint(hWnd, &ps);
+				HDC hDC = BeginPaint(hWnd, &ps);
 				mainWin->RealizePalette(hDC);
 				mainWin->updateLines(hDC, 0, 0);
 				EndPaint(hWnd, &ps);
@@ -1260,6 +1250,7 @@ LRESULT CALLBACK WndProc(
 
 			if (uParam != VK_F10 && uParam != VK_CONTROL)
 				break;
+
 		case WM_KEYDOWN:
 			//{char txt[100];sprintf(txt,"KeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);OutputDebugString(txt);}
 			if (mainWin->m_TextToSpeechEnabled &&
@@ -1332,6 +1323,7 @@ LRESULT CALLBACK WndProc(
 				MessageBeep(MB_ICONEXCLAMATION);
 				break;
 			}
+
 			if (uParam == 0x32 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickLoad();
@@ -1346,6 +1338,7 @@ LRESULT CALLBACK WndProc(
 				mainWin->AdjustSpeed(true);
 				break;
 			}
+
 			if (uParam == VK_OEM_MINUS && (lParam & 0x20000000))
 			{
 				mainWin->AdjustSpeed(false);
@@ -1354,6 +1347,7 @@ LRESULT CALLBACK WndProc(
 
 			if (uParam != VK_F10 && uParam != VK_CONTROL)
 				break;
+
 		case WM_KEYUP:
 			//{char txt[100];sprintf(txt,"KeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);OutputDebugString(txt);}
 			if (uParam == VK_DIVIDE && !mainWin->m_DisableKeysShortcut)
@@ -1380,16 +1374,12 @@ LRESULT CALLBACK WndProc(
 			}
 			else 
 			{
-				int i;
-				int mask;
-				bool bit;
-
-				mask = 0x01;
-				bit = false;
+				int mask = 0x01;
+				bool bit = false;
 
 				if (mBreakOutWindow)
 				{
-					for (i = 0; i < 8; ++i)
+					for (int i = 0; i < 8; ++i)
 					{
 						if (BitKeys[i] == static_cast<int>(uParam))
 						{
@@ -1462,38 +1452,32 @@ LRESULT CALLBACK WndProc(
 					}
 				}
 			}
-			break;					  
+			break;
 
 		case WM_ACTIVATE:
-			if (mainWin)
+			mainWin->Activate(uParam != WA_INACTIVE);
+			if(uParam != WA_INACTIVE)
 			{
-				mainWin->Activate(uParam != WA_INACTIVE);
-				if(uParam != WA_INACTIVE)
+				// Bring debug window to foreground BEHIND main window.
+				if(hwndDebug)
 				{
-					// Bring debug window to foreground BEHIND main window.
-					if(hwndDebug)
-					{
-						SetWindowPos(hwndDebug, GETHWND,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
-						SetWindowPos(GETHWND, HWND_TOP,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE);
-					}
+					SetWindowPos(hwndDebug, GETHWND,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
+					SetWindowPos(GETHWND, HWND_TOP,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE);
 				}
 			}
 			break;
 
 		case WM_SETFOCUS:
-			if (mainWin)
-				mainWin->Focus(true);
+			mainWin->Focus(true);
 			break;
 
 		case WM_KILLFOCUS:
 			BeebReleaseAllKeys();
-			if (mainWin)
-				mainWin->Focus(false);
+			mainWin->Focus(false);
 			break;
 
 		case MM_JOY1MOVE:
-			if (mainWin)
-				mainWin->ScaleJoystick(LOWORD(lParam), HIWORD(lParam));
+			mainWin->ScaleJoystick(LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case MM_JOY1BUTTONDOWN:
@@ -1502,7 +1486,6 @@ LRESULT CALLBACK WndProc(
 			break; 
 
 		case WM_MOUSEMOVE:
-			if (mainWin)
 			{
 				int xPos = GET_X_LPARAM(lParam);
 				int yPos = GET_Y_LPARAM(lParam);
@@ -1516,19 +1499,19 @@ LRESULT CALLBACK WndProc(
 			break;
 
 		case WM_LBUTTONDOWN:
-			if (mainWin)
-				mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) != 0);
+			mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) != 0);
 			AMXButtons |= AMX_LEFT_BUTTON;
 			break;
+
 		case WM_LBUTTONUP:
-			if (mainWin)
-				mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) != 0);
+			mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) != 0);
 			AMXButtons &= ~AMX_LEFT_BUTTON;
 			break;
 
 		case WM_MBUTTONDOWN:
 			AMXButtons |= AMX_MIDDLE_BUTTON;
 			break;
+
 		case WM_MBUTTONUP:
 			AMXButtons &= ~AMX_MIDDLE_BUTTON;
 			break;
@@ -1536,13 +1519,13 @@ LRESULT CALLBACK WndProc(
 		case WM_RBUTTONDOWN:
 			AMXButtons |= AMX_RIGHT_BUTTON;
 			break;
+
 		case WM_RBUTTONUP:
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
 		case WM_DESTROY:  // message: window being destroyed
-			if (mainWin)
-				mainWin->Shutdown();
+			mainWin->Shutdown();
 			PostQuitMessage(0);
 			break;
 
@@ -1552,13 +1535,13 @@ LRESULT CALLBACK WndProc(
 
 		case WM_EXITMENULOOP:
 			SetSound(SoundState::Unmuted);
-			if (mainWin)
-				mainWin->ResetTiming();
+			mainWin->ResetTiming();
 			break;
 
 		case WM_ENTERSIZEMOVE: // Window being moved
 			SetSound(SoundState::Muted);
 			break;
+
 		case WM_EXITSIZEMOVE:
 			SetSound(SoundState::Unmuted);
 			break;
@@ -1568,14 +1551,16 @@ LRESULT CALLBACK WndProc(
 			break;
 
 		case WM_TIMER:
-			if(uParam == 1)
+			if (uParam == 1) {
 				mainWin->HandleTimer();
+			}
 			break;
 
-		default:		  // Passes it on if unproccessed
-			return (DefWindowProc(hWnd, message, uParam, lParam));
-		}
-	return (0);
+		default: // Passes it on if unproccessed
+			return DefWindowProc(hWnd, message, uParam, lParam);
+	}
+
+	return 0;
 }
 
 /****************************************************************************/

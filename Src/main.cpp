@@ -24,6 +24,7 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <new>
 
 #include <windows.h>
 
@@ -33,21 +34,24 @@ Boston, MA  02110-1301, USA.
 #include "serial.h"
 
 Model MachineType;
-BeebWin *mainWin = NULL;
+BeebWin *mainWin = nullptr;
 HINSTANCE hInst;
-HWND hCurrentDialog = NULL;
-HACCEL hCurrentAccelTable = NULL;
+HWND hCurrentDialog = nullptr;
+HACCEL hCurrentAccelTable = nullptr;
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
                      LPSTR /* lpszCmdLine */, int /* nCmdShow */)
 {
-	MSG msg;
-
 	hInst = hInstance;
 
 	OpenLog();
 
-	mainWin = new BeebWin();
+	mainWin = new(std::nothrow) BeebWin();
+
+	if (mainWin == nullptr)
+	{
+		return 1;
+	}
 
 	if (!mainWin->Initialise())
 	{
@@ -60,6 +64,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
 	do
 	{
+		MSG msg;
+
 		if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) || mainWin->IsFrozen())
 		{
 			if (!GetMessage(&msg,   // message structure
