@@ -1185,7 +1185,7 @@ void AdjustVideo() {
   int InitialOffset = 0 - (((CRTC_HorizontalTotal + 1) / 2) - (HSyncModifier == 8 ? 40 : 20));
   int HStart = InitialOffset +
                (CRTC_HorizontalTotal + 1 - (CRTC_HorizontalSyncPos + (CRTC_SyncWidth & 0x0f))) +
-               (HSyncModifier == 8) ? 2 : 1;
+               ((HSyncModifier == 8) ? 2 : 1);
   if (TeletextEnabled) HStart += 2;
   if (HStart < 0) HStart = 0;
   ScreenAdjust = HStart * HSyncModifier + (VScreenAdjust > 0 ? VScreenAdjust * 800 : 0);
