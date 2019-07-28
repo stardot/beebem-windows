@@ -94,10 +94,8 @@ unsigned char CRTC_LightPenHigh=0;          /* R16 */
 unsigned char CRTC_LightPenLow=0;           /* R17 */
 
 unsigned int ActualScreenWidth=640;
-int InitialOffset=0;
 long ScreenAdjust=0; // Mode 7 Defaults.
 long VScreenAdjust=0;
-int VStart,HStart;
 unsigned char HSyncModifier=9;
 bool TeletextEnabled = false;
 char TeletextStyle=1; // Defines wether teletext will skip intermediate lines in order to speed up
@@ -1175,17 +1173,24 @@ void VideoDoScanLine(void) {
 
 /*-------------------------------------------------------------------------------------------------------------*/
 void AdjustVideo() {
-	ActualScreenWidth=CRTC_HorizontalDisplayed*HSyncModifier;
-	if (ActualScreenWidth>800) ActualScreenWidth=800;
-	if (ActualScreenWidth<640) ActualScreenWidth=640;
+  ActualScreenWidth = CRTC_HorizontalDisplayed * HSyncModifier;
 
-	InitialOffset=0-(((CRTC_HorizontalTotal+1)/2)-((HSyncModifier==8)?40:20));
-	HStart=InitialOffset+((CRTC_HorizontalTotal+1)-(CRTC_HorizontalSyncPos+(CRTC_SyncWidth&15)));
-	HStart+=(HSyncModifier==8)?2:1;
-	if (TeletextEnabled) HStart+=2;
-	if (HStart<0) HStart=0;
-	ScreenAdjust=(HStart*HSyncModifier)+((VScreenAdjust>0)?(VScreenAdjust*800):0);
+  if (ActualScreenWidth > 800) {
+    ActualScreenWidth = 800;
+  }
+  else if (ActualScreenWidth < 640) {
+    ActualScreenWidth = 640;
+  }
+
+  int InitialOffset = 0 - (((CRTC_HorizontalTotal + 1) / 2) - (HSyncModifier == 8 ? 40 : 20));
+  int HStart = InitialOffset +
+               (CRTC_HorizontalTotal + 1 - (CRTC_HorizontalSyncPos + (CRTC_SyncWidth & 0x0f))) +
+               (HSyncModifier == 8) ? 2 : 1;
+  if (TeletextEnabled) HStart += 2;
+  if (HStart < 0) HStart = 0;
+  ScreenAdjust = HStart * HSyncModifier + (VScreenAdjust > 0 ? VScreenAdjust * 800 : 0);
 }
+
 /*-------------------------------------------------------------------------------------------------------------*/
 void VideoInit(void) {
   VideoStartOfFrame();
@@ -1230,7 +1235,6 @@ void CRTCWrite(int Address, unsigned char Value) {
     switch (CRTCControlReg) {
       case 0:
         CRTC_HorizontalTotal = Value;
-        InitialOffset = 0 - (((CRTC_HorizontalTotal + 1) / 2) - (HSyncModifier == 8 ? 40 : 20));
         AdjustVideo();
         break;
 
