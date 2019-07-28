@@ -623,7 +623,7 @@ static void VideoStartOfFrame(void) {
 #endif
 
   /* FrameNum is determined by the window handler */
-  if (mainWin && VideoState.IsNewTVFrame)	// RTW - only calibrate timing once per frame
+  if (VideoState.IsNewTVFrame)	// RTW - only calibrate timing once per frame
   {
     VideoState.IsNewTVFrame = false;
 #ifdef WIN32
