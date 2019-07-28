@@ -101,7 +101,7 @@ int VStart,HStart;
 unsigned char HSyncModifier=9;
 bool TeletextEnabled = false;
 char TeletextStyle=1; // Defines wether teletext will skip intermediate lines in order to speed up
-bool THalfMode = false; // set true to use half-mode (TeletextStyle=1 all the time)
+bool TeletextHalfMode = false; // set true to use half-mode (TeletextStyle=1 all the time)
 int CurY=-1;
 FILE *crtclog;
 
@@ -908,7 +908,7 @@ static void DoMode7Row(void) {
     } /* test for special character */
     else FontTypeIndex=Graphics?(Separated?2:1):0;
     if (CurrentLineBottom && ((byte & 127) > 31) && !DoubleHeight) byte = 32;
-    if ((CRTC_ScanLinesPerChar <= 9) || THalfMode) TeletextStyle = 2; else TeletextStyle = 1;
+    TeletextStyle = (CRTC_ScanLinesPerChar <= 9 || TeletextHalfMode) ? 2 : 1;
     /* Top bit never reaches character generator */
     byte&=127;
     /* Our font table goes from character 32 up */

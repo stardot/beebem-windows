@@ -712,7 +712,7 @@ BEGIN
         END
         MENUITEM SEPARATOR
         MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
-        MENUITEM "&Teletext Half Mode",         ID_TSTYLE
+        MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE
         MENUITEM SEPARATOR
         MENUITEM "Econet On/Off",               ID_ECONET
         MENUITEM "Teletext Adapter On/Off",     ID_TELETEXT

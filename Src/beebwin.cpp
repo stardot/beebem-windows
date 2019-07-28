@@ -2403,7 +2403,7 @@ void BeebWin::UpdateOptiMenu() {
 	CheckMenuItem(ID_EXTRAS, OpCodes == 2);
 	CheckMenuItem(ID_FULLSET, OpCodes == 3);
 	CheckMenuItem(ID_BHARDWARE, BHardware);
-	CheckMenuItem(ID_TSTYLE, THalfMode);
+	CheckMenuItem(ID_TELETEXTHALFMODE, TeletextHalfMode);
 	CheckMenuItem(ID_PSAMPLES, PartSamples);
 }
 
@@ -3504,8 +3504,8 @@ void BeebWin::HandleCommand(int MenuId)
 		CheckMenuItem(ID_UPRM, RTC_Enabled);
 		break;
 
-	case ID_TSTYLE:
-		THalfMode = !THalfMode;
+	case ID_TELETEXTHALFMODE:
+		TeletextHalfMode = !TeletextHalfMode;
 		UpdateOptiMenu();
 		break;
 
