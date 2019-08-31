@@ -515,7 +515,7 @@ void BeebWin::LoadPreferences()
 	}
 
 	// Set file path defaults
-	if (!m_Preferences.HasValue("DiscPath")) {
+	if (!m_Preferences.HasValue("DiscsPath")) {
 		m_Preferences.SetStringValue("DiscsPath", "DiscIms");
 	}
 
