@@ -294,7 +294,8 @@ unsigned char Read_ACIA_Status(void) {
 
 //	WriteLog("Serial: Read ACIA status %02X\n", (int)ACIA_Status);
 
-	return(ACIA_Status);
+	// See https://github.com/stardot/beebem-windows/issues/47
+	return ACIA_Status;
 }
 
 void HandleData(unsigned char AData) {
