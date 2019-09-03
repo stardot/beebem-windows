@@ -203,8 +203,6 @@ BeebWin::BeebWin()
 	m_startFullScreen = false;
 	m_XDXSize = 640;
 	m_YDXSize = 480;
-	m_XDXPos = 0;
-	m_YDXPos = 0;
 	m_XScrSize = GetSystemMetrics(SM_CXSCREEN);
 	m_YScrSize = GetSystemMetrics(SM_CYSCREEN);
 	m_XWinBorder = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
@@ -2218,8 +2216,6 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 			// Get current resolution of the monitor
 			m_XDXSize = info.rcMonitor.right - info.rcMonitor.left;
 			m_YDXSize = info.rcMonitor.bottom - info.rcMonitor.top;
-			m_XDXPos = info.rcMonitor.left;
-			m_YDXPos = info.rcMonitor.top;
 		}
 
 		if (!wasFullScreen)

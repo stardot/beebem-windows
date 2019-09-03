@@ -270,8 +270,6 @@ public:
 	int		m_YWinPos;
 	int		m_XDXSize;
 	int		m_YDXSize;
-	int		m_XDXPos;
-	int		m_YDXPos;
 	int		m_XScrSize;
 	int		m_YScrSize;
 	int		m_XWinBorder;
