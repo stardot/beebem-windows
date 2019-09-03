@@ -425,7 +425,7 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_1280X720             40288
 #define ID_VIEW_DD_1920X1080            40289
 #define IDM_ARMCOPRO                    40290
-#define IDM_EMUPAUSED                   40293 // Must not be changed to maintain support for external messaging
+#define IDM_EMUPAUSED                   40293
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

@@ -245,9 +245,9 @@ public:
 	void CopyKey(int data);
 	int PasteKey(int addr);
 	void CaptureBitmapPending(bool autoFilename);
-	void DoShiftBreak(void);
-	void SetBootDiscTimer(void);
-	void KillBootDiscTimer(void);
+	void DoShiftBreak();
+	void SetBootDiscTimer();
+	void KillBootDiscTimer();
 
 	void SaveEmuUEF(FILE *SUEF);
 	void LoadEmuUEF(FILE *SUEF,int Version);
@@ -372,8 +372,9 @@ public:
 	int		m_KbdCmdLastCycles;
 	bool		m_NoAutoBoot;
 	int		m_AutoBootDelay;
-	bool            m_EmuPaused;
-	bool	m_AutoBootDisc;
+	bool		m_EmuPaused;
+	bool		m_StartPaused;
+	bool		m_AutoBootDisc;
 	unsigned char RomWritePrefs[16];
 
 	// Bitmap capture vars

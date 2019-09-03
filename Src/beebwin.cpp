@@ -189,6 +189,7 @@ BeebWin::BeebWin()
 	m_NoAutoBoot = false;
 	m_AutoBootDelay = 0;
 	m_EmuPaused = false;
+	m_StartPaused = false;
 	m_clipboardlen = 0;
 	m_clipboardptr = 0;
 	m_printerbufferlen = 0;
@@ -866,7 +867,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_5FPS, false);
 	CheckMenuItem(IDM_1FPS, false);
 	CheckMenuItem(m_MenuIdTiming, true);
-    // Check menu based on m_EmuPaused to take into account -StartPaused arg
+	// Check menu based on m_EmuPaused to take into account -StartPaused arg
 	CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
 
 	// Sound
@@ -1556,8 +1557,10 @@ LRESULT CALLBACK WndProc(
 			break;
 
 		case WM_TIMER:
-			if(uParam == 1)
+			if (uParam == 1)
+			{
 				mainWin->HandleTimer();
+			}
 			else if (uParam == 2) // Handle timer for automatic disc boot delay
 			{
 				mainWin->KillBootDiscTimer();
@@ -3071,6 +3074,23 @@ void BeebWin::HandleCommand(int MenuId)
 			sprintf(m_szTitle, "%s  Paused", WindowTitle);
 			SetWindowText(m_hWnd, m_szTitle);
 		}
+
+		if (m_StartPaused && !m_EmuPaused)
+		{
+			m_StartPaused = false;
+
+			// Schedule first key press if keyboard command supplied
+			if (mainWin->m_KbdCmd[0] != 0)
+			{
+				SetTimer(mainWin->m_hWnd, 1, 1000, NULL);
+			}
+
+			// If command line file in state to boot, trigger the timer
+			if (m_AutoBootDisc)
+			{
+				SetBootDiscTimer();
+			}
+		}
 		break;
 
 	case IDM_JOYSTICK:
@@ -3856,6 +3876,7 @@ void BeebWin::ParseCommandLine()
 		}
 		else if (_stricmp(__argv[i], "-StartPaused") == 0)
 		{
+			m_StartPaused = true;
 			m_EmuPaused = true;
 		}
 		else if (_stricmp(__argv[i], "-FullScreen") == 0)

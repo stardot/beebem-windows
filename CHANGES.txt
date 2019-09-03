@@ -32,9 +32,9 @@ Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley)
 * General sound emulation improvements.
 * Fixed graphics hold in teletext mode.
 * Release Shift key on disk read after auto-booting.
-* Added AutoBootDelay CLI argument taking a delay parameter set in 
+* Added AutoBootDelay CLI argument taking a delay parameter set in
   milliseconds creates a delay between initial boot and auto-boot of disk image
-  if supplied in arguments.  If used with -StartPaused, timer starts after
+  if supplied in arguments. If used with -StartPaused, timer starts after
   un-pausing
 * Added ability to pause the emulation, distinct from freezing when focus lost.
   - Menu item on Speed menu.
