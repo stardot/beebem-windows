@@ -190,6 +190,8 @@ BeebWin::BeebWin()
 	m_AutoBootDelay = 0;
 	m_EmuPaused = false;
 	m_StartPaused = false;
+	m_KeyboardTimerElapsed = false;
+	m_BootDiscTimerElapsed = false;
 	m_clipboardlen = 0;
 	m_clipboardptr = 0;
 	m_printerbufferlen = 0;
@@ -303,6 +305,15 @@ void BeebWin::Initialise()
 	HandleCommandLineFile(0, m_CommandLineFileName1);
 
 	HandleEnvironmentVariables();
+
+	if (!m_StartPaused)
+	{
+		// Schedule first key press if keyboard command supplied
+		if (HasKbdCmd())
+		{
+			SetKeyboardTimer();
+		}
+	}
 }
 
 /****************************************************************************/
@@ -3075,18 +3086,19 @@ void BeebWin::HandleCommand(int MenuId)
 			SetWindowText(m_hWnd, m_szTitle);
 		}
 
-		if (m_StartPaused && !m_EmuPaused)
+		if (m_EmuPaused)
 		{
-			m_StartPaused = false;
-
-			// Schedule first key press if keyboard command supplied
-			if (mainWin->m_KbdCmd[0] != 0)
+			KillTimer(m_hWnd, 1);
+			KillTimer(m_hWnd, 2);
+		}
+		else
+		{
+			if (HasKbdCmd() && !m_KeyboardTimerElapsed)
 			{
-				SetTimer(mainWin->m_hWnd, 1, 1000, NULL);
+				SetKeyboardTimer();
 			}
 
-			// If command line file in state to boot, trigger the timer
-			if (m_AutoBootDisc)
+			if (m_AutoBootDisc && !m_BootDiscTimerElapsed)
 			{
 				SetBootDiscTimer();
 			}
@@ -4324,6 +4336,16 @@ void BeebWin::DoShiftBreak()
 	m_ShiftBooted = true;
 }
 
+bool BeebWin::HasKbdCmd() const
+{
+	return m_KbdCmd[0] != '\0';
+}
+
+void BeebWin::SetKeyboardTimer()
+{
+	SetTimer(m_hWnd, 1, 1000, NULL);
+}
+
 void BeebWin::SetBootDiscTimer()
 {
 	SetTimer(m_hWnd, 2, m_AutoBootDelay, NULL);
@@ -4331,6 +4353,7 @@ void BeebWin::SetBootDiscTimer()
 
 void BeebWin::KillBootDiscTimer()
 {
+	m_BootDiscTimerElapsed = true;
 	KillTimer(m_hWnd, 2);
 }
 
@@ -4709,6 +4732,8 @@ void BeebWin::HandleTimer()
 {
 	int row,col;
 	char delay[10];
+
+	m_KeyboardTimerElapsed = true;
 
 	// Do nothing if emulation is not running (e.g. if Window is being moved)
 	if ((TotalCycles - m_KbdCmdLastCycles) / 2000 < m_KbdCmdDelay)

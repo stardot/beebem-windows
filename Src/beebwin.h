@@ -246,6 +246,8 @@ public:
 	int PasteKey(int addr);
 	void CaptureBitmapPending(bool autoFilename);
 	void DoShiftBreak();
+	bool HasKbdCmd() const;
+	void SetKeyboardTimer();
 	void SetBootDiscTimer();
 	void KillBootDiscTimer();
 
@@ -375,6 +377,8 @@ public:
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
 	bool		m_AutoBootDisc;
+	bool		m_KeyboardTimerElapsed;
+	bool		m_BootDiscTimerElapsed;
 	unsigned char RomWritePrefs[16];
 
 	// Bitmap capture vars
