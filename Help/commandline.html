@@ -206,15 +206,16 @@ option.</p>
 
 <p>-StartPaused is useful if you are scripting the launch of BeebEm and you
 want to manipulate the window, its position or perform other tasks before
-the emulated machine boots.  In this kind of script, launch BeebEm, then 
-send a message to the BeebEm window with wParam = 40293.  E.g. if using
+the emulated machine boots. In this kind of script, launch BeebEm, then
+send an Alt+F5 keypress when you are ready to un-pause. E.g., if using
 AutoHotKey, including the following in your script will toggle the pause
 state:</p>
-<p><blockquote><pre>PostMessage, 0x111, 40293,,,ahk_class BEEBWIN</pre></blockquote></p>
+
+<blockquote><code>SendInput !{F5}</code></blockquote>
 
 <p>If -StartPaused is used, the timer for -AutoBootDelay will start after
-unpausing, but will continue if paused again.  If the timer expires while
-paused, the boot will occur immediately after unpausing for the second time.</p>
+unpausing, but will reset if paused again. The -KbdCmd option will also
+only apply when the emulator is unpaused for the first time.</p>
 
 <h2>Startup Key Sequence</h2>
 
@@ -278,11 +279,13 @@ The string can include the following key sequences:</p>
       presses.</td>
   </tr>
 </table>
-                 
+
 <p>So, for example, run a tape image using commands such as:</p>
 
-<p>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</p>
-<p>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef</p>
+<blockquote>
+  <p><code>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</code></p>
+  <p><code>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef</code></p>
+</blockquote>
 
       <!-- End of content -->
       </td>
