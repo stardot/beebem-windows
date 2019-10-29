@@ -64,7 +64,6 @@ Source: ..\..\README.txt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOff.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOn.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\Teletext.fnt; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\zlib1.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\UserData\*; DestDir: {userdocs}\BeebEm; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 Source: {app}\BeebFile\*; DestDir: {userdocs}\BeebEm\BeebFile; AfterInstall: DeleteOldDataDir('{app}\BeebFile'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
 Source: {app}\DiscIms\*; DestDir: {userdocs}\BeebEm\DiscIms; AfterInstall: DeleteOldDataDir('{app}\DiscIms'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
