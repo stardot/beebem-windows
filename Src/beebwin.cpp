@@ -1655,6 +1655,12 @@ int BeebWin::TranslateKey(int vkey, bool keyUp, int &row, int &col)
 				col = 0;
 			}
 		}
+		//Reset IntegraB RTC on Break
+		if (MachineType == Model::IntegraB && row == -2 && col == -2)
+		{
+			//MessageBox(GETHWND, "Break!", "Keycheck", MB_OK | MB_ICONERROR);
+			RTCReset();
+		}
 
 		if (m_DisableKeysShortcut && (row == -3 || row == -4))
 			row = -10;

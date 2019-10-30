@@ -95,9 +95,22 @@ unsigned char Roms[16][16384];
 unsigned char Hidden[256];
 unsigned char Private[12288];
 unsigned char ShadowRam[20480];
-unsigned char HiddenDefault[31] = {0,0,0,0,0,0,2,1,1,0,0xe0,0x8e,0,0,0,0,0,0,0,
-						0xef,0xff,0xff,0x78,0,0x17,0x23,0x19,5,0x0a,0x2d,0xa0 }; 
-/* End of Computech (&B+) Specific Stuff */
+unsigned char HiddenDefault[31] = { 0,0,0,0,0,0,2,1,1,0,0xe0,0x8e,0,0,
+0,0,0,0,0,
+0xed,0xff,0xff,0x78,0,0x17,0x20,0x19,5,0x0a,0x2d,0xa1 };
+
+//Addresses 0x0 thru 0xD:		RTC Data: Sec, SecAlm, Min, MinAlm, Hr, HrAlm, Day, Date, Month, Year, Registers A, B, C & D
+//Addresses 0xE thru 0x12:	?
+//Address 0x13: 0xED		LANGUAGE in bank E. FILE SYSTEM in bank D. ROMS.cfg should match this, but IBOS reset will correct if wrong
+//Address 0x14: 0xFF		*INSERT status for ROMS &0F to &08. Default: &FF (All 8 ROMS enabled)
+//Address 0x15: 0xFF		*INSERT status for ROMS &07 to &00. Default: &FF (All 8 ROMS enabled)
+//Address 0x18: 0x17		0-2: MODE / 3: SHADOW / 4: TV Interlace / 5-7: TV screen shift.
+//Address 0x19: 0x20		0-2: FDRIVE / 3-5: CAPS. Default was &23. Changed to &20
+//Address 0x1A: 0x19		0-7: Keyboard Delay
+//Address 0x1B: 0x05		0-7: Keyboard Repeat
+//Address 0x1C: 0x0A		0-7: Printer Ignore
+//Address 0x1D: 0x2D		0: Tube / 2-4: BAUD / 5-7: Printer
+//Address 0x1E: 0xA1		0: File system / 4: Boot / 5-7: Data. Default was &A0. Changed to &A1/* End of Computech (&B+) Specific Stuff */
 
 unsigned char ROMSEL;
 unsigned char JimPageSel;
@@ -324,7 +337,7 @@ int BeebReadMem(int Address) {
 			if (HidAdd==6) return((localtime(&long_time)->tm_wday)+1);
 			if (HidAdd==7) return(localtime(&long_time)->tm_mday);
 			if (HidAdd==8) return((localtime(&long_time)->tm_mon)+1);
-			if (HidAdd==9) return((localtime(&long_time)->tm_year)-10);
+			if (HidAdd==9) return((localtime(&long_time)->tm_year)%100);
 			if (HidAdd==0xa) return(0x0);
 			return(Hidden[HidAdd]);
 		}
@@ -1250,6 +1263,11 @@ void BeebReadRoms(void) {
 	}
 }
 /*----------------------------------------------------------------------------*/
+void RTCReset(void) {
+	Hidden[0xb] &= 0x87; /* clear bits in register B */
+	Hidden[0xc] = 0;
+}
+/*----------------------------------------------------------------------------*/
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
   // Reset everything
   memset(WholeRam,0,0x8000);
@@ -1263,7 +1281,12 @@ void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
   Sh_CPUE = false;
   Sh_CPUX = false;
   memset(Private,0,0x3000);
-  Private[0x3b2]=4; // Default OSMODE to 4
+  Private[0x3b2] = 0x04; // Default OSMODE to 4
+  Private[0x3b5] = 0x14; // Default Century to 2000
+  Private[0x3b8] = 0xFF; // Default
+  Private[0x3b9] = 0xFF; // Default
+  Private[0x3ba] = 0x90; // Default
+  Private[0x3ff] = 0x0F; // Default RAM in bank locations 4, 5, 6 & 7
   memset(ShadowRam,0,0x5000);
   MemSel = PrvEn = ShEn = Prvs1 = Prvs4 = Prvs8 = false;
   HidAdd = 0;
