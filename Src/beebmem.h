@@ -110,6 +110,7 @@ const unsigned char *BeebMemPtrWithWrapMo7(int Address, int Length);
 bool ReadROMFile(const char *filename, ROMConfigFile RomConfig);
 void BeebReadRoms(void);
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);
+void RTCReset(void);
 
 /* used by debugger */
 bool ReadRomInfo(int bank, RomInfo* info);
