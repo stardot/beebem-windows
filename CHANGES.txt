@@ -2,7 +2,8 @@ BeebEm Change History
 =====================
 
 Version 4.15 (Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
-Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley)
+Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley,
+Ken Lowe)
 ------------
 * Fixed 320x256 screen capture.
 * Enabled DirectX full screen display at current desktop screen resolution.
@@ -53,6 +54,9 @@ Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley)
     HyperSpin/RocketLauncher configurations where you want to defer boot until
     the BeebEm window and bezels are shown, and any Fade screen has been removed.
   - If in windowed mode and showing fps, pause state is shown in window title.
+* Improved Computech IntegraB startup defaults, and correct the current year
+  calculation. Also included is a patched IBOS ROM where two digit years are
+  assumed to be 20xx instead of 19xx.
 
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------
