@@ -130,6 +130,6 @@ void LoadFileMemUEF(FILE *SUEF);
 void LoadSWRamMemUEF(FILE *SUEF);
 void LoadSWRomMemUEF(FILE *SUEF);
 void LoadIntegraBHiddenMemUEF(FILE *SUEF);
-void LoadJIMPageRegUEF(FILE *SUEF);
+//void LoadJIMPageRegUEF(FILE *SUEF);
 void DebugMemoryState();
 #endif
