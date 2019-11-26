@@ -33,8 +33,8 @@ extern bool Music5000Enabled;
 
 void Music5000Init();
 void Music5000Reset();
-void Music5000Write(UINT8 page, UINT8 address, UINT8 value);
-UINT8 Music5000Read(UINT8 page, UINT8 address);
+void Music5000Write(UINT16 address, UINT8 value);
+bool Music5000Read(UINT16 address, UINT8 *value);
 void Music5000Update(UINT cycles);
 void SaveMusic5000UEF(FILE *SUEF);
 void LoadMusic5000UEF(FILE *SUEF);

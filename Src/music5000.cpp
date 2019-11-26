@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 
 bool Music5000Enabled = false;
+UINT8	jimPageSelectRegister;
 extern int SoundVolume;
 
 #define RAM_SIZE              2048
@@ -154,19 +155,28 @@ void Music5000Reset()
 {
 	delete pSoundStreamer;
 	pSoundStreamer = NULL;
+	jimPageSelectRegister = 0;
 }
 
-void Music5000Write(UINT8 page, UINT8 address, UINT8 value)
+void Music5000Write(UINT16 address, UINT8 value)
 {
 	if (!Music5000Enabled)
 		return;
 
-	if ((page & 0xf0) != 0x30)
+	if (address == 0xfcff)
+	{
+		jimPageSelectRegister = value;
+		return;
+	}
+
+	if ((jimPageSelectRegister & 0xf0) != 0x30)
 		return;
 
-	page &= 0xe; // Bit0 unused
-	UINT offset = (page << 7) + address;
+	if ((address & 0xff00) == 0xfd00) {
+		// Bit0 unused
+		UINT offset = ((jimPageSelectRegister & 0x0E) << 7) + (address & 0xFF);
 	WaveRam[offset] = value;
+	}
 
 #if 0
 	char str[200];
@@ -175,17 +185,29 @@ void Music5000Write(UINT8 page, UINT8 address, UINT8 value)
 #endif
 }
 
-UINT8 Music5000Read(UINT8 page, UINT8 address)
+bool Music5000Read(UINT16 address, UINT8 *value)
 {
 	if (!Music5000Enabled)
-		return 0xFF;
+		return false;
 
-	if ((page & 0xf0) != 0x30)
-		return 0xFF;
+	if ((jimPageSelectRegister & 0xf0) != 0x30)
+		return false;
 
-	page &= 0xe; // Bit0 unused
-	UINT offset = (page << 7) + address;
-	UINT8 value = WaveRam[offset];
+	if (address == 0xfcff)
+	{
+		*value = jimPageSelectRegister;
+		return true;
+	}
+
+	if ((address & 0xff00) == 0xfd00)
+	{
+		// Bit0 unused
+		UINT offset = ((jimPageSelectRegister & 0x0e) << 7) + address;
+		*value = WaveRam[offset];
+		return true;
+	}
+
+	return false;
 
 #if 0
 	char str[200];
@@ -315,7 +337,7 @@ void SaveMusic5000UEF(FILE *SUEF)
 	if (!Music5000Enabled)
 		return;
 
-	unsigned int sz = RAM_SIZE + sizeof(PhaseRam) + 4 + 8;
+	unsigned int sz = RAM_SIZE + sizeof(PhaseRam) + 4 + 8 + 1;
 	fput16(0x0477,SUEF);
 	fput32(sz,SUEF);
 	fwrite(WaveRam,1,RAM_SIZE,SUEF);
@@ -326,6 +348,7 @@ void SaveMusic5000UEF(FILE *SUEF)
 	fputc(0,SUEF);//Unused pad
 	fput32(SampleLeft,SUEF);
 	fput32(SampleRight,SUEF);
+	fputc(jimPageSelectRegister,SUEF);
 }
 
 void LoadMusic5000UEF(FILE *SUEF)
@@ -338,4 +361,5 @@ void LoadMusic5000UEF(FILE *SUEF)
 	fgetc(SUEF);//Unused pad
 	SampleLeft=fget32(SUEF);
 	SampleRight=fget32(SUEF);
+	jimPageSelectRegister = fgetc(SUEF);
 }

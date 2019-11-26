@@ -113,7 +113,6 @@ unsigned char HiddenDefault[31] = { 0,0,0,0,0,0,2,1,1,0,0xe0,0x8e,0,0,
 //Address 0x1E: 0xA1		0: File system / 4: Boot / 5-7: Data. Default was &A0. Changed to &A1/* End of Computech (&B+) Specific Stuff */
 
 unsigned char ROMSEL;
-unsigned char JimPageSel;
 /* Master 128 Specific Stuff */
 unsigned char FSRam[8192];       // 8K Filing System RAM
 unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
@@ -559,15 +558,13 @@ int BeebReadMem(int Address) {
 		return(mainWin->PasteKey(Address & 0x1));
 	}
 
-	if (Address == 0xfcff) {
-		return(JimPageSel);
-	}
-
-	if ((JimPageSel & 0xf0) == 0x30 &&
-		Address >= 0xfd00 && Address <= 0xfdff)
-	{
-		return(Music5000Read(JimPageSel, Address));
-	}
+	//DB: M5000 will only return its fcff select register or 
+	//jim mapped registers if it has been selected by writing
+	//it's id value to fcff - other jim devices should similarly
+	//only return fcff..fcfc/fdxx when they have been selected
+	UINT8 ret;
+	if (Music5000Read(Address, &ret))
+		return ret;
 
 	if ((Address & ~0x3)==0xfdf0) {
 		return(SASIRead(Address & 0x3));
@@ -1023,17 +1020,8 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		}
 	}
 
-	if (Address == 0xfcff) {
-		JimPageSel = Value;
-	}
-
-	if ((JimPageSel & 0xf0) == 0x30 &&
-		Address >= 0xfd00 && Address <= 0xfdff)
-	{
-		Music5000Write(JimPageSel, Address, Value);
-		return;
-	}
-
+	Music5000Write(Address, Value);
+	
 	if ((Address & ~0x3)==0xfdf0) {
 		SASIWrite((Address & 0x3),Value);
 		return;
@@ -1401,9 +1389,6 @@ void SaveMemUEF(FILE *SUEF) {
 		}
 	}
 
-	fput16(0x0476,SUEF); // JIM Page Reg
-	fput32(1,SUEF);
-	fputc(JimPageSel,SUEF);
 }
 
 void LoadRomRegsUEF(FILE *SUEF) {
@@ -1503,9 +1488,6 @@ void LoadSWRomMemUEF(FILE *SUEF) {
 	}
 }
 
-void LoadJIMPageRegUEF(FILE *SUEF) {
-	JimPageSel=fgetc(SUEF);
-}
 
 /*-------------------------------------------------------------------------*/
 /* dump the contents of mainram into 2 16 K files */
