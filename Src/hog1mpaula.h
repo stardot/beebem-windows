@@ -12,31 +12,34 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 //
-// BeebEm Music 5000 emulation
+// Dossytronics 1M Paula / blitter sound demo board for Hoglet
+// 1MHz fpga board
 //
-// Mike Wyatt - Jan 2016
+// Dominic Beesley - 2019
 //
+// This is a rough functional approximation of the the real board
 
-#ifndef _MUSIC5000_H
-#define _MUSIC5000_H
+#ifndef _HOG1MPAULA_H
+#define _HOG1MPAULA_H
 
-extern bool Music5000Enabled;
 
-#define Music5000Poll(cycles) { if (Music5000Enabled) Music5000Update(cycles); }
+extern bool Hog1MPaulaEnabled;
 
-void Music5000Init();
-void Music5000Reset();
-void Music5000Write(UINT16 address, UINT8 value);
-bool Music5000Read(UINT16 address, UINT8 *value);
-void Music5000Update(UINT cycles);
-void SaveMusic5000UEF(FILE *SUEF);
-void LoadMusic5000UEF(FILE *SUEF);
+#define Hog1MPaulaPoll(cycles) { if (Hog1MPaulaEnabled) Hog1MPaulaUpdate(cycles); }
+
+void Hog1MPaulaInit();
+void Hog1MPaulaReset();
+void Hog1MPaulaWrite(UINT16 address, UINT8 value);
+bool Hog1MPaulaRead(UINT16 address, UINT8 *value);
+void Hog1MPaulaUpdate(UINT cycles);
+
+
 
 #endif

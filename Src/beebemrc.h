@@ -433,6 +433,7 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_2560X1440            40294
 #define ID_VIEW_DD_3840X2160            40295
 #define IDM_EMUPAUSED                   40296
+#define IDM_1MHZBUSPAULA                40301
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -441,7 +442,7 @@ Boston, MA  02110-1301, USA.
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        117
-#define _APS_NEXT_COMMAND_VALUE         40297
+#define _APS_NEXT_COMMAND_VALUE         40302
 #define _APS_NEXT_CONTROL_VALUE         1087
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

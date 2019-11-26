@@ -6,8 +6,16 @@ Src/Debug
 Src/Release
 Src/Hardware/Acorn1770/Debug
 Src/Hardware/Acorn1770/Release
+Src/Hardware/Acorn1770/x64
 Src/Hardware/OpusDDOS/Debug
 Src/Hardware/OpusDDOS/Release
+Src/Hardware/OpusDDOS/x64
 Src/Hardware/Watford/Debug
 Src/Hardware/Watford/Release
+Src/Hardware/Watford/x64
 Src/InnoSetup/Release
+Src/InnoSetup/x64
+Src/InnoSetup/Debug
+Src/BeebEm.vcxproj.bak
+Src/x64/Debug
+Src/x64/Release

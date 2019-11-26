@@ -152,7 +152,7 @@ void LoadUEFState(const char *StateName) {
 			if (Block==0x0473) LoadSerialUEF(UEFState);
 			if (Block==0x0474) LoadAtoDUEF(UEFState);
 			if (Block==0x0475) LoadSWRomMemUEF(UEFState);
-			if (Block==0x0476) LoadJIMPageRegUEF(UEFState);
+			//if (Block==0x0476) LoadJIMPageRegUEF(UEFState);
 			if (Block==0x0477) LoadMusic5000UEF(UEFState);
 			fseek(UEFState,CPos+Length,SEEK_SET); // Skip unrecognised blocks (and over any gaps)
 		}
