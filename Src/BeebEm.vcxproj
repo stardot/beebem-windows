@@ -187,6 +187,7 @@
     <ClCompile Include="discedit.cpp" />
     <ClCompile Include="econet.cpp" />
     <ClCompile Include="filedialog.cpp" />
+    <ClCompile Include="Hog1MPaula.cpp" />
     <ClCompile Include="ide.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
@@ -260,6 +261,7 @@
     <ClInclude Include="econet.h" />
     <ClInclude Include="ext1770.h" />
     <ClInclude Include="filedialog.h" />
+    <ClInclude Include="hog1mpaula.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="main.h" />

@@ -641,6 +641,7 @@ BEGIN
         MENUITEM "&Text To Speech",             IDM_TEXTTOSPEECH
         MENUITEM SEPARATOR
         MENUITEM "Music &5000",                 IDM_MUSIC5000
+        MENUITEM "1MHz bus PAULA",              IDM_1MHZBUSPAULA
     END
     POPUP "&AMX"
     BEGIN

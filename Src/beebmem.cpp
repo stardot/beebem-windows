@@ -59,6 +59,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"		//Rob added for INTON/OFF reporting only
 #include "teletext.h"
 #include "music5000.h"
+#include "hog1mpaula.h"
 
 using namespace std;
 
@@ -565,6 +566,9 @@ int BeebReadMem(int Address) {
 	UINT8 ret;
 	if (Music5000Read(Address, &ret))
 		return ret;
+	if (Hog1MPaulaRead(Address, &ret))
+		return ret;
+
 
 	if ((Address & ~0x3)==0xfdf0) {
 		return(SASIRead(Address & 0x3));
@@ -1022,6 +1026,9 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	Music5000Write(Address, Value);
 	
+	Hog1MPaulaWrite(Address, Value);
+
+
 	if ((Address & ~0x3)==0xfdf0) {
 		SASIWrite((Address & 0x3),Value);
 		return;
