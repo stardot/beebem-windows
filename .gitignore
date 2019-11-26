@@ -11,3 +11,13 @@ Src/Hardware/OpusDDOS/Release
 Src/Hardware/Watford/Debug
 Src/Hardware/Watford/Release
 Src/InnoSetup/Release
+Src/BeebEm.vcxproj.bak
+Src/Hardware/Acorn1770/x64/Debug/Acorn1770.Build.CppClean.log
+Src/Hardware/Acorn1770/x64/Debug/Acorn1770.log
+Src/Hardware/OpusDDOS/x64/Debug/OpusDDOS.Build.CppClean.log
+Src/Hardware/OpusDDOS/x64/Debug/OpusDDOS.log
+Src/Hardware/Watford/x64/Debug/Watford.Build.CppClean.log
+Src/Hardware/Watford/x64/Debug/Watford.log
+Src/InnoSetup/x64/Debug/Installer.log
+Src/x64/Debug
+Src/x64/Release
