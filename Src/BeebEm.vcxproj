@@ -92,6 +92,7 @@
       <PreprocessorDefinitions>MODET;MODE32;BEEBEM;WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalOptions>/source-charset:windows-1252 /execution-charset:windows-1252 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>Hardware\reSID;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -196,6 +197,7 @@
     <ClCompile Include="scsi.cpp" />
     <ClCompile Include="serial.cpp" />
     <ClCompile Include="serialdevices.cpp" />
+    <ClCompile Include="SIDwrap.cpp" />
     <ClCompile Include="soundstream.cpp" />
     <ClCompile Include="SprowCoPro.cpp" />
     <ClCompile Include="sysvia.cpp" />
@@ -272,6 +274,7 @@
     <ClInclude Include="scsi.h" />
     <ClInclude Include="serial.h" />
     <ClInclude Include="serialdevices.h" />
+    <ClInclude Include="SIDwrap.h" />
     <ClInclude Include="soundstream.h" />
     <ClInclude Include="SprowCoPro.h" />
     <ClInclude Include="sysvia.h" />
@@ -374,6 +377,11 @@
     <Text Include="..\COPYRIGHT.txt" />
     <Text Include="..\README-SPROW.txt" />
     <Text Include="..\README.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Hardware\reSID\reSID.vcxproj">
+      <Project>{5dea03a2-e54c-41d7-93ee-b37a9db7441a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

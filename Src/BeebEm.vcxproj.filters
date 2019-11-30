@@ -222,6 +222,9 @@
     <ClCompile Include="Hog1MPaula.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SIDwrap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h">
@@ -450,6 +453,9 @@
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="hog1mpaula.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SIDwrap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

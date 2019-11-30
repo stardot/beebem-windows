@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "soundstream.h"
 #include "music5000.h"
 #include "hog1mpaula.h"
+#include "SIDwrap.h"
 #include "beebmem.h"
 #include "serial.h"
 #include "econet.h"
@@ -241,6 +242,8 @@ void BeebWin::LoadPreferences()
 		Music5000Enabled = false;
 	if (!m_Preferences.GetBoolValue("Hog1MPaulaEnabled", Hog1MPaulaEnabled))
 		Hog1MPaulaEnabled = false;
+	if (!m_Preferences.GetBoolValue("SIDEnabled", SIDEnabled))
+		SIDEnabled = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
 		m_MenuIdSticks = dword;
@@ -598,6 +601,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 		m_Preferences.SetBoolValue("Hog1MPaulaEnabled", Hog1MPaulaEnabled);
+		m_Preferences.SetBoolValue("SIDEnabled", SIDEnabled);
 
 		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);

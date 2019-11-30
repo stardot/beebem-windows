@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "music5000.h"
 #include "hog1mpaula.h"
+#include "SIDwrap.h"
 #include "disc8271.h"
 #include "via.h"
 #include "sysvia.h"
@@ -2398,6 +2399,7 @@ void PollHardware(unsigned int nCycles)
 	Disc8271Poll();
 	Music5000Poll(nCycles);
 	Hog1MPaulaPoll(nCycles);
+	SIDPoll(nCycles);
 	Sound_Trigger(nCycles);
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
 	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff

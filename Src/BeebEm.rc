@@ -1,7 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "beebemrc.h"
-#include "version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -14,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -110,7 +107,7 @@ BEGIN
     CONTROL         "SFT LK",IDK_SHIFT_LOCK,"Button",BS_OWNERDRAW | WS_TABSTOP,9,62,29,14
 END
 
-IDD_KEYBOARD_LINKS DIALOG  0, 0, 160, 66
+IDD_KEYBOARD_LINKS DIALOG 0, 0, 160, 66
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Keyboard Links"
 CLASS "LinksDialog"
@@ -167,7 +164,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_USERKYBRD, DIALOG
     BEGIN
@@ -175,14 +172,6 @@ BEGIN
         RIGHTMARGIN, 327
         TOPMARGIN, 4
         BOTTOMMARGIN, 116
-    END
-
-    IDD_DIALOG1, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 153
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 59
     END
 
     IDD_BREAKOUT, DIALOG
@@ -202,8 +191,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
- PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+ FILEVERSION 4,15,0,0
+ PRODUCTVERSION 4,15,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -221,12 +210,12 @@ BEGIN
             VALUE "Comments", "BeebEm - BBC Micro Emulator"
             VALUE "CompanyName", "Mike Wyatt"
             VALUE "FileDescription", "BeebEm"
-            VALUE "FileVersion", VERSION_STRING
+            VALUE "FileVersion", "4.15 (Beta 4)"
             VALUE "InternalName", "BeebEm"
             VALUE "LegalCopyright", "Copyright © 2009"
             VALUE "OriginalFilename", "BeebEm.exe"
             VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", VERSION_STRING
+            VALUE "ProductVersion", "4.15 (Beta 4)"
         END
     END
     BLOCK "VarFileInfo"
@@ -235,18 +224,16 @@ BEGIN
     END
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.K.) resources
+// English (United Kingdom) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -294,7 +281,7 @@ BEGIN
     CONTROL         "Big endian",IDC_WATCHENDIAN,"Button",BS_AUTOCHECKBOX | BS_LEFT | WS_TABSTOP,444,258,50,14
 END
 
-IDD_TAPECONTROL DIALOG  0, 0, 187, 300
+IDD_TAPECONTROL DIALOG 0, 0, 187, 300
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "BeebEm Tape Control"
 FONT 8, "MS Sans Serif"
@@ -346,7 +333,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_DEBUG, DIALOG
     BEGIN
@@ -387,7 +374,7 @@ END
 // Menu
 //
 
-IDR_MENU MENU 
+IDR_MENU MENU
 BEGIN
     POPUP "&File"
     BEGIN
@@ -419,16 +406,16 @@ BEGIN
         POPUP "Screen Capture Options"
         BEGIN
             MENUITEM "Capture at Display Resolution", IDM_CAPTURERES1
-            MENUITEM "Capture at 1280x1024",          IDM_CAPTURERES2
-            MENUITEM "Capture at 640x512",            IDM_CAPTURERES3
-            MENUITEM "Capture at 320x256",            IDM_CAPTURERES4
+            MENUITEM "Capture at 1280x1024",        IDM_CAPTURERES2
+            MENUITEM "Capture at 640x512",          IDM_CAPTURERES3
+            MENUITEM "Capture at 320x256",          IDM_CAPTURERES4
             MENUITEM SEPARATOR
-            MENUITEM "BMP Format",                    IDM_CAPTUREBMP
-            MENUITEM "JPEG Format",                   IDM_CAPTUREJPEG
-            MENUITEM "GIF Format",                    IDM_CAPTUREGIF
-            MENUITEM "PNG Format",                    IDM_CAPTUREPNG
+            MENUITEM "BMP Format",                  IDM_CAPTUREBMP
+            MENUITEM "JPEG Format",                 IDM_CAPTUREJPEG
+            MENUITEM "GIF Format",                  IDM_CAPTUREGIF
+            MENUITEM "PNG Format",                  IDM_CAPTUREPNG
         END
-        MENUITEM "Capture Screen",                    IDM_CAPTURESCREEN
+        MENUITEM "Capture Screen",              IDM_CAPTURESCREEN
         MENUITEM SEPARATOR
         POPUP "Video Options"
         BEGIN
@@ -614,9 +601,6 @@ BEGIN
             MENUITEM "DirectSound",                 IDM_DIRECTSOUND
         END
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
-#ifdef SPEECH_ENABLED
-        MENUITEM "Speech On/Off",               IDM_SPEECH
-#endif
         MENUITEM "Sound Chip",                  IDM_SOUNDCHIP
         MENUITEM SEPARATOR
         POPUP "Sound &Effects"
@@ -642,6 +626,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Music &5000",                 IDM_MUSIC5000
         MENUITEM "1MHz bus PAULA",              IDM_1MHZBUSPAULA
+        MENUITEM "1MHz bus SID",                IDM_1MHZBUSSID
     END
     POPUP "&AMX"
     BEGIN
@@ -677,13 +662,10 @@ BEGIN
         POPUP "&Second Processor"
         BEGIN
             MENUITEM "65C02 &Second Processor",     IDM_TUBE
-#ifdef M512COPRO_ENABLED
-            MENUITEM "&Master 512 Second Processor", IDM_TUBE186
-#endif
             MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
             MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
             MENUITEM "ARM Second Processor",        IDM_ARM
-            MENUITEM "ARM7TDMI Co-Processor",        IDM_ARMCOPRO
+            MENUITEM "ARM7TDMI Co-Processor",       IDM_ARMCOPRO
         END
         MENUITEM SEPARATOR
         POPUP "&Allow SW RAM Write"
@@ -705,8 +687,8 @@ BEGIN
             MENUITEM "Rom &E",                      IDM_ALLOWWRITES_ROME, CHECKED
             MENUITEM "Rom &F",                      IDM_ALLOWWRITES_ROMF, CHECKED
         END
-        MENUITEM "SW RAM Board On/Off", IDM_SWRAMBOARD
-        MENUITEM "Edit ROM Configuration", IDM_ROMCONFIG
+        MENUITEM "SW RAM Board On/Off",         IDM_SWRAMBOARD
+        MENUITEM "Edit ROM Configuration",      IDM_ROMCONFIG
         MENUITEM SEPARATOR
         MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
         POPUP "&Undocumented Instructions"
@@ -815,18 +797,19 @@ END
 // remains consistent on all systems.
 IDI_BEEBEM              ICON                    "BeebEm.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Accelerator
 //
 
-IDR_ACCELERATORS ACCELERATORS 
+IDR_ACCELERATORS ACCELERATORS
 BEGIN
     VK_UP,          ID_ACCELUP,             VIRTKEY, NOINVERT
     VK_DOWN,        ID_ACCELDOWN,           VIRTKEY, NOINVERT
 END
 
-#endif    // English (U.K.) resources
+#endif    // English (United Kingdom) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

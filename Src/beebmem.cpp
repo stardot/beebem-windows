@@ -60,6 +60,7 @@ Boston, MA  02110-1301, USA.
 #include "teletext.h"
 #include "music5000.h"
 #include "hog1mpaula.h"
+#include "SIDwrap.h"
 
 using namespace std;
 
@@ -568,6 +569,8 @@ int BeebReadMem(int Address) {
 		return ret;
 	if (Hog1MPaulaRead(Address, &ret))
 		return ret;
+	if (SIDRead(Address, &ret))
+		return ret;
 
 
 	if ((Address & ~0x3)==0xfdf0) {
@@ -1028,7 +1031,8 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	
 	Hog1MPaulaWrite(Address, Value);
 
-
+	SIDWrite(Address, Value);
+	
 	if ((Address & ~0x3)==0xfdf0) {
 		SASIWrite((Address & 0x3),Value);
 		return;

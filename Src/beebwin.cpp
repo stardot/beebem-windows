@@ -48,6 +48,7 @@ Boston, MA  02110-1301, USA.
 #include "soundstream.h"
 #include "music5000.h"
 #include "hog1mpaula.h"
+#include "SIDwrap.h"
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "atodconv.h"
@@ -377,6 +378,8 @@ void BeebWin::ApplyPrefs()
 		Music5000Init();
 	if (Hog1MPaulaEnabled)
 		Hog1MPaulaInit();
+	if (SIDEnabled)
+		SIDInit();
 	SetSoundMenu();
 #ifdef SPEECH_ENABLED
 	if (SpeechDefault)
@@ -485,6 +488,8 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms
 		Music5000Init();
 	if (Hog1MPaulaEnabled)
 		Hog1MPaulaInit();
+	if (SIDEnabled)
+		SIDInit();
 	EnableTube=TubeStatus;
 	MachineType=NewModelType;
 	BeebMemInit(LoadRoms, m_ShiftBooted);
@@ -1471,6 +1476,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 							Hog1MPaulaReset();
 							if (Hog1MPaulaEnabled)
 								Hog1MPaulaInit();
+							SIDReset();
+							if (SIDEnabled)
+								SIDInit();
 						}
 						else if(row==-3)
 						{
@@ -2970,6 +2978,11 @@ void BeebWin::HandleCommand(int MenuId)
 			Hog1MPaulaReset();
 			Hog1MPaulaInit();
 		}
+		if (SIDEnabled)
+		{
+			SIDReset();
+			SIDInit();
+		}
 
 #ifdef SPEECH_ENABLED
 		if (SpeechDefault)
@@ -3059,6 +3072,14 @@ void BeebWin::HandleCommand(int MenuId)
 		if (Hog1MPaulaEnabled)
 			Hog1MPaulaInit();
 		CheckMenuItem(IDM_1MHZBUSPAULA, Hog1MPaulaEnabled);
+		break;
+
+	case IDM_1MHZBUSSID:
+		SIDEnabled = !SIDEnabled;
+		SIDReset();
+		if (SIDEnabled)
+			SIDInit();
+		CheckMenuItem(IDM_1MHZBUSSID, SIDEnabled);
 		break;
 
 	case IDM_MUSIC5000:
@@ -3932,6 +3953,7 @@ void BeebWin::SetSoundMenu() {
 	CheckMenuItem(IDM_SOUNDONOFF, SoundEnabled && SoundDefault);
 	CheckMenuItem(IDM_MUSIC5000, Music5000Enabled);
 	CheckMenuItem(IDM_1MHZBUSPAULA, Hog1MPaulaEnabled);
+	CheckMenuItem(IDM_1MHZBUSSID, SIDEnabled);
 }
 
 void BeebWin::Activate(bool active)

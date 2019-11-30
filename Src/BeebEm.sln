@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.902
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BeebEm", "BeebEm.vcxproj", "{DFAD47ED-5BDD-4ED8-B868-E03ACC223303}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -20,6 +20,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Installer", "InnoSetup\Inst
 	ProjectSection(ProjectDependencies) = postProject
 		{DFAD47ED-5BDD-4ED8-B868-E03ACC223303} = {DFAD47ED-5BDD-4ED8-B868-E03ACC223303}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "reSID", "Hardware\reSID\reSID.vcxproj", "{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,8 +71,19 @@ Global
 		{589E54D9-20AF-40D0-95B3-EFC0D47D9085}.Release|x64.Build.0 = Release|x64
 		{589E54D9-20AF-40D0-95B3-EFC0D47D9085}.Release|x86.ActiveCfg = Release|Win32
 		{589E54D9-20AF-40D0-95B3-EFC0D47D9085}.Release|x86.Build.0 = Release|Win32
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Debug|x64.ActiveCfg = Debug|x64
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Debug|x64.Build.0 = Debug|x64
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Debug|x86.ActiveCfg = Debug|Win32
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Debug|x86.Build.0 = Debug|Win32
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Release|x64.ActiveCfg = Release|x64
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Release|x64.Build.0 = Release|x64
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Release|x86.ActiveCfg = Release|Win32
+		{5DEA03A2-E54C-41D7-93EE-B37A9DB7441A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F58C295E-BB0A-4433-AD3A-CF45570A7DBF}
 	EndGlobalSection
 EndGlobal
