@@ -29,8 +29,11 @@ Boston, MA  02110-1301, USA.
 #ifndef _SID_WRAP_H
 #define _SID_WRAP_H
 
+#include "sid.h"
 
 extern bool SIDEnabled;
+extern chip_model SIDChipModel;
+extern sampling_method SIDSampleType;
 
 #define SIDPoll(cycles) { if (SIDEnabled) SIDUpdate(cycles); }
 
@@ -39,6 +42,7 @@ void SIDReset();
 void SIDWrite(UINT16 address, UINT8 value);
 bool SIDRead(UINT16 address, UINT8 *value);
 void SIDUpdate(UINT cycles);
+void SIDReInit();
 
 
 

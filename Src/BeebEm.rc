@@ -626,7 +626,22 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Music &5000",                 IDM_MUSIC5000
         MENUITEM "1MHz bus PAULA",              IDM_1MHZBUSPAULA
-        MENUITEM "1MHz bus SID",                IDM_1MHZBUSSID
+        POPUP "1MHz bus SID"
+        BEGIN
+			MENUITEM "Enable"					IDM_SID_ENABLE
+            POPUP "Chip"
+            BEGIN
+                MENUITEM "6581",                        IDM_SIDCHIP_6581
+                MENUITEM "8580",                        IDM_SIDCHIP_8580
+            END
+            POPUP "Sample Type"
+            BEGIN
+                MENUITEM "Fast",                        IDM_SIDSAMPLETYPE_FAST
+                MENUITEM "Interpolate",                 IDM_SIDSAMPLETYPE_INTERPOLATE
+                MENUITEM "Resample Interpolate",        IDM_SIDSAMPLETYPE_RESAMPLE_INTERPOLATE
+                MENUITEM "Resample Fast",               IDM_SIDSAMPLETYPE_RESAMPLEFAST
+            END
+        END
     END
     POPUP "&AMX"
     BEGIN

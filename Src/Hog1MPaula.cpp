@@ -416,12 +416,10 @@ void Hog1MPaulaUpdate(UINT cycles)
 		sample_clock_acc++;
 		while (sample_clock_acc >= H1M_CYCLES_PER_STREAM_SAMPLE)
 		{
-			a = a + 2 * 3.14F * 1000.0F / 41000.0F;
-
-
+			
 			int sample = 0;
 
-			sample = 50 * sin(a);
+			sample = 0;
 
 			for (int i = 0; i < NUM_CHANNELS; i++)
 			{
@@ -432,7 +430,7 @@ void Hog1MPaulaUpdate(UINT cycles)
 					ChannelRegs[i].peak = snd_mag;
 			}
 			sample = sample * (Volume >> 2) / NUM_CHANNELS;
-			sample = sample / 16;
+			sample = sample / 4;
 
 			SampleBuf[SampleWritePtr] = sample;
 			SampleWritePtr++;

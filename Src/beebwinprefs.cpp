@@ -244,6 +244,17 @@ void BeebWin::LoadPreferences()
 		Hog1MPaulaEnabled = false;
 	if (!m_Preferences.GetBoolValue("SIDEnabled", SIDEnabled))
 		SIDEnabled = false;
+	DWORD tmp;
+	if (!m_Preferences.GetDWORDValue("SIDChipModel", tmp))
+		tmp = MOS8580;
+	if (tmp != MOS6581)
+		tmp = MOS6581;
+	SIDChipModel = (chip_model)tmp;
+	if (!m_Preferences.GetDWORDValue("SIDSampleType", tmp))
+		tmp = SAMPLE_FAST;
+	if (tmp != SAMPLE_FAST && tmp != SAMPLE_INTERPOLATE && tmp != SAMPLE_RESAMPLE_INTERPOLATE && tmp != SAMPLE_RESAMPLE_FAST)
+		tmp = SAMPLE_FAST;
+	SIDSampleType = (sampling_method)tmp;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
 		m_MenuIdSticks = dword;
@@ -602,6 +613,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 		m_Preferences.SetBoolValue("Hog1MPaulaEnabled", Hog1MPaulaEnabled);
 		m_Preferences.SetBoolValue("SIDEnabled", SIDEnabled);
+		m_Preferences.SetDWORDValue("SIDChipMode", (DWORD)SIDChipModel);
+		m_Preferences.SetDWORDValue("SIDSampleType", (DWORD)SIDSampleType);
 
 		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);

@@ -433,7 +433,13 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_3840X2160            40295
 #define IDM_EMUPAUSED                   40296
 #define IDM_1MHZBUSPAULA                40301
-#define IDM_1MHZBUSSID                  40302
+#define IDM_SID_ENABLE                  40302
+#define IDM_SIDCHIP_6581                40303
+#define IDM_SIDCHIP_8580                40304
+#define IDM_SIDSAMPLETYPE_FAST          40305
+#define IDM_SIDSAMPLETYPE_INTERPOLATE   40306
+#define IDM_SIDSAMPLETYPE_RESAMPLE_INTERPOLATE      40307
+#define IDM_SIDSAMPLETYPE_RESAMPLEFAST  40308
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -442,7 +448,7 @@ Boston, MA  02110-1301, USA.
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        117
-#define _APS_NEXT_COMMAND_VALUE         40303
+#define _APS_NEXT_COMMAND_VALUE         40309
 #define _APS_NEXT_CONTROL_VALUE         1087
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

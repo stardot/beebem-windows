@@ -17,5 +17,9 @@ Src/InnoSetup/Release
 Src/InnoSetup/x64
 Src/InnoSetup/Debug
 Src/BeebEm.vcxproj.bak
-Src/x64/Debug
-Src/x64/Release
+Src/x64
+Src/BeebEm.aps
+Src/BeebEm.aps
+Src/Hardware/reSID/Debug
+Src/Hardware/reSID/Release
+Src/Hardware/reSID/x64

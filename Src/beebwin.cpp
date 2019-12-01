@@ -3074,12 +3074,43 @@ void BeebWin::HandleCommand(int MenuId)
 		CheckMenuItem(IDM_1MHZBUSPAULA, Hog1MPaulaEnabled);
 		break;
 
-	case IDM_1MHZBUSSID:
+	case IDM_SID_ENABLE:
 		SIDEnabled = !SIDEnabled;
 		SIDReset();
 		if (SIDEnabled)
 			SIDInit();
-		CheckMenuItem(IDM_1MHZBUSSID, SIDEnabled);
+		CheckMenuItem(IDM_SID_ENABLE, SIDEnabled);
+		break;
+
+	case IDM_SIDCHIP_6581:
+		SIDChipModel = MOS6581;
+		SIDReInit();
+		SetSIDSoundMenu();
+		break;
+	case IDM_SIDCHIP_8580:
+		SIDChipModel = MOS8580;
+		SIDReInit();
+		SetSIDSoundMenu();
+		break;
+	case IDM_SIDSAMPLETYPE_FAST:
+		SIDSampleType = SAMPLE_FAST;
+		SIDReInit();
+		SetSIDSoundMenu();
+		break;
+	case IDM_SIDSAMPLETYPE_INTERPOLATE:
+		SIDSampleType = SAMPLE_INTERPOLATE;
+		SIDReInit();
+		SetSIDSoundMenu();
+		break;
+	case IDM_SIDSAMPLETYPE_RESAMPLE_INTERPOLATE:
+		SIDSampleType = SAMPLE_RESAMPLE_INTERPOLATE;
+		SIDReInit();
+		SetSIDSoundMenu();
+		break;
+	case IDM_SIDSAMPLETYPE_RESAMPLEFAST:
+		SIDSampleType = SAMPLE_RESAMPLE_FAST;
+		SIDReInit();
+		SetSIDSoundMenu();
 		break;
 
 	case IDM_MUSIC5000:
@@ -3953,7 +3984,42 @@ void BeebWin::SetSoundMenu() {
 	CheckMenuItem(IDM_SOUNDONOFF, SoundEnabled && SoundDefault);
 	CheckMenuItem(IDM_MUSIC5000, Music5000Enabled);
 	CheckMenuItem(IDM_1MHZBUSPAULA, Hog1MPaulaEnabled);
-	CheckMenuItem(IDM_1MHZBUSSID, SIDEnabled);
+	SetSIDSoundMenu();
+}
+
+void BeebWin::SetSIDSoundMenu() {
+	CheckMenuItem(IDM_SID_ENABLE, SIDEnabled);
+	CheckMenuItem(IDM_SIDCHIP_6581, false);
+	CheckMenuItem(IDM_SIDCHIP_8580, false);
+	switch (SIDChipModel)
+	{
+		case MOS6581:
+			CheckMenuItem(IDM_SIDCHIP_6581, true);
+			break;
+		default:
+			CheckMenuItem(IDM_SIDCHIP_8580, true);
+			break;
+	}
+	CheckMenuItem(IDM_SIDSAMPLETYPE_FAST, false);
+	CheckMenuItem(IDM_SIDSAMPLETYPE_INTERPOLATE, false);
+	CheckMenuItem(IDM_SIDSAMPLETYPE_RESAMPLE_INTERPOLATE, false);
+	CheckMenuItem(IDM_SIDSAMPLETYPE_RESAMPLEFAST, false);
+	switch (SIDSampleType)
+	{
+		default:
+		case SAMPLE_FAST:
+			CheckMenuItem(IDM_SIDSAMPLETYPE_FAST, true);
+			break;
+		case SAMPLE_INTERPOLATE:
+			CheckMenuItem(IDM_SIDSAMPLETYPE_INTERPOLATE, true);
+			break;
+		case SAMPLE_RESAMPLE_INTERPOLATE:
+			CheckMenuItem(IDM_SIDSAMPLETYPE_RESAMPLE_INTERPOLATE, true);
+			break;
+		case SAMPLE_RESAMPLE_FAST:
+			CheckMenuItem(IDM_SIDSAMPLETYPE_RESAMPLEFAST, true);
+			break;
+	}
 }
 
 void BeebWin::Activate(bool active)

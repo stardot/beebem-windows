@@ -37,9 +37,11 @@ Boston, MA  02110-1301, USA.
 #include <math.h>
 
 #include "SIDwrap.h"
-#include "sid.h"
 
 bool		SIDEnabled = false;
+chip_model	SIDChipModel = MOS8580;
+sampling_method SIDSampleType = SAMPLE_FAST;
+
 extern int	SoundVolume;
 
 static INT16 *SampleBuf = NULL;
@@ -54,15 +56,26 @@ static SIDChip *pSID;
 
 static int nCyclesAcc = 0;
 
+void SIDReInit() {
+	if (!SIDEnabled)
+		return;
+	if (pSID == NULL)
+		SIDInit;
+	else {
+		pSID->set_chip_model(SIDChipModel);
+		pSID->set_sampling_parameters(1000000, SIDSampleType, SID_SAMPLE_RATE);
+	}
+}
+
 void SIDInit()
 {
 
 	// Init the SID emulation
 	delete pSID;
 	pSID = new SIDChip();
-	pSID->set_chip_model(MOS6581);
-	pSID->set_sampling_parameters(1000000, SAMPLE_FAST, SID_SAMPLE_RATE);
-	
+	pSID->set_chip_model(SIDChipModel);
+	pSID->set_sampling_parameters(1000000, SIDSampleType, SID_SAMPLE_RATE);
+
 	// Init the streamer
 	delete pSoundStreamerPaula;
 	pSoundStreamerPaula = CreateSoundStreamer(SID_SAMPLE_RATE, 16, 1);

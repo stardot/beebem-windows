@@ -133,6 +133,7 @@ public:
 
 	void UpdateModelType();
 	void SetSoundMenu(void);
+	void SetSIDSoundMenu(void);
 	void SetImageName(const char *DiscName, int Drive, DiscType DscType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
