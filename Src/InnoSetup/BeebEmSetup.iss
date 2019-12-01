@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=BeebEm
-AppVerName=BeebEm V4.15 Beta 4
+AppVerName=BeebEm V4.16 Dossy Alpha
 AppPublisher=Mike Wyatt
 AppPublisherURL=http://www.mkw.me.uk/beebem/index.html
 AppSupportURL=http://www.mkw.me.uk/beebem/index.html
@@ -14,10 +14,10 @@ OutputDir=Release
 OutputBaseFilename=BeebEm415b4
 Compression=lzma
 SolidCompression=yes
-VersionInfoVersion=4.15.0.0
+VersionInfoVersion=4.16.0.0
 
 [Registry]
-Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.15; ValueType: string; Flags: uninsdeletekey
+Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.16; ValueType: string; Flags: uninsdeletekey
 Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: InstallPath; ValueData: {app}; ValueType: string; Flags: uninsdeletekey
 Root: HKCU; Subkey: SOFTWARE\BeebEm; Flags: uninsdeletekey
 

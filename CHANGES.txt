@@ -1,6 +1,15 @@
 BeebEm Change History
 =====================
 
+Version 4.16
+------------
+
+This is an Alpha version, it includes 1st cut versions of:
+- M5000 emulation
+- SID chip
+- Paula sound chip
+
+
 Version 4.15 (Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
 Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley,
 Ken Lowe)
