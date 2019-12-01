@@ -23,3 +23,4 @@ Src/BeebEm.aps
 Src/Hardware/reSID/Debug
 Src/Hardware/reSID/Release
 Src/Hardware/reSID/x64
+Src/Hardware/reSID/Release/reSID.log

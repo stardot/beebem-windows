@@ -1,32 +1,17 @@
 ﻿  envelope.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\envelope.cc(228): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   extfilt.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\extfilt.cc(80): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   filter.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\filter.cc(306): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   pot.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\pot.cc(27): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   sid.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\sid.cc(1008): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   version.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\version.cc(22): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   voice.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\voice.cc(133): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave.cc(145): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave6581_PST.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave6581_pst.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave6581_PS_.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave6581_ps_.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave6581_P_T.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave6581_p_t.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave6581__ST.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave6581__st.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave8580_PST.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave8580_pst.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave8580_PS_.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave8580_ps_.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave8580_P_T.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave8580_p_t.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
   wave8580__ST.cc
-d:\users\dominic\documents\github\beebem-windows\src\hardware\resid\wave8580__st.cc(537): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "stdafx.h"' to your source?
+  reSID.vcxproj -> D:\Users\Dominic\Documents\GitHub\beebem-windows\Src\Release\reSID.lib
