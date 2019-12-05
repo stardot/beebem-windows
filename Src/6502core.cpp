@@ -402,8 +402,10 @@ INLINE static void ADCInstrHandler(int16 operand) {
       CFlag=1;
     }
     Accumulator=hn|ln;
-	ZFlag=(Accumulator==0);
-	NFlag=(Accumulator&128);
+	if (MachineType == Model::Master128) {
+		ZFlag = (Accumulator == 0);
+		NFlag = (Accumulator & 128);
+	}
     SetPSR(FlagC | FlagZ | FlagV | FlagN,CFlag,ZFlag,0,0,0,VFlag,NFlag);
   }
 } /* ADCInstrHandler */
@@ -766,8 +768,10 @@ INLINE static void SBCInstrHandler(int16 operand) {
       CFlag=0;
     }
     Accumulator=hn|ln;
-	if (Accumulator==0) ZFlag=1;
-	NFlag=(hn &128);
+	if (MachineType == Model::Master128) {
+		if (Accumulator == 0) ZFlag = 1;
+		NFlag = (hn & 128);
+	}
 	CFlag=(TmpResult&256)==0;
     SetPSR(FlagC | FlagZ | FlagV | FlagN,CFlag,ZFlag,0,0,0,VFlag,NFlag);
   }
