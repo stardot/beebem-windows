@@ -89,7 +89,6 @@ unsigned char intStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caus
 unsigned char NMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
 bool NMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
 typedef int int16;
-INLINE static void SBCInstrHandler(int16 operand);
 
 /* Note how GETCFLAG is special since being bit 0 we don't need to test it to get a clean 0/1 */
 #define GETCFLAG ((PSR & FlagC))
@@ -370,41 +369,50 @@ INLINE static int16 RelAddrModeHandler_Data(void) {
 /*----------------------------------------------------------------------------*/
 INLINE static void ADCInstrHandler(int16 operand) {
   /* NOTE! Not sure about C and V flags */
-  int TmpResultV,TmpResultC;
   if (!GETDFLAG) {
-    TmpResultC=Accumulator+operand+GETCFLAG;
-    TmpResultV=(signed char)Accumulator+(signed char)operand+GETCFLAG;
-    Accumulator=TmpResultC & 255;
-    SetPSR(FlagC | FlagZ | FlagV | FlagN, (TmpResultC & 256)>0,Accumulator==0,0,0,0,((Accumulator & 128)>0) ^ (TmpResultV<0),(Accumulator & 128));
+    int TmpResultC = Accumulator + operand + GETCFLAG;
+    int TmpResultV = (signed char)Accumulator + (signed char)operand + GETCFLAG;
+    Accumulator = TmpResultC & 255;
+    SetPSR(FlagC | FlagZ | FlagV | FlagN, (TmpResultC & 256) > 0,
+      Accumulator == 0, 0, 0, 0, ((Accumulator & 128) > 0) ^ (TmpResultV < 0),
+      Accumulator & 128);
   } else {
-    int ZFlag=0,NFlag=0,CFlag=0,VFlag=0;
-    int TmpResult,TmpCarry=0;
-    int ln,hn;
-
     /* Z flag determined from 2's compl result, not BCD result! */
-    TmpResult=Accumulator+operand+GETCFLAG;
-    ZFlag=((TmpResult & 0xff)==0);
+    int TmpResult = Accumulator + operand + GETCFLAG;
+    int ZFlag = (TmpResult & 0xff) == 0;
 
-    ln=(Accumulator & 0xf)+(operand & 0xf)+GETCFLAG;
-    if (ln>9) {
+    int ln = (Accumulator & 0xf) + (operand & 0xf) + GETCFLAG;
+
+    int TmpCarry = 0;
+
+    if (ln > 9) {
       ln += 6;
       ln &= 0xf;
-      TmpCarry=0x10;
+      TmpCarry = 0x10;
     }
-    hn=(Accumulator & 0xf0)+(operand & 0xf0)+TmpCarry;
+
+    int hn = (Accumulator & 0xf0) + (operand & 0xf0) + TmpCarry;
     /* N and V flags are determined before high nibble is adjusted.
        NOTE: V is not always correct */
-    NFlag=hn & 128;
-    VFlag=(hn ^ Accumulator) & 128 && !((Accumulator ^ operand) & 128);
-    if (hn>0x90) {
+    int NFlag = hn & 128;
+    int VFlag = (hn ^ Accumulator) & 128 && !((Accumulator ^ operand) & 128);
+
+    int CFlag = 0;
+
+    if (hn > 0x90) {
       hn += 0x60;
       hn &= 0xf0;
-      CFlag=1;
+      CFlag = 1;
     }
-    Accumulator=hn|ln;
-	ZFlag=(Accumulator==0);
-	NFlag=(Accumulator&128);
-    SetPSR(FlagC | FlagZ | FlagV | FlagN,CFlag,ZFlag,0,0,0,VFlag,NFlag);
+
+    Accumulator = hn | ln;
+
+    if (MachineType == Model::Master128) {
+      ZFlag = Accumulator == 0;
+      NFlag = Accumulator & 128;
+    }
+
+    SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
   }
 } /* ADCInstrHandler */
 
@@ -727,49 +735,80 @@ INLINE static void RORInstrHandler_Acc(void) {
 
 INLINE static void SBCInstrHandler(int16 operand) {
   /* NOTE! Not sure about C and V flags */
-  int TmpResultV,TmpResultC;
-  unsigned char nhn,nln;
   if (!GETDFLAG) {
-    TmpResultV=(signed char)Accumulator-(signed char)operand-(1-GETCFLAG);
-    TmpResultC=Accumulator-operand-(1-GETCFLAG);
-    Accumulator=TmpResultC & 255;
-    SetPSR(FlagC | FlagZ | FlagV | FlagN, TmpResultC>=0,Accumulator==0,0,0,0,
-      ((Accumulator & 128)>0) ^ ((TmpResultV & 256)!=0),(Accumulator & 128));
+    int TmpResultV = (signed char)Accumulator - (signed char)operand - (1 - GETCFLAG);
+    int TmpResultC = Accumulator - operand - (1 - GETCFLAG);
+    Accumulator = TmpResultC & 255;
+    SetPSR(FlagC | FlagZ | FlagV | FlagN, TmpResultC >= 0,
+      Accumulator == 0, 0, 0, 0,
+      ((Accumulator & 128) > 0) ^ ((TmpResultV & 256) != 0),
+      Accumulator & 128);
   } else {
-    int ZFlag=0,NFlag=0,CFlag=1,VFlag=0;
-    int TmpResult,TmpCarry=0;
-    int ln,hn,oln,ohn;
-	nhn=(Accumulator>>4)&15; nln=Accumulator & 15;
+    if (MachineType == Model::Master128) {
+      int ohn = operand & 0xf0;
+      int oln = operand & 0x0f;
 
-    /* Z flag determined from 2's compl result, not BCD result! */
-    TmpResult=Accumulator-operand-(1-GETCFLAG);
-    ZFlag=((TmpResult & 0xff)==0);
+      int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);
+      int TmpResult = Accumulator - operand - (1 - GETCFLAG);
 
-	ohn=operand & 0xf0; oln = operand & 0xf;
-	if ((oln>9) && ((Accumulator&15)<10)) { oln-=10; ohn+=0x10; } 
-	// promote the lower nibble to the next ten, and increase the higher nibble
-    ln=(Accumulator & 0xf)-oln-(1-GETCFLAG);
-    if (ln<0) {
-	  if ((Accumulator & 15)<10) ln-=6;
-      ln&=0xf;
-      TmpCarry=0x10;
+      int TmpResultV = (signed char)Accumulator - (signed char)operand - (1 - GETCFLAG);
+      int VFlag = ((TmpResultV < -128) || (TmpResultV > 127));
+
+      int CFlag = (TmpResult & 256) == 0;
+
+      if (TmpResult < 0) {
+        TmpResult -= 0x60;
+      }
+
+      if (ln < 0) {
+        TmpResult -= 0x06;
+      }
+
+      int NFlag = TmpResult & 128;
+      Accumulator = TmpResult & 0xFF;
+      int ZFlag = (Accumulator == 0);
+
+      SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
+    } else {
+      /* Z flag determined from 2's compl result, not BCD result! */
+      int TmpResult = Accumulator - operand - (1 - GETCFLAG);
+      int ZFlag = ((TmpResult & 0xff) == 0);
+
+      int ohn = operand & 0xf0;
+      int oln = operand & 0xf;
+
+      int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);
+      if (ln & 0x10) {
+        ln -= 6;
+      }
+
+      int TmpCarry = 0;
+
+      if (ln & 0x20) {
+        TmpCarry = 0x10;
+      }
+
+      ln &= 0xf;
+      int hn = (Accumulator & 0xf0) - ohn - TmpCarry;
+      /* N and V flags are determined before high nibble is adjusted.
+         NOTE: V is not always correct */
+      int NFlag = hn & 128;
+
+      int TmpResultV = (signed char)Accumulator - (signed char)operand - (1 - GETCFLAG);
+      int VFlag = ((TmpResultV < -128) || (TmpResultV > 127));
+
+      int CFlag = 1;
+
+      if (hn & 0x100) {
+        hn -= 0x60;
+        hn &= 0xf0;
+        CFlag = 0;
+      }
+
+      Accumulator = hn | ln;
+
+      SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
     }
-    hn=(Accumulator & 0xf0)-ohn-TmpCarry;
-    /* N and V flags are determined before high nibble is adjusted.
-       NOTE: V is not always correct */
-    NFlag=hn & 128;
-	TmpResultV=(signed char)Accumulator-(signed char)operand-(1-GETCFLAG);
-	if ((TmpResultV<-128)||(TmpResultV>127)) VFlag=1; else VFlag=0;
-    if (hn<0) {
-      hn-=0x60;
-      hn&=0xf0;
-      CFlag=0;
-    }
-    Accumulator=hn|ln;
-	if (Accumulator==0) ZFlag=1;
-	NFlag=(hn &128);
-	CFlag=(TmpResult&256)==0;
-    SetPSR(FlagC | FlagZ | FlagV | FlagN,CFlag,ZFlag,0,0,0,VFlag,NFlag);
   }
 } /* SBCInstrHandler */
 
