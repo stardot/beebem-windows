@@ -3,7 +3,7 @@ BeebEm Change History
 
 Version 4.15 (Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
 Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley,
-Ken Lowe)
+Ken Lowe, Dominic Beesley)
 ------------
 * Fixed 320x256 screen capture.
 * Enabled DirectX full screen display at current desktop screen resolution.
@@ -57,6 +57,7 @@ Ken Lowe)
 * Improved Computech IntegraB startup defaults, and correct the current year
   calculation. Also included is a patched IBOS ROM where two digit years are
   assumed to be 20xx instead of 19xx.
+* Fixed BCD mode in ADC and SBC instructions.
 
 Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 ------------
