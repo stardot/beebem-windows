@@ -41,7 +41,7 @@ public:
 	
 	uint8 romMemory[0x80000];		// 512 KBytes of rom memory
 
-    bool keepRunning;				// keep calling run()
+    // bool keepRunning;				// keep calling run()
 	void exec(int count);
 	void reset();
 

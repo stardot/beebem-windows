@@ -725,7 +725,6 @@ void DebugUserViaState()
  */
 
 void BreakOutOpenDialog(HINSTANCE hinst, HWND hwndMain)
-
 {
 	mBreakOutWindow = true;
 
@@ -744,7 +743,6 @@ void BreakOutOpenDialog(HINSTANCE hinst, HWND hwndMain)
 		ShowBitKey(5, IDK_BIT5);
 		ShowBitKey(6, IDK_BIT6);
 		ShowBitKey(7, IDK_BIT7);
-
 	}
 }
 

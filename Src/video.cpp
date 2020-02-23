@@ -1372,7 +1372,7 @@ void VideoULAWrite(int Address, unsigned char Value) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-int VideoULARead(int Address) {
+int VideoULARead(int /* Address */) {
   return 0xfe; // Read not defined from Video ULA
 }
 

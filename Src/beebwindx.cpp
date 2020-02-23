@@ -406,7 +406,7 @@ HRESULT BeebWin::InitDX9(void)
 		D3DXMATRIX Ortho2D;
 		//D3DXMatrixOrthoOffCenterLH(&Ortho2D, 0.0f, 800.0f, -512.0f, 0.0f, 0.0f, 1.0f);
 		D3DXMatrixIdentity(&Ortho2D);
-		float l = 0.0f;
+		// float l = 0.0f;
 		float r = 800.0f;
 		float b = -512.0f;
 		float t = 0.0f;

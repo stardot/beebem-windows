@@ -154,8 +154,10 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 /* DestTime is in samples */
 void PlayUpTil(double DestTime) {
 	int tmptotal,channel,bufinc,tapetotal;
+
+#ifdef SPEECH_ENABLED
 	int SpeechPtr = 0;
-	int i;
+#endif
 
 #ifdef SPEECH_ENABLED
 	if (MachineType != Model::Master128 && SpeechEnabled)
@@ -311,7 +313,7 @@ void PlayUpTil(double DestTime) {
 #endif
 
 			// Mix in sound samples here
-			for (i = 0; i < NUM_SOUND_SAMPLES; ++i) {
+			for (int i = 0; i < NUM_SOUND_SAMPLES; ++i) {
 				if (SoundSamples[i].playing) {
 					tmptotal+=(SoundSamples[i].pBuf[SoundSamples[i].pos]-128)*2;
 					SoundSamples[i].pos += (44100 / samplerate);

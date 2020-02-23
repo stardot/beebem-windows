@@ -136,7 +136,10 @@ void DoKbdIntCheck() {
   /* Two cases - write enable is OFF the keyboard - basically any key will cause an
      interrupt in a few cycles.
      */
+#ifdef KBDDEBUG
   int Oldflag=(SysVIAState.ifr & 1);
+#endif
+
   if ((KeysDown>0) && ((SysVIAState.pcr & 0xc)==4)) {
     if ((IC32State & 8)==8) {
       SysVIAState.ifr|=1; /* CA2 */

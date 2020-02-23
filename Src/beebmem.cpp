@@ -1170,7 +1170,6 @@ void BeebReadRoms(void) {
 	int bank;
 	char *RomName;
 	char *extension;
-	int i;
 
 	// Clear ROMs
 	for (bank = 0; bank < 16; bank++)
