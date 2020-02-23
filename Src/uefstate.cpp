@@ -36,8 +36,6 @@ Boston, MA  02110-1301, USA.
 #include "serial.h"
 #include "atodconv.h"
 
-FILE *UEFState;
-
 void fput32(unsigned int word32,FILE *fileptr) {
 	fputc(word32&255,fileptr);
 	fputc((word32>>8)&255,fileptr);
@@ -67,7 +65,7 @@ unsigned int fget16(FILE *fileptr) {
 }
 
 void SaveUEFState(const char *StateName) {
-	UEFState=fopen(StateName,"wb");
+	FILE *UEFState = fopen(StateName, "wb");
 	if (UEFState != NULL)
 	{
 		fprintf(UEFState,"UEF File!");
@@ -104,12 +102,12 @@ void SaveUEFState(const char *StateName) {
 void LoadUEFState(const char *StateName) {
 	// char errmsg[256];
 	char UEFId[10];
-	int CompletionBits=0; // These bits should be filled in
+	// int CompletionBits=0; // These bits should be filled in
 	long RPos=0,FLength,CPos;
 	unsigned int Block,Length;
 	int Version;
 	strcpy(UEFId,"BlankFile");
-	UEFState=fopen(StateName,"rb");
+	FILE *UEFState = fopen(StateName, "rb");
 	if (UEFState != NULL)
 	{
 		fseek(UEFState,NULL,SEEK_END);
