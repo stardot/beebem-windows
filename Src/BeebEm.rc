@@ -28,7 +28,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 IDD_USERKYBRD DIALOGEX 0, 0, 334, 122
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_NOPARENTNOTIFY
 CAPTION "User Defined Keyboard mapping"
 FONT 8, "MS Sans Serif", 0, 0, 0x1
@@ -160,98 +160,16 @@ BEGIN
     CTEXT           "b0",IDC_STATIC,157,10,13,12
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+IDD_SELECT_KEY DIALOGEX 0, 0, 149, 60
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Press key for unshifted press..."
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    IDD_USERKYBRD, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 327
-        TOPMARGIN, 4
-        BOTTOMMARGIN, 116
-    END
-
-    IDD_DIALOG1, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 153
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 59
-    END
-
-    IDD_BREAKOUT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 181
-        TOPMARGIN, 4
-        BOTTOMMARGIN, 116
-    END
+    LTEXT           "Assigned to PC key(s):",IDC_STATIC,7,7,74,8
+    LTEXT           "Static",IDC_ASSIGNED_KEYS,15,21,127,8
+    CONTROL         "Shift",IDC_SHIFT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,40,31,10
+    PUSHBUTTON      "OK",IDOK,92,39,50,14
 END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Version
-//
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
- PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "080904b0"
-        BEGIN
-            VALUE "Comments", "BeebEm - BBC Micro Emulator"
-            VALUE "CompanyName", "Mike Wyatt"
-            VALUE "FileDescription", "BeebEm"
-            VALUE "FileVersion", VERSION_STRING
-            VALUE "InternalName", "BeebEm"
-            VALUE "LegalCopyright", "Copyright © 2009"
-            VALUE "OriginalFilename", "BeebEm.exe"
-            VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", VERSION_STRING
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x809, 1200
-    END
-END
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.K.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
 
 IDD_DEBUG DIALOGEX 0, 0, 529, 387
 STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -348,6 +266,30 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO 
 BEGIN
+    IDD_USERKYBRD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 327
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 116
+    END
+
+    IDD_BREAKOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 181
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 116
+    END
+
+    IDD_SELECT_KEY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 142
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 53
+    END
+
     IDD_DEBUG, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -381,6 +323,45 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+ PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "Comments", "BeebEm - BBC Micro Emulator"
+            VALUE "CompanyName", "Mike Wyatt"
+            VALUE "FileDescription", "BeebEm"
+            VALUE "FileVersion", VERSION_STRING
+            VALUE "InternalName", "BeebEm"
+            VALUE "LegalCopyright", "Copyright © 2009"
+            VALUE "OriginalFilename", "BeebEm.exe"
+            VALUE "ProductName", "BeebEm"
+            VALUE "ProductVersion", VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -814,6 +795,7 @@ END
 // remains consistent on all systems.
 IDI_BEEBEM              ICON                    "BeebEm.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Accelerator
@@ -825,7 +807,7 @@ BEGIN
     VK_DOWN,        ID_ACCELDOWN,           VIRTKEY, NOINVERT
 END
 
-#endif    // English (U.K.) resources
+#endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

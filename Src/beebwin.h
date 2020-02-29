@@ -45,7 +45,8 @@ Boston, MA  02110-1301, USA.
 /* Used in message boxes */
 #define GETHWND (mainWin->GethWnd())
 
-#define WM_REINITDX (WM_APP+1)
+const UINT WM_REINITDX                    = WM_APP + 1;
+const UINT WM_USER_KEYBOARD_DIALOG_CLOSED = WM_APP + 2;
 
 // Registry defs for disabling windows keys
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
@@ -210,7 +211,10 @@ public:
 	void WinSizeChange(int size, int width, int height);
 	void WinPosChange(int x, int y);
 	bool IsFrozen();
+	void TogglePause();
 	bool IsPaused();
+	void OpenUserKeyboardDialog();
+	void UserKeyboardDialogClosed();
 	void ShowMenu(bool on);
 	void HideMenu(bool hide);
 	void TrackPopupMenu(int x, int y);
@@ -376,6 +380,7 @@ public:
 	int		m_AutoBootDelay;
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
+	bool		m_WasPaused;
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
 	bool		m_BootDiscTimerElapsed;

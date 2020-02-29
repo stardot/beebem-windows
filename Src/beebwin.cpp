@@ -190,6 +190,7 @@ BeebWin::BeebWin()
 	m_AutoBootDelay = 0;
 	m_EmuPaused = false;
 	m_StartPaused = false;
+	m_WasPaused = false;
 	m_KeyboardTimerElapsed = false;
 	m_BootDiscTimerElapsed = false;
 	m_clipboardlen = 0;
@@ -1582,6 +1583,10 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			break;
 
+		case WM_USER_KEYBOARD_DIALOG_CLOSED:
+			mainWin->UserKeyboardDialogClosed();
+			break;
+
 		default: // Passes it on if unproccessed
 			return DefWindowProc(hWnd, message, uParam, lParam);
 	}
@@ -2467,6 +2472,7 @@ void BeebWin::HandleCommand(int MenuId)
 	PaletteType PrevPaletteType = m_PaletteType;
 
 	SetSound(SoundState::Muted);
+	bool StayMuted = false;
 
 	switch (MenuId)
 	{
@@ -3111,31 +3117,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_EMUPAUSED:
-		m_EmuPaused = !m_EmuPaused;
-		CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
-		if (m_ShowSpeedAndFPS && m_EmuPaused)
-		{
-			sprintf(m_szTitle, "%s  Paused", WindowTitle);
-			SetWindowText(m_hWnd, m_szTitle);
-		}
-
-		if (m_EmuPaused)
-		{
-			KillTimer(m_hWnd, 1);
-			KillTimer(m_hWnd, 2);
-		}
-		else
-		{
-			if (HasKbdCmd() && !m_KeyboardTimerElapsed)
-			{
-				SetKeyboardTimer();
-			}
-
-			if (m_AutoBootDisc && !m_BootDiscTimerElapsed)
-			{
-				SetBootDiscTimer();
-			}
-		}
+		TogglePause();
 		break;
 
 	case IDM_JOYSTICK:
@@ -3198,8 +3180,8 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_DEFINEKEYMAP:
-		UserKeyboardDialog( m_hWnd );
-		SetFocus( m_hWnd );
+		OpenUserKeyboardDialog();
+		StayMuted = true;
 		break;
 
 	case IDM_LOADKEYMAP:
@@ -3898,7 +3880,10 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 	}
 
-	SetSound(SoundState::Unmuted);
+	if (!StayMuted)
+	{
+		SetSound(SoundState::Unmuted);
+	}
 
 	if (m_PaletteType != PrevPaletteType)
 	{
@@ -3933,9 +3918,63 @@ bool BeebWin::IsFrozen()
 	return m_frozen;
 }
 
+void BeebWin::TogglePause()
+{
+	m_EmuPaused = !m_EmuPaused;
+	CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
+	if (m_ShowSpeedAndFPS && m_EmuPaused)
+	{
+		sprintf(m_szTitle, "%s  Paused", WindowTitle);
+		SetWindowText(m_hWnd, m_szTitle);
+	}
+
+	if (m_EmuPaused)
+	{
+		KillTimer(m_hWnd, 1);
+		KillTimer(m_hWnd, 2);
+	}
+	else
+	{
+		if (HasKbdCmd() && !m_KeyboardTimerElapsed)
+		{
+			SetKeyboardTimer();
+		}
+
+		if (m_AutoBootDisc && !m_BootDiscTimerElapsed)
+		{
+			SetBootDiscTimer();
+		}
+	}
+}
+
 bool BeebWin::IsPaused()
 {
 	return m_EmuPaused;
+}
+
+void BeebWin::OpenUserKeyboardDialog()
+{
+	// Pause the emulator if not already paused.
+
+	m_WasPaused = mainWin->IsPaused();
+
+	if (!m_WasPaused)
+	{
+		TogglePause();
+	}
+
+	UserKeyboardDialog(m_hWnd);
+}
+
+void BeebWin::UserKeyboardDialogClosed()
+{
+	// Restart the emulator if it wasn't paused before the "user keyboard"
+	// dialog box was opened.
+
+	if (!mainWin->m_WasPaused)
+	{
+		mainWin->TogglePause();
+	}
 }
 
 /*****************************************************************************/

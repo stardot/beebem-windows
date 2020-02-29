@@ -41,4 +41,3 @@ typedef int CycleCountT;
 #define DEFAULTSAMPLERATE 40000
 
 #endif
-

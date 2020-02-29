@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "log.h"
 #include "serial.h"
+#include "userkybd.h"
 
 Model MachineType;
 BeebWin *mainWin = nullptr;
@@ -62,7 +63,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 	// Create serial threads
 	SerialInit();
 
-	do
+	for (;;)
 	{
 		MSG msg;
 
@@ -74,21 +75,37 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 			                0))
 				break; // Quit the app on WM_QUIT
 
-			if (hCurrentAccelTable != NULL)
+			if (hCurrentDialog != nullptr && hCurrentAccelTable != nullptr)
 			{
 				TranslateAccelerator(hCurrentDialog, hCurrentAccelTable, &msg);
 			}
 
-			if (hCurrentDialog == NULL || !IsDialogMessage(hCurrentDialog, &msg)) {
-				TranslateMessage(&msg);// Translates virtual key codes
+			if (hCurrentDialog == nullptr)
+			{
+				TranslateMessage(&msg); // Translates virtual key codes
 				DispatchMessage(&msg); // Dispatches message to window
+			}
+			else
+			{
+				bool handled = false;
+
+				if (hCurrentDialog == hwndSelectKey)
+				{
+					handled = SelectKeyHandleMessage(msg);
+				}
+
+				if (!handled && !IsDialogMessage(hCurrentDialog, &msg))
+				{
+					TranslateMessage(&msg); // Translates virtual key codes
+					DispatchMessage(&msg); // Dispatches message to window
+				}
 			}
 		}
 
 		if (!mainWin->IsFrozen() && !mainWin->IsPaused()) {
 			Exec6502Instruction();
 		}
-	} while(1);
+	}
 
 	mainWin->KillDLLs();
 
