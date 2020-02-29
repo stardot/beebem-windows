@@ -107,6 +107,7 @@ Boston, MA  02110-1301, USA.
 #define IDD_DISCEXPORT                  114
 #define IDR_ACCELERATORS                115
 #define IDD_ROMCONFIG                   116
+#define IDD_SELECT_KEY                  117
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -182,7 +183,9 @@ Boston, MA  02110-1301, USA.
 #define IDC_SAVE                        1085
 #define IDC_LOAD                        1086
 #define IDC_DEBUGTELETEXT               1087
-#define IDC_DEBUGTELETEXTBRK            1088
+#define IDC_SHIFT                       1088
+#define IDC_DEBUGTELETEXTBRK            1089
+#define IDC_ASSIGNED_KEYS               1090
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -440,9 +443,9 @@ Boston, MA  02110-1301, USA.
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        117
+#define _APS_NEXT_RESOURCE_VALUE        118
 #define _APS_NEXT_COMMAND_VALUE         40297
-#define _APS_NEXT_CONTROL_VALUE         1087
+#define _APS_NEXT_CONTROL_VALUE         1090
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
