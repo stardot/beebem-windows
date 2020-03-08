@@ -147,6 +147,9 @@
     <ClCompile Include="userkybd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UserPortBreakoutBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="uservia.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -345,6 +348,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="userkybd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserPortBreakoutBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="uservia.h">

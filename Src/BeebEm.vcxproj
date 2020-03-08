@@ -204,6 +204,7 @@
     <ClCompile Include="uef.cpp" />
     <ClCompile Include="uefstate.cpp" />
     <ClCompile Include="userkybd.cpp" />
+    <ClCompile Include="UserPortBreakoutBox.cpp" />
     <ClCompile Include="uservia.cpp" />
     <ClCompile Include="via.cpp" />
     <ClCompile Include="video.cpp" />
@@ -282,6 +283,7 @@
     <ClInclude Include="uef.h" />
     <ClInclude Include="uefstate.h" />
     <ClInclude Include="userkybd.h" />
+    <ClInclude Include="UserPortBreakoutBox.h" />
     <ClInclude Include="uservia.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="via.h" />
