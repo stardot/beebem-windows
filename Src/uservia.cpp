@@ -39,6 +39,8 @@ Boston, MA  02110-1301, USA.
 #include "log.h"
 #include "tube.h"
 #include "beebemrc.h"
+#include "SelectKeyDialog.h"
+#include "Messages.h"
 
 using namespace std;
 
@@ -49,14 +51,6 @@ int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
 unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
 bool RTC_Enabled = false;
 void RTCWrite(int Value, int lastValue);
-
-bool mBreakOutWindow = false; 
-
-int	BitKey;			// Used to store the bit key pressed while we wait 
-int BitKeys[8] = {48, 49, 50, 51, 52, 53, 54, 55};
-int LastBitButton = 0;
-static HWND hwndBreakOut;
-static HWND hwndGetBitKey;
 
 /* AMX mouse (see uservia.h) */
 bool AMXMouseEnabled = false;
@@ -84,6 +78,31 @@ bool SWRAMBoardEnabled = false;
 
 /* My raw VIA state */
 VIAState UserVIAState;
+
+/* User Port Breakout Box */
+
+static HWND hwndMain = nullptr; // Holds the BeebWin window handle.
+HWND hwndBreakOut = nullptr;
+static int BitKey; // Used to store the bit key pressed while we wait
+int BitKeys[8] = { 48, 49, 50, 51, 52, 53, 54, 55 };
+// static int SelectedBitKey = 0;
+static const UINT BitKeyButtonIDs[8] = {
+	IDK_BIT0, IDK_BIT1, IDK_BIT2, IDK_BIT3,
+	IDK_BIT4, IDK_BIT5, IDK_BIT6, IDK_BIT7,
+};
+
+// static void SetBitKey(int ctrlID);
+static bool GetValue(int ctrlID);
+static void SetValue(int ctrlID, bool State);
+static void ShowOutputs(unsigned char data);
+static void ShowBitKey(int key, int ctrlID);
+
+static INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
+                                        UINT   nMessage,
+                                        WPARAM wParam,
+                                        LPARAM lParam);
+
+static void PromptForBitKeyInput(HWND hwndParent, UINT ctrlID, int bitKey);
 
 /*--------------------------------------------------------------------------*/
 static void UpdateIFRTopBit(void) {
@@ -118,7 +137,7 @@ void UserVIAWrite(int Address, int Value) {
         UserVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
       }
-	  if (mBreakOutWindow)
+	  if (hwndBreakOut != nullptr)
 		  ShowOutputs(UserVIAState.orb);
 
 	  if (RTC_Enabled)
@@ -264,7 +283,7 @@ int UserVIARead(int Address) {
 		RTC_data = RTC_data >> 1;
 	  }
 
- 	  if (mBreakOutWindow) ShowInputs(tmp);
+	  if (hwndBreakOut != nullptr) ShowInputs(tmp);
 
 	  if (AMXMouseEnabled) {
         if (AMXLRForMiddle) {
@@ -654,26 +673,28 @@ void RTCWrite(int Value, int lastValue)
 		{
 			RTC_cmd = (RTC_cmd >> 1) | ((Value & 0x01) << 15);
 			RTC_bit++;
-			
+
 			WriteLog("RTC Shift cmd : 0x%03x, bit : %d\n", RTC_cmd, RTC_bit);
-		} else {
-			
-			if (RTC_bit == 11)		// Write data
+		}
+		else
+		{
+			if (RTC_bit == 11) // Write data
 			{
 				RTC_cmd >>= 5;
-				
+
 				WriteLog("RTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_cmd >> 4);
-				
+
 				RTC_ram[(RTC_cmd & 0x0f) >> 1] = RTC_cmd >> 4;
-			} else {
+			}
+			else
+			{
 				RTC_cmd >>= 12;
-				
+
 				time_t SysTime;
-				struct tm * CurTime;
-				
-				time( &SysTime );
-				CurTime = localtime( &SysTime );
-				
+				time(&SysTime);
+
+				struct tm* CurTime = localtime(&SysTime);
+
 				switch ((RTC_cmd & 0x0f) >> 1)
 				{
 				case 0 :
@@ -703,7 +724,6 @@ void RTCWrite(int Value, int lastValue)
 				}
 				
 				WriteLog("RTC Read cmd : 0x%03x, reg : 0x%02x, data : 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
-				
 			}
 		}
 	}
@@ -724,17 +744,60 @@ void DebugUserViaState()
  * Breakout box stuff
  */
 
-void BreakOutOpenDialog(HINSTANCE hinst, HWND hwndMain)
+bool BreakOutOpenDialog(HINSTANCE hinst, HWND hwndParent)
 {
-	mBreakOutWindow = true;
+	if (hwndBreakOut != nullptr)
+	{
+		// The dialog box is already open.
+		return false;
+	}
 
-	if (!IsWindow(hwndBreakOut)) 
-	{ 
-		hwndBreakOut = CreateDialog(hinst, MAKEINTRESOURCE(IDD_BREAKOUT),
-		                            NULL, BreakOutDlgProc);
+	hwndMain = hwndParent;
+
+	hwndBreakOut = CreateDialog(
+		hinst,
+		MAKEINTRESOURCE(IDD_BREAKOUT),
+		hwndParent,
+		BreakOutDlgProc
+	);
+
+	if (hwndBreakOut != nullptr)
+	{
 		hCurrentDialog = hwndBreakOut;
-		ShowWindow(hwndBreakOut, SW_SHOW);
+		return true;
+	}
 
+	return false;
+}
+
+void BreakOutCloseDialog()
+{
+	if (hwndBreakOut == nullptr)
+	{
+		return;
+	}
+
+	if (selectKeyDialog != nullptr)
+	{
+		selectKeyDialog->Close(IDCANCEL);
+	}
+
+	EnableWindow(hwndMain, TRUE);
+	DestroyWindow(hwndBreakOut);
+	hwndBreakOut = nullptr;
+	hCurrentDialog = nullptr;
+}
+
+INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
+                                 UINT   nMessage,
+                                 WPARAM wParam,
+                                 LPARAM lParam)
+{
+	bool bit;
+
+	switch (nMessage)
+	{
+	case WM_INITDIALOG:
 		ShowBitKey(0, IDK_BIT0);
 		ShowBitKey(1, IDK_BIT1);
 		ShowBitKey(2, IDK_BIT2);
@@ -743,29 +806,10 @@ void BreakOutOpenDialog(HINSTANCE hinst, HWND hwndMain)
 		ShowBitKey(5, IDK_BIT5);
 		ShowBitKey(6, IDK_BIT6);
 		ShowBitKey(7, IDK_BIT7);
-	}
-}
+		return TRUE;
 
-void BreakOutCloseDialog()
-{
-	DestroyWindow(hwndBreakOut);
-	hwndBreakOut = NULL;
-	mBreakOutWindow = false;
-	hCurrentDialog = NULL;
-}
-
-INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
-                                 UINT   nMessage,
-                                 WPARAM wParam,
-                                 LPARAM lParam)
-{
-	int bit;
-
-	switch( nMessage )
-	{
-	// 
 	case WM_COMMAND:
-		switch( wParam )
+		switch (wParam)
 		{
 		case IDOK:
 		case IDCANCEL:
@@ -773,97 +817,42 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			return TRUE;
 		
 		case IDK_BIT0:
-			BitKey = 0;
-			ShowBitKey(BitKey, IDK_BIT0);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 0);
 			break;
 
 		case IDK_BIT1:
-			BitKey = 1;
-
-			ShowBitKey(BitKey, IDK_BIT1);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 1);
 			break;
 
 		case IDK_BIT2:
-			BitKey = 2;
-
-			ShowBitKey(BitKey, IDK_BIT2);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 2);
 			break;
 
 		case IDK_BIT3:
-			BitKey = 3;
-
-			ShowBitKey(BitKey, IDK_BIT3);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 3);
 			break;
 
 		case IDK_BIT4:
-			BitKey = 4;
-
-			ShowBitKey(BitKey, IDK_BIT4);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 4);
 			break;
 
 		case IDK_BIT5:
-			BitKey = 5;
-
-			ShowBitKey(BitKey, IDK_BIT5);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 5);
 			break;
 
 		case IDK_BIT6:
-			BitKey = 6;
-
-			ShowBitKey(BitKey, IDK_BIT6);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 6);
 			break;
 
 		case IDK_BIT7:
-			BitKey = 7;
-
-			ShowBitKey(BitKey, IDK_BIT7);
-
-			if ( hwndGetBitKey != NULL )
-				SendMessage( hwndGetBitKey, WM_CLOSE, 0, 0L );
-
-			hwndGetBitKey = PromptForBitKeyInput( hwnd, (UINT)wParam );
+			PromptForBitKeyInput(hwnd, (UINT)wParam, 7);
 			break;
 
 		case IDC_IB7:
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x80) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x80; else UserVIAState.irb |= 0x80;
+				if (bit) UserVIAState.irb &= ~0x80; else UserVIAState.irb |= 0x80;
 			}
 			break;
 
@@ -871,7 +860,7 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x40) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x40; else UserVIAState.irb |= 0x40;
+				if (bit) UserVIAState.irb &= ~0x40; else UserVIAState.irb |= 0x40;
 			}
 			break;
 
@@ -879,7 +868,7 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x20) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x20; else UserVIAState.irb |= 0x20;
+				if (bit) UserVIAState.irb &= ~0x20; else UserVIAState.irb |= 0x20;
 			}
 			break;
 
@@ -887,7 +876,7 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x10) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x10; else UserVIAState.irb |= 0x10;
+				if (bit) UserVIAState.irb &= ~0x10; else UserVIAState.irb |= 0x10;
 			}
 			break;
 
@@ -895,7 +884,7 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x08) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x08; else UserVIAState.irb |= 0x08;
+				if (bit) UserVIAState.irb &= ~0x08; else UserVIAState.irb |= 0x08;
 			}
 			break;
 
@@ -903,7 +892,7 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x04) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x04; else UserVIAState.irb |= 0x04;
+				if (bit) UserVIAState.irb &= ~0x04; else UserVIAState.irb |= 0x04;
 			}
 			break;
 
@@ -911,7 +900,7 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x02) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x02; else UserVIAState.irb |= 0x02;
+				if (bit) UserVIAState.irb &= ~0x02; else UserVIAState.irb |= 0x02;
 			}
 			break;
 
@@ -919,112 +908,45 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 			bit = GetValue((int)wParam);
 			if ((UserVIAState.ddrb & 0x01) == 0x00)
 			{
-				if (bit == 1) UserVIAState.irb &= ~0x01; else UserVIAState.irb |= 0x01;
+				if (bit) UserVIAState.irb &= ~0x01; else UserVIAState.irb |= 0x01;
 			}
 			break;
+		}
+		return TRUE;
 
-		default:
-			return TRUE;
+	case WM_SELECT_KEY_DIALOG_CLOSED:
+		if (wParam == IDOK)
+		{
+			// Assign the BBC key to the PC key.
+			BitKeys[BitKey] = selectKeyDialog->Key();
+			ShowBitKey(BitKey, BitKeyButtonIDs[BitKey]);
 		}
 
-	default:
-		return FALSE;
-	}
-}
+		delete selectKeyDialog;
+		selectKeyDialog = nullptr;
 
-const char *BitKeyName( int Key )
-{
-	static CHAR Character[2]; // Used to return single characters.
-
-	switch( Key )
-	{
-	case   8: return "Backspace";
-	case   9: return "Tab";
-	case  13: return "Enter";
-	case  17: return "Ctrl";
-	case  18: return "Alt";
-	case  19: return "Break";
-	case  20: return "Caps";
-	case  27: return "Esc";
-	case  32: return "Spacebar";
-	case  33: return "PgUp";
-	case  34: return "PgDn";
-	case  35: return "End";
-	case  36: return "Home";
-	case  37: return "Left";
-	case  38: return "Up";
-	case  39: return "Right";
-	case  40: return "Down";
-	case  45: return "Insert";
-	case  46: return "Del";
-	case  93: return "Menu";
-	case  96: return "Pad0";
-	case  97: return "Pad1";
-	case  98: return "Pad2";
-	case  99: return "Pad3";
-	case 100: return "Pad4";
-	case 101: return "Pad5";
-	case 102: return "Pad6";
-	case 103: return "Pad7";
-	case 104: return "Pad8";
-	case 105: return "Pad9";
-	case 106: return "Pad*";
-	case 107: return "Pad+";
-	case 109: return "Pad-";
-	case 110: return "Pad.";
-	case 111: return "Pad/";
-	case 112: return "F1";
-	case 113: return "F2";
-	case 114: return "F3";
-	case 115: return "F4";
-	case 116: return "F5";
-	case 117: return "F6";
-	case 118: return "F7";
-	case 119: return "F8";
-	case 120: return "F9";
-	case 121: return "F10";
-	case 122: return "F11";
-	case 123: return "F12";
-	case 144: return "NumLock";
-	case 145: return "SclLock";
-	case 186: return ";";
-	case 187: return "=";
-	case 188: return ",";
-	case 189: return "-";
-	case 190: return ".";
-	case 191: return "/";
-	case 192: return "\'";
-	case 219: return "[";
-	case 220: return "\\";
-	case 221: return "]";
-	case 222: return "#";
-	case 223: return "`";
-
-	default:
-		Character[0] = (CHAR) LOBYTE( Key );
-		Character[1] = '\0';
-		return Character;
+		return TRUE;
 	}
 
+	return FALSE;
 }
 
-int GetValue(int ctrlID)
-
+static bool GetValue(int ctrlID)
 {
-	return (SendDlgItemMessage(hwndBreakOut, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED);
+	return SendDlgItemMessage(hwndBreakOut, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
 }
 
-void SetValue(int ctrlID, int State)
+static void SetValue(int ctrlID, bool State)
 {
-	SendDlgItemMessage(hwndBreakOut, ctrlID, BM_SETCHECK, State, 0);
+	SendDlgItemMessage(hwndBreakOut, ctrlID, BM_SETCHECK, State ? 1 : 0, 0);
 }
 
-void ShowOutputs(unsigned char data)
+static void ShowOutputs(unsigned char data)
 {
-static unsigned char last_data = 0;
-unsigned char changed_bits;
+	static unsigned char last_data = 0;
+	unsigned char changed_bits;
 	
-	if (mBreakOutWindow)
+	if (hwndBreakOut != nullptr)
 	{
 		if (data != last_data)
 		{
@@ -1044,37 +966,36 @@ unsigned char changed_bits;
 
 void ShowInputs(unsigned char data)
 {
-static unsigned char last_data = 0;
-unsigned char changed_bits;
+	static unsigned char last_data = 0;
+	unsigned char changed_bits;
 
-	if (mBreakOutWindow)
+	if (hwndBreakOut != nullptr)
 	{
 		if (data != last_data)
 		{
 			changed_bits = data ^ last_data;
-			if (changed_bits & 0x80) { if ((UserVIAState.ddrb & 0x80) == 0x00) SetValue(IDC_IB7, (data & 0x80) == 0); else SetValue(IDC_IB7, 0); }
-			if (changed_bits & 0x40) { if ((UserVIAState.ddrb & 0x40) == 0x00) SetValue(IDC_IB6, (data & 0x40) == 0); else SetValue(IDC_IB6, 0); }
-			if (changed_bits & 0x20) { if ((UserVIAState.ddrb & 0x20) == 0x00) SetValue(IDC_IB5, (data & 0x20) == 0); else SetValue(IDC_IB5, 0); }
-			if (changed_bits & 0x10) { if ((UserVIAState.ddrb & 0x10) == 0x00) SetValue(IDC_IB4, (data & 0x10) == 0); else SetValue(IDC_IB4, 0); }
-			if (changed_bits & 0x08) { if ((UserVIAState.ddrb & 0x08) == 0x00) SetValue(IDC_IB3, (data & 0x08) == 0); else SetValue(IDC_IB3, 0); }
-			if (changed_bits & 0x04) { if ((UserVIAState.ddrb & 0x04) == 0x00) SetValue(IDC_IB2, (data & 0x04) == 0); else SetValue(IDC_IB2, 0); }
-			if (changed_bits & 0x02) { if ((UserVIAState.ddrb & 0x02) == 0x00) SetValue(IDC_IB1, (data & 0x02) == 0); else SetValue(IDC_IB1, 0); }
-			if (changed_bits & 0x01) { if ((UserVIAState.ddrb & 0x01) == 0x00) SetValue(IDC_IB0, (data & 0x01) == 0); else SetValue(IDC_IB0, 0); }
+			if (changed_bits & 0x80) { if ((UserVIAState.ddrb & 0x80) == 0x00) SetValue(IDC_IB7, (data & 0x80) == 0); else SetValue(IDC_IB7, false); }
+			if (changed_bits & 0x40) { if ((UserVIAState.ddrb & 0x40) == 0x00) SetValue(IDC_IB6, (data & 0x40) == 0); else SetValue(IDC_IB6, false); }
+			if (changed_bits & 0x20) { if ((UserVIAState.ddrb & 0x20) == 0x00) SetValue(IDC_IB5, (data & 0x20) == 0); else SetValue(IDC_IB5, false); }
+			if (changed_bits & 0x10) { if ((UserVIAState.ddrb & 0x10) == 0x00) SetValue(IDC_IB4, (data & 0x10) == 0); else SetValue(IDC_IB4, false); }
+			if (changed_bits & 0x08) { if ((UserVIAState.ddrb & 0x08) == 0x00) SetValue(IDC_IB3, (data & 0x08) == 0); else SetValue(IDC_IB3, false); }
+			if (changed_bits & 0x04) { if ((UserVIAState.ddrb & 0x04) == 0x00) SetValue(IDC_IB2, (data & 0x04) == 0); else SetValue(IDC_IB2, false); }
+			if (changed_bits & 0x02) { if ((UserVIAState.ddrb & 0x02) == 0x00) SetValue(IDC_IB1, (data & 0x02) == 0); else SetValue(IDC_IB1, false); }
+			if (changed_bits & 0x01) { if ((UserVIAState.ddrb & 0x01) == 0x00) SetValue(IDC_IB0, (data & 0x01) == 0); else SetValue(IDC_IB0, false); }
 			last_data = data;
 		}
 	}
 }
 
-void ShowBitKey(int key, int ctrlID)
+static void ShowBitKey(int key, int ctrlID)
 {
-	LastBitButton = ctrlID;
-
-	SetDlgItemText(hwndBreakOut, ctrlID, BitKeyName(BitKeys[key]));
+	SetDlgItemText(hwndBreakOut, ctrlID, SelectKeyDialog::KeyName(BitKeys[key]));
 }
 
 /****************************************************************************/
 
-void SetBitKey( int ctrlID )
+/*
+void SetBitKey(int ctrlID)
 {
 	switch( ctrlID )
 	{
@@ -1092,133 +1013,24 @@ void SetBitKey( int ctrlID )
 		BitKey = -1;
 	}
 }
+*/
 
-HWND PromptForBitKeyInput( HWND hwndParent, UINT ctrlID )
+static void PromptForBitKeyInput(HWND hwndParent, UINT ctrlID, int bitKey)
 {
-	int Error;
-	HWND Success;
-	WNDCLASS  wc;
-	const char* szClass = "BEEBGETKEY";
-	const char* szTitle = "Press the key to use..";
+	BitKey = bitKey;
 
-	// Fill in window class structure with parameters that describe the
-	// main window, if it doesn't already exist.
-	if (!GetClassInfo( hInst, szClass, &wc ))
-	{
-		wc.style		 = CS_HREDRAW | CS_VREDRAW;// Class style(s).
-		wc.lpfnWndProc   = GetBitKeyWndProc; // Window Procedure
-		wc.cbClsExtra	 = 0;					   // No per-class extra data.
-		wc.cbWndExtra	 = 0;					   // No per-window extra data.
-		wc.hInstance	 = hInst;				   // Owner of this class
-		wc.hIcon		 = LoadIcon(hInst, MAKEINTRESOURCE(IDI_BEEBEM));
-		wc.hCursor		 = NULL;
-		wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);// Default color
-		wc.lpszMenuName  = NULL; // Menu from .RC
-		wc.lpszClassName = szClass; //szAppName;				// Name to register as
+	ShowBitKey(bitKey, BitKeyButtonIDs[bitKey]);
 
-		// Register the window class and return success/failure code.
-		RegisterClass(&wc);
-	}
+	std::string UsedKey = SelectKeyDialog::KeyName(BitKeys[BitKey]);
 
-	Success = CreateWindow(	szClass,	// pointer to registered class name
-							szTitle,	// pointer to window name
-							WS_OVERLAPPED|				  
-							WS_CAPTION| DS_MODALFRAME | DS_SYSMODAL,
-//				WS_SYSMENU|
-//				WS_MINIMIZEBOX, // Window style.			    
-							// WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION,
-							//WS_SYSMENU, // Window style.			    
-							80, 40,
-							200,	// window width
-							90,	// window height
-							hwndParent,	// handle to parent or owner window
-							NULL,//HMENU(IDD_GETKEY),	// handle to menu or child-window identifier
-							hInst,	// handle to application instance
-							NULL // pointer to window-creation data
-							);
-	if ( Success == NULL )
-		Error = GetLastError();
-	else
-		ShowWindow( Success, SW_SHOW );
-	
-	return Success;
+	selectKeyDialog = new SelectKeyDialog(
+		hInst,
+		hwndParent,
+		"Press the key to use...",
+		UsedKey
+	);
+
+	selectKeyDialog->Open();
 }
 
 /****************************************************************************/
-
-LRESULT CALLBACK GetBitKeyWndProc( HWND hWnd,		   // window handle
-								UINT message,	   // type of message
-								WPARAM uParam,	   // additional information
-								LPARAM lParam)	   // additional information
-{
-#define IDI_TEXT 100
-
-	switch( message )
-	{
-	case WM_CREATE:
-		// Add the parameters required for this window. ie a Stic text control
-		// and a cancel button.
-
-		HWND hwndCtrl;
-		CHAR szUsedKeys[80];
-
-		// Change Window Font.
-		PostMessage( hWnd, WM_SETFONT, (WPARAM)GetStockObject( ANSI_VAR_FONT ), 
-					 MAKELPARAM(FALSE, 0) );
-
-		// Create the static text for keys used
-		hwndCtrl = CreateWindow( "STATIC", "Assigned to PC key(s): ", WS_CHILD | SS_SIMPLE | WS_VISIBLE,
-								 4, 4, 
-								 200-10, 16, hWnd, HMENU(IDI_TEXT), 
-								 ((LPCREATESTRUCT)lParam)->hInstance, NULL );
-		PostMessage( hwndCtrl, WM_SETFONT, (WPARAM)GetStockObject( ANSI_VAR_FONT ), 
-					 MAKELPARAM(FALSE, 0) );
-
-		// The keys used list.
-
-		strcpy(szUsedKeys, BitKeyName(BitKeys[BitKey]));
-
-		CharToOem( szUsedKeys, szUsedKeys );
-		hwndCtrl = CreateWindow( "STATIC", szUsedKeys, WS_CHILD | SS_SIMPLE | WS_VISIBLE,
-								 8, 20, 
-								 200-10, 16, hWnd, HMENU(IDI_TEXT), 
-								 ((LPCREATESTRUCT)lParam)->hInstance, NULL );
-		PostMessage( hwndCtrl, WM_SETFONT, (WPARAM)GetStockObject( ANSI_VAR_FONT ), 
-					 MAKELPARAM(FALSE, 0) );
-
-		// Create the OK button.
-		hwndCtrl = CreateWindow( "BUTTON", "&Ok", WS_CHILD | BS_DEFPUSHBUTTON | WS_VISIBLE, 
-								 ( 200 - 50 ) / 2, 90 - 50, 
-								 60, 18,
-								 hWnd, HMENU(IDOK), 
-								 ((LPCREATESTRUCT)lParam)->hInstance, NULL );
-
-		PostMessage( hwndCtrl, WM_SETFONT, (WPARAM)GetStockObject( ANSI_VAR_FONT ), 
-					 MAKELPARAM(FALSE, 0) );
-	break;
-
-	case WM_COMMAND:
-		// Respond to the Cancel button click ( the only button ).
-		PostMessage( hWnd, WM_CLOSE, 0, 0L );
-		break;
-
-	case WM_SYSKEYUP:
-	case WM_KEYUP:
-		// Assign the BBC key to the PC key.
-
-		if (LastBitButton != 0)
-		{
-			BitKeys[BitKey] = (int)uParam;
-			ShowBitKey(BitKey, LastBitButton);
-		}
-		
-		// Close the window.
-		PostMessage( hWnd, WM_CLOSE, 0, 0L );
-		break;
-
-	default:
-		// Let the default procedure ehandle everything else.
-		return DefWindowProc( hWnd, message, uParam, lParam );
-	}
-	return FALSE; // Return zero because we have processed this message.
-}

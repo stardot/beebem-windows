@@ -76,6 +76,17 @@ bool SelectKeyDialog::Open()
 
 /****************************************************************************/
 
+void SelectKeyDialog::Close(UINT nResultID)
+{
+	EnableWindow(m_hwndParent, TRUE);
+	DestroyWindow(m_hwnd);
+	m_hwnd = nullptr;
+
+	PostMessage(m_hwndParent, WM_SELECT_KEY_DIALOG_CLOSED, nResultID, 0);
+}
+
+/****************************************************************************/
+
 INT_PTR SelectKeyDialog::DlgProc(
 	HWND   hwnd,
 	UINT   nMessage,
@@ -178,17 +189,6 @@ int SelectKeyDialog::Key() const
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
 {
 	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
-}
-
-/****************************************************************************/
-
-void SelectKeyDialog::Close(UINT nResultID)
-{
-	EnableWindow(m_hwndParent, TRUE);
-	DestroyWindow(m_hwnd);
-	m_hwnd = nullptr;
-
-	PostMessage(m_hwndParent, WM_SELECT_KEY_DIALOG_CLOSED, nResultID, 0);
 }
 
 /****************************************************************************/
