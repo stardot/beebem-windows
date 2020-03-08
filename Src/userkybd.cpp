@@ -27,6 +27,8 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #include "beebemrc.h"
 #include "userkybd.h"
+#include "SelectKeyDialog.h"
+#include "Messages.h"
 
 static void SetKeyColour(COLORREF aColour);
 static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl);
@@ -41,15 +43,7 @@ static void DrawSides(HDC hDC, RECT rect, COLORREF TopLeft, COLORREF BottomRight
 static void DrawBorder(HDC hDC, RECT rect, BOOL Depressed);
 static void DrawText(HDC hDC, RECT rect, HWND hwndCtrl, COLORREF colour, bool Depressed);
 static COLORREF GetKeyColour(UINT ctrlID);
-static bool PromptForInput(HWND hwndParent, bool doShiftedKey);
-static INT_PTR CALLBACK SelectKeyDlgProc(HWND   hWnd,
-                                         UINT   nMessage,
-                                         WPARAM wParam,
-                                         LPARAM lParam);
-static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem);
-static void CloseSelectKeyDialog();
 static std::string GetKeysUsed();
-static LPCSTR KeyName(UINT Key);
 
 // Colour used to highlight the selected key.
 static const COLORREF HighlightColour   = 0x00FF0080; // Purple
@@ -64,14 +58,15 @@ static HWND hwndUserKeyboard;
 
 static int BBCRow; // Used to store the Row and Col values while we wait
 static int BBCCol; // for a key press from the User.
-static HFONT hGetkeyFont; // The font used by the PromptForInput() prompt window.
 static bool doingShifted; // Selecting shifted or unshifted key press
-HWND hwndSelectKey;
 
 // Initialised to defaultMapping.
 KeyMap UserKeymap;
 
-const UINT WM_SELECT_KEY_DIALOG_CLOSED = WM_APP;
+static const char* szSelectKeyDialogTitle[2] = {
+	"Press key for unshifted press...",
+	"Press key for shifted press..."
+};
 
 /****************************************************************************/
 
@@ -123,24 +118,35 @@ static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl)
 	hwndBBCKey = hwndCtrl;
 	selectedCtrlID = ctrlID;
 
+	doingShifted = false;
+
+	std::string UsedKeys = GetKeysUsed();
+
 	// Now ask the user to input the PC key to assign to the BBC key.
-	PromptForInput(hwnd, false);
+	selectKeyDialog = new SelectKeyDialog(
+		hInst,
+		hwnd,
+		szSelectKeyDialogTitle[doingShifted ? 1 : 0],
+		UsedKeys
+	);
+
+	selectKeyDialog->Open();
 }
 
 /****************************************************************************/
 
-static void SetBBCKeyForVKEY(int Key, bool shift)
+static void SetBBCKeyForVKEY(int Key, bool Shift)
 {
 	if (Key >= 0 && Key < 256)
 	{
-		UserKeymap[Key][static_cast<int>(shift)].row = BBCRow;
-		UserKeymap[Key][static_cast<int>(shift)].col = BBCCol;
-		UserKeymap[Key][static_cast<int>(shift)].shift = doingShifted;
+		UserKeymap[Key][static_cast<int>(Shift)].row = BBCRow;
+		UserKeymap[Key][static_cast<int>(Shift)].col = BBCCol;
+		UserKeymap[Key][static_cast<int>(Shift)].shift = doingShifted;
 
-		char info[256];
-		sprintf(info, "SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
-		        Key, shift, BBCRow, BBCCol, doingShifted);
-		OutputDebugString(info);
+		// char info[256];
+		// sprintf(info, "SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
+		//         Key, shift, BBCRow, BBCCol, doingShifted);
+		// OutputDebugString(info);
 	}
 }
 
@@ -272,9 +278,32 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 		return TRUE;
 
 	case WM_SELECT_KEY_DIALOG_CLOSED:
-		if (!doingShifted)
+		if (wParam == IDOK)
 		{
-			PromptForInput(hwnd, true);
+			// Assign the BBC key to the PC key.
+			SetBBCKeyForVKEY(
+				selectKeyDialog->Key(),
+				doingShifted
+			);
+		}
+
+		delete selectKeyDialog;
+		selectKeyDialog = nullptr;
+
+		if ((wParam == IDOK || wParam == IDCONTINUE) && !doingShifted)
+		{
+			doingShifted = true;
+
+			std::string UsedKeys = GetKeysUsed();
+
+			selectKeyDialog = new SelectKeyDialog(
+				hInst,
+				hwndUserKeyboard,
+				szSelectKeyDialogTitle[doingShifted ? 1 : 0],
+				UsedKeys
+			);
+
+			selectKeyDialog->Open();
 		}
 		else
 		{
@@ -430,116 +459,6 @@ static COLORREF GetKeyColour(UINT ctrlID)
 
 /****************************************************************************/
 
-static bool PromptForInput(HWND hwndParent, bool doShiftedKey)
-{
-	doingShifted = doShiftedKey;
-
-	// Create modeless dialog box
-	hwndSelectKey = CreateDialog(
-		hInst,
-		MAKEINTRESOURCE(IDD_SELECT_KEY),
-		hwndParent,
-		SelectKeyDlgProc
-	);
-
-	if (hwndSelectKey != nullptr)
-	{
-		EnableWindow(hwndParent, FALSE);
-
-		return true;
-	}
-
-	return false;
-}
-
-/****************************************************************************/
-
-static INT_PTR CALLBACK SelectKeyDlgProc(HWND   hwnd,
-                                         UINT   nMessage,
-                                         WPARAM wParam,
-                                         LPARAM /* lParam */)
-{
-	const char* szTitle1 = "Press key for unshifted press...";
-	const char* szTitle2 = "Press key for shifted press...";
-
-	// The keys used list.
-	std::string UsedKeys;
-
-	switch (nMessage)
-	{
-		case WM_INITDIALOG:
-			SetWindowText(hwnd, doingShifted ? szTitle2 : szTitle1);
-
-			UsedKeys = GetKeysUsed();
-			SetDlgItemText(hwnd, IDC_ASSIGNED_KEYS, UsedKeys.c_str());
-			return TRUE;
-
-		case WM_ACTIVATE:
-			if (LOWORD(wParam) == WA_INACTIVE)
-			{
-				hCurrentDialog = nullptr;
-			}
-			else
-			{
-				hCurrentDialog = hwnd;
-				hCurrentAccelTable = nullptr;
-			}
-			return FALSE;
-
-		case WM_COMMAND:
-			switch (wParam)
-			{
-				case IDOK:
-				case IDCANCEL:
-					CloseSelectKeyDialog();
-					return TRUE;
-
-				default:
-					break;
-			}
-			break;
-	}
-
-	return FALSE;
-}
-
-/****************************************************************************/
-
-bool SelectKeyHandleMessage(const MSG& msg)
-{
-	if (msg.message == WM_KEYDOWN || msg.message == WM_SYSKEYDOWN)
-	{
-		// Assign the BBC key to the PC key.
-		bool shift = IsDlgItemChecked(hwndSelectKey, IDC_SHIFT);
-		SetBBCKeyForVKEY((int)msg.wParam, shift);
-
-		CloseSelectKeyDialog();
-		return true;
-	}
-
-	return false;
-}
-
-/****************************************************************************/
-
-static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
-{
-	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
-}
-
-/****************************************************************************/
-
-static void CloseSelectKeyDialog()
-{
-	EnableWindow(hwndUserKeyboard, TRUE);
-	DestroyWindow(hwndSelectKey);
-	hwndSelectKey = nullptr;
-
-	PostMessage(hwndUserKeyboard, WM_SELECT_KEY_DIALOG_CLOSED, 0, 0);
-}
-
-/****************************************************************************/
-
 static std::string GetKeysUsed()
 {
 	std::string Keys;
@@ -566,7 +485,7 @@ static std::string GetKeysUsed()
 						Keys += "Sh-";
 					}
 
-					Keys += KeyName(i);
+					Keys += SelectKeyDialog::KeyName(i);
 				}
 			}
 		}
@@ -578,81 +497,4 @@ static std::string GetKeysUsed()
 	}
 
 	return Keys;
-}
-
-/****************************************************************************/
-
-static LPCSTR KeyName(UINT Key)
-{
-	static CHAR Character[2]; // Used to return single characters.
-
-	switch (Key)
-	{
-	case   8: return "Backspace";
-	case   9: return "Tab";
-	case  13: return "Enter";
-	case  17: return "Ctrl";
-	case  18: return "Alt";
-	case  19: return "Break";
-	case  20: return "Caps";
-	case  27: return "Esc";
-	case  32: return "Spacebar";
-	case  33: return "PgUp";
-	case  34: return "PgDn";
-	case  35: return "End";
-	case  36: return "Home";
-	case  37: return "Left";
-	case  38: return "Up";
-	case  39: return "Right";
-	case  40: return "Down";
-	case  45: return "Insert";
-	case  46: return "Del";
-	case  93: return "Menu";
-	case  96: return "Pad0";
-	case  97: return "Pad1";
-	case  98: return "Pad2";
-	case  99: return "Pad3";
-	case 100: return "Pad4";
-	case 101: return "Pad5";
-	case 102: return "Pad6";
-	case 103: return "Pad7";
-	case 104: return "Pad8";
-	case 105: return "Pad9";
-	case 106: return "Pad*";
-	case 107: return "Pad+";
-	case 109: return "Pad-";
-	case 110: return "Pad.";
-	case 111: return "Pad/";
-	case 112: return "F1";
-	case 113: return "F2";
-	case 114: return "F3";
-	case 115: return "F4";
-	case 116: return "F5";
-	case 117: return "F6";
-	case 118: return "F7";
-	case 119: return "F8";
-	case 120: return "F9";
-	case 121: return "F10";
-	case 122: return "F11";
-	case 123: return "F12";
-	case 144: return "NumLock";
-	case 145: return "SclLock";
-	case 186: return ";";
-	case 187: return "=";
-	case 188: return ",";
-	case 189: return "-";
-	case 190: return ".";
-	case 191: return "/";
-	case 192: return "\'";
-	case 219: return "[";
-	case 220: return "\\";
-	case 221: return "]";
-	case 222: return "#";
-	case 223: return "`";
-
-	default:
-		Character[0] = (CHAR)LOBYTE(Key);
-		Character[1] = '\0';
-		return Character;
-	}
 }

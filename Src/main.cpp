@@ -32,7 +32,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "log.h"
 #include "serial.h"
-#include "userkybd.h"
+#include "SelectKeyDialog.h"
 
 Model MachineType;
 BeebWin *mainWin = nullptr;
@@ -89,9 +89,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 			{
 				bool handled = false;
 
-				if (hCurrentDialog == hwndSelectKey)
+				if (selectKeyDialog != nullptr)
 				{
-					handled = SelectKeyHandleMessage(msg);
+					handled = selectKeyDialog->HandleMessage(msg);
 				}
 
 				if (!handled && !IsDialogMessage(hCurrentDialog, &msg))
