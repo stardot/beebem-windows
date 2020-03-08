@@ -55,7 +55,7 @@ void SoundReset();
 
 // Called in sysvia.cpp when a write to one of the 76489's registers occurs
 void Sound_RegWrite(int Value);
-void DumpSound(void);
+void DumpSound();
 void ClickRelay(bool RelayState);
 
 #define SAMPLE_RELAY_ON         0
@@ -92,8 +92,8 @@ extern bool TapeSoundEnabled;
 extern bool SoundChipEnabled;
 extern bool PartSamples;
 
-void SoundChipReset(void);
-void SwitchOnSound(void);
+void SoundChipReset();
+void SwitchOnSound();
 void LoadSoundUEF(FILE *SUEF);
 void SaveSoundUEF(FILE *SUEF);
 
