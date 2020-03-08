@@ -30,6 +30,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "ext1770.h"
 #include "avi.h"
+#include "Messages.h"
 
 typedef HRESULT ( WINAPI* LPDIRECTDRAWCREATE )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
 

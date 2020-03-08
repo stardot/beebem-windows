@@ -43,6 +43,7 @@ Boston, MA  02110-1301, USA.
 #include "z80mem.h"
 #include "z80.h"
 #include "userkybd.h"
+#include "UserPortBreakoutBox.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif

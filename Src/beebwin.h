@@ -45,9 +45,6 @@ Boston, MA  02110-1301, USA.
 /* Used in message boxes */
 #define GETHWND (mainWin->GethWnd())
 
-const UINT WM_REINITDX                    = WM_APP + 1;
-const UINT WM_USER_KEYBOARD_DIALOG_CLOSED = WM_APP + 2;
-
 // Registry defs for disabling windows keys
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"

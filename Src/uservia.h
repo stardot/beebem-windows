@@ -76,14 +76,4 @@ void PrinterDisable();
 extern int PrinterTrigger;
 void PrinterPoll();
 
-/* User Port Breakout Box */
-
-bool BreakOutOpenDialog(HINSTANCE hinst, HWND hwndParent);
-void BreakOutCloseDialog();
-
-extern int BitKeys[8];
-extern HWND hwndBreakOut;
-
-void ShowInputs(unsigned char data);
-
 #endif

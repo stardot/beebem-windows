@@ -110,8 +110,9 @@ void UserVIAWrite(int Address, int Value) {
         UserVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
       }
-	  if (hwndBreakOut != nullptr)
-		  ShowOutputs(UserVIAState.orb);
+
+      if (userPortBreakoutDialog != nullptr)
+        userPortBreakoutDialog->ShowOutputs(UserVIAState.orb);
 
 	  if (RTC_Enabled)
 		  RTCWrite(Value, lastValue);
@@ -256,7 +257,8 @@ int UserVIARead(int Address) {
 		RTC_data = RTC_data >> 1;
 	  }
 
-	  if (hwndBreakOut != nullptr) ShowInputs(tmp);
+      if (userPortBreakoutDialog != nullptr)
+        userPortBreakoutDialog->ShowInputs(tmp);
 
 	  if (AMXMouseEnabled) {
         if (AMXLRForMiddle) {

@@ -28,52 +28,54 @@ Boston, MA  02110-1301, USA.
 #include "SelectKeyDialog.h"
 #include "uservia.h"
 
+/****************************************************************************/
+
 /* User Port Breakout Box */
 
-static HWND hwndMain = nullptr; // Holds the BeebWin window handle.
-HWND hwndBreakOut = nullptr;
-static int BitKey; // Used to store the bit key pressed while we wait
+UserPortBreakoutDialog* userPortBreakoutDialog = nullptr;
+
 int BitKeys[8] = { 48, 49, 50, 51, 52, 53, 54, 55 };
-// static int SelectedBitKey = 0;
+
 static const UINT BitKeyButtonIDs[8] = {
     IDK_BIT0, IDK_BIT1, IDK_BIT2, IDK_BIT3,
     IDK_BIT4, IDK_BIT5, IDK_BIT6, IDK_BIT7,
 };
 
-// static void SetBitKey(int ctrlID);
-static bool GetValue(int ctrlID);
-static void SetValue(int ctrlID, bool State);
-static void ShowBitKey(int key, int ctrlID);
+/****************************************************************************/
 
-static INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
-                                        UINT   nMessage,
-                                        WPARAM wParam,
-                                        LPARAM lParam);
-
-static void PromptForBitKeyInput(HWND hwndParent, int bitKey);
+UserPortBreakoutDialog::UserPortBreakoutDialog(
+	HINSTANCE hInstance,
+	HWND hwndParent) :
+	m_hInstance(hInstance),
+	m_hwnd(nullptr),
+	m_hwndParent(hwndParent),
+	m_BitKey(0),
+	m_LastInputData(0),
+	m_LastOutputData(0)
+{
+}
 
 /****************************************************************************/
 
-bool BreakOutOpenDialog(HINSTANCE hinst, HWND hwndParent)
+bool UserPortBreakoutDialog::Open()
 {
-	if (hwndBreakOut != nullptr)
+	if (m_hwnd != nullptr)
 	{
 		// The dialog box is already open.
 		return false;
 	}
 
-	hwndMain = hwndParent;
-
-	hwndBreakOut = CreateDialog(
-		hinst,
+	m_hwnd = CreateDialogParam(
+		m_hInstance,
 		MAKEINTRESOURCE(IDD_BREAKOUT),
-		hwndParent,
-		BreakOutDlgProc
+		m_hwndParent,
+		sDlgProc,
+		reinterpret_cast<LPARAM>(this)
 	);
 
-	if (hwndBreakOut != nullptr)
+	if (m_hwnd != nullptr)
 	{
-		hCurrentDialog = hwndBreakOut;
+		hCurrentDialog = m_hwnd;
 		return true;
 	}
 
@@ -82,9 +84,9 @@ bool BreakOutOpenDialog(HINSTANCE hinst, HWND hwndParent)
 
 /****************************************************************************/
 
-void BreakOutCloseDialog()
+void UserPortBreakoutDialog::Close()
 {
-	if (hwndBreakOut == nullptr)
+	if (m_hwnd == nullptr)
 	{
 		return;
 	}
@@ -94,18 +96,92 @@ void BreakOutCloseDialog()
 		selectKeyDialog->Close(IDCANCEL);
 	}
 
-	EnableWindow(hwndMain, TRUE);
-	DestroyWindow(hwndBreakOut);
-	hwndBreakOut = nullptr;
+	EnableWindow(m_hwndParent, TRUE);
+	DestroyWindow(m_hwnd);
+	m_hwnd = nullptr;
 	hCurrentDialog = nullptr;
+
+	PostMessage(m_hwndParent, WM_USER_PORT_BREAKOUT_DIALOG_CLOSED, 0, 0);
 }
 
 /****************************************************************************/
 
-INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
-                                 UINT   nMessage,
-                                 WPARAM wParam,
-                                 LPARAM /* lParam */)
+bool UserPortBreakoutDialog::KeyDown(int Key)
+{
+	int mask = 0x01;
+	bool bit = false;
+
+	for (int i = 0; i < 8; ++i)
+	{
+		if (BitKeys[i] == Key)
+		{
+			if ((UserVIAState.ddrb & mask) == 0x00)
+			{
+				UserVIAState.irb &= ~mask;
+				ShowInputs((UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb)));
+				bit = true;
+			}
+		}
+		mask <<= 1;
+	}
+
+	return bit;
+}
+
+/****************************************************************************/
+
+bool UserPortBreakoutDialog::KeyUp(int Key)
+{
+	int mask = 0x01;
+	bool bit = false;
+
+	for (int i = 0; i < 8; ++i)
+	{
+		if (BitKeys[i] == Key)
+		{
+			if ((UserVIAState.ddrb & mask) == 0x00)
+			{
+				UserVIAState.irb |= mask;
+				ShowInputs((UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb)));
+				bit = true;
+			}
+		}
+		mask <<= 1;
+	}
+
+	return bit;
+}
+
+/****************************************************************************/
+
+INT_PTR CALLBACK UserPortBreakoutDialog::sDlgProc(
+	HWND   hwnd,
+	UINT   nMessage,
+	WPARAM wParam,
+	LPARAM lParam)
+{
+	UserPortBreakoutDialog* dialog;
+
+	if (nMessage == WM_INITDIALOG)
+	{
+		SetWindowLongPtr(hwnd, DWLP_USER, lParam);
+		dialog = reinterpret_cast<UserPortBreakoutDialog*>(lParam);
+	}
+	else
+	{
+		dialog = reinterpret_cast<UserPortBreakoutDialog*>(
+			GetWindowLongPtr(hwnd, DWLP_USER)
+		);
+	}
+
+	return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
+}
+
+INT_PTR UserPortBreakoutDialog::DlgProc(
+	HWND   /* hwnd */,
+	UINT   nMessage,
+	WPARAM wParam,
+	LPARAM /* lParam */)
 {
 	bool bit;
 
@@ -127,39 +203,39 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 		{
 		case IDOK:
 		case IDCANCEL:
-			BreakOutCloseDialog();
+			Close();
 			return TRUE;
 
 		case IDK_BIT0:
-			PromptForBitKeyInput(hwnd, 0);
+			PromptForBitKeyInput(0);
 			break;
 
 		case IDK_BIT1:
-			PromptForBitKeyInput(hwnd, 1);
+			PromptForBitKeyInput(1);
 			break;
 
 		case IDK_BIT2:
-			PromptForBitKeyInput(hwnd, 2);
+			PromptForBitKeyInput(2);
 			break;
 
 		case IDK_BIT3:
-			PromptForBitKeyInput(hwnd, 3);
+			PromptForBitKeyInput(3);
 			break;
 
 		case IDK_BIT4:
-			PromptForBitKeyInput(hwnd, 4);
+			PromptForBitKeyInput(4);
 			break;
 
 		case IDK_BIT5:
-			PromptForBitKeyInput(hwnd, 5);
+			PromptForBitKeyInput(5);
 			break;
 
 		case IDK_BIT6:
-			PromptForBitKeyInput(hwnd, 6);
+			PromptForBitKeyInput(6);
 			break;
 
 		case IDK_BIT7:
-			PromptForBitKeyInput(hwnd, 7);
+			PromptForBitKeyInput(7);
 			break;
 
 		case IDC_IB7:
@@ -232,8 +308,8 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 		if (wParam == IDOK)
 		{
 			// Assign the BBC key to the PC key.
-			BitKeys[BitKey] = selectKeyDialog->Key();
-			ShowBitKey(BitKey, BitKeyButtonIDs[BitKey]);
+			BitKeys[m_BitKey] = selectKeyDialog->Key();
+			ShowBitKey(m_BitKey, BitKeyButtonIDs[m_BitKey]);
 		}
 
 		delete selectKeyDialog;
@@ -247,30 +323,27 @@ INT_PTR CALLBACK BreakOutDlgProc(HWND   hwnd,
 
 /****************************************************************************/
 
-static bool GetValue(int ctrlID)
+bool UserPortBreakoutDialog::GetValue(int ctrlID)
 {
-	return SendDlgItemMessage(hwndBreakOut, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
+	return SendDlgItemMessage(m_hwnd, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
 }
 
 /****************************************************************************/
 
-static void SetValue(int ctrlID, bool State)
+void UserPortBreakoutDialog::SetValue(int ctrlID, bool State)
 {
-	SendDlgItemMessage(hwndBreakOut, ctrlID, BM_SETCHECK, State ? 1 : 0, 0);
+	SendDlgItemMessage(m_hwnd, ctrlID, BM_SETCHECK, State ? 1 : 0, 0);
 }
 
 /****************************************************************************/
 
-void ShowOutputs(unsigned char data)
+void UserPortBreakoutDialog::ShowOutputs(unsigned char data)
 {
-	static unsigned char last_data = 0;
-	unsigned char changed_bits;
-
-	if (hwndBreakOut != nullptr)
+	if (m_hwnd != nullptr)
 	{
-		if (data != last_data)
+		if (data != m_LastOutputData)
 		{
-			changed_bits = data ^ last_data;
+			unsigned char changed_bits = data ^ m_LastOutputData;
 			if (changed_bits & 0x80) { if ((UserVIAState.ddrb & 0x80) == 0x80) SetValue(IDC_OB7, (data & 0x80) != 0); else SetValue(IDC_OB7, 0); }
 			if (changed_bits & 0x40) { if ((UserVIAState.ddrb & 0x40) == 0x40) SetValue(IDC_OB6, (data & 0x40) != 0); else SetValue(IDC_OB6, 0); }
 			if (changed_bits & 0x20) { if ((UserVIAState.ddrb & 0x20) == 0x20) SetValue(IDC_OB5, (data & 0x20) != 0); else SetValue(IDC_OB5, 0); }
@@ -279,23 +352,20 @@ void ShowOutputs(unsigned char data)
 			if (changed_bits & 0x04) { if ((UserVIAState.ddrb & 0x04) == 0x04) SetValue(IDC_OB2, (data & 0x04) != 0); else SetValue(IDC_OB2, 0); }
 			if (changed_bits & 0x02) { if ((UserVIAState.ddrb & 0x02) == 0x02) SetValue(IDC_OB1, (data & 0x02) != 0); else SetValue(IDC_OB1, 0); }
 			if (changed_bits & 0x01) { if ((UserVIAState.ddrb & 0x01) == 0x01) SetValue(IDC_OB0, (data & 0x01) != 0); else SetValue(IDC_OB0, 0); }
-			last_data = data;
+			m_LastOutputData = data;
 		}
 	}
 }
 
 /****************************************************************************/
 
-void ShowInputs(unsigned char data)
+void UserPortBreakoutDialog::ShowInputs(unsigned char data)
 {
-	static unsigned char last_data = 0;
-	unsigned char changed_bits;
-
-	if (hwndBreakOut != nullptr)
+	if (m_hwnd != nullptr)
 	{
-		if (data != last_data)
+		if (data != m_LastInputData)
 		{
-			changed_bits = data ^ last_data;
+			unsigned char changed_bits = data ^ m_LastInputData;
 			if (changed_bits & 0x80) { if ((UserVIAState.ddrb & 0x80) == 0x00) SetValue(IDC_IB7, (data & 0x80) == 0); else SetValue(IDC_IB7, false); }
 			if (changed_bits & 0x40) { if ((UserVIAState.ddrb & 0x40) == 0x00) SetValue(IDC_IB6, (data & 0x40) == 0); else SetValue(IDC_IB6, false); }
 			if (changed_bits & 0x20) { if ((UserVIAState.ddrb & 0x20) == 0x00) SetValue(IDC_IB5, (data & 0x20) == 0); else SetValue(IDC_IB5, false); }
@@ -304,54 +374,31 @@ void ShowInputs(unsigned char data)
 			if (changed_bits & 0x04) { if ((UserVIAState.ddrb & 0x04) == 0x00) SetValue(IDC_IB2, (data & 0x04) == 0); else SetValue(IDC_IB2, false); }
 			if (changed_bits & 0x02) { if ((UserVIAState.ddrb & 0x02) == 0x00) SetValue(IDC_IB1, (data & 0x02) == 0); else SetValue(IDC_IB1, false); }
 			if (changed_bits & 0x01) { if ((UserVIAState.ddrb & 0x01) == 0x00) SetValue(IDC_IB0, (data & 0x01) == 0); else SetValue(IDC_IB0, false); }
-			last_data = data;
+			m_LastInputData = data;
 		}
 	}
 }
 
 /****************************************************************************/
 
-static void ShowBitKey(int key, int ctrlID)
+void UserPortBreakoutDialog::ShowBitKey(int key, int ctrlID)
 {
-	SetDlgItemText(hwndBreakOut, ctrlID, SelectKeyDialog::KeyName(BitKeys[key]));
+	SetDlgItemText(m_hwnd, ctrlID, SelectKeyDialog::KeyName(BitKeys[key]));
 }
 
 /****************************************************************************/
 
-/*
-void SetBitKey(int ctrlID)
+void UserPortBreakoutDialog::PromptForBitKeyInput(int bitKey)
 {
-	switch( ctrlID )
-	{
-	// Character keys.
-	case IDK_BIT0 : BitKey = 0; break;
-	case IDK_BIT1 : BitKey = 1; break;
-	case IDK_BIT2 : BitKey = 2; break;
-	case IDK_BIT3 : BitKey = 3; break;
-	case IDK_BIT4 : BitKey = 4; break;
-	case IDK_BIT5 : BitKey = 5; break;
-	case IDK_BIT6 : BitKey = 6; break;
-	case IDK_BIT7 : BitKey = 7; break;
-
-	default:
-		BitKey = -1;
-	}
-}
-*/
-
-/****************************************************************************/
-
-static void PromptForBitKeyInput(HWND hwndParent, int bitKey)
-{
-	BitKey = bitKey;
+	m_BitKey = bitKey;
 
 	ShowBitKey(bitKey, BitKeyButtonIDs[bitKey]);
 
-	std::string UsedKey = SelectKeyDialog::KeyName(BitKeys[BitKey]);
+	std::string UsedKey = SelectKeyDialog::KeyName(BitKeys[m_BitKey]);
 
 	selectKeyDialog = new SelectKeyDialog(
-		hInst,
-		hwndParent,
+		m_hInstance,
+		m_hwndParent,
 		"Press the key to use...",
 		UsedKey
 	);

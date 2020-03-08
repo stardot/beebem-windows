@@ -63,6 +63,8 @@ Boston, MA  02110-1301, USA.
 #include "z80mem.h"
 #include "z80.h"
 #include "userkybd.h"
+#include "UserPortBreakoutBox.h"
+#include "Messages.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
@@ -1294,24 +1296,11 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			else
 			{
-				int mask = 0x01;
 				bool bit = false;
 
-				if (hwndBreakOut != nullptr)
+				if (userPortBreakoutDialog != nullptr)
 				{
-					for (int i = 0; i < 8; ++i)
-					{
-						if (BitKeys[i] == static_cast<int>(uParam))
-						{
-							if ((UserVIAState.ddrb & mask) == 0x00)
-							{
-								UserVIAState.irb &= ~mask;
-								ShowInputs( (UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb)) );
-								bit = true;
-							}
-						}
-						mask <<= 1;
-					}
+					bit = userPortBreakoutDialog->KeyDown(uParam);
 				}
 
 				if (!bit)
@@ -1395,24 +1384,11 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			else 
 			{
-				int mask = 0x01;
 				bool bit = false;
 
-				if (hwndBreakOut != nullptr)
+				if (userPortBreakoutDialog != nullptr)
 				{
-					for (int i = 0; i < 8; ++i)
-					{
-						if (BitKeys[i] == static_cast<int>(uParam))
-						{
-							if ((UserVIAState.ddrb & mask) == 0x00)
-							{
-								UserVIAState.irb |= mask;
-								ShowInputs( (UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb)) );
-								bit = true;
-							}
-						}
-						mask <<= 1;
-					}
+					bit = userPortBreakoutDialog->KeyUp(static_cast<int>(uParam));
 				}
 
 				if (!bit)
@@ -1585,6 +1561,11 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 		case WM_USER_KEYBOARD_DIALOG_CLOSED:
 			mainWin->UserKeyboardDialogClosed();
+			break;
+
+		case WM_USER_PORT_BREAKOUT_DIALOG_CLOSED:
+			delete userPortBreakoutDialog;
+			userPortBreakoutDialog = nullptr;
 			break;
 
 		default: // Passes it on if unproccessed
@@ -3558,10 +3539,17 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_BREAKOUT:
-		if (hwndBreakOut != nullptr)
-			BreakOutCloseDialog();
+		if (userPortBreakoutDialog != nullptr)
+		{
+			userPortBreakoutDialog->Close();
+			delete userPortBreakoutDialog;
+			userPortBreakoutDialog = nullptr;
+		}
 		else
-			BreakOutOpenDialog(hInst, m_hWnd);
+		{
+			userPortBreakoutDialog = new UserPortBreakoutDialog(hInst, m_hWnd);
+			userPortBreakoutDialog->Open();
+		}
 		break;
 
 	case ID_UPRM:
