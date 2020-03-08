@@ -34,6 +34,7 @@ class SelectKeyDialog
 		);
 
 		bool Open();
+		void Close(UINT nResultID);
 
 		bool HandleMessage(const MSG& msg);
 
@@ -42,8 +43,6 @@ class SelectKeyDialog
 		static LPCSTR KeyName(int Key);
 
 	private:
-		void Close(UINT nResultID);
-
 		static INT_PTR CALLBACK sDlgProc(
 			HWND   hwnd,
 			UINT   nMessage,

@@ -1297,7 +1297,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				int mask = 0x01;
 				bool bit = false;
 
-				if (mBreakOutWindow)
+				if (hwndBreakOut != nullptr)
 				{
 					for (int i = 0; i < 8; ++i)
 					{
@@ -1398,7 +1398,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				int mask = 0x01;
 				bool bit = false;
 
-				if (mBreakOutWindow)
+				if (hwndBreakOut != nullptr)
 				{
 					for (int i = 0; i < 8; ++i)
 					{
@@ -3558,7 +3558,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_BREAKOUT:
-		if (mBreakOutWindow)
+		if (hwndBreakOut != nullptr)
 			BreakOutCloseDialog();
 		else
 			BreakOutOpenDialog(hInst, m_hWnd);
