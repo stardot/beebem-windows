@@ -193,6 +193,7 @@
     <ClCompile Include="romconfig.cpp" />
     <ClCompile Include="sasi.cpp" />
     <ClCompile Include="scsi.cpp" />
+    <ClCompile Include="SelectKeyDialog.cpp" />
     <ClCompile Include="serial.cpp" />
     <ClCompile Include="serialdevices.cpp" />
     <ClCompile Include="soundstream.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="ide.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="Messages.h" />
     <ClInclude Include="ml675001.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="music5000.h" />
@@ -268,6 +270,7 @@
     <ClInclude Include="preferences.h" />
     <ClInclude Include="sasi.h" />
     <ClInclude Include="scsi.h" />
+    <ClInclude Include="SelectKeyDialog.h" />
     <ClInclude Include="serial.h" />
     <ClInclude Include="serialdevices.h" />
     <ClInclude Include="soundstream.h" />
