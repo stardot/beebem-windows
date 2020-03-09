@@ -48,7 +48,7 @@ int RTC_cmd = 0;
 int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
 unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
 bool RTC_Enabled = false;
-void RTCWrite(int Value, int lastValue);
+static void RTCWrite(int Value, int lastValue);
 
 /* AMX mouse (see uservia.h) */
 bool AMXMouseEnabled = false;
@@ -67,7 +67,7 @@ static char PrinterFileName[256];
 static FILE *PrinterFileHandle = NULL;
 
 // Shift Register
-int SRTrigger = 0;
+static int SRTrigger = 0;
 static void SRPoll();
 static void UpdateSRState(bool SRrw);
 

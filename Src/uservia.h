@@ -30,7 +30,6 @@ Boston, MA  02110-1301, USA.
 #include "via.h"
 
 extern VIAState UserVIAState;
-extern unsigned char WTDelay1,WTDelay2;
 extern bool RTC_Enabled;
 extern bool SWRAMBoardEnabled;
 
