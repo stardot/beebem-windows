@@ -98,10 +98,6 @@ typedef int int16;
 #define GETVFLAG ((PSR & FlagV)>0)
 #define GETNFLAG ((PSR & FlagN)>0)
 
-/* Types for internal function arrays */
-typedef void (*InstrHandlerFuncType)(int16 Operand);
-typedef int16 (*AddrModeHandlerFuncType)(int WantsAddr);
-
 static const int TubeCyclesTable[]={
   7,6,0,0,0,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
