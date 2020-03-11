@@ -30,7 +30,6 @@ Boston, MA  02110-1301, USA.
 
 bool Enable_Z80 = false;
 bool trace_z80 = false;
-bool debug_z80 = false;
 bool TorchTube = false;
 int PreZPC = 0; // Previous Z80 PC
 
