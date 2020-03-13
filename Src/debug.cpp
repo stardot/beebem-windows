@@ -30,6 +30,10 @@ Boston, MA  02110-1301, USA.
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
+#include <algorithm>
+#include <fstream>
+#include <string>
+#include <vector>
 
 #include "main.h"
 #include "beebmem.h"
@@ -40,6 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "z80mem.h"
 #include "z80.h"
+#include "StringUtils.h"
 
 #define MAX_LINES 4096          // Max lines in info window
 #define LINES_IN_INFO 28        // Visible lines in info window
@@ -105,8 +110,7 @@ static HWND hwndInfo;
 static HWND hwndBP;
 static HWND hwndW;
 static HACCEL haccelDebug;
-static Label Labels[MAX_LABELS];
-static int LabelCount = 0;
+static std::vector<Label> Labels;
 static Breakpoint Breakpoints[MAX_BPS];
 static Watch Watches[MAX_BPS];
 static unsigned char buffer[MAX_BUFFER];
@@ -500,10 +504,13 @@ void DebugDisplayInfoF(const char *format, ...)
 
 	char *buffer = (char*)malloc(len * sizeof(char));
 
-	vsprintf_s(buffer, len * sizeof(char), format, args);
+	if (buffer != nullptr)
+	{
+		vsprintf_s(buffer, len * sizeof(char), format, args);
 
-	DebugDisplayInfo(buffer);
-	free(buffer);
+		DebugDisplayInfo(buffer);
+		free(buffer);
+	}
 }
 
 void DebugDisplayInfo(const char *info)
@@ -1239,30 +1246,37 @@ void DebugLoadLabels(char *filename)
 	}
 	else
 	{
-		LabelCount = 0;
+		Labels.clear();
 
 		char buf[1024];
 
-		while(fgets(buf, _countof(buf), infile) != NULL && LabelCount < MAX_LABELS)
+		while(fgets(buf, _countof(buf), infile) != NULL)
 		{
 			DebugChompString(buf);
 
+			int addr;
+			char name[64];
+
 			// Example: al FFEE .oswrch
-			if(sscanf(buf,"%*s %x .%64s", &Labels[LabelCount].addr, Labels[LabelCount].name) != 2)
+			if (sscanf(buf, "%*s %x .%64s", &addr, name) != 2)
 			{
 				DebugDisplayInfoF("Error: Invalid labels format: %s", filename);
 				fclose(infile);
-				LabelCount = 0;
+
+				Labels.clear();
 				return;
+
 			}
-			LabelCount++;
+
+			Labels.emplace_back(std::string(name), addr);
 		}
-		DebugDisplayInfoF("Loaded %d labels from %s", LabelCount, filename);
+
+		DebugDisplayInfoF("Loaded %u labels from %s", Labels.size(), filename);
 		fclose(infile);
 	}
 }
 
-void DebugRunScript(char *filename)
+void DebugRunScript(const char *filename)
 {
 	FILE *infile = fopen(filename,"r");
 	if (infile == NULL)
@@ -1285,6 +1299,101 @@ void DebugRunScript(char *filename)
 	}
 }
 
+// Loads Swift format labels, used by BeebAsm
+
+bool DebugLoadSwiftLabels(const char* filename)
+{
+	std::ifstream input(filename);
+
+	if (input)
+	{
+		bool valid = true;
+
+		std::string line;
+
+		while (std::getline(input, line))
+		{
+			trim(line);
+
+			// Example: [{'SYMBOL':12345L,'SYMBOL2':12346L}]
+
+			if (line.length() > 4 && line[0] == '[' && line[1] == '{')
+			{
+				std::size_t i = 2;
+
+				while (line[i] == '\'')
+				{
+					std::size_t end = line.find('\'', i + 1);
+
+					if (end == std::string::npos)
+					{
+						valid = false;
+						break;
+					}
+
+					std::string symbol = line.substr(i + 1, end - (i + 1));
+					i = end + 1;
+
+					if (line[i] == ':')
+					{
+						end = line.find('L', i + 1);
+
+						if (end == std::string::npos)
+						{
+							valid = false;
+							break;
+						}
+
+						std::string address = line.substr(i + 1, end - (i + 1));
+						i = end + 1;
+
+						Label label;
+						label.name = symbol;
+
+						try
+						{
+							label.addr = std::stoi(address);
+						}
+						catch (const std::exception&)
+						{
+							valid = false;
+							break;
+						}
+
+						Labels.push_back(label);
+					}
+
+					if (line[i] == ',')
+					{
+						i++;
+					}
+					else if (line[i] == '}')
+					{
+						break;
+					}
+					else
+					{
+						valid = false;
+						break;
+					}
+				}
+			}
+		}
+
+		if (!valid)
+		{
+			Labels.clear();
+		}
+
+		return valid;
+	}
+	else
+	{
+		DebugDisplayInfoF("Failed to load symbols file:\n  %s", filename);
+		return false;
+	}
+}
+
 void DebugChompString(char *str)
 {
 	int end = strlen(str) - 1;
@@ -1297,17 +1406,11 @@ void DebugChompString(char *str)
 
 int DebugParseLabel(char *label)
 {
-	//int addr;
-	// Check it's not simply a hex address
-	//if(sscanf(label, "%x", &addr) == 1)
-	//	return addr;
+	auto it = std::find_if(Labels.begin(), Labels.end(), [=](const Label& Label) {
+		return _stricmp(label, Label.name.c_str()) == 0;
+	});
 
-	for(int i = 0; i < LabelCount; i++)
-	{
-		if(_stricmp(label, Labels[i].name) == 0)
-			return Labels[i].addr;
-	}
-	return -1;
+	return it != Labels.end() ? it->addr : -1;
 }
 
 void DebugHistoryAdd(char *command)
@@ -1929,17 +2032,25 @@ bool DebugCmdScript(char *args)
 
 bool DebugCmdLabels(char *args)
 {
-	if(args[0] != '\0')
+	if (args[0] != '\0')
+	{
 		DebugLoadLabels(args);
+	}
 
-	if(LabelCount == 0)
+	if (Labels.empty())
+	{
 		DebugDisplayInfo("No labels defined.");
+	}
 	else
 	{
-		DebugDisplayInfoF("%d known labels:", LabelCount);
-		for(int i = 0; i < LabelCount; i++)
-			DebugDisplayInfoF("%04X %s", Labels[i].addr, Labels[i].name);
+		DebugDisplayInfoF("%d known labels:", Labels.size());
+
+		for(std::size_t i = 0; i < Labels.size(); i++)
+		{
+			DebugDisplayInfoF("%04X %s", Labels[i].addr, Labels[i].name.c_str());
+		}
 	}
+
 	return true;
 }
 

@@ -198,6 +198,7 @@
     <ClCompile Include="serialdevices.cpp" />
     <ClCompile Include="soundstream.cpp" />
     <ClCompile Include="SprowCoPro.cpp" />
+    <ClCompile Include="StringUtils.cpp" />
     <ClCompile Include="sysvia.cpp" />
     <ClCompile Include="teletext.cpp" />
     <ClCompile Include="tube.cpp" />
@@ -276,6 +277,7 @@
     <ClInclude Include="serialdevices.h" />
     <ClInclude Include="soundstream.h" />
     <ClInclude Include="SprowCoPro.h" />
+    <ClInclude Include="StringUtils.h" />
     <ClInclude Include="sysvia.h" />
     <ClInclude Include="TarmacGlobals.h" />
     <ClInclude Include="teletext.h" />

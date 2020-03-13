@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 // 07/06/1997: Mike Wyatt and NRM's port to Win32
-// 11/01/1998: Conveted to use DirectX, Mike Wyatt
+// 11/01/1998: Converted to use DirectX, Mike Wyatt
 // 28/12/2004: Econet added Rob O'Donnell. robert@irrelevant.com.
 // 26/12/2011: Added IDE Drive to Hardware options, JGH
 
@@ -125,7 +125,7 @@ static const char *AboutText =
 	"Version " VERSION_STRING ", " VERSION_DATE;
 
 /* Prototypes */
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 // Keyboard mappings
 static KeyMap defaultMapping;
@@ -312,6 +312,17 @@ bool BeebWin::Initialise()
 	{
 		DebugOpenDialog(hInst, m_hWnd);
 		DebugRunScript(m_DebugScript);
+	}
+
+	if (!m_DebugLabelsFileName.empty())
+	{
+		if (!DebugLoadSwiftLabels(m_DebugLabelsFileName.c_str()))
+		{
+			std::string message("Failed to load symbols file:\n  ");
+			message += m_DebugLabelsFileName;
+
+			MessageBox(m_hWnd, message.c_str(), WindowTitle, MB_OK | MB_ICONERROR);
+		}
 	}
 
 	// Boot file if passed on command line
@@ -3971,14 +3982,13 @@ void BeebWin::UserKeyboardDialogClosed()
 void BeebWin::ParseCommandLine()
 {
 	char errstr[200];
-	int i;
-	int a;
 	bool invalid;
 
 	m_CommandLineFileName1[0] = 0;
 	m_CommandLineFileName2[0] = 0;
 
-	i = 1;
+	int i = 1;
+
 	while (i < __argc)
 	{
 		// Params with no arguments
@@ -4007,6 +4017,7 @@ void BeebWin::ParseCommandLine()
 		else // Params with additional arguments
 		{
 			invalid = false;
+
 			if (_stricmp(__argv[i], "-Data") == 0)
 			{
 				strcpy(m_UserDataPath, __argv[++i]);
@@ -4036,7 +4047,8 @@ void BeebWin::ParseCommandLine()
 			}
 			else if (_stricmp(__argv[i], "-EcoStn") == 0)
 			{
-				a = atoi(__argv[++i]);
+				int a = atoi(__argv[++i]);
+
 				if (a < 1 || a > 254)
 					invalid = true;
 				else
@@ -4044,7 +4056,8 @@ void BeebWin::ParseCommandLine()
 			}
 			else if (_stricmp(__argv[i], "-EcoFF") == 0)
 			{
-				a = atoi(__argv[++i]);
+				int a = atoi(__argv[++i]);
+
 				if (a < 1)
 					invalid = true;
 				else
@@ -4058,9 +4071,14 @@ void BeebWin::ParseCommandLine()
 			{
 				strncpy(m_DebugScript, __argv[++i], sizeof(m_DebugScript));
 			}
+			else if (_stricmp(__argv[i], "-DebugLabels") == 0)
+			{
+				m_DebugLabelsFileName = __argv[++i];
+			}
 			else if (_stricmp(__argv[i], "-AutoBootDelay") == 0)
 			{
-				a = atoi(__argv[++i]);
+				int a = atoi(__argv[++i]);
+
 				if (a < 1)
 					invalid = true;
 				else
@@ -4073,7 +4091,7 @@ void BeebWin::ParseCommandLine()
 			}
 			else
 			{
-				// Assume its a file name
+				// Assume it's a file name
 				if (m_CommandLineFileName1[0] == 0)
 					strncpy(m_CommandLineFileName1, __argv[i], _MAX_PATH);
 				else if (m_CommandLineFileName2[0] == 0)

@@ -31,6 +31,8 @@ Boston, MA  02110-1301, USA.
 
 #include <string.h>
 #include <stdlib.h>
+#include <string>
+
 #include <windows.h>
 #include <d3dx9.h>
 #include <ddraw.h>
@@ -368,6 +370,7 @@ public:
 	char 		m_CommandLineFileName2[_MAX_PATH];
 	char		m_KbdCmd[1024];
 	char		m_DebugScript[_MAX_PATH];
+	std::string m_DebugLabelsFileName;
 	int		m_KbdCmdPos;
 	int		m_KbdCmdKey;
 	bool		m_KbdCmdPress;

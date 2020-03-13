@@ -28,6 +28,8 @@ Boston, MA  02110-1301, USA.
 #define DEBUG_HEADER
 
 #include <windows.h>
+#include <string>
+
 #include "viastate.h"
 
 extern bool DebugEnabled;
@@ -52,10 +54,17 @@ enum class DebugType {
 
 struct Label
 {
-	char name[65];
+	std::string name;
 	int addr;
-};
 
+	Label() : addr(0)
+	{
+	}
+
+	Label(const std::string& n, int a) : name(n), addr(a)
+	{
+	}
+};
 
 struct Breakpoint
 {
@@ -115,7 +124,8 @@ void DebugUserViaState(void);
 void DebugSysViaState(void);
 void DebugViaState(const char *s, VIAState *v);
 void DebugParseCommand(char *command);
-void DebugRunScript(char *filename);
+void DebugRunScript(const char *filename);
+bool DebugLoadSwiftLabels(const char *filename);
 int DebugReadMem(int addr, bool host);
 void DebugWriteMem(int addr, bool host, unsigned char data);
 int DebugDisassembleInstruction(int addr, bool host, char *opstr);
