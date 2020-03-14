@@ -50,7 +50,6 @@ Boston, MA  02110-1301, USA.
 #define LINES_IN_INFO 28        // Visible lines in info window
 #define MAX_COMMAND_LEN 200     // Max debug command length
 #define MAX_BPS 50              // Max num of breakpoints/watches
-#define MAX_LABELS 500          // Max num labels.
 #define MAX_HISTORY 20          // Number of commands in the command history.
 
 // Where control goes
@@ -1265,7 +1264,6 @@ void DebugLoadLabels(char *filename)
 
 				Labels.clear();
 				return;
-
 			}
 
 			Labels.emplace_back(std::string(name), addr);
