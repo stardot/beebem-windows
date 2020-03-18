@@ -471,7 +471,7 @@ static bool uef_write_chunk()
 	if (uef_file_name[0])
 	{
 		/* Always append to file */
-		uef_file = gzopen(uef_file_name, "a+b");
+		uef_file = gzopen(uef_file_name, "ab");
 		if (uef_file == NULL)
 		{
 			uef_errno = UEF_OPEN_NOFILE;
