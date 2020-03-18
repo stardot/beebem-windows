@@ -2452,7 +2452,7 @@ void BeebWin::UpdateOptiMenu() {
 	CheckMenuItem(ID_DOCONLY, OpCodes == 1);
 	CheckMenuItem(ID_EXTRAS, OpCodes == 2);
 	CheckMenuItem(ID_FULLSET, OpCodes == 3);
-	CheckMenuItem(ID_BHARDWARE, BHardware);
+	CheckMenuItem(ID_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
 	CheckMenuItem(ID_TELETEXTHALFMODE, TeletextHalfMode);
 	CheckMenuItem(ID_PSAMPLES, PartSamples);
 }
@@ -3588,8 +3588,8 @@ void BeebWin::HandleCommand(int MenuId)
 		UpdateOptiMenu();
 		break;
 
-	case ID_BHARDWARE:
-		BHardware = !BHardware;
+	case ID_BASIC_HARDWARE_ONLY:
+		BasicHardwareOnly = !BasicHardwareOnly;
 		UpdateOptiMenu();
 		break;
 

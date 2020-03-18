@@ -181,7 +181,7 @@ int CyclesToInt = NO_TIMER_INT_DUE;
 
 static bool Branched; // true if the instruction branched
 int OpCodes=2; // 1 = documented only, 2 = commonoly used undocumenteds, 3 = full set
-bool BHardware = false; // false = all hardware, true = basic hardware only
+bool BasicHardwareOnly = false; // false = all hardware, true = basic hardware only
 // 1 if first cycle happened
 
 /* Get a two byte address from the program counter, and then post inc the program counter */
@@ -2425,7 +2425,7 @@ void PollHardware(unsigned int nCycles)
 	}
 
 	VideoPoll(nCycles);
-	if (!BHardware) {
+	if (!BasicHardwareOnly) {
 		AtoD_poll(nCycles);
 		Serial_Poll();
 	}

@@ -302,7 +302,7 @@ Boston, MA  02110-1301, USA.
 #define ID_TAPE_NORMAL                  40138
 #define IDM_MUSIC5000                   40140
 #define ID_TELETEXTHALFMODE             40141
-#define ID_BHARDWARE                    40142
+#define ID_BASIC_HARDWARE_ONLY          40142
 #define ID_DOCONLY                      40143
 #define ID_EXTRAS                       40144
 #define ID_FULLSET                      40145

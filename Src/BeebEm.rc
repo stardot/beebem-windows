@@ -696,7 +696,7 @@ BEGIN
             MENUITEM "&Full Set",                   ID_FULLSET
         END
         MENUITEM SEPARATOR
-        MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
+        MENUITEM "Basic &Hardware Only",        ID_BASIC_HARDWARE_ONLY
         MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE
         MENUITEM SEPARATOR
         MENUITEM "Econet On/Off",               ID_ECONET

@@ -98,5 +98,5 @@ int i186_execute(int num_cycles);
 #endif
 
 extern int OpCodes;
-extern bool BHardware;
+extern bool BasicHardwareOnly;
 #endif
