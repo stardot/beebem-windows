@@ -380,12 +380,6 @@
     <ClInclude Include="z80mem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="zconf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ARMulator\acconfig.h">
       <Filter>Header Files\ARMulator</Filter>
     </ClInclude>

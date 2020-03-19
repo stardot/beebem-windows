@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <math.h>
 #include "uef.h"
-#include "zlib.h"
+#include "zlib/zlib.h"
 
 /* Beats representing normal tape speed (not sure why its 5600) */
 #define NORMAL_TAPE_SPEED 5600

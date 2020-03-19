@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <stdlib.h>
 
-#include "zlib.h"
+#include "zlib/zlib.h"
 #include "log.h"
 #include "csw.h"
 

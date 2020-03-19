@@ -293,8 +293,6 @@
     <ClInclude Include="video.h" />
     <ClInclude Include="z80.h" />
     <ClInclude Include="z80mem.h" />
-    <ClInclude Include="zconf.h" />
-    <ClInclude Include="zlib.h" />
     <ClInclude Include="zlib\crc32.h" />
     <ClInclude Include="zlib\deflate.h" />
     <ClInclude Include="zlib\gzguts.h" />
