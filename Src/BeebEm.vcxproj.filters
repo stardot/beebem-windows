@@ -368,9 +368,6 @@
     <ClInclude Include="via.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="viastate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="video.h">
       <Filter>Header Files</Filter>
     </ClInclude>

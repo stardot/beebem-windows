@@ -38,7 +38,6 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "sysvia.h"
 #include "via.h"
 #include "main.h"
-#include "viastate.h"
 #include "debug.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
@@ -397,6 +396,32 @@ void SysVIAWrite(int Address, int Value) {
 
     case 12:
       SysVIAState.pcr=Value & 0xff;
+
+      SysVIAState.pcr = Value;
+
+      if ((Value & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH)
+      {
+        SysVIAState.ca2 = true;
+      }
+      else if ((Value & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_LOW)
+      {
+        SysVIAState.ca2 = false;
+      }
+
+      if ((Value & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_HIGH)
+      {
+        if (!SysVIAState.cb2)
+        {
+          // Light pen strobe on CB2 low -> high transition
+          VideoLightPenStrobe();
+        }
+
+        SysVIAState.cb2 = true;
+      }
+      else if ((Value & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_LOW)
+      {
+        SysVIAState.cb2 = false;
+      }
       break;
 
     case 13:

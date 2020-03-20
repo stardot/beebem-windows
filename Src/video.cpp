@@ -1334,7 +1334,7 @@ int CRTCRead(int Address) {
       case 15:
         return CRTC_CursorPosLow;
       case 16:
-        return CRTC_LightPenHigh; // Perhaps tie to mouse pointer?
+        return CRTC_LightPenHigh;
       case 17:
         return CRTC_LightPenLow;
       default:
@@ -1448,6 +1448,17 @@ static void VideoAddCursor() {
 			}
 		}
 	}
+}
+
+// A low to high transition on the 6845 Light Pen Strobe (LPSTB) input
+// latches the current Refresh Address in the light pen register.
+
+// Perhaps tie to mouse pointer?
+
+void VideoLightPenStrobe()
+{
+	CRTC_LightPenHigh = (VideoState.Addr & 0x3f00) >> 8;
+	CRTC_LightPenLow  = VideoState.Addr & 0xff;
 }
 
 void VideoAddLEDs(void) {

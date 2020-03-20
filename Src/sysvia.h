@@ -28,7 +28,6 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #define SYSVIA_HEADER
 
 #include "via.h"
-#include "viastate.h"
 
 extern VIAState SysVIAState;
 extern unsigned char IC32State;

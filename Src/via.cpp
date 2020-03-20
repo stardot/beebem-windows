@@ -20,8 +20,6 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef VIA_HEADER
-#define VIA_HEADER
 #include <windows.h>
 #include <iostream>
 #include <fstream>
@@ -30,7 +28,6 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "uservia.h"
 #include "uefstate.h"
-#include "viastate.h"
 #include "debug.h"
 
 using namespace std;
@@ -49,7 +46,9 @@ void VIAReset(VIAState *ToReset) {
   ToReset->timer2hasshot=false;
   ToReset->timer1adjust=0; //Added by Ken Lowe 24/08/03
   ToReset->timer2adjust=0;
-} /* VIAReset */
+  ToReset->ca2 = false;
+  ToReset->cb2 = false;
+}
 
 /*-------------------------------------------------------------------------*/
 void via_dumpstate(VIAState *ToDump) {
@@ -69,6 +68,8 @@ void via_dumpstate(VIAState *ToDump) {
   cerr << "  timer2l="  << ToDump->timer2l << "\n";
   cerr << "  timer1hasshot="  << ToDump->timer1hasshot << "\n";
   cerr << "  timer2hasshot="  << ToDump->timer2hasshot << "\n";
+  cerr << "  ca2="  << ToDump->ca2 << "\n";
+  cerr << "  cb2="  << ToDump->cb2 << "\n";
 }
 
 void DebugViaState(const char *s, VIAState *v)
@@ -91,6 +92,9 @@ void DebugViaState(const char *s, VIAState *v)
 		v->timer2c & 1 ? "+" : " ",
 		(int)v->timer1l, (int)v->timer2l,
 		(int)v->timer1hasshot, (int)v->timer2hasshot);
+
+	DebugDisplayInfoF("%s: ca2=%d cb2=%d", s,
+		(int)v->ca2, (int)v->cb2);
 }
 
 void SaveVIAUEF(FILE *SUEF) {
@@ -141,5 +145,7 @@ void LoadViaUEF(FILE *SUEF) {
 	VIAPtr->timer1hasshot=fgetc(SUEF) != 0;
 	VIAPtr->timer2hasshot=fgetc(SUEF) != 0;
 	if (!VIAType) IC32State=fgetc(SUEF);
+
+  VIAPtr->ca2 = ((VIAPtr->pcr & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH);
+  VIAPtr->cb2 = ((VIAPtr->pcr & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_HIGH);
 }
-#endif

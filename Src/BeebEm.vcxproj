@@ -289,7 +289,6 @@
     <ClInclude Include="uservia.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="via.h" />
-    <ClInclude Include="viastate.h" />
     <ClInclude Include="video.h" />
     <ClInclude Include="z80.h" />
     <ClInclude Include="z80mem.h" />

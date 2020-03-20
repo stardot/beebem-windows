@@ -30,7 +30,7 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <string>
 
-#include "viastate.h"
+#include "via.h"
 
 extern bool DebugEnabled;
 

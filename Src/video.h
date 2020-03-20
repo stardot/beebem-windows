@@ -62,6 +62,7 @@ void VideoInit(void);
 void video_dumpstate(void);
 void VideoDoScanLine(void);
 void VideoGetText(char *text, int line);
+void VideoLightPenStrobe();
 
 extern bool TeletextEnabled;
 
