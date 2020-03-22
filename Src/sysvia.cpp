@@ -43,10 +43,6 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "speech.h"
 #endif
 
-#ifdef WIN32
-#include <windows.h>
-#endif
-
 using namespace std;
 
 /* Clock stuff for Master 128 RTC */
