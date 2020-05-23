@@ -657,9 +657,7 @@ BEGIN
         POPUP "&Second Processor"
         BEGIN
             MENUITEM "65C02 &Second Processor",     IDM_TUBE
-#ifdef M512COPRO_ENABLED
             MENUITEM "&Master 512 Second Processor", IDM_TUBE186
-#endif
             MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
             MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
             MENUITEM "ARM Second Processor",        IDM_ARM

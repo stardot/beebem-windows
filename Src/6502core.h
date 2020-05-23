@@ -93,9 +93,7 @@ void SyncIO(void);
 void AdjustForIORead(void);
 void AdjustForIOWrite(void);
 
-#ifdef M512COPRO_ENABLED
 int i186_execute(int num_cycles);
-#endif
 
 extern int OpCodes;
 extern bool BasicHardwareOnly;

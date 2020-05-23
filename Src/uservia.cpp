@@ -267,14 +267,12 @@ int UserVIARead(int Address) {
             AMXButtons &= ~AMX_MIDDLE_BUTTON;
         }
 
-#ifdef M512COPRO_ENABLED
         if (Tube186Enabled)
         {
             tmp &= 0xf8;
             tmp |= (AMXButtons ^ 7);
         }
         else
-#endif
         {
             tmp &= 0x1f;
             tmp |= (AMXButtons ^ 7) << 5;
@@ -512,8 +510,6 @@ static bool first = true;
 
     	if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) )
 		{
-
-#ifdef M512COPRO_ENABLED
             if (Tube186Enabled)
             {
     
@@ -546,7 +542,6 @@ static bool first = true;
 			    }
             }
             else
-#endif
             {
 
 		    	if (AMXTargetX != AMXCurrentX)

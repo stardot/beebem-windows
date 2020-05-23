@@ -32,9 +32,7 @@ extern unsigned char R1Status;
 void ResetTube(void);
 
 extern bool EnableTube, TubeEnabled, AcornZ80;
-#ifdef M512COPRO_ENABLED
 extern bool Tube186Enabled;
-#endif
 extern bool TorchTubeActive;
 extern int TubeProgramCounter;
 const int TubeBufferLength = 24;

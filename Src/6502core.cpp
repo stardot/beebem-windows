@@ -55,6 +55,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "Arm.h"
 #include "sprowcopro.h"
+#include "Master512CoPro.h"
 
 #ifdef WIN32
 #define INLINE inline
@@ -1211,10 +1212,11 @@ void Exec6502Instruction(void) {
             sprow->exec(8);
 #endif
         }
-#ifdef M512COPRO_ENABLED
+
 		if (Tube186Enabled)
-			i186_execute(12 * 4);
-#endif
+		{
+			master512CoPro.Execute(12 * 4);
+		}
 
 		Branched = false;
 		iFlagJustCleared=false;

@@ -398,11 +398,9 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("TubeEnabled", TubeEnabled))
 		TubeEnabled = false;
 
-#ifdef M512COPRO_ENABLED
 	if (!m_Preferences.GetBoolValue("Tube186Enabled", Tube186Enabled))
 		Tube186Enabled = false;
-#endif
-    
+
 	if (!m_Preferences.GetBinaryValue("OpCodes", &OpCodes, 1))
 		OpCodes=2;
 	if (!m_Preferences.GetBoolValue("Basic Hardware", BasicHardwareOnly))
@@ -652,9 +650,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("TorchTube", TorchTube);
 		m_Preferences.SetBoolValue("AcornZ80", AcornZ80);
 		m_Preferences.SetBoolValue("TubeEnabled", TubeEnabled);
-#ifdef M512COPRO_ENABLED
 		m_Preferences.SetBoolValue("Tube186Enabled", Tube186Enabled);
-#endif
 
 		m_Preferences.SetBinaryValue("OpCodes", &OpCodes, 1);
 		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);

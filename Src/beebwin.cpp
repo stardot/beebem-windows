@@ -75,6 +75,7 @@ Boston, MA  02110-1301, USA.
 #include "Arm.h"
 #include "version.h"
 #include "sprowcopro.h"
+#include "Master512CoPro.h"
 
 using namespace Gdiplus;
 
@@ -88,10 +89,6 @@ static char *CFG_REG_KEY = "Software\\BeebEm";
 static unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
 	00,00,00,00,00,00,00,00,03,00,00,00,00,00,0x5B,0xE0,00,00,0x5C,0xE0,00,00,00,00
 };
-
-#ifdef M512COPRO_ENABLED
-void i86_main(void);
-#endif
 
 CArm *arm = NULL;
 CSprowCoPro *sprow = NULL;
@@ -117,9 +114,7 @@ static const char *AboutText =
 	"BBC Micro Model B Plus (128)\nAcorn Master 128\n\n"
 	"Acorn 65C02 Second Processor\n"
 	"Torch Z80 Second Processor\nAcorn Z80 Second Processor\n"
-#ifdef M512COPRO_ENABLED
 	"Master 512 Second Processor\n"
-#endif
 	"ARM Second Processor\n\n"
 	"Sprow ARM7TDMI 64MB\n\n"
 	"Version " VERSION_STRING ", " VERSION_DATE;
@@ -500,10 +495,13 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms
 	BeebMemInit(LoadRoms, m_ShiftBooted);
 	Init6502core();
 	if (EnableTube) Init65C02core();
-#ifdef M512COPRO_ENABLED
-	if (Tube186Enabled) i86_main();
-#endif
+	if (Tube186Enabled)
+	{
+		master512CoPro.Reset();
+	}
+
 	Enable_Z80 = false;
+
 	if (TorchTube || AcornZ80)
 	{
 		R1Status = 0;
@@ -958,9 +956,7 @@ void BeebWin::InitMenu(void)
 
 	// Hardware
 	CheckMenuItem(IDM_TUBE, TubeEnabled);
-#ifdef M512COPRO_ENABLED
 	CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-#endif
 	CheckMenuItem(IDM_TORCH, TorchTube);
 	CheckMenuItem(IDM_ACORNZ80, AcornZ80);
 	CheckMenuItem(IDM_ARM, ArmTube);
@@ -1407,14 +1403,19 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				{
 					if(mainWin->TranslateKey((int)uParam, true, row, col) < 0)
 					{
-						if(row==-2)
-						{ // Must do a reset!
+						if (row == -2)
+						{
+							// Must do a reset!
 							Init6502core();
 							if (EnableTube) Init65C02core();
-#ifdef M512COPRO_ENABLED
-							if (Tube186Enabled) i86_main();
-#endif
+							if (Tube186Enabled)
+							{
+								// i86_main();
+								master512CoPro.Reset();
+							}
+
 							Enable_Z80 = false;
+
 							if (TorchTube || AcornZ80)
 							{
 								R1Status = 0;
@@ -3316,15 +3317,11 @@ void BeebWin::HandleCommand(int MenuId)
 		ArmTube = !ArmTube;
 		ArmCoProTube = false;
 		TubeEnabled = false;
-#ifdef M512COPRO_ENABLED
 		Tube186Enabled = false;
-#endif
 		TorchTube = false;
 		AcornZ80 = false;
 		CheckMenuItem(IDM_TUBE, TubeEnabled);
-#ifdef M512COPRO_ENABLED
 		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-#endif
 		CheckMenuItem(IDM_TORCH, TorchTube);
 		CheckMenuItem(IDM_ARM, ArmTube);
 		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
@@ -3336,15 +3333,11 @@ void BeebWin::HandleCommand(int MenuId)
 		ArmCoProTube = !ArmCoProTube;
 		ArmTube = false;
 		TubeEnabled = false;
-#ifdef M512COPRO_ENABLED
 		Tube186Enabled = false;
-#endif
 		TorchTube = false;
 		AcornZ80 = false;
 		CheckMenuItem(IDM_TUBE, TubeEnabled);
-#ifdef M512COPRO_ENABLED
 		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-#endif
 		CheckMenuItem(IDM_TORCH, TorchTube);
 		CheckMenuItem(IDM_ARM, ArmTube);
 		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
@@ -3354,25 +3347,20 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_TUBE:
 		TubeEnabled = !TubeEnabled;
-#ifdef M512COPRO_ENABLED
 		Tube186Enabled = false;
-#endif
 		TorchTube = false;
 		ArmTube = false;
 		ArmCoProTube = false;
 		AcornZ80 = false;
 		CheckMenuItem(IDM_TUBE, TubeEnabled);
 		CheckMenuItem(IDM_ARM, ArmTube);
-#ifdef M512COPRO_ENABLED
 		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-#endif
 		CheckMenuItem(IDM_TORCH, TorchTube);
 		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
 		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
 
-#ifdef M512COPRO_ENABLED
 	case IDM_TUBE186:
 		Tube186Enabled = !Tube186Enabled;
 		TubeEnabled = false;
@@ -3388,22 +3376,17 @@ void BeebWin::HandleCommand(int MenuId)
 		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 		ResetBeebSystem(MachineType, TubeEnabled, false);
 		break;
-#endif
 
 	case IDM_TORCH:
 		TorchTube = !TorchTube;
 		TubeEnabled = false;
-#ifdef M512COPRO_ENABLED
 		Tube186Enabled = false;
-#endif
 		AcornZ80 = false;
 		ArmTube = false;
 		ArmCoProTube = false;
 		CheckMenuItem(IDM_ARM, ArmTube);
 		CheckMenuItem(IDM_TUBE, TubeEnabled);
-#ifdef M512COPRO_ENABLED
 		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-#endif
 		CheckMenuItem(IDM_TORCH, TorchTube);
 		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
 		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
@@ -3414,15 +3397,11 @@ void BeebWin::HandleCommand(int MenuId)
 		AcornZ80 = !AcornZ80;
 		TubeEnabled = false;
 		TorchTube = false;
-#ifdef M512COPRO_ENABLED
 		Tube186Enabled = false;
-#endif
 		ArmCoProTube = false;
 		CheckMenuItem(IDM_ARM, ArmTube);
 		CheckMenuItem(IDM_TUBE, TubeEnabled);
-#ifdef M512COPRO_ENABLED
 		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-#endif
 		CheckMenuItem(IDM_TORCH, TorchTube);
 		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
 		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);

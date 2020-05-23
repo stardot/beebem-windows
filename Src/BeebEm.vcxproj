@@ -188,6 +188,7 @@
     <ClCompile Include="ide.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Master512CoPro.cpp" />
     <ClCompile Include="music5000.cpp" />
     <ClCompile Include="preferences.cpp" />
     <ClCompile Include="romconfig.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="econet.h" />
     <ClInclude Include="ext1770.h" />
     <ClInclude Include="filedialog.h" />
+    <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="main.h" />

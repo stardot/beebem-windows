@@ -56,9 +56,7 @@ Boston, MA  02110-1301, USA.
 static int CurrentInstruction;
 unsigned char TubeRam[65536];
 bool TubeEnabled, AcornZ80, EnableTube;
-#ifdef M512COPRO_ENABLED
 bool Tube186Enabled;
-#endif
 unsigned char TubeMachineType=3;
 
 CycleCountT TotalTubeCycles = 0;
@@ -380,11 +378,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
-	if (! (EnableTube ||
-#ifdef M512COPRO_ENABLED
-		   Tube186Enabled ||
-#endif
-		   AcornZ80 || ArmTube || ArmCoProTube) ) 
+	if (!(EnableTube || Tube186Enabled || AcornZ80 || ArmTube || ArmCoProTube))
 		return MachineType == Model::Master128 ? 0xff : 0xfe;
 
 	switch (IOAddr) {
@@ -453,11 +447,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 }
 
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
-	if (! (EnableTube ||
-#ifdef M512COPRO_ENABLED
-		   Tube186Enabled ||
-#endif
-		   AcornZ80 || ArmTube || ArmCoProTube) ) 
+	if (!(EnableTube || Tube186Enabled || AcornZ80 || ArmTube || ArmCoProTube))
 		return;
 
 	if (DebugEnabled) {
