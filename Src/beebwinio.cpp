@@ -170,26 +170,29 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		bool adfs = false;
 		bool img = false;
 		bool dos = false;
+
 		switch (fileDialog.GetFilterIndex())
 		{
 		case 1:
 			{
-			char *ext = strrchr(FileName, '.');
-			if (ext != NULL)
-			  if (_stricmp(ext+1, "dsd") == 0)
-				dsd = true;
-			  if (_stricmp(ext+1, "adl") == 0)
-				adfs = true;
-			  if (_stricmp(ext+1, "adf") == 0)
-				adfs = true;
-			  if (_stricmp(ext+1, "img") == 0)
-				img = true;
-			  if (_stricmp(ext+1, "dos") == 0)
-				dos = true;
-			break;
+				char *ext = strrchr(FileName, '.');
+				if (ext != nullptr)
+				{
+					if (_stricmp(ext+1, "dsd") == 0)
+						dsd = true;
+					else if (_stricmp(ext+1, "adl") == 0)
+						adfs = true;
+					else if (_stricmp(ext+1, "adf") == 0)
+						adfs = true;
+					else if (_stricmp(ext+1, "img") == 0)
+						img = true;
+					else if (_stricmp(ext+1, "dos") == 0)
+						dos = true;
+				}
+				break;
 			}
 		case 2:
-			adfs=true;
+			adfs = true;
 			break;
 		case 4:
 		case 6:
@@ -206,7 +209,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				else
 					Load1770DiscImage(FileName, Drive, DiscType::DSD, m_hMenu);
 			}
-			if ((!dsd) && (!adfs) && (!dos))
+			if (!dsd && !adfs && !dos)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
