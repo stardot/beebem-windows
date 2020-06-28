@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=BeebEm
-AppVerName=BeebEm V4.15 Beta 5
+AppVerName=BeebEm V4.15
 AppPublisher=Mike Wyatt
 AppPublisherURL=http://www.mkw.me.uk/beebem/index.html
 AppSupportURL=http://www.mkw.me.uk/beebem/index.html
@@ -11,7 +11,7 @@ AppUpdatesURL=http://www.mkw.me.uk/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
 OutputDir=Release
-OutputBaseFilename=BeebEm415b5
+OutputBaseFilename=BeebEm415
 Compression=lzma
 SolidCompression=yes
 VersionInfoVersion=4.15.0.0
