@@ -35,9 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "AviWriter.h"
 #include "UEFState.h"
 #include "Main.h"
-#ifdef SPEECH_ENABLED
-#include "speech.h"
-#endif
+#include "Speech.h"
 #include "SoundStreamer.h"
 
 //  #define DEBUGSOUNDTOFILE
@@ -47,9 +45,7 @@ const int MAXBUFSIZE = 32768;
 
 static unsigned char SoundBuf[MAXBUFSIZE];
 
-#ifdef SPEECH_ENABLED
 unsigned char SpeechBuf[MAXBUFSIZE];
-#endif
 
 struct SoundSample
 {
@@ -163,7 +159,6 @@ static void WriteToSoundBuffer(BYTE *pSoundData)
 void PlayUpTil(double DestTime)
 {
 
-#ifdef SPEECH_ENABLED
 	int SpeechPtr = 0;
 
 	if (MachineType != Model::Master128 && SpeechEnabled)
@@ -175,7 +170,6 @@ void PlayUpTil(double DestTime)
 			len = MAXBUFSIZE;
 		tms5220_update(SpeechBuf, len);
 	}
-#endif
 
 	while (DestTime > OurTime) {
 		int bufinc = 0;
@@ -312,12 +306,12 @@ void PlayUpTil(double DestTime)
 				}
 			}
 
-			tmptotal/=4;
+			tmptotal /= 4;
 
-#ifdef SPEECH_ENABLED
 			// Mix in speech sound
-			if (SpeechEnabled) if (MachineType != 3) tmptotal += (SpeechBuf[SpeechPtr++]-128)*2;
-#endif
+			if (SpeechEnabled && MachineType != Model::Master128) {
+				tmptotal += (SpeechBuf[SpeechPtr++] - 128) * 2;
+			}
 
 			// Mix in sound samples here
 			for (int i = 0; i < NUM_SOUND_SAMPLES; ++i) {

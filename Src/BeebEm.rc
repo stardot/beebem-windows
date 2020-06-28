@@ -638,9 +638,7 @@ BEGIN
             MENUITEM "DirectSound",                 IDM_DIRECTSOUND
         END
         MENUITEM "&Sound On/Off",               IDM_SOUNDONOFF
-#ifdef SPEECH_ENABLED
         MENUITEM "Speech On/Off",               IDM_SPEECH
-#endif
         MENUITEM "Sound Chip",                  IDM_SOUNDCHIP
         MENUITEM SEPARATOR
         POPUP "Sound &Effects"

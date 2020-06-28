@@ -171,6 +171,9 @@
     <ClCompile Include="SoundStreamer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Speech.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="SprowCoPro.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -423,6 +426,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SoundStreamer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Speech.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SprowCoPro.h">

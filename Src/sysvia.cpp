@@ -39,9 +39,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "Main.h"
 #include "Debug.h"
 #include "DebugTrace.h"
-#ifdef SPEECH_ENABLED
-#include "speech.h"
-#endif
+#include "Speech.h"
 
 // Shift register stuff
 unsigned char SRMode;
@@ -251,12 +249,10 @@ static void IC32Write(unsigned char Value) {
 #endif
   // DebugTrace("IC32State now=%x\n", IC32State);
 
-#ifdef SPEECH_ENABLED
   if (bit == 2 && (Value & 8) == 0 && MachineType != Model::Master128) // Write Command
   {
-	  tms5220_data_w(SlowDataBusWriteValue);
+    tms5220_data_w(SlowDataBusWriteValue);
   }
-#endif
 
   if (!(IC32State & 8) && (oldval & 8)) {
     KBDRow=(SlowDataBusWriteValue>>4) & 7;
@@ -310,11 +306,9 @@ static unsigned char SlowDataBusRead() {
     if (KbdOP()) result |= 128;
   }
 
-#ifdef SPEECH_ENABLED
-  if (!(IC32State & 2) && Model::Master128) {
+  if (!(IC32State & 2) && MachineType != Model::Master128) {
     result = tms5220_status_r();
   }
-#endif
 
   if ((!(IC32State & 4)) && (MachineType != Model::Master128) ) {
     result = 0xff;
@@ -496,14 +490,12 @@ unsigned char SysVIARead(int Address)
       }
       else
       {
-#ifdef SPEECH_ENABLED
         if (SpeechDefault)
         {
           if (tms5220_int_r()) tmp |= 64;
           if (tms5220_ready_r() == 0) tmp |= 128;
         }
         else
-#endif
         {
           tmp |= 192; /* Speech system non existant */
         }

@@ -215,6 +215,7 @@
     <ClCompile Include="Serial.cpp" />
     <ClCompile Include="SerialPortDialog.cpp" />
     <ClCompile Include="SoundStreamer.cpp" />
+    <ClCompile Include="Speech.cpp" />
     <ClCompile Include="SprowCoPro.cpp" />
     <ClCompile Include="StringUtils.cpp" />
     <ClCompile Include="sysvia.cpp" />
@@ -369,6 +370,7 @@
     <ClInclude Include="Serial.h" />
     <ClInclude Include="SerialPortDialog.h" />
     <ClInclude Include="SoundStreamer.h" />
+    <ClInclude Include="Speech.h" />
     <ClInclude Include="SprowCoPro.h" />
     <ClInclude Include="StringUtils.h" />
     <ClInclude Include="sysvia.h" />

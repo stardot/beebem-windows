@@ -44,9 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "z80.h"
 #include "KeyMap.h"
 #include "UserPortBreakoutBox.h"
-#ifdef SPEECH_ENABLED
-#include "speech.h"
-#endif
+#include "Speech.h"
 #include "Teletext.h"
 #include "IP232.h"
 #include "Arm.h"
@@ -452,10 +450,8 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("EconetEnabled", EconetEnabled))
 		EconetEnabled = false;
 
-#ifdef SPEECH_ENABLED
 	if (!m_Preferences.GetBoolValue("SpeechEnabled", SpeechDefault))
 		SpeechDefault = false;
-#endif
 
 	if (!m_Preferences.GetBinaryValue("SWRAMWritable", RomWritePrefs, 16))
 	{
@@ -756,9 +752,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetStringValue("SerialPort", SerialPortName);
 
 		m_Preferences.SetBoolValue("EconetEnabled", EconetEnabled); // Rob
-#ifdef SPEECH_ENABLED
 		m_Preferences.SetBoolValue("SpeechEnabled", SpeechDefault);
-#endif
 
 		for (int slot = 0; slot < 16; ++slot)
 			RomWritePrefs[slot] = RomWritable[slot];

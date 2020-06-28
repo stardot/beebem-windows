@@ -80,9 +80,7 @@ using std::max;
 #include "UserKeyboardDialog.h"
 #include "UserPortBreakoutBox.h"
 #include "Messages.h"
-#ifdef SPEECH_ENABLED
-#include "speech.h"
-#endif
+#include "Speech.h"
 #include "Teletext.h"
 #include "AviWriter.h"
 #include "IP232.h"
@@ -439,10 +437,8 @@ void BeebWin::ApplyPrefs()
 		Music5000Init();
 	SetSoundMenu();
 
-#ifdef SPEECH_ENABLED
 	if (SpeechDefault)
 		tms5220_start();
-#endif
 
 	// Serial init
 	if (SerialPortEnabled)
@@ -1145,9 +1141,7 @@ void BeebWin::InitMenu(void)
 	// Sound
 	UpdateSoundStreamerMenu();
 	SetSoundMenu();
-#ifdef SPEECH_ENABLED
 	CheckMenuItem(IDM_SPEECH, SpeechDefault);
-#endif
 	CheckMenuItem(IDM_SOUNDCHIP, SoundChipEnabled);
 	UpdateSFXMenu();
 	CheckMenuItem(ID_TAPESOUND, TapeSoundEnabled);
@@ -3187,13 +3181,11 @@ void BeebWin::HandleCommand(UINT MenuID)
 			Music5000Init();
 		}
 
-#ifdef SPEECH_ENABLED
 		if (SpeechDefault)
 		{
 			tms5220_stop();
 			tms5220_start();
 		}
-#endif
 
 		UpdateSoundStreamerMenu();
 		break;
@@ -3246,13 +3238,11 @@ void BeebWin::HandleCommand(UINT MenuID)
 				SoundInit();
 			}
 
-#ifdef SPEECH_ENABLED
 			if (SpeechDefault)
 			{
 				tms5220_stop();
 				tms5220_start();
 			}
-#endif
 		}
 		break;
 
@@ -3855,7 +3845,6 @@ void BeebWin::HandleCommand(UINT MenuID)
 		EndVideo();
 		break;
 
-#ifdef SPEECH_ENABLED
 	case IDM_SPEECH:
 		if (SpeechDefault)
 		{
@@ -3873,7 +3862,6 @@ void BeebWin::HandleCommand(UINT MenuID)
 			}
 		}
 		break;
-#endif
 
 	case ID_TELETEXT:
 		TeletextAdapterEnabled = !TeletextAdapterEnabled;
@@ -4981,6 +4969,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			if (!FolderExists(path))
 				copy_user_files = true;
 		}
+
 		if (!copy_user_files)
 		{
 			sprintf(path, "%sEconet.cfg", m_UserDataPath);
@@ -4988,6 +4977,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			if (!FileExists(path))
 				copy_user_files = true;
 		}
+
 		if (!copy_user_files)
 		{
 			sprintf(path, "%sAUNMap", m_UserDataPath);
@@ -4995,7 +4985,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			if (!FileExists(path))
 				copy_user_files = true;
 		}
-#ifdef SPEECH_ENABLED
+
 		if (!copy_user_files)
 		{
 			sprintf(path, "%sPhroms.cfg", m_UserDataPath);
@@ -5003,7 +4993,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			if (!FileExists(path))
 				copy_user_files = true;
 		}
-#endif
+
 		if (!copy_user_files)
 		{
 			if (strcmp(RomFile, "Roms.cfg") == 0)
