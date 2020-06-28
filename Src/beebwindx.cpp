@@ -41,33 +41,39 @@ extern AVIWriter *aviWriter;
 /****************************************************************************/
 void BeebWin::InitDX(void)
 {
+	HRESULT hr = E_FAIL;
+
 	if (m_DisplayRenderer == IDM_DISPDX9)
 	{
-		HRESULT hr = InitDX9();
+		hr = InitDX9();
+
 		if (hr != D3D_OK)
 		{
 			char errstr[200];
-			sprintf(errstr,"DirectX9 initialisation failed\nFailure code %X\nTrying DirectDraw",hr);
-			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			sprintf(errstr, "DirectX9 initialisation failed\nFailure code %X\nTrying DirectDraw", hr);
+			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
 
-			m_DisplayRenderer = IDM_DISPDDRAW;
-			UpdateDisplayRendererMenu();
+			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPDDRAW, 0);
 		}
 	}
 	else if (m_DisplayRenderer == IDM_DISPDDRAW)
 	{
-		HRESULT hr = InitDirectDraw();
-		if (hr != DD_OK)
+		hr = InitDirectDraw();
+
+		if (hr != D3D_OK)
 		{
 			char errstr[200];
-			sprintf(errstr,
-					"DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI",hr);
-			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			sprintf(errstr, "DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI", hr);
+			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+
 			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 		}
 	}
 
-	m_CurrentDisplayRenderer = m_DisplayRenderer;
+	if (hr == D3D_OK)
+	{
+		m_CurrentDisplayRenderer = m_DisplayRenderer;
+	}
 }
 
 void BeebWin::ResetDX(void)
