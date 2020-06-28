@@ -203,6 +203,7 @@ BeebWin::BeebWin()
 	m_DXSmoothing = true;
 	m_DXSmoothMode7Only = false;
 	m_DXResetPending = false;
+
 	m_JoystickCaptured = false;
 	m_customip[0] = 0;
 	m_customport = 0;
@@ -231,7 +232,7 @@ BeebWin::BeebWin()
 
 	// Read user data path from registry
 	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "UserDataFolder",
-						   m_UserDataPath, _MAX_PATH))
+	                       m_UserDataPath, _MAX_PATH))
 	{
 		// Default user data path to a sub-directory in My Docs
 		if (SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, m_UserDataPath) == NOERROR)
@@ -242,7 +243,7 @@ BeebWin::BeebWin()
 
 	// Read disc images path from registry
 	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "DiscsPath",
-						   m_DiscPath, _MAX_PATH))
+	                       m_DiscPath, _MAX_PATH))
 	{
 		// Default disc images path to a sub-directory of UserData path
 		strcpy(m_DiscPath, m_UserDataPath);
@@ -265,7 +266,7 @@ bool BeebWin::Initialise()
 
 	// Check that user data directory exists
 	if (!CheckUserDataPath())
-		exit(-1);
+		return false;
 
 	LoadPreferences();
 
@@ -277,7 +278,7 @@ bool BeebWin::Initialise()
 
 	if (FAILED(CoInitialize(NULL)))
 	{
-		MessageBox(m_hWnd,"Failed to initialise COM\n",WindowTitle,MB_OK|MB_ICONERROR);
+		MessageBox(m_hWnd, "Failed to initialise COM", WindowTitle, MB_OK | MB_ICONERROR);
 		return false;
 	}
 
@@ -4593,15 +4594,15 @@ bool BeebWin::CheckUserDataPath()
 	bool store_user_data_path = false;
 	char path[_MAX_PATH];
 	char errstr[500];
-	DWORD att;
 
 	// Change all '/' to '\'
-	for (unsigned int i = 0; i < strlen(m_UserDataPath); ++i)
+	for (size_t i = 0; i < strlen(m_UserDataPath); ++i)
 		if (m_UserDataPath[i] == '/')
 			m_UserDataPath[i] = '\\';
 
 	// Check that the folder exists
-	att = GetFileAttributes(m_UserDataPath);
+	DWORD att = GetFileAttributes(m_UserDataPath);
+
 	if (att == INVALID_FILE_ATTRIBUTES || !(att & FILE_ATTRIBUTE_DIRECTORY))
 	{
 		sprintf(errstr, "BeebEm data folder does not exist:\n  %s\n\nCreate the folder?",
