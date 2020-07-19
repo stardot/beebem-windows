@@ -4448,6 +4448,11 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 	if (cont && !m_NoAutoBoot && drive == 0)
 	{
 		m_AutoBootDisc = true;
+
+		if (!m_StartPaused)
+		{
+			SetBootDiscTimer();
+		}
 	}
 }
 
