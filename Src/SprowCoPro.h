@@ -24,26 +24,22 @@ extern "C"
 {
 #include "ARMulator\armdefs.h"
 }
+
 typedef	unsigned char uint8;
 
-extern bool Enable_ArmCoPro;
-extern bool ArmCoProTube;
-
-class CSprowCoPro 
+class CSprowCoPro
 {
-
 // functions
 public:
-
 	// construct / destruct
 	CSprowCoPro();
-	virtual ~CSprowCoPro();
-	
-	uint8 romMemory[0x80000];		// 512 KBytes of rom memory
+	~CSprowCoPro();
 
-    // bool keepRunning;				// keep calling run()
+	uint8 romMemory[0x80000]; // 512 KBytes of rom memory
+
+	// bool keepRunning; // keep calling run()
 	void exec(int count);
 	void reset();
 
-    ARMul_State* state;
+	ARMul_State* state;
 };

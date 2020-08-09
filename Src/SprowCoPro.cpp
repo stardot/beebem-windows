@@ -33,16 +33,16 @@ Boston, MA  02110-1301, USA.
 #include "armulator.h"
 #include "SprowCoPro.h"
 
-bool Enable_ArmCoPro = false;
-bool ArmCoProTube = false;
 std::map<int, int> registers;
 DWORD ticks = 0;
+
+static void PutRegister(ARMul_State * state, ARMword registerNumber, ARMword data);
+static ARMword PeekRegister(ARMul_State * state, ARMword registerNumber);
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
-static void PutRegister(ARMul_State * state, ARMword registerNumber, ARMword data);
-static ARMword PeekRegister(ARMul_State * state, ARMword registerNumber);
+
 CSprowCoPro::CSprowCoPro()
 {
     // load file into test memory

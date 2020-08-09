@@ -28,9 +28,7 @@ Boston, MA  02110-1301, USA.
 #include "beebmem.h"
 #include "tube.h"
 
-bool Enable_Z80 = false;
 bool trace_z80 = false;
-bool TorchTube = false;
 int PreZPC = 0; // Previous Z80 PC
 
 unsigned char z80_rom[65536L];
@@ -38,50 +36,43 @@ unsigned char z80_ram[65536L];
 
 bool inROM = true;
 
-unsigned char ReadZ80Mem(int pc)
-
+unsigned char ReadZ80Mem(int addr)
 {
-unsigned char t;
-
-	if (AcornZ80)
+	if (TubeType == Tube::AcornZ80)
 	{
-		if (pc >= 0x8000) inROM = false;
+		if (addr >= 0x8000) inROM = false;
 	}
-	
-    t = (inROM) ? z80_rom[pc & 0x1fff] : z80_ram[pc & 0xffff];
 
-//    if (trace_z80)
-//        WriteLog("Read %02x from %04x in %s\n", t, pc, (inROM) ? "ROM" : "RAM");
+	unsigned char t = (inROM) ? z80_rom[addr & 0x1fff] : z80_ram[addr & 0xffff];
 
-    return t;
+	// if (trace_z80)
+	//	WriteLog("Read %02x from %04x in %s\n", t, addr, (inROM) ? "ROM" : "RAM");
 
+	return t;
 }
 
-void WriteZ80Mem(int pc, unsigned char data)
-
+void WriteZ80Mem(int addr, unsigned char data)
 {
-//    if (inROM)
-//    {
-//        z80_rom[pc & 0xffff] = data;
-//    }
-//    else
-//    {
-        z80_ram[pc & 0xffff] = data;
-//    }
+	// if (inROM)
+	// {
+	//	z80_rom[pc & 0xffff] = data;
+	// }
+	// else
+	// {
+		z80_ram[addr & 0xffff] = data;
+	// }
 
-//    if (trace_z80)
-//        WriteLog("Writing %02x to %04x\n", data, pc);
-
+	// if (trace_z80)
+	//	WriteLog("Writing %02x to %04x\n", data, addr);
 }
 
-/* 
+/*
 Register dump is following format:
 AF=0000 MZ5H3VNC BC=0000 DE=0000 HL=0000 IX=0000 I=00 PC=0000:00,00,00,00
 AF'0000 MZ5H3VNC BC'0000 DE'0000 HL'0000 IY=0000 R=00 SP=0000:00,00,00,00
- */
+*/
 
 void Disp_RegSet1(char *str)
-
 {
 	sprintf(str, "AF=%04X ",af[0]);
 	sprintf(str + strlen(str), (af[0] & 128) ? "M" : "P");
@@ -163,9 +154,9 @@ int in(unsigned int addr)
 
 	addr &= 255;
 
-	if (AcornZ80)
+	if (TubeType == Tube::AcornZ80)
 	{
-		value = ReadTubeFromParasiteSide(addr);
+		value = ReadTubeFromParasiteSide((unsigned char)addr);
 	}
 	else
 	{
@@ -193,9 +184,9 @@ void out(unsigned int addr, unsigned char value)
 {
 	addr &= 255;
 
-	if (AcornZ80)
+	if (TubeType == Tube::AcornZ80)
 	{
-		WriteTubeFromParasiteSide(addr, value);
+		WriteTubeFromParasiteSide((unsigned char)addr, value);
 	}
 	else
 	{
@@ -210,38 +201,34 @@ void out(unsigned int addr, unsigned char value)
 
 void z80_execute()
 {
-    if (Enable_Z80)
-    {
+	if (trace_z80)
+	{
+		if (pc <= 0xf800) // Don't trace BIOS cos toooo much data
+			disp_regs();
+	}
 
-        if (trace_z80)
-        {
-            if (pc <= 0xf800)       // Don't trace BIOS cos toooo much data
-                disp_regs();
-        }
+	// Output debug info
+	if (DebugEnabled)
+		DebugDisassembler(pc, PreZPC, 0, 0, 0, 0, 0, false);
 
-		// Output debug info
-		if (DebugEnabled)
-			DebugDisassembler(pc, PreZPC, 0, 0, 0, 0, 0, false);
-		
-		PreZPC = pc;
-		pc = simz80(pc);
+	PreZPC = pc;
+	pc = simz80(pc);
 
-		if (AcornZ80)
-		{
-			if (TubeintStatus & (1<<R1))
-				set_Z80_irq_line(1);
+	if (TubeType == Tube::AcornZ80)
+	{
+		if (TubeintStatus & (1 << R1))
+			set_Z80_irq_line(1);
 		
-			if (TubeintStatus & (1<<R4))
-				set_Z80_irq_line(1);
+		if (TubeintStatus & (1 << R4))
+			set_Z80_irq_line(1);
 		
-			if (TubeintStatus == 0)
-				set_Z80_irq_line(0);
+		if (TubeintStatus == 0)
+			set_Z80_irq_line(0);
 		
-			if (TubeNMIStatus) 
-				set_Z80_nmi_line(1);
-			else
-				set_Z80_nmi_line(0);
-		}
+		if (TubeNMIStatus)
+			set_Z80_nmi_line(1);
+		else
+			set_Z80_nmi_line(0);
 	}
 }
 
@@ -253,7 +240,7 @@ void init_z80()
 
 	WriteLog("init_z80()\n");
 
-	if (AcornZ80)
+	if (TubeType == Tube::AcornZ80)
 	{
 		strcpy(path, RomPath);
 		strcat(path, "BeebFile/Z80.ROM");
@@ -265,7 +252,7 @@ void init_z80()
 			fclose(f);
 		}
 	}
-	else
+	else // Tube::TorchZ80
 	{
 		strcpy(path, RomPath);
 		strcat(path, "BeebFile/CCPN102.ROM");

@@ -910,7 +910,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	if (DebugSource == DebugType::None)
 		return true;
 
-	if ( (TorchTube || AcornZ80) && !host)
+	if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
 	{
 		if (!DebugOS && addr >= 0xf800 && addr <= 0xffff)
 		{
@@ -960,8 +960,9 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	}
 
 	DebugAssertBreak(addr, prevAddr, host);
+
 	// Parasite instructions:
-	if ( (TorchTube || AcornZ80) && !host)
+	if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
 	{
 		char buff[128];
 		Z80_Disassemble(addr, buff);
@@ -2192,8 +2193,10 @@ int DebugReadMem(int addr, bool host)
 {
 	if (host)
 		return BeebReadMem(addr);
-	if (TorchTube || AcornZ80)
+
+	if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
 		return ReadZ80Mem(addr);
+
 	return TubeReadMem(addr);
 }
 
@@ -2201,8 +2204,10 @@ void DebugWriteMem(int addr, bool host, unsigned char data)
 {
 	if (host)
 		BeebWriteMem(addr, data);
-	if (TorchTube || AcornZ80)
+
+	if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
 		WriteZ80Mem(addr, data);
+
 	TubeWriteMem(addr, data);
 }
 
@@ -2330,10 +2335,10 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 
 	while (count > 0 && addr <= 0xffff)
 	{
-		if ((TorchTube || AcornZ80) && !host)
+		if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
 		{
 			char buff[64];
-			
+
 			sprintf(opstr, "%04X ", addr);
 			char *s = opstr + strlen(opstr);
 			int l = Z80_Disassemble(addr, buff);
@@ -2392,7 +2397,7 @@ void DebugMemoryDump(int addr, int count, bool host)
 		{
 			for (int b = 0; b < 16; ++b)
 			{
-				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TorchTube || AcornZ80))
+				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80))
 					sprintf(info+strlen(info), "IO ");
 				else
 					sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, host));

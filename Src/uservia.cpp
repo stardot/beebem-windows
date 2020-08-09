@@ -267,7 +267,7 @@ int UserVIARead(int Address) {
             AMXButtons &= ~AMX_MIDDLE_BUTTON;
         }
 
-        if (Tube186Enabled)
+        if (TubeType == Tube::Master512CoPro)
         {
             tmp &= 0xf8;
             tmp |= (AMXButtons ^ 7);
@@ -493,88 +493,89 @@ static void UpdateSRState(bool SRrw)
 }
 
 /*-------------------------------------------------------------------------*/
-void AMXMouseMovement() {
-static int xdir = 0;
-static int ydir = 0;
-static int xpulse = 0x08;
-static int ypulse = 0x10;
-static int lastxdir = 0;
-static int lastydir = 0;
-static bool first = true;
-    
-    ClearTrigger(AMXTrigger);
+void AMXMouseMovement()
+{
+	static int xdir = 0;
+	static int ydir = 0;
+	static int xpulse = 0x08;
+	static int ypulse = 0x10;
+	static int lastxdir = 0;
+	static int lastydir = 0;
+	static bool first = true;
+
+	ClearTrigger(AMXTrigger);
 
 	/* Check if there is a outstanding interrupt */
 	if (AMXMouseEnabled && (UserVIAState.ifr & 0x18) == 0)
 	{
-
-    	if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) )
+		if (AMXTargetX != AMXCurrentX || AMXTargetY != AMXCurrentY)
 		{
-            if (Tube186Enabled)
-            {
-    
-		    	xdir = sgn(AMXTargetX - AMXCurrentX);
+			if (TubeType == Tube::Master512CoPro)
+			{
+				xdir = sgn(AMXTargetX - AMXCurrentX);
 
-			    if (xdir != 0)
-    			{
-	    			UserVIAState.ifr |= 0x10;
-		    		if (lastxdir == xdir) UserVIAState.irb ^= xpulse;
-			    	lastxdir = xdir;
-				    AMXCurrentX += xdir;
-    			}
+				if (xdir != 0)
+				{
+					UserVIAState.ifr |= 0x10;
+					if (lastxdir == xdir) UserVIAState.irb ^= xpulse;
+					lastxdir = xdir;
+					AMXCurrentX += xdir;
+				}
 
-	    		ydir = sgn(AMXTargetY - AMXCurrentY);
+				ydir = sgn(AMXTargetY - AMXCurrentY);
 
-    			if (ydir != 0)
-	    		{
-		    		UserVIAState.ifr |= 0x08;
-    
-	    			if (first)
-    				{
-	    				UserVIAState.irb &= ~ypulse;
-		    			first = false;
-				    }
+				if (ydir != 0)
+				{
+					UserVIAState.ifr |= 0x08;
 
-    				if (lastydir == ydir) UserVIAState.irb ^= ypulse;
-	    			lastydir = ydir;
-		    		AMXCurrentY += ydir;
+					if (first)
+					{
+						UserVIAState.irb &= ~ypulse;
+						first = false;
+					}
 
-			    }
-            }
-            else
-            {
+					if (lastydir == ydir) UserVIAState.irb ^= ypulse;
+					lastydir = ydir;
+					AMXCurrentY += ydir;
+				}
+			}
+			else
+			{
+				if (AMXTargetX != AMXCurrentX)
+				{
+					UserVIAState.ifr |= 0x10;
 
-		    	if (AMXTargetX != AMXCurrentX)
-			    {
-    				UserVIAState.ifr |= 0x10;
-	    			if (AMXTargetX < AMXCurrentX)
-		    		{
-			    		UserVIAState.irb &= ~0x01;
-				    	AMXCurrentX--;
-    				}
-	    			else
-		    		{
-			    		UserVIAState.irb |= 0x01;
-				    	AMXCurrentX++;
-    				}
-	    		}
-		    	if (AMXTargetY != AMXCurrentY)
-			    {
-    				UserVIAState.ifr |= 0x08;
-	    			if (AMXTargetY > AMXCurrentY)
-		    		{
-			    		UserVIAState.irb &= ~0x04;
-				    	AMXCurrentY++;
-    				}
-	    			else
-		    		{
-			    		UserVIAState.irb |= 0x04;
-    					AMXCurrentY--;
-	    			}
-		    	}
-            }
-		    UpdateIFRTopBit();
-        }
+					if (AMXTargetX < AMXCurrentX)
+					{
+						UserVIAState.irb &= ~0x01;
+						AMXCurrentX--;
+					}
+					else
+					{
+						UserVIAState.irb |= 0x01;
+						AMXCurrentX++;
+					}
+				}
+
+				if (AMXTargetY != AMXCurrentY)
+				{
+					UserVIAState.ifr |= 0x08;
+
+					if (AMXTargetY > AMXCurrentY)
+					{
+						UserVIAState.irb &= ~0x04;
+						AMXCurrentY++;
+					}
+					else
+					{
+						UserVIAState.irb |= 0x04;
+						AMXCurrentY--;
+					}
+				}
+			}
+
+			UpdateIFRTopBit();
+		}
 	}
 }
 

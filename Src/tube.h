@@ -28,12 +28,21 @@ Boston, MA  02110-1301, USA.
 
 #include "port.h"
 
+enum class Tube : unsigned char {
+	None,
+	Acorn65C02,
+	Master512CoPro,
+	AcornZ80,
+	TorchZ80,
+	SprowArm,
+	Arm7TDMI
+};
+
+extern Tube TubeType;
+
 extern unsigned char R1Status;
 void ResetTube(void);
 
-extern bool EnableTube, TubeEnabled, AcornZ80;
-extern bool Tube186Enabled;
-extern bool TorchTubeActive;
 extern int TubeProgramCounter;
 const int TubeBufferLength = 24;
 extern unsigned char TubeintStatus; /* bit set (nums in IRQ_Nums) if interrupt being caused */

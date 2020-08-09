@@ -73,6 +73,7 @@ static const char *CFG_PRINTER_ENABLED = "PrinterEnabled";
 static const char *CFG_PRINTER_PORT = "PrinterPort";
 static const char *CFG_PRINTER_FILE = "PrinterFile";
 static const char *CFG_MACHINE_TYPE = "MachineType";
+static const char *CFG_TUBE_TYPE = "TubeType";
 
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
@@ -383,23 +384,10 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
 		SWRAMBoardEnabled = false;
 
-	if (!m_Preferences.GetBoolValue("ArmTube", ArmTube))
-		ArmTube = false;
-
-	if (!m_Preferences.GetBoolValue("ArmCoProTube", ArmCoProTube))
-		ArmCoProTube = false;
-
-	if (!m_Preferences.GetBoolValue("TorchTube", TorchTube))
-		TorchTube = false;
-
-	if (!m_Preferences.GetBoolValue("AcornZ80", AcornZ80))
-		AcornZ80 = false;
-
-	if (!m_Preferences.GetBoolValue("TubeEnabled", TubeEnabled))
-		TubeEnabled = false;
-
-	if (!m_Preferences.GetBoolValue("Tube186Enabled", Tube186Enabled))
-		Tube186Enabled = false;
+	if (!m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &type, 1))
+		TubeType = Tube::None;
+	else
+		TubeType = static_cast<Tube>(type);
 
 	if (!m_Preferences.GetBinaryValue("OpCodes", &OpCodes, 1))
 		OpCodes=2;
@@ -645,12 +633,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue("SWRAMWritable", RomWritePrefs, 16);
 		m_Preferences.SetBoolValue("SWRAMBoard", SWRAMBoardEnabled);
 
-		m_Preferences.SetBoolValue("ArmTube", ArmTube);
-		m_Preferences.SetBoolValue("ArmCoProTube", ArmCoProTube);
-		m_Preferences.SetBoolValue("TorchTube", TorchTube);
-		m_Preferences.SetBoolValue("AcornZ80", AcornZ80);
-		m_Preferences.SetBoolValue("TubeEnabled", TubeEnabled);
-		m_Preferences.SetBoolValue("Tube186Enabled", Tube186Enabled);
+		m_Preferences.SetBinaryValue(CFG_TUBE_TYPE, &TubeType, 1);
 
 		m_Preferences.SetBinaryValue("OpCodes", &OpCodes, 1);
 		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);

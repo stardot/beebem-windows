@@ -138,6 +138,7 @@ public:
 	void SetDiscWriteProtects(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
 	void SetTubeMenu();
+	void UpdateTubeMenu();
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
 	void KillDLLs(void);
@@ -191,7 +192,7 @@ public:
 	HWND GethWnd() { return m_hWnd; }
 	
 	void RealizePalette(HDC) {};
-	void ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms);
+	void ResetBeebSystem(Model NewModelType, bool LoadRoms);
 
 	int StartOfFrame(void);
 	bool UpdateTiming();

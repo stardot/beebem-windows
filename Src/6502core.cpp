@@ -1197,23 +1197,23 @@ void Exec6502Instruction(void) {
 			Dis6502();
 		}
 
-		z80_execute();
-
-		if (Enable_Arm)
+		if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
+		{
+			z80_execute();
+		}
+		else if (TubeType == Tube::Arm7TDMI)
 		{
 			arm->exec(4);
 		}
-
-        if (Enable_ArmCoPro)
-        {            
-#if _DEBUG
-            sprow->exec(2);
-#else
-            sprow->exec(8);
-#endif
-        }
-
-		if (Tube186Enabled)
+		else if (TubeType == Tube::SprowArm)
+		{
+			#if _DEBUG
+			sprow->exec(2);
+			#else
+			sprow->exec(8);
+			#endif
+		}
+		else if (TubeType == Tube::Master512CoPro)
 		{
 			master512CoPro.Execute(12 * 4);
 		}
@@ -2385,7 +2385,7 @@ void Exec6502Instruction(void) {
 		}
 		OldNMIStatus=NMIStatus;
 
-		if (EnableTube)
+		if (TubeType == Tube::Acorn65C02)
 			SyncTubeProcessor();
 	}
 } /* Exec6502Instruction */
@@ -2422,7 +2422,7 @@ void PollHardware(unsigned int nCycles)
 		AdjustTrigger(EconetTrigger);
 		AdjustTrigger(EconetFlagFillTimeoutTrigger);
 		AdjustTrigger(IP232RxTrigger);
-		if (EnableTube)
+		if (TubeType == Tube::Acorn65C02)
 			WrapTubeCycles();
 	}
 

@@ -34,6 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "beebsound.h"
 #include "sysvia.h"
+#include "tube.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -80,8 +81,6 @@ const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_1     = 0x18;
 const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2     = 0x19;
 
 using namespace std;
-
-extern bool TorchTube;
 
 bool Disc8271Enabled = true;
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
@@ -242,7 +241,7 @@ static void InitDiscStore(void) {
 /* Given a logical track number accounts for bad tracks                     */
 static int SkipBadTracks(int Unit, int trackin) {
   int offset=0;
-  if (!TorchTube)	// If running under Torch Z80, ignore bad tracks
+  if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
   {
     if (Internal_BadTracks[Unit][0]<=trackin) offset++;
     if (Internal_BadTracks[Unit][1]<=trackin) offset++;

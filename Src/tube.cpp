@@ -55,9 +55,8 @@ Boston, MA  02110-1301, USA.
 
 static int CurrentInstruction;
 unsigned char TubeRam[65536];
-bool TubeEnabled, AcornZ80, EnableTube;
-bool Tube186Enabled;
-unsigned char TubeMachineType=3;
+Tube TubeType;
+const unsigned char TubeMachineType = 3;
 
 CycleCountT TotalTubeCycles = 0;
 
@@ -209,7 +208,7 @@ void UpdateHostR4Interrupt(void) {
 /*-------------------------------------------------------------------*/
 // Torch tube memory/io handling functions
 
-bool TorchTubeActive = false;
+static bool TorchTubeActive = false;
 
 void UpdateInterrupts()
 {
@@ -221,17 +220,16 @@ void UpdateInterrupts()
 
 unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr) 
 {
-	unsigned char TmpData;
-
-	TmpData = 0xff;
+	unsigned char TmpData = 0xff;
 	
-	if (!TorchTubeActive) 
+	if (!TorchTubeActive)
 		return MachineType == Model::Master128 ? 0xff : 0xfe;
 
 	switch (IOAddr) {
 	case 0:
 		TmpData=R1HStatus | R1Status;
 		break;
+
 	case 1:
 		TmpData=R1PHData[0];
 		R1HStatus&=~TubeDataAv;
@@ -244,16 +242,12 @@ unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr)
 
 	case 0x0d:
 		TmpData = 0;
-		
 		if (R1HStatus & TubeDataAv) TmpData |= 0x02;
 		if (R1HStatus & TubeNotFull) TmpData |= 0x10;
-		
 		break;
 
 	case 0x10:
-
-//		trace = 1;
-		
+		// trace = 1;
 		break;
 	}
 
@@ -278,7 +272,10 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
-	if (IOAddr == 0x02 && IOData == 0xff) TorchTubeActive = true;
+	if (IOAddr == 0x02 && IOData == 0xff)
+	{
+		TorchTubeActive = true;
+	}
 
 	switch (IOAddr) {
 	case 1:
@@ -310,14 +307,13 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 // Echo back to tube ?
 
 	case 0x08 :
-//		WriteTorchTubeFromHostSide(1, IOData);
+		// WriteTorchTubeFromHostSide(1, IOData);
 		break;
 		
 	case 0x0c :
 		if (IOData == 0xaa)
 		{
 			init_z80();
-			Enable_Z80 = true;
 		}
 		break;
 		
@@ -378,7 +374,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
-	if (!(EnableTube || Tube186Enabled || AcornZ80 || ArmTube || ArmCoProTube))
+	if (TubeType == Tube::None)
 		return MachineType == Model::Master128 ? 0xff : 0xfe;
 
 	switch (IOAddr) {
@@ -447,7 +443,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 }
 
 void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
-	if (!(EnableTube || Tube186Enabled || AcornZ80 || ArmTube || ArmCoProTube))
+	if (TubeType == Tube::None)
 		return;
 
 	if (DebugEnabled) {
@@ -511,13 +507,14 @@ void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
 		UpdateR4Interrupt();
 		break;
 	}
-    //UpdateInterrupts();
+
+	// UpdateInterrupts();
 }
 
 unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 	unsigned char TmpData;
 
-	if (TorchTube) 
+	if (TubeType == Tube::TorchZ80)
 		return ReadTorchTubeFromHostSide(IOAddr);
 
 	switch (IOAddr) {
@@ -573,7 +570,9 @@ unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 		UpdateR4Interrupt();
 		break;
 	}
-//UpdateInterrupts();
+
+	// UpdateInterrupts();
+
 	if (DebugEnabled && (old_readPIOAddr != IOAddr || old_readPTmpData != TmpData)) {
 		char info[200];
 		sprintf(info, "Tube: Read from para, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
@@ -589,7 +588,7 @@ unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 
 void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 {
-	if (TorchTube) 
+	if (TubeType == Tube::TorchZ80)
 	{
 		WriteTorchTubeFromParasiteSide(IOAddr, IOData);
 		return;

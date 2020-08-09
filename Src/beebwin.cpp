@@ -418,7 +418,7 @@ void BeebWin::ApplyPrefs()
 		}
 	}
 
-	ResetBeebSystem(MachineType, TubeEnabled, true);
+	ResetBeebSystem(MachineType, true);
 
 	// Rom write flags
 	for (int slot = 0; slot < 16; ++slot)
@@ -481,7 +481,7 @@ void BeebWin::Shutdown()
 
 /****************************************************************************/
 
-void BeebWin::ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms)
+void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 {
 	SoundReset();
 	if (SoundDefault)
@@ -490,43 +490,37 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms
 	Music5000Reset();
 	if (Music5000Enabled)
 		Music5000Init();
-	EnableTube=TubeStatus;
 	MachineType=NewModelType;
 	BeebMemInit(LoadRoms, m_ShiftBooted);
 	Init6502core();
-	if (EnableTube) Init65C02core();
-	if (Tube186Enabled)
+
+	if (TubeType == Tube::Acorn65C02)
+	{
+		Init65C02core();
+	}
+	else if (TubeType == Tube::Master512CoPro)
 	{
 		master512CoPro.Reset();
 	}
-
-	Enable_Z80 = false;
-
-	if (TorchTube || AcornZ80)
+	else if (TubeType == Tube::TorchZ80 || TubeType == Tube::AcornZ80)
 	{
 		R1Status = 0;
 		ResetTube();
 		init_z80();
-		Enable_Z80 = true;
 	}
-	Enable_Arm = false;
-	if (ArmTube)
+	else if (TubeType == Tube::Arm7TDMI)
 	{
 		R1Status = 0;
 		ResetTube();
 		if (arm) delete arm;
 		arm = new CArm;
-		Enable_Arm = true;
 	}
-	Enable_ArmCoPro = false;
-	if (ArmCoProTube)
+	else if (TubeType == Tube::SprowArm)
 	{
 		R1Status = 0;
 		ResetTube();
 		if (sprow) delete sprow;
-
 		sprow = new CSprowCoPro();
-		Enable_ArmCoPro = true;
 	}
 
 	SysVIAReset();
@@ -955,11 +949,7 @@ void BeebWin::InitMenu(void)
 	UpdateModelType();
 
 	// Hardware
-	CheckMenuItem(IDM_TUBE, TubeEnabled);
-	CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-	CheckMenuItem(IDM_TORCH, TorchTube);
-	CheckMenuItem(IDM_ACORNZ80, AcornZ80);
-	CheckMenuItem(IDM_ARM, ArmTube);
+	UpdateTubeMenu();
 	SetTubeMenu();
 
 	SetRomMenu();
@@ -1042,18 +1032,35 @@ void BeebWin::SetTubeMenu()
     strcat(path, "BeebFile/Sprow.ROM");
     FILE *testFile = fopen(path, "rb");
 
-    if( testFile != NULL )
+    if (testFile != nullptr)
     {
         fclose(testFile);
         EnableMenuItem(IDM_ARMCOPRO, true);
     }
     else
     {
-        ArmCoProTube = false;
         EnableMenuItem(IDM_ARMCOPRO, false);
+
+        if (TubeType == Tube::SprowArm)
+        {
+            TubeType = Tube::None;
+        }
     }
-    CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
 }
+
+/****************************************************************************/
+
+void BeebWin::UpdateTubeMenu()
+{
+	CheckMenuItem(IDM_TUBE, TubeType == Tube::Acorn65C02);
+	CheckMenuItem(IDM_TUBE186, TubeType == Tube::Master512CoPro);
+	CheckMenuItem(IDM_TORCH, TubeType == Tube::TorchZ80);
+	CheckMenuItem(IDM_ARM, TubeType == Tube::Arm7TDMI);
+	CheckMenuItem(IDM_ACORNZ80, TubeType == Tube::AcornZ80);
+	CheckMenuItem(IDM_ARMCOPRO, TubeType == Tube::SprowArm);
+}
+
+/****************************************************************************/
 
 void BeebWin::SetRomMenu(void)
 {
@@ -1407,41 +1414,37 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 						{
 							// Must do a reset!
 							Init6502core();
-							if (EnableTube) Init65C02core();
-							if (Tube186Enabled)
+
+							if (TubeType == Tube::Acorn65C02)
 							{
-								// i86_main();
+								Init65C02core();
+							}
+							else if (TubeType == Tube::Master512CoPro)
+							{
 								master512CoPro.Reset();
 							}
-
-							Enable_Z80 = false;
-
-							if (TorchTube || AcornZ80)
+							else if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
 							{
 								R1Status = 0;
 								ResetTube();
 								init_z80();
-								Enable_Z80 = true;
 							}
-							Enable_Arm = false;
-							if (ArmTube)
+							else if (TubeType == Tube::Arm7TDMI)
 							{
 								R1Status = 0;
 								ResetTube();
 								if (arm) delete arm;
 								arm = new CArm;
-								Enable_Arm = true;
 							}
-							Enable_ArmCoPro = false;
-							if (ArmCoProTube)
+							else if (TubeType == Tube::SprowArm)
 							{
 								R1Status = 0;
 								ResetTube();
 								// We don't want to throw the contents of memory away
 								// just tell the co-pro to reset itself.
 								sprow->reset();
-								Enable_ArmCoPro = true;
 							}
+
 							Disc8271Reset();
 							Reset1770();
 							if (EconetEnabled) EconetReset();//Rob
@@ -2474,7 +2477,7 @@ void BeebWin::HandleCommand(int MenuId)
 		if (ReadDisc(0, true))
 		{
 			m_ShiftBooted = true;
-			ResetBeebSystem(MachineType, TubeEnabled, false);
+			ResetBeebSystem(MachineType, false);
 			BeebKeyDown(0, 0); // Shift key
 		}
 		break;
@@ -2813,7 +2816,7 @@ void BeebWin::HandleCommand(int MenuId)
 		if (EconetEnabled)
 		{
 			// Need hard reset for DNFS to detect econet HW
-			ResetBeebSystem(MachineType, TubeEnabled, false);
+			ResetBeebSystem(MachineType, false);
 			EconetStateChanged = true;
 		}
 		else
@@ -3314,108 +3317,49 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_ARM:
-		ArmTube = !ArmTube;
-		ArmCoProTube = false;
-		TubeEnabled = false;
-		Tube186Enabled = false;
-		TorchTube = false;
-		AcornZ80 = false;
-		CheckMenuItem(IDM_TUBE, TubeEnabled);
-		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-		CheckMenuItem(IDM_TORCH, TorchTube);
-		CheckMenuItem(IDM_ARM, ArmTube);
-		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
-		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
-		ResetBeebSystem(MachineType, TubeEnabled, false);
+		TubeType = (TubeType == Tube::Arm7TDMI) ? Tube::None : Tube::Arm7TDMI;
+		UpdateTubeMenu();
+		ResetBeebSystem(MachineType, false);
 		break;
 
 	case IDM_ARMCOPRO:
-		ArmCoProTube = !ArmCoProTube;
-		ArmTube = false;
-		TubeEnabled = false;
-		Tube186Enabled = false;
-		TorchTube = false;
-		AcornZ80 = false;
-		CheckMenuItem(IDM_TUBE, TubeEnabled);
-		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-		CheckMenuItem(IDM_TORCH, TorchTube);
-		CheckMenuItem(IDM_ARM, ArmTube);
-		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
-		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
-		ResetBeebSystem(MachineType, TubeEnabled, false);
+		TubeType = (TubeType == Tube::SprowArm) ? Tube::None : Tube::SprowArm;
+		UpdateTubeMenu();
+		ResetBeebSystem(MachineType, false);
 		break;
 
 	case IDM_TUBE:
-		TubeEnabled = !TubeEnabled;
-		Tube186Enabled = false;
-		TorchTube = false;
-		ArmTube = false;
-		ArmCoProTube = false;
-		AcornZ80 = false;
-		CheckMenuItem(IDM_TUBE, TubeEnabled);
-		CheckMenuItem(IDM_ARM, ArmTube);
-		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-		CheckMenuItem(IDM_TORCH, TorchTube);
-		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
-		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
-		ResetBeebSystem(MachineType, TubeEnabled, false);
+		TubeType = (TubeType == Tube::Acorn65C02) ? Tube::None : Tube::Acorn65C02;
+		UpdateTubeMenu();
+		ResetBeebSystem(MachineType, false);
 		break;
 
 	case IDM_TUBE186:
-		Tube186Enabled = !Tube186Enabled;
-		TubeEnabled = false;
-		TorchTube = false;
-		AcornZ80 = false;
-		ArmTube = false;
-		ArmCoProTube = false;
-		CheckMenuItem(IDM_ARM, ArmTube);
-		CheckMenuItem(IDM_TUBE, TubeEnabled);
-		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-		CheckMenuItem(IDM_TORCH, TorchTube);
-		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
-		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
-		ResetBeebSystem(MachineType, TubeEnabled, false);
+		TubeType = (TubeType == Tube::Master512CoPro) ? Tube::None : Tube::Master512CoPro;
+		UpdateTubeMenu();
+		ResetBeebSystem(MachineType, false);
 		break;
 
 	case IDM_TORCH:
-		TorchTube = !TorchTube;
-		TubeEnabled = false;
-		Tube186Enabled = false;
-		AcornZ80 = false;
-		ArmTube = false;
-		ArmCoProTube = false;
-		CheckMenuItem(IDM_ARM, ArmTube);
-		CheckMenuItem(IDM_TUBE, TubeEnabled);
-		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-		CheckMenuItem(IDM_TORCH, TorchTube);
-		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
-		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
-		ResetBeebSystem(MachineType, TubeEnabled, false);
+		TubeType = (TubeType == Tube::TorchZ80) ? Tube::None : Tube::TorchZ80;
+		UpdateTubeMenu();
+		ResetBeebSystem(MachineType, false);
 		break;
 
 	case IDM_ACORNZ80:
-		AcornZ80 = !AcornZ80;
-		TubeEnabled = false;
-		TorchTube = false;
-		Tube186Enabled = false;
-		ArmCoProTube = false;
-		CheckMenuItem(IDM_ARM, ArmTube);
-		CheckMenuItem(IDM_TUBE, TubeEnabled);
-		CheckMenuItem(IDM_TUBE186, Tube186Enabled);
-		CheckMenuItem(IDM_TORCH, TorchTube);
-		CheckMenuItem(IDM_ACORNZ80, AcornZ80);
-		CheckMenuItem(IDM_ARMCOPRO, ArmCoProTube);
-		ResetBeebSystem(MachineType, TubeEnabled, false);
+		TubeType = (TubeType == Tube::AcornZ80) ? Tube::None : Tube::AcornZ80;
+		UpdateTubeMenu();
+		ResetBeebSystem(MachineType, false);
 		break;
 
 	case ID_FILE_RESET:
-		ResetBeebSystem(MachineType, TubeEnabled, false);
+		ResetBeebSystem(MachineType, false);
 		break;
 
 	case ID_MODELB:
 		if (MachineType != Model::B)
 		{
-			ResetBeebSystem(Model::B, EnableTube, true);
+			ResetBeebSystem(Model::B, true);
 			UpdateModelType();
 		}
 		break;
@@ -3423,7 +3367,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_MODELBINT:
 		if (MachineType != Model::IntegraB)
 		{
-			ResetBeebSystem(Model::IntegraB, EnableTube, true);
+			ResetBeebSystem(Model::IntegraB, true);
 			UpdateModelType();
 		}
 		break;
@@ -3431,7 +3375,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_MODELBP:
 		if (MachineType != Model::BPlus)
 		{
-			ResetBeebSystem(Model::BPlus, EnableTube, true);
+			ResetBeebSystem(Model::BPlus, true);
 			UpdateModelType();
 		}
 		break;
@@ -3439,7 +3383,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_MASTER128:
 		if (MachineType != Model::Master128)
 		{
-			ResetBeebSystem(Model::Master128, EnableTube, true);
+			ResetBeebSystem(Model::Master128, true);
 			UpdateModelType();
 		}
 		break;
@@ -4438,7 +4382,7 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 void BeebWin::DoShiftBreak()
 {
 	// Do a shift + break
-	ResetBeebSystem(MachineType, TubeEnabled, false);
+	ResetBeebSystem(MachineType, false);
 	BeebKeyDown(0, 0); // Shift key
 	m_ShiftBooted = true;
 }

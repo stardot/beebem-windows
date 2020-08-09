@@ -98,9 +98,6 @@ const bool dynamicProfilingRegisterUse = false;
 const bool dynamicProfilingConditionalExecution = false;
 const bool dynamicProfilingCoprocessorUse = true;
 
-extern bool Enable_Arm;
-extern bool ArmTube;
-
 class CArm 
 {
 // functions

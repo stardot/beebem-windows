@@ -537,10 +537,10 @@ int BeebReadMem(int Address) {
 
 	if ((Address & ~0x1f)==0xfee0)
 	{
-		if (TorchTube)
-			return(ReadTorchTubeFromHostSide(Address&0x1f)); //Read From Torch Tube
+		if (TubeType == Tube::TorchZ80)
+			return ReadTorchTubeFromHostSide(Address & 0x1f); // Read From Torch Tube
 		else
-			return(ReadTubeFromHostSide(Address&7)); //Read From Tube
+			return ReadTubeFromHostSide(Address & 7); // Read From Tube
 	}
 
 	if ((Address & ~0x3)==0xfc10) {
@@ -998,10 +998,10 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	if ((Address&~0xf)==0xfee0)
 	{
-		if (TorchTube) 
-			WriteTorchTubeFromHostSide(Address&0xf,Value);
+		if (TubeType == Tube::TorchZ80)
+			WriteTorchTubeFromHostSide(Address & 0xf, Value);
 		else
-			WriteTubeFromHostSide(Address&7,Value);
+			WriteTubeFromHostSide(Address & 7, Value);
 	}
 
 	if ((Address & ~0x3)==0xfc10) {
