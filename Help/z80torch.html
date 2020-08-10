@@ -77,13 +77,14 @@ disc images of original Torch Z80 software you can use the
 confusion for new users). To configure support, you need to load a sideways
 ROM image for the Host Tube support. A configuration file has already been
 created for this so the simplest thing to do is replace the Roms.cfg file
-with the Roms_Torch.cfg file (backing up Roms.cfg first of course !) This
-file simply loads the required MCP122.ABM ROM into ROM Slot 0.</p>
+with the Roms_Torch.cfg file (backing up Roms.cfg first of course!) This
+file simply loads the required MCP120-CBL (for BBC B with BBC with 8271 FDC)
+or MCP122-ABM ROM (for BBC Master).</p>
 
-<p>With this new configuration, running the emulator in Master 128 mode,
-will default to a blue Mode 0 screen. You need to select Torch Z80 Second
-Processor off the Hardware menu (the emulator will reboot) and type *MCP to
-enter CPN. If you try and run *MCP without enabling the Torch Z80 Second
+<p>With this new configuration, running the emulator will default to a blue
+Mode 0 screen. You need to enable the Torch Z80 Second Processor from the
+Hardware menu (the emulator will reboot) and type *MCP to enter CPN.
+If you try and run *MCP without enabling the Torch Z80 Second
 Processor off the Hardware menu, you will get a 'No Z80!' error message on
 screen.</p>
 
@@ -96,9 +97,9 @@ prevent CPN from autobooting.</p>
 as well as exploring the disc images found at -
 <a href="http://www.g7jjf.com/disc_images.htm">Torch Discs</a>.</p>
 
-<p>The original Torch Standard Utilities Ver 2.0 disc is included on drive C
-and the Torch Hard Disc Utilities Ver 4.0 are on Drive D and both contain
-several useful programs to get you going.</p>
+<p>The original Torch Standard Utilities Ver 2.0 disc and Hard Disc Utilities
+Ver 4.0 are included with BeebEm. These contain several useful programs to
+get you going.</p>
 
 </p>The Torch Z80 fully supports Econet emulation which provides TORCHNET
 facilities for sharing drives amongst multiple computers or instances of
