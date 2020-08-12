@@ -671,7 +671,7 @@ static void FiddleACCCON(unsigned char newValue) {
 static void RomWriteThrough(int Address, unsigned char Value) {
 	int bank = 0;
 
-	// SW RAM board - bank to write to is selected by User Via
+	// SW RAM board - bank to write to is selected by User VIA
 	if (SWRAMBoardEnabled)
 	{
 		bank = (UserVIAState.orb & UserVIAState.ddrb) & 0xf;
@@ -738,7 +738,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 		if (Address < 0xc000 && Address >= 0x8000) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] = Value;
-			else RomWriteThrough(Address, Value);
+			// else RomWriteThrough(Address, Value); // Not supported on Integra-B
 			return;
 		}
 
