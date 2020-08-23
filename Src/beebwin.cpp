@@ -508,7 +508,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		ResetTube();
 		init_z80();
 	}
-	else if (TubeType == Tube::Arm7TDMI)
+	else if (TubeType == Tube::AcornArm)
 	{
 		R1Status = 0;
 		ResetTube();
@@ -1055,7 +1055,7 @@ void BeebWin::UpdateTubeMenu()
 	CheckMenuItem(IDM_TUBE, TubeType == Tube::Acorn65C02);
 	CheckMenuItem(IDM_TUBE186, TubeType == Tube::Master512CoPro);
 	CheckMenuItem(IDM_TORCH, TubeType == Tube::TorchZ80);
-	CheckMenuItem(IDM_ARM, TubeType == Tube::Arm7TDMI);
+	CheckMenuItem(IDM_ARM, TubeType == Tube::AcornArm);
 	CheckMenuItem(IDM_ACORNZ80, TubeType == Tube::AcornZ80);
 	CheckMenuItem(IDM_ARMCOPRO, TubeType == Tube::SprowArm);
 }
@@ -1429,7 +1429,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 								ResetTube();
 								init_z80();
 							}
-							else if (TubeType == Tube::Arm7TDMI)
+							else if (TubeType == Tube::AcornArm)
 							{
 								R1Status = 0;
 								ResetTube();
@@ -3317,7 +3317,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_ARM:
-		TubeType = (TubeType == Tube::Arm7TDMI) ? Tube::None : Tube::Arm7TDMI;
+		TubeType = (TubeType == Tube::AcornArm) ? Tube::None : Tube::AcornArm;
 		UpdateTubeMenu();
 		ResetBeebSystem(MachineType, false);
 		break;

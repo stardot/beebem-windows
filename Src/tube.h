@@ -34,8 +34,8 @@ enum class Tube : unsigned char {
 	Master512CoPro,
 	AcornZ80,
 	TorchZ80,
-	SprowArm,
-	Arm7TDMI
+	AcornArm,
+	SprowArm
 };
 
 extern Tube TubeType;

@@ -81,8 +81,8 @@ void SaveUEFState(const char *StateName) {
 			Save8271UEF(UEFState);
 		else
 			Save1770UEF(UEFState);
-		if (EnableTube) {
-			SaveTubeUEF(UEFState);
+		if (TubeType == Tube::Acorn65C02) {
+			SaveTubeUEF(UEFState); // TODO: Save Tube state for all co-pros?
 			Save65C02UEF(UEFState);
 			Save65C02MemUEF(UEFState);
 		}

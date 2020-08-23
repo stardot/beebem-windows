@@ -1201,7 +1201,7 @@ void Exec6502Instruction(void) {
 		{
 			z80_execute();
 		}
-		else if (TubeType == Tube::Arm7TDMI)
+		else if (TubeType == Tube::AcornArm)
 		{
 			arm->exec(4);
 		}
