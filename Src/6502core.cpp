@@ -1210,7 +1210,7 @@ void Exec6502Instruction(void) {
 			#if _DEBUG
 			sprow->exec(2);
 			#else
-			sprow->exec(8);
+			sprow->exec(32);
 			#endif
 		}
 		else if (TubeType == Tube::Master512CoPro)
