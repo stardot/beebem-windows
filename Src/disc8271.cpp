@@ -1283,7 +1283,7 @@ void Disc8271_poll_real(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Checks it the sectors passed in look like a valid disc catalogue. Returns:
+/* Checks if the sectors passed in look like a valid disc catalogue. Returns:
       1 - looks like a catalogue
       0 - does not look like a catalogue
      -1 - cannot tell
@@ -1291,9 +1291,6 @@ void Disc8271_poll_real(void) {
 static int CheckForCatalogue(const unsigned char *Sec1, const unsigned char *Sec2) {
   int Valid=1;
   int CatEntries=0;
-  int File;
-  unsigned char c;
-  int Invalid;
 
   /* First check the number of sectors (cannot be > 0x320) */
   if (((Sec2[6]&3)<<8)+Sec2[7] > 0x320)
@@ -1309,10 +1306,10 @@ static int CheckForCatalogue(const unsigned char *Sec1, const unsigned char *Sec
   }
 
   /* Check that the catalogue file names are all printable characters. */
-  Invalid=0;
-  for (File=0; Valid && File<CatEntries; ++File) {
+  int Invalid = 0;
+  for (int File = 0; Valid && File < CatEntries; ++File) {
     for (int i=0; Valid && i<8; ++i) {
-      c=Sec1[8+File*8+i];
+      unsigned char c = Sec1[8 + File * 8 + i];
 
       if (i==7)  /* Remove lock bit */
         c&=0x7f;
@@ -1368,11 +1365,6 @@ void FreeDiscImage(int DriveNum) {
 
 /*--------------------------------------------------------------------------*/
 void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks) {
-  int CurrentTrack,CurrentSector;
-  SectorType *SecPtr;
-  int Heads;
-  int Head;
-
   FILE *infile=fopen(FileName,"rb");
   if (!infile) {
 #ifdef WIN32
@@ -1388,31 +1380,31 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   mainWin->SetImageName(FileName, DriveNum, DiscType::SSD);
 
   // JGH, 26-Dec-2011
-  NumHeads[DriveNum] = 1;		/* 1 = TRACKSPERDRIVE SSD image   */
-					/* 2 = 2*TRACKSPERDRIVE DSD image */
-  Heads=1;
+  NumHeads[DriveNum] = 1; // 1 = TRACKSPERDRIVE SSD image
+                          // 2 = 2 * TRACKSPERDRIVE DSD image
+  int Heads = 1;
   fseek(infile, 0L, SEEK_END);
   if (ftell(infile)>0x40000) {
-	Heads=2;			/* Long sequential image continues onto side 1 */
-	NumHeads[DriveNum] = 0;		/* 0 = 2*TRACKSPERDRIVE SSD image */
-	}
+    Heads = 2; // Long sequential image continues onto side 1
+    NumHeads[DriveNum] = 0; // 0 = 2 * TRACKSPERDRIVE SSD image
+  }
   fseek(infile, 0L, SEEK_SET);
   // JGH
 
   strcpy(FileNames[DriveNum], FileName);
   FreeDiscImage(DriveNum);
 
-  for(Head=HeadNum;Head<Heads;Head++) {
-    for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
+  for (int Head = HeadNum; Head < Heads; Head++) {
+    for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++) {
       DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors=10;
       DiscStore[DriveNum][Head][CurrentTrack].NSectors=10;
-      SecPtr=DiscStore[DriveNum][Head][CurrentTrack].Sectors=(SectorType*)calloc(10,sizeof(SectorType));
+      SectorType *SecPtr = DiscStore[DriveNum][Head][CurrentTrack].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
       DiscStore[DriveNum][Head][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
       DiscStore[DriveNum][Head][CurrentTrack].Gap3Size=0;
       DiscStore[DriveNum][Head][CurrentTrack].Gap5Size=0;
   
-      for(CurrentSector=0;CurrentSector<10;CurrentSector++) {
-        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
+      for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
+        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;
         SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
         SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
         SecPtr[CurrentSector].IDField.PhysRecLength=256;
@@ -1445,8 +1437,6 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
 /*--------------------------------------------------------------------------*/
 void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
-  int CurrentTrack,CurrentSector,HeadNum;
-  SectorType *SecPtr;
 
   if (!infile) {
 #ifdef WIN32
@@ -1466,17 +1456,17 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
 
   FreeDiscImage(DriveNum);
 
-  for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
-    for(HeadNum=0;HeadNum<2;HeadNum++) {
+  for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++) {
+    for (int HeadNum = 0; HeadNum < 2; HeadNum++) {
       DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
       DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
-      SecPtr=DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors=(SectorType *)calloc(10,sizeof(SectorType));
+      SectorType *SecPtr = DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap5Size=0;
 
-      for(CurrentSector=0;CurrentSector<10;CurrentSector++) {
-        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
+      for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
+        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;
         SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
         SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
         SecPtr[CurrentSector].IDField.PhysRecLength=256;
