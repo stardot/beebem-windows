@@ -89,7 +89,6 @@ void Disp_RegSet1(char *str)
 }
 
 void Disp_RegSet2(char *str)
-
 {
 	sprintf(str, "AF'%04X ",af[1]);
 	sprintf(str + strlen(str), (af[1] & 128) ? "M" : "P");
@@ -108,42 +107,40 @@ void Disp_RegSet2(char *str)
 
 void disp_regs()
 {
+	char buff[64];
+	char str[256];
 
-char buff[64];
-char str[256];
-	
-Z80_Disassemble(pc, buff);
+	Z80_Disassemble(pc, buff);
 
-sprintf(str, "AF=%04X ",af[0]);
-sprintf(str + strlen(str), (af[0] & 128) ? "M" : "P");
-sprintf(str + strlen(str), (af[0] & 64) ? "Z" : ".");
-sprintf(str + strlen(str), (af[0] & 32) ? "5" : ".");
-sprintf(str + strlen(str), (af[0] & 16) ? "H" : ".");
-sprintf(str + strlen(str), (af[0] & 8) ? "3" : ".");
-sprintf(str + strlen(str), (af[0] & 4) ? "V" : ".");
-sprintf(str + strlen(str), (af[0] & 2) ? "N" : ".");
-sprintf(str + strlen(str), (af[0] & 1) ? "C" : ".");
-sprintf(str + strlen(str), " BC=%04X DE=%04X HL=%04X", regs[0].bc, regs[0].de, regs[0].hl);
-sprintf(str + strlen(str), " IX=%04X I=%02X PC=%04X",ix, ir & 255, pc);
-sprintf(str + strlen(str), ":%02X,%02X,%02X,%02X",ReadZ80Mem(pc),ReadZ80Mem(pc+1),ReadZ80Mem(pc+2),ReadZ80Mem(pc+3));
+	sprintf(str, "AF=%04X ",af[0]);
+	sprintf(str + strlen(str), (af[0] & 128) ? "M" : "P");
+	sprintf(str + strlen(str), (af[0] & 64) ? "Z" : ".");
+	sprintf(str + strlen(str), (af[0] & 32) ? "5" : ".");
+	sprintf(str + strlen(str), (af[0] & 16) ? "H" : ".");
+	sprintf(str + strlen(str), (af[0] & 8) ? "3" : ".");
+	sprintf(str + strlen(str), (af[0] & 4) ? "V" : ".");
+	sprintf(str + strlen(str), (af[0] & 2) ? "N" : ".");
+	sprintf(str + strlen(str), (af[0] & 1) ? "C" : ".");
+	sprintf(str + strlen(str), " BC=%04X DE=%04X HL=%04X", regs[0].bc, regs[0].de, regs[0].hl);
+	sprintf(str + strlen(str), " IX=%04X I=%02X PC=%04X",ix, ir & 255, pc);
+	sprintf(str + strlen(str), ":%02X,%02X,%02X,%02X",ReadZ80Mem(pc),ReadZ80Mem(pc+1),ReadZ80Mem(pc+2),ReadZ80Mem(pc+3));
 
-WriteLog("%s %s\n", str, buff);
+	WriteLog("%s %s\n", str, buff);
 
-sprintf(str, "AF'%04X ",af[1]);
-sprintf(str + strlen(str), (af[1] & 128) ? "M" : "P");
-sprintf(str + strlen(str), (af[1] & 64) ? "Z" : ".");
-sprintf(str + strlen(str), (af[1] & 32) ? "5" : ".");
-sprintf(str + strlen(str), (af[1] & 16) ? "H" : ".");
-sprintf(str + strlen(str), (af[1] & 8) ? "3" : ".");
-sprintf(str + strlen(str), (af[1] & 4) ? "V" : ".");
-sprintf(str + strlen(str), (af[1] & 2) ? "N" : ".");
-sprintf(str + strlen(str), (af[1] & 1) ? "C" : ".");
-sprintf(str + strlen(str), " BC'%04X DE'%04X HL'%04X",regs[1].bc,regs[1].de,regs[1].hl);
-sprintf(str + strlen(str), " IY=%04X R=%02x SP=%04X",iy, regs_sel, sp);
-sprintf(str + strlen(str), ":%02X,%02X,%02X,%02X\n",ReadZ80Mem(sp),ReadZ80Mem(sp+1),ReadZ80Mem(sp+2),ReadZ80Mem(sp+3));
+	sprintf(str, "AF'%04X ",af[1]);
+	sprintf(str + strlen(str), (af[1] & 128) ? "M" : "P");
+	sprintf(str + strlen(str), (af[1] & 64) ? "Z" : ".");
+	sprintf(str + strlen(str), (af[1] & 32) ? "5" : ".");
+	sprintf(str + strlen(str), (af[1] & 16) ? "H" : ".");
+	sprintf(str + strlen(str), (af[1] & 8) ? "3" : ".");
+	sprintf(str + strlen(str), (af[1] & 4) ? "V" : ".");
+	sprintf(str + strlen(str), (af[1] & 2) ? "N" : ".");
+	sprintf(str + strlen(str), (af[1] & 1) ? "C" : ".");
+	sprintf(str + strlen(str), " BC'%04X DE'%04X HL'%04X",regs[1].bc,regs[1].de,regs[1].hl);
+	sprintf(str + strlen(str), " IY=%04X R=%02x SP=%04X",iy, regs_sel, sp);
+	sprintf(str + strlen(str), ":%02X,%02X,%02X,%02X\n",ReadZ80Mem(sp),ReadZ80Mem(sp+1),ReadZ80Mem(sp+2),ReadZ80Mem(sp+3));
 
-WriteLog("%s\n", str);
-
+	WriteLog("%s\n", str);
 }
 
 int in(unsigned int addr)
@@ -235,8 +232,6 @@ void z80_execute()
 void init_z80()
 {
 	char path[256];
-	FILE *f;
-	int addr, count;
 
 	WriteLog("init_z80()\n");
 
@@ -245,8 +240,8 @@ void init_z80()
 		strcpy(path, RomPath);
 		strcat(path, "BeebFile/Z80.ROM");
 		
-		f = fopen(path, "rb");
-		if (f != NULL)
+		FILE *f = fopen(path, "rb");
+		if (f != nullptr)
 		{
 			fread(z80_rom, 4096, 1, f);
 			fclose(f);
@@ -257,12 +252,12 @@ void init_z80()
 		strcpy(path, RomPath);
 		strcat(path, "BeebFile/CCPN102.ROM");
 
-		f = fopen(path, "rb");
-		if (f != NULL)
+		FILE *f = fopen(path, "rb");
+		if (f != nullptr)
 		{
-			addr=0;
+			int addr = 0;
 			fseek(f, 0, SEEK_END);
-			count=ftell(f);
+			int count = ftell(f);
 			if (count > 4096) {
 				fseek(f, 0, SEEK_SET);
 				addr=addr+fread(z80_rom+0, 8192, 1, f);
@@ -299,44 +294,37 @@ void init_z80()
 }
 
 void Debug_Z80()
-
 {
-char buff[256];
-int s, t, a;
+	char buff[256];
 
+	int t = 0x4400;
 
-    t = 0x4400;
-    for (a = 0; a < 512; ++a)
-    {
-        s = Z80_Disassemble(t, buff);
-        WriteLog("%04x : %s\n", t, buff);
-        t += s;
-    }
-            
-    trace_z80 = true;
+	for (int a = 0; a < 512; ++a)
+	{
+		int s = Z80_Disassemble(t, buff);
+		WriteLog("%04x : %s\n", t, buff);
+		t += s;
+	}
 
-    for (a = 0; a < 32; ++a)
-    {
-        PrintHex(0x4400 + a * 16);
-    }
+	trace_z80 = true;
 
+	for (int a = 0; a < 32; ++a)
+	{
+		PrintHex(0x4400 + a * 16);
+	}
 }
 
 void PrintHex(int addr)
-
 {
-char buff[80];
-int i, a;
-int num;
-char *p;
+	char buff[80];
 
-	num = 16;
+	const int num = 16;
 
-	p = buff;
+	char *p = buff;
 	sprintf(p, "%04X : ", addr);
 	p += 7;
 
-	for (i = 0; i < num; ++i)
+	for (int i = 0; i < 16; ++i)
 	{
 		sprintf(p, "%02X ", ReadZ80Mem(addr + i));
 		p += 3;
@@ -345,16 +333,15 @@ char *p;
 	strcpy(p, " ");
 	p += 1;
 
-	for (i = 0; i < num; ++i)
+	for (int i = 0; i < num; ++i)
 	{
-		a = ReadZ80Mem(addr + i) & 127;
+		int a = ReadZ80Mem(addr + i) & 127;
 		if (a < 32 || a == 127) a = '.';
 		if (a == '%') a = '.';
-		*p++ = a;
-        *p = 0;
-    }
+		*p++ = (char)a;
+		*p = 0;
+	}
 
-    WriteLog("%s\n", buff);
-		
+	WriteLog("%s\n", buff);
 }
 
