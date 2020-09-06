@@ -1010,6 +1010,13 @@ void BeebWin::UpdateModelType() {
 	CheckMenuItem(ID_MODELBINT, MachineType == Model::IntegraB);
 	CheckMenuItem(ID_MODELBP, MachineType == Model::BPlus);
 	CheckMenuItem(ID_MASTER128, MachineType == Model::Master128);
+
+	if (MachineType == Model::Master128) {
+		EnableMenuItem(ID_FDC_DLL, false);
+	}
+	else {
+		EnableMenuItem(ID_FDC_DLL, true);
+	}
 }
 
 void BeebWin::UpdateSFXMenu() {
