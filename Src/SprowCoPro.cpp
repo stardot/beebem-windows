@@ -46,15 +46,14 @@ static ARMword PeekRegister(ARMul_State * state, ARMword registerNumber);
 CSprowCoPro::CSprowCoPro()
 {
     // load file into test memory
-    FILE *testFile;
     char path[MAX_PATH];
 
     strcpy(path, RomPath);
     strcat(path, "BeebFile/Sprow.ROM");
 
-    testFile = fopen(path, "rb");
+    FILE *testFile = fopen(path, "rb");
 
-    if( testFile != NULL )
+    if (testFile != nullptr)
     {
         fseek(testFile, 0, SEEK_END);
         long length = ftell(testFile);
@@ -88,7 +87,7 @@ void CSprowCoPro::reset()
 }
 
 void CSprowCoPro::exec(int count)
-{	
+{
     int a = R4;
     int b = R1;
     // check for tube interrupts
@@ -106,7 +105,7 @@ void CSprowCoPro::exec(int count)
     }
 
     while (count > 0)
-    {   
+    {
         ARMword pc = ARMul_DoInstr(state);
 
         state->Exception = FALSE;
@@ -168,11 +167,8 @@ ARMul_OSHandleSWI (ARMul_State * state, ARMword number)
 
     if (SWI_vector_installed)
     {
-        ARMword cpsr;
-        ARMword i_size;
-
-        cpsr = ARMul_GetCPSR (state);
-        i_size = INSN_SIZE;
+        ARMword cpsr = ARMul_GetCPSR (state);
+        ARMword i_size = INSN_SIZE;
 
         ARMul_SetSPSR (state, SVC32MODE, cpsr);
 
@@ -195,22 +191,16 @@ ARMul_OSHandleSWI (ARMul_State * state, ARMword number)
 
 static ARMword PeekRegister(ARMul_State * state, ARMword registerNumber)
 {
-    int data = 0;
-
-    std::map<int,int>::iterator it;
-
-    it = registers.find(registerNumber);
+    std::map<int,int>::iterator it = registers.find(registerNumber);
 
     if (it == registers.end())
     {
-        data = 0;
+        return 0;
     }
     else
     {
-        data = it->second;
+        return it->second;
     }
-
-    return data;
 }
 
 static ARMword GetRegister(ARMul_State * state, ARMword registerNumber)
@@ -239,7 +229,6 @@ GetWord (ARMul_State * state, ARMword address, int check)
 {
     unsigned char *offset_address;
     unsigned char *base_address;
-    ARMword *actual_address;
 
     // Hardware Registers..
     if (address >= 0x78000000 && address < 0xc0000000)
@@ -283,7 +272,7 @@ GetWord (ARMul_State * state, ARMword address, int check)
         return 0;
     }
 
-    actual_address = (ARMword*)offset_address;
+    ARMword *actual_address = (ARMword*)offset_address;
     return actual_address[0];
 }
 
@@ -421,14 +410,12 @@ PutWord (ARMul_State * state, ARMword address, ARMword data, int check)
 unsigned
 ARMul_MemoryInit (ARMul_State * state, unsigned long initmemsize)
 {
-    unsigned char *memory;
-
     if (initmemsize)
         state->MemSize = initmemsize;
 
-    memory = (unsigned char *) malloc (initmemsize);
+    unsigned char *memory = (unsigned char *)malloc(initmemsize);
 
-    if (memory == NULL)
+    if (memory == nullptr)
         return FALSE;
 
     state->MemDataPtr = memory;
@@ -443,13 +430,9 @@ ARMul_MemoryInit (ARMul_State * state, unsigned long initmemsize)
 void
 ARMul_MemoryExit (ARMul_State * state)
 {
-    unsigned char * memory;
-
-    memory = state->MemDataPtr;
+    unsigned char* memory = state->MemDataPtr;
 
     free(memory);
-
-    return;
 }
 
 /***************************************************************************\
@@ -564,15 +547,13 @@ ARMword ARMul_LoadWordN (ARMul_State * state, ARMword address)
 
 ARMword ARMul_LoadHalfWord (ARMul_State * state, ARMword address)
 {
-    ARMword temp;
-
     state->NumNcycles++;
 
-    //temp = ARMul_ReadWord (state, address);
-    //offset = (((ARMword) state->bigendSig * 2) ^ (address & 2)) << 3;	/* bit offset into the word */
+    //ARMword temp = ARMul_ReadWord (state, address);
+    //ARMword offset = (((ARMword) state->bigendSig * 2) ^ (address & 2)) << 3;	/* bit offset into the word */
 
     //return (temp >> offset) & 0xffff;
-    temp = ARMul_ReadWord (state, address);
+    ARMword temp = ARMul_ReadWord (state, address);
     return temp & 0xFFFF;
 }
 
@@ -582,8 +563,6 @@ ARMword ARMul_LoadHalfWord (ARMul_State * state, ARMword address)
 
 ARMword ARMul_ReadByte (ARMul_State * state, ARMword address)
 {
-    ARMword temp= 0, offset = 0;
-
     if (address >= 0xF0000000 && address <= 0xF0000010)
     {
         if (address == 0xF0000010)
@@ -598,8 +577,8 @@ ARMword ARMul_ReadByte (ARMul_State * state, ARMword address)
         }
     }
 
-    temp = ARMul_ReadWord (state, address);
-    //offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
+    ARMword temp = ARMul_ReadWord (state, address);
+    //ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
 
     //return (temp >> offset & 0xffL);
     return temp & 0xffL;
@@ -708,8 +687,6 @@ ARMul_StoreHalfWord (ARMul_State * state, ARMword address, ARMword data)
 void
 ARMul_WriteByte (ARMul_State * state, ARMword address, ARMword data)
 {
-    ARMword temp = 0, offset = 0;
-
     if (address >= 0xF0000000 && address <= 0xF0000010)
     {
         if (address == 0xF0000010)
@@ -725,8 +702,8 @@ ARMul_WriteByte (ARMul_State * state, ARMword address, ARMword data)
         }
     }
 
-    temp = ARMul_ReadWord (state, address);
-    //offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
+    ARMword temp = ARMul_ReadWord (state, address);
+    //ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
 
     //PutWord (state, address,
     //    (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
@@ -765,11 +742,9 @@ ARMul_StoreByte (ARMul_State * state, ARMword address, ARMword data)
 
 ARMword ARMul_SwapWord (ARMul_State * state, ARMword address, ARMword data)
 {
-    ARMword temp;
-
     state->NumNcycles++;
 
-    temp = ARMul_ReadWord (state, address);
+    ARMword temp = ARMul_ReadWord (state, address);
 
     state->NumNcycles++;
 
@@ -784,9 +759,7 @@ ARMword ARMul_SwapWord (ARMul_State * state, ARMword address, ARMword data)
 
 ARMword ARMul_SwapByte (ARMul_State * state, ARMword address, ARMword data)
 {
-    ARMword temp;
-
-    temp = ARMul_LoadByte (state, address);
+    ARMword temp = ARMul_LoadByte(state, address);
     ARMul_StoreByte (state, address, data);
 
     return temp;
@@ -820,10 +793,8 @@ ARMul_Ccycles (ARMul_State * state, unsigned number, ARMword address ATTRIBUTE_U
 ARMword
 ARMul_SafeReadByte (ARMul_State * state, ARMword address)
 {
-    ARMword temp, offset;
-
-    temp = GetWord (state, address, FALSE);
-    offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;
+    ARMword temp = GetWord (state, address, FALSE);
+    ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;
 
     return (temp >> offset & 0xffL);
 }
@@ -831,10 +802,8 @@ ARMul_SafeReadByte (ARMul_State * state, ARMword address)
 void
 ARMul_SafeWriteByte (ARMul_State * state, ARMword address, ARMword data)
 {
-    ARMword temp, offset;
-
-    temp = GetWord (state, address, FALSE);
-    offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;
+    ARMword temp = GetWord (state, address, FALSE);
+    ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;
 
     PutWord (state, address,
         (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
