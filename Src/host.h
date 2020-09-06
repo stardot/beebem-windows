@@ -3,7 +3,9 @@
 
 #ifndef HOST_HEADER
 #define HOST_HEADER
-extern char EmulatorTrap;
+
+extern DWORD EmulatorTrap;
+
 int host_emt(int rts);  // &03
 int host_byte(int rts); // &13
 int host_word(int rts); // &23
@@ -21,4 +23,5 @@ int host_D3(int rts);   // &D3
 int host_E3(int rts);   // &E3
 int host_F3(int rts);   // &F3
 int host_fsc(int dorts);
+
 #endif

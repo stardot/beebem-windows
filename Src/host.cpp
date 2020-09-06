@@ -48,7 +48,6 @@ Boston, MA  02110-1301, USA.
 // Warm Silence traps execute an RTS as part of the call, execution continues
 // at the previous JSR level.
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <shlobj.h>
@@ -64,7 +63,7 @@ Boston, MA  02110-1301, USA.
 extern unsigned char StackReg, PSR;
 extern int Accumulator, XReg, YReg;
 int XYReg, CommandLine;
-char EmulatorTrap = 0;				// b0=Acorn, b1=WSS, b4=TransBasic
+DWORD EmulatorTrap = 0; // b0=Acorn, b1=WSS, b4=TransBasic
 FILE *handles[16] = {
   nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
   nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
@@ -74,11 +73,10 @@ FILE *handles[16] = {
 
 #ifdef WIN32
 #include <windows.h>
-WIN32_FIND_DATA infobuf;			// Block to read file info
+WIN32_FIND_DATA infobuf; // Block to read file info
 SYSTEMTIME infotime;
-HANDLE hFind;					// Handle to search directory
+HANDLE hFind; // Handle to search directory
 #endif
-
 
 // Do an RTS (buglet, can't work out how to call PopWord)
 void rts() {
@@ -94,53 +92,51 @@ void rts() {
 
 // Generate an error - string must be < 253 characters
 // ***NOTE*** Ensure you use the correct error numbers
+
 int host_error(int num, const char* string) {
-  WholeRam[0x100]=0;				// BRK
-  WholeRam[0x101]=(char) num;			// Error number
-  strcpy((char *)(WholeRam+0x102), string);	// Error string, &00
-  ProgramCounter=0x100;				// Jump to execute BRK
+  WholeRam[0x100] = 0; // BRK
+  WholeRam[0x101] = (char)num; // Error number
+  strcpy((char *)(WholeRam+0x102), string); // Error string, &00
+  ProgramCounter = 0x100; // Jump to execute BRK
   return -1;
 }
 
-
 // Copy byte to BBC memory, return updated address
+
 int host_bytewr(int addr, char b) {
   if(WholeRam[0x27a]==0) addr|=0xff000000;	// No Tube
   if((addr & 0xff000000) == 0xff000000) {	// I/O memory
       WholeRam[(addr++) & 0xffff]=b;		// Write byte to memory
 // Should be WritePaged() ?
   } else {
-    if (TubeEnabled)     TubeRam[(addr++) & 0xffff]=b;
-    if (TorchTubeActive) z80_ram[(addr++) & 0xffff]=b;
-    if (AcornZ80)        z80_ram[(addr++) & 0xffff]=b;
-//    if (ArmTube)         ramMemory[addr++]=b;
-//#ifdef M512COPRO_ENABLED
-//    if (Tube186Enabled)  Tube186[addr++]=b;
-//#endif
+    if (TubeType == Tube::Acorn65C02) TubeRam[(addr++) & 0xffff] = b;
+    if (TubeType == Tube::TorchZ80) z80_ram[(addr++) & 0xffff] = b;
+    if (TubeType == Tube::AcornZ80) z80_ram[(addr++) & 0xffff] = b;
+    // if (TubeType == Tube::AcornArm) ramMemory[addr++] = b;
+    // if (TubeType == Tube::Master512CoPro)  Tube186[addr++] = b;
   }
   return addr;
 }
-
 
 // Load to BBC memory from open file, return length actually loaded
 int host_memload(FILE *handle, int addr, int count) {
   int num, byte, io;
 
-  if (WholeRam[0x27a]==0) addr|=0xFF000000;		// No Tube
-  if ((addr & 0xFF000000) == 0xFF000000) {		// I/O memory
+  if (WholeRam[0x27a]==0) addr|=0xFF000000; // No Tube
+  if ((addr & 0xFF000000) == 0xFF000000) { // I/O memory
     io = addr & 0xFFFF0000;
     addr &= 0xFFFF;
-    if (io == 0xFFFE0000) {				// Load to current screen memory
-      if (MachineType == 2) { if (ShEn==1)             io=0xFFFD0000; else io=0xFFFF0000; }
-      if (MachineType == 3) { if (WholeRam[0xD0] & 16) io=0xFFFD0000; else io=0xFFFF0000; }
+    if (io == 0xFFFE0000) { // Load to current screen memory
+      if (MachineType == Model::BPlus) { if (ShEn==1) io=0xFFFD0000; else io=0xFFFF0000; }
+      if (MachineType == Model::Master128) { if (WholeRam[0xD0] & 16) io=0xFFFD0000; else io=0xFFFF0000; }
     }
-    if ((io == 0xFFFD0000) && (MachineType != 1)) {	// Load to shadow memory
+    if (io == 0xFFFD0000 && MachineType != Model::IntegraB) { // Load to shadow memory
       if (count > 32768-addr) count=32768-addr;
-      if (MachineType == 2) fread((void *)(ShadowRam+addr-0x3000), 1, count, handle);
-      if (MachineType == 3) fread((void *)(ShadowRAM+addr), 1, count, handle);
+      if (MachineType == Model::BPlus) fread((void *)(ShadowRam+addr-0x3000), 1, count, handle);
+      if (MachineType == Model::Master128) fread((void *)(ShadowRAM+addr), 1, count, handle);
       return count;
     }
-    if (count > 65536-addr) count=65536-addr;		// Prevent wrapround
+    if (count > 65536 - addr) count = 65536 - addr; // Prevent wrapround
     num=count;
     while (num--) {
       byte=fgetc(handle);
@@ -148,85 +144,85 @@ int host_memload(FILE *handle, int addr, int count) {
       addr++;
     }
   } else {
-    if (TubeEnabled || TorchTubeActive || AcornZ80) {
+    if (TubeType == Tube::Acorn65C02 || TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) {
       addr&=0xFFFF;
-      if (count>0xFF00-addr) count=0xFF00-addr;		// Prevent wrapround
+      if (count > 0xFF00 - addr) count = 0xFF00 - addr; // Prevent wrapround
     }
-    if (TubeEnabled)     fread(TubeRam + addr, 1, count, handle);
-    if (TorchTubeActive) fread(z80_ram + addr, 1, count, handle);
-    if (AcornZ80)        fread(z80_ram + addr, 1, count, handle);
-//    if (ArmTube)         fread(ramMemory + addr, 1, count, handle);
-//#ifdef M512COPRO_ENABLED
-//    if (Tube186Enabled)  fread(Tube186 + addr, 1, count, handle);
-//#endif
+
+    if (TubeType == Tube::Acorn65C02) fread(TubeRam + addr, 1, count, handle);
+    if (TubeType == Tube::AcornZ80) fread(z80_ram + addr, 1, count, handle);
+    if (TubeType == Tube::TorchZ80) fread(z80_ram + addr, 1, count, handle);
+    // if (TubeType == Tube::AcornArm) fread(ramMemory + addr, 1, count, handle);
+    // if (TubeType == Tube::Master510CoPro)  fread(Tube186 + addr, 1, count, handle);
   }
   return count;
 }
 
-
 // Save from BBC memory to open file, return length actually saved
+
 int host_memsave(FILE *handle, int addr, int count) {
-  if(WholeRam[0x27a]==0) addr|=0xff000000;		// No Tube
-  if((addr & 0xff000000) == 0xff000000) {		// I/O memory
+  if (WholeRam[0x27a] == 0) addr |= 0xff000000; // No Tube
+  if ((addr & 0xff000000) == 0xff000000) { // I/O memory
     int io = addr & 0xFFFF0000;
     addr &= 0xFFFF;
-    if (io == 0xFFFE0000) {				// Save current screen memory
-      if (MachineType == 2) { if (ShEn==1)             io=0xFFFD0000; else io=0xFFFF0000; }
-      if (MachineType == 3) { if (WholeRam[0xD0] & 16) io=0xFFFD0000; else io=0xFFFF0000; }
+    if (io == 0xFFFE0000) { // Save current screen memory
+      if (MachineType == Model::BPlus) { if (ShEn == 1) io=0xFFFD0000; else io=0xFFFF0000; }
+      if (MachineType == Model::Master128) { if (WholeRam[0xD0] & 16) io=0xFFFD0000; else io=0xFFFF0000; }
     }
-    if ((io == 0xFFFD0000) && (MachineType != 1)) {	// Save shadow memory
+    if (io == 0xFFFD0000 && MachineType != Model::IntegraB) { // Save shadow memory
       if (count > 32768-addr) count=32768-addr;
-      if (MachineType == 2) fwrite((void *)(ShadowRam+addr-0x3000), 1, count, handle);
-      if (MachineType == 3) fwrite((void *)(ShadowRAM+addr), 1, count, handle);
+      if (MachineType == Model::BPlus) fwrite((void *)(ShadowRam+addr-0x3000), 1, count, handle);
+      if (MachineType == Model::Master128) fwrite((void *)(ShadowRAM+addr), 1, count, handle);
       return count;
     }
-    if (count>0xFF00-addr) count=0xFF00-addr;		// Prevent wrapround
+    if (count > 0xFF00 - addr) count = 0xFF00 - addr; // Prevent wrapround
     int num = count;
     while (num--) {
       int byte = ReadPaged(addr);			// Need to do this way to access banked memory
       fputc(byte, handle);
       addr++;
     }
-  } else {
-    if (TubeEnabled || TorchTubeActive || AcornZ80) {
+  }
+  else {
+    if (TubeType == Tube::Acorn65C02 || TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) {
       addr &= 0xFFFF;
-      if (count>0xFF00-addr) count=0xFF00-addr;		// Prevent wrapround
+      if (count > 0xFF00 - addr) count = 0xFF00 - addr; // Prevent wrapround
     }
-    if (TubeEnabled)     fwrite(TubeRam + addr, 1, count, handle);
-    if (TorchTubeActive) fwrite(z80_ram + addr, 1, count, handle);
-    if (AcornZ80)        fwrite(z80_ram + addr, 1, count, handle);
-//    if (ArmTube)         fwrite(ramMemory + addr, 1, count, handle);
-//#ifdef M512COPRO_ENABLED
-//    if (Tube186Enabled)  fwrite(Tube186 + addr, 1, count, handle);
-//#endif
+    if (TubeType == Tube::Acorn65C02) fwrite(TubeRam + addr, 1, count, handle);
+    if (TubeType == Tube::TorchZ80) fwrite(z80_ram + addr, 1, count, handle);
+    if (TubeType == Tube::AcornZ80) fwrite(z80_ram + addr, 1, count, handle);
+    // if (TubeType == Tube::AcornArm) fwrite(ramMemory + addr, 1, count, handle);
+    // if (TubeType == Tube::Master512CoPro) fwrite(Tube186 + addr, 1, count, handle);
   }
   return count;
 }
-
 
 // Load Russell format BASIC file to memory from open file, return length actually loaded
 // Russell format:
 // len lo hi text cr
 // Acorn format:
 // cr hi lo len text cr
+
 int host_basload(FILE *handle, int addr, int count) {
   count = 0;
   host_bytewr(addr++, 13);
   while (!feof(handle)) {
-    int len = fgetc(handle);		// len
-    int lo  = fgetc(handle);		// lo
-    host_bytewr(addr++, fgetc(handle));	// hi
+    int len = fgetc(handle);
+    int lo  = fgetc(handle);
+    int hi  = fgetc(handle);
+    host_bytewr(addr++, hi);
     host_bytewr(addr++, lo);
     host_bytewr(addr++, len);
     lo = 0;
-    while(!feof(handle) && lo!=13) host_bytewr(addr++, lo=fgetc(handle));
+    while(!feof(handle) && lo != 13) host_bytewr(addr++, lo = fgetc(handle));
     count += len;
   }
-  return count+2;
+
+  return count + 2;
 }
 
-
 // Test if file is Russell format BASIC
+
 int host_isrussell(FILE *handle) {
   int num = 0;
 
@@ -252,10 +248,10 @@ int host_isrussell(FILE *handle) {
   return num;
 }
 
-
 // Check if valid channel
+
 int host_channel(int handle) {
-  if (handle<VDFS_HANDMIN || handle>VDFS_HANDMAX)
+  if (handle < VDFS_HANDMIN || handle > VDFS_HANDMAX)
     return host_error(222, "Channel"); // Not one of our channels
 
   if (handles[handle-VDFS_HANDMIN]==nullptr)
@@ -264,13 +260,13 @@ int host_channel(int handle) {
   return handle-VDFS_HANDMIN; // Return index into translation table
 }
 
-
 // Filename and pathname translation
 // =================================
 
 // Copy leafname string to BBC memory, return updated Addr
 // We only ever read leafnames from the host system, so we
 // don't have to attempt to translate full path symantics.
+
 int host_strwr(int addr, char *str, int max) {
   if(WholeRam[0x27a]==0) addr|=0xff000000;	// No Tube
   while(*str && max>0) {
@@ -285,22 +281,21 @@ int host_strwr(int addr, char *str, int max) {
       case ' ': b='\xA0'; break;
     }
 #endif
-    if((addr & 0xff000000) == 0xff000000) {	// I/O memory
-      WholeRam[(addr++) & 0xffff]=b;		// Copy C string to memory
-// Should be WritePaged() ?
-    } else {
-      if (TubeEnabled)     TubeRam[(addr++) & 0xffff]=b;
-      if (TorchTubeActive) z80_ram[(addr++) & 0xffff]=b;
-      if (AcornZ80)        z80_ram[(addr++) & 0xffff]=b;
-//      if (ArmTube)         ramMemory[addr++]=b;
-//#ifdef M512COPRO_ENABLED
-//      if (Tube186Enabled)  Tube186[addr++]=b;
-//#endif
+
+    if ((addr & 0xff000000) == 0xff000000) { // I/O memory
+      WholeRam[(addr++) & 0xffff] = b; // Copy C string to memory
+      // Should be WritePaged() ?
+    }
+    else {
+      if (TubeType == Tube::Acorn65C02) TubeRam[(addr++) & 0xffff] = b;
+      if (TubeType == Tube::TorchZ80) z80_ram[(addr++) & 0xffff] = b;
+      if (TubeType == Tube::AcornZ80) z80_ram[(addr++) & 0xffff] = b;
+      // if (ArmTube == Tube::AcornArm) ramMemory[addr++] = b;
+      // if (TubeType == Tube::Master512CoPro)  Tube186[addr++] = b;
     }
   }
   return addr;
 }
-
 
 // Translate BBC <cr>-terminated pathname to host pathname
 // BBC: :d.$.directory.filename/ext
@@ -310,7 +305,7 @@ int host_strwr(int addr, char *str, int max) {
 //
 // Implement mount points in here
 // eg :H.fred.jim -> <mount point for H>\fred\jim
-//
+
 char *host_pathtrans(int src, char *dst) {
   char b;
 
@@ -371,12 +366,15 @@ char *host_pathtrans(int src, char *dst) {
   return dstpath;
 }
 
-
 // Add .inf to pathname
-char *host_inf(char *hostpath, char *buffer) {
-  int len;
 
-  if((len=strlen(hostpath)) > 251) return hostpath;
+char *host_inf(char *hostpath, char *buffer) {
+  const int len = strlen(hostpath);
+
+  if (len > 251) {
+    return hostpath;
+  }
+
   int off = len;
 #ifdef WIN32
   while ((hostpath[off] != '.') && (hostpath[off] != '\\') && (hostpath[off] != ':') && (off > 1)) off--;
@@ -389,7 +387,6 @@ char *host_inf(char *hostpath, char *buffer) {
   strcpy(buffer+off, ".inf");
   return buffer;
 }
-
 
 // Object information
 // ==================
@@ -497,8 +494,8 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
   return obj;
 }
 
-
 // Write object info
+
 void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) {
   int Load, Exec, Length, Attr;
   char buffer[256];
@@ -528,19 +525,20 @@ void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) 
       while((buffer[inp]==' ') || (buffer[inp]==9)) inp++; // Step past SPC/TABs
       while(buffer[inp]>' ') inp++;			   // Step past any access
       while((buffer[inp]==' ') || (buffer[inp]==9)) inp++; // Step past SPC/TABs
-	// inp now points to any remaining trailing metadata
-    } else {
+      // inp now points to any remaining trailing metadata
+    }
+    else {
       if((handle=fopen(buffer, "w"))==nullptr) return;	// Couldn't create .inf file
       inp=0; outp=0;
       while(pathname[inp]>' ') {
-        buffer[outp++]=pathname[inp];			// Copy filename to buffer
-							// pathname[] is same size as buffer[]
-        						// so won't overflow
+        buffer[outp++]=pathname[inp]; // Copy filename to buffer
+                                      // pathname[] is same size as buffer[]
+                                      // so won't overflow
 #if defined(WIN32) || defined(MSDOS)
-        if (pathname[inp]=='\\') outp=0;		// Reset to start of leafname
+        if (pathname[inp]=='\\') outp=0; // Reset to start of leafname
 #endif
 #ifdef UNIX
-        if (pathname[inp]=='/')  outp=0;		// Reset to start of leafname
+        if (pathname[inp]=='/')  outp=0; // Reset to start of leafname
 #endif
         inp++;
       }
@@ -564,7 +562,6 @@ void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) 
   }
 }
 
-
 // Emulator-implemented *command core routines
 // ===========================================
 
@@ -577,7 +574,7 @@ void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) 
 //    -2  - code being run in I/O processor    - continue executing at new PC
 //    -1  - error occured                      - continue executing at error PC
 //    1   - code being run in second processor - do RTS to return to VDFS *RUN handler
-//
+
 int host_run(int FSCAction, int XYReg) {
   int FileType, Load, Exec, Length, Attr;
   char pathname[256];
@@ -590,12 +587,13 @@ int host_run(int FSCAction, int XYReg) {
   host_pathtrans(XYReg, pathname);
   if ((FileType=host_readinfo(pathname, &Load, &Exec, &Length, &Attr)) > 1) return host_error(181, "Not a file");
 
-// todo: exec=ffffffff -> *Exec file
+  // todo: exec=ffffffff -> *Exec file
   if (FileType==1) {
-    if (Load==0 || Load==0xFFFFFF || (Load & 0xFF000000)!=(Exec & 0xFF000000))
+    if (Load==0 || Load==0xFFFFFF || (Load & 0xFF000000) != (Exec & 0xFF000000)) {
+      // Can only do '*RUN file' if file has a load address
+      // and load/exec both refer to same memory
       return host_error(252, "Bad address");
-						// Can only do '*RUN file' if file has a load address
-						// and load/exec both refer to same memory
+    }
   }
   if (FileType) if ((handle=fopen(pathname, "rb"))==nullptr) FileType=0;
   if (FileType==0) {
@@ -610,28 +608,30 @@ int host_run(int FSCAction, int XYReg) {
   fclose(handle);
   handle = nullptr;
 
-  if(WholeRam[0x27A]==0) Exec|=0xFF000000;	// No Tube
-  if ((Exec & 0xFF000000)==0xFF000000) {	// I/O memory
-    ProgramCounter=Exec & 0xFFFF;
-    WholeRam[0x100+StackReg--]=0x60;		// Need to ensure code returns with A=0
-    WholeRam[0x100+StackReg--]=0x00;		// Stack LDA #0:RTS
-    WholeRam[0x100+StackReg--]=0xA9;
-    WholeRam[0x100+StackReg]=StackReg;
+  if(WholeRam[0x27A]==0) Exec|=0xFF000000; // No Tube
+
+  if ((Exec & 0xFF000000) == 0xFF000000) { // I/O memory
+    ProgramCounter = Exec & 0xFFFF;
+    WholeRam[0x100 + StackReg--] = 0x60; // Need to ensure code returns with A=0
+    WholeRam[0x100 + StackReg--] = 0x00; // Stack LDA #0:RTS
+    WholeRam[0x100 + StackReg--] = 0xa9;
+    WholeRam[0x100 + StackReg] = StackReg;
     StackReg--;
-    WholeRam[0x100+StackReg--]=0x01;
-    return -2;					// Running in I/O memory
-  } else {
-    WholeRam[0xbc]=Exec & 0xFF;
-    WholeRam[0xbd]=(Exec >> 8) & 0xFF;
-    WholeRam[0xbe]=(Exec >> 16) & 0xFF;
-    WholeRam[0xbf]=(Exec >> 24) & 0xFF;
-    XReg=0xBC; YReg=0x00; Accumulator=0xFF;	// XY=>transfer address, A=Tube ID
-    return 1;					// Running in second processor
+    WholeRam[0x100 + StackReg--] = 0x01;
+    return -2; // Running in I/O memory
+  }
+  else {
+    WholeRam[0xbc] = Exec & 0xFF;
+    WholeRam[0xbd] = (Exec >> 8) & 0xFF;
+    WholeRam[0xbe] = (Exec >> 16) & 0xFF;
+    WholeRam[0xbf] = (Exec >> 24) & 0xFF;
+    XReg = 0xBC; YReg = 0x00; Accumulator = 0xFF; // XY=>transfer address, A=Tube ID
+    return 1; // Running in second processor
   }
 }
 
-
 // Create a directory, no error if exists
+
 int host_cdir(const char *hostpath) {
 
 #ifdef WIN32
@@ -647,8 +647,8 @@ int host_cdir(const char *hostpath) {
 #endif
 }
 
-
 // Delete an object
+
 int host_delete(char *hostpath, int hint) {
 #ifdef WIN32
   int result = 0;
@@ -681,14 +681,14 @@ int host_delete(char *hostpath, int hint) {
 #endif
 }
 
-
 // Filing system commands implemented by emulator
 // ==============================================
 
 // Match with filing system command
+
 int cmd_lookup(int *XYReg) {
   static const char commands[]=":ACCESS:CDIR:COPY:CREATE:DELETE:DIR:DRIVE:FREE:GO:LIB:MOUNT:RENAME:WIPE::";
-  int  lptr;
+  int lptr;
   char b;
 
   if (ReadPaged(*XYReg)<'A') return 0;		// Doesn't start with letter
@@ -705,10 +705,10 @@ int cmd_lookup(int *XYReg) {
     } while (b!='.' && b==commands[cptr]);	// Loop until '.' or no match
   } while (b!='.' && commands[cptr]!=':');	// Loop until '.' or end of command
 
-// ACCESS:          ACCESS:            ACCESS:        ACCESS:
-//  cptr-^           cptr-^             cptr-^         cptr-^
-// ACCESSfredjim    ACCESS fredjim     ACCESS<cr>     ACC.fredjim
-//  lptr-^           lptr-^             lptr-^      lptr-^
+  // ACCESS:          ACCESS:            ACCESS:        ACCESS:
+  //  cptr-^           cptr-^             cptr-^         cptr-^
+  // ACCESSfredjim    ACCESS fredjim     ACCESS<cr>     ACC.fredjim
+  //  lptr-^           lptr-^             lptr-^      lptr-^
 
   if (b>='A' && b<='Z') return 0;		// Command not terminated
   while(ReadPaged(lptr) == ' ') lptr++;		// Skip spaces
@@ -716,25 +716,28 @@ int cmd_lookup(int *XYReg) {
   return num;
 }
 
-
 // Match filing system command
 // ---------------------------
 // Return <0 if error occured
 // Return  0 if command wasn't matched, fall through to *RUN
 // Return >0 if command successful
+
 int host_cmd(int FSCAction, int XYReg) {
   char pathname[256];
-  int num;
+  int num = cmd_lookup(&XYReg);
 
-  if ((num=cmd_lookup(&XYReg))==0) return 0;
+  if (num == 0) {
+    return 0;
+  }
+
   switch (num) {
-    case 6:				// *DIR
+    case 6: // *DIR
       host_pathtrans(XYReg, pathname);
       if (SetCurrentDirectory(pathname)) return 1;
       return host_error(214, "Not found");
-    case 2:				// *CDIR
+    case 2: // *CDIR
       return host_cdir(host_pathtrans(XYReg, pathname));
-    case 5:				// *DELETE
+    case 5: // *DELETE
       return host_delete(host_pathtrans(XYReg, pathname), 0);
 
 //    case 1:  return cmd_access(XYReg);
@@ -748,52 +751,54 @@ int host_cmd(int FSCAction, int XYReg) {
 //    case 12: return cmd_rename(XYReg);
 //    case 13: return cmd_wipe(XYReg);
   }
+
   return 0;
 }
-
 
 // Filing system interface implemented by emulator via emulator traps
 // ==================================================================
 
 // Opcode 03 - Acorn MOS_CLI
 //           - WSS   MOS_EMT
+
 int host_emt(int dorts) {
-  if(EmulatorTrap & 2) {		// Warm Silence traps
+  if(EmulatorTrap & 2) { // Warm Silence traps
     switch(ReadPaged(ProgramCounter++)) {
-      case 0x00: return host_fsc(1);	// OSFSC
-      case 0x01: return host_find(1);	// OSFIND
-      case 0x02: return host_gbpb(1);	// OSGBPB
-      case 0x03: return host_bput(1);	// OSBPUT
-      case 0x04: return host_bget(1);	// OSBGET
-      case 0x05: return host_args(1);	// OSARGS
-      case 0x06: return host_file(1);	// OSFILE
+      case 0x00: return host_fsc(1); // OSFSC
+      case 0x01: return host_find(1); // OSFIND
+      case 0x02: return host_gbpb(1); // OSGBPB
+      case 0x03: return host_bput(1); // OSBPUT
+      case 0x04: return host_bget(1); // OSBGET
+      case 0x05: return host_args(1); // OSARGS
+      case 0x06: return host_file(1); // OSFILE
 
-      case 0x40: return host_word(1);	// OSWORD
-      case 0x41: return host_byte(1);	// OSBYTE
+      case 0x40: return host_word(1); // OSWORD
+      case 0x41: return host_byte(1); // OSBYTE
 
-      case 0x80: break;			// Read CMOS
-      case 0x81: break; 		// Write CMOS
-      case 0x82: break; 		// Read EEPROM
-      case 0x83: break; 		// Write EEPROM
+      case 0x80: break; // Read CMOS
+      case 0x81: break; // Write CMOS
+      case 0x82: break; // Read EEPROM
+      case 0x83: break; // Write EEPROM
 
-      case 0xD0: break; 		// *SRLOAD
-      case 0xD1: break; 		// *SRWRITE
-      case 0xD2: break; 		// *DRIVE
-      case 0xD3: break; 		// Load/Run/Exec !Boot
-      case 0xD4: break; 		// nothing
-      case 0xD5: break; 		// *BACK
-      case 0xD6: break; 		// *MOUNT
+      case 0xD0: break; // *SRLOAD
+      case 0xD1: break; // *SRWRITE
+      case 0xD2: break; // *DRIVE
+      case 0xD3: break; // Load/Run/Exec !Boot
+      case 0xD4: break; // nothing
+      case 0xD5: break; // *BACK
+      case 0xD6: break; // *MOUNT
 
-      case 0xFF: return host_quit(1);	// OSQUIT
+      case 0xFF: return host_quit(1); // OSQUIT
     }
+
     rts();
     return 0;
   }
   return host_error(0xFE, "BAD COMMAND");
 }
 
-
 // Opcode 03,00 - MOS_FSC
+
 int host_fsc(int dorts) {
   int idx;
 
@@ -802,12 +807,12 @@ int host_fsc(int dorts) {
       if ((idx=host_channel(XReg))<0) return -1;
       XReg=feof(handles[idx]);
       break;
-    case 3:				// *command
+    case 3: // *command
       idx=(host_cmd(Accumulator, XReg | (YReg<<8)));
       if (idx<0) return -1;		// Error occured, don't do rts()
       if (idx>0) break;			// Command executed, don't fall through
-    case 2:				// */filename
-    case 4:				// *RUN filename
+    case 2: // */filename
+    case 4: // *RUN filename
       if ((idx=host_run(Accumulator, XReg | (YReg<<8)))<0) return idx;
       break;
     case 7:
@@ -816,21 +821,23 @@ int host_fsc(int dorts) {
     case 8:
       Accumulator=3;			// Tell client *commands are supported
       break;
-//   0 - *OPT
-//   5 - *CAT   - done locally
-//   6 - NewFS  - done locally
-//   9 - *EX    - done locally
-//  10 - *INFO  - done locally
-//  11 - LibRun - done locally
-//  12 - *RENAME
-// 255 - Boot
+
+    //   0 - *OPT
+    //   5 - *CAT   - done locally
+    //   6 - NewFS  - done locally
+    //   9 - *EX    - done locally
+    //  10 - *INFO  - done locally
+    //  11 - LibRun - done locally
+    //  12 - *RENAME
+    // 255 - Boot
   }
+
   if(dorts) rts();
   return 0;
 }
 
-
 // Opcode 53 - MOS_FILE
+
 int host_file(int dorts) {
   int Load, Exec;
   union { int Length; int Start; };
@@ -847,7 +854,7 @@ int host_file(int dorts) {
   Attr  =ReadPaged(XYReg+14) | (ReadPaged(XYReg+15)<<8) | (ReadPaged(XYReg+16)<<16) | (ReadPaged(XYReg+17)<<24);
 
   switch(Accumulator) {
-    case 0xFF:					// Load
+    case 0xFF: // Load
       addr=Load; num=Exec;
       if ((Accumulator=host_readinfo(pathname, &Load, &Exec, &Length, &Attr)) > 1) {
         return host_error(181, "Not a file");
@@ -869,34 +876,35 @@ int host_file(int dorts) {
       fclose(handle);
       handle = nullptr;
       break;
-    case 0:					// Save
+    case 0: // Save
       handle=fopen(pathname, "wb");
       if (handle == nullptr) return host_error(192, "Can't save file");
       host_memsave(handle, Start, End-Start);
       fclose(handle);
       handle = nullptr;
       Length=End-Start;
-      Accumulator=1;				// Return A=file
-      Attr=0x33;				// Attr=WR/wr
-      						// Fall through with A=1 to write info
-    case 1:					// Write object info
-    case 2:					// Write load address
-    case 3:					// Write exec address
-    case 4:					// Write attrs
+      Accumulator = 1; // Return A=file
+      Attr = 0x33; // Attr=WR/wr
+      // Fall through with A=1 to write info
+
+    case 1: // Write object info
+    case 2: // Write load address
+    case 3: // Write exec address
+    case 4: // Write attrs
       host_writeinfo(pathname, Load, Exec, Length, Attr, Accumulator);
       break;
-    case 5:					// Read object info
+    case 5: // Read object info
       Accumulator=host_readinfo(pathname, &Load, &Exec, &Length, &Attr);
       break;
-    case 6:					// Delete
+    case 6: // Delete
       Accumulator=host_readinfo(pathname, &Load, &Exec, &Length, &Attr);
       if (Accumulator) {
         if (host_delete(pathname, Accumulator) < 0) return -1; // Error occured, return
       }
       break;
-    case 7:					// Create
+    case 7: // Create
       break;
-    case 8:					// CDir
+    case 8: // CDir
       if (host_cdir(pathname) < 0) return -1;	// Error occured, return
       Accumulator=host_readinfo(pathname, &Load, &Exec, &Length, &Attr);
       break;
@@ -928,8 +936,8 @@ int host_file(int dorts) {
   return 0;
 }
 
-
 // Opcode 63 - MOS_ARGS
+
 int host_args(int dorts) {
   int idx;
   FILE *handle = nullptr;
@@ -942,27 +950,27 @@ int host_args(int dorts) {
       handle=handles[idx];
     }
     switch(Accumulator) {
-      case 0xFD:			// Write context
-      case 0xFE:			// Read context
+      case 0xFD: // Write context
+      case 0xFE: // Read context
         break;
-      case 0xFF:			// Ensure file
+      case 0xFF: // Ensure file
         fflush(handle);
         break;
-      case 0:				// =PTR
+      case 0: // =PTR
         Data=ftell(handle);
         break;
-      case 1:				// PTR=
+      case 1: // PTR=
         fseek(handle, Data, SEEK_SET);
         break;
-      case 2:				// =EXT
-      case 4:				// =ALLOC
+      case 2: // =EXT
+      case 4: // =ALLOC
         idx=ftell(handle);
         fseek(handle, 0, SEEK_END);
         Data=ftell(handle);
         fseek(handle, idx, SEEK_SET);
         break;
-      case 3:				// EXT=
-      case 6:				// ALLOC=
+      case 3: // EXT=
+      case 6: // ALLOC=
         idx=ftell(handle);
         fseek(handle, Data, SEEK_SET);
         fseek(handle, idx, SEEK_SET);
@@ -971,24 +979,25 @@ int host_args(int dorts) {
         Data=feof(handle);
         break;
     }
-  } else {
+  }
+  else {
     switch(Accumulator) {
-      case 0xFD:			// Version info
-      case 0xFE:			// Last drive used
+      case 0xFD: // Version info
+      case 0xFE: // Last drive used
         break;
-      case 0xFF:			// Ensure all files
+      case 0xFF: // Ensure all files
         fflush(nullptr);
         break;
-      case 0:				// Read selected filing system
-        Accumulator=17;			// 17=VDFS
+      case 0: // Read selected filing system
+        Accumulator=17; // 17=VDFS
         break;
-      case 1:				// Read command line address
+      case 1: // Read command line address
         Data=CommandLine | 0xFFFF0000;
         break;
-      case 2:				// Read version
-      case 3:				// Read LIBFS
-      case 4:				// Read disk space used
-      case 5:				// Read disk free space
+      case 2: // Read version
+      case 3: // Read LIBFS
+      case 4: // Read disk space used
+      case 5: // Read disk free space
         break;
     }
   }
@@ -1003,25 +1012,25 @@ int host_args(int dorts) {
   return 0;
 }
 
-
 // Opcode 73 - MOS_BGET
+
 int host_bget(int dorts) {
   int idx = host_channel(YReg);
 
   if (idx<0) return -1;
   if (feof(handles[idx])) return host_error(223, "EOF");
   if ((Accumulator=fgetc(handles[idx]))==EOF) {
-    Accumulator=0xFE;
-    PSR|=1;			// Set carry flag
+    Accumulator = 0xfe;
+    PSR |= 1; // Set carry flag
   } else {
-    PSR&=0xFE;			// Clear carry flag
+    PSR &= 0xfe; // Clear carry flag
   }
   if(dorts) rts();
   return 0;
 }
 
-
 // Opcode 83 - MOS_BPUT
+
 int host_bput(int dorts) {
   int idx = host_channel(YReg);
 
@@ -1031,8 +1040,8 @@ int host_bput(int dorts) {
   return 0;
 }
 
-
 // Opcode 93 - MOS_GBPB
+
 int host_gbpb(int dorts) {
   int idx = 0, res = 0;
   FILE *handle = nullptr;
@@ -1043,93 +1052,93 @@ int host_gbpb(int dorts) {
   int Addr   =ReadPaged(XYReg+1) | (ReadPaged(XYReg+2)<<8)  | (ReadPaged(XYReg+3)<<16)  | (ReadPaged(XYReg+4)<<24);
   int Count  =ReadPaged(XYReg+5) | (ReadPaged(XYReg+6)<<8)  | (ReadPaged(XYReg+7)<<16)  | (ReadPaged(XYReg+8)<<24);
   int Offset =ReadPaged(XYReg+9) | (ReadPaged(XYReg+10)<<8) | (ReadPaged(XYReg+11)<<16) | (ReadPaged(XYReg+12)<<24);
-  PSR &= 0xFE;					// Clear carry flag, not EOF
+  PSR &= 0xFE; // Clear carry flag, not EOF
   int num=Count;
 
   if (Accumulator>=1 && Accumulator<=4) {	// Write/read from open channel
 
     // At the moment, BeebEm/VDFS gets confused by *MOVE playing with the memory mapping
     // So, to be safe, detect it happening and bomb out to the user with an error
-    if (MachineType == 3) {
-      if ( ReadPaged(0xDFD6) != 0 ) {		// ACCCON changed
+    if (MachineType == Model::Master128) {
+      if (ReadPaged(0xdfd6) != 0) { // ACCCON changed
         return host_error(254,"Bad use of OSGBPB with VDFS");
       }
     }
 
     if ((idx=host_channel(Channel))<0) return -1; // Check channel
     handle=handles[idx];
-    if (Accumulator == 3 || Accumulator == 4) {	// Read operation, check for EOF
+    if (Accumulator == 3 || Accumulator == 4) { // Read operation, check for EOF
       idx=ftell(handle);
       fseek(handle, 0, SEEK_END);
-      res=ftell(handle);			// Find size of file
-      if (Accumulator == 2) {			// Use current PTR
-        fseek(handle, idx, SEEK_SET);		// Restore PTR
-        if (idx+Count>=res) {			// Woah! Crazy overflow potentials
-          num=res-idx;				// Reduce number to transfer
-          PSR |= 1;				// Set carry, will end at EOF
+      res=ftell(handle); // Find size of file
+      if (Accumulator == 2) { // Use current PTR
+        fseek(handle, idx, SEEK_SET); // Restore PTR
+        if (idx+Count>=res) { // Woah! Crazy overflow potentials
+          num=res-idx; // Reduce number to transfer
+          PSR |= 1; // Set carry, will end at EOF
         }
-      } else {					// Use supplied Offset
-        if (Offset+Count>=res) {		// Woah! Crazy overflow potentials
-          num=res-Offset;			// Reduce number to transfer
-          PSR |= 1;				// Set carry, will end at EOF
+      } else { // Use supplied Offset
+        if (Offset+Count>=res) { // Woah! Crazy overflow potentials
+          num=res-Offset; // Reduce number to transfer
+          PSR |= 1; // Set carry, will end at EOF
         }
       }
     }
-    if(Accumulator==1 || Accumulator==3) {	// Set PTR to supplied Offset before action
+    if(Accumulator==1 || Accumulator==3) { // Set PTR to supplied Offset before action
       fseek(handle, Offset, SEEK_SET);
     }
   }
 
   switch(Accumulator) {
-    case 1:					// Write data
+    case 1: // Write data
     case 2:
       Count=Count-host_memsave(handle, Addr, num);
       Offset=ftell(handle);
       Addr=Addr+num;
       break;
-    case 3:					// Read data
+    case 3: // Read data
     case 4:
       Count=Count-host_memload(handle, Addr, num);
       Offset=ftell(handle);
       Addr=Addr+num;
       break;
-    case 8:					// Scan directory, standard format
-    case 9:					// Scan directory, special WSS format
-// NOTE: WSS OSGBPB 9 uses the control block differently to the standard
-// On entry, XY?0=count requested, XY!1=address,   XY!5=buffer length, XY!9=offset
-// On exit,  XY?0=count returned,  XY!1=preserved, XY!5=preserved,     XY!9=updated offset
+    case 8: // Scan directory, standard format
+    case 9: // Scan directory, special WSS format
+    // NOTE: WSS OSGBPB 9 uses the control block differently to the standard
+    // On entry, XY?0=count requested, XY!1=address,   XY!5=buffer length, XY!9=offset
+    // On exit,  XY?0=count returned,  XY!1=preserved, XY!5=preserved,     XY!9=updated offset
 
-      idx =  Offset;				// Offset into directory
+      idx =  Offset; // Offset into directory
 #ifdef WIN32
-      PSR |= 1; Channel=0;			// Prepare result=no objects returned
-      hFind = FindFirstFile("*.*", &infobuf);	// Initialise search
+      PSR |= 1; Channel=0; // Prepare result=no objects returned
+      hFind = FindFirstFile("*.*", &infobuf); // Initialise search
       if (hFind != INVALID_HANDLE_VALUE) {
         idx++;
         res=-1;
         while((idx != 0) && (res != 0)) {
           if (idx > 0) if ((res=FindNextFile(hFind, &infobuf)) != 0) idx--;
-						// Step to next object, if found decrement index
+          // Step to next object, if found decrement index
           if (infobuf.cFileName[0] == '.') {
-            idx++;				// Skip '.' and '..' (and '.xxxx')
+            idx++; // Skip '.' and '..' (and '.xxxx')
           }
           if ((num = strlen(infobuf.cFileName)) > 4) {
             if (_stricmp(&infobuf.cFileName[num - 4], ".inf") == 0) {
-              idx++;				// Skip '*.inf'
+              idx++; // Skip '*.inf'
             }
           }
         }
         FindClose(hFind);
-        if (idx == 0) {				// Found an object
-          PSR &= 0xFE;				// Clear carry
+        if (idx == 0) { // Found an object
+          PSR &= 0xfe; // Clear carry
           if (Accumulator == 9) {
-            res=Addr;						// NB: WSS expects Addr to /not/ be updated
-            res=host_strwr(res, infobuf.cFileName, Count-1);	// Copy string to BBC memory
-            res=host_bytewr(res, 0);				// Terminate with <null>
-            Channel=1;						// One object returned
+            res = Addr; // NB: WSS expects Addr to /not/ be updated
+            res = host_strwr(res, infobuf.cFileName, Count-1); // Copy string to BBC memory
+            res = host_bytewr(res, 0); // Terminate with <null>
+            Channel = 1; // One object returned
           } else {
-            if((res=strlen(infobuf.cFileName))>30) res=30;	// Truncate to 30 characters
+            if((res=strlen(infobuf.cFileName))>30) res=30; // Truncate to 30 characters
             Addr=host_bytewr(Addr, res);
-            Addr=host_strwr(Addr, infobuf.cFileName, res);	// Copy string to BBC memory
+            Addr=host_strwr(Addr, infobuf.cFileName, res); // Copy string to BBC memory
             Count--;
             // Channel=directory cycle number
           }
@@ -1163,15 +1172,15 @@ int host_gbpb(int dorts) {
   return 0;
 }
 
-
 // Opcode A3 - MOS_FIND
+
 int host_find(int dorts) {
   char pathname[256];
   FILE *handle = nullptr;
   int idx, lp;
 
-  if (Accumulator) {				// Open
-    idx=-1;					// Look for free handle
+  if (Accumulator) { // Open
+    idx = -1; // Look for free handle
     for (lp=0; lp<=(VDFS_HANDMAX-VDFS_HANDMIN); lp++) {
       if (handles[lp] == nullptr) idx=lp;
     }
@@ -1179,12 +1188,15 @@ int host_find(int dorts) {
     XYReg=XReg | (YReg<<8);
     host_pathtrans(XYReg, pathname);
     switch(Accumulator & 0xC0) {
-      case 0x40:				// OpenIn
-        handle=fopen(pathname, "rb"); break;
-      case 0x80:				// OpenOut
-        handle=fopen(pathname, "wb"); break;
-      case 0xC0:				// OpenUp
-        handle=fopen(pathname, "r+"); break;
+      case 0x40: // OpenIn
+        handle = fopen(pathname, "rb");
+        break;
+      case 0x80: // OpenOut
+        handle = fopen(pathname, "wb");
+        break;
+      case 0xC0: // OpenUp
+        handle = fopen(pathname, "r+");
+        break;
     }
     if (handle) {
       handles[idx]=handle;
@@ -1212,8 +1224,8 @@ int host_find(int dorts) {
   return 0;
 }
 
-
 // Opcode B3 - MOS_QUIT
+
 int host_quit(int dorts) {
 
 #ifdef WIN32

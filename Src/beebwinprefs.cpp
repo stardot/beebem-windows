@@ -431,8 +431,8 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
 		IDEDriveEnabled = false;
 
-	if (!m_Preferences.GetBoolValue("EmulatorTrap", EmulatorTrap))
-		EmulatorTrap = false;
+	if (!m_Preferences.GetDWORDValue("EmulatorTrap", EmulatorTrap))
+		EmulatorTrap = 0;
 
 	if (!m_Preferences.GetBoolValue("RTCEnabled", RTC_Enabled))
 		RTC_Enabled = false;
