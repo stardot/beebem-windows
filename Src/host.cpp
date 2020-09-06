@@ -48,6 +48,10 @@ Boston, MA  02110-1301, USA.
 // Warm Silence traps execute an RTS as part of the call, execution continues
 // at the previous JSR level.
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <shlobj.h>
@@ -71,13 +75,6 @@ FILE *handles[16] = {
 #define VDFS_HANDMIN 0xF0
 #define VDFS_HANDMAX 0xFF
 
-#ifdef WIN32
-#include <windows.h>
-WIN32_FIND_DATA infobuf; // Block to read file info
-SYSTEMTIME infotime;
-HANDLE hFind; // Handle to search directory
-#endif
-
 // Do an RTS (buglet, can't work out how to call PopWord)
 void rts() {
 	StackReg++;
@@ -85,7 +82,6 @@ void rts() {
 	StackReg++;
 	ProgramCounter=(ProgramCounter|((WholeRam[0x100+StackReg])<<8))+1;
 }
-
 
 // Read/write program memory, to/from files
 // ========================================
@@ -104,8 +100,8 @@ int host_error(int num, const char* string) {
 // Copy byte to BBC memory, return updated address
 
 int host_bytewr(int addr, char b) {
-	if(WholeRam[0x27a]==0) addr|=0xff000000; // No Tube
-	if((addr & 0xff000000) == 0xff000000) { // I/O memory
+	if (WholeRam[0x27a]==0) addr|=0xff000000; // No Tube
+	if ((addr & 0xff000000) == 0xff000000) { // I/O memory
 			WholeRam[(addr++) & 0xffff] = b; // Write byte to memory
 			// Should be WritePaged() ?
 	} else {
@@ -120,27 +116,25 @@ int host_bytewr(int addr, char b) {
 
 // Load to BBC memory from open file, return length actually loaded
 int host_memload(FILE *handle, int addr, int count) {
-	int num, byte, io;
-
 	if (WholeRam[0x27a]==0) addr|=0xFF000000; // No Tube
 	if ((addr & 0xFF000000) == 0xFF000000) { // I/O memory
-		io = addr & 0xFFFF0000;
+		int io = addr & 0xFFFF0000;
 		addr &= 0xFFFF;
 		if (io == 0xFFFE0000) { // Load to current screen memory
-			if (MachineType == Model::BPlus) { if (ShEn==1) io=0xFFFD0000; else io=0xFFFF0000; }
+			if (MachineType == Model::BPlus) { if (ShEn) io=0xFFFD0000; else io=0xFFFF0000; }
 			if (MachineType == Model::Master128) { if (WholeRam[0xD0] & 16) io=0xFFFD0000; else io=0xFFFF0000; }
 		}
 		if (io == 0xFFFD0000 && MachineType != Model::IntegraB) { // Load to shadow memory
 			if (count > 32768-addr) count=32768-addr;
-			if (MachineType == Model::BPlus) fread((void *)(ShadowRam+addr-0x3000), 1, count, handle);
-			if (MachineType == Model::Master128) fread((void *)(ShadowRAM+addr), 1, count, handle);
+			if (MachineType == Model::BPlus) fread(ShadowRam + addr - 0x3000, 1, count, handle);
+			if (MachineType == Model::Master128) fread(ShadowRAM + addr, 1, count, handle);
 			return count;
 		}
 		if (count > 65536 - addr) count = 65536 - addr; // Prevent wrapround
-		num=count;
+		int num = count;
 		while (num--) {
-			byte=fgetc(handle);
-			WritePaged(addr, (unsigned char) byte);
+			int byte = fgetc(handle);
+			WritePaged(addr, (unsigned char)byte);
 			addr++;
 		}
 	} else {
@@ -166,13 +160,13 @@ int host_memsave(FILE *handle, int addr, int count) {
 		int io = addr & 0xFFFF0000;
 		addr &= 0xFFFF;
 		if (io == 0xFFFE0000) { // Save current screen memory
-			if (MachineType == Model::BPlus) { if (ShEn == 1) io=0xFFFD0000; else io=0xFFFF0000; }
+			if (MachineType == Model::BPlus) { if (ShEn) io=0xFFFD0000; else io=0xFFFF0000; }
 			if (MachineType == Model::Master128) { if (WholeRam[0xD0] & 16) io=0xFFFD0000; else io=0xFFFF0000; }
 		}
 		if (io == 0xFFFD0000 && MachineType != Model::IntegraB) { // Save shadow memory
 			if (count > 32768-addr) count=32768-addr;
-			if (MachineType == Model::BPlus) fwrite((void *)(ShadowRam+addr-0x3000), 1, count, handle);
-			if (MachineType == Model::Master128) fwrite((void *)(ShadowRAM+addr), 1, count, handle);
+			if (MachineType == Model::BPlus) fwrite(ShadowRam + addr - 0x3000, 1, count, handle);
+			if (MachineType == Model::Master128) fwrite(ShadowRAM + addr, 1, count, handle);
 			return count;
 		}
 		if (count > 0xFF00 - addr) count = 0xFF00 - addr; // Prevent wrapround
@@ -268,7 +262,7 @@ int host_channel(int handle) {
 // don't have to attempt to translate full path symantics.
 
 int host_strwr(int addr, char *str, int max) {
-	if(WholeRam[0x27a]==0) addr|=0xff000000;	// No Tube
+	if (WholeRam[0x27a]==0) addr|=0xff000000;	// No Tube
 	while(*str && max>0) {
 		char b = *str++; max--;
 #if defined(WIN32) || defined(MSDOS) || defined(UNIX) || defined(MACOS)
@@ -402,25 +396,28 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
 	int obj, off, type;
 
 #ifdef WIN32
-	hFind = FindFirstFile(pathname, &infobuf);	// Look for object
-	if (hFind == INVALID_HANDLE_VALUE) return 0;	// Not found
+	WIN32_FIND_DATA infobuf;
+	HANDLE hFind = FindFirstFile(pathname, &infobuf); // Look for object
+	if (hFind == INVALID_HANDLE_VALUE) return 0; // Not found
 	FindClose(hFind);
-	*ld=0; *ex=0;					// Only update info if object exists
+	*ld=0; *ex=0; // Only update info if object exists
 	*ln=infobuf.nFileSizeLow;
-	if (infobuf.nFileSizeHigh) *ln=-1;		// If len>4G, use 4G
+	if (infobuf.nFileSizeHigh) *ln=-1; // If len>4G, use 4G
 
+	SYSTEMTIME infotime;
 	FileTimeToSystemTime(&infobuf.ftLastWriteTime, &infotime);
-	obj=infotime.wYear-1981; if (obj<0 || obj>127) obj=0;
-	*at=(infotime.wDay<<8) | (infotime.wMonth<<16) | ((obj & 0x0F)<<20) | ((obj & 0x70)<<9);
-	obj=infobuf.dwFileAttributes;
+	obj = infotime.wYear - 1981; if (obj < 0 || obj > 127) obj = 0;
+	*at = (infotime.wDay << 8) | (infotime.wMonth << 16) | ((obj & 0x0F) << 20) | ((obj & 0x70) << 9);
+	obj = infobuf.dwFileAttributes;
 	switch (obj & 0x11) {
-		case 0x00: *at|=0x33; break;		// file access WR/wr
-		case 0x01: *at|=0x19; break;		// file access LR/r
+		case 0x00: *at|=0x33; break; // file access WR/wr
+		case 0x01: *at|=0x19; break; // file access LR/r
 		case 0x10:
-		case 0x11: *at|=0x08; break;		// dir access DL/
+		case 0x11: *at|=0x08; break; // dir access DL/
 	}
-	obj=((obj & 16)>>4)+1;			// Object type
+	obj = ((obj & 16) >> 4) + 1; // Object type
 #endif
+
 #ifdef UNIX
 	if (stat(pathname, &statbuf)) return 0;	// Not found
 	*ld=0; *ex=0;					// Only update info if object exists
@@ -452,7 +449,7 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
 #endif
 
 	// Check for file header
-	if(handle=fopen(pathname, "r")) {
+	if (handle=fopen(pathname, "r")) {
 		memset(buffer, 0, 256);
 		fread(buffer, 1, 256, handle);
 		fclose(handle);
@@ -460,10 +457,10 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
 		off=buffer[7];
 		if (buffer[off+0]==0 && buffer[off+1]=='(' && buffer[off+2]=='C' && buffer[off+3]==')') {
 			type=buffer[6];
-			*ld=0xFFFF8000;				// Sideways ROM
-			if (type & 0x40) *ld=0x8000;		// Language ROM
-			if ((type & 0x20)==0x20) {		// Language relocation address
-				while (buffer[++off] && off<248);	// Step past copyright string
+			*ld=0xFFFF8000; // Sideways ROM
+			if (type & 0x40) *ld=0x8000; // Language ROM
+			if ((type & 0x20)==0x20) { // Language relocation address
+				while (buffer[++off] && off<248); // Step past copyright string
 				if (++off<249) *ld=(buffer[off+0]&0xFF) | ((buffer[off+1]&0xFF)<<8) | ((buffer[off+2]&0xFF)<<16) | ((buffer[off+3]&0xFF)<<24);
 			}
 			*ex=*ld;
@@ -472,20 +469,20 @@ int host_readinfo(char *pathname, int *ld, int *ex, int *ln, int *at) {
 
 	// Check for .inf file, if present overrides any file header
 	if (host_inf(pathname, buffer) == buffer) {
-		if(handle=fopen(buffer, "r")) {
+		if (handle=fopen(buffer, "r")) {
 			memset(buffer, 0, 256);
 			fread(buffer, 1, 256, handle);
 			fclose(handle);
 			handle = nullptr;
 			off=0;
-			while(buffer[off]>' ') off++;		// Step past filename
-			while(buffer[off]==' ') off++;		// Skip spaces
+			while(buffer[off]>' ') off++; // Step past filename
+			while(buffer[off]==' ') off++; // Skip spaces
 			if (buffer[off]>='0') {
-				sscanf(buffer+off, "%x", ld);		// Scan load address
-				while(buffer[off]>' ') off++;		// Step past load address
-				while(buffer[off]==' ') off++;		// Skip spaces
+				sscanf(buffer+off, "%x", ld); // Scan load address
+				while(buffer[off]>' ') off++; // Step past load address
+				while(buffer[off]==' ') off++; // Skip spaces
 				if (buffer[off]>='0') {
-					sscanf(buffer+off, "%x", ex);		// Scan exec address
+					sscanf(buffer+off, "%x", ex); // Scan exec address
 				}
 			}
 		}
@@ -503,37 +500,37 @@ void host_writeinfo(char *pathname, int ld, int ex, int ln, int at, int action) 
 	FILE *handle;
 
 	int FileType=host_readinfo(pathname, &Load, &Exec, &Length, &Attr);
-	if (action == 2) { ex=Exec; at=Attr; }		// Set load
-	if (action == 3) { ld=Load; at=Attr; }		// Set exec
-	if (action == 4) { ld=Load; ex=Exec; }		// Set attr
-	if ((Load==ld) && (Exec==ex) && ((Attr & 255)==(at & 255))) return;	// No change
+	if (action == 2) { ex=Exec; at=Attr; } // Set load
+	if (action == 3) { ld=Load; at=Attr; } // Set exec
+	if (action == 4) { ld=Load; ex=Exec; } // Set attr
+	if ((Load==ld) && (Exec==ex) && ((Attr & 255)==(at & 255))) return; // No change
 
 	// Only create a .inf file if actually needed because metadata changed
 	if (host_inf(pathname, buffer) == buffer) {
-		if(handle=fopen(buffer, "r+")) {
+		if (handle=fopen(buffer, "r+")) {
 			memset(buffer, 0, 256);
 			fread(buffer+64, 1, 256-64, handle);
-			buffer[255]=0;					// Ensure buffer terminated
+			buffer[255] = 0; // Ensure buffer terminated
 			inp=64; outp=0;
-			while(buffer[inp]>' ') {
-				buffer[outp++]=buffer[inp++];			// Copy filename
+			while(buffer[inp] > ' ') {
+				buffer[outp++] = buffer[inp++]; // Copy filename
 			}
 			while((buffer[inp]==' ') || (buffer[inp]==9)) inp++; // Step past SPC/TABs
-			while(buffer[inp]>' ') inp++;			   // Step past any load address
+			while(buffer[inp]>' ') inp++; // Step past any load address
 			while((buffer[inp]==' ') || (buffer[inp]==9)) inp++; // Step past SPC/TABs
-			while(buffer[inp]>' ') inp++;			   // Step past any exec address
+			while(buffer[inp]>' ') inp++; // Step past any exec address
 			while((buffer[inp]==' ') || (buffer[inp]==9)) inp++; // Step past SPC/TABs
-			while(buffer[inp]>' ') inp++;			   // Step past any access
+			while(buffer[inp]>' ') inp++; // Step past any access
 			while((buffer[inp]==' ') || (buffer[inp]==9)) inp++; // Step past SPC/TABs
 			// inp now points to any remaining trailing metadata
 		}
 		else {
-			if((handle=fopen(buffer, "w"))==nullptr) return;	// Couldn't create .inf file
+			if ((handle=fopen(buffer, "w"))==nullptr) return;	// Couldn't create .inf file
 			inp=0; outp=0;
 			while(pathname[inp]>' ') {
 				buffer[outp++]=pathname[inp]; // Copy filename to buffer
-																			// pathname[] is same size as buffer[]
-																			// so won't overflow
+				                              // pathname[] is same size as buffer[]
+				                              // so won't overflow
 #if defined(WIN32) || defined(MSDOS)
 				if (pathname[inp]=='\\') outp=0; // Reset to start of leafname
 #endif
@@ -691,27 +688,27 @@ int cmd_lookup(int *XYReg) {
 	int lptr;
 	char b;
 
-	if (ReadPaged(*XYReg)<'A') return 0;		// Doesn't start with letter
+	if (ReadPaged(*XYReg)<'A') return 0; // Doesn't start with letter
 	int num=0;
 	int cptr=0;
 	do {
 		num++;
 		lptr=*XYReg;
-		while (commands[cptr] != ':') cptr++;	// Step to start of next command
-		if (commands[cptr+1] == ':') return 0;	// End of command table
+		while (commands[cptr] != ':') cptr++; // Step to start of next command
+		if (commands[cptr+1] == ':') return 0; // End of command table
 		do {
 			if ((b=ReadPaged(lptr++)) >= '\x60') b&=0xDF;
 			cptr++;
-		} while (b!='.' && b==commands[cptr]);	// Loop until '.' or no match
-	} while (b!='.' && commands[cptr]!=':');	// Loop until '.' or end of command
+		} while (b != '.' && b == commands[cptr]); // Loop until '.' or no match
+	} while (b != '.' && commands[cptr] != ':'); // Loop until '.' or end of command
 
 	// ACCESS:          ACCESS:            ACCESS:        ACCESS:
 	//  cptr-^           cptr-^             cptr-^         cptr-^
 	// ACCESSfredjim    ACCESS fredjim     ACCESS<cr>     ACC.fredjim
 	//  lptr-^           lptr-^             lptr-^      lptr-^
 
-	if (b>='A' && b<='Z') return 0;		// Command not terminated
-	while(ReadPaged(lptr) == ' ') lptr++;		// Skip spaces
+	if (b>='A' && b<='Z') return 0; // Command not terminated
+	while(ReadPaged(lptr) == ' ') lptr++; // Skip spaces
 	*XYReg=lptr;
 	return num;
 }
@@ -833,7 +830,7 @@ int host_fsc(int dorts) {
 		// 255 - Boot
 	}
 
-	if(dorts) rts();
+	if (dorts) rts();
 	return 0;
 }
 
@@ -933,7 +930,7 @@ int host_file(int dorts) {
 	WritePaged(XYReg+16, (Attr >> 16) & 0xFF);
 	WritePaged(XYReg+17, (Attr >> 24) & 0xFF);
 
-	if(dorts) rts();
+	if (dorts) rts();
 	return 0;
 }
 
@@ -976,7 +973,7 @@ int host_args(int dorts) {
 				fseek(handle, Data, SEEK_SET);
 				fseek(handle, idx, SEEK_SET);
 				break;
-			case 5:				// =EOF
+			case 5: // =EOF
 				Data=feof(handle);
 				break;
 		}
@@ -1009,7 +1006,7 @@ int host_args(int dorts) {
 	WholeRam[XReg+2]=(Data >> 16) & 0xFF;
 	WholeRam[XReg+3]=(Data >> 24) & 0xFF;
 
-	if(dorts) rts();
+	if (dorts) rts();
 	return 0;
 }
 
@@ -1026,7 +1023,7 @@ int host_bget(int dorts) {
 	} else {
 		PSR &= 0xfe; // Clear carry flag
 	}
-	if(dorts) rts();
+	if (dorts) rts();
 	return 0;
 }
 
@@ -1037,7 +1034,7 @@ int host_bput(int dorts) {
 
 	if (idx<0) return -1;
 	fputc(Accumulator, handles[idx]);
-	if(dorts) rts();
+	if (dorts) rts();
 	return 0;
 }
 
@@ -1085,7 +1082,7 @@ int host_gbpb(int dorts) {
 				}
 			}
 		}
-		if(Accumulator==1 || Accumulator==3) { // Set PTR to supplied Offset before action
+		if (Accumulator==1 || Accumulator==3) { // Set PTR to supplied Offset before action
 			fseek(handle, Offset, SEEK_SET);
 		}
 	}
@@ -1112,7 +1109,9 @@ int host_gbpb(int dorts) {
 			idx =  Offset; // Offset into directory
 #ifdef WIN32
 			PSR |= 1; Channel=0; // Prepare result=no objects returned
-			hFind = FindFirstFile("*.*", &infobuf); // Initialise search
+
+			WIN32_FIND_DATA infobuf;
+			HANDLE hFind = FindFirstFile("*.*", &infobuf); // Initialise search
 			if (hFind != INVALID_HANDLE_VALUE) {
 				idx++;
 				res=-1;
@@ -1137,7 +1136,7 @@ int host_gbpb(int dorts) {
 						res = host_bytewr(res, 0); // Terminate with <null>
 						Channel = 1; // One object returned
 					} else {
-						if((res=strlen(infobuf.cFileName))>30) res=30; // Truncate to 30 characters
+						if ((res=strlen(infobuf.cFileName))>30) res=30; // Truncate to 30 characters
 						Addr=host_bytewr(Addr, res);
 						Addr=host_strwr(Addr, infobuf.cFileName, res); // Copy string to BBC memory
 						Count--;
@@ -1169,7 +1168,7 @@ int host_gbpb(int dorts) {
 	WritePaged(XYReg+11,(Offset >> 16) & 0xFF);
 	WritePaged(XYReg+12,(Offset >> 24) & 0xFF);
 
-	if(dorts) rts();
+	if (dorts) rts();
 	return 0;
 }
 
@@ -1178,12 +1177,12 @@ int host_gbpb(int dorts) {
 int host_find(int dorts) {
 	char pathname[256];
 	FILE *handle = nullptr;
-	int idx, lp;
+	int idx;
 
 	if (Accumulator) { // Open
 		idx = -1; // Look for free handle
-		for (lp=0; lp<=(VDFS_HANDMAX-VDFS_HANDMIN); lp++) {
-			if (handles[lp] == nullptr) idx=lp;
+		for (int lp = 0; lp <= VDFS_HANDMAX - VDFS_HANDMIN; lp++) {
+			if (handles[lp] == nullptr) idx = lp;
 		}
 		if (idx<0) return host_error(192, "Too many open files");
 		XYReg=XReg | (YReg<<8);
@@ -1240,25 +1239,25 @@ int host_quit(int dorts) {
 }
 
 // Opcode C3 - MOS_LANG
-int host_lang(int dorts) { if(dorts) rts(); return 0; }
+int host_lang(int dorts) { if (dorts) rts(); return 0; }
 
 // Opcode D3
-int host_D3(int dorts)   { if(dorts) rts(); return 0;  }
+int host_D3(int dorts)   { if (dorts) rts(); return 0;  }
 
 // Opcode E3
-int host_E3(int dorts)   { if(dorts) rts(); return 0;  }
+int host_E3(int dorts)   { if (dorts) rts(); return 0;  }
 
 // Opcode F3
-int host_F3(int dorts)   { if(dorts) rts(); return 0;  }
+int host_F3(int dorts)   { if (dorts) rts(); return 0;  }
 
 // Opcode 13 - MOS_BYTE
-int host_byte(int dorts) { if(dorts) rts(); return 0;  }
+int host_byte(int dorts) { if (dorts) rts(); return 0;  }
 
 // Opcode 23 - MOS_WORD
-int host_word(int dorts) { if(dorts) rts(); return 0;  }
+int host_word(int dorts) { if (dorts) rts(); return 0;  }
 
 // Opcode 33 - MOS_WRCH
-int host_wrch(int dorts) { if(dorts) rts(); return 0;  }
+int host_wrch(int dorts) { if (dorts) rts(); return 0;  }
 
 // Opcode 43 - MOS_RDCH
-int host_rdch(int dorts) { if(dorts) rts(); return 0;  }
+int host_rdch(int dorts) { if (dorts) rts(); return 0;  }
