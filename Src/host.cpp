@@ -758,19 +758,19 @@ int host_cmd(int FSCAction, int XYReg) {
 // Opcode 03 - Acorn MOS_CLI
 //           - WSS   MOS_EMT
 
-int host_emt(int dorts) {
+int host_emt(bool dorts) {
 	if (EmulatorTrap & 2) { // Warm Silence traps
 		switch (ReadPaged(ProgramCounter++)) {
-			case 0x00: return host_fsc(1); // OSFSC
-			case 0x01: return host_find(1); // OSFIND
-			case 0x02: return host_gbpb(1); // OSGBPB
-			case 0x03: return host_bput(1); // OSBPUT
-			case 0x04: return host_bget(1); // OSBGET
-			case 0x05: return host_args(1); // OSARGS
-			case 0x06: return host_file(1); // OSFILE
+			case 0x00: return host_fsc(true); // OSFSC
+			case 0x01: return host_find(true); // OSFIND
+			case 0x02: return host_gbpb(true); // OSGBPB
+			case 0x03: return host_bput(true); // OSBPUT
+			case 0x04: return host_bget(true); // OSBGET
+			case 0x05: return host_args(true); // OSARGS
+			case 0x06: return host_file(true); // OSFILE
 
-			case 0x40: return host_word(1); // OSWORD
-			case 0x41: return host_byte(1); // OSBYTE
+			case 0x40: return host_word(true); // OSWORD
+			case 0x41: return host_byte(true); // OSBYTE
 
 			case 0x80: break; // Read CMOS
 			case 0x81: break; // Write CMOS
@@ -785,7 +785,7 @@ int host_emt(int dorts) {
 			case 0xD5: break; // *BACK
 			case 0xD6: break; // *MOUNT
 
-			case 0xFF: return host_quit(1); // OSQUIT
+			case 0xFF: break; // OSQUIT
 		}
 
 		rts();
@@ -797,7 +797,7 @@ int host_emt(int dorts) {
 
 // Opcode 03,00 - MOS_FSC
 
-int host_fsc(int dorts) {
+int host_fsc(bool dorts) {
 	int idx;
 
 	switch (Accumulator) {
@@ -836,7 +836,7 @@ int host_fsc(int dorts) {
 
 // Opcode 53 - MOS_FILE
 
-int host_file(int dorts) {
+int host_file(bool dorts) {
 	int Load, Exec;
 	union { int Length; int Start; };
 	union { int Attr;   int End;   };
@@ -936,7 +936,7 @@ int host_file(int dorts) {
 
 // Opcode 63 - MOS_ARGS
 
-int host_args(int dorts) {
+int host_args(bool dorts) {
 	int idx;
 	FILE *handle = nullptr;
 
@@ -1012,7 +1012,7 @@ int host_args(int dorts) {
 
 // Opcode 73 - MOS_BGET
 
-int host_bget(int dorts) {
+int host_bget(bool dorts) {
 	int idx = host_channel(YReg);
 
 	if (idx<0) return -1;
@@ -1029,7 +1029,7 @@ int host_bget(int dorts) {
 
 // Opcode 83 - MOS_BPUT
 
-int host_bput(int dorts) {
+int host_bput(bool dorts) {
 	int idx = host_channel(YReg);
 
 	if (idx<0) return -1;
@@ -1040,7 +1040,7 @@ int host_bput(int dorts) {
 
 // Opcode 93 - MOS_GBPB
 
-int host_gbpb(int dorts) {
+int host_gbpb(bool dorts) {
 	int idx = 0, res = 0;
 	FILE *handle = nullptr;
 
@@ -1174,7 +1174,7 @@ int host_gbpb(int dorts) {
 
 // Opcode A3 - MOS_FIND
 
-int host_find(int dorts) {
+int host_find(bool dorts) {
 	char pathname[256];
 	FILE *handle = nullptr;
 	int idx;
@@ -1226,38 +1226,26 @@ int host_find(int dorts) {
 	return 0;
 }
 
-// Opcode B3 - MOS_QUIT
-
-int host_quit(int dorts) {
-
-#ifdef WIN32
-	ShowWindow(GETHWND, SW_MINIMIZE);
-#endif
-
-	if (dorts) rts();
-	return 0;
-}
-
 // Opcode C3 - MOS_LANG
-int host_lang(int dorts) { if (dorts) rts(); return 0; }
+int host_lang(bool dorts) { if (dorts) rts(); return 0; }
 
 // Opcode D3
-int host_D3(int dorts)   { if (dorts) rts(); return 0;  }
+int host_D3(bool dorts)   { if (dorts) rts(); return 0;  }
 
 // Opcode E3
-int host_E3(int dorts)   { if (dorts) rts(); return 0;  }
+int host_E3(bool dorts)   { if (dorts) rts(); return 0;  }
 
 // Opcode F3
-int host_F3(int dorts)   { if (dorts) rts(); return 0;  }
+int host_F3(bool dorts)   { if (dorts) rts(); return 0;  }
 
 // Opcode 13 - MOS_BYTE
-int host_byte(int dorts) { if (dorts) rts(); return 0;  }
+int host_byte(bool dorts) { if (dorts) rts(); return 0;  }
 
 // Opcode 23 - MOS_WORD
-int host_word(int dorts) { if (dorts) rts(); return 0;  }
+int host_word(bool dorts) { if (dorts) rts(); return 0;  }
 
 // Opcode 33 - MOS_WRCH
-int host_wrch(int dorts) { if (dorts) rts(); return 0;  }
+int host_wrch(bool dorts) { if (dorts) rts(); return 0;  }
 
 // Opcode 43 - MOS_RDCH
-int host_rdch(int dorts) { if (dorts) rts(); return 0;  }
+int host_rdch(bool dorts) { if (dorts) rts(); return 0;  }

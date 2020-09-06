@@ -6,22 +6,21 @@
 
 extern DWORD EmulatorTrap;
 
-int host_emt(int rts);  // &03
-int host_byte(int rts); // &13
-int host_word(int rts); // &23
-int host_wrch(int rts); // &33
-int host_rdch(int rts); // &43
-int host_file(int rts); // &53
-int host_args(int rts); // &63
-int host_bget(int rts); // &73
-int host_bput(int rts); // &83
-int host_gbpb(int rts); // &93
-int host_find(int rts); // &A3
-int host_quit(int rts); // &B3
-int host_lang(int rts); // &C3
-int host_D3(int rts);   // &D3
-int host_E3(int rts);   // &E3
-int host_F3(int rts);   // &F3
-int host_fsc(int dorts);
+int host_emt(bool dorts);  // &03
+int host_byte(bool dorts); // &13
+int host_word(bool dorts); // &23
+int host_wrch(bool dorts); // &33
+int host_rdch(bool dorts); // &43
+int host_file(bool dorts); // &53
+int host_args(bool dorts); // &63
+int host_bget(bool dorts); // &73
+int host_bput(bool dorts); // &83
+int host_gbpb(bool dorts); // &93
+int host_find(bool dorts); // &A3
+int host_lang(bool dorts); // &C3
+int host_D3(bool dorts);   // &D3
+int host_E3(bool dorts);   // &E3
+int host_F3(bool dorts);   // &F3
+int host_fsc(bool dorts);
 
 #endif

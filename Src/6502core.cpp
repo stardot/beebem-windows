@@ -1927,26 +1927,25 @@ void Exec6502Instruction(void) {
 		}
 
 		// JGH: Host interface opcodes
-		if ( ((CurrentInstruction & 0x0F) == 0x03)	// Opcode &x3
-			&& ((ProgramCounter & 0xC000)==0x8000)	// In sideways ROM/RAM
-			&& ((EmulatorTrap & 15)!=0) ) {		// EmulatorTrap enabled
+		if (   ((CurrentInstruction & 0x0F) == 0x03) // Opcode &x3
+			&& ((ProgramCounter & 0xC000) == 0x8000) // In sideways ROM/RAM
+			&& ((EmulatorTrap & 15) != 0) ) { // EmulatorTrap enabled
 			switch (CurrentInstruction) {
-				case 0x03: host_emt(0);  return; // MOS_CLI, WSS_EMT
-				case 0x13: host_byte(0); return; // MOS_BYTE
-				case 0x23: host_word(0); return; // MOS_WORD, WSS_RDCH
-				case 0x33: host_wrch(0); return; // MOS_WRCH
-				case 0x43: host_rdch(0); return; // MOS_RDCH
-				case 0x53: host_file(0); return; // MOS_FILE
-				case 0x63: host_args(0); return; // MOS_ARGS
-				case 0x73: host_bget(0); return; // MOS_BGET
-				case 0x83: host_bput(0); return; // MOS_BPUT
-				case 0x93: host_gbpb(0); return; // MOS_GBPB
-				case 0xa3: host_find(0); return; // MOS_FIND
-				case 0xb3: host_quit(0); return; // MOS_QUIT
-				case 0xc3: host_lang(0); return; // MOS_LANG
-				case 0xd3: host_D3(0);   return; // MOS_D
-				case 0xe3: host_E3(0);   return; // MOS_E
-				case 0xf3: host_F3(0);   return; // MOS_F
+				case 0x03: host_emt(false);  return; // MOS_CLI, WSS_EMT
+				case 0x13: host_byte(false); return; // MOS_BYTE
+				case 0x23: host_word(false); return; // MOS_WORD, WSS_RDCH
+				case 0x33: host_wrch(false); return; // MOS_WRCH
+				case 0x43: host_rdch(false); return; // MOS_RDCH
+				case 0x53: host_file(false); return; // MOS_FILE
+				case 0x63: host_args(false); return; // MOS_ARGS
+				case 0x73: host_bget(false); return; // MOS_BGET
+				case 0x83: host_bput(false); return; // MOS_BPUT
+				case 0x93: host_gbpb(false); return; // MOS_GBPB
+				case 0xa3: host_find(false); return; // MOS_FIND
+				case 0xc3: host_lang(false); return; // MOS_LANG
+				case 0xd3: host_D3(false);   return; // MOS_D
+				case 0xe3: host_E3(false);   return; // MOS_E
+				case 0xf3: host_F3(false);   return; // MOS_F
 			}
 		}
 
