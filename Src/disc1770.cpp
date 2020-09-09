@@ -108,12 +108,25 @@ bool InvertTR00; // Needed because the bloody stupid watford board inverts the i
 #define VERIFY_TIME (ONE_REV_TIME/MaxSects[CurrentDrive])
 #define BYTE_TIME (VERIFY_TIME/256)
 
-// 1770 registers
+// WD1770 registers
 const unsigned char WD1770_CONTROL_REGISTER = 0;
 const unsigned char WD1770_STATUS_REGISTER  = 0;
 const unsigned char WD1770_TRACK_REGISTER   = 1;
 const unsigned char WD1770_SECTOR_REGISTER  = 2;
 const unsigned char WD1770_DATA_REGISTER    = 3;
+
+// WD1770 commands
+const int WD1770_COMMAND_RESTORE         = 0x00; // Type I
+const int WD1770_COMMAND_SEEK            = 0x10; // Type I
+const int WD1770_COMMAND_STEP            = 0x20; // Type I
+const int WD1770_COMMAND_STEP_IN         = 0x40; // Type I
+const int WD1770_COMMAND_STEP_OUT        = 0x60; // Type I
+const int WD1770_COMMAND_READ_SECTOR     = 0x80; // Type II
+const int WD1770_COMMAND_WRITE_SECTOR    = 0xa0; // Type II
+const int WD1770_COMMAND_READ_ADDRESS    = 0xc0; // Type III
+const int WD1770_COMMAND_READ_TRACK      = 0xe0; // Type III
+const int WD1770_COMMAND_WRITE_TRACK     = 0xf0; // Type III
+const int WD1770_COMMAND_FORCE_INTERRUPT = 0xd0; // Type IV
 
 // Density selects on the disk image, and the actual chip
 
@@ -195,16 +208,34 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 		unsigned char ComBits = Value & 0xf0;
 		unsigned char HComBits = Value & 0xe0;
 
-		if (HComBits<0x80) {
+		if (HComBits < WD1770_COMMAND_READ_SECTOR) {
 			// Type 1 Command
 			SetStatus(0);
 			ResetStatus(3);
 			ResetStatus(4);
-			if (HComBits==0x40) { FDCommand=4; HeadDir = true; UpdateTrack = (Value & 16) != 0; } // Step In
-			if (HComBits==0x60) { FDCommand=5; HeadDir = false; UpdateTrack = (Value & 16) != 0; } // Step Out
-			if (HComBits==0x20) { FDCommand=3; UpdateTrack = (Value & 16) != 0; } // Step
-			if (ComBits==0x10) { FDCommand=2; } // Seek
-			if (ComBits==0) { FDCommand=1; } // Restore (Seek to Track 00)
+
+			if (HComBits == WD1770_COMMAND_STEP_IN) {
+				FDCommand = 4;
+				HeadDir = true;
+				UpdateTrack = (Value & 16) != 0;
+			}
+			else if (HComBits == WD1770_COMMAND_STEP_OUT) {
+				FDCommand = 5;
+				HeadDir = false;
+				UpdateTrack = (Value & 16) != 0;
+			}
+			else if (HComBits == WD1770_COMMAND_STEP) {
+				FDCommand = 3;
+				UpdateTrack = (Value & 16) != 0;
+			}
+			else if (ComBits == WD1770_COMMAND_SEEK) {
+				FDCommand = 2; // Seek
+			}
+			else if (ComBits == WD1770_COMMAND_RESTORE) {
+				// Restore (Seek to Track 00)
+				FDCommand=1;
+			}
+
 			if (FDCommand<6) {
 				ResetStatus(5); SetStatus(0);
 				// Now set some control bits for Type 1 Commands
@@ -230,35 +261,34 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 
 		if (*CDiscOpen && Sector>(RotSect+1))
 			SectorCycles=((ONE_REV_TIME)/MaxSects[CurrentDrive])*((RotSect+1)-Sector);
-		if (HComBits==0x80) { // Read Sector
-			RotSect=Sector;
+
+		if (HComBits == WD1770_COMMAND_READ_SECTOR) {
+			RotSect = Sector;
 			SetStatus(0);
-			FDCommand=8; MultiSect = (Value & 16) != 0;
+			FDCommand = 8;
+			MultiSect = (Value & 16) != 0;
 			ResetStatus(1);
 		}
-		if (HComBits==0xa0) { // Write Sector
-			RotSect=Sector;
+		else if (HComBits == WD1770_COMMAND_WRITE_SECTOR) {
+			RotSect = Sector;
 			SetStatus(0);
-			FDCommand=9; MultiSect = (Value & 16) != 0;
+			FDCommand = 9;
+			MultiSect = (Value & 16) != 0;
 		}
-
-//		if (ComBits==0xe0) { // Read Track		- not implemented yet
+//		else if (ComBits == WD1770_COMMAND_READ_TRACK) { // Not implemented yet
 //			Sector = 0;
 //			Track = Data;
 //			RotSect=Sector;
 //			FDCommand=20; MultiSect = true;
 //			ResetStatus(1);
 //		}
-
-		if (ComBits==0xf0) { // Write Track
+		else if (ComBits == WD1770_COMMAND_WRITE_TRACK) {
 			Sector = 0;
 			RotSect=Sector;
 			SetStatus(0);
 			FDCommand=21;
 		}
-
-		if (ComBits == 0xD0) {
-			// Force Interrupt - Type 4 Command
+		else if (ComBits == WD1770_COMMAND_FORCE_INTERRUPT) {
 			if (FDCommand!=0) {
 				ResetStatus(0);
 			} else {
@@ -274,8 +304,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 
 			if ((Value & 0xf)) NMIStatus|=1<<nmi_floppy;
 		}
-		if (ComBits==0xc0) {
-			// Read Address - Type 3 Command
+		else if (ComBits == WD1770_COMMAND_READ_ADDRESS) {
 			FDCommand=14;
 			SetStatus(0);
 			ByteCount=6;
@@ -286,6 +315,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 				SetStatus(7);
 			} else { LoadingCycles=SectorCycles; }
 		}
+
 		if ((FDCommand==8) || (FDCommand==9)) {
 			ResetStatus(1);
 			// Now set some control bits for Type 2 Commands
