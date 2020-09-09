@@ -101,12 +101,12 @@ bool InvertTR00; // Needed because the bloody stupid watford board inverts the i
 // A few defines here
 #define DENSITY_MISMATCH DiskDensity[CurrentDrive]!=SelectedDensity
 
-#define SPIN_DOWN_TIME 4000000 // 2secs
-#define SETTLE_TIME 30000 // 30 Milliseconds
-#define ONE_REV_TIME 500000 // 1 sixth of a second - used for density mismatch
-#define SPIN_UP_TIME (ONE_REV_TIME*3) // Two Seconds
-#define VERIFY_TIME (ONE_REV_TIME/MaxSects[CurrentDrive])
-#define BYTE_TIME (VERIFY_TIME/256)
+const int SPIN_DOWN_TIME = 4000000; // 2 seconds
+const int SETTLE_TIME    = 30000; // 30 milliseconds
+const int ONE_REV_TIME   = 500000; // 1 sixth of a second - used for density mismatch
+const int SPIN_UP_TIME   = ONE_REV_TIME * 3; // Two Seconds
+const int VERIFY_TIME    = ONE_REV_TIME / MaxSects[CurrentDrive];
+const int BYTE_TIME      = VERIFY_TIME / 256;
 
 // WD1770 registers
 const unsigned char WD1770_CONTROL_REGISTER = 0;
