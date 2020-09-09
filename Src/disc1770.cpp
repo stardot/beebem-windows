@@ -99,9 +99,6 @@ char SelectedDensity;
 unsigned char RotSect=0; // Sector counter to fool Opus DDOS on read address
 bool InvertTR00; // Needed because the bloody stupid watford board inverts the input.
 
-// A few defines here
-#define DENSITY_MISMATCH DiskDensity[CurrentDrive]!=SelectedDensity
-
 const int SPIN_DOWN_TIME = 4000000; // 2 seconds
 const int SETTLE_TIME    = 30000; // 30 milliseconds
 const int ONE_REV_TIME   = 500000; // 1 sixth of a second - used for density mismatch
@@ -116,6 +113,19 @@ const unsigned char WD1770_STATUS_REGISTER  = 0;
 const unsigned char WD1770_TRACK_REGISTER   = 1;
 const unsigned char WD1770_SECTOR_REGISTER  = 2;
 const unsigned char WD1770_DATA_REGISTER    = 3;
+
+// WD1770 status register bits
+const unsigned char WD1770_STATUS_MOTOR_ON         = 0x80;
+const unsigned char WD1770_STATUS_WRITE_PROTECT    = 0x40;
+const unsigned char WD1770_STATUS_SPIN_UP_COMPLETE = 0x20; // Type I commands
+const unsigned char WD1770_STATUS_DELETED_DATA     = 0x20; // Type II and III commands
+const unsigned char WD1770_STATUS_RECORD_NOT_FOUND = 0x10;
+const unsigned char WD1770_STATUS_CRC_ERROR        = 0x08;
+const unsigned char WD1770_STATUS_LOST_DATA        = 0x04;
+const unsigned char WD1770_STATUS_NOT_TRACK0       = 0x04; // Type I commands
+const unsigned char WD1770_STATUS_DATA_REQUEST     = 0x02;
+const unsigned char WD1770_STATUS_INDEX            = 0x02; // Type I commands
+const unsigned char WD1770_STATUS_BUSY             = 0x01;
 
 // WD1770 commands
 const int WD1770_COMMAND_RESTORE         = 0x00; // Type I
@@ -144,21 +154,13 @@ const int DRIVE_CONTROL_SELECT_DRIVE_1 = 0x02;
 const int DRIVE_CONTROL_SELECT_SIDE    = 0x10;
 const int DRIVE_CONTROL_SELECT_DENSITY = 0x20;
 
-static void SetStatus(unsigned char bit) {
-	Status|=1<<bit;
-}
-
-static void ResetStatus(unsigned char bit) {
-	Status&=~(1<<bit);
-}
+// Read 1770 Register. Note - NOT the FDC Control register at &FE24.
 
 unsigned char Read1770Register(unsigned char Register) {
 	if (!Disc1770Enabled)
 		return 0xFF;
 
-	// ResetStatus(5);
 	// fprintf(fdclog,"Read of Register %d - Status is %02X\n",Register,Status);
-	// Read 1770 Register. Note - NOT the FDC Control register @ &FE24
 
 	// Fool anything reading the Index pulse signal by alternating it on each read.
 	if ((FDCommand<6) && (FDCommand!=0)) Status^=2;
@@ -179,7 +181,7 @@ unsigned char Read1770Register(unsigned char Register) {
 	else if (Register == WD1770_DATA_REGISTER) {
 		if (FDCommand>5)
 		{
-			ResetStatus(1);
+			Status &= ~WD1770_STATUS_DATA_REQUEST;
 			NMIStatus &= ~(1<<nmi_floppy);
 		}
 
@@ -190,9 +192,16 @@ unsigned char Read1770Register(unsigned char Register) {
 }
 
 static void SetMotor(int Drive, bool State) {
-	if (Drive==0) LEDs.Disc0=State; else LEDs.Disc1=State;
-	if (State) SetStatus(7);
+	if (Drive == 0) {
+		LEDs.Disc0 = State;
+	}
+	else {
+		LEDs.Disc1 = State;
+	}
+
 	if (State) {
+		Status |= WD1770_STATUS_MOTOR_ON;
+
 		if (DiscDriveSoundEnabled && !HeadLoaded[Drive]) {
 			PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
 			PlaySoundSample(SAMPLE_HEAD_LOAD, false);
@@ -202,6 +211,7 @@ static void SetMotor(int Drive, bool State) {
 	else {
 		StopSoundSample(SAMPLE_DRIVE_MOTOR);
 		StopSoundSample(SAMPLE_HEAD_SEEK);
+
 		if (DiscDriveSoundEnabled && HeadLoaded[Drive]) {
 			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
 			HeadLoaded[Drive] = false;
@@ -225,9 +235,9 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 
 		if (HComBits < WD1770_COMMAND_READ_SECTOR) {
 			// Type 1 Command
-			SetStatus(0);
-			ResetStatus(3);
-			ResetStatus(4);
+			Status |= WD1770_STATUS_BUSY;
+			Status &= ~(WD1770_STATUS_RECORD_NOT_FOUND |
+			            WD1770_STATUS_CRC_ERROR);
 
 			if (HComBits == WD1770_COMMAND_STEP_IN) {
 				FDCommand = 4;
@@ -252,28 +262,33 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 			}
 
 			if (FDCommand<6) {
-				ResetStatus(5); SetStatus(0);
+				Status &= ~WD1770_STATUS_SPIN_UP_COMPLETE;
+				Status |= WD1770_STATUS_BUSY;
+
 				// Now set some control bits for Type 1 Commands
 				SpinUp = (Value & WD1770_CMD_FLAGS_DISABLE_SPIN_UP) != 0;
 				Verify = (Value & WD1770_CMD_FLAGS_VERIFY) != 0;
 				StepRate = StepRates[Value & WD1770_CMD_FLAGS_STEP_RATE]; // Make sure the step rate time is added to the delay time.
 
-				if (!(Status & 128)) {
+				if (!(Status & WD1770_STATUS_MOTOR_ON)) {
 					NextFDCommand = FDCommand;
 					FDCommand = 11; /* Spin-Up delay */
 					LoadingCycles = SPIN_UP_TIME;
 					//if (!SpinUp) LoadingCycles=ONE_REV_TIME;
 					SetMotor(CurrentDrive, true);
-					SetStatus(7);
 				}
 				else {
 					LoadingCycles = ONE_REV_TIME;
 				}
 
-				if (DENSITY_MISMATCH) {
+				if (DiskDensity[CurrentDrive] != SelectedDensity) {
+					// Density mismatch
 					FDCommand=13; // "Confusion spin"
-					SetStatus(7); SetMotor(CurrentDrive, true);
-					ResetStatus(5); ResetStatus(4); ResetStatus(3); SetStatus(0);
+					SetMotor(CurrentDrive, true);
+					Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+					            WD1770_STATUS_RECORD_NOT_FOUND |
+					            WD1770_STATUS_CRC_ERROR);
+					Status |= WD1770_STATUS_BUSY;
 					LoadingCycles=ONE_REV_TIME; // Make it about 4 milliseconds
 				}
 			}
@@ -286,14 +301,14 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 
 		if (HComBits == WD1770_COMMAND_READ_SECTOR) {
 			RotSect = Sector;
-			SetStatus(0);
+			Status |= WD1770_STATUS_BUSY;
 			FDCommand = 8;
 			MultiSect = (Value & WD1770_CMD_FLAGS_MULTIPLE_SECTORS) != 0;
-			ResetStatus(1);
+			Status &= ~WD1770_STATUS_DATA_REQUEST;
 		}
 		else if (HComBits == WD1770_COMMAND_WRITE_SECTOR) {
 			RotSect = Sector;
-			SetStatus(0);
+			Status |= WD1770_STATUS_BUSY;
 			FDCommand = 9;
 			MultiSect = (Value & WD1770_CMD_FLAGS_MULTIPLE_SECTORS) != 0;
 		}
@@ -301,20 +316,26 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 //			Sector = 0;
 //			Track = Data;
 //			RotSect=Sector;
-//			FDCommand=20; MultiSect = true;
-//			ResetStatus(1);
+//			FDCommand=20;
+//			MultiSect = true;
+//			Status &= ~WD1770_STATUS_DATA_REQUEST;
 //		}
 		else if (ComBits == WD1770_COMMAND_WRITE_TRACK) {
 			Sector = 0;
 			RotSect=Sector;
-			SetStatus(0);
+			Status |= WD1770_STATUS_BUSY;
 			FDCommand=21;
 		}
 		else if (ComBits == WD1770_COMMAND_FORCE_INTERRUPT) {
 			if (FDCommand!=0) {
-				ResetStatus(0);
-			} else {
-				ResetStatus(0); ResetStatus(1); ResetStatus(3); ResetStatus(4); ResetStatus(5);
+				Status &= ~WD1770_STATUS_BUSY;
+			}
+			else {
+				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+				            WD1770_STATUS_RECORD_NOT_FOUND |
+				            WD1770_STATUS_CRC_ERROR |
+				            WD1770_STATUS_DATA_REQUEST |
+				            WD1770_STATUS_BUSY);
 			}
 			FDCommand=12;
 			LoadingCycles=4000000;
@@ -328,13 +349,12 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 		}
 		else if (ComBits == WD1770_COMMAND_READ_ADDRESS) {
 			FDCommand=14;
-			SetStatus(0);
+			Status |= WD1770_STATUS_BUSY;
 			ByteCount=6;
 			if (!(Status & 128)) {
 				NextFDCommand=FDCommand; FDCommand=11; /* Spin-Up delay */ LoadingCycles=SPIN_UP_TIME;
 				//if (!SpinUp) LoadingCycles=ONE_REV_TIME; // Make it two seconds instead of one
 				SetMotor(CurrentDrive, true);
-				SetStatus(7);
 			}
 			else {
 				LoadingCycles = SectorCycles;
@@ -342,17 +362,17 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 		}
 
 		if ((FDCommand==8) || (FDCommand==9)) {
-			ResetStatus(1);
+			Status &= ~WD1770_STATUS_DATA_REQUEST;
 			// Now set some control bits for Type 2 Commands
 			SpinUp = (Value & WD1770_CMD_FLAGS_DISABLE_SPIN_UP);
 			Verify = (Value & WD1770_CMD_FLAGS_VERIFY);
-			if (!(Status & 128)) {
+
+			if (!(Status & WD1770_STATUS_MOTOR_ON)) {
 				NextFDCommand = FDCommand;
 				FDCommand = 11; // Spin-Up delay
 				LoadingCycles = SPIN_UP_TIME;
 				//if (SpinUp) LoadingCycles=ONE_REV_TIME;
 				SetMotor(CurrentDrive, true);
-				SetStatus(7);
 			}
 			else {
 				LoadingCycles = SectorCycles;
@@ -360,10 +380,14 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 
 			LoadingCycles+=BYTE_TIME;
 
-			if (DENSITY_MISMATCH) {
+			if (DiskDensity[CurrentDrive] != SelectedDensity) {
+				// Density mismatch
 				FDCommand=13; // "Confusion spin"
-				SetStatus(7); SetMotor(CurrentDrive, true);
-				ResetStatus(5); ResetStatus(4); ResetStatus(3); SetStatus(0);
+				SetMotor(CurrentDrive, true);
+				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+				            WD1770_STATUS_RECORD_NOT_FOUND |
+				            WD1770_STATUS_CRC_ERROR);
+				Status |= WD1770_STATUS_BUSY;
 				LoadingCycles=ONE_REV_TIME;
 			}
 		}
@@ -382,7 +406,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 		Data = Value;
 
 		if (FDCommand > 5) {
-			ResetStatus(1);
+			Status &= ~WD1770_STATUS_DATA_REQUEST;
 			NMIStatus &= ~(1<<nmi_floppy);
 		}
 	}
@@ -398,7 +422,9 @@ void Poll1770(int NCycles) {
 			if (SpinDown[d]<=0) {
 				SetMotor(d, false);
 				LightsOn[d] = false;
-				if (!LightsOn[0] && !LightsOn[1]) ResetStatus(7);
+				if (!LightsOn[0] && !LightsOn[1]) {
+					Status &= ~WD1770_STATUS_MOTOR_ON;
+				}
 			}
 		}
 	}
@@ -406,8 +432,8 @@ void Poll1770(int NCycles) {
 	if ((Status & 1) && !NMILock) {
 		if (FDCommand < 6 && *CDiscOpen && (DscType[CurrentDrive] == DiscType::SSD && CurrentHead[CurrentDrive] == 1)) {
 			// Single sided disk, disc not ready
-			ResetStatus(0);
-			SetStatus(4);
+			Status &= ~WD1770_STATUS_BUSY;
+			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
 			NMIStatus|=1<<nmi_floppy;
 			FDCommand=12;
 			return;
@@ -417,7 +443,9 @@ void Poll1770(int NCycles) {
 			int TracksPassed=0; // Holds the number of tracks passed over by the head during seek
 			unsigned char OldTrack=(Track >= 80 ? 0 : Track);
 			// Seek type commands
-			ResetStatus(4); ResetStatus(3);
+			Status &= ~(WD1770_STATUS_RECORD_NOT_FOUND |
+			            WD1770_STATUS_CRC_ERROR);
+
 			if (FDCommand == 1) {
 				// Restore
 				fseek(CurrentDisc, DiscStrt[CurrentDrive], SEEK_SET);
@@ -476,17 +504,30 @@ void Poll1770(int NCycles) {
 				LoadingCycles=SPIN_DOWN_TIME;
 				FDCommand=12;
 				NMIStatus|=1<<nmi_floppy;
-				if (InvertTR00) { if (Track!=0) ResetStatus(2); else SetStatus(2); }
-				else { if (Track==0) ResetStatus(2); else SetStatus(2); }
-				ResetStatus(5); ResetStatus(0);
+
+				bool Track0 = (Track == 0);
+
+				if (InvertTR00) {
+					Track0 = !Track0;
+				}
+
+				if (Track0) {
+					Status &= ~WD1770_STATUS_NOT_TRACK0;
+				}
+				else {
+					Status |= WD1770_STATUS_NOT_TRACK0;
+				}
+
+				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+				            WD1770_STATUS_BUSY);
 			}
 			return;
 		}
 
 		if (FDCommand<6 && !*CDiscOpen) {
-			// Disc not ready, return seek error;
-			ResetStatus(0);
-			SetStatus(4);
+			// Disc not ready, return seek error.
+			Status &= ~WD1770_STATUS_BUSY;
+			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
 			NMIStatus|=1<<nmi_floppy; FDCommand=12;
 			return;
 		}
@@ -498,9 +539,13 @@ void Poll1770(int NCycles) {
 				return;
 			}
 
-			if ((Status & 2)==0) {
+			if (!(Status & WD1770_STATUS_DATA_REQUEST)) {
 				NextFDCommand=0;
-				ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2);
+				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+				            WD1770_STATUS_RECORD_NOT_FOUND |
+				            WD1770_STATUS_CRC_ERROR |
+				            WD1770_STATUS_LOST_DATA);
+
 				ByteCount--;
 				// If reading a single sector, and ByteCount== :-
 				// 256..1: read + DRQ (256x)
@@ -509,9 +554,8 @@ void Poll1770(int NCycles) {
 				// 256..2: read + DRQ (255x)
 				//      1: read + DRQ + rotate disc + go back to 256
 				if (ByteCount > 0 && !feof(CurrentDisc)) {
-					// DRQ
 					Data = fgetc(CurrentDisc);
-					SetStatus(1);
+					Status |= WD1770_STATUS_DATA_REQUEST;
 					NMIStatus |= 1 << nmi_floppy;
 				}
 
@@ -525,11 +569,11 @@ void Poll1770(int NCycles) {
 
 				if (ByteCount == 0 && !MultiSect) {
 					// End of sector
-					ResetStatus(0);
+					Status &= ~(WD1770_STATUS_DATA_REQUEST |
+					            WD1770_STATUS_BUSY);
 					NMIStatus |= 1 << nmi_floppy;
 					fseek(CurrentDisc, HeadPos[CurrentDrive], SEEK_SET);
 					FDCommand = 10;
-					ResetStatus(1);
 				}
 
 				if (ByteCount == 1 && MultiSect) {
@@ -561,10 +605,14 @@ void Poll1770(int NCycles) {
 				return;
 			}
 
-			if ((Status & 2)==0) {
+			if (!(Status & WD1770_STATUS_DATA_REQUEST)) {
 				// DRQ already issued and answered
 				NextFDCommand=0;
-				ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2);
+				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+				            WD1770_STATUS_RECORD_NOT_FOUND |
+				            WD1770_STATUS_CRC_ERROR |
+				            WD1770_STATUS_LOST_DATA);
+
 				ByteCount--;
 				// If writing a single sector, and ByteCount== :-
 				// 256..2: write + next DRQ (255x)
@@ -575,8 +623,7 @@ void Poll1770(int NCycles) {
 				fputc(Data,CurrentDisc);
 
 				if (ByteCount > 1 || MultiSect) {
-					// DRQ
-					SetStatus(1);
+					Status |= WD1770_STATUS_DATA_REQUEST;
 					NMIStatus |= 1 << nmi_floppy;
 				}
 
@@ -589,11 +636,11 @@ void Poll1770(int NCycles) {
 				}
 
 				if (ByteCount <= 1 && !MultiSect) {
-					ResetStatus(0);
+					Status &= ~(WD1770_STATUS_DATA_REQUEST |
+					            WD1770_STATUS_BUSY);
 					NMIStatus |= 1 << nmi_floppy;
 					fseek(CurrentDisc, HeadPos[CurrentDrive], SEEK_SET);
 					FDCommand = 10;
-					ResetStatus(1);
 				}
 
 				if (ByteCount <= 1 && MultiSect) {
@@ -613,27 +660,36 @@ void Poll1770(int NCycles) {
 		}
 
 		if (FDCommand == 7 && !DWriteable[CurrentDrive]) {
-			// ResetStatus(0);
-			SetStatus(6);
+			// Status &= ~WD1770_STATUS_BUSY;
+			Status |= WD1770_STATUS_WRITE_PROTECT;
 			NMIStatus|=1<<nmi_floppy;
 			FDCommand=0;
 		}
 
 		if (FDCommand >= 8 && *CDiscOpen && FDCommand <= 10) { // Read/Write Prepare
-			SetStatus(0);
-			ResetStatus(5); ResetStatus(6); ResetStatus(2);
+			Status |= WD1770_STATUS_BUSY;
+			Status &= ~(WD1770_STATUS_WRITE_PROTECT |
+			            WD1770_STATUS_SPIN_UP_COMPLETE |
+			            WD1770_STATUS_LOST_DATA);
 			ByteCount=SecSize[CurrentDrive]+1; DataPos=ftell(CurrentDisc); HeadPos[CurrentDrive]=DataPos;
 			LoadingCycles=45;
 			fseek(CurrentDisc,DiscStrt[CurrentDrive]+(DiscStep[CurrentDrive]*Track)+(Sector*SecSize[CurrentDrive]),SEEK_SET);
 		}
+
 		if (FDCommand >= 8 && !*CDiscOpen && FDCommand <= 9) {
-			ResetStatus(0);
-			SetStatus(4);
+			Status &= ~WD1770_STATUS_BUSY;
+			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
 			NMIStatus |= 1 << nmi_floppy;
 			FDCommand = 0;
 		}
+
 		if (FDCommand == 8 && *CDiscOpen) FDCommand = 6;
-		if (FDCommand == 9 && *CDiscOpen) { FDCommand = 7; SetStatus(1); NMIStatus |= 1 << nmi_floppy; }
+
+		if (FDCommand == 9 && *CDiscOpen) {
+			FDCommand = 7;
+			Status |= WD1770_STATUS_DATA_REQUEST;
+			NMIStatus |= 1 << nmi_floppy;
+		}
 	}
 
 // Not implemented Read Track yet, perhaps don't really need it
@@ -658,15 +714,17 @@ void Poll1770(int NCycles) {
 
 	if (FDCommand == 23 && DWriteable[CurrentDrive]) { // Write Track
 		LoadingCycles-=NCycles; if (LoadingCycles>0) return;
-		if ((Status & 2)==0) {
+		if (!(Status & WD1770_STATUS_DATA_REQUEST)) {
 
 			// if (ByteCount == 0)
 			//	WriteLog("Formatting Track %d, Sector %d\n", Track, Sector);
 
 			NextFDCommand = 0;
-			ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2);
-
-			SetStatus(1);
+			Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+			            WD1770_STATUS_RECORD_NOT_FOUND |
+			            WD1770_STATUS_CRC_ERROR |
+			            WD1770_STATUS_LOST_DATA);
+			Status |= WD1770_STATUS_DATA_REQUEST;
 			NMIStatus|=1<<nmi_floppy; // DRQ
 
 			switch (FormatState)
@@ -740,11 +798,11 @@ void Poll1770(int NCycles) {
 
 						if (Sector>MaxSects[CurrentDrive])
 						{
-							ResetStatus(0);
+							Status &= ~(WD1770_STATUS_DATA_REQUEST |
+							            WD1770_STATUS_BUSY);
 							NMIStatus|=1<<nmi_floppy;
 							fseek(CurrentDisc,HeadPos[CurrentDrive],SEEK_SET);
 							FDCommand=10;
-							ResetStatus(1);
 						}
 					}
 					break;
@@ -761,14 +819,16 @@ void Poll1770(int NCycles) {
 
 	if (FDCommand == 23 && !DWriteable[CurrentDrive]) {
 		// WriteLog(tlog, "Disc Write Protected\n");
-		SetStatus(6);
+		Status |= WD1770_STATUS_WRITE_PROTECT;
 		NMIStatus|=1<<nmi_floppy;
 		FDCommand = 0;
 	}
 
 	if (FDCommand >= 20 && *CDiscOpen && FDCommand <= 21) { // Read/Write Track Prepare
-		SetStatus(0);
-		ResetStatus(5); ResetStatus(6); ResetStatus(2);
+		Status |= WD1770_STATUS_BUSY;
+		Status &= ~(WD1770_STATUS_WRITE_PROTECT |
+		            WD1770_STATUS_SPIN_UP_COMPLETE |
+		            WD1770_STATUS_LOST_DATA);
 		LoadingCycles=45;
 		fseek(CurrentDisc,DiscStrt[CurrentDrive]+(DiscStep[CurrentDrive]*Track),SEEK_SET);
 		Sector = 0;
@@ -778,8 +838,8 @@ void Poll1770(int NCycles) {
 
 	if (FDCommand >= 20 && !*CDiscOpen && FDCommand <= 21) {
 		// WriteLog("ResetStatus(0) Here 8\n");
-		ResetStatus(0);
-		SetStatus(4);
+		Status &= ~WD1770_STATUS_BUSY;
+		Status |= WD1770_STATUS_RECORD_NOT_FOUND;
 		NMIStatus |= 1 << nmi_floppy;
 		FDCommand = 0;
 	}
@@ -791,21 +851,33 @@ void Poll1770(int NCycles) {
 	if (FDCommand == 21 && *CDiscOpen) {
 		FDCommand = 23;
 		FormatState = 0;
-		SetStatus(1);
+		Status |= WD1770_STATUS_DATA_REQUEST;
 		NMIStatus |= 1 << nmi_floppy;
 	}
 
 	if (FDCommand==10) {
-		ResetStatus(0);
-		ResetStatus(4);
-		ResetStatus(5);
-		ResetStatus(6);
+		Status &= ~(WD1770_STATUS_WRITE_PROTECT |
+		            WD1770_STATUS_SPIN_UP_COMPLETE |
+		            WD1770_STATUS_RECORD_NOT_FOUND |
+		            WD1770_STATUS_BUSY);
+
 		if (NextFDCommand==255) {
 			// Error during access
-			SetStatus(4);
-			ResetStatus(3);
-			if ((Track==0) && (InvertTR00)) SetStatus(2); else ResetStatus(2);
-			if ((Track==0) && (!InvertTR00)) ResetStatus(2); else SetStatus(2);
+			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
+			Status &= ~WD1770_STATUS_CRC_ERROR;
+
+			bool Track0 = (Track == 0);
+
+			if (InvertTR00) {
+				Track0 = !Track0;
+			}
+
+			if (Track0) {
+				Status &= ~WD1770_STATUS_NOT_TRACK0;
+			}
+			else {
+				Status |= WD1770_STATUS_NOT_TRACK0;
+			}
 		}
 		NMIStatus|=1<<nmi_floppy; FDCommand=12; LoadingCycles=SPIN_DOWN_TIME; // Spin-down delay
 		return;
@@ -816,7 +888,12 @@ void Poll1770(int NCycles) {
 		LoadingCycles-=NCycles;
 		if (LoadingCycles<=0) {
 			FDCommand=NextFDCommand;
-			if (NextFDCommand<6) SetStatus(5); else ResetStatus(5);
+			if (NextFDCommand < 6) {
+				Status |= WD1770_STATUS_SPIN_UP_COMPLETE;
+			}
+			else {
+				Status &= ~WD1770_STATUS_SPIN_UP_COMPLETE;
+			}
 		}
 		return;
 	}
@@ -827,14 +904,19 @@ void Poll1770(int NCycles) {
 		LightsOn[CurrentDrive] = true;
 		SpinDown[CurrentDrive]=SPIN_DOWN_TIME;
 		RotSect=0; FDCommand=0;
-		ResetStatus(0);
+		Status &= ~WD1770_STATUS_BUSY;
 		return;
 	}
 
 	if (FDCommand==13) {
 		// Confusion spin
 		LoadingCycles-=NCycles;
-		if ((LoadingCycles<2000) && (!(Status & 32))) SetStatus(5); // Complete spin-up, but continuing whirring
+
+		if (LoadingCycles < 2000 && !(Status & WD1770_STATUS_SPIN_UP_COMPLETE)) {
+			// Complete spin-up, but continuing whirring
+			Status |= WD1770_STATUS_SPIN_UP_COMPLETE;
+		}
+
 		if (LoadingCycles<=0) FDCommand=10; NextFDCommand=255; // Go to spin down, but report error.
 		SpinDown[CurrentDrive]=SPIN_DOWN_TIME;
 		LightsOn[CurrentDrive] = true;
@@ -848,9 +930,12 @@ void Poll1770(int NCycles) {
 			return;
 		}
 
-		if ((Status & 2)==0) {
+		if (!(Status & WD1770_STATUS_DATA_REQUEST)) {
 			NextFDCommand=0;
-			ResetStatus(4); ResetStatus(5); ResetStatus(3); ResetStatus(2);
+			Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+			            WD1770_STATUS_RECORD_NOT_FOUND |
+			            WD1770_STATUS_CRC_ERROR |
+			            WD1770_STATUS_DATA_REQUEST);
 
 			if (ByteCount==6) Data=Track;
 			if (ByteCount==5) Data=CurrentHead[CurrentDrive];
@@ -867,14 +952,14 @@ void Poll1770(int NCycles) {
 
 			if (ByteCount==0) {
 				FDCommand=0;
-				ResetStatus(0);
+				Status &= ~WD1770_STATUS_BUSY;
 				RotSect++;
 				if (RotSect==(MaxSects[CurrentDrive]+1)) RotSect=0;
 				FDCommand=10;
 				return;
 			}
 
-			SetStatus(1);
+			Status |= WD1770_STATUS_DATA_REQUEST;
 			ByteCount--;
 			NMIStatus|=1<<nmi_floppy;
 			LoadingCycles=BYTE_TIME; // Slow down the read a bit :)
