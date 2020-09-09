@@ -13,8 +13,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -29,18 +29,19 @@ Boston, MA  02110-1301, USA.
 
 extern bool DWriteable[2]; // Write Protect
 extern bool Disc1770Enabled;
-unsigned char Read1770Register(unsigned char Register1770);
-void Write1770Register(unsigned char Register1770, unsigned char Value);
+extern bool InvertTR00;
+
+unsigned char Read1770Register(unsigned char Register);
+void Write1770Register(unsigned char Register, unsigned char Value);
 void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HMENU dmenu);
 void WriteFDCControlReg(unsigned char Value);
-unsigned char ReadFDCControlReg(void);
-void Reset1770(void);
+unsigned char ReadFDCControlReg();
+void Reset1770();
 void Poll1770(int NCycles);
 void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU dmenu);
 void Close1770Disc(int Drive);
 void Save1770UEF(FILE *SUEF);
 void Load1770UEF(FILE *SUEF,int Version);
 void Get1770DiscInfo(int DscDrive, DiscType *Type, char *pFileName);
-extern bool InvertTR00;
 
 #endif

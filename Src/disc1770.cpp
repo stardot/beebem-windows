@@ -137,6 +137,13 @@ const int WD1770_CMD_FLAGS_UPDATE_TRACK_REGISTER = 0x10; // Type I commands
 const int WD1770_CMD_FLAGS_VERIFY                = 0x04; // Type I commands
 const int WD1770_CMD_FLAGS_STEP_RATE             = 0x03; // Type I commands
 
+// FDC control register
+// See Hardware/Acorn1770/Acorn.cpp
+const int DRIVE_CONTROL_SELECT_DRIVE_0 = 0x01;
+const int DRIVE_CONTROL_SELECT_DRIVE_1 = 0x02;
+const int DRIVE_CONTROL_SELECT_SIDE    = 0x10;
+const int DRIVE_CONTROL_SELECT_DENSITY = 0x20;
+
 static void SetStatus(unsigned char bit) {
 	Status|=1<<bit;
 }
@@ -999,31 +1006,53 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HME
 	mainWin->SetImageName(DscFileName, DscDrive, Type);
 }
 
+// This function writes the control register at &FE24.
+
 void WriteFDCControlReg(unsigned char Value) {
-	// This function writes the control register @ &FE24
 	//fprintf(fdclog,"CTRL REG write of %02X\n",Value);
-	ExtControl=Value;
-	if ((ExtControl & 1)==1) { CurrentDisc=Disc0; CurrentDrive=0; CDiscOpen=&Disc0Open; }
-	if ((ExtControl & 2)==2) { CurrentDisc=Disc1; CurrentDrive=1; CDiscOpen=&Disc1Open; }
-	if ((ExtControl & 16)==16 && CurrentHead[CurrentDrive]==0) {
-		CurrentHead[CurrentDrive]=1;
-		if (*CDiscOpen) fseek(CurrentDisc,TrkLen[CurrentDrive],SEEK_CUR);
-		DiscStrt[CurrentDrive]=DefStart[CurrentDrive];
+
+	ExtControl = Value;
+
+	if (ExtControl & DRIVE_CONTROL_SELECT_DRIVE_0) {
+		CurrentDisc = Disc0;
+		CurrentDrive = 0;
+		CDiscOpen = &Disc0Open;
 	}
-	if ((ExtControl & 16)!=16 && CurrentHead[CurrentDrive]==1) {
-		CurrentHead[CurrentDrive]=0;
-		 if (*CDiscOpen) fseek(CurrentDisc,0-TrkLen[CurrentDrive],SEEK_CUR);
-		DiscStrt[CurrentDrive]=0;
+
+	if (ExtControl & DRIVE_CONTROL_SELECT_DRIVE_1) {
+		CurrentDisc = Disc1;
+		CurrentDrive = 1;
+		CDiscOpen = &Disc1Open;
 	}
-	SelectedDensity=(Value & 32)>>5; // Density Select - 0 = Double 1 = Single
-	// SelectedDensity=1;
+
+	if ((ExtControl & DRIVE_CONTROL_SELECT_SIDE) && CurrentHead[CurrentDrive] == 0) {
+		// Select side 1
+		CurrentHead[CurrentDrive] = 1;
+		if (*CDiscOpen) {
+			fseek(CurrentDisc, TrkLen[CurrentDrive], SEEK_CUR);
+		}
+		DiscStrt[CurrentDrive] = DefStart[CurrentDrive];
+	}
+
+	if (!(ExtControl & DRIVE_CONTROL_SELECT_SIDE) && CurrentHead[CurrentDrive] == 1) {
+		// Select side 0
+		CurrentHead[CurrentDrive] = 0;
+		if (*CDiscOpen) {
+			fseek(CurrentDisc, 0 - TrkLen[CurrentDrive], SEEK_CUR);
+		}
+		DiscStrt[CurrentDrive] = 0;
+	}
+
+	// Density Select: 0 = Double, 1 = Single
+	SelectedDensity = (Value & DRIVE_CONTROL_SELECT_DENSITY) != 0;
+	// SelectedDensity = 1;
 }
 
-unsigned char ReadFDCControlReg(void) {
-	return(ExtControl);
+unsigned char ReadFDCControlReg() {
+	return ExtControl;
 }
 
-void Reset1770(void) {
+void Reset1770() {
 	//fdclog=fopen("/fd.log","wb");
 	CurrentDisc=Disc0;
 	CurrentDrive=0;
