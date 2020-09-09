@@ -108,6 +108,13 @@ bool InvertTR00; // Needed because the bloody stupid watford board inverts the i
 #define VERIFY_TIME (ONE_REV_TIME/MaxSects[CurrentDrive])
 #define BYTE_TIME (VERIFY_TIME/256)
 
+// 1770 registers
+const unsigned char WD1770_CONTROL_REGISTER = 0;
+const unsigned char WD1770_STATUS_REGISTER  = 0;
+const unsigned char WD1770_TRACK_REGISTER   = 1;
+const unsigned char WD1770_SECTOR_REGISTER  = 2;
+const unsigned char WD1770_DATA_REGISTER    = 3;
+
 // Density selects on the disk image, and the actual chip
 
 static void SetStatus(unsigned char bit) {
@@ -129,29 +136,29 @@ unsigned char Read1770Register(unsigned char Register) {
 	// Fool anything reading the Index pulse signal by alternating it on each read.
 	if ((FDCommand<6) && (FDCommand!=0)) Status^=2;
 
-	if (Register==0) {
+	if (Register == WD1770_STATUS_REGISTER) {
 		NMIStatus &= ~(1<<nmi_floppy);
-		return(Status);
+		return Status;
 	}
-
-	if (Register == 1) {
+	else if (Register == WD1770_TRACK_REGISTER) {
 		return ATrack;
 	}
-	else if (Register == 2) {
+	else if (Register == WD1770_SECTOR_REGISTER) {
 		if (DscType[CurrentDrive] == DiscType::IMG || DscType[CurrentDrive] == DiscType::DOS)
 			return Sector + 1;
 		else
 			return Sector;
 	}
-	else if (Register == 3) {
+	else if (Register == WD1770_DATA_REGISTER) {
 		if (FDCommand>5)
 		{
 			ResetStatus(1); NMIStatus &= ~(1<<nmi_floppy);
 		}
-		return(Data);
+
+		return Data;
 	}
 
-	return(0);
+	return 0;
 }
 
 static void SetMotor(int Drive, bool State) {
@@ -175,21 +182,19 @@ static void SetMotor(int Drive, bool State) {
 }
 
 void Write1770Register(unsigned char Register, unsigned char Value) {
-	unsigned char ComBits,HComBits;
-	int SectorCycles = 0; // Number of cycles to wait for sector to come round
-
 	if (!Disc1770Enabled)
 		return;
 
 	//fprintf(fdclog,"Write of %02X to Register %d\n",Value, Register);
 
 	// Write 1770 Register - NOT the FDC Control register @ &FE24
-	if (Register==0) {
+	if (Register == WD1770_CONTROL_REGISTER) {
 		NMIStatus &= ~(1<<nmi_floppy); // reset INTRQ
 		// Control Register - can only write if current drive is open
 		// Changed, now command returns errors if no disc inserted
-		ComBits=Value & 0xf0;
-		HComBits=Value & 0xe0;
+		unsigned char ComBits = Value & 0xf0;
+		unsigned char HComBits = Value & 0xe0;
+
 		if (HComBits<0x80) {
 			// Type 1 Command
 			SetStatus(0);
@@ -220,7 +225,9 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 				}
 			}
 		}
-		SectorCycles=0;
+
+		int SectorCycles = 0; // Number of cycles to wait for sector to come round
+
 		if (*CDiscOpen && Sector>(RotSect+1))
 			SectorCycles=((ONE_REV_TIME)/MaxSects[CurrentDrive])*((RotSect+1)-Sector);
 		if (HComBits==0x80) { // Read Sector
@@ -299,17 +306,17 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 			}
 		}
 	}
-	else if (Register == 1) {
+	else if (Register == WD1770_TRACK_REGISTER) {
 		Track=Value;
 		ATrack=Value;
 	}
-	else if (Register == 2) {
+	else if (Register == WD1770_SECTOR_REGISTER) {
 		if (DscType[CurrentDrive] == DiscType::IMG || DscType[CurrentDrive] == DiscType::DOS)
 			Sector = Value - 1;
 		else
 			Sector = Value;
 	}
-	else if (Register == 3) {
+	else if (Register == WD1770_DATA_REGISTER) {
 		Data=Value;
 		if (FDCommand>5) { ResetStatus(1); NMIStatus &= ~(1<<nmi_floppy); }
 	}
