@@ -105,8 +105,9 @@ const int SPIN_DOWN_TIME = 4000000; // 2 seconds
 const int SETTLE_TIME    = 30000; // 30 milliseconds
 const int ONE_REV_TIME   = 500000; // 1 sixth of a second - used for density mismatch
 const int SPIN_UP_TIME   = ONE_REV_TIME * 3; // Two Seconds
-const int VERIFY_TIME    = ONE_REV_TIME / MaxSects[CurrentDrive];
-const int BYTE_TIME      = VERIFY_TIME / 256;
+
+#define VERIFY_TIME (ONE_REV_TIME / MaxSects[CurrentDrive])
+#define BYTE_TIME   (VERIFY_TIME / 256)
 
 // WD1770 registers
 const unsigned char WD1770_CONTROL_REGISTER = 0;
