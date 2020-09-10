@@ -952,23 +952,31 @@ void Poll1770(int NCycles) {
 			NextFDCommand = 0;
 			Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
 			            WD1770_STATUS_RECORD_NOT_FOUND |
-			            WD1770_STATUS_CRC_ERROR |
-			            WD1770_STATUS_DATA_REQUEST);
+			            WD1770_STATUS_CRC_ERROR);
 
-			if (ByteCount == 6) Data = Track;
-			if (ByteCount == 5) Data = CurrentHead[CurrentDrive];
-			if (ByteCount == 4) Data = RotSect + 1;
-			if (ByteCount == 3) {
+			if (ByteCount == 6) {
+				Data = Track;
+			}
+			else if (ByteCount == 5) {
+				Data = CurrentHead[CurrentDrive];
+			}
+			else if (ByteCount == 4) {
+				Data = RotSect + 1;
+			}
+			else if (ByteCount == 3) {
 				if (DscType[CurrentDrive] == DiscType::SSD)  Data = 1; // 256
 				if (DscType[CurrentDrive] == DiscType::DSD)  Data = 1; // 256
 				if (DscType[CurrentDrive] == DiscType::ADFS) Data = 1; // 256
 				if (DscType[CurrentDrive] == DiscType::IMG)  Data = 3; // 1024
 				if (DscType[CurrentDrive] == DiscType::DOS)  Data = 2; // 512
 			}
-			if (ByteCount == 2) Data = 0;
-			if (ByteCount == 1) Data = 0;
-
-			if (ByteCount == 0) {
+			else if (ByteCount == 2) {
+				Data = 0;
+			}
+			else if (ByteCount == 1) {
+				Data = 0;
+			}
+			else if (ByteCount == 0) {
 				FDCommand = 0;
 				Status &= ~WD1770_STATUS_BUSY;
 				RotSect++;
@@ -1161,15 +1169,14 @@ unsigned char ReadFDCControlReg() {
 }
 
 void Reset1770() {
-	//fdclog=fopen("/fd.log","wb");
 	CurrentDisc = Disc0;
 	CurrentDrive = 0;
 	CurrentHead[0] = 0;
 	CurrentHead[1] = 0;
 	DiscStrt[0] = 0;
 	DiscStrt[1] = 0;
-	if (Disc0) fseek(Disc0,0,SEEK_SET);
-	if (Disc1) fseek(Disc1,0,SEEK_SET);
+	if (Disc0) fseek(Disc0, 0, SEEK_SET);
+	if (Disc1) fseek(Disc1, 0, SEEK_SET);
 	SetMotor(0, false);
 	SetMotor(1, false);
 	Status = 0;
