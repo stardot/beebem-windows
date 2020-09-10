@@ -421,6 +421,23 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 	}
 }
 
+static void UpdateTR00Status()
+{
+	bool Track0 = (Track == 0);
+
+	if (InvertTR00) {
+		Track0 = !Track0;
+	}
+
+	if (Track0) {
+		Status &= ~WD1770_STATUS_NOT_TRACK0;
+	}
+	else {
+		Status |= WD1770_STATUS_NOT_TRACK0;
+	}
+}
+
+
 // This function is called from the 6502core to enable the chip to do stuff
 // in the background.
 
@@ -520,18 +537,7 @@ void Poll1770(int NCycles) {
 				FDCommand = 12;
 				NMIStatus |= 1 << nmi_floppy;
 
-				bool Track0 = (Track == 0);
-
-				if (InvertTR00) {
-					Track0 = !Track0;
-				}
-
-				if (Track0) {
-					Status &= ~WD1770_STATUS_NOT_TRACK0;
-				}
-				else {
-					Status |= WD1770_STATUS_NOT_TRACK0;
-				}
+				UpdateTR00Status();
 
 				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
 				            WD1770_STATUS_BUSY);
@@ -890,18 +896,7 @@ void Poll1770(int NCycles) {
 			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
 			Status &= ~WD1770_STATUS_CRC_ERROR;
 
-			bool Track0 = (Track == 0);
-
-			if (InvertTR00) {
-				Track0 = !Track0;
-			}
-
-			if (Track0) {
-				Status &= ~WD1770_STATUS_NOT_TRACK0;
-			}
-			else {
-				Status |= WD1770_STATUS_NOT_TRACK0;
-			}
+			UpdateTR00Status();
 		}
 		NMIStatus |= 1 << nmi_floppy;
 		FDCommand = 12;
