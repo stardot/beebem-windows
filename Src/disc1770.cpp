@@ -27,15 +27,12 @@ Written by Richard Gellman - Feb 2001
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <windows.h>
 #include "disc1770.h"
 #include "6502core.h"
 #include "log.h"
 #include "main.h"
-#include "beebemrc.h"
 #include "uefstate.h"
 #include "z80mem.h"
-#include "z80.h"
 #include "beebsound.h"
 #include "sysvia.h"
 
@@ -992,58 +989,59 @@ void Poll1770(int NCycles) {
 	}
 }
 
-void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HMENU dmenu) {
+Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type) {
+	Disc1770Result Result = Disc1770Result::Failed;
 	long int TotalSectors;
 	long HeadStore;
-	bool openFailure=false;
-	if (DscDrive==0) {
-		if (Disc0Open) fclose(Disc0);
+	if (DscDrive == 0) {
+		if (Disc0Open) {
+			fclose(Disc0);
+		}
 		Disc0Open = false;
-		Disc0=fopen(DscFileName,"rb+");
-		if (Disc0!=NULL) {
-			EnableMenuItem(dmenu, IDM_WPDISC0, MF_ENABLED );
+		Disc0 = fopen(DscFileName, "rb+");
+		if (Disc0 != nullptr) {
+			Result = Disc1770Result::OpenedReadWrite;
 		}
 		else {
-			Disc0=fopen(DscFileName,"rb");
-			if (Disc0!=NULL)
-				EnableMenuItem(dmenu, IDM_WPDISC0, MF_GRAYED );
+			Disc0 = fopen(DscFileName, "rb");
+			if (Disc0 != nullptr) {
+				Result = Disc1770Result::OpenedReadOnly;
+			}
 		}
+
 		if (Disc0) {
-			if (CurrentDrive==0) CurrentDisc=Disc0;
+			if (CurrentDrive == 0) {
+				CurrentDisc = Disc0;
+			}
+
 			Disc0Open = true;
 		}
-		else {
-			openFailure=true;
-		}
 	}
-
-	if (DscDrive==1) {
-		if (Disc1Open) fclose(Disc1);
+	else if (DscDrive == 1) {
+		if (Disc1Open) {
+			fclose(Disc1);
+		}
 		Disc1Open = false;
-		Disc1=fopen(DscFileName,"rb+");
-		if (Disc1!=NULL) {
-			EnableMenuItem(dmenu, IDM_WPDISC1, MF_ENABLED );
+		Disc1 = fopen(DscFileName, "rb+");
+		if (Disc1 != nullptr) {
+			Result = Disc1770Result::OpenedReadWrite;
 		}
 		else {
-			Disc1=fopen(DscFileName,"rb");
-			if (Disc1!=NULL)
-				EnableMenuItem(dmenu, IDM_WPDISC1, MF_GRAYED );
+			Disc1 = fopen(DscFileName, "rb");
+			if (Disc1 != nullptr) {
+				Result = Disc1770Result::OpenedReadOnly;
+			}
 		}
 		if (Disc1) {
-			if (CurrentDrive==1) CurrentDisc=Disc1;
+			if (CurrentDrive == 1) {
+				CurrentDisc = Disc1;
+			}
 			Disc1Open = true;
-		}
-		else {
-			openFailure=true;
 		}
 	}
 
-	if (openFailure)
-	{
-		char errstr[200];
-		sprintf(errstr, "Could not open disc file:\n  %s", DscFileName);
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-		return;
+	if (Result == Disc1770Result::Failed) {
+		return Result;
 	}
 
 	strcpy(DscFileNames[DscDrive], DscFileName);
@@ -1107,11 +1105,13 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HME
 			TrkLen[DscDrive] = 4096;
 		}
 	}
+
 	DscType[DscDrive] = Type;
 	MaxSects[DscDrive] = (Type == DiscType::SSD || Type == DiscType::DSD) ? 9 : 15;
 	if (Type == DiscType::IMG) MaxSects[DscDrive] = 4;
 	if (Type == DiscType::DOS) MaxSects[DscDrive] = 8;
-	mainWin->SetImageName(DscFileName, DscDrive, Type);
+
+	return Result;
 }
 
 // This function writes the control register at &FE24.
@@ -1197,14 +1197,15 @@ void Close1770Disc(int Drive) {
 	}
 }
 
-#define BPUT(a) fputc(a,NewImage); CheckSum=(CheckSum+a)&255
+#define BPUT(a) fputc(a, file); CheckSum = (CheckSum + a) & 0xff
 
-void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU hMenu) {
-	// This function creates a blank ADFS disc image, and then loads it.
+// This function creates a blank ADFS disc image.
+
+bool CreateADFSImage(const char *FileName, int Tracks) {
 	int ent;
 	const int sectors = (Tracks * 16);
-	FILE *NewImage = fopen(ImageName,"wb");
-	if (NewImage != NULL) {
+	FILE *file = fopen(FileName, "wb");
+	if (file != nullptr) {
 		// Now write the data - this is complex
 		// Free space map - T0S0 - start sectors
 		int CheckSum = 0;
@@ -1235,9 +1236,12 @@ void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU hMenu) 
 		BPUT(1);
 		BPUT('H'); BPUT('u'); BPUT('g'); BPUT('o'); // Hugo
 		BPUT(0);
-		fclose(NewImage);
-		Load1770DiscImage(ImageName, Drive, DiscType::ADFS, hMenu);
+		fclose(file);
+
+		return true;
 	}
+
+	return false;
 }
 
 void Save1770UEF(FILE *SUEF)
@@ -1335,7 +1339,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 	if (FileName[0]) {
 		// Load drive 0
 		Loaded = true;
-		Load1770DiscImage(FileName, 0, DscType[0], mainWin->m_hMenu);
+		mainWin->Load1770DiscImage(FileName, 0, DscType[0]);
 		if (!Disc0Open)
 			LoadFailed = true;
 	}
@@ -1344,7 +1348,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 	if (FileName[0]) {
 		// Load drive 1
 		Loaded = true;
-		Load1770DiscImage(FileName, 1, DscType[1], mainWin->m_hMenu);
+		mainWin->Load1770DiscImage(FileName, 1, DscType[1]);
 		if (!Disc1Open)
 			LoadFailed = true;
 	}

@@ -207,14 +207,14 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				if (NativeFDC)
 					LoadSimpleDSDiscImage(FileName, Drive, 80);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::DSD, m_hMenu);
+					Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			}
 			if (!dsd && !adfs && !dos)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::SSD, m_hMenu);
+					Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			}
 			if (adfs)
 			{
@@ -222,22 +222,22 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 					MessageBox(GETHWND,"The native 8271 FDC cannot read ADFS discs\n","BeebEm",
 							   MB_OK|MB_ICONERROR);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::ADFS, m_hMenu);
+					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
 			}
 		}
 		else
 		{
 			// Master 128
 			if (dsd)
-				Load1770DiscImage(FileName, Drive, DiscType::DSD, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
-				Load1770DiscImage(FileName, Drive, DiscType::SSD, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			if (adfs)
-				Load1770DiscImage(FileName, Drive, DiscType::ADFS, m_hMenu); // ADFS OO La La!
+				Load1770DiscImage(FileName, Drive, DiscType::ADFS); // ADFS OO La La!
 			if (img)
-				Load1770DiscImage(FileName, Drive, DiscType::IMG, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::IMG);
 			if (dos)
-				Load1770DiscImage(FileName, Drive, DiscType::DOS, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::DOS);
 		}
 
 		/* Write protect the disc */
@@ -246,6 +246,28 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 	}
 
 	return(gotName);
+}
+
+/****************************************************************************/
+
+void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
+{
+	Disc1770Result Result = ::Load1770DiscImage(FileName, Drive, Type);
+
+	if (Result == Disc1770Result::OpenedReadWrite) {
+		SetImageName(FileName, Drive, Type);
+		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, true);
+	}
+	else if (Result == Disc1770Result::OpenedReadOnly) {
+		SetImageName(FileName, Drive, Type);
+		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, false);
+	}
+	else {
+		// Disc1770Result::Failed
+		char errstr[200];
+		sprintf(errstr, "Could not open disc file:\n  %s", FileName);
+		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+	}
 }
 
 /****************************************************************************/
@@ -377,16 +399,19 @@ void BeebWin::NewDiscImage(int Drive)
 				strcat(FileName, ".adl");
 		}
 
-		if (filterIndex == 1 || filterIndex == 3)
-		{
+		if (filterIndex == 1 || filterIndex == 3) {
 			CreateDiscImage(FileName, Drive, 1, 80);
 		}
-		if (filterIndex == 2 || filterIndex == 4)
-		{
+		else if (filterIndex == 2 || filterIndex == 4) {
 			CreateDiscImage(FileName, Drive, 2, 80);
 		}
-		if (filterIndex == 5) CreateADFSImage(FileName,Drive,80,m_hMenu);
-		if (filterIndex == 6) CreateADFSImage(FileName,Drive,160,m_hMenu);
+		else if (filterIndex == 5 || filterIndex == 6) {
+			const int Tracks = filterIndex == 5 ? 80 : 160;
+			bool Success = CreateADFSImage(FileName, Tracks);
+			if (Success) {
+				Load1770DiscImage(FileName, Drive, DiscType::ADFS);
+			}
+		}
 
 		/* Allow disc writes */
 		if (m_WriteProtectDisc[Drive])
@@ -453,7 +478,7 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 		if (Heads == 1)
 		{
 			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(FileName, DriveNum, DiscType::SSD, mainWin->m_hMenu);
+				Load1770DiscImage(FileName, DriveNum, DiscType::SSD);
 			}
 			else {
 				LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
@@ -462,7 +487,7 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 		else
 		{
 			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(FileName, DriveNum, DiscType::DSD, mainWin->m_hMenu);
+				Load1770DiscImage(FileName, DriveNum, DiscType::DSD);
 			}
 			else {
 				LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
@@ -1638,9 +1663,9 @@ void BeebWin::ImportDiscFiles(int menuId)
 		// 1770 controller
 		Close1770Disc(drive);
 		if (heads == 2)
-			Load1770DiscImage(szDiscFile, drive, DiscType::DSD, m_hMenu);
+			Load1770DiscImage(szDiscFile, drive, DiscType::DSD);
 		else
-			Load1770DiscImage(szDiscFile, drive, DiscType::SSD, m_hMenu);
+			Load1770DiscImage(szDiscFile, drive, DiscType::SSD);
 	}
 }
 

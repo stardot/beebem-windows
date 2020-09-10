@@ -31,14 +31,20 @@ extern bool DWriteable[2]; // Write Protect
 extern bool Disc1770Enabled;
 extern bool InvertTR00;
 
+enum class Disc1770Result {
+	OpenedReadWrite,
+	OpenedReadOnly,
+	Failed
+};
+
 unsigned char Read1770Register(unsigned char Register);
 void Write1770Register(unsigned char Register, unsigned char Value);
-void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HMENU dmenu);
+Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type);
 void WriteFDCControlReg(unsigned char Value);
 unsigned char ReadFDCControlReg();
 void Reset1770();
 void Poll1770(int NCycles);
-void CreateADFSImage(const char *ImageName, int Drive, int Tracks, HMENU dmenu);
+bool CreateADFSImage(const char *FileName, int Tracks);
 void Close1770Disc(int Drive);
 void Save1770UEF(FILE *SUEF);
 void Load1770UEF(FILE *SUEF,int Version);

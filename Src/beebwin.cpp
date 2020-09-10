@@ -558,8 +558,8 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	}
 	if ((MachineType != Model::Master128 && !NativeFDC) || (MachineType == Model::Master128)) {
 		// 1770 Disc
-		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0],0,CDiscType[0],m_hMenu);
-		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1],1,CDiscType[1],m_hMenu);
+		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
+		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1], 1, CDiscType[1]);
 	}
 }
 
@@ -4338,19 +4338,19 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 				if (NativeFDC)
 					LoadSimpleDSDiscImage(FileName, drive, 80);
 				else
-					Load1770DiscImage(FileName, drive, DiscType::DSD, m_hMenu);
+					Load1770DiscImage(FileName, drive, DiscType::DSD);
 			}
 			if (ssd)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, drive, 0, 80);
 				else
-					Load1770DiscImage(FileName, drive, DiscType::SSD, m_hMenu);
+					Load1770DiscImage(FileName, drive, DiscType::SSD);
 			}
 			if (adfs)
 			{
 				if (!NativeFDC)
-					Load1770DiscImage(FileName, drive, DiscType::ADFS, m_hMenu);
+					Load1770DiscImage(FileName, drive, DiscType::ADFS);
 				else
 					cont = false;  // cannot load adfs with native DFS
 			}
@@ -4359,19 +4359,19 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, drive, 0, 80); // Treat like an ssd
 				else
-					Load1770DiscImage(FileName, drive, DiscType::IMG, m_hMenu);
+					Load1770DiscImage(FileName, drive, DiscType::IMG);
 			}
 		}
 		else // Model::Master128
 		{
 			if (dsd)
-				Load1770DiscImage(FileName, drive, DiscType::DSD, m_hMenu);
+				Load1770DiscImage(FileName, drive, DiscType::DSD);
 			if (ssd)
-				Load1770DiscImage(FileName, drive, DiscType::SSD, m_hMenu);
+				Load1770DiscImage(FileName, drive, DiscType::SSD);
 			if (adfs)
-				Load1770DiscImage(FileName, drive, DiscType::ADFS, m_hMenu);
+				Load1770DiscImage(FileName, drive, DiscType::ADFS);
 			if (img)
-				Load1770DiscImage(FileName, drive, DiscType::IMG, m_hMenu);
+				Load1770DiscImage(FileName, drive, DiscType::IMG);
 		}
 	}
 
@@ -4458,7 +4458,7 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 		case 'd':
 		case 'D':
 			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(Name, DriveNum, DiscType::DSD, m_hMenu);
+				Load1770DiscImage(Name, DriveNum, DiscType::DSD);
 			}
 			else {
 				LoadSimpleDSDiscImage(Name, DriveNum, Tracks);
@@ -4468,7 +4468,7 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 		case 'S':
 		case 's':
 			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(Name, DriveNum, DiscType::SSD, m_hMenu);
+				Load1770DiscImage(Name, DriveNum, DiscType::SSD);
 			}
 			else {
 				LoadSimpleDiscImage(Name, DriveNum, 0, Tracks);
@@ -4478,7 +4478,7 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 		case 'A':
 		case 'a':
 			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(Name, DriveNum, DiscType::ADFS, m_hMenu);
+				Load1770DiscImage(Name, DriveNum, DiscType::ADFS);
 			}
 			else {
 				MessageBox(m_hWnd, "The 8271 FDC Cannot load the ADFS disc image specified in the BeebDiscLoad environment variable", "BeebEm", MB_ICONERROR | MB_OK);
