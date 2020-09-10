@@ -40,63 +40,66 @@ Written by Richard Gellman - Feb 2001
 #include "sysvia.h"
 
 // Control/Status Register, Track, Sector, and Data Registers
-unsigned char FormatBuffer[2048];
-unsigned char *FormatPtr;
-unsigned char FormatState=0;
-unsigned int FormatCount=0;
-unsigned int FormatSize=0;
-unsigned char Status=0;
-unsigned char Data=0;
-unsigned char Track=0,ATrack=0;
-unsigned char Sector;
-bool HeadDir = true; // Head Movement direction - true to step in, false to step out
-unsigned char FDCommand = 0;
-unsigned char NextFDCommand = 0; // Next FDCommand during spin up/settling periods
-int LoadingCycles=0; // Spin up/settle counter in CPU Cycles
-int SpinDown[2]={0,0}; // Spin down delay per drive
+static unsigned char FormatBuffer[2048];
+static unsigned char *FormatPtr;
+static unsigned char FormatState = 0;
+static unsigned int FormatCount = 0;
+static unsigned int FormatSize = 0;
+static unsigned char Status = 0;
+static unsigned char Data = 0;
+static unsigned char Track = 0;
+static unsigned char ATrack = 0;
+static unsigned char Sector;
+static bool HeadDir = true; // Head Movement direction - true to step in, false to step out
+static unsigned char FDCommand = 0;
+static unsigned char NextFDCommand = 0; // Next FDCommand during spin up/settling periods
+static int LoadingCycles = 0; // Spin up/settle counter in CPU Cycles
+static int SpinDown[2] = {0, 0}; // Spin down delay per drive
 // The following are control bits
-bool UpdateTrack = false;
-bool MultiSect = false;
-const int StepRates[4] = {6, 12, 20, 30}; // Milliseconds
-int StepRate = StepRates[0];
-bool SpinUp = false;
-bool Verify = false;
-bool LightsOn[2] = { false, false };
-bool HeadLoaded[2] = { false,false };
+static bool UpdateTrack = false;
+static bool MultiSect = false;
+static const int StepRates[4] = {6, 12, 20, 30}; // Milliseconds
+static int StepRate = StepRates[0];
+static bool SpinUp = false;
+static bool Verify = false;
+static bool LightsOn[2] = { false, false };
+static bool HeadLoaded[2] = { false,false };
 // End of control bits
-int ByteCount=0;
-long DataPos;
+static int ByteCount = 0;
+static long DataPos;
+
 bool Disc1770Enabled = true;
 
 /* File names of loaded disc images */
 static char DscFileNames[2][256];
 
-FILE *Disc0; // File handlers for the disc drives 0 and 1
-FILE *Disc1;
-FILE *CurrentDisc; // Current Disc Handle
+static FILE *Disc0; // File handlers for the disc drives 0 and 1
+static FILE *Disc1;
+static FILE *CurrentDisc; // Current Disc Handle
 
-FILE *fdclog;
+static FILE *fdclog;
 
-bool Disc0Open = false;
-bool Disc1Open = false; // Disc open status markers
-bool *CDiscOpen = &Disc0Open; // Current Disc Open
+static bool Disc0Open = false;
+static bool Disc1Open = false; // Disc open status markers
+static bool *CDiscOpen = &Disc0Open; // Current Disc Open
 
-unsigned char ExtControl; // FDC External Control Register
-int CurrentDrive = 0; // FDC Control drive setting
-long HeadPos[2]; // Position of Head on each drive for swapping
-unsigned char CurrentHead[2]; // Current Head on any drive
-int DiscStep[2]; // Single/Double sided disc step
-int DiscStrt[2]; // Single/Double sided disc start
-unsigned int SecSize[2];
-DiscType DscType[2];
-unsigned char MaxSects[2]; // Maximum sectors per track
-unsigned int DefStart[2]; // Starting point for head 1
-unsigned int TrkLen[2]; // Track Length in bytes
-bool DWriteable[2]={ false, false }; // Write Protect
-char DiskDensity[2];
+static unsigned char ExtControl; // FDC External Control Register
+static int CurrentDrive = 0; // FDC Control drive setting
+static long HeadPos[2]; // Position of Head on each drive for swapping
+static unsigned char CurrentHead[2]; // Current Head on any drive
+static int DiscStep[2]; // Single/Double sided disc step
+static int DiscStrt[2]; // Single/Double sided disc start
+static unsigned int SecSize[2];
+static DiscType DscType[2];
+static unsigned char MaxSects[2]; // Maximum sectors per track
+static unsigned int DefStart[2]; // Starting point for head 1
+static unsigned int TrkLen[2]; // Track Length in bytes
+bool DWriteable[2] = { false, false }; // Write Protect
 
-char SelectedDensity;
-unsigned char RotSect=0; // Sector counter to fool Opus DDOS on read address
+static bool DiskDensity[2];
+static bool SelectedDensity;
+
+static unsigned char RotSect = 0; // Sector counter to fool Opus DDOS on read address
 bool InvertTR00; // Needed because the bloody stupid watford board inverts the input.
 
 const int SPIN_DOWN_TIME = 4000000; // 2 seconds
@@ -1391,12 +1394,12 @@ void Load1770UEF(FILE *SUEF, int Version)
 		TrkLen[1]=fget32(SUEF);
 		DWriteable[0]=fgetc(SUEF) != 0;
 		DWriteable[1]=fgetc(SUEF) != 0;
-		DiskDensity[0]=fgetc(SUEF);
+		DiskDensity[0]=fgetc(SUEF) != 0;
 		if (Version <= 9)
 			DiskDensity[1]=DiskDensity[0];
 		else
-			DiskDensity[1]=fgetc(SUEF);
-		SelectedDensity=fgetc(SUEF);
+			DiskDensity[1]=fgetc(SUEF) != 0;
+		SelectedDensity=fgetc(SUEF) != 0;
 		RotSect=fgetc(SUEF);
 		fread(FDCDLL,1,256,SUEF);
 
