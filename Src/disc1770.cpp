@@ -77,8 +77,6 @@ static FILE *Disc0; // File handlers for the disc drives 0 and 1
 static FILE *Disc1;
 static FILE *CurrentDisc; // Current Disc Handle
 
-static FILE *fdclog;
-
 static bool Disc0Open = false;
 static bool Disc1Open = false; // Disc open status markers
 static bool *CDiscOpen = &Disc0Open; // Current Disc Open
@@ -163,7 +161,7 @@ unsigned char Read1770Register(unsigned char Register) {
 	if (!Disc1770Enabled)
 		return 0xFF;
 
-	// fprintf(fdclog,"Read of Register %d - Status is %02X\n",Register,Status);
+	// WriteLog("Disc1770: Read of Register %d - Status is %02X\n", Register, Status);
 
 	// Fool anything reading the Index pulse signal by alternating it on each read.
 	if (FDCommand < 6 && FDCommand != 0) {
@@ -228,7 +226,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 	if (!Disc1770Enabled)
 		return;
 
-	//fprintf(fdclog,"Write of %02X to Register %d\n",Value, Register);
+	// WriteLog("Disc1770: Write of %02X to Register %d\n", Value, Register);
 
 	// Write 1770 Register - NOT the FDC Control register @ &FE24
 	if (Register == WD1770_CONTROL_REGISTER) {
@@ -1118,7 +1116,7 @@ void Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type, HME
 // This function writes the control register at &FE24.
 
 void WriteFDCControlReg(unsigned char Value) {
-	//fprintf(fdclog,"CTRL REG write of %02X\n",Value);
+	// WriteLog("Disc1770: CTRL REG write of %02X\n", Value);
 
 	ExtControl = Value;
 
