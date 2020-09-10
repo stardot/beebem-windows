@@ -165,7 +165,7 @@ unsigned char Read1770Register(unsigned char Register) {
 
 	// Fool anything reading the Index pulse signal by alternating it on each read.
 	if (FDCommand < 6 && FDCommand != 0) {
-		Status ^= 2;
+		Status ^= WD1770_STATUS_INDEX;
 	}
 
 	if (Register == WD1770_STATUS_REGISTER) {
@@ -222,13 +222,14 @@ static void SetMotor(int Drive, bool State) {
 	}
 }
 
+// Write 1770 Register - NOT the FDC Control register at &FE24
+
 void Write1770Register(unsigned char Register, unsigned char Value) {
 	if (!Disc1770Enabled)
 		return;
 
 	// WriteLog("Disc1770: Write of %02X to Register %d\n", Value, Register);
 
-	// Write 1770 Register - NOT the FDC Control register @ &FE24
 	if (Register == WD1770_CONTROL_REGISTER) {
 		NMIStatus &= ~(1 << nmi_floppy); // reset INTRQ
 		// Control Register - can only write if current drive is open
