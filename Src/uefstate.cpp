@@ -70,7 +70,13 @@ void SaveUEFState(const char *StateName) {
 	{
 		fprintf(UEFState,"UEF File!");
 		fputc(0,UEFState); // UEF Header
-		fputc(12,UEFState); fputc(0,UEFState); // Version
+
+		const unsigned char UEFMinorVersion = 12;
+		const unsigned char UEFMajorVersion = 0;
+
+		fputc(UEFMinorVersion, UEFState);
+		fputc(UEFMajorVersion, UEFState);
+
 		mainWin->SaveEmuUEF(UEFState);
 		Save6502UEF(UEFState);
 		SaveMemUEF(UEFState);
