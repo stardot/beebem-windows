@@ -344,4 +344,3 @@ void PrintHex(int addr)
 
 	WriteLog("%s\n", buff);
 }
-

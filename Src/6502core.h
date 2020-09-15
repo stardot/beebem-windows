@@ -92,6 +92,8 @@ void Load6502UEF(FILE *SUEF);
 void SyncIO(void);
 void AdjustForIORead(void);
 void AdjustForIOWrite(void);
+#define WritePaged(addr,val) BeebWriteMem(addr,val)
+#define ReadPaged(Address) BeebReadMem(Address)
 
 extern int OpCodes;
 extern bool BasicHardwareOnly;
