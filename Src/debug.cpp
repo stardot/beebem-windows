@@ -651,7 +651,7 @@ void DebugBreakExecution(DebugType type)
 	else
 	{
 		InstCount = 1;
-		SetDlgItemText(hwndDebug, IDC_DEBUGBREAK, "Cancel");
+		SetDlgItemText(hwndDebug, IDC_DEBUGBREAK, "Continue");
 		LastAddrInBIOS = LastAddrInOS = LastAddrInROM = false;
 
 		DebugUpdateWatches(true);
@@ -804,61 +804,77 @@ void DebugUpdateWatches(bool all)
 {
 	int value = 0;
 	char str[200];
-	if(WCount > 0)
+
+	for (int i = 0; i < WCount; ++i)
 	{
-		for(int i = 0; i < WCount; ++i)
+		switch (Watches[i].type)
 		{
-			switch(Watches[i].type)
-			{
 			case 'b':
 				value = DebugReadMem(Watches[i].start, Watches[i].host);
 				break;
+
 			case 'w':
-				if(WatchBigEndian)
-					value = DebugReadMem(Watches[i].start, Watches[i].host) * 256
-						+ DebugReadMem(Watches[i].start + 1, Watches[i].host);
-				else
-					value = DebugReadMem(Watches[i].start + 1, Watches[i].host) * 256
-						+ DebugReadMem(Watches[i].start, Watches[i].host);
-				break;
-			case 'd':
-				if(WatchBigEndian)
-					value =	DebugReadMem(Watches[i].start, Watches[i].host) * 256 * 256 * 256 + 
-						DebugReadMem(Watches[i].start + 1, Watches[i].host) * 256 * 256 + 
-						DebugReadMem(Watches[i].start + 2, Watches[i].host) * 256 + 
-						DebugReadMem(Watches[i].start + 3, Watches[i].host);
-				else
-					value =	DebugReadMem(Watches[i].start + 3, Watches[i].host) * 256 * 256 * 256 + 
-						DebugReadMem(Watches[i].start + 2, Watches[i].host) * 256 * 256 + 
-						DebugReadMem(Watches[i].start + 1, Watches[i].host) * 256 + 
-						DebugReadMem(Watches[i].start, Watches[i].host);
-				break;
-			}
-			if(all || value != Watches[i].value)
-			{
-				Watches[i].value = value;
-				SendMessage(hwndW, LB_DELETESTRING, i, 0);
-				if(WatchDecimal)
-					sprintf(str,"%s%04X %s=%d (%c)", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name, Watches[i].value, Watches[i].type);
+				if (WatchBigEndian)
+				{
+					value = (DebugReadMem(Watches[i].start,     Watches[i].host) << 8) +
+					         DebugReadMem(Watches[i].start + 1, Watches[i].host);
+				}
 				else
 				{
-					switch(Watches[i].type)
-					{
-					case 'b':
-						sprintf(str,"%s%04X %s=$%02X", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name, Watches[i].value);
-						break;
-					case 'w':
-						sprintf(str,"%s%04X %s=$%04X", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name, Watches[i].value);
-						break;
-					case 'd':
-						sprintf(str,"%s%04X %s=$%08X", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name, Watches[i].value);
-						break;
-					}
+					value = (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
+					         DebugReadMem(Watches[i].start,     Watches[i].host);
 				}
-				SendMessage(hwndW, LB_INSERTSTRING, i, (LPARAM)str);
-			}
+				break;
+
+			case 'd':
+				if (WatchBigEndian)
+				{
+					value = (DebugReadMem(Watches[i].start,     Watches[i].host) << 24) +
+					        (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 16) +
+					        (DebugReadMem(Watches[i].start + 2, Watches[i].host) << 8) +
+					         DebugReadMem(Watches[i].start + 3, Watches[i].host);
+				}
+				else
+				{
+					value = (DebugReadMem(Watches[i].start + 3, Watches[i].host) << 24) +
+					        (DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
+					        (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
+					         DebugReadMem(Watches[i].start,     Watches[i].host);
+				}
+				break;
 		}
-	}	
+
+		if (all || value != Watches[i].value)
+		{
+			Watches[i].value = value;
+
+			SendMessage(hwndW, LB_DELETESTRING, i, 0);
+
+			if (WatchDecimal)
+			{
+				sprintf(str, "%s%04X %s=%d (%c)", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name, Watches[i].value, Watches[i].type);
+			}
+			else
+			{
+				switch (Watches[i].type)
+				{
+					case 'b':
+						sprintf(str, "%s%04X %s=$%02X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
+						break;
+
+					case 'w':
+						sprintf(str, "%s%04X %s=$%04X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
+						break;
+
+					case 'd':
+						sprintf(str, "%s%04X %s=$%08X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
+						break;
+				}
+			}
+
+			SendMessage(hwndW, LB_INSERTSTRING, i, (LPARAM)str);
+		}
+	}
 }
 
 bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YReg, int PSR, int StackReg, bool host)
@@ -867,16 +883,29 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	AddrInfo addrInfo;
 	RomInfo romInfo;
 
+	// Update memory watches. Prevent emulator slowdown by limiting updates
+	// to every 100ms, or on timer wrap-around.
+	static DWORD LastTickCount = 0;
+	const DWORD TickCount = GetTickCount();
+
+	if (TickCount - LastTickCount > 100 || TickCount < LastTickCount)
+	{
+		LastTickCount = TickCount;
+		DebugUpdateWatches(false);
+	}
+
 	// If this is the host and we're debugging that and have no further
 	// instructions to execute, halt.
 	if (host && DebugHost && DebugSource != DebugType::None && InstCount == 0)
 	{
-		return(FALSE);
+		return false;
 	}
 
 	// Don't process further if we're not debugging the parasite either
 	if (!host && !DebugParasite)
-		return(TRUE);
+	{
+		return true;
+	}
 
 	if (BRKOn && DebugReadMem(addr, host) == 0)
 	{
@@ -907,7 +936,9 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	}
 
 	if (DebugSource == DebugType::None)
+	{
 		return true;
+	}
 
 	if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
 	{
@@ -921,6 +952,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 			}
 			return true;
 		}
+
 		LastAddrInBIOS = false;
 	}
 	else
@@ -933,8 +965,10 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 				LastAddrInOS = true;
 				LastAddrInBIOS = LastAddrInROM = false;
 			}
+
 			return true;
 		}
+
 		LastAddrInOS = false;
 
 		if (!DebugROM && addr >= 0x8000 && addr <= 0xbfff)
@@ -942,14 +976,20 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 			if (!LastAddrInROM)
 			{
 				if(ReadRomInfo(PagedRomReg, &romInfo))
+				{
 					DebugDisplayInfoF("Entered ROM \"%s\" (0x8000-0xBFFF) at 0x%04X", romInfo.Title, addr);
+				}
 				else
+				{
 					DebugDisplayInfoF("Entered unknown ROM (0x8000-0xBFFF) at 0x%04X", addr);
+				}
+
 				LastAddrInROM = true;
 				LastAddrInOS = LastAddrInBIOS = false;
 			}
 			return true;
 		}
+
 		LastAddrInROM = false;
 	}
 
@@ -968,7 +1008,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 
 		Disp_RegSet1(str);
 		sprintf(str + strlen(str), " %s", buff);
-				
+
 		DebugDisplayInfo(str);
 		Disp_RegSet2(str);
 	}
@@ -978,16 +1018,20 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 
 		sprintf(str + strlen(str), "A=%02X X=%02X Y=%02X S=%02X ", Accumulator, XReg, YReg, StackReg);
 
-		sprintf(str + strlen(str), (PSR & FlagC) ? "C" : ".");
-		sprintf(str + strlen(str), (PSR & FlagZ) ? "Z" : ".");
-		sprintf(str + strlen(str), (PSR & FlagI) ? "I" : ".");
-		sprintf(str + strlen(str), (PSR & FlagD) ? "D" : ".");
-		sprintf(str + strlen(str), (PSR & FlagB) ? "B" : ".");
-		sprintf(str + strlen(str), (PSR & FlagV) ? "V" : ".");
-		sprintf(str + strlen(str), (PSR & FlagN) ? "N" : ".");
+		char *p = str + strlen(str);
+		*p++ = (PSR & FlagC) ? 'C' : '.';
+		*p++ = (PSR & FlagZ) ? 'Z' : '.';
+		*p++ = (PSR & FlagI) ? 'I' : '.';
+		*p++ = (PSR & FlagD) ? 'D' : '.';
+		*p++ = (PSR & FlagB) ? 'B' : '.';
+		*p++ = (PSR & FlagV) ? 'V' : '.';
+		*p++ = (PSR & FlagN) ? 'N' : '.';
+		*p = '\0';
 
 		if (!host)
-			sprintf(str + strlen(str), "  Parasite");
+		{
+			strcpy(p, "  Parasite");
+		}
 	}
 
 	DebugDisplayInfo(str);
@@ -995,8 +1039,12 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	// If host debug is enable then only count host instructions
 	// and display all parasite inst (otherwise we lose them).
 	if ((DebugHost && host) || !DebugHost)
+	{
 		if (InstCount > 0)
+		{
 			InstCount--;
+		}
+	}
 
 	return true;
 }
