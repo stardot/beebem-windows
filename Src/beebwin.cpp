@@ -18,8 +18,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -295,7 +295,7 @@ bool BeebWin::Initialise()
 	}
 
 	InitClass();
-	CreateBeebWindow(); 
+	CreateBeebWindow();
 	CreateBitmap();
 
 	m_hMenu = GetMenu(m_hWnd);
@@ -402,7 +402,7 @@ void BeebWin::ApplyPrefs()
 		PortNo = 25232;
 	}
 	if (SerialPortEnabled) {
-		if (TouchScreenEnabled) 
+		if (TouchScreenEnabled)
 			TouchScreenOpen();
 
 		if (EthernetPortEnabled && (IP232localhost || IP232custom))
@@ -589,10 +589,10 @@ void BeebWin::CreateBitmap()
 
 #ifdef USE_PALETTE
 	__int16 *pInts = (__int16 *)&m_bmi.bmiColors[0];
-    
+
 	for(int i=0; i<12; i++)
 		pInts[i] = i;
-    
+
 	m_hBitmap = CreateDIBSection(m_hDCBitmap, (BITMAPINFO *)&m_bmi, DIB_PAL_COLORS,
 							(void**)&m_screen, NULL,0);
 #else
@@ -713,7 +713,7 @@ void BeebWin::CreateBeebWindow(void)
 				NULL,				 // Use the window class menu.
 				hInst,			 // This instance owns this window.
 				NULL				 // We don't use any data in our WM_CREATE
-		); 
+		);
 
 	ShowWindow(m_hWnd, show); // Show the window
 	UpdateWindow(m_hWnd);		  // Sends WM_PAINT message
@@ -946,7 +946,7 @@ void BeebWin::InitMenu(void)
 		CheckMenuItem(m_MenuIdAMXAdjust, true);
 
 	// Hardware -> Model
-	UpdateModelType();
+	UpdateModelMenu();
 
 	// Hardware
 	UpdateTubeMenu();
@@ -1005,11 +1005,24 @@ void BeebWin::UpdateMonitorMenu() {
 	CheckMenuItem(ID_MONITOR_AMBER, m_PaletteType == PaletteType::Amber);
 }
 
-void BeebWin::UpdateModelType() {
-	CheckMenuItem(ID_MODELB, MachineType == Model::B);
-	CheckMenuItem(ID_MODELBINT, MachineType == Model::IntegraB);
-	CheckMenuItem(ID_MODELBP, MachineType == Model::BPlus);
-	CheckMenuItem(ID_MASTER128, MachineType == Model::Master128);
+void BeebWin::UpdateModelMenu()
+{
+	static const std::map<Model, UINT> ModelMenuItems{
+		{ Model::B,         ID_MODELB },
+		{ Model::IntegraB,  ID_MODELBINT },
+		{ Model::BPlus,     ID_MODELBPLUS },
+		{ Model::Master128, ID_MASTER128 },
+	};
+
+	UINT SelectedMenuItem = ModelMenuItems.find(MachineType)->second;
+
+	CheckMenuRadioItem(
+		m_hMenu,
+		ID_MODELB,
+		ID_MASTER128,
+		SelectedMenuItem,
+		MF_BYCOMMAND
+	);
 
 	if (MachineType == Model::Master128) {
 		EnableMenuItem(ID_FDC_DLL, false);
@@ -1042,11 +1055,11 @@ void BeebWin::SetTubeMenu()
     if (testFile != nullptr)
     {
         fclose(testFile);
-        EnableMenuItem(IDM_ARMCOPRO, true);
+        EnableMenuItem(IDM_TUBE_SPROWARM, true);
     }
     else
     {
-        EnableMenuItem(IDM_ARMCOPRO, false);
+        EnableMenuItem(IDM_TUBE_SPROWARM, false);
 
         if (TubeType == Tube::SprowArm)
         {
@@ -1059,12 +1072,25 @@ void BeebWin::SetTubeMenu()
 
 void BeebWin::UpdateTubeMenu()
 {
-	CheckMenuItem(IDM_TUBE, TubeType == Tube::Acorn65C02);
-	CheckMenuItem(IDM_TUBE186, TubeType == Tube::Master512CoPro);
-	CheckMenuItem(IDM_TORCH, TubeType == Tube::TorchZ80);
-	CheckMenuItem(IDM_ARM, TubeType == Tube::AcornArm);
-	CheckMenuItem(IDM_ACORNZ80, TubeType == Tube::AcornZ80);
-	CheckMenuItem(IDM_ARMCOPRO, TubeType == Tube::SprowArm);
+	static const std::map<Tube, UINT> TubeMenuItems{
+		{ Tube::None,           IDM_TUBE_NONE },
+		{ Tube::Acorn65C02,     IDM_TUBE_ACORN65C02 },
+		{ Tube::Master512CoPro, IDM_TUBE_MASTER512 },
+		{ Tube::AcornZ80,       IDM_TUBE_ACORNZ80 },
+		{ Tube::TorchZ80,       IDM_TUBE_TORCHZ80 },
+		{ Tube::AcornArm,       IDM_TUBE_ACORNARM },
+		{ Tube::SprowArm,       IDM_TUBE_SPROWARM }
+	};
+
+	UINT SelectedMenuItem = TubeMenuItems.find(TubeType)->second;
+
+	CheckMenuRadioItem(
+		m_hMenu,
+		IDM_TUBE_NONE,
+		IDM_TUBE_SPROWARM,
+		SelectedMenuItem,
+		MF_BYCOMMAND
+	);
 }
 
 /****************************************************************************/
@@ -1080,10 +1106,10 @@ void BeebWin::SetRomMenu(void)
 		Title[0] = '&';
 		_itoa( i, &Title[1], 16 );
 		Title[2] = ' ';
-		
+
 		// Get the Rom Title.
 		ReadRomTitle( i, &Title[3], sizeof( Title )-4);
-	
+
 		if ( Title[3]== '\0' )
 		{
 			if (RomBankType[i] == BankType::Ram)
@@ -1180,7 +1206,7 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 	{
 		int dx = x - lastx;
 		int dy = y - lasty;
-		
+
 		if (dx > 4) JoystickX = 0;
 		if (dx < -4) JoystickX = 65535;
 
@@ -1333,7 +1359,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 						mainWin->m_ShiftBooted = false;
 						BeebKeyUp(0, 0);
 					}
-					
+
 					mainWin->TranslateKey((int)uParam, false, row, col);
 				}
 			}
@@ -1404,7 +1430,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			{
 				mainWin->AdjustSpeed(false);
 			}
-			else 
+			else
 			{
 				bool bit = false;
 
@@ -1503,7 +1529,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 		case MM_JOY1BUTTONDOWN:
 		case MM_JOY1BUTTONUP:
 			JoystickButton = ((UINT)uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0;
-			break; 
+			break;
 
 		case WM_MOUSEMOVE:
 			{
@@ -1612,7 +1638,7 @@ int BeebWin::TranslateKey(int vkey, bool keyUp, int &row, int &col)
 
 	if (keyUp)
 	{
-		// Key released, lookup beeb row + col that this vkey 
+		// Key released, lookup beeb row + col that this vkey
 		// mapped to when it was pressed.  Need to release
 		// both shifted and non-shifted presses.
 		row = m_vkeyPressed[vkey][0][0];
@@ -1711,7 +1737,7 @@ int BeebWin::StartOfFrame(void)
 	if (UpdateTiming())
 		FrameNum = 0;
 
-	// Force video frame rate to match AVI capture rate to avoid 
+	// Force video frame rate to match AVI capture rate to avoid
 	// video and sound getting out of sync
 	if (aviWriter != NULL)
 	{
@@ -1804,7 +1830,7 @@ bool BeebWin::UpdateTiming()
 
 		if (Ticks <= (DWORD)(nCycles / 2000))
 		{
-			// Need to slow down, show frame (max 50fps though) 
+			// Need to slow down, show frame (max 50fps though)
 			// and sleep a bit
 			if (TickCount >= m_LastFPSCount + 20)
 			{
@@ -1927,7 +1953,7 @@ void BeebWin::TranslateDDSize(void)
 		break;
 	}
 }
-	
+
 /****************************************************************************/
 void BeebWin::TranslateWindowSize(void)
 {
@@ -2305,7 +2331,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		// Note: Window size gets lost in DDraw mode when DD is reset
 		int xs = m_XLastWinSize;
 		int ys = m_YLastWinSize;
-			
+
 		if (m_DisplayRenderer != IDM_DISPGDI && m_DXInit)
 		{
 			ResetDX();
@@ -2671,7 +2697,7 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			TouchScreenClose();
 		}
-				
+
 		TouchScreenEnabled = !TouchScreenEnabled;
 
 		if (TouchScreenEnabled)
@@ -3036,7 +3062,7 @@ void BeebWin::HandleCommand(int MenuId)
 #endif
 		}
 		break;
-	
+
 	case IDM_FULLVOLUME:
 	case IDM_HIGHVOLUME:
 	case IDM_MEDIUMVOLUME:
@@ -3049,7 +3075,7 @@ void BeebWin::HandleCommand(int MenuId)
 			TranslateVolume();
 		}
 		break;
-	
+
 	case IDM_MUSIC5000:
 		Music5000Enabled = !Music5000Enabled;
 		Music5000Reset();
@@ -3079,7 +3105,7 @@ void BeebWin::HandleCommand(int MenuId)
 		int slot = MenuId-IDM_ALLOWWRITES_ROM0;
 		RomWritable[slot] = !RomWritable[slot];
 		CheckMenuItem(MenuId, RomWritable[slot]);
-		break;				
+		break;
 	}
 
 	case IDM_SWRAMBOARD:
@@ -3323,40 +3349,67 @@ void BeebWin::HandleCommand(int MenuId)
 		CreateBitmap();
 		break;
 
-	case IDM_ARM:
-		TubeType = (TubeType == Tube::AcornArm) ? Tube::None : Tube::AcornArm;
-		UpdateTubeMenu();
-		ResetBeebSystem(MachineType, false);
+	case IDM_TUBE_NONE:
+		if (TubeType != Tube::None)
+		{
+			TubeType = Tube::None;
+			UpdateTubeMenu();
+			ResetBeebSystem(MachineType, false);
+		}
 		break;
 
-	case IDM_ARMCOPRO:
-		TubeType = (TubeType == Tube::SprowArm) ? Tube::None : Tube::SprowArm;
-		UpdateTubeMenu();
-		ResetBeebSystem(MachineType, false);
+	case IDM_TUBE_ACORN65C02:
+		if (TubeType != Tube::Acorn65C02)
+		{
+			TubeType = Tube::Acorn65C02;
+			UpdateTubeMenu();
+			ResetBeebSystem(MachineType, false);
+		}
 		break;
 
-	case IDM_TUBE:
-		TubeType = (TubeType == Tube::Acorn65C02) ? Tube::None : Tube::Acorn65C02;
-		UpdateTubeMenu();
-		ResetBeebSystem(MachineType, false);
+	case IDM_TUBE_MASTER512:
+		if (TubeType != Tube::Master512CoPro)
+		{
+			TubeType = Tube::Master512CoPro;
+			UpdateTubeMenu();
+			ResetBeebSystem(MachineType, false);
+		}
 		break;
 
-	case IDM_TUBE186:
-		TubeType = (TubeType == Tube::Master512CoPro) ? Tube::None : Tube::Master512CoPro;
-		UpdateTubeMenu();
-		ResetBeebSystem(MachineType, false);
+	case IDM_TUBE_ACORNZ80:
+		if (TubeType != Tube::AcornZ80)
+		{
+			TubeType = Tube::AcornZ80;
+			UpdateTubeMenu();
+			ResetBeebSystem(MachineType, false);
+		}
 		break;
 
-	case IDM_TORCH:
-		TubeType = (TubeType == Tube::TorchZ80) ? Tube::None : Tube::TorchZ80;
-		UpdateTubeMenu();
-		ResetBeebSystem(MachineType, false);
+	case IDM_TUBE_TORCHZ80:
+		if (TubeType != Tube::TorchZ80)
+		{
+			TubeType = Tube::TorchZ80;
+			UpdateTubeMenu();
+			ResetBeebSystem(MachineType, false);
+		}
 		break;
 
-	case IDM_ACORNZ80:
-		TubeType = (TubeType == Tube::AcornZ80) ? Tube::None : Tube::AcornZ80;
-		UpdateTubeMenu();
-		ResetBeebSystem(MachineType, false);
+	case IDM_TUBE_ACORNARM:
+		if (TubeType != Tube::AcornArm)
+		{
+			TubeType = Tube::AcornArm;
+			UpdateTubeMenu();
+			ResetBeebSystem(MachineType, false);
+		}
+		break;
+
+	case IDM_TUBE_SPROWARM:
+		if (TubeType != Tube::SprowArm)
+		{
+			TubeType = Tube::SprowArm;
+			UpdateTubeMenu();
+			ResetBeebSystem(MachineType, false);
+		}
 		break;
 
 	case ID_FILE_RESET:
@@ -3367,7 +3420,7 @@ void BeebWin::HandleCommand(int MenuId)
 		if (MachineType != Model::B)
 		{
 			ResetBeebSystem(Model::B, true);
-			UpdateModelType();
+			UpdateModelMenu();
 		}
 		break;
 
@@ -3375,15 +3428,15 @@ void BeebWin::HandleCommand(int MenuId)
 		if (MachineType != Model::IntegraB)
 		{
 			ResetBeebSystem(Model::IntegraB, true);
-			UpdateModelType();
+			UpdateModelMenu();
 		}
 		break;
 
-	case ID_MODELBP:
+	case ID_MODELBPLUS:
 		if (MachineType != Model::BPlus)
 		{
 			ResetBeebSystem(Model::BPlus, true);
-			UpdateModelType();
+			UpdateModelMenu();
 		}
 		break;
 
@@ -3391,7 +3444,7 @@ void BeebWin::HandleCommand(int MenuId)
 		if (MachineType != Model::Master128)
 		{
 			ResetBeebSystem(Model::Master128, true);
-			UpdateModelType();
+			UpdateModelMenu();
 		}
 		break;
 
@@ -3642,7 +3695,7 @@ void BeebWin::HandleCommand(int MenuId)
 		TeletextInit();
 		CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
 		break;
-		
+
 	case ID_TELETEXTFILES:
 		if (!TeletextFiles)
 		{
@@ -3655,7 +3708,7 @@ void BeebWin::HandleCommand(int MenuId)
 		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
 		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
 		break;
-		
+
 	case ID_TELETEXTLOCALHOST:
 		if (!TeletextLocalhost)
 		{
@@ -3668,7 +3721,7 @@ void BeebWin::HandleCommand(int MenuId)
 		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
 		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
 		break;
-		
+
 	case ID_TELETEXTCUSTOM:
 		if (!TeletextCustom)
 		{
@@ -4095,7 +4148,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 
 /*****************************************************************************/
 // File location of a file passed on command line
-	
+
 void BeebWin::FindCommandLineFile(char *CmdLineFile)
 {
 	bool ssd = false;
@@ -4107,7 +4160,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 	bool uef = false;
 	bool csw = false;
 	bool img = false;
-	
+
 	// See if file is readable
 	if (CmdLineFile[0] != 0)
 	{
@@ -4244,7 +4297,7 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 	bool img = false;
 
 	m_AutoBootDisc = false;
-	
+
 	if (CmdLineFile[0] != 0)
 	{
 		FileName = CmdLineFile;
@@ -4498,26 +4551,26 @@ bool BeebWin::RebootSystem()
 {
 	HANDLE hToken;
 	TOKEN_PRIVILEGES tkp;
-	
+
 	if (!OpenProcessToken(GetCurrentProcess(),
 	                      TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
 		return false;
-	
+
 	LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME,
 	                     &tkp.Privileges[0].Luid);
-	
+
 	tkp.PrivilegeCount = 1;  // one privilege to set
 	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 	AdjustTokenPrivileges(hToken, FALSE, &tkp, 0, NULL, 0);
 	if (GetLastError() != ERROR_SUCCESS)
 		return false;
-	
+
 	if (!ExitWindowsEx(EWX_REBOOT | EWX_FORCE,
 	                   SHTDN_REASON_MAJOR_OPERATINGSYSTEM |
 	                   SHTDN_REASON_MINOR_RECONFIG |
 	                   SHTDN_REASON_FLAG_PLANNED))
 		return false;
-	
+
 	return true;
 }
 
@@ -4800,7 +4853,7 @@ void BeebWin::HandleTimer()
 		return;
 	}
 	m_KbdCmdLastCycles = TotalCycles;
-	
+
 	// Release previous key press (except shift/control)
 	if (m_KbdCmdPress &&
 		m_KbdCmdKey != VK_SHIFT && m_KbdCmdKey != VK_CONTROL)
@@ -4819,7 +4872,7 @@ void BeebWin::HandleTimer()
 		else
 		{
 			m_KbdCmdPress = true;
-			
+
 			switch (m_KbdCmd[m_KbdCmdPos])
 			{
 			case '\\':
@@ -4848,7 +4901,7 @@ void BeebWin::HandleTimer()
 				default: m_KbdCmdKey = 0; break;
 				}
 				break;
-				
+
 			case '`': m_KbdCmdKey = VK_OEM_8; break;
 			case '-': m_KbdCmdKey = VK_OEM_MINUS; break;
 			case '=': m_KbdCmdKey = VK_OEM_PLUS; break;
@@ -4862,7 +4915,7 @@ void BeebWin::HandleTimer()
 			case '/': m_KbdCmdKey = VK_OEM_2; break;
 			default: m_KbdCmdKey = m_KbdCmd[m_KbdCmdPos]; break;
 			}
-			
+
 			if (m_KbdCmdKey != 0)
 			{
 				if (m_KbdCmdPress)

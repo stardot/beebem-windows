@@ -131,7 +131,7 @@ public:
 	void ApplyPrefs();
 	void Shutdown();
 
-	void UpdateModelType();
+	void UpdateModelMenu();
 	void SetSoundMenu(void);
 	void SetImageName(const char *DiscName, int Drive, DiscType DscType);
 	void SetTapeSpeedMenu(void);

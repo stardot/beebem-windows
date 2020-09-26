@@ -264,7 +264,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_USERKYBRD, DIALOG
     BEGIN
@@ -368,7 +368,7 @@ END
 // Menu
 //
 
-IDR_MENU MENU 
+IDR_MENU MENU
 BEGIN
     POPUP "&File"
     BEGIN
@@ -646,7 +646,7 @@ BEGIN
         BEGIN
             MENUITEM "BBC Model &B",                ID_MODELB, CHECKED
             MENUITEM "BBC Model B + &Integra-B",    ID_MODELBINT
-            MENUITEM "BBC Model B &Plus",           ID_MODELBP
+            MENUITEM "BBC Model B &Plus",           ID_MODELBPLUS
             MENUITEM "BBC &Master 128",             ID_MASTER128
         END
         POPUP "Model B &Floppy Controller"
@@ -656,12 +656,13 @@ BEGIN
         END
         POPUP "&Second Processor"
         BEGIN
-            MENUITEM "65C02 &Second Processor",     IDM_TUBE
-            MENUITEM "&Master 512 Second Processor", IDM_TUBE186
-            MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
-            MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
-            MENUITEM "ARM Second Processor",        IDM_ARM
-            MENUITEM "ARM7TDMI Co-Processor",        IDM_ARMCOPRO
+            MENUITEM "&None",                       IDM_TUBE_NONE
+            MENUITEM "&65C02 Second Processor",     IDM_TUBE_ACORN65C02
+            MENUITEM "&Master 512 Second Processor", IDM_TUBE_MASTER512
+            MENUITEM "Acorn &Z80 Second Processor", IDM_TUBE_ACORNZ80
+            MENUITEM "&Torch Z80 Second Processor", IDM_TUBE_TORCHZ80
+            MENUITEM "&ARM Second Processor",       IDM_TUBE_ACORNARM
+            MENUITEM "&Sprow ARM7TDMI Co-Processor", IDM_TUBE_SPROWARM
         END
         MENUITEM SEPARATOR
         POPUP "&Allow SW RAM Write"
@@ -764,18 +765,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "beebemrc.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""winresrc.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -799,7 +800,7 @@ IDI_BEEBEM              ICON                    "BeebEm.ico"
 // Accelerator
 //
 
-IDR_ACCELERATORS ACCELERATORS 
+IDR_ACCELERATORS ACCELERATORS
 BEGIN
     VK_UP,          ID_ACCELUP,             VIRTKEY, NOINVERT
     VK_DOWN,        ID_ACCELDOWN,           VIRTKEY, NOINVERT
@@ -819,4 +820,3 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

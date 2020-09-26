@@ -1005,7 +1005,8 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 	}
 
 	mainWin->ResetBeebSystem(MachineType, true);
-	mainWin->UpdateModelType();
+	mainWin->UpdateModelMenu();
+	mainWin->UpdateTubeMenu();
 }
 
 /****************************************************************************/
