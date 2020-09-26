@@ -126,16 +126,13 @@ void LoadUEFState(const char *StateName) {
 			return;
 		}
 		Version=fget16(UEFState);
-		// sprintf(errmsg,"UEF Version %x",Version);
-		// MessageBox(GETHWND,errmsg,"BeebEm",MB_OK);
 		RPos=ftell(UEFState);
 
 		while (ftell(UEFState)<FLength) {
 			Block=fget16(UEFState);
 			Length=fget32(UEFState);
 			CPos=ftell(UEFState);
-			// sprintf(errmsg,"Block %04X - Length %d (%04X)",Block,Length,Length);
-			// MessageBox(GETHWND,errmsg,"BeebEm",MB_ICONERROR|MB_OK);
+
 			if (Block==0x046A) mainWin->LoadEmuUEF(UEFState,Version);
 			if (Block==0x0460) Load6502UEF(UEFState);
 			if (Block==0x0461) LoadRomRegsUEF(UEFState);
