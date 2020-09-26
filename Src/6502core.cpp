@@ -1142,35 +1142,33 @@ void Dis6502(void)
 
 void MemoryDump6502(int addr, int count)
 {
-	int a, b;
-	int s, e;
-	int v;
 	char info[80];
-	
-	s = addr & 0xffff0;
-	e = (addr + count - 1) | 0xf;
+
+	int s = addr & 0xffff0;
+	int e = (addr + count - 1) | 0xf;
+
 	if (e > 0xfffff)
 		e = 0xfffff;
-	for (a = s; a < e; a += 16)
+
+	for (int a = s; a < e; a += 16)
 	{
 		sprintf(info, "%04X  ", a);
-		
-		for (b = 0; b < 16; ++b)
+
+		for (int b = 0; b < 16; ++b)
 		{
 			sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, true));
 		}
-		
-		for (b = 0; b < 16; ++b)
+
+		for (int b = 0; b < 16; ++b)
 		{
-			v = DebugReadMem(a+b, true);
+			unsigned char v = DebugReadMem(a+b, true);
 			if (v < 32 || v > 127)
 				v = '.';
 			sprintf(info+strlen(info), "%c", v);
 		}
-		
+
 		WriteLog("%s\n", info);
 	}
-	
 }
 
 /*-------------------------------------------------------------------------*/

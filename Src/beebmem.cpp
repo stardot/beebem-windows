@@ -298,8 +298,8 @@ const unsigned char *BeebMemPtrWithWrapMo7(int Address, int Length) {
 }
 
 /*----------------------------------------------------------------------------*/
-int BeebReadMem(int Address) {
-	int Value = 0xff;
+unsigned char BeebReadMem(int Address) {
+	unsigned char Value = 0xff;
 
 	if (MachineType == Model::B) {
 		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address - 0x8000];
@@ -577,6 +577,7 @@ int BeebReadMem(int Address) {
 		//MessageBox(GETHWND,"Read of 1770 Extension Board\n","BeebEm",MB_OK|MB_ICONERROR);
 		return(Read1770Register(Address-EFDCAddr));
 	}
+
 	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
 		return(mainWin->GetDriveControl());
 	}

@@ -112,7 +112,6 @@ static HACCEL haccelDebug;
 static std::vector<Label> Labels;
 static Breakpoint Breakpoints[MAX_BPS];
 static Watch Watches[MAX_BPS];
-static unsigned char buffer[MAX_BUFFER];
 static MemoryMap MemoryMaps[17];
 INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -427,7 +426,7 @@ static void SetDlgItemChecked(HWND hDlg, int nIDDlgItem, bool checked)
 	SendDlgItemMessage(hDlg, nIDDlgItem, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
 }
 
-void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain)
+void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 {
 	if (hwndInvisibleOwner == 0)
 	{
@@ -1575,6 +1574,7 @@ bool DebugCmdFile(char* args)
 	char mode;
 	int i = 0;
 	int addr = 0;
+	unsigned char buffer[MAX_BUFFER];
 	int count = MAX_BUFFER;
 	char filename[MAX_PATH];
 	memset(filename, 0, MAX_PATH);
@@ -1919,7 +1919,7 @@ bool DebugCmdSet(char* args)
 		return false;
 }
 
-bool DebugCmdBreakContinue(char* args)
+bool DebugCmdBreakContinue(char* /* args */)
 {
 	DebugToggleRun();
 	DebugSetCommandString(".");
@@ -2080,7 +2080,7 @@ bool DebugCmdWatch(char *args)
 		if (result != EOF)
 		{
 			// Check type is valid
-			w.type = tolower(w.type);
+			w.type = (char)tolower(w.type);
 			if(w.type != 'b' && w.type != 'w' && w.type != 'd')
 				return false;
 
@@ -2189,7 +2189,7 @@ bool DebugCmdToggleBreak(char *args)
  * End of debugger command handlers                           *
  **************************************************************/
 
-int DebugReadMem(int addr, bool host)
+unsigned char DebugReadMem(int addr, bool host)
 {
 	if (host)
 		return BeebReadMem(addr);
@@ -2213,8 +2213,8 @@ void DebugWriteMem(int addr, bool host, unsigned char data)
 
 int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 {
-	int operand;
-	int l;
+	int operand = 0;
+	int l = 0;
 
 	sprintf(opstr, "%04X ", addr);
 
@@ -2261,8 +2261,11 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 		if (ip->flag & REL)
 		{
-			if (operand > 127) 
+			if (operand > 127)
+			{
 				operand = (~0xff | operand);
+			}
+
 			operand = operand + ip->nb + addr - 1;
 			l = 4;
 		}

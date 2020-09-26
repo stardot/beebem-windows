@@ -126,7 +126,7 @@ void DebugViaState(const char *s, VIAState *v);
 void DebugParseCommand(char *command);
 void DebugRunScript(const char *filename);
 bool DebugLoadSwiftLabels(const char *filename);
-int DebugReadMem(int addr, bool host);
+unsigned char DebugReadMem(int addr, bool host);
 void DebugWriteMem(int addr, bool host, unsigned char data);
 int DebugDisassembleInstruction(int addr, bool host, char *opstr);
 int DebugDisassembleCommand(int addr, int count, bool host);
