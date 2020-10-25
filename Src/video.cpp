@@ -670,18 +670,12 @@ static void VideoStartOfFrame(void) {
   // Hence, here we always set CharLine to 0.
   VideoState.CharLine=0;
   VideoState.InCharLineUp=0;
-  
-  VideoState.IsTeletext = (VideoULA_ControlReg & 2) != 0;
-  if (!VideoState.IsTeletext) {
-    VideoState.Addr=VideoState.StartAddr=CRTC_ScreenStartLow+(CRTC_ScreenStartHigh<<8);
-  } else {
-    int tmphigh=CRTC_ScreenStartHigh;
-    /* undo wrangling of start address - I don't understand why this should be - see p.372 of AUG for this info */
-    tmphigh^=0x20;
-    tmphigh+=0x74;
-    tmphigh&=255;
-    VideoState.Addr=VideoState.StartAddr=CRTC_ScreenStartLow+(tmphigh<<8);
 
+  VideoState.Addr = VideoState.StartAddr = CRTC_ScreenStartLow + (CRTC_ScreenStartHigh << 8);
+
+  VideoState.IsTeletext = (VideoULA_ControlReg & 2) != 0;
+
+  if (VideoState.IsTeletext) {
     // O aye. this is the mode 7 flash section is it? Modified for corrected flash settings - Richard Gellman
     if (Mode7FlashTrigger<0) {
       Mode7FlashTrigger = Mode7FlashOn ? MODE7OFFFIELDS : MODE7ONFIELDS;
@@ -997,7 +991,7 @@ static void LowLevelDoScanLine() {
 
 void RedoMPTR(void) {
 	if (VideoState.IsTeletext) {
-		VideoState.DataPtr = BeebMemPtrWithWrapMo7(ova, ovn);
+		VideoState.DataPtr = BeebMemPtrWithWrapMode7(ova, ovn);
 	}
 	else {
 		VideoState.DataPtr = BeebMemPtrWithWrap(ova, ovn);
@@ -1032,7 +1026,7 @@ void VideoDoScanLine(void) {
 	// The infrastructure now exists though to make DoMode7Row plot just a single scanline (from InCharLineUp 0..9).
     if (VideoState.CharLine<CRTC_VerticalDisplayed && VideoState.InCharLineUp==0) {
       ova=VideoState.Addr; ovn=CRTC_HorizontalDisplayed;
-      VideoState.DataPtr=BeebMemPtrWithWrapMo7(VideoState.Addr,CRTC_HorizontalDisplayed);
+      VideoState.DataPtr = BeebMemPtrWithWrapMode7(VideoState.Addr, CRTC_HorizontalDisplayed);
       VideoState.Addr+=CRTC_HorizontalDisplayed;
       if (!FrameNum) DoMode7Row();
       VideoState.PixmapLine+=20;
@@ -1620,7 +1614,7 @@ void VideoGetText(char *text, int line)
 	if (!VideoState.IsTeletext || line >= CRTC_VerticalDisplayed)
 		return;
 
-	const unsigned char *dataPtr = BeebMemPtrWithWrapMo7(
+	const unsigned char *dataPtr = BeebMemPtrWithWrapMode7(
 		VideoState.StartAddr + line * CRTC_HorizontalDisplayed,
 		CRTC_HorizontalDisplayed);
 
