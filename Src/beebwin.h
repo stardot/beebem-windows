@@ -234,8 +234,11 @@ public:
 	const char *GetAppPath(void) { return m_AppPath; }
 	const char *GetUserDataPath(void) { return m_UserDataPath; }
 	void GetDataPath(const char *folder, char *path);
-	void QuickLoad(void);
-	void QuickSave(void);
+	void QuickLoad();
+	void QuickSave();
+	void LoadUEFState(const char *FileName);
+	void SaveUEFState(const char *FileName);
+
 	void Speak(const char *text, DWORD flags);
 	void SpeakChar(unsigned char c);
 	void TextToSpeechKey(WPARAM uParam);

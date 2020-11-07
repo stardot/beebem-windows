@@ -854,6 +854,46 @@ void BeebWin::QuickSave()
 	SaveUEFState(FileName2);
 }
 
+void BeebWin::LoadUEFState(const char *FileName)
+{
+	UEFStateResult Result = ::LoadUEFState(FileName);
+
+	switch (Result) {
+		case UEFStateResult::Success:
+			SetRomMenu();
+			SetDiscWriteProtects();
+			break;
+
+		case UEFStateResult::OpenFailed: {
+			char errstr[256];
+			sprintf(errstr, "Cannot open state file: %s", FileName);
+			MessageBox(GETHWND, errstr, "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+
+		case UEFStateResult::InvalidUEFFile:
+			MessageBox(GETHWND, "The file selected is not a UEF File.", "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+	}
+}
+
+void BeebWin::SaveUEFState(const char *FileName)
+{
+	UEFStateResult Result = ::SaveUEFState(FileName);
+
+	switch (Result) {
+		case UEFStateResult::Success:
+			break;
+
+		case UEFStateResult::WriteFailed:
+		default: {
+			char errstr[256];
+			sprintf(errstr, "Failed to write state file: %s", FileName);
+			MessageBox(GETHWND, errstr, "BeebEm", MB_ICONERROR | MB_OK);
+		}
+	}
+}
+
 /****************************************************************************/
 // if DLLName is NULL then FDC setting is read from the registry
 // else the named DLL is read in

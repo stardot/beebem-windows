@@ -22,6 +22,7 @@ Boston, MA  02110-1301, USA.
 // UEF Game state code.
 
 #include <stdio.h>
+#include "uefstate.h"
 #include "6502core.h"
 #include "beebmem.h"
 #include "video.h"
@@ -64,9 +65,9 @@ unsigned int fget16(FILE *fileptr) {
 	return(tmpvar);
 }
 
-void SaveUEFState(const char *StateName) {
+UEFStateResult SaveUEFState(const char *StateName) {
 	FILE *UEFState = fopen(StateName, "wb");
-	if (UEFState != NULL)
+	if (UEFState != nullptr)
 	{
 		fprintf(UEFState,"UEF File!");
 		fputc(0,UEFState); // UEF Header
@@ -96,17 +97,16 @@ void SaveUEFState(const char *StateName) {
 		SaveAtoDUEF(UEFState);
 		SaveMusic5000UEF(UEFState);
 		fclose(UEFState);
+
+		return UEFStateResult::Success;
 	}
 	else
 	{
-		char errstr[256];
-		sprintf(errstr, "Failed to write state file: %s", StateName);
-		MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+		return UEFStateResult::WriteFailed;
 	}
 }
 
-void LoadUEFState(const char *StateName) {
-	// char errmsg[256];
+UEFStateResult LoadUEFState(const char *StateName) {
 	char UEFId[10];
 	// int CompletionBits=0; // These bits should be filled in
 	long RPos=0,FLength,CPos;
@@ -121,9 +121,8 @@ void LoadUEFState(const char *StateName) {
 		fseek(UEFState,0,SEEK_SET);  // Get File length for eof comparison.
 		fread(UEFId,10,1,UEFState);
 		if (strcmp(UEFId,"UEF File!")!=0) {
-			MessageBox(GETHWND,"The file selected is not a UEF File.","BeebEm",MB_ICONERROR|MB_OK);
 			fclose(UEFState);
-			return;
+			return UEFStateResult::InvalidUEFFile;
 		}
 		Version=fget16(UEFState);
 		RPos=ftell(UEFState);
@@ -160,13 +159,10 @@ void LoadUEFState(const char *StateName) {
 
 		fclose(UEFState);
 
-		mainWin->SetRomMenu();
-		mainWin->SetDiscWriteProtects();
+		return UEFStateResult::Success;
 	}
 	else
 	{
-		char errstr[256];
-		sprintf(errstr, "Cannot open state file: %s", StateName);
-		MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+		return UEFStateResult::OpenFailed;
 	}
 }

@@ -22,11 +22,18 @@ Boston, MA  02110-1301, USA.
 #ifndef UEFSTATE_HEADER
 #define UEFSTATE_HEADER
 
+enum class UEFStateResult {
+	Success,
+	OpenFailed,
+	WriteFailed,
+	InvalidUEFFile
+};
+
 void fput32(unsigned int word32,FILE *fileptr);
 void fput16(unsigned int word16,FILE *fileptr);
 unsigned int fget32(FILE *fileptr);
 unsigned int fget16(FILE *fileptr);
-void SaveUEFState(const char *StateName);
-void LoadUEFState(const char *StateName);
+UEFStateResult SaveUEFState(const char *StateName);
+UEFStateResult LoadUEFState(const char *StateName);
 
 #endif
