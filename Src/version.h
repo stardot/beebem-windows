@@ -12,14 +12,14 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 // BeebEm version
 #define VERSION_MAJOR   4
-#define VERSION_MINOR   15
-#define VERSION_STRING  "4.15"
-#define VERSION_DATE    "28 Jun 2020"
+#define VERSION_MINOR   16
+#define VERSION_STRING  "4.16"
+#define VERSION_DATE    "9 Jan 2021"

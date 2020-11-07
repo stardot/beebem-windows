@@ -1,6 +1,33 @@
 BeebEm Change History
 =====================
 
+Version 4.16 (Chris Needham, Dominic Beesley)
+------------
+* Reintroduced Master 512 co-processor support, following change to the MAME
+  source code license.
+* Added Torch Z80 utility discs and renamed ROM files.
+* Fixed Integra-B sideways RAM writes.
+* Improved Sprow ARM7TDMI co-processor clock speed accuracy.
+* Debug watches now update while the emulator is running.
+* Fixed disc image auto-boot.
+* Fixed Model B MODE 7 emulation with screen memory at &3C00.
+* Fixed 6502 opcodes and removed the Ignore Illegal Instructions menu option.
+  - Repton tape loader now works (instructions: 04, 0C, 14, 1C, 34, 3C, 44,
+    54, 64, 74, 89).
+  - Zalaga tape loader now works (instructions: 04, 3C, 44, 54, 5C, 64, 74, 7C).
+  - 3D Grand Prix tape loader now works (instruction &80).
+  - KIL instructions are executed repeatedly, to emulate hanging the machine.
+  - RMBn, SMBn, BBRn, BBSn instructions in 65C02 copro are now implemented.
+  - Fixed instruction cycle times.
+  - All 6502 and 65C02 opcodes are now recognised in the debugger.
+* Removed the "Incorrect disc type selected" warning dialog, which was reporting
+  false positives on valid .ssd files.
+* Include complete video state in UEF save state files.
+* Clipboard Paste handling no longer overwrites memory.
+* Fixed Music 5000 panning, the left and right channels were reversed.
+* Fixed use of Jim page select register with Music 5000.
+* Added -CustomData command line option.
+
 Version 4.15 (Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
 Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley,
 Ken Lowe, Dominic Beesley)
@@ -36,7 +63,7 @@ Ken Lowe, Dominic Beesley)
 * Rework teletext adapter emulation and add support for real-time packet streams.
 * Fixed reads from CRTC and Video ULA registers.
 * Added new DX video modes for full-screen (1440p and 4K).
-* Fixed issue where BeebEm would always use the primary monitor when going 
+* Fixed issue where BeebEm would always use the primary monitor when going
   fullscreen.
   - Now uses monitor on which the BeebEm window is positioned.  As with all
     DX9 applications, this works best when "Maintain Desktop Resolultion" is
@@ -109,7 +136,7 @@ Version 4.11 (Rob O'Donnell, Rich Talbot-Watkins, Mike Wyatt)
 ------------
 * Added AUN Econet support.
 * Added 'RAW comms' option for use with the serial port IP options.
-* Updated video emulation to remove screen stretching and fix cursor 
+* Updated video emulation to remove screen stretching and fix cursor
   positioning.
 * Added some more shortcut keys, for use on laptops primarily:
     ALT 1  Quick save state
@@ -128,7 +155,7 @@ Version 4.10 (Mike Wyatt)
 ------------
 * Added screen capture options to the file menu.  Resolution and file format
   can be selected.  The BMP, JPEG, GIF and PNG file formats are supported.
-  ALT+keypad 5 (with NumLock on) is a shortcut key for capturing the screen 
+  ALT+keypad 5 (with NumLock on) is a shortcut key for capturing the screen
   to file.
 * Added option to change the User Data folder location.
 * Added keyboard mapping to the saved emulator state.
@@ -163,7 +190,7 @@ Version 4.01 (Steve Pick, Mike Wyatt)
 * Expanded debug memory map support:
   - Maps can now be stored for each ROM, just put a .map file with the same
     name as the ROM in the ROM's directory, for example BeebFile\BBC\os12.map
-    corresponds to BeebFile\BBC\OS12.ROM, and address queries (via 
+    corresponds to BeebFile\BBC\OS12.ROM, and address queries (via
     'help <addr>') will return info from the currently selected ROM's map.
   - Address info queries now understand shadow/private/sideways RAM in
     different machines.
@@ -253,7 +280,7 @@ Version 3.81 (Mike Wyatt, Jon Welch)
 ------------
 * Added -DisMenu command line option to disable the menus.
 * Fixed issue where sound output stops after about 10 mins.
-* Corrected the fix in v3.8 for sound artifacts.  Sampled sound works 
+* Corrected the fix in v3.8 for sound artifacts.  Sampled sound works
   correctly again.
 * Added periodic noise emulation tweak from Rich Talbot-Watkins.
 * Updated instructions for defining user keyboard mappings (thanks to
@@ -262,7 +289,7 @@ Version 3.81 (Mike Wyatt, Jon Welch)
 
 Version 3.8 (Mike Wyatt, Jon Welch)
 -----------
-* Enhanced user defined key mapping support.  Shifted and unshifted key 
+* Enhanced user defined key mapping support.  Shifted and unshifted key
   presses can now be defined separately so custom logical mappings can be
   defined.
 * Added load and save options for user defined key mappings.
@@ -275,7 +302,7 @@ Version 3.8 (Mike Wyatt, Jon Welch)
   exit.  Also, by popular demand, added a prefs option to remember the last
   folder used for loading disc/tape/state files.
 * Fixed disc write protect menu update when ejecting a disc.
-* Increased default Econet flag fill timeout to 250000.  Improves Econet 
+* Increased default Econet flag fill timeout to 250000.  Improves Econet
   comms a bit (still not 100% though).
 
 Version 3.7 (Jon Welch)
@@ -288,19 +315,19 @@ Version 3.6 (Mike Wyatt, Jon Welch)
 * Added support for DirectX9 so image output looks good in Vista.
 * Moved all preferences from the Window registry to the Preferences.cfg
   file. CMOS settings also moved from cmos.ram to the prefs file.
-* Preferences such as Window position, FDC selection and CMOS settings 
+* Preferences such as Window position, FDC selection and CMOS settings
   are now only saved when "Save Preferences" is used.
 * Moved all "user" data such as disk images, tape images, state files,
   config files, etc. to the user's "My Documents\BeebEm" directory.
-  BeebEm will copy a default set of data files to "My Documents\BeebEm" 
-  if the directory does not exist.  Each user will have their own data 
+  BeebEm will copy a default set of data files to "My Documents\BeebEm"
+  if the directory does not exist.  Each user will have their own data
   files and preferences.
 * Added command line options to specify user data directory, preferences
-  file and roms configuration file.  This allows different BeebEm 
+  file and roms configuration file.  This allows different BeebEm
   preferences and configurations to be set up and selected via the command
-  line.  Also allows BeebEm to be run from a USB drive without affecting 
+  line.  Also allows BeebEm to be run from a USB drive without affecting
   the host PC (run via the BeebEmLocal.vbs script).
-* Added 'Protect on Load' to disc options menu to select default write 
+* Added 'Protect on Load' to disc options menu to select default write
   protect state when a disc is loaded.
 * Added some more Window and full screen sizes.
 * Change to use Inno Setup for installation.  Installer will move any user
@@ -318,7 +345,7 @@ Version 3.6 (Mike Wyatt, Jon Welch)
 
 Version 3.5 (Mike Wyatt, Theo Lindebaum, Jon Welch)
 -----------
-* Added text to speech support and screen reader compatible text view for 
+* Added text to speech support and screen reader compatible text view for
   use by visually impaired people.
 * Fixed support for MOS 3.50 in Master 128 mode.
 * Fixed a bunch of compiler warnings thrown up by VS2005.
@@ -332,7 +359,7 @@ Version 3.5 (Mike Wyatt, Theo Lindebaum, Jon Welch)
 Version 3.4 (Jon Welch)
 -----------
 * Added preliminary support for loading CSW format tape images
-* Added emulation of Microvitec touch screen (can be used with software 
+* Added emulation of Microvitec touch screen (can be used with software
   from Brilliant Computing)
 * Added user port breakout box
 * Added digital mousestick option
@@ -350,11 +377,11 @@ Version 3.3 (Mike Wyatt)
   emulation.  When enabled they cause corruption of Alien8 data.
 * Removed ADFS and ATS ROMs from Model-B configuration as they were causing
   a few problems.
-* Improved VIA and interrupt timing and fixed instruction cycle count for 
+* Improved VIA and interrupt timing and fixed instruction cycle count for
   branches.  The following programs now run:
     Nightshade (tape), Lancelot, The Empire Strikes Back, Dabs Fingerprint,
     Yie Ar Kung-Foo (tape)
-* Added "Eject Disc" options to the file menu.  The name of the currently 
+* Added "Eject Disc" options to the file menu.  The name of the currently
   loaded image file is shown next to the menu option.
 * Added two new debugger commands:
     "c" to change memory contents
@@ -379,7 +406,7 @@ Version 3.11 (Mike Wyatt)
 Version 3.1 (Mike Wyatt, Rob O'Donnell, Jon Welch)
 -----------
 * Added econet emulation.  It works in Model B mode and Master 128 mode.
-  The Acorn level 1 and 2 file server software runs and stations can 
+  The Acorn level 1 and 2 file server software runs and stations can
   read/write files to the server.  Note that the default DFS ROM in Model B
   mode has been changed to the Acorn DNFS ROM.
   (Note also that TORCHNET works using the Torch Z80 Co-Processor)
@@ -401,9 +428,9 @@ Version 3.1 (Mike Wyatt, Rob O'Donnell, Jon Welch)
 * Added keyboard shortcuts for Quicksave (keypad /) & Quickload (keypad *).
   Quicksave now keeps the last 10 quicksave files so you can go back to an
   earlier state using the load state menu option.
-* Changed to ignore DirectX errors during screen update.  Stops BeebEm 
+* Changed to ignore DirectX errors during screen update.  Stops BeebEm
   reporting an error when switching between a full and non-full screen mode
-  instances of BeebEm.  DirectX appears to sort itself out after a second 
+  instances of BeebEm.  DirectX appears to sort itself out after a second
   or two!
 * Fixed disk initialisation in the 1770 controller when creating a new disk
   image.
@@ -413,33 +440,33 @@ Version 3.0 (Mike Wyatt)
 -----------
 * Improved VIA timing emulation and fixed some instruction cycle counts.
   Its still not perfect but its good enough to run various versions of the
-  infamous "Kevin Edwards" protection code!  The following tapes now load 
+  infamous "Kevin Edwards" protection code!  The following tapes now load
   and run:
     Knight Lore, Alien 8, Daley Thompson Supertest, Strykers Run,
     Exile, Joust, Galaforce
   These are the only ones I've tried, others may work as well.
 * Fixed bug in horizontal displayed register emulation.  Joust tape loading
   screen now appears centered correctly.
-* Fixed bug in virtical sync position register emulation.  Stops DirectX 
+* Fixed bug in virtical sync position register emulation.  Stops DirectX
   errors occurring when running Micropower Roulette.
 * Fixed bug in virtical displayed/total register emulation for mode 7.
   Screen is now cleared below lines that are displayed.
 * Added AVI video capture to the file menu (now with resolution and frame
   skip options).
-* Changed command line parsing so it works when paths are enclosed in 
+* Changed command line parsing so it works when paths are enclosed in
   quotes and it now supports loading of UEF state files (thanks to Jasper
   for this one).  Disk and state files can now be associated with BeebEm
   and run by double clicking on them.
 * Fixed bug in IDE hard disk file access that prevented BeebEm from running
   when logged in as an unprivileged user on Windows XP.
-* Fixed bug with window positioning when task bar is on left or top of 
+* Fixed bug with window positioning when task bar is on left or top of
   screen.
 * Bumped version to 3.0 to keep in sync with the Mac version of BeebEm.
 
 Version 2.3 (Mike Wyatt, Greg Cook, Jon Welch)
 -----------
-* Added "Motion Blur" option to view menu (suggested by Ian Bell). This 
-  all but stops the spaceship flicker in Elite.  
+* Added "Motion Blur" option to view menu (suggested by Ian Bell). This
+  all but stops the spaceship flicker in Elite.
 * More 1770 disc controller fixes from Greg.
 * Preliminary IDE hard disk support from Jon Welch.
 * Torch Z80 second processor emulation from Jon Welch (see README_Z80.TXT).
@@ -496,7 +523,7 @@ Version 1.6 (Ken Lowe & Mike Wyatt)
   will load the disc images that were loaded when the state was stored.
 * Fixed various bugs in the video emulation (fixes Psycastria and Level 9
   graphical adventures, improves FireTrack).
-* Changed video emulation so that *TV255 does not move screen down (*TV254 
+* Changed video emulation so that *TV255 does not move screen down (*TV254
   does though). Some programs do a *TV255 and the bottom line of the screen
   is lost.
 * Fixed reload of drive 1 disc image after a File->Reset.
@@ -508,11 +535,11 @@ Version 1.6 (Ken Lowe & Mike Wyatt)
 Version 1.5 (Mike Wyatt)
 -----------
 * Updated the speed regulation code again (should fix hangs).
-* Added some more fixed speed settings (you can now play Elite at a 
+* Added some more fixed speed settings (you can now play Elite at a
   decent speed!).
 * Put quick load and save back the right way!
 * Add a link to the README file to the help menu.
-* Changed keyboard maps to default and logical layouts.  The default 
+* Changed keyboard maps to default and logical layouts.  The default
   mapping is the same as the old mapping 1.  Logical mapping maps symbol
   by symbol (for a UK PC keyboard at least) so you get what you press.
 * Added keyboard mapping options for A & S and function keys.
@@ -527,9 +554,9 @@ Version 1.5 (Mike Wyatt)
 * Add some sleeps to the serial comms threads so BeebEm is a bit
   easier on CPU usage.
 * Added some extra error checking for file handling.
-* Stopped BeebEm from creating the C:\crtc.log file (you can 
+* Stopped BeebEm from creating the C:\crtc.log file (you can
   remove this file).
-* Tidied up the BeebEm installation directory.  The source code 
+* Tidied up the BeebEm installation directory.  The source code
   is now kept in a zip file.
 * Moved all preference settings into the Windows registry.
 
@@ -644,7 +671,7 @@ Windows update only:
   DirectDraw implementation.)
 * Added option to use 32-bit DirectDraw modes in full screen, as opposed
   to 8-bit. (In a window, DirectDraw uses the desktop color depth.)
-  When combined with "Buffer in video RAM", the result is a *superior*, 
+  When combined with "Buffer in video RAM", the result is a *superior*,
   interpolated display!  Scaling artifacts "disappear" at any resolution.
 * Made "Full Screen" a toggle, not a standalone mode/"window size".
 * Fixed a bug that didn't show speed/FPS in a windowed DirectDraw mode.
@@ -660,7 +687,7 @@ Added Robert's Freeze when Inactive option.
 
 Version 1.01 (Mike Wyatt)
 ------------
-Fixes the problem with BeebEm hanging after about 35 minutes. 
+Fixes the problem with BeebEm hanging after about 35 minutes.
 
 Version 1.0 (Mike Wyatt)
 -----------
