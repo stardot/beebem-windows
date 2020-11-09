@@ -368,6 +368,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 
 		if (FDCommand == 8 || FDCommand == 9) {
 			Status &= ~WD1770_STATUS_DATA_REQUEST;
+
 			// Now set some control bits for Type 2 Commands
 			SpinUp = (Value & WD1770_CMD_FLAGS_DISABLE_SPIN_UP) != 0;
 			Verify = (Value & WD1770_CMD_FLAGS_VERIFY) != 0;
@@ -706,9 +707,9 @@ void Poll1770(int NCycles) {
 		if (FDCommand == 8 && *CDiscOpen) FDCommand = 6;
 
 		if (FDCommand == 9 && *CDiscOpen) {
-			FDCommand = 7;
 			Status |= WD1770_STATUS_DATA_REQUEST;
 			NMIStatus |= 1 << nmi_floppy;
+			FDCommand = 7;
 		}
 	}
 
@@ -749,7 +750,7 @@ void Poll1770(int NCycles) {
 			            WD1770_STATUS_CRC_ERROR |
 			            WD1770_STATUS_LOST_DATA);
 			Status |= WD1770_STATUS_DATA_REQUEST;
-			NMIStatus |= 1 << nmi_floppy; // DRQ
+			NMIStatus |= 1 << nmi_floppy;
 
 			switch (FormatState)
 			{
@@ -889,10 +890,11 @@ void Poll1770(int NCycles) {
 
 		if (NextFDCommand == 255) {
 			// Error during access
+			UpdateTR00Status();
+
 			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
 			Status &= ~WD1770_STATUS_CRC_ERROR;
 
-			UpdateTR00Status();
 		}
 		NMIStatus |= 1 << nmi_floppy;
 		FDCommand = 12;
@@ -952,7 +954,8 @@ void Poll1770(int NCycles) {
 			NextFDCommand = 0;
 			Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
 			            WD1770_STATUS_RECORD_NOT_FOUND |
-			            WD1770_STATUS_CRC_ERROR);
+			            WD1770_STATUS_CRC_ERROR |
+			            WD1770_STATUS_LOST_DATA);
 
 			if (ByteCount == 6) {
 				Data = Track;
