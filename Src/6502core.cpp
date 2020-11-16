@@ -1174,27 +1174,6 @@ void Exec6502Instruction(void) {
 			Dis6502();
 		}
 
-		if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
-		{
-			z80_execute();
-		}
-		else if (TubeType == Tube::AcornArm)
-		{
-			arm->exec(4);
-		}
-		else if (TubeType == Tube::SprowArm)
-		{
-			#if _DEBUG
-			sprow->exec(2);
-			#else
-			sprow->exec(32);
-			#endif
-		}
-		else if (TubeType == Tube::Master512CoPro)
-		{
-			master512CoPro.Execute(12 * 4);
-		}
-
 		Branched = false;
 		iFlagJustCleared=false;
 		iFlagJustSet=false;
@@ -2384,8 +2363,32 @@ void Exec6502Instruction(void) {
 		}
 		OldNMIStatus=NMIStatus;
 
-		if (TubeType == Tube::Acorn65C02)
-			SyncTubeProcessor();
+		switch (TubeType) {
+			case Tube::Acorn65C02:
+				SyncTubeProcessor();
+				break;
+
+			case Tube::AcornZ80:
+			case Tube::TorchZ80:
+				z80_execute();
+				break;
+
+			case Tube::AcornArm:
+				arm->exec(4);
+				break;
+
+			case Tube::SprowArm:
+				#if _DEBUG
+				sprow->exec(2);
+				#else
+				sprow->exec(32);
+				#endif
+				break;
+
+			case Tube::Master512CoPro:
+				master512CoPro.Execute(12 * 4);
+				break;
+		}
 	}
 } /* Exec6502Instruction */
 
