@@ -85,7 +85,6 @@ void Init6502core(void);
 void Exec6502Instruction(void);
 
 void DoNMI(void);
-void core_dumpstate(void);
 void DoInterrupt(void);
 void Save6502UEF(FILE *SUEF);
 void Load6502UEF(FILE *SUEF);

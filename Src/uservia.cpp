@@ -194,8 +194,7 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 9:
-      /* cerr << "UserVia Reg9 Timer2 hi Counter Write val=0x" << hex << Value << dec << "\n";
-      core_dumpstate(); */
+      /* cerr << "UserVia Reg9 Timer2 hi Counter Write val=0x" << hex << Value << dec << "\n"; */
       UserVIAState.timer2l&=0xff;
       UserVIAState.timer2l|=(Value & 0xff)<<8;
       UserVIAState.timer2c=UserVIAState.timer2l * 2 + 1;

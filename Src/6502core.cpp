@@ -14,8 +14,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -66,8 +66,6 @@ Boston, MA  02110-1301, USA.
 using namespace std;
 
 bool CPUDebug = false;
-// FILE *InstrLog;
-// FILE *osclilog; //=fopen("/oscli.log","wt");
 
 static unsigned int InstrCount;
 bool IgnoreIllegalInstructions = true;
@@ -518,8 +516,7 @@ INLINE static void BRKInstrHandler(void) {
   if (CPUDebug) {
   sprintf(errstr,"BRK Instruction at 0x%04x after %i instructions. ACCON: 0x%02x ROMSEL: 0x%02x",ProgramCounter,InstrCount,ACCCON,PagedRomReg);
   MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR);
-  //fclose(InstrLog);
-  exit(1); 
+  exit(1);
   }
   PushWord(ProgramCounter+1);
   SetPSR(FlagB,0,0,0,0,1,0,0); /* Set B before pushing */
@@ -621,24 +618,6 @@ INLINE static void INAInstrHandler(void) {
 INLINE static void JSRInstrHandler(int16 address) {
   PushWord(ProgramCounter-1);
   ProgramCounter=address;
-/*  if (ProgramCounter==0xffdd) {
-	  // OSCLI logging for elite debugging
-	  unsigned char *bptr;
-	  char pcbuf[256]; char *pcptr=pcbuf;
-	  int blk=((YReg*256)+XReg);
-	  bptr=WholeRam+((WholeRam[blk+1]*256)+WholeRam[blk]);
-  	  while((*bptr != 13) && ((pcptr-pcbuf)<254)) {
-		  *pcptr=*bptr; pcptr++;bptr++; 
-	  } 
-	  *pcptr=0;
-	  fprintf(osclilog,"%s\n",pcbuf);
-  }
-  /*if (ProgramCounter==0xffdd) {
-	  char errstr[250];
-	  sprintf(errstr,"OSFILE called\n");
-	  MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR);
-  }*/
-
 } /* JSRInstrHandler */
 
 INLINE static void LDAInstrHandler(int16 operand) {
@@ -1233,15 +1212,11 @@ void Exec6502Instruction(void) {
 		OldPC=ProgramCounter;
 		PrePC=ProgramCounter;
 		CurrentInstruction=ReadPaged(ProgramCounter++);
-		// cout << "Fetch at " << hex << (ProgramCounter-1) << " giving 0x" << CurrentInstruction << dec << "\n"; 
 
 		// Advance VIAs to point where mem read happens
 		ViaCycles=0;
 		AdvanceCyclesForMemRead();
 
-		//  if ((ProgramCounter>=0x0100) && (ProgramCounter<=0x0300)) {
-		//	  fprintf(InstrLog,"%04x %02x %02x %02x %02x\n",ProgramCounter-1,CurrentInstruction,ReadPaged(ProgramCounter),ReadPaged(ProgramCounter+1),YReg);
-		//  }
 		if (OpCodes>=1) { // Documented opcodes
 			switch (CurrentInstruction) {
 			case 0x00:
@@ -1473,24 +1448,7 @@ void Exec6502Instruction(void) {
 				LSRInstrHandler_Acc();
 				break;
 			case 0x4c:
-				ProgramCounter=AbsAddrModeHandler_Address(); /* JMP */
-				/*    if (ProgramCounter==0xffdd) {
-				// OSCLI logging for elite debugging
-				unsigned char *bptr;
-				char pcbuf[256]; char *pcptr=pcbuf;
-				int blk=((YReg*256)+XReg);
-				bptr=WholeRam+((WholeRam[blk+1]*256)+WholeRam[blk]);
-				while((*bptr != 13) && ((pcptr-pcbuf)<254)) {
-				*pcptr=*bptr; pcptr++;bptr++; 
-				} 
-				*pcptr=0;
-				fprintf(osclilog,"%s\n",pcbuf);
-				}
-				/*if (ProgramCounter==0xffdd) {
-				char errstr[250];
-				sprintf(errstr,"OSFILE called\n");
-				MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR);
-				}*/
+				ProgramCounter = AbsAddrModeHandler_Address(); // JMP
 				break;
 			case 0x4d:
 				EORInstrHandler(AbsAddrModeHandler_Data());
@@ -2481,9 +2439,3 @@ void Load6502UEF(FILE *SUEF) {
 	//AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
 }
 
-/*-------------------------------------------------------------------------*/
-/* Dump state                                                              */
-void core_dumpstate(void) {
-  cerr << "core:\n";
-  DumpRegs();
-}
