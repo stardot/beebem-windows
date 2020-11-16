@@ -1014,23 +1014,13 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	}
 	else
 	{
-		DebugDisassembleInstruction(addr, host, str);
-
-		sprintf(str + strlen(str), "A=%02X X=%02X Y=%02X S=%02X ", Accumulator, XReg, YReg, StackReg);
-
-		char *p = str + strlen(str);
-		*p++ = (PSR & FlagC) ? 'C' : '.';
-		*p++ = (PSR & FlagZ) ? 'Z' : '.';
-		*p++ = (PSR & FlagI) ? 'I' : '.';
-		*p++ = (PSR & FlagD) ? 'D' : '.';
-		*p++ = (PSR & FlagB) ? 'B' : '.';
-		*p++ = (PSR & FlagV) ? 'V' : '.';
-		*p++ = (PSR & FlagN) ? 'N' : '.';
-		*p = '\0';
+		int Length = DebugDisassembleInstructionWithCPUStatus(
+			addr, host, Accumulator, XReg, YReg, StackReg, PSR, str
+		);
 
 		if (!host)
 		{
-			strcpy(p, "  Parasite");
+			strcpy(&str[Length], "  Parasite");
 		}
 	}
 
@@ -2264,32 +2254,39 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 	int operand = 0;
 	int l = 0;
 
-	sprintf(opstr, "%04X ", addr);
+	char *s = opstr;
+
+	s += sprintf(s, "%04X ", addr);
 
 	int opcode = DebugReadMem(addr, host);
 	const InstInfo *ip = &optable[opcode];
 
-	char *s = opstr + strlen(opstr);
-
 	switch (ip->nb) {
 		case 1:
-			sprintf(s, "%02X        ", DebugReadMem(addr, host));
+			s += sprintf(s, "%02X        ",
+			             DebugReadMem(addr, host));
 			break;
 		case 2:
-			sprintf(s, "%02X %02X     ", DebugReadMem(addr, host), DebugReadMem(addr+1, host));
+			s += sprintf(s, "%02X %02X     ",
+			             DebugReadMem(addr, host),
+			             DebugReadMem(addr + 1, host));
 			break;
 		case 3:
-			sprintf(s, "%02X %02X %02X  ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host));
+			s += sprintf(s, "%02X %02X %02X  ",
+			             DebugReadMem(addr, host),
+			             DebugReadMem(addr + 1, host),
+			             DebugReadMem(addr + 2, host));
 			break;
 	}
 
-	if (!host)
-		sprintf(opstr + strlen(opstr), "            ");
+	if (!host) {
+		s += sprintf(s, "            ");
+	}
 
 	// Deal with 65C02 instructions
 	if (!ip->c6502 || !host || MachineType == Model::Master128)
 	{
-		sprintf(opstr + strlen(opstr), "%s ", ip->opn);
+		s += sprintf(s, "%s ", ip->opn);
 		addr++;
 
 		switch(ip->nb)
@@ -2302,7 +2299,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 				l = 2;
 				break;
 			case 3:
-				operand = DebugReadMem(addr, host) + (DebugReadMem(addr+1, host) << 8);
+				operand = DebugReadMem(addr, host) + (DebugReadMem(addr + 1, host) << 8);
 				l = 4;
 				break;
 		}
@@ -2318,56 +2315,83 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 			l = 4;
 		}
 
-		s=opstr+strlen(opstr);
-
 		switch (ip->flag & ADRMASK)
 		{
 		case IMM:
-			sprintf(s, "#%0*X    ", l, operand);
+			s += sprintf(s, "#%0*X    ", l, operand);
 			break;
 		case REL:
 		case ABS:
 		case ZPG:
-			sprintf(s, "%0*X     ", l, operand);
+			s += sprintf(s, "%0*X     ", l, operand);
 			break;
 		case IND:
-			sprintf(s, "(%0*X)   ", l, operand);
+			s += sprintf(s, "(%0*X)   ", l, operand);
 			break;
 		case ABX:
 		case ZPX:
-			sprintf(s, "%0*X,X   ", l, operand);
+			s += sprintf(s, "%0*X,X   ", l, operand);
 			break;
 		case ABY:
 		case ZPY:
-			sprintf(s, "%0*X,Y   ", l, operand);
+			s += sprintf(s, "%0*X,Y   ", l, operand);
 			break;
 		case INX:
-			sprintf(s, "(%0*X,X) ", l, operand);
+			s += sprintf(s, "(%0*X,X) ", l, operand);
 			break;
 		case INY:
-			sprintf(s, "(%0*X),Y ", l, operand);
+			s += sprintf(s, "(%0*X),Y ", l, operand);
 			break;
 		case ACC:
-			sprintf(s, "A        ");
+			s += sprintf(s, "A        ");
 			break;
 		case IMP:
 		default:
-			sprintf(s, "         ");
+			s += sprintf(s, "         ");
 			break;
 		}
 
-		if (l == 2)
-			sprintf(opstr + strlen(opstr), "  ");
+		if (l == 2) {
+			s += sprintf(s, "  ");
+		}
 	}
 	else
 	{
-		sprintf(opstr + strlen(opstr), "???          ");
+		s += sprintf(s, "???          ");
 	}
 
-	if (host)
-		sprintf(opstr + strlen(opstr), "            ");
+	if (host) {
+		s += sprintf(s, "            ");
+	}
 
-	return(ip->nb);
+	return ip->nb;
+}
+
+int DebugDisassembleInstructionWithCPUStatus(int addr,
+                                             bool host,
+                                             unsigned char Accumulator,
+                                             unsigned char XReg,
+                                             unsigned char YReg,
+                                             unsigned char StackReg,
+                                             unsigned char PSR,
+                                             char *opstr)
+{
+	DebugDisassembleInstruction(addr, host, opstr);
+
+	char* p = opstr + strlen(opstr);
+
+	p += sprintf(p, "A=%02X X=%02X Y=%02X S=%02X ", Accumulator, XReg, YReg, StackReg);
+
+	*p++ = (PSR & FlagC) ? 'C' : '.';
+	*p++ = (PSR & FlagZ) ? 'Z' : '.';
+	*p++ = (PSR & FlagI) ? 'I' : '.';
+	*p++ = (PSR & FlagD) ? 'D' : '.';
+	*p++ = (PSR & FlagB) ? 'B' : '.';
+	*p++ = (PSR & FlagV) ? 'V' : '.';
+	*p++ = (PSR & FlagN) ? 'N' : '.';
+	*p = '\0';
+
+	return p - opstr;
 }
 
 int DebugDisassembleCommand(int addr, int count, bool host)

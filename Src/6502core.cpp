@@ -1101,22 +1101,18 @@ void DoNMI(void) {
   IRQCycles=7;
 } /* DoNMI */
 
-void Dis6502(void)
+void Dis6502()
 {
 	char str[256];
-	DebugDisassembleInstruction(ProgramCounter, true, str);
-	
-	sprintf(str + strlen(str), "%02X %02X %02X ", Accumulator, XReg, YReg);
-	
-	sprintf(str + strlen(str), (PSR & FlagC) ? "C" : ".");
-	sprintf(str + strlen(str), (PSR & FlagZ) ? "Z" : ".");
-	sprintf(str + strlen(str), (PSR & FlagI) ? "I" : ".");
-	sprintf(str + strlen(str), (PSR & FlagD) ? "D" : ".");
-	sprintf(str + strlen(str), (PSR & FlagB) ? "B" : ".");
-	sprintf(str + strlen(str), (PSR & FlagV) ? "V" : ".");
-	sprintf(str + strlen(str), (PSR & FlagN) ? "N" : ".");
 
-	WriteLog("%s\n", str);
+	int Length = DebugDisassembleInstructionWithCPUStatus(
+		ProgramCounter, true, Accumulator, XReg, YReg, StackReg, PSR, str
+	);
+
+	str[Length] = '\n';
+	str[Length + 1] = '\0';
+
+	WriteLog(str);
 }
 
 void MemoryDump6502(int addr, int count)

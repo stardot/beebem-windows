@@ -113,6 +113,14 @@ struct DebugCmd
 
 extern HWND hwndDebug;
 int DebugDisassembleInstruction(int addr, bool host, char *opstr);
+int DebugDisassembleInstructionWithCPUStatus(int addr,
+                                             bool host,
+                                             unsigned char Accumulator,
+                                             unsigned char XReg,
+                                             unsigned char YReg,
+                                             unsigned char StackReg,
+                                             unsigned char PSR,
+                                             char *opstr);
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain);
 void DebugCloseDialog(void);
 bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YReg, int PSR, int StackReg, bool host);
