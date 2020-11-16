@@ -100,19 +100,19 @@ typedef int int16;
 
 static const int CyclesTable[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
-  7,6,0,0,0,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
+  7,6,0,0,3,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
   6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 3 */
-  6,6,0,0,0,3,5,0,3,2,2,2,3,4,6,0, /* 4 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 5 */
-  6,6,0,0,0,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 7 */
+  2,5,0,0,0,4,6,0,2,4,0,0,4,4,7,0, /* 3 */
+  6,6,0,0,3,3,5,0,3,2,2,2,3,4,6,6, /* 4 */
+  2,5,0,0,4,4,6,0,2,4,0,0,4,4,7,0, /* 5 */
+  6,6,0,0,3,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
+  2,5,0,0,4,4,6,0,2,4,0,0,4,4,7,0, /* 7 */
   2,6,0,0,3,3,3,3,2,0,2,0,4,4,4,0, /* 8 */
   2,6,0,0,4,4,4,0,2,5,2,0,0,5,0,0, /* 9 */
   2,6,2,0,3,3,3,0,2,2,2,0,4,4,4,0, /* a */
   2,5,0,0,4,4,4,0,2,4,2,0,4,4,4,0, /* b */
-  2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0, /* c */
+  2,6,2,0,3,3,5,0,2,2,2,0,4,4,6,0, /* c */
   2,5,0,0,0,4,6,0,2,4,0,0,4,4,7,0, /* d */
   2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0, /* e */
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
@@ -1230,7 +1230,9 @@ void Exec6502Instruction(void) {
 					TSBInstrHandler(ZeroPgAddrModeHandler_Address());
 				}
 				else {
-					ProgramCounter += 1;
+					// NOP zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					ReadPaged(zpaddr);
 				}
 				break;
 			case 0x05:
@@ -1410,12 +1412,14 @@ void Exec6502Instruction(void) {
 					DEAInstrHandler();
 				}
 				break;
-			case 0x3c: /* BIT Absolute,X */
+			case 0x3c:
 				if (MachineType == Model::Master128) {
+					// BIT abs,x
 					BITInstrHandler(AbsXAddrModeHandler_Data());
 				}
 				else {
-					ProgramCounter += 2;
+					// NOP abs,x
+					AbsXAddrModeHandler_Data();
 				}
 				break;
 			case 0x3d:
@@ -1499,6 +1503,11 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(), 0); /* STZ Zero Page */
 				}
+				else {
+					// NOP zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					ReadPaged(zpaddr);
+				}
 				break;
 			case 0x65:
 				ADCInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]/*zp */);
@@ -1539,7 +1548,9 @@ void Exec6502Instruction(void) {
 					BEEBWRITEMEM_DIRECT(ZeroPgXAddrModeHandler_Address(), 0); /* STZ Zpg,X */
 				}
 				else {
-					ProgramCounter += 1;
+					// NOP zp,x
+					int Address = ReadPaged(ProgramCounter++);
+					ReadPaged((Address + XReg) & 0xff);
 				}
 				break;
 			case 0x75:
@@ -1568,7 +1579,8 @@ void Exec6502Instruction(void) {
 					ProgramCounter=IndAddrXModeHandler_Address(); /* JMP abs,X */
 				}
 				else {
-					ProgramCounter += 2;
+					// NOP abs,x
+					AbsXAddrModeHandler_Data();
 				}
 				break;
 			case 0x7d:
@@ -2034,11 +2046,33 @@ void Exec6502Instruction(void) {
 			}
 			break;
 			case 0x44:
+				if (MachineType != Model::Master128) {
+					// NOP zp
+					int Address = ZeroPgAddrModeHandler_Address();
+					ReadPaged(Address);
+				}
+				else {
+					ProgramCounter++;
+				}
+				break;
 			case 0x54:
-				ProgramCounter+=1;
+				if (MachineType != Model::Master128) {
+					// NOP zp,x
+					int Address = ReadPaged(ProgramCounter++);
+					ReadPaged((Address + XReg) & 0xff);
+				}
+				else {
+					ProgramCounter++;
+				}
 				break;
 			case 0x5c:
-				ProgramCounter+=2;
+				if (MachineType != Model::Master128) {
+					// NOP abs,x
+					AbsXAddrModeHandler_Data();
+				}
+				else {
+					ProgramCounter += 2;
+				}
 				break;
 			case 0x63: /* Undocumented Instruction: ROR-ADC (zp,X) */
 			{
@@ -2089,6 +2123,15 @@ void Exec6502Instruction(void) {
 				ADCInstrHandler(WholeRam[zpaddr]);
 			}
 			break;
+			case 0xc2:
+				if (MachineType != Model::Master128) {
+					// NOP imm
+					ReadPaged(ProgramCounter++);
+				}
+				else {
+					ProgramCounter++;
+				}
+				break;
 			// Undocumented DEC-CMP and INC-SBC Instructions
 			case 0xc3: // DEC-CMP (zp,X)
 			{
