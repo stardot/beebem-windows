@@ -1147,6 +1147,116 @@ void MemoryDump6502(int addr, int count)
 }
 
 /*-------------------------------------------------------------------------*/
+
+// The routine indirected through the REMV vector is used by the operating
+// system to remove a character from a buffer, or to examine the buffer only.
+//
+// On entry, X=buffer number. (0 is the keyboard buffer)
+//
+// The overflow flag is set if only an examination is needed.
+//
+// If the buffer is only examined, the next character to be withdrawn from the
+// buffer is returned, but not removed, hence no buffer empty event can be
+// caused.
+//
+// If the last character is removed, a buffer empty event will be caused.
+//
+// On exit,
+//   A is the next character to be removed, for the examine option,
+//   undefined otherwise.
+//   X is preserved.
+//   Y is the character removed for the remove option.
+//   C is set if the buffer was empty on entry.
+
+static void ClipboardREMVHandler()
+{
+	if (GETVFLAG) {
+		// Examine buffer state
+
+		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength) {
+			Accumulator = mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex];
+			PSR &= ~FlagC;
+		}
+		else {
+			PSR |= FlagC;
+		}
+	}
+	else {
+		// Remove character from buffer
+		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength) {
+			unsigned char c = mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex++];
+
+			if (c == 0xa3) {
+				// Convert pound sign
+				c = 0x60;
+			}
+			else if (mainWin->m_translateCRLF) {
+				if (c == 0x0a) {
+					// Convert LF to CR
+					c = 0x0d;
+				}
+				else if (c == 0x0d && mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex] == 0x0a) {
+					// Drop LF after CR
+					mainWin->m_ClipboardIndex++;
+				}
+			}
+
+			Accumulator = c;
+			YReg = c;
+			PSR &= ~FlagC;
+		}
+		else {
+			// We've reached the end of the clipboard contents
+			mainWin->ClearClipboardBuffer();
+
+			PSR |= FlagC;
+		}
+	}
+
+	CurrentInstruction = 0x60; // RTS
+}
+
+// The routine indirected through the CNPV vector is used by the operating
+// system to count the entries in a buffer or to purge the contents of a buffer.
+//
+// On entry,
+//   X=buffer number (0 is the keyboard buffer)
+//
+// The overflow flag is set if the buffer is to be purged.
+//
+// The overflow flag is clear if the buffer is to be counted.
+//
+// For a count operation, if the carry flag is set, the amount of space left
+// in the buffer is returned, otherwise the number of entries in the buffer
+// is returned.
+//
+// On exit,
+//   For purge: X and Y are preserved
+//   For count: X=low byte of result,  Y=high byte of result
+//   A is undefined
+//   V,C are preserved
+
+static void ClipboardCNPVHandler()
+{
+	if (GETVFLAG) {
+		mainWin->ClearClipboardBuffer();
+	}
+	else {
+		if (GETCFLAG) {
+			XReg = 0;
+			YReg = 0;
+		}
+		else {
+			int Length = mainWin->m_ClipboardLength - mainWin->m_ClipboardIndex;
+			XReg = Length & 0xff;
+			YReg = Length >> 8;
+		}
+	}
+
+	CurrentInstruction = 0x60; // RTS
+}
+
+/*-------------------------------------------------------------------------*/
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec6502Instruction(void) {
 	static unsigned char OldNMIStatus;
@@ -1177,16 +1287,33 @@ void Exec6502Instruction(void) {
 		IOCycles = 0;
 		BadCount=0;
 		IntDue = false;
+		CurrentInstruction = -1;
+
+		OldPC = ProgramCounter;
+		PrePC = ProgramCounter;
 
 		// Check for WRCHV, send char to speech output
 		if (mainWin->m_TextToSpeechEnabled &&
-			ProgramCounter == (WholeRam[0x20e] + (WholeRam[0x20f] << 8)))
+			ProgramCounter == (WholeRam[0x20e] | (WholeRam[0x20f] << 8))) {
 			mainWin->SpeakChar(Accumulator);
+		}
+		else if (mainWin->m_ClipboardBuffer[0] != '\0') {
+			// Check for REMV (Remove from buffer vector) and CNPV (Count/purge buffer
+			// vector). X register contains the buffer number (0 indicates the keyboard
+			// buffer). See AUG p.263/264 and p.138
 
-		/* Read an instruction and post inc program counter */
-		OldPC=ProgramCounter;
-		PrePC=ProgramCounter;
-		CurrentInstruction=ReadPaged(ProgramCounter++);
+			if (ProgramCounter == (WholeRam[0x22c] | (WholeRam[0x22d] << 8)) && XReg == 0) {
+				ClipboardREMVHandler();
+			}
+			else if (ProgramCounter == (WholeRam[0x22e] | (WholeRam[0x22f] << 8)) && XReg == 0) {
+				ClipboardCNPVHandler();
+			}
+		}
+
+		if (CurrentInstruction == -1) {
+			// Read an instruction and post inc program counter
+			CurrentInstruction = ReadPaged(ProgramCounter++);
+		}
 
 		// Advance VIAs to point where mem read happens
 		ViaCycles=0;

@@ -190,8 +190,9 @@ BeebWin::BeebWin()
 	m_WasPaused = false;
 	m_KeyboardTimerElapsed = false;
 	m_BootDiscTimerElapsed = false;
-	m_clipboardlen = 0;
-	m_clipboardptr = 0;
+	memset(m_ClipboardBuffer, 0, sizeof(m_ClipboardBuffer));
+	m_ClipboardLength = 0;
+	m_ClipboardIndex = 0;
 	m_printerbufferlen = 0;
 	m_translateCRLF = true;
 	m_CurrentDisplayRenderer = 0;

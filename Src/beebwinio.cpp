@@ -1227,15 +1227,14 @@ void BeebWin::doCopy()
 
 	m_printerbufferlen = 0;
 
-	m_clipboard[0] = 2;
-	m_clipboard[1] = 'L';
-	m_clipboard[2] = '.';
-	m_clipboard[3] = 13;
-	m_clipboard[4] = 3;
-	m_clipboardlen = 5;
-	m_clipboardptr = 0;
+	m_ClipboardBuffer[0] = 2;
+	m_ClipboardBuffer[1] = 'L';
+	m_ClipboardBuffer[2] = '.';
+	m_ClipboardBuffer[3] = 13;
+	m_ClipboardBuffer[4] = 3;
+	m_ClipboardLength = 5;
+	m_ClipboardIndex = 0;
 	m_printerbufferlen = 0;
-	SetupClipboard();
 }
 
 void BeebWin::doPaste()
@@ -1252,80 +1251,21 @@ void BeebWin::doPaste()
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
 		if (lptstr != NULL)
 		{
-			strncpy(m_clipboard, lptstr, 32767);
+			strncpy(m_ClipboardBuffer, lptstr, ClipboardBufferSize - 1);
 			GlobalUnlock(hglb);
-			m_clipboardptr = 0;
-			m_clipboardlen = (int)strlen(m_clipboard);
-			SetupClipboard();
+			m_ClipboardIndex = 0;
+			m_ClipboardLength = (int)strlen(m_ClipboardBuffer);
 		}
 	}
+
 	CloseClipboard();
 }
 
-void BeebWin::SetupClipboard(void)
+void BeebWin::ClearClipboardBuffer()
 {
-	m_OSRDCH = BeebReadMem(0x210) + (BeebReadMem(0x211) << 8);
-
-	BeebWriteMem(0x100, 0x38);	// SEC
-	BeebWriteMem(0x101, 0xad);	// LDA &FC51
-	BeebWriteMem(0x102, 0x51);
-	BeebWriteMem(0x103, 0xfc);
-	BeebWriteMem(0x104, 0xd0);	// BNE P% + 6
-	BeebWriteMem(0x105, 0x04);
-	BeebWriteMem(0x106, 0xad);	// LDA &FC50
-	BeebWriteMem(0x107, 0x50);
-	BeebWriteMem(0x108, 0xfc);
-	BeebWriteMem(0x109, 0x18);	// CLC
-	BeebWriteMem(0x10A, 0x60);	// RTS
-
-	BeebWriteMem(0x210, 0x00);
-	BeebWriteMem(0x211, 0x01);
-
-	// Just to kick off keyboard input
-	int row, col;
-	TranslateKey(VK_RETURN, false, row, col);
-}
-
-void BeebWin::ResetClipboard(void)
-{
-	BeebWriteMem(0x210, m_OSRDCH & 0xff);
-	BeebWriteMem(0x211, (m_OSRDCH >> 8) & 0xff);
-}
-
-int BeebWin::PasteKey(int addr)
-{
-	int row, col;
-	int data = 0x00;
-	
-	switch (addr)
-	{
-	case 0 :
-		TranslateKey(VK_RETURN, true, row, col);
-		if (m_clipboardlen > 0)
-		{
-			data = m_clipboard[m_clipboardptr++];
-			m_clipboardlen--;
-
-			// Drop LF after CR
-			if (m_translateCRLF &&
-				data == 0xD && m_clipboardlen > 0 &&
-				m_clipboard[m_clipboardptr] == 0xA)
-			{
-				m_clipboardlen--;
-				m_clipboardptr++;
-			}
-
-			if (m_clipboardlen <= 0)
-			{
-				ResetClipboard();
-			}
-		}
-		break;
-	case 1 :
-		data = (m_clipboardlen == 0) ? 255 : 0;
-		break;
-	}
-	return data;
+	mainWin->m_ClipboardBuffer[0] = '\0';
+	mainWin->m_ClipboardIndex = 0;
+	mainWin->m_ClipboardLength = 0;
 }
 
 void BeebWin::CopyKey(int Value)

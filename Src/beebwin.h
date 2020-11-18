@@ -247,10 +247,8 @@ public:
 	void HandleTimer(void);
 	void doCopy(void);
 	void doPaste(void);
-	void SetupClipboard(void);
-	void ResetClipboard(void);
+	void ClearClipboardBuffer();
 	void CopyKey(int data);
-	int PasteKey(int addr);
 	void CaptureBitmapPending(bool autoFilename);
 	void DoShiftBreak();
 	bool HasKbdCmd() const;
@@ -346,12 +344,14 @@ public:
 	double		m_RelativeSpeed;
 	double		m_FramesPerSecond;
 
-	char		m_clipboard[32768];
-	int		m_clipboardlen;
-	int		m_clipboardptr;
+	static const int ClipboardBufferSize = 32768;
+
+	char m_ClipboardBuffer[ClipboardBufferSize];
+	int m_ClipboardLength;
+	int m_ClipboardIndex;
+
 	char		m_printerbuffer[1024 * 1024];
 	int		m_printerbufferlen;
-	int		m_OSRDCH;
 	bool		m_translateCRLF;
 
 	int		m_MenuIdPrinterPort;

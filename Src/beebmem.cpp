@@ -534,10 +534,6 @@ unsigned char BeebReadMem(int Address) {
 		if (IDEDriveEnabled)  return(IDERead(Address & 0x7));
 	}
 
-	if ((Address & ~0x1)==0xfc50) {
-		return(mainWin->PasteKey(Address & 0x1));
-	}
-
 	if (Address == 0xfcff) {
 		return(JimPageSel);
 	}
