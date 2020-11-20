@@ -38,7 +38,7 @@ void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads);
 unsigned char Disc8271Read(int Address);
 void Disc8271Write(int Address, unsigned char Value);
 
-void Disc8271_poll_real(void);
+void Disc8271_poll_real();
 
 #define Disc8271Poll() if (Disc8271Trigger <= TotalCycles) Disc8271_poll_real();
 
@@ -47,6 +47,6 @@ void Disc8271Reset();
 void Save8271UEF(FILE *SUEF);
 void Load8271UEF(FILE *SUEF);
 
-void disc8271_dumpstate(void);
+void disc8271_dumpstate();
 
 #endif
