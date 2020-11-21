@@ -660,8 +660,8 @@ unsigned char TubeReadMem(unsigned int IOAddr) {
 // Get a two byte address from the program counter, and then post inc
 // the program counter
 #define GETTWOBYTEFROMPC(var) \
-  var = TubeRam[TubeProgramCounter++]; \
-  var |= (TubeRam[TubeProgramCounter++] << 8);
+	var = TubeRam[TubeProgramCounter++]; \
+	var |= (TubeRam[TubeProgramCounter++] << 8);
 
 /*----------------------------------------------------------------------------*/
 INLINE void Carried() {
@@ -679,14 +679,6 @@ INLINE void Carried() {
 		TubeCycles++;
 	}
 }
-
-/*----------------------------------------------------------------------------*/
-INLINE int SignExtendByte(signed char in) {
-  /*if (in & 0x80) return(in | 0xffffff00); else return(in); */
-  /* I think this should sign extend by virtue of the casts - gcc does anyway - the code
-  above will definitly do the trick */
-  return((int)in);
-} /* SignExtendByte */
 
 /*----------------------------------------------------------------------------*/
 /* Set the Z flag if 'in' is 0, and N if bit 7 is set - leave all other bits  */
@@ -738,17 +730,17 @@ INLINE static int16 PopWord() {
 } /* PopWord */
 
 /*-------------------------------------------------------------------------*/
-/* Relative addressing mode handler                                        */
-INLINE static int16 RelAddrModeHandler_Data(void) {
-  int EffectiveAddress;
 
-  /* For branches - is this correct - i.e. is the program counter incremented
-     at the correct time? */
-  EffectiveAddress=SignExtendByte((signed char)TubeRam[TubeProgramCounter++]);
-  EffectiveAddress+=TubeProgramCounter;
+// Relative addressing mode handler
 
-  return(EffectiveAddress);
-} /* RelAddrModeHandler */
+INLINE static int16 RelAddrModeHandler_Data() {
+	// For branches - is this correct - i.e. is the program counter incremented
+	// at the correct time?
+	int EffectiveAddress = (signed char)TubeRam[TubeProgramCounter++];
+	EffectiveAddress += TubeProgramCounter;
+
+	return EffectiveAddress;
+}
 
 /*----------------------------------------------------------------------------*/
 INLINE static void ADCInstrHandler(int16 operand) {

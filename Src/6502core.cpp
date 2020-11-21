@@ -280,13 +280,6 @@ void AdvanceCyclesForMemWrite(void)
 
 	DoIntCheck();
 }
-/*----------------------------------------------------------------------------*/
-INLINE int SignExtendByte(signed char in) {
-  /*if (in & 0x80) return(in | 0xffffff00); else return(in); */
-  /* I think this should sign extend by virtue of the casts - gcc does anyway - the code
-  above will definitly do the trick */
-  return((int)in);
-} /* SignExtendByte */
 
 /*----------------------------------------------------------------------------*/
 /* Set the Z flag if 'in' is 0, and N if bit 7 is set - leave all other bits  */
@@ -349,17 +342,17 @@ INLINE static int16 PopWord() {
 } /* PopWord */
 
 /*-------------------------------------------------------------------------*/
-/* Relative addressing mode handler                                        */
-INLINE static int16 RelAddrModeHandler_Data(void) {
-  int EffectiveAddress;
 
-  /* For branches - is this correct - i.e. is the program counter incremented
-     at the correct time? */
-  EffectiveAddress=SignExtendByte((signed char)ReadPaged(ProgramCounter++));
-  EffectiveAddress+=ProgramCounter;
+// Relative addressing mode handler
 
-  return(EffectiveAddress);
-} /* RelAddrModeHandler */
+INLINE static int16 RelAddrModeHandler_Data() {
+	// For branches - is this correct - i.e. is the program counter incremented
+	// at the correct time?
+	int EffectiveAddress = (signed char)ReadPaged(ProgramCounter++);
+	EffectiveAddress += ProgramCounter;
+
+	return EffectiveAddress;
+}
 
 /*----------------------------------------------------------------------------*/
 INLINE static void ADCInstrHandler(int16 operand) {
