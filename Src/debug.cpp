@@ -14,8 +14,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -227,7 +227,7 @@ static const InstInfo optable_6502[256] =
 	/* 41 */	{ "EOR",  2, INX|NORM, 0, },
 	/* 00 */	{ "?42",  1, ILL|NORM, 0, },
 	/* 00 */	{ "?43",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?44",  1, ILL|NORM, 0, },
+	/* 44 */	{ "NOP",  2, ZPG|NORM, 0, },
 	/* 45 */	{ "EOR",  2, ZPG|NORM, 0, },
 	/* 46 */	{ "LSR",  2, ZPG|NORM, 0, },
 	/* 00 */	{ "?47",  1, ILL|NORM, 0, },
@@ -243,7 +243,7 @@ static const InstInfo optable_6502[256] =
 	/* 51 */	{ "EOR",  2, INY|NORM, 0, },
 	/* 52 */	{ "EOR",  2, IND|NORM, 1, },
 	/* 00 */	{ "?53",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?54",  1, ILL|NORM, 0, },
+	/* 54 */	{ "NOP",  2, ZPX|NORM, 0, },
 	/* 55 */	{ "EOR",  2, ZPX|NORM, 0, },
 	/* 56 */	{ "LSR",  2, ZPX|NORM, 0, },
 	/* 00 */	{ "?57",  1, ILL|NORM, 0, },
@@ -371,7 +371,7 @@ static const InstInfo optable_6502[256] =
 	/* d1 */	{ "CMP",  2, INY|NORM, 0, },
 	/* d2 */	{ "CMP",  2, IND|NORM, 1, },
 	/* 00 */	{ "?D3",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?D4",  1, ILL|NORM, 0, },
+	/* d4 */	{ "NOP",  2, ZPX|NORM, 0, },
 	/* d5 */	{ "CMP",  2, ZPX|NORM, 0, },
 	/* d6 */	{ "DEC",  2, ZPX|NORM, 0, },
 	/* 00 */	{ "?D7",  1, ILL|NORM, 0, },
@@ -403,7 +403,7 @@ static const InstInfo optable_6502[256] =
 	/* f1 */	{ "SBC",  2, INY|NORM, 0, },
 	/* f2 */	{ "SBC",  2, IND|NORM, 1, },
 	/* 00 */	{ "?F3",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?F4",  1, ILL|NORM, 0, },
+	/* f4 */	{ "NOP",  2, ZPX|NORM, 0, },
 	/* f5 */	{ "SBC",  2, ZPX|NORM, 0, },
 	/* f6 */	{ "INC",  2, ZPX|NORM, 0, },
 	/* 00 */	{ "?F7",  1, ILL|NORM, 0, },
@@ -487,7 +487,7 @@ static const InstInfo optable_65c02[256] =
 	/* 41 */	{ "EOR",  2, INX|NORM, 0, },
 	/* 42 */	{ "NOP",  2, IMM|NORM, 0, },
 	/* 00 */	{ "?43",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?44",  1, ILL|NORM, 0, },
+	/* 44 */	{ "NOP",  2, ZPG|NORM, 0, },
 	/* 45 */	{ "EOR",  2, ZPG|NORM, 0, },
 	/* 46 */	{ "LSR",  2, ZPG|NORM, 0, },
 	/* 47 */	{ "RMB4", 2, ZPG|NORM, 0, },
@@ -503,7 +503,7 @@ static const InstInfo optable_65c02[256] =
 	/* 51 */	{ "EOR",  2, INY|NORM, 0, },
 	/* 52 */	{ "EOR",  2, IND|NORM, 1, },
 	/* 00 */	{ "?53",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?54",  1, ILL|NORM, 0, },
+	/* 54 */	{ "NOP",  2, ZPX|NORM, 0, },
 	/* 55 */	{ "EOR",  2, ZPX|NORM, 0, },
 	/* 56 */	{ "LSR",  2, ZPX|NORM, 0, },
 	/* 57 */	{ "RMB5", 2, ZPG|NORM, 0, },
@@ -631,7 +631,7 @@ static const InstInfo optable_65c02[256] =
 	/* d1 */	{ "CMP",  2, INY|NORM, 0, },
 	/* d2 */	{ "CMP",  2, IND|NORM, 1, },
 	/* 00 */	{ "?D3",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?D4",  1, ILL|NORM, 0, },
+	/* d4 */	{ "NOP",  2, ZPX|NORM, 0, },
 	/* d5 */	{ "CMP",  2, ZPX|NORM, 0, },
 	/* d6 */	{ "DEC",  2, ZPX|NORM, 0, },
 	/* d7 */	{ "SMB5", 2, ZPG|NORM, 0, },
@@ -663,7 +663,7 @@ static const InstInfo optable_65c02[256] =
 	/* f1 */	{ "SBC",  2, INY|NORM, 0, },
 	/* f2 */	{ "SBC",  2, IND|NORM, 1, },
 	/* 00 */	{ "?F3",  1, ILL|NORM, 0, },
-	/* 00 */	{ "?F4",  1, ILL|NORM, 0, },
+	/* f4 */	{ "NOP",  2, ZPX|NORM, 0, },
 	/* f5 */	{ "SBC",  2, ZPX|NORM, 0, },
 	/* f6 */	{ "INC",  2, ZPX|NORM, 0, },
 	/* f7 */	{ "SMB7", 2, ZPG|NORM, 0, },
@@ -698,8 +698,8 @@ void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 	}
 
 	DebugEnabled = true;
-	if (!IsWindow(hwndDebug)) 
-	{ 
+	if (!IsWindow(hwndDebug))
+	{
 		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
 		hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
 		                         hwndInvisibleOwner, DebugDlgProc);
@@ -931,7 +931,7 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 		LastBreakAddr = addr;
 	else
 		return;
-	
+
 	switch(DebugSource)
 	{
 	case DebugType::None:
@@ -2711,9 +2711,9 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 					sprintf(s, "%02X %02X %02X %02X  ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host), DebugReadMem(addr+3, host));
 					break;
 			}
-			
+
 			strcat(opstr, buff);
-			
+
 			addr += l;
 		}
 		else
