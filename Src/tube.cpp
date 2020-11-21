@@ -94,22 +94,23 @@ typedef int int16;
 #define GETNFLAG ((PSR & FlagN)>0)
 
 static const int TubeCyclesTable[] = {
-  7,6,0,0,0,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
-  6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 3 */
-  6,6,0,0,0,3,5,0,3,2,2,2,3,4,6,0, /* 4 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 5 */
-  6,6,0,0,0,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 7 */
-  2,6,0,0,3,3,3,3,2,0,2,0,4,4,4,0, /* 8 */
-  2,6,0,0,4,4,4,0,2,5,2,0,0,5,0,0, /* 9 */
-  2,6,2,0,3,3,3,0,2,2,2,0,4,4,4,0, /* a */
-  2,5,0,0,4,4,4,0,2,4,2,0,4,4,4,0, /* b */
-  2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0, /* c */
-  2,5,0,0,0,4,6,0,2,4,0,0,4,4,7,0, /* d */
-  2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0, /* e */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
+/*0 1 2 3 4 5 6 7 8 9 a b c d e f */
+  7,6,0,0,0,3,5,5,3,2,2,0,0,4,6,5, /* 0 */
+  2,5,0,0,0,4,6,5,2,4,0,0,0,4,7,5, /* 1 */
+  6,6,0,0,3,3,5,5,4,2,2,0,4,4,6,5, /* 2 */
+  2,5,0,0,0,4,6,5,2,4,0,0,0,4,7,5, /* 3 */
+  6,6,0,0,0,3,5,5,3,2,2,2,3,4,6,5, /* 4 */
+  2,5,0,0,0,4,6,5,2,4,0,0,0,4,7,5, /* 5 */
+  6,6,0,0,0,3,5,5,4,2,2,0,5,4,6,5, /* 6 */
+  2,5,0,0,0,4,6,5,2,4,0,0,0,4,7,5, /* 7 */
+  2,6,0,0,3,3,3,5,2,0,2,0,4,4,4,5, /* 8 */
+  2,6,0,0,4,4,4,5,2,5,2,0,0,5,0,5, /* 9 */
+  2,6,2,0,3,3,3,5,2,2,2,0,4,4,4,5, /* a */
+  2,5,0,0,4,4,4,5,2,4,2,0,4,4,4,5, /* b */
+  2,6,0,0,3,3,5,5,2,2,2,0,4,4,6,5, /* c */
+  2,5,0,0,0,4,6,5,2,4,0,0,4,4,7,5, /* d */
+  2,6,0,0,3,3,5,5,2,2,2,0,4,4,6,5, /* e */
+  2,5,0,0,0,4,6,5,2,4,0,0,0,4,7,5  /* f */
 };
 
 /* The number of TubeCycles to be used by the current instruction - exported to
@@ -1099,6 +1100,48 @@ INLINE static void STXInstrHandler(int16 address) {
 INLINE static void STYInstrHandler(int16 address) {
   TUBEWRITEMEM_FAST(address, YReg);
 } /* STYInstrHandler */
+
+/*-------------------------------------------------------------------------*/
+
+// The RMB, SMB, BBR, and BBS instructions are specific to the 65C02,
+// used in the Acorn 6502 co-processor. They are not implemented in the
+// 65SC02, used in the Master 128.
+
+static void ResetMemoryBit(int bit)
+{
+	const int EffectiveAddress = TubeRam[TubeProgramCounter++];
+
+	TUBEWRITEMEM_DIRECT(EffectiveAddress, TubeRam[EffectiveAddress] & ~(1 << bit));
+}
+
+static void SetMemoryBit(int bit)
+{
+	const int EffectiveAddress = TubeRam[TubeProgramCounter++];
+
+	TUBEWRITEMEM_DIRECT(EffectiveAddress, TubeRam[EffectiveAddress] | (1 << bit));
+}
+
+static void BranchOnBitReset(int bit)
+{
+	const int EffectiveAddress = TubeRam[TubeProgramCounter++];
+	const int Offset = TubeRam[TubeProgramCounter++];
+
+	if ((TubeRam[EffectiveAddress] & (1 << bit)) == 0) {
+		TubeProgramCounter += Offset;
+	}
+}
+
+static void BranchOnBitSet(int bit)
+{
+	const int EffectiveAddress = TubeRam[TubeProgramCounter++];
+	const int Offset = TubeRam[TubeProgramCounter++];
+
+	if (TubeRam[EffectiveAddress] & (1 << bit)) {
+		TubeProgramCounter += Offset;
+	}
+}
+
+/*-------------------------------------------------------------------------*/
 
 INLINE static void BadInstrHandler(int opcode) {
 	if (!IgnoreIllegalInstructions)
@@ -2163,7 +2206,11 @@ void Exec65C02Instruction() {
 			INCInstrHandler(AbsXAddrModeHandler_Address());
 			break;
 		case 0x07:
-			{
+			if (TubeMachineType == 3) {
+				// RMB0
+				ResetMemoryBit(0);
+			}
+			else {
 				// Undocumented Instruction: ASL zp and ORA zp
 				int16 zpaddr = ZeroPgAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
@@ -2187,7 +2234,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x0f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR0
+				BranchOnBitReset(0);
+			}
+			else {
 				// Undocumented Instruction: ASL-ORA abs
 				int16 zpaddr = AbsAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
@@ -2195,7 +2246,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x17:
-			{
+			if (TubeMachineType == 3) {
+				// RMB1
+				ResetMemoryBit(1);
+			}
+			else {
 				// Undocumented Instruction: ASL-ORA zp,X
 				int16 zpaddr = ZeroPgXAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
@@ -2211,7 +2266,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x1f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR1
+				BranchOnBitReset(1);
+			}
+			else {
 				// Undocumented Instruction: ASL-ORA abs,X
 				int16 zpaddr = AbsXAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
@@ -2227,7 +2286,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x27:
-			{
+			if (TubeMachineType == 3) {
+				// RMB2
+				ResetMemoryBit(2);
+			}
+			else {
 				// Undocumented Instruction: ROL-AND zp
 				int16 zpaddr = ZeroPgAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
@@ -2235,7 +2298,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x2f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR2
+				BranchOnBitReset(2);
+			}
+			else {
 				// Undocumented Instruction: ROL-AND abs
 				int16 zpaddr = AbsAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
@@ -2251,7 +2318,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x37:
-			{
+			if (TubeMachineType == 3) {
+				// RMB3
+				ResetMemoryBit(3);
+			}
+			else {
 				// Undocumented Instruction: ROL-AND zp,X
 				int16 zpaddr = ZeroPgXAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
@@ -2267,7 +2338,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x3f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR3
+				BranchOnBitReset(3);
+			}
+			else {
 				// Undocumented Instruction: ROL-AND abs.X
 				int16 zpaddr = AbsXAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
@@ -2283,7 +2358,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x47:
-			{
+			if (TubeMachineType == 3) {
+				// RMB4
+				ResetMemoryBit(4);
+			}
+			else {
 				// Undocumented Instruction: LSR-EOR zp
 				int16 zpaddr = ZeroPgAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
@@ -2291,7 +2370,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x4f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR4
+				BranchOnBitReset(4);
+			}
+			else {
 				// Undocumented Instruction: LSR-EOR abs
 				int16 zpaddr = AbsAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
@@ -2307,7 +2390,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x57:
-			{
+			if (TubeMachineType == 3) {
+				// RMB5
+				ResetMemoryBit(5);
+			}
+			else {
 				// Undocumented Instruction: LSR-EOR zp,X
 				int16 zpaddr = ZeroPgXAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
@@ -2323,7 +2410,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x5f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR5
+				BranchOnBitReset(5);
+			}
+			else {
 				// Undocumented Instruction: LSR-EOR abs,X
 				int16 zpaddr = AbsXAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
@@ -2346,7 +2437,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x67:
-			{
+			if (TubeMachineType == 3) {
+				// RMB6
+				ResetMemoryBit(6);
+			}
+			else {
 				// Undocumented Instruction: ROR-ADC zp
 				int16 zpaddr = ZeroPgAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
@@ -2354,7 +2449,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x6f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR6
+				BranchOnBitReset(6);
+			}
+			else {
 				// Undocumented Instruction: ROR-ADC abs
 				int16 zpaddr = AbsAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
@@ -2370,7 +2469,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x77:
-			{
+			if (TubeMachineType == 3) {
+				// RMB7
+				ResetMemoryBit(7);
+			}
+			else {
 				// Undocumented Instruction: ROR-ADC zp,X
 				int16 zpaddr = ZeroPgXAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
@@ -2386,7 +2489,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x7f:
-			{
+			if (TubeMachineType == 3) {
+				// BBR7
+				BranchOnBitReset(7);
+			}
+			else {
 				// Undocumented Instruction: ROR-ADC abs,X
 				int16 zpaddr = AbsXAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
@@ -2405,33 +2512,57 @@ void Exec65C02Instruction() {
 			LSRInstrHandler_Acc();
 			break;
 		case 0x87:
-			// Undocumented Instruction: SAX zp (i.e. (zp) = A & X)
-			// This one does not seem to change the processor flags
-			TubeRam[ZeroPgAddrModeHandler_Address()] = Accumulator & XReg;
+			if (TubeMachineType == 3) {
+				// SMB0
+				SetMemoryBit(0);
+			}
+			else {
+				// Undocumented Instruction: SAX zp (i.e. (zp) = A & X)
+				// This one does not seem to change the processor flags
+				TubeRam[ZeroPgAddrModeHandler_Address()] = Accumulator & XReg;
+			}
 			break;
 		case 0x83:
 			// Undocumented Instruction: SAX (zp,X)
 			TubeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
 			break;
 		case 0x8f:
-			// Undocumented Instruction: SAX abs
-			TubeRam[AbsAddrModeHandler_Address()] = Accumulator & XReg;
+			if (TubeMachineType == 3) {
+				// BBS0
+				BranchOnBitSet(0);
+			}
+			else {
+				// Undocumented Instruction: SAX abs
+				TubeRam[AbsAddrModeHandler_Address()] = Accumulator & XReg;
+			}
 			break;
 		case 0x93:
 			// Undocumented Instruction: SAX (zp),Y
 			TubeRam[IndYAddrModeHandler_Address()] = Accumulator & XReg;
 			break;
 		case 0x97:
-			// Undocumented Instruction: SAX zp,Y
-			TubeRam[ZeroPgYAddrModeHandler_Address()] = Accumulator & XReg;
+			if (TubeMachineType == 3) {
+				// SMB1
+				SetMemoryBit(1);
+			}
+			else {
+				// Undocumented Instruction: SAX zp,Y
+				TubeRam[ZeroPgYAddrModeHandler_Address()] = Accumulator & XReg;
+			}
 			break;
 		case 0x9b:
 			// Undocumented Instruction: SAX abs,Y
 			TubeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
 			break;
 		case 0x9f:
-			// Undocumented Instruction: SAX abs,X
-			TubeRam[AbsXAddrModeHandler_Address()] = Accumulator & XReg;
+			if (TubeMachineType == 3) {
+				// BBS1
+				BranchOnBitSet(1);
+			}
+			else {
+				// Undocumented Instruction: SAX abs,X
+				TubeRam[AbsXAddrModeHandler_Address()] = Accumulator & XReg;
+			}
 			break;
 		case 0xab:
 			// Undocumented Instruction: LAX #n
@@ -2444,14 +2575,26 @@ void Exec65C02Instruction() {
 			XReg = Accumulator;
 			break;
 		case 0xa7:
-			// Undocumented Instruction: LAX zp
-			LDAInstrHandler(TubeRam[TubeRam[TubeProgramCounter++]]);
-			XReg = Accumulator;
+			if (TubeMachineType == 3) {
+				// SMB2
+				SetMemoryBit(2);
+			}
+			else {
+				// Undocumented Instruction: LAX zp
+				LDAInstrHandler(TubeRam[TubeRam[TubeProgramCounter++]]);
+				XReg = Accumulator;
+			}
 			break;
 		case 0xaf:
-			// Undocumented Instruction: LAX abs
-			LDAInstrHandler(AbsAddrModeHandler_Data());
-			XReg = Accumulator;
+			if (TubeMachineType == 3) {
+				// BBS2
+				BranchOnBitSet(2);
+			}
+			else {
+				// Undocumented Instruction: LAX abs
+				LDAInstrHandler(AbsAddrModeHandler_Data());
+				XReg = Accumulator;
+			}
 			break;
 		case 0xb3:
 			// Undocumented Instruction: LAX (zp),Y
@@ -2459,15 +2602,27 @@ void Exec65C02Instruction() {
 			XReg = Accumulator;
 			break;
 		case 0xb7:
-			// Undocumented Instruction: LAX zp,Y
-			LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
-			Accumulator = XReg;
+			if (TubeMachineType == 3) {
+				// SMB3
+				SetMemoryBit(3);
+			}
+			else {
+				// Undocumented Instruction: LAX zp,Y
+				LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
+				Accumulator = XReg;
+			}
 			break;
 		case 0xbb:
 		case 0xbf:
-			// Undocumented Instruction: LAX abs,Y
-			LDAInstrHandler(AbsYAddrModeHandler_Data());
-			XReg = Accumulator;
+			if (TubeMachineType == 3) {
+				// BBS3
+				BranchOnBitSet(3);
+			}
+			else {
+				// Undocumented Instruction: LAX abs,Y
+				LDAInstrHandler(AbsYAddrModeHandler_Data());
+				XReg = Accumulator;
+			}
 			break;
 		// Undocumented DEC-CMP and INC-SBC Instructions
 		case 0xc3:
@@ -2479,7 +2634,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xc7:
-			{
+			if (TubeMachineType == 3) {
+				// SMB4
+				SetMemoryBit(4);
+			}
+			else {
 				// DEC-CMP zp
 				int16 zpaddr = ZeroPgAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
@@ -2487,7 +2646,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xcf:
-			{
+			if (TubeMachineType == 3) {
+				// BBS4
+				BranchOnBitSet(4);
+			}
+			else {
 				// DEC-CMP abs
 				int16 zpaddr = AbsAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
@@ -2503,7 +2666,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xd7:
-			{
+			if (TubeMachineType == 3) {
+				// SMB5
+				SetMemoryBit(5);
+			}
+			else {
 				// DEC-CMP zp,X
 				int16 zpaddr = ZeroPgXAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
@@ -2519,7 +2686,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xdf:
-			{
+			if (TubeMachineType == 3) {
+				// BBS5
+				BranchOnBitSet(5);
+			}
+			else {
 				// DEC-CMP abs,X
 				int16 zpaddr = AbsXAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
@@ -2543,7 +2714,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xe7:
-			{
+			if (TubeMachineType == 3) {
+				// SMB6
+				SetMemoryBit(6);
+			}
+			else {
 				// INC-SBC zp
 				int16 zpaddr = ZeroPgAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
@@ -2551,7 +2726,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xef:
-			{
+			if (TubeMachineType == 3) {
+				// BBS6
+				BranchOnBitSet(6);
+			}
+			else {
 				// INC-SBC abs
 				int16 zpaddr = AbsAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
@@ -2567,7 +2746,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xf7:
-			{
+			if (TubeMachineType == 3) {
+				// SMB7
+				SetMemoryBit(7);
+			}
+			else {
 				// INC-SBC zp,X
 				int16 zpaddr = ZeroPgXAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
@@ -2583,7 +2766,11 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xff:
-			{
+			if (TubeMachineType == 3) {
+				// BBS7
+				BranchOnBitSet(7);
+			}
+			else {
 				// INC-SBC abs,X
 				int16 zpaddr = AbsXAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
