@@ -2274,7 +2274,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x1b:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ASL-ORA abs,Y
 				int16 zpaddr = AbsYAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
@@ -2352,7 +2355,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x3b:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ROL-AND abs.Y
 				int16 zpaddr = AbsYAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
@@ -2430,7 +2436,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x5b:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: LSR-EOR abs,Y
 				int16 zpaddr = AbsYAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
@@ -2515,7 +2524,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x7b:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ROR-ADC abs,Y
 				int16 zpaddr = AbsYAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
@@ -2536,14 +2548,24 @@ void Exec65C02Instruction() {
 			break;
 		case 0x0b:
 		case 0x2b:
-			// AND-MVC #n,b7
-			ANDInstrHandler(TubeRam[TubeProgramCounter++]);
-			PSR |= ((Accumulator & 128) >> 7);
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// AND-MVC #n,b7
+				ANDInstrHandler(TubeRam[TubeProgramCounter++]);
+				PSR |= ((Accumulator & 128) >> 7);
+			}
 			break;
 		case 0x4b:
-			// Undocumented Instruction: AND imm and LSR A
-			ANDInstrHandler(TubeRam[TubeProgramCounter++]);
-			LSRInstrHandler_Acc();
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: AND imm and LSR A
+				ANDInstrHandler(TubeRam[TubeProgramCounter++]);
+				LSRInstrHandler_Acc();
+			}
 			break;
 		case 0x87:
 			if (TubeMachineType == 3) {
@@ -2595,8 +2617,13 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x9b:
-			// Undocumented Instruction: SAX abs,Y
-			TubeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: SAX abs,Y
+				TubeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
+			}
 			break;
 		case 0x9f:
 			if (TubeMachineType == 3) {
@@ -2609,9 +2636,14 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xab:
-			// Undocumented Instruction: LAX #n
-			LDAInstrHandler(TubeRam[TubeProgramCounter++]);
-			XReg = Accumulator;
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: LAX #n
+				LDAInstrHandler(TubeRam[TubeProgramCounter++]);
+				XReg = Accumulator;
+			}
 			break;
 		case 0xa3:
 			if (TubeMachineType == 3) {
@@ -2667,6 +2699,15 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xbb:
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: LAX abs,Y
+				LDAInstrHandler(AbsYAddrModeHandler_Data());
+				XReg = Accumulator;
+			}
+			break;
 		case 0xbf:
 			if (TubeMachineType == 3) {
 				// BBS3
@@ -2738,7 +2779,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xdb:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// DEC-CMP abs,Y
 				int16 zpaddr = AbsYAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
@@ -2788,6 +2832,14 @@ void Exec65C02Instruction() {
 				SBCInstrHandler(TubeRam[zpaddr]);
 			}
 			break;
+		case 0xeb:
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// TODO: SBC imm
+			}
+			break;
 		case 0xef:
 			if (TubeMachineType == 3) {
 				// BBS6
@@ -2824,7 +2876,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xfb:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// INC-SBC abs,Y
 				int16 zpaddr = AbsYAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
@@ -2845,20 +2900,33 @@ void Exec65C02Instruction() {
 			break;
 		// REALLY Undocumented instructions 6B, 8B and CB
 		case 0x6b:
-			ANDInstrHandler(TubeRam[TubeProgramCounter++]);
-			RORInstrHandler_Acc();
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				ANDInstrHandler(TubeRam[TubeProgramCounter++]);
+				RORInstrHandler_Acc();
+			}
 			break;
 		case 0x8b:
-			// TXA
-			Accumulator = XReg;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((Accumulator == 0)<<1) | (Accumulator & 128);
-			ANDInstrHandler(TubeRam[TubeProgramCounter++]);
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// TXA
+				Accumulator = XReg;
+				PSR &= ~(FlagZ | FlagN);
+				PSR |= ((Accumulator == 0)<<1) | (Accumulator & 128);
+				ANDInstrHandler(TubeRam[TubeProgramCounter++]);
+			}
 			break;
 		case 0xcb:
-			// SBX #n - I dont know if this uses the carry or not, i'm assuming its
-			// Subtract #n from X with carry.
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// SBX #n - I dont know if this uses the carry or not, i'm assuming its
+				// Subtract #n from X with carry.
 				unsigned char TmpAcc = Accumulator;
 				Accumulator = XReg;
 				SBCInstrHandler(TubeRam[TubeProgramCounter++]);
