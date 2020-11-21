@@ -1162,33 +1162,7 @@ INLINE static void BadInstrHandler(int opcode) {
 		// abort();
 #endif
 	}
-
-	/* Do not know what the instruction does but can guess if it is 1,2 or 3 bytes */
-	switch (opcode & 0xf)
-	{
-	/* One byte instructions */
-	case 0xa:
-		break;
-
-	/* Two byte instructions */
-	case 0x0:
-	case 0x2:  /* Inst 0xf2 causes the 6502 to hang! Try it on your BBC Micro */
-	case 0x3:
-	case 0x4:
-	case 0x7:
-	case 0x9:
-	case 0xb:
-		TubeProgramCounter++;
-		break;
-
-	/* Three byte instructions */
-	case 0xc:
-	case 0xe:
-	case 0xf:
-		TubeProgramCounter += 2;
-		break;
-	}
-} /* BadInstrHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Absolute  addressing mode handler                                       */
