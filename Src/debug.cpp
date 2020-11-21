@@ -73,11 +73,12 @@ Boston, MA  02110-1301, USA.
 #define IND  0x8000
 #define ZPY  0x10000
 #define ZPG  0x20000
-#define ILL  0x40000
+#define ZPR  0x40000
+#define ILL  0x80000
 
 #define STR(x) #x
 
-#define ADRMASK (IMM|ABS|ACC|IMP|INX|INY|ZPX|ABX|ABY|REL|IND|ZPY|ZPG|ILL)
+#define ADRMASK (IMM | ABS | ACC | IMP | INX | INY | ZPX | ABX | ABY | REL | IND | ZPY | ZPG | ZPR | ILL)
 
 #define MAX_BUFFER 65536
 
@@ -156,7 +157,7 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "script",	DebugCmdScript, "[filename]", "Executes a debugger script." }
 };
 
-static const InstInfo optable[256] =
+static const InstInfo optable_6502[256] =
 {
 	/* 00 */	{ "BRK",  1, IMP|STOP, 0, },
 	/* 01 */	{ "ORA",  2, INX|NORM, 0, },
@@ -414,6 +415,266 @@ static const InstInfo optable[256] =
 	/* fd */	{ "SBC",  3, ABX|NORM, 0, },
 	/* fe */	{ "INC",  3, ABX|NORM, 0, },
 	/* 00 */	{ "?FF",  1, ILL|NORM, 0, }
+};
+
+static const InstInfo optable_65c02[256] =
+{
+	/* 00 */	{ "BRK",  1, IMP|STOP, 0, },
+	/* 01 */	{ "ORA",  2, INX|NORM, 0, },
+	/* 02 */	{ "NOP",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?03",  1, ILL|NORM, 0, },
+	/* 04 */	{ "TSB",  2, ZPG|NORM, 1, },
+	/* 05 */	{ "ORA",  2, ZPG|NORM, 0, },
+	/* 06 */	{ "ASL",  2, ZPG|NORM, 0, },
+	/* 07 */	{ "RMB0", 2, ZPG|NORM, 0, },
+	/* 08 */	{ "PHP",  1, IMP|NORM, 0, },
+	/* 09 */	{ "ORA",  2, IMM|NORM, 0, },
+	/* 0a */	{ "ASL",  1, ACC|NORM, 0, },
+	/* 00 */	{ "?0B",  1, ILL|NORM, 0, },
+	/* 0c */	{ "TSB",  3, ABS|NORM, 1, },
+	/* 0d */	{ "ORA",  3, ABS|NORM, 0, },
+	/* 0e */	{ "ASL",  3, ABS|NORM, 0, },
+	/* 0f */	{ "BBR0", 3, ZPR|NORM, 0, },
+	/* 10 */	{ "BPL",  2, REL|FORK, 0, },
+	/* 11 */	{ "ORA",  2, INY|NORM, 0, },
+	/* 12 */	{ "ORA",  2, IND|NORM, 1, },
+	/* 00 */	{ "?13",  1, ILL|NORM, 0, },
+	/* 14 */	{ "TRB",  2, ZPG|NORM, 1, },
+	/* 15 */	{ "ORA",  2, ZPX|NORM, 0, },
+	/* 16 */	{ "ASL",  2, ZPX|NORM, 0, },
+	/* 17 */	{ "RMB1", 2, ZPG|NORM, 0, },
+	/* 18 */	{ "CLC",  1, IMP|NORM, 0, },
+	/* 19 */	{ "ORA",  3, ABY|NORM, 0, },
+	/* 1a */	{ "INC",  1, ACC|NORM, 1, },
+	/* 00 */	{ "?1B",  1, ILL|NORM, 0, },
+	/* 1c */	{ "TRB",  3, ABS|NORM, 1, },
+	/* 1d */	{ "ORA",  3, ABX|NORM, 0, },
+	/* 1e */	{ "ASL",  3, ABX|NORM, 0, },
+	/* 1f */	{ "BBR1", 3, ZPR|NORM, 0, },
+	/* 20 */	{ "JSR",  3, ABS|FORK, 0, },
+	/* 21 */	{ "AND",  2, INX|NORM, 0, },
+	/* 22 */	{ "NOP",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?23",  1, ILL|NORM, 0, },
+	/* 24 */	{ "BIT",  2, ZPG|NORM, 0, },
+	/* 25 */	{ "AND",  2, ZPG|NORM, 0, },
+	/* 26 */	{ "ROL",  2, ZPG|NORM, 0, },
+	/* 27 */	{ "RMB2", 2, ZPG|NORM, 0, },
+	/* 28 */	{ "PLP",  1, IMP|NORM, 0, },
+	/* 29 */	{ "AND",  2, IMM|NORM, 0, },
+	/* 2a */	{ "ROL",  1, ACC|NORM, 0, },
+	/* 00 */	{ "?2B",  1, ILL|NORM, 0, },
+	/* 2c */	{ "BIT",  3, ABS|NORM, 0, },
+	/* 2d */	{ "AND",  3, ABS|NORM, 0, },
+	/* 2e */	{ "ROL",  3, ABS|NORM, 0, },
+	/* 2f */	{ "BBR2", 3, ZPR|NORM, 0, },
+	/* 30 */	{ "BMI",  2, REL|FORK, 0, },
+	/* 31 */	{ "AND",  2, INY|NORM, 0, },
+	/* 32 */	{ "AND",  2, IND|NORM, 1, },
+	/* 00 */	{ "?33",  1, ILL|NORM, 0, },
+	/* 34 */	{ "BIT",  2, ZPX|NORM, 1, },
+	/* 35 */	{ "AND",  2, ZPX|NORM, 0, },
+	/* 36 */	{ "ROL",  2, ZPX|NORM, 0, },
+	/* 37 */	{ "RMB3", 2, ZPG|NORM, 0, },
+	/* 38 */	{ "SEC",  1, IMP|NORM, 0, },
+	/* 39 */	{ "AND",  3, ABY|NORM, 0, },
+	/* 3a */	{ "DEC",  1, ACC|NORM, 1, },
+	/* 00 */	{ "?3B",  1, ILL|NORM, 0, },
+	/* 3c */	{ "BIT",  3, ABX|NORM, 1, },
+	/* 3d */	{ "AND",  3, ABX|NORM, 0, },
+	/* 3e */	{ "ROL",  3, ABX|NORM, 0, },
+	/* 3f */	{ "BBR3", 3, ZPR|NORM, 0, },
+	/* 40 */	{ "RTI",  1, IMP|STOP, 0, },
+	/* 41 */	{ "EOR",  2, INX|NORM, 0, },
+	/* 42 */	{ "NOP",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?43",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?44",  1, ILL|NORM, 0, },
+	/* 45 */	{ "EOR",  2, ZPG|NORM, 0, },
+	/* 46 */	{ "LSR",  2, ZPG|NORM, 0, },
+	/* 47 */	{ "RMB4", 2, ZPG|NORM, 0, },
+	/* 48 */	{ "PHA",  1, IMP|NORM, 0, },
+	/* 49 */	{ "EOR",  2, IMM|NORM, 0, },
+	/* 4a */	{ "LSR",  1, ACC|NORM, 0, },
+	/* 00 */	{ "?4B",  1, ILL|NORM, 0, },
+	/* 4c */	{ "JMP",  3, ABS|JUMP, 0, },
+	/* 4d */	{ "EOR",  3, ABS|NORM, 0, },
+	/* 4e */	{ "LSR",  3, ABS|NORM, 0, },
+	/* 4f */	{ "BBR4", 3, ZPR|NORM, 0, },
+	/* 50 */	{ "BVC",  2, REL|FORK, 0, },
+	/* 51 */	{ "EOR",  2, INY|NORM, 0, },
+	/* 52 */	{ "EOR",  2, IND|NORM, 1, },
+	/* 00 */	{ "?53",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?54",  1, ILL|NORM, 0, },
+	/* 55 */	{ "EOR",  2, ZPX|NORM, 0, },
+	/* 56 */	{ "LSR",  2, ZPX|NORM, 0, },
+	/* 57 */	{ "RMB5", 2, ZPG|NORM, 0, },
+	/* 58 */	{ "CLI",  1, IMP|NORM, 0, },
+	/* 59 */	{ "EOR",  3, ABY|NORM, 0, },
+	/* 5a */	{ "PHY",  1, IMP|NORM, 1, },
+	/* 00 */	{ "?5B",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?5C",  1, ILL|NORM, 0, },
+	/* 5d */	{ "EOR",  3, ABX|NORM, 0, },
+	/* 5e */	{ "LSR",  3, ABX|NORM, 0, },
+	/* 5f */	{ "BBR5", 3, ZPR|NORM, 0, },
+	/* 60 */	{ "RTS",  1, IMP|STOP, 0, },
+	/* 61 */	{ "ADC",  2, INX|NORM, 0, },
+	/* 62 */	{ "NOP",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?63",  1, ILL|NORM, 0, },
+	/* 64 */	{ "STZ",  2, ZPG|NORM, 1, },
+	/* 65 */	{ "ADC",  2, ZPG|NORM, 0, },
+	/* 66 */	{ "ROR",  2, ZPG|NORM, 0, },
+	/* 67 */	{ "RMB6", 2, ZPG|NORM, 0, },
+	/* 68 */	{ "PLA",  1, IMP|NORM, 0, },
+	/* 69 */	{ "ADC",  2, IMM|NORM, 0, },
+	/* 6a */	{ "ROR",  1, ACC|NORM, 0, },
+	/* 00 */	{ "?6B",  1, ILL|NORM, 0, },
+	/* 6c */	{ "JMP",  3, IND|STOP, 0, },
+	/* 6d */	{ "ADC",  3, ABS|NORM, 0, },
+	/* 6e */	{ "ROR",  3, ABS|NORM, 0, },
+	/* 6f */	{ "BBR6", 3, ZPR|NORM, 0, },
+	/* 70 */	{ "BVS",  2, REL|FORK, 0, },
+	/* 71 */	{ "ADC",  2, INY|NORM, 0, },
+	/* 72 */	{ "ADC",  2, IND|NORM, 1, },
+	/* 00 */	{ "?73",  1, ILL|NORM, 0, },
+	/* 74 */	{ "STZ",  2, ZPX|NORM, 1, },
+	/* 75 */	{ "ADC",  2, ZPX|NORM, 0, },
+	/* 76 */	{ "ROR",  2, ZPX|NORM, 0, },
+	/* 77 */	{ "RMB7", 2, ZPG|NORM, 0, },
+	/* 78 */	{ "SEI",  1, IMP|NORM, 0, },
+	/* 79 */	{ "ADC",  3, ABY|NORM, 0, },
+	/* 7a */	{ "PLY",  1, IMP|NORM, 1, },
+	/* 00 */	{ "?7B",  1, ILL|NORM, 0, },
+	/* 7c */	{ "JMP",  3, INX|NORM, 1, },
+	/* 7d */	{ "ADC",  3, ABX|NORM, 0, },
+	/* 7e */	{ "ROR",  3, ABX|NORM, 0, },
+	/* 7f */	{ "BBR7", 3, ZPR|NORM, 0, },
+	/* 80 */	{ "BRA",  2, REL|FORK, 1, },
+	/* 81 */	{ "STA",  2, INX|NORM, 0, },
+	/* 82 */	{ "NOP",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?83",  1, ILL|NORM, 0, },
+	/* 84 */	{ "STY",  2, ZPG|NORM, 0, },
+	/* 85 */	{ "STA",  2, ZPG|NORM, 0, },
+	/* 86 */	{ "STX",  2, ZPG|NORM, 0, },
+	/* 87 */	{ "SMB0", 2, ZPG|NORM, 0, },
+	/* 88 */	{ "DEY",  1, IMP|NORM, 0, },
+	/* 00 */	{ "?89",  1, ILL|NORM, 0, },
+	/* 8a */	{ "TXA",  1, IMP|NORM, 0, },
+	/* 00 */	{ "?8B",  1, ILL|NORM, 0, },
+	/* 8c */	{ "STY",  3, ABS|NORM, 0, },
+	/* 8d */	{ "STA",  3, ABS|NORM, 0, },
+	/* 8e */	{ "STX",  3, ABS|NORM, 0, },
+	/* 8f */	{ "BBS0", 3, ZPR|NORM, 0, },
+	/* 90 */	{ "BCC",  2, REL|FORK, 0, },
+	/* 91 */	{ "STA",  2, INY|NORM, 0, },
+	/* 92 */	{ "STA",  2, IND|NORM, 1, },
+	/* 00 */	{ "?93",  1, ILL|NORM, 0, },
+	/* 94 */	{ "STY",  2, ZPX|NORM, 0, },
+	/* 95 */	{ "STA",  2, ZPX|NORM, 0, },
+	/* 96 */	{ "STX",  2, ZPY|NORM, 0, },
+	/* 97 */	{ "SMB1", 2, ZPG|NORM, 0, },
+	/* 98 */	{ "TYA",  1, IMP|NORM, 0, },
+	/* 99 */	{ "STA",  3, ABY|NORM, 0, },
+	/* 9a */	{ "TXS",  1, IMP|NORM, 0, },
+	/* 00 */	{ "?9B",  1, ILL|NORM, 0, },
+	/* 9c */	{ "STZ",  3, ABS|NORM, 1, },
+	/* 9d */	{ "STA",  3, ABX|NORM, 0, },
+	/* 9e */	{ "STZ",  3, ABX|NORM, 1, },
+	/* 9f */	{ "BBS1", 3, ZPR|NORM, 0, },
+	/* a0 */	{ "LDY",  2, IMM|NORM, 0, },
+	/* a1 */	{ "LDA",  2, INX|NORM, 0, },
+	/* a2 */	{ "LDX",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?A3",  1, ILL|NORM, 0, },
+	/* a4 */	{ "LDY",  2, ZPG|NORM, 0, },
+	/* a5 */	{ "LDA",  2, ZPG|NORM, 0, },
+	/* a6 */	{ "LDX",  2, ZPG|NORM, 0, },
+	/* a7 */	{ "SMB2", 2, ZPG|NORM, 0, },
+	/* a8 */	{ "TAY",  1, IMP|NORM, 0, },
+	/* a9 */	{ "LDA",  2, IMM|NORM, 0, },
+	/* aa */	{ "TAX",  1, IMP|NORM, 0, },
+	/* 00 */	{ "?AB",  1, ILL|NORM, 0, },
+	/* ac */	{ "LDY",  3, ABS|NORM, 0, },
+	/* ad */	{ "LDA",  3, ABS|NORM, 0, },
+	/* ae */	{ "LDX",  3, ABS|NORM, 0, },
+	/* af */	{ "BBS2", 3, ZPR|NORM, 0, },
+	/* b0 */	{ "BCS",  2, REL|FORK, 0, },
+	/* b1 */	{ "LDA",  2, INY|NORM, 0, },
+	/* b2 */	{ "LDA",  2, IND|NORM, 1, },
+	/* 00 */	{ "?B3",  1, ILL|NORM, 0, },
+	/* b4 */	{ "LDY",  2, ZPX|NORM, 0, },
+	/* b5 */	{ "LDA",  2, ZPX|NORM, 0, },
+	/* b6 */	{ "LDX",  2, ZPY|NORM, 0, },
+	/* b7 */	{ "SMB3", 2, ZPG|NORM, 0, },
+	/* b8 */	{ "CLV",  1, IMP|NORM, 0, },
+	/* b9 */	{ "LDA",  3, ABY|NORM, 0, },
+	/* ba */	{ "TSX",  1, IMP|NORM, 0, },
+	/* 00 */	{ "?BB",  1, ILL|NORM, 0, },
+	/* bc */	{ "LDY",  3, ABX|NORM, 0, },
+	/* bd */	{ "LDA",  3, ABX|NORM, 0, },
+	/* be */	{ "LDX",  3, ABY|NORM, 0, },
+	/* bf */	{ "BBS3", 3, ZPR|NORM, 0, },
+	/* c0 */	{ "CPY",  2, IMM|NORM, 0, },
+	/* c1 */	{ "CMP",  2, INX|NORM, 0, },
+	/* c2 */	{ "NOP",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?C3",  1, ILL|NORM, 0, },
+	/* c4 */	{ "CPY",  2, ZPG|NORM, 0, },
+	/* c5 */	{ "CMP",  2, ZPG|NORM, 0, },
+	/* c6 */	{ "DEC",  2, ZPG|NORM, 0, },
+	/* c7 */	{ "SMB4", 2, ZPG|NORM, 0, },
+	/* c8 */	{ "INY",  1, IMP|NORM, 0, },
+	/* c9 */	{ "CMP",  2, IMM|NORM, 0, },
+	/* ca */	{ "DEX",  1, IMP|NORM, 0, },
+	/* 00 */	{ "?CB",  1, ILL|NORM, 0, },
+	/* cc */	{ "CPY",  3, ABS|NORM, 0, },
+	/* cd */	{ "CMP",  3, ABS|NORM, 0, },
+	/* ce */	{ "DEC",  3, ABS|NORM, 0, },
+	/* cf */	{ "BBS4", 3, ZPR|NORM, 0, },
+	/* d0 */	{ "BNE",  2, REL|FORK, 0, },
+	/* d1 */	{ "CMP",  2, INY|NORM, 0, },
+	/* d2 */	{ "CMP",  2, IND|NORM, 1, },
+	/* 00 */	{ "?D3",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?D4",  1, ILL|NORM, 0, },
+	/* d5 */	{ "CMP",  2, ZPX|NORM, 0, },
+	/* d6 */	{ "DEC",  2, ZPX|NORM, 0, },
+	/* d7 */	{ "SMB5", 2, ZPG|NORM, 0, },
+	/* d8 */	{ "CLD",  1, IMP|NORM, 0, },
+	/* d9 */	{ "CMP",  3, ABY|NORM, 0, },
+	/* da */	{ "PHX",  1, IMP|NORM, 1, },
+	/* 00 */	{ "?DB",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?DC",  1, ILL|NORM, 0, },
+	/* dd */	{ "CMP",  3, ABX|NORM, 0, },
+	/* de */	{ "DEC",  3, ABX|NORM, 0, },
+	/* df */	{ "BBS5", 3, ZPR|NORM, 0, },
+	/* e0 */	{ "CPX",  2, IMM|NORM, 0, },
+	/* e1 */	{ "SBC",  2, INX|NORM, 0, },
+	/* e2 */	{ "NOP",  2, IMM|NORM, 0, },
+	/* 00 */	{ "?E3",  1, ILL|NORM, 0, },
+	/* e4 */	{ "CPX",  2, ZPG|NORM, 0, },
+	/* e5 */	{ "SBC",  2, ZPG|NORM, 0, },
+	/* e6 */	{ "INC",  2, ZPG|NORM, 0, },
+	/* e7 */	{ "SMB6", 2, ZPG|NORM, 0, },
+	/* e8 */	{ "INX",  1, IMP|NORM, 0, },
+	/* e9 */	{ "SBC",  2, IMM|NORM, 0, },
+	/* ea */	{ "NOP",  1, IMP|NORM, 0, },
+	/* 00 */	{ "?EB",  1, ILL|NORM, 0, },
+	/* ec */	{ "CPX",  3, ABS|NORM, 0, },
+	/* ed */	{ "SBC",  3, ABS|NORM, 0, },
+	/* ee */	{ "INC",  3, ABS|NORM, 0, },
+	/* ef */	{ "BBS6", 3, ZPR|NORM, 0, },
+	/* f0 */	{ "BEQ",  2, REL|FORK, 0, },
+	/* f1 */	{ "SBC",  2, INY|NORM, 0, },
+	/* f2 */	{ "SBC",  2, IND|NORM, 1, },
+	/* 00 */	{ "?F3",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?F4",  1, ILL|NORM, 0, },
+	/* f5 */	{ "SBC",  2, ZPX|NORM, 0, },
+	/* f6 */	{ "INC",  2, ZPX|NORM, 0, },
+	/* f7 */	{ "SMB7", 2, ZPG|NORM, 0, },
+	/* f8 */	{ "SED",  1, IMP|NORM, 0, },
+	/* f9 */	{ "SBC",  3, ABY|NORM, 0, },
+	/* fa */	{ "PLX",  1, IMP|NORM, 1, },
+	/* 00 */	{ "?FB",  1, ILL|NORM, 0, },
+	/* 00 */	{ "?FC",  1, ILL|NORM, 0, },
+	/* fd */	{ "SBC",  3, ABX|NORM, 0, },
+	/* fe */	{ "INC",  3, ABX|NORM, 0, },
+	/* ff */	{ "BBS7", 3, ZPR|NORM, 0, },
 };
 
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
@@ -2252,6 +2513,7 @@ void DebugWriteMem(int addr, bool host, unsigned char data)
 int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 {
 	int operand = 0;
+	int zpaddr = 0;
 	int l = 0;
 
 	char *s = opstr;
@@ -2259,6 +2521,8 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 	s += sprintf(s, "%04X ", addr);
 
 	int opcode = DebugReadMem(addr, host);
+
+	const InstInfo *optable = host ? optable_6502 : optable_65c02;
 	const InstInfo *ip = &optable[opcode];
 
 	switch (ip->nb) {
@@ -2299,7 +2563,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 				l = 2;
 				break;
 			case 3:
-				operand = DebugReadMem(addr, host) + (DebugReadMem(addr + 1, host) << 8);
+				operand = DebugReadMem(addr, host) | (DebugReadMem(addr + 1, host) << 8);
 				l = 4;
 				break;
 		}
@@ -2313,6 +2577,18 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 			operand = operand + ip->nb + addr - 1;
 			l = 4;
+		}
+		else if (ip->flag & ZPR)
+		{
+			zpaddr = operand & 0xff;
+			int Offset  = (operand & 0xff00) >> 8;
+
+			if (Offset > 127)
+			{
+				Offset = (~0xff | Offset);
+			}
+
+			operand = addr + ip->nb - 1 + Offset;
 		}
 
 		switch (ip->flag & ADRMASK)
@@ -2344,6 +2620,9 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 			break;
 		case ACC:
 			s += sprintf(s, "A        ");
+			break;
+		case ZPR:
+			s += sprintf(s, "%02X,%04X ", zpaddr, operand);
 			break;
 		case IMP:
 		default:

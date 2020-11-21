@@ -84,7 +84,7 @@ struct Watch
 
 struct InstInfo
 {
-	char opn[4];
+	const char* opn;
 	int  nb;
 	int  flag;
 	int  c6502;
