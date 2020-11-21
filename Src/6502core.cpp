@@ -98,7 +98,7 @@ typedef int int16;
 #define GETVFLAG ((PSR & FlagV)>0)
 #define GETNFLAG ((PSR & FlagN)>0)
 
-static const int CyclesTable[] = {
+static const int CyclesTable6502[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
   7,6,0,0,3,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
@@ -117,6 +117,28 @@ static const int CyclesTable[] = {
   2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0, /* e */
   2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
 }; /* CyclesTable */
+
+static const int CyclesTable65C02[] = {
+/*0 1 2 3 4 5 6 7 8 9 a b c d e f */
+  7,6,2,1,5,3,5,1,3,2,2,1,6,4,6,1, /* 0 */
+  2,5,5,1,5,4,6,1,2,4,2,1,6,4,6,1, /* 1 */
+  6,6,2,1,3,3,5,1,4,2,2,1,4,4,6,1, /* 2 */
+  2,5,5,1,4,4,6,1,2,4,2,1,4,4,6,1, /* 3 */
+  6,6,2,1,3,3,5,1,3,2,2,1,3,4,6,1, /* 4 */
+  2,5,5,1,4,4,6,1,2,4,3,1,8,4,6,1, /* 5 */
+  6,6,2,1,3,3,5,1,4,2,2,1,6,4,6,1, /* 6 */
+  2,5,5,1,4,4,6,1,2,4,4,1,6,4,6,1, /* 7 */
+  3,6,2,1,3,3,3,1,2,2,2,1,4,4,4,1, /* 8 */
+  2,6,5,1,4,4,4,1,2,5,2,1,4,5,5,1, /* 9 */
+  2,6,2,1,3,3,3,1,2,2,2,1,4,4,4,1, /* a */
+  2,5,5,1,4,4,4,1,2,4,2,1,4,4,4,1, /* b */
+  2,6,2,1,3,3,5,1,2,2,2,1,4,4,6,1, /* c */
+  2,5,5,1,4,4,6,1,2,4,3,1,4,4,7,1, /* d */
+  2,6,2,1,3,3,5,1,2,2,2,1,4,4,6,1, /* e */
+  2,5,5,1,4,4,6,1,2,4,4,1,4,4,7,1  /* f */
+};
+
+const int *CyclesTable = CyclesTable6502;
 
 // Number of cycles to start of memory read cycle
 static const int CyclesToMemRead[] = {
@@ -1062,16 +1084,30 @@ INLINE static int16 ZeroPgYAddrModeHandler_Address(void) {
 } /* ZeroPgYAddrModeHandler */
 
 /*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void) {
-  ProgramCounter=BeebReadMem(0xfffc) | (BeebReadMem(0xfffd)<<8);
-  Accumulator=XReg=YReg=0; /* For consistancy of execution */
-  StackReg=0xff; /* Initial value ? */
-  PSR=FlagI; /* Interrupts off for starters */
 
-  intStatus=0;
-  NMIStatus=0;
-  NMILock = false;
+// Initialise 6502core
+
+void Init6502core()
+{
+	if (MachineType == Model::Master128) {
+		CyclesTable = CyclesTable65C02;
+	}
+	else {
+		CyclesTable = CyclesTable6502;
+	}
+
+	ProgramCounter = BeebReadMem(0xfffc) | (BeebReadMem(0xfffd) << 8);
+
+	// For consistancy of execution
+	Accumulator = 0;
+	XReg = 0;
+	YReg = 0;
+	StackReg = 0xff; // Initial value?
+	PSR = FlagI; // Interrupts off for starters
+
+	intStatus = 0;
+	NMIStatus = 0;
+	NMILock = false;
 }
 
 /*-------------------------------------------------------------------------*/
