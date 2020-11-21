@@ -2205,6 +2205,16 @@ void Exec65C02Instruction() {
 		case 0xfe:
 			INCInstrHandler(AbsXAddrModeHandler_Address());
 			break;
+		case 0x02:
+		case 0x22:
+		case 0x42:
+		case 0x62:
+		case 0x82:
+		case 0xc2:
+		case 0xe2:
+			// NOP imm
+			TubeProgramCounter++;
+			break;
 		case 0x07:
 			if (TubeMachineType == 3) {
 				// RMB0
@@ -2218,7 +2228,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x03:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ASL-ORA (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
@@ -2226,7 +2239,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x13:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ASL-ORA (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
@@ -2278,7 +2294,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x23:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ROL-AND (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
@@ -2310,7 +2329,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x33:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ROL-AND (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
@@ -2350,7 +2372,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x43:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: LSR-EOR (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
@@ -2382,7 +2407,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x53:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: LSR-EOR (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
@@ -2429,7 +2457,10 @@ void Exec65C02Instruction() {
 			TubeProgramCounter += 2;
 			break;
 		case 0x63:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ROR-ADC (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
@@ -2461,7 +2492,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x73:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// Undocumented Instruction: ROR-ADC (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
@@ -2523,8 +2557,13 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x83:
-			// Undocumented Instruction: SAX (zp,X)
-			TubeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: SAX (zp,X)
+				TubeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
+			}
 			break;
 		case 0x8f:
 			if (TubeMachineType == 3) {
@@ -2537,8 +2576,13 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0x93:
-			// Undocumented Instruction: SAX (zp),Y
-			TubeRam[IndYAddrModeHandler_Address()] = Accumulator & XReg;
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: SAX (zp),Y
+				TubeRam[IndYAddrModeHandler_Address()] = Accumulator & XReg;
+			}
 			break;
 		case 0x97:
 			if (TubeMachineType == 3) {
@@ -2570,9 +2614,14 @@ void Exec65C02Instruction() {
 			XReg = Accumulator;
 			break;
 		case 0xa3:
-			// Undocumented Instruction: LAX (zp,X)
-			LDAInstrHandler(IndXAddrModeHandler_Data());
-			XReg = Accumulator;
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: LAX (zp,X)
+				LDAInstrHandler(IndXAddrModeHandler_Data());
+				XReg = Accumulator;
+			}
 			break;
 		case 0xa7:
 			if (TubeMachineType == 3) {
@@ -2597,9 +2646,14 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xb3:
-			// Undocumented Instruction: LAX (zp),Y
-			LDAInstrHandler(IndYAddrModeHandler_Data());
-			XReg = Accumulator;
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
+				// Undocumented Instruction: LAX (zp),Y
+				LDAInstrHandler(IndYAddrModeHandler_Data());
+				XReg = Accumulator;
+			}
 			break;
 		case 0xb7:
 			if (TubeMachineType == 3) {
@@ -2626,7 +2680,10 @@ void Exec65C02Instruction() {
 			break;
 		// Undocumented DEC-CMP and INC-SBC Instructions
 		case 0xc3:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// DEC-CMP (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
@@ -2658,7 +2715,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xd3:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// DEC-CMP (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
@@ -2706,7 +2766,10 @@ void Exec65C02Instruction() {
 			TubeProgramCounter += 2;
 			break;
 		case 0xe3:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// INC-SBC (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
@@ -2738,7 +2801,10 @@ void Exec65C02Instruction() {
 			}
 			break;
 		case 0xf3:
-			{
+			if (TubeMachineType == 3) {
+				// NOP
+			}
+			else {
 				// INC-SBC (zp).Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
