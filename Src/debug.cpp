@@ -556,7 +556,7 @@ static const InstInfo optable_65c02[256] =
 	/* 86 */	{ "STX",  2, ZPG|NORM, 0, },
 	/* 87 */	{ "SMB0", 2, ZPG|NORM, 0, },
 	/* 88 */	{ "DEY",  1, IMP|NORM, 0, },
-	/* 00 */	{ "?89",  1, ILL|NORM, 0, },
+	/* 89 */	{ "BIT",  2, IMM|NORM, 0, },
 	/* 8a */	{ "TXA",  1, IMP|NORM, 0, },
 	/* 8b */	{ "NOP",  1, IMP|NORM, 0, },
 	/* 8c */	{ "STY",  3, ABS|NORM, 0, },

@@ -1914,7 +1914,9 @@ void Exec65C02Instruction() {
 		case 0x89:
 			if (TubeMachineType == 3) {
 				// BIT imm
-				BITInstrHandler(TubeRam[TubeProgramCounter++]);
+				int operand = TubeRam[TubeProgramCounter++];
+				PSR &= ~FlagZ;
+				PSR |= (((Accumulator & operand) == 0) << 1);
 			}
 			break;
 		case 0x8a:
