@@ -311,9 +311,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_MUSIC5000                   40142
 #define ID_TELETEXTHALFMODE             40143
 #define ID_BASIC_HARDWARE_ONLY          40144
-#define ID_DOCONLY                      40145
-#define ID_EXTRAS                       40146
-#define ID_FULLSET                      40147
 #define ID_PSAMPLES                     40148
 #define IDM_FIXEDSPEED100               40151
 #define IDM_FIXEDSPEED5                 40154

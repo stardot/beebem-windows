@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -347,7 +347,7 @@ void BeebWin::LoadPreferences()
 		IP232localhost = false;
 	if (!m_Preferences.GetBoolValue("IP232custom", IP232custom))
 		IP232custom = false;
-		
+
 	EthernetPortEnabled = IP232localhost || IP232custom;
 
 	if (!m_Preferences.GetBoolValue("IP232mode", IP232mode))
@@ -361,7 +361,7 @@ void BeebWin::LoadPreferences()
 	m_customport = IP232customport;
 	if (m_Preferences.GetStringValue("IP232customip", m_customip))
 		strcpy(IP232customip, m_customip);
-	else 
+	else
 		IP232customip[0] = 0;
 
 	if (!m_Preferences.GetBinaryValue("SerialPort", &SerialPort, 1))
@@ -389,8 +389,6 @@ void BeebWin::LoadPreferences()
 	else
 		TubeType = static_cast<Tube>(type);
 
-	if (!m_Preferences.GetBinaryValue("OpCodes", &OpCodes, 1))
-		OpCodes=2;
 	if (!m_Preferences.GetBoolValue("Basic Hardware", BasicHardwareOnly))
 		BasicHardwareOnly = false;
 	if (!m_Preferences.GetBoolValue("Teletext Half Mode", TeletextHalfMode))
@@ -404,7 +402,7 @@ void BeebWin::LoadPreferences()
 		TeletextCustom = false;
 	if (!(TeletextLocalhost || TeletextCustom))
 		TeletextFiles = true; // default to Files
-	
+
 	char key[20];
 	for (int ch=0; ch<4; ch++)
 	{
@@ -635,7 +633,6 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		m_Preferences.SetBinaryValue(CFG_TUBE_TYPE, &TubeType, 1);
 
-		m_Preferences.SetBinaryValue("OpCodes", &OpCodes, 1);
 		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);
 		m_Preferences.SetBoolValue("Teletext Half Mode", TeletextHalfMode);
 		m_Preferences.SetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled);
@@ -649,7 +646,7 @@ void BeebWin::SavePreferences(bool saveAll)
 			snprintf(key,20,"TeletextCustomIP%d",ch);
 			m_Preferences.SetStringValue(key, TeletextCustomIP[ch]);
 		}
-		
+
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);

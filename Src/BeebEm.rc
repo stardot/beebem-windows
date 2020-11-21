@@ -688,12 +688,6 @@ BEGIN
         MENUITEM "Edit ROM Configuration", IDM_ROMCONFIG
         MENUITEM SEPARATOR
         MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
-        POPUP "&Undocumented Instructions"
-        BEGIN
-            MENUITEM "&Documented Only",            ID_DOCONLY
-            MENUITEM "&Common Extras",              ID_EXTRAS
-            MENUITEM "&Full Set",                   ID_FULLSET
-        END
         MENUITEM SEPARATOR
         MENUITEM "Basic &Hardware Only",        ID_BASIC_HARDWARE_ONLY
         MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE

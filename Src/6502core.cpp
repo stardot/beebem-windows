@@ -182,13 +182,12 @@ static const int CyclesToMemWrite[] = {
   0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0  /* f */
 };
 
-
 /* The number of cycles to be used by the current instruction - exported to
    allow fernangling by memory subsystem */
-unsigned int Cycles;
+static unsigned int Cycles;
 
 /* Number of cycles VIAs advanced for mem read and writes */
-unsigned int ViaCycles;
+static unsigned int ViaCycles;
 
 /* Number of additional cycles for IO read / writes */
 int IOCycles=0;
@@ -201,7 +200,6 @@ bool IntDue=false;
 int CyclesToInt = NO_TIMER_INT_DUE;
 
 static bool Branched; // true if the instruction branched
-int OpCodes=2; // 1 = documented only, 2 = commonoly used undocumenteds, 3 = full set
 bool BasicHardwareOnly = false; // false = all hardware, true = basic hardware only
 // 1 if first cycle happened
 
@@ -214,8 +212,8 @@ bool BasicHardwareOnly = false; // false = all hardware, true = basic hardware o
 #define WritePaged(addr,val) BeebWriteMem(addr,val)
 #define ReadPaged(Address) BeebReadMem(Address)
 
-void PollVIAs(unsigned int nCycles);
-void PollHardware(unsigned int nCycles);
+static void PollVIAs(unsigned int nCycles);
+static void PollHardware(unsigned int nCycles);
 
 /*----------------------------------------------------------------------------*/
 INLINE void Carried() {
@@ -279,8 +277,10 @@ void AdjustForIOWrite(void)
 	PollVIAs(1);
 	DoIntCheck();
 }
+
 /*----------------------------------------------------------------------------*/
-void AdvanceCyclesForMemRead(void)
+
+static void AdvanceCyclesForMemRead()
 {
 	// Advance VIAs to point where mem read happens
 	Cycles += CyclesToMemRead[CurrentInstruction];
@@ -294,7 +294,8 @@ void AdvanceCyclesForMemRead(void)
 		DoIntCheck();
 	}
 }
-void AdvanceCyclesForMemWrite(void)
+
+static void AdvanceCyclesForMemWrite()
 {
 	// Advance VIAs to point where mem write happens
 	Cycles += CyclesToMemWrite[CurrentInstruction];
@@ -832,33 +833,7 @@ INLINE static void BadInstrHandler(int opcode) {
 		// abort();
 #endif
 	}
-
-	/* Do not know what the instruction does but can guess if it is 1,2 or 3 bytes */
-	switch (opcode & 0xf)
-	{
-	/* One byte instructions */
-	case 0xa:
-		break;
-
-	/* Two byte instructions */
-	case 0x0:
-	case 0x2:  /* Inst 0xf2 causes the 6502 to hang! Try it on your BBC Micro */
-	case 0x3:
-	case 0x4:
-	case 0x7:
-	case 0x9:
-	case 0xb:
-		ProgramCounter++;
-		break;
-
-	/* Three byte instructions */
-	case 0xc:
-	case 0xe:
-	case 0xf:
-		ProgramCounter += 2;
-		break;
-	}
-} /* BadInstrHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Absolute  addressing mode handler                                       */
@@ -1291,12 +1266,12 @@ void Exec6502Instruction(void) {
 	static unsigned char OldNMIStatus;
 	int BadCount=0;
 	int OldPC;
-	int loop,loopc;
 	bool iFlagJustCleared;
 	bool iFlagJustSet;
 
-	loopc=(DebugEnabled ? 1 : 1024); // Makes debug window more responsive
-	for(loop=0;loop<loopc;loop++) {
+	const int Count = DebugEnabled ? 1 : 1024; // Makes debug window more responsive
+
+	for (int i = 0; i < Count; i++) {
 		// Output debug info
 		if (DebugEnabled && !DebugDisassembler(ProgramCounter, PrePC, Accumulator, XReg, YReg, PSR, StackReg, true))
 		{
@@ -1348,8 +1323,7 @@ void Exec6502Instruction(void) {
 		ViaCycles=0;
 		AdvanceCyclesForMemRead();
 
-		if (OpCodes >= 1) { // Documented opcodes
-			switch (CurrentInstruction) {
+		switch (CurrentInstruction) {
 			case 0x00:
 				BRKInstrHandler();
 				break;
@@ -2069,13 +2043,6 @@ void Exec6502Instruction(void) {
 			case 0xfe:
 				INCInstrHandler(AbsXAddrModeHandler_Address());
 				break;
-			default:
-				BadCount++;
-			}
-		}
-
-		if (OpCodes==3) {
-			switch (CurrentInstruction) {
 			case 0x07:
 				if (MachineType == Model::Master128) {
 					// NOP
@@ -2599,13 +2566,6 @@ void Exec6502Instruction(void) {
 					Accumulator = TmpAcc; // Fudge so that I dont have to do the whole SBC code again
 				}
 				break;
-			default:
-				BadCount++;
-				break;
-			}
-		}
-		if (OpCodes>=2) {
-			switch (CurrentInstruction) {
 			case 0x0b:
 			case 0x2b:
 				if (MachineType == Model::Master128) {
@@ -2773,11 +2733,11 @@ void Exec6502Instruction(void) {
 				break;
 			default:
 				BadCount++;
-			}
 		}
 
-		if (BadCount==OpCodes)
+		if (BadCount > 0) {
 			BadInstrHandler(CurrentInstruction);
+		}
 
 		// This block corrects the cycle count for the branch instructions
 		if ((CurrentInstruction == 0x10) ||
