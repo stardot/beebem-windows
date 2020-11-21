@@ -2522,7 +2522,20 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 	int opcode = DebugReadMem(addr, host);
 
-	const InstInfo *optable = host ? optable_6502 : optable_65c02;
+	const InstInfo *optable;
+
+	if (host) {
+		if (MachineType == Model::Master128) {
+			optable = optable_65c02;
+		}
+		else {
+			optable = optable_6502;
+		}
+	}
+	else {
+		optable = optable_65c02;
+	}
+
 	const InstInfo *ip = &optable[opcode];
 
 	switch (ip->nb) {
