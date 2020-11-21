@@ -183,11 +183,11 @@ int OpCodes=2; // 1 = documented only, 2 = commonoly used undocumenteds, 3 = ful
 bool BasicHardwareOnly = false; // false = all hardware, true = basic hardware only
 // 1 if first cycle happened
 
-/* Get a two byte address from the program counter, and then post inc the program counter */
+// Get a two byte address from the program counter, and then post inc
+// the program counter
 #define GETTWOBYTEFROMPC(var) \
-  var=ReadPaged(ProgramCounter); \
-  var|=(ReadPaged(ProgramCounter+1)<<8); \
-  ProgramCounter += 2;
+	var = ReadPaged(ProgramCounter++); \
+	var |= (ReadPaged(ProgramCounter++) << 8);
 
 #define WritePaged(addr,val) BeebWriteMem(addr,val)
 #define ReadPaged(Address) BeebReadMem(Address)

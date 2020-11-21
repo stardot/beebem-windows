@@ -657,11 +657,11 @@ unsigned char TubeReadMem(unsigned int IOAddr) {
 		return(ReadTubeFromParasiteSide(IOAddr-0xfef8));
 }
 
-/* Get a two byte address from the program counter, and then post inc the program counter */
+// Get a two byte address from the program counter, and then post inc
+// the program counter
 #define GETTWOBYTEFROMPC(var) \
-  var=TubeRam[TubeProgramCounter]; \
-  var|=(TubeRam[TubeProgramCounter+1]<<8); \
-  TubeProgramCounter += 2;
+  var = TubeRam[TubeProgramCounter++]; \
+  var |= (TubeRam[TubeProgramCounter++] << 8);
 
 /*----------------------------------------------------------------------------*/
 INLINE void Carried() {
