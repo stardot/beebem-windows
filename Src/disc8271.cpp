@@ -1313,66 +1313,6 @@ void Disc8271_poll_real() {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Checks if the sectors passed in look like a valid disc catalogue. Returns:
-      1 - looks like a catalogue
-      0 - does not look like a catalogue
-     -1 - cannot tell
-*/
-static int CheckForCatalogue(const unsigned char *Sec1, const unsigned char *Sec2) {
-  int Valid=1;
-  int CatEntries=0;
-
-  /* First check the number of sectors (cannot be > 0x320) */
-  if (((Sec2[6]&3)<<8)+Sec2[7] > 0x320)
-    Valid=0;
-
-  /* Check the number of catalogue entries (must be multiple of 8) */
-  if (Valid)
-  {
-    if (Sec2[5] % 8)
-      Valid=0;
-    else
-      CatEntries = Sec2[5] / 8;
-  }
-
-  /* Check that the catalogue file names are all printable characters. */
-  int Invalid = 0;
-  for (int File = 0; Valid && File < CatEntries; ++File) {
-    for (int i=0; Valid && i<8; ++i) {
-      unsigned char c = Sec1[8 + File * 8 + i];
-
-      if (i==7)  /* Remove lock bit */
-        c&=0x7f;
-
-      if (c<0x20 || c>0x7f)
-        Invalid++;  /* not printable */
-    }
-  }
-  /* Some games discs have one or two invalid names */
-  if (Invalid > 3)
-    Valid=0;
-
-#if 0
-  /* Check that all the bytes after the file names are 0 */
-  for (File=CatEntries; Valid && File<31; ++File) {
-    for (int i=0; Valid && i<8; ++i) {
-      c=Sec1[8+File*8+i];
-
-      if (c!=0)
-        Valid=0;
-    }
-  }
-#endif
-
-  /* If still valid but there are no catalogue entries then we cannot tell
-     if its a catalog */
-  if (Valid && CatEntries==0)
-    Valid=-1;
-
-  return Valid;
-}
-
-/*--------------------------------------------------------------------------*/
 
 void FreeDiscImage(int DriveNum) {
   for (int Track = 0; Track < TRACKSPERDRIVE; Track++) {
@@ -1446,22 +1386,6 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   }
 
   fclose(infile);
-
-  /* Check if the sectors that would be the disc catalogue of a double sized
-     image look like a disc catalogue - give a warning if they do. */
-  if (CheckForCatalogue(DiscStore[DriveNum][HeadNum][1].Sectors[0].Data,
-                        DiscStore[DriveNum][HeadNum][1].Sectors[1].Data) == 1) {
-#ifdef WIN32
-    MessageBox(GETHWND,"WARNING - Incorrect disc type selected?\n\n"
-                       "This disc file looks like a double sided\n"
-                       "disc image. Check files before copying them.\n",
-                       WindowTitle,MB_OK|MB_ICONWARNING);
-#else
-    cerr << "WARNING - Incorrect disc type selected(?) in drive " << DriveNum << "\n";
-    cerr << "This disc file looks like a double sided disc image.\n";
-    cerr << "Check files before copying them.\n";
-#endif
-  }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1508,21 +1432,6 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   }
 
   fclose(infile);
-
-  /* Check if the side 2 catalogue sectors look OK - give a warning if they do not. */
-  if (CheckForCatalogue(DiscStore[DriveNum][1][0].Sectors[0].Data,
-                        DiscStore[DriveNum][1][0].Sectors[1].Data) == 0) {
-#ifdef WIN32
-    MessageBox(GETHWND,"WARNING - Incorrect disc type selected?\n\n"
-                       "This disc file looks like a single sided\n"
-                       "disc image. Check files before copying them.\n",
-                       WindowTitle,MB_OK|MB_ICONWARNING);
-#else
-    cerr << "WARNING - Incorrect disc type selected(?) in drive " << DriveNum << "\n";
-    cerr << "This disc file looks like a single sided disc image.\n";
-    cerr << "Check files before copying them.\n";
-#endif
-  }
 }
 
 /*--------------------------------------------------------------------------*/
