@@ -100,22 +100,22 @@ typedef int int16;
 
 static const int CyclesTable6502[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
-  7,6,0,0,3,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
-  6,6,0,0,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
-  2,5,0,0,0,4,6,0,2,4,0,0,4,4,7,0, /* 3 */
-  6,6,0,0,3,3,5,0,3,2,2,2,3,4,6,6, /* 4 */
-  2,5,0,0,4,4,6,0,2,4,0,0,4,4,7,0, /* 5 */
-  6,6,0,0,3,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
-  2,5,0,0,4,4,6,0,2,4,0,0,4,4,7,0, /* 7 */
-  2,6,0,0,3,3,3,3,2,0,2,0,4,4,4,0, /* 8 */
-  2,6,0,0,4,4,4,0,2,5,2,0,0,5,0,0, /* 9 */
-  2,6,2,0,3,3,3,0,2,2,2,0,4,4,4,0, /* a */
-  2,5,0,0,4,4,4,0,2,4,2,0,4,4,4,0, /* b */
-  2,6,2,0,3,3,5,0,2,2,2,0,4,4,6,0, /* c */
-  2,5,0,0,0,4,6,0,2,4,0,0,4,4,7,0, /* d */
-  2,6,0,0,3,3,5,0,2,2,2,0,4,4,6,0, /* e */
-  2,5,0,0,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
+  7,6,0,8,3,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
+  2,5,0,8,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
+  6,6,0,8,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
+  2,5,0,8,0,4,6,0,2,4,0,0,4,4,7,0, /* 3 */
+  6,6,0,8,3,3,5,0,3,2,2,2,3,4,6,6, /* 4 */
+  2,5,0,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 5 */
+  6,6,0,8,3,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
+  2,5,0,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 7 */
+  2,6,0,6,3,3,3,3,2,0,2,0,4,4,4,0, /* 8 */
+  2,6,0,6,4,4,4,0,2,5,2,0,0,5,0,0, /* 9 */
+  2,6,2,6,3,3,3,0,2,2,2,0,4,4,4,0, /* a */
+  2,5,0,5,4,4,4,0,2,4,2,0,4,4,4,0, /* b */
+  2,6,2,8,3,3,5,0,2,2,2,0,4,4,6,0, /* c */
+  2,5,0,8,0,4,6,0,2,4,0,0,4,4,7,0, /* d */
+  2,6,0,8,3,3,5,0,2,2,2,0,4,4,6,0, /* e */
+  2,5,0,8,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
 }; /* CyclesTable */
 
 static const int CyclesTable65C02[] = {
@@ -880,15 +880,12 @@ INLINE static int16 IndXAddrModeHandler_Data(void) {
 
 /*-------------------------------------------------------------------------*/
 /* Indexed with X preinc addressing mode handler                           */
-INLINE static int16 IndXAddrModeHandler_Address(void) {
-  unsigned char ZeroPageAddress;
-  int EffectiveAddress;
+INLINE static int16 IndXAddrModeHandler_Address() {
+  unsigned char ZeroPageAddress = (ReadPaged(ProgramCounter++) + XReg) & 0xff;
+  int EffectiveAddress = WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress + 1] << 8);
 
-  ZeroPageAddress=(ReadPaged(ProgramCounter++)+XReg) & 255;
-
-  EffectiveAddress=WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress+1]<<8);
-  return(EffectiveAddress);
-} /* IndXAddrModeHandler_Address */
+  return EffectiveAddress;
+}
 
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
@@ -2059,7 +2056,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: ASL-ORA (zp,X)
+					// Undocumented Instruction: SLO (zp,X)
 					int16 zpaddr = IndXAddrModeHandler_Address();
 					ASLInstrHandler(zpaddr);
 					ORAInstrHandler(WholeRam[zpaddr]);
@@ -2070,7 +2067,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: ASL-ORA (zp),Y
+					// Undocumented Instruction: SLO (zp),Y
 					int16 zpaddr = IndYAddrModeHandler_Address();
 					ASLInstrHandler(zpaddr);
 					ORAInstrHandler(WholeRam[zpaddr]);
@@ -2125,7 +2122,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: ROL-AND (zp,X)
+					// Undocumented Instruction: RLA (zp,X)
 					int16 zpaddr = IndXAddrModeHandler_Address();
 					ROLInstrHandler(zpaddr);
 					ANDInstrHandler(WholeRam[zpaddr]);
@@ -2158,7 +2155,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: ROL-AND (zp),Y
+					// Undocumented Instruction: RLA (zp),Y
 					int16 zpaddr = IndYAddrModeHandler_Address();
 					ROLInstrHandler(zpaddr);
 					ANDInstrHandler(WholeRam[zpaddr]);
@@ -2202,7 +2199,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: LSR-EOR (zp,X)
+					// Undocumented Instruction: SRE (zp,X)
 					int16 zpaddr = IndXAddrModeHandler_Address();
 					LSRInstrHandler(zpaddr);
 					EORInstrHandler(WholeRam[zpaddr]);
@@ -2235,7 +2232,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: LSR-EOR (zp),Y
+					// Undocumented Instruction: SRE (zp),Y
 					int16 zpaddr = IndYAddrModeHandler_Address();
 					LSRInstrHandler(zpaddr);
 					EORInstrHandler(WholeRam[zpaddr]);
@@ -2308,7 +2305,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: ROR-ADC (zp,X)
+					// Undocumented Instruction: RRA (zp,X)
 					int16 zpaddr = IndXAddrModeHandler_Address();
 					RORInstrHandler(zpaddr);
 					ADCInstrHandler(WholeRam[zpaddr]);
@@ -2341,7 +2338,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: ROR-ADC (zp),Y
+					// Undocumented Instruction: RRA (zp),Y
 					int16 zpaddr = IndYAddrModeHandler_Address();
 					RORInstrHandler(zpaddr);
 					ADCInstrHandler(WholeRam[zpaddr]);
@@ -2391,8 +2388,11 @@ void Exec6502Instruction(void) {
 				break;
 			// Undocumented DEC-CMP and INC-SBC Instructions
 			case 0xc3:
-				if (MachineType != Model::Master128) {
-					// DEC-CMP (zp,X)
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocument instruction: DCP (zp,X)
 					int16 zpaddr = IndXAddrModeHandler_Address();
 					DECInstrHandler(zpaddr);
 					CMPInstrHandler(WholeRam[zpaddr]);
@@ -2415,8 +2415,11 @@ void Exec6502Instruction(void) {
 				}
 				break;
 			case 0xd3:
-				if (MachineType != Model::Master128) {
-					// DEC-CMP (zp),Y
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: DCP (zp),Y
 					int16 zpaddr = IndYAddrModeHandler_Address();
 					DECInstrHandler(zpaddr);
 					CMPInstrHandler(WholeRam[zpaddr]);
@@ -2455,8 +2458,11 @@ void Exec6502Instruction(void) {
 				ProgramCounter += 2;
 				break;
 			case 0xe3:
-				if (MachineType != Model::Master128) {
-					// INC-SBC (zp,X)
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ISC (zp,X)
 					int16 zpaddr = IndXAddrModeHandler_Address();
 					INCInstrHandler(zpaddr);
 					SBCInstrHandler(WholeRam[zpaddr]);
@@ -2494,7 +2500,7 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// INC-SBC (zp).Y
+					// Undocumented instruction: ISC (zp),Y
 					int16 zpaddr = IndYAddrModeHandler_Address();
 					INCInstrHandler(zpaddr);
 					SBCInstrHandler(WholeRam[zpaddr]);
@@ -2620,8 +2626,9 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// Undocumented Instruction: SAX (zp),Y
-					WholeRam[IndYAddrModeHandler_Address()] = Accumulator & XReg;
+					// Undocumented Instruction: AHX (zp),Y
+					int Address = IndYAddrModeHandler_Address();
+					WholeRam[Address] = Accumulator & XReg & ((Address >> 8) + 1);
 				}
 				break;
 			case 0x97:

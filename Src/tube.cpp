@@ -2208,7 +2208,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: ASL-ORA (zp,X)
+				// Undocumented Instruction: SLO (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
 				ORAInstrHandler(TubeRam[zpaddr]);
@@ -2219,7 +2219,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: ASL-ORA (zp),Y
+				// Undocumented Instruction: SLO (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				ASLInstrHandler(zpaddr);
 				ORAInstrHandler(TubeRam[zpaddr]);
@@ -2277,7 +2277,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: ROL-AND (zp,X)
+				// Undocumented Instruction: RLA (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
 				ANDInstrHandler(TubeRam[zpaddr]);
@@ -2312,7 +2312,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: ROL-AND (zp),Y
+				// Undocumented Instruction: RLA (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				ROLInstrHandler(zpaddr);
 				ANDInstrHandler(TubeRam[zpaddr]);
@@ -2358,7 +2358,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: LSR-EOR (zp,X)
+				// Undocumented Instruction: SRE (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
 				EORInstrHandler(TubeRam[zpaddr]);
@@ -2393,7 +2393,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: LSR-EOR (zp),Y
+				// Undocumented Instruction: SRE (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				LSRInstrHandler(zpaddr);
 				EORInstrHandler(TubeRam[zpaddr]);
@@ -2446,7 +2446,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: ROR-ADC (zp,X)
+				// Undocumented Instruction: RRA (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
 				ADCInstrHandler(TubeRam[zpaddr]);
@@ -2481,7 +2481,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: ROR-ADC (zp),Y
+				// Undocumented Instruction: RRA (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				RORInstrHandler(zpaddr);
 				ADCInstrHandler(TubeRam[zpaddr]);
@@ -2578,8 +2578,9 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// Undocumented Instruction: SAX (zp),Y
-				TubeRam[IndYAddrModeHandler_Address()] = Accumulator & XReg;
+				// Undocumented Instruction: AHX (zp),Y
+				int Address = IndYAddrModeHandler_Address();
+				TubeRam[Address] = Accumulator & XReg & ((Address >> 8) + 1);
 			}
 			break;
 		case 0x97:
@@ -2701,7 +2702,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// DEC-CMP (zp,X)
+				// Undocument instruction: DCP (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
 				CMPInstrHandler(TubeRam[zpaddr]);
@@ -2736,7 +2737,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// DEC-CMP (zp),Y
+				// Undocumented instruction: DCP (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				DECInstrHandler(zpaddr);
 				CMPInstrHandler(TubeRam[zpaddr]);
@@ -2790,7 +2791,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// INC-SBC (zp,X)
+				// Undocumented instruction: ISC (zp,X)
 				int16 zpaddr = IndXAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
 				SBCInstrHandler(TubeRam[zpaddr]);
@@ -2833,7 +2834,7 @@ void Exec65C02Instruction() {
 				// NOP
 			}
 			else {
-				// INC-SBC (zp).Y
+				// Undocumented instruction: ISC (zp),Y
 				int16 zpaddr = IndYAddrModeHandler_Address();
 				INCInstrHandler(zpaddr);
 				SBCInstrHandler(TubeRam[zpaddr]);
