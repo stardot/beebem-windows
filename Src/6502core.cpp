@@ -1261,7 +1261,6 @@ static void ClipboardCNPVHandler()
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec6502Instruction(void) {
 	static unsigned char OldNMIStatus;
-	int BadCount=0;
 	int OldPC;
 	bool iFlagJustCleared;
 	bool iFlagJustSet;
@@ -1282,11 +1281,10 @@ void Exec6502Instruction(void) {
 		}
 
 		Branched = false;
-		iFlagJustCleared=false;
-		iFlagJustSet=false;
-		Cycles=0;
+		iFlagJustCleared = false;
+		iFlagJustSet = false;
+		Cycles = 0;
 		IOCycles = 0;
-		BadCount=0;
 		IntDue = false;
 		CurrentInstruction = -1;
 
@@ -2739,11 +2737,8 @@ void Exec6502Instruction(void) {
 				}
 				break;
 			default:
-				BadCount++;
-		}
-
-		if (BadCount > 0) {
-			BadInstrHandler(CurrentInstruction);
+				BadInstrHandler(CurrentInstruction);
+				break;
 		}
 
 		// This block corrects the cycle count for the branch instructions
