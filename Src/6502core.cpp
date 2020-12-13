@@ -1233,7 +1233,7 @@ static void ClipboardREMVHandler()
 //
 // On exit,
 //   For purge: X and Y are preserved
-//   For count: X=low byte of result,  Y=high byte of result
+//   For count: X=low byte of result, Y=high byte of result
 //   A is undefined
 //   V,C are preserved
 
@@ -1249,8 +1249,8 @@ static void ClipboardCNPVHandler()
 		}
 		else {
 			int Length = mainWin->m_ClipboardLength - mainWin->m_ClipboardIndex;
-			XReg = Length & 0xff;
-			YReg = Length >> 8;
+			XReg = Length > 0;
+			YReg = 0;
 		}
 	}
 
