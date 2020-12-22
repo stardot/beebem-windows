@@ -100,22 +100,22 @@ typedef int int16;
 
 static const int CyclesTable6502[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
-  7,6,0,8,3,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
-  2,5,0,8,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
-  6,6,0,8,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
-  2,5,0,8,0,4,6,0,2,4,0,0,4,4,7,0, /* 3 */
-  6,6,0,8,3,3,5,0,3,2,2,2,3,4,6,6, /* 4 */
-  2,5,0,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 5 */
-  6,6,0,8,3,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
-  2,5,0,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 7 */
-  2,6,0,6,3,3,3,3,2,0,2,0,4,4,4,0, /* 8 */
-  2,6,0,6,4,4,4,0,2,5,2,0,0,5,0,0, /* 9 */
+  7,6,1,8,3,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
+  2,5,1,8,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
+  6,6,1,8,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
+  2,5,1,8,0,4,6,0,2,4,0,0,4,4,7,0, /* 3 */
+  6,6,1,8,3,3,5,0,3,2,2,2,3,4,6,6, /* 4 */
+  2,5,1,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 5 */
+  6,6,1,8,3,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
+  2,5,1,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 7 */
+  2,6,2,6,3,3,3,3,2,0,2,0,4,4,4,0, /* 8 */
+  2,6,1,6,4,4,4,0,2,5,2,0,0,5,0,0, /* 9 */
   2,6,2,6,3,3,3,0,2,2,2,0,4,4,4,0, /* a */
-  2,5,0,5,4,4,4,0,2,4,2,0,4,4,4,0, /* b */
+  2,5,1,5,4,4,4,0,2,4,2,0,4,4,4,0, /* b */
   2,6,2,8,3,3,5,0,2,2,2,0,4,4,6,0, /* c */
-  2,5,0,8,0,4,6,0,2,4,0,0,4,4,7,0, /* d */
-  2,6,0,8,3,3,5,0,2,2,2,0,4,4,6,0, /* e */
-  2,5,0,8,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
+  2,5,1,8,0,4,6,0,2,4,0,0,4,4,7,0, /* d */
+  2,6,2,8,3,3,5,0,2,2,2,0,4,4,6,0, /* e */
+  2,5,1,8,0,4,6,0,2,4,0,0,0,4,7,0  /* f */
 }; /* CyclesTable */
 
 static const int CyclesTable65C02[] = {
@@ -812,6 +812,13 @@ INLINE static void STYInstrHandler(int16 address) {
   WritePaged(address,YReg);
 } /* STYInstrHandler */
 
+// KIL (Halt) instruction handler.
+
+INLINE static void KILInstrHandler() {
+	// Just repeat the instruction indefinitely.
+	ProgramCounter--;
+}
+
 INLINE static void BadInstrHandler(int opcode) {
 	if (!IgnoreIllegalInstructions)
 	{
@@ -1399,6 +1406,9 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					ORAInstrHandler(ZPIndAddrModeHandler_Data());
 				}
+				else {
+					KILInstrHandler();
+				}
 				break;
 			case 0x14:
 				if (MachineType == Model::Master128) {
@@ -1491,6 +1501,9 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					ANDInstrHandler(ZPIndAddrModeHandler_Data());
 				}
+				else {
+					KILInstrHandler();
+				}
 				break;
 			case 0x34:
 				if (MachineType == Model::Master128) {
@@ -1576,6 +1589,9 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					EORInstrHandler(ZPIndAddrModeHandler_Data());
 				}
+				else {
+					KILInstrHandler();
+				}
 				break;
 			case 0x55:
 				EORInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1657,6 +1673,9 @@ void Exec6502Instruction(void) {
 			case 0x72:
 				if (MachineType == Model::Master128) {
 					ADCInstrHandler(ZPIndAddrModeHandler_Data());
+				}
+				else {
+					KILInstrHandler();
 				}
 				break;
 			case 0x74:
@@ -1765,10 +1784,13 @@ void Exec6502Instruction(void) {
 				WritePaged(IndYAddrModeHandler_Address(), Accumulator);
 				break;
 			case 0x92:
-				AdvanceCyclesForMemWrite();
 				if (MachineType == Model::Master128) {
 					// STA
+					AdvanceCyclesForMemWrite();
 					WritePaged(ZPIndAddrModeHandler_Address(), Accumulator);
+				}
+				else {
+					KILInstrHandler();
 				}
 				break;
 			case 0x94:
@@ -1868,6 +1890,9 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					LDAInstrHandler(ZPIndAddrModeHandler_Data());
 				}
+				else {
+					KILInstrHandler();
+				}
 				break;
 			case 0xb4:
 				LDYInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1944,6 +1969,9 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					CMPInstrHandler(ZPIndAddrModeHandler_Data());
 				}
+				else {
+					KILInstrHandler();
+				}
 				break;
 			case 0xd5:
 				CMPInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -2010,6 +2038,9 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					SBCInstrHandler(ZPIndAddrModeHandler_Data());
 				}
+				else {
+					KILInstrHandler();
+				}
 				break;
 			case 0xf5:
 				SBCInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -2037,6 +2068,25 @@ void Exec6502Instruction(void) {
 				break;
 			case 0xfe:
 				INCInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			case 0x02:
+			case 0x22:
+			case 0x42:
+			case 0x62:
+				if (MachineType == Model::Master128) {
+					// NOP imm
+					ProgramCounter++;
+				}
+				else {
+					KILInstrHandler();
+				}
+				break;
+
+			case 0x82:
+			case 0xc2:
+			case 0xe2:
+				// NOP imm
+				ReadPaged(ProgramCounter++);
 				break;
 			case 0x07:
 				if (MachineType == Model::Master128) {
@@ -2373,15 +2423,6 @@ void Exec6502Instruction(void) {
 					int16 zpaddr = AbsXAddrModeHandler_Address();
 					RORInstrHandler(zpaddr);
 					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xc2:
-				if (MachineType != Model::Master128) {
-					// NOP imm
-					ReadPaged(ProgramCounter++);
-				}
-				else {
-					ProgramCounter++;
 				}
 				break;
 			// Undocumented DEC-CMP and INC-SBC Instructions
