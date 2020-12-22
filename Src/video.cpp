@@ -124,6 +124,8 @@ struct VideoStateT {
   int InCharLineUp; /* Scanline within a character line - counts up*/
   int VSyncState; // Cannot =0 in MSVC $NRM; /* When >0 VSync is high */
   bool IsNewTVFrame; // Specifies the start of a new TV frame, following VSync (used so we only calibrate speed once per frame)
+  bool InterlaceFrame;
+  bool DoCA1Int;
 };
 
 static VideoStateT VideoState;
@@ -145,8 +147,8 @@ static bool NextLineBottom = false; // true if the next line of double height sh
 #define MODE7FLASHFREQUENCY 25
 #define MODE7ONFIELDS 37
 #define MODE7OFFFIELDS 13
-unsigned char CursorOnFields,CursorOffFields;
-int CursorFieldCount=32;
+
+int CursorFieldCount = 32;
 bool CursorOnState = true;
 int Mode7FlashTrigger=MODE7ONFIELDS;
 
@@ -579,9 +581,6 @@ static void DoFastTable() {
 #define BEEB_DOTIME_SAMPLESIZE 50
 
 static void VideoStartOfFrame(void) {
-  static bool InterlaceFrame = false;
-  int CurStart;
-  int IL_Multiplier;
 #ifdef BEEB_DOTIME
   static int Have_GotTime=0;
   static struct tms previous,now;
@@ -589,9 +588,6 @@ static void VideoStartOfFrame(void) {
 
   double frametime;
   static CycleCountT OldCycles=0;
-  
-  int CurStart; 
-
 
   if (!Have_GotTime) {
     times(&previous);
@@ -635,30 +631,30 @@ static void VideoStartOfFrame(void) {
 
     CursorFieldCount--;
     Mode7FlashTrigger--;
-    InterlaceFrame = !InterlaceFrame;
+    VideoState.InterlaceFrame = !VideoState.InterlaceFrame;
   }
 
   // Cursor update for blink. I thought I'd put it here, as this is where the mode 7 flash field thingy is too
   // - Richard Gellman
   if (CursorFieldCount<0) {
-    CurStart = CRTC_CursorStart & 0x60;
+    int CurStart = CRTC_CursorStart & 0x60;
 
     if (CurStart == 0) {
       // 0 is cursor displays, but does not blink
-      CursorFieldCount = CursorOnFields;
+      CursorFieldCount = 0;
       CursorOnState = true;
     }
-    else if (CurStart == 32) {
+    else if (CurStart == 0x20) {
       // 32 is no cursor
-      CursorFieldCount = CursorOffFields;
+      CursorFieldCount = 0;
       CursorOnState = false;
     }
-    else if (CurStart == 64) {
+    else if (CurStart == 0x40) {
       // 64 is 1/16 fast blink
       CursorFieldCount = 8;
       CursorOnState = !CursorOnState;
     }
-    else if (CurStart == 96) {
+    else if (CurStart == 0x60) {
       // 96 is 1/32 slow blink
       CursorFieldCount = 16;
       CursorOnState = !CursorOnState;
@@ -683,8 +679,9 @@ static void VideoStartOfFrame(void) {
     }
   }
 
-  IL_Multiplier=(CRTC_InterlaceAndDelay&1)?2:1;
-  if (InterlaceFrame) {
+  const int IL_Multiplier = (CRTC_InterlaceAndDelay & 1) ? 2 : 1;
+
+  if (VideoState.InterlaceFrame) {
     IncTrigger((IL_Multiplier*(CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
   } else {
     IncTrigger(((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
@@ -1005,10 +1002,9 @@ void VideoDoScanLine(void) {
   int l;
   /* cerr << "CharLine=" << VideoState.CharLine << " InCharLineUp=" << VideoState.InCharLineUp << "\n"; */
   if (VideoState.IsTeletext) {
-    static int DoCA1Int=0;
-    if (DoCA1Int) {
+    if (VideoState.DoCA1Int) {
       SysVIATriggerCA1Int(0);
-      DoCA1Int=0;
+      VideoState.DoCA1Int = false;
     }
 
     /* Clear the next 20 scan lines */
@@ -1020,10 +1016,10 @@ void VideoDoScanLine(void) {
         mainWin->doHorizLine(0, VideoState.PixmapLine+l, -36, 800);
     }
 
-	// RTW - Mode 7 emulation is rather broken, as we should be plotting it line-by-line instead
-	// of character block at a time.
-	// For now though, I leave it as it is, and plot an entire block when InCharLineUp is 0.
-	// The infrastructure now exists though to make DoMode7Row plot just a single scanline (from InCharLineUp 0..9).
+    // RTW - Mode 7 emulation is rather broken, as we should be plotting it line-by-line instead
+    // of character block at a time.
+    // For now though, I leave it as it is, and plot an entire block when InCharLineUp is 0.
+    // The infrastructure now exists though to make DoMode7Row plot just a single scanline (from InCharLineUp 0..9).
     if (VideoState.CharLine<CRTC_VerticalDisplayed && VideoState.InCharLineUp==0) {
       ova=VideoState.Addr; ovn=CRTC_HorizontalDisplayed;
       VideoState.DataPtr = BeebMemPtrWithWrapMode7(VideoState.Addr, CRTC_HorizontalDisplayed);
@@ -1033,16 +1029,17 @@ void VideoDoScanLine(void) {
     }
 
     /* Move onto next physical scanline as far as timing is concerned */
-    VideoState.InCharLineUp+=1;
-	// RTW - Mode 7 hardwired for now. Assume 10 scanlines per character regardless (actually 9.5 but god knows how that works)
-	if (VideoState.CharLine<=CRTC_VerticalTotal && VideoState.InCharLineUp>9) {
+    VideoState.InCharLineUp++;
+
+    // RTW - Mode 7 hardwired for now. Assume 10 scanlines per character regardless (actually 9.5 but god knows how that works)
+    if (VideoState.CharLine<=CRTC_VerticalTotal && VideoState.InCharLineUp>9) {
       VideoState.CharLine++;
       VideoState.InCharLineUp=0;
     }
 
-	// RTW - check if we have reached the end of the PAL frame.
-	// This whole thing is a bit hardwired and kludged. Should really be emulating VSync position 'properly' like Modes 0-6. 
-	if (VideoState.CharLine>CRTC_VerticalTotal && VideoState.InCharLineUp>=CRTC_VerticalTotalAdjust) {
+    // RTW - check if we have reached the end of the PAL frame.
+    // This whole thing is a bit hardwired and kludged. Should really be emulating VSync position 'properly' like Modes 0-6.
+    if (VideoState.CharLine > CRTC_VerticalTotal && VideoState.InCharLineUp >= CRTC_VerticalTotalAdjust) {
       // Changed so that whole screen is still visible after *TV255
       VScreenAdjust=-100+(((CRTC_VerticalTotal+1)-(CRTC_VerticalSyncPos-1))*(20/TeletextStyle));
       AdjustVideo();
@@ -1059,24 +1056,24 @@ void VideoDoScanLine(void) {
       VideoState.PreviousLastPixmapLine=VideoState.PixmapLine;
       VideoState.PixmapLine=0;
       SysVIATriggerCA1Int(1);
-      DoCA1Int=1;
+      VideoState.DoCA1Int = true;
     } else {
-	  // RTW- set timer till the next scanline update (this is now nice and simple)
+      // RTW- set timer till the next scanline update (this is now nice and simple)
       IncTrigger((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2),VideoTriggerCount);
     }
   } else {
     /* Non teletext. */
 
-	// Handle VSync
-	// RTW - this was moved to the top so that we can correctly set R7=0,
-	// i.e. we can catch it before the line counters are incremented
+    // Handle VSync
+    // RTW - this was moved to the top so that we can correctly set R7=0,
+    // i.e. we can catch it before the line counters are incremented
     if (VideoState.VSyncState) {
       if (!(--VideoState.VSyncState)) {
         SysVIATriggerCA1Int(0);
       }
     }
 
-	if ((VideoState.VSyncState==0) && (VideoState.CharLine==CRTC_VerticalSyncPos) && (VideoState.InCharLineUp == 0)) {
+    if (VideoState.VSyncState == 0 && VideoState.CharLine == CRTC_VerticalSyncPos && VideoState.InCharLineUp == 0) {
       // Nothing displayed?
       if (VideoState.FirstPixmapLine<0)
         VideoState.FirstPixmapLine=0;
@@ -1096,12 +1093,12 @@ void VideoDoScanLine(void) {
     if (!FrameNum)
       memset(mainWin->GetLinePtr(VideoState.PixmapLine),0,800);
 
-	// RTW - changed so we are even able to plot vertical total adjust region if CRTC_VerticalDisplayed is high enough
+    // RTW - changed so we are even able to plot vertical total adjust region if CRTC_VerticalDisplayed is high enough
     if (VideoState.CharLine<CRTC_VerticalDisplayed) {
       // Visible char line, record first line
       if (VideoState.FirstPixmapLine==-1)
         VideoState.FirstPixmapLine=VideoState.PixmapLine;
-	  // Always record the last line
+      // Always record the last line
       VideoState.LastPixmapLine=VideoState.PixmapLine;
 
       /* If first row of character then get the data pointer from memory */
@@ -1110,16 +1107,17 @@ void VideoDoScanLine(void) {
         VideoState.DataPtr=BeebMemPtrWithWrap(VideoState.Addr*8,CRTC_HorizontalDisplayed*8);
         VideoState.Addr+=CRTC_HorizontalDisplayed;
       }
-  
+
       if ((VideoState.InCharLineUp<8) && ((CRTC_InterlaceAndDelay & 0x30)!=48)) {
         if (!FrameNum)
           LowLevelDoScanLine();
       }
     }
 
-	// See if we are at the cursor line
-	if (CurY == -1 && VideoState.Addr > (CRTC_CursorPosLow+(CRTC_CursorPosHigh<<8)))
-		CurY = VideoState.PixmapLine;
+    // See if we are at the cursor line
+    if (CurY == -1 && VideoState.Addr > (CRTC_CursorPosLow + (CRTC_CursorPosHigh << 8))) {
+      CurY = VideoState.PixmapLine;
+    }
 
     // Screen line increment and wraparound
     if (++VideoState.PixmapLine == MAX_VIDEO_SCAN_LINES)
@@ -1128,34 +1126,35 @@ void VideoDoScanLine(void) {
     /* Move onto next physical scanline as far as timing is concerned */
     VideoState.InCharLineUp+=1;
 
-	// RTW - check whether we have reached a new character row.
-	// if CharLine>CRTC_VerticalTotal, we are in the vertical total adjust region so we don't wrap to a new row.
-	if (VideoState.CharLine<=CRTC_VerticalTotal && VideoState.InCharLineUp>CRTC_ScanLinesPerChar) {
+    // RTW - check whether we have reached a new character row.
+    // if CharLine>CRTC_VerticalTotal, we are in the vertical total adjust region so we don't wrap to a new row.
+    if (VideoState.CharLine<=CRTC_VerticalTotal && VideoState.InCharLineUp>CRTC_ScanLinesPerChar) {
       VideoState.CharLine++;
       VideoState.InCharLineUp=0;
     }
 
-	// RTW - neater way of detecting the end of the PAL frame, which doesn't require making a special case
-	// of the vertical total adjust period.
-	if (VideoState.CharLine>CRTC_VerticalTotal && VideoState.InCharLineUp>=CRTC_VerticalTotalAdjust) {
+    // RTW - neater way of detecting the end of the PAL frame, which doesn't require making a special case
+    // of the vertical total adjust period.
+    if (VideoState.CharLine>CRTC_VerticalTotal && VideoState.InCharLineUp>=CRTC_VerticalTotalAdjust) {
       VScreenAdjust=0;
       if (!FrameNum && VideoState.IsNewTVFrame) {
         VideoAddCursor();
         VideoAddLEDs();
-		CurY=-1;
+        CurY=-1;
         int n = VideoState.PreviousLastPixmapLine-VideoState.PreviousFirstPixmapLine+1;
-		if (n < 0)
-		  n += MAX_VIDEO_SCAN_LINES;
+        if (n < 0) {
+          n += MAX_VIDEO_SCAN_LINES;
+        }
 
-		int startLine = 32;
-		if (n > 248 && VideoState.PreviousFirstPixmapLine >= 40)
-		{
-			// RTW -
-			// This is a little hack which ensures that a fullscreen mode with *TV255 will always
-			// fit unclipped in the window in Modes 0-6
-			startLine = 40;
-		}
-		mainWin->updateLines(startLine, 256);
+        int startLine = 32;
+        if (n > 248 && VideoState.PreviousFirstPixmapLine >= 40) {
+          // RTW -
+          // This is a little hack which ensures that a fullscreen mode with *TV255 will always
+          // fit unclipped in the window in Modes 0-6
+          startLine = 40;
+        }
+
+        mainWin->updateLines(startLine, 256);
       }
       VideoStartOfFrame();
       AdjustVideo();
@@ -1437,8 +1436,9 @@ static void VideoAddCursor() {
 		for (int y = CurStart; y <= CurEnd && y <= CRTC_ScanLinesPerChar && CurY + y < 500; ++y)
 		{
 			if (CurY + y >= 0) {
-				if (CursorOnState)
-				 mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
+				if (CursorOnState) {
+					mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
+				}
 			}
 		}
 	}
@@ -1482,38 +1482,60 @@ void VideoAddLEDs(void) {
 /*-------------------------------------------------------------------------*/
 void SaveVideoUEF(FILE *SUEF) {
 	fput16(0x0468,SUEF);
-	fput32(47,SUEF);
-	// save the registers now
-	fputc(CRTC_HorizontalTotal,SUEF);
-	fputc(CRTC_HorizontalDisplayed,SUEF);
-	fputc(CRTC_HorizontalSyncPos,SUEF);
-	fputc(CRTC_SyncWidth,SUEF);
-	fputc(CRTC_VerticalTotal,SUEF);
-	fputc(CRTC_VerticalTotalAdjust,SUEF);
-	fputc(CRTC_VerticalDisplayed,SUEF);
-	fputc(CRTC_VerticalSyncPos,SUEF);
-	fputc(CRTC_InterlaceAndDelay,SUEF);
-	fputc(CRTC_ScanLinesPerChar,SUEF);
-	fputc(CRTC_CursorStart,SUEF);
-	fputc(CRTC_CursorEnd,SUEF);
-	fputc(CRTC_ScreenStartHigh,SUEF);
-	fputc(CRTC_ScreenStartLow,SUEF);
-	fputc(CRTC_CursorPosHigh,SUEF);
-	fputc(CRTC_CursorPosLow,SUEF);
-	fputc(CRTC_LightPenHigh,SUEF);
-	fputc(CRTC_LightPenLow,SUEF);
+	fput32(112, SUEF);
+	// Save CRTC state
+	fputc(CRTC_HorizontalTotal, SUEF);
+	fputc(CRTC_HorizontalDisplayed, SUEF);
+	fputc(CRTC_HorizontalSyncPos, SUEF);
+	fputc(CRTC_SyncWidth, SUEF);
+	fputc(CRTC_VerticalTotal, SUEF);
+	fputc(CRTC_VerticalTotalAdjust, SUEF);
+	fputc(CRTC_VerticalDisplayed, SUEF);
+	fputc(CRTC_VerticalSyncPos, SUEF);
+	fputc(CRTC_InterlaceAndDelay, SUEF);
+	fputc(CRTC_ScanLinesPerChar, SUEF);
+	fputc(CRTC_CursorStart, SUEF);
+	fputc(CRTC_CursorEnd, SUEF);
+	fputc(CRTC_ScreenStartHigh, SUEF);
+	fputc(CRTC_ScreenStartLow, SUEF);
+	fputc(CRTC_CursorPosHigh, SUEF);
+	fputc(CRTC_CursorPosLow, SUEF);
+	fputc(CRTC_LightPenHigh, SUEF);
+	fputc(CRTC_LightPenLow, SUEF);
 	// VIDPROC
-	fputc(VideoULA_ControlReg,SUEF);
-	for (int col = 0; col < 16; ++col)
-		fputc(VideoULA_Palette[col] ^ 7,SUEF); /* Use real ULA values */
-	fput16(ActualScreenWidth,SUEF);
-	fput32(ScreenAdjust,SUEF);
-	fputc(CRTCControlReg,SUEF);
-	fputc(TeletextStyle,SUEF);
-	fput32(0,SUEF); // Pad out
+	fputc(VideoULA_ControlReg, SUEF);
+	for (int col = 0; col < 16; ++col) {
+		fputc(VideoULA_Palette[col] ^ 7,SUEF); // Use real ULA values
+	}
+	fput16(ActualScreenWidth, SUEF);
+	fput32(ScreenAdjust, SUEF);
+	fputc(CRTCControlReg, SUEF);
+	fputc(TeletextStyle, SUEF);
+
+	fput32(VideoState.Addr, SUEF);
+	fput32(VideoState.StartAddr, SUEF);
+	fput32(VideoState.PixmapLine, SUEF);
+	fput32(VideoState.FirstPixmapLine, SUEF);
+	fput32(VideoState.PreviousFirstPixmapLine, SUEF);
+	fput32(VideoState.LastPixmapLine, SUEF);
+	fput32(VideoState.PreviousLastPixmapLine, SUEF);
+	fput32(VideoState.CharLine, SUEF);
+	fput32(VideoState.InCharLineUp, SUEF);
+	fput32(VideoState.VSyncState, SUEF);
+	fputc(VideoState.IsNewTVFrame, SUEF);
+	fputc(VideoState.InterlaceFrame, SUEF);
+	fputc(VideoState.DoCA1Int, SUEF);
+	fput32(ova, SUEF);
+	fput32(ovn, SUEF);
+	fput32(CursorFieldCount, SUEF);
+	fputc(CursorOnState, SUEF);
+	fput32(CurY, SUEF);
+	fput32(Mode7FlashTrigger, SUEF);
+	fputc(Mode7FlashOn, SUEF);
+	fput32(VideoTriggerCount - TotalCycles, SUEF);
 }
 
-void LoadVideoUEF(FILE *SUEF) {
+void LoadVideoUEF(FILE *SUEF, int Version) {
 	CRTC_HorizontalTotal=fgetc(SUEF);
 	CRTC_HorizontalDisplayed=fgetc(SUEF);
 	CRTC_HorizontalSyncPos=fgetc(SUEF);
@@ -1534,17 +1556,45 @@ void LoadVideoUEF(FILE *SUEF) {
 	CRTC_LightPenLow=fgetc(SUEF);
 	// VIDPROC
 	VideoULA_ControlReg=fgetc(SUEF);
-	for (int col = 0; col < 16; ++col)
-		VideoULA_Palette[col]=fgetc(SUEF)^7; /* Use real ULA values */
+	for (int col = 0; col < 16; ++col) {
+		VideoULA_Palette[col]=fgetc(SUEF)^7; // Use real ULA values
+	}
 	ActualScreenWidth=fget16(SUEF);
 	ScreenAdjust=fget32(SUEF);
 	CRTCControlReg=fgetc(SUEF);
 	TeletextStyle=fgetc(SUEF);
+
 	VideoInit();
+
 	TeletextEnabled = (VideoULA_ControlReg & 2) != 0;
 	if (VideoULA_ControlReg & 16) HSyncModifier=8; else HSyncModifier=16;
 	if (VideoULA_ControlReg & 2) HSyncModifier=12;
-	//SetTrigger(99,VideoTriggerCount);
+
+	if (Version >= 13) {
+		VideoState.Addr = fget32(SUEF);
+		VideoState.StartAddr = fget32(SUEF);
+		VideoState.PixmapLine = fget32(SUEF);
+		VideoState.FirstPixmapLine = fget32(SUEF);
+		VideoState.PreviousFirstPixmapLine = fget32(SUEF);
+		VideoState.LastPixmapLine = fget32(SUEF);
+		VideoState.PreviousLastPixmapLine = fget32(SUEF);
+		// VideoState.IsTeletext - computed in VideoStartOfFrame(), called from VideoInit()
+		// VideoState.DataPtr - computed in VideoStartOfFrame(), called from VideoInit()
+		VideoState.CharLine = fget32(SUEF);
+		VideoState.InCharLineUp = fget32(SUEF);
+		VideoState.VSyncState = fget32(SUEF);
+		VideoState.IsNewTVFrame = fgetc(SUEF);
+		VideoState.InterlaceFrame = fgetc(SUEF);
+		VideoState.DoCA1Int = fgetc(SUEF);
+		ova = fget32(SUEF);
+		ovn = fget32(SUEF);
+		CursorFieldCount = fget32(SUEF);
+		CursorOnState = fgetc(SUEF);
+		CurY = fget32(SUEF);
+		Mode7FlashTrigger = fget32(SUEF);
+		Mode7FlashOn = fgetc(SUEF);
+		VideoTriggerCount = TotalCycles + fget32(SUEF);
+	}
 }
 
 /*-------------------------------------------------------------------------*/

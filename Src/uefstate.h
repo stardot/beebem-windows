@@ -26,7 +26,8 @@ enum class UEFStateResult {
 	Success,
 	OpenFailed,
 	WriteFailed,
-	InvalidUEFFile
+	InvalidUEFFile,
+	InvalidUEFVersion
 };
 
 void fput32(unsigned int word32,FILE *fileptr);

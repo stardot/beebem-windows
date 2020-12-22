@@ -72,7 +72,7 @@ UEFStateResult SaveUEFState(const char *StateName) {
 		fprintf(UEFState,"UEF File!");
 		fputc(0,UEFState); // UEF Header
 
-		const unsigned char UEFMinorVersion = 12;
+		const unsigned char UEFMinorVersion = 13;
 		const unsigned char UEFMajorVersion = 0;
 
 		fputc(UEFMinorVersion, UEFState);
@@ -111,7 +111,6 @@ UEFStateResult LoadUEFState(const char *StateName) {
 	// int CompletionBits=0; // These bits should be filled in
 	long RPos=0,FLength,CPos;
 	unsigned int Block,Length;
-	int Version;
 	strcpy(UEFId,"BlankFile");
 	FILE *UEFState = fopen(StateName, "rb");
 	if (UEFState != NULL)
@@ -124,7 +123,14 @@ UEFStateResult LoadUEFState(const char *StateName) {
 			fclose(UEFState);
 			return UEFStateResult::InvalidUEFFile;
 		}
-		Version=fget16(UEFState);
+
+		const int Version = fget16(UEFState);
+
+		if (Version > 13) {
+			fclose(UEFState);
+			return UEFStateResult::InvalidUEFVersion;
+		}
+
 		RPos=ftell(UEFState);
 
 		while (ftell(UEFState)<FLength) {
@@ -141,7 +147,7 @@ UEFStateResult LoadUEFState(const char *StateName) {
 			if (Block==0x0465) LoadFileMemUEF(UEFState);
 			if (Block==0x0466) LoadSWRamMemUEF(UEFState);
 			if (Block==0x0467) LoadViaUEF(UEFState);
-			if (Block==0x0468) LoadVideoUEF(UEFState);
+			if (Block==0x0468) LoadVideoUEF(UEFState, Version);
 			if (Block==0x046B) LoadSoundUEF(UEFState);
 			if (Block==0x046D) LoadIntegraBHiddenMemUEF(UEFState);
 			if (Block==0x046E) Load8271UEF(UEFState);

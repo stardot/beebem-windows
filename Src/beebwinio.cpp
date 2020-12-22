@@ -865,7 +865,7 @@ void BeebWin::LoadUEFState(const char *FileName)
 			break;
 
 		case UEFStateResult::OpenFailed: {
-			char errstr[256];
+			char errstr[_MAX_PATH + 256];
 			sprintf(errstr, "Cannot open state file: %s", FileName);
 			MessageBox(GETHWND, errstr, "BeebEm", MB_ICONERROR | MB_OK);
 			break;
@@ -874,6 +874,13 @@ void BeebWin::LoadUEFState(const char *FileName)
 		case UEFStateResult::InvalidUEFFile:
 			MessageBox(GETHWND, "The file selected is not a UEF File.", "BeebEm", MB_ICONERROR | MB_OK);
 			break;
+
+		case UEFStateResult::InvalidUEFVersion: {
+			char errstr[_MAX_PATH + 256];
+			sprintf(errstr, "Cannot open state file:\n  %s\n\nPlease upgrade to the latest version of BeebEm", FileName);
+			MessageBox(GETHWND, errstr, "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
 	}
 }
 
