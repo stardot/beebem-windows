@@ -100,15 +100,15 @@ typedef int int16;
 
 static const int CyclesTable6502[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
-  7,6,1,8,3,3,5,5,3,2,2,0,0,4,6,0, /* 0 */
-  2,5,1,8,0,4,6,0,2,4,0,0,0,4,7,0, /* 1 */
+  7,6,1,8,3,3,5,5,3,2,2,0,4,4,6,0, /* 0 */
+  2,5,1,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 1 */
   6,6,1,8,3,3,5,0,4,2,2,0,4,4,6,0, /* 2 */
-  2,5,1,8,0,4,6,0,2,4,0,0,4,4,7,0, /* 3 */
+  2,5,1,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 3 */
   6,6,1,8,3,3,5,0,3,2,2,2,3,4,6,6, /* 4 */
   2,5,1,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 5 */
   6,6,1,8,3,3,5,0,4,2,2,0,5,4,6,0, /* 6 */
   2,5,1,8,4,4,6,0,2,4,0,0,4,4,7,0, /* 7 */
-  2,6,2,6,3,3,3,3,2,0,2,0,4,4,4,0, /* 8 */
+  2,6,2,6,3,3,3,3,2,2,2,0,4,4,4,0, /* 8 */
   2,6,1,6,4,4,4,0,2,5,2,0,0,5,0,0, /* 9 */
   2,6,2,6,3,3,3,0,2,2,2,0,4,4,4,0, /* a */
   2,5,1,5,4,4,4,0,2,4,2,0,4,4,4,0, /* b */
@@ -216,21 +216,31 @@ static void PollVIAs(unsigned int nCycles);
 static void PollHardware(unsigned int nCycles);
 
 /*----------------------------------------------------------------------------*/
-INLINE void Carried() {
-	// Correct cycle count for indirection across page boundary
-	if (((CurrentInstruction & 0xf)==0x1 ||
-		 (CurrentInstruction & 0xf)==0x9 ||
-		 (CurrentInstruction & 0xf)==0xd) &&
-		(CurrentInstruction & 0xf0)!=0x90)
+
+// Correct cycle count for indirection across page boundary
+
+static INLINE void Carried()
+{
+	if (((CurrentInstruction & 0xf) == 0x1 ||
+	     (CurrentInstruction & 0xf) == 0x9 ||
+	     (CurrentInstruction & 0xf) == 0xd) &&
+	    (CurrentInstruction & 0xf0) != 0x90)
 	{
 		Cycles++;
 	}
-	else if (CurrentInstruction==0xBC ||
-			 CurrentInstruction==0xBE)
+	else if (CurrentInstruction == 0x1c ||
+	         CurrentInstruction == 0x3c ||
+	         CurrentInstruction == 0x5c ||
+	         CurrentInstruction == 0x7c ||
+	         CurrentInstruction == 0xbc ||
+	         CurrentInstruction == 0xbe ||
+	         CurrentInstruction == 0xdc ||
+	         CurrentInstruction == 0xfc)
 	{
 		Cycles++;
 	}
 }
+
 /*----------------------------------------------------------------------------*/
 void DoIntCheck(void)
 {
@@ -1363,7 +1373,8 @@ void Exec6502Instruction(void) {
 					TSBInstrHandler(AbsAddrModeHandler_Address());
 				}
 				else {
-					ProgramCounter += 2;
+					// NOP abs
+					AbsAddrModeHandler_Address();
 				}
 				break;
 			case 0x0d:
@@ -1415,7 +1426,8 @@ void Exec6502Instruction(void) {
 					TRBInstrHandler(ZeroPgAddrModeHandler_Address());
 				}
 				else {
-					ProgramCounter += 1;
+					// NOP zp,X
+					ZeroPgXAddrModeHandler_Data();
 				}
 				break;
 			case 0x15:
@@ -1439,7 +1451,8 @@ void Exec6502Instruction(void) {
 					TRBInstrHandler(AbsAddrModeHandler_Address());
 				}
 				else {
-					ProgramCounter += 2;
+					// NOP abs,X
+					AbsXAddrModeHandler_Data();
 				}
 				break;
 			case 0x1d:
@@ -1511,7 +1524,8 @@ void Exec6502Instruction(void) {
 					BITInstrHandler(ZeroPgXAddrModeHandler_Data());
 				}
 				else {
-					ProgramCounter += 1;
+					// NOP zp,X
+					ZeroPgXAddrModeHandler_Data();
 				}
 				break;
 			case 0x35:
@@ -1685,8 +1699,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// NOP zp,x
-					int Address = ReadPaged(ProgramCounter++);
-					ReadPaged((Address + XReg) & 0xff);
+					ZeroPgXAddrModeHandler_Data();
 				}
 				break;
 			case 0x75:
@@ -1757,6 +1770,10 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					// BIT imm
 					BITImmedInstrHandler(ReadPaged(ProgramCounter++));
+				}
+				else {
+					// NOP imm
+					ReadPaged(ProgramCounter++);
 				}
 				break;
 			case 0x8a:
@@ -2319,33 +2336,24 @@ void Exec6502Instruction(void) {
 					EORInstrHandler(WholeRam[zpaddr]);
 				}
 				break;
-			case 0x44:
-				if (MachineType != Model::Master128) {
+			case 0x44: {
 					// NOP zp
 					int Address = ZeroPgAddrModeHandler_Address();
 					ReadPaged(Address);
 				}
-				else {
-					ProgramCounter++;
-				}
 				break;
 			case 0x54:
-				if (MachineType != Model::Master128) {
-					// NOP zp,x
-					int Address = ReadPaged(ProgramCounter++);
-					ReadPaged((Address + XReg) & 0xff);
-				}
-				else {
-					ProgramCounter++;
-				}
+				// NOP zp,x
+				ZeroPgXAddrModeHandler_Data();
 				break;
 			case 0x5c:
-				if (MachineType != Model::Master128) {
-					// NOP abs,x
-					AbsXAddrModeHandler_Data();
+				if (MachineType == Model::Master128) {
+					// TODO: NOP abs
+					ProgramCounter += 2;
 				}
 				else {
-					ProgramCounter += 2;
+					// NOP abs,x
+					AbsXAddrModeHandler_Data();
 				}
 				break;
 			case 0x63:
