@@ -213,7 +213,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_1FPS                        40029
 #define IDM_JOYSTICK                    40030
 #define IDM_HIDECURSOR                  40032
-#define IDM_IGNOREILLEGALOPS            40033
 #define IDM_DEFAULTKYBDMAPPING          40034
 #define IDM_LOGICALKYBDMAPPING          40035
 #define IDM_3QSPEED                     40036

@@ -1142,29 +1142,6 @@ static void BranchOnBitSet(int bit)
 }
 
 /*-------------------------------------------------------------------------*/
-
-INLINE static void BadInstrHandler(int opcode) {
-	if (!IgnoreIllegalInstructions)
-	{
-#ifdef WIN32
-		char errstr[250];
-		sprintf(errstr,"Unsupported 65C02 instruction 0x%02X at 0x%04X\n"
-			"  OK - instruction will be skipped\n"
-			"  Cancel - dump memory and exit",opcode,TubeProgramCounter-1);
-		if (MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR) == IDCANCEL)
-		{
-			exit(0);
-		}
-#else
-		fprintf(stderr,"Bad instruction handler called:\n");
-		fprintf(stderr,"Dumping main memory\n");
-		beebmem_dumpstate();
-		// abort();
-#endif
-	}
-}
-
-/*-------------------------------------------------------------------------*/
 /* Absolute  addressing mode handler                                       */
 INLINE static int16 AbsAddrModeHandler_Data(void) {
   int FullAddress;
@@ -2910,9 +2887,6 @@ void Exec65C02Instruction() {
 				XReg = Accumulator;
 				Accumulator = TmpAcc; // Fudge so that I dont have to do the whole SBC code again
 			}
-			break;
-		default:
-			BadInstrHandler(CurrentInstruction);
 			break;
 	}
 

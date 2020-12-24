@@ -168,7 +168,6 @@ BeebWin::BeebWin()
 	m_SpVoice = NULL;
 	m_hTextView = NULL;
 	m_frozen = false;
-	IgnoreIllegalInstructions = true;
 	aviWriter = NULL;
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
@@ -955,7 +954,6 @@ void BeebWin::InitMenu(void)
 
 	SetRomMenu();
 	CheckMenuItem(IDM_SWRAMBOARD, SWRAMBoardEnabled);
-	CheckMenuItem(IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions);
 	UpdateOptiMenu();
 	UpdateEconetMenu();
 	CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
@@ -3200,11 +3198,6 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_HIDECURSOR:
 		m_HideCursor = !m_HideCursor;
 		CheckMenuItem(IDM_HIDECURSOR, m_HideCursor);
-		break;
-
-	case IDM_IGNOREILLEGALOPS:
-		IgnoreIllegalInstructions = !IgnoreIllegalInstructions;
-		CheckMenuItem(IDM_IGNOREILLEGALOPS, IgnoreIllegalInstructions);
 		break;
 
 	case IDM_DEFINEKEYMAP:
