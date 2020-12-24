@@ -1377,7 +1377,14 @@ void Exec6502Instruction(void) {
 				BVSInstrHandler();
 				break;
 			case 0x80:
-				BRAInstrHandler();
+				if (MachineType == Model::Master128) {
+					// BRA rel
+					BRAInstrHandler();
+				}
+				else {
+					// NOP imm
+					ReadPaged(ProgramCounter++);
+				}
 				break;
 			case 0x90:
 				BCCInstrHandler();
