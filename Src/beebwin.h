@@ -555,6 +555,8 @@ private:
 
 	char m_PrefsFile[_MAX_PATH];
 	Preferences m_Preferences;
+
+	bool m_WriteInstructionCounts;
 };
 
 #endif

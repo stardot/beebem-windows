@@ -216,6 +216,8 @@ BeebWin::BeebWin()
 	m_HideMenuEnabled = false;
 	m_DisableMenu = false;
 	m_MenuOn = true;
+	m_PaletteType = PaletteType::RGB;
+	m_WriteInstructionCounts = false;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -477,6 +479,14 @@ void BeebWin::Shutdown()
 	IP232Close();
 
 	WSACleanup();
+
+	if (m_WriteInstructionCounts) {
+		char FileName[_MAX_PATH];
+		strcpy(FileName, mainWin->m_UserDataPath);
+		strcat(FileName, "InstructionCounts.txt");
+
+		WriteInstructionCounts(FileName);
+	}
 }
 
 /****************************************************************************/

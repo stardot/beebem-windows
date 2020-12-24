@@ -92,4 +92,7 @@ void AdjustForIOWrite(void);
 
 extern int OpCodes;
 extern bool BasicHardwareOnly;
+
+void WriteInstructionCounts(const char *FileName);
+
 #endif

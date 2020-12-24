@@ -215,6 +215,8 @@ bool BasicHardwareOnly = false; // false = all hardware, true = basic hardware o
 static void PollVIAs(unsigned int nCycles);
 static void PollHardware(unsigned int nCycles);
 
+static unsigned int InstructionCount[256];
+
 /*----------------------------------------------------------------------------*/
 
 // Correct cycle count for indirection across page boundary
@@ -1307,6 +1309,8 @@ void Exec6502Instruction(void) {
 			// Read an instruction and post inc program counter
 			CurrentInstruction = ReadPaged(ProgramCounter++);
 		}
+
+		InstructionCount[CurrentInstruction]++;
 
 		// Advance VIAs to point where mem read happens
 		ViaCycles=0;
@@ -2934,4 +2938,15 @@ void Load6502UEF(FILE *SUEF) {
 	NMIStatus=fgetc(SUEF);
 	NMILock=fgetc(SUEF) != 0;
 	//AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
+}
+
+void WriteInstructionCounts(const char *FileName)
+{
+	FILE *file = fopen(FileName, "w");
+	if (file) {
+		for (int i = 0; i < 256; i++) {
+			fprintf(file, "%02X\t%d\n", i, InstructionCount[i]);
+		}
+		fclose(file);
+	}
 }

@@ -534,6 +534,9 @@ void BeebWin::LoadPreferences()
 		m_DisableKeysWindows = true;
 	else
 		m_DisableKeysWindows = false;
+
+	if (!m_Preferences.GetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts))
+		m_WriteInstructionCounts = false;
 }
 
 /****************************************************************************/
@@ -673,6 +676,8 @@ void BeebWin::SavePreferences(bool saveAll)
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
 	m_Preferences.SetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders);
 	m_Preferences.SetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll);
+
+	m_Preferences.SetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts);
 
 	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success) {
 		m_AutoSavePrefsChanged = false;
