@@ -52,13 +52,6 @@ Boston, MA  02110-1301, USA.
 #define MAX_BPS 50              // Max num of breakpoints/watches
 #define MAX_HISTORY 20          // Number of commands in the command history.
 
-// Where control goes
-#define NORM 1
-#define JUMP 2
-#define FORK 4
-#define STOP 8
-#define CTLMASK (NORM|JUMP|FORK|STOP)
-
 // Instruction format
 #define IMM  0x20
 #define ABS  0x40
@@ -159,522 +152,784 @@ static const DebugCmd DebugCmdTable[] = {
 
 static const InstInfo optable_6502[256] =
 {
-	/* 00 */	{ "BRK",  1, IMP|STOP, 0, },
-	/* 01 */	{ "ORA",  2, INX|NORM, 0, },
-	/* 02 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 03 */	{ "SLO",  2, INX|NORM, 0, },
-	/* 04 */	{ "NOP",  2, ZPG|NORM, 0, },
-	/* 05 */	{ "ORA",  2, ZPG|NORM, 0, },
-	/* 06 */	{ "ASL",  2, ZPG|NORM, 0, },
-	/* 07 */	{ "SLO",  2, ZPG|NORM, 0, },
-	/* 08 */	{ "PHP",  1, IMP|NORM, 0, },
-	/* 09 */	{ "ORA",  2, IMM|NORM, 0, },
-	/* 0a */	{ "ASL",  1, ACC|NORM, 0, },
-	/* 0b */	{ "ANC",  2, IMM|NORM, 0, },
-	/* 0c */	{ "NOP",  3, ABS|NORM, 0, },
-	/* 0d */	{ "ORA",  3, ABS|NORM, 0, },
-	/* 0e */	{ "ASL",  3, ABS|NORM, 0, },
-	/* 0f */	{ "SLO",  3, ABS|NORM, 0, },
-	/* 10 */	{ "BPL",  2, REL|FORK, 0, },
-	/* 11 */	{ "ORA",  2, INY|NORM, 0, },
-	/* 12 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 13 */	{ "SLO",  2, INY|NORM, 0, },
-	/* 14 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* 15 */	{ "ORA",  2, ZPX|NORM, 0, },
-	/* 16 */	{ "ASL",  2, ZPX|NORM, 0, },
-	/* 17 */	{ "SLO",  2, ZPX|NORM, 0, },
-	/* 18 */	{ "CLC",  1, IMP|NORM, 0, },
-	/* 19 */	{ "ORA",  3, ABY|NORM, 0, },
-	/* 1a */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 1b */	{ "SLO",  3, ABY|NORM, 0, },
-	/* 1c */	{ "NOP",  3, ABX|NORM, 0, },
-	/* 1d */	{ "ORA",  3, ABX|NORM, 0, },
-	/* 1e */	{ "ASL",  3, ABX|NORM, 0, },
-	/* 1f */	{ "SLO",  3, ABX|NORM, 0, },
-	/* 20 */	{ "JSR",  3, ABS|FORK, 0, },
-	/* 21 */	{ "AND",  2, INX|NORM, 0, },
-	/* 22 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 23 */	{ "RLA",  2, INX|NORM, 0, },
-	/* 24 */	{ "BIT",  2, ZPG|NORM, 0, },
-	/* 25 */	{ "AND",  2, ZPG|NORM, 0, },
-	/* 26 */	{ "ROL",  2, ZPG|NORM, 0, },
-	/* 27 */	{ "RLA",  2, ZPG|NORM, 0, },
-	/* 28 */	{ "PLP",  1, IMP|NORM, 0, },
-	/* 29 */	{ "AND",  2, IMM|NORM, 0, },
-	/* 2a */	{ "ROL",  1, ACC|NORM, 0, },
-	/* 2b */	{ "ANC",  2, IMM|NORM, 0, },
-	/* 2c */	{ "BIT",  3, ABS|NORM, 0, },
-	/* 2d */	{ "AND",  3, ABS|NORM, 0, },
-	/* 2e */	{ "ROL",  3, ABS|NORM, 0, },
-	/* 2f */	{ "RLA",  3, ABS|NORM, 0, },
-	/* 30 */	{ "BMI",  2, REL|FORK, 0, },
-	/* 31 */	{ "AND",  2, INY|NORM, 0, },
-	/* 32 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 33 */	{ "RLA",  2, INY|NORM, 0, },
-	/* 34 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* 35 */	{ "AND",  2, ZPX|NORM, 0, },
-	/* 36 */	{ "ROL",  2, ZPX|NORM, 0, },
-	/* 37 */	{ "RLA",  2, ZPX|NORM, 0, },
-	/* 38 */	{ "SEC",  1, IMP|NORM, 0, },
-	/* 39 */	{ "AND",  3, ABY|NORM, 0, },
-	/* 3a */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 3b */	{ "RLA",  3, ABY|NORM, 0, },
-	/* 3c */	{ "NOP",  3, ABX|NORM, 0, },
-	/* 3d */	{ "AND",  3, ABX|NORM, 0, },
-	/* 3e */	{ "ROL",  3, ABX|NORM, 0, },
-	/* 3f */	{ "RLA",  3, ABX|NORM, 0, },
-	/* 40 */	{ "RTI",  1, IMP|STOP, 0, },
-	/* 41 */	{ "EOR",  2, INX|NORM, 0, },
-	/* 42 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 43 */	{ "SRE",  2, INX|NORM, 0, },
-	/* 44 */	{ "NOP",  2, ZPG|NORM, 0, },
-	/* 45 */	{ "EOR",  2, ZPG|NORM, 0, },
-	/* 46 */	{ "LSR",  2, ZPG|NORM, 0, },
-	/* 47 */	{ "SRE",  2, ZPG|NORM, 0, },
-	/* 48 */	{ "PHA",  1, IMP|NORM, 0, },
-	/* 49 */	{ "EOR",  2, IMM|NORM, 0, },
-	/* 4a */	{ "LSR",  1, ACC|NORM, 0, },
-	/* 4b */	{ "ALR",  1, IMM|NORM, 0, },
-	/* 4c */	{ "JMP",  3, ABS|JUMP, 0, },
-	/* 4d */	{ "EOR",  3, ABS|NORM, 0, },
-	/* 4e */	{ "LSR",  3, ABS|NORM, 0, },
-	/* 4f */	{ "SRE",  3, ABS|NORM, 0, },
-	/* 50 */	{ "BVC",  2, REL|FORK, 0, },
-	/* 51 */	{ "EOR",  2, INY|NORM, 0, },
-	/* 52 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 53 */	{ "SRE",  2, INY|NORM, 0, },
-	/* 54 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* 55 */	{ "EOR",  2, ZPX|NORM, 0, },
-	/* 56 */	{ "LSR",  2, ZPX|NORM, 0, },
-	/* 57 */	{ "SRE",  2, ZPX|NORM, 0, },
-	/* 58 */	{ "CLI",  1, IMP|NORM, 0, },
-	/* 59 */	{ "EOR",  3, ABY|NORM, 0, },
-	/* 5a */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 5b */	{ "SRE",  3, ABY|NORM, 0, },
-	/* 5c */	{ "NOP",  3, ABX|NORM, 0, },
-	/* 5d */	{ "EOR",  3, ABX|NORM, 0, },
-	/* 5e */	{ "LSR",  3, ABX|NORM, 0, },
-	/* 5f */	{ "SRE",  3, ABX|NORM, 0, },
-	/* 60 */	{ "RTS",  1, IMP|STOP, 0, },
-	/* 61 */	{ "ADC",  2, INX|NORM, 0, },
-	/* 62 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 63 */	{ "RRA",  2, INX|NORM, 0, },
-	/* 64 */	{ "NOP",  2, ZPG|NORM, 0, },
-	/* 65 */	{ "ADC",  2, ZPG|NORM, 0, },
-	/* 66 */	{ "ROR",  2, ZPG|NORM, 0, },
-	/* 67 */	{ "RRA",  2, ZPG|NORM, 0, },
-	/* 68 */	{ "PLA",  1, IMP|NORM, 0, },
-	/* 69 */	{ "ADC",  2, IMM|NORM, 0, },
-	/* 6a */	{ "ROR",  1, ACC|NORM, 0, },
-	/* 6b */	{ "ARR",  2, IMM|NORM, 0, },
-	/* 6c */	{ "JMP",  3, IND|STOP, 0, },
-	/* 6d */	{ "ADC",  3, ABS|NORM, 0, },
-	/* 6e */	{ "ROR",  3, ABS|NORM, 0, },
-	/* 6f */	{ "RRA",  3, ABS|NORM, 0, },
-	/* 70 */	{ "BVS",  2, REL|FORK, 0, },
-	/* 71 */	{ "ADC",  2, INY|NORM, 0, },
-	/* 72 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 73 */	{ "RRA",  2, INY|NORM, 0, },
-	/* 74 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* 75 */	{ "ADC",  2, ZPX|NORM, 0, },
-	/* 76 */	{ "ROR",  2, ZPX|NORM, 0, },
-	/* 77 */	{ "RRA",  2, ZPX|NORM, 0, },
-	/* 78 */	{ "SEI",  1, IMP|NORM, 0, },
-	/* 79 */	{ "ADC",  3, ABY|NORM, 0, },
-	/* 7a */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 7b */	{ "RRA",  3, ABY|NORM, 0, },
-	/* 7c */	{ "NOP",  3, ABX|NORM, 0, },
-	/* 7d */	{ "ADC",  3, ABX|NORM, 0, },
-	/* 7e */	{ "ROR",  3, ABX|NORM, 0, },
-	/* 7f */	{ "RRA",  3, ABX|NORM, 0, },
-	/* 80 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 81 */	{ "STA",  2, INX|NORM, 0, },
-	/* 82 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 83 */	{ "SAX",  2, INX|NORM, 0, },
-	/* 84 */	{ "STY",  2, ZPG|NORM, 0, },
-	/* 85 */	{ "STA",  2, ZPG|NORM, 0, },
-	/* 86 */	{ "STX",  2, ZPG|NORM, 0, },
-	/* 87 */	{ "SAX",  2, ZPG|NORM, 0, },
-	/* 88 */	{ "DEY",  1, IMP|NORM, 0, },
-	/* 89 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 8a */	{ "TXA",  1, IMP|NORM, 0, },
-	/* 8b */	{ "XAA",  2, IMM|NORM, 0, },
-	/* 8c */	{ "STY",  3, ABS|NORM, 0, },
-	/* 8d */	{ "STA",  3, ABS|NORM, 0, },
-	/* 8e */	{ "STX",  3, ABS|NORM, 0, },
-	/* 8f */	{ "SAX",  3, ABS|NORM, 0, },
-	/* 90 */	{ "BCC",  2, REL|FORK, 0, },
-	/* 91 */	{ "STA",  2, INY|NORM, 0, },
-	/* 92 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* 93 */	{ "AHX",  2, INY|NORM, 0, },
-	/* 94 */	{ "STY",  2, ZPX|NORM, 0, },
-	/* 95 */	{ "STA",  2, ZPX|NORM, 0, },
-	/* 96 */	{ "STX",  2, ZPY|NORM, 0, },
-	/* 97 */	{ "SAX",  2, ZPY|NORM, 0, },
-	/* 98 */	{ "TYA",  1, IMP|NORM, 0, },
-	/* 99 */	{ "STA",  3, ABY|NORM, 0, },
-	/* 9a */	{ "TXS",  1, IMP|NORM, 0, },
-	/* 9b */	{ "TAS",  3, ABY|NORM, 0, },
-	/* 9c */	{ "SHY",  3, ABX|NORM, 0, },
-	/* 9d */	{ "STA",  3, ABX|NORM, 0, },
-	/* 9e */	{ "SHX",  3, ABY|NORM, 0, },
-	/* 9f */	{ "AHX",  3, ABY|NORM, 0, },
-	/* a0 */	{ "LDY",  2, IMM|NORM, 0, },
-	/* a1 */	{ "LDA",  2, INX|NORM, 0, },
-	/* a2 */	{ "LDX",  2, IMM|NORM, 0, },
-	/* a3 */	{ "LAX",  2, INX|NORM, 0, },
-	/* a4 */	{ "LDY",  2, ZPG|NORM, 0, },
-	/* a5 */	{ "LDA",  2, ZPG|NORM, 0, },
-	/* a6 */	{ "LDX",  2, ZPG|NORM, 0, },
-	/* a7 */	{ "LAX",  2, ZPG|NORM, 0, },
-	/* a8 */	{ "TAY",  1, IMP|NORM, 0, },
-	/* a9 */	{ "LDA",  2, IMM|NORM, 0, },
-	/* aa */	{ "TAX",  1, IMP|NORM, 0, },
-	/* ab */	{ "LAX",  2, IMM|NORM, 0, },
-	/* ac */	{ "LDY",  3, ABS|NORM, 0, },
-	/* ad */	{ "LDA",  3, ABS|NORM, 0, },
-	/* ae */	{ "LDX",  3, ABS|NORM, 0, },
-	/* af */	{ "LAX",  3, ABS|NORM, 0, },
-	/* b0 */	{ "BCS",  2, REL|FORK, 0, },
-	/* b1 */	{ "LDA",  2, INY|NORM, 0, },
-	/* b2 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* b3 */	{ "LAX",  2, INY|NORM, 0, },
-	/* b4 */	{ "LDY",  2, ZPX|NORM, 0, },
-	/* b5 */	{ "LDA",  2, ZPX|NORM, 0, },
-	/* b6 */	{ "LDX",  2, ZPY|NORM, 0, },
-	/* b7 */	{ "LAX",  2, ZPY|NORM, 0, },
-	/* b8 */	{ "CLV",  1, IMP|NORM, 0, },
-	/* b9 */	{ "LDA",  3, ABY|NORM, 0, },
-	/* ba */	{ "TSX",  1, IMP|NORM, 0, },
-	/* bb */	{ "LAS",  3, ABY|NORM, 0, },
-	/* bc */	{ "LDY",  3, ABX|NORM, 0, },
-	/* bd */	{ "LDA",  3, ABX|NORM, 0, },
-	/* be */	{ "LDX",  3, ABY|NORM, 0, },
-	/* bf */	{ "LAX",  3, ABY|NORM, 0, },
-	/* c0 */	{ "CPY",  2, IMM|NORM, 0, },
-	/* c1 */	{ "CMP",  2, INX|NORM, 0, },
-	/* c2 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* c3 */	{ "DCP",  2, INX|NORM, 0, },
-	/* c4 */	{ "CPY",  2, ZPG|NORM, 0, },
-	/* c5 */	{ "CMP",  2, ZPG|NORM, 0, },
-	/* c6 */	{ "DEC",  2, ZPG|NORM, 0, },
-	/* c7 */	{ "DCP",  2, ZPG|NORM, 0, },
-	/* c8 */	{ "INY",  1, IMP|NORM, 0, },
-	/* c9 */	{ "CMP",  2, IMM|NORM, 0, },
-	/* ca */	{ "DEX",  1, IMP|NORM, 0, },
-	/* cb */	{ "AXS",  2, IMM|NORM, 0, },
-	/* cc */	{ "CPY",  3, ABS|NORM, 0, },
-	/* cd */	{ "CMP",  3, ABS|NORM, 0, },
-	/* ce */	{ "DEC",  3, ABS|NORM, 0, },
-	/* cf */	{ "DCP",  3, ABS|NORM, 0, },
-	/* d0 */	{ "BNE",  2, REL|FORK, 0, },
-	/* d1 */	{ "CMP",  2, INY|NORM, 0, },
-	/* d2 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* d3 */	{ "DCP",  2, INY|NORM, 0, },
-	/* d4 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* d5 */	{ "CMP",  2, ZPX|NORM, 0, },
-	/* d6 */	{ "DEC",  2, ZPX|NORM, 0, },
-	/* d7 */	{ "DCP",  2, ZPX|NORM, 0, },
-	/* d8 */	{ "CLD",  1, IMP|NORM, 0, },
-	/* d9 */	{ "CMP",  3, ABY|NORM, 0, },
-	/* da */	{ "NOP",  1, IMP|NORM, 0, },
-	/* db */	{ "DCP",  3, ABY|NORM, 0, },
-	/* dc */	{ "NOP",  3, ABX|NORM, 0, },
-	/* dd */	{ "CMP",  3, ABX|NORM, 0, },
-	/* de */	{ "DEC",  3, ABX|NORM, 0, },
-	/* df */	{ "DCP",  3, ABX|NORM, 0, },
-	/* e0 */	{ "CPX",  2, IMM|NORM, 0, },
-	/* e1 */	{ "SBC",  2, INX|NORM, 0, },
-	/* e2 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* e3 */	{ "ISC",  2, INX|NORM, 0, },
-	/* e4 */	{ "CPX",  2, ZPG|NORM, 0, },
-	/* e5 */	{ "SBC",  2, ZPG|NORM, 0, },
-	/* e6 */	{ "INC",  2, ZPG|NORM, 0, },
-	/* e7 */	{ "ISC",  2, ZPG|NORM, 0, },
-	/* e8 */	{ "INX",  1, IMP|NORM, 0, },
-	/* e9 */	{ "SBC",  2, IMM|NORM, 0, },
-	/* ea */	{ "NOP",  1, IMP|NORM, 0, },
-	/* eb */	{ "SBC",  2, IMM|NORM, 0, },
-	/* ec */	{ "CPX",  3, ABS|NORM, 0, },
-	/* ed */	{ "SBC",  3, ABS|NORM, 0, },
-	/* ee */	{ "INC",  3, ABS|NORM, 0, },
-	/* ef */	{ "ISC",  3, ABS|NORM, 0, },
-	/* f0 */	{ "BEQ",  2, REL|FORK, 0, },
-	/* f1 */	{ "SBC",  2, INY|NORM, 0, },
-	/* f2 */	{ "KIL",  1, ILL|NORM, 0, },
-	/* f3 */	{ "ISC",  2, INY|NORM, 0, },
-	/* f4 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* f5 */	{ "SBC",  2, ZPX|NORM, 0, },
-	/* f6 */	{ "INC",  2, ZPX|NORM, 0, },
-	/* f7 */	{ "ISC",  2, ZPX|NORM, 0, },
-	/* f8 */	{ "SED",  1, IMP|NORM, 0, },
-	/* f9 */	{ "SBC",  3, ABY|NORM, 0, },
-	/* fa */	{ "NOP",  1, IMP|NORM, 0, },
-	/* fb */	{ "ISC",  3, ABY|NORM, 0, },
-	/* fc */	{ "NOP",  3, ABX|NORM, 0, },
-	/* fd */	{ "SBC",  3, ABX|NORM, 0, },
-	/* fe */	{ "INC",  3, ABX|NORM, 0, },
-	/* ff */	{ "ISC",  3, ABX|NORM, 0, }
+	{ "BRK",  1, IMP }, // 00
+	{ "ORA",  2, INX }, // 01
+	{ "KIL",  1, ILL }, // 02
+	{ "SLO",  2, INX }, // 03
+	{ "NOP",  2, ZPG }, // 04
+	{ "ORA",  2, ZPG }, // 05
+	{ "ASL",  2, ZPG }, // 06
+	{ "SLO",  2, ZPG }, // 07
+	{ "PHP",  1, IMP }, // 08
+	{ "ORA",  2, IMM }, // 09
+	{ "ASL",  1, ACC }, // 0a
+	{ "ANC",  2, IMM }, // 0b
+	{ "NOP",  3, ABS }, // 0c
+	{ "ORA",  3, ABS }, // 0d
+	{ "ASL",  3, ABS }, // 0e
+	{ "SLO",  3, ABS }, // 0f
+	{ "BPL",  2, REL }, // 10
+	{ "ORA",  2, INY }, // 11
+	{ "KIL",  1, ILL }, // 12
+	{ "SLO",  2, INY }, // 13
+	{ "NOP",  2, ZPX }, // 14
+	{ "ORA",  2, ZPX }, // 15
+	{ "ASL",  2, ZPX }, // 16
+	{ "SLO",  2, ZPX }, // 17
+	{ "CLC",  1, IMP }, // 18
+	{ "ORA",  3, ABY }, // 19
+	{ "NOP",  1, IMP }, // 1a
+	{ "SLO",  3, ABY }, // 1b
+	{ "NOP",  3, ABX }, // 1c
+	{ "ORA",  3, ABX }, // 1d
+	{ "ASL",  3, ABX }, // 1e
+	{ "SLO",  3, ABX }, // 1f
+	{ "JSR",  3, ABS }, // 20
+	{ "AND",  2, INX }, // 21
+	{ "KIL",  1, ILL }, // 22
+	{ "RLA",  2, INX }, // 23
+	{ "BIT",  2, ZPG }, // 24
+	{ "AND",  2, ZPG }, // 25
+	{ "ROL",  2, ZPG }, // 26
+	{ "RLA",  2, ZPG }, // 27
+	{ "PLP",  1, IMP }, // 28
+	{ "AND",  2, IMM }, // 29
+	{ "ROL",  1, ACC }, // 2a
+	{ "ANC",  2, IMM }, // 2b
+	{ "BIT",  3, ABS }, // 2c
+	{ "AND",  3, ABS }, // 2d
+	{ "ROL",  3, ABS }, // 2e
+	{ "RLA",  3, ABS }, // 2f
+	{ "BMI",  2, REL }, // 30
+	{ "AND",  2, INY }, // 31
+	{ "KIL",  1, ILL }, // 32
+	{ "RLA",  2, INY }, // 33
+	{ "NOP",  2, ZPX }, // 34
+	{ "AND",  2, ZPX }, // 35
+	{ "ROL",  2, ZPX }, // 36
+	{ "RLA",  2, ZPX }, // 37
+	{ "SEC",  1, IMP }, // 38
+	{ "AND",  3, ABY }, // 39
+	{ "NOP",  1, IMP }, // 3a
+	{ "RLA",  3, ABY }, // 3b
+	{ "NOP",  3, ABX }, // 3c
+	{ "AND",  3, ABX }, // 3d
+	{ "ROL",  3, ABX }, // 3e
+	{ "RLA",  3, ABX }, // 3f
+	{ "RTI",  1, IMP }, // 40
+	{ "EOR",  2, INX }, // 41
+	{ "KIL",  1, ILL }, // 42
+	{ "SRE",  2, INX }, // 43
+	{ "NOP",  2, ZPG }, // 44
+	{ "EOR",  2, ZPG }, // 45
+	{ "LSR",  2, ZPG }, // 46
+	{ "SRE",  2, ZPG }, // 47
+	{ "PHA",  1, IMP }, // 48
+	{ "EOR",  2, IMM }, // 49
+	{ "LSR",  1, ACC }, // 4a
+	{ "ALR",  1, IMM }, // 4b
+	{ "JMP",  3, ABS }, // 4c
+	{ "EOR",  3, ABS }, // 4d
+	{ "LSR",  3, ABS }, // 4e
+	{ "SRE",  3, ABS }, // 4f
+	{ "BVC",  2, REL }, // 50
+	{ "EOR",  2, INY }, // 51
+	{ "KIL",  1, ILL }, // 52
+	{ "SRE",  2, INY }, // 53
+	{ "NOP",  2, ZPX }, // 54
+	{ "EOR",  2, ZPX }, // 55
+	{ "LSR",  2, ZPX }, // 56
+	{ "SRE",  2, ZPX }, // 57
+	{ "CLI",  1, IMP }, // 58
+	{ "EOR",  3, ABY }, // 59
+	{ "NOP",  1, IMP }, // 5a
+	{ "SRE",  3, ABY }, // 5b
+	{ "NOP",  3, ABX }, // 5c
+	{ "EOR",  3, ABX }, // 5d
+	{ "LSR",  3, ABX }, // 5e
+	{ "SRE",  3, ABX }, // 5f
+	{ "RTS",  1, IMP }, // 60
+	{ "ADC",  2, INX }, // 61
+	{ "KIL",  1, ILL }, // 62
+	{ "RRA",  2, INX }, // 63
+	{ "NOP",  2, ZPG }, // 64
+	{ "ADC",  2, ZPG }, // 65
+	{ "ROR",  2, ZPG }, // 66
+	{ "RRA",  2, ZPG }, // 67
+	{ "PLA",  1, IMP }, // 68
+	{ "ADC",  2, IMM }, // 69
+	{ "ROR",  1, ACC }, // 6a
+	{ "ARR",  2, IMM }, // 6b
+	{ "JMP",  3, IND }, // 6c
+	{ "ADC",  3, ABS }, // 6d
+	{ "ROR",  3, ABS }, // 6e
+	{ "RRA",  3, ABS }, // 6f
+	{ "BVS",  2, REL }, // 70
+	{ "ADC",  2, INY }, // 71
+	{ "KIL",  1, ILL }, // 72
+	{ "RRA",  2, INY }, // 73
+	{ "NOP",  2, ZPX }, // 74
+	{ "ADC",  2, ZPX }, // 75
+	{ "ROR",  2, ZPX }, // 76
+	{ "RRA",  2, ZPX }, // 77
+	{ "SEI",  1, IMP }, // 78
+	{ "ADC",  3, ABY }, // 79
+	{ "NOP",  1, IMP }, // 7a
+	{ "RRA",  3, ABY }, // 7b
+	{ "NOP",  3, ABX }, // 7c
+	{ "ADC",  3, ABX }, // 7d
+	{ "ROR",  3, ABX }, // 7e
+	{ "RRA",  3, ABX }, // 7f
+	{ "NOP",  2, IMM }, // 80
+	{ "STA",  2, INX }, // 81
+	{ "NOP",  2, IMM }, // 82
+	{ "SAX",  2, INX }, // 83
+	{ "STY",  2, ZPG }, // 84
+	{ "STA",  2, ZPG }, // 85
+	{ "STX",  2, ZPG }, // 86
+	{ "SAX",  2, ZPG }, // 87
+	{ "DEY",  1, IMP }, // 88
+	{ "NOP",  2, IMM }, // 89
+	{ "TXA",  1, IMP }, // 8a
+	{ "XAA",  2, IMM }, // 8b
+	{ "STY",  3, ABS }, // 8c
+	{ "STA",  3, ABS }, // 8d
+	{ "STX",  3, ABS }, // 8e
+	{ "SAX",  3, ABS }, // 8f
+	{ "BCC",  2, REL }, // 90
+	{ "STA",  2, INY }, // 91
+	{ "KIL",  1, ILL }, // 92
+	{ "AHX",  2, INY }, // 93
+	{ "STY",  2, ZPX }, // 94
+	{ "STA",  2, ZPX }, // 95
+	{ "STX",  2, ZPY }, // 96
+	{ "SAX",  2, ZPY }, // 97
+	{ "TYA",  1, IMP }, // 98
+	{ "STA",  3, ABY }, // 99
+	{ "TXS",  1, IMP }, // 9a
+	{ "TAS",  3, ABY }, // 9b
+	{ "SHY",  3, ABX }, // 9c
+	{ "STA",  3, ABX }, // 9d
+	{ "SHX",  3, ABY }, // 9e
+	{ "AHX",  3, ABY }, // 9f
+	{ "LDY",  2, IMM }, // a0
+	{ "LDA",  2, INX }, // a1
+	{ "LDX",  2, IMM }, // a2
+	{ "LAX",  2, INX }, // a3
+	{ "LDY",  2, ZPG }, // a4
+	{ "LDA",  2, ZPG }, // a5
+	{ "LDX",  2, ZPG }, // a6
+	{ "LAX",  2, ZPG }, // a7
+	{ "TAY",  1, IMP }, // a8
+	{ "LDA",  2, IMM }, // a9
+	{ "TAX",  1, IMP }, // aa
+	{ "LAX",  2, IMM }, // ab
+	{ "LDY",  3, ABS }, // ac
+	{ "LDA",  3, ABS }, // ad
+	{ "LDX",  3, ABS }, // ae
+	{ "LAX",  3, ABS }, // af
+	{ "BCS",  2, REL }, // b0
+	{ "LDA",  2, INY }, // b1
+	{ "KIL",  1, ILL }, // b2
+	{ "LAX",  2, INY }, // b3
+	{ "LDY",  2, ZPX }, // b4
+	{ "LDA",  2, ZPX }, // b5
+	{ "LDX",  2, ZPY }, // b6
+	{ "LAX",  2, ZPY }, // b7
+	{ "CLV",  1, IMP }, // b8
+	{ "LDA",  3, ABY }, // b9
+	{ "TSX",  1, IMP }, // ba
+	{ "LAS",  3, ABY }, // bb
+	{ "LDY",  3, ABX }, // bc
+	{ "LDA",  3, ABX }, // bd
+	{ "LDX",  3, ABY }, // be
+	{ "LAX",  3, ABY }, // bf
+	{ "CPY",  2, IMM }, // c0
+	{ "CMP",  2, INX }, // c1
+	{ "NOP",  2, IMM }, // c2
+	{ "DCP",  2, INX }, // c3
+	{ "CPY",  2, ZPG }, // c4
+	{ "CMP",  2, ZPG }, // c5
+	{ "DEC",  2, ZPG }, // c6
+	{ "DCP",  2, ZPG }, // c7
+	{ "INY",  1, IMP }, // c8
+	{ "CMP",  2, IMM }, // c9
+	{ "DEX",  1, IMP }, // ca
+	{ "AXS",  2, IMM }, // cb
+	{ "CPY",  3, ABS }, // cc
+	{ "CMP",  3, ABS }, // cd
+	{ "DEC",  3, ABS }, // ce
+	{ "DCP",  3, ABS }, // cf
+	{ "BNE",  2, REL }, // d0
+	{ "CMP",  2, INY }, // d1
+	{ "KIL",  1, ILL }, // d2
+	{ "DCP",  2, INY }, // d3
+	{ "NOP",  2, ZPX }, // d4
+	{ "CMP",  2, ZPX }, // d5
+	{ "DEC",  2, ZPX }, // d6
+	{ "DCP",  2, ZPX }, // d7
+	{ "CLD",  1, IMP }, // d8
+	{ "CMP",  3, ABY }, // d9
+	{ "NOP",  1, IMP }, // da
+	{ "DCP",  3, ABY }, // db
+	{ "NOP",  3, ABX }, // dc
+	{ "CMP",  3, ABX }, // dd
+	{ "DEC",  3, ABX }, // de
+	{ "DCP",  3, ABX }, // df
+	{ "CPX",  2, IMM }, // e0
+	{ "SBC",  2, INX }, // e1
+	{ "NOP",  2, IMM }, // e2
+	{ "ISC",  2, INX }, // e3
+	{ "CPX",  2, ZPG }, // e4
+	{ "SBC",  2, ZPG }, // e5
+	{ "INC",  2, ZPG }, // e6
+	{ "ISC",  2, ZPG }, // e7
+	{ "INX",  1, IMP }, // e8
+	{ "SBC",  2, IMM }, // e9
+	{ "NOP",  1, IMP }, // ea
+	{ "SBC",  2, IMM }, // eb
+	{ "CPX",  3, ABS }, // ec
+	{ "SBC",  3, ABS }, // ed
+	{ "INC",  3, ABS }, // ee
+	{ "ISC",  3, ABS }, // ef
+	{ "BEQ",  2, REL }, // f0
+	{ "SBC",  2, INY }, // f1
+	{ "KIL",  1, ILL }, // f2
+	{ "ISC",  2, INY }, // f3
+	{ "NOP",  2, ZPX }, // f4
+	{ "SBC",  2, ZPX }, // f5
+	{ "INC",  2, ZPX }, // f6
+	{ "ISC",  2, ZPX }, // f7
+	{ "SED",  1, IMP }, // f8
+	{ "SBC",  3, ABY }, // f9
+	{ "NOP",  1, IMP }, // fa
+	{ "ISC",  3, ABY }, // fb
+	{ "NOP",  3, ABX }, // fc
+	{ "SBC",  3, ABX }, // fd
+	{ "INC",  3, ABX }, // fe
+	{ "ISC",  3, ABX }  // ff
 };
 
 static const InstInfo optable_65c02[256] =
 {
-	/* 00 */	{ "BRK",  1, IMP|STOP, 0, },
-	/* 01 */	{ "ORA",  2, INX|NORM, 0, },
-	/* 02 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 03 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 04 */	{ "TSB",  2, ZPG|NORM, 0, },
-	/* 05 */	{ "ORA",  2, ZPG|NORM, 0, },
-	/* 06 */	{ "ASL",  2, ZPG|NORM, 0, },
-	/* 07 */	{ "RMB0", 2, ZPG|NORM, 0, },
-	/* 08 */	{ "PHP",  1, IMP|NORM, 0, },
-	/* 09 */	{ "ORA",  2, IMM|NORM, 0, },
-	/* 0a */	{ "ASL",  1, ACC|NORM, 0, },
-	/* 0b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 0c */	{ "TSB",  3, ABS|NORM, 0, },
-	/* 0d */	{ "ORA",  3, ABS|NORM, 0, },
-	/* 0e */	{ "ASL",  3, ABS|NORM, 0, },
-	/* 0f */	{ "BBR0", 3, ZPR|NORM, 0, },
-	/* 10 */	{ "BPL",  2, REL|FORK, 0, },
-	/* 11 */	{ "ORA",  2, INY|NORM, 0, },
-	/* 12 */	{ "ORA",  2, IND|NORM, 0, },
-	/* 13 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 14 */	{ "TRB",  2, ZPG|NORM, 0, },
-	/* 15 */	{ "ORA",  2, ZPX|NORM, 0, },
-	/* 16 */	{ "ASL",  2, ZPX|NORM, 0, },
-	/* 17 */	{ "RMB1", 2, ZPG|NORM, 0, },
-	/* 18 */	{ "CLC",  1, IMP|NORM, 0, },
-	/* 19 */	{ "ORA",  3, ABY|NORM, 0, },
-	/* 1a */	{ "INC",  1, ACC|NORM, 0, },
-	/* 1b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 1c */	{ "TRB",  3, ABS|NORM, 0, },
-	/* 1d */	{ "ORA",  3, ABX|NORM, 0, },
-	/* 1e */	{ "ASL",  3, ABX|NORM, 0, },
-	/* 1f */	{ "BBR1", 3, ZPR|NORM, 0, },
-	/* 20 */	{ "JSR",  3, ABS|FORK, 0, },
-	/* 21 */	{ "AND",  2, INX|NORM, 0, },
-	/* 22 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 23 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 24 */	{ "BIT",  2, ZPG|NORM, 0, },
-	/* 25 */	{ "AND",  2, ZPG|NORM, 0, },
-	/* 26 */	{ "ROL",  2, ZPG|NORM, 0, },
-	/* 27 */	{ "RMB2", 2, ZPG|NORM, 0, },
-	/* 28 */	{ "PLP",  1, IMP|NORM, 0, },
-	/* 29 */	{ "AND",  2, IMM|NORM, 0, },
-	/* 2a */	{ "ROL",  1, ACC|NORM, 0, },
-	/* 2b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 2c */	{ "BIT",  3, ABS|NORM, 0, },
-	/* 2d */	{ "AND",  3, ABS|NORM, 0, },
-	/* 2e */	{ "ROL",  3, ABS|NORM, 0, },
-	/* 2f */	{ "BBR2", 3, ZPR|NORM, 0, },
-	/* 30 */	{ "BMI",  2, REL|FORK, 0, },
-	/* 31 */	{ "AND",  2, INY|NORM, 0, },
-	/* 32 */	{ "AND",  2, IND|NORM, 0, },
-	/* 33 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 34 */	{ "BIT",  2, ZPX|NORM, 0, },
-	/* 35 */	{ "AND",  2, ZPX|NORM, 0, },
-	/* 36 */	{ "ROL",  2, ZPX|NORM, 0, },
-	/* 37 */	{ "RMB3", 2, ZPG|NORM, 0, },
-	/* 38 */	{ "SEC",  1, IMP|NORM, 0, },
-	/* 39 */	{ "AND",  3, ABY|NORM, 0, },
-	/* 3a */	{ "DEC",  1, ACC|NORM, 0, },
-	/* 3b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 3c */	{ "BIT",  3, ABX|NORM, 0, },
-	/* 3d */	{ "AND",  3, ABX|NORM, 0, },
-	/* 3e */	{ "ROL",  3, ABX|NORM, 0, },
-	/* 3f */	{ "BBR3", 3, ZPR|NORM, 0, },
-	/* 40 */	{ "RTI",  1, IMP|STOP, 0, },
-	/* 41 */	{ "EOR",  2, INX|NORM, 0, },
-	/* 42 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 43 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 44 */	{ "NOP",  2, ZPG|NORM, 0, },
-	/* 45 */	{ "EOR",  2, ZPG|NORM, 0, },
-	/* 46 */	{ "LSR",  2, ZPG|NORM, 0, },
-	/* 47 */	{ "RMB4", 2, ZPG|NORM, 0, },
-	/* 48 */	{ "PHA",  1, IMP|NORM, 0, },
-	/* 49 */	{ "EOR",  2, IMM|NORM, 0, },
-	/* 4a */	{ "LSR",  1, ACC|NORM, 0, },
-	/* 4b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 4c */	{ "JMP",  3, ABS|JUMP, 0, },
-	/* 4d */	{ "EOR",  3, ABS|NORM, 0, },
-	/* 4e */	{ "LSR",  3, ABS|NORM, 0, },
-	/* 4f */	{ "BBR4", 3, ZPR|NORM, 0, },
-	/* 50 */	{ "BVC",  2, REL|FORK, 0, },
-	/* 51 */	{ "EOR",  2, INY|NORM, 0, },
-	/* 52 */	{ "EOR",  2, IND|NORM, 0, },
-	/* 53 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 54 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* 55 */	{ "EOR",  2, ZPX|NORM, 0, },
-	/* 56 */	{ "LSR",  2, ZPX|NORM, 0, },
-	/* 57 */	{ "RMB5", 2, ZPG|NORM, 0, },
-	/* 58 */	{ "CLI",  1, IMP|NORM, 0, },
-	/* 59 */	{ "EOR",  3, ABY|NORM, 0, },
-	/* 5a */	{ "PHY",  1, IMP|NORM, 0, },
-	/* 5b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 5c */	{ "NOP",  3, ABS|NORM, 0, },
-	/* 5d */	{ "EOR",  3, ABX|NORM, 0, },
-	/* 5e */	{ "LSR",  3, ABX|NORM, 0, },
-	/* 5f */	{ "BBR5", 3, ZPR|NORM, 0, },
-	/* 60 */	{ "RTS",  1, IMP|STOP, 0, },
-	/* 61 */	{ "ADC",  2, INX|NORM, 0, },
-	/* 62 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 63 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 64 */	{ "STZ",  2, ZPG|NORM, 0, },
-	/* 65 */	{ "ADC",  2, ZPG|NORM, 0, },
-	/* 66 */	{ "ROR",  2, ZPG|NORM, 0, },
-	/* 67 */	{ "RMB6", 2, ZPG|NORM, 0, },
-	/* 68 */	{ "PLA",  1, IMP|NORM, 0, },
-	/* 69 */	{ "ADC",  2, IMM|NORM, 0, },
-	/* 6a */	{ "ROR",  1, ACC|NORM, 0, },
-	/* 6b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 6c */	{ "JMP",  3, IND|STOP, 0, },
-	/* 6d */	{ "ADC",  3, ABS|NORM, 0, },
-	/* 6e */	{ "ROR",  3, ABS|NORM, 0, },
-	/* 6f */	{ "BBR6", 3, ZPR|NORM, 0, },
-	/* 70 */	{ "BVS",  2, REL|FORK, 0, },
-	/* 71 */	{ "ADC",  2, INY|NORM, 0, },
-	/* 72 */	{ "ADC",  2, IND|NORM, 0, },
-	/* 73 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 74 */	{ "STZ",  2, ZPX|NORM, 0, },
-	/* 75 */	{ "ADC",  2, ZPX|NORM, 0, },
-	/* 76 */	{ "ROR",  2, ZPX|NORM, 0, },
-	/* 77 */	{ "RMB7", 2, ZPG|NORM, 0, },
-	/* 78 */	{ "SEI",  1, IMP|NORM, 0, },
-	/* 79 */	{ "ADC",  3, ABY|NORM, 0, },
-	/* 7a */	{ "PLY",  1, IMP|NORM, 0, },
-	/* 7b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 7c */	{ "JMP",  3, INX|NORM, 0, },
-	/* 7d */	{ "ADC",  3, ABX|NORM, 0, },
-	/* 7e */	{ "ROR",  3, ABX|NORM, 0, },
-	/* 7f */	{ "BBR7", 3, ZPR|NORM, 0, },
-	/* 80 */	{ "BRA",  2, REL|FORK, 0, },
-	/* 81 */	{ "STA",  2, INX|NORM, 0, },
-	/* 82 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* 83 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 84 */	{ "STY",  2, ZPG|NORM, 0, },
-	/* 85 */	{ "STA",  2, ZPG|NORM, 0, },
-	/* 86 */	{ "STX",  2, ZPG|NORM, 0, },
-	/* 87 */	{ "SMB0", 2, ZPG|NORM, 0, },
-	/* 88 */	{ "DEY",  1, IMP|NORM, 0, },
-	/* 89 */	{ "BIT",  2, IMM|NORM, 0, },
-	/* 8a */	{ "TXA",  1, IMP|NORM, 0, },
-	/* 8b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 8c */	{ "STY",  3, ABS|NORM, 0, },
-	/* 8d */	{ "STA",  3, ABS|NORM, 0, },
-	/* 8e */	{ "STX",  3, ABS|NORM, 0, },
-	/* 8f */	{ "BBS0", 3, ZPR|NORM, 0, },
-	/* 90 */	{ "BCC",  2, REL|FORK, 0, },
-	/* 91 */	{ "STA",  2, INY|NORM, 0, },
-	/* 92 */	{ "STA",  2, IND|NORM, 0, },
-	/* 93 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 94 */	{ "STY",  2, ZPX|NORM, 0, },
-	/* 95 */	{ "STA",  2, ZPX|NORM, 0, },
-	/* 96 */	{ "STX",  2, ZPY|NORM, 0, },
-	/* 97 */	{ "SMB1", 2, ZPG|NORM, 0, },
-	/* 98 */	{ "TYA",  1, IMP|NORM, 0, },
-	/* 99 */	{ "STA",  3, ABY|NORM, 0, },
-	/* 9a */	{ "TXS",  1, IMP|NORM, 0, },
-	/* 9b */	{ "NOP",  1, IMP|NORM, 0, },
-	/* 9c */	{ "STZ",  3, ABS|NORM, 0, },
-	/* 9d */	{ "STA",  3, ABX|NORM, 0, },
-	/* 9e */	{ "STZ",  3, ABX|NORM, 0, },
-	/* 9f */	{ "BBS1", 3, ZPR|NORM, 0, },
-	/* a0 */	{ "LDY",  2, IMM|NORM, 0, },
-	/* a1 */	{ "LDA",  2, INX|NORM, 0, },
-	/* a2 */	{ "LDX",  2, IMM|NORM, 0, },
-	/* a3 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* a4 */	{ "LDY",  2, ZPG|NORM, 0, },
-	/* a5 */	{ "LDA",  2, ZPG|NORM, 0, },
-	/* a6 */	{ "LDX",  2, ZPG|NORM, 0, },
-	/* a7 */	{ "SMB2", 2, ZPG|NORM, 0, },
-	/* a8 */	{ "TAY",  1, IMP|NORM, 0, },
-	/* a9 */	{ "LDA",  2, IMM|NORM, 0, },
-	/* aa */	{ "TAX",  1, IMP|NORM, 0, },
-	/* ab */	{ "NOP",  1, IMP|NORM, 0, },
-	/* ac */	{ "LDY",  3, ABS|NORM, 0, },
-	/* ad */	{ "LDA",  3, ABS|NORM, 0, },
-	/* ae */	{ "LDX",  3, ABS|NORM, 0, },
-	/* af */	{ "BBS2", 3, ZPR|NORM, 0, },
-	/* b0 */	{ "BCS",  2, REL|FORK, 0, },
-	/* b1 */	{ "LDA",  2, INY|NORM, 0, },
-	/* b2 */	{ "LDA",  2, IND|NORM, 0, },
-	/* b3 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* b4 */	{ "LDY",  2, ZPX|NORM, 0, },
-	/* b5 */	{ "LDA",  2, ZPX|NORM, 0, },
-	/* b6 */	{ "LDX",  2, ZPY|NORM, 0, },
-	/* b7 */	{ "SMB3", 2, ZPG|NORM, 0, },
-	/* b8 */	{ "CLV",  1, IMP|NORM, 0, },
-	/* b9 */	{ "LDA",  3, ABY|NORM, 0, },
-	/* ba */	{ "TSX",  1, IMP|NORM, 0, },
-	/* bb */	{ "NOP",  1, IMP|NORM, 0, },
-	/* bc */	{ "LDY",  3, ABX|NORM, 0, },
-	/* bd */	{ "LDA",  3, ABX|NORM, 0, },
-	/* be */	{ "LDX",  3, ABY|NORM, 0, },
-	/* bf */	{ "BBS3", 3, ZPR|NORM, 0, },
-	/* c0 */	{ "CPY",  2, IMM|NORM, 0, },
-	/* c1 */	{ "CMP",  2, INX|NORM, 0, },
-	/* c2 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* c3 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* c4 */	{ "CPY",  2, ZPG|NORM, 0, },
-	/* c5 */	{ "CMP",  2, ZPG|NORM, 0, },
-	/* c6 */	{ "DEC",  2, ZPG|NORM, 0, },
-	/* c7 */	{ "SMB4", 2, ZPG|NORM, 0, },
-	/* c8 */	{ "INY",  1, IMP|NORM, 0, },
-	/* c9 */	{ "CMP",  2, IMM|NORM, 0, },
-	/* ca */	{ "DEX",  1, IMP|NORM, 0, },
-	/* cb */	{ "NOP",  1, IMP|NORM, 0, },
-	/* cc */	{ "CPY",  3, ABS|NORM, 0, },
-	/* cd */	{ "CMP",  3, ABS|NORM, 0, },
-	/* ce */	{ "DEC",  3, ABS|NORM, 0, },
-	/* cf */	{ "BBS4", 3, ZPR|NORM, 0, },
-	/* d0 */	{ "BNE",  2, REL|FORK, 0, },
-	/* d1 */	{ "CMP",  2, INY|NORM, 0, },
-	/* d2 */	{ "CMP",  2, IND|NORM, 0, },
-	/* d3 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* d4 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* d5 */	{ "CMP",  2, ZPX|NORM, 0, },
-	/* d6 */	{ "DEC",  2, ZPX|NORM, 0, },
-	/* d7 */	{ "SMB5", 2, ZPG|NORM, 0, },
-	/* d8 */	{ "CLD",  1, IMP|NORM, 0, },
-	/* d9 */	{ "CMP",  3, ABY|NORM, 0, },
-	/* da */	{ "PHX",  1, IMP|NORM, 0, },
-	/* db */	{ "NOP",  1, IMP|NORM, 0, },
-	/* dc */	{ "NOP",  3, ABS|NORM, 0, },
-	/* dd */	{ "CMP",  3, ABX|NORM, 0, },
-	/* de */	{ "DEC",  3, ABX|NORM, 0, },
-	/* df */	{ "BBS5", 3, ZPR|NORM, 0, },
-	/* e0 */	{ "CPX",  2, IMM|NORM, 0, },
-	/* e1 */	{ "SBC",  2, INX|NORM, 0, },
-	/* e2 */	{ "NOP",  2, IMM|NORM, 0, },
-	/* e3 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* e4 */	{ "CPX",  2, ZPG|NORM, 0, },
-	/* e5 */	{ "SBC",  2, ZPG|NORM, 0, },
-	/* e6 */	{ "INC",  2, ZPG|NORM, 0, },
-	/* e7 */	{ "SMB6", 2, ZPG|NORM, 0, },
-	/* e8 */	{ "INX",  1, IMP|NORM, 0, },
-	/* e9 */	{ "SBC",  2, IMM|NORM, 0, },
-	/* ea */	{ "NOP",  1, IMP|NORM, 0, },
-	/* eb */	{ "NOP",  1, IMP|NORM, 0, },
-	/* ec */	{ "CPX",  3, ABS|NORM, 0, },
-	/* ed */	{ "SBC",  3, ABS|NORM, 0, },
-	/* ee */	{ "INC",  3, ABS|NORM, 0, },
-	/* ef */	{ "BBS6", 3, ZPR|NORM, 0, },
-	/* f0 */	{ "BEQ",  2, REL|FORK, 0, },
-	/* f1 */	{ "SBC",  2, INY|NORM, 0, },
-	/* f2 */	{ "SBC",  2, IND|NORM, 0, },
-	/* f3 */	{ "NOP",  1, IMP|NORM, 0, },
-	/* f4 */	{ "NOP",  2, ZPX|NORM, 0, },
-	/* f5 */	{ "SBC",  2, ZPX|NORM, 0, },
-	/* f6 */	{ "INC",  2, ZPX|NORM, 0, },
-	/* f7 */	{ "SMB7", 2, ZPG|NORM, 0, },
-	/* f8 */	{ "SED",  1, IMP|NORM, 0, },
-	/* f9 */	{ "SBC",  3, ABY|NORM, 0, },
-	/* fa */	{ "PLX",  1, IMP|NORM, 0, },
-	/* fb */	{ "NOP",  1, IMP|NORM, 0, },
-	/* fc */	{ "NOP",  3, ABS|NORM, 0, },
-	/* fd */	{ "SBC",  3, ABX|NORM, 0, },
-	/* fe */	{ "INC",  3, ABX|NORM, 0, },
-	/* ff */	{ "BBS7", 3, ZPR|NORM, 0, },
+	{ "BRK",  1, IMP }, // 00
+	{ "ORA",  2, INX }, // 01
+	{ "NOP",  2, IMM }, // 02
+	{ "NOP",  1, IMP }, // 03
+	{ "TSB",  2, ZPG }, // 04
+	{ "ORA",  2, ZPG }, // 05
+	{ "ASL",  2, ZPG }, // 06
+	{ "RMB0", 2, ZPG }, // 07
+	{ "PHP",  1, IMP }, // 08
+	{ "ORA",  2, IMM }, // 09
+	{ "ASL",  1, ACC }, // 0a
+	{ "NOP",  1, IMP }, // 0b
+	{ "TSB",  3, ABS }, // 0c
+	{ "ORA",  3, ABS }, // 0d
+	{ "ASL",  3, ABS }, // 0e
+	{ "BBR0", 3, ZPR }, // 0f
+	{ "BPL",  2, REL }, // 10
+	{ "ORA",  2, INY }, // 11
+	{ "ORA",  2, IND }, // 12
+	{ "NOP",  1, IMP }, // 13
+	{ "TRB",  2, ZPG }, // 14
+	{ "ORA",  2, ZPX }, // 15
+	{ "ASL",  2, ZPX }, // 16
+	{ "RMB1", 2, ZPG }, // 17
+	{ "CLC",  1, IMP }, // 18
+	{ "ORA",  3, ABY }, // 19
+	{ "INC",  1, ACC }, // 1a
+	{ "NOP",  1, IMP }, // 1b
+	{ "TRB",  3, ABS }, // 1c
+	{ "ORA",  3, ABX }, // 1d
+	{ "ASL",  3, ABX }, // 1e
+	{ "BBR1", 3, ZPR }, // 1f
+	{ "JSR",  3, ABS }, // 20
+	{ "AND",  2, INX }, // 21
+	{ "NOP",  2, IMM }, // 22
+	{ "NOP",  1, IMP }, // 23
+	{ "BIT",  2, ZPG }, // 24
+	{ "AND",  2, ZPG }, // 25
+	{ "ROL",  2, ZPG }, // 26
+	{ "RMB2", 2, ZPG }, // 27
+	{ "PLP",  1, IMP }, // 28
+	{ "AND",  2, IMM }, // 29
+	{ "ROL",  1, ACC }, // 2a
+	{ "NOP",  1, IMP }, // 2b
+	{ "BIT",  3, ABS }, // 2c
+	{ "AND",  3, ABS }, // 2d
+	{ "ROL",  3, ABS }, // 2e
+	{ "BBR2", 3, ZPR }, // 2f
+	{ "BMI",  2, REL }, // 30
+	{ "AND",  2, INY }, // 31
+	{ "AND",  2, IND }, // 32
+	{ "NOP",  1, IMP }, // 33
+	{ "BIT",  2, ZPX }, // 34
+	{ "AND",  2, ZPX }, // 35
+	{ "ROL",  2, ZPX }, // 36
+	{ "RMB3", 2, ZPG }, // 37
+	{ "SEC",  1, IMP }, // 38
+	{ "AND",  3, ABY }, // 39
+	{ "DEC",  1, ACC }, // 3a
+	{ "NOP",  1, IMP }, // 3b
+	{ "BIT",  3, ABX }, // 3c
+	{ "AND",  3, ABX }, // 3d
+	{ "ROL",  3, ABX }, // 3e
+	{ "BBR3", 3, ZPR }, // 3f
+	{ "RTI",  1, IMP }, // 40
+	{ "EOR",  2, INX }, // 41
+	{ "NOP",  2, IMM }, // 42
+	{ "NOP",  1, IMP }, // 43
+	{ "NOP",  2, ZPG }, // 44
+	{ "EOR",  2, ZPG }, // 45
+	{ "LSR",  2, ZPG }, // 46
+	{ "RMB4", 2, ZPG }, // 47
+	{ "PHA",  1, IMP }, // 48
+	{ "EOR",  2, IMM }, // 49
+	{ "LSR",  1, ACC }, // 4a
+	{ "NOP",  1, IMP }, // 4b
+	{ "JMP",  3, ABS }, // 4c
+	{ "EOR",  3, ABS }, // 4d
+	{ "LSR",  3, ABS }, // 4e
+	{ "BBR4", 3, ZPR }, // 4f
+	{ "BVC",  2, REL }, // 50
+	{ "EOR",  2, INY }, // 51
+	{ "EOR",  2, IND }, // 52
+	{ "NOP",  1, IMP }, // 53
+	{ "NOP",  2, ZPX }, // 54
+	{ "EOR",  2, ZPX }, // 55
+	{ "LSR",  2, ZPX }, // 56
+	{ "RMB5", 2, ZPG }, // 57
+	{ "CLI",  1, IMP }, // 58
+	{ "EOR",  3, ABY }, // 59
+	{ "PHY",  1, IMP }, // 5a
+	{ "NOP",  1, IMP }, // 5b
+	{ "NOP",  3, ABS }, // 5c
+	{ "EOR",  3, ABX }, // 5d
+	{ "LSR",  3, ABX }, // 5e
+	{ "BBR5", 3, ZPR }, // 5f
+	{ "RTS",  1, IMP }, // 60
+	{ "ADC",  2, INX }, // 61
+	{ "NOP",  2, IMM }, // 62
+	{ "NOP",  1, IMP }, // 63
+	{ "STZ",  2, ZPG }, // 64
+	{ "ADC",  2, ZPG }, // 65
+	{ "ROR",  2, ZPG }, // 66
+	{ "RMB6", 2, ZPG }, // 67
+	{ "PLA",  1, IMP }, // 68
+	{ "ADC",  2, IMM }, // 69
+	{ "ROR",  1, ACC }, // 6a
+	{ "NOP",  1, IMP }, // 6b
+	{ "JMP",  3, IND }, // 6c
+	{ "ADC",  3, ABS }, // 6d
+	{ "ROR",  3, ABS }, // 6e
+	{ "BBR6", 3, ZPR }, // 6f
+	{ "BVS",  2, REL }, // 70
+	{ "ADC",  2, INY }, // 71
+	{ "ADC",  2, IND }, // 72
+	{ "NOP",  1, IMP }, // 73
+	{ "STZ",  2, ZPX }, // 74
+	{ "ADC",  2, ZPX }, // 75
+	{ "ROR",  2, ZPX }, // 76
+	{ "RMB7", 2, ZPG }, // 77
+	{ "SEI",  1, IMP }, // 78
+	{ "ADC",  3, ABY }, // 79
+	{ "PLY",  1, IMP }, // 7a
+	{ "NOP",  1, IMP }, // 7b
+	{ "JMP",  3, INX }, // 7c
+	{ "ADC",  3, ABX }, // 7d
+	{ "ROR",  3, ABX }, // 7e
+	{ "BBR7", 3, ZPR }, // 7f
+	{ "BRA",  2, REL }, // 80
+	{ "STA",  2, INX }, // 81
+	{ "NOP",  2, IMM }, // 82
+	{ "NOP",  1, IMP }, // 83
+	{ "STY",  2, ZPG }, // 84
+	{ "STA",  2, ZPG }, // 85
+	{ "STX",  2, ZPG }, // 86
+	{ "SMB0", 2, ZPG }, // 87
+	{ "DEY",  1, IMP }, // 88
+	{ "BIT",  2, IMM }, // 89
+	{ "TXA",  1, IMP }, // 8a
+	{ "NOP",  1, IMP }, // 8b
+	{ "STY",  3, ABS }, // 8c
+	{ "STA",  3, ABS }, // 8d
+	{ "STX",  3, ABS }, // 8e
+	{ "BBS0", 3, ZPR }, // 8f
+	{ "BCC",  2, REL }, // 90
+	{ "STA",  2, INY }, // 91
+	{ "STA",  2, IND }, // 92
+	{ "NOP",  1, IMP }, // 93
+	{ "STY",  2, ZPX }, // 94
+	{ "STA",  2, ZPX }, // 95
+	{ "STX",  2, ZPY }, // 96
+	{ "SMB1", 2, ZPG }, // 97
+	{ "TYA",  1, IMP }, // 98
+	{ "STA",  3, ABY }, // 99
+	{ "TXS",  1, IMP }, // 9a
+	{ "NOP",  1, IMP }, // 9b
+	{ "STZ",  3, ABS }, // 9c
+	{ "STA",  3, ABX }, // 9d
+	{ "STZ",  3, ABX }, // 9e
+	{ "BBS1", 3, ZPR }, // 9f
+	{ "LDY",  2, IMM }, // a0
+	{ "LDA",  2, INX }, // a1
+	{ "LDX",  2, IMM }, // a2
+	{ "NOP",  1, IMP }, // a3
+	{ "LDY",  2, ZPG }, // a4
+	{ "LDA",  2, ZPG }, // a5
+	{ "LDX",  2, ZPG }, // a6
+	{ "SMB2", 2, ZPG }, // a7
+	{ "TAY",  1, IMP }, // a8
+	{ "LDA",  2, IMM }, // a9
+	{ "TAX",  1, IMP }, // aa
+	{ "NOP",  1, IMP }, // ab
+	{ "LDY",  3, ABS }, // ac
+	{ "LDA",  3, ABS }, // ad
+	{ "LDX",  3, ABS }, // ae
+	{ "BBS2", 3, ZPR }, // af
+	{ "BCS",  2, REL }, // b0
+	{ "LDA",  2, INY }, // b1
+	{ "LDA",  2, IND }, // b2
+	{ "NOP",  1, IMP }, // b3
+	{ "LDY",  2, ZPX }, // b4
+	{ "LDA",  2, ZPX }, // b5
+	{ "LDX",  2, ZPY }, // b6
+	{ "SMB3", 2, ZPG }, // b7
+	{ "CLV",  1, IMP }, // b8
+	{ "LDA",  3, ABY }, // b9
+	{ "TSX",  1, IMP }, // ba
+	{ "NOP",  1, IMP }, // bb
+	{ "LDY",  3, ABX }, // bc
+	{ "LDA",  3, ABX }, // bd
+	{ "LDX",  3, ABY }, // be
+	{ "BBS3", 3, ZPR }, // bf
+	{ "CPY",  2, IMM }, // c0
+	{ "CMP",  2, INX }, // c1
+	{ "NOP",  2, IMM }, // c2
+	{ "NOP",  1, IMP }, // c3
+	{ "CPY",  2, ZPG }, // c4
+	{ "CMP",  2, ZPG }, // c5
+	{ "DEC",  2, ZPG }, // c6
+	{ "SMB4", 2, ZPG }, // c7
+	{ "INY",  1, IMP }, // c8
+	{ "CMP",  2, IMM }, // c9
+	{ "DEX",  1, IMP }, // ca
+	{ "NOP",  1, IMP }, // cb
+	{ "CPY",  3, ABS }, // cc
+	{ "CMP",  3, ABS }, // cd
+	{ "DEC",  3, ABS }, // ce
+	{ "BBS4", 3, ZPR }, // cf
+	{ "BNE",  2, REL }, // d0
+	{ "CMP",  2, INY }, // d1
+	{ "CMP",  2, IND }, // d2
+	{ "NOP",  1, IMP }, // d3
+	{ "NOP",  2, ZPX }, // d4
+	{ "CMP",  2, ZPX }, // d5
+	{ "DEC",  2, ZPX }, // d6
+	{ "SMB5", 2, ZPG }, // d7
+	{ "CLD",  1, IMP }, // d8
+	{ "CMP",  3, ABY }, // d9
+	{ "PHX",  1, IMP }, // da
+	{ "NOP",  1, IMP }, // db
+	{ "NOP",  3, ABS }, // dc
+	{ "CMP",  3, ABX }, // dd
+	{ "DEC",  3, ABX }, // de
+	{ "BBS5", 3, ZPR }, // df
+	{ "CPX",  2, IMM }, // e0
+	{ "SBC",  2, INX }, // e1
+	{ "NOP",  2, IMM }, // e2
+	{ "NOP",  1, IMP }, // e3
+	{ "CPX",  2, ZPG }, // e4
+	{ "SBC",  2, ZPG }, // e5
+	{ "INC",  2, ZPG }, // e6
+	{ "SMB6", 2, ZPG }, // e7
+	{ "INX",  1, IMP }, // e8
+	{ "SBC",  2, IMM }, // e9
+	{ "NOP",  1, IMP }, // ea
+	{ "NOP",  1, IMP }, // eb
+	{ "CPX",  3, ABS }, // ec
+	{ "SBC",  3, ABS }, // ed
+	{ "INC",  3, ABS }, // ee
+	{ "BBS6", 3, ZPR }, // ef
+	{ "BEQ",  2, REL }, // f0
+	{ "SBC",  2, INY }, // f1
+	{ "SBC",  2, IND }, // f2
+	{ "NOP",  1, IMP }, // f3
+	{ "NOP",  2, ZPX }, // f4
+	{ "SBC",  2, ZPX }, // f5
+	{ "INC",  2, ZPX }, // f6
+	{ "SMB7", 2, ZPG }, // f7
+	{ "SED",  1, IMP }, // f8
+	{ "SBC",  3, ABY }, // f9
+	{ "PLX",  1, IMP }, // fa
+	{ "NOP",  1, IMP }, // fb
+	{ "NOP",  3, ABS }, // fc
+	{ "SBC",  3, ABX }, // fd
+	{ "INC",  3, ABX }, // fe
+	{ "BBS7", 3, ZPR }  // ff
+};
+
+// Same as 65c02 but without BBRx and RMBx instructions
+
+static const InstInfo optable_65sc12[256] =
+{
+	{ "BRK",  1, IMP }, // 00
+	{ "ORA",  2, INX }, // 01
+	{ "NOP",  2, IMM }, // 02
+	{ "NOP",  1, IMP }, // 03
+	{ "TSB",  2, ZPG }, // 04
+	{ "ORA",  2, ZPG }, // 05
+	{ "ASL",  2, ZPG }, // 06
+	{ "NOP",  1, IMP }, // 07
+	{ "PHP",  1, IMP }, // 08
+	{ "ORA",  2, IMM }, // 09
+	{ "ASL",  1, ACC }, // 0a
+	{ "NOP",  1, IMP }, // 0b
+	{ "TSB",  3, ABS }, // 0c
+	{ "ORA",  3, ABS }, // 0d
+	{ "ASL",  3, ABS }, // 0e
+	{ "NOP",  1, IMP }, // 0f
+	{ "BPL",  2, REL }, // 10
+	{ "ORA",  2, INY }, // 11
+	{ "ORA",  2, IND }, // 12
+	{ "NOP",  1, IMP }, // 13
+	{ "TRB",  2, ZPG }, // 14
+	{ "ORA",  2, ZPX }, // 15
+	{ "ASL",  2, ZPX }, // 16
+	{ "NOP",  1, IMP }, // 17
+	{ "CLC",  1, IMP }, // 18
+	{ "ORA",  3, ABY }, // 19
+	{ "INC",  1, ACC }, // 1a
+	{ "NOP",  1, IMP }, // 1b
+	{ "TRB",  3, ABS }, // 1c
+	{ "ORA",  3, ABX }, // 1d
+	{ "ASL",  3, ABX }, // 1e
+	{ "NOP",  1, IMP }, // 1f
+	{ "JSR",  3, ABS }, // 20
+	{ "AND",  2, INX }, // 21
+	{ "NOP",  2, IMM }, // 22
+	{ "NOP",  1, IMP }, // 23
+	{ "BIT",  2, ZPG }, // 24
+	{ "AND",  2, ZPG }, // 25
+	{ "ROL",  2, ZPG }, // 26
+	{ "NOP",  1, IMP }, // 27
+	{ "PLP",  1, IMP }, // 28
+	{ "AND",  2, IMM }, // 29
+	{ "ROL",  1, ACC }, // 2a
+	{ "NOP",  1, IMP }, // 2b
+	{ "BIT",  3, ABS }, // 2c
+	{ "AND",  3, ABS }, // 2d
+	{ "ROL",  3, ABS }, // 2e
+	{ "NOP",  1, IMP }, // 2f
+	{ "BMI",  2, REL }, // 30
+	{ "AND",  2, INY }, // 31
+	{ "AND",  2, IND }, // 32
+	{ "NOP",  1, IMP }, // 33
+	{ "BIT",  2, ZPX }, // 34
+	{ "AND",  2, ZPX }, // 35
+	{ "ROL",  2, ZPX }, // 36
+	{ "NOP",  1, IMP }, // 37
+	{ "SEC",  1, IMP }, // 38
+	{ "AND",  3, ABY }, // 39
+	{ "DEC",  1, ACC }, // 3a
+	{ "NOP",  1, IMP }, // 3b
+	{ "BIT",  3, ABX }, // 3c
+	{ "AND",  3, ABX }, // 3d
+	{ "ROL",  3, ABX }, // 3e
+	{ "NOP",  1, IMP }, // 3f
+	{ "RTI",  1, IMP }, // 40
+	{ "EOR",  2, INX }, // 41
+	{ "NOP",  2, IMM }, // 42
+	{ "NOP",  1, IMP }, // 43
+	{ "NOP",  2, ZPG }, // 44
+	{ "EOR",  2, ZPG }, // 45
+	{ "LSR",  2, ZPG }, // 46
+	{ "NOP",  1, IMP }, // 47
+	{ "PHA",  1, IMP }, // 48
+	{ "EOR",  2, IMM }, // 49
+	{ "LSR",  1, ACC }, // 4a
+	{ "NOP",  1, IMP }, // 4b
+	{ "JMP",  3, ABS }, // 4c
+	{ "EOR",  3, ABS }, // 4d
+	{ "LSR",  3, ABS }, // 4e
+	{ "NOP",  1, IMP }, // 4f
+	{ "BVC",  2, REL }, // 50
+	{ "EOR",  2, INY }, // 51
+	{ "EOR",  2, IND }, // 52
+	{ "NOP",  1, IMP }, // 53
+	{ "NOP",  2, ZPX }, // 54
+	{ "EOR",  2, ZPX }, // 55
+	{ "LSR",  2, ZPX }, // 56
+	{ "NOP",  1, IMP }, // 57
+	{ "CLI",  1, IMP }, // 58
+	{ "EOR",  3, ABY }, // 59
+	{ "PHY",  1, IMP }, // 5a
+	{ "NOP",  1, IMP }, // 5b
+	{ "NOP",  3, ABS }, // 5c
+	{ "EOR",  3, ABX }, // 5d
+	{ "LSR",  3, ABX }, // 5e
+	{ "NOP",  1, IMP }, // 5f
+	{ "RTS",  1, IMP }, // 60
+	{ "ADC",  2, INX }, // 61
+	{ "NOP",  2, IMM }, // 62
+	{ "NOP",  1, IMP }, // 63
+	{ "STZ",  2, ZPG }, // 64
+	{ "ADC",  2, ZPG }, // 65
+	{ "ROR",  2, ZPG }, // 66
+	{ "NOP",  1, IMP }, // 67
+	{ "PLA",  1, IMP }, // 68
+	{ "ADC",  2, IMM }, // 69
+	{ "ROR",  1, ACC }, // 6a
+	{ "NOP",  1, IMP }, // 6b
+	{ "JMP",  3, IND }, // 6c
+	{ "ADC",  3, ABS }, // 6d
+	{ "ROR",  3, ABS }, // 6e
+	{ "NOP",  1, IMP }, // 6f
+	{ "BVS",  2, REL }, // 70
+	{ "ADC",  2, INY }, // 71
+	{ "ADC",  2, IND }, // 72
+	{ "NOP",  1, IMP }, // 73
+	{ "STZ",  2, ZPX }, // 74
+	{ "ADC",  2, ZPX }, // 75
+	{ "ROR",  2, ZPX }, // 76
+	{ "NOP",  1, IMP }, // 77
+	{ "SEI",  1, IMP }, // 78
+	{ "ADC",  3, ABY }, // 79
+	{ "PLY",  1, IMP }, // 7a
+	{ "NOP",  1, IMP }, // 7b
+	{ "JMP",  3, INX }, // 7c
+	{ "ADC",  3, ABX }, // 7d
+	{ "ROR",  3, ABX }, // 7e
+	{ "NOP",  1, IMP }, // 7f
+	{ "BRA",  2, REL }, // 80
+	{ "STA",  2, INX }, // 81
+	{ "NOP",  2, IMM }, // 82
+	{ "NOP",  1, IMP }, // 83
+	{ "STY",  2, ZPG }, // 84
+	{ "STA",  2, ZPG }, // 85
+	{ "STX",  2, ZPG }, // 86
+	{ "NOP",  1, IMP }, // 87
+	{ "DEY",  1, IMP }, // 88
+	{ "BIT",  2, IMM }, // 89
+	{ "TXA",  1, IMP }, // 8a
+	{ "NOP",  1, IMP }, // 8b
+	{ "STY",  3, ABS }, // 8c
+	{ "STA",  3, ABS }, // 8d
+	{ "STX",  3, ABS }, // 8e
+	{ "NOP",  1, IMP }, // 8f
+	{ "BCC",  2, REL }, // 90
+	{ "STA",  2, INY }, // 91
+	{ "STA",  2, IND }, // 92
+	{ "NOP",  1, IMP }, // 93
+	{ "STY",  2, ZPX }, // 94
+	{ "STA",  2, ZPX }, // 95
+	{ "STX",  2, ZPY }, // 96
+	{ "NOP",  1, IMP }, // 97
+	{ "TYA",  1, IMP }, // 98
+	{ "STA",  3, ABY }, // 99
+	{ "TXS",  1, IMP }, // 9a
+	{ "NOP",  1, IMP }, // 9b
+	{ "STZ",  3, ABS }, // 9c
+	{ "STA",  3, ABX }, // 9d
+	{ "STZ",  3, ABX }, // 9e
+	{ "NOP",  1, IMP }, // 9f
+	{ "LDY",  2, IMM }, // a0
+	{ "LDA",  2, INX }, // a1
+	{ "LDX",  2, IMM }, // a2
+	{ "NOP",  1, IMP }, // a3
+	{ "LDY",  2, ZPG }, // a4
+	{ "LDA",  2, ZPG }, // a5
+	{ "LDX",  2, ZPG }, // a6
+	{ "NOP",  1, IMP }, // a7
+	{ "TAY",  1, IMP }, // a8
+	{ "LDA",  2, IMM }, // a9
+	{ "TAX",  1, IMP }, // aa
+	{ "NOP",  1, IMP }, // ab
+	{ "LDY",  3, ABS }, // ac
+	{ "LDA",  3, ABS }, // ad
+	{ "LDX",  3, ABS }, // ae
+	{ "NOP",  1, IMP }, // af
+	{ "BCS",  2, REL }, // b0
+	{ "LDA",  2, INY }, // b1
+	{ "LDA",  2, IND }, // b2
+	{ "NOP",  1, IMP }, // b3
+	{ "LDY",  2, ZPX }, // b4
+	{ "LDA",  2, ZPX }, // b5
+	{ "LDX",  2, ZPY }, // b6
+	{ "NOP",  1, IMP }, // b7
+	{ "CLV",  1, IMP }, // b8
+	{ "LDA",  3, ABY }, // b9
+	{ "TSX",  1, IMP }, // ba
+	{ "NOP",  1, IMP }, // bb
+	{ "LDY",  3, ABX }, // bc
+	{ "LDA",  3, ABX }, // bd
+	{ "LDX",  3, ABY }, // be
+	{ "NOP",  1, IMP }, // bf
+	{ "CPY",  2, IMM }, // c0
+	{ "CMP",  2, INX }, // c1
+	{ "NOP",  2, IMM }, // c2
+	{ "NOP",  1, IMP }, // c3
+	{ "CPY",  2, ZPG }, // c4
+	{ "CMP",  2, ZPG }, // c5
+	{ "DEC",  2, ZPG }, // c6
+	{ "NOP",  1, IMP }, // c7
+	{ "INY",  1, IMP }, // c8
+	{ "CMP",  2, IMM }, // c9
+	{ "DEX",  1, IMP }, // ca
+	{ "NOP",  1, IMP }, // cb
+	{ "CPY",  3, ABS }, // cc
+	{ "CMP",  3, ABS }, // cd
+	{ "DEC",  3, ABS }, // ce
+	{ "NOP",  1, IMP }, // cf
+	{ "BNE",  2, REL }, // d0
+	{ "CMP",  2, INY }, // d1
+	{ "CMP",  2, IND }, // d2
+	{ "NOP",  1, IMP }, // d3
+	{ "NOP",  2, ZPX }, // d4
+	{ "CMP",  2, ZPX }, // d5
+	{ "DEC",  2, ZPX }, // d6
+	{ "NOP",  1, IMP }, // d7
+	{ "CLD",  1, IMP }, // d8
+	{ "CMP",  3, ABY }, // d9
+	{ "PHX",  1, IMP }, // da
+	{ "NOP",  1, IMP }, // db
+	{ "NOP",  3, ABS }, // dc
+	{ "CMP",  3, ABX }, // dd
+	{ "DEC",  3, ABX }, // de
+	{ "NOP",  1, IMP }, // df
+	{ "CPX",  2, IMM }, // e0
+	{ "SBC",  2, INX }, // e1
+	{ "NOP",  2, IMM }, // e2
+	{ "NOP",  1, IMP }, // e3
+	{ "CPX",  2, ZPG }, // e4
+	{ "SBC",  2, ZPG }, // e5
+	{ "INC",  2, ZPG }, // e6
+	{ "NOP",  1, IMP }, // e7
+	{ "INX",  1, IMP }, // e8
+	{ "SBC",  2, IMM }, // e9
+	{ "NOP",  1, IMP }, // ea
+	{ "NOP",  1, IMP }, // eb
+	{ "CPX",  3, ABS }, // ec
+	{ "SBC",  3, ABS }, // ed
+	{ "INC",  3, ABS }, // ee
+	{ "NOP",  1, IMP }, // ef
+	{ "BEQ",  2, REL }, // f0
+	{ "SBC",  2, INY }, // f1
+	{ "SBC",  2, IND }, // f2
+	{ "NOP",  1, IMP }, // f3
+	{ "NOP",  2, ZPX }, // f4
+	{ "SBC",  2, ZPX }, // f5
+	{ "INC",  2, ZPX }, // f6
+	{ "NOP",  1, IMP }, // f7
+	{ "SED",  1, IMP }, // f8
+	{ "SBC",  3, ABY }, // f9
+	{ "PLX",  1, IMP }, // fa
+	{ "NOP",  1, IMP }, // fb
+	{ "NOP",  3, ABS }, // fc
+	{ "SBC",  3, ABX }, // fd
+	{ "INC",  3, ABX }, // fe
+	{ "NOP",  1, IMP }  // ff
 };
 
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
@@ -2526,7 +2781,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 	if (host) {
 		if (MachineType == Model::Master128) {
-			optable = optable_65c02;
+			optable = optable_65sc12;
 		}
 		else {
 			optable = optable_6502;
@@ -2538,7 +2793,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 	const InstInfo *ip = &optable[opcode];
 
-	switch (ip->nb) {
+	switch (ip->bytes) {
 		case 1:
 			s += sprintf(s, "%02X        ",
 			             DebugReadMem(addr, host));
@@ -2560,103 +2815,95 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 		s += sprintf(s, "            ");
 	}
 
-	// Deal with 65C02 instructions
-	if (!ip->c6502 || !host || MachineType == Model::Master128)
+	s += sprintf(s, "%s ", ip->opcode);
+	addr++;
+
+	switch (ip->bytes)
 	{
-		s += sprintf(s, "%s ", ip->opn);
-		addr++;
-
-		switch(ip->nb)
-		{
-			case 1:
-				l = 0;
-				break;
-			case 2:
-				operand = DebugReadMem(addr, host);
-				l = 2;
-				break;
-			case 3:
-				operand = DebugReadMem(addr, host) | (DebugReadMem(addr + 1, host) << 8);
-				l = 4;
-				break;
-		}
-
-		if (ip->flag & REL)
-		{
-			if (operand > 127)
-			{
-				operand = (~0xff | operand);
-			}
-
-			operand = operand + ip->nb + addr - 1;
+		case 1:
+			l = 0;
+			break;
+		case 2:
+			operand = DebugReadMem(addr, host);
+			l = 2;
+			break;
+		case 3:
+			operand = DebugReadMem(addr, host) | (DebugReadMem(addr + 1, host) << 8);
 			l = 4;
-		}
-		else if (ip->flag & ZPR)
-		{
-			zpaddr = operand & 0xff;
-			int Offset  = (operand & 0xff00) >> 8;
-
-			if (Offset > 127)
-			{
-				Offset = (~0xff | Offset);
-			}
-
-			operand = addr + ip->nb - 1 + Offset;
-		}
-
-		switch (ip->flag & ADRMASK)
-		{
-		case IMM:
-			s += sprintf(s, "#%0*X    ", l, operand);
 			break;
-		case REL:
-		case ABS:
-		case ZPG:
-			s += sprintf(s, "%0*X     ", l, operand);
-			break;
-		case IND:
-			s += sprintf(s, "(%0*X)   ", l, operand);
-			break;
-		case ABX:
-		case ZPX:
-			s += sprintf(s, "%0*X,X   ", l, operand);
-			break;
-		case ABY:
-		case ZPY:
-			s += sprintf(s, "%0*X,Y   ", l, operand);
-			break;
-		case INX:
-			s += sprintf(s, "(%0*X,X) ", l, operand);
-			break;
-		case INY:
-			s += sprintf(s, "(%0*X),Y ", l, operand);
-			break;
-		case ACC:
-			s += sprintf(s, "A        ");
-			break;
-		case ZPR:
-			s += sprintf(s, "%02X,%04X ", zpaddr, operand);
-			break;
-		case IMP:
-		default:
-			s += sprintf(s, "         ");
-			break;
-		}
-
-		if (l == 2) {
-			s += sprintf(s, "  ");
-		}
 	}
-	else
+
+	if (ip->flag & REL)
 	{
-		s += sprintf(s, "???          ");
+		if (operand > 127)
+		{
+			operand = (~0xff | operand);
+		}
+
+		operand = operand + ip->bytes + addr - 1;
+		l = 4;
+	}
+	else if (ip->flag & ZPR)
+	{
+		zpaddr = operand & 0xff;
+		int Offset  = (operand & 0xff00) >> 8;
+
+		if (Offset > 127)
+		{
+			Offset = (~0xff | Offset);
+		}
+
+		operand = addr + ip->bytes - 1 + Offset;
+	}
+
+	switch (ip->flag & ADRMASK)
+	{
+	case IMM:
+		s += sprintf(s, "#%0*X    ", l, operand);
+		break;
+	case REL:
+	case ABS:
+	case ZPG:
+		s += sprintf(s, "%0*X     ", l, operand);
+		break;
+	case IND:
+		s += sprintf(s, "(%0*X)   ", l, operand);
+		break;
+	case ABX:
+	case ZPX:
+		s += sprintf(s, "%0*X,X   ", l, operand);
+		break;
+	case ABY:
+	case ZPY:
+		s += sprintf(s, "%0*X,Y   ", l, operand);
+		break;
+	case INX:
+		s += sprintf(s, "(%0*X,X) ", l, operand);
+		break;
+	case INY:
+		s += sprintf(s, "(%0*X),Y ", l, operand);
+		break;
+	case ACC:
+		s += sprintf(s, "A        ");
+		break;
+	case ZPR:
+		s += sprintf(s, "%02X,%04X ", zpaddr, operand);
+		break;
+	case IMP:
+	default:
+		s += sprintf(s, "         ");
+		break;
+	}
+
+	if (l == 2) {
+		s += sprintf(s, "  ");
 	}
 
 	if (host) {
 		s += sprintf(s, "            ");
 	}
 
-	return ip->nb;
+	return ip->bytes;
 }
 
 int DebugDisassembleInstructionWithCPUStatus(int addr,
