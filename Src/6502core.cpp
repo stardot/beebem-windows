@@ -65,8 +65,6 @@ Boston, MA  02110-1301, USA.
 
 using namespace std;
 
-bool CPUDebug = false;
-
 static unsigned int InstrCount;
 bool IgnoreIllegalInstructions = true;
 static int CurrentInstruction;
@@ -540,12 +538,6 @@ INLINE static void BPLInstrHandler(void) {
 }
 
 INLINE static void BRKInstrHandler(void) {
-  char errstr[250];
-  if (CPUDebug) {
-  sprintf(errstr,"BRK Instruction at 0x%04x after %i instructions. ACCON: 0x%02x ROMSEL: 0x%02x",ProgramCounter,InstrCount,ACCCON,PagedRomReg);
-  MessageBox(GETHWND,errstr,WindowTitle,MB_OKCANCEL|MB_ICONERROR);
-  exit(1);
-  }
   PushWord(ProgramCounter+1);
   SetPSR(FlagB,0,0,0,0,1,0,0); /* Set B before pushing */
   Push(PSR);
