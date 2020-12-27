@@ -1771,8 +1771,7 @@ void Exec65C02Instruction() {
 		case 0x68:
 			// PLA
 			Accumulator = Pop();
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+			SetPSRZN(Accumulator);
 			break;
 		case 0x69:
 			ADCInstrHandler(TubeRam[TubeProgramCounter++]); // immediate
@@ -1823,8 +1822,7 @@ void Exec65C02Instruction() {
 			if (TubeMachineType == 3) {
 				// PLY
 				YReg = Pop();
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((YReg == 0) << 1) | (YReg & 128);
+				SetPSRZN(YReg);
 			}
 			break;
 		case 0x7c:
@@ -1859,8 +1857,7 @@ void Exec65C02Instruction() {
 		case 0x88:
 			// DEY
 			YReg = (YReg - 1) & 0xff;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((YReg == 0) << 1) | (YReg & 128);
+			SetPSRZN(YReg);
 			break;
 		case 0x89:
 			if (TubeMachineType == 3) {
@@ -1873,8 +1870,7 @@ void Exec65C02Instruction() {
 		case 0x8a:
 			// TXA
 			Accumulator = XReg;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((Accumulator==0)<<1) | (Accumulator & 128);
+			SetPSRZN(Accumulator);
 			break;
 		case 0x8c:
 			STYInstrHandler(AbsAddrModeHandler_Address());
@@ -1909,8 +1905,7 @@ void Exec65C02Instruction() {
 		case 0x98:
 			// TYA
 			Accumulator = YReg;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+			SetPSRZN(Accumulator);
 			break;
 		case 0x99:
 			// STA
@@ -1960,8 +1955,7 @@ void Exec65C02Instruction() {
 		case 0xa8:
 			// TAY
 			YReg = Accumulator;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+			SetPSRZN(Accumulator);
 			break;
 		case 0xa9:
 			LDAInstrHandler(TubeRam[TubeProgramCounter++]); // immediate
@@ -1969,8 +1963,7 @@ void Exec65C02Instruction() {
 		case 0xaa:
 			// TXA
 			XReg = Accumulator;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+			SetPSRZN(Accumulator);
 			break;
 		case 0xac:
 			LDYInstrHandler(AbsAddrModeHandler_Data());
@@ -2008,8 +2001,7 @@ void Exec65C02Instruction() {
 		case 0xba:
 			// TSX
 			XReg = StackReg;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((XReg == 0) << 1) | (XReg & 128);
+			SetPSRZN(XReg);
 			break;
 		case 0xbc:
 			LDYInstrHandler(AbsXAddrModeHandler_Data());
@@ -2039,8 +2031,7 @@ void Exec65C02Instruction() {
 			// INY
 			YReg += 1;
 			YReg &= 255;
-			PSR &= ~(FlagZ | FlagN);
-			PSR |= ((YReg == 0) << 1) | (YReg & 128);
+			SetPSRZN(YReg);
 			break;
 		case 0xc9:
 			CMPInstrHandler(TubeRam[TubeProgramCounter++]); // immediate
@@ -2148,8 +2139,7 @@ void Exec65C02Instruction() {
 			if (TubeMachineType == 3) {
 				// PLX
 				XReg = Pop();
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((XReg == 0) << 1) | (XReg & 128);
+				SetPSRZN(XReg);
 			}
 			break;
 		case 0xfd:
@@ -2869,8 +2859,7 @@ void Exec65C02Instruction() {
 			else {
 				// TXA
 				Accumulator = XReg;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((Accumulator == 0)<<1) | (Accumulator & 128);
+				SetPSRZN(Accumulator);
 				ANDInstrHandler(TubeRam[TubeProgramCounter++]);
 			}
 			break;

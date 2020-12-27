@@ -1456,8 +1456,7 @@ void Exec6502Instruction(void) {
 			case 0x26:
 				ROLInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
-			case 0x28:
-				{
+			case 0x28: {
 					// PLP
 					unsigned char oldPSR = PSR;
 					PSR = Pop();
@@ -1642,8 +1641,7 @@ void Exec6502Instruction(void) {
 			case 0x68:
 				// PLA
 				Accumulator = Pop();
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+				SetPSRZN(Accumulator);
 				break;
 			case 0x69:
 				ADCInstrHandler(ReadPaged(ProgramCounter++)); // immediate
@@ -1702,8 +1700,10 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					// PLY
 					YReg = Pop();
-					PSR &= ~(FlagZ | FlagN);
-					PSR |= ((YReg == 0) << 1) | (YReg & 128);
+					SetPSRZN(YReg);
+				}
+				else {
+					// Undocumented instruction: NOP
 				}
 				break;
 			case 0x7c:
@@ -1743,8 +1743,7 @@ void Exec6502Instruction(void) {
 			case 0x88:
 				// DEY
 				YReg = (YReg - 1) & 255;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((YReg == 0) << 1) | (YReg & 128);
+				SetPSRZN(YReg);
 				break;
 			case 0x89:
 				if (MachineType == Model::Master128) {
@@ -1759,8 +1758,7 @@ void Exec6502Instruction(void) {
 			case 0x8a:
 				// TXA
 				Accumulator = XReg;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+				SetPSRZN(Accumulator);
 				break;
 			case 0x8c:
 				AdvanceCyclesForMemWrite();
@@ -1806,8 +1804,7 @@ void Exec6502Instruction(void) {
 			case 0x98:
 				// TYA
 				Accumulator = YReg;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+				SetPSRZN(Accumulator);
 				break;
 			case 0x99:
 				// STA
@@ -1859,8 +1856,7 @@ void Exec6502Instruction(void) {
 			case 0xa8:
 				// TAY
 				YReg = Accumulator;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+				SetPSRZN(Accumulator);
 				break;
 			case 0xa9:
 				LDAInstrHandler(ReadPaged(ProgramCounter++)); // immediate
@@ -1868,8 +1864,7 @@ void Exec6502Instruction(void) {
 			case 0xaa:
 				// TXA
 				XReg = Accumulator;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
+				SetPSRZN(Accumulator);
 				break;
 			case 0xac:
 				LDYInstrHandler(AbsAddrModeHandler_Data());
@@ -1910,8 +1905,7 @@ void Exec6502Instruction(void) {
 			case 0xba:
 				// TSX
 				XReg = StackReg;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((XReg == 0) << 1) | (XReg & 128);
+				SetPSRZN(XReg);
 				break;
 			case 0xbc:
 				LDYInstrHandler(AbsXAddrModeHandler_Data());
@@ -1941,8 +1935,7 @@ void Exec6502Instruction(void) {
 				// INY
 				YReg += 1;
 				YReg &= 255;
-				PSR &= ~(FlagZ | FlagN);
-				PSR |= ((YReg == 0) << 1) | (YReg & 128);
+				SetPSRZN(YReg);
 				break;
 			case 0xc9:
 				CMPInstrHandler(ReadPaged(ProgramCounter++)); // immediate
@@ -2056,8 +2049,10 @@ void Exec6502Instruction(void) {
 				if (MachineType == Model::Master128) {
 					// PLX
 					XReg = Pop();
-					PSR &= ~(FlagZ | FlagN);
-					PSR |= ((XReg == 0) << 1) | (XReg & 128);
+					SetPSRZN(XReg);
+				}
+				else {
+					// Undocumented instruction: NOP
 				}
 				break;
 			case 0xfd:
