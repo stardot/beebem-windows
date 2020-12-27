@@ -234,6 +234,7 @@ static INLINE void Carried()
 	         CurrentInstruction == 0x7c ||
 	         CurrentInstruction == 0xbc ||
 	         CurrentInstruction == 0xbe ||
+	         CurrentInstruction == 0xbf ||
 	         CurrentInstruction == 0xdc ||
 	         CurrentInstruction == 0xfc)
 	{
@@ -1676,8 +1677,8 @@ void Exec6502Instruction(void) {
 					BEEBWRITEMEM_DIRECT(ZeroPgXAddrModeHandler_Address(), 0);
 				}
 				else {
-					// NOP zp,x
-					ZeroPgXAddrModeHandler_Data();
+					// Undocumented instruction: NOP zp,x
+					ZeroPgXAddrModeHandler_Address();
 				}
 				break;
 			case 0x75:
@@ -2318,13 +2319,15 @@ void Exec6502Instruction(void) {
 				}
 				break;
 			case 0x54:
-				// NOP zp,x
-				ZeroPgXAddrModeHandler_Data();
+			case 0xd4:
+			case 0xf4:
+				// Undocumented instruction: NOP zp,x
+				ZeroPgXAddrModeHandler_Address();
 				break;
 			case 0x5c:
 				if (MachineType == Model::Master128) {
-					// TODO: NOP abs
-					ProgramCounter += 2;
+					// NOP abs
+					AbsAddrModeHandler_Address();
 				}
 				else {
 					// NOP abs,x
@@ -2471,13 +2474,16 @@ void Exec6502Instruction(void) {
 					CMPInstrHandler(WholeRam[zpaddr]);
 				}
 				break;
-			case 0xd4:
-			case 0xf4:
-				ProgramCounter += 1;
-				break;
 			case 0xdc:
 			case 0xfc:
-				ProgramCounter += 2;
+				if (MachineType == Model::Master128) {
+					// NOP abs
+					AbsAddrModeHandler_Address();
+				}
+				else {
+					// NOP abs,X
+					AbsXAddrModeHandler_Data();
+				}
 				break;
 			case 0xe3:
 				if (MachineType == Model::Master128) {
@@ -2767,7 +2773,7 @@ void Exec6502Instruction(void) {
 		    (CurrentInstruction == 0x30) ||
 		    (CurrentInstruction == 0x50) ||
 		    (CurrentInstruction == 0x70) ||
-		    (CurrentInstruction == 0x80) ||
+		    (CurrentInstruction == 0x80 && MachineType == Model::Master128) ||
 		    (CurrentInstruction == 0x90) ||
 		    (CurrentInstruction == 0xb0) ||
 		    (CurrentInstruction == 0xd0) ||
