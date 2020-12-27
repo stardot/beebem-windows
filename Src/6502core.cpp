@@ -65,8 +65,6 @@ Boston, MA  02110-1301, USA.
 
 using namespace std;
 
-static unsigned int InstrCount;
-bool IgnoreIllegalInstructions = true;
 static int CurrentInstruction;
 
 extern CArm *arm;
