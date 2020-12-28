@@ -2255,6 +2255,7 @@ void Exec6502Instruction(void) {
 				else {
 					// Undocumented instruction: SAX zp
 					// This one does not seem to change the processor flags
+					AdvanceCyclesForMemWrite();
 					WholeRam[ZeroPgAddrModeHandler_Address()] = Accumulator & XReg;
 				}
 				break;
@@ -2339,6 +2340,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: AHX (zp),Y
+					AdvanceCyclesForMemWrite();
 					int Address = IndYAddrModeHandler_Address();
 					WholeRam[Address] = Accumulator & XReg & ((Address >> 8) + 1);
 				}
@@ -2364,6 +2366,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SAX zp,Y
+					AdvanceCyclesForMemWrite();
 					WholeRam[ZeroPgYAddrModeHandler_Address()] = Accumulator & XReg;
 				}
 				break;
@@ -2409,10 +2412,12 @@ void Exec6502Instruction(void) {
 			case 0x9e:
 				if (MachineType == Model::Master128) {
 					// STZ abs,x
+					AdvanceCyclesForMemWrite();
 					WritePaged(AbsXAddrModeHandler_Address(), 0);
 				}
 				else {
 					// Undocumented instruction: SHX abs,Y
+					AdvanceCyclesForMemWrite();
 					WritePaged(AbsXAddrModeHandler_Address(), Accumulator & XReg);
 				}
 				break;
@@ -2422,6 +2427,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: AHX abs,Y
+					AdvanceCyclesForMemWrite();
 					int Address = AbsYAddrModeHandler_Address();
 					WritePaged(Address, Accumulator & XReg & ((Address >> 8) + 1));
 				}
