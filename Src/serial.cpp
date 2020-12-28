@@ -477,7 +477,7 @@ void Serial_Poll(void)
 
 			if (Cass_Relay && CSWOpen && TapeClock != OldClock)
 			{
-				int last_state = csw_state;
+				CSWState last_state = csw_state;
 				
 				CSW_BUF = csw_poll(TapeClock);
 				OldClock = TapeClock;
@@ -485,21 +485,21 @@ void Serial_Poll(void)
 				if (last_state != csw_state)
 					TapeControlUpdateCounter(csw_ptr);
 
-				if (csw_state == 0)		// Waiting for tone
+				if (csw_state == CSWState::WaitingForTone)
 				{
 					DCDI=1;
 					TapeAudio.Signal=0;
 				}
 				
 				// New data read in, so do something about it
-				if (csw_state == 1)		// In tone
+				if (csw_state == CSWState::Tone)
 				{
 					DCDI=1;
 					TapeAudio.Signal=2;
 					TapeAudio.BytePos=11;
 				}
 
-				if ( (CSW_BUF >= 0) && (csw_state == 2) )
+				if (CSW_BUF >= 0 && csw_state == CSWState::Data)
 				{
 					DCDI=0;
 					HandleData(CSW_BUF);
@@ -790,7 +790,7 @@ void RewindTape(void) {
 	TapeTrigger=TotalCycles+TAPECYCLES;
 	TapeControlUpdateCounter(TapeClock);
 
-	csw_state = 0;
+	csw_state = CSWState::WaitingForTone;
 	csw_bit = 0;
 	csw_pulselen = 0;
 	csw_ptr = 0;
@@ -954,7 +954,7 @@ bool map_file(const char *file_name)
 
 INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
+void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 {
 	int Clock;
 
@@ -1038,7 +1038,7 @@ void TapeControlUpdateCounter(int tape_time)
 	}
 }
 
-INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
 	char str[256];
 	int s;
