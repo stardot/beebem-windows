@@ -95,7 +95,7 @@ bool uef_create(const char *name)
 	return true;
 }
 
-int uef_open(const char *name)
+bool uef_open(const char *name)
 {
 	gzFile uef_file;
 	char UEFId[10];

@@ -62,21 +62,14 @@ bool CSWOpen = false;
 int CSW_BUF;
 int CSW_CYCLES;
 
-void LoadCSW(const char *file)
+CSWResult LoadCSW(const char *file)
 {
-	int end;
-	int sourcesize;
-	
-//	csw_file = fopen("/Users/jonwelch/MyProjects/csw/AticAtac.csw", "rb");
-
 	CloseCSW();
 
 	csw_file = fopen(file, "rb");
 
-	if (csw_file == NULL)
-	{
-		WriteLog("Failed to open file\n");
-		return;
+	if (csw_file == nullptr) {
+		return CSWResult::OpenFailed;
 	}
 	
 	/* Read header */
@@ -84,9 +77,8 @@ void LoadCSW(const char *file)
 		strncmp((const char*)file_buf, "Compressed Square Wave", 0x16) != 0 ||
 		file_buf[0x16] != 0x1a)
 	{
-		WriteLog("Not a valid CSW file\n");
 		fclose(csw_file);
-		return;
+		return CSWResult::InvalidCSWFile;
 	}
 	
 	WriteLog("CSW version: %d.%d\n", (int)file_buf[0x17], (int)file_buf[0x18]);
@@ -111,12 +103,12 @@ void LoadCSW(const char *file)
 	{
 		WriteLog("Failed to read header extension\n");
 		fclose(csw_file);
-		return;
+		return CSWResult::InvalidHeaderExtension;
 	}
 	
-    end = ftell(csw_file);
+	int end = ftell(csw_file);
 	fseek(csw_file, 0, SEEK_END);
-	sourcesize = ftell(csw_file) - end + 1;
+	int sourcesize = ftell(csw_file) - end + 1;
 	fseek(csw_file, end, SEEK_SET);
 	
 	csw_bufflen = 8 * 1024 * 1024;

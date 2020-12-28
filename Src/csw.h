@@ -26,9 +26,16 @@ Boston, MA  02110-1301, USA.
  *
  */
 
+enum class CSWResult {
+	Success,
+	OpenFailed,
+	InvalidCSWFile,
+	InvalidHeaderExtension
+};
+
 #define BUFFER_LEN	256
 
-void LoadCSW(const char *file);
+CSWResult LoadCSW(const char *file);
 void CloseCSW(void);
 int csw_data(void);
 int csw_poll(int clock);

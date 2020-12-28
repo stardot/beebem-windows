@@ -4357,7 +4357,7 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 			if (stateFile)
 				LoadUEFState(FileName);
 			else
-				LoadUEF(FileName);
+				LoadUEFTape(FileName);
 
 			cont = false;
 		}

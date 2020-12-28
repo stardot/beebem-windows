@@ -40,6 +40,7 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "serial.h"
 #include "csw.h"
+#include "uef.h"
 #include "avi.h"
 #include "ext1770.h"
 #include "tube.h"
@@ -294,8 +295,12 @@ void BeebWin::LoadTape(void)
 			m_Preferences.SetStringValue("TapesPath", DefaultPath);
 		}
 
-		if (strstr(FileName, ".uef")) LoadUEF(FileName);
-		if (strstr(FileName, ".csw")) LoadCSW(FileName);
+		if (hasFileExt(FileName, ".uef")) {
+			LoadUEFTape(FileName);
+		}
+		else if (hasFileExt(FileName, ".csw")) {
+			LoadCSWTape(FileName);
+		}
 	}
 }
 
@@ -865,20 +870,24 @@ void BeebWin::LoadUEFState(const char *FileName)
 			break;
 
 		case UEFStateResult::OpenFailed: {
-			char errstr[_MAX_PATH + 256];
-			sprintf(errstr, "Cannot open state file: %s", FileName);
-			MessageBox(GETHWND, errstr, "BeebEm", MB_ICONERROR | MB_OK);
+			std::string Message = "Cannot open state file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
 			break;
 		}
 
-		case UEFStateResult::InvalidUEFFile:
-			MessageBox(GETHWND, "The file selected is not a UEF File.", "BeebEm", MB_ICONERROR | MB_OK);
+		case UEFStateResult::InvalidUEFFile: {
+			std::string Message = "The file selected is not a UEF file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
 			break;
+		}
 
 		case UEFStateResult::InvalidUEFVersion: {
-			char errstr[_MAX_PATH + 256];
-			sprintf(errstr, "Cannot open state file:\n  %s\n\nPlease upgrade to the latest version of BeebEm", FileName);
-			MessageBox(GETHWND, errstr, "BeebEm", MB_ICONERROR | MB_OK);
+			std::string Message = "Cannot open state file:\n  ";
+			Message += FileName;
+			Message += "\n\nPlease upgrade to the latest version of BeebEm";
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
 			break;
 		}
 	}
@@ -894,9 +903,66 @@ void BeebWin::SaveUEFState(const char *FileName)
 
 		case UEFStateResult::WriteFailed:
 		default: {
-			char errstr[256];
-			sprintf(errstr, "Failed to write state file: %s", FileName);
-			MessageBox(GETHWND, errstr, "BeebEm", MB_ICONERROR | MB_OK);
+			std::string Message = "Failed to write state file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		}
+	}
+}
+
+void BeebWin::LoadUEFTape(const char *FileName)
+{
+	bool Success = ::LoadUEFTape(FileName);
+
+	if (!Success) {
+		switch (uef_errno) {
+			case UEF_OPEN_NOTUEF:
+			case UEF_OPEN_NOTTAPE: {
+				std::string Message = "The file selected is not a UEF tape image:\n  ";
+				Message += FileName;
+				MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+				break;
+			}
+
+			case UEF_OPEN_NOFILE:
+			default: {
+				std::string Message = "Cannot open UEF file:\n  ";
+				Message += FileName;
+				MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+				break;
+			}
+		}
+	}
+}
+
+void BeebWin::LoadCSWTape(const char *FileName)
+{
+	CSWResult Result = ::LoadCSW(FileName);
+
+	switch (Result) {
+		case CSWResult::Success:
+			break;
+
+		case CSWResult::InvalidCSWFile: {
+			std::string Message = "The file selected is not a CSW file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+
+		case CSWResult::InvalidHeaderExtension: {
+			std::string Message = "Failed to read CSW header extension:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+
+		case CSWResult::OpenFailed:
+		default: {
+			std::string Message = "Cannot open CSW file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
 		}
 	}
 }
