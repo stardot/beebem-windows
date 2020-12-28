@@ -137,7 +137,27 @@ static const int CyclesTable65C02[] = {
 const int *CyclesTable = CyclesTable6502;
 
 // Number of cycles to start of memory read cycle
-static const int CyclesToMemRead[] = {
+static const int CyclesToMemRead6502[] = {
+/*0 1 2 3 4 5 6 7 8 9 a b c d e f */
+  0,5,0,7,0,2,2,2,0,0,0,0,3,3,3,3, /* 0 */
+  0,4,0,7,0,3,3,3,0,3,0,0,3,3,4,4, /* 1 */
+  0,5,0,7,0,2,2,2,0,0,0,0,3,3,3,3, /* 2 */
+  0,4,0,7,0,3,3,3,0,3,0,0,3,3,4,4, /* 3 */
+  0,5,0,7,0,2,2,2,0,0,0,0,0,3,3,3, /* 4 */
+  0,4,0,7,0,3,3,3,0,3,0,0,3,3,4,4, /* 5 */
+  0,5,0,7,0,2,2,2,0,0,0,0,0,3,3,3, /* 6 */
+  0,4,0,7,0,3,3,3,0,3,0,0,3,3,4,4, /* 7 */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 8 */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* 9 */
+  0,5,0,5,2,2,2,2,0,0,0,0,3,3,3,3, /* a */
+  0,4,0,4,3,3,3,3,0,3,0,0,3,3,4,4, /* b */
+  0,5,0,7,2,2,2,2,0,0,0,0,3,3,3,3, /* c */
+  0,4,0,7,0,3,3,3,0,3,0,0,3,3,4,4, /* d */
+  0,5,0,7,2,2,2,2,0,0,0,0,3,3,3,3, /* e */
+  0,4,0,7,0,3,3,3,0,3,0,0,3,3,4,4  /* f */
+};
+
+static const int CyclesToMemRead65C02[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
   0,5,0,0,0,2,2,0,0,0,0,0,0,3,3,0, /* 0 */
   0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0, /* 1 */
@@ -157,8 +177,30 @@ static const int CyclesToMemRead[] = {
   0,4,0,0,0,3,3,0,0,3,0,0,0,3,4,0  /* f */
 };
 
+const int *CyclesToMemRead = CyclesToMemRead6502;
+
 // Number of cycles to start of memory write cycle
-static const int CyclesToMemWrite[] = {
+static const int CyclesToMemWrite6502[] = {
+/*0 1 2 3 4 5 6 7 8 9 a b c d e f */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 0 */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 1 */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 2 */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 3 */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 4 */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 5 */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 6 */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* 7 */
+  0,5,0,5,2,2,2,2,0,0,0,0,3,3,3,3, /* 8 */
+  0,5,0,5,3,3,3,3,0,4,0,0,0,0,0,4, /* 9 */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* a */
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* b */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* c */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* d */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2, /* e */
+  0,0,0,0,0,0,2,2,0,0,0,0,0,0,2,2  /* f */
+};
+
+static const int CyclesToMemWrite65C02[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
   0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 0 */
   0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* 1 */
@@ -177,6 +219,8 @@ static const int CyclesToMemWrite[] = {
   0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0, /* e */
   0,0,0,0,0,0,2,0,0,0,0,0,0,0,2,0  /* f */
 };
+
+const int *CyclesToMemWrite = CyclesToMemWrite6502;
 
 /* The number of cycles to be used by the current instruction - exported to
    allow fernangling by memory subsystem */
@@ -1050,9 +1094,13 @@ void Init6502core()
 {
 	if (MachineType == Model::Master128) {
 		CyclesTable = CyclesTable65C02;
+		CyclesToMemRead = CyclesToMemRead65C02;
+		CyclesToMemWrite = CyclesToMemWrite65C02;
 	}
 	else {
 		CyclesTable = CyclesTable6502;
+		CyclesToMemRead = CyclesToMemRead6502;
+		CyclesToMemWrite = CyclesToMemWrite6502;
 	}
 
 	ProgramCounter = BeebReadMem(0xfffc) | (BeebReadMem(0xfffd) << 8);
