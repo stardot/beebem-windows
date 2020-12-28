@@ -1364,6 +1364,17 @@ void Exec6502Instruction(void) {
 				// ORA (zp,X)
 				ORAInstrHandler(IndXAddrModeHandler_Data());
 				break;
+			case 0x03:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SLO (zp,X)
+					int16 zpaddr = IndXAddrModeHandler_Address();
+					ASLInstrHandler(zpaddr);
+					ORAInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x04:
 				if (MachineType == Model::Master128) {
 					// TSB zp
@@ -1381,6 +1392,17 @@ void Exec6502Instruction(void) {
 			case 0x06:
 				// ASL zp
 				ASLInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0x07:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SLO zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					ASLInstrHandler(zpaddr);
+					ORAInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x08:
 				// PHP
@@ -1412,47 +1434,20 @@ void Exec6502Instruction(void) {
 				// ASL abs
 				ASLInstrHandler(AbsAddrModeHandler_Address());
 				break;
+			case 0x0f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SLO abs
+					int16 zpaddr = AbsAddrModeHandler_Address();
+					ASLInstrHandler(zpaddr);
+					ORAInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x10:
 				// BPL rel
 				BPLInstrHandler();
-				break;
-			case 0x30:
-				// BMI rel
-				BMIInstrHandler();
-				break;
-			case 0x50:
-				// BVC rel
-				BVCInstrHandler();
-				break;
-			case 0x70:
-				// BVS rel
-				BVSInstrHandler();
-				break;
-			case 0x80:
-				if (MachineType == Model::Master128) {
-					// BRA rel
-					BRAInstrHandler();
-				}
-				else {
-					// Undocumented instruction: NOP imm
-					ReadPaged(ProgramCounter++);
-				}
-				break;
-			case 0x90:
-				// BCC rel
-				BCCInstrHandler();
-				break;
-			case 0xb0:
-				// BCS rel
-				BCSInstrHandler();
-				break;
-			case 0xd0:
-				// BNE rel
-				BNEInstrHandler();
-				break;
-			case 0xf0:
-				// BEQ rel
-				BEQInstrHandler();
 				break;
 			case 0x11:
 				// ORA (zp),Y
@@ -1466,6 +1461,17 @@ void Exec6502Instruction(void) {
 				else {
 					// Undocumented instruction: KIL
 					KILInstrHandler();
+				}
+				break;
+			case 0x13:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SLO (zp),Y
+					int16 zpaddr = IndYAddrModeHandler_Address();
+					ASLInstrHandler(zpaddr);
+					ORAInstrHandler(WholeRam[zpaddr]);
 				}
 				break;
 			case 0x14:
@@ -1486,6 +1492,17 @@ void Exec6502Instruction(void) {
 				// ASL zp,X
 				ASLInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
+			case 0x17:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SLO zp,X
+					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
+					ASLInstrHandler(zpaddr);
+					ORAInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x18:
 				// CLC
 				PSR &= 255 - FlagC;
@@ -1501,6 +1518,17 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: NOP
+				}
+				break;
+			case 0x1b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SLO abs,Y
+					int16 zpaddr = AbsYAddrModeHandler_Address();
+					ASLInstrHandler(zpaddr);
+					ORAInstrHandler(WholeRam[zpaddr]);
 				}
 				break;
 			case 0x1c:
@@ -1521,6 +1549,17 @@ void Exec6502Instruction(void) {
 				// ASL abs,X
 				ASLInstrHandler(AbsXAddrModeHandler_Address());
 				break;
+			case 0x1f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SLO abs,X
+					int16 zpaddr = AbsXAddrModeHandler_Address();
+					ASLInstrHandler(zpaddr);
+					ORAInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x20:
 				// JSR abs
 				JSRInstrHandler(AbsAddrModeHandler_Address());
@@ -1528,6 +1567,17 @@ void Exec6502Instruction(void) {
 			case 0x21:
 				// AND (zp,X)
 				ANDInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0x23:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RLA (zp,X)
+					int16 zpaddr = IndXAddrModeHandler_Address();
+					ROLInstrHandler(zpaddr);
+					ANDInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x24:
 				// BIT zp
@@ -1540,6 +1590,17 @@ void Exec6502Instruction(void) {
 			case 0x26:
 				// ROL zp
 				ROLInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0x27:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RLA zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					ROLInstrHandler(zpaddr);
+					ANDInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x28: {
 					// PLP
@@ -1576,6 +1637,21 @@ void Exec6502Instruction(void) {
 				// ROL abs
 				ROLInstrHandler(AbsAddrModeHandler_Address());
 				break;
+			case 0x2f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RLA abs
+					int16 zpaddr = AbsAddrModeHandler_Address();
+					ROLInstrHandler(zpaddr);
+					ANDInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0x30:
+				// BMI rel
+				BMIInstrHandler();
+				break;
 			case 0x31:
 				// AND (zp),Y
 				ANDInstrHandler(IndYAddrModeHandler_Data());
@@ -1588,6 +1664,17 @@ void Exec6502Instruction(void) {
 				else {
 					// Undocumented instruction: KIL
 					KILInstrHandler();
+				}
+				break;
+			case 0x33:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RLA (zp),Y
+					int16 zpaddr = IndYAddrModeHandler_Address();
+					ROLInstrHandler(zpaddr);
+					ANDInstrHandler(WholeRam[zpaddr]);
 				}
 				break;
 			case 0x34:
@@ -1608,6 +1695,17 @@ void Exec6502Instruction(void) {
 				// ROL zp,X
 				ROLInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
+			case 0x37:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RLA zp,X
+					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
+					ROLInstrHandler(zpaddr);
+					ANDInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x38:
 				// SEC
 				PSR |= FlagC;
@@ -1623,6 +1721,17 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: NOP
+				}
+				break;
+			case 0x3b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RLA abs.Y
+					int16 zpaddr = AbsYAddrModeHandler_Address();
+					ROLInstrHandler(zpaddr);
+					ANDInstrHandler(WholeRam[zpaddr]);
 				}
 				break;
 			case 0x3c:
@@ -1643,6 +1752,17 @@ void Exec6502Instruction(void) {
 				// ROL abs,X
 				ROLInstrHandler(AbsXAddrModeHandler_Address());
 				break;
+			case 0x3f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RLA abs.X
+					int16 zpaddr = AbsXAddrModeHandler_Address();
+					ROLInstrHandler(zpaddr);
+					ANDInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x40:
 				// RTI
 				PSR = Pop();
@@ -1653,6 +1773,21 @@ void Exec6502Instruction(void) {
 				// EOR (zp,X)
 				EORInstrHandler(IndXAddrModeHandler_Data());
 				break;
+			case 0x43:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SRE (zp,X)
+					int16 zpaddr = IndXAddrModeHandler_Address();
+					LSRInstrHandler(zpaddr);
+					EORInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0x44:
+				// NOP zp
+				ReadPaged(ZeroPgAddrModeHandler_Address());
+				break;
 			case 0x45:
 				// EOR zp
 				EORInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]);
@@ -1660,6 +1795,17 @@ void Exec6502Instruction(void) {
 			case 0x46:
 				// LSR zp
 				LSRInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0x47:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SRE zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					LSRInstrHandler(zpaddr);
+					EORInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x48:
 				// PHA
@@ -1673,6 +1819,16 @@ void Exec6502Instruction(void) {
 				// LSR A
 				LSRInstrHandler_Acc();
 				break;
+			case 0x4b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ALR imm
+					ANDInstrHandler(WholeRam[ProgramCounter++]);
+					LSRInstrHandler_Acc();
+				}
+				break;
 			case 0x4c:
 				// JMP abs
 				ProgramCounter = AbsAddrModeHandler_Address();
@@ -1684,6 +1840,21 @@ void Exec6502Instruction(void) {
 			case 0x4e:
 				// LSR abs
 				LSRInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x4f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SRE abs
+					int16 zpaddr = AbsAddrModeHandler_Address();
+					LSRInstrHandler(zpaddr);
+					EORInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0x50:
+				// BVC rel
+				BVCInstrHandler();
 				break;
 			case 0x51:
 				// EOR (zp),Y
@@ -1699,6 +1870,17 @@ void Exec6502Instruction(void) {
 					KILInstrHandler();
 				}
 				break;
+			case 0x53:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SRE (zp),Y
+					int16 zpaddr = IndYAddrModeHandler_Address();
+					LSRInstrHandler(zpaddr);
+					EORInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x55:
 				// EOR zp,X
 				EORInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1706,6 +1888,17 @@ void Exec6502Instruction(void) {
 			case 0x56:
 				// LSR zp,X
 				LSRInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0x57:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SRE zp,X
+					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
+					LSRInstrHandler(zpaddr);
+					EORInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x58:
 				// CLI
@@ -1727,6 +1920,27 @@ void Exec6502Instruction(void) {
 					// Undocumented instruction: NOP
 				}
 				break;
+			case 0x5b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SRE abs,Y
+					int16 zpaddr = AbsYAddrModeHandler_Address();
+					LSRInstrHandler(zpaddr);
+					EORInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0x5c:
+				if (MachineType == Model::Master128) {
+					// NOP abs
+					AbsAddrModeHandler_Address();
+				}
+				else {
+					// Undocumented instruction: NOP abs,x
+					AbsXAddrModeHandler_Data();
+				}
+				break;
 			case 0x5d:
 				// EOR abs,X
 				EORInstrHandler(AbsXAddrModeHandler_Data());
@@ -1735,6 +1949,17 @@ void Exec6502Instruction(void) {
 				// LSR abs,X
 				LSRInstrHandler(AbsXAddrModeHandler_Address());
 				break;
+			case 0x5f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SRE abs,X
+					int16 zpaddr = AbsXAddrModeHandler_Address();
+					LSRInstrHandler(zpaddr);
+					EORInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x60:
 				// RTS
 				ProgramCounter = PopWord() + 1;
@@ -1742,6 +1967,17 @@ void Exec6502Instruction(void) {
 			case 0x61:
 				// ADC (zp,X)
 				ADCInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0x63:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RRA (zp,X)
+					int16 zpaddr = IndXAddrModeHandler_Address();
+					RORInstrHandler(zpaddr);
+					ADCInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x64:
 				if (MachineType == Model::Master128) {
@@ -1761,6 +1997,17 @@ void Exec6502Instruction(void) {
 				// ROR zp
 				RORInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
+			case 0x67:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RRA zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					RORInstrHandler(zpaddr);
+					ADCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x68:
 				// PLA
 				Accumulator = Pop();
@@ -1774,6 +2021,16 @@ void Exec6502Instruction(void) {
 				// ROR A
 				RORInstrHandler_Acc();
 				break;
+			case 0x6b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ARR imm
+					ANDInstrHandler(WholeRam[ProgramCounter++]);
+					RORInstrHandler_Acc();
+				}
+				break;
 			case 0x6c:
 				// JMP (abs)
 				ProgramCounter = IndAddrModeHandler_Address();
@@ -1785,6 +2042,21 @@ void Exec6502Instruction(void) {
 			case 0x6e:
 				// ROR abs
 				RORInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x6f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RRA abs
+					int16 zpaddr = AbsAddrModeHandler_Address();
+					RORInstrHandler(zpaddr);
+					ADCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0x70:
+				// BVS rel
+				BVSInstrHandler();
 				break;
 			case 0x71:
 				// ADC (zp),Y
@@ -1798,6 +2070,17 @@ void Exec6502Instruction(void) {
 				else {
 					// Undocumented instruction: KIL
 					KILInstrHandler();
+				}
+				break;
+			case 0x73:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RRA (zp),Y
+					int16 zpaddr = IndYAddrModeHandler_Address();
+					RORInstrHandler(zpaddr);
+					ADCInstrHandler(WholeRam[zpaddr]);
 				}
 				break;
 			case 0x74:
@@ -1817,6 +2100,17 @@ void Exec6502Instruction(void) {
 			case 0x76:
 				// ROR zp,X
 				RORInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0x77:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RRA zp,X
+					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
+					RORInstrHandler(zpaddr);
+					ADCInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x78:
 				// SEI
@@ -1839,6 +2133,17 @@ void Exec6502Instruction(void) {
 					// Undocumented instruction: NOP
 				}
 				break;
+			case 0x7b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RRA abs,Y
+					int16 zpaddr = AbsYAddrModeHandler_Address();
+					RORInstrHandler(zpaddr);
+					ADCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0x7c:
 				if (MachineType == Model::Master128) {
 					// JMP abs,x
@@ -1857,10 +2162,40 @@ void Exec6502Instruction(void) {
 				// ROR abs,X
 				RORInstrHandler(AbsXAddrModeHandler_Address());
 				break;
+			case 0x7f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: RRA abs,X
+					int16 zpaddr = AbsXAddrModeHandler_Address();
+					RORInstrHandler(zpaddr);
+					ADCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0x80:
+				if (MachineType == Model::Master128) {
+					// BRA rel
+					BRAInstrHandler();
+				}
+				else {
+					// Undocumented instruction: NOP imm
+					ReadPaged(ProgramCounter++);
+				}
+				break;
 			case 0x81:
 				// STA (zp,X)
 				AdvanceCyclesForMemWrite();
 				WritePaged(IndXAddrModeHandler_Address(), Accumulator);
+				break;
+			case 0x83:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SAX (zp,X)
+					WholeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
+				}
 				break;
 			case 0x84:
 				// STY zp
@@ -1876,6 +2211,16 @@ void Exec6502Instruction(void) {
 				// STX zp
 				AdvanceCyclesForMemWrite();
 				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(), XReg);
+				break;
+			case 0x87:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SAX zp
+					// This one does not seem to change the processor flags
+					WholeRam[ZeroPgAddrModeHandler_Address()] = Accumulator & XReg;
+				}
 				break;
 			case 0x88:
 				// DEY
@@ -1897,6 +2242,17 @@ void Exec6502Instruction(void) {
 				Accumulator = XReg;
 				SetPSRZN(Accumulator);
 				break;
+			case 0x8b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: XAA imm
+					// See http://visual6502.org/wiki/index.php?title=6502_Opcode_8B_(XAA,_ANE)_explained
+					Accumulator &= XReg & ReadPaged(ProgramCounter++);
+					SetPSRZN(Accumulator);
+				}
+				break;
 			case 0x8c:
 				// STY abs
 				AdvanceCyclesForMemWrite();
@@ -1911,6 +2267,19 @@ void Exec6502Instruction(void) {
 				// STX abs
 				AdvanceCyclesForMemWrite();
 				STXInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0x8f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SAX abs
+					WholeRam[AbsAddrModeHandler_Address()] = Accumulator & XReg;
+				}
+				break;
+			case 0x90:
+				// BCC rel
+				BCCInstrHandler();
 				break;
 			case 0x91:
 				// STA (zp),Y
@@ -1928,6 +2297,16 @@ void Exec6502Instruction(void) {
 					KILInstrHandler();
 				}
 				break;
+			case 0x93:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: AHX (zp),Y
+					int Address = IndYAddrModeHandler_Address();
+					WholeRam[Address] = Accumulator & XReg & ((Address >> 8) + 1);
+				}
+				break;
 			case 0x94:
 				// STY zp,X
 				AdvanceCyclesForMemWrite();
@@ -1943,6 +2322,15 @@ void Exec6502Instruction(void) {
 				AdvanceCyclesForMemWrite();
 				STXInstrHandler(ZeroPgYAddrModeHandler_Address());
 				break;
+			case 0x97:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: SAX zp,Y
+					WholeRam[ZeroPgYAddrModeHandler_Address()] = Accumulator & XReg;
+				}
+				break;
 			case 0x98:
 				// TYA
 				Accumulator = YReg;
@@ -1956,6 +2344,15 @@ void Exec6502Instruction(void) {
 			case 0x9a:
 				// TXS
 				StackReg = XReg;
+				break;
+			case 0x9b:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: TAS abs,Y
+					WholeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
+				}
 				break;
 			case 0x9c:
 				if (MachineType == Model::Master128) {
@@ -1983,6 +2380,16 @@ void Exec6502Instruction(void) {
 					WritePaged(AbsXAddrModeHandler_Address(), Accumulator & XReg);
 				}
 				break;
+			case 0x9f:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: AHX abs,Y
+					int Address = AbsYAddrModeHandler_Address();
+					WritePaged(Address, Accumulator & XReg & ((Address >> 8) + 1));
+				}
+				break;
 			case 0xa0:
 				// LDY imm
 				LDYInstrHandler(ReadPaged(ProgramCounter++));
@@ -1995,6 +2402,16 @@ void Exec6502Instruction(void) {
 				// LDX imm
 				LDXInstrHandler(ReadPaged(ProgramCounter++));
 				break;
+			case 0xa3:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAX (zp,X)
+					LDAInstrHandler(IndXAddrModeHandler_Data());
+					XReg = Accumulator;
+				}
+				break;
 			case 0xa4:
 				// LDY zp
 				LDYInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]);
@@ -2006,6 +2423,16 @@ void Exec6502Instruction(void) {
 			case 0xa6:
 				// LDX zp
 				LDXInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]);
+				break;
+			case 0xa7:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAX zp
+					LDAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]);
+					XReg = Accumulator;
+				}
 				break;
 			case 0xa8:
 				// TAY
@@ -2021,6 +2448,16 @@ void Exec6502Instruction(void) {
 				XReg = Accumulator;
 				SetPSRZN(Accumulator);
 				break;
+			case 0xab:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAX imm
+					LDAInstrHandler(Accumulator & ReadPaged(ProgramCounter++));
+					XReg = Accumulator;
+				}
+				break;
 			case 0xac:
 				// LDY abs
 				LDYInstrHandler(AbsAddrModeHandler_Data());
@@ -2032,6 +2469,20 @@ void Exec6502Instruction(void) {
 			case 0xae:
 				// LDX abs
 				LDXInstrHandler(AbsAddrModeHandler_Data());
+				break;
+			case 0xaf:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAX abs
+					LDAInstrHandler(AbsAddrModeHandler_Data());
+					XReg = Accumulator;
+				}
+				break;
+			case 0xb0:
+				// BCS rel
+				BCSInstrHandler();
 				break;
 			case 0xb1:
 				// LDA (zp),Y
@@ -2047,6 +2498,16 @@ void Exec6502Instruction(void) {
 					KILInstrHandler();
 				}
 				break;
+			case 0xb3:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAX (zp),Y
+					LDAInstrHandler(IndYAddrModeHandler_Data());
+					XReg = Accumulator;
+				}
+				break;
 			case 0xb4:
 				// LDY zp,X
 				LDYInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -2058,6 +2519,16 @@ void Exec6502Instruction(void) {
 			case 0xb6:
 				// LDX zp,Y
 				LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
+				break;
+			case 0xb7:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAX zp,Y
+					LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
+					Accumulator = XReg;
+				}
 				break;
 			case 0xb8:
 				// CLV
@@ -2072,6 +2543,17 @@ void Exec6502Instruction(void) {
 				XReg = StackReg;
 				SetPSRZN(XReg);
 				break;
+			case 0xbb:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAS abs,Y
+					LDAInstrHandler(StackReg & AbsYAddrModeHandler_Data());
+					XReg = Accumulator;
+					StackReg = Accumulator;
+				}
+				break;
 			case 0xbc:
 				// LDY abs,X
 				LDYInstrHandler(AbsXAddrModeHandler_Data());
@@ -2084,6 +2566,16 @@ void Exec6502Instruction(void) {
 				// LDX abs,Y
 				LDXInstrHandler(AbsYAddrModeHandler_Data());
 				break;
+			case 0xbf:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: LAX abs,Y
+					LDAInstrHandler(AbsYAddrModeHandler_Data());
+					XReg = Accumulator;
+				}
+				break;
 			case 0xc0:
 				// CPY imm
 				CPYInstrHandler(ReadPaged(ProgramCounter++));
@@ -2091,6 +2583,17 @@ void Exec6502Instruction(void) {
 			case 0xc1:
 				// CMP(zp,X)
 				CMPInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0xc3:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocument instruction: DCP (zp,X)
+					int16 zpaddr = IndXAddrModeHandler_Address();
+					DECInstrHandler(zpaddr);
+					CMPInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0xc4:
 				// CPY zp
@@ -2103,6 +2606,17 @@ void Exec6502Instruction(void) {
 			case 0xc6:
 				// DEC zp
 				DECInstrHandler(ZeroPgAddrModeHandler_Address());
+				break;
+			case 0xc7:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: DCP zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					DECInstrHandler(zpaddr);
+					CMPInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0xc8:
 				// INY
@@ -2118,6 +2632,21 @@ void Exec6502Instruction(void) {
 				// DEX
 				DEXInstrHandler();
 				break;
+			case 0xcb:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ASX imm
+					// I dont know if this uses the carry or not, i'm assuming it's
+					// Subtract #n from X with carry.
+					unsigned char TmpAcc = Accumulator;
+					Accumulator = XReg;
+					SBCInstrHandler(WholeRam[ProgramCounter++]);
+					XReg = Accumulator;
+					Accumulator = TmpAcc; // Fudge so that I dont have to do the whole SBC code again
+				}
+				break;
 			case 0xcc:
 				// CPY abs
 				CPYInstrHandler(AbsAddrModeHandler_Data());
@@ -2129,6 +2658,21 @@ void Exec6502Instruction(void) {
 			case 0xce:
 				// DEC abs
 				DECInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0xcf:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: DCP abs
+					int16 zpaddr = AbsAddrModeHandler_Address();
+					DECInstrHandler(zpaddr);
+					CMPInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0xd0:
+				// BNE rel
+				BNEInstrHandler();
 				break;
 			case 0xd1:
 				// CMP (zp),Y
@@ -2144,6 +2688,17 @@ void Exec6502Instruction(void) {
 					KILInstrHandler();
 				}
 				break;
+			case 0xd3:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: DCP (zp),Y
+					int16 zpaddr = IndYAddrModeHandler_Address();
+					DECInstrHandler(zpaddr);
+					CMPInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0xd5:
 				// CMP zp,X
 				CMPInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -2151,6 +2706,17 @@ void Exec6502Instruction(void) {
 			case 0xd6:
 				// DEC zp,X
 				DECInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0xd7:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: DCP zp,X
+					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
+					DECInstrHandler(zpaddr);
+					CMPInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0xd8:
 				// CLD
@@ -2169,6 +2735,17 @@ void Exec6502Instruction(void) {
 					// Undocumented instruction: NOP
 				}
 				break;
+			case 0xdb:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: DCP abs,Y
+					int16 zpaddr = AbsYAddrModeHandler_Address();
+					DECInstrHandler(zpaddr);
+					CMPInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0xdd:
 				// CMP abs,X
 				CMPInstrHandler(AbsXAddrModeHandler_Data());
@@ -2177,6 +2754,17 @@ void Exec6502Instruction(void) {
 				// DEC abs,X
 				DECInstrHandler(AbsXAddrModeHandler_Address());
 				break;
+			case 0xdf:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: DCP abs,X
+					int16 zpaddr = AbsXAddrModeHandler_Address();
+					DECInstrHandler(zpaddr);
+					CMPInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0xe0:
 				// CPX imm
 				CPXInstrHandler(ReadPaged(ProgramCounter++));
@@ -2184,6 +2772,17 @@ void Exec6502Instruction(void) {
 			case 0xe1:
 				// SBC (zp,X)
 				SBCInstrHandler(IndXAddrModeHandler_Data());
+				break;
+			case 0xe3:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ISC (zp,X)
+					int16 zpaddr = IndXAddrModeHandler_Address();
+					INCInstrHandler(zpaddr);
+					SBCInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0xe4:
 				// CPX zp
@@ -2197,6 +2796,14 @@ void Exec6502Instruction(void) {
 				// INC zp
 				INCInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
+			case 0xe7:
+				if (MachineType != Model::Master128) {
+					// Undocumented instruction: ISC zp
+					int16 zpaddr = ZeroPgAddrModeHandler_Address();
+					INCInstrHandler(zpaddr);
+					SBCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0xe8:
 				// INX
 				INXInstrHandler();
@@ -2207,6 +2814,14 @@ void Exec6502Instruction(void) {
 				break;
 			case 0xea:
 				// NOP
+				break;
+			case 0xeb:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// TODO: SBC imm
+				}
 				break;
 			case 0xec:
 				// CPX abs
@@ -2219,6 +2834,21 @@ void Exec6502Instruction(void) {
 			case 0xee:
 				// INC abs
 				INCInstrHandler(AbsAddrModeHandler_Address());
+				break;
+			case 0xef:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ISC abs
+					int16 zpaddr = AbsAddrModeHandler_Address();
+					INCInstrHandler(zpaddr);
+					SBCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
+			case 0xf0:
+				// BEQ rel
+				BEQInstrHandler();
 				break;
 			case 0xf1:
 				// SBC (zp),Y
@@ -2234,6 +2864,17 @@ void Exec6502Instruction(void) {
 					KILInstrHandler();
 				}
 				break;
+			case 0xf3:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ISC (zp),Y
+					int16 zpaddr = IndYAddrModeHandler_Address();
+					INCInstrHandler(zpaddr);
+					SBCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0xf5:
 				// SBC zp,X
 				SBCInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -2241,6 +2882,17 @@ void Exec6502Instruction(void) {
 			case 0xf6:
 				// INC zp,X
 				INCInstrHandler(ZeroPgXAddrModeHandler_Address());
+				break;
+			case 0xf7:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ISC zp,X
+					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
+					INCInstrHandler(zpaddr);
+					SBCInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0xf8:
 				// SED
@@ -2260,6 +2912,17 @@ void Exec6502Instruction(void) {
 					// Undocumented instruction: NOP
 				}
 				break;
+			case 0xfb:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ISC abs,Y
+					int16 zpaddr = AbsYAddrModeHandler_Address();
+					INCInstrHandler(zpaddr);
+					SBCInstrHandler(WholeRam[zpaddr]);
+				}
+				break;
 			case 0xfd:
 				// SBC abs,X
 				SBCInstrHandler(AbsXAddrModeHandler_Data());
@@ -2267,6 +2930,17 @@ void Exec6502Instruction(void) {
 			case 0xfe:
 				// INC abs,X
 				INCInstrHandler(AbsXAddrModeHandler_Address());
+				break;
+			case 0xff:
+				if (MachineType == Model::Master128) {
+					// NOP
+				}
+				else {
+					// Undocumented instruction: ISC abs,X
+					int16 zpaddr = AbsXAddrModeHandler_Address();
+					INCInstrHandler(zpaddr);
+					SBCInstrHandler(WholeRam[zpaddr]);
+				}
 				break;
 			case 0x02:
 			case 0x22:
@@ -2287,539 +2961,11 @@ void Exec6502Instruction(void) {
 				// Undocumented instruction: NOP imm
 				ReadPaged(ProgramCounter++);
 				break;
-			case 0x07:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SLO zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x03:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SLO (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x13:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SLO (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x0f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SLO abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x17:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SLO zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x1b:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SLO abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x1f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SLO abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x23:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RLA (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x27:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RLA zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x2f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RLA abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x33:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RLA (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x37:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RLA zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x3b:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RLA abs.Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x3f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RLA abs.X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x43:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SRE (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x47:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SRE zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x4f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SRE abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x53:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SRE (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x57:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SRE zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x5b:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SRE abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x5f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SRE abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x44:
-				// NOP zp
-				ReadPaged(ZeroPgAddrModeHandler_Address());
-				break;
 			case 0x54:
 			case 0xd4:
 			case 0xf4:
 				// Undocumented instruction: NOP zp,X
 				ZeroPgXAddrModeHandler_Address();
-				break;
-			case 0x5c:
-				if (MachineType == Model::Master128) {
-					// NOP abs
-					AbsAddrModeHandler_Address();
-				}
-				else {
-					// Undocumented instruction: NOP abs,x
-					AbsXAddrModeHandler_Data();
-				}
-				break;
-			case 0x63:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RRA (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x67:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RRA zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x6f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RRA abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x73:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RRA (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x77:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RRA zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x7b:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RRA abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x7f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: RRA abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xc3:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocument instruction: DCP (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xc7:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: DCP zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xcf:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: DCP abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xd3:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: DCP (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xd7:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: DCP zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xdb:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: DCP abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xdf:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: DCP abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xdc:
-			case 0xfc:
-				if (MachineType == Model::Master128) {
-					// NOP abs
-					AbsAddrModeHandler_Address();
-				}
-				else {
-					// Undocumented instruction: NOP abs,X
-					AbsXAddrModeHandler_Data();
-				}
-				break;
-			case 0xe3:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ISC (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xe7:
-				if (MachineType != Model::Master128) {
-					// Undocumented instruction: ISC zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xeb:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// TODO: SBC imm
-				}
-				break;
-			case 0xef:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ISC abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xf3:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ISC (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xf7:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ISC zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xfb:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ISC abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0xff:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ISC abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
-				}
-				break;
-			case 0x6b:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ARR imm
-					ANDInstrHandler(WholeRam[ProgramCounter++]);
-					RORInstrHandler_Acc();
-				}
-				break;
-			case 0x8b:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: XAA imm
-					// See http://visual6502.org/wiki/index.php?title=6502_Opcode_8B_(XAA,_ANE)_explained
-					Accumulator &= XReg & ReadPaged(ProgramCounter++);
-					SetPSRZN(Accumulator);
-				}
-				break;
-			case 0xcb:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: ASX imm
-					// I dont know if this uses the carry or not, i'm assuming it's
-					// Subtract #n from X with carry.
-					unsigned char TmpAcc = Accumulator;
-					Accumulator = XReg;
-					SBCInstrHandler(WholeRam[ProgramCounter++]);
-					XReg = Accumulator;
-					Accumulator = TmpAcc; // Fudge so that I dont have to do the whole SBC code again
-				}
 				break;
 			case 0x0b:
 			case 0x2b:
@@ -2832,161 +2978,15 @@ void Exec6502Instruction(void) {
 					PSR |= ((Accumulator & 128) >> 7);
 				}
 				break;
-			case 0x4b:
+			case 0xdc:
+			case 0xfc:
 				if (MachineType == Model::Master128) {
-					// NOP
+					// NOP abs
+					AbsAddrModeHandler_Address();
 				}
 				else {
-					// Undocumented instruction: ALR imm
-					ANDInstrHandler(WholeRam[ProgramCounter++]);
-					LSRInstrHandler_Acc();
-				}
-				break;
-			case 0x87:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SAX zp
-					// This one does not seem to change the processor flags
-					WholeRam[ZeroPgAddrModeHandler_Address()] = Accumulator & XReg;
-				}
-				break;
-			case 0x83:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SAX (zp,X)
-					WholeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
-				}
-				break;
-			case 0x8f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SAX abs
-					WholeRam[AbsAddrModeHandler_Address()] = Accumulator & XReg;
-				}
-				break;
-			case 0x93:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: AHX (zp),Y
-					int Address = IndYAddrModeHandler_Address();
-					WholeRam[Address] = Accumulator & XReg & ((Address >> 8) + 1);
-				}
-				break;
-			case 0x97:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: SAX zp,Y
-					WholeRam[ZeroPgYAddrModeHandler_Address()] = Accumulator & XReg;
-				}
-				break;
-			case 0x9b:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: TAS abs,Y
-					WholeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
-				}
-				break;
-			case 0x9f:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: AHX abs,Y
-					int Address = AbsYAddrModeHandler_Address();
-					WritePaged(Address, Accumulator & XReg & ((Address >> 8) + 1));
-				}
-				break;
-			case 0xab:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAX imm
-					LDAInstrHandler(Accumulator & ReadPaged(ProgramCounter++));
-					XReg = Accumulator;
-				}
-				break;
-			case 0xa3:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAX (zp,X)
-					LDAInstrHandler(IndXAddrModeHandler_Data());
-					XReg = Accumulator;
-				}
-				break;
-			case 0xa7:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAX zp
-					LDAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]);
-					XReg = Accumulator;
-				}
-				break;
-			case 0xaf:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAX abs
-					LDAInstrHandler(AbsAddrModeHandler_Data());
-					XReg = Accumulator;
-				}
-				break;
-			case 0xb3:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAX (zp),Y
-					LDAInstrHandler(IndYAddrModeHandler_Data());
-					XReg = Accumulator;
-				}
-				break;
-			case 0xb7:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAX zp,Y
-					LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
-					Accumulator = XReg;
-				}
-				break;
-			case 0xbb:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAS abs,Y
-					LDAInstrHandler(StackReg & AbsYAddrModeHandler_Data());
-					XReg = Accumulator;
-					StackReg = Accumulator;
-				}
-				break;
-			case 0xbf:
-				if (MachineType == Model::Master128) {
-					// NOP
-				}
-				else {
-					// Undocumented instruction: LAX abs,Y
-					LDAInstrHandler(AbsYAddrModeHandler_Data());
-					XReg = Accumulator;
+					// Undocumented instruction: NOP abs,X
+					AbsXAddrModeHandler_Data();
 				}
 				break;
 		}
