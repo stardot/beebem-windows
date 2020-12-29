@@ -76,6 +76,7 @@ Boston, MA  02110-1301, USA.
 #include "version.h"
 #include "sprowcopro.h"
 #include "Master512CoPro.h"
+#include "FolderSelectDialog.h"
 
 using namespace Gdiplus;
 
@@ -4766,53 +4767,31 @@ void BeebWin::StoreUserDataPath()
 }
 
 /****************************************************************************/
-/* Selection of User Data Folder */
-static char szExportUserDataPath[MAX_PATH];
 
-int CALLBACK BrowseUserDataCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lParam */, LPARAM /* lpData */)
-{
-	switch (uMsg)
-	{
-	case BFFM_INITIALIZED:
-		if (szExportUserDataPath[0])
-		{
-			SendMessage(hwnd, BFFM_SETEXPANDED, TRUE, (LPARAM)szExportUserDataPath);
-			SendMessage(hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)szExportUserDataPath);
-		}
-		break;
-	}
-	return 0;
-}
+// Selection of User Data Folder
 
 void BeebWin::SelectUserDataPath()
 {
-	char szDisplayName[MAX_PATH];
-	char szPathBackup[MAX_PATH];
-	BROWSEINFO bi;
+	std::string PathBackup;
 
-	memset(&bi, 0, sizeof(bi));
-	bi.hwndOwner = m_hWnd;
-	bi.pszDisplayName = szDisplayName;
-	bi.lpszTitle = "Select folder for user data files:";
-	bi.ulFlags = BIF_EDITBOX | BIF_NEWDIALOGSTYLE;
-	bi.lpfn = BrowseUserDataCallbackProc;
-	LPITEMIDLIST idList = SHBrowseForFolder(&bi);
-	if (idList != NULL)
-	{
-		if (!SHGetPathFromIDList(idList, szExportUserDataPath))
-		{
-			MessageBox(m_hWnd, "Invalid folder selected", WindowTitle, MB_OK|MB_ICONWARNING);
-		}
-		else
-		{
-			strcpy(szPathBackup, m_UserDataPath);
-			strcpy(m_UserDataPath, szExportUserDataPath);
+	FolderSelectDialog Dialog(
+		m_hWnd,
+		"Select folder for user data files:",
+		m_UserDataPath
+	);
+
+	FolderSelectDialog::Result result = Dialog.DoModal();
+
+	switch (result) {
+		case FolderSelectDialog::Result::OK:
+			PathBackup = m_UserDataPath;
+			strcpy(m_UserDataPath, Dialog.GetFolder().c_str());
 			strcat(m_UserDataPath, "\\");
 
 			// Check folder contents
 			if (!CheckUserDataPath(true))
 			{
-				strcpy(m_UserDataPath, szPathBackup);
+				strcpy(m_UserDataPath, PathBackup.c_str());
 			}
 			else
 			{
@@ -4828,8 +4807,11 @@ void BeebWin::SelectUserDataPath()
 				LoadPreferences();
 				ApplyPrefs();
 			}
-		}
-		CoTaskMemFree(idList);
+			break;
+
+		case FolderSelectDialog::Result::InvalidFolder:
+			MessageBox(m_hWnd, "Invalid folder selected", WindowTitle, MB_OK|MB_ICONWARNING);
+			break;
 	}
 }
 

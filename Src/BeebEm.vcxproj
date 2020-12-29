@@ -185,6 +185,7 @@
     <ClCompile Include="discedit.cpp" />
     <ClCompile Include="econet.cpp" />
     <ClCompile Include="filedialog.cpp" />
+    <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="ide.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
@@ -262,6 +263,7 @@
     <ClInclude Include="econet.h" />
     <ClInclude Include="ext1770.h" />
     <ClInclude Include="filedialog.h" />
+    <ClInclude Include="FolderSelectDialog.h" />
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="log.h" />
