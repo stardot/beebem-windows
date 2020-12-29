@@ -227,7 +227,7 @@ public:
 	void HandleCommandLineFile(int drive, const char *CmdLineFile);
 	void HandleEnvironmentVariables();
 	void LoadStartupDisc(int DriveNum, const char *DiscString);
-	bool CheckUserDataPath(void);
+	bool CheckUserDataPath(bool Persist);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
 	void NewTapeImage(char *FileName);
@@ -309,6 +309,7 @@ public:
 	int		m_vkeyPressed[256][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
+	bool m_CustomData;
 	char		m_DiscPath[_MAX_PATH];	// JGH
 	bool		m_WriteProtectDisc[2];
 	bool		m_WriteProtectOnLoad;

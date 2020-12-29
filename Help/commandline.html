@@ -10,7 +10,7 @@
   <table width="100%" border="0" cellpadding="2" cellspacing="2">
     <tr>
       <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
                                align="middle" width="48" height="48" border="0" /></p>
       </td>
 
@@ -65,7 +65,12 @@
 <table width="100%" border="0" cellpadding="4" cellspacing="0">
   <tr>
     <td width="20%">-Data &lt;directory&gt;</td>
-    <td width="80%">Use a specified data directory</td>
+    <td width="80%">Use a specified data directory and set as the new default data directory</td>
+  </tr>
+
+  <tr>
+    <td width="20%">-CustomData &lt;directory&gt;</td>
+    <td width="80%">Use a specified data directory without changing the default data directory</td>
   </tr>
 
   <tr>
@@ -145,7 +150,7 @@
 </table>
 
 <p>Note: Command line options -Model and -Tube are no longer supported.
-      Use the -Prefs option with different preferences files instead.</p>
+Use the -Prefs option with different preferences files instead.</p>
 
 <p>If you create a shortcut to BeebEm.exe on your desktop and edit the
 properties (right click the icon) you can add command line options and a
@@ -190,14 +195,20 @@ automatically run it in BeebEm.</p>
 
 <h2>Command Line Parameter Notes</h2>
 
-<p>If the specified &lt;data directory&gt; does not exist BeebEm will offer
-to create it.  BeebEm will copy a default set of data to the data directory.
-The default data directory is 'My Documents\BeebEm'.  If a data directory of
-"-" is specified BeebEm will use the "UserData" directory where the
-BeebEm.exe file exists (this is useful for running from a USB drive).</p>
+<p>If the data directory specified using the -Data or -CustomData option
+does not exist, BeebEm will offer to create it. BeebEm will copy a default
+set of data to the data directory. The default data directory is
+'My Documents\BeebEm'. If a data directory of "-" is specified BeebEm will
+use the "UserData" directory where the BeebEm.exe file exists (this is
+useful for running from a USB drive).</p>
 
 <p>The preferences and ROMs configuration file names are relative to the
 data directory.</p>
+
+<p>The -Data option tells BeebEm to use a new data directory as the default
+data directory. The default is stored in the Windows Registry under
+'HKEY_CURRENT_USER\Software\BeebEm\UserDataFolder'. The -CustomData option
+tells BeebEm to use a new data directory without changing the default.</p>
 
 <p>If a disk image or a state file name is passed to BeebEm on the command
 line it will be run automatically (but see -NoAutoBoot option).  The name

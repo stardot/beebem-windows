@@ -238,6 +238,8 @@ BeebWin::BeebWin()
 		}
 	}
 
+	m_CustomData = false;
+
 	// Read disc images path from registry
 	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "DiscsPath",
 	                       m_DiscPath, _MAX_PATH))
@@ -262,7 +264,7 @@ bool BeebWin::Initialise()
 	CheckForLocalPrefs(m_CommandLineFileName1, false);
 
 	// Check that user data directory exists
-	if (!CheckUserDataPath())
+	if (!CheckUserDataPath(!m_CustomData))
 		return false;
 
 	LoadPreferences();
@@ -3988,7 +3990,10 @@ void BeebWin::ParseCommandLine()
 		{
 			invalid = false;
 
-			if (_stricmp(__argv[i], "-Data") == 0)
+			const bool Data       = _stricmp(__argv[i], "-Data") == 0;
+			const bool CustomData = _stricmp(__argv[i], "-CustomData") == 0;
+
+			if (Data || CustomData)
 			{
 				strcpy(m_UserDataPath, __argv[++i]);
 
@@ -4005,6 +4010,10 @@ void BeebWin::ParseCommandLine()
 					{
 						strcat(m_UserDataPath, "\\");
 					}
+				}
+
+				if (CustomData) {
+					m_CustomData = true;
 				}
 			}
 			else if (_stricmp(__argv[i], "-Prefs") == 0)
@@ -4561,7 +4570,7 @@ bool BeebWin::RebootSystem()
 }
 
 /****************************************************************************/
-bool BeebWin::CheckUserDataPath()
+bool BeebWin::CheckUserDataPath(bool Persist)
 {
 	bool success = true;
 	bool copy_user_files = false;
@@ -4740,7 +4749,7 @@ bool BeebWin::CheckUserDataPath()
 		}
 	}
 
-	if (success && (copy_user_files || store_user_data_path))
+	if (success && Persist && (copy_user_files || store_user_data_path))
 	{
 		StoreUserDataPath();
 	}
@@ -4801,7 +4810,7 @@ void BeebWin::SelectUserDataPath()
 			strcat(m_UserDataPath, "\\");
 
 			// Check folder contents
-			if (!CheckUserDataPath())
+			if (!CheckUserDataPath(true))
 			{
 				strcpy(m_UserDataPath, szPathBackup);
 			}
