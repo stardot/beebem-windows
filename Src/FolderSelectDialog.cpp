@@ -50,19 +50,11 @@ int CALLBACK FolderSelectDialog::BrowseCallbackProc(
 					);
 				}
 				break;
-
-			case BFFM_SELCHANGED:
-				break;
-
-			default:
-				break;
 		}
 	}
 
 	return 0;
 }
-
-//------------------------------------------------------------------------------
 
 FolderSelectDialog::FolderSelectDialog(
 	HWND hwndOwner,
