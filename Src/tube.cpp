@@ -1485,6 +1485,34 @@ void Exec65C02Instruction() {
 			// ORA (zp,X)
 			ORAInstrHandler(IndXAddrModeHandler_Data());
 			break;
+		case 0x02:
+		case 0x22:
+		case 0x42:
+		case 0x62:
+		case 0x82:
+		case 0xc2:
+		case 0xe2:
+			// NOP imm
+			TubeProgramCounter++;
+			break;
+		case 0x03:
+		case 0x13:
+		case 0x23:
+		case 0x33:
+		case 0x43:
+		case 0x53:
+		case 0x63:
+		case 0x73:
+		case 0x83:
+		case 0x93:
+		case 0xa3:
+		case 0xb3:
+		case 0xc3:
+		case 0xd3:
+		case 0xe3:
+		case 0xf3:
+			// NOP
+			break;
 		case 0x04:
 			// TSB zp
 			TSBInstrHandler(ZeroPgAddrModeHandler_Address());
@@ -1496,6 +1524,10 @@ void Exec65C02Instruction() {
 		case 0x06:
 			// ASL zp
 			ASLInstrHandler(ZeroPgAddrModeHandler_Address());
+			break;
+		case 0x07:
+			// RMB0
+			ResetMemoryBit(0);
 			break;
 		case 0x08:
 			// PHP
@@ -1509,6 +1541,24 @@ void Exec65C02Instruction() {
 			// ASL A
 			ASLInstrHandler_Acc();
 			break;
+		case 0x0b:
+		case 0x1b:
+		case 0x2b:
+		case 0x3b:
+		case 0x4b:
+		case 0x5b:
+		case 0x6b:
+		case 0x7b:
+		case 0x8b:
+		case 0x9b:
+		case 0xab:
+		case 0xbb:
+		case 0xcb:
+		case 0xdb:
+		case 0xeb:
+		case 0xfb:
+			// NOP
+			break;
 		case 0x0c:
 			// TSB abs
 			TSBInstrHandler(AbsAddrModeHandler_Address());
@@ -1521,41 +1571,13 @@ void Exec65C02Instruction() {
 			// ASL abs
 			ASLInstrHandler(AbsAddrModeHandler_Address());
 			break;
+		case 0x0f:
+			// BBR0
+			BranchOnBitReset(0);
+			break;
 		case 0x10:
 			// BPL rel
 			BPLInstrHandler();
-			break;
-		case 0x30:
-			// BMI rel
-			BMIInstrHandler();
-			break;
-		case 0x50:
-			// BVC rel
-			BVCInstrHandler();
-			break;
-		case 0x70:
-			// BVS rel
-			BVSInstrHandler();
-			break;
-		case 0x80:
-			// BRA rel
-			BRAInstrHandler();
-			break;
-		case 0x90:
-			// BCC rel
-			BCCInstrHandler();
-			break;
-		case 0xb0:
-			// BCS rel
-			BCSInstrHandler();
-			break;
-		case 0xd0:
-			// BNE rel
-			BNEInstrHandler();
-			break;
-		case 0xf0:
-			// BEQ rel
-			BEQInstrHandler();
 			break;
 		case 0x11:
 			// ORA (zp),Y
@@ -1576,6 +1598,10 @@ void Exec65C02Instruction() {
 		case 0x16:
 			// ASL zp,X
 			ASLInstrHandler(ZeroPgXAddrModeHandler_Address());
+			break;
+		case 0x17:
+			// RMB1
+			ResetMemoryBit(1);
 			break;
 		case 0x18:
 			// CLC
@@ -1601,6 +1627,10 @@ void Exec65C02Instruction() {
 			// ASL abs,X
 			ASLInstrHandler(AbsXAddrModeHandler_Address());
 			break;
+		case 0x1f:
+			// BBR1
+			BranchOnBitReset(1);
+			break;
 		case 0x20:
 			// JSR abs
 			JSRInstrHandler(AbsAddrModeHandler_Address());
@@ -1620,6 +1650,10 @@ void Exec65C02Instruction() {
 		case 0x26:
 			// ROL zp
 			ROLInstrHandler(ZeroPgAddrModeHandler_Address());
+			break;
+		case 0x27:
+			// RMB2
+			ResetMemoryBit(2);
 			break;
 		case 0x28:
 			// PLP
@@ -1645,6 +1679,14 @@ void Exec65C02Instruction() {
 			// ROL abs
 			ROLInstrHandler(AbsAddrModeHandler_Address());
 			break;
+		case 0x2f:
+			// BBR2
+			BranchOnBitReset(2);
+			break;
+		case 0x30:
+			// BMI rel
+			BMIInstrHandler();
+			break;
 		case 0x31:
 			// AND (zp),Y
 			ANDInstrHandler(IndYAddrModeHandler_Data());
@@ -1664,6 +1706,10 @@ void Exec65C02Instruction() {
 		case 0x36:
 			// ROL zp,X
 			ROLInstrHandler(ZeroPgXAddrModeHandler_Address());
+			break;
+		case 0x37:
+			// RMB3
+			ResetMemoryBit(3);
 			break;
 		case 0x38:
 			// SEC
@@ -1688,6 +1734,10 @@ void Exec65C02Instruction() {
 			// ROL abs,X
 			ROLInstrHandler(AbsXAddrModeHandler_Address());
 			break;
+		case 0x3f:
+			// BBR3
+			BranchOnBitReset(3);
+			break;
 		case 0x40:
 			// RTI
 			PSR = Pop();
@@ -1698,6 +1748,10 @@ void Exec65C02Instruction() {
 			// EOR (zp,X)
 			EORInstrHandler(IndXAddrModeHandler_Data());
 			break;
+		case 0x44:
+			// NOP zp
+			TubeProgramCounter += 1;
+			break;
 		case 0x45:
 			// EOR zp
 			EORInstrHandler(TubeRam[TubeRam[TubeProgramCounter++]]);
@@ -1705,6 +1759,10 @@ void Exec65C02Instruction() {
 		case 0x46:
 			// LSR zp
 			LSRInstrHandler(ZeroPgAddrModeHandler_Address());
+			break;
+		case 0x47:
+			// RMB4
+			ResetMemoryBit(4);
 			break;
 		case 0x48:
 			// PHA
@@ -1730,6 +1788,14 @@ void Exec65C02Instruction() {
 			// LSR abs
 			LSRInstrHandler(AbsAddrModeHandler_Address());
 			break;
+		case 0x4f:
+			// BBR4
+			BranchOnBitReset(4);
+			break;
+		case 0x50:
+			// BVC rel
+			BVCInstrHandler();
+			break;
 		case 0x51:
 			// EOR (zp),Y
 			EORInstrHandler(IndYAddrModeHandler_Data());
@@ -1738,6 +1804,10 @@ void Exec65C02Instruction() {
 			// EOR (zp)
 			EORInstrHandler(ZPIndAddrModeHandler_Data());
 			break;
+		case 0x54:
+			// NOP zp,X
+			TubeProgramCounter += 1;
+			break;
 		case 0x55:
 			// EOR zp,X
 			EORInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -1745,6 +1815,10 @@ void Exec65C02Instruction() {
 		case 0x56:
 			// LSR zp,X
 			LSRInstrHandler(ZeroPgXAddrModeHandler_Address());
+			break;
+		case 0x57:
+			// RMB5
+			ResetMemoryBit(5);
 			break;
 		case 0x58:
 			// CLI
@@ -1758,6 +1832,10 @@ void Exec65C02Instruction() {
 			// PHY
 			Push(YReg);
 			break;
+		case 0x5c:
+			// NOP abs
+			TubeProgramCounter += 2;
+			break;
 		case 0x5d:
 			// EOR abs,X
 			EORInstrHandler(AbsXAddrModeHandler_Data());
@@ -1765,6 +1843,10 @@ void Exec65C02Instruction() {
 		case 0x5e:
 			// LSR abs,X
 			LSRInstrHandler(AbsXAddrModeHandler_Address());
+			break;
+		case 0x5f:
+			// BBR5
+			BranchOnBitReset(5);
 			break;
 		case 0x60:
 			// RTS
@@ -1785,6 +1867,10 @@ void Exec65C02Instruction() {
 		case 0x66:
 			// ROR zp
 			RORInstrHandler(ZeroPgAddrModeHandler_Address());
+			break;
+		case 0x67:
+			// RMB6
+			ResetMemoryBit(6);
 			break;
 		case 0x68:
 			// PLA
@@ -1811,6 +1897,14 @@ void Exec65C02Instruction() {
 			// ROR abs
 			RORInstrHandler(AbsAddrModeHandler_Address());
 			break;
+		case 0x6f:
+			// BBR6
+			BranchOnBitReset(6);
+			break;
+		case 0x70:
+			// BVS rel
+			BVSInstrHandler();
+			break;
 		case 0x71:
 			// ADC (zp),Y
 			ADCInstrHandler(IndYAddrModeHandler_Data());
@@ -1830,6 +1924,10 @@ void Exec65C02Instruction() {
 		case 0x76:
 			// ROR zp,X
 			RORInstrHandler(ZeroPgXAddrModeHandler_Address());
+			break;
+		case 0x77:
+			// RMB7
+			ResetMemoryBit(7);
 			break;
 		case 0x78:
 			// SEI
@@ -1856,6 +1954,14 @@ void Exec65C02Instruction() {
 			// ROR abs,X
 			RORInstrHandler(AbsXAddrModeHandler_Address());
 			break;
+		case 0x7f:
+			// BBR7
+			BranchOnBitReset(7);
+			break;
+		case 0x80:
+			// BRA rel
+			BRAInstrHandler();
+			break;
 		case 0x81:
 			// STA (zp,X)
 			TUBEFASTWRITE(IndXAddrModeHandler_Address(), Accumulator);
@@ -1871,6 +1977,10 @@ void Exec65C02Instruction() {
 		case 0x86:
 			// STX zp
 			TUBEWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(), XReg);
+			break;
+		case 0x87:
+			// SMB0
+			SetMemoryBit(0);
 			break;
 		case 0x88:
 			// DEY
@@ -1898,6 +2008,14 @@ void Exec65C02Instruction() {
 			// STX abs
 			STXInstrHandler(AbsAddrModeHandler_Address());
 			break;
+		case 0x8f:
+			// BBS0
+			BranchOnBitSet(0);
+			break;
+		case 0x90:
+			// BCC rel
+			BCCInstrHandler();
+			break;
 		case 0x91:
 			// STA (zp),Y
 			TUBEFASTWRITE(IndYAddrModeHandler_Address(), Accumulator);
@@ -1917,6 +2035,10 @@ void Exec65C02Instruction() {
 		case 0x96:
 			// STX zp,X
 			STXInstrHandler(ZeroPgYAddrModeHandler_Address());
+			break;
+		case 0x97:
+			// SMB1
+			SetMemoryBit(1);
 			break;
 		case 0x98:
 			// TYA
@@ -1943,6 +2065,10 @@ void Exec65C02Instruction() {
 			// STZ abs,x
 			TUBEFASTWRITE(AbsXAddrModeHandler_Address(), 0);
 			break;
+		case 0x9f:
+			// BBS1
+			BranchOnBitSet(1);
+			break;
 		case 0xa0:
 			// LDY imm
 			LDYInstrHandler(TubeRam[TubeProgramCounter++]);
@@ -1967,6 +2093,10 @@ void Exec65C02Instruction() {
 			// LDX zp
 			LDXInstrHandler(TubeRam[TubeRam[TubeProgramCounter++]]);
 			break;
+		case 0xa7:
+			// SMB2
+			SetMemoryBit(2);
+			break;
 		case 0xa8:
 			// TAY
 			YReg = Accumulator;
@@ -1981,6 +2111,10 @@ void Exec65C02Instruction() {
 			XReg = Accumulator;
 			SetPSRZN(Accumulator);
 			break;
+		case 0xaf:
+			// BBS2
+			BranchOnBitSet(2);
+			break;
 		case 0xac:
 			// LDY abs
 			LDYInstrHandler(AbsAddrModeHandler_Data());
@@ -1992,6 +2126,10 @@ void Exec65C02Instruction() {
 		case 0xae:
 			// LDX abs
 			LDXInstrHandler(AbsAddrModeHandler_Data());
+			break;
+		case 0xb0:
+			// BCS rel
+			BCSInstrHandler();
 			break;
 		case 0xb1:
 			// LDA (zp),Y
@@ -2012,6 +2150,10 @@ void Exec65C02Instruction() {
 		case 0xb6:
 			// LDX zp,X
 			LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
+			break;
+		case 0xb7:
+			// SMB3
+			SetMemoryBit(3);
 			break;
 		case 0xb8:
 			// CLV
@@ -2038,6 +2180,10 @@ void Exec65C02Instruction() {
 			// LDX abs,X
 			LDXInstrHandler(AbsYAddrModeHandler_Data());
 			break;
+		case 0xbf:
+			// BBS3
+			BranchOnBitSet(3);
+			break;
 		case 0xc0:
 			// CPY imm
 			CPYInstrHandler(TubeRam[TubeProgramCounter++]);
@@ -2057,6 +2203,10 @@ void Exec65C02Instruction() {
 		case 0xc6:
 			// DEC zp
 			DECInstrHandler(ZeroPgAddrModeHandler_Address());
+			break;
+		case 0xc7:
+			// SMB4
+			SetMemoryBit(4);
 			break;
 		case 0xc8:
 			// INY
@@ -2084,12 +2234,24 @@ void Exec65C02Instruction() {
 			// DEC abs
 			DECInstrHandler(AbsAddrModeHandler_Address());
 			break;
+		case 0xcf:
+			// BBS4
+			BranchOnBitSet(4);
+			break;
+		case 0xd0:
+			// BNE rel
+			BNEInstrHandler();
+			break;
 		case 0xd1:
 			CMPInstrHandler(IndYAddrModeHandler_Data());
 			break;
 		case 0xd2:
 			// CMP (zp)
 			CMPInstrHandler(ZPIndAddrModeHandler_Data());
+			break;
+		case 0xd4:
+			// NOP zp,X
+			TubeProgramCounter += 1;
 			break;
 		case 0xd5:
 			// CMP zp,X
@@ -2098,6 +2260,10 @@ void Exec65C02Instruction() {
 		case 0xd6:
 			// DEC zp,X
 			DECInstrHandler(ZeroPgXAddrModeHandler_Address());
+			break;
+		case 0xd7:
+			// SMB5
+			SetMemoryBit(5);
 			break;
 		case 0xd8:
 			// CLD
@@ -2111,6 +2277,10 @@ void Exec65C02Instruction() {
 			// PHX
 			Push(XReg);
 			break;
+		case 0xdc:
+			// NOP abs
+			TubeProgramCounter += 2;
+			break;
 		case 0xdd:
 			// CMP abs,X
 			CMPInstrHandler(AbsXAddrModeHandler_Data());
@@ -2118,6 +2288,10 @@ void Exec65C02Instruction() {
 		case 0xde:
 			// DEC abs,X
 			DECInstrHandler(AbsXAddrModeHandler_Address());
+			break;
+		case 0xdf:
+			// BBS5
+			BranchOnBitSet(5);
 			break;
 		case 0xe0:
 			// CPX imm
@@ -2138,6 +2312,10 @@ void Exec65C02Instruction() {
 		case 0xe6:
 			// INC zp
 			INCInstrHandler(ZeroPgAddrModeHandler_Address());
+			break;
+		case 0xe7:
+			// SMB6
+			SetMemoryBit(6);
 			break;
 		case 0xe8:
 			// INX
@@ -2162,6 +2340,14 @@ void Exec65C02Instruction() {
 			// INC abs
 			INCInstrHandler(AbsAddrModeHandler_Address());
 			break;
+		case 0xef:
+			// BBS6
+			BranchOnBitSet(6);
+			break;
+		case 0xf0:
+			// BEQ rel
+			BEQInstrHandler();
+			break;
 		case 0xf1:
 			// SBC (zp),Y
 			SBCInstrHandler(IndYAddrModeHandler_Data());
@@ -2170,6 +2356,10 @@ void Exec65C02Instruction() {
 			// SBC (zp)
 			SBCInstrHandler(ZPIndAddrModeHandler_Data());
 			break;
+		case 0xf4:
+			// NOP zp,X
+			TubeProgramCounter += 1;
+			break;
 		case 0xf5:
 			// SBC zp,X
 			SBCInstrHandler(ZeroPgXAddrModeHandler_Data());
@@ -2177,6 +2367,10 @@ void Exec65C02Instruction() {
 		case 0xf6:
 			// INC zp,X
 			INCInstrHandler(ZeroPgXAddrModeHandler_Address());
+			break;
+		case 0xf7:
+			// SMB7
+			SetMemoryBit(7);
 			break;
 		case 0xf8:
 			// SED
@@ -2191,6 +2385,10 @@ void Exec65C02Instruction() {
 			XReg = Pop();
 			SetPSRZN(XReg);
 			break;
+		case 0xfc:
+			// NOP abs
+			TubeProgramCounter += 2;
+			break;
 		case 0xfd:
 			// SBC abs,X
 			SBCInstrHandler(AbsXAddrModeHandler_Data());
@@ -2199,252 +2397,9 @@ void Exec65C02Instruction() {
 			// INC abs,X
 			INCInstrHandler(AbsXAddrModeHandler_Address());
 			break;
-		case 0x02:
-		case 0x22:
-		case 0x42:
-		case 0x62:
-		case 0x82:
-		case 0xc2:
-		case 0xe2:
-			// NOP imm
-			TubeProgramCounter++;
-			break;
-		case 0x07:
-			// RMB0
-			ResetMemoryBit(0);
-			break;
-		case 0x03:
-			// NOP
-			break;
-		case 0x13:
-			// NOP
-			break;
-		case 0x0f:
-			// BBR0
-			BranchOnBitReset(0);
-			break;
-		case 0x17:
-			// RMB1
-			ResetMemoryBit(1);
-			break;
-		case 0x1b:
-			// NOP
-			break;
-		case 0x1f:
-			// BBR1
-			BranchOnBitReset(1);
-			break;
-		case 0x23:
-			// NOP
-			break;
-		case 0x27:
-			// RMB2
-			ResetMemoryBit(2);
-			break;
-		case 0x2f:
-			// BBR2
-			BranchOnBitReset(2);
-			break;
-		case 0x33:
-			// NOP
-			break;
-		case 0x37:
-			// RMB3
-			ResetMemoryBit(3);
-			break;
-		case 0x3b:
-			// NOP
-			break;
-		case 0x3f:
-			// BBR3
-			BranchOnBitReset(3);
-			break;
-		case 0x43:
-			// NOP
-			break;
-		case 0x47:
-			// RMB4
-			ResetMemoryBit(4);
-			break;
-		case 0x4f:
-			// BBR4
-			BranchOnBitReset(4);
-			break;
-		case 0x53:
-			// NOP
-			break;
-		case 0x57:
-			// RMB5
-			ResetMemoryBit(5);
-			break;
-		case 0x5b:
-			// NOP
-			break;
-		case 0x5f:
-			// BBR5
-			BranchOnBitReset(5);
-			break;
-		case 0x44:
-		case 0x54:
-			TubeProgramCounter += 1;
-			break;
-		case 0x5c:
-			TubeProgramCounter += 2;
-			break;
-		case 0x63:
-			// NOP
-			break;
-		case 0x67:
-			// RMB6
-			ResetMemoryBit(6);
-			break;
-		case 0x6f:
-			// BBR6
-			BranchOnBitReset(6);
-			break;
-		case 0x73:
-			// NOP
-			break;
-		case 0x77:
-			// RMB7
-			ResetMemoryBit(7);
-			break;
-		case 0x7b:
-			// NOP
-			break;
-		case 0x7f:
-			// BBR7
-			BranchOnBitReset(7);
-			break;
-		case 0x0b:
-		case 0x2b:
-			// NOP
-			break;
-		case 0x4b:
-			// NOP
-			break;
-		case 0x87:
-			// SMB0
-			SetMemoryBit(0);
-			break;
-		case 0x83:
-			// NOP
-			break;
-		case 0x8f:
-			// BBS0
-			BranchOnBitSet(0);
-			break;
-		case 0x93:
-			// NOP
-			break;
-		case 0x97:
-			// SMB1
-			SetMemoryBit(1);
-			break;
-		case 0x9b:
-			// NOP
-			break;
-		case 0x9f:
-			// BBS1
-			BranchOnBitSet(1);
-			break;
-		case 0xab:
-			// NOP
-			break;
-		case 0xa3:
-			// NOP
-			break;
-		case 0xa7:
-			// SMB2
-			SetMemoryBit(2);
-			break;
-		case 0xaf:
-			// BBS2
-			BranchOnBitSet(2);
-			break;
-		case 0xb3:
-			// NOP
-			break;
-		case 0xb7:
-			// SMB3
-			SetMemoryBit(3);
-			break;
-		case 0xbb:
-			// NOP
-			break;
-		case 0xbf:
-			// BBS3
-			BranchOnBitSet(3);
-			break;
-		case 0xc3:
-			// NOP
-			break;
-		case 0xc7:
-			// SMB4
-			SetMemoryBit(4);
-			break;
-		case 0xcf:
-			// BBS4
-			BranchOnBitSet(4);
-			break;
-		case 0xd3:
-			// NOP
-			break;
-		case 0xd7:
-			// SMB5
-			SetMemoryBit(5);
-			break;
-		case 0xdb:
-			// NOP
-			break;
-		case 0xdf:
-			// BBS5
-			BranchOnBitSet(5);
-			break;
-		case 0xd4:
-		case 0xf4:
-			TubeProgramCounter += 1;
-			break;
-		case 0xdc:
-		case 0xfc:
-			TubeProgramCounter += 2;
-			break;
-		case 0xe3:
-			// NOP
-			break;
-		case 0xe7:
-			// SMB6
-			SetMemoryBit(6);
-			break;
-		case 0xeb:
-			// NOP
-			break;
-		case 0xef:
-			// BBS6
-			BranchOnBitSet(6);
-			break;
-		case 0xf3:
-			// NOP
-			break;
-		case 0xf7:
-			// SMB7
-			SetMemoryBit(7);
-			break;
-		case 0xfb:
-			// NOP
-			break;
 		case 0xff:
 			// BBS7
 			BranchOnBitSet(7);
-			break;
-		case 0x6b:
-			// NOP
-			break;
-		case 0x8b:
-			// NOP
-			break;
-		case 0xcb:
-			// NOP
 			break;
 	}
 
