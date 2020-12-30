@@ -2176,7 +2176,7 @@ void Exec6502Instruction(void) {
 				break;
 			case 0x7c:
 				if (MachineType == Model::Master128) {
-					// JMP abs,x
+					// JMP abs,X
 					ProgramCounter = IndAddrXModeHandler_Address();
 				}
 				else {
@@ -2623,7 +2623,7 @@ void Exec6502Instruction(void) {
 				CPYInstrHandler(ReadPaged(ProgramCounter++));
 				break;
 			case 0xc1:
-				// CMP(zp,X)
+				// CMP (zp,X)
 				CMPInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0xc3:
