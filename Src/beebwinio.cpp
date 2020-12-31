@@ -1101,8 +1101,10 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 
 	if (Version >= 11)
 	{
+		const int UEF_KEYBOARD_MAPPING = 40060; // UEF Chunk ID
+
 		id = fget16(SUEF);
-		if (id == IDM_USERKYBDMAPPING)
+		if (id == UEF_KEYBOARD_MAPPING)
 		{
 			fread(fileName,1,256,SUEF);
 			GetDataPath(m_UserDataPath, fileName);
