@@ -43,6 +43,7 @@ Preferences::Result Preferences::Load(const char *fileName)
 
 	if (fgets(buf, MAX_PREFS_LINE_LEN - 1, fd) != nullptr) {
 		if (strcmp(buf, PREFS_TOKEN "\n") != 0) {
+			fclose(fd);
 			return Result::InvalidFormat;
 		}
 		else {
