@@ -309,7 +309,7 @@ bool BeebWin::Initialise()
 	ReadROMFile(RomFile, RomConfig);
 	ApplyPrefs();
 
-	if(strcmp(m_DebugScript,"\0") != 0)
+	if (m_DebugScript[0] != '\0')
 	{
 		DebugOpenDialog(hInst, m_hWnd);
 		DebugRunScript(m_DebugScript);
@@ -4602,28 +4602,15 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 		else
 		{
 			// Create the folder
-			strcpy(path, m_UserDataPath);
+			int result = SHCreateDirectoryEx(nullptr, m_UserDataPath, nullptr);
 
-			char *s = strchr(path, '\\');
-			while (s != NULL)
-			{
-				*s = 0;
-				CreateDirectory(path, NULL);
-				*s = '\\';
-				s = strchr(s+1, '\\');
+			if (result == ERROR_SUCCESS) {
+				copy_user_files = true;
 			}
-
-			att = GetFileAttributes(m_UserDataPath);
-			if (att == INVALID_FILE_ATTRIBUTES ||
-				!(att & FILE_ATTRIBUTE_DIRECTORY))
-			{
+			else {
 				sprintf(errstr, "Failed to create BeebEm data folder:\n  %s", m_UserDataPath);
 				MessageBox(m_hWnd, errstr, WindowTitle, MB_OK|MB_ICONERROR);
 				success = false;
-			}
-			else
-			{
-				copy_user_files = true;
 			}
 		}
 	}
