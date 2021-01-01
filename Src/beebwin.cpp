@@ -241,15 +241,6 @@ BeebWin::BeebWin()
 
 	m_CustomData = false;
 
-	// Read disc images path from registry
-	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "DiscsPath",
-	                       m_DiscPath, _MAX_PATH))
-	{
-		// Default disc images path to a sub-directory of UserData path
-		strcpy(m_DiscPath, m_UserDataPath);
-		strcat(m_DiscPath, "DiscIms\\");
-	}
-
 	// Set default files, may be overridden by command line parameters.
 	strcpy(m_PrefsFile, "Preferences.cfg");
 	strcpy(RomFile, "Roms.cfg");
@@ -269,6 +260,19 @@ bool BeebWin::Initialise()
 		return false;
 
 	LoadPreferences();
+
+	// Read disc images path from registry
+	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "DiscsPath",
+	                       m_DiscPath, _MAX_PATH))
+	{
+		// Default disc images path to a sub-directory of UserData path
+		strcpy(m_DiscPath, m_UserDataPath);
+
+		char DefaultPath[_MAX_PATH];
+		m_Preferences.GetStringValue("DiscsPath", DefaultPath);
+		GetDataPath(m_DiscPath, DefaultPath);
+		strcpy(m_DiscPath, DefaultPath);
+	}
 
 	// Override full screen?
 	if (m_startFullScreen)
