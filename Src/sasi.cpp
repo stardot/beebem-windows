@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -104,7 +104,7 @@ FILE *SASIDisc[4] = {0};
 
 extern bool SCSIDriveEnabled;
 
-void SASIReset(void)
+void SASIReset()
 {
 	char buff[256];
 
@@ -138,7 +138,7 @@ void SASIReset(void)
 	SASIBusFree();
 }
 
-void SASIWrite(int Address, int Value) 
+void SASIWrite(int Address, int Value)
 {
 	if (!SCSIDriveEnabled)
 		return;
@@ -199,6 +199,18 @@ int SASIRead(int Address)
 	return data;
 }
 
+void SASIClose()
+{
+	for (int i = 0; i < 4; ++i)
+	{
+		if (SASIDisc[i] != nullptr)
+		{
+			fclose(SASIDisc[i]);
+			SASIDisc[i] = nullptr;
+		}
+	}
+}
+
 static int SASIReadData()
 {
 	int data;
@@ -241,14 +253,14 @@ static int SASIReadData()
 				sasi.next++;
 			}
 			return data;
-			break;
+
+		case busfree:
+			return sasi.lastwrite;
+
+		default:
+			SASIBusFree();
+			return sasi.lastwrite;
 	}
-
-	if (sasi.phase == busfree)
-		return sasi.lastwrite;
-
-	SASIBusFree();
-	return sasi.lastwrite;
 }
 
 static void SASIWriteData(int data)
@@ -342,7 +354,7 @@ static void SASIBusFree()
 	sasi.bsy = false;
 	sasi.req = false;
 	sasi.irq = false;
-	
+
 	sasi.phase = busfree;
 
 	LEDs.HDisc[0] = 0;
@@ -415,7 +427,7 @@ static void SASIExecute()
 			SASIControllerDiagnostics();
 			return;
 	}
-	
+
 	// WriteLog("Unknown Command 0x%02x, Param 1=0x%02x, Param 2=0x%02x, Param 3=0x%02x, Param 4=0x%02x, Param 5=0x%02x, Phase = %d, PC = 0x%04x\n",
 	//          sasi.cmd[0], sasi.cmd[1], sasi.cmd[2], sasi.cmd[3], sasi.cmd[4], sasi.cmd[5], sasi.phase, ProgramCounter);
 
@@ -427,7 +439,7 @@ static void SASIExecute()
 static void SASIStatus()
 {
 	sasi.phase = status;
-	
+
 	sasi.io = true;
 	sasi.cd = true;
 	sasi.msg = false;
@@ -437,7 +449,7 @@ static void SASIStatus()
 static void SASIMessage()
 {
 	sasi.phase = message;
-	
+
 	sasi.io = true;
 	sasi.cd = true;
 	sasi.msg = true;
@@ -446,8 +458,7 @@ static void SASIMessage()
 
 static bool SASIDiscTestUnitReady(unsigned char *buf)
 {
-	if (SASIDisc[sasi.lun] == NULL) return false;
-	return true;
+	return SASIDisc[sasi.lun] != nullptr;
 }
 
 static void SASITestUnitReady()
@@ -468,7 +479,7 @@ static void SASITestUnitReady()
 static void SASIRequestSense()
 {
 	sasi.length = SASIDiscRequestSense(sasi.cmd, sasi.buffer);
-	
+
 	if (sasi.length > 0) {
 		sasi.offset = 0;
 		sasi.blocks = 1;
@@ -476,10 +487,10 @@ static void SASIRequestSense()
 		sasi.io = true;
 		sasi.cd = false;
 		sasi.msg = false;
-		
+
 		sasi.status = 0x00;
 		sasi.message = 0x00;
-		
+
 		sasi.req = true;
 	}
 	else
@@ -503,6 +514,7 @@ static int SASIDiscRequestSense(unsigned char *cdb, unsigned char *buf)
 			buf[2] = 0x00;
 			buf[3] = 0x00;
 			break;
+
 		case 0x80:
 			buf[0] = 0x80;
 			buf[1] = ((sasi.sector >> 16) & 0xff) | (sasi.lun << 5);
@@ -683,7 +695,7 @@ static bool SASIDiscRezero(unsigned char *buf)
 	return true;
 }
 
-void SASIRezero(void)
+void SASIRezero()
 {
 	bool status = SASIDiscRezero(sasi.cmd);
 

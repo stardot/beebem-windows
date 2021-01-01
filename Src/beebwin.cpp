@@ -494,6 +494,10 @@ void BeebWin::Shutdown()
 
 		WriteInstructionCounts(FileName);
 	}
+
+	SCSIClose();
+	SASIClose();
+	IDEClose();
 }
 
 /****************************************************************************/

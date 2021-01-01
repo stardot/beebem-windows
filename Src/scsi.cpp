@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -112,19 +112,16 @@ void SCSIReset(void)
 
 	scsi.code = 0x00;
 	scsi.sector = 0x00;
-	
+
+	SCSIClose();
+
+	if (!SCSIDriveEnabled)
+	{
+		return;
+	}
+
 	for (int i = 0; i < 4; ++i)
 	{
-		if (SCSIDisc[i] != NULL)
-		{
-			fclose(SCSIDisc[i]);
-			SCSIDisc[i] = NULL;
-		}
-
-		if (!SCSIDriveEnabled)
-			continue;
-
-		// sprintf(buff, "%s/discims/scsi%d.dat", mainWin->GetUserDataPath(), i);
 		sprintf(buff, "%s/scsi%d.dat", DiscPath, i);
 
 		SCSIDisc[i] = fopen(buff, "rb+");
@@ -140,7 +137,6 @@ void SCSIReset(void)
 
 		if (SCSIDisc[i] != NULL)
 		{
-			// sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), i);
 			sprintf(buff, "%s/scsi%d.dsc", DiscPath, i);
 
 			FILE *f = fopen(buff, "rb");
@@ -162,25 +158,29 @@ void SCSIReset(void)
 	BusFree();
 }
 
-void SCSIWrite(int Address, int Value) 
+void SCSIWrite(int Address, int Value)
 {
 	if (!SCSIDriveEnabled)
 		return;
 
-	// SCSILog("SCSIWrite Address = 0x%02x, Value = 0x%02x, Phase = %d, PC = 0x%04x\n", Address, Value, scsi.phase, ProgramCounter);
+	// WriteLog("SCSIWrite Address = 0x%02x, Value = 0x%02x, Phase = %d, PC = 0x%04x\n", Address, Value, scsi.phase, ProgramCounter);
+
 	switch (Address)
 	{
 		case 0x00:
 			scsi.sel = true;
 			WriteData(Value);
 			break;
+
 		case 0x01:
 			scsi.sel = true;
 			break;
+
 		case 0x02:
 			scsi.sel = false;
 			WriteData(Value);
 			break;
+
 		case 0x03:
 			scsi.sel = true;
 			if (Value == 0xff)
@@ -211,6 +211,7 @@ int SCSIRead(int Address)
 		case 0x00: // Data Register
 			data = ReadData();
 			break;
+
 		case 0x01: // Status Register
 			data = 0x20; // Hmmm.. don't know why req has to always be active ? If start at 0x00, ADFS lock up on entry
 			if (scsi.cd) data |= 0x80;
@@ -220,8 +221,10 @@ int SCSIRead(int Address)
 			if (scsi.bsy) data |= 0x02;
 			if (scsi.msg) data |= 0x01;
 			break;
+
 		case 0x02:
 			break;
+
 		case 0x03:
 			break;
 	}
@@ -231,10 +234,22 @@ int SCSIRead(int Address)
 	return data;
 }
 
+void SCSIClose()
+{
+	for (int i = 0; i < 4; ++i)
+	{
+		if (SCSIDisc[i] != nullptr)
+		{
+			fclose(SCSIDisc[i]);
+			SCSIDisc[i] = nullptr;
+		}
+	}
+}
+
 static int ReadData()
 {
 	int data;
-	
+
 	switch (scsi.phase)
 	{
 		case status:
@@ -273,14 +288,14 @@ static int ReadData()
 				scsi.next++;
 			}
 			return data;
-			break;
+
+		case busfree:
+			return scsi.lastwrite;
+
+		default:
+			BusFree();
+			return scsi.lastwrite;
 	}
-
-	if (scsi.phase == busfree)
-		return scsi.lastwrite;
-
-	BusFree();
-	return scsi.lastwrite;
 }
 
 static void WriteData(int data)
@@ -382,7 +397,7 @@ static void BusFree()
 	scsi.bsy = false;
 	scsi.req = false;
 	scsi.irq = false;
-	
+
 	scsi.phase = busfree;
 
 	LEDs.HDisc[0] = 0;
@@ -400,11 +415,11 @@ static void Selection(int data)
 static void Command(void)
 {
 	scsi.phase = command;
-	
+
 	scsi.io = false;
 	scsi.cd = true;
 	scsi.msg = false;
-	
+
 	scsi.offset = 0;
 	scsi.length = 6;
 }
@@ -731,7 +746,6 @@ bool WriteGeometory(unsigned char *buf)
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 
 	char buff[256];
-	// sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
 	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
 
 	FILE *f = fopen(buff, "wb");
@@ -755,7 +769,6 @@ bool DiscFormat(unsigned char *buf)
 	}
 
 	char buff[256];
-	// sprintf(buff, "%s/discims/scsi%d.dat", mainWin->GetUserDataPath(), scsi.lun);
 	sprintf(buff, "%s/scsi%d.dat", DiscPath, scsi.lun);
 
 	SCSIDisc[scsi.lun] = fopen(buff, "wb");
@@ -764,7 +777,6 @@ bool DiscFormat(unsigned char *buf)
 
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 
-	// sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
 	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
 
 	FILE *f = fopen(buff, "rb");
@@ -776,7 +788,8 @@ bool DiscFormat(unsigned char *buf)
 		// heads = buf[15];
 		// cyl   = buf[13] * 256 + buf[14];
 
-		SCSISize[scsi.lun] = buff[15] * (buff[13] * 256 + buff[14]) * 33;		// Number of sectors on disk = heads * cyls * 33
+		// Number of sectors on disk = heads * cyls * 33
+		SCSISize[scsi.lun] = buff[15] * (buff[13] * 256 + buff[14]) * 33;
 
 		fclose(f);
 	}

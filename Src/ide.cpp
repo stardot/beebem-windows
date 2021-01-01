@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -29,15 +29,15 @@ Boston, MA  02110-1301, USA.
 
 /*
 IDE Registers
-Offset  Description             Access  
-+00     data (low byte)           RW  
-+01     error if status b0 set    R   
-+02     count                     RW  
-+03     sector                    RW  
-+04     cylinder (low)            RW  
-+05     cylinder (high)           RW  
-+06     head and device           RW  
-+07     status/command            RW  
+Offset  Description             Access
++00     data (low byte)           RW
++01     error if status b0 set    R
++02     count                     RW
++03     sector                    RW
++04     cylinder (low)            RW
++05     cylinder (high)           RW
++06     head and device           RW
++07     status/command            RW
 */
 
 #include <stdio.h>
@@ -60,23 +60,24 @@ int IDEDrive;
 bool IDEDriveEnabled = false;
 int IDEnumSectors = 64;
 int IDEnumHeads = 4;
-int IDEDriveMax = 4;
+const int IDEDriveMax = 4;
 
-void IDEReset(void)
+static void DoIDESeek();
+static void DoIDEGeometry();
+
+void IDEReset()
 {
-int i;
-char buff[256];
-
     IDEStatus = 0x50;
     IDEError = 0;
     IDEData = 0;
 
     // NB: Only mount drives 0-IDEDriveMax
-    for (i = 0; i < IDEDriveMax; ++i) {
+    for (int i = 0; i < IDEDriveMax; ++i) {
 
+        char buff[256];
         sprintf(buff, "%s\\ide%d.dat", DiscPath, i);
         IDEDisc[i] = fopen(buff, "rb+");
-    
+
         if (IDEDisc[i] == NULL) {
             IDEDisc[i] = fopen(buff, "wb");
             if (IDEDisc[i] != NULL)
@@ -86,7 +87,7 @@ char buff[256];
     }
 }
 
-void IDEWrite(int Address, int Value) 
+void IDEWrite(int Address, int Value)
 {
     IDERegs[Address] = Value;
     IDEError = 0;
@@ -142,12 +143,15 @@ int IDERead(int Address)
             }
         }
         break;
+
     case 0x01:          // Error
         data = IDEError;
         break;
+
     case 0x07:          // Status
         data = IDEStatus;
         break;
+
     default:            // Other registers
         data = IDERegs[Address];
         break;
@@ -155,6 +159,17 @@ int IDERead(int Address)
     return data;
 }
 
+void IDEClose()
+{
+    for (int i = 0; i < IDEDriveMax; ++i)
+    {
+        if (IDEDisc[i] != nullptr)
+        {
+            fclose(IDEDisc[i]);
+            IDEDisc[i] = nullptr;
+        }
+    }
+}
 
 /*                    Heads<5  Heads>4
  *    Track     Head   Drive    Drive
@@ -170,13 +185,12 @@ int IDERead(int Address)
  * 49152-65535  16+n              7
  */
 
-void DoIDESeek(void)
+void DoIDESeek()
 {
-int Sector;
-int Track;
-int Head;
-long pos;
-int MS;
+    int Sector;
+    int Track;
+    int Head;
+    int MS;
 
     IDEData = IDERegs[2] * 256;                 // Number of sectors to read/write, * 256 = bytes
     Sector = IDERegs[3] - 1;                    // Sector number 0 - 63
@@ -193,17 +207,17 @@ int MS;
       IDEDrive = (IDERegs[6] & 16) / 4 + MS;    // Drive 0 - 7
     }
 
-//  pos = (Track * 4L * 64L + Head * 64L + Sector ) * 256L;     // Absolute position within file
-    pos = (Track * IDEnumHeads * IDEnumSectors + Head * IDEnumSectors + Sector) * 256L;
+    //  = (Track * 4L * 64L + Head * 64L + Sector ) * 256L; // Absolute position within file
+    long pos = (Track * IDEnumHeads * IDEnumSectors + Head * IDEnumSectors + Sector) * 256L;
 
     if (IDEDrive >= IDEDriveMax) {              // Drive out of range
-        IDEStatus = 0x01;                       // Not busy, error occured 
+        IDEStatus = 0x01;                       // Not busy, error occured
         IDEError = 0x10;                        // Sector not found (no media present)
         return;
     }
 
     if (IDEDisc[IDEDrive] == NULL) {            // No drive image present
-        IDEStatus = 0x01;                       // Not busy, error occured 
+        IDEStatus = 0x01;                       // Not busy, error occured
         IDEError = 0x10;                        // Sector not found (no media present)
         return;
     }
@@ -213,7 +227,7 @@ int MS;
 }
 
 
-void DoIDEGeometry(void)
+void DoIDEGeometry()
 {
     IDEnumSectors = IDERegs[3];                 // Number of sectors
     IDEnumHeads = (IDERegs[6] & 0x0F) + 1;      // Number of heads
