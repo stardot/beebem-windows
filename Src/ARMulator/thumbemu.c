@@ -132,7 +132,7 @@ ARMul_ThumbDecode (ARMul_State * state,
     case 3:			/* ADD/SUB */
       /* Format 2 */
       {
-	ARMword subset[4] = {
+	static const ARMword subset[4] = {
 	  0xE0900000,		/* ADDS Rd,Rs,Rn    */
 	  0xE0500000,		/* SUBS Rd,Rs,Rn    */
 	  0xE2900000,		/* ADDS Rd,Rs,#imm3 */
@@ -152,7 +152,7 @@ ARMul_ThumbDecode (ARMul_State * state,
     case 7:			/* SUB */
       /* Format 3 */
       {
-	ARMword subset[4] = {
+	static const ARMword subset[4] = {
 	  0xE3B00000,		/* MOVS Rd,#imm8    */
 	  0xE3500000,		/* CMP  Rd,#imm8    */
 	  0xE2900000,		/* ADDS Rd,Rd,#imm8 */
@@ -172,7 +172,7 @@ ARMul_ThumbDecode (ARMul_State * state,
       if ((tinstr & (1 << 10)) == 0)
 	{
 	  /* Format 4 */
-	  struct
+	  static const struct
 	  {
 	    ARMword opcode;
 	    enum
@@ -294,7 +294,7 @@ ARMul_ThumbDecode (ARMul_State * state,
       if ((tinstr & (1 << 9)) == 0)
 	{
 	  /* Format 7 */
-	  ARMword subset[4] = {
+	  static const ARMword subset[4] = {
 	    0xE7800000,		/* STR  Rd,[Rb,Ro] */
 	    0xE7C00000,		/* STRB Rd,[Rb,Ro] */
 	    0xE7900000,		/* LDR  Rd,[Rb,Ro] */
@@ -308,7 +308,7 @@ ARMul_ThumbDecode (ARMul_State * state,
       else
 	{
 	  /* Format 8 */
-	  ARMword subset[4] = {
+	  static const ARMword subset[4] = {
 	    0xE18000B0,		/* STRH  Rd,[Rb,Ro] */
 	    0xE19000D0,		/* LDRSB Rd,[Rb,Ro] */
 	    0xE19000B0,		/* LDRH  Rd,[Rb,Ro] */
@@ -326,7 +326,7 @@ ARMul_ThumbDecode (ARMul_State * state,
     case 15:			/* LDRB Rd,[Rb,#imm5] */
       /* Format 9 */
       {
-	ARMword subset[4] = {
+	static const ARMword subset[4] = {
 	  0xE5800000,		/* STR  Rd,[Rb,#imm5] */
 	  0xE5900000,		/* LDR  Rd,[Rb,#imm5] */
 	  0xE5C00000,		/* STRB Rd,[Rb,#imm5] */
