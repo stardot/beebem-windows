@@ -134,6 +134,7 @@ CArm::CArm()
 	r[15] = 0;
 	prefetchInvalid = true;
 	conditionFlags = 0;
+	trace = 0;
 
 	WriteLog("init_arm()\n");
 	
@@ -208,11 +209,11 @@ void CArm::exec(int count)
 
 			trace--;
 		}
-	
-//		if ( ((pc & 0xffff) >= 0x1c48) && ((pc & 0xffff) <= 0x1c60) )
-//		{
-//			trace = 100;
-//		}
+
+		// if ( ((pc & 0xffff) >= 0x1c48) && ((pc & 0xffff) <= 0x1c60) )
+		// {
+		//	trace = 100;
+		// }
 	
 		run();
 		count--;
