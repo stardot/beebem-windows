@@ -657,7 +657,7 @@ ARMul_Emulate26 (ARMul_State * state)
         {
             ARMword new;
 #if _DEBUG
-            disThumb(state, pc, state->disassembly, DIS_VIEW_ADDRESS | DIS_VIEW_CODE);
+            // disThumb(state, pc, state->disassembly, DIS_VIEW_ADDRESS | DIS_VIEW_CODE);
 #endif
             /* Check if in Thumb mode.  */
             switch (ARMul_ThumbDecode (state, pc, instr, &new))
@@ -683,11 +683,11 @@ ARMul_Emulate26 (ARMul_State * state)
         else
         {
 #if _DEBUG
-            disArm(state, pc, state->disassembly, DIS_VIEW_ADDRESS | DIS_VIEW_CODE);
+            /* disArm(state, pc, state->disassembly, DIS_VIEW_ADDRESS | DIS_VIEW_CODE);
             if (pc == 0x0)
             {
                 int a = 0;
-            }
+            } */
 #endif
         }
 #endif
