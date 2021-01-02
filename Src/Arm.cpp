@@ -42,7 +42,6 @@ Boston, MA  02110-1301, USA.
 
 CArm::CArm()
 {
-
 	// set up pointers to each bank of registers
 	curR[USR_MODE] = usrR;
 	curR[SVC_MODE] = svcR;
@@ -121,8 +120,6 @@ CArm::CArm()
 		lastCopro = 0;
 	}
 
-	iocounter = 0;
-	
 	modeTotal[USR_MODE] = 0;
 	modeTotal[FIQ_MODE] = 0;
 	modeTotal[IRQ_MODE] = 0;
@@ -162,28 +159,24 @@ CArm::CArm()
 	memset(ramMemory, 0, 0x400000);
 	memcpy(ramMemory, romMemory, 0x4000);
 
-	uint32 memoryValue = 0;
+	/* uint32 memoryValue = 0;
 	for(int x=0; x<4*11; x+=4)
 	{
 		(void)readWord(x, memoryValue);
-//		TRACE("%x = %x\n", x, memoryValue);
-	}
-	
+		TRACE("%x = %x\n", x, memoryValue);
+	} */
 }
 
 void CArm::exec(int count)
 {
-
 	uint32 ci;
 	char disassembly[256];
 	char addressS[64];
 	
 	while (count > 0)
 	{
-		
 		if (trace)
 		{
-		
 			uint32 val;
 			readWord(0xc50c, val);
 		
@@ -202,10 +195,9 @@ void CArm::exec(int count)
 				(void) readWord(pc - 4, ci);
 
 				Arm_disassemble(pc - 4, ci, disassembly);
-		
+
 				sprintf(addressS, "0x%08x : %02x %02x %02x %02x ", pc - 4,
 						ci & 0xff, (ci >> 8) & 0xff, (ci >> 16) & 0xff, (ci >> 24) & 0xff );
-
 			}
 
 			WriteLog(" r0 = %08x r1 = %08x r2 = %08x r3 = %08x r4 = %08x r5 = %08x r6 = %08x r7 = %08x r8 = %08x : ",
@@ -229,7 +221,6 @@ void CArm::exec(int count)
 
 CArm::~CArm()
 {
-
 	// ??? output mode counter info
 	//CString modeInfo;
 	//modeInfo.Format("usr=%d fiq=%d irq=%d svc=%d \n", modeTotal[USR_MODE], modeTotal[FIQ_MODE], modeTotal[IRQ_MODE], modeTotal[SVC_MODE] );
@@ -247,10 +238,8 @@ CArm::~CArm()
 
 void CArm::run()
 {
-
 	// note, if the while(true) loop is placed inside run() as it may need to be for speed
 	// then returns after exceptions need to be changed to continues!
-
 
 	// ??? profile usage of processor modes
 	//modeTotal[processorMode]++;
@@ -264,7 +253,6 @@ void CArm::run()
 	//	modeCounter = 0;
 	//	previousProcessorMode = processorMode;
 	//}
-
 
 	// has prefetch been invalidated by previously executed instruction
 	if(prefetchInvalid)
@@ -309,7 +297,6 @@ void CArm::run()
 		// decode instruction type from bits 20-27
 		switch( getField(currentInstruction, 20, 27) )
 		{
-
 			// data processing instructions have operand 2 as register
 
 			// and rd, rn, rm
@@ -2722,7 +2709,6 @@ void CArm::run()
 	// if prefetch invalidated
 	if(prefetchInvalid)
 	{
-	
 		pc = getRegister(15);
 		// adjust PC but don't change prefetch
 		setRegister( 15, (getRegister(15) + 8) & PC_MASK );

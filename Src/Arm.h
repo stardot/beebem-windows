@@ -119,9 +119,9 @@ public:
 	void ResetState();
 	void signal_fast_interrupt(bool state);
 	void signal_interrupt(bool state);
-	
+
 	uint32 pc;
-	inline void performBranch();	
+	inline void performBranch();
 
 	// logic
 	inline uint32 eorOperator(uint32 operand1, uint32 operand2);
@@ -293,6 +293,5 @@ private:
 	uint32 registerGotCounter[16];
 	uint32 conditionallyExecuted[16];
 	uint32 conditionallyNotExecuted[16];
-	int iocounter;
 	// END OF TEST ENVIRONMENT VARIABLES
 };
