@@ -49,7 +49,7 @@ CSprowCoPro::CSprowCoPro()
     char path[MAX_PATH];
 
     strcpy(path, RomPath);
-    strcat(path, "BeebFile/Sprow.ROM");
+    strcat(path, "BeebFile/Sprow.rom");
 
     FILE *testFile = fopen(path, "rb");
 
@@ -72,6 +72,7 @@ CSprowCoPro::CSprowCoPro()
 
     ARMul_MemoryInit(state, 0x4000000); // 64mb
     ticks = GetTickCount();
+    m_CycleCount = 0;
 }
 
 void CSprowCoPro::reset()
@@ -84,27 +85,30 @@ void CSprowCoPro::reset()
     state->Reg[15] = 0x000;
     ARMul_WriteWord(state, RMPCON, 0);
     ARMul_WriteWord(state, ROMSEL, 1);
+    m_CycleCount = 0;
 }
 
-void CSprowCoPro::exec(int count)
+// Execute a number of 64MHz cycles
+
+void CSprowCoPro::exec(int cycles)
 {
-    int a = R4;
-    int b = R1;
     // check for tube interrupts
-    if(TubeNMIStatus && !(state->IFFlags & 0x1))
+    if (TubeNMIStatus && !(state->IFFlags & 0x1))
     {
         TubeNMIStatus = 0;
         state->NfiqSig = LOW;
         state->Exception = TRUE;
     }
-    else if(((TubeintStatus & (1<<a)) || (TubeintStatus & (1<<b))) && !(state->IFFlags & 0x2))
+    else if (((TubeintStatus & (1 << R4)) || (TubeintStatus & (1 << R1))) && !(state->IFFlags & 0x2))
     {
         PutRegister(state, IRN, INT_EX3);
         state->NirqSig = LOW;
         state->Exception = TRUE;
     }
 
-    while (count > 0)
+    m_CycleCount += cycles;
+
+    while (m_CycleCount > 0)
     {
         ARMword pc = ARMul_DoInstr(state);
 
@@ -112,7 +116,11 @@ void CSprowCoPro::exec(int count)
         state->NirqSig = HIGH;
         state->NfiqSig = HIGH;
 
-        count--;
+        // TODO: This is not accurate, it assumes instructions take 3 cycles each,
+        // on average. More info at:
+        // https://developer.arm.com/documentation/ddi0210/c/Instruction-Cycle-Timings
+
+        m_CycleCount -= 3;
     }
 }
 
@@ -136,7 +144,6 @@ For the new test suite Abort between 8 Mbytes and 26 Mbytes */
 #define HIGHABORT 32 * 1024 * 1024 */
 #define LOWABORT 8 * 1024 * 1024
 #define HIGHABORT 26 * 1024 * 1024
-
 #endif
 
 #define OFFSETBITS 0xffff

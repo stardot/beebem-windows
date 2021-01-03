@@ -35,11 +35,12 @@ public:
 	CSprowCoPro();
 	~CSprowCoPro();
 
-	uint8 romMemory[0x80000]; // 512 KBytes of rom memory
-
 	// bool keepRunning; // keep calling run()
 	void exec(int count);
 	void reset();
 
+private:
+	uint8 romMemory[0x80000]; // 512 KBytes of rom memory
 	ARMul_State* state;
+	int m_CycleCount;
 };

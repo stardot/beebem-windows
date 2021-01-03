@@ -3048,34 +3048,33 @@ void Exec6502Instruction(void) {
 		OldNMIStatus=NMIStatus;
 
 		switch (TubeType) {
-			case Tube::Acorn65C02:
+			case Tube::Acorn65C02: // 3MHz
 				SyncTubeProcessor();
 				break;
 
-			case Tube::AcornZ80:
-			case Tube::TorchZ80:
+			case Tube::AcornZ80: // TODO: 6MHz
+			case Tube::TorchZ80: // TODO: 4MHz
 				z80_execute();
 				break;
 
-			case Tube::AcornArm:
+			case Tube::AcornArm: // TODO: 8MHz
 				arm->exec(4);
 				break;
 
-			case Tube::SprowArm:
+			case Tube::SprowArm: // 64MHz
 				#if _DEBUG
 				sprow->exec(2);
 				#else
-				sprow->exec(32);
+				sprow->exec(32 * Cycles);
 				#endif
 				break;
 
-			case Tube::Master512CoPro:
-				master512CoPro.Execute(12 * 4);
+			case Tube::Master512CoPro: // 8MHz
+				master512CoPro.Execute(4 * Cycles);
 				break;
 		}
 	}
-} /* Exec6502Instruction */
-
+}
 
 void PollVIAs(unsigned int nCycles)
 {

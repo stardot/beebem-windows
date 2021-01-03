@@ -51,15 +51,14 @@ extern unsigned char TubeNMIStatus; /* bit set (nums in NMI_Nums) if NMI being c
 // EnableTube - Should the tube be enabled on next start - 1=yes
 // TubeEnabled - Is the tube enabled by default - 1=yes
 
-typedef enum TubeIRQ {
+enum TubeIRQ {
 	R1,
-	R4,
-} TubeIRQ;
+	R4
+};
 
-typedef enum TubeNMI {
+enum TubeNMI {
 	R3,
-} TubeNMI;
-
+};
 
 /*-------------------------------------------------------------------------*/
 /* Initialise 6502core                                                     */
