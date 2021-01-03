@@ -45,76 +45,76 @@ static ARMword PeekRegister(ARMul_State * state, ARMword registerNumber);
 
 CSprowCoPro::CSprowCoPro()
 {
-    // load file into test memory
-    char path[MAX_PATH];
+}
 
-    strcpy(path, RomPath);
-    strcat(path, "BeebFile/Sprow.rom");
-
-    FILE *testFile = fopen(path, "rb");
+CSprowCoPro::InitResult CSprowCoPro::Init(const char* ROMPath)
+{
+    FILE *testFile = fopen(ROMPath, "rb");
 
     if (testFile != nullptr)
     {
         fseek(testFile, 0, SEEK_END);
         long length = ftell(testFile);
         fseek(testFile, 0, SEEK_SET);
-        fread(romMemory, length, 1, testFile);
+        fread(m_ROMMemory, length, 1, testFile);
         fclose(testFile);
     }
     else
     {
-        WriteLog(">>>>>>>>> ROM file %s not found!\n", path);
+        return InitResult::FileNotFound;
     }
 
     ARMul_EmulateInit();
-    state = ARMul_NewState();
-    state->ROMDataPtr = romMemory;
+    m_State = ARMul_NewState();
+    m_State->ROMDataPtr = m_ROMMemory;
 
-    ARMul_MemoryInit(state, 0x4000000); // 64mb
+    ARMul_MemoryInit(m_State, 0x4000000); // 64mb
     ticks = GetTickCount();
     m_CycleCount = 0;
+
+    return InitResult::Success;
 }
 
-void CSprowCoPro::reset()
+void CSprowCoPro::Reset()
 {
-    //ARMul_EmulateInit();
-    //state = ARMul_NewState();
-    state->ROMDataPtr = romMemory;
+    // ARMul_EmulateInit();
+    // m_State = ARMul_NewState();
+    m_State->ROMDataPtr = m_ROMMemory;
     ticks = GetTickCount();
-    state->pc = 0x000;
-    state->Reg[15] = 0x000;
-    ARMul_WriteWord(state, RMPCON, 0);
-    ARMul_WriteWord(state, ROMSEL, 1);
+    m_State->pc = 0x000;
+    m_State->Reg[15] = 0x000;
+    ARMul_WriteWord(m_State, RMPCON, 0);
+    ARMul_WriteWord(m_State, ROMSEL, 1);
     m_CycleCount = 0;
 }
 
 // Execute a number of 64MHz cycles
 
-void CSprowCoPro::exec(int cycles)
+void CSprowCoPro::Execute(int Cycles)
 {
     // check for tube interrupts
-    if (TubeNMIStatus && !(state->IFFlags & 0x1))
+    if (TubeNMIStatus && !(m_State->IFFlags & 0x1))
     {
         TubeNMIStatus = 0;
-        state->NfiqSig = LOW;
-        state->Exception = TRUE;
+        m_State->NfiqSig = LOW;
+        m_State->Exception = TRUE;
     }
-    else if (((TubeintStatus & (1 << R4)) || (TubeintStatus & (1 << R1))) && !(state->IFFlags & 0x2))
+    else if (((TubeintStatus & (1 << R4)) || (TubeintStatus & (1 << R1))) && !(m_State->IFFlags & 0x2))
     {
-        PutRegister(state, IRN, INT_EX3);
-        state->NirqSig = LOW;
-        state->Exception = TRUE;
+        PutRegister(m_State, IRN, INT_EX3);
+        m_State->NirqSig = LOW;
+        m_State->Exception = TRUE;
     }
 
-    m_CycleCount += cycles;
+    m_CycleCount += Cycles;
 
     while (m_CycleCount > 0)
     {
-        ARMword pc = ARMul_DoInstr(state);
+        ARMul_DoInstr(m_State);
 
-        state->Exception = FALSE;
-        state->NirqSig = HIGH;
-        state->NfiqSig = HIGH;
+        m_State->Exception = FALSE;
+        m_State->NirqSig = HIGH;
+        m_State->NfiqSig = HIGH;
 
         // TODO: This is not accurate, it assumes instructions take 3 cycles each,
         // on average. More info at:
@@ -126,9 +126,12 @@ void CSprowCoPro::exec(int cycles)
 
 CSprowCoPro::~CSprowCoPro()
 {
-    ARMul_MemoryExit(state);
+    if (m_State != nullptr)
+    {
+        ARMul_MemoryExit(m_State);
+        m_State = nullptr;
+    }
 }
-
 
 #ifdef VALIDATE			/* for running the validate suite */
 #define TUBE 48 * 1024 * 1024	/* write a char on the screen */
@@ -160,7 +163,7 @@ int tenval = 1;
 unsigned
 ARMul_OSHandleSWI (ARMul_State * state, ARMword number)
 {
-    struct OSblock * OSptr = (struct OSblock *) state->OSptr;
+    // struct OSblock * OSptr = (struct OSblock *) state->OSptr;
 
     // OS_ReadMonotonicTime
     // Normally this is handled by the CoPro by one of the system
@@ -196,7 +199,7 @@ ARMul_OSHandleSWI (ARMul_State * state, ARMword number)
     return TRUE;
 }
 
-static ARMword PeekRegister(ARMul_State * state, ARMword registerNumber)
+static ARMword PeekRegister(ARMul_State * /* state */, ARMword registerNumber)
 {
     std::map<int,int>::iterator it = registers.find(registerNumber);
 
@@ -232,7 +235,7 @@ static ARMword GetRegister(ARMul_State * state, ARMword registerNumber)
 \***************************************************************************/
 
 static ARMword
-GetWord (ARMul_State * state, ARMword address, int check)
+GetWord (ARMul_State * state, ARMword address, int /* check */)
 {
     unsigned char *offset_address;
     unsigned char *base_address;
@@ -329,7 +332,7 @@ static void PutRegister(ARMul_State * state, ARMword registerNumber, ARMword dat
 \***************************************************************************/
 
 static void
-PutWord (ARMul_State * state, ARMword address, ARMword data, int check)
+PutWord (ARMul_State * state, ARMword address, ARMword data, int /* check */)
 {
     /*
     0xB7000004 Block clock control register BCKCTL R/W 16 0x0000
@@ -387,11 +390,11 @@ PutWord (ARMul_State * state, ARMword address, ARMword data, int check)
                     SWI_vector_installed = TRUE;
                 }
 
-                if (address <= 0x1c)
+                /* if (address <= 0x1c)
                 {
                     int a= 0;
                     // WHAT!?
-                }
+                } */
             }
         }
         else if (address >= 0xC0000000 && address < 0xC8000000)
@@ -401,7 +404,7 @@ PutWord (ARMul_State * state, ARMword address, ARMword data, int check)
         }
         else
         {
-            int a = 0; // where are we??
+            // int a = 0; // where are we??
             return;
         }
 
@@ -578,7 +581,7 @@ ARMword ARMul_ReadByte (ARMul_State * state, ARMword address)
         }
         else
         {
-            int addr = (address & 0x0f) / 2;
+            unsigned char addr = (address & 0x0f) / 2;
             unsigned char data = ReadTubeFromParasiteSide(addr);
             return data;
         }
@@ -703,8 +706,8 @@ ARMul_WriteByte (ARMul_State * state, ARMword address, ARMword data)
         }
         else
         {
-            int addr = (address & 0x0f) / 2;
-            WriteTubeFromParasiteSide(addr, data);
+            unsigned char addr = (address & 0x0f) / 2;
+            WriteTubeFromParasiteSide(addr, (unsigned char)data);
             return;
         }
     }
@@ -777,7 +780,7 @@ ARMword ARMul_SwapByte (ARMul_State * state, ARMword address, ARMword data)
 \***************************************************************************/
 
 void
-ARMul_Icycles (ARMul_State * state, unsigned number, ARMword address ATTRIBUTE_UNUSED)
+ARMul_Icycles (ARMul_State * state, unsigned number, ARMword /* address */)
 {
     state->NumIcycles += number;
     ARMul_CLEARABORT;
@@ -788,7 +791,7 @@ ARMul_Icycles (ARMul_State * state, unsigned number, ARMword address ATTRIBUTE_U
 \***************************************************************************/
 
 void
-ARMul_Ccycles (ARMul_State * state, unsigned number, ARMword address ATTRIBUTE_UNUSED)
+ARMul_Ccycles (ARMul_State * state, unsigned number, ARMword /* address */)
 {
     state->NumCcycles += number;
     ARMul_CLEARABORT;

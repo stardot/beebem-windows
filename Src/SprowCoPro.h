@@ -25,22 +25,27 @@ extern "C"
 #include "ARMulator\armdefs.h"
 }
 
-typedef	unsigned char uint8;
-
 class CSprowCoPro
 {
-// functions
-public:
-	// construct / destruct
-	CSprowCoPro();
-	~CSprowCoPro();
+	public:
+		enum class InitResult {
+			Success,
+			FileNotFound
+		};
 
-	// bool keepRunning; // keep calling run()
-	void exec(int count);
-	void reset();
+	public:
+		CSprowCoPro();
+		~CSprowCoPro();
+		CSprowCoPro(const CSprowCoPro&) = delete;
+		CSprowCoPro& operator=(CSprowCoPro&) = delete;
 
-private:
-	uint8 romMemory[0x80000]; // 512 KBytes of rom memory
-	ARMul_State* state;
-	int m_CycleCount;
+		InitResult Init(const char *ROMPath);
+		void Execute(int Count);
+		void Reset();
+
+	private:
+		unsigned char m_ROMMemory[0x80000]; // 512 KBytes of rom memory
+		ARMul_State *m_State;
+		// bool keepRunning; // keep calling run()
+		int m_CycleCount;
 };

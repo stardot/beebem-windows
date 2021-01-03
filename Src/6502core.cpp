@@ -3063,9 +3063,9 @@ void Exec6502Instruction(void) {
 
 			case Tube::SprowArm: // 64MHz
 				#if _DEBUG
-				sprow->exec(2);
+				sprow->Execute(2);
 				#else
-				sprow->exec(32 * Cycles);
+				sprow->Execute(32 * Cycles);
 				#endif
 				break;
 

@@ -98,8 +98,14 @@ const bool dynamicProfilingRegisterUse = false;
 const bool dynamicProfilingConditionalExecution = false;
 const bool dynamicProfilingCoprocessorUse = true;
 
-class CArm 
+class CArm
 {
+public:
+	enum class InitResult {
+		Success,
+		FileNotFound
+	};
+
 // functions
 public:
 	void dynamicProfilingCoprocessorUsage(uint32 currentInstruction);
@@ -222,6 +228,7 @@ public:
 	inline void exceptionDataAbort();
 
 	// control
+	InitResult init(const char *ROMPath);
 	void exec(int count);
 	void run(void);
 	void reset();

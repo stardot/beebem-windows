@@ -435,8 +435,8 @@ void BeebWin::ApplyPrefs()
 		if (!RomWritePrefs[slot])
 			RomWritable[slot] = false;
 	}
+
 	SetRomMenu();
-	SetTubeMenu();
 }
 
 /****************************************************************************/
@@ -498,6 +498,9 @@ void BeebWin::Shutdown()
 	SCSIClose();
 	SASIClose();
 	IDEClose();
+
+	DestroyArmCoPro();
+	DestroySprowCoPro();
 }
 
 /****************************************************************************/
@@ -533,15 +536,15 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	{
 		R1Status = 0;
 		ResetTube();
-		if (arm) delete arm;
-		arm = new CArm;
+		DestroyArmCoPro();
+		CreateArmCoPro();
 	}
 	else if (TubeType == Tube::SprowArm)
 	{
 		R1Status = 0;
 		ResetTube();
-		if (sprow) delete sprow;
-		sprow = new CSprowCoPro();
+		DestroySprowCoPro();
+		CreateSprowCoPro();
 	}
 
 	SysVIAReset();
@@ -553,7 +556,6 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	Reset1770();
 	AtoDInit();
 	SetRomMenu();
-	SetTubeMenu();
 	FreeDiscImage(0);
 	// Keep the disc images loaded
 	FreeDiscImage(1);
@@ -581,6 +583,81 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		// 1770 Disc
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
 		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1], 1, CDiscType[1]);
+	}
+}
+
+void BeebWin::CreateArmCoPro()
+{
+	arm = new CArm;
+
+	char ArmROMPath[256];
+
+	strcpy(ArmROMPath, RomPath);
+	strcat(ArmROMPath, "BeebFile/ARMeval_100.rom");
+
+	CArm::InitResult Result = arm->init(ArmROMPath);
+
+	switch (Result) {
+		case CArm::InitResult::FileNotFound: {
+			std::string Message = "ARM co-processor ROM file not found:\n  ";
+			Message += ArmROMPath;
+			MessageBox(m_hWnd, Message.c_str(), WindowTitle, MB_OK | MB_ICONERROR);
+
+			DestroyArmCoPro();
+
+			TubeType = Tube::None;
+			UpdateTubeMenu();
+			break;
+		}
+
+		case CArm::InitResult::Success:
+			break;
+	}
+}
+
+void BeebWin::DestroyArmCoPro()
+{
+	if (arm)
+	{
+		delete arm;
+		arm = nullptr;
+	}
+}
+
+void BeebWin::CreateSprowCoPro()
+{
+	char SprowROMPath[MAX_PATH];
+
+	strcpy(SprowROMPath, RomPath);
+	strcat(SprowROMPath, "BeebFile/Sprow.rom");
+
+	sprow = new CSprowCoPro();
+	CSprowCoPro::InitResult Result = sprow->Init(SprowROMPath);
+
+	switch (Result) {
+		case CSprowCoPro::InitResult::FileNotFound: {
+			std::string Message = "ARM7TDMI co-processor ROM file not found:\n  ";
+			Message += SprowROMPath;
+			MessageBox(m_hWnd, Message.c_str(), WindowTitle, MB_OK | MB_ICONERROR);
+
+			DestroySprowCoPro();
+
+			TubeType = Tube::None;
+			UpdateTubeMenu();
+			break;
+		}
+
+		case CSprowCoPro::InitResult::Success:
+			break;
+	}
+}
+
+void BeebWin::DestroySprowCoPro()
+{
+	if (sprow)
+	{
+		delete sprow;
+		sprow = nullptr;
 	}
 }
 
@@ -971,7 +1048,6 @@ void BeebWin::InitMenu(void)
 
 	// Hardware
 	UpdateTubeMenu();
-	SetTubeMenu();
 
 	SetRomMenu();
 	CheckMenuItem(IDM_SWRAMBOARD, SWRAMBoardEnabled);
@@ -1064,29 +1140,6 @@ void BeebWin::UpdateDisableKeysMenu() {
 	CheckMenuItem(IDM_DISABLEKEYSSHORTCUT, m_DisableKeysShortcut);
 }
 
-/****************************************************************************/
-void BeebWin::SetTubeMenu()
-{
-    char path[MAX_PATH];
-    strcpy(path, RomPath);
-    strcat(path, "BeebFile/Sprow.ROM");
-    FILE *testFile = fopen(path, "rb");
-
-    if (testFile != nullptr)
-    {
-        fclose(testFile);
-        EnableMenuItem(IDM_TUBE_SPROWARM, true);
-    }
-    else
-    {
-        EnableMenuItem(IDM_TUBE_SPROWARM, false);
-
-        if (TubeType == Tube::SprowArm)
-        {
-            TubeType = Tube::None;
-        }
-    }
-}
 
 /****************************************************************************/
 
@@ -1486,8 +1539,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 							{
 								R1Status = 0;
 								ResetTube();
-								if (arm) delete arm;
-								arm = new CArm;
+								mainWin->DestroyArmCoPro();
+								mainWin->CreateArmCoPro();
 							}
 							else if (TubeType == Tube::SprowArm)
 							{
@@ -1495,7 +1548,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 								ResetTube();
 								// We don't want to throw the contents of memory away
 								// just tell the co-pro to reset itself.
-								sprow->reset();
+								sprow->Reset();
 							}
 
 							Disc8271Reset();

@@ -137,7 +137,6 @@ public:
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
-	void SetTubeMenu();
 	void UpdateTubeMenu();
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
@@ -193,6 +192,11 @@ public:
 	
 	void RealizePalette(HDC) {};
 	void ResetBeebSystem(Model NewModelType, bool LoadRoms);
+
+	void CreateArmCoPro();
+	void DestroyArmCoPro();
+	void CreateSprowCoPro();
+	void DestroySprowCoPro();
 
 	int StartOfFrame(void);
 	bool UpdateTiming();
