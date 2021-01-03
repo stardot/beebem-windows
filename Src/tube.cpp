@@ -125,8 +125,7 @@ static bool Branched; // true if the instruction branched
 #define TUBEFASTWRITE(addr,val) tmpaddr=addr; if (tmpaddr<0xfef8) TUBEWRITEMEM_DIRECT(tmpaddr,val) else TubeWriteMem(tmpaddr,val);
 
 // Local fns
-void Reset65C02(void);
-void ResetTube(void);
+static void Reset65C02();
 
 // Staus bits
 enum TubeFlags {
@@ -1363,7 +1362,8 @@ INLINE static int16 ZeroPgYAddrModeHandler_Address(void) {
 
 /*-------------------------------------------------------------------------*/
 /* Reset processor */
-void Reset65C02(void) {
+static void Reset65C02()
+{
   FILE *TubeRom;
   char TRN[256];
   char *TubeRomName=TRN;
