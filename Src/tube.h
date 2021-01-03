@@ -48,16 +48,13 @@ const int TubeBufferLength = 24;
 extern unsigned char TubeintStatus; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 extern unsigned char TubeNMIStatus; /* bit set (nums in NMI_Nums) if NMI being caused */
 
-// EnableTube - Should the tube be enabled on next start - 1=yes
-// TubeEnabled - Is the tube enabled by default - 1=yes
-
 enum TubeIRQ {
 	R1,
 	R4
 };
 
 enum TubeNMI {
-	R3,
+	R3
 };
 
 /*-------------------------------------------------------------------------*/
