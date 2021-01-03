@@ -34,7 +34,7 @@ ARMword ARMul_DoProg (ARMul_State * state);
 ARMword ARMul_DoInstr (ARMul_State * state);
 void ARMul_Abort (ARMul_State * state, ARMword address);
 
-unsigned ARMul_MultTable[32] =
+const unsigned ARMul_MultTable[32] =
 { 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9,
 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 16
 };

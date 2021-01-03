@@ -444,7 +444,7 @@ extern ARMword isize;
 #define RUN             3	/* continuous execution */
 
 /* Stuff that is shared across modes.  */
-extern unsigned ARMul_MultTable[];	/* Number of I cycles for a mult.  */
+extern const unsigned ARMul_MultTable[]; /* Number of I cycles for a mult.  */
 extern ARMword  ARMul_ImmedTable[];	/* Immediate DP LHS values.  */
 extern char     ARMul_BitList[];	/* Number of bits in a byte table.  */
 
