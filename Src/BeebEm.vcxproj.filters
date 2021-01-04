@@ -114,6 +114,9 @@
     <ClCompile Include="scsi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SelectKeyDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="serial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -124,6 +127,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SprowCoPro.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StringUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sysvia.cpp">
@@ -144,6 +150,9 @@
     <ClCompile Include="userkybd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UserPortBreakoutBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="uservia.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -162,6 +171,9 @@
     <ClCompile Include="z80dis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ARMulator\armdis.cpp">
+      <Filter>Source Files\ARMulator</Filter>
+    </ClCompile>
     <ClCompile Include="ARMulator\armemu.c">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
@@ -174,40 +186,34 @@
     <ClCompile Include="ARMulator\bag.c">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
-    <ClCompile Include="ARMulator\armdis.cpp">
-      <Filter>Source Files\ARMulator</Filter>
-    </ClCompile>
     <ClCompile Include="ARMulator\thumbemu.c">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
-    <ClCompile Include="zlib\gzwrite.c">
-      <Filter>Source Files\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib\gzread.c">
-      <Filter>Source Files\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib\gzlib.c">
-      <Filter>Source Files\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib\inflate.c">
-      <Filter>Source Files\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="zlib\zutil.c">
+    <ClCompile Include="zlib\adler32.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
     <ClCompile Include="zlib\crc32.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="zlib\inffast.c">
+    <ClCompile Include="zlib\deflate.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
     <ClCompile Include="zlib\gzclose.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="zlib\adler32.c">
+    <ClCompile Include="zlib\gzlib.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="zlib\deflate.c">
+    <ClCompile Include="zlib\gzread.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\gzwrite.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inffast.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\inflate.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
     <ClCompile Include="zlib\inftrees.c">
@@ -218,6 +224,15 @@
     </ClCompile>
     <ClCompile Include="zlib\uncompr.c">
       <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="zlib\zutil.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="Master512CoPro.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FolderSelectDialog.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -284,6 +299,9 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ml675001.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -305,6 +323,9 @@
     <ClInclude Include="scsi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SelectKeyDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="serial.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -315,6 +336,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SprowCoPro.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StringUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sysvia.h">
@@ -338,6 +362,9 @@
     <ClInclude Include="userkybd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UserPortBreakoutBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="uservia.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -347,9 +374,6 @@
     <ClInclude Include="via.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="viastate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="video.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -357,12 +381,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="z80mem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zconf.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ARMulator\acconfig.h">
@@ -413,13 +431,28 @@
     <ClInclude Include="ARMulator\iwmmxt.h">
       <Filter>Header Files\ARMulator</Filter>
     </ClInclude>
-    <ClInclude Include="zlib\inflate.h">
+    <ClInclude Include="zlib\crc32.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\deflate.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\gzguts.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inffast.h">
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="zlib\inffixed.h">
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
-    <ClInclude Include="zlib\inffast.h">
+    <ClInclude Include="zlib\inflate.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\inftrees.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib\trees.h">
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="zlib\zconf.h">
@@ -431,20 +464,11 @@
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
-    <ClInclude Include="zlib\trees.h">
-      <Filter>Header Files\zlib</Filter>
+    <ClInclude Include="Master512CoPro.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="zlib\inftrees.h">
-      <Filter>Header Files\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib\gzguts.h">
-      <Filter>Header Files\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib\deflate.h">
-      <Filter>Header Files\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="zlib\crc32.h">
-      <Filter>Header Files\zlib</Filter>
+    <ClInclude Include="FolderSelectDialog.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

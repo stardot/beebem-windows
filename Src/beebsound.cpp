@@ -62,6 +62,7 @@ struct SoundSample
 	bool playing;
 	bool repeat;
 };
+
 static SoundSample SoundSamples[] = {
 	{ "RelayOn.snd", NULL, 0, 0, false, false },
 	{ "RelayOff.snd", NULL, 0, 0, false, false },
@@ -71,7 +72,9 @@ static SoundSample SoundSamples[] = {
 	{ "HeadSeek.snd", NULL, 0, 0, false, false },
 	{ "HeadStep.snd", NULL, 0, 0, false, false }
 };
-#define NUM_SOUND_SAMPLES (sizeof(SoundSamples)/sizeof(SoundSample))
+
+const int NUM_SOUND_SAMPLES = sizeof(SoundSamples) / sizeof(SoundSample);
+
 static bool SoundSamplesLoaded = false;
 
 SoundConfig::Option SoundConfig::Selection;
@@ -82,9 +85,12 @@ bool SoundChipEnabled = true;
 
 int SoundSampleRate = PREFSAMPLERATE;
 int SoundVolume = 100; //Percentage
-int SoundAutoTriggerTime;
-int SoundBufferSize;
-double CSC[4]={0,0,0,0},CSA[4]={0,0,0,0}; // ChangeSamps Adjusts
+static int SoundAutoTriggerTime;
+static int SoundBufferSize;
+
+static double CSC[4] = { 0, 0, 0, 0 };
+static double CSA[4] = { 0, 0, 0, 0 }; // ChangeSamps Adjusts
+
 bool SoundExponentialVolume = true;
 
 /* Number of places to shift the volume */
@@ -121,14 +127,13 @@ static int bufptr=0;
 bool SoundDefault;
 double SoundTuning=0.0; // Tunning offset
 
-void PlayUpTil(double DestTime);
-int GetVol(int vol);
+static int GetVol(int vol);
 
 struct AudioType TapeAudio; // Tape audio decoder stuff
 bool TapeSoundEnabled;
 bool PartSamples = true;
 
-SoundStreamer *pSoundStreamer = 0;
+SoundStreamer *pSoundStreamer = nullptr;
 
 /****************************************************************************/
 /* Writes sound data to a sound buffer */
@@ -149,13 +154,14 @@ HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 	return S_OK;
 }
 
-
 /****************************************************************************/
 /* DestTime is in samples */
 void PlayUpTil(double DestTime) {
 	int tmptotal,channel,bufinc,tapetotal;
+
+#ifdef SPEECH_ENABLED
 	int SpeechPtr = 0;
-	int i;
+#endif
 
 #ifdef SPEECH_ENABLED
 	if (MachineType != Model::Master128 && SpeechEnabled)
@@ -170,7 +176,6 @@ void PlayUpTil(double DestTime) {
 #endif
 
 	while (DestTime>OurTime) {
-
 		for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
 			int tt;
 			tmptotal=0;
@@ -298,7 +303,6 @@ void PlayUpTil(double DestTime) {
 								}
 							}
 							break; 
-
 						} /* Freq type switch */
 					}
 				}
@@ -311,7 +315,7 @@ void PlayUpTil(double DestTime) {
 #endif
 
 			// Mix in sound samples here
-			for (i = 0; i < NUM_SOUND_SAMPLES; ++i) {
+			for (int i = 0; i < NUM_SOUND_SAMPLES; ++i) {
 				if (SoundSamples[i].playing) {
 					tmptotal+=(SoundSamples[i].pBuf[SoundSamples[i].pos]-128)*2;
 					SoundSamples[i].pos += (44100 / samplerate);
@@ -360,7 +364,6 @@ void PlayUpTil(double DestTime) {
 				tmptotal = -127;
 
 			SoundBuf[bufptr] = tmptotal + 128;
-
 		} /* buffer loop */
 
 		/* Only write data when buffer is full */
@@ -433,16 +436,14 @@ static void InitAudioDev(int sampleratein) {
 		SoundEnabled = false;
 }
 
-void LoadSoundSamples(void) {
-	FILE *fd;
+void LoadSoundSamples() {
 	char FileName[256];
-	int i;
 
 	if (!SoundSamplesLoaded) {
-		for (i = 0; i < NUM_SOUND_SAMPLES; ++i) {
+		for (int i = 0; i < NUM_SOUND_SAMPLES; ++i) {
 			strcpy(FileName, mainWin->GetAppPath());
 			strcat(FileName, SoundSamples[i].pFilename);
-			fd = fopen(FileName, "rb");
+			FILE *fd = fopen(FileName, "rb");
 			if (fd != NULL) {
 				fseek(fd, 0, SEEK_END);
 				SoundSamples[i].len = ftell(fd);
@@ -462,19 +463,17 @@ void LoadSoundSamples(void) {
 }
 
 /****************************************************************************/
-/* The 'freqval' variable is the value as sene by the 76489                 */
+/* The 'freqval' variable is the value as seen by the 76489                 */
 static void SetFreq(int Channel, int freqval) {
-  unsigned int freq;
-  int ChangeSamps; /* Number of samples after which to change */
   //fprintf(sndlog,"Channel %d - Value %d\n",Channel,freqval);
-  double t;
 
   if (freqval==0) freqval=1;
   if (freqval<5) Speech[Channel]=1; else Speech[Channel]=0;
-  freq=4000000/(32*freqval);
+  unsigned int freq = 4000000 / (32 * freqval);
 
-  t=( (( (double)samplerate/(double)freq)/2.0) +SoundTuning);
-  ChangeSamps=(int)t;
+  double t = ((((double)samplerate / (double)freq) / 2.0) + SoundTuning);
+  int ChangeSamps = (int)t; // Number of samples after which to change
+
   CSA[Channel]=(double)(t-ChangeSamps);
   CSC[Channel]=CSA[Channel];  // we look ahead, so should already include the fraction on the first update
   if (Channel==1) {
@@ -485,9 +484,8 @@ static void SetFreq(int Channel, int freqval) {
 }
 
 /****************************************************************************/
-static void SoundTrigger_Real(void) {
-  double nowsamps;
-  nowsamps=CyclesToSamples(TotalCycles);
+static void SoundTrigger_Real() {
+  double nowsamps = CyclesToSamples(TotalCycles);
   PlayUpTil(nowsamps);
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;
 }
@@ -497,7 +495,7 @@ void Sound_Trigger(int NCycles) {
 	// fprintf(sndlog,"SoundTrigger_Real was called from Sound_Trigger\n"); }
 }
 
-void SoundChipReset(void) {
+void SoundChipReset() {
   BeebState76489.LastToneFreqSet=0;
   BeebState76489.ToneVolume[0]=0;
   BeebState76489.ToneVolume[1]=BeebState76489.ToneVolume[2]=BeebState76489.ToneVolume[3]=GetVol(15);
@@ -528,7 +526,7 @@ void SoundInit() {
   SoundTrigger=TotalCycles+SoundAutoTriggerTime;
 }
 
-void SwitchOnSound(void) {
+void SwitchOnSound() {
   SetFreq(3,1000);
   ActiveChannel[3] = true;
   BeebState76489.ToneVolume[3]=GetVol(15);
@@ -547,17 +545,14 @@ void SetSound(SoundState state)
 	}
 }
 
-
 /****************************************************************************/
 /* Called to disable sound output                                           */
-void SoundReset(void) {
-
+void SoundReset() {
 	delete pSoundStreamer;
-	pSoundStreamer = 0;
+	pSoundStreamer = nullptr;
 
 	ClearTrigger(SoundTrigger);
-
-}//	SoundReset
+}
 
 /****************************************************************************/
 /* Called in sysvia.cpp when a write is made to the 76489 sound chip        */
@@ -609,8 +604,7 @@ void Sound_RegWrite(int value)
 	SoundTrigger_Real();
 }
 
-void DumpSound(void) {
-	
+void DumpSound() {
 }
 
 void ClickRelay(bool RelayState) {
@@ -636,8 +630,8 @@ void StopSoundSample(int sample) {
 	SoundSamples[sample].playing = false;
 }
 
-int GetVol(int vol) {
-	if (SoundExponentialVolume)	{
+static int GetVol(int vol) {
+	if (SoundExponentialVolume) {
 //		static int expVol[] = { 0,  2,  4,  6,  9, 12, 15, 19, 24, 30, 38, 48, 60, 76,  95, 120 };
 		static const int expVol[] = { 0, 11, 14, 17, 20, 24, 28, 33, 39, 46, 54, 63, 74, 87, 102, 120 };
 		if (vol >= 0 && vol <= 15)
@@ -687,7 +681,6 @@ void LoadSoundUEF(FILE *SUEF) {
 }
 
 void SaveSoundUEF(FILE *SUEF) {
-	unsigned char Noise;
 	fput16(0x046B,SUEF);
 	fput32(20,SUEF);
 	// Sound Block
@@ -697,8 +690,8 @@ void SaveSoundUEF(FILE *SUEF) {
 	fputc(RealVolumes[3],SUEF);
 	fputc(RealVolumes[2],SUEF);
 	fputc(RealVolumes[1],SUEF);
-    Noise=BeebState76489.Noise.Freq |
-          (BeebState76489.Noise.FB<<2);
+	unsigned char Noise = BeebState76489.Noise.Freq |
+	                      (BeebState76489.Noise.FB << 2);
 	fputc(Noise,SUEF);
 	fputc(RealVolumes[0],SUEF);
 	fputc(BeebState76489.LastToneFreqSet,SUEF);

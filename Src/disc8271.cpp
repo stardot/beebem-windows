@@ -23,8 +23,6 @@ Boston, MA  02110-1301, USA.
 /* 30/08/1997 Mike Wyatt: Added disc write and format support */
 /* 27/12/2011 J.G.Harston: Double-sided SSD supported */
 
-#include <iostream>
-#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,11 +32,15 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "beebsound.h"
 #include "sysvia.h"
+#include "tube.h"
+#include "log.h"
 
 #ifdef WIN32
 #include <windows.h>
 #include "main.h"
 #endif
+
+#define ENABLE_LOG 0
 
 // 8271 Status register
 const unsigned char STATUS_REG_COMMAND_BUSY       = 0x80;
@@ -80,8 +82,6 @@ const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_1     = 0x18;
 const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2     = 0x19;
 
 using namespace std;
-
-extern bool TorchTube;
 
 bool Disc8271Enabled = true;
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
@@ -216,7 +216,7 @@ static void NotImp(const char *NotImpCom) {
   sprintf(errstr,"Disc operation '%s' not supported", NotImpCom);
   MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 #else
-  cerr << NotImpCom << " has not been implemented in disc8271 - sorry\n";
+  WriteLog("%s has not been implemented in disc8271 - sorry", NotImpCom);
   exit(0);
 #endif
 }
@@ -242,7 +242,7 @@ static void InitDiscStore(void) {
 /* Given a logical track number accounts for bad tracks                     */
 static int SkipBadTracks(int Unit, int trackin) {
   int offset=0;
-  if (!TorchTube)	// If running under Torch Z80, ignore bad tracks
+  if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
   {
     if (Internal_BadTracks[Unit][0]<=trackin) offset++;
     if (Internal_BadTracks[Unit][1]<=trackin) offset++;
@@ -517,7 +517,10 @@ static void ReadInterrupt(void) {
   }
 
   DataReg=CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++];
-  /*cerr << "ReadInterrupt called - DataReg=0x" << hex << int(DataReg) << dec << "ByteWithinSector=" << CommandStatus.ByteWithinSector << "\n"; */
+
+  #if ENABLE_LOG
+  WriteLog("ReadInterrupt called - DataReg=0x%02X ByteWithinSector=%d\n", DataReg, CommandStatus.ByteWithinSector);
+  #endif
 
   ResultReg=0;
   if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
@@ -936,7 +939,9 @@ static void DoWriteSpecialCommand(void) {
       break;
 
     default:
-      /* cerr << "Write to bad special register\n"; */
+      #if ENABLE_LOG
+      WriteLog("Write to bad special register\n");
+      #endif
       break;
   }
 }
@@ -995,7 +1000,9 @@ static void DoReadSpecialCommand(void) {
       break;
 
     default:
-      /* cerr << "Read of bad special register\n"; */
+      #if ENABLE_LOG
+      WriteLog("Read of bad special register\n");
+      #endif
       return;
   }
 
@@ -1058,12 +1065,18 @@ unsigned char Disc8271Read(int Address) {
 
   switch (Address) {
     case 0:
-      /*cerr << "8271 Status register read (0x" << hex << int(StatusReg) << dec << ")\n"; */
+      #if ENABLE_LOG
+      WriteLog("8271 Status register read (0x%0X)\n", StatusReg);
+      #endif
+
       Value=StatusReg;
       break;
 
     case 1:
-      /*cerr << "8271 Result register read (0x" << hex << int(ResultReg) << dec << ")\n"; */
+      #if ENABLE_LOG
+      WriteLog("8271 Result register read (0x%02X)\n", ResultReg);
+      #endif
+
       // Clear interrupt request and result reg full flag
       StatusReg &= ~(STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST);
       UPDATENMISTATUS;
@@ -1072,7 +1085,10 @@ unsigned char Disc8271Read(int Address) {
       break;
 
     case 4:
-      /*cerr << "8271 data register read\n"; */
+      #if ENABLE_LOG
+      WriteLog("8271 data register read\n");
+      #endif
+
       // Clear interrupt and non-dma request - not stated but DFS never looks at result reg!
       StatusReg &= ~(STATUS_REG_INTERRUPT_REQUEST | STATUS_REG_NON_DMA_MODE);
       UPDATENMISTATUS;
@@ -1080,7 +1096,9 @@ unsigned char Disc8271Read(int Address) {
       break;
 
     default:
-      /* cerr << "8271: Read to unknown register address=" << Address << "\n"; */
+      #if ENABLE_LOG
+      WriteLog("8271: Read to unknown register address=%04X\n", Address);
+      #endif
       break;
   }
 
@@ -1090,7 +1108,11 @@ unsigned char Disc8271Read(int Address) {
 /*--------------------------------------------------------------------------*/
 static void CommandRegWrite(int Value) {
   const PrimaryCommandLookupType *ptr = CommandPtrFromNumber(Value);
-  /*cerr << "8271: Command register write value=0x" << hex << Value << dec << "(Name=" << ptr->Ident << ")\n"; */
+
+  #if ENABLE_LOG
+  WriteLog("8271: Command register write value=0x%02X (Name=%s)\n", Value, ptr->Ident);
+  #endif
+
   ThisCommand=Value;
   NParamsInThisCommand=ptr->NParams;
   PresentParam=0;
@@ -1111,7 +1133,9 @@ static void CommandRegWrite(int Value) {
 static void ParamRegWrite(unsigned char Value) {
   // Parameter wanted ?
   if (PresentParam>=NParamsInThisCommand) {
-    /* cerr << "8271: Unwanted parameter register write value=0x" << hex << Value << dec << "\n"; */
+    #if ENABLE_LOG
+    WriteLog("8271: Unwanted parameter register write value=0x%02X\n", Value);
+    #endif
   } else {
     Params[PresentParam++]=Value;
     
@@ -1125,12 +1149,16 @@ static void ParamRegWrite(unsigned char Value) {
       UPDATENMISTATUS;
 
       const PrimaryCommandLookupType *ptr = CommandPtrFromNumber(ThisCommand);
-    /* cerr << "<Disc access>"; */
-    /*  cerr << "8271: All parameters arrived for '" << ptr->Ident;
-      int tmp;
-      for(tmp=0;tmp<PresentParam;tmp++)
-        cerr << " 0x" << hex << int(Params[tmp]);
-      cerr << dec << "\n"; */
+
+      #if ENABLE_LOG
+      WriteLog("<Disc access> 8271: All parameters arrived for '%s':", ptr->Ident);
+
+      for (int i = 0; i < PresentParam; i++) {
+        WriteLog(" %02X", Params[i]);
+      }
+
+      WriteLog("\n");
+      #endif
 
       ptr->ToCall();
     }
@@ -1259,7 +1287,8 @@ static bool DriveHeadMotorUpdate(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-void Disc8271_poll_real(void) {
+
+void Disc8271_poll_real() {
   ClearTrigger(Disc8271Trigger);
 
   if (DriveHeadMotorUpdate())
@@ -1281,69 +1310,6 @@ void Disc8271_poll_real(void) {
   }
 
   DriveHeadScheduleUnload();
-}
-
-/*--------------------------------------------------------------------------*/
-/* Checks it the sectors passed in look like a valid disc catalogue. Returns:
-      1 - looks like a catalogue
-      0 - does not look like a catalogue
-     -1 - cannot tell
-*/
-static int CheckForCatalogue(const unsigned char *Sec1, const unsigned char *Sec2) {
-  int Valid=1;
-  int CatEntries=0;
-  int File;
-  unsigned char c;
-  int Invalid;
-
-  /* First check the number of sectors (cannot be > 0x320) */
-  if (((Sec2[6]&3)<<8)+Sec2[7] > 0x320)
-    Valid=0;
-
-  /* Check the number of catalogue entries (must be multiple of 8) */
-  if (Valid)
-  {
-    if (Sec2[5] % 8)
-      Valid=0;
-    else
-      CatEntries = Sec2[5] / 8;
-  }
-
-  /* Check that the catalogue file names are all printable characters. */
-  Invalid=0;
-  for (File=0; Valid && File<CatEntries; ++File) {
-    for (int i=0; Valid && i<8; ++i) {
-      c=Sec1[8+File*8+i];
-
-      if (i==7)  /* Remove lock bit */
-        c&=0x7f;
-
-      if (c<0x20 || c>0x7f)
-        Invalid++;  /* not printable */
-    }
-  }
-  /* Some games discs have one or two invalid names */
-  if (Invalid > 3)
-    Valid=0;
-
-#if 0
-  /* Check that all the bytes after the file names are 0 */
-  for (File=CatEntries; Valid && File<31; ++File) {
-    for (int i=0; Valid && i<8; ++i) {
-      c=Sec1[8+File*8+i];
-
-      if (c!=0)
-        Valid=0;
-    }
-  }
-#endif
-
-  /* If still valid but there are no catalogue entries then we cannot tell
-     if its a catalog */
-  if (Valid && CatEntries==0)
-    Valid=-1;
-
-  return Valid;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1369,11 +1335,6 @@ void FreeDiscImage(int DriveNum) {
 
 /*--------------------------------------------------------------------------*/
 void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks) {
-  int CurrentTrack,CurrentSector;
-  SectorType *SecPtr;
-  int Heads;
-  int Head;
-
   FILE *infile=fopen(FileName,"rb");
   if (!infile) {
 #ifdef WIN32
@@ -1389,31 +1350,31 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   mainWin->SetImageName(FileName, DriveNum, DiscType::SSD);
 
   // JGH, 26-Dec-2011
-  NumHeads[DriveNum] = 1;		/* 1 = TRACKSPERDRIVE SSD image   */
-					/* 2 = 2*TRACKSPERDRIVE DSD image */
-  Heads=1;
+  NumHeads[DriveNum] = 1; // 1 = TRACKSPERDRIVE SSD image
+                          // 2 = 2 * TRACKSPERDRIVE DSD image
+  int Heads = 1;
   fseek(infile, 0L, SEEK_END);
   if (ftell(infile)>0x40000) {
-	Heads=2;			/* Long sequential image continues onto side 1 */
-	NumHeads[DriveNum] = 0;		/* 0 = 2*TRACKSPERDRIVE SSD image */
-	}
+    Heads = 2; // Long sequential image continues onto side 1
+    NumHeads[DriveNum] = 0; // 0 = 2 * TRACKSPERDRIVE SSD image
+  }
   fseek(infile, 0L, SEEK_SET);
   // JGH
 
   strcpy(FileNames[DriveNum], FileName);
   FreeDiscImage(DriveNum);
 
-  for(Head=HeadNum;Head<Heads;Head++) {
-    for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
+  for (int Head = HeadNum; Head < Heads; Head++) {
+    for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++) {
       DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors=10;
       DiscStore[DriveNum][Head][CurrentTrack].NSectors=10;
-      SecPtr=DiscStore[DriveNum][Head][CurrentTrack].Sectors=(SectorType*)calloc(10,sizeof(SectorType));
+      SectorType *SecPtr = DiscStore[DriveNum][Head][CurrentTrack].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
       DiscStore[DriveNum][Head][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
       DiscStore[DriveNum][Head][CurrentTrack].Gap3Size=0;
       DiscStore[DriveNum][Head][CurrentTrack].Gap5Size=0;
   
-      for(CurrentSector=0;CurrentSector<10;CurrentSector++) {
-        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
+      for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
+        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;
         SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
         SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
         SecPtr[CurrentSector].IDField.PhysRecLength=256;
@@ -1425,29 +1386,11 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   }
 
   fclose(infile);
-
-  /* Check if the sectors that would be the disc catalogue of a double sized
-     image look like a disc catalogue - give a warning if they do. */
-  if (CheckForCatalogue(DiscStore[DriveNum][HeadNum][1].Sectors[0].Data,
-                        DiscStore[DriveNum][HeadNum][1].Sectors[1].Data) == 1) {
-#ifdef WIN32
-    MessageBox(GETHWND,"WARNING - Incorrect disc type selected?\n\n"
-                       "This disc file looks like a double sided\n"
-                       "disc image. Check files before copying them.\n",
-                       WindowTitle,MB_OK|MB_ICONWARNING);
-#else
-    cerr << "WARNING - Incorrect disc type selected(?) in drive " << DriveNum << "\n";
-    cerr << "This disc file looks like a double sided disc image.\n";
-    cerr << "Check files before copying them.\n";
-#endif
-  }
 }
 
 /*--------------------------------------------------------------------------*/
 void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
-  int CurrentTrack,CurrentSector,HeadNum;
-  SectorType *SecPtr;
 
   if (!infile) {
 #ifdef WIN32
@@ -1467,17 +1410,17 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
 
   FreeDiscImage(DriveNum);
 
-  for(CurrentTrack=0;CurrentTrack<Tracks;CurrentTrack++) {
-    for(HeadNum=0;HeadNum<2;HeadNum++) {
+  for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++) {
+    for (int HeadNum = 0; HeadNum < 2; HeadNum++) {
       DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
       DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
-      SecPtr=DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors=(SectorType *)calloc(10,sizeof(SectorType));
+      SectorType *SecPtr = DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
       DiscStore[DriveNum][HeadNum][CurrentTrack].Gap5Size=0;
 
-      for(CurrentSector=0;CurrentSector<10;CurrentSector++) {
-        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;     
+      for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
+        SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;
         SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
         SecPtr[CurrentSector].IDField.HeadNum=HeadNum;
         SecPtr[CurrentSector].IDField.PhysRecLength=256;
@@ -1489,21 +1432,6 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   }
 
   fclose(infile);
-
-  /* Check if the side 2 catalogue sectors look OK - give a warning if they do not. */
-  if (CheckForCatalogue(DiscStore[DriveNum][1][0].Sectors[0].Data,
-                        DiscStore[DriveNum][1][0].Sectors[1].Data) == 0) {
-#ifdef WIN32
-    MessageBox(GETHWND,"WARNING - Incorrect disc type selected?\n\n"
-                       "This disc file looks like a single sided\n"
-                       "disc image. Check files before copying them.\n",
-                       WindowTitle,MB_OK|MB_ICONWARNING);
-#else
-    cerr << "WARNING - Incorrect disc type selected(?) in drive " << DriveNum << "\n";
-    cerr << "This disc file looks like a single sided disc image.\n";
-    cerr << "Check files before copying them.\n";
-#endif
-  }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1862,25 +1790,30 @@ void Load8271UEF(FILE *SUEF)
 }
 
 /*--------------------------------------------------------------------------*/
-void disc8271_dumpstate(void) {
-  cerr << "8271:\n";
-  cerr << "  ResultReg=" << int(ResultReg)<< "\n";
-  cerr << "  StatusReg=" << int(StatusReg)<< "\n";
-  cerr << "  DataReg=" << int(DataReg)<< "\n";
-  cerr << "  Internal_Scan_SectorNum=" << int(Internal_Scan_SectorNum)<< "\n";
-  cerr << "  Internal_Scan_Count=" << Internal_Scan_Count<< "\n";
-  cerr << "  Internal_ModeReg=" << int(Internal_ModeReg)<< "\n";
-  cerr << "  Internal_CurrentTrack=" << int(Internal_CurrentTrack[0]) << "," << int(Internal_CurrentTrack[1]) << "\n";
-  cerr << "  Internal_DriveControlOutputPort=" << int(Internal_DriveControlOutputPort)<< "\n";
-  cerr << "  Internal_DriveControlInputPort=" << int(Internal_DriveControlInputPort)<< "\n";
-  cerr << "  Internal_BadTracks=" << "(" << int(Internal_BadTracks[0][0]) << "," << int(Internal_BadTracks[0][1]) << ") (";
-  cerr <<                                   int(Internal_BadTracks[1][0]) << "," << int(Internal_BadTracks[1][1]) << ")\n";
-  cerr << "  Disc8271Trigger=" << Disc8271Trigger << "\n";
-  cerr << "  ThisCommand=" << ThisCommand<< "\n";
-  cerr << "  NParamsInThisCommand=" << NParamsInThisCommand<< "\n";
-  cerr << "  PresentParam=" << PresentParam<< "\n";
-  cerr << "  Selects=" << Selects[0] << "," << Selects[1] << "\n";
-  cerr << "  NextInterruptIsErr=" << int(NextInterruptIsErr) << "\n";
+
+void disc8271_dumpstate()
+{
+	WriteLog("8271:\n");
+	WriteLog("  ResultReg=%02X\n", ResultReg);
+	WriteLog("  StatusReg=%02X\n", StatusReg);
+	WriteLog("  DataReg=%02X\n", DataReg);
+	WriteLog("  Internal_Scan_SectorNum=%d\n", Internal_Scan_SectorNum);
+	WriteLog("  Internal_Scan_Count=%u\n", Internal_Scan_Count);
+	WriteLog("  Internal_ModeReg=%02X\n", Internal_ModeReg);
+	WriteLog("  Internal_CurrentTrack=%d, %d\n", Internal_CurrentTrack[0],
+	                                             Internal_CurrentTrack[1]);
+	WriteLog("  Internal_DriveControlOutputPort=%02X\n", Internal_DriveControlOutputPort);
+	WriteLog("  Internal_DriveControlInputPort=%02X\n", Internal_DriveControlInputPort);
+	WriteLog("  Internal_BadTracks=(%d, %d) (%d, %d)\n", Internal_BadTracks[0][0],
+	                                                     Internal_BadTracks[0][1],
+	                                                     Internal_BadTracks[1][0],
+	                                                     Internal_BadTracks[1][1]);
+	WriteLog("  Disc8271Trigger=%d\n", Disc8271Trigger);
+	WriteLog("  ThisCommand=%d\n", ThisCommand);
+	WriteLog("  NParamsInThisCommand=%d\n", NParamsInThisCommand);
+	WriteLog("  PresentParam=%d\n", PresentParam);
+	WriteLog("  Selects=%d, %d\n", Selects[0], Selects[1]);
+	WriteLog("  NextInterruptIsErr=%02X\n", NextInterruptIsErr);
 }
 
 /*--------------------------------------------------------------------------*/

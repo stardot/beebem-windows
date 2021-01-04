@@ -13,8 +13,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -107,6 +107,7 @@ Boston, MA  02110-1301, USA.
 #define IDD_DISCEXPORT                  114
 #define IDR_ACCELERATORS                115
 #define IDD_ROMCONFIG                   116
+#define IDD_SELECT_KEY                  117
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -182,7 +183,9 @@ Boston, MA  02110-1301, USA.
 #define IDC_SAVE                        1085
 #define IDC_LOAD                        1086
 #define IDC_DEBUGTELETEXT               1087
-#define IDC_DEBUGTELETEXTBRK            1088
+#define IDC_SHIFT                       1088
+#define IDC_DEBUGTELETEXTBRK            1089
+#define IDC_ASSIGNED_KEYS               1090
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -210,7 +213,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_1FPS                        40029
 #define IDM_JOYSTICK                    40030
 #define IDM_HIDECURSOR                  40032
-#define IDM_IGNOREILLEGALOPS            40033
 #define IDM_DEFAULTKYBDMAPPING          40034
 #define IDM_LOGICALKYBDMAPPING          40035
 #define IDM_3QSPEED                     40036
@@ -274,36 +276,41 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_1280X1024            40101
 #define ID_VIEW_DD_SCREENRES            40102
 #define ID_FILE_RESET                   40103
-#define ID_MODELB                       40105
-#define ID_MASTER128                    40106
+#define ID_MODELB                       40104
+#define ID_MODELBINT                    40105
+#define ID_MODELBPLUS                   40106
+#define ID_MASTER128                    40107
 #define ID_LOADTAPE                     40108
 #define ID_REWINDTAPE                   40116
 #define ID_SFX_RELAY                    40117
-#define IDM_TUBE                        40118
-#define ID_HIDEMENU                     40121
-#define ID_TAPESOUND                    40122
-#define ID_SERIAL                       40123
-#define ID_COM1                         40124
-#define ID_COM2                         40125
-#define ID_COM3                         40126
-#define ID_COM4                         40127
-#define ID_RED_LEDS                     40129
-#define ID_GREEN_LEDS                   40130
-#define ID_SHOW_KBLEDS                  40131
-#define ID_SHOW_DISCLEDS                40132
-#define ID_8271                         40133
-#define ID_FDC_DLL                      40134
-#define ID_TAPE_FAST                    40135
-#define ID_TAPE_MFAST                   40136
-#define ID_TAPE_MSLOW                   40137
-#define ID_TAPE_NORMAL                  40138
-#define IDM_MUSIC5000                   40140
-#define ID_TELETEXTHALFMODE             40141
-#define ID_BHARDWARE                    40142
-#define ID_DOCONLY                      40143
-#define ID_EXTRAS                       40144
-#define ID_FULLSET                      40145
-#define ID_PSAMPLES                     40147
+#define IDM_TUBE_NONE                   40118
+#define IDM_TUBE_ACORN65C02             40119
+#define IDM_TUBE_MASTER512              40120
+#define IDM_TUBE_ACORNZ80               40121
+#define IDM_TUBE_TORCHZ80               40122
+#define IDM_TUBE_ACORNARM               40123
+#define IDM_TUBE_SPROWARM               40124
+#define ID_HIDEMENU                     40125
+#define ID_TAPESOUND                    40126
+#define ID_SERIAL                       40127
+#define ID_COM1                         40128
+#define ID_COM2                         40129
+#define ID_COM3                         40130
+#define ID_COM4                         40131
+#define ID_RED_LEDS                     40132
+#define ID_GREEN_LEDS                   40133
+#define ID_SHOW_KBLEDS                  40134
+#define ID_SHOW_DISCLEDS                40135
+#define ID_8271                         40136
+#define ID_FDC_DLL                      40137
+#define ID_TAPE_FAST                    40138
+#define ID_TAPE_MFAST                   40139
+#define ID_TAPE_MSLOW                   40140
+#define ID_TAPE_NORMAL                  40141
+#define IDM_MUSIC5000                   40142
+#define ID_TELETEXTHALFMODE             40143
+#define ID_BASIC_HARDWARE_ONLY          40144
+#define ID_PSAMPLES                     40148
 #define IDM_FIXEDSPEED100               40151
 #define IDM_FIXEDSPEED5                 40154
 #define IDM_FIXEDSPEED2                 40155
@@ -321,8 +328,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_MAPAS                       40167
 #define IDM_MAPFUNCS                    40168
 #define IDM_RUNDISC                     40169
-#define ID_MODELBINT                    40170
-#define ID_MODELBP                      40171
 #define IDM_SHOWDEBUGGER                40173
 #define ID_TAPECONTROL                  40174
 #define IDM_SOUNDCHIP                   40175
@@ -331,7 +336,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_BLUR_2                      40178
 #define IDM_BLUR_4                      40179
 #define IDM_BLUR_8                      40180
-#define IDM_TORCH                       40181
 #define IDM_CAPTUREVIDEO                40182
 #define IDM_ENDVIDEO                    40183
 #define IDM_VIDEORES1                   40185
@@ -345,8 +349,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_VIDEOSKIP5                  40193
 #define ID_ECONET                       40194
 #define IDM_SPEECH                      40196
-#define IDM_TUBE186                     40197
-#define IDM_ACORNZ80                    40198
 #define ID_TELETEXT                     40199
 #define ID_HARDDRIVE                    40200
 #define IDM_EJECTDISC0                  40201
@@ -376,7 +378,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_1440X1080                   40226
 #define IDM_1600X1200                   40227
 #define ID_UPRM                         40228
-#define IDM_ARM                         40229
 #define IDM_LOADKEYMAP                  40230
 #define IDM_SAVEKEYMAP                  40231
 #define IDM_AUTOSAVE_PREFS_CMOS         40232
@@ -426,7 +427,6 @@ Boston, MA  02110-1301, USA.
 #define ID_IDEDRIVE                     40287
 #define ID_VIEW_DD_1280X720             40288
 #define ID_VIEW_DD_1920X1080            40289
-#define IDM_ARMCOPRO                    40290
 #define ID_TELETEXTFILES                40291
 #define ID_TELETEXTLOCALHOST            40292
 #define ID_TELETEXTCUSTOM               40293
@@ -440,9 +440,9 @@ Boston, MA  02110-1301, USA.
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        117
+#define _APS_NEXT_RESOURCE_VALUE        118
 #define _APS_NEXT_COMMAND_VALUE         40297
-#define _APS_NEXT_CONTROL_VALUE         1087
+#define _APS_NEXT_CONTROL_VALUE         1090
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

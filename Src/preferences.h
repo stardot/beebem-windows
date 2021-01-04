@@ -28,6 +28,7 @@ Boston, MA  02110-1301, USA.
 #define PREFERENCES_HEADER
 
 #include <map>
+#include <string>
 
 class Preferences {
 

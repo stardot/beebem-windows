@@ -38,14 +38,9 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "sysvia.h"
 #include "via.h"
 #include "main.h"
-#include "viastate.h"
 #include "debug.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
-#endif
-
-#ifdef WIN32
-#include <windows.h>
 #endif
 
 using namespace std;
@@ -136,7 +131,10 @@ void DoKbdIntCheck() {
   /* Two cases - write enable is OFF the keyboard - basically any key will cause an
      interrupt in a few cycles.
      */
+#ifdef KBDDEBUG
   int Oldflag=(SysVIAState.ifr & 1);
+#endif
+
   if ((KeysDown>0) && ((SysVIAState.pcr & 0xc)==4)) {
     if ((IC32State & 8)==8) {
       SysVIAState.ifr|=1; /* CA2 */
@@ -394,6 +392,32 @@ void SysVIAWrite(int Address, int Value) {
 
     case 12:
       SysVIAState.pcr=Value & 0xff;
+
+      SysVIAState.pcr = Value;
+
+      if ((Value & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH)
+      {
+        SysVIAState.ca2 = true;
+      }
+      else if ((Value & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_LOW)
+      {
+        SysVIAState.ca2 = false;
+      }
+
+      if ((Value & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_HIGH)
+      {
+        if (!SysVIAState.cb2)
+        {
+          // Light pen strobe on CB2 low -> high transition
+          VideoLightPenStrobe();
+        }
+
+        SysVIAState.cb2 = true;
+      }
+      else if ((Value & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_LOW)
+      {
+        SysVIAState.cb2 = false;
+      }
       break;
 
     case 13:

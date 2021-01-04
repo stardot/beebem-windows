@@ -80,8 +80,8 @@ static const double ChordBase[8] = { 0, 8.25, 24.75, 57.75, 123.75, 255.75, 519.
 static const double StepInc[8] = { 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0 };
 static INT D2ATable[128];
 
-static const INT StereoLeft[16]  = { 100,100,100,100,100,100,100,100,  0,  0,  0, 17, 33, 50, 67, 83 };
-static const INT StereoRight[16] = {   0,  0,  0,  0,  0,  0,  0,  0,100,100,100, 83, 67, 50, 33, 17 };
+static const INT StereoLeft[16]  = {   0,  0,  0,  0,  0,  0,  0,  0,100,100,100, 83, 67, 50, 33, 17 };
+static const INT StereoRight[16] = { 100,100,100,100,100,100,100,100,  0,  0,  0, 17, 33, 50, 67, 83 };
 
 // 6MHz clock, 128 cycles to update all channels
 static UINT CycleCount = 0;
@@ -293,8 +293,7 @@ void Music5000Update(UINT cycles)
 		SampleLeft += sample * StereoLeft[pos] / 100;
 		SampleRight += sample * StereoRight[pos] / 100;
 
-		CurCh++;
-		if (CurCh == NUM_CHANNELS)
+		if (++CurCh == NUM_CHANNELS)
 		{
 			CurCh = 0;
 			ActiveRegSet = REG_SET_NORMAL;
@@ -314,10 +313,9 @@ void Music5000Update(UINT cycles)
 			else if (SampleRight > 32767)
 				SampleRight = 32767;
 
-			SampleBuf[SampleWritePtr] = SampleLeft;
-			SampleWritePtr++;
-			SampleBuf[SampleWritePtr] = SampleRight;
-			SampleWritePtr++;
+			SampleBuf[SampleWritePtr++] = SampleLeft;
+			SampleBuf[SampleWritePtr++] = SampleRight;
+
 			if (SampleWritePtr/2 >= SampleBufSize)
 			{
 				pSoundStreamer->Stream(SampleBuf);

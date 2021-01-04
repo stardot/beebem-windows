@@ -28,7 +28,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 IDD_USERKYBRD DIALOGEX 0, 0, 334, 122
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_NOPARENTNOTIFY
 CAPTION "User Defined Keyboard mapping"
 FONT 8, "MS Sans Serif", 0, 0, 0x1
@@ -119,7 +119,7 @@ BEGIN
 END
 
 IDD_BREAKOUT DIALOGEX 0, 0, 188, 122
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_NOPARENTNOTIFY
 CAPTION "User Port Breakout Box"
 FONT 8, "MS Sans Serif", 0, 0, 0x1
@@ -160,98 +160,16 @@ BEGIN
     CTEXT           "b0",IDC_STATIC,157,10,13,12
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+IDD_SELECT_KEY DIALOGEX 0, 0, 149, 60
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Press key for unshifted press..."
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    IDD_USERKYBRD, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 327
-        TOPMARGIN, 4
-        BOTTOMMARGIN, 116
-    END
-
-    IDD_DIALOG1, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 153
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 59
-    END
-
-    IDD_BREAKOUT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 181
-        TOPMARGIN, 4
-        BOTTOMMARGIN, 116
-    END
+    LTEXT           "Assigned to PC key(s):",IDC_STATIC,7,7,74,8
+    LTEXT           "Static",IDC_ASSIGNED_KEYS,15,21,127,8
+    CONTROL         "Shift",IDC_SHIFT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,40,31,10
+    PUSHBUTTON      "OK",IDOK,92,39,50,14
 END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Version
-//
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
- PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x1L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "080904b0"
-        BEGIN
-            VALUE "Comments", "BeebEm - BBC Micro Emulator"
-            VALUE "CompanyName", "Mike Wyatt"
-            VALUE "FileDescription", "BeebEm"
-            VALUE "FileVersion", VERSION_STRING
-            VALUE "InternalName", "BeebEm"
-            VALUE "LegalCopyright", "Copyright © 2009"
-            VALUE "OriginalFilename", "BeebEm.exe"
-            VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", VERSION_STRING
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x809, 1200
-    END
-END
-
-#endif    // English (U.S.) resources
-/////////////////////////////////////////////////////////////////////////////
-
-
-/////////////////////////////////////////////////////////////////////////////
-// English (U.K.) resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
-#ifdef _WIN32
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
-#pragma code_page(1252)
-#endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
 
 IDD_DEBUG DIALOGEX 0, 0, 529, 387
 STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
@@ -346,8 +264,32 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
+    IDD_USERKYBRD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 327
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 116
+    END
+
+    IDD_BREAKOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 181
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 116
+    END
+
+    IDD_SELECT_KEY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 142
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 53
+    END
+
     IDD_DEBUG, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -384,24 +326,63 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+ PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "Comments", "BeebEm - BBC Micro Emulator"
+            VALUE "CompanyName", "Mike Wyatt"
+            VALUE "FileDescription", "BeebEm"
+            VALUE "FileVersion", VERSION_STRING
+            VALUE "InternalName", "BeebEm"
+            VALUE "LegalCopyright", "Copyright © 2009"
+            VALUE "OriginalFilename", "BeebEm.exe"
+            VALUE "ProductName", "BeebEm"
+            VALUE "ProductVersion", VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Menu
 //
 
-IDR_MENU MENU 
+IDR_MENU MENU
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "&Run Disc",                   IDM_RUNDISC
+        MENUITEM "&Run Disc...",                IDM_RUNDISC
         MENUITEM SEPARATOR
-        MENUITEM "Load Disc &0",                IDM_LOADDISC0
-        MENUITEM "Load Disc &1",                IDM_LOADDISC1
+        MENUITEM "Load Disc &0...",             IDM_LOADDISC0
+        MENUITEM "Load Disc &1...",             IDM_LOADDISC1
         MENUITEM SEPARATOR
-        MENUITEM "Load &Tape",                  ID_LOADTAPE
+        MENUITEM "Load &Tape...",               ID_LOADTAPE
         MENUITEM SEPARATOR
         POPUP "Disc Options"
         BEGIN
-            MENUITEM "New Disc 0",                  IDM_NEWDISC0
-            MENUITEM "New Disc 1",                  IDM_NEWDISC1
+            MENUITEM "New Disc 0...",               IDM_NEWDISC0
+            MENUITEM "New Disc 1...",               IDM_NEWDISC1
             MENUITEM "Eject Disc 0",                IDM_EJECTDISC0
             MENUITEM "Eject Disc 1",                IDM_EJECTDISC1
             MENUITEM "Write Protect 0",             IDM_WPDISC0
@@ -411,8 +392,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "R&eset",                      ID_FILE_RESET
         MENUITEM SEPARATOR
-        MENUITEM "&Load State",                 IDM_LOADSTATE
-        MENUITEM "&Save State",                 IDM_SAVESTATE
+        MENUITEM "&Load State...",              IDM_LOADSTATE
+        MENUITEM "&Save State...",              IDM_SAVESTATE
         MENUITEM "&Quick Load",                 IDM_QUICKLOAD
         MENUITEM "Quick Sa&ve",                 IDM_QUICKSAVE
         MENUITEM SEPARATOR
@@ -428,7 +409,7 @@ BEGIN
             MENUITEM "GIF Format",                    IDM_CAPTUREGIF
             MENUITEM "PNG Format",                    IDM_CAPTUREPNG
         END
-        MENUITEM "Capture Screen",                    IDM_CAPTURESCREEN
+        MENUITEM "Capture Screen...",                 IDM_CAPTURESCREEN
         MENUITEM SEPARATOR
         POPUP "Video Options"
         BEGIN
@@ -443,7 +424,7 @@ BEGIN
             MENUITEM "Skip 4 Frames",               IDM_VIDEOSKIP4
             MENUITEM "Skip 5 Frames",               IDM_VIDEOSKIP5
         END
-        MENUITEM "Capture Video",               IDM_CAPTUREVIDEO
+        MENUITEM "Capture Video...",            IDM_CAPTUREVIDEO
         MENUITEM "End Video",                   IDM_ENDVIDEO
         MENUITEM SEPARATOR
         MENUITEM "E&xit",                       IDM_EXIT
@@ -456,17 +437,17 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Import Files to Disc"
         BEGIN
-            MENUITEM "Disc 0",                      IDM_DISC_IMPORT_0
-            MENUITEM "Disc 1",                      IDM_DISC_IMPORT_1
-            MENUITEM "Disc 2",                      IDM_DISC_IMPORT_2
-            MENUITEM "Disc 3",                      IDM_DISC_IMPORT_3
+            MENUITEM "Disc 0...",                   IDM_DISC_IMPORT_0
+            MENUITEM "Disc 1...",                   IDM_DISC_IMPORT_1
+            MENUITEM "Disc 2...",                   IDM_DISC_IMPORT_2
+            MENUITEM "Disc 3...",                   IDM_DISC_IMPORT_3
         END
         POPUP "Export Files from Disc"
         BEGIN
-            MENUITEM "Disc 0",                      IDM_DISC_EXPORT_0
-            MENUITEM "Disc 1",                      IDM_DISC_EXPORT_1
-            MENUITEM "Disc 2",                      IDM_DISC_EXPORT_2
-            MENUITEM "Disc 3",                      IDM_DISC_EXPORT_3
+            MENUITEM "Disc 0...",                   IDM_DISC_EXPORT_0
+            MENUITEM "Disc 1...",                   IDM_DISC_EXPORT_1
+            MENUITEM "Disc 2...",                   IDM_DISC_EXPORT_2
+            MENUITEM "Disc 3...",                   IDM_DISC_EXPORT_3
         END
     END
     POPUP "&Comms"
@@ -485,7 +466,7 @@ BEGIN
         MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
         POPUP "Printer &Destination"
         BEGIN
-            MENUITEM "File:",                       IDM_PRINTER_FILE
+            MENUITEM "File...",                     IDM_PRINTER_FILE
             MENUITEM "Clipboard",                   IDM_PRINTER_CLIPBOARD
             MENUITEM "LPT1:",                       IDM_PRINTER_LPT1
             MENUITEM "LPT2:",                       IDM_PRINTER_LPT2
@@ -665,7 +646,7 @@ BEGIN
         BEGIN
             MENUITEM "BBC Model &B",                ID_MODELB, CHECKED
             MENUITEM "BBC Model B + &Integra-B",    ID_MODELBINT
-            MENUITEM "BBC Model B &Plus",           ID_MODELBP
+            MENUITEM "BBC Model B &Plus",           ID_MODELBPLUS
             MENUITEM "BBC &Master 128",             ID_MASTER128
         END
         POPUP "Model B &Floppy Controller"
@@ -675,14 +656,13 @@ BEGIN
         END
         POPUP "&Second Processor"
         BEGIN
-            MENUITEM "65C02 &Second Processor",     IDM_TUBE
-#ifdef M512COPRO_ENABLED
-            MENUITEM "&Master 512 Second Processor", IDM_TUBE186
-#endif
-            MENUITEM "Acorn Z80 Second Processor",  IDM_ACORNZ80
-            MENUITEM "Torch &Z80 Second Processor", IDM_TORCH
-            MENUITEM "ARM Second Processor",        IDM_ARM
-            MENUITEM "ARM7TDMI Co-Processor",        IDM_ARMCOPRO
+            MENUITEM "&None",                       IDM_TUBE_NONE
+            MENUITEM "&65C02 Second Processor",     IDM_TUBE_ACORN65C02
+            MENUITEM "&Master 512 Second Processor", IDM_TUBE_MASTER512
+            MENUITEM "Acorn &Z80 Second Processor", IDM_TUBE_ACORNZ80
+            MENUITEM "&Torch Z80 Second Processor", IDM_TUBE_TORCHZ80
+            MENUITEM "&ARM Second Processor",       IDM_TUBE_ACORNARM
+            MENUITEM "&Sprow ARM7TDMI Co-Processor", IDM_TUBE_SPROWARM
         END
         MENUITEM SEPARATOR
         POPUP "&Allow SW RAM Write"
@@ -707,15 +687,7 @@ BEGIN
         MENUITEM "SW RAM Board On/Off", IDM_SWRAMBOARD
         MENUITEM "Edit ROM Configuration", IDM_ROMCONFIG
         MENUITEM SEPARATOR
-        MENUITEM "&Ignore Illegal Instructions", IDM_IGNOREILLEGALOPS
-        POPUP "&Undocumented Instructions"
-        BEGIN
-            MENUITEM "&Documented Only",            ID_DOCONLY
-            MENUITEM "&Common Extras",              ID_EXTRAS
-            MENUITEM "&Full Set",                   ID_FULLSET
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "Basic &Hardware Only",        ID_BHARDWARE
+        MENUITEM "Basic &Hardware Only",        ID_BASIC_HARDWARE_ONLY
         MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE
         MENUITEM SEPARATOR
         MENUITEM "Econet On/Off",               ID_ECONET
@@ -742,8 +714,8 @@ BEGIN
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR
         MENUITEM "&Define User Key Mapping",    IDM_DEFINEKEYMAP
-        MENUITEM "Load User Key Mapping",       IDM_LOADKEYMAP
-        MENUITEM "Save User Key Mapping",       IDM_SAVEKEYMAP
+        MENUITEM "Load User Key Mapping...",    IDM_LOADKEYMAP
+        MENUITEM "Save User Key Mapping...",    IDM_SAVEKEYMAP
         MENUITEM SEPARATOR
         MENUITEM "&User Defined Mapping",       IDM_USERKYBDMAPPING
         MENUITEM "Default &Keyboard Mapping",   IDM_DEFAULTKYBDMAPPING
@@ -768,7 +740,7 @@ BEGIN
             MENUITEM "Autosave CMOS RAM",           IDM_AUTOSAVE_PREFS_CMOS
             MENUITEM "Autosave All Prefs",          IDM_AUTOSAVE_PREFS_ALL
             MENUITEM "Save Disc/Tape/State Folders", IDM_AUTOSAVE_PREFS_FOLDERS
-            MENUITEM "Select User Data Folder",     IDM_SELECT_USER_DATA_FOLDER
+            MENUITEM "Select User Data Folder...",  IDM_SELECT_USER_DATA_FOLDER
         END
     END
     POPUP "&Help"
@@ -785,18 +757,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "beebemrc.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""winresrc.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -814,18 +786,19 @@ END
 // remains consistent on all systems.
 IDI_BEEBEM              ICON                    "BeebEm.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Accelerator
 //
 
-IDR_ACCELERATORS ACCELERATORS 
+IDR_ACCELERATORS ACCELERATORS
 BEGIN
     VK_UP,          ID_ACCELUP,             VIRTKEY, NOINVERT
     VK_DOWN,        ID_ACCELDOWN,           VIRTKEY, NOINVERT
 END
 
-#endif    // English (U.K.) resources
+#endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -839,4 +812,3 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

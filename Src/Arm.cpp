@@ -36,16 +36,16 @@ Boston, MA  02110-1301, USA.
 #include "Arm.h"
 #include "ArmDisassembler.h"	// gives access to disassembler
 
-bool Enable_Arm = false;
-bool ArmTube = false;
-
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 CArm::CArm()
 {
+}
 
+CArm::InitResult CArm::init(const char *ROMPath)
+{
 	// set up pointers to each bank of registers
 	curR[USR_MODE] = usrR;
 	curR[SVC_MODE] = svcR;
@@ -124,8 +124,6 @@ CArm::CArm()
 		lastCopro = 0;
 	}
 
-	iocounter = 0;
-	
 	modeTotal[USR_MODE] = 0;
 	modeTotal[FIQ_MODE] = 0;
 	modeTotal[IRQ_MODE] = 0;
@@ -140,53 +138,46 @@ CArm::CArm()
 	r[15] = 0;
 	prefetchInvalid = true;
 	conditionFlags = 0;
+	trace = 0;
 
 	WriteLog("init_arm()\n");
 	
 	// load file into test memory
-	FILE *testFile;
-	char path[256];
-	
-	strcpy(path, RomPath);
-	strcat(path, "BeebFile/ARMeval_100.ROM");
+	FILE *ROMFile = fopen(ROMPath, "rb");
 
-	testFile = fopen(path, "rb");
-
-	if( testFile != NULL )
+	if (ROMFile != nullptr)
 	{
-		fread(romMemory, 0x4000, 1, testFile);
-		fclose(testFile);
+		fread(romMemory, 0x4000, 1, ROMFile);
+		fclose(ROMFile);
 	}
 	else
 	{
-		WriteLog(">>>>>>>>> ROM file %s not found!\n", path);
+		return InitResult::FileNotFound;
 	}
 	
 	memset(ramMemory, 0, 0x400000);
 	memcpy(ramMemory, romMemory, 0x4000);
 
-	uint32 memoryValue = 0;
+	/* uint32 memoryValue = 0;
 	for(int x=0; x<4*11; x+=4)
 	{
 		(void)readWord(x, memoryValue);
-//		TRACE("%x = %x\n", x, memoryValue);
-	}
-	
+		TRACE("%x = %x\n", x, memoryValue);
+	} */
+
+	return InitResult::Success;
 }
 
 void CArm::exec(int count)
 {
-
 	uint32 ci;
 	char disassembly[256];
 	char addressS[64];
 	
 	while (count > 0)
 	{
-		
 		if (trace)
 		{
-		
 			uint32 val;
 			readWord(0xc50c, val);
 		
@@ -205,10 +196,9 @@ void CArm::exec(int count)
 				(void) readWord(pc - 4, ci);
 
 				Arm_disassemble(pc - 4, ci, disassembly);
-		
+
 				sprintf(addressS, "0x%08x : %02x %02x %02x %02x ", pc - 4,
 						ci & 0xff, (ci >> 8) & 0xff, (ci >> 16) & 0xff, (ci >> 24) & 0xff );
-
 			}
 
 			WriteLog(" r0 = %08x r1 = %08x r2 = %08x r3 = %08x r4 = %08x r5 = %08x r6 = %08x r7 = %08x r8 = %08x : ",
@@ -219,11 +209,11 @@ void CArm::exec(int count)
 
 			trace--;
 		}
-	
-//		if ( ((pc & 0xffff) >= 0x1c48) && ((pc & 0xffff) <= 0x1c60) )
-//		{
-//			trace = 100;
-//		}
+
+		// if ( ((pc & 0xffff) >= 0x1c48) && ((pc & 0xffff) <= 0x1c60) )
+		// {
+		//	trace = 100;
+		// }
 	
 		run();
 		count--;
@@ -232,7 +222,6 @@ void CArm::exec(int count)
 
 CArm::~CArm()
 {
-
 	// ??? output mode counter info
 	//CString modeInfo;
 	//modeInfo.Format("usr=%d fiq=%d irq=%d svc=%d \n", modeTotal[USR_MODE], modeTotal[FIQ_MODE], modeTotal[IRQ_MODE], modeTotal[SVC_MODE] );
@@ -250,10 +239,8 @@ CArm::~CArm()
 
 void CArm::run()
 {
-
 	// note, if the while(true) loop is placed inside run() as it may need to be for speed
 	// then returns after exceptions need to be changed to continues!
-
 
 	// ??? profile usage of processor modes
 	//modeTotal[processorMode]++;
@@ -267,7 +254,6 @@ void CArm::run()
 	//	modeCounter = 0;
 	//	previousProcessorMode = processorMode;
 	//}
-
 
 	// has prefetch been invalidated by previously executed instruction
 	if(prefetchInvalid)
@@ -312,7 +298,6 @@ void CArm::run()
 		// decode instruction type from bits 20-27
 		switch( getField(currentInstruction, 20, 27) )
 		{
-
 			// data processing instructions have operand 2 as register
 
 			// and rd, rn, rm
@@ -2725,7 +2710,6 @@ void CArm::run()
 	// if prefetch invalidated
 	if(prefetchInvalid)
 	{
-	
 		pc = getRegister(15);
 		// adjust PC but don't change prefetch
 		setRegister( 15, (getRegister(15) + 8) & PC_MASK );
@@ -3428,8 +3412,8 @@ inline uint32 CArm::getDataProcessingRegisterOperand2S()
 	if( !getField(currentInstruction, 4, 11) )
 		return getRegisterWithPSR(rm);
 	
-	uint32 carry;
-	uint32 result;
+	uint32 carry = 0;
+	uint32 result = 0;
 
 	// if register-specified shift amount
 	if( getBit(currentInstruction, 4) )
@@ -3439,9 +3423,8 @@ inline uint32 CArm::getDataProcessingRegisterOperand2S()
 		// get shift amount
 		uint8 shiftAmount = getRegister(rs) & 0xff;
 		
-		uint32 regValue;
 		// get register value to be shifted pipelining effect
-		regValue = getRegisterWithPSRAndPipelining(rm);
+		uint32 regValue = getRegisterWithPSRAndPipelining(rm);
 		
 		if( shiftAmount == 0 )
 		{
@@ -4823,14 +4806,14 @@ inline void CArm::exceptionAddress()
 // use with red squirrel
 
 // copy data from ARM memory to coprocessor memory
-inline bool CArm::coprocessorDataTransferStore(uint32 address)
+inline bool CArm::coprocessorDataTransferStore(uint32 /* address */)
 {
 	exceptionAddress();
 	return false;
 }
 
 // copy data from coprocessor memory to ARM memory
-inline bool CArm::coprocessorDataTransferLoad(uint32 address)
+inline bool CArm::coprocessorDataTransferLoad(uint32 /* address */)
 {
 	exceptionAddress();
 	return false;
@@ -4839,9 +4822,9 @@ inline bool CArm::coprocessorDataTransferLoad(uint32 address)
 // copy from ARM register to coprocessor register
 inline bool CArm::coprocessorRegisterTransferWrite()
 {
-	uint rd = getField(currentInstruction, 12, 15);
+	// uint rd = getField(currentInstruction, 12, 15);
 
-	uint coprocessorNumber = getField(currentInstruction, 8, 11);
+	// uint coprocessorNumber = getField(currentInstruction, 8, 11);
 
 	exceptionUndefinedInstruction();
 	return false;
@@ -4850,9 +4833,9 @@ inline bool CArm::coprocessorRegisterTransferWrite()
 // copy from coprocessor register to ARM register
 inline bool CArm::coprocessorRegisterTransferRead()
 {
-	uint rd = getField(currentInstruction, 12, 15);
+	// uint rd = getField(currentInstruction, 12, 15);
 
-	uint coprocessorNumber = getField(currentInstruction, 8, 11);
+	// uint coprocessorNumber = getField(currentInstruction, 8, 11);
 
 	if(dynamicProfilingCoprocessorUse)
 		dynamicProfilingCoprocessorUsage(currentInstruction);
@@ -4864,7 +4847,7 @@ inline bool CArm::coprocessorRegisterTransferRead()
 // perform a data operation (e.g. logic/arithmetic) on the coprocessor 
 inline bool CArm::coprocessorDataOperation()
 {
-	uint coprocessorNumber = getField(currentInstruction, 8, 11);
+	// uint coprocessorNumber = getField(currentInstruction, 8, 11);
 
 	if(dynamicProfilingCoprocessorUse)
 		dynamicProfilingCoprocessorUsage(currentInstruction);
@@ -5012,17 +4995,17 @@ void CArm::dynamicProfilingRegisterUsageReport()
 	}
 }
 
-void CArm::dynamicProfilingConditionalExe(uint32 currentInstruction)
+void CArm::dynamicProfilingConditionalExe(uint32 instruction)
 {
-	if( executeConditionally(currentInstruction) )
+	if( executeConditionally(instruction) )
 	{
 		// executed
-		conditionallyExecuted[ getField(currentInstruction, 28, 31) ]++;
+		conditionallyExecuted[ getField(instruction, 28, 31) ]++;
 	}
 	else
 	{
 		// not executed
-		conditionallyNotExecuted[ getField(currentInstruction, 28, 31) ]++;
+		conditionallyNotExecuted[ getField(instruction, 28, 31) ]++;
 	}
 }
 
@@ -5036,8 +5019,8 @@ void CArm::dynamicProfilingConditionalExeReport()
 	}
 }
 
-void CArm::dynamicProfilingCoprocessorUsage(uint32 currentInstruction)
+void CArm::dynamicProfilingCoprocessorUsage(uint32 instruction)
 {
-	WriteLog("copro number=%d instructions=%d\n", getField(currentInstruction, 8, 11), executionCount - lastCopro);
+	WriteLog("copro number=%d instructions=%d\n", getField(instruction, 8, 11), executionCount - lastCopro);
 	lastCopro = executionCount;
 }

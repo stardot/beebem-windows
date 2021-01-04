@@ -21,14 +21,11 @@ Boston, MA  02110-1301, USA.
 #ifndef USERKYBD_HEADER
 #define USERKYBD_HEADER
 
-#include <string.h>
-#include <stdlib.h>
 #include <windows.h>
-#include "port.h"
 
 // Public declarations.
 
-BOOL UserKeyboardDialog( HWND  hwndParent );
+bool UserKeyboardDialog(HWND hwndParent);
 
 extern KeyMap UserKeymap;
 

@@ -40,6 +40,7 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "serial.h"
 #include "csw.h"
+#include "uef.h"
 #include "avi.h"
 #include "ext1770.h"
 #include "tube.h"
@@ -170,26 +171,29 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		bool adfs = false;
 		bool img = false;
 		bool dos = false;
+
 		switch (fileDialog.GetFilterIndex())
 		{
 		case 1:
 			{
-			char *ext = strrchr(FileName, '.');
-			if (ext != NULL)
-			  if (_stricmp(ext+1, "dsd") == 0)
-				dsd = true;
-			  if (_stricmp(ext+1, "adl") == 0)
-				adfs = true;
-			  if (_stricmp(ext+1, "adf") == 0)
-				adfs = true;
-			  if (_stricmp(ext+1, "img") == 0)
-				img = true;
-			  if (_stricmp(ext+1, "dos") == 0)
-				dos = true;
-			break;
+				char *ext = strrchr(FileName, '.');
+				if (ext != nullptr)
+				{
+					if (_stricmp(ext+1, "dsd") == 0)
+						dsd = true;
+					else if (_stricmp(ext+1, "adl") == 0)
+						adfs = true;
+					else if (_stricmp(ext+1, "adf") == 0)
+						adfs = true;
+					else if (_stricmp(ext+1, "img") == 0)
+						img = true;
+					else if (_stricmp(ext+1, "dos") == 0)
+						dos = true;
+				}
+				break;
 			}
 		case 2:
-			adfs=true;
+			adfs = true;
 			break;
 		case 4:
 		case 6:
@@ -204,14 +208,14 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				if (NativeFDC)
 					LoadSimpleDSDiscImage(FileName, Drive, 80);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::DSD, m_hMenu);
+					Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			}
-			if ((!dsd) && (!adfs) && (!dos))
+			if (!dsd && !adfs && !dos)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::SSD, m_hMenu);
+					Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			}
 			if (adfs)
 			{
@@ -219,22 +223,22 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 					MessageBox(GETHWND,"The native 8271 FDC cannot read ADFS discs\n","BeebEm",
 							   MB_OK|MB_ICONERROR);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::ADFS, m_hMenu);
+					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
 			}
 		}
 		else
 		{
 			// Master 128
 			if (dsd)
-				Load1770DiscImage(FileName, Drive, DiscType::DSD, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
-				Load1770DiscImage(FileName, Drive, DiscType::SSD, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			if (adfs)
-				Load1770DiscImage(FileName, Drive, DiscType::ADFS, m_hMenu); // ADFS OO La La!
+				Load1770DiscImage(FileName, Drive, DiscType::ADFS); // ADFS OO La La!
 			if (img)
-				Load1770DiscImage(FileName, Drive, DiscType::IMG, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::IMG);
 			if (dos)
-				Load1770DiscImage(FileName, Drive, DiscType::DOS, m_hMenu);
+				Load1770DiscImage(FileName, Drive, DiscType::DOS);
 		}
 
 		/* Write protect the disc */
@@ -243,6 +247,28 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 	}
 
 	return(gotName);
+}
+
+/****************************************************************************/
+
+void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
+{
+	Disc1770Result Result = ::Load1770DiscImage(FileName, Drive, Type);
+
+	if (Result == Disc1770Result::OpenedReadWrite) {
+		SetImageName(FileName, Drive, Type);
+		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, true);
+	}
+	else if (Result == Disc1770Result::OpenedReadOnly) {
+		SetImageName(FileName, Drive, Type);
+		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, false);
+	}
+	else {
+		// Disc1770Result::Failed
+		char errstr[200];
+		sprintf(errstr, "Could not open disc file:\n  %s", FileName);
+		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+	}
 }
 
 /****************************************************************************/
@@ -269,8 +295,12 @@ void BeebWin::LoadTape(void)
 			m_Preferences.SetStringValue("TapesPath", DefaultPath);
 		}
 
-		if (strstr(FileName, ".uef")) LoadUEF(FileName);
-		if (strstr(FileName, ".csw")) LoadCSW(FileName);
+		if (hasFileExt(FileName, ".uef")) {
+			LoadUEFTape(FileName);
+		}
+		else if (hasFileExt(FileName, ".csw")) {
+			LoadCSWTape(FileName);
+		}
 	}
 }
 
@@ -374,16 +404,19 @@ void BeebWin::NewDiscImage(int Drive)
 				strcat(FileName, ".adl");
 		}
 
-		if (filterIndex == 1 || filterIndex == 3)
-		{
+		if (filterIndex == 1 || filterIndex == 3) {
 			CreateDiscImage(FileName, Drive, 1, 80);
 		}
-		if (filterIndex == 2 || filterIndex == 4)
-		{
+		else if (filterIndex == 2 || filterIndex == 4) {
 			CreateDiscImage(FileName, Drive, 2, 80);
 		}
-		if (filterIndex == 5) CreateADFSImage(FileName,Drive,80,m_hMenu);
-		if (filterIndex == 6) CreateADFSImage(FileName,Drive,160,m_hMenu);
+		else if (filterIndex == 5 || filterIndex == 6) {
+			const int Tracks = filterIndex == 5 ? 80 : 160;
+			bool Success = CreateADFSImage(FileName, Tracks);
+			if (Success) {
+				Load1770DiscImage(FileName, Drive, DiscType::ADFS);
+			}
+		}
 
 		/* Allow disc writes */
 		if (m_WriteProtectDisc[Drive])
@@ -450,7 +483,7 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 		if (Heads == 1)
 		{
 			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(FileName, DriveNum, DiscType::SSD, mainWin->m_hMenu);
+				Load1770DiscImage(FileName, DriveNum, DiscType::SSD);
 			}
 			else {
 				LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
@@ -459,7 +492,7 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 		else
 		{
 			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(FileName, DriveNum, DiscType::DSD, mainWin->m_hMenu);
+				Load1770DiscImage(FileName, DriveNum, DiscType::DSD);
 			}
 			else {
 				LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
@@ -826,6 +859,114 @@ void BeebWin::QuickSave()
 	SaveUEFState(FileName2);
 }
 
+void BeebWin::LoadUEFState(const char *FileName)
+{
+	UEFStateResult Result = ::LoadUEFState(FileName);
+
+	switch (Result) {
+		case UEFStateResult::Success:
+			SetRomMenu();
+			SetDiscWriteProtects();
+			break;
+
+		case UEFStateResult::OpenFailed: {
+			std::string Message = "Cannot open state file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+
+		case UEFStateResult::InvalidUEFFile: {
+			std::string Message = "The file selected is not a UEF file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+
+		case UEFStateResult::InvalidUEFVersion: {
+			std::string Message = "Cannot open state file:\n  ";
+			Message += FileName;
+			Message += "\n\nPlease upgrade to the latest version of BeebEm";
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+	}
+}
+
+void BeebWin::SaveUEFState(const char *FileName)
+{
+	UEFStateResult Result = ::SaveUEFState(FileName);
+
+	switch (Result) {
+		case UEFStateResult::Success:
+			break;
+
+		case UEFStateResult::WriteFailed:
+		default: {
+			std::string Message = "Failed to write state file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		}
+	}
+}
+
+void BeebWin::LoadUEFTape(const char *FileName)
+{
+	bool Success = ::LoadUEFTape(FileName);
+
+	if (!Success) {
+		switch (uef_errno) {
+			case UEF_OPEN_NOTUEF:
+			case UEF_OPEN_NOTTAPE: {
+				std::string Message = "The file selected is not a UEF tape image:\n  ";
+				Message += FileName;
+				MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+				break;
+			}
+
+			case UEF_OPEN_NOFILE:
+			default: {
+				std::string Message = "Cannot open UEF file:\n  ";
+				Message += FileName;
+				MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+				break;
+			}
+		}
+	}
+}
+
+void BeebWin::LoadCSWTape(const char *FileName)
+{
+	CSWResult Result = ::LoadCSW(FileName);
+
+	switch (Result) {
+		case CSWResult::Success:
+			break;
+
+		case CSWResult::InvalidCSWFile: {
+			std::string Message = "The file selected is not a CSW file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+
+		case CSWResult::InvalidHeaderExtension: {
+			std::string Message = "Failed to read CSW header extension:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+
+		case CSWResult::OpenFailed:
+		default: {
+			std::string Message = "Cannot open CSW file:\n  ";
+			Message += FileName;
+			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			break;
+		}
+	}
+}
+
 /****************************************************************************/
 // if DLLName is NULL then FDC setting is read from the registry
 // else the named DLL is read in
@@ -931,7 +1072,7 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	// the UEF has been determined to be from BeebEm (Block 046C)
 	fputc(static_cast<unsigned char>(MachineType), SUEF);
 	fputc(NativeFDC ? 0 : 1, SUEF);
-	fputc(TubeEnabled,SUEF);
+	fputc(TubeType == Tube::Acorn65C02, SUEF); // TubeEnabled // TODO: save TubeType
 	fput16(m_MenuIdKeyMapping,SUEF);
 	if (m_MenuIdKeyMapping == IDM_USERKYBDMAPPING)
 		fwrite(m_UserKeyMapPath,1,256,SUEF);
@@ -951,12 +1092,19 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 		MachineType = static_cast<Model>(type);
 
 	NativeFDC = fgetc(SUEF) == 0;
-	TubeEnabled = fgetc(SUEF) != 0;
+	int TubeEnabled = fgetc(SUEF) != 0; // TODO: get TubeType
+
+	if (TubeEnabled)
+	{
+		TubeType = Tube::Acorn65C02;
+	}
 
 	if (Version >= 11)
 	{
+		const int UEF_KEYBOARD_MAPPING = 40060; // UEF Chunk ID
+
 		id = fget16(SUEF);
-		if (id == IDM_USERKYBDMAPPING)
+		if (id == UEF_KEYBOARD_MAPPING)
 		{
 			fread(fileName,1,256,SUEF);
 			GetDataPath(m_UserDataPath, fileName);
@@ -971,8 +1119,9 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 		TranslateKeyMapping();
 	}
 
-	mainWin->ResetBeebSystem(MachineType, TubeEnabled, true);
-	mainWin->UpdateModelType();
+	mainWin->ResetBeebSystem(MachineType, true);
+	mainWin->UpdateModelMenu();
+	mainWin->UpdateTubeMenu();
 }
 
 /****************************************************************************/
@@ -1153,15 +1302,14 @@ void BeebWin::doCopy()
 
 	m_printerbufferlen = 0;
 
-	m_clipboard[0] = 2;
-	m_clipboard[1] = 'L';
-	m_clipboard[2] = '.';
-	m_clipboard[3] = 13;
-	m_clipboard[4] = 3;
-	m_clipboardlen = 5;
-	m_clipboardptr = 0;
+	m_ClipboardBuffer[0] = 2;
+	m_ClipboardBuffer[1] = 'L';
+	m_ClipboardBuffer[2] = '.';
+	m_ClipboardBuffer[3] = 13;
+	m_ClipboardBuffer[4] = 3;
+	m_ClipboardLength = 5;
+	m_ClipboardIndex = 0;
 	m_printerbufferlen = 0;
-	SetupClipboard();
 }
 
 void BeebWin::doPaste()
@@ -1178,80 +1326,21 @@ void BeebWin::doPaste()
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
 		if (lptstr != NULL)
 		{
-			strncpy(m_clipboard, lptstr, 32767);
+			strncpy(m_ClipboardBuffer, lptstr, ClipboardBufferSize - 1);
 			GlobalUnlock(hglb);
-			m_clipboardptr = 0;
-			m_clipboardlen = (int)strlen(m_clipboard);
-			SetupClipboard();
+			m_ClipboardIndex = 0;
+			m_ClipboardLength = (int)strlen(m_ClipboardBuffer);
 		}
 	}
+
 	CloseClipboard();
 }
 
-void BeebWin::SetupClipboard(void)
+void BeebWin::ClearClipboardBuffer()
 {
-	m_OSRDCH = BeebReadMem(0x210) + (BeebReadMem(0x211) << 8);
-
-	BeebWriteMem(0x100, 0x38);	// SEC
-	BeebWriteMem(0x101, 0xad);	// LDA &FC51
-	BeebWriteMem(0x102, 0x51);
-	BeebWriteMem(0x103, 0xfc);
-	BeebWriteMem(0x104, 0xd0);	// BNE P% + 6
-	BeebWriteMem(0x105, 0x04);
-	BeebWriteMem(0x106, 0xad);	// LDA &FC50
-	BeebWriteMem(0x107, 0x50);
-	BeebWriteMem(0x108, 0xfc);
-	BeebWriteMem(0x109, 0x18);	// CLC
-	BeebWriteMem(0x10A, 0x60);	// RTS
-
-	BeebWriteMem(0x210, 0x00);
-	BeebWriteMem(0x211, 0x01);
-
-	// Just to kick off keyboard input
-	int row, col;
-	TranslateKey(VK_RETURN, false, row, col);
-}
-
-void BeebWin::ResetClipboard(void)
-{
-	BeebWriteMem(0x210, m_OSRDCH & 0xff);
-	BeebWriteMem(0x211, (m_OSRDCH >> 8) & 0xff);
-}
-
-int BeebWin::PasteKey(int addr)
-{
-	int row, col;
-	int data = 0x00;
-	
-	switch (addr)
-	{
-	case 0 :
-		TranslateKey(VK_RETURN, true, row, col);
-		if (m_clipboardlen > 0)
-		{
-			data = m_clipboard[m_clipboardptr++];
-			m_clipboardlen--;
-
-			// Drop LF after CR
-			if (m_translateCRLF &&
-				data == 0xD && m_clipboardlen > 0 &&
-				m_clipboard[m_clipboardptr] == 0xA)
-			{
-				m_clipboardlen--;
-				m_clipboardptr++;
-			}
-
-			if (m_clipboardlen <= 0)
-			{
-				ResetClipboard();
-			}
-		}
-		break;
-	case 1 :
-		data = (m_clipboardlen == 0) ? 255 : 0;
-		break;
-	}
-	return data;
+	mainWin->m_ClipboardBuffer[0] = '\0';
+	mainWin->m_ClipboardIndex = 0;
+	mainWin->m_ClipboardLength = 0;
 }
 
 void BeebWin::CopyKey(int Value)
@@ -1630,9 +1719,9 @@ void BeebWin::ImportDiscFiles(int menuId)
 		// 1770 controller
 		Close1770Disc(drive);
 		if (heads == 2)
-			Load1770DiscImage(szDiscFile, drive, DiscType::DSD, m_hMenu);
+			Load1770DiscImage(szDiscFile, drive, DiscType::DSD);
 		else
-			Load1770DiscImage(szDiscFile, drive, DiscType::SSD, m_hMenu);
+			Load1770DiscImage(szDiscFile, drive, DiscType::SSD);
 	}
 }
 

@@ -49,7 +49,7 @@ void SerialInit();
 void Serial_Poll(void);
 void InitSerialPort(void);
 void Kill_Serial(void);
-void LoadUEF(const char *UEFName);
+bool LoadUEFTape(const char *FileName);
 void RewindTape(void);
 
 unsigned int __stdcall SerialThread(void *lpParam);

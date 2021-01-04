@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <math.h>
 #include "uef.h"
-#include "zlib.h"
+#include "zlib/zlib.h"
 
 /* Beats representing normal tape speed (not sure why its 5600) */
 #define NORMAL_TAPE_SPEED 5600
@@ -95,7 +95,7 @@ bool uef_create(const char *name)
 	return true;
 }
 
-int uef_open(const char *name)
+bool uef_open(const char *name)
 {
 	gzFile uef_file;
 	char UEFId[10];
@@ -471,7 +471,7 @@ static bool uef_write_chunk()
 	if (uef_file_name[0])
 	{
 		/* Always append to file */
-		uef_file = gzopen(uef_file_name, "a+b");
+		uef_file = gzopen(uef_file_name, "ab");
 		if (uef_file == NULL)
 		{
 			uef_errno = UEF_OPEN_NOFILE;

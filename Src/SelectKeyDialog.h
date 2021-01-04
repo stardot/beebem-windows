@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 2020  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,22 +18,55 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef VS_HEADER
-#define VS_HEADER
+#ifndef SELECT_KEY_DIALOG_HEADER
+#define SELECT_KEY_DIALOG_HEADER
 
-typedef struct VIAState {
-  unsigned char ora,orb;
-  unsigned char ira,irb;
-  unsigned char ddra,ddrb;
-  unsigned char acr,pcr;
-  unsigned char ifr,ier;
-  int timer1c,timer2c; /* NOTE: Timers descrement at 2MHz and values are */
-  int timer1l,timer2l; /*   fixed up on read/write - latches hold 1MHz values*/
-  bool timer1hasshot; // True if we have already caused an interrupt for one shot mode
-  bool timer2hasshot; // True if we have already caused an interrupt for one shot mode
-  int timer1adjust; // Adjustment for 1.5 cycle counts, every other interrupt, it becomes 2 cycles instead of one
-  int timer2adjust; // Adjustment for 1.5 cycle counts, every other interrupt, it becomes 2 cycles instead of one
-  unsigned char sr;
-} VIAState;
+#include <windows.h>
+
+class SelectKeyDialog
+{
+	public:
+		SelectKeyDialog(
+			HINSTANCE hInstance,
+			HWND hwndParent,
+			const std::string& Title,
+			const std::string& SelectedKey
+		);
+
+		bool Open();
+		void Close(UINT nResultID);
+
+		bool HandleMessage(const MSG& msg);
+
+		int Key() const;
+
+		static LPCSTR KeyName(int Key);
+
+	private:
+		static INT_PTR CALLBACK sDlgProc(
+			HWND   hwnd,
+			UINT   nMessage,
+			WPARAM wParam,
+			LPARAM lParam
+		);
+
+		INT_PTR DlgProc(
+			HWND   hwnd,
+			UINT   nMessage,
+			WPARAM wParam,
+			LPARAM lParam
+		);
+
+	private:
+		HINSTANCE m_hInstance;
+		HWND m_hwnd;
+		HWND m_hwndParent;
+		std::string m_Title;
+		std::string m_SelectedKey;
+		int m_Key;
+		bool m_Shift;
+};
+
+extern SelectKeyDialog* selectKeyDialog;
 
 #endif

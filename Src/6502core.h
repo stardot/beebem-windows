@@ -55,8 +55,6 @@ typedef enum PSR_Flags
   FlagN=128
 } PSR_Flags;
 
-extern bool IgnoreIllegalInstructions;
-
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;
 extern unsigned int Cycles;
@@ -85,7 +83,6 @@ void Init6502core(void);
 void Exec6502Instruction(void);
 
 void DoNMI(void);
-void core_dumpstate(void);
 void DoInterrupt(void);
 void Save6502UEF(FILE *SUEF);
 void Load6502UEF(FILE *SUEF);
@@ -93,10 +90,9 @@ void SyncIO(void);
 void AdjustForIORead(void);
 void AdjustForIOWrite(void);
 
-#ifdef M512COPRO_ENABLED
-int i186_execute(int num_cycles);
-#endif
-
 extern int OpCodes;
-extern bool BHardware;
+extern bool BasicHardwareOnly;
+
+void WriteInstructionCounts(const char *FileName);
+
 #endif

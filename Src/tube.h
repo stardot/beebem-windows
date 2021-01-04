@@ -28,31 +28,34 @@ Boston, MA  02110-1301, USA.
 
 #include "port.h"
 
+enum class Tube : unsigned char {
+	None,
+	Acorn65C02,
+	Master512CoPro,
+	AcornZ80,
+	TorchZ80,
+	AcornArm,
+	SprowArm
+};
+
+extern Tube TubeType;
+
 extern unsigned char R1Status;
 void ResetTube(void);
 
-extern bool EnableTube, TubeEnabled, AcornZ80;
-#ifdef M512COPRO_ENABLED
-extern bool Tube186Enabled;
-#endif
-extern bool TorchTubeActive;
 extern int TubeProgramCounter;
 const int TubeBufferLength = 24;
 extern unsigned char TubeintStatus; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 extern unsigned char TubeNMIStatus; /* bit set (nums in NMI_Nums) if NMI being caused */
 
-// EnableTube - Should the tube be enabled on next start - 1=yes
-// TubeEnabled - Is the tube enabled by default - 1=yes
-
-typedef enum TubeIRQ {
+enum TubeIRQ {
 	R1,
-	R4,
-} TubeIRQ;
+	R4
+};
 
-typedef enum TubeNMI {
-	R3,
-} TubeNMI;
-
+enum TubeNMI {
+	R3
+};
 
 /*-------------------------------------------------------------------------*/
 /* Initialise 6502core                                                     */

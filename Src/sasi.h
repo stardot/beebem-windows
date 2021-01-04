@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -23,33 +23,9 @@ Boston, MA  02110-1301, USA.
 #ifndef SASI_HEADER
 #define SASI_HEADER
 
-void SASIReset(void);
-void SASIWrite(int Address, int Value) ;
+void SASIReset();
+void SASIWrite(int Address, int Value);
 int SASIRead(int Address);
-int SASIReadData(void);
-void SASIWriteData(int data);
-void SASIBusFree(void);
-void SASIMessage(void);
-void SASISelection(int data);
-void SASICommand(void);
-void SASIExecute(void);
-void SASIStatus(void);
-void SASITestUnitReady(void);
-void SASIRequestSense(void);
-int SASIDiscRequestSense(unsigned char *cdb, unsigned char *buf);
-void SASIRead(void);
-void SASIWrite(void);
-int SASIReadSector(unsigned char *buf, int block);
-bool SASIWriteSector(unsigned char *buf, int block);
-void SASIStartStop(void);
-bool SASIDiscFormat(unsigned char *buf);
-void SASIFormat(void);
-void SASIVerify(void);
-void SASITranslate(void);
-void SASIRezero(void);
-void SASIRamDiagnostics(void);
-void SASIControllerDiagnostics(void);
-void SASISetGeometory(void);
-void SASISeek(void);
-bool SASIWriteGeometory(unsigned char *buf);
+void SASIClose();
+
 #endif

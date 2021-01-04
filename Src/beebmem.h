@@ -102,11 +102,11 @@ extern char RomPath[_MAX_PATH];
 extern char RomFile[_MAX_PATH];
 extern char DiscPath[_MAX_PATH]; // JGH
 
-int BeebReadMem(int Address);
+unsigned char BeebReadMem(int Address);
 void BeebWriteMem(int Address, unsigned char Value);
 #define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address]=Value;
 const unsigned char *BeebMemPtrWithWrap(int Address, int Length);
-const unsigned char *BeebMemPtrWithWrapMo7(int Address, int Length);
+const unsigned char *BeebMemPtrWithWrapMode7(int Address, int Length);
 bool ReadROMFile(const char *filename, ROMConfigFile RomConfig);
 void BeebReadRoms(void);
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);

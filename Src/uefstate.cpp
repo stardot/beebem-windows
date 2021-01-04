@@ -22,6 +22,7 @@ Boston, MA  02110-1301, USA.
 // UEF Game state code.
 
 #include <stdio.h>
+#include "uefstate.h"
 #include "6502core.h"
 #include "beebmem.h"
 #include "video.h"
@@ -35,8 +36,6 @@ Boston, MA  02110-1301, USA.
 #include "tube.h"
 #include "serial.h"
 #include "atodconv.h"
-
-FILE *UEFState;
 
 void fput32(unsigned int word32,FILE *fileptr) {
 	fputc(word32&255,fileptr);
@@ -66,13 +65,19 @@ unsigned int fget16(FILE *fileptr) {
 	return(tmpvar);
 }
 
-void SaveUEFState(const char *StateName) {
-	UEFState=fopen(StateName,"wb");
-	if (UEFState != NULL)
+UEFStateResult SaveUEFState(const char *StateName) {
+	FILE *UEFState = fopen(StateName, "wb");
+	if (UEFState != nullptr)
 	{
 		fprintf(UEFState,"UEF File!");
 		fputc(0,UEFState); // UEF Header
-		fputc(12,UEFState); fputc(0,UEFState); // Version
+
+		const unsigned char UEFMinorVersion = 13;
+		const unsigned char UEFMajorVersion = 0;
+
+		fputc(UEFMinorVersion, UEFState);
+		fputc(UEFMajorVersion, UEFState);
+
 		mainWin->SaveEmuUEF(UEFState);
 		Save6502UEF(UEFState);
 		SaveMemUEF(UEFState);
@@ -83,8 +88,8 @@ void SaveUEFState(const char *StateName) {
 			Save8271UEF(UEFState);
 		else
 			Save1770UEF(UEFState);
-		if (EnableTube) {
-			SaveTubeUEF(UEFState);
+		if (TubeType == Tube::Acorn65C02) {
+			SaveTubeUEF(UEFState); // TODO: Save Tube state for all co-pros?
 			Save65C02UEF(UEFState);
 			Save65C02MemUEF(UEFState);
 		}
@@ -92,24 +97,22 @@ void SaveUEFState(const char *StateName) {
 		SaveAtoDUEF(UEFState);
 		SaveMusic5000UEF(UEFState);
 		fclose(UEFState);
+
+		return UEFStateResult::Success;
 	}
 	else
 	{
-		char errstr[256];
-		sprintf(errstr, "Failed to write state file: %s", StateName);
-		MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+		return UEFStateResult::WriteFailed;
 	}
 }
 
-void LoadUEFState(const char *StateName) {
-	// char errmsg[256];
+UEFStateResult LoadUEFState(const char *StateName) {
 	char UEFId[10];
-	int CompletionBits=0; // These bits should be filled in
+	// int CompletionBits=0; // These bits should be filled in
 	long RPos=0,FLength,CPos;
 	unsigned int Block,Length;
-	int Version;
 	strcpy(UEFId,"BlankFile");
-	UEFState=fopen(StateName,"rb");
+	FILE *UEFState = fopen(StateName, "rb");
 	if (UEFState != NULL)
 	{
 		fseek(UEFState,NULL,SEEK_END);
@@ -117,21 +120,24 @@ void LoadUEFState(const char *StateName) {
 		fseek(UEFState,0,SEEK_SET);  // Get File length for eof comparison.
 		fread(UEFId,10,1,UEFState);
 		if (strcmp(UEFId,"UEF File!")!=0) {
-			MessageBox(GETHWND,"The file selected is not a UEF File.","BeebEm",MB_ICONERROR|MB_OK);
 			fclose(UEFState);
-			return;
+			return UEFStateResult::InvalidUEFFile;
 		}
-		Version=fget16(UEFState);
-		// sprintf(errmsg,"UEF Version %x",Version);
-		// MessageBox(GETHWND,errmsg,"BeebEm",MB_OK);
+
+		const int Version = fget16(UEFState);
+
+		if (Version > 13) {
+			fclose(UEFState);
+			return UEFStateResult::InvalidUEFVersion;
+		}
+
 		RPos=ftell(UEFState);
 
 		while (ftell(UEFState)<FLength) {
 			Block=fget16(UEFState);
 			Length=fget32(UEFState);
 			CPos=ftell(UEFState);
-			// sprintf(errmsg,"Block %04X - Length %d (%04X)",Block,Length,Length);
-			// MessageBox(GETHWND,errmsg,"BeebEm",MB_ICONERROR|MB_OK);
+
 			if (Block==0x046A) mainWin->LoadEmuUEF(UEFState,Version);
 			if (Block==0x0460) Load6502UEF(UEFState);
 			if (Block==0x0461) LoadRomRegsUEF(UEFState);
@@ -141,7 +147,7 @@ void LoadUEFState(const char *StateName) {
 			if (Block==0x0465) LoadFileMemUEF(UEFState);
 			if (Block==0x0466) LoadSWRamMemUEF(UEFState);
 			if (Block==0x0467) LoadViaUEF(UEFState);
-			if (Block==0x0468) LoadVideoUEF(UEFState);
+			if (Block==0x0468) LoadVideoUEF(UEFState, Version);
 			if (Block==0x046B) LoadSoundUEF(UEFState);
 			if (Block==0x046D) LoadIntegraBHiddenMemUEF(UEFState);
 			if (Block==0x046E) Load8271UEF(UEFState);
@@ -159,13 +165,10 @@ void LoadUEFState(const char *StateName) {
 
 		fclose(UEFState);
 
-		mainWin->SetRomMenu();
-		mainWin->SetDiscWriteProtects();
+		return UEFStateResult::Success;
 	}
 	else
 	{
-		char errstr[256];
-		sprintf(errstr, "Cannot open state file: %s", StateName);
-		MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+		return UEFStateResult::OpenFailed;
 	}
 }

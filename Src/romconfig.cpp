@@ -49,12 +49,10 @@ static bool WriteROMFile(const char *filename, ROMConfigFile RomConfig);
 /****************************************************************************/
 void BeebWin::EditROMConfig(void)
 {
-	INT_PTR nResult;
-
 	// Copy Rom config
 	memcpy(&ROMCfg, &RomConfig, sizeof(ROMConfigFile));
 
-	nResult = DialogBox(hInst, MAKEINTRESOURCE(IDD_ROMCONFIG), m_hWnd, ROMConfigDlgProc);
+	INT_PTR nResult = DialogBox(hInst, MAKEINTRESOURCE(IDD_ROMCONFIG), m_hWnd, ROMConfigDlgProc);
 	if (nResult == TRUE)
 	{
 		// Copy in new config and read ROMs
@@ -97,8 +95,11 @@ static void LVSetItemText(
 static void LVSetFocus(HWND hWnd)
 {
 	int row = ListView_GetSelectionMark(hWnd);
-	ListView_SetItemState(hWndROMList, row,
-						  LVIS_SELECTED|LVIS_FOCUSED, LVIS_SELECTED|LVIS_FOCUSED);
+	ListView_SetItemState(hWndROMList,
+	                      row,
+	                      LVIS_SELECTED | LVIS_FOCUSED,
+	                      LVIS_SELECTED | LVIS_FOCUSED);
+
 	SetFocus(hWnd);
 }
 
@@ -127,22 +128,22 @@ static void UpdateROMField(int row)
 /****************************************************************************/
 static void FillROMList(void)
 {
-	int bank;
-	int row;
-	char str[20];
 
 	Edit_SetText(hWndModel, szModel[static_cast<int>(nModel)]);
 
 	ListView_DeleteAllItems(hWndROMList);
 
-	row = 0;
+	int row = 0;
 	LVInsertItem(hWndROMList, row, 0, (LPTSTR)"OS", 16);
 	LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[static_cast<int>(nModel)][0]);
 
 	for (row = 1; row <= 16; ++row)
 	{
-		bank = 16 - row;
+		int bank = 16 - row;
+
+		char str[20];
 		sprintf(str, "%02d (%X)", bank, bank);
+
 		LVInsertItem(hWndROMList, row, 0, (LPTSTR)str, bank);
 		UpdateROMField(row);
 	}
@@ -340,11 +341,7 @@ static bool SaveROMConfigFile(HWND hWnd)
 /****************************************************************************/
 bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
 {
-	FILE *fd;
-	int model;
-	int bank;
-
-	fd = fopen(filename, "r");
+	FILE *fd = fopen(filename, "r");
 	if (fd)
 	{
 		fclose(fd);
@@ -363,9 +360,9 @@ bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
 		return false;
 	}
 
-	for (model = 0; model < 4; ++model)
+	for (int model = 0; model < 4; ++model)
 	{
-		for (bank = 0; bank < 17; ++bank)
+		for (int bank = 0; bank < 17; ++bank)
 		{
 			fprintf(fd, "%s\n", ROMConfig[model][bank]);
 		}

@@ -26,10 +26,6 @@ Written by Richard Gellman - March 2001
 
 // P.S. If anybody knows how to emulate this, do tell me - 16/03/2001 - Richard Gellman
 
-// Need to comment out uef calls and remove uef.lib from project in
-// order to use VC profiling.
-//#define PROFILING
-
 #include <windows.h>
 #include <process.h>
 #include <stdio.h>
@@ -431,11 +427,7 @@ void Serial_Poll(void)
 
 			if (Cass_Relay && UEFOpen && TapeClock != OldClock)
 			{
-#ifndef PROFILING
-
 				NEW_UEF_BUF=uef_getdata(TapeClock);
-
-#endif
 				OldClock=TapeClock;
 			}
 
@@ -485,7 +477,7 @@ void Serial_Poll(void)
 
 			if (Cass_Relay && CSWOpen && TapeClock != OldClock)
 			{
-				int last_state = csw_state;
+				CSWState last_state = csw_state;
 				
 				CSW_BUF = csw_poll(TapeClock);
 				OldClock = TapeClock;
@@ -493,21 +485,21 @@ void Serial_Poll(void)
 				if (last_state != csw_state)
 					TapeControlUpdateCounter(csw_ptr);
 
-				if (csw_state == 0)		// Waiting for tone
+				if (csw_state == CSWState::WaitingForTone)
 				{
 					DCDI=1;
 					TapeAudio.Signal=0;
 				}
 				
 				// New data read in, so do something about it
-				if (csw_state == 1)		// In tone
+				if (csw_state == CSWState::Tone)
 				{
 					DCDI=1;
 					TapeAudio.Signal=2;
 					TapeAudio.BytePos=11;
 				}
 
-				if ( (CSW_BUF >= 0) && (csw_state == 2) )
+				if (CSW_BUF >= 0 && csw_state == CSWState::Data)
 				{
 					DCDI=0;
 					HandleData(CSW_BUF);
@@ -729,7 +721,6 @@ void InitSerialPort(void) {
 }
 
 void CloseUEF(void) {
-#ifndef PROFILING
 	if (UEFOpen) {
 		TapeControlStopRecording(false);
 		uef_close();
@@ -739,7 +730,6 @@ void CloseUEF(void) {
 		if (TapeControlEnabled) 
 			SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
 	}
-#endif
 }
 
 void SerialInit()
@@ -759,8 +749,7 @@ void Kill_Serial(void) {
 	}
 }
 
-void LoadUEF(const char *UEFName) {
-#ifndef PROFILING
+bool LoadUEFTape(const char *UEFName) {
 	CloseUEF();
 
 	strcpy(UEFTapeName, UEFName);
@@ -774,7 +763,9 @@ void LoadUEF(const char *UEFName) {
 	uef_setclock(TapeClockSpeed);
 	SetUnlockTape(UnlockTape);
 
-	if (uef_open(UEFName)) {
+	bool Success = uef_open(UEFName);
+
+	if (Success) {
 		UEFOpen = true;
 		UEF_BUF=0;
 		TxD=0;
@@ -787,7 +778,8 @@ void LoadUEF(const char *UEFName) {
 	else {
 		UEFTapeName[0]=0;
 	}
-#endif
+
+	return Success;
 }
 
 void RewindTape(void) {
@@ -798,7 +790,7 @@ void RewindTape(void) {
 	TapeTrigger=TotalCycles+TAPECYCLES;
 	TapeControlUpdateCounter(TapeClock);
 
-	csw_state = 0;
+	csw_state = CSWState::WaitingForTone;
 	csw_bit = 0;
 	csw_pulselen = 0;
 	csw_ptr = 0;
@@ -810,7 +802,7 @@ void SetTapeSpeed(int speed) {
 	int NewClock = (int)((double)TapeClock * ((double)speed / TapeClockSpeed));
 	TapeClockSpeed=speed;
 	if (UEFOpen)
-		LoadUEF(UEFTapeName);
+		LoadUEFTape(UEFTapeName);
 	TapeClock=NewClock;
 }
 
@@ -962,14 +954,13 @@ bool map_file(const char *file_name)
 
 INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
+void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 {
 	int Clock;
 
 	TapeControlEnabled = true;
 
-	if (!IsWindow(hwndTapeControl)) 
-	{ 
+	if (!IsWindow(hwndTapeControl)) {
 		hwndTapeControl = CreateDialog(hinst, MAKEINTRESOURCE(IDD_TAPECONTROL),
 		                               NULL, TapeControlDlgProc);
 		hCurrentDialog = hwndTapeControl;
@@ -982,7 +973,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
 		if (UEFOpen)
 		{
 			Clock = TapeClock;
-			LoadUEF(UEFTapeName);
+			LoadUEFTape(UEFTapeName);
 			TapeClock = Clock;
 			TapeControlUpdateCounter(TapeClock);
 		}
@@ -1011,8 +1002,6 @@ void TapeControlCloseDialog()
 
 void TapeControlOpenFile(const char *UEFName)
 {
-	int i;
-
 	if (TapeControlEnabled) 
 	{
 		if (!CSWOpen)
@@ -1027,7 +1016,7 @@ void TapeControlOpenFile(const char *UEFName)
 		}
 
 		SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
-		for (i = 0; i < map_lines; ++i)
+		for (int i = 0; i < map_lines; ++i)
 			SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)map_desc[i]);
 
 		TapeControlUpdateCounter(0);
@@ -1036,11 +1025,9 @@ void TapeControlOpenFile(const char *UEFName)
 
 void TapeControlUpdateCounter(int tape_time)
 {
-	int i;
-
 	if (TapeControlEnabled) 
 	{
-		i = 0;
+		int i = 0;
 		while (i < map_lines && map_time[i] <= tape_time)
 			i++;
 
@@ -1051,7 +1038,7 @@ void TapeControlUpdateCounter(int tape_time)
 	}
 }
 
-INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
 	char str[256];
 	int s;
@@ -1186,7 +1173,7 @@ void TapeControlStopRecording(bool RefreshControl)
 
 		if (RefreshControl)
 		{
-			LoadUEF(UEFTapeName);
+			LoadUEFTape(UEFTapeName);
 		}
 	}
 }
@@ -1240,7 +1227,7 @@ void LoadSerialUEF(FILE *SUEF)
 	fread(FileName,1,256,SUEF);
 	if (FileName[0])
 	{
-		LoadUEF(FileName);
+		LoadUEFTape(FileName);
 		if (!UEFOpen)
 		{
 			if (!TapeControlEnabled)

@@ -58,7 +58,7 @@ void uef_setunlock(bool unlock);
 int uef_getdata(int time);
 
 /* open & close */
-int uef_open(const char *name);
+bool uef_open(const char *name);
 void uef_close(void);
 
 /* writing */

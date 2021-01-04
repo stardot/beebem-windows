@@ -14,8 +14,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -28,7 +28,9 @@ Boston, MA  02110-1301, USA.
 #define DEBUG_HEADER
 
 #include <windows.h>
-#include "viastate.h"
+#include <string>
+
+#include "via.h"
 
 extern bool DebugEnabled;
 
@@ -52,10 +54,17 @@ enum class DebugType {
 
 struct Label
 {
-	char name[65];
+	std::string name;
 	int addr;
-};
 
+	Label() : addr(0)
+	{
+	}
+
+	Label(const std::string& n, int a) : name(n), addr(a)
+	{
+	}
+};
 
 struct Breakpoint
 {
@@ -75,10 +84,9 @@ struct Watch
 
 struct InstInfo
 {
-	char opn[4];
-	int  nb;
-	int  flag;
-	int  c6502;
+	const char* opcode;
+	int bytes;
+	int flag;
 };
 
 struct AddrInfo
@@ -104,6 +112,14 @@ struct DebugCmd
 
 extern HWND hwndDebug;
 int DebugDisassembleInstruction(int addr, bool host, char *opstr);
+int DebugDisassembleInstructionWithCPUStatus(int addr,
+                                             bool host,
+                                             unsigned char Accumulator,
+                                             unsigned char XReg,
+                                             unsigned char YReg,
+                                             unsigned char StackReg,
+                                             unsigned char PSR,
+                                             char *opstr);
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain);
 void DebugCloseDialog(void);
 bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YReg, int PSR, int StackReg, bool host);
@@ -115,8 +131,9 @@ void DebugUserViaState(void);
 void DebugSysViaState(void);
 void DebugViaState(const char *s, VIAState *v);
 void DebugParseCommand(char *command);
-void DebugRunScript(char *filename);
-int DebugReadMem(int addr, bool host);
+void DebugRunScript(const char *filename);
+bool DebugLoadSwiftLabels(const char *filename);
+unsigned char DebugReadMem(int addr, bool host);
 void DebugWriteMem(int addr, bool host, unsigned char data);
 int DebugDisassembleInstruction(int addr, bool host, char *opstr);
 int DebugDisassembleCommand(int addr, int count, bool host);

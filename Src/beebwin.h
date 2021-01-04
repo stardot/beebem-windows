@@ -31,6 +31,8 @@ Boston, MA  02110-1301, USA.
 
 #include <string.h>
 #include <stdlib.h>
+#include <string>
+
 #include <windows.h>
 #include <d3dx9.h>
 #include <ddraw.h>
@@ -44,8 +46,6 @@ Boston, MA  02110-1301, USA.
 
 /* Used in message boxes */
 #define GETHWND (mainWin->GethWnd())
-
-#define WM_REINITDX (WM_APP+1)
 
 // Registry defs for disabling windows keys
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
@@ -131,13 +131,13 @@ public:
 	void ApplyPrefs();
 	void Shutdown();
 
-	void UpdateModelType();
+	void UpdateModelMenu();
 	void SetSoundMenu(void);
 	void SetImageName(const char *DiscName, int Drive, DiscType DscType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
 	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
-	void SetTubeMenu();
+	void UpdateTubeMenu();
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
 	void KillDLLs(void);
@@ -191,7 +191,12 @@ public:
 	HWND GethWnd() { return m_hWnd; }
 	
 	void RealizePalette(HDC) {};
-	void ResetBeebSystem(Model NewModelType, bool TubeStatus, bool LoadRoms);
+	void ResetBeebSystem(Model NewModelType, bool LoadRoms);
+
+	void CreateArmCoPro();
+	void DestroyArmCoPro();
+	void CreateSprowCoPro();
+	void DestroySprowCoPro();
 
 	int StartOfFrame(void);
 	bool UpdateTiming();
@@ -210,7 +215,10 @@ public:
 	void WinSizeChange(int size, int width, int height);
 	void WinPosChange(int x, int y);
 	bool IsFrozen();
+	void TogglePause();
 	bool IsPaused();
+	void OpenUserKeyboardDialog();
+	void UserKeyboardDialogClosed();
 	void ShowMenu(bool on);
 	void HideMenu(bool hide);
 	void TrackPopupMenu(int x, int y);
@@ -223,15 +231,20 @@ public:
 	void HandleCommandLineFile(int drive, const char *CmdLineFile);
 	void HandleEnvironmentVariables();
 	void LoadStartupDisc(int DriveNum, const char *DiscString);
-	bool CheckUserDataPath(void);
+	bool CheckUserDataPath(bool Persist);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
 	void NewTapeImage(char *FileName);
 	const char *GetAppPath(void) { return m_AppPath; }
 	const char *GetUserDataPath(void) { return m_UserDataPath; }
 	void GetDataPath(const char *folder, char *path);
-	void QuickLoad(void);
-	void QuickSave(void);
+	void QuickLoad();
+	void QuickSave();
+	void LoadUEFState(const char *FileName);
+	void SaveUEFState(const char *FileName);
+	void LoadUEFTape(const char *FileName);
+	void LoadCSWTape(const char *FileName);
+
 	void Speak(const char *text, DWORD flags);
 	void SpeakChar(unsigned char c);
 	void TextToSpeechKey(WPARAM uParam);
@@ -240,10 +253,8 @@ public:
 	void HandleTimer(void);
 	void doCopy(void);
 	void doPaste(void);
-	void SetupClipboard(void);
-	void ResetClipboard(void);
+	void ClearClipboardBuffer();
 	void CopyKey(int data);
-	int PasteKey(int addr);
 	void CaptureBitmapPending(bool autoFilename);
 	void DoShiftBreak();
 	bool HasKbdCmd() const;
@@ -302,6 +313,7 @@ public:
 	int		m_vkeyPressed[256][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
+	bool m_CustomData;
 	char		m_DiscPath[_MAX_PATH];	// JGH
 	bool		m_WriteProtectDisc[2];
 	bool		m_WriteProtectOnLoad;
@@ -339,12 +351,14 @@ public:
 	double		m_RelativeSpeed;
 	double		m_FramesPerSecond;
 
-	char		m_clipboard[32768];
-	int		m_clipboardlen;
-	int		m_clipboardptr;
+	static const int ClipboardBufferSize = 32768;
+
+	char m_ClipboardBuffer[ClipboardBufferSize];
+	int m_ClipboardLength;
+	int m_ClipboardIndex;
+
 	char		m_printerbuffer[1024 * 1024];
 	int		m_printerbufferlen;
-	int		m_OSRDCH;
 	bool		m_translateCRLF;
 
 	int		m_MenuIdPrinterPort;
@@ -367,6 +381,7 @@ public:
 	char 		m_CommandLineFileName2[_MAX_PATH];
 	char		m_KbdCmd[1024];
 	char		m_DebugScript[_MAX_PATH];
+	std::string m_DebugLabelsFileName;
 	int		m_KbdCmdPos;
 	int		m_KbdCmdKey;
 	bool		m_KbdCmdPress;
@@ -376,6 +391,7 @@ public:
 	int		m_AutoBootDelay;
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
+	bool		m_WasPaused;
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
 	bool		m_BootDiscTimerElapsed;
@@ -485,6 +501,7 @@ public:
 	void TranslateTiming(void);
 	void TranslateKeyMapping(void);
 	int ReadDisc(int Drive, bool bCheckForPrefs);
+	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
 	void InitJoystick(void);
 	void ResetJoystick(void);
@@ -545,6 +562,8 @@ private:
 
 	char m_PrefsFile[_MAX_PATH];
 	Preferences m_Preferences;
+
+	bool m_WriteInstructionCounts;
 };
 
 #endif

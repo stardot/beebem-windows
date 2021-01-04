@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -43,6 +43,7 @@ Boston, MA  02110-1301, USA.
 #include "z80mem.h"
 #include "z80.h"
 #include "userkybd.h"
+#include "UserPortBreakoutBox.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
@@ -72,6 +73,7 @@ static const char *CFG_PRINTER_ENABLED = "PrinterEnabled";
 static const char *CFG_PRINTER_PORT = "PrinterPort";
 static const char *CFG_PRINTER_FILE = "PrinterFile";
 static const char *CFG_MACHINE_TYPE = "MachineType";
+static const char *CFG_TUBE_TYPE = "TubeType";
 
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
@@ -345,7 +347,7 @@ void BeebWin::LoadPreferences()
 		IP232localhost = false;
 	if (!m_Preferences.GetBoolValue("IP232custom", IP232custom))
 		IP232custom = false;
-		
+
 	EthernetPortEnabled = IP232localhost || IP232custom;
 
 	if (!m_Preferences.GetBoolValue("IP232mode", IP232mode))
@@ -359,7 +361,7 @@ void BeebWin::LoadPreferences()
 	m_customport = IP232customport;
 	if (m_Preferences.GetStringValue("IP232customip", m_customip))
 		strcpy(IP232customip, m_customip);
-	else 
+	else
 		IP232customip[0] = 0;
 
 	if (!m_Preferences.GetBinaryValue("SerialPort", &SerialPort, 1))
@@ -382,30 +384,13 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
 		SWRAMBoardEnabled = false;
 
-	if (!m_Preferences.GetBoolValue("ArmTube", ArmTube))
-		ArmTube = false;
+	if (!m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &type, 1))
+		TubeType = Tube::None;
+	else
+		TubeType = static_cast<Tube>(type);
 
-	if (!m_Preferences.GetBoolValue("ArmCoProTube", ArmCoProTube))
-		ArmCoProTube = false;
-
-	if (!m_Preferences.GetBoolValue("TorchTube", TorchTube))
-		TorchTube = false;
-
-	if (!m_Preferences.GetBoolValue("AcornZ80", AcornZ80))
-		AcornZ80 = false;
-
-	if (!m_Preferences.GetBoolValue("TubeEnabled", TubeEnabled))
-		TubeEnabled = false;
-
-#ifdef M512COPRO_ENABLED
-	if (!m_Preferences.GetBoolValue("Tube186Enabled", Tube186Enabled))
-		Tube186Enabled = false;
-#endif
-    
-	if (!m_Preferences.GetBinaryValue("OpCodes", &OpCodes, 1))
-		OpCodes=2;
-	if (!m_Preferences.GetBoolValue("Basic Hardware", BHardware))
-		BHardware = false;
+	if (!m_Preferences.GetBoolValue("Basic Hardware", BasicHardwareOnly))
+		BasicHardwareOnly = false;
 	if (!m_Preferences.GetBoolValue("Teletext Half Mode", TeletextHalfMode))
 		TeletextHalfMode = false;
 
@@ -417,7 +402,7 @@ void BeebWin::LoadPreferences()
 		TeletextCustom = false;
 	if (!(TeletextLocalhost || TeletextCustom))
 		TeletextFiles = true; // default to Files
-	
+
 	char key[20];
 	for (int ch=0; ch<4; ch++)
 	{
@@ -549,6 +534,9 @@ void BeebWin::LoadPreferences()
 		m_DisableKeysWindows = true;
 	else
 		m_DisableKeysWindows = false;
+
+	if (!m_Preferences.GetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts))
+		m_WriteInstructionCounts = false;
 }
 
 /****************************************************************************/
@@ -646,17 +634,9 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue("SWRAMWritable", RomWritePrefs, 16);
 		m_Preferences.SetBoolValue("SWRAMBoard", SWRAMBoardEnabled);
 
-		m_Preferences.SetBoolValue("ArmTube", ArmTube);
-		m_Preferences.SetBoolValue("ArmCoProTube", ArmCoProTube);
-		m_Preferences.SetBoolValue("TorchTube", TorchTube);
-		m_Preferences.SetBoolValue("AcornZ80", AcornZ80);
-		m_Preferences.SetBoolValue("TubeEnabled", TubeEnabled);
-#ifdef M512COPRO_ENABLED
-		m_Preferences.SetBoolValue("Tube186Enabled", Tube186Enabled);
-#endif
+		m_Preferences.SetBinaryValue(CFG_TUBE_TYPE, &TubeType, 1);
 
-		m_Preferences.SetBinaryValue("OpCodes", &OpCodes, 1);
-		m_Preferences.SetBoolValue("Basic Hardware", BHardware);
+		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);
 		m_Preferences.SetBoolValue("Teletext Half Mode", TeletextHalfMode);
 		m_Preferences.SetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled);
 		m_Preferences.SetBoolValue("TeletextLocalhost", TeletextLocalhost);
@@ -669,7 +649,7 @@ void BeebWin::SavePreferences(bool saveAll)
 			snprintf(key,20,"TeletextCustomIP%d",ch);
 			m_Preferences.SetStringValue(key, TeletextCustomIP[ch]);
 		}
-		
+
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
@@ -696,6 +676,8 @@ void BeebWin::SavePreferences(bool saveAll)
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
 	m_Preferences.SetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders);
 	m_Preferences.SetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll);
+
+	m_Preferences.SetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts);
 
 	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success) {
 		m_AutoSavePrefsChanged = false;
