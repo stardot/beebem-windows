@@ -13,8 +13,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -158,8 +158,8 @@ UEFStateResult LoadUEFState(const char *StateName) {
 			if (Block==0x0473) LoadSerialUEF(UEFState);
 			if (Block==0x0474) LoadAtoDUEF(UEFState);
 			if (Block==0x0475) LoadSWRomMemUEF(UEFState);
-			//if (Block==0x0476) LoadJIMPageRegUEF(UEFState);
-			if (Block==0x0477) LoadMusic5000UEF(UEFState);
+			if (Block==0x0476) LoadMusic5000JIMPageRegUEF(UEFState);
+			if (Block==0x0477) LoadMusic5000UEF(UEFState, Version);
 			fseek(UEFState,CPos+Length,SEEK_SET); // Skip unrecognised blocks (and over any gaps)
 		}
 

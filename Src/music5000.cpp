@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 
 bool Music5000Enabled = false;
-UINT8	jimPageSelectRegister;
+UINT8 JimPageSelectRegister;
 extern int SoundVolume;
 
 #define RAM_SIZE              2048
@@ -155,7 +155,7 @@ void Music5000Reset()
 {
 	delete pSoundStreamer;
 	pSoundStreamer = NULL;
-	jimPageSelectRegister = 0;
+	JimPageSelectRegister = 0;
 }
 
 void Music5000Write(UINT16 address, UINT8 value)
@@ -165,17 +165,17 @@ void Music5000Write(UINT16 address, UINT8 value)
 
 	if (address == 0xfcff)
 	{
-		jimPageSelectRegister = value;
+		JimPageSelectRegister = value;
 		return;
 	}
 
-	if ((jimPageSelectRegister & 0xf0) != 0x30)
+	if ((JimPageSelectRegister & 0xf0) != 0x30)
 		return;
 
 	if ((address & 0xff00) == 0xfd00) {
 		// Bit0 unused
-		UINT offset = ((jimPageSelectRegister & 0x0E) << 7) + (address & 0xFF);
-	WaveRam[offset] = value;
+		UINT offset = ((JimPageSelectRegister & 0x0e) << 7) + (address & 0xff);
+		WaveRam[offset] = value;
 	}
 
 #if 0
@@ -190,24 +190,22 @@ bool Music5000Read(UINT16 address, UINT8 *value)
 	if (!Music5000Enabled)
 		return false;
 
-	if ((jimPageSelectRegister & 0xf0) != 0x30)
+	if ((JimPageSelectRegister & 0xf0) != 0x30)
 		return false;
 
 	if (address == 0xfcff)
 	{
-		*value = jimPageSelectRegister;
+		*value = JimPageSelectRegister;
 		return true;
 	}
 
 	if ((address & 0xff00) == 0xfd00)
 	{
 		// Bit0 unused
-		UINT offset = ((jimPageSelectRegister & 0x0e) << 7) + address;
+		UINT offset = ((JimPageSelectRegister & 0x0e) << 7) + address;
 		*value = WaveRam[offset];
 		return true;
 	}
-
-	return false;
 
 #if 0
 	char str[200];
@@ -215,7 +213,7 @@ bool Music5000Read(UINT16 address, UINT8 *value)
 	OutputDebugString(str);
 #endif
 
-	return value;
+	return false;
 }
 
 void Music5000Update(UINT cycles)
@@ -346,10 +344,10 @@ void SaveMusic5000UEF(FILE *SUEF)
 	fputc(0,SUEF);//Unused pad
 	fput32(SampleLeft,SUEF);
 	fput32(SampleRight,SUEF);
-	fputc(jimPageSelectRegister,SUEF);
+	fputc(JimPageSelectRegister,SUEF);
 }
 
-void LoadMusic5000UEF(FILE *SUEF)
+void LoadMusic5000UEF(FILE *SUEF, int Version)
 {
 	fread(WaveRam,1,RAM_SIZE,SUEF);
 	fread(PhaseRam,1,sizeof(PhaseRam),SUEF);
@@ -359,5 +357,12 @@ void LoadMusic5000UEF(FILE *SUEF)
 	fgetc(SUEF);//Unused pad
 	SampleLeft=fget32(SUEF);
 	SampleRight=fget32(SUEF);
-	jimPageSelectRegister = fgetc(SUEF);
+	if (Version >= 13) {
+		JimPageSelectRegister = fgetc(SUEF);
+	}
+}
+
+void LoadMusic5000JIMPageRegUEF(FILE *SUEF)
+{
+	JimPageSelectRegister = fgetc(SUEF);
 }

@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -37,6 +37,7 @@ void Music5000Write(UINT16 address, UINT8 value);
 bool Music5000Read(UINT16 address, UINT8 *value);
 void Music5000Update(UINT cycles);
 void SaveMusic5000UEF(FILE *SUEF);
-void LoadMusic5000UEF(FILE *SUEF);
+void LoadMusic5000UEF(FILE *SUEF, int Version);
+void LoadMusic5000JIMPageRegUEF(FILE *SUEF);
 
 #endif
