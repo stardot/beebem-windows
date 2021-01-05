@@ -16,8 +16,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -355,8 +355,8 @@ unsigned char BeebReadMem(int Address) {
 			break;
 		case 8:
 			if (PRAM) {
-				return(PrivateRAM[Address-0x8000]); 
-			} else { 
+				return(PrivateRAM[Address-0x8000]);
+			} else {
 				return(Roms[ROMSEL][Address-0x8000]);
 			}
 			break;
@@ -374,7 +374,7 @@ unsigned char BeebReadMem(int Address) {
 			break;
 		case 0xf:
 			if (Address<0xfc00 || Address>=0xff00) { return(WholeRam[Address]); }
-			if ((ACCCON & 0x40) && Address>=0xfc00 && Address<0xff00) { 
+			if ((ACCCON & 0x40) && Address>=0xfc00 && Address<0xff00) {
 				return WholeRam[Address];
 			}
 			break;
@@ -438,17 +438,17 @@ unsigned char BeebReadMem(int Address) {
 	}
 
 	/* Rob: BBC AUG says FE20 is econet stn no. for bbc b. [It's in cmos for a master,]
-	   This is wrong and doesn't work. Study of the circuit diagram for a model B (IC26) shows it's at 
-	   FE18-FE1F. This now works.  AUG says read station also enables Econet NMI but again the circuit 
-	   shows the read-station select line is also INTOFF. (and it's any access to FE18, not just a read.) 
-	*/ 
+	   This is wrong and doesn't work. Study of the circuit diagram for a model B (IC26) shows it's at
+	   FE18-FE1F. This now works.  AUG says read station also enables Econet NMI but again the circuit
+	   shows the read-station select line is also INTOFF. (and it's any access to FE18, not just a read.)
+	*/
 	if (EconetEnabled &&
 		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
 		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF");
-		EconetNMIenabled = INTOFF; 
-		return(Read_Econet_Station()); 
+		EconetNMIenabled = INTOFF;
+		return(Read_Econet_Station());
 	}
 
 	if (Address >= 0xfe18 && Address <= 0xfe20 && MachineType == Model::Master128) {
@@ -533,10 +533,10 @@ unsigned char BeebReadMem(int Address) {
 		if (IDEDriveEnabled)  return(IDERead(Address & 0x7));
 	}
 
-	//DB: M5000 will only return its fcff select register or
-	//jim mapped registers if it has been selected by writing
-	//it's id value to fcff - other jim devices should similarly
-	//only return fcff..fcfc/fdxx when they have been selected
+	// DB: M5000 will only return its fcff select register or
+	// Jim mapped registers if it has been selected by writing
+	// it's id value to fcff - other Jim devices should similarly
+	// only return fcff..fcfc/fdxx when they have been selected
 	UINT8 ret;
 	if (Music5000Read(Address, &ret))
 		return ret;
@@ -617,7 +617,7 @@ static void DoRomChange(int NewBank) {
     return;
   }
 
-  // Master Specific stuff   
+  // Master Specific stuff
   if (MachineType == Model::Master128) {
     PagedRomReg = NewBank;
     PRAM = (PagedRomReg & 128) != 0;
@@ -836,7 +836,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 				if (Sh_CPUX) ShadowRAM[Address] = Value;
 				if (Sh_CPUE && !Sh_CPUX) {
 					if ((PrePC>=0xc000) && (PrePC<0xe000)) ShadowRAM[Address]=Value; else WholeRam[Address]=Value;
-				} 
+				}
 				break;
 			case 8:
 				if (PRAM) { PrivateRAM[Address-0x8000]=Value; }
@@ -916,7 +916,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF(w)");
-		EconetNMIenabled = INTOFF; 
+		EconetNMIenabled = INTOFF;
 	}
 
 	if ((Address & ~0x7) == 0xfe18 && MachineType == Model::Master128) {
@@ -937,7 +937,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	if ((Address & ~0x7) == 0xfe28 && MachineType == Model::Master128) {
 		Write1770Register(Address & 7,Value);
 		return;
-	} 
+	}
 
 	if (Address>=0xfe30 && Address<0xfe34) {
 		DoRomChange(Value);
@@ -981,7 +981,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		TeletextWrite((Address & 0x3),Value);
 		return;
 	}
-    
+
 	if ((Address & ~0x3)==0xfc40) {
 		if (SCSIDriveEnabled) {
 			SCSIWrite((Address & 0x3),Value);
