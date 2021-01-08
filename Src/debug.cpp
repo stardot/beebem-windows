@@ -126,7 +126,7 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "q",		DebugCmdHelp,"",""}, // Alias of "help"
 	{ "break",	DebugCmdBreakContinue, "", "Break/Continue." },
 	{ ".",		DebugCmdBreakContinue,"",""}, // Alias of "break"
-	{ "set",	DebugCmdSet, "host/parasite/rom/os/endian/breakpoint/decimal/brk on/off", "Turns various UI checkboxes on or off." },
+	{ "set",	DebugCmdSet, "host/parasite/rom/os/endian/breakpoints/decimal/brk on/off", "Turns various UI checkboxes on or off." },
 	{ "next",	DebugCmdNext, "[count]", "Execute the specified number instructions, default 1." },
 	{ "n",		DebugCmdNext,"",""}, // Alias of "next"
 	{ "peek",	DebugCmdPeek, "[p] [start] [count]", "Dumps memory to console." },
