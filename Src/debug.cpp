@@ -1430,9 +1430,9 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	}
 
 	// Check breakpoints
-	if (BPSOn)
+	if (BPSOn && DebugSource != DebugType::Breakpoint)
 	{
-		for (int i = 0; i < BPCount && DebugSource != DebugType::Breakpoint; ++i)
+		for (int i = 0; i < BPCount; ++i)
 		{
 			if (Breakpoints[i].end == -1)
 			{
