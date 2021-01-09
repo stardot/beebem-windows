@@ -106,8 +106,8 @@ struct DebugCmd
 {
 	char *name;
 	bool (*handler)(char* arguments);
-	char *argdesc;
-	char *help;
+	const char *argdesc;
+	const char *help;
 };
 
 extern HWND hwndDebug;
