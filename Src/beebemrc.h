@@ -355,8 +355,8 @@ Boston, MA  02110-1301, USA.
 #define IDM_EJECTDISC1                  40202
 #define IDM_EXPVOLUME                   40203
 #define ID_TOUCHSCREEN                  40204
-#define IDM_AMOUSESTICK                 40205
-#define IDM_DMOUSESTICK                 40206
+#define IDM_ANALOGUE_MOUSESTICK         40205
+#define IDM_DIGITAL_MOUSESTICK          40206
 #define ID_BREAKOUT                     40208
 #define IDM_TEXTTOSPEECH                40209
 #define IDM_TEXTVIEW                    40210

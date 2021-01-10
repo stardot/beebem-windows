@@ -1065,8 +1065,8 @@ void BeebWin::InitMenu(void)
 
 	// Options
 	CheckMenuItem(IDM_JOYSTICK, false);
-	CheckMenuItem(IDM_AMOUSESTICK, false);
-	CheckMenuItem(IDM_DMOUSESTICK, false);
+	CheckMenuItem(IDM_ANALOGUE_MOUSESTICK, false);
+	CheckMenuItem(IDM_DIGITAL_MOUSESTICK, false);
 	if (m_MenuIdSticks != 0)
 		CheckMenuItem(m_MenuIdSticks, true);
 	CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
@@ -1258,10 +1258,13 @@ void BeebWin::ResetJoystick(void)
 }
 
 /****************************************************************************/
-void BeebWin::SetMousestickButton(bool button)
+void BeebWin::SetMousestickButton(int index, bool button)
 {
-	if ( (m_MenuIdSticks == IDM_AMOUSESTICK) || ((m_MenuIdSticks == IDM_DMOUSESTICK)) )
-		JoystickButton = button;
+	if (m_MenuIdSticks == IDM_ANALOGUE_MOUSESTICK ||
+	    m_MenuIdSticks == IDM_DIGITAL_MOUSESTICK)
+	{
+		JoystickButton[index] = button;
+	}
 }
 
 /****************************************************************************/
@@ -1270,12 +1273,12 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 	static int lastx = 32768;
 	static int lasty = 32768;
 
-	if (m_MenuIdSticks == IDM_AMOUSESTICK)				// Analogue mouse stick
+	if (m_MenuIdSticks == IDM_ANALOGUE_MOUSESTICK)
 	{
 		JoystickX = (m_XWinSize - x) * 65535 / m_XWinSize;
 		JoystickY = (m_YWinSize - y) * 65535 / m_YWinSize;
 	}
-	else if (m_MenuIdSticks == IDM_DMOUSESTICK)		// Digital mouse stick
+	else if (m_MenuIdSticks == IDM_DIGITAL_MOUSESTICK)
 	{
 		int dx = x - lastx;
 		int dy = y - lasty;
@@ -1289,9 +1292,6 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 		lastx = x;
 		lasty = y;
 	}
-
-	if (m_HideCursor)
-		SetCursor(NULL);
 }
 
 /****************************************************************************/
@@ -1595,13 +1595,25 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			mainWin->Focus(false);
 			break;
 
+		case WM_SETCURSOR:
+			if (mainWin->m_HideCursor && LOWORD(lParam) == HTCLIENT)
+			{
+				SetCursor(nullptr);
+				return TRUE;
+			}
+			else
+			{
+				return DefWindowProc(hWnd, message, uParam, lParam);
+			}
+			break;
+
 		case MM_JOY1MOVE:
 			mainWin->ScaleJoystick(LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case MM_JOY1BUTTONDOWN:
 		case MM_JOY1BUTTONUP:
-			JoystickButton = ((UINT)uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0;
+			JoystickButton[0] = (uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0;
 			break;
 
 		case WM_MOUSEMOVE:
@@ -1618,12 +1630,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_LBUTTONDOWN:
-			mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) != 0);
+			mainWin->SetMousestickButton(0, (uParam & MK_LBUTTON) != 0);
 			AMXButtons |= AMX_LEFT_BUTTON;
 			break;
 
 		case WM_LBUTTONUP:
-			mainWin->SetMousestickButton(((UINT)uParam & MK_LBUTTON) != 0);
+			mainWin->SetMousestickButton(0, (uParam & MK_LBUTTON) != 0);
 			AMXButtons &= ~AMX_LEFT_BUTTON;
 			break;
 
@@ -1636,10 +1648,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_RBUTTONDOWN:
+			mainWin->SetMousestickButton(1, (uParam & MK_RBUTTON) != 0);
 			AMXButtons |= AMX_RIGHT_BUTTON;
 			break;
 
 		case WM_RBUTTONUP:
+			mainWin->SetMousestickButton(1, (uParam & MK_RBUTTON) != 0);
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
@@ -2774,8 +2788,8 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			// Also switch on analogue mousestick (touch screen uses
 			// mousestick position)
-			if (m_MenuIdSticks != IDM_AMOUSESTICK)
-				HandleCommand(IDM_AMOUSESTICK);
+			if (m_MenuIdSticks != IDM_ANALOGUE_MOUSESTICK)
+				HandleCommand(IDM_ANALOGUE_MOUSESTICK);
 
 			if (EthernetPortEnabled)
 			{
@@ -3221,8 +3235,8 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_JOYSTICK:
-	case IDM_AMOUSESTICK:
-	case IDM_DMOUSESTICK:
+	case IDM_ANALOGUE_MOUSESTICK:
+	case IDM_DIGITAL_MOUSESTICK:
 		/* Disable current selection */
 		if (m_MenuIdSticks != 0)
 		{

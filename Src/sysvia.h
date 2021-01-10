@@ -57,6 +57,6 @@ void PulseSysViaCB1(void);
 
 unsigned char BCD(unsigned char nonBCD);
 
-extern bool JoystickButton;
+extern bool JoystickButton[2];
 
 #endif

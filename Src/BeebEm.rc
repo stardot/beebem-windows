@@ -708,8 +708,8 @@ BEGIN
     POPUP "&Options"
     BEGIN
         MENUITEM "&Joystick",                   IDM_JOYSTICK
-        MENUITEM "&Analogue Mousestick",        IDM_AMOUSESTICK
-        MENUITEM "&Digital Mousestick",         IDM_DMOUSESTICK
+        MENUITEM "&Analogue Mousestick",        IDM_ANALOGUE_MOUSESTICK
+        MENUITEM "&Digital Mousestick",         IDM_DIGITAL_MOUSESTICK
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR

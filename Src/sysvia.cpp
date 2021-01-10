@@ -56,8 +56,8 @@ unsigned char SRCount;
 unsigned char SRData;
 unsigned char SREnabled;
 
-/* Fire button for joystick 1, false=not pressed, true=pressed */
-bool JoystickButton = false;
+// Fire button for joystick 1 and 2, false=not pressed, true=pressed
+bool JoystickButton[2] = { false, false };
 
 /* My raw VIA state */
 VIAState SysVIAState;
@@ -454,8 +454,9 @@ int SysVIARead(int Address) {
 	  // Clear bit 4 of IFR from ATOD Conversion
       SysVIAState.ifr&=~16;
       tmp=SysVIAState.orb & SysVIAState.ddrb;
-      tmp |= 32;    /* Fire button 2 released */
-      if (!JoystickButton)
+      if (!JoystickButton[1])
+        tmp |= 32;
+      if (!JoystickButton[0])
         tmp |= 16;
       if (MachineType == Model::Master128)
       {
