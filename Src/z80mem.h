@@ -67,8 +67,8 @@ typedef unsigned long	FASTWORK;
    If someone knows about it - I'am very interessed to that knowledge.
  */
 
-#define PutWORD(a, v)							\
-    do { WriteZ80Mem((a), v), (BYTE)(v);						\
-	 WriteZ80Mem(((a) + 1), (v) >> 8);						\
-     } while (0)
-
+#define PutWORD(a, v) \
+	do { \
+		WriteZ80Mem((a), (BYTE)v); \
+		WriteZ80Mem(((a) + 1), (BYTE)((v) >> 8)); \
+	} while (0)

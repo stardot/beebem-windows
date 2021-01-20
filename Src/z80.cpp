@@ -31,11 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. */
 /* This file was generated from simz80.pl
    with the following choice of options */
 const char *perl_params =
-    "combine=0,"
-    "optab=0,"
-    "cb_inline=1,"
-    "dfd_inline=1,"
-    "ed_inline=1";
+	"combine=0,"
+	"optab=0,"
+	"cb_inline=1,"
+	"dfd_inline=1,"
+	"ed_inline=1";
 
 #include "main.h"
 #include "z80mem.h"
@@ -93,63 +93,63 @@ volatile int stopsim;
 
 #define JPC(cond) PC = cond ? GetWORD(PC) : PC+2
 
-#define CALLC(cond) {							\
-    if (cond) {								\
-	FASTREG adrr = GetWORD(PC);					\
-	PUSH(PC+2);							\
-	PC = adrr;							\
-    }									\
-    else								\
-	PC += 2;							\
+#define CALLC(cond) { \
+	if (cond) { \
+		FASTREG adrr = GetWORD(PC); \
+		PUSH(PC+2); \
+		PC = adrr; \
+	} \
+	else { \
+		PC += 2; \
+	} \
 }
 
 /* load Z80 registers into (we hope) host registers */
-#define LOAD_STATE()							\
-    PC = pc;								\
-    AF = af[af_sel];							\
-    BC = regs[regs_sel].bc;						\
-    DE = regs[regs_sel].de;						\
-    HL = regs[regs_sel].hl;						\
-    IX = ix;								\
-    IY = iy;								\
-    SP = sp
+#define LOAD_STATE() \
+	PC = pc; \
+	AF = af[af_sel]; \
+	BC = regs[regs_sel].bc; \
+	DE = regs[regs_sel].de; \
+	HL = regs[regs_sel].hl; \
+	IX = ix; \
+	IY = iy; \
+	SP = sp
 
 /* load Z80 registers into (we hope) host registers */
-#define DECLARE_STATE()							\
-    FASTREG PC = pc;							\
-    FASTREG AF = af[af_sel];						\
-    FASTREG BC = regs[regs_sel].bc;					\
-    FASTREG DE = regs[regs_sel].de;					\
-    FASTREG HL = regs[regs_sel].hl;					\
-    FASTREG IX = ix;							\
-    FASTREG IY = iy;							\
-    FASTREG SP = sp
+#define DECLARE_STATE() \
+	FASTREG PC = pc; \
+	FASTREG AF = af[af_sel]; \
+	FASTREG BC = regs[regs_sel].bc; \
+	FASTREG DE = regs[regs_sel].de; \
+	FASTREG HL = regs[regs_sel].hl; \
+	FASTREG IX = ix; \
+	FASTREG IY = iy; \
+	FASTREG SP = sp
 
 /* save Z80 registers back into memory */
-#define SAVE_STATE()							\
-    pc = PC;								\
-    af[af_sel] = AF;							\
-    regs[regs_sel].bc = BC;						\
-    regs[regs_sel].de = DE;						\
-    regs[regs_sel].hl = HL;						\
-    ix = IX;								\
-    iy = IY;								\
-    sp = SP
+#define SAVE_STATE() \
+	pc = (WORD)PC; \
+	af[af_sel] = (WORD)AF; \
+	regs[regs_sel].bc = (WORD)BC; \
+	regs[regs_sel].de = (WORD)DE; \
+	regs[regs_sel].hl = (WORD)HL; \
+	ix = (WORD)IX; \
+	iy = (WORD)IY; \
+	sp = (WORD)SP
 
-FASTWORK
-simz80(FASTREG PC)
+FASTWORK simz80(FASTREG PC)
 {
-    FASTREG AF = af[af_sel];
-    FASTREG BC = regs[regs_sel].bc;
-    FASTREG DE = regs[regs_sel].de;
-    FASTREG HL = regs[regs_sel].hl;
-    FASTREG SP = sp;
-    FASTREG IX = ix;
-    FASTREG IY = iy;
-    FASTWORK temp, acu, sum, cbits;
-    FASTWORK op, adr;
+	FASTREG AF = af[af_sel];
+	FASTREG BC = regs[regs_sel].bc;
+	FASTREG DE = regs[regs_sel].de;
+	FASTREG HL = regs[regs_sel].hl;
+	FASTREG SP = sp;
+	FASTREG IX = ix;
+	FASTREG IY = iy;
+	FASTWORK temp, acu, sum, cbits;
+	FASTWORK op, adr;
 
-    switch(GetBYTE_pp(PC)) {
+	switch (GetBYTE_pp(PC)) {
 	case 0x00:			/* NOP */
 		break;
 	case 0x01:			/* LD BC,nnnn */
@@ -186,7 +186,7 @@ simz80(FASTREG PC)
 			(AF & 0xc4) | ((AF >> 15) & 1);
 		break;
 	case 0x08:			/* EX AF,AF' */
-		af[af_sel] = AF;
+		af[af_sel] = (WORD)AF;
 		af_sel = 1 - af_sel;
 		AF = af[af_sel];
 		break;
@@ -429,7 +429,7 @@ simz80(FASTREG PC)
 		break;
 	case 0x34:			/* INC (HL) */
 		temp = GetBYTE(HL)+1;
-		PutBYTE(HL, temp);
+		PutBYTE(HL, (BYTE)temp);
 		AF = (AF & ~0xfe) | (temp & 0xa8) |
 			(((temp & 0xff) == 0) << 6) |
 			(((temp & 0xf) == 0) << 4) |
@@ -437,7 +437,7 @@ simz80(FASTREG PC)
 		break;
 	case 0x35:			/* DEC (HL) */
 		temp = GetBYTE(HL)-1;
-		PutBYTE(HL, temp);
+		PutBYTE(HL, (BYTE)temp);
 		AF = (AF & ~0xfe) | (temp & 0xa8) |
 			(((temp & 0xff) == 0) << 6) |
 			(((temp & 0xf) == 0xf) << 4) |
@@ -1244,7 +1244,7 @@ simz80(FASTREG PC)
 		case 3: ++PC; acu = lreg(DE); break;
 		case 4: ++PC; acu = hreg(HL); break;
 		case 5: ++PC; acu = lreg(HL); break;
-		case 6: ++PC; acu = GetBYTE(adr);  break;
+		case 6: ++PC; acu = GetBYTE(adr); break;
 		case 7: ++PC; acu = hreg(AF); break;
 		}
 		switch (op & 0xc0) {
@@ -1311,7 +1311,7 @@ simz80(FASTREG PC)
 		case 3: Setlreg(DE, temp); break;
 		case 4: Sethreg(HL, temp); break;
 		case 5: Setlreg(HL, temp); break;
-		case 6: PutBYTE(adr, temp);  break;
+		case 6: PutBYTE(adr, (BYTE)temp); break;
 		case 7: Sethreg(AF, temp); break;
 		}
 		break;
@@ -1369,9 +1369,9 @@ simz80(FASTREG PC)
 		if (TSTFLAG(C)) POP(PC);
 		break;
 	case 0xD9:			/* EXX */
-		regs[regs_sel].bc = BC;
-		regs[regs_sel].de = DE;
-		regs[regs_sel].hl = HL;
+		regs[regs_sel].bc = (WORD)BC;
+		regs[regs_sel].de = (WORD)DE;
+		regs[regs_sel].hl = (WORD)HL;
 		regs_sel = 1 - regs_sel;
 		BC = regs[regs_sel].bc;
 		DE = regs[regs_sel].de;
@@ -1475,7 +1475,7 @@ simz80(FASTREG PC)
 		case 0x34:			/* INC (IX+dd) */
 			adr = IX + (signed char) GetBYTE_pp(PC);
 			temp = GetBYTE(adr)+1;
-			PutBYTE(adr, temp);
+			PutBYTE(adr, (BYTE)temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				(((temp & 0xf) == 0) << 4) |
@@ -1484,7 +1484,7 @@ simz80(FASTREG PC)
 		case 0x35:			/* DEC (IX+dd) */
 			adr = IX + (signed char) GetBYTE_pp(PC);
 			temp = GetBYTE(adr)-1;
-			PutBYTE(adr, temp);
+			PutBYTE(adr, (BYTE)temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				(((temp & 0xf) == 0xf) << 4) |
@@ -1908,7 +1908,7 @@ simz80(FASTREG PC)
 			case 3: Setlreg(DE, temp); break;
 			case 4: Sethreg(HL, temp); break;
 			case 5: Setlreg(HL, temp); break;
-			case 6: PutBYTE(adr, temp);  break;
+			case 6: PutBYTE(adr, (BYTE)temp); break;
 			case 7: Sethreg(AF, temp); break;
 			}
 			break;
@@ -2262,7 +2262,7 @@ simz80(FASTREG PC)
 			break;
 		case 0xA0:			/* LDI */
 			acu = GetBYTE_pp(HL);
-			PutBYTE_pp(DE, acu);
+			PutBYTE_pp(DE, (BYTE)acu);
 			acu += hreg(AF);
 			AF = (AF & ~0x3e) | (acu & 8) | ((acu & 2) << 4) |
 				(((--BC & 0xffff) != 0) << 2);
@@ -2301,7 +2301,7 @@ simz80(FASTREG PC)
 			break;
 		case 0xA8:			/* LDD */
 			acu = GetBYTE_mm(HL);
-			PutBYTE_mm(DE, acu);
+			PutBYTE_mm(DE, (BYTE)acu);
 			acu += hreg(AF);
 			AF = (AF & ~0x3e) | (acu & 8) | ((acu & 2) << 4) |
 				(((--BC & 0xffff) != 0) << 2);
@@ -2343,7 +2343,7 @@ simz80(FASTREG PC)
 			if (BC == 0) BC |= 0x10000;
 			do {
 				acu = GetBYTE_pp(HL);
-				PutBYTE_pp(DE, acu);
+				PutBYTE_pp(DE, (BYTE)acu);
 			} while (--BC);
 			acu += hreg(AF);
 			AF = (AF & ~0x3e) | (acu & 8) | ((acu & 2) << 4);
@@ -2392,7 +2392,7 @@ simz80(FASTREG PC)
 			if (BC == 0) BC |= 0x10000;
 			do {
 				acu = GetBYTE_mm(HL);
-				PutBYTE_mm(DE, acu);
+				PutBYTE_mm(DE, (BYTE)acu);
 			} while (--BC);
 			acu += hreg(AF);
 			AF = (AF & ~0x3e) | (acu & 8) | ((acu & 2) << 4);
@@ -2577,7 +2577,7 @@ simz80(FASTREG PC)
 		case 0x34:			/* INC (IY+dd) */
 			adr = IY + (signed char) GetBYTE_pp(PC);
 			temp = GetBYTE(adr)+1;
-			PutBYTE(adr, temp);
+			PutBYTE(adr, (BYTE)temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				(((temp & 0xf) == 0) << 4) |
@@ -2586,7 +2586,7 @@ simz80(FASTREG PC)
 		case 0x35:			/* DEC (IY+dd) */
 			adr = IY + (signed char) GetBYTE_pp(PC);
 			temp = GetBYTE(adr)-1;
-			PutBYTE(adr, temp);
+			PutBYTE(adr, (BYTE)temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				(((temp & 0xf) == 0xf) << 4) |
@@ -3010,7 +3010,7 @@ simz80(FASTREG PC)
 			case 3: Setlreg(DE, temp); break;
 			case 4: Sethreg(HL, temp); break;
 			case 5: Setlreg(HL, temp); break;
-			case 6: PutBYTE(adr, temp);  break;
+			case 6: PutBYTE(adr, (BYTE)temp);  break;
 			case 7: Sethreg(AF, temp); break;
 			}
 			break;
@@ -3045,73 +3045,72 @@ simz80(FASTREG PC)
 		break;
 	case 0xFF:			/* RST 38H */
 		PUSH(PC); PC = 0x38;
-    }
-/* make registers visible for debugging if interrupted */
-    SAVE_STATE();
-    return (PC&0xffff)|0x10000;	/* flag non-bios stop */
+	}
+
+	/* make registers visible for debugging if interrupted */
+	SAVE_STATE();
+
+	return (PC & 0xffff) | 0x10000; /* flag non-bios stop */
 }
 
 extern bool inROM;
 
 void z80_NMI_Interrupt(void)
 {
-	FASTREG SP = sp;
-	
-    PUSH(pc);
-    pc = 0x0066;
-    sp = SP;
-    inROM = true;
+	WORD SP = sp;
+
+	PUSH(pc);
+	pc = 0x0066;
+	sp = SP;
+	inROM = true;
 }
 
 void z80_IRQ_Interrupt(void)
 {
-	FASTREG SP = sp;
-	
-    PUSH(pc);
-    pc = GetWORD(0xfffe);		// Interrupt vector
-    sp = SP;
+	WORD SP = sp;
+
+	PUSH(pc);
+	pc = GetWORD(0xfffe); // Interrupt vector
+	sp = SP;
 }
 
-void set_Z80_irq_line(int state)
+void set_Z80_irq_line(bool state)
 {
-static int irq_state = 0;
-	
-    if (irq_state != state)
-    {
-        
-        /* if the IF is set, signal an interrupt */
-	    if (state == 1)
-        {
-            if (IFF1)
-            {
-                IFF1 = 0;
-                irq_state = state;
-                z80_IRQ_Interrupt();
-            }
-        }
-        else
-        {
-            irq_state = 0;
-        }
+	static bool irq_state = false;
+
+	if (irq_state != state)
+	{
+		// if the IF is set, signal an interrupt
+		if (state)
+		{
+			if (IFF1)
+			{
+				IFF1 = 0;
+				irq_state = state;
+				z80_IRQ_Interrupt();
+			}
+		}
+		else
+		{
+			irq_state = false;
+		}
 	}
 }
 
-void set_Z80_nmi_line(int state)
+void set_Z80_nmi_line(bool state)
 {
-static int irq_state = 0;
-	
-    if (irq_state != state)
-    {
-        
-	    if (state == 1)
-        {
-            irq_state = state;
-            z80_NMI_Interrupt();
-        }
-        else
-        {
-            irq_state = 0;
-        }
+	static bool irq_state = false;
+
+	if (irq_state != state)
+	{
+		if (state)
+		{
+			irq_state = state;
+			z80_NMI_Interrupt();
+		}
+		else
+		{
+			irq_state = false;
+		}
 	}
-	
 }

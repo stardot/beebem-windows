@@ -143,13 +143,11 @@ void disp_regs()
 	WriteLog("%s\n", str);
 }
 
-int in(unsigned int addr)
+unsigned char in(unsigned int addr)
 {
-	int value = 0xff;
-	int tmp;
-	// int c;
+	unsigned char value = 0xff;
 
-	addr &= 255;
+	addr &= 0xff;
 
 	if (TubeType == Tube::AcornZ80)
 	{
@@ -157,15 +155,15 @@ int in(unsigned int addr)
 	}
 	else
 	{
-		if ( (addr == 0x05) || (addr == 0x01) )
+		if (addr == 0x05 || addr == 0x01)
 		{
 			value = ReadTorchTubeFromParasiteSide(1); // Data Port
 		}
 
-		if ( (addr == 0x06) || (addr == 0x02) )
+		if (addr == 0x06 || addr == 0x02)
 		{
 			value = ReadTorchTubeFromParasiteSide(0); // Status Port
-			tmp = 0x00;
+			unsigned char tmp = 0x00;
 			if (value & 128) tmp |= 2;      // Tube data available
 			if (value & 64) tmp |= 128;     // Tube not full
 			value = tmp;
@@ -209,23 +207,23 @@ void z80_execute()
 		DebugDisassembler(pc, PreZPC, 0, 0, 0, 0, 0, false);
 
 	PreZPC = pc;
-	pc = simz80(pc);
+	pc = (WORD)simz80(pc);
 
 	if (TubeType == Tube::AcornZ80)
 	{
 		if (TubeintStatus & (1 << R1))
-			set_Z80_irq_line(1);
+			set_Z80_irq_line(true);
 		
 		if (TubeintStatus & (1 << R4))
-			set_Z80_irq_line(1);
+			set_Z80_irq_line(true);
 		
 		if (TubeintStatus == 0)
-			set_Z80_irq_line(0);
+			set_Z80_irq_line(false);
 		
 		if (TubeNMIStatus)
-			set_Z80_nmi_line(1);
+			set_Z80_nmi_line(true);
 		else
-			set_Z80_nmi_line(0);
+			set_Z80_nmi_line(false);
 	}
 }
 
@@ -255,9 +253,9 @@ void init_z80()
 		FILE *f = fopen(path, "rb");
 		if (f != nullptr)
 		{
-			int addr = 0;
+			size_t addr = 0;
 			fseek(f, 0, SEEK_END);
-			int count = ftell(f);
+			long count = ftell(f);
 			if (count > 4096) {
 				fseek(f, 0, SEEK_SET);
 				addr=addr+fread(z80_rom+0, 8192, 1, f);
