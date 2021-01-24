@@ -116,7 +116,7 @@ static const char *AboutText =
 	"Acorn 65C02 Second Processor\n"
 	"Torch Z80 Second Processor\nAcorn Z80 Second Processor\n"
 	"Master 512 Second Processor\n"
-	"ARM Second Processor\n\n"
+	"ARM Second Processor\n"
 	"Sprow ARM7TDMI 64MB\n\n"
 	"Version " VERSION_STRING ", " VERSION_DATE;
 
