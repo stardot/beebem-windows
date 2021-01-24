@@ -199,12 +199,12 @@ void SCSIWrite(int Address, int Value)
 		}
 }
 
-int SCSIRead(int Address)
+unsigned char SCSIRead(int Address)
 {
 	if (!SCSIDriveEnabled)
 		return 0xff;
 
-	int data = 0xff;
+	unsigned char data = 0xff;
 
 	switch (Address)
 	{

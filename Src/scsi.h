@@ -27,7 +27,7 @@ extern bool SCSIDriveEnabled;
 
 void SCSIReset();
 void SCSIWrite(int Address, int Value);
-int SCSIRead(int Address);
+unsigned char SCSIRead(int Address);
 void SCSIClose();
 
 #endif

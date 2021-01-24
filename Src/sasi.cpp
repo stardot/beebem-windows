@@ -165,12 +165,12 @@ void SASIWrite(int Address, int Value)
 	}
 }
 
-int SASIRead(int Address)
+unsigned char SASIRead(int Address)
 {
 	if (!SCSIDriveEnabled)
 		return 0xff;
 
-	int data = 0xff;
+	unsigned char data = 0xff;
 
 	switch (Address)
 	{

@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 
 void SASIReset();
 void SASIWrite(int Address, int Value);
-int SASIRead(int Address);
+unsigned char SASIRead(int Address);
 void SASIClose();
 
 #endif
