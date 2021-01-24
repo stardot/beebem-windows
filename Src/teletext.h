@@ -31,7 +31,7 @@ extern char TeletextCustomIP[4][20];
 extern u_short TeletextCustomPort[4];
 
 void TeletextWrite(int Address, int Value);
-int TeletextRead(int Address);
+unsigned char TeletextRead(int Address);
 void TeletextPoll(void);
 void TeletextLog(char *text, ...);
 void TeletextInit(void);

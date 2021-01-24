@@ -64,7 +64,7 @@ bool TeletextFiles;
 bool TeletextLocalhost;
 bool TeletextCustom;
 
-int TeletextStatus = 0x0f;
+unsigned char TeletextStatus = 0x0f;
 bool TeletextInts = false;
 bool TeletextEnable = false;
 int TeletextChannel = 0;
@@ -277,12 +277,12 @@ void TeletextWrite(int Address, int Value)
     }
 }
 
-int TeletextRead(int Address)
+unsigned char TeletextRead(int Address)
 {
     if (!TeletextAdapterEnabled)
         return 0xff;
 
-    int data = 0x00;
+    unsigned char data = 0x00;
 
     switch (Address)
     {
