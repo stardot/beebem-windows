@@ -59,6 +59,8 @@ Status register:
 #include "beebmem.h"
 #include "log.h"
 
+#define ENABLE_LOG 0
+
 bool TeletextAdapterEnabled = false;
 bool TeletextFiles;
 bool TeletextLocalhost;
@@ -86,23 +88,6 @@ u_short TeletextCustomPort[4];
 
 static SOCKET TeletextSocket[4] = { INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET };
 bool TeletextSocketConnected[4] = { false, false, false, false };
-
-void TeletextLog(char *text, ...)
-{
-    return;
-
-    va_list argptr;
-    va_start(argptr, text);
-
-    FILE *f = fopen("teletext.log", "at");
-    if (f)
-    {
-        vfprintf(f, text, argptr);
-        fclose(f);
-    }
-
-    va_end(argptr);
-}
 
 static int TeletextConnect(int ch)
 {
@@ -238,7 +223,9 @@ void TeletextWrite(int Address, int Value)
     if (!TeletextAdapterEnabled)
         return;
 
-    TeletextLog("TeletextWrite Address = 0x%02x, Value = 0x%02x, PC = 0x%04x\n", Address, Value, ProgramCounter);
+    #if ENABLE_LOG
+    WriteLog("TeletextWrite Address = 0x%02x, Value = 0x%02x, PC = 0x%04x\n", Address, Value, ProgramCounter);
+    #endif
 
     switch (Address)
     {
@@ -292,9 +279,11 @@ unsigned char TeletextRead(int Address)
     case 0x01:          // Row Register
         break;
     case 0x02:          // Data Register
+        #if ENABLE_LOG
         if (colPtr == 0x00)
-            TeletextLog("TeletextRead Reading Row %d, PC = 0x%04x\n", rowPtr, ProgramCounter);
-        // TeletextLog("TeletextRead Returning Row %d, Col %d, Data %d, PC = 0x%04x\n", rowPtr, colPtr, row[rowPtr][colPtr], ProgramCounter);
+            WriteLog("TeletextRead Reading Row %d, PC = 0x%04x\n", rowPtr, ProgramCounter);
+        // WriteLog("TeletextRead Returning Row %d, Col %d, Data %d, PC = 0x%04x\n", rowPtr, colPtr, row[rowPtr][colPtr], ProgramCounter);
+        #endif
 
         data = row[rowPtr][colPtr++];
         break;
@@ -305,7 +294,9 @@ unsigned char TeletextRead(int Address)
         break;
     }
 
-    TeletextLog("TeletextRead Address = 0x%02x, Value = 0x%02x, PC = 0x%04x\n", Address, data, ProgramCounter);
+    #if ENABLE_LOG
+    WriteLog("TeletextRead Address = 0x%02x, Value = 0x%02x, PC = 0x%04x\n", Address, data, ProgramCounter);
+    #endif
 
     return data;
 }

@@ -33,6 +33,5 @@ extern u_short TeletextCustomPort[4];
 void TeletextWrite(int Address, int Value);
 unsigned char TeletextRead(int Address);
 void TeletextPoll(void);
-void TeletextLog(char *text, ...);
 void TeletextInit(void);
 void TeletextClose(void);
