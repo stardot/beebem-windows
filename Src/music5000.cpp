@@ -103,10 +103,7 @@ void Music5000Init()
 	UINT chord;
 	UINT step;
 
-	if (sizeof(WAVERAM) != RAM_SIZE)
-	{
-		exit(-1);
-	}
+	static_assert(sizeof(WAVERAM) == RAM_SIZE, "WAVERAM size");
 
 	memset(WaveRam, 0, sizeof(WaveRam));
 	memset(PhaseRam, 0, sizeof(PhaseRam));
