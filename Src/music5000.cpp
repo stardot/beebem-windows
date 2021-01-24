@@ -158,7 +158,7 @@ void Music5000Reset()
 	JimPageSelectRegister = 0;
 }
 
-void Music5000Write(UINT16 address, UINT8 value)
+void Music5000Write(int address, unsigned char value)
 {
 	if (!Music5000Enabled)
 		return;
@@ -185,7 +185,7 @@ void Music5000Write(UINT16 address, UINT8 value)
 #endif
 }
 
-bool Music5000Read(UINT16 address, UINT8 *value)
+bool Music5000Read(int address, unsigned char *value)
 {
 	if (!Music5000Enabled)
 		return false;
