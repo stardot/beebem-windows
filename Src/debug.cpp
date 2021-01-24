@@ -1948,11 +1948,17 @@ bool DebugLoadSwiftLabels(const char* filename)
 
 void DebugChompString(char *str)
 {
-	int end = strlen(str) - 1;
-	while(end > 0 && (str[end] == '\r' || str[end] == '\n' || str[end] == ' ' || str[end] == '\t'))
+	const size_t length = strlen(str);
+
+	if (length > 0)
 	{
-		str[end] = '\0';
-		end--;
+		size_t end = length - 1;
+
+		while (end > 0 && (str[end] == '\r' || str[end] == '\n' || str[end] == ' ' || str[end] == '\t'))
+		{
+			str[end] = '\0';
+			end--;
+		}
 	}
 }
 
