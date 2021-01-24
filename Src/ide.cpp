@@ -118,9 +118,9 @@ void IDEWrite(int Address, int Value)
     }
 }
 
-int IDERead(int Address)
+unsigned char IDERead(int Address)
 {
-    int data = 0xff;
+    unsigned char data = 0xff;
 
     switch (Address)
     {
@@ -156,6 +156,7 @@ int IDERead(int Address)
         data = IDERegs[Address];
         break;
     }
+
     return data;
 }
 

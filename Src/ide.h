@@ -28,7 +28,7 @@ Boston, MA  02110-1301, USA.
 extern bool IDEDriveEnabled;
 
 void IDEWrite(int Address, int Value);
-int IDERead(int Address);
+unsigned char IDERead(int Address);
 void IDEReset();
 void IDEClose();
 
