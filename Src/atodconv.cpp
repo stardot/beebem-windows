@@ -69,10 +69,12 @@ void AtoDWrite(int Address, int Value)
 }
 
 /*--------------------------------------------------------------------------*/
-/* Address is in the range 0-f - with the fec0 stripped out */
-int AtoDRead(int Address)
+
+// Address is in the range 0-f - with the fec0 stripped out
+
+unsigned char AtoDRead(int Address)
 {
-	int Value = 0xff;
+	unsigned char Value = 0xff;
 
 	switch (Address)
 	{
@@ -89,7 +91,7 @@ int AtoDRead(int Address)
 		break;
 	}
 
-	return(Value);
+	return Value;
 }
 
 /*--------------------------------------------------------------------------*/

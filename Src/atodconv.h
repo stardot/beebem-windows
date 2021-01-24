@@ -29,7 +29,7 @@ extern int JoystickX;  /* 16 bit number, 0 = right */
 extern int JoystickY;  /* 16 bit number, 0 = down */
 
 void AtoDWrite(int Address, int Value);
-int AtoDRead(int Address);
+unsigned char AtoDRead(int Address);
 void AtoDInit(void);
 void AtoDEnable(void);
 void AtoDDisable(void);
