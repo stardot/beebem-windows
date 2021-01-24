@@ -55,9 +55,9 @@ extern long ScreenAdjust;
 
 void RedoMPTR(void);
 void CRTCWrite(int Address, unsigned char Value);
-int CRTCRead(int Address);
+unsigned char CRTCRead(int Address);
 void VideoULAWrite(int Address, unsigned char Value);
-int VideoULARead(int Address);
+unsigned char VideoULARead(int Address);
 void VideoInit(void);
 void video_dumpstate(void);
 void VideoDoScanLine(void);

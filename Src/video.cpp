@@ -16,8 +16,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -111,10 +111,10 @@ struct VideoStateT {
   int Addr;       /* Address of start of next visible character line in beeb memory  - raw */
   int StartAddr;  /* Address of start of first character line in beeb memory  - raw */
   int PixmapLine; /* Current line in the pixmap */
-  int FirstPixmapLine; /* The first pixmap line where something is visible.  Used to eliminate the 
+  int FirstPixmapLine; /* The first pixmap line where something is visible.  Used to eliminate the
                           blank vertical retrace lines at the top of the screen. */
   int PreviousFirstPixmapLine; /* The first pixmap line on the previous frame */
-  int LastPixmapLine; /* The last pixmap line where something is visible.  Used to eliminate the 
+  int LastPixmapLine; /* The last pixmap line where something is visible.  Used to eliminate the
                           blank vertical retrace lines at the bottom of the screen. */
   int PreviousLastPixmapLine; /* The last pixmap line on the previous frame */
   bool IsTeletext; /* This frame is a teletext frame - do things differently */
@@ -604,7 +604,7 @@ static void VideoStartOfFrame(void) {
 #else
                 frametime/=(double)sysconf(_SC_CLK_TCK);
 #endif
-#else 
+#else
                 frametime/=(double)HZ;
 #endif
     frametime/=(double)BEEB_DOTIME_SAMPLESIZE;
@@ -782,8 +782,8 @@ static void DoMode7Row(void) {
   bool Separated = false; // i.e. continuous graphics
   bool HoldGraph;
   bool NextHoldGraph = false; // i.e. don't hold graphics
-  int HoldGraphChar;
-  int NextHoldGraphChar=32; // the character to "hold" during control codes
+  unsigned char HoldGraphChar;
+  unsigned char NextHoldGraphChar = 32; // the character to "hold" during control codes
   bool HoldSeparated;
   bool NextHoldSeparated = false; // Separated graphics mode in force when grapics held
   unsigned int CurrentCol[20]={0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff,0xffffff
@@ -805,7 +805,7 @@ static void DoMode7Row(void) {
     HoldGraphChar=NextHoldGraphChar;
     HoldSeparated=NextHoldSeparated;
     Graphics=NextGraphics;
-    byte=CurrentPtr[CurrentChar]; 
+    byte=CurrentPtr[CurrentChar];
     if (byte<32) byte+=128; // fix for naughty programs that use 7-bit control codes - Richard Gellman
     if ((byte & 32) && Graphics) {
       NextHoldGraphChar=byte;
@@ -901,7 +901,7 @@ static void DoMode7Row(void) {
     /* Top bit never reaches character generator */
     byte&=127;
     /* Our font table goes from character 32 up */
-    if (byte<32) byte=0; else byte-=32; 
+    if (byte < 32) byte = 0; else byte -= 32;
 
     /* Conceal flashed text if necessary */
     ActualForeground=(Flash && !Mode7FlashOn)?Background:Foreground;
@@ -925,7 +925,7 @@ static void DoMode7Row(void) {
 
             /* Do we need to draw ? */
             if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=XStep; else {
-              if (CurrentLen[CurrentScanLine]) 
+              if (CurrentLen[CurrentScanLine])
                 mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
               CurrentCol[CurrentScanLine]=col;
               CurrentStartX[CurrentScanLine]=CurrentX;
@@ -1315,7 +1315,9 @@ void CRTCWrite(int Address, unsigned char Value) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-int CRTCRead(int Address) {
+
+unsigned char CRTCRead(int Address)
+{
   if (Address & 1) {
     switch (CRTCControlReg) {
       case 12:
@@ -1365,8 +1367,10 @@ void VideoULAWrite(int Address, unsigned char Value) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-int VideoULARead(int /* Address */) {
-  return 0xfe; // Read not defined from Video ULA
+
+unsigned char VideoULARead(int /* Address */)
+{
+	return 0xfe; // Read not defined from Video ULA
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -1404,7 +1408,7 @@ static void VideoAddCursor() {
 		CurStart = CRTC_CursorStart & 0x1f;
 		CurEnd = CRTC_CursorEnd;
 	}
-		
+
 	RelAddr=CurAddr-ScrAddr;
 	if (RelAddr < 0 || CRTC_HorizontalDisplayed == 0)
 		return;
