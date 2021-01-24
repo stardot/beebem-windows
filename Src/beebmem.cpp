@@ -76,7 +76,7 @@ BankType RomBankType[16] = {
 	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty
 };
 
-int PagedRomReg;
+unsigned char PagedRomReg;
 
 // Computech (&B+) Specific Stuff Added by K.Lowe 18/08/03
 bool MemSel = false; // Shadow/Main RAM Toggle
@@ -608,8 +608,10 @@ void DebugMemoryState()
 }
 
 /*----------------------------------------------------------------------------*/
-static void DoRomChange(int NewBank) {
-  ROMSEL=NewBank&0xf;
+
+static void DoRomChange(unsigned char NewBank)
+{
+  ROMSEL = NewBank & 0xf;
 
   if (MachineType != Model::Master128) {
     NewBank&=0xf; // strip top bit if Model B

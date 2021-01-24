@@ -48,7 +48,7 @@ extern BankType RomBankType[16]; // Identifies what is in each bank
 extern unsigned char WholeRam[65536];
 extern unsigned char Roms[16][16384];
 extern unsigned char ROMSEL;
-extern int PagedRomReg;
+extern unsigned char PagedRomReg;
 
 /* Master 128 Specific Stuff */
 extern unsigned char FSRam[8192]; // 8K Filing System RAM
