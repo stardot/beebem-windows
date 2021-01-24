@@ -13,8 +13,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -227,12 +227,12 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
 						IP232Write(Data );
 						if (!IP232raw && Data == 255) IP232Write(Data);
 //					}
-				} 
+				}
 				else
 				{
 					WriteFile(hSerialPort,&SerialWriteBuffer,1,&BytesOut,&olSerialWrite);
 				}
-			
+
 			SetACIAStatus(1);
 		}
 	}
@@ -303,7 +303,7 @@ void HandleData(unsigned char AData) {
 	ResetACIAStatus(5);
 	if (RxD==2) { RDR=RDSR; RDSR=AData; SetACIAStatus(5); } // overrun
 	if (RIE) { intStatus|=1<<serial; SetACIAStatus(7); } // interrupt on receive/overun
-	if (RxD<2) RxD++; 	
+	if (RxD<2) RxD++;
 }
 
 
@@ -320,7 +320,7 @@ unsigned char Read_ACIA_Rx_Data(void) {
 	intStatus&=~(1<<serial);
 	ResetACIAStatus(7);
 	TData=RDR; RDR=RDSR; RDSR=0;
-	if (RxD>0) RxD--; 
+	if (RxD>0) RxD--;
 	if (RxD==0) ResetACIAStatus(0);
 	if ((RxD>0) && (RIE)) { intStatus|=1<<serial; SetACIAStatus(7); }
 	if (Data_Bits==7) TData&=127;
@@ -354,7 +354,7 @@ void Serial_Poll(void)
 	{
 		if (TapeRecording)
 		{
-		
+
 //			if (trace == 1) WriteLog("Here - TapeRecording\n");
 
 			if (Cass_Relay && UEFOpen && TotalCycles >= TapeTrigger)
@@ -436,7 +436,7 @@ void Serial_Poll(void)
 			{
 				if (UEFRES_TYPE(UEF_BUF) != UEFRES_TYPE(NEW_UEF_BUF))
 					TapeControlUpdateCounter(TapeClock);
-		
+
 				UEF_BUF=NEW_UEF_BUF;
 
 				// New data read in, so do something about it
@@ -473,15 +473,15 @@ void Serial_Poll(void)
 				}
 			}
 
-// CSW stuff			
+// CSW stuff
 
 			if (Cass_Relay && CSWOpen && TapeClock != OldClock)
 			{
 				CSWState last_state = csw_state;
-				
+
 				CSW_BUF = csw_poll(TapeClock);
 				OldClock = TapeClock;
-			
+
 				if (last_state != csw_state)
 					TapeControlUpdateCounter(csw_ptr);
 
@@ -490,7 +490,7 @@ void Serial_Poll(void)
 					DCDI=1;
 					TapeAudio.Signal=0;
 				}
-				
+
 				// New data read in, so do something about it
 				if (csw_state == CSWState::Tone)
 				{
@@ -516,12 +516,12 @@ void Serial_Poll(void)
 				{
 					if (TapePlaying)
 						TapeClock++;
-					
+
 					TapeTrigger = TotalCycles + CSW_CYCLES;
-					
+
 				}
 			}
-			
+
 			if (DCDI==1 && ODCDI==0)
 			{
 				// low to high transition on the DCD line
@@ -554,7 +554,7 @@ void Serial_Poll(void)
 			}
 		}
 		else if (EthernetPortEnabled)
-		{	
+		{
 			if (IP232Poll())
 			{
 				if (RxD<2)
@@ -583,7 +583,7 @@ void Serial_Poll(void)
 					}
 				}
 			}
-		} 
+		}
 	}
 }
 
@@ -616,7 +616,7 @@ unsigned int __stdcall StatThread(void * /* lpParam */) {
 		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled) {
 			if (GetOverlappedResult(hSerialPort,&olStatus,&dwOvRes,FALSE)) {
 				// Event waiting in dwCommEvent
-				if ((dwCommEvent & EV_RXCHAR) && (!bWaitingForData)) { 
+				if ((dwCommEvent & EV_RXCHAR) && !bWaitingForData) {
 					bCharReady = true;
 				}
 				if (dwCommEvent & EV_CTS) {
@@ -713,7 +713,7 @@ void InitSerialPort(void) {
 			ctSerialPort.ReadTotalTimeoutMultiplier=0;
 			ctSerialPort.WriteTotalTimeoutConstant=0;
 			ctSerialPort.WriteTotalTimeoutMultiplier=0;
-			SetCommTimeouts(hSerialPort,&ctSerialPort); 
+			SetCommTimeouts(hSerialPort,&ctSerialPort);
 			SetCommMask(hSerialPort,EV_CTS | EV_RXCHAR | EV_ERR);
 		}
 	}
@@ -727,7 +727,7 @@ void CloseUEF(void) {
 		UEFOpen = false;
 		TxD=0;
 		RxD=0;
-		if (TapeControlEnabled) 
+		if (TapeControlEnabled)
 			SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
 	}
 }
@@ -907,7 +907,7 @@ bool map_file(const char *file_name)
 					map_lines++;
 					blk_num++;
 				}
-					
+
 				if (UEFRES_TYPE(data) == UEF_HTONE)
 				{
 					// strcpy(map_desc[map_lines++], "Tone");
@@ -1002,7 +1002,7 @@ void TapeControlCloseDialog()
 
 void TapeControlOpenFile(const char *UEFName)
 {
-	if (TapeControlEnabled) 
+	if (TapeControlEnabled)
 	{
 		if (!CSWOpen)
 		{
@@ -1025,7 +1025,7 @@ void TapeControlOpenFile(const char *UEFName)
 
 void TapeControlUpdateCounter(int tape_time)
 {
-	if (TapeControlEnabled) 
+	if (TapeControlEnabled)
 	{
 		int i = 0;
 		while (i < map_lines && map_time[i] <= tape_time)
@@ -1238,28 +1238,28 @@ void LoadSerialUEF(FILE *SUEF)
 		}
 		else
 		{
-			Cass_Relay=fgetc(SUEF) != 0;
-			Tx_Rate=fget32(SUEF);
-			Rx_Rate=fget32(SUEF);
-			Clk_Divide=fgetc(SUEF);
-			Parity=fgetc(SUEF);
-			Stop_Bits=fgetc(SUEF);
-			Data_Bits=fgetc(SUEF);
-			RIE=fgetc(SUEF);
-			TIE=fgetc(SUEF);
-			TxD=fgetc(SUEF);
-			RxD=fgetc(SUEF);
-			RDR=fgetc(SUEF);
-			TDR=fgetc(SUEF);
-			RDSR=fgetc(SUEF);
-			TDSR=fgetc(SUEF);
-			ACIA_Status=fgetc(SUEF);
-			ACIA_Control=fgetc(SUEF);
-			SP_Control=fgetc(SUEF);
-			DCD=fgetc(SUEF);
-			DCDI=fgetc(SUEF);
-			ODCDI=fgetc(SUEF);
-			DCDClear=fgetc(SUEF);
+			Cass_Relay = fgetbool(SUEF);
+			Tx_Rate = fget32(SUEF);
+			Rx_Rate = fget32(SUEF);
+			Clk_Divide = fget8(SUEF);
+			Parity = fget8(SUEF);
+			Stop_Bits = fget8(SUEF);
+			Data_Bits = fget8(SUEF);
+			RIE = fget8(SUEF);
+			TIE = fget8(SUEF);
+			TxD = fget8(SUEF);
+			RxD = fget8(SUEF);
+			RDR = fget8(SUEF);
+			TDR = fget8(SUEF);
+			RDSR = fget8(SUEF);
+			TDSR = fget8(SUEF);
+			ACIA_Status = fget8(SUEF);
+			ACIA_Control = fget8(SUEF);
+			SP_Control = fget8(SUEF);
+			DCD = fget8(SUEF);
+			DCDI = fget8(SUEF);
+			ODCDI = fget8(SUEF);
+			DCDClear = fget8(SUEF);
 			TapeClock=fget32(SUEF);
 			sp=fget32(SUEF);
 			if (sp != TapeClockSpeed)

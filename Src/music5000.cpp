@@ -358,11 +358,11 @@ void LoadMusic5000UEF(FILE *SUEF, int Version)
 	SampleLeft=fget32(SUEF);
 	SampleRight=fget32(SUEF);
 	if (Version >= 13) {
-		JimPageSelectRegister = fgetc(SUEF);
+		JimPageSelectRegister = fget8(SUEF);
 	}
 }
 
 void LoadMusic5000JIMPageRegUEF(FILE *SUEF)
 {
-	JimPageSelectRegister = fgetc(SUEF);
+	JimPageSelectRegister = fget8(SUEF);
 }

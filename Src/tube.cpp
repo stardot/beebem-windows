@@ -2525,43 +2525,42 @@ void Save65C02MemUEF(FILE *SUEF) {
 }
 
 void LoadTubeUEF(FILE *SUEF) {
-	R1Status=fgetc(SUEF);
+	R1Status = fget8(SUEF);
 	fread(R1PHData,1,TubeBufferLength,SUEF);
-	R1PHPtr=fgetc(SUEF);
-	R1HStatus=fgetc(SUEF);
-	R1HPData=fgetc(SUEF);
-	R1PStatus=fgetc(SUEF);
-	R2PHData=fgetc(SUEF);
-	R2HStatus=fgetc(SUEF);
-	R2HPData=fgetc(SUEF);
-	R2PStatus=fgetc(SUEF);
-	R3PHData[0]=fgetc(SUEF);
-	R3PHData[1]=fgetc(SUEF);
-	R3PHPtr=fgetc(SUEF);
-	R3HStatus=fgetc(SUEF);
-	R3HPData[0]=fgetc(SUEF);
-	R3HPData[1]=fgetc(SUEF);
-	R3HPPtr=fgetc(SUEF);
-	R3PStatus=fgetc(SUEF);
-	R4PHData=fgetc(SUEF);
-	R4HStatus=fgetc(SUEF);
-	R4HPData=fgetc(SUEF);
-	R4PStatus=fgetc(SUEF);
+	R1PHPtr = fget8(SUEF);
+	R1HStatus = fget8(SUEF);
+	R1HPData = fget8(SUEF);
+	R1PStatus = fget8(SUEF);
+	R2PHData = fget8(SUEF);
+	R2HStatus = fget8(SUEF);
+	R2HPData = fget8(SUEF);
+	R2PStatus = fget8(SUEF);
+	R3PHData[0] = fget8(SUEF);
+	R3PHData[1] = fget8(SUEF);
+	R3PHPtr = fget8(SUEF);
+	R3HStatus = fget8(SUEF);
+	R3HPData[0] = fget8(SUEF);
+	R3HPData[1] = fget8(SUEF);
+	R3HPPtr = fget8(SUEF);
+	R3PStatus = fget8(SUEF);
+	R4PHData = fget8(SUEF);
+	R4HStatus = fget8(SUEF);
+	R4HPData = fget8(SUEF);
+	R4PStatus = fget8(SUEF);
 }
 
 void Load65C02UEF(FILE *SUEF) {
-	int Dlong;
-	TubeProgramCounter=fget16(SUEF);
-	Accumulator=fgetc(SUEF);
-	XReg=fgetc(SUEF);
-	YReg=fgetc(SUEF);
-	StackReg=fgetc(SUEF);
-	PSR=fgetc(SUEF);
-	//TotalTubeCycles=fget32(SUEF);
-	Dlong=fget32(SUEF);
-	TubeintStatus=fgetc(SUEF);
-	TubeNMIStatus=fgetc(SUEF);
-	TubeNMILock=fgetc(SUEF) != 0;
+	TubeProgramCounter = fget16(SUEF);
+	Accumulator = fget8(SUEF);
+	XReg = fget8(SUEF);
+	YReg = fget8(SUEF);
+	StackReg = fget8(SUEF);
+	PSR = fget8(SUEF);
+	// TotalTubeCycles = fget32(SUEF);
+	int Dlong = fget32(SUEF);
+	TubeintStatus = fget8(SUEF);
+	TubeNMIStatus = fget8(SUEF);
+	TubeNMILock = fgetbool(SUEF);
 }
 
 void Load65C02MemUEF(FILE *SUEF) {

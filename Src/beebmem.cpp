@@ -1369,9 +1369,9 @@ void SaveMemUEF(FILE *SUEF) {
 }
 
 void LoadRomRegsUEF(FILE *SUEF) {
-	PagedRomReg=fgetc(SUEF);
-	ROMSEL=PagedRomReg & 0xf;
-	ACCCON=fgetc(SUEF);
+	PagedRomReg = fget8(SUEF);
+	ROMSEL = PagedRomReg & 0xf;
+	ACCCON = fget8(SUEF);
 	switch (MachineType) {
 	case Model::IntegraB:
 		MemSel = (PagedRomReg & 0x80) != 0;
@@ -1381,7 +1381,7 @@ void LoadRomRegsUEF(FILE *SUEF) {
 		Prvs8 = (ACCCON & 0x40) != 0;
 		Prvs4 = (ACCCON & 0x20) != 0;
 		Prvs1 = (ACCCON & 0x10) != 0;
-		HidAdd = fgetc(SUEF) != 0;
+		HidAdd = fgetbool(SUEF);
 		break;
 
 	case Model::BPlus:

@@ -34,6 +34,9 @@ void fput32(unsigned int word32,FILE *fileptr);
 void fput16(unsigned int word16,FILE *fileptr);
 unsigned int fget32(FILE *fileptr);
 unsigned int fget16(FILE *fileptr);
+unsigned char fget8(FILE *fileptr);
+bool fgetbool(FILE *fileptr);
+
 UEFStateResult SaveUEFState(const char *StateName);
 UEFStateResult LoadUEFState(const char *StateName);
 

@@ -175,10 +175,10 @@ void SaveAtoDUEF(FILE *SUEF) {
 		fput32(AtoDTrigger - TotalCycles,SUEF);
 }
 void LoadAtoDUEF(FILE *SUEF) {
-	AtoDState.datalatch = fgetc(SUEF);
-	AtoDState.status = fgetc(SUEF);
-	AtoDState.high = fgetc(SUEF);
-	AtoDState.low = fgetc(SUEF);
+	AtoDState.datalatch = fget8(SUEF);
+	AtoDState.status = fget8(SUEF);
+	AtoDState.high = fget8(SUEF);
+	AtoDState.low = fget8(SUEF);
 	AtoDTrigger = fget32(SUEF);
 	if (AtoDTrigger != CycleCountTMax)
 		AtoDTrigger+=TotalCycles;

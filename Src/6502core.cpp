@@ -3153,19 +3153,18 @@ void Save6502UEF(FILE *SUEF) {
 }
 
 void Load6502UEF(FILE *SUEF) {
-	int Dlong;
-	ProgramCounter=fget16(SUEF);
-	Accumulator=fgetc(SUEF);
-	XReg=fgetc(SUEF);
-	YReg=fgetc(SUEF);
-	StackReg=fgetc(SUEF);
-	PSR=fgetc(SUEF);
-	//TotalCycles=fget32(SUEF);
-	Dlong=fget32(SUEF);
-	intStatus=fgetc(SUEF);
-	NMIStatus=fgetc(SUEF);
-	NMILock=fgetc(SUEF) != 0;
-	//AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
+	ProgramCounter = fget16(SUEF);
+	Accumulator = fget8(SUEF);
+	XReg = fget8(SUEF);
+	YReg = fget8(SUEF);
+	StackReg = fget8(SUEF);
+	PSR = fget8(SUEF);
+	// TotalCycles = fget32(SUEF);
+	int Dlong = fget32(SUEF);
+	intStatus = fget8(SUEF);
+	NMIStatus = fget8(SUEF);
+	NMILock = fgetbool(SUEF);
+	// AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
 }
 
 void WriteInstructionCounts(const char *FileName)

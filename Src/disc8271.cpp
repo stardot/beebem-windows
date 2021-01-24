@@ -13,8 +13,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -80,8 +80,6 @@ const unsigned char SPECIAL_REG_SURFACE_0_BAD_TRACK_1     = 0x10;
 const unsigned char SPECIAL_REG_SURFACE_0_BAD_TRACK_2     = 0x11;
 const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_1     = 0x18;
 const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2     = 0x19;
-
-using namespace std;
 
 bool Disc8271Enabled = true;
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
@@ -246,7 +244,7 @@ static int SkipBadTracks(int Unit, int trackin) {
   {
     if (Internal_BadTracks[Unit][0]<=trackin) offset++;
     if (Internal_BadTracks[Unit][1]<=trackin) offset++;
-  }  
+  }
   return(trackin+offset);
 }
 
@@ -432,7 +430,7 @@ static void WriteInterrupt(void) {
       }
     }
   }
-  
+
   if (!LastByte) {
     StatusReg = STATUS_REG_COMMAND_BUSY |
                 STATUS_REG_INTERRUPT_REQUEST |
@@ -547,7 +545,7 @@ static void ReadInterrupt(void) {
       SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
     }
   }
-  
+
   if (!LastByte) {
     StatusReg = STATUS_REG_COMMAND_BUSY |
                 STATUS_REG_INTERRUPT_REQUEST |
@@ -648,7 +646,7 @@ static void ReadIDInterrupt(void) {
       SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
     }
   }
-  
+
   if (!LastByte) {
     StatusReg = STATUS_REG_COMMAND_BUSY |
                 STATUS_REG_INTERRUPT_REQUEST |
@@ -796,7 +794,7 @@ static void FormatInterrupt(void) {
       }
     }
   }
-  
+
   if (!LastByte) {
     StatusReg = STATUS_REG_COMMAND_BUSY |
                 STATUS_REG_INTERRUPT_REQUEST |
@@ -1138,7 +1136,7 @@ static void ParamRegWrite(unsigned char Value) {
     #endif
   } else {
     Params[PresentParam++]=Value;
-    
+
     StatusReg&=0xfe; /* Observed on beeb */
     UPDATENMISTATUS;
 
@@ -1372,7 +1370,7 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
       DiscStore[DriveNum][Head][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
       DiscStore[DriveNum][Head][CurrentTrack].Gap3Size=0;
       DiscStore[DriveNum][Head][CurrentTrack].Gap5Size=0;
-  
+
       for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
         SecPtr[CurrentSector].IDField.CylinderNum=CurrentTrack;
         SecPtr[CurrentSector].IDField.RecordNum=CurrentSector;
@@ -1747,20 +1745,20 @@ void Load8271UEF(FILE *SUEF)
 		if (Disc8271Trigger != CycleCountTMax)
 			Disc8271Trigger+=TotalCycles;
 
-		ResultReg=fgetc(SUEF);
-		StatusReg=fgetc(SUEF);
-		DataReg=fgetc(SUEF);
-		Internal_Scan_SectorNum=fgetc(SUEF);
+		ResultReg = fget8(SUEF);
+		StatusReg = fget8(SUEF);
+		DataReg = fget8(SUEF);
+		Internal_Scan_SectorNum = fget8(SUEF);
 		Internal_Scan_Count=fget32(SUEF);
-		Internal_ModeReg=fgetc(SUEF);
-		Internal_CurrentTrack[0]=fgetc(SUEF);
-		Internal_CurrentTrack[1]=fgetc(SUEF);
-		Internal_DriveControlOutputPort=fgetc(SUEF);
-		Internal_DriveControlInputPort=fgetc(SUEF);
-		Internal_BadTracks[0][0]=fgetc(SUEF);
-		Internal_BadTracks[0][1]=fgetc(SUEF);
-		Internal_BadTracks[1][0]=fgetc(SUEF);
-		Internal_BadTracks[1][1]=fgetc(SUEF);
+		Internal_ModeReg = fget8(SUEF);
+		Internal_CurrentTrack[0] = fget8(SUEF);
+		Internal_CurrentTrack[1] = fget8(SUEF);
+		Internal_DriveControlOutputPort = fget8(SUEF);
+		Internal_DriveControlInputPort = fget8(SUEF);
+		Internal_BadTracks[0][0] = fget8(SUEF);
+		Internal_BadTracks[0][1] = fget8(SUEF);
+		Internal_BadTracks[1][0] = fget8(SUEF);
+		Internal_BadTracks[1][1] = fget8(SUEF);
 		ThisCommand=fget32(SUEF);
 		NParamsInThisCommand=fget32(SUEF);
 		PresentParam=fget32(SUEF);

@@ -14,8 +14,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -125,26 +125,25 @@ void SaveVIAUEF(FILE *SUEF) {
 }
 
 void LoadViaUEF(FILE *SUEF) {
-	VIAState *VIAPtr;
-	int VIAType;
-	VIAType=fgetc(SUEF); if (VIAType) VIAPtr=&UserVIAState; else VIAPtr=&SysVIAState;
-	VIAPtr->orb=fgetc(SUEF);
-	VIAPtr->irb=fgetc(SUEF);
-	VIAPtr->ora=fgetc(SUEF);
-	VIAPtr->ira=fgetc(SUEF);
-	VIAPtr->ddrb=fgetc(SUEF);
-	VIAPtr->ddra=fgetc(SUEF);
-	VIAPtr->timer1c=fget16(SUEF) * 2;
-	VIAPtr->timer1l=fget16(SUEF);
-	VIAPtr->timer2c=fget16(SUEF) * 2;
-	VIAPtr->timer2l=fget16(SUEF);
-	VIAPtr->acr=fgetc(SUEF);
-	VIAPtr->pcr=fgetc(SUEF);
-	VIAPtr->ifr=fgetc(SUEF);
-	VIAPtr->ier=fgetc(SUEF);
-	VIAPtr->timer1hasshot=fgetc(SUEF) != 0;
-	VIAPtr->timer2hasshot=fgetc(SUEF) != 0;
-	if (!VIAType) IC32State=fgetc(SUEF);
+	int VIAType = fget8(SUEF);
+	VIAState *VIAPtr = VIAType ? &UserVIAState : &SysVIAState;
+	VIAPtr->orb = fget8(SUEF);
+	VIAPtr->irb = fget8(SUEF);
+	VIAPtr->ora = fget8(SUEF);
+	VIAPtr->ira = fget8(SUEF);
+	VIAPtr->ddrb = fget8(SUEF);
+	VIAPtr->ddra = fget8(SUEF);
+	VIAPtr->timer1c = fget16(SUEF) * 2;
+	VIAPtr->timer1l = fget16(SUEF);
+	VIAPtr->timer2c = fget16(SUEF) * 2;
+	VIAPtr->timer2l = fget16(SUEF);
+	VIAPtr->acr = fget8(SUEF);
+	VIAPtr->pcr = fget8(SUEF);
+	VIAPtr->ifr = fget8(SUEF);
+	VIAPtr->ier = fget8(SUEF);
+	VIAPtr->timer1hasshot = fgetbool(SUEF);
+	VIAPtr->timer2hasshot = fgetbool(SUEF);
+	if (!VIAType) IC32State = fget8(SUEF);
 
   VIAPtr->ca2 = ((VIAPtr->pcr & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH);
   VIAPtr->cb2 = ((VIAPtr->pcr & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_HIGH);

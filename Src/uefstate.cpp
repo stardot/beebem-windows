@@ -65,6 +65,16 @@ unsigned int fget16(FILE *fileptr) {
 	return(tmpvar);
 }
 
+unsigned char fget8(FILE *fileptr)
+{
+	return (unsigned char)fgetc(fileptr);
+}
+
+bool fgetbool(FILE *fileptr)
+{
+	return fget8(fileptr) != 0;
+}
+
 UEFStateResult SaveUEFState(const char *StateName) {
 	FILE *UEFState = fopen(StateName, "wb");
 	if (UEFState != nullptr)

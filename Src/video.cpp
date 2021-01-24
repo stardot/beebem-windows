@@ -1540,33 +1540,33 @@ void SaveVideoUEF(FILE *SUEF) {
 }
 
 void LoadVideoUEF(FILE *SUEF, int Version) {
-	CRTC_HorizontalTotal=fgetc(SUEF);
-	CRTC_HorizontalDisplayed=fgetc(SUEF);
-	CRTC_HorizontalSyncPos=fgetc(SUEF);
-	CRTC_SyncWidth=fgetc(SUEF);
-	CRTC_VerticalTotal=fgetc(SUEF);
-	CRTC_VerticalTotalAdjust=fgetc(SUEF);
-	CRTC_VerticalDisplayed=fgetc(SUEF);
-	CRTC_VerticalSyncPos=fgetc(SUEF);
-	CRTC_InterlaceAndDelay=fgetc(SUEF);
-	CRTC_ScanLinesPerChar=fgetc(SUEF);
-	CRTC_CursorStart=fgetc(SUEF);
-	CRTC_CursorEnd=fgetc(SUEF);
-	CRTC_ScreenStartHigh=fgetc(SUEF);
-	CRTC_ScreenStartLow=fgetc(SUEF);
-	CRTC_CursorPosHigh=fgetc(SUEF);
-	CRTC_CursorPosLow=fgetc(SUEF);
-	CRTC_LightPenHigh=fgetc(SUEF);
-	CRTC_LightPenLow=fgetc(SUEF);
+	CRTC_HorizontalTotal = fget8(SUEF);
+	CRTC_HorizontalDisplayed = fget8(SUEF);
+	CRTC_HorizontalSyncPos = fget8(SUEF);
+	CRTC_SyncWidth = fget8(SUEF);
+	CRTC_VerticalTotal = fget8(SUEF);
+	CRTC_VerticalTotalAdjust = fget8(SUEF);
+	CRTC_VerticalDisplayed = fget8(SUEF);
+	CRTC_VerticalSyncPos = fget8(SUEF);
+	CRTC_InterlaceAndDelay = fget8(SUEF);
+	CRTC_ScanLinesPerChar = fget8(SUEF);
+	CRTC_CursorStart = fget8(SUEF);
+	CRTC_CursorEnd = fget8(SUEF);
+	CRTC_ScreenStartHigh = fget8(SUEF);
+	CRTC_ScreenStartLow = fget8(SUEF);
+	CRTC_CursorPosHigh = fget8(SUEF);
+	CRTC_CursorPosLow = fget8(SUEF);
+	CRTC_LightPenHigh = fget8(SUEF);
+	CRTC_LightPenLow = fget8(SUEF);
 	// VIDPROC
-	VideoULA_ControlReg=fgetc(SUEF);
+	VideoULA_ControlReg = fget8(SUEF);
 	for (int col = 0; col < 16; ++col) {
-		VideoULA_Palette[col]=fgetc(SUEF)^7; // Use real ULA values
+		VideoULA_Palette[col] = fget8(SUEF) ^ 7; // Use real ULA values
 	}
 	ActualScreenWidth=fget16(SUEF);
 	ScreenAdjust=fget32(SUEF);
-	CRTCControlReg=fgetc(SUEF);
-	TeletextStyle=fgetc(SUEF);
+	CRTCControlReg = fget8(SUEF);
+	TeletextStyle = fget8(SUEF);
 
 	VideoInit();
 
@@ -1587,16 +1587,16 @@ void LoadVideoUEF(FILE *SUEF, int Version) {
 		VideoState.CharLine = fget32(SUEF);
 		VideoState.InCharLineUp = fget32(SUEF);
 		VideoState.VSyncState = fget32(SUEF);
-		VideoState.IsNewTVFrame = fgetc(SUEF);
-		VideoState.InterlaceFrame = fgetc(SUEF);
-		VideoState.DoCA1Int = fgetc(SUEF);
+		VideoState.IsNewTVFrame = fgetbool(SUEF);
+		VideoState.InterlaceFrame = fgetbool(SUEF);
+		VideoState.DoCA1Int = fgetbool(SUEF);
 		ova = fget32(SUEF);
 		ovn = fget32(SUEF);
 		CursorFieldCount = fget32(SUEF);
-		CursorOnState = fgetc(SUEF);
+		CursorOnState = fgetbool(SUEF);
 		CurY = fget32(SUEF);
 		Mode7FlashTrigger = fget32(SUEF);
-		Mode7FlashOn = fgetc(SUEF);
+		Mode7FlashOn = fgetbool(SUEF);
 		VideoTriggerCount = TotalCycles + fget32(SUEF);
 	}
 }
