@@ -656,7 +656,7 @@ void RTCWrite(int Value, int lastValue)
 
 				WriteLog("RTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_cmd >> 4);
 
-				RTC_ram[(RTC_cmd & 0x0f) >> 1] = RTC_cmd >> 4;
+				RTC_ram[(RTC_cmd & 0x0f) >> 1] = (unsigned char)(RTC_cmd >> 4);
 			}
 			else
 			{
@@ -670,25 +670,25 @@ void RTCWrite(int Value, int lastValue)
 				switch ((RTC_cmd & 0x0f) >> 1)
 				{
 				case 0 :
-					RTC_data = BCD((CurTime->tm_mon)+1);
+					RTC_data = BCD((unsigned char)(CurTime->tm_mon + 1));
 					break;
 				case 1 :
 					RTC_data = BCD((CurTime->tm_year % 100) - 1);
 					break;
 				case 2 :
-					RTC_data = BCD(CurTime->tm_mday);
+					RTC_data = BCD((unsigned char)CurTime->tm_mday);
 					break;
 				case 3 :
 					RTC_data = RTC_ram[3];
 					break;
 				case 4 :
-					RTC_data = BCD(CurTime->tm_hour);
+					RTC_data = BCD((unsigned char)CurTime->tm_hour);
 					break;
 				case 5 :
 					RTC_data = RTC_ram[5];
 					break;
 				case 6 :
-					RTC_data = BCD(CurTime->tm_min);
+					RTC_data = BCD((unsigned char)CurTime->tm_min);
 					break;
 				case 7 :
 					RTC_data = RTC_ram[7];
