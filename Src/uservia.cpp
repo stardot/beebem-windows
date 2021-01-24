@@ -239,9 +239,12 @@ void UserVIAWrite(int Address, int Value) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Address is in the range 0-f - with the fe60 stripped out */
-int UserVIARead(int Address) {
-  int tmp = 0xff;
+
+// Address is in the range 0-f - with the fe60 stripped out
+
+unsigned char UserVIARead(int Address)
+{
+  unsigned char tmp = 0xff;
   /* cerr << "UserVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
 
@@ -368,7 +371,7 @@ int UserVIARead(int Address) {
     DebugDisplayTrace(DebugType::UserVIA, true, info);
   }
 
-  return(tmp);
+  return tmp;
 }
 
 /*--------------------------------------------------------------------------*/

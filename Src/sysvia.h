@@ -34,7 +34,7 @@ extern unsigned char IC32State;
 extern bool RTCY2KAdjust;
 
 void SysVIAWrite(int Address, int Value);
-int SysVIARead(int Address);
+unsigned char SysVIARead(int Address);
 void SysVIAReset(void);
 
 void SysVIA_poll_real(void);

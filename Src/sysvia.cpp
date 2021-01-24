@@ -443,9 +443,12 @@ void SysVIAWrite(int Address, int Value) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Address is in the range 0-f - with the fe40 stripped out */
-int SysVIARead(int Address) {
-  int tmp = 0xff;
+
+// Address is in the range 0-f - with the fe40 stripped out
+
+unsigned char SysVIARead(int Address)
+{
+  unsigned char tmp = 0xff;
   //fprintf(vialog,"SYSTEM VIA Read of address %02x (%d)\n",Address,Address);
   /* cerr << "SysVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
@@ -560,7 +563,7 @@ int SysVIARead(int Address) {
     DebugDisplayTrace(DebugType::SysVIA, true, info);
   }
 
-  return(tmp);
+  return tmp;
 }
 
 /*--------------------------------------------------------------------------*/
