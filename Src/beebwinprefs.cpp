@@ -74,10 +74,16 @@ static const char *CFG_PRINTER_PORT = "PrinterPort";
 static const char *CFG_PRINTER_FILE = "PrinterFile";
 static const char *CFG_MACHINE_TYPE = "MachineType";
 static const char *CFG_TUBE_TYPE = "TubeType";
+static const char *CFG_OPTIONS_STICKS_TO_KEYS = "SticksToKeys";
+static const char *CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP = "AutoloadJoystickMap";
+static const char *CFG_OPTIONS_STICK1_DEADBAND = "Stick1ToKeysDeadBand";
+static const char *CFG_OPTIONS_STICK2_DEADBAND = "Stick2ToKeysDeadBand";
 
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
 #define LED_SHOW_DISC (LEDByte&2)>>1
+
+#define DEFAULT_JOY_DEADBAND 4096
 
 extern unsigned char CMOSDefault[64];
 
@@ -245,6 +251,23 @@ void BeebWin::LoadPreferences()
 		m_MenuIdSticks = dword;
 	else
 		m_MenuIdSticks = 0;
+
+	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys))
+		m_JoystickToKeys = false;
+
+	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP,
+	    m_AutoloadJoystickMap))
+		m_AutoloadJoystickMap = false;
+
+	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICK1_DEADBAND, dword))
+		m_Joystick1Deadband = dword;
+	else
+		m_Joystick1Deadband = DEFAULT_JOY_DEADBAND;
+
+	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICK2_DEADBAND, dword))
+		m_Joystick2Deadband = dword;
+	else
+		m_Joystick2Deadband = DEFAULT_JOY_DEADBAND;
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
@@ -583,7 +606,12 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
-		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIdSticks);
+		m_Preferences.SetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys);
+		m_Preferences.SetBoolValue(CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP, m_AutoloadJoystickMap);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK1_DEADBAND, m_Joystick1Deadband);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK2_DEADBAND, m_Joystick2Deadband);
+
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIdKeyMapping);
