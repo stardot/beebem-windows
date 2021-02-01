@@ -51,6 +51,11 @@ public:
 		m_ofn.lpstrTitle = title;
 	}
 
+	void SetInitial(LPCTSTR initial)
+	{
+		strcpy(m_ofn.lpstrFile, initial);
+	}
+
 	// Show dialog
 	bool Open()
 	{

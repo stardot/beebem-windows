@@ -30,7 +30,9 @@ class SelectKeyDialog
 			HINSTANCE hInstance,
 			HWND hwndParent,
 			const std::string& Title,
-			const std::string& SelectedKey
+			const std::string& SelectedKey,
+			bool doingShifted = false,
+			bool doingJoystick = false
 		);
 
 		bool Open();
@@ -39,8 +41,10 @@ class SelectKeyDialog
 		bool HandleMessage(const MSG& msg);
 
 		int Key() const;
+		bool Shift() const;
 
 		static LPCSTR KeyName(int Key);
+		static int JoyVKeyByName(const char* Name);
 
 	private:
 		static INT_PTR CALLBACK sDlgProc(
@@ -65,6 +69,7 @@ class SelectKeyDialog
 		std::string m_SelectedKey;
 		int m_Key;
 		bool m_Shift;
+		bool m_Joystick;
 };
 
 extern SelectKeyDialog* selectKeyDialog;
