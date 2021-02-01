@@ -1275,10 +1275,10 @@ void BeebWin::InitJoystick(void)
 }
 
 /****************************************************************************/
-void BeebWin::SetJoystickButton(bool button)
+void BeebWin::SetJoystickButton(int index, bool button)
 {
 	if (m_MenuIdSticks == IDM_JOYSTICK)
-		JoystickButton[0] = button;
+		JoystickButton[index] = button;
 }
 
 /****************************************************************************/
@@ -1826,7 +1826,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 		case MM_JOY1BUTTONDOWN:
 		case MM_JOY1BUTTONUP:
-			mainWin->SetJoystickButton(((UINT)uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0);
+			mainWin->SetJoystickButton(0, ((UINT)uParam & JOY_BUTTON1) != 0);
+			mainWin->SetJoystickButton(1, ((UINT)uParam & JOY_BUTTON2) != 0);
 			break;
 
 		case MM_JOY2MOVE:
