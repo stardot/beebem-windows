@@ -51,13 +51,48 @@ Boston, MA  02110-1301, USA.
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
 
+#define JOYSTICK_MAX_AXES    16
+#define JOYSTICK_MAX_BTNS    16
+
+#define JOYSTICK_AXIS_UP        0
+#define JOYSTICK_AXIS_DOWN      1
+#define JOYSTICK_AXIS_LEFT      2
+#define JOYSTICK_AXIS_RIGHT     3
+#define JOYSTICK_AXIS_Z_N       4
+#define JOYSTICK_AXIS_Z_P       5
+#define JOYSTICK_AXIS_R_N       6
+#define JOYSTICK_AXIS_R_P       7
+#define JOYSTICK_AXIS_U_N       8
+#define JOYSTICK_AXIS_U_P       9
+#define JOYSTICK_AXIS_V_N       10
+#define JOYSTICK_AXIS_V_P       11
+#define JOYSTICK_AXIS_HAT_UP    12
+#define JOYSTICK_AXIS_HAT_DOWN  13
+#define JOYSTICK_AXIS_HAT_LEFT  14
+#define JOYSTICK_AXIS_HAT_RIGHT 15
+#define JOYSTICK_AXES_COUNT     16
+
+#define BEEB_VKEY_JOY_START  256
+#define BEEB_VKEY_JOY1_AXES  BEEB_VKEY_JOY_START
+#define BEEB_VKEY_JOY1_BTN1  (BEEB_VKEY_JOY1_AXES + JOYSTICK_MAX_AXES) // 256+16 = 272
+#define BEEB_VKEY_JOY2_AXES  (BEEB_VKEY_JOY1_BTN1 + JOYSTICK_MAX_BTNS) // 272+16 = 288
+#define BEEB_VKEY_JOY2_BTN1  (BEEB_VKEY_JOY2_AXES + JOYSTICK_MAX_AXES) // 288+16 = 304
+#define BEEB_VKEY_JOY_END    (BEEB_VKEY_JOY2_BTN1 + JOYSTICK_MAX_BTNS) // 304+16 = 320
+
+#define BEEB_VKEY_JOY_COUNT  (BEEB_VKEY_JOY_END - BEEB_VKEY_JOY_START)
+#define BEEB_VKEY_COUNT      BEEB_VKEY_JOY_END
+
+#define UNASSIGNED_ROW       -9
+
 typedef struct KeyMapping {
 	int row;    // Beeb row
 	int col;    // Beeb col
 	bool shift; // Beeb shift state
 } KeyMapping;
 
-typedef KeyMapping KeyMap[256][2]; // Indices are: [Virt key][shift state]
+typedef KeyMapping  KeyPair[2];
+typedef KeyPair     KeyMap[256]; // Indices are: [Virt key][shift state]
+typedef KeyPair     JoyMap[BEEB_VKEY_JOY_COUNT];
 
 extern const char *WindowTitle;
 
@@ -213,7 +248,13 @@ public:
 	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
+	void SetJoystickButton(bool button);
 	void ScaleJoystick(unsigned int x, unsigned int y);
+	unsigned int GetJoystickAxes(JOYCAPS& caps, unsigned int deadband, JOYINFOEX& joyInfoEx);
+	void TranslateOrSendKey(int vkey, bool keyUp);
+	void TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx);
+	void TranslateJoystickButtons(int joyId, unsigned int buttons);
+	void TranslateJoystick(int joyId);
 	void SetMousestickButton(int index, bool button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
 	void HandleCommand(int MenuId);
@@ -229,6 +270,7 @@ public:
 	void TogglePause();
 	bool IsPaused();
 	void OpenUserKeyboardDialog();
+	void OpenJoystickMapDialog();
 	void UserKeyboardDialogClosed();
 	void ShowMenu(bool on);
 	void HideMenu(bool hide);
@@ -237,6 +279,7 @@ public:
 	void ResetTiming(void);
 	int TranslateKey(int vkey, bool keyUp, int &row, int &col);
 	void ParseCommandLine(void);
+	void CheckForJoystickMap(const char *path);
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
 	void FindCommandLineFile(char *CmdLineFile);
 	void HandleCommandLineFile(int drive, const char *CmdLineFile);
@@ -313,7 +356,18 @@ public:
 	int		m_FPSTarget;
 	bool		m_JoystickCaptured;
 	JOYCAPS		m_JoystickCaps;
+	unsigned int	m_Joystick1Deadband;
+	int		m_Joystick1PrevAxes;
+	int		m_Joystick1PrevBtns;
+	bool		m_Joystick2Captured;
+	JOYCAPS		m_Joystick2Caps;
+	unsigned int	m_Joystick2Deadband;
+	int		m_Joystick2PrevAxes;
+	int		m_Joystick2PrevBtns;
 	int		m_MenuIdSticks;
+	bool		m_JoystickToKeys;
+	bool		m_AutoloadJoystickMap;
+	HWND		m_JoystickTarget;
 	bool		m_HideCursor;
 	bool		m_CaptureMouse;
 	bool		m_MouseCaptured;
@@ -323,8 +377,9 @@ public:
 	bool		m_KeyMapAS;
 	bool		m_KeyMapFunc;
 	char		m_UserKeyMapPath[_MAX_PATH];
+	char		m_JoystickMapPath[_MAX_PATH];
 	bool		m_ShiftPressed;
-	int		m_vkeyPressed[256][2][2];
+	int		m_vkeyPressed[BEEB_VKEY_COUNT][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
 	bool m_CustomData;
@@ -406,6 +461,7 @@ public:
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
 	bool		m_WasPaused;
+	bool		m_J2KWasEnabled;
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
 	bool		m_BootDiscTimerElapsed;
@@ -555,8 +611,20 @@ public:
 	bool RebootSystem();
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);
+	void ResetJoystickMap(void);
+	void LoadJoystickMap(void);
+	void SaveJoystickMap(void);
+	FILE* OpenReadFile(const char *filename, const char *typeDescr,
+			   const char *token);
+	FILE* OpenWriteFile(const char *filename, const char *typeDescr);
 	bool ReadKeyMap(const char *filename, KeyMap *keymap);
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
+
+	void ResetJoyMapToDefaultUser(void);
+	void ResetJoyMap(JoyMap* joymap);
+	bool ReadJoyMap(const char *filename, JoyMap *joymap);
+	bool WriteJoyMap(const char *filename, JoyMap *joymap);
+	void MaybeEnableInitJoystick(void);
 
 	void Report(MessageType type, const char *format, ...);
 
