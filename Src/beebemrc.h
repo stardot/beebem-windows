@@ -97,6 +97,7 @@ Boston, MA  02110-1301, USA.
 #define IDK_BACKSLASH                   81
 #define IDK_UNDERSCORE                  82
 #define IDK_CARET                       83
+#define IDK_UNASSIGN                    84
 #define IDR_MENU                        101
 #define IDI_BEEBEM                      102
 #define IDD_USERKYBRD                   103
@@ -186,6 +187,7 @@ Boston, MA  02110-1301, USA.
 #define IDC_SHIFT                       1088
 #define IDC_DEBUGTELETEXTBRK            1089
 #define IDC_ASSIGNED_KEYS               1090
+#define IDC_ASSIGNED_KEYS_LBL           1091
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -433,17 +435,24 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_2560X1440            40294
 #define ID_VIEW_DD_3840X2160            40295
 #define IDM_EMUPAUSED                   40296
+#define IDM_JOYSTICK_TO_KEYS            40297
+#define IDM_DEFINEJOYMAP                40298
+#define IDM_LOADJOYMAP                  40299
+#define IDM_SAVEJOYMAP                  40300
+#define IDM_AUTOLOADJOYMAP              40301
+#define IDM_RESETJOYMAP                 40302
+#define IDM_INIT_JOYSTICK               40303
 #define IDM_CAPTUREMOUSE                40318
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        118
 #define _APS_NEXT_COMMAND_VALUE         40319
-#define _APS_NEXT_CONTROL_VALUE         1090
+#define _APS_NEXT_CONTROL_VALUE         1092
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

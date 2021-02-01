@@ -1,0 +1,70 @@
+*** BeebEm Joystick Map ***
+
+# Joystick map file begins with special marker line as above.
+# All empty lines and lines starting with '#' are ignored.
+
+# Remaining lines must consist of two or three tokens separated with
+# whitespaces.
+# All names are case insensitive except for the marker in the first line.
+
+# Two-token lines are:
+# <Joystick input>  <BBC Key>
+# Three-token lines are:
+# <Joystick input>  <BBC Key for unshifted> <BBC Key for shifted>
+
+# These two lines define the same mapping:
+# Joy1Up   A
+# Joy1Up   A   SH+A
+
+# BBC Key names prefixed with 'SH+' indicate shifted key press.
+# In the two-token lines, the 'SH+' prefix is allowed, but ignored.
+
+# Special BBC key names are:
+# LEFT, RIGHT, UP, DOWN, BREAK, COPY, DELETE, CAPS-LOCK, TAB, CTRL
+# SPACE, RETURN, ESCACE, SHIFT, SHIFT-LOCK
+# Allowed aliases:
+# DEL, CAPS, CAPSLOCK, CONTROL, ESC, SHIFTLOCK
+
+# All other BBC keys are named by their unshifted character (i.e. 'SH+[' not '{')
+# Function keys are named, as one would expect, 'F0' to 'F9'
+
+# Joystick input have form Joy[X][Act] where [X] is joystick number and
+# [Act] is action name. Axis and button assignments differ between
+# joystick or gamepad models.
+
+# Xbox 360 controller has following assignments
+# (with JOYINFOEX fields in the middle column):
+# Up, Down, Left, Right       - dwY, dwX   - Left Analog Up, Down, Left, Right
+# Axis3+,Axis3-               - dwZ        - Left Trigger, Right Trigger
+# Axis4-,Axis4+,Axis5-,Axis5+ - dwR, dwU   - Right Analog Up, Down, Left, Right
+# Axis7-,Axis7+,Axis8-,Axis8+ - dwPOV      - Hat Up, Down, Left, Right
+# Btn1-4                                   - A, B, X, Y 
+# Btn5,6                                   - Left Shoulder, Right Shoulder
+# Btn7,8                                   - Select, Start
+# Btn9,10                                  - Left Thumbstick, Right Thumbstick
+
+# Other common layout:
+# Up, Down, Left, Right       - dwY, dwX   - Left Analog Up, Down, Left, Right
+# Axis4-,Axis4+,Axis3-,Axis3+ - dwR, dwZ   - Right Analog Up, Down, Left, Right
+# Axis7-,Axis7+,Axis8-,Axis8+ - dwPOV      - Hat Up, Down, Left, Right
+# Btn1-4                                   - Y, B, A, X
+# Btn5,6                                   - Left Shoulder, Right Shoulder
+# Btn7,8                                   - Left Trigger, Right Trigger
+# Btn9,10                                  - Select, Start
+# Btn11,12                                 - Left Thumbstick, Right Thumbstick
+# Btn12                                    - Home
+
+# Sample mapping for Chuckie Egg
+
+Joy1Up        A
+Joy1Down      Z
+Joy1Left      ,
+Joy1Right     .
+Joy1Axis7-    A
+Joy1Axis7+    Z
+Joy1Axis8-    ,
+Joy1Axis8+    .
+Joy1Btn1      SPACE
+Joy1Btn6      RETURN
+Joy1Btn7      1
+Joy1Btn8      S

@@ -25,8 +25,20 @@ Boston, MA  02110-1301, USA.
 
 // Public declarations.
 
-bool UserKeyboardDialog(HWND hwndParent);
+struct BBCKey
+{
+    int ctrlId;
+    const char* name;
+    int row;
+    int column;
+};
+
+const BBCKey& GetBBCKeyByName(const std::string& name);
+const BBCKey& GetBBCKeyByRowAndCol(int row, int col);
+
+bool UserKeyboardDialog(HWND hwndParent, bool joystick);
 
 extern KeyMap UserKeymap;
+extern JoyMap JoystickMap;
 
 #endif

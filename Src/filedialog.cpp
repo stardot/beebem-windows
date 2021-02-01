@@ -36,12 +36,11 @@ FileDialog::FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength,
 	m_ofn.nMaxFile = resultLength;
 	m_ofn.lpstrInitialDir = initialFolder;
 	m_ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	m_ofn.lpstrFile[0] = 0;
 }
 
 bool FileDialog::ShowDialog(bool open)
 {
-	m_ofn.lpstrFile[0] = 0;
-
 	if (open)
 		return GetOpenFileName(&m_ofn) != 0;
 	else

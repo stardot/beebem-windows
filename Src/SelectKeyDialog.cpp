@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 /****************************************************************************/
 
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem);
+static void DlgItemCheck(HWND hDlg, int nIDDlgItem, bool checked);
 
 SelectKeyDialog* selectKeyDialog;
 
@@ -40,14 +41,17 @@ SelectKeyDialog::SelectKeyDialog(
 	HINSTANCE hInstance,
 	HWND hwndParent,
 	const std::string& Title,
-	const std::string& SelectedKey) :
+	const std::string& SelectedKey,
+	bool doingShifted,
+	bool doingJoystick) :
 	m_hInstance(hInstance),
 	m_hwnd(nullptr),
 	m_hwndParent(hwndParent),
 	m_Title(Title),
 	m_SelectedKey(SelectedKey),
 	m_Key(-1),
-	m_Shift(false)
+	m_Shift(doingShifted),
+	m_Joystick(doingJoystick)
 {
 }
 
@@ -101,16 +105,30 @@ INT_PTR SelectKeyDialog::DlgProc(
 		SetWindowText(m_hwnd, m_Title.c_str());
 
 		SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS, m_SelectedKey.c_str());
+
+		// If the selected keys is empty (as opposed to "Not assigned"), we are currently unassigning.
+		// Hide the "Assigned to:" label
+		if (m_SelectedKey.empty())
+		    SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS_LBL, "");
+		else if (m_Joystick)
+		    SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS_LBL, "Assigned to:");
+
+		// If doing shifted key, start with the Shift checkbox checked because that's most likely
+		// what the user wants
+		DlgItemCheck(m_hwnd, IDC_SHIFT, m_Shift);
+
 		return TRUE;
 
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			hCurrentDialog = nullptr;
+			mainWin->m_JoystickTarget = nullptr;
 		}
 		else
 		{
 			hCurrentDialog = m_hwnd;
+			mainWin->m_JoystickTarget = m_hwnd;
 			hCurrentAccelTable = nullptr;
 		}
 		break;
@@ -167,11 +185,16 @@ bool SelectKeyDialog::HandleMessage(const MSG& msg)
 {
 	if (msg.message == WM_KEYDOWN || msg.message == WM_SYSKEYDOWN)
 	{
-		m_Key = (int)msg.wParam;
-		m_Shift = IsDlgItemChecked(m_hwnd, IDC_SHIFT);
+		int key = (int)msg.wParam;
+		if (!m_Joystick && key < 256
+			|| m_Joystick && key >= BEEB_VKEY_JOY_START && key < BEEB_VKEY_JOY_END)
+		{
+			m_Key = key;
+			m_Shift = IsDlgItemChecked(m_hwnd, IDC_SHIFT);
+			Close(IDOK);
+			return true;
+		}
 
-		Close(IDOK);
-		return true;
 	}
 
 	return false;
@@ -186,9 +209,23 @@ int SelectKeyDialog::Key() const
 
 /****************************************************************************/
 
+bool SelectKeyDialog::Shift() const
+{
+	return m_Shift;
+}
+
+/****************************************************************************/
+
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
 {
 	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
+}
+
+/****************************************************************************/
+
+static void DlgItemCheck(HWND hDlg, int nIDDlgItem, bool checked)
+{
+	SendDlgItemMessage(hDlg, nIDDlgItem, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
 }
 
 /****************************************************************************/
@@ -197,11 +234,57 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 {
 	static CHAR Character[2]; // Used to return single characters.
 
+	if (Key >= BEEB_VKEY_JOY_START && Key < BEEB_VKEY_JOY_END)
+	{
+		static CHAR Name[16]; // Buffer for joystick button or axis name
+		Key -= BEEB_VKEY_JOY_START;
+		if (Key >= BEEB_VKEY_JOY2_AXES - BEEB_VKEY_JOY1_AXES)
+		{
+			strcpy(Name, "Joy2");
+			Key -= BEEB_VKEY_JOY2_AXES - BEEB_VKEY_JOY1_AXES;
+		}
+		else
+		{
+			strcpy(Name, "Joy1");
+		}
+
+		if (Key < BEEB_VKEY_JOY1_BTN1 - BEEB_VKEY_JOY1_AXES)
+		{
+			if (Key == JOYSTICK_AXIS_UP)
+			{
+				strcat(Name, "Up");
+			}
+			else if (Key == JOYSTICK_AXIS_DOWN)
+			{
+				strcat(Name, "Down");
+			}
+			else if (Key == JOYSTICK_AXIS_LEFT)
+			{
+				strcat(Name, "Left");
+			}
+			else if (Key == JOYSTICK_AXIS_RIGHT)
+			{
+				strcat(Name, "Right");
+			}
+			else
+			{
+				sprintf(Name + strlen(Name), "Axis%d", (Key / 2) + 1);
+				strcat(Name, (Key & 1) ? "+" : "-");
+			}
+		}
+		else
+		{
+			sprintf(Name + strlen(Name), "Btn%d", Key - (BEEB_VKEY_JOY1_BTN1 - BEEB_VKEY_JOY1_AXES) + 1);
+		}
+		return Name;
+	}
+
 	switch (Key)
 	{
 	case   8: return "Backspace";
 	case   9: return "Tab";
 	case  13: return "Enter";
+	case  16: return "Shift";
 	case  17: return "Ctrl";
 	case  18: return "Alt";
 	case  19: return "Break";
@@ -266,4 +349,35 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 		Character[1] = '\0';
 		return Character;
 	}
+}
+
+static
+std::string toupper(const std::string& src)
+{
+	std::string result = src;
+	for (auto& c : result)
+		c = toupper(c);
+	return result;
+}
+
+int SelectKeyDialog::JoyVKeyByName(const char* Name)
+{
+
+	using vkeyMapType = std::map<std::string, int>;
+
+	// Construct map on first use by lambda
+	static vkeyMapType nameToVKeyMap = []() {
+		vkeyMapType keyMap{};
+
+		for (int vkey = BEEB_VKEY_JOY_START; vkey < BEEB_VKEY_JOY_END; ++vkey)
+			keyMap[toupper(KeyName(vkey))] = vkey;
+
+		return keyMap;
+	}();
+
+	auto iter = nameToVKeyMap.find(toupper(Name));
+	if (iter == nameToVKeyMap.end())
+		return -1;
+
+	return iter->second;
 }

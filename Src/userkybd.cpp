@@ -24,13 +24,14 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <string.h>
 #include <string>
+#include <vector>
 #include "main.h"
 #include "beebemrc.h"
 #include "userkybd.h"
 #include "SelectKeyDialog.h"
 #include "Messages.h"
 
-static void SetKeyColour(COLORREF aColour);
+static void SetKeyColour(COLORREF aColour, HWND keyCtrl = NULL);
 static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl);
 static void SetBBCKeyForVKEY(int Key, bool shift);
 static void SetRowCol(UINT ctrlID);
@@ -44,37 +45,244 @@ static void DrawBorder(HDC hDC, RECT rect, BOOL Depressed);
 static void DrawText(HDC hDC, RECT rect, HWND hwndCtrl, COLORREF colour, bool Depressed);
 static COLORREF GetKeyColour(UINT ctrlID);
 static std::string GetKeysUsed();
+static void FillAssignedKeysCount();
+static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawColour = false);
+static int GetBBCKeyIndex(const BBCKey& key);
 
 // Colour used to highlight the selected key.
 static const COLORREF HighlightColour   = 0x00FF0080; // Purple
 static const COLORREF FunctionKeyColour = 0x000000FF; // Red
 static const COLORREF NormalKeyColour   = 0x00000000; // Black
-static COLORREF oldKeyColour;
+static const COLORREF JoyAssignedKeyColour = 0x00802020; // Blueish
 
 static HWND hwndBBCKey; // Holds the BBCKey control handle which is now selected.
 static UINT selectedCtrlID; // Holds ctrlId of selected key (or 0 if none selected).
 static HWND hwndMain; // Holds the BeebWin window handle.
 static HWND hwndUserKeyboard;
+static bool doingJoystick; // Doing joystick vs user keyboard mapping
 
 static int BBCRow; // Used to store the Row and Col values while we wait
 static int BBCCol; // for a key press from the User.
 static bool doingShifted; // Selecting shifted or unshifted key press
+static bool doingUnassign; // Removing key assignment
 
 // Initialised to defaultMapping.
 KeyMap UserKeymap;
 
-static const char* szSelectKeyDialogTitle[2] = {
-	"Press key for unshifted press...",
-	"Press key for shifted press..."
+JoyMap JoystickMap;
+
+static const char* szSelectKeyDialogTitle[2][3] = {
+	{
+		"Press key for unshifted press...",
+		"Press key for shifted press...",
+		"Press key to unassign..."
+	},
+	{
+		// This can't be too long so 'unshifted' part is visible
+		"Move stick for unshifted press...",
+		"Move stick for shifted press...",
+		"Move stick to unassign..."
+	}
 };
+
+// Table of BBC keys
+const BBCKey BBCKeys[] = {
+	// Unassigned must go first
+	{ IDK_UNASSIGN, "NONE", -9, 0 },
+
+	// Letter keys
+	{ IDK_A, "A", 4, 1 },
+	{ IDK_B, "B", 6, 4 },
+	{ IDK_C, "C", 5, 2 },
+	{ IDK_D, "D", 3, 2 },
+	{ IDK_E, "E", 2, 2 },
+	{ IDK_F, "F", 4, 3 },
+	{ IDK_G, "G", 5, 3 },
+	{ IDK_H, "H", 5, 4 },
+	{ IDK_I, "I", 2, 5 },
+	{ IDK_J, "J", 4, 5 },
+	{ IDK_K, "K", 4, 6 },
+	{ IDK_L, "L", 5, 6 },
+	{ IDK_M, "M", 6, 5 },
+	{ IDK_N, "N", 5, 5 },
+	{ IDK_O, "O", 3, 6 },
+	{ IDK_P, "P", 3, 7 },
+	{ IDK_Q, "Q", 1, 0 },
+	{ IDK_R, "R", 3, 3 },
+	{ IDK_S, "S", 5, 1 },
+	{ IDK_T, "T", 2, 3 },
+	{ IDK_U, "U", 3, 5 },
+	{ IDK_V, "V", 6, 3 },
+	{ IDK_W, "W", 2, 1 },
+	{ IDK_X, "X", 4, 2 },
+	{ IDK_Y, "Y", 4, 4 },
+	{ IDK_Z, "Z", 6, 1 },
+
+	// Number keys
+	{ IDK_0, "0", 2, 7 },
+	{ IDK_1, "1", 3, 0 },
+	{ IDK_2, "2", 3, 1 },
+	{ IDK_3, "3", 1, 1 },
+	{ IDK_4, "4", 1, 2 },
+	{ IDK_5, "5", 1, 3 },
+	{ IDK_6, "6", 3, 4 },
+	{ IDK_7, "7", 2, 4 },
+	{ IDK_8, "8", 1, 5 },
+	{ IDK_9, "9", 2, 6 },
+
+	// Function keys.
+	{ IDK_F0, "F0", 2, 0 },
+	{ IDK_F1, "F1", 7, 1 },
+	{ IDK_F2, "F2", 7, 2 },
+	{ IDK_F3, "F3", 7, 3 },
+	{ IDK_F4, "F4", 1, 4 },
+	{ IDK_F5, "F5", 7, 4 },
+	{ IDK_F6, "F6", 7, 5 },
+	{ IDK_F7, "F7", 1, 6 },
+	{ IDK_F8, "F8", 7, 6 },
+	{ IDK_F9, "F9", 7, 7 },
+
+	// Special keys.
+	{ IDK_LEFT, "LEFT", 1, 9 },
+	{ IDK_RIGHT, "RIGHT", 7, 9 },
+	{ IDK_UP, "UP", 3, 9 },
+	{ IDK_DOWN, "DOWN", 2, 9 },
+	{ IDK_BREAK, "BREAK", -2, -2 },
+	{ IDK_COPY, "COPY", 6, 9 },
+	{ IDK_DEL, "DELETE", 5, 9 },
+	{ IDK_CAPS, "CAPS-LOCK", 4, 0 },
+	{ IDK_TAB, "TAB", 6, 0 },
+	{ IDK_CTRL, "CTRL", 0, 1 },
+	{ IDK_SPACE, "SPACE", 6, 2 },
+	{ IDK_RETURN, "RETURN", 4, 9 },
+	{ IDK_ESC, "ESCAPE", 7, 0 },
+	{ IDK_SHIFT_L, "SHIFT", 0, 0 },
+	{ IDK_SHIFT_R, "SHIFT", 0, 0 },
+	{ IDK_SHIFT_LOCK, "SHIFT-LOCK", 5, 0 },
+
+	// Special Character keys.
+	{ IDK_SEMI_COLON, ";", 5, 7 },
+	{ IDK_EQUALS, "=", 1, 7 },
+	{ IDK_COMMA, ",", 6, 6 },
+	{ IDK_CARET, "^", 1, 8 },
+	{ IDK_DOT, ".", 6, 7 },
+	{ IDK_FWDSLASH, "/", 6, 8 },
+	{ IDK_STAR, "*", 4, 8 },
+	{ IDK_OPEN_SQUARE, "[", 3, 8 },
+	{ IDK_BACKSLASH, "\\", 7, 8 },
+	{ IDK_CLOSE_SQUARE, "]", 5, 8 },
+	{ IDK_AT, "@", 4, 7 },
+	{ IDK_UNDERSCORE, "_", 2, 8 },
+};
+
+const std::pair<const char*, const char*> BBCKeyAliases[] = {
+	{ "DEL", "DELETE" },
+	{ "CAPS", "CAPS-LOCK" },
+	{ "CAPSLOCK", "CAPS-LOCK" },
+	{ "CONTROL", "CTRL" },
+	{ "ESC", "ESCAPE" },
+	{ "SHIFTLOCK", "SHIFT-LOCK" }
+};
+
+// Number of inputs assigned to each key (for joystick dialog highlight)
+static int assignedKeysCount[_countof(BBCKeys)] = {};
 
 /****************************************************************************/
 
-bool UserKeyboardDialog(HWND hwndParent)
+const BBCKey& GetBBCKeyByResId(int ctrlId)
+{
+    using resIdToKeyMapType = std::map<int, const BBCKey*>;
+
+    // Construct map on first use by lambda
+    static resIdToKeyMapType resIdToKeyMap = []()
+    {
+        resIdToKeyMapType keyMap{};
+
+        for (auto& theKey : BBCKeys)
+            keyMap[theKey.ctrlId] = &theKey;
+        return keyMap;
+    } ();
+
+    auto iter = resIdToKeyMap.find(ctrlId);
+    if (iter == resIdToKeyMap.end())
+        return BBCKeys[0];
+
+    return *iter->second;
+}
+
+/****************************************************************************/
+
+const BBCKey& GetBBCKeyByName(const std::string& name)
+{
+    using nameToKeyMapType = std::map<std::string, const BBCKey*>;
+
+    // Construct map on first use by lambda
+    static nameToKeyMapType nameToKeyMap = []()
+    {
+        nameToKeyMapType keyMap{};
+
+        for (auto& theKey : BBCKeys)
+            keyMap[theKey.name] = &theKey;
+
+        for (auto& alias : BBCKeyAliases)
+            keyMap[alias.first] = keyMap[alias.second];
+
+        return keyMap;
+    } ();
+
+    auto iter = nameToKeyMap.find(name);
+    if (iter == nameToKeyMap.end())
+        return BBCKeys[0];
+
+    return *iter->second;
+}
+
+/****************************************************************************/
+
+const BBCKey& GetBBCKeyByRowAndCol(int row, int col)
+{
+    using posPair = std::pair<int, int>;
+    using posToKeyMapType = std::map<posPair, const BBCKey*>;
+
+    // Construct map on first use by lambda
+    static posToKeyMapType posToKeyMap = []()
+    {
+        posToKeyMapType keyMap{};
+
+        for (auto& theKey : BBCKeys)
+            keyMap[posPair{ theKey.row, theKey.column }] = &theKey;
+        return keyMap;
+    } ();
+
+    auto iter = posToKeyMap.find(posPair{ row, col });
+    if (iter == posToKeyMap.end())
+        return BBCKeys[0];
+
+    return *iter->second;
+}
+
+/****************************************************************************/
+// Get index for assignedKeysCount. The 'key' parameter must be reference to
+// item in BBCKeys table, not a copy of it.
+int GetBBCKeyIndex(const BBCKey& key)
+{
+    int index = &key - BBCKeys;
+    if (index >= 0 && index < _countof(BBCKeys))
+	return index;
+    return 0;
+}
+
+/****************************************************************************/
+
+bool UserKeyboardDialog(HWND hwndParent, bool joystick)
 {
 	// Initialise locals used during this window's life.
 	hwndMain = hwndParent;
 	selectedCtrlID = 0;
+	doingJoystick = joystick;
+
+	if (doingJoystick)
+	    FillAssignedKeysCount();
 
 	// Open the dialog box. This is created as a modeless dialog so that
 	// the "select key" dialog box can handle key-press messages.
@@ -97,13 +305,16 @@ bool UserKeyboardDialog(HWND hwndParent)
 
 /****************************************************************************/
 
-static void SetKeyColour(COLORREF aColour)
+static void SetKeyColour(COLORREF aColour, HWND keyCtrl)
 {
-	HDC hdc = GetDC(hwndBBCKey);
+	if (keyCtrl == NULL)
+		keyCtrl = hwndBBCKey;
+
+	HDC hdc = GetDC(keyCtrl);
 	SetBkColor(hdc, aColour);
-	ReleaseDC(hwndBBCKey, hdc);
-	InvalidateRect(hwndBBCKey, nullptr, TRUE);
-	UpdateWindow(hwndBBCKey);
+	ReleaseDC(keyCtrl, hdc);
+	InvalidateRect(keyCtrl, nullptr, TRUE);
+	UpdateWindow(keyCtrl);
 }
 
 /****************************************************************************/
@@ -113,21 +324,22 @@ static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl)
 	// Set the placeholders.
 	SetRowCol(ctrlID);
 
-	oldKeyColour = GetKeyColour(ctrlID);
-
 	hwndBBCKey = hwndCtrl;
 	selectedCtrlID = ctrlID;
 
 	doingShifted = false;
+	doingUnassign = (BBCRow == -9);
 
-	std::string UsedKeys = GetKeysUsed();
+	std::string UsedKeys = doingUnassign ? "" : GetKeysUsed();
 
 	// Now ask the user to input the PC key to assign to the BBC key.
 	selectKeyDialog = new SelectKeyDialog(
 		hInst,
 		hwnd,
-		szSelectKeyDialogTitle[doingShifted ? 1 : 0],
-		UsedKeys
+		szSelectKeyDialogTitle[(int)doingJoystick][doingUnassign ? 2 : doingShifted ? 1 : 0],
+		UsedKeys,
+		doingShifted,
+		doingJoystick
 	);
 
 	selectKeyDialog->Open();
@@ -137,7 +349,7 @@ static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl)
 
 static void SetBBCKeyForVKEY(int Key, bool Shift)
 {
-	if (Key >= 0 && Key < 256)
+	if (!doingJoystick && Key >= 0 && Key < BEEB_VKEY_JOY_START)
 	{
 		UserKeymap[Key][static_cast<int>(Shift)].row = BBCRow;
 		UserKeymap[Key][static_cast<int>(Shift)].col = BBCCol;
@@ -146,101 +358,24 @@ static void SetBBCKeyForVKEY(int Key, bool Shift)
 		// DebugTrace("SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
 		//            Key, shift, BBCRow, BBCCol, doingShifted);
 	}
+	else if (doingJoystick && Key >= BEEB_VKEY_JOY_START && Key < BEEB_VKEY_JOY_END)
+	{
+		KeyMapping& entry = JoystickMap[Key - BEEB_VKEY_JOY_START][static_cast<int>(Shift)];
+		UpdateAssignedKeysCount(entry.row, entry.col, -1, true);
+		entry.row = BBCRow;
+		entry.col = BBCCol;
+		entry.shift = doingShifted;
+		UpdateAssignedKeysCount(entry.row, entry.col, +1);
+	}
 }
 
 /****************************************************************************/
 
 static void SetRowCol(UINT ctrlID)
 {
-	switch (ctrlID)
-	{
-	// Character keys.
-	case IDK_A: BBCRow = 4; BBCCol = 1; break;
-	case IDK_B: BBCRow = 6; BBCCol = 4; break;
-	case IDK_C: BBCRow = 5; BBCCol = 2; break;
-	case IDK_D: BBCRow = 3; BBCCol = 2; break;
-	case IDK_E: BBCRow = 2; BBCCol = 2; break;
-	case IDK_F: BBCRow = 4; BBCCol = 3; break;
-	case IDK_G: BBCRow = 5; BBCCol = 3; break;
-	case IDK_H: BBCRow = 5; BBCCol = 4; break;
-	case IDK_I: BBCRow = 2; BBCCol = 5; break;
-	case IDK_J: BBCRow = 4; BBCCol = 5; break;
-	case IDK_K: BBCRow = 4; BBCCol = 6; break;
-	case IDK_L: BBCRow = 5; BBCCol = 6; break;
-	case IDK_M: BBCRow = 6; BBCCol = 5; break;
-	case IDK_N: BBCRow = 5; BBCCol = 5; break;
-	case IDK_O: BBCRow = 3; BBCCol = 6; break;
-	case IDK_P: BBCRow = 3; BBCCol = 7; break;
-	case IDK_Q: BBCRow = 1; BBCCol = 0; break;
-	case IDK_R: BBCRow = 3; BBCCol = 3; break;
-	case IDK_S: BBCRow = 5; BBCCol = 1; break;
-	case IDK_T: BBCRow = 2; BBCCol = 3; break;
-	case IDK_U: BBCRow = 3; BBCCol = 5; break;
-	case IDK_V: BBCRow = 6; BBCCol = 3; break;
-	case IDK_W: BBCRow = 2; BBCCol = 1; break;
-	case IDK_X: BBCRow = 4; BBCCol = 2; break;
-	case IDK_Y: BBCRow = 4; BBCCol = 4; break;
-	case IDK_Z: BBCRow = 6; BBCCol = 1; break;
-
-	// Number keys.
-	case IDK_0: BBCRow = 2; BBCCol = 7; break;
-	case IDK_1: BBCRow = 3; BBCCol = 0; break;
-	case IDK_2: BBCRow = 3; BBCCol = 1; break;
-	case IDK_3: BBCRow = 1; BBCCol = 1; break;
-	case IDK_4: BBCRow = 1; BBCCol = 2; break;
-	case IDK_5: BBCRow = 1; BBCCol = 3; break;
-	case IDK_6: BBCRow = 3; BBCCol = 4; break;
-	case IDK_7: BBCRow = 2; BBCCol = 4; break;
-	case IDK_8: BBCRow = 1; BBCCol = 5; break;
-	case IDK_9: BBCRow = 2; BBCCol = 6; break;
-
-	// Function keys.
-	case IDK_F0: BBCRow = 2; BBCCol = 0; break;
-	case IDK_F1: BBCRow = 7; BBCCol = 1; break;
-	case IDK_F2: BBCRow = 7; BBCCol = 2; break;
-	case IDK_F3: BBCRow = 7; BBCCol = 3; break;
-	case IDK_F4: BBCRow = 1; BBCCol = 4; break;
-	case IDK_F5: BBCRow = 7; BBCCol = 4; break;
-	case IDK_F6: BBCRow = 7; BBCCol = 5; break;
-	case IDK_F7: BBCRow = 1; BBCCol = 6; break;
-	case IDK_F8: BBCRow = 7; BBCCol = 6; break;
-	case IDK_F9: BBCRow = 7; BBCCol = 7; break;
-
-	// Special keys.
-	case IDK_LEFT:       BBCRow = 1;  BBCCol = 9; break;
-	case IDK_RIGHT:      BBCRow = 7;  BBCCol = 9; break;
-	case IDK_UP:         BBCRow = 3;  BBCCol = 9; break;
-	case IDK_DOWN:       BBCRow = 2;  BBCCol = 9; break;
-	case IDK_BREAK:      BBCRow = -2; BBCCol = -2; break;
-	case IDK_COPY:       BBCRow = 6;  BBCCol = 9; break;
-	case IDK_DEL:        BBCRow = 5;  BBCCol = 9; break;
-	case IDK_CAPS:       BBCRow = 4;  BBCCol = 0; break;
-	case IDK_TAB:        BBCRow = 6;  BBCCol = 0; break;
-	case IDK_CTRL:       BBCRow = 0;  BBCCol = 1; break;
-	case IDK_SPACE:      BBCRow = 6;  BBCCol = 2; break;
-	case IDK_RETURN:     BBCRow = 4;  BBCCol = 9; break;
-	case IDK_ESC:        BBCRow = 7;  BBCCol = 0; break;
-	case IDK_SHIFT_L:    BBCRow = 0;  BBCCol = 0; break;
-	case IDK_SHIFT_R:    BBCRow = 0;  BBCCol = 0; break;
-	case IDK_SHIFT_LOCK: BBCRow = 5;  BBCCol = 0; break;
-
-	// Special Character keys.
-	case IDK_SEMI_COLON:   BBCRow = 5; BBCCol = 7; break;
-	case IDK_EQUALS:       BBCRow = 1; BBCCol = 7; break;
-	case IDK_COMMA:        BBCRow = 6; BBCCol = 6; break;
-	case IDK_CARET:        BBCRow = 1; BBCCol = 8; break;
-	case IDK_DOT:          BBCRow = 6; BBCCol = 7; break;
-	case IDK_FWDSLASH:     BBCRow = 6; BBCCol = 8; break;
-	case IDK_STAR:         BBCRow = 4; BBCCol = 8; break;
-	case IDK_OPEN_SQUARE:  BBCRow = 3; BBCCol = 8; break;
-	case IDK_BACKSLASH:    BBCRow = 7; BBCCol = 8; break;
-	case IDK_CLOSE_SQUARE: BBCRow = 5; BBCCol = 8; break;
-	case IDK_AT:           BBCRow = 4; BBCCol = 7; break;
-	case IDK_UNDERSCORE:   BBCRow = 2; BBCCol = 8; break;
-
-	default:
-		BBCRow = 0; BBCCol = 0;
-	}
+    const BBCKey& key = GetBBCKeyByResId(ctrlID);
+    BBCRow = key.row;
+    BBCCol = key.column;
 }
 
 /****************************************************************************/
@@ -252,6 +387,13 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 {
 	switch (nMessage)
 	{
+	case WM_INITDIALOG:
+		if (doingJoystick)
+		{
+			SetWindowText(hwnd, "Joystick To Keyboard Mapping");
+		}
+		return FALSE;
+
 	case WM_COMMAND:
 		switch (wParam)
 		{
@@ -281,7 +423,7 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 			// Assign the BBC key to the PC key.
 			SetBBCKeyForVKEY(
 				selectKeyDialog->Key(),
-				doingShifted
+				selectKeyDialog->Shift()
 			);
 		}
 
@@ -290,25 +432,28 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 
 		if ((wParam == IDOK || wParam == IDCONTINUE) && !doingShifted)
 		{
-			doingShifted = true;
+			doingShifted = !doingShifted;
 
-			std::string UsedKeys = GetKeysUsed();
+			std::string UsedKeys = doingUnassign ? "" : GetKeysUsed();
 
 			selectKeyDialog = new SelectKeyDialog(
 				hInst,
 				hwndUserKeyboard,
-				szSelectKeyDialogTitle[doingShifted ? 1 : 0],
-				UsedKeys
+				szSelectKeyDialogTitle[(int)doingJoystick][doingUnassign ? 2 : doingShifted ? 1 : 0],
+				UsedKeys,
+				doingShifted,
+				doingJoystick
 			);
 
 			selectKeyDialog->Open();
 		}
 		else
 		{
+			int ctrlID = selectedCtrlID;
 			selectedCtrlID = 0;
 
 			// Show the key as not depressed, i.e., normal.
-			SetKeyColour(oldKeyColour);
+			SetKeyColour(GetKeyColour(ctrlID));
 		}
 		return TRUE;
 
@@ -436,6 +581,13 @@ static COLORREF GetKeyColour(UINT ctrlID)
 		return HighlightColour;
 	}
 
+	if (doingJoystick)
+	{
+		int index = GetBBCKeyIndex(GetBBCKeyByResId(ctrlID));
+		if (index != 0 && assignedKeysCount[index] > 0)
+			return JoyAssignedKeyColour;
+	}
+
 	switch (ctrlID)
 	{
 	case IDK_F0:
@@ -461,16 +613,36 @@ static std::string GetKeysUsed()
 {
 	std::string Keys;
 
-	// First see if this key is defined.
-	if (BBCRow != 0 || BBCCol != 0)
+	KeyPair* table;
+	int start, end;
+	int offset; // First Vkey code in table
+
+	if (!doingJoystick)
 	{
-		for (int i = 1; i < 256; i++)
+		table = UserKeymap;
+		offset = 0;
+		start = 1;
+		end = 256;
+	}
+	else
+	{
+		table = JoystickMap;
+		offset = BEEB_VKEY_JOY_START;
+		start = BEEB_VKEY_JOY_START;
+		end = BEEB_VKEY_JOY_END;
+	}
+
+	// First see if this key is defined.
+	// Row 0 is Shift key, row -2 is Break, row -9 is unassigned
+	if (BBCRow != -9)
+	{
+		for (int i = start; i < end; i++)
 		{
 			for (int s = 0; s < 2; ++s)
 			{
-				if (UserKeymap[i][s].row == BBCRow &&
-					UserKeymap[i][s].col == BBCCol &&
-					UserKeymap[i][s].shift == doingShifted)
+				if (table[i - offset][s].row == BBCRow &&
+					table[i - offset][s].col == BBCCol &&
+					table[i - offset][s].shift == doingShifted)
 				{
 					// We have found a key that matches.
 					if (!Keys.empty())
@@ -495,4 +667,56 @@ static std::string GetKeysUsed()
 	}
 
 	return Keys;
+}
+
+/****************************************************************************/
+
+void FillAssignedKeysCount()
+{
+    std::fill(std::begin(assignedKeysCount), std::end(assignedKeysCount), 0);
+
+    KeyPair* table;
+    int start, end;
+    int offset; // First Vkey code in table
+
+    if (!doingJoystick)
+    {
+        table = UserKeymap;
+        offset = 0;
+        start = 1;
+        end = 256;
+    }
+    else
+    {
+        table = JoystickMap;
+        offset = BEEB_VKEY_JOY_START;
+        start = BEEB_VKEY_JOY_START;
+        end = BEEB_VKEY_JOY_END;
+    }
+
+    for (int i = start; i < end; i++)
+    {
+        KeyPair& pair = table[i - offset];
+        for (int s = 0; s < 2; s++)
+        {
+            UpdateAssignedKeysCount(pair[s].row, pair[s].col, +1);
+        }
+    }
+}
+
+/****************************************************************************/
+
+static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawColour)
+{
+    const BBCKey& key = GetBBCKeyByRowAndCol(row, col);
+    int index = GetBBCKeyIndex(key);
+    if (index < _countof(BBCKeys))
+    {
+        assignedKeysCount[index] += change;
+        if (redrawColour && key.ctrlId != selectedCtrlID)
+        {
+            HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key.ctrlId);
+            SetKeyColour(GetKeyColour(key.ctrlId), keyCtrl);
+        }
+    }
 }
