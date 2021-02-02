@@ -1181,7 +1181,7 @@ void BeebWin::LoadJoystickMap()
 {
     char DefaultPath[_MAX_PATH];
     char FileName[_MAX_PATH];
-    const char* filter = "Joystick Mapping File (*.jmap)\0*.jmap\0";
+    const char* filter = "Joystick Map File (*.jmap)\0*.jmap\0";
 
     // If Autoload is enabled, look for joystick mapping near disks,
     // otherwise start in user data path.
@@ -1219,7 +1219,7 @@ void BeebWin::SaveJoystickMap()
     char DefaultPath[_MAX_PATH];
     // Add space for .jmap exstension
     char FileName[_MAX_PATH + 5];
-    const char* filter = "Key Map File (*.jmap)\0*.jmap\0";
+    const char* filter = "Joystick Map File (*.jmap)\0*.jmap\0";
 
     // If Autoload is enabled, store joystick mapping near disks,
     // otherwise start in user data path.
