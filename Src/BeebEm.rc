@@ -831,6 +831,15 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_BEEBEM              ICON                    "BeebEm.ico"
+IDI_SSD                 ICON                    "SSD.ico"
+IDI_DSD                 ICON                    "DSD.ico"
+IDI_FSD                 ICON                    "FSD.ico"
+IDI_UEF                 ICON                    "UEF.ico"
+IDI_CSW                 ICON                    "CSW.ico"
+IDI_ADF                 ICON                    "ADF.ico"
+IDI_ADS                 ICON                    "ADS.ico"
+IDI_ADM                 ICON                    "ADM.ico"
+IDI_ADL                 ICON                    "ADL.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////

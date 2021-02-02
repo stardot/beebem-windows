@@ -407,7 +407,16 @@
     <Image Include="..\Help\beeb.gif" />
     <Image Include="..\Help\keyboard.jpg" />
     <Image Include="..\Help\startup.jpg" />
+    <Image Include="ADF.ico" />
+    <Image Include="ADL.ico" />
+    <Image Include="ADM.ico" />
+    <Image Include="ADS.ico" />
     <Image Include="BeebEm.ico" />
+    <Image Include="CSW.ico" />
+    <Image Include="DSD.ico" />
+    <Image Include="FSD.ico" />
+    <Image Include="SSD.ico" />
+    <Image Include="UEF.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BeebEm.rc" />

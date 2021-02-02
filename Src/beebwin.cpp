@@ -4447,21 +4447,76 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 	}
 }
 
+enum FileType {
+	None,
+	SSD,
+	DSD,
+	ADFS,
+	UEF,
+	UEFState,
+	CSW,
+	IMG,
+	FSD
+};
+
+static FileType GetFileTypeFromExtension(const char* FileName)
+{
+	FileType Type = FileType::None;
+
+	const char *Ext = strrchr(FileName, '.');
+
+	if (Ext != nullptr)
+	{
+		if (_stricmp(Ext + 1, "ssd") == 0)
+		{
+			Type = FileType::SSD;
+		}
+		else if (_stricmp(Ext + 1, "dsd") == 0)
+		{
+			Type = FileType::DSD;
+		}
+		else if (_stricmp(Ext + 1, "adl") == 0)
+		{
+			Type = FileType::ADFS;
+		}
+		else if (_stricmp(Ext + 1, "adf") == 0)
+		{
+			Type = FileType::ADFS;
+		}
+		else if (_stricmp(Ext + 1, "uef") == 0)
+		{
+			Type = FileType::UEF;
+		}
+		else if (_stricmp(Ext + 1, "uefstate") == 0)
+		{
+			Type = FileType::UEFState;
+		}
+		else if (_stricmp(Ext + 1, "csw") == 0)
+		{
+			Type = FileType::CSW;
+		}
+		else if (_stricmp(Ext + 1, "img") == 0)
+		{
+			Type = FileType::IMG;
+		}
+		else if (_stricmp(Ext + 1, "fsd") == 0)
+		{
+			Type = FileType::FSD;
+		}
+	}
+
+	return Type;
+}
+
 /*****************************************************************************/
 // File location of a file passed on command line
 
 void BeebWin::FindCommandLineFile(char *CmdLineFile)
 {
-	bool ssd = false;
-	bool dsd = false;
-	bool adfs = false;
 	bool cont = false;
 	char TmpPath[_MAX_PATH];
 	char *FileName = NULL;
-	bool uef = false;
-	bool csw = false;
-	bool img = false;
-	bool fsd = false;
+	FileType Type = FileType::None;
 
 	// See if file is readable
 	if (CmdLineFile[0] != 0)
@@ -4470,33 +4525,14 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 		strncpy(TmpPath, CmdLineFile, _MAX_PATH);
 
 		// Work out which type of file it is
-		const char *ext = strrchr(FileName, '.');
-		if (ext != NULL)
-		{
-			cont = true;
-			if (_stricmp(ext+1, "ssd") == 0)
-				ssd = true;
-			else if (_stricmp(ext+1, "dsd") == 0)
-				dsd = true;
-			else if (_stricmp(ext+1, "adl") == 0)
-				adfs = true;
-			else if (_stricmp(ext+1, "adf") == 0)
-				adfs = true;
-			else if (_stricmp(ext+1, "uef") == 0)
-				uef = true;
-			else if (_stricmp(ext+1, "csw") == 0)
-				csw = true;
-			else if (_stricmp(ext+1, "img") == 0)
-				img = true;
-			else if (_stricmp(ext+1, "fsd") == 0)
-				fsd = true;
-			else
-			{
-				Report(MessageType::Error, "Unrecognised file type:\n  %s",
-				       FileName);
+		Type = GetFileTypeFromExtension(FileName);
 
-				cont = false;
-			}
+		if (Type == FileType::None)
+		{
+			Report(MessageType::Error, "Unrecognised file type:\n  %s",
+			       FileName);
+
+			cont = false;
 		}
 	}
 
@@ -4508,11 +4544,11 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 		{
 			cont = true;
 		}
-		else if (uef)
+		else if (Type == FileType::UEF)
 		{
-			// Try getting it from BeebState directory
+			// Try getting it from Tapes directory
 			strcpy(TmpPath, m_UserDataPath);
-			strcat(TmpPath, "beebstate/");
+			strcat(TmpPath, "Tapes/");
 			strcat(TmpPath, FileName);
 
 			if (FileExists(TmpPath))
@@ -4520,25 +4556,24 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 				cont = true;
 				FileName = TmpPath;
 			}
-			else
-			{
-				// Try getting it from Tapes directory
-				strcpy(TmpPath, m_UserDataPath);
-				strcat(TmpPath, "tapes/");
-				strcat(TmpPath, FileName);
+		}
+		else if (Type == FileType::UEFState)
+		{
+			strcpy(TmpPath, m_UserDataPath);
+			strcat(TmpPath, "BeebState/");
+			strcat(TmpPath, FileName);
 
-				if (FileExists(TmpPath))
-				{
-					cont = true;
-					FileName = TmpPath;
-				}
+			if (FileExists(TmpPath))
+			{
+				cont = true;
+				FileName = TmpPath;
 			}
 		}
-		else if (csw)
+		else if (Type == FileType::CSW)
 		{
 			// Try getting it from Tapes directory
 			strcpy(TmpPath, m_UserDataPath);
-			strcat(TmpPath, "tapes/");
+			strcat(TmpPath, "Tapes/");
 			strcat(TmpPath, FileName);
 
 			if (FileExists(TmpPath))
@@ -4551,7 +4586,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 		{
 			// Try getting it from DiscIms directory
 			strcpy(TmpPath, m_UserDataPath);
-			strcat(TmpPath, "discims/");
+			strcat(TmpPath, "DiscIms/");
 			strcat(TmpPath, FileName);
 
 			if (FileExists(TmpPath))
@@ -4583,15 +4618,9 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 
 void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 {
-	bool ssd = false;
-	bool dsd = false;
-	bool adfs = false;
 	bool cont = false;
 	const char *FileName = NULL;
-	bool uef = false;
-	bool csw = false;
-	bool img = false;
-	bool fsd = false;
+	FileType Type = FileType::None;
 
 	m_AutoBootDisc = false;
 
@@ -4600,33 +4629,14 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 		FileName = CmdLineFile;
 
 		// Work out which type of files it is
-		const char *ext = strrchr(FileName, '.');
-		if (ext != NULL)
-		{
-			cont = true;
-			if (_stricmp(ext+1, "ssd") == 0)
-				ssd = true;
-			else if (_stricmp(ext+1, "dsd") == 0)
-				dsd = true;
-			else if (_stricmp(ext+1, "adl") == 0)
-				adfs = true;
-			else if (_stricmp(ext+1, "adf") == 0)
-				adfs = true;
-			else if (_stricmp(ext+1, "uef") == 0)
-				uef = true;
-			else if (_stricmp(ext+1, "csw") == 0)
-				csw = true;
-			else if (_stricmp(ext+1, "img") == 0)
-				img = true;
-			else if (_stricmp(ext+1, "fsd") == 0)
-				fsd = true;
-			else
-			{
-				Report(MessageType::Error, "Unrecognised file type:\n  %s",
-				       FileName);
+		Type = GetFileTypeFromExtension(FileName);
 
-				cont = false;
-			}
+		if (Type == FileType::None)
+		{
+			Report(MessageType::Error, "Unrecognised file type:\n  %s",
+			       FileName);
+
+			cont = false;
 		}
 	}
 
@@ -4647,7 +4657,11 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 
 	if (cont)
 	{
-		if (uef)
+		if (Type == FileType::UEFState)
+		{
+			LoadUEFState(FileName);
+		}
+		else if (Type == FileType::UEF)
 		{
 			// Determine if file is a tape or a state file
 			if (IsUEFSaveState(FileName))
@@ -4661,7 +4675,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 
 			cont = false;
 		}
-		else if (csw)
+		else if (Type == FileType::CSW)
 		{
 			CSWOpen(FileName);
 			cont = false;
@@ -4672,35 +4686,51 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 	{
 		if (MachineType != Model::Master128)
 		{
-			if (dsd)
+			if (Type == FileType::DSD)
 			{
 				if (NativeFDC)
+				{
 					LoadSimpleDSDiscImage(FileName, Drive, 80);
+				}
 				else
+				{
 					Load1770DiscImage(FileName, Drive, DiscType::DSD);
+				}
 			}
-			else if (ssd)
+			else if (Type == FileType::SSD)
 			{
 				if (NativeFDC)
+				{
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
+				}
 				else
+				{
 					Load1770DiscImage(FileName, Drive, DiscType::SSD);
+				}
 			}
-			else if (adfs)
+			else if (Type == FileType::ADFS)
 			{
 				if (!NativeFDC)
+				{
 					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
+				}
 				else
+				{
 					cont = false;  // cannot load adfs with native DFS
+				}
 			}
-			else if (img)
+			else if (Type == FileType::IMG)
 			{
 				if (NativeFDC)
+				{
 					LoadSimpleDiscImage(FileName, Drive, 0, 80); // Treat like an ssd
+				}
 				else
+				{
 					Load1770DiscImage(FileName, Drive, DiscType::IMG);
+				}
 			}
-			else if (fsd)
+			else if (Type == FileType::FSD)
 			{
 				if (NativeFDC)
 				{
@@ -4715,23 +4745,23 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 		}
 		else // Model::Master128
 		{
-			if (dsd)
+			if (Type == FileType::DSD)
 			{
 				Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			}
-			else if (ssd)
+			else if (Type == FileType::SSD)
 			{
 				Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			}
-			else if (adfs)
+			else if (Type == FileType::ADFS)
 			{
 				Load1770DiscImage(FileName, Drive, DiscType::ADFS);
 			}
-			else if (img)
+			else if (Type == FileType::IMG)
 			{
 				Load1770DiscImage(FileName, Drive, DiscType::IMG);
 			}
-			else if (fsd)
+			else if (Type == FileType::FSD)
 			{
 				Report(MessageType::Error, "FSD images are only supported with the 8271 FDC");
 				return;

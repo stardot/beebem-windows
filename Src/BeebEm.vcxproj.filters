@@ -562,6 +562,33 @@
     <Image Include="..\Help\startup.jpg">
       <Filter>Help Files</Filter>
     </Image>
+    <Image Include="ADF.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="ADL.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="ADM.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="ADS.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="CSW.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="DSD.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="FSD.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="SSD.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UEF.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BeebEm.rc">

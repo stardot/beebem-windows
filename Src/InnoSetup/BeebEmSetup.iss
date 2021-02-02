@@ -11,96 +11,254 @@ AppUpdatesURL=http://www.mkw.me.uk/beebem/index.html
 DefaultDirName={pf}\BeebEm
 DefaultGroupName=BeebEm
 OutputDir=Release
-OutputBaseFilename=BeebEm419
+OutputBaseFilename=BeebEm
 Compression=lzma
 SolidCompression=yes
 VersionInfoVersion=4.19.0.0
+ChangesAssociations=yes
 
 [Registry]
-Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: Version; ValueData: 4.19; ValueType: string; Flags: uninsdeletekey
-Root: HKLM; Subkey: SOFTWARE\BeebEm; ValueName: InstallPath; ValueData: {app}; ValueType: string; Flags: uninsdeletekey
-Root: HKCU; Subkey: SOFTWARE\BeebEm; Flags: uninsdeletekey
+
+; https://learn.microsoft.com/en-us/windows/win32/shell/app-registration
+; https://learn.microsoft.com/en-us/windows/win32/shell/fa-file-types
+
+Root: HKLM; Subkey: "SOFTWARE\BeebEm"; ValueType: string; ValueName: Version;      ValueData: 4.19;  Flags: uninsdeletekey
+Root: HKLM; Subkey: "SOFTWARE\BeebEm"; ValueType: string; ValueName: InstallPath;  ValueData: {app}; Flags: uninsdeletekey
+Root: HKCU; Subkey: "SOFTWARE\BeebEm";                                                               Flags: uninsdeletekey
+
+Root: HKLM; Subkey: "Software\Classes\.ssd";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.ssd";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('ssd')
+Root: HKLM; Subkey: "Software\Classes\.ssd\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.ssd";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('ssd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.ssd";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro DFS Disk Image";    Flags: uninsdeletekey;   Check: CheckAddFileAssociation('ssd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.ssd\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,1";                                   Check: CheckAddFileAssociation('ssd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.ssd\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('ssd')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".ssd";            ValueData: "";                                                     Check: CheckAddFileAssociation('ssd')
+
+Root: HKLM; Subkey: "Software\Classes\.dsd";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.dsd";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('dsd')
+Root: HKLM; Subkey: "Software\Classes\.dsd\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.dsd";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('dsd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.dsd";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro DFS Disk Image";    Flags: uninsdeletekey;   Check: CheckAddFileAssociation('dsd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.dsd\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,2";                                   Check: CheckAddFileAssociation('dsd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.dsd\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('dsd')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".dsd";            ValueData: "";                                                     Check: CheckAddFileAssociation('dsd')
+
+Root: HKLM; Subkey: "Software\Classes\.fsd";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.fsd";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('fsd')
+Root: HKLM; Subkey: "Software\Classes\.fsd\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.fsd";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('fsd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.fsd";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro DFS Disk Image";    Flags: uninsdeletekey;   Check: CheckAddFileAssociation('fsd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.fsd\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,3";                                   Check: CheckAddFileAssociation('fsd')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.fsd\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('fsd')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".fsd";            ValueData: "";                                                     Check: CheckAddFileAssociation('fsd')
+
+Root: HKLM; Subkey: "Software\Classes\.adf";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.adf";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('adf')
+Root: HKLM; Subkey: "Software\Classes\.adf\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.adf";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('adf')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adf";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro ADFS Disk Image";   Flags: uninsdeletekey;   Check: CheckAddFileAssociation('adf')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adf\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,6";                                   Check: CheckAddFileAssociation('adf')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adf\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('adf')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".adf";            ValueData: "";                                                     Check: CheckAddFileAssociation('adf')
+
+Root: HKLM; Subkey: "Software\Classes\.ads";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.ads";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('ads')
+Root: HKLM; Subkey: "Software\Classes\.ads\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.ads";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('ads')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.ads";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro ADFS Disk Image";   Flags: uninsdeletekey;   Check: CheckAddFileAssociation('ads')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.ads\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,7";                                   Check: CheckAddFileAssociation('ads')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.ads\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('ads')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".ads";            ValueData: "";                                                     Check: CheckAddFileAssociation('ads')
+
+Root: HKLM; Subkey: "Software\Classes\.adm";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.adm";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('adm')
+Root: HKLM; Subkey: "Software\Classes\.adm\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.adm";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('adm')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adm";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro ADFS Disk Image";   Flags: uninsdeletekey;   Check: CheckAddFileAssociation('adm')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adm\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,8";                                   Check: CheckAddFileAssociation('adm')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adm\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('adm')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".adm";            ValueData: "";                                                     Check: CheckAddFileAssociation('adm')
+
+Root: HKLM; Subkey: "Software\Classes\.adl";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.adl";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('adl')
+Root: HKLM; Subkey: "Software\Classes\.adl\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.adl";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('adl')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adl";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro ADFS Disk Image";   Flags: uninsdeletekey;   Check: CheckAddFileAssociation('adl')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adl\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,9";                                   Check: CheckAddFileAssociation('adl')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.adl\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('adl')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".adl";            ValueData: "";                                                     Check: CheckAddFileAssociation('adl')
+
+Root: HKLM; Subkey: "Software\Classes\.uef";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.uef";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('uef')
+Root: HKLM; Subkey: "Software\Classes\.uef\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.uef";      ValueData: "BBC Micro UEF File";          Flags: uninsdeletevalue; Check: CheckAddFileAssociation('uef')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.uef";                             ValueType: string; ValueName: "";                ValueData: "My Program File";             Flags: uninsdeletekey;   Check: CheckAddFileAssociation('uef')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.uef\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,4";                                   Check: CheckAddFileAssociation('uef')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.uef\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('uef')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".uef";            ValueData: "";                                                     Check: CheckAddFileAssociation('uef')
+
+Root: HKLM; Subkey: "Software\Classes\.csw";                                   ValueType: string; ValueName: "";                ValueData: "BeebEm.csw";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('csw')
+Root: HKLM; Subkey: "Software\Classes\.csw\OpenWithProgIds";                   ValueType: string; ValueName: "BeebEm.csw";      ValueData: "";                            Flags: uninsdeletevalue; Check: CheckAddFileAssociation('csw')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.csw";                             ValueType: string; ValueName: "";                ValueData: "BBC Micro Tape Image";        Flags: uninsdeletekey;   Check: CheckAddFileAssociation('csw')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.csw\DefaultIcon";                 ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,5";                                   Check: CheckAddFileAssociation('csw')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.csw\shell\open\command";          ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('csw')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".csw";            ValueData: "";                                                     Check: CheckAddFileAssociation('csw')
+
+Root: HKLM; Subkey: "Software\Classes\.uefstate";                              ValueType: string; ValueName: "";                ValueData: "BeebEm.uef";                  Flags: uninsdeletevalue; Check: CheckAddFileAssociation('uefstate')
+Root: HKLM; Subkey: "Software\Classes\.uefstate\OpenWithProgIds";              ValueType: string; ValueName: "BeebEm.uefstate"; ValueData: "BeebEm Saved State";          Flags: uninsdeletevalue; Check: CheckAddFileAssociation('uefstate')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.uefstate";                        ValueType: string; ValueName: "";                ValueData: "My Program File";             Flags: uninsdeletekey;   Check: CheckAddFileAssociation('uefstate')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.uefstate\DefaultIcon";            ValueType: string; ValueName: "";                ValueData: "{app}\BeebEm.exe,0";                                   Check: CheckAddFileAssociation('uefstate')
+Root: HKLM; Subkey: "Software\Classes\BeebEm.uefstate\shell\open\command";     ValueType: string; ValueName: "";                ValueData: """{app}\BeebEm.exe"" ""%1""";                          Check: CheckAddFileAssociation('uefstate')
+Root: HKLM; Subkey: "Software\Classes\Applications\BeebEm.exe\SupportedTypes"; ValueType: string; ValueName: ".uefstate";       ValueData: "";                                                     Check: CheckAddFileAssociation('uefstate')
 
 [Languages]
 Name: english; MessagesFile: compiler:Default.isl
 
 [Tasks]
-Name: desktopicon; Description: {cm:CreateDesktopIcon}; GroupDescription: {cm:AdditionalIcons}
-Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
+Name: desktopicon;      Description: {cm:CreateDesktopIcon};     GroupDescription: {cm:AdditionalIcons}
+Name: quicklaunchicon;  Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked
+Name: fileassociations; Description: "Create file associations"; GroupDescription: "File Associations";  Flags: unchecked
 
 [InstallDelete]
 Name: {app}\msvcp80.dll; Type: files
 Name: {app}\msvcr80.dll; Type: files
-Name: {app}\Documents; Type: filesandordirs
-Name: {app}\Hardware; Type: filesandordirs
+Name: {app}\Documents;   Type: filesandordirs
+Name: {app}\Hardware;    Type: filesandordirs
 
 [Dirs]
 Name: {userdocs}\BeebEm
 Name: {userdocs}\BeebEm\BeebState; Flags: uninsneveruninstall
 
 [Files]
-Source: ..\Release\BeebEm.exe; DestDir: {app}; Flags: ignoreversion
-Source: ..\Release\Hardware\Acorn1770.dll; DestDir: {app}\Hardware; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\Release\Hardware\OpusDDOS.dll; DestDir: {app}\Hardware; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\Release\Hardware\Watford.dll; DestDir: {app}\Hardware; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Documents\*; DestDir: {app}\Documents; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\*; DestDir: {app}\Help; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\UserData\*; DestDir: {app}\UserData; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\BeebEmLocal.vbs; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\BeebEmTorch.vbs; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\CHANGES.md; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\COPYRIGHT.txt; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\DriveMotor.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\HeadLoad.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\HeadSeek.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\HeadStep.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\HeadUnload.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\README.md; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\BeebEm.png; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\RelayOff.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\RelayOn.snd; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\Teletext.fnt; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\UserData\*; DestDir: {userdocs}\BeebEm; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
-Source: {app}\BeebFile\*; DestDir: {userdocs}\BeebEm\BeebFile; AfterInstall: DeleteOldDataDir('{app}\BeebFile'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
-Source: {app}\DiscIms\*; DestDir: {userdocs}\BeebEm\DiscIms; AfterInstall: DeleteOldDataDir('{app}\DiscIms'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
-Source: {app}\Phroms\*; DestDir: {userdocs}\BeebEm\Phroms; AfterInstall: DeleteOldDataDir('{app}\Phroms'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
-Source: {app}\Tapes\*; DestDir: {userdocs}\BeebEm\Tapes; AfterInstall: DeleteOldDataDir('{app}\Tapes'); Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
-Source: {app}\Econet.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Econet.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
-Source: {app}\Phroms.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Phroms.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
-Source: {app}\Roms.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Roms.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
-Source: {app}\Roms_Torch.cfg; DestDir: {userdocs}\BeebEm; AfterInstall: DeleteOldDataFile('{app}\Roms_Torch.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
-Source: ..\..\VCRedist\vc_redist.x86.exe; DestDir: {app}; Flags: deleteafterinstall
+Source: ..\Release\BeebEm.exe;             DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\Release\Hardware\Acorn1770.dll; DestDir: {app}\Hardware;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\Release\Hardware\OpusDDOS.dll;  DestDir: {app}\Hardware;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\Release\Hardware\Watford.dll;   DestDir: {app}\Hardware;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Documents\*;                 DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Help\*;                      DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\UserData\*;                  DestDir: {app}\UserData;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\BeebEmLocal.vbs;             DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\BeebEmTorch.vbs;             DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\CHANGES.md;                  DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\COPYRIGHT.txt;               DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\DriveMotor.snd;              DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\HeadLoad.snd;                DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\HeadSeek.snd;                DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\HeadStep.snd;                DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\HeadUnload.snd;              DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\README.md;                   DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\BeebEm.png;                  DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\RelayOff.snd;                DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\RelayOn.snd;                 DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\Teletext.fnt;                DestDir: {app};                                                                               Flags: ignoreversion
+Source: ..\..\UserData\*;                  DestDir: {userdocs}\BeebEm;                                                                   Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
+Source: {app}\BeebFile\*;                  DestDir: {userdocs}\BeebEm\BeebFile; AfterInstall: DeleteOldDataDir('{app}\BeebFile');        Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
+Source: {app}\DiscIms\*;                   DestDir: {userdocs}\BeebEm\DiscIms;  AfterInstall: DeleteOldDataDir('{app}\DiscIms');         Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
+Source: {app}\Phroms\*;                    DestDir: {userdocs}\BeebEm\Phroms;   AfterInstall: DeleteOldDataDir('{app}\Phroms');          Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
+Source: {app}\Tapes\*;                     DestDir: {userdocs}\BeebEm\Tapes;    AfterInstall: DeleteOldDataDir('{app}\Tapes');           Flags: uninsneveruninstall external skipifsourcedoesntexist recursesubdirs
+Source: {app}\Econet.cfg;                  DestDir: {userdocs}\BeebEm;          AfterInstall: DeleteOldDataFile('{app}\Econet.cfg');     Flags: uninsneveruninstall external skipifsourcedoesntexist
+Source: {app}\Phroms.cfg;                  DestDir: {userdocs}\BeebEm;          AfterInstall: DeleteOldDataFile('{app}\Phroms.cfg');     Flags: uninsneveruninstall external skipifsourcedoesntexist
+Source: {app}\Roms.cfg;                    DestDir: {userdocs}\BeebEm;          AfterInstall: DeleteOldDataFile('{app}\Roms.cfg');       Flags: uninsneveruninstall external skipifsourcedoesntexist
+Source: {app}\Roms_Torch.cfg;              DestDir: {userdocs}\BeebEm;          AfterInstall: DeleteOldDataFile('{app}\Roms_Torch.cfg'); Flags: uninsneveruninstall external skipifsourcedoesntexist
+Source: ..\..\VCRedist\vc_redist.x86.exe;  DestDir: {app};                                                                               Flags: deleteafterinstall
 
 [Icons]
-Name: {group}\BeebEm; Filename: {app}\BeebEm.exe
-Name: {group}\View BeebEm Change History; Filename: {app}\CHANGES.md
-Name: {group}\View COPYRIGHT notice; Filename: {app}\COPYRIGHT.txt
-Name: {group}\View Help; Filename: {app}\Help\index.html
-Name: {group}\{cm:ProgramOnTheWeb,BeebEm}; Filename: http://www.mkw.me.uk/beebem/index.html
-Name: {group}\{cm:UninstallProgram,BeebEm}; Filename: {uninstallexe}
-Name: {commondesktop}\BeebEm; Filename: {app}\BeebEm.exe; Tasks: desktopicon
-Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\BeebEm; Filename: {app}\BeebEm.exe; Tasks: quicklaunchicon
+Name: {group}\BeebEm;                                                Filename: {app}\BeebEm.exe
+Name: {group}\View BeebEm Change History;                            Filename: {app}\CHANGES.md
+Name: {group}\View COPYRIGHT notice;                                 Filename: {app}\COPYRIGHT.txt
+Name: {group}\View Help;                                             Filename: {app}\Help\index.html
+Name: {group}\{cm:ProgramOnTheWeb,BeebEm};                           Filename: http://www.mkw.me.uk/beebem/index.html
+Name: {group}\{cm:UninstallProgram,BeebEm};                          Filename: {uninstallexe}
+Name: {commondesktop}\BeebEm;                                        Filename: {app}\BeebEm.exe;                      Tasks: desktopicon
+Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\BeebEm; Filename: {app}\BeebEm.exe;                      Tasks: quicklaunchicon
 
 [Run]
 Filename: {app}\vc_redist.x86.exe; Parameters: "/quiet /norestart"; StatusMsg: Installing Visual C++ Redistributable for Visual Studio 2015...
 Filename: {app}\BeebEm.exe; Description: {cm:LaunchProgram,BeebEm}; Flags: nowait postinstall skipifsilent
 
 [Code]
+var
+  FileAssociationsPage: TInputOptionWizardPage;
+
+procedure InitializeWizard;
+begin
+  FileAssociationsPage := CreateInputOptionPage(
+    wpSelectTasks,
+    'File Associations',
+    'Associate file types with BeebEm',
+    'Select the file extensions that you want to associate with BeebEm:',
+    False,
+    False
+  );
+
+  FileAssociationsPage.Add('DFS Disk Images (.ssd, .dsd, .fsd)'); FileAssociationsPage.Values[0] := True;
+  FileAssociationsPage.Add('ADFS Disk Images (.adf, .ads, .adm, .adl)'); FileAssociationsPage.Values[1] := True;
+  FileAssociationsPage.Add('Tape Images (.uef)'); FileAssociationsPage.Values[2] := True;
+  FileAssociationsPage.Add('Tape Images (.csw )'); FileAssociationsPage.Values[3] := True;
+  FileAssociationsPage.Add('BeebEm Saved States (.uefstate)'); FileAssociationsPage.Values[4] := True;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+
+  if PageID = FileAssociationsPage.ID then begin
+    Result := not IsTaskSelected('fileassociations');
+  end;
+end;
+
+function CheckAddFileAssociation(Extension: String): Boolean;
+begin
+  Result := True;
+
+  if CompareStr(Extension, 'ssd') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[0];
+  end
+  else if CompareStr(Extension, 'dsd') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[0];
+  end
+  else if CompareStr(Extension, 'fsd') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[0];
+  end
+  else if CompareStr(Extension, 'adf') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[1];
+  end
+  else if CompareStr(Extension, 'ads') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[1];
+  end
+  else if CompareStr(Extension, 'adm') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[1];
+  end
+  else if CompareStr(Extension, 'adl') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[1];
+  end
+  else if CompareStr(Extension, 'uef') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[2];
+  end
+  else if CompareStr(Extension, 'csw') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[3];
+  end
+  else if CompareStr(Extension, 'uefstate') = 0 then
+  begin
+    Result := FileAssociationsPage.Values[4];
+  end
+end;
+
 procedure DeleteOldDataDir(dirName: String);
+
 var
   fullDirName: String;
+
 begin
   fullDirName := ExpandConstant(dirName);
+
   if DirExists(fullDirName) then begin
     DelTree(fullDirName, True, True, True);
   end;
 end;
 
 procedure DeleteOldDataFile(fileName: String);
+
 var
   fullFileName: String;
+
 begin
   fullFileName := ExpandConstant(fileName);
+
   if FileExists(fullFileName) then begin
     DeleteFile(fullFileName);
   end;

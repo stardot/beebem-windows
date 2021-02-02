@@ -98,7 +98,16 @@ Boston, MA  02110-1301, USA.
 #define IDK_UNDERSCORE                  82
 #define IDK_CARET                       83
 #define IDR_MENU                        101
-#define IDI_BEEBEM                      102
+#define IDI_BEEBEM                      101
+#define IDI_SSD                         102
+#define IDI_DSD                         103
+#define IDI_FSD                         104
+#define IDI_UEF                         105
+#define IDI_CSW                         106
+#define IDI_ADF                         107
+#define IDI_ADS                         108
+#define IDI_ADM                         109
+#define IDI_ADL                         110
 #define IDD_USERKYBRD                   103
 #define IDD_KEYBOARD_LINKS              106
 #define IDD_DEBUG                       110

@@ -55,6 +55,7 @@ using std::max;
 #include "KeyMap.h"
 #include "discedit.h"
 #include "ExportFileDialog.h"
+#include "FileUtils.h"
 #include "version.h"
 
 using namespace Gdiplus;
@@ -541,7 +542,7 @@ void BeebWin::SaveState()
 	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
-	const char* filter = "UEF State File (*.uef)\0*.uef\0";
+	const char* filter = "UEF State File (*.uefstate)\0*.uefstate\0";
 
 	m_Preferences.GetStringValue("StatesPath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
@@ -558,9 +559,9 @@ void BeebWin::SaveState()
 		}
 
 		// Add UEF extension if not already set and is UEF
-		if (!hasFileExt(FileName, ".uef"))
+		if (!hasFileExt(FileName, ".uefstate"))
 		{
-			strcat(FileName,".uef");
+			strcat(FileName, ".uefstate");
 		}
 		SaveUEFState(FileName);
 	}
@@ -573,7 +574,7 @@ void BeebWin::RestoreState()
 	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
-	const char* filter = "UEF State File (*.uef)\0*.uef\0";
+	const char* filter = "UEF State File (*.uefstate; *.uef)\0*.uefstate;*.uef\0";
 
 	m_Preferences.GetStringValue("StatesPath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
@@ -884,25 +885,39 @@ void BeebWin::QuickLoad()
 {
 	char FileName[_MAX_PATH];
 	strcpy(FileName, m_UserDataPath);
-	strcat(FileName, "beebstate\\quicksave.uef");
-	LoadUEFState(FileName);
+	strcat(FileName, "BeebState\\quicksave.uefstate");
+
+	if (FileExists(FileName))
+	{
+		LoadUEFState(FileName);
+	}
+	else
+	{
+		// For backwards compatiblity with existing quicksave files:
+		strcpy(FileName, m_UserDataPath);
+		strcat(FileName, "BeebState\\quicksave.uef");
+		LoadUEFState(FileName);
+	}
 }
 
 void BeebWin::QuickSave()
 {
 	char FileName1[_MAX_PATH];
 	char FileName2[_MAX_PATH];
-	int i;
 
 	// Bump old quicksave files down
-	for (i = 1; i <= 9; ++i)
+	for (int i = 1; i <= 9; ++i)
 	{
-		sprintf(FileName1, "%sbeebstate\\quicksave%d.uef", m_UserDataPath, i);
+		sprintf(FileName1, "%sBeebState\\quicksave%d.uefstate", m_UserDataPath, i);
 
 		if (i == 9)
-			sprintf(FileName2, "%sbeebstate\\quicksave.uef", m_UserDataPath);
+		{
+			sprintf(FileName2, "%sBeebState\\quicksave.uefstate", m_UserDataPath);
+		}
 		else
-			sprintf(FileName2, "%sbeebstate\\quicksave%d.uef", m_UserDataPath, i+1);
+		{
+			sprintf(FileName2, "%sBeebState\\quicksave%d.uefstate", m_UserDataPath, i + 1);
+		}
 
 		MoveFileEx(FileName2, FileName1, MOVEFILE_REPLACE_EXISTING);
 	}
