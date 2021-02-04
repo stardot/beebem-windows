@@ -26,6 +26,7 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #include "Messages.h"
 #include "SelectKeyDialog.h"
+#include "Dialog.h"
 #include "uservia.h"
 
 /****************************************************************************/
@@ -325,14 +326,14 @@ INT_PTR UserPortBreakoutDialog::DlgProc(
 
 bool UserPortBreakoutDialog::GetValue(int ctrlID)
 {
-	return SendDlgItemMessage(m_hwnd, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
+	return IsDlgItemChecked(m_hwnd, ctrlID);
 }
 
 /****************************************************************************/
 
 void UserPortBreakoutDialog::SetValue(int ctrlID, bool State)
 {
-	SendDlgItemMessage(m_hwnd, ctrlID, BM_SETCHECK, State ? 1 : 0, 0);
+	SetDlgItemChecked(m_hwnd, ctrlID, State);
 }
 
 /****************************************************************************/

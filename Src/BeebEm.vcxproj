@@ -182,6 +182,7 @@
     <ClCompile Include="beebwinspeech.cpp" />
     <ClCompile Include="csw.cpp" />
     <ClCompile Include="debug.cpp" />
+    <ClCompile Include="Dialog.cpp" />
     <ClCompile Include="disc1770.cpp" />
     <ClCompile Include="disc8271.cpp" />
     <ClCompile Include="discedit.cpp" />
@@ -323,6 +324,7 @@
     <ClInclude Include="beebwin.h" />
     <ClInclude Include="csw.h" />
     <ClInclude Include="debug.h" />
+    <ClInclude Include="Dialog.h" />
     <ClInclude Include="disc1770.h" />
     <ClInclude Include="disc8271.h" />
     <ClInclude Include="discedit.h" />
