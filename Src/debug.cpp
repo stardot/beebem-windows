@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "z80mem.h"
 #include "z80.h"
+#include "Dialog.h"
 #include "FileDialog.h"
 #include "StringUtils.h"
 #include "DebugTrace.h"
@@ -986,16 +987,6 @@ static const InstInfo* GetOpcodeTable(bool host)
 	else {
 		return optable_65c02;
 	}
-}
-
-static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
-{
-	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
-}
-
-static void SetDlgItemChecked(HWND hDlg, int nIDDlgItem, bool checked)
-{
-	SendDlgItemMessage(hDlg, nIDDlgItem, BM_SETCHECK, checked ? BST_CHECKED : BST_UNCHECKED, 0);
 }
 
 void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
