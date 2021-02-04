@@ -1360,14 +1360,15 @@ unsigned int BeebWin::GetJoystickAxes(JOYCAPS& caps, unsigned int deadband, JOYI
 /****************************************************************************/
 void BeebWin::TranslateOrSendKey(int vkey, bool keyUp)
 {
-	int row, col;
-	if (m_JoystickTarget == NULL)
+	if (m_JoystickTarget == nullptr)
 	{
+		int row, col;
 		TranslateKey(vkey, keyUp, row, col);
 	}
 	else if (!keyUp)
 	{
-		// Keyboard input dialog is visible - translate button down to key down message and send to dialog
+		// Keyboard input dialog is visible - translate button down to key down
+		// message and send to dialog
 		PostMessage(m_JoystickTarget, WM_KEYDOWN, vkey, 0);
 	}
 }
@@ -1375,18 +1376,16 @@ void BeebWin::TranslateOrSendKey(int vkey, bool keyUp)
 /****************************************************************************/
 void BeebWin::TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx)
 {
-	const int axNum = JOYSTICK_AXES_COUNT;
-
 	JOYCAPS& caps = (joyId == 1) ? m_Joystick2Caps : m_JoystickCaps;
 	unsigned int deadband = (joyId == 1) ? m_Joystick2Deadband : m_Joystick1Deadband;
 	int& prevAxes = (joyId == 1) ? m_Joystick2PrevAxes : m_Joystick1PrevAxes;
 	int vkeys = (joyId == 1) ? BEEB_VKEY_JOY2_AXES : BEEB_VKEY_JOY1_AXES;
 
-	unsigned int axes = mainWin->GetJoystickAxes(caps, deadband, joyInfoEx);
+	unsigned int axes = GetJoystickAxes(caps, deadband, joyInfoEx);
 
 	if (axes != prevAxes)
 	{
-		for (int axId = 0; axId < axNum; ++axId)
+		for (int axId = 0; axId < JOYSTICK_AXES_COUNT; ++axId)
 		{
 			if ((axes & ~prevAxes) & (1 << axId))
 			{
@@ -1397,6 +1396,7 @@ void BeebWin::TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx)
 				TranslateOrSendKey(vkeys + axId, true);
 			}
 		}
+
 		prevAxes = axes;
 	}
 }
@@ -1404,14 +1404,14 @@ void BeebWin::TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx)
 /****************************************************************************/
 void BeebWin::TranslateJoystickButtons(int joyId, unsigned int buttons)
 {
-	const int btnNum = 32;
+	const int BUTTON_COUNT = 32;
 
 	int& prevBtns = (joyId == 1) ? m_Joystick2PrevBtns : m_Joystick1PrevBtns;
 	int vkeys = (joyId == 1) ? BEEB_VKEY_JOY2_BTN1 : BEEB_VKEY_JOY1_BTN1;
 
 	if (buttons != prevBtns)
 	{
-		for (int btnId = 0; btnId < btnNum; ++btnId)
+		for (int btnId = 0; btnId < BUTTON_COUNT; ++btnId)
 		{
 			if ((buttons & ~prevBtns) & (1 << btnId))
 			{
@@ -1422,6 +1422,7 @@ void BeebWin::TranslateJoystickButtons(int joyId, unsigned int buttons)
 				TranslateOrSendKey(vkeys + btnId, true);
 			}
 		}
+
 		prevBtns = buttons;
 	}
 }
@@ -1429,15 +1430,16 @@ void BeebWin::TranslateJoystickButtons(int joyId, unsigned int buttons)
 /****************************************************************************/
 void BeebWin::TranslateJoystick(int joyId)
 {
-	if (mainWin->m_JoystickToKeys)
+	if (m_JoystickToKeys)
 	{
 		JOYINFOEX joyInfoEx;
 		joyInfoEx.dwSize = sizeof(joyInfoEx);
 		joyInfoEx.dwFlags = JOY_RETURNALL | JOY_RETURNPOVCTS;
+
 		if (!joyGetPosEx(joyId, &joyInfoEx))
 		{
-			mainWin->TranslateJoystickMove(joyId, joyInfoEx);
-			mainWin->TranslateJoystickButtons(joyId, joyInfoEx.dwButtons);
+			TranslateJoystickMove(joyId, joyInfoEx);
+			TranslateJoystickButtons(joyId, joyInfoEx.dwButtons);
 		}
 	}
 }
