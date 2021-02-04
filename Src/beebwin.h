@@ -84,11 +84,11 @@ Boston, MA  02110-1301, USA.
 
 #define UNASSIGNED_ROW       -9
 
-typedef struct KeyMapping {
+struct KeyMapping {
 	int row;    // Beeb row
 	int col;    // Beeb col
 	bool shift; // Beeb shift state
-} KeyMapping;
+};
 
 typedef KeyMapping  KeyPair[2];
 typedef KeyPair     KeyMap[256]; // Indices are: [Virt key][shift state]
