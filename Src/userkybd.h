@@ -27,7 +27,7 @@ Boston, MA  02110-1301, USA.
 
 struct BBCKey
 {
-    int ctrlId;
+    unsigned int ctrlId;
     const char* name;
     int row;
     int column;
