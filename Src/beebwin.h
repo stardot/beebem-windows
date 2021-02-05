@@ -156,6 +156,14 @@ struct CUSTOMVERTEX
 // Our custom FVF, which describes our custom vertex structure
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_TEX1)
 
+struct JoystickState {
+	JOYCAPS Caps;
+	unsigned int Deadband;
+	bool Captured;
+	unsigned int PrevAxes;
+	unsigned int PrevBtns;
+};
+
 class BeebWin {
 
 public:
@@ -242,7 +250,7 @@ public:
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
 	void SetJoystickButton(int index, bool button);
 	void ScaleJoystick(unsigned int x, unsigned int y);
-	unsigned int GetJoystickAxes(JOYCAPS& caps, unsigned int deadband, JOYINFOEX& joyInfoEx);
+	unsigned int GetJoystickAxes(JOYCAPS& caps, int deadband, JOYINFOEX& joyInfoEx);
 	void TranslateOrSendKey(int vkey, bool keyUp);
 	void TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx);
 	void TranslateJoystickButtons(int joyId, unsigned int buttons);
@@ -343,16 +351,7 @@ public:
 	int		m_MenuIdVolume;
 	int		m_MenuIdTiming;
 	int		m_FPSTarget;
-	bool		m_JoystickCaptured;
-	JOYCAPS		m_JoystickCaps;
-	unsigned int	m_Joystick1Deadband;
-	int		m_Joystick1PrevAxes;
-	int		m_Joystick1PrevBtns;
-	bool		m_Joystick2Captured;
-	JOYCAPS		m_Joystick2Caps;
-	unsigned int	m_Joystick2Deadband;
-	int		m_Joystick2PrevAxes;
-	int		m_Joystick2PrevBtns;
+	JoystickState	m_JoystickState[2];
 	int		m_MenuIdSticks;
 	bool		m_JoystickToKeys;
 	bool		m_AutoloadJoystickMap;
@@ -560,7 +559,6 @@ public:
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
 	void InitJoystick(void);
-	void ResetJoystick(void);
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);

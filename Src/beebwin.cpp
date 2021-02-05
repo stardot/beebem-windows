@@ -203,13 +203,13 @@ BeebWin::BeebWin()
 	m_DXSmoothMode7Only = false;
 	m_DXResetPending = false;
 
-	m_JoystickCaptured = false;
-	m_Joystick2Captured = false;
 	m_JoystickTarget = NULL;
-	m_Joystick1PrevAxes = 0;
-	m_Joystick1PrevBtns = 0;
-	m_Joystick2PrevAxes = 0;
-	m_Joystick2PrevBtns = 0;
+	for (int i = 0; i < 2; ++i)
+	{
+		m_JoystickState[i].Captured = false;
+		m_JoystickState[i].PrevAxes = 0;
+		m_JoystickState[i].PrevBtns = 0;
+	}
 	m_customip[0] = 0;
 	m_customport = 0;
 	m_isFullScreen = false;
@@ -1225,8 +1225,8 @@ void BeebWin::SetRomMenu(void)
 
 void BeebWin::MaybeEnableInitJoystick(void)
 {
-	bool enableIt = ((m_MenuIdSticks == IDM_JOYSTICK) && !m_JoystickCaptured
-		|| m_JoystickToKeys && (!m_JoystickCaptured || !m_Joystick2Captured));
+	bool enableIt = ((m_MenuIdSticks == IDM_JOYSTICK) && !m_JoystickState[0].Captured
+		|| m_JoystickToKeys && (!m_JoystickState[0].Captured || !m_JoystickState[1].Captured));
 	EnableMenuItem(IDM_INIT_JOYSTICK, enableIt);
 }
 
@@ -1237,24 +1237,24 @@ void BeebWin::InitJoystick(void)
 	MMRESULT mmresult = JOYERR_NOERROR;
 	MMRESULT mmresult2;
 
-	if ((m_MenuIdSticks == IDM_JOYSTICK || m_JoystickToKeys) && !m_JoystickCaptured)
+	if ((m_MenuIdSticks == IDM_JOYSTICK || m_JoystickToKeys) && !m_JoystickState[0].Captured)
 	{
 		/* Get joystick updates 20 times a second */
 		mmresult = joySetCapture(m_hWnd, JOYSTICKID1, 50, FALSE);
 		if (mmresult == JOYERR_NOERROR)
-			mmresult = joyGetDevCaps(JOYSTICKID1, &m_JoystickCaps, sizeof(JOYCAPS));
+			mmresult = joyGetDevCaps(JOYSTICKID1, &m_JoystickState[0].Caps, sizeof(JOYCAPS));
 		if (mmresult == JOYERR_NOERROR)
-			m_JoystickCaptured = true;
+			m_JoystickState[0].Captured = true;
 	}
 
-	if (m_JoystickToKeys && !m_Joystick2Captured)
+	if (m_JoystickToKeys && !m_JoystickState[1].Captured)
 	{
 		/* Get joystick updates 20 times a second */
 		mmresult2 = joySetCapture(m_hWnd, JOYSTICKID2, 50, FALSE);
 		if (mmresult2 == JOYERR_NOERROR)
-			mmresult2 = joyGetDevCaps(JOYSTICKID2, &m_Joystick2Caps, sizeof(JOYCAPS));
+			mmresult2 = joyGetDevCaps(JOYSTICKID2, &m_JoystickState[1].Caps, sizeof(JOYCAPS));
 		if (mmresult2 == JOYERR_NOERROR)
-			m_Joystick2Captured = true;
+			m_JoystickState[1].Captured = true;
 	}
 
 	if (mmresult == JOYERR_NOERROR)
@@ -1284,18 +1284,19 @@ void BeebWin::SetJoystickButton(int index, bool button)
 /****************************************************************************/
 void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 {
+	JOYCAPS& caps = m_JoystickState[0].Caps;
 	if (m_MenuIdSticks == IDM_JOYSTICK)
 	{
 		/* Scale and reverse the readings */
-		JoystickX = (int)((double)(m_JoystickCaps.wXmax - x) * 65535.0 /
-						  (double)(m_JoystickCaps.wXmax - m_JoystickCaps.wXmin));
-		JoystickY = (int)((double)(m_JoystickCaps.wYmax - y) * 65535.0 /
-						  (double)(m_JoystickCaps.wYmax - m_JoystickCaps.wYmin));
+		JoystickX = (int)((double)(caps.wXmax - x) * 65535.0 /
+						  (double)(caps.wXmax - caps.wXmin));
+		JoystickY = (int)((double)(caps.wYmax - y) * 65535.0 /
+						  (double)(caps.wYmax - caps.wYmin));
 	}
 }
 
 /****************************************************************************/
-unsigned int BeebWin::GetJoystickAxes(JOYCAPS& caps, unsigned int deadband, JOYINFOEX& joyInfoEx)
+unsigned int BeebWin::GetJoystickAxes(JOYCAPS& caps, int deadband, JOYINFOEX& joyInfoEx)
 {
 	unsigned int axes = 0;
 
@@ -1376,9 +1377,9 @@ void BeebWin::TranslateOrSendKey(int vkey, bool keyUp)
 /****************************************************************************/
 void BeebWin::TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx)
 {
-	JOYCAPS& caps = (joyId == 1) ? m_Joystick2Caps : m_JoystickCaps;
-	unsigned int deadband = (joyId == 1) ? m_Joystick2Deadband : m_Joystick1Deadband;
-	int& prevAxes = (joyId == 1) ? m_Joystick2PrevAxes : m_Joystick1PrevAxes;
+	JOYCAPS& caps = m_JoystickState[joyId].Caps;
+	unsigned int deadband = m_JoystickState[joyId].Deadband;
+	unsigned int& prevAxes = m_JoystickState[joyId].PrevAxes;
 	int vkeys = (joyId == 1) ? BEEB_VKEY_JOY2_AXES : BEEB_VKEY_JOY1_AXES;
 
 	unsigned int axes = GetJoystickAxes(caps, deadband, joyInfoEx);
@@ -1406,7 +1407,7 @@ void BeebWin::TranslateJoystickButtons(int joyId, unsigned int buttons)
 {
 	const int BUTTON_COUNT = 32;
 
-	int& prevBtns = (joyId == 1) ? m_Joystick2PrevBtns : m_Joystick1PrevBtns;
+	unsigned int& prevBtns = m_JoystickState[joyId].PrevBtns;
 	int vkeys = (joyId == 1) ? BEEB_VKEY_JOY2_BTN1 : BEEB_VKEY_JOY1_BTN1;
 
 	if (buttons != prevBtns)
@@ -1442,33 +1443,6 @@ void BeebWin::TranslateJoystick(int joyId)
 			TranslateJoystickButtons(joyId, joyInfoEx.dwButtons);
 		}
 	}
-}
-
-/****************************************************************************/
-void BeebWin::ResetJoystick(void)
-{
-	// joySetCapture() fails after a joyReleaseCapture() call (not sure why)
-	// so leave joystick captured.
-	// joyReleaseCapture(JOYSTICKID1);
-
-	// It still doesn't work
-	// Don't really release joystick if mapping is enabled
-	//if (!m_JoystickToKeyboard)
-	//{
-	//	if (m_JoystickCaptured)
-	//	{
-	//		if (joyReleaseCapture(JOYSTICKID1) == JOYERR_NOERROR)
-	//			m_JoystickCaptured = false;
-	//	}
-	//	if (m_Joystick2Captured)
-	//	{
-	//		if (joyReleaseCapture(JOYSTICKID2) == JOYERR_NOERROR)
-	//			m_Joystick2Captured = false;
-	//	}
-	//}
-
-	// Don't disable AtoD here, we may want to reset joystick, but keep
-	// mousestick active
 }
 
 /****************************************************************************/
@@ -3471,10 +3445,6 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			CheckMenuItem(m_MenuIdSticks, false);
 
-			if (m_MenuIdSticks == IDM_JOYSTICK)
-			{
-				ResetJoystick();
-			}
 			AtoDDisable();
 		}
 
@@ -3515,10 +3485,6 @@ void BeebWin::HandleCommand(int MenuId)
 		if (m_JoystickToKeys)
 		{
 			InitJoystick();
-		}
-		else if (m_MenuIdSticks != IDM_JOYSTICK)
-		{
-			ResetJoystick();
 		}
 		CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
 		MaybeEnableInitJoystick();
@@ -4320,11 +4286,10 @@ void BeebWin::UserKeyboardDialogClosed()
 	if (m_JoystickToKeys && !m_J2KWasEnabled)
 	{
 		m_JoystickToKeys = m_J2KWasEnabled;
-		if (m_MenuIdSticks != IDM_JOYSTICK)
-		{
-			ResetJoystick();
-		}
 	}
+
+	// Unmute
+	SetSound(SoundState::Unmuted);
 }
 
 /*****************************************************************************/

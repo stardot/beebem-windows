@@ -260,14 +260,14 @@ void BeebWin::LoadPreferences()
 		m_AutoloadJoystickMap = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICK1_DEADBAND, dword))
-		m_Joystick1Deadband = dword;
+		m_JoystickState[0].Deadband = dword;
 	else
-		m_Joystick1Deadband = DEFAULT_JOY_DEADBAND;
+		m_JoystickState[0].Deadband = DEFAULT_JOY_DEADBAND;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICK2_DEADBAND, dword))
-		m_Joystick2Deadband = dword;
+		m_JoystickState[1].Deadband = dword;
 	else
-		m_Joystick2Deadband = DEFAULT_JOY_DEADBAND;
+		m_JoystickState[1].Deadband = DEFAULT_JOY_DEADBAND;
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
@@ -609,8 +609,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIdSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP, m_AutoloadJoystickMap);
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK1_DEADBAND, m_Joystick1Deadband);
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK2_DEADBAND, m_Joystick2Deadband);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK1_DEADBAND, m_JoystickState[0].Deadband);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK2_DEADBAND, m_JoystickState[1].Deadband);
 
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
