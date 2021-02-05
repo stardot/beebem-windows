@@ -1351,14 +1351,13 @@ void BeebWin::ResetJoyMap(JoyMap* joymap)
 }
 
 /****************************************************************************/
-static
-void makeupper(char* str)
+static void makeupper(char* str)
 {
 	if (str == NULL)
 		return;
 	while (*str)
 	{
-		*str = toupper(*str);
+		*str = static_cast<char>(toupper(*str));
 		++str;
 	}
 }
