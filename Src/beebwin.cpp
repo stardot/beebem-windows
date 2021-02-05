@@ -203,13 +203,17 @@ BeebWin::BeebWin()
 	m_DXSmoothMode7Only = false;
 	m_DXResetPending = false;
 
-	m_JoystickTarget = NULL;
+	m_JoystickTarget = nullptr;
+
 	for (int i = 0; i < 2; ++i)
 	{
+		memset(&m_JoystickState[i].Caps, 0, sizeof(m_JoystickState[i]));
+		m_JoystickState[i].Deadband = false;
 		m_JoystickState[i].Captured = false;
 		m_JoystickState[i].PrevAxes = 0;
 		m_JoystickState[i].PrevBtns = 0;
 	}
+
 	m_customip[0] = 0;
 	m_customport = 0;
 	m_isFullScreen = false;
@@ -398,7 +402,7 @@ void BeebWin::ApplyPrefs()
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
 	InitJoystick();
-	MaybeEnableInitJoystick();
+	UpdateInitJoystickMenu();
 
 	LoadFDC(NULL, true);
 	RTCInit();
@@ -1223,56 +1227,77 @@ void BeebWin::SetRomMenu(void)
 
 /****************************************************************************/
 
-void BeebWin::MaybeEnableInitJoystick(void)
+void BeebWin::UpdateInitJoystickMenu()
 {
-	bool enableIt = ((m_MenuIdSticks == IDM_JOYSTICK) && !m_JoystickState[0].Captured
-		|| m_JoystickToKeys && (!m_JoystickState[0].Captured || !m_JoystickState[1].Captured));
-	EnableMenuItem(IDM_INIT_JOYSTICK, enableIt);
+	bool Enable = false;
+
+	if (m_MenuIdSticks == IDM_JOYSTICK && !m_JoystickState[0].Captured)
+	{
+		Enable = true;
+	}
+	else if (m_JoystickToKeys && (!m_JoystickState[0].Captured || !m_JoystickState[1].Captured))
+	{
+		Enable = true;
+	}
+
+	EnableMenuItem(IDM_INIT_JOYSTICK, Enable);
 }
 
 /****************************************************************************/
 
-void BeebWin::InitJoystick(void)
+bool BeebWin::InitJoystick()
 {
-	MMRESULT mmresult = JOYERR_NOERROR;
-	MMRESULT mmresult2;
+	bool Success = false;
 
 	if ((m_MenuIdSticks == IDM_JOYSTICK || m_JoystickToKeys) && !m_JoystickState[0].Captured)
 	{
-		/* Get joystick updates 20 times a second */
-		mmresult = joySetCapture(m_hWnd, JOYSTICKID1, 50, FALSE);
-		if (mmresult == JOYERR_NOERROR)
-			mmresult = joyGetDevCaps(JOYSTICKID1, &m_JoystickState[0].Caps, sizeof(JOYCAPS));
-		if (mmresult == JOYERR_NOERROR)
-			m_JoystickState[0].Captured = true;
+		Success = CaptureJoystick(0);
 	}
 
-	if (m_JoystickToKeys && !m_JoystickState[1].Captured)
+	if (Success && m_JoystickToKeys && !m_JoystickState[1].Captured)
 	{
-		/* Get joystick updates 20 times a second */
-		mmresult2 = joySetCapture(m_hWnd, JOYSTICKID2, 50, FALSE);
-		if (mmresult2 == JOYERR_NOERROR)
-			mmresult2 = joyGetDevCaps(JOYSTICKID2, &m_JoystickState[1].Caps, sizeof(JOYCAPS));
-		if (mmresult2 == JOYERR_NOERROR)
-			m_JoystickState[1].Captured = true;
+		Success = CaptureJoystick(1);
 	}
 
-	if (mmresult == JOYERR_NOERROR)
+	return Success;
+}
+
+bool BeebWin::CaptureJoystick(int Index)
+{
+	static const int Joystick[] = { JOYSTICKID1, JOYSTICKID2 };
+
+	const int JoystickId = Joystick[Index];
+
+	// Get joystick updates 20 times a second
+	MMRESULT Result = joySetCapture(m_hWnd, JoystickId, 50, FALSE);
+
+	if (Result == JOYERR_NOERROR)
 	{
-		if (m_MenuIdSticks == IDM_JOYSTICK)
-			AtoDEnable();
+		Result = joyGetDevCaps(JoystickId, &m_JoystickState[Index].Caps, sizeof(JOYCAPS));
 	}
-	else if (mmresult == JOYERR_UNPLUGGED)
+
+	if (Result == JOYERR_NOERROR)
 	{
-		MessageBox(m_hWnd, "Joystick is not plugged in",
-					WindowTitle, MB_OK|MB_ICONWARNING);
+		m_JoystickState[Index].Captured = true;
+	}
+	else if (Result == JOYERR_UNPLUGGED)
+	{
+		char str[100];
+		sprintf(str, "Joystick %d is not plugged in", Index + 1);
+
+		MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
 	}
 	else
 	{
-		MessageBox(m_hWnd, "Failed to initialise the joystick",
-					WindowTitle, MB_OK|MB_ICONWARNING);
+		char str[100];
+		sprintf(str, "Failed to initialise joystick %d", Index + 1);
+
+		MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
 	}
+
+	return Result == JOYERR_NOERROR;
 }
+
 
 /****************************************************************************/
 void BeebWin::SetJoystickButton(int index, bool button)
@@ -1284,14 +1309,15 @@ void BeebWin::SetJoystickButton(int index, bool button)
 /****************************************************************************/
 void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 {
-	JOYCAPS& caps = m_JoystickState[0].Caps;
 	if (m_MenuIdSticks == IDM_JOYSTICK)
 	{
-		/* Scale and reverse the readings */
+		JOYCAPS& caps = m_JoystickState[0].Caps;
+
+		// Scale and reverse the readings
 		JoystickX = (int)((double)(caps.wXmax - x) * 65535.0 /
-						  (double)(caps.wXmax - caps.wXmin));
+		                  (double)(caps.wXmax - caps.wXmin));
 		JoystickY = (int)((double)(caps.wYmax - y) * 65535.0 /
-						  (double)(caps.wYmax - caps.wYmin));
+		                  (double)(caps.wYmax - caps.wYmin));
 	}
 }
 
@@ -3472,22 +3498,27 @@ void BeebWin::HandleCommand(int MenuId)
 			else
 				m_MenuIdSticks = 0;
 		}
-		MaybeEnableInitJoystick();
+		UpdateInitJoystickMenu();
 		break;
 
 	case IDM_INIT_JOYSTICK:
 		InitJoystick();
-		MaybeEnableInitJoystick();
+		UpdateInitJoystickMenu();
 		break;
 
 	case IDM_JOYSTICK_TO_KEYS:
 		m_JoystickToKeys = !m_JoystickToKeys;
 		if (m_JoystickToKeys)
 		{
-			InitJoystick();
+			bool Success = InitJoystick();
+
+			if (Success)
+			{
+				CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
+			}
 		}
-		CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
-		MaybeEnableInitJoystick();
+
+		UpdateInitJoystickMenu();
 		break;
 
 	case IDM_AUTOLOADJOYMAP:
