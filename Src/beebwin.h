@@ -572,7 +572,8 @@ public:
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
-	void InitJoystick(void);
+	bool InitJoystick();
+	bool CaptureJoystick(int Index);
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);
@@ -622,7 +623,7 @@ public:
 	void ResetJoyMap(JoyMap* joymap);
 	bool ReadJoyMap(const char *filename, JoyMap *joymap);
 	bool WriteJoyMap(const char *filename, JoyMap *joymap);
-	void MaybeEnableInitJoystick(void);
+	void UpdateInitJoystickMenu();
 
 	void Report(MessageType type, const char *format, ...);
 
