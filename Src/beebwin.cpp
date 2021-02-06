@@ -219,8 +219,8 @@ BeebWin::BeebWin()
 
 	for (int i = 0; i < 2; ++i)
 	{
-		memset(&m_JoystickState[i].Caps, 0, sizeof(m_JoystickState[i]));
-		m_JoystickState[i].Deadband = false;
+		memset(&m_JoystickState[i].Caps, 0, sizeof(m_JoystickState[i].Caps));
+		m_JoystickState[i].Deadband = 0;
 		m_JoystickState[i].Captured = false;
 		m_JoystickState[i].PrevAxes = 0;
 		m_JoystickState[i].PrevBtns = 0;
@@ -1271,11 +1271,16 @@ void BeebWin::UpdateInitJoystickMenu()
 
 bool BeebWin::InitJoystick()
 {
-	bool Success = false;
+	bool Success = true;
 
 	if ((m_MenuIdSticks == IDM_JOYSTICK || m_JoystickToKeys) && !m_JoystickState[0].Captured)
 	{
 		Success = CaptureJoystick(0);
+	}
+
+	if (Success && m_MenuIdSticks == IDM_JOYSTICK)
+	{
+		AtoDEnable();
 	}
 
 	if (Success && m_JoystickToKeys && !m_JoystickState[1].Captured)
@@ -3621,6 +3626,10 @@ void BeebWin::HandleCommand(int MenuId)
 			{
 				CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
 			}
+		}
+		else
+		{
+			CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
 		}
 
 		UpdateInitJoystickMenu();
