@@ -4,7 +4,7 @@
 # All empty lines and lines starting with '#' are ignored.
 
 # Remaining lines must consist of two or three tokens separated with
-# whitespaces.
+# whitespace.
 # All names are case insensitive except for the marker in the first line.
 
 # Two-token lines are:
@@ -28,8 +28,8 @@
 # All other BBC keys are named by their unshifted character (i.e. 'SH+[' not '{')
 # Function keys are named, as one would expect, 'F0' to 'F9'
 
-# Joystick input have form Joy[X][Act] where [X] is joystick number and
-# [Act] is action name. Axis and button assignments differ between
+# Joystick inputs have the form Joy[X][Act] where [X] is the joystick number
+# and [Act] is the action name. Axis and button assignments differ between
 # joystick or gamepad models.
 
 # Xbox 360 controller has following assignments
@@ -38,7 +38,7 @@
 # Axis3+,Axis3-               - dwZ        - Left Trigger, Right Trigger
 # Axis4-,Axis4+,Axis5-,Axis5+ - dwR, dwU   - Right Analog Up, Down, Left, Right
 # Axis7-,Axis7+,Axis8-,Axis8+ - dwPOV      - Hat Up, Down, Left, Right
-# Btn1-4                                   - A, B, X, Y 
+# Btn1-4                                   - A, B, X, Y
 # Btn5,6                                   - Left Shoulder, Right Shoulder
 # Btn7,8                                   - Select, Start
 # Btn9,10                                  - Left Thumbstick, Right Thumbstick
