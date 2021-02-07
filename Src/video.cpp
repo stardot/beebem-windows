@@ -132,9 +132,11 @@ static VideoStateT VideoState;
 
 int VideoTriggerCount=9999; /* Number of cycles before next scanline service */
 
-/* first subscript is graphics flag (1 for graphics,2 for separated graphics), next is character, then scanline */
-/* character is (value & 127)-32 */
-static unsigned int EM7Font[3][96][20]; // 20 rows to account for "half pixels"
+// First subscript is graphics flag (1 for graphics, 2 for separated graphics),
+// next is character, then scanline
+// character is (value & 127) - 32
+// There are 20 rows, to account for "half pixels"
+static unsigned int Mode7Font[3][96][20];
 
 static bool Mode7FlashOn = true; // true if a flashing character in mode 7 is on
 static bool Mode7DoubleHeightFlags[80]; // Pessimistic size for this flags - if true then corresponding character on NEXT line is top half
@@ -164,79 +166,136 @@ static void LowLevelDoScanLineWideNot4Bytes();
 static void VideoAddCursor(void);
 void AdjustVideo();
 void VideoAddLEDs(void);
+
 /*-------------------------------------------------------------------------------------------------------------*/
-static void BuildMode7Font(void) {
-  FILE *m7File;
-  unsigned char m7cc,m7cy;
-  unsigned int m7cb;
-  unsigned int row1,row2,row3; // row builders for mode 7 graphics
-  char TxtFnt[256];
-  /* cout <<"Building mode 7 font data structures\n"; */
- // Build enhanced mode 7 font
-  strcpy(TxtFnt,mainWin->GetAppPath());
-  strcat(TxtFnt,"teletext.fnt");
-  m7File=fopen(TxtFnt,"rb");
-  if (m7File == NULL)
-  {
-    char errstr[200];
-    sprintf(errstr, "Cannot open Teletext font file teletext.fnt");
-    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-    exit(1);
-  }
-  for (m7cc=32;m7cc<=127;m7cc++) {
-	  for (m7cy=0;m7cy<=17;m7cy++) {
-		  m7cb=fgetc(m7File);
-		  m7cb|=fgetc(m7File)<<8;
-		  EM7Font[0][m7cc-32][m7cy+2]=m7cb<<2;
-		  EM7Font[1][m7cc-32][m7cy+2]=m7cb<<2;
-		  EM7Font[2][m7cc-32][m7cy+2]=m7cb<<2;
-	  }
-	  EM7Font[0][m7cc-32][0]=EM7Font[1][m7cc-32][0]=EM7Font[2][m7cc-32][0]=0;
-	  EM7Font[0][m7cc-32][1]=EM7Font[1][m7cc-32][1]=EM7Font[2][m7cc-32][1]=0;
-  }
-  fclose(m7File);
-  // Now fill in the graphics - this is built from an algorithm, but has certain lines/columns
-  // blanked for separated graphics.
-  for (m7cc=0;m7cc<96;m7cc++) {
-	  // here's how it works: top two blocks: 1 & 2
-	  // middle two blocks: 4 & 8
-	  // bottom two blocks: 16 & 64
-	  // its only a grpahics character if bit 5 (32) is clear.
-	  if (!(m7cc & 32)) {
-		  row1=0; row2=0; row3=0;
-		  // left block has a value of 4032, right 63 and both 4095
-		  if (m7cc & 1) row1|=4032;
-		  if (m7cc & 2) row1|=63;
-		  if (m7cc & 4) row2|=4032;
-		  if (m7cc & 8) row2|=63;
-		  if (m7cc & 16) row3|=4032;
-		  if (m7cc & 64) row3|=63;
-		  // now input these values into the array
-		  // top row of blocks - continuous
-		  EM7Font[1][m7cc][0]=EM7Font[1][m7cc][1]=EM7Font[1][m7cc][2]=row1;
-		  EM7Font[1][m7cc][3]=EM7Font[1][m7cc][4]=EM7Font[1][m7cc][5]=row1;
-		  // Separated
-		  row1&=975; // insert gaps
-		  EM7Font[2][m7cc][0]=EM7Font[2][m7cc][1]=EM7Font[2][m7cc][2]=row1;
-		  EM7Font[2][m7cc][3]=row1; EM7Font[2][m7cc][4]=EM7Font[2][m7cc][5]=0;
-		  // middle row of blocks - continuous
-		  EM7Font[1][m7cc][6]=EM7Font[1][m7cc][7]=EM7Font[1][m7cc][8]=row2;
-		  EM7Font[1][m7cc][9]=EM7Font[1][m7cc][10]=EM7Font[1][m7cc][11]=row2;
-		  EM7Font[1][m7cc][12]=EM7Font[1][m7cc][13]=row2;
-		  // Separated
-		  row2&=975; // insert gaps
-		  EM7Font[2][m7cc][6]=EM7Font[2][m7cc][7]=EM7Font[2][m7cc][8]=row2;
-		  EM7Font[2][m7cc][9]=EM7Font[2][m7cc][10]=EM7Font[2][m7cc][11]=row2;
-		  EM7Font[2][m7cc][12]=EM7Font[2][m7cc][13]=0;
-		  // Bottom row - continuous
-		  EM7Font[1][m7cc][14]=EM7Font[1][m7cc][15]=EM7Font[1][m7cc][16]=row3;
-		  EM7Font[1][m7cc][17]=EM7Font[1][m7cc][18]=EM7Font[1][m7cc][19]=row3;
-		  // Separated
-		  row3&=975; // insert gaps
-		  EM7Font[2][m7cc][14]=EM7Font[2][m7cc][15]=EM7Font[2][m7cc][16]=row3;
-		  EM7Font[2][m7cc][17]=row3; EM7Font[2][m7cc][18]=EM7Font[2][m7cc][19]=0;
-	  } // check for valid char to modify
-  } // character loop.
+
+// Build enhanced mode 7 font
+
+static void BuildMode7Font()
+{
+	char FileName[256];
+	strcpy(FileName, mainWin->GetAppPath());
+	strcat(FileName, "teletext.fnt");
+
+	FILE *TeletextFontFile = fopen(FileName, "rb");
+
+	if (TeletextFontFile == nullptr)
+	{
+		char errstr[200];
+		sprintf(errstr, "Cannot open Teletext font file teletext.fnt");
+		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		exit(1);
+	}
+
+	for (int Character = 32; Character <= 127; Character++)
+	{
+		// The first two lines of each character are blank.
+		Mode7Font[0][Character - 32][0] = 0;
+		Mode7Font[0][Character - 32][1] = 0;
+		Mode7Font[1][Character - 32][0] = 0;
+		Mode7Font[1][Character - 32][1] = 0;
+		Mode7Font[2][Character - 32][0] = 0;
+		Mode7Font[2][Character - 32][1] = 0;
+
+		// Read 18 lines of 16 pixels each from the file.
+		for (int y = 2; y < 20; y++)
+		{
+			unsigned int Bitmap =  fget16(TeletextFontFile);
+
+			Mode7Font[0][Character - 32][y] = Bitmap << 2; // Text bank
+			Mode7Font[1][Character - 32][y] = Bitmap << 2; // Contiguous graphics bank
+			Mode7Font[2][Character - 32][y] = Bitmap << 2; // Separated graphics bank
+		}
+	}
+
+	fclose(TeletextFontFile);
+
+	// Now fill in the graphics - this is built from an algorithm, but has certain
+	// lines/columns blanked for separated graphics.
+
+	for (int Character = 0; Character < 96; Character++)
+	{
+		// Here's how it works:
+		// - top two blocks: 1 & 2
+		// - middle two blocks: 4 & 8
+		// - bottom two blocks: 16 & 64
+		// - its only a graphics character if bit 5 (32) is clear
+
+		if ((Character & 32) == 0)
+		{
+			// Row builders for mode 7 graphics
+			int row1 = 0;
+			int row2 = 0;
+			int row3 = 0;
+
+			// Left block has a value of 0xfc0, right 0x03f and both 0xfff
+			if (Character & 0x01) row1 |= 0xfc0; // 1111 1100 0000
+			if (Character & 0x02) row1 |= 0x03f; // 0000 0011 1111
+			if (Character & 0x04) row2 |= 0xfc0;
+			if (Character & 0x08) row2 |= 0x03f;
+			if (Character & 0x10) row3 |= 0xfc0;
+			if (Character & 0x40) row3 |= 0x03f;
+
+			// Now input these values into the array
+			// Top row of blocks - continuous
+			Mode7Font[1][Character][0] = row1;
+			Mode7Font[1][Character][1] = row1;
+			Mode7Font[1][Character][2] = row1;
+			Mode7Font[1][Character][3] = row1;
+			Mode7Font[1][Character][4] = row1;
+			Mode7Font[1][Character][5] = row1;
+
+			// Separated
+			row1 &= 0x3cf; // insert gaps 0011 1100 1111
+
+			Mode7Font[2][Character][0] = row1;
+			Mode7Font[2][Character][1] = row1;
+			Mode7Font[2][Character][2] = row1;
+			Mode7Font[2][Character][3] = row1;
+			Mode7Font[2][Character][4] = 0;
+			Mode7Font[2][Character][5] = 0;
+
+			// Middle row of blocks - continuous
+			Mode7Font[1][Character][6]  = row2;
+			Mode7Font[1][Character][7]  = row2;
+			Mode7Font[1][Character][8]  = row2;
+			Mode7Font[1][Character][9]  = row2;
+			Mode7Font[1][Character][10] = row2;
+			Mode7Font[1][Character][11] = row2;
+			Mode7Font[1][Character][12] = row2;
+			Mode7Font[1][Character][13] = row2;
+
+			// Separated
+			row2 &= 0x3cf; // insert gaps 0011 1100 1111
+
+			Mode7Font[2][Character][6]  = row2;
+			Mode7Font[2][Character][7]  = row2;
+			Mode7Font[2][Character][8]  = row2;
+			Mode7Font[2][Character][9]  = row2;
+			Mode7Font[2][Character][10] = row2;
+			Mode7Font[2][Character][11] = row2;
+			Mode7Font[2][Character][12] = 0;
+			Mode7Font[2][Character][13] = 0;
+
+			// Bottom row - continuous
+			Mode7Font[1][Character][14] = row3;
+			Mode7Font[1][Character][15] = row3;
+			Mode7Font[1][Character][16] = row3;
+			Mode7Font[1][Character][17] = row3;
+			Mode7Font[1][Character][18] = row3;
+			Mode7Font[1][Character][19] = row3;
+
+			// Separated
+			row3 &= 0x3cf; // insert gaps 0011 1100 1111
+
+			Mode7Font[2][Character][14] = row3;
+			Mode7Font[2][Character][15] = row3;
+			Mode7Font[2][Character][16] = row3;
+			Mode7Font[2][Character][17] = row3;
+			Mode7Font[2][Character][18] = 0;
+			Mode7Font[2][Character][19] = 0;
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -907,7 +966,7 @@ static void DoMode7Row(void) {
     ActualForeground=(Flash && !Mode7FlashOn)?Background:Foreground;
     if (!DoubleHeight) {
       for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
-        tmp=EM7Font[FontTypeIndex][byte][CurrentScanLine];
+        tmp = Mode7Font[FontTypeIndex][byte][CurrentScanLine];
 
         if ((tmp==0) || (tmp==255)) {
           col=(tmp==0)?Background:ActualForeground;
@@ -945,7 +1004,7 @@ static void DoMode7Row(void) {
         for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
           if (!CurrentLineBottom) ActualScanLine=CurrentScanLine >> 1; else ActualScanLine=10+(CurrentScanLine>>1);
           /* Background or foreground ? */
-          col=(EM7Font[FontTypeIndex][byte][ActualScanLine] & CurrentPixel)?ActualForeground:Background;
+          col = (Mode7Font[FontTypeIndex][byte][ActualScanLine] & CurrentPixel) ? ActualForeground : Background;
 
           /* Do we need to draw ? */
           if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=XStep; else {
