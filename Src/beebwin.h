@@ -446,7 +446,7 @@ public:
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
 	bool		m_WasPaused;
-	bool		m_J2KWasEnabled;
+	bool		m_JoystickToKeysWasEnabled;
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
 	bool		m_BootDiscTimerElapsed;
