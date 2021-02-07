@@ -721,7 +721,7 @@ BEGIN
             MENUITEM "Load Joystick Mapping...",      IDM_LOADJOYMAP
             MENUITEM "Save Joystick Mapping...",      IDM_SAVEJOYMAP
         END
-        MENUITEM "Reinitialize Joystick",       IDM_INIT_JOYSTICK
+        MENUITEM "Initialise Joystick",         IDM_INIT_JOYSTICK
         MENUITEM SEPARATOR
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
