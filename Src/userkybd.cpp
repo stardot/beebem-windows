@@ -47,7 +47,7 @@ static COLORREF GetKeyColour(UINT ctrlID);
 static std::string GetKeysUsed();
 static void FillAssignedKeysCount();
 static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawColour = false);
-static int GetBBCKeyIndex(const BBCKey& key);
+static int GetBBCKeyIndex(const BBCKey* key);
 
 // Colour used to highlight the selected key.
 static const COLORREF HighlightColour   = 0x00FF0080; // Purple
@@ -189,12 +189,12 @@ static int assignedKeysCount[_countof(BBCKeys)] = {};
 
 /****************************************************************************/
 
-const BBCKey& GetBBCKeyByResId(int ctrlId)
+const BBCKey* GetBBCKeyByResId(int ctrlId)
 {
     using resIdToKeyMapType = std::map<int, const BBCKey*>;
 
     // Construct map on first use by lambda
-    static resIdToKeyMapType resIdToKeyMap = []()
+    static const resIdToKeyMapType resIdToKeyMap = []()
     {
         resIdToKeyMapType keyMap{};
 
@@ -205,19 +205,19 @@ const BBCKey& GetBBCKeyByResId(int ctrlId)
 
     auto iter = resIdToKeyMap.find(ctrlId);
     if (iter == resIdToKeyMap.end())
-        return BBCKeys[0];
+        return &BBCKeys[0];
 
-    return *iter->second;
+    return iter->second;
 }
 
 /****************************************************************************/
 
-const BBCKey& GetBBCKeyByName(const std::string& name)
+const BBCKey* GetBBCKeyByName(const std::string& name)
 {
     using nameToKeyMapType = std::map<std::string, const BBCKey*>;
 
     // Construct map on first use by lambda
-    static nameToKeyMapType nameToKeyMap = []()
+    static const nameToKeyMapType nameToKeyMap = []()
     {
         nameToKeyMapType keyMap{};
 
@@ -232,20 +232,20 @@ const BBCKey& GetBBCKeyByName(const std::string& name)
 
     auto iter = nameToKeyMap.find(name);
     if (iter == nameToKeyMap.end())
-        return BBCKeys[0];
+        return &BBCKeys[0];
 
-    return *iter->second;
+    return iter->second;
 }
 
 /****************************************************************************/
 
-const BBCKey& GetBBCKeyByRowAndCol(int row, int col)
+const BBCKey* GetBBCKeyByRowAndCol(int row, int col)
 {
     using posPair = std::pair<int, int>;
     using posToKeyMapType = std::map<posPair, const BBCKey*>;
 
     // Construct map on first use by lambda
-    static posToKeyMapType posToKeyMap = []()
+    static const posToKeyMapType posToKeyMap = []()
     {
         posToKeyMapType keyMap{};
 
@@ -256,17 +256,17 @@ const BBCKey& GetBBCKeyByRowAndCol(int row, int col)
 
     auto iter = posToKeyMap.find(posPair{ row, col });
     if (iter == posToKeyMap.end())
-        return BBCKeys[0];
+        return &BBCKeys[0];
 
-    return *iter->second;
+    return iter->second;
 }
 
 /****************************************************************************/
-// Get index for assignedKeysCount. The 'key' parameter must be reference to
+// Get index for assignedKeysCount. The 'key' parameter must be a pointer to
 // item in BBCKeys table, not a copy of it.
-int GetBBCKeyIndex(const BBCKey& key)
+int GetBBCKeyIndex(const BBCKey* key)
 {
-    int index = &key - BBCKeys;
+    int index = key - BBCKeys;
     if (index >= 0 && index < _countof(BBCKeys))
 	return index;
     return 0;
@@ -375,9 +375,9 @@ static void SetBBCKeyForVKEY(int Key, bool Shift)
 
 static void SetRowCol(UINT ctrlID)
 {
-    const BBCKey& key = GetBBCKeyByResId(ctrlID);
-    BBCRow = key.row;
-    BBCCol = key.column;
+    const BBCKey* key = GetBBCKeyByResId(ctrlID);
+    BBCRow = key->row;
+    BBCCol = key->column;
 }
 
 /****************************************************************************/
@@ -710,15 +710,15 @@ void FillAssignedKeysCount()
 
 static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawColour)
 {
-    const BBCKey& key = GetBBCKeyByRowAndCol(row, col);
+    const BBCKey* key = GetBBCKeyByRowAndCol(row, col);
     int index = GetBBCKeyIndex(key);
     if (index < _countof(BBCKeys))
     {
         assignedKeysCount[index] += change;
-        if (redrawColour && key.ctrlId != selectedCtrlID)
+        if (redrawColour && key->ctrlId != selectedCtrlID)
         {
-            HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key.ctrlId);
-            SetKeyColour(GetKeyColour(key.ctrlId), keyCtrl);
+            HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key->ctrlId);
+            SetKeyColour(GetKeyColour(key->ctrlId), keyCtrl);
         }
     }
 }
