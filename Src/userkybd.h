@@ -33,8 +33,8 @@ struct BBCKey
     int column;
 };
 
-const BBCKey& GetBBCKeyByName(const std::string& name);
-const BBCKey& GetBBCKeyByRowAndCol(int row, int col);
+const BBCKey* GetBBCKeyByName(const std::string& name);
+const BBCKey* GetBBCKeyByRowAndCol(int row, int col);
 
 bool UserKeyboardDialog(HWND hwndParent, bool joystick);
 
