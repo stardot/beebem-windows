@@ -1276,11 +1276,6 @@ bool BeebWin::InitJoystick()
 		Success = CaptureJoystick(0);
 	}
 
-	if (Success && m_MenuIdSticks == IDM_JOYSTICK)
-	{
-		AtoDEnable();
-	}
-
 	if (Success && m_JoystickToKeys && !m_JoystickState[1].Captured)
 	{
 		Success = CaptureJoystick(1);
@@ -1291,35 +1286,35 @@ bool BeebWin::InitJoystick()
 
 bool BeebWin::CaptureJoystick(int Index)
 {
-	static const int Joystick[] = { JOYSTICKID1, JOYSTICKID2 };
-
-	const int JoystickId = Joystick[Index];
-
-	// Get joystick updates 20 times a second
-	MMRESULT Result = joySetCapture(m_hWnd, JoystickId, 50, FALSE);
+	// Get joystick updates 20 times a second.
+	// There's no need to use JOYSTICKID constants.
+	MMRESULT Result = joySetCapture(m_hWnd, Index, 50, FALSE);
 
 	if (Result == JOYERR_NOERROR)
 	{
-		Result = joyGetDevCaps(JoystickId, &m_JoystickState[Index].Caps, sizeof(JOYCAPS));
+		Result = joyGetDevCaps(Index, &m_JoystickState[Index].Caps, sizeof(JOYCAPS));
 	}
 
 	if (Result == JOYERR_NOERROR)
 	{
 		m_JoystickState[Index].Captured = true;
 	}
-	else if (Result == JOYERR_UNPLUGGED)
+	else if (Index == 0)
 	{
-		char str[100];
-		sprintf(str, "Joystick %d is not plugged in", Index + 1);
+		if (Result == JOYERR_UNPLUGGED)
+		{
+			char str[100];
+			sprintf(str, "Joystick %d is not plugged in", Index + 1);
 
-		MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
-	}
-	else
-	{
-		char str[100];
-		sprintf(str, "Failed to initialise joystick %d", Index + 1);
+			MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
+		}
+		else
+		{
+			char str[100];
+			sprintf(str, "Failed to initialise joystick %d", Index + 1);
 
-		MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
+			MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
+		}
 	}
 
 	return Result == JOYERR_NOERROR;
@@ -3605,10 +3600,7 @@ void BeebWin::HandleCommand(int MenuId)
 			{
 				InitJoystick();
 			}
-			else /* mousestick */
-			{
-				AtoDEnable();
-			}
+			AtoDEnable();
 
 			if (JoystickEnabled)
 				CheckMenuItem(m_MenuIdSticks, true);
@@ -3627,17 +3619,10 @@ void BeebWin::HandleCommand(int MenuId)
 		m_JoystickToKeys = !m_JoystickToKeys;
 		if (m_JoystickToKeys)
 		{
-			bool Success = InitJoystick();
+			InitJoystick();
+		}
 
-			if (Success)
-			{
-				CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
-			}
-		}
-		else
-		{
-			CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
-		}
+		CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
 
 		UpdateInitJoystickMenu();
 		break;
