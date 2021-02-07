@@ -421,7 +421,7 @@ void BeebWin::ApplyPrefs()
 		PrinterDisable();
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
-	InitJoystick();
+	InitJoystick(false);
 	UpdateInitJoystickMenu();
 
 	LoadFDC(NULL, true);
@@ -1263,28 +1263,29 @@ void BeebWin::UpdateInitJoystickMenu()
 	}
 
 	EnableMenuItem(IDM_INIT_JOYSTICK, Enable);
+	CheckMenuItem(IDM_INIT_JOYSTICK, m_JoystickState[0].Captured);
 }
 
 /****************************************************************************/
 
-bool BeebWin::InitJoystick()
+bool BeebWin::InitJoystick(bool verbose)
 {
 	bool Success = true;
 
 	if ((m_MenuIdSticks == IDM_JOYSTICK || m_JoystickToKeys) && !m_JoystickState[0].Captured)
 	{
-		Success = CaptureJoystick(0);
+		Success = CaptureJoystick(0, verbose);
 	}
 
 	if (Success && m_JoystickToKeys && !m_JoystickState[1].Captured)
 	{
-		Success = CaptureJoystick(1);
+		Success = CaptureJoystick(1, verbose);
 	}
 
 	return Success;
 }
 
-bool BeebWin::CaptureJoystick(int Index)
+bool BeebWin::CaptureJoystick(int Index, bool verbose)
 {
 	// Get joystick updates 20 times a second.
 	// There's no need to use JOYSTICKID constants.
@@ -1299,7 +1300,7 @@ bool BeebWin::CaptureJoystick(int Index)
 	{
 		m_JoystickState[Index].Captured = true;
 	}
-	else if (Index == 0)
+	else if (verbose)
 	{
 		if (Result == JOYERR_UNPLUGGED)
 		{
@@ -1485,10 +1486,17 @@ void BeebWin::TranslateJoystick(int joyId)
 		joyInfoEx.dwSize = sizeof(joyInfoEx);
 		joyInfoEx.dwFlags = JOY_RETURNALL | JOY_RETURNPOVCTS;
 
-		if (!joyGetPosEx(joyId, &joyInfoEx))
+		if (joyGetPosEx(joyId, &joyInfoEx) == JOYERR_NOERROR)
 		{
 			TranslateJoystickMove(joyId, joyInfoEx);
 			TranslateJoystickButtons(joyId, joyInfoEx.dwButtons);
+		}
+		else
+		{
+			// Joystick read failed - unplugged?
+			// Reset 'captured' flag and update menu entry
+			m_JoystickState[joyId].Captured = false;
+			UpdateInitJoystickMenu();
 		}
 	}
 }
@@ -3598,7 +3606,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 			if (m_MenuIdSticks == IDM_JOYSTICK)
 			{
-				InitJoystick();
+				InitJoystick(false);
 			}
 			AtoDEnable();
 
@@ -3611,7 +3619,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_INIT_JOYSTICK:
-		InitJoystick();
+		InitJoystick(true);
 		UpdateInitJoystickMenu();
 		break;
 
@@ -3619,7 +3627,7 @@ void BeebWin::HandleCommand(int MenuId)
 		m_JoystickToKeys = !m_JoystickToKeys;
 		if (m_JoystickToKeys)
 		{
-			InitJoystick();
+			InitJoystick(false);
 		}
 
 		CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
@@ -4484,7 +4492,7 @@ void BeebWin::OpenJoystickMapDialog()
 	if (!m_JoystickToKeysWasEnabled)
 	{
 		m_JoystickToKeys = true;
-		InitJoystick();
+		InitJoystick(false);
 	}
 
 	UserKeyboardDialog(m_hWnd, true);
@@ -4713,7 +4721,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 			HandleCommand(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
-			InitJoystick();
+			InitJoystick(false);
 		}
 	}
 

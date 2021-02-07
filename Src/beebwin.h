@@ -572,8 +572,8 @@ public:
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
-	bool InitJoystick();
-	bool CaptureJoystick(int Index);
+	bool InitJoystick(bool verbose = false);
+	bool CaptureJoystick(int Index, bool verbose);
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);
