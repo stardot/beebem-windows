@@ -352,14 +352,16 @@ static std::string toupper(const std::string& src)
 
 int SelectKeyDialog::JoyVKeyByName(const char* Name)
 {
-	using vkeyMapType = std::map<std::string, int>;
+	using VKeyMapType = std::map<std::string, int>;
 
 	// Construct map on first use by lambda
-	static vkeyMapType nameToVKeyMap = []() {
-		vkeyMapType keyMap{};
+	static const VKeyMapType nameToVKeyMap = []() {
+		VKeyMapType keyMap{};
 
 		for (int vkey = BEEB_VKEY_JOY_START; vkey < BEEB_VKEY_JOY_END; ++vkey)
+		{
 			keyMap[toupper(KeyName(vkey))] = vkey;
+		}
 
 		return keyMap;
 	}();
