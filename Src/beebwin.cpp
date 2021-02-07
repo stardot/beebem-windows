@@ -155,13 +155,15 @@ BeebWin::BeebWin()
 	m_KeyMapFunc = false;
 	m_ShiftPressed = 0;
 	m_ShiftBooted = false;
-	for (int k = 0; k < 256; ++k)
+
+	for (int k = 0; k < BEEB_VKEY_COUNT; ++k)
 	{
 		m_vkeyPressed[k][0][0] = -1;
 		m_vkeyPressed[k][1][0] = -1;
 		m_vkeyPressed[k][0][1] = -1;
 		m_vkeyPressed[k][1][1] = -1;
 	}
+
 	m_DisableKeysWindows = false;
 	m_DisableKeysBreak = false;
 	m_DisableKeysEscape = false;
@@ -203,6 +205,7 @@ BeebWin::BeebWin()
 	m_EmuPaused = false;
 	m_StartPaused = false;
 	m_WasPaused = false;
+	m_JoystickToKeysWasEnabled = false;
 	m_KeyboardTimerElapsed = false;
 	m_BootDiscTimerElapsed = false;
 	memset(m_ClipboardBuffer, 0, sizeof(m_ClipboardBuffer));
@@ -4465,7 +4468,7 @@ void BeebWin::OpenUserKeyboardDialog()
 
 	m_WasPaused = mainWin->IsPaused();
 
-	m_J2KWasEnabled = m_JoystickToKeys;
+	m_JoystickToKeysWasEnabled = m_JoystickToKeys;
 
 	if (!m_WasPaused)
 	{
@@ -4487,9 +4490,9 @@ void BeebWin::OpenJoystickMapDialog()
 	}
 
 	// Enable mapping to capture keys in dialog
-	m_J2KWasEnabled = m_JoystickToKeys;
+	m_JoystickToKeysWasEnabled = m_JoystickToKeys;
 
-	if (!m_J2KWasEnabled)
+	if (!m_JoystickToKeysWasEnabled)
 	{
 		m_JoystickToKeys = true;
 		InitJoystick();
@@ -4509,9 +4512,9 @@ void BeebWin::UserKeyboardDialogClosed()
 	}
 
 	// Restore joystick state
-	if (m_JoystickToKeys && !m_J2KWasEnabled)
+	if (m_JoystickToKeys && !m_JoystickToKeysWasEnabled)
 	{
-		m_JoystickToKeys = m_J2KWasEnabled;
+		m_JoystickToKeys = m_JoystickToKeysWasEnabled;
 	}
 
 	// Unmute
