@@ -1437,8 +1437,8 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 			keyName1 += 3;
 		}
 
-		const BBCKey& key1 = GetBBCKeyByName(keyName1);
-		if (key1.row == UNASSIGNED_ROW && strcmp(keyName1, "NONE") != 0)
+		const BBCKey* key1 = GetBBCKeyByName(keyName1);
+		if (key1->row == UNASSIGNED_ROW && strcmp(keyName1, "NONE") != 0)
 		{
 			char errstr[500];
 			sprintf(errstr, "Invalid key name in joystick mapping file:\n  %s\n  line %d\n",
@@ -1451,8 +1451,8 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 		if (keyName2 == NULL)
 		{
 			// Shifted and unshifted input map to the same key
-			mapping[0].row = mapping[1].row = key1.row;
-			mapping[0].col = mapping[1].col = key1.column;
+			mapping[0].row = mapping[1].row = key1->row;
+			mapping[0].col = mapping[1].col = key1->column;
 			mapping[0].shift = false;
 			mapping[1].shift = true;
 		}
@@ -1467,8 +1467,8 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 				keyName2 += 3;
 			}
 
-			const BBCKey& key2 = GetBBCKeyByName(keyName2);
-			if (key2.row == UNASSIGNED_ROW && strcmp(keyName2, "NONE") != 0)
+			const BBCKey* key2 = GetBBCKeyByName(keyName2);
+			if (key2->row == UNASSIGNED_ROW && strcmp(keyName2, "NONE") != 0)
 			{
 				char errstr[500];
 				sprintf(errstr, "Invalid key name in joystick mapping file:\n  %s\n  line %d\n",
@@ -1478,11 +1478,11 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 				break;
 			}
 
-			mapping[0].row = key1.row;
-			mapping[0].col = key1.column;
+			mapping[0].row = key1->row;
+			mapping[0].col = key1->column;
 			mapping[0].shift = shift1;
-			mapping[1].row = key2.row;
-			mapping[1].col = key2.column;
+			mapping[1].row = key2->row;
+			mapping[1].col = key2->column;
 			mapping[1].shift = shift2;
 		}
 	}
@@ -1563,33 +1563,33 @@ bool BeebWin::WriteJoyMap(const char *filename, JoyMap *joymap)
 		if (mapping[0].row != UNASSIGNED_ROW
 			|| mapping[1].row != UNASSIGNED_ROW)
 		{
-			auto inputName = SelectKeyDialog::KeyName(i + BEEB_VKEY_JOY_START);
+			const char* inputName = SelectKeyDialog::KeyName(i + BEEB_VKEY_JOY_START);
 
 			if (mapping[0].row == mapping[1].row
 				&& mapping[0].col == mapping[1].col
 				&& !mapping[0].shift && mapping[1].shift)
 			{
 				// Shifted and unshifted input map to the same key - write one name
-				const auto& key = GetBBCKeyByRowAndCol(mapping[0].row, mapping[0].col);
+				const BBCKey* key = GetBBCKeyByRowAndCol(mapping[0].row, mapping[0].col);
 				fprintf(outfile, "%-13s %s\n",
 					inputName,
-					key.name);
+					key->name);
 			}
 			else
 			{
 				// Separate mapping for shifted and unshifted
-				const auto& key1 = GetBBCKeyByRowAndCol(mapping[0].row, mapping[0].col);
-				auto key1shift = mapping[0].shift && mapping[0].row != UNASSIGNED_ROW;
-				const auto& key2 = GetBBCKeyByRowAndCol(mapping[1].row, mapping[1].col);
-				auto key2shift = mapping[1].shift && mapping[1].row != UNASSIGNED_ROW;
+				const BBCKey* key1 = GetBBCKeyByRowAndCol(mapping[0].row, mapping[0].col);
+				bool key1shift = mapping[0].shift && mapping[0].row != UNASSIGNED_ROW;
+				const BBCKey* key2 = GetBBCKeyByRowAndCol(mapping[1].row, mapping[1].col);
+				bool key2shift = mapping[1].shift && mapping[1].row != UNASSIGNED_ROW;
 				fprintf(outfile, "%-13s %s%-*s %s%s\n",
 					inputName,
 					key1shift ? "SH+" : "",
 					// Align for longest possible: "SHIFT-LOCK+SH"
 					key1shift ? 10 : 13,
-					key1.name,
+					key1->name,
 					key2shift ? "SH+" : "",
-					key2.name);
+					key2->name);
 			}
 		}
 	}
