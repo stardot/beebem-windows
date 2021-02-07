@@ -32,7 +32,7 @@ Boston, MA  02110-1301, USA.
 #include "uservia.h"
 #include "video.h"
 #include "beebsound.h"
-#include "soundstream.h"
+#include "SoundStreamer.h"
 #include "music5000.h"
 #include "beebmem.h"
 #include "serial.h"

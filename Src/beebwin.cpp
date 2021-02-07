@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 #include <windows.h>
+#include <windowsx.h>
 #include <initguid.h>
 #include <shlobj.h>
 #include <shlwapi.h>
@@ -45,7 +46,7 @@ Boston, MA  02110-1301, USA.
 #include "uservia.h"
 #include "video.h"
 #include "beebsound.h"
-#include "soundstream.h"
+#include "SoundStreamer.h"
 #include "music5000.h"
 #include "beebmem.h"
 #include "beebemrc.h"
@@ -3072,6 +3073,7 @@ void BeebWin::HandleCommand(int MenuId)
 			SoundReset();
 			SoundInit();
 		}
+
 		if (Music5000Enabled)
 		{
 			Music5000Reset();
