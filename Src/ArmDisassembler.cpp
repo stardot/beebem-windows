@@ -87,7 +87,7 @@ char *decodeSingleDataSwapOrDataProcessing(uint32 address, uint32 instruction, c
 	}
 }
 
-char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff)
+char *decodeDataProcessing(uint32 /* address */, uint32 instruction, char *buff)
 {
 	// table of opcode names
 	static const char* const opcodeNames[16] =
@@ -240,7 +240,7 @@ char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff)
 	return buff;
 }
 
-char *decodeSingleDTImmOffsetPostIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeSingleDTImmOffsetPostIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
 	
 	// decode whether load or store from bit 20
@@ -300,7 +300,7 @@ char *decodeSingleDTImmOffsetPostIndex(uint32 address, uint32 instruction, char 
 	return buff;
 }
 
-char *decodeSingleDTImmOffsetPreIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeSingleDTImmOffsetPreIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
 	// decode whether load or store from bit 20
 	if( getBit(instruction, 20) )
@@ -362,7 +362,7 @@ char *decodeSingleDTImmOffsetPreIndex(uint32 address, uint32 instruction, char *
 	return buff;
 }
 
-char *decodeSingleDTRegOffsetPostIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeSingleDTRegOffsetPostIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
 	// decode whether load or store from bit 20
 	if( getBit(instruction, 20) )
@@ -445,7 +445,7 @@ char *decodeSingleDTRegOffsetPostIndex(uint32 address, uint32 instruction, char 
 	return buff;
 }
 
-char *decodeSingleDTRegOffsetPreIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeSingleDTRegOffsetPreIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
 	// decode whether load or store from bit 20
 	if( getBit(instruction, 20) )
@@ -534,7 +534,7 @@ char *decodeSingleDTRegOffsetPreIndex(uint32 address, uint32 instruction, char *
 	return buff;
 }
 
-char *decodeBlockDTPostIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeBlockDTPostIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
 	
 	// decode whether to load from or store to memory from bit 20
@@ -599,7 +599,7 @@ char *decodeBlockDTPostIndex(uint32 address, uint32 instruction, char *buff)
 	return buff;
 }
 
-char *decodeBlockDTPreIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeBlockDTPreIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
 	// decode whether to load from or store to memory from bit 20
 	if( getBit(instruction, 20) )
@@ -814,19 +814,19 @@ char *decodeBranchWithLink(uint32 address, uint32 instruction, char *buff)
 	return buff;
 }
 
-char *decodeCoProDTPreIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeCoProDTPreIndex(uint32 /* address */, uint32 /* instruction */, char * buff)
 {
 	strcpy(buff, "CO PRO DATA TRANSFER PRE INDEX");
 	return buff;
 }
 
-char *decodeCoProDTPostIndex(uint32 address, uint32 instruction, char *buff)
+char *decodeCoProDTPostIndex(uint32 /* address */, uint32 /* instruction */, char * buff)
 {
 	strcpy(buff, "CO PRO DATA TRANSFER POST INDEX");
 	return buff;
 }
 
-char *decodeCoProRegTransferOrDataOperation(uint32 address, uint32 instruction, char *buff)
+char *decodeCoProRegTransferOrDataOperation(uint32 /* address */, uint32 /* instruction */, char * buff)
 {
 	strcpy(buff, "CO PRO REG TRANSFER OR DATA OP");
 	return buff;

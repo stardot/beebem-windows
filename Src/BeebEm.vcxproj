@@ -183,6 +183,7 @@
     <ClCompile Include="csw.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="Dialog.cpp" />
+    <ClCompile Include="DirectSoundStreamer.cpp" />
     <ClCompile Include="disc1770.cpp" />
     <ClCompile Include="disc8271.cpp" />
     <ClCompile Include="discedit.cpp" />
@@ -201,7 +202,7 @@
     <ClCompile Include="SelectKeyDialog.cpp" />
     <ClCompile Include="serial.cpp" />
     <ClCompile Include="serialdevices.cpp" />
-    <ClCompile Include="soundstream.cpp" />
+    <ClCompile Include="SoundStreamer.cpp" />
     <ClCompile Include="SprowCoPro.cpp" />
     <ClCompile Include="StringUtils.cpp" />
     <ClCompile Include="sysvia.cpp" />
@@ -214,6 +215,7 @@
     <ClCompile Include="uservia.cpp" />
     <ClCompile Include="via.cpp" />
     <ClCompile Include="video.cpp" />
+    <ClCompile Include="XAudio2Streamer.cpp" />
     <ClCompile Include="z80.cpp" />
     <ClCompile Include="z80dis.cpp" />
     <ClCompile Include="z80_support.cpp" />
@@ -325,6 +327,7 @@
     <ClInclude Include="csw.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="Dialog.h" />
+    <ClInclude Include="DirectSoundStreamer.h" />
     <ClInclude Include="disc1770.h" />
     <ClInclude Include="disc8271.h" />
     <ClInclude Include="discedit.h" />
@@ -348,7 +351,7 @@
     <ClInclude Include="SelectKeyDialog.h" />
     <ClInclude Include="serial.h" />
     <ClInclude Include="serialdevices.h" />
-    <ClInclude Include="soundstream.h" />
+    <ClInclude Include="SoundStreamer.h" />
     <ClInclude Include="SprowCoPro.h" />
     <ClInclude Include="StringUtils.h" />
     <ClInclude Include="sysvia.h" />
@@ -363,6 +366,7 @@
     <ClInclude Include="version.h" />
     <ClInclude Include="via.h" />
     <ClInclude Include="video.h" />
+    <ClInclude Include="XAudio2Streamer.h" />
     <ClInclude Include="z80.h" />
     <ClInclude Include="z80mem.h" />
     <ClInclude Include="zlib\crc32.h" />

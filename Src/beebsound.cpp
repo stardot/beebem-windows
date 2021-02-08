@@ -38,7 +38,7 @@ Boston, MA  02110-1301, USA.
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
-#include "soundstream.h"
+#include "SoundStreamer.h"
 
 extern AVIWriter *aviWriter;
 
@@ -137,20 +137,25 @@ SoundStreamer *pSoundStreamer = nullptr;
 
 /****************************************************************************/
 /* Writes sound data to a sound buffer */
-HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
+static HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 {
-	if( pSoundStreamer )
-		pSoundStreamer->Stream( lpbSoundData );
-	if( aviWriter )
+	if (pSoundStreamer != nullptr)
 	{
-		HRESULT hResult( aviWriter->WriteSound( lpbSoundData, SoundBufferSize ) );
-		if( FAILED( hResult ) && hResult != E_UNEXPECTED )
+		pSoundStreamer->Stream(lpbSoundData);
+	}
+
+	if (aviWriter != nullptr)
+	{
+		HRESULT hResult = aviWriter->WriteSound(lpbSoundData, SoundBufferSize);
+
+		if (FAILED(hResult) && hResult != E_UNEXPECTED)
 		{
-			MessageBox( GETHWND, "Failed to write sound to AVI file", "BeebEm", MB_OK | MB_ICONERROR );
+			MessageBox(GETHWND, "Failed to write sound to AVI file", "BeebEm", MB_OK | MB_ICONERROR);
 			delete aviWriter;
-			aviWriter = 0;
+			aviWriter = nullptr;
 		}
 	}
+
 	return S_OK;
 }
 
@@ -382,11 +387,7 @@ void PlayUpTil(double DestTime) {
 				exit(1);
 			}
 #else
-			//if (sndlog!=NULL)
-				//fprintf(sndlog,"Sound write at %lf Samples\n",DestTime);
-				//fwrite(SoundBuf,1,SoundBufferSize,sndlog);
-			HRESULT hr;
-			hr = WriteToSoundBuffer(SoundBuf);
+			HRESULT hr = WriteToSoundBuffer(SoundBuf);
 #endif
 			// buffer swapping no longer needed
 			bufptr=0;

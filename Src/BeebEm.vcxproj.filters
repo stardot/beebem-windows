@@ -75,6 +75,9 @@
     <ClCompile Include="debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DirectSoundStreamer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="disc1770.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -90,6 +93,9 @@
     <ClCompile Include="filedialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FolderSelectDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ide.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -97,6 +103,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Master512CoPro.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="music5000.cpp">
@@ -123,7 +132,7 @@
     <ClCompile Include="serialdevices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="soundstream.cpp">
+    <ClCompile Include="SoundStreamer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SprowCoPro.cpp">
@@ -160,6 +169,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="video.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="XAudio2Streamer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="z80.cpp">
@@ -228,12 +240,6 @@
     <ClCompile Include="zlib\zutil.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="Master512CoPro.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FolderSelectDialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Dialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -272,6 +278,9 @@
     <ClInclude Include="debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DirectSoundStreamer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="disc1770.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -293,6 +302,9 @@
     <ClInclude Include="filedialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FolderSelectDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -300,6 +312,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Master512CoPro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Messages.h">
@@ -335,7 +350,7 @@
     <ClInclude Include="serialdevices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="soundstream.h">
+    <ClInclude Include="SoundStreamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SprowCoPro.h">
@@ -378,6 +393,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="video.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XAudio2Streamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="z80.h">
@@ -466,12 +484,6 @@
     </ClInclude>
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="Master512CoPro.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FolderSelectDialog.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Dialog.h">
       <Filter>Header Files</Filter>
