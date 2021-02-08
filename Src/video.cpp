@@ -98,7 +98,7 @@ long ScreenAdjust=0; // Mode 7 Defaults.
 long VScreenAdjust=0;
 unsigned char HSyncModifier=9;
 bool TeletextEnabled = false;
-char TeletextStyle=1; // Defines wether teletext will skip intermediate lines in order to speed up
+char TeletextStyle = 1; // Defines whether teletext will skip intermediate lines in order to speed up
 bool TeletextHalfMode = false; // set true to use half-mode (TeletextStyle=1 all the time)
 int CurY=-1;
 FILE *crtclog;
@@ -183,7 +183,7 @@ static void BuildMode7Font()
 	{
 		char errstr[200];
 		sprintf(errstr, "Cannot open Teletext font file teletext.fnt");
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
 		exit(1);
 	}
 
@@ -223,12 +223,12 @@ static void BuildMode7Font()
 
 		if ((Character & 32) == 0)
 		{
-			// Row builders for mode 7 graphics
+			// Row builders for mode 7 sixel graphics
 			int row1 = 0;
 			int row2 = 0;
 			int row3 = 0;
 
-			// Left block has a value of 0xfc0, right 0x03f and both 0xfff
+			// Left sixel has a value of 0xfc0, right 0x03f and both 0xfff
 			if (Character & 0x01) row1 |= 0xfc0; // 1111 1100 0000
 			if (Character & 0x02) row1 |= 0x03f; // 0000 0011 1111
 			if (Character & 0x04) row2 |= 0xfc0;
@@ -237,25 +237,16 @@ static void BuildMode7Font()
 			if (Character & 0x40) row3 |= 0x03f;
 
 			// Now input these values into the array
-			// Top row of blocks - continuous
-			Mode7Font[1][Character][0] = row1;
-			Mode7Font[1][Character][1] = row1;
-			Mode7Font[1][Character][2] = row1;
-			Mode7Font[1][Character][3] = row1;
-			Mode7Font[1][Character][4] = row1;
-			Mode7Font[1][Character][5] = row1;
 
-			// Separated
-			row1 &= 0x3cf; // insert gaps 0011 1100 1111
+			// Top row of sixel - continuous
+			Mode7Font[1][Character][0]  = row1;
+			Mode7Font[1][Character][1]  = row1;
+			Mode7Font[1][Character][2]  = row1;
+			Mode7Font[1][Character][3]  = row1;
+			Mode7Font[1][Character][4]  = row1;
+			Mode7Font[1][Character][5]  = row1;
 
-			Mode7Font[2][Character][0] = row1;
-			Mode7Font[2][Character][1] = row1;
-			Mode7Font[2][Character][2] = row1;
-			Mode7Font[2][Character][3] = row1;
-			Mode7Font[2][Character][4] = 0;
-			Mode7Font[2][Character][5] = 0;
-
-			// Middle row of blocks - continuous
+			// Middle row of sixel - continuous
 			Mode7Font[1][Character][6]  = row2;
 			Mode7Font[1][Character][7]  = row2;
 			Mode7Font[1][Character][8]  = row2;
@@ -265,9 +256,28 @@ static void BuildMode7Font()
 			Mode7Font[1][Character][12] = row2;
 			Mode7Font[1][Character][13] = row2;
 
-			// Separated
-			row2 &= 0x3cf; // insert gaps 0011 1100 1111
+			// Bottom row of sixel - continuous
+			Mode7Font[1][Character][14] = row3;
+			Mode7Font[1][Character][15] = row3;
+			Mode7Font[1][Character][16] = row3;
+			Mode7Font[1][Character][17] = row3;
+			Mode7Font[1][Character][18] = row3;
+			Mode7Font[1][Character][19] = row3;
 
+			// Separated - insert gaps 0011 1100 1111
+			row1 &= 0x3cf;
+			row2 &= 0x3cf;
+			row3 &= 0x3cf;
+
+			// Top row of sixel - separated
+			Mode7Font[2][Character][0] = row1;
+			Mode7Font[2][Character][1] = row1;
+			Mode7Font[2][Character][2] = row1;
+			Mode7Font[2][Character][3] = row1;
+			Mode7Font[2][Character][4] = 0;
+			Mode7Font[2][Character][5] = 0;
+
+			// Middle row of sixel - separated
 			Mode7Font[2][Character][6]  = row2;
 			Mode7Font[2][Character][7]  = row2;
 			Mode7Font[2][Character][8]  = row2;
@@ -277,17 +287,7 @@ static void BuildMode7Font()
 			Mode7Font[2][Character][12] = 0;
 			Mode7Font[2][Character][13] = 0;
 
-			// Bottom row - continuous
-			Mode7Font[1][Character][14] = row3;
-			Mode7Font[1][Character][15] = row3;
-			Mode7Font[1][Character][16] = row3;
-			Mode7Font[1][Character][17] = row3;
-			Mode7Font[1][Character][18] = row3;
-			Mode7Font[1][Character][19] = row3;
-
-			// Separated
-			row3 &= 0x3cf; // insert gaps 0011 1100 1111
-
+			// Bottom row of sixel - separated
 			Mode7Font[2][Character][14] = row3;
 			Mode7Font[2][Character][15] = row3;
 			Mode7Font[2][Character][16] = row3;
@@ -827,7 +827,6 @@ static void DoMode7Row(void) {
   int CurrentChar;
   int XStep;
   unsigned char byte;
-  unsigned int tmp;
 
   unsigned int Foreground = 7;
   /* The foreground colour changes after the current character; only relevant for hold graphics */
@@ -852,7 +851,6 @@ static void DoMode7Row(void) {
   int CurrentScanLine;
   int CurrentX=0;
   int CurrentPixel;
-  unsigned int col;
   int FontTypeIndex=0; /* 0=alpha, 1=contiguous graphics, 2=separated graphics */
 
   if (CRTC_HorizontalDisplayed>80) return; /* Not possible on beeb - and would break the double height lookup array */
@@ -954,7 +952,10 @@ static void DoMode7Row(void) {
         FontTypeIndex=Graphics?(Separated?2:1):0;
       }
     } /* test for special character */
-    else FontTypeIndex=Graphics?(Separated?2:1):0;
+    else {
+      FontTypeIndex = Graphics ? (Separated ? 2 : 1) : 0;
+    }
+
     if (CurrentLineBottom && ((byte & 127) > 31) && !DoubleHeight) byte = 32;
     TeletextStyle = (CRTC_ScanLinesPerChar <= 9 || TeletextHalfMode) ? 2 : 1;
     /* Top bit never reaches character generator */
@@ -963,72 +964,123 @@ static void DoMode7Row(void) {
     if (byte < 32) byte = 0; else byte -= 32;
 
     /* Conceal flashed text if necessary */
-    ActualForeground=(Flash && !Mode7FlashOn)?Background:Foreground;
-    if (!DoubleHeight) {
-      for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
-        tmp = Mode7Font[FontTypeIndex][byte][CurrentScanLine];
+    ActualForeground = (Flash && !Mode7FlashOn) ? Background : Foreground;
 
-        if ((tmp==0) || (tmp==255)) {
-          col=(tmp==0)?Background:ActualForeground;
-          if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=12*XStep; else {
-            if (CurrentLen[CurrentScanLine])
-              mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
-            CurrentCol[CurrentScanLine]=col;
-            CurrentStartX[CurrentScanLine]=CurrentX;
-            CurrentLen[CurrentScanLine]=12*XStep;
-          } /* same colour */
+    if (!DoubleHeight) {
+      // Loop through each scanline
+      for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
+        unsigned int tmp = Mode7Font[FontTypeIndex][byte][CurrentScanLine];
+
+        if (tmp == 0 || tmp == 255) {
+          unsigned int col = tmp == 0 ? Background : ActualForeground;
+
+          if (col == CurrentCol[CurrentScanLine]) {
+            // Same colour, so increment run length
+            CurrentLen[CurrentScanLine] += 12 * XStep;
+          }
+          else {
+            if (CurrentLen[CurrentScanLine]) {
+              mainWin->doHorizLine(
+                CurrentCol[CurrentScanLine],             // Colour
+                VideoState.PixmapLine + CurrentScanLine, // y
+                CurrentStartX[CurrentScanLine],          // sx
+                CurrentLen[CurrentScanLine]              // width
+              );
+            }
+
+            CurrentCol[CurrentScanLine] = col;
+            CurrentStartX[CurrentScanLine] = CurrentX;
+            CurrentLen[CurrentScanLine] = 12 * XStep;
+          }
         } else {
-          for(CurrentPixel=0x800;CurrentPixel;CurrentPixel=CurrentPixel>>1) {
+          // Loop through 12 pixels horizontally
+          for (CurrentPixel = 0x800; CurrentPixel != 0; CurrentPixel >>= 1) {
             /* Background or foreground ? */
-            col=(tmp & CurrentPixel)?ActualForeground:Background;
+            unsigned int col = (tmp & CurrentPixel) ? ActualForeground : Background;
 
             /* Do we need to draw ? */
-            if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=XStep; else {
-              if (CurrentLen[CurrentScanLine])
-                mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
-              CurrentCol[CurrentScanLine]=col;
-              CurrentStartX[CurrentScanLine]=CurrentX;
-              CurrentLen[CurrentScanLine]=XStep;
-            } /* Fore/back ground */
-            CurrentX+=XStep;
-          } /* Pixel within byte */
-          CurrentX-=12*XStep;
+            if (col == CurrentCol[CurrentScanLine]) {
+              // Same colour, so increment run length
+              CurrentLen[CurrentScanLine] += XStep;
+            }
+            else {
+              if (CurrentLen[CurrentScanLine]) {
+                mainWin->doHorizLine(
+                  CurrentCol[CurrentScanLine],             // Colour
+                  VideoState.PixmapLine + CurrentScanLine, // y
+                  CurrentStartX[CurrentScanLine],          // sx
+                  CurrentLen[CurrentScanLine]              // width
+                );
+              }
+
+              CurrentCol[CurrentScanLine] = col;
+              CurrentStartX[CurrentScanLine] = CurrentX;
+              CurrentLen[CurrentScanLine] = XStep;
+            }
+
+            CurrentX += XStep;
+          }
+
+          CurrentX -= 12 * XStep;
         }
       } /* Scanline for */
+
       CurrentX+=12*XStep;
       Mode7DoubleHeightFlags[CurrentChar] = true; // Not double height - so if the next line is double height it will be top half
-    } else {
-      int ActualScanLine;
+    }
+    else {
       /* Double height! */
-      for(CurrentPixel=0x800;CurrentPixel;CurrentPixel=CurrentPixel>>1) {
-        for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
-          if (!CurrentLineBottom) ActualScanLine=CurrentScanLine >> 1; else ActualScanLine=10+(CurrentScanLine>>1);
+
+      // Loop through 12 pixels horizontally
+      for (CurrentPixel = 0x800; CurrentPixel != 0; CurrentPixel >>= 1) {
+        // Loop through each scanline
+        for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
+          const int ActualScanLine = CurrentLineBottom ? 10 + (CurrentScanLine / 2) : (CurrentScanLine / 2);
+
           /* Background or foreground ? */
-          col = (Mode7Font[FontTypeIndex][byte][ActualScanLine] & CurrentPixel) ? ActualForeground : Background;
+          unsigned int col = (Mode7Font[FontTypeIndex][byte][ActualScanLine] & CurrentPixel) ? ActualForeground : Background;
 
           /* Do we need to draw ? */
-          if (col==CurrentCol[CurrentScanLine]) CurrentLen[CurrentScanLine]+=XStep; else {
-            if (CurrentLen[CurrentScanLine])  {
-              mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
+          if (col == CurrentCol[CurrentScanLine]) {
+            // Same colour, so increment run length
+            CurrentLen[CurrentScanLine] += XStep;
+          }
+          else {
+            if (CurrentLen[CurrentScanLine]) {
+              mainWin->doHorizLine(
+                CurrentCol[CurrentScanLine],             // Colour
+                VideoState.PixmapLine + CurrentScanLine, // y
+                CurrentStartX[CurrentScanLine],          // sx
+                CurrentLen[CurrentScanLine]              // width
+              );
             }
-            CurrentCol[CurrentScanLine]=col;
-            CurrentStartX[CurrentScanLine]=CurrentX;
-            CurrentLen[CurrentScanLine]=XStep;
-          } /* Fore/back ground */
-        } /* Scanline for */
-        CurrentX+=XStep;
-      } /* Pixel within byte */
+
+            CurrentCol[CurrentScanLine] = col;
+            CurrentStartX[CurrentScanLine] = CurrentX;
+            CurrentLen[CurrentScanLine] = XStep;
+          }
+        }
+
+        CurrentX += XStep;
+      }
+
       Mode7DoubleHeightFlags[CurrentChar] = !Mode7DoubleHeightFlags[CurrentChar]; // Not double height - so if the next line is double height it will be top half
     }
     Foreground=ForegroundPending;
   } /* character loop */
 
   /* Finish off right bits of scan line */
-  for(CurrentScanLine=0+(TeletextStyle-1);CurrentScanLine<20;CurrentScanLine+=TeletextStyle) {
+  for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
     if (CurrentLen[CurrentScanLine])
-      mainWin->doHorizLine(CurrentCol[CurrentScanLine],VideoState.PixmapLine+CurrentScanLine,CurrentStartX[CurrentScanLine],CurrentLen[CurrentScanLine]);
+      mainWin->doHorizLine(
+        CurrentCol[CurrentScanLine],             // Colour
+        VideoState.PixmapLine + CurrentScanLine, // y
+        CurrentStartX[CurrentScanLine],          // sx
+        CurrentLen[CurrentScanLine]              // width
+      );
   }
-  CurrentLineBottom=NextLineBottom;
+
+  CurrentLineBottom = NextLineBottom;
   NextLineBottom = false;
 }
 
