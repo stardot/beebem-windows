@@ -825,7 +825,7 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 static void DoMode7Row(void) {
   const unsigned char *CurrentPtr = VideoState.DataPtr;
   int CurrentChar;
-  int XStep;
+  const int XStep = 1;
   unsigned char byte;
 
   unsigned int Foreground = 7;
@@ -855,9 +855,7 @@ static void DoMode7Row(void) {
 
   if (CRTC_HorizontalDisplayed>80) return; /* Not possible on beeb - and would break the double height lookup array */
 
-  XStep=1;
-
-  for(CurrentChar=0;CurrentChar<CRTC_HorizontalDisplayed;CurrentChar++) {
+  for (CurrentChar = 0; CurrentChar < CRTC_HorizontalDisplayed; CurrentChar++) {
     HoldGraph=NextHoldGraph;
     HoldGraphChar=NextHoldGraphChar;
     HoldSeparated=NextHoldSeparated;
@@ -967,19 +965,19 @@ static void DoMode7Row(void) {
     ActualForeground = (Flash && !Mode7FlashOn) ? Background : Foreground;
 
     if (!DoubleHeight) {
-      // Loop through each scanline
+      // Loop through each scanline in this character row
       for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
-        unsigned int tmp = Mode7Font[FontTypeIndex][byte][CurrentScanLine];
+        unsigned int Bitmap = Mode7Font[FontTypeIndex][byte][CurrentScanLine];
 
-        if (tmp == 0 || tmp == 255) {
-          unsigned int col = tmp == 0 ? Background : ActualForeground;
+        if (Bitmap == 0 || Bitmap == 0xfff) {
+          unsigned int col = Bitmap == 0 ? Background : ActualForeground;
 
           if (col == CurrentCol[CurrentScanLine]) {
             // Same colour, so increment run length
             CurrentLen[CurrentScanLine] += 12 * XStep;
           }
           else {
-            if (CurrentLen[CurrentScanLine]) {
+            if (CurrentLen[CurrentScanLine] != 0) {
               mainWin->doHorizLine(
                 CurrentCol[CurrentScanLine],             // Colour
                 VideoState.PixmapLine + CurrentScanLine, // y
@@ -992,19 +990,20 @@ static void DoMode7Row(void) {
             CurrentStartX[CurrentScanLine] = CurrentX;
             CurrentLen[CurrentScanLine] = 12 * XStep;
           }
-        } else {
+        }
+        else {
           // Loop through 12 pixels horizontally
           for (CurrentPixel = 0x800; CurrentPixel != 0; CurrentPixel >>= 1) {
-            /* Background or foreground ? */
-            unsigned int col = (tmp & CurrentPixel) ? ActualForeground : Background;
+            // Background or foreground ?
+            unsigned int col = (Bitmap & CurrentPixel) ? ActualForeground : Background;
 
-            /* Do we need to draw ? */
+            // Do we need to draw ?
             if (col == CurrentCol[CurrentScanLine]) {
               // Same colour, so increment run length
               CurrentLen[CurrentScanLine] += XStep;
             }
             else {
-              if (CurrentLen[CurrentScanLine]) {
+              if (CurrentLen[CurrentScanLine] != 0) {
                 mainWin->doHorizLine(
                   CurrentCol[CurrentScanLine],             // Colour
                   VideoState.PixmapLine + CurrentScanLine, // y
@@ -1023,30 +1022,30 @@ static void DoMode7Row(void) {
 
           CurrentX -= 12 * XStep;
         }
-      } /* Scanline for */
+      }
 
-      CurrentX+=12*XStep;
+      CurrentX += 12 * XStep;
       Mode7DoubleHeightFlags[CurrentChar] = true; // Not double height - so if the next line is double height it will be top half
     }
     else {
-      /* Double height! */
+      // Double height!
 
       // Loop through 12 pixels horizontally
       for (CurrentPixel = 0x800; CurrentPixel != 0; CurrentPixel >>= 1) {
-        // Loop through each scanline
+        // Loop through each scanline in this character row
         for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
           const int ActualScanLine = CurrentLineBottom ? 10 + (CurrentScanLine / 2) : (CurrentScanLine / 2);
 
-          /* Background or foreground ? */
+          // Background or foreground ?
           unsigned int col = (Mode7Font[FontTypeIndex][byte][ActualScanLine] & CurrentPixel) ? ActualForeground : Background;
 
-          /* Do we need to draw ? */
+          // Do we need to draw ?
           if (col == CurrentCol[CurrentScanLine]) {
             // Same colour, so increment run length
             CurrentLen[CurrentScanLine] += XStep;
           }
           else {
-            if (CurrentLen[CurrentScanLine]) {
+            if (CurrentLen[CurrentScanLine] != 0) {
               mainWin->doHorizLine(
                 CurrentCol[CurrentScanLine],             // Colour
                 VideoState.PixmapLine + CurrentScanLine, // y
@@ -1066,18 +1065,20 @@ static void DoMode7Row(void) {
 
       Mode7DoubleHeightFlags[CurrentChar] = !Mode7DoubleHeightFlags[CurrentChar]; // Not double height - so if the next line is double height it will be top half
     }
-    Foreground=ForegroundPending;
-  } /* character loop */
 
-  /* Finish off right bits of scan line */
+    Foreground = ForegroundPending;
+  }
+
+  // Finish off right bits of scan line
   for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
-    if (CurrentLen[CurrentScanLine])
+    if (CurrentLen[CurrentScanLine] != 0) {
       mainWin->doHorizLine(
         CurrentCol[CurrentScanLine],             // Colour
         VideoState.PixmapLine + CurrentScanLine, // y
         CurrentStartX[CurrentScanLine],          // sx
         CurrentLen[CurrentScanLine]              // width
       );
+    }
   }
 
   CurrentLineBottom = NextLineBottom;
