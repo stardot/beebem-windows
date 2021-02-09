@@ -54,7 +54,7 @@ extern int SoundVolume;
 #define REG_SET_NORMAL        0
 #define REG_SET_ALT           1
 
-typedef struct
+struct CHANNELREGS
 {
 	UINT8 FreqLo[NUM_CHANNELS];
 	UINT8 FreqMed[NUM_CHANNELS];
@@ -64,13 +64,13 @@ typedef struct
 	UINT8 WaveformReg[NUM_CHANNELS];
 	UINT8 AmplitudeReg[NUM_CHANNELS];
 	UINT8 ControlReg[NUM_CHANNELS];
-} CHANNELREGS;
+};
 
-typedef struct
+struct WAVERAM
 {
 	UINT8 WaveTable[WAVE_TABLES][WAVE_TABLE_SIZE];
 	CHANNELREGS ChannelRegs[NUM_REG_SETS];  // Normal & Alt
-} WAVERAM;
+};
 
 static UINT8 WaveRam[RAM_SIZE];
 static WAVERAM* pWaveRam = (WAVERAM*)WaveRam;
@@ -99,10 +99,6 @@ static SoundStreamer *pSoundStreamer = NULL;
 
 void Music5000Init()
 {
-	UINT i;
-	UINT chord;
-	UINT step;
-
 	static_assert(sizeof(WAVERAM) == RAM_SIZE, "WAVERAM size");
 
 	memset(WaveRam, 0, sizeof(WaveRam));
@@ -115,11 +111,13 @@ void Music5000Init()
 	SampleWritePtr = 0;
 
 	// Build the D2A table
-	i = 0;
-	for (chord = 0; chord < 8; chord++)
+	int i = 0;
+
+	for (int chord = 0; chord < 8; chord++)
 	{
 		double val = ChordBase[chord];
-		for (step = 0; step < 16; step++)
+
+		for (int step = 0; step < 16; step++)
 		{
 			D2ATable[i] = (INT)(val * 4); // Multiply up to get an integer
 			val += StepInc[chord];
@@ -308,8 +306,8 @@ void Music5000Update(UINT cycles)
 			else if (SampleRight > 32767)
 				SampleRight = 32767;
 
-			SampleBuf[SampleWritePtr++] = SampleLeft;
-			SampleBuf[SampleWritePtr++] = SampleRight;
+			SampleBuf[SampleWritePtr++] = (INT16)SampleLeft;
+			SampleBuf[SampleWritePtr++] = (INT16)SampleRight;
 
 			if (SampleWritePtr/2 >= SampleBufSize)
 			{
