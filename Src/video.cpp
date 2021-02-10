@@ -825,7 +825,6 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 static void DoMode7Row(void) {
   const unsigned char *CurrentPtr = VideoState.DataPtr;
   int CurrentChar;
-  const int XStep = 1;
   unsigned char byte;
 
   unsigned int Foreground = 7;
@@ -974,7 +973,7 @@ static void DoMode7Row(void) {
 
           if (col == CurrentCol[CurrentScanLine]) {
             // Same colour, so increment run length
-            CurrentLen[CurrentScanLine] += 12 * XStep;
+            CurrentLen[CurrentScanLine] += 12;
           }
           else {
             if (CurrentLen[CurrentScanLine] != 0) {
@@ -988,7 +987,7 @@ static void DoMode7Row(void) {
 
             CurrentCol[CurrentScanLine] = col;
             CurrentStartX[CurrentScanLine] = CurrentX;
-            CurrentLen[CurrentScanLine] = 12 * XStep;
+            CurrentLen[CurrentScanLine] = 12;
           }
         }
         else {
@@ -1000,7 +999,7 @@ static void DoMode7Row(void) {
             // Do we need to draw ?
             if (col == CurrentCol[CurrentScanLine]) {
               // Same colour, so increment run length
-              CurrentLen[CurrentScanLine] += XStep;
+              CurrentLen[CurrentScanLine]++;
             }
             else {
               if (CurrentLen[CurrentScanLine] != 0) {
@@ -1014,17 +1013,18 @@ static void DoMode7Row(void) {
 
               CurrentCol[CurrentScanLine] = col;
               CurrentStartX[CurrentScanLine] = CurrentX;
-              CurrentLen[CurrentScanLine] = XStep;
+              CurrentLen[CurrentScanLine] = 1;
             }
 
-            CurrentX += XStep;
+            CurrentX++;
           }
 
-          CurrentX -= 12 * XStep;
+          CurrentX -= 12;
         }
       }
 
-      CurrentX += 12 * XStep;
+      CurrentX += 12;
+
       Mode7DoubleHeightFlags[CurrentChar] = true; // Not double height - so if the next line is double height it will be top half
     }
     else {
@@ -1042,7 +1042,7 @@ static void DoMode7Row(void) {
           // Do we need to draw ?
           if (col == CurrentCol[CurrentScanLine]) {
             // Same colour, so increment run length
-            CurrentLen[CurrentScanLine] += XStep;
+            CurrentLen[CurrentScanLine]++;
           }
           else {
             if (CurrentLen[CurrentScanLine] != 0) {
@@ -1056,11 +1056,11 @@ static void DoMode7Row(void) {
 
             CurrentCol[CurrentScanLine] = col;
             CurrentStartX[CurrentScanLine] = CurrentX;
-            CurrentLen[CurrentScanLine] = XStep;
+            CurrentLen[CurrentScanLine] = 1;
           }
         }
 
-        CurrentX += XStep;
+        CurrentX++;
       }
 
       Mode7DoubleHeightFlags[CurrentChar] = !Mode7DoubleHeightFlags[CurrentChar]; // Not double height - so if the next line is double height it will be top half
