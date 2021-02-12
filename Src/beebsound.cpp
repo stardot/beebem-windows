@@ -464,24 +464,36 @@ void LoadSoundSamples() {
 }
 
 /****************************************************************************/
-/* The 'freqval' variable is the value as seen by the 76489                 */
+
+// The 'freqval' variable is the value as seen by the 76489
+
 static void SetFreq(int Channel, int freqval) {
   //fprintf(sndlog,"Channel %d - Value %d\n",Channel,freqval);
 
-  if (freqval==0) freqval=1;
-  if (freqval<5) Speech[Channel]=1; else Speech[Channel]=0;
-  unsigned int freq = 4000000 / (32 * freqval);
+	if (freqval == 0) {
+		freqval = 1024;
+	}
 
-  double t = ((((double)samplerate / (double)freq) / 2.0) + SoundTuning);
-  int ChangeSamps = (int)t; // Number of samples after which to change
+	if (freqval < 5) {
+		Speech[Channel] = 1;
+	}
+	else {
+		Speech[Channel] = 0;
+	}
 
-  CSA[Channel]=(double)(t-ChangeSamps);
-  CSC[Channel]=CSA[Channel];  // we look ahead, so should already include the fraction on the first update
-  if (Channel==1) {
-    CSC[0]=CSC[1];
-  }
+	unsigned int freq = 4000000 / (32 * freqval);
 
-  BeebState76489.ChangeSamps[Channel]=ChangeSamps;
+	double t = (((double)samplerate / (double)freq) / 2.0) + SoundTuning;
+	int ChangeSamps = (int)t; // Number of samples after which to change
+
+	CSA[Channel] = (double)(t - ChangeSamps);
+	CSC[Channel] = CSA[Channel]; // We look ahead, so should already include the fraction on the first update
+
+	if (Channel == 1) {
+		CSC[0] = CSC[1];
+	}
+
+	BeebState76489.ChangeSamps[Channel] = ChangeSamps;
 }
 
 /****************************************************************************/
