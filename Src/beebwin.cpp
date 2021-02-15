@@ -880,10 +880,10 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_WPONLOAD, m_WriteProtectOnLoad);
 
 	// File -> Capture Options
-	CheckMenuItem(IDM_CAPTURERES1, false);
-	CheckMenuItem(IDM_CAPTURERES2, false);
-	CheckMenuItem(IDM_CAPTURERES3, false);
-	CheckMenuItem(IDM_CAPTURERES4, false);
+	CheckMenuItem(IDM_CAPTURERES_DISPLAY, false);
+	CheckMenuItem(IDM_CAPTURERES_1280, false);
+	CheckMenuItem(IDM_CAPTURERES_640, false);
+	CheckMenuItem(IDM_CAPTURERES_320, false);
 	CheckMenuItem(IDM_CAPTUREBMP, false);
 	CheckMenuItem(IDM_CAPTUREJPEG, false);
 	CheckMenuItem(IDM_CAPTUREGIF, false);
@@ -3672,10 +3672,10 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
-	case IDM_CAPTURERES1:
-	case IDM_CAPTURERES2:
-	case IDM_CAPTURERES3:
-	case IDM_CAPTURERES4:
+	case IDM_CAPTURERES_DISPLAY:
+	case IDM_CAPTURERES_1280:
+	case IDM_CAPTURERES_640:
+	case IDM_CAPTURERES_320:
 		if (MenuId != m_MenuIdCaptureResolution)
 		{
 			CheckMenuItem(m_MenuIdCaptureResolution, false);

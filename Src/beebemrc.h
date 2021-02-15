@@ -404,10 +404,10 @@ Boston, MA  02110-1301, USA.
 #define IDM_DXSMOOTHMODE7ONLY           40259
 #define ID_SFX_DISCDRIVES               40260
 #define IDM_SELECT_USER_DATA_FOLDER     40261
-#define IDM_CAPTURERES1                 40262
-#define IDM_CAPTURERES2                 40263
-#define IDM_CAPTURERES3                 40264
-#define IDM_CAPTURERES4                 40265
+#define IDM_CAPTURERES_DISPLAY          40262
+#define IDM_CAPTURERES_1280             40263
+#define IDM_CAPTURERES_640              40264
+#define IDM_CAPTURERES_320              40265
 #define IDM_CAPTUREBMP                  40266
 #define IDM_CAPTUREJPEG                 40267
 #define IDM_CAPTUREGIF                  40268

@@ -399,10 +399,10 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Screen Capture Options"
         BEGIN
-            MENUITEM "Capture at Display Resolution", IDM_CAPTURERES1
-            MENUITEM "Capture at 1280x1024",          IDM_CAPTURERES2
-            MENUITEM "Capture at 640x512",            IDM_CAPTURERES3
-            MENUITEM "Capture at 320x256",            IDM_CAPTURERES4
+            MENUITEM "Capture at Display Resolution", IDM_CAPTURERES_DISPLAY
+            MENUITEM "Capture at 1280x1024",          IDM_CAPTURERES_1280
+            MENUITEM "Capture at 640x512",            IDM_CAPTURERES_640
+            MENUITEM "Capture at 320x256",            IDM_CAPTURERES_320
             MENUITEM SEPARATOR
             MENUITEM "BMP Format",                    IDM_CAPTUREBMP
             MENUITEM "JPEG Format",                   IDM_CAPTUREJPEG

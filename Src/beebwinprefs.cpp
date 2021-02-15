@@ -447,7 +447,7 @@ void BeebWin::LoadPreferences()
 	if (m_Preferences.GetDWORDValue("BitmapCaptureResolution", dword))
 		m_MenuIdCaptureResolution = dword;
 	else
-		m_MenuIdCaptureResolution = IDM_CAPTURERES3;
+		m_MenuIdCaptureResolution = IDM_CAPTURERES_640;
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureFormat", dword))
 		m_MenuIdCaptureFormat = dword;
