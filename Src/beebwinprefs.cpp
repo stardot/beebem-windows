@@ -384,10 +384,50 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
 		SWRAMBoardEnabled = false;
 
-	if (!m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &type, 1))
-		TubeType = Tube::None;
-	else
+	if (m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &type, 1))
+	{
 		TubeType = static_cast<Tube>(type);
+	}
+	else
+	{
+		// For backwards compatibility with BeebEm 4.14 or earlier:
+		unsigned char TubeEnabled = 0;
+		unsigned char AcornZ80 = 0;
+		unsigned char TorchTube = 0;
+		unsigned char Tube186Enabled = 0;
+		unsigned char ArmTube = 0;
+
+		m_Preferences.GetBinaryValue("TubeEnabled", &TubeEnabled, 1);
+		m_Preferences.GetBinaryValue("AcornZ80", &AcornZ80, 1);
+		m_Preferences.GetBinaryValue("TorchTube", &TorchTube, 1);
+		m_Preferences.GetBinaryValue("Tube186Enabled", &Tube186Enabled, 1);
+		m_Preferences.GetBinaryValue("ArmTube", &ArmTube, 1);
+
+		if (TubeEnabled)
+		{
+			TubeType = Tube::Acorn65C02;
+		}
+		else if (AcornZ80)
+		{
+			TubeType = Tube::AcornZ80;
+		}
+		else if (TorchTube)
+		{
+			TubeType = Tube::TorchZ80;
+		}
+		else if (Tube186Enabled)
+		{
+			TubeType = Tube::Master512CoPro;
+		}
+		else if (ArmTube)
+		{
+			TubeType = Tube::AcornArm;
+		}
+		else
+		{
+			TubeType = Tube::None;
+		}
+	}
 
 	if (!m_Preferences.GetBoolValue("Basic Hardware", BasicHardwareOnly))
 		BasicHardwareOnly = false;
