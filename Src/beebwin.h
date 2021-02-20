@@ -51,8 +51,10 @@ Boston, MA  02110-1301, USA.
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
 
-#define JOYSTICK_MAX_AXES    16
-#define JOYSTICK_MAX_BTNS    16
+#define NUM_PC_JOYSTICKS        2
+
+#define JOYSTICK_MAX_AXES       16
+#define JOYSTICK_MAX_BTNS       16
 
 #define JOYSTICK_AXIS_UP        0
 #define JOYSTICK_AXIS_DOWN      1
@@ -158,10 +160,12 @@ struct CUSTOMVERTEX
 
 struct JoystickState {
 	JOYCAPS Caps;
+	unsigned int JoyIndex;
 	unsigned int Deadband;
 	bool Captured;
 	unsigned int PrevAxes;
 	unsigned int PrevBtns;
+	bool JoystickToKeysActive;
 };
 
 class BeebWin {
@@ -249,10 +253,13 @@ public:
 	void DisplayClientAreaText(HDC hdc);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
 	void SetJoystickButton(int index, bool button);
-	void ScaleJoystick(unsigned int x, unsigned int y);
-	unsigned int GetJoystickAxes(JOYCAPS& caps, int deadband, JOYINFOEX& joyInfoEx);
+	void ScaleJoystick(int index, unsigned int x, unsigned int y,
+			unsigned int minX, unsigned int minY,
+			unsigned int maxX, unsigned int maxY);
+	unsigned int GetJoystickAxes(const JOYCAPS& caps, int deadband, const JOYINFOEX& joyInfoEx);
 	void TranslateOrSendKey(int vkey, bool keyUp);
-	void TranslateJoystickMove(int joyId, JOYINFOEX& joyInfoEx);
+	void TranslateAxes(int joyId, unsigned int axesState);
+	void TranslateJoystickMove(int joyId, const JOYINFOEX& joyInfoEx, const JOYCAPS& caps);
 	void TranslateJoystickButtons(int joyId, unsigned int buttons);
 	void TranslateJoystick(int joyId);
 	void SetMousestickButton(int index, bool button);
@@ -351,8 +358,12 @@ public:
 	int		m_MenuIdVolume;
 	int		m_MenuIdTiming;
 	int		m_FPSTarget;
-	JoystickState	m_JoystickState[2];
-	int		m_MenuIdSticks;
+	bool		m_JoystickTimerRunning;
+	JoystickState	m_JoystickState[NUM_PC_JOYSTICKS];
+	int		m_PCStickForJoystick[2];
+	int		m_PCAxesForJoystick[2];
+	int		m_MenuIdSticks[2];
+	int		m_MenuIdAxes[2];
 	bool		m_JoystickToKeys;
 	bool		m_AutoloadJoystickMap;
 	HWND		m_JoystickTarget;
@@ -558,8 +569,13 @@ public:
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
+	int MenuIdToStick(int menuId);
+	int StickToMenuId(int bbcStick, int pcStick);
+	int MenuIdToAxes(int menuId);
+	int AxesToMenuId(int bbcStick, int pcAxes);
 	bool InitJoystick(bool verbose = false);
 	bool CaptureJoystick(int Index, bool verbose);
+	void ResetJoystick(void);
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);
@@ -604,7 +620,9 @@ public:
 	void ResetJoyMap(JoyMap* joymap);
 	bool ReadJoyMap(const char *filename, JoyMap *joymap);
 	bool WriteJoyMap(const char *filename, JoyMap *joymap);
-	void UpdateInitJoystickMenu();
+	bool PCJoystick1On();
+	bool PCJoystick2On();
+	void UpdateJoystickMenu();
 	bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
 	bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, void* pData, int* pnSize);
 	bool RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, const void* pData, int* pnSize);

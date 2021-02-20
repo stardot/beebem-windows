@@ -442,6 +442,17 @@ Boston, MA  02110-1301, USA.
 #define IDM_AUTOLOADJOYMAP              40301
 #define IDM_RESETJOYMAP                 40302
 #define IDM_INIT_JOYSTICK               40303
+#define IDM_JOY1_PCJOY2                 40305
+#define IDM_JOY1_PRIMARY                40306
+#define IDM_JOY1_SECONDARY1             40307
+#define IDM_JOY1_SECONDARY2             40308
+#define IDM_JOY2_PCJOY1                 40309
+#define IDM_JOY2_PCJOY2                 40310
+#define IDM_JOY2_ANALOGUE_MOUSESTICK    40311
+#define IDM_JOY2_DIGITAL_MOUSESTICK     40312
+#define IDM_JOY2_PRIMARY                40313
+#define IDM_JOY2_SECONDARY1             40314
+#define IDM_JOY2_SECONDARY2             40315
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -450,7 +461,7 @@ Boston, MA  02110-1301, USA.
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        118
-#define _APS_NEXT_COMMAND_VALUE         40304
+#define _APS_NEXT_COMMAND_VALUE         40316
 #define _APS_NEXT_CONTROL_VALUE         1092
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
