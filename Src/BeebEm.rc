@@ -689,7 +689,6 @@ BEGIN
         MENUITEM "SW RAM Board On/Off", IDM_SWRAMBOARD
         MENUITEM "Edit ROM Configuration", IDM_ROMCONFIG
         MENUITEM SEPARATOR
-        MENUITEM "Basic &Hardware Only",        ID_BASIC_HARDWARE_ONLY
         MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE
         MENUITEM SEPARATOR
         MENUITEM "Econet On/Off",               ID_ECONET

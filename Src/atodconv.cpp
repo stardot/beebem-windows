@@ -32,8 +32,6 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "uefstate.h"
 
-bool JoystickEnabled[2] = { false, false };
-
 /* X and Y positions for joystick 1 and 2 */
 int JoystickX[2];
 int JoystickY[2];
@@ -128,45 +126,24 @@ void AtoD_poll_real(void)
 }
 
 /*--------------------------------------------------------------------------*/
-void AtoDInit(int index)
+
+void AtoDInit()
 {
 	AtoDState.datalatch = 0;
 	AtoDState.high = 0;
 	AtoDState.low = 0;
 	ClearTrigger(AtoDTrigger);
 
-	/* Move joystick to middle */
-	JoystickX[index] = 32767;
-	JoystickY[index] = 32767;
+	// Move both joysticks to middle
+	JoystickX[0] = 32767;
+	JoystickY[0] = 32767;
 
-	/* Not busy, conversion complete (OS1.2 will then request another conversion) */
+	JoystickX[1] = 32767;
+	JoystickY[1] = 32767;
+
+	// Not busy, conversion complete (OS1.2 will then request another conversion)
 	AtoDState.status = 0x40;
 	PulseSysViaCB1();
-}
-
-/*--------------------------------------------------------------------------*/
-void AtoDEnable(int index)
-{
-	JoystickEnabled[index] = true;
-	AtoDInit(index);
-}
-
-/*--------------------------------------------------------------------------*/
-void AtoDDisable(int index)
-{
-	JoystickEnabled[index] = false;
-	if (!JoystickEnabled[0] && !JoystickEnabled[1])
-	{
-		AtoDState.datalatch = 0;
-		AtoDState.status = 0x80; /* busy, conversion not complete */
-		AtoDState.high = 0;
-		AtoDState.low = 0;
-		ClearTrigger(AtoDTrigger);
-	}
-
-	/* Move joystick to middle (superpool looks at joystick even when not selected) */
-	JoystickX[index] = 32767;
-	JoystickY[index] = 32767;
 }
 
 /*--------------------------------------------------------------------------*/

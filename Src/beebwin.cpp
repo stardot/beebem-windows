@@ -411,7 +411,6 @@ void BeebWin::ApplyPrefs()
 
 	ResetJoyMapToDefaultUser();
 
-
 	InitMenu();
 	ShowMenu(true);
 
@@ -600,8 +599,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	Disc8271Reset();
 	if (EconetEnabled) EconetReset();	//Rob:
 	Reset1770();
-	AtoDInit(0);
-	AtoDInit(1);
+	AtoDInit();
 	SetRomMenu();
 	FreeDiscImage(0);
 	// Keep the disc images loaded
@@ -1693,7 +1691,6 @@ void BeebWin::TranslateJoystickButtons(int joyId, unsigned int buttons)
 /****************************************************************************/
 void BeebWin::TranslateJoystick(int joyId)
 {
-
 	static const JOYCAPS dummyJoyCaps = {
 		0, 0, "",
 		0, 65535, 0, 65535, 0, 65535,
@@ -3238,7 +3235,6 @@ void BeebWin::UpdateLEDMenu() {
 }
 
 void BeebWin::UpdateOptiMenu() {
-	CheckMenuItem(ID_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
 	CheckMenuItem(ID_TELETEXTHALFMODE, TeletextHalfMode);
 	CheckMenuItem(ID_PSAMPLES, PartSamples);
 }
@@ -3910,7 +3906,9 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			CheckMenuItem(m_MenuIdSticks[0], false);
 
-			AtoDDisable(0);
+			// Reset joystick position to centre
+			JoystickX[0] = 32767;
+			JoystickY[0] = 32767;
 
 			SetJoystickButton(0, false);
 
@@ -3930,12 +3928,7 @@ void BeebWin::HandleCommand(int MenuId)
 			/* Initialise new selection */
 			m_MenuIdSticks[0] = MenuId;
 
-			AtoDEnable(0);
-
-			if (JoystickEnabled[0])
-				CheckMenuItem(m_MenuIdSticks[0], true);
-			else
-				m_MenuIdSticks[0] = 0;
+			CheckMenuItem(m_MenuIdSticks[0], true);
 		}
 
 		InitJoystick(false);
@@ -3950,7 +3943,9 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			CheckMenuItem(m_MenuIdSticks[1], false);
 
-			AtoDDisable(1);
+			// Reset joystick position to centre
+			JoystickX[1] = 32767;
+			JoystickY[1] = 32767;
 
 			SetJoystickButton(1, false);
 		}
@@ -3965,13 +3960,9 @@ void BeebWin::HandleCommand(int MenuId)
 			/* Initialise new selection */
 			m_MenuIdSticks[1] = MenuId;
 
-			AtoDEnable(1);
-
-			if (JoystickEnabled[1])
-				CheckMenuItem(m_MenuIdSticks[1], true);
-			else
-				m_MenuIdSticks[1] = 0;
+			CheckMenuItem(m_MenuIdSticks[1], true);
 		}
+
 		InitJoystick(false);
 		break;
 
@@ -4387,11 +4378,6 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case ID_TELETEXTHALFMODE:
 		TeletextHalfMode = !TeletextHalfMode;
-		UpdateOptiMenu();
-		break;
-
-	case ID_BASIC_HARDWARE_ONLY:
-		BasicHardwareOnly = !BasicHardwareOnly;
 		UpdateOptiMenu();
 		break;
 
