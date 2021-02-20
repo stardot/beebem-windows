@@ -243,8 +243,8 @@ void TouchScreenReadScreen(bool check)
 {
 	static int last_x = -1, last_y = -1, last_m = -1;
 
-	int x = (65535 - JoystickX) / (65536 / 120) + 1;
-	int y = JoystickY / (65536 / 90) + 1;
+	int x = (65535 - JoystickX[0]) / (65536 / 120) + 1;
+	int y = JoystickY[0] / (65536 / 90) + 1;
 
 	if (last_x != x || last_y != y || last_m != AMXButtons || !check)
 	{

@@ -709,9 +709,28 @@ BEGIN
     END
     POPUP "&Options"
     BEGIN
-        MENUITEM "&Joystick",                   IDM_JOYSTICK
-        MENUITEM "&Analogue Mousestick",        IDM_ANALOGUE_MOUSESTICK
-        MENUITEM "&Digital Mousestick",         IDM_DIGITAL_MOUSESTICK
+        POPUP "Joystick"
+        BEGIN
+            MENUITEM "First PC &Joystick",              IDM_JOYSTICK
+            MENUITEM "&Analogue Mousestick",            IDM_ANALOGUE_MOUSESTICK
+            MENUITEM "&Digital Mousestick",             IDM_DIGITAL_MOUSESTICK
+            MENUITEM "Second PC Joystick",              IDM_JOY1_PCJOY2
+            MENUITEM SEPARATOR
+            MENUITEM "Primary Stick",                   IDM_JOY1_PRIMARY
+            MENUITEM "Right Thumbstick (XBox)",         IDM_JOY1_SECONDARY1
+            MENUITEM "Right Thumbstick (other)",        IDM_JOY1_SECONDARY2
+        END
+        POPUP "Second Joystick"
+        BEGIN
+            MENUITEM "Second PC Joystick",              IDM_JOY2_PCJOY2
+            MENUITEM "&Analogue Mousestick",            IDM_JOY2_ANALOGUE_MOUSESTICK
+            MENUITEM "&Digital Mousestick",             IDM_JOY2_DIGITAL_MOUSESTICK
+            MENUITEM "First PC Joystick",               IDM_JOY2_PCJOY1
+            MENUITEM SEPARATOR
+            MENUITEM "Primary Stick",                   IDM_JOY2_PRIMARY
+            MENUITEM "Right Thumbstick (XBox)",         IDM_JOY2_SECONDARY1
+            MENUITEM "Right Thumbstick (other)",        IDM_JOY2_SECONDARY2
+        END
         POPUP "Joystick To Keyboard"
         BEGIN
             MENUITEM "Enable Joystick To Keyboard",   IDM_JOYSTICK_TO_KEYS
@@ -722,7 +741,7 @@ BEGIN
             MENUITEM "Load Joystick Mapping...",      IDM_LOADJOYMAP
             MENUITEM "Save Joystick Mapping...",      IDM_SAVEJOYMAP
         END
-        MENUITEM "Initialise Joystick",         IDM_INIT_JOYSTICK
+        MENUITEM "Initialise Joysticks",        IDM_INIT_JOYSTICK
         MENUITEM SEPARATOR
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
