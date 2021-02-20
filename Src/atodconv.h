@@ -24,15 +24,12 @@ Boston, MA  02110-1301, USA.
 #ifndef ATODCONV_HEADER
 #define ATODCONV_HEADER
 
-extern bool JoystickEnabled[2];
 extern int JoystickX[2];   /* 16 bit number, 0 = right */
 extern int JoystickY[2];   /* 16 bit number, 0 = down */
 
 void AtoDWrite(int Address, int Value);
 unsigned char AtoDRead(int Address);
-void AtoDInit(int index);
-void AtoDEnable(int index);
-void AtoDDisable(int index);
+void AtoDInit();
 void SaveAtoDUEF(FILE *SUEF);
 void LoadAtoDUEF(FILE *SUEF);
 

@@ -240,7 +240,6 @@ bool IntDue=false;
 int CyclesToInt = NO_TIMER_INT_DUE;
 
 static bool Branched; // true if the instruction branched
-bool BasicHardwareOnly = false; // false = all hardware, true = basic hardware only
 // 1 if first cycle happened
 
 // Get a two byte address from the program counter, and then post inc
@@ -3112,10 +3111,8 @@ void PollHardware(unsigned int nCycles)
 	}
 
 	VideoPoll(nCycles);
-	if (!BasicHardwareOnly) {
-		AtoD_poll(nCycles);
-		Serial_Poll();
-	}
+	AtoD_poll(nCycles);
+	Serial_Poll();
 	Disc8271Poll();
 	Music5000Poll(nCycles);
 	Sound_Trigger(nCycles);
