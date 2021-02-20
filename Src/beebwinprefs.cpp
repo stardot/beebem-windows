@@ -485,8 +485,6 @@ void BeebWin::LoadPreferences()
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue("Basic Hardware", BasicHardwareOnly))
-		BasicHardwareOnly = false;
 	if (!m_Preferences.GetBoolValue("Teletext Half Mode", TeletextHalfMode))
 		TeletextHalfMode = false;
 
@@ -749,7 +747,6 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		m_Preferences.SetBinaryValue(CFG_TUBE_TYPE, &TubeType, 1);
 
-		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);
 		m_Preferences.SetBoolValue("Teletext Half Mode", TeletextHalfMode);
 		m_Preferences.SetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled);
 		m_Preferences.SetBoolValue("TeletextLocalhost", TeletextLocalhost);
