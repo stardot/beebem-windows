@@ -1703,8 +1703,6 @@ void BeebWin::TranslateJoystick(int joyId)
 	const JOYCAPS* joyCaps = &m_JoystickState[joyId].Caps;
 	DWORD joyIndex = m_JoystickState[joyId].JoyIndex;
 
-	memset(&joyInfoEx, 0, sizeof(joyInfoEx));
-
 	joyInfoEx.dwSize = sizeof(joyInfoEx);
 	joyInfoEx.dwFlags = JOY_RETURNALL | JOY_RETURNPOVCTS;
 
@@ -1737,19 +1735,19 @@ void BeebWin::TranslateJoystick(int joyId)
 			if (bbcIndex == 1 && m_PCStickForJoystick[0] == m_PCStickForJoystick[1]
 				&& m_PCAxesForJoystick[0] != m_PCAxesForJoystick[1])
 			{
-				// If both BBC joystick are mapped to the same PC gamepad, but not
-				// the same axes, use secondary button for second joystick
-				SetJoystickButton(bbcIndex, (joyInfoEx.dwButtons & JOY_BUTTON2) != 0);
+				// If both BBC joysticks are mapped to the same PC gamepad, but not
+				// the same axes, map buttons 2 and 4 to the Beeb's PB1 input
+				SetJoystickButton(bbcIndex, (joyInfoEx.dwButtons & (JOY_BUTTON2 | JOY_BUTTON4)) != 0);
 			}
 			else
 			{
-				SetJoystickButton(bbcIndex, (joyInfoEx.dwButtons & JOY_BUTTON1) != 0);
+				SetJoystickButton(bbcIndex, (joyInfoEx.dwButtons & (JOY_BUTTON1 | JOY_BUTTON3)) != 0);
 			}
 
 			if (m_MenuIdSticks[1] == 0)
 			{
-				// Second BBC joystick not enabled - map second button to BBC second button
-				SetJoystickButton(1, (joyInfoEx.dwButtons & JOY_BUTTON2) != 0);
+				// Second BBC joystick not enabled - map buttons 2 and 4 to Beeb's PB1 input
+				SetJoystickButton(1, (joyInfoEx.dwButtons & (JOY_BUTTON2 | JOY_BUTTON4)) != 0);
 			}
 
 			if (m_PCAxesForJoystick[bbcIndex] == 1)
