@@ -1830,31 +1830,47 @@ void BeebWin::SetMousestickButton(int index, bool button)
 /****************************************************************************/
 void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 {
-	static int lastx[2] = { 32768, 32768 };
-	static int lasty[2] = { 32768, 32768 };
-
 	for (int index = 0; index < 2; ++index)
 	{
+		int XPos = (m_XWinSize - x) * 65535 / m_XWinSize;
+		int YPos = (m_YWinSize - y) * 65535 / m_YWinSize;
+
 		if (index == 0 && m_MenuIdSticks[0] == IDM_ANALOGUE_MOUSESTICK ||
 		    index == 1 && m_MenuIdSticks[1] == IDM_JOY2_ANALOGUE_MOUSESTICK)
 		{
-			JoystickX[index] = (m_XWinSize - x) * 65535 / m_XWinSize;
-			JoystickY[index] = (m_YWinSize - y) * 65535 / m_YWinSize;
+			JoystickX[index] = XPos;
+			JoystickY[index] = YPos;
 		}
 		else if (index == 0 && m_MenuIdSticks[0] == IDM_DIGITAL_MOUSESTICK ||
-		    index == 1 && m_MenuIdSticks[1]== IDM_JOY2_DIGITAL_MOUSESTICK)
+		         index == 1 && m_MenuIdSticks[1] == IDM_JOY2_DIGITAL_MOUSESTICK)
 		{
-			int dx = x - lastx[index];
-			int dy = y - lasty[index];
+			const int Threshold = 2000;
 
-			if (dx > 4) JoystickX[index] = 0;
-			if (dx < -4) JoystickX[index] = 65535;
+			if (XPos < 32768 - Threshold)
+			{
+				JoystickX[index] = 0;
+			}
+			else if (XPos > 32768 + Threshold)
+			{
+				JoystickX[index] = 65535;
+			}
+			else
+			{
+				JoystickX[index] = 32768;
+			}
 
-			if (dy > 4) JoystickY[index] = 0;
-			if (dy < -4) JoystickY[index] = 65535;
-
-			lastx[index] = x;
-			lasty[index] = y;
+			if (YPos < 32768 - Threshold)
+			{
+				JoystickY[index] = 0;
+			}
+			else if (YPos > 32768 + Threshold)
+			{
+				JoystickY[index] = 65535;
+			}
+			else
+			{
+				JoystickY[index] = 32768;
+			}
 		}
 	}
 }
