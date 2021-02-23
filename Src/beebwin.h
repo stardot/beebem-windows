@@ -43,6 +43,8 @@ Boston, MA  02110-1301, USA.
 #include "port.h"
 #include "preferences.h"
 #include "video.h"
+#include "keymapping.h"
+#include "JoystickHandler.h"
 
 /* Used in message boxes */
 #define GETHWND (mainWin->GethWnd())
@@ -51,50 +53,8 @@ Boston, MA  02110-1301, USA.
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
 
-#define NUM_PC_JOYSTICKS        2
-
-#define JOYSTICK_MAX_AXES       16
-#define JOYSTICK_MAX_BTNS       16
-
-#define JOYSTICK_AXIS_UP        0
-#define JOYSTICK_AXIS_DOWN      1
-#define JOYSTICK_AXIS_LEFT      2
-#define JOYSTICK_AXIS_RIGHT     3
-#define JOYSTICK_AXIS_Z_N       4
-#define JOYSTICK_AXIS_Z_P       5
-#define JOYSTICK_AXIS_R_N       6
-#define JOYSTICK_AXIS_R_P       7
-#define JOYSTICK_AXIS_U_N       8
-#define JOYSTICK_AXIS_U_P       9
-#define JOYSTICK_AXIS_V_N       10
-#define JOYSTICK_AXIS_V_P       11
-#define JOYSTICK_AXIS_HAT_UP    12
-#define JOYSTICK_AXIS_HAT_DOWN  13
-#define JOYSTICK_AXIS_HAT_LEFT  14
-#define JOYSTICK_AXIS_HAT_RIGHT 15
-#define JOYSTICK_AXES_COUNT     16
-
-#define BEEB_VKEY_JOY_START  256
-#define BEEB_VKEY_JOY1_AXES  BEEB_VKEY_JOY_START
-#define BEEB_VKEY_JOY1_BTN1  (BEEB_VKEY_JOY1_AXES + JOYSTICK_MAX_AXES) // 256+16 = 272
-#define BEEB_VKEY_JOY2_AXES  (BEEB_VKEY_JOY1_BTN1 + JOYSTICK_MAX_BTNS) // 272+16 = 288
-#define BEEB_VKEY_JOY2_BTN1  (BEEB_VKEY_JOY2_AXES + JOYSTICK_MAX_AXES) // 288+16 = 304
-#define BEEB_VKEY_JOY_END    (BEEB_VKEY_JOY2_BTN1 + JOYSTICK_MAX_BTNS) // 304+16 = 320
-
-#define BEEB_VKEY_JOY_COUNT  (BEEB_VKEY_JOY_END - BEEB_VKEY_JOY_START)
-#define BEEB_VKEY_COUNT      BEEB_VKEY_JOY_END
 
 #define UNASSIGNED_ROW       -9
-
-struct KeyMapping {
-	int row;    // Beeb row
-	int col;    // Beeb col
-	bool shift; // Beeb shift state
-};
-
-typedef KeyMapping  KeyPair[2];
-typedef KeyPair     KeyMap[256]; // Indices are: [Virt key][shift state]
-typedef KeyPair     JoyMap[BEEB_VKEY_JOY_COUNT];
 
 extern const char *WindowTitle;
 
@@ -278,18 +238,6 @@ public:
 	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
-	void SetJoystickButton(int index, bool button);
-	void ScaleJoystick(int index, unsigned int x, unsigned int y,
-			unsigned int minX, unsigned int minY,
-			unsigned int maxX, unsigned int maxY);
-	unsigned int GetJoystickAxes(const JOYCAPS& caps, int deadband, const JOYINFOEX& joyInfoEx);
-	void TranslateOrSendKey(int vkey, bool keyUp);
-	void TranslateAxes(int joyId, unsigned int axesState);
-	void TranslateJoystickMove(int joyId, const JOYINFOEX& joyInfoEx, const JOYCAPS& caps);
-	void TranslateJoystickButtons(int joyId, unsigned int buttons);
-	void TranslateJoystick(int joyId);
-	void SetMousestickButton(int index, bool button);
-	void ScaleMousestick(unsigned int x, unsigned int y);
 	void HandleCommand(int MenuId);
 	void SetAMXPosition(unsigned int x, unsigned int y);
 	void ChangeAMXPosition(int deltaX, int deltaY);
@@ -312,7 +260,6 @@ public:
 	void ResetTiming(void);
 	int TranslateKey(int vkey, bool keyUp, int &row, int &col);
 	void ParseCommandLine(void);
-	void CheckForJoystickMap(const char *path);
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
 	void FindCommandLineFile(char *CmdLineFile);
 	void HandleCommandLineFile(int drive, const char *CmdLineFile);
@@ -387,15 +334,7 @@ public:
 	int		m_MenuIdVolume;
 	int		m_MenuIdTiming;
 	int		m_FPSTarget;
-	bool		m_JoystickTimerRunning;
-	JoystickState	m_JoystickState[NUM_PC_JOYSTICKS];
-	int		m_PCStickForJoystick[2];
-	int		m_PCAxesForJoystick[2];
-	int		m_MenuIdSticks[2];
-	int		m_MenuIdAxes[2];
-	bool		m_JoystickToKeys;
-	bool		m_AutoloadJoystickMap;
-	HWND		m_JoystickTarget;
+	JoystickHandler m_Joysticks;
 	bool		m_HideCursor;
 	bool		m_CaptureMouse;
 	bool		m_MouseCaptured;
@@ -405,8 +344,8 @@ public:
 	bool		m_KeyMapAS;
 	bool		m_KeyMapFunc;
 	char		m_UserKeyMapPath[_MAX_PATH];
-	char		m_JoystickMapPath[_MAX_PATH];
 	bool		m_ShiftPressed;
+	/* indexes are [vkey][0: row/1: col][shift pressed] */
 	int		m_vkeyPressed[BEEB_VKEY_COUNT][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
@@ -601,13 +540,6 @@ public:
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
-	int MenuIdToStick(int menuId);
-	int StickToMenuId(int bbcStick, int pcStick);
-	int MenuIdToAxes(int menuId);
-	int AxesToMenuId(int bbcStick, int pcAxes);
-	bool InitJoystick(bool verbose = false);
-	bool CaptureJoystick(int Index, bool verbose);
-	void ResetJoystick(void);
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);
@@ -644,22 +576,11 @@ public:
 	bool RebootSystem();
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);
-	void ResetJoystickMap(void);
-	void LoadJoystickMap(void);
-	void SaveJoystickMap(void);
 	FILE* OpenReadFile(const char *filename, const char *typeDescr,
 			   const char *token);
 	FILE* OpenWriteFile(const char *filename, const char *typeDescr);
 	bool ReadKeyMap(const char *filename, KeyMap *keymap);
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
-
-	void ResetJoyMapToDefaultUser(void);
-	void ResetJoyMap(JoyMap* joymap);
-	bool ReadJoyMap(const char *filename, JoyMap *joymap);
-	bool WriteJoyMap(const char *filename, JoyMap *joymap);
-	bool PCJoystick1On();
-	bool PCJoystick2On();
-	void UpdateJoystickMenu();
 
 	MessageResult Report(MessageType type, const char *format, ...);
 
@@ -673,6 +594,7 @@ public:
 	// Preferences
 	void LoadPreferences();
 	void SavePreferences(bool saveAll);
+	Preferences& GetPreferences() { return m_Preferences; }
 
 	PaletteType m_PaletteType;
 

@@ -121,7 +121,7 @@ void AtoD_poll_real(void)
 	}
 
 	AtoDState.status |= (value & 0xc000)>>10;
-	AtoDState.high = value>>8;
+	AtoDState.high = static_cast<unsigned char>(value>>8);
 	AtoDState.low = value & 0xf0;
 }
 

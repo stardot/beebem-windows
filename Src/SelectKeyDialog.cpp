@@ -121,12 +121,12 @@ INT_PTR SelectKeyDialog::DlgProc(
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			hCurrentDialog = nullptr;
-			mainWin->m_JoystickTarget = nullptr;
+			mainWin->m_Joysticks.SetJoystickTarget(nullptr);
 		}
 		else
 		{
 			hCurrentDialog = m_hwnd;
-			mainWin->m_JoystickTarget = m_hwnd;
+			mainWin->m_Joysticks.SetJoystickTarget(m_hwnd);
 			hCurrentAccelTable = nullptr;
 		}
 		break;
@@ -224,17 +224,12 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 
 		Key -= BEEB_VKEY_JOY_START;
 
-		if (Key >= BEEB_VKEY_JOY2_AXES - BEEB_VKEY_JOY1_AXES)
-		{
-			strcpy(Name, "Joy2");
-			Key -= BEEB_VKEY_JOY2_AXES - BEEB_VKEY_JOY1_AXES;
-		}
-		else
-		{
-			strcpy(Name, "Joy1");
-		}
+		int joyIdx = Key / (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS);
+		Key -= joyIdx * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS);
 
-		if (Key < BEEB_VKEY_JOY1_BTN1 - BEEB_VKEY_JOY1_AXES)
+		sprintf(Name, "Joy%d", joyIdx + 1);
+
+		if (Key < JOYSTICK_MAX_AXES)
 		{
 			if (Key == JOYSTICK_AXIS_UP)
 			{
@@ -260,7 +255,7 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 		}
 		else
 		{
-			sprintf(Name + strlen(Name), "Btn%d", Key - (BEEB_VKEY_JOY1_BTN1 - BEEB_VKEY_JOY1_AXES) + 1);
+			sprintf(Name + strlen(Name), "Btn%d", Key - JOYSTICK_MAX_AXES + 1);
 		}
 
 		return Name;
