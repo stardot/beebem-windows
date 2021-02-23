@@ -654,6 +654,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIdCaptureResolution);
 		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIdCaptureFormat);
 
+		m_Joysticks.WritePreferences(m_Preferences);
+
 		RECT rect;
 		GetWindowRect(m_hWnd,&rect);
 		m_Preferences.SetBinaryValue("WindowPos", &rect, sizeof(rect));
