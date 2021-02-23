@@ -711,9 +711,9 @@ BEGIN
         POPUP "Joystick"
         BEGIN
             MENUITEM "First PC &Joystick",              IDM_JOYSTICK
+            MENUITEM "Second PC Joystick",              IDM_JOY1_PCJOY2
             MENUITEM "&Analogue Mousestick",            IDM_ANALOGUE_MOUSESTICK
             MENUITEM "&Digital Mousestick",             IDM_DIGITAL_MOUSESTICK
-            MENUITEM "Second PC Joystick",              IDM_JOY1_PCJOY2
             MENUITEM SEPARATOR
             MENUITEM "Primary Stick",                   IDM_JOY1_PRIMARY
             MENUITEM "Right Thumbstick (XBox)",         IDM_JOY1_SECONDARY1
@@ -721,10 +721,10 @@ BEGIN
         END
         POPUP "Second Joystick"
         BEGIN
+            MENUITEM "First PC Joystick",               IDM_JOY2_PCJOY1
             MENUITEM "Second PC Joystick",              IDM_JOY2_PCJOY2
             MENUITEM "&Analogue Mousestick",            IDM_JOY2_ANALOGUE_MOUSESTICK
             MENUITEM "&Digital Mousestick",             IDM_JOY2_DIGITAL_MOUSESTICK
-            MENUITEM "First PC Joystick",               IDM_JOY2_PCJOY1
             MENUITEM SEPARATOR
             MENUITEM "Primary Stick",                   IDM_JOY2_PRIMARY
             MENUITEM "Right Thumbstick (XBox)",         IDM_JOY2_SECONDARY1

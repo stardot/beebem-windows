@@ -162,6 +162,10 @@ public:
 	bool WriteJoyMap(const char *filename, JoyMap *joymap);
 
 	/* Preferences */
+	bool GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value);
+	bool GetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD& value);
+	void SetNthBoolValue(Preferences& preferences, const char* format, int idx, bool value);
+	void SetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD value);
 	void ReadPreferences(Preferences& preferences);
 	void WritePreferences(Preferences& preferences);
 };

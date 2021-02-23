@@ -34,12 +34,6 @@ Boston, MA  02110-1301, USA.
 
 #define JOYMAP_TOKEN "*** BeebEm Joystick Map ***"
 
-static const char *CFG_OPTIONS_STICKS = "Sticks";
-static const char *CFG_OPTIONS_STICKS2 = "Sticks2";
-static const char *CFG_OPTIONS_STICKS_TO_KEYS = "SticksToKeys";
-static const char *CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP = "AutoloadJoystickMap";
-static const char *CFG_OPTIONS_STICK_DEADBAND = "StickToKeysDeadBand";
-
 #define DEFAULT_JOY_DEADBAND 4096
 
 /*****************************************************************************/
@@ -105,15 +99,15 @@ int JoystickHandler::MenuIdToAxes(int bbcIdx, UINT menuId)
 	for (int axesIdx = 0; axesIdx < _countof(JoystickMenuIdsType::Axes); ++axesIdx)
 	{
 		if (menuId == JoystickMenuIds[bbcIdx].Axes[axesIdx])
-			return axesIdx + 1;
+			return axesIdx;
 	}
 }
 
 /****************************************************************************/
 UINT JoystickHandler::AxesToMenuId(int bbcIdx, int pcAxes)
 {
-	if (pcAxes > 0 && pcAxes - 1 < _countof(JoystickMenuIdsType::Axes))
-		return JoystickMenuIds[bbcIdx].Axes[pcAxes - 1];
+	if (pcAxes >= 0 && pcAxes < _countof(JoystickMenuIdsType::Axes))
+		return JoystickMenuIds[bbcIdx].Axes[pcAxes];
 	return 0;
 }
 
@@ -172,8 +166,6 @@ void JoystickHandler::InitMenu()
 		}
 		if (m_MenuIdAxes[bbcIdx] != 0)
 			CheckMenuItem(m_MenuIdAxes[bbcIdx], true);
-
-		UpdateJoystickConfig(bbcIdx);
 	}
 
 	CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
@@ -642,19 +634,19 @@ void JoystickHandler::TranslateJoystick(int joyId)
 			}
 
 			int axesConfig = m_JoystickConfig[bbcIndex].PCAxes;
-			if (axesConfig == 1)
+			if (axesConfig == 0)
 			{
 				ScaleJoystick(bbcIndex, joyInfoEx.dwXpos, joyInfoEx.dwYpos,
 					joyCaps->wXmin, joyCaps->wYmin,
 					joyCaps->wXmax, joyCaps->wYmax);
 			}
-			else if (axesConfig == 2)
+			else if (axesConfig == 1)
 			{
 				ScaleJoystick(bbcIndex, joyInfoEx.dwUpos, joyInfoEx.dwRpos,
 					joyCaps->wUmin, joyCaps->wRmin,
 					joyCaps->wUmax, joyCaps->wRmax);
 			}
-			else if (axesConfig == 3)
+			else if (axesConfig == 2)
 			{
 				ScaleJoystick(bbcIndex, joyInfoEx.dwZpos, joyInfoEx.dwRpos,
 					joyCaps->wZmin, joyCaps->wRmin,
@@ -1027,34 +1019,113 @@ void JoystickHandler::SaveJoystickMap()
 	}
 }
 
-static const char *CFG_OPTIONS_STICK1_DEADBAND = "Stick1ToKeysDeadBand";
-static const char *CFG_OPTIONS_STICK2_DEADBAND = "Stick2ToKeysDeadBand";
+/* Backward compatibility */
+static const char *CFG_OPTIONS_STICKS = "Sticks";
+
+/* New joystick options */
+static const char *CFG_OPTIONS_STICK_PCSTICK = "Stick%dPCStick";
+static const char *CFG_OPTIONS_STICK_PCAXES = "Stick%dPCAxes";
+static const char *CFG_OPTIONS_STICK_ANALOG = "Stick%dAnalogMousepad";
+static const char *CFG_OPTIONS_STICK_DIGITAL = "Stick%dDigitalMousepad";
+
+static const char *CFG_OPTIONS_STICKS_TO_KEYS = "SticksToKeys";
+static const char *CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP = "AutoloadJoystickMap";
+static const char *CFG_OPTIONS_STICKS_DEADBAND = "SticksToKeysDeadBand";
+
+/****************************************************************************/
+bool JoystickHandler::GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value)
+{
+	char option_str[256];
+	sprintf_s(option_str, format, idx);
+	return preferences.GetBoolValue(option_str, value);
+}
+
+/****************************************************************************/
+bool JoystickHandler::GetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD& value)
+{
+	char option_str[256];
+	sprintf_s(option_str, format, idx);
+	return preferences.GetDWORDValue(option_str, value);
+}
+
+/****************************************************************************/
+void JoystickHandler::SetNthBoolValue(Preferences& preferences, const char* format, int idx, bool value)
+{
+	char option_str[256];
+	sprintf_s(option_str, format, idx);
+	preferences.SetBoolValue(option_str, value);
+}
+
+/****************************************************************************/
+void JoystickHandler::SetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD value)
+{
+	char option_str[256];
+	sprintf_s(option_str, format, idx);
+	preferences.SetDWORDValue(option_str, value);
+}
 
 /****************************************************************************/
 void JoystickHandler::ReadPreferences(Preferences& preferences)
 {
 	DWORD dword;
+	unsigned char b;
+	bool flag;
+
+	/* Clear joystick configuration */
+	for (int bbcIdx = 0; bbcIdx < NUM_BBC_JOYSTICKS; ++bbcIdx)
+	{
+		BBCJoystickConfig& config = m_JoystickConfig[bbcIdx];
+
+		m_MenuIdSticks[bbcIdx] = 0;
+		m_MenuIdAxes[bbcIdx] = 0;
+
+		config.Enabled = false;
+		config.PCStick = 0;
+		config.PCAxes = 0;
+		config.AnalogMousestick = false;
+		config.DigitalMousestick = false;
+	}
+
+	/* Backward compatibility - "Sticks" contains MenuId */
 	if (preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
+	{
 		m_MenuIdSticks[0] = dword;
-	else
-		m_MenuIdSticks[0] = 0;
+		m_JoystickConfig[0].Enabled = true;
+		m_JoystickConfig[0].PCStick = MenuIdToStick(0, dword);
+		m_JoystickConfig[0].AnalogMousestick = (dword == JoystickMenuIds[0].AnalogMousestick);
+		m_JoystickConfig[0].DigitalMousestick = (dword == JoystickMenuIds[0].DigitalMousestick);
+	}
 
-	if (preferences.GetDWORDValue(CFG_OPTIONS_STICKS2, dword))
-		m_MenuIdSticks[1] = dword;
-	else
-		m_MenuIdSticks[1] = 0;
+	/* New joystick options */
+	for (int bbcIdx = 0; bbcIdx < NUM_BBC_JOYSTICKS; ++bbcIdx)
+	{
+		BBCJoystickConfig& config = m_JoystickConfig[bbcIdx];
 
-	if (preferences.GetDWORDValue("JoystickAxes1", dword))
-		m_JoystickConfig[0].PCAxes = dword;
-	else
-		m_JoystickConfig[0].PCAxes = 1;
-	m_MenuIdAxes[0] = AxesToMenuId(0, m_JoystickConfig[0].PCAxes);
+		if (GetNthBoolValue(preferences, CFG_OPTIONS_STICK_ANALOG, bbcIdx + 1, flag) && flag)
+		{
+			config.AnalogMousestick = true;
+			config.Enabled = true;
+			m_MenuIdSticks[bbcIdx] = JoystickMenuIds[bbcIdx].AnalogMousestick;
+		}
+		else if (GetNthBoolValue(preferences, CFG_OPTIONS_STICK_DIGITAL, bbcIdx + 1, flag) && flag)
+		{
+			config.DigitalMousestick = true;
+			config.Enabled = true;
+			m_MenuIdSticks[bbcIdx] = JoystickMenuIds[bbcIdx].DigitalMousestick;
 
-	if (preferences.GetDWORDValue("JoystickAxes2", dword))
-		m_JoystickConfig[1].PCAxes = dword;
-	else
-		m_JoystickConfig[1].PCAxes = 1;
-	m_MenuIdAxes[1] = AxesToMenuId(1, m_JoystickConfig[1].PCAxes);
+		}
+		else if (GetNthDWORDValue(preferences, CFG_OPTIONS_STICK_PCSTICK, bbcIdx + 1, dword) && dword != 0)
+		{
+			config.PCStick = dword;
+			config.Enabled = true;
+			m_MenuIdSticks[bbcIdx] = StickToMenuId(bbcIdx, dword);
+		}
+
+		if (GetNthDWORDValue(preferences, CFG_OPTIONS_STICK_PCAXES, bbcIdx + 1, dword))
+			config.PCAxes = dword;
+
+		m_MenuIdAxes[bbcIdx] = AxesToMenuId(bbcIdx, config.PCAxes);
+	}
 
 	if (!preferences.GetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys))
 		m_JoystickToKeys = false;
@@ -1063,24 +1134,33 @@ void JoystickHandler::ReadPreferences(Preferences& preferences)
 		m_AutoloadJoystickMap))
 		m_AutoloadJoystickMap = false;
 
-	preferences.EraseValue("Stick1ToKeysDeadBand");
-	preferences.EraseValue("Stick2ToKeysDeadBand");
-
-	if (preferences.GetDWORDValue(CFG_OPTIONS_STICK_DEADBAND, dword))
+	if (preferences.GetDWORDValue(CFG_OPTIONS_STICKS_DEADBAND, dword))
 		m_Deadband = dword;
 	else
 		m_Deadband = DEFAULT_JOY_DEADBAND;
+
+	/* Remove obsolete values */
+	preferences.EraseValue(CFG_OPTIONS_STICKS);
+	preferences.EraseValue("Sticks2");
+	preferences.EraseValue("JoystickAxes1");
+	preferences.EraseValue("JoystickAxes2");
+	preferences.EraseValue("Stick1ToKeysDeadBand");
+	preferences.EraseValue("Stick2ToKeysDeadBand");
 }
 
 /****************************************************************************/
 void JoystickHandler::WritePreferences(Preferences& preferences)
 {
-	preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIdSticks[0]);
-	preferences.SetDWORDValue(CFG_OPTIONS_STICKS2, m_MenuIdSticks[1]);
-	preferences.SetDWORDValue("JoystickAxes1", m_JoystickConfig[0].PCAxes);
-	preferences.SetDWORDValue("JoystickAxes2", m_JoystickConfig[1].PCAxes);
+	for (int bbcIdx = 0; bbcIdx < NUM_BBC_JOYSTICKS; ++bbcIdx)
+	{
+		BBCJoystickConfig& config = m_JoystickConfig[bbcIdx];
+		SetNthBoolValue(preferences, CFG_OPTIONS_STICK_ANALOG, bbcIdx + 1, config.AnalogMousestick);
+		SetNthBoolValue(preferences, CFG_OPTIONS_STICK_DIGITAL, bbcIdx + 1, config.DigitalMousestick);
+		SetNthDWORDValue(preferences, CFG_OPTIONS_STICK_PCSTICK, bbcIdx + 1, config.PCStick);
+		SetNthDWORDValue(preferences, CFG_OPTIONS_STICK_PCAXES, bbcIdx + 1, config.PCAxes);
+	}
 
 	preferences.SetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys);
 	preferences.SetBoolValue(CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP, m_AutoloadJoystickMap);
-	preferences.SetDWORDValue(CFG_OPTIONS_STICK_DEADBAND, m_Deadband);
+	preferences.SetDWORDValue(CFG_OPTIONS_STICKS_DEADBAND, m_Deadband);
 }
