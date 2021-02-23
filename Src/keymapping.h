@@ -1,6 +1,13 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
+Copyright (C) 1994  Nigel Magnay
 Copyright (C) 1997  Mike Wyatt
+Copyright (C) 1998  Robert Schmidt
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2004  Ken Lowe
+Copyright (C) 2004  Rob O'Donnell
+Copyright (C) 2005  Jon Welch
+Copyright (C) 2021  Chris Needham, Tadeusz Kijkowski
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -12,32 +19,22 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* Analogue to digital converter support file for the beeb emulator -
-   Mike Wyatt 7/6/97 */
+#ifndef BEEBEM_KEYMAPPING_H
+#define BEEBEM_KEYMAPPING_H
 
-#ifndef ATODCONV_HEADER
-#define ATODCONV_HEADER
+struct KeyMapping {
+	int row;    // Beeb row
+	int col;    // Beeb col
+	bool shift; // Beeb shift state
+};
 
-#define NUM_BBC_JOYSTICKS 2
-
-extern int JoystickX[NUM_BBC_JOYSTICKS];   /* 16 bit number, 0 = right */
-extern int JoystickY[NUM_BBC_JOYSTICKS];   /* 16 bit number, 0 = down */
-
-void AtoDWrite(int Address, int Value);
-unsigned char AtoDRead(int Address);
-void AtoDInit();
-void SaveAtoDUEF(FILE *SUEF);
-void LoadAtoDUEF(FILE *SUEF);
-
-extern int AtoDTrigger;  /* For next A to D conversion completion */
-
-void AtoD_poll_real(void);
-#define AtoD_poll(ncycles) if (AtoDTrigger<=TotalCycles) AtoD_poll_real();
+typedef KeyMapping  KeyPair[2];
+typedef KeyPair     KeyMap[256]; // Indices are: [Virt key][shift state]
 
 #endif

@@ -59,8 +59,6 @@ static const char *CFG_VIEW_MONITOR = "Monitor";
 static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
 static const char *CFG_SOUND_VOLUME = "SoundVolume";
 static const char *CFG_SOUND_ENABLED = "SoundEnabled";
-static const char *CFG_OPTIONS_STICKS = "Sticks";
-static const char *CFG_OPTIONS_STICKS2 = "Sticks2";
 static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
 static const char *CFG_OPTIONS_USER_KEY_MAP_FILE = "UserKeyMapFile";
 static const char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
@@ -76,16 +74,10 @@ static const char *CFG_PRINTER_PORT = "PrinterPort";
 static const char *CFG_PRINTER_FILE = "PrinterFile";
 static const char *CFG_MACHINE_TYPE = "MachineType";
 static const char *CFG_TUBE_TYPE = "TubeType";
-static const char *CFG_OPTIONS_STICKS_TO_KEYS = "SticksToKeys";
-static const char *CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP = "AutoloadJoystickMap";
-static const char *CFG_OPTIONS_STICK1_DEADBAND = "Stick1ToKeysDeadBand";
-static const char *CFG_OPTIONS_STICK2_DEADBAND = "Stick2ToKeysDeadBand";
 
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
 #define LED_SHOW_DISC (LEDByte&2)>>1
-
-#define DEFAULT_JOY_DEADBAND 4096
 
 extern unsigned char CMOSDefault[64];
 
@@ -260,44 +252,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("Music5000Enabled", Music5000Enabled))
 		Music5000Enabled = false;
 
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
-		m_MenuIdSticks[0] = dword;
-	else
-		m_MenuIdSticks[0] = 0;
-
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS2, dword))
-		m_MenuIdSticks[1] = dword;
-	else
-		m_MenuIdSticks[1] = 0;
-
-	if (m_Preferences.GetDWORDValue("JoystickAxes1", dword))
-		m_PCAxesForJoystick[0] = dword;
-	else
-		m_PCAxesForJoystick[0] = 1;
-	m_MenuIdAxes[0] = AxesToMenuId(0, m_PCAxesForJoystick[0]);
-
-	if (m_Preferences.GetDWORDValue("JoystickAxes2", dword))
-		m_PCAxesForJoystick[1] = dword;
-	else
-		m_PCAxesForJoystick[1] = 1;
-	m_MenuIdAxes[1] = AxesToMenuId(1, m_PCAxesForJoystick[1]);
-
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys))
-		m_JoystickToKeys = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP,
-	    m_AutoloadJoystickMap))
-		m_AutoloadJoystickMap = false;
-
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICK1_DEADBAND, dword))
-		m_JoystickState[0].Deadband = dword;
-	else
-		m_JoystickState[0].Deadband = DEFAULT_JOY_DEADBAND;
-
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICK2_DEADBAND, dword))
-		m_JoystickState[1].Deadband = dword;
-	else
-		m_JoystickState[1].Deadband = DEFAULT_JOY_DEADBAND;
+	m_Joysticks.ReadPreferences(m_Preferences);
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
@@ -680,16 +635,6 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("ExponentialVolume", SoundExponentialVolume);
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
-
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIdSticks[0]);
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS2, m_MenuIdSticks[1]);
-		m_Preferences.SetDWORDValue("JoystickAxes1", m_PCAxesForJoystick[0]);
-		m_Preferences.SetDWORDValue("JoystickAxes2", m_PCAxesForJoystick[1]);
-
-		m_Preferences.SetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys);
-		m_Preferences.SetBoolValue(CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP, m_AutoloadJoystickMap);
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK1_DEADBAND, m_JoystickState[0].Deadband);
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICK2_DEADBAND, m_JoystickState[1].Deadband);
 
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
