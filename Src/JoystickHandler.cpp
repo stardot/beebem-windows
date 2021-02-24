@@ -598,15 +598,15 @@ void JoystickHandlerDetails::ScanJoysticks(void)
 	// If joystick order list is too long, remove some unconnected entries
 	// Remove entries from the beginning or from the end, or some other order?
 	int to_remove = newJoysticks.size() + m_JoystickOrder.size() - MAX_JOYSTICK_ORDER;
-	int idx = m_JoystickOrder.size() - 1;
-	while (to_remove > 0 && idx >= 0)
+	unsigned int idx =  0;
+	while (to_remove > 0 && idx < m_JoystickOrder.size())
 	{
 		if (m_JoystickOrder[idx].JoyIndex == -1)
 		{
 			m_JoystickOrder.erase(m_JoystickOrder.begin() + idx);
 			--to_remove;
 		}
-		--idx;
+		++idx;
 	}
 
 	// Add new joystick at the end of order list
@@ -669,7 +669,7 @@ bool JoystickHandlerDetails::CaptureJoystick(int Index, bool verbose)
 		m_PCJoystickState[Index].Captured = true;
 		success = true;
 	}
-	else if (verbose)
+	else if (verbose && (IsPCJoystickOn(Index) || m_JoystickToKeys && Index == 0))
 	{
 		mainWin->Report(MessageType::Warning,
 		                "Failed to initialise joystick %d", Index + 1);
