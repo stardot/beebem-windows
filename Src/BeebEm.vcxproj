@@ -344,7 +344,6 @@
     <ClInclude Include="filedialog.h" />
     <ClInclude Include="FolderSelectDialog.h" />
     <ClInclude Include="JoystickHandler.h" />
-    <ClInclude Include="keymapping.h" />
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="log.h" />
