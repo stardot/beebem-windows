@@ -494,9 +494,6 @@
     <ClInclude Include="JoystickHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="keymapping.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="BeebEm.ico">

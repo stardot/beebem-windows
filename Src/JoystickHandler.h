@@ -28,11 +28,7 @@ Boston, MA  02110-1301, USA.
 #ifndef BEEBWINJOYSTICK_H
 #define BEEBWINJOYSTICK_H
 
-#include "atodconv.h"
-#include "beebemrc.h"
-#include "keymapping.h"
-
-#include <vector>
+#include <memory>
 
 /* Max number of joysticks in joystickapi */
 #define MAX_JOYSTICK_DEVS       16
@@ -69,158 +65,48 @@ Boston, MA  02110-1301, USA.
 
 #define BEEB_VKEY_COUNT      BEEB_VKEY_JOY_END
 
-typedef KeyPair     JoyMap[BEEB_VKEY_JOY_COUNT];
-
 class BeebWin;
-
-struct JoystickId : std::pair<int, int>
-{
-	using std::pair<int, int>::pair;
-
-	// Manufacturer ID aka Vendor ID
-	int& mId() { return first; }
-	// Product ID
-	int& pId() { return second; }
-};
-
-struct JoystickOrderEntry : JoystickId
-{
-	std::string   Name{};
-	int           JoyIndex{ -1 };
-
-	JoystickOrderEntry() = default;
-	JoystickOrderEntry(JoystickId id, const std::string& name, int joyIndex) :
-		JoystickId(id), Name(name), JoyIndex(joyIndex) {}
-	JoystickOrderEntry(int mid, int pid, const std::string& name) :
-		JoystickId(mid, pid), Name(name) {}
-
-	std::string to_string();
-	bool from_string(const std::string&);
-};
-
-struct JoystickDev
-{
-	JOYCAPS      Caps{};
-	int          Instance{ 0 };
-	int          Order{ -1 };
-	int          JoyIndex{ -1 };
-	bool         Configured{ false };
-	bool         Present{ false };
-
-	JoystickId   Id() { return JoystickId{ Caps.wMid, Caps.wPid }; }
-	std::string  DisplayString();
-};
-
-struct PCJoystickState
-{
-	JoystickDev*  Dev{ nullptr };
-	int           JoyIndex{ -1 };
-	bool          Captured{ false };
-	unsigned int  PrevAxes{ 0 };
-	unsigned int  PrevBtns{ 0 };
-	bool          JoystickToKeysActive{ false };
-};
-
-struct BBCJoystickConfig
-{
-	bool Enabled{ false };
-	int  PCStick{ 0 };
-	int  PCAxes{ 0 };
-	bool AnalogMousestick{ false };
-	bool DigitalMousestick{ false };
-};
+class JoystickHandlerDetails;
 
 class JoystickHandler
 {
-	BeebWin*	  m_BeebWin;
-	bool		  m_JoystickTimerRunning{ false };
-	JoystickDev       m_JoystickDevs[MAX_JOYSTICK_DEVS];
-	PCJoystickState	  m_PCJoystickState[NUM_PC_JOYSTICKS];
-	BBCJoystickConfig m_JoystickConfig[NUM_BBC_JOYSTICKS];
-	int		  m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
-	int		  m_MenuIdAxes[NUM_BBC_JOYSTICKS]{};
-	int		  m_Deadband;
-	bool		  m_JoystickToKeys{ false };
-	bool		  m_AutoloadJoystickMap{ false };
-	HWND		  m_JoystickTarget{ nullptr };
-	char		  m_JoystickMapPath[_MAX_PATH]{};
-	std::vector<JoystickOrderEntry> m_JoystickOrder;
+	std::unique_ptr<JoystickHandlerDetails> m_Details;
 
 public:
-	JoystickHandler(BeebWin* beebWin) : m_BeebWin{ beebWin } {}
+	JoystickHandler(BeebWin* beebWin);
+	~JoystickHandler();
 
 	/* Accessors */
-	int GetMenuIdSticks(int bbcIdx) { return m_MenuIdSticks[bbcIdx]; }
-	bool GetJoystickToKeys() { return m_JoystickToKeys; }
-	void SetJoystickToKeys(bool enabled) { m_JoystickToKeys = enabled; }
-	void SetJoystickTarget(HWND target) { m_JoystickTarget = target; }
-
-	/* BeebWin access */
-	HWND GetHWnd();
-	HMENU GetHMenu();
-	int GetXWinSize();
-	int GetYWinSize();
-	void CheckMenuItem(UINT id, bool checked);
-	void EnableMenuItem(UINT id, bool enabled);
-	void SetMenuItemText(UINT id, const std::string& text);
+	int GetMenuIdSticks(int bbcIdx);
+	bool GetJoystickToKeys();
+	void SetJoystickToKeys(bool enabled);
+	void SetJoystickTarget(HWND target);
 
 	/* Menu handling - will soon be gone */
-	int MenuIdToStick(int bbcIdx, UINT menuId);
-	UINT StickToMenuId(int bbcIdx, int pcStick);
-	int MenuIdToAxes(int bbcIdx, UINT menuId);
-	UINT AxesToMenuId(int bbcIdx, int pcAxes);
-	void UpdateJoystickConfig(int bbcIdx);
-	bool IsPCJoystickAssigned(int pcIdx, int bbcIdx);
-	bool IsPCJoystickOn(int pcIdx);
 	void InitMenu(void);
-	void UpdateJoystickMenu(void);
 	void ProcessMenuCommand(int bbcIdx, UINT menuId);
 	void ProcessAxesMenuCommand(int bbcIdx, UINT menuId);
 	void ToggleJoystickToKeys();
 	void ToggleAutoloadJoystickMap();
 
 	/* Initialization */
-	void ScanJoysticks(void);
-	void ResetJoystick(void);
 	bool InitJoystick(bool verbose = false);
-	bool CaptureJoystick(int Index, bool verbose);
-
-	/* BBC Analog */
-	void SetJoystickButton(int index, bool value);
-	void ScaleJoystick(int index, unsigned int x, unsigned int y,
-		unsigned int minX, unsigned int minY,
-		unsigned int maxX, unsigned int maxY);
 
 	/* Mousestick */
 	void SetMousestickButton(int index, bool button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
 
-	/* Joystick to keyboard */
-	unsigned int GetJoystickAxes(const JOYCAPS& caps, int deadband, const JOYINFOEX& joyInfoEx);
-	void TranslateAxes(int joyId, unsigned int axesState);
-	void TranslateJoystickButtons(int joyId, unsigned int buttons);
-	void TranslateOrSendKey(int vkey, bool keyUp);
-	void TranslateJoystick(int joyId);
+	/* Timer handler */
 	void UpdateJoysticks(void);
 
 	/* Joystick to keyboard mapping */
-	void CheckForJoystickMap(const char *path);
+	void CheckForJoystickMap(const char* path);
 	void ResetJoystickMap(void);
-	void ResetJoyMap(JoyMap* joymap);
 	void ResetJoyMapToDefaultUser(void);
-	bool ReadJoyMap(const char *filename, JoyMap *joymap);
 	void LoadJoystickMap(void);
 	void SaveJoystickMap(void);
-	bool WriteJoyMap(const char *filename, JoyMap *joymap);
 
 	/* Preferences */
-	bool GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value);
-	bool GetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD& value);
-	bool GetNthStringValue(Preferences& preferences, const char* format, int idx, std::string& value);
-	void SetNthBoolValue(Preferences& preferences, const char* format, int idx, bool value);
-	void SetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD value);
-	void SetNthStringValue(Preferences& preferences, const char* format, int idx, const std::string& value);
-	void EraseNthValue(Preferences& preferences, const char* format, int idx);
 	void ReadPreferences(Preferences& preferences);
 	void WritePreferences(Preferences& preferences);
 	void WriteJoystickOrder(Preferences& preferences);
