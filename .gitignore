@@ -1,4 +1,5 @@
 *.user
+.vs
 Src/.vs
 Src/BeebEm.aps
 Src/BeebEm.VC.db

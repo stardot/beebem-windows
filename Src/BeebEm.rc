@@ -720,7 +720,7 @@ BEGIN
         END
         POPUP "Second Joystick"
         BEGIN
-            MENUITEM "First PC Joystick",               IDM_JOY2_PCJOY1
+            MENUITEM "First PC &Joystick",              IDM_JOY2_PCJOY1
             MENUITEM "Second PC Joystick",              IDM_JOY2_PCJOY2
             MENUITEM "&Analogue Mousestick",            IDM_JOY2_ANALOGUE_MOUSESTICK
             MENUITEM "&Digital Mousestick",             IDM_JOY2_DIGITAL_MOUSESTICK
@@ -739,7 +739,7 @@ BEGIN
             MENUITEM "Load Joystick Mapping...",      IDM_LOADJOYMAP
             MENUITEM "Save Joystick Mapping...",      IDM_SAVEJOYMAP
         END
-        MENUITEM "Initialise Joysticks",        IDM_INIT_JOYSTICK
+        MENUITEM "Rescan Joysticks",            IDM_INIT_JOYSTICK
         MENUITEM SEPARATOR
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR

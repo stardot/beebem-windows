@@ -673,6 +673,8 @@ void BeebWin::SavePreferences(bool saveAll)
 
 	m_Preferences.SetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts);
 
+	m_Joysticks.WriteJoystickOrder(m_Preferences);
+
 	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success) {
 		m_AutoSavePrefsChanged = false;
 	}
