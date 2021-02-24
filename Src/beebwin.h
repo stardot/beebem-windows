@@ -43,7 +43,6 @@ Boston, MA  02110-1301, USA.
 #include "port.h"
 #include "preferences.h"
 #include "video.h"
-#include "keymapping.h"
 #include "JoystickHandler.h"
 
 /* Used in message boxes */
@@ -53,6 +52,15 @@ Boston, MA  02110-1301, USA.
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
 
+struct KeyMapping {
+	int row;    // Beeb row
+	int col;    // Beeb col
+	bool shift; // Beeb shift state
+};
+
+typedef KeyMapping  KeyPair[2];
+typedef KeyPair     KeyMap[256]; // Indices are: [Virt key][shift state]
+typedef KeyPair     JoyMap[BEEB_VKEY_JOY_COUNT];
 
 #define UNASSIGNED_ROW       -9
 

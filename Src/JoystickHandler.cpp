@@ -31,13 +31,171 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "filedialog.h"
 #include "SelectKeyDialog.h"
+#include "atodconv.h"
 
 #include <cctype>
 #include <list>
+#include <vector>
 
 #define JOYMAP_TOKEN "*** BeebEm Joystick Map ***"
 
 #define DEFAULT_JOY_DEADBAND 4096
+
+struct JoystickId : std::pair<int, int>
+{
+	using std::pair<int, int>::pair;
+
+	// Manufacturer ID aka Vendor ID
+	int& mId() { return first; }
+	// Product ID
+	int& pId() { return second; }
+};
+
+struct JoystickOrderEntry : JoystickId
+{
+	std::string   Name{};
+	int           JoyIndex{ -1 };
+
+	JoystickOrderEntry() = default;
+	JoystickOrderEntry(JoystickId id, const std::string& name, int joyIndex) :
+		JoystickId(id), Name(name), JoyIndex(joyIndex) {}
+	JoystickOrderEntry(int mid, int pid, const std::string& name) :
+		JoystickId(mid, pid), Name(name) {}
+
+	std::string to_string();
+	bool from_string(const std::string&);
+};
+
+struct JoystickDev
+{
+	JOYCAPS      Caps{};
+	int          Instance{ 0 };
+	int          Order{ -1 };
+	int          JoyIndex{ -1 };
+	bool         Configured{ false };
+	bool         Present{ false };
+
+	JoystickId   Id() { return JoystickId{ Caps.wMid, Caps.wPid }; }
+	std::string  DisplayString();
+};
+
+struct PCJoystickState
+{
+	JoystickDev* Dev{ nullptr };
+	int           JoyIndex{ -1 };
+	bool          Captured{ false };
+	unsigned int  PrevAxes{ 0 };
+	unsigned int  PrevBtns{ 0 };
+	bool          JoystickToKeysActive{ false };
+};
+
+struct BBCJoystickConfig
+{
+	bool Enabled{ false };
+	int  PCStick{ 0 };
+	int  PCAxes{ 0 };
+	bool AnalogMousestick{ false };
+	bool DigitalMousestick{ false };
+};
+
+class JoystickHandlerDetails
+{
+	BeebWin*          m_BeebWin;
+
+	bool              m_JoystickTimerRunning{ false };
+	JoystickDev       m_JoystickDevs[MAX_JOYSTICK_DEVS];
+	PCJoystickState	  m_PCJoystickState[NUM_PC_JOYSTICKS];
+	BBCJoystickConfig m_JoystickConfig[NUM_BBC_JOYSTICKS];
+	int               m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
+	int               m_MenuIdAxes[NUM_BBC_JOYSTICKS]{};
+	int               m_Deadband;
+	bool              m_JoystickToKeys{ false };
+	bool              m_AutoloadJoystickMap{ false };
+	HWND              m_JoystickTarget{ nullptr };
+	char              m_JoystickMapPath[_MAX_PATH]{};
+	std::vector<JoystickOrderEntry> m_JoystickOrder;
+
+public:
+	JoystickHandlerDetails(BeebWin* beebWin) : m_BeebWin{ beebWin } {}
+
+	/* Accessors */
+	int GetMenuIdSticks(int bbcIdx) { return m_MenuIdSticks[bbcIdx]; }
+	bool GetJoystickToKeys() { return m_JoystickToKeys; }
+	void SetJoystickToKeys(bool enabled) { m_JoystickToKeys = enabled; }
+	void SetJoystickTarget(HWND target) { m_JoystickTarget = target; }
+
+	/* BeebWin access */
+	HWND GetHWnd();
+	HMENU GetHMenu();
+	int GetXWinSize();
+	int GetYWinSize();
+	void CheckMenuItem(UINT id, bool checked);
+	void EnableMenuItem(UINT id, bool enabled);
+	void SetMenuItemText(UINT id, const std::string& text);
+
+	/* Menu handling - will soon be gone */
+	int MenuIdToStick(int bbcIdx, UINT menuId);
+	UINT StickToMenuId(int bbcIdx, int pcStick);
+	int MenuIdToAxes(int bbcIdx, UINT menuId);
+	UINT AxesToMenuId(int bbcIdx, int pcAxes);
+	void UpdateJoystickConfig(int bbcIdx);
+	bool IsPCJoystickAssigned(int pcIdx, int bbcIdx);
+	bool IsPCJoystickOn(int pcIdx);
+	void InitMenu(void);
+	void UpdateJoystickMenu(void);
+	void ProcessMenuCommand(int bbcIdx, UINT menuId);
+	void ProcessAxesMenuCommand(int bbcIdx, UINT menuId);
+	void ToggleJoystickToKeys();
+	void ToggleAutoloadJoystickMap();
+
+	/* Initialization */
+	void ScanJoysticks(void);
+	void ResetJoystick(void);
+	bool InitJoystick(bool verbose = false);
+	bool CaptureJoystick(int Index, bool verbose);
+
+	/* BBC Analog */
+	void SetJoystickButton(int index, bool value);
+	void ScaleJoystick(int index, unsigned int x, unsigned int y,
+		unsigned int minX, unsigned int minY,
+		unsigned int maxX, unsigned int maxY);
+
+	/* Mousestick */
+	void SetMousestickButton(int index, bool button);
+	void ScaleMousestick(unsigned int x, unsigned int y);
+
+	/* Joystick to keyboard */
+	unsigned int GetJoystickAxes(const JOYCAPS& caps, int deadband, const JOYINFOEX& joyInfoEx);
+	void TranslateAxes(int joyId, unsigned int axesState);
+	void TranslateJoystickButtons(int joyId, unsigned int buttons);
+	void TranslateOrSendKey(int vkey, bool keyUp);
+	void TranslateJoystick(int joyId);
+
+	/* Timer handler */
+	void UpdateJoysticks(void);
+
+	/* Joystick to keyboard mapping */
+	void CheckForJoystickMap(const char* path);
+	void ResetJoystickMap(void);
+	void ResetJoyMap(JoyMap* joymap);
+	void ResetJoyMapToDefaultUser(void);
+	bool ReadJoyMap(const char* filename, JoyMap* joymap);
+	void LoadJoystickMap(void);
+	void SaveJoystickMap(void);
+	bool WriteJoyMap(const char* filename, JoyMap* joymap);
+
+	/* Preferences */
+	bool GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value);
+	bool GetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD& value);
+	bool GetNthStringValue(Preferences& preferences, const char* format, int idx, std::string& value);
+	void SetNthBoolValue(Preferences& preferences, const char* format, int idx, bool value);
+	void SetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD value);
+	void SetNthStringValue(Preferences& preferences, const char* format, int idx, const std::string& value);
+	void EraseNthValue(Preferences& preferences, const char* format, int idx);
+	void ReadPreferences(Preferences& preferences);
+	void WritePreferences(Preferences& preferences);
+	void WriteJoystickOrder(Preferences& preferences);
+};
 
 /*****************************************************************************/
 std::string JoystickOrderEntry::to_string()
@@ -82,19 +240,19 @@ std::string JoystickDev::DisplayString()
 }
 
 /*****************************************************************************/
-HWND JoystickHandler::GetHWnd() { return m_BeebWin->m_hWnd; }
+HWND JoystickHandlerDetails::GetHWnd() { return m_BeebWin->m_hWnd; }
 
-HMENU JoystickHandler::GetHMenu() { return m_BeebWin->m_hMenu; }
+HMENU JoystickHandlerDetails::GetHMenu() { return m_BeebWin->m_hMenu; }
 
-int JoystickHandler::GetXWinSize() { return m_BeebWin->m_XWinSize; }
+int JoystickHandlerDetails::GetXWinSize() { return m_BeebWin->m_XWinSize; }
 
-int JoystickHandler::GetYWinSize() { return m_BeebWin->m_YWinSize; }
+int JoystickHandlerDetails::GetYWinSize() { return m_BeebWin->m_YWinSize; }
 
-void JoystickHandler::CheckMenuItem(UINT id, bool checked) { m_BeebWin->CheckMenuItem(id, checked); }
+void JoystickHandlerDetails::CheckMenuItem(UINT id, bool checked) { m_BeebWin->CheckMenuItem(id, checked); }
 
-void JoystickHandler::EnableMenuItem(UINT id, bool enabled) { m_BeebWin->EnableMenuItem(id, enabled); }
+void JoystickHandlerDetails::EnableMenuItem(UINT id, bool enabled) { m_BeebWin->EnableMenuItem(id, enabled); }
 
-void JoystickHandler::SetMenuItemText(UINT id, const std::string& text)
+void JoystickHandlerDetails::SetMenuItemText(UINT id, const std::string& text)
 {
 	MENUITEMINFO mii{ 0 };
 	mii.cbSize = sizeof(mii);
@@ -132,7 +290,7 @@ constexpr JoystickMenuIdsType JoystickMenuIds[NUM_BBC_JOYSTICKS] {
 
 
 /****************************************************************************/
-int JoystickHandler::MenuIdToStick(int bbcIdx, UINT menuId)
+int JoystickHandlerDetails::MenuIdToStick(int bbcIdx, UINT menuId)
 {
 	for (int pcIdx = 0; pcIdx < _countof(JoystickMenuIdsType::Joysticks); ++pcIdx)
 	{
@@ -143,7 +301,7 @@ int JoystickHandler::MenuIdToStick(int bbcIdx, UINT menuId)
 }
 
 /****************************************************************************/
-UINT JoystickHandler::StickToMenuId(int bbcIdx, int pcStick)
+UINT JoystickHandlerDetails::StickToMenuId(int bbcIdx, int pcStick)
 {
 	if (pcStick > 0 && pcStick - 1 < _countof(JoystickMenuIdsType::Joysticks))
 		return JoystickMenuIds[bbcIdx].Joysticks[pcStick - 1];
@@ -151,7 +309,7 @@ UINT JoystickHandler::StickToMenuId(int bbcIdx, int pcStick)
 }
 
 /****************************************************************************/
-int JoystickHandler::MenuIdToAxes(int bbcIdx, UINT menuId)
+int JoystickHandlerDetails::MenuIdToAxes(int bbcIdx, UINT menuId)
 {
 	for (int axesIdx = 0; axesIdx < _countof(JoystickMenuIdsType::Axes); ++axesIdx)
 	{
@@ -162,7 +320,7 @@ int JoystickHandler::MenuIdToAxes(int bbcIdx, UINT menuId)
 }
 
 /****************************************************************************/
-UINT JoystickHandler::AxesToMenuId(int bbcIdx, int pcAxes)
+UINT JoystickHandlerDetails::AxesToMenuId(int bbcIdx, int pcAxes)
 {
 	if (pcAxes >= 0 && pcAxes < _countof(JoystickMenuIdsType::Axes))
 		return JoystickMenuIds[bbcIdx].Axes[pcAxes];
@@ -171,7 +329,7 @@ UINT JoystickHandler::AxesToMenuId(int bbcIdx, int pcAxes)
 
 /****************************************************************************/
 // Update joystick configuration from checked menu items
-void JoystickHandler::UpdateJoystickConfig(int bbcIdx)
+void JoystickHandlerDetails::UpdateJoystickConfig(int bbcIdx)
 {
 	m_JoystickConfig[bbcIdx].Enabled = (m_MenuIdAxes[bbcIdx] != 0);
 	m_JoystickConfig[bbcIdx].PCStick = MenuIdToStick(bbcIdx, m_MenuIdSticks[bbcIdx]);
@@ -184,7 +342,7 @@ void JoystickHandler::UpdateJoystickConfig(int bbcIdx)
 
 /****************************************************************************/
 // Check if this PC joystick is assigned to this BBC joystick
-bool JoystickHandler::IsPCJoystickAssigned(int pcIdx, int bbcIdx)
+bool JoystickHandlerDetails::IsPCJoystickAssigned(int pcIdx, int bbcIdx)
 {
 	return m_JoystickConfig[bbcIdx].PCStick == pcIdx + 1;
 }
@@ -192,7 +350,7 @@ bool JoystickHandler::IsPCJoystickAssigned(int pcIdx, int bbcIdx)
 /****************************************************************************/
 // Check if PC joystick is assigned to any BBC joystick
 // TODO: Update m_PCStickForJoystick early and use it here
-bool JoystickHandler::IsPCJoystickOn(int pcIdx)
+bool JoystickHandlerDetails::IsPCJoystickOn(int pcIdx)
 {
 	if (pcIdx >= _countof(JoystickMenuIdsType::Joysticks))
 		return false;
@@ -207,7 +365,7 @@ bool JoystickHandler::IsPCJoystickOn(int pcIdx)
 }
 
 /*****************************************************************************/
-void JoystickHandler::InitMenu()
+void JoystickHandlerDetails::InitMenu()
 {
 	for (int bbcIdx = 0; bbcIdx < NUM_BBC_JOYSTICKS; ++bbcIdx)
 	{
@@ -233,7 +391,7 @@ void JoystickHandler::InitMenu()
 }
 
 /****************************************************************************/
-void JoystickHandler::UpdateJoystickMenu()
+void JoystickHandlerDetails::UpdateJoystickMenu()
 {
 	bool EnableInit = false;
 
@@ -281,7 +439,7 @@ void JoystickHandler::UpdateJoystickMenu()
 }
 
 /****************************************************************************/
-void JoystickHandler::ProcessMenuCommand(int bbcIdx, UINT MenuId)
+void JoystickHandlerDetails::ProcessMenuCommand(int bbcIdx, UINT MenuId)
 {
 	/* Disable current selection */
 	if (m_MenuIdSticks[bbcIdx] != 0)
@@ -318,7 +476,7 @@ void JoystickHandler::ProcessMenuCommand(int bbcIdx, UINT MenuId)
 }
 
 /****************************************************************************/
-void JoystickHandler::ProcessAxesMenuCommand(int bbcIdx, UINT MenuId)
+void JoystickHandlerDetails::ProcessAxesMenuCommand(int bbcIdx, UINT MenuId)
 {
 	CheckMenuItem(m_MenuIdAxes[bbcIdx], false);
 	m_MenuIdAxes[bbcIdx] = MenuId;
@@ -327,7 +485,7 @@ void JoystickHandler::ProcessAxesMenuCommand(int bbcIdx, UINT MenuId)
 }
 
 /****************************************************************************/
-void JoystickHandler::ToggleJoystickToKeys(void)
+void JoystickHandlerDetails::ToggleJoystickToKeys(void)
 {
 	m_JoystickToKeys = !m_JoystickToKeys;
 	InitJoystick(false);
@@ -335,14 +493,14 @@ void JoystickHandler::ToggleJoystickToKeys(void)
 }
 
 /****************************************************************************/
-void JoystickHandler::ToggleAutoloadJoystickMap(void)
+void JoystickHandlerDetails::ToggleAutoloadJoystickMap(void)
 {
 	m_AutoloadJoystickMap = !m_AutoloadJoystickMap;
 	CheckMenuItem(IDM_AUTOLOADJOYMAP, m_AutoloadJoystickMap);
 }
 
 /****************************************************************************/
-void JoystickHandler::ResetJoystick(void)
+void JoystickHandlerDetails::ResetJoystick(void)
 {
 	for (int pcIdx = 0; pcIdx < NUM_PC_JOYSTICKS; ++pcIdx)
 	{
@@ -353,7 +511,7 @@ void JoystickHandler::ResetJoystick(void)
 }
 
 /****************************************************************************/
-void JoystickHandler::ScanJoysticks(void)
+void JoystickHandlerDetails::ScanJoysticks(void)
 {
 	JOYINFOEX joyInfoEx;
 	std::map<JoystickId, std::list<JoystickDev*>> listById;
@@ -464,7 +622,7 @@ void JoystickHandler::ScanJoysticks(void)
 }
 
 /****************************************************************************/
-bool JoystickHandler::InitJoystick(bool verbose)
+bool JoystickHandlerDetails::InitJoystick(bool verbose)
 {
 	bool Success = true;
 
@@ -501,7 +659,7 @@ bool JoystickHandler::InitJoystick(bool verbose)
 }
 
 /****************************************************************************/
-bool JoystickHandler::CaptureJoystick(int Index, bool verbose)
+bool JoystickHandlerDetails::CaptureJoystick(int Index, bool verbose)
 {
 	bool success = false;
 
@@ -522,13 +680,13 @@ bool JoystickHandler::CaptureJoystick(int Index, bool verbose)
 }
 
 /****************************************************************************/
-void JoystickHandler::SetJoystickButton(int index, bool value)
+void JoystickHandlerDetails::SetJoystickButton(int index, bool value)
 {
 	JoystickButton[index] = value;
 }
 
 /****************************************************************************/
-void JoystickHandler::ScaleJoystick(int index, unsigned int x, unsigned int y,
+void JoystickHandlerDetails::ScaleJoystick(int index, unsigned int x, unsigned int y,
 	unsigned int minX, unsigned int minY, unsigned int maxX, unsigned int maxY)
 {
 	/* Scale and reverse the readings */
@@ -539,7 +697,7 @@ void JoystickHandler::ScaleJoystick(int index, unsigned int x, unsigned int y,
 }
 
 /****************************************************************************/
-void JoystickHandler::SetMousestickButton(int index, bool value)
+void JoystickHandlerDetails::SetMousestickButton(int index, bool value)
 {
 	if (index == 0)
 	{
@@ -566,7 +724,7 @@ void JoystickHandler::SetMousestickButton(int index, bool value)
 }
 
 /****************************************************************************/
-void JoystickHandler::ScaleMousestick(unsigned int x, unsigned int y)
+void JoystickHandlerDetails::ScaleMousestick(unsigned int x, unsigned int y)
 {
 	for (int index = 0; index < 2; ++index)
 	{
@@ -612,7 +770,7 @@ void JoystickHandler::ScaleMousestick(unsigned int x, unsigned int y)
 }
 
 /****************************************************************************/
-unsigned int JoystickHandler::GetJoystickAxes(const JOYCAPS& caps, int deadband, const JOYINFOEX& joyInfoEx)
+unsigned int JoystickHandlerDetails::GetJoystickAxes(const JOYCAPS& caps, int deadband, const JOYINFOEX& joyInfoEx)
 {
 	using Info = JOYINFOEX;
 	using Caps = JOYCAPS;
@@ -661,7 +819,7 @@ unsigned int JoystickHandler::GetJoystickAxes(const JOYCAPS& caps, int deadband,
 
 /****************************************************************************/
 // Translate joystick position changes to key up or down message
-void JoystickHandler::TranslateAxes(int joyId, unsigned int axesState)
+void JoystickHandlerDetails::TranslateAxes(int joyId, unsigned int axesState)
 {
 	int vkeys = BEEB_VKEY_JOY_START + joyId * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS);
 	unsigned int& prevAxes = m_PCJoystickState[joyId].PrevAxes;
@@ -684,7 +842,7 @@ void JoystickHandler::TranslateAxes(int joyId, unsigned int axesState)
 }
 
 /****************************************************************************/
-void JoystickHandler::TranslateJoystickButtons(int joyId, unsigned int buttons)
+void JoystickHandlerDetails::TranslateJoystickButtons(int joyId, unsigned int buttons)
 {
 	const int BUTTON_COUNT = 32;
 
@@ -711,7 +869,7 @@ void JoystickHandler::TranslateJoystickButtons(int joyId, unsigned int buttons)
 }
 
 /****************************************************************************/
-void JoystickHandler::TranslateOrSendKey(int vkey, bool keyUp)
+void JoystickHandlerDetails::TranslateOrSendKey(int vkey, bool keyUp)
 {
 	if (m_JoystickTarget == nullptr)
 	{
@@ -727,7 +885,7 @@ void JoystickHandler::TranslateOrSendKey(int vkey, bool keyUp)
 }
 
 /****************************************************************************/
-void JoystickHandler::TranslateJoystick(int joyId)
+void JoystickHandlerDetails::TranslateJoystick(int joyId)
 {
 	static const JOYCAPS dummyJoyCaps = {
 		0, 0, "",
@@ -827,7 +985,7 @@ void JoystickHandler::TranslateJoystick(int joyId)
 }
 
 /*****************************************************************************/
-void JoystickHandler::UpdateJoysticks()
+void JoystickHandlerDetails::UpdateJoysticks()
 {
 	for (int idx = 0; idx < NUM_PC_JOYSTICKS; ++idx)
 	{
@@ -838,7 +996,7 @@ void JoystickHandler::UpdateJoysticks()
 
 /*****************************************************************************/
 // Look for file specific joystick map
-void JoystickHandler::CheckForJoystickMap(const char *path)
+void JoystickHandlerDetails::CheckForJoystickMap(const char *path)
 {
 	char file[_MAX_PATH];
 	char drive[_MAX_DRIVE];
@@ -868,7 +1026,7 @@ void JoystickHandler::CheckForJoystickMap(const char *path)
 }
 
 /****************************************************************************/
-void JoystickHandler::ResetJoystickMap()
+void JoystickHandlerDetails::ResetJoystickMap()
 {
 	if (MessageBox(GetHWnd(), "Clear joystick to keyboard mapping table?", WindowTitle, MB_YESNO | MB_ICONQUESTION) != IDYES)
 		return;
@@ -877,7 +1035,7 @@ void JoystickHandler::ResetJoystickMap()
 }
 
 /****************************************************************************/
-void JoystickHandler::ResetJoyMap(JoyMap* joymap)
+void JoystickHandlerDetails::ResetJoyMap(JoyMap* joymap)
 {
 	// Initialize all input to unassigned
 	for (auto& mapping : *joymap)
@@ -890,7 +1048,7 @@ void JoystickHandler::ResetJoyMap(JoyMap* joymap)
 }
 
 /****************************************************************************/
-void JoystickHandler::ResetJoyMapToDefaultUser(void)
+void JoystickHandlerDetails::ResetJoyMapToDefaultUser(void)
 {
 	char keymap[_MAX_PATH];
 	strcpy(keymap, "DefaultUser.jmap");
@@ -913,7 +1071,7 @@ static void makeupper(char* str)
 }
 
 /****************************************************************************/
-bool JoystickHandler::ReadJoyMap(const char *filename, JoyMap *joymap)
+bool JoystickHandlerDetails::ReadJoyMap(const char *filename, JoyMap *joymap)
 {
 	bool success = true;
 	FILE *infile = m_BeebWin->OpenReadFile(filename, "key map", JOYMAP_TOKEN "\n");
@@ -1033,7 +1191,7 @@ bool JoystickHandler::ReadJoyMap(const char *filename, JoyMap *joymap)
 }
 
 /****************************************************************************/
-void JoystickHandler::LoadJoystickMap()
+void JoystickHandlerDetails::LoadJoystickMap()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
@@ -1070,7 +1228,7 @@ void JoystickHandler::LoadJoystickMap()
 }
 
 /****************************************************************************/
-bool JoystickHandler::WriteJoyMap(const char *filename, JoyMap *joymap)
+bool JoystickHandlerDetails::WriteJoyMap(const char *filename, JoyMap *joymap)
 {
 	FILE* outfile = m_BeebWin->OpenWriteFile(filename, "joystick map");
 
@@ -1132,7 +1290,7 @@ static bool hasFileExt(const char* fileName, const char* fileExt)
 }
 
 /****************************************************************************/
-void JoystickHandler::SaveJoystickMap()
+void JoystickHandlerDetails::SaveJoystickMap()
 {
 	char DefaultPath[_MAX_PATH];
 	// Add space for .jmap exstension
@@ -1188,7 +1346,7 @@ static const char *CFG_OPTIONS_STICKS_DEADBAND = "SticksToKeysDeadBand";
 static const char *CFG_OPTIONS_JOYSTICK_ORDER = "JoystickOrder%d";
 
 /****************************************************************************/
-bool JoystickHandler::GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value)
+bool JoystickHandlerDetails::GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value)
 {
 	char option_str[256];
 	sprintf_s(option_str, format, idx);
@@ -1196,7 +1354,7 @@ bool JoystickHandler::GetNthBoolValue(Preferences& preferences, const char* form
 }
 
 /****************************************************************************/
-bool JoystickHandler::GetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD& value)
+bool JoystickHandlerDetails::GetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD& value)
 {
 	char option_str[256];
 	sprintf_s(option_str, format, idx);
@@ -1204,7 +1362,7 @@ bool JoystickHandler::GetNthDWORDValue(Preferences& preferences, const char* for
 }
 
 /****************************************************************************/
-bool JoystickHandler::GetNthStringValue(Preferences& preferences, const char* format, int idx, std::string& value)
+bool JoystickHandlerDetails::GetNthStringValue(Preferences& preferences, const char* format, int idx, std::string& value)
 {
 	char option_str[256];
 	sprintf_s(option_str, format, idx);
@@ -1212,7 +1370,7 @@ bool JoystickHandler::GetNthStringValue(Preferences& preferences, const char* fo
 }
 
 /****************************************************************************/
-void JoystickHandler::SetNthBoolValue(Preferences& preferences, const char* format, int idx, bool value)
+void JoystickHandlerDetails::SetNthBoolValue(Preferences& preferences, const char* format, int idx, bool value)
 {
 	char option_str[256];
 	sprintf_s(option_str, format, idx);
@@ -1220,7 +1378,7 @@ void JoystickHandler::SetNthBoolValue(Preferences& preferences, const char* form
 }
 
 /****************************************************************************/
-void JoystickHandler::SetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD value)
+void JoystickHandlerDetails::SetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD value)
 {
 	char option_str[256];
 	sprintf_s(option_str, format, idx);
@@ -1228,7 +1386,7 @@ void JoystickHandler::SetNthDWORDValue(Preferences& preferences, const char* for
 }
 
 /****************************************************************************/
-void JoystickHandler::SetNthStringValue(Preferences& preferences, const char* format, int idx, const std::string& value)
+void JoystickHandlerDetails::SetNthStringValue(Preferences& preferences, const char* format, int idx, const std::string& value)
 {
 	char option_str[256];
 	sprintf_s(option_str, format, idx);
@@ -1236,7 +1394,7 @@ void JoystickHandler::SetNthStringValue(Preferences& preferences, const char* fo
 }
 
 /****************************************************************************/
-void JoystickHandler::EraseNthValue(Preferences& preferences, const char* format, int idx)
+void JoystickHandlerDetails::EraseNthValue(Preferences& preferences, const char* format, int idx)
 {
 	char option_str[256];
 	sprintf_s(option_str, format, idx);
@@ -1244,7 +1402,7 @@ void JoystickHandler::EraseNthValue(Preferences& preferences, const char* format
 }
 
 /****************************************************************************/
-void JoystickHandler::ReadPreferences(Preferences& preferences)
+void JoystickHandlerDetails::ReadPreferences(Preferences& preferences)
 {
 	DWORD dword;
 	bool flag;
@@ -1332,7 +1490,7 @@ void JoystickHandler::ReadPreferences(Preferences& preferences)
 }
 
 /****************************************************************************/
-void JoystickHandler::WritePreferences(Preferences& preferences)
+void JoystickHandlerDetails::WritePreferences(Preferences& preferences)
 {
 	for (int bbcIdx = 0; bbcIdx < NUM_BBC_JOYSTICKS; ++bbcIdx)
 	{
@@ -1357,7 +1515,7 @@ void JoystickHandler::WritePreferences(Preferences& preferences)
 }
 
 /****************************************************************************/
-void JoystickHandler::WriteJoystickOrder(Preferences& preferences)
+void JoystickHandlerDetails::WriteJoystickOrder(Preferences& preferences)
 {
 	for (UINT idx = 0; idx < MAX_JOYSTICK_ORDER; ++idx)
 	{
@@ -1372,3 +1530,50 @@ void JoystickHandler::WriteJoystickOrder(Preferences& preferences)
 		}
 	}
 }
+
+/****************************************************************************/
+JoystickHandler::JoystickHandler(BeebWin* beebWin) : m_Details{ std::make_unique<JoystickHandlerDetails>(beebWin) } {}
+
+JoystickHandler::~JoystickHandler() {}
+
+int JoystickHandler::GetMenuIdSticks(int bbcIdx) { return m_Details->GetMenuIdSticks(bbcIdx); }
+
+bool JoystickHandler::GetJoystickToKeys() { return m_Details->GetJoystickToKeys(); }
+
+void JoystickHandler::SetJoystickToKeys(bool enabled) { m_Details->SetJoystickToKeys(enabled); }
+
+void JoystickHandler::SetJoystickTarget(HWND target) { m_Details->SetJoystickTarget(target); }
+
+void JoystickHandler::InitMenu(void) { m_Details->InitMenu(); }
+
+void JoystickHandler::ProcessMenuCommand(int bbcIdx, UINT menuId) { m_Details->ProcessMenuCommand(bbcIdx, menuId); }
+
+void JoystickHandler::ProcessAxesMenuCommand(int bbcIdx, UINT menuId) { m_Details->ProcessAxesMenuCommand(bbcIdx, menuId); }
+
+void JoystickHandler::ToggleJoystickToKeys() { m_Details->ToggleJoystickToKeys(); }
+
+void JoystickHandler::ToggleAutoloadJoystickMap() { m_Details->ToggleAutoloadJoystickMap(); }
+
+bool JoystickHandler::InitJoystick(bool verbose) { return m_Details->InitJoystick(verbose); }
+
+void JoystickHandler::SetMousestickButton(int index, bool button) { m_Details->SetMousestickButton(index, button); }
+
+void JoystickHandler::ScaleMousestick(unsigned int x, unsigned int y) { m_Details->ScaleMousestick(x, y); }
+
+void JoystickHandler::UpdateJoysticks(void) { m_Details->UpdateJoysticks(); }
+
+void JoystickHandler::CheckForJoystickMap(const char* path) { m_Details->CheckForJoystickMap(path); }
+
+void JoystickHandler::ResetJoystickMap(void) { m_Details->ResetJoystickMap(); }
+
+void JoystickHandler::ResetJoyMapToDefaultUser(void) { m_Details->ResetJoyMapToDefaultUser(); }
+
+void JoystickHandler::LoadJoystickMap(void) { m_Details->LoadJoystickMap(); }
+
+void JoystickHandler::SaveJoystickMap(void) { m_Details->SaveJoystickMap(); }
+
+void JoystickHandler::ReadPreferences(Preferences& preferences) { m_Details->ReadPreferences(preferences); }
+
+void JoystickHandler::WritePreferences(Preferences& preferences) { m_Details->WritePreferences(preferences); }
+
+void JoystickHandler::WriteJoystickOrder(Preferences& preferences) { m_Details->WriteJoystickOrder(preferences); }
