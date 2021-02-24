@@ -32,7 +32,14 @@ Boston, MA  02110-1301, USA.
 #include "beebemrc.h"
 #include "keymapping.h"
 
+#include <vector>
+
+/* Max number of joysticks in joystickapi */
+#define MAX_JOYSTICK_DEVS       16
+/* Max number of joysticks to capture */
 #define NUM_PC_JOYSTICKS        4
+/* Max number of entries on joystick order list */
+#define MAX_JOYSTICK_ORDER      16
 
 #define JOYSTICK_MAX_AXES       16
 #define JOYSTICK_MAX_BTNS       16
@@ -66,16 +73,56 @@ typedef KeyPair     JoyMap[BEEB_VKEY_JOY_COUNT];
 
 class BeebWin;
 
-struct PCJoystickState {
-	JOYCAPS      Caps{};
-	unsigned int JoyIndex{ 0 };
-	bool         Captured{ false };
-	unsigned int PrevAxes{ 0 };
-	unsigned int PrevBtns{ 0 };
-	bool         JoystickToKeysActive{ false };
+struct JoystickId : std::pair<int, int>
+{
+	using std::pair<int, int>::pair;
+
+	// Manufacturer ID aka Vendor ID
+	int& mId() { return first; }
+	// Product ID
+	int& pId() { return second; }
 };
 
-struct BBCJoystickConfig {
+struct JoystickOrderEntry : JoystickId
+{
+	std::string   Name{};
+	int           JoyIndex{ -1 };
+
+	JoystickOrderEntry() = default;
+	JoystickOrderEntry(JoystickId id, const std::string& name, int joyIndex) :
+		JoystickId(id), Name(name), JoyIndex(joyIndex) {}
+	JoystickOrderEntry(int mid, int pid, const std::string& name) :
+		JoystickId(mid, pid), Name(name) {}
+
+	std::string to_string();
+	bool from_string(const std::string&);
+};
+
+struct JoystickDev
+{
+	JOYCAPS      Caps{};
+	int          Instance{ 0 };
+	int          Order{ -1 };
+	int          JoyIndex{ -1 };
+	bool         Configured{ false };
+	bool         Present{ false };
+
+	JoystickId   Id() { return JoystickId{ Caps.wMid, Caps.wPid }; }
+	std::string  DisplayString();
+};
+
+struct PCJoystickState
+{
+	JoystickDev*  Dev{ nullptr };
+	int           JoyIndex{ -1 };
+	bool          Captured{ false };
+	unsigned int  PrevAxes{ 0 };
+	unsigned int  PrevBtns{ 0 };
+	bool          JoystickToKeysActive{ false };
+};
+
+struct BBCJoystickConfig
+{
 	bool Enabled{ false };
 	int  PCStick{ 0 };
 	int  PCAxes{ 0 };
@@ -87,6 +134,7 @@ class JoystickHandler
 {
 	BeebWin*	  m_BeebWin;
 	bool		  m_JoystickTimerRunning{ false };
+	JoystickDev       m_JoystickDevs[MAX_JOYSTICK_DEVS];
 	PCJoystickState	  m_PCJoystickState[NUM_PC_JOYSTICKS];
 	BBCJoystickConfig m_JoystickConfig[NUM_BBC_JOYSTICKS];
 	int		  m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
@@ -96,6 +144,7 @@ class JoystickHandler
 	bool		  m_AutoloadJoystickMap{ false };
 	HWND		  m_JoystickTarget{ nullptr };
 	char		  m_JoystickMapPath[_MAX_PATH]{};
+	std::vector<JoystickOrderEntry> m_JoystickOrder;
 
 public:
 	JoystickHandler(BeebWin* beebWin) : m_BeebWin{ beebWin } {}
@@ -107,11 +156,13 @@ public:
 	void SetJoystickTarget(HWND target) { m_JoystickTarget = target; }
 
 	/* BeebWin access */
-	HWND GetHwnd();
+	HWND GetHWnd();
+	HMENU GetHMenu();
 	int GetXWinSize();
 	int GetYWinSize();
 	void CheckMenuItem(UINT id, bool checked);
 	void EnableMenuItem(UINT id, bool enabled);
+	void SetMenuItemText(UINT id, const std::string& text);
 
 	/* Menu handling - will soon be gone */
 	int MenuIdToStick(int bbcIdx, UINT menuId);
@@ -129,6 +180,7 @@ public:
 	void ToggleAutoloadJoystickMap();
 
 	/* Initialization */
+	void ScanJoysticks(void);
 	void ResetJoystick(void);
 	bool InitJoystick(bool verbose = false);
 	bool CaptureJoystick(int Index, bool verbose);
@@ -164,10 +216,14 @@ public:
 	/* Preferences */
 	bool GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value);
 	bool GetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD& value);
+	bool GetNthStringValue(Preferences& preferences, const char* format, int idx, std::string& value);
 	void SetNthBoolValue(Preferences& preferences, const char* format, int idx, bool value);
 	void SetNthDWORDValue(Preferences& preferences, const char* format, int idx, DWORD value);
+	void SetNthStringValue(Preferences& preferences, const char* format, int idx, const std::string& value);
+	void EraseNthValue(Preferences& preferences, const char* format, int idx);
 	void ReadPreferences(Preferences& preferences);
 	void WritePreferences(Preferences& preferences);
+	void WriteJoystickOrder(Preferences& preferences);
 };
 
 #endif

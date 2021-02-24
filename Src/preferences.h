@@ -46,7 +46,9 @@ class Preferences {
 		bool GetBinaryValue(const char *id, void *bin, size_t binsize);
 		void SetBinaryValue(const char *id, const void *bin, size_t binsize);
 		bool GetStringValue(const char *id, char *str);
+		bool GetStringValue(const char *id, std::string& str);
 		void SetStringValue(const char *id, const char *str);
+		void SetStringValue(const char *id, const std::string& str);
 		bool GetDWORDValue(const char *id, DWORD &dw);
 		void SetDWORDValue(const char *id, DWORD dw);
 		bool GetBoolValue(const char *id, bool &b);
