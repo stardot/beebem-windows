@@ -47,6 +47,7 @@ static COLORREF GetKeyColour(UINT ctrlID);
 static std::string GetKeysUsed();
 static void FillAssignedKeysCount();
 static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawColour = false);
+static void RedrawAllKeys();
 static int GetBBCKeyIndex(const BBCKey* key);
 
 // Colour used to highlight the selected key.
@@ -394,6 +395,10 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 		{
 			SetWindowText(hwnd, "Joystick To Keyboard Mapping");
 		}
+		else
+		{
+			ShowWindow(GetDlgItem(hwnd, IDK_RESET_MAPPING), SW_HIDE);
+		}
 		return FALSE;
 
 	case WM_COMMAND:
@@ -406,6 +411,12 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 			hwndUserKeyboard = nullptr;
 
 			PostMessage(hwndMain, WM_USER_KEYBOARD_DIALOG_CLOSED, 0, 0);
+			break;
+
+		case IDK_RESET_MAPPING:
+			SendMessage(hwndMain, WM_COMMAND, IDM_RESETJOYMAP, 0);
+			FillAssignedKeysCount();
+			RedrawAllKeys();
 			break;
 
 		default:
@@ -456,6 +467,17 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 
 			// Show the key as not depressed, i.e., normal.
 			SetKeyColour(GetKeyColour(ctrlID));
+
+			if (ctrlID == IDK_SHIFT_L)
+			{
+				HWND rShiftCtrl = GetDlgItem(hwndUserKeyboard, IDK_SHIFT_R);
+				SetKeyColour(GetKeyColour(IDK_SHIFT_R), rShiftCtrl);
+			}
+			else if (ctrlID == IDK_SHIFT_R)
+			{
+				HWND lShiftCtrl = GetDlgItem(hwndUserKeyboard, IDK_SHIFT_L);
+				SetKeyColour(GetKeyColour(IDK_SHIFT_L), lShiftCtrl);
+			}
 		}
 		return TRUE;
 
@@ -720,5 +742,28 @@ static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawCol
             HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key->ctrlId);
             SetKeyColour(GetKeyColour(key->ctrlId), keyCtrl);
         }
+        /* If it's shift, update the other one */
+        if (key->column == 0 && key->row == 0)
+        {
+            key = GetBBCKeyByResId((IDK_SHIFT_L + IDK_SHIFT_R) - key->ctrlId);
+            index = GetBBCKeyIndex(key);
+            assignedKeysCount[index] += change;
+            if (redrawColour && key->ctrlId != selectedCtrlID)
+            {
+                HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key->ctrlId);
+                SetKeyColour(GetKeyColour(key->ctrlId), keyCtrl);
+            }
+        }
+    }
+}
+
+/****************************************************************************/
+
+static void RedrawAllKeys()
+{
+    for (auto& key : BBCKeys)
+    {
+	HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key.ctrlId);
+	SetKeyColour(GetKeyColour(key.ctrlId), keyCtrl);
     }
 }
