@@ -36,6 +36,11 @@ Boston, MA  02110-1301, USA.
 #include <cctype>
 #include <list>
 #include <vector>
+#include <algorithm>
+
+// Unhide std::min, std::max
+#undef min
+#undef max
 
 #define JOYMAP_TOKEN "*** BeebEm Joystick Map ***"
 
@@ -109,6 +114,7 @@ class JoystickHandlerDetails
 	int               m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
 	int               m_MenuIdAxes[NUM_BBC_JOYSTICKS]{};
 	int               m_Deadband;
+	double            m_Gain{ 1.0 };
 	bool              m_JoystickToKeys{ false };
 	bool              m_AutoloadJoystickMap{ false };
 	HWND              m_JoystickTarget{ nullptr };
@@ -689,11 +695,16 @@ void JoystickHandlerDetails::SetJoystickButton(int index, bool value)
 void JoystickHandlerDetails::ScaleJoystick(int index, unsigned int x, unsigned int y,
 	unsigned int minX, unsigned int minY, unsigned int maxX, unsigned int maxY)
 {
-	/* Scale and reverse the readings */
-	JoystickX[index] = (int)((double)(maxX - x) * 65535.0 /
-		(double)(maxX - minX));
-	JoystickY[index] = (int)((double)(maxY - y) * 65535.0 /
-		(double)(maxY - minY));
+	/* Gain and reverse the readings */
+	double sx = 0.5 + ((double)(maxX - x) / (double)(maxX - minX) - 0.5) * m_Gain;
+	double sy = 0.5 + ((double)(maxY - y) / (double)(maxY - minY) - 0.5) * m_Gain;
+
+	/* Scale to 0-65535 range */
+	sx = std::max(0.0, std::min(65535.0, sx * 65535.0));
+	sy = std::max(0.0, std::min(65535.0, sy * 65535.0));
+
+	JoystickX[index] = (int)sx;
+	JoystickY[index] = (int)sy;
 }
 
 /****************************************************************************/
@@ -1338,12 +1349,12 @@ static const char *CFG_OPTIONS_STICK_PCSTICK = "Stick%dPCStick";
 static const char *CFG_OPTIONS_STICK_PCAXES = "Stick%dPCAxes";
 static const char *CFG_OPTIONS_STICK_ANALOG = "Stick%dAnalogMousepad";
 static const char *CFG_OPTIONS_STICK_DIGITAL = "Stick%dDigitalMousepad";
+static const char* CFG_OPTIONS_JOYSTICK_GAIN = "JoystickGain";
+static const char* CFG_OPTIONS_JOYSTICK_ORDER = "JoystickOrder%d";
 
 static const char *CFG_OPTIONS_STICKS_TO_KEYS = "SticksToKeys";
 static const char *CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP = "AutoloadJoystickMap";
 static const char *CFG_OPTIONS_STICKS_DEADBAND = "SticksToKeysDeadBand";
-
-static const char *CFG_OPTIONS_JOYSTICK_ORDER = "JoystickOrder%d";
 
 /****************************************************************************/
 bool JoystickHandlerDetails::GetNthBoolValue(Preferences& preferences, const char* format, int idx, bool& value)
@@ -1475,6 +1486,11 @@ void JoystickHandlerDetails::ReadPreferences(Preferences& preferences)
 	else
 		m_Deadband = DEFAULT_JOY_DEADBAND;
 
+	if (preferences.GetDWORDValue(CFG_OPTIONS_JOYSTICK_GAIN, dword))
+		m_Gain = static_cast<double>(dword) / 0x10000;
+	else
+		m_Gain = 1.0;
+
 	m_JoystickOrder.clear();
 	for (int idx = 0; idx < MAX_JOYSTICK_ORDER; ++idx)
 	{
@@ -1504,6 +1520,7 @@ void JoystickHandlerDetails::WritePreferences(Preferences& preferences)
 	preferences.SetBoolValue(CFG_OPTIONS_STICKS_TO_KEYS, m_JoystickToKeys);
 	preferences.SetBoolValue(CFG_OPTIONS_AUTOLOAD_JOYSICK_MAP, m_AutoloadJoystickMap);
 	preferences.SetDWORDValue(CFG_OPTIONS_STICKS_DEADBAND, m_Deadband);
+	preferences.SetDWORDValue(CFG_OPTIONS_JOYSTICK_GAIN, static_cast<DWORD>(m_Gain * 0x10000));
 
 	/* Remove obsolete values */
 	preferences.EraseValue(CFG_OPTIONS_STICKS);
