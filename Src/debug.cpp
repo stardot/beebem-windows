@@ -227,7 +227,7 @@ static const InstInfo optable_6502[256] =
 	{ "PHA",  1, IMP }, // 48
 	{ "EOR",  2, IMM }, // 49
 	{ "LSR",  1, ACC }, // 4a
-	{ "ALR",  1, IMM }, // 4b
+	{ "ALR",  2, IMM }, // 4b
 	{ "JMP",  3, ABS }, // 4c
 	{ "EOR",  3, ABS }, // 4d
 	{ "LSR",  3, ABS }, // 4e
