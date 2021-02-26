@@ -240,7 +240,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("Music5000Enabled", Music5000Enabled))
 		Music5000Enabled = false;
 
-	m_Joysticks.ReadPreferences(m_Preferences);
+	ReadJoystickPreferences();
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
@@ -654,7 +654,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIdCaptureResolution);
 		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIdCaptureFormat);
 
-		m_Joysticks.WritePreferences(m_Preferences);
+		WriteJoystickPreferences();
 
 		RECT rect;
 		GetWindowRect(m_hWnd,&rect);
@@ -673,7 +673,7 @@ void BeebWin::SavePreferences(bool saveAll)
 
 	m_Preferences.SetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts);
 
-	m_Joysticks.WriteJoystickOrder(m_Preferences);
+	WriteJoystickOrder();
 
 	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success) {
 		m_AutoSavePrefsChanged = false;

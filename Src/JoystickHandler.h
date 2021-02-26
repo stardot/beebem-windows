@@ -25,91 +25,81 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef BEEBWINJOYSTICK_H
-#define BEEBWINJOYSTICK_H
+#ifndef JOYSTICKHANDLER_H
+#define JOYSTICKHANDLER_H
 
-#include <memory>
+#include <vector>
+
+#include "beebwin.h"
 
 /* Max number of joysticks in joystickapi */
 #define MAX_JOYSTICK_DEVS       16
-/* Max number of joysticks to capture */
-#define NUM_PC_JOYSTICKS        4
 /* Max number of entries on joystick order list */
 #define MAX_JOYSTICK_ORDER      16
 
-#define JOYSTICK_MAX_AXES       16
-#define JOYSTICK_MAX_BTNS       16
-
-#define JOYSTICK_AXIS_UP        0
-#define JOYSTICK_AXIS_DOWN      1
-#define JOYSTICK_AXIS_LEFT      2
-#define JOYSTICK_AXIS_RIGHT     3
-#define JOYSTICK_AXIS_Z_N       4
-#define JOYSTICK_AXIS_Z_P       5
-#define JOYSTICK_AXIS_R_N       6
-#define JOYSTICK_AXIS_R_P       7
-#define JOYSTICK_AXIS_U_N       8
-#define JOYSTICK_AXIS_U_P       9
-#define JOYSTICK_AXIS_V_N       10
-#define JOYSTICK_AXIS_V_P       11
-#define JOYSTICK_AXIS_HAT_UP    12
-#define JOYSTICK_AXIS_HAT_DOWN  13
-#define JOYSTICK_AXIS_HAT_LEFT  14
-#define JOYSTICK_AXIS_HAT_RIGHT 15
-#define JOYSTICK_AXES_COUNT     16
-
-#define BEEB_VKEY_JOY_START  256
-#define BEEB_VKEY_JOY_COUNT  (NUM_PC_JOYSTICKS * \
-			      (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS))   // 4*32 = 128
-#define BEEB_VKEY_JOY_END    (BEEB_VKEY_JOY_START + BEEB_VKEY_JOY_COUNT) // 256+128 = 384
-
-#define BEEB_VKEY_COUNT      BEEB_VKEY_JOY_END
-
-class BeebWin;
-class JoystickHandlerDetails;
-
-class JoystickHandler
+struct JoystickId : std::pair<int, int>
 {
-	std::unique_ptr<JoystickHandlerDetails> m_Details;
+    using std::pair<int, int>::pair;
 
-public:
-	JoystickHandler(BeebWin* beebWin);
-	~JoystickHandler();
+    // Manufacturer ID aka Vendor ID
+    int& mId() { return first; }
+    // Product ID
+    int& pId() { return second; }
+};
 
-	/* Accessors */
-	int GetMenuIdSticks(int bbcIdx);
-	bool GetJoystickToKeys();
-	void SetJoystickToKeys(bool enabled);
-	void SetJoystickTarget(HWND target);
+struct JoystickOrderEntry : JoystickId
+{
+    std::string   Name{};
+    int           JoyIndex{ -1 };
 
-	/* Menu handling - will soon be gone */
-	void InitMenu(void);
-	void ProcessMenuCommand(int bbcIdx, UINT menuId);
-	void ProcessAxesMenuCommand(int bbcIdx, UINT menuId);
-	void ToggleJoystickToKeys();
-	void ToggleAutoloadJoystickMap();
+    JoystickOrderEntry() = default;
+    JoystickOrderEntry(JoystickId id, const std::string& name, int joyIndex) :
+	JoystickId(id), Name(name), JoyIndex(joyIndex) {}
+    JoystickOrderEntry(int mid, int pid, const std::string& name) :
+	JoystickId(mid, pid), Name(name) {}
 
-	/* Initialization */
-	bool InitJoystick(bool verbose = false);
+    std::string to_string();
+    bool from_string(const std::string&);
+};
 
-	/* Mousestick */
-	void SetMousestickButton(int index, bool button);
-	void ScaleMousestick(unsigned int x, unsigned int y);
+struct JoystickDev
+{
+    JOYCAPS      Caps{};
+    JOYINFOEX    InfoEx{};
+    int          Instance{ 0 };
+    int          Order{ -1 };
+    int          JoyIndex{ -1 };
+    bool         Configured{ false };
+    bool         Present{ false };
 
-	/* Timer handler */
-	void UpdateJoysticks(void);
+    JoystickId   Id() { return JoystickId{ Caps.wMid, Caps.wPid }; }
+    std::string  DisplayString();
+    bool         Update();
+    DWORD        GetButtons();
+    DWORD        GetAxesState(int threshold);
+    void         GetAxesValue(int axesSet, int& x, int& y);
+};
 
-	/* Joystick to keyboard mapping */
-	void CheckForJoystickMap(const char* path);
-	void ResetJoystickMap(void);
-	void ResetJoyMapToDefaultUser(void);
-	void LoadJoystickMap(void);
-	void SaveJoystickMap(void);
+struct PCJoystickState
+{
+    JoystickDev* Dev{ nullptr };
+    int           JoyIndex{ -1 };
+    bool          Captured{ false };
+    unsigned int  PrevAxes{ 0 };
+    unsigned int  PrevBtns{ 0 };
+    bool          JoystickToKeysActive{ false };
+};
 
-	/* Preferences */
-	void ReadPreferences(Preferences& preferences);
-	void WritePreferences(Preferences& preferences);
-	void WriteJoystickOrder(Preferences& preferences);
+struct JoystickHandler
+{
+    JoystickDev       m_JoystickDevs[MAX_JOYSTICK_DEVS];
+    PCJoystickState   m_PCJoystickState[NUM_PC_JOYSTICKS];
+    std::vector<JoystickOrderEntry> m_JoystickOrder;
+
+    void         ScanJoysticks(void);
+
+    JoystickHandler() {}
+    ~JoystickHandler() {}
 };
 
 #endif
