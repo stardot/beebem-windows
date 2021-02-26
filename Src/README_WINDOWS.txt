@@ -34,7 +34,9 @@ Open BeebEm.sln in Visual Studio. Select the View menu, then Other Windows,
 then Property Manager. In the Property Manager window, click to expand
 BeebEm\Release | Win32 and then double-click on BeebEm.user.
 
-This opens the BeebEm.user then set the following macros values:
+This opens the BeebEm.user properties. Select User Macros from the list
+in the left column, under Common Properties, then set the following macro
+values:
 
 * Set DXSDK_Dir to the path to the DirectX SDK, e.g:
 
@@ -45,3 +47,6 @@ This opens the BeebEm.user then set the following macros values:
 
   Name:  ISCC_Dir
   Value: C:\Program Files\Inno Setup 5
+
+The "Set this macro as an environment variable in the build environment"
+option does not need to be ticked.
