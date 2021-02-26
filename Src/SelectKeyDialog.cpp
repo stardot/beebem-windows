@@ -121,12 +121,12 @@ INT_PTR SelectKeyDialog::DlgProc(
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			hCurrentDialog = nullptr;
-			mainWin->m_Joysticks.SetJoystickTarget(nullptr);
+			mainWin->SetJoystickTarget(nullptr);
 		}
 		else
 		{
 			hCurrentDialog = m_hwnd;
-			mainWin->m_Joysticks.SetJoystickTarget(m_hwnd);
+			mainWin->SetJoystickTarget(m_hwnd);
 			hCurrentAccelTable = nullptr;
 		}
 		break;
