@@ -2501,13 +2501,20 @@ bool DebugCmdHelp(char* args)
 		DebugDisplayInfo("  Parameters in [] are optional. 'p' can be specified in some commands");
 		DebugDisplayInfo("  to specify parasite processor. Words preceded with a . will be");
 		DebugDisplayInfo("  interpreted as labels and may be used in place of addresses.");
+
 		// Display help for basic commands:
 		for (int i = 0; i < _countof(DebugCmdTable); i++)
 		{
-			if(strlen(DebugCmdTable[i].help) > 0 && strlen(DebugCmdTable[i].argdesc) > 0)
+			if (DebugCmdTable[i].help[0] != '\0')
 			{
 				DebugDisplayInfo("");
-				DebugDisplayInfoF("  %s %s",DebugCmdTable[i].name,DebugCmdTable[i].argdesc);
+				DebugDisplayInfoF("  %s",DebugCmdTable[i].name);
+
+				if (DebugCmdTable[i].argdesc[0] != '\0')
+				{
+					DebugDisplayInfoF("  %s",DebugCmdTable[i].argdesc);
+				}
+
 				DebugDisplayInfoF("    %s",DebugCmdTable[i].help);
 			}
 		}
