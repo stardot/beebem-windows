@@ -105,7 +105,7 @@
       <Command>"$(ISCC_Path)\iscc.exe" BeebEmSetup.iss</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(SolutionDir)InnoSetup\Release\BeebEm415.exe</Outputs>
+      <Outputs>$(SolutionDir)InnoSetup\Release\BeebEm416.exe</Outputs>
       <Inputs>$(OutDir)BeebEm.exe</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
