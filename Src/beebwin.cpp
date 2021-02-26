@@ -146,7 +146,6 @@ static JoyMap *joystickTable = &JoystickMap;
 
 /****************************************************************************/
 BeebWin::BeebWin()
-	: m_Joysticks(this)
 {
 	m_DXInit = false;
 	m_hWnd = NULL;
@@ -333,7 +332,7 @@ bool BeebWin::Initialise()
 	ReadROMFile(RomFile, RomConfig);
 	ApplyPrefs();
 
-	m_Joysticks.CheckForJoystickMap(m_CommandLineFileName1);
+	CheckForJoystickMap(m_CommandLineFileName1);
 
 	if (m_DebugScript[0] != '\0')
 	{
@@ -398,7 +397,7 @@ void BeebWin::ApplyPrefs()
 	GetDataPath(m_UserDataPath, keymap);
 	ReadKeyMap(keymap, &defaultMapping);
 
-	m_Joysticks.ResetJoyMapToDefaultUser();
+	ResetJoyMapToDefaultUser();
 
 	InitMenu();
 	ShowMenu(true);
@@ -417,7 +416,7 @@ void BeebWin::ApplyPrefs()
 		PrinterDisable();
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
-	m_Joysticks.InitJoystick(false);
+	InitJoystick(false);
 
 	LoadFDC(NULL, true);
 	RTCInit();
@@ -888,6 +887,16 @@ void BeebWin::EnableMenuItem(UINT id, bool enabled)
 	::EnableMenuItem(m_hMenu, id, enabled ? MF_ENABLED : MF_GRAYED);
 }
 
+void BeebWin::SetMenuItemText(UINT id, const std::string& text)
+{
+	MENUITEMINFO mii{ 0 };
+	mii.cbSize = sizeof(mii);
+	mii.fMask = MIIM_STRING;
+	mii.fType = MFT_STRING;
+	mii.dwTypeData = const_cast<char*>(text.c_str());
+	SetMenuItemInfo(m_hMenu, id, FALSE, &mii);
+}
+
 void BeebWin::InitMenu(void)
 {
 	char menu_string[256];
@@ -1110,7 +1119,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_AUTOSAVE_PREFS_CMOS, m_AutoSavePrefsCMOS);
 	CheckMenuItem(IDM_AUTOSAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders);
 	CheckMenuItem(IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll);
-	m_Joysticks.InitMenu();
+	InitJoystickMenu();
 }
 
 void BeebWin::UpdateDisplayRendererMenu() {
@@ -1618,7 +1627,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 					mainWin->m_RelMousePos.y = mainWin->m_YWinSize;
 				}
 
-				mainWin->m_Joysticks.ScaleMousestick(mainWin->m_RelMousePos.x,
+				mainWin->ScaleMousestick(mainWin->m_RelMousePos.x,
 				                         mainWin->m_RelMousePos.y);
 
 				mainWin->ChangeAMXPosition(xDelta, yDelta);
@@ -1631,7 +1640,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				int xPos = GET_X_LPARAM(lParam);
 				int yPos = GET_Y_LPARAM(lParam);
 
-				mainWin->m_Joysticks.ScaleMousestick(xPos, yPos);
+				mainWin->ScaleMousestick(xPos, yPos);
 				mainWin->SetAMXPosition(xPos, yPos);
 
 				// Experiment: show menu in full screen when cursor moved to top of window
@@ -1646,13 +1655,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			else
 			{
-				mainWin->m_Joysticks.SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
+				mainWin->SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
 				AMXButtons |= AMX_LEFT_BUTTON;
 			}
 			break;
 
 		case WM_LBUTTONUP:
-			mainWin->m_Joysticks.SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
+			mainWin->SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
 			AMXButtons &= ~AMX_LEFT_BUTTON;
 			break;
 
@@ -1665,12 +1674,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_RBUTTONDOWN:
-			mainWin->m_Joysticks.SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
+			mainWin->SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
 			AMXButtons |= AMX_RIGHT_BUTTON;
 			break;
 
 		case WM_RBUTTONUP:
-			mainWin->m_Joysticks.SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
+			mainWin->SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
@@ -1712,7 +1721,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			else if (wParam == 3)
 			{
-				mainWin->m_Joysticks.UpdateJoysticks();
+				mainWin->UpdateJoysticks();
 			}
 			break;
 
@@ -2812,7 +2821,7 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			// Also switch on analogue mousestick (touch screen uses
 			// mousestick position)
-			if (m_Joysticks.GetMenuIdSticks(0) != IDM_ANALOGUE_MOUSESTICK)
+			if (!GetAnalogMousestick(0))
 				HandleCommand(IDM_ANALOGUE_MOUSESTICK);
 
 			if (EthernetPortEnabled)
@@ -3265,38 +3274,38 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_ANALOGUE_MOUSESTICK:
 	case IDM_DIGITAL_MOUSESTICK:
 	case IDM_JOY1_PCJOY2:
-		m_Joysticks.ProcessMenuCommand(0, MenuId);
+		ProcessJoystickMenuCommand(0, MenuId);
 		break;
 
 	case IDM_JOY2_PCJOY1:
 	case IDM_JOY2_ANALOGUE_MOUSESTICK:
 	case IDM_JOY2_DIGITAL_MOUSESTICK:
 	case IDM_JOY2_PCJOY2:
-		m_Joysticks.ProcessMenuCommand(1, MenuId);
+		ProcessJoystickMenuCommand(1, MenuId);
 		break;
 
 	case IDM_JOY1_PRIMARY:
 	case IDM_JOY1_SECONDARY1:
 	case IDM_JOY1_SECONDARY2:
-		m_Joysticks.ProcessAxesMenuCommand(0, MenuId);
+		ProcessJoystickAxesMenuCommand(0, MenuId);
 		break;
 
 	case IDM_JOY2_PRIMARY:
 	case IDM_JOY2_SECONDARY1:
 	case IDM_JOY2_SECONDARY2:
-		m_Joysticks.ProcessAxesMenuCommand(1, MenuId);
+		ProcessJoystickAxesMenuCommand(1, MenuId);
 		break;
 
 	case IDM_INIT_JOYSTICK:
-		m_Joysticks.InitJoystick(true);
+		InitJoystick(true);
 		break;
 
 	case IDM_JOYSTICK_TO_KEYS:
-		m_Joysticks.ToggleJoystickToKeys();
+		ProcessJoystickToKeysCommand();
 		break;
 
 	case IDM_AUTOLOADJOYMAP:
-		m_Joysticks.ToggleAutoloadJoystickMap();
+		ProcessAutoloadJoystickMapCommand();
 		break;
 
 	case IDM_FREEZEINACTIVE:
@@ -3323,15 +3332,15 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_LOADJOYMAP:
-		m_Joysticks.LoadJoystickMap();
+		LoadJoystickMap();
 		break;
 
 	case IDM_SAVEJOYMAP:
-		m_Joysticks.SaveJoystickMap();
+		SaveJoystickMap();
 		break;
 
 	case IDM_RESETJOYMAP:
-		m_Joysticks.ResetJoystickMap();
+		ResetJoystickMap();
 		break;
 
 	case IDM_DEFINEKEYMAP:
@@ -4119,7 +4128,7 @@ void BeebWin::OpenUserKeyboardDialog()
 
 	m_WasPaused = mainWin->IsPaused();
 
-	m_JoystickToKeysWasEnabled = m_Joysticks.GetJoystickToKeys();
+	m_JoystickToKeysWasEnabled = GetJoystickToKeys();
 
 	if (!m_WasPaused)
 	{
@@ -4141,12 +4150,12 @@ void BeebWin::OpenJoystickMapDialog()
 	}
 
 	// Enable mapping to capture keys in dialog
-	m_JoystickToKeysWasEnabled = m_Joysticks.GetJoystickToKeys();
+	m_JoystickToKeysWasEnabled = GetJoystickToKeys();
 
 	if (!m_JoystickToKeysWasEnabled)
 	{
-		m_Joysticks.SetJoystickToKeys(true);
-		m_Joysticks.InitJoystick(false);
+		SetJoystickToKeys(true);
+		InitJoystick(false);
 	}
 
 	UserKeyboardDialog(m_hWnd, true);
@@ -4163,10 +4172,10 @@ void BeebWin::UserKeyboardDialogClosed()
 	}
 
 	// Restore joystick state
-	if (m_Joysticks.GetJoystickToKeys() && !m_JoystickToKeysWasEnabled)
+	if (GetJoystickToKeys() && !m_JoystickToKeysWasEnabled)
 	{
-		m_Joysticks.SetJoystickToKeys(m_JoystickToKeysWasEnabled);
-		m_Joysticks.InitJoystick(false);
+		SetJoystickToKeys(m_JoystickToKeysWasEnabled);
+		InitJoystick(false);
 	}
 
 	// Unmute
@@ -4344,7 +4353,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 			HandleCommand(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
-			m_Joysticks.InitJoystick(false);
+			InitJoystick(false);
 		}
 	}
 
@@ -4365,7 +4374,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 
 	if (bLoadPrefs)
 	{
-		m_Joysticks.CheckForJoystickMap(path);
+		CheckForJoystickMap(path);
 	}
 }
 

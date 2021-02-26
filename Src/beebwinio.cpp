@@ -308,7 +308,7 @@ void BeebWin::LoadTape(void)
 			LoadCSWTape(FileName);
 		}
 
-		m_Joysticks.CheckForJoystickMap(FileName);
+		CheckForJoystickMap(FileName);
 	}
 }
 
