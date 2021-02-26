@@ -147,7 +147,8 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "f",		DebugCmdFile,"",""}, // Alias of "file"
 	{ "echo",	DebugCmdEcho, "string", "Write string to console." },
 	{ "!",	DebugCmdEcho, "","" }, // Alias of "echo"
-	{ "script",	DebugCmdScript, "[filename]", "Executes a debugger script." }
+	{ "script",	DebugCmdScript, "[filename]", "Executes a debugger script." },
+	{ "clear",	DebugCmdClear, "", "Clears the console." }
 };
 
 static const InstInfo optable_6502[256] =
@@ -2586,6 +2587,13 @@ bool DebugCmdScript(char *args)
 	{
 		DebugRunScript(args);
 	}
+	return true;
+}
+
+bool DebugCmdClear(char *args)
+{
+	LinesDisplayed = 0;
+	SendMessage(hwndInfo, LB_RESETCONTENT, 0, 0);
 	return true;
 }
 

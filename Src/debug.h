@@ -167,5 +167,6 @@ bool DebugCmdGoto(char* args);
 bool DebugCmdFile(char* args);
 bool DebugCmdEcho(char* args);
 bool DebugCmdScript(char *args);
+bool DebugCmdClear(char *args);
 
 #endif
