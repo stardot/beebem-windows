@@ -65,7 +65,7 @@ static const char* CFG_OPTIONS_STICKS_THRESHOLD = "JoysticksToKeysThreshold";
  */
 struct JoystickMenuIdsType {
 	UINT Joysticks[2];
-	UINT Axes[3];
+	UINT Axes[2];
 	UINT AnalogMousestick;
 	UINT DigitalMousestick;
 };
@@ -74,13 +74,13 @@ struct JoystickMenuIdsType {
 constexpr JoystickMenuIdsType JoystickMenuIds[NUM_BBC_JOYSTICKS]{
 	{
 		{ IDM_JOYSTICK, IDM_JOY1_PCJOY2 },
-		{ IDM_JOY1_PRIMARY, IDM_JOY1_SECONDARY1, IDM_JOY1_SECONDARY2 },
+		{ IDM_JOY1_PRIMARY, IDM_JOY1_SECONDARY1 },
 		IDM_ANALOGUE_MOUSESTICK,
 		IDM_DIGITAL_MOUSESTICK,
 	},
 	{
 		{ IDM_JOY2_PCJOY1, IDM_JOY2_PCJOY2 },
-		{ IDM_JOY2_PRIMARY, IDM_JOY2_SECONDARY1, IDM_JOY2_SECONDARY2 },
+		{ IDM_JOY2_PRIMARY, IDM_JOY2_SECONDARY1 },
 		IDM_JOY2_ANALOGUE_MOUSESTICK,
 		IDM_JOY2_DIGITAL_MOUSESTICK,
 	}
@@ -92,10 +92,8 @@ std::string JoystickOrderEntry::to_string()
 	char buf[10];
 	sprintf_s(buf, "%04x:%04x", mId(), pId());
 	std::string result(buf);
-#if 0 // Joystick names from joyGetDevCaps are useless
 	if (Name.length() != 0)
 		result += " # " + Name;
-#endif
 	return result;
 }
 
@@ -157,67 +155,106 @@ static UINT AxesToMenuId(int bbcIdx, int pcAxes)
 /*****************************************************************************/
 std::string JoystickDev::DisplayString()
 {
-	if (!Configured)
+	if (!m_Configured)
 		return std::string{};
 
-	std::string name = Caps.szPname;
-	if (Instance != 1)
-		name += " #" + std::to_string(Instance);
+	std::string name = m_Name;
+	if (m_Instance != 1)
+		name += " #" + std::to_string(m_Instance);
 	return name;
 }
+
+#ifndef NDEBUG
+void OutputDebug(const char* format, ...)
+{
+	char buf[256];
+	va_list var;
+	va_start(var, format);
+	vsnprintf(buf, sizeof(buf), format, var);
+	OutputDebugString(buf);
+	va_end(var);
+}
+#else
+void OutputDebug(const char* format, ...) {}
+#endif
 
 /*****************************************************************************/
 bool JoystickDev::Update()
 {
-	if (!Present)
+	HRESULT hr;
+	if (!m_Present)
 		return false;
 
-	InfoEx.dwSize = sizeof(InfoEx);
-	InfoEx.dwFlags = JOY_RETURNALL | JOY_RETURNPOVCTS;
-	return joyGetPosEx(JoyIndex, &InfoEx) == JOYERR_NOERROR;
+	hr = m_Device->Poll();
+	if (FAILED(hr)) { OutputDebug("Poll result %08x\n", hr); }
+	if (FAILED(hr))
+	{
+		hr = m_Device->Acquire();
+		OutputDebug("Acquire result %08x\n", hr);
+
+		if (hr == DIERR_UNPLUGGED)
+			return false;
+
+		return true;
+	}
+	if (FAILED(hr = m_Device->GetDeviceState(sizeof(DIJOYSTATE2), &m_JoyState)))
+	{
+		OutputDebug("GeteviceState result %08x\n", hr);
+		return false;
+	}
+	return true;
 }
 
 /*****************************************************************************/
 DWORD JoystickDev::GetButtons()
 {
-	return InfoEx.dwButtons;
+	DWORD buttons{ 0 };
+	for (int i = 0; i < JOYSTICK_MAX_BTNS && i < sizeof(DIJOYSTATE2::rgbButtons); ++i)
+	{
+		if (m_JoyState.rgbButtons[i] & 0x80)
+			buttons |= (1 << i);
+	}
+	return buttons;
 }
+
+static constexpr unsigned int setbit(int bit) { return 1u << bit; }
+constexpr DWORD xboxAxes = setbit(JOYSTICK_AXIS_RX_P) | setbit(JOYSTICK_AXIS_RY_P);
+constexpr DWORD stdpadAxes = setbit(JOYSTICK_AXIS_Z_P) | setbit(JOYSTICK_AXIS_RZ_P);
 
 /*****************************************************************************/
 void JoystickDev::GetAxesValue(int axesSet, int& x, int& y)
 {
-	UINT minX, maxX;
-	UINT minY, maxY;
-	DWORD dwX, dwY;
 	switch (axesSet)
 	{
 	case 1:
-		dwX = InfoEx.dwUpos; minX = Caps.wUmin; maxX = Caps.wUmax;
-		dwY = InfoEx.dwRpos; minY = Caps.wRmin; maxY = Caps.wRmax;
-		break;
 	case 2:
-		dwX = InfoEx.dwZpos; minX = Caps.wZmin; maxX = Caps.wZmax;
-		dwY = InfoEx.dwRpos; minY = Caps.wRmin; maxY = Caps.wRmax;
+		if ((m_PresentAxes & xboxAxes) == xboxAxes)
+		{
+			x = m_JoyState.lRx;
+			y = m_JoyState.lRy;
+		}
+		else if ((m_PresentAxes & stdpadAxes) == stdpadAxes)
+		{
+			x = m_JoyState.lZ;
+			y = m_JoyState.lRz;
+		}
+		else
+		{
+			x = 32767;
+			y = 32767;
+		}
 		break;
 	default:
-		dwX = InfoEx.dwXpos; minX = Caps.wXmin; maxX = Caps.wXmax;
-		dwY = InfoEx.dwYpos; minY = Caps.wYmin; maxY = Caps.wYmax;
+		x = m_JoyState.lX;
+		y = m_JoyState.lY;
 		break;
 	}
-	x = ((dwX - minX) * 65535 / (maxX - minX));
-	y = ((dwY - minY) * 65535 / (maxY - minY));
 }
 
 DWORD JoystickDev::GetAxesState(int threshold)
 {
-	using InfoT = JOYINFOEX;
-	using CapsT = JOYCAPS;
+	DIJOYSTATE2& state = m_JoyState;
 	unsigned int axes = 0;
-
-	auto Scale = [this](DWORD InfoT::* pos, UINT CapsT::* min, UINT CapsT::* max) {
-		return (int)((double)(InfoEx.*pos - Caps.*min) * 65535.0 /
-			(double)(Caps.*max - Caps.*min));
-	};
 
 	auto Detect = [&axes, threshold](const int val, const int nbit, const int pbit) {
 		if (val < 32767 - threshold)
@@ -226,39 +263,157 @@ DWORD JoystickDev::GetAxesState(int threshold)
 			axes |= (1 << pbit);
 	};
 
-	int ty = Scale(&InfoT::dwYpos, &CapsT::wYmin, &CapsT::wYmax);
-	int tx = Scale(&InfoT::dwXpos, &CapsT::wXmin, &CapsT::wXmax);
-	int tz = Scale(&InfoT::dwZpos, &CapsT::wZmin, &CapsT::wZmin);
-	int tr = Scale(&InfoT::dwRpos, &CapsT::wRmin, &CapsT::wRmax);
-	int tu = Scale(&InfoT::dwUpos, &CapsT::wUmin, &CapsT::wUmax);
-	int tv = Scale(&InfoT::dwVpos, &CapsT::wVmin, &CapsT::wVmax);
+	Detect(state.lX, JOYSTICK_AXIS_LEFT, JOYSTICK_AXIS_RIGHT);
+	Detect(state.lY, JOYSTICK_AXIS_UP, JOYSTICK_AXIS_DOWN);
 
-	Detect(ty, JOYSTICK_AXIS_UP, JOYSTICK_AXIS_DOWN);
-	Detect(tx, JOYSTICK_AXIS_LEFT, JOYSTICK_AXIS_RIGHT);
-	Detect(tz, JOYSTICK_AXIS_Z_N, JOYSTICK_AXIS_Z_P);
-	Detect(tr, JOYSTICK_AXIS_R_N, JOYSTICK_AXIS_R_P);
-	Detect(tu, JOYSTICK_AXIS_U_N, JOYSTICK_AXIS_U_P);
-	Detect(tv, JOYSTICK_AXIS_V_N, JOYSTICK_AXIS_V_P);
-
-	if (InfoEx.dwPOV != JOY_POVCENTERED)
+	// If axes RX and RY are not present, but Z and RZ are,
+	// map Z and RZ to RX and RY
+	if ((m_PresentAxes & xboxAxes) == 0)
 	{
-		if (InfoEx.dwPOV >= 29250 || InfoEx.dwPOV < 6750)
-			axes |= (1 << JOYSTICK_AXIS_HAT_UP);
-		if (InfoEx.dwPOV >= 2250 && InfoEx.dwPOV < 15750)
-			axes |= (1 << JOYSTICK_AXIS_HAT_RIGHT);
-		if (InfoEx.dwPOV >= 11250 && InfoEx.dwPOV < 24750)
-			axes |= (1 << JOYSTICK_AXIS_HAT_DOWN);
-		if (InfoEx.dwPOV >= 20250 && InfoEx.dwPOV < 33750)
-			axes |= (1 << JOYSTICK_AXIS_HAT_LEFT);
+		if (m_PresentAxes & setbit(JOYSTICK_AXIS_Z_P))
+			Detect(state.lZ, JOYSTICK_AXIS_RX_N, JOYSTICK_AXIS_RX_P);
+		if (m_PresentAxes & setbit(JOYSTICK_AXIS_RZ_P))
+			Detect(state.lZ, JOYSTICK_AXIS_RY_N, JOYSTICK_AXIS_RY_P);
+	}
+	else
+	{
+		if (m_PresentAxes & setbit(JOYSTICK_AXIS_Z_P))
+			Detect(state.lZ, JOYSTICK_AXIS_Z_N, JOYSTICK_AXIS_Z_P);
+		if (m_PresentAxes & setbit(JOYSTICK_AXIS_RX_P))
+			Detect(state.lRx, JOYSTICK_AXIS_RX_N, JOYSTICK_AXIS_RX_P);
+		if (m_PresentAxes & setbit(JOYSTICK_AXIS_RY_P))
+			Detect(state.lRy, JOYSTICK_AXIS_RY_N, JOYSTICK_AXIS_RY_P);
+		if (m_PresentAxes & setbit(JOYSTICK_AXIS_RZ_P))
+			Detect(state.lRz, JOYSTICK_AXIS_RZ_N, JOYSTICK_AXIS_RZ_P);
+	}
+
+	if (m_PresentAxes & setbit(JOYSTICK_AXIS_HAT_UP))
+	{
+		DWORD pov = state.rgdwPOV[0];
+		if (pov != -1)
+		{
+			if (pov >= 29250 || pov < 6750)
+				axes |= (1 << JOYSTICK_AXIS_HAT_UP);
+			if (pov >= 2250 && pov < 15750)
+				axes |= (1 << JOYSTICK_AXIS_HAT_RIGHT);
+			if (pov >= 11250 && pov < 24750)
+				axes |= (1 << JOYSTICK_AXIS_HAT_DOWN);
+			if (pov >= 20250 && pov < 33750)
+				axes |= (1 << JOYSTICK_AXIS_HAT_LEFT);
+		}
 	}
 
 	return axes;
 }
 
 /****************************************************************************/
-void JoystickHandler::ScanJoysticks()
+void JoystickDev::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* pdidoi)
 {
-	JOYINFOEX joyInfoEx;
+	// For axes that are returned, set the DIPROP_RANGE property for the
+	// enumerated axis in order to scale min/max values.
+	if (pdidoi->dwType & DIDFT_AXIS)
+	{
+		DIPROPRANGE diprg{};
+		diprg.diph.dwSize = sizeof(DIPROPRANGE);
+		diprg.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+		diprg.diph.dwHow = DIPH_BYID;
+		diprg.diph.dwObj = pdidoi->dwType; // Specify the enumerated axis
+		diprg.lMin = 0;
+		diprg.lMax = 65535;
+
+		// Set the range for the axis
+		if (FAILED(m_Device->SetProperty(DIPROP_RANGE, &diprg.diph)))
+			return;
+	}
+
+	if (pdidoi->dwType & DIDFT_BUTTON)
+	{
+		auto instance = DIDFT_GETINSTANCE(pdidoi->dwType);
+		if (instance < JOYSTICK_MAX_BTNS)
+			m_PresentButtons |= setbit(instance);
+	}
+
+	if (pdidoi->guidType == GUID_YAxis)
+		m_PresentAxes |= setbit(JOYSTICK_AXIS_UP) | setbit(JOYSTICK_AXIS_DOWN);
+	if (pdidoi->guidType == GUID_XAxis)
+		m_PresentAxes |= setbit(JOYSTICK_AXIS_LEFT) | setbit(JOYSTICK_AXIS_RIGHT);
+	if (pdidoi->guidType == GUID_ZAxis)
+		m_PresentAxes |= setbit(JOYSTICK_AXIS_Z_N) | setbit(JOYSTICK_AXIS_Z_P);
+	if (pdidoi->guidType == GUID_RxAxis)
+		m_PresentAxes |= setbit(JOYSTICK_AXIS_RX_N) | setbit(JOYSTICK_AXIS_RX_P);
+	if (pdidoi->guidType == GUID_RyAxis)
+		m_PresentAxes |= setbit(JOYSTICK_AXIS_RY_N) | setbit(JOYSTICK_AXIS_RY_P);
+	if (pdidoi->guidType == GUID_RzAxis)
+		m_PresentAxes |= setbit(JOYSTICK_AXIS_RZ_N) | setbit(JOYSTICK_AXIS_RZ_P);
+	if (pdidoi->guidType == GUID_POV)
+		m_PresentAxes |= setbit(JOYSTICK_AXIS_HAT_LEFT) | setbit(JOYSTICK_AXIS_HAT_RIGHT)
+				| setbit(JOYSTICK_AXIS_HAT_UP) | setbit(JOYSTICK_AXIS_HAT_DOWN);
+}
+
+/****************************************************************************/
+JoystickDev::JoystickDev(JoystickDev&& r)
+{
+	m_GUIDInstance = r.m_GUIDInstance;
+	m_Id = r.m_Id;
+	std::swap(m_Name, r.m_Name);
+	std::swap(m_Device, r.m_Device);
+	m_PresentAxes = r.m_PresentAxes;
+	m_PresentButtons = r.m_PresentButtons;
+	m_Instance = r.m_Instance;
+	m_Order = r.m_Order;
+	m_JoyIndex = r.m_JoyIndex;
+	m_Configured = r.m_Configured;
+	m_Present = r.m_Present;
+}
+
+/****************************************************************************/
+void JoystickDev::CloseDevice()
+{
+	if (m_Device)
+	{
+		m_Device->Unacquire();
+		m_Device->Release();
+		m_Device = nullptr;
+	}
+}
+
+/****************************************************************************/
+JoystickDev::~JoystickDev()
+{
+	CloseDevice();
+}
+
+/****************************************************************************/
+void JoystickHandler::AddDeviceInstance(const DIDEVICEINSTANCE* pdidInstance)
+{
+	int mid = LOWORD(pdidInstance->guidProduct.Data1);
+	int pid = HIWORD(pdidInstance->guidProduct.Data1);
+
+	int index = m_JoystickDevs.size();
+
+	JoystickDev dev;
+	dev.m_GUIDInstance = pdidInstance->guidInstance;
+	dev.m_Id = JoystickId(mid, pid);
+	dev.m_Name = pdidInstance->tszInstanceName;
+	dev.m_Configured = true;
+	dev.m_Present = true;
+	dev.m_JoyIndex = index;
+
+	m_JoystickDevs.emplace_back(std::move(dev));
+}
+
+/****************************************************************************/
+
+static BOOL CALLBACK EnumJoysticksCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext)
+{
+	reinterpret_cast<JoystickHandler*>(pContext)->AddDeviceInstance(pdidInstance);
+	return DIENUM_CONTINUE;
+}
+
+/****************************************************************************/
+HRESULT JoystickHandler::ScanJoysticks()
+{
+//	JOYINFOEX joyInfoEx;
 	std::map<JoystickId, std::list<JoystickDev*>> listById;
 
 	// Clear PC joystick list
@@ -269,33 +424,21 @@ void JoystickHandler::ScanJoysticks()
 		state.JoyIndex = -1;
 	}
 
-	// Get all configured and present joysticks
-	for (int devIdx = 0; devIdx < MAX_JOYSTICK_DEVS; ++devIdx)
+	// Clear joystick devs vector
+	m_JoystickDevs.clear();
+
+	if (FAILED(m_DirectInputInitResult))
+		return m_DirectInputInitResult;
+
+	HRESULT hr = m_pDirectInput->EnumDevices(DI8DEVCLASS_GAMECTRL, EnumJoysticksCallback, this, DIEDFL_ATTACHEDONLY);
+	if (FAILED(hr))
+		return hr;
+
+	for (unsigned int devIdx = 0; devIdx < m_JoystickDevs.size(); ++devIdx)
 	{
 		JoystickDev& dev = m_JoystickDevs[devIdx];
-		dev.Configured = false;
-		dev.Present = false;
-		dev.Instance = 0;
-		dev.Order = -1;
-		dev.JoyIndex = devIdx;
-
-		memset(&joyInfoEx, 0, sizeof(joyInfoEx));
-		joyInfoEx.dwSize = sizeof(joyInfoEx);
-		joyInfoEx.dwFlags = JOY_RETURNBUTTONS;
-
-		DWORD Result = joyGetDevCaps(devIdx, &dev.Caps, sizeof(JOYCAPS));
-		if (Result == JOYERR_NOERROR)
-		{
-			dev.Configured = true;
-
-			Result = joyGetPosEx(devIdx, &joyInfoEx);
-			if (Result == JOYERR_NOERROR)
-			{
-				dev.Present = true;
-				listById[dev.Id()].push_back(&dev);
-				dev.Instance = listById[dev.Id()].size();
-			}
-		}
+		listById[dev.Id()].push_back(&dev);
+		dev.m_Instance = listById[dev.Id()].size();
 	}
 
 	int joyIdx = 0;
@@ -308,12 +451,12 @@ void JoystickHandler::ScanJoysticks()
 		{
 			JoystickDev& dev = *(list.front());
 			list.pop_front();
-			dev.Order = order++;
-			entry.JoyIndex = dev.JoyIndex;
-			if (dev.Present && joyIdx < NUM_PC_JOYSTICKS)
+			dev.m_Order = order++;
+			entry.JoyIndex = dev.m_JoyIndex;
+			if (dev.m_Present && joyIdx < NUM_PC_JOYSTICKS)
 			{
 				m_PCJoystickState[joyIdx].Dev = &dev;
-				m_PCJoystickState[joyIdx].JoyIndex = dev.JoyIndex;
+				m_PCJoystickState[joyIdx].JoyIndex = dev.m_JoyIndex;
 				++joyIdx;
 			}
 		}
@@ -330,10 +473,10 @@ void JoystickHandler::ScanJoysticks()
 		if (joyIdx >= NUM_PC_JOYSTICKS)
 			break;
 
-		if (dev.Present && dev.Order == -1)
+		if (dev.m_Present && dev.m_Order == -1)
 		{
 			m_PCJoystickState[joyIdx].Dev = &dev;
-			m_PCJoystickState[joyIdx].JoyIndex = dev.JoyIndex;
+			m_PCJoystickState[joyIdx].JoyIndex = dev.m_JoyIndex;
 			++joyIdx;
 			newJoysticks.push_back(&dev);
 		}
@@ -356,14 +499,75 @@ void JoystickHandler::ScanJoysticks()
 
 	// Add new joystick at the end of order list
 	for (JoystickDev* dev : newJoysticks)
-		m_JoystickOrder.emplace_back(dev->Id(), dev->DisplayString(), dev->JoyIndex);
+		m_JoystickOrder.emplace_back(dev->Id(), dev->DisplayString(), dev->m_JoyIndex);
 
 	// Update order in joystick list
 	for (idx = 0; idx < static_cast<int>(m_JoystickOrder.size()); ++idx)
 	{
 		JoystickOrderEntry& entry = m_JoystickOrder[idx];
 		if (entry.JoyIndex != -1)
-			m_JoystickDevs[entry.JoyIndex].Order = idx;
+			m_JoystickDevs[entry.JoyIndex].m_Order = idx;
+	}
+	return S_OK;
+}
+
+/****************************************************************************/
+
+static BOOL CALLBACK EnumJoystickObjectsCallback(const DIDEVICEOBJECTINSTANCE* pdidoi, VOID* pContext)
+{
+	reinterpret_cast<JoystickDev*>(pContext)->EnumObjectsCallback(pdidoi);
+	return DIENUM_CONTINUE;
+}
+
+/****************************************************************************/
+HRESULT JoystickHandler::OpenDevice(HWND mainWindow, JoystickDev* dev)
+{
+	HRESULT hr;
+
+	// Do nothing if device already open
+	if (dev->m_Device)
+		return S_OK;
+
+	if (FAILED(hr = m_pDirectInput->CreateDevice(dev->m_GUIDInstance, &dev->m_Device, nullptr)))
+		return hr;
+
+	if (FAILED(hr = dev->m_Device->SetDataFormat(&c_dfDIJoystick2)))
+	{
+		dev->CloseDevice();
+		return hr;
+	}
+
+	if (FAILED(hr = dev->m_Device->SetCooperativeLevel(mainWindow, DISCL_NONEXCLUSIVE | DISCL_BACKGROUND)))
+	{
+		dev->CloseDevice();
+		return hr;
+	}
+
+	if (FAILED(hr = dev->m_Device->EnumObjects(EnumJoystickObjectsCallback, (VOID*)dev, DIDFT_ALL)))
+	{
+		dev->CloseDevice();
+		return hr;
+	}
+
+	return S_OK;
+}
+
+/****************************************************************************/
+HRESULT JoystickHandler::InitDirectInput()
+{
+	if (FAILED(m_DirectInputInitResult = DirectInput8Create(GetModuleHandle(NULL),
+			DIRECTINPUT_VERSION, IID_IDirectInput8, (VOID**)&m_pDirectInput, NULL)))
+		return m_DirectInputInitResult;
+	return S_OK;
+}
+
+/****************************************************************************/
+JoystickHandler::~JoystickHandler()
+{
+	if (m_pDirectInput)
+	{
+		m_pDirectInput->Release();
+		m_pDirectInput = nullptr;
 	}
 }
 
@@ -472,12 +676,11 @@ void BeebWin::UpdateJoystickMenu()
 	for (int bbcIdx = 0; bbcIdx < NUM_BBC_JOYSTICKS; ++bbcIdx)
 	{
 		bool EnableAxes = false;
-#if 0 // This needs rework (proper joystick name from DirectInput)
 		static const char* const menuItems[2] = { "First PC &Joystick", "Second PC Joystick" };
 
 		for (int pcIdx = 0; pcIdx < _countof(JoystickMenuIdsType::Joysticks); ++pcIdx)
 		{
-			auto* dev = m_PCJoystickState[pcIdx].Dev;
+			auto* dev = m_JoystickHandler->m_PCJoystickState[pcIdx].Dev;
 			if (dev)
 			{
 				SetMenuItemText(JoystickMenuIds[bbcIdx].Joysticks[pcIdx], dev->DisplayString());
@@ -487,7 +690,6 @@ void BeebWin::UpdateJoystickMenu()
 				SetMenuItemText(JoystickMenuIds[bbcIdx].Joysticks[pcIdx], menuItems[pcIdx]);
 			}
 		}
-#endif
 
 		if (GetPCJoystick(bbcIdx) != 0)
 			EnableAxes = true;
@@ -570,15 +772,54 @@ void BeebWin::ResetJoystick()
 }
 
 /****************************************************************************/
+bool BeebWin::ScanJoysticks(bool verbose)
+{
+	if (!m_JoystickHandler->m_DirectInputInitialized)
+		m_JoystickHandler->InitDirectInput();
+
+	if (FAILED(m_JoystickHandler->m_DirectInputInitResult))
+	{
+		if (verbose)
+		{
+			char msg[128];
+			snprintf(msg, sizeof(msg), "DirectInput initialization failed.\nError Code: %08X", m_JoystickHandler->m_DirectInputInitResult);
+			MessageBox(m_hWnd, msg, WindowTitle, MB_OK | MB_ICONERROR);
+		}
+		return false;
+	}
+
+	HRESULT hr;
+	if (FAILED(hr = m_JoystickHandler->ScanJoysticks()))
+	{
+		if (verbose)
+		{
+			char msg[128];
+			snprintf(msg, sizeof(msg), "Joystick enumeration failed.\nError Code: %08X", hr);
+			MessageBox(m_hWnd, msg, WindowTitle, MB_OK | MB_ICONERROR);
+		}
+		return false;
+	}
+
+	if (m_JoystickHandler->m_JoystickDevs.size() == 0)
+	{
+		if (verbose)
+		{
+			MessageBox(m_hWnd, "No joysticks found", WindowTitle, MB_OK | MB_ICONERROR);
+		}
+		return false;
+	}
+
+	return true;
+}
+
+/****************************************************************************/
 bool BeebWin::InitJoystick(bool verbose)
 {
 	bool Success = true;
 
 	ResetJoystick();
 
-	m_JoystickHandler->ScanJoysticks();
-
-	if (IsPCJoystickOn(0) || IsPCJoystickOn(1) || m_JoystickToKeys)
+	if (GetPCJoystick(0) || GetPCJoystick(1) || m_JoystickToKeys)
 	{
 		for (int pcIdx = 0; pcIdx < NUM_PC_JOYSTICKS; ++pcIdx)
 		{
@@ -610,18 +851,23 @@ bool BeebWin::InitJoystick(bool verbose)
 bool BeebWin::CaptureJoystick(int Index, bool verbose)
 {
 	bool success = false;
+	JoystickDev* dev = m_JoystickHandler->m_PCJoystickState[Index].Dev;
 
-	if (m_JoystickHandler->m_PCJoystickState[Index].Dev)
+	if (dev)
 	{
-		m_JoystickHandler->m_PCJoystickState[Index].Captured = true;
-		success = true;
-	}
-	else if (verbose && (IsPCJoystickOn(Index) || m_JoystickToKeys && Index == 0))
-	{
-		char str[100];
-		sprintf(str, "Failed to initialise joystick %d", Index + 1);
+		HRESULT hr = m_JoystickHandler->OpenDevice(m_hWnd, dev);
+		if (!FAILED(hr))
+		{
+			m_JoystickHandler->m_PCJoystickState[Index].Captured = true;
+			success = true;
+		}
+		else if (verbose)
+		{
+			char str[256];
+			snprintf(str, sizeof(str), "Failed to initialise %s", dev->DisplayString().c_str());
 
-		MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
+			MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
+		}
 	}
 
 	return success;
@@ -732,7 +978,7 @@ void BeebWin::TranslateAxes(int joyId, unsigned int axesState)
 
 	if (axesState != prevAxes)
 	{
-		for (int axId = 0; axId < JOYSTICK_AXES_COUNT; ++axId)
+		for (int axId = 0; axId < JOYSTICK_MAX_AXES; ++axId)
 		{
 			if ((axesState & ~prevAxes) & (1 << axId))
 			{
@@ -868,6 +1114,10 @@ void BeebWin::TranslateJoystick(int joyId)
 /*****************************************************************************/
 void BeebWin::UpdateJoysticks()
 {
+	// Don't update joysticks if not in foreground
+	if (!m_active && m_JoystickTarget == nullptr)
+		return;
+
 	for (int idx = 0; idx < NUM_PC_JOYSTICKS; ++idx)
 	{
 		if (m_JoystickHandler->m_PCJoystickState[0].Captured)
@@ -1345,7 +1595,12 @@ void BeebWin::ReadJoystickPreferences()
 		}
 
 		if (GetNthDWORDValue(m_Preferences, CFG_OPTIONS_STICK_PCAXES, bbcIdx + 1, dword))
+		{
+			// Axes value 2 is obsolete, replace with 1
+			if (dword == 2)
+				dword = 1;
 			config.PCAxes = dword;
+		}
 
 		m_MenuIdAxes[bbcIdx] = AxesToMenuId(bbcIdx, config.PCAxes);
 	}

@@ -216,6 +216,26 @@ bool SelectKeyDialog::Shift() const
 
 LPCSTR SelectKeyDialog::KeyName(int Key)
 {
+	static const std::map<int, const char*> axisNamesMap = {
+		{ JOYSTICK_AXIS_LEFT, "Left" },
+		{ JOYSTICK_AXIS_RIGHT, "Right" },
+		{ JOYSTICK_AXIS_UP, "Up" },
+		{ JOYSTICK_AXIS_DOWN, "Down" },
+		{ JOYSTICK_AXIS_Z_N, "Z-" },
+		{ JOYSTICK_AXIS_Z_P, "Z+" },
+		{ JOYSTICK_AXIS_RX_N, "RLeft" },
+		{ JOYSTICK_AXIS_RX_P, "RRight" },
+		{ JOYSTICK_AXIS_RY_N, "RUp" },
+		{ JOYSTICK_AXIS_RY_P, "RDown" },
+		{ JOYSTICK_AXIS_RZ_N, "RZ-" },
+		{ JOYSTICK_AXIS_RZ_P, "RZ+" },
+		{ JOYSTICK_AXIS_HAT_LEFT, "HatLeft" },
+		{ JOYSTICK_AXIS_HAT_RIGHT, "HatRight" },
+		{ JOYSTICK_AXIS_HAT_UP, "HatUp" },
+		{ JOYSTICK_AXIS_HAT_DOWN, "HatDown" }
+
+	};
+
 	static CHAR Character[2]; // Used to return single characters.
 
 	if (Key >= BEEB_VKEY_JOY_START && Key < BEEB_VKEY_JOY_END)
@@ -231,21 +251,10 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 
 		if (Key < JOYSTICK_MAX_AXES)
 		{
-			if (Key == JOYSTICK_AXIS_UP)
+			auto iter = axisNamesMap.find(Key);
+			if (iter != axisNamesMap.end())
 			{
-				strcat(Name, "Up");
-			}
-			else if (Key == JOYSTICK_AXIS_DOWN)
-			{
-				strcat(Name, "Down");
-			}
-			else if (Key == JOYSTICK_AXIS_LEFT)
-			{
-				strcat(Name, "Left");
-			}
-			else if (Key == JOYSTICK_AXIS_RIGHT)
-			{
-				strcat(Name, "Right");
+				strcat(Name, iter->second);
 			}
 			else
 			{
@@ -361,9 +370,38 @@ int SelectKeyDialog::JoyVKeyByName(const char* Name)
 		return keyMap;
 	}();
 
-	auto iter = nameToVKeyMap.find(toupper(Name));
-	if (iter == nameToVKeyMap.end())
+	std::string uname = toupper(Name);
+	auto iter = nameToVKeyMap.find(uname);
+	if (iter != nameToVKeyMap.end())
+		return iter->second;
+
+	// Read axis number
+	if (uname.substr(0, 3) != "JOY")
+		return -1;
+	uname = uname.substr(3);
+	char* endp;
+	long joyIdx = strtol(uname.c_str(), &endp, 10);
+	if (joyIdx < 1 || joyIdx > NUM_PC_JOYSTICKS || !endp || endp == uname.c_str())
+		return -1;
+	uname = uname.substr(endp - uname.c_str());
+
+	if (uname.substr(0, 4) != "AXIS")
+		return -1;
+	uname = uname.substr(4);
+	long axis = strtol(uname.c_str(), &endp, 10);
+	if (axis < 1 || axis > JOYSTICK_MAX_AXES || !endp || endp == uname.c_str())
+		return -1;
+	uname = uname.substr(endp - uname.c_str());
+
+	int pos = 0;
+	if (uname.size() != 1)
+		return -1;
+	if (uname[0] == '-')
+		pos = 0;
+	else if (uname[0] == '+')
+		pos = 1;
+	else
 		return -1;
 
-	return iter->second;
+	return BEEB_VKEY_JOY_START + (joyIdx - 1) * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS) + (axis - 1) * 2 + pos;
 }
