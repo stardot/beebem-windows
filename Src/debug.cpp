@@ -74,7 +74,7 @@ Boston, MA  02110-1301, USA.
 
 #define ADRMASK (IMM | ABS | ACC | IMP | INX | INY | ZPX | ABX | ABY | REL | IND | ZPY | ZPG | ZPR | ILL)
 
-#define MAX_BUFFER 65536
+const int MAX_BUFFER = 65536;
 
 bool DebugEnabled = false; // Debug dialog visible
 static DebugType DebugSource = DebugType::None; // Debugging active?
@@ -2257,10 +2257,14 @@ static bool DebugCmdFile(char* args)
 		else if(tolower(mode) == 'w')
 		{
 			FILE *fd = fopen(filename, "wb");
+
 			if (fd)
 			{
-				if(count + addr > 0xFFFF)
-					count = 0xFFFF - addr;
+				if (count + addr > MAX_BUFFER)
+				{
+					count = MAX_BUFFER - addr;
+				}
+
 				for (i = 0; i < count; ++i)
 					buffer[i] = DebugReadMem((addr + i) & 0xffff, true);
 
