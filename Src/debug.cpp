@@ -118,41 +118,41 @@ int debugHistoryIndex = 0;
 // Aliases are supported, put these below the command they reference and leave argspec/help
 // empty.
 static const DebugCmd DebugCmdTable[] = {
-	{ "bp",		DebugCmdToggleBreak, "start[-end] [name]", "Sets/Clears a breakpoint or break range." },
-	{ "b",		DebugCmdToggleBreak, "", ""}, // Alias of "bp"
-	{ "breakpoint", DebugCmdToggleBreak, "", ""}, // Alias of "bp"
-	{ "labels",	DebugCmdLabels, "[filename]", "Loads labels from VICE file, or display known labels." },
-	{ "l",		DebugCmdLabels,"",""}, // Alias of "labels"
-	{ "help",	DebugCmdHelp, "[command/addr]", "Displays help for the specified command or address." },
-	{ "?",		DebugCmdHelp,"",""}, // Alias of "help"
-	{ "q",		DebugCmdHelp,"",""}, // Alias of "help"
-	{ "break",	DebugCmdBreakContinue, "", "Break/Continue." },
-	{ ".",		DebugCmdBreakContinue,"",""}, // Alias of "break"
-	{ "set",	DebugCmdSet, "host/parasite/rom/os/endian/breakpoints/decimal/brk on/off", "Turns various UI checkboxes on or off." },
-	{ "next",	DebugCmdNext, "[count]", "Execute the specified number instructions, default 1." },
-	{ "n",		DebugCmdNext,"",""}, // Alias of "next"
-	{ "over",	DebugCmdOver, "", "Step over JSR (host only)." },
-	{ "o",		DebugCmdOver,"",""}, // Alias of "over"
-	{ "peek",	DebugCmdPeek, "[p] [start] [count]", "Dumps memory to console." },
-	{ "m",		DebugCmdPeek,"",""}, // Alias of "peek"
-	{ "code",	DebugCmdCode, "[p] [start] [count]", "Disassembles specified range." },
-	{ "d",		DebugCmdCode,"",""}, // Alias of "code"
-	{ "watch",	DebugCmdWatch, "[p] addr [b/w/d] [name]", "Sets/Clears a byte/word/dword watch at addr." },
-	{ "e",		DebugCmdWatch,"",""}, // Alias of "watch"
-	{ "state",	DebugCmdState, "v/u/s/t/m/r", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms." },
-	{ "s",		DebugCmdState,"",""}, // Alias of "state"
-	{ "save",	DebugCmdSave, "[count] file", "Writes console lines to file." },
-	{ "w",		DebugCmdSave,"",""}, // Alias of "save"
-	{ "poke",	DebugCmdPoke, "[p] start byte [byte...]", "Write bytes to memory." },
-	{ "c",		DebugCmdPoke,"",""}, // Alias of "poke"
-	{ "goto",	DebugCmdGoto, "[p] addr", "Jump to address." },
-	{ "g",		DebugCmdGoto,"",""}, // Alias of "goto"
-	{ "file",	DebugCmdFile, "r/w addr [count] filename", "Read/Write memory at address from/to file." },
-	{ "f",		DebugCmdFile,"",""}, // Alias of "file"
-	{ "echo",	DebugCmdEcho, "string", "Write string to console." },
-	{ "!",	DebugCmdEcho, "","" }, // Alias of "echo"
-	{ "script",	DebugCmdScript, "[filename]", "Executes a debugger script." },
-	{ "clear",	DebugCmdClear, "", "Clears the console." }
+	{ "bp",         DebugCmdToggleBreak,   "start[-end] [name]", "Sets/Clears a breakpoint or break range." },
+	{ "b",          DebugCmdToggleBreak,   "", ""}, // Alias of "bp"
+	{ "breakpoint", DebugCmdToggleBreak,   "", ""}, // Alias of "bp"
+	{ "labels",     DebugCmdLabels,        "[filename]", "Loads labels from VICE file, or display known labels." },
+	{ "l",          DebugCmdLabels,        "", ""}, // Alias of "labels"
+	{ "help",       DebugCmdHelp,          "[command/addr]", "Displays help for the specified command or address." },
+	{ "?",          DebugCmdHelp,          "", ""}, // Alias of "help"
+	{ "q",          DebugCmdHelp,          "", ""}, // Alias of "help"
+	{ "break",      DebugCmdBreakContinue, "", "Break/Continue." },
+	{ ".",          DebugCmdBreakContinue, "",""}, // Alias of "break"
+	{ "set",        DebugCmdSet,           "host/parasite/rom/os/endian/breakpoints/decimal/brk on/off", "Turns various UI checkboxes on or off." },
+	{ "next",       DebugCmdNext,          "[count]", "Execute the specified number instructions, default 1." },
+	{ "n",          DebugCmdNext,          "", ""}, // Alias of "next"
+	{ "over",       DebugCmdOver,          "", "Step over JSR (host only)." },
+	{ "o",          DebugCmdOver,          "", ""}, // Alias of "over"
+	{ "peek",       DebugCmdPeek,          "[p] [start] [count]", "Dumps memory to console." },
+	{ "m",          DebugCmdPeek,          "", ""}, // Alias of "peek"
+	{ "code",       DebugCmdCode,          "[p] [start] [count]", "Disassembles specified range." },
+	{ "d",          DebugCmdCode,          "", ""}, // Alias of "code"
+	{ "watch",      DebugCmdWatch,         "[p] addr [b/w/d] [name]", "Sets/Clears a byte/word/dword watch at addr." },
+	{ "e",          DebugCmdWatch,         "", ""}, // Alias of "watch"
+	{ "state",      DebugCmdState,         "v/u/s/t/m/r", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms." },
+	{ "s",          DebugCmdState,         "", ""}, // Alias of "state"
+	{ "save",       DebugCmdSave,          "[count] file", "Writes console lines to file." },
+	{ "w",          DebugCmdSave,          "", ""}, // Alias of "save"
+	{ "poke",       DebugCmdPoke,          "[p] start byte [byte...]", "Write bytes to memory." },
+	{ "c",          DebugCmdPoke,          "", ""}, // Alias of "poke"
+	{ "goto",       DebugCmdGoto,          "[p] addr", "Jump to address." },
+	{ "g",          DebugCmdGoto,          "", ""}, // Alias of "goto"
+	{ "file",       DebugCmdFile,          "r/w addr [count] filename", "Read/Write memory at address from/to file." },
+	{ "f",          DebugCmdFile,          "", ""}, // Alias of "file"
+	{ "echo",       DebugCmdEcho,          "string", "Write string to console." },
+	{ "!",          DebugCmdEcho,          "", "" }, // Alias of "echo"
+	{ "script",     DebugCmdScript,        "[filename]", "Executes a debugger script." },
+	{ "clear",      DebugCmdClear,         "", "Clears the console." }
 };
 
 static const InstInfo optable_6502[256] =
