@@ -62,23 +62,22 @@ Boston, MA  02110-1301, USA.
 #define JOYSTICK_MAX_AXES       16
 #define JOYSTICK_MAX_BTNS       16
 
-#define JOYSTICK_AXIS_UP        0
-#define JOYSTICK_AXIS_DOWN      1
-#define JOYSTICK_AXIS_LEFT      2
-#define JOYSTICK_AXIS_RIGHT     3
+#define JOYSTICK_AXIS_LEFT      0
+#define JOYSTICK_AXIS_RIGHT     1
+#define JOYSTICK_AXIS_UP        2
+#define JOYSTICK_AXIS_DOWN      3
 #define JOYSTICK_AXIS_Z_N       4
 #define JOYSTICK_AXIS_Z_P       5
-#define JOYSTICK_AXIS_R_N       6
-#define JOYSTICK_AXIS_R_P       7
-#define JOYSTICK_AXIS_U_N       8
-#define JOYSTICK_AXIS_U_P       9
-#define JOYSTICK_AXIS_V_N       10
-#define JOYSTICK_AXIS_V_P       11
-#define JOYSTICK_AXIS_HAT_UP    12
-#define JOYSTICK_AXIS_HAT_DOWN  13
-#define JOYSTICK_AXIS_HAT_LEFT  14
-#define JOYSTICK_AXIS_HAT_RIGHT 15
-#define JOYSTICK_AXES_COUNT     16
+#define JOYSTICK_AXIS_RX_N      6
+#define JOYSTICK_AXIS_RX_P      7
+#define JOYSTICK_AXIS_RY_N      8
+#define JOYSTICK_AXIS_RY_P      9
+#define JOYSTICK_AXIS_RZ_N      10
+#define JOYSTICK_AXIS_RZ_P      11
+#define JOYSTICK_AXIS_HAT_LEFT  12
+#define JOYSTICK_AXIS_HAT_RIGHT 13
+#define JOYSTICK_AXIS_HAT_UP    14
+#define JOYSTICK_AXIS_HAT_DOWN  15
 
 #define BEEB_VKEY_JOY_START  256
 #define BEEB_VKEY_JOY_COUNT  (NUM_PC_JOYSTICKS * \
@@ -335,6 +334,7 @@ public:
 
 	HMENU		m_hMenu;
 	bool		m_frozen;
+	bool		m_active;
 	char*		m_screen;
 	char*		m_screen_blur;
 	double		m_RealTimeTarget;
@@ -598,6 +598,7 @@ public:
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
+	bool ScanJoysticks(bool verbose = false);
 	bool InitJoystick(bool verbose = false);
 	bool CaptureJoystick(int Index, bool verbose);
 	void ResetJoystick(void);
