@@ -111,6 +111,14 @@ struct DebugCmd
 };
 
 extern HWND hwndDebug;
+bool DebugDisassembler(int addr,
+                       int prevAddr,
+                       int Accumulator,
+                       int XReg,
+                       int YReg,
+                       int PSR,
+                       int StackReg,
+                       bool host);
 int DebugDisassembleInstruction(int addr, bool host, char *opstr);
 int DebugDisassembleInstructionWithCPUStatus(int addr,
                                              bool host,
@@ -120,54 +128,26 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
                                              unsigned char StackReg,
                                              unsigned char PSR,
                                              char *opstr);
+
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain);
 void DebugCloseDialog(void);
-bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YReg, int PSR, int StackReg, bool host);
+
 void DebugDisplayTrace(DebugType type, bool host, const char *info);
 void DebugDisplayInfo(const char *info);
 void DebugDisplayInfoF(const char *format, ...);
-void DebugVideoState(void);
-void DebugUserViaState(void);
-void DebugSysViaState(void);
-void DebugViaState(const char *s, VIAState *v);
-void DebugParseCommand(char *command);
+
+void DebugVideoState(); // See video.cpp
+void DebugUserViaState(); // See uservia.cpp
+void DebugSysViaState(); // See sysvia.cpp
+void DebugViaState(const char *s, VIAState *v); // See via.cpp
+
 void DebugRunScript(const char *filename);
 bool DebugLoadSwiftLabels(const char *filename);
+
 unsigned char DebugReadMem(int addr, bool host);
-void DebugWriteMem(int addr, bool host, unsigned char data);
-int DebugDisassembleInstruction(int addr, bool host, char *opstr);
-int DebugDisassembleCommand(int addr, int count, bool host);
-void DebugMemoryDump(int addr, int count, bool host);
-void DebugExecuteCommand();
-void DebugToggleRun();
 void DebugBreakExecution(DebugType type);
-void DebugUpdateWatches(bool all);
-void DebugDisplayInfoF(const char *format, ...);
-bool DebugLookupAddress(int addr, AddrInfo* addrInfo);
-void DebugHistoryMove(int delta);
-void DebugHistoryAdd(char* command);
+
 void DebugInitMemoryMaps();
 bool DebugLoadMemoryMap(char* filename, int bank);
-void DebugSetCommandString(char* string);
-void DebugChompString(char* string);
-
-bool DebugCmdBreakContinue(char* args);
-bool DebugCmdToggleBreak(char* args);
-bool DebugCmdLabels(char* args);
-bool DebugCmdHelp(char* args);
-bool DebugCmdSet(char* args);
-bool DebugCmdNext(char* args);
-bool DebugCmdOver(char* args);
-bool DebugCmdPeek(char* args);
-bool DebugCmdCode(char* args);
-bool DebugCmdWatch(char* args);
-bool DebugCmdState(char* args);
-bool DebugCmdSave(char* args);
-bool DebugCmdPoke(char* args);
-bool DebugCmdGoto(char* args);
-bool DebugCmdFile(char* args);
-bool DebugCmdEcho(char* args);
-bool DebugCmdScript(char *args);
-bool DebugCmdClear(char *args);
 
 #endif

@@ -114,6 +114,40 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 char debugHistory[MAX_HISTORY][300];
 int debugHistoryIndex = 0;
 
+static void DebugParseCommand(char *command);
+static void DebugWriteMem(int addr, bool host, unsigned char data);
+static int DebugDisassembleCommand(int addr, int count, bool host);
+static void DebugMemoryDump(int addr, int count, bool host);
+static void DebugExecuteCommand();
+static void DebugToggleRun();
+static void DebugUpdateWatches(bool all);
+static bool DebugLookupAddress(int addr, AddrInfo* addrInfo);
+static void DebugHistoryMove(int delta);
+static void DebugHistoryAdd(char* command);
+static void DebugSetCommandString(char* str);
+static void DebugChompString(char* str);
+
+// Command handlers
+static bool DebugCmdBreakContinue(char* args);
+static bool DebugCmdToggleBreak(char* args);
+static bool DebugCmdLabels(char* args);
+static bool DebugCmdHelp(char* args);
+static bool DebugCmdSet(char* args);
+static bool DebugCmdNext(char* args);
+static bool DebugCmdOver(char* args);
+static bool DebugCmdPeek(char* args);
+static bool DebugCmdCode(char* args);
+static bool DebugCmdWatch(char* args);
+static bool DebugCmdState(char* args);
+static bool DebugCmdSave(char* args);
+static bool DebugCmdPoke(char* args);
+static bool DebugCmdGoto(char* args);
+static bool DebugCmdFile(char* args);
+static bool DebugCmdEcho(char* args);
+static bool DebugCmdScript(char *args);
+static bool DebugCmdClear(char *args);
+
+
 // Debugger commands go here. Format is COMMAND, HANDLER, ARGSPEC, HELPSTRING
 // Aliases are supported, put these below the command they reference and leave argspec/help
 // empty.
@@ -1162,7 +1196,7 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 
 //*******************************************************************
 
-void DebugToggleRun()
+static void DebugToggleRun()
 {
 	if(DebugSource != DebugType::None)
 	{
@@ -1338,7 +1372,7 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 	}
 }
 
-void DebugUpdateWatches(bool all)
+static void DebugUpdateWatches(bool all)
 {
 	int value = 0;
 	char str[200];
@@ -1583,7 +1617,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	return true;
 }
 
-bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
+static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 {
 	RomInfo rom;
 
@@ -1732,7 +1766,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 	return false;
 }
 
-void DebugExecuteCommand()
+static void DebugExecuteCommand()
 {
 	char command[MAX_COMMAND_LEN + 1];
 	GetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, command, MAX_COMMAND_LEN);
@@ -1974,7 +2008,7 @@ bool DebugLoadSwiftLabels(const char* filename)
 	}
 }
 
-void DebugChompString(char *str)
+static void DebugChompString(char *str)
 {
 	const size_t length = strlen(str);
 
@@ -1999,7 +2033,7 @@ int DebugParseLabel(char *label)
 	return it != Labels.end() ? it->addr : -1;
 }
 
-void DebugHistoryAdd(char *command)
+static void DebugHistoryAdd(char *command)
 {
 	// Do nothing if this is the same as the last
 	// command
@@ -2013,7 +2047,7 @@ void DebugHistoryAdd(char *command)
 	debugHistoryIndex = -1;
 }
 
-void DebugHistoryMove(int delta)
+static void DebugHistoryMove(int delta)
 {
 	int newIndex = debugHistoryIndex - delta;
 	if(newIndex < 0)
@@ -2032,9 +2066,9 @@ void DebugHistoryMove(int delta)
 	}
 }
 
-void DebugSetCommandString(char* string)
+void DebugSetCommandString(char* str)
 {
-	if(debugHistoryIndex == -1 && _stricmp(debugHistory[0], string) == 0)
+	if (debugHistoryIndex == -1 && _stricmp(debugHistory[0], str) == 0)
 	{
 		// The string we're about to set is the same as the top history one,
 		// so use history to set it. This is just a nicety to make the up
@@ -2044,12 +2078,12 @@ void DebugSetCommandString(char* string)
 	}
 	else
 	{
-		SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, string);
-		SendDlgItemMessage(hwndDebug, IDC_DEBUGCOMMAND, EM_SETSEL, strlen(string),strlen(string));
+		SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, str);
+		SendDlgItemMessage(hwndDebug, IDC_DEBUGCOMMAND, EM_SETSEL, strlen(str), strlen(str));
 	}
 }
 
-void DebugParseCommand(char *command)
+static void DebugParseCommand(char *command)
 {
 	char label[65], addrStr[6];
 	char info[MAX_PATH + 100];
@@ -2125,13 +2159,13 @@ void DebugParseCommand(char *command)
  * Start of debugger command handlers                         *
  **************************************************************/
 
-bool DebugCmdEcho(char* args)
+static bool DebugCmdEcho(char* args)
 {
 	DebugDisplayInfo(args);
 	return true;
 }
 
-bool DebugCmdGoto(char* args)
+static bool DebugCmdGoto(char* args)
 {
 	bool host = true;
 	int addr = 0;
@@ -2156,7 +2190,7 @@ bool DebugCmdGoto(char* args)
 	return false;
 }
 
-bool DebugCmdFile(char* args)
+static bool DebugCmdFile(char* args)
 {
 	char mode;
 	int i = 0;
@@ -2225,7 +2259,7 @@ bool DebugCmdFile(char* args)
 	return false;
 }
 
-bool DebugCmdPoke(char* args)
+static bool DebugCmdPoke(char* args)
 {
 	int addr, data;
 	int i = 0;
@@ -2274,7 +2308,7 @@ bool DebugCmdPoke(char* args)
 		return false;
 }
 
-bool DebugCmdSave(char* args)
+static bool DebugCmdSave(char* args)
 {
 	int count = 0;
 	char filename[MAX_PATH];
@@ -2330,7 +2364,7 @@ bool DebugCmdSave(char* args)
 	return false;
 }
 
-bool DebugCmdState(char* args)
+static bool DebugCmdState(char* args)
 {
 	RomInfo rom;
 	char flags[50] = "";
@@ -2390,7 +2424,7 @@ bool DebugCmdState(char* args)
 	return true;
 }
 
-bool DebugCmdCode(char* args)
+static bool DebugCmdCode(char* args)
 {
 	bool host = true;
 	int count = LINES_IN_INFO;
@@ -2410,7 +2444,7 @@ bool DebugCmdCode(char* args)
 	return true;
 }
 
-bool DebugCmdPeek(char* args)
+static bool DebugCmdPeek(char* args)
 {
 	int count = 256;
 	bool host = true;
@@ -2430,7 +2464,7 @@ bool DebugCmdPeek(char* args)
 	return true;
 }
 
-bool DebugCmdNext(char* args)
+static bool DebugCmdNext(char* args)
 {
 	int count = 1;
 	if(args[0] != '\0' && sscanf(args, "%u", &count) == 0)
@@ -2444,7 +2478,7 @@ bool DebugCmdNext(char* args)
 
 // TODO: currently host only, enable for Tube debugging
 
-bool DebugCmdOver(char* args)
+static bool DebugCmdOver(char* args)
 {
 	// If current instruction is JSR, run to the following instruction,
 	// otherwise do a regular 'Next'
@@ -2470,7 +2504,7 @@ bool DebugCmdOver(char* args)
 	}
 }
 
-bool DebugCmdSet(char* args)
+static bool DebugCmdSet(char* args)
 {
 	char name[20];
 	char state[4];
@@ -2534,14 +2568,14 @@ bool DebugCmdSet(char* args)
 		return false;
 }
 
-bool DebugCmdBreakContinue(char* /* args */)
+static bool DebugCmdBreakContinue(char* /* args */)
 {
 	DebugToggleRun();
 	DebugSetCommandString(".");
 	return true;
 }
 
-bool DebugCmdHelp(char* args)
+static bool DebugCmdHelp(char* args)
 {
 	int addr;
 	int li = 0;
@@ -2645,7 +2679,7 @@ bool DebugCmdHelp(char* args)
 	return true;
 }
 
-bool DebugCmdScript(char *args)
+static bool DebugCmdScript(char *args)
 {
 	if(args[0] != '\0')
 	{
@@ -2654,14 +2688,14 @@ bool DebugCmdScript(char *args)
 	return true;
 }
 
-bool DebugCmdClear(char *args)
+static bool DebugCmdClear(char *args)
 {
 	LinesDisplayed = 0;
 	SendMessage(hwndInfo, LB_RESETCONTENT, 0, 0);
 	return true;
 }
 
-bool DebugCmdLabels(char *args)
+static bool DebugCmdLabels(char *args)
 {
 	if (args[0] != '\0')
 	{
@@ -2685,7 +2719,7 @@ bool DebugCmdLabels(char *args)
 	return true;
 }
 
-bool DebugCmdWatch(char *args)
+static bool DebugCmdWatch(char *args)
 {
 	Watch w;
 	char info[64];
@@ -2755,7 +2789,7 @@ bool DebugCmdWatch(char *args)
 	return true;
 }
 
-bool DebugCmdToggleBreak(char *args)
+static bool DebugCmdToggleBreak(char *args)
 {
 	int i;
 	Breakpoint bp;
@@ -2832,7 +2866,7 @@ unsigned char DebugReadMem(int addr, bool host)
 	return TubeReadMem(addr);
 }
 
-void DebugWriteMem(int addr, bool host, unsigned char data)
+static void DebugWriteMem(int addr, bool host, unsigned char data)
 {
 	if (host)
 		BeebWriteMem(addr, data);
@@ -2999,7 +3033,7 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
 	return p - opstr;
 }
 
-int DebugDisassembleCommand(int addr, int count, bool host)
+static int DebugDisassembleCommand(int addr, int count, bool host)
 {
 	char opstr[80];
 	int saddr = addr;
@@ -3053,7 +3087,7 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 	return(addr - saddr);
 }
 
-void DebugMemoryDump(int addr, int count, bool host)
+static void DebugMemoryDump(int addr, int count, bool host)
 {
 	if (count > MAX_LINES * 16)
 		count = MAX_LINES * 16;
