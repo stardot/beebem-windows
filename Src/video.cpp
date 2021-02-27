@@ -1486,9 +1486,11 @@ unsigned char VideoULARead(int /* Address */)
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-static void VideoAddCursor() {
+
+static void VideoAddCursor()
+{
 	static const int CurSizes[] = { 2,1,0,0,4,2,0,4 };
-	int ScrAddr,CurAddr,RelAddr;
+	int ScrAddr, CurAddr, RelAddr;
 	int CurX;
 	int CurSize;
 	int CurStart, CurEnd;
@@ -1496,7 +1498,8 @@ static void VideoAddCursor() {
 	/* Check if cursor has been hidden */
 	if ((VideoULA_ControlReg & 0xe0) == 0 ||
 	    (CRTC_CursorStart & 0x60) == 0x20 ||
-	    (CRTC_InterlaceAndDelay & 0xc0) == 0xc0)
+	    (CRTC_InterlaceAndDelay & 0xc0) == 0xc0 ||
+	    !CursorOnState)
 	{
 		return;
 	}
@@ -1513,7 +1516,7 @@ static void VideoAddCursor() {
 		CurAddr = CRTC_CursorPosLow   + ((((CRTC_CursorPosHigh   ^ 0x20) + 0x74) & 0xff) << 8);
 
 		CurStart = (CRTC_CursorStart & 0x1f) / 2;
-		CurEnd = CRTC_CursorEnd;
+		CurEnd   = CRTC_CursorEnd;
 		CurSize -= 4;
 	}
 	else
@@ -1525,7 +1528,7 @@ static void VideoAddCursor() {
 		CurEnd   = CRTC_CursorEnd;
 	}
 
-	RelAddr=CurAddr-ScrAddr;
+	RelAddr = CurAddr - ScrAddr;
 	if (RelAddr < 0 || CRTC_HorizontalDisplayed == 0)
 		return;
 
@@ -1561,10 +1564,7 @@ static void VideoAddCursor() {
 		{
 			if (CurY + y >= 0)
 			{
-				if (CursorOnState)
-				{
-					mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
-				}
+				mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
 			}
 		}
 	}
