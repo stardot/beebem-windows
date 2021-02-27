@@ -186,6 +186,7 @@ BeebWin::BeebWin()
 	m_SpVoice = NULL;
 	m_hTextView = NULL;
 	m_frozen = false;
+	m_active = true;
 	aviWriter = NULL;
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
@@ -416,6 +417,7 @@ void BeebWin::ApplyPrefs()
 		PrinterDisable();
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
+	ScanJoysticks(false);
 	InitJoystick(false);
 
 	LoadFDC(NULL, true);
@@ -3286,17 +3288,16 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_JOY1_PRIMARY:
 	case IDM_JOY1_SECONDARY1:
-	case IDM_JOY1_SECONDARY2:
 		ProcessJoystickAxesMenuCommand(0, MenuId);
 		break;
 
 	case IDM_JOY2_PRIMARY:
 	case IDM_JOY2_SECONDARY1:
-	case IDM_JOY2_SECONDARY2:
 		ProcessJoystickAxesMenuCommand(1, MenuId);
 		break;
 
 	case IDM_INIT_JOYSTICK:
+		ScanJoysticks(true);
 		InitJoystick(true);
 		break;
 
@@ -3995,6 +3996,7 @@ void BeebWin::SetSoundMenu()
 
 void BeebWin::Activate(bool active)
 {
+	m_active = active;
 	if (active)
 		m_frozen = false;
 	else if (m_FreezeWhenInactive)
