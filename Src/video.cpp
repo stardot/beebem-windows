@@ -1220,7 +1220,7 @@ void VideoDoScanLine(void) {
         VideoState.Addr+=CRTC_HorizontalDisplayed;
       }
 
-      if ((VideoState.InCharLineUp<8) && ((CRTC_InterlaceAndDelay & 0x30)!=48)) {
+      if (VideoState.InCharLineUp < 8 && ((CRTC_InterlaceAndDelay & 0x30) != 0x30)) {
         if (!FrameNum)
           LowLevelDoScanLine();
       }
@@ -1414,7 +1414,7 @@ void CRTCWrite(int Address, unsigned char Value) {
         break;
 
       case 15:
-        CRTC_CursorPosLow = Value & 0xff;
+        CRTC_CursorPosLow = Value;
         break;
 
       default: /* In case the user wrote a duff control register value */
@@ -1494,31 +1494,35 @@ static void VideoAddCursor() {
 	int CurStart, CurEnd;
 
 	/* Check if cursor has been hidden */
-	if ((VideoULA_ControlReg & 0xe0) == 0 || (CRTC_CursorStart & 0x60) == 0x20)
+	if ((VideoULA_ControlReg & 0xe0) == 0 ||
+	    (CRTC_CursorStart & 0x60) == 0x20 ||
+	    (CRTC_InterlaceAndDelay & 0xc0) == 0xc0)
+	{
 		return;
+	}
 
 	/* Use clock bit and cursor bits to work out size */
 	if (VideoULA_ControlReg & 0x80)
-		CurSize = CurSizes[(VideoULA_ControlReg & 0x70)>>4] * 8;
+		CurSize = CurSizes[(VideoULA_ControlReg & 0x70) >> 4] * 8;
 	else
 		CurSize = 2 * 8; /* Mode 7 */
 
 	if (VideoState.IsTeletext)
 	{
-		ScrAddr=CRTC_ScreenStartLow+(((CRTC_ScreenStartHigh ^ 0x20) + 0x74 & 0xff)<<8);
-		CurAddr=CRTC_CursorPosLow+(((CRTC_CursorPosHigh ^ 0x20) + 0x74 & 0xff)<<8);
+		ScrAddr = CRTC_ScreenStartLow + ((((CRTC_ScreenStartHigh ^ 0x20) + 0x74) & 0xff) << 8);
+		CurAddr = CRTC_CursorPosLow   + ((((CRTC_CursorPosHigh   ^ 0x20) + 0x74) & 0xff) << 8);
 
 		CurStart = (CRTC_CursorStart & 0x1f) / 2;
 		CurEnd = CRTC_CursorEnd;
-		CurSize-=4;
+		CurSize -= 4;
 	}
 	else
 	{
-		ScrAddr=CRTC_ScreenStartLow+(CRTC_ScreenStartHigh<<8);
-		CurAddr=CRTC_CursorPosLow+(CRTC_CursorPosHigh<<8);
+		ScrAddr = CRTC_ScreenStartLow + (CRTC_ScreenStartHigh << 8);
+		CurAddr = CRTC_CursorPosLow   + (CRTC_CursorPosHigh   << 8);
 
 		CurStart = CRTC_CursorStart & 0x1f;
-		CurEnd = CRTC_CursorEnd;
+		CurEnd   = CRTC_CursorEnd;
 	}
 
 	RelAddr=CurAddr-ScrAddr;
@@ -1544,15 +1548,21 @@ static void VideoAddCursor() {
 	if (CurX + CurSize >= 640)
 		CurSize = 640 - CurX;
 
-	// Cursor delay
-	CurX+=((CRTC_InterlaceAndDelay&192)>>6)*HSyncModifier;
-	if (VideoState.IsTeletext) CurX-=2*HSyncModifier;
+	CurX += ((CRTC_InterlaceAndDelay & 0xc0) >> 6) * HSyncModifier;
+
+	if (VideoState.IsTeletext)
+	{
+		CurX -= 2 * HSyncModifier;
+	}
+
 	if (CurSize > 0)
 	{
 		for (int y = CurStart; y <= CurEnd && y <= CRTC_ScanLinesPerChar && CurY + y < 500; ++y)
 		{
-			if (CurY + y >= 0) {
-				if (CursorOnState) {
+			if (CurY + y >= 0)
+			{
+				if (CursorOnState)
+				{
 					mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
 				}
 			}
