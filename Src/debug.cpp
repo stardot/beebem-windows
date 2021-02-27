@@ -135,7 +135,7 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "o",		DebugCmdOver,"",""}, // Alias of "over"
 	{ "peek",	DebugCmdPeek, "[p] [start] [count]", "Dumps memory to console." },
 	{ "m",		DebugCmdPeek,"",""}, // Alias of "peek"
-	{ "code",	DebugCmdCode, "[p] [start] [count]", "Dissassembles specified range." },
+	{ "code",	DebugCmdCode, "[p] [start] [count]", "Disassembles specified range." },
 	{ "d",		DebugCmdCode,"",""}, // Alias of "code"
 	{ "watch",	DebugCmdWatch, "[p] addr [b/w/d] [name]", "Sets/Clears a byte/word/dword watch at addr." },
 	{ "e",		DebugCmdWatch,"",""}, // Alias of "watch"
@@ -2573,12 +2573,14 @@ bool DebugCmdHelp(char* args)
 			}
 		}
 
+		// Display help for aliases
+
 		DebugDisplayInfo("");
 		DebugDisplayInfo("Command aliases:");
-		// Display help for aliases
+
 		for (int i = 0; i < _countof(DebugCmdTable); i++)
 		{
-			if(strlen(DebugCmdTable[i].help) > 0 && strlen(DebugCmdTable[i].argdesc) > 0)
+			if (strlen(DebugCmdTable[i].help) > 0)
 			{
 				if(strlen(aliasInfo) > 0)
 				{
@@ -2595,6 +2597,7 @@ bool DebugCmdHelp(char* args)
 				strcat(aliasInfo, ", ");
 			}
 		}
+
 		if(aliasInfo[0] != 0)
 		{
 			aliasInfo[strlen(aliasInfo) - 2] = 0;
