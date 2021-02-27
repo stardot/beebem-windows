@@ -157,6 +157,7 @@ bool DebugCmdLabels(char* args);
 bool DebugCmdHelp(char* args);
 bool DebugCmdSet(char* args);
 bool DebugCmdNext(char* args);
+bool DebugCmdOver(char* args);
 bool DebugCmdPeek(char* args);
 bool DebugCmdCode(char* args);
 bool DebugCmdWatch(char* args);

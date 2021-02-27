@@ -87,6 +87,8 @@ static int LastBreakAddr = 0;   // Address of last break
 static int DebugInfoWidth = 0;  // Width of debug info window
 static bool BPSOn = true;
 static bool BRKOn = false;
+static bool StepOver = false;
+static int ReturnAddress = 0;
 static bool DebugOS = false;
 static bool LastAddrInOS = false;
 static bool LastAddrInBIOS = false;
@@ -129,6 +131,8 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "set",	DebugCmdSet, "host/parasite/rom/os/endian/breakpoints/decimal/brk on/off", "Turns various UI checkboxes on or off." },
 	{ "next",	DebugCmdNext, "[count]", "Execute the specified number instructions, default 1." },
 	{ "n",		DebugCmdNext,"",""}, // Alias of "next"
+	{ "over",	DebugCmdOver, "", "Step over JSR (host only)." },
+	{ "o",		DebugCmdOver,"",""}, // Alias of "over"
 	{ "peek",	DebugCmdPeek, "[p] [start] [count]", "Dumps memory to console." },
 	{ "m",		DebugCmdPeek,"",""}, // Alias of "peek"
 	{ "code",	DebugCmdCode, "[p] [start] [count]", "Dissassembles specified range." },
@@ -933,6 +937,21 @@ static const InstInfo optable_65sc12[256] =
 	{ "NOP",  1, IMP }  // ff
 };
 
+static const InstInfo* GetOpcodeTable(bool host)
+{
+	if (host) {
+		if (MachineType == Model::Master128) {
+			return optable_65sc12;
+		}
+		else {
+			return optable_6502;
+		}
+	}
+	else {
+		return optable_65c02;
+	}
+}
+
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
 {
 	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
@@ -996,6 +1015,8 @@ void DebugCloseDialog()
 	DisAddress = 0;
 	BPCount = 0;
 	BPSOn = true;
+	StepOver = false;
+	ReturnAddress = 0;
 	DebugOS = false;
 	LastAddrInOS = false;
 	LastAddrInBIOS = false;
@@ -1428,6 +1449,12 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	{
 		DebugBreakExecution(DebugType::BRK);
 		ProgramCounter++;
+	}
+
+	if (host && StepOver && addr == ReturnAddress)
+	{
+		StepOver = false;
+		DebugBreakExecution(DebugType::Breakpoint);
 	}
 
 	// Check breakpoints
@@ -2090,9 +2117,8 @@ void DebugParseCommand(char *command)
 			return;
 		}
 	}
-	DebugDisplayInfoF("Invalid command %s - try 'help'",command);
 
-	return;
+	DebugDisplayInfoF("Invalid command %s - try 'help'",command);
 }
 
 /**************************************************************
@@ -2414,6 +2440,34 @@ bool DebugCmdNext(char* args)
 	InstCount = count;
 	DebugSetCommandString("next");
 	return true;
+}
+
+// TODO: currently host only, enable for Tube debugging
+
+bool DebugCmdOver(char* args)
+{
+	// If current instruction is JSR, run to the following instruction,
+	// otherwise do a regular 'Next'
+	int Instruction = DebugReadMem(PrePC, true);
+
+	if (Instruction == 0x20)
+	{
+		StepOver = true;
+		InstCount = 1;
+
+		const InstInfo* optable = GetOpcodeTable(true);
+
+		ReturnAddress = PrePC + optable[Instruction].bytes;
+
+		// Resume execution
+		DebugBreakExecution(DebugType::None);
+
+		return true;
+	}
+	else
+	{
+		return DebugCmdNext(args);
+	}
 }
 
 bool DebugCmdSet(char* args)
@@ -2798,19 +2852,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 	int opcode = DebugReadMem(addr, host);
 
-	const InstInfo *optable;
-
-	if (host) {
-		if (MachineType == Model::Master128) {
-			optable = optable_65sc12;
-		}
-		else {
-			optable = optable_6502;
-		}
-	}
-	else {
-		optable = optable_65c02;
-	}
+	const InstInfo *optable = GetOpcodeTable(host);
 
 	const InstInfo *ip = &optable[opcode];
 
