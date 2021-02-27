@@ -34,6 +34,7 @@ Boston, MA  02110-1301, USA.
 #include <fstream>
 #include <string>
 #include <vector>
+#include <deque>
 
 #include "main.h"
 #include "beebmem.h"
@@ -111,8 +112,8 @@ static Watch Watches[MAX_BPS];
 static MemoryMap MemoryMaps[17];
 INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-char debugHistory[MAX_HISTORY][300];
-int debugHistoryIndex = 0;
+std::deque<std::string> DebugHistory;
+int DebugHistoryIndex = 0;
 
 static void DebugParseCommand(char *command);
 static void DebugWriteMem(int addr, bool host, unsigned char data);
@@ -124,7 +125,7 @@ static void DebugUpdateWatches(bool all);
 static bool DebugLookupAddress(int addr, AddrInfo* addrInfo);
 static void DebugHistoryMove(int delta);
 static void DebugHistoryAdd(char* command);
-static void DebugSetCommandString(char* str);
+static void DebugSetCommandString(const char* str);
 static void DebugChompString(char* str);
 
 // Command handlers
@@ -1007,12 +1008,15 @@ void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 	}
 
 	DebugEnabled = true;
+
 	if (!IsWindow(hwndDebug))
 	{
+		DebugHistory.clear();
+
 		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
 		hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
 		                         hwndInvisibleOwner, DebugDlgProc);
-		memset(debugHistory,'\0',sizeof(debugHistory));
+
 		hCurrentDialog = hwndDebug;
 		hCurrentAccelTable = haccelDebug;
 		ShowWindow(hwndDebug, SW_SHOW);
@@ -2035,40 +2039,57 @@ int DebugParseLabel(char *label)
 
 static void DebugHistoryAdd(char *command)
 {
-	// Do nothing if this is the same as the last
-	// command
-	if(_stricmp(debugHistory[0], command) != 0)
+	// Do nothing if this is the same as the last command
+
+	if (DebugHistory.size() == 0 ||
+	    (DebugHistory.size() > 0 && _stricmp(DebugHistory[0].c_str(), command) != 0))
 	{
 		// Otherwise insert command string at index 0.
-		for (int i = MAX_HISTORY - 2; i >= 0; i--)
-			memcpy(debugHistory[i + 1],debugHistory[i],300);
-		strncpy(debugHistory[0], command, 300);
+		DebugHistory.push_front(command);
+
+		if (DebugHistory.size() > MAX_HISTORY)
+		{
+			DebugHistory.pop_back();
+		}
 	}
-	debugHistoryIndex = -1;
+
+	DebugHistoryIndex = -1;
 }
 
 static void DebugHistoryMove(int delta)
 {
-	int newIndex = debugHistoryIndex - delta;
-	if(newIndex < 0)
+	int newIndex = DebugHistoryIndex - delta;
+
+	if (newIndex < 0)
 	{
-		debugHistoryIndex = -1;
+		DebugHistoryIndex = -1;
 		SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
-	}
-	if(newIndex >= MAX_HISTORY)
-		newIndex = MAX_HISTORY - 1;
-	if(strlen(debugHistory[newIndex]) == 0)
 		return;
-	else
-	{
-		debugHistoryIndex = newIndex;
-		DebugSetCommandString(debugHistory[debugHistoryIndex]);
 	}
+
+	const int HistorySize = DebugHistory.size();
+
+	if (newIndex >= HistorySize)
+	{
+		if (HistorySize > 0)
+		{
+			newIndex = HistorySize - 1;
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	DebugHistoryIndex = newIndex;
+	DebugSetCommandString(DebugHistory[DebugHistoryIndex].c_str());
 }
 
-void DebugSetCommandString(char* str)
+static void DebugSetCommandString(const char* str)
 {
-	if (debugHistoryIndex == -1 && _stricmp(debugHistory[0], str) == 0)
+	if (DebugHistoryIndex == -1 &&
+	    DebugHistory.size() > 0 &&
+	    _stricmp(DebugHistory[0].c_str(), str) == 0)
 	{
 		// The string we're about to set is the same as the top history one,
 		// so use history to set it. This is just a nicety to make the up
@@ -2688,7 +2709,7 @@ static bool DebugCmdScript(char *args)
 	return true;
 }
 
-static bool DebugCmdClear(char *args)
+static bool DebugCmdClear(char * /* args */)
 {
 	LinesDisplayed = 0;
 	SendMessage(hwndInfo, LB_RESETCONTENT, 0, 0);
