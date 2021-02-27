@@ -717,8 +717,7 @@ BEGIN
             MENUITEM "&Digital Mousestick",             IDM_DIGITAL_MOUSESTICK
             MENUITEM SEPARATOR
             MENUITEM "Primary Stick",                   IDM_JOY1_PRIMARY
-            MENUITEM "Right Thumbstick (XBox)",         IDM_JOY1_SECONDARY1
-            MENUITEM "Right Thumbstick (other)",        IDM_JOY1_SECONDARY2
+            MENUITEM "Right Thumbstick",                IDM_JOY1_SECONDARY1
         END
         POPUP "Second Joystick"
         BEGIN
@@ -728,8 +727,7 @@ BEGIN
             MENUITEM "&Digital Mousestick",             IDM_JOY2_DIGITAL_MOUSESTICK
             MENUITEM SEPARATOR
             MENUITEM "Primary Stick",                   IDM_JOY2_PRIMARY
-            MENUITEM "Right Thumbstick (XBox)",         IDM_JOY2_SECONDARY1
-            MENUITEM "Right Thumbstick (other)",        IDM_JOY2_SECONDARY2
+            MENUITEM "Right Thumbstick",                IDM_JOY2_SECONDARY1
         END
         POPUP "Joystick To Keyboard"
         BEGIN

@@ -33,26 +33,26 @@
 # joystick or gamepad models.
 
 # Xbox 360 controller has following assignments
-# (with JOYINFOEX fields in the middle column):
-# Up, Down, Left, Right       - dwY, dwX   - Left Analog Up, Down, Left, Right
-# Axis3+,Axis3-               - dwZ        - Left Trigger, Right Trigger
-# Axis4-,Axis4+,Axis5-,Axis5+ - dwR, dwU   - Right Analog Up, Down, Left, Right
-# Axis7-,Axis7+,Axis8-,Axis8+ - dwPOV      - Hat Up, Down, Left, Right
-# Btn1-4                                   - A, B, X, Y
-# Btn5,6                                   - Left Shoulder, Right Shoulder
-# Btn7,8                                   - Select, Start
-# Btn9,10                                  - Left Thumbstick, Right Thumbstick
+# (with DIJOYSTATE2 fields in the middle column):
+# Left, Right, Up, Down             - lX, lY     - Left Analog Left, Right, Up, Down
+# Z+,Z-                             - lZ         - Left Trigger, Right Trigger
+# RLeft, RRight, RUp, RDown         - lRx, lRy   - Right Analog Left, Right, Up, Down
+# HatLeft, HatRight, HatUp, HatDown - rgdwPOV[0] - Hat Up, Down, Left, Right
+# Btn1-4                                         - A, B, X, Y
+# Btn5,6                                         - Left Shoulder, Right Shoulder
+# Btn7,8                                         - Back, Start
+# Btn9,10                                        - Left Thumbstick, Right Thumbstick
 
 # Other common layout:
-# Up, Down, Left, Right       - dwY, dwX   - Left Analog Up, Down, Left, Right
-# Axis4-,Axis4+,Axis3-,Axis3+ - dwR, dwZ   - Right Analog Up, Down, Left, Right
-# Axis7-,Axis7+,Axis8-,Axis8+ - dwPOV      - Hat Up, Down, Left, Right
-# Btn1-4                                   - Y, B, A, X
-# Btn5,6                                   - Left Shoulder, Right Shoulder
-# Btn7,8                                   - Left Trigger, Right Trigger
-# Btn9,10                                  - Select, Start
-# Btn11,12                                 - Left Thumbstick, Right Thumbstick
-# Btn12                                    - Home
+# Left, Right, Up, Down             - lX, lY     - Left Analog Left, Right, Up, Down
+# RLeft, RRight, RUp, RDown         - lZ, lRz    - Right Analog Left, Right, Up, Down
+# HatLeft, HatRight, HatUp, HatDown - rgdwPOV[0] - Hat Up, Down, Left, Right
+# Btn1-4                                         - Y, B, A, X
+# Btn5,6                                         - Left Shoulder, Right Shoulder
+# Btn7,8                                         - Left Trigger, Right Trigger
+# Btn9,10                                        - Select/Back, Start
+# Btn11,12                                       - Left Thumbstick, Right Thumbstick
+# Btn13                                          - Home
 
 # Sample mapping for Chuckie Egg
 
@@ -60,10 +60,10 @@ Joy1Up        A
 Joy1Down      Z
 Joy1Left      ,
 Joy1Right     .
-Joy1Axis7-    A
-Joy1Axis7+    Z
-Joy1Axis8-    ,
-Joy1Axis8+    .
+Joy1HatUp     A
+Joy1HatDown   Z
+Joy1HatLeft   ,
+Joy1HatRight  .
 Joy1Btn1      SPACE
 Joy1Btn6      RETURN
 Joy1Btn7      1
