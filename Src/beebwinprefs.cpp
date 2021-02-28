@@ -380,10 +380,50 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
 		SWRAMBoardEnabled = false;
 
-	if (!m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &type, 1))
-		TubeType = Tube::None;
-	else
+	if (m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &type, 1))
+	{
 		TubeType = static_cast<Tube>(type);
+	}
+	else
+	{
+		// For backwards compatibility with BeebEm 4.14 or earlier:
+		unsigned char TubeEnabled = 0;
+		unsigned char AcornZ80 = 0;
+		unsigned char TorchTube = 0;
+		unsigned char Tube186Enabled = 0;
+		unsigned char ArmTube = 0;
+
+		m_Preferences.GetBinaryValue("TubeEnabled", &TubeEnabled, 1);
+		m_Preferences.GetBinaryValue("AcornZ80", &AcornZ80, 1);
+		m_Preferences.GetBinaryValue("TorchTube", &TorchTube, 1);
+		m_Preferences.GetBinaryValue("Tube186Enabled", &Tube186Enabled, 1);
+		m_Preferences.GetBinaryValue("ArmTube", &ArmTube, 1);
+
+		if (TubeEnabled)
+		{
+			TubeType = Tube::Acorn65C02;
+		}
+		else if (AcornZ80)
+		{
+			TubeType = Tube::AcornZ80;
+		}
+		else if (TorchTube)
+		{
+			TubeType = Tube::TorchZ80;
+		}
+		else if (Tube186Enabled)
+		{
+			TubeType = Tube::Master512CoPro;
+		}
+		else if (ArmTube)
+		{
+			TubeType = Tube::AcornArm;
+		}
+		else
+		{
+			TubeType = Tube::None;
+		}
+	}
 
 	if (!m_Preferences.GetBoolValue("Teletext Half Mode", TeletextHalfMode))
 		TeletextHalfMode = false;
@@ -400,12 +440,12 @@ void BeebWin::LoadPreferences()
 	char key[20];
 	for (int ch=0; ch<4; ch++)
 	{
-		snprintf(key,20,"TeletextCustomPort%d",ch);
+		sprintf(key, "TeletextCustomPort%d", ch);
 		if (m_Preferences.GetDWORDValue(key,dword))
 			TeletextCustomPort[ch] = (u_short)dword;
 		else
 			TeletextCustomPort[ch] = (u_short)(19761 + ch);
-		snprintf(key,20,"TeletextCustomIP%d",ch);
+		sprintf(key, "TeletextCustomIP%d", ch);
 		if (m_Preferences.GetStringValue(key, keyData))
 			strncpy(TeletextCustomIP[ch], keyData, 16);
 		else
@@ -441,7 +481,7 @@ void BeebWin::LoadPreferences()
 	if (m_Preferences.GetDWORDValue("BitmapCaptureResolution", dword))
 		m_MenuIdCaptureResolution = dword;
 	else
-		m_MenuIdCaptureResolution = IDM_CAPTURERES3;
+		m_MenuIdCaptureResolution = IDM_CAPTURERES_640;
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureFormat", dword))
 		m_MenuIdCaptureFormat = dword;
@@ -556,7 +596,11 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS);
 		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &m_PaletteType, 1);
 		m_Preferences.SetBoolValue("HideMenuEnabled", m_HideMenuEnabled);
-		LEDByte=(static_cast<int>(DiscLedColour) << 2) | ((LEDs.ShowDisc ? 1 : 0) << 1) | (LEDs.ShowKB ? 1 : 0);
+		LEDByte = static_cast<unsigned char>(
+			(DiscLedColour == LEDColour::Green ? 4 : 0) |
+			(LEDs.ShowDisc ? 2 : 0) |
+			(LEDs.ShowKB ? 1 : 0)
+		);
 		m_Preferences.SetBinaryValue("LED Information", &LEDByte, 1);
 		m_Preferences.SetDWORDValue("MotionBlur", m_MotionBlur);
 		m_Preferences.SetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8);
@@ -588,8 +632,11 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("DisableKeysEscape", m_DisableKeysEscape);
 		m_Preferences.SetBoolValue("DisableKeysShortcut", m_DisableKeysShortcut);
 
-		for (int key=0; key<8; ++key)
-			keyData[key] = BitKeys[key];
+		for (int key = 0; key < 8; ++key)
+		{
+			keyData[key] = static_cast<char>(BitKeys[key]);
+		}
+
 		m_Preferences.SetBinaryValue("BitKeys", keyData, 8);
 
 		m_Preferences.SetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath);
@@ -636,9 +683,9 @@ void BeebWin::SavePreferences(bool saveAll)
 		char key[20];
 		for (int ch=0; ch<4; ch++)
 		{
-			snprintf(key,20,"TeletextCustomPort%d",ch);
+			sprintf(key, "TeletextCustomPort%d", ch);
 			m_Preferences.SetDWORDValue(key, TeletextCustomPort[ch]);
-			snprintf(key,20,"TeletextCustomIP%d",ch);
+			sprintf(key, "TeletextCustomIP%d", ch);
 			m_Preferences.SetStringValue(key, TeletextCustomIP[ch]);
 		}
 

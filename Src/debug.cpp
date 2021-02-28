@@ -34,6 +34,7 @@ Boston, MA  02110-1301, USA.
 #include <fstream>
 #include <string>
 #include <vector>
+#include <deque>
 
 #include "main.h"
 #include "beebmem.h"
@@ -74,7 +75,7 @@ Boston, MA  02110-1301, USA.
 
 #define ADRMASK (IMM | ABS | ACC | IMP | INX | INY | ZPX | ABX | ABY | REL | IND | ZPY | ZPG | ZPR | ILL)
 
-#define MAX_BUFFER 65536
+const int MAX_BUFFER = 65536;
 
 bool DebugEnabled = false; // Debug dialog visible
 static DebugType DebugSource = DebugType::None; // Debugging active?
@@ -88,6 +89,8 @@ static int LastBreakAddr = 0;   // Address of last break
 static int DebugInfoWidth = 0;  // Width of debug info window
 static bool BPSOn = true;
 static bool BRKOn = false;
+static bool StepOver = false;
+static int ReturnAddress = 0;
 static bool DebugOS = false;
 static bool LastAddrInOS = false;
 static bool LastAddrInBIOS = false;
@@ -110,45 +113,82 @@ static Watch Watches[MAX_BPS];
 static MemoryMap MemoryMaps[17];
 INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-char debugHistory[MAX_HISTORY][300];
-int debugHistoryIndex = 0;
+std::deque<std::string> DebugHistory;
+int DebugHistoryIndex = 0;
+
+static void DebugParseCommand(char *command);
+static void DebugWriteMem(int addr, bool host, unsigned char data);
+static int DebugDisassembleCommand(int addr, int count, bool host);
+static void DebugMemoryDump(int addr, int count, bool host);
+static void DebugExecuteCommand();
+static void DebugToggleRun();
+static void DebugUpdateWatches(bool all);
+static bool DebugLookupAddress(int addr, AddrInfo* addrInfo);
+static void DebugHistoryMove(int delta);
+static void DebugHistoryAdd(char* command);
+static void DebugSetCommandString(const char* str);
+static void DebugChompString(char* str);
+
+// Command handlers
+static bool DebugCmdBreakContinue(char* args);
+static bool DebugCmdToggleBreak(char* args);
+static bool DebugCmdLabels(char* args);
+static bool DebugCmdHelp(char* args);
+static bool DebugCmdSet(char* args);
+static bool DebugCmdNext(char* args);
+static bool DebugCmdOver(char* args);
+static bool DebugCmdPeek(char* args);
+static bool DebugCmdCode(char* args);
+static bool DebugCmdWatch(char* args);
+static bool DebugCmdState(char* args);
+static bool DebugCmdSave(char* args);
+static bool DebugCmdPoke(char* args);
+static bool DebugCmdGoto(char* args);
+static bool DebugCmdFile(char* args);
+static bool DebugCmdEcho(char* args);
+static bool DebugCmdScript(char *args);
+static bool DebugCmdClear(char *args);
+
 
 // Debugger commands go here. Format is COMMAND, HANDLER, ARGSPEC, HELPSTRING
 // Aliases are supported, put these below the command they reference and leave argspec/help
 // empty.
 static const DebugCmd DebugCmdTable[] = {
-	{ "bp",		DebugCmdToggleBreak, "start[-end] [name]", "Sets/Clears a breakpoint or break range." },
-	{ "b",		DebugCmdToggleBreak, "", ""}, // Alias of "bp"
-	{ "breakpoint", DebugCmdToggleBreak, "", ""}, // Alias of "bp"
-	{ "labels",	DebugCmdLabels, "[filename]", "Loads labels from VICE file, or display known labels." },
-	{ "l",		DebugCmdLabels,"",""}, // Alias of "labels"
-	{ "help",	DebugCmdHelp, "[command/addr]", "Displays help for the specified command or address." },
-	{ "?",		DebugCmdHelp,"",""}, // Alias of "help"
-	{ "q",		DebugCmdHelp,"",""}, // Alias of "help"
-	{ "break",	DebugCmdBreakContinue, "", "Break/Continue." },
-	{ ".",		DebugCmdBreakContinue,"",""}, // Alias of "break"
-	{ "set",	DebugCmdSet, "host/parasite/rom/os/endian/breakpoints/decimal/brk on/off", "Turns various UI checkboxes on or off." },
-	{ "next",	DebugCmdNext, "[count]", "Execute the specified number instructions, default 1." },
-	{ "n",		DebugCmdNext,"",""}, // Alias of "next"
-	{ "peek",	DebugCmdPeek, "[p] [start] [count]", "Dumps memory to console." },
-	{ "m",		DebugCmdPeek,"",""}, // Alias of "peek"
-	{ "code",	DebugCmdCode, "[p] [start] [count]", "Dissassembles specified range." },
-	{ "d",		DebugCmdCode,"",""}, // Alias of "code"
-	{ "watch",	DebugCmdWatch, "[p] addr [b/w/d] [name]", "Sets/Clears a byte/word/dword watch at addr." },
-	{ "e",		DebugCmdWatch,"",""}, // Alias of "watch"
-	{ "state",	DebugCmdState, "v/u/s/t/m/r", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms." },
-	{ "s",		DebugCmdState,"",""}, // Alias of "state"
-	{ "save",	DebugCmdSave, "[count] file", "Writes console lines to file." },
-	{ "w",		DebugCmdSave,"",""}, // Alias of "save"
-	{ "poke",	DebugCmdPoke, "[p] start byte [byte...]", "Write bytes to memory." },
-	{ "c",		DebugCmdPoke,"",""}, // Alias of "poke"
-	{ "goto",	DebugCmdGoto, "[p] addr", "Jump to address." },
-	{ "g",		DebugCmdGoto,"",""}, // Alias of "goto"
-	{ "file",	DebugCmdFile, "r/w addr [count] filename", "Read/Write memory at address from/to file." },
-	{ "f",		DebugCmdFile,"",""}, // Alias of "file"
-	{ "echo",	DebugCmdEcho, "string", "Write string to console." },
-	{ "!",	DebugCmdEcho, "","" }, // Alias of "echo"
-	{ "script",	DebugCmdScript, "[filename]", "Executes a debugger script." }
+	{ "bp",         DebugCmdToggleBreak,   "start[-end] [name]", "Sets/Clears a breakpoint or break range." },
+	{ "b",          DebugCmdToggleBreak,   "", ""}, // Alias of "bp"
+	{ "breakpoint", DebugCmdToggleBreak,   "", ""}, // Alias of "bp"
+	{ "labels",     DebugCmdLabels,        "[filename]", "Loads labels from VICE file, or display known labels." },
+	{ "l",          DebugCmdLabels,        "", ""}, // Alias of "labels"
+	{ "help",       DebugCmdHelp,          "[command/addr]", "Displays help for the specified command or address." },
+	{ "?",          DebugCmdHelp,          "", ""}, // Alias of "help"
+	{ "q",          DebugCmdHelp,          "", ""}, // Alias of "help"
+	{ "break",      DebugCmdBreakContinue, "", "Break/Continue." },
+	{ ".",          DebugCmdBreakContinue, "",""}, // Alias of "break"
+	{ "set",        DebugCmdSet,           "host/parasite/rom/os/endian/breakpoints/decimal/brk on/off", "Turns various UI checkboxes on or off." },
+	{ "next",       DebugCmdNext,          "[count]", "Execute the specified number instructions, default 1." },
+	{ "n",          DebugCmdNext,          "", ""}, // Alias of "next"
+	{ "over",       DebugCmdOver,          "", "Step over JSR (host only)." },
+	{ "o",          DebugCmdOver,          "", ""}, // Alias of "over"
+	{ "peek",       DebugCmdPeek,          "[p] [start] [count]", "Dumps memory to console." },
+	{ "m",          DebugCmdPeek,          "", ""}, // Alias of "peek"
+	{ "code",       DebugCmdCode,          "[p] [start] [count]", "Disassembles specified range." },
+	{ "d",          DebugCmdCode,          "", ""}, // Alias of "code"
+	{ "watch",      DebugCmdWatch,         "[p] addr [b/w/d] [name]", "Sets/Clears a byte/word/dword watch at addr." },
+	{ "e",          DebugCmdWatch,         "", ""}, // Alias of "watch"
+	{ "state",      DebugCmdState,         "v/u/s/t/m/r", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms." },
+	{ "s",          DebugCmdState,         "", ""}, // Alias of "state"
+	{ "save",       DebugCmdSave,          "[count] file", "Writes console lines to file." },
+	{ "w",          DebugCmdSave,          "", ""}, // Alias of "save"
+	{ "poke",       DebugCmdPoke,          "[p] start byte [byte...]", "Write bytes to memory." },
+	{ "c",          DebugCmdPoke,          "", ""}, // Alias of "poke"
+	{ "goto",       DebugCmdGoto,          "[p] addr", "Jump to address." },
+	{ "g",          DebugCmdGoto,          "", ""}, // Alias of "goto"
+	{ "file",       DebugCmdFile,          "r/w addr [count] filename", "Read/Write memory at address from/to file." },
+	{ "f",          DebugCmdFile,          "", ""}, // Alias of "file"
+	{ "echo",       DebugCmdEcho,          "string", "Write string to console." },
+	{ "!",          DebugCmdEcho,          "", "" }, // Alias of "echo"
+	{ "script",     DebugCmdScript,        "[filename]", "Executes a debugger script." },
+	{ "clear",      DebugCmdClear,         "", "Clears the console." }
 };
 
 static const InstInfo optable_6502[256] =
@@ -228,7 +268,7 @@ static const InstInfo optable_6502[256] =
 	{ "PHA",  1, IMP }, // 48
 	{ "EOR",  2, IMM }, // 49
 	{ "LSR",  1, ACC }, // 4a
-	{ "ALR",  1, IMM }, // 4b
+	{ "ALR",  2, IMM }, // 4b
 	{ "JMP",  3, ABS }, // 4c
 	{ "EOR",  3, ABS }, // 4d
 	{ "LSR",  3, ABS }, // 4e
@@ -933,6 +973,21 @@ static const InstInfo optable_65sc12[256] =
 	{ "NOP",  1, IMP }  // ff
 };
 
+static const InstInfo* GetOpcodeTable(bool host)
+{
+	if (host) {
+		if (MachineType == Model::Master128) {
+			return optable_65sc12;
+		}
+		else {
+			return optable_6502;
+		}
+	}
+	else {
+		return optable_65c02;
+	}
+}
+
 void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 {
 	if (hwndInvisibleOwner == 0)
@@ -944,12 +999,15 @@ void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 	}
 
 	DebugEnabled = true;
+
 	if (!IsWindow(hwndDebug))
 	{
+		DebugHistory.clear();
+
 		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
 		hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
 		                         hwndInvisibleOwner, DebugDlgProc);
-		memset(debugHistory,'\0',sizeof(debugHistory));
+
 		hCurrentDialog = hwndDebug;
 		hCurrentAccelTable = haccelDebug;
 		ShowWindow(hwndDebug, SW_SHOW);
@@ -986,6 +1044,8 @@ void DebugCloseDialog()
 	DisAddress = 0;
 	BPCount = 0;
 	BPSOn = true;
+	StepOver = false;
+	ReturnAddress = 0;
 	DebugOS = false;
 	LastAddrInOS = false;
 	LastAddrInBIOS = false;
@@ -1131,7 +1191,7 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 
 //*******************************************************************
 
-void DebugToggleRun()
+static void DebugToggleRun()
 {
 	if(DebugSource != DebugType::None)
 	{
@@ -1307,7 +1367,7 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 	}
 }
 
-void DebugUpdateWatches(bool all)
+static void DebugUpdateWatches(bool all)
 {
 	int value = 0;
 	char str[200];
@@ -1418,6 +1478,12 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	{
 		DebugBreakExecution(DebugType::BRK);
 		ProgramCounter++;
+	}
+
+	if (host && StepOver && addr == ReturnAddress)
+	{
+		StepOver = false;
+		DebugBreakExecution(DebugType::Breakpoint);
 	}
 
 	// Check breakpoints
@@ -1546,7 +1612,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	return true;
 }
 
-bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
+static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 {
 	RomInfo rom;
 
@@ -1695,7 +1761,7 @@ bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 	return false;
 }
 
-void DebugExecuteCommand()
+static void DebugExecuteCommand()
 {
 	char command[MAX_COMMAND_LEN + 1];
 	GetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, command, MAX_COMMAND_LEN);
@@ -1937,7 +2003,7 @@ bool DebugLoadSwiftLabels(const char* filename)
 	}
 }
 
-void DebugChompString(char *str)
+static void DebugChompString(char *str)
 {
 	const size_t length = strlen(str);
 
@@ -1962,42 +2028,59 @@ int DebugParseLabel(char *label)
 	return it != Labels.end() ? it->addr : -1;
 }
 
-void DebugHistoryAdd(char *command)
+static void DebugHistoryAdd(char *command)
 {
-	// Do nothing if this is the same as the last
-	// command
-	if(_stricmp(debugHistory[0], command) != 0)
+	// Do nothing if this is the same as the last command
+
+	if (DebugHistory.size() == 0 ||
+	    (DebugHistory.size() > 0 && _stricmp(DebugHistory[0].c_str(), command) != 0))
 	{
 		// Otherwise insert command string at index 0.
-		for (int i = MAX_HISTORY - 2; i >= 0; i--)
-			memcpy(debugHistory[i + 1],debugHistory[i],300);
-		strncpy(debugHistory[0], command, 300);
+		DebugHistory.push_front(command);
+
+		if (DebugHistory.size() > MAX_HISTORY)
+		{
+			DebugHistory.pop_back();
+		}
 	}
-	debugHistoryIndex = -1;
+
+	DebugHistoryIndex = -1;
 }
 
-void DebugHistoryMove(int delta)
+static void DebugHistoryMove(int delta)
 {
-	int newIndex = debugHistoryIndex - delta;
-	if(newIndex < 0)
+	int newIndex = DebugHistoryIndex - delta;
+
+	if (newIndex < 0)
 	{
-		debugHistoryIndex = -1;
+		DebugHistoryIndex = -1;
 		SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
-	}
-	if(newIndex >= MAX_HISTORY)
-		newIndex = MAX_HISTORY - 1;
-	if(strlen(debugHistory[newIndex]) == 0)
 		return;
-	else
-	{
-		debugHistoryIndex = newIndex;
-		DebugSetCommandString(debugHistory[debugHistoryIndex]);
 	}
+
+	const int HistorySize = DebugHistory.size();
+
+	if (newIndex >= HistorySize)
+	{
+		if (HistorySize > 0)
+		{
+			newIndex = HistorySize - 1;
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	DebugHistoryIndex = newIndex;
+	DebugSetCommandString(DebugHistory[DebugHistoryIndex].c_str());
 }
 
-void DebugSetCommandString(char* string)
+static void DebugSetCommandString(const char* str)
 {
-	if(debugHistoryIndex == -1 && _stricmp(debugHistory[0], string) == 0)
+	if (DebugHistoryIndex == -1 &&
+	    DebugHistory.size() > 0 &&
+	    _stricmp(DebugHistory[0].c_str(), str) == 0)
 	{
 		// The string we're about to set is the same as the top history one,
 		// so use history to set it. This is just a nicety to make the up
@@ -2007,12 +2090,12 @@ void DebugSetCommandString(char* string)
 	}
 	else
 	{
-		SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, string);
-		SendDlgItemMessage(hwndDebug, IDC_DEBUGCOMMAND, EM_SETSEL, strlen(string),strlen(string));
+		SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, str);
+		SendDlgItemMessage(hwndDebug, IDC_DEBUGCOMMAND, EM_SETSEL, strlen(str), strlen(str));
 	}
 }
 
-void DebugParseCommand(char *command)
+static void DebugParseCommand(char *command)
 {
 	char label[65], addrStr[6];
 	char info[MAX_PATH + 100];
@@ -2080,22 +2163,21 @@ void DebugParseCommand(char *command)
 			return;
 		}
 	}
-	DebugDisplayInfoF("Invalid command %s - try 'help'",command);
 
-	return;
+	DebugDisplayInfoF("Invalid command %s - try 'help'",command);
 }
 
 /**************************************************************
  * Start of debugger command handlers                         *
  **************************************************************/
 
-bool DebugCmdEcho(char* args)
+static bool DebugCmdEcho(char* args)
 {
 	DebugDisplayInfo(args);
 	return true;
 }
 
-bool DebugCmdGoto(char* args)
+static bool DebugCmdGoto(char* args)
 {
 	bool host = true;
 	int addr = 0;
@@ -2120,7 +2202,7 @@ bool DebugCmdGoto(char* args)
 	return false;
 }
 
-bool DebugCmdFile(char* args)
+static bool DebugCmdFile(char* args)
 {
 	char mode;
 	int i = 0;
@@ -2166,10 +2248,14 @@ bool DebugCmdFile(char* args)
 		else if(tolower(mode) == 'w')
 		{
 			FILE *fd = fopen(filename, "wb");
+
 			if (fd)
 			{
-				if(count + addr > 0xFFFF)
-					count = 0xFFFF - addr;
+				if (count + addr > MAX_BUFFER)
+				{
+					count = MAX_BUFFER - addr;
+				}
+
 				for (i = 0; i < count; ++i)
 					buffer[i] = DebugReadMem((addr + i) & 0xffff, true);
 
@@ -2189,7 +2275,7 @@ bool DebugCmdFile(char* args)
 	return false;
 }
 
-bool DebugCmdPoke(char* args)
+static bool DebugCmdPoke(char* args)
 {
 	int addr, data;
 	int i = 0;
@@ -2238,7 +2324,7 @@ bool DebugCmdPoke(char* args)
 		return false;
 }
 
-bool DebugCmdSave(char* args)
+static bool DebugCmdSave(char* args)
 {
 	int count = 0;
 	char filename[MAX_PATH];
@@ -2294,7 +2380,7 @@ bool DebugCmdSave(char* args)
 	return false;
 }
 
-bool DebugCmdState(char* args)
+static bool DebugCmdState(char* args)
 {
 	RomInfo rom;
 	char flags[50] = "";
@@ -2354,7 +2440,7 @@ bool DebugCmdState(char* args)
 	return true;
 }
 
-bool DebugCmdCode(char* args)
+static bool DebugCmdCode(char* args)
 {
 	bool host = true;
 	int count = LINES_IN_INFO;
@@ -2374,7 +2460,7 @@ bool DebugCmdCode(char* args)
 	return true;
 }
 
-bool DebugCmdPeek(char* args)
+static bool DebugCmdPeek(char* args)
 {
 	int count = 256;
 	bool host = true;
@@ -2394,7 +2480,7 @@ bool DebugCmdPeek(char* args)
 	return true;
 }
 
-bool DebugCmdNext(char* args)
+static bool DebugCmdNext(char* args)
 {
 	int count = 1;
 	if(args[0] != '\0' && sscanf(args, "%u", &count) == 0)
@@ -2406,7 +2492,36 @@ bool DebugCmdNext(char* args)
 	return true;
 }
 
-bool DebugCmdSet(char* args)
+// TODO: currently host only, enable for Tube debugging
+
+static bool DebugCmdOver(char* args)
+{
+	// If current instruction is JSR, run to the following instruction,
+	// otherwise do a regular 'Next'
+	int Instruction = DebugReadMem(PrePC, true);
+
+	if (Instruction == 0x20)
+	{
+		StepOver = true;
+		InstCount = 1;
+
+		const InstInfo* optable = GetOpcodeTable(true);
+
+		ReturnAddress = PrePC + optable[Instruction].bytes;
+
+		// Resume execution
+		DebugBreakExecution(DebugType::None);
+	}
+	else
+	{
+		DebugCmdNext(args);
+	}
+
+	DebugSetCommandString("over");
+	return true;
+}
+
+static bool DebugCmdSet(char* args)
 {
 	char name[20];
 	char state[4];
@@ -2470,14 +2585,14 @@ bool DebugCmdSet(char* args)
 		return false;
 }
 
-bool DebugCmdBreakContinue(char* /* args */)
+static bool DebugCmdBreakContinue(char* /* args */)
 {
 	DebugToggleRun();
 	DebugSetCommandString(".");
 	return true;
 }
 
-bool DebugCmdHelp(char* args)
+static bool DebugCmdHelp(char* args)
 {
 	int addr;
 	int li = 0;
@@ -2491,23 +2606,32 @@ bool DebugCmdHelp(char* args)
 		DebugDisplayInfo("  Parameters in [] are optional. 'p' can be specified in some commands");
 		DebugDisplayInfo("  to specify parasite processor. Words preceded with a . will be");
 		DebugDisplayInfo("  interpreted as labels and may be used in place of addresses.");
+
 		// Display help for basic commands:
 		for (int i = 0; i < _countof(DebugCmdTable); i++)
 		{
-			if(strlen(DebugCmdTable[i].help) > 0 && strlen(DebugCmdTable[i].argdesc) > 0)
+			if (DebugCmdTable[i].help[0] != '\0')
 			{
 				DebugDisplayInfo("");
-				DebugDisplayInfoF("  %s %s",DebugCmdTable[i].name,DebugCmdTable[i].argdesc);
+				DebugDisplayInfoF("  %s",DebugCmdTable[i].name);
+
+				if (DebugCmdTable[i].argdesc[0] != '\0')
+				{
+					DebugDisplayInfoF("  %s",DebugCmdTable[i].argdesc);
+				}
+
 				DebugDisplayInfoF("    %s",DebugCmdTable[i].help);
 			}
 		}
 
+		// Display help for aliases
+
 		DebugDisplayInfo("");
 		DebugDisplayInfo("Command aliases:");
-		// Display help for aliases
+
 		for (int i = 0; i < _countof(DebugCmdTable); i++)
 		{
-			if(strlen(DebugCmdTable[i].help) > 0 && strlen(DebugCmdTable[i].argdesc) > 0)
+			if (strlen(DebugCmdTable[i].help) > 0)
 			{
 				if(strlen(aliasInfo) > 0)
 				{
@@ -2524,6 +2648,7 @@ bool DebugCmdHelp(char* args)
 				strcat(aliasInfo, ", ");
 			}
 		}
+
 		if(aliasInfo[0] != 0)
 		{
 			aliasInfo[strlen(aliasInfo) - 2] = 0;
@@ -2571,7 +2696,7 @@ bool DebugCmdHelp(char* args)
 	return true;
 }
 
-bool DebugCmdScript(char *args)
+static bool DebugCmdScript(char *args)
 {
 	if(args[0] != '\0')
 	{
@@ -2580,7 +2705,14 @@ bool DebugCmdScript(char *args)
 	return true;
 }
 
-bool DebugCmdLabels(char *args)
+static bool DebugCmdClear(char * /* args */)
+{
+	LinesDisplayed = 0;
+	SendMessage(hwndInfo, LB_RESETCONTENT, 0, 0);
+	return true;
+}
+
+static bool DebugCmdLabels(char *args)
 {
 	if (args[0] != '\0')
 	{
@@ -2604,7 +2736,7 @@ bool DebugCmdLabels(char *args)
 	return true;
 }
 
-bool DebugCmdWatch(char *args)
+static bool DebugCmdWatch(char *args)
 {
 	Watch w;
 	char info[64];
@@ -2674,7 +2806,7 @@ bool DebugCmdWatch(char *args)
 	return true;
 }
 
-bool DebugCmdToggleBreak(char *args)
+static bool DebugCmdToggleBreak(char *args)
 {
 	int i;
 	Breakpoint bp;
@@ -2751,7 +2883,7 @@ unsigned char DebugReadMem(int addr, bool host)
 	return TubeReadMem(addr);
 }
 
-void DebugWriteMem(int addr, bool host, unsigned char data)
+static void DebugWriteMem(int addr, bool host, unsigned char data)
 {
 	if (host)
 		BeebWriteMem(addr, data);
@@ -2774,19 +2906,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 	int opcode = DebugReadMem(addr, host);
 
-	const InstInfo *optable;
-
-	if (host) {
-		if (MachineType == Model::Master128) {
-			optable = optable_65sc12;
-		}
-		else {
-			optable = optable_6502;
-		}
-	}
-	else {
-		optable = optable_65c02;
-	}
+	const InstInfo *optable = GetOpcodeTable(host);
 
 	const InstInfo *ip = &optable[opcode];
 
@@ -2930,7 +3050,7 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
 	return p - opstr;
 }
 
-int DebugDisassembleCommand(int addr, int count, bool host)
+static int DebugDisassembleCommand(int addr, int count, bool host)
 {
 	char opstr[80];
 	int saddr = addr;
@@ -2984,7 +3104,7 @@ int DebugDisassembleCommand(int addr, int count, bool host)
 	return(addr - saddr);
 }
 
-void DebugMemoryDump(int addr, int count, bool host)
+static void DebugMemoryDump(int addr, int count, bool host)
 {
 	if (count > MAX_LINES * 16)
 		count = MAX_LINES * 16;

@@ -625,5 +625,11 @@
     <Text Include="..\README-SPROW.txt">
       <Filter>Documents</Filter>
     </Text>
+    <Text Include="README_UNIX.txt">
+      <Filter>Documents</Filter>
+    </Text>
+    <Text Include="README_WINDOWS.txt">
+      <Filter>Documents</Filter>
+    </Text>
   </ItemGroup>
 </Project>

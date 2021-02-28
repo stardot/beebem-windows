@@ -4,6 +4,7 @@ Src/.vs
 Src/BeebEm.aps
 Src/BeebEm.VC.db
 Src/BeebEm.VC.VC.opendb
+Src/BeebEm.user.props
 Src/Debug
 Src/Release
 Src/x64/Debug

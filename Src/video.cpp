@@ -825,7 +825,6 @@ static void LowLevelDoScanLineWideNot4Bytes() {
 static void DoMode7Row(void) {
   const unsigned char *CurrentPtr = VideoState.DataPtr;
   int CurrentChar;
-  int XStep;
   unsigned char byte;
 
   unsigned int Foreground = 7;
@@ -855,9 +854,14 @@ static void DoMode7Row(void) {
 
   if (CRTC_HorizontalDisplayed>80) return; /* Not possible on beeb - and would break the double height lookup array */
 
-  XStep=1;
+  // Reset double-height state for the first character row of the screen.
+  if (VideoState.CharLine == 0)
+  {
+    CurrentLineBottom = false;
+    NextLineBottom = false;
+  }
 
-  for(CurrentChar=0;CurrentChar<CRTC_HorizontalDisplayed;CurrentChar++) {
+  for (CurrentChar = 0; CurrentChar < CRTC_HorizontalDisplayed; CurrentChar++) {
     HoldGraph=NextHoldGraph;
     HoldGraphChar=NextHoldGraphChar;
     HoldSeparated=NextHoldSeparated;
@@ -967,19 +971,19 @@ static void DoMode7Row(void) {
     ActualForeground = (Flash && !Mode7FlashOn) ? Background : Foreground;
 
     if (!DoubleHeight) {
-      // Loop through each scanline
+      // Loop through each scanline in this character row
       for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
-        unsigned int tmp = Mode7Font[FontTypeIndex][byte][CurrentScanLine];
+        unsigned int Bitmap = Mode7Font[FontTypeIndex][byte][CurrentScanLine];
 
-        if (tmp == 0 || tmp == 255) {
-          unsigned int col = tmp == 0 ? Background : ActualForeground;
+        if (Bitmap == 0 || Bitmap == 0xfff) {
+          unsigned int col = Bitmap == 0 ? Background : ActualForeground;
 
           if (col == CurrentCol[CurrentScanLine]) {
             // Same colour, so increment run length
-            CurrentLen[CurrentScanLine] += 12 * XStep;
+            CurrentLen[CurrentScanLine] += 12;
           }
           else {
-            if (CurrentLen[CurrentScanLine]) {
+            if (CurrentLen[CurrentScanLine] != 0) {
               mainWin->doHorizLine(
                 CurrentCol[CurrentScanLine],             // Colour
                 VideoState.PixmapLine + CurrentScanLine, // y
@@ -990,21 +994,22 @@ static void DoMode7Row(void) {
 
             CurrentCol[CurrentScanLine] = col;
             CurrentStartX[CurrentScanLine] = CurrentX;
-            CurrentLen[CurrentScanLine] = 12 * XStep;
+            CurrentLen[CurrentScanLine] = 12;
           }
-        } else {
+        }
+        else {
           // Loop through 12 pixels horizontally
           for (CurrentPixel = 0x800; CurrentPixel != 0; CurrentPixel >>= 1) {
-            /* Background or foreground ? */
-            unsigned int col = (tmp & CurrentPixel) ? ActualForeground : Background;
+            // Background or foreground ?
+            unsigned int col = (Bitmap & CurrentPixel) ? ActualForeground : Background;
 
-            /* Do we need to draw ? */
+            // Do we need to draw ?
             if (col == CurrentCol[CurrentScanLine]) {
               // Same colour, so increment run length
-              CurrentLen[CurrentScanLine] += XStep;
+              CurrentLen[CurrentScanLine]++;
             }
             else {
-              if (CurrentLen[CurrentScanLine]) {
+              if (CurrentLen[CurrentScanLine] != 0) {
                 mainWin->doHorizLine(
                   CurrentCol[CurrentScanLine],             // Colour
                   VideoState.PixmapLine + CurrentScanLine, // y
@@ -1015,38 +1020,39 @@ static void DoMode7Row(void) {
 
               CurrentCol[CurrentScanLine] = col;
               CurrentStartX[CurrentScanLine] = CurrentX;
-              CurrentLen[CurrentScanLine] = XStep;
+              CurrentLen[CurrentScanLine] = 1;
             }
 
-            CurrentX += XStep;
+            CurrentX++;
           }
 
-          CurrentX -= 12 * XStep;
+          CurrentX -= 12;
         }
-      } /* Scanline for */
+      }
 
-      CurrentX+=12*XStep;
+      CurrentX += 12;
+
       Mode7DoubleHeightFlags[CurrentChar] = true; // Not double height - so if the next line is double height it will be top half
     }
     else {
-      /* Double height! */
+      // Double height!
 
       // Loop through 12 pixels horizontally
       for (CurrentPixel = 0x800; CurrentPixel != 0; CurrentPixel >>= 1) {
-        // Loop through each scanline
+        // Loop through each scanline in this character row
         for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
           const int ActualScanLine = CurrentLineBottom ? 10 + (CurrentScanLine / 2) : (CurrentScanLine / 2);
 
-          /* Background or foreground ? */
+          // Background or foreground ?
           unsigned int col = (Mode7Font[FontTypeIndex][byte][ActualScanLine] & CurrentPixel) ? ActualForeground : Background;
 
-          /* Do we need to draw ? */
+          // Do we need to draw ?
           if (col == CurrentCol[CurrentScanLine]) {
             // Same colour, so increment run length
-            CurrentLen[CurrentScanLine] += XStep;
+            CurrentLen[CurrentScanLine]++;
           }
           else {
-            if (CurrentLen[CurrentScanLine]) {
+            if (CurrentLen[CurrentScanLine] != 0) {
               mainWin->doHorizLine(
                 CurrentCol[CurrentScanLine],             // Colour
                 VideoState.PixmapLine + CurrentScanLine, // y
@@ -1057,27 +1063,29 @@ static void DoMode7Row(void) {
 
             CurrentCol[CurrentScanLine] = col;
             CurrentStartX[CurrentScanLine] = CurrentX;
-            CurrentLen[CurrentScanLine] = XStep;
+            CurrentLen[CurrentScanLine] = 1;
           }
         }
 
-        CurrentX += XStep;
+        CurrentX++;
       }
 
       Mode7DoubleHeightFlags[CurrentChar] = !Mode7DoubleHeightFlags[CurrentChar]; // Not double height - so if the next line is double height it will be top half
     }
-    Foreground=ForegroundPending;
-  } /* character loop */
 
-  /* Finish off right bits of scan line */
+    Foreground = ForegroundPending;
+  }
+
+  // Finish off right bits of scan line
   for (CurrentScanLine = 0 + (TeletextStyle - 1); CurrentScanLine < 20; CurrentScanLine += TeletextStyle) {
-    if (CurrentLen[CurrentScanLine])
+    if (CurrentLen[CurrentScanLine] != 0) {
       mainWin->doHorizLine(
         CurrentCol[CurrentScanLine],             // Colour
         VideoState.PixmapLine + CurrentScanLine, // y
         CurrentStartX[CurrentScanLine],          // sx
         CurrentLen[CurrentScanLine]              // width
       );
+    }
   }
 
   CurrentLineBottom = NextLineBottom;
@@ -1219,7 +1227,7 @@ void VideoDoScanLine(void) {
         VideoState.Addr+=CRTC_HorizontalDisplayed;
       }
 
-      if ((VideoState.InCharLineUp<8) && ((CRTC_InterlaceAndDelay & 0x30)!=48)) {
+      if (VideoState.InCharLineUp < 8 && ((CRTC_InterlaceAndDelay & 0x30) != 0x30)) {
         if (!FrameNum)
           LowLevelDoScanLine();
       }
@@ -1413,7 +1421,7 @@ void CRTCWrite(int Address, unsigned char Value) {
         break;
 
       case 15:
-        CRTC_CursorPosLow = Value & 0xff;
+        CRTC_CursorPosLow = Value;
         break;
 
       default: /* In case the user wrote a duff control register value */
@@ -1485,42 +1493,49 @@ unsigned char VideoULARead(int /* Address */)
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-static void VideoAddCursor() {
+
+static void VideoAddCursor()
+{
 	static const int CurSizes[] = { 2,1,0,0,4,2,0,4 };
-	int ScrAddr,CurAddr,RelAddr;
+	int ScrAddr, CurAddr, RelAddr;
 	int CurX;
 	int CurSize;
 	int CurStart, CurEnd;
 
 	/* Check if cursor has been hidden */
-	if ((VideoULA_ControlReg & 0xe0) == 0 || (CRTC_CursorStart & 0x60) == 0x20)
+	if ((VideoULA_ControlReg & 0xe0) == 0 ||
+	    (CRTC_CursorStart & 0x60) == 0x20 ||
+	    (CRTC_InterlaceAndDelay & 0xc0) == 0xc0 ||
+	    !CursorOnState)
+	{
 		return;
+	}
 
 	/* Use clock bit and cursor bits to work out size */
 	if (VideoULA_ControlReg & 0x80)
-		CurSize = CurSizes[(VideoULA_ControlReg & 0x70)>>4] * 8;
+		CurSize = CurSizes[(VideoULA_ControlReg & 0x70) >> 4] * 8;
 	else
 		CurSize = 2 * 8; /* Mode 7 */
 
 	if (VideoState.IsTeletext)
 	{
-		ScrAddr=CRTC_ScreenStartLow+(((CRTC_ScreenStartHigh ^ 0x20) + 0x74 & 0xff)<<8);
-		CurAddr=CRTC_CursorPosLow+(((CRTC_CursorPosHigh ^ 0x20) + 0x74 & 0xff)<<8);
+		ScrAddr = CRTC_ScreenStartLow + ((((CRTC_ScreenStartHigh ^ 0x20) + 0x74) & 0xff) << 8);
+		CurAddr = CRTC_CursorPosLow   + ((((CRTC_CursorPosHigh   ^ 0x20) + 0x74) & 0xff) << 8);
 
 		CurStart = (CRTC_CursorStart & 0x1f) / 2;
-		CurEnd = CRTC_CursorEnd;
-		CurSize-=4;
+		CurEnd   = CRTC_CursorEnd;
+		CurSize -= 4;
 	}
 	else
 	{
-		ScrAddr=CRTC_ScreenStartLow+(CRTC_ScreenStartHigh<<8);
-		CurAddr=CRTC_CursorPosLow+(CRTC_CursorPosHigh<<8);
+		ScrAddr = CRTC_ScreenStartLow + (CRTC_ScreenStartHigh << 8);
+		CurAddr = CRTC_CursorPosLow   + (CRTC_CursorPosHigh   << 8);
 
 		CurStart = CRTC_CursorStart & 0x1f;
-		CurEnd = CRTC_CursorEnd;
+		CurEnd   = CRTC_CursorEnd;
 	}
 
-	RelAddr=CurAddr-ScrAddr;
+	RelAddr = CurAddr - ScrAddr;
 	if (RelAddr < 0 || CRTC_HorizontalDisplayed == 0)
 		return;
 
@@ -1543,17 +1558,20 @@ static void VideoAddCursor() {
 	if (CurX + CurSize >= 640)
 		CurSize = 640 - CurX;
 
-	// Cursor delay
-	CurX+=((CRTC_InterlaceAndDelay&192)>>6)*HSyncModifier;
-	if (VideoState.IsTeletext) CurX-=2*HSyncModifier;
+	CurX += ((CRTC_InterlaceAndDelay & 0xc0) >> 6) * HSyncModifier;
+
+	if (VideoState.IsTeletext)
+	{
+		CurX -= 2 * HSyncModifier;
+	}
+
 	if (CurSize > 0)
 	{
 		for (int y = CurStart; y <= CurEnd && y <= CRTC_ScanLinesPerChar && CurY + y < 500; ++y)
 		{
-			if (CurY + y >= 0) {
-				if (CursorOnState) {
-					mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
-				}
+			if (CurY + y >= 0)
+			{
+				mainWin->doInvHorizLine(7, CurY + y, CurX, CurSize);
 			}
 		}
 	}

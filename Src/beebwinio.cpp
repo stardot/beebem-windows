@@ -1752,23 +1752,33 @@ void BeebWin::CaptureBitmapPending(bool autoFilename)
 	m_CaptureBitmapAutoFilename = autoFilename;
 }
 
-bool BeebWin::GetImageEncoderClsid(WCHAR *mimeType, CLSID *encoderClsid)
+bool BeebWin::GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid)
 {
+	bool Success = false;
 	UINT num;
 	UINT size;
 	UINT i;
-	ImageCodecInfo* pImageCodecInfo;
 
 	GetImageEncodersSize(&num, &size);
+
 	if (size == 0)
+	{
 		return false;
+	}
 
-	pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
-	if (pImageCodecInfo == NULL)
+	ImageCodecInfo* pImageCodecInfo = (ImageCodecInfo*)malloc(size);
+
+	if (pImageCodecInfo == nullptr)
+	{
 		return false;
+	}
 
-	GetImageEncoders(num, size, pImageCodecInfo);
-	for(i = 0; i < num; ++i)
+	if (GetImageEncoders(num, size, pImageCodecInfo) != Ok)
+	{
+		goto Exit;
+	}
+
+	for (i = 0; i < num; ++i)
 	{ 
 		if (wcscmp(pImageCodecInfo[i].MimeType, mimeType) == 0)
 		{
@@ -1776,16 +1786,60 @@ bool BeebWin::GetImageEncoderClsid(WCHAR *mimeType, CLSID *encoderClsid)
 			break;
 		}
 	}
-	free(pImageCodecInfo);
 
 	if (i == num)
 	{
 		MessageBox(m_hWnd, "Failed to get image encoder",
-				   WindowTitle, MB_OK|MB_ICONERROR);
-		return false;
+		           WindowTitle, MB_OK | MB_ICONERROR);
 	}
 
-	return true;
+	Success = true;
+
+Exit:
+	if (pImageCodecInfo != nullptr)
+	{
+		free(pImageCodecInfo);
+	}
+
+	return Success;
+}
+
+static const char* GetCaptureFormatFileExt(UINT MenuID)
+{
+	switch (MenuID)
+	{
+		case IDM_CAPTUREBMP:
+		default:
+			return ".bmp";
+
+		case IDM_CAPTUREJPEG:
+			return ".jpg";
+
+		case IDM_CAPTUREGIF:
+			return ".gif";
+
+		case IDM_CAPTUREPNG:
+			return ".png";
+	}
+}
+
+static const WCHAR* GetCaptureFormatMimeType(UINT MenuID)
+{
+	switch (MenuID)
+	{
+		case IDM_CAPTUREBMP:
+		default:
+			return L"image/bmp";
+
+		case IDM_CAPTUREJPEG:
+			return L"image/jpeg";
+
+		case IDM_CAPTUREGIF:
+			return L"image/gif";
+
+		case IDM_CAPTUREPNG:
+			return L"image/png";
+	}
 }
 
 bool BeebWin::GetImageFile(char *FileName)
@@ -1793,27 +1847,11 @@ bool BeebWin::GetImageFile(char *FileName)
 	char DefaultPath[_MAX_PATH];
 	bool success = false;
 	char filter[200];
-	const char *fileExt = NULL;
-
-	switch (m_MenuIdCaptureFormat)
-	{
-	default:
-	case IDM_CAPTUREBMP:
-		fileExt = ".bmp";
-		break;
-	case IDM_CAPTUREJPEG:
-		fileExt = ".jpg";
-		break;
-	case IDM_CAPTUREGIF:
-		fileExt = ".gif";
-		break;
-	case IDM_CAPTUREPNG:
-		fileExt = ".png";
-		break;
-	}
 
 	m_Preferences.GetStringValue("ImagePath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
+
+	const char *fileExt = GetCaptureFormatFileExt(m_MenuIdCaptureFormat);
 
 	// A literal \0 in the format string terminates the string so use %c
 	sprintf(filter, "Image File (*%s)%c*%s%c", fileExt, 0, fileExt, 0);
@@ -1841,38 +1879,16 @@ bool BeebWin::GetImageFile(char *FileName)
 	return success;
 }
 
-void BeebWin::CaptureBitmap(int x, int y, int sx, int sy)
+void BeebWin::CaptureBitmap(int SourceX,
+                            int SourceY,
+                            int SourceWidth,
+                            int SourceHeight,
+                            bool TeletextEnabled)
 {
-	WCHAR *mimeType = NULL;
-	CLSID encoderClsid;
-	HBITMAP CaptureDIB = NULL;
-	HDC CaptureDC = NULL;
-	bmiData Capturebmi;
-	char *CaptureScreen = NULL;
-	char *fileExt = NULL;
-	char AutoName[MAX_PATH];
-	WCHAR wFileName[MAX_PATH];
+	const WCHAR *mimeType = GetCaptureFormatMimeType(m_MenuIdCaptureFormat);
+	const char *fileExt = GetCaptureFormatFileExt(m_MenuIdCaptureFormat);
 
-	switch (m_MenuIdCaptureFormat)
-	{
-	default:
-	case IDM_CAPTUREBMP:
-		mimeType = L"image/bmp";
-		fileExt = ".bmp";
-		break;
-	case IDM_CAPTUREJPEG:
-		mimeType = L"image/jpeg";
-		fileExt = ".jpg";
-		break;
-	case IDM_CAPTUREGIF:
-		mimeType = L"image/gif";
-		fileExt = ".gif";
-		break;
-	case IDM_CAPTUREPNG:
-		mimeType = L"image/png";
-		fileExt = ".png";
-		break;
-	}
+	CLSID encoderClsid;
 
 	if (!GetImageEncoderClsid(mimeType, &encoderClsid))
 		return;
@@ -1885,61 +1901,132 @@ void BeebWin::CaptureBitmap(int x, int y, int sx, int sy)
 
 		SYSTEMTIME systemTime;
 		GetLocalTime(&systemTime);
+
+		char AutoName[MAX_PATH];
+
 		sprintf(AutoName, "\\BeebEm_%04d%02d%02d_%02d%02d%02d_%d%s",
-				systemTime.wYear, systemTime.wMonth, systemTime.wDay,
-				systemTime.wHour, systemTime.wMinute, systemTime.wSecond,
-				systemTime.wMilliseconds/100,
-				fileExt);
+		        systemTime.wYear, systemTime.wMonth,  systemTime.wDay,
+		        systemTime.wHour, systemTime.wMinute, systemTime.wSecond,
+		        systemTime.wMilliseconds / 100,
+		        fileExt);
+
 		strcat(m_CaptureFileName, AutoName);
 	}
 
+	int BitmapWidth, BitmapHeight;
+	int DestX, DestY;
+	int DestWidth, DestHeight;
+
+	switch (m_MenuIdCaptureResolution)
+	{
+		case IDM_CAPTURERES_DISPLAY:
+			BitmapWidth  = m_XWinSize;
+			BitmapHeight = m_YWinSize;
+			DestWidth  = BitmapWidth;
+			DestHeight = BitmapHeight;
+			DestX = 0;
+			DestY = 0;
+			break;
+
+		case IDM_CAPTURERES_1280:
+			BitmapWidth  = 1280;
+			BitmapHeight = 1024;
+
+			if (TeletextEnabled)
+			{
+				DestWidth  = SourceWidth  * 2;
+				DestHeight = SourceHeight * 2;
+				DestX = (BitmapWidth  - DestWidth)  / 2;
+				DestY = (BitmapHeight - DestHeight) / 2;
+			}
+			else
+			{
+				DestWidth  = BitmapWidth;
+				DestHeight = BitmapHeight;
+				DestX = 0;
+				DestY = 0;
+			}
+			break;
+
+		case IDM_CAPTURERES_640:
+		default:
+			BitmapWidth  = 640;
+			BitmapHeight = 512;
+
+			if (TeletextEnabled)
+			{
+				DestWidth  = SourceWidth;
+				DestHeight = SourceHeight;
+				DestX = (BitmapWidth  - DestWidth)  / 2;
+				DestY = (BitmapHeight - DestHeight) / 2;
+			}
+			else
+			{
+				DestWidth  = BitmapWidth;
+				DestHeight = BitmapHeight;
+				DestX = 0;
+				DestY = 0;
+			}
+			break;
+
+		case IDM_CAPTURERES_320:
+			BitmapWidth  = 320;
+			BitmapHeight = 256;
+			DestWidth  = BitmapWidth;
+			DestHeight = BitmapHeight;
+			DestX = 0;
+			DestY = 0;
+			break;
+	}
+
 	// Capture the bitmap
-	Capturebmi = m_bmi;
-	if (m_MenuIdCaptureResolution == IDM_CAPTURERES1)
-	{
-		Capturebmi.bmiHeader.biWidth = m_XWinSize;
-		Capturebmi.bmiHeader.biHeight = m_YWinSize;
-	}
-	else if (m_MenuIdCaptureResolution == IDM_CAPTURERES2)
-	{
-		Capturebmi.bmiHeader.biWidth = 1280;
-		Capturebmi.bmiHeader.biHeight = 1024;
-	}
-	else if (m_MenuIdCaptureResolution == IDM_CAPTURERES3)
-	{
-		Capturebmi.bmiHeader.biWidth = 640;
-		Capturebmi.bmiHeader.biHeight = 512;
-	}
-	else
-	{
-		Capturebmi.bmiHeader.biWidth = 320;
-		Capturebmi.bmiHeader.biHeight = 256;
-	}
+	bmiData Capturebmi = m_bmi;
+	Capturebmi.bmiHeader.biWidth  = BitmapWidth;
+	Capturebmi.bmiHeader.biHeight = BitmapHeight;
 	Capturebmi.bmiHeader.biSizeImage = Capturebmi.bmiHeader.biWidth * Capturebmi.bmiHeader.biHeight;
-	CaptureDC = CreateCompatibleDC(NULL);
-	CaptureDIB = CreateDIBSection(CaptureDC, (BITMAPINFO *)&Capturebmi,
-									DIB_RGB_COLORS, (void**)&CaptureScreen, NULL, 0);
+
+	HDC CaptureDC = CreateCompatibleDC(nullptr);
+
+	char *CaptureScreen = nullptr;
+
+	HBITMAP CaptureDIB = CreateDIBSection(CaptureDC,
+	                                      (BITMAPINFO *)&Capturebmi,
+	                                      DIB_RGB_COLORS,
+	                                      (void**)&CaptureScreen,
+	                                      nullptr,
+	                                      0);
+
 	HGDIOBJ prevObj = SelectObject(CaptureDC, CaptureDIB);
-	if (prevObj == NULL)
+
+	if (prevObj == nullptr)
 	{
 		MessageBox(m_hWnd, "Failed to initialise capture buffers",
-				   WindowTitle, MB_OK|MB_ICONERROR);
+		           WindowTitle, MB_OK | MB_ICONERROR);
 	}
 	else
 	{
-		StretchBlt(CaptureDC, 0, 0, Capturebmi.bmiHeader.biWidth, Capturebmi.bmiHeader.biHeight,
-				   m_hDCBitmap, x, y, sx, sy, SRCCOPY);
+		StretchBlt(CaptureDC,
+		           DestX, DestY,
+		           DestWidth, DestHeight,
+		           m_hDCBitmap,
+		           SourceX, SourceY,
+		           SourceWidth, SourceHeight,
+		           SRCCOPY);
+
 		SelectObject(CaptureDC, prevObj);
 
 		// Use GDI+ Bitmap to save bitmap
 		Bitmap *bitmap = new Bitmap((HBITMAP)CaptureDIB, 0);
 
+		WCHAR wFileName[MAX_PATH];
 		mbstowcs(wFileName, m_CaptureFileName, MAX_PATH);
+
 		Status status = bitmap->Save(wFileName, &encoderClsid, NULL);
+
 		if (status != Ok)
 		{
 			MessageBox(m_hWnd, "Failed to save screen capture",
-					   WindowTitle, MB_OK|MB_ICONERROR);
+			           WindowTitle, MB_OK | MB_ICONERROR);
 		}
 		else if (m_CaptureBitmapAutoFilename)
 		{
@@ -1951,8 +2038,13 @@ void BeebWin::CaptureBitmap(int x, int y, int sx, int sy)
 		delete bitmap;
 	}
 
-	if (CaptureDIB != NULL)
+	if (CaptureDIB != nullptr)
+	{
 		DeleteObject(CaptureDIB);
-	if (CaptureDC != NULL)
+	}
+
+	if (CaptureDC != nullptr)
+	{
 		DeleteDC(CaptureDC);
+	}
 }

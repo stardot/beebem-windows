@@ -57,16 +57,19 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)BeebEm.user.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="PropertySheet.props" />
+    <Import Project="$(SolutionDir)BeebEm.user.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)BeebEm.user.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)BeebEm.user.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -102,10 +105,10 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <CustomBuildStep>
-      <Command>"$(ISCC_Path)\iscc.exe" BeebEmSetup.iss</Command>
+      <Command>"$(ISCC_Dir)\iscc.exe" BeebEmSetup.iss</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>$(SolutionDir)InnoSetup\Release\BeebEm415.exe</Outputs>
+      <Outputs>$(SolutionDir)InnoSetup\Release\BeebEm416.exe</Outputs>
       <Inputs>$(OutDir)BeebEm.exe</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
