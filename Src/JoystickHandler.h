@@ -99,6 +99,7 @@ struct JoystickDev
 	JoystickDev(const JoystickDev&) = delete;
 	JoystickDev(JoystickDev&& r);
 	JoystickDev& operator=(const JoystickDev&) = delete;
+	JoystickDev& operator=(JoystickDev&& r);
 	~JoystickDev();
 };
 
