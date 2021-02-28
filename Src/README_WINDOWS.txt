@@ -30,9 +30,12 @@ and install Inno Setup from http://www.jrsoftware.org/isinfo.php.
 After installing the DirectX 9.0 SDK and Inno Setup, the next step is to
 configure the BeebEm Visual Studio project to find the relevant files.
 
-Open BeebEm.sln in Visual Studio. Select the View menu, then Other Windows,
-then Property Manager. In the Property Manager window, click to expand
-BeebEm\Release | Win32 and then double-click on BeebEm.user.
+Rename the file Src\BeebEm.user.props.example to Src\BeebEm.user.props,
+and then open BeebEm.sln in Visual Studio.
+
+Select the View menu, then Other Windows, then Property Manager. In the
+Property Manager window, click to expand BeebEm\Release | Win32 and then
+double-click on BeebEm.user.
 
 This opens the BeebEm.user properties. Select User Macros from the list
 in the left column, under Common Properties, then set the following macro
