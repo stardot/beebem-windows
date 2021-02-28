@@ -613,7 +613,7 @@ public:
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
 	bool ScanJoysticks(bool verbose = false);
-	bool InitJoystick(bool verbose = false);
+	void InitJoystick(bool verbose = false);
 	bool CaptureJoystick(int Index, bool verbose);
 	void ResetJoystick(void);
 	void RestoreState(void);
