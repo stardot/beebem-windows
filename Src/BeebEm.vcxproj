@@ -192,6 +192,7 @@
     <ClCompile Include="filedialog.cpp" />
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="ide.cpp" />
+    <ClCompile Include="JoystickOrderDialog.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Master512CoPro.cpp" />
@@ -338,6 +339,7 @@
     <ClInclude Include="filedialog.h" />
     <ClInclude Include="FolderSelectDialog.h" />
     <ClInclude Include="JoystickHandler.h" />
+    <ClInclude Include="JoystickOrderDialog.h" />
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="log.h" />

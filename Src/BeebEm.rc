@@ -109,7 +109,7 @@ BEGIN
     CONTROL         "^ ~",IDK_CARET,"Button",BS_OWNERDRAW | WS_TABSTOP,243,19,17,14
     CONTROL         "SFT LK",IDK_SHIFT_LOCK,"Button",BS_OWNERDRAW | WS_TABSTOP,9,62,29,14
     CONTROL         "Unassign",IDK_UNASSIGN,"Button",BS_OWNERDRAW | WS_TABSTOP,9,86,60,14
-    CONTROL         "Reset Mapping",IDK_RESET_MAPPING,"Button",WS_TABSTOP,9,101,60,14
+    PUSHBUTTON      "Reset Mapping",IDK_RESET_MAPPING,9,101,60,14
 END
 
 IDD_KEYBOARD_LINKS DIALOG  0, 0, 160, 66
@@ -259,6 +259,17 @@ BEGIN
     PUSHBUTTON      "Save Config",IDC_SAVE,235,136,50,14
 END
 
+IDD_JOYSTICKORDER DIALOGEX 0, 0, 170, 133
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Joystick Order"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,113,113,50,14
+    LISTBOX         IDC_JOYSTICKLIST,7,7,141,103,WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_JOYSTICKSPIN,"msctls_updown32",UDS_ARROWKEYS,151,35,12,34
+    CONTROL         "Show disconnected",IDC_JOYSTICKSHOWALL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,115,79,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -321,6 +332,14 @@ BEGIN
         RIGHTMARGIN, 285
         TOPMARGIN, 7
         BOTTOMMARGIN, 197
+    END
+
+    IDD_JOYSTICKORDER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 127
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -739,6 +758,7 @@ BEGIN
             MENUITEM "Save Joystick Mapping...",      IDM_SAVEJOYMAP
         END
         MENUITEM "Rescan Joysticks",            IDM_INIT_JOYSTICK
+        MENUITEM "Change Joystick Order",       IDM_JOYSTICKORDER
         MENUITEM SEPARATOR
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
@@ -787,18 +807,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE
+1 TEXTINCLUDE 
 BEGIN
     "beebemrc.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
     "#include ""winresrc.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"

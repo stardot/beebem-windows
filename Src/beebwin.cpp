@@ -78,6 +78,7 @@ Boston, MA  02110-1301, USA.
 #include "sprowcopro.h"
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
+#include "JoystickOrderDialog.h"
 
 using namespace Gdiplus;
 
@@ -3200,6 +3201,12 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_AUTOLOADJOYMAP:
 		ProcessAutoloadJoystickMapCommand();
+		break;
+
+	case IDM_JOYSTICKORDER:
+		ShowJoystickOrderDialog(m_hWnd, m_JoystickHandler.get());
+		UpdateJoystickMenu();
+		InitJoystick();
 		break;
 
 	case IDM_FREEZEINACTIVE:
