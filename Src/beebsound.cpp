@@ -44,8 +44,8 @@ extern AVIWriter *aviWriter;
 
 //  #define DEBUGSOUNDTOFILE
 
-#define PREFSAMPLERATE 44100
-#define MAXBUFSIZE 32768
+const int DEFAULT_SAMPLE_RATE = 44100;
+const int MAXBUFSIZE = 32768;
 
 static unsigned char SoundBuf[MAXBUFSIZE];
 
@@ -83,7 +83,7 @@ bool RelaySoundEnabled = false;
 bool DiscDriveSoundEnabled = false;
 bool SoundChipEnabled = true;
 
-int SoundSampleRate = PREFSAMPLERATE;
+unsigned int SoundSampleRate = DEFAULT_SAMPLE_RATE;
 int SoundVolume = 100; //Percentage
 static int SoundAutoTriggerTime;
 static int SoundBufferSize;
@@ -116,7 +116,7 @@ static int RealVolumes[4]; // Holds the real volume values for state save use
 
 static bool ActiveChannel[4] = {false, false, false, false}; // Those channels with non-0 volume
 // Set it to an array for more accurate sound generation
-static unsigned int samplerate;
+
 static double OurTime=0.0; /* Time in sample periods */
 
 int SoundTrigger; /* Time to trigger a sound event */
@@ -125,7 +125,7 @@ static unsigned int GenIndex[4]; /* Used by the voice generators */
 static int GenState[4];
 static int bufptr=0;
 bool SoundDefault;
-double SoundTuning=0.0; // Tunning offset
+double SoundTuning=0.0; // Tuning offset
 
 static int GetVol(int vol);
 
@@ -161,14 +161,13 @@ static HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 
 /****************************************************************************/
 /* DestTime is in samples */
-void PlayUpTil(double DestTime) {
-	int tmptotal,channel,bufinc,tapetotal;
+
+void PlayUpTil(double DestTime)
+{
 
 #ifdef SPEECH_ENABLED
 	int SpeechPtr = 0;
-#endif
 
-#ifdef SPEECH_ENABLED
 	if (MachineType != Model::Master128 && SpeechEnabled)
 	{
 		SpeechPtr = 0;
@@ -180,14 +179,16 @@ void PlayUpTil(double DestTime) {
 	}
 #endif
 
-	while (DestTime>OurTime) {
-		for(bufinc=0;(bufptr<SoundBufferSize) && ((OurTime+bufinc)<DestTime);bufptr++,bufinc++) {
+	while (DestTime > OurTime) {
+		int bufinc = 0;
+
+		for (bufinc = 0; bufptr < SoundBufferSize && OurTime + bufinc < DestTime; bufptr++, bufinc++) {
 			int tt;
-			tmptotal=0;
+			int tmptotal = 0;
 
 			if (SoundChipEnabled) {
-				// Begin of for loop
-				for(channel=1;channel<=3;channel++) {
+				// Channels 1 to 3 are tone generators
+				for (int channel = 1; channel <= 3; channel++) {
 					if (ActiveChannel[channel]) {
 						if ((GenState[channel]) && (!Speech[channel]))
 							tmptotal+=BeebState76489.ToneVolume[channel];
@@ -206,10 +207,10 @@ void PlayUpTil(double DestTime) {
 							GenState[channel]^=1;
 						}
 					}
-				} /* Channel loop */
+				}
 
 				/* Now put in noise generator stuff */
-				if (ActiveChannel[0]) { 
+				if (ActiveChannel[0]) {
 					if (BeebState76489.Noise.FB) {
 						/* White noise */
 						if (GenState[0])
@@ -219,21 +220,21 @@ void PlayUpTil(double DestTime) {
 						GenIndex[0]++;
 						switch (BeebState76489.Noise.Freq) {
 						case 0: /* Low */
-							if (GenIndex[0]>=(samplerate/10000)) {
+							if (GenIndex[0] >= SoundSampleRate / 10000) {
 								GenIndex[0]=0;
 								GenState[0]=rand() & 1;
 							}
 							break;
 
 						case 1: /* Med */
-							if (GenIndex[0]>=(samplerate/5000)) {
+							if (GenIndex[0] >= SoundSampleRate / 5000) {
 								GenIndex[0]=0;
 								GenState[0]=rand() & 1;
 							}
 							break;
 
 						case 2: /* High */
-							if (GenIndex[0]>=(samplerate/2500)) {
+							if (GenIndex[0] >= SoundSampleRate / 2500) {
 								GenIndex[0]=0;
 								GenState[0]=rand() & 1;
 							}
@@ -256,12 +257,12 @@ void PlayUpTil(double DestTime) {
 						switch (BeebState76489.Noise.Freq) {
 						case 2: /* Low */
 							if (GenState[0]) {
-								if (GenIndex[0]>=(samplerate/125)) {
+								if (GenIndex[0] >= SoundSampleRate / 125) {
 									GenIndex[0]=0;
 									GenState[0]=0;
 								}
 							} else {
-								if (GenIndex[0]>=(samplerate/1250)) {
+								if (GenIndex[0] >= SoundSampleRate / 1250) {
 									GenIndex[0]=0;
 									GenState[0]=1;
 								}
@@ -270,12 +271,12 @@ void PlayUpTil(double DestTime) {
 
 						case 1: /* Med */
 							if (GenState[0]) {
-								if (GenIndex[0]>=(samplerate/250)) {
+								if (GenIndex[0] >= SoundSampleRate / 250) {
 									GenIndex[0]=0;
 									GenState[0]=0;
 								}
 							} else {
-								if (GenIndex[0]>=(samplerate/2500)) {
+								if (GenIndex[0] >= SoundSampleRate / 2500) {
 									GenIndex[0]=0;
 									GenState[0]=1;
 								}
@@ -284,12 +285,12 @@ void PlayUpTil(double DestTime) {
 
 						case 0: /* High */
 							if (GenState[0]) {
-								if (GenIndex[0]>=(samplerate/500)) {
+								if (GenIndex[0] >= SoundSampleRate / 500) {
 									GenIndex[0]=0;
 									GenState[0]=0;
 								}
 							} else {
-								if (GenIndex[0]>=(samplerate/5000)) {
+								if (GenIndex[0] >= SoundSampleRate / 5000) {
 									GenIndex[0]=0;
 									GenState[0]=1;
 								}
@@ -312,6 +313,7 @@ void PlayUpTil(double DestTime) {
 					}
 				}
 			}
+
 			tmptotal/=4;
 
 #ifdef SPEECH_ENABLED
@@ -323,7 +325,7 @@ void PlayUpTil(double DestTime) {
 			for (int i = 0; i < NUM_SOUND_SAMPLES; ++i) {
 				if (SoundSamples[i].playing) {
 					tmptotal+=(SoundSamples[i].pBuf[SoundSamples[i].pos]-128)*2;
-					SoundSamples[i].pos += (44100 / samplerate);
+					SoundSamples[i].pos += 44100 / SoundSampleRate;
 					if (SoundSamples[i].pos >= SoundSamples[i].len) {
 						if (SoundSamples[i].repeat)
 							SoundSamples[i].pos = 0;
@@ -335,7 +337,8 @@ void PlayUpTil(double DestTime) {
 
 			if (TapeSoundEnabled) {
 				// Mix in tape sound here
-				tapetotal=0; 
+				int tapetotal = 0;
+
 				if ((TapeAudio.Enabled) && (TapeAudio.Signal==2)) {
 					if (TapeAudio.Samples++>=36) TapeAudio.Samples=0;
 					tapetotal=(int)(sin(((TapeAudio.Samples*20)*3.14)/180)*20);
@@ -393,8 +396,8 @@ void PlayUpTil(double DestTime) {
 			bufptr=0;
 		}
 
-		OurTime+=bufinc;
-	} /* While time */ 
+		OurTime += bufinc;
+	}
 }
 
 /****************************************************************************/
@@ -409,30 +412,31 @@ static double CyclesToSamples(int BeebCycles) {
   /* This is all done incrementally - find the number of ticks since the last call
      in both domains.  This does mean this should only be called once */
   /* Extract number of cycles since last call */
-  if (BeebCycles<LastBeebCycle) {
+  if (BeebCycles < LastBeebCycle) {
     /* Wrap around in beebs time */
-    tmp=((double)CycleCountWrap-(double)LastBeebCycle)+(double)BeebCycles;
+    tmp = ((double)CycleCountWrap-(double)LastBeebCycle)+(double)BeebCycles;
   } else {
-    tmp=(double)BeebCycles-(double)LastBeebCycle;
+    tmp = (double)BeebCycles-(double)LastBeebCycle;
   }
-  tmp/=(mainWin->m_RealTimeTarget)?mainWin->m_RealTimeTarget:1;
-/*fprintf(stderr,"Convert tmp=%f\n",tmp); */
-  LastBeebCycle=BeebCycles;
 
-  tmp*=(samplerate);
-  tmp/=2000000.0; /* Few - glad thats a double! */
+  tmp /= mainWin->m_RealTimeTarget ? mainWin->m_RealTimeTarget : 1;
+  /*fprintf(stderr,"Convert tmp=%f\n",tmp); */
 
-  LastOurTime+=tmp;
+  LastBeebCycle = BeebCycles;
+
+  tmp *= SoundSampleRate;
+  tmp /= 2000000.0; /* Few - glad thats a double! */
+
+  LastOurTime += tmp;
   return LastOurTime;
 }
 
 /****************************************************************************/
 
-static void InitAudioDev(int sampleratein) {
+static void InitAudioDev() {
 	delete pSoundStreamer;
-	samplerate = sampleratein;
 
-	pSoundStreamer = CreateSoundStreamer(samplerate, 8, 1);
+	pSoundStreamer = CreateSoundStreamer(SoundSampleRate, 8, 1);
 	if (!pSoundStreamer)
 		SoundEnabled = false;
 }
@@ -483,7 +487,7 @@ static void SetFreq(int Channel, int freqval) {
 
 	unsigned int freq = 4000000 / (32 * freqval);
 
-	double t = (((double)samplerate / (double)freq) / 2.0) + SoundTuning;
+	double t = (((double)SoundSampleRate / (double)freq) / 2.0) + SoundTuning;
 	int ChangeSamps = (int)t; // Number of samples after which to change
 
 	CSA[Channel] = (double)(t - ChangeSamps);
@@ -497,15 +501,21 @@ static void SetFreq(int Channel, int freqval) {
 }
 
 /****************************************************************************/
-static void SoundTrigger_Real() {
-  double nowsamps = CyclesToSamples(TotalCycles);
-  PlayUpTil(nowsamps);
-  SoundTrigger=TotalCycles+SoundAutoTriggerTime;
+
+static void UpdateSound()
+{
+  double CurrentTimeInSamples = CyclesToSamples(TotalCycles);
+  PlayUpTil(CurrentTimeInSamples);
+
+  SoundTrigger = TotalCycles + SoundAutoTriggerTime;
 }
 
-void Sound_Trigger(int NCycles) {
-	if (SoundTrigger<=TotalCycles) SoundTrigger_Real(); 
-	// fprintf(sndlog,"SoundTrigger_Real was called from Sound_Trigger\n"); }
+void SoundPoll()
+{
+	if (SoundTrigger <= TotalCycles)
+	{
+		UpdateSound();
+	}
 }
 
 void SoundChipReset() {
@@ -530,13 +540,13 @@ void SoundInit() {
   LastOurTime=(double)LastBeebCycle * (double)SoundSampleRate / 2000000.0;
   OurTime=LastOurTime;
   bufptr=0;
-  InitAudioDev(SoundSampleRate);
+  InitAudioDev();
   if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000; 
   if (SoundSampleRate == 22050) SoundAutoTriggerTime = 10000; 
   if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000; 
-  SoundBufferSize=pSoundStreamer?pSoundStreamer->BufferSize():SoundSampleRate/50;
+  SoundBufferSize = pSoundStreamer ? pSoundStreamer->BufferSize() : SoundSampleRate / 50;
   LoadSoundSamples();
-  SoundTrigger=TotalCycles+SoundAutoTriggerTime;
+  SoundTrigger = TotalCycles + SoundAutoTriggerTime;
 }
 
 void SwitchOnSound() {
@@ -614,7 +624,7 @@ void Sound_RegWrite(int value)
 		break;
 	}
 
-	SoundTrigger_Real();
+	UpdateSound();
 }
 
 void DumpSound() {

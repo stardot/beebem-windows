@@ -3076,7 +3076,7 @@ void Exec6502Instruction(void) {
 	}
 }
 
-void PollVIAs(unsigned int nCycles)
+static void PollVIAs(unsigned int nCycles)
 {
 	if (nCycles != 0)
 	{
@@ -3090,7 +3090,7 @@ void PollVIAs(unsigned int nCycles)
 	}
 }
 
-void PollHardware(unsigned int nCycles)
+static void PollHardware(unsigned int nCycles)
 {
 	TotalCycles+=nCycles;
 
@@ -3118,7 +3118,7 @@ void PollHardware(unsigned int nCycles)
 	}
 	Disc8271Poll();
 	Music5000Poll(nCycles);
-	Sound_Trigger(nCycles);
+	SoundPoll();
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
 	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 

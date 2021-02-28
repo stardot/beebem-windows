@@ -43,7 +43,7 @@ extern bool SoundDefault; // Default sound state (enabled/disabled via sound men
 extern bool SoundEnabled; // Sound on/off flag - will be off if DirectSound init fails
 extern bool RelaySoundEnabled; // Relay Click noise enable
 extern bool DiscDriveSoundEnabled; // Disc drive sound enable
-extern int SoundSampleRate; /* Sample rate, 11025, 22050 or 44100 Hz */
+extern unsigned int SoundSampleRate; // Sample rate, 11025, 22050 or 44100 Hz
 extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
 extern bool SoundExponentialVolume;
 
@@ -73,7 +73,7 @@ void ClickRelay(bool RelayState);
 void PlaySoundSample(int sample, bool repeat);
 void StopSoundSample(int sample);
 
-void Sound_Trigger(int NCycles);
+void SoundPoll();
 
 void SetSound(SoundState state);
 
