@@ -2520,13 +2520,14 @@ static bool DebugCmdOver(char* args)
 
 		// Resume execution
 		DebugBreakExecution(DebugType::None);
-
-		return true;
 	}
 	else
 	{
-		return DebugCmdNext(args);
+		DebugCmdNext(args);
 	}
+
+	DebugSetCommandString("over");
+	return true;
 }
 
 static bool DebugCmdSet(char* args)
