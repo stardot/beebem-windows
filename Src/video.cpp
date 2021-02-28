@@ -854,6 +854,13 @@ static void DoMode7Row(void) {
 
   if (CRTC_HorizontalDisplayed>80) return; /* Not possible on beeb - and would break the double height lookup array */
 
+  // Reset double-height state for the first character row of the screen.
+  if (VideoState.CharLine == 0)
+  {
+    CurrentLineBottom = false;
+    NextLineBottom = false;
+  }
+
   for (CurrentChar = 0; CurrentChar < CRTC_HorizontalDisplayed; CurrentChar++) {
     HoldGraph=NextHoldGraph;
     HoldGraphChar=NextHoldGraphChar;
