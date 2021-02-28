@@ -77,10 +77,14 @@ struct JoystickDev
 	DIJOYSTATE2  m_JoyState;
 
 	int          m_Instance{ 0 };
-	int          m_Order{ -1 };
+	bool         m_OnOrderList{ false };
 	int          m_JoyIndex{ -1 };
 	bool         m_Configured{ false };
 	bool         m_Present{ false };
+	bool         m_Captured{ false };
+	unsigned int m_PrevAxes{ 0 };
+	unsigned int m_PrevBtns{ 0 };
+	bool         m_JoystickToKeysActive{ false };
 
 	JoystickId   Id() { return m_Id; }
 	std::string  DisplayString();
@@ -98,30 +102,30 @@ struct JoystickDev
 	~JoystickDev();
 };
 
-struct PCJoystickState
-{
-	JoystickDev*  Dev{ nullptr };
-	int           JoyIndex{ -1 };
-	bool          Captured{ false };
-	unsigned int  PrevAxes{ 0 };
-	unsigned int  PrevBtns{ 0 };
-	bool          JoystickToKeysActive{ false };
-};
-
 struct JoystickHandler
 {
 	bool              m_DirectInputInitialized{ false };
 	HRESULT           m_DirectInputInitResult{ E_FAIL };
 	LPDIRECTINPUT8    m_pDirectInput{ nullptr };
+	DIJOYCONFIG       m_PreferredJoyCfg{};
+	bool              m_HavePreferredJoyCfg{ false };
 
 	std::vector<JoystickDev>        m_JoystickDevs;
-	PCJoystickState                 m_PCJoystickState[NUM_PC_JOYSTICKS];
 	std::vector<JoystickOrderEntry> m_JoystickOrder;
 
 	HRESULT      InitDirectInput(void);
 	void         AddDeviceInstance(const DIDEVICEINSTANCE*);
 	HRESULT      ScanJoysticks(void);
 	HRESULT      OpenDevice(HWND mainWindow, JoystickDev* dev);
+	JoystickDev* GetDev(int pcIdx)
+	{
+		return (pcIdx >= 0 && static_cast<unsigned int>(pcIdx) < m_JoystickDevs.size()) ? &m_JoystickDevs[pcIdx] : nullptr;
+	}
+	bool         IsCaptured(int pcIdx)
+	{
+		JoystickDev* dev = GetDev(pcIdx);
+		return dev && dev->m_Captured;
+	}
 
 	JoystickHandler() {}
 	~JoystickHandler();
