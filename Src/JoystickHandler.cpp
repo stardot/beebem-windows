@@ -373,6 +373,28 @@ JoystickDev::JoystickDev(JoystickDev&& r)
 }
 
 /****************************************************************************/
+JoystickDev& JoystickDev::operator=(JoystickDev&& r)
+{
+	m_GUIDInstance = r.m_GUIDInstance;
+	m_Id = r.m_Id;
+	std::swap(m_Name, r.m_Name);
+	std::swap(m_Device, r.m_Device);
+	m_PresentAxes = r.m_PresentAxes;
+	m_PresentButtons = r.m_PresentButtons;
+	m_Instance = r.m_Instance;
+	m_OnOrderList = r.m_OnOrderList;
+	m_JoyIndex = r.m_JoyIndex;
+	m_Configured = r.m_Configured;
+	m_Present = r.m_Present;
+	m_Captured = r.m_Captured;
+	m_PrevAxes = r.m_PrevAxes;
+	m_PrevBtns = r.m_PrevBtns;
+	m_JoystickToKeysActive = r.m_JoystickToKeysActive;
+	r.m_Present = false;
+	return *this;
+}
+
+/****************************************************************************/
 void JoystickDev::CloseDevice()
 {
 	m_Captured = false;
@@ -785,6 +807,7 @@ void BeebWin::ResetJoystick()
 			dev.m_Captured = false;
 			TranslateJoystick(dev.m_JoyIndex);
 		}
+		dev.CloseDevice();
 	}
 }
 
