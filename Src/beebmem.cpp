@@ -675,7 +675,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		}
 
 		if (Address < 0xc000 && Address >= 0x8000) {
-			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address -0x8000] =Value;
+			if (!SWRAMBoardEnabled && RomWritable[ROMSEL]) Roms[ROMSEL][Address -0x8000] =Value;
 			else RomWriteThrough(Address, Value);
 			return;
 		}
