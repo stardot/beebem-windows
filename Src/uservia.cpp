@@ -501,14 +501,15 @@ void AMXMouseMovement()
 {
 	int xdir = 0, ydir = 0;
 	int xpulse, ypulse;
+	int deltaX = 0, deltaY =0;
 
 	ClearTrigger(AMXTrigger);
 
 	/* Check if there is a outstanding interrupt */
 	if (AMXMouseEnabled && (UserVIAState.ifr & 0x18) == 0)
 	{
-		int deltaX = AMXDeltaX == 0 ? AMXTargetX - AMXCurrentX : AMXDeltaX;
-		int deltaY = AMXDeltaY == 0 ? AMXTargetY - AMXCurrentY : AMXDeltaY;
+		deltaX = AMXDeltaX == 0 ? AMXTargetX - AMXCurrentX : AMXDeltaX;
+		deltaY = AMXDeltaY == 0 ? AMXTargetY - AMXCurrentY : AMXDeltaY;
 
 		if (deltaX != 0 || deltaY != 0)
 		{
@@ -573,7 +574,15 @@ void AMXMouseMovement()
 
 			UpdateIFRTopBit();
 		}
+#if 0
+		static int prevCycles = 0;
+		char buf[256];
+		snprintf(buf, 256, "dT=%d dX=%d dY=%d x=%d y=%d\n", TotalCycles - prevCycles, deltaX, deltaY, xdir, ydir);
+		OutputDebugString(buf);
+		prevCycles = TotalCycles;
+#endif
 	}
+
 }
 
 /*-------------------------------------------------------------------------*/

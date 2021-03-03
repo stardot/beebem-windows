@@ -46,7 +46,7 @@ extern bool AMXMouseEnabled;
 extern bool AMXLRForMiddle;
 
 /* Number of cycles between each mouse interrupt */
-#define AMX_TRIGGER 1000
+#define AMX_TRIGGER 250
 extern int AMXTrigger;
 
 /* Checks if a movement interrupt should be generated */
