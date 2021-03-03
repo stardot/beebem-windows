@@ -64,6 +64,7 @@ static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
 static const char *CFG_OPTIONS_USER_KEY_MAP_FILE = "UserKeyMapFile";
 static const char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
 static const char *CFG_OPTIONS_HIDE_CURSOR = "HideCursor";
+static const char* CFG_OPTIONS_CAPTURE_MOUSE = "CaptureMouse";
 static const char *CFG_SPEED_TIMING = "Timing";
 static const char *CFG_AMX_ENABLED = "AMXMouseEnabled";
 static const char *CFG_AMX_LRFORMIDDLE = "AMXMouseLRForMiddle";
@@ -251,6 +252,9 @@ void BeebWin::LoadPreferences()
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor))
 		m_HideCursor = false;
+
+	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse))
+		m_CaptureMouse = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING,dword))
 		m_MenuIdKeyMapping = dword;
@@ -630,6 +634,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
+		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
 		m_Preferences.SetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIdKeyMapping);
 		m_Preferences.SetBoolValue("KeyMapAS", m_KeyMapAS);
 		flag = m_KeyMapFunc;

@@ -57,6 +57,8 @@ extern int AMXTargetX;
 extern int AMXTargetY;
 extern int AMXCurrentX;
 extern int AMXCurrentY;
+extern int AMXDeltaX;
+extern int AMXDeltaY;
 
 /* Button states */
 #define AMX_LEFT_BUTTON 1

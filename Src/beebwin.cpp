@@ -220,6 +220,8 @@ BeebWin::BeebWin()
 	m_MenuOn = true;
 	m_PaletteType = PaletteType::RGB;
 	m_WriteInstructionCounts = false;
+	m_CaptureMouse = false;
+	m_MouseCaptured = false;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -1030,6 +1032,8 @@ void BeebWin::InitMenu(void)
 
 	// AMX
 	CheckMenuItem(IDM_AMXONOFF, AMXMouseEnabled);
+	CheckMenuItem(IDM_CAPTUREMOUSE, m_CaptureMouse);
+	EnableMenuItem(IDM_CAPTUREMOUSE, AMXMouseEnabled);
 	CheckMenuItem(IDM_AMX_LRFORMIDDLE, AMXLRForMiddle);
 	CheckMenuItem(IDM_AMX_320X256, false);
 	CheckMenuItem(IDM_AMX_640X256, false);
@@ -1309,6 +1313,27 @@ void BeebWin::SetAMXPosition(unsigned int x, unsigned int y)
 }
 
 /****************************************************************************/
+void BeebWin::ChangeAMXPosition(int deltaX, int deltaY)
+{
+	if (AMXMouseEnabled)
+	{
+		static int remX = 0;
+		static int remY = 0;
+
+		// Scale the window coords to the beeb screen coords
+		int bigX = deltaX * m_AMXXSize * (100 + m_AMXAdjust);
+		AMXDeltaX += (bigX + remX) / (100 * m_XWinSize);
+		remX = (bigX + remX) % (100 * m_XWinSize);
+
+		int bigY = deltaY * m_AMXYSize * (100 + m_AMXAdjust);
+		AMXDeltaY += (bigY + remY) / (100 * m_YWinSize);
+		remY = (bigY + remY) % (100 * m_YWinSize);
+
+		AMXMouseMovement();
+	}
+}
+
+/****************************************************************************/
 LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
                          UINT message,  // type of message
                          WPARAM uParam, // additional information
@@ -1415,6 +1440,11 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 					 !mainWin->m_DisableKeysShortcut)
 			{
 				// Ignore shortcut key, handled on key up
+			}
+			else if (uParam == VK_MENU && (GetKeyState(VK_CONTROL) & 0x8000)
+				|| uParam == VK_CONTROL && (GetKeyState(VK_MENU) & 0x8000))
+			{
+				mainWin->ReleaseMouse();
 			}
 			else
 			{
@@ -1585,6 +1615,10 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 					SetWindowPos(GETHWND, HWND_TOP,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE);
 				}
 			}
+			if (mainWin->m_MouseCaptured && uParam == WA_INACTIVE)
+			{
+				mainWin->ReleaseMouse();
+			}
 			break;
 
 		case WM_SETFOCUS:
@@ -1618,6 +1652,42 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_MOUSEMOVE:
+			if (mainWin->m_MouseCaptured)
+			{
+				POINT curPos;
+
+				GetCursorPos(&curPos);
+
+				int xDelta = curPos.x - mainWin->m_MousePos.x;
+				int yDelta = curPos.y - mainWin->m_MousePos.y;
+
+				mainWin->m_RelMousePos.x += xDelta;
+				if (mainWin->m_RelMousePos.x < 0)
+				{
+					mainWin->m_RelMousePos.x = 0;
+				}
+				else if (mainWin->m_RelMousePos.x > mainWin->m_XWinSize)
+				{
+					mainWin->m_RelMousePos.x = mainWin->m_XWinSize;
+				}
+
+				mainWin->m_RelMousePos.y += yDelta;
+				if (mainWin->m_RelMousePos.y < 0)
+				{
+					mainWin->m_RelMousePos.y = 0;
+				}
+				else if (mainWin->m_RelMousePos.y > mainWin->m_YWinSize)
+				{
+					mainWin->m_RelMousePos.y = mainWin->m_YWinSize;
+				}
+
+				mainWin->ScaleMousestick(mainWin->m_RelMousePos.x, mainWin->m_RelMousePos.y);
+				mainWin->ChangeAMXPosition(xDelta, yDelta);
+
+				if (xDelta != 0 || yDelta != 0)
+					SetCursorPos(mainWin->m_MousePos.x, mainWin->m_MousePos.y);
+			}
+			else
 			{
 				int xPos = GET_X_LPARAM(lParam);
 				int yPos = GET_Y_LPARAM(lParam);
@@ -1631,8 +1701,15 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_LBUTTONDOWN:
-			mainWin->SetMousestickButton(0, (uParam & MK_LBUTTON) != 0);
-			AMXButtons |= AMX_LEFT_BUTTON;
+			if (AMXMouseEnabled && mainWin->m_CaptureMouse && !mainWin->m_MouseCaptured)
+			{
+				mainWin->CaptureMouse();
+			}
+			else
+			{
+				mainWin->SetMousestickButton(0, (uParam & MK_LBUTTON) != 0);
+				AMXButtons |= AMX_LEFT_BUTTON;
+			}
 			break;
 
 		case WM_LBUTTONUP:
@@ -3036,6 +3113,8 @@ void BeebWin::HandleCommand(int MenuId)
 		m_isFullScreen = !m_isFullScreen;
 		CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
 		SetWindowAttributes(!m_isFullScreen);
+		if (m_MouseCaptured)
+			ReleaseMouse();
 		break;
 
 	case IDM_MAINTAINASPECTRATIO:
@@ -3368,6 +3447,12 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_AMXONOFF:
 		AMXMouseEnabled = !AMXMouseEnabled;
 		CheckMenuItem(IDM_AMXONOFF, AMXMouseEnabled);
+		EnableMenuItem(IDM_CAPTUREMOUSE, AMXMouseEnabled);
+		break;
+
+	case IDM_CAPTUREMOUSE:
+		m_CaptureMouse = !m_CaptureMouse;
+		CheckMenuItem(IDM_CAPTUREMOUSE, m_CaptureMouse);
 		break;
 
 	case IDM_AMX_LRFORMIDDLE:
@@ -3999,6 +4084,48 @@ void BeebWin::TogglePause()
 bool BeebWin::IsPaused()
 {
 	return m_EmuPaused;
+}
+
+void BeebWin::CaptureMouse()
+{
+	if (m_MouseCaptured)
+		return;
+
+	// Display info on title bar
+	std::string tempTitle = WindowTitle + std::string(" (Press Ctrl+Alt to release mouse)");
+	SetWindowText(m_hWnd, tempTitle.c_str());
+
+	// Save original mouse position
+	GetCursorPos(&m_PrevMousePos);
+
+	// Capture mouse
+	m_MouseCaptured = true;
+	::SetCapture(m_hWnd);
+
+	// Move mouse to window centre and hide cursor
+	POINT centre{ m_XWinSize/2, m_YWinSize/2 };
+	m_RelMousePos = centre;
+	ClientToScreen(m_hWnd, &centre);
+	m_MousePos = centre;
+	ShowCursor(false);
+	SetCursorPos(centre.x, centre.y);
+}
+
+void BeebWin::ReleaseMouse()
+{
+	if (!m_MouseCaptured)
+		return;
+
+	// Restore original window title
+	SetWindowText(m_hWnd, WindowTitle);
+
+	// Move cursor to where it was
+	SetCursorPos(m_PrevMousePos.x, m_PrevMousePos.y);
+
+	// Release mouse and show cursor
+	m_MouseCaptured = false;
+	ShowCursor(true);
+	::ReleaseCapture();
 }
 
 void BeebWin::OpenUserKeyboardDialog()

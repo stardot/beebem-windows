@@ -626,6 +626,7 @@ BEGIN
     POPUP "&AMX"
     BEGIN
         MENUITEM "&On/Off",                     IDM_AMXONOFF
+        MENUITEM "Capture Mouse",               IDM_CAPTUREMOUSE
         MENUITEM SEPARATOR
         MENUITEM "L+R for &Middle",             IDM_AMX_LRFORMIDDLE
         MENUITEM SEPARATOR

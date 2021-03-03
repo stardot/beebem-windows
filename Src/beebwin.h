@@ -210,6 +210,9 @@ public:
 	void ScaleMousestick(unsigned int x, unsigned int y);
 	void HandleCommand(int MenuId);
 	void SetAMXPosition(unsigned int x, unsigned int y);
+	void ChangeAMXPosition(int deltaX, int deltaY);
+	void CaptureMouse();
+	void ReleaseMouse();
 	void Activate(bool active);
 	void Focus(bool gotit);
 	void WinSizeChange(int size, int width, int height);
@@ -304,6 +307,11 @@ public:
 	JOYCAPS		m_JoystickCaps;
 	int		m_MenuIdSticks;
 	bool		m_HideCursor;
+	bool		m_CaptureMouse;
+	bool		m_MouseCaptured;
+	POINT		m_PrevMousePos;
+	POINT		m_MousePos;
+	POINT		m_RelMousePos;
 	bool		m_FreezeWhenInactive;
 	int		m_MenuIdKeyMapping;
 	bool		m_KeyMapAS;

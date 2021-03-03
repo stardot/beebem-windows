@@ -58,6 +58,8 @@ int AMXTargetX = 0;
 int AMXTargetY = 0;
 int AMXCurrentX = 0;
 int AMXCurrentY = 0;
+int AMXDeltaX = 0;
+int AMXDeltaY = 0;
 
 /* Printer port */
 bool PrinterEnabled = false;
@@ -284,7 +286,7 @@ unsigned char UserVIARead(int Address)
         UpdateIFRTopBit();
 
         /* Set up another interrupt if not at target */
-        if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) ) {
+        if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) || AMXDeltaX || AMXDeltaY) {
           SetTrigger(AMX_TRIGGER, AMXTrigger);
         }
         else {
@@ -510,21 +512,23 @@ void AMXMouseMovement()
 	/* Check if there is a outstanding interrupt */
 	if (AMXMouseEnabled && (UserVIAState.ifr & 0x18) == 0)
 	{
-		if (AMXTargetX != AMXCurrentX || AMXTargetY != AMXCurrentY)
+		int deltaX = AMXDeltaX == 0 ? AMXTargetX - AMXCurrentX : AMXDeltaX;
+		int deltaY = AMXDeltaY == 0 ? AMXTargetY - AMXCurrentY : AMXDeltaY;
+
+		if (deltaX != 0 || deltaY != 0)
 		{
+			xdir = sgn(deltaX);
+			ydir = sgn(deltaY);
+
 			if (TubeType == Tube::Master512CoPro)
 			{
-				xdir = sgn(AMXTargetX - AMXCurrentX);
-
 				if (xdir != 0)
 				{
 					UserVIAState.ifr |= 0x10;
+					// Is this correct?
 					if (lastxdir == xdir) UserVIAState.irb ^= xpulse;
 					lastxdir = xdir;
-					AMXCurrentX += xdir;
 				}
-
-				ydir = sgn(AMXTargetY - AMXCurrentY);
 
 				if (ydir != 0)
 				{
@@ -536,45 +540,51 @@ void AMXMouseMovement()
 						first = false;
 					}
 
+					// Is this correct?
 					if (lastydir == ydir) UserVIAState.irb ^= ypulse;
 					lastydir = ydir;
-					AMXCurrentY += ydir;
 				}
 			}
 			else
 			{
-				if (AMXTargetX != AMXCurrentX)
+				if (xdir)
 				{
 					UserVIAState.ifr |= 0x10;
 
-					if (AMXTargetX < AMXCurrentX)
+					if (xdir < 0)
 					{
 						UserVIAState.irb &= ~0x01;
-						AMXCurrentX--;
 					}
 					else
 					{
 						UserVIAState.irb |= 0x01;
-						AMXCurrentX++;
 					}
 				}
 
-				if (AMXTargetY != AMXCurrentY)
+				if (ydir)
 				{
 					UserVIAState.ifr |= 0x08;
 
-					if (AMXTargetY > AMXCurrentY)
+					if (ydir > 0)
 					{
 						UserVIAState.irb &= ~0x04;
-						AMXCurrentY++;
 					}
 					else
 					{
 						UserVIAState.irb |= 0x04;
-						AMXCurrentY--;
 					}
 				}
 			}
+
+			if (AMXDeltaX != 0)
+				AMXDeltaX -= xdir;
+			else
+				AMXCurrentX += xdir;
+
+			if (AMXDeltaY != 0)
+				AMXDeltaY -= ydir;
+			else
+				AMXCurrentY += ydir;
 
 			UpdateIFRTopBit();
 		}
