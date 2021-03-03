@@ -247,6 +247,8 @@ void UserVIAWrite(int Address, int Value) {
 unsigned char UserVIARead(int Address)
 {
   unsigned char tmp = 0xff;
+  // Local copy for processing middle button
+  int amxButtons = AMXButtons;
   /* cerr << "UserVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
   DumpRegs(); */
 
@@ -265,28 +267,26 @@ unsigned char UserVIARead(int Address)
 
 	  if (AMXMouseEnabled) {
         if (AMXLRForMiddle) {
-          if ((AMXButtons & AMX_LEFT_BUTTON) && (AMXButtons & AMX_RIGHT_BUTTON))
-            AMXButtons = AMX_MIDDLE_BUTTON;
-          else
-            AMXButtons &= ~AMX_MIDDLE_BUTTON;
+          if ((amxButtons & AMX_LEFT_BUTTON) && (amxButtons & AMX_RIGHT_BUTTON))
+            amxButtons = AMX_MIDDLE_BUTTON;
         }
 
         if (TubeType == Tube::Master512CoPro)
         {
             tmp &= 0xf8;
-            tmp |= (AMXButtons ^ 7);
+            tmp |= (amxButtons ^ 7);
         }
         else
         {
             tmp &= 0x1f;
-            tmp |= (AMXButtons ^ 7) << 5;
+            tmp |= (amxButtons ^ 7) << 5;
             UserVIAState.ifr&=0xe7;
         }
         
         UpdateIFRTopBit();
 
         /* Set up another interrupt if not at target */
-        if ( (AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) || AMXDeltaX || AMXDeltaY) {
+        if ((AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) || AMXDeltaX || AMXDeltaY) {
           SetTrigger(AMX_TRIGGER, AMXTrigger);
         }
         else {
