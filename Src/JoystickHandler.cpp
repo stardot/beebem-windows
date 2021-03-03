@@ -103,7 +103,7 @@ bool JoystickOrderEntry::from_string(const std::string& str)
 {
 	Name = "";
 
-	auto split = str.find('#');
+	size_t split = str.find('#');
 	if (split != std::string::npos)
 	{
 		++split;
@@ -329,7 +329,7 @@ void JoystickDev::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* pdidoi)
 
 	if (pdidoi->dwType & DIDFT_BUTTON)
 	{
-		auto instance = DIDFT_GETINSTANCE(pdidoi->dwType);
+		WORD instance = DIDFT_GETINSTANCE(pdidoi->dwType);
 		if (instance < JOYSTICK_MAX_BTNS)
 			m_PresentButtons |= setbit(instance);
 	}
@@ -717,7 +717,7 @@ void BeebWin::UpdateJoystickMenu()
 
 		for (int pcIdx = 0; pcIdx < _countof(JoystickMenuIdsType::Joysticks); ++pcIdx)
 		{
-			auto* dev = m_JoystickHandler->GetDev(pcIdx);
+			JoystickDev* dev = m_JoystickHandler->GetDev(pcIdx);
 			if (dev)
 			{
 				SetMenuItemText(JoystickMenuIds[bbcIdx].Joysticks[pcIdx], dev->DisplayString());
@@ -800,7 +800,7 @@ void BeebWin::ProcessAutoloadJoystickMapCommand(void)
 /****************************************************************************/
 void BeebWin::ResetJoystick()
 {
-	for (auto& dev : m_JoystickHandler->m_JoystickDevs)
+	for (JoystickDev& dev : m_JoystickHandler->m_JoystickDevs)
 	{
 		if (dev.m_Captured)
 		{
@@ -1091,8 +1091,7 @@ void BeebWin::TranslateOrSendKey(int vkey, bool keyUp)
 /****************************************************************************/
 void BeebWin::TranslateJoystick(int joyId)
 {
-	auto& handler = m_JoystickHandler;
-	auto* joyDev = handler->GetDev(joyId);
+	JoystickDev* joyDev = m_JoystickHandler->GetDev(joyId);
 	bool success = false;
 	DWORD buttons = 0;
 
@@ -1150,7 +1149,7 @@ void BeebWin::TranslateJoystick(int joyId)
 	// Joystick to keyboard mapping
 	if (joyId < NUM_PC_JOYSTICKS && m_JoystickToKeys && success)
 	{
-		auto axes = joyDev->GetAxesState(m_JoystickToKeysThreshold);
+		DWORD axes = joyDev->GetAxesState(m_JoystickToKeysThreshold);
 		TranslateAxes(joyId, axes);
 		TranslateJoystickButtons(joyId, buttons);
 		joyDev->m_JoystickToKeysActive = true;
@@ -1258,7 +1257,7 @@ void BeebWin::ResetJoystickMap()
 void BeebWin::ResetJoyMap(JoyMap* joymap)
 {
 	// Initialize all input to unassigned
-	for (auto& mapping : *joymap)
+	for (KeyPair& mapping : *joymap)
 	{
 		mapping[0].row = mapping[1].row = UNASSIGNED_ROW;
 		mapping[0].col = mapping[1].col = 0;
@@ -1609,7 +1608,7 @@ static void EraseNthValue(Preferences& preferences, const char* format, int idx)
 /****************************************************************************/
 void BeebWin::WriteJoystickOrder()
 {
-	auto& order = m_JoystickHandler->m_JoystickOrder;
+	std::vector<JoystickOrderEntry>& order = m_JoystickHandler->m_JoystickOrder;
 	for (UINT idx = 0; idx < MAX_JOYSTICK_ORDER; ++idx)
 	{
 		if (idx < order.size())
@@ -1629,7 +1628,6 @@ void BeebWin::ReadJoystickPreferences()
 {
 	DWORD dword;
 	bool flag;
-	auto& handler = m_JoystickHandler;
 
 	/* Clear joystick configuration */
 	for (int bbcIdx = 0; bbcIdx < NUM_BBC_JOYSTICKS; ++bbcIdx)
@@ -1710,7 +1708,7 @@ void BeebWin::ReadJoystickPreferences()
 	else
 		m_JoystickSensitivity = 1.0;
 
-	handler->m_JoystickOrder.clear();
+	m_JoystickHandler->m_JoystickOrder.clear();
 	for (int idx = 0; idx < MAX_JOYSTICK_ORDER; ++idx)
 	{
 		std::string value;
@@ -1718,7 +1716,7 @@ void BeebWin::ReadJoystickPreferences()
 		if (!GetNthStringValue(m_Preferences, CFG_OPTIONS_JOYSTICK_ORDER, idx + 1, value)
 		    || !entry.from_string(value))
 			break;
-		handler->m_JoystickOrder.push_back(entry);
+		m_JoystickHandler->m_JoystickOrder.push_back(entry);
 
 	}
 }

@@ -346,7 +346,7 @@ static std::string toupper(const std::string& src)
 {
 	std::string result = src;
 
-	for (auto& c : result)
+	for (char& c : result)
 	{
 		c = static_cast<char>(toupper(c));
 	}
@@ -375,33 +375,5 @@ int SelectKeyDialog::JoyVKeyByName(const char* Name)
 	if (iter != nameToVKeyMap.end())
 		return iter->second;
 
-	// Read axis number
-	if (uname.substr(0, 3) != "JOY")
-		return -1;
-	uname = uname.substr(3);
-	char* endp;
-	long joyIdx = strtol(uname.c_str(), &endp, 10);
-	if (joyIdx < 1 || joyIdx > NUM_PC_JOYSTICKS || !endp || endp == uname.c_str())
-		return -1;
-	uname = uname.substr(endp - uname.c_str());
-
-	if (uname.substr(0, 4) != "AXIS")
-		return -1;
-	uname = uname.substr(4);
-	long axis = strtol(uname.c_str(), &endp, 10);
-	if (axis < 1 || axis > JOYSTICK_MAX_AXES || !endp || endp == uname.c_str())
-		return -1;
-	uname = uname.substr(endp - uname.c_str());
-
-	int pos = 0;
-	if (uname.size() != 1)
-		return -1;
-	if (uname[0] == '-')
-		pos = 0;
-	else if (uname[0] == '+')
-		pos = 1;
-	else
-		return -1;
-
-	return BEEB_VKEY_JOY_START + (joyIdx - 1) * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS) + (axis - 1) * 2 + pos;
+	return -1;
 }
