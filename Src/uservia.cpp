@@ -499,13 +499,8 @@ static void UpdateSRState(bool SRrw)
 /*-------------------------------------------------------------------------*/
 void AMXMouseMovement()
 {
-	static int xdir = 0;
-	static int ydir = 0;
-	static int xpulse = 0x08;
-	static int ypulse = 0x10;
-	static int lastxdir = 0;
-	static int lastydir = 0;
-	static bool first = true;
+	int xdir = 0, ydir = 0;
+	int xpulse, ypulse;
 
 	ClearTrigger(AMXTrigger);
 
@@ -522,58 +517,48 @@ void AMXMouseMovement()
 
 			if (TubeType == Tube::Master512CoPro)
 			{
-				if (xdir != 0)
-				{
-					UserVIAState.ifr |= 0x10;
-					// Is this correct?
-					if (lastxdir == xdir) UserVIAState.irb ^= xpulse;
-					lastxdir = xdir;
-				}
-
-				if (ydir != 0)
-				{
-					UserVIAState.ifr |= 0x08;
-
-					if (first)
-					{
-						UserVIAState.irb &= ~ypulse;
-						first = false;
-					}
-
-					// Is this correct?
-					if (lastydir == ydir) UserVIAState.irb ^= ypulse;
-					lastydir = ydir;
-				}
+				xpulse = 0x08;
+				ypulse = 0x10;
 			}
 			else
 			{
-				if (xdir)
-				{
-					UserVIAState.ifr |= 0x10;
+				xpulse = 0x01;
+				ypulse = 0x04;
+			}
 
-					if (xdir < 0)
-					{
-						UserVIAState.irb &= ~0x01;
-					}
-					else
-					{
-						UserVIAState.irb |= 0x01;
-					}
+			if (xdir)
+			{
+				if (xdir > 0)
+					UserVIAState.irb &= ~xpulse;
+				else
+					UserVIAState.irb |= xpulse;
+
+				if (!(UserVIAState.pcr & 0x10))            // Interrupt on falling CB1 edge
+				{
+					// Warp time to the falling edge, invert the input
+					UserVIAState.irb ^= xpulse;
 				}
 
-				if (ydir)
-				{
-					UserVIAState.ifr |= 0x08;
+				// Trigger the interrupt
+				UserVIAState.ifr |= 0x10;
 
-					if (ydir > 0)
-					{
-						UserVIAState.irb &= ~0x04;
-					}
-					else
-					{
-						UserVIAState.irb |= 0x04;
-					}
+			}
+
+			if (ydir)
+			{
+				if (ydir > 0)
+					UserVIAState.irb |= ypulse;
+				else
+					UserVIAState.irb &= ~ypulse;
+
+				if (!(UserVIAState.pcr & 0x40))	           // Interrupt on falling CB2 edge
+				{
+					// Warp time to the falling edge, invert the input
+					UserVIAState.irb ^= ypulse;
 				}
+
+				// Trigger the interrupt
+				UserVIAState.ifr |= 0x08;
 			}
 
 			if (AMXDeltaX != 0)
