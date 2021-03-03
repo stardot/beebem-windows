@@ -199,7 +199,7 @@ const BBCKey* GetBBCKeyByResId(int ctrlId)
     {
         resIdToKeyMapType keyMap{};
 
-        for (auto& theKey : BBCKeys)
+        for (const BBCKey& theKey : BBCKeys)
             keyMap[theKey.ctrlId] = &theKey;
         return keyMap;
     } ();
@@ -222,7 +222,7 @@ const BBCKey* GetBBCKeyByName(const std::string& name)
     {
         nameToKeyMapType keyMap{};
 
-        for (auto& theKey : BBCKeys)
+        for (const BBCKey& theKey : BBCKeys)
             keyMap[theKey.name] = &theKey;
 
         for (auto& alias : BBCKeyAliases)
@@ -250,7 +250,7 @@ const BBCKey* GetBBCKeyByRowAndCol(int row, int col)
     {
         posToKeyMapType keyMap{};
 
-        for (auto& theKey : BBCKeys)
+        for (const BBCKey& theKey : BBCKeys)
             keyMap[posPair{ theKey.row, theKey.column }] = &theKey;
         return keyMap;
     } ();
@@ -761,7 +761,7 @@ static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawCol
 
 static void RedrawAllKeys()
 {
-    for (auto& key : BBCKeys)
+    for (const BBCKey& key : BBCKeys)
     {
 	HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key.ctrlId);
 	SetKeyColour(GetKeyColour(key.ctrlId), keyCtrl);

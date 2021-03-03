@@ -37,12 +37,12 @@ public:
 	{
 		SendMessage(m_hwndList, LB_RESETCONTENT, 0, 0);
 		int orderIndex = 0;
-		for (auto& order : m_handler->m_JoystickOrder)
+		for (JoystickOrderEntry& entry : m_handler->m_JoystickOrder)
 		{
-			int joyIndex = order.JoyIndex;
+			int joyIndex = entry.JoyIndex;
 			if (joyIndex != -1 || m_showAll)
 			{
-				int index = static_cast<int>(SendMessage(m_hwndList, LB_ADDSTRING, 0, (LPARAM)order.Name.c_str()));
+				int index = static_cast<int>(SendMessage(m_hwndList, LB_ADDSTRING, 0, (LPARAM)entry.Name.c_str()));
 				SendMessage(m_hwndList, LB_SETITEMDATA, index, (LPARAM)orderIndex);
 			}
 			++orderIndex;
