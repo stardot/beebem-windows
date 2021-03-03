@@ -222,6 +222,7 @@ BeebWin::BeebWin()
 	m_WriteInstructionCounts = false;
 	m_CaptureMouse = false;
 	m_MouseCaptured = false;
+	m_RawInputRegistered = false;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -1651,15 +1652,21 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			JoystickButton[0] = (uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0;
 			break;
 
-		case WM_MOUSEMOVE:
+		case WM_INPUT:
 			if (mainWin->m_MouseCaptured)
 			{
-				POINT curPos;
+				UINT dwSize = sizeof(RAWINPUT);
+				static BYTE lpb[sizeof(RAWINPUT)];
 
-				GetCursorPos(&curPos);
+				GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
 
-				int xDelta = curPos.x - mainWin->m_MousePos.x;
-				int yDelta = curPos.y - mainWin->m_MousePos.y;
+				RAWINPUT* raw = (RAWINPUT*)lpb;
+
+				if (raw->header.dwType != RIM_TYPEMOUSE)
+					break;
+
+				int xDelta = raw->data.mouse.lLastX;
+				int yDelta = raw->data.mouse.lLastY;
 
 				mainWin->m_RelMousePos.x += xDelta;
 				if (mainWin->m_RelMousePos.x < 0)
@@ -1683,11 +1690,11 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 				mainWin->ScaleMousestick(mainWin->m_RelMousePos.x, mainWin->m_RelMousePos.y);
 				mainWin->ChangeAMXPosition(xDelta, yDelta);
-
-				if (xDelta != 0 || yDelta != 0)
-					SetCursorPos(mainWin->m_MousePos.x, mainWin->m_MousePos.y);
 			}
-			else
+			break;
+
+		case WM_MOUSEMOVE:
+			if (!mainWin->m_MouseCaptured)
 			{
 				int xPos = GET_X_LPARAM(lParam);
 				int yPos = GET_Y_LPARAM(lParam);
@@ -4086,10 +4093,29 @@ bool BeebWin::IsPaused()
 	return m_EmuPaused;
 }
 
+#ifndef HID_USAGE_PAGE_GENERIC
+#define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
+#endif
+#ifndef HID_USAGE_GENERIC_MOUSE
+#define HID_USAGE_GENERIC_MOUSE        ((USHORT) 0x02)
+#endif
+
 void BeebWin::CaptureMouse()
 {
 	if (m_MouseCaptured)
 		return;
+
+	if (!m_RawInputRegistered)
+	{
+		RAWINPUTDEVICE Rid[1];
+		Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+		Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+		Rid[0].dwFlags = RIDEV_INPUTSINK;
+		Rid[0].hwndTarget = m_hWnd;
+		if (!RegisterRawInputDevices(Rid, 1, sizeof(Rid[0])))
+			return;
+	}
+	m_RawInputRegistered = true;
 
 	// Display info on title bar
 	std::string tempTitle = WindowTitle + std::string(" (Press Ctrl+Alt to release mouse)");
@@ -4100,21 +4126,28 @@ void BeebWin::CaptureMouse()
 
 	// Capture mouse
 	m_MouseCaptured = true;
-	::SetCapture(m_hWnd);
+	SetCapture(m_hWnd);
 
 	// Move mouse to window centre and hide cursor
 	POINT centre{ m_XWinSize/2, m_YWinSize/2 };
 	m_RelMousePos = centre;
 	ClientToScreen(m_hWnd, &centre);
 	m_MousePos = centre;
-	ShowCursor(false);
 	SetCursorPos(centre.x, centre.y);
+	ShowCursor(false);
+
+	RECT windowRect;
+	// Clip cursor
+	GetWindowRect(m_hWnd, &windowRect);
+	ClipCursor(&windowRect);
 }
 
 void BeebWin::ReleaseMouse()
 {
 	if (!m_MouseCaptured)
 		return;
+
+	ClipCursor(nullptr);
 
 	// Restore original window title
 	SetWindowText(m_hWnd, WindowTitle);
@@ -4125,7 +4158,7 @@ void BeebWin::ReleaseMouse()
 	// Release mouse and show cursor
 	m_MouseCaptured = false;
 	ShowCursor(true);
-	::ReleaseCapture();
+	ReleaseCapture();
 }
 
 void BeebWin::OpenUserKeyboardDialog()

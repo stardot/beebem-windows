@@ -309,6 +309,7 @@ public:
 	bool		m_HideCursor;
 	bool		m_CaptureMouse;
 	bool		m_MouseCaptured;
+	bool		m_RawInputRegistered;
 	POINT		m_PrevMousePos;
 	POINT		m_MousePos;
 	POINT		m_RelMousePos;
