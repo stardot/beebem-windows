@@ -4121,10 +4121,6 @@ void BeebWin::CaptureMouse()
 	if (!RegisterRawInputDevices(Rid, 1, sizeof(Rid[0])))
 		return;
 
-	// Display info on title bar
-	std::string tempTitle = WindowTitle + std::string(" (Press Ctrl+Alt to release mouse)");
-	SetWindowText(m_hWnd, tempTitle.c_str());
-
 	// Capture mouse
 	m_MouseCaptured = true;
 	SetCapture(m_hWnd);
@@ -4142,6 +4138,9 @@ void BeebWin::CaptureMouse()
 	GetClientRect(m_hWnd, &clientRect);
 	MapWindowPoints(m_hWnd, nullptr, reinterpret_cast<LPPOINT>(&clientRect), 2);
 	ClipCursor(&clientRect);
+
+	// Display info on title bar
+	UpdateWindowTitle();
 }
 
 void BeebWin::ReleaseMouse()
@@ -4160,9 +4159,6 @@ void BeebWin::ReleaseMouse()
 
 	ClipCursor(nullptr);
 
-	// Restore original window title
-	SetWindowText(m_hWnd, WindowTitle);
-
 	// Show cursor in the centre of the window
 	POINT centre{ m_XWinSize / 2, m_YWinSize / 2 };
 	ClientToScreen(m_hWnd, &centre);
@@ -4173,6 +4169,9 @@ void BeebWin::ReleaseMouse()
 	ReleaseCapture();
 
 	m_MouseCaptured = false;
+
+	// Restore original window title
+	UpdateWindowTitle();
 }
 
 void BeebWin::OpenUserKeyboardDialog()

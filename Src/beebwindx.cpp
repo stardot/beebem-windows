@@ -834,12 +834,51 @@ void BeebWin::DisplayFDCBoardInfo(HDC hDC, int x, int y)
 }
 
 /****************************************************************************/
-void BeebWin::DisplayTiming(void)
+
+static const char* pszReleaseCaptureMessage = "(Press Ctrl+Alt to release mouse)";
+
+bool BeebWin::ShouldDisplayTiming() const
 {
-	if (m_ShowSpeedAndFPS && (m_DisplayRenderer == IDM_DISPGDI || !m_isFullScreen))
+	return m_ShowSpeedAndFPS && (m_DisplayRenderer == IDM_DISPGDI || !m_isFullScreen);
+}
+
+void BeebWin::DisplayTiming()
+{
+	if (ShouldDisplayTiming())
 	{
-		sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2d",
-				WindowTitle, m_RelativeSpeed, (int)m_FramesPerSecond);
+		if (m_MouseCaptured)
+		{
+			sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2d  %s",
+			        WindowTitle, m_RelativeSpeed, (int)m_FramesPerSecond, pszReleaseCaptureMessage);
+		}
+		else
+		{
+			sprintf(m_szTitle, "%s  Speed: %2.2f  fps: %2d",
+			        WindowTitle, m_RelativeSpeed, (int)m_FramesPerSecond);
+		}
+
+		SetWindowText(m_hWnd, m_szTitle);
+	}
+}
+
+void BeebWin::UpdateWindowTitle()
+{
+	if (ShouldDisplayTiming())
+	{
+		DisplayTiming();
+	}
+	else
+	{
+		if (m_MouseCaptured)
+		{
+			sprintf(m_szTitle, "%s  %s",
+			        WindowTitle, pszReleaseCaptureMessage);
+		}
+		else
+		{
+			strcpy(m_szTitle, WindowTitle);
+		}
+
 		SetWindowText(m_hWnd, m_szTitle);
 	}
 }
