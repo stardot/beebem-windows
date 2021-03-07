@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "ext1770.h"
 #include "avi.h"
 #include "Messages.h"
+#include "DebugTrace.h"
 
 typedef HRESULT ( WINAPI* LPDIRECTDRAWCREATE )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
 
@@ -297,11 +298,9 @@ HRESULT BeebWin::InitDX9(void)
 		for (UINT mode = 0; mode < nModes; ++mode)
 		{
 			hr = m_pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8,
-										  mode, &d3dMode);
-			char str[200];
-			sprintf(str, "D3D Mode: %d x %d, refresh %d\n",
-					d3dMode.Width, d3dMode.Height, d3dMode.RefreshRate);
-			OutputDebugString(str);
+			                              mode, &d3dMode);
+			DebugTrace("D3D Mode: %d x %d, refresh %d\n",
+			           d3dMode.Width, d3dMode.Height, d3dMode.RefreshRate);
 		}
 	}
 #endif

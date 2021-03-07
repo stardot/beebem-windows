@@ -78,6 +78,7 @@ Boston, MA  02110-1301, USA.
 #include "sprowcopro.h"
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
+#include "DebugTrace.h"
 
 using namespace Gdiplus;
 
@@ -1384,7 +1385,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_SYSKEYDOWN:
-			//{char txt[100];sprintf(txt,"SysKeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);OutputDebugString(txt);}
+			// DebugTrace("SysKeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
+
 			if (mainWin->m_TextToSpeechEnabled &&
 				((uParam >= VK_NUMPAD0 && uParam <= VK_NUMPAD9) ||
 				 uParam == VK_DECIMAL ||
@@ -1422,7 +1424,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				break;
 
 		case WM_KEYDOWN:
-			//{char txt[100];sprintf(txt,"KeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);OutputDebugString(txt);}
+			// DebugTrace("KeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
+
 			if (mainWin->m_TextToSpeechEnabled &&
 				((uParam >= VK_NUMPAD0 && uParam <= VK_NUMPAD9) ||
 				 uParam == VK_DECIMAL ||
@@ -1470,7 +1473,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_SYSKEYUP:
-			//{char txt[100];sprintf(txt,"SysKeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);OutputDebugString(txt);}
+			// Debug("SysKeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
+
 			if ((uParam == 0x35 || uParam == VK_NUMPAD5) && (lParam & 0x20000000))
 			{
 				mainWin->CaptureBitmapPending(true);
@@ -1511,7 +1515,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				break;
 
 		case WM_KEYUP:
-			//{char txt[100];sprintf(txt,"KeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);OutputDebugString(txt);}
+			// DebugTrace("KeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
+
 			if (uParam == VK_DIVIDE && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickSave();
@@ -2570,11 +2575,7 @@ void BeebWin::WinSizeChange(int size, int width, int height)
 /****************************************************************************/
 void BeebWin::WinPosChange(int /* x */, int /* y */)
 {
-#if 0
-	char str[200];
-	sprintf(str, "WM_MOVE %d, %d (%d, %d)\n", x, y, m_XWinPos, m_YWinPos);
-	OutputDebugString(str);
-#endif
+	// DebugTrace("WM_MOVE %d, %d (%d, %d)\n", x, y, m_XWinPos, m_YWinPos);
 }
 
 /****************************************************************************/

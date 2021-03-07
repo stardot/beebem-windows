@@ -46,6 +46,7 @@ Boston, MA  02110-1301, USA.
 #include "z80mem.h"
 #include "z80.h"
 #include "StringUtils.h"
+#include "DebugTrace.h"
 
 #define MAX_LINES 4096          // Max lines in info window
 #define LINES_IN_INFO 28        // Visible lines in info window
@@ -1341,9 +1342,7 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 					DebugBreakExecution(type);
 			}
 
-#if _DEBUG
-			OutputDebugString(info);
-#endif
+			DebugTrace(info);
 			break;
 
 		case DebugType::Serial:

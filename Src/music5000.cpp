@@ -174,9 +174,7 @@ void Music5000Write(int address, unsigned char value)
 	}
 
 #if 0
-	char str[200];
-	sprintf(str, "M5KWrite %02x ?%02x=%02x\n", page, address, value);
-	OutputDebugString(str);
+	DebugTrace("M5KWrite %02x ?%02x=%02x\n", page, address, value);
 #endif
 }
 
@@ -203,9 +201,7 @@ bool Music5000Read(int address, unsigned char *value)
 	}
 
 #if 0
-	char str[200];
-	sprintf(str, "M5KRead %02x ?%02x=%02x\n", page, address, value);
-	OutputDebugString(str);
+	DebugTrace("M5KRead %02x ?%02x=%02x\n", page, address, value);
 #endif
 
 	return false;
@@ -275,9 +271,7 @@ void Music5000Update(UINT cycles)
 #if 0
 		if (sample > 0)
 		{
-			char str[200];
-			sprintf(str, "S %d, amplitude %d, data %d\n", sample, amplitude, data);
-			OutputDebugString(str);
+			DebugTrace("S %d, amplitude %d, data %d\n", sample, amplitude, data);
 		}
 #endif
 

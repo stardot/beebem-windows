@@ -143,10 +143,8 @@ static void SetBBCKeyForVKEY(int Key, bool Shift)
 		UserKeymap[Key][static_cast<int>(Shift)].col = BBCCol;
 		UserKeymap[Key][static_cast<int>(Shift)].shift = doingShifted;
 
-		// char info[256];
-		// sprintf(info, "SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
-		//         Key, shift, BBCRow, BBCCol, doingShifted);
-		// OutputDebugString(info);
+		// DebugTrace("SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
+		//            Key, shift, BBCRow, BBCCol, doingShifted);
 	}
 }
 

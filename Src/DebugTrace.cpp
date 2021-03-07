@@ -19,13 +19,14 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 #include <windows.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 #include "DebugTrace.h"
 
 #if !defined(NDEBUG)
 
-void DebugTrace(char *format, ...)
+void DebugTrace(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
