@@ -201,7 +201,9 @@ public:
 	int StartOfFrame(void);
 	bool UpdateTiming();
 	void AdjustSpeed(bool up);
-	void DisplayTiming(void);
+	bool ShouldDisplayTiming() const;
+	void DisplayTiming();
+	void UpdateWindowTitle();
 	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
@@ -351,7 +353,7 @@ public:
 	HDC 		m_hDCBitmap;
 	HGDIOBJ 	m_hBitmap;
 	bmiData 	m_bmi;
-	char		m_szTitle[100];
+	char m_szTitle[256];
 
 	int		m_ScreenRefreshCount;
 	double		m_RelativeSpeed;
