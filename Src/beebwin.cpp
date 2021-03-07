@@ -222,7 +222,6 @@ BeebWin::BeebWin()
 	m_WriteInstructionCounts = false;
 	m_CaptureMouse = false;
 	m_MouseCaptured = false;
-	m_RawInputRegistered = false;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -4114,24 +4113,17 @@ void BeebWin::CaptureMouse()
 	if (m_MouseCaptured)
 		return;
 
-	if (!m_RawInputRegistered)
-	{
-		RAWINPUTDEVICE Rid[1];
-		Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
-		Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
-		Rid[0].dwFlags = RIDEV_INPUTSINK;
-		Rid[0].hwndTarget = m_hWnd;
-		if (!RegisterRawInputDevices(Rid, 1, sizeof(Rid[0])))
-			return;
-	}
-	m_RawInputRegistered = true;
+	RAWINPUTDEVICE Rid[1];
+	Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+	Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+	Rid[0].dwFlags = 0;
+	Rid[0].hwndTarget = m_hWnd;
+	if (!RegisterRawInputDevices(Rid, 1, sizeof(Rid[0])))
+		return;
 
 	// Display info on title bar
 	std::string tempTitle = WindowTitle + std::string(" (Press Ctrl+Alt to release mouse)");
 	SetWindowText(m_hWnd, tempTitle.c_str());
-
-	// Save original mouse position
-	GetCursorPos(&m_PrevMousePos);
 
 	// Capture mouse
 	m_MouseCaptured = true;
@@ -4141,14 +4133,15 @@ void BeebWin::CaptureMouse()
 	POINT centre{ m_XWinSize/2, m_YWinSize/2 };
 	m_RelMousePos = centre;
 	ClientToScreen(m_hWnd, &centre);
-	m_MousePos = centre;
 	SetCursorPos(centre.x, centre.y);
 	ShowCursor(false);
 
-	RECT windowRect;
-	// Clip cursor
-	GetWindowRect(m_hWnd, &windowRect);
-	ClipCursor(&windowRect);
+	// Clip cursor to the main window's client area. Coordinates are converted
+	// to screen coordinates for ClipCursor()
+	RECT clientRect;
+	GetClientRect(m_hWnd, &clientRect);
+	MapWindowPoints(m_hWnd, nullptr, reinterpret_cast<LPPOINT>(&clientRect), 2);
+	ClipCursor(&clientRect);
 }
 
 void BeebWin::ReleaseMouse()
@@ -4156,18 +4149,30 @@ void BeebWin::ReleaseMouse()
 	if (!m_MouseCaptured)
 		return;
 
+	// Deregister to stop receiving WM_INPUT messages.
+	RAWINPUTDEVICE Rid[1];
+	Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+	Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+	Rid[0].dwFlags = RIDEV_REMOVE;
+	Rid[0].hwndTarget = nullptr;
+
+	RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
+
 	ClipCursor(nullptr);
 
 	// Restore original window title
 	SetWindowText(m_hWnd, WindowTitle);
 
-	// Move cursor to where it was
-	SetCursorPos(m_PrevMousePos.x, m_PrevMousePos.y);
+	// Show cursor in the centre of the window
+	POINT centre{ m_XWinSize / 2, m_YWinSize / 2 };
+	ClientToScreen(m_hWnd, &centre);
+	SetCursorPos(centre.x, centre.y);
 
 	// Release mouse and show cursor
-	m_MouseCaptured = false;
 	ShowCursor(true);
 	ReleaseCapture();
+
+	m_MouseCaptured = false;
 }
 
 void BeebWin::OpenUserKeyboardDialog()
