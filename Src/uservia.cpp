@@ -499,22 +499,20 @@ static void UpdateSRState(bool SRrw)
 /*-------------------------------------------------------------------------*/
 void AMXMouseMovement()
 {
-	int xdir = 0, ydir = 0;
-	int xpulse, ypulse;
-	int deltaX = 0, deltaY =0;
-
 	ClearTrigger(AMXTrigger);
 
-	/* Check if there is a outstanding interrupt */
+	// Check if there is an outstanding interrupt.
 	if (AMXMouseEnabled && (UserVIAState.ifr & 0x18) == 0)
 	{
-		deltaX = AMXDeltaX == 0 ? AMXTargetX - AMXCurrentX : AMXDeltaX;
-		deltaY = AMXDeltaY == 0 ? AMXTargetY - AMXCurrentY : AMXDeltaY;
+		int deltaX = AMXDeltaX == 0 ? AMXTargetX - AMXCurrentX : AMXDeltaX;
+		int deltaY = AMXDeltaY == 0 ? AMXTargetY - AMXCurrentY : AMXDeltaY;
 
 		if (deltaX != 0 || deltaY != 0)
 		{
-			xdir = sgn(deltaX);
-			ydir = sgn(deltaY);
+			int xdir = sgn(deltaX);
+			int ydir = sgn(deltaY);
+
+			int xpulse, ypulse;
 
 			if (TubeType == Tube::Master512CoPro)
 			{
@@ -534,7 +532,7 @@ void AMXMouseMovement()
 				else
 					UserVIAState.irb |= xpulse;
 
-				if (!(UserVIAState.pcr & 0x10))            // Interrupt on falling CB1 edge
+				if (!(UserVIAState.pcr & 0x10)) // Interrupt on falling CB1 edge
 				{
 					// Warp time to the falling edge, invert the input
 					UserVIAState.irb ^= xpulse;
@@ -542,7 +540,6 @@ void AMXMouseMovement()
 
 				// Trigger the interrupt
 				UserVIAState.ifr |= 0x10;
-
 			}
 
 			if (ydir)
@@ -552,7 +549,7 @@ void AMXMouseMovement()
 				else
 					UserVIAState.irb &= ~ypulse;
 
-				if (!(UserVIAState.pcr & 0x40))	           // Interrupt on falling CB2 edge
+				if (!(UserVIAState.pcr & 0x40)) // Interrupt on falling CB2 edge
 				{
 					// Warp time to the falling edge, invert the input
 					UserVIAState.irb ^= ypulse;
@@ -574,15 +571,7 @@ void AMXMouseMovement()
 
 			UpdateIFRTopBit();
 		}
-#if 0
-		static int prevCycles = 0;
-		char buf[256];
-		snprintf(buf, 256, "dT=%d dX=%d dY=%d x=%d y=%d\n", TotalCycles - prevCycles, deltaX, deltaY, xdir, ydir);
-		OutputDebugString(buf);
-		prevCycles = TotalCycles;
-#endif
 	}
-
 }
 
 /*-------------------------------------------------------------------------*/
