@@ -1656,11 +1656,15 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			if (mainWin->m_MouseCaptured)
 			{
 				UINT dwSize = sizeof(RAWINPUT);
-				static BYTE lpb[sizeof(RAWINPUT)];
+				BYTE Buffer[sizeof(RAWINPUT)];
 
-				GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
+				GetRawInputData((HRAWINPUT)lParam,
+				                RID_INPUT,
+				                Buffer,
+				                &dwSize,
+				                sizeof(RAWINPUTHEADER));
 
-				RAWINPUT* raw = (RAWINPUT*)lpb;
+				RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(Buffer);
 
 				if (raw->header.dwType != RIM_TYPEMOUSE)
 					break;
@@ -1669,6 +1673,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				int yDelta = raw->data.mouse.lLastY;
 
 				mainWin->m_RelMousePos.x += xDelta;
+
 				if (mainWin->m_RelMousePos.x < 0)
 				{
 					mainWin->m_RelMousePos.x = 0;
@@ -1679,6 +1684,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				}
 
 				mainWin->m_RelMousePos.y += yDelta;
+
 				if (mainWin->m_RelMousePos.y < 0)
 				{
 					mainWin->m_RelMousePos.y = 0;
@@ -1688,7 +1694,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 					mainWin->m_RelMousePos.y = mainWin->m_YWinSize;
 				}
 
-				mainWin->ScaleMousestick(mainWin->m_RelMousePos.x, mainWin->m_RelMousePos.y);
+				mainWin->ScaleMousestick(mainWin->m_RelMousePos.x,
+				                         mainWin->m_RelMousePos.y);
+
 				mainWin->ChangeAMXPosition(xDelta, yDelta);
 			}
 			break;
@@ -4094,10 +4102,11 @@ bool BeebWin::IsPaused()
 }
 
 #ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
+#define HID_USAGE_PAGE_GENERIC ((USHORT)0x01)
 #endif
+
 #ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE        ((USHORT) 0x02)
+#define HID_USAGE_GENERIC_MOUSE ((USHORT)0x02)
 #endif
 
 void BeebWin::CaptureMouse()
