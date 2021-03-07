@@ -186,6 +186,7 @@
     <ClCompile Include="beebwinspeech.cpp" />
     <ClCompile Include="csw.cpp" />
     <ClCompile Include="debug.cpp" />
+    <ClCompile Include="DebugTrace.cpp" />
     <ClCompile Include="DirectSoundStreamer.cpp" />
     <ClCompile Include="disc1770.cpp" />
     <ClCompile Include="disc8271.cpp" />
@@ -329,6 +330,7 @@
     <ClInclude Include="beebwin.h" />
     <ClInclude Include="csw.h" />
     <ClInclude Include="debug.h" />
+    <ClInclude Include="DebugTrace.h" />
     <ClInclude Include="DirectSoundStreamer.h" />
     <ClInclude Include="disc1770.h" />
     <ClInclude Include="disc8271.h" />
