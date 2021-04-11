@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "z80mem.h"
 #include "z80.h"
+#include "FileDialog.h"
 #include "StringUtils.h"
 #include "DebugTrace.h"
 
@@ -149,7 +150,6 @@ static bool DebugCmdEcho(char* args);
 static bool DebugCmdScript(char *args);
 static bool DebugCmdClear(char *args);
 
-
 // Debugger commands go here. Format is COMMAND, HANDLER, ARGSPEC, HELPSTRING
 // Aliases are supported, put these below the command they reference and leave argspec/help
 // empty.
@@ -157,7 +157,7 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "bp",         DebugCmdToggleBreak,   "start[-end] [name]", "Sets/Clears a breakpoint or break range." },
 	{ "b",          DebugCmdToggleBreak,   "", ""}, // Alias of "bp"
 	{ "breakpoint", DebugCmdToggleBreak,   "", ""}, // Alias of "bp"
-	{ "labels",     DebugCmdLabels,        "[filename]", "Loads labels from VICE file, or display known labels." },
+	{ "labels",     DebugCmdLabels,        "load/show [filename]", "Loads labels from VICE file, or display known labels." },
 	{ "l",          DebugCmdLabels,        "", ""}, // Alias of "labels"
 	{ "help",       DebugCmdHelp,          "[command/addr]", "Displays help for the specified command or address." },
 	{ "?",          DebugCmdHelp,          "", ""}, // Alias of "help"
@@ -177,13 +177,13 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "e",          DebugCmdWatch,         "", ""}, // Alias of "watch"
 	{ "state",      DebugCmdState,         "v/u/s/t/m/r", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms." },
 	{ "s",          DebugCmdState,         "", ""}, // Alias of "state"
-	{ "save",       DebugCmdSave,          "[count] file", "Writes console lines to file." },
+	{ "save",       DebugCmdSave,          "[count] [file]", "Writes console lines to file." },
 	{ "w",          DebugCmdSave,          "", ""}, // Alias of "save"
 	{ "poke",       DebugCmdPoke,          "[p] start byte [byte...]", "Write bytes to memory." },
 	{ "c",          DebugCmdPoke,          "", ""}, // Alias of "poke"
 	{ "goto",       DebugCmdGoto,          "[p] addr", "Jump to address." },
 	{ "g",          DebugCmdGoto,          "", ""}, // Alias of "goto"
-	{ "file",       DebugCmdFile,          "r/w addr [count] filename", "Read/Write memory at address from/to file." },
+	{ "file",       DebugCmdFile,          "r/w addr [count] [filename]", "Read/Write memory at address from/to file." },
 	{ "f",          DebugCmdFile,          "", ""}, // Alias of "file"
 	{ "echo",       DebugCmdEcho,          "string", "Write string to console." },
 	{ "!",          DebugCmdEcho,          "", "" }, // Alias of "echo"
@@ -2226,10 +2226,41 @@ static bool DebugCmdFile(char* args)
 		sscanf(args,"%c %x %259c", &mode, &addr, filename);
 	}
 
-	if (strlen(filename) > 0)
+	mode = tolower(mode);
+
+	if (filename[0] == '\0')
+	{
+		const char* filter = "Memory Dump Files (*.dat)\0*.dat\0" "All Files (*.*)\0*.*\0";
+
+		FileDialog Dialog(hwndDebug, filename, MAX_PATH, nullptr, filter);
+
+		if (mode == 'w')
+		{
+			if (!Dialog.Save())
+			{
+				return false;
+			}
+
+			// Add a file extension if the user did not specify one
+			if (strchr(filename, '.') == nullptr)
+			{
+				strcat(filename, ".dat");
+			}
+		}
+		else
+		{
+			if (!Dialog.Open())
+			{
+				return false;
+			}
+		}
+	}
+
+	if (filename[0] != '\0')
 	{
 		addr &= 0xFFFF;
-		if(tolower(mode) == 'r')
+
+		if (mode == 'r')
 		{
 			FILE *fd = fopen(filename, "rb");
 			if (fd)
@@ -2253,7 +2284,7 @@ static bool DebugCmdFile(char* args)
 
 			return true;
 		}
-		else if(tolower(mode) == 'w')
+		else if (mode == 'w')
 		{
 			FILE *fd = fopen(filename, "wb");
 
@@ -2346,7 +2377,25 @@ static bool DebugCmdSave(char* args)
 		sscanf(args, "%259c", filename);
 	}
 
-	if (strlen(filename) > 0)
+	if (filename[0] == '\0')
+	{
+		const char* filter = "Text Files (*.txt)\0*.txt\0";
+
+		FileDialog Dialog(hwndDebug, filename, MAX_PATH, nullptr, filter);
+
+		if (!Dialog.Save())
+		{
+			return false;
+		}
+
+		// Add a file extension if the user did not specify one
+		if (strchr(filename, '.') == nullptr)
+		{
+			strcat(filename, ".txt");
+		}
+	}
+
+	if (filename[0] != '\0')
 	{
 		if (count <= 0 || count > LinesDisplayed)
 			count = LinesDisplayed;
@@ -2385,6 +2434,7 @@ static bool DebugCmdSave(char* args)
 		}
 		return true;
 	}
+
 	return false;
 }
 
@@ -2706,10 +2756,28 @@ static bool DebugCmdHelp(char* args)
 
 static bool DebugCmdScript(char *args)
 {
-	if(args[0] != '\0')
+	char filename[MAX_PATH];
+	memset(filename, 0, sizeof(filename));
+
+	strncpy(filename, args, sizeof(filename) - 1);
+
+	if (filename[0] == '\0')
 	{
-		DebugRunScript(args);
+		const char* filter = "Debugger Script Files (*.txt)\0*.txt\0" "All Files (*.*)\0*.*\0";
+
+		FileDialog Dialog(hwndDebug, filename, MAX_PATH, nullptr, filter);
+
+		if (!Dialog.Open())
+		{
+			return false;
+		}
 	}
+
+	if (filename[0] != '\0')
+	{
+		DebugRunScript(filename);
+	}
+
 	return true;
 }
 
@@ -2720,13 +2788,8 @@ static bool DebugCmdClear(char * /* args */)
 	return true;
 }
 
-static bool DebugCmdLabels(char *args)
+static void DebugShowLabels()
 {
-	if (args[0] != '\0')
-	{
-		DebugLoadLabels(args);
-	}
-
 	if (Labels.empty())
 	{
 		DebugDisplayInfo("No labels defined.");
@@ -2735,10 +2798,42 @@ static bool DebugCmdLabels(char *args)
 	{
 		DebugDisplayInfoF("%d known labels:", Labels.size());
 
-		for(std::size_t i = 0; i < Labels.size(); i++)
+		for (std::size_t i = 0; i < Labels.size(); i++)
 		{
 			DebugDisplayInfoF("%04X %s", Labels[i].addr, Labels[i].name.c_str());
 		}
+	}
+}
+
+static bool DebugCmdLabels(char *args)
+{
+	if (stricmp(args, "show") == 0)
+	{
+		DebugShowLabels();
+		return true;
+	}
+	else if (_strnicmp(args, "load", 4) == 0)
+	{
+		char filename[MAX_PATH];
+		memset(filename, 0, MAX_PATH);
+
+		sscanf(args, "%*s %259c", filename);
+
+		if (filename[0] == '\0')
+		{
+			const char* filter = "Label Files (*.txt)\0*.txt\0" "All Files (*.*)\0*.*\0";
+
+			FileDialog Dialog(hwndDebug, filename, MAX_PATH, nullptr, filter);
+
+			bool success = Dialog.Open();
+		}
+
+		if (filename[0] != '\0')
+		{
+			DebugLoadLabels(filename);
+		}
+
+		DebugShowLabels();
 	}
 
 	return true;
