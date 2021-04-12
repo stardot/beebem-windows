@@ -649,7 +649,9 @@ BEGIN
             MENUITEM "BBC Model B + &Integra-B",    ID_MODELBINT
             MENUITEM "BBC Model B &Plus",           ID_MODELBPLUS
             MENUITEM "BBC &Master 128",             ID_MASTER128
-            MENUITEM "Acorn FileStore",             ID_FILESTORE
+            MENUITEM SEPARATOR
+            MENUITEM "Filestore E01",               ID_FILESTORE_E01
+            MENUITEM "Filestore E01S",              ID_FILESTORE_E01S
         END
         POPUP "Model B &Floppy Controller"
         BEGIN
