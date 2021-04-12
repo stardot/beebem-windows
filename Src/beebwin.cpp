@@ -1133,6 +1133,7 @@ void BeebWin::UpdateModelMenu()
 		{ Model::IntegraB,  ID_MODELBINT },
 		{ Model::BPlus,     ID_MODELBPLUS },
 		{ Model::Master128, ID_MASTER128 },
+		{ Model::FileStore, ID_FILESTORE }
 	};
 
 	UINT SelectedMenuItem = ModelMenuItems.find(MachineType)->second;
@@ -1140,7 +1141,7 @@ void BeebWin::UpdateModelMenu()
 	CheckMenuRadioItem(
 		m_hMenu,
 		ID_MODELB,
-		ID_MASTER128,
+		ID_FILESTORE,
 		SelectedMenuItem,
 		MF_BYCOMMAND
 	);
@@ -3636,6 +3637,14 @@ void BeebWin::HandleCommand(int MenuId)
 		if (MachineType != Model::Master128)
 		{
 			ResetBeebSystem(Model::Master128, true);
+			UpdateModelMenu();
+		}
+		break;
+
+	case ID_FILESTORE:
+		if (MachineType != Model::FileStore)
+		{
+			ResetBeebSystem(Model::FileStore, true);
 			UpdateModelMenu();
 		}
 		break;

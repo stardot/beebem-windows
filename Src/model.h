@@ -26,7 +26,13 @@ enum class Model : unsigned char {
 	IntegraB,  // 1: BBC B with Integra B
 	BPlus,     // 2: BBC B+
 	Master128, // 3: BBC Master 128
+	FileStore, // 4: Acorn FileStore E01S
 	Last
+};
+
+enum class CPU : unsigned char {
+	CPU6502,
+	CPU65C02
 };
 
 #endif
