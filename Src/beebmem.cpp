@@ -1110,6 +1110,38 @@ bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
 		}
 	}
 
+	// Now get Filestore E01 OS & FS
+	model = 4;
+	for (bank = 0; bank < 2 && success; ++bank)
+	{
+		if (fgets(line, MAX_PATH, fd) == NULL)
+		{
+			success = false;
+		}
+		else
+		{
+			if (strchr(line, 13)) *strchr(line, 13) = 0;
+			if (strchr(line, 10)) *strchr(line, 10) = 0;
+			strcpy(ROMConfig[model][bank], line);
+		}
+	}
+
+	// and Filestore E01S OS
+	bank = 0;
+	model = 5;
+
+		if (fgets(line, MAX_PATH, fd) == NULL)
+		{
+			success = false;
+		}
+		else
+		{
+			if (strchr(line, 13)) *strchr(line, 13) = 0;
+			if (strchr(line, 10)) *strchr(line, 10) = 0;
+			strcpy(ROMConfig[model][bank], line);
+		}
+
+
 	if (success && fgets(line, MAX_PATH, fd) != NULL)
 	{
 		// Too many lines
@@ -1137,43 +1169,75 @@ void BeebReadRoms(void) {
 	char *RomName;
 	char *extension;
 
-	// Clear ROMs
-	for (bank = 0; bank < 16; bank++)
+	switch (MachineType)
 	{
-		RomWritable[bank] = false;
-		RomBankType[bank] = BankType::Empty;
-		memset(Roms[bank], 0, 0x4000);
-	}
+	case Model::FileStoreE01:
+		// Clear ROMs
+		RomWritable[0] = false;
+		RomWritable[1] = false;
 
-	// Read OS ROM
-	RomName = RomConfig[static_cast<int>(MachineType)][0];
-	strcpy(fullname,RomName);
-	if ((RomName[0]!='\\') && (RomName[1]!=':')) {
-		strcpy(fullname,RomPath);
-		strcat(fullname,"BeebFile/");
-		strcat(fullname,RomName);
-	}
 
-	InFile=fopen(fullname,"rb");
-	if (InFile!=NULL)
-	{
-		fread(WholeRam+0xc000,1,16384,InFile);
-		fclose(InFile);
-		// Try to read OS ROM memory map:
-		if((extension = strrchr(fullname, '.')) != NULL)
-			*extension = 0;
-		strncat(fullname, ".map", _MAX_PATH);
-		DebugLoadMemoryMap(fullname, 16);
-	}
-	else {
-		mainWin->Report(MessageType::Error,
-		                "Cannot open specified OS ROM:\n %s", fullname);
-	}
+		// Read OS ROM
+		RomName = RomConfig[static_cast<int>(MachineType)][0];
+		strcpy(fullname, RomName);
+		if ((RomName[0] != '\\') && (RomName[1] != ':')) {
+			strcpy(fullname, RomPath);
+			strcat(fullname, "BeebFile/");
+			strcat(fullname, RomName);
+		}
 
-	// read paged ROMs
-	for (bank=15;bank>=0;bank--)
-	{
-		RomName = RomConfig[static_cast<int>(MachineType)][16-bank];
+		InFile = fopen(fullname, "rb");
+		if (InFile != NULL)
+		{
+			fread(WholeRam + 0x8000, 1, 32768, InFile);
+			fclose(InFile);
+			// Try to read OS ROM memory map:
+			if ((extension = strrchr(fullname, '.')) != NULL)
+				*extension = 0;
+			strncat(fullname, ".map", _MAX_PATH);
+			DebugLoadMemoryMap(fullname, 16);
+		}
+		else {
+			mainWin->Report(MessageType::Error,
+			                "Cannot open specified OS ROM:\n %s", fullname);
+		}
+
+		// Read FS ROM
+		RomName = RomConfig[static_cast<int>(MachineType)][0];
+		strcpy(fullname, RomName);
+		if ((RomName[1] != '\\') && (RomName[1] != ':')) {
+			strcpy(fullname, RomPath);
+			strcat(fullname, "BeebFile/");
+			strcat(fullname, RomName);
+		}
+
+		break;
+	case Model::FileStoreE01S:
+		// Clear OS ROM
+		RomWritable[0] = false;
+
+		// Read OS ROM
+		RomName = RomConfig[static_cast<int>(MachineType)][0];
+		strcpy(fullname, RomName);
+		if ((RomName[0] != '\\') && (RomName[1] != ':')) {
+			strcpy(fullname, RomPath);
+			strcat(fullname, "BeebFile/");
+			strcat(fullname, RomName);
+		}
+
+		break;
+	default:
+
+		// Clear ROMs
+		for (bank = 0; bank < 16; bank++)
+		{
+			RomWritable[bank] = false;
+			RomBankType[bank] = BankType::Empty;
+			memset(Roms[bank], 0, 0x4000);
+		}
+
+		// Read OS ROM
+		RomName = RomConfig[static_cast<int>(MachineType)][0];
 		strcpy(fullname,RomName);
 		if ((RomName[0]!='\\') && (RomName[1]!=':')) {
 			strcpy(fullname,RomPath);
@@ -1181,49 +1245,80 @@ void BeebReadRoms(void) {
 			strcat(fullname,RomName);
 		}
 
-		if (strcmp(RomName,BANK_EMPTY)==0)
+		InFile=fopen(fullname,"rb");
+		if (InFile!=NULL)
 		{
-			RomBankType[bank] = BankType::Empty;
-			RomWritable[bank] = false;
+			fread(WholeRam+0xc000,1,16384,InFile);
+			fclose(InFile);
+			// Try to read OS ROM memory map:
+			if((extension = strrchr(fullname, '.')) != NULL)
+				*extension = 0;
+			strncat(fullname, ".map", _MAX_PATH);
+			DebugLoadMemoryMap(fullname, 16);
 		}
-		else if (strcmp(RomName,BANK_RAM)==0)
-		{
-			RomBankType[bank] = BankType::Ram;
-			RomWritable[bank] = true;
+		else {
+			char errstr[200];
+			sprintf(errstr, "Cannot open specified OS ROM:\n %s",fullname);
+			MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
 		}
-		else
+
+		// read paged ROMs
+		for (bank=15;bank>=0;bank--)
 		{
-			if (strncmp(RomName+(strlen(RomName)-4),ROM_WRITABLE,4)==0)
+			RomName = RomConfig[static_cast<int>(MachineType)][16-bank];
+			strcpy(fullname,RomName);
+			if ((RomName[0]!='\\') && (RomName[1]!=':')) {
+				strcpy(fullname,RomPath);
+				strcat(fullname,"BeebFile/");
+				strcat(fullname,RomName);
+			}
+
+			if (strcmp(RomName,BANK_EMPTY)==0)
 			{
-				// Writable ROM
+				RomBankType[bank] = BankType::Empty;
+				RomWritable[bank] = false;
+			}
+			else if (strcmp(RomName,BANK_RAM)==0)
+			{
 				RomBankType[bank] = BankType::Ram;
 				RomWritable[bank] = true;
-				fullname[strlen(fullname)-4]=0;
 			}
 			else
 			{
-				RomBankType[bank] = BankType::Rom;
-				RomWritable[bank] = false;
-			}
+				if (strncmp(RomName+(strlen(RomName)-4),ROM_WRITABLE,4)==0)
+				{
+					// Writable ROM
+					RomBankType[bank] = BankType::Ram;
+					RomWritable[bank] = true;
+					fullname[strlen(fullname)-4]=0;
+				}
+				else
+				{
+					RomBankType[bank] = BankType::Rom;
+					RomWritable[bank] = false;
+				}
 
-			InFile=fopen(fullname,"rb");
-			if	(InFile!=NULL)
-			{
-				// Read ROM:
-				fread(Roms[bank],1,16384,InFile);
-				fclose(InFile);
-				// Try to read ROM memory map:
-				if((extension = strrchr(fullname, '.')) != NULL)
-					*extension = 0;
-				strncat(fullname, ".map", _MAX_PATH);
-				DebugLoadMemoryMap(fullname, bank);
-			}
-			else {
-				mainWin->Report(MessageType::Error,
-				                "Cannot open specified ROM:\n %s", fullname);
+				InFile=fopen(fullname,"rb");
+				if	(InFile!=NULL)
+				{
+					// Read ROM:
+					fread(Roms[bank],1,16384,InFile);
+					fclose(InFile);
+					// Try to read ROM memory map:
+					if((extension = strrchr(fullname, '.')) != NULL)
+						*extension = 0;
+					strncat(fullname, ".map", _MAX_PATH);
+					DebugLoadMemoryMap(fullname, bank);
+				}
+				else {
+					mainWin->Report(MessageType::Error,
+					                "Cannot open specified ROM:\n %s", fullname);
+				}
 			}
 		}
+
 	}
+
 }
 /*----------------------------------------------------------------------------*/
 void RTCReset(void) {

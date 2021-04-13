@@ -129,7 +129,8 @@ static const char *AboutText =
 	"Torch Z80 Second Processor\nAcorn Z80 Second Processor\n"
 	"Master 512 Second Processor\n"
 	"ARM Second Processor\n"
-	"Sprow ARM7TDMI 64MB\n\n"
+	"Sprow ARM7TDMI 64MB\n"
+	"Filestore E01 & E01S\n\n"
 	"Version " VERSION_STRING ", " VERSION_DATE;
 
 /* Prototypes */
@@ -603,8 +604,12 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		if (DiscLoaded[1] && CDiscType[1] == DiscType::SSD) LoadSimpleDiscImage(CDiscName[1], 1, 0, 80);
 		if (DiscLoaded[1] && CDiscType[1] == DiscType::DSD) LoadSimpleDSDiscImage(CDiscName[1], 1, 80);
 	}
-	if ((MachineType != Model::Master128 && !NativeFDC) || (MachineType == Model::Master128)) {
+	if ((MachineType != Model::Master128 && !NativeFDC) || 
+		(MachineType == Model::Master128) || 
+		(MachineType == Model::FileStoreE01) || 
+		(MachineType == Model::FileStoreE01S)) {
 		// 1770 Disc
+
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
 		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1], 1, CDiscType[1]);
 	}
@@ -1133,7 +1138,8 @@ void BeebWin::UpdateModelMenu()
 		{ Model::IntegraB,  ID_MODELBINT },
 		{ Model::BPlus,     ID_MODELBPLUS },
 		{ Model::Master128, ID_MASTER128 },
-		{ Model::FileStore, ID_FILESTORE }
+		{ Model::FileStoreE01, ID_FILESTORE_E01 },
+		{ Model::FileStoreE01S, ID_FILESTORE_E01S }
 	};
 
 	UINT SelectedMenuItem = ModelMenuItems.find(MachineType)->second;
@@ -1141,7 +1147,7 @@ void BeebWin::UpdateModelMenu()
 	CheckMenuRadioItem(
 		m_hMenu,
 		ID_MODELB,
-		ID_FILESTORE,
+		ID_FILESTORE_E01,
 		SelectedMenuItem,
 		MF_BYCOMMAND
 	);
@@ -3641,10 +3647,18 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
-	case ID_FILESTORE:
-		if (MachineType != Model::FileStore)
+	case ID_FILESTORE_E01:
+		if (MachineType != Model::FileStoreE01)
 		{
-			ResetBeebSystem(Model::FileStore, true);
+			ResetBeebSystem(Model::FileStoreE01, true);
+			UpdateModelMenu();
+		}
+		break;
+
+	case ID_FILESTORE_E01S:
+		if (MachineType != Model::FileStoreE01S)
+		{
+			ResetBeebSystem(Model::FileStoreE01S, true);
 			UpdateModelMenu();
 		}
 		break;

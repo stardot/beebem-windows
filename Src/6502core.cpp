@@ -1096,7 +1096,8 @@ void Init6502core()
 {
 	switch (MachineType) {
 		case Model::Master128:
-		case Model::FileStore:
+		case Model::FileStoreE01:
+		case Model::FileStoreE01S:
 			CPUType = CPU::CPU65C02;
 			break;
 

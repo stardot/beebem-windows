@@ -34,7 +34,7 @@ Boston, MA  02110-1301, USA.
 static HWND hWndROMList = NULL;
 static HWND hWndModel = NULL;
 static Model nModel = Model::B;
-static const LPCSTR szModel[] = { "BBC B", "Integra-B", "B Plus", "Master 128" };
+static const LPCSTR szModel[] = { "BBC B", "Integra-B", "B Plus", "Master 128", "Filestore E01", "Filestore E01S" };
 static ROMConfigFile ROMCfg;
 static char szDefaultROMPath[MAX_PATH] = {0};
 static char szDefaultROMConfigPath[MAX_PATH] = {0};
@@ -134,19 +134,39 @@ static void FillROMList(void)
 	ListView_DeleteAllItems(hWndROMList);
 
 	int row = 0;
-	LVInsertItem(hWndROMList, row, 0, (LPTSTR)"OS", 16);
-	LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[static_cast<int>(nModel)][0]);
-
-	for (row = 1; row <= 16; ++row)
+	
+	switch (nModel)
 	{
-		int bank = 16 - row;
-
-		char str[20];
-		sprintf(str, "%02d (%X)", bank, bank);
-
-		LVInsertItem(hWndROMList, row, 0, (LPTSTR)str, bank);
+	case Model::FileStoreE01:
+		LVInsertItem(hWndROMList, row, 0, (LPTSTR)"OS", 16);
+		LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[static_cast<int>(nModel)][0]);
 		UpdateROMField(row);
+		row++;
+		LVInsertItem(hWndROMList, row, 0, (LPTSTR)"FS", 15);
+		LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[static_cast<int>(nModel)][1]);
+		UpdateROMField(row);
+		break;
+	case Model::FileStoreE01S:
+		LVInsertItem(hWndROMList, row, 0, (LPTSTR)"OS", 16);
+		LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[static_cast<int>(nModel)][0]);
+		UpdateROMField(row);
+		break;
+	default:
+		LVInsertItem(hWndROMList, row, 0, (LPTSTR)"OS", 16);
+		LVSetItemText(hWndROMList, row, 1, (LPTSTR)ROMCfg[static_cast<int>(nModel)][0]);
+
+		for (row = 1; row <= 16; ++row)
+		{
+			int bank = 16 - row;
+
+			char str[20];
+			sprintf(str, "%02d (%X)", bank, bank);
+
+			LVInsertItem(hWndROMList, row, 0, (LPTSTR)str, bank);
+			UpdateROMField(row);
+		}
 	}
+
 }
 
 /****************************************************************************/

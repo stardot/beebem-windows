@@ -22,11 +22,12 @@ Boston, MA  02110-1301, USA.
 #define MODEL_HEADER
 
 enum class Model : unsigned char {
-	B,         // 0: BBC B
-	IntegraB,  // 1: BBC B with Integra B
-	BPlus,     // 2: BBC B+
-	Master128, // 3: BBC Master 128
-	FileStore, // 4: Acorn FileStore E01S
+	B,             // 0: BBC B
+	IntegraB,      // 1: BBC B with Integra B
+	BPlus,         // 2: BBC B+
+	Master128,     // 3: BBC Master 128
+	FileStoreE01,  // 4: Acorn FileStore E01
+	FileStoreE01S, // 5: Acorn FileStore E01S
 	Last
 };
 
