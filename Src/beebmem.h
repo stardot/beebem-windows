@@ -30,7 +30,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef char ROMConfigFile[4][17][_MAX_PATH];
+typedef char ROMConfigFile[6][17][_MAX_PATH];
 static const char *BANK_EMPTY = "EMPTY";
 static const char *BANK_RAM = "RAM";
 static const char *ROM_WRITABLE = ":RAM";

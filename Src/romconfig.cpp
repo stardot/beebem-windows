@@ -362,6 +362,8 @@ static bool SaveROMConfigFile(HWND hWnd)
 bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
 {
 	FILE *fd = fopen(filename, "r");
+	int model;
+
 	if (fd)
 	{
 		fclose(fd);
@@ -383,13 +385,22 @@ bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
 		return false;
 	}
 
-	for (int model = 0; model < 4; ++model)
+	for (model = 0; model < 4; ++model)
 	{
 		for (int bank = 0; bank < 17; ++bank)
 		{
 			fprintf(fd, "%s\n", ROMConfig[model][bank]);
 		}
 	}
+
+	// add the Filestore E01 files
+	model++;
+	fprintf(fd, "%s\n", ROMConfig[model][0]); // OS
+	fprintf(fd, "%s\n", ROMConfig[model][1]); // FS
+
+	// add the Filestore E01S files
+	model++;
+	fprintf(fd, "%s\n", ROMConfig[model][0]); // OS & FS combined
 
 	fclose(fd);
 

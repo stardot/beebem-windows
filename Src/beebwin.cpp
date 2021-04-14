@@ -1158,6 +1158,60 @@ void BeebWin::UpdateModelMenu()
 	else {
 		EnableMenuItem(ID_FDC_DLL, true);
 	}
+	
+	// disable menu items that are not needed for filestore hardware
+	bool b_Filestore_disable = !(MachineType == Model::FileStoreE01) 
+		                     || (MachineType == Model::FileStoreE01S);
+	// File
+	EnableMenuItem(ID_LOADTAPE, b_Filestore_disable);
+	// < screen capture pop up
+	EnableMenuItem(IDM_CAPTURESCREEN, b_Filestore_disable);
+	// < video options pop up
+	EnableMenuItem(IDM_CAPTUREVIDEO, b_Filestore_disable);
+	EnableMenuItem(IDM_ENDVIDEO, b_Filestore_disable);
+	// Edit
+	EnableMenuItem(IDM_EDIT_COPY, b_Filestore_disable);
+	EnableMenuItem(IDM_EDIT_PASTE, b_Filestore_disable);
+	EnableMenuItem(IDM_EDIT_CRLF, b_Filestore_disable);
+	// Comms
+	// < Tape speed pop up
+	EnableMenuItem(ID_TAPE_FAST, b_Filestore_disable);
+	EnableMenuItem(ID_TAPE_MFAST, b_Filestore_disable);
+	EnableMenuItem(ID_TAPE_MSLOW, b_Filestore_disable);
+	EnableMenuItem(ID_TAPE_NORMAL, b_Filestore_disable);
+
+	EnableMenuItem(ID_REWINDTAPE, b_Filestore_disable);
+	EnableMenuItem(ID_UNLOCKTAPE, b_Filestore_disable);
+	EnableMenuItem(ID_TAPECONTROL, b_Filestore_disable);
+	EnableMenuItem(ID_SERIAL, b_Filestore_disable);
+	// < &RS423 Destination pop up
+		
+	// View
+	// Speed
+	// Sound
+	// AMX
+	// Hardware
+	EnableMenuItem(IDM_SWRAMBOARD, b_Filestore_disable);
+	EnableMenuItem(ID_TELETEXTHALFMODE, b_Filestore_disable);
+	EnableMenuItem(ID_TELETEXT, b_Filestore_disable);
+	//	POPUP "&Teletext Data"
+	EnableMenuItem(ID_IDEDRIVE, b_Filestore_disable);
+	// Options
+	EnableMenuItem(IDM_JOYSTICK, b_Filestore_disable);
+	EnableMenuItem(IDM_ANALOGUE_MOUSESTICK, b_Filestore_disable);
+	EnableMenuItem(IDM_DIGITAL_MOUSESTICK, b_Filestore_disable);
+	EnableMenuItem(IDM_HIDECURSOR, b_Filestore_disable);
+	EnableMenuItem(IDM_DEFINEKEYMAP, b_Filestore_disable);
+	EnableMenuItem(IDM_LOADKEYMAP, b_Filestore_disable);
+	EnableMenuItem(IDM_SAVEKEYMAP, b_Filestore_disable);
+	EnableMenuItem(IDM_USERKYBDMAPPING, b_Filestore_disable);
+	EnableMenuItem(IDM_DEFAULTKYBDMAPPING, b_Filestore_disable);
+	EnableMenuItem(IDM_LOGICALKYBDMAPPING, b_Filestore_disable);
+	EnableMenuItem(IDM_MAPAS, b_Filestore_disable);
+	EnableMenuItem(IDM_MAPFUNCS, b_Filestore_disable);
+	// POPUP "&Disable Keys"
+
+
 }
 
 void BeebWin::UpdateSFXMenu() {

@@ -1094,7 +1094,7 @@ bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
 	}
 
 	for (model = 0; model < 4 && success; ++model)
-	{
+		{
 		for (bank = 0; bank < 17 && success; ++bank)
 		{
 			if (fgets(line, MAX_PATH, fd) == NULL)
@@ -1203,12 +1203,30 @@ void BeebReadRoms(void) {
 		}
 
 		// Read FS ROM
-		RomName = RomConfig[static_cast<int>(MachineType)][0];
+		RomName = RomConfig[static_cast<int>(MachineType)][1];
 		strcpy(fullname, RomName);
 		if ((RomName[1] != '\\') && (RomName[1] != ':')) {
 			strcpy(fullname, RomPath);
 			strcat(fullname, "BeebFile/");
 			strcat(fullname, RomName);
+		}
+
+
+		InFile = fopen(fullname, "rb");
+		if (InFile != NULL)
+		{
+			fread(WholeRam + 0x0000, 1, 32768, InFile);
+			fclose(InFile);
+			// Try to read FS ROM memory map:
+			if ((extension = strrchr(fullname, '.')) != NULL)
+				*extension = 0;
+			strncat(fullname, ".map", _MAX_PATH);
+			DebugLoadMemoryMap(fullname, 16);
+		}
+		else {
+			char errstr[200];
+			sprintf(errstr, "Cannot open specified FS ROM:\n %s", fullname);
+			MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
 		}
 
 		break;
@@ -1223,6 +1241,23 @@ void BeebReadRoms(void) {
 			strcpy(fullname, RomPath);
 			strcat(fullname, "BeebFile/");
 			strcat(fullname, RomName);
+		}
+
+		InFile = fopen(fullname, "rb");
+		if (InFile != NULL)
+		{
+			fread(WholeRam + 0x0000, 1, 65536, InFile);
+			fclose(InFile);
+			// Try to read OS ROM memory map:
+			if ((extension = strrchr(fullname, '.')) != NULL)
+				*extension = 0;
+			strncat(fullname, ".map", _MAX_PATH);
+			DebugLoadMemoryMap(fullname, 16);
+		}
+		else {
+			char errstr[200];
+			sprintf(errstr, "Cannot open specified OS ROM:\n %s", fullname);
+			MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
 		}
 
 		break;
