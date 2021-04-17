@@ -121,6 +121,12 @@ struct CUSTOMVERTEX
 // Our custom FVF, which describes our custom vertex structure
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_TEX1)
 
+enum class MessageType {
+	Error,
+	Warning,
+	Info
+};
+
 class BeebWin {
 
 public:
@@ -551,6 +557,9 @@ public:
 	void SaveUserKeyMap(void);
 	bool ReadKeyMap(const char *filename, KeyMap *keymap);
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
+
+	void Report(MessageType type, const char *format, ...);
+
 	bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
 	bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, void* pData, int* pnSize);
 	bool RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, const void* pData, int* pnSize);

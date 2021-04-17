@@ -171,20 +171,13 @@ void VideoAddLEDs(void);
 
 // Build enhanced mode 7 font
 
-static void BuildMode7Font()
+bool BuildMode7Font(const char *filename)
 {
-	char FileName[256];
-	strcpy(FileName, mainWin->GetAppPath());
-	strcat(FileName, "teletext.fnt");
-
-	FILE *TeletextFontFile = fopen(FileName, "rb");
+	FILE *TeletextFontFile = fopen(filename, "rb");
 
 	if (TeletextFontFile == nullptr)
 	{
-		char errstr[200];
-		sprintf(errstr, "Cannot open Teletext font file teletext.fnt");
-		MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
-		exit(1);
+		return false;
 	}
 
 	for (int Character = 32; Character <= 127; Character++)
@@ -296,6 +289,8 @@ static void BuildMode7Font()
 			Mode7Font[2][Character][19] = 0;
 		}
 	}
+
+	return true;
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
@@ -1310,7 +1305,6 @@ void VideoInit(void) {
   VideoState.DataPtr=BeebMemPtrWithWrap(0x3000,640);
   SetTrigger(99,VideoTriggerCount); /* Give time for OS to set mode up before doing anything silly */
   FastTable_Valid = false;
-  BuildMode7Font();
 
 #ifndef WIN32
   char *environptr=getenv("BeebVideoRefreshFreq");

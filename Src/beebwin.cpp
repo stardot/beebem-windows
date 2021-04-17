@@ -334,6 +334,19 @@ bool BeebWin::Initialise()
 		}
 	}
 
+	char fontFilename[_MAX_PATH];
+	strcpy(fontFilename, GetAppPath());
+	strcat(fontFilename, "teletext.fnt");
+
+	if (!BuildMode7Font(fontFilename))
+	{
+		Report(MessageType::Error,
+		       "Cannot open Teletext font file:\n  %s",
+		       fontFilename);
+
+		return false;
+	}
+
 	// Boot file if passed on command line
 	HandleCommandLineFile(1, m_CommandLineFileName2);
 	HandleCommandLineFile(0, m_CommandLineFileName1);
@@ -5142,6 +5155,48 @@ void BeebWin::HandleTimer()
 			SetTimer(m_hWnd, 1, m_KbdCmdDelay, NULL);
 		}
 	}
+}
+
+/****************************************************************************/
+
+void BeebWin::Report(MessageType type, const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+
+	// Calculate required length, +1 is for NUL terminator
+	const int length = _vscprintf(format, args) + 1;
+
+	char *buffer = (char*)malloc(length);
+
+	if (buffer != nullptr)
+	{
+		vsprintf(buffer, format, args);
+
+		UINT Type = 0;
+
+		switch (type)
+		{
+			case MessageType::Error:
+			default:
+				Type = MB_ICONERROR;
+				break;
+
+			case MessageType::Warning:
+				Type = MB_ICONWARNING;
+				break;
+
+			case MessageType::Info:
+				Type = MB_ICONINFORMATION;
+				break;
+		}
+
+		MessageBox(m_hWnd, buffer, WindowTitle, Type | MB_OK);
+
+		free(buffer);
+	}
+
+	va_end(args);
 }
 
 /****************************************************************************/

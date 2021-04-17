@@ -53,6 +53,7 @@ extern unsigned char CRTC_LightPenLow;         /* R17 */
 extern unsigned int ActualScreenWidth;
 extern long ScreenAdjust;
 
+bool BuildMode7Font(const char *filename);
 void RedoMPTR(void);
 void CRTCWrite(int Address, unsigned char Value);
 unsigned char CRTCRead(int Address);
