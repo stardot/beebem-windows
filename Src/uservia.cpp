@@ -127,16 +127,13 @@ void UserVIAWrite(int Address, int Value) {
 		if (PrinterEnabled) {
 			if (PrinterFileHandle != NULL)
 			{
-				if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF) {
-#ifdef WIN32
-					char errstr[200];
-					sprintf(errstr, "Failed to write to printer file:\n  %s", PrinterFileName);
-					MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-					cerr << "Failed to write to printer file " << PrinterFileName << "\n";
-#endif
+				if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF)
+				{
+					mainWin->Report(MessageType::Error,
+					                "Failed to write to printer file:\n  %s", PrinterFileName);
 				}
-				else {
+				else
+				{
 					fflush(PrinterFileHandle);
 					SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
 				}
@@ -594,13 +591,7 @@ void PrinterEnable(char *FileName) {
 	PrinterFileHandle = fopen(FileName, "wb");
 	if (PrinterFileHandle == NULL)
 	{
-#ifdef WIN32
-		char errstr[200];
-		sprintf(errstr, "Failed to open printer:\n  %s", PrinterFileName);
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-		cerr << "Failed to open printer " << PrinterFileName << "\n";
-#endif
+		mainWin->Report(MessageType::Error, "Failed to open printer:\n  %s", PrinterFileName);
 	}
 	else
 	{

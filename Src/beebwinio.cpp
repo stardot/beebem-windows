@@ -785,8 +785,8 @@ void BeebWin::CaptureVideo()
 									DIB_RGB_COLORS, (void**)&m_AviScreen, NULL, 0);
 		if (SelectObject(m_AviDC, m_AviDIB) == NULL)
 		{
-			MessageBox(m_hWnd, "Failed to initialise AVI buffers",
-				WindowTitle, MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Failed to initialise AVI buffers");
+
 			delete aviWriter;
 			aviWriter = NULL;
 		}
@@ -810,8 +810,8 @@ void BeebWin::CaptureVideo()
 				(int)(50 / (m_AviFrameSkip + 1)));
 			if (FAILED(hr))
 			{
-				MessageBox(m_hWnd, "Failed to create AVI file",
-					WindowTitle, MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Failed to create AVI file");
+
 				delete aviWriter;
 				aviWriter = NULL;
 			}
@@ -1527,8 +1527,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
 	if (!success)
 	{
-		sprintf(szErrStr, "Failed to read catalogue from disc:\n  %s", szDiscFile);
-		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONERROR);
+		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
 		return;
 	}
 
@@ -1544,7 +1543,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	for (i = 0; i < numSelected; ++i)
 	{
 		success = dfs_export_file(szDiscFile, heads, side, &dfsCat,
-								  filesSelected[i], szExportFolder, szErrStr);
+		                          filesSelected[i], szExportFolder, szErrStr);
 		if (success)
 		{
 			n++;
@@ -1605,7 +1604,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 		else
 		{
 			// ADFS - not currently supported
-			MessageBox(m_hWnd, "Import to ADFS disc not supported", WindowTitle, MB_OK|MB_ICONWARNING);
+			Report(MessageType::Error, "Import to ADFS disc not supported");
 			return;
 		}
 	}
@@ -1627,8 +1626,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
 	if (!success)
 	{
-		sprintf(szErrStr, "Failed to read catalogue from disc:\n  %s", szDiscFile);
-		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONERROR);
+		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
 		return;
 	}
 
@@ -1770,8 +1768,7 @@ bool BeebWin::GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid)
 
 	if (i == num)
 	{
-		MessageBox(m_hWnd, "Failed to get image encoder",
-		           WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "Failed to get image encoder");
 	}
 
 	Success = true;
@@ -1981,8 +1978,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 
 	if (prevObj == nullptr)
 	{
-		MessageBox(m_hWnd, "Failed to initialise capture buffers",
-		           WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "Failed to initialise capture buffers");
 	}
 	else
 	{
@@ -2006,8 +2002,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 
 		if (status != Ok)
 		{
-			MessageBox(m_hWnd, "Failed to save screen capture",
-			           WindowTitle, MB_OK | MB_ICONERROR);
+			Report(MessageType::Error, "Failed to save screen capture");
 		}
 		else if (m_CaptureBitmapAutoFilename)
 		{

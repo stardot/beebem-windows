@@ -150,7 +150,7 @@ static HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 
 		if (FAILED(hResult) && hResult != E_UNEXPECTED)
 		{
-			MessageBox(GETHWND, "Failed to write sound to AVI file", "BeebEm", MB_OK | MB_ICONERROR);
+			mainWin->Report(MessageType::Error, "Failed to write sound to AVI file");
 			delete aviWriter;
 			aviWriter = nullptr;
 		}
@@ -386,7 +386,7 @@ void PlayUpTil(double DestTime)
 			}
 			else
 			{
-				MessageBox(GETHWND,"Failed to open audio.dbg",WindowTitle,MB_OK|MB_ICONERROR);
+				mainWin->ReportError("Failed to open audio.dbg");
 				exit(1);
 			}
 #else
@@ -441,11 +441,14 @@ static void InitAudioDev() {
 		SoundEnabled = false;
 }
 
-void LoadSoundSamples() {
+void LoadSoundSamples()
+{
 	char FileName[256];
 
-	if (!SoundSamplesLoaded) {
-		for (int i = 0; i < NUM_SOUND_SAMPLES; ++i) {
+	if (!SoundSamplesLoaded)
+	{
+		for (int i = 0; i < NUM_SOUND_SAMPLES; ++i)
+		{
 			strcpy(FileName, mainWin->GetAppPath());
 			strcat(FileName, SoundSamples[i].pFilename);
 			FILE *fd = fopen(FileName, "rb");
@@ -457,12 +460,14 @@ void LoadSoundSamples() {
 				fread(SoundSamples[i].pBuf, 1, SoundSamples[i].len, fd);
 				fclose(fd);
 			}
-			else {
-				char errstr[200];
-				sprintf(errstr,"Could not open sound sample file:\n  %s", FileName);
-				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			else
+			{
+				mainWin->Report(MessageType::Error,
+				                "Could not open sound sample file:\n  %s",
+				                FileName);
 			}
 		}
+
 		SoundSamplesLoaded = true;
 	}
 }

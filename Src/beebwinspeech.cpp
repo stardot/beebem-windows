@@ -47,8 +47,7 @@ void BeebWin::InitTextToSpeech(void)
 		{
 			m_SpVoice = NULL;
 			m_TextToSpeechEnabled = false;
-			MessageBox(m_hWnd,"Failed to initialise text-to-speech engine\n",
-					   WindowTitle,MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Failed to initialise text-to-speech engine");
 		}
 	}
 	CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);

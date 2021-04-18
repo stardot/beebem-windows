@@ -1773,8 +1773,13 @@ void debugADLCprint(void) {
 //--------------------------------------------------------------------------------------------
 // Display an error message box
 
-void EconetError(const char *errstr) {
-	if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, errstr);
-	MessageBox(GETHWND,errstr,"BeebEm",MB_OK|MB_ICONERROR);
+void EconetError(const char *errstr)
+{
+	if (DebugEnabled)
+	{
+		DebugDisplayTrace(DebugType::Econet, true, errstr);
+	}
+
+	mainWin->Report(MessageType::Error, errstr);
 }
 

@@ -3776,10 +3776,7 @@ void Master512CoPro::LoadBIOS()
 	}
 	else
 	{
-		std::string message("Could not open BIOS image file:\n  ");
-		message += path;
-
-		MessageBox(GETHWND, message.c_str(), WindowTitle, MB_OK | MB_ICONERROR);
+		mainWin->Report(MessageType::Error, "Could not open BIOS image file:\n %s", path);
 	}
 }
 

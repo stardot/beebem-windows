@@ -1786,8 +1786,6 @@ void DebugInitMemoryMaps()
 
 bool DebugLoadMemoryMap(char* filename, int bank)
 {
-	char errstr[200];
-
 	if(bank < 0 || bank > 16)
 		return false;
 
@@ -1818,8 +1816,8 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 				if(newAddrInfo == NULL)
 				{
 					fclose(infile);
-					sprintf(errstr, "Allocation failure reading memory map!");
-					MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+					mainWin->Report(MessageType::Error, "Allocation failure reading memory map!");
+
 					if(map->entries != NULL)
 					{
 						free(map->entries);
@@ -1841,8 +1839,8 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 			}
 			else
 			{
-				sprintf(errstr, "Invalid memory map format!");
-				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				mainWin->Report(MessageType::Error, "Invalid memory map format!");
+
 				free(map->entries);
 				map->entries = NULL;
 				map->count = 0;
@@ -1852,6 +1850,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 		}
 		fclose(infile);
 	}
+
 	return true;
 }
 

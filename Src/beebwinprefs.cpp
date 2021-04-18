@@ -88,14 +88,14 @@ void BeebWin::LoadPreferences()
 
 	if (result == Preferences::Result::Failed) {
 		// No prefs file, will use defaults
-		char errstr[500];
-		sprintf(errstr, "Cannot open preferences file:\n  %s\n\nUsing default preferences", m_PrefsFile);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error,
+		       "Cannot open preferences file:\n  %s\n\nUsing default preferences",
+		       m_PrefsFile);
 	}
 	else if (result == Preferences::Result::InvalidFormat) {
-		char errstr[500];
-		sprintf(errstr, "Invalid preferences file:\n  %s\n\nUsing default preferences", m_PrefsFile);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error,
+		       "Invalid preferences file:\n  %s\n\nUsing default preferences",
+		       m_PrefsFile);
 	}
 
 	char path[_MAX_PATH];
@@ -735,8 +735,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_AutoSavePrefsChanged = false;
 	}
 	else {
-		char errstr[500];
-		sprintf(errstr, "Failed to write preferences file:\n  %s", m_PrefsFile);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error,
+		       "Failed to write preferences file:\n  %s",
+		       m_PrefsFile);
 	}
 }
