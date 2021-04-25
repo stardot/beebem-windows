@@ -117,10 +117,18 @@ unsigned char ROMSEL;
 unsigned char FSRam[8192];       // 8K Filing System RAM
 unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
 unsigned char CMOSRAM[64];       // 50 Bytes CMOS RAM
+unsigned char CMOSRAMFS[64];     // 50 Bytes CMOS RAM for Filestore
 unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2}; // Backup of CMOS Defaults
+unsigned char CMOSDefaultFS[64] = { 0xFE,0x01,
+                                    0x00, 0x00, 0x00, 0x00, 0x04, 0x84, 0x00, 0xC0, 0x02, 0xFF, 0xFF, 0xFF, 0x50, 0x05, 0x50, 0x75,
+                                    0x63, 0x65, 0x00, 0x00, 0x53, 0x59, 0x53, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x54,
+                                    0x4E, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x40, 0x20, 0x44, 0x00, 0x00, 0xFC, 0x00, 0x04, 0x00
+                                    }; // Backup of CMOS Defaults for FileStore from byte 14.
 unsigned char ShadowRAM[32768];  // 20K Shadow RAM
 unsigned char ACCCON;            // ACCess CONtrol register
 struct CMOSType CMOS;
+struct FS_State FS_Status;
+
 bool Sh_Display;
 static bool PRAM, FRAM;
 static bool Sh_CPUX, Sh_CPUE;
@@ -286,9 +294,9 @@ unsigned char BeebReadMem(int Address) {
 	}
 	else if (MachineType == Model::IntegraB) {
 		if (Address < 0x3000) return WholeRam[Address];
-		if (Address >= 0x8000 && Address < 0x8400 && Prvs8 && PrvEn) return Private[Address-0x8000];
-		if (Address >= 0x8000 && Address < 0x9000 && Prvs4 && PrvEn) return Private[Address-0x8000];
-		if (Address >= 0x9000 && Address < 0xb000 && Prvs1 && PrvEn) return Private[Address-0x8000];
+		if (Address >= 0x8000 && Address < 0x8400 && Prvs8 && PrvEn) return Private[Address - 0x8000];
+		if (Address >= 0x8000 && Address < 0x9000 && Prvs4 && PrvEn) return Private[Address - 0x8000];
+		if (Address >= 0x9000 && Address < 0xb000 && Prvs1 && PrvEn) return Private[Address - 0x8000];
 		if (Address < 0x8000) {
 			if (ShEn) {
 				if (MemSel) {
@@ -302,21 +310,21 @@ unsigned char BeebReadMem(int Address) {
 				return WholeRam[Address];
 			}
 		}
-		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address-0x8000];
+		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address - 0x8000];
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
 
-		if (Address==0xfe3c) {
+		if (Address == 0xfe3c) {
 			time_t long_time; // Clock for Computech Integra-B
-			time( &long_time );
-			if (HidAdd==0) return(localtime(&long_time)->tm_sec);
-			if (HidAdd==2) return(localtime(&long_time)->tm_min);
-			if (HidAdd==4) return(localtime(&long_time)->tm_hour);
-			if (HidAdd==6) return((localtime(&long_time)->tm_wday)+1);
-			if (HidAdd==7) return(localtime(&long_time)->tm_mday);
-			if (HidAdd==8) return((localtime(&long_time)->tm_mon)+1);
-			if (HidAdd==9) return((localtime(&long_time)->tm_year)%100);
-			if (HidAdd==0xa) return(0x0);
+			time(&long_time);
+			if (HidAdd == 0) return(localtime(&long_time)->tm_sec);
+			if (HidAdd == 2) return(localtime(&long_time)->tm_min);
+			if (HidAdd == 4) return(localtime(&long_time)->tm_hour);
+			if (HidAdd == 6) return((localtime(&long_time)->tm_wday) + 1);
+			if (HidAdd == 7) return(localtime(&long_time)->tm_mday);
+			if (HidAdd == 8) return((localtime(&long_time)->tm_mon) + 1);
+			if (HidAdd == 9) return((localtime(&long_time)->tm_year) % 100);
+			if (HidAdd == 0xa) return(0x0);
 			return(Hidden[HidAdd]);
 		}
 	}
@@ -325,13 +333,13 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0x8000 && Sh_Display && PrePC >= 0xc000 && PrePC < 0xe000) return ShadowRAM[Address];
 		if (Address < 0x8000 && Sh_Display && MemSel && PrePC >= 0xa000 && PrePC < 0xb000) return ShadowRAM[Address];
 		if (Address < 0x8000) return WholeRam[Address];
-		if (Address < 0xB000 && MemSel) return Private[Address-0x8000];
-		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address-0x8000];
+		if (Address < 0xB000 && MemSel) return Private[Address - 0x8000];
+		if (Address >= 0x8000 && Address < 0xc000) return Roms[ROMSEL][Address - 0x8000];
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
 	}
 	else if (MachineType == Model::Master128) {
-		switch ((Address&0xf000)>>12) {
+		switch ((Address & 0xf000) >> 12) {
 		case 0:
 		case 1:
 		case 2:
@@ -355,26 +363,27 @@ unsigned char BeebReadMem(int Address) {
 			break;
 		case 8:
 			if (PRAM) {
-				return(PrivateRAM[Address-0x8000]);
-			} else {
-				return(Roms[ROMSEL][Address-0x8000]);
+				return(PrivateRAM[Address - 0x8000]);
+			}
+			else {
+				return(Roms[ROMSEL][Address - 0x8000]);
 			}
 			break;
 		case 9:
 		case 0xa:
 		case 0xb:
-			return(Roms[ROMSEL][Address-0x8000]);
+			return(Roms[ROMSEL][Address - 0x8000]);
 			break;
 		case 0xc:
 		case 0xd:
-			if (FRAM) return(FSRam[Address-0xc000]); else return(WholeRam[Address]);
+			if (FRAM) return(FSRam[Address - 0xc000]); else return(WholeRam[Address]);
 			break;
 		case 0xe:
 			return(WholeRam[Address]);
 			break;
 		case 0xf:
-			if (Address<0xfc00 || Address>=0xff00) { return(WholeRam[Address]); }
-			if ((ACCCON & 0x40) && Address>=0xfc00 && Address<0xff00) {
+			if (Address < 0xfc00 || Address >= 0xff00) { return(WholeRam[Address]); }
+			if ((ACCCON & 0x40) && Address >= 0xfc00 && Address < 0xff00) {
 				return WholeRam[Address];
 			}
 			break;
@@ -382,59 +391,100 @@ unsigned char BeebReadMem(int Address) {
 			return(0);
 		}
 	}
-
-	if (Address>=0xff00)
-		return(WholeRam[Address]);
-
-	/* IO space */
-
-	if (Address >= 0xfc00 && Address < 0xfe00) {
-		SyncIO();
-		AdjustForIORead();
+	else if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		if (Address < 0xfc00) return WholeRam[Address];
+		if (Address >= 0xfd00) return WholeRam[Address];
 	}
 
-	/* VIAs first - games seem to do really heavy reading of these */
-	/* Can read from a via using either of the two 16 bytes blocks */
-	if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
-		SyncIO();
-		Value = SysVIARead(Address & 0xf);
-		AdjustForIORead();
-		return Value;
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		/* It is only read one time by a BIT instruction at the start of the MOS
+		   initialisation (0xEB94), which serves to trigger a latch from reading EPROM
+		   to reading RAM */
+
+		// EPROM/RAM Latch
+		if (Address == 0xfc08) return (Value);
+
+		/* Front Panel Switch
+		   E01 has a front panel open/close switch on bit 7
+		                       command mode switch on bit 8 */
+		if (Address == 0xfc2c) {
+			// to do
+			return (0x40); /* temporary
+						      0x00=user mode, 0x40 door open, 0x80=cmnd0, 0xC0=cmnd1
+						      only works at the moment if the door is open at start, then
+							  use goto 0x0200 in the debugger */
+		}
 	}
 
-	if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
-		SyncIO();
-		Value = UserVIARead(Address & 0xf);
-		AdjustForIORead();
-		return Value;
-	}
 
-	if ((Address & ~7)==0xfe00) {
-		SyncIO();
-		Value = CRTCRead(Address & 0x7);
-		AdjustForIORead();
-		return Value;
-	}
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
 
-	if (Address==0xfe08) {
-		SyncIO();
-		Value = Read_ACIA_Status();
-		AdjustForIORead();
-		return Value;
-	}
+		/* System VIA */
+		if ((Address & ~0xf) == 0xfc10) {
+			SyncIO();
+			Value = UserVIARead(Address & 0xf);  /* uses the USER VIA of the BBC */
+			AdjustForIORead();
+			return Value;
+		}
 
-	if (Address==0xfe09) {
-		SyncIO();
-		Value = Read_ACIA_Rx_Data();
-		AdjustForIORead();
-		return Value;
-	}
 
-	if (Address==0xfe10) {
-		SyncIO();
-		Value = Read_SERPROC();
-		AdjustForIORead();
-		return Value;
+	}
+	else
+	{
+		if (Address >= 0xff00)
+			return(WholeRam[Address]);
+
+		/* IO space */
+
+		if (Address >= 0xfc00 && Address < 0xfe00) {
+			SyncIO();
+			AdjustForIORead();
+		}
+
+		/* VIAs first - games seem to do really heavy reading of these */
+		/* Can read from a via using either of the two 16 bytes blocks */
+		if ((Address & ~0xf) == 0xfe40 || (Address & ~0xf) == 0xfe50) {
+			SyncIO();
+			Value = SysVIARead(Address & 0xf);
+			AdjustForIORead();
+			return Value;
+		}
+
+		if ((Address & ~0xf) == 0xfe60 || (Address & ~0xf) == 0xfe70) {
+			SyncIO();
+			Value = UserVIARead(Address & 0xf);
+			AdjustForIORead();
+			return Value;
+		}
+
+		if ((Address & ~7) == 0xfe00) {
+			SyncIO();
+			Value = CRTCRead(Address & 0x7);
+			AdjustForIORead();
+			return Value;
+		}
+
+		if (Address == 0xfe08) {
+			SyncIO();
+			Value = Read_ACIA_Status();
+			AdjustForIORead();
+			return Value;
+		}
+
+		if (Address == 0xfe09) {
+			SyncIO();
+			Value = Read_ACIA_Rx_Data();
+			AdjustForIORead();
+			return Value;
+		}
+
+		if (Address == 0xfe10) {
+			SyncIO();
+			Value = Read_SERPROC();
+			AdjustForIORead();
+			return Value;
+		}
 	}
 
 	/* Rob: BBC AUG says FE20 is econet stn no. for bbc b. [It's in cmos for a master,]
@@ -444,12 +494,15 @@ unsigned char BeebReadMem(int Address) {
 	*/
 	if (EconetEnabled &&
 		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
-		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
+			(MachineType == Model::Master128 && (Address & ~3) == 0xfe38) ||
+			(MachineType == Model::FileStoreE01 && (Address) == 0xfc24) ||
+			(MachineType == Model::FileStoreE01S && (Address) == 0xfc24)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF");
 		EconetNMIenabled = INTOFF;
 		return(Read_Econet_Station());
 	}
+
 
 	if (Address >= 0xfe18 && Address <= 0xfe20 && MachineType == Model::Master128) {
 		return(AtoDRead(Address - 0xfe18));
@@ -463,19 +516,29 @@ unsigned char BeebReadMem(int Address) {
 	*/
 	if (EconetEnabled &&
 		((MachineType != Model::Master128 && (Address & ~3) == 0xfe20) ||
-		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe3c)) ) {
+		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe3c) ||
+		 (MachineType == Model::FileStoreE01 && (Address) == 0xfc28) ||
+		 (MachineType == Model::FileStoreE01S && (Address) == 0xfc28)) ) {
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: INTON");
 		if (!EconetNMIenabled) {  // was off
 			EconetNMIenabled = INTON;  // turn on
-			if (ADLC.status1 & 128) {			// irq pending?
+			 if (ADLC.status1 & 128) {			// irq pending?
 				NMIStatus |= 1 << nmi_econet;
 				if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: delayed NMI asserted");
 			}
+			return(0xFF);
 		}
 	}
 
-	if ((Address & ~3)==0xfe20) {
-		return(VideoULARead(Address & 0xf));
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	}
+	else
+	{
+
+		if ((Address & ~3) == 0xfe20) {
+			return(VideoULARead(Address & 0xf));
+		}
 	}
 
 	// Master uses fe24 to fe2f for FDC
@@ -487,10 +550,25 @@ unsigned char BeebReadMem(int Address) {
 		return(Read1770Register(Address & 0x7));
 	}
 
-	if ((Address & ~3)==0xfe30) {
-		return(PagedRomReg); /* report back ROMSEL - I'm sure the beeb allows ROMSEL read..
-								correct me if im wrong. - Richard Gellman */
+
+	if ((Address >= 0xfc0c && Address <= 0xfc0f) &&
+		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
+		return(Read1770Register(Address));
 	}
+
+
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	}
+	else
+	{
+
+		if ((Address & ~3) == 0xfe30) {
+			return(PagedRomReg); /* report back ROMSEL - I'm sure the beeb allows ROMSEL read..
+									correct me if im wrong. - Richard Gellman */
+		}
+	}
+
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
 	if ((Address & ~3) == 0xfe34 && MachineType == Model::Master128) {
 		return(ACCCON);
@@ -500,10 +578,35 @@ unsigned char BeebReadMem(int Address) {
 		return Disc8271Read(Address & 0x7);
 	}
 
-	if ((Address & ~0x1f)==0xfea0) {
-		if (EconetEnabled)
-			return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
-		return(0xfe); // if not enabled
+
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
+		if (Address >= 0xfc20 && Address <= 0xfc23 && EconetEnabled) {
+				return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
+			return(0xfe); // if not enabled
+		}
+
+		if ((Address & ~0x3) == 0xfc30) {
+			if (SCSIDriveEnabled) return(SCSIRead(Address & 0x3));
+		}
+
+		/* Filestore CMOS reads. These are not handled through the VIA as they are on the Master 128 */
+		if (Address == 0xfc00) {           /* RTC address register */
+			// write only
+		}
+		if ((Address == 0xfc04) && (CMOS.Enabled == true)) {           /* RTC data register */
+			return(CMOSRead(CMOS.Address));
+		}
+
+	}
+	else
+	{
+		if ((Address & ~0x1f) == 0xfea0) {
+			if (EconetEnabled)
+				return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
+			return(0xfe); // if not enabled
+		}
 	}
 
 	if ((Address & ~0x1f) == 0xfec0 && MachineType != Model::Master128) {
@@ -513,45 +616,55 @@ unsigned char BeebReadMem(int Address) {
 		return Value;
 	}
 
-	if ((Address & ~0x1f)==0xfee0)
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	}
+	else
 	{
-		if (TubeType == Tube::TorchZ80)
-			return ReadTorchTubeFromHostSide(Address & 0x1f); // Read From Torch Tube
-		else
-			return ReadTubeFromHostSide(Address & 7); // Read From Tube
+		if ((Address & ~0x1f) == 0xfee0)
+		{
+			if (TubeType == Tube::TorchZ80)
+				return ReadTorchTubeFromHostSide(Address & 0x1f); // Read From Torch Tube
+			else
+				return ReadTubeFromHostSide(Address & 7); // Read From Tube
+		}
+
+		if ((Address & ~0x3) == 0xfc10) {
+			return(TeletextRead(Address & 0x3));
+		}
+
+		if ((Address & ~0x3) == 0xfc40) {
+			if (SCSIDriveEnabled) return(SCSIRead(Address & 0x3));
+		}
+
+		if ((Address & ~0x7) == 0xfc40) {
+			if (IDEDriveEnabled)  return(IDERead(Address & 0x7));
+		}
+
+		// DB: M5000 will only return its fcff select register or
+		// Jim mapped registers if it has been selected by writing
+		// it's id value to fcff - other Jim devices should similarly
+		// only return fcff..fcfc/fdxx when they have been selected
+		unsigned char ret;
+		if (Music5000Read(Address, &ret))
+			return ret;
+
+		if ((Address & ~0x3) == 0xfdf0) {
+			return(SASIRead(Address & 0x3));
+		}
+
+		if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
+			// mainWin->Report(MessageType::Error, "Read of 1770 Extension Board");
+			return(Read1770Register(Address-EFDCAddr));
+		}
+
+		if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
+			return(mainWin->GetDriveControl());
+		}
+
 	}
 
-	if ((Address & ~0x3)==0xfc10) {
-		return(TeletextRead(Address & 0x3));
-	}
-
-	if ((Address & ~0x3)==0xfc40) {
-		if (SCSIDriveEnabled) return(SCSIRead(Address & 0x3));
-	}
-
-	if ((Address & ~0x7)==0xfc40) {
-		if (IDEDriveEnabled)  return(IDERead(Address & 0x7));
-	}
-
-	// DB: M5000 will only return its fcff select register or
-	// Jim mapped registers if it has been selected by writing
-	// it's id value to fcff - other Jim devices should similarly
-	// only return fcff..fcfc/fdxx when they have been selected
-	unsigned char ret;
-	if (Music5000Read(Address, &ret))
-		return ret;
-
-	if ((Address & ~0x3)==0xfdf0) {
-		return(SASIRead(Address & 0x3));
-	}
-
-	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
-		// mainWin->Report(MessageType::Error, "Read of 1770 Extension Board");
-		return(Read1770Register(Address-EFDCAddr));
-	}
-
-	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
-		return(mainWin->GetDriveControl());
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		return(0xFF); // catch any memory addresses not handled at this stage. Temporary
 	}
 
 	return(0xFF);
@@ -862,60 +975,91 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		}
 	}
 // Master 128 End
+	else if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		if (Address < 0xFC00) {
+			WholeRam[Address] = Value;
+			return;
+		}
+		if (Address >= 0xFD00) {
+			WholeRam[Address] = Value;
+			return;
+		}
+	}
+
 
 	/* IO space */
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		if (Address >= 0xfc00 && Address < 0xfd00) {
+			SyncIO();
+			AdjustForIOWrite();
+		}
 
-	if (Address >= 0xfc00 && Address < 0xfe00) {
-		SyncIO();
-		AdjustForIOWrite();
-	}
+		/* System VIA */
+		if ((Address & ~0xf) == 0xfc10) {
+			SyncIO();
+			AdjustForIOWrite();
+			UserVIAWrite((Address & 0xf), Value); /* uses the USER VIA of the BBC */
+			return;
+		}
 
-	/* Can write to a via using either of the two 16 bytes blocks */
-	if ((Address & ~0xf)==0xfe40 || (Address & ~0xf)==0xfe50) {
-		SyncIO();
-		AdjustForIOWrite();
-		SysVIAWrite((Address & 0xf),Value);
-		return;
-	}
 
-	/* Can write to a via using either of the two 16 bytes blocks */
-	if ((Address & ~0xf)==0xfe60 || (Address & ~0xf)==0xfe70) {
-		SyncIO();
-		AdjustForIOWrite();
-		UserVIAWrite((Address & 0xf),Value);
-		return;
 	}
 
-	if ((Address & ~0x7)==0xfe00) {
-		SyncIO();
-		AdjustForIOWrite();
-		CRTCWrite(Address & 0x7, Value);
-		return;
+	else
+	{
+		if (Address >= 0xfc00 && Address < 0xfe00) {
+			SyncIO();
+			AdjustForIOWrite();
+		}
+
+		/* Can write to a via using either of the two 16 bytes blocks */
+		if ((Address & ~0xf) == 0xfe40 || (Address & ~0xf) == 0xfe50) {
+			SyncIO();
+			AdjustForIOWrite();
+			SysVIAWrite((Address & 0xf), Value);
+			return;
+		}
+
+		/* Can write to a via using either of the two 16 bytes blocks */
+		if ((Address & ~0xf) == 0xfe60 || (Address & ~0xf) == 0xfe70) {
+			SyncIO();
+			AdjustForIOWrite();
+			UserVIAWrite((Address & 0xf), Value);
+			return;
+		}
+
+		if ((Address & ~0x7) == 0xfe00) {
+			SyncIO();
+			AdjustForIOWrite();
+			CRTCWrite(Address & 0x7, Value);
+			return;
+		}
+
+		if (Address == 0xfe08) {
+			SyncIO();
+			AdjustForIOWrite();
+			Write_ACIA_Control(Value);
+			return;
+		}
+		if (Address == 0xfe09) {
+			SyncIO();
+			AdjustForIOWrite();
+			Write_ACIA_Tx_Data(Value);
+			return;
+		}
+		if (Address == 0xfe10) {
+			SyncIO();
+			AdjustForIOWrite();
+			Write_SERPROC(Value);
+			return;
+		}
 	}
 
-	if (Address==0xfe08) {
-		SyncIO();
-		AdjustForIOWrite();
-		Write_ACIA_Control(Value);
-		return;
-	}
-	if (Address==0xfe09) {
-		SyncIO();
-		AdjustForIOWrite();
-		Write_ACIA_Tx_Data(Value);
-		return;
-	}
-	if (Address==0xfe10) {
-		SyncIO();
-		AdjustForIOWrite();
-		Write_SERPROC(Value);
-		return;
-	}
 
-	//Rob: econet NMI mask
+	//Rob: econet NMI mask - Filestore this is read only. No writes occur
 	if (EconetEnabled &&
 		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
-		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
+		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38) )) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF(w)");
 		EconetNMIenabled = INTOFF;
@@ -926,9 +1070,14 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		return;
 	}
 
-	if ((Address & ~0x3)==0xfe20) {
-		VideoULAWrite(Address & 0xf, Value);
-		return;
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	}
+	else
+	{
+		if ((Address & ~0x3) == 0xfe20) {
+			VideoULAWrite(Address & 0xf, Value);
+				return;
+		}
 	}
 
 	if (Address == 0xfe24 && MachineType == Model::Master128) {
@@ -941,9 +1090,21 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		return;
 	}
 
-	if (Address>=0xfe30 && Address<0xfe34) {
-		DoRomChange(Value);
+	if ((Address >= 0xfc0c && Address <= 0xfc0f) &&
+		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
+		Write1770Register(Address, Value);
 		return;
+	}
+
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	}
+	else
+	{
+		if (Address >= 0xfe30 && Address < 0xfe34) {
+			DoRomChange(Value);
+			return;
+		}
 	}
 
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
@@ -959,9 +1120,18 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 
 	//Rob: add econet
-	if (Address >= 0xfea0 && Address < 0xfebf && EconetEnabled) {
-		WriteEconetRegister((Address & 3), Value);
-		return;
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		if (Address >= 0xfc20 && Address <= 0xfc23 && EconetEnabled) {
+			WriteEconetRegister((Address & 3), Value);
+			return;
+		}
+	}
+	else
+	{
+		if (Address >= 0xfea0 && Address < 0xfebf && EconetEnabled) {
+			WriteEconetRegister((Address & 3), Value);
+			return;
+		}
 	}
 
 	if ((Address & ~0x1f) == 0xfec0 && MachineType != Model::Master128) {
@@ -971,46 +1141,110 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		return;
 	}
 
-	if ((Address&~0xf)==0xfee0)
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
+		if ((Address & ~0x3) == 0xfc30) {
+			if (SCSIDriveEnabled) {
+				SCSIWrite((Address & 0x3), Value);
+				return;
+			}
+		}
+	}
+	else
 	{
-		if (TubeType == Tube::TorchZ80)
-			WriteTorchTubeFromHostSide(Address & 0xf, Value);
-		else
-			WriteTubeFromHostSide(Address & 7, Value);
+
+		if ((Address & ~0xf) == 0xfee0)
+		{
+			if (TubeType == Tube::TorchZ80)
+				WriteTorchTubeFromHostSide(Address & 0xf, Value);
+			else
+				WriteTubeFromHostSide(Address & 7, Value);
+		}
+
+		if ((Address & ~0x3) == 0xfc10) {
+			TeletextWrite((Address & 0x3), Value);
+			return;
+		}
+
+		if ((Address & ~0x3) == 0xfc40) {
+			if (SCSIDriveEnabled) {
+				SCSIWrite((Address & 0x3), Value);
+				return;
+			}
+		}
+
+		if ((Address & ~0x7) == 0xfc40) {
+			if (IDEDriveEnabled) {
+				IDEWrite((Address & 0x7), Value);
+				return;
+			}
+		}
+
+		Music5000Write(Address, Value);
+
+		if ((Address & ~0x3) == 0xfdf0) {
+			SASIWrite((Address & 0x3), Value);
+			return;
+		}
+
+		if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
+			mainWin->SetDriveControl(Value);
+		}
+		if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr + 4) && !NativeFDC) {
+			Write1770Register(Address - EFDCAddr, Value);
+		}
 	}
 
-	if ((Address & ~0x3)==0xfc10) {
-		TeletextWrite((Address & 0x3),Value);
-		return;
-	}
 
-	if ((Address & ~0x3)==0xfc40) {
-		if (SCSIDriveEnabled) {
-			SCSIWrite((Address & 0x3),Value);
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
+		/* Filestore CMOS writes. These are not handled through the VIA as they are on the Master 128 */
+		if (Address == 0xfc00) {           /* RTC address register */
+			CMOS.Address = Value;
+			return;
+		}
+		if ((Address == 0xfc04) && (CMOS.Enabled == true)) {           /* RTC data register */
+			CMOSWrite(CMOS.Address, Value);
+			return;
+		}
+
+
+		/* FileStore Status writes. These are kept in a copy in RAM and never read back directly.
+		They are only used as signals to the hardware and not to read the status */
+
+		// MODE LED for Filestore - temporarily on the Cassette Motor LED
+		LEDs.ShowKB = true;          /* temporary */
+		LEDs.CapsLock = false;
+		LEDs.ShowFS = true;
+		LEDs.ShowDisc = true;
+
+		if (Address == 0xfc08) {
+			FS_Status.Floppy0 = bool((Value & 0x1) == 0x1);
+			FS_Status.Floppy1 = bool((Value & 0x2) == 0x2);
+			FS_Status.FloppySide = bool((Value & 0x4) == 0x4);
+			FS_Status.CMOS_Write = bool((Value & 0x8) == 0x8);
+			FS_Status.FDCDEN = bool((Value & 0x10) == 0x10);
+			FS_Status.FDCRST = bool((Value & 0x20) == 0x20);
+			FS_Status.FDCTST = bool((Value & 0x40) == 0x40);
+			FS_Status.MODE_LED = bool((Value & 0x80) == 0x80);
+			LEDs.Motor = FS_Status.MODE_LED;
+			CMOS.Enabled = FS_Status.CMOS_Write;
+
+			// FDC Control Reg doesn't evaluate the bits in the same order
+			Value = Value & 0x3;					 // Floppy 0 & 1 are the same
+			if (FS_Status.FloppySide) Value & 0x10;  // bit4
+			if (FS_Status.FDCDEN) Value & 0x20;      // bit5
+			WriteFDCControlReg(Value);
 			return;
 		}
 	}
 
-	if ((Address & ~0x7)==0xfc40) {
-		if (IDEDriveEnabled) {
-			IDEWrite((Address & 0x7),Value);
-			return;
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+				if ((Address) == 0xfc30) {  // catch any memory addresses not handled at this stage. temporary
 		}
 	}
 
-	Music5000Write(Address, Value);
-
-	if ((Address & ~0x3)==0xfdf0) {
-		SASIWrite((Address & 0x3),Value);
-		return;
-	}
-
-	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
-		mainWin->SetDriveControl(Value);
-	}
-	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr + 4) && !NativeFDC) {
-		Write1770Register(Address-EFDCAddr,Value);
-	}
 }
 
 bool ReadRomInfo(int bank, RomInfo* info)
@@ -1175,7 +1409,6 @@ void BeebReadRoms(void) {
 		// Clear ROMs
 		RomWritable[0] = false;
 		RomWritable[1] = false;
-
 
 		// Read OS ROM
 		RomName = RomConfig[static_cast<int>(MachineType)][0];

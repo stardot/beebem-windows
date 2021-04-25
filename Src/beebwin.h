@@ -86,6 +86,8 @@ struct LEDType {
 	bool HDisc[4];
 	bool ShowDisc;
 	bool ShowKB;
+	bool MODE;        // Model LED on the Filestore
+	bool ShowFS;
 };
 extern struct LEDType LEDs;
 

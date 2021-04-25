@@ -81,6 +81,7 @@ static const char *CFG_TUBE_TYPE = "TubeType";
 #define LED_SHOW_DISC (LEDByte&2)>>1
 
 extern unsigned char CMOSDefault[64];
+extern unsigned char CMOSDefaultFS[64];
 
 void BeebWin::LoadPreferences()
 {
@@ -534,8 +535,15 @@ void BeebWin::LoadPreferences()
 	}
 
 	// CMOS RAM now in prefs file
-	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[14], 50))
+	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[14], 50)) {
 		memcpy(&CMOSRAM[14], CMOSDefault, 50);
+	}
+
+	if (!m_Preferences.GetBinaryValue("CMOSRamFS", &CMOSRAMFS[14], 50)) {
+		memcpy(&CMOSRAMFS[14], CMOSDefaultFS, 50);
+	}
+
+	MachineType = Model::B;
 
 	// Set FDC defaults if not already set
 	for (int machine = 0; machine < 3; ++machine)
@@ -642,7 +650,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
-		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIdSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
@@ -734,6 +742,7 @@ void BeebWin::SavePreferences(bool saveAll)
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
 		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[14], 50);
+		m_Preferences.SetBinaryValue("CMOSRamFS", &CMOSRAMFS[14], 50);
 	}
 
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);

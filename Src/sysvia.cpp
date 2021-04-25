@@ -665,14 +665,25 @@ unsigned char BCDToBin(unsigned char BCD) {
 }
 /*-------------------------------------------------------------------------*/
 time_t CMOSConvertClock(void) {
-	time_t tim;
+
+    unsigned char* pCMOS;
+
+    time_t tim;
 	struct tm Base;
-	Base.tm_sec = BCDToBin(CMOSRAM[0]);
-	Base.tm_min = BCDToBin(CMOSRAM[2]);
-	Base.tm_hour = BCDToBin(CMOSRAM[4]);
-	Base.tm_mday = BCDToBin(CMOSRAM[7]);
-	Base.tm_mon = BCDToBin(CMOSRAM[8])-1;
-	Base.tm_year = BCDToBin(CMOSRAM[9]);
+
+    
+    // switch to either BBC Master CMOS or Filestore CMOS
+    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
+    else
+        pCMOS = &CMOSRAM[0];       // pointer to Master 128 CMOS
+
+    Base.tm_sec = BCDToBin(pCMOS[0]);
+	Base.tm_min = BCDToBin(pCMOS[2]);
+	Base.tm_hour = BCDToBin(pCMOS[4]);
+	Base.tm_mday = BCDToBin(pCMOS[7]);
+	Base.tm_mon = BCDToBin(pCMOS[8])-1;
+	Base.tm_year = BCDToBin(pCMOS[9]);
 	Base.tm_wday = -1;
 	Base.tm_yday = -1;
 	Base.tm_isdst = -1;
@@ -681,42 +692,72 @@ time_t CMOSConvertClock(void) {
 }
 /*-------------------------------------------------------------------------*/
 void RTCInit(void) {
-	struct tm *CurTime;
+
+    unsigned char* pCMOS;
+
+    struct tm *CurTime;
 	time( &SysTime );
 	CurTime = localtime( &SysTime );
-	CMOSRAM[0] = BCD(CurTime->tm_sec);
-	CMOSRAM[2] = BCD(CurTime->tm_min);
-	CMOSRAM[4] = BCD(CurTime->tm_hour);
-	CMOSRAM[6] = BCD((CurTime->tm_wday)+1);
-	CMOSRAM[7] = BCD(CurTime->tm_mday);
-	CMOSRAM[8] = BCD((CurTime->tm_mon)+1);
-	CMOSRAM[9] = BCD((CurTime->tm_year)-(RTCY2KAdjust ? 20 : 0));
+
+    // switch to either BBC Master CMOS or Filestore CMOS
+    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
+    else
+        pCMOS = &CMOSRAM[0];      // pointer to Master 128 CMOS
+
+    pCMOS[0] = BCD(CurTime->tm_sec);
+    pCMOS[2] = BCD(CurTime->tm_min);
+    pCMOS[4] = BCD(CurTime->tm_hour);
+    pCMOS[6] = BCD((CurTime->tm_wday)+1);
+    pCMOS[7] = BCD(CurTime->tm_mday);
+    pCMOS[8] = BCD((CurTime->tm_mon)+1);
+    pCMOS[9] = BCD((CurTime->tm_year)-(RTCY2KAdjust ? 20 : 0));
 	RTCTimeOffset = SysTime - CMOSConvertClock();
 }
 /*-------------------------------------------------------------------------*/
 void RTCUpdate(void) {
+
+    unsigned char* pCMOS;
+
 	struct tm *CurTime;
 	time( &SysTime );
 	SysTime -= RTCTimeOffset;
 	CurTime = localtime( &SysTime );
-	CMOSRAM[0] = BCD(CurTime->tm_sec);
-	CMOSRAM[2] = BCD(CurTime->tm_min);
-	CMOSRAM[4] = BCD(CurTime->tm_hour);
-	CMOSRAM[6] = BCD((CurTime->tm_wday)+1);
-	CMOSRAM[7] = BCD(CurTime->tm_mday);
-	CMOSRAM[8] = BCD((CurTime->tm_mon)+1);
-	CMOSRAM[9] = BCD(CurTime->tm_year);
+
+    // switch to either BBC Master CMOS or Filestore CMOS
+    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
+    else
+        pCMOS = &CMOSRAM[0];       // pointer to Master 128 CMOS
+
+    pCMOS[0] = BCD(CurTime->tm_sec);
+    pCMOS[2] = BCD(CurTime->tm_min);
+    pCMOS[4] = BCD(CurTime->tm_hour);
+    pCMOS[6] = BCD((CurTime->tm_wday)+1);
+    pCMOS[7] = BCD(CurTime->tm_mday);
+    pCMOS[8] = BCD((CurTime->tm_mon)+1);
+    pCMOS[9] = BCD(CurTime->tm_year);
 }
 /*-------------------------------------------------------------------------*/
 void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
 	// Many thanks to Tom Lees for supplying me with info on the 146818 registers 
 	// for these two functions.
+
+    unsigned char* pCMOS;
+
+    // switch to either BBC Master CMOS or Filestore CMOS
+    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
+    else
+        pCMOS = &CMOSRAM[0];       // pointer to Master 128 CMOS
+
+                                   
 	if (CMOSAddr>0xd) {
-		CMOSRAM[CMOSAddr]=CMOSData;
+		pCMOS[CMOSAddr]=CMOSData;
 	}
 	else if (CMOSAddr==0xa) {
 		// Control register A
-		CMOSRAM[CMOSAddr]=CMOSData & 0x7f; // Top bit not writable
+		pCMOS[CMOSAddr]=CMOSData & 0x7f; // Top bit not writable
 	}
 	else if (CMOSAddr==0xb) {
 		// Control register B
@@ -729,7 +770,7 @@ void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
 			time(&SysTime);
 			RTCTimeOffset = SysTime - CMOSConvertClock();
 		}
-		CMOSRAM[CMOSAddr]=CMOSData;
+		pCMOS[CMOSAddr]=CMOSData;
 	}
 	else if (CMOSAddr==0xc) {
 		// Control register C - read only
@@ -739,18 +780,44 @@ void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
 	}
 	else {
 		// Clock registers
-		CMOSRAM[CMOSAddr]=CMOSData;
+		pCMOS[CMOSAddr]=CMOSData;
 	}
+
+
 }
+
 
 /*-------------------------------------------------------------------------*/
 unsigned char CMOSRead(unsigned char CMOSAddr) {
 	// 0x0 to 0x9 - Clock
 	// 0xa to 0xd - Regs
 	// 0xe to 0x3f - RAM
-	if (CMOSAddr<0xa)
-		RTCUpdate();
-	return(CMOSRAM[CMOSAddr]);
+
+    struct tm* CurTime;
+    time(&SysTime);
+    SysTime -= RTCTimeOffset;
+    CurTime = localtime(&SysTime);
+
+    if (CMOSAddr < 0xa) // update the clock
+        RTCUpdate();
+
+    
+    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
+        // Filestore CMOS interrupt check - simulate as every second
+        if (CMOSAddr == 0xc) { // interrupt check
+            if (CMOSRAMFS[0] == BCD(CurTime->tm_sec))
+                return (0x00); // no interrupt
+            return (0x90);     // UIE interrupt
+        }
+
+        // otherwise no 0x0C return the byte from the Filestore CMOS address
+        return(CMOSRAMFS[CMOSAddr]);
+        
+    }
+    else // not filestore
+        return(CMOSRAM[CMOSAddr]);
+
 }
 
 /*--------------------------------------------------------------------------*/

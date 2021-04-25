@@ -543,38 +543,49 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	BeebMemInit(LoadRoms, m_ShiftBooted);
 	Init6502core();
 
-	if (TubeType == Tube::Acorn65C02)
-	{
-		Init65C02core();
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
 	}
-	else if (TubeType == Tube::Master512CoPro)
-	{
-		master512CoPro.Reset();
-	}
-	else if (TubeType == Tube::TorchZ80 || TubeType == Tube::AcornZ80)
-	{
-		R1Status = 0;
-		ResetTube();
-		init_z80();
-	}
-	else if (TubeType == Tube::AcornArm)
-	{
-		R1Status = 0;
-		ResetTube();
-		DestroyArmCoPro();
-		CreateArmCoPro();
-	}
-	else if (TubeType == Tube::SprowArm)
-	{
-		R1Status = 0;
-		ResetTube();
-		DestroySprowCoPro();
-		CreateSprowCoPro();
+	else {
+		if (TubeType == Tube::Acorn65C02)
+		{
+			Init65C02core();
+		}
+		else if (TubeType == Tube::Master512CoPro)
+		{
+			master512CoPro.Reset();
+		}
+		else if (TubeType == Tube::TorchZ80 || TubeType == Tube::AcornZ80)
+		{
+			R1Status = 0;
+			ResetTube();
+			init_z80();
+		}
+		else if (TubeType == Tube::AcornArm)
+		{
+			R1Status = 0;
+			ResetTube();
+			DestroyArmCoPro();
+			CreateArmCoPro();
+		}
+		else if (TubeType == Tube::SprowArm)
+		{
+			R1Status = 0;
+			ResetTube();
+			DestroySprowCoPro();
+			CreateSprowCoPro();
+		}
+
+		SysVIAReset();
 	}
 
-	SysVIAReset();
 	UserVIAReset();
-	VideoInit();
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	}
+	else {
+		VideoInit();
+	}
+
 	SetDiscWriteProtects();
 	Disc8271Reset();
 	if (EconetEnabled) EconetReset();	//Rob:
@@ -1162,6 +1173,7 @@ void BeebWin::UpdateModelMenu()
 	// disable menu items that are not needed for filestore hardware
 	bool b_Filestore_disable = !(MachineType == Model::FileStoreE01) 
 		                     || (MachineType == Model::FileStoreE01S);
+	
 	// File
 	EnableMenuItem(ID_LOADTAPE, b_Filestore_disable);
 	// < screen capture pop up

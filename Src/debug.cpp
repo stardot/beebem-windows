@@ -976,7 +976,9 @@ static const InstInfo optable_65sc12[256] =
 static const InstInfo* GetOpcodeTable(bool host)
 {
 	if (host) {
-		if (MachineType == Model::Master128) {
+		if ((MachineType == Model::Master128) ||
+		    (MachineType == Model::FileStoreE01) ||
+		    (MachineType == Model::FileStoreE01S)) {
 			return optable_65sc12;
 		}
 		else {

@@ -54,6 +54,7 @@ extern unsigned char PagedRomReg;
 extern unsigned char FSRam[8192]; // 8K Filing System RAM
 extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
 extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
+extern unsigned char CMOSRAMFS[64]; // 50 Bytes CMOS RAM for FileStore
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
 extern bool MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8;
@@ -92,6 +93,18 @@ typedef struct RomInfo {
 	char Copyright[256];
 	int RelocationAddr;
 } RomInfo;
+
+/* used to represent the state of the FileStore per location 0xFC08 */
+struct FS_State {
+	bool Floppy0;
+	bool Floppy1;
+	bool FloppySide;
+	bool CMOS_Write;
+	bool FDCDEN;
+	bool FDCRST;
+	bool FDCTST;
+	bool MODE_LED;
+};
 
 extern struct CMOSType CMOS;
 extern bool Sh_Display;
