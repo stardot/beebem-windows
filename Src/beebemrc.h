@@ -97,6 +97,7 @@ Boston, MA  02110-1301, USA.
 #define IDK_BACKSLASH                   81
 #define IDK_UNDERSCORE                  82
 #define IDK_CARET                       83
+#define IDR_FSMENU						100
 #define IDR_MENU                        101
 #define IDI_BEEBEM                      102
 #define IDD_USERKYBRD                   103
@@ -282,7 +283,9 @@ Boston, MA  02110-1301, USA.
 #define ID_MASTER128                    40107
 #define ID_FILESTORE_E01                40108
 #define ID_FILESTORE_E01S               40109
-#define ID_LOADTAPE                     40110
+#define IDM_OPEN_DRIVE_DOOR             40110
+#define IDM_COMMAND_MODE                40111
+#define ID_LOADTAPE                     40115
 #define ID_REWINDTAPE                   40116
 #define ID_SFX_RELAY                    40117
 #define IDM_TUBE_NONE                   40118

@@ -390,6 +390,9 @@ BEGIN
             MENUITEM "Protect on Load",             IDM_WPONLOAD
         END
         MENUITEM SEPARATOR
+        MENUITEM "Filestore Door Open"              IDM_OPEN_DRIVE_DOOR       // Filestore E01/E01S
+        MENUITEM "Command Mode"                 IDM_COMMAND_MODE          // Filestore E01 only
+        MENUITEM SEPARATOR
         MENUITEM "R&eset",                      ID_FILE_RESET
         MENUITEM SEPARATOR
         MENUITEM "&Load State...",              IDM_LOADSTATE
@@ -653,7 +656,7 @@ BEGIN
             MENUITEM "Filestore E01",               ID_FILESTORE_E01
             MENUITEM "Filestore E01S",              ID_FILESTORE_E01S
         END
-        POPUP "Model B &Floppy Controller"
+        POPUP "&Floppy Controller"
         BEGIN
             MENUITEM "Native &8271",                ID_8271
             MENUITEM "&Select FDC Board...",        ID_FDC_DLL
@@ -753,6 +756,182 @@ BEGIN
         MENUITEM "&About BeebEm",               IDM_ABOUT
     END
 END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// FileStore Menu
+//
+
+IDR_FSMENU MENU
+BEGIN
+    POPUP "&File"
+    BEGIN // FILE
+        MENUITEM "Load Disc &4...", IDM_LOADDISC0
+        MENUITEM "Load Disc &5...", IDM_LOADDISC1
+        MENUITEM SEPARATOR
+        POPUP "Disc Options"
+            BEGIN
+                MENUITEM "New Disc 4...", IDM_NEWDISC0
+                MENUITEM "New Disc 5...", IDM_NEWDISC1
+                MENUITEM "Eject Disc 4", IDM_EJECTDISC0
+                MENUITEM "Eject Disc 5", IDM_EJECTDISC1
+                MENUITEM "Write Protect 4", IDM_WPDISC0
+                MENUITEM "Write Protect 5", IDM_WPDISC1
+                MENUITEM "Protect on Load", IDM_WPONLOAD
+            END
+        MENUITEM SEPARATOR
+        MENUITEM "Filestore Door Open"              IDM_OPEN_DRIVE_DOOR       // Filestore E01/E01S
+        MENUITEM "Command Mode"                 IDM_COMMAND_MODE          // Filestore E01 only
+        MENUITEM SEPARATOR
+        MENUITEM "R&eset", ID_FILE_RESET
+        MENUITEM SEPARATOR
+        MENUITEM "&Load State...", IDM_LOADSTATE
+        MENUITEM "&Save State...", IDM_SAVESTATE
+        MENUITEM "&Quick Load", IDM_QUICKLOAD
+        MENUITEM "Quick Sa&ve", IDM_QUICKSAVE
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit", IDM_EXIT
+    END // FILE
+    POPUP "&Edit"
+    BEGIN // EDIT
+        POPUP "Import Files to Disc"
+        BEGIN
+            MENUITEM "Disc 0...", IDM_DISC_IMPORT_0
+            MENUITEM "Disc 1...", IDM_DISC_IMPORT_1
+            MENUITEM "Disc 2...", IDM_DISC_IMPORT_2
+            MENUITEM "Disc 3...", IDM_DISC_IMPORT_3
+        END
+        POPUP "Export Files from Disc"
+        BEGIN
+            MENUITEM "Disc 0...", IDM_DISC_EXPORT_0
+            MENUITEM "Disc 1...", IDM_DISC_EXPORT_1
+            MENUITEM "Disc 2...", IDM_DISC_EXPORT_2
+            MENUITEM "Disc 3...", IDM_DISC_EXPORT_3
+        END
+    END // EDIT
+    POPUP "&Comms"
+    BEGIN // COMMMS
+        MENUITEM "&Printer On/Off", IDM_PRINTERONOFF
+        POPUP "Printer &Destination"
+        BEGIN
+            MENUITEM "File...", IDM_PRINTER_FILE
+            MENUITEM "Clipboard", IDM_PRINTER_CLIPBOARD
+            MENUITEM "LPT1:", IDM_PRINTER_LPT1
+            MENUITEM "LPT2:", IDM_PRINTER_LPT2
+            MENUITEM "LPT3:", IDM_PRINTER_LPT3
+            MENUITEM "LPT4:", IDM_PRINTER_LPT4
+        END
+    END // COMMS
+    POPUP "&View"
+    BEGIN
+    MENUITEM "&Speed and FPS On/Off", IDM_SPEEDANDFPS
+    MENUITEM SEPARATOR
+    MENUITEM "&Full Screen", IDM_FULLSCREEN
+    MENUITEM "Maintain Aspect Ratio in Full Screen", IDM_MAINTAINASPECTRATIO
+    POPUP "Window Sizes"
+        BEGIN
+        MENUITEM "320x256", IDM_320X256
+        MENUITEM "640x512", IDM_640X512
+        MENUITEM "800x600", IDM_800X600
+        MENUITEM "1024x512", IDM_1024X512
+        MENUITEM "1024x768", IDM_1024X768
+        MENUITEM "1280x1024", IDM_1280X1024
+        MENUITEM "1440x1080", IDM_1440X1080
+        MENUITEM "1600x1200", IDM_1600X1200
+        END
+    POPUP "DirectX Full Screen Modes"
+        BEGIN
+        MENUITEM "Current Screen Resolution", ID_VIEW_DD_SCREENRES
+        MENUITEM "640x480", ID_VIEW_DD_640X480
+        MENUITEM "720x576", ID_VIEW_DD_720X576
+        MENUITEM "800x600", ID_VIEW_DD_800X600
+        MENUITEM "1024x768", ID_VIEW_DD_1024X768
+        MENUITEM "1280x720 (720p)", ID_VIEW_DD_1280X720
+        MENUITEM "1280x768", ID_VIEW_DD_1280X768
+        MENUITEM "1280x960", ID_VIEW_DD_1280X960
+        MENUITEM "1280x1024", ID_VIEW_DD_1280X1024
+        MENUITEM "1440x900", ID_VIEW_DD_1440X900
+        MENUITEM "1600x1200", ID_VIEW_DD_1600X1200
+        MENUITEM "1920x1080 (1080p)", ID_VIEW_DD_1920X1080
+        MENUITEM "2560x1440", ID_VIEW_DD_2560X1440
+        MENUITEM "3840x2160 (4K)", ID_VIEW_DD_3840X2160
+        END
+    POPUP "&LEDs"
+        BEGIN
+        MENUITEM "&Red Disc LEDs", ID_RED_LEDS
+        MENUITEM "&Green Disc LEDs", ID_GREEN_LEDS
+        MENUITEM SEPARATOR
+        MENUITEM "Show &MODE LED", ID_SHOW_KBLEDS
+        MENUITEM "Show &Disc LEDs", ID_SHOW_DISCLEDS
+        END
+    END // VIEW
+    POPUP "S&peed"
+    BEGIN
+    MENUITEM "&Real Time", IDM_REALTIME
+    POPUP "&Fixed Speed"
+        BEGIN
+        MENUITEM "100", IDM_FIXEDSPEED100
+        MENUITEM "50", IDM_FIXEDSPEED50
+        MENUITEM "10", IDM_FIXEDSPEED10
+        MENUITEM "5", IDM_FIXEDSPEED5
+        MENUITEM "2", IDM_FIXEDSPEED2
+        MENUITEM "1.5", IDM_FIXEDSPEED1_5
+        MENUITEM "1.25", IDM_FIXEDSPEED1_25
+        MENUITEM "1.1", IDM_FIXEDSPEED1_1
+        MENUITEM "0.9", IDM_FIXEDSPEED0_9
+        MENUITEM "0.75", IDM_FIXEDSPEED0_75
+        MENUITEM "0.5", IDM_FIXEDSPEED0_5
+        MENUITEM "0.25", IDM_FIXEDSPEED0_25
+        MENUITEM "0.1", IDM_FIXEDSPEED0_1
+        END
+    MENUITEM SEPARATOR
+    MENUITEM "50 FPS", IDM_50FPS
+    MENUITEM "25 FPS", IDM_25FPS
+    MENUITEM "10 FPS", IDM_10FPS
+    MENUITEM "5 FPS", IDM_5FPS
+    MENUITEM "1 FPS", IDM_1FPS
+    MENUITEM SEPARATOR
+    MENUITEM "&Pause Emulation", IDM_EMUPAUSED
+    END // Speed
+    POPUP "Hard&ware"
+    BEGIN
+    POPUP "&BBC Model"
+        BEGIN
+        MENUITEM "BBC Model &B", ID_MODELB, CHECKED
+        MENUITEM "BBC Model B + &Integra-B", ID_MODELBINT
+        MENUITEM "BBC Model B &Plus", ID_MODELBPLUS
+        MENUITEM "BBC &Master 128", ID_MASTER128
+        MENUITEM SEPARATOR
+        MENUITEM "Filestore E01", ID_FILESTORE_E01
+        MENUITEM "Filestore E01S", ID_FILESTORE_E01S
+        END
+    MENUITEM SEPARATOR
+    MENUITEM "Econet On/Off", ID_ECONET
+    MENUITEM "Floppy Drive On/Off", ID_FLOPPYDRIVE
+    MENUITEM "SCSI Hard Drive On/Off", ID_HARDDRIVE
+    MENUITEM "RTC Y2K Adjust", ID_RTCY2KADJUST
+    END // Hardware
+    POPUP "&Options"
+    BEGIN
+    MENUITEM "&Freeze when inactive", IDM_FREEZEINACTIVE
+    MENUITEM SEPARATOR
+    MENUITEM "Debu&gger", IDM_SHOWDEBUGGER
+    MENUITEM SEPARATOR
+    MENUITEM "&Save Preferences", IDM_SAVE_PREFS
+    POPUP "Preference Options"
+        BEGIN
+        MENUITEM "Autosave CMOS RAM", IDM_AUTOSAVE_PREFS_CMOS
+        MENUITEM "Autosave All Prefs", IDM_AUTOSAVE_PREFS_ALL
+        MENUITEM "Save Disc/Tape/State Folders", IDM_AUTOSAVE_PREFS_FOLDERS
+        MENUITEM "Select User Data Folder...", IDM_SELECT_USER_DATA_FOLDER
+        END
+    END // Options
+    POPUP "&Help"
+    BEGIN
+    MENUITEM "View &Help", IDM_VIEWREADME
+    MENUITEM "&About BeebEm", IDM_ABOUT
+    END // Help
+END // FSMenu
 
 
 #ifdef APSTUDIO_INVOKED

@@ -42,6 +42,9 @@ enum class BankType
 	Empty
 };
 
+extern bool	FS_DoorStatus;
+extern bool FS_CMDMode;
+
 extern bool RomWritable[16]; // Allow writing to banks on an individual basis
 extern BankType RomBankType[16]; // Identifies what is in each bank
 
@@ -94,8 +97,9 @@ typedef struct RomInfo {
 	int RelocationAddr;
 } RomInfo;
 
-/* used to represent the state of the FileStore per location 0xFC08 */
+/* used to represent the state of the FileStore */
 struct FS_State {
+	// location 0xFC08 
 	bool Floppy0;
 	bool Floppy1;
 	bool FloppySide;
@@ -104,6 +108,9 @@ struct FS_State {
 	bool FDCRST;
 	bool FDCTST;
 	bool MODE_LED;
+	// and location 0xFC2C
+	bool DriveDoor; //0 closed - 1 Open
+	bool CMD_Mode;  //0 off - 1 on
 };
 
 extern struct CMOSType CMOS;

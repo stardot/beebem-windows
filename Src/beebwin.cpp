@@ -48,6 +48,7 @@ Boston, MA  02110-1301, USA.
 
 #include "main.h"
 #include "beebwin.h"
+#include "beebmem.h"
 #include "port.h"
 #include "6502core.h"
 #include "disc8271.h"
@@ -58,7 +59,6 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "SoundStreamer.h"
 #include "music5000.h"
-#include "beebmem.h"
 #include "beebemrc.h"
 #include "atodconv.h"
 #include "userkybd.h"
@@ -234,6 +234,9 @@ BeebWin::BeebWin()
 	m_WriteInstructionCounts = false;
 	m_CaptureMouse = false;
 	m_MouseCaptured = false;
+
+	FS_DoorStatus = false;
+	FS_CMDMode = false;
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -929,6 +932,10 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(m_MenuIdCaptureResolution, true);
 	CheckMenuItem(m_MenuIdCaptureFormat, true);
 
+	// File -> Filestore
+	CheckMenuItem(IDM_OPEN_DRIVE_DOOR, FS_DoorStatus);
+	CheckMenuItem(IDM_COMMAND_MODE, FS_CMDMode);
+
 	// Edit
 	CheckMenuItem(IDM_EDIT_CRLF, m_translateCRLF);
 
@@ -1158,23 +1165,35 @@ void BeebWin::UpdateModelMenu()
 	CheckMenuRadioItem(
 		m_hMenu,
 		ID_MODELB,
-		ID_FILESTORE_E01,
+		ID_FILESTORE_E01S,
 		SelectedMenuItem,
 		MF_BYCOMMAND
 	);
 
 	if (MachineType == Model::Master128) {
 		EnableMenuItem(ID_FDC_DLL, false);
+		ModifyMenu(m_hMenu, ID_8271, MF_BYCOMMAND, ID_8271, "Native &1770");
+	}
+	else if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		EnableMenuItem(ID_FDC_DLL, false);
+		ModifyMenu(m_hMenu, ID_8271, MF_BYCOMMAND, ID_8271, "Native &2793");
 	}
 	else {
 		EnableMenuItem(ID_FDC_DLL, true);
+		ModifyMenu(m_hMenu, ID_8271, MF_BYCOMMAND, ID_8271, "Native &8271");
 	}
+	CheckMenuItem(ID_8271, true);
+
+
+	// disable menu items that are needed/not needed for filestore hardware
+	bool b_Filestore_disable = !((MachineType == Model::FileStoreE01) 
+		                     || (MachineType == Model::FileStoreE01S));
 	
-	// disable menu items that are not needed for filestore hardware
-	bool b_Filestore_disable = !(MachineType == Model::FileStoreE01) 
-		                     || (MachineType == Model::FileStoreE01S);
-	
+
 	// File
+	EnableMenuItem(ID_LOADTAPE, b_Filestore_disable);
+	EnableMenuItem(IDM_OPEN_DRIVE_DOOR, !b_Filestore_disable);
+	EnableMenuItem(IDM_COMMAND_MODE, (MachineType == Model::FileStoreE01)); // Filestore E01 only not E01S
 	EnableMenuItem(ID_LOADTAPE, b_Filestore_disable);
 	// < screen capture pop up
 	EnableMenuItem(IDM_CAPTURESCREEN, b_Filestore_disable);
@@ -2831,6 +2850,16 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_WPONLOAD:
 		m_WriteProtectOnLoad = !m_WriteProtectOnLoad;
 		CheckMenuItem(IDM_WPONLOAD, m_WriteProtectOnLoad);
+		break;
+
+	case IDM_OPEN_DRIVE_DOOR: // open & close the FileStore drive door
+		FS_DoorStatus = !FS_DoorStatus;
+		CheckMenuItem(IDM_OPEN_DRIVE_DOOR, FS_DoorStatus);
+		break;
+	
+	case IDM_COMMAND_MODE: // Set command mode on the E01
+		FS_CMDMode = !FS_CMDMode;
+		CheckMenuItem(IDM_COMMAND_MODE, FS_CMDMode);
 		break;
 
 	case IDM_EDIT_COPY:
@@ -4873,7 +4902,9 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 
 		case 'A':
 		case 'a':
-			if (MachineType == Model::Master128 || !NativeFDC) {
+			if ((MachineType == Model::Master128 || !NativeFDC) || 
+				(MachineType == Model::FileStoreE01) ||
+				(MachineType == Model::FileStoreE01S)) {
 				Load1770DiscImage(Name, DriveNum, DiscType::ADFS);
 			}
 			else {

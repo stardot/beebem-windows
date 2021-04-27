@@ -208,7 +208,9 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		}
 
 		// Another Master 128 Update, brought to you by Richard Gellman
-		if (MachineType != Model::Master128)
+		if ((MachineType != Model::Master128) && 
+			(MachineType != Model::FileStoreE01) && 
+			(MachineType != Model::FileStoreE01S))
 		{
 			if (dsd)
 			{
@@ -234,7 +236,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		}
 		else
 		{
-			// Master 128
+			// Master 128 or Filestore
 			if (dsd)
 				Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
@@ -1474,7 +1476,9 @@ void BeebWin::ExportDiscFiles(int menuId)
 	else
 		drive = 1;
 
-	if (MachineType != Model::Master128 && NativeFDC)
+	if ((MachineType != Model::Master128 && NativeFDC) && 
+		(MachineType != Model::FileStoreE01) &&
+		(MachineType != Model::FileStoreE01S))
 	{
 		// 8271 controller
 		Get8271DiscInfo(drive, szDiscFile, &heads);
@@ -1574,7 +1578,9 @@ void BeebWin::ImportDiscFiles(int menuId)
 	else
 		drive = 1;
 
-	if (MachineType != Model::Master128 && NativeFDC)
+	if ((MachineType != Model::Master128 && NativeFDC) &&
+		(MachineType != Model::FileStoreE01) &&
+		(MachineType != Model::FileStoreE01S))
 	{
 		// 8271 controller
 		Get8271DiscInfo(drive, szDiscFile, &heads);
@@ -1688,7 +1694,9 @@ void BeebWin::ImportDiscFiles(int menuId)
 	Report(MessageType::Info, "Files successfully imported: %d", n);
 
 	// Re-read disc image
-	if (MachineType != Model::Master128 && NativeFDC)
+	if ((MachineType != Model::Master128 && NativeFDC) &&
+		(MachineType != Model::FileStoreE01) &&
+		(MachineType != Model::FileStoreE01S))
 	{
 		// 8271 controller
 		Eject8271DiscImage(drive);

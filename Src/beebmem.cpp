@@ -118,7 +118,7 @@ unsigned char FSRam[8192];       // 8K Filing System RAM
 unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
 unsigned char CMOSRAM[64];       // 50 Bytes CMOS RAM
 unsigned char CMOSRAMFS[64];     // 50 Bytes CMOS RAM for Filestore
-unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2}; // Backup of CMOS Defaults
+unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2}; // Backup of Master 128 CMOS Defaults
 unsigned char CMOSDefaultFS[64] = { 0xFE,0x01,
                                     0x00, 0x00, 0x00, 0x00, 0x04, 0x84, 0x00, 0xC0, 0x02, 0xFF, 0xFF, 0xFF, 0x50, 0x05, 0x50, 0x75,
                                     0x63, 0x65, 0x00, 0x00, 0x53, 0x59, 0x53, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x54,
@@ -128,6 +128,9 @@ unsigned char ShadowRAM[32768];  // 20K Shadow RAM
 unsigned char ACCCON;            // ACCess CONtrol register
 struct CMOSType CMOS;
 struct FS_State FS_Status;
+bool FS_DoorStatus;
+bool FS_CMDMode;
+
 
 bool Sh_Display;
 static bool PRAM, FRAM;
@@ -406,10 +409,25 @@ unsigned char BeebReadMem(int Address) {
 		if (Address == 0xfc08) return (Value);
 
 		/* Front Panel Switch
-		   E01 has a front panel open/close switch on bit 7
-		                       command mode switch on bit 8 */
+		   FileStore has a front panel open/close switch on bit 6. open = 0x40
+		                    E01 only command mode switch on bit 7. on = 0x80  */
 		if (Address == 0xfc2c) {
-			// to do
+			if (FS_DoorStatus) { Value = 0x40; }
+			else { Value = 0x00; }
+
+			if (MachineType == Model::FileStoreE01) {
+				if (FS_CMDMode == false) {
+					Value = Value | 0x80;
+				}
+				else {
+					Value = Value & 0x7f;
+				}
+			}
+			else {
+				Value = Value | 0x80;
+			}
+			return (Value); /* temporary
+
 			return (0x40); /* temporary
 						      0x00=user mode, 0x40 door open, 0x80=cmnd0, 0xC0=cmnd1
 						      only works at the moment if the door is open at start, then
@@ -417,18 +435,14 @@ unsigned char BeebReadMem(int Address) {
 		}
 	}
 
-
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-
 		/* System VIA */
 		if ((Address & ~0xf) == 0xfc10) {
 			SyncIO();
-			Value = UserVIARead(Address & 0xf);  /* uses the USER VIA of the BBC */
+			Value = UserVIARead(Address & 0xf);  // uses the USER VIA of the BBC
 			AdjustForIORead();
 			return Value;
 		}
-
-
 	}
 	else
 	{
@@ -503,7 +517,6 @@ unsigned char BeebReadMem(int Address) {
 		return(Read_Econet_Station());
 	}
 
-
 	if (Address >= 0xfe18 && Address <= 0xfe20 && MachineType == Model::Master128) {
 		return(AtoDRead(Address - 0xfe18));
 	}
@@ -530,7 +543,6 @@ unsigned char BeebReadMem(int Address) {
 		}
 	}
 
-
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
 	}
 	else
@@ -556,8 +568,6 @@ unsigned char BeebReadMem(int Address) {
 		return(Read1770Register(Address));
 	}
 
-
-
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
 	}
 	else
@@ -578,10 +588,7 @@ unsigned char BeebReadMem(int Address) {
 		return Disc8271Read(Address & 0x7);
 	}
 
-
-
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-
 		if (Address >= 0xfc20 && Address <= 0xfc23 && EconetEnabled) {
 				return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
 			return(0xfe); // if not enabled
@@ -598,7 +605,6 @@ unsigned char BeebReadMem(int Address) {
 		if ((Address == 0xfc04) && (CMOS.Enabled == true)) {           /* RTC data register */
 			return(CMOSRead(CMOS.Address));
 		}
-
 	}
 	else
 	{
@@ -660,11 +666,6 @@ unsigned char BeebReadMem(int Address) {
 		if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
 			return(mainWin->GetDriveControl());
 		}
-
-	}
-
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-		return(0xFF); // catch any memory addresses not handled at this stage. Temporary
 	}
 
 	return(0xFF);
@@ -996,6 +997,9 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 		/* System VIA */
 		if ((Address & ~0xf) == 0xfc10) {
+			if (Address == 0xfc1c) Value = Value & 0xF; /* ensure VIA PCR CB2 is not written b4/b5/b6/b7.
+														   on a FileStore this enables the automatic
+														   clock and termination circuit */
 			SyncIO();
 			AdjustForIOWrite();
 			UserVIAWrite((Address & 0xf), Value); /* uses the USER VIA of the BBC */
@@ -1237,11 +1241,6 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			if (FS_Status.FDCDEN) Value & 0x20;      // bit5
 			WriteFDCControlReg(Value);
 			return;
-		}
-	}
-
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-				if ((Address) == 0xfc30) {  // catch any memory addresses not handled at this stage. temporary
 		}
 	}
 
