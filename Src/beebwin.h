@@ -284,6 +284,7 @@ public:
 	void TextViewSpeechSync(void);
 	void TextViewSyncWithBeebCursor(void);
 	void HandleTimer(void);
+	void HandleRTCTimer(void); // Filestore only
 	void doCopy(void);
 	void doPaste(void);
 	void ClearClipboardBuffer();

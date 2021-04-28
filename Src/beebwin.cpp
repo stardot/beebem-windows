@@ -547,6 +547,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	Init6502core();
 
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
 	}
 	else {
 		if (TubeType == Tube::Acorn65C02)
@@ -578,12 +579,13 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 			CreateSprowCoPro();
 		}
 
-		SysVIAReset();
 	}
 
+	SysVIAReset();  // ensure also for FileStore otherwise interrupts are enabled
 	UserVIAReset();
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	if ((MachineType == Model::FileStoreE01) || 
+		(MachineType == Model::FileStoreE01S)) {
 	}
 	else {
 		VideoInit();
@@ -626,6 +628,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
 		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1], 1, CDiscType[1]);
+
 	}
 }
 
@@ -1894,6 +1897,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				mainWin->KillBootDiscTimer();
 				mainWin->DoShiftBreak();
 			}
+			else if (uParam == 3) // Handle timer for Filestore RTC clock every 1/100th sec
+				mainWin->HandleRTCTimer();
 			break;
 
 		case WM_USER_KEYBOARD_DIALOG_CLOSED:
@@ -4211,6 +4216,9 @@ void BeebWin::TogglePause()
 	{
 		KillTimer(m_hWnd, 1);
 		KillTimer(m_hWnd, 2);
+
+		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+			KillTimer(m_hWnd, 3);
 	}
 	else
 	{
@@ -4223,6 +4231,9 @@ void BeebWin::TogglePause()
 		{
 			SetBootDiscTimer();
 		}
+
+		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+			SetTimer(mainWin->m_hWnd, 3, 10, NULL);   // Set the RTC UIE interrupt timer
 	}
 }
 
@@ -4834,6 +4845,7 @@ void BeebWin::SetBootDiscTimer()
 	SetTimer(m_hWnd, 2, m_AutoBootDelay, NULL);
 }
 
+
 void BeebWin::KillBootDiscTimer()
 {
 	m_BootDiscTimerElapsed = true;
@@ -5181,6 +5193,7 @@ void BeebWin::SelectUserDataPath()
 	}
 }
 
+
 /****************************************************************************/
 void BeebWin::HandleTimer()
 {
@@ -5271,6 +5284,21 @@ void BeebWin::HandleTimer()
 		}
 	}
 }
+
+
+
+/****************************************************************************/
+void BeebWin::HandleRTCTimer()
+{
+	/* FileStores use the RTC timer that fires an interrupt every 1/100th second 
+	   It is flagged in UIE Register B and C. 
+	   */
+
+	RTC_IRQF = 0x90; // +SET +UIE
+	// assert IRQ
+	intStatus = 1;
+}
+
 
 /****************************************************************************/
 

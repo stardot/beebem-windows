@@ -109,8 +109,8 @@ struct FS_State {
 	bool FDCTST;
 	bool MODE_LED;
 	// and location 0xFC2C
-	bool DriveDoor; //0 closed - 1 Open
-	bool CMD_Mode;  //0 off - 1 on
+//	bool DriveDoor; //0 closed - 1 Open
+//	bool CMD_Mode;  //0 off - 1 on
 };
 
 extern struct CMOSType CMOS;

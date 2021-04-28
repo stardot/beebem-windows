@@ -131,7 +131,6 @@ struct FS_State FS_Status;
 bool FS_DoorStatus;
 bool FS_CMDMode;
 
-
 bool Sh_Display;
 static bool PRAM, FRAM;
 static bool Sh_CPUX, Sh_CPUE;

@@ -64,6 +64,9 @@ VIAState SysVIAState;
 char WECycles=0;
 char WEState=0;
 
+/* Used for the FileStore RTC interrupt on +UIE */
+unsigned char RTC_IRQF;
+
 /* State of the 8bit latch IC32 - bit 0 is WE for sound gen, B1 is read
    select on speech proc, B2 is write select on speech proc, b4,b5 select
    screen start address offset , b6 is CAPS lock, b7 is shift lock */
@@ -698,6 +701,7 @@ void RTCInit(void) {
     struct tm *CurTime;
 	time( &SysTime );
 	CurTime = localtime( &SysTime );
+    RTC_IRQF = 0x00;  // Register C
 
     // switch to either BBC Master CMOS or Filestore CMOS
     if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
@@ -750,7 +754,6 @@ void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
         pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
     else
         pCMOS = &CMOSRAM[0];       // pointer to Master 128 CMOS
-
                                    
 	if (CMOSAddr>0xd) {
 		pCMOS[CMOSAddr]=CMOSData;
@@ -763,15 +766,29 @@ void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
 		// Control register B
 		// Bit-7 SET - 0=clock running, 1=clock update halted
 		if (CMOSData & 0x80) {
-			RTCUpdate();
+            if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+                // FilesStore - cancel bits -SET -UIE 
+                RTC_IRQF = 0x00;
+            }
+
+            RTCUpdate();
 		}
 		else if ((CMOSRAM[CMOSAddr] & 0x80) && !(CMOSData & 0x80)) {
 			// New clock settings
 			time(&SysTime);
 			RTCTimeOffset = SysTime - CMOSConvertClock();
 		}
-		pCMOS[CMOSAddr]=CMOSData;
-	}
+		
+        // Set RTC Timer +UIE interrupt for the FileStore 1/100th sec
+        if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+            if (CMOSData & 0x10)
+                SetTimer(mainWin->m_hWnd, 3, 10, NULL);   // Set the RTC UIE interrupt timer
+            else
+                KillTimer(mainWin->m_hWnd, 3);
+
+        pCMOS[CMOSAddr]=CMOSData;  // write the value to CMOS anyway
+
+    }
 	else if (CMOSAddr==0xc) {
 		// Control register C - read only
 	}
@@ -804,16 +821,23 @@ unsigned char CMOSRead(unsigned char CMOSAddr) {
     
     if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
 
-        // Filestore CMOS interrupt check - simulate as every second
         if (CMOSAddr == 0xc) { // interrupt check
-            if (CMOSRAMFS[0] == BCD(CurTime->tm_sec))
-                return (0x00); // no interrupt
-            return (0x90);     // UIE interrupt
+
+        // Reading returns the status and causes IRQF to be cleared
+            if (RTC_IRQF == 0x90) {  // +SET +UIE interrupt
+                RTC_IRQF = 0x00;
+                return (0x90);
+            }
+            else {
+                return (0x00);
+            }
+
+        // otherwise not 0x0C,  return the byte from the Filestore CMOS address
+        }
+        else {
+            return(CMOSRAMFS[CMOSAddr]);
         }
 
-        // otherwise no 0x0C return the byte from the Filestore CMOS address
-        return(CMOSRAMFS[CMOSAddr]);
-        
     }
     else // not filestore
         return(CMOSRAM[CMOSAddr]);

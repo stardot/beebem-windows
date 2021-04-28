@@ -33,6 +33,8 @@ extern VIAState SysVIAState;
 extern unsigned char IC32State;
 extern bool RTCY2KAdjust;
 
+extern unsigned char RTC_IRQF;
+
 void SysVIAWrite(int Address, int Value);
 unsigned char SysVIARead(int Address);
 void SysVIAReset(void);
