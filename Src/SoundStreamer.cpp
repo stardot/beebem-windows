@@ -82,7 +82,7 @@ SoundStreamer *CreateSoundStreamer(int samplerate, int bits_per_sample, int chan
 		delete pSoundStreamer;
 		pSoundStreamer= nullptr;
 
-		MessageBox(GETHWND, "Attempt to start sound system failed", "BeebEm", MB_OK | MB_ICONERROR);
+		mainWin->Report(MessageType::Error, "Attempt to start sound system failed");
 
 		return nullptr;
 	}
