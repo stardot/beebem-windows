@@ -3199,7 +3199,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_SOUNDONOFF:
-		if (SoundDefault)
+		if (SoundEnabled)
 		{
 			CheckMenuItem(IDM_SOUNDONOFF, false);
 			SoundReset();
@@ -4054,8 +4054,9 @@ void BeebWin::HandleCommand(int MenuId)
 	}
 }
 
-void BeebWin::SetSoundMenu() {
-	CheckMenuItem(IDM_SOUNDONOFF, SoundEnabled && SoundDefault);
+void BeebWin::SetSoundMenu()
+{
+	CheckMenuItem(IDM_SOUNDONOFF, SoundEnabled);
 	CheckMenuItem(IDM_MUSIC5000, Music5000Enabled);
 }
 

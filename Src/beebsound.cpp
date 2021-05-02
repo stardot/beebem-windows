@@ -78,7 +78,7 @@ const int NUM_SOUND_SAMPLES = sizeof(SoundSamples) / sizeof(SoundSample);
 static bool SoundSamplesLoaded = false;
 
 SoundConfig::Option SoundConfig::Selection;
-bool SoundEnabled = true;
+bool SoundEnabled = false;
 bool RelaySoundEnabled = false;
 bool DiscDriveSoundEnabled = false;
 bool SoundChipEnabled = true;
@@ -86,7 +86,7 @@ bool SoundChipEnabled = true;
 unsigned int SoundSampleRate = DEFAULT_SAMPLE_RATE;
 int SoundVolume = 100; //Percentage
 static int SoundAutoTriggerTime;
-static int SoundBufferSize;
+static int SoundBufferSize = SoundSampleRate / 50;
 
 static double CSC[4] = { 0, 0, 0, 0 };
 static double CSA[4] = { 0, 0, 0, 0 }; // ChangeSamps Adjusts
@@ -371,7 +371,7 @@ void PlayUpTil(double DestTime)
 			if (tmptotal < -127)
 				tmptotal = -127;
 
-			SoundBuf[bufptr] = tmptotal + 128;
+			SoundBuf[bufptr] = (unsigned char)(tmptotal + 128);
 		} /* buffer loop */
 
 		/* Only write data when buffer is full */
@@ -390,7 +390,7 @@ void PlayUpTil(double DestTime)
 				exit(1);
 			}
 #else
-			HRESULT hr = WriteToSoundBuffer(SoundBuf);
+			WriteToSoundBuffer(SoundBuf);
 #endif
 			// buffer swapping no longer needed
 			bufptr=0;
@@ -433,12 +433,16 @@ static double CyclesToSamples(int BeebCycles) {
 
 /****************************************************************************/
 
-static void InitAudioDev() {
-	delete pSoundStreamer;
+static void InitAudioDev()
+{
+	if (pSoundStreamer != nullptr)
+	{
+		delete pSoundStreamer;
+	}
 
 	pSoundStreamer = CreateSoundStreamer(SoundSampleRate, 8, 1);
-	if (!pSoundStreamer)
-		SoundEnabled = false;
+
+	SoundEnabled = pSoundStreamer != nullptr;
 }
 
 void LoadSoundSamples()
@@ -575,11 +579,17 @@ void SetSound(SoundState state)
 
 /****************************************************************************/
 /* Called to disable sound output                                           */
-void SoundReset() {
-	delete pSoundStreamer;
-	pSoundStreamer = nullptr;
+void SoundReset()
+{
+	if (pSoundStreamer != nullptr)
+	{
+		delete pSoundStreamer;
+		pSoundStreamer = nullptr;
+	}
 
 	ClearTrigger(SoundTrigger);
+
+	SoundEnabled = false;
 }
 
 /****************************************************************************/
@@ -587,8 +597,6 @@ void SoundReset() {
 void Sound_RegWrite(int value)
 {
 	unsigned int reg, tone, channel; // may not be tone, why not index volume and tone with the same index?
-
-	if (!SoundEnabled) return;
 
 	if (value & 0x80)
 	{
