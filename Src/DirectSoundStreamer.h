@@ -34,9 +34,10 @@ class DirectSoundStreamer : public SoundStreamer
 		DirectSoundStreamer();
 		virtual ~DirectSoundStreamer();
 
+	public:
 		bool Init(std::size_t rate,
-							std::size_t bits_per_sample,
-							std::size_t channels) override;
+		          std::size_t bits_per_sample,
+		          std::size_t channels) override;
 
 		virtual std::size_t BufferSize() const override;
 

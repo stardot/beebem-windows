@@ -35,9 +35,10 @@ class XAudio2Streamer : public SoundStreamer
 		XAudio2Streamer();
 		virtual ~XAudio2Streamer();
 
+	public:
 		bool Init(std::size_t rate,
-							std::size_t bits_per_sample,
-							std::size_t channels) override;
+		          std::size_t bits_per_sample,
+		          std::size_t channels) override;
 
 		std::size_t BufferSize() const override;
 
