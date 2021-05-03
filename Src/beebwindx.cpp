@@ -929,3 +929,22 @@ void BeebWin::UpdateSmoothing(void)
 		}
 	}
 }
+
+/****************************************************************************/
+
+void BeebWin::DrawBackgroundBitmap(HDC hDC)
+{
+	if (m_DisplayRenderer == IDM_DISPGDI)
+	{
+		HDC hMemDC = CreateCompatibleDC(hDC);
+		HGDIOBJ hPrevBitmap = SelectObject(hMemDC, m_hBackgroundBitmap);
+
+		BITMAP bitmap;
+		GetObject(m_hBackgroundBitmap, sizeof(bitmap), &bitmap);
+
+		BitBlt(hDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, hMemDC, 0, 0, SRCCOPY);
+
+		SelectObject(hMemDC, hPrevBitmap);
+		DeleteDC(hMemDC);
+	}
+}

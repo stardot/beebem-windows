@@ -391,6 +391,7 @@
     <Image Include="..\Help\keyboard.jpg" />
     <Image Include="..\Help\startup.jpg" />
     <Image Include="BeebEm.ico" />
+    <Image Include="cover.bmp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BeebEm.rc" />

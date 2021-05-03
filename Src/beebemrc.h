@@ -109,6 +109,7 @@ Boston, MA  02110-1301, USA.
 #define IDR_ACCELERATORS                115
 #define IDD_ROMCONFIG                   116
 #define IDD_SELECT_KEY                  117
+#define IDB_FILESTORE                   118
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -446,7 +447,7 @@ Boston, MA  02110-1301, USA.
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        118
+#define _APS_NEXT_RESOURCE_VALUE        119
 #define _APS_NEXT_COMMAND_VALUE         40319
 #define _APS_NEXT_CONTROL_VALUE         1090
 #define _APS_NEXT_SYMED_VALUE           101

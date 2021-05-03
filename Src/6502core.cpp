@@ -3131,7 +3131,11 @@ static void PollHardware(unsigned int nCycles)
 			WrapTubeCycles();
 	}
 
-	VideoPoll(nCycles);
+	if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S)
+	{
+		VideoPoll(nCycles);
+	}
+
 	if (!BasicHardwareOnly) {
 		AtoD_poll(nCycles);
 		Serial_Poll();

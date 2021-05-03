@@ -505,6 +505,9 @@
     <Image Include="..\Help\startup.jpg">
       <Filter>Help Files</Filter>
     </Image>
+    <Image Include="cover.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BeebEm.rc">
