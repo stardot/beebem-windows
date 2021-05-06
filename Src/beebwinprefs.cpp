@@ -326,7 +326,7 @@ void BeebWin::LoadPreferences()
 		m_MenuIdAMXAdjust = IDM_AMX_ADJUSTP30;
 	TranslateAMX();
 
-	if (m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
+	if (!m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
 		PrinterEnabled = false;
 	if (m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, dword))
 		m_MenuIdPrinterPort = dword;
