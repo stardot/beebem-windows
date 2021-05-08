@@ -576,7 +576,8 @@ private:
 		RGB,
 		BW,
 		Amber,
-		Green
+		Green,
+		Last
 	};
 
 	PaletteType m_PaletteType;

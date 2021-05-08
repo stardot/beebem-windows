@@ -110,11 +110,17 @@ void BeebWin::LoadPreferences()
 	m_Preferences.EraseValue("Volume");
 	m_Preferences.EraseValue("UsePrimaryBuffer");
 
+	MachineType = Model::B;
+
 	unsigned char type = 0;
-	if (!m_Preferences.GetBinaryValue(CFG_MACHINE_TYPE, &type, 1))
-		MachineType = Model::B;
-	else
-		MachineType = static_cast<Model>(type);
+
+	if (m_Preferences.GetBinaryValue(CFG_MACHINE_TYPE, &type, 1))
+	{
+		if (type < static_cast<unsigned char>(Model::Last))
+		{
+			MachineType = static_cast<Model>(type);
+		}
+	}
 
 	if (!m_Preferences.GetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad))
 		m_WriteProtectOnLoad = true;
@@ -163,10 +169,15 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS))
 		m_ShowSpeedAndFPS = true;
 
+	m_PaletteType = PaletteType::RGB;
+
 	if (m_Preferences.GetBinaryValue(CFG_VIEW_MONITOR, &flag, 1))
-		m_PaletteType = static_cast<PaletteType>(flag);
-	else
-		m_PaletteType = PaletteType::RGB;
+	{
+		if (flag < static_cast<unsigned char>(PaletteType::Last))
+		{
+			m_PaletteType = static_cast<PaletteType>(flag);
+		}
+	}
 
 	if (!m_Preferences.GetBoolValue("HideMenuEnabled", m_HideMenuEnabled))
 		m_HideMenuEnabled = false;
