@@ -662,6 +662,41 @@ BEGIN
         MENUITEM "Adjust -30%",                 IDM_AMX_ADJUSTM30
         MENUITEM "Adjust -50%",                 IDM_AMX_ADJUSTM50
     END
+    POPUP "&Joysticks"
+    BEGIN
+        POPUP "Primary Joystick"
+        BEGIN
+            MENUITEM "First PC &Joystick",              IDM_JOYSTICK
+            MENUITEM "Second PC Joystick",              IDM_JOY1_PCJOY2
+            MENUITEM "&Analogue Mousestick",            IDM_ANALOGUE_MOUSESTICK
+            MENUITEM "&Digital Mousestick",             IDM_DIGITAL_MOUSESTICK
+            MENUITEM SEPARATOR
+            MENUITEM "Primary Stick",                   IDM_JOY1_PRIMARY
+            MENUITEM "Right Thumbstick",                IDM_JOY1_SECONDARY1
+        END
+        POPUP "Secondary Joystick"
+        BEGIN
+            MENUITEM "First PC &Joystick",              IDM_JOY2_PCJOY1
+            MENUITEM "Second PC Joystick",              IDM_JOY2_PCJOY2
+            MENUITEM "&Analogue Mousestick",            IDM_JOY2_ANALOGUE_MOUSESTICK
+            MENUITEM "&Digital Mousestick",             IDM_JOY2_DIGITAL_MOUSESTICK
+            MENUITEM SEPARATOR
+            MENUITEM "Primary Stick",                   IDM_JOY2_PRIMARY
+            MENUITEM "Right Thumbstick",                IDM_JOY2_SECONDARY1
+        END
+        POPUP "Joystick To Keyboard"
+        BEGIN
+            MENUITEM "Enable Joystick To Keyboard",   IDM_JOYSTICK_TO_KEYS
+            MENUITEM "Autoload Joystick Mapping",     IDM_AUTOLOADJOYMAP
+            MENUITEM SEPARATOR
+            MENUITEM "Define Joystick Mapping",       IDM_DEFINEJOYMAP
+            MENUITEM "Reset Joystick Mapping",        IDM_RESETJOYMAP
+            MENUITEM "Load Joystick Mapping...",      IDM_LOADJOYMAP
+            MENUITEM "Save Joystick Mapping...",      IDM_SAVEJOYMAP
+        END
+        MENUITEM "Rescan Joysticks",                  IDM_INIT_JOYSTICK
+        MENUITEM "Change Joystick Order",             IDM_JOYSTICKORDER
+    END
     POPUP "Hard&ware"
     BEGIN
         POPUP "&BBC Model"
@@ -728,39 +763,6 @@ BEGIN
     END
     POPUP "&Options"
     BEGIN
-        POPUP "Joystick"
-        BEGIN
-            MENUITEM "First PC &Joystick",              IDM_JOYSTICK
-            MENUITEM "Second PC Joystick",              IDM_JOY1_PCJOY2
-            MENUITEM "&Analogue Mousestick",            IDM_ANALOGUE_MOUSESTICK
-            MENUITEM "&Digital Mousestick",             IDM_DIGITAL_MOUSESTICK
-            MENUITEM SEPARATOR
-            MENUITEM "Primary Stick",                   IDM_JOY1_PRIMARY
-            MENUITEM "Right Thumbstick",                IDM_JOY1_SECONDARY1
-        END
-        POPUP "Second Joystick"
-        BEGIN
-            MENUITEM "First PC &Joystick",              IDM_JOY2_PCJOY1
-            MENUITEM "Second PC Joystick",              IDM_JOY2_PCJOY2
-            MENUITEM "&Analogue Mousestick",            IDM_JOY2_ANALOGUE_MOUSESTICK
-            MENUITEM "&Digital Mousestick",             IDM_JOY2_DIGITAL_MOUSESTICK
-            MENUITEM SEPARATOR
-            MENUITEM "Primary Stick",                   IDM_JOY2_PRIMARY
-            MENUITEM "Right Thumbstick",                IDM_JOY2_SECONDARY1
-        END
-        POPUP "Joystick To Keyboard"
-        BEGIN
-            MENUITEM "Enable Joystick To Keyboard",   IDM_JOYSTICK_TO_KEYS
-            MENUITEM "Autoload Joystick Mapping",     IDM_AUTOLOADJOYMAP
-            MENUITEM SEPARATOR
-            MENUITEM "Define Joystick Mapping",       IDM_DEFINEJOYMAP
-            MENUITEM "Reset Joystick Mapping",        IDM_RESETJOYMAP
-            MENUITEM "Load Joystick Mapping...",      IDM_LOADJOYMAP
-            MENUITEM "Save Joystick Mapping...",      IDM_SAVEJOYMAP
-        END
-        MENUITEM "Rescan Joysticks",            IDM_INIT_JOYSTICK
-        MENUITEM "Change Joystick Order",       IDM_JOYSTICKORDER
-        MENUITEM SEPARATOR
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR

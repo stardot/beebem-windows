@@ -534,6 +534,144 @@
   </tr>
 </table>
 
+<h2>Joysticks Menu</h2>
+
+<table width="100%" border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td width="20%">Primary Joystick</td>
+    <td width="80%">Switch on or off primary Beeb analogue joystick support
+      and select which PC device the emulator should use for the primary
+      Beeb analogue joystick. Click on the currently selected device
+      again to disable primary Beeb analogue joystick. 
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">First PC Joystick</td>
+    <td width="80%">Use first PC joystick or gamepad.
+      First and third PC joystick buttons are mapped to the primary Beeb
+      joystick fire button. Second and fourth PC joystick buttons are mapped to
+      the secondary Beeb joystick fire button, unless the secondary Beeb
+      joystick support is separately enabled and mapped to another contoller.
+      The "First PC Joystick" menu text is replaced with actual joystick or
+      gamepad model name, if it is known to the emulator.
+      Calibrate the joystick through the Windows control panel.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Second PC Joystick</td>
+    <td width="80%">Use second PC joystick or gamepad.
+      First and third PC joystick buttons are mapped to the primary Beeb
+      joystick firs button. Second and fourth PC joystick buttons are mapped to
+      the secondary Beeb joystick fire button, unless the secondary Beeb
+      joystick support is separately enabled and mapped to another controller.
+      The "Second PC Joystick" menu text is replaced with actual joystick or
+      gamepad model name, if it is known to the emulator.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Analogue Mousestick</td>
+    <td width="80%">Map Mouse position to analogue Beeb joystick position. 
+      Allows you to use the mouse as a joystick. The left mouse button
+      controls the joystick 1 fire button and the right mouse button controls
+      the joystick 2 fire button, unless the secondary Beeb joystick support
+      is separately enabled.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Digital Mousestick</td>
+    <td width="80%">Map Mouse movements to digital Beeb joystick movements.
+      The left mouse button controls the joystick 1 fire button and the right
+      mouse button controls the joystick 2 fire button, unless the secondary
+      Beeb joystick is separately enabled.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Primary Stick / Right Thumbstick</td>
+    <td width="80%">Select between primary Joystick/Thumbstick and secondary
+      Joystick/Thumbstick on a gamepad or other controller with more than one
+      analogue sticks. In other words select between primary and secondary
+      set of axes.
+      If both primary and secondary Beeb analogue joysticks are mapped to two
+      different sticks on the same PC contoller, joystick button mapping
+      changes so that first and third PC joystick buttons are mapped
+      to the first Beeb joystick fire button, and second and fourth PC joystick
+      buttons are mapped to the second Beeb joystick fire button.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Secondary Joystick</td>
+    <td width="80%">Switch on or off secondary Beeb analogue joystick support
+      and select which PC device the emulator should use for the secondary
+      Beeb analogue joystick. Click on the currently selected device
+      again to disable secondary Beeb analogue joystick.
+      Available devices selection is the same as for primary Beeb analogue
+      joystick.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Enable Joystick To Keyboard</td>
+    <td width="80%">Switch on or off mapping PC joystick to BBC keyboard.
+      See the <a href="keyboard.html">Keyboard Mappings</a> section.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Autoload Joystick Mapping</td>
+    <td width="80%">Switch on or off automatically loading joystick mapping
+      files for disk or tape images.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Define Joystick Mapping</td>
+    <td width="80%">Allows you to configure joystick to keyboard mapping.
+      See the <a href="keyboard.html">Keyboard Mappings</a> section.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Reset Joystick Mapping</td>
+    <td width="80%">Clears joystick to keyboard mapping table.</td>
+  </tr>
+
+  <tr>
+    <td width="20%">Load Joystick Mapping</td>
+    <td width="80%">Loads joystick to keyboard mapping from a file.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Save Joystick Mapping</td>
+    <td width="80%">Saves joystick to keyboard mapping to a file.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Rescan Joysticks</td>
+    <td width="80%">Repeat scanning of available PC joysticks and
+      gamepads and retry joystick initialization. You can use this
+      option if you have connected your USB gamepad after starting
+      BeebEm.
+    </td>
+  </tr>
+
+  <tr>
+    <td width="20%">Change Joystick Order</td>
+    <td width="80%">Change assigned joystick order. This can be useful
+      if you have more than two joysticks to map Beeb analogue
+      joystick to other than first two PC joysticks or to switch PC joysticks
+      mapped to Beeb keyboard without having to remap each key.
+    </td>
+  </tr>
+</table>
+
 <h2>Hardware Menu</h2>
 
 <table width="100%" border="0" cellpadding="4" cellspacing="0">
@@ -698,77 +836,6 @@
 <h2>Options Menu</h2>
 
 <table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Joystick</td>
-    <td width="80%">Switch on or off PC/Beeb analogue joystick support.
-      Calibrate the joystick through the Windows control panel.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Analogue Mousestick</td>
-    <td width="80%">Switch on or off the mapping of Mouse position to
-      analogue Beeb joystick position.  Allows you to use the mouse
-      as a joystick. The left mouse button controls the joystick 1
-      fire button and the right mouse button controls the joystick 2
-      fire button.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Digital Mousestick</td>
-    <td width="80%">Switch on or off the mapping of Mouse movements to
-      digital Beeb joystick movements. The left mouse button controls
-      the joystick 1 fire button and the right mouse button controls
-      the joystick 2 fire button.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Enable Joystick To Keyboard</td>
-    <td width="80%">Switch on or off mapping PC joystick to BBC keyboard.
-      See the <a href="keyboard.html">Keyboard Mappings</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Autoload Joystick Mapping</td>
-    <td width="80%">Switch on or off automatically loading joystick mapping
-      files for disk or tape images.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Define Joystick Mapping</td>
-    <td width="80%">Allows you to configure joystick to keyboard mapping.
-      See the <a href="keyboard.html">Keyboard Mappings</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Reset Joystick Mapping</td>
-    <td width="80%">Clears joystick to keyboard mapping table.</td>
-  </tr>
-
-  <tr>
-    <td width="20%">Load Joystick Mapping</td>
-    <td width="80%">Loads joystick to keyboard mapping from a file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Save Joystick Mapping</td>
-    <td width="80%">Saves joystick to keyboard mapping to a file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Reinitialize Joystick</td>
-    <td width="80%">Retries joystick initialization. You can use
-      this if you connected your USB gamepad after starting BeebEm.
-    </td>
-  </tr>
-
   <tr>
     <td width="20%">Freeze when inactive</td>
     <td width="80%">When selected BeebEm will freeze when you switch
