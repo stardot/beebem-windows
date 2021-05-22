@@ -135,7 +135,7 @@ public:
 				EndDialog(hwndDlg, wParam);
 				return TRUE;
 			case IDC_JOYSTICKSHOWALL:
-				m_showAll = IsDlgButtonChecked(hwndDlg, IDC_JOYSTICKSHOWALL);
+				m_showAll = (IsDlgButtonChecked(hwndDlg, IDC_JOYSTICKSHOWALL) == BST_CHECKED);
 				PopulateJoystickList();
 				return TRUE;
 			}

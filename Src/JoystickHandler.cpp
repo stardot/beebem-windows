@@ -733,6 +733,16 @@ void BeebWin::UpdateJoystickMenu()
 		for (int axesIdx = 0; axesIdx < _countof(JoystickMenuIdsType::Axes); ++axesIdx)
 			EnableMenuItem(JoystickMenuIds[bbcIdx].Axes[axesIdx], EnableAxes);
 	}
+
+	CheckMenuItem(IDM_JOY_SENSITIVITY_50, m_JoystickSensitivity == 0.5);
+	CheckMenuItem(IDM_JOY_SENSITIVITY_100, m_JoystickSensitivity == 1.0);
+	CheckMenuItem(IDM_JOY_SENSITIVITY_200, m_JoystickSensitivity == 2.0);
+	CheckMenuItem(IDM_JOY_SENSITIVITY_300, m_JoystickSensitivity == 3.0);
+
+	CheckMenuItem(IDM_JOY_KEY_THRESHOLD_12_5, m_JoystickToKeysThreshold == 4096);
+	CheckMenuItem(IDM_JOY_KEY_THRESHOLD_25, m_JoystickToKeysThreshold == 8192);
+	CheckMenuItem(IDM_JOY_KEY_THRESHOLD_50, m_JoystickToKeysThreshold == 16384);
+	CheckMenuItem(IDM_JOY_KEY_THRESHOLD_75, m_JoystickToKeysThreshold == 24756);
 }
 
 /****************************************************************************/
@@ -981,23 +991,23 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 {
 	for (int index = 0; index < 2; ++index)
 	{
-		int XPos = (m_XWinSize - x) * 65535 / m_XWinSize;
-		int YPos = (m_YWinSize - y) * 65535 / m_YWinSize;
-
 		if (m_JoystickConfig[index].AnalogMousestick)
 		{
-			JoystickX[index] = XPos;
-			JoystickY[index] = YPos;
+			ScaleJoystick(index, x, y, 0, 0, m_XWinSize, m_YWinSize);
 		}
 		else if (m_JoystickConfig[index].DigitalMousestick)
 		{
-			const int Threshold = 2000;
+			const int Threshold = 4000;
 
-			if (XPos < 32768 - Threshold)
+			/* Keep 32768.0 double to convert from unsigned int */
+			double XPos = (((m_XWinSize - x) * 65535 / m_XWinSize) - 32768.0) * m_JoystickSensitivity;
+			double YPos = (((m_YWinSize - y) * 65535 / m_YWinSize) - 32768.0) * m_JoystickSensitivity;
+
+			if (XPos < -Threshold)
 			{
 				JoystickX[index] = 0;
 			}
-			else if (XPos > 32768 + Threshold)
+			else if (XPos > Threshold)
 			{
 				JoystickX[index] = 65535;
 			}
@@ -1006,11 +1016,11 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 				JoystickX[index] = 32768;
 			}
 
-			if (YPos < 32768 - Threshold)
+			if (YPos < -Threshold)
 			{
 				JoystickY[index] = 0;
 			}
-			else if (YPos > 32768 + Threshold)
+			else if (YPos > Threshold)
 			{
 				JoystickY[index] = 65535;
 			}
