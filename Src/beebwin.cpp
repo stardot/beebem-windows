@@ -3316,6 +3316,44 @@ void BeebWin::HandleCommand(int MenuId)
 		InitJoystick();
 		break;
 
+	case IDM_JOY_SENSITIVITY_50:
+	case IDM_JOY_SENSITIVITY_100:
+	case IDM_JOY_SENSITIVITY_200:
+	case IDM_JOY_SENSITIVITY_300:
+		if (MenuId == IDM_JOY_SENSITIVITY_50) {
+			m_JoystickSensitivity = 0.5;
+		}
+		else if (MenuId == IDM_JOY_SENSITIVITY_200) {
+			m_JoystickSensitivity = 2.0;
+		}
+		else if (MenuId == IDM_JOY_SENSITIVITY_300) {
+			m_JoystickSensitivity = 3.0;
+		}
+		else {
+			m_JoystickSensitivity = 1.0;
+		}
+		UpdateJoystickMenu();
+		break;
+
+	case IDM_JOY_KEY_THRESHOLD_12_5:
+	case IDM_JOY_KEY_THRESHOLD_25:
+	case IDM_JOY_KEY_THRESHOLD_50:
+	case IDM_JOY_KEY_THRESHOLD_75:
+		if (MenuId == IDM_JOY_KEY_THRESHOLD_25) {
+			m_JoystickToKeysThreshold = 8192;
+		}
+		else if (MenuId == IDM_JOY_KEY_THRESHOLD_50) {
+			m_JoystickToKeysThreshold = 16384;
+		}
+		else if (MenuId == IDM_JOY_KEY_THRESHOLD_75) {
+			m_JoystickToKeysThreshold = 24576;
+		}
+		else {
+			m_JoystickToKeysThreshold = 4096;
+		}
+		UpdateJoystickMenu();
+		break;
+
 	case IDM_FREEZEINACTIVE:
 		m_FreezeWhenInactive = !m_FreezeWhenInactive;
 		CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
