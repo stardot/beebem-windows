@@ -457,6 +457,14 @@ Boston, MA  02110-1301, USA.
 #define IDM_JOY2_SECONDARY1             40314
 #define IDM_JOYSTICKORDER               40317
 #define IDM_CAPTUREMOUSE                40318
+#define IDM_JOY_SENSITIVITY_50          40319
+#define IDM_JOY_SENSITIVITY_100         40320
+#define IDM_JOY_SENSITIVITY_200         40321
+#define IDM_JOY_SENSITIVITY_300         40322
+#define IDM_JOY_KEY_THRESHOLD_12_5      40323
+#define IDM_JOY_KEY_THRESHOLD_25        40324
+#define IDM_JOY_KEY_THRESHOLD_50        40325
+#define IDM_JOY_KEY_THRESHOLD_75        40326
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -465,7 +473,7 @@ Boston, MA  02110-1301, USA.
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        119
-#define _APS_NEXT_COMMAND_VALUE         40319
+#define _APS_NEXT_COMMAND_VALUE         40327
 #define _APS_NEXT_CONTROL_VALUE         1096
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
