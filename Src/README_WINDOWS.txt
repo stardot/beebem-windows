@@ -19,13 +19,17 @@ The following project files are included:
   Hardware\Watford\Watford.vcxproj   - Watford FDC project file
   InnoSetup\Installer.vcxproj        - Inno Setup installer project file
 
-You will need to download and install the Microsoft DirectX 9.0 SDK, then
-configure the project to find it.
+These project files are set up to target Windows XP. This requires the
+following options Visual Studio 2019 components to be installed:
 
-https://www.microsoft.com/en-us/download/details.aspx?id=6812
+* MSVC v140 - VS 2015 C++ build tools (v14.00)
+* C++ Windows XP Support for VS 2017 (v141) tools [Deprecated]
+
+You also will need to download and install the Microsoft DirectX 9.0 SDK
+from https://www.microsoft.com/en-us/download/details.aspx?id=6812.
 
 To build the installer from within Visual Studio, you'll need to download
-and install Inno Setup from http://www.jrsoftware.org/isinfo.php.
+and install Inno Setup 5.6.1 from https://files.jrsoftware.org/is/5/.
 
 After installing the DirectX 9.0 SDK and Inno Setup, the next step is to
 configure the BeebEm Visual Studio project to find the relevant files.
