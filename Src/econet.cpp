@@ -36,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "6502core.h"
 #include "sysvia.h"
+#include "rtc.h"
 
 // Configuration Options.
 // These, among others, are overridden in econet.cfg (see ReadNetwork() )
@@ -463,6 +464,13 @@ void EconetReset(void) {
 	if (MachineType == Model::Master128) {
 		CMOSWrite(0xe, EconetStationNumber);
 	}
+
+	// On FileStore the station number is read from CMOS so update it
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		CMOSWrite(0xe, EconetStationNumber);
+		CMOSWrite(0xf, 0xff-EconetStationNumber); // checkbyte
+	}
+
 
 	//---------------------
 	// Socket used to send messages.

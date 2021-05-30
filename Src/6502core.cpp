@@ -3103,7 +3103,9 @@ static void PollVIAs(unsigned int nCycles)
 		if (CyclesToInt != NO_TIMER_INT_DUE)
 			CyclesToInt -= nCycles;
 
-		SysVIA_poll(nCycles);
+		if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S))
+			SysVIA_poll(nCycles);
+	
 		UserVIA_poll(nCycles);
 
 		ViaCycles += nCycles;
@@ -3117,34 +3119,49 @@ static void PollHardware(unsigned int nCycles)
 	if (TotalCycles > CycleCountWrap)
 	{
 		TotalCycles -= CycleCountWrap;
-		AdjustTrigger(AtoDTrigger);
-		AdjustTrigger(SoundTrigger);
-		AdjustTrigger(Disc8271Trigger);
-		AdjustTrigger(AMXTrigger);
+		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
+			AdjustTrigger(AtoDTrigger);
+			AdjustTrigger(SoundTrigger);
+			AdjustTrigger(Disc8271Trigger);
+			AdjustTrigger(AMXTrigger);
+		}
+		
 		AdjustTrigger(PrinterTrigger);
-		AdjustTrigger(VideoTriggerCount);
-		AdjustTrigger(TapeTrigger);
+
+		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
+			AdjustTrigger(VideoTriggerCount);
+			AdjustTrigger(TapeTrigger);
+		}
+
 		AdjustTrigger(EconetTrigger);
 		AdjustTrigger(EconetFlagFillTimeoutTrigger);
-		AdjustTrigger(IP232RxTrigger);
-		if (TubeType == Tube::Acorn65C02)
-			WrapTubeCycles();
+
+		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
+			AdjustTrigger(IP232RxTrigger);
+			if (TubeType == Tube::Acorn65C02)
+				WrapTubeCycles();
+		}
 	}
 
 	if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S)
 	{
 		VideoPoll(nCycles);
+	
+		if (!BasicHardwareOnly) {
+			AtoD_poll(nCycles);
+			Serial_Poll();
+		}
+		Disc8271Poll();
+		Music5000Poll(nCycles);
+		SoundPoll();
 	}
 
-	if (!BasicHardwareOnly) {
-		AtoD_poll(nCycles);
-		Serial_Poll();
-	}
-	Disc8271Poll();
-	Music5000Poll(nCycles);
-	SoundPoll();
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
-	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
+	if ((MachineType == Model::Master128 || !NativeFDC) ||
+		(MachineType == Model::FileStoreE01) || 
+		(MachineType == Model::FileStoreE01S))
+			Poll1770(nCycles); // Do 1770 Background stuff
+
 
 	if (EconetEnabled && EconetPoll()) {
 		if (EconetNMIenabled) {

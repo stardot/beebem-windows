@@ -28,8 +28,8 @@ Boston, MA  02110-1301, USA.
 
 #include "via.h"
 
+
 extern VIAState UserVIAState;
-extern bool RTC_Enabled;
 extern bool SWRAMBoardEnabled;
 
 void UserVIAWrite(int Address, int Value);

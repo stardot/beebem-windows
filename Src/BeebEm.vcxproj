@@ -201,6 +201,7 @@
     <ClCompile Include="music5000.cpp" />
     <ClCompile Include="preferences.cpp" />
     <ClCompile Include="romconfig.cpp" />
+    <ClCompile Include="rtc.cpp" />
     <ClCompile Include="sasi.cpp" />
     <ClCompile Include="scsi.cpp" />
     <ClCompile Include="SelectKeyDialog.cpp" />
@@ -216,6 +217,7 @@
     <ClCompile Include="uefstate.cpp" />
     <ClCompile Include="userkybd.cpp" />
     <ClCompile Include="UserPortBreakoutBox.cpp" />
+    <ClCompile Include="UserPortRTC.cpp" />
     <ClCompile Include="uservia.cpp" />
     <ClCompile Include="via.cpp" />
     <ClCompile Include="video.cpp" />
@@ -350,6 +352,7 @@
     <ClInclude Include="music5000.h" />
     <ClInclude Include="port.h" />
     <ClInclude Include="preferences.h" />
+    <ClInclude Include="rtc.h" />
     <ClInclude Include="sasi.h" />
     <ClInclude Include="scsi.h" />
     <ClInclude Include="SelectKeyDialog.h" />
@@ -366,6 +369,7 @@
     <ClInclude Include="uefstate.h" />
     <ClInclude Include="userkybd.h" />
     <ClInclude Include="UserPortBreakoutBox.h" />
+    <ClInclude Include="UserPortRTC.h" />
     <ClInclude Include="uservia.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="via.h" />
@@ -392,6 +396,7 @@
     <Image Include="..\Help\startup.jpg" />
     <Image Include="BeebEm.ico" />
     <Image Include="cover.bmp" />
+    <Image Include="fs-drives.bmp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BeebEm.rc" />

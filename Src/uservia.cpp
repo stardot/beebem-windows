@@ -30,6 +30,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <time.h>
 
+#include "rtc.h"
 #include "6502core.h"
 #include "uservia.h"
 #include "sysvia.h"
@@ -38,16 +39,10 @@ Boston, MA  02110-1301, USA.
 #include "log.h"
 #include "tube.h"
 #include "UserPortBreakoutBox.h"
+#include "UserPortRTC.h"
 
 using namespace std;
 
-/* Real Time Clock */
-int RTC_bit = 0;
-int RTC_cmd = 0;
-int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
-unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
-bool RTC_Enabled = false;
-static void RTCWrite(int Value, int lastValue);
 
 /* AMX mouse (see uservia.h) */
 bool AMXMouseEnabled = false;
@@ -85,8 +80,8 @@ static void UpdateIFRTopBit(void) {
     UserVIAState.ifr|=0x80;
   else
     UserVIAState.ifr&=0x7f;
-  intStatus&=~(1<<userVia);
-  intStatus|=((UserVIAState.ifr & 128)?(1<<userVia):0);
+ intStatus&=~(1<<userVia);
+ intStatus|=((UserVIAState.ifr & 128)?(1<<userVia):0);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -115,8 +110,8 @@ void UserVIAWrite(int Address, int Value) {
       if (userPortBreakoutDialog != nullptr)
         userPortBreakoutDialog->ShowOutputs(UserVIAState.orb);
 
-	  if (RTC_Enabled)
-		  RTCWrite(Value, lastValue);
+	  if (userPortRTC_Enabled) // RTC User port dongle
+		  UserPortRTCWrite(Value, lastValue);
 	  lastValue = Value;
       break;
 
@@ -149,7 +144,7 @@ void UserVIAWrite(int Address, int Value) {
 
     case 2:
       UserVIAState.ddrb=Value & 0xff;
- 	  if (RTC_Enabled && ((Value & 0x07) == 0x07)) RTC_bit = 0;
+ 	  if (userPortRTC_Enabled && ((Value & 0x07) == 0x07)) userPortRTC_bit = 0; // RTC User port dongle
       break;
 
     case 3:
@@ -253,10 +248,10 @@ unsigned char UserVIARead(int Address)
     case 0: /* IRB read */
       tmp=(UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb));
 
-	  if (RTC_Enabled)
+	  if (userPortRTC_Enabled) // RTC User port dongle
 	  {
-		tmp = (tmp & 0xfe) | (RTC_data & 0x01);
-		RTC_data = RTC_data >> 1;
+		tmp = (tmp & 0xfe) | (userPortRTC_data & 0x01);
+		userPortRTC_data = userPortRTC_data >> 1;
 	  }
 
       if (userPortBreakoutDialog != nullptr)
@@ -619,70 +614,6 @@ void PrinterPoll() {
 	/* The CA1 interrupt is not always picked up,
 		set up a trigger just in case. */
 	SetTrigger(100000, PrinterTrigger);
-}
-/*--------------------------------------------------------------------------*/
-void RTCWrite(int Value, int lastValue)
-{
-	if ( ((lastValue & 0x02) == 0x02) && ((Value & 0x02) == 0x00) )		// falling clock edge
-	{
-		if ((Value & 0x04) == 0x04)
-		{
-			RTC_cmd = (RTC_cmd >> 1) | ((Value & 0x01) << 15);
-			RTC_bit++;
-
-			WriteLog("RTC Shift cmd : 0x%03x, bit : %d\n", RTC_cmd, RTC_bit);
-		}
-		else
-		{
-			if (RTC_bit == 11) // Write data
-			{
-				RTC_cmd >>= 5;
-
-				WriteLog("RTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_cmd >> 4);
-
-				RTC_ram[(RTC_cmd & 0x0f) >> 1] = (unsigned char)(RTC_cmd >> 4);
-			}
-			else
-			{
-				RTC_cmd >>= 12;
-
-				time_t SysTime;
-				time(&SysTime);
-
-				struct tm* CurTime = localtime(&SysTime);
-
-				switch ((RTC_cmd & 0x0f) >> 1)
-				{
-				case 0 :
-					RTC_data = BCD((unsigned char)(CurTime->tm_mon + 1));
-					break;
-				case 1 :
-					RTC_data = BCD((CurTime->tm_year % 100) - 1);
-					break;
-				case 2 :
-					RTC_data = BCD((unsigned char)CurTime->tm_mday);
-					break;
-				case 3 :
-					RTC_data = RTC_ram[3];
-					break;
-				case 4 :
-					RTC_data = BCD((unsigned char)CurTime->tm_hour);
-					break;
-				case 5 :
-					RTC_data = RTC_ram[5];
-					break;
-				case 6 :
-					RTC_data = BCD((unsigned char)CurTime->tm_min);
-					break;
-				case 7 :
-					RTC_data = RTC_ram[7];
-					break;
-				}
-				
-				WriteLog("RTC Read cmd : 0x%03x, reg : 0x%02x, data : 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
-			}
-		}
-	}
 }
 
 /*--------------------------------------------------------------------------*/

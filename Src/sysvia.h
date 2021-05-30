@@ -31,9 +31,6 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 
 extern VIAState SysVIAState;
 extern unsigned char IC32State;
-extern bool RTCY2KAdjust;
-
-extern unsigned char RTC_IRQF;
 
 void SysVIAWrite(int Address, int Value);
 unsigned char SysVIARead(int Address);
@@ -50,14 +47,19 @@ void BeebReleaseAllKeys(void);
 void SysVIATriggerCA1Int(int value);
 extern unsigned char IC32State;
 
-void RTCInit(void);
-void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData);
-unsigned char CMOSRead(unsigned char CMOSAddr);
+struct CMOSType {
+	bool Enabled;
+	// unsigned char ChipSelect;
+	unsigned char Address;
+	// unsigned char StrobedData;
+	bool DataStrobe;
+	bool Op;
+};
+
+extern struct CMOSType CMOS;
 
 void sysvia_dumpstate(void);
 void PulseSysViaCB1(void);
-
-unsigned char BCD(unsigned char nonBCD);
 
 extern bool JoystickButton[2];
 

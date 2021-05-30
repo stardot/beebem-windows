@@ -37,6 +37,7 @@ typedef enum IRQ_Nums {
   tube,
   teletext,
   hdc,
+  rtc,
 } IRQ_Nums;
 
 typedef enum NMI_Nums{

@@ -29,6 +29,7 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #include "beebwin.h"
 #include "beebmem.h"
+#include "rtc.h"
 #include "filedialog.h"
 
 static HWND hWndROMList = NULL;
@@ -114,9 +115,9 @@ static void UpdateROMField(int row)
 	{
 		bank = 16 - row;
 		if (bank >= 0 && bank <= 7)
-			unplugged = (CMOSRAM[20] & (1 << bank)) ? false : true;
+			unplugged = (CMOSRAM_M128[20] & (1 << bank)) ? false : true;
 		else if (bank >= 8 && bank <= 15)
-			unplugged = (CMOSRAM[21] & (1 << (bank-8))) ? false : true;
+			unplugged = (CMOSRAM_M128[21] & (1 << (bank-8))) ? false : true;
 	}
 
 	strncpy(szROMFile, ROMCfg[static_cast<int>(nModel)][row], _MAX_PATH);

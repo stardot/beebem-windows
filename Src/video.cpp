@@ -1584,7 +1584,7 @@ void VideoLightPenStrobe()
 
 void VideoAddLEDs(void) {
 	// now add some keyboard leds
-	if (LEDs.ShowKB) {
+	if ((LEDs.ShowKB) && (MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)) {
 		if (MachineType == Model::Master128) {
 			mainWin->doLED(4, true);
 		}
@@ -1593,7 +1593,7 @@ void VideoAddLEDs(void) {
 		}
 		mainWin->doLED(14,LEDs.CapsLock);
 		mainWin->doLED(24,LEDs.ShiftLock);
-	}
+    }
 
 	if (LEDs.ShowDisc) {
 		int adj = TeletextEnabled ? 86 : 0;

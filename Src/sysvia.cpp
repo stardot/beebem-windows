@@ -39,16 +39,12 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "via.h"
 #include "main.h"
 #include "debug.h"
+#include "rtc.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
 
 using namespace std;
-
-/* Clock stuff for Master 128 RTC */
-time_t SysTime;
-time_t RTCTimeOffset=0;
-bool RTCY2KAdjust = true;
 
 // Shift register stuff
 unsigned char SRMode;
@@ -64,9 +60,6 @@ VIAState SysVIAState;
 char WECycles=0;
 char WEState=0;
 
-/* Used for the FileStore RTC interrupt on +UIE */
-unsigned char RTC_IRQF;
-
 /* State of the 8bit latch IC32 - bit 0 is WE for sound gen, B1 is read
    select on speech proc, B2 is write select on speech proc, b4,b5 select
    screen start address offset , b6 is CAPS lock, b7 is shift lock */
@@ -75,10 +68,11 @@ bool OldCMOSState = false;
 
 // CMOS logging facilities
 bool CMOSDebug = false;
-FILE *CMDF;
-FILE *vialog;
+FILE* CMDF;
+FILE* vialog;
 /* Last value written to the slow data bus - sound reads it later */
 static unsigned char SlowDataBusWriteValue=0;
+struct CMOSType CMOS;
 
 /* Currently selected keyboard row, column */
 static unsigned int KBDRow=0;
@@ -273,7 +267,7 @@ static int SlowDataBusRead(void) {
   int result;
   if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128)
   {
-    SysVIAState.ora=CMOSRead(CMOS.Address); //SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
+    SysVIAState.ora=CMOSRead(CMOS.Address); //SysVIAState.ddra ^ CMOSRAM_M128[CMOS.Address];
     if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
   }
   result=(SysVIAState.ora & SysVIAState.ddra);
@@ -657,192 +651,6 @@ void SysVIAReset(void) {
   SREnabled = 0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
 }
 
-/*-------------------------------------------------------------------------*/
-unsigned char BCD(unsigned char nonBCD) {
-	// convert a decimal value to a BCD value
-	return(((nonBCD/10)*16)+nonBCD%10);
-}
-unsigned char BCDToBin(unsigned char BCD) {
-	// convert a BCD value to decimal value
-	return((BCD>>4)*10+(BCD&15));
-}
-/*-------------------------------------------------------------------------*/
-time_t CMOSConvertClock(void) {
-
-    unsigned char* pCMOS;
-
-    time_t tim;
-	struct tm Base;
-
-    
-    // switch to either BBC Master CMOS or Filestore CMOS
-    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
-    else
-        pCMOS = &CMOSRAM[0];       // pointer to Master 128 CMOS
-
-    Base.tm_sec = BCDToBin(pCMOS[0]);
-	Base.tm_min = BCDToBin(pCMOS[2]);
-	Base.tm_hour = BCDToBin(pCMOS[4]);
-	Base.tm_mday = BCDToBin(pCMOS[7]);
-	Base.tm_mon = BCDToBin(pCMOS[8])-1;
-	Base.tm_year = BCDToBin(pCMOS[9]);
-	Base.tm_wday = -1;
-	Base.tm_yday = -1;
-	Base.tm_isdst = -1;
-	tim = mktime(&Base);
-	return tim;
-}
-/*-------------------------------------------------------------------------*/
-void RTCInit(void) {
-
-    unsigned char* pCMOS;
-
-    struct tm *CurTime;
-	time( &SysTime );
-	CurTime = localtime( &SysTime );
-    RTC_IRQF = 0x00;  // Register C
-
-    // switch to either BBC Master CMOS or Filestore CMOS
-    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
-    else
-        pCMOS = &CMOSRAM[0];      // pointer to Master 128 CMOS
-
-    pCMOS[0] = BCD(CurTime->tm_sec);
-    pCMOS[2] = BCD(CurTime->tm_min);
-    pCMOS[4] = BCD(CurTime->tm_hour);
-    pCMOS[6] = BCD((CurTime->tm_wday)+1);
-    pCMOS[7] = BCD(CurTime->tm_mday);
-    pCMOS[8] = BCD((CurTime->tm_mon)+1);
-    pCMOS[9] = BCD((CurTime->tm_year)-(RTCY2KAdjust ? 20 : 0));
-	RTCTimeOffset = SysTime - CMOSConvertClock();
-}
-/*-------------------------------------------------------------------------*/
-void RTCUpdate(void) {
-
-    unsigned char* pCMOS;
-
-	struct tm *CurTime;
-	time( &SysTime );
-	SysTime -= RTCTimeOffset;
-	CurTime = localtime( &SysTime );
-
-    // switch to either BBC Master CMOS or Filestore CMOS
-    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
-    else
-        pCMOS = &CMOSRAM[0];       // pointer to Master 128 CMOS
-
-    pCMOS[0] = BCD(CurTime->tm_sec);
-    pCMOS[2] = BCD(CurTime->tm_min);
-    pCMOS[4] = BCD(CurTime->tm_hour);
-    pCMOS[6] = BCD((CurTime->tm_wday)+1);
-    pCMOS[7] = BCD(CurTime->tm_mday);
-    pCMOS[8] = BCD((CurTime->tm_mon)+1);
-    pCMOS[9] = BCD(CurTime->tm_year);
-}
-/*-------------------------------------------------------------------------*/
-void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
-	// Many thanks to Tom Lees for supplying me with info on the 146818 registers 
-	// for these two functions.
-
-    unsigned char* pCMOS;
-
-    // switch to either BBC Master CMOS or Filestore CMOS
-    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-        pCMOS = &CMOSRAMFS[0];    // pointer to FS CMOS
-    else
-        pCMOS = &CMOSRAM[0];       // pointer to Master 128 CMOS
-                                   
-	if (CMOSAddr>0xd) {
-		pCMOS[CMOSAddr]=CMOSData;
-	}
-	else if (CMOSAddr==0xa) {
-		// Control register A
-		pCMOS[CMOSAddr]=CMOSData & 0x7f; // Top bit not writable
-	}
-	else if (CMOSAddr==0xb) {
-		// Control register B
-		// Bit-7 SET - 0=clock running, 1=clock update halted
-		if (CMOSData & 0x80) {
-            if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-                // FilesStore - cancel bits -SET -UIE 
-                RTC_IRQF = 0x00;
-            }
-
-            RTCUpdate();
-		}
-		else if ((CMOSRAM[CMOSAddr] & 0x80) && !(CMOSData & 0x80)) {
-			// New clock settings
-			time(&SysTime);
-			RTCTimeOffset = SysTime - CMOSConvertClock();
-		}
-		
-        // Set RTC Timer +UIE interrupt for the FileStore 1/100th sec
-        if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-            if (CMOSData & 0x10)
-                SetTimer(mainWin->m_hWnd, 3, 10, NULL);   // Set the RTC UIE interrupt timer
-            else
-                KillTimer(mainWin->m_hWnd, 3);
-
-        pCMOS[CMOSAddr]=CMOSData;  // write the value to CMOS anyway
-
-    }
-	else if (CMOSAddr==0xc) {
-		// Control register C - read only
-	}
-	else if (CMOSAddr==0xd) {
-		// Control register D - read only
-	}
-	else {
-		// Clock registers
-		pCMOS[CMOSAddr]=CMOSData;
-	}
-
-
-}
-
-
-/*-------------------------------------------------------------------------*/
-unsigned char CMOSRead(unsigned char CMOSAddr) {
-	// 0x0 to 0x9 - Clock
-	// 0xa to 0xd - Regs
-	// 0xe to 0x3f - RAM
-
-    struct tm* CurTime;
-    time(&SysTime);
-    SysTime -= RTCTimeOffset;
-    CurTime = localtime(&SysTime);
-
-    if (CMOSAddr < 0xa) // update the clock
-        RTCUpdate();
-
-    
-    if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-
-        if (CMOSAddr == 0xc) { // interrupt check
-
-        // Reading returns the status and causes IRQF to be cleared
-            if (RTC_IRQF == 0x90) {  // +SET +UIE interrupt
-                RTC_IRQF = 0x00;
-                return (0x90);
-            }
-            else {
-                return (0x00);
-            }
-
-        // otherwise not 0x0C,  return the byte from the Filestore CMOS address
-        }
-        else {
-            return(CMOSRAMFS[CMOSAddr]);
-        }
-
-    }
-    else // not filestore
-        return(CMOSRAM[CMOSAddr]);
-
-}
 
 /*--------------------------------------------------------------------------*/
 void sysvia_dumpstate(void) {

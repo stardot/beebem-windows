@@ -25,6 +25,7 @@ Boston, MA  02110-1301, USA.
 //
 // Mike Wyatt - Nov 2004
 // Econet added Rob O'Donnell 2004-12-28.
+// RTC added Mark Usher 2021-05-28
 
 #include <windows.h>
 #include <ctype.h>
@@ -48,6 +49,7 @@ Boston, MA  02110-1301, USA.
 #include "FileDialog.h"
 #include "StringUtils.h"
 #include "DebugTrace.h"
+#include "rtc.h"
 
 #define MAX_LINES 4096          // Max lines in info window
 #define LINES_IN_INFO 28        // Visible lines in info window
@@ -175,7 +177,7 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "d",          DebugCmdCode,          "", ""}, // Alias of "code"
 	{ "watch",      DebugCmdWatch,         "[p] addr [b/w/d] [name]", "Sets/Clears a byte/word/dword watch at addr." },
 	{ "e",          DebugCmdWatch,         "", ""}, // Alias of "watch"
-	{ "state",      DebugCmdState,         "v/u/s/t/m/r", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms." },
+	{ "state",      DebugCmdState,         "v/u/s/t/m/r/c", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms/CMOS" },
 	{ "s",          DebugCmdState,         "", ""}, // Alias of "state"
 	{ "save",       DebugCmdSave,          "[count] [file]", "Writes console lines to file." },
 	{ "w",          DebugCmdSave,          "", ""}, // Alias of "save"
@@ -1287,6 +1289,9 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 	case DebugType::Teletext:
 		source = "Teletext";
 		break;
+	case DebugType::RTC:
+		source = "RTC";
+		break;
 	}
 
 	if (DebugSource == DebugType::Breakpoint)
@@ -1325,6 +1330,13 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGUSERVIA))
 				DebugDisplayInfo(info);
 			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGUSERVIABRK))
+				DebugBreakExecution(type);
+			break;
+
+		case DebugType::RTC:
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGRTC))
+				DebugDisplayInfo(info);
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGRTCBRK))
 				DebugBreakExecution(type);
 			break;
 
@@ -1401,6 +1413,8 @@ static void DebugUpdateWatches(bool all)
 					value = (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
 					         DebugReadMem(Watches[i].start,     Watches[i].host);
 				}
+
+
 				break;
 
 			case 'd':
@@ -1419,6 +1433,26 @@ static void DebugUpdateWatches(bool all)
 					         DebugReadMem(Watches[i].start,     Watches[i].host);
 				}
 				break;
+
+			case 'f':
+				if (WatchBigEndian)
+				{
+					value = (DebugReadMem(Watches[i].start, Watches[i].host) << 32) +
+						(DebugReadMem(Watches[i].start + 1, Watches[i].host) << 24) +
+						(DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
+						(DebugReadMem(Watches[i].start + 3, Watches[i].host) << 8) +
+						DebugReadMem(Watches[i].start + 4, Watches[i].host);
+				}
+				else
+				{
+					value = (DebugReadMem(Watches[i].start + 4, Watches[i].host) << 32) +
+						(DebugReadMem(Watches[i].start + 3, Watches[i].host) << 24) +
+						(DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
+						(DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
+						DebugReadMem(Watches[i].start, Watches[i].host);
+				}
+				break;
+
 		}
 
 		if (all || value != Watches[i].value)
@@ -1445,6 +1479,10 @@ static void DebugUpdateWatches(bool all)
 
 					case 'd':
 						sprintf(str, "%s%04X %s=$%08X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
+						break;
+
+					case 'f':
+						sprintf(str, "%s%04X %s=$%10X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
 						break;
 				}
 			}
@@ -1540,16 +1578,33 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	}
 	else
 	{
-		if (!DebugOS && addr >= 0xc000 && addr <= 0xfbff)
-		{
-			if (!LastAddrInOS)
+		
+		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+			if (!DebugOS && addr >= 0xE000 && addr <= 0xffff)
 			{
-				DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X (%s)",addr,DebugLookupAddress(addr,&addrInfo) ? addrInfo.desc : "Unknown");
-				LastAddrInOS = true;
-				LastAddrInBIOS = LastAddrInROM = false;
-			}
+				if (!LastAddrInOS)
+				{
+					DebugDisplayInfoF("Entered OS (0xE000-0xFFFF) at 0x%04X (%s)", addr, DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
+					LastAddrInOS = true;
+					LastAddrInBIOS = LastAddrInROM = false;
+				}
 
-			return true;
+				return true;
+			}
+		}
+		else
+		{
+			if (!DebugOS && addr >= 0xc000 && addr <= 0xfbff)
+			{
+				if (!LastAddrInOS)
+				{
+					DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X (%s)",addr,DebugLookupAddress(addr,&addrInfo) ? addrInfo.desc : "Unknown");
+					LastAddrInOS = true;
+					LastAddrInBIOS = LastAddrInROM = false;
+				}
+
+				return true;
+			}
 		}
 
 		LastAddrInOS = false;
@@ -2460,6 +2515,9 @@ static bool DebugCmdState(char* args)
 		case 'm': // Memory state
 			DebugMemoryState();
 			break;
+		case 'c': // RTC/CMOS state
+			DebugRTCState();
+			break;
 		case 'r': // ROM state
 			DebugDisplayInfo("ROMs by priority:");
 			for (int i = 15; i >= 0; i--)
@@ -2868,7 +2926,7 @@ static bool DebugCmdWatch(char *args)
 		{
 			// Check type is valid
 			w.type = (char)tolower(w.type);
-			if(w.type != 'b' && w.type != 'w' && w.type != 'd')
+			if(w.type != 'b' && w.type != 'w' && w.type != 'd' && w.type != 'f')
 				return false;
 
 			sprintf(info, "%s%04X", (w.host ? "" : "p"), w.start);

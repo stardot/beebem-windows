@@ -56,21 +56,10 @@ extern unsigned char PagedRomReg;
 /* Master 128 Specific Stuff */
 extern unsigned char FSRam[8192]; // 8K Filing System RAM
 extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
-extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
-extern unsigned char CMOSRAMFS[64]; // 50 Bytes CMOS RAM for FileStore
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
 extern bool MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8;
 extern int HidAdd;
-
-struct CMOSType {
-	bool Enabled;
-	// unsigned char ChipSelect;
-	unsigned char Address;
-	// unsigned char StrobedData;
-	bool DataStrobe;
-	bool Op;
-};
 
 typedef enum RomFlags
 {
@@ -109,11 +98,8 @@ struct FS_State {
 	bool FDCTST;
 	bool MODE_LED;
 	// and location 0xFC2C
-//	bool DriveDoor; //0 closed - 1 Open
-//	bool CMD_Mode;  //0 off - 1 on
 };
 
-extern struct CMOSType CMOS;
 extern bool Sh_Display;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 
@@ -130,12 +116,13 @@ const unsigned char *BeebMemPtrWithWrapMode7(int Address, int Length);
 bool ReadROMFile(const char *filename, ROMConfigFile RomConfig);
 void BeebReadRoms(void);
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);
-void RTCReset(void);
 
 /* used by debugger */
 bool ReadRomInfo(int bank, RomInfo* info);
 /* Used to show the Rom titles from the options menu */
 char *ReadRomTitle( int bank, char *Title, int BufSize );
+
+void RTCReset(void);
 
 void beebmem_dumpstate(void);
 void SaveMemUEF(FILE *SUEF);

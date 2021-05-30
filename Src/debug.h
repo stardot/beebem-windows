@@ -46,7 +46,8 @@ enum class DebugType {
 	RemoteServer,
 	Manual,
 	Breakpoint,
-	BRK
+	BRK,
+	RTC
 };
 
 //*******************************************************************

@@ -59,6 +59,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"		//Rob added for INTON/OFF reporting only
 #include "teletext.h"
 #include "music5000.h"
+#include "rtc.h"
 
 using namespace std;
 
@@ -99,34 +100,13 @@ unsigned char HiddenDefault[31] = { 0,0,0,0,0,0,2,1,1,0,0xe0,0x8e,0,0,
 0,0,0,0,0,
 0xed,0xff,0xff,0x78,0,0x17,0x20,0x19,5,0x0a,0x2d,0xa1 };
 
-//Addresses 0x0 thru 0xD:		RTC Data: Sec, SecAlm, Min, MinAlm, Hr, HrAlm, Day, Date, Month, Year, Registers A, B, C & D
-//Addresses 0xE thru 0x12:	?
-//Address 0x13: 0xED		LANGUAGE in bank E. FILE SYSTEM in bank D. ROMS.cfg should match this, but IBOS reset will correct if wrong
-//Address 0x14: 0xFF		*INSERT status for ROMS &0F to &08. Default: &FF (All 8 ROMS enabled)
-//Address 0x15: 0xFF		*INSERT status for ROMS &07 to &00. Default: &FF (All 8 ROMS enabled)
-//Address 0x18: 0x17		0-2: MODE / 3: SHADOW / 4: TV Interlace / 5-7: TV screen shift.
-//Address 0x19: 0x20		0-2: FDRIVE / 3-5: CAPS. Default was &23. Changed to &20
-//Address 0x1A: 0x19		0-7: Keyboard Delay
-//Address 0x1B: 0x05		0-7: Keyboard Repeat
-//Address 0x1C: 0x0A		0-7: Printer Ignore
-//Address 0x1D: 0x2D		0: Tube / 2-4: BAUD / 5-7: Printer
-//Address 0x1E: 0xA1		0: File system / 4: Boot / 5-7: Data. Default was &A0. Changed to &A1/* End of Computech (&B+) Specific Stuff */
-
 unsigned char ROMSEL;
 /* Master 128 Specific Stuff */
 unsigned char FSRam[8192];       // 8K Filing System RAM
 unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
-unsigned char CMOSRAM[64];       // 50 Bytes CMOS RAM
-unsigned char CMOSRAMFS[64];     // 50 Bytes CMOS RAM for Filestore
-unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2}; // Backup of Master 128 CMOS Defaults
-unsigned char CMOSDefaultFS[64] = { 0xFE,0x01,
-                                    0x00, 0x00, 0x00, 0x00, 0x04, 0x84, 0x00, 0xC0, 0x02, 0xFF, 0xFF, 0xFF, 0x50, 0x05, 0x50, 0x75,
-                                    0x63, 0x65, 0x00, 0x00, 0x53, 0x59, 0x53, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x54,
-                                    0x4E, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x40, 0x20, 0x44, 0x00, 0x00, 0xFC, 0x00, 0x04, 0x00
-                                    }; // Backup of CMOS Defaults for FileStore from byte 14.
 unsigned char ShadowRAM[32768];  // 20K Shadow RAM
 unsigned char ACCCON;            // ACCess CONtrol register
-struct CMOSType CMOS;
+
 struct FS_State FS_Status;
 bool FS_DoorStatus;
 bool FS_CMDMode;
@@ -408,29 +388,18 @@ unsigned char BeebReadMem(int Address) {
 		if (Address == 0xfc08) return (Value);
 
 		/* Front Panel Switch
-		   FileStore has a front panel open/close switch on bit 6. open = 0x40
-		                    E01 only command mode switch on bit 7. on = 0x80  */
+			0x00=user mode, 0x40 door open, 0x80=cmnd0, 0xC0=cmnd1
+			FileStore has a front panel open/close switch on bit 6. open = 0x40
+		                     E01 only command mode switch on bit 7. on = 0x80  */
 		if (Address == 0xfc2c) {
-			if (FS_DoorStatus) { Value = 0x40; }
-			else { Value = 0x00; }
+			Value = 0x80;
 
-			if (MachineType == Model::FileStoreE01) {
-				if (FS_CMDMode == false) {
-					Value = Value | 0x80;
-				}
-				else {
-					Value = Value & 0x7f;
-				}
-			}
-			else {
-				Value = Value | 0x80;
-			}
-			return (Value); /* temporary
+			if (FS_DoorStatus) Value = 0x40;
 
-			return (0x40); /* temporary
-						      0x00=user mode, 0x40 door open, 0x80=cmnd0, 0xC0=cmnd1
-						      only works at the moment if the door is open at start, then
-							  use goto 0x0200 in the debugger */
+			if (MachineType == Model::FileStoreE01)
+				if (FS_CMDMode == true) Value |= 0x80;  // set top bit
+
+			return Value;
 		}
 	}
 
@@ -1001,7 +970,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 														   clock and termination circuit */
 			SyncIO();
 			AdjustForIOWrite();
-			UserVIAWrite((Address & 0xf), Value); /* uses the USER VIA of the BBC */
+			UserVIAWrite((Address & 0xf), Value); /* uses the USER VIA of the BBC as the FileStore System VIA */
 			return;
 		}
 
@@ -1073,10 +1042,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		return;
 	}
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-	}
-	else
-	{
+	if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)) {
 		if ((Address & ~0x3) == 0xfe20) {
 			VideoULAWrite(Address & 0xf, Value);
 				return;
@@ -1223,21 +1189,26 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		LEDs.ShowDisc = true;
 
 		if (Address == 0xfc08) {
-			FS_Status.Floppy0 = bool((Value & 0x1) == 0x1);
-			FS_Status.Floppy1 = bool((Value & 0x2) == 0x2);
+			LEDs.Disc0 = bool((Value & 0x1) == 0x1);
+			LEDs.Disc1 = bool((Value & 0x2) == 0x2);
+			mainWin->DrawFSLEDs(mainWin->m_hDC,1);
+
 			FS_Status.FloppySide = bool((Value & 0x4) == 0x4);
 			FS_Status.CMOS_Write = bool((Value & 0x8) == 0x8);
 			FS_Status.FDCDEN = bool((Value & 0x10) == 0x10);
 			FS_Status.FDCRST = bool((Value & 0x20) == 0x20);
 			FS_Status.FDCTST = bool((Value & 0x40) == 0x40);
-			FS_Status.MODE_LED = bool((Value & 0x80) == 0x80);
-			LEDs.Motor = FS_Status.MODE_LED;
+
+			LEDs.Motor = bool((Value & 0x80) == 0x80);
+			mainWin->DrawFSLEDs(mainWin->m_hDC,0);
+
 			CMOS.Enabled = FS_Status.CMOS_Write;
 
+
 			// FDC Control Reg doesn't evaluate the bits in the same order
-			Value = Value & 0x3;					 // Floppy 0 & 1 are the same
-			if (FS_Status.FloppySide) Value & 0x10;  // bit4
-			if (FS_Status.FDCDEN) Value & 0x20;      // bit5
+			Value = Value & 0x3;					 // Floppy 0 & 1 are the same, bit0, bit1
+			if (FS_Status.FloppySide) Value &= 0x10;  // bit4
+			if (FS_Status.FDCDEN) Value &= 0x20;      // bit5
 			WriteFDCControlReg(Value);
 			return;
 		}

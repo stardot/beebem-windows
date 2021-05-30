@@ -243,6 +243,12 @@
     <ClCompile Include="DebugTrace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rtc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UserPortRTC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h">
@@ -488,6 +494,12 @@
     <ClInclude Include="DebugTrace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rtc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserPortRTC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="BeebEm.ico">
@@ -506,6 +518,9 @@
       <Filter>Help Files</Filter>
     </Image>
     <Image Include="cover.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="fs-drives.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -75,6 +75,7 @@ Boston, MA  02110-1301, USA.
 #include "z80.h"
 #include "userkybd.h"
 #include "UserPortBreakoutBox.h"
+#include "UserPortRTC.h"
 #include "Messages.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
@@ -89,6 +90,7 @@ Boston, MA  02110-1301, USA.
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
 #include "DebugTrace.h"
+#include "rtc.h"
 
 using namespace Gdiplus;
 
@@ -416,6 +418,7 @@ void BeebWin::ApplyPrefs()
 		InitJoystick();
 
 	LoadFDC(NULL, true);
+
 	RTCInit();
 
 	SoundReset();
@@ -543,13 +546,36 @@ void BeebWin::Shutdown()
 
 void BeebWin::LoadBackgroundBitmap(Model model)
 {
+
 	if (model == Model::FileStoreE01 || model == Model::FileStoreE01S)
 	{
-		if (m_hBackgroundBitmap == nullptr)
-		{
+//		if (m_hBackgroundBitmap == nullptr)
+//		{
+
+		if (!FS_DoorStatus) {  // door closed
+			if (model == Model::FileStoreE01)  // Filestore E01 front cover image
+				m_hBackgroundBitmap = (HBITMAP)LoadImage(
+					hInst,
+					MAKEINTRESOURCE(IDB_FILESTOREE01),
+					IMAGE_BITMAP,
+					0,
+					0,
+					LR_CREATEDIBSECTION
+				);
+			else // FileStore E01S front cover image
+				m_hBackgroundBitmap = (HBITMAP)LoadImage(
+					hInst,
+					MAKEINTRESOURCE(IDB_FILESTOREE01S),
+					IMAGE_BITMAP,
+					0,
+					0,
+					LR_CREATEDIBSECTION
+				);
+		}
+		else { // door open
 			m_hBackgroundBitmap = (HBITMAP)LoadImage(
 				hInst,
-				MAKEINTRESOURCE(IDB_FILESTORE),
+				MAKEINTRESOURCE(IDB_FSDRIVES),
 				IMAGE_BITMAP,
 				0,
 				0,
@@ -557,21 +583,79 @@ void BeebWin::LoadBackgroundBitmap(Model model)
 			);
 		}
 
-		InvalidateRect(m_hWnd, nullptr, TRUE);
+//	}
+
+	InvalidateRect(m_hWnd, nullptr, TRUE);
+
 	}
+
 }
+
 
 /****************************************************************************/
 
 void BeebWin::SelectMachineType(Model model)
 {
+
+	char PrefsFile_temp[_MAX_PATH];
+
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
+		// in case model is being changed and the FileStore door is open, close it
+		if (FS_DoorStatus) {
+			FS_DoorStatus = !FS_DoorStatus;
+
+		CheckMenuItem(IDM_OPEN_DRIVE_DOOR, FS_DoorStatus);
+
+		// Only allow loading of floppy discs when the door is open
+//		EnableMenuItem(IDM_LOADDISC0, FS_DoorStatus);
+//		EnableMenuItem(IDM_LOADDISC1, FS_DoorStatus);
+		m_hBackgroundBitmap = nullptr;        // invalidate the current background image
+		}
+
+
+		// save current preferences
+/*		strcpy (PrefsFile_temp, m_PrefsFile);
+		strcpy(m_PrefsFile, "machine.tmp");
+		SavePreferences(true); // save all
+
+		// load filestore default preferences
+		strcpy(m_PrefsFile, "fs.tmp");
+		LoadPreferences(true, model);
+		MachineType = model;
+
+		SetTimer(mainWin->m_hWnd, 3, RTC_interrupt_delay, NULL);   // Set the RTC UIE interrupt timer
+		*/
+	}
+	else {
+
+
+		// save current filestore preferences
+/*
+		KillTimer(mainWin->m_hWnd, 3);               // remove the RTC UIE interrupt timer
+
+		strcpy(m_PrefsFile, "fs.tmp");
+		SavePreferences(true); // save all
+
+		// load previous machine preferences
+		strcpy(m_PrefsFile, "machine.tmp");
+		LoadPreferences(true, model);
+		strcpy(m_PrefsFile, PrefsFile_temp);
+		*/
+	}
+
+
 	LoadBackgroundBitmap(model);
 
+	// if a different machine has been selected
 	if (MachineType != model)
 	{
+
 		ResetBeebSystem(model, true);
 		UpdateModelMenu();
 	}
+
 }
 
 /****************************************************************************/
@@ -585,14 +669,14 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	Music5000Reset();
 	if (Music5000Enabled)
 		Music5000Init();
+
 	MachineType=NewModelType;
 	BeebMemInit(LoadRoms, m_ShiftBooted);
 	Init6502core();
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	RTCInit();
 
-	}
-	else {
+	if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)) {
 		if (TubeType == Tube::Acorn65C02)
 		{
 			Init65C02core();
@@ -624,37 +708,79 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	}
 
-	SysVIAReset();  // ensure also for FileStore otherwise interrupts are enabled
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
+			// Turn off Freeze when inactive
+			if (m_FreezeWhenInactive) {
+				m_FreezeWhenInactive = !m_FreezeWhenInactive;
+				CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
+			}
+
+			// Ensure GDI Mode
+			ExitDX();
+			m_DisplayRenderer = IDM_DISPGDI;
+			SetWindowAttributes(m_isFullScreen);
+			UpdateDisplayRendererMenu();
+
+			// set window size
+			m_MenuIdWinSize = IDM_640X512;
+			CheckMenuItem(m_MenuIdWinSize, true);
+			TranslateWindowSize();
+			SetWindowAttributes(m_isFullScreen);
+
+			// Ensure Econet enabled
+			if (!EconetEnabled){
+				EconetReset();
+				UpdateEconetMenu();
+			}
+
+	}
+
+
+	SysVIAReset();  // ensure also for FileStore otherwise interrupts might be enabled
 	UserVIAReset();
 
-	if ((MachineType == Model::FileStoreE01) || 
-		(MachineType == Model::FileStoreE01S)) {
-	}
-	else {
-		VideoInit();
-	}
-
+	VideoInit();
 	SetDiscWriteProtects();
 	Disc8271Reset();
+
 	if (EconetEnabled) EconetReset();	//Rob:
+
 	Reset1770();
 	AtoDInit();
 	SetRomMenu();
+
 	FreeDiscImage(0);
-	// Keep the disc images loaded
 	FreeDiscImage(1);
+
 	Close1770Disc(0);
 	Close1770Disc(1);
+
 	if (SCSIDriveEnabled) SCSIReset();
 	if (SCSIDriveEnabled) SASIReset();
 	if (IDEDriveEnabled)  IDEReset();
+
 	TeletextInit();
+
 	if (MachineType == Model::Master128) {
 		InvertTR00 = false;
 	}
 	else {
 		LoadFDC(NULL, false);
 	}
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		// ensure write protect on load is off
+		CheckMenuItem(IDM_WPONLOAD, false);
+		CheckMenuItem(IDM_WPDISC0, false);
+		CheckMenuItem(IDM_WPDISC1, false);
+		m_WriteProtectOnLoad = false;
+		m_WriteProtectDisc[0] = false;
+		m_WriteProtectDisc[1] = false;
+	}
+
+	// Keep the disc images loaded
 
 	if (MachineType != Model::Master128 && NativeFDC) {
 		// 8271 disc
@@ -663,9 +789,10 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		if (DiscLoaded[1] && CDiscType[1] == DiscType::SSD) LoadSimpleDiscImage(CDiscName[1], 1, 0, 80);
 		if (DiscLoaded[1] && CDiscType[1] == DiscType::DSD) LoadSimpleDSDiscImage(CDiscName[1], 1, 80);
 	}
-	if ((MachineType != Model::Master128 && !NativeFDC) || 
-		(MachineType == Model::Master128) || 
-		(MachineType == Model::FileStoreE01) || 
+
+	if ((MachineType != Model::Master128 && !NativeFDC) ||
+		(MachineType == Model::Master128) ||
+		(MachineType == Model::FileStoreE01) ||
 		(MachineType == Model::FileStoreE01S)) {
 		// 1770 Disc
 
@@ -1154,7 +1281,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
-	CheckMenuItem(ID_UPRM, RTC_Enabled);
+	CheckMenuItem(ID_UPRM, userPortRTC_Enabled);
 	CheckMenuItem(ID_RTCY2KADJUST, RTCY2KAdjust);
 
 	// Options
@@ -1232,11 +1359,21 @@ void BeebWin::UpdateModelMenu()
 
 
 	// disable menu items that are needed/not needed for filestore hardware
-	bool b_Filestore_disable = !((MachineType == Model::FileStoreE01) 
+	bool b_Filestore_disable = !((MachineType == Model::FileStoreE01)
 		                     || (MachineType == Model::FileStoreE01S));
-	
+
 
 	// File
+	// on FileStore, only allow loading of discs when the door flap is open
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		EnableMenuItem(IDM_LOADDISC0, FS_DoorStatus);
+		EnableMenuItem(IDM_LOADDISC1, FS_DoorStatus);
+	}
+	else {
+		EnableMenuItem(IDM_LOADDISC0, true);
+		EnableMenuItem(IDM_LOADDISC1, true);
+	}
+
 	EnableMenuItem(ID_LOADTAPE, b_Filestore_disable);
 	EnableMenuItem(IDM_OPEN_DRIVE_DOOR, !b_Filestore_disable);
 	EnableMenuItem(IDM_COMMAND_MODE, (MachineType == Model::FileStoreE01)); // Filestore E01 only not E01S
@@ -1262,7 +1399,7 @@ void BeebWin::UpdateModelMenu()
 	EnableMenuItem(ID_TAPECONTROL, b_Filestore_disable);
 	EnableMenuItem(ID_SERIAL, b_Filestore_disable);
 	// < &RS423 Destination pop up
-		
+
 	// View
 	// Speed
 	// Sound
@@ -1524,6 +1661,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				HDC hDC = BeginPaint(hWnd, &ps);
 
 				mainWin->DrawBackgroundBitmap(hDC);
+				mainWin->DrawFSLEDs(hDC, 0);
+				mainWin->DrawFSLEDs(hDC, 1);
+				mainWin->DrawFSLEDs(hDC, 2);
 
 				EndPaint(hWnd, &ps);
 			}
@@ -1950,8 +2090,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				mainWin->KillBootDiscTimer();
 				mainWin->DoShiftBreak();
 			}
-			else if (uParam == 3) // Handle timer for Filestore RTC clock every 1/100th sec
-				mainWin->HandleRTCTimer();
+			else if (wParam == 3) // Handle update cycles for FileStore RTC
+				HandleRTCTimer();
 			break;
 
 		case WM_USER_KEYBOARD_DIALOG_CLOSED:
@@ -2913,8 +3053,13 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_OPEN_DRIVE_DOOR: // open & close the FileStore drive door
 		FS_DoorStatus = !FS_DoorStatus;
 		CheckMenuItem(IDM_OPEN_DRIVE_DOOR, FS_DoorStatus);
+		// Only allow loading of floppy discs when the door is open
+		EnableMenuItem(IDM_LOADDISC0, FS_DoorStatus);
+		EnableMenuItem(IDM_LOADDISC1, FS_DoorStatus);
+		m_hBackgroundBitmap = nullptr;        // invalidate the current background image
+		LoadBackgroundBitmap(MachineType);
 		break;
-	
+
 	case IDM_COMMAND_MODE: // Set command mode on the E01
 		FS_CMDMode = !FS_CMDMode;
 		CheckMenuItem(IDM_COMMAND_MODE, FS_CMDMode);
@@ -3765,6 +3910,7 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_FILE_RESET:
+		CloseFileStore();
 		ResetBeebSystem(MachineType, false);
 		break;
 
@@ -3892,8 +4038,8 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_UPRM:
-		RTC_Enabled = !RTC_Enabled;
-		CheckMenuItem(ID_UPRM, RTC_Enabled);
+		userPortRTC_Enabled = !userPortRTC_Enabled;
+		CheckMenuItem(ID_UPRM, userPortRTC_Enabled);
 		break;
 
 	case ID_TELETEXTHALFMODE:
@@ -4074,6 +4220,8 @@ void BeebWin::HandleCommand(int MenuId)
 		SCSIReset();
 		SASIReset();
 		CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
+		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+			mainWin->DrawFSLEDs(mainWin->m_hDC,2);
 		if (SCSIDriveEnabled) {
 			IDEDriveEnabled = false;
 			CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
@@ -4247,7 +4395,7 @@ void BeebWin::TogglePause()
 		KillTimer(m_hWnd, 2);
 
 		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-			KillTimer(m_hWnd, 3);
+			KillTimer(m_hWnd, 3);  // emulation paused, stop the RTC update cycle
 	}
 	else
 	{
@@ -4262,7 +4410,7 @@ void BeebWin::TogglePause()
 		}
 
 		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-			SetTimer(mainWin->m_hWnd, 3, 10, NULL);   // Set the RTC UIE interrupt timer
+			SetTimer(mainWin->m_hWnd, 3, RTC_UpdateCycle, NULL);   // Set the RTC UIE interrupt timer
 	}
 }
 
@@ -4796,7 +4944,7 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 
 	if (cont)
 	{
-		if (MachineType != Model::Master128)
+		if ((MachineType != Model::Master128) && (MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S))
 		{
 			if (dsd)
 			{
@@ -4943,7 +5091,7 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 
 		case 'A':
 		case 'a':
-			if ((MachineType == Model::Master128 || !NativeFDC) || 
+			if ((MachineType == Model::Master128 || !NativeFDC) ||
 				(MachineType == Model::FileStoreE01) ||
 				(MachineType == Model::FileStoreE01S)) {
 				Load1770DiscImage(Name, DriveNum, DiscType::ADFS);
@@ -5314,21 +5462,6 @@ void BeebWin::HandleTimer()
 	}
 }
 
-
-
-/****************************************************************************/
-void BeebWin::HandleRTCTimer()
-{
-	/* FileStores use the RTC timer that fires an interrupt every 1/100th second 
-	   It is flagged in UIE Register B and C. 
-	   */
-
-	RTC_IRQF = 0x90; // +SET +UIE
-	// assert IRQ
-	intStatus = 1;
-}
-
-
 /****************************************************************************/
 
 MessageResult BeebWin::Report(MessageType type, const char *format, ...)
@@ -5504,4 +5637,20 @@ bool BeebWin::RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
 	}
 
 	return rc;
+}
+
+void BeebWin::CloseFileStore(void)
+{
+	// Clean up FileStore on a reset.
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+
+		// Ensure maintenance mode is entered to flush buffers
+		if ((FS_DoorStatus) == false) {
+			FS_DoorStatus != FS_DoorStatus;
+		}
+
+		FS_DoorStatus != FS_DoorStatus;
+
+	}
+
 }

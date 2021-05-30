@@ -80,13 +80,12 @@ typedef struct bmiData
 struct LEDType {
 	bool ShiftLock;
 	bool CapsLock;
-	bool Motor;
+	bool Motor;		// Mode LED on the Filestore
 	bool Disc0;
 	bool Disc1;
 	bool HDisc[4];
 	bool ShowDisc;
 	bool ShowKB;
-	bool MODE;        // Model LED on the Filestore
 	bool ShowFS;
 };
 extern struct LEDType LEDs;
@@ -288,7 +287,7 @@ public:
 	void TextViewSpeechSync(void);
 	void TextViewSyncWithBeebCursor(void);
 	void HandleTimer(void);
-	void HandleRTCTimer(void); // Filestore only
+	void CloseFileStore(void);
 	void doCopy(void);
 	void doPaste(void);
 	void ClearClipboardBuffer();
@@ -525,6 +524,7 @@ public:
 	void ExitDX(void);
 	void UpdateSmoothing(void);
 	void DrawBackgroundBitmap(HDC hDC);
+	void DrawFSLEDs(HDC hDC, int LEDset);
 
 	// DirectDraw
 	HRESULT InitDirectDraw(void);

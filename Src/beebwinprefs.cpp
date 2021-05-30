@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "SoundStreamer.h"
 #include "music5000.h"
 #include "beebmem.h"
+#include "rtc.h"
 #include "serial.h"
 #include "econet.h"
 #include "tube.h"
@@ -44,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "z80.h"
 #include "userkybd.h"
 #include "UserPortBreakoutBox.h"
+#include "UserPortRTC.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
@@ -76,12 +78,10 @@ static const char *CFG_PRINTER_FILE = "PrinterFile";
 static const char *CFG_MACHINE_TYPE = "MachineType";
 static const char *CFG_TUBE_TYPE = "TubeType";
 
+
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
 #define LED_SHOW_DISC (LEDByte&2)>>1
-
-extern unsigned char CMOSDefault[64];
-extern unsigned char CMOSDefaultFS[64];
 
 void BeebWin::LoadPreferences()
 {
@@ -340,6 +340,7 @@ void BeebWin::LoadPreferences()
 
 	if (!m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
 		PrinterEnabled = false;
+
 	if (m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, dword))
 		m_MenuIdPrinterPort = dword;
 	else
@@ -484,11 +485,17 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
 		IDEDriveEnabled = false;
 
-	if (!m_Preferences.GetBoolValue("RTCEnabled", RTC_Enabled))
-		RTC_Enabled = false;
+	if (!m_Preferences.GetBoolValue("UserPort RTCEnabled", userPortRTC_Enabled))
+		userPortRTC_Enabled = false;
 
-	if (!m_Preferences.GetBoolValue("RTCY2KAdjust", RTCY2KAdjust))
+	if (!m_Preferences.GetBinaryValue("UserPort RTCOffset", &userPortRTC_YearCorrection, 1))
+		userPortRTC_YearCorrection = -1;
+
+	if (!m_Preferences.GetBoolValue("RTCY2KAdjust Enabled", RTCY2KAdjust))
 		RTCY2KAdjust = true;
+
+	if (!m_Preferences.GetBinaryValue("RTCY2KOffset", &RTC_YearCorrection, 1))
+		RTC_YearCorrection = 20;
 
 	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
 		m_MenuIdAviResolution = dword;
@@ -535,15 +542,17 @@ void BeebWin::LoadPreferences()
 	}
 
 	// CMOS RAM now in prefs file
-	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[14], 50)) {
-		memcpy(&CMOSRAM[14], CMOSDefault, 50);
+	if (!m_Preferences.GetBinaryValue("CMOSRamM128", &CMOSRAM_M128[14], 50)) {
+		memcpy(&CMOSRAM_M128[14], CMOSDefault, 50);
 	}
 
-	if (!m_Preferences.GetBinaryValue("CMOSRamFS", &CMOSRAMFS[14], 50)) {
-		memcpy(&CMOSRAMFS[14], CMOSDefaultFS, 50);
+	if (!m_Preferences.GetBinaryValue("CMOSRamE01", &CMOSRAM_E01[14], 50)) {
+		memcpy(&CMOSRAM_E01[14], CMOSDefaultFS, 50);
 	}
 
-	MachineType = Model::B;
+	if (!m_Preferences.GetBinaryValue("CMOSRamE01S", &CMOSRAM_E01S[14], 50)) {
+		memcpy(&CMOSRAM_E01S[14], CMOSDefaultFS, 50);
+	}
 
 	// Set FDC defaults if not already set
 	for (int machine = 0; machine < 3; ++machine)
@@ -553,7 +562,7 @@ void BeebWin::LoadPreferences()
 
 		if (!m_Preferences.HasValue(CfgName))
 		{
-			// Default B+ to Acorn FDC
+			// Default B+, to Acorn FDC
 			if (machine == static_cast<int>(Model::BPlus))
 				strcpy(path, "Hardware\\Acorn1770.dll");
 			else
@@ -561,6 +570,7 @@ void BeebWin::LoadPreferences()
 			m_Preferences.SetStringValue(CfgName, path);
 		}
 	}
+
 
 	// Set file path defaults
 	if (!m_Preferences.HasValue("DiscsPath")) {
@@ -588,7 +598,7 @@ void BeebWin::LoadPreferences()
 	}
 
 	// Update prefs version
-	m_Preferences.SetStringValue("PrefsVersion", "2.1");
+	m_Preferences.SetStringValue("PrefsVersion", "2.2");
 
 	// Windows key enable/disable still comes from registry
 	int binsize = 24;
@@ -724,8 +734,11 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
-		m_Preferences.SetBoolValue("RTCEnabled", RTC_Enabled);
-		m_Preferences.SetBoolValue("RTCY2KAdjust", RTCY2KAdjust);
+		m_Preferences.SetBoolValue("UserPort RTCEnabled", userPortRTC_Enabled);
+		m_Preferences.SetBinaryValue("UserPort RTCOffset", &userPortRTC_YearCorrection, 1);
+		m_Preferences.SetBoolValue("RTCY2KAdjust Enabled", RTCY2KAdjust);
+		m_Preferences.SetBinaryValue("RTCY2KOffset", &RTC_YearCorrection, 1);
+
 
 		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIdAviResolution);
 		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIdAviSkip);
@@ -741,8 +754,9 @@ void BeebWin::SavePreferences(bool saveAll)
 	// CMOS RAM now in prefs file
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
-		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[14], 50);
-		m_Preferences.SetBinaryValue("CMOSRamFS", &CMOSRAMFS[14], 50);
+		m_Preferences.SetBinaryValue("CMOSRamM128", &CMOSRAM_M128[14], 50);
+		m_Preferences.SetBinaryValue("CMOSRamE01", &CMOSRAM_E01[14], 50);
+		m_Preferences.SetBinaryValue("CMOSRamE01S", &CMOSRAM_E01S[14], 50);
 	}
 
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
