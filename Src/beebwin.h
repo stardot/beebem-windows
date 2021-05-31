@@ -297,7 +297,9 @@ public:
 	bool HasKbdCmd() const;
 	void SetKeyboardTimer();
 	void SetBootDiscTimer();
+	void SetFileStoreShutdownTimer();
 	void KillBootDiscTimer();
+	void KillFileStoreShutdownTimer();
 
 	void SaveEmuUEF(FILE *SUEF);
 	void LoadEmuUEF(FILE *SUEF,int Version);
@@ -432,10 +434,12 @@ public:
 	int		m_AutoBootDelay;
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
+	bool		m_FileStoreReset;
 	bool		m_WasPaused;
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
 	bool		m_BootDiscTimerElapsed;
+	bool		m_FileStoreShutdownTimerElapsed;
 	unsigned char RomWritePrefs[16];
 
 	// Bitmap capture vars

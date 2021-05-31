@@ -203,9 +203,11 @@ BeebWin::BeebWin()
 	m_AutoBootDelay = 0;
 	m_EmuPaused = false;
 	m_StartPaused = false;
+	m_FileStoreReset = false;
 	m_WasPaused = false;
 	m_KeyboardTimerElapsed = false;
 	m_BootDiscTimerElapsed = false;
+	m_FileStoreShutdownTimerElapsed = false;
 	memset(m_ClipboardBuffer, 0, sizeof(m_ClipboardBuffer));
 	m_ClipboardLength = 0;
 	m_ClipboardIndex = 0;
@@ -501,6 +503,13 @@ BeebWin::~BeebWin()
 /****************************************************************************/
 void BeebWin::Shutdown()
 {
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		//		if (!m_FileStoreShutdownTimerElapsed) {
+		//			CloseFileStore();
+		//			return;
+		//		}
+	}
+
 	if (aviWriter)
 	{
 		delete aviWriter;
@@ -553,7 +562,7 @@ void BeebWin::LoadBackgroundBitmap(Model model)
 //		{
 
 		if (!FS_DoorStatus) {  // door closed
-			if (model == Model::FileStoreE01)  // Filestore E01 front cover image
+			if (model == Model::FileStoreE01)					// Filestore E01 front cover image
 				m_hBackgroundBitmap = (HBITMAP)LoadImage(
 					hInst,
 					MAKEINTRESOURCE(IDB_FILESTOREE01),
@@ -562,7 +571,7 @@ void BeebWin::LoadBackgroundBitmap(Model model)
 					0,
 					LR_CREATEDIBSECTION
 				);
-			else // FileStore E01S front cover image
+			else												// FileStore E01S front cover image
 				m_hBackgroundBitmap = (HBITMAP)LoadImage(
 					hInst,
 					MAKEINTRESOURCE(IDB_FILESTOREE01S),
@@ -572,7 +581,7 @@ void BeebWin::LoadBackgroundBitmap(Model model)
 					LR_CREATEDIBSECTION
 				);
 		}
-		else { // door open
+		else {													// door open
 			m_hBackgroundBitmap = (HBITMAP)LoadImage(
 				hInst,
 				MAKEINTRESOURCE(IDB_FSDRIVES),
@@ -604,14 +613,7 @@ void BeebWin::SelectMachineType(Model model)
 
 		// in case model is being changed and the FileStore door is open, close it
 		if (FS_DoorStatus) {
-			FS_DoorStatus = !FS_DoorStatus;
-
-		CheckMenuItem(IDM_OPEN_DRIVE_DOOR, FS_DoorStatus);
-
-		// Only allow loading of floppy discs when the door is open
-//		EnableMenuItem(IDM_LOADDISC0, FS_DoorStatus);
-//		EnableMenuItem(IDM_LOADDISC1, FS_DoorStatus);
-		m_hBackgroundBitmap = nullptr;        // invalidate the current background image
+			HandleCommand(IDM_OPEN_DRIVE_DOOR);
 		}
 
 
@@ -662,6 +664,15 @@ void BeebWin::SelectMachineType(Model model)
 
 void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 {
+
+/*
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+		if (!m_FileStoreShutdownTimerElapsed) {
+			m_FileStoreReset = true;
+			CloseFileStore();
+			return;
+		}
+*/
 	SoundReset();
 	if (SoundDefault)
 		SoundInit();
@@ -2092,6 +2103,21 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			else if (wParam == 3) // Handle update cycles for FileStore RTC
 				HandleRTCTimer();
+			else if (wParam == 4) // Handle timer FileStore shutdown delay
+			{
+				mainWin->m_FileStoreShutdownTimerElapsed = true;
+
+				mainWin->KillFileStoreShutdownTimer();
+				if (mainWin->m_FileStoreReset = true) {
+					mainWin->m_FileStoreReset = false;				//	Reset
+					mainWin->ResetBeebSystem(MachineType, false);
+				}
+				else
+				{
+					mainWin->Shutdown();							//	Shutdown - no restart
+				}
+
+			}
 			break;
 
 		case WM_USER_KEYBOARD_DIALOG_CLOSED:
@@ -3910,8 +3936,13 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_FILE_RESET:
-		CloseFileStore();
-		ResetBeebSystem(MachineType, false);
+		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+			m_FileStoreReset = true;
+			CloseFileStore();
+		}
+		else
+			ResetBeebSystem(MachineType, false);
+
 		break;
 
 	case ID_MODELB:
@@ -5022,11 +5053,22 @@ void BeebWin::SetBootDiscTimer()
 	SetTimer(m_hWnd, 2, m_AutoBootDelay, NULL);
 }
 
+// used to allow the FileStore to flush buffers when
+// shutting down or being reset
+void BeebWin::SetFileStoreShutdownTimer()
+{
+	SetTimer(m_hWnd, 4, 8000, NULL);
+}
 
 void BeebWin::KillBootDiscTimer()
 {
 	m_BootDiscTimerElapsed = true;
 	KillTimer(m_hWnd, 2);
+}
+
+void BeebWin::KillFileStoreShutdownTimer()
+{
+	KillTimer(m_hWnd, 4);
 }
 
 
@@ -5639,18 +5681,21 @@ bool BeebWin::RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
 	return rc;
 }
 
-void BeebWin::CloseFileStore(void)
+void BeebWin::CloseFileStore()
 {
-	// Clean up FileStore on a reset.
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-
-		// Ensure maintenance mode is entered to flush buffers
-		if ((FS_DoorStatus) == false) {
-			FS_DoorStatus != FS_DoorStatus;
-		}
-
-		FS_DoorStatus != FS_DoorStatus;
-
+	// Ensure maintenance mode is entered to flush buffers
+	if (!FS_DoorStatus) {
+		HandleCommand(IDM_OPEN_DRIVE_DOOR);
+		//	cause delay
+		SetFileStoreShutdownTimer();
 	}
+	else // was already open and can be reset/shutdown immediately
+	{
+		m_FileStoreShutdownTimerElapsed = true;
 
+		if (m_FileStoreReset)
+			ResetBeebSystem(MachineType, false);
+		else
+			Shutdown();
+	}
 }

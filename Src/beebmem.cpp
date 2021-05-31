@@ -392,12 +392,12 @@ unsigned char BeebReadMem(int Address) {
 			FileStore has a front panel open/close switch on bit 6. open = 0x40
 		                     E01 only command mode switch on bit 7. on = 0x80  */
 		if (Address == 0xfc2c) {
-			Value = 0x80;
+			Value = 0x00;
 
 			if (FS_DoorStatus) Value = 0x40;
 
 			if (MachineType == Model::FileStoreE01)
-				if (FS_CMDMode == true) Value |= 0x80;  // set top bit
+				if (FS_CMDMode) Value |= 0x80;  // set top bit
 
 			return Value;
 		}
