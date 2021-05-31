@@ -74,10 +74,6 @@ static FILE *Disc0; // File handlers for the disc drives 0 and 1
 static FILE *Disc1;
 static FILE *CurrentDisc; // Current Disc Handle
 
-static bool Disc0Open = false;
-static bool Disc1Open = false; // Disc open status markers
-static bool *CDiscOpen = &Disc0Open; // Current Disc Open
-
 static unsigned char ExtControl; // FDC External Control Register
 static int CurrentDrive = 0; // FDC Control drive setting
 static long HeadPos[2]; // Position of Head on each drive for swapping
@@ -151,6 +147,11 @@ const int DRIVE_CONTROL_SELECT_DRIVE_0 = 0x01;
 const int DRIVE_CONTROL_SELECT_DRIVE_1 = 0x02;
 const int DRIVE_CONTROL_SELECT_SIDE    = 0x10;
 const int DRIVE_CONTROL_SELECT_DENSITY = 0x20;
+
+static bool CurrentDiscOpen()
+{
+	return CurrentDisc != nullptr;
+}
 
 // Read 1770 Register. Note - NOT the FDC Control register at &FE24.
 
@@ -297,7 +298,7 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 
 		int SectorCycles = 0; // Number of cycles to wait for sector to come round
 
-		if (*CDiscOpen && Sector > (RotSect + 1))
+		if (CurrentDiscOpen() && Sector > (RotSect + 1))
 			SectorCycles = (ONE_REV_TIME / MaxSects[CurrentDrive]) * ((RotSect + 1) - Sector);
 
 		if (HComBits == WD1770_COMMAND_READ_SECTOR) {
@@ -453,7 +454,7 @@ void Poll1770(int NCycles) {
 	}
 
 	if ((Status & WD1770_STATUS_BUSY) && !NMILock) {
-		if (FDCommand < 6 && *CDiscOpen && (DscType[CurrentDrive] == DiscType::SSD && CurrentHead[CurrentDrive] == 1)) {
+		if (FDCommand < 6 && CurrentDiscOpen() && (DscType[CurrentDrive] == DiscType::SSD && CurrentHead[CurrentDrive] == 1)) {
 			// Single sided disk, disc not ready
 			Status &= ~WD1770_STATUS_BUSY;
 			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
@@ -462,7 +463,7 @@ void Poll1770(int NCycles) {
 			return;
 		}
 
-		if (FDCommand < 6 && *CDiscOpen) {
+		if (FDCommand < 6 && CurrentDiscOpen()) {
 			int TracksPassed = 0; // Holds the number of tracks passed over by the head during seek
 			unsigned char OldTrack = (Track >= 80 ? 0 : Track);
 			// Seek type commands
@@ -542,7 +543,7 @@ void Poll1770(int NCycles) {
 			return;
 		}
 
-		if (FDCommand < 6 && !*CDiscOpen) {
+		if (FDCommand < 6 && !CurrentDiscOpen()) {
 			// Disc not ready, return seek error.
 			Status &= ~WD1770_STATUS_BUSY;
 			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
@@ -685,7 +686,7 @@ void Poll1770(int NCycles) {
 			FDCommand = 0;
 		}
 
-		if (FDCommand >= 8 && *CDiscOpen && FDCommand <= 10) { // Read/Write Prepare
+		if (FDCommand >= 8 && CurrentDiscOpen() && FDCommand <= 10) { // Read/Write Prepare
 			Status |= WD1770_STATUS_BUSY;
 			Status &= ~(WD1770_STATUS_WRITE_PROTECT |
 			            WD1770_STATUS_SPIN_UP_COMPLETE |
@@ -697,16 +698,16 @@ void Poll1770(int NCycles) {
 			fseek(CurrentDisc, DiscStrt[CurrentDrive] + (DiscStep[CurrentDrive] * Track) + (Sector * SecSize[CurrentDrive]), SEEK_SET);
 		}
 
-		if (FDCommand >= 8 && !*CDiscOpen && FDCommand <= 9) {
+		if (FDCommand >= 8 && !CurrentDiscOpen() && FDCommand <= 9) {
 			Status &= ~WD1770_STATUS_BUSY;
 			Status |= WD1770_STATUS_RECORD_NOT_FOUND;
 			NMIStatus |= 1 << nmi_floppy;
 			FDCommand = 0;
 		}
 
-		if (FDCommand == 8 && *CDiscOpen) FDCommand = 6;
+		if (FDCommand == 8 && CurrentDiscOpen()) FDCommand = 6;
 
-		if (FDCommand == 9 && *CDiscOpen) {
+		if (FDCommand == 9 && CurrentDiscOpen()) {
 			Status |= WD1770_STATUS_DATA_REQUEST;
 			NMIStatus |= 1 << nmi_floppy;
 			FDCommand = 7;
@@ -849,7 +850,7 @@ void Poll1770(int NCycles) {
 		FDCommand = 0;
 	}
 
-	if (FDCommand >= 20 && *CDiscOpen && FDCommand <= 21) { // Read/Write Track Prepare
+	if (FDCommand >= 20 && CurrentDiscOpen() && FDCommand <= 21) { // Read/Write Track Prepare
 		Status |= WD1770_STATUS_BUSY;
 		Status &= ~(WD1770_STATUS_WRITE_PROTECT |
 		            WD1770_STATUS_SPIN_UP_COMPLETE |
@@ -863,7 +864,7 @@ void Poll1770(int NCycles) {
 		// WriteLog("Read/Write Track Prepare - Disc = %d, Track = %d\n", CurrentDrive, Track);
 	}
 
-	if (FDCommand >= 20 && !*CDiscOpen && FDCommand <= 21) {
+	if (FDCommand >= 20 && !CurrentDiscOpen() && FDCommand <= 21) {
 		// WriteLog("ResetStatus(0) Here 8\n");
 		Status &= ~WD1770_STATUS_BUSY;
 		Status |= WD1770_STATUS_RECORD_NOT_FOUND;
@@ -871,11 +872,11 @@ void Poll1770(int NCycles) {
 		FDCommand = 0;
 	}
 
-	if (FDCommand == 20 && *CDiscOpen) {
+	if (FDCommand == 20 && CurrentDiscOpen()) {
 		FDCommand = 22;
 	}
 
-	if (FDCommand == 21 && *CDiscOpen) {
+	if (FDCommand == 21 && CurrentDiscOpen()) {
 		FDCommand = 23;
 		FormatState = 0;
 		Status |= WD1770_STATUS_DATA_REQUEST;
@@ -1002,52 +1003,59 @@ void Poll1770(int NCycles) {
 
 Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type) {
 	Disc1770Result Result = Disc1770Result::Failed;
-	long int TotalSectors;
-	long HeadStore;
+
+	FILE* DiscLoaded = nullptr;
+
 	if (DscDrive == 0) {
-		if (Disc0Open) {
+		if (Disc0 != nullptr) {
 			fclose(Disc0);
 		}
-		Disc0Open = false;
+
 		Disc0 = fopen(DscFileName, "rb+");
+
 		if (Disc0 != nullptr) {
 			Result = Disc1770Result::OpenedReadWrite;
 		}
 		else {
 			Disc0 = fopen(DscFileName, "rb");
+
 			if (Disc0 != nullptr) {
 				Result = Disc1770Result::OpenedReadOnly;
 			}
 		}
 
-		if (Disc0) {
+		if (Disc0 != nullptr) {
 			if (CurrentDrive == 0) {
 				CurrentDisc = Disc0;
 			}
 
-			Disc0Open = true;
+			DiscLoaded = Disc0;
 		}
 	}
 	else if (DscDrive == 1) {
-		if (Disc1Open) {
+		if (Disc1 != nullptr) {
 			fclose(Disc1);
 		}
-		Disc1Open = false;
+
 		Disc1 = fopen(DscFileName, "rb+");
+
 		if (Disc1 != nullptr) {
 			Result = Disc1770Result::OpenedReadWrite;
 		}
 		else {
 			Disc1 = fopen(DscFileName, "rb");
+
 			if (Disc1 != nullptr) {
 				Result = Disc1770Result::OpenedReadOnly;
 			}
 		}
-		if (Disc1) {
+
+		if (Disc1 != nullptr) {
 			if (CurrentDrive == 1) {
 				CurrentDisc = Disc1;
 			}
-			Disc1Open = true;
+
+			DiscLoaded = Disc1;
 		}
 	}
 
@@ -1103,12 +1111,12 @@ Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType
 		// In an ADFS L disc, this is 0xa00 (160 Tracks)
 		// for and ADFS M disc, this is 0x500 (80 Tracks)
 		// and for the dreaded ADFS S disc, this is 0x280
-		HeadStore = ftell(CurrentDisc);
-		fseek(CurrentDisc, 0xfc, SEEK_SET);
-		TotalSectors = fgetc(CurrentDisc);
-		TotalSectors |= fgetc(CurrentDisc) << 8;
-		TotalSectors |= fgetc(CurrentDisc) << 16;
-		fseek(CurrentDisc, HeadStore, SEEK_SET);
+		long HeadStore = ftell(DiscLoaded);
+		fseek(DiscLoaded, 0xfc, SEEK_SET);
+		long TotalSectors = fgetc(DiscLoaded);
+		TotalSectors |= fgetc(DiscLoaded) << 8;
+		TotalSectors |= fgetc(DiscLoaded) << 16;
+		fseek(DiscLoaded, HeadStore, SEEK_SET);
 		if (TotalSectors == 0x500 || TotalSectors == 0x280) { // Just so 1024 sector mixed mode ADFS/NET discs can be recognised as dbl sided
 			DiscStep[DscDrive] = 4096;
 			DiscStrt[DscDrive] = 0;
@@ -1135,19 +1143,17 @@ void WriteFDCControlReg(unsigned char Value) {
 	if (ExtControl & DRIVE_CONTROL_SELECT_DRIVE_0) {
 		CurrentDisc = Disc0;
 		CurrentDrive = 0;
-		CDiscOpen = &Disc0Open;
 	}
 
 	if (ExtControl & DRIVE_CONTROL_SELECT_DRIVE_1) {
 		CurrentDisc = Disc1;
 		CurrentDrive = 1;
-		CDiscOpen = &Disc1Open;
 	}
 
 	if ((ExtControl & DRIVE_CONTROL_SELECT_SIDE) && CurrentHead[CurrentDrive] == 0) {
 		// Select side 1
 		CurrentHead[CurrentDrive] = 1;
-		if (*CDiscOpen) {
+		if (CurrentDisc != nullptr) {
 			fseek(CurrentDisc, TrkLen[CurrentDrive], SEEK_CUR);
 		}
 		DiscStrt[CurrentDrive] = DefStart[CurrentDrive];
@@ -1156,7 +1162,7 @@ void WriteFDCControlReg(unsigned char Value) {
 	if (!(ExtControl & DRIVE_CONTROL_SELECT_SIDE) && CurrentHead[CurrentDrive] == 1) {
 		// Select side 0
 		CurrentHead[CurrentDrive] = 0;
-		if (*CDiscOpen) {
+		if (CurrentDisc != nullptr) {
 			fseek(CurrentDisc, 0 - TrkLen[CurrentDrive], SEEK_CUR);
 		}
 		DiscStrt[CurrentDrive] = 0;
@@ -1192,17 +1198,17 @@ void Reset1770() {
 	if (DscType[1] == DiscType::DOS) MaxSects[1] = 8;
 }
 
-void Close1770Disc(int Drive) {
-	if (Drive == 0 && Disc0Open) {
+void Close1770Disc(int Drive)
+{
+	if (Drive == 0 && Disc0 != nullptr) {
 		fclose(Disc0);
-		Disc0 = NULL;
-		Disc0Open = false;
+		Disc0 = nullptr;
 		DscFileNames[0][0] = 0;
 	}
-	if (Drive == 1 && Disc1Open) {
+
+	if (Drive == 1 && Disc1 != nullptr) {
 		fclose(Disc1);
-		Disc1 = NULL;
-		Disc1Open = false;
+		Disc1 = nullptr;
 		DscFileNames[1][0] = 0;
 	}
 }
@@ -1266,20 +1272,20 @@ void Save1770UEF(FILE *SUEF)
 	fputc(static_cast<int>(DscType[0]), SUEF);
 	fputc(static_cast<int>(DscType[1]), SUEF);
 
-	if (!Disc0Open) {
+	if (Disc0 != nullptr) {
+		fwrite(CDiscName[0],1,256,SUEF);
+	}
+	else {
 		// No disc in drive 0
 		fwrite(blank,1,256,SUEF);
 	}
-	else {
-		fwrite(CDiscName[0],1,256,SUEF);
-	}
 
-	if (!Disc1Open) {
+	if (Disc1 != nullptr) {
+		fwrite(CDiscName[1],1,256,SUEF);
+	}
+	else {
 		// No disc in drive 1
 		fwrite(blank,1,256,SUEF);
-	}
-	else {
-		fwrite(CDiscName[1],1,256,SUEF);
 	}
 
 	fputc(Status,SUEF);
@@ -1350,7 +1356,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 		// Load drive 0
 		Loaded = true;
 		mainWin->Load1770DiscImage(FileName, 0, DscType[0]);
-		if (!Disc0Open)
+		if (Disc0 == nullptr)
 			LoadFailed = true;
 	}
 
@@ -1359,7 +1365,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 		// Load drive 1
 		Loaded = true;
 		mainWin->Load1770DiscImage(FileName, 1, DscType[1]);
-		if (!Disc1Open)
+		if (Disc1 == nullptr)
 			LoadFailed = true;
 	}
 
@@ -1410,11 +1416,6 @@ void Load1770UEF(FILE *SUEF, int Version)
 		SelectedDensity = fgetbool(SUEF);
 		RotSect = fget8(SUEF);
 		fread(FDCDLL,1,256,SUEF);
-
-		if (CurrentDrive==1)
-			CDiscOpen=&Disc1Open;
-		else
-			CDiscOpen=&Disc0Open;
 
 		if (MachineType != Model::Master128) {
 			mainWin->LoadFDC(FDCDLL, false);
