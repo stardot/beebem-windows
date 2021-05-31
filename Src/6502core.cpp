@@ -3143,10 +3143,17 @@ static void PollHardware(unsigned int nCycles)
 		}
 	}
 
-	if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S)
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+	{
+		FileStoreVideoPoll(nCycles);
+	}
+	else
 	{
 		VideoPoll(nCycles);
-	
+	}
+
+	if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S)
+	{
 		if (!BasicHardwareOnly) {
 			AtoD_poll(nCycles);
 			Serial_Poll();

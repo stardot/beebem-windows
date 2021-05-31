@@ -67,6 +67,11 @@ void VideoLightPenStrobe();
 
 extern bool TeletextEnabled;
 
+// The FileStore doesn't have video output, but we use this to regulate the CPU speed
+// based on counting video frames
+void FileStoreVideoUpdate();
+#define FileStoreVideoPoll(ncycles) if ((VideoTriggerCount)<=TotalCycles) FileStoreVideoUpdate();
+
 #define VideoPoll(ncycles) if ((VideoTriggerCount)<=TotalCycles) VideoDoScanLine();
 
 // Allow enough lines for all modes.

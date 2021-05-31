@@ -1112,6 +1112,13 @@ void RedoMPTR(void) {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
+
+void FileStoreVideoUpdate()
+{
+  mainWin->StartOfFrame();
+  IncTrigger(40000, VideoTriggerCount);
+}
+
 void VideoDoScanLine(void) {
   int l;
   /* cerr << "CharLine=" << VideoState.CharLine << " InCharLineUp=" << VideoState.InCharLineUp << "\n"; */
