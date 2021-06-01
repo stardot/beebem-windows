@@ -533,7 +533,8 @@ unsigned char BeebReadMem(int Address) {
 
 	if ((Address >= 0xfc0c && Address <= 0xfc0f) &&
 		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
-		return(Read1770Register(Address));
+		// adjust the registers for the FileStore as 1770 expects 00-04, not 0c-0f
+		return(Read1770Register(Address-0x0C));
 	}
 
 	if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)) {
@@ -1060,8 +1061,9 @@ void BeebWriteMem(int Address, unsigned char Value) {
 
 	if ((Address >= 0xfc0c && Address <= 0xfc0f) &&
 		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
-		Write1770Register(Address, Value);
-		return;
+			// adjust the registers for the FileStore as 1770 expects 00-04, not 0c-0f
+			Write1770Register(Address-0x0C, Value);
+			return;
 	}
 
 
@@ -1177,7 +1179,6 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			return;
 		}
 
-
 		/* FileStore Status writes. These are kept in a copy in RAM and never read back directly.
 		They are only used as signals to the hardware and not to read the status */
 
@@ -1187,32 +1188,40 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		LEDs.ShowFS = true;
 		LEDs.ShowDisc = true;
 
-		if (Address == 0xfc08) {
-			LEDs.Disc0 = bool((Value & 0x1) == 0x1);
-			LEDs.Disc1 = bool((Value & 0x2) == 0x2);
-			mainWin->DrawFSLEDs(mainWin->m_hDC,1);
+		// FileStore ROM SWITCH WRITE LOCATION
+		// Contains Floppy Control bytes, NVRAM access, MODE LED
 
+		// bit0 Floppy 1 (left)select
+		// bit1 Floppy 2 (right)select
+		// bit2 Floppy side(0 | 1) select
+		// bit3	Access to NVRAM possible if set
+		// bit4	FDC Disc Density(active low)
+		// bit5	FDC MasterReset(active low)
+		// bit6	FDC Test(active low)
+		// bit7 Mode LED
+
+		if (Address == 0xfc08) {
+			CMOS.Enabled = bool((Value & 0x8) == 0x8);
+			LEDs.Motor = bool((Value & 0x80) == 0x80);
+			mainWin->DrawFSLEDs(mainWin->m_hDC, 0);
+
+			// process the remaining bits with the FDC Control Register
+			FS_Status.Floppy0 = bool((Value & 0x4) == 0x1);
+			FS_Status.Floppy1 = bool((Value & 0x4) == 0x2);
 			FS_Status.FloppySide = bool((Value & 0x4) == 0x4);
-			FS_Status.CMOS_Write = bool((Value & 0x8) == 0x8);
 			FS_Status.FDCDEN = bool((Value & 0x10) == 0x10);
 			FS_Status.FDCRST = bool((Value & 0x20) == 0x20);
 			FS_Status.FDCTST = bool((Value & 0x40) == 0x40);
 
-			LEDs.Motor = bool((Value & 0x80) == 0x80);
-			mainWin->DrawFSLEDs(mainWin->m_hDC,0);
-
-			CMOS.Enabled = FS_Status.CMOS_Write;
-
-
 			// FDC Control Reg doesn't evaluate the bits in the same order
-			Value = Value & 0x3;					 // Floppy 0 & 1 are the same, bit0, bit1
-			if (FS_Status.FloppySide) Value &= 0x10;  // bit4
-			if (FS_Status.FDCDEN) Value &= 0x20;      // bit5
-			WriteFDCControlReg(Value);
+			unsigned char tmp = 0x3;				// Floppy 0 & 1 are the same, bit0, bit1
+			if (FS_Status.FloppySide) tmp |= 0x10;  // bit4
+			if (FS_Status.FDCDEN) tmp |= 0x20;      // bit5
+			WriteFDCControlReg(tmp);
+
 			return;
 		}
 	}
-
 }
 
 bool ReadRomInfo(int bank, RomInfo* info)
