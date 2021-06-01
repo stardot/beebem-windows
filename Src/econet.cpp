@@ -963,7 +963,7 @@ bool EconetPoll_real(void) { // return NMI status
 
 					sockaddr_in RecvAddr;
 					bool SendMe = false;
-					int SendLen;
+					int SendLen = 0;
 					unsigned int i=0;
 					if (confAUNmode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) { // broadcast!
 						// TODO something
@@ -1033,8 +1033,8 @@ bool EconetPoll_real(void) { // return NMI status
 								(unsigned int)RecvAddr.sin_addr.s_addr, (unsigned int)htons(RecvAddr.sin_port));
 						DebugDisplayTrace(DebugType::Econet, true, info);
 						sprintf(info, "Econet: Packet data:");
-						for (unsigned int i = 0; i < BeebTx.Pointer; ++i) {
-							sprintf(info+strlen(info), " %02X", BeebTx.buff[i]);
+						for (unsigned int l = 0; l < BeebTx.Pointer; ++l) {
+							sprintf(info+strlen(info), " %02X", BeebTx.buff[l]);
 						}
 						DebugDisplayTrace(DebugType::Econet, true, info);
 					}
