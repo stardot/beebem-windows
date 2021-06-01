@@ -3121,11 +3121,11 @@ static void PollHardware(unsigned int nCycles)
 		TotalCycles -= CycleCountWrap;
 		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
 			AdjustTrigger(AtoDTrigger);
-			AdjustTrigger(SoundTrigger);
 			AdjustTrigger(Disc8271Trigger);
+			AdjustTrigger(SoundTrigger);
 			AdjustTrigger(AMXTrigger);
 		}
-		
+
 		AdjustTrigger(PrinterTrigger);
 
 		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
@@ -3160,8 +3160,8 @@ static void PollHardware(unsigned int nCycles)
 		}
 		Disc8271Poll();
 		Music5000Poll(nCycles);
-		SoundPoll();
 	}
+	SoundPoll();
 
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
 	if ((MachineType == Model::Master128 || !NativeFDC) ||

@@ -2115,7 +2115,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			else {
 				DestroyWindow(hWnd);
 			}
-			break;
+break;
 		case WM_DESTROY:  // message: window being destroyed
 			mainWin->Shutdown();
 			PostQuitMessage(0);

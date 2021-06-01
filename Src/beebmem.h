@@ -92,12 +92,11 @@ struct FS_State {
 	bool Floppy0;
 	bool Floppy1;
 	bool FloppySide;
-	bool CMOS_Write;
+	bool CMOS_Write;	// not used in emulation
 	bool FDCDEN;
 	bool FDCRST;
 	bool FDCTST;
-	bool MODE_LED;
-	// and location 0xFC2C
+	bool MODE_LED;		// not used in emulation
 };
 
 extern bool Sh_Display;
