@@ -536,11 +536,7 @@ unsigned char BeebReadMem(int Address) {
 		return(Read1770Register(Address));
 	}
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-	}
-	else
-	{
-
+	if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)) {
 		if ((Address & ~3) == 0xfe30) {
 			return(PagedRomReg); /* report back ROMSEL - I'm sure the beeb allows ROMSEL read..
 									correct me if im wrong. - Richard Gellman */
@@ -557,9 +553,11 @@ unsigned char BeebReadMem(int Address) {
 	}
 
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-		if (Address >= 0xfc20 && Address <= 0xfc23 && EconetEnabled) {
+		if (Address >= 0xfc20 && Address <= 0xfc23) {
+			if (EconetEnabled)
 				return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
-			return(0xfe); // if not enabled
+			else
+				return(0xfe); // if not enabled
 		}
 
 		if ((Address & ~0x3) == 0xfc30) {
@@ -579,7 +577,8 @@ unsigned char BeebReadMem(int Address) {
 		if ((Address & ~0x1f) == 0xfea0) {
 			if (EconetEnabled)
 				return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
-			return(0xfe); // if not enabled
+			else
+				return(0xfe); // if not enabled
 		}
 	}
 
