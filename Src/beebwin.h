@@ -287,7 +287,7 @@ public:
 	void TextViewSpeechSync(void);
 	void TextViewSyncWithBeebCursor(void);
 	void HandleTimer(void);
-	void CloseFileStore(void);
+	void CloseFileStore();
 	void doCopy(void);
 	void doPaste(void);
 	void ClearClipboardBuffer();
@@ -434,7 +434,7 @@ public:
 	int		m_AutoBootDelay;
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
-	bool		m_FileStoreReset;
+	int		m_FileStoreReset;
 	bool		m_WasPaused;
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
@@ -599,6 +599,7 @@ public:
 	bool RegGetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, LPSTR pData, DWORD dwSize);
 	bool RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, LPCSTR pData);
 	void EditROMConfig(void);
+	void ShutdownFileStore();
 
 	// Preferences
 	void LoadPreferences();

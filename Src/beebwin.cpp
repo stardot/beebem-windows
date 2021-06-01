@@ -123,6 +123,9 @@ char CDiscName[2][256]; // Filename of disc current in drive 0 and 1
 DiscType CDiscType[2]; // Current disc types
 char FDCDLL[256]={0};
 
+int FileStoreReset = 0;
+Model ChangeModel;
+
 const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 static const char *AboutText =
 	"BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
@@ -503,12 +506,6 @@ BeebWin::~BeebWin()
 /****************************************************************************/
 void BeebWin::Shutdown()
 {
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-		//		if (!m_FileStoreShutdownTimerElapsed) {
-		//			CloseFileStore();
-		//			return;
-		//		}
-	}
 
 	if (aviWriter)
 	{
@@ -605,17 +602,31 @@ void BeebWin::LoadBackgroundBitmap(Model model)
 
 void BeebWin::SelectMachineType(Model model)
 {
-
 	char PrefsFile_temp[_MAX_PATH];
 
-
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		// Close the FileStore and ensure the buffers are flushed
+		// has the FileStore already been through the timed shutdown procedure?
+		if (!m_FileStoreShutdownTimerElapsed) { // no - then start timer and quit
+			ChangeModel = model;
+			m_FileStoreReset = 3;
+			CloseFileStore();
+			return;
+		}
+		else {
+			m_FileStoreShutdownTimerElapsed = false;
+			m_FileStoreReset = 0;
+		}
 
 		// in case model is being changed and the FileStore door is open, close it
 		if (FS_DoorStatus) {
 			HandleCommand(IDM_OPEN_DRIVE_DOOR);
 		}
 
+		// ensure command mode is off
+		if (FS_CMDMode) {
+			HandleCommand(IDM_COMMAND_MODE);
+		}
 
 		// save current preferences
 /*		strcpy (PrefsFile_temp, m_PrefsFile);
@@ -647,7 +658,6 @@ void BeebWin::SelectMachineType(Model model)
 		*/
 	}
 
-
 	LoadBackgroundBitmap(model);
 
 	// if a different machine has been selected
@@ -665,14 +675,36 @@ void BeebWin::SelectMachineType(Model model)
 void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 {
 
-/*
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-		if (!m_FileStoreShutdownTimerElapsed) {
-			m_FileStoreReset = true;
-			CloseFileStore();
-			return;
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		// if LoadRoms is false it signifies this is a reset rather than a new instance
+		if (!LoadRoms) {
+			// has the FileStore already been through the timed shutdown procedure?
+			if (!m_FileStoreShutdownTimerElapsed) { // no - then trigger it and quit
+				m_FileStoreReset = true;
+				CloseFileStore();
+				return;
+			}
 		}
-*/
+
+		// otherwise timed procedure has been completed
+
+		// always ensure the ROMS are reloaded on a FileStore Reset.
+		// this is due to the fact they are not copied from ROM to RAM but simply loaded directly to RAM.
+		// The code is self modifying and therefore to get a clean reset the ROMs must be reloaded.
+		LoadRoms = true;
+
+		// ensure door is closed
+		if (FS_DoorStatus) {
+			HandleCommand(IDM_OPEN_DRIVE_DOOR);
+		}
+
+		// ensure command mode is off
+		if (FS_CMDMode) {
+			HandleCommand(IDM_COMMAND_MODE);
+		}
+	}
+
 	SoundReset();
 	if (SoundDefault)
 		SoundInit();
@@ -2064,7 +2096,23 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			mainWin->SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
+		case WM_CLOSE:
+			// if the machine is a FileStore, the buffers need to be flushed first before exit
+			// this is done by opening the door, which enters command mode
+			// a timer is set to give time for the buffers to be flushed. The timer will then
+			// initiate the shutdown after a short delay.
 
+			if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+				// has the FileStore already been through the timed shutdown procedure?
+				if (!mainWin->m_FileStoreShutdownTimerElapsed) { // no - then trigger it and quit
+					mainWin->m_FileStoreReset = 2;
+					mainWin->CloseFileStore();
+				}
+				else {
+					DestroyWindow(hWnd);
+				}
+			}
+			break;
 		case WM_DESTROY:  // message: window being destroyed
 			mainWin->Shutdown();
 			PostQuitMessage(0);
@@ -2105,18 +2153,9 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				HandleRTCTimer();
 			else if (wParam == 4) // Handle timer FileStore shutdown delay
 			{
-				mainWin->m_FileStoreShutdownTimerElapsed = true;
-
 				mainWin->KillFileStoreShutdownTimer();
-				if (mainWin->m_FileStoreReset = true) {
-					mainWin->m_FileStoreReset = false;				//	Reset
-					mainWin->ResetBeebSystem(MachineType, false);
-				}
-				else
-				{
-					mainWin->Shutdown();							//	Shutdown - no restart
-				}
-
+				mainWin->m_FileStoreShutdownTimerElapsed = true;
+				mainWin->ShutdownFileStore();
 			}
 			break;
 
@@ -5057,6 +5096,7 @@ void BeebWin::SetBootDiscTimer()
 // shutting down or being reset
 void BeebWin::SetFileStoreShutdownTimer()
 {
+	mainWin->m_FileStoreShutdownTimerElapsed = false;
 	SetTimer(m_hWnd, 4, 8000, NULL);
 }
 
@@ -5686,16 +5726,24 @@ void BeebWin::CloseFileStore()
 	// Ensure maintenance mode is entered to flush buffers
 	if (!FS_DoorStatus) {
 		HandleCommand(IDM_OPEN_DRIVE_DOOR);
-		//	cause delay
+		//	cause delay by starting the timer
 		SetFileStoreShutdownTimer();
 	}
 	else // was already open and can be reset/shutdown immediately
-	{
-		m_FileStoreShutdownTimerElapsed = true;
+		ShutdownFileStore();
+}
 
-		if (m_FileStoreReset)
-			ResetBeebSystem(MachineType, false);
-		else
-			Shutdown();
+void BeebWin::ShutdownFileStore()
+{
+	if (m_FileStoreReset == 1) {				// 1 = Reset
+		m_FileStoreReset = 0;
+		ResetBeebSystem(MachineType, false);
+	}
+	else if (m_FileStoreReset == 2) {			// 2 = Shutdown - no restart
+		// CloseWindow(m_hWnd);
+		DestroyWindow(m_hWnd);
+	}
+	else if (m_FileStoreReset == 3) {			// 3 = change model
+		SelectMachineType(ChangeModel);
 	}
 }
