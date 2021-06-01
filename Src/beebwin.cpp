@@ -5097,7 +5097,7 @@ void BeebWin::SetBootDiscTimer()
 void BeebWin::SetFileStoreShutdownTimer()
 {
 	mainWin->m_FileStoreShutdownTimerElapsed = false;
-	SetTimer(m_hWnd, 4, 8000, NULL);
+	SetTimer(m_hWnd, 4, 2000, NULL);
 }
 
 void BeebWin::KillBootDiscTimer()
