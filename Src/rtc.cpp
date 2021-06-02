@@ -259,7 +259,7 @@ void RTCInit(void) {
 			pCMOS = &CMOSRAM_E01[0];	// pointer to FileStore E01 CMOS
 			break;
 		case Model::FileStoreE01S:
-			pCMOS = &CMOSRAM_E01[0];    // pointer to FileStore E01S CMOS
+			pCMOS = &CMOSRAM_E01S[0];    // pointer to FileStore E01S CMOS
 			break;
 		default:						// machine doesn't use CMOS
 			KillTimer(mainWin->m_hWnd, 3);
