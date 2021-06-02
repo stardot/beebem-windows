@@ -1214,10 +1214,11 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			FS_Status.FDCTST = bool((Value & 0x40) == 0x40);
 
 			// FDC Control Reg doesn't evaluate the bits in the same order
-			unsigned char tmp = 0x3;				// Floppy 0 & 1 are the same, bit0, bit1
+			unsigned char tmp = Value & 0x3;		// Floppy 0 & 1 are the same, bit0, bit1
 			if (FS_Status.FloppySide) tmp |= 0x10;  // bit4
 			if (FS_Status.FDCDEN) tmp |= 0x20;      // bit5
-			WriteFDCControlReg(tmp);
+//			if (FS_Status.FDCRST)					// if reset is off (high)
+				WriteFDCControlReg(tmp);
 
 			return;
 		}
