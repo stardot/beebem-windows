@@ -815,12 +815,9 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
 		// ensure write protect on load is off
-		CheckMenuItem(IDM_WPONLOAD, false);
-		CheckMenuItem(IDM_WPDISC0, false);
-		CheckMenuItem(IDM_WPDISC1, false);
+		if (!DWriteable[0]) ToggleWriteProtect(0);
+		if (!DWriteable[1]) ToggleWriteProtect(1);
 		m_WriteProtectOnLoad = false;
-		m_WriteProtectDisc[0] = false;
-		m_WriteProtectDisc[1] = false;
 	}
 
 	// Keep the disc images loaded
