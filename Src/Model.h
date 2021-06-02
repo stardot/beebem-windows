@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2020  Chris Needham
+Copyright (C) 2017  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,37 +18,24 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#include "StringUtils.h"
+#ifndef MODEL_HEADER
+#define MODEL_HEADER
 
-#include <algorithm>
-#include <cctype>
+enum class Model : unsigned char {
+	B,             // 0: BBC B
+	IntegraB,      // 1: BBC B with Integra B
+	BPlus,         // 2: BBC B+
+	Master128,     // 3: BBC Master 128
+	FileStoreE01,  // 4: Acorn FileStore E01
+	FileStoreE01S, // 5: Acorn FileStore E01S
+	Last
+};
 
-static void trimLeft(std::string& str)
-{
-	auto pos = std::find_if(str.begin(), str.end(), [](int ch) {
-		return !std::isspace(ch);
-	});
+enum class CPU : unsigned char {
+	CPU6502,
+	CPU65C02
+};
 
-	str.erase(str.begin(), pos);
-}
+const char* GetModelName(Model model);
 
-static void trimRight(std::string& str)
-{
-	auto pos = std::find_if(str.rbegin(), str.rend(), [](int ch) {
-		return !std::isspace(ch);
-	});
-
-	str.erase(pos.base(), str.end());
-}
-
-void trim(std::string& str)
-{
-	trimLeft(str);
-	trimRight(str);
-}
-
-bool StringEndsWith(const std::string& str, const std::string& suffix)
-{
-	return str.size() >= suffix.size() &&
-		str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
+#endif

@@ -91,6 +91,7 @@ Boston, MA  02110-1301, USA.
 #include "FolderSelectDialog.h"
 #include "DebugTrace.h"
 #include "rtc.h"
+#include "RomConfigDialog.h"
 
 using namespace Gdiplus;
 
@@ -336,7 +337,7 @@ bool BeebWin::Initialise()
 	m_hMenu = GetMenu(m_hWnd);
 	m_hDC = GetDC(m_hWnd);
 
-	ReadROMFile(RomFile, RomConfig);
+	RomConfig.Load(RomFile);
 	ApplyPrefs();
 
 	if (m_DebugScript[0] != '\0')
@@ -713,8 +714,10 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	if (Music5000Enabled)
 		Music5000Init();
 
-	MachineType=NewModelType;
+	MachineType = NewModelType;
+
 	BeebMemInit(LoadRoms, m_ShiftBooted);
+
 	Init6502core();
 
 	RTCInit();
@@ -4774,7 +4777,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 		strcpy(RomFile, file);
 		if (bLoadPrefs)
 		{
-			ReadROMFile(RomFile, RomConfig);
+			RomConfig.Load(RomFile);
 			BeebReadRoms();
 		}
 	}
@@ -5719,6 +5722,16 @@ bool BeebWin::RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
 	}
 
 	return rc;
+}
+
+void BeebWin::EditROMConfig()
+{
+	RomConfigDialog Dialog(hInst, m_hWnd, MachineType, RomConfig);
+	if (Dialog.DoModal())
+	{
+		RomConfig = Dialog.GetRomConfig();
+		BeebReadRoms();
+	}
 }
 
 void BeebWin::CloseFileStore()

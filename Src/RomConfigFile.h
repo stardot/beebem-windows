@@ -1,6 +1,10 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2017  Chris Needham
+Copyright (C) 1994  David Alan Gilbert
+Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2004  Ken Lowe
+Copyright (C) 2004  Rob O'Donnell
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,22 +22,29 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef MODEL_HEADER
-#define MODEL_HEADER
+#ifndef ROM_CONFIG_FILE_HEADER
+#define ROM_CONFIG_FILE_HEADER
 
-enum class Model : unsigned char {
-	B,             // 0: BBC B
-	IntegraB,      // 1: BBC B with Integra B
-	BPlus,         // 2: BBC B+
-	Master128,     // 3: BBC Master 128
-	FileStoreE01,  // 4: Acorn FileStore E01
-	FileStoreE01S, // 5: Acorn FileStore E01S
-	Last
+#include "model.h"
+#include <string>
+
+class RomConfigFile
+{
+	public:
+		void Reset();
+
+		bool Load(const char *FileName);
+		bool Save(const char *FileName);
+
+		const std::string& GetFileName(Model model, int index) const;
+		void SetFileName(Model model, int index, const std::string& FileName);
+
+	private:
+		std::string m_FileName[static_cast<int>(Model::Last)][17];
 };
 
-enum class CPU : unsigned char {
-	CPU6502,
-	CPU65C02
-};
+extern const char *BANK_EMPTY;
+extern const char *BANK_RAM;
+extern const char *ROM_WRITABLE;
 
 #endif

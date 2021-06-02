@@ -176,10 +176,6 @@ Boston, MA  02110-1301, USA.
 #define IDC_WATCHENDIAN                 1072
 #define IDC_DEBUGBRK                    1073
 #define IDC_DEBUGGRP                    1074
-#define IDC_BBCB                        1075
-#define IDC_INTEGRAB                    1076
-#define IDC_BBCBPLUS                    1077
-#define IDC_MASTER128                   1078
 #define IDC_MODEL                       1079
 #define IDC_ROMLIST                     1080
 #define IDC_SELECTROM                   1081
@@ -189,8 +185,10 @@ Boston, MA  02110-1301, USA.
 #define IDC_SAVE                        1085
 #define IDC_LOAD                        1086
 #define IDC_DEBUGTELETEXT               1087
+#define IDC_DOWN                        1087
 #define IDC_SHIFT                       1088
 #define IDC_DEBUGTELETEXTBRK            1089
+#define IDC_UP                          1089
 #define IDC_ASSIGNED_KEYS               1090
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
@@ -453,7 +451,7 @@ Boston, MA  02110-1301, USA.
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        119
 #define _APS_NEXT_COMMAND_VALUE         40319
-#define _APS_NEXT_CONTROL_VALUE         1090
+#define _APS_NEXT_CONTROL_VALUE         1093
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

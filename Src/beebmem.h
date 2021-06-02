@@ -30,10 +30,9 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef char ROMConfigFile[6][17][_MAX_PATH];
-static const char *BANK_EMPTY = "EMPTY";
-static const char *BANK_RAM = "RAM";
-static const char *ROM_WRITABLE = ":RAM";
+#include "model.h"
+#include "RomConfigFile.h"
+#include <string>
 
 enum class BankType
 {
@@ -102,7 +101,7 @@ struct FS_State {
 extern bool Sh_Display;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 
-extern ROMConfigFile RomConfig;
+extern RomConfigFile RomConfig;
 extern char RomPath[_MAX_PATH];
 extern char RomFile[_MAX_PATH];
 extern char DiscPath[_MAX_PATH]; // JGH
@@ -112,7 +111,6 @@ void BeebWriteMem(int Address, unsigned char Value);
 #define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address]=Value;
 const unsigned char *BeebMemPtrWithWrap(int Address, int Length);
 const unsigned char *BeebMemPtrWithWrapMode7(int Address, int Length);
-bool ReadROMFile(const char *filename, ROMConfigFile RomConfig);
 void BeebReadRoms(void);
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);
 

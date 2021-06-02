@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2020  Chris Needham
+Copyright (C) 2021  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,37 +18,18 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#include "StringUtils.h"
+#include "Model.h"
 
-#include <algorithm>
-#include <cctype>
+static const char* const szModel[] = {
+	"BBC Model B",
+	"BBC Model B + Integra-B",
+	"BBC Model B Plus",
+	"BBC Master 128",
+	"Filestore E01",
+	"Filestore E01S",
+};
 
-static void trimLeft(std::string& str)
+const char* GetModelName(Model model)
 {
-	auto pos = std::find_if(str.begin(), str.end(), [](int ch) {
-		return !std::isspace(ch);
-	});
-
-	str.erase(str.begin(), pos);
-}
-
-static void trimRight(std::string& str)
-{
-	auto pos = std::find_if(str.rbegin(), str.rend(), [](int ch) {
-		return !std::isspace(ch);
-	});
-
-	str.erase(pos.base(), str.end());
-}
-
-void trim(std::string& str)
-{
-	trimLeft(str);
-	trimRight(str);
-}
-
-bool StringEndsWith(const std::string& str, const std::string& suffix)
-{
-	return str.size() >= suffix.size() &&
-		str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+	return szModel[static_cast<int>(model)];
 }

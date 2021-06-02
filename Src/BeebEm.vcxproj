@@ -198,9 +198,11 @@
     <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Master512CoPro.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="music5000.cpp" />
     <ClCompile Include="preferences.cpp" />
-    <ClCompile Include="romconfig.cpp" />
+    <ClCompile Include="RomConfigFile.cpp" />
+    <ClCompile Include="RomConfigDialog.cpp" />
     <ClCompile Include="rtc.cpp" />
     <ClCompile Include="sasi.cpp" />
     <ClCompile Include="scsi.cpp" />
@@ -348,10 +350,12 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="ml675001.h" />
-    <ClInclude Include="model.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="music5000.h" />
     <ClInclude Include="port.h" />
     <ClInclude Include="preferences.h" />
+    <ClInclude Include="RomConfigDialog.h" />
+    <ClInclude Include="RomConfigFile.h" />
     <ClInclude Include="rtc.h" />
     <ClInclude Include="sasi.h" />
     <ClInclude Include="scsi.h" />
