@@ -537,7 +537,7 @@ unsigned char BeebReadMem(int Address) {
 	// Jim mapped registers if it has been selected by writing
 	// it's id value to fcff - other Jim devices should similarly
 	// only return fcff..fcfc/fdxx when they have been selected
-	UINT8 ret;
+	unsigned char ret;
 	if (Music5000Read(Address, &ret))
 		return ret;
 
