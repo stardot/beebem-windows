@@ -125,7 +125,7 @@ UEFStateResult LoadUEFState(const char *StateName) {
 	FILE *UEFState = fopen(StateName, "rb");
 	if (UEFState != NULL)
 	{
-		fseek(UEFState,NULL,SEEK_END);
+		fseek(UEFState, 0, SEEK_END);
 		FLength=ftell(UEFState);
 		fseek(UEFState,0,SEEK_SET);  // Get File length for eof comparison.
 		fread(UEFId,10,1,UEFState);
