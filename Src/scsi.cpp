@@ -196,7 +196,7 @@ void SCSIWrite(int Address, int Value)
 			}
 
 			break;
-		}
+	}
 }
 
 unsigned char SCSIRead(int Address)

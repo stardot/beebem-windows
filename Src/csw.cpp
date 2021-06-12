@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -79,7 +79,7 @@ CSWResult LoadCSW(const char *file)
 	if (csw_file == nullptr) {
 		return CSWResult::OpenFailed;
 	}
-	
+
 	/* Read header */
 	if (fread(file_buf, 1, 0x34, csw_file) != 0x34 ||
 		strncmp((const char*)file_buf, "Compressed Square Wave", 0x16) != 0 ||
@@ -113,16 +113,16 @@ CSWResult LoadCSW(const char *file)
 		fclose(csw_file);
 		return CSWResult::InvalidHeaderExtension;
 	}
-	
+
 	int end = ftell(csw_file);
 	fseek(csw_file, 0, SEEK_END);
 	int sourcesize = ftell(csw_file) - end + 1;
 	fseek(csw_file, end, SEEK_SET);
-	
+
 	csw_bufflen = 8 * 1024 * 1024;
 	csw_buff = (unsigned char *) malloc(csw_bufflen);
 	sourcebuff = (unsigned char *) malloc(sourcesize);
-	
+
 	fread(sourcebuff, 1, sourcesize, csw_file);
 	fclose(csw_file);
 	csw_file = nullptr;
@@ -142,9 +142,9 @@ CSWResult LoadCSW(const char *file)
 	csw_pulsecount = -1;
 	csw_tonecount = 0;
 	bit_count = -1;
-	
+
 	strcpy(UEFTapeName, file);
-	
+
 	CSWOpen = true;
 	CSW_BUF = 0;
 	TxD = 0;
@@ -179,21 +179,20 @@ void HexDump(const char *buff, int count)
 
 	for (int a = 0; a < count; a += 16) {
 		sprintf(info, "%04X  ", a);
-		
+
 		for (int b = 0; b < 16; ++b) {
 			sprintf(info+strlen(info), "%02X ", buff[a+b]);
 		}
-		
+
 		for (int b = 0; b < 16; ++b) {
 			int v = buff[a+b];
 			if (v < 32 || v > 127)
 				v = '.';
 			sprintf(info+strlen(info), "%c", v);
 		}
-		
+
 		WriteLog("%s\n", info);
 	}
-	
 }
 
 void map_csw_file(void)
@@ -211,7 +210,7 @@ void map_csw_file(void)
 	int last_tone = 0;
 
 	Clk_Divide = 16;
-	
+
 	memset(map_desc, 0, sizeof(map_desc));
 	memset(map_time, 0, sizeof(map_time));
 	start_time = 0;
@@ -274,7 +273,7 @@ again : ;
 
 				// Pull file name from block
 				n = 1;
-				while (block[n] != 0 && block[n] >= 32 && n <= 10) 
+				while (block[n] != 0 && block[n] >= 32 && n <= 10)
 				{
 					name[n-1] = block[n];
 					n++;
@@ -284,9 +283,9 @@ again : ;
 					sprintf(map_desc[map_lines], "%-12s %02X  Length %04X", name, blk_num, block_ptr);
 				else
 					sprintf(map_desc[map_lines], "<No name>    %02X  Length %04X", blk_num, block_ptr);
-				
+
 				map_time[map_lines]=start_time;
-				
+
 				// Is this the last block for this file?
 				if (block[strlen(name) + 14] & 0x80)
 				{
@@ -369,7 +368,7 @@ int csw_data(void)
 
 	for (int i = 0; i < j; ++i) {
 		csw_pulsecount++;
-	
+
 		if (csw_buff[csw_ptr] == 0)
 		{
 			if ((unsigned long)csw_ptr + 4 < csw_bufflen)
@@ -500,7 +499,7 @@ int csw_poll(int clock)
 						csw_datastate = CSWDataState::StopBits;
 					}
 					break;
-					
+
 				case CSWDataState::StopBits:
 					bit_count = csw_data();
 
@@ -520,7 +519,7 @@ int csw_poll(int clock)
 					break;
 
 				case CSWDataState::ToneOrStartBit:
-					if (csw_pulselen > 0x14) 
+					if (csw_pulselen > 0x14)
 					{
 						// Noisy pulse so reset to tone
 						csw_state = CSWState::WaitingForTone;

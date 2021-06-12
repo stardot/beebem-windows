@@ -43,8 +43,8 @@ class SoundStreamer
 		virtual ~SoundStreamer();
 
 		virtual bool Init(std::size_t samplerate,
-											std::size_t bits_per_sample,
-											std::size_t channels) = 0;
+		                  std::size_t bits_per_sample,
+		                  std::size_t channels) = 0;
 
 		virtual std::size_t BufferSize() const = 0;
 
