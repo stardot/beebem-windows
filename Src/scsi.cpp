@@ -101,7 +101,7 @@ struct scsi_t {
 };
 
 scsi_t scsi;
-FILE *SCSIDisc[4] = {0};
+FILE *SCSIDisc[4] = { nullptr, nullptr, nullptr, nullptr };
 int SCSISize[4];
 
 bool SCSIDriveEnabled = false;
