@@ -104,7 +104,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;winmm.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;dinput8.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
@@ -120,7 +120,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;winmm.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;dinput8.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,7 +142,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;winmm.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;dinput8.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
@@ -162,7 +162,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;winmm.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Comctl32.lib;d3d9.lib;dsound.lib;dinput8.lib;Gdiplus.lib;Shlwapi.lib;Vfw32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -182,11 +182,13 @@
     <ClCompile Include="beebwin.cpp" />
     <ClCompile Include="beebwindx.cpp" />
     <ClCompile Include="beebwinio.cpp" />
+    <ClCompile Include="JoystickHandler.cpp" />
     <ClCompile Include="beebwinprefs.cpp" />
     <ClCompile Include="beebwinspeech.cpp" />
     <ClCompile Include="csw.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="DebugTrace.cpp" />
+    <ClCompile Include="Dialog.cpp" />
     <ClCompile Include="DirectSoundStreamer.cpp" />
     <ClCompile Include="disc1770.cpp" />
     <ClCompile Include="disc8271.cpp" />
@@ -195,6 +197,7 @@
     <ClCompile Include="filedialog.cpp" />
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="ide.cpp" />
+    <ClCompile Include="JoystickOrderDialog.cpp" />
     <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Master512CoPro.cpp" />
@@ -331,6 +334,7 @@
     <ClInclude Include="csw.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="DebugTrace.h" />
+    <ClInclude Include="Dialog.h" />
     <ClInclude Include="DirectSoundStreamer.h" />
     <ClInclude Include="disc1770.h" />
     <ClInclude Include="disc8271.h" />
@@ -340,6 +344,8 @@
     <ClInclude Include="ext1770.h" />
     <ClInclude Include="filedialog.h" />
     <ClInclude Include="FolderSelectDialog.h" />
+    <ClInclude Include="JoystickHandler.h" />
+    <ClInclude Include="JoystickOrderDialog.h" />
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="log.h" />

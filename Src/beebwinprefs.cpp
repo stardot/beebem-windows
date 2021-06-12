@@ -59,7 +59,6 @@ static const char *CFG_VIEW_MONITOR = "Monitor";
 static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
 static const char *CFG_SOUND_VOLUME = "SoundVolume";
 static const char *CFG_SOUND_ENABLED = "SoundEnabled";
-static const char *CFG_OPTIONS_STICKS = "Sticks";
 static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
 static const char *CFG_OPTIONS_USER_KEY_MAP_FILE = "UserKeyMapFile";
 static const char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
@@ -253,10 +252,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("Music5000Enabled", Music5000Enabled))
 		Music5000Enabled = false;
 
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
-		m_MenuIdSticks = dword;
-	else
-		m_MenuIdSticks = 0;
+	ReadJoystickPreferences();
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
@@ -444,8 +440,6 @@ void BeebWin::LoadPreferences()
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue("Basic Hardware", BasicHardwareOnly))
-		BasicHardwareOnly = false;
 	if (!m_Preferences.GetBoolValue("Teletext Half Mode", TeletextHalfMode))
 		TeletextHalfMode = false;
 
@@ -642,7 +636,6 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
-		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
@@ -699,7 +692,6 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		m_Preferences.SetBinaryValue(CFG_TUBE_TYPE, &TubeType, 1);
 
-		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);
 		m_Preferences.SetBoolValue("Teletext Half Mode", TeletextHalfMode);
 		m_Preferences.SetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled);
 		m_Preferences.SetBoolValue("TeletextLocalhost", TeletextLocalhost);
@@ -725,6 +717,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIdCaptureResolution);
 		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIdCaptureFormat);
 
+		WriteJoystickPreferences();
+
 		RECT rect;
 		GetWindowRect(m_hWnd,&rect);
 		m_Preferences.SetBinaryValue("WindowPos", &rect, sizeof(rect));
@@ -741,6 +735,8 @@ void BeebWin::SavePreferences(bool saveAll)
 	m_Preferences.SetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll);
 
 	m_Preferences.SetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts);
+
+	WriteJoystickOrder();
 
 	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success) {
 		m_AutoSavePrefsChanged = false;

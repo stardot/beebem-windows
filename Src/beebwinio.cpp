@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "filedialog.h"
+#include "SelectKeyDialog.h"
 #include "uservia.h"
 #include "beebsound.h"
 #include "disc8271.h"
@@ -301,6 +302,8 @@ void BeebWin::LoadTape(void)
 		else if (hasFileExt(FileName, ".csw")) {
 			LoadCSWTape(FileName);
 		}
+
+		CheckForJoystickMap(FileName);
 	}
 }
 
@@ -1161,7 +1164,7 @@ void BeebWin::LoadUserKeyMap()
 /****************************************************************************/
 void BeebWin::SaveUserKeyMap()
 {
-	char FileName[_MAX_PATH];
+	char FileName[_MAX_PATH + 5];
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
@@ -1176,111 +1179,127 @@ void BeebWin::SaveUserKeyMap()
 	}
 }
 
+FILE* BeebWin::OpenReadFile(const char *filename, const char *typeDescr,
+                   const char *token)
+{
+    FILE *infile = fopen(filename, "r");
+
+    if (infile == NULL)
+    {
+        char errstr[500];
+        sprintf(errstr, "Failed to read %s file:\n  %s", typeDescr, filename);
+        MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+    }
+    else
+    {
+        char buf[256];
+
+        if (fgets(buf, 255, infile) == NULL ||
+            strcmp(buf, token) != 0)
+        {
+            char errstr[500];
+            sprintf(errstr, "Invalid %s file:\n  %s\n", typeDescr, filename);
+            MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+            fclose(infile);
+            infile = NULL;
+        }
+    }
+
+    return infile;
+}
+
 /****************************************************************************/
 bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 {
 	bool success = true;
+	FILE *infile = OpenReadFile(filename, "key map", KEYMAP_TOKEN "\n");
 	char buf[256];
 
-	FILE *infile = fopen(filename,"r");
-
 	if (infile == NULL)
+		return false;
+
+	fgets(buf, 255, infile);
+
+	for (int i = 0; i < 256; ++i)
 	{
-		char errstr[500];
-		sprintf(errstr, "Failed to read key map file:\n  %s", filename);
-		MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
-		success = false;
-	}
-	else
-	{
-		if (fgets(buf, 255, infile) == NULL || 
-			strcmp(buf, KEYMAP_TOKEN "\n") != 0)
+		if (fgets(buf, 255, infile) == NULL)
 		{
 			char errstr[500];
-			sprintf(errstr, "Invalid key map file:\n  %s\n", filename);
-			MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+			sprintf(errstr, "Data missing from key map file:\n  %s\n", filename);
+			MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
 			success = false;
-		}
-		else
-		{
-			fgets(buf, 255, infile);
-
-			for (int i = 0; i < 256; ++i)
-			{
-				if (fgets(buf, 255, infile) == NULL)
-				{
-					char errstr[500];
-					sprintf(errstr, "Data missing from key map file:\n  %s\n", filename);
-					MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
-					success = false;
-					break;
-				}
-
-				int shift0 = 0, shift1 = 0;
-
-				sscanf(buf, "%d %d %d %d %d %d",
-				       &(*keymap)[i][0].row,
-				       &(*keymap)[i][0].col,
-				       &shift0,
-				       &(*keymap)[i][1].row,
-				       &(*keymap)[i][1].col,
-				       &shift1);
-
-				(*keymap)[i][0].shift = shift0 != 0;
-				(*keymap)[i][1].shift = shift1 != 0;
-			}
+			break;
 		}
 
-		fclose(infile);
+		int shift0 = 0, shift1 = 0;
+
+		sscanf(buf, "%d %d %d %d %d %d",
+				&(*keymap)[i][0].row,
+				&(*keymap)[i][0].col,
+				&shift0,
+				&(*keymap)[i][1].row,
+				&(*keymap)[i][1].col,
+				&shift1);
+
+		(*keymap)[i][0].shift = shift0 != 0;
+		(*keymap)[i][1].shift = shift1 != 0;
 	}
+
+	fclose(infile);
 
 	return success;
 }
 
 /****************************************************************************/
-bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
+FILE* BeebWin::OpenWriteFile(const char *filename, const char *typeDescr)
 {
-	bool success = true;
-
 	/* First check if file already exists */
-	FILE *outfile = fopen(filename,"r");
+	FILE *outfile = fopen(filename, "r");
 
 	if (outfile != NULL)
 	{
 		fclose(outfile);
 		char errstr[200];
 		sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", filename);
-		if (MessageBox(GETHWND,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
-			return false;
+		if (MessageBox(GETHWND, errstr, WindowTitle, MB_YESNO | MB_ICONQUESTION) != IDYES)
+			return NULL;
 	}
 
-	outfile=fopen(filename,"w");
+	outfile = fopen(filename, "w");
 	if (outfile == NULL)
 	{
 		char errstr[500];
-		sprintf(errstr, "Failed to write key map file:\n  %s", filename);
-		MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
-		success = false;
+		sprintf(errstr, "Failed to write %s file:\n  %s", typeDescr, filename);
+		MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
 	}
-	else
+
+	return outfile;
+}
+
+/****************************************************************************/
+bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
+{
+	FILE* outfile = OpenWriteFile(filename, "key map");
+
+	if (outfile == NULL)
+		return false;
+
+	fprintf(outfile, KEYMAP_TOKEN "\n\n");
+
+	for (int i = 0; i < 256; ++i)
 	{
-		fprintf(outfile, KEYMAP_TOKEN "\n\n");
-
-		for (int i = 0; i < 256; ++i)
-		{
-			fprintf(outfile, "%d %d %d %d %d %d\n",
-					(*keymap)[i][0].row,
-					(*keymap)[i][0].col,
-					(*keymap)[i][0].shift,
-					(*keymap)[i][1].row,
-					(*keymap)[i][1].col,
-					(*keymap)[i][1].shift);
-		}
-
-		fclose(outfile);
+		fprintf(outfile, "%d %d %d %d %d %d\n",
+				(*keymap)[i][0].row,
+				(*keymap)[i][0].col,
+				(*keymap)[i][0].shift,
+				(*keymap)[i][1].row,
+				(*keymap)[i][1].col,
+				(*keymap)[i][1].shift);
 	}
 
-	return success;
+	fclose(outfile);
+
+	return true;
 }
 
 /****************************************************************************/

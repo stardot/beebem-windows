@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <stdlib.h>
 #include <string>
+#include <memory>
 
 #include <windows.h>
 #include <d3dx9.h>
@@ -43,6 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "port.h"
 #include "preferences.h"
 #include "video.h"
+#include "atodconv.h"
 
 /* Used in message boxes */
 #define GETHWND (mainWin->GethWnd())
@@ -51,13 +53,50 @@ Boston, MA  02110-1301, USA.
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
 
-typedef struct KeyMapping {
+// Max number of joysticks to capture
+#define NUM_PC_JOYSTICKS        4
+
+// Default Joystick to keyboard threshold
+#define DEFAULT_JOYSTICK_THRESHOLD 4096
+
+#define JOYSTICK_MAX_AXES       16
+#define JOYSTICK_MAX_BTNS       16
+
+#define JOYSTICK_AXIS_LEFT      0
+#define JOYSTICK_AXIS_RIGHT     1
+#define JOYSTICK_AXIS_UP        2
+#define JOYSTICK_AXIS_DOWN      3
+#define JOYSTICK_AXIS_Z_N       4
+#define JOYSTICK_AXIS_Z_P       5
+#define JOYSTICK_AXIS_RX_N      6
+#define JOYSTICK_AXIS_RX_P      7
+#define JOYSTICK_AXIS_RY_N      8
+#define JOYSTICK_AXIS_RY_P      9
+#define JOYSTICK_AXIS_RZ_N      10
+#define JOYSTICK_AXIS_RZ_P      11
+#define JOYSTICK_AXIS_HAT_LEFT  12
+#define JOYSTICK_AXIS_HAT_RIGHT 13
+#define JOYSTICK_AXIS_HAT_UP    14
+#define JOYSTICK_AXIS_HAT_DOWN  15
+
+#define BEEB_VKEY_JOY_START  256
+#define BEEB_VKEY_JOY_COUNT  (NUM_PC_JOYSTICKS * \
+			      (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS))   // 4*32 = 128
+#define BEEB_VKEY_JOY_END    (BEEB_VKEY_JOY_START + BEEB_VKEY_JOY_COUNT) // 256+128 = 384
+
+#define BEEB_VKEY_COUNT      BEEB_VKEY_JOY_END
+
+struct KeyMapping {
 	int row;    // Beeb row
 	int col;    // Beeb col
 	bool shift; // Beeb shift state
-} KeyMapping;
+};
 
-typedef KeyMapping KeyMap[256][2]; // Indices are: [Virt key][shift state]
+typedef KeyMapping  KeyPair[2];
+typedef KeyPair     KeyMap[256]; // Indices are: [Virt key][shift state]
+typedef KeyPair     JoyMap[BEEB_VKEY_JOY_COUNT];
+
+#define UNASSIGNED_ROW       -9
 
 extern const char *WindowTitle;
 
@@ -125,6 +164,24 @@ enum class MessageType {
 	Error,
 	Warning,
 	Info
+};
+
+struct BBCJoystickConfig
+{
+	bool Enabled{ false };
+	int  PCStick{ 0 };
+	int  PCAxes{ 0 };
+	bool AnalogMousestick{ false };
+	bool DigitalMousestick{ false };
+};
+
+struct JoystickHandler;
+
+struct JoystickHandlerPtr : std::unique_ptr<JoystickHandler>
+{
+	// Delegate constructor and destructor
+	JoystickHandlerPtr();
+	~JoystickHandlerPtr();
 };
 
 class BeebWin {
@@ -213,9 +270,18 @@ public:
 	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
-	void ScaleJoystick(unsigned int x, unsigned int y);
+	void SetJoystickTarget(HWND target);
+	void SetJoystickButton(int index, bool value);
+	void ScaleJoystick(int index, unsigned int x, unsigned int y,
+		unsigned int minX, unsigned int minY,
+		unsigned int maxX, unsigned int maxY);
 	void SetMousestickButton(int index, bool button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
+	void UpdateJoysticks(void);
+	void TranslateJoystick(int joyId);
+	void TranslateOrSendKey(int vkey, bool keyUp);
+	void TranslateAxes(int joyId, unsigned int axesState);
+	void TranslateJoystickButtons(int joyId, unsigned int buttons);
 	void HandleCommand(int MenuId);
 	void SetAMXPosition(unsigned int x, unsigned int y);
 	void ChangeAMXPosition(int deltaX, int deltaY);
@@ -229,6 +295,7 @@ public:
 	void TogglePause();
 	bool IsPaused();
 	void OpenUserKeyboardDialog();
+	void OpenJoystickMapDialog();
 	void UserKeyboardDialogClosed();
 	void ShowMenu(bool on);
 	void HideMenu(bool hide);
@@ -278,6 +345,7 @@ public:
 
 	HMENU		m_hMenu;
 	bool		m_frozen;
+	bool		m_active;
 	char*		m_screen;
 	char*		m_screen_blur;
 	double		m_RealTimeTarget;
@@ -311,9 +379,17 @@ public:
 	int		m_MenuIdVolume;
 	int		m_MenuIdTiming;
 	int		m_FPSTarget;
-	bool		m_JoystickCaptured;
-	JOYCAPS		m_JoystickCaps;
-	int		m_MenuIdSticks;
+	JoystickHandlerPtr m_JoystickHandler;
+	bool		m_JoystickTimerRunning{ false };
+	int		m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
+	int		m_MenuIdAxes[NUM_BBC_JOYSTICKS]{};
+	BBCJoystickConfig m_JoystickConfig[NUM_BBC_JOYSTICKS];
+	int		m_JoystickToKeysThreshold{ DEFAULT_JOYSTICK_THRESHOLD };
+	double		m_JoystickSensitivity{ 1.0 };
+	bool		m_JoystickToKeys{ false };
+	bool		m_AutoloadJoystickMap{ false };
+	HWND		m_JoystickTarget{ nullptr };
+	char		m_JoystickMapPath[_MAX_PATH]{};
 	bool		m_HideCursor;
 	bool		m_CaptureMouse;
 	bool		m_MouseCaptured;
@@ -324,7 +400,8 @@ public:
 	bool		m_KeyMapFunc;
 	char		m_UserKeyMapPath[_MAX_PATH];
 	bool		m_ShiftPressed;
-	int		m_vkeyPressed[256][2][2];
+	/* indexes are [vkey][0: row/1: col][shift pressed] */
+	int		m_vkeyPressed[BEEB_VKEY_COUNT][2][2];
 	char		m_AppPath[_MAX_PATH];
 	char		m_UserDataPath[_MAX_PATH];
 	bool m_CustomData;
@@ -406,6 +483,7 @@ public:
 	bool		m_EmuPaused;
 	bool		m_StartPaused;
 	bool		m_WasPaused;
+	bool		m_JoystickToKeysWasEnabled;
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
 	bool		m_BootDiscTimerElapsed;
@@ -487,8 +565,25 @@ public:
 
 	void UpdateSoundStreamerMenu();
 
+	void InitJoystickMenu(void);
+	void UpdateJoystickMenu(void);
+	void ProcessJoystickMenuCommand(int bbcIdx, UINT menuId);
+	void ProcessJoystickAxesMenuCommand(int bbcIdx, UINT menuId);
+	void ProcessJoystickToKeysCommand();
+	void ProcessAutoloadJoystickMapCommand();
+
+	void UpdateJoystickConfig(int bbcIdx);
+	bool GetAnalogMousestick(int bbcIdx);
+	bool GetDigitalMousestick(int bbcIdx);
+	int  GetPCJoystick(int bbcIdx);
+	bool IsPCJoystickOn(int pcIdx);
+
+	bool GetJoystickToKeys() { return m_JoystickToKeys; }
+	void SetJoystickToKeys(bool value) { m_JoystickToKeys = value; }
+
 	void CheckMenuItem(UINT id, bool checked);
 	void EnableMenuItem(UINT id, bool enabled);
+	void SetMenuItemText(UINT id, const std::string& text);
 
 	// DirectX - calls DDraw or DX9 fn
 	void InitDX(void);
@@ -517,7 +612,9 @@ public:
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
-	void InitJoystick(void);
+	bool ScanJoysticks(bool verbose = false);
+	void InitJoystick(bool verbose = false);
+	bool CaptureJoystick(int Index, bool verbose);
 	void ResetJoystick(void);
 	void RestoreState(void);
 	void SaveState(void);
@@ -555,8 +652,20 @@ public:
 	bool RebootSystem();
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);
+	FILE* OpenReadFile(const char *filename, const char *typeDescr,
+			   const char *token);
+	FILE* OpenWriteFile(const char *filename, const char *typeDescr);
 	bool ReadKeyMap(const char *filename, KeyMap *keymap);
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
+
+	void CheckForJoystickMap(const char* path);
+	void ResetJoystickMap(void);
+	void ResetJoyMap(JoyMap* joymap);
+	void ResetJoyMapToDefaultUser(void);
+	bool ReadJoyMap(const char* filename, JoyMap* joymap);
+	bool WriteJoyMap(const char* filename, JoyMap* joymap);
+	void LoadJoystickMap(void);
+	void SaveJoystickMap(void);
 
 	void Report(MessageType type, const char *format, ...);
 
@@ -570,6 +679,9 @@ public:
 	// Preferences
 	void LoadPreferences();
 	void SavePreferences(bool saveAll);
+	void ReadJoystickPreferences();
+	void WriteJoystickPreferences();
+	void WriteJoystickOrder();
 
 private:
 	enum class PaletteType : char {

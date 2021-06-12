@@ -1,0 +1,70 @@
+*** BeebEm Joystick Map ***
+
+# Joystick map file begins with special marker line as above.
+# All empty lines and lines starting with '#' are ignored.
+
+# Remaining lines must consist of two or three tokens separated with
+# whitespace.
+# All names are case insensitive except for the marker in the first line.
+
+# Two-token lines are:
+# <Joystick input>  <BBC Key>
+# Three-token lines are:
+# <Joystick input>  <BBC Key for unshifted> <BBC Key for shifted>
+
+# These two lines define the same mapping:
+# Joy1Up   A
+# Joy1Up   A   SH+A
+
+# BBC Key names prefixed with 'SH+' indicate shifted key press.
+# In the two-token lines, the 'SH+' prefix is allowed, but ignored.
+
+# Special BBC key names are:
+# LEFT, RIGHT, UP, DOWN, BREAK, COPY, DELETE, CAPS-LOCK, TAB, CTRL
+# SPACE, RETURN, ESCAPE, SHIFT, SHIFT-LOCK
+# Allowed aliases:
+# DEL, CAPS, CAPSLOCK, CONTROL, ESC, SHIFTLOCK
+
+# All other BBC keys are named by their unshifted character (i.e. 'SH+[' not '{')
+# Function keys are named, as one would expect, 'F0' to 'F9'
+
+# Joystick inputs have the form Joy[X][Act] where [X] is the joystick number
+# and [Act] is the action name. Axis and button assignments differ between
+# joystick or gamepad models.
+
+# Xbox 360 controller has following assignments
+# (with DIJOYSTATE2 fields in the middle column):
+# Left, Right, Up, Down             - lX, lY     - Left Analog Left, Right, Up, Down
+# Z+,Z-                             - lZ         - Left Trigger, Right Trigger
+# RLeft, RRight, RUp, RDown         - lRx, lRy   - Right Analog Left, Right, Up, Down
+# HatLeft, HatRight, HatUp, HatDown - rgdwPOV[0] - Hat Up, Down, Left, Right
+# Btn1-4                                         - A, B, X, Y
+# Btn5,6                                         - Left Shoulder, Right Shoulder
+# Btn7,8                                         - Back, Start
+# Btn9,10                                        - Left Thumbstick, Right Thumbstick
+
+# Other common layout:
+# Left, Right, Up, Down             - lX, lY     - Left Analog Left, Right, Up, Down
+# RLeft, RRight, RUp, RDown         - lZ, lRz    - Right Analog Left, Right, Up, Down
+# HatLeft, HatRight, HatUp, HatDown - rgdwPOV[0] - Hat Up, Down, Left, Right
+# Btn1-4                                         - Y, B, A, X
+# Btn5,6                                         - Left Shoulder, Right Shoulder
+# Btn7,8                                         - Left Trigger, Right Trigger
+# Btn9,10                                        - Select/Back, Start
+# Btn11,12                                       - Left Thumbstick, Right Thumbstick
+# Btn13                                          - Home
+
+# Sample mapping for Chuckie Egg
+
+Joy1Up        A
+Joy1Down      Z
+Joy1Left      ,
+Joy1Right     .
+Joy1HatUp     A
+Joy1HatDown   Z
+Joy1HatLeft   ,
+Joy1HatRight  .
+Joy1Btn1      SPACE
+Joy1Btn6      RETURN
+Joy1Btn7      1
+Joy1Btn8      S

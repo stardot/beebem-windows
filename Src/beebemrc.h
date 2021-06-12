@@ -97,6 +97,7 @@ Boston, MA  02110-1301, USA.
 #define IDK_BACKSLASH                   81
 #define IDK_UNDERSCORE                  82
 #define IDK_CARET                       83
+#define IDK_UNASSIGN                    84
 #define IDR_MENU                        101
 #define IDI_BEEBEM                      102
 #define IDD_USERKYBRD                   103
@@ -108,6 +109,7 @@ Boston, MA  02110-1301, USA.
 #define IDR_ACCELERATORS                115
 #define IDD_ROMCONFIG                   116
 #define IDD_SELECT_KEY                  117
+#define IDD_JOYSTICKORDER               118
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -186,6 +188,11 @@ Boston, MA  02110-1301, USA.
 #define IDC_SHIFT                       1088
 #define IDC_DEBUGTELETEXTBRK            1089
 #define IDC_ASSIGNED_KEYS               1090
+#define IDC_ASSIGNED_KEYS_LBL           1091
+#define IDK_RESET_MAPPING               1092
+#define IDC_JOYSTICKLIST                1093
+#define IDC_JOYSTICKSPIN                1094
+#define IDC_JOYSTICKSHOWALL             1095
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -309,7 +316,6 @@ Boston, MA  02110-1301, USA.
 #define ID_TAPE_NORMAL                  40141
 #define IDM_MUSIC5000                   40142
 #define ID_TELETEXTHALFMODE             40143
-#define ID_BASIC_HARDWARE_ONLY          40144
 #define ID_PSAMPLES                     40148
 #define IDM_FIXEDSPEED100               40151
 #define IDM_FIXEDSPEED5                 40154
@@ -433,17 +439,42 @@ Boston, MA  02110-1301, USA.
 #define ID_VIEW_DD_2560X1440            40294
 #define ID_VIEW_DD_3840X2160            40295
 #define IDM_EMUPAUSED                   40296
+#define IDM_JOYSTICK_TO_KEYS            40297
+#define IDM_DEFINEJOYMAP                40298
+#define IDM_LOADJOYMAP                  40299
+#define IDM_SAVEJOYMAP                  40300
+#define IDM_AUTOLOADJOYMAP              40301
+#define IDM_RESETJOYMAP                 40302
+#define IDM_INIT_JOYSTICK               40303
+#define IDM_JOY1_PCJOY2                 40305
+#define IDM_JOY1_PRIMARY                40306
+#define IDM_JOY1_SECONDARY1             40307
+#define IDM_JOY2_PCJOY1                 40309
+#define IDM_JOY2_PCJOY2                 40310
+#define IDM_JOY2_ANALOGUE_MOUSESTICK    40311
+#define IDM_JOY2_DIGITAL_MOUSESTICK     40312
+#define IDM_JOY2_PRIMARY                40313
+#define IDM_JOY2_SECONDARY1             40314
+#define IDM_JOYSTICKORDER               40317
 #define IDM_CAPTUREMOUSE                40318
+#define IDM_JOY_SENSITIVITY_50          40319
+#define IDM_JOY_SENSITIVITY_100         40320
+#define IDM_JOY_SENSITIVITY_200         40321
+#define IDM_JOY_SENSITIVITY_300         40322
+#define IDM_JOY_KEY_THRESHOLD_12_5      40323
+#define IDM_JOY_KEY_THRESHOLD_25        40324
+#define IDM_JOY_KEY_THRESHOLD_50        40325
+#define IDM_JOY_KEY_THRESHOLD_75        40326
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        118
-#define _APS_NEXT_COMMAND_VALUE         40319
-#define _APS_NEXT_CONTROL_VALUE         1090
+#define _APS_NEXT_RESOURCE_VALUE        119
+#define _APS_NEXT_COMMAND_VALUE         40327
+#define _APS_NEXT_CONTROL_VALUE         1096
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

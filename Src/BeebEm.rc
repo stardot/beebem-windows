@@ -108,6 +108,8 @@ BEGIN
     CONTROL         "_ £",IDK_UNDERSCORE,"Button",BS_OWNERDRAW | WS_TABSTOP,269,33,17,14
     CONTROL         "^ ~",IDK_CARET,"Button",BS_OWNERDRAW | WS_TABSTOP,243,19,17,14
     CONTROL         "SFT LK",IDK_SHIFT_LOCK,"Button",BS_OWNERDRAW | WS_TABSTOP,9,62,29,14
+    CONTROL         "Unassign",IDK_UNASSIGN,"Button",BS_OWNERDRAW | WS_TABSTOP,9,86,60,14
+    PUSHBUTTON      "Reset Mapping",IDK_RESET_MAPPING,9,101,60,14
 END
 
 IDD_KEYBOARD_LINKS DIALOG  0, 0, 160, 66
@@ -165,7 +167,7 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPT
 CAPTION "Press key for unshifted press..."
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    LTEXT           "Assigned to PC key(s):",IDC_STATIC,7,7,74,8
+    LTEXT           "Assigned to PC key(s):",IDC_ASSIGNED_KEYS_LBL,7,7,74,8
     LTEXT           "Static",IDC_ASSIGNED_KEYS,15,21,127,8
     CONTROL         "Shift",IDC_SHIFT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,40,31,10
     PUSHBUTTON      "OK",IDOK,92,39,50,14
@@ -257,6 +259,17 @@ BEGIN
     PUSHBUTTON      "Save Config",IDC_SAVE,235,136,50,14
 END
 
+IDD_JOYSTICKORDER DIALOGEX 0, 0, 170, 133
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Joystick Order"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,113,113,50,14
+    LISTBOX         IDC_JOYSTICKLIST,7,7,141,103,WS_VSCROLL | WS_TABSTOP
+    CONTROL         "",IDC_JOYSTICKSPIN,"msctls_updown32",UDS_ARROWKEYS,151,35,12,34
+    CONTROL         "Show disconnected",IDC_JOYSTICKSHOWALL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,115,79,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -319,6 +332,14 @@ BEGIN
         RIGHTMARGIN, 285
         TOPMARGIN, 7
         BOTTOMMARGIN, 197
+    END
+
+    IDD_JOYSTICKORDER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 127
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -641,6 +662,55 @@ BEGIN
         MENUITEM "Adjust -30%",                 IDM_AMX_ADJUSTM30
         MENUITEM "Adjust -50%",                 IDM_AMX_ADJUSTM50
     END
+    POPUP "&Joysticks"
+    BEGIN
+        POPUP "Primary Joystick"
+        BEGIN
+            MENUITEM "First PC &Joystick",              IDM_JOYSTICK
+            MENUITEM "Second PC Joystick",              IDM_JOY1_PCJOY2
+            MENUITEM "&Analogue Mousestick",            IDM_ANALOGUE_MOUSESTICK
+            MENUITEM "&Digital Mousestick",             IDM_DIGITAL_MOUSESTICK
+            MENUITEM SEPARATOR
+            MENUITEM "Primary Stick",                   IDM_JOY1_PRIMARY
+            MENUITEM "Right Thumbstick",                IDM_JOY1_SECONDARY1
+        END
+        POPUP "Secondary Joystick"
+        BEGIN
+            MENUITEM "First PC &Joystick",              IDM_JOY2_PCJOY1
+            MENUITEM "Second PC Joystick",              IDM_JOY2_PCJOY2
+            MENUITEM "&Analogue Mousestick",            IDM_JOY2_ANALOGUE_MOUSESTICK
+            MENUITEM "&Digital Mousestick",             IDM_JOY2_DIGITAL_MOUSESTICK
+            MENUITEM SEPARATOR
+            MENUITEM "Primary Stick",                   IDM_JOY2_PRIMARY
+            MENUITEM "Right Thumbstick",                IDM_JOY2_SECONDARY1
+        END
+        POPUP "Joystick To Keyboard"
+        BEGIN
+            MENUITEM "Enable Joystick To Keyboard",   IDM_JOYSTICK_TO_KEYS
+            POPUP "Threshold"
+            BEGIN
+                MENUITEM "12.5%",                     IDM_JOY_KEY_THRESHOLD_12_5
+                MENUITEM "25%",                       IDM_JOY_KEY_THRESHOLD_25
+                MENUITEM "50%",                       IDM_JOY_KEY_THRESHOLD_50
+                MENUITEM "75%",                       IDM_JOY_KEY_THRESHOLD_75
+            END
+            MENUITEM "Autoload Joystick Mapping",     IDM_AUTOLOADJOYMAP
+            MENUITEM SEPARATOR
+            MENUITEM "Define Joystick Mapping",       IDM_DEFINEJOYMAP
+            MENUITEM "Reset Joystick Mapping",        IDM_RESETJOYMAP
+            MENUITEM "Load Joystick Mapping...",      IDM_LOADJOYMAP
+            MENUITEM "Save Joystick Mapping...",      IDM_SAVEJOYMAP
+        END
+        POPUP "Joystick Sensitivity"
+        BEGIN
+            MENUITEM "50%",                           IDM_JOY_SENSITIVITY_50
+            MENUITEM "100%",                          IDM_JOY_SENSITIVITY_100
+            MENUITEM "200%",                          IDM_JOY_SENSITIVITY_200
+            MENUITEM "300%",                          IDM_JOY_SENSITIVITY_300
+        END
+        MENUITEM "Rescan Joysticks",                  IDM_INIT_JOYSTICK
+        MENUITEM "Change Joystick Order",             IDM_JOYSTICKORDER
+    END
     POPUP "Hard&ware"
     BEGIN
         POPUP "&BBC Model"
@@ -688,7 +758,6 @@ BEGIN
         MENUITEM "SW RAM Board On/Off", IDM_SWRAMBOARD
         MENUITEM "Edit ROM Configuration", IDM_ROMCONFIG
         MENUITEM SEPARATOR
-        MENUITEM "Basic &Hardware Only",        ID_BASIC_HARDWARE_ONLY
         MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE
         MENUITEM SEPARATOR
         MENUITEM "Econet On/Off",               ID_ECONET
@@ -708,9 +777,6 @@ BEGIN
     END
     POPUP "&Options"
     BEGIN
-        MENUITEM "&Joystick",                   IDM_JOYSTICK
-        MENUITEM "&Analogue Mousestick",        IDM_ANALOGUE_MOUSESTICK
-        MENUITEM "&Digital Mousestick",         IDM_DIGITAL_MOUSESTICK
         MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR
@@ -758,18 +824,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE
+1 TEXTINCLUDE 
 BEGIN
     "beebemrc.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
     "#include ""winresrc.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"

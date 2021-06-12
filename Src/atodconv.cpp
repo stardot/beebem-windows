@@ -32,11 +32,9 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "uefstate.h"
 
-bool JoystickEnabled = false;
-
-/* X and Y positions for joystick 1 */
-int JoystickX;
-int JoystickY;
+/* X and Y positions for joystick 1 and 2 */
+int JoystickX[2];
+int JoystickY[2];
 
 /* A to D state */
 typedef struct AtoDStateT{
@@ -107,58 +105,45 @@ void AtoD_poll_real(void)
 	switch (AtoDState.status & 3)
 	{
 	case 0:
-		value = JoystickX;
+		value = JoystickX[0];
 		break;
 	case 1:
-		value = JoystickY;
+		value = JoystickY[0];
+		break;
+	case 2:
+		value = JoystickX[1];
+		break;
+	case 3:
+		value = JoystickY[1];
 		break;
 	default:
 		value = 0;
-		break;
 	}
 
 	AtoDState.status |= (value & 0xc000)>>10;
-	AtoDState.high = value>>8;
+	AtoDState.high = static_cast<unsigned char>(value>>8);
 	AtoDState.low = value & 0xf0;
 }
 
 /*--------------------------------------------------------------------------*/
-void AtoDInit(void)
+
+void AtoDInit()
 {
 	AtoDState.datalatch = 0;
 	AtoDState.high = 0;
 	AtoDState.low = 0;
 	ClearTrigger(AtoDTrigger);
 
-	/* Move joystick to middle */
-	JoystickX = 32767;
-	JoystickY = 32767;
+	// Move both joysticks to middle
+	JoystickX[0] = 32767;
+	JoystickY[0] = 32767;
 
-	/* Not busy, conversion complete (OS1.2 will then request another conversion) */
+	JoystickX[1] = 32767;
+	JoystickY[1] = 32767;
+
+	// Not busy, conversion complete (OS1.2 will then request another conversion)
 	AtoDState.status = 0x40;
 	PulseSysViaCB1();
-}
-
-/*--------------------------------------------------------------------------*/
-void AtoDEnable(void)
-{
-	JoystickEnabled = true;
-	AtoDInit();
-}
-
-/*--------------------------------------------------------------------------*/
-void AtoDDisable(void)
-{
-	JoystickEnabled = false;
-	AtoDState.datalatch = 0;
-	AtoDState.status = 0x80; /* busy, conversion not complete */
-	AtoDState.high = 0;
-	AtoDState.low = 0;
-	ClearTrigger(AtoDTrigger);
-
-	/* Move joystick to middle (superpool looks at joystick even when not selected) */
-	JoystickX = 32767;
-	JoystickY = 32767;
 }
 
 /*--------------------------------------------------------------------------*/
