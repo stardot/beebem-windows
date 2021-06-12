@@ -236,7 +236,7 @@ unsigned int networkp = 0;				// how many friends do I have?
 unsigned int aunnetp = 0;				// now many networks do i know about
 unsigned int myaunnet = 0;				// aunnet table entry that I match. should be -1 as 0 is valid..
 
-char EconetCfgPath[512];				// where's my config files saved?
+char EconetCfgPath[512];				// where's my config file saved?
 
 unsigned char irqcause;					// flagto indicate cause of irq sr1b7
 unsigned char sr1b2cause;				// flagto indicate cause of irq sr1b2
