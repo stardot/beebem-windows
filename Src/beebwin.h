@@ -127,6 +127,14 @@ enum class MessageType {
 	Info
 };
 
+enum class PaletteType : char {
+	RGB,
+	BW,
+	Amber,
+	Green,
+	Last
+};
+
 class BeebWin {
 
 public:
@@ -570,15 +578,6 @@ public:
 	// Preferences
 	void LoadPreferences();
 	void SavePreferences(bool saveAll);
-
-private:
-	enum class PaletteType : char {
-		RGB,
-		BW,
-		Amber,
-		Green,
-		Last
-	};
 
 	PaletteType m_PaletteType;
 
