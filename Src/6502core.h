@@ -57,7 +57,7 @@ typedef enum PSR_Flags
 
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;
-extern unsigned int Cycles;
+
 extern int ProgramCounter;
 extern int PrePC;
 extern CycleCountT TotalCycles;
