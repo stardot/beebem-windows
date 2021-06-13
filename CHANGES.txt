@@ -1,6 +1,63 @@
 BeebEm Change History
 =====================
 
+Version 4.17 (Chris Needham, Tadek Kijkowski)
+------------
+* Writes to the sound chip are now allowed while sound is disabled.
+  This ensures that the sound chip is in the right state if sound is later
+  enabled.
+* Fixed sound frequency write. Setting frequency to zero should initalise
+  the counter to 1024.
+* The cursor is now disabled based on CRTC register R8 (see AUG p.366).
+  This fixes the cursor display in Wizzy's Mansion and Pedro.
+* Debugger improvements:
+  * Fixed instruction 4B (ALR imm).
+  * Set the initial input focus so that you can now open the Debugger
+    window and type commands without having to click in the edit box.
+  * Added 'over' command. This steps over a JSR instruction, i.e., runs to
+    the next instruction in memory after the JSR.
+  * Added a command to show existing labels.
+  * Added a command to clear the output window.
+  * Fixed help output to show all commands and aliases.
+  * Fixed the 'file' command to allow the full 64k address space to be
+    saved.
+  * The following commands now prompt for a filename if not given:
+    labels load, save, file, script.
+* Mouse input improvements:
+  * Changed the right mouse button to control joystick button 2, which is
+    useful for games such as Phoenix and Ripcord that use both joystick
+    buttons.
+  * Fixed the "Hide Cursor" option, which caused the cursor to flicker when
+    using the mouse-stick options.
+  * Added mouse capture option. To enable, select the "Capture Mouse"
+    menu item and click in the window area. To release the mouse, press
+    Ctrl+Alt.
+  * Fixed "AMX L+R for Middle" option.
+  * Fixed bug where Master 512 mouse input would sometimes be reversed.
+    Master 512 configures interrupt on raising and faiilng CBx edges
+    alternately. Instead of guessing which should be next, check selected
+    edge in the PCR register.
+  * Improved mouse responsiveness when captured.
+* Fixed Mode 7 run-length optimisation in the video renderer
+* Fixed the teletext font file. The 'W' character had one pixel missing.
+* Improved Mode 7 screen capture to avoid distorting the image.
+  Use the 640x512 option for best results.
+* Reset double-height state at start of mode 7 screen. This fixes an
+  issue where, if double height is enabled on the last character row of
+  a mode 7 screen, the top row of the screen would also be treated as
+  double height. This effect could be seen in the Twin Kingdom Valley
+  instructions pages.
+* Fixed Solidisk Sideways RAM emulation. Writes to RAM bank are selected
+  by User VIA output port B even if the bank selected by &FE30 is writable.
+* Fixed Preferences.cfg file backwards compatibility.
+* Fixed reading the tube coprocessor selection from BeebEm 4.14
+  Preferences.cfg files.
+* Fixed crash when loading multiple ADFS images from the command line.
+* Fixed PrinterEnabled preferences option, which was not being
+  saved/loaded correctly.
+* Added BeebEm.user.props.example file and updated the instructions
+  for how to compile BeebEm
+
 Version 4.16 (Chris Needham, Dominic Beesley)
 ------------
 * Reintroduced Master 512 co-processor support, following change to the MAME
