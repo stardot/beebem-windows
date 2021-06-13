@@ -4654,21 +4654,21 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 				else
 					Load1770DiscImage(FileName, drive, DiscType::DSD);
 			}
-			if (ssd)
+			else if (ssd)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, drive, 0, 80);
 				else
 					Load1770DiscImage(FileName, drive, DiscType::SSD);
 			}
-			if (adfs)
+			else if (adfs)
 			{
 				if (!NativeFDC)
 					Load1770DiscImage(FileName, drive, DiscType::ADFS);
 				else
 					cont = false;  // cannot load adfs with native DFS
 			}
-			if (img)
+			else if (img)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, drive, 0, 80); // Treat like an ssd
@@ -4680,11 +4680,11 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 		{
 			if (dsd)
 				Load1770DiscImage(FileName, drive, DiscType::DSD);
-			if (ssd)
+			else if (ssd)
 				Load1770DiscImage(FileName, drive, DiscType::SSD);
-			if (adfs)
+			else if (adfs)
 				Load1770DiscImage(FileName, drive, DiscType::ADFS);
-			if (img)
+			else if (img)
 				Load1770DiscImage(FileName, drive, DiscType::IMG);
 		}
 	}
