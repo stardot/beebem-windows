@@ -137,7 +137,7 @@ SoundStreamer *pSoundStreamer = nullptr;
 
 /****************************************************************************/
 /* Writes sound data to a sound buffer */
-static HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
+static void WriteToSoundBuffer(PBYTE lpbSoundData)
 {
 	if (pSoundStreamer != nullptr)
 	{
@@ -155,8 +155,6 @@ static HRESULT WriteToSoundBuffer(PBYTE lpbSoundData)
 			aviWriter = nullptr;
 		}
 	}
-
-	return S_OK;
 }
 
 /****************************************************************************/
