@@ -13,8 +13,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -1038,7 +1038,7 @@ void BeebWin::KillDLLs(void) {
 }
 
 void BeebWin::SetDriveControl(unsigned char value) {
-	// This takes a value from the mem/io decoder, as written by the cpu, runs it through the 
+	// This takes a value from the mem/io decoder, as written by the cpu, runs it through the
 	// DLL's translator, then sends it on to the 1770 FDC in master 128 form.
 	WriteFDCControlReg(PSetDriveControl(value));
 }

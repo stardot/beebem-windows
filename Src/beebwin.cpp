@@ -1159,7 +1159,6 @@ void BeebWin::UpdateDisableKeysMenu() {
 	CheckMenuItem(IDM_DISABLEKEYSSHORTCUT, m_DisableKeysShortcut);
 }
 
-
 /****************************************************************************/
 
 void BeebWin::UpdateTubeMenu()
