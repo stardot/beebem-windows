@@ -87,9 +87,9 @@ using namespace Gdiplus;
 // some LED based macros
 #define LED_COL_BASE 64
 
-static char *CFG_REG_KEY = "Software\\BeebEm";
+static const char *CFG_REG_KEY = "Software\\BeebEm";
 
-static unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
+static const unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
 	00,00,00,00,00,00,00,00,03,00,00,00,00,00,0x5B,0xE0,00,00,0x5C,0xE0,00,00,00,00
 };
 
