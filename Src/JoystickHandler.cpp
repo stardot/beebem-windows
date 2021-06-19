@@ -34,6 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "SelectKeyDialog.h"
 #include "JoystickHandler.h"
 #include "DebugTrace.h"
+#include "FileUtils.h"
 
 #include <cctype>
 #include <list>
@@ -1493,16 +1494,6 @@ bool BeebWin::WriteJoyMap(const char *filename, JoyMap *joymap)
 	fclose(outfile);
 
 	return true;
-}
-
-/****************************************************************************/
-static bool hasFileExt(const char* fileName, const char* fileExt)
-{
-	const size_t fileExtLen = strlen(fileExt);
-	const size_t fileNameLen = strlen(fileName);
-
-	return fileNameLen >= fileExtLen &&
-		_stricmp(fileName + fileNameLen - fileExtLen, fileExt) == 0;
 }
 
 /****************************************************************************/

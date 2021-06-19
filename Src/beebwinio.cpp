@@ -39,6 +39,7 @@ Boston, MA  02110-1301, USA.
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "filedialog.h"
+#include "FileUtils.h"
 #include "SelectKeyDialog.h"
 #include "uservia.h"
 #include "beebsound.h"
@@ -75,15 +76,6 @@ typedef unsigned char (*lGetDriveControl)(unsigned char);
 lGetBoardProperties PGetBoardProperties;
 lSetDriveControl PSetDriveControl;
 lGetDriveControl PGetDriveControl;
-
-static bool hasFileExt(const char* fileName, const char* fileExt)
-{
-	const size_t fileExtLen = strlen(fileExt);
-	const size_t fileNameLen = strlen(fileName);
-
-	return fileNameLen >= fileExtLen &&
-	       _stricmp(fileName + fileNameLen - fileExtLen, fileExt) == 0;
-}
 
 /****************************************************************************/
 void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType DscType) {
