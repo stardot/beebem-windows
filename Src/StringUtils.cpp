@@ -58,3 +58,15 @@ std::string toupper(const std::string& src)
 
 	return result;
 }
+
+void makeupper(char* str)
+{
+	if (str == nullptr)
+		return;
+
+	while (*str != '\0')
+	{
+		*str = static_cast<char>(toupper(*str));
+		++str;
+	}
+}

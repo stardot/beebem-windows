@@ -25,5 +25,6 @@ Boston, MA  02110-1301, USA.
 
 void trim(std::string& str);
 std::string toupper(const std::string& src);
+void makeupper(char* str);
 
 #endif

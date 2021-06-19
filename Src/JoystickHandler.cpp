@@ -34,6 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "JoystickHandler.h"
 #include "DebugTrace.h"
 #include "FileUtils.h"
+#include "StringUtils.h"
 
 #include <cctype>
 #include <list>
@@ -1271,18 +1272,6 @@ void BeebWin::ResetJoyMapToDefaultUser(void)
 	ResetJoyMap(&JoystickMap);
 	if (GetFileAttributes(keymap) != INVALID_FILE_ATTRIBUTES)
 		ReadJoyMap(keymap, &JoystickMap);
-}
-
-/****************************************************************************/
-static void makeupper(char* str)
-{
-	if (str == NULL)
-		return;
-	while (*str)
-	{
-		*str = static_cast<char>(toupper(*str));
-		++str;
-	}
 }
 
 /****************************************************************************/
