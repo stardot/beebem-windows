@@ -399,8 +399,8 @@ public:
 	int		m_FPSTarget;
 	JoystickHandlerPtr m_JoystickHandler;
 	bool		m_JoystickTimerRunning{ false };
-	int		m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
-	int		m_MenuIdAxes[NUM_BBC_JOYSTICKS]{};
+	UINT m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
+	UINT m_MenuIdAxes[NUM_BBC_JOYSTICKS]{};
 	BBCJoystickConfig m_JoystickConfig[NUM_BBC_JOYSTICKS];
 	int		m_JoystickToKeysThreshold{ DEFAULT_JOYSTICK_THRESHOLD };
 	double		m_JoystickSensitivity{ 1.0 };

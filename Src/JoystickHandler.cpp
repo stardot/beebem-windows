@@ -626,9 +626,9 @@ void BeebWin::UpdateJoystickConfig(int bbcIdx)
 	m_JoystickConfig[bbcIdx].PCStick = MenuIdToStick(bbcIdx, m_MenuIdSticks[bbcIdx]);
 	m_JoystickConfig[bbcIdx].PCAxes = MenuIdToAxes(bbcIdx, m_MenuIdAxes[bbcIdx]);
 	m_JoystickConfig[bbcIdx].AnalogMousestick =
-		(static_cast<UINT>(m_MenuIdSticks[bbcIdx]) == JoystickMenuIds[bbcIdx].AnalogMousestick);
+		m_MenuIdSticks[bbcIdx] == JoystickMenuIds[bbcIdx].AnalogMousestick;
 	m_JoystickConfig[bbcIdx].DigitalMousestick =
-		(static_cast<UINT>(m_MenuIdSticks[bbcIdx]) == JoystickMenuIds[bbcIdx].DigitalMousestick);
+		m_MenuIdSticks[bbcIdx] == JoystickMenuIds[bbcIdx].DigitalMousestick;
 }
 
 /****************************************************************************/
@@ -755,7 +755,7 @@ void BeebWin::ProcessJoystickMenuCommand(int bbcIdx, UINT MenuId)
 		}
 	}
 
-	if (MenuId == static_cast<UINT>(m_MenuIdSticks[bbcIdx]))
+	if (MenuId == m_MenuIdSticks[bbcIdx])
 	{
 		/* Joystick switched off completely */
 		m_MenuIdSticks[bbcIdx] = 0;
