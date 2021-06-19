@@ -28,6 +28,7 @@ Boston, MA  02110-1301, USA.
 #include "SelectKeyDialog.h"
 #include "Dialog.h"
 #include "Messages.h"
+#include "StringUtils.h"
 
 /****************************************************************************/
 
@@ -340,18 +341,6 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 		Character[1] = '\0';
 		return Character;
 	}
-}
-
-static std::string toupper(const std::string& src)
-{
-	std::string result = src;
-
-	for (char& c : result)
-	{
-		c = static_cast<char>(toupper(c));
-	}
-
-	return result;
 }
 
 int SelectKeyDialog::JoyVKeyByName(const char* Name)
