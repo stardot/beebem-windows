@@ -22,7 +22,7 @@ Boston, MA  02110-1301, USA.
 
 extern "C"
 {
-#include "ARMulator\armdefs.h"
+#include "ARMulator/armdefs.h"
 }
 
 class CSprowCoPro

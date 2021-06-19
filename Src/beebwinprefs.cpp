@@ -50,7 +50,7 @@ Boston, MA  02110-1301, USA.
 #include "teletext.h"
 #include "serialdevices.h"
 #include "Arm.h"
-#include "sprowcopro.h"
+#include "SprowCoPro.h"
 
 /* Configuration file strings */
 static const char *CFG_VIEW_WIN_SIZE = "WinSize";

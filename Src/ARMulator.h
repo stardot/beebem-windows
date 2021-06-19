@@ -28,9 +28,9 @@ extern "C" {
 #endif
 
 #include "ML675001.h"
-#include "ARMulator\armopts.h"
-#include "ARMulator\armos.h"
-#include "ARMulator\ansidecl.h"
+#include "ARMulator/armopts.h"
+#include "ARMulator/armos.h"
+#include "ARMulator/ansidecl.h"
 
 int stop_simulator = 0;
 

@@ -75,7 +75,7 @@ Boston, MA  02110-1301, USA.
 #include "serialdevices.h"
 #include "Arm.h"
 #include "version.h"
-#include "sprowcopro.h"
+#include "SprowCoPro.h"
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
 #include "DebugTrace.h"

@@ -40,7 +40,7 @@ Boston, MA  02110-1301, USA.
 #include "z80mem.h"
 #include "z80.h"
 #include "Arm.h"
-#include "sprowcopro.h"
+#include "SprowCoPro.h"
 
 #ifdef WIN32
 #include <windows.h>

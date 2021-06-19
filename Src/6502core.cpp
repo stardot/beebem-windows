@@ -54,7 +54,7 @@ Boston, MA  02110-1301, USA.
 #include "ide.h"
 #include "debug.h"
 #include "Arm.h"
-#include "sprowcopro.h"
+#include "SprowCoPro.h"
 #include "Master512CoPro.h"
 
 #ifdef WIN32
