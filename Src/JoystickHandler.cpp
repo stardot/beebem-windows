@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 #include "filedialog.h"
 #include "SelectKeyDialog.h"
 #include "JoystickHandler.h"
+#include "DebugTrace.h"
 
 #include <cctype>
 #include <list>
@@ -164,20 +165,6 @@ std::string JoystickDev::DisplayString()
 	return name;
 }
 
-#ifndef NDEBUG
-void OutputDebug(const char* format, ...)
-{
-	char buf[256];
-	va_list var;
-	va_start(var, format);
-	vsnprintf(buf, sizeof(buf), format, var);
-	OutputDebugString(buf);
-	va_end(var);
-}
-#else
-void OutputDebug(const char* format, ...) { (void)format; }
-#endif
-
 /*****************************************************************************/
 bool JoystickDev::Update()
 {
@@ -186,11 +173,11 @@ bool JoystickDev::Update()
 		return false;
 
 	hr = m_Device->Poll();
-	if (FAILED(hr)) { OutputDebug("Poll result %08x\n", hr); }
+	if (FAILED(hr)) { DebugTrace("Poll result %08x\n", hr); }
 	if (FAILED(hr))
 	{
 		hr = m_Device->Acquire();
-		OutputDebug("Acquire result %08x\n", hr);
+		DebugTrace("Acquire result %08x\n", hr);
 
 		if (hr == DIERR_UNPLUGGED)
 			return false;
@@ -199,7 +186,7 @@ bool JoystickDev::Update()
 	}
 	if (FAILED(hr = m_Device->GetDeviceState(sizeof(DIJOYSTATE2), &m_JoyState)))
 	{
-		OutputDebug("GeteviceState result %08x\n", hr);
+		DebugTrace("GeteviceState result %08x\n", hr);
 		return false;
 	}
 	return true;
