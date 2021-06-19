@@ -46,3 +46,15 @@ void trim(std::string& str)
 	trimLeft(str);
 	trimRight(str);
 }
+
+std::string toupper(const std::string& src)
+{
+	std::string result = src;
+
+	for (char& c : result)
+	{
+		c = static_cast<char>(toupper(c));
+	}
+
+	return result;
+}
