@@ -34,7 +34,7 @@ Version 4.17 (Chris Needham, Tadek Kijkowski)
     Ctrl+Alt.
   * Fixed "AMX L+R for Middle" option.
   * Fixed bug where Master 512 mouse input would sometimes be reversed.
-    Master 512 configures interrupt on raising and faiilng CBx edges
+    Master 512 configures interrupt on raising and falling CBx edges
     alternately. Instead of guessing which should be next, check selected
     edge in the PCR register.
   * Improved mouse responsiveness when captured.
@@ -56,7 +56,7 @@ Version 4.17 (Chris Needham, Tadek Kijkowski)
 * Fixed PrinterEnabled preferences option, which was not being
   saved/loaded correctly.
 * Added BeebEm.user.props.example file and updated the instructions
-  for how to compile BeebEm
+  for how to compile BeebEm.
 
 Version 4.16 (Chris Needham, Dominic Beesley)
 ------------
