@@ -402,17 +402,17 @@ JoystickDev::~JoystickDev()
 }
 
 /****************************************************************************/
-void JoystickHandler::AddDeviceInstance(const DIDEVICEINSTANCE* pdidInstance)
+void JoystickHandler::AddDeviceInstance(const DIDEVICEINSTANCE* pDeviceInstance)
 {
-	int mid = LOWORD(pdidInstance->guidProduct.Data1);
-	int pid = HIWORD(pdidInstance->guidProduct.Data1);
+	int mid = LOWORD(pDeviceInstance->guidProduct.Data1);
+	int pid = HIWORD(pDeviceInstance->guidProduct.Data1);
 
 	int index = m_JoystickDevs.size();
 
 	JoystickDev dev;
-	dev.m_GUIDInstance = pdidInstance->guidInstance;
+	dev.m_GUIDInstance = pDeviceInstance->guidInstance;
 	dev.m_Id = JoystickId(mid, pid);
-	dev.m_Name = pdidInstance->tszInstanceName;
+	dev.m_Name = pDeviceInstance->tszInstanceName;
 	dev.m_Configured = true;
 	dev.m_Present = true;
 	dev.m_JoyIndex = index;
@@ -422,9 +422,12 @@ void JoystickHandler::AddDeviceInstance(const DIDEVICEINSTANCE* pdidInstance)
 
 /****************************************************************************/
 
-static BOOL CALLBACK EnumJoysticksCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext)
+static BOOL CALLBACK EnumJoysticksCallback(const DIDEVICEINSTANCE* pDeviceInstance, VOID* pContext)
 {
-	reinterpret_cast<JoystickHandler*>(pContext)->AddDeviceInstance(pdidInstance);
+	JoystickHandler* pJoystickHandler = reinterpret_cast<JoystickHandler*>(pContext);
+
+	pJoystickHandler ->AddDeviceInstance(pDeviceInstance);
+
 	return DIENUM_CONTINUE;
 }
 
