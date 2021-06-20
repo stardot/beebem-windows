@@ -27,6 +27,7 @@ Boston, MA  02110-1301, USA.
 
 #include "beebwin.h"
 #include "beebemrc.h"
+#include "main.h"
 #include "userkybd.h"
 #include "sysvia.h"
 #include "filedialog.h"
@@ -824,10 +825,11 @@ bool BeebWin::ScanJoysticks(bool verbose)
 	{
 		if (verbose)
 		{
-			char msg[128];
-			snprintf(msg, sizeof(msg), "DirectInput initialization failed.\nError Code: %08X", m_JoystickHandler->m_DirectInputInitResult);
-			MessageBox(m_hWnd, msg, WindowTitle, MB_OK | MB_ICONERROR);
+			mainWin->Report(MessageType::Error,
+			                "DirectInput initialization failed.\nError Code: %08X",
+			                m_JoystickHandler->m_DirectInputInitResult);
 		}
+
 		return false;
 	}
 
@@ -836,10 +838,10 @@ bool BeebWin::ScanJoysticks(bool verbose)
 	{
 		if (verbose)
 		{
-			char msg[128];
-			snprintf(msg, sizeof(msg), "Joystick enumeration failed.\nError Code: %08X", hr);
-			MessageBox(m_hWnd, msg, WindowTitle, MB_OK | MB_ICONERROR);
+			mainWin->Report(MessageType::Error,
+			                "Joystick enumeration failed.\nError Code: %08X", hr);
 		}
+
 		return false;
 	}
 
@@ -847,8 +849,9 @@ bool BeebWin::ScanJoysticks(bool verbose)
 	{
 		if (verbose)
 		{
-			MessageBox(m_hWnd, "No joysticks found", WindowTitle, MB_OK | MB_ICONERROR);
+			mainWin->Report(MessageType::Error, "No joysticks found");
 		}
+
 		return false;
 	}
 
@@ -919,10 +922,9 @@ bool BeebWin::CaptureJoystick(int Index, bool verbose)
 		}
 		else if (verbose)
 		{
-			char str[256];
-			snprintf(str, sizeof(str), "Failed to initialise %s", dev->DisplayString().c_str());
-
-			MessageBox(m_hWnd, str, WindowTitle, MB_OK | MB_ICONWARNING);
+			mainWin->Report(MessageType::Warning,
+			                "Failed to initialise %s",
+			                dev->DisplayString().c_str());
 		}
 	}
 
@@ -1308,10 +1310,10 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 
 		if (keyName1 == NULL)
 		{
-			char errstr[500];
-			sprintf(errstr, "Invalid line in joystick mapping file:\n  %s\n  line %d\n",
-				filename, line);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+			mainWin->Report(MessageType::Error,
+			                "Invalid line in joystick mapping file:\n  %s\n  line %d",
+			                filename, line);
+
 			success = false;
 			break;
 		}
@@ -1320,10 +1322,10 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 		int vkey = SelectKeyDialog::JoyVKeyByName(inputName);
 		if (vkey < BEEB_VKEY_JOY_START || vkey >= BEEB_VKEY_JOY_END)
 		{
-			char errstr[500];
-			sprintf(errstr, "Invalid input name in joystick mapping file:\n  %s\n  line %d\n",
-				filename, line);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+			mainWin->Report(MessageType::Error,
+			                "Invalid input name in joystick mapping file:\n  %s\n  line %d",
+			                filename, line);
+
 			success = false;
 			break;
 		}
@@ -1342,10 +1344,10 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 		const BBCKey* key1 = GetBBCKeyByName(keyName1);
 		if (key1->row == UNASSIGNED_ROW && strcmp(keyName1, "NONE") != 0)
 		{
-			char errstr[500];
-			sprintf(errstr, "Invalid key name in joystick mapping file:\n  %s\n  line %d\n",
-				filename, line);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+			mainWin->Report(MessageType::Error,
+			                "Invalid key name in joystick mapping file:\n  %s\n  line %d",
+			                filename, line);
+
 			success = false;
 			break;
 		}
@@ -1372,10 +1374,10 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 			const BBCKey* key2 = GetBBCKeyByName(keyName2);
 			if (key2->row == UNASSIGNED_ROW && strcmp(keyName2, "NONE") != 0)
 			{
-				char errstr[500];
-				sprintf(errstr, "Invalid key name in joystick mapping file:\n  %s\n  line %d\n",
-					filename, line);
-				MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+				mainWin->Report(MessageType::Error,
+				                "Invalid key name in joystick mapping file:\n  %s\n  line %d",
+				                filename, line);
+
 				success = false;
 				break;
 			}
