@@ -829,6 +829,7 @@ bool BeebWin::ScanJoysticks(bool verbose)
 			       "DirectInput initialization failed.\nError Code: %08X",
 			       m_JoystickHandler->m_DirectInputInitResult);
 		}
+
 		return false;
 	}
 
@@ -840,6 +841,7 @@ bool BeebWin::ScanJoysticks(bool verbose)
 			Report(MessageType::Error,
 			       "Joystick enumeration failed.\nError Code: %08X", hr);
 		}
+
 		return false;
 	}
 
@@ -849,6 +851,7 @@ bool BeebWin::ScanJoysticks(bool verbose)
 		{
 			Report(MessageType::Error, "No joysticks found");
 		}
+
 		return false;
 	}
 
