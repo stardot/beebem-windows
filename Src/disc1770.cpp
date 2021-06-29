@@ -282,17 +282,6 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 				else {
 					LoadingCycles = ONE_REV_TIME;
 				}
-
-				if (DiskDensity[CurrentDrive] != SelectedDensity) {
-					// Density mismatch
-					FDCommand = 13; // "Confusion spin"
-					SetMotor(CurrentDrive, true);
-					Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
-					            WD1770_STATUS_RECORD_NOT_FOUND |
-					            WD1770_STATUS_CRC_ERROR);
-					Status |= WD1770_STATUS_BUSY;
-					LoadingCycles = ONE_REV_TIME; // Make it about 4 milliseconds
-				}
 			}
 		}
 
@@ -364,6 +353,17 @@ void Write1770Register(unsigned char Register, unsigned char Value) {
 			}
 			else {
 				LoadingCycles = SectorCycles;
+			}
+
+			if (DiskDensity[CurrentDrive] != SelectedDensity) {
+				// Density mismatch
+				FDCommand = 13; // "Confusion spin"
+				SetMotor(CurrentDrive, true);
+				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
+					WD1770_STATUS_RECORD_NOT_FOUND |
+					WD1770_STATUS_CRC_ERROR);
+				Status |= WD1770_STATUS_BUSY;
+				LoadingCycles = ONE_REV_TIME;
 			}
 		}
 
