@@ -240,6 +240,9 @@ GetWord (ARMul_State * state, ARMword address, int /* check */)
     unsigned char *offset_address;
     unsigned char *base_address;
 
+    // All fetches are word-aligned, caller rearranges bytes as needed
+    address &= ~(ARMword)3;
+
     // Hardware Registers..
     if (address >= 0x78000000 && address < 0xc0000000)
     {
@@ -341,6 +344,9 @@ PutWord (ARMul_State * state, ARMword address, ARMword data, int /* check */)
     0xB800000C Clock wait register CKWT R/W 32 0x000000FF
     */
 
+    // All stores are word-aligned and unrotated
+    address &= ~(ARMword)3;
+
     if (address >= 0xF0000000 && address <= 0xF0000010)
     {
         return;
@@ -364,7 +370,7 @@ PutWord (ARMul_State * state, ARMword address, ARMword data, int /* check */)
         unsigned char *offset_address;
         ARMword *actual_address;
 
-        // If the ROM has been selected to appear at 0x00000000 then
+             // If the ROM has been selected to appear at 0x00000000 then
         // we need to ensure that accesses go to the ROM
         if (state->romSelectRegister & 1 && ((state->remapControlRegister & 8) == 0))
         {
@@ -559,12 +565,12 @@ ARMword ARMul_LoadHalfWord (ARMul_State * state, ARMword address)
 {
     state->NumNcycles++;
 
-    //ARMword temp = ARMul_ReadWord (state, address);
-    //ARMword offset = (((ARMword) state->bigendSig * 2) ^ (address & 2)) << 3;	/* bit offset into the word */
-
-    //return (temp >> offset) & 0xffff;
     ARMword temp = ARMul_ReadWord (state, address);
-    return temp & 0xFFFF;
+    ARMword offset = (((ARMword) state->bigendSig * 2) ^ (address & 2)) << 3;	/* bit offset into the word */
+
+    return (temp >> offset) & 0xffff;
+    //ARMword temp = ARMul_ReadWord (state, address);
+    //return temp & 0xFFFF;
 }
 
 /***************************************************************************\
@@ -588,10 +594,10 @@ ARMword ARMul_ReadByte (ARMul_State * state, ARMword address)
     }
 
     ARMword temp = ARMul_ReadWord (state, address);
-    //ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
+    ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
 
-    //return (temp >> offset & 0xffL);
-    return temp & 0xffL;
+    return (temp >> offset & 0xffL);
+    //return temp & 0xffL;
 }
 
 /***************************************************************************\
@@ -673,21 +679,15 @@ ARMul_StoreHalfWord (ARMul_State * state, ARMword address, ARMword data)
     }
 #endif
 
-    //temp = ARMul_ReadWord (state, address);
-    //offset = (((ARMword) state->bigendSig * 2) ^ (address & 2)) << 3;	/* bit offset into the word */
-    //PutWord (state, address,
-    //    (temp & ~(0xffffL << offset)) | ((data & 0xffffL) << offset),
-    //    TRUE);
     temp = ARMul_ReadWord (state, address);
-    //offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
-
-    //PutWord (state, address,
-    //    (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
-    //    TRUE);
-
-    temp = temp & 0xFFFF0000;
-    temp = temp | (data & 0xFFFF);
-    PutWord (state, address, temp, TRUE);
+    ARMword offset = (((ARMword) state->bigendSig * 2) ^ (address & 2)) << 3;	/* bit offset into the word */
+    PutWord (state, address,
+        (temp & ~(0xffffL << offset)) | ((data & 0xffffL) << offset),
+        TRUE);
+    //temp = ARMul_ReadWord (state, address);
+    //temp = temp & 0xFFFF0000;
+    //temp = temp | (data & 0xFFFF);
+    //PutWord (state, address, temp, TRUE);
 }
 
 /***************************************************************************\
@@ -713,14 +713,14 @@ ARMul_WriteByte (ARMul_State * state, ARMword address, ARMword data)
     }
 
     ARMword temp = ARMul_ReadWord (state, address);
-    //ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
+    ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
 
-    //PutWord (state, address,
-    //    (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
-    //    TRUE);
-    temp = temp & 0xFFFFFF00;
-    temp = temp | (data & 0xFF);
-    PutWord (state, address, temp, TRUE);
+    PutWord (state, address,
+        (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
+        TRUE);
+    //temp = temp & 0xFFFFFF00;
+    //temp = temp | (data & 0xFF);
+    //PutWord (state, address, temp, TRUE);
 }
 
 /***************************************************************************\
