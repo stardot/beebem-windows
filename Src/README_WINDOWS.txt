@@ -20,7 +20,7 @@ The following project files are included:
   InnoSetup\Installer.vcxproj        - Inno Setup installer project file
 
 These project files are set up to target Windows XP. This requires the
-following options Visual Studio 2019 components to be installed:
+following optional Visual Studio 2019 components to be installed:
 
 * MSVC v140 - VS 2015 C++ build tools (v14.00)
 * C++ Windows XP Support for VS 2017 (v141) tools [Deprecated]
