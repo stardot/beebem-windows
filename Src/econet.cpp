@@ -39,22 +39,22 @@ Boston, MA  02110-1301, USA.
 
 // Configuration Options.
 // These, among others, are overridden in econet.cfg (see ReadNetwork() )
-bool confAUNmode = false;      // Use AUN style networking
-bool confLEARN = false;        // Add receipts from unknown hosts to network table
-bool confSTRICT = false;       // Assume network ip=stn number when sending to unknown hosts
-bool confSingleSocket = true;  // use same socket for Send and receive
-unsigned int FourWayStageTimeout = 500000 ;
-bool MassageNetworks = false;  // massage network numbers on send/receive (add/sub 128)
 
+static bool confAUNmode = false;      // Use AUN style networking
+static bool confLEARN = false;        // Add receipts from unknown hosts to network table
+static bool confSTRICT = false;       // Assume network ip=stn number when sending to unknown hosts
+static bool confSingleSocket = true;  // use same socket for Send and receive
+static unsigned int FourWayStageTimeout = 500000;
+static bool MassageNetworks = false;  // massage network numbers on send/receive (add/sub 128)
 
-int inmask, outmask;
+static int inmask, outmask;
 
 bool EconetStateChanged = false;
 bool EconetEnabled;							// Enable hardware
 bool EconetNMIenabled;						// 68B54 -> NMI enabled. (IC97)
 int EconetTrigger;							// Poll timer
 
-const unsigned char powers[4]={1,2,4,8};
+static const unsigned char powers[4] = { 1, 2, 4, 8 };
 
 // Frequency between network actions.
 // max 250Khz network clock. 2MHz system clock. one click every 8 cycles.
@@ -65,20 +65,20 @@ const unsigned char powers[4]={1,2,4,8};
 // during data transmission - more than 5 are flags or errors)
 // 6854 datasheet has max clock frequency of 1.5MHz for the B version.
 // 64 cycles seems to be a bit fast for 'netmon' prog to keep up - set to 128.
-unsigned int TimeBetweenBytes = 128;
+static unsigned int TimeBetweenBytes = 128;
 
 // Station Configuration settings:
 // You specify station number on command line.
 // This allows multiple different instances of the emulator to be run and
 // to communicate with each other.  Note that you STILL need to have them
 // all listed in econet.cfg so each one knows where the other area.
-unsigned char EconetStationNumber=0;	// default Station Number
-unsigned int EconetListenPort=0;		// default Listen port
-unsigned long EconetListenIP=0x0100007f;		
+unsigned char EconetStationNumber = 0; // default Station Number
+static unsigned int EconetListenPort = 0; // default Listen port
+static unsigned long EconetListenIP = 0x0100007f;
 // IP settings:
-SOCKET ListenSocket = INVALID_SOCKET;		// Listen socket
-SOCKET SendSocket = INVALID_SOCKET;
-bool ReceiverSocketsOpen = false; // Used to flag line up and clock running
+static SOCKET ListenSocket = INVALID_SOCKET; // Listen socket
+static SOCKET SendSocket = INVALID_SOCKET;
+static bool ReceiverSocketsOpen = false; // Used to flag line up and clock running
 
 // Written in 2004:
 // we will be using Econet over Ethernet as per AUN,
@@ -91,50 +91,56 @@ bool ReceiverSocketsOpen = false; // Used to flag line up and clock running
 // 2009: Now I come back to this, I know the format ... :-)
 // and sure enough, it's pretty simple.
 // It's translating the different protocols that was harder..
-struct aunhdr
-{
-	unsigned char type;		/* AUN magic protocol byte */
-#define AUN_TYPE_BROADCAST	1	// 'type' from NetBSD aund.h
-#define AUN_TYPE_UNICAST	2
-#define AUN_TYPE_ACK		3
-#define AUN_TYPE_NACK		4
-#define AUN_TYPE_IMMEDIATE	5
-#define AUN_TYPE_IMM_REPLY	6
 
+enum class AUNType : unsigned char {
+	Broadcast = 1,
+	Unicast = 2,
+	Ack = 3,
+	NAck = 4,
+	Immediate = 5,
+	ImmReply = 6
+};
+
+struct AUNHeader
+{
+	AUNType type; // AUN magic protocol byte
 	unsigned char port;		// dest port
 	unsigned char cb;		// flag
 	unsigned char pad;		// retrans
 	unsigned long handle;	// 4 byte sequence little-endian.
 };
 
-#define EC_PORT_FS 0x99
-#define EC_PORT_PS_STATUS_ENQ 0x9f
-#define EC_PORT_PS_STATUS_REPLY 0x9e
-#define EC_PORT_PS_JOB	0xd1
+// #define EC_PORT_FS 0x99
+// #define EC_PORT_PS_STATUS_ENQ 0x9f
+// #define EC_PORT_PS_STATUS_REPLY 0x9e
+// #define EC_PORT_PS_JOB 0xd1
 
-unsigned long ec_sequence = 0;
+static unsigned long ec_sequence = 0;
 
-unsigned int fourwaystage;
-#define FWS_IDLE 0
-#define FWS_SCOUTSENT 1
-#define FWS_SCACKRCVD 2
-#define FWS_DATASENT 3
-#define FWS_WAIT4IDLE 4
-#define FWS_SCOUTRCVD 11
-#define FWS_SCACKSENT 12
-#define FWS_DATARCVD 13
-#define FWS_IMMSENT 7
-#define FWS_IMMRCVD 8
+enum class FourWayStage {
+	Idle = 0,
+	ScoutSent = 1,
+	ScoutAckReceived = 2,
+	DataSent = 3,
+	WaitForIdle = 4,
+	ScoutReceived = 11,
+	ScoutAckSent = 12,
+	DataReceived = 13,
+	ImmediateSent = 7,
+	ImmediateReceived = 8
+};
 
+static FourWayStage fourwaystage;
 
-struct shorteconethdr
+struct ShorEeconetHeader
 {
 	unsigned char deststn;
 	unsigned char destnet;
 	unsigned char srcstn;
 	unsigned char srcnet;
 };
-struct longeconetpacket
+
+struct LongEconetPacket
 {
 	unsigned char deststn;
 	unsigned char destnet;
@@ -142,9 +148,8 @@ struct longeconetpacket
 	unsigned char srcnet;
 	unsigned char cb;
 	unsigned char port;
-//	unsigned char buff[2];
+	// unsigned char buff[2];
 };
-
 
 // MC6854 has 3 byte FIFOs. There is no wait for an end of data
 // before transmission starts. Data is sent immediately it's put into
@@ -163,17 +168,17 @@ struct longeconetpacket
 
 // 64K max.. can't see any transfers being neeeded larger than this too often!
 // (and that's certainly larger than acorn bridges can cope with.)
-#define ETHERNETBUFFERSIZE 65536  
+const int ETHERNET_BUFFER_SIZE = 65536;
 
-struct ethernetpacket
+struct EthernetPacket
 {
 	union {
 		unsigned char raw[8];
-		aunhdr ah;
+		AUNHeader ah;
 	} ;
 	union {
-		unsigned char buff[ETHERNETBUFFERSIZE];
-		shorteconethdr eh;
+		unsigned char buff[ETHERNET_BUFFER_SIZE];
+		ShorEeconetHeader eh;
 	};
 	volatile unsigned int Pointer;
 	volatile unsigned int BytesInBuffer;
@@ -183,29 +188,26 @@ struct ethernetpacket
 	unsigned int destnet;
 };
 
-
 // buffers used to construct packets for sending out via UDP
-ethernetpacket EconetRx;
-ethernetpacket EconetTx;
-
+static EthernetPacket EconetRx;
+static EthernetPacket EconetTx;
 
 // buffers used to construct packets sent to/received from bbc micro
 
-
-struct econetpacket
+struct EconetPacket
 {
 	union {
-		longeconetpacket eh;
-		unsigned char buff[ETHERNETBUFFERSIZE+12];
+		LongEconetPacket eh;
+		unsigned char buff[ETHERNET_BUFFER_SIZE + 12];
 	};
 	volatile unsigned int Pointer;
 	volatile unsigned int BytesInBuffer;
 };
 
-econetpacket BeebTx;
-econetpacket BeebRx;
+static EconetPacket BeebTx;
+static EconetPacket BeebRx;
 
-unsigned char BeebTxCopy[6]; // size of longeconetpacket structure
+static unsigned char BeebTxCopy[6]; // size of longeconetpacket structure
 
 //unsigned char BeebRx.buff[2048];				// probably can't be bigger than 1500
 //unsigned char BeebTx.buff[2048];				// (or 1458 on my lan)  sniffed packets max 1280+hdr
@@ -227,19 +229,19 @@ struct AUNTAB {
 	unsigned char network;
 };
 
-#define NETWORKTABLELENGTH 512						// total number of hosts we can know about
-#define AUNTABLELENGTH 128							// number of disparate network in AUNMap
-ECOLAN network[NETWORKTABLELENGTH];					// list of my friends! :-)
-AUNTAB aunnet[AUNTABLELENGTH];						// AUNMap file for guess mode.
+const int NETWORK_TABLE_LENGTH = 512; // total number of hosts we can know about
+const int AUN_TABLE_LENGTH = 128; // number of disparate network in AUNMap
+static ECOLAN network[NETWORK_TABLE_LENGTH]; // list of my friends! :-)
+static AUNTAB aunnet[AUN_TABLE_LENGTH]; // AUNMap file for guess mode.
 
-unsigned int networkp = 0;				// how many friends do I have?
-unsigned int aunnetp = 0;				// now many networks do i know about
-unsigned int myaunnet = 0;				// aunnet table entry that I match. should be -1 as 0 is valid..
+static unsigned int networkp = 0;				// how many friends do I have?
+static unsigned int aunnetp = 0;				// now many networks do i know about
+static unsigned int myaunnet = 0;				// aunnet table entry that I match. should be -1 as 0 is valid..
 
 char EconetCfgPath[512];				// where's my config file saved?
 
-unsigned char irqcause;					// flagto indicate cause of irq sr1b7
-unsigned char sr1b2cause;				// flagto indicate cause of irq sr1b2
+static unsigned char irqcause;					// flagto indicate cause of irq sr1b7
+static unsigned char sr1b2cause;				// flagto indicate cause of irq sr1b2
 
 // A receiving station goes into flag fill mode while it is processing 
 // a message.  This stops other stations sending messages that may interfere
@@ -253,18 +255,17 @@ unsigned char sr1b2cause;				// flagto indicate cause of irq sr1b2
 // cancel flag fill after the last message of a four-way handshake we time it
 // out - which is not ideal as we do not want to delay new messages any
 // longer that we have to - but it will have to do for now!
-bool FlagFillActive;                    // Flag fill state
+static bool FlagFillActive;                    // Flag fill state
 int EconetFlagFillTimeoutTrigger;       // Trigger point for flag fill
 int EconetFlagFillTimeout = 500000 ;     // Cycles for flag fill timeout // added cfg file to override this
-int EconetSCACKtrigger;					//trigger point for scout ack
-int EconetSCACKtimeout = 500;			// cycles to delay before sending ack to scout (aun mode only)
-int Econet4Wtrigger;
+static int EconetSCACKtrigger; // Trigger point for scout ack
+static int EconetSCACKtimeout = 500; // Cycles to delay before sending ack to scout (aun mode only)
+static int Econet4Wtrigger;
+
 // Device and temp copy!
 volatile MC6854 ADLC;
-MC6854 ADLCtemp;
+static MC6854 ADLCtemp;
 
-
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 
 void EconetReset(void) {
@@ -302,8 +303,8 @@ void EconetReset(void) {
 	BeebRx.BytesInBuffer = 0;
 	BeebTx.Pointer = 0;
 	BeebTx.BytesInBuffer = 0;
-	
-	fourwaystage = FWS_IDLE;		// used for AUN mode translation stage.
+
+	fourwaystage = FourWayStage::Idle; // used for AUN mode translation stage.
 
 	ADLC.rxfptr = 0;
 	ADLC.rxap = 0;
@@ -362,9 +363,11 @@ void EconetReset(void) {
 				break;
 			}
 		}
+
 		if (EconetListenPort != 0) {
 			service.sin_port = htons(EconetListenPort);
 			service.sin_addr.s_addr = EconetListenIP;
+
 			if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
 				sprintf(info, "Econet: Failed to bind to port %d (error %ld)", EconetListenPort, WSAGetLastError());
 				EconetError(info);
@@ -388,19 +391,18 @@ void EconetReset(void) {
 		// Get localhost IP address
 		if (gethostname(localhost, 256) != SOCKET_ERROR &&
 			(hent = gethostbyname(localhost)) != NULL) {
-			
 			// See if configured addresses match local IPs
 			for (unsigned int i = 0; i < networkp && EconetStationNumber == 0; ++i) {
 
 				// Check address for each network interface/card
 				for (int a = 0; hent->h_addr_list[a] != NULL && EconetStationNumber == 0; ++a) {
 					memcpy(&localaddr, hent->h_addr_list[a], sizeof(struct in_addr));
-				
-					if (network[i].inet_addr == inet_addr("127.0.0.1") ||
-						network[i].inet_addr == localaddr.S_un.S_addr) {
 
+					if (network[i].inet_addr == inet_addr("127.0.0.1") ||
+					    network[i].inet_addr == localaddr.S_un.S_addr) {
 						service.sin_port = htons(network[i].port);
 						service.sin_addr.s_addr = network[i].inet_addr;
+
 						if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0) {
 							EconetListenPort = network[i].port;
 							EconetListenIP = network[i].inet_addr;
@@ -413,7 +415,7 @@ void EconetReset(void) {
 			if (EconetListenPort == 0) {
 				// still can't find one ... strict mode?
 
-				if (confSTRICT && confAUNmode && networkp < NETWORKTABLELENGTH) {
+				if (confSTRICT && confAUNmode && networkp < NETWORK_TABLE_LENGTH) {
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true, "Econet: No free hosts in table; trying automatic mode..");
 
@@ -424,6 +426,7 @@ void EconetReset(void) {
 							if (aunnet[j].inet_addr == (localaddr.S_un.S_addr & 0x00FFFFFF)) {
 								service.sin_port = htons(32768);
 								service.sin_addr.s_addr = localaddr.S_un.S_addr;
+
 								if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0) {
 									myaunnet = j;
 									network[networkp].inet_addr = EconetListenIP = localaddr.S_un.S_addr;
@@ -477,25 +480,23 @@ void EconetReset(void) {
 	}
 
 	// this call is what allows broadcast packets to be sent:
-    char broadcast = '1';
-	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast,
-        sizeof broadcast) == -1) {
- 			sprintf(info, "Econet: Failed to set cosket for broadcasts (error %ld)", WSAGetLastError());
-			EconetError(info);
-			closesocket(ListenSocket);
-			WSACleanup();
-			return;
-    }
+	const char broadcast = '1';
+	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1) {
+		sprintf(info, "Econet: Failed to set cosket for broadcasts (error %ld)", WSAGetLastError());
+		EconetError(info);
+		closesocket(ListenSocket);
+		WSACleanup();
+		return;
+	}
 
 	ReceiverSocketsOpen = true;
 
 	// how long before we bother with poll routine?
-    SetTrigger(TimeBetweenBytes,EconetTrigger);
+	SetTrigger(TimeBetweenBytes, EconetTrigger);
 
 	EconetStateChanged = true;
 }
 
-//-----------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 
 void ReadNetwork(void) {
@@ -584,7 +585,7 @@ void ReadNetwork(void) {
 				if (q == 0 && p == 4) networkp++;	// there were correct qty fields on line
 				// otherwise pointer not incremented, next line overwrites it.
 			}
-		} while (networkp < NETWORKTABLELENGTH);
+		} while (networkp < NETWORK_TABLE_LENGTH);
 		network[networkp].station = 0;
 
 		if (MassageNetworks) {
@@ -655,15 +656,14 @@ void ReadNetwork(void) {
 					}
 					// otherwise pointer not incremented, next line overwrites it.
 				}
-			} while (aunnetp < AUNTABLELENGTH);
+			} while (aunnetp < AUN_TABLE_LENGTH);
 			fclose(EcoCfg);
 		}
 	}
 
 	aunnet[aunnetp].network = 0; // terminate table. 0 is always local so should not be in file.
-} // end ReadNetwork
+}
 
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // read to FE18..
 
@@ -678,7 +678,6 @@ unsigned char Read_Econet_Station(void) {
 }
 
 //---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
 // read to FEA0-3
 
 unsigned char ReadEconetRegister(unsigned char Register) {
@@ -688,6 +687,7 @@ unsigned char ReadEconetRegister(unsigned char Register) {
 		DebugDisplayTrace(DebugType::Econet, true, info);
 		debugADLCprint();
 	}
+
 	if (Register==0) {
 		return (ADLC.status1);
 	}
@@ -715,8 +715,6 @@ unsigned char ReadEconetRegister(unsigned char Register) {
 	return 0;
 }
 
-
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // write to FEA0-3
 
@@ -726,7 +724,7 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 		sprintf(info, "Econet: Write ADLC %02X = %02X", (int)Register, (int)Value);
 		DebugDisplayTrace(DebugType::Econet, true, info);
 	}
-	
+
 	// command registers are really just a set of flags that affect 
 	// operation of the rest of the device.
 
@@ -753,13 +751,12 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 			if (Register == 3) ADLC.control2 |= 16;	// set txlast control flag ourself
 		}
 	}
-	
+
 	if (DebugEnabled) debugADLCprint();
 
 	EconetStateChanged = true;
 }
 
-//--------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
 // Optimisation - only call real poll routine when something has changed
 
@@ -775,8 +772,6 @@ bool EconetPoll(void) {		//return NMI status
 	return false;
 }
 
-
-//--------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
 // Run when state changed or time to check comms.
 // The majority of this code is to handle the status registers.
@@ -820,7 +815,7 @@ bool EconetPoll_real(void) {		//return NMI status
 		ADLC.rxap = 0;
 		ADLC.rxffc = 0;
 		ADLC.control1 &= ~32;	// reset flag
-		fourwaystage = FWS_IDLE;
+		fourwaystage = FourWayStage::Idle;
 	}
 	// CR1b6 - RxRs - Receiver reset. set by cpu or when reset line goes low.
 	//		all receive operations blocked (bar dcd monitoring) when this is set.
@@ -865,7 +860,7 @@ bool EconetPoll_real(void) {		//return NMI status
 			ADLC.rxffc = 0;
 			ADLC.sr2pse = 0;
 		}
-//		fourwaystage = FWS_IDLE;			// this really doesn't like being here.
+		// fourwaystage = FourWayStage::Idle; // this really doesn't like being here.
 	}
 
 	// CR2b6 - CLT TxST - Clear Transmitter Status - reset status bits
@@ -876,6 +871,7 @@ bool EconetPoll_real(void) {		//return NMI status
 			ADLC.status1 |= 16;					//cts follows signal, reset high again
 			ADLCtemp.status1 |= 16;				// don't trigger another interrupt instantly
 		}
+
 		if (ADLC.control1 & 128) {				// tx reset,clear buffers.
 			BeebTx.Pointer =0;
 			BeebTx.BytesInBuffer = 0;
@@ -913,16 +909,13 @@ bool EconetPoll_real(void) {		//return NMI status
 		BeebTx.Pointer = 0;
 		BeebTx.BytesInBuffer = 0; 
 		ADLC.control4 &= ~32;		// reset flag.
-		fourwaystage = FWS_IDLE;
+		fourwaystage = FourWayStage::Idle;
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IDLE (abort)");
 	}
 
 	// CR4b6 - ABTex - extend abort - adjust way the abort flag is sent.  ignore,
 	//	can affect timing of RTS output line (and thus CTS input) still ignored.
 	// CR4b7 - NRZI/NRZ - invert data encoding on wire. ignore.
-
-	//--------------------------------------------------------------------------------------------
-	//--------------------------------------------------------------------------------------------
 
 	if (EconetTrigger<=TotalCycles) {
 		// Only do this bit occasionally as data only comes in from
@@ -940,7 +933,7 @@ bool EconetPoll_real(void) {		//return NMI status
 						(ADLC.txfptr >4 )) {				// overflowed fifo
 					ADLC.status1 |= 32;						// set tx underrun flag
 					BeebTx.Pointer = 0;				// wipe buffer
-					BeebTx.BytesInBuffer = 0;					
+					BeebTx.BytesInBuffer = 0;
 					ADLC.txfptr = 0;
 					ADLC.txftl = 0;
 					if (DebugEnabled)
@@ -949,6 +942,7 @@ bool EconetPoll_real(void) {		//return NMI status
 					BeebTx.buff[BeebTx.Pointer] = ADLC.txfifo[--ADLC.txfptr];
 					BeebTx.Pointer++;
 				}
+
 				if (TXlast) {	// TxLast set
 					if (DebugEnabled) {
 						sprintf(info, "Econet: TXLast set - Send packet to %02x %02x ",
@@ -976,11 +970,11 @@ bool EconetPoll_real(void) {		//return NMI status
 						RecvAddr.sin_port = htons(32768);
 						RecvAddr.sin_addr.s_addr = INADDR_BROADCAST; //((EconetListenIP & 0x00FFFFFF) | 0xFF000000) ;
 						SendMe = true;
-					} else { 
+					} else {
 						do {
 							// does the packet match this network table entry?
-//							SendMe = false;
-//							// check for 0.stn and mynet.stn. 
+							// SendMe = false;
+							// // check for 0.stn and mynet.stn.
 							// aunnet wont be populted if not in aun mode, but we don't need to not check
 							// it because it won't matter..
 							if ((network[i].network == (unsigned int)(BeebTx.eh.destnet)
@@ -991,6 +985,7 @@ bool EconetPoll_real(void) {		//return NMI status
 							}
 							i++;
 						} while (i < networkp);
+
 						// guess address if not found in table
 						if (!SendMe && confSTRICT) { // didn't find it and allowed to guess
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Send to unknown host; make assumptions & add entry!");
@@ -1022,7 +1017,6 @@ bool EconetPoll_real(void) {		//return NMI status
 						RecvAddr.sin_port = htons(network[i].port);
 						RecvAddr.sin_addr.s_addr = network[i].inet_addr;
 					}
-					
 
 					if (DebugEnabled) {
 						sprintf(info, "Econet: TXLast set - Send %d byte packet to %02x %02x (%08X :%u)",
@@ -1042,33 +1036,35 @@ bool EconetPoll_real(void) {		//return NMI status
 								EconetError("Erm.. trying to send somewhere while in the middle of talking to somewhere else.");
 						}
 					}
-*/					
+*/
 					// Send a datagram to the receiver
 					if (confAUNmode) {
 						unsigned int j=0;
 						// OK. Lets do AUN ...
 						// The beeb has given us a packet .. what is it?
 						SendMe = false;
+
 						switch (fourwaystage)
 						{
-						case FWS_SCACKRCVD:
+						case FourWayStage::ScoutAckReceived:
 							// it came in response to our ack of a scout
 							// what we have /should/ be the data block ..
 							//CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
 							if ( BeebTx.Pointer != sizeof(BeebTx.eh) || memcmp(BeebTx.buff,BeebTxCopy,sizeof(BeebTx.eh))!= 0) { // nope
-//								j=0;
+								// j = 0;
 								for (unsigned int k=4; k<BeebTx.Pointer; k++) {
 									EconetTx.buff[j] = BeebTx.buff[k];
 									j++;
 								}
 								EconetTx.Pointer = j;
-								fourwaystage = FWS_DATASENT;
+								fourwaystage = FourWayStage::DataSent;
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATASENT");
 								SendMe = true;
 								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
 								break;
 							} // else fall through...
-						case FWS_IDLE:
+
+						case FourWayStage::Idle:
 							// not currently doing anything, so this will be a scout, 
 							memcpy(BeebTxCopy,BeebTx.buff,sizeof(BeebTx.eh));
 							// maybe a long scout or a broadcast
@@ -1079,48 +1075,52 @@ bool EconetPoll_real(void) {		//return NMI status
 
 							EconetTx.destnet = BeebTx.eh.destnet | outmask; //30JUN
 							EconetTx.deststn = BeebTx.eh.deststn;
-//							j=0;
+							// j = 0;
 							for (unsigned int k=6; k<BeebTx.Pointer; k++) {
 								EconetTx.buff[j] = BeebTx.buff[k];
 								j++;
 							}
+
 							EconetTx.Pointer = j;
+
 							if (EconetTx.deststn == 255 || EconetTx.deststn == 0) {
-								EconetTx.ah.type = AUN_TYPE_BROADCAST;
-								fourwaystage = FWS_WAIT4IDLE; // no response to broadcasts...
+								EconetTx.ah.type = AUNType::Broadcast;
+								fourwaystage = FourWayStage::WaitForIdle; // no response to broadcasts...
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast snt)");
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + 8;
 							} else if (EconetTx.ah.port == 0 ) {
-								EconetTx.ah.type = AUN_TYPE_IMMEDIATE;
-								fourwaystage = FWS_IMMSENT;
+								EconetTx.ah.type = AUNType::Immediate;
+								fourwaystage = FourWayStage::ImmediateSent;
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMSENT");
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
 							} else {
-								EconetTx.ah.type = AUN_TYPE_UNICAST;
-								fourwaystage = FWS_SCOUTSENT;
+								EconetTx.ah.type = AUNType::Unicast;
+								fourwaystage = FourWayStage::ScoutSent;
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTSENT");
 								// dont send anything but set wait anyway
 								SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
 							} // else BROADCAST !!!!
 							break;
-						case FWS_SCOUTRCVD:
+
+						case FourWayStage::ScoutReceived:
 							// it's an ack for a scout which we sent the beeb. just drop it, but move on.
-							fourwaystage = FWS_SCACKSENT;
+							fourwaystage = FourWayStage::ScoutAckSent;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKSENT");
 								SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
 							break;
-						case FWS_DATARCVD:
+
+						case FourWayStage::DataReceived:
 							// this must be ack for data just receved
 							// now we really need to send an ack to the far AUN host...
 							// send header of last block received straight back.
 							// this ought to work, but only because the beeb can only talk to one machine at any time..
 							SendLen = sizeof(EconetRx.ah);
 							EconetTx.ah = EconetRx.ah;
-							EconetTx.ah.type = AUN_TYPE_ACK;
+							EconetTx.ah.type = AUNType::Ack;
 							SendMe = true;
 /*							if (sendto(SendSocket, (char *) &EconetTx.ah, SendLen, 0, 
 								(SOCKADDR *) &RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR) {
@@ -1131,12 +1131,13 @@ bool EconetPoll_real(void) {		//return NMI status
 							}
 */
 
-							fourwaystage = FWS_WAIT4IDLE;
+							fourwaystage = FourWayStage::WaitForIdle;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (final ack sent)");
 							break;
-						case FWS_IMMRCVD:
+
+						case FourWayStage::ImmediateReceived:
 							// it's a reply to an immediate command we just had
-							fourwaystage = FWS_WAIT4IDLE;
+							fourwaystage = FourWayStage::WaitForIdle;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (imm rcvd)");
 							//							j=0;
 							for (unsigned int k=4; k<BeebTx.Pointer; k++) {
@@ -1145,17 +1146,18 @@ bool EconetPoll_real(void) {		//return NMI status
 							}
 							EconetTx.Pointer = j;
 							EconetTx.ah = EconetRx.ah;
-							EconetTx.ah.type = AUN_TYPE_IMM_REPLY;
+							EconetTx.ah.type = AUNType::ImmReply;
 							SendMe = true;
 							SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
 							break;
+
 						default:
 							// shouldn't be here.. ignore packet and abort fourway
-							fourwaystage = FWS_WAIT4IDLE;
+							fourwaystage = FourWayStage::WaitForIdle;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (unexpected mode, packet ignored)");
 						}
 					}
-					
+
 					if (SendMe) {
 						if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Sending a packet..");
 						if (confAUNmode) {
@@ -1175,8 +1177,6 @@ bool EconetPoll_real(void) {		//return NMI status
 								EconetError(info);
 							}
 						}
-					
-						
 
 						// Sending packet will mean peer goes into flag fill while
 						// it deals with it
@@ -1188,8 +1188,8 @@ bool EconetPoll_real(void) {		//return NMI status
 						BeebTx.BytesInBuffer = 0;					
 						if (DebugEnabled) debugADLCprint();
 					}
-				}	
-			}	
+				}
+			}
 		}
 
 		// Receive data
@@ -1213,29 +1213,30 @@ bool EconetPoll_real(void) {		//return NMI status
 						ADLC.rxffc |= 1;			// set FV flag (this was last byte of frame)
 						BeebRx.Pointer = 0;    // Reset read for next packet
 						BeebRx.BytesInBuffer = 0;
-					}		
+					}
 				}
 			}
-			if (ADLC.rxfptr == 0)  {
+
+			if (ADLC.rxfptr == 0) {
 				unsigned int hostno, j=0;
 
 				// still nothing in buffers (and thus nothing in Econetrx buffer)
 				ADLC.control1 &= ~32;		// reset discontinue flag
 
 				// wait for cpu to clear FV flag from last frame received
-				if (!(ADLC.status2 & 2) ) {
-
-
-					if (!confAUNmode || fourwaystage == FWS_IDLE || fourwaystage == FWS_IMMSENT || fourwaystage == FWS_DATASENT) 
+				if (!(ADLC.status2 & 2)) {
+					if (!confAUNmode ||
+					    fourwaystage == FourWayStage::Idle ||
+					    fourwaystage == FourWayStage::ImmediateSent ||
+					    fourwaystage == FourWayStage::DataSent)
 					{
 						// Try and get another packet from network
 						// Check if packet is waiting without blocking
-						int RetVal;
 						fd_set RdFds;
 						timeval TmOut = {0,0};
 						FD_ZERO(&RdFds);
 						FD_SET(ListenSocket, &RdFds);
-						RetVal = select((int)ListenSocket + 1, &RdFds, NULL, NULL, &TmOut);
+						int RetVal = select((int)ListenSocket + 1, &RdFds, NULL, NULL, &TmOut);
 						if (RetVal > 0)
 						{
 							sockaddr_in RecvAddr;
@@ -1247,9 +1248,10 @@ bool EconetPoll_real(void) {		//return NMI status
 							} else {
 								RetVal = recvfrom(ListenSocket, (char *) BeebRx.buff, sizeof(BeebRx.buff), 0, (SOCKADDR *) &RecvAddr, (int *) &sizRcvAdr);
 							}
+
 							if (RetVal > 0) {
 								if (DebugEnabled) {
-	//								sprintf (info, "EconetPoll: Packet received. %u bytes", (int)RetVal);
+									// sprintf (info, "EconetPoll: Packet received. %u bytes", (int)RetVal);
 									sprintf (info, "EconetPoll: Packet received. %u bytes from %08X :%u)", (int)RetVal, RecvAddr.sin_addr.s_addr, htons(RecvAddr.sin_port));
 									DebugDisplayTrace(DebugType::Econet, true, info);
 									sprintf (info, "EconetPoll: Packet data:");
@@ -1268,6 +1270,7 @@ bool EconetPoll_real(void) {		//return NMI status
 									// find station number of sender
 									hostno=0;
 									bool foundhost = false;
+
 									do {
 										if (RecvAddr.sin_port == htons(network[hostno].port) &&
 											RecvAddr.sin_addr.s_addr == network[hostno].inet_addr)
@@ -1277,9 +1280,10 @@ bool EconetPoll_real(void) {		//return NMI status
 										}
 										hostno++;
 									} while (hostno < networkp);
+
 									if (!foundhost) {
 										// packet from unknown host
-										if (confLEARN && networkp < NETWORKTABLELENGTH) {
+										if (confLEARN && networkp < NETWORK_TABLE_LENGTH) {
 											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Previusly unknown host; add entry!");
 											network[networkp].port = ntohs(RecvAddr.sin_port);
 											network[networkp].inet_addr = RecvAddr.sin_addr.s_addr;
@@ -1305,25 +1309,25 @@ bool EconetPoll_real(void) {		//return NMI status
 													(unsigned int)(network[hostno].network), (unsigned int)network[hostno].station);
 											DebugDisplayTrace(DebugType::Econet, true, info);
 										}
+
 										// TODO - many of these copies can use memcpy()
 										switch (fourwaystage)
 										{
-										case FWS_IDLE:
+										case FourWayStage::Idle:
 											// we weren't doing anything when this packet came in.
 											BeebRx.eh.srcstn = network[hostno].station;
 											BeebRx.eh.srcnet = network[hostno].network;
 
 											BeebRx.eh.deststn = EconetStationNumber; // must be for us.
 											BeebRx.eh.destnet = 0;
-//											BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
-//											BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
+											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
+											// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
 											BeebRx.eh.cb = EconetRx.ah.cb | 128;
 											BeebRx.eh.port = EconetRx.ah.port;
 											switch (EconetRx.ah.type) 
 											{
-
-												case AUN_TYPE_BROADCAST:
+												case AUNType::Broadcast:
 													BeebRx.eh.deststn = 255;	// wasn't just for us..
 													BeebRx.eh.destnet = 0;		// TODO check if not net 0.. does it make a difference?
 													j=6;
@@ -1332,22 +1336,24 @@ bool EconetPoll_real(void) {		//return NMI status
 														j++;
 													}
 													BeebRx.BytesInBuffer = j;
-													fourwaystage = FWS_WAIT4IDLE;
+													fourwaystage = FourWayStage::WaitForIdle;
 													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast received)");
 													break;
-												case AUN_TYPE_IMMEDIATE:
+
+												case AUNType::Immediate:
 													j=6;
 													for (unsigned int i=0; i<RetVal-sizeof(EconetRx.ah); i++) {
 														BeebRx.buff[j] = EconetRx.buff[i];
 														j++;
 													}
 													BeebRx.BytesInBuffer = j;
-													fourwaystage = FWS_IMMRCVD;
+													fourwaystage = FourWayStage::ImmediateReceived;
 													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMRCVD");
 													break;
-												case AUN_TYPE_UNICAST:
+
+												case AUNType::Unicast:
 													// we're assuming things here..
-													fourwaystage = FWS_SCOUTRCVD;
+													fourwaystage = FourWayStage::ScoutReceived;
 													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTRCVD");
 													BeebRx.BytesInBuffer = sizeof(BeebRx.eh);
 													break;
@@ -1357,7 +1363,8 @@ bool EconetPoll_real(void) {		//return NMI status
 											}
 											BeebRx.Pointer = 0;
 											break;
-										case FWS_IMMSENT:  // it should be reply to an immediate instruction
+
+										case FourWayStage::ImmediateSent:  // it should be reply to an immediate instruction
 											// TODO  check that it is!!!   Example scenario where it will not
 											// be - *STATIONs poll sends packet to itself... packet we get
 											// here is the one we just sent out..!!!
@@ -1366,8 +1373,8 @@ bool EconetPoll_real(void) {		//return NMI status
 											BeebRx.eh.srcnet = network[hostno].network;
 											BeebRx.eh.deststn = EconetStationNumber; // must be for us.
 											BeebRx.eh.destnet = 0;
-//											BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
-//											BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
+											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
+											// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
 											j=4;
 											for (unsigned int i=0; i<RetVal-sizeof(EconetRx.ah); i++) {
@@ -1376,13 +1383,13 @@ bool EconetPoll_real(void) {		//return NMI status
 											}
 											BeebRx.BytesInBuffer = j;
 											BeebRx.Pointer = 0;
-											fourwaystage = FWS_WAIT4IDLE;
+											fourwaystage = FourWayStage::WaitForIdle;
 											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (ack received from remote AUN server)");
-										
 											break;
-										case FWS_DATASENT:
+
+										case FourWayStage::DataSent:
 											// we sent block of data, awaiting final ack..
-											if (EconetRx.ah.type == AUN_TYPE_ACK || EconetRx.ah.type == AUN_TYPE_NACK) {
+											if (EconetRx.ah.type == AUNType::Ack || EconetRx.ah.type == AUNType::NAck) {
 												// are we expecting a (N)ACK ?
 												// TODO check it is a (n)ack for packet we just sent!!, deal with naks!
 												// construct a final ack for the beeb
@@ -1390,18 +1397,19 @@ bool EconetPoll_real(void) {		//return NMI status
 												BeebRx.eh.srcnet = network[hostno].network;
 												BeebRx.eh.deststn = EconetStationNumber; // must be for us.
 												BeebRx.eh.destnet = 0;
-//												BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
-//												BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
+												// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
+												// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
 												BeebRx.BytesInBuffer = 4;
 												BeebRx.Pointer = 0;
 												if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (aun ack rxd)");
-												fourwaystage = FWS_WAIT4IDLE;
+												fourwaystage = FourWayStage::WaitForIdle;
 												break;
 											} // else unexpected packet - ignore it.TODO: queue it?
+
 										default:	// erm, what are we doing here?
 											//ignore packet
-											fourwaystage = FWS_WAIT4IDLE;
+											fourwaystage = FourWayStage::WaitForIdle;
 											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (ack received from remote AUN server)");
 											break;
 										}
@@ -1418,14 +1426,16 @@ bool EconetPoll_real(void) {		//return NMI status
 									BeebRx.eh.deststn == 0) && BeebRx.BytesInBuffer > 0 ) { 
 									// Peer sent us packet - no longer in flag fill
 									FlagFillActive = false;
-									if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true,
-														"Econet: FlagFill reset");
+									if (DebugEnabled) {
+										DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill reset");
+									}
 								} else {
 									// Two other stations communicating - assume one of them will flag fill
 									FlagFillActive = true;
 									SetTrigger(EconetFlagFillTimeout, EconetFlagFillTimeoutTrigger);
-									if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true,
-														"Econet: FlagFill set - other station comms");
+									if (DebugEnabled) {
+										DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill set - other station comms");
+									}
 								}
 							} else if (RetVal == SOCKET_ERROR && !confSingleSocket) {
 								sprintf(info, "Econet: Failed to receive packet (error %ld)", WSAGetLastError());
@@ -1436,27 +1446,29 @@ bool EconetPoll_real(void) {		//return NMI status
 						}
 					}
 
-// this bit fakes the bits of the 4-way handshake that AUN doesn't do.
+					// this bit fakes the bits of the 4-way handshake that AUN doesn't do.
+
 					if (confAUNmode && EconetSCACKtrigger > TotalCycles) {
 						switch (fourwaystage) {
-						case FWS_SCOUTSENT:
+						case FourWayStage::ScoutSent:
 							// just got a scout from the beeb, fake an acknowledgement.
 							BeebRx.eh.deststn = EconetStationNumber;
 							BeebRx.eh.destnet = 0;
-							BeebRx.eh.srcstn = EconetTx.deststn;	// use scout's dest as source of ack.
+							BeebRx.eh.srcstn = EconetTx.deststn; // use scout's dest as source of ack.
 							BeebRx.eh.srcnet = EconetTx.destnet; // & inmask; //30jun
 
 							BeebRx.BytesInBuffer = 4;
 							BeebRx.Pointer = 0;
-							fourwaystage = FWS_SCACKRCVD;
+							fourwaystage = FourWayStage::ScoutAckReceived;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKRCVD");
 							break;
-						case FWS_SCACKSENT:
+
+						case FourWayStage::ScoutAckSent:
 							// beeb acked the scout we gave it, so give it the data AUN sent us earlier.
 							BeebRx.eh.deststn = EconetStationNumber; // as it is data it must be for us
 							BeebRx.eh.destnet = 0;
-//							BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun 
-//							BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
+							// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun
+							// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
 							BeebRx.eh.srcstn = EconetTx.deststn;  //30jun dont think this is right..
 							BeebRx.eh.srcnet = EconetTx.destnet & inmask;
@@ -1467,7 +1479,7 @@ bool EconetPoll_real(void) {		//return NMI status
 							}
 							BeebRx.BytesInBuffer = j;
 							BeebRx.Pointer =0;
-							fourwaystage = FWS_DATARCVD;
+							fourwaystage = FourWayStage::DataReceived;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATARCVD");
 							break;
 						}
@@ -1486,7 +1498,6 @@ bool EconetPoll_real(void) {		//return NMI status
 			ADLC.idle = false;
 		}
 
-		//----------------------------------------------------------------------------------
 		// how long before we come back in here?
 		SetTrigger(TimeBetweenBytes,EconetTrigger);
 	}
@@ -1498,14 +1509,14 @@ bool EconetPoll_real(void) {		//return NMI status
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill timeout reset");
 	}
 
-		//waiting for AUN to become idle?
-	if (confAUNmode && fourwaystage == FWS_WAIT4IDLE 
+	// waiting for AUN to become idle?
+	if (confAUNmode && fourwaystage == FourWayStage::WaitForIdle
 		&& BeebRx.BytesInBuffer == 0 
 		&& ADLC.rxfptr == 0 
 		&& ADLC.txfptr == 0 // ??
-//		&& EconetSCACKtrigger > TotalCycles	
+		// && EconetSCACKtrigger > TotalCycles
 		) {
-			fourwaystage = FWS_IDLE;
+			fourwaystage = FourWayStage::Idle;
 			Econet4Wtrigger = 0;
 			EconetSCACKtrigger = 0;
 			FlagFillActive = false;
@@ -1513,20 +1524,19 @@ bool EconetPoll_real(void) {		//return NMI status
 
 	// timeout four way handshake - for when we get lost..
 	if (Econet4Wtrigger == 0) {
-		if (fourwaystage != FWS_IDLE )
+		if (fourwaystage != FourWayStage::Idle)
 			SetTrigger(FourWayStageTimeout,Econet4Wtrigger);
 	}
 	else if (Econet4Wtrigger <= TotalCycles) {
 		EconetSCACKtrigger = 0;
 		Econet4Wtrigger = 0;
-		fourwaystage = FWS_IDLE;
+		fourwaystage = FourWayStage::Idle;
 		if (DebugEnabled) {
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: 4waystage timeout; Set FWS_IDLE");
 			debugADLCprint();
 		}
 	}
 
-	//--------------------------------------------------------------------------------------------
 	// Status bits need changing?
 
 	// SR1b0 - RDA - received data available. 
@@ -1539,7 +1549,7 @@ bool EconetPoll_real(void) {		//return NMI status
 		} else {
 			ADLC.status1 &= ~1;
 			ADLC.status2 &= ~128;
-		} 
+		}
 	}
 	// SR1b1 - S2RQ - set after SR2, see below
 	// SR1b2 - LOOP - set if in loop mode. not supported in this emulation,
@@ -1653,7 +1663,6 @@ bool EconetPoll_real(void) {		//return NMI status
 	}
 	// SR2b7 - RDA. As per SR1b0 - set above.
 
-
 	// Handle PSE - only for SR2 Rx bits at the moment
 	int sr2psetemp = ADLC.sr2pse;
 	if (ADLC.control2 & 1) {
@@ -1687,7 +1696,6 @@ bool EconetPoll_real(void) {		//return NMI status
 		DebugDisplayTrace(DebugType::Econet, true, info);
 	}
 
-
 	// Do we need to flag an interrupt?
 	if (ADLC.status1 != ADLCtemp.status1 || ADLC.status2 != ADLCtemp.status2) { // something changed
 		unsigned char tempcause, temp2;
@@ -1716,7 +1724,7 @@ bool EconetPoll_real(void) {		//return NMI status
 		if (!(ADLC.control1 & 4))	{	// TIE not set,
 			tempcause = tempcause & ~0x70;
 		}
-			
+
 		if (tempcause) { //something got set
 			interruptnow = true;
 			irqcause = irqcause | tempcause;	// remember which bit went high to flag irq
@@ -1751,11 +1759,10 @@ bool EconetPoll_real(void) {		//return NMI status
 		if (DebugEnabled) debugADLCprint();
 	}
 
-	return (interruptnow);	// flag NMI if necessary. see also INTON flag as
-							// this can cause a delayed interrupt.(beebmem.cpp)
+	return interruptnow; // flag NMI if necessary. see also INTON flag as
+	                     // this can cause a delayed interrupt (beebmem.cpp).
 }
 
-//--------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
 // display some information
 
@@ -1770,7 +1777,6 @@ void debugADLCprint(void) {
 }
 
 //--------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------
 // Display an error message box
 
 void EconetError(const char *errstr)
@@ -1782,4 +1788,3 @@ void EconetError(const char *errstr)
 
 	mainWin->Report(MessageType::Error, errstr);
 }
-
