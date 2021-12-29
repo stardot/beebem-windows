@@ -68,8 +68,8 @@ bool OldCMOSState = false;
 
 // CMOS logging facilities
 bool CMOSDebug = false;
-FILE* CMDF;
-FILE* vialog;
+FILE *CMDF;
+FILE *vialog;
 /* Last value written to the slow data bus - sound reads it later */
 static unsigned char SlowDataBusWriteValue=0;
 struct CMOSType CMOS;

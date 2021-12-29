@@ -80,7 +80,7 @@ typedef struct bmiData
 struct LEDType {
 	bool ShiftLock;
 	bool CapsLock;
-	bool Motor;		// Mode LED on the Filestore
+	bool Motor; // Mode LED on the Filestore
 	bool Disc0;
 	bool Disc1;
 	bool HDisc[4];

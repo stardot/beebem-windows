@@ -207,7 +207,7 @@ BeebWin::BeebWin()
 	m_AutoBootDelay = 0;
 	m_EmuPaused = false;
 	m_StartPaused = false;
-	m_FileStoreReset = false;
+	m_FileStoreReset = 0;
 	m_WasPaused = false;
 	m_KeyboardTimerElapsed = false;
 	m_BootDiscTimerElapsed = false;
@@ -507,7 +507,6 @@ BeebWin::~BeebWin()
 /****************************************************************************/
 void BeebWin::Shutdown()
 {
-
 	if (aviWriter)
 	{
 		delete aviWriter;
@@ -603,9 +602,9 @@ void BeebWin::LoadBackgroundBitmap(Model model)
 
 void BeebWin::SelectMachineType(Model model)
 {
-	char PrefsFile_temp[_MAX_PATH];
+	// char PrefsFile_temp[_MAX_PATH];
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S) {
 		// Close the FileStore and ensure the buffers are flushed
 		// has the FileStore already been through the timed shutdown procedure?
 		if (!m_FileStoreShutdownTimerElapsed) { // no - then start timer and quit
@@ -642,9 +641,8 @@ void BeebWin::SelectMachineType(Model model)
 		SetTimer(mainWin->m_hWnd, 3, RTC_interrupt_delay, NULL);   // Set the RTC UIE interrupt timer
 		*/
 	}
-	else {
-
-
+	else
+	{
 		// save current filestore preferences
 /*
 		KillTimer(mainWin->m_hWnd, 3);               // remove the RTC UIE interrupt timer
@@ -664,25 +662,21 @@ void BeebWin::SelectMachineType(Model model)
 	// if a different machine has been selected
 	if (MachineType != model)
 	{
-
 		ResetBeebSystem(model, true);
 		UpdateModelMenu();
 	}
-
 }
 
 /****************************************************************************/
 
 void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 {
-
-
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S) {
 		// if LoadRoms is false it signifies this is a reset rather than a new instance
 		if (!LoadRoms) {
 			// has the FileStore already been through the timed shutdown procedure?
 			if (!m_FileStoreShutdownTimerElapsed) { // no - then trigger it and quit
-				m_FileStoreReset = true;
+				m_FileStoreReset = 1;
 				CloseFileStore();
 				return;
 			}
@@ -722,7 +716,8 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	RTCInit();
 
-	if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)) {
+	if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S)
+	{
 		if (TubeType == Tube::Acorn65C02)
 		{
 			Init65C02core();
@@ -751,38 +746,34 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 			DestroySprowCoPro();
 			CreateSprowCoPro();
 		}
-
 	}
 
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+	{
+		// Turn off Freeze when inactive
+		if (m_FreezeWhenInactive) {
+			m_FreezeWhenInactive = !m_FreezeWhenInactive;
+			CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
+		}
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		// Ensure GDI Mode
+		ExitDX();
+		m_DisplayRenderer = IDM_DISPGDI;
+		SetWindowAttributes(m_isFullScreen);
+		UpdateDisplayRendererMenu();
 
-			// Turn off Freeze when inactive
-			if (m_FreezeWhenInactive) {
-				m_FreezeWhenInactive = !m_FreezeWhenInactive;
-				CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
-			}
+		// set window size
+		m_MenuIdWinSize = IDM_640X512;
+		CheckMenuItem(m_MenuIdWinSize, true);
+		TranslateWindowSize();
+		SetWindowAttributes(m_isFullScreen);
 
-			// Ensure GDI Mode
-			ExitDX();
-			m_DisplayRenderer = IDM_DISPGDI;
-			SetWindowAttributes(m_isFullScreen);
-			UpdateDisplayRendererMenu();
-
-			// set window size
-			m_MenuIdWinSize = IDM_640X512;
-			CheckMenuItem(m_MenuIdWinSize, true);
-			TranslateWindowSize();
-			SetWindowAttributes(m_isFullScreen);
-
-			// Ensure Econet enabled
-			if (!EconetEnabled){
-				EconetReset();
-				UpdateEconetMenu();
-			}
-
+		// Ensure Econet enabled
+		if (!EconetEnabled){
+			EconetReset();
+			UpdateEconetMenu();
+		}
 	}
-
 
 	SysVIAReset();  // ensure also for FileStore otherwise interrupts might be enabled
 	UserVIAReset();
@@ -816,7 +807,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		LoadFDC(NULL, false);
 	}
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S) {
 		// ensure write protect on load is off
 		if (!DWriteable[0]) ToggleWriteProtect(0);
 		if (!DWriteable[1]) ToggleWriteProtect(1);
@@ -838,10 +829,8 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		(MachineType == Model::FileStoreE01) ||
 		(MachineType == Model::FileStoreE01S)) {
 		// 1770 Disc
-
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
 		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1], 1, CDiscType[1]);
-
 	}
 }
 
@@ -2115,7 +2104,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			else {
 				DestroyWindow(hWnd);
 			}
-break;
+			break;
+
 		case WM_DESTROY:  // message: window being destroyed
 			mainWin->Shutdown();
 			PostQuitMessage(0);
@@ -2153,7 +2143,9 @@ break;
 				mainWin->DoShiftBreak();
 			}
 			else if (wParam == 3) // Handle update cycles for FileStore RTC
+			{
 				HandleRTCTimer();
+			}
 			else if (wParam == 4) // Handle timer FileStore shutdown delay
 			{
 				mainWin->KillFileStoreShutdownTimer();
@@ -3978,13 +3970,15 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_FILE_RESET:
-		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
-			m_FileStoreReset = true;
+		if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+		{
+			m_FileStoreReset = 1;
 			CloseFileStore();
 		}
 		else
+		{
 			ResetBeebSystem(MachineType, false);
-
+		}
 		break;
 
 	case ID_MODELB:

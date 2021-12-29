@@ -30,7 +30,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "ext1770.h"
 #include "avi.h"
-#include "sasi.h"
+#include "scsi.h"
 #include "Messages.h"
 #include "DebugTrace.h"
 
@@ -39,7 +39,6 @@ typedef HRESULT ( WINAPI* LPDIRECTDRAWCREATE )( GUID FAR *lpGUID, LPDIRECTDRAW F
 extern HMODULE hFDCBoard;
 extern EDCB ExtBoard;
 extern AVIWriter *aviWriter;
-extern bool SCSIDriveEnabled;
 
 /****************************************************************************/
 void BeebWin::InitDX(void)
@@ -955,13 +954,12 @@ void BeebWin::DrawBackgroundBitmap(HDC hDC)
 
 void BeebWin::DrawFSLEDs(HDC hDC, int LEDset)
 {
-
 	if (m_DisplayRenderer == IDM_DISPGDI)
 	{
 		HBRUSH hBrush;
 
 		switch (LEDset) {
-		case 0:		// MODE
+		case 0: // MODE
 			if (LEDs.Motor)
 				hBrush = CreateSolidBrush(RGB(255, 0, 0));	// red
 			else
@@ -970,9 +968,9 @@ void BeebWin::DrawFSLEDs(HDC hDC, int LEDset)
 			SelectObject(hDC, hBrush);
 			Rectangle(hDC, 487, 34, 494, 41);	// MODE LED
 			DeleteObject(hBrush);
-
 			break;
-		case 1:		// Floppies
+
+		case 1: // Floppies
 			// Drive 0
 			if (LEDs.Disc0)
 				hBrush = CreateSolidBrush(RGB(0, 255, 0)); // green
@@ -992,9 +990,9 @@ void BeebWin::DrawFSLEDs(HDC hDC, int LEDset)
 			SelectObject(hDC, hBrush);
 			Rectangle(hDC, 390, 50, 397, 57);	// Disc 1
 			DeleteObject(hBrush);
-
 			break;
-		case 2:		// Hard Drive
+
+		case 2: // Hard Drive
 			for (int i = 0; i < 4; i++) {
 				if (SCSIDriveEnabled) {
 					if (LEDs.HDisc[i]) {
@@ -1011,10 +1009,8 @@ void BeebWin::DrawFSLEDs(HDC hDC, int LEDset)
 				SelectObject(hDC, hBrush);
 				Rectangle(hDC, 560 + (i * 20), 80, 567 + (i * 20), 87);	// Hard drives 0-3
 				DeleteObject(hBrush);
-
 			}
 			break;
 		}
-
 	}
 }

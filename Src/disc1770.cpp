@@ -195,13 +195,13 @@ unsigned char Read1770Register(unsigned char Register) {
 static void SetMotor(int Drive, bool State) {
 	if (Drive == 0) {
 		LEDs.Disc0 = State;
-		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-			mainWin->DrawFSLEDs(mainWin->m_hDC,1);
+		if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+			mainWin->DrawFSLEDs(mainWin->m_hDC, 1);
 	}
 	else {
 		LEDs.Disc1 = State;
-		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-			mainWin->DrawFSLEDs(mainWin->m_hDC,1);
+		if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+			mainWin->DrawFSLEDs(mainWin->m_hDC, 1);
 	}
 
 	if (State) {

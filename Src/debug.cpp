@@ -1413,8 +1413,6 @@ static void DebugUpdateWatches(bool all)
 					value = (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
 					         DebugReadMem(Watches[i].start,     Watches[i].host);
 				}
-
-
 				break;
 
 			case 'd':
@@ -1437,22 +1435,21 @@ static void DebugUpdateWatches(bool all)
 			case 'f':
 				if (WatchBigEndian)
 				{
-					value = (DebugReadMem(Watches[i].start, Watches[i].host) << 32) +
-						(DebugReadMem(Watches[i].start + 1, Watches[i].host) << 24) +
-						(DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
-						(DebugReadMem(Watches[i].start + 3, Watches[i].host) << 8) +
-						DebugReadMem(Watches[i].start + 4, Watches[i].host);
+					value = (DebugReadMem(Watches[i].start,     Watches[i].host) << 32) +
+					        (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 24) +
+					        (DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
+					        (DebugReadMem(Watches[i].start + 3, Watches[i].host) << 8) +
+					         DebugReadMem(Watches[i].start + 4, Watches[i].host);
 				}
 				else
 				{
 					value = (DebugReadMem(Watches[i].start + 4, Watches[i].host) << 32) +
-						(DebugReadMem(Watches[i].start + 3, Watches[i].host) << 24) +
-						(DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
-						(DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
-						DebugReadMem(Watches[i].start, Watches[i].host);
+					        (DebugReadMem(Watches[i].start + 3, Watches[i].host) << 24) +
+					        (DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
+					        (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
+					         DebugReadMem(Watches[i].start,     Watches[i].host);
 				}
 				break;
-
 		}
 
 		if (all || value != Watches[i].value)
@@ -1578,8 +1575,8 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	}
 	else
 	{
-		
-		if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+		{
 			if (!DebugOS && addr >= 0xE000 && addr <= 0xffff)
 			{
 				if (!LastAddrInOS)
@@ -2926,7 +2923,7 @@ static bool DebugCmdWatch(char *args)
 		{
 			// Check type is valid
 			w.type = (char)tolower(w.type);
-			if(w.type != 'b' && w.type != 'w' && w.type != 'd' && w.type != 'f')
+			if (w.type != 'b' && w.type != 'w' && w.type != 'd' && w.type != 'f')
 				return false;
 
 			sprintf(info, "%s%04X", (w.host ? "" : "p"), w.start);

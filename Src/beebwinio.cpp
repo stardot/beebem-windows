@@ -208,9 +208,9 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		}
 
 		// Another Master 128 Update, brought to you by Richard Gellman
-		if ((MachineType != Model::Master128) && 
-			(MachineType != Model::FileStoreE01) && 
-			(MachineType != Model::FileStoreE01S))
+		if (MachineType != Model::Master128 &&
+		    MachineType != Model::FileStoreE01 &&
+		    MachineType != Model::FileStoreE01S)
 		{
 			if (dsd)
 			{
@@ -252,7 +252,6 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		/* Write protect the disc */
 		if (m_WriteProtectOnLoad != m_WriteProtectDisc[Drive])
 			ToggleWriteProtect(Drive);
-
 	}
 
 	return(gotName);

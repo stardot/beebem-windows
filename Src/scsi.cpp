@@ -405,9 +405,8 @@ static void BusFree()
 	LEDs.HDisc[2] = 0;
 	LEDs.HDisc[3] = 0;
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-		mainWin->DrawFSLEDs(mainWin->m_hDC,2);
-
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+		mainWin->DrawFSLEDs(mainWin->m_hDC, 2);
 }
 
 static void Selection(int data)
@@ -444,8 +443,8 @@ static void Execute(void)
 
 	LEDs.HDisc[scsi.lun] = 1;
 
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
-		mainWin->DrawFSLEDs(mainWin->m_hDC,2);
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
+		mainWin->DrawFSLEDs(mainWin->m_hDC, 2);
 
 	switch (scsi.cmd[0]) {
 		case 0x00:

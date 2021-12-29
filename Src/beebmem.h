@@ -119,7 +119,7 @@ bool ReadRomInfo(int bank, RomInfo* info);
 /* Used to show the Rom titles from the options menu */
 char *ReadRomTitle( int bank, char *Title, int BufSize );
 
-void RTCReset(void);
+void RTCReset();
 
 void beebmem_dumpstate(void);
 void SaveMemUEF(FILE *SUEF);
@@ -136,4 +136,5 @@ void LoadSWRomMemUEF(FILE *SUEF);
 void LoadIntegraBHiddenMemUEF(FILE *SUEF);
 //void LoadJIMPageRegUEF(FILE *SUEF);
 void DebugMemoryState();
+
 #endif

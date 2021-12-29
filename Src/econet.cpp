@@ -466,11 +466,10 @@ void EconetReset(void) {
 	}
 
 	// On FileStore the station number is read from CMOS so update it
-	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S) {
 		CMOSWrite(0xe, EconetStationNumber);
 		CMOSWrite(0xf, 0xff-EconetStationNumber); // checkbyte
 	}
-
 
 	//---------------------
 	// Socket used to send messages.
