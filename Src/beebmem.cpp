@@ -60,6 +60,7 @@ Boston, MA  02110-1301, USA.
 #include "teletext.h"
 #include "music5000.h"
 #include "rtc.h"
+#include "StringUtils.h"
 
 using namespace std;
 
@@ -1340,13 +1341,6 @@ static bool ReadRom(const std::string& RomFileName, unsigned char *Start, int Le
 	DebugLoadMemoryMap(const_cast<char*>(MapFileName.c_str()), Bank); // TODO: Remove cast
 
 	return true;
-}
-
-/*----------------------------------------------------------------------------*/
-
-static bool StringEndsWith(const std::string& str, const std::string& suffix)
-{
-	return str.size() >= suffix.size() && 0 == str.compare(str.size() - suffix.size(), suffix.size(), suffix);
 }
 
 /*----------------------------------------------------------------------------*/

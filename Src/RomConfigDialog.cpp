@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "Model.h"
 #include "RomConfigFile.h"
 #include "RomConfigDialog.h"
+#include "StringUtils.h"
 
 static char szDefaultROMPath[MAX_PATH] = {0};
 static char szDefaultROMConfigPath[MAX_PATH] = {0};
@@ -208,13 +209,6 @@ void RomConfigDialog::FillRomList()
 			}
 			break;
 	}
-}
-
-/*----------------------------------------------------------------------------*/
-
-static bool StringEndsWith(const std::string& str, const std::string& suffix)
-{
-	return str.size() >= suffix.size() && 0 == str.compare(str.size() - suffix.size(), suffix.size(), suffix);
 }
 
 /****************************************************************************/
