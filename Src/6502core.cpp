@@ -3119,28 +3119,22 @@ static void PollHardware(unsigned int nCycles)
 	if (TotalCycles > CycleCountWrap)
 	{
 		TotalCycles -= CycleCountWrap;
+
 		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
 			AdjustTrigger(AtoDTrigger);
 			AdjustTrigger(Disc8271Trigger);
 			AdjustTrigger(SoundTrigger);
 			AdjustTrigger(AMXTrigger);
-		}
-
-		AdjustTrigger(PrinterTrigger);
-
-		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
 			AdjustTrigger(VideoTriggerCount);
 			AdjustTrigger(TapeTrigger);
-		}
-
-		AdjustTrigger(EconetTrigger);
-		AdjustTrigger(EconetFlagFillTimeoutTrigger);
-
-		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
 			AdjustTrigger(IP232RxTrigger);
 			if (TubeType == Tube::Acorn65C02)
 				WrapTubeCycles();
 		}
+
+		AdjustTrigger(PrinterTrigger);
+		AdjustTrigger(EconetTrigger);
+		AdjustTrigger(EconetFlagFillTimeoutTrigger);
 	}
 
 	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
@@ -3150,10 +3144,7 @@ static void PollHardware(unsigned int nCycles)
 	else
 	{
 		VideoPoll(nCycles);
-	}
 
-	if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S)
-	{
 		if (!BasicHardwareOnly) {
 			AtoD_poll(nCycles);
 			Serial_Poll();
@@ -3164,11 +3155,13 @@ static void PollHardware(unsigned int nCycles)
 	SoundPoll();
 
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
-	if ((MachineType == Model::Master128 || !NativeFDC) ||
-		(MachineType == Model::FileStoreE01) || 
-		(MachineType == Model::FileStoreE01S))
-			Poll1770(nCycles); // Do 1770 Background stuff
 
+	if ((MachineType == Model::Master128 || !NativeFDC) ||
+	    (MachineType == Model::FileStoreE01) ||
+	    (MachineType == Model::FileStoreE01S))
+	{
+		Poll1770(nCycles); // Do 1770 Background stuff
+	}
 
 	if (EconetEnabled && EconetPoll()) {
 		if (EconetNMIenabled) {
