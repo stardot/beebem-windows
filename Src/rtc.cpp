@@ -201,6 +201,25 @@ interrupt and square wave generator and 50 bytes CMOS RAM
 
 ****************************************************************/
 
+// RTC Registers in memory
+const unsigned char RegisterA = 0x0A;
+const unsigned char RegisterB = 0x0B;
+const unsigned char RegisterC = 0x0C;
+const unsigned char RegisterD = 0x0D;
+
+// Register A
+const unsigned char UIP = 0x80; // bit7
+
+// Register B
+const unsigned char SET  = 0x80; // bit7
+const unsigned char UIE  = 0x10; // bit4
+const unsigned char SQWE = 0x08; // bit3
+const unsigned char DM   = 0x04; // bit2
+
+// Register C
+const unsigned char IRQF = 0x80; // bit7
+const unsigned char UF   = 0x10; // bit4
+
 // Storage for the RTC Memory Map
 // Seperate instances for each machine type that uses CMOS
 
