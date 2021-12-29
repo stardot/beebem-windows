@@ -124,7 +124,6 @@ char CDiscName[2][256]; // Filename of disc current in drive 0 and 1
 DiscType CDiscType[2]; // Current disc types
 char FDCDLL[256]={0};
 
-int FileStoreReset = 0;
 Model ChangeModel;
 
 const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
