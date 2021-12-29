@@ -552,51 +552,38 @@ void BeebWin::Shutdown()
 
 void BeebWin::LoadBackgroundBitmap(Model model)
 {
+	if (m_hBackgroundBitmap != nullptr)
+	{
+		DeleteObject(m_hBackgroundBitmap);
+		m_hBackgroundBitmap = nullptr;
+	}
 
 	if (model == Model::FileStoreE01 || model == Model::FileStoreE01S)
 	{
-//		if (m_hBackgroundBitmap == nullptr)
-//		{
+		int BitmapID;
 
-		if (!FS_DoorStatus) {  // door closed
-			if (model == Model::FileStoreE01)					// Filestore E01 front cover image
-				m_hBackgroundBitmap = (HBITMAP)LoadImage(
-					hInst,
-					MAKEINTRESOURCE(IDB_FILESTOREE01),
-					IMAGE_BITMAP,
-					0,
-					0,
-					LR_CREATEDIBSECTION
-				);
-			else												// FileStore E01S front cover image
-				m_hBackgroundBitmap = (HBITMAP)LoadImage(
-					hInst,
-					MAKEINTRESOURCE(IDB_FILESTOREE01S),
-					IMAGE_BITMAP,
-					0,
-					0,
-					LR_CREATEDIBSECTION
-				);
+		if (!FS_DoorStatus) {
+			// door closed
+			BitmapID = model == Model::FileStoreE01 ? IDB_FILESTOREE01 : IDB_FILESTOREE01S;
 		}
-		else {													// door open
-			m_hBackgroundBitmap = (HBITMAP)LoadImage(
-				hInst,
-				MAKEINTRESOURCE(IDB_FSDRIVES),
-				IMAGE_BITMAP,
-				0,
-				0,
-				LR_CREATEDIBSECTION
-			);
+		else
+		{
+			// door open
+			BitmapID = IDB_FSDRIVES;
 		}
 
-//	}
+		m_hBackgroundBitmap = (HBITMAP)LoadImage(
+			hInst,
+			MAKEINTRESOURCE(BitmapID),
+			IMAGE_BITMAP,
+			0,
+			0,
+			LR_CREATEDIBSECTION
+		);
 
-	InvalidateRect(m_hWnd, nullptr, TRUE);
-
+		InvalidateRect(m_hWnd, nullptr, TRUE);
 	}
-
 }
-
 
 /****************************************************************************/
 
@@ -3116,7 +3103,6 @@ void BeebWin::HandleCommand(int MenuId)
 		// Only allow loading of floppy discs when the door is open
 		EnableMenuItem(IDM_LOADDISC0, FS_DoorStatus);
 		EnableMenuItem(IDM_LOADDISC1, FS_DoorStatus);
-		m_hBackgroundBitmap = nullptr;        // invalidate the current background image
 		LoadBackgroundBitmap(MachineType);
 		break;
 
