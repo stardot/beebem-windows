@@ -1359,9 +1359,8 @@ void BeebReadRoms()
 
 			if (!ReadRom(OSRomFileName, WholeRam + 0x8000, 32768, 16))
 			{
-				char errstr[200];
-				sprintf(errstr, "Cannot open specified OS ROM:\n %s", OSRomFileName.c_str());
-				MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+				mainWin->Report(MessageType::Error,
+				                "Cannot open specified OS ROM:\n %s", OSRomFileName.c_str());
 			}
 
 			// Read FS ROM
@@ -1370,9 +1369,8 @@ void BeebReadRoms()
 
 			if (!ReadRom(FSRomFileName, WholeRam + 0x0000, 32768, 16))
 			{
-				char errstr[200];
-				sprintf(errstr, "Cannot open specified FS ROM:\n %s", FSRomFileName.c_str());
-				MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+				mainWin->Report(MessageType::Error,
+				                "Cannot open specified FS ROM:\n %s", FSRomFileName.c_str());
 			}
 			break;
 		}
@@ -1387,9 +1385,8 @@ void BeebReadRoms()
 
 			if (!ReadRom(OSRomFileName, WholeRam + 0x0000, 65536, 16))
 			{
-				char errstr[200];
-				sprintf(errstr, "Cannot open specified OS ROM:\n %s", OSRomFileName.c_str());
-				MessageBox(GETHWND, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+				mainWin->Report(MessageType::Error,
+				                "Cannot open specified OS ROM:\n %s", OSRomFileName.c_str());
 			}
 			break;
 		}
@@ -1409,9 +1406,8 @@ void BeebReadRoms()
 
 			if (!ReadRom(OSRomFileName, WholeRam + 0xc000, 16384, 16))
 			{
-				char errstr[200];
-				sprintf(errstr, "Cannot open specified OS ROM:\n %s",OSRomFileName.c_str());
-				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				mainWin->Report(MessageType::Error,
+				                "Cannot open specified OS ROM:\n %s",OSRomFileName.c_str());
 			}
 
 			// read paged ROMs
@@ -1448,7 +1444,8 @@ void BeebReadRoms()
 					if (!ReadRom(RomFileName, Roms[bank], 16384, bank))
 					{
 						mainWin->Report(MessageType::Error,
-						                "Cannot open specified ROM:\n %s", fullname);
+						                "Cannot open specified ROM:\n %s",
+						                RomFileName.c_str());
 					}
 				}
 			}
