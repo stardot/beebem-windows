@@ -26,22 +26,19 @@ Boston, MA  02110-1301, USA.
 
 #include <time.h>
 
-using namespace std;
-
 #include "rtc.h"
 #include "beebmem.h"
 #include "6502core.h"
 #include "debug.h"
 #include "log.h"
 
-
 /******************************************************************************
 The Acorn Master 128 and FileStore products use a HD146818.
-This provides a	RTC (Real Time Clock), a programmable periodic 
+This provides a RTC (Real Time Clock), a programmable periodic
 interrupt and square wave generator and 50 bytes CMOS RAM
 
                                 Memory Map
-								                                  DM=0    =1
+                                                                  DM=0    =1
 +----+----+---------------------------------------------------+---------------+
 | 00 | 00 | Seconds                                           | Binary or BCD |
 | 01 | 01 | Seconds Alarm                                     | Binary or BCD |
@@ -67,14 +64,14 @@ interrupt and square wave generator and 50 bytes CMOS RAM
 |         |hex | Description                                                  |
 +----+----+-------------------------------------------------------------------+
 | 14 | 0E | 00 |       Station ID number                    *SetStation nnn
-| 15 | 0F | FE |       File server number                	*CO. FS nnn
-| 16 | 10 | 00 |       File server network             	    *CO. FS nnn.sss
-| 17 | 11 | FE |       Print server number             	    *CO. PS nnn
-| 18 | 12 | 00 |       Print server network            	    *CO. PS nnn.sss
-| 19 | 13 | C9 | b0-b3 Default filing system ROM     	    *CO. File nn
-|    |    |    | b4-b7 Default lanugage ROM      	        *CO. Lang nn
-| 20 | 14 | FF |       ROMs 0-7 unplugged/inserted     	    *Insert nn/*Unplug nn
-| 21 | 15 | FE |       ROMs 8-F unplugged/inserted     	    *Insert nn/*Unplug nn
+| 15 | 0F | FE |       File server number                   *CO. FS nnn
+| 16 | 10 | 00 |       File server network                  *CO. FS nnn.sss
+| 17 | 11 | FE |       Print server number                  *CO. PS nnn
+| 18 | 12 | 00 |       Print server network                 *CO. PS nnn.sss
+| 19 | 13 | C9 | b0-b3 Default filing system ROM            *CO. File nn
+|    |    |    | b4-b7 Default lanugage ROM                 *CO. Lang nn
+| 20 | 14 | FF |       ROMs 0-7 unplugged/inserted          *Insert nn/*Unplug nn
+| 21 | 15 | FE |       ROMs 8-F unplugged/inserted          *Insert nn/*Unplug nn
 | 22 | 16 | 32 | b0-b2 EDIT screen mode
 |    |    |    | b3    EDIT TAB to columns/words
 |    |    |    | b4    EDIT overwrite/instert
@@ -83,27 +80,27 @@ interrupt and square wave generator and 50 bytes CMOS RAM
 | 23 | 17 | 00 |       Telecoms software
 | 24 | 18 | 07 | b0-b2 Default screen mode                  *CO. Mode nn
 |    |    |    | b3    Shadow 
-|    |    |    | b4    Default TV interlace          	    *CO. TV xx,n
+|    |    |    | b4    Default TV interlace                 *CO. TV xx,n
 |    |    |    | b5-b7 Default TV position 0-3, -4 to -1    *CO. TV nn,x
-| 25 | 19 | C1 | b0-b2 Default floppy speed         	    *CO. FDrive n
-|    |    |    | b3    Shift Caps on startup         	    *CO. ShCaps
+| 25 | 19 | C1 | b0-b2 Default floppy speed                 *CO. FDrive n
+|    |    |    | b3    Shift Caps on startup                *CO. ShCaps
 |    |    |    | b4    No CAPS lock on startup              *CO. NoCaps
 |    |    |    | b5    CAPS lock on startup                 *CO. Caps
-|    |    |    | b6    ADFS load dir on startup  	        *CO. NoDir/Dir
+|    |    |    | b6    ADFS load dir on startup             *CO. NoDir/Dir
 |    |    |    | b7    ADFS floppy/hard drive on startup    *CO. Floppy/Hard
 | 26 | 1A | 1E |       Keyboard repeat delay                *CO. Delay nnn
 | 27 | 1B | 05 |       Keyboard repeat rate                 *CO. Repeat nnn
 | 28 | 1C | 00 |       Printer ignore character             *CO. Ignore nnn
-| 29 | 1D | 59 | b0    Ignore/enable Tube		            *CO. NoTube/Tube
-|    |    |    | b1    Ignore printer ignore character	    *CO. Ignore/Ignore nnn
-|    |    |    | b2-b4 Default serial speed, 0-7	        *CO. Baud n
+| 29 | 1D | 59 | b0    Ignore/enable Tube                   *CO. NoTube/Tube
+|    |    |    | b1    Ignore printer ignore character      *CO. Ignore/Ignore nnn
+|    |    |    | b2-b4 Default serial speed, 0-7            *CO. Baud n
 |    |    |    | b5-b7 Default printer device, 0-7 	        *CO. Print n
 | 30 | 1E | A2 | b0    Default to shadow screen on start    *CO. Shadow
-|    |    |    | b1    Default BEEP quite/loud   	        *CO. Quiet/Loud
-|    |    |    | b2    Internal/External Tube   	        *CO. InTube/ExTube
-|    |    |    | b3    Scrolling enabled/protected     	    *CO. Scroll/NoScroll
-|    |    |    | b4    Noboot/boot on reset     	        *CO. NoBoot/Boot
-|    |    |    | b5-b7 Default serial data format      	    *CO. Data n
+|    |    |    | b1    Default BEEP quite/loud              *CO. Quiet/Loud
+|    |    |    | b2    Internal/External Tube               *CO. InTube/ExTube
+|    |    |    | b3    Scrolling enabled/protected          *CO. Scroll/NoScroll
+|    |    |    | b4    Noboot/boot on reset                 *CO. NoBoot/Boot
+|    |    |    | b5-b7 Default serial data format           *CO. Data n
 | 31 | 1F | 00 | b0    ANFS raise 2 pages of workspace      *CO. NoSpace/Space
 |    |    |    | b1    ANFS run *FindLib on logon           *-Net-Opt 5,n
 |    |    |    | b2    ANFS uses &0Bxx-&0Cxx or &0Exx-&0Fxx *-Net-Opt 6,n
@@ -202,15 +199,14 @@ interrupt and square wave generator and 50 bytes CMOS RAM
 | 63 | 3F | 00 |
 +----+----+--------------------+-------------------+
 
-
 ****************************************************************/
 
 // Storage for the RTC Memory Map
 // Seperate instances for each machine type that uses CMOS
 
-unsigned char CMOSRAM_M128[64];		// 10 Bytes Clock, 4 bytes Control Registers, 50 Bytes User RAM for Master 128
-unsigned char CMOSRAM_E01[64];		// 10 Bytes Clock, 4 bytes Control Registers, 50 Bytes User RAM for FileStore E01
-unsigned char CMOSRAM_E01S[64];		// 10 Bytes Clock, 4 bytes Control Registers, 50 Bytes User RAM for FileStore E01S
+unsigned char CMOSRAM_M128[64]; // 10 Bytes Clock, 4 bytes Control Registers, 50 Bytes User RAM for Master 128
+unsigned char CMOSRAM_E01[64];  // 10 Bytes Clock, 4 bytes Control Registers, 50 Bytes User RAM for FileStore E01
+unsigned char CMOSRAM_E01S[64]; // 10 Bytes Clock, 4 bytes Control Registers, 50 Bytes User RAM for FileStore E01S
 
 // Backup of Master 128 CMOS Defaults from byte 14
 extern unsigned char CMOSDefault[50] = { 0,0xFE,0,0xFE,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2,0,0,0 }; 
@@ -394,7 +390,7 @@ void CMOSWrite(unsigned char CMOSAddr, unsigned char CMOSData) {
 
 	switch (CMOSAddr)
 	{
-		case 1:		// clock data
+		case 1: // clock data
 		case 2:
 		case 3:
 		case 4:
@@ -403,7 +399,7 @@ void CMOSWrite(unsigned char CMOSAddr, unsigned char CMOSData) {
 		case 7:
 		case 8:
 		case 9:
-			if (!(pCMOS[RegisterB] & DM))	// BCD or binary format
+			if (!(pCMOS[RegisterB] & DM)) // BCD or binary format
 				pCMOS[CMOSAddr] = BCD(CMOSData);
 			else
 				pCMOS[CMOSAddr] = CMOSData;
@@ -429,29 +425,28 @@ void CMOSWrite(unsigned char CMOSAddr, unsigned char CMOSData) {
 
 			pCMOS[CMOSAddr] = CMOSData;  // write the value to CMOS anyway
 			break;
-		case RegisterC:	// do nothing, read only
+		case RegisterC: // do nothing, read only
 			break;
 		case RegisterD: // do nothing, read only
 			break;
 		default:   // otherwise CMOS data
-			pCMOS[CMOSAddr] = CMOSData;
+			if (CMOSAddr < 64) {
+				pCMOS[CMOSAddr] = CMOSData;
+			}
+			break;
 	}
-
-
 }
 
-
 /*-------------------------------------------------------------------------*/
-unsigned char CMOSRead(unsigned char CMOSAddr) {
-
+unsigned char CMOSRead(unsigned char CMOSAddr)
+{
 	unsigned char tmp = 0x00;
 
 	// 0xc Register is a special case when reading as it clears after a read
-    // only appears to be used by Filestore
+	// only appears to be used by Filestore
 
 	if (CMOSAddr == RegisterC) { // interrupt check
-
-	// Reading returns the status and causes IRQ Flag to be cleared
+		// Reading returns the status and causes IRQ Flag to be cleared
 		if (pCMOS[RegisterC] == 0x90) {  // +IRQF +UF interrupt flag
 			pCMOS[RegisterC] = 0x00; // clear register
 			intStatus &= ~(1 << rtc); // Clear interrupt
@@ -481,7 +476,6 @@ unsigned char CMOSRead(unsigned char CMOSAddr) {
 
 	return tmp;
 }
-
 
 /*-------------------------------------------------------------------------
              Useful functions
@@ -534,7 +528,6 @@ time_t CMOSConvertClock(void) {
 
 void DebugRTCState()
 {
-
 	DebugDisplayInfo("");
 
 	if (!(pCMOS[RegisterB] & DM)) 
@@ -589,5 +582,4 @@ void DebugRTCState()
 	DebugDisplayInfoF("CMOS: 30: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
 		pCMOS[0x30], pCMOS[0x31], pCMOS[0x32], pCMOS[0x33], pCMOS[0x34], pCMOS[0x35], pCMOS[0x36], pCMOS[0x37],
 		pCMOS[0x38], pCMOS[0x39], pCMOS[0x3A], pCMOS[0x3B], pCMOS[0x3C], pCMOS[0x3D], pCMOS[0x3E], pCMOS[0x3F]);
-
 }
