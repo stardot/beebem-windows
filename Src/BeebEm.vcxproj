@@ -399,7 +399,8 @@
     <Image Include="..\Help\keyboard.jpg" />
     <Image Include="..\Help\startup.jpg" />
     <Image Include="BeebEm.ico" />
-    <Image Include="cover.bmp" />
+    <Image Include="fs-coverE01.bmp" />
+    <Image Include="fs-coverE01S.bmp" />
     <Image Include="fs-drives.bmp" />
   </ItemGroup>
   <ItemGroup>

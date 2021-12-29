@@ -529,10 +529,13 @@
     <Image Include="..\Help\startup.jpg">
       <Filter>Help Files</Filter>
     </Image>
-    <Image Include="cover.bmp">
+    <Image Include="fs-drives.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="fs-drives.bmp">
+    <Image Include="fs-coverE01.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="fs-coverE01S.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
