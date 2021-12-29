@@ -149,6 +149,6 @@ unsigned char DebugReadMem(int addr, bool host);
 void DebugBreakExecution(DebugType type);
 
 void DebugInitMemoryMaps();
-bool DebugLoadMemoryMap(char* filename, int bank);
+bool DebugLoadMemoryMap(const char* filename, int bank);
 
 #endif

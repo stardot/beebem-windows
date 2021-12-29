@@ -1338,7 +1338,7 @@ static bool ReadRom(const std::string& RomFileName, unsigned char *Start, int Le
 	// Try to read OS ROM memory map:
 	std::string MapFileName = ReplaceFileExtension(RomFileName, ".map");
 
-	DebugLoadMemoryMap(const_cast<char*>(MapFileName.c_str()), Bank); // TODO: Remove cast
+	DebugLoadMemoryMap(MapFileName.c_str(), Bank);
 
 	return true;
 }
