@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 //
 //
 // Search TODO for some issues that need addressing.
-// 
+//
 //
 #include <stdio.h>
 #include <windows.h>
@@ -50,9 +50,9 @@ static bool MassageNetworks = false;  // massage network numbers on send/receive
 static int inmask, outmask;
 
 bool EconetStateChanged = false;
-bool EconetEnabled;							// Enable hardware
-bool EconetNMIenabled;						// 68B54 -> NMI enabled. (IC97)
-int EconetTrigger;							// Poll timer
+bool EconetEnabled;    // Enable hardware
+bool EconetNMIenabled; // 68B54 -> NMI enabled. (IC97)
+int EconetTrigger;     // Poll timer
 
 static const unsigned char powers[4] = { 1, 2, 4, 8 };
 
@@ -103,11 +103,11 @@ enum class AUNType : unsigned char {
 
 struct AUNHeader
 {
-	AUNType type; // AUN magic protocol byte
-	unsigned char port;		// dest port
-	unsigned char cb;		// flag
-	unsigned char pad;		// retrans
-	unsigned long handle;	// 4 byte sequence little-endian.
+	AUNType type;         // AUN magic protocol byte
+	unsigned char port;   // dest port
+	unsigned char cb;     // flag
+	unsigned char pad;    // retrans
+	unsigned long handle; // 4 byte sequence little-endian.
 };
 
 // #define EC_PORT_FS 0x99
@@ -132,7 +132,7 @@ enum class FourWayStage {
 
 static FourWayStage fourwaystage;
 
-struct ShorEeconetHeader
+struct ShorEconetHeader
 {
 	unsigned char deststn;
 	unsigned char destnet;
@@ -178,7 +178,7 @@ struct EthernetPacket
 	} ;
 	union {
 		unsigned char buff[ETHERNET_BUFFER_SIZE];
-		ShorEeconetHeader eh;
+		ShorEconetHeader eh;
 	};
 	volatile unsigned int Pointer;
 	volatile unsigned int BytesInBuffer;
@@ -234,14 +234,14 @@ const int AUN_TABLE_LENGTH = 128; // number of disparate network in AUNMap
 static ECOLAN network[NETWORK_TABLE_LENGTH]; // list of my friends! :-)
 static AUNTAB aunnet[AUN_TABLE_LENGTH]; // AUNMap file for guess mode.
 
-static unsigned int networkp = 0;				// how many friends do I have?
-static unsigned int aunnetp = 0;				// now many networks do i know about
-static unsigned int myaunnet = 0;				// aunnet table entry that I match. should be -1 as 0 is valid..
+static unsigned int networkp = 0; // how many friends do I have?
+static unsigned int aunnetp = 0;  // now many networks do i know about
+static unsigned int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 is valid..
 
-char EconetCfgPath[512];				// where's my config file saved?
+char EconetCfgPath[512]; // where's my config file saved?
 
-static unsigned char irqcause;					// flagto indicate cause of irq sr1b7
-static unsigned char sr1b2cause;				// flagto indicate cause of irq sr1b2
+static unsigned char irqcause;   // flagto indicate cause of irq sr1b7
+static unsigned char sr1b2cause; // flagto indicate cause of irq sr1b2
 
 // A receiving station goes into flag fill mode while it is processing 
 // a message.  This stops other stations sending messages that may interfere
@@ -255,9 +255,10 @@ static unsigned char sr1b2cause;				// flagto indicate cause of irq sr1b2
 // cancel flag fill after the last message of a four-way handshake we time it
 // out - which is not ideal as we do not want to delay new messages any
 // longer that we have to - but it will have to do for now!
-static bool FlagFillActive;                    // Flag fill state
-int EconetFlagFillTimeoutTrigger;       // Trigger point for flag fill
-int EconetFlagFillTimeout = 500000 ;     // Cycles for flag fill timeout // added cfg file to override this
+
+static bool FlagFillActive; // Flag fill state
+int EconetFlagFillTimeoutTrigger; // Trigger point for flag fill
+int EconetFlagFillTimeout = 500000; // Cycles for flag fill timeout // added cfg file to override this
 static int EconetSCACKtrigger; // Trigger point for scout ack
 static int EconetSCACKtimeout = 500; // Cycles to delay before sending ack to scout (aun mode only)
 static int Econet4Wtrigger;
@@ -289,8 +290,8 @@ void EconetReset(void) {
 	ADLC.control3 = 0; //ADLC.control3 & 95;
 
 	// clear all status conditions
-	ADLC.status1=0;	//cts - clear to send line input (no collissions talking udp)
-	ADLC.status2=0;	//dcd - no clock (until sockets initialised and open)
+	ADLC.status1 = 0; // cts - clear to send line input (no collissions talking udp)
+	ADLC.status2 = 0; // dcd - no clock (until sockets initialised and open)
 	ADLC.sr2pse=0;
 
 	//software stuff:
@@ -381,7 +382,6 @@ void EconetReset(void) {
 			WSACleanup();
 			return;
 		}
-
 	} else {
 		// Station number not specified, find first one not already in use.
 		char localhost[256];
@@ -728,15 +728,15 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 	// command registers are really just a set of flags that affect 
 	// operation of the rest of the device.
 
-	if (Register == 0) {								// adr 00
+	if (Register == 0) { // adr 00
 		ADLC.control1 = Value;
-	} else if (Register == 1 && !(ADLC.control1 & 1)) {	// adr 01 & AC=0
+	} else if (Register == 1 && !(ADLC.control1 & 1)) { // adr 01 & AC=0
 		ADLC.control2 = Value;
-	} else if (Register == 1 && (ADLC.control1 & 1)) {	// adr 01 & AC=1
+	} else if (Register == 1 && (ADLC.control1 & 1)) { // adr 01 & AC=1
 		ADLC.control3 = Value;
-	} else if (Register == 3 && (ADLC.control1 & 1)) {	// adr 03 & AC=1
+	} else if (Register == 3 && (ADLC.control1 & 1)) { // adr 03 & AC=1
 		ADLC.control4 = Value;
-	} else if (Register == 2 || Register == 3) {		// adr 02 or adr 03 & AC=0
+	} else if (Register == 2 || Register == 3) { // adr 02 or adr 03 & AC=0
 		// cannot write an output byte if txreset is set
 		// register 2 is an output byte
 		// register 3 with c1b0=0 is output byte & finalise tx.
@@ -760,7 +760,7 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 //--------------------------------------------------------------------------------------------
 // Optimisation - only call real poll routine when something has changed
 
-bool EconetPoll(void) {		//return NMI status
+bool EconetPoll() { // return NMI status
 	if (EconetStateChanged || EconetTrigger<=TotalCycles) {
 		EconetStateChanged = false;
 
@@ -782,7 +782,7 @@ bool EconetPoll(void) {		//return NMI status
 // routines before they are checked) but for the moment I just want to get this
 // code actually working!
 
-bool EconetPoll_real(void) {		//return NMI status
+bool EconetPoll_real(void) { // return NMI status
 	char info[200];
 	bool interruptnow = false;
 
@@ -832,27 +832,27 @@ bool EconetPoll_real(void) {		//return NMI status
 	// CR2b3 - FC/TDRA mode - does status bit SR1b6 indicate 1=frame complete, 
 	//	0=tx data reg available. 1=frame tx complete.  see tdra status bit
 	// CR2b4 - TxLast - byte just put into fifo was the last byte of a packet.
-	if (ADLC.control2 & 16) {					// TxLast set
-		ADLC.txftl |= 1;						//	set b0 - flag for fifo[0]
-		ADLC.control2 &= ~16;					// clear flag.
+	if (ADLC.control2 & 16) { // TxLast set
+		ADLC.txftl |= 1; //	set b0 - flag for fifo[0]
+		ADLC.control2 &= ~16; // clear flag.
 	}
 
 	// CR2b5 - CLR RxST - Clear Receiver Status - reset status bits
-	if ((ADLC.control2 & 32) || (ADLC.control1 & 64)) {	// or rxreset
-		ADLC.control2 &= ~32;					// clear this bit
-		ADLC.status1 &= ~10;  					// clear sr2rq, FD
-		ADLC.status2 &= ~126;					// clear FV, RxIdle, RxAbt, Err, OVRN, DCD
+	if ((ADLC.control2 & 32) || (ADLC.control1 & 64)) { // or rxreset
+		ADLC.control2 &= ~32; // clear this bit
+		ADLC.status1 &= ~10; // clear sr2rq, FD
+		ADLC.status2 &= ~126; // clear FV, RxIdle, RxAbt, Err, OVRN, DCD
 
-		if ((ADLC.control2 & 1) && ADLC.sr2pse) {	// PSE active?
-			ADLC.sr2pse++;						// Advance PSE to next priority
+		if ((ADLC.control2 & 1) && ADLC.sr2pse) { // PSE active?
+			ADLC.sr2pse++; // Advance PSE to next priority
 			if (ADLC.sr2pse > 4)
 				ADLC.sr2pse = 0;
 		} else {
 			ADLC.sr2pse = 0;
 		}
 
-		sr1b2cause = 0;							// clear cause of sr2b1 going up
-		if (ADLC.control1 & 64) {				// rx reset,clear buffers.
+		sr1b2cause = 0; // clear cause of sr2b1 going up
+		if (ADLC.control1 & 64) { // rx reset,clear buffers.
 			BeebRx.Pointer =0;
 			BeebRx.BytesInBuffer = 0;
 			ADLC.rxfptr = 0;
@@ -864,15 +864,15 @@ bool EconetPoll_real(void) {		//return NMI status
 	}
 
 	// CR2b6 - CLT TxST - Clear Transmitter Status - reset status bits
-	if ((ADLC.control2 & 64) || (ADLC.control1 & 128)) {	// or txreset
-		ADLC.control2 &= ~64;					// clear this bit
-		ADLC.status1 &= ~0x70;					// clear TXU , cts, TDRA/FC
+	if ((ADLC.control2 & 64) || (ADLC.control1 & 128)) { // or txreset
+		ADLC.control2 &= ~64; // clear this bit
+		ADLC.status1 &= ~0x70; // clear TXU , cts, TDRA/FC
 		if (ADLC.cts) {
-			ADLC.status1 |= 16;					//cts follows signal, reset high again
-			ADLCtemp.status1 |= 16;				// don't trigger another interrupt instantly
+			ADLC.status1 |= 16; // cts follows signal, reset high again
+			ADLCtemp.status1 |= 16; // don't trigger another interrupt instantly
 		}
 
-		if (ADLC.control1 & 128) {				// tx reset,clear buffers.
+		if (ADLC.control1 & 128) { // tx reset,clear buffers.
 			BeebTx.Pointer =0;
 			BeebTx.BytesInBuffer = 0;
 			ADLC.txfptr = 0;
@@ -881,7 +881,7 @@ bool EconetPoll_real(void) {		//return NMI status
 	}
 
 	// CR2b7 - RTS control - looks after RTS output line. ignored here.
-	//		but used in CTS logic
+	// but used in CTS logic
 	// RTS gates TXD onto the econet bus. if not zero, no tx reaches it,
 	// in the B+, RTS substitutes for the collision detection circuit.
 
@@ -892,7 +892,7 @@ bool EconetPoll_real(void) {		//return NMI status
 	// CR3b2 - AEX - When set, address will be two bytes (unless first byte is zero). ignored here.
 	// CR3b3 - 01/11 idle - idle transmission mode - ignored here,.
 	// CR3b4 - FDSE - flag detect status enable.  when set, then FD (SR1b3) + interrupr indicated a flag
-	//				has been received. I don't think we use this mode, so ignoring it.
+	// has been received. I don't think we use this mode, so ignoring it.
 	// CR3b5 - Loop - Loop mode. Not used.
 	// CR3b6 - GAP/TST - sets test loopback mode (when not in Loop operation mode.) ignored.
 	// CR3b7 - LOC/DTR - (when not in loop mode) controls DTR pin directly. pin not used in a BBC B
@@ -902,19 +902,19 @@ bool EconetPoll_real(void) {		//return NMI status
 	// CR4b1,2 - TX word length. 11=8 bits. BBC uses 8 bits so ignore flags and assume 8 bits throughout
 	// CR4b3,4 - RX word length. 11=8 bits. BBC uses 8 bits so ignore flags and assume 8 bits throughout
 	// CR4b5 - TransmitABT - Abort Transmission.  Once abort starts, bit is cleared.
-	if (ADLC.control4 & 32) {		// ABORT
+	if (ADLC.control4 & 32) { // ABORT
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: TxABORT is set\0");
-		ADLC.txfptr = 0;			//	reset fifo
-		ADLC.txftl = 0;				//	reset fifo flags
+		ADLC.txfptr = 0; // reset fifo
+		ADLC.txftl = 0; // reset fifo flags
 		BeebTx.Pointer = 0;
 		BeebTx.BytesInBuffer = 0; 
-		ADLC.control4 &= ~32;		// reset flag.
+		ADLC.control4 &= ~32; // reset flag.
 		fourwaystage = FourWayStage::Idle;
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IDLE (abort)");
 	}
 
 	// CR4b6 - ABTex - extend abort - adjust way the abort flag is sent.  ignore,
-	//	can affect timing of RTS output line (and thus CTS input) still ignored.
+	// can affect timing of RTS output line (and thus CTS input) still ignored.
 	// CR4b7 - NRZI/NRZ - invert data encoding on wire. ignore.
 
 	if (EconetTrigger<=TotalCycles) {
@@ -923,16 +923,16 @@ bool EconetPoll_real(void) {		//return NMI status
 		// Trickle data between fifo registers and ip packets.
 
 		// Transmit data
-		if (!(ADLC.control1 & 128)) {		// tx reset off
-			if (ADLC.txfptr) {				// there is data is in tx fifo
+		if (!(ADLC.control1 & 128)) { // tx reset off
+			if (ADLC.txfptr) { // there is data is in tx fifo
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: Write to FIFO noticed");
 				bool TXlast = false;
 				if (ADLC.txftl & powers[ADLC.txfptr-1]) TXlast = true; // TxLast set
 				if (BeebTx.Pointer + 1 >sizeof(BeebTx.buff) || // overflow IP buffer
-						(ADLC.txfptr >4 )) {				// overflowed fifo
-					ADLC.status1 |= 32;						// set tx underrun flag
-					BeebTx.Pointer = 0;				// wipe buffer
+						(ADLC.txfptr >4 )) { // overflowed fifo
+					ADLC.status1 |= 32; // set tx underrun flag
+					BeebTx.Pointer = 0; // wipe buffer
 					BeebTx.BytesInBuffer = 0;
 					ADLC.txfptr = 0;
 					ADLC.txftl = 0;
@@ -943,7 +943,7 @@ bool EconetPoll_real(void) {		//return NMI status
 					BeebTx.Pointer++;
 				}
 
-				if (TXlast) {	// TxLast set
+				if (TXlast) { // TxLast set
 					if (DebugEnabled) {
 						sprintf(info, "Econet: TXLast set - Send packet to %02x %02x ",
 								(unsigned int)(BeebTx.eh.destnet), (unsigned int)BeebTx.eh.deststn);
@@ -968,7 +968,7 @@ bool EconetPoll_real(void) {		//return NMI status
 						// TODO lookup destnet in aunnet() and use proper ip address!
 						RecvAddr.sin_family = AF_INET;
 						RecvAddr.sin_port = htons(32768);
-						RecvAddr.sin_addr.s_addr = INADDR_BROADCAST; //((EconetListenIP & 0x00FFFFFF) | 0xFF000000) ;
+						RecvAddr.sin_addr.s_addr = INADDR_BROADCAST; // ((EconetListenIP & 0x00FFFFFF) | 0xFF000000) ;
 						SendMe = true;
 					} else {
 						do {
@@ -1030,13 +1030,16 @@ bool EconetPoll_real(void) {		//return NMI status
 						}
 						DebugDisplayTrace(DebugType::Econet, true, info);
 					}
-/*					if (confAUNmode && fourwaystage != FWS_IDLE) {
+
+					/*
+					if (confAUNmode && fourwaystage != FWS_IDLE) {
 						if (RecvAddr.sin_port != EconetTx.inet_addr ||
 							RecvAddr.sin_port != htons(EconetTx.port) ) {
 								EconetError("Erm.. trying to send somewhere while in the middle of talking to somewhere else.");
 						}
 					}
-*/
+					*/
+
 					// Send a datagram to the receiver
 					if (confAUNmode) {
 						unsigned int j=0;
@@ -1049,7 +1052,7 @@ bool EconetPoll_real(void) {		//return NMI status
 						case FourWayStage::ScoutAckReceived:
 							// it came in response to our ack of a scout
 							// what we have /should/ be the data block ..
-							//CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
+							// CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
 							if ( BeebTx.Pointer != sizeof(BeebTx.eh) || memcmp(BeebTx.buff,BeebTxCopy,sizeof(BeebTx.eh))!= 0) { // nope
 								// j = 0;
 								for (unsigned int k=4; k<BeebTx.Pointer; k++) {
@@ -1122,14 +1125,15 @@ bool EconetPoll_real(void) {		//return NMI status
 							EconetTx.ah = EconetRx.ah;
 							EconetTx.ah.type = AUNType::Ack;
 							SendMe = true;
-/*							if (sendto(SendSocket, (char *) &EconetTx.ah, SendLen, 0, 
+							/*
+							if (sendto(SendSocket, (char *) &EconetTx.ah, SendLen, 0,
 								(SOCKADDR *) &RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR) {
 									sprintf(info, "Econet: Failed to send packet to %02x %02x (%08X :%u)",
 										(unsigned int)(network[i].inet_addr), (unsigned int)network[i].station,
 										(unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
 									EconetError(info);
 							}
-*/
+							*/
 
 							fourwaystage = FourWayStage::WaitForIdle;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (final ack sent)");
@@ -1193,10 +1197,10 @@ bool EconetPoll_real(void) {		//return NMI status
 		}
 
 		// Receive data
-		if (0 == (ADLC.control1 & 64)) {		// rx reset off
+		if (!(ADLC.control1 & 64)) { // rx reset off
 			if (BeebRx.Pointer < BeebRx.BytesInBuffer) {
 				// something waiting to be given to the processor
-				if (ADLC.rxfptr<3 )	{		// space in fifo
+				if (ADLC.rxfptr < 3) { // space in fifo
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true,
 							"EconetPoll: Time to give another byte to the beeb");
@@ -1207,11 +1211,11 @@ bool EconetPoll_real(void) {		//return NMI status
 					ADLC.rxffc = (ADLC.rxffc <<1) & 7;
 					ADLC.rxap = (ADLC.rxap <<1) & 7;
 					if (BeebRx.Pointer == 0)
-						ADLC.rxap |= 1; 			// 2 bytes? adr extention mode
+						ADLC.rxap |= 1; // 2 bytes? adr extention mode
 					BeebRx.Pointer++;
-					if (BeebRx.Pointer >= BeebRx.BytesInBuffer)  { // that was last byte!
-						ADLC.rxffc |= 1;			// set FV flag (this was last byte of frame)
-						BeebRx.Pointer = 0;    // Reset read for next packet
+					if (BeebRx.Pointer >= BeebRx.BytesInBuffer) { // that was last byte!
+						ADLC.rxffc |= 1; // set FV flag (this was last byte of frame)
+						BeebRx.Pointer = 0; // Reset read for next packet
 						BeebRx.BytesInBuffer = 0;
 					}
 				}
@@ -1221,7 +1225,7 @@ bool EconetPoll_real(void) {		//return NMI status
 				unsigned int hostno, j=0;
 
 				// still nothing in buffers (and thus nothing in Econetrx buffer)
-				ADLC.control1 &= ~32;		// reset discontinue flag
+				ADLC.control1 &= ~32; // reset discontinue flag
 
 				// wait for cpu to clear FV flag from last frame received
 				if (!(ADLC.status2 & 2)) {
@@ -1328,8 +1332,8 @@ bool EconetPoll_real(void) {		//return NMI status
 											switch (EconetRx.ah.type) 
 											{
 												case AUNType::Broadcast:
-													BeebRx.eh.deststn = 255;	// wasn't just for us..
-													BeebRx.eh.destnet = 0;		// TODO check if not net 0.. does it make a difference?
+													BeebRx.eh.deststn = 255; // wasn't just for us..
+													BeebRx.eh.destnet = 0; // TODO check if not net 0.. does it make a difference?
 													j=6;
 													for (unsigned int i=0; i<RetVal-sizeof(EconetRx.ah); i++) {
 														BeebRx.buff[j] = EconetRx.buff[i];
@@ -1407,8 +1411,8 @@ bool EconetPoll_real(void) {		//return NMI status
 												break;
 											} // else unexpected packet - ignore it.TODO: queue it?
 
-										default:	// erm, what are we doing here?
-											//ignore packet
+										default: // erm, what are we doing here?
+											// ignore packet
 											fourwaystage = FourWayStage::WaitForIdle;
 											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (ack received from remote AUN server)");
 											break;
@@ -1489,10 +1493,10 @@ bool EconetPoll_real(void) {		//return NMI status
 		}
 
 		// Update idle status
-		if (!(ADLC.control1 & 0x40)				// not rxreset
-			&& !ADLC.rxfptr						// nothing in fifo
-			&& !(ADLC.status2 & 2)              // no FV
-			&& (BeebRx.BytesInBuffer ==0)) {	// nothing in ip buffer
+		if (!(ADLC.control1 & 0x40) // not rxreset
+			&& !ADLC.rxfptr // nothing in fifo
+			&& !(ADLC.status2 & 2) // no FV
+			&& (BeebRx.BytesInBuffer == 0)) { // nothing in ip buffer
 			ADLC.idle = true;
 		} else {
 			ADLC.idle = false;
@@ -1539,12 +1543,12 @@ bool EconetPoll_real(void) {		//return NMI status
 
 	// Status bits need changing?
 
-	// SR1b0 - RDA - received data available. 
-	if (!(ADLC.control1 & 64)) { 		// rx reset off
-		if ((ADLC.rxfptr && !(ADLC.control2 & 2))			// 1 byte mode
-		    || ((ADLC.rxfptr > 1) && (ADLC.control2 & 2)))	// 2 byte mode
+	// SR1b0 - RDA - received data available.
+	if (!(ADLC.control1 & 64)) { // rx reset off
+		if ((ADLC.rxfptr && !(ADLC.control2 & 2)) // 1 byte mode
+		    || ((ADLC.rxfptr > 1) && (ADLC.control2 & 2))) // 2 byte mode
 		{
-			ADLC.status1 |=  1;		// set RDA copy
+			ADLC.status1 |=  1; // set RDA copy
 			ADLC.status2 |=  128;
 		} else {
 			ADLC.status1 &= ~1;
@@ -1558,15 +1562,15 @@ bool EconetPoll_real(void) {		//return NMI status
 	else ADLC.status1 &= ~8;
 
 	// SR1b4 - CTS - set by ~CTS line going up, and causes IRQ if enabled.
-	//				only cleared by cpu. 
-	//			~CTS is a NAND of DCD(clock present)(high if valid)
-	//			 &  collission detection!
-	//			i.e. it's low (thus clear to send) when we have both DCD(clock) 
-	//          present AND no collision on line and no collision.
-	//          cts will ALSO be high if there is no cable!
-	//		we will only bother checking against DCD here as can't have collisions.
-	//		but nfs then loops waiting for CTS high!	
-	//  on the B+ there is (by default) no collission detection circuitary. instead S29
+	//               only cleared by cpu.
+	//               ~CTS is a NAND of DCD(clock present)(high if valid)
+	//               & collission detection!
+	//               i.e. it's low (thus clear to send) when we have both DCD(clock)
+	//               present AND no collision on line and no collision.
+	//               cts will ALSO be high if there is no cable!
+	// we will only bother checking against DCD here as can't have collisions.
+	// but nfs then loops waiting for CTS high!
+	// on the B+ there is (by default) no collission detection circuitary. instead S29
 	// links RTS in it's place, thus CTS is a NAND of not RTS & not DCD
 	// i.e. cts = ! ( !rts && !dcd ) all signals are active low.
 	// there is a delay on rts going high after cr2b7=0 - ignore this for now.
@@ -1574,7 +1578,7 @@ bool EconetPoll_real(void) {		//return NMI status
 	// sockets true means dcd low means not dcd high means cts low
 	// doing it this way finally works !!  great :-) :-)
 
-	if (ReceiverSocketsOpen && (ADLC.control2 & 128) ) {	// clock + RTS
+	if (ReceiverSocketsOpen && (ADLC.control2 & 128)) { // clock + RTS
 		ADLC.cts = false;
 		ADLC.status1 &= ~16;
 	} else {
@@ -1585,11 +1589,11 @@ bool EconetPoll_real(void) {		//return NMI status
 	// up until cpu tries to clear it) (& still stays up if cts line still high)
 
 	if (!(ADLC.control1 && 128) && ADLC.cts) {
-		ADLC.status1 |= 16;		// set CTS now
+		ADLC.status1 |= 16; // set CTS now
 	}
 
 	// SR1b5 - TXU - Tx Underrun.
-	if (ADLC.txfptr>4) {		// probably not needed
+	if (ADLC.txfptr > 4) { // probably not needed
 		if (DebugEnabled) {
 			sprintf(info, "Econet: TX Underrun - TXfptr %02x", (unsigned int)ADLC.txfptr);
 			DebugDisplayTrace(DebugType::Econet, true, info);
@@ -1599,39 +1603,39 @@ bool EconetPoll_real(void) {		//return NMI status
 	}
 
 	// SR1b6 TDRA flag - another complicated derivation
-	if (!(ADLC.control1 & 128)) {		// not txreset
-		if (!(ADLC.control2 & 8)) {		// tdra mode
+	if (!(ADLC.control1 & 128)) { // not txreset
+		if (!(ADLC.control2 & 8)) { // tdra mode
 			if (   (   ((ADLC.txfptr < 3) && !(ADLC.control2 & 2)) // space in fifo?
 			        || ((ADLC.txfptr < 2) && (ADLC.control2 & 2))) // space in fifo?
-			    && (!(ADLC.status1 & 16))		// clear to send is ok
-			    && (!(ADLC.status2 & 32)) ) {	// DTR not high
+			    && (!(ADLC.status1 & 16))     // clear to send is ok
+			    && (!(ADLC.status2 & 32)) ) { // DTR not high
 
 				if (DebugEnabled && !(ADLC.status1 & 64))
 					DebugDisplayTrace(DebugType::Econet, true, "set tdra");
-				ADLC.status1 |= 64;				// set Tx Reg Data Available flag.
+				ADLC.status1 |= 64; // set Tx Reg Data Available flag.
 			} else {
 				if (DebugEnabled && (ADLC.status1 & 64))
 					DebugDisplayTrace(DebugType::Econet, true, "clear tdra");
-				ADLC.status1 &= ~64;			// clear Tx Reg Data Available flag.
+				ADLC.status1 &= ~64; // clear Tx Reg Data Available flag.
 			}
-		} else {		// FC mode
-			if (!(ADLC.txfptr)) {			// nothing in fifo
+		} else { // FC mode
+			if (!(ADLC.txfptr)) { // nothing in fifo
 				if (DebugEnabled && !(ADLC.status1 & 64))
 					DebugDisplayTrace(DebugType::Econet, true, "set fc");
-				ADLC.status1 |= 64;			// set Tx Reg Data Available flag.
+				ADLC.status1 |= 64; // set Tx Reg Data Available flag.
 			} else {
 				if (DebugEnabled && (ADLC.status1 & 64))
 					DebugDisplayTrace(DebugType::Econet, true, "clear fc");
-				ADLC.status1 &= ~64;		// clear Tx Reg Data Available flag.
+				ADLC.status1 &= ~64; // clear Tx Reg Data Available flag.
 			}
 		}
 	}
 	// SR1b7 IRQ flag - see below
 
 	// SR2b0 - AP - Address present 
-	if (!(ADLC.control1  & 64)) {				// not rxreset
+	if (!(ADLC.control1  & 64)) { // not rxreset
 		if (ADLC.rxfptr &&
-			(ADLC.rxap & (powers[ADLC.rxfptr-1]))) {		// ap bits set on fifo
+			(ADLC.rxap & (powers[ADLC.rxfptr-1]))) { // ap bits set on fifo
 			ADLC.status2 |= 1;
 		} else {
 			ADLC.status2 &= ~1;
@@ -1651,8 +1655,8 @@ bool EconetPoll_real(void) {		//return NMI status
 	// SR2b3 - RxAbort - Abort received - set in rx routines above
 	// SR2b4 - Error during reception - set if error flaged in rx routine.
 	// SR2b5 - DCD
-	if (!ReceiverSocketsOpen) {			// is line down?
-		ADLC.status2 |= 32;				// flag error
+	if (!ReceiverSocketsOpen) { // is line down?
+		ADLC.status2 |= 32; // flag error
 	} else {
 		ADLC.status2 &= ~32;
 	}
@@ -1666,7 +1670,7 @@ bool EconetPoll_real(void) {		//return NMI status
 	// Handle PSE - only for SR2 Rx bits at the moment
 	int sr2psetemp = ADLC.sr2pse;
 	if (ADLC.control2 & 1) {
-		if ((ADLC.sr2pse <= 1) && (ADLC.status2 & 0x7A)) {	// ERR, FV, DCD, OVRN, ABT
+		if ((ADLC.sr2pse <= 1) && (ADLC.status2 & 0x7A)) { // ERR, FV, DCD, OVRN, ABT
 			ADLC.sr2pse = 1;
 			ADLC.status2 &= ~0x85;
 		} else if ((ADLC.sr2pse <= 2) && (ADLC.status2 & 0x04)) { // Idle
@@ -1675,11 +1679,11 @@ bool EconetPoll_real(void) {		//return NMI status
 		} else if ((ADLC.sr2pse <= 3) && (ADLC.status2 & 0x01)) { // AP
 			ADLC.sr2pse = 3;
 			ADLC.status2 &= ~0x80;
-		} else if (ADLC.status2 & 0x80) {					// RDA
+		} else if (ADLC.status2 & 0x80) { // RDA
 			ADLC.sr2pse = 4;
 			ADLC.status2 &= ~0x02;
 		} else {
-			ADLC.sr2pse = 0;				// No relevant bits set
+			ADLC.sr2pse = 0; // No relevant bits set
 		}
 
 		// Set SR1 RDA copy
@@ -1688,9 +1692,10 @@ bool EconetPoll_real(void) {		//return NMI status
 		else
 			ADLC.status1 &= ~1;
 
-	} else {								// PSE inactive
+	} else { // PSE inactive
 		ADLC.sr2pse = 0;
 	}
+
 	if (DebugEnabled && sr2psetemp != ADLC.sr2pse) {
 		sprintf(info, "ADLC: PSE SR2Rx priority changed to %d", ADLC.sr2pse);
 		DebugDisplayTrace(DebugType::Econet, true, info);
@@ -1703,7 +1708,7 @@ bool EconetPoll_real(void) {		//return NMI status
 		// SR1b1 - S2RQ - Status2 request. New bit set in S2?
 		tempcause = ((ADLC.status2 ^ ADLCtemp.status2) & ADLC.status2) & ~128;
 
-		if (!(ADLC.control1 & 2))	{	// RIE not set,
+		if (!(ADLC.control1 & 2)) { // RIE not set,
 			tempcause = 0;
 		}
 
@@ -1718,16 +1723,16 @@ bool EconetPoll_real(void) {		//return NMI status
 		// New bit set in S1?
 		tempcause = ((ADLC.status1 ^ ADLCtemp.status1) & ADLC.status1) & ~128;
 
-		if (!(ADLC.control1 & 2))	{	// RIE not set,
+		if (!(ADLC.control1 & 2)) { // RIE not set
 			tempcause = tempcause & ~11;
 		}
-		if (!(ADLC.control1 & 4))	{	// TIE not set,
+		if (!(ADLC.control1 & 4)) { // TIE not set
 			tempcause = tempcause & ~0x70;
 		}
 
 		if (tempcause) { //something got set
 			interruptnow = true;
-			irqcause = irqcause | tempcause;	// remember which bit went high to flag irq
+			irqcause = irqcause | tempcause; // remember which bit went high to flag irq
 			// SR1b7 IRQ flag
 			ADLC.status1 |= 128;
 
@@ -1739,9 +1744,9 @@ bool EconetPoll_real(void) {		//return NMI status
 
 		// Bit cleared in S1?
 		temp2 = ((ADLC.status1 ^ ADLCtemp.status1) & ADLCtemp.status1) & ~128;
-		if (temp2) {		// something went off
-			irqcause = irqcause & ~temp2;	// clear flags that went off
-			if (irqcause == 0) {	// all flag gone off now
+		if (temp2) { // something went off
+			irqcause = irqcause & ~temp2; // clear flags that went off
+			if (irqcause == 0) { // all flag gone off now
 				// clear irq status bit when cause has gone.
 				ADLC.status1 &= ~128;
 			} else {
