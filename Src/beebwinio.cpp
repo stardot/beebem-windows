@@ -22,13 +22,20 @@ Boston, MA  02110-1301, USA.
 // BeebEm IO support - disk, tape, state, printer, AVI capture
 
 #include <stdio.h>
-#include <windows.h>
-#include <initguid.h>
+
+#pragma warning(push)
+#pragma warning(disable: 4091) // ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
 #include <shlobj.h>
+#pragma warning(pop)
+
+#pragma warning(push)
+#pragma warning(disable: 4458) // declaration of 'xxx' hides class member
 #include <gdiplus.h>
+#pragma warning(pop)
+
+#include "beebwin.h"
 #include "main.h"
 #include "6502core.h"
-#include "beebwin.h"
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "filedialog.h"

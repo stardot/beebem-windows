@@ -33,9 +33,19 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <windowsx.h>
 #include <initguid.h>
+
+#pragma warning(push)
+#pragma warning(disable: 4091) // ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
 #include <shlobj.h>
+#pragma warning(pop)
+
 #include <shlwapi.h>
+
+#pragma warning(push)
+#pragma warning(disable: 4458) // declaration of 'xxx' hides class member
 #include <gdiplus.h>
+#pragma warning(pop)
+
 #include "main.h"
 #include "beebwin.h"
 #include "port.h"

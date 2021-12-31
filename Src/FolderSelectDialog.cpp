@@ -19,7 +19,11 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 #include <windows.h>
+
+#pragma warning(push)
+#pragma warning(disable: 4091) // ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
 #include <shlobj.h>
+#pragma warning(pop)
 
 #include "FolderSelectDialog.h"
 
