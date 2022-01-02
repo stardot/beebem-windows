@@ -1895,7 +1895,6 @@ int BeebWin::TranslateKey(int vkey, bool keyUp, int &row, int &col)
 		//Reset IntegraB RTC on Break
 		if (MachineType == Model::IntegraB && row == -2 && col == -2)
 		{
-			//MessageBox(GETHWND, "Break!", "Keycheck", MB_OK | MB_ICONERROR);
 			RTCReset();
 		}
 
@@ -4224,7 +4223,6 @@ void BeebWin::UserKeyboardDialogClosed()
 
 void BeebWin::ParseCommandLine()
 {
-	char errstr[200];
 	bool invalid;
 
 	m_CommandLineFileName1[0] = 0;

@@ -364,9 +364,9 @@ void Serial_Poll(void)
 					// Writing data
 					if (!uef_putdata(TDR|UEF_DATA, TapeClock))
 					{
-						char errstr[256];
-						sprintf(errstr, "Error writing to UEF file:\n  %s", UEFTapeName);
-						MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+						mainWin->Report(MessageType::Error,
+						                "Error writing to UEF file:\n  %s", UEFTapeName);
+
 						TapeControlStopRecording(true);
 					}
 					TxD=0;
@@ -387,9 +387,9 @@ void Serial_Poll(void)
 					// Tone
 					if (!uef_putdata(UEF_HTONE, TapeClock))
 					{
-						char errstr[256];
-						sprintf(errstr, "Error writing to UEF file:\n  %s", UEFTapeName);
-						MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+						mainWin->Report(MessageType::Error,
+						                "Error writing to UEF file:\n  %s", UEFTapeName);
+
 						TapeControlStopRecording(true);
 					}
 					TapeAudio.Signal=2;
@@ -572,7 +572,7 @@ void Serial_Poll(void)
 					if (GetLastError()==ERROR_IO_PENDING) {
 						bWaitingForData = true;
 					} else {
-						MessageBox(GETHWND,"Serial Port Error",WindowTitle,MB_OK|MB_ICONERROR);
+						mainWin->Report(MessageType::Error, "Serial Port Error");
 					}
 				} else {
 					if (BytesIn>0) {
@@ -686,7 +686,7 @@ void InitSerialPort(void) {
 		if (SerialPort==4) pnSerialPort="Com4";
 		hSerialPort=CreateFile(pnSerialPort,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,0);
 		if (hSerialPort==INVALID_HANDLE_VALUE) {
-			MessageBox(GETHWND,"Could not open specified serial port",WindowTitle,MB_OK|MB_ICONERROR);
+			mainWin->Report(MessageType::Error, "Could not open specified serial port");
 			bSerialStateChanged = true;
 			SerialPortEnabled = false;
 			mainWin->UpdateSerialMenu();
@@ -1008,9 +1008,9 @@ void TapeControlOpenFile(const char *UEFName)
 		{
 			if (!map_file(UEFName))
 			{
-				char errstr[256];
-				sprintf(errstr, "Cannot open UEF file:\n  %s", UEFName);
-				MessageBox(GETHWND,errstr,"BeebEm",MB_ICONERROR|MB_OK);
+				mainWin->Report(MessageType::Error,
+				                "Cannot open UEF file:\n  %s", UEFName);
+
 				return;
 			}
 		}
@@ -1138,8 +1138,9 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 									}
 									else
 									{
-										sprintf(str, "Error creating tape file:\n  %s", UEFTapeName);
-										MessageBox(GETHWND,str,"BeebEm",MB_ICONERROR|MB_OK);
+										mainWin->Report(MessageType::Error,
+										                "Error creating tape file:\n  %s", UEFTapeName);
+
 										UEFTapeName[0] = 0;
 										r = IDCANCEL;
 									}
@@ -1217,7 +1218,6 @@ void SaveSerialUEF(FILE *SUEF)
 
 void LoadSerialUEF(FILE *SUEF)
 {
-	char errstr[200];
 	char FileName[256];
 	int sp;
 
@@ -1232,8 +1232,8 @@ void LoadSerialUEF(FILE *SUEF)
 		{
 			if (!TapeControlEnabled)
 			{
-				sprintf(errstr, "Cannot open UEF file:\n  %s", FileName);
-				MessageBox(GETHWND,errstr,"BeebEm",MB_OK|MB_ICONERROR);
+				mainWin->Report(MessageType::Error,
+				                "Cannot open UEF file:\n  %s", FileName);
 			}
 		}
 		else

@@ -1169,9 +1169,9 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 
 	if (infile == NULL)
 	{
-		char errstr[500];
-		sprintf(errstr, "Failed to read key map file:\n  %s", filename);
-		MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+		Report(MessageType::Error,
+		       "Failed to read key map file:\n  %s", filename);
+
 		success = false;
 	}
 	else
@@ -1179,9 +1179,9 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 		if (fgets(buf, 255, infile) == NULL || 
 			strcmp(buf, KEYMAP_TOKEN "\n") != 0)
 		{
-			char errstr[500];
-			sprintf(errstr, "Invalid key map file:\n  %s\n", filename);
-			MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+			Report(MessageType::Error,
+			       "Invalid key map file:\n  %s\n", filename);
+
 			success = false;
 		}
 		else
@@ -1192,9 +1192,9 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 			{
 				if (fgets(buf, 255, infile) == NULL)
 				{
-					char errstr[500];
-					sprintf(errstr, "Data missing from key map file:\n  %s\n", filename);
-					MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+					Report(MessageType::Error,
+					       "Data missing from key map file:\n  %s\n", filename);
+
 					success = false;
 					break;
 				}
@@ -1240,9 +1240,7 @@ bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 	outfile=fopen(filename,"w");
 	if (outfile == NULL)
 	{
-		char errstr[500];
-		sprintf(errstr, "Failed to write key map file:\n  %s", filename);
-		MessageBox(GETHWND, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+		Report(MessageType::Error, "Failed to write key map file:\n  %s", filename);
 		success = false;
 	}
 	else
@@ -1438,7 +1436,7 @@ INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LP
 				}
 				else if (!SHGetPathFromIDList(idList, szExportFolder))
 				{
-					MessageBox(hwndDlg, "Invalid folder selected", WindowTitle, MB_OK|MB_ICONWARNING);
+					mainWin->Report(MessageType::Warning, "Invalid folder selected");
 					wParam = IDCANCEL;
 				}
 				if (idList != NULL)

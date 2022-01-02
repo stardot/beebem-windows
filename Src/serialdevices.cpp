@@ -357,14 +357,14 @@ bool IP232Poll(void)
 		WriteLog("Closing Comms\n");
 		if (DebugEnabled) 
 				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Comms Close");
-//		mStartAgain = false;
-//		MessageBox(GETHWND,"Could not connect to specified address",WindowTitle,MB_OK|MB_ICONERROR);
+		// mStartAgain = false;
+		// mainWin->Report(MessageType::Error, "Could not connect to specified address");
 		bSerialStateChanged = true;
 		SerialPortEnabled = false;
 		mainWin->ExternUpdateSerialMenu();
 		
 		IP232Close();
-//		IP232Open();
+		// IP232Open();
 		return false;
 	}
 */
@@ -555,7 +555,8 @@ int space, bufflen;
 						SerialPortEnabled = false;
 						mainWin->UpdateSerialMenu();
 						IP232Close();
-						MessageBox(GETHWND,"Lost connection; serial port has been disabled.",WindowTitle,MB_OK|MB_ICONERROR);
+						mainWin->Report(MessageType::Error,
+						                "Lost connection. Serial port has been disabled");
 						return 0;
 					}
 				}
@@ -606,7 +607,8 @@ int space, bufflen;
 						mainWin->UpdateSerialMenu();
 						
 						IP232Close();
-						MessageBox(GETHWND,"Lost connection; serial port has been disabled",WindowTitle,MB_OK|MB_ICONERROR);
+						mainWin->Report(MessageType::Error,
+						                "Lost connection. Serial port has been disabled");
 					}
 				}
 			}

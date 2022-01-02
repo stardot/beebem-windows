@@ -740,12 +740,11 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		
 			if (ddrval != DD_OK && ddrval != DDERR_WASSTILLDRAWING)
 			{
-				char errstr[200];
-				sprintf(errstr,"DirectX failure while updating screen\nFailure code %X",ddrval);
-				// Ignore DX errors for now - swapping between full screen and windowed DX 
-				// apps causes an error while transitioning between display modes.  It
-				// appears to correct itself after a second or two though.
-				// MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				// Ignore DX errors for now - swapping between full screen and windowed DX
+				// apps causes an error while transitioning between display modes.
+				// It appears to correct itself after a second or two though.
+				// Report(MessageType::Error,
+				//        "DirectX failure while updating screen\nFailure code %X", ddrval);
 			}
 		}
 	}

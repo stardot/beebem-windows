@@ -354,9 +354,9 @@ bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
 	fd = fopen(filename, "w");
 	if (!fd)
 	{
-		char errstr[200];
-		sprintf(errstr, "Failed to write ROM configuration file:\n  %s", filename);
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		mainWin->Report(MessageType::Error,
+		                "Failed to write ROM configuration file:\n  %s", filename);
+
 		return false;
 	}
 

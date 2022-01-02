@@ -546,7 +546,7 @@ unsigned char BeebReadMem(int Address) {
 	}
 
 	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
-		//MessageBox(GETHWND,"Read of 1770 Extension Board\n","BeebEm",MB_OK|MB_ICONERROR);
+		// mainWin->Report(MessageType::Error, "Read of 1770 Extension Board");
 		return(Read1770Register(Address-EFDCAddr));
 	}
 
@@ -1087,9 +1087,9 @@ bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
 	fd = fopen(filename, "r");
 	if (!fd)
 	{
-		char errstr[200];
-		sprintf(errstr, "Cannot open ROM configuration file:\n  %s", filename);
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		mainWin->Report(MessageType::Error,
+		                "Cannot open ROM configuration file:\n  %s", filename);
+
 		return false;
 	}
 
@@ -1120,9 +1120,9 @@ bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
 
 	if (!success)
 	{
-		char errstr[200];
-		sprintf(errstr, "Invalid ROM configuration file:\n  %s", filename);
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		mainWin->Report(MessageType::Error,
+		                "Invalid ROM configuration file:\n  %s", filename);
+
 		memset(ROMConfig, 0, sizeof(ROMConfigFile));
 	}
 
@@ -1166,9 +1166,8 @@ void BeebReadRoms(void) {
 		DebugLoadMemoryMap(fullname, 16);
 	}
 	else {
-		char errstr[200];
-		sprintf(errstr, "Cannot open specified OS ROM:\n %s",fullname);
-		MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		mainWin->Report(MessageType::Error,
+		                "Cannot open specified OS ROM:\n %s", fullname);
 	}
 
 	// read paged ROMs
@@ -1220,9 +1219,8 @@ void BeebReadRoms(void) {
 				DebugLoadMemoryMap(fullname, bank);
 			}
 			else {
-				char errstr[200];
-				sprintf(errstr, "Cannot open specified ROM:\n %s",fullname);
-				MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				mainWin->Report(MessageType::Error,
+				                "Cannot open specified ROM:\n %s", fullname);
 			}
 		}
 	}

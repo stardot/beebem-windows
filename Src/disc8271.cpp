@@ -209,14 +209,8 @@ static void DoSelects(void) {
 
 /*--------------------------------------------------------------------------*/
 static void NotImp(const char *NotImpCom) {
-#ifdef WIN32
-  char errstr[200];
-  sprintf(errstr,"Disc operation '%s' not supported", NotImpCom);
-  MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-  WriteLog("%s has not been implemented in disc8271 - sorry", NotImpCom);
-  exit(0);
-#endif
+  mainWin->Report(MessageType::Error,
+                  "Disc operation '%s' not supported", NotImpCom);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1335,13 +1329,9 @@ void FreeDiscImage(int DriveNum) {
 void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
   if (!infile) {
-#ifdef WIN32
-    char errstr[200];
-    sprintf(errstr, "Could not open disc file:\n  %s", FileName);
-    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-    cerr << "Could not open disc file " << FileName << "\n";
-#endif
+    mainWin->Report(MessageType::Error,
+                    "Could not open disc file:\n  %s", FileName);
+
     return;
   }
 
@@ -1391,13 +1381,9 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
 
   if (!infile) {
-#ifdef WIN32
-    char errstr[200];
-    sprintf(errstr, "Could not open disc file:\n  %s", FileName);
-    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-    cerr << "Could not open disc file " << FileName << "\n";
-#endif
+    mainWin->Report(MessageType::Error,
+                    "Could not open disc file:\n  %s", FileName);
+
     return;
   }
 
@@ -1446,13 +1432,9 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
   FILE *outfile=fopen(FileNames[DriveNum],"r+b");
 
   if (!outfile) {
-#ifdef WIN32
-    char errstr[200];
-    sprintf(errstr, "Could not open disc file for write:\n  %s", FileNames[DriveNum]);
-    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-    cerr << "Could not open disc file for write " << FileNames[DriveNum] << "\n";
-#endif
+    mainWin->Report(MessageType::Error,
+                    "Could not open disc file for write:\n  %s", FileNames[DriveNum]);
+
     return false;
   }
 
@@ -1502,13 +1484,8 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
   }
 
   if (!Success) {
-#ifdef WIN32
-    char errstr[200];
-    sprintf(errstr, "Failed writing to disc file:\n  %s", FileNames[DriveNum]);
-    MessageBox(GETHWND,errstr,WindowTitle,MB_OK|MB_ICONERROR);
-#else
-    cerr << "Failed writing to disc file " << FileNames[DriveNum] << "\n";
-#endif
+    mainWin->Report(MessageType::Error,
+                    "Failed writing to disc file:\n  %s", FileNames[DriveNum]);
   }
 
   return Success;
@@ -1577,17 +1554,10 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
 
     if (!DiscOK)
     {
-#ifdef WIN32
-      MessageBox(GETHWND,"WARNING - Invalid Disc Catalogue\n\n"
-                       "This disc image will get corrupted if\n"
-                       "files are written to it.  Copy all the\n"
-                       "files to a new image to fix it.",
-                       WindowTitle,MB_OK|MB_ICONWARNING);
-#else
-      cerr << "WARNING - Invalid Disc Catalogue in drive " << DriveNum << "\n";
-      cerr << "This disc image will get corrupted if files are written to it.\n";
-      cerr << "Copy all the files to a new image to fix it.\n";
-#endif
+      mainWin->Report(MessageType::Error,
+                      "WARNING - Invalid Disc Catalogue\n\n"
+                      "This disc image will get corrupted if files are written to it.\n"
+                      "Copy all the files to a new image to fix it.");
     }
   }
 }
