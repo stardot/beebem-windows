@@ -51,17 +51,17 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "beebwin.h"
 #include "debug.h"
+#include "DebugTrace.h"
 #include "uefstate.h"
 #include "csw.h"
 #include "uservia.h"
 #include "atodconv.h"
 
+constexpr int TS_BUFF_SIZE = 10240;
+constexpr int TS_DELAY = 8192; // Cycles to wait for data to be TX'd or RX'd
 
-#define TS_BUFF_SIZE	10240
-#define TS_DELAY		8192			// Cycles to wait for data to be TX'd or RX'd
-
-//#define IP232_BUFF_SIZE	128
-#define IP232_CXDELAY	8192			// Cycles to wait after connection
+// constexpr int IP232_BUFF_SIZE = 128;
+constexpr int IP232_CXDELAY = 8192; // Cycles to wait after connection
 
 // IP232
 static SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
@@ -107,8 +107,7 @@ void TouchScreenOpen(void)
 
 bool TouchScreenPoll(void)
 {
-unsigned char data;
-static int mode = 0;
+	static int mode = 0;
 
 	if (ts_delay > 0)
 	{
@@ -123,10 +122,10 @@ static int mode = 0;
 
 	if (ts_inlen > 0)
 	{
-		data = ts_inbuff[ts_inhead];
+		unsigned char data = ts_inbuff[ts_inhead];
 		ts_inhead = (ts_inhead + 1) % TS_BUFF_SIZE;
 		ts_inlen--;
-		
+
 		switch (data)
 		{
 			case 'M' :
@@ -148,43 +147,40 @@ static int mode = 0;
 
 			case '.' :
 
-/*
- * Mode 1 seems to be polled, sends a '?' and we reply with data
- * Mode 129 seems to be send current values all time
- */
-				
+				/*
+				 * Mode 1 seems to be polled, sends a '?' and we reply with data
+				 * Mode 129 seems to be send current values all time
+				 */
+
 				WriteLog("Setting touch screen mode to %d\n", mode);
 				break;
 
 			case '?' :
-
-				if (mode == 1)		// polled mode
+				if (mode == 1) // polled mode
 				{
 					TouchScreenReadScreen(false);
 				}
 				break;
 		}
 	}
-	
-	if (mode == 129)		// real time mode
+
+	if (mode == 129) // real time mode
 	{
 		TouchScreenReadScreen(true);
 	}
-		
-	if (mode == 130)		// area mode - seems to be pressing with two fingers which we can't really do ??
+
+	if (mode == 130) // area mode - seems to be pressing with two fingers which we can't really do ??
 	{
 		TouchScreenReadScreen(true);
 	}
-	
-	
+
 	return false;
 }
 
 void TouchScreenWrite(unsigned char data)
 {
+	// WriteLog("TouchScreenWrite 0x%02x\n", data);
 
-//	WriteLog("TouchScreenWrite 0x%02x\n", data);
-	
 	if (ts_inlen != TS_BUFF_SIZE)
 	{
 		ts_inbuff[ts_intail] = data;
@@ -198,12 +194,10 @@ void TouchScreenWrite(unsigned char data)
 	}
 }
 
-
 unsigned char TouchScreenRead(void)
 {
-unsigned char data;
+	unsigned char data = 0;
 
-	data = 0;
 	if (ts_outlen > 0)
 	{
 		data = ts_outbuff[ts_outhead];
@@ -215,8 +209,8 @@ unsigned char data;
 	{
 		WriteLog("TouchScreenRead output buffer empty\n");
 	}
-	
-//	WriteLog("TouchScreenRead 0x%02x\n", data);
+
+	// WriteLog("TouchScreenRead 0x%02x\n", data);
 
 	return data;
 }
@@ -248,8 +242,8 @@ void TouchScreenReadScreen(bool check)
 
 	if (last_x != x || last_y != y || last_m != AMXButtons || !check)
 	{
-//		WriteLog("JoystickX = %d, JoystickY = %d, last_x = %d, last_y = %d\n", JoystickX, JoystickY, last_x, last_y);
-		
+		// WriteLog("JoystickX = %d, JoystickY = %d, last_x = %d, last_y = %d\n", JoystickX, JoystickY, last_x, last_y);
+
 		if (AMXButtons & AMX_LEFT_BUTTON)
 		{
 			TouchScreenStore( 64 + ((x & 0xf0) >> 4) );
@@ -257,22 +251,21 @@ void TouchScreenReadScreen(bool check)
 			TouchScreenStore( 64 + ((y & 0xf0) >> 4) );
 			TouchScreenStore( 64 + (y & 0x0f) );
 			TouchScreenStore('.');
-//			WriteLog("Sending X = %d, Y = %d\n", x, y);
+			// WriteLog("Sending X = %d, Y = %d\n", x, y);
 		} else {
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore('.');
-//			WriteLog("Screen not touched\n");
+			// WriteLog("Screen not touched\n");
 		}
+
 		last_x = x;
 		last_y = y;
 		last_m = AMXButtons;
 	}
 }
-
-
 
 /******************************************************************
 **                                                               **
@@ -286,7 +279,6 @@ void TouchScreenReadScreen(bool check)
 
 bool IP232Open(void)
 {
-
 	ts_inhead = ts_intail = ts_outlen = 0;
 	ts_outhead = ts_outtail = ts_inlen = 0;
 
@@ -305,13 +297,13 @@ bool IP232Open(void)
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: socket created");
 
-//	bEthernetSocketsCreated = true;
-	
+	// bEthernetSocketsCreated = true;
+
 	IP232RxTrigger = TotalCycles + IP232_CXDELAY;
 
 	ip232_serv_addr.sin_family = AF_INET; // address family Internet
-	ip232_serv_addr.sin_port = htons (PortNo); //Port to connect on
-	ip232_serv_addr.sin_addr.s_addr = inet_addr (IPAddress); //Target IP
+	ip232_serv_addr.sin_port = htons(static_cast<u_short>(PortNo)); // Port to connect on
+	ip232_serv_addr.sin_addr.s_addr = inet_addr (IPAddress); // Target IP
 
 	if (connect(mEthernetHandle, (SOCKADDR *)&ip232_serv_addr, sizeof(ip232_serv_addr)) == SOCKET_ERROR)
 	{
@@ -330,10 +322,10 @@ bool IP232Open(void)
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: connected to server");
 
-	// TEMP! 
+	// TEMP!
 	ResetACIAStatus(3); // CTS input low,
 	SetACIAStatus(1); // TDRE high
-	if (DebugEnabled) 
+	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Init, CTS low");
 
 	if (mEthernetPortReadTaskID == 0)
@@ -347,7 +339,6 @@ bool IP232Open(void)
 
 bool IP232Poll(void)
 {
-	
 //	fd_set	fds;
 //	timeval tv;
 //	int i;
@@ -355,7 +346,7 @@ bool IP232Poll(void)
 /*	if (mStartAgain == true)
 	{
 		WriteLog("Closing Comms\n");
-		if (DebugEnabled) 
+		if (DebugEnabled)
 				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Comms Close");
 		// mStartAgain = false;
 		// mainWin->Report(MessageType::Error, "Could not connect to specified address");
@@ -381,12 +372,12 @@ void IP232Close(void)
 {
 	if (mEthernetHandle != INVALID_SOCKET) {
 		WriteLog("Closing IP232 socket");
-		if (DebugEnabled) 
+		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Closing Sockets");
 
 		closesocket(mEthernetHandle);
 		mEthernetHandle = INVALID_SOCKET;
-//		bEthernetSocketsCreated = false;
+		// bEthernetSocketsCreated = false;
 	}
 
 /*
@@ -412,9 +403,8 @@ void IP232Close(void)
 
 void IP232Write(unsigned char data)
 {
+	// WriteLog("TouchScreenWrite 0x%02x\n", data);
 
-//	WriteLog("TouchScreenWrite 0x%02x\n", data);
-	
 	if (ts_outlen != TS_BUFF_SIZE)
 	{
 		ts_outbuff[ts_outtail] = data;
@@ -424,16 +414,15 @@ void IP232Write(unsigned char data)
 	else
 	{
 		WriteLog("IP232Write send buffer full\n");
-		if (DebugEnabled) 
+		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Write send Buffer Full");
 	}
 }
 
 unsigned char IP232Read(void)
-{	
-	unsigned char data;
+{
+	unsigned char data = 0;
 
-	data = 0;
 	if (ts_inlen > 0)
 	{
 		data = ts_inbuff[ts_inhead];
@@ -448,19 +437,18 @@ unsigned char IP232Read(void)
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: receive buffer empty");
 	}
-	
+
 	return data;
 }
 
 static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 { // Much taken from Mac version by Jon Welch
+	fd_set fds;
+	timeval tv;
+	int i, j;
+	unsigned char buff[256];
+	int space, bufflen;
 
-fd_set	fds;
-timeval tv;
-int i, j;
-unsigned char buff[256];
-int space, bufflen;
-	
 	Sleep (3000);
 
 	while (1)
@@ -470,29 +458,26 @@ int space, bufflen;
 			space = TS_BUFF_SIZE - ts_inlen;
 
 			if (space > 256)
-//			if (ts_inlen == 0)
+			// if (ts_inlen == 0)
 			{
-				
 				FD_ZERO(&fds);
 				tv.tv_sec = 0;
 				tv.tv_usec = 0;
-			
+
 				FD_SET(mEthernetHandle, &fds);
-			
-				i = select(32, &fds, NULL, NULL, &tv);		// Read
+
+				i = select(32, &fds, NULL, NULL, &tv); // Read
 				if (i > 0)
 				{
-
 					i = recv(mEthernetHandle, (char *) buff, 256, 0);
 					if (i > 0)
 					{
-					
-//						WriteLog("Read %d bytes\n%s\n", i, buff);
+						// WriteLog("Read %d bytes\n%s\n", i, buff);
 						if (DebugEnabled) {
 							char info[514];
 							sprintf(info, "IP232: Read %d bytes from server",i);
 							DebugDisplayTrace(DebugType::RemoteServer, true, info);
-							char hexval[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+							static const char hexval[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 							for(j = 0; j < i; j++){
 								info[j*2] = hexval[((buff[j] >> 4) & 0xF)];
 								info[(j*2) + 1] = hexval[(buff[j]) & 0x0F];
@@ -500,31 +485,31 @@ int space, bufflen;
 							info[j*2] = 0;
 							DebugDisplayTrace(DebugType::RemoteServer, true, info);
 						}
-					
+
 						for (j = 0; j < i; j++)
 						{
 							if (ip232_flag_received) 
 							{
 								ip232_flag_received = false;
 								if (buff[j] == 1) {
-										if (DebugEnabled) 
-											DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
-										// dtr on modem high
-										ResetACIAStatus(3);  // CTS goes active low
-										SetACIAStatus(1);  // so TDRE goes high ??
+									if (DebugEnabled)
+										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
+									// dtr on modem high
+									ResetACIAStatus(3);  // CTS goes active low
+									SetACIAStatus(1);  // so TDRE goes high ??
 								}
 								else if (buff[j] == 0) {
-										if (DebugEnabled)
-											DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
-										// dtr on modem low
-										SetACIAStatus(3);  // CTS goes inactive high
-										ResetACIAStatus(1);  // so TDRE goes low
+									if (DebugEnabled)
+										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
+									// dtr on modem low
+									SetACIAStatus(3);  // CTS goes inactive high
+									ResetACIAStatus(1);  // so TDRE goes low
 								}
 								else if (buff[j] == 255) {
-										if (DebugEnabled)
-											DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,Flag =255");
+									if (DebugEnabled)
+										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,Flag =255");
 
-										EthernetPortStore(255);
+									EthernetPortStore(255);
 								}
 							}
 							else
@@ -538,19 +523,18 @@ int space, bufflen;
 									EthernetPortStore(buff[j]);
 								}
 							}
-
 						}
 					}
 					else
 					{
 						// Should really check what the error was ...
 
-//						WriteLog("Read error %d\n", i);
+						// WriteLog("Read error %d\n", i);
 
 						WriteLog("Remote session disconnected\n");
 						if (DebugEnabled)
 							DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Remote session disconnected");
-//						mEthernetPortReadTaskID = NULL;
+						// mEthernetPortReadTaskID = NULL;
 						bSerialStateChanged = true;
 						SerialPortEnabled = false;
 						mainWin->UpdateSerialMenu();
@@ -562,10 +546,9 @@ int space, bufflen;
 				}
 				else
 				{
-//					WriteLog("Nothing to read %d\n", i);
+					// WriteLog("Nothing to read %d\n", i);
 				}
-			}		
-
+			}
 
 			if (ts_outlen > 0 && mEthernetHandle != INVALID_SOCKET)
 			{
@@ -582,14 +565,14 @@ int space, bufflen;
 				FD_ZERO(&fds);
 				tv.tv_sec = 0;
 				tv.tv_usec = 0;
-				
+
 				FD_SET(mEthernetHandle, &fds);
-				
+
 				i = select(32, NULL, &fds, NULL, &tv);		// Write
 				if (i <= 0)
 				{
 					WriteLog("Select Error %i\n", i);
-					if (DebugEnabled) 
+					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Select error on send");
 				}
 				else
@@ -600,12 +583,12 @@ int space, bufflen;
 					{
 						// Should really check what the error was ...
 						WriteLog("Send Error %i\n", i);
-						if (DebugEnabled) 
-								DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Send Error");
+						if (DebugEnabled)
+							DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Send Error");
 						bSerialStateChanged = true;
 						SerialPortEnabled = false;
 						mainWin->UpdateSerialMenu();
-						
+
 						IP232Close();
 						mainWin->Report(MessageType::Error,
 						                "Lost connection. Serial port has been disabled");
@@ -614,13 +597,12 @@ int space, bufflen;
 			}
 		}
 
-		//		Sleep(1000 * 50);		// sleep for 50 msec
+		// Sleep(1000 * 50); // sleep for 50 msec
 		Sleep (50); //+10*J); //100ms
 	}
-	
+
 	return 0;
 }
-
 
 void EthernetPortStore(unsigned char data)
 { // much taken from Mac version by Jon Welch
@@ -637,34 +619,31 @@ void EthernetPortStore(unsigned char data)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: EthernetPortStore output buffer full");
 	}
 }
+
 unsigned char EthernetPortGet(void)
 { // much taken from Mac version by Jon Welch
+	unsigned char data = 0;
 
-	unsigned char data;
-	
-	data = 0;
-	
 	if (ts_outlen > 0)
 	{
 		data = ts_outbuff[ts_outhead];
 		ts_outhead = (ts_outhead + 1) % TS_BUFF_SIZE;
 		ts_outlen--;
 	}
-	
+
 	return data;
 }
 
 
 static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 { // much taken from Mac version by Jon Welch
-	int dcd, odcd, rts, orts;
+	int dcd = 0;
+	int odcd = 0;
+	int rts = 0;
+	int orts = 0;
 
-	dcd = 0;
-	odcd = 0;
-	rts = orts = 0;
-	
-// Put bits in here for DCD when got active IP connection
-	
+	// Put bits in here for DCD when got active IP connection
+
 	Sleep (2000);
 
 	while (1)
@@ -678,22 +657,22 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 			{
 				dcd = 0;
 			}
-			
-			if ( (dcd == 1) && (odcd ==0) )
+
+			if (dcd == 1 && odcd == 0)
 			{
-//				RaiseDCD();
+				// RaiseDCD();
 				ResetACIAStatus(3);  // CTS goes Low
 				SetACIAStatus(1);  // so TDRE goes high
-				if (DebugEnabled) 
+				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: StatusThread DCD up, set CTS low");
 			}
 
-			if ( (dcd == 0) && (odcd == 1) )
+			if (dcd == 0 && odcd == 1)
 			{
-//				LowerDCD();
+				// LowerDCD();
 				SetACIAStatus(3);  // CTS goes Hgh
 				ResetACIAStatus(1);  // so TDRE goes low
-				if (DebugEnabled) 
+				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: StatusThread lost DCD, set CTS high");
 			}
 		}
@@ -706,6 +685,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 			{
 				rts = 0;
 			}
+
 			if (rts != orts)
 			{
 				if (mEthernetHandle != INVALID_SOCKET)
@@ -717,7 +697,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 					}
 					
 					IP232Write(255);
-					IP232Write(rts);
+					IP232Write(static_cast<unsigned char>(rts));
 				}
 				orts = rts;
 			}
@@ -725,12 +705,11 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 
 		if (dcd != odcd)
 			odcd = dcd;
-		
-		//usleep(1000 * 50);		// sleep for 50 milli seconds
-		Sleep (50);
+
+		Sleep(50); // sleep for 50 milliseconds
 	}
-	
-	//	fprintf(stderr, "Exited MySerialStatusThread\n");
-	
+
+	DebugTrace("Exited MySerialStatusThread\n");
+
 	return 0;
 }
