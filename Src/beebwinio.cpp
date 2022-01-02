@@ -227,8 +227,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 			if (adfs)
 			{
 				if (NativeFDC)
-					MessageBox(GETHWND,"The native 8271 FDC cannot read ADFS discs\n","BeebEm",
-							   MB_OK|MB_ICONERROR);
+					Report(MessageType::Error, "The native 8271 FDC cannot read ADFS discs");
 				else
 					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
 			}
@@ -272,9 +271,8 @@ void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 	}
 	else {
 		// Disc1770Result::Failed
-		char errstr[200];
-		sprintf(errstr, "Could not open disc file:\n  %s", FileName);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "Could not open disc file:\n  %s",
+		       FileName);
 	}
 }
 
@@ -452,9 +450,8 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 
 	outfile = fopen(FileName, "wb");
 	if (outfile == nullptr) {
-		char errstr[200];
-		sprintf(errstr, "Could not create disc file:\n  %s", FileName);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "Could not create disc file:\n  %s",
+		       FileName);
 		return;
 	}
 
@@ -480,9 +477,8 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 		Success = false;
 
 	if (!Success) {
-		char errstr[200];
-		sprintf(errstr, "Failed writing to disc file:\n  %s", FileName);
-		MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "Failed writing to disc file:\n  %s",
+		       FileName);
 	}
 	else
 	{
@@ -876,27 +872,21 @@ void BeebWin::LoadUEFState(const char *FileName)
 			SetDiscWriteProtects();
 			break;
 
-		case UEFStateResult::OpenFailed: {
-			std::string Message = "Cannot open state file:\n  ";
-			Message += FileName;
-			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		case UEFStateResult::OpenFailed:
+			Report(MessageType::Error, "Cannot open state file:\n  %s",
+			       FileName);
 			break;
-		}
 
-		case UEFStateResult::InvalidUEFFile: {
-			std::string Message = "The file selected is not a UEF file:\n  ";
-			Message += FileName;
-			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		case UEFStateResult::InvalidUEFFile:
+			Report(MessageType::Error, "The file selected is not a UEF file:\n  %s",
+			       FileName);
 			break;
-		}
 
-		case UEFStateResult::InvalidUEFVersion: {
-			std::string Message = "Cannot open state file:\n  ";
-			Message += FileName;
-			Message += "\n\nPlease upgrade to the latest version of BeebEm";
-			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		case UEFStateResult::InvalidUEFVersion:
+			Report(MessageType::Error,
+			       "Cannot open state file:\n  %s\n\nPlease upgrade to the latest version of BeebEm",
+			       FileName);
 			break;
-		}
 	}
 }
 
@@ -909,11 +899,9 @@ void BeebWin::SaveUEFState(const char *FileName)
 			break;
 
 		case UEFStateResult::WriteFailed:
-		default: {
-			std::string Message = "Failed to write state file:\n  ";
-			Message += FileName;
-			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
-		}
+			Report(MessageType::Error, "Failed to write state file:\n  %s",
+			       FileName);
+			break;
 	}
 }
 
@@ -924,20 +912,15 @@ void BeebWin::LoadUEFTape(const char *FileName)
 	if (!Success) {
 		switch (uef_errno) {
 			case UEF_OPEN_NOTUEF:
-			case UEF_OPEN_NOTTAPE: {
-				std::string Message = "The file selected is not a UEF tape image:\n  ";
-				Message += FileName;
-				MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			case UEF_OPEN_NOTTAPE:
+				Report(MessageType::Error, "The file selected is not a UEF tape image:\n  %s",
+				       FileName);
 				break;
-			}
 
 			case UEF_OPEN_NOFILE:
-			default: {
-				std::string Message = "Cannot open UEF file:\n  ";
-				Message += FileName;
-				MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+			default:
+				Report(MessageType::Error, "Cannot open UEF file:\n  %s", FileName);
 				break;
-			}
 		}
 	}
 }
@@ -950,27 +933,20 @@ void BeebWin::LoadCSWTape(const char *FileName)
 		case CSWResult::Success:
 			break;
 
-		case CSWResult::InvalidCSWFile: {
-			std::string Message = "The file selected is not a CSW file:\n  ";
-			Message += FileName;
-			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		case CSWResult::InvalidCSWFile:
+			Report(MessageType::Error, "The file selected is not a CSW file:\n  %s",
+			       FileName);
 			break;
-		}
 
-		case CSWResult::InvalidHeaderExtension: {
-			std::string Message = "Failed to read CSW header extension:\n  ";
-			Message += FileName;
-			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		case CSWResult::InvalidHeaderExtension:
+			Report(MessageType::Error, "Failed to read CSW header extension:\n  %s",
+			       FileName);
 			break;
-		}
 
 		case CSWResult::OpenFailed:
-		default: {
-			std::string Message = "Cannot open CSW file:\n  ";
-			Message += FileName;
-			MessageBox(GETHWND, Message.c_str(), "BeebEm", MB_ICONERROR | MB_OK);
+		default:
+			Report(MessageType::Error, "Cannot open CSW file:\n  %s", FileName);
 			break;
-		}
 	}
 }
 
@@ -1000,7 +976,7 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 
 		hFDCBoard=LoadLibrary(path);
 		if (hFDCBoard==NULL) {
-			MessageBox(GETHWND,"Unable to load FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR); 
+			Report(MessageType::Error, "Unable to load FDD Extension Board DLL\nReverting to native 8271");
 			strcpy(DLLName, "None");
 		}
 		else {
@@ -1008,7 +984,7 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 			PSetDriveControl=(lSetDriveControl) GetProcAddress(hFDCBoard,"SetDriveControl");
 			PGetDriveControl=(lGetDriveControl) GetProcAddress(hFDCBoard,"GetDriveControl");
 			if ((PGetBoardProperties==NULL) || (PSetDriveControl==NULL) || (PGetDriveControl==NULL)) {
-				MessageBox(GETHWND,"Invalid FDD Extension Board DLL\nReverting to native 8271\n",WindowTitle,MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Invalid FDD Extension Board DLL\nReverting to native 8271");
 				strcpy(DLLName, "None");
 			}
 			else {
@@ -1512,7 +1488,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 		else
 		{
 			// ADFS - not currently supported
-			MessageBox(m_hWnd, "Export from ADFS disc not supported", WindowTitle, MB_OK|MB_ICONWARNING);
+			Report(MessageType::Warning, "Export from ADFS disc not supported");
 			return;
 		}
 	}
@@ -1520,8 +1496,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	// Check for no disk loaded
 	if (szDiscFile[0] == 0 || heads == 1 && (menuId == IDM_DISC_EXPORT_2 || menuId == IDM_DISC_EXPORT_3))
 	{
-		sprintf(szErrStr, "No disc loaded in drive %d", menuId - IDM_DISC_EXPORT_0);
-		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONWARNING);
+		Report(MessageType::Warning, "No disc loaded in drive %d", menuId - IDM_DISC_EXPORT_0);
 		return;
 	}
 
@@ -1566,8 +1541,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 		}
 	}
 
-	sprintf(szErrStr, "Files successfully exported: %d", n);
-	MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONINFORMATION);
+	Report(MessageType::Info, "Files successfully exported: %d", n);
 }
 
 
@@ -1619,8 +1593,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	// Check for no disk loaded
 	if (szDiscFile[0] == 0 || heads == 1 && (menuId == IDM_DISC_IMPORT_2 || menuId == IDM_DISC_IMPORT_3))
 	{
-		sprintf(szErrStr, "No disc loaded in drive %d", menuId - IDM_DISC_IMPORT_0);
-		MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONWARNING);
+		Report(MessageType::Warning, "No disc loaded in drive %d", menuId - IDM_DISC_IMPORT_0);
 		return;
 	}
 
@@ -1706,8 +1679,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 		}
 	}
 
-	sprintf(szErrStr, "Files successfully imported: %d", n);
-	MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OK|MB_ICONINFORMATION);
+	Report(MessageType::Info, "Files successfully imported: %d", n);
 
 	// Re-read disc image
 	if (MachineType != Model::Master128 && NativeFDC)

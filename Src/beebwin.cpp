@@ -296,7 +296,7 @@ bool BeebWin::Initialise()
 
 	if (FAILED(CoInitialize(NULL)))
 	{
-		MessageBox(m_hWnd, "Failed to initialise COM", WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "Failed to initialise COM");
 		return false;
 	}
 
@@ -313,7 +313,7 @@ bool BeebWin::Initialise()
 
 	if (WSAStartup(MAKEWORD(1, 1), &WsaData) != 0)
 	{
-		MessageBox(m_hWnd, "WSA initialisation failed", WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "WSA initialisation failed");
 		return false;
 	}
 
@@ -337,10 +337,8 @@ bool BeebWin::Initialise()
 	{
 		if (!DebugLoadSwiftLabels(m_DebugLabelsFileName.c_str()))
 		{
-			std::string message("Failed to load symbols file:\n  ");
-			message += m_DebugLabelsFileName;
-
-			MessageBox(m_hWnd, message.c_str(), WindowTitle, MB_OK | MB_ICONERROR);
+			Report(MessageType::Error, "Failed to load symbols file:\n  %s",
+			       m_DebugLabelsFileName.c_str());
 		}
 	}
 
@@ -445,8 +443,7 @@ void BeebWin::ApplyPrefs()
 		{
 			if (!IP232Open())
 			{
-				MessageBox(GETHWND,"Serial IP232 could not connect to specified address",
-						   WindowTitle,MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Serial IP232 could not connect to specified address");
 				bSerialStateChanged = true;
 				SerialPortEnabled = false;
 				UpdateSerialMenu();
@@ -625,17 +622,15 @@ void BeebWin::CreateArmCoPro()
 	CArm::InitResult Result = arm->init(ArmROMPath);
 
 	switch (Result) {
-		case CArm::InitResult::FileNotFound: {
-			std::string Message = "ARM co-processor ROM file not found:\n  ";
-			Message += ArmROMPath;
-			MessageBox(m_hWnd, Message.c_str(), WindowTitle, MB_OK | MB_ICONERROR);
+		case CArm::InitResult::FileNotFound:
+			Report(MessageType::Error, "ARM co-processor ROM file not found:\n  %s",
+			       ArmROMPath);
 
 			DestroyArmCoPro();
 
 			TubeType = Tube::None;
 			UpdateTubeMenu();
 			break;
-		}
 
 		case CArm::InitResult::Success:
 			break;
@@ -662,17 +657,15 @@ void BeebWin::CreateSprowCoPro()
 	CSprowCoPro::InitResult Result = sprow->Init(SprowROMPath);
 
 	switch (Result) {
-		case CSprowCoPro::InitResult::FileNotFound: {
-			std::string Message = "ARM7TDMI co-processor ROM file not found:\n  ";
-			Message += SprowROMPath;
-			MessageBox(m_hWnd, Message.c_str(), WindowTitle, MB_OK | MB_ICONERROR);
+		case CSprowCoPro::InitResult::FileNotFound:
+			Report(MessageType::Error, "ARM7TDMI co-processor ROM file not found:\n  %s",
+			       SprowROMPath);
 
 			DestroySprowCoPro();
 
 			TubeType = Tube::None;
 			UpdateTubeMenu();
 			break;
-		}
 
 		case CSprowCoPro::InitResult::Success:
 			break;
@@ -771,9 +764,12 @@ void BeebWin::CreateBitmap()
 	m_screen_blur = (char *)calloc(m_bmi.bmiHeader.biSizeImage,1);
 
 	m_hOldObj = SelectObject(m_hDCBitmap, m_hBitmap);
-	if(m_hOldObj == NULL)
-		MessageBox(m_hWnd,"Cannot select the screen bitmap\n"
-					"Try running in a 256 colour mode",WindowTitle,MB_OK|MB_ICONERROR);
+
+	if (m_hOldObj == NULL)
+	{
+		Report(MessageType::Error,
+		       "Cannot select the screen bitmap\nTry running in a 256 colour mode");
+	}
 }
 
 /****************************************************************************/
@@ -2881,7 +2877,7 @@ void BeebWin::HandleCommand(int MenuId)
 			EthernetPortEnabled = true;
 			if (!IP232Open())
 			{
-				MessageBox(GETHWND,"Could not connect to specified address",WindowTitle,MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Could not connect to specified address");
 				bSerialStateChanged = true;
 				UpdateSerialMenu();
 				SerialPortEnabled = false;
@@ -2964,7 +2960,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 			if (SerialPortEnabled) {
 				if (!IP232Open()) {
-					MessageBox(GETHWND,"Could not connect to specified address",WindowTitle,MB_OK|MB_ICONERROR);
+					Report(MessageType::Error, "Could not connect to specified address");
 					bSerialStateChanged = true;
 					UpdateSerialMenu();
 					SerialPortEnabled = false;
@@ -3009,7 +3005,7 @@ void BeebWin::HandleCommand(int MenuId)
 			PortNo = IP232customport;
 			if (SerialPortEnabled) {
 				if (!IP232Open()) {
-					MessageBox(GETHWND,"Could not connect to specified address",WindowTitle,MB_OK|MB_ICONERROR);
+					Report(MessageType::Error, "Could not connect to specified address");
 					bSerialStateChanged = true;
 					UpdateSerialMenu();
 					SerialPortEnabled = false;
@@ -4258,8 +4254,8 @@ void BeebWin::ParseCommandLine()
 		}
 		else if (__argv[i][0] == '-' && i+1 >= __argc)
 		{
-			sprintf(errstr,"Invalid command line parameter:\n  %s", __argv[i]);
-			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Invalid command line parameter:\n  %s",
+			       __argv[i]);
 		}
 		else // Params with additional arguments
 		{
@@ -4354,8 +4350,8 @@ void BeebWin::ParseCommandLine()
 
 			if (invalid)
 			{
-				sprintf(errstr,"Invalid command line parameter:\n  %s %s", __argv[i-1], __argv[i]);
-				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Invalid command line parameter:\n  %s %s",
+				       __argv[i-1], __argv[i]);
 			}
 		}
 
@@ -4458,9 +4454,9 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 				img = true;
 			else
 			{
-				char errstr[200];
-				sprintf(errstr,"Unrecognised file type:\n  %s", FileName);
-				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Unrecognised file type:\n  %s",
+				       FileName);
+
 				cont = false;
 			}
 		}
@@ -4535,9 +4531,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 
 		if (!cont)
 		{
-			char errstr[200];
-			sprintf(errstr,"Cannot find file:\n  %s", FileName);
-			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Cannot find file:\n  %s", FileName);
 			cont = false;
 		}
 	}
@@ -4593,9 +4587,9 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 				img = true;
 			else
 			{
-				char errstr[200];
-				sprintf(errstr,"Unrecognised file type:\n  %s", FileName);
-				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Unrecognised file type:\n  %s",
+				       FileName);
+
 				cont = false;
 			}
 		}
@@ -4614,9 +4608,7 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 
 		if (!cont)
 		{
-			char errstr[200];
-			sprintf(errstr,"Cannot find file:\n  %s", FileName);
-			MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Cannot find file:\n  %s", FileName);
 		}
 	}
 
@@ -4773,8 +4765,8 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 
 	if (scanfres = sscanf(DiscString, "%c:%d:%s", &DoubleSided, &Tracks, Name),
 		scanfres != 3) {
-		MessageBox(m_hWnd, "Incorrect format for BeebDiscLoad, correct format is "
-			"D|S|A:tracks:filename", WindowTitle, MB_OK | MB_ICONERROR);
+		Report(MessageType::Error, "Incorrect format for BeebDiscLoad, "
+		                           "correct format is D|S|A:tracks:filename");
 	}
 	else {
 		switch (DoubleSided) {
@@ -4804,13 +4796,15 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 				Load1770DiscImage(Name, DriveNum, DiscType::ADFS);
 			}
 			else {
-				MessageBox(m_hWnd, "The 8271 FDC Cannot load the ADFS disc image specified in the BeebDiscLoad environment variable", "BeebEm", MB_ICONERROR | MB_OK);
+				Report(MessageType::Error, "The 8271 FDC cannot load the ADFS disc image "
+				                           "specified in the BeebDiscLoad environment variable");
 			}
 			break;
 
 		default:
-			MessageBox(m_hWnd, "BeebDiscLoad disc type incorrect, use S for single sided, "
-				"D for double sided and A for ADFS", WindowTitle, MB_OK | MB_ICONERROR);
+			Report(MessageType::Error, "BeebDiscLoad disc type incorrect, "
+			                           "use S for single sided, "
+			                           "D for double sided and A for ADFS");
 			break;
 		}
 	}
@@ -4882,8 +4876,8 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 				copy_user_files = true;
 			}
 			else {
-				sprintf(errstr, "Failed to create BeebEm data folder:\n  %s", m_UserDataPath);
-				MessageBox(m_hWnd, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "Failed to create BeebEm data folder:\n  %s",
+				       m_UserDataPath);
 				success = false;
 			}
 		}
@@ -4972,9 +4966,9 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 
 		if (SHFileOperation(&fileOp) || fileOp.fAnyOperationsAborted)
 		{
-			sprintf(errstr, "Copy failed.  Manually copy files from:\n  %s"
-					"\n\nTo BeebEm data folder:\n  %s", path, m_UserDataPath);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Copy failed.  Manually copy files from:\n  %s"
+			                           "\n\nTo BeebEm data folder:\n  %s",
+			       path, m_UserDataPath);
 			success = false;
 		}
 		else
@@ -4995,8 +4989,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 		att = GetFileAttributes(RomFile);
 		if (att == INVALID_FILE_ATTRIBUTES)
 		{
-			sprintf(errstr, "Cannot open ROMs file:\n  %s", RomFile);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Cannot open ROMs file:\n  %s", RomFile);
 			success = false;
 		}
 	}
@@ -5071,7 +5064,7 @@ void BeebWin::SelectUserDataPath()
 			break;
 
 		case FolderSelectDialog::Result::InvalidFolder:
-			MessageBox(m_hWnd, "Invalid folder selected", WindowTitle, MB_OK|MB_ICONWARNING);
+			Report(MessageType::Warning, "Invalid folder selected");
 			break;
 	}
 }

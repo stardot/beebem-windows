@@ -50,9 +50,8 @@ void BeebWin::InitDX(void)
 
 		if (hr != D3D_OK)
 		{
-			char errstr[200];
-			sprintf(errstr, "DirectX9 initialisation failed\nFailure code %X\nTrying DirectDraw", hr);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+			Report(MessageType::Error, "DirectX9 initialisation failed\nFailure code %X\nTrying DirectDraw",
+			       hr);
 
 			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPDDRAW, 0);
 		}
@@ -63,9 +62,8 @@ void BeebWin::InitDX(void)
 
 		if (hr != D3D_OK)
 		{
-			char errstr[200];
-			sprintf(errstr, "DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI", hr);
-			MessageBox(m_hWnd, errstr, WindowTitle, MB_OK | MB_ICONERROR);
+			Report(MessageType::Error, "DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI",
+			       hr);
 
 			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 		}
@@ -111,9 +109,9 @@ void BeebWin::ReinitDX(void)
 
 	if (hr != DD_OK)
 	{
-		char errstr[200];
-		sprintf(errstr,"DirectX failure re-initialising\nFailure code %X\nSwitching to GDI\n",hr);
-		MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		Report(MessageType::Error, "DirectX failure re-initialising\nFailure code %X\nSwitching to GDI",
+		       hr);
+
 		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 	}
 
@@ -525,9 +523,9 @@ void BeebWin::RenderDX9(void)
 
 	if (hr != D3D_OK)
 	{
-		char errstr[200];
-		sprintf(errstr,"DirectX9 renderer failed\nFailure code %X\nSwitching to GDI\n",hr);
-		MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+		Report(MessageType::Error, "DirectX9 renderer failed\nFailure code %X\nSwitching to GDI",
+		       hr);
+
 		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 	}
 }
@@ -683,11 +681,9 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 			}
 			if (ddrval != D3D_OK)
 			{
-				char errstr[200];
-				sprintf(errstr,
-					"DirectX failure while updating screen\nFailure code %XSwitching to GDI\n",
-					ddrval);
-				MessageBox(m_hWnd,errstr,WindowTitle,MB_OK|MB_ICONERROR);
+				Report(MessageType::Error, "DirectX failure while updating screen\nFailure code %X\nSwitching to GDI",
+				       ddrval);
+
 				PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 			}
 		}
@@ -765,8 +761,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
 		if (hr != E_UNEXPECTED && FAILED(hr))
 		{
-			MessageBox(m_hWnd, "Failed to write video to AVI file",
-					   WindowTitle, MB_OK|MB_ICONERROR);
+			Report(MessageType::Error, "Failed to write video to AVI file");
 			delete aviWriter;
 			aviWriter = NULL;
 		}
