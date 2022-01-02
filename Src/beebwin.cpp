@@ -1249,13 +1249,11 @@ void BeebWin::InitJoystick(void)
 	}
 	else if (mmresult == JOYERR_UNPLUGGED)
 	{
-		MessageBox(m_hWnd, "Joystick is not plugged in",
-					WindowTitle, MB_OK|MB_ICONERROR);
+		Report(MessageType::Error, "Joystick is not plugged in");
 	}
 	else
 	{
-		MessageBox(m_hWnd, "Failed to initialise the joystick",
-					WindowTitle, MB_OK|MB_ICONERROR);
+		Report(MessageType::Error, "Failed to initialise the joystick");
 	}
 }
 
@@ -3974,9 +3972,9 @@ void BeebWin::HandleCommand(int MenuId)
 		if (m_DisableKeysWindows)
 		{
 			// Give user warning
-			if (MessageBox(m_hWnd,"Disabling the Windows keys will affect the whole PC.\n"
-						   "Go ahead and disable the Windows keys?",
-						   WindowTitle,MB_YESNO|MB_ICONQUESTION) == IDYES)
+			if (Report(MessageType::Question,
+			           "Disabling the Windows keys will affect the whole PC.\n"
+			           "Go ahead and disable the Windows keys?") == MessageResult::Yes)
 			{
 				int binsize=sizeof(CFG_DISABLE_WINDOWS_KEYS);
 				RegSetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
@@ -4000,8 +3998,8 @@ void BeebWin::HandleCommand(int MenuId)
 		if (reboot)
 		{
 			// Ask user for reboot
-			if (MessageBox(m_hWnd,"Reboot required for key change to\ntake effect. Reboot now?",
-						   WindowTitle,MB_YESNO|MB_ICONQUESTION) == IDYES)
+			if (Report(MessageType::Question,
+			           "Reboot required for key change to\ntake effect. Reboot now?") == MessageResult::Yes)
 			{
 				RebootSystem();
 			}
@@ -4855,9 +4853,9 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 
 	if (att == INVALID_FILE_ATTRIBUTES || !(att & FILE_ATTRIBUTE_DIRECTORY))
 	{
-		sprintf(errstr, "BeebEm data folder does not exist:\n  %s\n\nCreate the folder?",
-				m_UserDataPath);
-		if (MessageBox(m_hWnd, errstr, WindowTitle, MB_YESNO|MB_ICONQUESTION) != IDYES)
+		if (Report(MessageType::Question,
+		           "BeebEm data folder does not exist:\n  %s\n\nCreate the folder?",
+		           m_UserDataPath) != MessageResult::Yes)
 		{
 			// Use data dir installed with BeebEm
 			strcpy(m_UserDataPath, m_AppPath);
@@ -4930,9 +4928,10 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 
 		if (copy_user_files)
 		{
-			sprintf(errstr, "Essential or new files missing from BeebEm data folder:\n  %s"
-			                "\n\nCopy essential or new files into folder?", m_UserDataPath);
-			if (MessageBox(m_hWnd, errstr, WindowTitle, MB_YESNO|MB_ICONQUESTION) != IDYES)
+			if (Report(MessageType::Question,
+			           "Essential or new files missing from BeebEm data folder:\n  %s"
+			           "\n\nCopy essential or new files into folder?",
+			           m_UserDataPath) != MessageResult::Yes)
 			{
 				success = false;
 			}
@@ -5160,8 +5159,10 @@ void BeebWin::HandleTimer()
 
 /****************************************************************************/
 
-void BeebWin::Report(MessageType type, const char *format, ...)
+MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 {
+	MessageResult Result = MessageResult::None;
+
 	va_list args;
 	va_start(args, format);
 
@@ -5190,14 +5191,46 @@ void BeebWin::Report(MessageType type, const char *format, ...)
 			case MessageType::Info:
 				Type = MB_ICONINFORMATION;
 				break;
+
+			case MessageType::Question:
+				Type = MB_ICONQUESTION | MB_YESNO;
+				break;
+
+			case MessageType::Confirm:
+				Type = MB_ICONWARNING | MB_OKCANCEL;
 		}
 
-		MessageBox(m_hWnd, buffer, WindowTitle, Type | MB_OK);
+		int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
+
+		if (type == MessageType::Question)
+		{
+			switch (ID)
+			{
+				case IDYES:
+					Result = MessageResult::Yes;
+					break;
+
+				case IDNO:
+					Result = MessageResult::No;
+					break;
+
+				case IDOK:
+					Result = MessageResult::OK;
+					break;
+
+				case IDCANCEL:
+				default:
+					Result = MessageResult::Cancel;
+					break;
+			}
+		}
 
 		free(buffer);
 	}
 
 	va_end(args);
+
+	return Result;
 }
 
 /****************************************************************************/

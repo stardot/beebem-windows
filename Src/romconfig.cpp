@@ -345,10 +345,13 @@ bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
 	if (fd)
 	{
 		fclose(fd);
-		char errstr[200];
-		sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", filename);
-		if (MessageBox(GETHWND,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
+
+		if (mainWin->Report(MessageType::Question,
+		                    "File already exists:\n  %s\n\nOverwrite file?",
+		                    filename) != MessageResult::Yes)
+		{
 			return false;
+		}
 	}
 
 	fd = fopen(filename, "w");

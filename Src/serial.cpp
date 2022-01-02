@@ -1040,10 +1040,6 @@ void TapeControlUpdateCounter(int tape_time)
 
 INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
-	char str[256];
-	int s;
-	int r;
-
 	switch (message)
 	{
 		case WM_INITDIALOG:
@@ -1062,7 +1058,8 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 				case IDC_TCMAP:
 					if (HIWORD(wParam) == LBN_SELCHANGE)
 					{
-						s = (int)SendMessage(hwndMap, LB_GETCURSEL, 0, 0);
+						LRESULT s = SendMessage(hwndMap, LB_GETCURSEL, 0, 0);
+
 						if (s != LB_ERR && s >= 0 && s < map_lines)
 						{
 							if (CSWOpen)
@@ -1102,14 +1099,17 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					if (CSWOpen) break;
 					if (!TapeRecording)
 					{
-						r = IDCANCEL;
+						bool Continue = false;
+
 						if (UEFOpen)
 						{
-							sprintf(str, "Append to current tape file:\n  %s", UEFTapeName);
-							r = MessageBox(GETHWND,str,"BeebEm",MB_ICONWARNING|MB_OKCANCEL);
-							if (r == IDOK)
+							if (mainWin->Report(MessageType::Confirm,
+							                    "Append to current tape file:\n  %s",
+							                    UEFTapeName) == MessageResult::OK)
 							{
 								SendMessage(hwndMap, LB_SETCURSEL, (WPARAM)map_lines-1, 0);
+
+								Continue = true;
 							}
 						}
 						else
@@ -1119,17 +1119,22 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 							mainWin->NewTapeImage(UEFTapeName);
 							if (UEFTapeName[0])
 							{
-								r = IDOK;
+								Continue = true;
+
 								FILE *fd = fopen(UEFTapeName,"rb");
 								if (fd != NULL)
 								{
 									fclose(fd);
-									sprintf(str, "File already exists:\n  %s\n\nOverwrite file?", UEFTapeName);
-									if (MessageBox(GETHWND,str,"BeebEm",MB_YESNO|MB_ICONQUESTION) != IDYES)
-										r = IDCANCEL;
+
+									if (mainWin->Report(MessageType::Question,
+									                    "File already exists:\n  %s\n\nOverwrite file?",
+									                    UEFTapeName) != MessageResult::Yes)
+									{
+										Continue = false;
+									}
 								}
 
-								if (r == IDOK)
+								if (Continue)
 								{
 									// Create file
 									if (uef_create(UEFTapeName))
@@ -1142,13 +1147,13 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 										                "Error creating tape file:\n  %s", UEFTapeName);
 
 										UEFTapeName[0] = 0;
-										r = IDCANCEL;
+										Continue = false;
 									}
 								}
 							}
 						}
 
-						if (r == IDOK)
+						if (Continue)
 						{
 							TapeRecording=true;
 							TapePlaying=false;

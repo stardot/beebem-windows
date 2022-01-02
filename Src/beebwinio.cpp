@@ -442,9 +442,9 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 	if (outfile != nullptr) {
 		fclose(outfile);
 
-		char errstr[200];
-		sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", FileName);
-		if (MessageBox(m_hWnd, errstr, WindowTitle, MB_YESNO | MB_ICONQUESTION) != IDYES)
+		if (Report(MessageType::Question,
+		           "File already exists:\n  %s\n\nOverwrite file?",
+		           FileName) != MessageResult::Yes)
 			return;
 	}
 
@@ -660,10 +660,13 @@ void BeebWin::TogglePrinter()
 				if (outfile != NULL)
 				{
 					fclose(outfile);
-					char errstr[200];
-					sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", m_PrinterFileName);
-					if (MessageBox(m_hWnd,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
+
+					if (Report(MessageType::Question,
+					           "File already exists:\n  %s\n\nOverwrite file?",
+					           m_PrinterFileName) != MessageResult::Yes)
+					{
 						FileOK = false;
+					}
 				}
 				if (FileOK)
 					PrinterEnable(m_PrinterFileName);
@@ -1231,10 +1234,12 @@ bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 	if (outfile != NULL)
 	{
 		fclose(outfile);
-		char errstr[200];
-		sprintf(errstr, "File already exists:\n  %s\n\nOverwrite file?", filename);
-		if (MessageBox(GETHWND,errstr,WindowTitle,MB_YESNO|MB_ICONQUESTION) != IDYES)
+
+		if (Report(MessageType::Question,
+		           "File already exists:\n  %s\n\nOverwrite file?") != MessageResult::Yes)
+		{
 			return false;
+		}
 	}
 
 	outfile=fopen(filename,"w");
@@ -1462,7 +1467,6 @@ void BeebWin::ExportDiscFiles(int menuId)
 	char szDiscFile[MAX_PATH];
 	int heads;
 	int side;
-	char szErrStr[500];
 	int i, n;
 
 	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_2)
@@ -1522,6 +1526,8 @@ void BeebWin::ExportDiscFiles(int menuId)
 	n = 0;
 	for (i = 0; i < numSelected; ++i)
 	{
+		char szErrStr[500];
+
 		success = dfs_export_file(szDiscFile, heads, side, &dfsCat,
 		                          filesSelected[i], szExportFolder, szErrStr);
 		if (success)
@@ -1531,7 +1537,8 @@ void BeebWin::ExportDiscFiles(int menuId)
 		else
 		{
 			success = true;
-			if (MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OKCANCEL|MB_ICONWARNING) == IDCANCEL)
+
+			if (Report(MessageType::Confirm, szErrStr) == MessageResult::Cancel)
 			{
 				success = false;
 				break;
@@ -1669,7 +1676,8 @@ void BeebWin::ImportDiscFiles(int menuId)
 		else
 		{
 			success = true;
-			if (MessageBox(m_hWnd, szErrStr, WindowTitle, MB_OKCANCEL|MB_ICONWARNING) == IDCANCEL)
+
+			if (Report(MessageType::Confirm, szErrStr) == MessageResult::Cancel)
 			{
 				success = false;
 				break;

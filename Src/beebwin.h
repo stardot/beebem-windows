@@ -70,7 +70,7 @@ typedef union SixteenUChars {
 	unsigned char data[16];
 	EightByteType eightbytes[2];
 } SixteenUChars;
- 
+
 typedef struct bmiData
 {
 	BITMAPINFOHEADER	bmiHeader;
@@ -124,7 +124,17 @@ struct CUSTOMVERTEX
 enum class MessageType {
 	Error,
 	Warning,
-	Info
+	Info,
+	Question,
+	Confirm
+};
+
+enum class MessageResult {
+	None,
+	Yes,
+	No,
+	OK,
+	Cancel
 };
 
 enum class PaletteType : char {
@@ -203,7 +213,7 @@ public:
 	}
 
 	HWND GethWnd() { return m_hWnd; }
-	
+
 	void RealizePalette(HDC) {};
 	void ResetBeebSystem(Model NewModelType, bool LoadRoms);
 
@@ -566,7 +576,7 @@ public:
 	bool ReadKeyMap(const char *filename, KeyMap *keymap);
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
 
-	void Report(MessageType type, const char *format, ...);
+	MessageResult Report(MessageType type, const char *format, ...);
 
 	bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
 	bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, void* pData, int* pnSize);
