@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "JoystickHandler.h"
 #include "DebugTrace.h"
 #include "FileUtils.h"
+#include "KeyNames.h"
 #include "StringUtils.h"
 
 #include <cctype>
@@ -199,7 +200,7 @@ bool JoystickDev::Update()
 DWORD JoystickDev::GetButtons()
 {
 	DWORD buttons{ 0 };
-	for (int i = 0; i < JOYSTICK_MAX_BTNS && i < sizeof(DIJOYSTATE2::rgbButtons); ++i)
+	for (int i = 0; i < JOYSTICK_MAX_BUTTONS && i < sizeof(DIJOYSTATE2::rgbButtons); ++i)
 	{
 		if (m_JoyState.rgbButtons[i] & 0x80)
 			buttons |= (1 << i);
@@ -319,7 +320,7 @@ void JoystickDev::EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* pdidoi)
 	if (pdidoi->dwType & DIDFT_BUTTON)
 	{
 		WORD instance = DIDFT_GETINSTANCE(pdidoi->dwType);
-		if (instance < JOYSTICK_MAX_BTNS)
+		if (instance < JOYSTICK_MAX_BUTTONS)
 			m_PresentButtons |= setbit(instance);
 	}
 
@@ -1032,7 +1033,7 @@ void BeebWin::TranslateAxes(int joyId, unsigned int axesState)
 {
 	JoystickDev* dev = m_JoystickHandler->GetDev(joyId);
 	unsigned int& prevAxes = dev->m_PrevAxes;
-	int vkeys = BEEB_VKEY_JOY_START + joyId * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS);
+	int vkeys = BEEB_VKEY_JOY_START + joyId * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BUTTONS);
 
 	if (axesState != prevAxes)
 	{
@@ -1057,11 +1058,11 @@ void BeebWin::TranslateJoystickButtons(int joyId, unsigned int buttons)
 	JoystickDev* dev = m_JoystickHandler->GetDev(joyId);
 	unsigned int& prevBtns = dev->m_PrevBtns;
 	int vkeys = BEEB_VKEY_JOY_START + JOYSTICK_MAX_AXES
-			+ joyId * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS);
+	          + joyId * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BUTTONS);
 
 	if (buttons != prevBtns)
 	{
-		for (int btnId = 0; btnId < JOYSTICK_MAX_BTNS; ++btnId)
+		for (int btnId = 0; btnId < JOYSTICK_MAX_BUTTONS; ++btnId)
 		{
 			if ((buttons & ~prevBtns) & (1 << btnId))
 			{
@@ -1322,7 +1323,7 @@ bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
 		}
 
 		// Get vkey number and mapping entry from input name
-		int vkey = SelectKeyDialog::JoyVKeyByName(inputName);
+		int vkey = JoyVKeyByName(inputName);
 		if (vkey < BEEB_VKEY_JOY_START || vkey >= BEEB_VKEY_JOY_END)
 		{
 			mainWin->Report(MessageType::Error,
@@ -1455,7 +1456,7 @@ bool BeebWin::WriteJoyMap(const char *filename, JoyMap *joymap)
 		if (mapping[0].row != UNASSIGNED_ROW
 			|| mapping[1].row != UNASSIGNED_ROW)
 		{
-			const char* inputName = SelectKeyDialog::KeyName(i + BEEB_VKEY_JOY_START);
+			const char* inputName = KeyName(i + BEEB_VKEY_JOY_START);
 
 			if (mapping[0].row == mapping[1].row
 				&& mapping[0].col == mapping[1].col

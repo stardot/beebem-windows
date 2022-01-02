@@ -43,9 +43,6 @@ class SelectKeyDialog
 		int Key() const;
 		bool Shift() const;
 
-		static LPCSTR KeyName(int Key);
-		static int JoyVKeyByName(const char* Name);
-
 	private:
 		static INT_PTR CALLBACK sDlgProc(
 			HWND   hwnd,

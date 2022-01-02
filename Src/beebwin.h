@@ -54,37 +54,36 @@ Boston, MA  02110-1301, USA.
 #define CFG_SCANCODE_MAP "Scancode Map"
 
 // Max number of joysticks to capture
-#define NUM_PC_JOYSTICKS        4
+constexpr int NUM_PC_JOYSTICKS = 4;
 
 // Default Joystick to keyboard threshold
-#define DEFAULT_JOYSTICK_THRESHOLD 4096
+constexpr int DEFAULT_JOYSTICK_THRESHOLD = 4096;
 
-#define JOYSTICK_MAX_AXES       16
-#define JOYSTICK_MAX_BTNS       16
+constexpr int JOYSTICK_MAX_AXES    = 16;
+constexpr int JOYSTICK_MAX_BUTTONS = 16;
 
-#define JOYSTICK_AXIS_LEFT      0
-#define JOYSTICK_AXIS_RIGHT     1
-#define JOYSTICK_AXIS_UP        2
-#define JOYSTICK_AXIS_DOWN      3
-#define JOYSTICK_AXIS_Z_N       4
-#define JOYSTICK_AXIS_Z_P       5
-#define JOYSTICK_AXIS_RX_N      6
-#define JOYSTICK_AXIS_RX_P      7
-#define JOYSTICK_AXIS_RY_N      8
-#define JOYSTICK_AXIS_RY_P      9
-#define JOYSTICK_AXIS_RZ_N      10
-#define JOYSTICK_AXIS_RZ_P      11
-#define JOYSTICK_AXIS_HAT_LEFT  12
-#define JOYSTICK_AXIS_HAT_RIGHT 13
-#define JOYSTICK_AXIS_HAT_UP    14
-#define JOYSTICK_AXIS_HAT_DOWN  15
+constexpr int JOYSTICK_AXIS_LEFT      = 0;
+constexpr int JOYSTICK_AXIS_RIGHT     = 1;
+constexpr int JOYSTICK_AXIS_UP        = 2;
+constexpr int JOYSTICK_AXIS_DOWN      = 3;
+constexpr int JOYSTICK_AXIS_Z_N       = 4;
+constexpr int JOYSTICK_AXIS_Z_P       = 5;
+constexpr int JOYSTICK_AXIS_RX_N      = 6;
+constexpr int JOYSTICK_AXIS_RX_P      = 7;
+constexpr int JOYSTICK_AXIS_RY_N      = 8;
+constexpr int JOYSTICK_AXIS_RY_P      = 9;
+constexpr int JOYSTICK_AXIS_RZ_N      = 10;
+constexpr int JOYSTICK_AXIS_RZ_P      = 11;
+constexpr int JOYSTICK_AXIS_HAT_LEFT  = 12;
+constexpr int JOYSTICK_AXIS_HAT_RIGHT = 13;
+constexpr int JOYSTICK_AXIS_HAT_UP    = 14;
+constexpr int JOYSTICK_AXIS_HAT_DOWN  = 15;
 
-#define BEEB_VKEY_JOY_START  256
-#define BEEB_VKEY_JOY_COUNT  (NUM_PC_JOYSTICKS * \
-			      (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BTNS))   // 4*32 = 128
-#define BEEB_VKEY_JOY_END    (BEEB_VKEY_JOY_START + BEEB_VKEY_JOY_COUNT) // 256+128 = 384
+constexpr int BEEB_VKEY_JOY_START = 256;
+constexpr int BEEB_VKEY_JOY_COUNT = (NUM_PC_JOYSTICKS * (JOYSTICK_MAX_AXES + JOYSTICK_MAX_BUTTONS)); // 4*32 = 128
+constexpr int BEEB_VKEY_JOY_END   = BEEB_VKEY_JOY_START + BEEB_VKEY_JOY_COUNT; // 256+128 = 384
 
-#define BEEB_VKEY_COUNT      BEEB_VKEY_JOY_END
+constexpr int BEEB_VKEY_COUNT = BEEB_VKEY_JOY_END;
 
 struct KeyMapping {
 	int row;    // Beeb row
@@ -96,7 +95,7 @@ typedef KeyMapping  KeyPair[2];
 typedef KeyPair     KeyMap[256]; // Indices are: [Virt key][shift state]
 typedef KeyPair     JoyMap[BEEB_VKEY_JOY_COUNT];
 
-#define UNASSIGNED_ROW       -9
+constexpr int UNASSIGNED_ROW = -9;
 
 extern const char *WindowTitle;
 

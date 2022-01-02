@@ -25,6 +25,7 @@ Boston, MA  02110-1301, USA.
 #include "beebemrc.h"
 #include "main.h"
 #include "Messages.h"
+#include "KeyNames.h"
 #include "SelectKeyDialog.h"
 #include "Dialog.h"
 #include "uservia.h"
@@ -384,7 +385,7 @@ void UserPortBreakoutDialog::ShowInputs(unsigned char data)
 
 void UserPortBreakoutDialog::ShowBitKey(int key, int ctrlID)
 {
-	SetDlgItemText(m_hwnd, ctrlID, SelectKeyDialog::KeyName(BitKeys[key]));
+	SetDlgItemText(m_hwnd, ctrlID, KeyName(BitKeys[key]));
 }
 
 /****************************************************************************/
@@ -395,7 +396,7 @@ void UserPortBreakoutDialog::PromptForBitKeyInput(int bitKey)
 
 	ShowBitKey(bitKey, BitKeyButtonIDs[bitKey]);
 
-	std::string UsedKey = SelectKeyDialog::KeyName(BitKeys[m_BitKey]);
+	std::string UsedKey = KeyName(BitKeys[m_BitKey]);
 
 	selectKeyDialog = new SelectKeyDialog(
 		m_hInstance,

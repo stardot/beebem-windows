@@ -28,6 +28,7 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #include "beebemrc.h"
 #include "userkybd.h"
+#include "KeyNames.h"
 #include "SelectKeyDialog.h"
 #include "Messages.h"
 
@@ -192,74 +193,74 @@ static int assignedKeysCount[_countof(BBCKeys)] = {};
 
 const BBCKey* GetBBCKeyByResId(int ctrlId)
 {
-    using resIdToKeyMapType = std::map<int, const BBCKey*>;
+	using resIdToKeyMapType = std::map<int, const BBCKey*>;
 
-    // Construct map on first use by lambda
-    static const resIdToKeyMapType resIdToKeyMap = []()
-    {
-        resIdToKeyMapType keyMap{};
+	// Construct map on first use by lambda
+	static const resIdToKeyMapType resIdToKeyMap = []()
+	{
+		resIdToKeyMapType keyMap{};
 
-        for (const BBCKey& theKey : BBCKeys)
-            keyMap[theKey.ctrlId] = &theKey;
-        return keyMap;
-    } ();
+		for (const BBCKey& theKey : BBCKeys)
+			keyMap[theKey.ctrlId] = &theKey;
+		return keyMap;
+	} ();
 
-    auto iter = resIdToKeyMap.find(ctrlId);
-    if (iter == resIdToKeyMap.end())
-        return &BBCKeys[0];
+	auto iter = resIdToKeyMap.find(ctrlId);
+	if (iter == resIdToKeyMap.end())
+		return &BBCKeys[0];
 
-    return iter->second;
+	return iter->second;
 }
 
 /****************************************************************************/
 
 const BBCKey* GetBBCKeyByName(const std::string& name)
 {
-    using nameToKeyMapType = std::map<std::string, const BBCKey*>;
+	using nameToKeyMapType = std::map<std::string, const BBCKey*>;
 
-    // Construct map on first use by lambda
-    static const nameToKeyMapType nameToKeyMap = []()
-    {
-        nameToKeyMapType keyMap{};
+	// Construct map on first use by lambda
+	static const nameToKeyMapType nameToKeyMap = []()
+	{
+		nameToKeyMapType keyMap{};
 
-        for (const BBCKey& theKey : BBCKeys)
-            keyMap[theKey.name] = &theKey;
+		for (const BBCKey& theKey : BBCKeys)
+			keyMap[theKey.name] = &theKey;
 
-        for (auto& alias : BBCKeyAliases)
-            keyMap[alias.first] = keyMap[alias.second];
+		for (auto& alias : BBCKeyAliases)
+			keyMap[alias.first] = keyMap[alias.second];
 
-        return keyMap;
-    } ();
+		return keyMap;
+	} ();
 
-    auto iter = nameToKeyMap.find(name);
-    if (iter == nameToKeyMap.end())
-        return &BBCKeys[0];
+	auto iter = nameToKeyMap.find(name);
+	if (iter == nameToKeyMap.end())
+		return &BBCKeys[0];
 
-    return iter->second;
+	return iter->second;
 }
 
 /****************************************************************************/
 
 const BBCKey* GetBBCKeyByRowAndCol(int row, int col)
 {
-    using posPair = std::pair<int, int>;
-    using posToKeyMapType = std::map<posPair, const BBCKey*>;
+	using posPair = std::pair<int, int>;
+	using posToKeyMapType = std::map<posPair, const BBCKey*>;
 
-    // Construct map on first use by lambda
-    static const posToKeyMapType posToKeyMap = []()
-    {
-        posToKeyMapType keyMap{};
+	// Construct map on first use by lambda
+	static const posToKeyMapType posToKeyMap = []()
+	{
+		posToKeyMapType keyMap{};
 
-        for (const BBCKey& theKey : BBCKeys)
-            keyMap[posPair{ theKey.row, theKey.column }] = &theKey;
-        return keyMap;
-    } ();
+		for (const BBCKey& theKey : BBCKeys)
+			keyMap[posPair{ theKey.row, theKey.column }] = &theKey;
+		return keyMap;
+	} ();
 
-    auto iter = posToKeyMap.find(posPair{ row, col });
-    if (iter == posToKeyMap.end())
-        return &BBCKeys[0];
+	auto iter = posToKeyMap.find(posPair{ row, col });
+	if (iter == posToKeyMap.end())
+		return &BBCKeys[0];
 
-    return iter->second;
+	return iter->second;
 }
 
 /****************************************************************************/
@@ -267,10 +268,12 @@ const BBCKey* GetBBCKeyByRowAndCol(int row, int col)
 // item in BBCKeys table, not a copy of it.
 int GetBBCKeyIndex(const BBCKey* key)
 {
-    int index = key - BBCKeys;
-    if (index >= 0 && index < _countof(BBCKeys))
-	return index;
-    return 0;
+	int index = key - BBCKeys;
+
+	if (index >= 0 && index < _countof(BBCKeys))
+		return index;
+
+	return 0;
 }
 
 /****************************************************************************/
@@ -283,7 +286,7 @@ bool UserKeyboardDialog(HWND hwndParent, bool joystick)
 	doingJoystick = joystick;
 
 	if (doingJoystick)
-	    FillAssignedKeysCount();
+		FillAssignedKeysCount();
 
 	// Open the dialog box. This is created as a modeless dialog so that
 	// the "select key" dialog box can handle key-press messages.
@@ -374,9 +377,9 @@ static void SetBBCKeyForVKEY(int Key, bool Shift)
 
 static void SetRowCol(UINT ctrlID)
 {
-    const BBCKey* key = GetBBCKeyByResId(ctrlID);
-    BBCRow = key->row;
-    BBCCol = key->column;
+	const BBCKey* key = GetBBCKeyByResId(ctrlID);
+	BBCRow = key->row;
+	BBCCol = key->column;
 }
 
 /****************************************************************************/
@@ -677,7 +680,7 @@ static std::string GetKeysUsed()
 						Keys += "Sh-";
 					}
 
-					Keys += SelectKeyDialog::KeyName(i);
+					Keys += KeyName(i);
 				}
 			}
 		}
@@ -695,73 +698,73 @@ static std::string GetKeysUsed()
 
 void FillAssignedKeysCount()
 {
-    std::fill(std::begin(assignedKeysCount), std::end(assignedKeysCount), 0);
+	std::fill(std::begin(assignedKeysCount), std::end(assignedKeysCount), 0);
 
-    KeyPair* table;
-    int start, end;
-    int offset; // First Vkey code in table
+	KeyPair* table;
+	int start, end;
+	int offset; // First Vkey code in table
 
-    if (!doingJoystick)
-    {
-        table = UserKeymap;
-        offset = 0;
-        start = 1;
-        end = 256;
-    }
-    else
-    {
-        table = JoystickMap;
-        offset = BEEB_VKEY_JOY_START;
-        start = BEEB_VKEY_JOY_START;
-        end = BEEB_VKEY_JOY_END;
-    }
+	if (!doingJoystick)
+	{
+		table = UserKeymap;
+		offset = 0;
+		start = 1;
+		end = 256;
+	}
+	else
+	{
+		table = JoystickMap;
+		offset = BEEB_VKEY_JOY_START;
+		start = BEEB_VKEY_JOY_START;
+		end = BEEB_VKEY_JOY_END;
+	}
 
-    for (int i = start; i < end; i++)
-    {
-        KeyPair& pair = table[i - offset];
-        for (int s = 0; s < 2; s++)
-        {
-            UpdateAssignedKeysCount(pair[s].row, pair[s].col, +1);
-        }
-    }
+	for (int i = start; i < end; i++)
+	{
+		KeyPair& pair = table[i - offset];
+		for (int s = 0; s < 2; s++)
+		{
+			UpdateAssignedKeysCount(pair[s].row, pair[s].col, +1);
+		}
+	}
 }
 
 /****************************************************************************/
 
 static void UpdateAssignedKeysCount(int row, int col, int change, bool redrawColour)
 {
-    const BBCKey* key = GetBBCKeyByRowAndCol(row, col);
-    int index = GetBBCKeyIndex(key);
-    if (index < _countof(BBCKeys))
-    {
-        assignedKeysCount[index] += change;
-        if (redrawColour && key->ctrlId != selectedCtrlID)
-        {
-            HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key->ctrlId);
-            SetKeyColour(GetKeyColour(key->ctrlId), keyCtrl);
-        }
-        /* If it's shift, update the other one */
-        if (key->column == 0 && key->row == 0)
-        {
-            key = GetBBCKeyByResId((IDK_SHIFT_L + IDK_SHIFT_R) - key->ctrlId);
-            index = GetBBCKeyIndex(key);
-            assignedKeysCount[index] += change;
-            if (redrawColour && key->ctrlId != selectedCtrlID)
-            {
-                HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key->ctrlId);
-                SetKeyColour(GetKeyColour(key->ctrlId), keyCtrl);
-            }
-        }
-    }
+	const BBCKey* key = GetBBCKeyByRowAndCol(row, col);
+	int index = GetBBCKeyIndex(key);
+	if (index < _countof(BBCKeys))
+	{
+		assignedKeysCount[index] += change;
+		if (redrawColour && key->ctrlId != selectedCtrlID)
+		{
+			HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key->ctrlId);
+			SetKeyColour(GetKeyColour(key->ctrlId), keyCtrl);
+		}
+		/* If it's shift, update the other one */
+		if (key->column == 0 && key->row == 0)
+		{
+			key = GetBBCKeyByResId((IDK_SHIFT_L + IDK_SHIFT_R) - key->ctrlId);
+			index = GetBBCKeyIndex(key);
+			assignedKeysCount[index] += change;
+			if (redrawColour && key->ctrlId != selectedCtrlID)
+			{
+				HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key->ctrlId);
+				SetKeyColour(GetKeyColour(key->ctrlId), keyCtrl);
+			}
+		}
+	}
 }
 
 /****************************************************************************/
 
 static void RedrawAllKeys()
 {
-    for (const BBCKey& key : BBCKeys)
-    {
-	HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key.ctrlId);
-	SetKeyColour(GetKeyColour(key.ctrlId), keyCtrl);
-    }
+	for (const BBCKey& key : BBCKeys)
+	{
+		HWND keyCtrl = GetDlgItem(hwndUserKeyboard, key.ctrlId);
+		SetKeyColour(GetKeyColour(key.ctrlId), keyCtrl);
+	}
 }
