@@ -289,6 +289,8 @@ public:
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
 	void SetJoystickTargetWindow(HWND target);
 	void SetJoystickButton(int index, bool value);
+	void SetJoystickSensitivity(double Sensitivity);
+	void SetJoystickToKeysThreshold(int Threshold);
 	void ScaleJoystick(int index, unsigned int x, unsigned int y,
 		unsigned int minX, unsigned int minY,
 		unsigned int maxX, unsigned int maxY);

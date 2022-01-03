@@ -862,7 +862,6 @@ bool BeebWin::ScanJoysticks(bool verbose)
 /****************************************************************************/
 void BeebWin::InitJoystick(bool verbose)
 {
-
 	ResetJoystick();
 
 	if (m_JoystickToKeys)
@@ -936,6 +935,20 @@ bool BeebWin::CaptureJoystick(int Index, bool verbose)
 void BeebWin::SetJoystickButton(int index, bool value)
 {
 	JoystickButton[index] = value;
+}
+
+/****************************************************************************/
+void BeebWin::SetJoystickSensitivity(double Sensitivity)
+{
+	m_JoystickSensitivity = Sensitivity;
+	UpdateJoystickMenu();
+}
+
+/****************************************************************************/
+void BeebWin::SetJoystickToKeysThreshold(int Threshold)
+{
+	m_JoystickToKeysThreshold = Threshold;
+	UpdateJoystickMenu();
 }
 
 /****************************************************************************/
