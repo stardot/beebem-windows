@@ -320,7 +320,7 @@ void WriteTorchTubeFromHostSide(int IOAddr,unsigned char IOData)
 
 unsigned char ReadTorchTubeFromParasiteSide(int IOAddr)
 {
-	unsigned char TmpData;
+	unsigned char TmpData = 0;
 
 	switch (IOAddr) {
 	case 0:
@@ -424,6 +424,9 @@ unsigned char ReadTubeFromHostSide(int IOAddr) {
 		}
 		UpdateHostR4Interrupt();
 		break;
+
+	default:
+		return MachineType == Model::Master128 ? 0xff : 0xfe;
 	}
 
 	if (DebugEnabled && (old_readHIOAddr != IOAddr || old_readHTmpData != TmpData)) {
@@ -565,6 +568,9 @@ unsigned char ReadTubeFromParasiteSide(int IOAddr) {
 		}
 		UpdateR4Interrupt();
 		break;
+
+	default:
+		return 0;
 	}
 
 	// UpdateInterrupts();
