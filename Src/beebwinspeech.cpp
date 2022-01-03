@@ -120,7 +120,7 @@ bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
 			else
 			{
 				done = true;
-				MessageBeep(-1);
+				MessageBeep(0xFFFFFFFF);
 			}
 		}
 		else // Backwards
@@ -140,7 +140,7 @@ bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
 			else
 			{
 				done = true;
-				MessageBeep(-1);
+				MessageBeep(0xFFFFFFFF);
 			}
 		}
 
@@ -438,7 +438,7 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 				}
 				else
 				{
-					MessageBeep(-1);
+					MessageBeep(0xFFFFFFFF);
 				}
 			}
 			break;
@@ -470,7 +470,7 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 				}
 				else
 				{
-					MessageBeep(-1);
+					MessageBeep(0xFFFFFFFF);
 				}
 			}
 			break;

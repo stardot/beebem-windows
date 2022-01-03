@@ -1893,7 +1893,7 @@ mainswitch:
                         /* ElSegundo SMULxy insn.  */
                         ARMword op1 = state->Reg[BITS (0, 3)];
                         ARMword op2 = state->Reg[BITS (8, 11)];
-                        ARMword Rn = state->Reg[BITS (12, 15)];
+                        // ARMword Rn = state->Reg[BITS (12, 15)];
 
                         if (BIT (5))
                             op1 >>= 16;

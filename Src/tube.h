@@ -69,18 +69,18 @@ void DoTubeNMI(void);
 void DoTubeInterrupt(void);
 void WrapTubeCycles(void);
 void SyncTubeProcessor(void);
-unsigned char ReadTubeFromHostSide(unsigned char IOAddr);
-unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr);
-void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData);
-void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData);
+unsigned char ReadTubeFromHostSide(int IOAddr);
+unsigned char ReadTubeFromParasiteSide(int IOAddr);
+void WriteTubeFromHostSide(int IOAddr, unsigned char IOData);
+void WriteTubeFromParasiteSide(int IOAddr, unsigned char IOData);
 
-unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr);
-unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr);
-void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData);
-void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData);
+unsigned char ReadTorchTubeFromHostSide(int IOAddr);
+unsigned char ReadTorchTubeFromParasiteSide(int IOAddr);
+void WriteTorchTubeFromHostSide(int IOAddr, unsigned char IOData);
+void WriteTorchTubeFromParasiteSide(int IOAddr, unsigned char IOData);
 
-unsigned char TubeReadMem(unsigned int IOAddr);
-void TubeWriteMem(unsigned int IOAddr,unsigned char IOData);
+unsigned char TubeReadMem(int IOAddr);
+void TubeWriteMem(int IOAddr,unsigned char IOData);
 void DebugTubeState(void);
 void SaveTubeUEF(FILE *SUEF);
 void Save65C02UEF(FILE *SUEF);

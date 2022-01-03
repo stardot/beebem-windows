@@ -609,21 +609,21 @@ INLINE static void BRAInstrHandler(void) {
 
 INLINE static void CMPInstrHandler(int16 operand) {
   /* NOTE! Should we consult D flag ? */
-  unsigned char result=Accumulator-operand;
+  unsigned char result = static_cast<unsigned char>(Accumulator - operand);
   unsigned char CFlag;
   CFlag=0; if (Accumulator>=operand) CFlag=FlagC;
   SetPSRCZN(CFlag,Accumulator==operand,result & 128);
-} /* CMPInstrHandler */
+}
 
 INLINE static void CPXInstrHandler(int16 operand) {
-  unsigned char result=(XReg-operand);
+  unsigned char result = static_cast<unsigned char>(XReg - operand);
   SetPSRCZN(XReg>=operand,XReg==operand,result & 128);
-} /* CPXInstrHandler */
+}
 
 INLINE static void CPYInstrHandler(int16 operand) {
-  unsigned char result=(YReg-operand);
+  unsigned char result = static_cast<unsigned char>(YReg - operand);
   SetPSRCZN(YReg>=operand,YReg==operand,result & 128);
-} /* CPYInstrHandler */
+}
 
 INLINE static void DECInstrHandler(int16 address) {
   unsigned char val;
@@ -784,7 +784,7 @@ INLINE static void SBCInstrHandler(int16 operand) {
       Accumulator & 128);
   } else {
     if (MachineType == Model::Master128) {
-      int ohn = operand & 0xf0;
+      // int ohn = operand & 0xf0;
       int oln = operand & 0x0f;
 
       int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);

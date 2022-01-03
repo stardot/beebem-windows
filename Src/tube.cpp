@@ -214,7 +214,7 @@ void UpdateInterrupts()
 	UpdateHostR4Interrupt();
 }
 
-unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr)
+unsigned char ReadTorchTubeFromHostSide(int IOAddr)
 {
 	unsigned char TmpData = 0xff;
 
@@ -258,13 +258,13 @@ unsigned char ReadTorchTubeFromHostSide(unsigned char IOAddr)
 	return TmpData;
 }
 
-void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
+void WriteTorchTubeFromHostSide(int IOAddr,unsigned char IOData)
 {
 	// WriteLog("WriteTorchTubeFromHostSide - Addr = %02x, Value = %02x\n", (int)IOAddr, (int)IOData);
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Write from host, addr %X value %02X", (int)IOAddr, (int)IOData);
+		sprintf(info, "Tube: Write from host, addr %X value %02X", IOAddr, (int)IOData);
 		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
@@ -318,7 +318,7 @@ void WriteTorchTubeFromHostSide(unsigned char IOAddr,unsigned char IOData)
 	}
 }
 
-unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr)
+unsigned char ReadTorchTubeFromParasiteSide(int IOAddr)
 {
 	unsigned char TmpData;
 
@@ -338,20 +338,20 @@ unsigned char ReadTorchTubeFromParasiteSide(unsigned char IOAddr)
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Read from para, addr %X value %02X", (int)IOAddr, (int)TmpData);
+		sprintf(info, "Tube: Read from para, addr %X value %02X", IOAddr, (int)TmpData);
 		DebugDisplayTrace(DebugType::Tube, false, info);
 	}
 
 	return TmpData;
 }
 
-void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
+void WriteTorchTubeFromParasiteSide(int IOAddr,unsigned char IOData)
 {
 	// WriteLog("WriteTorchTubeFromParasiteSide - Addr = %02x, Value = %02x\n", (int)IOAddr, (int)IOData);
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Write from para, addr %X value %02X", (int)IOAddr, (int)IOData);
+		sprintf(info, "Tube: Write from para, addr %X value %02X", IOAddr, (int)IOData);
 		DebugDisplayTrace(DebugType::Tube, false, info);
 	}
 
@@ -367,7 +367,7 @@ void WriteTorchTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 /*-------------------------------------------------------------------*/
 // Tube memory/io handling functions
 
-unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
+unsigned char ReadTubeFromHostSide(int IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
 	if (TubeType == Tube::None)
@@ -428,7 +428,7 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 
 	if (DebugEnabled && (old_readHIOAddr != IOAddr || old_readHTmpData != TmpData)) {
 		char info[200];
-		sprintf(info, "Tube: Read from host, addr %X value %02X\r\n", (int)IOAddr, (int)TmpData);
+		sprintf(info, "Tube: Read from host, addr %X value %02X\r\n", IOAddr, (int)TmpData);
 		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
@@ -438,13 +438,13 @@ unsigned char ReadTubeFromHostSide(unsigned char IOAddr) {
 	return TmpData;
 }
 
-void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
+void WriteTubeFromHostSide(int IOAddr, unsigned char IOData) {
 	if (TubeType == Tube::None)
 		return;
 
 	if (DebugEnabled) {
 		char info[200];
-		sprintf(info, "Tube: Write from host, addr %X value %02X", (int)IOAddr, (int)IOData);
+		sprintf(info, "Tube: Write from host, addr %X value %02X", IOAddr, (int)IOData);
 		DebugDisplayTrace(DebugType::Tube, true, info);
 	}
 
@@ -507,7 +507,7 @@ void WriteTubeFromHostSide(unsigned char IOAddr,unsigned char IOData) {
 	// UpdateInterrupts();
 }
 
-unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
+unsigned char ReadTubeFromParasiteSide(int IOAddr) {
 	unsigned char TmpData;
 
 	if (TubeType == Tube::TorchZ80)
@@ -582,7 +582,7 @@ unsigned char ReadTubeFromParasiteSide(unsigned char IOAddr) {
 	return TmpData;
 }
 
-void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
+void WriteTubeFromParasiteSide(int IOAddr, unsigned char IOData)
 {
 	if (TubeType == Tube::TorchZ80)
 	{
@@ -637,18 +637,19 @@ void WriteTubeFromParasiteSide(unsigned char IOAddr,unsigned char IOData)
 		UpdateHostR4Interrupt();
 		break;
 	}
-    //UpdateInterrupts();
+
+	// UpdateInterrupts();
 }
 
 /*----------------------------------------------------------------------------*/
-void TubeWriteMem(unsigned int IOAddr,unsigned char IOData) {
+void TubeWriteMem(int IOAddr, unsigned char IOData) {
 	if (IOAddr>=0xff00 || IOAddr<0xfef8)
 		TubeRam[IOAddr]=IOData;
 	else
 		WriteTubeFromParasiteSide(IOAddr-0xfef8,IOData);
 }
 
-unsigned char TubeReadMem(unsigned int IOAddr) {
+unsigned char TubeReadMem(int IOAddr) {
 	if (IOAddr>=0xff00 || IOAddr<0xfef8)
 		return(TubeRam[IOAddr]);
 	else
@@ -913,21 +914,21 @@ INLINE static void BRAInstrHandler(void) {
 
 INLINE static void CMPInstrHandler(int16 operand) {
   /* NOTE! Should we consult D flag ? */
-  unsigned char result=Accumulator-operand;
+  unsigned char result = static_cast<unsigned char>(Accumulator - operand);
   unsigned char CFlag;
   CFlag=0; if (Accumulator>=operand) CFlag=FlagC;
   SetPSRCZN(CFlag, Accumulator==operand,result & 128);
-} /* CMPInstrHandler */
+}
 
 INLINE static void CPXInstrHandler(int16 operand) {
-  unsigned char result=(XReg-operand);
+  unsigned char result = static_cast<unsigned char>(XReg - operand);
   SetPSRCZN(XReg>=operand, XReg==operand,result & 128);
-} /* CPXInstrHandler */
+}
 
 INLINE static void CPYInstrHandler(int16 operand) {
-  unsigned char result=(YReg-operand);
+  unsigned char result = static_cast<unsigned char>(YReg - operand);
   SetPSRCZN(YReg>=operand, YReg==operand,result & 128);
-} /* CPYInstrHandler */
+}
 
 INLINE static void DECInstrHandler(int16 address) {
   unsigned char val;
@@ -1070,7 +1071,7 @@ INLINE static void SBCInstrHandler(int16 operand) {
       ((Accumulator & 128) > 0) ^ ((TmpResultV & 256) != 0),
       Accumulator & 128);
   } else {
-    int ohn = operand & 0xf0;
+    // int ohn = operand & 0xf0;
     int oln = operand & 0x0f;
 
     int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);

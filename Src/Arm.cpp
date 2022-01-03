@@ -3777,7 +3777,7 @@ inline bool CArm::readByte(uint32 address, uint8 &destination)
 	if (address < 0x1000000)
 	{
 		value |= ramMemory[(address & 0x3fffff)];
-		destination = value;
+		destination = static_cast<uint8>(value);
 		return true;
 	}
 
@@ -3788,10 +3788,10 @@ inline bool CArm::readByte(uint32 address, uint8 &destination)
 		return true;
 	}
 
-	if ( (address >= 0x3000000) && (address < 0x3004000) )
+	if (address >= 0x3000000 && address < 0x3004000)
 	{
 		value |= romMemory[(address & 0x3fff)];
-		destination = value;
+		destination = static_cast<uint8>(value);
 		return true;
 	}
 
@@ -4072,7 +4072,7 @@ inline bool CArm::performBlockDataTransferLoad(uint rn, uint32 initialAddress, u
 		// if r15 was loaded to then prefetch will have been corrupted
 		if( getBit(currentInstruction, 15) )
 		{
-			setRegister(15, getRegister(15) & PCMASK );
+			setRegister(15, getRegister(15) & PC_MASK);
 			prefetchInvalid = true;
 		}
 		// successful

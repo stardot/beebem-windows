@@ -181,7 +181,7 @@ void out(unsigned int addr, unsigned char value)
 
 	if (TubeType == Tube::AcornZ80)
 	{
-		WriteTubeFromParasiteSide((unsigned char)addr, value);
+		WriteTubeFromParasiteSide(addr, value);
 	}
 	else
 	{

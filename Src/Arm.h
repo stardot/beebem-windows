@@ -30,48 +30,47 @@ Boston, MA  02110-1301, USA.
 // define constants
 
 // PSR flags
-#define N_FLAG		(1<<31)	// negative
-#define Z_FLAG		(1<<30)	// zero
-#define C_FLAG		(1<<29)	// carry
-#define V_FLAG		(1<<28)	// overflow
-#define I_FLAG		(1<<27)	// interrupt disable
-#define F_FLAG		(1<<26)	// fast interrupt disable
-#define M1_FLAG		(1<<1)	// processor mode (bit 1)
-#define M2_FLAG		(1<<0)	// processor mode (bit 2)
+constexpr unsigned int N_FLAG  = 1 << 31; // negative
+constexpr unsigned int Z_FLAG  = 1 << 30; // zero
+constexpr unsigned int C_FLAG  = 1 << 29; // carry
+constexpr unsigned int V_FLAG  = 1 << 28; // overflow
+constexpr unsigned int I_FLAG  = 1 << 27; // interrupt disable
+constexpr unsigned int F_FLAG  = 1 << 26; // fast interrupt disable
+constexpr unsigned int M1_FLAG = 1 << 1;  // processor mode (bit 1)
+constexpr unsigned int M2_FLAG = 1 << 0;  // processor mode (bit 2)
 
 // masks for PSR
-#define PSR_MASK	(N_FLAG | Z_FLAG | C_FLAG | V_FLAG | I_FLAG | F_FLAG | M1_FLAG | M2_FLAG)
-#define PC_MASK		(~PSR_MASK)
+constexpr unsigned int MODE_FLAGS = M1_FLAG | M2_FLAG;
+constexpr unsigned int INTR_FLAGS = I_FLAG | F_FLAG;
+
+constexpr unsigned int PSR_MASK = N_FLAG | Z_FLAG | C_FLAG | V_FLAG | INTR_FLAGS | MODE_FLAGS;
+constexpr unsigned int PC_MASK  = ~PSR_MASK;
 
 // processor modes for bits 0-1 of PSR
-#define USR_MODE	0		// user
-#define FIQ_MODE	1		// fast interrupt request
-#define IRQ_MODE	2		// interrupt request
-#define SVC_MODE	3		// supervisor
+constexpr int USR_MODE = 0; // user
+constexpr int FIQ_MODE = 1; // fast interrupt request
+constexpr int IRQ_MODE = 2; // interrupt request
+constexpr int SVC_MODE = 3; // supervisor
 
 // hardware vector addresses
-#define RESET_VECTOR					0x0000000
-#define UNDEFINED_INSTRUCTION_VECTOR	0x0000004
-#define SOFTWARE_INTERRUPT_VECTOR		0x0000008
-#define PREFETCH_ABORT_VECTOR			0x000000c
-#define DATA_ABORT_VECTOR				0x0000010
-#define ADDRESS_EXCEPTION_VECTOR		0x0000014
-#define INTERRUPT_REQUEST_VECTOR		0x0000018
-#define FAST_INTERRUPT_REQUEST_VECTOR	0x000001c
+constexpr unsigned int RESET_VECTOR                  = 0x00;
+constexpr unsigned int UNDEFINED_INSTRUCTION_VECTOR  = 0x04;
+constexpr unsigned int SOFTWARE_INTERRUPT_VECTOR     = 0x08;
+constexpr unsigned int PREFETCH_ABORT_VECTOR         = 0x0c;
+constexpr unsigned int DATA_ABORT_VECTOR             = 0x10;
+constexpr unsigned int ADDRESS_EXCEPTION_VECTOR      = 0x14;
+constexpr unsigned int INTERRUPT_REQUEST_VECTOR      = 0x18;
+constexpr unsigned int FAST_INTERRUPT_REQUEST_VECTOR = 0x1c;
 
 // ARM shift types operand fields
-#define LSL			0
-#define LSR			1
-#define ASR			2
-#define ROR			3
+constexpr int LSL = 0;
+constexpr int LSR = 1;
+constexpr int ASR = 2;
+constexpr int ROR = 3;
 
 typedef unsigned int Reg;
 typedef unsigned int Word;
 typedef unsigned char Byte;
-#define MODEFLAGS	(M1_FLAG | M2_FLAG)
-#define INTRFLAGS	(I_FLAG | F_FLAG)
-#define PSRMASK		(N_FLAG|Z_FLAG|C_FLAG|V_FLAG | MODEFLAGS | INTRFLAGS)
-#define PCMASK		(~PSRMASK)
 
 // signals are a block of flags for RedSquirrel to allow IOC to adjust/examine interrupts
 // "Each device can call IOC.irqa_interrupt(mask), IOC.irqb_interrupt(mask) or
@@ -93,10 +92,10 @@ union Signals
 };
 
 // dynamic profiling options
-const bool dynamicProfilingExceptionFreq = false;
-const bool dynamicProfilingRegisterUse = false;
-const bool dynamicProfilingConditionalExecution = false;
-const bool dynamicProfilingCoprocessorUse = true;
+constexpr bool dynamicProfilingExceptionFreq = false;
+constexpr bool dynamicProfilingRegisterUse = false;
+constexpr bool dynamicProfilingConditionalExecution = false;
+constexpr bool dynamicProfilingCoprocessorUse = true;
 
 class CArm
 {
