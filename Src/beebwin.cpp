@@ -775,21 +775,21 @@ void BeebWin::CreateBitmap()
 /****************************************************************************/
 bool BeebWin::InitClass()
 {
-	WNDCLASS  wc;
+	WNDCLASS wc;
 
 	// Fill in window class structure with parameters that describe the
 	// main window.
 
-	wc.style		 = CS_HREDRAW | CS_VREDRAW;// Class style(s).
-	wc.lpfnWndProc	 = WndProc; // Window Procedure
-	wc.cbClsExtra	 = 0;					   // No per-class extra data.
-	wc.cbWndExtra	 = 0;					   // No per-window extra data.
-	wc.hInstance	 = hInst;				   // Owner of this class
-	wc.hIcon		 = LoadIcon(hInst, MAKEINTRESOURCE(IDI_BEEBEM));
-	wc.hCursor		 = LoadCursor(NULL, IDC_ARROW);
+	wc.style         = CS_HREDRAW | CS_VREDRAW; // Class style(s).
+	wc.lpfnWndProc   = WndProc; // Window Procedure
+	wc.cbClsExtra    = 0; // No per-class extra data.
+	wc.cbWndExtra    = 0; // No per-window extra data.
+	wc.hInstance     = hInst; // Owner of this class
+	wc.hIcon         = LoadIcon(hInst, MAKEINTRESOURCE(IDI_BEEBEM));
+	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wc.lpszMenuName  = MAKEINTRESOURCE(IDR_MENU); // Menu from .RC
-	wc.lpszClassName = "BEEBWIN"; //szAppName;				// Name to register as
+	wc.lpszMenuName  = MAKEINTRESOURCE(IDR_MENU); // Menu from .rc file
+	wc.lpszClassName = "BEEBWIN"; // Name to register as
 
 	// Register the window class and return success/failure code.
 	return RegisterClass(&wc) != 0;
@@ -824,20 +824,20 @@ void BeebWin::CreateBeebWindow(void)
 	}
 
 	m_hWnd = CreateWindow(
-				"BEEBWIN",				// See RegisterClass() call.
-				m_szTitle, 		// Text for window title bar.
-				style,
-				x, y,
-				m_XWinSize + m_XWinBorder,
-				m_YWinSize + m_YWinBorder,
-				NULL,					// Overlapped windows have no parent.
-				NULL,				 // Use the window class menu.
-				hInst,			 // This instance owns this window.
-				NULL				 // We don't use any data in our WM_CREATE
-		);
+		"BEEBWIN",  // See RegisterClass() call.
+		m_szTitle,  // Text for window title bar.
+		style,
+		x, y,
+		m_XWinSize + m_XWinBorder,
+		m_YWinSize + m_YWinBorder,
+		nullptr,    // Overlapped windows have no parent.
+		nullptr,    // Use the window class menu.
+		hInst,      // This instance owns this window.
+		nullptr     // We don't use any data in our WM_CREATE
+	);
 
 	ShowWindow(m_hWnd, show); // Show the window
-	UpdateWindow(m_hWnd);		  // Sends WM_PAINT message
+	UpdateWindow(m_hWnd); // Sends WM_PAINT message
 
 	SetWindowAttributes(false);
 }
