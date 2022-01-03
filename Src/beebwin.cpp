@@ -399,7 +399,7 @@ void BeebWin::ApplyPrefs()
 	GetDataPath(m_UserDataPath, keymap);
 	ReadKeyMap(keymap, &defaultMapping);
 
-	ResetJoyMapToDefaultUser();
+	ResetJoystickMapToDefaultUser();
 
 	InitMenu();
 	ShowMenu(true);

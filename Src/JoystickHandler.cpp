@@ -1248,12 +1248,12 @@ void BeebWin::CheckForJoystickMap(const char *path)
 
 	if (GetFileAttributes(file) != INVALID_FILE_ATTRIBUTES)
 	{
-		ReadJoyMap(file, &JoystickMap);
+		ReadJoystickMap(file, &JoystickMap);
 	}
 	else
 	{
 		// Mapping file not found - reset to default
-		ResetJoyMapToDefaultUser();
+		ResetJoystickMapToDefaultUser();
 
 		// Set jmap path even if the file doesn't exist
 		strcpy(m_JoystickMapPath, file);
@@ -1269,11 +1269,11 @@ void BeebWin::ResetJoystickMap()
 		return;
 	}
 
-	ResetJoyMap(&JoystickMap);
+	ResetJoystickMap(&JoystickMap);
 }
 
 /****************************************************************************/
-void BeebWin::ResetJoyMap(JoyMap* joymap)
+void BeebWin::ResetJoystickMap(JoyMap* joymap)
 {
 	// Initialize all input to unassigned
 	for (KeyPair& mapping : *joymap)
@@ -1286,264 +1286,14 @@ void BeebWin::ResetJoyMap(JoyMap* joymap)
 }
 
 /****************************************************************************/
-void BeebWin::ResetJoyMapToDefaultUser(void)
+void BeebWin::ResetJoystickMapToDefaultUser()
 {
 	char keymap[_MAX_PATH];
 	strcpy(keymap, "DefaultUser.jmap");
 	GetDataPath(m_UserDataPath, keymap);
-	ResetJoyMap(&JoystickMap);
+	ResetJoystickMap(&JoystickMap);
 	if (GetFileAttributes(keymap) != INVALID_FILE_ATTRIBUTES)
-		ReadJoyMap(keymap, &JoystickMap);
-}
-
-/****************************************************************************/
-bool BeebWin::ReadJoyMap(const char *filename, JoyMap *joymap)
-{
-	bool success = true;
-	FILE *infile = OpenReadFile(filename, "joystick map", JOYMAP_TOKEN "\n");
-	char buf[256];
-	JoyMap newJoyMap;
-	int line = 1;
-
-	if (infile == NULL)
-		return false;
-
-	ResetJoyMap(&newJoyMap);
-
-	while (fgets(buf, 255, infile) != NULL)
-	{
-		char *ptr, *inputName, *keyName1, *keyName2;
-
-		++line;
-
-		// Read at most three tokens from line
-		inputName = strtok_s(buf, " \t\n", &ptr);
-		keyName1 = strtok_s(NULL, " \t\n", &ptr);
-		keyName2 = strtok_s(NULL, " \t\n", &ptr);
-
-		// Ignore empty lines or lines starting with '#'
-		if (inputName == NULL || inputName[0] == '#')
-			continue;
-
-		if (keyName1 == NULL)
-		{
-			mainWin->Report(MessageType::Error,
-			                "Invalid line in joystick mapping file:\n  %s\n  line %d",
-			                filename, line);
-
-			success = false;
-			break;
-		}
-
-		// Get vkey number and mapping entry from input name
-		int vkey = JoyVKeyByName(inputName);
-		if (vkey < BEEB_VKEY_JOY_START || vkey >= BEEB_VKEY_JOY_END)
-		{
-			mainWin->Report(MessageType::Error,
-			                "Invalid input name in joystick mapping file:\n  %s\n  line %d",
-			                filename, line);
-
-			success = false;
-			break;
-		}
-		KeyMapping* mapping = newJoyMap[vkey - BEEB_VKEY_JOY_START];
-
-		// Get shift state and BBC key from key name
-		bool shift1 = false;
-		makeupper(keyName1);
-
-		if (strncmp(keyName1, "SH+", 3) == 0)
-		{
-			shift1 = true;
-			keyName1 += 3;
-		}
-
-		const BBCKey* key1 = GetBBCKeyByName(keyName1);
-		if (key1->row == UNASSIGNED_ROW && strcmp(keyName1, "NONE") != 0)
-		{
-			mainWin->Report(MessageType::Error,
-			                "Invalid key name in joystick mapping file:\n  %s\n  line %d",
-			                filename, line);
-
-			success = false;
-			break;
-		}
-
-		if (keyName2 == NULL)
-		{
-			// Shifted and unshifted input map to the same key
-			mapping[0].row = mapping[1].row = key1->row;
-			mapping[0].col = mapping[1].col = key1->column;
-			mapping[0].shift = false;
-			mapping[1].shift = true;
-		}
-		else
-		{
-			bool shift2 = false;
-			makeupper(keyName2);
-
-			if (strncmp(keyName2, "SH+", 3) == 0)
-			{
-				shift2 = true;
-				keyName2 += 3;
-			}
-
-			const BBCKey* key2 = GetBBCKeyByName(keyName2);
-			if (key2->row == UNASSIGNED_ROW && strcmp(keyName2, "NONE") != 0)
-			{
-				mainWin->Report(MessageType::Error,
-				                "Invalid key name in joystick mapping file:\n  %s\n  line %d",
-				                filename, line);
-
-				success = false;
-				break;
-			}
-
-			mapping[0].row = key1->row;
-			mapping[0].col = key1->column;
-			mapping[0].shift = shift1;
-			mapping[1].row = key2->row;
-			mapping[1].col = key2->column;
-			mapping[1].shift = shift2;
-		}
-	}
-
-	if (success)
-	{
-		memcpy(joymap, &newJoyMap, sizeof(newJoyMap));
-	}
-
-	return success;
-}
-
-/****************************************************************************/
-void BeebWin::LoadJoystickMap()
-{
-	char DefaultPath[_MAX_PATH];
-	char FileName[_MAX_PATH];
-	const char* filter = "Joystick Map File (*.jmap)\0*.jmap\0";
-
-	// If Autoload is enabled, look for joystick mapping near disks,
-	// otherwise start in user data path.
-	if (m_AutoloadJoystickMap)
-	{
-		m_Preferences.GetStringValue("DiscsPath", DefaultPath);
-		GetDataPath(GetUserDataPath(), DefaultPath);
-	}
-	else
-	{
-		strcpy(DefaultPath, GetUserDataPath());
-	}
-
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-
-	if (m_JoystickMapPath[0] == '\0' && !m_AutoloadJoystickMap)
-	{
-		fileDialog.SetInitial("DefaultUser.jmap");
-	}
-	else
-	{
-		fileDialog.SetInitial(m_JoystickMapPath);
-	}
-
-	if (fileDialog.Open())
-	{
-		if (ReadJoyMap(FileName, &JoystickMap))
-			strcpy(m_JoystickMapPath, FileName);
-	}
-}
-
-/****************************************************************************/
-bool BeebWin::WriteJoyMap(const char *filename, JoyMap *joymap)
-{
-	FILE* outfile = OpenWriteFile(filename, "joystick map");
-
-	if (outfile == NULL)
-		return false;
-
-	fprintf(outfile, JOYMAP_TOKEN "\n\n");
-
-	for (int i = 0; i < BEEB_VKEY_JOY_COUNT; ++i)
-	{
-		KeyMapping* mapping = (*joymap)[i];
-		if (mapping[0].row != UNASSIGNED_ROW
-			|| mapping[1].row != UNASSIGNED_ROW)
-		{
-			const char* inputName = KeyName(i + BEEB_VKEY_JOY_START);
-
-			if (mapping[0].row == mapping[1].row
-				&& mapping[0].col == mapping[1].col
-				&& !mapping[0].shift && mapping[1].shift)
-			{
-				// Shifted and unshifted input map to the same key - write one name
-				const BBCKey* key = GetBBCKeyByRowAndCol(mapping[0].row, mapping[0].col);
-				fprintf(outfile, "%-13s %s\n",
-					inputName,
-					key->name);
-			}
-			else
-			{
-				// Separate mapping for shifted and unshifted
-				const BBCKey* key1 = GetBBCKeyByRowAndCol(mapping[0].row, mapping[0].col);
-				bool key1shift = mapping[0].shift && mapping[0].row != UNASSIGNED_ROW;
-				const BBCKey* key2 = GetBBCKeyByRowAndCol(mapping[1].row, mapping[1].col);
-				bool key2shift = mapping[1].shift && mapping[1].row != UNASSIGNED_ROW;
-				fprintf(outfile, "%-13s %s%-*s %s%s\n",
-					inputName,
-					key1shift ? "SH+" : "",
-					// Align for longest possible: "SHIFT-LOCK+SH"
-					key1shift ? 10 : 13,
-					key1->name,
-					key2shift ? "SH+" : "",
-					key2->name);
-			}
-		}
-	}
-
-	fclose(outfile);
-
-	return true;
-}
-
-/****************************************************************************/
-void BeebWin::SaveJoystickMap()
-{
-	char DefaultPath[_MAX_PATH];
-	// Add space for .jmap exstension
-	char FileName[_MAX_PATH + 5];
-	const char* filter = "Joystick Map File (*.jmap)\0*.jmap\0";
-
-	// If Autoload is enabled, store joystick mapping near disks,
-	// otherwise start in user data path.
-	if (m_AutoloadJoystickMap)
-	{
-		m_Preferences.GetStringValue("DiscsPath", DefaultPath);
-		GetDataPath(GetUserDataPath(), DefaultPath);
-	}
-	else
-	{
-		strcpy(DefaultPath, GetUserDataPath());
-	}
-
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-
-	if (m_JoystickMapPath[0] == '\0' && !m_AutoloadJoystickMap)
-	{
-		fileDialog.SetInitial("DefaultUser.jmap");
-	}
-	else
-	{
-		fileDialog.SetInitial(m_JoystickMapPath);
-	}
-
-	if (fileDialog.Save())
-	{
-		if (!hasFileExt(FileName, ".jmap"))
-			strcat(FileName, ".jmap");
-
-		if (WriteJoyMap(FileName, &JoystickMap))
-			strcpy(m_JoystickMapPath, FileName);
-	}
+		ReadJoystickMap(keymap, &JoystickMap);
 }
 
 /****************************************************************************/

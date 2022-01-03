@@ -672,17 +672,17 @@ public:
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);
 	FILE* OpenReadFile(const char *filename, const char *typeDescr,
-			   const char *token);
+	                   const char *token);
 	FILE* OpenWriteFile(const char *filename, const char *typeDescr);
 	bool ReadKeyMap(const char *filename, KeyMap *keymap);
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
 
 	void CheckForJoystickMap(const char* path);
-	void ResetJoystickMap(void);
-	void ResetJoyMap(JoyMap* joymap);
-	void ResetJoyMapToDefaultUser(void);
-	bool ReadJoyMap(const char* filename, JoyMap* joymap);
-	bool WriteJoyMap(const char* filename, JoyMap* joymap);
+	void ResetJoystickMap();
+	void ResetJoystickMap(JoyMap* joymap);
+	void ResetJoystickMapToDefaultUser(void);
+	bool ReadJoystickMap(const char* filename, JoyMap* joymap);
+	bool WriteJoystickMap(const char* filename, JoyMap* joymap);
 	void LoadJoystickMap(void);
 	void SaveJoystickMap(void);
 
