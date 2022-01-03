@@ -1353,7 +1353,7 @@ void BeebWin::ChangeAMXPosition(int deltaX, int deltaY)
 /****************************************************************************/
 LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
                          UINT message,  // type of message
-                         WPARAM uParam, // additional information
+                         WPARAM wParam, // additional information
                          LPARAM lParam) // additional information
 {
 	int wmId, wmEvent;
@@ -1363,13 +1363,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 	switch (message)
 	{
 		case WM_COMMAND:  // message: command from application menu
-			wmId	= LOWORD(uParam);
-			wmEvent = HIWORD(uParam);
+			wmId	= LOWORD(wParam);
+			wmEvent = HIWORD(wParam);
 			mainWin->HandleCommand(wmId);
 			break;
 
 		case WM_PALETTECHANGED:
-			if ((HWND)uParam == hWnd)
+			if ((HWND)wParam == hWnd)
 				break;
 
 			// fall through to WM_QUERYNEWPALETTE
@@ -1393,7 +1393,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_SIZE:
-			mainWin->WinSizeChange(uParam, LOWORD(lParam), HIWORD(lParam));
+			mainWin->WinSizeChange(wParam, LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case WM_MOVE:
@@ -1404,64 +1404,64 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			// DebugTrace("SysKeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
 
 			if (mainWin->m_TextToSpeechEnabled &&
-				((uParam >= VK_NUMPAD0 && uParam <= VK_NUMPAD9) ||
-				 uParam == VK_DECIMAL ||
-				 uParam == VK_HOME || uParam == VK_END ||
-				 uParam == VK_PRIOR || uParam == VK_NEXT ||
-				 uParam == VK_UP || uParam == VK_DOWN ||
-				 uParam == VK_LEFT || uParam == VK_RIGHT ||
-				 uParam == VK_INSERT || uParam == VK_DELETE ||
-				 uParam == VK_CLEAR))
+				((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
+				 wParam == VK_DECIMAL ||
+				 wParam == VK_HOME || wParam == VK_END ||
+				 wParam == VK_PRIOR || wParam == VK_NEXT ||
+				 wParam == VK_UP || wParam == VK_DOWN ||
+				 wParam == VK_LEFT || wParam == VK_RIGHT ||
+				 wParam == VK_INSERT || wParam == VK_DELETE ||
+				 wParam == VK_CLEAR))
 			{
-				mainWin->TextToSpeechKey(uParam);
+				mainWin->TextToSpeechKey(wParam);
 			}
-			else if (uParam == VK_OEM_8 /* Alt ` */)
+			else if (wParam == VK_OEM_8 /* Alt ` */)
 			{
 				mainWin->TextViewSyncWithBeebCursor();
 			}
-			else if (uParam == VK_RETURN && (lParam & 0x20000000))
+			else if (wParam == VK_RETURN && (lParam & 0x20000000))
 			{
 				mainWin->HandleCommand(IDM_FULLSCREEN);
 				break;
 			}
-			else if (uParam == VK_F4 && (lParam & 0x20000000))
+			else if (wParam == VK_F4 && (lParam & 0x20000000))
 			{
 				mainWin->HandleCommand(IDM_EXIT);
 				break;
 			}
 			// Alt+F5 pauses the emulation
-			else if (uParam == VK_F5 && (lParam & 0x20000000))
+			else if (wParam == VK_F5 && (lParam & 0x20000000))
 			{
 				mainWin->HandleCommand(IDM_EMUPAUSED);
 				break;
 			}
 
-			if (uParam != VK_F10 && uParam != VK_CONTROL)
+			if (wParam != VK_F10 && wParam != VK_CONTROL)
 				break;
 
 		case WM_KEYDOWN:
-			// DebugTrace("KeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
+			// DebugTrace("KeyD: %d, 0x%X, 0x%X\n", wParam, wParam, lParam);
 
 			if (mainWin->m_TextToSpeechEnabled &&
-				((uParam >= VK_NUMPAD0 && uParam <= VK_NUMPAD9) ||
-				 uParam == VK_DECIMAL ||
-				 uParam == VK_HOME || uParam == VK_END ||
-				 uParam == VK_PRIOR || uParam == VK_NEXT ||
-				 uParam == VK_UP || uParam == VK_DOWN ||
-				 uParam == VK_LEFT || uParam == VK_RIGHT ||
-				 uParam == VK_INSERT || uParam == VK_DELETE ||
-				 uParam == VK_CLEAR))
+				((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
+				 wParam == VK_DECIMAL ||
+				 wParam == VK_HOME || wParam == VK_END ||
+				 wParam == VK_PRIOR || wParam == VK_NEXT ||
+				 wParam == VK_UP || wParam == VK_DOWN ||
+				 wParam == VK_LEFT || wParam == VK_RIGHT ||
+				 wParam == VK_INSERT || wParam == VK_DELETE ||
+				 wParam == VK_CLEAR))
 			{
-				mainWin->TextToSpeechKey(uParam);
+				mainWin->TextToSpeechKey(wParam);
 			}
-			else if ((uParam == VK_DIVIDE || uParam == VK_MULTIPLY ||
-					  uParam == VK_ADD || uParam == VK_SUBTRACT) &&
-					 !mainWin->m_DisableKeysShortcut)
+			else if ((wParam == VK_DIVIDE || wParam == VK_MULTIPLY ||
+			         wParam == VK_ADD || wParam == VK_SUBTRACT) &&
+			         !mainWin->m_DisableKeysShortcut)
 			{
 				// Ignore shortcut key, handled on key up
 			}
-			else if (uParam == VK_MENU && (GetKeyState(VK_CONTROL) & 0x8000)
-				|| uParam == VK_CONTROL && (GetKeyState(VK_MENU) & 0x8000))
+			else if (wParam == VK_MENU && (GetKeyState(VK_CONTROL) & 0x8000) ||
+			         wParam == VK_CONTROL && (GetKeyState(VK_MENU) & 0x8000))
 			{
 				mainWin->ReleaseMouse();
 			}
@@ -1471,7 +1471,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 				if (userPortBreakoutDialog != nullptr)
 				{
-					bit = userPortBreakoutDialog->KeyDown(uParam);
+					bit = userPortBreakoutDialog->KeyDown((int)wParam);
 				}
 
 				if (!bit)
@@ -1483,7 +1483,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 						BeebKeyUp(0, 0);
 					}
 
-					mainWin->TranslateKey((int)uParam, false, row, col);
+					mainWin->TranslateKey((int)wParam, false, row, col);
 				}
 			}
 			break;
@@ -1491,13 +1491,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 		case WM_SYSKEYUP:
 			// Debug("SysKeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
 
-			if ((uParam == 0x35 || uParam == VK_NUMPAD5) && (lParam & 0x20000000))
+			if ((wParam == 0x35 || wParam == VK_NUMPAD5) && (lParam & 0x20000000))
 			{
 				mainWin->CaptureBitmapPending(true);
 				break;
 			}
-
-			if (uParam == 0x31 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == 0x31 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickSave();
 				// Let user know state has been saved
@@ -1505,8 +1504,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				MessageBeep(MB_ICONEXCLAMATION);
 				break;
 			}
-
-			if (uParam == 0x32 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == 0x32 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickLoad();
 				// Let user know state has been loaded
@@ -1514,44 +1512,41 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				MessageBeep(MB_ICONEXCLAMATION);
 				break;
 			}
-
-			if (uParam == VK_OEM_PLUS && (lParam & 0x20000000))
+			else if (wParam == VK_OEM_PLUS && (lParam & 0x20000000))
 			{
 				mainWin->AdjustSpeed(true);
 				break;
 			}
-
-			if (uParam == VK_OEM_MINUS && (lParam & 0x20000000))
+			else if (wParam == VK_OEM_MINUS && (lParam & 0x20000000))
 			{
 				mainWin->AdjustSpeed(false);
 				break;
 			}
-
-			if (uParam != VK_F10 && uParam != VK_CONTROL)
+			else if (wParam != VK_F10 && wParam != VK_CONTROL)
 				break;
 
 		case WM_KEYUP:
 			// DebugTrace("KeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
 
-			if (uParam == VK_DIVIDE && !mainWin->m_DisableKeysShortcut)
+			if (wParam == VK_DIVIDE && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickSave();
 				// Let user know state has been saved
 				FlashWindow(GETHWND, TRUE);
 				MessageBeep(MB_ICONEXCLAMATION);
 			}
-			else if (uParam == VK_MULTIPLY && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == VK_MULTIPLY && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickLoad();
 				// Let user know state has been loaded
 				FlashWindow(GETHWND, TRUE);
 				MessageBeep(MB_ICONEXCLAMATION);
 			}
-			else if (uParam == VK_ADD && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == VK_ADD && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->AdjustSpeed(true);
 			}
-			else if (uParam == VK_SUBTRACT && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == VK_SUBTRACT && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->AdjustSpeed(false);
 			}
@@ -1561,12 +1556,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 				if (userPortBreakoutDialog != nullptr)
 				{
-					bit = userPortBreakoutDialog->KeyUp(static_cast<int>(uParam));
+					bit = userPortBreakoutDialog->KeyUp(static_cast<int>(wParam));
 				}
 
 				if (!bit)
 				{
-					if(mainWin->TranslateKey((int)uParam, true, row, col) < 0)
+					if (mainWin->TranslateKey((int)wParam, true, row, col) < 0)
 					{
 						if (row == -2)
 						{
@@ -1626,8 +1621,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_ACTIVATE:
-			mainWin->Activate(uParam != WA_INACTIVE);
-			if(uParam != WA_INACTIVE)
+			mainWin->Activate(wParam != WA_INACTIVE);
+			if (wParam != WA_INACTIVE)
 			{
 				// Bring debug window to foreground BEHIND main window.
 				if(hwndDebug)
@@ -1636,7 +1631,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 					SetWindowPos(GETHWND, HWND_TOP,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE);
 				}
 			}
-			if (mainWin->m_MouseCaptured && uParam == WA_INACTIVE)
+
+			if (mainWin->m_MouseCaptured && wParam == WA_INACTIVE)
 			{
 				mainWin->ReleaseMouse();
 			}
@@ -1659,7 +1655,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			else
 			{
-				return DefWindowProc(hWnd, message, uParam, lParam);
+				return DefWindowProc(hWnd, message, wParam, lParam);
 			}
 			break;
 
@@ -1669,7 +1665,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 		case MM_JOY1BUTTONDOWN:
 		case MM_JOY1BUTTONUP:
-			JoystickButton[0] = (uParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0;
+			JoystickButton[0] = (wParam & (JOY_BUTTON1 | JOY_BUTTON2)) != 0;
 			break;
 
 		case WM_INPUT:
@@ -1742,13 +1738,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			}
 			else
 			{
-				mainWin->SetMousestickButton(0, (uParam & MK_LBUTTON) != 0);
+				mainWin->SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
 				AMXButtons |= AMX_LEFT_BUTTON;
 			}
 			break;
 
 		case WM_LBUTTONUP:
-			mainWin->SetMousestickButton(0, (uParam & MK_LBUTTON) != 0);
+			mainWin->SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
 			AMXButtons &= ~AMX_LEFT_BUTTON;
 			break;
 
@@ -1761,12 +1757,12 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_RBUTTONDOWN:
-			mainWin->SetMousestickButton(1, (uParam & MK_RBUTTON) != 0);
+			mainWin->SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
 			AMXButtons |= AMX_RIGHT_BUTTON;
 			break;
 
 		case WM_RBUTTONUP:
-			mainWin->SetMousestickButton(1, (uParam & MK_RBUTTON) != 0);
+			mainWin->SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
@@ -1797,11 +1793,11 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_TIMER:
-			if (uParam == 1)
+			if (wParam == 1)
 			{
 				mainWin->HandleTimer();
 			}
-			else if (uParam == 2) // Handle timer for automatic disc boot delay
+			else if (wParam == 2) // Handle timer for automatic disc boot delay
 			{
 				mainWin->KillBootDiscTimer();
 				mainWin->DoShiftBreak();
@@ -1818,7 +1814,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		default: // Passes it on if unproccessed
-			return DefWindowProc(hWnd, message, uParam, lParam);
+			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 
 	return 0;
@@ -2560,7 +2556,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 }
 
 /*****************************************************************************/
-void BeebWin::WinSizeChange(int size, int width, int height)
+void BeebWin::WinSizeChange(WPARAM size, int width, int height)
 {
 	if (m_DisplayRenderer == IDM_DISPGDI && size == SIZE_RESTORED && m_isFullScreen)
 	{
@@ -4841,7 +4837,6 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 	bool copy_user_files = false;
 	bool store_user_data_path = false;
 	char path[_MAX_PATH];
-	char errstr[500];
 
 	// Change all '/' to '\'
 	for (size_t i = 0; i < strlen(m_UserDataPath); ++i)

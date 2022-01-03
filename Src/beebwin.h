@@ -241,7 +241,7 @@ public:
 	void ReleaseMouse();
 	void Activate(bool active);
 	void Focus(bool gotit);
-	void WinSizeChange(int size, int width, int height);
+	void WinSizeChange(WPARAM size, int width, int height);
 	void WinPosChange(int x, int y);
 	bool IsFrozen();
 	void TogglePause();
