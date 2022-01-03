@@ -25,8 +25,6 @@ Boston, MA  02110-1301, USA.
 keyboard emulation - David Alan Gilbert 30/10/94 */
 /* CMOS Ram finalised 06/01/2001 - Richard Gellman */
 
-#include <iostream>
-#include <fstream>
 #include <stdio.h>
 #include <time.h>
 #include <windows.h>
@@ -39,6 +37,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "via.h"
 #include "main.h"
 #include "debug.h"
+#include "DebugTrace.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
@@ -73,7 +72,7 @@ bool OldCMOSState = false;
 // CMOS logging facilities
 bool CMOSDebug = false;
 FILE *CMDF;
-FILE *vialog;
+
 /* Last value written to the slow data bus - sound reads it later */
 static unsigned char SlowDataBusWriteValue=0;
 
@@ -138,7 +137,7 @@ void DoKbdIntCheck() {
   if ((KeysDown>0) && ((SysVIAState.pcr & 0xc)==4)) {
     if ((IC32State & 8)==8) {
       SysVIAState.ifr|=1; /* CA2 */
-      /*cerr << "DoKbdIntCheck: Caused interrupt case 1\n"; */
+      // DebugTrace("DoKbdIntCheck: Caused interrupt case 1\n");
       UpdateIFRTopBit();
     } else {
       if (KBDCol<15) {
@@ -146,19 +145,21 @@ void DoKbdIntCheck() {
         for(presrow=1;presrow<8;presrow++) {
           if (SysViaKbdState[KBDCol][presrow]) {
             SysVIAState.ifr|=1;
-            /*cerr << "DoKbdIntCheck: Caused interrupt case 2\n"; */
+            // DebugTrace("DoKbdIntCheck: Caused interrupt case 2\n");
             UpdateIFRTopBit();
           }
         } /* presrow */
       } /* KBDCol range */
     } /* WriteEnable on */
   } /* Keys down and CA2 input enabled */
+
 #ifdef KBDDEBUG
-  cerr << "DoKbdIntCheck KeysDown=" << KeysDown << "pcr & c=" << (int)(SysVIAState.pcr & 0xc);
-  cerr << " IC32State & 8=" << (int)(IC32State & 8) << " KBDRow=" << KBDRow << "KBDCol=" << KBDCol;
-  cerr << " oldIFRflag=" << Oldflag << " Newflag=" << (int)(SysVIAState.ifr & 1) << "\n";
+  DebugTrace("DoKbdIntCheck KeysDown=%d pcr & c=%d IC32State & 8=%d "
+             "KBDRow=%d KBDCol=%d oldIFRflag=%d Newflag=%d\n",
+             KeysDown, SysVIAState.pcr & 0xc, IC32State & 8,
+             KBDRow, KBDCol, Oldflag, SysVIAState.ifr & 1);
 #endif
-} /* DoKbdIntCheck */
+}
 
 /*--------------------------------------------------------------------------*/
 void BeebKeyDown(int row,int col) {
@@ -219,7 +220,7 @@ static void IC32Write(unsigned char Value) {
   if (((oldval & 1)) && (!(IC32State & 1))) { Sound_RegWrite(SlowDataBusWriteValue); }
   // now, this was a change from 0 to 1, but my docs say its a change from 1 to 0. might work better this way.
 #endif
-  /* cerr << "IC32State now=" << hex << int(IC32State) << dec << "\n"; */
+  // DebugTrace("IC32State now=%x\n", IC32State);
 
 #ifdef SPEECH_ENABLED
   if (bit == 2 && (Value & 8) == 0 && MachineType != Model::Master128) // Write Command
@@ -244,11 +245,11 @@ void ChipClock(int /* nCycles */) {
 /*--------------------------------------------------------------------------*/
 static void SlowDataBusWrite(unsigned char Value) {
   SlowDataBusWriteValue=Value;
-  /*cerr << "Slow data bus write IC32State=" << int(IC32State) << " Value=" << int(Value) << "\n";*/
+  // DebugTrace("Slow data bus write IC32State=%d Value=0x%02x\n", IC32State, Value);
   if (!(IC32State & 8)) {
     KBDRow=(Value>>4) & 7;
     KBDCol=(Value & 0xf);
-    /*cerr << "SlowDataBusWrite to kbd  Row=" << KBDRow << " Col=" << KBDCol << "\n"; */
+    // DebugTrace("SlowDataBusWrite to kbd  Row=%d Col=%d\n", KBDRow, KBDCol);
     DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
   } /* kbd write */
 
@@ -291,16 +292,15 @@ static int SlowDataBusRead(void) {
     result = 0xff;
   }
 
-  /* cerr << "SlowDataBusRead giving 0x" << hex << result << dec << "\n"; */
+  // DebugTrace("SlowDataBusRead giving 0x%02x\n", result);
+
   return(result);
 }
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe40 stripped out */
 void SysVIAWrite(int Address, int Value) {
-  //fprintf(vialog,"SYSTEM VIA Write of %d (%02x) to address %d\n",Value,Value,Address);
-  /* cerr << "SysVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
-  DumpRegs(); */
+  DebugTrace("SysVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
   if (DebugEnabled) {
     char info[200];
@@ -426,7 +426,8 @@ void SysVIAWrite(int Address, int Value) {
       break;
 
     case 14:
-      /*cerr << "Write ier Value=" << Value << "\n"; */
+      // DebugTrace("Write ier Value=0x%02x\n", Value);
+
       if (Value & 0x80)
         SysVIAState.ier|=Value & 0xff;
       else
@@ -449,9 +450,9 @@ void SysVIAWrite(int Address, int Value) {
 unsigned char SysVIARead(int Address)
 {
   unsigned char tmp = 0xff;
-  //fprintf(vialog,"SYSTEM VIA Read of address %02x (%d)\n",Address,Address);
-  /* cerr << "SysVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
-  DumpRegs(); */
+
+  // DebugTrace("SysVIARead: Address=0x%02x at %d\n", Address, TotalCycles);
+
   switch (Address) {
     case 0: /* IRB read */
 	  // Clear bit 4 of IFR from ATOD Conversion
@@ -539,7 +540,7 @@ unsigned char SysVIARead(int Address)
     case 13:
       UpdateIFRTopBit();
 #ifdef KBDDEBUG
-      cerr << "Read IFR got=0x" << hex << int(SysVIAState.ifr) << dec << "\n";
+      // DebugTrace("Read IFR got=0x%02x\n", SysVIAState.ifr);
 #endif
       tmp = SysVIAState.ifr;
       break;
@@ -570,7 +571,7 @@ unsigned char SysVIARead(int Address)
 /* Value denotes the new value - i.e. 1 for a rising edge */
 void SysVIATriggerCA1Int(int value) {
   /*value^=1; */
-  /*cerr << "SysVIATriggerCA1Int at " << TotalCycles << "\n"; */
+  // DebugTrace("SysVIATriggerCA1Int at %d\n", TotalCycles);
   /* Cause interrupt on appropriate edge */
   if (!((SysVIAState.pcr & 1) ^ value)) {
     SysVIAState.ifr|=2; /* CA1 */
@@ -585,7 +586,7 @@ void SysVIA_poll_real(void) {
   if (SysVIAState.timer1c<-2 && !t1int) {
     t1int=true;
     if (!SysVIAState.timer1hasshot || (SysVIAState.acr & 0x40)) {
-      /* cerr << "SysVia timer1 int at " << TotalCycles << "\n"; */
+      // DebugTrace("SysVia timer1 int at %d\n", TotalCycles);
       SysVIAState.ifr|=0x40; /* Timer 1 interrupt */
       UpdateIFRTopBit();
       if (SysVIAState.acr & 0x80) {
@@ -606,7 +607,7 @@ void SysVIA_poll_real(void) {
 
   if (SysVIAState.timer2c<-2) {
     if (!SysVIAState.timer2hasshot) {
-      /* cerr << "SysVia timer2 int at " << TotalCycles << "\n"; */
+      // DebugTrace("SysVia timer2 int at %d\n", TotalCycles);
       SysVIAState.ifr|=0x20; /* Timer 2 interrupt */
       UpdateIFRTopBit();
       if ((SysVIAState.ier & 0x20) && CyclesToInt == NO_TIMER_INT_DUE) {
@@ -643,7 +644,6 @@ void SysVIA_poll(unsigned int ncycles) {
 /*--------------------------------------------------------------------------*/
 void SysVIAReset(void) {
   VIAReset(&SysVIAState);
-  //vialog=fopen("/via.log","wt");
 
   /* Make it no keys down and no dip switches set */
   BeebReleaseAllKeys();
@@ -754,12 +754,6 @@ unsigned char CMOSRead(unsigned char CMOSAddr) {
 }
 
 /*--------------------------------------------------------------------------*/
-void sysvia_dumpstate(void) {
-  cerr << "Sysvia:\n";
-  cerr << "  IC32State=" << IC32State << "\n";
-  via_dumpstate(&SysVIAState);
-}
-
 void DebugSysViaState()
 {
 	DebugViaState("SysVia", &SysVIAState);

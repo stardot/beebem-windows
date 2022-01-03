@@ -37,8 +37,6 @@ unsigned char UserVIARead(int Address);
 void UserVIAReset(void);
 void UserVIA_poll(unsigned int ncycles);
 
-void uservia_dumpstate(void);
-
 /* AMX mouse enabled */
 extern bool AMXMouseEnabled;
 

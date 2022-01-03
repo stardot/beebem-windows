@@ -25,8 +25,6 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #endif
 
-#include <iostream>
-#include <fstream>
 #include <stdio.h>
 #include <time.h>
 
@@ -39,7 +37,6 @@ Boston, MA  02110-1301, USA.
 #include "tube.h"
 #include "UserPortBreakoutBox.h"
 
-using namespace std;
 
 /* Real Time Clock */
 int RTC_bit = 0;
@@ -95,12 +92,11 @@ void UserVIAWrite(int Address, int Value) {
 
   static int lastValue = 0xff;
 
-  /* cerr << "UserVIAWrite: Address=0x" << hex << Address << " Value=0x" << Value << dec << " at " << TotalCycles << "\n";
-  DumpRegs(); */
+  // DebugTrace("UserVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
   if (DebugEnabled) {
     char info[200];
-    sprintf(info, "UsrVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
+    sprintf(info, "UserVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
     DebugDisplayTrace(DebugType::UserVIA, true, info);
   }
 
@@ -158,13 +154,13 @@ void UserVIAWrite(int Address, int Value) {
 
     case 4:
     case 6:
-      /*cerr << "UserVia Reg4 Timer1 lo Counter Write val=0x " << hex << Value << dec << " at " << TotalCycles << "\n"; */
+      // DebugTrace("UserVia Reg4 Timer1 lo Counter Write val=0x%02x at %d\n", Value, TotalCycles);
       UserVIAState.timer1l&=0xff00;
       UserVIAState.timer1l|=(Value & 0xff);
       break;
 
     case 5:
-      /*cerr << "UserVia Reg5 Timer1 hi Counter Write val=0x" << hex << Value << dec  << " at " << TotalCycles << "\n"; */
+      // DebugTrace("UserVia Reg5 Timer1 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
       UserVIAState.timer1l&=0xff;
       UserVIAState.timer1l|=(Value & 0xff)<<8;
       UserVIAState.timer1c=UserVIAState.timer1l * 2 + 1;
@@ -179,7 +175,7 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 7:
-      /*cerr << "UserVia Reg7 Timer1 hi latch Write val=0x" << hex << Value << dec  << " at " << TotalCycles << "\n"; */
+      // DebugTrace("UserVia Reg7 Timer1 hi latch Write val=0x%02x at %d\n", Value, TotalCycles);
       UserVIAState.timer1l&=0xff;
       UserVIAState.timer1l|=(Value & 0xff)<<8;
       UserVIAState.ifr &=0xbf; /* clear timer 1 ifr (this is what Model-B does) */
@@ -187,13 +183,13 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 8:
-      /* cerr << "UserVia Reg8 Timer2 lo Counter Write val=0x" << hex << Value << dec << "\n"; */
+      // DebugTrace("UserVia Reg8 Timer2 lo Counter Write val=0x%02x at %d\n", Value, TotalCycles);
       UserVIAState.timer2l&=0xff00;
       UserVIAState.timer2l|=(Value & 0xff);
       break;
 
     case 9:
-      /* cerr << "UserVia Reg9 Timer2 hi Counter Write val=0x" << hex << Value << dec << "\n"; */
+      // DebugTrace("UserVia Reg9 Timer2 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
       UserVIAState.timer2l&=0xff;
       UserVIAState.timer2l|=(Value & 0xff)<<8;
       UserVIAState.timer2c=UserVIAState.timer2l * 2 + 1;
@@ -222,7 +218,7 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 14:
-      // cerr << "User VIA Write ier Value=" << Value << "\n";
+      // DebugTrace("User VIA Write ier Value=0x%02x\n", Value);
       if (Value & 0x80)
         UserVIAState.ier|=Value & 0xff;
       else
@@ -246,8 +242,8 @@ unsigned char UserVIARead(int Address)
   unsigned char tmp = 0xff;
   // Local copy for processing middle button
   int amxButtons = AMXButtons;
-  /* cerr << "UserVIARead: Address=0x" << hex << Address << dec << " at " << TotalCycles << "\n";
-  DumpRegs(); */
+
+  // DebugTrace("UserVIARead: Address=0x%02x at %d\n", Address, TotalCycles);
 
   switch (Address) {
     case 0: /* IRB read */
@@ -366,7 +362,7 @@ unsigned char UserVIARead(int Address)
 
   if (DebugEnabled) {
     char info[200];
-    sprintf(info, "UsrVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
+    sprintf(info, "UserVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
     DebugDisplayTrace(DebugType::UserVIA, true, info);
   }
 
@@ -387,7 +383,7 @@ void UserVIA_poll_real(void) {
   if (UserVIAState.timer1c<-2 && !t1int) {
     t1int=true;
     if (!UserVIAState.timer1hasshot || (UserVIAState.acr & 0x40)) {
-      /*cerr << "UserVIA timer1c - int at " << TotalCycles << "\n"; */
+      // DebugTrace("UserVIA timer1c - int at %d\n", TotalCycles);
       UserVIAState.ifr|=0x40; /* Timer 1 interrupt */
       UpdateIFRTopBit();
       if (UserVIAState.acr & 0x80) {
@@ -402,14 +398,14 @@ void UserVIA_poll_real(void) {
   }
 
   if (UserVIAState.timer1c<-3) {
-    /*cerr << "UserVIA timer1c\n"; */
+    // DebugTrace("UserVIA timer1c\n");
     UserVIAState.timer1c += (UserVIAState.timer1l * 2) + 4;
     t1int=false;
   }
 
   if (UserVIAState.timer2c<-2) {
     if (!UserVIAState.timer2hasshot) {
-      /* cerr << "UserVIA timer2c - int\n"; */
+      // DebugTrace("UserVIA timer2c - int\n");
       UserVIAState.ifr|=0x20; /* Timer 2 interrupt */
       UpdateIFRTopBit();
       if ((UserVIAState.ier & 0x20) && CyclesToInt == NO_TIMER_INT_DUE) {
@@ -420,7 +416,7 @@ void UserVIA_poll_real(void) {
   }
 
   if (UserVIAState.timer2c<-3) {
-    /* cerr << "UserVIA timer2c\n"; */
+    // DebugTrace("UserVIA timer2c\n");
     UserVIAState.timer2c += 0x20000; // Do not reload latches for T2
   }
 }
@@ -686,13 +682,8 @@ void RTCWrite(int Value, int lastValue)
 }
 
 /*--------------------------------------------------------------------------*/
-void uservia_dumpstate(void) {
-  cerr << "Uservia:\n";
-  via_dumpstate(&UserVIAState);
-}
-
 void DebugUserViaState()
 {
-	DebugViaState("UsrVia", &UserVIAState);
+	DebugViaState("UserVia", &UserVIAState);
 }
 

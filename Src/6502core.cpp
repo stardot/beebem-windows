@@ -380,17 +380,6 @@ INLINE static void SetPSRCZN(int c,int z, int n) {
 } /* SetPSRCZN */
 
 /*----------------------------------------------------------------------------*/
-void DumpRegs(void) {
-  static const char FlagNames[]="CZIDB-VNczidb-vn";
-
-  fprintf(stderr,"  PC=0x%x A=0x%x X=0x%x Y=0x%x S=0x%x PSR=0x%x=",
-    ProgramCounter,Accumulator,XReg,YReg,StackReg,PSR);
-  for (int FlagNum = 0; FlagNum < 8; FlagNum++)
-    fputc(FlagNames[FlagNum+8*((PSR & (1<<FlagNum))==0)],stderr);
-  fputc('\n',stderr);
-} /* DumpRegs */
-
-/*----------------------------------------------------------------------------*/
 INLINE static void Push(unsigned char ToPush) {
   BEEBWRITEMEM_DIRECT(0x100+StackReg,ToPush);
   StackReg--;

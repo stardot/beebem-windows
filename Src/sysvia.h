@@ -52,7 +52,6 @@ void RTCInit(void);
 void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData);
 unsigned char CMOSRead(unsigned char CMOSAddr);
 
-void sysvia_dumpstate(void);
 void PulseSysViaCB1(void);
 
 unsigned char BCD(unsigned char nonBCD);

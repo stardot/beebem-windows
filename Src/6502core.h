@@ -28,8 +28,6 @@ Boston, MA  02110-1301, USA.
 #include "port.h"
 #include <stdio.h>
 
-void DumpRegs(void);
-
 typedef enum IRQ_Nums {
   sysVia,
   userVia,
