@@ -117,18 +117,17 @@ INT_PTR SelectKeyDialog::DlgProc(
 		// what the user wants
 		SetDlgItemChecked(m_hwnd, IDC_SHIFT, m_Shift);
 
+		PostMessage(m_hwndParent, WM_SELECT_KEY_DIALOG_OPENED, m_Joystick, (LPARAM)m_hwnd);
 		return TRUE;
 
 	case WM_ACTIVATE:
 		if (LOWORD(wParam) == WA_INACTIVE)
 		{
 			hCurrentDialog = nullptr;
-			mainWin->SetJoystickTarget(nullptr);
 		}
 		else
 		{
 			hCurrentDialog = m_hwnd;
-			mainWin->SetJoystickTarget(m_hwnd);
 			hCurrentAccelTable = nullptr;
 		}
 		break;

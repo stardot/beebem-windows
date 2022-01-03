@@ -1737,6 +1737,16 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			userPortBreakoutDialog = nullptr;
 			break;
 
+		case WM_SELECT_KEY_DIALOG_OPENED:
+			if (wParam) {
+				mainWin->SetJoystickTargetWindow((HWND)lParam);
+			}
+			break;
+
+		case WM_SELECT_KEY_DIALOG_CLOSED:
+			mainWin->SetJoystickTargetWindow(nullptr);
+			break;
+
 		default: // Passes it on if unproccessed
 			return DefWindowProc(hWnd, message, wParam, lParam);
 	}

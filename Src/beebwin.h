@@ -287,7 +287,7 @@ public:
 	bool IsWindowMinimized() const;
 	void DisplayClientAreaText(HDC hdc);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
-	void SetJoystickTarget(HWND target);
+	void SetJoystickTargetWindow(HWND target);
 	void SetJoystickButton(int index, bool value);
 	void ScaleJoystick(int index, unsigned int x, unsigned int y,
 		unsigned int minX, unsigned int minY,

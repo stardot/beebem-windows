@@ -617,7 +617,7 @@ JoystickHandlerPtr::JoystickHandlerPtr() : std::unique_ptr<JoystickHandler>{ std
 JoystickHandlerPtr::~JoystickHandlerPtr() {}
 
 /****************************************************************************/
-void BeebWin::SetJoystickTarget(HWND target)
+void BeebWin::SetJoystickTargetWindow(HWND target)
 {
 	m_JoystickTarget = target;
 }

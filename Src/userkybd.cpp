@@ -431,6 +431,10 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 		OnDrawItem((UINT)wParam, (LPDRAWITEMSTRUCT)lParam);
 		return TRUE;
 
+	case WM_SELECT_KEY_DIALOG_OPENED:
+		SendMessage(hwndMain, WM_SELECT_KEY_DIALOG_OPENED, wParam, lParam);
+		break;
+
 	case WM_SELECT_KEY_DIALOG_CLOSED:
 		if (wParam == IDOK)
 		{
@@ -440,6 +444,8 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 				selectKeyDialog->Shift()
 			);
 		}
+
+		SendMessage(hwndMain, WM_SELECT_KEY_DIALOG_CLOSED, 0, 0);
 
 		delete selectKeyDialog;
 		selectKeyDialog = nullptr;
