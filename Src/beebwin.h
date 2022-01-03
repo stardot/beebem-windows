@@ -588,8 +588,6 @@ public:
 	void UpdateJoystickMenu(void);
 	void ProcessJoystickMenuCommand(int bbcIdx, UINT menuId);
 	void ProcessJoystickAxesMenuCommand(int bbcIdx, UINT menuId);
-	void ProcessJoystickToKeysCommand();
-	void ProcessAutoloadJoystickMapCommand();
 
 	void UpdateJoystickConfig(int bbcIdx);
 	bool GetAnalogMousestick(int bbcIdx);

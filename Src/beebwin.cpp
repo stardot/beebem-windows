@@ -3313,11 +3313,14 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_JOYSTICK_TO_KEYS:
-		ProcessJoystickToKeysCommand();
+		m_JoystickToKeys = !m_JoystickToKeys;
+		InitJoystick(false);
+		CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
 		break;
 
 	case IDM_AUTOLOADJOYMAP:
-		ProcessAutoloadJoystickMapCommand();
+		m_AutoloadJoystickMap = !m_AutoloadJoystickMap;
+		CheckMenuItem(IDM_AUTOLOADJOYMAP, m_AutoloadJoystickMap);
 		break;
 
 	case IDM_JOYSTICKORDER:

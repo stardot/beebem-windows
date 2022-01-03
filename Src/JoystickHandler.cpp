@@ -786,21 +786,6 @@ void BeebWin::ProcessJoystickAxesMenuCommand(int bbcIdx, UINT MenuId)
 }
 
 /****************************************************************************/
-void BeebWin::ProcessJoystickToKeysCommand(void)
-{
-	m_JoystickToKeys = !m_JoystickToKeys;
-	InitJoystick(false);
-	CheckMenuItem(IDM_JOYSTICK_TO_KEYS, m_JoystickToKeys);
-}
-
-/****************************************************************************/
-void BeebWin::ProcessAutoloadJoystickMapCommand(void)
-{
-	m_AutoloadJoystickMap = !m_AutoloadJoystickMap;
-	CheckMenuItem(IDM_AUTOLOADJOYMAP, m_AutoloadJoystickMap);
-}
-
-/****************************************************************************/
 void BeebWin::ResetJoystick()
 {
 	for (JoystickDev& dev : m_JoystickHandler->m_JoystickDevs)
