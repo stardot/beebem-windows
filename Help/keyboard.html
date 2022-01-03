@@ -193,7 +193,7 @@ these are not:</p>
 <h2>Custom Key Mappings</h2>
 
 <p>Key mappings are kept in .kmap files stored in the 'My Documents\BeebEm'
-area.  BeebEm will read the Default.kmap and Logical.kmap files at start up.
+folder. BeebEm will read the Default.kmap and Logical.kmap files at start up.
 These files contain mappings for a UK PC keyboard and they can be replaced
 with alternative mapping files if you are not using a UK keyboard (for
 example, the USLogical.kmap file for a US keyboard).</p>
@@ -242,7 +242,7 @@ BBC one.  Do this as follows:</p>
 <p>To enable translating PC joystick actions to BBC keys, use menu item
    "Options &rarr; Joystick To Keyboard &rarr; Enable Joystick To Keyboard".
    BeemEm supports mapping up to four joysticks or gamepads to BBC keys,
-   with each joystick actions (button presses or stick movements)
+   with each joystick action (button presses or stick movements)
    mapped separately.</p>
 
 <p>Creating mapping of PC joystick movements and buttons to BBC keys is
@@ -286,23 +286,23 @@ BBC one.  Do this as follows:</p>
    unshifted state separately.  The most common scenario is to assign a
    joystick action to the same BBC key in both shifted and unshifted state.
    To do that, just click on the BBC key that you want to map, and move
-   joystick or press button twice - once for unshifted and second time for
-   shifted state.</p>
+   the joystick or press the button twice - once for unshifted and then for
+   the shifted state.</p>
 
 <p>Additionally, you can assign one or more joystick buttons to the SHIFT key.
    This can be used to assign one joystick button as a modifier for
    other joystick actions, which can be useful for games that have a lot of
-   keyboard contols.</p>
+   keyboard controls.</p>
 
 <p>PC joystick to BBC keyboard mapping is independent from enabling PC joystick
-   acting as BBC joystick.  If you enable both, primary PC joystick axes
+   acting as a BBC joystick. If you enable both, the primary PC joystick axes
    (primary stick up, down, left and right) and first two buttons are mapped
-   to BBC joystick.  You can map other axes and buttons to BBC keys. You can
+   to the BBC joystick. You can map other axes and buttons to BBC keys. You can
    map those axes and buttons which are acting as BBC joystick to BBC
    keys as well. In that case, the PC joystick action will be seen as both BBC
    joystick action and BBC key press.</p>
 
-<p>To remove mapping from previously mapped joystick action, click on the
+<p>To remove a previously mapped joystick action, click on the
    'Unassign' button.  It will display small window and wait for the
    joystick action.  Press the joystick button or move the joystick in the
    direction that you want to unmap.  The same window will be displayed again,
@@ -311,19 +311,18 @@ BBC one.  Do this as follows:</p>
    second unassignment.</p>
 
 <p>At start up BeebEm loads DefaultUser.jmap from the User Data Folder, if such
-   file was created by user. If this file is not present, all joystick actions
+   file was created by the user. If this file is not present, all joystick actions
    start unassigned.</p>
 
-<p>Menu item "Options &rarr; Joystick To Keyboard &rarr; Autoload Joystick Mapping"
-   toggles Autoload Joystick Mapping option. If this option is enabled, BeebEm
-   will automatically look for joystick mapping file based on name of image
-   file started from "File &rarr; Run Disc.." or "File &rarr; Load Tape..." menu item,
-   or from command-line. The sought mapping file has the same name and
-   directory as loaded image, but extension changed to ".jmap". If no such
-   file is found, joystick mapping is reset to default - either empty, or that
-   from "DefaultUser.jmap" file. If the Autoload Joystick Mapping option is
-   enabled, the "Save Joystick Mapping..." dialog will automatically suggest
-   correct file name for currently loaded image file.</p>
+<p>If the "Options &rarr; Joystick To Keyboard &rarr; Autoload Joystick Mapping"
+   menu item is enabled, BeebEm will automatically look for a joystick mapping file
+   based on name of the disk or tape image file started from the "File &rarr; Run Disc.."
+   or "File &rarr; Load Tape..." menu items, or from the command-line. The mapping file
+   should be in the same folder as the disk or tape image, with the same file name,
+   but the extension changed to ".jmap". If no such file is found, the joystick mapping
+   is reset to default: either empty, or from the "DefaultUser.jmap" file. If the
+   Autoload Joystick Mapping option is enabled, the "Save Joystick Mapping..." dialog
+   will automatically suggest correct file name for currently loaded image file.</p>
 
          <!-- End of content -->
       </td>
