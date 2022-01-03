@@ -337,8 +337,8 @@ public:
 	void QuickSave();
 	void LoadUEFState(const char *FileName);
 	void SaveUEFState(const char *FileName);
-	void LoadUEFTape(const char *FileName);
-	void LoadCSWTape(const char *FileName);
+	bool LoadUEFTape(const char *FileName);
+	bool LoadCSWTape(const char *FileName);
 
 	void Speak(const char *text, DWORD flags);
 	void SpeakChar(unsigned char c);

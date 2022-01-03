@@ -293,14 +293,21 @@ void BeebWin::LoadTape(void)
 			m_Preferences.SetStringValue("TapesPath", DefaultPath);
 		}
 
-		if (hasFileExt(FileName, ".uef")) {
-			LoadUEFTape(FileName);
+		bool Success = false;
+
+		if (hasFileExt(FileName, ".uef"))
+		{
+			Success = LoadUEFTape(FileName);
 		}
-		else if (hasFileExt(FileName, ".csw")) {
-			LoadCSWTape(FileName);
+		else if (hasFileExt(FileName, ".csw"))
+		{
+			Success = LoadCSWTape(FileName);
 		}
 
-		CheckForJoystickMap(FileName);
+		if (Success)
+		{
+			CheckForJoystickMap(FileName);
+		}
 	}
 }
 
@@ -903,7 +910,7 @@ void BeebWin::SaveUEFState(const char *FileName)
 	}
 }
 
-void BeebWin::LoadUEFTape(const char *FileName)
+bool BeebWin::LoadUEFTape(const char *FileName)
 {
 	bool Success = ::LoadUEFTape(FileName);
 
@@ -921,9 +928,11 @@ void BeebWin::LoadUEFTape(const char *FileName)
 				break;
 		}
 	}
+
+	return Success;
 }
 
-void BeebWin::LoadCSWTape(const char *FileName)
+bool BeebWin::LoadCSWTape(const char *FileName)
 {
 	CSWResult Result = ::LoadCSW(FileName);
 
@@ -946,6 +955,8 @@ void BeebWin::LoadCSWTape(const char *FileName)
 			Report(MessageType::Error, "Cannot open CSW file:\n  %s", FileName);
 			break;
 	}
+
+	return Result == CSWResult::Success;
 }
 
 /****************************************************************************/
