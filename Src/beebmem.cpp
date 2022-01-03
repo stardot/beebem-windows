@@ -308,14 +308,16 @@ unsigned char BeebReadMem(int Address) {
 
 		if (Address==0xfe3c) {
 			time_t long_time; // Clock for Computech Integra-B
-			time( &long_time );
-			if (HidAdd==0) return(localtime(&long_time)->tm_sec);
-			if (HidAdd==2) return(localtime(&long_time)->tm_min);
-			if (HidAdd==4) return(localtime(&long_time)->tm_hour);
-			if (HidAdd==6) return((localtime(&long_time)->tm_wday)+1);
-			if (HidAdd==7) return(localtime(&long_time)->tm_mday);
-			if (HidAdd==8) return((localtime(&long_time)->tm_mon)+1);
-			if (HidAdd==9) return((localtime(&long_time)->tm_year)%100);
+			time(&long_time);
+			struct tm* time = localtime(&long_time);
+
+			if (HidAdd==0) return (unsigned char)time->tm_sec;
+			if (HidAdd==2) return (unsigned char)time->tm_min;
+			if (HidAdd==4) return (unsigned char)time->tm_hour;
+			if (HidAdd==6) return (unsigned char)(time->tm_wday + 1);
+			if (HidAdd==7) return (unsigned char)(time->tm_mday);
+			if (HidAdd==8) return (unsigned char)(time->tm_mon + 1);
+			if (HidAdd==9) return (unsigned char)(time->tm_year % 100);
 			if (HidAdd==0xa) return(0x0);
 			return(Hidden[HidAdd]);
 		}
@@ -547,7 +549,7 @@ unsigned char BeebReadMem(int Address) {
 
 	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
 		// mainWin->Report(MessageType::Error, "Read of 1770 Extension Board");
-		return(Read1770Register(Address-EFDCAddr));
+		return Read1770Register(Address - EFDCAddr);
 	}
 
 	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {

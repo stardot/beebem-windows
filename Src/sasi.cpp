@@ -363,7 +363,7 @@ static void SASIBusFree()
 	LEDs.HDisc[3] = 0;
 }
 
-static void SASISelection(int data)
+static void SASISelection(int /* data */)
 {
 	sasi.bsy = true;
 	sasi.phase = selection;
@@ -456,7 +456,7 @@ static void SASIMessage()
 	sasi.req = true;
 }
 
-static bool SASIDiscTestUnitReady(unsigned char *buf)
+static bool SASIDiscTestUnitReady(unsigned char * /* buf */)
 {
 	return SASIDisc[sasi.lun] != nullptr;
 }
@@ -639,7 +639,7 @@ static void SASISetGeometory()
 	sasi.req = true;
 }
 
-static bool SASIWriteGeometory(unsigned char *buf)
+static bool SASIWriteGeometory(unsigned char * /* buf */)
 {
 	// WriteLog("Write Geometory 0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
 	//          buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8]);
@@ -690,7 +690,7 @@ static void SASIFormat()
 	SASIStatus();
 }
 
-static bool SASIDiscRezero(unsigned char *buf)
+static bool SASIDiscRezero(unsigned char * /* buf */)
 {
 	return true;
 }
@@ -717,7 +717,7 @@ static void SASIVerify()
 	sector |= sasi.cmd[2];
 	sector <<= 8;
 	sector |= sasi.cmd[3];
-	int blocks = sasi.cmd[4];
+	// int blocks = sasi.cmd[4];
 
 	// WriteLog("Verifying sector %d, blocks %d\n", sector, blocks);
 

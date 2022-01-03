@@ -102,11 +102,11 @@ const int SPIN_UP_TIME   = ONE_REV_TIME * 3; // Two Seconds
 #define BYTE_TIME   (VERIFY_TIME / 256)
 
 // WD1770 registers
-const unsigned char WD1770_CONTROL_REGISTER = 0;
-const unsigned char WD1770_STATUS_REGISTER  = 0;
-const unsigned char WD1770_TRACK_REGISTER   = 1;
-const unsigned char WD1770_SECTOR_REGISTER  = 2;
-const unsigned char WD1770_DATA_REGISTER    = 3;
+const int WD1770_CONTROL_REGISTER = 0;
+const int WD1770_STATUS_REGISTER  = 0;
+const int WD1770_TRACK_REGISTER   = 1;
+const int WD1770_SECTOR_REGISTER  = 2;
+const int WD1770_DATA_REGISTER    = 3;
 
 // WD1770 status register bits
 const unsigned char WD1770_STATUS_MOTOR_ON         = 0x80;
@@ -155,7 +155,7 @@ static bool CurrentDiscOpen()
 
 // Read 1770 Register. Note - NOT the FDC Control register at &FE24.
 
-unsigned char Read1770Register(unsigned char Register) {
+unsigned char Read1770Register(int Register) {
 	if (!Disc1770Enabled)
 		return 0xFF;
 
@@ -222,7 +222,7 @@ static void SetMotor(int Drive, bool State) {
 
 // Write 1770 Register - NOT the FDC Control register at &FE24
 
-void Write1770Register(unsigned char Register, unsigned char Value) {
+void Write1770Register(int Register, unsigned char Value) {
 	if (!Disc1770Enabled)
 		return;
 

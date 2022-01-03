@@ -37,8 +37,8 @@ enum class Disc1770Result {
 	Failed
 };
 
-unsigned char Read1770Register(unsigned char Register);
-void Write1770Register(unsigned char Register, unsigned char Value);
+unsigned char Read1770Register(int Register);
+void Write1770Register(int Register, unsigned char Value);
 Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type);
 void WriteFDCControlReg(unsigned char Value);
 unsigned char ReadFDCControlReg();

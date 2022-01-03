@@ -235,7 +235,7 @@ static void IC32Write(unsigned char Value) {
   }
 }
 
-void ChipClock(int nCycles) {
+void ChipClock(int /* nCycles */) {
 //	if (WECycles > 0) WECycles -= nCycles;
 //	else
 //	if (WEState) Sound_RegWrite(SlowDataBusWriteValue);

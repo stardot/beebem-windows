@@ -406,7 +406,7 @@ static void BusFree()
 	LEDs.HDisc[3] = 0;
 }
 
-static void Selection(int data)
+static void Selection(int /* data */)
 {
 	scsi.bsy = true;
 	scsi.phase = selection;
@@ -495,7 +495,7 @@ static void Message()
 	scsi.req = true;
 }
 
-static bool DiscTestUnitReady(unsigned char *buf)
+static bool DiscTestUnitReady(unsigned char * /* buf */)
 {
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 	return true;
@@ -759,7 +759,7 @@ bool WriteGeometory(unsigned char *buf)
 	return true;
 }
 
-bool DiscFormat(unsigned char *buf)
+bool DiscFormat(unsigned char * /* buf */)
 {
 	// Ignore defect list
 
@@ -812,7 +812,7 @@ static void Format()
 	Status();
 }
 
-static bool DiscVerify(unsigned char *buf)
+static bool DiscVerify(unsigned char * /* buf */)
 {
 	int sector = scsi.cmd[1] & 0x1f;
 	sector <<= 8;

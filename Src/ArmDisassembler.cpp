@@ -832,7 +832,7 @@ char *decodeCoProRegTransferOrDataOperation(uint32 /* address */, uint32 /* inst
 	return buff;
 }
 
-char *decodeSoftwareInterrupt(uint32 address, uint32 instruction, char *buff)
+char *decodeSoftwareInterrupt(uint32 /* address */, uint32 instruction, char *buff)
 {
 	strcpy(buff, "swi");
 	strcat(buff, decodeConditionCode(instruction));
@@ -873,7 +873,7 @@ char *decodeSoftwareInterrupt(uint32 address, uint32 instruction, char *buff)
 	return buff;
 }
 
-char *decodeMultiply(uint32 address, uint32 instruction, char *buff)
+char *decodeMultiply(uint32 /* address */, uint32 instruction, char *buff)
 {
 	bool accumulate = false;
 
@@ -930,7 +930,7 @@ char *decodeMultiply(uint32 address, uint32 instruction, char *buff)
 	return buff;
 }
 
-char *decodeSingleDataSwap(uint32 address, uint32 instruction, char *buff)
+char *decodeSingleDataSwap(uint32 /* address */, uint32 instruction, char *buff)
 {
 	// word or byte quantity, byte if bit 22 set
 	if(getBit(instruction,22))
