@@ -34,6 +34,8 @@ Boston, MA  02110-1301, USA.
 #include <string>
 #include <memory>
 
+#define NOMINMAX
+
 #include <windows.h>
 #include <d3dx9.h>
 #include <ddraw.h>
@@ -192,14 +194,7 @@ struct BBCJoystickConfig
 	bool DigitalMousestick{ false };
 };
 
-struct JoystickHandler;
-
-struct JoystickHandlerPtr : std::unique_ptr<JoystickHandler>
-{
-	// Delegate constructor and destructor
-	JoystickHandlerPtr();
-	~JoystickHandlerPtr();
-};
+class JoystickHandler;
 
 class BeebWin {
 
@@ -398,7 +393,7 @@ public:
 	int		m_MenuIdVolume;
 	int		m_MenuIdTiming;
 	int		m_FPSTarget;
-	JoystickHandlerPtr m_JoystickHandler;
+	JoystickHandler* m_pJoystickHandler;
 	bool		m_JoystickTimerRunning{ false };
 	UINT m_MenuIdSticks[NUM_BBC_JOYSTICKS]{};
 	UINT m_MenuIdAxes[NUM_BBC_JOYSTICKS]{};
@@ -629,8 +624,8 @@ public:
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
-	bool ScanJoysticks(bool verbose = false);
-	void InitJoystick(bool verbose = false);
+	bool ScanJoysticks(bool verbose);
+	void InitJoystick(bool verbose);
 	bool CaptureJoystick(int Index, bool verbose);
 	void ResetJoystick(void);
 	void RestoreState(void);
@@ -696,9 +691,9 @@ public:
 	// Preferences
 	void LoadPreferences();
 	void SavePreferences(bool saveAll);
-	void ReadJoystickPreferences();
-	void WriteJoystickPreferences();
-	void WriteJoystickOrder();
+	void LoadJoystickPreferences();
+	void SaveJoystickPreferences();
+	void SaveJoystickOrder();
 
 	PaletteType m_PaletteType;
 

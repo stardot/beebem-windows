@@ -18,12 +18,12 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef JOYSTICKORDERDIALOG_H
-#define JOYSTICKORDERDIALOG_H
+#ifndef JOYSTICK_ORDER_DIALOG_HEADER
+#define JOYSTICK_ORDER_DIALOG_HEADER
 
 #include <windows.h>
 
-struct JoystickHandler;
+class JoystickHandler;
 
 void ShowJoystickOrderDialog(HWND hwndParent, JoystickHandler* handler);
 

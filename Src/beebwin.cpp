@@ -89,6 +89,7 @@ Boston, MA  02110-1301, USA.
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
 #include "DebugTrace.h"
+#include "JoystickHandler.h"
 #include "JoystickOrderDialog.h"
 
 using namespace Gdiplus;
@@ -240,6 +241,8 @@ BeebWin::BeebWin()
 	m_WriteInstructionCounts = false;
 	m_CaptureMouse = false;
 	m_MouseCaptured = false;
+
+	m_pJoystickHandler = new JoystickHandler();
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -477,6 +480,8 @@ void BeebWin::ApplyPrefs()
 /****************************************************************************/
 BeebWin::~BeebWin()
 {
+	delete m_pJoystickHandler;
+
 	if (m_DisplayRenderer != IDM_DISPGDI)
 		ExitDX();
 
@@ -3324,9 +3329,9 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case IDM_JOYSTICKORDER:
-		ShowJoystickOrderDialog(m_hWnd, m_JoystickHandler.get());
+		ShowJoystickOrderDialog(m_hWnd, m_pJoystickHandler);
 		UpdateJoystickMenu();
-		InitJoystick();
+		InitJoystick(false);
 		break;
 
 	case IDM_JOY_SENSITIVITY_50:

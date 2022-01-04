@@ -182,7 +182,9 @@
     <ClCompile Include="beebwin.cpp" />
     <ClCompile Include="beebwindx.cpp" />
     <ClCompile Include="beebwinio.cpp" />
+    <ClCompile Include="BeebWinJoystick.cpp" />
     <ClCompile Include="FileUtils.cpp" />
+    <ClCompile Include="JoystickDevice.cpp" />
     <ClCompile Include="JoystickHandler.cpp" />
     <ClCompile Include="beebwinprefs.cpp" />
     <ClCompile Include="beebwinspeech.cpp" />
@@ -347,6 +349,7 @@
     <ClInclude Include="filedialog.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="FolderSelectDialog.h" />
+    <ClInclude Include="JoystickDevice.h" />
     <ClInclude Include="JoystickHandler.h" />
     <ClInclude Include="JoystickOrderDialog.h" />
     <ClInclude Include="KeyNames.h" />

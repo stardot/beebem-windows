@@ -25,31 +25,21 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef JOYSTICKHANDLER_H
-#define JOYSTICKHANDLER_H
+#ifndef JOYSTICK_HANDLER_HEADER
+#define JOYSTICK_HANDLER_HEADER
 
 #define DIRECTINPUT_VERSION 0x0800
 
-#include <vector>
-
 #include "beebwin.h"
+#include "JoystickDevice.h"
 
-#include <InitGuid.h>
 #include <dinput.h>
 #include <dinputd.h>
 
-/* Max number of entries on joystick order list */
-#define MAX_JOYSTICK_ORDER      16
+#include <vector>
 
-struct JoystickId : std::pair<int, int>
-{
-	using std::pair<int, int>::pair;
-
-	// Manufacturer ID aka Vendor ID
-	int& mId() { return first; }
-	// Product ID
-	int& pId() { return second; }
-};
+// Max number of entries on joystick order list
+constexpr int MAX_JOYSTICK_ORDER = 16;
 
 struct JoystickOrderEntry : JoystickId
 {
@@ -66,70 +56,39 @@ struct JoystickOrderEntry : JoystickId
 	bool from_string(const std::string&);
 };
 
-struct JoystickDev
+class JoystickHandler
 {
-	GUID         m_GUIDInstance{};
-	JoystickId   m_Id{ 0, 0 };
-	std::string  m_Name;
-	LPDIRECTINPUTDEVICE8 m_Device{ nullptr };
-	DWORD        m_PresentAxes{ 0 };
-	DWORD        m_PresentButtons{ 0 };
-	DIJOYSTATE2  m_JoyState;
+	public:
+		JoystickHandler();
+		~JoystickHandler();
 
-	int          m_Instance{ 0 };
-	bool         m_OnOrderList{ false };
-	int          m_JoyIndex{ -1 };
-	bool         m_Configured{ false };
-	bool         m_Present{ false };
-	bool         m_Captured{ false };
-	unsigned int m_PrevAxes{ 0 };
-	unsigned int m_PrevBtns{ 0 };
-	bool         m_JoystickToKeysActive{ false };
+		JoystickHandler(const JoystickHandler&) = delete;
+		JoystickHandler& operator=(const JoystickHandler&) = delete;
 
-	JoystickId   Id() { return m_Id; }
-	std::string  DisplayString();
-	bool         Update();
-	DWORD        GetButtons();
-	DWORD        GetAxesState(int threshold);
-	void         GetAxesValue(int axesSet, int& x, int& y);
-	void         EnumObjectsCallback(const DIDEVICEOBJECTINSTANCE* pdidoi);
-	void         CloseDevice();
+	public:
+		HRESULT Init();
+		HRESULT ScanJoysticks();
+		HRESULT OpenDevice(HWND hWnd, JoystickDevice* pJoystickDevice);
 
-	JoystickDev() {}
-	JoystickDev(const JoystickDev&) = delete;
-	JoystickDev(JoystickDev&& r);
-	JoystickDev& operator=(const JoystickDev&) = delete;
-	JoystickDev& operator=(JoystickDev&& r);
-	~JoystickDev();
-};
+		JoystickDevice* GetDev(int pcIdx)
+		{
+			return (pcIdx >= 0 && static_cast<unsigned int>(pcIdx) < m_JoystickDevs.size()) ? &m_JoystickDevs[pcIdx] : nullptr;
+		}
 
-struct JoystickHandler
-{
-	bool              m_DirectInputInitialized{ false };
-	HRESULT           m_DirectInputInitResult{ E_FAIL };
-	LPDIRECTINPUT8    m_pDirectInput{ nullptr };
-	DIJOYCONFIG       m_PreferredJoyCfg{};
-	bool              m_HavePreferredJoyCfg{ false };
+		size_t GetJoystickCount() const;
 
-	std::vector<JoystickDev>        m_JoystickDevs;
-	std::vector<JoystickOrderEntry> m_JoystickOrder;
+	private:
+		void AddDeviceInstance(const DIDEVICEINSTANCE*);
 
-	HRESULT      InitDirectInput(void);
-	void         AddDeviceInstance(const DIDEVICEINSTANCE*);
-	HRESULT      ScanJoysticks(void);
-	HRESULT      OpenDevice(HWND mainWindow, JoystickDev* dev);
-	JoystickDev* GetDev(int pcIdx)
-	{
-		return (pcIdx >= 0 && static_cast<unsigned int>(pcIdx) < m_JoystickDevs.size()) ? &m_JoystickDevs[pcIdx] : nullptr;
-	}
-	bool         IsCaptured(int pcIdx)
-	{
-		JoystickDev* dev = GetDev(pcIdx);
-		return dev && dev->m_Captured;
-	}
+		static BOOL CALLBACK EnumJoysticksCallback(const DIDEVICEINSTANCE* pDeviceInstance, VOID* pContext);
 
-	JoystickHandler() {}
-	~JoystickHandler();
+	public:
+		LPDIRECTINPUT8 m_pDirectInput{ nullptr };
+		DIJOYCONFIG m_PreferredJoyCfg{};
+		bool m_HavePreferredJoyCfg{ false };
+
+		std::vector<JoystickDevice> m_JoystickDevs;
+		std::vector<JoystickOrderEntry> m_JoystickOrder;
 };
 
 #endif

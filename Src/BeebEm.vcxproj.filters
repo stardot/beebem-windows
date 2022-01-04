@@ -60,6 +60,9 @@
     <ClCompile Include="beebwindx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BeebWinJoystick.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="beebwinio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -73,6 +76,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugTrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DirectSoundStreamer.cpp">
@@ -93,10 +102,25 @@
     <ClCompile Include="filedialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="FolderSelectDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ide.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JoystickDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JoystickHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JoystickOrderDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyNames.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="log.cpp">
@@ -240,24 +264,6 @@
     <ClCompile Include="zlib\zutil.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="DebugTrace.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Dialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JoystickHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="JoystickOrderDialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FileUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="KeyNames.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h">
@@ -293,6 +299,12 @@
     <ClInclude Include="debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DebugTrace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="DirectSoundStreamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -317,10 +329,25 @@
     <ClInclude Include="filedialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FileUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="FolderSelectDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ide.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JoystickDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JoystickHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JoystickOrderDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyNames.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="log.h">
@@ -499,24 +526,6 @@
     </ClInclude>
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="DebugTrace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Dialog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JoystickHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JoystickOrderDialog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FileUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="KeyNames.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
