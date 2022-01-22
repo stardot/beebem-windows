@@ -789,11 +789,12 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	if (MachineType == Model::Master128) {
 		InvertTR00 = false;
 	}
-	else {
+	else if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)){
 		LoadFDC(NULL, false);
 	}
 
 	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S) {
+//		InvertTR00 = false;
 		// ensure write protect on load is off
 		if (!DWriteable[0]) ToggleWriteProtect(0);
 		if (!DWriteable[1]) ToggleWriteProtect(1);
@@ -5027,16 +5028,17 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 					Load1770DiscImage(FileName, drive, DiscType::IMG);
 			}
 		}
-		else // Model::Master128
+		else // Model::Master128 or FileStores
 		{
-			if (dsd)
-				Load1770DiscImage(FileName, drive, DiscType::DSD);
-			else if (ssd)
-				Load1770DiscImage(FileName, drive, DiscType::SSD);
-			else if (adfs)
-				Load1770DiscImage(FileName, drive, DiscType::ADFS);
-			else if (img)
-				Load1770DiscImage(FileName, drive, DiscType::IMG);
+			// Master 128 only
+			if (MachineType == Model::Master128) {
+				if (dsd) Load1770DiscImage(FileName, drive, DiscType::DSD);
+				if (ssd) Load1770DiscImage(FileName, drive, DiscType::SSD);
+				if (img) Load1770DiscImage(FileName, drive, DiscType::IMG);
+			}
+//MU Load2793 DiscImage ?
+			// Master 128 or FileStores
+			if (adfs) Load1770DiscImage(FileName, drive, DiscType::ADFS);
 		}
 	}
 

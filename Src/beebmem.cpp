@@ -47,6 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "atodconv.h"
 #include "beebmem.h"
 #include "disc1770.h"
+#include "disc2793.h"
 #include "serial.h"
 #include "tube.h"
 #include "scsi.h"
@@ -61,6 +62,7 @@ Boston, MA  02110-1301, USA.
 #include "music5000.h"
 #include "rtc.h"
 #include "StringUtils.h"
+#include "log.h"
 
 using namespace std;
 
@@ -534,8 +536,12 @@ unsigned char BeebReadMem(int Address) {
 
 	if ((Address >= 0xfc0c && Address <= 0xfc0f) &&
 		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
+		unsigned char tmp = 0;
 		// adjust the registers for the FileStore as 1770 expects 00-04, not 0c-0f
-		return(Read1770Register(Address-0x0C));
+		WriteLog("BeebMem: Read of FDC Register %d - Value is %02X\n", ((Address & 0x00FF) - 0x0C), tmp);
+		tmp = Read2793Register(((Address & 0x00FF) - 0x0C));
+		return tmp;
+//		return(Read1770Register(Address-0x0C));
 	}
 
 	if ((MachineType != Model::FileStoreE01) && (MachineType != Model::FileStoreE01S)) {
@@ -1063,7 +1069,8 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	if ((Address >= 0xfc0c && Address <= 0xfc0f) &&
 		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
 			// adjust the registers for the FileStore as 1770 expects 00-04, not 0c-0f
-			Write1770Register(Address-0x0C, Value);
+			WriteLog("BeebMem: Write of FDC Register %d - Value is %02X\n", ((Address&0x00FF) - 0x0C), Value);
+			Write2793Register(((Address & 0x00FF) - 0x0C), Value);
 			return;
 	}
 
@@ -1207,10 +1214,17 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			mainWin->DrawFSLEDs(mainWin->m_hDC, 0);
 
 			// process the remaining bits with the FDC Control Register
-			FS_Status.Floppy0 = bool((Value & 0x4) == 0x1);
-			FS_Status.Floppy1 = bool((Value & 0x4) == 0x2);
+			FS_Status.Floppy0 = bool((Value & 0x1) == 0x1);
+			FS_Status.Floppy1 = bool((Value & 0x2) == 0x2);
 			FS_Status.FloppySide = bool((Value & 0x4) == 0x4);
 			FS_Status.FDCDEN = bool((Value & 0x10) == 0x10);
+			
+			if (!FS_Status.FDCRST) { // reset is held on (0)
+				if ((FS_Status.FDCRST) != (bool((Value & 0x20) == 0x20))) { // it's gone high
+					Reset2793();
+				}
+			}
+
 			FS_Status.FDCRST = bool((Value & 0x20) == 0x20);
 			FS_Status.FDCTST = bool((Value & 0x40) == 0x40);
 
@@ -1218,9 +1232,10 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			unsigned char tmp = Value & 0x3;		// Floppy 0 & 1 are the same, bit0, bit1
 			if (FS_Status.FloppySide) tmp |= 0x10;  // bit4
 			if (FS_Status.FDCDEN) tmp |= 0x20;      // bit5
-//			if (FS_Status.FDCRST)					// if reset is off (high)
-				WriteFDCControlReg(tmp);
-
+			if (FS_Status.FDCRST) {					// if reset is off (high)
+				WriteLog("BeebMem: Write Control Register Value is %02X\n", tmp);
+				WriteFDC2793ControlReg(tmp);
+			}
 			return;
 		}
 	}

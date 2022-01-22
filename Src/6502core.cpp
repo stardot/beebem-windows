@@ -43,6 +43,7 @@ Boston, MA  02110-1301, USA.
 #include "log.h"
 #include "main.h"
 #include "disc1770.h"
+#include "disc2793.h"
 #include "serial.h"
 #include "tube.h"
 #include "debug.h"
@@ -3154,14 +3155,11 @@ static void PollHardware(unsigned int nCycles)
 	}
 	SoundPoll();
 
-	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
+	if (DisplayCycles > 0) DisplayCycles -= nCycles; // Countdown time till end of display of info.
+	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 
-	if ((MachineType == Model::Master128 || !NativeFDC) ||
-	    (MachineType == Model::FileStoreE01) ||
-	    (MachineType == Model::FileStoreE01S))
-	{
-		Poll1770(nCycles); // Do 1770 Background stuff
-	}
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+		Poll2793(nCycles); // Do 2793 FDC Background stuff
 
 	if (EconetEnabled && EconetPoll()) {
 		if (EconetNMIenabled) {

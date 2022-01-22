@@ -35,8 +35,15 @@ static const char* const mon[] = {
 
 void OpenLog()
 {
+
+	char path[256];
+	strcpy(path, "C:\\Beeb\\BeebEm\\");
+	strcat(path, "trace.log");
+
 	tlog = nullptr;
-	//  tlog = fopen("\\trace.log", "wt");
+//	tlog = fopen("\\trace.log", "wt");
+	tlog = fopen(path, "wt");
+
 }
 
 void CloseLog()

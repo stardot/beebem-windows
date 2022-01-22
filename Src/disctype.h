@@ -26,7 +26,8 @@ enum class DiscType : unsigned char {
 	DSD  = 1,
 	ADFS = 2,
 	IMG  = 3,
-	DOS  = 4
+	DOS  = 4,
+	AFS0 = 5 // Acorn FileServer (Level3 / FileStore) disc format
 };
 
 #endif

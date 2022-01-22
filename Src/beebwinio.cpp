@@ -116,9 +116,14 @@ void BeebWin::EjectDiscImage(int Drive)
 {
 	Eject8271DiscImage(Drive);
 	Close1770Disc(Drive);
+// MU - add close disc for 2793? 
 
 	strcpy(CDiscName[Drive], "");
-	CDiscType[Drive] = DiscType::SSD;
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+		CDiscType[Drive] = DiscType::ADFS;
+	else
+		CDiscType[Drive] = DiscType::SSD;
+	
 	DiscLoaded[Drive] = false;
 
 	MENUITEMINFO mii = {0};

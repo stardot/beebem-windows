@@ -189,6 +189,7 @@
     <ClCompile Include="DebugTrace.cpp" />
     <ClCompile Include="DirectSoundStreamer.cpp" />
     <ClCompile Include="disc1770.cpp" />
+    <ClCompile Include="disc2793.cpp" />
     <ClCompile Include="disc8271.cpp" />
     <ClCompile Include="discedit.cpp" />
     <ClCompile Include="econet.cpp" />
@@ -337,6 +338,7 @@
     <ClInclude Include="DebugTrace.h" />
     <ClInclude Include="DirectSoundStreamer.h" />
     <ClInclude Include="disc1770.h" />
+    <ClInclude Include="disc2793.h" />
     <ClInclude Include="disc8271.h" />
     <ClInclude Include="discedit.h" />
     <ClInclude Include="disctype.h" />
