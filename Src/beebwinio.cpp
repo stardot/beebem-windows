@@ -43,6 +43,7 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "disc8271.h"
 #include "disc1770.h"
+#include "disc2793.h"
 #include "disctype.h"
 #include "uefstate.h"
 #include "serial.h"
@@ -241,17 +242,20 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		}
 		else
 		{
-			// Master 128 or Filestore
-			if (dsd)
-				Load1770DiscImage(FileName, Drive, DiscType::DSD);
-			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
-				Load1770DiscImage(FileName, Drive, DiscType::SSD);
-			if (adfs)
-				Load1770DiscImage(FileName, Drive, DiscType::ADFS); // ADFS OO La La!
-			if (img)
-				Load1770DiscImage(FileName, Drive, DiscType::IMG);
-			if (dos)
-				Load1770DiscImage(FileName, Drive, DiscType::DOS);
+			// Master 128 only
+			if (MachineType == Model::Master128) {
+				if (dsd) Load1770DiscImage(FileName, Drive, DiscType::DSD);
+				if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
+					Load1770DiscImage(FileName, Drive, DiscType::SSD);
+				if (img) Load1770DiscImage(FileName, Drive, DiscType::IMG);
+				if (adfs) Load1770DiscImage(FileName, Drive, DiscType::ADFS); // ADFS OO La La!
+				if (dos) Load1770DiscImage(FileName, Drive, DiscType::DOS);
+			}
+
+			// FileStore only
+			if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+				if (adfs) Load2793DiscImage(FileName, Drive, DiscType::ADFS);
+			}
 		}
 
 		/* Write protect the disc */
@@ -278,8 +282,27 @@ void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 	}
 	else {
 		// Disc1770Result::Failed
-		Report(MessageType::Error, "Could not open disc file:\n  %s",
-		       FileName);
+		Report(MessageType::Error, "Could not open disc file:\n  %s", FileName);
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::Load2793DiscImage(const char* FileName, int Drive, DiscType Type)
+{
+	Disc2793Result Result = ::Load2793DiscImage(FileName, Drive, Type);
+
+	if (Result == Disc2793Result::OpenedReadWrite) {
+		SetImageName(FileName, Drive, Type);
+		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, true);
+	}
+	else if (Result == Disc2793Result::OpenedReadOnly) {
+		SetImageName(FileName, Drive, Type);
+		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, false);
+	}
+	else {
+		// Disc2793Result::Failed
+		Report(MessageType::Error, "Could not open disc file:\n  %s", FileName);
 	}
 }
 
@@ -426,7 +449,11 @@ void BeebWin::NewDiscImage(int Drive)
 			const int Tracks = filterIndex == 5 ? 80 : 160;
 			bool Success = CreateADFSImage(FileName, Tracks);
 			if (Success) {
-				Load1770DiscImage(FileName, Drive, DiscType::ADFS);
+				if (MachineType == Model::Master128)
+					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
+				if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))
+					Load2793DiscImage(FileName, Drive, DiscType::ADFS);
+		
 			}
 		}
 

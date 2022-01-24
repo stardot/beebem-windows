@@ -53,6 +53,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "disc8271.h"
 #include "disc1770.h"
+#include "disc2793.h"
 #include "sysvia.h"
 #include "uservia.h"
 #include "video.h"
@@ -812,13 +813,19 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	}
 
 	if ((MachineType != Model::Master128 && !NativeFDC) ||
-		(MachineType == Model::Master128) ||
-		(MachineType == Model::FileStoreE01) ||
-		(MachineType == Model::FileStoreE01S)) {
+		(MachineType == Model::Master128)) {
 		// 1770 Disc
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
 		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1], 1, CDiscType[1]);
 	}
+
+	if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+		// 2793 Disc
+		if (DiscLoaded[0]) Load2793DiscImage(CDiscName[0], 0, CDiscType[0]);
+		if (DiscLoaded[1]) Load2793DiscImage(CDiscName[1], 1, CDiscType[1]);
+	}
+
+
 }
 
 void BeebWin::CreateArmCoPro()
@@ -4294,6 +4301,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_FLOPPYDRIVE:
 		Disc8271Enabled = !Disc8271Enabled;
 		Disc1770Enabled = !Disc1770Enabled;
+		Disc2793Enabled = !Disc2793Enabled;
 		CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 		break;
 
@@ -5035,10 +5043,13 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 				if (dsd) Load1770DiscImage(FileName, drive, DiscType::DSD);
 				if (ssd) Load1770DiscImage(FileName, drive, DiscType::SSD);
 				if (img) Load1770DiscImage(FileName, drive, DiscType::IMG);
+				if (adfs) Load1770DiscImage(FileName, drive, DiscType::ADFS);
 			}
-//MU Load2793 DiscImage ?
-			// Master 128 or FileStores
-			if (adfs) Load1770DiscImage(FileName, drive, DiscType::ADFS);
+ 
+			// FileStore only
+			if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+				if (adfs) Load2793DiscImage(FileName, drive, DiscType::ADFS);
+			}
 		}
 	}
 
@@ -5157,10 +5168,11 @@ void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
 
 		case 'A':
 		case 'a':
-			if ((MachineType == Model::Master128 || !NativeFDC) ||
-				(MachineType == Model::FileStoreE01) ||
-				(MachineType == Model::FileStoreE01S)) {
+			if ((MachineType == Model::Master128 || !NativeFDC)) {
 				Load1770DiscImage(Name, DriveNum, DiscType::ADFS);
+			}
+			else if ((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S)) {
+				Load2793DiscImage(Name, DriveNum, DiscType::ADFS);
 			}
 			else {
 				Report(MessageType::Error, "The 8271 FDC cannot load the ADFS disc image "

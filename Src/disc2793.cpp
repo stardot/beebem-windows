@@ -140,7 +140,7 @@ const int WD2793_COMMAND_WRITE_TRACK     = 0xf0; // Type III
 const int WD2793_COMMAND_FORCE_INTERRUPT = 0xd0; // Type IV
 
 const int WD2793_CMD_FLAGS_MULTIPLE_SECTORS      = 0x10; // Type II commands
-const int WD2793_CMD_FLAGS_DISABLE_SPIN_UP       = 0x08; // Type II commands
+const int WD2793_CMD_FLAGS_DISABLE_SPIN_UP       = 0x08; // Type II commands   Motor on flag
 const int WD2793_CMD_FLAGS_ADD_DELAY             = 0x04; // Type II commands
 const int WD2793_CMD_FLAGS_UPDATE_TRACK_REGISTER = 0x10; // Type I commands
 const int WD2793_CMD_FLAGS_VERIFY                = 0x04; // Type I commands
@@ -224,7 +224,7 @@ static void SetMotor(int Drive, bool State) {
 	}
 
 	if (State) {
-		Status |= WD2793_STATUS_MOTOR_ON;
+		Status |= !WD2793_STATUS_MOTOR_ON;
 
 		if (DiscDriveSoundEnabled && !HeadLoaded[Drive]) {
 			PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
@@ -311,13 +311,13 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 				WriteLog("Disc2793: Type I, Status:%02X. \n", Status);
 
 				// Now set some control bits for Type 1 Commands
-				SpinUp = (Value & WD2793_CMD_FLAGS_DISABLE_SPIN_UP) != 0;
+				SpinUp = (Value & !WD2793_CMD_FLAGS_DISABLE_SPIN_UP) != 0;
 				Verify = (Value & WD2793_CMD_FLAGS_VERIFY) != 0;
 				StepRate = StepRates[Value & WD2793_CMD_FLAGS_STEP_RATE]; // Make sure the step rate time is added to the delay time.
 				WriteLog("Disc2793: Type I Command Spinup:%02X, Verify:%02X, StepRate:%02X\n", SpinUp, Verify, StepRate);
 
 				// Is the Motor on?
-				if (!(Status & WD2793_STATUS_MOTOR_ON)) {
+				if (!(Status & !WD2793_STATUS_MOTOR_ON)) {
 					WriteLog("Disc2793: Motor On. Spin up delay.\n");
 					NextFDCommand = FDCommand;
 					FDCommand = 11; /* Spin-Up delay */
@@ -408,7 +408,7 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 			Status |= WD2793_STATUS_BUSY;
 			ByteCount = 6;
 			WriteLog("Disc2793: Read Address. Status:%02X\n", Status);
-			if (!(Status & WD2793_STATUS_MOTOR_ON)) {
+			if (!(Status & !WD2793_STATUS_MOTOR_ON)) {
 				NextFDCommand = FDCommand;
 				FDCommand = 11; // Spin-Up delay
 				LoadingCycles = SPIN_UP_TIME;
@@ -426,10 +426,10 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 			Status &= ~WD2793_STATUS_DATA_REQUEST;
 
 			// Now set some control bits for Type 2 Commands
-			SpinUp = (Value & WD2793_CMD_FLAGS_DISABLE_SPIN_UP) != 0;
+			SpinUp = (Value & !WD2793_CMD_FLAGS_DISABLE_SPIN_UP) != 0;
 			Verify = (Value & WD2793_CMD_FLAGS_VERIFY) != 0;
 
-			if (!(Status & WD2793_STATUS_MOTOR_ON)) {
+			if (!(Status & !WD2793_STATUS_MOTOR_ON)) {
 				NextFDCommand = FDCommand;
 				FDCommand = 11; // Spin-Up delay
 				LoadingCycles = SPIN_UP_TIME;
@@ -510,7 +510,7 @@ void Poll2793(int NCycles) {
 				SetMotor(i, false);
 				LightsOn[i] = false;
 				if (!LightsOn[0] && !LightsOn[1]) {
-					Status &= ~WD2793_STATUS_MOTOR_ON;
+					Status &= ~!WD2793_STATUS_MOTOR_ON;
 				}
 			}
 		}

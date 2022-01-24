@@ -28,6 +28,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "disc8271.h"
 #include "disc1770.h"
+#include "disc2793.h"
 #include "sysvia.h"
 #include "uservia.h"
 #include "video.h"
@@ -478,6 +479,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("FloppyDriveEnabled", Disc8271Enabled))
 		Disc8271Enabled = true;
 	Disc1770Enabled = Disc8271Enabled;
+	Disc2793Enabled = Disc8271Enabled;
 
 	if (!m_Preferences.GetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled))
 		SCSIDriveEnabled = false;
