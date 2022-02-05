@@ -30,7 +30,8 @@ class SelectKeyDialog
 			HINSTANCE hInstance,
 			HWND hwndParent,
 			const std::string& Title,
-			const std::string& SelectedKey
+			const std::string& SelectedKey,
+			bool EnableShift = true
 		);
 
 		bool Open();
@@ -63,6 +64,7 @@ class SelectKeyDialog
 		HWND m_hwndParent;
 		std::string m_Title;
 		std::string m_SelectedKey;
+		bool m_EnableShift;
 		int m_Key;
 		bool m_Shift;
 };

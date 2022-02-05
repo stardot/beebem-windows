@@ -40,12 +40,14 @@ SelectKeyDialog::SelectKeyDialog(
 	HINSTANCE hInstance,
 	HWND hwndParent,
 	const std::string& Title,
-	const std::string& SelectedKey) :
+	const std::string& SelectedKey,
+	bool EnableShift) :
 	m_hInstance(hInstance),
 	m_hwnd(nullptr),
 	m_hwndParent(hwndParent),
 	m_Title(Title),
 	m_SelectedKey(SelectedKey),
+	m_EnableShift(EnableShift),
 	m_Key(-1),
 	m_Shift(false)
 {
@@ -101,6 +103,11 @@ INT_PTR SelectKeyDialog::DlgProc(
 		SetWindowText(m_hwnd, m_Title.c_str());
 
 		SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS, m_SelectedKey.c_str());
+
+		if (!m_EnableShift)
+		{
+			ShowWindow(GetDlgItem(m_hwnd, IDC_SHIFT), SW_HIDE);
+		}
 		return TRUE;
 
 	case WM_ACTIVATE:
@@ -202,6 +209,7 @@ LPCSTR SelectKeyDialog::KeyName(int Key)
 	case   8: return "Backspace";
 	case   9: return "Tab";
 	case  13: return "Enter";
+	case  16: return "Shift";
 	case  17: return "Ctrl";
 	case  18: return "Alt";
 	case  19: return "Break";

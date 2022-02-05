@@ -37,8 +37,8 @@ UserPortBreakoutDialog* userPortBreakoutDialog = nullptr;
 int BitKeys[8] = { 48, 49, 50, 51, 52, 53, 54, 55 };
 
 static const UINT BitKeyButtonIDs[8] = {
-    IDK_BIT0, IDK_BIT1, IDK_BIT2, IDK_BIT3,
-    IDK_BIT4, IDK_BIT5, IDK_BIT6, IDK_BIT7,
+	IDK_BIT0, IDK_BIT1, IDK_BIT2, IDK_BIT3,
+	IDK_BIT4, IDK_BIT5, IDK_BIT6, IDK_BIT7,
 };
 
 /****************************************************************************/
@@ -188,14 +188,10 @@ INT_PTR UserPortBreakoutDialog::DlgProc(
 	switch (nMessage)
 	{
 	case WM_INITDIALOG:
-		ShowBitKey(0, IDK_BIT0);
-		ShowBitKey(1, IDK_BIT1);
-		ShowBitKey(2, IDK_BIT2);
-		ShowBitKey(3, IDK_BIT3);
-		ShowBitKey(4, IDK_BIT4);
-		ShowBitKey(5, IDK_BIT5);
-		ShowBitKey(6, IDK_BIT6);
-		ShowBitKey(7, IDK_BIT7);
+		for (int i = 0; i < _countof(BitKeyButtonIDs); i++)
+		{
+			ShowBitKey(i, BitKeyButtonIDs[i]);
+		}
 		return TRUE;
 
 	case WM_COMMAND:
@@ -398,9 +394,10 @@ void UserPortBreakoutDialog::PromptForBitKeyInput(int bitKey)
 
 	selectKeyDialog = new SelectKeyDialog(
 		m_hInstance,
-		m_hwndParent,
+		m_hwnd,
 		"Press the key to use...",
-		UsedKey
+		UsedKey,
+		false
 	);
 
 	selectKeyDialog->Open();
