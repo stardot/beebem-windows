@@ -443,14 +443,16 @@ void BeebWin::SetJoystickButton(int index, bool value)
 }
 
 /****************************************************************************/
-void BeebWin::ScaleJoystick(int index, unsigned int x, unsigned int y,
-	unsigned int minX, unsigned int minY, unsigned int maxX, unsigned int maxY)
+void BeebWin::ScaleJoystick(int index,
+                            unsigned int x, unsigned int y,
+                            unsigned int minX, unsigned int minY,
+                            unsigned int maxX, unsigned int maxY)
 {
-	/* Gain and reverse the readings */
+	// Gain and reverse the readings
 	double sx = 0.5 + ((double)(maxX - x) / (double)(maxX - minX) - 0.5) * m_JoystickSensitivity;
 	double sy = 0.5 + ((double)(maxY - y) / (double)(maxY - minY) - 0.5) * m_JoystickSensitivity;
 
-	/* Scale to 0-65535 range */
+	// Scale to 0-65535 range
 	sx = std::max(0.0, std::min(65535.0, sx * 65535.0));
 	sy = std::max(0.0, std::min(65535.0, sy * 65535.0));
 
