@@ -946,12 +946,12 @@ bool Master512CoPro::common_op(uint8_t op)
 
 		case 0x6a:
 		case 0x7a: // i_jp
-			JMP(PF);
+			JMP(PF != 0);
 			break;
 
 		case 0x6b:
 		case 0x7b: // i_jnp
-			JMP(!PF);
+			JMP(PF == 0);
 			break;
 
 		case 0x6c:
@@ -3405,7 +3405,7 @@ uint32_t Master512CoPro::get_ea(int size, int op)
 	return m_ea;
 }
 
-void Master512CoPro::interrupt(int int_num, int trap)
+void Master512CoPro::interrupt(int int_num, int /* trap */)
 {
 	uint16_t dest_off = read_word(int_num * 4);
 	uint16_t dest_seg = read_word(int_num * 4 + 2);
@@ -3421,7 +3421,7 @@ void Master512CoPro::interrupt(int int_num, int trap)
 	m_sregs[CS] = dest_seg;
 }
 
-inline uint32_t Master512CoPro::calc_addr(int seg, uint16_t offset, int size, int op, bool override)
+inline uint32_t Master512CoPro::calc_addr(int seg, uint16_t offset, int /* size */, int /* op */, bool override)
 {
 	if (m_seg_prefix && (seg == DS || seg == SS) && override)
 	{

@@ -2818,16 +2818,18 @@ static bool DebugCmdLabels(char *args)
 
 		sscanf(args, "%*s %259c", filename);
 
+		bool success = true;
+
 		if (filename[0] == '\0')
 		{
 			const char* filter = "Label Files (*.txt)\0*.txt\0" "All Files (*.*)\0*.*\0";
 
 			FileDialog Dialog(hwndDebug, filename, MAX_PATH, nullptr, filter);
 
-			bool success = Dialog.Open();
+			success = Dialog.Open();
 		}
 
-		if (filename[0] != '\0')
+		if (success && filename[0] != '\0')
 		{
 			DebugLoadLabels(filename);
 		}

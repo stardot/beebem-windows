@@ -398,7 +398,7 @@ int csw_data(void)
 
 /* Called every sample rate 44,100 Hz */
 
-int csw_poll(int clock)
+int csw_poll(int /* clock */)
 {
 	int ret = -1;
 
