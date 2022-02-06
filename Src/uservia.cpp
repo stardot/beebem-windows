@@ -88,21 +88,21 @@ static void UpdateIFRTopBit(void) {
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe60 stripped out */
-void UserVIAWrite(int Address, int Value) {
-
-  static int lastValue = 0xff;
+void UserVIAWrite(int Address, unsigned char Value)
+{
+  static unsigned char lastValue = 0xff;
 
   // DebugTrace("UserVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
   if (DebugEnabled) {
     char info[200];
-    sprintf(info, "UserVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
+    sprintf(info, "UserVia: Write address %X value %02X", (int)(Address & 0xf), Value);
     DebugDisplayTrace(DebugType::UserVIA, true, info);
   }
 
   switch (Address) {
     case 0:
-      UserVIAState.orb=Value & 0xff;
+      UserVIAState.orb = Value;
       if ((UserVIAState.ifr & 8) && ((UserVIAState.pcr & 0x20)==0)) {
         UserVIAState.ifr&=0xf7;
         UpdateIFRTopBit();
@@ -117,7 +117,7 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 1:
-		UserVIAState.ora=Value & 0xff;
+		UserVIAState.ora = Value;
 		UserVIAState.ifr&=0xfc;
 		UpdateIFRTopBit();
 		if (PrinterEnabled) {
@@ -144,12 +144,12 @@ void UserVIAWrite(int Address, int Value) {
 		break;
 
     case 2:
-      UserVIAState.ddrb=Value & 0xff;
+      UserVIAState.ddrb = Value;
  	  if (RTC_Enabled && ((Value & 0x07) == 0x07)) RTC_bit = 0;
       break;
 
     case 3:
-      UserVIAState.ddra=Value & 0xff;
+      UserVIAState.ddra = Value;
       break;
 
     case 4:
@@ -161,8 +161,8 @@ void UserVIAWrite(int Address, int Value) {
 
     case 5:
       // DebugTrace("UserVia Reg5 Timer1 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer1l&=0xff;
-      UserVIAState.timer1l|=(Value & 0xff)<<8;
+      UserVIAState.timer1l &= 0xff;
+      UserVIAState.timer1l |= Value << 8;
       UserVIAState.timer1c=UserVIAState.timer1l * 2 + 1;
       UserVIAState.ifr &=0xbf; /* clear timer 1 ifr */
       /* If PB7 toggling enabled, then lower PB7 now */
@@ -176,22 +176,22 @@ void UserVIAWrite(int Address, int Value) {
 
     case 7:
       // DebugTrace("UserVia Reg7 Timer1 hi latch Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer1l&=0xff;
-      UserVIAState.timer1l|=(Value & 0xff)<<8;
+      UserVIAState.timer1l &= 0xff;
+      UserVIAState.timer1l |= Value << 8;
       UserVIAState.ifr &=0xbf; /* clear timer 1 ifr (this is what Model-B does) */
       UpdateIFRTopBit();
       break;
 
     case 8:
       // DebugTrace("UserVia Reg8 Timer2 lo Counter Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer2l&=0xff00;
-      UserVIAState.timer2l|=(Value & 0xff);
+      UserVIAState.timer2l &= 0xff00;
+      UserVIAState.timer2l |= Value;
       break;
 
     case 9:
       // DebugTrace("UserVia Reg9 Timer2 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer2l&=0xff;
-      UserVIAState.timer2l|=(Value & 0xff)<<8;
+      UserVIAState.timer2l &= 0xff;
+      UserVIAState.timer2l |= Value << 8;
       UserVIAState.timer2c=UserVIAState.timer2l * 2 + 1;
       UserVIAState.ifr &=0xdf; /* clear timer 2 ifr */
       UpdateIFRTopBit();
@@ -199,36 +199,36 @@ void UserVIAWrite(int Address, int Value) {
       break;
 
     case 10:
-      UserVIAState.sr=Value & 0xff;
+      UserVIAState.sr = Value;
       UpdateSRState(true);
       break;
 
     case 11:
-      UserVIAState.acr=Value & 0xff;
+      UserVIAState.acr = Value;
       UpdateSRState(false);
       break;
 
     case 12:
-      UserVIAState.pcr=Value & 0xff;
+      UserVIAState.pcr = Value;
       break;
 
     case 13:
-      UserVIAState.ifr&=~(Value & 0xff);
+      UserVIAState.ifr &= ~Value;
       UpdateIFRTopBit();
       break;
 
     case 14:
       // DebugTrace("User VIA Write ier Value=0x%02x\n", Value);
       if (Value & 0x80)
-        UserVIAState.ier|=Value & 0xff;
+        UserVIAState.ier |= Value;
       else
-        UserVIAState.ier&=~(Value & 0xff);
+        UserVIAState.ier &= ~Value;
       UserVIAState.ier&=0x7f;
       UpdateIFRTopBit();
       break;
 
     case 15:
-      UserVIAState.ora=Value & 0xff;
+      UserVIAState.ora = Value;
       break;
   }
 }

@@ -32,7 +32,7 @@ extern VIAState UserVIAState;
 extern bool RTC_Enabled;
 extern bool SWRAMBoardEnabled;
 
-void UserVIAWrite(int Address, int Value);
+void UserVIAWrite(int Address, unsigned char Value);
 unsigned char UserVIARead(int Address);
 void UserVIAReset(void);
 void UserVIA_poll(unsigned int ncycles);

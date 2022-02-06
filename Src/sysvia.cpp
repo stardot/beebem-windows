@@ -299,12 +299,13 @@ static int SlowDataBusRead(void) {
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe40 stripped out */
-void SysVIAWrite(int Address, int Value) {
+void SysVIAWrite(int Address, unsigned char Value)
+{
   DebugTrace("SysVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
   if (DebugEnabled) {
     char info[200];
-    sprintf(info, "SysVia: Write address %X value %02X", (int)(Address & 0xf), Value & 0xff);
+    sprintf(info, "SysVia: Write address %X value %02X", (int)(Address & 0xf), Value);
     DebugDisplayTrace(DebugType::SysVIA, true, info);
   }
 
@@ -312,7 +313,7 @@ void SysVIAWrite(int Address, int Value) {
     case 0:
       // Clear bit 4 of IFR from ATOD Conversion
       SysVIAState.ifr&=~16;
-      SysVIAState.orb=Value & 0xff;
+      SysVIAState.orb = Value;
       IC32Write(Value);
       CMOS.Enabled = (Value & 64) != 0; // CMOS Chip select
       CMOS.Address=(((Value & 128)>>7)) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
@@ -325,29 +326,29 @@ void SysVIAWrite(int Address, int Value) {
       break;
 
     case 1:
-      SysVIAState.ora=Value & 0xff;
-      SlowDataBusWrite(Value & 0xff);
+      SysVIAState.ora = Value;
+      SlowDataBusWrite(Value);
       SysVIAState.ifr&=0xfc;
       UpdateIFRTopBit();
       break;
 
     case 2:
-      SysVIAState.ddrb=Value & 0xff;
+      SysVIAState.ddrb = Value;
       break;
 
     case 3:
-      SysVIAState.ddra=Value & 0xff;
+      SysVIAState.ddra = Value;
       break;
 
     case 4:
     case 6:
-      SysVIAState.timer1l&=0xff00;
-      SysVIAState.timer1l|=(Value & 0xff);
+      SysVIAState.timer1l &= 0xff00;
+      SysVIAState.timer1l |= Value;
       break;
 
     case 5:
-      SysVIAState.timer1l&=0xff;
-      SysVIAState.timer1l|=(Value & 0xff)<<8;
+      SysVIAState.timer1l &= 0xff;
+      SysVIAState.timer1l |= Value << 8;
       SysVIAState.timer1c=SysVIAState.timer1l * 2 + 1;
       SysVIAState.ifr &=0xbf; /* clear timer 1 ifr */
       /* If PB7 toggling enabled, then lower PB7 now */
@@ -360,20 +361,20 @@ void SysVIAWrite(int Address, int Value) {
       break;
 
     case 7:
-      SysVIAState.timer1l&=0xff;
-      SysVIAState.timer1l|=(Value & 0xff)<<8;
+      SysVIAState.timer1l &= 0xff;
+      SysVIAState.timer1l |= Value << 8;
       SysVIAState.ifr &=0xbf; /* clear timer 1 ifr (this is what Model-B does) */
       UpdateIFRTopBit();
       break;
 
     case 8:
-      SysVIAState.timer2l&=0xff00;
-      SysVIAState.timer2l|=(Value & 0xff);
+      SysVIAState.timer2l &= 0xff00;
+      SysVIAState.timer2l |= Value;
       break;
 
     case 9:
-      SysVIAState.timer2l&=0xff;
-      SysVIAState.timer2l|=(Value & 0xff)<<8;
+      SysVIAState.timer2l &= 0xff;
+      SysVIAState.timer2l |= Value << 8;
       SysVIAState.timer2c=SysVIAState.timer2l * 2 + 1;
       if (SysVIAState.timer2c == 0) SysVIAState.timer2c = 0x20000; 
       SysVIAState.ifr &=0xdf; // clear timer 2 ifr 
@@ -386,13 +387,11 @@ void SysVIAWrite(int Address, int Value) {
       break;
 
     case 11:
-      SysVIAState.acr=Value & 0xff;
+      SysVIAState.acr = Value;
       SRMode=(Value>>2)&7;
       break;
 
     case 12:
-      SysVIAState.pcr=Value & 0xff;
-
       SysVIAState.pcr = Value;
 
       if ((Value & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH)
@@ -421,7 +420,7 @@ void SysVIAWrite(int Address, int Value) {
       break;
 
     case 13:
-      SysVIAState.ifr&=~(Value & 0xff);
+      SysVIAState.ifr &= ~Value;
       UpdateIFRTopBit();
       break;
 
@@ -429,16 +428,16 @@ void SysVIAWrite(int Address, int Value) {
       // DebugTrace("Write ier Value=0x%02x\n", Value);
 
       if (Value & 0x80)
-        SysVIAState.ier|=Value & 0xff;
+        SysVIAState.ier |= Value;
       else
-        SysVIAState.ier&=~(Value & 0xff);
+        SysVIAState.ier &= ~Value;
       SysVIAState.ier&=0x7f;
       UpdateIFRTopBit();
       break;
 
     case 15:
-      SysVIAState.ora=Value & 0xff;
-      SlowDataBusWrite(Value & 0xff);
+      SysVIAState.ora = Value;
+      SlowDataBusWrite(Value);
       break;
   }
 }
