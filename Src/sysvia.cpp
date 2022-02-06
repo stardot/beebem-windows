@@ -267,14 +267,14 @@ static void SlowDataBusWrite(unsigned char Value) {
 }
 
 /*--------------------------------------------------------------------------*/
-static int SlowDataBusRead(void) {
-  int result;
+static unsigned char SlowDataBusRead() {
   if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128)
   {
     SysVIAState.ora=CMOSRead(CMOS.Address); //SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
     if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
   }
-  result=(SysVIAState.ora & SysVIAState.ddra);
+
+  unsigned char result = SysVIAState.ora & SysVIAState.ddra;
   if (CMOS.Enabled) result=(SysVIAState.ora & ~SysVIAState.ddra);
   /* I don't know this lot properly - just put in things as we figure them out */
   if (MachineType != Model::Master128) if (!(IC32State & 8)) { if (KbdOP()) result|=128; }
@@ -294,7 +294,7 @@ static int SlowDataBusRead(void) {
 
   // DebugTrace("SlowDataBusRead giving 0x%02x\n", result);
 
-  return(result);
+  return result;
 }
 
 /*--------------------------------------------------------------------------*/
