@@ -2552,7 +2552,7 @@ void Master512CoPro::Execute(int Cycles)
 					PUSH(m_regs.w[BP]);
 					m_regs.w[BP] = m_regs.w[SP];
 					m_regs.w[SP] -= nb;
-					for (int i=1; i<level; i++)
+					for (unsigned int i = 1; i < level; i++)
 					{
 						PUSH(GetMemW(SS, m_regs.w[BP] - i * 2));
 					}

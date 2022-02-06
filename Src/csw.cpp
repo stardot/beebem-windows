@@ -219,7 +219,7 @@ void map_csw_file(void)
 
 	while ((unsigned long)csw_ptr + 4 < csw_bufflen) {
 
-again : ;
+again:
 		last_state = csw_state;
 		data = csw_poll(0);
 		if (last_state == CSWState::Tone && csw_state == CSWState::Data)
@@ -323,7 +323,7 @@ again : ;
 		}
 
 		if (data != -1 && block_ptr >= 0) {
-			block[block_ptr++] = data;
+			block[block_ptr++] = (unsigned char)data;
 		}
 	}
 
