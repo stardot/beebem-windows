@@ -28,7 +28,7 @@ extern bool JoystickEnabled;
 extern int JoystickX;  /* 16 bit number, 0 = right */
 extern int JoystickY;  /* 16 bit number, 0 = down */
 
-void AtoDWrite(int Address, int Value);
+void AtoDWrite(int Address, unsigned char Value);
 unsigned char AtoDRead(int Address);
 void AtoDInit(void);
 void AtoDEnable(void);

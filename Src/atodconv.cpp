@@ -52,19 +52,19 @@ int AtoDTrigger;  /* For next A to D conversion completion */
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fec0 stripped out */
-void AtoDWrite(int Address, int Value)
+void AtoDWrite(int Address, unsigned char Value)
 {
 	if (Address == 0)
 	{
-		int timetoconvert;
-		AtoDState.datalatch = Value & 0xff;
-		if (AtoDState.datalatch & 8)
-			timetoconvert = 20000; /* 10 bit conversion, 10 ms */
-		else
-			timetoconvert = 8000; /* 8 bit conversion, 4 ms */
-		SetTrigger(timetoconvert,AtoDTrigger);
+		AtoDState.datalatch = Value;
 
-		AtoDState.status = (AtoDState.datalatch & 0xf) | 0x80; /* busy, not complete */
+		const int TimeToConvert = (AtoDState.datalatch & 8) ?
+		                          20000 : // 10 bit conversion, 10 ms
+		                          8000;   // 8 bit conversion, 4 ms
+
+		SetTrigger(TimeToConvert, AtoDTrigger);
+
+		AtoDState.status = (AtoDState.datalatch & 0xf) | 0x80; // busy, not complete
 	}
 }
 
