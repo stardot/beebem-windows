@@ -38,8 +38,8 @@ Offset  Description                 Access
 #include "sasi.h"
 #include "beebmem.h"
 
-static int SASIReadData();
-static void SASIWriteData(int data);
+static unsigned char SASIReadData();
+static void SASIWriteData(unsigned char data);
 static void SASIBusFree();
 static void SASISelection(int data);
 static void SASICommand();
@@ -87,13 +87,13 @@ struct sasi_t {
 	bool irq;
 	unsigned char cmd[10];
 	int status;
-	int message;
+	unsigned char message;
 	unsigned char buffer[0x800];
 	int blocks;
 	int next;
 	int offset;
 	int length;
-	int lastwrite;
+	unsigned char lastwrite;
 	int lun;
 	int code;
 	int sector;
@@ -138,7 +138,7 @@ void SASIReset()
 	SASIBusFree();
 }
 
-void SASIWrite(int Address, int Value)
+void SASIWrite(int Address, unsigned char Value)
 {
 	if (!SCSIDriveEnabled)
 		return;
@@ -211,14 +211,14 @@ void SASIClose()
 	}
 }
 
-static int SASIReadData()
+static unsigned char SASIReadData()
 {
-	int data;
+	unsigned char data;
 
 	switch (sasi.phase)
 	{
 		case status:
-			data = sasi.status;
+			data = (unsigned char)sasi.status;
 			sasi.req = false;
 			SASIMessage();
 			return data;
@@ -263,7 +263,7 @@ static int SASIReadData()
 	}
 }
 
-static void SASIWriteData(int data)
+static void SASIWriteData(unsigned char data)
 {
 	sasi.lastwrite = data;
 
@@ -517,7 +517,7 @@ static int SASIDiscRequestSense(unsigned char *cdb, unsigned char *buf)
 
 		case 0x80:
 			buf[0] = 0x80;
-			buf[1] = ((sasi.sector >> 16) & 0xff) | (sasi.lun << 5);
+			buf[1] = (unsigned char)(((sasi.sector >> 16) & 0xff) | (sasi.lun << 5));
 			buf[2] = (sasi.sector >> 8) & 0xff;
 			buf[3] = (sasi.sector & 0xff);
 			break;

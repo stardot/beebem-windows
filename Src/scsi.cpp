@@ -38,8 +38,8 @@ Offset  Description                 Access
 #include "scsi.h"
 #include "beebmem.h"
 
-static int ReadData();
-static void WriteData(int data);
+static unsigned char ReadData();
+static void WriteData(unsigned char data);
 static void BusFree();
 static void Selection(int data);
 static void Command();
@@ -88,13 +88,13 @@ struct scsi_t {
 	bool irq;
 	unsigned char cmd[10];
 	int status;
-	int message;
+	unsigned char message;
 	unsigned char buffer[0x800];
 	int blocks;
 	int next;
 	int offset;
 	int length;
-	int lastwrite;
+	unsigned char lastwrite;
 	int lun;
 	int code;
 	int sector;
@@ -158,7 +158,7 @@ void SCSIReset(void)
 	BusFree();
 }
 
-void SCSIWrite(int Address, int Value)
+void SCSIWrite(int Address, unsigned char Value)
 {
 	if (!SCSIDriveEnabled)
 		return;
@@ -246,14 +246,14 @@ void SCSIClose()
 	}
 }
 
-static int ReadData()
+static unsigned char ReadData()
 {
-	int data;
+	unsigned char data;
 
 	switch (scsi.phase)
 	{
 		case status:
-			data = scsi.status;
+			data = (unsigned char)scsi.status;
 			scsi.req = false;
 			Message();
 			return data;
@@ -298,7 +298,7 @@ static int ReadData()
 	}
 }
 
-static void WriteData(int data)
+static void WriteData(unsigned char data)
 {
 	scsi.lastwrite = data;
 

@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 extern bool SCSIDriveEnabled;
 
 void SCSIReset();
-void SCSIWrite(int Address, int Value);
+void SCSIWrite(int Address, unsigned char Value);
 unsigned char SCSIRead(int Address);
 void SCSIClose();
 
