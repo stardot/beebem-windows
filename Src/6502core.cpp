@@ -2671,11 +2671,11 @@ void Exec6502Instruction(void) {
 					// Undocumented instruction: ASX imm
 					// I dont know if this uses the carry or not, i'm assuming it's
 					// Subtract #n from X with carry.
-					unsigned char TmpAcc = Accumulator;
+					int Temp = Accumulator;
 					Accumulator = XReg;
 					SBCInstrHandler(WholeRam[ProgramCounter++]);
 					XReg = Accumulator;
-					Accumulator = TmpAcc; // Fudge so that I dont have to do the whole SBC code again
+					Accumulator = Temp; // Fudge so that I dont have to do the whole SBC code again
 				}
 				break;
 			case 0xcc:
@@ -3149,7 +3149,7 @@ void Load6502UEF(FILE *SUEF) {
 	StackReg = fget8(SUEF);
 	PSR = fget8(SUEF);
 	// TotalCycles = fget32(SUEF);
-	int Dlong = fget32(SUEF);
+	fget32(SUEF); // Unused, was: Dlong
 	intStatus = fget8(SUEF);
 	NMIStatus = fget8(SUEF);
 	NMILock = fgetbool(SUEF);

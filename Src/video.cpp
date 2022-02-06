@@ -1782,7 +1782,6 @@ void DebugVideoState()
 /*-------------------------------------------------------------------------*/
 void VideoGetText(char *text, int line)
 {
-	unsigned char c;
 	int x;
 
 	text[0] = 0;
@@ -1797,15 +1796,17 @@ void VideoGetText(char *text, int line)
 
 	for (x = 0; x < CRTC_HorizontalDisplayed; ++x)
 	{
-		c = dataPtr[x];
+		unsigned char c = dataPtr[x];
+
 		if (isprint(c))
 		{
 			if (c == '_')
 				c = '#';
 			else if (c == '#')
-				c = '£';
+				c = 0xa3; // '£'
 			else if (c == '`')
 				c = '_';
+
 			text[x] = c;
 		}
 		else
@@ -1813,5 +1814,6 @@ void VideoGetText(char *text, int line)
 			text[x] = ' ';
 		}
 	}
+
 	text[x] = '\0';
 }

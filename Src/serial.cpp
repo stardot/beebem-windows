@@ -502,7 +502,7 @@ void Serial_Poll(void)
 				if (CSW_BUF >= 0 && csw_state == CSWState::Data)
 				{
 					DCDI=0;
-					HandleData(CSW_BUF);
+					HandleData((unsigned char)CSW_BUF);
 					TapeAudio.Data=(CSW_BUF<<1)|1;
 					TapeAudio.BytePos=1;
 					TapeAudio.CurrentBit=0;
@@ -510,6 +510,7 @@ void Serial_Poll(void)
 					TapeAudio.ByteCount=3;
 				}
 			}
+
 			if (Cass_Relay && (RxD < 2) && CSWOpen)
 			{
 				if (TotalCycles >= TapeTrigger)
@@ -820,7 +821,7 @@ bool map_file(const char *file_name)
 	int n;
 	int data;
 	int last_data;
-	int blk;
+	int blk = 0;
 	int blk_num;
 	char block[500];
 	bool std_last_block=true;

@@ -1846,7 +1846,7 @@ void BeebWin::CaptureBitmap(int SourceX,
                             int SourceY,
                             int SourceWidth,
                             int SourceHeight,
-                            bool TeletextEnabled)
+                            bool Teletext)
 {
 	const WCHAR *mimeType = GetCaptureFormatMimeType(m_MenuIdCaptureFormat);
 	const char *fileExt = GetCaptureFormatFileExt(m_MenuIdCaptureFormat);
@@ -1895,7 +1895,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 			BitmapWidth  = 1280;
 			BitmapHeight = 1024;
 
-			if (TeletextEnabled)
+			if (Teletext)
 			{
 				DestWidth  = SourceWidth  * 2;
 				DestHeight = SourceHeight * 2;
@@ -1916,7 +1916,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 			BitmapWidth  = 640;
 			BitmapHeight = 512;
 
-			if (TeletextEnabled)
+			if (Teletext)
 			{
 				DestWidth  = SourceWidth;
 				DestHeight = SourceHeight;

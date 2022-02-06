@@ -556,7 +556,7 @@ public:
 	                   int SourceY,
 	                   int SourceWidth,
 	                   int SourceHeight,
-	                   bool TeletextEnabled);
+	                   bool Teletext);
 	bool GetImageFile(char *FileName);
 	bool GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid);
 	void InitTextToSpeech(void);

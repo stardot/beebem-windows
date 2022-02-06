@@ -59,7 +59,7 @@ Tube TubeType;
 
 CycleCountT TotalTubeCycles = 0;
 
-unsigned char old_readHIOAddr = 0;
+int old_readHIOAddr = 0;
 unsigned char old_readHTmpData = 0;
 
 unsigned char old_readPIOAddr = 0;
@@ -2564,7 +2564,7 @@ void Load65C02UEF(FILE *SUEF) {
 	StackReg = fget8(SUEF);
 	PSR = fget8(SUEF);
 	// TotalTubeCycles = fget32(SUEF);
-	int Dlong = fget32(SUEF);
+	fget32(SUEF); // Unused, was: Dlong
 	TubeintStatus = fget8(SUEF);
 	TubeNMIStatus = fget8(SUEF);
 	TubeNMILock = fgetbool(SUEF);

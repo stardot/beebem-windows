@@ -517,7 +517,7 @@ static bool uef_write_chunk()
 static void uef_unlock_offset_and_crc(uef_chunk_info *ch)
 {
 	unsigned char *data = nullptr;
-	int len;
+	int len = 0;
 	int n;
 	int i;
 	int d;
