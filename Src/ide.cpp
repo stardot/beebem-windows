@@ -51,15 +51,15 @@ Offset  Description             Access
 #include "beebwin.h"
 #include "beebmem.h"
 
-int IDERegs[8];
-int IDEStatus;
-int IDEError;
-int IDEData;
-FILE *IDEDisc[8]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-int IDEDrive;
+static unsigned char IDERegs[8];
+static unsigned char IDEStatus;
+static unsigned char IDEError;
+static int IDEData;
+static FILE *IDEDisc[8]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+static int IDEDrive;
 bool IDEDriveEnabled = false;
-int IDEnumSectors = 64;
-int IDEnumHeads = 4;
+static int IDEnumSectors = 64;
+static int IDEnumHeads = 4;
 const int IDEDriveMax = 4;
 
 static void DoIDESeek();
@@ -73,7 +73,6 @@ void IDEReset()
 
     // NB: Only mount drives 0-IDEDriveMax
     for (int i = 0; i < IDEDriveMax; ++i) {
-
         char buff[256];
         sprintf(buff, "%s\\ide%d.dat", DiscPath, i);
         IDEDisc[i] = fopen(buff, "rb+");
@@ -87,7 +86,7 @@ void IDEReset()
     }
 }
 
-void IDEWrite(int Address, int Value)
+void IDEWrite(int Address, unsigned char Value)
 {
     IDERegs[Address] = Value;
     IDEError = 0;
