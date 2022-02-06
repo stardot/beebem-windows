@@ -163,8 +163,6 @@ int tenval = 1;
 unsigned
 ARMul_OSHandleSWI (ARMul_State * state, ARMword number)
 {
-    // struct OSblock * OSptr = (struct OSblock *) state->OSptr;
-
     // OS_ReadMonotonicTime
     // Normally this is handled by the CoPro by one of the system
     // timers. However we'll handle it directly here for accuracy

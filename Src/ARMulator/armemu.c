@@ -643,7 +643,6 @@ ARMul_Emulate26 (ARMul_State * state)
             break;
         }
 #endif
-        state->NumInstrs++;
 
 #ifdef MODET
         /* Provide Thumb instruction decoding. If the processor is in Thumb
@@ -816,7 +815,7 @@ ARMul_Emulate26 (ARMul_State * state)
                     ARMword cp14r1;
                     int do_int = 0;
 
-                    state->CP14R0_CCD = -1;
+                    state->CP14R0_CCD = (ARMword)-1;
 check_PMUintr:
                     cp14r0 |= ARMul_CP14_R0_FLAG2;
                     (void) state->CPWrite[14] (state, 0, cp14r0);

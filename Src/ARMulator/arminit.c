@@ -94,7 +94,6 @@ ARMul_NewState (void)
 
     state->CallDebug = FALSE;
     state->Debug = FALSE;
-    state->VectorCatch = 0;
     state->Aborted = FALSE;
     state->Reseted = FALSE;
     state->Inted = 3;
@@ -106,9 +105,6 @@ ARMul_NewState (void)
     state->MemSparePtr = NULL;
     state->MemSize = 0;
     state->ROMDataPtr = NULL;
-
-    state->OSptr = NULL;
-    state->CommandLine = NULL;
 
     state->CP14R0_CCD = -1;
     state->LastTime = 0;
@@ -213,7 +209,6 @@ ARMul_Reset (ARMul_State * state)
     state->abortSig = LOW;
     state->AbortAddr = 1;
 
-    state->NumInstrs = 0;
     state->NumNcycles = 0;
     state->NumScycles = 0;
     state->NumIcycles = 0;

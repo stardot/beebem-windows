@@ -83,14 +83,8 @@ struct ARMul_State
   ARMword instr, pc, temp;	/* saved register state */
   ARMword loaded, decoded;	/* saved pipeline state */
   unsigned long NumScycles, NumNcycles, NumIcycles, NumCcycles, NumFcycles;	/* emulated cycles used */
-  unsigned long NumInstrs;	/* the number of instructions executed */
   unsigned NextInstr;
-  unsigned VectorCatch;		/* caught exception mask */
   unsigned CallDebug;		/* set to call the debugger */
-  unsigned CanWatch;		/* set by memory interface if its willing to suffer the
-				   overhead of checking for watchpoints on each memory
-				   access */
-  unsigned MemReadDebug, MemWriteDebug;
   unsigned long StopHandle;
 
   unsigned char *MemDataPtr;	/* admin data */
@@ -103,9 +97,6 @@ struct ARMul_State
   /* ARMCoPro control registers */
   unsigned int remapControlRegister;
   unsigned int romSelectRegister;
-
-  unsigned char *OSptr;		/* OS Handle */
-  char *CommandLine;		/* Command Line from ARMsd */
 
   ARMul_CPInits *CPInit[16];	/* coprocessor initialisers */
   ARMul_CPExits *CPExit[16];	/* coprocessor finalisers */

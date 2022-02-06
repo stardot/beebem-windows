@@ -724,8 +724,9 @@ void SaveSoundUEF(FILE *SUEF) {
 	fputc(RealVolumes[3],SUEF);
 	fputc(RealVolumes[2],SUEF);
 	fputc(RealVolumes[1],SUEF);
-	unsigned char Noise = BeebState76489.Noise.Freq |
-	                      (BeebState76489.Noise.FB << 2);
+	unsigned char Noise = (unsigned char)(
+		BeebState76489.Noise.Freq | (BeebState76489.Noise.FB << 2)
+	);
 	fputc(Noise,SUEF);
 	fputc(RealVolumes[0],SUEF);
 	fputc(BeebState76489.LastToneFreqSet,SUEF);
