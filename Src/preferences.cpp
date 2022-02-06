@@ -31,6 +31,26 @@ static const int MAX_PREFS_LINE_LEN = 1024;
 
 //-----------------------------------------------------------------------------
 
+static int Hex2Int(int hex)
+{
+	if (hex >= '0' && hex <= '9')
+	{
+		return hex - '0';
+	}
+	else if (hex >= 'A' && hex <= 'F')
+	{
+		return hex - 'A' + 10;
+	}
+	else if (hex >= 'a' && hex <= 'f')
+	{
+		return hex - 'a' + 10;
+	}
+
+	return 0;
+}
+
+//-----------------------------------------------------------------------------
+
 Preferences::Result Preferences::Load(const char *fileName)
 {
 	FILE *fd = fopen(fileName, "r");
@@ -96,28 +116,26 @@ bool Preferences::GetBinaryValue(const char *id, void *bin, size_t binsize)
 
 	PrefsMap::const_iterator i = m_Prefs.find(id);
 
-	if (i != m_Prefs.end()) {
-		char val[MAX_PREFS_LINE_LEN];
-		strcpy(val, i->second.c_str());
+	if (i != m_Prefs.end())
+	{
+		const std::string& value = i->second;
 
-		if (strlen(val) == binsize * 2) {
+		if (value.size() == binsize * 2)
+		{
 			unsigned char *binc = reinterpret_cast<unsigned char *>(bin);
-			int x;
-			char hx[3];
-			hx[2] = 0;
 
-			for (size_t b = 0; b < binsize; ++b) {
-				hx[0] = val[b * 2];
-				hx[1] = val[b * 2 + 1];
-				sscanf(hx, "%x", &x);
-				binc[b] = x;
+			for (size_t b = 0; b < binsize; ++b)
+			{
+				binc[b] = (unsigned char)((Hex2Int(value[b * 2]) << 4) | Hex2Int(value[b * 2 + 1]));
 			}
 		}
-		else {
+		else
+		{
 			found = false;
 		}
 	}
-	else {
+	else
+	{
 		found = false;
 	}
 
