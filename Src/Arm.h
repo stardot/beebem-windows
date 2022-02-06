@@ -30,14 +30,14 @@ Boston, MA  02110-1301, USA.
 // define constants
 
 // PSR flags
-constexpr unsigned int N_FLAG  = 1 << 31; // negative
-constexpr unsigned int Z_FLAG  = 1 << 30; // zero
-constexpr unsigned int C_FLAG  = 1 << 29; // carry
-constexpr unsigned int V_FLAG  = 1 << 28; // overflow
-constexpr unsigned int I_FLAG  = 1 << 27; // interrupt disable
-constexpr unsigned int F_FLAG  = 1 << 26; // fast interrupt disable
-constexpr unsigned int M1_FLAG = 1 << 1;  // processor mode (bit 1)
-constexpr unsigned int M2_FLAG = 1 << 0;  // processor mode (bit 2)
+constexpr unsigned int N_FLAG  = 1U << 31; // negative
+constexpr unsigned int Z_FLAG  = 1U << 30; // zero
+constexpr unsigned int C_FLAG  = 1U << 29; // carry
+constexpr unsigned int V_FLAG  = 1U << 28; // overflow
+constexpr unsigned int I_FLAG  = 1U << 27; // interrupt disable
+constexpr unsigned int F_FLAG  = 1U << 26; // fast interrupt disable
+constexpr unsigned int M1_FLAG = 1U << 1;  // processor mode (bit 1)
+constexpr unsigned int M2_FLAG = 1U << 0;  // processor mode (bit 2)
 
 // masks for PSR
 constexpr unsigned int MODE_FLAGS = M1_FLAG | M2_FLAG;
@@ -72,25 +72,6 @@ typedef unsigned int Reg;
 typedef unsigned int Word;
 typedef unsigned char Byte;
 
-// signals are a block of flags for RedSquirrel to allow IOC to adjust/examine interrupts
-// "Each device can call IOC.irqa_interrupt(mask), IOC.irqb_interrupt(mask) or
-// IOC.firq_interrupt(mask) to tell IOC which interrupt has occurred. IOC then calls
-// ARM.signal_fast_interrupt(state) or ARM.signal_interrupt(state) as appropriate which
-// sets or clears a bit in signals word (iff that interrupt is enabled). If any signal is
-// set the arm will handle the interrupt at the end of the current instruction." - GB
-
-union Signals
-{
-	uint32 all;
-	struct
-	{
-		uint8 step_once;			// UI wants to stop
-		uint8 interrupt;			// interrupt may have occurred
-		uint8 fast_interrupt;		// fast interrupt may have occurred
-		uint8 unused;			
-	};
-};
-
 // dynamic profiling options
 constexpr bool dynamicProfilingExceptionFreq = false;
 constexpr bool dynamicProfilingRegisterUse = false;
@@ -110,20 +91,6 @@ public:
 	void dynamicProfilingCoprocessorUsage(uint32 currentInstruction);
 	void dynamicProfilingExceptionFrequencyReport();
 	void dynamicProfilingExceptionFrequency(char *exceptionName, uint32& counter);
-	int GetMode();
-	Reg GetUserRegister(unsigned int reg);
-	void SetMode(int mode);
-	Reg GetUserReg(int reg);
-	Reg GetFirqReg(int reg);
-	Reg GetIrqReg(int reg);
-	Reg GetSvcReg(int reg);
-	Reg GetReg(int reg);
-	void set_stepping(bool state);
-	Word current_pc();
-	void stop_at(Word address);
-	void ResetState();
-	void signal_fast_interrupt(bool state);
-	void signal_interrupt(bool state);
 
 	uint32 pc;
 	inline void performBranch();
@@ -240,14 +207,7 @@ public:
 	// construct / destruct
 	CArm();
 	virtual ~CArm();
-	
-	// variables
-	Signals signals;
-	bool pending_interrupt;
-	bool pending_fast_interrupt;
-	int instr_count;
-	Word stop_address;
-	
+
 private:
 	uint32 lastCopro;				// num of instructions executed since last copro instruction profiled
 	void dynamicProfilingConditionalExe(uint32 currentInstruction);

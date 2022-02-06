@@ -283,9 +283,6 @@ void CArm::run()
 		return;
 	}
 
-	// increment red squirrel's MIPS counter
-	instr_count++;
-
 	// increment total instruction executed counter
 	executionCount++;
 	
@@ -953,7 +950,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
-				uint8 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
+				uint8 storeValue = (uint8)getRegisterWithPSRAndPipelining(getField(currentInstruction, 12, 15));
 				// storeValue get cast to uint8 when written to memory
 
 				// if str performed ok
@@ -990,8 +987,8 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
-				uint8 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
-				
+				uint8 storeValue = (uint8)getRegisterWithPSRAndPipelining(getField(currentInstruction, 12, 15));
+
 				clearTrans();
 
 				// if str performed ok
@@ -1129,7 +1126,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
-				uint8 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
+				uint8 storeValue = (uint8)getRegisterWithPSRAndPipelining(getField(currentInstruction, 12, 15));
 				// storeValue get cast to uint8 when written to memory
 
 				// if str performed ok
@@ -1166,7 +1163,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
-				uint8 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
+				uint8 storeValue = (uint8)getRegisterWithPSRAndPipelining(getField(currentInstruction, 12, 15));
 				
 				clearTrans();
 
@@ -1216,7 +1213,7 @@ void CArm::run()
 			{
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreWord( getRegister(rn) - getDataTransferValueImmediate(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreWord(getRegister(rn) - getDataTransferValueImmediate(), (uint8)getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldr rd, [rn, -imm]
@@ -1265,7 +1262,7 @@ void CArm::run()
 			{
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreByte( getRegister(rn) - getDataTransferValueImmediate(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreByte(getRegister(rn) - getDataTransferValueImmediate(), (uint8)getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldrB rd, [rn, -imm]
@@ -1286,7 +1283,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn) - getDataTransferValueImmediate();
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					// writeback
 					setRegisterWithPrefetch(rn, address);
@@ -1316,7 +1313,7 @@ void CArm::run()
 			{
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreWord( getRegister(rn) + getDataTransferValueImmediate(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreWord(getRegister(rn) + getDataTransferValueImmediate(), getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldr rd, [rn, imm]
@@ -1364,7 +1361,7 @@ void CArm::run()
 			{
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreByte( getRegister(rn) + getDataTransferValueImmediate(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreByte(getRegister(rn) + getDataTransferValueImmediate(), (uint8)getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldrB rd, [rn, imm]
@@ -1385,7 +1382,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn) + getDataTransferValueImmediate();
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					// writeback
 					setRegisterWithPrefetch(rn, address);
@@ -1509,7 +1506,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn);
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					setRegisterWithPrefetch(rn, address - getDataTransferValueRegister() );
 				}
@@ -1548,7 +1545,7 @@ void CArm::run()
 				
 				clearTrans();
 
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					setRegisterWithPrefetch(rn, address - getDataTransferValueRegister() );
 				}
@@ -1684,7 +1681,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn);
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					setRegisterWithPrefetch(rn, address + getDataTransferValueRegister() );
 				}
@@ -1723,7 +1720,7 @@ void CArm::run()
 				
 				clearTrans();
 
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					setRegisterWithPrefetch(rn, address + getDataTransferValueRegister() );
 				}
@@ -1769,7 +1766,7 @@ void CArm::run()
 				}
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreWord( getRegister(rn) - getDataTransferValueRegister(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreWord(getRegister(rn) - getDataTransferValueRegister(), getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldr rd, [rn, -reg]
@@ -1837,7 +1834,7 @@ void CArm::run()
 				}
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreByte( getRegister(rn) - getDataTransferValueRegister(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreByte(getRegister(rn) - getDataTransferValueRegister(), (uint8)getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldrB rd, [rn, -reg]
@@ -1868,7 +1865,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn) - getDataTransferValueRegister();
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					// writeback
 					setRegisterWithPrefetch(rn, address);
@@ -1908,7 +1905,7 @@ void CArm::run()
 				}
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreWord( getRegister(rn) + getDataTransferValueRegister(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreWord(getRegister(rn) + getDataTransferValueRegister(), getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldr rd, [rn, reg]
@@ -1976,7 +1973,7 @@ void CArm::run()
 				}
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreByte( getRegister(rn) + getDataTransferValueRegister(), getRegisterWithPSRAndPipelining(rd) );
+				performDataTransferStoreByte(getRegister(rn) + getDataTransferValueRegister(), (uint8)getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldrB rd, [rn, reg]
@@ -2007,7 +2004,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn) + getDataTransferValueRegister();
-				if( performDataTransferStoreByte( address, getRegisterWithPSRAndPipelining(rd) ) )
+				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
 				{
 					// writeback
 					setRegisterWithPrefetch(rn, address);
@@ -2756,23 +2753,6 @@ void CArm::run()
 			exceptionInterruptRequest();
 		}
 	}
-	
-	if(signals.all != 0)
-	{
-		if(signals.step_once)
-		{
-			//break;
-		}
-		if(signals.fast_interrupt)
-		{
-			exceptionFastInterruptRequest();
-		}
-		else if(signals.interrupt)
-		{
-			exceptionInterruptRequest();
-		}
-	}
-
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -3064,13 +3044,13 @@ inline void CArm::performSingleDataSwapByte()
 		{
 			// get replacement value to be swapped into rn's address
 			uint32 rm = getField(currentInstruction,0,3);
-			uint8 writeValue = getRegisterWithPSRAndPipelining(rm);
+			uint8 writeValue = (uint8)getRegisterWithPSRAndPipelining(rm);
 
 			// write new value back into address
 			if( writeByte(address, writeValue) )
 			{
 				// get register to store value to
-				uint32 rd = getField(currentInstruction,12,15);	
+				uint32 rd = getField(currentInstruction, 12, 15);
 				// update destination register
 				setRegisterWithPrefetch(rd, readValue);
 			}
@@ -4373,7 +4353,6 @@ inline void CArm::setProcessorStatusRegister(uint32 value)
 // clear and set specific flags in the PSR
 inline void CArm::setProcessorStatusFlags(uint32 mask, uint32 value)
 {
-
 	// get mode and interrupt flags
 	uint32 oldFlags = getProcessorStatusRegister() & ( I_FLAG | F_FLAG | M1_FLAG | M2_FLAG );
 	// clear mask and set new bits
@@ -4387,10 +4366,6 @@ inline void CArm::setProcessorStatusFlags(uint32 mask, uint32 value)
 		// update (fast)interrupt disable flags
 		interruptDisableFlag = newFlags & I_FLAG;
 		fastInterruptDisableFlag = newFlags & F_FLAG;
-
-		// update signals
-		signals.interrupt = pending_interrupt && !interruptDisableFlag;
-		signals.fast_interrupt = pending_fast_interrupt && !fastInterruptDisableFlag;
 	}
 }
 
@@ -4605,11 +4580,6 @@ void CArm::reset()
 	// invalidate prefetch
 	prefetchInvalid = true;
 
-	// clear all interrupts signals
-	signals.all = 0;
-	pending_interrupt = false;
-	pending_fast_interrupt = false;
-
 	// clear all registers in all banks
 	for(int rNum = 0; rNum<16; rNum++)
 	{
@@ -4625,12 +4595,8 @@ void CArm::reset()
 	interruptDisableFlag = I_FLAG;
 	fastInterruptDisableFlag = F_FLAG;
 
-	// ??? issues with getting past first while()
-	stop_address = -1;
-
 	setRegister(15, 0);
 	setConditionFlags(0);
-
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -4863,90 +4829,6 @@ inline uint32 CArm::coprocessorDataTransferOffset()
 		dynamicProfilingCoprocessorUsage(currentInstruction);
 
 	return (currentInstruction & 0xff) << 2;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-// Red Squirrel specific routines
-//////////////////////////////////////////////////////////////////////
-// Smooth the interface to Red Squirrel's implementation.
-
-// so that red squirrel components can trigger an interrupt
-void CArm::signal_interrupt(bool state)
-{
-	pending_interrupt = state;
-	signals.interrupt = state && !interruptDisableFlag;
-}
-
-void CArm::signal_fast_interrupt(bool state)
-{
-	pending_fast_interrupt = state;
-	signals.fast_interrupt = state && !fastInterruptDisableFlag;
-}
-
-// just calls reset() but in RS nomenclature
-void CArm::ResetState()
-{
-	reset();
-}
-
-// sets an address to stop executing at according to user of debugger
-void CArm::stop_at(Word address)
-{
-	stop_address = address+4;
-}
-
-// returns the current PC value
-Word CArm::current_pc()
-{
-	return pc - 4;
-}
-
-// set whether to do single stepping or not
-// ??? currently has no effect
-void CArm::set_stepping(bool state)
-{
-	signals.step_once = state;
-}
-
-Reg CArm::GetReg(int reg)
-{
-	return r[reg];
-}
-
-Reg CArm::GetSvcReg(int reg)
-{
-	return svcR[reg];
-}
-
-Reg CArm::GetIrqReg(int reg)
-{
-	return irqR[reg];
-}
-
-Reg CArm::GetFirqReg(int reg)
-{
-	return fiqR[reg];
-}
-
-Reg CArm::GetUserReg(int reg)
-{
-	return usrR[reg];
-}
-
-void CArm::SetMode(int mode)
-{
-	setProcessorMode(mode);
-}
-
-Reg CArm::GetUserRegister(unsigned int reg)
-{
-	return getRegisterWithPSR(reg);
-}
-
-int CArm::GetMode()
-{
-	return processorMode;
 }
 
 //////////////////////////////////////////////////////////////////////
