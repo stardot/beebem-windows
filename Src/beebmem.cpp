@@ -1465,21 +1465,3 @@ void LoadSWRomMemUEF(FILE *SUEF) {
 	}
 }
 
-
-/*-------------------------------------------------------------------------*/
-/* dump the contents of mainram into 2 16 K files */
-void beebmem_dumpstate(void) {
-  FILE *bottom,*top;
-
-  bottom=fopen("memdump_bottom","wb");
-  top=fopen("memdump_top","wb");
-  if ((bottom==NULL) || (top==NULL)) {
-    cerr << "Couldn't open memory dump files\n";
-    return;
-  }
-
-  fwrite(WholeRam,1,16384,bottom);
-  fwrite(WholeRam+16384,1,16384,top);
-  fclose(bottom);
-  fclose(top);
-}

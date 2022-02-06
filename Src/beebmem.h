@@ -117,7 +117,6 @@ bool ReadRomInfo(int bank, RomInfo* info);
 /* Used to show the Rom titles from the options menu */
 char *ReadRomTitle( int bank, char *Title, int BufSize );
 
-void beebmem_dumpstate(void);
 void SaveMemUEF(FILE *SUEF);
 extern int EFDCAddr; // 1770 FDC location
 extern int EDCAddr; // Drive control location
@@ -132,4 +131,5 @@ void LoadSWRomMemUEF(FILE *SUEF);
 void LoadIntegraBHiddenMemUEF(FILE *SUEF);
 //void LoadJIMPageRegUEF(FILE *SUEF);
 void DebugMemoryState();
+
 #endif
