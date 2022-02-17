@@ -113,8 +113,7 @@ void SASIReset()
 
 	for (int i = 0; i < 1; ++i) // only one drive allowed under Torch Z80 ?
 	{
-		// sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), i);
-		sprintf(buff, "%s/sasi%d.dat", DiscPath, i);
+		sprintf(buff, "%s/sasi%d.dat", HardDrivePath, i);
 
 		if (SASIDisc[i] != NULL)
 		{
@@ -663,8 +662,7 @@ static bool SASIDiscFormat(unsigned char *buf)
 	record |= buf[3];
 
 	char buff[256];
-	// sprintf(buff, "%s/discims/sasi%d.dat", mainWin->GetUserDataPath(), sasi.lun);
-	sprintf(buff, "%s/sasi%d.dat", DiscPath, sasi.lun);
+	sprintf(buff, "%s/sasi%d.dat", HardDrivePath, sasi.lun);
 
 	SASIDisc[sasi.lun] = fopen(buff, "wb");
 	if (SASIDisc[sasi.lun] != NULL) fclose(SASIDisc[sasi.lun]);

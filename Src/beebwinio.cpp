@@ -1708,6 +1708,37 @@ void BeebWin::ImportDiscFiles(int menuId)
 	}
 }
 
+void BeebWin::SelectHardDriveFolder()
+{
+	char DefaultPath[_MAX_PATH];
+	char FileName[_MAX_PATH];
+	int gotName = false;
+	const char* filter =
+		"Hard Drive Images (*.dat)\0*.dat\0"
+		"All files (*.*)\0*.*\0";
+
+	m_Preferences.GetStringValue("HardDrivePath", DefaultPath);
+	GetDataPath(m_UserDataPath, DefaultPath);
+
+	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	gotName = fileDialog.Open();
+	if (gotName)
+	{
+		unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
+		strncpy(DefaultPath, FileName, PathLength);
+		DefaultPath[PathLength] = 0;
+		m_Preferences.SetStringValue("HardDrivePath", DefaultPath);
+
+		MessageResult Result = Report(MessageType::Question,
+		                              "The emulator must be reset for the change to take effect.\n\nDo you want to reset now?");
+
+		if (Result == MessageResult::Yes)
+		{
+			ResetBeebSystem(MachineType, false);
+		}
+	}
+}
+
 /****************************************************************************/
 /* Bitmap capture support */
 void BeebWin::CaptureBitmapPending(bool autoFilename)

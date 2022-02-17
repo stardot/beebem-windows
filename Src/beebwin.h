@@ -544,6 +544,7 @@ public:
 	void EjectDiscImage(int Drive);
 	void ExportDiscFiles(int menuId);
 	void ImportDiscFiles(int menuId);
+	void SelectHardDriveFolder();
 	void ToggleWriteProtect(int Drive);
 	void SetWindowAttributes(bool wasFullScreen);
 	void TranslateAMX(void);

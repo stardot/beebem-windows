@@ -61,12 +61,12 @@
 <h1 align="center">Hard Disks</a></h1>
 
 <p>BeebEm supports emulated SCSI, SASI and IDE hard disks.  You can only
-have one of either SCSI or IDE hard drive enabled at one time.</p>
+have one of either SCSI or IDE hard drive enabled at a time.</p>
 
-<p>There are some preformatted ADFS disk images in the discims
+<p>There are some preformatted ADFS disk images in the DiscIms
 directory. The disks can be used in Model B (you will need to add a suitable
 ADFS ROM to the ROM configuration, see below), B Plus or Master 128 mode.
-To use the disk images enable hard drive emulation on the hardware menu and
+To use the disk images enable hard drive emulation on the Hardware menu and
 press A & F12 to boot in ADFS mode (ignore the error for drive 4 if in
 Master mode).  The hard disks then appear as drives 0 to 3.  Floppy disks
 can still be accessed as drives 4 and 5.</p>
@@ -77,7 +77,7 @@ to use the IDE interface. HADFS 5.30 and later use the IDE interface.</p>
 
 <p>There are 4 10MB pre-formatted ADFS SCSI disk images in the discims
 directory (the scsi?.dat files). There are 4 4MB blank IDE drive images in
-the discims directory (the ide?.dat files).</p>
+the DiscIms directory (the ide?.dat files).</p>
 
 <p>There are some demo tunes in scsi0.dat which you can listen to with the
 PLAY program.</p>
@@ -85,11 +85,17 @@ PLAY program.</p>
 <p>There is also the sasi0.dat file which is a Torch Z80 hard disc image
 (see the <a href="z80torch.html">Torch Z80</a> section).</p>
 
-<p>Note that you cannot load hard disk images using the File menu options.
-To use alternative hard disk image files you need to replace one of the
-existing scsi?.dat files.  The scsi?.dsc file may also need changing to
-configure the size of the hard disk image.  Bytes in the scsi?.dsc file used
-by BeebEm (with offsets starting at 0):</p>
+<p>You can use the Hardware &rarr; Select Hard Drive Folder menu option to
+select an alternative folder containing hard disk image files.  The folder
+should contain scsi?.dat, sasi?.dat or ide?.dat files, together with
+corresponding .dsc files.</p>
+
+<p>Use the Options &rarr; Save Preferences menu option to save the setting
+to the BeebEm preferences file</p>
+
+<p>Note that if you replace the scsi?.dat files, the scsi?.dsc files may also
+need changing to configure the size of the hard disk image.  Bytes in the
+scsi?.dsc file used by BeebEm (with offsets starting at 0):</p>
 
 <ul>
 <li>Byte offset 13 = number of cyclinders (high byte)</li>

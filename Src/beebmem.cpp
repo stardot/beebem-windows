@@ -130,7 +130,9 @@ static bool Sh_CPUX, Sh_CPUE;
 char RomPath[_MAX_PATH];
 char RomFile[_MAX_PATH];
 ROMConfigFile RomConfig;
-char DiscPath[_MAX_PATH]; // JGH
+
+// SCSI and IDE hard drive file location
+char HardDrivePath[_MAX_PATH]; // JGH
 
 // FDD Extension board variables
 int EFDCAddr;   // 1770 FDC location
