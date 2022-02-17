@@ -122,7 +122,7 @@ void SCSIReset(void)
 
 	for (int i = 0; i < 4; ++i)
 	{
-		sprintf(buff, "%s/scsi%d.dat", DiscPath, i);
+		sprintf(buff, "%s/scsi%d.dat", HardDrivePath, i);
 
 		SCSIDisc[i] = fopen(buff, "rb+");
 
@@ -137,7 +137,7 @@ void SCSIReset(void)
 
 		if (SCSIDisc[i] != NULL)
 		{
-			sprintf(buff, "%s/scsi%d.dsc", DiscPath, i);
+			sprintf(buff, "%s/scsi%d.dsc", HardDrivePath, i);
 
 			FILE *f = fopen(buff, "rb");
 
@@ -706,8 +706,7 @@ static int DiscModeSense(unsigned char *cdb, unsigned char *buf)
 	if (SCSIDisc[scsi.lun] == NULL) return 0;
 
 	char buff[256];
-	// sprintf(buff, "%s/discims/scsi%d.dsc", mainWin->GetUserDataPath(), scsi.lun);
-	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
+	sprintf(buff, "%s/scsi%d.dsc", HardDrivePath, scsi.lun);
 
 	FILE *f = fopen(buff, "rb");
 
@@ -752,7 +751,7 @@ bool WriteGeometory(unsigned char *buf)
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 
 	char buff[256];
-	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
+	sprintf(buff, "%s/scsi%d.dsc", HardDrivePath, scsi.lun);
 
 	FILE *f = fopen(buff, "wb");
 
@@ -775,7 +774,7 @@ bool DiscFormat(unsigned char *buf)
 	}
 
 	char buff[256];
-	sprintf(buff, "%s/scsi%d.dat", DiscPath, scsi.lun);
+	sprintf(buff, "%s/scsi%d.dat", HardDrivePath, scsi.lun);
 
 	SCSIDisc[scsi.lun] = fopen(buff, "wb");
 	if (SCSIDisc[scsi.lun] != NULL) fclose(SCSIDisc[scsi.lun]);
@@ -783,7 +782,7 @@ bool DiscFormat(unsigned char *buf)
 
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 
-	sprintf(buff, "%s/scsi%d.dsc", DiscPath, scsi.lun);
+	sprintf(buff, "%s/scsi%d.dsc", HardDrivePath, scsi.lun);
 
 	FILE *f = fopen(buff, "rb");
 

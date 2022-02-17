@@ -75,7 +75,7 @@ void IDEReset()
     for (int i = 0; i < IDEDriveMax; ++i) {
 
         char buff[256];
-        sprintf(buff, "%s\\ide%d.dat", DiscPath, i);
+        sprintf(buff, "%s\\ide%d.dat", HardDrivePath, i);
         IDEDisc[i] = fopen(buff, "rb+");
 
         if (IDEDisc[i] == NULL) {

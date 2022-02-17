@@ -705,9 +705,12 @@ BEGIN
             MENUITEM "IP: localhost:19761-19764",   ID_TELETEXTLOCALHOST
             MENUITEM "IP: Custom destination",      ID_TELETEXTCUSTOM
         END
+        MENUITEM SEPARATOR
         MENUITEM "Floppy Drive On/Off",         ID_FLOPPYDRIVE
         MENUITEM "SCSI Hard Drive On/Off",      ID_HARDDRIVE
         MENUITEM "IDE Hard Drive On/Off",       ID_IDEDRIVE
+        MENUITEM "Select Hard Drive Folder...", IDM_SELECT_HARD_DRIVE_FOLDER
+        MENUITEM SEPARATOR
         MENUITEM "User Port Breakout Box",      ID_BREAKOUT
         MENUITEM "User Port RTC Module",        ID_UPRM
         MENUITEM "Master 128 RTC Y2K Adjust",   ID_RTCY2KADJUST

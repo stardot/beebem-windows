@@ -392,7 +392,11 @@ void BeebWin::ApplyPrefs()
 	// Set up paths
 	strcpy(EconetCfgPath, m_UserDataPath);
 	strcpy(RomPath, m_UserDataPath);
-	strcpy(DiscPath, m_DiscPath);
+
+	char Path[_MAX_PATH];
+	m_Preferences.GetStringValue("HardDrivePath", Path);
+	GetDataPath(m_UserDataPath, Path);
+	strcpy(HardDrivePath, Path);
 
 	// Load key maps
 	char keymap[_MAX_PATH];
@@ -4298,6 +4302,10 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
+	case IDM_SELECT_HARD_DRIVE_FOLDER:
+		SelectHardDriveFolder();
+		break;
+
 	case ID_FLOPPYDRIVE:
 		Disc8271Enabled = !Disc8271Enabled;
 		Disc1770Enabled = !Disc1770Enabled;
@@ -4335,7 +4343,7 @@ void BeebWin::HandleCommand(int MenuId)
 			{
 				int binsize=sizeof(CFG_DISABLE_WINDOWS_KEYS);
 				RegSetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
-								  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &binsize);
+				                  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &binsize);
 				reboot = true;
 			}
 			else
@@ -4348,7 +4356,7 @@ void BeebWin::HandleCommand(int MenuId)
 		{
 			int binsize=0;
 			RegSetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
-							  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &binsize);
+			                  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &binsize);
 			reboot = true;
 		}
 
@@ -4635,8 +4643,8 @@ void BeebWin::ParseCommandLine()
 				}
 				else
 				{
-					if (m_UserDataPath[strlen(m_UserDataPath)-1] != '\\' &&
-						m_UserDataPath[strlen(m_UserDataPath)-1] != '/')
+					if (m_UserDataPath[strlen(m_UserDataPath) - 1] != '\\' &&
+					    m_UserDataPath[strlen(m_UserDataPath) - 1] != '/')
 					{
 						strcat(m_UserDataPath, "\\");
 					}

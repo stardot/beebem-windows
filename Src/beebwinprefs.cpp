@@ -599,6 +599,10 @@ void BeebWin::LoadPreferences()
 		m_Preferences.SetStringValue("ImagePath", "");
 	}
 
+	if (!m_Preferences.HasValue("HardDrivePath")) {
+		m_Preferences.SetStringValue("HardDrivePath", "DiscIms");
+	}
+
 	// Update prefs version
 	m_Preferences.SetStringValue("PrefsVersion", "2.2");
 
