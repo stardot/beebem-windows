@@ -307,12 +307,14 @@ bool IP232Open(void)
 
 	if (connect(mEthernetHandle, (SOCKADDR *)&ip232_serv_addr, sizeof(ip232_serv_addr)) == SOCKET_ERROR)
 	{
-		WriteLog("Unable to connect to IP232 server %s",IPAddress);
-		if (DebugEnabled) {
-			char info[200];
-			sprintf(info, "IP232: Unable to connect to server  %s",IPAddress);
-			DebugDisplayTrace(DebugType::RemoteServer, true, info);
+		WriteLog("Unable to connect to IP232 server %s", IPAddress);
+
+		if (DebugEnabled)
+		{
+			DebugDisplayTraceF(DebugType::RemoteServer, true,
+			                   "IP232: Unable to connect to server  %s", IPAddress);
 		}
+
 		IP232Close();
 		mEthernetHandle = INVALID_SOCKET;
 
@@ -473,10 +475,13 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 					if (i > 0)
 					{
 						// WriteLog("Read %d bytes\n%s\n", i, buff);
-						if (DebugEnabled) {
+						if (DebugEnabled)
+						{
 							char info[514];
-							sprintf(info, "IP232: Read %d bytes from server",i);
-							DebugDisplayTrace(DebugType::RemoteServer, true, info);
+
+							DebugDisplayTraceF(DebugType::RemoteServer, true,
+							                   "IP232: Read %d bytes from server", i);
+
 							static const char hexval[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 							for(j = 0; j < i; j++){
 								info[j*2] = hexval[((buff[j] >> 4) & 0xF)];
@@ -690,10 +695,10 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 			{
 				if (mEthernetHandle != INVALID_SOCKET)
 				{
-					if (DebugEnabled) {
-						char info[200];
-						sprintf(info, "IP232: Sending RTS status of %i",rts);
-						DebugDisplayTrace(DebugType::RemoteServer, true, info);
+					if (DebugEnabled)
+					{
+						DebugDisplayTraceF(DebugType::RemoteServer, true,
+						                   "IP232: Sending RTS status of %i", rts);
 					}
 					
 					IP232Write(255);

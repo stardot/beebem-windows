@@ -89,11 +89,10 @@ u_short TeletextCustomPort[4];
 static SOCKET TeletextSocket[4] = { INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET };
 bool TeletextSocketConnected[4] = { false, false, false, false };
 
+// Initiate connection on socket
+
 static int TeletextConnect(int ch)
 {
-    /* initiate connection on socket */
-    char info[200];
-
     TeletextSocketConnected[ch] = false;
 
     TeletextSocket[ch] = socket(AF_INET, SOCK_STREAM, 0);
@@ -101,16 +100,16 @@ static int TeletextConnect(int ch)
     {
         if (DebugEnabled)
         {
-            sprintf(info, "Teletext: Unable to create socket %d", ch);
-            DebugDisplayTrace(DebugType::Teletext, true, info);
+            DebugDisplayTraceF(DebugType::Teletext, true,
+                               "Teletext: Unable to create socket %d", ch);
         }
         return 1;
     }
 
     if (DebugEnabled)
     {
-        sprintf(info, "Teletext: socket %d created, connecting to server", ch);
-        DebugDisplayTrace(DebugType::Teletext, true, info);
+        DebugDisplayTraceF(DebugType::Teletext, true,
+                           "Teletext: socket %d created, connecting to server", ch);
     }
 
     u_long iMode = 1;
@@ -125,9 +124,12 @@ static int TeletextConnect(int ch)
     {
         if (WSAGetLastError() != WSAEWOULDBLOCK) // WSAEWOULDBLOCK is expected
         {
-            if (DebugEnabled) {
-                sprintf(info, "Teletext: Socket %d unable to connect to server %s:%d %d",ch,TeletextIP[ch], TeletextPort[ch], WSAGetLastError());
-                DebugDisplayTrace(DebugType::Teletext, true, info);
+            if (DebugEnabled)
+            {
+                DebugDisplayTraceF(DebugType::Teletext, true,
+                                   "Teletext: Socket %d unable to connect to server %s:%d %d",
+                                   ch, TeletextIP[ch], TeletextPort[ch],
+                                   WSAGetLastError());
             }
             closesocket(TeletextSocket[ch]);
             TeletextSocket[ch] = INVALID_SOCKET;
@@ -200,9 +202,8 @@ void TeletextClose()
         {
             if (DebugEnabled)
             {
-                char info[200];
-                sprintf(info, "Teletext: closing socket %d", ch);
-                DebugDisplayTrace(DebugType::Teletext, true, info);
+                DebugDisplayTraceF(DebugType::Teletext, true,
+                                   "Teletext: closing socket %d", ch);
             }
 
             closesocket(TeletextSocket[ch]);
@@ -307,8 +308,7 @@ void TeletextPoll(void)
         return;
 
     int i;
-    char info[200];
-    
+
     if (TeletextLocalhost || TeletextCustom)
     {
         char socketBuff[4][672] = {0};
@@ -327,8 +327,9 @@ void TeletextPoll(void)
 
                     if (DebugEnabled)
                     {
-                        sprintf(info, "Teletext: recv error %d. Closing socket %d", err, i);
-                        DebugDisplayTrace(DebugType::Teletext, true, info);
+                        DebugDisplayTraceF(DebugType::Teletext, true,
+                                           "Teletext: recv error %d. Closing socket %d",
+                                           err, i);
                     }
 
                     closesocket(TeletextSocket[i]);

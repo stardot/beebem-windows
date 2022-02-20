@@ -94,10 +94,11 @@ void UserVIAWrite(int Address, unsigned char Value)
 
   // DebugTrace("UserVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
-  if (DebugEnabled) {
-    char info[200];
-    sprintf(info, "UserVia: Write address %X value %02X", (int)(Address & 0xf), Value);
-    DebugDisplayTrace(DebugType::UserVIA, true, info);
+  if (DebugEnabled)
+  {
+    DebugDisplayTraceF(DebugType::UserVIA, true,
+                       "UserVia: Write address %X value %02X",
+                       Address & 0xf, Value);
   }
 
   switch (Address) {
@@ -360,10 +361,11 @@ unsigned char UserVIARead(int Address)
       break;
   } /* Address switch */
 
-  if (DebugEnabled) {
-    char info[200];
-    sprintf(info, "UserVia: Read address %X value %02X", (int)(Address & 0xf), tmp & 0xff);
-    DebugDisplayTrace(DebugType::UserVIA, true, info);
+  if (DebugEnabled)
+  {
+    DebugDisplayTraceF(DebugType::UserVIA, true,
+                       "UserVia: Read address %X value %02X",
+                       Address & 0xf, tmp & 0xff);
   }
 
   return tmp;

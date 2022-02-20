@@ -133,6 +133,7 @@ void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain);
 void DebugCloseDialog(void);
 
 void DebugDisplayTrace(DebugType type, bool host, const char *info);
+void DebugDisplayTraceF(DebugType type, bool host, const char *format, ...);
 void DebugDisplayInfo(const char *info);
 void DebugDisplayInfoF(const char *format, ...);
 

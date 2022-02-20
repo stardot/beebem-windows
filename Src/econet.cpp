@@ -455,8 +455,9 @@ void EconetReset(void) {
 	}
 
 	if (DebugEnabled) {
-		sprintf(info, "Econet: Station number set to %d, port %d", EconetStationNumber, EconetListenPort);
-		DebugDisplayTrace(DebugType::Econet, true, info);
+		DebugDisplayTraceF(DebugType::Econet, true,
+		                   "Econet: Station number set to %d, port %d",
+		                   EconetStationNumber, EconetListenPort);
 	}
 
 	// On Master the station number is read from CMOS so update it
@@ -527,8 +528,7 @@ void ReadNetwork(void) {
 		do {
 			if (fgets(EcoName,255,EcoCfg) == NULL) break;
 			if (DebugEnabled) {
-				sprintf(info, "Econet: ConfigFile %s", EcoName);
-				DebugDisplayTrace(DebugType::Econet, true, info);
+				DebugDisplayTraceF(DebugType::Econet, true, "Econet: ConfigFile %s", EcoName);
 			}
 			if (EcoName[0] != '#') {
 				i=0; p=0; q=0;
@@ -564,8 +564,9 @@ void ReadNetwork(void) {
 						if (q == 0 ) network[networkp].station = atoi(value);
 						else {
 								if (DebugEnabled) {
-									sprintf(info, "Econet: Config option %i flag %s", q, value);
-									DebugDisplayTrace(DebugType::Econet, true, info);
+									DebugDisplayTraceF(DebugType::Econet, true,
+									                   "Econet: Config option %i flag %s",
+									                   q, value);
 								}
 								break;
 						}
@@ -576,12 +577,15 @@ void ReadNetwork(void) {
 					do i++; while (EcoName[i] == ' ' && i < strlen(EcoName));
 					p++;
 				} while (i < strlen(EcoName));
-				if (DebugEnabled && q == 0 ) {
-					sprintf(info, "Econet: ConfigFile Net %i Stn %i IP %08x Port %i",
-							network[networkp].network, network[networkp].station,
-							network[networkp].inet_addr, network[networkp].port );
-					DebugDisplayTrace(DebugType::Econet, true, info);
+
+				if (DebugEnabled && q == 0)
+				{
+					DebugDisplayTraceF(DebugType::Econet, true,
+					                   "Econet: ConfigFile Net %i Stn %i IP %08x Port %i",
+					                   network[networkp].network, network[networkp].station,
+					                   network[networkp].inet_addr, network[networkp].port);
 				}
+
 				if (q == 0 && p == 4) networkp++;	// there were correct qty fields on line
 				// otherwise pointer not incremented, next line overwrites it.
 			}
@@ -614,8 +618,9 @@ void ReadNetwork(void) {
 			do {
 				if (fgets(EcoName,255,EcoCfg) == NULL) break;
 				if (DebugEnabled) {
-					sprintf(info, "Econet: ConfigFile %s", EcoName);
-					DebugDisplayTrace(DebugType::Econet, true, info);
+					DebugDisplayTraceF(DebugType::Econet, true,
+					                   "Econet: ConfigFile %s",
+					                   EcoName);
 				}
 				if (EcoName[0] != '#' && EcoName[0] != '|') {
 					i=0; p=0; q=0;
@@ -639,10 +644,11 @@ void ReadNetwork(void) {
 						p++;
 					} while (i < strlen(EcoName));
 					if (q == 1 && p == 3) {
-						if (DebugEnabled) {
-							sprintf(info, "Econet: AUNMap Net %i IP %08x ",
-									aunnet[aunnetp].network, aunnet[aunnetp].inet_addr );
-							DebugDisplayTrace(DebugType::Econet, true, info);
+						if (DebugEnabled)
+						{
+							DebugDisplayTraceF(DebugType::Econet, true,
+							                   "Econet: AUNMap Net %i IP %08x",
+							                   aunnet[aunnetp].network, aunnet[aunnetp].inet_addr);
 						}
 						// note which network we are a part of.. this wont work on first run as listenip not set!
 						if (aunnet[aunnetp].inet_addr == (EconetListenIP & 0x00FFFFFF)) {
@@ -668,10 +674,11 @@ void ReadNetwork(void) {
 // read to FE18..
 
 unsigned char Read_Econet_Station(void) {
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Econet: Read Station %02X", (int)EconetStationNumber);
-		DebugDisplayTrace(DebugType::Econet, true, info);
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Econet, true,
+		                   "Econet: Read Station %02X",
+		                   (int)EconetStationNumber);
 	}
 
 	return(EconetStationNumber);
@@ -682,9 +689,9 @@ unsigned char Read_Econet_Station(void) {
 
 unsigned char ReadEconetRegister(unsigned char Register) {
 	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Econet: Read ADLC %02X", (int)Register);
-		DebugDisplayTrace(DebugType::Econet, true, info);
+		DebugDisplayTraceF(DebugType::Econet, true,
+		                   "Econet: Read ADLC %02X",
+		                   (int)Register);
 		debugADLCprint();
 	}
 
@@ -696,10 +703,11 @@ unsigned char ReadEconetRegister(unsigned char Register) {
 	}
 	else if (Register>1) {
 		if (((ADLC.control1 & 64)==0) && ADLC.rxfptr) {	// rxreset not set and someting in fifo
-			if (DebugEnabled) {
-				char info[200];
-				sprintf(info, "Econet: Returned fifo: %02X", (int)ADLC.rxfifo[ADLC.rxfptr-1]);
-				DebugDisplayTrace(DebugType::Econet, true, info);
+			if (DebugEnabled)
+			{
+				DebugDisplayTraceF(DebugType::Econet, true,
+				                   "Econet: Returned fifo: %02X",
+				                   (int)ADLC.rxfifo[ADLC.rxfptr - 1]);
 				debugADLCprint();
 			}
 			
@@ -719,13 +727,14 @@ unsigned char ReadEconetRegister(unsigned char Register) {
 // write to FEA0-3
 
 void WriteEconetRegister(unsigned char Register, unsigned char Value) {
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Econet: Write ADLC %02X = %02X", (int)Register, (int)Value);
-		DebugDisplayTrace(DebugType::Econet, true, info);
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Econet, true,
+		                   "Econet: Write ADLC %02X = %02X",
+		                   (int)Register, (int)Value);
 	}
 
-	// command registers are really just a set of flags that affect 
+	// Command registers are really just a set of flags that affect
 	// operation of the rest of the device.
 
 	if (Register == 0) { // adr 00
@@ -808,7 +817,7 @@ bool EconetPoll_real(void) { // return NMI status
 	//	    automatically reset this when reach the end of current frame in progress
 	//		automatically reset when frame aborted bvy receiving an abort flag, or DCD fails.
 	if (ADLC.control1 & 32) {
-		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: RxABORT is set\0");
+		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: RxABORT is set");
 		BeebRx.Pointer =0;
 		BeebRx.BytesInBuffer = 0;
 		ADLC.rxfptr = 0;
@@ -903,7 +912,7 @@ bool EconetPoll_real(void) { // return NMI status
 	// CR4b3,4 - RX word length. 11=8 bits. BBC uses 8 bits so ignore flags and assume 8 bits throughout
 	// CR4b5 - TransmitABT - Abort Transmission.  Once abort starts, bit is cleared.
 	if (ADLC.control4 & 32) { // ABORT
-		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: TxABORT is set\0");
+		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: TxABORT is set");
 		ADLC.txfptr = 0; // reset fifo
 		ADLC.txftl = 0; // reset fifo flags
 		BeebTx.Pointer = 0;
@@ -944,10 +953,12 @@ bool EconetPoll_real(void) { // return NMI status
 				}
 
 				if (TXlast) { // TxLast set
-					if (DebugEnabled) {
-						sprintf(info, "Econet: TXLast set - Send packet to %02x %02x ",
-								(unsigned int)(BeebTx.eh.destnet), (unsigned int)BeebTx.eh.deststn);
-						DebugDisplayTrace(DebugType::Econet, true, info);
+					if (DebugEnabled)
+					{
+						DebugDisplayTraceF(DebugType::Econet, true,
+						                   "Econet: TXLast set - Send packet to %02x %02x",
+						                   (unsigned int)BeebTx.eh.destnet,
+						                   (unsigned int)BeebTx.eh.deststn);
 					}
 
 					// first two bytes of BeebTx.buff contain the destination address
@@ -1019,11 +1030,14 @@ bool EconetPoll_real(void) { // return NMI status
 					}
 
 					if (DebugEnabled) {
-						sprintf(info, "Econet: TXLast set - Send %d byte packet to %02x %02x (%08X :%u)",
-								BeebTx.Pointer,
-								(unsigned int)(BeebTx.eh.destnet), (unsigned int)BeebTx.eh.deststn,
-								(unsigned int)RecvAddr.sin_addr.s_addr, (unsigned int)htons(RecvAddr.sin_port));
-						DebugDisplayTrace(DebugType::Econet, true, info);
+						DebugDisplayTraceF(DebugType::Econet, true,
+						                   "Econet: TXLast set - Send %d byte packet to %02x %02x (%08X :%u)",
+						                   BeebTx.Pointer,
+						                   (unsigned int)BeebTx.eh.destnet,
+						                   (unsigned int)BeebTx.eh.deststn,
+						                   (unsigned int)RecvAddr.sin_addr.s_addr,
+						                   (unsigned int)htons(RecvAddr.sin_port));
+
 						sprintf(info, "Econet: Packet data:");
 						for (unsigned int i = 0; i < BeebTx.Pointer; ++i) {
 							sprintf(info+strlen(info), " %02X", BeebTx.buff[i]);
@@ -1254,11 +1268,15 @@ bool EconetPoll_real(void) { // return NMI status
 							}
 
 							if (RetVal > 0) {
-								if (DebugEnabled) {
-									// sprintf (info, "EconetPoll: Packet received. %u bytes", (int)RetVal);
-									sprintf (info, "EconetPoll: Packet received. %u bytes from %08X :%u)", (int)RetVal, RecvAddr.sin_addr.s_addr, htons(RecvAddr.sin_port));
-									DebugDisplayTrace(DebugType::Econet, true, info);
-									sprintf (info, "EconetPoll: Packet data:");
+								if (DebugEnabled)
+								{
+									DebugDisplayTraceF(DebugType::Econet, true,
+									                   "EconetPoll: Packet received. %u bytes from %08X :%u)",
+									                   (int)RetVal,
+									                   RecvAddr.sin_addr.s_addr,
+									                   htons(RecvAddr.sin_port));
+
+									sprintf(info, "EconetPoll: Packet data:");
 									for (int i = 0; i < RetVal; ++i) {
 										if (confAUNmode) {
 											sprintf(info+strlen(info), " %02X", EconetRx.raw[i]);
@@ -1308,10 +1326,12 @@ bool EconetPoll_real(void) { // return NMI status
 									if (!foundhost) { // didn't find it in the table ..
 										BeebRx.BytesInBuffer = 0; //ignore the packet
 									} else {
-										if (DebugEnabled) {
-											sprintf(info, "Econet: Packet was from %02x %02x ",
-													(unsigned int)(network[hostno].network), (unsigned int)network[hostno].station);
-											DebugDisplayTrace(DebugType::Econet, true, info);
+										if (DebugEnabled)
+										{
+											DebugDisplayTraceF(DebugType::Econet, true,
+											                   "Econet: Packet was from %02x %02x ",
+											                   (unsigned int)network[hostno].network,
+											                   (unsigned int)network[hostno].station);
 										}
 
 										// TODO - many of these copies can use memcpy()
@@ -1594,9 +1614,11 @@ bool EconetPoll_real(void) { // return NMI status
 
 	// SR1b5 - TXU - Tx Underrun.
 	if (ADLC.txfptr > 4) { // probably not needed
-		if (DebugEnabled) {
-			sprintf(info, "Econet: TX Underrun - TXfptr %02x", (unsigned int)ADLC.txfptr);
-			DebugDisplayTrace(DebugType::Econet, true, info);
+		if (DebugEnabled)
+		{
+			DebugDisplayTraceF(DebugType::Econet, true,
+			                   "Econet: TX Underrun - TXfptr %02x",
+			                   (unsigned int)ADLC.txfptr);
 		}
 		ADLC.status1 |= 32;
 		ADLC.txfptr = 4;
@@ -1696,9 +1718,11 @@ bool EconetPoll_real(void) { // return NMI status
 		ADLC.sr2pse = 0;
 	}
 
-	if (DebugEnabled && sr2psetemp != ADLC.sr2pse) {
-		sprintf(info, "ADLC: PSE SR2Rx priority changed to %d", ADLC.sr2pse);
-		DebugDisplayTrace(DebugType::Econet, true, info);
+	if (DebugEnabled && sr2psetemp != ADLC.sr2pse)
+	{
+		DebugDisplayTraceF(DebugType::Econet, true,
+		                   "ADLC: PSE SR2Rx priority changed to %d",
+		                   ADLC.sr2pse);
 	}
 
 	// Do we need to flag an interrupt?
@@ -1736,9 +1760,11 @@ bool EconetPoll_real(void) { // return NMI status
 			// SR1b7 IRQ flag
 			ADLC.status1 |= 128;
 
-			if (DebugEnabled) {
-				sprintf(info, "ADLC: Status1 bit got set %02x, interrupt", (int)tempcause);
-				DebugDisplayTrace(DebugType::Econet, true, info);
+			if (DebugEnabled)
+			{
+				DebugDisplayTraceF(DebugType::Econet, true,
+				                  "ADLC: Status1 bit got set %02x, interrupt",
+				                  (int)tempcause);
 			}
 		}
 
@@ -1756,9 +1782,12 @@ bool EconetPoll_real(void) { // return NMI status
 					DebugDisplayTrace(DebugType::Econet, true, "ADLC: S1 flags still set, interrupt");
 				}
 			}
-			if (DebugEnabled) {
-				sprintf(info, "ADLC: IRQ cause reset, irqcause %02x", (int)irqcause);
-				DebugDisplayTrace(DebugType::Econet, true, info);
+
+			if (DebugEnabled)
+			{
+				DebugDisplayTraceF(DebugType::Econet, true,
+				                   "ADLC: IRQ cause reset, irqcause %02x",
+				                   (int)irqcause);
 			}
 		}
 		if (DebugEnabled) debugADLCprint();
@@ -1772,13 +1801,12 @@ bool EconetPoll_real(void) { // return NMI status
 // display some information
 
 void debugADLCprint(void) {
-	char info[200];
-	sprintf(info, "ADLC: Ctl:%02X %02X %02X %02X St:%02X %02X TXptr:%01x rx:%01x FF:%d IRQc:%02x SR2c:%02x PC:%04x 4W:%i ",
-			(int)ADLC.control1, (int)ADLC.control2, (int)ADLC.control3, (int)ADLC.control4,
-			(int)ADLC.status1, (int)ADLC.status2,
-			(int)ADLC.txfptr, (int)ADLC.rxfptr, FlagFillActive ? 1 : 0,
-			(int)irqcause, (int)sr1b2cause, (int)ProgramCounter, (int)fourwaystage);
-	DebugDisplayTrace(DebugType::Econet, true, info);
+	DebugDisplayTraceF(DebugType::Econet, true,
+	                   "ADLC: Ctl:%02X %02X %02X %02X St:%02X %02X TXptr:%01x rx:%01x FF:%d IRQc:%02x SR2c:%02x PC:%04x 4W:%i ",
+	                   (int)ADLC.control1, (int)ADLC.control2, (int)ADLC.control3, (int)ADLC.control4,
+	                   (int)ADLC.status1, (int)ADLC.status2,
+	                   (int)ADLC.txfptr, (int)ADLC.rxfptr, FlagFillActive ? 1 : 0,
+	                   (int)irqcause, (int)sr1b2cause, (int)ProgramCounter, (int)fourwaystage);
 }
 
 //--------------------------------------------------------------------------------------------

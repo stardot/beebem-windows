@@ -129,12 +129,12 @@ void ResetACIAStatus(unsigned char bit) {
 	ACIA_Status&=~(1<<bit);
 }
 
-void Write_ACIA_Control(unsigned char CReg) {
-	unsigned char bit;
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Serial: Write ACIA control %02X", (int)CReg);
-		DebugDisplayTrace(DebugType::Serial, true, info);
+void Write_ACIA_Control(unsigned char CReg)
+{
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Serial, true,
+		                   "Serial: Write ACIA control %02X", (int)CReg);
 	}
 
 	ACIA_Control=CReg; // This is done for safe keeping
@@ -164,8 +164,9 @@ void Write_ACIA_Control(unsigned char CReg) {
 	TIE=(CReg & 32)>>5;
 	RTS=(CReg & 64)>>6;
 	RIE=(CReg & 128)>>7;
-	bit=(CReg & 96)>>5;
+	unsigned char bit=(CReg & 96)>>5;
 	if (bit==3) { RTS=0; TIE=0; }
+
 	// Seem to need an interrupt immediately for tape writing when TIE set
 	if (SerialChannel == SerialDevice::Cassette && TIE && Cass_Relay) {
 		intStatus|=1<<serial;
@@ -184,11 +185,12 @@ void Write_ACIA_Control(unsigned char CReg) {
 	}
 }
 
-void Write_ACIA_Tx_Data(unsigned char Data) {
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Serial: Write ACIA Tx %02X", (int)Data);
-		DebugDisplayTrace(DebugType::Serial, true, info);
+void Write_ACIA_Tx_Data(unsigned char Data)
+{
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Serial, true,
+		                   "Serial: Write ACIA Tx %02X", (int)Data);
 	}
 
 //	WriteLog("Serial: Write ACIA Tx %02X, SerialChannel = %d\n", (int)Data, SerialChannel);
@@ -238,12 +240,12 @@ void Write_ACIA_Tx_Data(unsigned char Data) {
 	}
 }
 
-void Write_SERPROC(unsigned char Data) {
-	unsigned int HigherRate;
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Serial: Write serial ULA %02X", (int)Data);
-		DebugDisplayTrace(DebugType::Serial, true, info);
+void Write_SERPROC(unsigned char Data)
+{
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Serial, true,
+		                   "Serial: Write serial ULA %02X", (int)Data);
 	}
 
 	SP_Control=Data;
@@ -261,10 +263,12 @@ void Write_SERPROC(unsigned char Data) {
 	SerialChannel = (Data & 64) != 0 ? SerialDevice::RS423 : SerialDevice::Cassette;
 	Tx_Rate=Baud_Rates[(Data & 7)];
 	Rx_Rate=Baud_Rates[(Data & 56)>>3];
-	// Note, the PC serial port (or at least win32) does not allow different transmit/receive rates
-	// So we will use the higher of the two
+
+	// Note, the PC serial port (or at least win32) does not allow different
+	// transmit/receive rates So we will use the higher of the two
+
 	if (SerialChannel == SerialDevice::RS423) {
-		HigherRate=Tx_Rate;
+		unsigned int HigherRate=Tx_Rate;
 		if (Rx_Rate>Tx_Rate) HigherRate=Rx_Rate;
 		GetCommState(hSerialPort,&dcbSerialPort);
 		dcbSerialPort.BaudRate=HigherRate;
@@ -282,13 +286,13 @@ unsigned char Read_ACIA_Status(void) {
 //			DCDClear=0;
 //		}
 //	}
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Serial: Read ACIA status %02X", (int)ACIA_Status);
-		DebugDisplayTrace(DebugType::Serial, true, info);
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Serial, true,
+		                   "Serial: Read ACIA status %02X", (int)ACIA_Status);
 	}
 
-//	WriteLog("Serial: Read ACIA status %02X\n", (int)ACIA_Status);
+	// WriteLog("Serial: Read ACIA status %02X\n", (int)ACIA_Status);
 
 	// See https://github.com/stardot/beebem-windows/issues/47
 	return ACIA_Status;
@@ -324,10 +328,11 @@ unsigned char Read_ACIA_Rx_Data(void) {
 	if (RxD==0) ResetACIAStatus(0);
 	if ((RxD>0) && (RIE)) { intStatus|=1<<serial; SetACIAStatus(7); }
 	if (Data_Bits==7) TData&=127;
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Serial: Read ACIA Rx %02X", (int)TData);
-		DebugDisplayTrace(DebugType::Serial, true, info);
+
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Serial, true,
+		                   "Serial: Read ACIA Rx %02X", (int)TData);
 	}
 
 //	WriteLog("Serial: Read ACIA Rx %02X, ACIA_Status = %02x\n", (int)TData, (int) ACIA_Status);
@@ -335,14 +340,15 @@ unsigned char Read_ACIA_Rx_Data(void) {
 	return(TData);
 }
 
-unsigned char Read_SERPROC(void) {
-	if (DebugEnabled) {
-		char info[200];
-		sprintf(info, "Serial: Read serial ULA %02X", (int)SP_Control);
-		DebugDisplayTrace(DebugType::Serial, true, info);
+unsigned char Read_SERPROC()
+{
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Serial, true,
+		                   "Serial: Read serial ULA %02X", (int)SP_Control);
 	}
 
-	return(SP_Control);
+	return SP_Control;
 }
 
 void Serial_Poll(void)

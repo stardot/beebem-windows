@@ -1332,10 +1332,11 @@ void CRTCWrite(int Address, unsigned char Value) {
     //     fprintf(crtclog,"%d (%02X) Written to register %d from %04X\n",Value,Value,CRTCControlReg,ProgramCounter);
     // }
 
-    if (DebugEnabled && CRTCControlReg<14) {
-        char info[200];
-        sprintf(info, "CRTC: Write register %X value %02X", (int)CRTCControlReg, Value);
-        DebugDisplayTrace(DebugType::Video, true, info);
+    if (DebugEnabled && CRTCControlReg < 14)
+    {
+        DebugDisplayTraceF(DebugType::Video, true,
+                           "CRTC: Write register %X value %02X",
+                           (int)CRTCControlReg, Value);
     }
 
     switch (CRTCControlReg) {
