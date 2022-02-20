@@ -33,6 +33,7 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <windowsx.h>
 #include <initguid.h>
+#include <algorithm>
 
 #pragma warning(push)
 #pragma warning(disable: 4091) // ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
@@ -43,6 +44,8 @@ Boston, MA  02110-1301, USA.
 
 #pragma warning(push)
 #pragma warning(disable: 4458) // declaration of 'xxx' hides class member
+using std::min;
+using std::max;
 #include <gdiplus.h>
 #pragma warning(pop)
 

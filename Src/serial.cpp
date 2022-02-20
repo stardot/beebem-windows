@@ -29,6 +29,7 @@ Written by Richard Gellman - March 2001
 #include <windows.h>
 #include <process.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include "6502core.h"
 #include "uef.h"
@@ -266,8 +267,7 @@ void Write_SERPROC(unsigned char Data)
 	// transmit/receive rates So we will use the higher of the two
 
 	if (SerialChannel == SerialDevice::RS423) {
-		unsigned int HigherRate=Tx_Rate;
-		if (Rx_Rate>Tx_Rate) HigherRate=Rx_Rate;
+		unsigned int HigherRate = std::max(Rx_Rate, Tx_Rate);
 		GetCommState(hSerialPort,&dcbSerialPort);
 		dcbSerialPort.BaudRate=HigherRate;
 		dcbSerialPort.DCBlength=sizeof(dcbSerialPort);
