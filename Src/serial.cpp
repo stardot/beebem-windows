@@ -119,8 +119,6 @@ volatile bool bCharReady = false;
 COMMTIMEOUTS ctSerialPort;
 DWORD dwClrCommError;
 
-FILE *serlog;
-
 void SetACIAStatus(unsigned char bit) {
 	ACIA_Status|=1<<bit;
 }
@@ -298,8 +296,8 @@ unsigned char Read_ACIA_Status(void) {
 	return ACIA_Status;
 }
 
-void HandleData(unsigned char AData) {
-	//fprintf(serlog,"%d %02X\n",RxD,AData);
+void HandleData(unsigned char AData)
+{
 	// This proc has to dump data into the serial chip's registers
 
 	if (RxD==0) { RDR=AData; SetACIAStatus(0); } // Rx Reg full
@@ -724,7 +722,6 @@ void InitSerialPort(void) {
 			SetCommMask(hSerialPort,EV_CTS | EV_RXCHAR | EV_ERR);
 		}
 	}
-	//serlog=fopen("/ser.log","wb");
 }
 
 void CloseUEF(void) {
@@ -802,7 +799,6 @@ void RewindTape(void) {
 	csw_pulselen = 0;
 	csw_ptr = 0;
 	csw_pulsecount = -1;
-
 }
 
 void SetTapeSpeed(int speed) {
