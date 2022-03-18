@@ -35,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "music5000.h"
 #include "disc8271.h"
+#include "teletext.h"
 #include "via.h"
 #include "sysvia.h"
 #include "uservia.h"
@@ -3089,6 +3090,7 @@ static void PollHardware(unsigned int nCycles)
 		AdjustTrigger(AtoDTrigger);
 		AdjustTrigger(SoundTrigger);
 		AdjustTrigger(Disc8271Trigger);
+		AdjustTrigger(TeletextAdapterTrigger);
 		AdjustTrigger(AMXTrigger);
 		AdjustTrigger(PrinterTrigger);
 		AdjustTrigger(VideoTriggerCount);
@@ -3108,6 +3110,7 @@ static void PollHardware(unsigned int nCycles)
 	Disc8271Poll();
 	Music5000Poll(nCycles);
 	SoundPoll();
+	TeletextPoll(nCycles);
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
 	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 

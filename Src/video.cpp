@@ -36,7 +36,6 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "beebsound.h"
 #include "debug.h"
-#include "teletext.h"
 
 #ifdef BEEB_DOTIME
 #include <sys/times.h>
@@ -740,8 +739,6 @@ static void VideoStartOfFrame(void) {
   } else {
     IncTrigger(((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
   }
-
-  TeletextPoll();
 }
 
 /*--------------------------------------------------------------------------*/

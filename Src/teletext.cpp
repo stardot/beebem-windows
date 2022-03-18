@@ -23,29 +23,28 @@ Boston, MA  02110-1301, USA.
 
 /*
 
-Offset  Description                 Access  
-+00     Status register             R/W
-+01     Row register
-+02     Data register
-+03     Clear status register
+Offset           Read               Write
++00         Status Register     Control Latch
++01         Undefined result    Loads Row Counter
++02         Reads Next Byte     Writes Next Byte
++03                 Clears status flags
 
 Status register:
-  Read
    Bits     Function
-   0-3      Link settings
-   4        FSYN (Latches high on Field sync)
-   5        DEW (Data entry window)
-   6        DOR (Latches INT on end of DEW)
-   7        INT (latches high on end of DEW)
+   0-3      Link settings (connected to 1, 0, AFC, or 'spare' bit D5)
+   4        Frame Sync Flag (Set by a frame sync pulse)
+   5        DEW (High during the teletext portion of the TV frame)
+   6        DOR (Set by a failure to clear the status flags before start of DEW)
+   7        INT (Set by trailing edge of DEW)
   
-  Write
+Control latch:
    Bits     Function
    0-1      Channel select
    2        Teletext Enable
    3        Enable Interrupts
-   4        Enable AFC (and mystery links A)
-   5        Mystery links B
-
+   4        Enable AFC
+   5        Spare latched bit
+   6-7      Not latched
 */
 
 #include <stdio.h>
@@ -62,6 +61,10 @@ Status register:
 #define ENABLE_LOG 0
 
 bool TeletextAdapterEnabled = false;
+int TeletextAdapterTrigger;
+enum TTXState {TTXFIELD, TTXFSYNC, TTXDEW};
+TTXState TeletextState = TTXFIELD;
+
 bool TeletextFiles;
 bool TeletextLocalhost;
 bool TeletextCustom;
@@ -153,7 +156,7 @@ void TeletextInit(void)
 
     if (!TeletextAdapterEnabled)
         return;
-
+    
     TeletextClose();
 
     for (i = 0; i < 4; i++)
@@ -191,6 +194,8 @@ void TeletextInit(void)
 
         TeletextCurrentFrame = 0;
     }
+    
+    TeletextState = TTXFIELD; // within a field
 }
 
 void TeletextClose()
@@ -232,8 +237,8 @@ void TeletextWrite(int Address, int Value)
     {
         case 0x00:
             // Status register
-            // if (Value * 0x20) mystery links
-            // if (Value * 0x10) enable AFC and mystery links
+            // if (Value * 0x20) set spare bit D5
+            // if (Value * 0x10) enable AFC
 
             TeletextInts = (Value & 0x08) == 0x08;
             if (TeletextInts && (TeletextStatus & 0x80))
@@ -255,7 +260,8 @@ void TeletextWrite(int Address, int Value)
             break;
 
         case 0x02:
-            row[rowPtr][colPtr++] = Value & 0xFF;
+            row[rowPtr][colPtr] = Value & 0xFF;
+            colPtr = (colPtr + 1) & 0x3F;
             break;
 
         case 0x03:
@@ -276,6 +282,8 @@ unsigned char TeletextRead(int Address)
     {
     case 0x00:          // Status Register
         data = TeletextStatus;
+        if (TeletextState == TTXDEW)
+            data |= 0x20; // raise DEW bit
         break;
     case 0x01:          // Row Register
         break;
@@ -286,11 +294,12 @@ unsigned char TeletextRead(int Address)
         // WriteLog("TeletextRead Returning Row %d, Col %d, Data %d, PC = 0x%04x\n", rowPtr, colPtr, row[rowPtr][colPtr], ProgramCounter);
         #endif
 
-        data = row[rowPtr][colPtr++];
+        data = row[rowPtr][colPtr];
+        colPtr = (colPtr + 1) & 0x3F;
         break;
 
     case 0x03:
-        TeletextStatus &= ~0xD0;       // Clear INT, DOR, and FSYN latches
+        TeletextStatus &= ~0xD0;       // Clear INT, DOR, and FSYNC latches
         intStatus &= ~(1 << teletext);
         break;
     }
@@ -302,98 +311,117 @@ unsigned char TeletextRead(int Address)
     return data;
 }
 
-void TeletextPoll(void)
+void TeletextAdapterUpdate(void)
 {
     if (!TeletextAdapterEnabled)
-        return;
-
-    int i;
-
-    if (TeletextLocalhost || TeletextCustom)
     {
-        char socketBuff[4][672] = {0};
-
-        for (i = 0; i < 4; i++)
-        {
-            if (TeletextSocket[i] != INVALID_SOCKET)
+        ClearTrigger(TeletextAdapterTrigger);
+        return;
+    }
+    
+    switch (TeletextState)
+    {
+        default:
+        case TTXFIELD: // transition to FSYNC state
+            TeletextState = TTXFSYNC;
+            TeletextStatus |= 0x10; // latch FSYNC
+            IncTrigger(640, TeletextAdapterTrigger); // wait for approximately 5 video lines
+            break;
+        case TTXFSYNC: // transition to DEW state
+            TeletextStatus &= 0xBF;
+            TeletextStatus |= ((TeletextStatus & 0xF0) >> 1); // latch INT into DOR
+            IncTrigger(2176, TeletextAdapterTrigger); // wait for approximately 17 video lines
+            TeletextState = TTXDEW;
+            
+            int i;
+            
+            if (TeletextLocalhost || TeletextCustom)
             {
-                int result = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+                char socketBuff[4][672] = {0};
 
-                if (result == SOCKET_ERROR)
+                for (i = 0; i < 4; i++)
                 {
-                    int err = WSAGetLastError();
-                    if (err == WSAEWOULDBLOCK)
-                        break; // not fatal, ignore
-
-                    if (DebugEnabled)
+                    if (TeletextSocket[i] != INVALID_SOCKET)
                     {
-                        DebugDisplayTraceF(DebugType::Teletext, true,
-                                           "Teletext: recv error %d. Closing socket %d",
-                                           err, i);
+                        int result = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+
+                        if (result == SOCKET_ERROR)
+                        {
+                            int err = WSAGetLastError();
+                            if (err == WSAEWOULDBLOCK)
+                                break; // not fatal, ignore
+
+                            if (DebugEnabled)
+                            {
+                                DebugDisplayTraceF(DebugType::Teletext, true,
+                                                   "Teletext: recv error %d. Closing socket %d",
+                                                   err, i);
+                            }
+                            closesocket(TeletextSocket[i]);
+                            TeletextSocketConnected[i] = false;
+                            TeletextSocket[i] = INVALID_SOCKET;
+                        }
+                    }
+                }
+                
+                if (TeletextEnable)
+                {
+                    for (i = 0; i < 16; ++i)
+                    {
+                        if (socketBuff[TeletextChannel][i * 42] != 0)
+                        {
+                            row[i][0] = 0x27;
+                            memcpy(&(row[i][1]), socketBuff[TeletextChannel] + i * 42, 42);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                char buff[16 * 43] = {0};
+
+                if (TeletextFile[TeletextChannel] != nullptr)
+                {
+                    if (TeletextCurrentFrame >= TeletextFrameCount[TeletextChannel])
+                    {
+                        TeletextCurrentFrame = 0;
                     }
 
-                    closesocket(TeletextSocket[i]);
-                    TeletextSocketConnected[i] = false;
-                    TeletextSocket[i] = INVALID_SOCKET;
+                    fseek(TeletextFile[TeletextChannel], TeletextCurrentFrame * TELETEXT_FRAME_SIZE + 3L * 43L, SEEK_SET);
+                    fread(buff, 16 * 43, 1, TeletextFile[TeletextChannel]);
                 }
-            }
-        }
-
-        TeletextStatus &= 0x0F;
-        TeletextStatus |= 0xD0; // data ready so latch INT, DOR, and FSYN
-
-        if (TeletextEnable)
-        {
-            for (i = 0; i < 16; ++i)
-            {
-                if (socketBuff[TeletextChannel][i * 42] != 0)
+                
+                if (TeletextEnable)
                 {
-                    row[i][0] = 0x27;
-                    memcpy(&(row[i][1]), socketBuff[TeletextChannel] + i * 42, 42);
+                    for (i = 0; i < 16; ++i)
+                    {
+                        if (buff[i*43] != 0)
+                        {
+                            row[i][0] = 0x67;
+                            memcpy(&(row[i][1]), buff + i * 43, 42);
+                        }
+                        else
+                        {
+                            row[i][0] = 0x00;
+                        }
+                    }
                 }
+                
+                TeletextCurrentFrame++;
             }
-        }
+            
+            rowPtr = 0x00;
+            colPtr = 0x00;
+            
+            break;
+        case TTXDEW: // transition to field state
+            TeletextStatus &= 0x7F;
+            TeletextStatus |= 0x80; // latch INT
+            IncTrigger(37184, TeletextAdapterTrigger); // wait for approximately 290.5 video lines
+            TeletextState = TTXFIELD;
+            
+            if (TeletextInts)
+                intStatus |= 1 << teletext; // raise the interrupt
+            break;
     }
-    else
-    {
-        char buff[16 * 43] = {0};
-
-        if (TeletextFile[TeletextChannel] != nullptr)
-        {
-            if (TeletextCurrentFrame >= TeletextFrameCount[TeletextChannel])
-            {
-                TeletextCurrentFrame = 0;
-            }
-
-            fseek(TeletextFile[TeletextChannel], TeletextCurrentFrame * TELETEXT_FRAME_SIZE + 3L * 43L, SEEK_SET);
-            fread(buff, 16 * 43, 1, TeletextFile[TeletextChannel]);
-
-            TeletextStatus &= 0x0F;
-            TeletextStatus |= 0xD0;       // data ready so latch INT, DOR, and FSYN
-        }
-
-        if (TeletextEnable)
-        {
-            for (i = 0; i < 16; ++i)
-            {
-                if (buff[i*43] != 0)
-                {
-                    row[i][0] = 0x67;
-                    memcpy(&(row[i][1]), buff + i * 43, 42);
-                }
-                else
-                {
-                    row[i][0] = 0x00;
-                }
-            }
-        }
-
-        TeletextCurrentFrame++;
-    }
-
-    rowPtr = 0x00;
-    colPtr = 0x00;
-
-    if (TeletextInts)
-        intStatus |= 1 << teletext;
 }
