@@ -21,6 +21,8 @@ Boston, MA  02110-1301, USA.
 /* Teletext Support for Beebem */
 
 extern bool TeletextAdapterEnabled;
+extern int TeletextAdapterTrigger;
+
 extern bool TeletextFiles;
 extern bool TeletextLocalhost;
 extern bool TeletextCustom;
@@ -32,6 +34,9 @@ extern u_short TeletextCustomPort[4];
 
 void TeletextWrite(int Address, int Value);
 unsigned char TeletextRead(int Address);
-void TeletextPoll(void);
+void TeletextAdapterUpdate(void);
+
+#define TeletextPoll(cycles) { if (TeletextAdapterTrigger<=TotalCycles)  TeletextAdapterUpdate(); }
+
 void TeletextInit(void);
 void TeletextClose(void);
