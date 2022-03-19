@@ -68,7 +68,7 @@ struct CMOSType {
 	bool Op;
 };
 
-typedef enum RomFlags
+enum RomFlags
 {
 	RomService=128,
 	RomLanguage=64,
@@ -78,9 +78,9 @@ typedef enum RomFlags
 	RomFlag2=4,
 	RomFlag1=2,
 	RomFlag0=1,
-} RomFlags;
+};
 
-typedef struct RomInfo {
+struct RomInfo {
 	int Slot;
 	int LanguageAddr;
 	int ServiceAddr;
@@ -91,7 +91,7 @@ typedef struct RomInfo {
 	char VersionStr[256];
 	char Copyright[256];
 	int RelocationAddr;
-} RomInfo;
+};
 
 extern struct CMOSType CMOS;
 extern bool Sh_Display;
@@ -105,7 +105,7 @@ extern char HardDrivePath[_MAX_PATH]; // JGH
 
 unsigned char BeebReadMem(int Address);
 void BeebWriteMem(int Address, unsigned char Value);
-#define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address]=Value;
+#define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address] = Value
 const unsigned char *BeebMemPtrWithWrap(int Address, int Length);
 const unsigned char *BeebMemPtrWithWrapMode7(int Address, int Length);
 bool ReadROMFile(const char *filename, ROMConfigFile RomConfig);
@@ -116,7 +116,7 @@ void RTCReset(void);
 /* used by debugger */
 bool ReadRomInfo(int bank, RomInfo* info);
 /* Used to show the Rom titles from the options menu */
-char *ReadRomTitle( int bank, char *Title, int BufSize );
+char *ReadRomTitle(int bank, char *Title, int BufSize);
 
 void SaveMemUEF(FILE *SUEF);
 extern int EFDCAddr; // 1770 FDC location
