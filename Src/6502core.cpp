@@ -3110,7 +3110,8 @@ static void PollHardware(unsigned int nCycles)
 	Disc8271Poll();
 	Music5000Poll(nCycles);
 	SoundPoll();
-	TeletextPoll(nCycles);
+	TeletextPoll();
+
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
 	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 
