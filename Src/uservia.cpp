@@ -20,11 +20,7 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifdef WIN32
 #include <windows.h>
-#include "main.h"
-#endif
-
 #include <stdio.h>
 #include <time.h>
 
@@ -34,16 +30,18 @@ Boston, MA  02110-1301, USA.
 #include "via.h"
 #include "debug.h"
 #include "log.h"
+#include "main.h"
 #include "tube.h"
 #include "UserPortBreakoutBox.h"
 
-
 /* Real Time Clock */
-int RTC_bit = 0;
-int RTC_cmd = 0;
-int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
-unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
 bool RTC_Enabled = false;
+
+static int RTC_bit = 0;
+static int RTC_cmd = 0;
+static int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
+static unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
+
 static void RTCWrite(int Value, int lastValue);
 
 /* AMX mouse (see uservia.h) */
@@ -76,162 +74,175 @@ bool SWRAMBoardEnabled = false;
 VIAState UserVIAState;
 
 /*--------------------------------------------------------------------------*/
-static void UpdateIFRTopBit(void) {
-  /* Update top bit of IFR */
-  if (UserVIAState.ifr&(UserVIAState.ier&0x7f))
-    UserVIAState.ifr|=0x80;
-  else
-    UserVIAState.ifr&=0x7f;
-  intStatus&=~(1<<userVia);
-  intStatus|=((UserVIAState.ifr & 128)?(1<<userVia):0);
+static void UpdateIFRTopBit()
+{
+	/* Update top bit of IFR */
+	if (UserVIAState.ifr & (UserVIAState.ier & 0x7f))
+		UserVIAState.ifr |= 0x80;
+	else
+		UserVIAState.ifr &= 0x7f;
+
+	intStatus &= ~(1 << userVia);
+
+	if (UserVIAState.ifr & 128)
+	{
+		intStatus |= 1 << userVia;
+	}
 }
 
 /*--------------------------------------------------------------------------*/
 /* Address is in the range 0-f - with the fe60 stripped out */
 void UserVIAWrite(int Address, unsigned char Value)
 {
-  static unsigned char lastValue = 0xff;
+	static unsigned char lastValue = 0xff;
 
-  // DebugTrace("UserVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
+	// DebugTrace("UserVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
-  if (DebugEnabled)
-  {
-    DebugDisplayTraceF(DebugType::UserVIA, true,
-                       "UserVia: Write address %X value %02X",
-                       Address & 0xf, Value);
-  }
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::UserVIA, true,
+		                   "UserVia: Write address %X value %02X",
+		                   Address & 0xf, Value);
+	}
 
-  switch (Address) {
-    case 0:
-      UserVIAState.orb = Value;
-      if ((UserVIAState.ifr & 8) && ((UserVIAState.pcr & 0x20)==0)) {
-        UserVIAState.ifr&=0xf7;
-        UpdateIFRTopBit();
-      }
+	switch (Address)
+	{
+		case 0:
+			UserVIAState.orb = Value;
 
-      if (userPortBreakoutDialog != nullptr)
-        userPortBreakoutDialog->ShowOutputs(UserVIAState.orb);
-
-	  if (RTC_Enabled)
-		  RTCWrite(Value, lastValue);
-	  lastValue = Value;
-      break;
-
-    case 1:
-		UserVIAState.ora = Value;
-		UserVIAState.ifr&=0xfc;
-		UpdateIFRTopBit();
-		if (PrinterEnabled) {
-			if (PrinterFileHandle != NULL)
+			if ((UserVIAState.ifr & 8) && ((UserVIAState.pcr & 0x20) == 0))
 			{
-				if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF)
+				UserVIAState.ifr &= 0xf7;
+				UpdateIFRTopBit();
+			}
+
+			if (userPortBreakoutDialog != nullptr)
+				userPortBreakoutDialog->ShowOutputs(UserVIAState.orb);
+
+			if (RTC_Enabled)
+				RTCWrite(Value, lastValue);
+
+			lastValue = Value;
+			break;
+
+		case 1:
+			UserVIAState.ora = Value;
+			UserVIAState.ifr &= 0xfc;
+			UpdateIFRTopBit();
+
+			if (PrinterEnabled)
+			{
+				if (PrinterFileHandle != nullptr)
 				{
-					mainWin->Report(MessageType::Error,
-					                "Failed to write to printer file:\n  %s", PrinterFileName);
+					if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF)
+					{
+						mainWin->Report(MessageType::Error,
+						                "Failed to write to printer file:\n  %s", PrinterFileName);
+					}
+					else
+					{
+						fflush(PrinterFileHandle);
+						SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+					}
 				}
 				else
 				{
-					fflush(PrinterFileHandle);
+					// Write to clipboard
+					mainWin->CopyKey(UserVIAState.ora);
 					SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
 				}
 			}
-			else
+			break;
+
+		case 2:
+			UserVIAState.ddrb = Value;
+			if (RTC_Enabled && ((Value & 0x07) == 0x07)) RTC_bit = 0;
+			break;
+
+		case 3:
+			UserVIAState.ddra = Value;
+			break;
+
+		case 4:
+		case 6:
+			// DebugTrace("UserVia Reg4 Timer1 lo Counter Write val=0x%02x at %d\n", Value, TotalCycles);
+			UserVIAState.timer1l &= 0xff00;
+			UserVIAState.timer1l |= Value & 0xff;
+			break;
+
+		case 5:
+			// DebugTrace("UserVia Reg5 Timer1 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
+			UserVIAState.timer1l &= 0xff;
+			UserVIAState.timer1l |= Value << 8;
+			UserVIAState.timer1c = UserVIAState.timer1l * 2 + 1;
+			UserVIAState.ifr &= 0xbf; /* clear timer 1 ifr */
+			/* If PB7 toggling enabled, then lower PB7 now */
+			if (UserVIAState.acr & 128)
 			{
-				// Write to clipboard
-				mainWin->CopyKey(UserVIAState.ora);
-				SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+				UserVIAState.orb &= 0x7f;
+				UserVIAState.irb &= 0x7f;
 			}
-		}
-		break;
+			UpdateIFRTopBit();
+			UserVIAState.timer1hasshot = false; // Added by K.Lowe 24/08/03
+			break;
 
-    case 2:
-      UserVIAState.ddrb = Value;
- 	  if (RTC_Enabled && ((Value & 0x07) == 0x07)) RTC_bit = 0;
-      break;
+		case 7:
+			// DebugTrace("UserVia Reg7 Timer1 hi latch Write val=0x%02x at %d\n", Value, TotalCycles);
+			UserVIAState.timer1l &= 0xff;
+			UserVIAState.timer1l |= Value << 8;
+			UserVIAState.ifr &=0xbf; /* clear timer 1 ifr (this is what Model-B does) */
+			UpdateIFRTopBit();
+			break;
 
-    case 3:
-      UserVIAState.ddra = Value;
-      break;
+		case 8:
+			// DebugTrace("UserVia Reg8 Timer2 lo Counter Write val=0x%02x at %d\n", Value, TotalCycles);
+			UserVIAState.timer2l &= 0xff00;
+			UserVIAState.timer2l |= Value;
+			break;
 
-    case 4:
-    case 6:
-      // DebugTrace("UserVia Reg4 Timer1 lo Counter Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer1l&=0xff00;
-      UserVIAState.timer1l|=(Value & 0xff);
-      break;
+		case 9:
+			// DebugTrace("UserVia Reg9 Timer2 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
+			UserVIAState.timer2l &= 0xff;
+			UserVIAState.timer2l |= Value << 8;
+			UserVIAState.timer2c = UserVIAState.timer2l * 2 + 1;
+			UserVIAState.ifr &= 0xdf; /* clear timer 2 ifr */
+			UpdateIFRTopBit();
+			UserVIAState.timer2hasshot = false; // Added by K.Lowe 24/08/03
+			break;
 
-    case 5:
-      // DebugTrace("UserVia Reg5 Timer1 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer1l &= 0xff;
-      UserVIAState.timer1l |= Value << 8;
-      UserVIAState.timer1c=UserVIAState.timer1l * 2 + 1;
-      UserVIAState.ifr &=0xbf; /* clear timer 1 ifr */
-      /* If PB7 toggling enabled, then lower PB7 now */
-      if (UserVIAState.acr & 128) {
-        UserVIAState.orb&=0x7f;
-        UserVIAState.irb&=0x7f;
-      }
-      UpdateIFRTopBit();
-      UserVIAState.timer1hasshot = false; // Added by K.Lowe 24/08/03
-      break;
+		case 10:
+			UserVIAState.sr = Value;
+			UpdateSRState(true);
+			break;
 
-    case 7:
-      // DebugTrace("UserVia Reg7 Timer1 hi latch Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer1l &= 0xff;
-      UserVIAState.timer1l |= Value << 8;
-      UserVIAState.ifr &=0xbf; /* clear timer 1 ifr (this is what Model-B does) */
-      UpdateIFRTopBit();
-      break;
+		case 11:
+			UserVIAState.acr = Value;
+			UpdateSRState(false);
+			break;
 
-    case 8:
-      // DebugTrace("UserVia Reg8 Timer2 lo Counter Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer2l &= 0xff00;
-      UserVIAState.timer2l |= Value;
-      break;
+		case 12:
+			UserVIAState.pcr = Value;
+			break;
 
-    case 9:
-      // DebugTrace("UserVia Reg9 Timer2 hi Counter Write val=0x%02x at %d\n", Value, TotalCycles);
-      UserVIAState.timer2l &= 0xff;
-      UserVIAState.timer2l |= Value << 8;
-      UserVIAState.timer2c=UserVIAState.timer2l * 2 + 1;
-      UserVIAState.ifr &=0xdf; /* clear timer 2 ifr */
-      UpdateIFRTopBit();
-      UserVIAState.timer2hasshot = false; // Added by K.Lowe 24/08/03
-      break;
+		case 13:
+			UserVIAState.ifr &= ~Value;
+			UpdateIFRTopBit();
+			break;
 
-    case 10:
-      UserVIAState.sr = Value;
-      UpdateSRState(true);
-      break;
+		case 14:
+			// DebugTrace("User VIA Write ier Value=0x%02x\n", Value);
+			if (Value & 0x80)
+				UserVIAState.ier |= Value;
+			else
+				UserVIAState.ier &= ~Value;
+			UserVIAState.ier &= 0x7f;
+			UpdateIFRTopBit();
+			break;
 
-    case 11:
-      UserVIAState.acr = Value;
-      UpdateSRState(false);
-      break;
-
-    case 12:
-      UserVIAState.pcr = Value;
-      break;
-
-    case 13:
-      UserVIAState.ifr &= ~Value;
-      UpdateIFRTopBit();
-      break;
-
-    case 14:
-      // DebugTrace("User VIA Write ier Value=0x%02x\n", Value);
-      if (Value & 0x80)
-        UserVIAState.ier |= Value;
-      else
-        UserVIAState.ier &= ~Value;
-      UserVIAState.ier&=0x7f;
-      UpdateIFRTopBit();
-      break;
-
-    case 15:
-      UserVIAState.ora = Value;
-      break;
-  }
+		case 15:
+			UserVIAState.ora = Value;
+			break;
+	}
 }
 
 /*--------------------------------------------------------------------------*/
@@ -240,164 +251,178 @@ void UserVIAWrite(int Address, unsigned char Value)
 
 unsigned char UserVIARead(int Address)
 {
-  unsigned char tmp = 0xff;
-  // Local copy for processing middle button
-  int amxButtons = AMXButtons;
+	unsigned char tmp = 0xff;
+	// Local copy for processing middle button
+	int amxButtons = AMXButtons;
 
-  // DebugTrace("UserVIARead: Address=0x%02x at %d\n", Address, TotalCycles);
+	// DebugTrace("UserVIARead: Address=0x%02x at %d\n", Address, TotalCycles);
 
-  switch (Address) {
-    case 0: /* IRB read */
-      tmp=(UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & (~UserVIAState.ddrb));
+	switch (Address)
+	{
+		case 0: /* IRB read */
+			tmp = (UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & ~UserVIAState.ddrb);
 
-	  if (RTC_Enabled)
-	  {
-		tmp = (tmp & 0xfe) | (RTC_data & 0x01);
-		RTC_data = RTC_data >> 1;
-	  }
+			if (RTC_Enabled)
+			{
+				tmp = (tmp & 0xfe) | (RTC_data & 0x01);
+				RTC_data = RTC_data >> 1;
+			}
 
-      if (userPortBreakoutDialog != nullptr)
-        userPortBreakoutDialog->ShowInputs(tmp);
+			if (userPortBreakoutDialog != nullptr)
+				userPortBreakoutDialog->ShowInputs(tmp);
 
-	  if (AMXMouseEnabled) {
-        if (AMXLRForMiddle) {
-          if ((amxButtons & AMX_LEFT_BUTTON) && (amxButtons & AMX_RIGHT_BUTTON))
-            amxButtons = AMX_MIDDLE_BUTTON;
-        }
+			if (AMXMouseEnabled)
+			{
+				if (AMXLRForMiddle)
+				{
+					if ((amxButtons & AMX_LEFT_BUTTON) && (amxButtons & AMX_RIGHT_BUTTON))
+						amxButtons = AMX_MIDDLE_BUTTON;
+				}
 
-        if (TubeType == Tube::Master512CoPro)
-        {
-            tmp &= 0xf8;
-            tmp |= (amxButtons ^ 7);
-        }
-        else
-        {
-            tmp &= 0x1f;
-            tmp |= (amxButtons ^ 7) << 5;
-            UserVIAState.ifr&=0xe7;
-        }
-        
-        UpdateIFRTopBit();
+				if (TubeType == Tube::Master512CoPro)
+				{
+						tmp &= 0xf8;
+						tmp |= (amxButtons ^ 7);
+				}
+				else
+				{
+						tmp &= 0x1f;
+						tmp |= (amxButtons ^ 7) << 5;
+						UserVIAState.ifr &= 0xe7;
+				}
 
-        /* Set up another interrupt if not at target */
-        if ((AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) || AMXDeltaX || AMXDeltaY) {
-          SetTrigger(AMX_TRIGGER, AMXTrigger);
-        }
-        else {
-          ClearTrigger(AMXTrigger);
-        }
-      }
-      break;
+				UpdateIFRTopBit();
 
-    case 2:
-      tmp = UserVIAState.ddrb;
-      break;
+				/* Set up another interrupt if not at target */
+				if ((AMXTargetX != AMXCurrentX) || (AMXTargetY != AMXCurrentY) || AMXDeltaX || AMXDeltaY)
+				{
+					SetTrigger(AMX_TRIGGER, AMXTrigger);
+				}
+				else
+				{
+					ClearTrigger(AMXTrigger);
+				}
+			}
+			break;
 
-    case 3:
-      tmp = UserVIAState.ddra;
-      break;
+		case 2:
+			tmp = UserVIAState.ddrb;
+			break;
 
-    case 4: /* Timer 1 lo counter */
-      if (UserVIAState.timer1c < 0)
-        tmp=0xff;
-      else
-        tmp=(UserVIAState.timer1c / 2) & 0xff;
-      UserVIAState.ifr&=0xbf; /* Clear bit 6 - timer 1 */
-      UpdateIFRTopBit();
-      break;
+		case 3:
+			tmp = UserVIAState.ddra;
+			break;
 
-    case 5: /* Timer 1 hi counter */
-      tmp=(UserVIAState.timer1c>>9) & 0xff;
-      break;
+		case 4: /* Timer 1 lo counter */
+			if (UserVIAState.timer1c < 0)
+				tmp = 0xff;
+			else
+				tmp = (UserVIAState.timer1c / 2) & 0xff;
+			UserVIAState.ifr &= 0xbf; /* Clear bit 6 - timer 1 */
+			UpdateIFRTopBit();
+			break;
 
-    case 6: /* Timer 1 lo latch */
-      tmp = UserVIAState.timer1l & 0xff;
-      break;
+		case 5: /* Timer 1 hi counter */
+			tmp = (UserVIAState.timer1c >> 9) & 0xff;
+			break;
 
-    case 7: /* Timer 1 hi latch */
-      tmp = (UserVIAState.timer1l>>8) & 0xff;
-      break;
+		case 6: /* Timer 1 lo latch */
+			tmp = UserVIAState.timer1l & 0xff;
+			break;
 
-    case 8: /* Timer 2 lo counter */
-      if (UserVIAState.timer2c < 0) /* Adjust for dividing -ve count by 2 */
-        tmp=((UserVIAState.timer2c - 1) / 2) & 0xff;
-      else
-        tmp=(UserVIAState.timer2c / 2) & 0xff;
-      UserVIAState.ifr&=0xdf; /* Clear bit 5 - timer 2 */
-      UpdateIFRTopBit();
-      break;
+		case 7: /* Timer 1 hi latch */
+			tmp = (UserVIAState.timer1l >> 8) & 0xff;
+			break;
 
-    case 9: /* Timer 2 hi counter */
-      tmp=(UserVIAState.timer2c>>9) & 0xff;
-      break;
+		case 8: /* Timer 2 lo counter */
+			if (UserVIAState.timer2c < 0) /* Adjust for dividing -ve count by 2 */
+				tmp = ((UserVIAState.timer2c - 1) / 2) & 0xff;
+			else
+				tmp = (UserVIAState.timer2c / 2) & 0xff;
+			UserVIAState.ifr &= 0xdf; /* Clear bit 5 - timer 2 */
+			UpdateIFRTopBit();
+			break;
 
-    case 10:
-      tmp=UserVIAState.sr;
-      UpdateSRState(true);
-      break;
+		case 9: /* Timer 2 hi counter */
+			tmp = (UserVIAState.timer2c >> 9) & 0xff;
+			break;
 
-    case 11:
-      tmp = UserVIAState.acr;
-      break;
+		case 10:
+			tmp = UserVIAState.sr;
+			UpdateSRState(true);
+			break;
 
-    case 12:
-      tmp = UserVIAState.pcr;
-      break;
+		case 11:
+			tmp = UserVIAState.acr;
+			break;
 
-    case 13:
-      UpdateIFRTopBit();
-      tmp = UserVIAState.ifr;
-      break;
+		case 12:
+			tmp = UserVIAState.pcr;
+			break;
 
-    case 14:
-      tmp = UserVIAState.ier | 0x80;
-      break;
+		case 13:
+			UpdateIFRTopBit();
+			tmp = UserVIAState.ifr;
+			break;
 
-    case 1:
-      UserVIAState.ifr&=0xfc;
-      UpdateIFRTopBit();
-    case 15:
-      tmp = 255;
-      break;
-  } /* Address switch */
+		case 14:
+			tmp = UserVIAState.ier | 0x80;
+			break;
 
-  if (DebugEnabled)
-  {
-    DebugDisplayTraceF(DebugType::UserVIA, true,
-                       "UserVia: Read address %X value %02X",
-                       Address & 0xf, tmp & 0xff);
-  }
+		case 1:
+			UserVIAState.ifr &= 0xfc;
+			UpdateIFRTopBit();
+		case 15:
+			tmp = 255;
+			break;
+	}
 
-  return tmp;
+	if (DebugEnabled)
+	{
+	  DebugDisplayTraceF(DebugType::UserVIA, true,
+	                     "UserVia: Read address %X value %02X",
+	                     Address & 0xf, tmp & 0xff);
+	}
+
+	return tmp;
 }
 
 /*--------------------------------------------------------------------------*/
-void UserVIATriggerCA1Int(void) {
-  /* We should be concerned with active edges etc. */
-  UserVIAState.ifr|=2; /* CA1 */
-  UpdateIFRTopBit();
+void UserVIATriggerCA1Int()
+{
+	/* We should be concerned with active edges etc. */
+	UserVIAState.ifr |= 2; /* CA1 */
+	UpdateIFRTopBit();
 }
 
 /*--------------------------------------------------------------------------*/
-void UserVIA_poll_real(void) {
-  static bool t1int=false;
+void UserVIA_poll_real()
+{
+	static bool t1int = false;
 
-  if (UserVIAState.timer1c<-2 && !t1int) {
-    t1int=true;
-    if (!UserVIAState.timer1hasshot || (UserVIAState.acr & 0x40)) {
-      // DebugTrace("UserVIA timer1c - int at %d\n", TotalCycles);
-      UserVIAState.ifr|=0x40; /* Timer 1 interrupt */
-      UpdateIFRTopBit();
-      if (UserVIAState.acr & 0x80) {
-        UserVIAState.orb^=0x80; /* Toggle PB7 */
-        UserVIAState.irb^=0x80; /* Toggle PB7 */
-      }
-      if ((UserVIAState.ier & 0x40) && CyclesToInt == NO_TIMER_INT_DUE) {
-        CyclesToInt = 3 + UserVIAState.timer1c;
-      }
-      UserVIAState.timer1hasshot = true;
-    }
-  }
+	if (UserVIAState.timer1c<-2 && !t1int)
+	{
+		t1int = true;
+		if (!UserVIAState.timer1hasshot || (UserVIAState.acr & 0x40))
+		{
+			// DebugTrace("UserVIA timer1c - int at %d\n", TotalCycles);
+			UserVIAState.ifr|=0x40; /* Timer 1 interrupt */
+			UpdateIFRTopBit();
+
+			if (UserVIAState.acr & 0x80)
+			{
+				UserVIAState.orb ^= 0x80; /* Toggle PB7 */
+				UserVIAState.irb ^= 0x80; /* Toggle PB7 */
+			}
+
+			if ((UserVIAState.ier & 0x40) && CyclesToInt == NO_TIMER_INT_DUE)
+			{
+				CyclesToInt = 3 + UserVIAState.timer1c;
+			}
+
+			UserVIAState.timer1hasshot = true;
+		}
+	}
 
   if (UserVIAState.timer1c<-3) {
     // DebugTrace("UserVIA timer1c\n");
@@ -405,45 +430,57 @@ void UserVIA_poll_real(void) {
     t1int=false;
   }
 
-  if (UserVIAState.timer2c<-2) {
-    if (!UserVIAState.timer2hasshot) {
-      // DebugTrace("UserVIA timer2c - int\n");
-      UserVIAState.ifr|=0x20; /* Timer 2 interrupt */
-      UpdateIFRTopBit();
-      if ((UserVIAState.ier & 0x20) && CyclesToInt == NO_TIMER_INT_DUE) {
-        CyclesToInt = 3 + UserVIAState.timer2c;
-      }
-      UserVIAState.timer2hasshot = true; // Added by K.Lowe 24/08/03
-    }
-  }
+	if (UserVIAState.timer2c < -2)
+	{
+		if (!UserVIAState.timer2hasshot)
+		{
+			// DebugTrace("UserVIA timer2c - int\n");
+			UserVIAState.ifr |= 0x20; /* Timer 2 interrupt */
+			UpdateIFRTopBit();
 
-  if (UserVIAState.timer2c<-3) {
-    // DebugTrace("UserVIA timer2c\n");
-    UserVIAState.timer2c += 0x20000; // Do not reload latches for T2
-  }
+			if ((UserVIAState.ier & 0x20) && CyclesToInt == NO_TIMER_INT_DUE)
+			{
+				CyclesToInt = 3 + UserVIAState.timer2c;
+			}
+
+			UserVIAState.timer2hasshot = true; // Added by K.Lowe 24/08/03
+		}
+	}
+
+	if (UserVIAState.timer2c < -3)
+	{
+		// DebugTrace("UserVIA timer2c\n");
+		UserVIAState.timer2c += 0x20000; // Do not reload latches for T2
+	}
 }
 
-void UserVIA_poll(unsigned int ncycles) {
-  // Converted to a proc to allow shift register functions
+void UserVIA_poll(unsigned int ncycles)
+{
+	// Converted to a proc to allow shift register functions
 
-  UserVIAState.timer1c-=ncycles;
-  if (!(UserVIAState.acr & 0x20))
-    UserVIAState.timer2c-=ncycles;
-  if ((UserVIAState.timer1c<0) || (UserVIAState.timer2c<0)) UserVIA_poll_real();
+	UserVIAState.timer1c -= ncycles;
 
-  if (AMXMouseEnabled && AMXTrigger<=TotalCycles) AMXMouseMovement();
-  if (PrinterEnabled && PrinterTrigger<=TotalCycles) PrinterPoll();
-  if (SRTrigger<=TotalCycles) SRPoll();
+	if (!(UserVIAState.acr & 0x20))
+		UserVIAState.timer2c -= ncycles;
+
+	if (UserVIAState.timer1c < 0 || UserVIAState.timer2c < 0)
+	{
+		UserVIA_poll_real();
+	}
+
+	if (AMXMouseEnabled && AMXTrigger<=TotalCycles) AMXMouseMovement();
+	if (PrinterEnabled && PrinterTrigger<=TotalCycles) PrinterPoll();
+	if (SRTrigger<=TotalCycles) SRPoll();
 }
 
 /*--------------------------------------------------------------------------*/
-void UserVIAReset(void) {
-  VIAReset(&UserVIAState);
-  ClearTrigger(AMXTrigger);
-  ClearTrigger(PrinterTrigger);
-  SRTrigger=0;
-} /* UserVIAReset */
-
+void UserVIAReset()
+{
+	VIAReset(&UserVIAState);
+	ClearTrigger(AMXTrigger);
+	ClearTrigger(PrinterTrigger);
+	SRTrigger = 0;
+}
 
 int sgn(int number)
 {
@@ -454,6 +491,7 @@ int sgn(int number)
 
 /*--------------------------------------------------------------------------*/
 static int SRMode = 0;
+
 static void SRPoll()
 {
 	if (SRTrigger == 0)
@@ -476,6 +514,7 @@ static void SRPoll()
 static void UpdateSRState(bool SRrw)
 {
 	SRMode = ((UserVIAState.acr >> 2) & 7);
+
 	if (SRMode == 6 && SRTrigger == CycleCountTMax)
 	{
 		SetTrigger(16, SRTrigger);
@@ -618,6 +657,7 @@ void PrinterPoll() {
 		set up a trigger just in case. */
 	SetTrigger(100000, PrinterTrigger);
 }
+
 /*--------------------------------------------------------------------------*/
 void RTCWrite(int Value, int lastValue)
 {
@@ -651,28 +691,35 @@ void RTCWrite(int Value, int lastValue)
 
 				switch ((RTC_cmd & 0x0f) >> 1)
 				{
-				case 0 :
+				case 0:
 					RTC_data = BCD((unsigned char)(CurTime->tm_mon + 1));
 					break;
-				case 1 :
+
+				case 1:
 					RTC_data = BCD((CurTime->tm_year % 100) - 1);
 					break;
-				case 2 :
+
+				case 2:
 					RTC_data = BCD((unsigned char)CurTime->tm_mday);
 					break;
-				case 3 :
+
+				case 3:
 					RTC_data = RTC_ram[3];
 					break;
-				case 4 :
+
+				case 4:
 					RTC_data = BCD((unsigned char)CurTime->tm_hour);
 					break;
-				case 5 :
+
+				case 5:
 					RTC_data = RTC_ram[5];
 					break;
-				case 6 :
+
+				case 6:
 					RTC_data = BCD((unsigned char)CurTime->tm_min);
 					break;
-				case 7 :
+
+				case 7:
 					RTC_data = RTC_ram[7];
 					break;
 				}
@@ -688,4 +735,3 @@ void DebugUserViaState()
 {
 	DebugViaState("UserVia", &UserVIAState);
 }
-
