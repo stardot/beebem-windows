@@ -34,9 +34,9 @@ extern u_short TeletextCustomPort[4];
 
 void TeletextWrite(int Address, int Value);
 unsigned char TeletextRead(int Address);
-void TeletextAdapterUpdate(void);
+void TeletextAdapterUpdate();
 
-#define TeletextPoll(cycles) { if (TeletextAdapterTrigger<=TotalCycles)  TeletextAdapterUpdate(); }
+#define TeletextPoll() { if (TeletextAdapterTrigger <= TotalCycles) TeletextAdapterUpdate(); }
 
-void TeletextInit(void);
-void TeletextClose(void);
+void TeletextInit();
+void TeletextClose();

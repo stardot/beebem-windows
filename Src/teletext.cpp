@@ -62,35 +62,36 @@ Control latch:
 
 bool TeletextAdapterEnabled = false;
 int TeletextAdapterTrigger;
-enum TTXState {TTXFIELD, TTXFSYNC, TTXDEW};
-TTXState TeletextState = TTXFIELD;
 
 bool TeletextFiles;
 bool TeletextLocalhost;
 bool TeletextCustom;
-
-unsigned char TeletextStatus = 0x0f;
-bool TeletextInts = false;
-bool TeletextEnable = false;
-int TeletextChannel = 0;
-int rowPtrOffset = 0x00;
-int rowPtr = 0x00;
-int colPtr = 0x00;
-
-FILE *TeletextFile[4] = { nullptr, nullptr, nullptr, nullptr };
-int TeletextFrameCount[4] = { 0, 0, 0, 0 };
-const int TELETEXT_FRAME_SIZE = 860;
-int TeletextCurrentFrame = 0;
-
-unsigned char row[16][64] = {0};
 
 char TeletextIP[4][20] = { "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1" };
 u_short TeletextPort[4] = { 19761, 19762, 19763, 19764 };
 char TeletextCustomIP[4][20];
 u_short TeletextCustomPort[4];
 
+enum TTXState {TTXFIELD, TTXFSYNC, TTXDEW};
+static TTXState TeletextState = TTXFIELD;
+
+static unsigned char TeletextStatus = 0x0f;
+static bool TeletextInts = false;
+static bool TeletextEnable = false;
+static int TeletextChannel = 0;
+static int rowPtrOffset = 0x00;
+static int rowPtr = 0x00;
+static int colPtr = 0x00;
+
+static FILE *TeletextFile[4] = { nullptr, nullptr, nullptr, nullptr };
+static int TeletextFrameCount[4] = { 0, 0, 0, 0 };
+constexpr int TELETEXT_FRAME_SIZE = 860;
+static int TeletextCurrentFrame = 0;
+
+static unsigned char row[16][64] = {0};
+
 static SOCKET TeletextSocket[4] = { INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET };
-bool TeletextSocketConnected[4] = { false, false, false, false };
+static bool TeletextSocketConnected[4] = { false, false, false, false };
 
 // Initiate connection on socket
 
@@ -144,9 +145,8 @@ static int TeletextConnect(int ch)
     return 0;
 }
 
-void TeletextInit(void)
+void TeletextInit()
 {
-    int i;
     TeletextStatus = 0x0f; /* low nibble comes from LK4-7 and mystery links which are left floating */
     TeletextInts = false;
     TeletextEnable = false;
@@ -156,10 +156,10 @@ void TeletextInit(void)
 
     if (!TeletextAdapterEnabled)
         return;
-    
+
     TeletextClose();
 
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
     {
         if (TeletextCustom)
         {
@@ -170,14 +170,14 @@ void TeletextInit(void)
 
     if (TeletextLocalhost || TeletextCustom)
     {
-        for (i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
             TeletextConnect(i);
         }
     }
     else
     {
-        for (i = 0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
             char pathname[256];
             sprintf(pathname, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), i);
@@ -194,7 +194,7 @@ void TeletextInit(void)
 
         TeletextCurrentFrame = 0;
     }
-    
+
     TeletextState = TTXFIELD; // within a field
 }
 
@@ -285,8 +285,10 @@ unsigned char TeletextRead(int Address)
         if (TeletextState == TTXDEW)
             data |= 0x20; // raise DEW bit
         break;
+
     case 0x01:          // Row Register
         break;
+
     case 0x02:          // Data Register
         #if ENABLE_LOG
         if (colPtr == 0x00)
@@ -311,14 +313,14 @@ unsigned char TeletextRead(int Address)
     return data;
 }
 
-void TeletextAdapterUpdate(void)
+void TeletextAdapterUpdate()
 {
     if (!TeletextAdapterEnabled)
     {
         ClearTrigger(TeletextAdapterTrigger);
         return;
     }
-    
+
     switch (TeletextState)
     {
         default:
@@ -327,19 +329,18 @@ void TeletextAdapterUpdate(void)
             TeletextStatus |= 0x10; // latch FSYNC
             IncTrigger(640, TeletextAdapterTrigger); // wait for approximately 5 video lines
             break;
+
         case TTXFSYNC: // transition to DEW state
             TeletextStatus &= 0xBF;
             TeletextStatus |= ((TeletextStatus & 0xF0) >> 1); // latch INT into DOR
             IncTrigger(2176, TeletextAdapterTrigger); // wait for approximately 17 video lines
             TeletextState = TTXDEW;
-            
-            int i;
-            
+
             if (TeletextLocalhost || TeletextCustom)
             {
                 char socketBuff[4][672] = {0};
 
-                for (i = 0; i < 4; i++)
+                for (int i = 0; i < 4; i++)
                 {
                     if (TeletextSocket[i] != INVALID_SOCKET)
                     {
@@ -363,10 +364,10 @@ void TeletextAdapterUpdate(void)
                         }
                     }
                 }
-                
+
                 if (TeletextEnable)
                 {
-                    for (i = 0; i < 16; ++i)
+                    for (int i = 0; i < 16; ++i)
                     {
                         if (socketBuff[TeletextChannel][i * 42] != 0)
                         {
@@ -390,10 +391,10 @@ void TeletextAdapterUpdate(void)
                     fseek(TeletextFile[TeletextChannel], TeletextCurrentFrame * TELETEXT_FRAME_SIZE + 3L * 43L, SEEK_SET);
                     fread(buff, 16 * 43, 1, TeletextFile[TeletextChannel]);
                 }
-                
+
                 if (TeletextEnable)
                 {
-                    for (i = 0; i < 16; ++i)
+                    for (int i = 0; i < 16; ++i)
                     {
                         if (buff[i*43] != 0)
                         {
@@ -406,20 +407,20 @@ void TeletextAdapterUpdate(void)
                         }
                     }
                 }
-                
+
                 TeletextCurrentFrame++;
             }
-            
+
             rowPtr = 0x00;
             colPtr = 0x00;
-            
             break;
+
         case TTXDEW: // transition to field state
             TeletextStatus &= 0x7F;
             TeletextStatus |= 0x80; // latch INT
             IncTrigger(37184, TeletextAdapterTrigger); // wait for approximately 290.5 video lines
             TeletextState = TTXFIELD;
-            
+
             if (TeletextInts)
                 intStatus |= 1 << teletext; // raise the interrupt
             break;
