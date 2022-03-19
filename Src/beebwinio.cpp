@@ -1390,11 +1390,10 @@ int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lParam */, LPARA
 INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
 	char str[100];
-	HWND hwndList;
 	char szDisplayName[MAX_PATH];
 	int i, j;
 
-	hwndList = GetDlgItem(hwndDlg, IDC_EXPORTFILELIST);
+	HWND hwndList = GetDlgItem(hwndDlg, IDC_EXPORTFILELIST);
 
 	switch (message)
 	{
@@ -1404,11 +1403,11 @@ INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LP
 		for (i = 0; i < dfsCat.numFiles; ++i)
 		{
 			sprintf(str, "%c.%-7s %06X %06X %06X",
-					dfsCat.fileAttrs[i].directory,
-					dfsCat.fileAttrs[i].filename,
-					dfsCat.fileAttrs[i].loadAddr & 0xffffff,
-					dfsCat.fileAttrs[i].execAddr & 0xffffff,
-					dfsCat.fileAttrs[i].length);
+			        dfsCat.fileAttrs[i].directory,
+			        dfsCat.fileAttrs[i].filename,
+			        dfsCat.fileAttrs[i].loadAddr & 0xffffff,
+			        dfsCat.fileAttrs[i].execAddr & 0xffffff,
+			        dfsCat.fileAttrs[i].length);
 			j = (int)SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)str);
 			// List is sorted so store catalogue index in list's item data
 			SendMessage(hwndList, LB_SETITEMDATA, j, (LPARAM)i);
@@ -1419,8 +1418,11 @@ INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LP
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
-			numSelected = (int)SendMessage(
-				hwndList, LB_GETSELITEMS, (WPARAM)DFS_MAX_CAT_SIZE, (LPARAM)filesSelected);
+			numSelected = (int)SendMessage(hwndList,
+			                               LB_GETSELITEMS,
+			                               (WPARAM)DFS_MAX_CAT_SIZE,
+			                               (LPARAM)filesSelected);
+
 			if (numSelected)
 			{
 				// Convert list indices to catalogue indices
@@ -1447,6 +1449,7 @@ INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LP
 					mainWin->Report(MessageType::Warning, "Invalid folder selected");
 					wParam = IDCANCEL;
 				}
+
 				if (idList != NULL)
 					CoTaskMemFree(idList);
 			}
@@ -1459,18 +1462,17 @@ INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LP
 			return TRUE;
 		}
 	}
+
 	return FALSE;
 }
 
 void BeebWin::ExportDiscFiles(int menuId)
 {
-	bool success = true;
 	int drive;
 	DiscType type;
 	char szDiscFile[MAX_PATH];
 	int heads;
 	int side;
-	int i, n;
 
 	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_2)
 		drive = 0;
@@ -1511,7 +1513,8 @@ void BeebWin::ExportDiscFiles(int menuId)
 	else
 		side = 1;
 
-	success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+	bool success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+
 	if (!success)
 	{
 		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
@@ -1520,14 +1523,15 @@ void BeebWin::ExportDiscFiles(int menuId)
 
 	// Show export dialog
 	if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DISCEXPORT), m_hWnd, DiscExportDlgProc) != IDOK ||
-		numSelected == 0)
+	    numSelected == 0)
 	{
 		return;
 	}
 
 	// Export the files
-	n = 0;
-	for (i = 0; i < numSelected; ++i)
+	int Count = 0;
+
+	for (int i = 0; i < numSelected; ++i)
 	{
 		char szErrStr[500];
 
@@ -1535,7 +1539,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 		                          filesSelected[i], szExportFolder, szErrStr);
 		if (success)
 		{
-			n++;
+			Count++;
 		}
 		else
 		{
@@ -1549,14 +1553,12 @@ void BeebWin::ExportDiscFiles(int menuId)
 		}
 	}
 
-	Report(MessageType::Info, "Files successfully exported: %d", n);
+	Report(MessageType::Info, "Files successfully exported: %d", Count);
 }
-
 
 // File import
 void BeebWin::ImportDiscFiles(int menuId)
 {
-	bool success = true;
 	int drive;
 	DiscType type;
 	char szDiscFile[MAX_PATH];
@@ -1566,7 +1568,6 @@ void BeebWin::ImportDiscFiles(int menuId)
 	char szFolder[MAX_PATH];
 	char fileSelection[4096];
 	char baseName[MAX_PATH];
-	char *fileName;
 	static char fileNames[DFS_MAX_CAT_SIZE*2][MAX_PATH]; // Allow user to select > cat size
 	int numFiles;
 	int i, n;
@@ -1611,7 +1612,8 @@ void BeebWin::ImportDiscFiles(int menuId)
 	else
 		side = 1;
 
-	success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+	bool success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+
 	if (!success)
 	{
 		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
@@ -1632,7 +1634,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	}
 
 	// Parse the file selection string
-	fileName = fileSelection + strlen(fileSelection) + 1;
+	char *fileName = fileSelection + strlen(fileSelection) + 1;
 	if (fileName[0] == 0)
 	{
 		// Only one file selected
@@ -2028,7 +2030,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 		else if (m_CaptureBitmapAutoFilename)
 		{
 			// Let user know bitmap has been saved
-			FlashWindow(GETHWND, TRUE);
+			FlashWindow(m_hWnd, TRUE);
 			MessageBeep(MB_ICONEXCLAMATION);
 		}
 
