@@ -1730,6 +1730,8 @@ void BeebWin::SelectHardDriveFolder()
 		unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
 		strncpy(DefaultPath, FileName, PathLength);
 		DefaultPath[PathLength] = 0;
+
+		strcpy(HardDrivePath, DefaultPath);
 		m_Preferences.SetStringValue("HardDrivePath", DefaultPath);
 
 		MessageResult Result = Report(MessageType::Question,

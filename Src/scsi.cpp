@@ -37,6 +37,7 @@ Offset  Description                 Access
 #include "main.h"
 #include "scsi.h"
 #include "beebmem.h"
+#include "DebugTrace.h"
 
 static unsigned char ReadData();
 static void WriteData(unsigned char data);
@@ -100,13 +101,13 @@ struct scsi_t {
 	int sector;
 };
 
-scsi_t scsi;
-FILE *SCSIDisc[4] = { nullptr, nullptr, nullptr, nullptr };
-int SCSISize[4];
+static scsi_t scsi;
+static FILE *SCSIDisc[4] = { nullptr, nullptr, nullptr, nullptr };
+static int SCSISize[4];
 
 bool SCSIDriveEnabled = false;
 
-void SCSIReset(void)
+void SCSIReset()
 {
 	char buff[256];
 
@@ -122,26 +123,28 @@ void SCSIReset(void)
 
 	for (int i = 0; i < 4; ++i)
 	{
-		sprintf(buff, "%s/scsi%d.dat", HardDrivePath, i);
+		sprintf(buff, "%s\\scsi%d.dat", HardDrivePath, i);
 
 		SCSIDisc[i] = fopen(buff, "rb+");
 
-		if (SCSIDisc[i] == NULL)
+		if (SCSIDisc[i] == nullptr)
 		{
-			SCSIDisc[i] = fopen(buff, "wb");
-			if (SCSIDisc[i] != NULL) fclose(SCSIDisc[i]);
-			SCSIDisc[i] = fopen(buff, "rb+");
+			char *error = _strerror(nullptr);
+			error[strlen(error) - 1] = '\0'; // Remove trailing '\n'
+
+			mainWin->Report(MessageType::Error,
+			                "Could not open SCSI disc image:\n  %s\n\n%s", buff, error);
 		}
 
 		SCSISize[i] = 0;
 
-		if (SCSIDisc[i] != NULL)
+		if (SCSIDisc[i] != nullptr)
 		{
 			sprintf(buff, "%s/scsi%d.dsc", HardDrivePath, i);
 
 			FILE *f = fopen(buff, "rb");
 
-			if (f != NULL)
+			if (f != nullptr)
 			{
 				fread(buff, 1, 22, f);
 
@@ -400,10 +403,10 @@ static void BusFree()
 
 	scsi.phase = busfree;
 
-	LEDs.HDisc[0] = 0;
-	LEDs.HDisc[1] = 0;
-	LEDs.HDisc[2] = 0;
-	LEDs.HDisc[3] = 0;
+	LEDs.HDisc[0] = false;
+	LEDs.HDisc[1] = false;
+	LEDs.HDisc[2] = false;
+	LEDs.HDisc[3] = false;
 }
 
 static void Selection(int /* data */)
@@ -440,35 +443,45 @@ static void Execute(void)
 
 	LEDs.HDisc[scsi.lun] = 1;
 
-	switch (scsi.cmd[0]) {
+	switch (scsi.cmd[0])
+	{
 		case 0x00:
 			TestUnitReady();
 			return;
+
 		case 0x03:
 			RequestSense();
 			return;
+
 		case 0x04:
 			Format();
 			return;
+
 		case 0x08:
 			Read6();
 			return;
+
 		case 0x0a:
 			Write6();
 			return;
+
 		case 0x0f:
 			Translate();
 			return;
+
 		case 0x15:
 			ModeSelect();
 			return;
+
 		case 0x1a:
 			ModeSense();
 			return;
+
 		case 0x1b:
 			StartStop();
 			return;
-		case 0x2f :
+
+		case 0x2f:
 			Verify();
 			return;
 	}
@@ -578,6 +591,7 @@ static int DiscRequestSense(unsigned char *cdb, unsigned char *buf)
 			buf[2] = 0x00;
 			buf[3] = 0x00;
 			break;
+
 		case 0x21:
 			buf[0] = 0x21;
 			buf[1] = (scsi.sector >> 16) & 0xff;
@@ -740,7 +754,7 @@ static void ModeSelect()
 	scsi.req = true;
 }
 
-bool WriteGeometory(unsigned char *buf)
+static bool WriteGeometory(unsigned char *buf)
 {
 	if (SCSIDisc[scsi.lun] == NULL) return false;
 
@@ -758,7 +772,7 @@ bool WriteGeometory(unsigned char *buf)
 	return true;
 }
 
-bool DiscFormat(unsigned char * /* buf */)
+static bool DiscFormat(unsigned char * /* buf */)
 {
 	// Ignore defect list
 

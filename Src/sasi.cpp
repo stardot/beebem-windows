@@ -32,6 +32,7 @@ Offset  Description                 Access
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "6502core.h"
 #include "log.h"
 #include "main.h"
@@ -99,8 +100,8 @@ struct sasi_t {
 	int sector;
 };
 
-sasi_t sasi;
-FILE *SASIDisc[4] = {0};
+static sasi_t sasi;
+static FILE *SASIDisc[4] = {0};
 
 extern bool SCSIDriveEnabled;
 
@@ -113,7 +114,7 @@ void SASIReset()
 
 	for (int i = 0; i < 1; ++i) // only one drive allowed under Torch Z80 ?
 	{
-		sprintf(buff, "%s/sasi%d.dat", HardDrivePath, i);
+		sprintf(buff, "%s\\sasi%d.dat", HardDrivePath, i);
 
 		if (SASIDisc[i] != NULL)
 		{
@@ -126,11 +127,13 @@ void SASIReset()
 
 		SASIDisc[i] = fopen(buff, "rb+");
 
-		if (SASIDisc[i] == NULL)
+		if (SASIDisc[i] == nullptr)
 		{
-			SASIDisc[i] = fopen(buff, "wb");
-			if (SASIDisc[i] != NULL) fclose(SASIDisc[i]);
-			SASIDisc[i] = fopen(buff, "rb+");
+			char *error = _strerror(nullptr);
+			error[strlen(error) - 1] = '\0'; // Remove trailing '\n'
+
+			mainWin->Report(MessageType::Error,
+			                "Could not open Torch Z80 SASI disc image:\n  %s\n\n%s", buff, error);
 		}
 	}
 
@@ -150,13 +153,16 @@ void SASIWrite(int Address, unsigned char Value)
 			sasi.sel = true;
 			SASIWriteData(Value);
 			break;
+
 		case 0x01:
 			sasi.sel = true;
 			break;
+
 		case 0x02:
 			sasi.sel = false;
 			SASIWriteData(Value);
 			break;
+
 		case 0x03:
 			sasi.sel = true;
 			sasi.irq = true;
@@ -176,6 +182,7 @@ unsigned char SASIRead(int Address)
 		case 0x00: // Data Register
 			data = SASIReadData();
 			break;
+
 		case 0x01: // Status Register
 		case 0x02:
 			data = 0x01;
@@ -391,37 +398,48 @@ static void SASIExecute()
 
 	LEDs.HDisc[sasi.lun] = 1;
 
-	switch (sasi.cmd[0]) {
+	switch (sasi.cmd[0])
+	{
 		case 0x00:
 			SASITestUnitReady();
 			return;
+
 		case 0x01:
 			SASIRezero();
 			return;
+
 		case 0x03:
 			SASIRequestSense();
 			return;
+
 		case 0x04:
 			SASIFormat();
 			return;
+
 		case 0x08:
 			SASIRead();
 			return;
+
 		case 0x09:
 			SASIVerify();
 			return;
+
 		case 0x0a:
 			SASIWrite();
 			return;
+
 		case 0x0b:
 			SASISeek();
 			return;
+
 		case 0x0c:
 			SASISetGeometory();
 			return;
+
 		case 0xe0:
 			SASIRamDiagnostics();
 			return;
+
 		case 0xe4:
 			SASIControllerDiagnostics();
 			return;
