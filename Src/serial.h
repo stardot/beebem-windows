@@ -24,9 +24,10 @@ Boston, MA  02110-1301, USA.
 #ifndef SERIAL_HEADER
 #define SERIAL_HEADER
 
-#define TAPECYCLES 357 // 2000000/5600 - 5600 is normal tape speed
+constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
 
-#define MAX_MAP_LINES 4096
+constexpr int MAX_MAP_LINES = 4096;
+
 extern int map_lines;
 extern char map_desc[MAX_MAP_LINES][40];
 extern int map_time[MAX_MAP_LINES];
