@@ -2216,7 +2216,7 @@ void Master512CoPro::Reset()
 	m_sregs[CS] = 0xf000;
 	m_sregs[SS] = 0;
 	m_sregs[DS] = 0;
-	m_ip = 0xffff0;
+	m_ip = 0xfff0;
 	m_prev_ip = 0;
 	m_SignVal = 0;
 	m_AuxVal = 0;
