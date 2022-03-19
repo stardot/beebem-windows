@@ -283,7 +283,7 @@ public:
 	void doCopy(void);
 	void doPaste(void);
 	void ClearClipboardBuffer();
-	void CopyKey(int data);
+	void CopyKey(unsigned char Value);
 	void CaptureBitmapPending(bool autoFilename);
 	void DoShiftBreak();
 	bool HasKbdCmd() const;

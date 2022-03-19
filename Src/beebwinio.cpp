@@ -1332,12 +1332,12 @@ void BeebWin::ClearClipboardBuffer()
 	mainWin->m_ClipboardLength = 0;
 }
 
-void BeebWin::CopyKey(int Value)
+void BeebWin::CopyKey(unsigned char Value)
 {
 	if (m_printerbufferlen >= 1024 * 1024)
 		return;
 
-	m_printerbuffer[m_printerbufferlen++] = Value;
+	m_printerbuffer[m_printerbufferlen++] = static_cast<char>(Value);
 	if (m_translateCRLF && Value == 0xD)
 		m_printerbuffer[m_printerbufferlen++] = 0xA;
 
