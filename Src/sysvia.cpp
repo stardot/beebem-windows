@@ -643,16 +643,17 @@ void SysVIA_poll(unsigned int ncycles) {
 }
 
 /*--------------------------------------------------------------------------*/
-void SysVIAReset(void) {
-  VIAReset(&SysVIAState);
+void SysVIAReset()
+{
+	VIAReset(&SysVIAState);
 
-  /* Make it no keys down and no dip switches set */
-  BeebReleaseAllKeys();
+	// Make it no keys down and no dip switches set
+	BeebReleaseAllKeys();
 
-  SRData = 0;
-  SRMode = 0;
-  SRCount = 0;
-  SREnabled = 0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
+	SRData = 0;
+	SRMode = 0;
+	SRCount = 0;
+	SREnabled = 0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
 }
 
 /*-------------------------------------------------------------------------*/
@@ -665,8 +666,8 @@ unsigned char BCDToBin(unsigned char BCD) {
 	return((BCD>>4)*10+(BCD&15));
 }
 /*-------------------------------------------------------------------------*/
-time_t CMOSConvertClock(void) {
-	time_t tim;
+time_t CMOSConvertClock()
+{
 	struct tm Base;
 	Base.tm_sec = BCDToBin(CMOSRAM[0]);
 	Base.tm_min = BCDToBin(CMOSRAM[2]);
@@ -677,36 +678,36 @@ time_t CMOSConvertClock(void) {
 	Base.tm_wday = -1;
 	Base.tm_yday = -1;
 	Base.tm_isdst = -1;
-	tim = mktime(&Base);
-	return tim;
+
+	return mktime(&Base);
 }
 /*-------------------------------------------------------------------------*/
-void RTCInit(void) {
-	struct tm *CurTime;
-	time( &SysTime );
-	CurTime = localtime( &SysTime );
-	CMOSRAM[0] = BCD(CurTime->tm_sec);
-	CMOSRAM[2] = BCD(CurTime->tm_min);
-	CMOSRAM[4] = BCD(CurTime->tm_hour);
-	CMOSRAM[6] = BCD((CurTime->tm_wday)+1);
-	CMOSRAM[7] = BCD(CurTime->tm_mday);
-	CMOSRAM[8] = BCD((CurTime->tm_mon)+1);
-	CMOSRAM[9] = BCD((CurTime->tm_year)-(RTCY2KAdjust ? 20 : 0));
+void RTCInit()
+{
+	time(&SysTime);
+	struct tm *CurTime = localtime(&SysTime);
+	CMOSRAM[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
+	CMOSRAM[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
+	CMOSRAM[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
+	CMOSRAM[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
+	CMOSRAM[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
+	CMOSRAM[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
+	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year - (RTCY2KAdjust ? 20 : 0)));
 	RTCTimeOffset = SysTime - CMOSConvertClock();
 }
 /*-------------------------------------------------------------------------*/
-void RTCUpdate(void) {
-	struct tm *CurTime;
-	time( &SysTime );
+void RTCUpdate()
+{
+	time(&SysTime);
 	SysTime -= RTCTimeOffset;
-	CurTime = localtime( &SysTime );
-	CMOSRAM[0] = BCD(CurTime->tm_sec);
-	CMOSRAM[2] = BCD(CurTime->tm_min);
-	CMOSRAM[4] = BCD(CurTime->tm_hour);
-	CMOSRAM[6] = BCD((CurTime->tm_wday)+1);
-	CMOSRAM[7] = BCD(CurTime->tm_mday);
-	CMOSRAM[8] = BCD((CurTime->tm_mon)+1);
-	CMOSRAM[9] = BCD(CurTime->tm_year);
+	struct tm *CurTime = localtime(&SysTime);
+	CMOSRAM[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
+	CMOSRAM[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
+	CMOSRAM[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
+	CMOSRAM[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
+	CMOSRAM[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
+	CMOSRAM[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
+	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year));
 }
 /*-------------------------------------------------------------------------*/
 void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
