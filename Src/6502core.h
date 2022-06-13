@@ -28,21 +28,21 @@ Boston, MA  02110-1301, USA.
 #include "port.h"
 #include <stdio.h>
 
-typedef enum IRQ_Nums {
+enum IRQ_Nums {
   sysVia,
   userVia,
   serial,
   tube,
   teletext,
   hdc,
-} IRQ_Nums;
+};
 
-typedef enum NMI_Nums{
+enum NMI_Nums{
 	nmi_floppy,
 	nmi_econet,
-} NMI_Nums;
+};
 
-typedef enum PSR_Flags
+enum PSR_Flags
 {
   FlagC=1,
   FlagZ=2,
@@ -51,7 +51,7 @@ typedef enum PSR_Flags
   FlagB=16,
   FlagV=64,
   FlagN=128
-} PSR_Flags;
+};
 
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;
