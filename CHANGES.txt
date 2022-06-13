@@ -1,6 +1,30 @@
 BeebEm Change History
 =====================
 
+Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
+------------
+* Fixed undocumented 6502 opcodes 2B (ANC imm) and CB (ASX imm).
+* Fixed memory reads in undocumented 6502 opcodes.
+* Hard disk support improvements:
+  * Added new Select Hard Drive Folder menu option. This fixes an issue
+    with the "Options -> Preferences -> Save Disc/Tape/State Folders"
+    menu option which caused BeebEm to remember the last folder used
+    to open disk or tape images. This would also set the folder where
+    BeebEm looks for hard disk images, causing it to create empty
+    *.dat files in the last folder used. This change also adds a new
+    HardDrivePath preferences option, separate to DiscsPath.
+    An error is now reported if opening a hard disk image file fails.
+* Improved the emulation of the teletext adapter to implement the full
+  range of possible states (field sync, data entry window, and video
+  field). The TFS ROM now acquires pages correctly.
+* Fixed key selection in the User Port Breakout Box dialog.
+* Fixed 1770 disk emulation to enable automatic disk density selection
+  in Opus DDOS.
+* Fixed the Sprow ARM7TDMI co-processor emulation to ensure fetches are
+  word aligned.
+* Removed documentation for the Emulator Traps menu option,
+  which has not been implemented yet.
+
 Version 4.17 (Chris Needham, Tadek Kijkowski)
 ------------
 * Writes to the sound chip are now allowed while sound is disabled.
