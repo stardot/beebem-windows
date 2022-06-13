@@ -1427,6 +1427,7 @@ void Exec6502Instruction(void) {
 				else {
 					// Undocumented instruction: ANC imm
 					ANDInstrHandler(ReadPaged(ProgramCounter++));
+					PSR &= ~FlagC;
 					PSR |= ((Accumulator & 128) >> 7);
 				}
 				break;
