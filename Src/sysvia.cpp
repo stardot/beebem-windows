@@ -301,7 +301,7 @@ static unsigned char SlowDataBusRead() {
 /* Address is in the range 0-f - with the fe40 stripped out */
 void SysVIAWrite(int Address, unsigned char Value)
 {
-  DebugTrace("SysVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
+  // DebugTrace("SysVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
   if (DebugEnabled)
   {
