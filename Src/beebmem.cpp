@@ -62,6 +62,9 @@ Boston, MA  02110-1301, USA.
 
 using namespace std;
 
+unsigned char WholeRam[65536];
+unsigned char Roms[16][16384];
+
 /* Each Rom now has a Ram/Rom flag */
 bool RomWritable[16] = {
 	true, true, true, true, true, true, true, true,
@@ -77,6 +80,7 @@ BankType RomBankType[16] = {
 };
 
 unsigned char PagedRomReg;
+unsigned char ROMSEL;
 
 // Computech (&B+) Specific Stuff Added by K.Lowe 18/08/03
 bool MemSel = false; // Shadow/Main RAM Toggle
@@ -85,34 +89,37 @@ bool ShEn = false;   // Shadow RAM Enable
 bool Prvs1 = false;  // Private RAM 1K Area
 bool Prvs4 = false;  // Private RAM 4K Area
 bool Prvs8 = false;  // Private RAM 8K Area
-int HidAdd = 0;
-// End of Computech (&B+) Specific Stuff
+static int HidAdd = 0;
 
-unsigned char WholeRam[65536];
-unsigned char Roms[16][16384];
-
-/* Computech (&B+) Specific Stuff Added by K.Lowe 18/08/03 */
 unsigned char Hidden[256];
 unsigned char Private[12288];
 unsigned char ShadowRam[20480];
-unsigned char HiddenDefault[31] = { 0,0,0,0,0,0,2,1,1,0,0xe0,0x8e,0,0,
-0,0,0,0,0,
-0xed,0xff,0xff,0x78,0,0x17,0x20,0x19,5,0x0a,0x2d,0xa1 };
 
-//Addresses 0x0 thru 0xD:		RTC Data: Sec, SecAlm, Min, MinAlm, Hr, HrAlm, Day, Date, Month, Year, Registers A, B, C & D
-//Addresses 0xE thru 0x12:	?
-//Address 0x13: 0xED		LANGUAGE in bank E. FILE SYSTEM in bank D. ROMS.cfg should match this, but IBOS reset will correct if wrong
-//Address 0x14: 0xFF		*INSERT status for ROMS &0F to &08. Default: &FF (All 8 ROMS enabled)
-//Address 0x15: 0xFF		*INSERT status for ROMS &07 to &00. Default: &FF (All 8 ROMS enabled)
-//Address 0x18: 0x17		0-2: MODE / 3: SHADOW / 4: TV Interlace / 5-7: TV screen shift.
-//Address 0x19: 0x20		0-2: FDRIVE / 3-5: CAPS. Default was &23. Changed to &20
-//Address 0x1A: 0x19		0-7: Keyboard Delay
-//Address 0x1B: 0x05		0-7: Keyboard Repeat
-//Address 0x1C: 0x0A		0-7: Printer Ignore
-//Address 0x1D: 0x2D		0: Tube / 2-4: BAUD / 5-7: Printer
-//Address 0x1E: 0xA1		0: File system / 4: Boot / 5-7: Data. Default was &A0. Changed to &A1/* End of Computech (&B+) Specific Stuff */
+static const unsigned char HiddenDefault[31] = {
+	// Addresses 0x0 thru 0x9: RTC Data: Sec, SecAlm, Min, MinAlm, Hr, HrAlm, Day, Date, Month, Year
+	0, 0, 0, 0, 0, 0, 2, 1, 1, 0,
+	// Addresses 0xA thru 0xD: Registers A, B, C & D
+	0xe0,
+	0x8e,
+	0,
+	0,
+	// Addresses 0xE thru 0x12: ?
+	0, 0, 0, 0, 0,
+	0xed, // Address 0x13: 0xED LANGUAGE in bank E. FILE SYSTEM in bank D. ROMS.cfg should match this, but IBOS reset will correct if wrong
+	0xff, // Address 0x14: 0xFF *INSERT status for ROMS &0F to &08. Default: &FF (All 8 ROMS enabled)
+	0xff, // Address 0x15: 0xFF *INSERT status for ROMS &07 to &00. Default: &FF (All 8 ROMS enabled)
+	0x78,
+	0,
+	0x17, // Address 0x18: 0x17 0-2: MODE / 3: SHADOW / 4: TV Interlace / 5-7: TV screen shift.
+	0x20, // Address 0x19: 0x20 0-2: FDRIVE / 3-5: CAPS. Default was &23. Changed to &20
+	0x19, // Address 0x1A: 0x19 0-7: Keyboard Delay
+	5,    // Address 0x1B: 0x05 0-7: Keyboard Repeat
+	0x0a, // Address 0x1C: 0x0A 0-7: Printer Ignore
+	0x2d, // Address 0x1D: 0x2D 0: Tube / 2-4: BAUD / 5-7: Printer
+	0xa1  // Address 0x1E: 0xA1 0: File system / 4: Boot / 5-7: Data. Default was &A0. Changed to &A1
+};
+// End of Computech (&B+) Specific Stuff
 
-unsigned char ROMSEL;
 /* Master 128 Specific Stuff */
 unsigned char FSRam[8192];       // 8K Filing System RAM
 unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
@@ -492,8 +499,8 @@ unsigned char BeebReadMem(int Address) {
 	}
 
 	if ((Address & ~3)==0xfe30) {
-		return(PagedRomReg); /* report back ROMSEL - I'm sure the beeb allows ROMSEL read..
-								correct me if im wrong. - Richard Gellman */
+		return(PagedRomReg); // report back ROMSEL - I'm sure the beeb allows ROMSEL read..
+		                     // correct me if im wrong. - Richard Gellman
 	}
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
 	if ((Address & ~3) == 0xfe34 && MachineType == Model::Master128) {
@@ -737,41 +744,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		}
 
 		if (Address==0xfe3c) {
-			if (HidAdd==0) {
-				Hidden[HidAdd]=Value;
-				return;
-			}
-
-			if (HidAdd==2) {
-				Hidden[HidAdd]=Value;
-				return;
-			}
-
-			if (HidAdd==4) {
-				Hidden[HidAdd]=Value;
-				return;
-			}
-
-			if (HidAdd==6) {
-				Hidden[HidAdd]=Value;
-				return;
-			}
-
-			if (HidAdd==7) {
-				Hidden[HidAdd]=Value;
-				return;
-			}
-
-			if (HidAdd==8) {
-				Hidden[HidAdd]=Value;
-				return;
-			}
-
-			if (HidAdd==9) {
-				Hidden[HidAdd]=Value;
-				return;
-			}
-
+			// TODO
 			Hidden[HidAdd]=Value;
 			return;
 		}
@@ -1367,7 +1340,6 @@ void SaveMemUEF(FILE *SUEF) {
 			break;
 		}
 	}
-
 }
 
 void LoadRomRegsUEF(FILE *SUEF) {

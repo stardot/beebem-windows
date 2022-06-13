@@ -57,7 +57,6 @@ extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
 extern bool MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8;
-extern int HidAdd;
 
 struct CMOSType {
 	bool Enabled;
