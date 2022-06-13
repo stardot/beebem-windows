@@ -2671,13 +2671,12 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ASX imm
-					// I dont know if this uses the carry or not, i'm assuming it's
-					// Subtract #n from X with carry.
-					int Temp = Accumulator;
-					Accumulator = XReg;
-					SBCInstrHandler(ReadPaged(ProgramCounter++));
-					XReg = Accumulator;
-					Accumulator = Temp; // Fudge so that I dont have to do the whole SBC code again
+					//
+					// Subtract #n from (A & X) and store result in X
+					unsigned char Operand = ReadPaged(ProgramCounter++);
+					unsigned char Result = (unsigned char)((Accumulator & XReg) - Operand);
+					SetPSRCZN((Accumulator & XReg) >= Operand, Result == 0, Result & 128);
+					XReg = Result;
 				}
 				break;
 			case 0xcc:
