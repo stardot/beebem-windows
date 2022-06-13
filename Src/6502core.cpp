@@ -1373,9 +1373,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SLO (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
+					int Address = IndXAddrModeHandler_Address();
+					ASLInstrHandler(Address);
+					ORAInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x04:
@@ -1385,7 +1385,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: NOP zp
-					ReadPaged(ZeroPgAddrModeHandler_Address());
+					ZeroPgAddrModeHandler_Address();
 				}
 				break;
 			case 0x05:
@@ -1402,9 +1402,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SLO zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
+					ASLInstrHandler(ZeroPageAddress);
+					ORAInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x08:
@@ -1426,7 +1426,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ANC imm
-					ANDInstrHandler(WholeRam[ProgramCounter++]);
+					ANDInstrHandler(ReadPaged(ProgramCounter++));
 					PSR |= ((Accumulator & 128) >> 7);
 				}
 				break;
@@ -1454,9 +1454,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SLO abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsAddrModeHandler_Address();
+					ASLInstrHandler(Address);
+					ORAInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x10:
@@ -1483,9 +1483,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SLO (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
+					int Address = IndYAddrModeHandler_Address();
+					ASLInstrHandler(Address);
+					ORAInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x14:
@@ -1512,9 +1512,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SLO zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgXAddrModeHandler_Address();
+					ASLInstrHandler(ZeroPageAddress);
+					ORAInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x18:
@@ -1540,9 +1540,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SLO abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsYAddrModeHandler_Address();
+					ASLInstrHandler(Address);
+					ORAInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x1c:
@@ -1569,9 +1569,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SLO abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					ASLInstrHandler(zpaddr);
-					ORAInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsXAddrModeHandler_Address();
+					ASLInstrHandler(Address);
+					ORAInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x20:
@@ -1588,9 +1588,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RLA (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
+					int Address = IndXAddrModeHandler_Address();
+					ROLInstrHandler(Address);
+					ANDInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x24:
@@ -1611,9 +1611,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RLA zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
+					ROLInstrHandler(ZeroPageAddress);
+					ANDInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x28: {
@@ -1657,9 +1657,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RLA abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsAddrModeHandler_Address();
+					ROLInstrHandler(Address);
+					ANDInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x30:
@@ -1686,9 +1686,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RLA (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
+					int Address = IndYAddrModeHandler_Address();
+					ROLInstrHandler(Address);
+					ANDInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x34:
@@ -1715,9 +1715,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RLA zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgXAddrModeHandler_Address();
+					ROLInstrHandler(ZeroPageAddress);
+					ANDInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x38:
@@ -1743,9 +1743,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RLA abs.Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsYAddrModeHandler_Address();
+					ROLInstrHandler(Address);
+					ANDInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x3c:
@@ -1772,9 +1772,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RLA abs.X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					ROLInstrHandler(zpaddr);
-					ANDInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsXAddrModeHandler_Address();
+					ROLInstrHandler(Address);
+					ANDInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x40:
@@ -1793,9 +1793,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SRE (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
+					int Address = IndXAddrModeHandler_Address();
+					LSRInstrHandler(Address);
+					EORInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x44:
@@ -1816,9 +1816,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SRE zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
+					LSRInstrHandler(ZeroPageAddress);
+					EORInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x48:
@@ -1839,7 +1839,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ALR imm
-					ANDInstrHandler(WholeRam[ProgramCounter++]);
+					ANDInstrHandler(ReadPaged(ProgramCounter++));
 					LSRInstrHandler_Acc();
 				}
 				break;
@@ -1861,9 +1861,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SRE abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsAddrModeHandler_Address();
+					LSRInstrHandler(Address);
+					EORInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x50:
@@ -1890,9 +1890,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SRE (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
+					int Address = IndYAddrModeHandler_Address();
+					LSRInstrHandler(Address);
+					EORInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x54:
@@ -1915,9 +1915,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SRE zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgXAddrModeHandler_Address();
+					LSRInstrHandler(ZeroPageAddress);
+					EORInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x58:
@@ -1946,9 +1946,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SRE abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsYAddrModeHandler_Address();
+					LSRInstrHandler(Address);
+					EORInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x5c:
@@ -1975,9 +1975,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SRE abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					LSRInstrHandler(zpaddr);
-					EORInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsXAddrModeHandler_Address();
+					LSRInstrHandler(Address);
+					EORInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x60:
@@ -1994,9 +1994,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RRA (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
+					int Address = IndXAddrModeHandler_Address();
+					RORInstrHandler(Address);
+					ADCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x64:
@@ -2006,7 +2006,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: NOP zp
-					ReadPaged(ZeroPgAddrModeHandler_Address());
+					ZeroPgAddrModeHandler_Address();
 				}
 				break;
 			case 0x65:
@@ -2023,9 +2023,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RRA zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
+					RORInstrHandler(ZeroPageAddress);
+					ADCInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x68:
@@ -2047,7 +2047,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ARR imm
-					ANDInstrHandler(WholeRam[ProgramCounter++]);
+					ANDInstrHandler(ReadPaged(ProgramCounter++));
 					RORInstrHandler_Acc();
 				}
 				break;
@@ -2069,9 +2069,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RRA abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsAddrModeHandler_Address();
+					RORInstrHandler(Address);
+					ADCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x70:
@@ -2098,9 +2098,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RRA (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
+					int Address = IndYAddrModeHandler_Address();
+					RORInstrHandler(Address);
+					ADCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x74:
@@ -2127,9 +2127,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RRA zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgXAddrModeHandler_Address();
+					RORInstrHandler(ZeroPageAddress);
+					ADCInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0x78:
@@ -2159,9 +2159,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RRA abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsYAddrModeHandler_Address();
+					RORInstrHandler(Address);
+					ADCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x7c:
@@ -2188,9 +2188,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: RRA abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					RORInstrHandler(zpaddr);
-					ADCInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsXAddrModeHandler_Address();
+					RORInstrHandler(Address);
+					ADCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0x80:
@@ -2220,7 +2220,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SAX (zp,X)
-					WholeRam[IndXAddrModeHandler_Address()] = Accumulator & XReg;
+					WritePaged(IndXAddrModeHandler_Address(), Accumulator & XReg);
 				}
 				break;
 			case 0x84:
@@ -2301,7 +2301,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SAX abs
-					WholeRam[AbsAddrModeHandler_Address()] = Accumulator & XReg;
+					WritePaged(AbsAddrModeHandler_Address(), Accumulator & XReg);
 				}
 				break;
 			case 0x90:
@@ -2332,7 +2332,7 @@ void Exec6502Instruction(void) {
 					// Undocumented instruction: AHX (zp),Y
 					AdvanceCyclesForMemWrite();
 					int Address = IndYAddrModeHandler_Address();
-					WholeRam[Address] = Accumulator & XReg & ((Address >> 8) + 1);
+					WritePaged(Address, Accumulator & XReg & ((Address >> 8) + 1));
 				}
 				break;
 			case 0x94:
@@ -2380,7 +2380,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: TAS abs,Y
-					WholeRam[AbsYAddrModeHandler_Address()] = Accumulator & XReg;
+					WritePaged(AbsYAddrModeHandler_Address(), Accumulator & XReg);
 				}
 				break;
 			case 0x9c:
@@ -2462,7 +2462,8 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: LAX zp
-					LDAInstrHandler(WholeRam[WholeRam[ProgramCounter++]]);
+					int ZeroPageAddress = ReadPaged(ProgramCounter++);
+					LDAInstrHandler(WholeRam[ZeroPageAddress]);
 					XReg = Accumulator;
 				}
 				break;
@@ -2622,9 +2623,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocument instruction: DCP (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
+					int Address = IndXAddrModeHandler_Address();
+					DECInstrHandler(Address);
+					CMPInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xc4:
@@ -2645,9 +2646,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: DCP zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
+					DECInstrHandler(ZeroPageAddress);
+					CMPInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0xc8:
@@ -2674,7 +2675,7 @@ void Exec6502Instruction(void) {
 					// Subtract #n from X with carry.
 					int Temp = Accumulator;
 					Accumulator = XReg;
-					SBCInstrHandler(WholeRam[ProgramCounter++]);
+					SBCInstrHandler(ReadPaged(ProgramCounter++));
 					XReg = Accumulator;
 					Accumulator = Temp; // Fudge so that I dont have to do the whole SBC code again
 				}
@@ -2697,9 +2698,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: DCP abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsAddrModeHandler_Address();
+					DECInstrHandler(Address);
+					CMPInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xd0:
@@ -2726,9 +2727,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: DCP (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
+					int Address = IndYAddrModeHandler_Address();
+					DECInstrHandler(Address);
+					CMPInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xd5:
@@ -2745,9 +2746,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: DCP zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgXAddrModeHandler_Address();
+					DECInstrHandler(ZeroPageAddress);
+					CMPInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0xd8:
@@ -2773,9 +2774,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: DCP abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsYAddrModeHandler_Address();
+					DECInstrHandler(Address);
+					CMPInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xdc:
@@ -2803,9 +2804,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: DCP abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					DECInstrHandler(zpaddr);
-					CMPInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsXAddrModeHandler_Address();
+					DECInstrHandler(Address);
+					CMPInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xe0:
@@ -2822,9 +2823,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ISC (zp,X)
-					int16 zpaddr = IndXAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
+					int Address = IndXAddrModeHandler_Address();
+					INCInstrHandler(Address);
+					SBCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xe4:
@@ -2842,9 +2843,9 @@ void Exec6502Instruction(void) {
 			case 0xe7:
 				if (MachineType != Model::Master128) {
 					// Undocumented instruction: ISC zp
-					int16 zpaddr = ZeroPgAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
+					INCInstrHandler(ZeroPageAddress);
+					SBCInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0xe8:
@@ -2884,9 +2885,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ISC abs
-					int16 zpaddr = AbsAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsAddrModeHandler_Address();
+					INCInstrHandler(Address);
+					SBCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xf0:
@@ -2913,9 +2914,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ISC (zp),Y
-					int16 zpaddr = IndYAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
+					int Address = IndYAddrModeHandler_Address();
+					INCInstrHandler(Address);
+					SBCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xf5:
@@ -2932,9 +2933,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ISC zp,X
-					int16 zpaddr = ZeroPgXAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
+					int ZeroPageAddress = ZeroPgXAddrModeHandler_Address();
+					INCInstrHandler(ZeroPageAddress);
+					SBCInstrHandler(WholeRam[ZeroPageAddress]);
 				}
 				break;
 			case 0xf8:
@@ -2961,9 +2962,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ISC abs,Y
-					int16 zpaddr = AbsYAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsYAddrModeHandler_Address();
+					INCInstrHandler(Address);
+					SBCInstrHandler(ReadPaged(Address));
 				}
 				break;
 			case 0xfd:
@@ -2980,9 +2981,9 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ISC abs,X
-					int16 zpaddr = AbsXAddrModeHandler_Address();
-					INCInstrHandler(zpaddr);
-					SBCInstrHandler(WholeRam[zpaddr]);
+					int Address = AbsXAddrModeHandler_Address();
+					INCInstrHandler(Address);
+					SBCInstrHandler(ReadPaged(Address));
 				}
 				break;
 		}
