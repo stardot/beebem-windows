@@ -77,7 +77,7 @@ unsigned int Tx_Rate=1200,Rx_Rate=1200; // Recieve and Transmit baud rates.
 unsigned char Clk_Divide=1; // Clock divide rate
 
 unsigned char ACIA_Status, ACIA_Control; // 6850 ACIA Status & Control
-static unsigned char SP_Control; // SERPROC Control;
+static unsigned char SerialULAControl; // Serial ULA / SERPROC control register;
 
 unsigned char CTS, RTS;
 static bool FirstReset = true;
@@ -185,7 +185,7 @@ void ResetACIAStatus(unsigned char bit) {
 	ACIA_Status&=~(1<<bit);
 }
 
-void Write_ACIA_Control(unsigned char Value)
+void SerialACIAWriteControl(unsigned char Value)
 {
 	if (DebugEnabled)
 	{
@@ -255,7 +255,7 @@ void Write_ACIA_Control(unsigned char Value)
 	}
 }
 
-void Write_ACIA_Tx_Data(unsigned char Data)
+void SerialACIAWriteTxData(unsigned char Data)
 {
 	if (DebugEnabled)
 	{
@@ -275,6 +275,7 @@ void Write_ACIA_Tx_Data(unsigned char Data)
 	if (SerialChannel == SerialDevice::Cassette || (SerialChannel == SerialDevice::RS423 && !SerialPortEnabled))
 	{
 		TDR = Data;
+		TxD = 1;
 		ACIA_Status &= ~MC6850_STATUS_TDRE;
 		int baud = Tx_Rate * ((Clk_Divide == 1) ? 64 : (Clk_Divide==64) ? 1 : 4);
 		TapeTrigger=TotalCycles + 2000000/(baud/8) * TapeClockSpeed/5600;
@@ -310,7 +311,10 @@ void Write_ACIA_Tx_Data(unsigned char Data)
 	}
 }
 
-void Write_SERPROC(unsigned char Value)
+// The Serial ULA control register controls the cassette motor relay,
+// transmit and receive baud rates, and RS423/cassette switch
+
+void SerialULAWrite(unsigned char Value)
 {
 	if (DebugEnabled)
 	{
@@ -318,7 +322,8 @@ void Write_SERPROC(unsigned char Value)
 		                   "Serial: Write serial ULA %02X", (int)Value);
 	}
 
-	SP_Control = Value;
+	SerialULAControl = Value;
+
 	// Slightly easier this time.
 	// just the Rx and Tx baud rates, and the selectors.
 	CassetteRelay = (Value & 0x80) != 0;
@@ -351,7 +356,19 @@ void Write_SERPROC(unsigned char Value)
 	}
 }
 
-unsigned char Read_ACIA_Status(void) {
+unsigned char SerialULARead()
+{
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Serial, true,
+		                   "Serial: Read serial ULA %02X", (int)SerialULAControl);
+	}
+
+	return SerialULAControl;
+}
+
+unsigned char SerialACIAReadStatus()
+{
 //	if (DCDI==0 && DCD!=0)
 //	{
 //		DCDClear++;
@@ -406,7 +423,7 @@ void HandleData(unsigned char Data)
 	}
 }
 
-unsigned char Read_ACIA_Rx_Data()
+unsigned char SerialACIAReadRxData()
 {
 	unsigned char TData;
 //	if (DCDI==0 && DCD!=0)
@@ -443,18 +460,7 @@ unsigned char Read_ACIA_Rx_Data()
 	return TData;
 }
 
-unsigned char Read_SERPROC()
-{
-	if (DebugEnabled)
-	{
-		DebugDisplayTraceF(DebugType::Serial, true,
-		                   "Serial: Read serial ULA %02X", (int)SP_Control);
-	}
-
-	return SP_Control;
-}
-
-void Serial_Poll(void)
+void Serial_Poll()
 {
 	if (SerialChannel == SerialDevice::Cassette)
 	{
@@ -1365,7 +1371,7 @@ void SaveSerialUEF(FILE *SUEF)
 		fputc(TDSR,SUEF);
 		fputc(ACIA_Status,SUEF);
 		fputc(ACIA_Control,SUEF);
-		fputc(SP_Control,SUEF);
+		fputc(SerialULAControl,SUEF);
 		fputc(DCD,SUEF);
 		fputc(DCDI,SUEF);
 		fputc(ODCDI,SUEF);
@@ -1414,7 +1420,7 @@ void LoadSerialUEF(FILE *SUEF)
 			TDSR = fget8(SUEF);
 			ACIA_Status = fget8(SUEF);
 			ACIA_Control = fget8(SUEF);
-			SP_Control = fget8(SUEF);
+			SerialULAControl = fget8(SUEF);
 			DCD = fget8(SUEF);
 			DCDI = fget8(SUEF);
 			ODCDI = fget8(SUEF);

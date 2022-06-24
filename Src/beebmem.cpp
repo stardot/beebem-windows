@@ -429,21 +429,21 @@ unsigned char BeebReadMem(int Address) {
 
 	if (Address==0xfe08) {
 		SyncIO();
-		Value = Read_ACIA_Status();
+		Value = SerialACIAReadStatus();
 		AdjustForIORead();
 		return Value;
 	}
 
 	if (Address==0xfe09) {
 		SyncIO();
-		Value = Read_ACIA_Rx_Data();
+		Value = SerialACIAReadRxData();
 		AdjustForIORead();
 		return Value;
 	}
 
 	if (Address==0xfe10) {
 		SyncIO();
-		Value = Read_SERPROC();
+		Value = SerialULARead();
 		AdjustForIORead();
 		return Value;
 	}
@@ -873,19 +873,19 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	if (Address==0xfe08) {
 		SyncIO();
 		AdjustForIOWrite();
-		Write_ACIA_Control(Value);
+		SerialACIAWriteControl(Value);
 		return;
 	}
 	if (Address==0xfe09) {
 		SyncIO();
 		AdjustForIOWrite();
-		Write_ACIA_Tx_Data(Value);
+		SerialACIAWriteTxData(Value);
 		return;
 	}
 	if (Address==0xfe10) {
 		SyncIO();
 		AdjustForIOWrite();
-		Write_SERPROC(Value);
+		SerialULAWrite(Value);
 		return;
 	}
 

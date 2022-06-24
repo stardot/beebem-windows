@@ -36,12 +36,16 @@ extern unsigned int Tx_Rate, Rx_Rate;
 
 extern CycleCountT TapeTrigger;
 extern CycleCountT IP232RxTrigger;
-void Write_ACIA_Control(unsigned char CReg);
-void Write_ACIA_Tx_Data(unsigned char Data);
-void Write_SERPROC(unsigned char Data);
-unsigned char Read_ACIA_Status(void);
-unsigned char Read_ACIA_Rx_Data(void);
-unsigned char Read_SERPROC(void);
+
+void SerialACIAWriteControl(unsigned char Value);
+unsigned char SerialACIAReadStatus();
+
+void SerialACIAWriteTxData(unsigned char Value);
+unsigned char SerialACIAReadRxData();
+
+void SerialULAWrite(unsigned char Value);
+unsigned char SerialULARead();
+
 extern bool SerialPortEnabled;
 extern unsigned char SerialPort;
 
