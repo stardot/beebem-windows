@@ -142,8 +142,9 @@ bool TapePlaying = true;
 bool TapeRecording = false;
 static HWND hwndTapeControl;
 static HWND hwndMap;
-void TapeControlUpdateCounter(int tape_time);
-void TapeControlStopRecording(bool RefreshControl);
+static void TapeControlUpdateCounter(int tape_time);
+static void TapeControlRecord();
+static void TapeControlStopRecording(bool RefreshControl);
 
 // This bit is the Serial Port stuff
 bool SerialPortEnabled;
@@ -881,9 +882,7 @@ void CloseUEF()
 		UEFFileOpen = false;
 		TxD=0;
 		RxD=0;
-		if (TapeControlEnabled)
-			SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
-	}
+  }
 }
 
 void SerialInit()
@@ -945,6 +944,11 @@ void CloseTape()
 {
 	CloseUEF();
 	CSWClose();
+
+	if (TapeControlEnabled)
+	{
+		SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
+	}
 }
 
 void RewindTape()
@@ -1267,74 +1271,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					return TRUE;
 
 				case IDC_TCRECORD:
-					if (CSWFileOpen)
-					{
-						break;
-					}
-
-					if (!TapeRecording)
-					{
-						bool Continue = false;
-
-						if (UEFFileOpen)
-						{
-							if (mainWin->Report(MessageType::Confirm,
-							                    "Append to current tape file:\n  %s",
-							                    UEFTapeName) == MessageResult::OK)
-							{
-								SendMessage(hwndMap, LB_SETCURSEL, (WPARAM)(map_lines.size() - 1), 0);
-
-								Continue = true;
-							}
-						}
-						else
-						{
-							// Query for new file name
-							CloseUEF();
-							mainWin->NewTapeImage(UEFTapeName);
-							if (UEFTapeName[0])
-							{
-								Continue = true;
-
-								FILE *fd = fopen(UEFTapeName,"rb");
-								if (fd != NULL)
-								{
-									fclose(fd);
-
-									if (mainWin->Report(MessageType::Question,
-									                    "File already exists:\n  %s\n\nOverwrite file?",
-									                    UEFTapeName) != MessageResult::Yes)
-									{
-										Continue = false;
-									}
-								}
-
-								if (Continue)
-								{
-									// Create file
-									if (UEFWriter.Open(UEFTapeName) == UEFResult::Success)
-									{
-										UEFFileOpen = true;
-									}
-									else
-									{
-										mainWin->Report(MessageType::Error,
-										                "Error creating tape file:\n  %s", UEFTapeName);
-
-										UEFTapeName[0] = 0;
-										Continue = false;
-									}
-								}
-							}
-						}
-
-						if (Continue)
-						{
-							TapeRecording = true;
-							TapePlaying = false;
-							TapeAudio.Enabled = CassetteRelay;
-						}
-					}
+					TapeControlRecord();
 					return TRUE;
 
 				case IDCANCEL:
@@ -1345,6 +1282,59 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 	return FALSE;
 }
 
+void TapeControlRecord()
+{
+	if (!TapeRecording)
+	{
+		// Query for new file name
+		char FileName[_MAX_PATH];
+
+		if (mainWin->NewTapeImage(FileName))
+		{
+			bool Continue = true;
+
+			FILE *fd = fopen(FileName, "rb");
+			if (fd != NULL)
+			{
+				fclose(fd);
+
+				if (mainWin->Report(MessageType::Question,
+				                    "File already exists:\n  %s\n\nOverwrite file?",
+				                    FileName) != MessageResult::Yes)
+				{
+					Continue = false;
+				}
+			}
+
+			if (Continue)
+			{
+				CloseTape();
+
+				// Create file
+				if (UEFWriter.Open(FileName) == UEFResult::Success)
+				{
+					strcpy(UEFTapeName, FileName);
+					UEFFileOpen = true;
+				}
+				else
+				{
+					mainWin->Report(MessageType::Error,
+					                "Error creating tape file:\n  %s", UEFTapeName);
+
+					UEFTapeName[0] = 0;
+					Continue = false;
+				}
+			}
+
+			if (Continue)
+			{
+				TapeRecording = true;
+				TapePlaying = false;
+				TapeAudio.Enabled = CassetteRelay;
+			}
+		}
+	}
+}
 void TapeControlStopRecording(bool RefreshControl)
 {
 	if (TapeRecording)
@@ -1403,7 +1393,7 @@ void LoadSerialUEF(FILE *SUEF)
 	char FileName[256];
 	int sp;
 
-	CloseUEF();
+	CloseTape();
 
 	SerialChannel = static_cast<SerialDevice>(fgetc(SUEF));
 	fread(FileName,1,256,SUEF);

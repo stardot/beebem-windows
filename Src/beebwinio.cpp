@@ -312,7 +312,7 @@ void BeebWin::LoadTape(void)
 	}
 }
 
-void BeebWin::NewTapeImage(char *FileName)
+bool BeebWin::NewTapeImage(char *FileName)
 {
 	char DefaultPath[_MAX_PATH];
 	const char* filter = "UEF Tape File (*.uef)\0*.uef\0";
@@ -321,7 +321,10 @@ void BeebWin::NewTapeImage(char *FileName)
 	GetDataPath(m_UserDataPath, DefaultPath);
 
 	FileDialog fileDialog(m_hWnd, FileName, 256, DefaultPath, filter);
-	if (fileDialog.Save())
+
+	bool Result = fileDialog.Save();
+
+	if (Result)
 	{
 		/* Add a file extension if the user did not specify one */
 		if (strchr(FileName, '.') == NULL)
@@ -333,6 +336,8 @@ void BeebWin::NewTapeImage(char *FileName)
 	{
 		FileName[0] = '\0';
 	}
+
+	return Result;
 }
 
 /*******************************************************************/

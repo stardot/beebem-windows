@@ -263,7 +263,7 @@ public:
 	bool CheckUserDataPath(bool Persist);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
-	void NewTapeImage(char *FileName);
+	bool NewTapeImage(char *FileName);
 	const char *GetAppPath(void) { return m_AppPath; }
 	const char *GetUserDataPath(void) { return m_UserDataPath; }
 	void GetDataPath(const char *folder, char *path);
