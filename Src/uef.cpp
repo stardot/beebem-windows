@@ -101,10 +101,8 @@ UEFResult UEFCreate(const char *FileName)
 	return UEFResult::Success;
 }
 
-UEFResult UEFOpen(const char *FileName)
+static UEFResult LoadUEFData(const char *FileName)
 {
-	UEFClose();
-
 	gzFile InputFile = gzopen(FileName, "rb");
 
 	if (InputFile == nullptr)
@@ -166,7 +164,22 @@ UEFResult UEFOpen(const char *FileName)
 	if (Result != UEFResult::Success)
 	{
 		UEFClose();
+		return Result;
+	}
 
+	UEFFileName = FileName;
+
+	return Result;
+}
+
+UEFResult UEFOpen(const char *FileName)
+{
+	UEFClose();
+
+	UEFResult Result = LoadUEFData(FileName);
+
+	if (Result != UEFResult::Success)
+	{
 		return Result;
 	}
 
@@ -239,8 +252,6 @@ UEFResult UEFOpen(const char *FileName)
 
 		chunk.end_time = clock;
 	}
-
-	UEFFileName = FileName;
 
 	return UEFResult::Success;
 }
