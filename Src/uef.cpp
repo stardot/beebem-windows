@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "uef.h"
+#include "version.h"
 #include "zlib/zlib.h"
 
 // Beats representing normal tape speed (not sure why its 5600)
@@ -84,11 +85,15 @@ UEFResult UEFFileWriter::Open(const char *FileName)
 		return UEFResult::NoFile;
 	}
 
+	std::string CreatedBy = "Created by BeebEm ";
+	CreatedBy += VERSION_STRING;
+
 	gzwrite(m_OutputFile, "UEF File!", 10);
 	gzput16(m_OutputFile, 0x000a); // V0.10
 	gzput16(m_OutputFile, 0);
-	gzput32(m_OutputFile, 18);
-	gzwrite(m_OutputFile, "Created by BeebEm", 18);
+	gzput32(m_OutputFile, CreatedBy.size() + 1); // +1 includes NUL terminator
+	gzputs(m_OutputFile, CreatedBy.c_str());
+	gzputc(m_OutputFile, 0);
 
 	m_FileName = FileName;
 
