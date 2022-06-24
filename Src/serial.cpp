@@ -483,16 +483,18 @@ void Serial_Poll()
 					}
 					TxD=0;
 					ACIA_Status |= MC6850_STATUS_TDRE;
+
 					if (TIE)
 					{
 						ACIA_Status |= MC6850_STATUS_IRQ;
 						intStatus |= 1 << serial;
 					}
-					TapeAudio.Data=(TDR<<1)|1;
-					TapeAudio.BytePos=1;
-					TapeAudio.CurrentBit=0;
-					TapeAudio.Signal=1;
-					TapeAudio.ByteCount=3;
+
+					TapeAudio.Data       = (TDR << 1) | 1;
+					TapeAudio.BytePos    = 1;
+					TapeAudio.CurrentBit = 0;
+					TapeAudio.Signal     = 1;
+					TapeAudio.ByteCount  = 3;
 				}
 				else
 				{
@@ -504,9 +506,9 @@ void Serial_Poll()
 
 						TapeControlStopRecording(true);
 					}
-					TapeAudio.Signal=2;
-					TapeAudio.BytePos=11;
 
+					TapeAudio.Signal  = 2;
+					TapeAudio.BytePos = 11;
 				}
 
 				SetTrigger(TAPECYCLES, TapeTrigger);
@@ -550,25 +552,27 @@ void Serial_Poll()
 				// New data read in, so do something about it
 				if (UEFRES_TYPE(UEF_BUF) == UEF_HTONE)
 				{
-					DCDI=1;
-					TapeAudio.Signal=2;
-					//TapeAudio.Samples=0;
-					TapeAudio.BytePos=11;
+					DCDI = 1;
+					TapeAudio.Signal = 2;
+					// TapeAudio.Samples = 0;
+					TapeAudio.BytePos = 11;
 				}
+
 				if (UEFRES_TYPE(UEF_BUF) == UEF_GAP)
 				{
-					DCDI=1;
-					TapeAudio.Signal=0;
+					DCDI = 1;
+					TapeAudio.Signal = 0;
 				}
+
 				if (UEFRES_TYPE(UEF_BUF) == UEF_DATA)
 				{
-					DCDI=0;
+					DCDI = 0;
 					HandleData(UEFRES_BYTE(UEF_BUF));
-					TapeAudio.Data=(UEFRES_BYTE(UEF_BUF)<<1)|1;
-					TapeAudio.BytePos=1;
-					TapeAudio.CurrentBit=0;
-					TapeAudio.Signal=1;
-					TapeAudio.ByteCount=3;
+					TapeAudio.Data       = (UEFRES_BYTE(UEF_BUF) << 1) | 1;
+					TapeAudio.BytePos    = 1;
+					TapeAudio.CurrentBit = 0;
+					TapeAudio.Signal     = 1;
+					TapeAudio.ByteCount  = 3;
 				}
 			}
 
@@ -604,20 +608,20 @@ void Serial_Poll()
 				// New data read in, so do something about it
 				if (csw_state == CSWState::Tone)
 				{
-					DCDI=1;
-					TapeAudio.Signal=2;
-					TapeAudio.BytePos=11;
+					DCDI = 1;
+					TapeAudio.Signal  = 2;
+					TapeAudio.BytePos = 11;
 				}
 
 				if (CSW_BUF >= 0 && csw_state == CSWState::Data)
 				{
-					DCDI=0;
+					DCDI = 0;
 					HandleData((unsigned char)CSW_BUF);
-					TapeAudio.Data=(CSW_BUF<<1)|1;
-					TapeAudio.BytePos=1;
-					TapeAudio.CurrentBit=0;
-					TapeAudio.Signal=1;
-					TapeAudio.ByteCount=3;
+					TapeAudio.Data       = (CSW_BUF << 1) | 1;
+					TapeAudio.BytePos    = 1;
+					TapeAudio.CurrentBit = 0;
+					TapeAudio.Signal     = 1;
+					TapeAudio.ByteCount  = 3;
 				}
 			}
 
@@ -632,7 +636,7 @@ void Serial_Poll()
 				}
 			}
 
-			if (DCDI==1 && ODCDI==0)
+			if (DCDI == 1 && ODCDI == 0)
 			{
 				// low to high transition on the DCD line
 				if (RIE)
@@ -945,7 +949,8 @@ bool LoadUEFTape(const char *UEFName) {
 	return Success;
 }
 
-void RewindTape(void) {
+void RewindTape()
+{
 	TapeControlStopRecording(true);
 	UEF_BUF=0;
 	TapeClock=0;
@@ -1318,8 +1323,8 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 
 						if (Continue)
 						{
-							TapeRecording=true;
-							TapePlaying=false;
+							TapeRecording = true;
+							TapePlaying = false;
 							TapeAudio.Enabled = CassetteRelay;
 						}
 					}
