@@ -582,7 +582,7 @@ void Serial_Poll()
 			{
 				CSWState last_state = csw_state;
 
-				CSW_BUF = csw_poll(TapeClock);
+				int Data = csw_poll(TapeClock);
 				OldClock = TapeClock;
 
 				if (last_state != csw_state)
@@ -590,8 +590,8 @@ void Serial_Poll()
 
 				if (csw_state == CSWState::WaitingForTone)
 				{
-					DCDI=1;
-					TapeAudio.Signal=0;
+					DCDI = 1;
+					TapeAudio.Signal = 0;
 				}
 
 				// New data read in, so do something about it
@@ -602,11 +602,11 @@ void Serial_Poll()
 					TapeAudio.BytePos = 11;
 				}
 
-				if (CSW_BUF >= 0 && csw_state == CSWState::Data)
+				if (Data >= 0 && csw_state == CSWState::Data)
 				{
 					DCDI = 0;
-					HandleData((unsigned char)CSW_BUF);
-					TapeAudio.Data       = (CSW_BUF << 1) | 1;
+					HandleData((unsigned char)Data);
+					TapeAudio.Data       = (Data << 1) | 1;
 					TapeAudio.BytePos    = 1;
 					TapeAudio.CurrentBit = 0;
 					TapeAudio.Signal     = 1;

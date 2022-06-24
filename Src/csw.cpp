@@ -60,7 +60,6 @@ static int csw_byte;
 int csw_pulsecount;
 static int bit_count;
 bool CSWFileOpen = false;
-int CSW_BUF;
 int CSW_CYCLES;
 
 CSWResult CSWOpen(const char *FileName)
@@ -139,7 +138,6 @@ CSWResult CSWOpen(const char *FileName)
 	strcpy(UEFTapeName, FileName);
 
 	CSWFileOpen = true;
-	CSW_BUF = 0;
 	TxD = 0;
 	RxD = 0;
 	TapeClock = 0;
