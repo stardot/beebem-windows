@@ -4642,7 +4642,7 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 		}
 		else if (csw)
 		{
-			LoadCSW(FileName);
+			CSWOpen(FileName);
 			cont = false;
 		}
 	}

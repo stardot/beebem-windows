@@ -578,7 +578,7 @@ void Serial_Poll()
 
 			// CSW stuff
 
-			if (CassetteRelay && CSWOpen && TapeClock != OldClock)
+			if (CassetteRelay && CSWFileOpen && TapeClock != OldClock)
 			{
 				CSWState last_state = csw_state;
 
@@ -614,7 +614,7 @@ void Serial_Poll()
 				}
 			}
 
-			if (CassetteRelay && RxD < 2 && CSWOpen)
+			if (CassetteRelay && RxD < 2 && CSWFileOpen)
 			{
 				if (TotalCycles >= TapeTrigger)
 				{
@@ -945,7 +945,7 @@ UEFResult LoadUEFTape(const char *UEFName)
 void CloseTape()
 {
 	CloseUEF();
-	CloseCSW();
+	CSWClose();
 }
 
 void RewindTape()
@@ -1148,10 +1148,10 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 			TapeControlUpdateCounter(TapeClock);
 		}
 
-		if (CSWOpen)
+		if (CSWFileOpen)
 		{
 			Clock = csw_ptr;
-			LoadCSW(UEFTapeName);
+			CSWOpen(UEFTapeName);
 			csw_ptr = Clock;
 			TapeControlUpdateCounter(csw_ptr);
 		}
@@ -1174,7 +1174,7 @@ void TapeControlOpenFile(const char *UEFName)
 {
 	if (TapeControlEnabled)
 	{
-		if (!CSWOpen)
+		if (!CSWFileOpen)
 		{
 			if (!map_file(UEFName))
 			{
@@ -1233,7 +1233,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 
 						if (s != LB_ERR && s >= 0 && s < (int)map_lines.size())
 						{
-							if (CSWOpen)
+							if (CSWFileOpen)
 							{
 								csw_ptr = map_lines[s].time;
 							}
@@ -1268,7 +1268,11 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					return TRUE;
 
 				case IDC_TCRECORD:
-					if (CSWOpen) break;
+					if (CSWFileOpen)
+					{
+						break;
+					}
+
 					if (!TapeRecording)
 					{
 						bool Continue = false;

@@ -18,13 +18,10 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/*
- *  csw.h
- *  BeebEm3
- *
- *  Created by Jon Welch on 27/08/2006.
- *
- */
+// Created by Jon Welch on 27/08/2006.
+
+#ifndef INCLUDE_CSW
+#define INCLUDE_CSW
 
 enum class CSWResult {
 	Success,
@@ -33,13 +30,14 @@ enum class CSWResult {
 	InvalidHeaderExtension
 };
 
-#define BUFFER_LEN	256
+constexpr int BUFFER_LEN = 256;
 
-CSWResult LoadCSW(const char *file);
-void CloseCSW(void);
+CSWResult CSWOpen(const char *FileName);
+void CSWClose();
+
 int csw_data(void);
 int csw_poll(int clock);
-void map_csw_file(void);
+void map_csw_file();
 
 enum class CSWState {
 	WaitingForTone,
@@ -55,7 +53,8 @@ extern int csw_pulselen;
 extern int csw_ptr;
 extern unsigned long csw_bufflen;
 extern int csw_pulsecount;
-extern bool CSWOpen;
+extern bool CSWFileOpen;
 extern int CSW_BUF;
 extern int CSW_CYCLES;
 
+#endif

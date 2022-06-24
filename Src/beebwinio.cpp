@@ -938,7 +938,7 @@ void BeebWin::LoadCSWTape(const char *FileName)
 {
 	CloseTape();
 
-	CSWResult Result = ::LoadCSW(FileName);
+	CSWResult Result = ::CSWOpen(FileName);
 
 	switch (Result) {
 		case CSWResult::Success:

@@ -18,32 +18,25 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/*
- *  csw.cc
- *  BeebEm3
- *
- *  Created by Jon Welch on 27/08/2006.
- *
- */
+// Created by Jon Welch on 27/08/2006.
 
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "zlib/zlib.h"
-#include "log.h"
 #include "csw.h"
-
 #include "6502core.h"
 #include "uef.h"
 #include "serial.h"
 #include "beebsound.h"
 #include "beebwin.h"
 #include "debug.h"
+#include "log.h"
 #include "uefstate.h"
 
-static FILE *csw_file;
+#include "zlib/zlib.h"
+
 static unsigned char file_buf[BUFFER_LEN];
 static unsigned char *csw_buff;
 static unsigned char *sourcebuff;
@@ -66,15 +59,15 @@ unsigned long csw_bufflen;
 static int csw_byte;
 int csw_pulsecount;
 static int bit_count;
-bool CSWOpen = false;
+bool CSWFileOpen = false;
 int CSW_BUF;
 int CSW_CYCLES;
 
-CSWResult LoadCSW(const char *file)
+CSWResult CSWOpen(const char *FileName)
 {
-	CloseCSW();
+	CSWClose();
 
-	csw_file = fopen(file, "rb");
+	FILE* csw_file = fopen(FileName, "rb");
 
 	if (csw_file == nullptr) {
 		return CSWResult::OpenFailed;
@@ -143,9 +136,9 @@ CSWResult LoadCSW(const char *file)
 	csw_tonecount = 0;
 	bit_count = -1;
 
-	strcpy(UEFTapeName, file);
+	strcpy(UEFTapeName, FileName);
 
-	CSWOpen = true;
+	CSWFileOpen = true;
 	CSW_BUF = 0;
 	TxD = 0;
 	RxD = 0;
@@ -162,13 +155,13 @@ CSWResult LoadCSW(const char *file)
 	return CSWResult::Success;
 }
 
-void CloseCSW(void)
+void CSWClose()
 {
 	if (CSWOpen)
 	{
 		free(csw_buff);
 		csw_buff = nullptr;
-		CSWOpen = false;
+		CSWFileOpen = false;
 		TxD = 0;
 		RxD = 0;
 	}
@@ -407,7 +400,7 @@ int csw_poll(int /* clock */)
 		bit_count = csw_data();
 		if (bit_count == -1)
 		{
-			CloseCSW();
+			CSWClose();
 			return ret;
 		}
 	}
