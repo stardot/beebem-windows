@@ -58,7 +58,7 @@ static int csw_byte;
 int csw_pulsecount;
 static int bit_count;
 bool CSWFileOpen = false;
-int CSW_CYCLES;
+int CSWPollCycles;
 
 CSWResult CSWOpen(const char *FileName)
 {
@@ -128,7 +128,7 @@ CSWResult CSWOpen(const char *FileName)
 	// WriteLog("Source Size = %d\n", sourcesize);
 	// WriteLog("Uncompressed Size = %d\n", csw_bufflen);
 
-	CSW_CYCLES = 2000000 / sample_rate - 1;
+	CSWPollCycles = 2000000 / sample_rate - 1;
 	csw_state = CSWState::WaitingForTone;
 	csw_bit = 0;
 	csw_pulselen = 0;
@@ -144,7 +144,7 @@ CSWResult CSWOpen(const char *FileName)
 	RxD = 0;
 	TapeClock = 0;
 	OldClock = 0;
-	TapeTrigger = TotalCycles + CSW_CYCLES;
+	SetTrigger(CSWPollCycles, TapeTrigger);
 
 	if (TapeControlEnabled)
 	{

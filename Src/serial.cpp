@@ -620,7 +620,7 @@ void Serial_Poll()
 					if (TapePlaying)
 						TapeClock++;
 
-					SetTrigger(CSW_CYCLES, TapeTrigger);
+					SetTrigger(CSWPollCycles, TapeTrigger);
 				}
 			}
 

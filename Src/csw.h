@@ -51,6 +51,6 @@ extern int csw_pulselen;
 extern int csw_ptr;
 extern int csw_pulsecount;
 extern bool CSWFileOpen;
-extern int CSW_CYCLES;
+extern int CSWPollCycles;
 
 #endif
