@@ -81,28 +81,28 @@ CSWResult CSWOpen(const char *FileName)
 		fclose(csw_file);
 		return CSWResult::InvalidCSWFile;
 	}
-	
-	WriteLog("CSW version: %d.%d\n", (int)file_buf[0x17], (int)file_buf[0x18]);
-	
+
+	// WriteLog("CSW version: %d.%d\n", (int)file_buf[0x17], (int)file_buf[0x18]);
+
 	int sample_rate = file_buf[0x19] + (file_buf[0x1a] << 8) + (file_buf[0x1b] << 16) + (file_buf[0x1c] << 24);
-	int total_samples = file_buf[0x1d] + (file_buf[0x1e] << 8) + (file_buf[0x1f] << 16) + (file_buf[0x20] << 24);
-	int compression_type = file_buf[0x21];
-	int flags = file_buf[0x22];
+	// int total_samples = file_buf[0x1d] + (file_buf[0x1e] << 8) + (file_buf[0x1f] << 16) + (file_buf[0x20] << 24);
+	// int compression_type = file_buf[0x21];
+	// int flags = file_buf[0x22];
 	unsigned int header_ext = file_buf[0x23];
-	
-	WriteLog("Sample rate: %d\n", sample_rate);
-	WriteLog("Total Samples: %d\n", total_samples);
-	WriteLog("Compressing: %d\n", compression_type);
-	WriteLog("Flags: %x\n", flags);
-	WriteLog("Header ext: %d\n", header_ext);
-	
+
+	// WriteLog("Sample rate: %d\n", sample_rate);
+	// WriteLog("Total Samples: %d\n", total_samples);
+	// WriteLog("Compressing: %d\n", compression_type);
+	// WriteLog("Flags: %x\n", flags);
+	// WriteLog("Header ext: %d\n", header_ext);
+
 	file_buf[0x33] = 0;
-	WriteLog("Enc appl: %s\n", &file_buf[0x24]);
+	// WriteLog("Enc appl: %s\n", &file_buf[0x24]);
 	
-	/* Read header extension bytes */
+	// Read header extension bytes
 	if (fread(file_buf, 1, header_ext, csw_file) != header_ext)
 	{
-		WriteLog("Failed to read header extension\n");
+		// WriteLog("Failed to read header extension\n");
 		fclose(csw_file);
 		return CSWResult::InvalidHeaderExtension;
 	}
@@ -124,9 +124,9 @@ CSWResult CSWOpen(const char *FileName)
 
 	free(sourcebuff);
 
-	WriteLog("Source Size = %d\n", sourcesize);
-	WriteLog("Uncompressed Size = %d\n", csw_bufflen);
-	
+	// WriteLog("Source Size = %d\n", sourcesize);
+	// WriteLog("Uncompressed Size = %d\n", csw_bufflen);
+
 	CSW_CYCLES = 2000000 / sample_rate - 1;
 	csw_state = CSWState::WaitingForTone;
 	csw_bit = 0;
@@ -157,7 +157,7 @@ CSWResult CSWOpen(const char *FileName)
 
 void CSWClose()
 {
-	if (CSWOpen)
+	if (CSWFileOpen)
 	{
 		free(csw_buff);
 		csw_buff = nullptr;
@@ -167,6 +167,7 @@ void CSWClose()
 	}
 }
 
+/*
 void HexDump(const char *buff, int count)
 {
 	char info[80];
@@ -188,6 +189,7 @@ void HexDump(const char *buff, int count)
 		WriteLog("%s\n", info);
 	}
 }
+*/
 
 void map_csw_file(void)
 {
