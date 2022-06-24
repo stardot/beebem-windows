@@ -586,20 +586,20 @@ static float UEFDecodeFloat(unsigned char* data)
 
 static int gzget16(gzFile f)
 {
-	int b1, b2;
-	b1 = gzgetc(f);
-	b2 = gzgetc(f);
-	return(b1+(b2<<8));
+	int b1 = gzgetc(f);
+	int b2 = gzgetc(f);
+
+	return b1 | (b2 << 8);
 }
 
 static int gzget32(gzFile f)
 {
-	int b1, b2, b3, b4;
-	b1 = gzgetc(f);
-	b2 = gzgetc(f);
-	b3 = gzgetc(f);
-	b4 = gzgetc(f);
-	return(b1+(b2<<8)+(b3<<16)+(b4<<24));
+	int b1 = gzgetc(f);
+	int b2 = gzgetc(f);
+	int b3 = gzgetc(f);
+	int b4 = gzgetc(f);
+
+	return b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
 }
 
 static void gzput16(gzFile f, int b)
