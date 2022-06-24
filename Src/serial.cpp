@@ -93,7 +93,7 @@ bool RIE, TIE; // Receive Interrupt Enable and Transmit Interrupt Enable
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
 
 char UEFTapeName[256]; // Filename of current tape file
-bool UEFOpen = false;
+bool UEFFileOpen = false;
 
 struct WordSelectBits
 {
@@ -469,12 +469,12 @@ void Serial_Poll()
 	{
 		if (TapeRecording)
 		{
-			if (CassetteRelay && UEFOpen && TotalCycles >= TapeTrigger)
+			if (CassetteRelay && UEFFileOpen && TotalCycles >= TapeTrigger)
 			{
 				if (TxD > 0)
 				{
 					// Writing data
-					if (uef_putdata(TDR | UEF_DATA, TapeClock) != UEFResult::Success)
+					if (UEFPutData(TDR | UEF_DATA, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", UEFTapeName);
@@ -499,7 +499,7 @@ void Serial_Poll()
 				else
 				{
 					// Tone
-					if (uef_putdata(UEF_HTONE, TapeClock) != UEFResult::Success)
+					if (UEFPutData(UEF_CARRIER_TONE, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", UEFTapeName);
@@ -520,7 +520,7 @@ void Serial_Poll()
 			// 10/09/06
 			// JW - If trying to write data when not recording, just ignore
 
-			if ( (TxD > 0) && (TotalCycles >= TapeTrigger) )
+			if (TxD > 0 && TotalCycles >= TapeTrigger)
 			{
 
 //				WriteLog("Ignoring Writes\n");
@@ -535,22 +535,22 @@ void Serial_Poll()
 				}
 			}
 
-			if (CassetteRelay && UEFOpen && TapeClock != OldClock)
+			if (CassetteRelay && UEFFileOpen && TapeClock != OldClock)
 			{
-				NEW_UEF_BUF=uef_getdata(TapeClock);
+				NEW_UEF_BUF = UEFGetData(TapeClock);
 				OldClock=TapeClock;
 			}
 
-			if ((NEW_UEF_BUF!=UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF)==UEF_HTONE || UEFRES_TYPE(NEW_UEF_BUF)==UEF_GAP) &&
-				CassetteRelay && UEFOpen)
+			if ((NEW_UEF_BUF != UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF) == UEF_CARRIER_TONE || UEFRES_TYPE(NEW_UEF_BUF) == UEF_GAP) &&
+			    CassetteRelay && UEFFileOpen)
 			{
 				if (UEFRES_TYPE(UEF_BUF) != UEFRES_TYPE(NEW_UEF_BUF))
 					TapeControlUpdateCounter(TapeClock);
 
-				UEF_BUF=NEW_UEF_BUF;
+				UEF_BUF = NEW_UEF_BUF;
 
 				// New data read in, so do something about it
-				if (UEFRES_TYPE(UEF_BUF) == UEF_HTONE)
+				if (UEFRES_TYPE(UEF_BUF) == UEF_CARRIER_TONE)
 				{
 					DCDI = 1;
 					TapeAudio.Signal = 2;
@@ -576,7 +576,7 @@ void Serial_Poll()
 				}
 			}
 
-			if (CassetteRelay && RxD < 2 && UEFOpen)
+			if (CassetteRelay && RxD < 2 && UEFFileOpen)
 			{
 				if (TotalCycles >= TapeTrigger)
 				{
@@ -884,11 +884,13 @@ void InitSerialPort()
 	}
 }
 
-void CloseUEF(void) {
-	if (UEFOpen) {
+void CloseUEF()
+{
+	if (UEFFileOpen)
+	{
 		TapeControlStopRecording(false);
-		uef_close();
-		UEFOpen = false;
+		UEFClose();
+		UEFFileOpen = false;
 		TxD=0;
 		RxD=0;
 		if (TapeControlEnabled)
@@ -928,14 +930,14 @@ UEFResult LoadUEFTape(const char *UEFName)
 	// Clock values:
 	// 5600 - Normal speed - anything higher is a bit slow
 	// 750 - Recommended minium settings, fastest reliable load
-	uef_setclock(TapeClockSpeed);
+	UEFSetClock(TapeClockSpeed);
 	SetUnlockTape(UnlockTape);
 
-	UEFResult Result = uef_open(UEFName);
+	UEFResult Result = UEFOpen(UEFName);
 
 	if (Result == UEFResult::Success)
 	{
-		UEFOpen = true;
+		UEFFileOpen = true;
 		UEF_BUF=0;
 		TxD=0;
 		RxD=0;
@@ -968,16 +970,18 @@ void RewindTape()
 	csw_pulsecount = -1;
 }
 
-void SetTapeSpeed(int speed) {
-	int NewClock = (int)((double)TapeClock * ((double)speed / TapeClockSpeed));
-	TapeClockSpeed=speed;
-	if (UEFOpen)
+void SetTapeSpeed(int Speed)
+{
+	int NewClock = (int)((double)TapeClock * ((double)Speed / TapeClockSpeed));
+	TapeClockSpeed = Speed;
+	if (UEFFileOpen)
 		LoadUEFTape(UEFTapeName);
-	TapeClock=NewClock;
+	TapeClock = NewClock;
 }
 
-void SetUnlockTape(bool unlock) {
-	uef_setunlock(unlock);
+void SetUnlockTape(bool Unlock)
+{
+	UEFSetUnlock(Unlock);
 }
 
 //*******************************************************************
@@ -988,7 +992,6 @@ bool map_file(const char *file_name)
 	int i;
 	int start_time;
 	int n;
-	int data;
 	int last_data;
 	int blk = 0;
 	int blk_num;
@@ -996,9 +999,9 @@ bool map_file(const char *file_name)
 	bool std_last_block=true;
 	char name[11];
 
-	uef_setclock(TapeClockSpeed);
+	UEFSetClock(TapeClockSpeed);
 
-	UEFResult Result = uef_open(file_name);
+	UEFResult Result = UEFOpen(file_name);
 
 	if (Result != UEFResult::Success)
 	{
@@ -1016,7 +1019,8 @@ bool map_file(const char *file_name)
 
 	while (!done && map_lines < MAX_MAP_LINES)
 	{
-		data = uef_getdata(i);
+		int data = UEFGetData(i);
+
 		if (data != last_data)
 		{
 			if (UEFRES_TYPE(data) != UEFRES_TYPE(last_data))
@@ -1029,7 +1033,8 @@ bool map_file(const char *file_name)
 						if (!std_last_block)
 						{
 							// Change of block type, must be first block
-							blk_num=0;
+							blk_num = 0;
+
 							if (map_lines > 0 && map_desc[map_lines-1][0] != 0)
 							{
 								strcpy(map_desc[map_lines], "");
@@ -1079,7 +1084,7 @@ bool map_file(const char *file_name)
 					blk_num++;
 				}
 
-				if (UEFRES_TYPE(data) == UEF_HTONE)
+				if (UEFRES_TYPE(data) == UEF_CARRIER_TONE)
 				{
 					// strcpy(map_desc[map_lines++], "Tone");
 					start_time=i;
@@ -1116,7 +1121,7 @@ bool map_file(const char *file_name)
 		i++;
 	}
 
-	uef_close();
+	UEFClose();
 
 	return(true);
 }
@@ -1141,7 +1146,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 		SendMessage(hwndMap, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
 		            (LPARAM)MAKELPARAM(FALSE,0));
 
-		if (UEFOpen)
+		if (UEFFileOpen)
 		{
 			Clock = TapeClock;
 			LoadUEFTape(UEFTapeName);
@@ -1273,7 +1278,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					{
 						bool Continue = false;
 
-						if (UEFOpen)
+						if (UEFFileOpen)
 						{
 							if (mainWin->Report(MessageType::Confirm,
 							                    "Append to current tape file:\n  %s",
@@ -1309,9 +1314,9 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 								if (Continue)
 								{
 									// Create file
-									if (uef_create(UEFTapeName) == UEFResult::Success)
+									if (UEFCreate(UEFTapeName) == UEFResult::Success)
 									{
-										UEFOpen = true;
+										UEFFileOpen = true;
 									}
 									else
 									{
@@ -1346,7 +1351,7 @@ void TapeControlStopRecording(bool RefreshControl)
 {
 	if (TapeRecording)
 	{
-		uef_putdata(UEF_EOF, 0);
+		UEFPutData(UEF_EOF, 0);
 		TapeRecording = false;
 
 		if (RefreshControl)
@@ -1360,7 +1365,7 @@ void TapeControlStopRecording(bool RefreshControl)
 
 void SaveSerialUEF(FILE *SUEF)
 {
-	if (UEFOpen)
+	if (UEFFileOpen)
 	{
 		fput16(0x0473,SUEF);
 		fput32(293,SUEF);

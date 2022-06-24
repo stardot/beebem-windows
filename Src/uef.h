@@ -26,10 +26,10 @@ constexpr int UEF_MMASK    = (3 << 16);
 constexpr int UEF_BYTEMASK = 0xff;
 
 // Some macros for reading parts of the status byte
-constexpr int UEF_HTONE = (0 << 16);
-constexpr int UEF_DATA  = (1 << 16);
-constexpr int UEF_GAP   = (2 << 16);
-constexpr int UEF_EOF   = (3 << 16);
+constexpr int UEF_CARRIER_TONE = (0 << 16);
+constexpr int UEF_DATA         = (1 << 16);
+constexpr int UEF_GAP          = (2 << 16);
+constexpr int UEF_EOF          = (3 << 16);
 
 constexpr int           UEFRES_TYPE(int x) { return x & UEF_MMASK;    }
 constexpr unsigned char UEFRES_BYTE(int x) { return x & UEF_BYTEMASK; }
@@ -40,23 +40,22 @@ enum class UEFResult
 	Success,
 	NotUEF,
 	NotTape,
-	NoFile,
-	OutOfMemory
+	NoFile
 };
 
 // Setup
-void uef_setclock(int beats);
-void uef_setunlock(bool unlock);
+void UEFSetClock(int Speed);
+void UEFSetUnlock(bool Unlock);
 
 // Poll mode
-int uef_getdata(int time);
+int UEFGetData(int Time);
 
 // Open & close
-UEFResult uef_open(const char *name);
-void uef_close(void);
+UEFResult UEFOpen(const char *FileName);
+void UEFClose();
 
 // Writing
-UEFResult uef_create(const char *name);
-UEFResult uef_putdata(int data, int time);
+UEFResult UEFCreate(const char *FileName);
+UEFResult UEFPutData(int Data, int Time);
 
 #endif

@@ -57,30 +57,31 @@ static bool uef_unlock = false;
 static int uef_last_put_data=UEF_EOF;
 static UEFChunkInfo uef_put_chunk;
 
-static UEFResult uef_write_chunk();
-static float uef_decode_float(unsigned char *Float);
-static void uef_unlock_offset_and_crc(UEFChunkInfo& chunk);
+static UEFResult UEFWriteChunk();
+static float UEFDecodeFloat(unsigned char* data);
+static void UEFUnlockOffsetAndCRC(UEFChunkInfo& ch);
+
 static int gzget16(gzFile f);
 static int gzget32(gzFile f);
 static void gzput16(gzFile f, int b);
 static void gzput32(gzFile f, int b);
 
-void uef_setclock(int beats)
+void UEFSetClock(int Speed)
 {
-	/* beats = bit samples per second? */
-	uef_clock_speed = beats;
+	// Speed = bit samples per second?
+	uef_clock_speed = Speed;
 }
 
-void uef_setunlock(bool unlock)
+void UEFSetUnlock(bool Unlock)
 {
-	uef_unlock = unlock;
+	uef_unlock = Unlock;
 }
 
-UEFResult uef_create(const char *filename)
+UEFResult UEFCreate(const char *FileName)
 {
-	uef_close();
+	UEFClose();
 
-	gzFile uef_file = gzopen(filename, "wb");
+	gzFile uef_file = gzopen(FileName, "wb");
 
 	if (uef_file == nullptr)
 	{
@@ -94,19 +95,19 @@ UEFResult uef_create(const char *filename)
 	gzwrite(uef_file, "Created by BeebEm", 18);
 
 	gzclose(uef_file);
-	strcpy(uef_file_name, filename);
+	strcpy(uef_file_name, FileName);
 
 	return UEFResult::Success;
 }
 
-UEFResult uef_open(const char *name)
+UEFResult UEFOpen(const char *FileName)
 {
 	gzFile uef_file;
 	char UEFId[10];
 
-	uef_close();
+	UEFClose();
 
-	uef_file = gzopen(name, "rb");
+	uef_file = gzopen(FileName, "rb");
 	if (uef_file == nullptr)
 	{
 		return UEFResult::NoFile;
@@ -115,7 +116,7 @@ UEFResult uef_open(const char *name)
 	gzread(uef_file, UEFId, 10);
 	if (strcmp(UEFId,"UEF File!")!=0)
 	{
-		uef_close();
+		UEFClose();
 
 		return UEFResult::NotUEF;
 	}
@@ -163,7 +164,7 @@ UEFResult uef_open(const char *name)
 
 	if (Result != UEFResult::Success)
 	{
-		uef_close();
+		UEFClose();
 
 		return Result;
 	}
@@ -180,7 +181,7 @@ UEFResult uef_open(const char *name)
 			case 0x100:
 				// Implicit start/stop bit tape data block
 				clock += (int)(chunk.len * uef_clock_speed * 10.0 / baud);
-				uef_unlock_offset_and_crc(chunk);
+				UEFUnlockOffsetAndCRC(chunk);
 				break;
 			case 0x101:
 				// Multiplexed data block (not supported)
@@ -191,7 +192,7 @@ UEFResult uef_open(const char *name)
 			case 0x104:
 				// Defined tape format data block
 				clock += (int)((double)(chunk.len-3) * uef_clock_speed * 10.0 / baud);
-				uef_unlock_offset_and_crc(chunk);
+				UEFUnlockOffsetAndCRC(chunk);
 				break;
 			case 0x110:
 				// Carrier tone
@@ -213,7 +214,7 @@ UEFResult uef_open(const char *name)
 				break;
 			case 0x113:
 				// Change of base frequency
-				baud = (int)uef_decode_float(&chunk.data[0]);
+				baud = (int)UEFDecodeFloat(&chunk.data[0]);
 				if (baud <= 0)
 					baud = 1200;
 				break;
@@ -228,7 +229,7 @@ UEFResult uef_open(const char *name)
 				break;
 			case 0x116:
 				// Gap (not in http://electrem.emuunlim.com/UEFSpecs.htm)
-				clock += (int)(uef_decode_float(&chunk.data[0]) * uef_clock_speed);
+				clock += (int)(UEFDecodeFloat(&chunk.data[0]) * uef_clock_speed);
 				break;
 			case 0x120:
 				// Position marker (not supported)
@@ -238,15 +239,15 @@ UEFResult uef_open(const char *name)
 		chunk.end_time = clock;
 	}
 
-	strcpy(uef_file_name, name);
+	strcpy(uef_file_name, FileName);
 
 	return UEFResult::Success;
 }
 
-static UEFChunkInfo* uef_find_chunk(int time)
+static UEFChunkInfo* UEFFindChunk(int Time)
 {
 	if (uef_last_chunk != nullptr &&
-	    time >= uef_last_chunk->start_time && time < uef_last_chunk->end_time)
+	    Time >= uef_last_chunk->start_time && Time < uef_last_chunk->end_time)
 	{
 		return uef_last_chunk;
 	}
@@ -254,7 +255,7 @@ static UEFChunkInfo* uef_find_chunk(int time)
 	{
 		for (UEFChunkInfo& chunk : uef_chunks)
 		{
-			if (time >= chunk.start_time && time < chunk.end_time)
+			if (Time >= chunk.start_time && Time < chunk.end_time)
 			{
 				uef_last_chunk = &chunk;
 				return uef_last_chunk;
@@ -265,9 +266,9 @@ static UEFChunkInfo* uef_find_chunk(int time)
 	return nullptr;
 }
 
-int uef_getdata(int time)
+int UEFGetData(int Time)
 {
-	UEFChunkInfo *ch = uef_find_chunk(time);
+	UEFChunkInfo *ch = UEFFindChunk(Time);
 
 	if (ch == nullptr)
 		return UEF_EOF;
@@ -281,7 +282,7 @@ int uef_getdata(int time)
 		case 0x100: // Implicit start/stop bit tape data block
 		case 0x104: // Defined tape format data block
 			j = ch->type == 0x104 ? 3 : 0;
-			i = (int)((double)(time - ch->start_time) / (ch->end_time - ch->start_time) * (ch->len - j));
+			i = (int)((double)(Time - ch->start_time) / (ch->end_time - ch->start_time) * (ch->len - j));
 			data = UEF_DATA | ch->data[i + j] | ((i & 0x7f) << 24);
 
 			if (uef_unlock)
@@ -313,13 +314,13 @@ int uef_getdata(int time)
 			break;
 		case 0x110:
 			// Carrier tone
-			data = UEF_HTONE | 0x1000;
+			data = UEF_CARRIER_TONE | 0x1000;
 			break;
 		case 0x111:
 			// Carrier tone with dummy byte
-			i = (int)((double)(time - ch->start_time) / (ch->end_time - ch->start_time) * (ch->l1+160+ch->l2));
+			i = (int)((double)(Time - ch->start_time) / (ch->end_time - ch->start_time) * (ch->l1 + 160 + ch->l2));
 			if (i < ch->l1 || i >= (ch->l1 + 160))
-				data = UEF_HTONE | 0x1000;
+				data = UEF_CARRIER_TONE | 0x1000;
 			else
 				data = UEF_DATA | 0xAA;
 			break;
@@ -332,7 +333,7 @@ int uef_getdata(int time)
 			break;
 		case 0x114:
 			// Security cycles
-			i = (int)((double)(time - ch->start_time) / (ch->end_time - ch->start_time) * ch->l1);
+			i = (int)((double)(Time - ch->start_time) / (ch->end_time - ch->start_time) * ch->l1);
 			data = UEF_DATA | ch->data[i + 5] | ((i & 0x7f) << 24);
 			break;
 		case 0x115:
@@ -350,19 +351,19 @@ int uef_getdata(int time)
 	return data;
 }
 
-UEFResult uef_putdata(int data, int time)
+UEFResult UEFPutData(int Data, int Time)
 {
 	UEFResult Result = UEFResult::Success;
 
-	if (UEFRES_TYPE(data) != UEFRES_TYPE(uef_last_put_data))
+	if (UEFRES_TYPE(Data) != UEFRES_TYPE(uef_last_put_data))
 	{
 		// Finished a chunk
-		if (UEFRES_TYPE(uef_last_put_data) == UEF_HTONE)
+		if (UEFRES_TYPE(uef_last_put_data) == UEF_CARRIER_TONE)
 		{
 			if (uef_put_chunk.start_time != uef_put_chunk.end_time)
 			{
 				uef_put_chunk.type = 0x110;
-				Result = uef_write_chunk();
+				Result = UEFWriteChunk();
 			}
 		}
 		else if (UEFRES_TYPE(uef_last_put_data) == UEF_GAP)
@@ -370,13 +371,13 @@ UEFResult uef_putdata(int data, int time)
 			if (uef_put_chunk.start_time != uef_put_chunk.end_time)
 			{
 				uef_put_chunk.type = 0x112;
-				Result = uef_write_chunk();
+				Result = UEFWriteChunk();
 			}
 		}
 		else if (UEFRES_TYPE(uef_last_put_data) == UEF_DATA)
 		{
 			uef_put_chunk.type = 0x100;
-			Result = uef_write_chunk();
+			Result = UEFWriteChunk();
 		}
 
 		// Reset for next chunk
@@ -386,43 +387,44 @@ UEFResult uef_putdata(int data, int time)
 	}
 
 	// Add to chunk
-	if (UEFRES_TYPE(data) == UEF_HTONE || UEFRES_TYPE(data) == UEF_GAP)
+	if (UEFRES_TYPE(Data) == UEF_CARRIER_TONE || UEFRES_TYPE(Data) == UEF_GAP)
 	{
 		if (uef_put_chunk.start_time == -1)
 		{
-			uef_put_chunk.start_time = time;
-			uef_put_chunk.end_time = time;
+			uef_put_chunk.start_time = Time;
+			uef_put_chunk.end_time = Time;
 		}
 		else
 		{
-			uef_put_chunk.end_time = time;
+			uef_put_chunk.end_time = Time;
 		}
 	}
-	else if (UEFRES_TYPE(data) == UEF_DATA)
+	else if (UEFRES_TYPE(Data) == UEF_DATA)
 	{
 		// Put data in buffer
-		uef_put_chunk.data.push_back(UEFRES_BYTE(data));
+		uef_put_chunk.data.push_back(UEFRES_BYTE(Data));
 		uef_put_chunk.len++;
 	}
 
-	uef_last_put_data = data;
+	uef_last_put_data = Data;
 
 	return Result;
 }
 
-void uef_close(void)
+void UEFClose()
 {
 	uef_chunks.clear();
 
 	uef_file_name[0] = 0;
 	uef_last_chunk = nullptr;
 	uef_last_put_data = UEF_EOF;
+
 	uef_put_chunk.len = 0;
 	uef_put_chunk.data.clear();
 	uef_put_chunk.start_time = -1;
 }
 
-static UEFResult uef_write_chunk()
+static UEFResult UEFWriteChunk()
 {
 	gzFile uef_file = nullptr;
 	UEFResult Result = UEFResult::Success;
@@ -453,7 +455,7 @@ static UEFResult uef_write_chunk()
 				gzwrite(uef_file, &uef_put_chunk.data[0], uef_put_chunk.data.size());
 				break;
 			case 0x110: {
-				// HTone
+				// Carrier tone
 				gzput32(uef_file, 2);
 				// Assume 1200 baud
 				int len = (int)((double)(uef_put_chunk.end_time-uef_put_chunk.start_time) * (1200*2.0) / NORMAL_TAPE_SPEED);
@@ -476,7 +478,7 @@ static UEFResult uef_write_chunk()
 	return Result;
 }
 
-static void uef_unlock_offset_and_crc(UEFChunkInfo& chunk)
+static void UEFUnlockOffsetAndCRC(UEFChunkInfo& chunk)
 {
 	unsigned char *data = nullptr;
 	int len = 0;
@@ -550,28 +552,23 @@ static void uef_unlock_offset_and_crc(UEFChunkInfo& chunk)
 	}
 }
 
-static float uef_decode_float(unsigned char *Float)
+static float UEFDecodeFloat(unsigned char* data)
 {
-	int Mantissa;
-	int Exponent;
-	float Result;
+	// Decode mantissa
+	int Mantissa = data[0] | (data[1] << 8) | ((data[2] & 0x7f) | 0x80) << 16;
 
-	/* decode mantissa */
-	Mantissa = Float[0] | (Float[1] << 8) | ((Float[2]&0x7f)|0x80) << 16;
+	float Result = (float)ldexp(Mantissa, -23);
 
-	Result = (float)Mantissa;
-	Result = (float)ldexp(Result, -23);
-
-	/* decode exponent */
-	Exponent = ((Float[2]&0x80) >> 7) | (Float[3]&0x7f) << 1;
+	// Decode exponent
+	int Exponent = ((data[2] & 0x80) >> 7) | (data[3] & 0x7f) << 1;
 	Exponent -= 127;
 	Result = (float)ldexp(Result, Exponent);
 
-	/* flip sign if necessary */
-	if(Float[3]&0x80)
+	// Flip sign if necessary
+	if (data[3] & 0x80)
 		Result = -Result;
 
-	return(Result);
+	return Result;
 }
 
 static int gzget16(gzFile f)
