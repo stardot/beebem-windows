@@ -164,7 +164,8 @@ CSWResult LoadCSW(const char *file)
 
 void CloseCSW(void)
 {
-	if (CSWOpen) {
+	if (CSWOpen)
+	{
 		free(csw_buff);
 		csw_buff = nullptr;
 		CSWOpen = false;
@@ -197,31 +198,30 @@ void HexDump(const char *buff, int count)
 
 void map_csw_file(void)
 {
-	int data;
 	CSWState last_state = CSWState::Undefined;
 	char block[65535];
 	int block_ptr = -1;
-	int start_time;
 
 	int n;
-	int blk_num;
 	char name[11];
 	bool std_last_block = true;
 	int last_tone = 0;
 
 	Clk_Divide = 16;
 
-	memset(map_desc, 0, sizeof(map_desc));
-	memset(map_time, 0, sizeof(map_time));
-	start_time = 0;
-	map_lines = 0;
-	blk_num = 0;
+	map_lines.clear();
 
-	while ((unsigned long)csw_ptr + 4 < csw_bufflen) {
+	int start_time = 0;
+	int blk_num = 0;
 
+	char desc[100];
+
+	while ((unsigned long)csw_ptr + 4 < csw_bufflen)
+	{
 again:
 		last_state = csw_state;
-		data = csw_poll(0);
+		int data = csw_poll(0);
+
 		if (last_state == CSWState::Tone && csw_state == CSWState::Data)
 		{
 			block_ptr = 0;
@@ -263,11 +263,9 @@ again:
 				{
 					// Change of block type, must be first block
 					blk_num=0;
-					if (map_lines > 0 && map_desc[map_lines-1][0] != 0)
+					if (!map_lines.empty() && !map_lines.back().desc.empty() != 0)
 					{
-						strcpy(map_desc[map_lines], "");
-						map_time[map_lines]=start_time;
-						map_lines++;
+						map_lines.emplace_back("", start_time);
 					}
 				}
 
@@ -279,44 +277,46 @@ again:
 					n++;
 				}
 				name[n-1] = 0;
-				if (name[0] != 0)
-					sprintf(map_desc[map_lines], "%-12s %02X  Length %04X", name, blk_num, block_ptr);
-				else
-					sprintf(map_desc[map_lines], "<No name>    %02X  Length %04X", blk_num, block_ptr);
 
-				map_time[map_lines]=start_time;
+				if (name[0] != 0)
+				{
+					sprintf(desc, "%-12s %02X  Length %04X", name, blk_num, block_ptr);
+				}
+				else
+				{
+					sprintf(desc, "<No name>    %02X  Length %04X", blk_num, block_ptr);
+				}
+
+				map_lines.emplace_back(desc, start_time);
 
 				// Is this the last block for this file?
 				if (block[strlen(name) + 14] & 0x80)
 				{
 					blk_num=-1;
-					++map_lines;
-					strcpy(map_desc[map_lines], "");
-					map_time[map_lines]=csw_ptr;
+					map_lines.emplace_back("", csw_ptr);
 				}
-				std_last_block=true;
+
+				std_last_block = true;
 			}
 			else
 			{
 				if (std_last_block)
 				{
 					// Change of block type, must be first block
-					blk_num=0;
-					if (map_lines > 0 && map_desc[map_lines-1][0] != 0)
+					blk_num = 0;
+					if (!map_lines.empty() && !map_lines.back().desc.empty())
 					{
-						strcpy(map_desc[map_lines], "");
-						map_time[map_lines]=csw_ptr;
-						map_lines++;
+						map_lines.emplace_back("", csw_ptr);
 					}
 				}
 
-				sprintf(map_desc[map_lines], "Non-standard %02X  Length %04X", blk_num, block_ptr);
-				map_time[map_lines]=start_time;
-				std_last_block=false;
+				sprintf(desc, "Non-standard %02X  Length %04X", blk_num, block_ptr);
+
+				map_lines.emplace_back(desc, start_time);
+				std_last_block = false;
 			}
 
 			// Data block recorded
-			map_lines++;
 			blk_num = (blk_num + 1) & 255;
 
 			block_ptr = -1;
@@ -327,8 +327,8 @@ again:
 		}
 	}
 
-	// for (int i = 0; i < map_lines; i++)
-	//	WriteLog("%s, %d\n", map_desc[i], map_time[i]);
+	// for (const MapLine& Line : map_lines)
+	//	WriteLog("%s, %d\n", Line.desc.c_str(), Line.time);
 
 	csw_state = CSWState::WaitingForTone;
 	csw_bit = 0;

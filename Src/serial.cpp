@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include <algorithm>
+#include <string>
 
 #include "6502core.h"
 #include "uef.h"
@@ -133,10 +134,8 @@ int TapeClock=0,OldClock=0;
 int TapeClockSpeed = 5600;
 bool UnlockTape = true;
 
-// Tape control variables
-int map_lines;
-char map_desc[MAX_MAP_LINES][40];
-int map_time[MAX_MAP_LINES];
+// Tape control dialog box variables
+std::vector<TapeMapEntry> map_lines;
 
 bool TapeControlEnabled = false;
 bool TapePlaying = true;
@@ -168,6 +167,12 @@ static volatile bool bWaitingForStat = false;
 static volatile bool bCharReady = false;
 static COMMTIMEOUTS ctSerialPort;
 static DWORD dwClrCommError;
+
+TapeMapEntry::TapeMapEntry(const std::string& d, int t) :
+	desc(d),
+	time(t)
+{
+}
 
 void SerialACIAWriteControl(unsigned char Value)
 {
@@ -980,7 +985,7 @@ static bool map_file(const char *file_name)
 	bool done = false;
 	int blk = 0;
 	char block[500];
-	bool std_last_block=true;
+	bool std_last_block = true;
 
 	UEFSetClock(TapeClockSpeed);
 
@@ -996,11 +1001,11 @@ static bool map_file(const char *file_name)
 	int last_data = 0;
 	int blk_num = 0;
 
-	map_lines = 0;
-	memset(map_desc, 0, sizeof(map_desc));
-	memset(map_time, 0, sizeof(map_time));
+	map_lines.clear();
 
-	while (!done && map_lines < MAX_MAP_LINES)
+	char desc[100];
+
+	while (!done)
 	{
 		int data = UEFGetData(i);
 
@@ -1018,11 +1023,9 @@ static bool map_file(const char *file_name)
 							// Change of block type, must be first block
 							blk_num = 0;
 
-							if (map_lines > 0 && map_desc[map_lines-1][0] != 0)
+							if (!map_lines.empty() && !map_lines.back().desc.empty())
 							{
-								strcpy(map_desc[map_lines], "");
-								map_time[map_lines]=start_time;
-								map_lines++;
+								map_lines.emplace_back("", start_time);
 							}
 						}
 
@@ -1039,61 +1042,61 @@ static bool map_file(const char *file_name)
 
 						if (!name.empty())
 						{
-							sprintf(map_desc[map_lines], "%-12s %02X  Length %04X", name.c_str(), blk_num, blk);
+							sprintf(desc, "%-12s %02X  Length %04X", name.c_str(), blk_num, blk);
 						}
 						else
 						{
-							sprintf(map_desc[map_lines], "<No name>    %02X  Length %04X", blk_num, blk);
+							sprintf(desc, "<No name>    %02X  Length %04X", blk_num, blk);
 						}
 
-						map_time[map_lines]=start_time;
+						map_lines.emplace_back(desc, start_time);
 
 						// Is this the last block for this file?
 						if (block[name.size() + 14] & 0x80)
 						{
-							blk_num=-1;
-							++map_lines;
-							strcpy(map_desc[map_lines], "");
-							map_time[map_lines]=start_time;
+							blk_num = -1;
+
+							map_lines.emplace_back("", start_time);
 						}
-						std_last_block=true;
+
+						std_last_block = true;
 					}
 					else
 					{
-						sprintf(map_desc[map_lines], "Non-standard %02X  Length %04X", blk_num, blk);
-						map_time[map_lines]=start_time;
-						std_last_block=false;
+						sprintf(desc, "Non-standard %02X  Length %04X", blk_num, blk);
+						map_lines.emplace_back(desc, start_time);
+						std_last_block = false;
 					}
 
 					// Replace time counter in previous blank lines
-					if (map_lines > 0 && map_desc[map_lines-1][0] == 0)
-						map_time[map_lines-1]=start_time;
+					if (!map_lines.empty() && map_lines.back().desc.empty())
+						map_lines.back().time = start_time;
 
 					// Data block recorded
-					map_lines++;
 					blk_num++;
 				}
 
 				if (UEFRES_TYPE(data) == UEF_CARRIER_TONE)
 				{
-					// strcpy(map_desc[map_lines++], "Tone");
-					start_time=i;
+					// map_lines.emplace_back("Tone", i);
+					start_time = i;
 				}
 				else if (UEFRES_TYPE(data) == UEF_GAP)
 				{
-					if (map_lines > 0 && map_desc[map_lines-1][0] != 0)
-						strcpy(map_desc[map_lines++], "");
-					start_time=i;
-					blk_num=0;
+					if (!map_lines.empty() && !map_lines.back().desc.empty())
+						map_lines.emplace_back("", i);
+
+					start_time = i;
+					blk_num = 0;
 				}
 				else if (UEFRES_TYPE(data) == UEF_DATA)
 				{
-					blk=0;
-					block[blk++]=UEFRES_BYTE(data);
+					blk = 0;
+					block[blk++] = UEFRES_BYTE(data);
 				}
 				else if (UEFRES_TYPE(data) == UEF_EOF)
 				{
-					done=true;
+					done = true;
 				}
 			}
 			else
@@ -1101,7 +1104,7 @@ static bool map_file(const char *file_name)
 				if (UEFRES_TYPE(data) == UEF_DATA)
 				{
 					if (blk < 500)
-						block[blk++]=UEFRES_BYTE(data);
+						block[blk++] = UEFRES_BYTE(data);
 					else
 						blk++;
 				}
@@ -1114,7 +1117,7 @@ static bool map_file(const char *file_name)
 
 	UEFClose();
 
-	return(true);
+	return true;
 }
 
 //*******************************************************************
@@ -1158,13 +1161,13 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 void TapeControlCloseDialog()
 {
 	DestroyWindow(hwndTapeControl);
-	hwndTapeControl = NULL;
-	hwndMap = NULL;
+	hwndTapeControl = nullptr;
+	hwndMap = nullptr;
 	TapeControlEnabled = false;
-	hCurrentDialog = NULL;
-	map_lines = 0;
-	TapePlaying=true;
-	TapeRecording=false;
+	hCurrentDialog = nullptr;
+	map_lines.empty();
+	TapePlaying = true;
+	TapeRecording = false;
 }
 
 void TapeControlOpenFile(const char *UEFName)
@@ -1184,8 +1187,8 @@ void TapeControlOpenFile(const char *UEFName)
 
 		SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
 
-		for (int i = 0; i < map_lines; ++i)
-			SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)map_desc[i]);
+		for (const TapeMapEntry& line : map_lines)
+			SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)line.desc.c_str());
 
 		TapeControlUpdateCounter(0);
 	}
@@ -1196,7 +1199,7 @@ void TapeControlUpdateCounter(int tape_time)
 	if (TapeControlEnabled)
 	{
 		int i = 0;
-		while (i < map_lines && map_time[i] <= tape_time)
+		while (i < map_lines.size() && map_lines[i].time <= tape_time)
 			i++;
 
 		if (i > 0)
@@ -1228,17 +1231,19 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					{
 						LRESULT s = SendMessage(hwndMap, LB_GETCURSEL, 0, 0);
 
-						if (s != LB_ERR && s >= 0 && s < map_lines)
+						if (s != LB_ERR && s >= 0 && s < (int)map_lines.size())
 						{
 							if (CSWOpen)
 							{
-								csw_ptr = map_time[s];
+								csw_ptr = map_lines[s].time;
 							}
 							else
 							{
-								TapeClock=map_time[s];
+								TapeClock = map_lines[s].time;
 							}
-							OldClock=0;
+
+							OldClock = 0;
+
 							SetTrigger(TAPECYCLES, TapeTrigger);
 						}
 					}
@@ -1274,7 +1279,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 							                    "Append to current tape file:\n  %s",
 							                    UEFTapeName) == MessageResult::OK)
 							{
-								SendMessage(hwndMap, LB_SETCURSEL, (WPARAM)map_lines-1, 0);
+								SendMessage(hwndMap, LB_SETCURSEL, (WPARAM)(map_lines.size() - 1), 0);
 
 								Continue = true;
 							}

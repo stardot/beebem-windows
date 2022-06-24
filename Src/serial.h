@@ -24,13 +24,19 @@ Boston, MA  02110-1301, USA.
 #ifndef SERIAL_HEADER
 #define SERIAL_HEADER
 
+#include <vector>
+
 #include "uef.h"
 
-constexpr int MAX_MAP_LINES = 4096;
+struct TapeMapEntry
+{
+	std::string desc;
+	int time;
 
-extern int map_lines;
-extern char map_desc[MAX_MAP_LINES][40];
-extern int map_time[MAX_MAP_LINES];
+	TapeMapEntry(const std::string& d, int t);
+};
+
+extern std::vector<TapeMapEntry> map_lines;
 
 extern unsigned int Tx_Rate, Rx_Rate;
 extern unsigned char Clk_Divide;
