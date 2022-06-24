@@ -46,12 +46,29 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "log.h"
 
+// MC6850 control register bits
+constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
+constexpr unsigned char MC6850_CONTROL_MASTER_RESET     = 0x03;
+constexpr unsigned char MC6850_CONTROL_WORD_SELECT      = 0x1c;
+constexpr unsigned char MC6850_CONTROL_TRANSMIT_CONTROL = 0x60;
+constexpr unsigned char MC6850_CONTROL_RIE              = 0x80;
+
+// MC6850 status register bits
+constexpr unsigned char MC6850_STATUS_RDRF = 0x01;
+constexpr unsigned char MC6850_STATUS_TDRE = 0x02;
+constexpr unsigned char MC6850_STATUS_DCD  = 0x04;
+constexpr unsigned char MC6850_STATUS_CTS  = 0x08;
+constexpr unsigned char MC6850_STATUS_FE   = 0x10;
+constexpr unsigned char MC6850_STATUS_OVRN = 0x20;
+constexpr unsigned char MC6850_STATUS_PE   = 0x40;
+constexpr unsigned char MC6850_STATUS_IRQ  = 0x80;
+
 enum class SerialDevice : unsigned char {
 	Cassette,
 	RS423
 };
 
-static bool Cass_Relay = false; // Cassette Relay state
+static bool CassetteRelay = false; // Cassette Relay state
 static SerialDevice SerialChannel = SerialDevice::Cassette; // Device in use
 
 static unsigned char RDR, TDR; // Receive and Transmit Data Registers
@@ -69,7 +86,7 @@ static unsigned char DCDI = 1;
 static unsigned char ODCDI = 1;
 static unsigned char DCDClear = 0; // count to clear DCD bit
 
-static unsigned char Parity, Stop_Bits, Data_Bits;
+static unsigned char Parity, StopBits, DataBits;
 
 bool RIE, TIE; // Receive Interrupt Enable and Transmit Interrupt Enable
 
@@ -77,6 +94,39 @@ unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift regis
 
 char UEFTapeName[256]; // Filename of current tape file
 bool UEFOpen = false;
+
+struct WordSelectBits
+{
+	unsigned char DataBits;
+	unsigned char Parity;
+	unsigned char StopBits;
+};
+
+static const WordSelectBits WordSelect[8] =
+{
+	{ 7, EVENPARITY, 2 },
+	{ 7, ODDPARITY,  2 },
+	{ 7, EVENPARITY, 1 },
+	{ 7, ODDPARITY,  1 },
+	{ 8, NOPARITY,   2 },
+	{ 8, NOPARITY,   1 },
+	{ 8, EVENPARITY, 1 },
+	{ 8, ODDPARITY,  1 },
+};
+
+struct TransmitterControlBits
+{
+	bool RTS;
+	bool TIE;
+};
+
+static const TransmitterControlBits TransmitterControl[8] =
+{
+	{ false, false },
+	{ false, true  },
+	{ true,  false },
+	{ false, false },
+};
 
 static const unsigned int Baud_Rates[8] = {
 	19200, 1200, 4800, 150, 9600, 300, 2400, 75
@@ -135,59 +185,73 @@ void ResetACIAStatus(unsigned char bit) {
 	ACIA_Status&=~(1<<bit);
 }
 
-void Write_ACIA_Control(unsigned char CReg)
+void Write_ACIA_Control(unsigned char Value)
 {
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Serial, true,
-		                   "Serial: Write ACIA control %02X", (int)CReg);
+		                   "Serial: Write ACIA control %02X", (int)Value);
 	}
 
-	ACIA_Control=CReg; // This is done for safe keeping
-	// Master reset
-	if ((CReg & 3)==3) {
-		ACIA_Status&=8; ResetACIAStatus(7); SetACIAStatus(2);
-		intStatus&=~(1<<serial); // Master reset clears IRQ
-		if (FirstReset) {
-			CTS=1; SetACIAStatus(3);
-			FirstReset = false; RTS=1;
-		} // RTS High on first Master reset.
-		ResetACIAStatus(2); DCD=0; DCDI=0; DCDClear=0;
-		SetACIAStatus(1); // Xmit data register empty
+	ACIA_Control = Value; // This is done for safe keeping
+
+	// Master reset - clear all bits in the status register, except for
+	// external conditions on CTS and DCD.
+	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == MC6850_CONTROL_MASTER_RESET)
+	{
+		ACIA_Status &= MC6850_STATUS_CTS;
+		ACIA_Status |= MC6850_STATUS_DCD;
+
+		// Master reset clears IRQ
+		ACIA_Status &= ~MC6850_STATUS_IRQ;
+		intStatus &= ~(1 << serial);
+
+		if (FirstReset)
+		{
+			// RTS High on first Master reset.
+			ACIA_Status |= MC6850_STATUS_CTS;
+			FirstReset = false;
+			RTS = true;
+		}
+
+		ACIA_Status &= ~MC6850_STATUS_DCD; DCD=0; DCDI=0; DCDClear=0;
+		ACIA_Status |= MC6850_STATUS_TDRE; // Transmit data register empty
 		TapeTrigger=TotalCycles+TAPECYCLES;
 	}
+
 	// Clock Divide
-	if ((CReg & 3)==0) Clk_Divide=1;
-	if ((CReg & 3)==1) Clk_Divide=16;
-	if ((CReg & 3)==2) Clk_Divide=64;
-	// Parity, Data, and Stop Bits.
-	Parity=2-((CReg & 4)>>2);
-	Stop_Bits=2-((CReg & 8)>>3);
-	Data_Bits=7+((CReg & 16)>>4);
-	if ((CReg & 28)==16) { Stop_Bits=2; Parity=0; }
-	if ((CReg & 28)==20) { Stop_Bits=1; Parity=0; }
-	// Transmission control
-	TIE=(CReg & 32)>>5;
-	RTS=(CReg & 64)>>6;
-	RIE=(CReg & 128)>>7;
-	unsigned char bit=(CReg & 96)>>5;
-	if (bit==3) { RTS=0; TIE=0; }
+	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x00) Clk_Divide = 1;
+	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x01) Clk_Divide = 16;
+	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x02) Clk_Divide = 64;
+
+	// Word select
+	Parity   = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].Parity;
+	StopBits = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].StopBits;
+	DataBits = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].DataBits;
+
+	// Transmitter control
+	RTS = TransmitterControl[(Value & MC6850_CONTROL_TRANSMIT_CONTROL) >> 5].RTS;
+	TIE = TransmitterControl[(Value & MC6850_CONTROL_TRANSMIT_CONTROL) >> 5].TIE;
+	RIE = (Value & MC6850_CONTROL_RIE) != 0;
 
 	// Seem to need an interrupt immediately for tape writing when TIE set
-	if (SerialChannel == SerialDevice::Cassette && TIE && Cass_Relay) {
-		intStatus|=1<<serial;
-		SetACIAStatus(7);
+	if (SerialChannel == SerialDevice::Cassette && TIE && CassetteRelay)
+	{
+		ACIA_Status |= MC6850_STATUS_IRQ;
+		intStatus |= 1 << serial;
 	}
+
 	// Change serial port settings
-	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled) {
-		GetCommState(hSerialPort,&dcbSerialPort);
-		dcbSerialPort.ByteSize=Data_Bits;
-		dcbSerialPort.StopBits=(Stop_Bits==1)?ONESTOPBIT:TWOSTOPBITS;
-		dcbSerialPort.Parity=(Parity==0)?NOPARITY:((Parity==1)?ODDPARITY:EVENPARITY);
-		dcbSerialPort.DCBlength=sizeof(dcbSerialPort);
-		SetCommState(hSerialPort,&dcbSerialPort);
+	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled)
+	{
+		GetCommState(hSerialPort, &dcbSerialPort);
+		dcbSerialPort.ByteSize  = DataBits;
+		dcbSerialPort.StopBits  = (StopBits == 1) ? ONESTOPBIT : TWOSTOPBITS;
+		dcbSerialPort.Parity    = Parity;
+		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+		SetCommState(hSerialPort, &dcbSerialPort);
 		// Check RTS
-		EscapeCommFunction(hSerialPort,(RTS==1)?CLRRTS:SETRTS);
+		EscapeCommFunction(hSerialPort, RTS ? CLRRTS : SETRTS);
 	}
 }
 
@@ -201,8 +265,8 @@ void Write_ACIA_Tx_Data(unsigned char Data)
 
 //	WriteLog("Serial: Write ACIA Tx %02X, SerialChannel = %d\n", (int)Data, SerialChannel);
 
-	intStatus&=~(1<<serial);
-	ResetACIAStatus(7);
+	ACIA_Status &= ~MC6850_STATUS_IRQ;
+	intStatus &= ~(1 << serial);
 
 	// 10/09/06
 	// JW - A bug in swarm loader overwrites the rs423 output buffer counter
@@ -210,17 +274,18 @@ void Write_ACIA_Tx_Data(unsigned char Data)
 
 	if (SerialChannel == SerialDevice::Cassette || (SerialChannel == SerialDevice::RS423 && !SerialPortEnabled))
 	{
-		ResetACIAStatus(1);
-		TDR=Data;
-		TxD=1;
-		int baud = Tx_Rate * ((Clk_Divide==1) ? 64 : (Clk_Divide==64) ? 1 : 4);
+		TDR = Data;
+		ACIA_Status &= ~MC6850_STATUS_TDRE;
+		int baud = Tx_Rate * ((Clk_Divide == 1) ? 64 : (Clk_Divide==64) ? 1 : 4);
 		TapeTrigger=TotalCycles + 2000000/(baud/8) * TapeClockSpeed/5600;
 	}
 
-	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled) {
-		if (ACIA_Status & 2) {
-			ResetACIAStatus(1);
-			SerialWriteBuffer=Data;
+	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
+	{
+		if (ACIA_Status & MC6850_STATUS_TDRE)
+		{
+			ACIA_Status &= ~MC6850_STATUS_TDRE;
+			SerialWriteBuffer = Data;
 
 			if (TouchScreenEnabled)
 			{
@@ -240,39 +305,44 @@ void Write_ACIA_Tx_Data(unsigned char Data)
 				WriteFile(hSerialPort, &SerialWriteBuffer, 1, &BytesOut, &olSerialWrite);
 			}
 
-			SetACIAStatus(1);
+			ACIA_Status |= MC6850_STATUS_TDRE;
 		}
 	}
 }
 
-void Write_SERPROC(unsigned char Data)
+void Write_SERPROC(unsigned char Value)
 {
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Serial, true,
-		                   "Serial: Write serial ULA %02X", (int)Data);
+		                   "Serial: Write serial ULA %02X", (int)Value);
 	}
 
-	SP_Control=Data;
+	SP_Control = Value;
 	// Slightly easier this time.
 	// just the Rx and Tx baud rates, and the selectors.
-	Cass_Relay = (Data & 128) != 0;
-	TapeAudio.Enabled = Cass_Relay && (TapePlaying || TapeRecording);
-	LEDs.Motor = Cass_Relay;
-	if (Cass_Relay)
+	CassetteRelay = (Value & 0x80) != 0;
+	TapeAudio.Enabled = CassetteRelay && (TapePlaying || TapeRecording);
+	LEDs.Motor = CassetteRelay;
+
+	if (CassetteRelay)
 		TapeTrigger=TotalCycles+TAPECYCLES;
-	if (Cass_Relay!=OldRelayState) {
-		OldRelayState=Cass_Relay;
-		ClickRelay(Cass_Relay);
+
+	if (CassetteRelay != OldRelayState)
+	{
+		OldRelayState = CassetteRelay;
+		ClickRelay(CassetteRelay);
 	}
-	SerialChannel = (Data & 64) != 0 ? SerialDevice::RS423 : SerialDevice::Cassette;
-	Tx_Rate=Baud_Rates[(Data & 7)];
-	Rx_Rate=Baud_Rates[(Data & 56)>>3];
+
+	SerialChannel = (Value & 0x40) != 0 ? SerialDevice::RS423 : SerialDevice::Cassette;
+	Tx_Rate = Baud_Rates[(Value & 0x07)];
+	Rx_Rate = Baud_Rates[(Value & 0x38) >> 3];
 
 	// Note, the PC serial port (or at least win32) does not allow different
 	// transmit/receive rates So we will use the higher of the two
 
-	if (SerialChannel == SerialDevice::RS423) {
+	if (SerialChannel == SerialDevice::RS423)
+	{
 		unsigned int HigherRate = std::max(Rx_Rate, Tx_Rate);
 		GetCommState(hSerialPort,&dcbSerialPort);
 		dcbSerialPort.BaudRate=HigherRate;
@@ -286,7 +356,8 @@ unsigned char Read_ACIA_Status(void) {
 //	{
 //		DCDClear++;
 //		if (DCDClear > 1) {
-//			DCD=0; ResetACIAStatus(2);
+//			DCD=0;
+//			ACIA_Status &= ~(1 << MC6850_STATUS_DCS);
 //			DCDClear=0;
 //		}
 //	}
@@ -302,36 +373,64 @@ unsigned char Read_ACIA_Status(void) {
 	return ACIA_Status;
 }
 
-void HandleData(unsigned char AData)
+void HandleData(unsigned char Data)
 {
 	// This proc has to dump data into the serial chip's registers
 
-	if (RxD==0) { RDR=AData; SetACIAStatus(0); } // Rx Reg full
-	if (RxD==1) { RDSR=AData; SetACIAStatus(0); }
-	ResetACIAStatus(5);
-	if (RxD==2) { RDR=RDSR; RDSR=AData; SetACIAStatus(5); } // overrun
-	if (RIE) { intStatus|=1<<serial; SetACIAStatus(7); } // interrupt on receive/overun
-	if (RxD<2) RxD++;
+	ACIA_Status &= ~MC6850_STATUS_OVRN;
+
+	if (RxD == 0)
+	{
+		RDR = Data;
+		ACIA_Status |= MC6850_STATUS_RDRF; // Rx Reg full
+		RxD++;
+	}
+	else if (RxD == 1)
+	{
+		RDSR = Data;
+		ACIA_Status |= MC6850_STATUS_RDRF;
+		RxD++;
+	}
+	else if (RxD == 2)
+	{
+		RDR = RDSR;
+		RDSR = Data;
+		ACIA_Status |= MC6850_STATUS_OVRN;
+	}
+
+	if (RIE)
+	{
+		// interrupt on receive/overun
+		ACIA_Status |= MC6850_STATUS_IRQ;
+		intStatus |= 1 << serial;
+	}
 }
 
-
-unsigned char Read_ACIA_Rx_Data(void) {
+unsigned char Read_ACIA_Rx_Data()
+{
 	unsigned char TData;
 //	if (DCDI==0 && DCD!=0)
 //	{
 //		DCDClear++;
 //		if (DCDClear > 1) {
-//			DCD=0; ResetACIAStatus(2);
+//			DCD=0;
+//			ACIA_Status &= ~(1 << MC6850_STATUS_DCS);
 //			DCDClear=0;
 //		}
 //	}
-	intStatus&=~(1<<serial);
-	ResetACIAStatus(7);
+	ACIA_Status &= ~MC6850_STATUS_IRQ;
+	intStatus &= ~(1 << serial);
+
 	TData=RDR; RDR=RDSR; RDSR=0;
-	if (RxD>0) RxD--;
-	if (RxD==0) ResetACIAStatus(0);
-	if ((RxD>0) && (RIE)) { intStatus|=1<<serial; SetACIAStatus(7); }
-	if (Data_Bits==7) TData&=127;
+	if (RxD > 0) RxD--;
+	if (RxD == 0) ACIA_Status &= ~MC6850_STATUS_RDRF;
+	if (RxD > 0 && RIE)
+	{
+		ACIA_Status |= MC6850_STATUS_IRQ;
+		intStatus |= 1 << serial;
+	}
+
+	if (DataBits == 7) TData &= 127;
 
 	if (DebugEnabled)
 	{
@@ -341,7 +440,7 @@ unsigned char Read_ACIA_Rx_Data(void) {
 
 //	WriteLog("Serial: Read ACIA Rx %02X, ACIA_Status = %02x\n", (int)TData, (int) ACIA_Status);
 
-	return(TData);
+	return TData;
 }
 
 unsigned char Read_SERPROC()
@@ -361,7 +460,7 @@ void Serial_Poll(void)
 	{
 		if (TapeRecording)
 		{
-			if (Cass_Relay && UEFOpen && TotalCycles >= TapeTrigger)
+			if (CassetteRelay && UEFOpen && TotalCycles >= TapeTrigger)
 			{
 				if (TxD > 0)
 				{
@@ -374,11 +473,11 @@ void Serial_Poll(void)
 						TapeControlStopRecording(true);
 					}
 					TxD=0;
-					SetACIAStatus(1);
+					ACIA_Status |= MC6850_STATUS_TDRE;
 					if (TIE)
 					{
-						intStatus|=1<<serial;
-						SetACIAStatus(7);
+						ACIA_Status |= MC6850_STATUS_IRQ;
+						intStatus |= 1 << serial;
 					}
 					TapeAudio.Data=(TDR<<1)|1;
 					TapeAudio.BytePos=1;
@@ -416,22 +515,23 @@ void Serial_Poll(void)
 //				WriteLog("Ignoring Writes\n");
 
 				TxD=0;
-				SetACIAStatus(1);
+				ACIA_Status |= MC6850_STATUS_TDRE;
+
 				if (TIE)
 				{
-					intStatus|=1<<serial;
-					SetACIAStatus(7);
+					ACIA_Status |= MC6850_STATUS_IRQ;
+					intStatus |= 1 << serial;
 				}
 			}
 
-			if (Cass_Relay && UEFOpen && TapeClock != OldClock)
+			if (CassetteRelay && UEFOpen && TapeClock != OldClock)
 			{
 				NEW_UEF_BUF=uef_getdata(TapeClock);
 				OldClock=TapeClock;
 			}
 
 			if ((NEW_UEF_BUF!=UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF)==UEF_HTONE || UEFRES_TYPE(NEW_UEF_BUF)==UEF_GAP) &&
-				Cass_Relay && UEFOpen)
+				CassetteRelay && UEFOpen)
 			{
 				if (UEFRES_TYPE(UEF_BUF) != UEFRES_TYPE(NEW_UEF_BUF))
 					TapeControlUpdateCounter(TapeClock);
@@ -462,7 +562,8 @@ void Serial_Poll(void)
 					TapeAudio.ByteCount=3;
 				}
 			}
-			if (Cass_Relay && (RxD < 2) && UEFOpen)
+
+			if (CassetteRelay && RxD < 2 && UEFOpen)
 			{
 				if (TotalCycles >= TapeTrigger)
 				{
@@ -474,7 +575,7 @@ void Serial_Poll(void)
 
 			// CSW stuff
 
-			if (Cass_Relay && CSWOpen && TapeClock != OldClock)
+			if (CassetteRelay && CSWOpen && TapeClock != OldClock)
 			{
 				CSWState last_state = csw_state;
 
@@ -510,7 +611,7 @@ void Serial_Poll(void)
 				}
 			}
 
-			if (Cass_Relay && (RxD < 2) && CSWOpen)
+			if (CassetteRelay && RxD < 2 && CSWOpen)
 			{
 				if (TotalCycles >= TapeTrigger)
 				{
@@ -527,19 +628,24 @@ void Serial_Poll(void)
 				// low to high transition on the DCD line
 				if (RIE)
 				{
-					intStatus|=1<<serial;
-					SetACIAStatus(7);
+					ACIA_Status |= MC6850_STATUS_IRQ;
+					intStatus |= 1 << serial;
 				}
-				DCD=1; SetACIAStatus(2); //ResetACIAStatus(0);
-				DCDClear=0;
+
+				DCD = 1;
+				ACIA_Status |= MC6850_STATUS_DCD; // ACIA_Status &= ~MC6850_STATUS_RDRF;
+				DCDClear = 0;
 			}
-			if (DCDI==0 && ODCDI==1)
+
+			if (DCDI == 0 && ODCDI == 1)
 			{
-				DCD=0; ResetACIAStatus(2);
-				DCDClear=0;
+				DCD = 0;
+				ACIA_Status &= ~MC6850_STATUS_DCD;
+				DCDClear = 0;
 			}
-			if (DCDI!=ODCDI)
-				ODCDI=DCDI;
+
+			if (DCDI != ODCDI)
+				ODCDI = DCDI;
 		}
 	}
 
@@ -646,8 +752,26 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 				if (dwCommEvent & EV_CTS) {
 					// CTS line change
 					GetCommModemStatus(hSerialPort,&LineStat);
-					if (LineStat & MS_CTS_ON) ResetACIAStatus(3); else SetACIAStatus(3); // Invert for CTS bit
-					if (LineStat & MS_CTS_ON) SetACIAStatus(1); else ResetACIAStatus(1); // Keep for TDRE bit
+
+					// Invert for CTS bit
+					if (LineStat & MS_CTS_ON)
+					{
+						ACIA_Status &= ~MC6850_STATUS_CTS;
+					}
+					else
+					{
+						ACIA_Status |= MC6850_STATUS_CTS;
+					}
+
+					// Keep for TDRE bit
+					if (LineStat & MS_CTS_ON)
+					{
+						ACIA_Status |= MC6850_STATUS_TDRE;
+					}
+					else
+					{
+						ACIA_Status &= ~MC6850_STATUS_TDRE;
+					}
 				}
 			}
 
@@ -1107,13 +1231,13 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					return FALSE;
 
 				case IDC_TCPLAY:
-					TapePlaying=true;
+					TapePlaying = true;
 					TapeControlStopRecording(true);
-					TapeAudio.Enabled = Cass_Relay;
+					TapeAudio.Enabled = CassetteRelay;
 					return TRUE;
 
 				case IDC_TCSTOP:
-					TapePlaying=false;
+					TapePlaying = false;
 					TapeControlStopRecording(true);
 					TapeAudio.Enabled = false;
 					return TRUE;
@@ -1187,7 +1311,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 						{
 							TapeRecording=true;
 							TapePlaying=false;
-							TapeAudio.Enabled = Cass_Relay;
+							TapeAudio.Enabled = CassetteRelay;
 						}
 					}
 					return TRUE;
@@ -1224,13 +1348,13 @@ void SaveSerialUEF(FILE *SUEF)
 		fput32(293,SUEF);
 		fputc(static_cast<int>(SerialChannel),SUEF);
 		fwrite(UEFTapeName,1,256,SUEF);
-		fputc(Cass_Relay,SUEF);
+		fputc(CassetteRelay,SUEF);
 		fput32(Tx_Rate,SUEF);
 		fput32(Rx_Rate,SUEF);
 		fputc(Clk_Divide,SUEF);
 		fputc(Parity,SUEF);
-		fputc(Stop_Bits,SUEF);
-		fputc(Data_Bits,SUEF);
+		fputc(StopBits,SUEF);
+		fputc(DataBits,SUEF);
 		fputc(RIE,SUEF);
 		fputc(TIE,SUEF);
 		fputc(TxD,SUEF);
@@ -1273,15 +1397,15 @@ void LoadSerialUEF(FILE *SUEF)
 		}
 		else
 		{
-			Cass_Relay = fgetbool(SUEF);
+			CassetteRelay = fgetbool(SUEF);
 			Tx_Rate = fget32(SUEF);
 			Rx_Rate = fget32(SUEF);
 			Clk_Divide = fget8(SUEF);
 			Parity = fget8(SUEF);
-			Stop_Bits = fget8(SUEF);
-			Data_Bits = fget8(SUEF);
-			RIE = fget8(SUEF);
-			TIE = fget8(SUEF);
+			StopBits = fget8(SUEF);
+			DataBits = fget8(SUEF);
+			RIE = fgetbool(SUEF);
+			TIE = fgetbool(SUEF);
 			TxD = fget8(SUEF);
 			RxD = fget8(SUEF);
 			RDR = fget8(SUEF);
