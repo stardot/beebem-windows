@@ -41,7 +41,7 @@ static unsigned char file_buf[BUFFER_LEN];
 static unsigned char *csw_buff;
 static unsigned char *sourcebuff;
 
-int csw_tonecount;
+static int csw_tonecount;
 
 CSWState csw_state;
 
@@ -55,7 +55,7 @@ static CSWDataState csw_datastate;
 int csw_bit;
 int csw_pulselen;
 int csw_ptr;
-unsigned long csw_bufflen;
+static unsigned long csw_bufflen;
 static int csw_byte;
 int csw_pulsecount;
 static int bit_count;

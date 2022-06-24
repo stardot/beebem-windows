@@ -51,7 +51,6 @@ extern CSWState csw_state;
 extern int csw_bit;
 extern int csw_pulselen;
 extern int csw_ptr;
-extern unsigned long csw_bufflen;
 extern int csw_pulsecount;
 extern bool CSWFileOpen;
 extern int CSW_BUF;
