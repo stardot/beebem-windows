@@ -30,6 +30,7 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <process.h>
 #include <stdio.h>
+
 #include <algorithm>
 
 #include "6502core.h"
@@ -986,7 +987,7 @@ void SetUnlockTape(bool Unlock)
 
 //*******************************************************************
 
-bool map_file(const char *file_name)
+static bool map_file(const char *file_name)
 {
 	bool done = false;
 	int blk = 0;
