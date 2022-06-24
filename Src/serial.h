@@ -24,15 +24,13 @@ Boston, MA  02110-1301, USA.
 #ifndef SERIAL_HEADER
 #define SERIAL_HEADER
 
-constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
-
 constexpr int MAX_MAP_LINES = 4096;
 
 extern int map_lines;
 extern char map_desc[MAX_MAP_LINES][40];
 extern int map_time[MAX_MAP_LINES];
-extern unsigned char Clk_Divide;
 
+extern unsigned char Clk_Divide;
 extern unsigned char ACIA_Control;
 extern unsigned int Tx_Rate, Rx_Rate;
 
@@ -46,16 +44,13 @@ unsigned char Read_ACIA_Rx_Data(void);
 unsigned char Read_SERPROC(void);
 extern bool SerialPortEnabled;
 extern unsigned char SerialPort;
-void SerialInit();
-void Serial_Poll(void);
-void InitSerialPort(void);
-void Kill_Serial(void);
-bool LoadUEFTape(const char *FileName);
-void RewindTape(void);
 
-unsigned int __stdcall SerialThread(void *lpParam);
-unsigned int __stdcall StatThread(void *lpParam);
-void InitThreads(void);
+void SerialInit();
+void Serial_Poll();
+void InitSerialPort();
+void Kill_Serial();
+bool LoadUEFTape(const char *FileName);
+void RewindTape();
 
 extern volatile bool bSerialStateChanged;
 extern bool TapeControlEnabled;

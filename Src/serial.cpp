@@ -51,23 +51,28 @@ enum class SerialDevice : unsigned char {
 	RS423
 };
 
-bool Cass_Relay = false; // Cassette Relay state
-SerialDevice SerialChannel = SerialDevice::Cassette; // Device in use
+static bool Cass_Relay = false; // Cassette Relay state
+static SerialDevice SerialChannel = SerialDevice::Cassette; // Device in use
 
-unsigned char RDR,TDR; // Receive and Transmit Data Registers
-unsigned char RDSR,TDSR; // Receive and Transmit Data Shift Registers (buffers)
+static unsigned char RDR, TDR; // Receive and Transmit Data Registers
+static unsigned char RDSR, TDSR; // Receive and Transmit Data Shift Registers (buffers)
 unsigned int Tx_Rate=1200,Rx_Rate=1200; // Recieve and Transmit baud rates.
 unsigned char Clk_Divide=1; // Clock divide rate
 
-unsigned char ACIA_Status,ACIA_Control; // 6850 ACIA Status.& Control
-unsigned char SP_Control; // SERPROC Control;
+unsigned char ACIA_Status, ACIA_Control; // 6850 ACIA Status & Control
+static unsigned char SP_Control; // SERPROC Control;
 
 unsigned char CTS, RTS;
-bool FirstReset = true;
-unsigned char DCD=0,DCDI=1,ODCDI=1,DCDClear=0; // count to clear DCD bit
+static bool FirstReset = true;
+static unsigned char DCD = 0;
+static unsigned char DCDI = 1;
+static unsigned char ODCDI = 1;
+static unsigned char DCDClear = 0; // count to clear DCD bit
 
-unsigned char Parity, Stop_Bits, Data_Bits, RIE, TIE; // Receive Interrupt Enable
-                                                      // and Transmit Interrupt Enable
+static unsigned char Parity, Stop_Bits, Data_Bits;
+
+bool RIE, TIE; // Receive Interrupt Enable and Transmit Interrupt Enable
+
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
 
 char UEFTapeName[256]; // Filename of current tape file
@@ -79,9 +84,9 @@ static const unsigned int Baud_Rates[8] = {
 
 bool OldRelayState = false;
 CycleCountT TapeTrigger=CycleCountTMax;
-#define TAPECYCLES 357 // 2000000/5600 - 5600 is normal tape speed
+constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
 
-int UEF_BUF=0,NEW_UEF_BUF=0;
+static int UEF_BUF=0,NEW_UEF_BUF=0;
 int TapeClock=0,OldClock=0;
 int TapeClockSpeed = 5600;
 bool UnlockTape = true;
@@ -90,6 +95,7 @@ bool UnlockTape = true;
 int map_lines;
 char map_desc[MAX_MAP_LINES][40];
 int map_time[MAX_MAP_LINES];
+
 bool TapeControlEnabled = false;
 bool TapePlaying = true;
 bool TapeRecording = false;
@@ -102,24 +108,24 @@ void TapeControlStopRecording(bool RefreshControl);
 bool SerialPortEnabled;
 unsigned char SerialPort;
 
-HANDLE hSerialThread = nullptr;
-HANDLE hStatThread = nullptr;
-HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
-DCB dcbSerialPort; // Serial port device control block
-char nSerialPort[5]; // Serial port name
-char *pnSerialPort=nSerialPort;
+static HANDLE hSerialThread = nullptr;
+static HANDLE hStatThread = nullptr;
+static HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
+static DCB dcbSerialPort; // Serial port device control block
+static char nSerialPort[5]; // Serial port name
+static const char *pnSerialPort = nSerialPort;
 bool SerialPortOpen = false; // Indicates status of serial port (on the host)
-unsigned int SerialBuffer=0,SerialWriteBuffer=0;
-DWORD BytesIn,BytesOut;
-DWORD LineStat;
-DWORD dwCommEvent;
-OVERLAPPED olSerialPort={0},olSerialWrite={0},olStatus={0};
+static unsigned int SerialBuffer=0,SerialWriteBuffer=0;
+static DWORD BytesIn,BytesOut;
+static DWORD LineStat;
+static DWORD dwCommEvent;
+static OVERLAPPED olSerialPort={0},olSerialWrite={0},olStatus={0};
 volatile bool bSerialStateChanged = false;
-volatile bool bWaitingForData = false;
-volatile bool bWaitingForStat = false;
-volatile bool bCharReady = false;
-COMMTIMEOUTS ctSerialPort;
-DWORD dwClrCommError;
+static volatile bool bWaitingForData = false;
+static volatile bool bWaitingForStat = false;
+static volatile bool bCharReady = false;
+static COMMTIMEOUTS ctSerialPort;
+static DWORD dwClrCommError;
 
 void SetACIAStatus(unsigned char bit) {
 	ACIA_Status|=1<<bit;
@@ -582,8 +588,10 @@ void Serial_Poll(void)
 	}
 }
 
-void InitThreads(void) {
-	if (hSerialPort != INVALID_HANDLE_VALUE) {
+static void InitThreads()
+{
+	if (hSerialPort != INVALID_HANDLE_VALUE)
+	{
 		CloseHandle(hSerialPort);
 		hSerialPort = INVALID_HANDLE_VALUE;
 	}
@@ -591,21 +599,42 @@ void InitThreads(void) {
 	bWaitingForData = false;
 	bWaitingForStat = false;
 
-	if ( (SerialPortEnabled) && (SerialPort > 0)) {
+	if (SerialPortEnabled && SerialPort > 0)
+	{
 		InitSerialPort(); // Set up the serial port if its enabled.
-		if (olSerialPort.hEvent) { CloseHandle(olSerialPort.hEvent); olSerialPort.hEvent=NULL; }
-		olSerialPort.hEvent=CreateEvent(NULL,TRUE,FALSE,NULL); // Create the serial port event signal
-		if (olSerialWrite.hEvent) { CloseHandle(olSerialWrite.hEvent); olSerialWrite.hEvent=NULL; }
-		olSerialWrite.hEvent=CreateEvent(NULL,TRUE,FALSE,NULL); // Write event, not actually used.
-		if (olStatus.hEvent) { CloseHandle(olStatus.hEvent); olStatus.hEvent=NULL; }
-		olStatus.hEvent=CreateEvent(NULL,TRUE,FALSE,NULL); // Status event, for WaitCommEvent
+
+		if (olSerialPort.hEvent)
+		{
+			CloseHandle(olSerialPort.hEvent);
+			olSerialPort.hEvent = nullptr;
+		}
+
+		olSerialPort.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Create the serial port event signal
+
+		if (olSerialWrite.hEvent)
+		{
+			CloseHandle(olSerialWrite.hEvent);
+			olSerialWrite.hEvent = nullptr;
+		}
+
+		olSerialWrite.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Write event, not actually used.
+
+		if (olStatus.hEvent)
+		{
+			CloseHandle(olStatus.hEvent);
+			olStatus.hEvent = nullptr;
+		}
+
+		olStatus.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Status event, for WaitCommEvent
 	}
 
 	bSerialStateChanged = false;
 }
 
-unsigned int __stdcall StatThread(void * /* lpParam */) {
-	DWORD dwOvRes=0;
+static unsigned int __stdcall StatThread(void * /* lpParam */)
+{
+	DWORD dwOvRes = 0;
+
 	do {
 		if (!TouchScreenEnabled && !EthernetPortEnabled &&
 		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled) {
@@ -621,13 +650,16 @@ unsigned int __stdcall StatThread(void * /* lpParam */) {
 					if (LineStat & MS_CTS_ON) SetACIAStatus(1); else ResetACIAStatus(1); // Keep for TDRE bit
 				}
 			}
+
 			bWaitingForStat = false;
 		}
 		else
 		{
 			Sleep(100); // Don't hog CPU if nothing happening
 		}
-		if ((bSerialStateChanged) && (!bWaitingForData)) {
+
+		if (bSerialStateChanged && !bWaitingForData)
+		{
 			// Shut off serial port, and re-initialise
 			InitThreads();
 			bSerialStateChanged = false;
@@ -638,14 +670,14 @@ unsigned int __stdcall StatThread(void * /* lpParam */) {
 	return 0;
 }
 
-unsigned int __stdcall SerialThread(void * /* lpParam */) {
+static unsigned int __stdcall SerialThread(void * /* lpParam */)
+{
 	// New Serial port thread - 7:35pm 16/10/2001 GMT
 	// This sorta runs as a seperate process in effect, checking
 	// enable status, and doing the monitoring.
-	DWORD spResult;
 	do {
 		if (!bSerialStateChanged && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled && bWaitingForData) {
-			spResult=WaitForSingleObject(olSerialPort.hEvent,INFINITE); // 10ms to respond
+			DWORD spResult = WaitForSingleObject(olSerialPort.hEvent, INFINITE); // 10ms to respond
 			if (spResult==WAIT_OBJECT_0) {
 				if (GetOverlappedResult(hSerialPort,&olSerialPort,&BytesIn,FALSE)) {
 					// sucessful read, screw any errors.
@@ -671,7 +703,8 @@ unsigned int __stdcall SerialThread(void * /* lpParam */) {
 	return 0;
 }
 
-void InitSerialPort(void) {
+void InitSerialPort()
+{
 	BOOL bPortStat;
 	// Initialise COM port
 	if (SerialPortEnabled && SerialPort > 0) {
@@ -734,10 +767,13 @@ void SerialInit()
 	hStatThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, StatThread, nullptr, 0, nullptr));
 }
 
-void Kill_Serial(void) {
+void Kill_Serial()
+{
 	CloseUEF();
 	CloseCSW();
-	if (SerialPortOpen) {
+
+	if (SerialPortOpen)
+	{
 		CloseHandle(hSerialPort);
 		hSerialPort = INVALID_HANDLE_VALUE;
 	}
