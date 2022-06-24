@@ -37,9 +37,7 @@ Boston, MA  02110-1301, USA.
 
 #include "zlib/zlib.h"
 
-static unsigned char file_buf[BUFFER_LEN];
 static unsigned char *csw_buff;
-static unsigned char *sourcebuff;
 
 static int csw_tonecount;
 
@@ -71,6 +69,9 @@ CSWResult CSWOpen(const char *FileName)
 	if (csw_file == nullptr) {
 		return CSWResult::OpenFailed;
 	}
+
+	constexpr int BUFFER_LEN = 256;
+	unsigned char file_buf[BUFFER_LEN];
 
 	/* Read header */
 	if (fread(file_buf, 1, 0x34, csw_file) != 0x34 ||
@@ -113,7 +114,7 @@ CSWResult CSWOpen(const char *FileName)
 
 	csw_bufflen = 8 * 1024 * 1024;
 	csw_buff = (unsigned char *) malloc(csw_bufflen);
-	sourcebuff = (unsigned char *) malloc(sourcesize);
+	unsigned char *sourcebuff = (unsigned char *) malloc(sourcesize);
 
 	fread(sourcebuff, 1, sourcesize, csw_file);
 	fclose(csw_file);
@@ -122,6 +123,7 @@ CSWResult CSWOpen(const char *FileName)
 	uncompress(csw_buff, &csw_bufflen, sourcebuff, sourcesize);
 
 	free(sourcebuff);
+	sourcebuff = nullptr;
 
 	// WriteLog("Source Size = %d\n", sourcesize);
 	// WriteLog("Uncompressed Size = %d\n", csw_bufflen);
@@ -359,7 +361,8 @@ int csw_data(void)
 		j = 1;
 	}
 
-	for (int i = 0; i < j; ++i) {
+	for (int i = 0; i < j; ++i)
+	{
 		csw_pulsecount++;
 
 		if (csw_buff[csw_ptr] == 0)
@@ -381,6 +384,7 @@ int csw_data(void)
 		{
 			csw_pulselen = csw_buff[csw_ptr++];
 		}
+
 		t = t + csw_pulselen;
 	}
 

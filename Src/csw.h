@@ -30,8 +30,6 @@ enum class CSWResult {
 	InvalidHeaderExtension
 };
 
-constexpr int BUFFER_LEN = 256;
-
 CSWResult CSWOpen(const char *FileName);
 void CSWClose();
 
