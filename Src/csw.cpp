@@ -137,7 +137,7 @@ CSWResult CSWOpen(const char *FileName)
 	csw_tonecount = 0;
 	bit_count = -1;
 
-	strcpy(UEFTapeName, FileName);
+	strcpy(TapeFileName, FileName);
 
 	CSWFileOpen = true;
 	TxD = 0;
@@ -149,7 +149,7 @@ CSWResult CSWOpen(const char *FileName)
 	if (TapeControlEnabled)
 	{
 		map_csw_file();
-		TapeControlOpenFile(UEFTapeName);
+		TapeControlOpenFile(TapeFileName);
 	}
 
 	return CSWResult::Success;

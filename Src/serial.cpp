@@ -85,7 +85,7 @@ bool RIE, TIE; // Receive Interrupt Enable and Transmit Interrupt Enable
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
 
 static UEFFileWriter UEFWriter;
-char UEFTapeName[256]; // Filename of current tape file
+char TapeFileName[256]; // Filename of current tape file
 bool UEFFileOpen = false;
 
 struct WordSelectBits
@@ -467,7 +467,7 @@ void Serial_Poll()
 					if (UEFWriter.PutData(TDR | UEF_DATA, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
-						                "Error writing to UEF file:\n  %s", UEFTapeName);
+						                "Error writing to UEF file:\n  %s", TapeFileName);
 
 						TapeControlStopRecording(true);
 					}
@@ -492,7 +492,7 @@ void Serial_Poll()
 					if (UEFWriter.PutData(UEF_CARRIER_TONE, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
-						                "Error writing to UEF file:\n  %s", UEFTapeName);
+						                "Error writing to UEF file:\n  %s", TapeFileName);
 
 						TapeControlStopRecording(true);
 					}
@@ -908,7 +908,7 @@ UEFResult LoadUEFTape(const char *UEFName)
 {
 	CloseUEF();
 
-	strcpy(UEFTapeName, UEFName);
+	strcpy(TapeFileName, UEFName);
 
 	if (TapeControlEnabled)
 		TapeControlOpenFile(UEFName);
@@ -934,7 +934,7 @@ UEFResult LoadUEFTape(const char *UEFName)
 	}
 	else
 	{
-		UEFTapeName[0] = 0;
+		TapeFileName[0] = '\0';
 	}
 
 	return Result;
@@ -972,7 +972,7 @@ void SetTapeSpeed(int Speed)
 	int NewClock = (int)((double)TapeClock * ((double)Speed / TapeClockSpeed));
 	TapeClockSpeed = Speed;
 	if (UEFFileOpen)
-		LoadUEFTape(UEFTapeName);
+		LoadUEFTape(TapeFileName);
 	TapeClock = NewClock;
 }
 
@@ -1146,7 +1146,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 		if (UEFFileOpen)
 		{
 			Clock = TapeClock;
-			LoadUEFTape(UEFTapeName);
+			LoadUEFTape(TapeFileName);
 			TapeClock = Clock;
 			TapeControlUpdateCounter(TapeClock);
 		}
@@ -1154,7 +1154,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 		if (CSWFileOpen)
 		{
 			Clock = csw_ptr;
-			CSWOpen(UEFTapeName);
+			CSWOpen(TapeFileName);
 			csw_ptr = Clock;
 			TapeControlUpdateCounter(csw_ptr);
 		}
@@ -1313,15 +1313,15 @@ void TapeControlRecord()
 				// Create file
 				if (UEFWriter.Open(FileName) == UEFResult::Success)
 				{
-					strcpy(UEFTapeName, FileName);
+					strcpy(TapeFileName, FileName);
 					UEFFileOpen = true;
 				}
 				else
 				{
 					mainWin->Report(MessageType::Error,
-					                "Error creating tape file:\n  %s", UEFTapeName);
+					                "Error creating tape file:\n  %s", TapeFileName);
 
-					UEFTapeName[0] = 0;
+					TapeFileName[0] = '\0';
 					Continue = false;
 				}
 			}
@@ -1346,7 +1346,7 @@ void TapeControlStopRecording(bool RefreshControl)
 
 		if (RefreshControl)
 		{
-			LoadUEFTape(UEFTapeName);
+			LoadUEFTape(TapeFileName);
 		}
 	}
 }
@@ -1360,7 +1360,7 @@ void SaveSerialUEF(FILE *SUEF)
 		fput16(0x0473,SUEF);
 		fput32(293,SUEF);
 		fputc(static_cast<int>(SerialChannel),SUEF);
-		fwrite(UEFTapeName,1,256,SUEF);
+		fwrite(TapeFileName,1,256,SUEF);
 		fputc(CassetteRelay,SUEF);
 		fput32(Tx_Rate,SUEF);
 		fput32(Rx_Rate,SUEF);

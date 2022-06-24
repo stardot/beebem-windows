@@ -79,7 +79,7 @@ void RewindTape();
 
 extern volatile bool bSerialStateChanged;
 extern bool TapeControlEnabled;
-extern char UEFTapeName[256];
+extern char TapeFileName[256];
 extern bool UnlockTape;
 extern unsigned char TxD,RxD;
 extern int TapeClock,OldClock;

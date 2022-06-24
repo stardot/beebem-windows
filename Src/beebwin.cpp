@@ -187,7 +187,7 @@ BeebWin::BeebWin()
 	aviWriter = NULL;
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
-	UEFTapeName[0]=0;
+	TapeFileName[0] = '\0';
 	m_AutoSavePrefsCMOS = false;
 	m_AutoSavePrefsFolders = false;
 	m_AutoSavePrefsAll = false;
