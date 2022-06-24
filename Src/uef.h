@@ -21,6 +21,11 @@ Boston, MA  02110-1301, USA.
 #ifndef INCLUDE_UEF_H
 #define INCLUDE_UEF_H
 
+#include <string>
+#include <vector>
+
+#include "zlib/zlib.h"
+
 // Some defines related to the status byte - these may change!
 constexpr int UEF_MMASK    = (3 << 16);
 constexpr int UEF_BYTEMASK = 0xff;
@@ -41,6 +46,40 @@ enum class UEFResult
 	NotUEF,
 	NotTape,
 	NoFile
+};
+
+struct UEFChunkInfo
+{
+	int type;
+	int len;
+	std::vector<unsigned char> data;
+	int l1;
+	int l2;
+	int unlock_offset;
+	int crc;
+	int start_time;
+	int end_time;
+};
+
+class UEFFileWriter
+{
+	public:
+		UEFFileWriter();
+		~UEFFileWriter();
+
+	public:
+		UEFResult Open(const char *FileName);
+		UEFResult PutData(int Data, int Time);
+		void Close();
+
+	private:
+		UEFResult WriteChunk();
+
+	private:
+		std::string m_FileName;
+		gzFile m_OutputFile;
+		int m_LastPutData;
+		UEFChunkInfo m_Chunk;
 };
 
 // Setup

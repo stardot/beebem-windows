@@ -80,7 +80,7 @@ unsigned char Clk_Divide=1; // Clock divide rate
 unsigned char ACIA_Status, ACIA_Control; // 6850 ACIA Status & Control
 static unsigned char SerialULAControl; // Serial ULA / SERPROC control register;
 
-static unsigned char RTS;
+static bool RTS;
 static bool FirstReset = true;
 static unsigned char DCD = 0;
 static unsigned char DCDI = 1;
@@ -93,6 +93,7 @@ bool RIE, TIE; // Receive Interrupt Enable and Transmit Interrupt Enable
 
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
 
+static UEFFileWriter UEFWriter;
 char UEFTapeName[256]; // Filename of current tape file
 bool UEFFileOpen = false;
 
@@ -475,7 +476,7 @@ void Serial_Poll()
 				if (TxD > 0)
 				{
 					// Writing data
-					if (UEFPutData(TDR | UEF_DATA, TapeClock) != UEFResult::Success)
+					if (UEFWriter.PutData(TDR | UEF_DATA, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", UEFTapeName);
@@ -500,7 +501,7 @@ void Serial_Poll()
 				else
 				{
 					// Tone
-					if (UEFPutData(UEF_CARRIER_TONE, TapeClock) != UEFResult::Success)
+					if (UEFWriter.PutData(UEF_CARRIER_TONE, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", UEFTapeName);
@@ -1317,7 +1318,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 								if (Continue)
 								{
 									// Create file
-									if (UEFCreate(UEFTapeName) == UEFResult::Success)
+									if (UEFWriter.Open(UEFTapeName) == UEFResult::Success)
 									{
 										UEFFileOpen = true;
 									}
@@ -1354,7 +1355,9 @@ void TapeControlStopRecording(bool RefreshControl)
 {
 	if (TapeRecording)
 	{
-		UEFPutData(UEF_EOF, 0);
+		UEFWriter.PutData(UEF_EOF, 0);
+		UEFWriter.Close();
+
 		TapeRecording = false;
 
 		if (RefreshControl)
