@@ -325,8 +325,9 @@ bool IP232Open(void)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: connected to server");
 
 	// TEMP!
-	ResetACIAStatus(3); // CTS input low,
-	SetACIAStatus(1); // TDRE high
+	ACIA_Status &= ~MC6850_STATUS_CTS;
+	ACIA_Status |= MC6850_STATUS_TDRE;
+
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Init, CTS low");
 
@@ -499,16 +500,18 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 								if (buff[j] == 1) {
 									if (DebugEnabled)
 										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
+
 									// dtr on modem high
-									ResetACIAStatus(3);  // CTS goes active low
-									SetACIAStatus(1);  // so TDRE goes high ??
+									ACIA_Status &= ~MC6850_STATUS_CTS; // CTS goes active low
+									ACIA_Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
 								}
 								else if (buff[j] == 0) {
 									if (DebugEnabled)
 										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
+
 									// dtr on modem low
-									SetACIAStatus(3);  // CTS goes inactive high
-									ResetACIAStatus(1);  // so TDRE goes low
+									ACIA_Status |= MC6850_STATUS_CTS; // CTS goes inactive high
+									ACIA_Status &= ~MC6850_STATUS_TDRE; // so TDRE goes low
 								}
 								else if (buff[j] == 255) {
 									if (DebugEnabled)
@@ -666,8 +669,9 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 			if (dcd == 1 && odcd == 0)
 			{
 				// RaiseDCD();
-				ResetACIAStatus(3);  // CTS goes Low
-				SetACIAStatus(1);  // so TDRE goes high
+				ACIA_Status &= ~MC6850_STATUS_CTS; // CTS goes low
+				ACIA_Status |= MC6850_STATUS_TDRE; // so TDRE goes high
+
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: StatusThread DCD up, set CTS low");
 			}
@@ -675,8 +679,9 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 			if (dcd == 0 && odcd == 1)
 			{
 				// LowerDCD();
-				SetACIAStatus(3);  // CTS goes Hgh
-				ResetACIAStatus(1);  // so TDRE goes low
+				ACIA_Status |= MC6850_STATUS_CTS; // CTS goes high
+				ACIA_Status &= ~MC6850_STATUS_TDRE; // so TDRE goes low
+
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: StatusThread lost DCD, set CTS high");
 			}

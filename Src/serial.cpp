@@ -54,16 +54,6 @@ constexpr unsigned char MC6850_CONTROL_WORD_SELECT      = 0x1c;
 constexpr unsigned char MC6850_CONTROL_TRANSMIT_CONTROL = 0x60;
 constexpr unsigned char MC6850_CONTROL_RIE              = 0x80;
 
-// MC6850 status register bits
-constexpr unsigned char MC6850_STATUS_RDRF = 0x01;
-constexpr unsigned char MC6850_STATUS_TDRE = 0x02;
-constexpr unsigned char MC6850_STATUS_DCD  = 0x04;
-constexpr unsigned char MC6850_STATUS_CTS  = 0x08;
-constexpr unsigned char MC6850_STATUS_FE   = 0x10;
-constexpr unsigned char MC6850_STATUS_OVRN = 0x20;
-constexpr unsigned char MC6850_STATUS_PE   = 0x40;
-constexpr unsigned char MC6850_STATUS_IRQ  = 0x80;
-
 enum class SerialDevice : unsigned char {
 	Cassette,
 	RS423
@@ -178,14 +168,6 @@ static volatile bool bWaitingForStat = false;
 static volatile bool bCharReady = false;
 static COMMTIMEOUTS ctSerialPort;
 static DWORD dwClrCommError;
-
-void SetACIAStatus(unsigned char bit) {
-	ACIA_Status|=1<<bit;
-}
-
-void ResetACIAStatus(unsigned char bit) {
-	ACIA_Status&=~(1<<bit);
-}
 
 void SerialACIAWriteControl(unsigned char Value)
 {

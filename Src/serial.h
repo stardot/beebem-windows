@@ -32,9 +32,21 @@ extern int map_lines;
 extern char map_desc[MAX_MAP_LINES][40];
 extern int map_time[MAX_MAP_LINES];
 
-extern unsigned char Clk_Divide;
-extern unsigned char ACIA_Control;
 extern unsigned int Tx_Rate, Rx_Rate;
+extern unsigned char Clk_Divide;
+
+// MC6850 status register bits
+constexpr unsigned char MC6850_STATUS_RDRF = 0x01;
+constexpr unsigned char MC6850_STATUS_TDRE = 0x02;
+constexpr unsigned char MC6850_STATUS_DCD  = 0x04;
+constexpr unsigned char MC6850_STATUS_CTS  = 0x08;
+constexpr unsigned char MC6850_STATUS_FE   = 0x10;
+constexpr unsigned char MC6850_STATUS_OVRN = 0x20;
+constexpr unsigned char MC6850_STATUS_PE   = 0x40;
+constexpr unsigned char MC6850_STATUS_IRQ  = 0x80;
+
+extern unsigned char ACIA_Status;
+extern unsigned char ACIA_Control;
 
 extern CycleCountT TapeTrigger;
 extern CycleCountT IP232RxTrigger;
@@ -73,7 +85,5 @@ void TapeControlOpenFile(const char *UEFName);
 void TapeControlCloseDialog(void);
 void SaveSerialUEF(FILE *SUEF);
 void LoadSerialUEF(FILE *SUEF);
-void SetACIAStatus(unsigned char bit);
-void ResetACIAStatus(unsigned char bit);
 
 #endif
