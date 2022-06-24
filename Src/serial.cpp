@@ -19,12 +19,13 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/*
-Serial/Cassette Support for BeebEm
-Written by Richard Gellman - March 2001
-*/
-
+// Serial/Cassette Support for BeebEm
+// Written by Richard Gellman - March 2001
+//
 // P.S. If anybody knows how to emulate this, do tell me - 16/03/2001 - Richard Gellman
+//
+// See https://beebwiki.mdfs.net/Acorn_cassette_format
+// and http://electrem.emuunlim.com/UEFSpecs.html
 
 #include <windows.h>
 #include <process.h>
@@ -197,13 +198,12 @@ void Write_ACIA_Tx_Data(unsigned char Data)
 	intStatus&=~(1<<serial);
 	ResetACIAStatus(7);
 
-/*
- * 10/09/06
- * JW - A bug in swarm loader overwrites the rs423 output buffer counter
- * Unless we do something with the data, the loader hangs so just swallow it (see below)
- */
+	// 10/09/06
+	// JW - A bug in swarm loader overwrites the rs423 output buffer counter
+	// Unless we do something with the data, the loader hangs so just swallow it (see below)
 
-	if (SerialChannel == SerialDevice::Cassette || (SerialChannel == SerialDevice::RS423 && !SerialPortEnabled)) {
+	if (SerialChannel == SerialDevice::Cassette || (SerialChannel == SerialDevice::RS423 && !SerialPortEnabled))
+	{
 		ResetACIAStatus(1);
 		TDR=Data;
 		TxD=1;
@@ -221,18 +221,18 @@ void Write_ACIA_Tx_Data(unsigned char Data)
 				TouchScreenWrite(Data);
 			}
 			else if (EthernetPortEnabled)
-				{
-//					if (Data_Bits==7) {
-//						IP232Write(Data & 127 );
-//					} else {
-						IP232Write(Data );
-						if (!IP232raw && Data == 255) IP232Write(Data);
-//					}
-				}
-				else
-				{
-					WriteFile(hSerialPort,&SerialWriteBuffer,1,&BytesOut,&olSerialWrite);
-				}
+			{
+				// if (Data_Bits == 7) {
+				//	IP232Write(Data & 127);
+				// } else {
+					IP232Write(Data);
+					if (!IP232raw && Data == 255) IP232Write(Data);
+				// }
+			}
+			else
+			{
+				WriteFile(hSerialPort, &SerialWriteBuffer, 1, &BytesOut, &olSerialWrite);
+			}
 
 			SetACIAStatus(1);
 		}
@@ -351,16 +351,10 @@ unsigned char Read_SERPROC()
 
 void Serial_Poll(void)
 {
-
-//	if (trace == 1) WriteLog("Here - SerialChannel = %d, TapeRecording = %d\n", SerialChannel, TapeRecording);
-
 	if (SerialChannel == SerialDevice::Cassette)
 	{
 		if (TapeRecording)
 		{
-
-//			if (trace == 1) WriteLog("Here - TapeRecording\n");
-
 			if (Cass_Relay && UEFOpen && TotalCycles >= TapeTrigger)
 			{
 				if (TxD > 0)
@@ -407,13 +401,8 @@ void Serial_Poll(void)
 		}
 		else // Playing or stopped
 		{
-//			if (trace == 1) WriteLog("In Serial Poll - Cass_Relay = %d, UEFOpen = %d, TapeClock = %d, OldClock = %d\n", Cass_Relay, UEFOpen, TapeClock, OldClock);
-
-
-/*
- * 10/09/06
- * JW - If trying to write data when not recording, just ignore
- */
+			// 10/09/06
+			// JW - If trying to write data when not recording, just ignore
 
 			if ( (TxD > 0) && (TotalCycles >= TapeTrigger) )
 			{
@@ -477,7 +466,7 @@ void Serial_Poll(void)
 				}
 			}
 
-// CSW stuff
+			// CSW stuff
 
 			if (Cass_Relay && CSWOpen && TapeClock != OldClock)
 			{
@@ -572,6 +561,7 @@ void Serial_Poll(void)
 				WaitCommEvent(hSerialPort,&dwCommEvent,&olStatus);
 				bWaitingForStat = true;
 			}
+
 			if (!bSerialStateChanged && bCharReady && !bWaitingForData && RxD < 2) {
 				if (!ReadFile(hSerialPort,&SerialBuffer,1,&BytesIn,&olSerialPort)) {
 					if (GetLastError()==ERROR_IO_PENDING) {
@@ -971,7 +961,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 
 		hwndMap = GetDlgItem(hwndTapeControl, IDC_TCMAP);
 		SendMessage(hwndMap, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
-						(LPARAM)MAKELPARAM(FALSE,0));
+		            (LPARAM)MAKELPARAM(FALSE,0));
 
 		if (UEFOpen)
 		{
@@ -1019,6 +1009,7 @@ void TapeControlOpenFile(const char *UEFName)
 		}
 
 		SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
+
 		for (int i = 0; i < map_lines; ++i)
 			SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)map_desc[i]);
 
