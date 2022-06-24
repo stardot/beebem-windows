@@ -28,6 +28,7 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <math.h>
 
+#include <string>
 #include <vector>
 
 #include "uef.h"
@@ -49,12 +50,12 @@ struct UEFChunkInfo
 	int end_time;
 };
 
-static char uef_file_name[256];
+static std::string UEFFileName;
 static std::vector<UEFChunkInfo> uef_chunks;
 static int uef_clock_speed = 5600;
 static UEFChunkInfo *uef_last_chunk = nullptr;
 static bool uef_unlock = false;
-static int uef_last_put_data=UEF_EOF;
+static int uef_last_put_data = UEF_EOF;
 static UEFChunkInfo uef_put_chunk;
 
 static UEFResult UEFWriteChunk();
@@ -81,57 +82,57 @@ UEFResult UEFCreate(const char *FileName)
 {
 	UEFClose();
 
-	gzFile uef_file = gzopen(FileName, "wb");
+	gzFile OutputFile = gzopen(FileName, "wb");
 
-	if (uef_file == nullptr)
+	if (OutputFile == nullptr)
 	{
 		return UEFResult::NoFile;
 	}
 
-	gzwrite(uef_file, "UEF File!", 10);
-	gzput16(uef_file, 0x000a); /* V0.10 */
-	gzput16(uef_file, 0);
-	gzput32(uef_file, 18);
-	gzwrite(uef_file, "Created by BeebEm", 18);
+	gzwrite(OutputFile, "UEF File!", 10);
+	gzput16(OutputFile, 0x000a); // V0.10
+	gzput16(OutputFile, 0);
+	gzput32(OutputFile, 18);
+	gzwrite(OutputFile, "Created by BeebEm", 18);
 
-	gzclose(uef_file);
-	strcpy(uef_file_name, FileName);
+	gzclose(OutputFile);
+	UEFFileName = FileName;
 
 	return UEFResult::Success;
 }
 
 UEFResult UEFOpen(const char *FileName)
 {
-	gzFile uef_file;
-	char UEFId[10];
-
 	UEFClose();
 
-	uef_file = gzopen(FileName, "rb");
-	if (uef_file == nullptr)
+	gzFile InputFile = gzopen(FileName, "rb");
+
+	if (InputFile == nullptr)
 	{
 		return UEFResult::NoFile;
 	}
 
-	gzread(uef_file, UEFId, 10);
-	if (strcmp(UEFId,"UEF File!")!=0)
+	char UEFId[10];
+	gzread(InputFile, UEFId, 10);
+
+	if (strcmp(UEFId, "UEF File!") != 0)
 	{
 		UEFClose();
 
 		return UEFResult::NotUEF;
 	}
 
-	const int ver = gzget16(uef_file);
+	const int ver = gzget16(InputFile);
 
 	uef_chunks.clear();
 
 	UEFResult Result = UEFResult::Success;
 
-	while (Result == UEFResult::Success && !gzeof(uef_file))
+	while (Result == UEFResult::Success && !gzeof(InputFile))
 	{
 		UEFChunkInfo chunk{};
-		chunk.type = gzget16(uef_file);
-		chunk.len = gzget32(uef_file);
+		chunk.type = gzget16(InputFile);
+		chunk.len = gzget32(InputFile);
 
 		// Only store UEF chunks 1xx which contain tape data
 		if (chunk.type >= 0x100 && chunk.type <= 0x1ff)
@@ -140,7 +141,7 @@ UEFResult UEFOpen(const char *FileName)
 			{
 				chunk.data.resize(chunk.len);
 
-				if (gzread(uef_file, &chunk.data[0], chunk.len) == chunk.len)
+				if (gzread(InputFile, &chunk.data[0], chunk.len) == chunk.len)
 				{
 					uef_chunks.push_back(chunk);
 				}
@@ -156,11 +157,11 @@ UEFResult UEFOpen(const char *FileName)
 		}
 		else if (chunk.len > 0)
 		{
-			gzseek(uef_file, chunk.len, SEEK_CUR);
+			gzseek(InputFile, chunk.len, SEEK_CUR);
 		}
 	}
 
-	gzclose(uef_file);
+	gzclose(InputFile);
 
 	if (Result != UEFResult::Success)
 	{
@@ -239,7 +240,7 @@ UEFResult UEFOpen(const char *FileName)
 		chunk.end_time = clock;
 	}
 
-	strcpy(uef_file_name, FileName);
+	UEFFileName = FileName;
 
 	return UEFResult::Success;
 }
@@ -415,7 +416,7 @@ void UEFClose()
 {
 	uef_chunks.clear();
 
-	uef_file_name[0] = 0;
+	UEFFileName.clear();
 	uef_last_chunk = nullptr;
 	uef_last_put_data = UEF_EOF;
 
@@ -426,14 +427,15 @@ void UEFClose()
 
 static UEFResult UEFWriteChunk()
 {
-	gzFile uef_file = nullptr;
+	gzFile OutputFile = nullptr;
 	UEFResult Result = UEFResult::Success;
 
-	if (uef_file_name[0])
+	if (!UEFFileName.empty())
 	{
-		/* Always append to file */
-		uef_file = gzopen(uef_file_name, "ab");
-		if (uef_file == NULL)
+		// Always append to file
+		OutputFile = gzopen(UEFFileName.c_str(), "ab");
+
+		if (OutputFile == nullptr)
 		{
 			Result = UEFResult::NoFile;
 		}
@@ -445,34 +447,34 @@ static UEFResult UEFWriteChunk()
 
 	if (Result == UEFResult::Success)
 	{
-		gzput16(uef_file, uef_put_chunk.type);
+		gzput16(OutputFile, uef_put_chunk.type);
 
 		switch (uef_put_chunk.type)
 		{
 			case 0x100:
 				// Data block
-				gzput32(uef_file, uef_put_chunk.data.size());
-				gzwrite(uef_file, &uef_put_chunk.data[0], uef_put_chunk.data.size());
+				gzput32(OutputFile, uef_put_chunk.data.size());
+				gzwrite(OutputFile, &uef_put_chunk.data[0], uef_put_chunk.data.size());
 				break;
 			case 0x110: {
 				// Carrier tone
-				gzput32(uef_file, 2);
+				gzput32(OutputFile, 2);
 				// Assume 1200 baud
 				int len = (int)((double)(uef_put_chunk.end_time-uef_put_chunk.start_time) * (1200*2.0) / NORMAL_TAPE_SPEED);
-				gzput16(uef_file, len);
+				gzput16(OutputFile, len);
 				break;
 			}
 			case 0x112: {
 				// Gap
-				gzput32(uef_file, 2);
+				gzput32(OutputFile, 2);
 				// Assume 1200 baud
 				int len = (int)((double)(uef_put_chunk.end_time-uef_put_chunk.start_time) * (1200*2.0) / NORMAL_TAPE_SPEED);
-				gzput16(uef_file, len);
+				gzput16(OutputFile, len);
 				break;
 			}
 		}
 
-		gzclose(uef_file);
+		gzclose(OutputFile);
 	}
 
 	return Result;
