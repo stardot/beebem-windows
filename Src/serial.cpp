@@ -216,7 +216,7 @@ void SerialACIAWriteControl(unsigned char Value)
 
 		ACIA_Status &= ~MC6850_STATUS_DCD; DCD=0; DCDI=0; DCDClear=0;
 		ACIA_Status |= MC6850_STATUS_TDRE; // Transmit data register empty
-		TapeTrigger=TotalCycles+TAPECYCLES;
+		SetTrigger(TAPECYCLES, TapeTrigger);
 	}
 
 	// Clock Divide
@@ -278,7 +278,8 @@ void SerialACIAWriteTxData(unsigned char Data)
 		TxD = 1;
 		ACIA_Status &= ~MC6850_STATUS_TDRE;
 		int baud = Tx_Rate * ((Clk_Divide == 1) ? 64 : (Clk_Divide==64) ? 1 : 4);
-		TapeTrigger=TotalCycles + 2000000/(baud/8) * TapeClockSpeed/5600;
+
+		SetTrigger(2000000 / (baud / 8) * TapeClockSpeed / 5600, TapeTrigger);
 	}
 
 	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
@@ -331,7 +332,9 @@ void SerialULAWrite(unsigned char Value)
 	LEDs.Motor = CassetteRelay;
 
 	if (CassetteRelay)
-		TapeTrigger=TotalCycles+TAPECYCLES;
+	{
+		SetTrigger(TAPECYCLES, TapeTrigger);
+	}
 
 	if (CassetteRelay != OldRelayState)
 	{
@@ -506,7 +509,7 @@ void Serial_Poll()
 
 				}
 
-				TapeTrigger=TotalCycles+TAPECYCLES;
+				SetTrigger(TAPECYCLES, TapeTrigger);
 				TapeClock++;
 			}
 		}
@@ -575,7 +578,8 @@ void Serial_Poll()
 				{
 					if (TapePlaying)
 						TapeClock++;
-					TapeTrigger=TotalCycles+TAPECYCLES;
+
+					SetTrigger(TAPECYCLES, TapeTrigger);
 				}
 			}
 
@@ -624,8 +628,7 @@ void Serial_Poll()
 					if (TapePlaying)
 						TapeClock++;
 
-					TapeTrigger = TotalCycles + CSW_CYCLES;
-
+					SetTrigger(CSW_CYCLES, TapeTrigger);
 				}
 			}
 
@@ -932,7 +935,7 @@ bool LoadUEFTape(const char *UEFName) {
 		RxD=0;
 		TapeClock=0;
 		OldClock=0;
-		TapeTrigger=TotalCycles+TAPECYCLES;
+		SetTrigger(TAPECYCLES, TapeTrigger);
 		TapeControlUpdateCounter(TapeClock);
 	}
 	else {
@@ -947,7 +950,7 @@ void RewindTape(void) {
 	UEF_BUF=0;
 	TapeClock=0;
 	OldClock=0;
-	TapeTrigger=TotalCycles+TAPECYCLES;
+	SetTrigger(TAPECYCLES, TapeTrigger);
 	TapeControlUpdateCounter(TapeClock);
 
 	csw_state = CSWState::WaitingForTone;
@@ -1231,7 +1234,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 								TapeClock=map_time[s];
 							}
 							OldClock=0;
-							TapeTrigger=TotalCycles+TAPECYCLES;
+							SetTrigger(TAPECYCLES, TapeTrigger);
 						}
 					}
 					return FALSE;
