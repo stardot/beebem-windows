@@ -399,8 +399,10 @@ int UEFGetData(int Time)
 
 	switch (ch->type)
 	{
-		case 0x100: // Implicit start/stop bit tape data block
-		case 0x104: // Defined tape format data block
+		case 0x100:
+			// Implicit start/stop bit tape data block
+		case 0x104:
+			// Defined tape format data block
 			j = ch->type == 0x104 ? 3 : 0;
 			i = (int)((double)(Time - ch->start_time) / (ch->end_time - ch->start_time) * (ch->len - j));
 			data = UEF_DATA | ch->data[i + j] | ((i & 0x7f) << 24);
@@ -413,12 +415,12 @@ int UEFGetData(int Time)
 				}
 				else if (ch->crc != -1)
 				{
-					if (i == ch->unlock_offset+5)
+					if (i == ch->unlock_offset + 5)
 					{
 						data &= 0xffffff00;
 						data |= ch->crc >> 8;
 					}
-					else if (i == ch->unlock_offset+6)
+					else if (i == ch->unlock_offset + 6)
 					{
 						data &= 0xffffff00;
 						data |= ch->crc & 0xff;
