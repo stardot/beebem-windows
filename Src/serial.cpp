@@ -79,7 +79,7 @@ unsigned char Clk_Divide=1; // Clock divide rate
 unsigned char ACIA_Status, ACIA_Control; // 6850 ACIA Status & Control
 static unsigned char SerialULAControl; // Serial ULA / SERPROC control register;
 
-unsigned char CTS, RTS;
+unsigned char RTS;
 static bool FirstReset = true;
 static unsigned char DCD = 0;
 static unsigned char DCDI = 1;
