@@ -18,31 +18,25 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef _UEF_H
-#define _UEF_H
+#ifndef INCLUDE_UEF_H
+#define INCLUDE_UEF_H
 
-/* some defines related to the status byte - these may change! */
+// Some defines related to the status byte - these may change!
+constexpr int UEF_MMASK    = (3 << 16);
+constexpr int UEF_BYTEMASK = 0xff;
 
-#define UEF_MMASK			(3 << 16)
-#define UEF_STARTBIT		(2 << 8)
-#define UEF_STOPBIT			(1 << 8)
-#define UEF_BYTEMASK		0xff
+// Some macros for reading parts of the status byte
+constexpr int UEF_HTONE = (0 << 16);
+constexpr int UEF_DATA  = (1 << 16);
+constexpr int UEF_GAP   = (2 << 16);
+constexpr int UEF_EOF   = (3 << 16);
 
-/* some macros for reading parts of the status byte */
+constexpr int           UEFRES_TYPE(int x) { return x & UEF_MMASK;    }
+constexpr unsigned char UEFRES_BYTE(int x) { return x & UEF_BYTEMASK; }
 
-#define UEF_HTONE			(0 << 16)
-#define UEF_DATA			(1 << 16)
-#define UEF_GAP				(2 << 16)
-#define UEF_EOF				(3 << 16)
-
-#define UEFRES_TYPE(x)		(x&UEF_MMASK)
-#define UEFRES_BYTE(x)		(x&UEF_BYTEMASK)
-#define UEFRES_10BIT(x)		(((x&UEF_BYTEMASK) << 1) | ((x&UEF_STARTBIT) ? 1 : 0) | ((x&UEF_STOPBIT) ? 0x200 : 0))
-#define UEFRES_STARTBIT(x)	(x&UEF_STARTBIT)
-#define UEFRES_STOPBIT(x)	(x&UEF_STOPBIT)
-
-/* some possible return states */
-enum class UEFResult {
+// Some possible return states
+enum class UEFResult
+{
 	Success,
 	NotUEF,
 	NotTape,
@@ -50,18 +44,18 @@ enum class UEFResult {
 	OutOfMemory
 };
 
-/* setup */
+// Setup
 void uef_setclock(int beats);
 void uef_setunlock(bool unlock);
 
-/* poll mode */
+// Poll mode
 int uef_getdata(int time);
 
-/* open & close */
+// Open & close
 UEFResult uef_open(const char *name);
 void uef_close(void);
 
-/* writing */
+// Writing
 UEFResult uef_create(const char *name);
 UEFResult uef_putdata(int data, int time);
 
