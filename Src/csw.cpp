@@ -213,7 +213,7 @@ void map_csw_file(void)
 	{
 again:
 		last_state = csw_state;
-		int data = csw_poll(0);
+		int data = CSWPoll();
 
 		if (last_state == CSWState::Tone && csw_state == CSWState::Data)
 		{
@@ -391,7 +391,7 @@ int csw_data(void)
 
 /* Called every sample rate 44,100 Hz */
 
-int csw_poll(int /* clock */)
+int CSWPoll()
 {
 	int ret = -1;
 

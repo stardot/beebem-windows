@@ -511,8 +511,7 @@ void Serial_Poll()
 
 			if (TxD > 0 && TotalCycles >= TapeTrigger)
 			{
-
-//				WriteLog("Ignoring Writes\n");
+				// WriteLog("Ignoring Writes\n");
 
 				TxD=0;
 				ACIA_Status |= MC6850_STATUS_TDRE;
@@ -582,7 +581,7 @@ void Serial_Poll()
 			{
 				CSWState last_state = csw_state;
 
-				int Data = csw_poll(TapeClock);
+				int Data = CSWPoll();
 				OldClock = TapeClock;
 
 				if (last_state != csw_state)
