@@ -913,21 +913,22 @@ void BeebWin::SaveUEFState(const char *FileName)
 
 void BeebWin::LoadUEFTape(const char *FileName)
 {
-	bool Success = ::LoadUEFTape(FileName);
+	UEFResult Result = ::LoadUEFTape(FileName);
 
-	if (!Success) {
-		switch (uef_errno) {
-			case UEF_OPEN_NOTUEF:
-			case UEF_OPEN_NOTTAPE:
-				Report(MessageType::Error, "The file selected is not a UEF tape image:\n  %s",
-				       FileName);
-				break;
+	switch (Result) {
+		case UEFResult::Success:
+			break;
 
-			case UEF_OPEN_NOFILE:
-			default:
-				Report(MessageType::Error, "Cannot open UEF file:\n  %s", FileName);
-				break;
-		}
+		case UEFResult::NotUEF:
+		case UEFResult::NotTape:
+			Report(MessageType::Error, "The file selected is not a UEF tape image:\n  %s",
+				      FileName);
+			break;
+
+		case UEFResult::NoFile:
+		default:
+			Report(MessageType::Error, "Cannot open UEF file:\n  %s", FileName);
+			break;
 	}
 }
 

@@ -18,7 +18,10 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* UEF tape file functions */
+// UEF tape file functions
+//
+// See UEF file format at
+// http://electrem.emuunlim.com/UEFSpecs.html
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +46,6 @@ struct uef_chunk_info
 	int end_time;
 };
 
-int uef_errno;
 static char uef_file_name[256];
 static uef_chunk_info *uef_chunk = NULL;
 static int uef_chunks = 0;
@@ -53,7 +55,7 @@ static bool uef_unlock = false;
 static int uef_last_put_data=UEF_EOF;
 static uef_chunk_info uef_put_chunk;
 
-static bool uef_write_chunk();
+static UEFResult uef_write_chunk();
 static float uef_decode_float(unsigned char *Float);
 static void uef_unlock_offset_and_crc(uef_chunk_info *ch);
 static int gzget16(gzFile f);
@@ -72,15 +74,15 @@ void uef_setunlock(bool unlock)
 	uef_unlock = unlock;
 }
 
-bool uef_create(const char *name)
+UEFResult uef_create(const char *filename)
 {
 	uef_close();
 
-	gzFile uef_file = gzopen(name, "wb");
-	if (uef_file == NULL)
+	gzFile uef_file = gzopen(filename, "wb");
+
+	if (uef_file == nullptr)
 	{
-		uef_errno = UEF_OPEN_NOFILE;
-		return false;
+		return UEFResult::NoFile;
 	}
 
 	gzwrite(uef_file, "UEF File!", 10);
@@ -90,12 +92,12 @@ bool uef_create(const char *name)
 	gzwrite(uef_file, "Created by BeebEm", 18);
 
 	gzclose(uef_file);
-	strcpy(uef_file_name, name);
+	strcpy(uef_file_name, filename);
 
-	return true;
+	return UEFResult::Success;
 }
 
-bool uef_open(const char *name)
+UEFResult uef_open(const char *name)
 {
 	gzFile uef_file;
 	char UEFId[10];
@@ -110,32 +112,33 @@ bool uef_open(const char *name)
 	uef_close();
 
 	uef_file = gzopen(name, "rb");
-	if (uef_file == NULL)
+	if (uef_file == nullptr)
 	{
-		uef_errno = UEF_OPEN_NOFILE;
-		return false;
+		return UEFResult::NoFile;
 	}
 
 	gzread(uef_file, UEFId, 10);
 	if (strcmp(UEFId,"UEF File!")!=0)
 	{
 		uef_close();
-		uef_errno = UEF_OPEN_NOTUEF;
-		return false;
+
+		return UEFResult::NotUEF;
 	}
 
 	ver = gzget16(uef_file);
 
 	uef_chunks = 0;
 	uef_chunk = (uef_chunk_info *)malloc(sizeof(uef_chunk_info));
-	if (uef_chunk == NULL)
+	if (uef_chunk == nullptr)
 	{
 		uef_close();
-		uef_errno = UEF_OPEN_MEMERR;
-		return false;
+
+		return UEFResult::OutOfMemory;
 	}
 
-	while (!error && !gzeof(uef_file))
+	UEFResult Result = UEFResult::Success;
+
+	while (Result == UEFResult::Success && !gzeof(uef_file))
 	{
 		ch = &uef_chunk[uef_chunks];
 		ch->type = gzget16(uef_file);
@@ -148,13 +151,11 @@ bool uef_open(const char *name)
 				ch->data = (unsigned char *)malloc(ch->len);
 				if (ch->data == NULL)
 				{
-					uef_errno = UEF_OPEN_MEMERR;
-					error = true;
+					Result = UEFResult::OutOfMemory;
 				}
 				else if (gzread(uef_file, ch->data, ch->len) != ch->len)
 				{
-					uef_errno = UEF_OPEN_NOTTAPE;
-					error = true;
+					Result = UEFResult::NotTape;
 				}
 				else
 				{
@@ -162,8 +163,7 @@ bool uef_open(const char *name)
 					ch = (uef_chunk_info *)realloc(uef_chunk, (uef_chunks+1) * sizeof(uef_chunk_info));
 					if (ch == NULL)
 					{
-						uef_errno = UEF_OPEN_MEMERR;
-						error = true;
+						Result = UEFResult::OutOfMemory;
 					}
 					else
 					{
@@ -178,8 +178,7 @@ bool uef_open(const char *name)
 		}
 		else if (ch->type >= 0x200)
 		{
-			uef_errno = UEF_OPEN_NOTTAPE;
-			error = true;
+			Result = UEFResult::NotTape;
 		}
 		else if (ch->len > 0)
 		{
@@ -187,10 +186,11 @@ bool uef_open(const char *name)
 		}
 	}
 
-	if (error)
+	if (Result != UEFResult::Success)
 	{
 		uef_close();
-		return false;
+
+		return Result;
 	}
 
 	clock = 0;
@@ -258,7 +258,7 @@ bool uef_open(const char *name)
 	gzclose(uef_file);
 	strcpy(uef_file_name, name);
 
-	return true;
+	return UEFResult::Success;
 }
 
 int uef_getdata(int time)
@@ -361,9 +361,9 @@ int uef_getdata(int time)
 	return(data);
 }
 
-bool uef_putdata(int data, int time)
+UEFResult uef_putdata(int data, int time)
 {
-	bool ok = true;
+	UEFResult Result = UEFResult::Success;
 	unsigned char *datap;
 
 	if (UEFRES_TYPE(data) != UEFRES_TYPE(uef_last_put_data))
@@ -374,7 +374,7 @@ bool uef_putdata(int data, int time)
 			if (uef_put_chunk.start_time != uef_put_chunk.end_time)
 			{
 				uef_put_chunk.type = 0x110;
-				ok = uef_write_chunk();
+				Result = uef_write_chunk();
 			}
 		}
 		else if (UEFRES_TYPE(uef_last_put_data) == UEF_GAP)
@@ -382,13 +382,13 @@ bool uef_putdata(int data, int time)
 			if (uef_put_chunk.start_time != uef_put_chunk.end_time)
 			{
 				uef_put_chunk.type = 0x112;
-				ok = uef_write_chunk();
+				Result = uef_write_chunk();
 			}
 		}
 		else if (UEFRES_TYPE(uef_last_put_data) == UEF_DATA)
 		{
 			uef_put_chunk.type = 0x100;
-			ok = uef_write_chunk();
+			Result = uef_write_chunk();
 		}
 
 		/* Reset for next chunk */
@@ -418,10 +418,9 @@ bool uef_putdata(int data, int time)
 		else
 			datap = (unsigned char *)realloc(uef_put_chunk.data, uef_put_chunk.len+1);
 
-		if (datap == NULL)
+		if (datap == nullptr)
 		{
-			uef_errno = UEF_OPEN_MEMERR;
-			ok = false;
+			Result = UEFResult::OutOfMemory;
 		}
 		else
 		{
@@ -433,7 +432,7 @@ bool uef_putdata(int data, int time)
 
 	uef_last_put_data = data;
 
-	return ok;
+	return Result;
 }
 
 void uef_close(void)
@@ -462,10 +461,10 @@ void uef_close(void)
 	uef_put_chunk.start_time = -1;
 }
 
-static bool uef_write_chunk()
+static UEFResult uef_write_chunk()
 {
 	gzFile uef_file = nullptr;
-	bool ok = true;
+	UEFResult Result = UEFResult::Success;
 	int l;
 
 	if (uef_file_name[0])
@@ -474,17 +473,15 @@ static bool uef_write_chunk()
 		uef_file = gzopen(uef_file_name, "ab");
 		if (uef_file == NULL)
 		{
-			uef_errno = UEF_OPEN_NOFILE;
-			ok = false;
+			Result = UEFResult::NoFile;
 		}
 	}
 	else
 	{
-		uef_errno = UEF_OPEN_NOFILE;
-		ok = false;
+		Result = UEFResult::NoFile;
 	}
 
-	if (ok)
+	if (Result == UEFResult::Success)
 	{
 		gzput16(uef_file, uef_put_chunk.type);
 
@@ -511,7 +508,7 @@ static bool uef_write_chunk()
 		gzclose(uef_file);
 	}
 
-	return ok;
+	return Result;
 }
 
 static void uef_unlock_offset_and_crc(uef_chunk_info *ch)

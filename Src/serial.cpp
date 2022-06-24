@@ -474,7 +474,7 @@ void Serial_Poll()
 				if (TxD > 0)
 				{
 					// Writing data
-					if (!uef_putdata(TDR|UEF_DATA, TapeClock))
+					if (uef_putdata(TDR | UEF_DATA, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", UEFTapeName);
@@ -499,7 +499,7 @@ void Serial_Poll()
 				else
 				{
 					// Tone
-					if (!uef_putdata(UEF_HTONE, TapeClock))
+					if (uef_putdata(UEF_HTONE, TapeClock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", UEFTapeName);
@@ -916,7 +916,8 @@ void Kill_Serial()
 	}
 }
 
-bool LoadUEFTape(const char *UEFName) {
+UEFResult LoadUEFTape(const char *UEFName)
+{
 	CloseUEF();
 
 	strcpy(UEFTapeName, UEFName);
@@ -930,9 +931,10 @@ bool LoadUEFTape(const char *UEFName) {
 	uef_setclock(TapeClockSpeed);
 	SetUnlockTape(UnlockTape);
 
-	bool Success = uef_open(UEFName);
+	UEFResult Result = uef_open(UEFName);
 
-	if (Success) {
+	if (Result == UEFResult::Success)
+	{
 		UEFOpen = true;
 		UEF_BUF=0;
 		TxD=0;
@@ -942,11 +944,12 @@ bool LoadUEFTape(const char *UEFName) {
 		SetTrigger(TAPECYCLES, TapeTrigger);
 		TapeControlUpdateCounter(TapeClock);
 	}
-	else {
-		UEFTapeName[0]=0;
+	else
+	{
+		UEFTapeName[0] = 0;
 	}
 
-	return Success;
+	return Result;
 }
 
 void RewindTape()
@@ -995,10 +998,11 @@ bool map_file(const char *file_name)
 
 	uef_setclock(TapeClockSpeed);
 
-	int file = uef_open(file_name);
-	if (file == 0)
+	UEFResult Result = uef_open(file_name);
+
+	if (Result != UEFResult::Success)
 	{
-		return(false);
+		return false;
 	}
 
 	i=0;
@@ -1305,7 +1309,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 								if (Continue)
 								{
 									// Create file
-									if (uef_create(UEFTapeName))
+									if (uef_create(UEFTapeName) == UEFResult::Success)
 									{
 										UEFOpen = true;
 									}
@@ -1400,8 +1404,7 @@ void LoadSerialUEF(FILE *SUEF)
 	fread(FileName,1,256,SUEF);
 	if (FileName[0])
 	{
-		LoadUEFTape(FileName);
-		if (!UEFOpen)
+		if (LoadUEFTape(FileName) != UEFResult::Success)
 		{
 			if (!TapeControlEnabled)
 			{

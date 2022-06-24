@@ -24,6 +24,8 @@ Boston, MA  02110-1301, USA.
 #ifndef SERIAL_HEADER
 #define SERIAL_HEADER
 
+#include "uef.h"
+
 constexpr int MAX_MAP_LINES = 4096;
 
 extern int map_lines;
@@ -53,7 +55,7 @@ void SerialInit();
 void Serial_Poll();
 void InitSerialPort();
 void Kill_Serial();
-bool LoadUEFTape(const char *FileName);
+UEFResult LoadUEFTape(const char *FileName);
 void RewindTape();
 
 extern volatile bool bSerialStateChanged;

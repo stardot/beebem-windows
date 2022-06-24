@@ -21,8 +21,6 @@ Boston, MA  02110-1301, USA.
 #ifndef _UEF_H
 #define _UEF_H
 
-extern int uef_errno;
-
 /* some defines related to the status byte - these may change! */
 
 #define UEF_MMASK			(3 << 16)
@@ -44,11 +42,13 @@ extern int uef_errno;
 #define UEFRES_STOPBIT(x)	(x&UEF_STOPBIT)
 
 /* some possible return states */
-#define UEF_OK				0
-#define UEF_OPEN_NOTUEF		-1
-#define UEF_OPEN_NOTTAPE	-2
-#define UEF_OPEN_NOFILE		-3
-#define UEF_OPEN_MEMERR		-4
+enum class UEFResult {
+	Success,
+	NotUEF,
+	NotTape,
+	NoFile,
+	OutOfMemory
+};
 
 /* setup */
 void uef_setclock(int beats);
@@ -58,11 +58,11 @@ void uef_setunlock(bool unlock);
 int uef_getdata(int time);
 
 /* open & close */
-bool uef_open(const char *name);
+UEFResult uef_open(const char *name);
 void uef_close(void);
 
 /* writing */
-bool uef_create(const char *name);
-bool uef_putdata(int data, int time);
+UEFResult uef_create(const char *name);
+UEFResult uef_putdata(int data, int time);
 
 #endif
