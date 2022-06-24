@@ -988,16 +988,10 @@ void SetUnlockTape(bool Unlock)
 
 bool map_file(const char *file_name)
 {
-	bool done=false;
-	int i;
-	int start_time;
-	int n;
-	int last_data;
+	bool done = false;
 	int blk = 0;
-	int blk_num;
 	char block[500];
 	bool std_last_block=true;
-	char name[11];
 
 	UEFSetClock(TapeClockSpeed);
 
@@ -1008,12 +1002,12 @@ bool map_file(const char *file_name)
 		return false;
 	}
 
-	i=0;
-	start_time=0;
-	map_lines=0;
-	last_data=0;
-	blk_num=0;
+	int i = 0;
+	int start_time = 0;
+	int last_data = 0;
+	int blk_num = 0;
 
+	map_lines = 0;
 	memset(map_desc, 0, sizeof(map_desc));
 	memset(map_time, 0, sizeof(map_time));
 
@@ -1044,22 +1038,29 @@ bool map_file(const char *file_name)
 						}
 
 						// Pull file name from block
-						n = 1;
+						std::string name;
+
+						int n = 1;
+
 						while (block[n] != 0 && block[n] >= 32 && block[n] <= 127 && n <= 10)
 						{
-							name[n-1] = block[n];
+							name += block[n];
 							n++;
 						}
-						name[n-1] = 0;
-						if (name[0] != 0)
-							sprintf(map_desc[map_lines], "%-12s %02X  Length %04X", name, blk_num, blk);
+
+						if (!name.empty())
+						{
+							sprintf(map_desc[map_lines], "%-12s %02X  Length %04X", name.c_str(), blk_num, blk);
+						}
 						else
+						{
 							sprintf(map_desc[map_lines], "<No name>    %02X  Length %04X", blk_num, blk);
+						}
 
 						map_time[map_lines]=start_time;
 
 						// Is this the last block for this file?
-						if (block[strlen(name) + 14] & 0x80)
+						if (block[name.size() + 14] & 0x80)
 						{
 							blk_num=-1;
 							++map_lines;
@@ -1117,7 +1118,8 @@ bool map_file(const char *file_name)
 				}
 			}
 		}
-		last_data=data;
+
+		last_data = data;
 		i++;
 	}
 
