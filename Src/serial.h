@@ -68,6 +68,7 @@ void Serial_Poll();
 void InitSerialPort();
 void Kill_Serial();
 UEFResult LoadUEFTape(const char *FileName);
+void CloseTape();
 void RewindTape();
 
 extern volatile bool bSerialStateChanged;

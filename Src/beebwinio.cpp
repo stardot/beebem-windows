@@ -913,6 +913,8 @@ void BeebWin::SaveUEFState(const char *FileName)
 
 void BeebWin::LoadUEFTape(const char *FileName)
 {
+	CloseTape();
+
 	UEFResult Result = ::LoadUEFTape(FileName);
 
 	switch (Result) {
@@ -934,6 +936,8 @@ void BeebWin::LoadUEFTape(const char *FileName)
 
 void BeebWin::LoadCSWTape(const char *FileName)
 {
+	CloseTape();
+
 	CSWResult Result = ::LoadCSW(FileName);
 
 	switch (Result) {

@@ -892,8 +892,7 @@ void SerialInit()
 
 void Kill_Serial()
 {
-	CloseUEF();
-	CloseCSW();
+	CloseTape();
 
 	if (SerialPortOpen)
 	{
@@ -936,6 +935,12 @@ UEFResult LoadUEFTape(const char *UEFName)
 	}
 
 	return Result;
+}
+
+void CloseTape()
+{
+	CloseUEF();
+	CloseCSW();
 }
 
 void RewindTape()
@@ -1254,8 +1259,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 				case IDC_TCEJECT:
 					TapeControlStopRecording(false);
 					TapeAudio.Enabled = false;
-					CloseUEF();
-					CloseCSW();
+					CloseTape();
 					return TRUE;
 
 				case IDC_TCRECORD:
