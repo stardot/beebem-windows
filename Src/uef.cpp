@@ -464,8 +464,8 @@ static UEFResult UEFWriteChunk()
 		{
 			case 0x100:
 				// Data block
-				gzput32(OutputFile, uef_put_chunk.data.size());
-				gzwrite(OutputFile, &uef_put_chunk.data[0], uef_put_chunk.data.size());
+				gzput32(OutputFile, (int)uef_put_chunk.data.size());
+				gzwrite(OutputFile, &uef_put_chunk.data[0], (int)uef_put_chunk.data.size());
 				break;
 			case 0x110: {
 				// Carrier tone
