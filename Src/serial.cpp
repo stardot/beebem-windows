@@ -73,9 +73,9 @@ static unsigned char SerialULAControl; // Serial ULA / SERPROC control register;
 
 static bool RTS;
 static bool FirstReset = true;
-static unsigned char DCD = 0;
-static unsigned char DCDI = 1;
-static unsigned char ODCDI = 1;
+static bool DCD = false;
+static bool DCDI = true;
+static bool ODCDI = true;
 static unsigned char DCDClear = 0; // count to clear DCD bit
 
 static unsigned char Parity, StopBits, DataBits;
@@ -204,7 +204,10 @@ void SerialACIAWriteControl(unsigned char Value)
 			RTS = true;
 		}
 
-		ACIA_Status &= ~MC6850_STATUS_DCD; DCD=0; DCDI=0; DCDClear=0;
+		ACIA_Status &= ~MC6850_STATUS_DCD;
+		DCD = false;
+		DCDI = false;
+		DCDClear = 0;
 		ACIA_Status |= MC6850_STATUS_TDRE; // Transmit data register empty
 		SetTrigger(TAPECYCLES, TapeTrigger);
 	}
@@ -362,13 +365,13 @@ unsigned char SerialULARead()
 
 unsigned char SerialACIAReadStatus()
 {
-//	if (DCDI==0 && DCD!=0)
+//	if (!DCDI && DCD)
 //	{
 //		DCDClear++;
 //		if (DCDClear > 1) {
-//			DCD=0;
+//			DCD = false;
 //			ACIA_Status &= ~(1 << MC6850_STATUS_DCS);
-//			DCDClear=0;
+//			DCDClear = 0;
 //		}
 //	}
 	if (DebugEnabled)
@@ -419,13 +422,13 @@ void HandleData(unsigned char Data)
 unsigned char SerialACIAReadRxData()
 {
 	unsigned char TData;
-//	if (DCDI==0 && DCD!=0)
+//	if (!DCDI && DCD)
 //	{
 //		DCDClear++;
 //		if (DCDClear > 1) {
-//			DCD=0;
+//			DCD = false;
 //			ACIA_Status &= ~(1 << MC6850_STATUS_DCS);
-//			DCDClear=0;
+//			DCDClear = 0;
 //		}
 //	}
 	ACIA_Status &= ~MC6850_STATUS_IRQ;
@@ -541,7 +544,7 @@ void Serial_Poll()
 				// New data read in, so do something about it
 				if (UEFRES_TYPE(UEF_BUF) == UEF_CARRIER_TONE)
 				{
-					DCDI = 1;
+					DCDI = true;
 					TapeAudio.Signal = 2;
 					// TapeAudio.Samples = 0;
 					TapeAudio.BytePos = 11;
@@ -549,13 +552,13 @@ void Serial_Poll()
 
 				if (UEFRES_TYPE(UEF_BUF) == UEF_GAP)
 				{
-					DCDI = 1;
+					DCDI = true;
 					TapeAudio.Signal = 0;
 				}
 
 				if (UEFRES_TYPE(UEF_BUF) == UEF_DATA)
 				{
-					DCDI = 0;
+					DCDI = false;
 					HandleData(UEFRES_BYTE(UEF_BUF));
 					TapeAudio.Data       = (UEFRES_BYTE(UEF_BUF) << 1) | 1;
 					TapeAudio.BytePos    = 1;
@@ -590,21 +593,21 @@ void Serial_Poll()
 
 				if (csw_state == CSWState::WaitingForTone)
 				{
-					DCDI = 1;
+					DCDI = true;
 					TapeAudio.Signal = 0;
 				}
 
 				// New data read in, so do something about it
 				if (csw_state == CSWState::Tone)
 				{
-					DCDI = 1;
+					DCDI = true;
 					TapeAudio.Signal  = 2;
 					TapeAudio.BytePos = 11;
 				}
 
 				if (Data >= 0 && csw_state == CSWState::Data)
 				{
-					DCDI = 0;
+					DCDI = false;
 					HandleData((unsigned char)Data);
 					TapeAudio.Data       = (Data << 1) | 1;
 					TapeAudio.BytePos    = 1;
@@ -625,7 +628,7 @@ void Serial_Poll()
 				}
 			}
 
-			if (DCDI == 1 && ODCDI == 0)
+			if (DCDI && !ODCDI)
 			{
 				// low to high transition on the DCD line
 				if (RIE)
@@ -634,20 +637,22 @@ void Serial_Poll()
 					intStatus |= 1 << serial;
 				}
 
-				DCD = 1;
+				DCD = true;
 				ACIA_Status |= MC6850_STATUS_DCD; // ACIA_Status &= ~MC6850_STATUS_RDRF;
 				DCDClear = 0;
 			}
 
-			if (DCDI == 0 && ODCDI == 1)
+			if (!DCDI && ODCDI)
 			{
-				DCD = 0;
+				DCD = false;
 				ACIA_Status &= ~MC6850_STATUS_DCD;
 				DCDClear = 0;
 			}
 
 			if (DCDI != ODCDI)
+			{
 				ODCDI = DCDI;
+			}
 		}
 	}
 
@@ -1355,6 +1360,8 @@ void TapeControlStopRecording(bool RefreshControl)
 
 void SaveSerialUEF(FILE *SUEF)
 {
+	// TODO: Save/Restore state when CSW file is open
+
 	if (UEFFileOpen)
 	{
 		fput16(0x0473,SUEF);
@@ -1390,13 +1397,13 @@ void SaveSerialUEF(FILE *SUEF)
 
 void LoadSerialUEF(FILE *SUEF)
 {
-	char FileName[256];
-	int sp;
-
 	CloseTape();
 
 	SerialChannel = static_cast<SerialDevice>(fgetc(SUEF));
+
+	char FileName[256];
 	fread(FileName,1,256,SUEF);
+
 	if (FileName[0])
 	{
 		if (LoadUEFTape(FileName) != UEFResult::Success)
@@ -1427,15 +1434,15 @@ void LoadSerialUEF(FILE *SUEF)
 			ACIA_Status = fget8(SUEF);
 			ACIA_Control = fget8(SUEF);
 			SerialULAControl = fget8(SUEF);
-			DCD = fget8(SUEF);
-			DCDI = fget8(SUEF);
-			ODCDI = fget8(SUEF);
+			DCD = fgetbool(SUEF);
+			DCDI = fgetbool(SUEF);
+			ODCDI = fgetbool(SUEF);
 			DCDClear = fget8(SUEF);
 			TapeClock=fget32(SUEF);
-			sp=fget32(SUEF);
-			if (sp != TapeClockSpeed)
+			int Speed = fget32(SUEF);
+			if (Speed != TapeClockSpeed)
 			{
-				TapeClock = (int)((double)TapeClock * ((double)TapeClockSpeed / sp));
+				TapeClock = (int)((double)TapeClock * ((double)TapeClockSpeed / Speed));
 			}
 			TapeControlUpdateCounter(TapeClock);
 		}
