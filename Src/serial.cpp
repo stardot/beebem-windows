@@ -211,7 +211,10 @@ void SerialACIAWriteControl(unsigned char Value)
 		DCD = false;
 		DCDI = false;
 		DCDClear = 0;
+
+		TxD = 0;
 		ACIA_Status |= MC6850_STATUS_TDRE; // Transmit data register empty
+
 		SetTrigger(TAPECYCLES, TapeTrigger);
 	}
 
