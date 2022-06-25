@@ -40,10 +40,16 @@ FileDialog::FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength,
 
 bool FileDialog::ShowDialog(bool open)
 {
-	m_ofn.lpstrFile[0] = 0;
+	m_ofn.lpstrFile[0] = '\0';
 
 	if (open)
+	{
 		return GetOpenFileName(&m_ofn) != 0;
+	}
 	else
+	{
+		m_ofn.Flags |= OFN_OVERWRITEPROMPT;
+
 		return GetSaveFileName(&m_ofn) != 0;
+	}
 }

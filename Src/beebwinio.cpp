@@ -49,8 +49,6 @@ using std::max;
 #include "disctype.h"
 #include "uefstate.h"
 #include "serial.h"
-#include "csw.h"
-#include "uef.h"
 #include "avi.h"
 #include "ext1770.h"
 #include "tube.h"
@@ -918,8 +916,6 @@ void BeebWin::SaveUEFState(const char *FileName)
 
 void BeebWin::LoadUEFTape(const char *FileName)
 {
-	CloseTape();
-
 	UEFResult Result = ::LoadUEFTape(FileName);
 
 	switch (Result) {
@@ -929,7 +925,7 @@ void BeebWin::LoadUEFTape(const char *FileName)
 		case UEFResult::NotUEF:
 		case UEFResult::NotTape:
 			Report(MessageType::Error, "The file selected is not a UEF tape image:\n  %s",
-				      FileName);
+			       FileName);
 			break;
 
 		case UEFResult::NoFile:
@@ -941,9 +937,7 @@ void BeebWin::LoadUEFTape(const char *FileName)
 
 void BeebWin::LoadCSWTape(const char *FileName)
 {
-	CloseTape();
-
-	CSWResult Result = ::CSWOpen(FileName);
+	CSWResult Result = ::LoadCSWTape(FileName);
 
 	switch (Result) {
 		case CSWResult::Success:

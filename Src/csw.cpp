@@ -137,21 +137,6 @@ CSWResult CSWOpen(const char *FileName)
 	csw_tonecount = 0;
 	bit_count = -1;
 
-	strcpy(TapeFileName, FileName);
-
-	CSWFileOpen = true;
-	TxD = 0;
-	RxD = 0;
-	TapeClock = 0;
-	OldClock = 0;
-	SetTrigger(CSWPollCycles, TapeTrigger);
-
-	if (TapeControlEnabled)
-	{
-		map_csw_file();
-		TapeControlOpenFile(TapeFileName);
-	}
-
 	return CSWResult::Success;
 }
 

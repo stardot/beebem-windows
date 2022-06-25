@@ -26,6 +26,7 @@ Boston, MA  02110-1301, USA.
 
 #include <vector>
 
+#include "csw.h"
 #include "uef.h"
 
 struct TapeMapEntry
@@ -74,12 +75,12 @@ void Serial_Poll();
 void InitSerialPort();
 void Kill_Serial();
 UEFResult LoadUEFTape(const char *FileName);
+CSWResult LoadCSWTape(const char *FileName);
 void CloseTape();
 void RewindTape();
 
 extern volatile bool bSerialStateChanged;
 extern bool TapeControlEnabled;
-extern char TapeFileName[256];
 extern bool UnlockTape;
 extern unsigned char TxD,RxD;
 extern int TapeClock,OldClock;
@@ -88,8 +89,8 @@ extern int TapeClockSpeed;
 void SetTapeSpeed(int speed);
 void SetUnlockTape(bool unlock);
 void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain);
-void TapeControlOpenFile(const char *UEFName);
-void TapeControlCloseDialog(void);
+void TapeControlAddMapLines();
+void TapeControlCloseDialog();
 void SaveSerialUEF(FILE *SUEF);
 void LoadSerialUEF(FILE *SUEF);
 

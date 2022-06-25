@@ -85,7 +85,7 @@ bool RIE, TIE; // Receive Interrupt Enable and Transmit Interrupt Enable
 unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
 
 static UEFFileWriter UEFWriter;
-char TapeFileName[256]; // Filename of current tape file
+static char TapeFileName[256]; // Filename of current tape file
 bool UEFFileOpen = false;
 
 struct WordSelectBits
@@ -130,7 +130,8 @@ CycleCountT TapeTrigger=CycleCountTMax;
 constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
 
 static int UEF_BUF=0,NEW_UEF_BUF=0;
-int TapeClock=0,OldClock=0;
+int TapeClock = 0;
+int OldClock = 0;
 int TapeClockSpeed = 5600;
 bool UnlockTape = true;
 
@@ -145,6 +146,8 @@ static HWND hwndMap;
 static void TapeControlUpdateCounter(int tape_time);
 static void TapeControlRecord();
 static void TapeControlStopRecording(bool RefreshControl);
+
+static bool map_file();
 
 // This bit is the Serial Port stuff
 bool SerialPortEnabled;
@@ -474,7 +477,8 @@ void Serial_Poll()
 
 						TapeControlStopRecording(true);
 					}
-					TxD=0;
+
+					TxD = 0;
 					ACIA_Status |= MC6850_STATUS_TDRE;
 
 					if (TIE)
@@ -517,7 +521,7 @@ void Serial_Poll()
 			{
 				// WriteLog("Ignoring Writes\n");
 
-				TxD=0;
+				TxD = 0;
 				ACIA_Status |= MC6850_STATUS_TDRE;
 
 				if (TIE)
@@ -530,7 +534,7 @@ void Serial_Poll()
 			if (CassetteRelay && UEFFileOpen && TapeClock != OldClock)
 			{
 				NEW_UEF_BUF = UEFGetData(TapeClock);
-				OldClock=TapeClock;
+				OldClock = TapeClock;
 			}
 
 			if ((NEW_UEF_BUF != UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF) == UEF_CARRIER_TONE || UEFRES_TYPE(NEW_UEF_BUF) == UEF_GAP) &&
@@ -909,14 +913,39 @@ void Kill_Serial()
 	}
 }
 
-UEFResult LoadUEFTape(const char *UEFName)
+CSWResult LoadCSWTape(const char *FileName)
 {
-	CloseUEF();
+	CloseTape();
 
-	strcpy(TapeFileName, UEFName);
+	CSWResult Result = CSWOpen(FileName);
 
-	if (TapeControlEnabled)
-		TapeControlOpenFile(UEFName);
+	if (Result == CSWResult::Success)
+	{
+		CSWFileOpen = true;
+		strcpy(TapeFileName, FileName);
+
+		TxD = 0;
+		RxD = 0;
+		TapeClock = 0;
+		OldClock = 0;
+		SetTrigger(CSWPollCycles, TapeTrigger);
+
+		map_csw_file();
+
+		csw_ptr = 0;
+
+		if (TapeControlEnabled)
+		{
+			TapeControlAddMapLines();
+		}
+	}
+
+	return Result;
+}
+
+UEFResult LoadUEFTape(const char *FileName)
+{
+	CloseTape();
 
 	// Clock values:
 	// 5600 - Normal speed - anything higher is a bit slow
@@ -924,22 +953,32 @@ UEFResult LoadUEFTape(const char *UEFName)
 	UEFSetClock(TapeClockSpeed);
 	SetUnlockTape(UnlockTape);
 
-	UEFResult Result = UEFOpen(UEFName);
+	UEFResult Result = UEFOpen(FileName);
 
 	if (Result == UEFResult::Success)
 	{
 		UEFFileOpen = true;
-		UEF_BUF=0;
-		TxD=0;
-		RxD=0;
-		TapeClock=0;
-		OldClock=0;
+		strcpy(TapeFileName, FileName);
+
+		UEF_BUF = 0;
+		TxD = 0;
+		RxD = 0;
+		TapeClock = 0;
+		OldClock = 0;
 		SetTrigger(TAPECYCLES, TapeTrigger);
+
+		int Clock = TapeClock;
+
+		map_file();
+
+		TapeClock = Clock;
+
+		if (TapeControlEnabled)
+		{
+			TapeControlAddMapLines();
+		}
+
 		TapeControlUpdateCounter(TapeClock);
-	}
-	else
-	{
-		TapeFileName[0] = '\0';
 	}
 
 	return Result;
@@ -950,6 +989,8 @@ void CloseTape()
 	CloseUEF();
 	CSWClose();
 
+	TapeFileName[0] = '\0';
+
 	if (TapeControlEnabled)
 	{
 		SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
@@ -959,10 +1000,12 @@ void CloseTape()
 void RewindTape()
 {
 	TapeControlStopRecording(true);
-	UEF_BUF=0;
-	TapeClock=0;
-	OldClock=0;
+
+	UEF_BUF = 0;
+	TapeClock = 0;
+	OldClock = 0;
 	SetTrigger(TAPECYCLES, TapeTrigger);
+
 	TapeControlUpdateCounter(TapeClock);
 
 	csw_state = CSWState::WaitingForTone;
@@ -976,8 +1019,13 @@ void SetTapeSpeed(int Speed)
 {
 	int NewClock = (int)((double)TapeClock * ((double)Speed / TapeClockSpeed));
 	TapeClockSpeed = Speed;
+
 	if (UEFFileOpen)
-		LoadUEFTape(TapeFileName);
+	{
+		std::string FileName = TapeFileName;
+		LoadUEFTape(FileName.c_str());
+	}
+
 	TapeClock = NewClock;
 }
 
@@ -988,7 +1036,7 @@ void SetUnlockTape(bool Unlock)
 
 //*******************************************************************
 
-static bool map_file(const char *file_name)
+static bool map_file()
 {
 	bool done = false;
 	int blk = 0;
@@ -996,13 +1044,6 @@ static bool map_file(const char *file_name)
 	bool std_last_block = true;
 
 	UEFSetClock(TapeClockSpeed);
-
-	UEFResult Result = UEFOpen(file_name);
-
-	if (Result != UEFResult::Success)
-	{
-		return false;
-	}
 
 	int i = 0;
 	int start_time = 0;
@@ -1123,8 +1164,6 @@ static bool map_file(const char *file_name)
 		i++;
 	}
 
-	UEFClose();
-
 	return true;
 }
 
@@ -1134,8 +1173,6 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, L
 
 void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 {
-	int Clock;
-
 	TapeControlEnabled = true;
 
 	if (!IsWindow(hwndTapeControl)) {
@@ -1148,21 +1185,7 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 		SendMessage(hwndMap, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
 		            (LPARAM)MAKELPARAM(FALSE,0));
 
-		if (UEFFileOpen)
-		{
-			Clock = TapeClock;
-			LoadUEFTape(TapeFileName);
-			TapeClock = Clock;
-			TapeControlUpdateCounter(TapeClock);
-		}
-
-		if (CSWFileOpen)
-		{
-			Clock = csw_ptr;
-			CSWOpen(TapeFileName);
-			csw_ptr = Clock;
-			TapeControlUpdateCounter(csw_ptr);
-		}
+		TapeControlAddMapLines();
 	}
 }
 
@@ -1178,28 +1201,16 @@ void TapeControlCloseDialog()
 	TapeRecording = false;
 }
 
-void TapeControlOpenFile(const char *UEFName)
+void TapeControlAddMapLines()
 {
-	if (TapeControlEnabled)
+	SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
+
+	for (const TapeMapEntry& line : map_lines)
 	{
-		if (!CSWFileOpen)
-		{
-			if (!map_file(UEFName))
-			{
-				mainWin->Report(MessageType::Error,
-				                "Cannot open UEF file:\n  %s", UEFName);
-
-				return;
-			}
-		}
-
-		SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
-
-		for (const TapeMapEntry& line : map_lines)
-			SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)line.desc.c_str());
-
-		TapeControlUpdateCounter(0);
+		SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)line.desc.c_str());
 	}
+
+	TapeControlUpdateCounter(UEFFileOpen ? TapeClock : csw_ptr);
 }
 
 void TapeControlUpdateCounter(int tape_time)
@@ -1226,9 +1237,13 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 
 		case WM_ACTIVATE:
 			if (LOWORD(wParam) == WA_INACTIVE)
-				hCurrentDialog = NULL;
+			{
+				hCurrentDialog = nullptr;
+			}
 			else
+			{
 				hCurrentDialog = hwndTapeControl;
+			}
 			return FALSE;
 
 		case WM_COMMAND:
@@ -1284,6 +1299,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					return TRUE;
 			}
 	}
+
 	return FALSE;
 }
 
@@ -1296,50 +1312,29 @@ void TapeControlRecord()
 
 		if (mainWin->NewTapeImage(FileName))
 		{
-			bool Continue = true;
+			CloseTape();
 
-			FILE *fd = fopen(FileName, "rb");
-			if (fd != NULL)
+			// Create file
+			if (UEFWriter.Open(FileName) == UEFResult::Success)
 			{
-				fclose(fd);
+				strcpy(TapeFileName, FileName);
+				UEFFileOpen = true;
 
-				if (mainWin->Report(MessageType::Question,
-				                    "File already exists:\n  %s\n\nOverwrite file?",
-				                    FileName) != MessageResult::Yes)
-				{
-					Continue = false;
-				}
-			}
-
-			if (Continue)
-			{
-				CloseTape();
-
-				// Create file
-				if (UEFWriter.Open(FileName) == UEFResult::Success)
-				{
-					strcpy(TapeFileName, FileName);
-					UEFFileOpen = true;
-				}
-				else
-				{
-					mainWin->Report(MessageType::Error,
-					                "Error creating tape file:\n  %s", TapeFileName);
-
-					TapeFileName[0] = '\0';
-					Continue = false;
-				}
-			}
-
-			if (Continue)
-			{
 				TapeRecording = true;
 				TapePlaying = false;
 				TapeAudio.Enabled = CassetteRelay;
 			}
+			else
+			{
+				mainWin->Report(MessageType::Error,
+				                "Error creating tape file:\n  %s", TapeFileName);
+
+				TapeFileName[0] = '\0';
+			}
 		}
 	}
 }
+
 void TapeControlStopRecording(bool RefreshControl)
 {
 	if (TapeRecording)
@@ -1351,7 +1346,9 @@ void TapeControlStopRecording(bool RefreshControl)
 
 		if (RefreshControl)
 		{
-			LoadUEFTape(TapeFileName);
+			std::string FileName = TapeFileName;
+
+			LoadUEFTape(FileName.c_str());
 		}
 	}
 }

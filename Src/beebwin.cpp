@@ -187,7 +187,6 @@ BeebWin::BeebWin()
 	aviWriter = NULL;
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
-	TapeFileName[0] = '\0';
 	m_AutoSavePrefsCMOS = false;
 	m_AutoSavePrefsFolders = false;
 	m_AutoSavePrefsAll = false;
@@ -3727,9 +3726,13 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case ID_TAPECONTROL:
 		if (TapeControlEnabled)
+		{
 			TapeControlCloseDialog();
+		}
 		else
+		{
 			TapeControlOpenDialog(hInst, m_hWnd);
+		}
 		break;
 
 	case ID_BREAKOUT:
