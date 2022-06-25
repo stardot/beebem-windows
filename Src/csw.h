@@ -33,7 +33,7 @@ enum class CSWResult {
 CSWResult CSWOpen(const char *FileName);
 void CSWClose();
 
-int csw_data(void);
+int csw_data();
 int CSWPoll();
 void map_csw_file();
 

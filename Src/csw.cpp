@@ -66,7 +66,8 @@ CSWResult CSWOpen(const char *FileName)
 
 	FILE* csw_file = fopen(FileName, "rb");
 
-	if (csw_file == nullptr) {
+	if (csw_file == nullptr)
+	{
 		return CSWResult::OpenFailed;
 	}
 
@@ -75,8 +76,8 @@ CSWResult CSWOpen(const char *FileName)
 
 	/* Read header */
 	if (fread(file_buf, 1, 0x34, csw_file) != 0x34 ||
-		strncmp((const char*)file_buf, "Compressed Square Wave", 0x16) != 0 ||
-		file_buf[0x16] != 0x1a)
+	    strncmp((const char*)file_buf, "Compressed Square Wave", 0x16) != 0 ||
+	    file_buf[0x16] != 0x1a)
 	{
 		fclose(csw_file);
 		return CSWResult::InvalidCSWFile;
@@ -84,7 +85,11 @@ CSWResult CSWOpen(const char *FileName)
 
 	// WriteLog("CSW version: %d.%d\n", (int)file_buf[0x17], (int)file_buf[0x18]);
 
-	int sample_rate = file_buf[0x19] + (file_buf[0x1a] << 8) + (file_buf[0x1b] << 16) + (file_buf[0x1c] << 24);
+	int sample_rate = file_buf[0x19] |
+	                  (file_buf[0x1a] << 8) |
+	                  (file_buf[0x1b] << 16) |
+	                  (file_buf[0x1c] << 24);
+
 	// int total_samples = file_buf[0x1d] + (file_buf[0x1e] << 8) + (file_buf[0x1f] << 16) + (file_buf[0x20] << 24);
 	// int compression_type = file_buf[0x21];
 	// int flags = file_buf[0x22];
@@ -176,7 +181,7 @@ void HexDump(const char *buff, int count)
 }
 */
 
-void map_csw_file(void)
+void map_csw_file()
 {
 	CSWState last_state = CSWState::Undefined;
 	char block[65535];
@@ -209,12 +214,14 @@ again:
 			start_time = csw_ptr;
 		}
 
-		if (last_state != csw_state && csw_state == CSWState::Tone) {
+		if (last_state != csw_state && csw_state == CSWState::Tone)
+		{
 			// Remember start position of last tone state
 			last_tone = csw_ptr;
 		}
 
-		if (last_state == CSWState::Data && csw_state == CSWState::WaitingForTone && block_ptr > 0) {
+		if (last_state == CSWState::Data && csw_state == CSWState::WaitingForTone && block_ptr > 0)
+		{
 			// WriteLog("Decoded Block of length %d, starting at %d\n", block_ptr, start_time);
 			// HexDump(block, block_ptr);
 
@@ -242,7 +249,7 @@ again:
 				if (!std_last_block)
 				{
 					// Change of block type, must be first block
-					blk_num=0;
+					blk_num = 0;
 					if (!map_lines.empty() && !map_lines.back().desc.empty() != 0)
 					{
 						map_lines.emplace_back("", start_time);
@@ -253,10 +260,10 @@ again:
 				n = 1;
 				while (block[n] != 0 && block[n] >= 32 && n <= 10)
 				{
-					name[n-1] = block[n];
+					name[n - 1] = block[n];
 					n++;
 				}
-				name[n-1] = 0;
+				name[n - 1] = 0;
 
 				if (name[0] != 0)
 				{
@@ -272,7 +279,7 @@ again:
 				// Is this the last block for this file?
 				if (block[strlen(name) + 14] & 0x80)
 				{
-					blk_num=-1;
+					blk_num = -1;
 					map_lines.emplace_back("", csw_ptr);
 				}
 
@@ -284,6 +291,7 @@ again:
 				{
 					// Change of block type, must be first block
 					blk_num = 0;
+
 					if (!map_lines.empty() && !map_lines.back().desc.empty())
 					{
 						map_lines.emplace_back("", csw_ptr);
@@ -302,7 +310,8 @@ again:
 			block_ptr = -1;
 		}
 
-		if (data != -1 && block_ptr >= 0) {
+		if (data != -1 && block_ptr >= 0)
+		{
 			block[block_ptr++] = (unsigned char)data;
 		}
 	}
@@ -319,14 +328,15 @@ again:
 	bit_count = -1;
 }
 
-int csw_data(void)
+int csw_data()
 {
 	static int last = -1;
 
 	int t = 0;
 	int j = 1;
 
-	if (last != Clk_Divide) {
+	if (last != Clk_Divide)
+	{
 		// WriteLog("Baud Rate changed to %s\n", (Clk_Divide == 16) ? "1200" : "300");
 		last = Clk_Divide;
 	}
@@ -334,14 +344,13 @@ int csw_data(void)
 	if (Clk_Divide == 16) j = 1; // 1200 baud
 	if (Clk_Divide == 64) j = 4; // 300 baud
 
-/*
- * JW 18/11/06
- * For 300 baud, just average 4 samples
- * Really need to adjust clock speed as well, as we are loading 300 baud 4 times too quick !
- * But it works
- */
+	// JW 18/11/06
+	// For 300 baud, just average 4 samples
+	// Really need to adjust clock speed as well, as we are loading 300 baud 4 times too quick !
+	// But it works
 
-	if (csw_state == CSWState::WaitingForTone || csw_state == CSWState::Tone) {
+	if (csw_state == CSWState::WaitingForTone || csw_state == CSWState::Tone)
+	{
 		// Only read 1 bit whilst looking for start bit
 		j = 1;
 	}
@@ -355,8 +364,11 @@ int csw_data(void)
 			if ((unsigned long)csw_ptr + 4 < csw_bufflen)
 			{
 				csw_ptr++;
-				csw_pulselen = csw_buff[csw_ptr] + (csw_buff[csw_ptr + 1] << 8) + (csw_buff[csw_ptr + 2] << 16) + (csw_buff[csw_ptr + 3] << 24);
-				csw_ptr+= 4;
+				csw_pulselen = csw_buff[csw_ptr] |
+				               (csw_buff[csw_ptr + 1] << 8) |
+				               (csw_buff[csw_ptr + 2] << 16) |
+				               (csw_buff[csw_ptr + 3] << 24);
+				csw_ptr += 4;
 			}
 			else
 			{
@@ -370,7 +382,7 @@ int csw_data(void)
 			csw_pulselen = csw_buff[csw_ptr++];
 		}
 
-		t = t + csw_pulselen;
+		t += csw_pulselen;
 	}
 
 	// WriteLog("Pulse %d, duration %d\n", csw_pulsecount, csw_pulselen);
@@ -387,6 +399,7 @@ int CSWPoll()
 	if (bit_count == -1)
 	{
 		bit_count = csw_data();
+
 		if (bit_count == -1)
 		{
 			CSWClose();
@@ -426,11 +439,13 @@ int CSWPoll()
 				csw_state = CSWState::WaitingForTone;
 				csw_tonecount = 0;
 			}
-			else if (csw_pulselen > 0x0d && csw_pulselen < 0x14) {
+			else if (csw_pulselen > 0x0d && csw_pulselen < 0x14)
+			{
 				// Not in tone any more - data start bit
 				// WriteLog("Entered data at %d\n", csw_pulsecount);
 
-				if (Clk_Divide == 64) {
+				if (Clk_Divide == 64)
+				{
 					// Skip 300 baud data
 					csw_data();
 					csw_data();
@@ -439,7 +454,8 @@ int CSWPoll()
 
 				bit_count = csw_data(); // Skip next half of wave
 
-				if (Clk_Divide == 64) {
+				if (Clk_Divide == 64)
+				{
 					// Skip 300 baud data
 					csw_data();
 					csw_data();
@@ -460,7 +476,8 @@ int CSWPoll()
 					bit_count = csw_data(); // Skip next half of wave
 					csw_byte >>= 1;
 
-					if (csw_pulselen > 0x14) {
+					if (csw_pulselen > 0x14)
+					{
 						// Noisy pulse so reset to tone
 						csw_state = CSWState::WaitingForTone;
 						csw_tonecount = 0;
@@ -473,8 +490,8 @@ int CSWPoll()
 						bit_count += csw_data();
 						csw_byte |= 0x80;
 					}
-					csw_bit++;
-					if (csw_bit == 8)
+
+					if (++csw_bit == 8)
 					{
 						ret = csw_byte;
 						// WriteLog("Returned data byte of %02x at %d\n", ret, csw_pulsecount);
@@ -485,7 +502,8 @@ int CSWPoll()
 				case CSWDataState::StopBits:
 					bit_count = csw_data();
 
-					if (csw_pulselen > 0x14) {
+					if (csw_pulselen > 0x14)
+					{
 						// Noisy pulse so reset to tone
 						csw_state = CSWState::WaitingForTone;
 						csw_tonecount = 0;
@@ -497,6 +515,7 @@ int CSWPoll()
 						bit_count += csw_data();
 						bit_count += csw_data();
 					}
+
 					csw_datastate = CSWDataState::ToneOrStartBit; // tone/start bit
 					break;
 
