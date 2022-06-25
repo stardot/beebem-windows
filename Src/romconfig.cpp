@@ -341,20 +341,7 @@ static bool SaveROMConfigFile(HWND hWnd)
 /****************************************************************************/
 bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
 {
-	FILE *fd = fopen(filename, "r");
-	if (fd)
-	{
-		fclose(fd);
-
-		if (mainWin->Report(MessageType::Question,
-		                    "File already exists:\n  %s\n\nOverwrite file?",
-		                    filename) != MessageResult::Yes)
-		{
-			return false;
-		}
-	}
-
-	fd = fopen(filename, "w");
+	FILE *fd = fopen(filename, "w");
 	if (!fd)
 	{
 		mainWin->Report(MessageType::Error,

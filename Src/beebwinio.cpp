@@ -440,26 +440,18 @@ void BeebWin::NewDiscImage(int Drive)
 
 /****************************************************************************/
 void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
-                              int Heads, int Tracks) {
-	bool Success = true;
+                              int Heads, int Tracks)
+{
+	FILE *outfile = fopen(FileName, "wb");
 
-	// First check if file already exists
-	FILE *outfile = fopen(FileName, "rb");
-	if (outfile != nullptr) {
-		fclose(outfile);
-
-		if (Report(MessageType::Question,
-		           "File already exists:\n  %s\n\nOverwrite file?",
-		           FileName) != MessageResult::Yes)
-			return;
-	}
-
-	outfile = fopen(FileName, "wb");
-	if (outfile == nullptr) {
+	if (outfile == nullptr)
+	{
 		Report(MessageType::Error, "Could not create disc file:\n  %s",
 		       FileName);
 		return;
 	}
+
+	bool Success = true;
 
 	const int NumSectors = Tracks * 10;
 
@@ -645,8 +637,6 @@ bool BeebWin::PrinterFile()
 /****************************************************************************/
 void BeebWin::TogglePrinter()
 {
-	bool FileOK = true;
-
 	m_printerbufferlen = 0;
 
 	if (PrinterEnabled)
@@ -658,24 +648,13 @@ void BeebWin::TogglePrinter()
 		if (m_MenuIdPrinterPort == IDM_PRINTER_FILE)
 		{
 			if (strlen(m_PrinterFileName) == 0)
+			{
 				PrinterFile();
+			}
+
 			if (strlen(m_PrinterFileName) != 0)
 			{
-				/* First check if file already exists */
-				FILE *outfile = fopen(m_PrinterFileName,"rb");
-				if (outfile != NULL)
-				{
-					fclose(outfile);
-
-					if (Report(MessageType::Question,
-					           "File already exists:\n  %s\n\nOverwrite file?",
-					           m_PrinterFileName) != MessageResult::Yes)
-					{
-						FileOK = false;
-					}
-				}
-				if (FileOK)
-					PrinterEnable(m_PrinterFileName);
+				PrinterEnable(m_PrinterFileName);
 			}
 		}
 		else if (m_MenuIdPrinterPort == IDM_PRINTER_CLIPBOARD)
@@ -1164,8 +1143,11 @@ void BeebWin::SaveUserKeyMap()
 		{
 			strcat(FileName,".kmap");
 		}
+
 		if (WriteKeyMap(FileName, &UserKeymap))
+		{
 			strcpy(m_UserKeyMapPath, FileName);
+		}
 	}
 }
 
@@ -1233,47 +1215,30 @@ bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
 /****************************************************************************/
 bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
 {
-	bool success = true;
+	FILE *outfile = fopen(filename, "w");
 
-	/* First check if file already exists */
-	FILE *outfile = fopen(filename,"r");
-
-	if (outfile != NULL)
-	{
-		fclose(outfile);
-
-		if (Report(MessageType::Question,
-		           "File already exists:\n  %s\n\nOverwrite file?") != MessageResult::Yes)
-		{
-			return false;
-		}
-	}
-
-	outfile=fopen(filename,"w");
-	if (outfile == NULL)
+	if (outfile == nullptr)
 	{
 		Report(MessageType::Error, "Failed to write key map file:\n  %s", filename);
-		success = false;
+		return false;
 	}
-	else
+
+	fprintf(outfile, KEYMAP_TOKEN "\n\n");
+
+	for (int i = 0; i < 256; ++i)
 	{
-		fprintf(outfile, KEYMAP_TOKEN "\n\n");
-
-		for (int i = 0; i < 256; ++i)
-		{
-			fprintf(outfile, "%d %d %d %d %d %d\n",
-					(*keymap)[i][0].row,
-					(*keymap)[i][0].col,
-					(*keymap)[i][0].shift,
-					(*keymap)[i][1].row,
-					(*keymap)[i][1].col,
-					(*keymap)[i][1].shift);
-		}
-
-		fclose(outfile);
+		fprintf(outfile, "%d %d %d %d %d %d\n",
+		        (*keymap)[i][0].row,
+		        (*keymap)[i][0].col,
+		        (*keymap)[i][0].shift,
+		        (*keymap)[i][1].row,
+		        (*keymap)[i][1].col,
+		        (*keymap)[i][1].shift);
 	}
 
-	return success;
+	fclose(outfile);
+
+	return true;
 }
 
 /****************************************************************************/
