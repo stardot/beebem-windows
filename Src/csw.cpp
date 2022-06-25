@@ -181,7 +181,7 @@ void HexDump(const char *buff, int count)
 }
 */
 
-void map_csw_file()
+void CSWCreateTapeMap()
 {
 	CSWState last_state = CSWState::Undefined;
 	char block[65535];

@@ -71,7 +71,7 @@ extern bool SerialPortEnabled;
 extern unsigned char SerialPort;
 
 void SerialInit();
-void Serial_Poll();
+void SerialPoll();
 void InitSerialPort();
 void Kill_Serial();
 UEFResult LoadUEFTape(const char *FileName);

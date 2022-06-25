@@ -3106,7 +3106,7 @@ static void PollHardware(unsigned int nCycles)
 	VideoPoll(nCycles);
 	if (!BasicHardwareOnly) {
 		AtoD_poll(nCycles);
-		Serial_Poll();
+		SerialPoll();
 	}
 	Disc8271Poll();
 	Music5000Poll(nCycles);

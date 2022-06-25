@@ -147,7 +147,7 @@ static void TapeControlUpdateCounter(int tape_time);
 static void TapeControlRecord();
 static void TapeControlStopRecording(bool RefreshControl);
 
-static bool map_file();
+static bool UEFCreateTapeMap();
 
 // This bit is the Serial Port stuff
 bool SerialPortEnabled;
@@ -459,7 +459,7 @@ unsigned char SerialACIAReadRxData()
 	return TData;
 }
 
-void Serial_Poll()
+void SerialPoll()
 {
 	if (SerialChannel == SerialDevice::Cassette)
 	{
@@ -930,7 +930,7 @@ CSWResult LoadCSWTape(const char *FileName)
 		OldClock = 0;
 		SetTrigger(CSWPollCycles, TapeTrigger);
 
-		map_csw_file();
+		CSWCreateTapeMap();
 
 		csw_ptr = 0;
 
@@ -969,7 +969,7 @@ UEFResult LoadUEFTape(const char *FileName)
 
 		int Clock = TapeClock;
 
-		map_file();
+		UEFCreateTapeMap();
 
 		TapeClock = Clock;
 
@@ -1036,7 +1036,7 @@ void SetUnlockTape(bool Unlock)
 
 //*******************************************************************
 
-static bool map_file()
+static bool UEFCreateTapeMap()
 {
 	bool done = false;
 	int blk = 0;

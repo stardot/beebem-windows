@@ -33,9 +33,8 @@ enum class CSWResult {
 CSWResult CSWOpen(const char *FileName);
 void CSWClose();
 
-int csw_data();
 int CSWPoll();
-void map_csw_file();
+void CSWCreateTapeMap();
 
 enum class CSWState {
 	WaitingForTone,
