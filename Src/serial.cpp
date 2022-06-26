@@ -760,30 +760,25 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled) {
 			if (GetOverlappedResult(hSerialPort,&olStatus,&dwOvRes,FALSE)) {
 				// Event waiting in dwCommEvent
-				if ((dwCommEvent & EV_RXCHAR) && !bWaitingForData) {
+				if ((dwCommEvent & EV_RXCHAR) && !bWaitingForData)
+				{
 					bCharReady = true;
 				}
-				if (dwCommEvent & EV_CTS) {
+
+				if (dwCommEvent & EV_CTS)
+				{
 					// CTS line change
 					GetCommModemStatus(hSerialPort,&LineStat);
 
-					// Invert for CTS bit
+					// Invert for CTS bit, Keep for TDRE bit
 					if (LineStat & MS_CTS_ON)
 					{
 						ACIA_Status &= ~MC6850_STATUS_CTS;
-					}
-					else
-					{
-						ACIA_Status |= MC6850_STATUS_CTS;
-					}
-
-					// Keep for TDRE bit
-					if (LineStat & MS_CTS_ON)
-					{
 						ACIA_Status |= MC6850_STATUS_TDRE;
 					}
 					else
 					{
+						ACIA_Status |= MC6850_STATUS_CTS;
 						ACIA_Status &= ~MC6850_STATUS_TDRE;
 					}
 				}
@@ -802,6 +797,7 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 			InitThreads();
 			bSerialStateChanged = false;
 		}
+
 		Sleep(0);
 	} while(1);
 
@@ -835,6 +831,7 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 		{
 			Sleep(100); // Don't hog CPU if nothing happening
 		}
+
 		Sleep(0);
 	} while (1);
 
@@ -892,8 +889,8 @@ void CloseUEF()
 		TapeControlStopRecording(false);
 		UEFClose();
 		UEFFileOpen = false;
-		TxD=0;
-		RxD=0;
+		TxD = 0;
+		RxD = 0;
   }
 }
 
