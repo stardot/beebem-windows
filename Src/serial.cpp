@@ -86,7 +86,9 @@ unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift regis
 
 static UEFFileWriter UEFWriter;
 static char TapeFileName[256]; // Filename of current tape file
-bool UEFFileOpen = false;
+
+static UEFFileReader UEFReader;
+static bool UEFFileOpen = false;
 
 struct WordSelectBits
 {
@@ -542,7 +544,7 @@ void SerialPoll()
 
 			if (CassetteRelay && UEFFileOpen && TapeClock != OldClock)
 			{
-				NEW_UEF_BUF = UEFGetData(TapeClock);
+				NEW_UEF_BUF = UEFReader.GetData(TapeClock);
 				OldClock = TapeClock;
 			}
 
@@ -929,7 +931,7 @@ void CloseUEF()
 	if (UEFFileOpen)
 	{
 		TapeControlStopRecording(false);
-		UEFClose();
+		UEFReader.Close();
 		UEFFileOpen = false;
 		TxD = 0;
 		RxD = 0;
@@ -992,10 +994,10 @@ UEFResult LoadUEFTape(const char *FileName)
 	// Clock values:
 	// 5600 - Normal speed - anything higher is a bit slow
 	// 750 - Recommended minium settings, fastest reliable load
-	UEFSetClock(TapeClockSpeed);
+	UEFReader.SetClock(TapeClockSpeed);
 	SetUnlockTape(UnlockTape);
 
-	UEFResult Result = UEFOpen(FileName);
+	UEFResult Result = UEFReader.Open(FileName);
 
 	if (Result == UEFResult::Success)
 	{
@@ -1073,7 +1075,7 @@ void SetTapeSpeed(int Speed)
 
 void SetUnlockTape(bool Unlock)
 {
-	UEFSetUnlock(Unlock);
+	UEFReader.SetUnlock(Unlock);
 }
 
 //*******************************************************************
@@ -1085,7 +1087,7 @@ static bool UEFCreateTapeMap()
 	char block[500];
 	bool std_last_block = true;
 
-	UEFSetClock(TapeClockSpeed);
+	UEFReader.SetClock(TapeClockSpeed);
 
 	int i = 0;
 	int start_time = 0;
@@ -1098,7 +1100,7 @@ static bool UEFCreateTapeMap()
 
 	while (!done)
 	{
-		int data = UEFGetData(i);
+		int data = UEFReader.GetData(i);
 
 		if (data != last_data)
 		{

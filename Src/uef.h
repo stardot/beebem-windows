@@ -82,19 +82,33 @@ class UEFFileWriter
 		UEFChunkInfo m_Chunk;
 };
 
-// Setup
-void UEFSetClock(int Speed);
-void UEFSetUnlock(bool Unlock);
+class UEFFileReader
+{
+	public:
+		UEFFileReader();
+		~UEFFileReader();
 
-// Poll mode
-int UEFGetData(int Time);
+	public:
+		UEFResult Open(const char *FileName);
+		void Close();
 
-// Open & close
-UEFResult UEFOpen(const char *FileName);
-void UEFClose();
+		// Setup
+		void SetClock(int Speed);
+		void SetUnlock(bool Unlock);
 
-// Writing
-UEFResult UEFCreate(const char *FileName);
-UEFResult UEFPutData(int Data, int Time);
+		// Poll mode
+		int GetData(int Time);
+
+	private:
+		UEFResult LoadData(const char *FileName);
+		UEFChunkInfo* FindChunk(int Time);
+
+	private:
+		std::string m_FileName;
+		std::vector<UEFChunkInfo> m_Chunks;
+		int m_ClockSpeed = 5600;
+		UEFChunkInfo *m_LastChunk;
+		bool m_Unlock;
+};
 
 #endif

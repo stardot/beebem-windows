@@ -38,12 +38,6 @@ Boston, MA  02110-1301, USA.
 // Beats representing normal tape speed (not sure why its 5600)
 constexpr int NORMAL_TAPE_SPEED = 5600;
 
-static std::string UEFFileName;
-static std::vector<UEFChunkInfo> uef_chunks;
-static int uef_clock_speed = 5600;
-static UEFChunkInfo *uef_last_chunk = nullptr;
-static bool uef_unlock = false;
-
 static float UEFDecodeFloat(unsigned char* data);
 static void UEFUnlockOffsetAndCRC(UEFChunkInfo& ch);
 
@@ -51,17 +45,6 @@ static int gzget16(gzFile f);
 static int gzget32(gzFile f);
 static void gzput16(gzFile f, int b);
 static void gzput32(gzFile f, int b);
-
-void UEFSetClock(int Speed)
-{
-	// Speed = bit samples per second?
-	uef_clock_speed = Speed;
-}
-
-void UEFSetUnlock(bool Unlock)
-{
-	uef_unlock = Unlock;
-}
 
 UEFFileWriter::UEFFileWriter() :
 	m_OutputFile(nullptr),
@@ -91,7 +74,7 @@ UEFResult UEFFileWriter::Open(const char *FileName)
 	gzwrite(m_OutputFile, "UEF File!", 10);
 	gzput16(m_OutputFile, 0x000a); // V0.10
 	gzput16(m_OutputFile, 0);
-	gzput32(m_OutputFile, CreatedBy.size() + 1); // +1 includes NUL terminator
+	gzput32(m_OutputFile, static_cast<int>(CreatedBy.size() + 1)); // +1 includes NUL terminator
 	gzputs(m_OutputFile, CreatedBy.c_str());
 	gzputc(m_OutputFile, 0);
 
@@ -209,7 +192,114 @@ void UEFFileWriter::Close()
 	m_Chunk.start_time = -1;
 }
 
-static UEFResult LoadUEFData(const char *FileName)
+UEFFileReader::UEFFileReader() :
+	m_ClockSpeed(5600),
+	m_LastChunk(nullptr),
+	m_Unlock(false)
+{
+}
+
+UEFFileReader::~UEFFileReader()
+{
+	Close();
+}
+
+void UEFFileReader::SetClock(int Speed)
+{
+	// Speed = bit samples per second?
+	m_ClockSpeed = Speed;
+}
+
+void UEFFileReader::SetUnlock(bool Unlock)
+{
+	m_Unlock = Unlock;
+}
+
+UEFResult UEFFileReader::Open(const char *FileName)
+{
+	Close();
+
+	UEFResult Result = LoadData(FileName);
+
+	if (Result != UEFResult::Success)
+	{
+		return Result;
+	}
+
+	int clock = 0;
+	int baud = 1200;
+
+	for (UEFChunkInfo& chunk : m_Chunks)
+	{
+		chunk.start_time = clock;
+
+		switch (chunk.type)
+		{
+			case 0x100:
+				// Implicit start/stop bit tape data block
+				clock += (int)(chunk.len * m_ClockSpeed * 10.0 / baud);
+				UEFUnlockOffsetAndCRC(chunk);
+				break;
+			case 0x101:
+				// Multiplexed data block (not supported)
+				break;
+			case 0x102:
+				// Explicit tape data block (not supported)
+				break;
+			case 0x104:
+				// Defined tape format data block
+				clock += (int)((double)(chunk.len-3) * m_ClockSpeed * 10.0 / baud);
+				UEFUnlockOffsetAndCRC(chunk);
+				break;
+			case 0x110:
+				// Carrier tone
+				chunk.l1 = chunk.data[0] + (chunk.data[1] << 8);
+				clock += (int)((double)chunk.l1 * m_ClockSpeed / (baud * 2.0));
+				break;
+			case 0x111: {
+				// Carrier tone with dummy byte
+				chunk.l1 = chunk.data[0] + (chunk.data[1] << 8);
+				chunk.l2 = chunk.data[2] + (chunk.data[3] << 8);
+				int len = chunk.l1 + chunk.l2 + 160; // 160 for dummy byte
+				clock += (int)((double)len * m_ClockSpeed / (baud * 2.0));
+				break;
+			}
+			case 0x112:
+				// Integer gap
+				chunk.l1 = chunk.data[0] + (chunk.data[1] << 8);
+				clock += (int)((double)chunk.l1 * m_ClockSpeed / (baud * 2.0));
+				break;
+			case 0x113:
+				// Change of base frequency
+				baud = (int)UEFDecodeFloat(&chunk.data[0]);
+				if (baud <= 0)
+					baud = 1200;
+				break;
+			case 0x114:
+				// Security cycles
+				chunk.l1 = chunk.data[0] | (chunk.data[1] << 8) | (chunk.data[2] << 16);
+				chunk.l1 = (chunk.l1 + 7) / 8;
+				clock += (int)(chunk.l1 * m_ClockSpeed * 10.0 / baud);
+				break;
+			case 0x115:
+				// Phase change (not supported)
+				break;
+			case 0x116:
+				// Gap (not in http://electrem.emuunlim.com/UEFSpecs.htm)
+				clock += (int)(UEFDecodeFloat(&chunk.data[0]) * m_ClockSpeed);
+				break;
+			case 0x120:
+				// Position marker (not supported)
+				break;
+		}
+
+		chunk.end_time = clock;
+	}
+
+	return UEFResult::Success;
+}
+
+UEFResult UEFFileReader::LoadData(const char *FileName)
 {
 	gzFile InputFile = gzopen(FileName, "rb");
 
@@ -223,14 +313,14 @@ static UEFResult LoadUEFData(const char *FileName)
 
 	if (strcmp(UEFId, "UEF File!") != 0)
 	{
-		UEFClose();
+		Close();
 
 		return UEFResult::NotUEF;
 	}
 
 	const int ver = gzget16(InputFile);
 
-	uef_chunks.clear();
+	m_Chunks.clear();
 
 	UEFResult Result = UEFResult::Success;
 
@@ -249,7 +339,7 @@ static UEFResult LoadUEFData(const char *FileName)
 
 				if (gzread(InputFile, &chunk.data[0], chunk.len) == chunk.len)
 				{
-					uef_chunks.push_back(chunk);
+					m_Chunks.push_back(chunk);
 				}
 				else
 				{
@@ -271,114 +361,30 @@ static UEFResult LoadUEFData(const char *FileName)
 
 	if (Result != UEFResult::Success)
 	{
-		UEFClose();
+		Close();
 		return Result;
 	}
 
-	UEFFileName = FileName;
+	m_FileName = FileName;
 
 	return Result;
 }
 
-UEFResult UEFOpen(const char *FileName)
+UEFChunkInfo* UEFFileReader::FindChunk(int Time)
 {
-	UEFClose();
-
-	UEFResult Result = LoadUEFData(FileName);
-
-	if (Result != UEFResult::Success)
+	if (m_LastChunk != nullptr &&
+	    Time >= m_LastChunk->start_time && Time < m_LastChunk->end_time)
 	{
-		return Result;
-	}
-
-	int clock = 0;
-	int baud = 1200;
-
-	for (UEFChunkInfo& chunk : uef_chunks)
-	{
-		chunk.start_time = clock;
-
-		switch (chunk.type)
-		{
-			case 0x100:
-				// Implicit start/stop bit tape data block
-				clock += (int)(chunk.len * uef_clock_speed * 10.0 / baud);
-				UEFUnlockOffsetAndCRC(chunk);
-				break;
-			case 0x101:
-				// Multiplexed data block (not supported)
-				break;
-			case 0x102:
-				// Explicit tape data block (not supported)
-				break;
-			case 0x104:
-				// Defined tape format data block
-				clock += (int)((double)(chunk.len-3) * uef_clock_speed * 10.0 / baud);
-				UEFUnlockOffsetAndCRC(chunk);
-				break;
-			case 0x110:
-				// Carrier tone
-				chunk.l1 = chunk.data[0] + (chunk.data[1] << 8);
-				clock += (int)((double)chunk.l1 * uef_clock_speed / (baud * 2.0));
-				break;
-			case 0x111: {
-				// Carrier tone with dummy byte
-				chunk.l1 = chunk.data[0] + (chunk.data[1] << 8);
-				chunk.l2 = chunk.data[2] + (chunk.data[3] << 8);
-				int len = chunk.l1 + chunk.l2 + 160; // 160 for dummy byte
-				clock += (int)((double)len * uef_clock_speed / (baud * 2.0));
-				break;
-			}
-			case 0x112:
-				// Integer gap
-				chunk.l1 = chunk.data[0] + (chunk.data[1] << 8);
-				clock += (int)((double)chunk.l1 * uef_clock_speed / (baud * 2.0));
-				break;
-			case 0x113:
-				// Change of base frequency
-				baud = (int)UEFDecodeFloat(&chunk.data[0]);
-				if (baud <= 0)
-					baud = 1200;
-				break;
-			case 0x114:
-				// Security cycles
-				chunk.l1 = chunk.data[0] | (chunk.data[1] << 8) | (chunk.data[2] << 16);
-				chunk.l1 = (chunk.l1 + 7) / 8;
-				clock += (int)(chunk.l1 * uef_clock_speed * 10.0 / baud);
-				break;
-			case 0x115:
-				// Phase change (not supported)
-				break;
-			case 0x116:
-				// Gap (not in http://electrem.emuunlim.com/UEFSpecs.htm)
-				clock += (int)(UEFDecodeFloat(&chunk.data[0]) * uef_clock_speed);
-				break;
-			case 0x120:
-				// Position marker (not supported)
-				break;
-		}
-
-		chunk.end_time = clock;
-	}
-
-	return UEFResult::Success;
-}
-
-static UEFChunkInfo* UEFFindChunk(int Time)
-{
-	if (uef_last_chunk != nullptr &&
-	    Time >= uef_last_chunk->start_time && Time < uef_last_chunk->end_time)
-	{
-		return uef_last_chunk;
+		return m_LastChunk;
 	}
 	else
 	{
-		for (UEFChunkInfo& chunk : uef_chunks)
+		for (UEFChunkInfo& chunk : m_Chunks)
 		{
 			if (Time >= chunk.start_time && Time < chunk.end_time)
 			{
-				uef_last_chunk = &chunk;
-				return uef_last_chunk;
+				m_LastChunk = &chunk;
+				return m_LastChunk;
 			}
 		}
 	}
@@ -386,9 +392,9 @@ static UEFChunkInfo* UEFFindChunk(int Time)
 	return nullptr;
 }
 
-int UEFGetData(int Time)
+int UEFFileReader::GetData(int Time)
 {
-	UEFChunkInfo *ch = UEFFindChunk(Time);
+	UEFChunkInfo *ch = FindChunk(Time);
 
 	if (ch == nullptr)
 		return UEF_EOF;
@@ -407,7 +413,7 @@ int UEFGetData(int Time)
 			i = (int)((double)(Time - ch->start_time) / (ch->end_time - ch->start_time) * (ch->len - j));
 			data = UEF_DATA | ch->data[i + j] | ((i & 0x7f) << 24);
 
-			if (uef_unlock)
+			if (m_Unlock)
 			{
 				if (i == ch->unlock_offset)
 				{
@@ -473,12 +479,11 @@ int UEFGetData(int Time)
 	return data;
 }
 
-void UEFClose()
+void UEFFileReader::Close()
 {
-	uef_chunks.clear();
-
-	UEFFileName.clear();
-	uef_last_chunk = nullptr;
+	m_Chunks.clear();
+	m_FileName.clear();
+	m_LastChunk = nullptr;
 }
 
 static void UEFUnlockOffsetAndCRC(UEFChunkInfo& chunk)
