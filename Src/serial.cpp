@@ -1154,14 +1154,16 @@ static bool UEFCreateTapeMap()
 					}
 					else
 					{
+						// Replace time counter in previous blank line
+						if (!map_lines.empty() && map_lines.back().desc.empty())
+						{
+							map_lines.back().time = start_time;
+						}
+
 						sprintf(desc, "Non-standard %02X  Length %04X", blk_num, blk);
 						map_lines.emplace_back(desc, start_time);
 						std_last_block = false;
 					}
-
-					// Replace time counter in previous blank lines
-					if (!map_lines.empty() && map_lines.back().desc.empty())
-						map_lines.back().time = start_time;
 
 					// Data block recorded
 					blk_num++;
