@@ -156,21 +156,17 @@ unsigned char SerialPort;
 static HANDLE hSerialThread = nullptr;
 static HANDLE hStatThread = nullptr;
 static HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
-static DCB dcbSerialPort; // Serial port device control block
 static char nSerialPort[5]; // Serial port name
 static const char *pnSerialPort = nSerialPort;
 bool SerialPortOpen = false; // Indicates status of serial port (on the host)
 static unsigned int SerialBuffer=0,SerialWriteBuffer=0;
 static DWORD BytesIn,BytesOut;
-static DWORD LineStat;
 static DWORD dwCommEvent;
 static OVERLAPPED olSerialPort={0},olSerialWrite={0},olStatus={0};
 volatile bool bSerialStateChanged = false;
 static volatile bool bWaitingForData = false;
 static volatile bool bWaitingForStat = false;
 static volatile bool bCharReady = false;
-static COMMTIMEOUTS ctSerialPort;
-static DWORD dwClrCommError;
 
 TapeMapEntry::TapeMapEntry(const std::string& d, int t) :
 	desc(d),
@@ -243,12 +239,18 @@ void SerialACIAWriteControl(unsigned char Value)
 	// Change serial port settings
 	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled)
 	{
+		DCB dcbSerialPort{}; // Serial port device control block
+		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
 		GetCommState(hSerialPort, &dcbSerialPort);
+
 		dcbSerialPort.ByteSize  = DataBits;
 		dcbSerialPort.StopBits  = (StopBits == 1) ? ONESTOPBIT : TWOSTOPBITS;
 		dcbSerialPort.Parity    = Parity;
 		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
 		SetCommState(hSerialPort, &dcbSerialPort);
+
 		// Check RTS
 		EscapeCommFunction(hSerialPort, RTS ? CLRRTS : SETRTS);
 	}
@@ -351,10 +353,14 @@ void SerialULAWrite(unsigned char Value)
 	if (SerialChannel == SerialDevice::RS423)
 	{
 		unsigned int HigherRate = std::max(Rx_Rate, Tx_Rate);
-		GetCommState(hSerialPort,&dcbSerialPort);
-		dcbSerialPort.BaudRate=HigherRate;
-		dcbSerialPort.DCBlength=sizeof(dcbSerialPort);
-		SetCommState(hSerialPort,&dcbSerialPort);
+
+		DCB dcbSerialPort{}; // Serial port device control block
+		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
+		GetCommState(hSerialPort, &dcbSerialPort);
+		dcbSerialPort.BaudRate  = HigherRate;
+		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+		SetCommState(hSerialPort, &dcbSerialPort);
 	}
 }
 
@@ -683,23 +689,35 @@ void SerialPoll()
 		}
 		else
 		{
-			if (!bWaitingForStat && !bSerialStateChanged) {
-				WaitCommEvent(hSerialPort,&dwCommEvent,&olStatus);
+			if (!bWaitingForStat && !bSerialStateChanged)
+			{
+				WaitCommEvent(hSerialPort, &dwCommEvent, &olStatus);
 				bWaitingForStat = true;
 			}
 
-			if (!bSerialStateChanged && bCharReady && !bWaitingForData && RxD < 2) {
-				if (!ReadFile(hSerialPort,&SerialBuffer,1,&BytesIn,&olSerialPort)) {
-					if (GetLastError()==ERROR_IO_PENDING) {
+			if (!bSerialStateChanged && bCharReady && !bWaitingForData && RxD < 2)
+			{
+				if (!ReadFile(hSerialPort, &SerialBuffer, 1, &BytesIn, &olSerialPort))
+				{
+					if (GetLastError() == ERROR_IO_PENDING)
+					{
 						bWaitingForData = true;
-					} else {
+					}
+					else
+					{
 						mainWin->Report(MessageType::Error, "Serial Port Error");
 					}
-				} else {
-					if (BytesIn>0) {
+				}
+				else
+				{
+					if (BytesIn > 0)
+					{
 						HandleData((unsigned char)SerialBuffer);
-					} else {
-						ClearCommError(hSerialPort, &dwClrCommError,NULL);
+					}
+					else
+					{
+						DWORD CommError;
+						ClearCommError(hSerialPort, &CommError, nullptr);
 						bCharReady = false;
 					}
 				}
@@ -757,8 +775,10 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 
 	do {
 		if (!TouchScreenEnabled && !EthernetPortEnabled &&
-		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled) {
-			if (GetOverlappedResult(hSerialPort,&olStatus,&dwOvRes,FALSE)) {
+		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled)
+		{
+			if (GetOverlappedResult(hSerialPort, &olStatus, &dwOvRes, FALSE))
+			{
 				// Event waiting in dwCommEvent
 				if ((dwCommEvent & EV_RXCHAR) && !bWaitingForData)
 				{
@@ -768,7 +788,8 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 				if (dwCommEvent & EV_CTS)
 				{
 					// CTS line change
-					GetCommModemStatus(hSerialPort,&LineStat);
+					DWORD LineStat;
+					GetCommModemStatus(hSerialPort, &LineStat);
 
 					// Invert for CTS bit, Keep for TDRE bit
 					if (LineStat & MS_CTS_ON)
@@ -809,20 +830,31 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 	// New Serial port thread - 7:35pm 16/10/2001 GMT
 	// This sorta runs as a seperate process in effect, checking
 	// enable status, and doing the monitoring.
-	do {
-		if (!bSerialStateChanged && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled && bWaitingForData) {
-			DWORD spResult = WaitForSingleObject(olSerialPort.hEvent, INFINITE); // 10ms to respond
-			if (spResult==WAIT_OBJECT_0) {
-				if (GetOverlappedResult(hSerialPort,&olSerialPort,&BytesIn,FALSE)) {
+
+	do
+	{
+		if (!bSerialStateChanged && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled && bWaitingForData)
+		{
+			DWORD Result = WaitForSingleObject(olSerialPort.hEvent, INFINITE); // 10ms to respond
+
+			if (Result == WAIT_OBJECT_0)
+			{
+				if (GetOverlappedResult(hSerialPort, &olSerialPort, &BytesIn, FALSE))
+				{
 					// sucessful read, screw any errors.
-					if (SerialChannel == SerialDevice::RS423 && BytesIn > 0) {
+					if (SerialChannel == SerialDevice::RS423 && BytesIn > 0)
+					{
 						HandleData((unsigned char)SerialBuffer);
 					}
 
-					if (BytesIn==0) {
+					if (BytesIn == 0)
+					{
 						bCharReady = false;
-						ClearCommError(hSerialPort, &dwClrCommError,NULL);
+
+						DWORD CommError;
+						ClearCommError(hSerialPort, &CommError, nullptr);
 					}
+
 					bWaitingForData = false;
 				}
 			}
@@ -840,44 +872,54 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 
 void InitSerialPort()
 {
-	BOOL bPortStat;
 	// Initialise COM port
-	if (SerialPortEnabled && SerialPort > 0) {
+	if (SerialPortEnabled && SerialPort > 0)
+	{
 		if (SerialPort==1) pnSerialPort="Com1";
 		if (SerialPort==2) pnSerialPort="Com2";
 		if (SerialPort==3) pnSerialPort="Com3";
 		if (SerialPort==4) pnSerialPort="Com4";
 		hSerialPort=CreateFile(pnSerialPort,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,0);
-		if (hSerialPort==INVALID_HANDLE_VALUE) {
+		if (hSerialPort == INVALID_HANDLE_VALUE)
+		{
 			mainWin->Report(MessageType::Error, "Could not open specified serial port");
 			bSerialStateChanged = true;
 			SerialPortEnabled = false;
 			mainWin->UpdateSerialMenu();
 		}
-		else {
-			bPortStat=SetupComm(hSerialPort, 1280, 1280);
-			bPortStat=GetCommState(hSerialPort, &dcbSerialPort);
-			dcbSerialPort.fBinary=TRUE;
-			dcbSerialPort.BaudRate=9600;
-			dcbSerialPort.Parity=NOPARITY;
-			dcbSerialPort.StopBits=ONESTOPBIT;
-			dcbSerialPort.ByteSize=8;
-			dcbSerialPort.fDtrControl=DTR_CONTROL_DISABLE;
-			dcbSerialPort.fOutxCtsFlow=FALSE;
-			dcbSerialPort.fOutxDsrFlow=FALSE;
-			dcbSerialPort.fOutX=FALSE;
-			dcbSerialPort.fDsrSensitivity=FALSE;
-			dcbSerialPort.fInX=FALSE;
-			dcbSerialPort.fRtsControl=RTS_CONTROL_DISABLE; // Leave it low (do not send) for now
-			dcbSerialPort.DCBlength=sizeof(dcbSerialPort);
-			bPortStat=SetCommState(hSerialPort, &dcbSerialPort);
-			ctSerialPort.ReadIntervalTimeout=MAXDWORD;
-			ctSerialPort.ReadTotalTimeoutConstant=0;
-			ctSerialPort.ReadTotalTimeoutMultiplier=0;
-			ctSerialPort.WriteTotalTimeoutConstant=0;
-			ctSerialPort.WriteTotalTimeoutMultiplier=0;
-			SetCommTimeouts(hSerialPort,&ctSerialPort);
-			SetCommMask(hSerialPort,EV_CTS | EV_RXCHAR | EV_ERR);
+		else
+		{
+			BOOL bPortStat = SetupComm(hSerialPort, 1280, 1280);
+
+			DCB dcbSerialPort{}; // Serial port device control block
+			dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
+			bPortStat = GetCommState(hSerialPort, &dcbSerialPort);
+			dcbSerialPort.fBinary         = TRUE;
+			dcbSerialPort.BaudRate        = 9600;
+			dcbSerialPort.Parity          = NOPARITY;
+			dcbSerialPort.StopBits        = ONESTOPBIT;
+			dcbSerialPort.ByteSize        = 8;
+			dcbSerialPort.fDtrControl     = DTR_CONTROL_DISABLE;
+			dcbSerialPort.fOutxCtsFlow    = FALSE;
+			dcbSerialPort.fOutxDsrFlow    = FALSE;
+			dcbSerialPort.fOutX           = FALSE;
+			dcbSerialPort.fDsrSensitivity = FALSE;
+			dcbSerialPort.fInX            = FALSE;
+			dcbSerialPort.fRtsControl     = RTS_CONTROL_DISABLE; // Leave it low (do not send) for now
+
+			bPortStat = SetCommState(hSerialPort, &dcbSerialPort);
+
+			COMMTIMEOUTS CommTimeOuts{};
+			CommTimeOuts.ReadIntervalTimeout         = MAXDWORD;
+			CommTimeOuts.ReadTotalTimeoutConstant    = 0;
+			CommTimeOuts.ReadTotalTimeoutMultiplier  = 0;
+			CommTimeOuts.WriteTotalTimeoutConstant   = 0;
+			CommTimeOuts.WriteTotalTimeoutMultiplier = 0;
+
+			SetCommTimeouts(hSerialPort, &CommTimeOuts);
+
+			SetCommMask(hSerialPort, EV_CTS | EV_RXCHAR | EV_ERR);
 		}
 	}
 }
