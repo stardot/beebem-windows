@@ -29,17 +29,8 @@ Boston, MA  02110-1301, USA.
 #include "csw.h"
 #include "uef.h"
 
-struct TapeMapEntry
-{
-	std::string desc;
-	int time;
-
-	TapeMapEntry(const std::string& d, int t);
-};
-
-extern std::vector<TapeMapEntry> map_lines;
-
-extern unsigned int Tx_Rate, Rx_Rate;
+extern unsigned int Tx_Rate;
+extern unsigned int Rx_Rate;
 extern unsigned char Clk_Divide;
 
 // MC6850 status register bits
@@ -91,6 +82,7 @@ void SetUnlockTape(bool unlock);
 void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain);
 void TapeControlAddMapLines();
 void TapeControlCloseDialog();
+
 void SaveSerialUEF(FILE *SUEF);
 void LoadSerialUEF(FILE *SUEF);
 

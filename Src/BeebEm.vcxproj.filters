@@ -75,6 +75,9 @@
     <ClCompile Include="debug.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DebugTrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="DirectSoundStreamer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -142,6 +145,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sysvia.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TapeMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="teletext.cpp">
@@ -240,9 +246,6 @@
     <ClCompile Include="zlib\zutil.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="DebugTrace.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h">
@@ -276,6 +279,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugTrace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DirectSoundStreamer.h">
@@ -360,6 +366,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sysvia.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TapeMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TarmacGlobals.h">
@@ -484,9 +493,6 @@
     </ClInclude>
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="DebugTrace.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

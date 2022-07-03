@@ -18,11 +18,13 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef INCLUDE_UEF_H
-#define INCLUDE_UEF_H
+#ifndef UEF_HEADER
+#define UEF_HEADER
 
 #include <string>
 #include <vector>
+
+#include "TapeMap.h"
 
 #include "zlib/zlib.h"
 
@@ -99,6 +101,8 @@ class UEFFileReader
 		// Poll mode
 		int GetData(int Time);
 
+		void CreateTapeMap(std::vector<TapeMapEntry>& TapeMap);
+
 	private:
 		UEFResult LoadData(const char *FileName);
 		UEFChunkInfo* FindChunk(int Time);
@@ -106,7 +110,7 @@ class UEFFileReader
 	private:
 		std::string m_FileName;
 		std::vector<UEFChunkInfo> m_Chunks;
-		int m_ClockSpeed = 5600;
+		int m_ClockSpeed;
 		UEFChunkInfo *m_LastChunk;
 		bool m_Unlock;
 };

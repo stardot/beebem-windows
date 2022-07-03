@@ -486,6 +486,143 @@ void UEFFileReader::Close()
 	m_LastChunk = nullptr;
 }
 
+void UEFFileReader::CreateTapeMap(std::vector<TapeMapEntry>& TapeMap)
+{
+	bool done = false;
+	int blk = 0;
+	char block[500];
+	bool std_last_block = true;
+
+	// SetClock(TapeClockSpeed);
+
+	int i = 0;
+	int start_time = 0;
+	int last_data = 0;
+	int blk_num = 0;
+
+	TapeMap.clear();
+
+	char desc[100];
+
+	while (!done)
+	{
+		int data = GetData(i);
+
+		if (data != last_data)
+		{
+			if (UEFRES_TYPE(data) != UEFRES_TYPE(last_data))
+			{
+				if (UEFRES_TYPE(last_data) == UEF_DATA)
+				{
+					// End of block, standard header?
+					if (blk > 20 && block[0] == 0x2A)
+					{
+						if (!std_last_block)
+						{
+							// Change of block type, must be first block
+							blk_num = 0;
+
+							if (!TapeMap.empty() && !TapeMap.back().desc.empty())
+							{
+								TapeMap.emplace_back("", start_time);
+							}
+						}
+
+						// Pull file name from block
+						std::string name;
+
+						int n = 1;
+
+						while (block[n] != 0 && block[n] >= 32 && block[n] <= 127 && n <= 10)
+						{
+							name += block[n];
+							n++;
+						}
+
+						if (!name.empty())
+						{
+							sprintf(desc, "%-12s %02X  Length %04X", name.c_str(), blk_num, blk);
+						}
+						else
+						{
+							sprintf(desc, "<No name>    %02X  Length %04X", blk_num, blk);
+						}
+
+						TapeMap.emplace_back(desc, start_time);
+
+						// Is this the last block for this file?
+						if (block[name.size() + 14] & 0x80)
+						{
+							blk_num = -1;
+
+							TapeMap.emplace_back("", start_time);
+						}
+
+						std_last_block = true;
+					}
+					else
+					{
+						// Replace time counter in previous blank line
+						if (!TapeMap.empty() && TapeMap.back().desc.empty())
+						{
+							TapeMap.back().time = start_time;
+						}
+
+						sprintf(desc, "Non-standard %02X  Length %04X", blk_num, blk);
+						TapeMap.emplace_back(desc, start_time);
+						std_last_block = false;
+					}
+
+					// Data block recorded
+					blk_num++;
+				}
+
+				if (UEFRES_TYPE(data) == UEF_CARRIER_TONE)
+				{
+					// map_lines.emplace_back("Tone", i);
+					start_time = i;
+				}
+				else if (UEFRES_TYPE(data) == UEF_GAP)
+				{
+					if (!TapeMap.empty() && !TapeMap.back().desc.empty())
+					{
+						TapeMap.emplace_back("", i);
+					}
+
+					start_time = i;
+					blk_num = 0;
+				}
+				else if (UEFRES_TYPE(data) == UEF_DATA)
+				{
+					blk = 0;
+					block[blk++] = UEFRES_BYTE(data);
+				}
+				else if (UEFRES_TYPE(data) == UEF_EOF)
+				{
+					done = true;
+				}
+			}
+			else
+			{
+				if (UEFRES_TYPE(data) == UEF_DATA)
+				{
+					if (blk < 500)
+					{
+						block[blk++] = UEFRES_BYTE(data);
+					}
+					else
+					{
+						blk++;
+					}
+				}
+			}
+		}
+
+		last_data = data;
+		i++;
+	}
+}
+
 static void UEFUnlockOffsetAndCRC(UEFChunkInfo& chunk)
 {
 	unsigned char *data = nullptr;

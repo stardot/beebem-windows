@@ -1,6 +1,7 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2006  Jon Welch
+Copyright (C) 2001  Richard Gellman
+Copyright (C) 2004  Mike Wyatt
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -12,46 +13,25 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
+// Serial/Cassette Support for BeebEm
+// Written by Richard Gellman
 
-// Created by Jon Welch on 27/08/2006.
+#ifndef TAPE_MAP_HEADER
+#define TAPE_MAP_HEADER
 
-#ifndef CSW_HEADER
-#define CSW_HEADER
+#include <vector>
 
-#include "TapeMap.h"
+struct TapeMapEntry
+{
+	std::string desc;
+	int time;
 
-enum class CSWResult {
-	Success,
-	OpenFailed,
-	InvalidCSWFile,
-	InvalidHeaderExtension
+	TapeMapEntry(const std::string& d, int t);
 };
-
-CSWResult CSWOpen(const char *FileName);
-void CSWClose();
-
-int CSWPoll();
-void CSWCreateTapeMap(std::vector<TapeMapEntry>& TapeMap);
-
-enum class CSWState {
-	WaitingForTone,
-	Tone,
-	Data,
-	Undefined
-};
-
-extern CSWState csw_state;
-
-extern int csw_bit;
-extern int csw_pulselen;
-extern int csw_ptr;
-extern int csw_pulsecount;
-extern bool CSWFileOpen;
-extern int CSWPollCycles;
 
 #endif

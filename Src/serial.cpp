@@ -47,6 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "serialdevices.h"
 #include "debug.h"
 #include "log.h"
+#include "TapeMap.h"
 
 // MC6850 control register bits
 constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
@@ -138,8 +139,7 @@ int TapeClockSpeed = 5600;
 bool UnlockTape = true;
 
 // Tape control dialog box variables
-std::vector<TapeMapEntry> map_lines;
-
+static std::vector<TapeMapEntry> TapeMap;
 bool TapeControlEnabled = false;
 bool TapePlaying = true;
 bool TapeRecording = false;
@@ -148,8 +148,6 @@ static HWND hwndMap;
 static void TapeControlUpdateCounter(int tape_time);
 static void TapeControlRecord();
 static void TapeControlStopRecording(bool RefreshControl);
-
-static bool UEFCreateTapeMap();
 
 // This bit is the Serial Port stuff
 bool SerialPortEnabled;
@@ -169,12 +167,6 @@ volatile bool bSerialStateChanged = false;
 static volatile bool bWaitingForData = false;
 static volatile bool bWaitingForStat = false;
 static volatile bool bCharReady = false;
-
-TapeMapEntry::TapeMapEntry(const std::string& d, int t) :
-	desc(d),
-	time(t)
-{
-}
 
 void SerialACIAWriteControl(unsigned char Value)
 {
@@ -974,7 +966,7 @@ CSWResult LoadCSWTape(const char *FileName)
 		OldClock = 0;
 		SetTrigger(CSWPollCycles, TapeTrigger);
 
-		CSWCreateTapeMap();
+		CSWCreateTapeMap(TapeMap);
 
 		csw_ptr = 0;
 
@@ -1013,7 +1005,7 @@ UEFResult LoadUEFTape(const char *FileName)
 
 		int Clock = TapeClock;
 
-		UEFCreateTapeMap();
+		UEFReader.CreateTapeMap(TapeMap);
 
 		TapeClock = Clock;
 
@@ -1080,141 +1072,6 @@ void SetUnlockTape(bool Unlock)
 
 //*******************************************************************
 
-static bool UEFCreateTapeMap()
-{
-	bool done = false;
-	int blk = 0;
-	char block[500];
-	bool std_last_block = true;
-
-	UEFReader.SetClock(TapeClockSpeed);
-
-	int i = 0;
-	int start_time = 0;
-	int last_data = 0;
-	int blk_num = 0;
-
-	map_lines.clear();
-
-	char desc[100];
-
-	while (!done)
-	{
-		int data = UEFReader.GetData(i);
-
-		if (data != last_data)
-		{
-			if (UEFRES_TYPE(data) != UEFRES_TYPE(last_data))
-			{
-				if (UEFRES_TYPE(last_data) == UEF_DATA)
-				{
-					// End of block, standard header?
-					if (blk > 20 && block[0] == 0x2A)
-					{
-						if (!std_last_block)
-						{
-							// Change of block type, must be first block
-							blk_num = 0;
-
-							if (!map_lines.empty() && !map_lines.back().desc.empty())
-							{
-								map_lines.emplace_back("", start_time);
-							}
-						}
-
-						// Pull file name from block
-						std::string name;
-
-						int n = 1;
-
-						while (block[n] != 0 && block[n] >= 32 && block[n] <= 127 && n <= 10)
-						{
-							name += block[n];
-							n++;
-						}
-
-						if (!name.empty())
-						{
-							sprintf(desc, "%-12s %02X  Length %04X", name.c_str(), blk_num, blk);
-						}
-						else
-						{
-							sprintf(desc, "<No name>    %02X  Length %04X", blk_num, blk);
-						}
-
-						map_lines.emplace_back(desc, start_time);
-
-						// Is this the last block for this file?
-						if (block[name.size() + 14] & 0x80)
-						{
-							blk_num = -1;
-
-							map_lines.emplace_back("", start_time);
-						}
-
-						std_last_block = true;
-					}
-					else
-					{
-						// Replace time counter in previous blank line
-						if (!map_lines.empty() && map_lines.back().desc.empty())
-						{
-							map_lines.back().time = start_time;
-						}
-
-						sprintf(desc, "Non-standard %02X  Length %04X", blk_num, blk);
-						map_lines.emplace_back(desc, start_time);
-						std_last_block = false;
-					}
-
-					// Data block recorded
-					blk_num++;
-				}
-
-				if (UEFRES_TYPE(data) == UEF_CARRIER_TONE)
-				{
-					// map_lines.emplace_back("Tone", i);
-					start_time = i;
-				}
-				else if (UEFRES_TYPE(data) == UEF_GAP)
-				{
-					if (!map_lines.empty() && !map_lines.back().desc.empty())
-						map_lines.emplace_back("", i);
-
-					start_time = i;
-					blk_num = 0;
-				}
-				else if (UEFRES_TYPE(data) == UEF_DATA)
-				{
-					blk = 0;
-					block[blk++] = UEFRES_BYTE(data);
-				}
-				else if (UEFRES_TYPE(data) == UEF_EOF)
-				{
-					done = true;
-				}
-			}
-			else
-			{
-				if (UEFRES_TYPE(data) == UEF_DATA)
-				{
-					if (blk < 500)
-						block[blk++] = UEFRES_BYTE(data);
-					else
-						blk++;
-				}
-			}
-		}
-
-		last_data = data;
-		i++;
-	}
-
-	return true;
-}
-
-//*******************************************************************
-
 INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
@@ -1242,7 +1099,7 @@ void TapeControlCloseDialog()
 	hwndMap = nullptr;
 	TapeControlEnabled = false;
 	hCurrentDialog = nullptr;
-	map_lines.empty();
+	TapeMap.empty();
 	TapePlaying = true;
 	TapeRecording = false;
 }
@@ -1251,7 +1108,7 @@ void TapeControlAddMapLines()
 {
 	SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
 
-	for (const TapeMapEntry& line : map_lines)
+	for (const TapeMapEntry& line : TapeMap)
 	{
 		SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)line.desc.c_str());
 	}
@@ -1264,7 +1121,7 @@ void TapeControlUpdateCounter(int tape_time)
 	if (TapeControlEnabled)
 	{
 		int i = 0;
-		while (i < map_lines.size() && map_lines[i].time <= tape_time)
+		while (i < TapeMap.size() && TapeMap[i].time <= tape_time)
 			i++;
 
 		if (i > 0)
@@ -1300,15 +1157,15 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 					{
 						LRESULT s = SendMessage(hwndMap, LB_GETCURSEL, 0, 0);
 
-						if (s != LB_ERR && s >= 0 && s < (int)map_lines.size())
+						if (s != LB_ERR && s >= 0 && s < (int)TapeMap.size())
 						{
 							if (CSWFileOpen)
 							{
-								csw_ptr = map_lines[s].time;
+								csw_ptr = TapeMap[s].time;
 							}
 							else
 							{
-								TapeClock = map_lines[s].time;
+								TapeClock = TapeMap[s].time;
 							}
 
 							OldClock = 0;

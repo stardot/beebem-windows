@@ -33,6 +33,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "debug.h"
 #include "log.h"
+#include "TapeMap.h"
 #include "uefstate.h"
 
 #include "zlib/zlib.h"
@@ -181,7 +182,7 @@ void HexDump(const char *buff, int count)
 }
 */
 
-void CSWCreateTapeMap()
+void CSWCreateTapeMap(std::vector<TapeMapEntry>& TapeMap)
 {
 	CSWState last_state = CSWState::Undefined;
 	char block[65535];
@@ -194,7 +195,7 @@ void CSWCreateTapeMap()
 
 	Clk_Divide = 16;
 
-	map_lines.clear();
+	TapeMap.clear();
 
 	int start_time = 0;
 	int blk_num = 0;
@@ -250,9 +251,10 @@ again:
 				{
 					// Change of block type, must be first block
 					blk_num = 0;
-					if (!map_lines.empty() && !map_lines.back().desc.empty() != 0)
+
+					if (!TapeMap.empty() && !TapeMap.back().desc.empty() != 0)
 					{
-						map_lines.emplace_back("", start_time);
+						TapeMap.emplace_back("", start_time);
 					}
 				}
 
@@ -274,13 +276,13 @@ again:
 					sprintf(desc, "<No name>    %02X  Length %04X", blk_num, block_ptr);
 				}
 
-				map_lines.emplace_back(desc, start_time);
+				TapeMap.emplace_back(desc, start_time);
 
 				// Is this the last block for this file?
 				if (block[strlen(name) + 14] & 0x80)
 				{
 					blk_num = -1;
-					map_lines.emplace_back("", csw_ptr);
+					TapeMap.emplace_back("", csw_ptr);
 				}
 
 				std_last_block = true;
@@ -292,15 +294,15 @@ again:
 					// Change of block type, must be first block
 					blk_num = 0;
 
-					if (!map_lines.empty() && !map_lines.back().desc.empty())
+					if (!TapeMap.empty() && !TapeMap.back().desc.empty())
 					{
-						map_lines.emplace_back("", csw_ptr);
+						TapeMap.emplace_back("", csw_ptr);
 					}
 				}
 
 				sprintf(desc, "Non-standard %02X  Length %04X", blk_num, block_ptr);
 
-				map_lines.emplace_back(desc, start_time);
+				TapeMap.emplace_back(desc, start_time);
 				std_last_block = false;
 			}
 

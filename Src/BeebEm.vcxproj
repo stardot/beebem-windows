@@ -210,6 +210,7 @@
     <ClCompile Include="SprowCoPro.cpp" />
     <ClCompile Include="StringUtils.cpp" />
     <ClCompile Include="sysvia.cpp" />
+    <ClCompile Include="TapeMap.cpp" />
     <ClCompile Include="teletext.cpp" />
     <ClCompile Include="tube.cpp" />
     <ClCompile Include="uef.cpp" />
@@ -359,6 +360,7 @@
     <ClInclude Include="SprowCoPro.h" />
     <ClInclude Include="StringUtils.h" />
     <ClInclude Include="sysvia.h" />
+    <ClInclude Include="TapeMap.h" />
     <ClInclude Include="TarmacGlobals.h" />
     <ClInclude Include="teletext.h" />
     <ClInclude Include="tube.h" />
