@@ -849,6 +849,51 @@ INLINE static void STYInstrHandler(int16 address) {
   WritePaged(address,YReg);
 } /* STYInstrHandler */
 
+// ARR instruction hander.
+// See http://www.zimmers.net/anonftp/pub/cbm/documents/chipdata/64doc
+
+INLINE static void ARRInstrHandler(int Operand)
+{
+	if (GETDFLAG)
+	{
+		const int Temp = Accumulator & Operand;
+		const int HighBits = Temp >> 4;
+		const int LowBits  = Temp & 0x0f;
+
+		Accumulator = (Temp >> 1) | (GETCFLAG << 7); // ROR
+		SetPSRZN(Accumulator);
+
+		PSR &= ~(FlagC | FlagV);
+
+		PSR |= (((Accumulator ^ Temp) & 0x40) != 0) << 6; // VFlag
+
+		if (LowBits + (LowBits & 1) > 5)
+		{
+			Accumulator = (Accumulator & 0xf0) | ((Accumulator + 6) & 0x0f);
+		}
+
+		// Update carry flag
+		PSR |= (HighBits + (HighBits & 1)) > 5;
+
+		if (GETCFLAG)
+		{
+			Accumulator = (Accumulator + 0x60) & 0xff;
+		}
+	}
+	else
+	{
+		Accumulator &= Operand;
+		RORInstrHandler_Acc();
+
+		const int Bit6 = (Accumulator & 0x40) != 0;
+		const int Bit5 = (Accumulator & 0x20) != 0;
+
+		PSR &= ~(FlagC | FlagV);
+		PSR |= Bit6; // FlagC
+		PSR |= (Bit6 ^ Bit5) << 6; // FlagV
+	}
+}
+
 // KIL (Halt) instruction handler.
 
 INLINE static void KILInstrHandler() {
@@ -2048,8 +2093,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: ARR imm
-					ANDInstrHandler(ReadPaged(ProgramCounter++));
-					RORInstrHandler_Acc();
+					ARRInstrHandler(ReadPaged(ProgramCounter++));
 				}
 				break;
 			case 0x6c:
@@ -2864,7 +2908,8 @@ void Exec6502Instruction(void) {
 					// NOP
 				}
 				else {
-					// TODO: SBC imm
+					// SBC imm
+					SBCInstrHandler(ReadPaged(ProgramCounter++));
 				}
 				break;
 			case 0xec:
