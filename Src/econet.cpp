@@ -107,7 +107,7 @@ struct AUNHeader
 	unsigned char port;   // dest port
 	unsigned char cb;     // flag
 	unsigned char pad;    // retrans
-	unsigned long handle; // 4 byte sequence little-endian.
+	uint32_t handle;      // 4 byte sequence little-endian.
 };
 
 // #define EC_PORT_FS 0x99
