@@ -105,10 +105,10 @@ static const int CyclesTable6502[] = {
   2,5,1,8,4,4,6,6,2,4,2,7,4,4,7,7, /* 5 */
   6,6,1,8,3,3,5,5,4,2,2,2,5,4,6,6, /* 6 */
   2,5,1,8,4,4,6,6,2,4,2,7,4,4,7,7, /* 7 */
-  2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4, /* 8 */
+  2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,7, /* 8 */
   2,6,1,6,4,4,4,4,2,5,2,5,5,5,5,5, /* 9 */
   2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4, /* a */
-  2,5,1,5,4,4,4,4,2,4,2,4,4,4,4,4, /* b */
+  2,5,1,5,4,4,4,4,2,4,2,5,4,4,4,4, /* b */
   2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6, /* c */
   2,5,1,8,4,4,6,6,2,4,2,7,4,4,7,7, /* d */
   2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6, /* e */
@@ -275,6 +275,7 @@ static INLINE void Carried()
 	         CurrentInstruction == 0x3c ||
 	         CurrentInstruction == 0x5c ||
 	         CurrentInstruction == 0x7c ||
+	         CurrentInstruction == 0xb3 ||
 	         CurrentInstruction == 0xbc ||
 	         CurrentInstruction == 0xbe ||
 	         CurrentInstruction == 0xbf ||
@@ -2265,6 +2266,7 @@ void Exec6502Instruction(void) {
 				}
 				else {
 					// Undocumented instruction: SAX (zp,X)
+					AdvanceCyclesForMemWrite();
 					WritePaged(IndXAddrModeHandler_Address(), Accumulator & XReg);
 				}
 				break;
