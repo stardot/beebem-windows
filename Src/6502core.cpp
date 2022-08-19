@@ -125,7 +125,7 @@ static const int CyclesTable65C02[] = {
   2,5,5,1,4,4,6,1,2,4,3,1,8,4,6,1, /* 5 */
   6,6,2,1,3,3,5,1,4,2,2,1,6,4,6,1, /* 6 */
   2,5,5,1,4,4,6,1,2,4,4,1,6,4,6,1, /* 7 */
-  3,6,2,1,3,3,3,1,2,2,2,1,4,4,4,1, /* 8 */
+  2,6,2,1,3,3,3,1,2,2,2,1,4,4,4,1, /* 8 */
   2,6,5,1,4,4,4,1,2,5,2,1,4,5,5,1, /* 9 */
   2,6,2,1,3,3,3,1,2,2,2,1,4,4,4,1, /* a */
   2,5,5,1,4,4,4,1,2,4,2,1,4,4,4,1, /* b */
@@ -264,6 +264,17 @@ static unsigned int InstructionCount[256];
 
 static INLINE void Carried()
 {
+	if (MachineType == Model::Master128)
+	{
+		if (CurrentInstruction == 0x1e ||
+		    CurrentInstruction == 0x3e ||
+		    CurrentInstruction == 0x5e ||
+		    CurrentInstruction == 0x7e)
+		{
+			Cycles++;
+		}
+	}
+
 	if (((CurrentInstruction & 0xf) == 0x1 ||
 	     (CurrentInstruction & 0xf) == 0x9 ||
 	     (CurrentInstruction & 0xf) == 0xd) &&
@@ -466,6 +477,7 @@ INLINE static void ADCInstrHandler(int16 operand) {
     if (MachineType == Model::Master128) {
       ZFlag = Accumulator == 0;
       NFlag = Accumulator & 128;
+      Cycles++;
     }
 
     SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
@@ -800,6 +812,8 @@ INLINE static void SBCInstrHandler(int16 operand) {
       int ZFlag = (Accumulator == 0);
 
       SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
+
+      Cycles++;
     } else {
       /* Z flag determined from 2's compl result, not BCD result! */
       int TmpResult = Accumulator - operand - (1 - GETCFLAG);
