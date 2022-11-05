@@ -1,6 +1,9 @@
 BeebEm Change History
 =====================
 
+* Added keyboard shortcuts for changing text-to-speech reading rate.  Enable
+  text output reader by default when text-to-speech is enabled.
+
 Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
 ------------
 * Fixed undocumented 6502 opcodes 2B (ANC imm) and CB (ASX imm).

@@ -34,10 +34,11 @@ void BeebWin::InitTextToSpeech(void)
 	m_SpeechCol = 0;
 	memset(m_SpeechText, 0, MAX_SPEECH_LINE_LEN+1);
 	m_SpeechSpeakPunctuation = false;
-	m_SpeechWriteChar = false;
+	m_SpeechWriteChar = true;
 	m_SpeechBufPos = 0;
 	memset(m_SpeechBuf, 0, MAX_SPEECH_BUF_LEN+1);
 	m_SpeechBufPos = 0;
+	m_SpeechRate = 6;
 
 	if (m_TextToSpeechEnabled && m_SpVoice == NULL)
 	{
@@ -54,6 +55,7 @@ void BeebWin::InitTextToSpeech(void)
 
 	if (m_TextToSpeechEnabled)
 	{
+		m_SpVoice->SetRate(m_SpeechRate);
 		m_SpVoice->Speak(L"<SILENCE MSEC='800'/>BeebEm text to speech output enabled",
 						 SPF_ASYNC, NULL);
 	}
@@ -483,6 +485,16 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 				sprintf(text, "Line %d column %d", m_SpeechLine, m_SpeechCol);
 				Speak(text, SPF_PURGEBEFORESPEAK);
 			}
+			else if (altPressed)
+			{
+				if (m_SpeechRate < 10)
+				{
+					m_SpeechRate++;
+					m_SpVoice->SetRate(m_SpeechRate);
+					sprintf(text, "Rate %d", m_SpeechRate);
+					Speak(text, SPF_PURGEBEFORESPEAK);
+				}
+			}
 			else
 			{
 				// Go to top of screen
@@ -520,6 +532,16 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 					Speak("Speak puntuation enabled.", SPF_PURGEBEFORESPEAK);
 				else
 					Speak("Speak puntuation disabled.", SPF_PURGEBEFORESPEAK);
+			}
+			else if (altPressed)
+			{
+				if (m_SpeechRate > -10)
+				{
+					m_SpeechRate--;
+					m_SpVoice->SetRate(m_SpeechRate);
+					sprintf(text, "Rate %d", m_SpeechRate);
+					Speak(text, SPF_PURGEBEFORESPEAK);
+				}
 			}
 			else
 			{
