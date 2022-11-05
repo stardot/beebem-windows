@@ -529,9 +529,9 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 				// Toggle speaking of punctuation
 				m_SpeechSpeakPunctuation = !m_SpeechSpeakPunctuation;
 				if (m_SpeechSpeakPunctuation)
-					Speak("Speak puntuation enabled.", SPF_PURGEBEFORESPEAK);
+					Speak("Speak punctuation enabled.", SPF_PURGEBEFORESPEAK);
 				else
-					Speak("Speak puntuation disabled.", SPF_PURGEBEFORESPEAK);
+					Speak("Speak punctuation disabled.", SPF_PURGEBEFORESPEAK);
 			}
 			else if (altPressed)
 			{
