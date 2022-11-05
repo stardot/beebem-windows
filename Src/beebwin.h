@@ -483,6 +483,7 @@ public:
 	static const int MAX_SPEECH_BUF_LEN = 160;
 	char m_SpeechBuf[MAX_SPEECH_BUF_LEN+1];
 	int m_SpeechBufPos;
+	int m_SpeechRate;
 
 	// Text view variables
 	HWND m_hTextView;

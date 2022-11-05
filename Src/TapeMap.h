@@ -25,6 +25,7 @@ Boston, MA  02110-1301, USA.
 #define TAPE_MAP_HEADER
 
 #include <vector>
+#include <string>
 
 struct TapeMapEntry
 {
