@@ -561,16 +561,16 @@ public:
 	                   bool Teletext);
 	bool GetImageFile(char *FileName);
 	bool GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid);
-	void InitTextToSpeech(void);
+	void InitTextToSpeech();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
-							TextToSpeechSearchType type);
-	void TextToSpeechReadChar(void);
-	void TextToSpeechReadWord(void);
-	void TextToSpeechReadLine(void);
-	void TextToSpeechReadSentence(void);
-	void TextToSpeechReadScreen(void);
-	void InitTextView(void);
-	void TextView(void);
+	                        TextToSpeechSearchType type);
+	void TextToSpeechReadChar();
+	void TextToSpeechReadWord();
+	void TextToSpeechReadLine();
+	void TextToSpeechReadSentence();
+	void TextToSpeechReadScreen();
+	void InitTextView();
+	void TextView();
 	void TextViewSetCursorPos(int line, int col);
 	bool RebootSystem();
 	void LoadUserKeyMap(void);

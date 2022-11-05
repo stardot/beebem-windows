@@ -28,7 +28,7 @@ Boston, MA  02110-1301, USA.
 #include "beebemrc.h"
 
 /****************************************************************************/
-void BeebWin::InitTextToSpeech(void)
+void BeebWin::InitTextToSpeech()
 {
 	m_SpeechLine = 0;
 	m_SpeechCol = 0;
@@ -43,21 +43,28 @@ void BeebWin::InitTextToSpeech(void)
 	if (m_TextToSpeechEnabled && m_SpVoice == NULL)
 	{
 		HRESULT hr = CoCreateInstance(
-			CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void **)&m_SpVoice);
-		if( FAILED( hr ) )
+			CLSID_SpVoice,
+			NULL,
+			CLSCTX_ALL,
+			IID_ISpVoice,
+			(void **)&m_SpVoice
+		);
+
+		if (FAILED(hr))
 		{
 			m_SpVoice = NULL;
 			m_TextToSpeechEnabled = false;
 			Report(MessageType::Error, "Failed to initialise text-to-speech engine");
 		}
 	}
+
 	CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
 
 	if (m_TextToSpeechEnabled)
 	{
 		m_SpVoice->SetRate(m_SpeechRate);
 		m_SpVoice->Speak(L"<SILENCE MSEC='800'/>BeebEm text to speech output enabled",
-						 SPF_ASYNC, NULL);
+		                 SPF_ASYNC, NULL);
 	}
 }
 
@@ -96,7 +103,7 @@ void BeebWin::SpeakChar(unsigned char c)
 #define IS_ENDSENTENCE(c) (c == '.' || c == '!' || c == '?')
 
 bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
-								 TextToSpeechSearchType type)
+                                 TextToSpeechSearchType type)
 {
 	bool done = false;
 	bool found = false;
@@ -195,9 +202,10 @@ bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	return found;
 }
 
-void BeebWin::TextToSpeechReadChar(void)
+void BeebWin::TextToSpeechReadChar()
 {
 	char text[MAX_SPEECH_LINE_LEN+1];
+
 	if (m_SpeechText[m_SpeechCol] == ' ')
 	{
 		strcpy(text, "space");
@@ -207,10 +215,11 @@ void BeebWin::TextToSpeechReadChar(void)
 		text[0] = m_SpeechText[m_SpeechCol];
 		text[1] = '\0';
 	}
+
 	Speak(text, SPF_PURGEBEFORESPEAK | SPF_NLP_SPEAK_PUNC);
 }
 
-void BeebWin::TextToSpeechReadWord(void)
+void BeebWin::TextToSpeechReadWord()
 {
 	char text[MAX_SPEECH_LINE_LEN+1];
 	int i = 0;
@@ -221,11 +230,12 @@ void BeebWin::TextToSpeechReadWord(void)
 	text[i] = 0;
 	if (i == 0)
 		strcpy(text, "blank");
+
 	Speak(text, SPF_PURGEBEFORESPEAK |
-		  (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
+	      (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
 }
 
-void BeebWin::TextToSpeechReadLine(void)
+void BeebWin::TextToSpeechReadLine()
 {
 	char text[MAX_SPEECH_LINE_LEN+1];
 	bool blank = true;
@@ -242,10 +252,10 @@ void BeebWin::TextToSpeechReadLine(void)
 		strcpy(text, "blank");
 
 	Speak(text, SPF_PURGEBEFORESPEAK |
-		  (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
+	      (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
 }
 
-void BeebWin::TextToSpeechReadSentence(void)
+void BeebWin::TextToSpeechReadSentence()
 {
 	char text[MAX_SPEECH_SENTENCE_LEN+1];
 	char textLine[MAX_SPEECH_LINE_LEN+1];
@@ -289,10 +299,10 @@ void BeebWin::TextToSpeechReadSentence(void)
 		strcpy(text, "blank");
 
 	Speak(text, SPF_PURGEBEFORESPEAK |
-		  (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
+	      (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
 }
 
-void BeebWin::TextToSpeechReadScreen(void)
+void BeebWin::TextToSpeechReadScreen()
 {
 	char text[MAX_SPEECH_SCREEN_LEN+1];
 	bool blank = true;
@@ -314,7 +324,7 @@ void BeebWin::TextToSpeechReadScreen(void)
 		strcpy(text, "blank");
 
 	Speak(text, SPF_PURGEBEFORESPEAK |
-		  (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
+	      (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
 }
 
 void BeebWin::TextToSpeechKey(WPARAM uParam)
@@ -323,8 +333,8 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 	bool found;
 
 	if (!TeletextEnabled &&
-		uParam != VK_NUMPAD0 && uParam != VK_INSERT &&
-		uParam != VK_END && uParam != VK_NUMPAD1)
+	    uParam != VK_NUMPAD0 && uParam != VK_INSERT &&
+	    uParam != VK_END && uParam != VK_NUMPAD1)
 	{
 		Speak("Not in text mode.", SPF_PURGEBEFORESPEAK);
 	}
@@ -555,7 +565,9 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 }
 
 /****************************************************************************/
+
 static WNDPROC TextViewPrevWndProc;
+
 LRESULT TextViewWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	bool keypress = false;
@@ -578,7 +590,7 @@ LRESULT TextViewWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return lr;
 }
 
-void BeebWin::InitTextView(void)
+void BeebWin::InitTextView()
 {
 	if (m_hTextView != NULL)
 	{
@@ -602,7 +614,7 @@ void BeebWin::InitTextView(void)
 		else
 		{
 			SendMessage(m_hTextView, WM_SETFONT,
-						(WPARAM)GetStockObject(ANSI_FIXED_FONT), 0);
+			            (WPARAM)GetStockObject(ANSI_FIXED_FONT), 0);
 
 			LONG_PTR lPtr = GetWindowLongPtr(m_hTextView, GWLP_WNDPROC);
 			TextViewPrevWndProc = (WNDPROC)lPtr;
@@ -615,7 +627,7 @@ void BeebWin::InitTextView(void)
 	CheckMenuItem(IDM_TEXTVIEW, m_TextViewEnabled);
 }
 
-void BeebWin::TextView(void)
+void BeebWin::TextView()
 {
 	char text[MAX_SPEECH_LINE_LEN+1];
 	char screen[MAX_TEXTVIEW_SCREEN_LEN+1];
@@ -648,7 +660,7 @@ void BeebWin::TextView(void)
 	}
 }
 
-void BeebWin::TextViewSpeechSync(void)
+void BeebWin::TextViewSpeechSync()
 {
 	if (m_TextToSpeechEnabled)
 		TextViewSetCursorPos(m_SpeechLine, m_SpeechCol);
@@ -660,7 +672,7 @@ void BeebWin::TextViewSetCursorPos(int line, int col)
 	SendMessage(m_hTextView, EM_SETSEL, selpos, selpos);
 }
 
-void BeebWin::TextViewSyncWithBeebCursor(void)
+void BeebWin::TextViewSyncWithBeebCursor()
 {
 	// Move speech cursor to Beeb's cursor pos
 	int CurAddr = CRTC_CursorPosLow+(((CRTC_CursorPosHigh ^ 0x20) + 0x74 & 0xff)<<8);
