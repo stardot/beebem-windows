@@ -79,6 +79,8 @@ enum RomFlags
 	RomFlag0=1,
 };
 
+constexpr int MAX_ROMINFO_LENGTH = 255;
+
 struct RomInfo {
 	int Slot;
 	int LanguageAddr;
@@ -86,9 +88,9 @@ struct RomInfo {
 	int WorkspaceAddr;
 	RomFlags Flags;
 	int Version;
-	char Title[256];
-	char VersionStr[256];
-	char Copyright[256];
+	char Title[MAX_ROMINFO_LENGTH + 1];
+	char VersionStr[MAX_ROMINFO_LENGTH + 1];
+	char Copyright[MAX_ROMINFO_LENGTH + 1];
 	int RelocationAddr;
 };
 

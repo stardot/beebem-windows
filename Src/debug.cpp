@@ -1575,7 +1575,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 		{
 			if (!LastAddrInROM)
 			{
-				if(ReadRomInfo(PagedRomReg, &romInfo))
+				if (ReadRomInfo(PagedRomReg, &romInfo))
 				{
 					DebugDisplayInfoF("Entered ROM \"%s\" (0x8000-0xBFFF) at 0x%04X", romInfo.Title, addr);
 				}
@@ -1587,6 +1587,7 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 				LastAddrInROM = true;
 				LastAddrInOS = LastAddrInBIOS = false;
 			}
+
 			return true;
 		}
 

@@ -994,29 +994,43 @@ bool ReadRomInfo(int bank, RomInfo* info)
 {
 	if((RomFlags)Roms[bank][6] == 0)
 		return false;
+
+	info->Slot = bank;
+
 	// LanguageAddr and ServiceAddr are really 6502 instructions. Most ROMs obey the JMP convention as
 	// described in the AUG, however BASIC fills the first 6 bytes with CMP 1; BEQ 1F; RTS; NOP
 	// which seems to simply be a check for whether it was entered properly.
-	info->Slot = bank;
 	info->ServiceAddr = info->LanguageAddr = info->RelocationAddr = 0;
 	if(Roms[bank][0] == 0x4C)
 		info->LanguageAddr = (Roms[bank][2] << 8) | Roms[bank][1];
 	if(Roms[bank][3] == 0x4C)
 		info->ServiceAddr = (Roms[bank][5] << 8) | Roms[bank][4];
+
 	// TODO: Flags0-3 specify instruction type, see master reference manual part 1 p257.
 	info->Flags = (RomFlags)Roms[bank][6];
+
 	info->VersionStr[0] = '\0';
 	info->Version = Roms[bank][8];
-	strncpy(info->Title, (char*)&Roms[bank][9], 256);
-	if(strlen(info->Title) + 9 != Roms[bank][7])
-		strncpy(info->VersionStr, (char*)&Roms[bank][strlen(info->Title) + 10], 256);
-	strncpy(info->Copyright, (char*)(Roms[bank] + Roms[bank][7] + 1), 256);
-	if(info->Flags & RomRelocate)
+
+	strncpy(info->Title, (char*)&Roms[bank][9], MAX_ROMINFO_LENGTH);
+	info->Title[MAX_ROMINFO_LENGTH] = '\0';
+
+	if (strlen(info->Title) + 9 != Roms[bank][7])
+	{
+		strncpy(info->VersionStr, (char*)&Roms[bank][strlen(info->Title) + 10], MAX_ROMINFO_LENGTH);
+		info->VersionStr[MAX_ROMINFO_LENGTH] = '\0';
+	}
+
+	strncpy(info->Copyright, (char*)(Roms[bank] + Roms[bank][7] + 1), MAX_ROMINFO_LENGTH);
+	info->Copyright[MAX_ROMINFO_LENGTH] = '\0';
+
+	if (info->Flags & RomRelocate)
 	{
 		int addr = Roms[bank][7] + (int)strlen(info->Copyright) + 2;
 		info->RelocationAddr = (Roms[bank][addr + 3] << 24) | (Roms[bank][addr + 2] << 16) | (Roms[bank][addr + 1] << 8) | Roms[bank][addr];
 	}
-	if(!(info->Flags & RomService))
+
+	if (!(info->Flags & RomService))
 	{
 		// BASIC:
 		info->LanguageAddr = 0x8000;
