@@ -82,8 +82,6 @@ static int LinesDisplayed = 0;  // Lines in info window
 static int InstCount = 0;       // Instructions to execute before breaking
 static int DumpAddress = 0;     // Next address for memory dump command
 static int DisAddress = 0;      // Next address for disassemble command
-static int BPCount = 0;         // Num of breakpoints
-static int WCount = 0;          // Num of watches
 static int LastBreakAddr = 0;   // Address of last break
 static int DebugInfoWidth = 0;  // Width of debug info window
 static bool BPSOn = true;
@@ -106,9 +104,10 @@ static HWND hwndInfo;
 static HWND hwndBP;
 static HWND hwndW;
 static HACCEL haccelDebug;
+
 static std::vector<Label> Labels;
-static Breakpoint Breakpoints[MAX_BPS];
-static Watch Watches[MAX_BPS];
+static std::vector<Breakpoint> Breakpoints;
+static std::vector<Watch> Watches;
 
 typedef std::vector<AddrInfo> MemoryMap;
 
@@ -1054,7 +1053,8 @@ void DebugCloseDialog()
 	InstCount = 0;
 	DumpAddress = 0;
 	DisAddress = 0;
-	BPCount = 0;
+	Breakpoints.clear();
+	Watches.clear();
 	BPSOn = true;
 	StepOver = false;
 	ReturnAddress = 0;
@@ -1066,8 +1066,6 @@ void DebugCloseDialog()
 	DebugHost = true;
 	DebugParasite = false;
 	DebugInfoWidth = 0;
-	memset(Breakpoints, 0, MAX_BPS * sizeof(Breakpoint));
-	memset(Watches, 0, MAX_BPS * sizeof(Watch));
 }
 
 //*******************************************************************
@@ -1318,14 +1316,14 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 
 	if (DebugSource == DebugType::Breakpoint)
 	{
-		for (int i = 0; i < BPCount; i++)
+		for (const Breakpoint& bp : Breakpoints)
 		{
-			if (Breakpoints[i].start == addr)
+			if (bp.start == addr)
 			{
 				DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s' / %s)",
 				                  host ? "Host" : "Parasite",
 				                  addr,
-				                  Breakpoints[i].name,
+				                  bp.name.c_str(),
 				                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc.c_str() : "Unknown");
 
 				DebugDisplayPreviousAddress(prevAddr);
@@ -1436,7 +1434,7 @@ static void DebugUpdateWatches(bool all)
 	int value = 0;
 	char str[200];
 
-	for (int i = 0; i < WCount; ++i)
+	for (size_t i = 0; i < Watches.size(); ++i)
 	{
 		switch (Watches[i].type)
 		{
@@ -1483,22 +1481,22 @@ static void DebugUpdateWatches(bool all)
 
 			if (WatchDecimal)
 			{
-				sprintf(str, "%s%04X %s=%d (%c)", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name, Watches[i].value, Watches[i].type);
+				sprintf(str, "%s%04X %s=%d (%c)", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name.c_str(), Watches[i].value, Watches[i].type);
 			}
 			else
 			{
 				switch (Watches[i].type)
 				{
 					case 'b':
-						sprintf(str, "%s%04X %s=$%02X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
+						sprintf(str, "%s%04X %s=$%02X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name.c_str(), Watches[i].value);
 						break;
 
 					case 'w':
-						sprintf(str, "%s%04X %s=$%04X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
+						sprintf(str, "%s%04X %s=$%04X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name.c_str(), Watches[i].value);
 						break;
 
 					case 'd':
-						sprintf(str, "%s%04X %s=$%08X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name, Watches[i].value);
+						sprintf(str, "%s%04X %s=$%08X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name.c_str(), Watches[i].value);
 						break;
 				}
 			}
@@ -1560,18 +1558,18 @@ bool DebugDisassembler(int addr,
 	// Check breakpoints
 	if (BPSOn && DebugSource != DebugType::Breakpoint)
 	{
-		for (int i = 0; i < BPCount; ++i)
+		for (const Breakpoint& bp : Breakpoints)
 		{
-			if (Breakpoints[i].end == -1)
+			if (bp.end == -1)
 			{
-				if (addr == Breakpoints[i].start)
+				if (addr == bp.start)
 				{
 					DebugBreakExecution(DebugType::Breakpoint);
 				}
 			}
 			else
 			{
-				if (addr >= Breakpoints[i].start && addr <= Breakpoints[i].end)
+				if (addr >= bp.start && addr <= bp.end)
 				{
 					DebugBreakExecution(DebugType::Breakpoint);
 				}
@@ -2955,12 +2953,11 @@ static bool DebugCmdWatch(char *args)
 	Watch w;
 	char info[64];
 	int i;
-	memset(w.name, 0, _countof(w.name));
 	w.start = -1;
 	w.host = true;
 	w.type = 'w';
 
-	if (WCount < _countof(Watches))
+	if (Watches.size() < MAX_BPS)
 	{
 		if (tolower(args[0]) == 'p') // Parasite
 		{
@@ -2968,44 +2965,47 @@ static bool DebugCmdWatch(char *args)
 			args++;
 		}
 
-		int result = sscanf(args, "%x %c %50c", &w.start, &w.type, w.name);
+		char name[51];
+		memset(name, 0, _countof(name));
+
+		int result = sscanf(args, "%x %c %50c", &w.start, &w.type, name);
 
 		if (result < 2) {
-			result = sscanf(args, "%x %50c", &w.start, w.name);
+			result = sscanf(args, "%x %50c", &w.start, name);
 		}
 
 		if (result != EOF)
 		{
 			// Check type is valid
 			w.type = (char)tolower(w.type);
-			if(w.type != 'b' && w.type != 'w' && w.type != 'd')
+			if (w.type != 'b' && w.type != 'w' && w.type != 'd')
 				return false;
+
+			w.name = name;
 
 			sprintf(info, "%s%04X", (w.host ? "" : "p"), w.start);
 
 			// Check if watch in list
 			i = (int)SendMessage(hwndW, LB_FINDSTRING, 0, (LPARAM)info);
+
 			if (i != LB_ERR)
 			{
 				SendMessage(hwndW, LB_DELETESTRING, i, 0);
-				for (i = 0; i < WCount; ++i)
-				{
-					if (Watches[i].start == w.start)
-					{
-						if (i != WCount - 1)
-							memmove(&Watches[i], &Watches[i+1], sizeof(Watch) * (WCount - i - 1));
-						WCount--;
-						break;
-					}
-				}
+
+				auto it = std::find_if(Watches.begin(), Watches.end(), [&w](const Watch& watch){
+					return watch.start == w.start;
+				});
+
+				Watches.erase(it);
 			}
 			else
 			{
-				memcpy(&Watches[WCount], &w, sizeof(Watch));
-				WCount++;
+				Watches.push_back(w);
+
 				SendMessage(hwndW, LB_ADDSTRING, 0, (LPARAM)info);
 				DebugUpdateWatches(true);
 			}
+
 			SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
 		}
 		else
@@ -3022,52 +3022,60 @@ static bool DebugCmdWatch(char *args)
 
 static bool DebugCmdToggleBreak(char *args)
 {
-	int i;
 	Breakpoint bp;
-	char info[64];
-
-	memset(bp.name, 0, _countof(bp.name));
 	bp.start = bp.end = -1;
 
-	if (BPCount < _countof(Breakpoints))
+	if (Breakpoints.size() < MAX_BPS)
 	{
-		if (sscanf(args, "%x-%x %50c", &bp.start, &bp.end, bp.name) >= 2 ||
-			sscanf(args, "%x %50c", &bp.start, bp.name) >= 1)
+		char name[51];
+		memset(name, 0, _countof(name));
+
+		if (sscanf(args, "%x-%x %50c", &bp.start, &bp.end, name) >= 2 ||
+		    sscanf(args, "%x %50c", &bp.start, name) >= 1)
 		{
-			sprintf(info, "%04X", bp.start);
+			bp.name = name;
+
 			// Check if BP in list
-			i = (int)SendMessage(hwndBP, LB_FINDSTRING, 0, (LPARAM)info);
+
+			char info[64];
+			sprintf(info, "%04X", bp.start);
+
+			int i = (int)SendMessage(hwndBP, LB_FINDSTRING, 0, (LPARAM)info);
+
 			if (i != LB_ERR)
 			{
 				// Yes - delete
 				SendMessage(hwndBP, LB_DELETESTRING, i, 0);
-				for (i = 0; i < BPCount; i++)
-				{
-					if (Breakpoints[i].start == bp.start)
-					{
-						if (i != BPCount - 1)
-							memmove(&Breakpoints[i], &Breakpoints[i+1], sizeof(Breakpoint) * (BPCount - i - 1));
-						BPCount--;
-						break;
-					}
-				}
+
+				auto it = std::find_if(Breakpoints.begin(), Breakpoints.end(), [&bp](const Breakpoint& b){
+					return b.start == bp.start;
+				});
+
+				Breakpoints.erase(it);
 			}
 			else
 			{
-				if(bp.end >= 0 && bp.end < bp.start)
+				if (bp.end >= 0 && bp.end < bp.start)
 				{
 					DebugDisplayInfo("Error: Invalid breakpoint range.");
 					return false;
 				}
+
 				// No - add a new bp.
-				memcpy(&Breakpoints[BPCount], &bp, sizeof(Breakpoint));
-				if (Breakpoints[BPCount].end >= 0)
-					sprintf(info, "%04X-%04X %s", Breakpoints[BPCount].start, Breakpoints[BPCount].end, Breakpoints[BPCount].name);
+				Breakpoints.push_back(bp);
+
+				if (bp.end >= 0)
+				{
+					sprintf(info, "%04X-%04X %s", bp.start, bp.end, bp.name.c_str());
+				}
 				else
-					sprintf(info, "%04X %s", Breakpoints[BPCount].start, Breakpoints[BPCount].name);
-				BPCount++;
+				{
+					sprintf(info, "%04X %s", bp.start, bp.name.c_str());
+				}
+
 				SendMessage(hwndBP, LB_ADDSTRING, 0, (LPARAM)info);
 			}
+
 			SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
 		}
 		else
@@ -3079,6 +3087,7 @@ static bool DebugCmdToggleBreak(char *args)
 	{
 		DebugDisplayInfo("You have too many breakpoints!");
 	}
+
 	return true;
 }
 

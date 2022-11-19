@@ -70,7 +70,7 @@ struct Breakpoint
 {
 	int start;
 	int end;
-	char name[50 + 1];
+	std::string name;
 };
 
 struct Watch
@@ -79,7 +79,7 @@ struct Watch
 	char type;
 	int value;
 	bool host;
-	char name[50 + 1];
+	std::string name;
 };
 
 struct InstInfo
