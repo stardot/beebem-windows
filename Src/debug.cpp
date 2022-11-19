@@ -1279,6 +1279,23 @@ static const char* GetDebugSourceString()
 	return source;
 }
 
+static void DebugDisplayPreviousAddress(int prevAddr)
+{
+	if (prevAddr > 0)
+	{
+		AddrInfo addrInfo;
+
+		if (DebugLookupAddress(prevAddr, &addrInfo))
+		{
+			DebugDisplayInfoF("  Previous PC 0x%04X (%s)", prevAddr, addrInfo.desc);
+		}
+		else
+		{
+			DebugDisplayInfoF("  Previous PC 0x%04X", prevAddr);
+		}
+	}
+}
+
 void DebugAssertBreak(int addr, int prevAddr, bool host)
 {
 	AddrInfo addrInfo;
@@ -1301,26 +1318,25 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 		{
 			if (Breakpoints[i].start == addr)
 			{
-				DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s' / %s)", host ? "Host" : "Parasite", addr, Breakpoints[i].name, DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
+				DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s' / %s)",
+				                  host ? "Host" : "Parasite",
+				                  addr,
+				                  Breakpoints[i].name,
+				                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
 
-				if (prevAddr > 0)
-				{
-					DebugDisplayInfoF("  Previous PC 0x%04X (%s)", prevAddr, DebugLookupAddress(prevAddr, &addrInfo) ? addrInfo.desc : "Unknown");
-				}
-
+				DebugDisplayPreviousAddress(prevAddr);
 				return;
 			}
 		}
 	}
 
-	const char* source = GetDebugSourceString();
+	DebugDisplayInfoF("%s break at 0x%04X (%s / %s)",
+	                  host ? "Host" : "Parasite",
+	                  addr,
+	                  GetDebugSourceString(),
+	                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
 
-	DebugDisplayInfoF("%s break at 0x%04X %s / %s)", host ? "Host" : "Parasite", addr, source, DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
-
-	if (prevAddr > 0)
-	{
-		DebugDisplayInfoF("  Previous PC 0x%04X (%s)", prevAddr, DebugLookupAddress(prevAddr, &addrInfo) ? addrInfo.desc : "Unknown");
-	}
+	DebugDisplayPreviousAddress(prevAddr);
 }
 
 void DebugDisplayTrace(DebugType type, bool host, const char *info)
@@ -1578,7 +1594,15 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 		{
 			if (!LastAddrInOS)
 			{
-				DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X (%s)",addr,DebugLookupAddress(addr,&addrInfo) ? addrInfo.desc : "Unknown");
+				if (DebugLookupAddress(addr, &addrInfo))
+				{
+					DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X (%s)", addr, addrInfo.desc);
+				}
+				else
+				{
+					DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X", addr);
+				}
+
 				LastAddrInOS = true;
 				LastAddrInBIOS = LastAddrInROM = false;
 			}
@@ -1594,11 +1618,11 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 			{
 				if (ReadRomInfo(PagedRomReg, &romInfo))
 				{
-					DebugDisplayInfoF("Entered ROM \"%s\" (0x8000-0xBFFF) at 0x%04X", romInfo.Title, addr);
+					DebugDisplayInfoF("Entered paged ROM bank %d \"%s\" (0x8000-0xBFFF) at 0x%04X", PagedRomReg, romInfo.Title, addr);
 				}
 				else
 				{
-					DebugDisplayInfoF("Entered unknown ROM (0x8000-0xBFFF) at 0x%04X", addr);
+					DebugDisplayInfoF("Entered paged ROM bank %d (0x8000-0xBFFF) at 0x%04X", PagedRomReg, addr);
 				}
 
 				LastAddrInROM = true;
@@ -1657,16 +1681,36 @@ bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YR
 	return true;
 }
 
+static void DebugLookupSWRAddress(AddrInfo* addrInfo)
+{
+	addrInfo->start = 0x8000;
+	addrInfo->end   = 0xbfff;
+
+	RomInfo rom;
+
+	const char* ROMType = RomWritable[ROMSEL] ? "Paged ROM" : "Sideways RAM";
+
+	// Try ROM info:
+	if (ReadRomInfo(ROMSEL, &rom))
+	{
+		sprintf(addrInfo->desc, "%s bank %d: %.80s", ROMType, ROMSEL, rom.Title);
+	}
+	else
+	{
+		sprintf(addrInfo->desc, "%s bank %d", ROMType, ROMSEL);
+	}
+}
+
 static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 {
 	RomInfo rom;
 
-	if(MemoryMaps[ROMSEL].count > 0)
+	// Try current ROM's map
+	if (MemoryMaps[ROMSEL].count > 0)
 	{
-		// Try current ROM's map
 		for (int i = 0; i < MemoryMaps[ROMSEL].count; i++)
 		{
-			if(addr >= MemoryMaps[ROMSEL].entries[i].start && addr <= MemoryMaps[ROMSEL].entries[i].end)
+			if (addr >= MemoryMaps[ROMSEL].entries[i].start && addr <= MemoryMaps[ROMSEL].entries[i].end)
 			{
 				addrInfo->start = MemoryMaps[ROMSEL].entries[i].start;
 				addrInfo->end = MemoryMaps[ROMSEL].entries[i].end;
@@ -1675,138 +1719,145 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			}
 		}
 	}
-	else if(addr >= 0x8000 && addr <= 0xBFFF && ReadRomInfo(ROMSEL, &rom))
-	{
-		addrInfo->start = 0x8000;
-		addrInfo->end = 0xBFFF;
 
-		// Try ROM info:
-		if (ReadRomInfo(ROMSEL, &rom))
+	// Try OS map
+	if (MemoryMaps[16].count > 0)
+	{
+		for (int i = 0; i < MemoryMaps[16].count; i++)
 		{
-			sprintf(addrInfo->desc, "Paged ROM bank %d: %.80s", ROMSEL, rom.Title);
-			return true;
+			if (addr >= MemoryMaps[16].entries[i].start && addr <= MemoryMaps[16].entries[i].end)
+			{
+				memcpy(addrInfo, &MemoryMaps[16].entries[i], sizeof(AddrInfo));
+				return true;
+			}
 		}
-		else if (RomWritable[ROMSEL])
+	}
+
+	if (MachineType == Model::B)
+	{
+		if (addr >= 0x8000 && addr < 0xc000)
 		{
-			sprintf(addrInfo->desc,"Sideways RAM bank %d",ROMSEL);
+			DebugLookupSWRAddress(addrInfo);
 			return true;
 		}
 	}
-	else
+	else if (MachineType == Model::IntegraB)
 	{
-		// Some custom machine related stuff
-		if (MachineType == Model::Master128)
+		if (ShEn && !MemSel && addr >= 0x3000 && addr <= 0x7fff)
 		{
-			// Master cartridge (not implemented in BeebEm yet)
-			if((ACCCON & 0x20) && addr >= 0xFC00 && addr <= 0xFDFF)
-			{
-				addrInfo->start = 0xFC00;
-				addrInfo->end = 0xFDFF;
-				strcpy(addrInfo->desc, "Cartridge (ACCCON bit 5 set)");
-				return true;
-			}
-
-			// Master private and shadow RAM.
-			if((ACCCON & 0x08) && addr >= 0xC000 && addr <= 0xDFFF)
-			{
-				addrInfo->start = 0xC000;
-				addrInfo->end = 0xDFFF;
-				strcpy(addrInfo->desc, "8K Private RAM (ACCCON bit 3 set)");
-				return true;
-			}
-
-			if((ACCCON & 0x04) && addr >= 0x3000 && addr <= 0x7FFF)
-			{
-				addrInfo->start = 0x3000;
-				addrInfo->end = 0x7FFF;
-				strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 2 set)");
-				return true;
-			}
-
-			if((ACCCON & 0x02) && PrePC >= 0xC000 && PrePC <= 0xDFFF && addr >= 0x3000 && addr <= 0x7FFF)
-			{
-				addrInfo->start = 0x3000;
-				addrInfo->end = 0x7FFF;
-				strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 1 set and PC in VDU driver)");
-				return true;
-			}
+			addrInfo->start = 0x3000;
+			addrInfo->end   = 0x7fff;
+			strcpy(addrInfo->desc, "Shadow RAM");
+			return true;
 		}
-		else if (MachineType == Model::BPlus)
-		{
-			if(addr >= 0x3000 && addr <= 0x7FFF)
-			{
-				addrInfo->start = 0x3000;
-				addrInfo->end = 0x7FFF;
 
-				if (Sh_Display && PrePC>=0xC000 && PrePC<=0xDFFF)
-				{
-					strcpy(addrInfo->desc, "Shadow RAM (PC in VDU driver)");
-					return true;
-				}
-				else if(Sh_Display && MemSel && PrePC>=0xA000 && PrePC <=0xAFFF)
-				{
-					addrInfo->start = 0x3000;
-					addrInfo->end = 0x7FFF;
-					strcpy(addrInfo->desc, "Shadow RAM (PC in upper 4K of ROM and shadow selected)");
-					return true;
-				}
-			}
-			else if(addr >= 0x8000 && addr <= 0xAFFF && MemSel)
+		if (PrvEn)
+		{
+			if (Prvs8 && addr >= 0x8000 && addr <= 0x83ff)
 			{
 				addrInfo->start = 0x8000;
-				addrInfo->end = 0xAFFF;
-				strcpy(addrInfo->desc, "Paged RAM");
+				addrInfo->end   = 0x83ff;
+				strcpy(addrInfo->desc, "1K private area");
 				return true;
 			}
-		}
-		else if (MachineType == Model::IntegraB)
-		{
-			if(ShEn && !MemSel && addr >= 0x3000 && addr <= 0x7FFF)
+			else if (Prvs4 && addr >= 0x8000 && addr <= 0x8fff)
 			{
-				addrInfo->start = 0x3000;
-				addrInfo->end = 0x7FFF;
-				strcpy(addrInfo->desc, "Shadow RAM");
+				addrInfo->start = 0x8400;
+				addrInfo->end   = 0x8fff;
+				strcpy(addrInfo->desc, "4K private area");
 				return true;
 			}
-			if(PrvEn)
+			else if (Prvs1 && addr >= 0x9000 && addr <= 0xafff)
 			{
-				if(Prvs8 && addr >= 0x8000 && addr <= 0x83FF)
-				{
-					addrInfo->start = 0x8000;
-					addrInfo->end = 0x83FF;
-					strcpy(addrInfo->desc, "1K private area");
-					return true;
-				}
-				else if(Prvs4 && addr >= 0x8000 && addr <= 0x8FFF)
-				{
-					addrInfo->start = 0x8400;
-					addrInfo->end = 0x8FFF;
-					strcpy(addrInfo->desc, "4K private area");
-					return true;
-				}
-				else if(Prvs1 && addr >= 0x9000 && addr <= 0xAFFF)
-				{
-					addrInfo->start = 0x9000;
-					addrInfo->end = 0xAFFF;
-					strcpy(addrInfo->desc, "8K private area");
-					return true;
-				}
+				addrInfo->start = 0x9000;
+				addrInfo->end   = 0xafff;
+				strcpy(addrInfo->desc, "8K private area");
+				return true;
 			}
 		}
 
-		// Try OS map:
-		if(MemoryMaps[16].count > 0)
+		if (addr >= 0x8000 && addr < 0xc000)
 		{
-			for (int i = 0; i < MemoryMaps[16].count; i++)
-			{
-				if(addr >= MemoryMaps[16].entries[i].start && addr <= MemoryMaps[16].entries[i].end)
-				{
-					memcpy(addrInfo, &MemoryMaps[16].entries[i], sizeof(AddrInfo));
-					return true;
-				}
-			}
+			DebugLookupSWRAddress(addrInfo);
+			return true;
 		}
 	}
+	else if (MachineType == Model::BPlus)
+	{
+		if (addr >= 0x3000 && addr <= 0x7fff)
+		{
+			addrInfo->start = 0x3000;
+			addrInfo->end   = 0x7fff;
+
+			if (Sh_Display && PrePC >= 0xc000 && PrePC <= 0xdfff)
+			{
+				strcpy(addrInfo->desc, "Shadow RAM (PC in VDU driver)");
+				return true;
+			}
+			else if (Sh_Display && MemSel && PrePC >= 0xa000 && PrePC <= 0xafff)
+			{
+				addrInfo->start = 0x3000;
+				addrInfo->end   = 0x7fff;
+				strcpy(addrInfo->desc, "Shadow RAM (PC in upper 4K of ROM and shadow selected)");
+				return true;
+			}
+		}
+		else if (addr >= 0x8000 && addr <= 0xafff && MemSel)
+		{
+			addrInfo->start = 0x8000;
+			addrInfo->end   = 0xafff;
+			strcpy(addrInfo->desc, "Paged RAM");
+			return true;
+		}
+		else if (addr >= 0x8000 && addr < 0xc000)
+		{
+			DebugLookupSWRAddress(addrInfo);
+			return true;
+		}
+	}
+	else if (MachineType == Model::Master128)
+	{
+		// Master cartridge (not implemented in BeebEm yet)
+		if ((ACCCON & 0x20) && addr >= 0xfc00 && addr <= 0xfdff)
+		{
+			addrInfo->start = 0xfc00;
+			addrInfo->end   = 0xfdff;
+			strcpy(addrInfo->desc, "Cartridge (ACCCON bit 5 set)");
+			return true;
+		}
+
+		// Master private and shadow RAM.
+		if ((ACCCON & 0x08) && addr >= 0xc000 && addr <= 0xdfff)
+		{
+			addrInfo->start = 0xc000;
+			addrInfo->end   = 0xdfff;
+			strcpy(addrInfo->desc, "8K Private RAM (ACCCON bit 3 set)");
+			return true;
+		}
+
+		if ((ACCCON & 0x04) && addr >= 0x3000 && addr <= 0x7fff)
+		{
+			addrInfo->start = 0x3000;
+			addrInfo->end   = 0x7fff;
+			strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 2 set)");
+			return true;
+		}
+
+		if ((ACCCON & 0x02) && PrePC >= 0xC000 && PrePC <= 0xDFFF && addr >= 0x3000 && addr <= 0x7FFF)
+		{
+			addrInfo->start = 0x3000;
+			addrInfo->end   = 0x7fff;
+			strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 1 set and PC in VDU driver)");
+			return true;
+		}
+
+		if (addr >= 0x8000 && addr < 0xc000)
+		{
+			DebugLookupSWRAddress(addrInfo);
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -1827,23 +1878,21 @@ void DebugInitMemoryMaps()
 
 bool DebugLoadMemoryMap(char* filename, int bank)
 {
-	if(bank < 0 || bank > 16)
+	if (bank < 0 || bank > 16)
 		return false;
 
 	MemoryMap* map = &MemoryMaps[bank];
+
 	FILE *infile = fopen(filename, "r");
-	if (infile == NULL)
-	{
-		return false;
-	}
-	else
+
+	if (infile != nullptr)
 	{
 		map->count = 0;
-		map->entries = NULL;
+		map->entries = nullptr;
 
 		char line[1024];
 
-		while(fgets(line, _countof(line), infile) != NULL)
+		while (fgets(line, _countof(line), infile) != nullptr)
 		{
 			DebugChompString(line);
 			char *buf = line;
@@ -1854,19 +1903,22 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 			if(map->count % 256 == 0)
 			{
 				AddrInfo* newAddrInfo = (AddrInfo*)realloc(map->entries, (map->count + 256) * sizeof(AddrInfo));
-				if(newAddrInfo == NULL)
+
+				if (newAddrInfo == nullptr)
 				{
 					fclose(infile);
 					mainWin->Report(MessageType::Error, "Allocation failure reading memory map!");
 
-					if(map->entries != NULL)
+					if (map->entries != nullptr)
 					{
 						free(map->entries);
-						map->entries = NULL;
+						map->entries = nullptr;
 						map->count = 0;
 					}
+
 					return false;
 				}
+
 				map->entries = newAddrInfo;
 			}
 
@@ -1885,11 +1937,17 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 				free(map->entries);
 				map->entries = NULL;
 				map->count = 0;
+
 				fclose(infile);
 				return false;
 			}
 		}
+
 		fclose(infile);
+	}
+	else
+	{
+		return false;
 	}
 
 	return true;
@@ -2781,16 +2839,23 @@ static bool DebugCmdHelp(char* args)
 			}
 		}
 		// Display help for address
-		if(sscanf(args, "%x", &addr) == 1)
+		if (sscanf(args, "%x", &addr) == 1)
 		{
-			if(DebugLookupAddress(addr, &addrInfo))
+			if (DebugLookupAddress(addr, &addrInfo))
+			{
 				DebugDisplayInfoF("0x%04X: %s (0x%04X-0x%04X)", addr, addrInfo.desc, addrInfo.start, addrInfo.end);
+			}
 			else
+			{
 				DebugDisplayInfoF("0x%04X: No description", addr);
+			}
 		}
 		else
+		{
 			DebugDisplayInfoF("Help: Command %s was not recognised.", args);
+		}
 	}
+
 	return true;
 }
 

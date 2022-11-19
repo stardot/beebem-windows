@@ -990,6 +990,27 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 }
 
+static bool IsValidROMString(const unsigned char* s)
+{
+	int Count = 0;
+	int Total = 0;
+
+	for (; *s != '\0'; s++)
+	{
+		Count += isprint(*s) ? 1 : 0;
+		Total++;
+	}
+
+	if (Total == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return ((double)Count / (double)Total) > 0.5;
+	}
+}
+
 bool ReadRomInfo(int bank, RomInfo* info)
 {
 	if((RomFlags)Roms[bank][6] == 0)
@@ -1014,6 +1035,11 @@ bool ReadRomInfo(int bank, RomInfo* info)
 
 	strncpy(info->Title, (char*)&Roms[bank][9], MAX_ROMINFO_LENGTH);
 	info->Title[MAX_ROMINFO_LENGTH] = '\0';
+
+	if (!IsValidROMString((unsigned char*)info->Title))
+	{
+		return false;
+	}
 
 	if (strlen(info->Title) + 9 != Roms[bank][7])
 	{
