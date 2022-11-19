@@ -49,34 +49,32 @@ Boston, MA  02110-1301, USA.
 #include "StringUtils.h"
 #include "DebugTrace.h"
 
-#define MAX_LINES 4096          // Max lines in info window
-#define LINES_IN_INFO 28        // Visible lines in info window
-#define MAX_COMMAND_LEN 200     // Max debug command length
-#define MAX_BPS 50              // Max num of breakpoints/watches
-#define MAX_HISTORY 20          // Number of commands in the command history.
+constexpr int MAX_LINES = 4096;          // Max lines in info window
+constexpr int LINES_IN_INFO = 28;        // Visible lines in info window
+constexpr int MAX_COMMAND_LEN = 200;     // Max debug command length
+constexpr int MAX_BPS = 50;              // Max num of breakpoints/watches
+constexpr int MAX_HISTORY = 20;          // Number of commands in the command history.
 
 // Instruction format
-#define IMM  0x20
-#define ABS  0x40
-#define ACC  0x80
-#define IMP  0x100
-#define INX  0x200
-#define INY  0x400
-#define ZPX  0x800
-#define ABX  0x1000
-#define ABY  0x2000
-#define REL  0x4000
-#define IND  0x8000
-#define ZPY  0x10000
-#define ZPG  0x20000
-#define ZPR  0x40000
-#define ILL  0x80000
+constexpr int IMM = 0x20;
+constexpr int ABS = 0x40;
+constexpr int ACC = 0x80;
+constexpr int IMP = 0x100;
+constexpr int INX = 0x200;
+constexpr int INY = 0x400;
+constexpr int ZPX = 0x800;
+constexpr int ABX = 0x1000;
+constexpr int ABY = 0x2000;
+constexpr int REL = 0x4000;
+constexpr int IND = 0x8000;
+constexpr int ZPY = 0x10000;
+constexpr int ZPG = 0x20000;
+constexpr int ZPR = 0x40000;
+constexpr int ILL = 0x80000;
 
-#define STR(x) #x
+constexpr int ADRMASK = IMM | ABS | ACC | IMP | INX | INY | ZPX | ABX | ABY | REL | IND | ZPY | ZPG | ZPR | ILL;
 
-#define ADRMASK (IMM | ABS | ACC | IMP | INX | INY | ZPX | ABX | ABY | REL | IND | ZPY | ZPG | ZPR | ILL)
-
-const int MAX_BUFFER = 65536;
+constexpr int MAX_BUFFER = 65536;
 
 bool DebugEnabled = false; // Debug dialog visible
 static DebugType DebugSource = DebugType::None; // Debugging active?
