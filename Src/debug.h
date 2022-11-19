@@ -29,6 +29,7 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 #include <string>
+#include <vector>
 
 #include "via.h"
 
@@ -93,13 +94,12 @@ struct AddrInfo
 {
 	int start;
 	int end;
-	char desc[100];
+	std::string desc;
 };
 
 struct MemoryMap
 {
-	AddrInfo* entries;
-	int count;
+	std::vector<AddrInfo> entries;
 };
 
 struct DebugCmd

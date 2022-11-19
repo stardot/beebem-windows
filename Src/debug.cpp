@@ -1287,7 +1287,7 @@ static void DebugDisplayPreviousAddress(int prevAddr)
 
 		if (DebugLookupAddress(prevAddr, &addrInfo))
 		{
-			DebugDisplayInfoF("  Previous PC 0x%04X (%s)", prevAddr, addrInfo.desc);
+			DebugDisplayInfoF("  Previous PC 0x%04X (%s)", prevAddr, addrInfo.desc.c_str());
 		}
 		else
 		{
@@ -1322,7 +1322,7 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 				                  host ? "Host" : "Parasite",
 				                  addr,
 				                  Breakpoints[i].name,
-				                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
+				                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc.c_str() : "Unknown");
 
 				DebugDisplayPreviousAddress(prevAddr);
 				return;
@@ -1334,7 +1334,7 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 	                  host ? "Host" : "Parasite",
 	                  addr,
 	                  GetDebugSourceString(),
-	                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
+	                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc.c_str() : "Unknown");
 
 	DebugDisplayPreviousAddress(prevAddr);
 }
@@ -1586,7 +1586,10 @@ bool DebugDisassembler(int addr,
 		{
 			if (!LastAddrInBIOS)
 			{
-				DebugDisplayInfoF("Entered BIOS (0xF800-0xFFFF) at 0x%04X (%s)",addr,DebugLookupAddress(addr,&addrInfo) ? addrInfo.desc : "Unknown");
+				DebugDisplayInfoF("Entered BIOS (0xF800-0xFFFF) at 0x%04X (%s)",
+				                  addr,
+				                  DebugLookupAddress(addr,&addrInfo) ? addrInfo.desc.c_str() : "Unknown");
+
 				LastAddrInBIOS = true;
 				LastAddrInOS = LastAddrInROM = false;
 			}
@@ -1603,7 +1606,7 @@ bool DebugDisassembler(int addr,
 			{
 				if (DebugLookupAddress(addr, &addrInfo))
 				{
-					DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X (%s)", addr, addrInfo.desc);
+					DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X (%s)", addr, addrInfo.desc.c_str());
 				}
 				else
 				{
@@ -1694,18 +1697,21 @@ static void DebugLookupSWRAddress(AddrInfo* addrInfo)
 	addrInfo->end   = 0xbfff;
 
 	RomInfo rom;
+	char desc[100];
 
 	const char* ROMType = RomWritable[ROMSEL] ? "Paged ROM" : "Sideways RAM";
 
 	// Try ROM info:
 	if (ReadRomInfo(ROMSEL, &rom))
 	{
-		sprintf(addrInfo->desc, "%s bank %d: %.80s", ROMType, ROMSEL, rom.Title);
+		sprintf(desc, "%s bank %d: %.80s", ROMType, ROMSEL, rom.Title);
 	}
 	else
 	{
-		sprintf(addrInfo->desc, "%s bank %d", ROMType, ROMSEL);
+		sprintf(desc, "%s bank %d", ROMType, ROMSEL);
 	}
+
+	addrInfo->desc = desc;
 }
 
 static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
@@ -1713,28 +1719,33 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 	RomInfo rom;
 
 	// Try current ROM's map
-	if (MemoryMaps[ROMSEL].count > 0)
+	if (!MemoryMaps[ROMSEL].entries.empty())
 	{
-		for (int i = 0; i < MemoryMaps[ROMSEL].count; i++)
+		for (size_t i = 0; i < MemoryMaps[ROMSEL].entries.size(); i++)
 		{
 			if (addr >= MemoryMaps[ROMSEL].entries[i].start && addr <= MemoryMaps[ROMSEL].entries[i].end)
 			{
 				addrInfo->start = MemoryMaps[ROMSEL].entries[i].start;
-				addrInfo->end = MemoryMaps[ROMSEL].entries[i].end;
-				sprintf(addrInfo->desc, "%.99s", ReadRomInfo(ROMSEL, &rom) ? rom.Title : "ROM");
+				addrInfo->end   = MemoryMaps[ROMSEL].entries[i].end;
+
+				char desc[100];
+				sprintf(desc, "%.99s", ReadRomInfo(ROMSEL, &rom) ? rom.Title : "ROM");
+				addrInfo->desc = desc;
+
 				return true;
 			}
 		}
 	}
 
 	// Try OS map
-	if (MemoryMaps[16].count > 0)
+	if (!MemoryMaps[16].entries.empty())
 	{
-		for (int i = 0; i < MemoryMaps[16].count; i++)
+		for (size_t i = 0; i < MemoryMaps[16].entries.size(); i++)
 		{
 			if (addr >= MemoryMaps[16].entries[i].start && addr <= MemoryMaps[16].entries[i].end)
 			{
-				memcpy(addrInfo, &MemoryMaps[16].entries[i], sizeof(AddrInfo));
+				*addrInfo = MemoryMaps[16].entries[i];
+
 				return true;
 			}
 		}
@@ -1754,7 +1765,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		{
 			addrInfo->start = 0x3000;
 			addrInfo->end   = 0x7fff;
-			strcpy(addrInfo->desc, "Shadow RAM");
+			addrInfo->desc  = "Shadow RAM";
 			return true;
 		}
 
@@ -1764,21 +1775,21 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = 0x8000;
 				addrInfo->end   = 0x83ff;
-				strcpy(addrInfo->desc, "1K private area");
+				addrInfo->desc  = "1K private area";
 				return true;
 			}
 			else if (Prvs4 && addr >= 0x8000 && addr <= 0x8fff)
 			{
 				addrInfo->start = 0x8400;
 				addrInfo->end   = 0x8fff;
-				strcpy(addrInfo->desc, "4K private area");
+				addrInfo->desc  = "4K private area";
 				return true;
 			}
 			else if (Prvs1 && addr >= 0x9000 && addr <= 0xafff)
 			{
 				addrInfo->start = 0x9000;
 				addrInfo->end   = 0xafff;
-				strcpy(addrInfo->desc, "8K private area");
+				addrInfo->desc  = "8K private area";
 				return true;
 			}
 		}
@@ -1798,14 +1809,14 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 
 			if (Sh_Display && PrePC >= 0xc000 && PrePC <= 0xdfff)
 			{
-				strcpy(addrInfo->desc, "Shadow RAM (PC in VDU driver)");
+				addrInfo->desc = "Shadow RAM (PC in VDU driver)";
 				return true;
 			}
 			else if (Sh_Display && MemSel && PrePC >= 0xa000 && PrePC <= 0xafff)
 			{
 				addrInfo->start = 0x3000;
 				addrInfo->end   = 0x7fff;
-				strcpy(addrInfo->desc, "Shadow RAM (PC in upper 4K of ROM and shadow selected)");
+				addrInfo->desc  = "Shadow RAM (PC in upper 4K of ROM and shadow selected)";
 				return true;
 			}
 		}
@@ -1813,7 +1824,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		{
 			addrInfo->start = 0x8000;
 			addrInfo->end   = 0xafff;
-			strcpy(addrInfo->desc, "Paged RAM");
+			addrInfo->desc  = "Paged RAM";
 			return true;
 		}
 		else if (addr >= 0x8000 && addr < 0xc000)
@@ -1829,7 +1840,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		{
 			addrInfo->start = 0xfc00;
 			addrInfo->end   = 0xfdff;
-			strcpy(addrInfo->desc, "Cartridge (ACCCON bit 5 set)");
+			addrInfo->desc  = "Cartridge (ACCCON bit 5 set)";
 			return true;
 		}
 
@@ -1838,7 +1849,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		{
 			addrInfo->start = 0xc000;
 			addrInfo->end   = 0xdfff;
-			strcpy(addrInfo->desc, "8K Private RAM (ACCCON bit 3 set)");
+			addrInfo->desc  = "8K Private RAM (ACCCON bit 3 set)";
 			return true;
 		}
 
@@ -1846,7 +1857,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		{
 			addrInfo->start = 0x3000;
 			addrInfo->end   = 0x7fff;
-			strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 2 set)");
+			addrInfo->desc  = "Shadow RAM (ACCCON bit 2 set)";
 			return true;
 		}
 
@@ -1854,7 +1865,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		{
 			addrInfo->start = 0x3000;
 			addrInfo->end   = 0x7fff;
-			strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 1 set and PC in VDU driver)");
+			addrInfo->desc  = "Shadow RAM (ACCCON bit 1 set and PC in VDU driver)";
 			return true;
 		}
 
@@ -1879,7 +1890,7 @@ void DebugInitMemoryMaps()
 {
 	for(int i = 0; i < _countof(MemoryMaps); i++)
 	{
-		MemoryMaps[i].count = 0;
+		MemoryMaps[i].entries.clear();
 	}
 }
 
@@ -1894,8 +1905,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 
 	if (infile != nullptr)
 	{
-		map->count = 0;
-		map->entries = nullptr;
+		map->entries.clear();
 
 		char line[1024];
 
@@ -1905,45 +1915,27 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 			char *buf = line;
 			while(buf[0] == ' ' || buf[0] == '\t' || buf[0] == '\r' || buf[0] == '\n')
 				buf++;
-			if(buf[0] == ';' || buf[0] == '\0')	// Skip comments and empty lines
+
+			if (buf[0] == ';' || buf[0] == '\0') // Skip comments and empty lines
 				continue;
-			if(map->count % 256 == 0)
+
+			AddrInfo entry;
+
+			char desc[256];
+			memset(desc, 0, sizeof(desc));
+
+			int result = sscanf(buf, "%x %x %99c", &entry.start, &entry.end, desc);
+
+			if (result >= 2 && strlen(desc) > 0)
 			{
-				AddrInfo* newAddrInfo = (AddrInfo*)realloc(map->entries, (map->count + 256) * sizeof(AddrInfo));
-
-				if (newAddrInfo == nullptr)
-				{
-					fclose(infile);
-					mainWin->Report(MessageType::Error, "Allocation failure reading memory map!");
-
-					if (map->entries != nullptr)
-					{
-						free(map->entries);
-						map->entries = nullptr;
-						map->count = 0;
-					}
-
-					return false;
-				}
-
-				map->entries = newAddrInfo;
-			}
-
-			AddrInfo* entry = &map->entries[map->count];
-
-			memset(entry->desc, 0, _countof(entry->desc));
-			int result = sscanf(buf, "%x %x %99c", &entry->start, &entry->end, &entry->desc);
-			if (result >= 2 && strlen(entry->desc) > 0)
-			{
-				map->count++;
+				entry.desc = desc;
+				map->entries.push_back(entry);
 			}
 			else
 			{
 				mainWin->Report(MessageType::Error, "Invalid memory map format!");
 
-				free(map->entries);
-				map->entries = NULL;
-				map->count = 0;
+				map->entries.clear();
 
 				fclose(infile);
 				return false;
@@ -2850,7 +2842,7 @@ static bool DebugCmdHelp(char* args)
 		{
 			if (DebugLookupAddress(addr, &addrInfo))
 			{
-				DebugDisplayInfoF("0x%04X: %s (0x%04X-0x%04X)", addr, addrInfo.desc, addrInfo.start, addrInfo.end);
+				DebugDisplayInfoF("0x%04X: %s (0x%04X-0x%04X)", addr, addrInfo.desc.c_str(), addrInfo.start, addrInfo.end);
 			}
 			else
 			{
