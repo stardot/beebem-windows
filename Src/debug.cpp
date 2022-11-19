@@ -1504,7 +1504,14 @@ static void DebugUpdateWatches(bool all)
 	}
 }
 
-bool DebugDisassembler(int addr, int prevAddr, int Accumulator, int XReg, int YReg, int PSR, int StackReg, bool host)
+bool DebugDisassembler(int addr,
+                       int prevAddr,
+                       int Accumulator,
+                       int XReg,
+                       int YReg,
+                       unsigned char PSR,
+                       unsigned char StackReg,
+                       bool host)
 {
 	char str[150];
 	AddrInfo addrInfo;
@@ -2324,7 +2331,7 @@ static bool DebugCmdFile(char* args)
 		sscanf(args,"%c %x %259c", &mode, &addr, filename);
 	}
 
-	mode = tolower(mode);
+	mode = static_cast<char>(tolower(mode));
 
 	if (filename[0] == '\0')
 	{
@@ -3235,9 +3242,9 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 
 int DebugDisassembleInstructionWithCPUStatus(int addr,
                                              bool host,
-                                             unsigned char Accumulator,
-                                             unsigned char XReg,
-                                             unsigned char YReg,
+                                             int Accumulator,
+                                             int XReg,
+                                             int YReg,
                                              unsigned char StackReg,
                                              unsigned char PSR,
                                              char *opstr)
