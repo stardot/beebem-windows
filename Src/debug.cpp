@@ -1233,18 +1233,9 @@ void DebugBreakExecution(DebugType type)
 	}
 }
 
-void DebugAssertBreak(int addr, int prevAddr, bool host)
+static const char* GetDebugSourceString()
 {
-	AddrInfo addrInfo;
 	const char* source = "Unknown";
-
-	DebugUpdateWatches(false);
-	SetDlgItemText(hwndDebug, IDC_DEBUGBREAK, "Continue");
-
-	if(LastBreakAddr == 0)
-		LastBreakAddr = addr;
-	else
-		return;
 
 	switch(DebugSource)
 	{
@@ -1285,23 +1276,51 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 		break;
 	}
 
+	return source;
+}
+
+void DebugAssertBreak(int addr, int prevAddr, bool host)
+{
+	AddrInfo addrInfo;
+
+	DebugUpdateWatches(false);
+	SetDlgItemText(hwndDebug, IDC_DEBUGBREAK, "Continue");
+
+	if (LastBreakAddr == 0)
+	{
+		LastBreakAddr = addr;
+	}
+	else
+	{
+		return;
+	}
+
 	if (DebugSource == DebugType::Breakpoint)
 	{
-		for(int i = 0; i < BPCount; i++)
+		for (int i = 0; i < BPCount; i++)
 		{
-			if(Breakpoints[i].start == addr)
+			if (Breakpoints[i].start == addr)
 			{
-				DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s' / %s)",(host ? "Host" : "Parasite"), addr, Breakpoints[i].name, (DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown"));
-				if(prevAddr > 0)
-					DebugDisplayInfoF("  Previous PC 0x%04X (%s)",prevAddr,DebugLookupAddress(prevAddr, &addrInfo) ? addrInfo.desc : "Unknown");
+				DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s' / %s)", host ? "Host" : "Parasite", addr, Breakpoints[i].name, DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
+
+				if (prevAddr > 0)
+				{
+					DebugDisplayInfoF("  Previous PC 0x%04X (%s)", prevAddr, DebugLookupAddress(prevAddr, &addrInfo) ? addrInfo.desc : "Unknown");
+				}
+
 				return;
 			}
 		}
 	}
 
-	DebugDisplayInfoF("%s break at 0x%04X %s / %s)",(host ? "Host" : "Parasite"), addr, source, DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
-	if(prevAddr > 0)
-		DebugDisplayInfoF("  Previous PC 0x%04X (%s)",prevAddr,DebugLookupAddress(prevAddr, &addrInfo) ? addrInfo.desc : "Unknown");
+	const char* source = GetDebugSourceString();
+
+	DebugDisplayInfoF("%s break at 0x%04X %s / %s)", host ? "Host" : "Parasite", addr, source, DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc : "Unknown");
+
+	if (prevAddr > 0)
+	{
+		DebugDisplayInfoF("  Previous PC 0x%04X (%s)", prevAddr, DebugLookupAddress(prevAddr, &addrInfo) ? addrInfo.desc : "Unknown");
+	}
 }
 
 void DebugDisplayTrace(DebugType type, bool host, const char *info)
