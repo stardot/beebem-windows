@@ -1702,29 +1702,32 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = 0xFC00;
 				addrInfo->end = 0xFDFF;
-				sprintf(addrInfo->desc,"Cartridge (ACCCON bit 5 set)");
+				strcpy(addrInfo->desc, "Cartridge (ACCCON bit 5 set)");
 				return true;
 			}
+
 			// Master private and shadow RAM.
 			if((ACCCON & 0x08) && addr >= 0xC000 && addr <= 0xDFFF)
 			{
 				addrInfo->start = 0xC000;
 				addrInfo->end = 0xDFFF;
-				sprintf(addrInfo->desc,"8K Private RAM (ACCCON bit 3 set)");
+				strcpy(addrInfo->desc, "8K Private RAM (ACCCON bit 3 set)");
 				return true;
 			}
+
 			if((ACCCON & 0x04) && addr >= 0x3000 && addr <= 0x7FFF)
 			{
 				addrInfo->start = 0x3000;
 				addrInfo->end = 0x7FFF;
-				sprintf(addrInfo->desc,"Shadow RAM (ACCCON bit 2 set)");
+				strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 2 set)");
 				return true;
 			}
+
 			if((ACCCON & 0x02) && PrePC >= 0xC000 && PrePC <= 0xDFFF && addr >= 0x3000 && addr <= 0x7FFF)
 			{
 				addrInfo->start = 0x3000;
 				addrInfo->end = 0x7FFF;
-				sprintf(addrInfo->desc,"Shadow RAM (ACCCON bit 1 set and PC in VDU driver)");
+				strcpy(addrInfo->desc, "Shadow RAM (ACCCON bit 1 set and PC in VDU driver)");
 				return true;
 			}
 		}
@@ -1734,16 +1737,17 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = 0x3000;
 				addrInfo->end = 0x7FFF;
+
 				if (Sh_Display && PrePC>=0xC000 && PrePC<=0xDFFF)
 				{
-					sprintf(addrInfo->desc,"Shadow RAM (PC in VDU driver)");
+					strcpy(addrInfo->desc, "Shadow RAM (PC in VDU driver)");
 					return true;
 				}
 				else if(Sh_Display && MemSel && PrePC>=0xA000 && PrePC <=0xAFFF)
 				{
 					addrInfo->start = 0x3000;
 					addrInfo->end = 0x7FFF;
-					sprintf(addrInfo->desc,"Shadow RAM (PC in upper 4K of ROM and shadow selected)");
+					strcpy(addrInfo->desc, "Shadow RAM (PC in upper 4K of ROM and shadow selected)");
 					return true;
 				}
 			}
@@ -1751,7 +1755,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = 0x8000;
 				addrInfo->end = 0xAFFF;
-				sprintf(addrInfo->desc,"Paged RAM");
+				strcpy(addrInfo->desc, "Paged RAM");
 				return true;
 			}
 		}
@@ -1761,7 +1765,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = 0x3000;
 				addrInfo->end = 0x7FFF;
-				sprintf(addrInfo->desc,"Shadow RAM");
+				strcpy(addrInfo->desc, "Shadow RAM");
 				return true;
 			}
 			if(PrvEn)
@@ -1770,21 +1774,21 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 				{
 					addrInfo->start = 0x8000;
 					addrInfo->end = 0x83FF;
-					sprintf(addrInfo->desc,"1K private area");
+					strcpy(addrInfo->desc, "1K private area");
 					return true;
 				}
 				else if(Prvs4 && addr >= 0x8000 && addr <= 0x8FFF)
 				{
 					addrInfo->start = 0x8400;
 					addrInfo->end = 0x8FFF;
-					sprintf(addrInfo->desc,"4K private area");
+					strcpy(addrInfo->desc, "4K private area");
 					return true;
 				}
 				else if(Prvs1 && addr >= 0x9000 && addr <= 0xAFFF)
 				{
 					addrInfo->start = 0x9000;
 					addrInfo->end = 0xAFFF;
-					sprintf(addrInfo->desc,"8K private area");
+					strcpy(addrInfo->desc, "8K private area");
 					return true;
 				}
 			}
