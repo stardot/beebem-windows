@@ -603,10 +603,14 @@ void BeebWin::InitTextView()
 	{
 		RECT rc;
 		GetClientRect(m_hWnd, &rc);
+
 		m_hTextView = CreateWindow("EDIT", "TextView",
-			WS_CHILD | WS_VISIBLE | ES_READONLY | ES_MULTILINE | ES_LEFT,
-			0, 0, rc.right, rc.bottom, m_hWnd,
-			NULL, hInst, NULL);
+		                           WS_CHILD | WS_VISIBLE | ES_READONLY | ES_MULTILINE | ES_LEFT,
+		                           0, 0, rc.right, rc.bottom,
+		                           m_hWnd,
+		                           NULL,
+		                           hInst,
+		                           NULL);
 		if (m_hTextView == NULL)
 		{
 			m_TextViewEnabled = false;
