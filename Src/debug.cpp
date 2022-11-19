@@ -1670,7 +1670,7 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			{
 				addrInfo->start = MemoryMaps[ROMSEL].entries[i].start;
 				addrInfo->end = MemoryMaps[ROMSEL].entries[i].end;
-				sprintf(addrInfo->desc, "%s", ReadRomInfo(ROMSEL, &rom) ? rom.Title : "ROM");
+				sprintf(addrInfo->desc, "%.99s", ReadRomInfo(ROMSEL, &rom) ? rom.Title : "ROM");
 				return true;
 			}
 		}
@@ -1681,12 +1681,12 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 		addrInfo->end = 0xBFFF;
 
 		// Try ROM info:
-		if(ReadRomInfo(ROMSEL, &rom))
+		if (ReadRomInfo(ROMSEL, &rom))
 		{
-			sprintf(addrInfo->desc,"Paged ROM bank %d: %s",ROMSEL,rom.Title);
+			sprintf(addrInfo->desc, "Paged ROM bank %d: %.80s", ROMSEL, rom.Title);
 			return true;
 		}
-		else if(RomWritable[ROMSEL])
+		else if (RomWritable[ROMSEL])
 		{
 			sprintf(addrInfo->desc,"Sideways RAM bank %d",ROMSEL);
 			return true;
