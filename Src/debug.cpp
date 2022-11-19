@@ -109,7 +109,11 @@ static HACCEL haccelDebug;
 static std::vector<Label> Labels;
 static Breakpoint Breakpoints[MAX_BPS];
 static Watch Watches[MAX_BPS];
+
+typedef std::vector<AddrInfo> MemoryMap;
+
 static MemoryMap MemoryMaps[17];
+
 INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 std::deque<std::string> DebugHistory;
@@ -1719,14 +1723,14 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 	RomInfo rom;
 
 	// Try current ROM's map
-	if (!MemoryMaps[ROMSEL].entries.empty())
+	if (!MemoryMaps[ROMSEL].empty())
 	{
-		for (size_t i = 0; i < MemoryMaps[ROMSEL].entries.size(); i++)
+		for (size_t i = 0; i < MemoryMaps[ROMSEL].size(); i++)
 		{
-			if (addr >= MemoryMaps[ROMSEL].entries[i].start && addr <= MemoryMaps[ROMSEL].entries[i].end)
+			if (addr >= MemoryMaps[ROMSEL][i].start && addr <= MemoryMaps[ROMSEL][i].end)
 			{
-				addrInfo->start = MemoryMaps[ROMSEL].entries[i].start;
-				addrInfo->end   = MemoryMaps[ROMSEL].entries[i].end;
+				addrInfo->start = MemoryMaps[ROMSEL][i].start;
+				addrInfo->end   = MemoryMaps[ROMSEL][i].end;
 
 				char desc[100];
 				sprintf(desc, "%.99s", ReadRomInfo(ROMSEL, &rom) ? rom.Title : "ROM");
@@ -1738,13 +1742,13 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 	}
 
 	// Try OS map
-	if (!MemoryMaps[16].entries.empty())
+	if (!MemoryMaps[16].empty())
 	{
-		for (size_t i = 0; i < MemoryMaps[16].entries.size(); i++)
+		for (size_t i = 0; i < MemoryMaps[16].size(); i++)
 		{
-			if (addr >= MemoryMaps[16].entries[i].start && addr <= MemoryMaps[16].entries[i].end)
+			if (addr >= MemoryMaps[16][i].start && addr <= MemoryMaps[16][i].end)
 			{
-				*addrInfo = MemoryMaps[16].entries[i];
+				*addrInfo = MemoryMaps[16][i];
 
 				return true;
 			}
@@ -1890,7 +1894,7 @@ void DebugInitMemoryMaps()
 {
 	for(int i = 0; i < _countof(MemoryMaps); i++)
 	{
-		MemoryMaps[i].entries.clear();
+		MemoryMaps[i].clear();
 	}
 }
 
@@ -1905,7 +1909,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 
 	if (infile != nullptr)
 	{
-		map->entries.clear();
+		map->clear();
 
 		char line[1024];
 
@@ -1913,6 +1917,7 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 		{
 			DebugChompString(line);
 			char *buf = line;
+
 			while(buf[0] == ' ' || buf[0] == '\t' || buf[0] == '\r' || buf[0] == '\n')
 				buf++;
 
@@ -1929,13 +1934,13 @@ bool DebugLoadMemoryMap(char* filename, int bank)
 			if (result >= 2 && strlen(desc) > 0)
 			{
 				entry.desc = desc;
-				map->entries.push_back(entry);
+				map->push_back(entry);
 			}
 			else
 			{
 				mainWin->Report(MessageType::Error, "Invalid memory map format!");
 
-				map->entries.clear();
+				map->clear();
 
 				fclose(infile);
 				return false;
