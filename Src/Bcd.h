@@ -21,39 +21,10 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* System VIA support file for the beeb emulator- includes things like the
-keyboard emulation - David Alan Gilbert 30/10/94 */
+#ifndef BCD_HEADER
+#define BCD_HEADER
 
-#ifndef SYSVIA_HEADER
-#define SYSVIA_HEADER
-
-#include "via.h"
-
-extern VIAState SysVIAState;
-extern unsigned char IC32State;
-extern bool RTCY2KAdjust;
-
-void SysVIAWrite(int Address, unsigned char Value);
-unsigned char SysVIARead(int Address);
-void SysVIAReset(void);
-
-void SysVIA_poll_real(void);
-
-void SysVIA_poll(unsigned int ncycles);
-
-void BeebKeyUp(int row, int col);
-void BeebKeyDown(int row, int col);
-void BeebReleaseAllKeys(void);
-
-void SysVIATriggerCA1Int(int value);
-extern unsigned char IC32State;
-
-void RTCInit();
-void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData);
-unsigned char CMOSRead(unsigned char CMOSAddr);
-
-void PulseSysViaCB1(void);
-
-extern bool JoystickButton[2];
+unsigned char BCD(unsigned char Value);
+unsigned char BCDToBin(unsigned char Value);
 
 #endif

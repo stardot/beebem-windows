@@ -177,6 +177,7 @@
     <ClCompile Include="ARMulator\thumbemu.c" />
     <ClCompile Include="atodconv.cpp" />
     <ClCompile Include="avi.cpp" />
+    <ClCompile Include="Bcd.cpp" />
     <ClCompile Include="beebmem.cpp" />
     <ClCompile Include="beebsound.cpp" />
     <ClCompile Include="beebwin.cpp" />
@@ -325,6 +326,7 @@
     <ClInclude Include="ARMulator\iwmmxt.h" />
     <ClInclude Include="atodconv.h" />
     <ClInclude Include="avi.h" />
+    <ClInclude Include="Bcd.h" />
     <ClInclude Include="beebemrc.h" />
     <ClInclude Include="beebmem.h" />
     <ClInclude Include="beebsound.h" />

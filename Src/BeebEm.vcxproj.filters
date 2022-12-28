@@ -48,6 +48,9 @@
     <ClCompile Include="avi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Bcd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="beebmem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -261,6 +264,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="avi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Bcd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="beebemrc.h">

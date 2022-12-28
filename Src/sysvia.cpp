@@ -30,6 +30,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include <windows.h>
 
 #include "6502core.h"
+#include "Bcd.h"
 #include "beebsound.h"
 #include "beebmem.h"
 #include "beebwin.h"
@@ -656,15 +657,6 @@ void SysVIAReset()
 	SREnabled = 0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
 }
 
-/*-------------------------------------------------------------------------*/
-unsigned char BCD(unsigned char nonBCD) {
-	// convert a decimal value to a BCD value
-	return(((nonBCD/10)*16)+nonBCD%10);
-}
-unsigned char BCDToBin(unsigned char BCD) {
-	// convert a BCD value to decimal value
-	return((BCD>>4)*10+(BCD&15));
-}
 /*-------------------------------------------------------------------------*/
 time_t CMOSConvertClock()
 {

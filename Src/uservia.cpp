@@ -24,9 +24,9 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <time.h>
 
-#include "6502core.h"
 #include "uservia.h"
-#include "sysvia.h"
+#include "6502core.h"
+#include "Bcd.h"
 #include "via.h"
 #include "debug.h"
 #include "log.h"
