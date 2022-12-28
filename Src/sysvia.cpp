@@ -70,10 +70,6 @@ char WEState=0;
 unsigned char IC32State=0;
 bool OldCMOSState = false;
 
-// CMOS logging facilities
-bool CMOSDebug = false;
-FILE *CMDF;
-
 /* Last value written to the slow data bus - sound reads it later */
 static unsigned char SlowDataBusWriteValue=0;
 
@@ -209,11 +205,9 @@ static void IC32Write(unsigned char Value) {
   OldCMOSState = tmpCMOSState;
   if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType == Model::Master128) {
     CMOSWrite(CMOS.Address, SlowDataBusWriteValue);
-    if (CMOSDebug) fprintf(CMDF,"Wrote %02x to %02x\n",SlowDataBusWriteValue,CMOS.Address);
   }
   if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128) {
     SysVIAState.ora = CMOSRead(CMOS.Address);
-    if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
   }
 
   /* Must do sound reg access when write line changes */
@@ -271,8 +265,7 @@ static void SlowDataBusWrite(unsigned char Value) {
 static unsigned char SlowDataBusRead() {
   if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128)
   {
-    SysVIAState.ora=CMOSRead(CMOS.Address); //SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
-    if (CMOSDebug) fprintf(CMDF,"Read %02x from %02x\n",SysVIAState.ora,CMOS.Address);
+    SysVIAState.ora = CMOSRead(CMOS.Address); // SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
   }
 
   unsigned char result = SysVIAState.ora & SysVIAState.ddra;
