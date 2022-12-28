@@ -709,9 +709,19 @@ void RTCUpdate()
 	CMOSRAM[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
 	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year));
 }
+
 /*-------------------------------------------------------------------------*/
-void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData) {
-	// Many thanks to Tom Lees for supplying me with info on the 146818 registers 
+
+void CMOSWrite(unsigned char CMOSAddr, unsigned char CMOSData)
+{
+	if (DebugEnabled)
+	{
+	  DebugDisplayTraceF(DebugType::CMOS, true,
+	                     "CMOS: Write address %X value %02X",
+	                     CMOSAddr, CMOSData);
+	}
+
+	// Many thanks to Tom Lees for supplying me with info on the 146818 registers
 	// for these two functions.
 	if (CMOSAddr>0xd) {
 		CMOSRAM[CMOSAddr]=CMOSData;
@@ -752,7 +762,17 @@ unsigned char CMOSRead(unsigned char CMOSAddr) {
 	// 0xe to 0x3f - RAM
 	if (CMOSAddr<0xa)
 		RTCUpdate();
-	return(CMOSRAM[CMOSAddr]);
+
+	unsigned char Value = CMOSRAM[CMOSAddr];
+
+	if (DebugEnabled)
+	{
+	  DebugDisplayTraceF(DebugType::CMOS, true,
+	                     "CMOS: Read address %X value %02X",
+	                     CMOSAddr, Value);
+	}
+
+	return Value;
 }
 
 /*--------------------------------------------------------------------------*/

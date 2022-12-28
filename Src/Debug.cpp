@@ -1348,32 +1348,32 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 		switch (type)
 		{
 		case DebugType::Video:
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGVIDEO))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_VIDEO))
 				DebugDisplayInfo(info);
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGVIDEOBRK))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_VIDEO_BRK))
 				DebugBreakExecution(type);
 			break;
 
 		case DebugType::UserVIA:
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGUSERVIA))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_USERVIA))
 				DebugDisplayInfo(info);
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGUSERVIABRK))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_USERVIA_BRK))
 				DebugBreakExecution(type);
 			break;
 
 		case DebugType::SysVIA:
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSYSVIA))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_SYSVIA))
 				DebugDisplayInfo(info);
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSYSVIABRK))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_SYSVIA_BRK))
 				DebugBreakExecution(type);
 			break;
 
 		case DebugType::Tube:
 			if ((DebugHost && host) || (DebugParasite && !host))
 			{
-				if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTUBE))
+				if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_TUBE))
 					DebugDisplayInfo(info);
-				if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTUBEBRK))
+				if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_TUBE_BRK))
 					DebugBreakExecution(type);
 			}
 
@@ -1381,29 +1381,37 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 			break;
 
 		case DebugType::Serial:
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSERIAL))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_SERIAL))
 				DebugDisplayInfo(info);
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGSERIALBRK))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_SERIAL_BRK))
 				DebugBreakExecution(type);
 			break;
 
 		case DebugType::RemoteServer:
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGREMSER))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_REMSER))
 				DebugDisplayInfo(info);
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGREMSERBRK))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_REMSER_BRK))
 				DebugBreakExecution(type);
 			break;
 
 		case DebugType::Econet:
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGECONET))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_ECONET))
 				DebugDisplayInfo(info);
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGECONETBRK))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_ECONET_BRK))
 				DebugBreakExecution(type);
 			break;
+
 		case DebugType::Teletext:
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTELETEXT))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_TELETEXT))
 				DebugDisplayInfo(info);
-			if (IsDlgItemChecked(hwndDebug, IDC_DEBUGTELETEXTBRK))
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_TELETEXT_BRK))
+				DebugBreakExecution(type);
+			break;
+
+		case DebugType::CMOS:
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_CMOS))
+				DebugDisplayInfo(info);
+			if (IsDlgItemChecked(hwndDebug, IDC_DEBUG_CMOS_BRK))
 				DebugBreakExecution(type);
 			break;
 		}
