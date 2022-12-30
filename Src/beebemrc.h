@@ -379,7 +379,7 @@ Boston, MA  02110-1301, USA.
 #define IDM_1280X1024                   40225
 #define IDM_1440X1080                   40226
 #define IDM_1600X1200                   40227
-#define ID_UPRM                         40228
+#define ID_USER_PORT_RTC_MODULE         40228
 #define IDM_LOADKEYMAP                  40230
 #define IDM_SAVEKEYMAP                  40231
 #define IDM_AUTOSAVE_PREFS_CMOS         40232

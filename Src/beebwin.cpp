@@ -1091,7 +1091,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
-	CheckMenuItem(ID_UPRM, RTC_Enabled);
+	CheckMenuItem(ID_USER_PORT_RTC_MODULE, RTC_Enabled);
 	CheckMenuItem(ID_RTCY2KADJUST, RTCY2KAdjust);
 
 	// Options
@@ -3749,9 +3749,9 @@ void BeebWin::HandleCommand(int MenuId)
 		}
 		break;
 
-	case ID_UPRM:
+	case ID_USER_PORT_RTC_MODULE:
 		RTC_Enabled = !RTC_Enabled;
-		CheckMenuItem(ID_UPRM, RTC_Enabled);
+		CheckMenuItem(ID_USER_PORT_RTC_MODULE, RTC_Enabled);
 		break;
 
 	case ID_TELETEXTHALFMODE:

@@ -708,7 +708,7 @@ BEGIN
         MENUITEM "Select Hard Drive Folder...", IDM_SELECT_HARD_DRIVE_FOLDER
         MENUITEM SEPARATOR
         MENUITEM "User Port Breakout Box",      ID_BREAKOUT
-        MENUITEM "User Port RTC Module",        ID_UPRM
+        MENUITEM "User Port RTC Module",        ID_USER_PORT_RTC_MODULE
         MENUITEM "Master 128 RTC Y2K Adjust",   ID_RTCY2KADJUST
     END
     POPUP "&Options"
