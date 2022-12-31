@@ -56,6 +56,7 @@ extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
 extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
+
 extern bool MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8;
 
 struct CMOSType {

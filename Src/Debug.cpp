@@ -1243,38 +1243,53 @@ static const char* GetDebugSourceString()
 	{
 	case DebugType::None:
 		break;
+
 	case DebugType::Video:
 		source = "Video";
 		break;
-	case DebugType::Serial:
-		source = "Serial";
-		break;
-	case DebugType::Econet:
-		source = "Econet";
-		break;
-	case DebugType::Tube:
-		source = "Tube";
-		break;
-	case DebugType::SysVIA:
-		source = "System VIA";
-		break;
+
 	case DebugType::UserVIA:
 		source = "User VIA";
 		break;
-	case DebugType::Manual:
-		source = "Manual";
+
+	case DebugType::SysVIA:
+		source = "System VIA";
 		break;
-	case DebugType::Breakpoint:
-		source = "Breakpoint";
+
+	case DebugType::Tube:
+		source = "Tube";
 		break;
-	case DebugType::BRK:
-		source = "BRK instruction";
+
+	case DebugType::Serial:
+		source = "Serial";
 		break;
+
+	case DebugType::Econet:
+		source = "Econet";
+		break;
+
+	case DebugType::Teletext:
+		source = "Teletext";
+		break;
+
 	case DebugType::RemoteServer:
 		source = "Remote server";
 		break;
-	case DebugType::Teletext:
-		source = "Teletext";
+
+	case DebugType::Manual:
+		source = "Manual";
+		break;
+
+	case DebugType::Breakpoint:
+		source = "Breakpoint";
+		break;
+
+	case DebugType::CMOS:
+		source = "CMOS";
+		break;
+
+	case DebugType::BRK:
+		source = "BRK instruction";
 		break;
 	}
 
@@ -1320,11 +1335,21 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 		{
 			if (bp.start == addr)
 			{
-				DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s' / %s)",
-				                  host ? "Host" : "Parasite",
-				                  addr,
-				                  bp.name.c_str(),
-				                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc.c_str() : "Unknown");
+				if (DebugLookupAddress(addr, &addrInfo))
+				{
+					DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s' / %s)",
+					                  host ? "Host" : "Parasite",
+					                  addr,
+					                  bp.name.c_str(),
+					                  addrInfo.desc.c_str());
+				}
+				else
+				{
+					DebugDisplayInfoF("%s break at 0x%04X (Breakpoint '%s')",
+					                  host ? "Host" : "Parasite",
+					                  addr,
+					                  bp.name.c_str());
+				}
 
 				DebugDisplayPreviousAddress(prevAddr);
 				return;
@@ -1332,11 +1357,21 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 		}
 	}
 
-	DebugDisplayInfoF("%s break at 0x%04X (%s / %s)",
-	                  host ? "Host" : "Parasite",
-	                  addr,
-	                  GetDebugSourceString(),
-	                  DebugLookupAddress(addr, &addrInfo) ? addrInfo.desc.c_str() : "Unknown");
+	if (DebugLookupAddress(addr, &addrInfo))
+	{
+		DebugDisplayInfoF("%s break at 0x%04X (%s / %s)",
+		                  host ? "Host" : "Parasite",
+		                  addr,
+		                  GetDebugSourceString(),
+		                  addrInfo.desc.c_str());
+	}
+	else
+	{
+		DebugDisplayInfoF("%s break at 0x%04X (%s)",
+		                  host ? "Host" : "Parasite",
+		                  addr,
+		                  GetDebugSourceString());
+	}
 
 	DebugDisplayPreviousAddress(prevAddr);
 }
@@ -1596,9 +1631,17 @@ bool DebugDisassembler(int addr,
 		{
 			if (!LastAddrInBIOS)
 			{
-				DebugDisplayInfoF("Entered BIOS (0xF800-0xFFFF) at 0x%04X (%s)",
-				                  addr,
-				                  DebugLookupAddress(addr,&addrInfo) ? addrInfo.desc.c_str() : "Unknown");
+				if (DebugLookupAddress(addr, &addrInfo))
+				{
+					DebugDisplayInfoF("Entered BIOS (0xF800-0xFFFF) at 0x%04X (%s)",
+					                  addr,
+					                  addrInfo.desc.c_str());
+				}
+				else
+				{
+					DebugDisplayInfoF("Entered BIOS (0xF800-0xFFFF) at 0x%04X",
+					                  addr);
+				}
 
 				LastAddrInBIOS = true;
 				LastAddrInOS = LastAddrInROM = false;
@@ -1636,13 +1679,13 @@ bool DebugDisassembler(int addr,
 		{
 			if (!LastAddrInROM)
 			{
-				if (ReadRomInfo(PagedRomReg, &romInfo))
+				if (ReadRomInfo(ROMSEL, &romInfo))
 				{
-					DebugDisplayInfoF("Entered paged ROM bank %d \"%s\" (0x8000-0xBFFF) at 0x%04X", PagedRomReg, romInfo.Title, addr);
+					DebugDisplayInfoF("Entered paged ROM bank %d \"%s\" (0x8000-0xBFFF) at 0x%04X", ROMSEL, romInfo.Title, addr);
 				}
 				else
 				{
-					DebugDisplayInfoF("Entered paged ROM bank %d (0x8000-0xBFFF) at 0x%04X", PagedRomReg, addr);
+					DebugDisplayInfoF("Entered paged ROM bank %d (0x8000-0xBFFF) at 0x%04X", ROMSEL, addr);
 				}
 
 				LastAddrInROM = true;
@@ -1876,6 +1919,15 @@ static bool DebugLookupAddress(int addr, AddrInfo* addrInfo)
 			addrInfo->start = 0x3000;
 			addrInfo->end   = 0x7fff;
 			addrInfo->desc  = "Shadow RAM (ACCCON bit 1 set and PC in VDU driver)";
+			return true;
+		}
+
+		// Master private RAM.
+		if ((PagedRomReg & 0x80) && addr >= 0x8000 && addr <= 0x8fff)
+		{
+			addrInfo->start = 0x8000;
+			addrInfo->end   = 0x8fff;
+			addrInfo->desc  = "4K Private RAM (ROMSEL bit 7 set)";
 			return true;
 		}
 

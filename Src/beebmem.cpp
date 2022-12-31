@@ -129,7 +129,8 @@ unsigned char ShadowRAM[32768];  // 20K Shadow RAM
 unsigned char ACCCON;            // ACCess CONtrol register
 struct CMOSType CMOS;
 bool Sh_Display;
-static bool PRAM, FRAM;
+static bool PrivateRAMSelect;
+static bool FSRAMSelect;
 static bool Sh_CPUX, Sh_CPUE;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 
@@ -365,7 +366,7 @@ unsigned char BeebReadMem(int Address) {
 			}
 			break;
 		case 8:
-			if (PRAM) {
+			if (PrivateRAMSelect) {
 				return(PrivateRAM[Address-0x8000]);
 			} else {
 				return(Roms[ROMSEL][Address-0x8000]);
@@ -378,7 +379,14 @@ unsigned char BeebReadMem(int Address) {
 			break;
 		case 0xc:
 		case 0xd:
-			if (FRAM) return(FSRam[Address-0xc000]); else return(WholeRam[Address]);
+			if (FSRAMSelect)
+			{
+				return FSRam[Address - 0xc000];
+			}
+			else
+			{
+				return WholeRam[Address];
+			}
 			break;
 		case 0xe:
 			return(WholeRam[Address]);
@@ -633,7 +641,7 @@ static void DoRomChange(unsigned char NewBank)
   // Master Specific stuff
   if (MachineType == Model::Master128) {
     PagedRomReg = NewBank;
-    PRAM = (PagedRomReg & 128) != 0;
+    PrivateRAMSelect = (PagedRomReg & 0x80) != 0;
   }
 }
 
@@ -650,7 +658,7 @@ static void FiddleACCCON(unsigned char newValue) {
 	if (Sh_Display != oldshd) RedoMPTR();
 	Sh_CPUX = (ACCCON & 4) != 0;
 	Sh_CPUE = (ACCCON & 2) != 0;
-	FRAM = (ACCCON & 8) != 0;
+	FSRAMSelect = (ACCCON & 8) != 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -818,7 +826,10 @@ void BeebWriteMem(int Address, unsigned char Value) {
 				}
 				break;
 			case 8:
-				if (PRAM) { PrivateRAM[Address-0x8000]=Value; }
+				if (PrivateRAMSelect)
+				{
+					PrivateRAM[Address - 0x8000] = Value;
+				}
 				else {
 					if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 					//else RomWriteThrough(Address, Value); //Not supported on Master
@@ -832,7 +843,10 @@ void BeebWriteMem(int Address, unsigned char Value) {
 				break;
 			case 0xc:
 			case 0xd:
-				if (FRAM) FSRam[Address-0xc000]=Value;
+				if (FSRAMSelect)
+				{
+					FSRam[Address - 0xc000] = Value;
+				}
 				break;
 			}
 			return;
@@ -1256,8 +1270,8 @@ void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
   memset(PrivateRAM,0,0x1000);
   ACCCON = 0;
   Sh_Display = false;
-  FRAM = false;
-  PRAM = false;
+  FSRAMSelect = false;
+  PrivateRAMSelect = false;
   Sh_CPUE = false;
   Sh_CPUX = false;
   memset(Private,0,0x3000);
@@ -1405,11 +1419,11 @@ void LoadRomRegsUEF(FILE *SUEF) {
 		break;
 
 	case Model::Master128:
-		PRAM = (PagedRomReg & 0x80) != 0;
+		PrivateRAMSelect = (PagedRomReg & 0x80) != 0;
 		Sh_Display = (ACCCON & 1) != 0;
 		Sh_CPUX = (ACCCON & 4) != 0;
 		Sh_CPUE = (ACCCON & 2) != 0;
-		FRAM = (ACCCON & 8) != 0;
+		FSRAMSelect = (ACCCON & 8) != 0;
 		break;
 	}
 }
