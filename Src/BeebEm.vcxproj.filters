@@ -613,7 +613,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\CHANGES.txt">
+    <Text Include="..\CHANGES.md">
       <Filter>Documents</Filter>
     </Text>
     <Text Include="..\COPYRIGHT.txt">

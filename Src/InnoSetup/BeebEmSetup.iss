@@ -53,7 +53,7 @@ Source: ..\..\Help\*; DestDir: {app}\Help; Flags: ignoreversion recursesubdirs c
 Source: ..\..\UserData\*; DestDir: {app}\UserData; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\BeebEmLocal.vbs; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\BeebEmTorch.vbs; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\CHANGES.txt; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\CHANGES.md; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\COPYRIGHT.txt; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\DriveMotor.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\HeadLoad.snd; DestDir: {app}; Flags: ignoreversion
@@ -77,7 +77,7 @@ Source: ..\..\VCRedist\vc_redist.x86.exe; DestDir: {app}; Flags: deleteafterinst
 
 [Icons]
 Name: {group}\BeebEm; Filename: {app}\BeebEm.exe
-Name: {group}\View CHANGES log; Filename: {app}\CHANGES.txt
+Name: {group}\View BeebEm Change History; Filename: {app}\CHANGES.md
 Name: {group}\View COPYRIGHT notice; Filename: {app}\COPYRIGHT.txt
 Name: {group}\View Help; Filename: {app}\Help\index.html
 Name: {group}\{cm:ProgramOnTheWeb,BeebEm}; Filename: http://www.mkw.me.uk/beebem/index.html
