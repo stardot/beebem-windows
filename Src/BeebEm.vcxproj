@@ -460,9 +460,7 @@
     <Text Include="..\CHANGES.md" />
     <Text Include="..\COPYRIGHT.txt" />
     <Text Include="..\README-SPROW.txt" />
-    <Text Include="..\README.txt" />
-    <Text Include="README_UNIX.txt" />
-    <Text Include="README_WINDOWS.txt" />
+    <Text Include="..\README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

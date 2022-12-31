@@ -619,16 +619,10 @@
     <Text Include="..\COPYRIGHT.txt">
       <Filter>Documents</Filter>
     </Text>
-    <Text Include="..\README.txt">
+    <Text Include="..\README.md">
       <Filter>Documents</Filter>
     </Text>
     <Text Include="..\README-SPROW.txt">
-      <Filter>Documents</Filter>
-    </Text>
-    <Text Include="README_UNIX.txt">
-      <Filter>Documents</Filter>
-    </Text>
-    <Text Include="README_WINDOWS.txt">
       <Filter>Documents</Filter>
     </Text>
   </ItemGroup>
