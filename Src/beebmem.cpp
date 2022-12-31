@@ -123,11 +123,9 @@ static const unsigned char HiddenDefault[31] = {
 /* Master 128 Specific Stuff */
 unsigned char FSRam[8192];       // 8K Filing System RAM
 unsigned char PrivateRAM[4096];  // 4K Private RAM (VDU Use mainly)
-unsigned char CMOSRAM[64];       // 50 Bytes CMOS RAM
-unsigned char CMOSDefault[64]={0,0,0,0,0,0xc9,0xff,0xfe,0x32,0,7,0xc1,0x1e,5,0,0x59,0xa2}; // Backup of CMOS Defaults
 unsigned char ShadowRAM[32768];  // 20K Shadow RAM
 unsigned char ACCCON;            // ACCess CONtrol register
-struct CMOSType CMOS;
+
 bool Sh_Display;
 static bool PrivateRAMSelect;
 static bool FSRAMSelect;

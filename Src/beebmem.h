@@ -53,20 +53,10 @@ extern unsigned char PagedRomReg;
 /* Master 128 Specific Stuff */
 extern unsigned char FSRam[8192]; // 8K Filing System RAM
 extern unsigned char PrivateRAM[4096]; // 4K Private RAM (VDU Use mainly)
-extern unsigned char CMOSRAM[64]; // 50 Bytes CMOS RAM
 extern unsigned char ShadowRAM[32768]; // 20K Shadow RAM
 extern unsigned char ACCCON; // ACCess CONtrol register
 
 extern bool MemSel, PrvEn, ShEn, Prvs1, Prvs4, Prvs8;
-
-struct CMOSType {
-	bool Enabled;
-	// unsigned char ChipSelect;
-	unsigned char Address;
-	// unsigned char StrobedData;
-	bool DataStrobe;
-	bool Op;
-};
 
 enum RomFlags
 {
@@ -95,7 +85,6 @@ struct RomInfo {
 	int RelocationAddr;
 };
 
-extern struct CMOSType CMOS;
 extern bool Sh_Display;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 

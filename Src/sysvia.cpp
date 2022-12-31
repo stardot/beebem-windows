@@ -46,8 +46,8 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 using namespace std;
 
 /* Clock stuff for Master 128 RTC */
-time_t SysTime;
-time_t RTCTimeOffset=0;
+static time_t SysTime;
+static time_t RTCTimeOffset=0;
 bool RTCY2KAdjust = true;
 
 // Shift register stuff
@@ -68,7 +68,6 @@ char WEState=0;
    select on speech proc, B2 is write select on speech proc, b4,b5 select
    screen start address offset , b6 is CAPS lock, b7 is shift lock */
 unsigned char IC32State=0;
-bool OldCMOSState = false;
 
 /* Last value written to the slow data bus - sound reads it later */
 static unsigned char SlowDataBusWriteValue=0;
@@ -79,6 +78,30 @@ static unsigned int KBDCol=0;
 
 static bool SysViaKbdState[16][8]; // Col, row
 static int KeysDown=0;
+
+// Master 128 MC146818AP Real-Time Clock and RAM
+struct CMOSType
+{
+	bool Enabled;
+	// unsigned char ChipSelect;
+	unsigned char Address;
+	// unsigned char StrobedData;
+	bool DataStrobe;
+	bool Op;
+};
+
+static struct CMOSType CMOS;
+static bool OldCMOSState = false;
+unsigned char CMOSRAM[64]; // RTC registers + 50 bytes CMOS RAM
+
+// Backup of CMOS Defaults (RAM bytes only)
+const unsigned char CMOSDefault[50] =
+{
+	0x00, 0x00, 0x00, 0x00, 0x00,
+	0xc9, 0xff, 0xfe, 0x32, 0x00,
+	0x07, 0xc1, 0x1e, 0x05, 0x00,
+	0x59, 0xa2
+};
 
 /*--------------------------------------------------------------------------*/
 static void UpdateIFRTopBit(void) {
@@ -697,64 +720,73 @@ void RTCUpdate()
 
 /*-------------------------------------------------------------------------*/
 
-void CMOSWrite(unsigned char CMOSAddr, unsigned char CMOSData)
+void CMOSWrite(unsigned char Address, unsigned char Value)
 {
 	if (DebugEnabled)
 	{
 	  DebugDisplayTraceF(DebugType::CMOS, true,
 	                     "CMOS: Write address %X value %02X",
-	                     CMOSAddr, CMOSData);
+	                     Address, Value);
 	}
 
 	// Many thanks to Tom Lees for supplying me with info on the 146818 registers
 	// for these two functions.
-	if (CMOSAddr>0xd) {
-		CMOSRAM[CMOSAddr]=CMOSData;
+	if (Address <= 0x9)
+	{
+		// Clock registers
+		CMOSRAM[Address] = Value;
 	}
-	else if (CMOSAddr==0xa) {
+	else if (Address == 0xa)
+	{
 		// Control register A
-		CMOSRAM[CMOSAddr]=CMOSData & 0x7f; // Top bit not writable
+		CMOSRAM[Address] = Value & 0x7f; // Top bit not writable
 	}
-	else if (CMOSAddr==0xb) {
+	else if (Address == 0xb)
+	{
 		// Control register B
 		// Bit-7 SET - 0=clock running, 1=clock update halted
-		if (CMOSData & 0x80) {
+		if (Value & 0x80)
+		{
 			RTCUpdate();
 		}
-		else if ((CMOSRAM[CMOSAddr] & 0x80) && !(CMOSData & 0x80)) {
+		else if ((CMOSRAM[Address] & 0x80) && !(Value & 0x80))
+		{
 			// New clock settings
 			time(&SysTime);
 			RTCTimeOffset = SysTime - CMOSConvertClock();
 		}
-		CMOSRAM[CMOSAddr]=CMOSData;
+		CMOSRAM[Address] = Value;
 	}
-	else if (CMOSAddr==0xc) {
-		// Control register C - read only
+	else if (Address == 0xc || Address == 0xd)
+	{
+		// Control register C and D - read only
 	}
-	else if (CMOSAddr==0xd) {
-		// Control register D - read only
-	}
-	else {
-		// Clock registers
-		CMOSRAM[CMOSAddr]=CMOSData;
+	else if (Address <= 0x3f)
+	{
+		// User RAM
+		CMOSRAM[Address] = Value;
 	}
 }
 
 /*-------------------------------------------------------------------------*/
-unsigned char CMOSRead(unsigned char CMOSAddr) {
+
+unsigned char CMOSRead(unsigned char Address)
+{
 	// 0x0 to 0x9 - Clock
 	// 0xa to 0xd - Regs
 	// 0xe to 0x3f - RAM
-	if (CMOSAddr<0xa)
+	if (Address <= 0x9)
+	{
 		RTCUpdate();
+	}
 
-	unsigned char Value = CMOSRAM[CMOSAddr];
+	unsigned char Value = CMOSRAM[Address];
 
 	if (DebugEnabled)
 	{
 	  DebugDisplayTraceF(DebugType::CMOS, true,
 	                     "CMOS: Read address %X value %02X",
-	                     CMOSAddr, Value);
+	                     Address, Value);
 	}
 
 	return Value;

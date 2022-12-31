@@ -30,6 +30,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "beebmem.h"
 #include "filedialog.h"
+#include "sysvia.h"
 
 static HWND hWndROMList = NULL;
 static HWND hWndModel = NULL;
@@ -128,7 +129,6 @@ static void UpdateROMField(int row)
 /****************************************************************************/
 static void FillROMList(void)
 {
-
 	Edit_SetText(hWndModel, szModel[static_cast<int>(nModel)]);
 
 	ListView_DeleteAllItems(hWndROMList);

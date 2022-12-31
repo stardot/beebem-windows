@@ -48,9 +48,12 @@ void BeebReleaseAllKeys(void);
 void SysVIATriggerCA1Int(int value);
 extern unsigned char IC32State;
 
+// Master 128 MC146818AP Real-Time Clock and RAM
 void RTCInit();
-void CMOSWrite(unsigned char CMOSAddr,unsigned char CMOSData);
-unsigned char CMOSRead(unsigned char CMOSAddr);
+void CMOSWrite(unsigned char Address, unsigned char Value);
+unsigned char CMOSRead(unsigned char Address);
+extern unsigned char CMOSRAM[64]; // RTC registers + 50 bytes CMOS RAM
+extern const unsigned char CMOSDefault[50];
 
 void PulseSysViaCB1(void);
 

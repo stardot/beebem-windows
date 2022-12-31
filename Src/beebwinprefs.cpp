@@ -80,8 +80,6 @@ static const char *CFG_TUBE_TYPE = "TubeType";
 #define LED_SHOW_KB (LEDByte&1)
 #define LED_SHOW_DISC (LEDByte&2)>>1
 
-extern unsigned char CMOSDefault[64];
-
 void BeebWin::LoadPreferences()
 {
 	Preferences::Result result = m_Preferences.Load(m_PrefsFile);
