@@ -36,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "beebsound.h"
 #include "debug.h"
+#include "DebugTrace.h"
 
 #ifdef BEEB_DOTIME
 #include <sys/times.h>
@@ -46,8 +47,6 @@ Boston, MA  02110-1301, USA.
 #include <unistd.h>
 #endif
 #endif
-
-using namespace std;
 
 /* Bit assignments in control reg:
    0 - Flash colour (0=first colour, 1=second)
@@ -1111,7 +1110,7 @@ void RedoMPTR(void) {
 /*-------------------------------------------------------------------------------------------------------------*/
 void VideoDoScanLine(void) {
   int l;
-  /* cerr << "CharLine=" << VideoState.CharLine << " InCharLineUp=" << VideoState.InCharLineUp << "\n"; */
+  // DebugTrace("CharLine=%d InCharLineUp=%d\n", VideoState.CharLine, VideoState.InCharLineUp);
   if (VideoState.IsTeletext) {
     if (VideoState.DoCA1Int) {
       SysVIATriggerCA1Int(0);
@@ -1419,7 +1418,7 @@ void CRTCWrite(int Address, unsigned char Value) {
       default: /* In case the user wrote a duff control register value */
         break;
     }
-    /* cerr << "CRTCWrite RegNum=" << int(CRTCControlReg) << " Value=" << Value << "\n"; */
+    // DebugTrace("CRTCWrite RegNum=%d Value=%02X\n", CRTCControlReg, Value);
   } else {
     CRTCControlReg = Value & 0x1f;
   }
@@ -1460,12 +1459,12 @@ void VideoULAWrite(int Address, unsigned char Value) {
   if (Address & 1) {
     VideoULA_Palette[(Value & 0xf0)>>4]=(Value & 0xf) ^ 7;
     FastTable_Valid = false;
-    /* cerr << "Palette reg " << ((Value & 0xf0)>>4) << " now has value " << ((Value & 0xf) ^ 7) << "\n"; */
     //fprintf(crtclog,"Pallette written to at line %d\n",VideoState.PixmapLine);
   } else {
     unsigned char oldValue = VideoULA_ControlReg;
     VideoULA_ControlReg=Value;
     FastTable_Valid = false; /* Could be more selective and only do it if no.of.cols bit changes */
+    // DebugTrace("Palette reg %d now has value %02X\n", (Value & 0xf0) >> 4, (Value & 0xf) ^ 7);
     /* cerr << "VidULA Ctrl reg write " << hex << Value << "\n"; */
     // Adjust HSyncModifier
     if (VideoULA_ControlReg & 16) HSyncModifier=8; else HSyncModifier=16;
@@ -1723,33 +1722,6 @@ void LoadVideoUEF(FILE *SUEF, int Version) {
 }
 
 /*-------------------------------------------------------------------------*/
-void video_dumpstate(void) {
-  int tmp;
-  cerr << "video:\n";
-  cerr << "  VideoULA_ControlReg=" << int(VideoULA_ControlReg) << "\n";
-  cerr << "  VideoULA_Palette=";
-  for(tmp=0;tmp<16;tmp++)
-    cerr << int(VideoULA_Palette[tmp]) << " ";
-  cerr << "\n  CRTC Control=" << int(CRTCControlReg) << "\n";
-  cerr << "  CRTC_HorizontalTotal=" << int(CRTC_HorizontalTotal) << "\n";
-  cerr << "  CRTC_HorizontalDisplayed=" << int(CRTC_HorizontalDisplayed)<< "\n";
-  cerr << "  CRTC_HorizontalSyncPos=" << int(CRTC_HorizontalSyncPos)<< "\n";
-  cerr << "  CRTC_SyncWidth=" << int(CRTC_SyncWidth)<< "\n";
-  cerr << "  CRTC_VerticalTotal=" << int(CRTC_VerticalTotal)<< "\n";
-  cerr << "  CRTC_VerticalTotalAdjust=" << int(CRTC_VerticalTotalAdjust)<< "\n";
-  cerr << "  CRTC_VerticalDisplayed=" << int(CRTC_VerticalDisplayed)<< "\n";
-  cerr << "  CRTC_VerticalSyncPos=" << int(CRTC_VerticalSyncPos)<< "\n";
-  cerr << "  CRTC_InterlaceAndDelay=" << int(CRTC_InterlaceAndDelay)<< "\n";
-  cerr << "  CRTC_ScanLinesPerChar=" << int(CRTC_ScanLinesPerChar)<< "\n";
-  cerr << "  CRTC_CursorStart=" << int(CRTC_CursorStart)<< "\n";
-  cerr << "  CRTC_CursorEnd=" << int(CRTC_CursorEnd)<< "\n";
-  cerr << "  CRTC_ScreenStartHigh=" << int(CRTC_ScreenStartHigh)<< "\n";
-  cerr << "  CRTC_ScreenStartLow=" << int(CRTC_ScreenStartLow)<< "\n";
-  cerr << "  CRTC_CursorPosHigh=" << int(CRTC_CursorPosHigh)<< "\n";
-  cerr << "  CRTC_CursorPosLow=" << int(CRTC_CursorPosLow)<< "\n";
-  cerr << "  CRTC_LightPenHigh=" << int(CRTC_LightPenHigh)<< "\n";
-  cerr << "  CRTC_LightPenLow=" << int(CRTC_LightPenLow)<< "\n";
-}
 
 void DebugVideoState()
 {

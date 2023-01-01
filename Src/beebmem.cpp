@@ -60,8 +60,6 @@ Boston, MA  02110-1301, USA.
 #include "teletext.h"
 #include "music5000.h"
 
-using namespace std;
-
 unsigned char WholeRam[65536];
 unsigned char Roms[16][16384];
 
@@ -936,7 +934,6 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	}
 
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-	/*cerr << "Write *0x" << hex << Address << "=0x" << Value << dec << "\n"; */
 	if (Address >= 0xfe34 && Address < 0xfe38 && MachineType == Model::Master128) {
 		FiddleACCCON(Value);
 		return;

@@ -30,8 +30,6 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "debug.h"
 
-using namespace std;
-
 void VIAReset(VIAState *ToReset) {
   ToReset->ora=ToReset->orb=0xff;
   ToReset->ira=ToReset->irb=0xff;
@@ -51,26 +49,6 @@ void VIAReset(VIAState *ToReset) {
 }
 
 /*-------------------------------------------------------------------------*/
-void via_dumpstate(VIAState *ToDump) {
-  cerr << "  ora=" << int(ToDump->ora) << "\n";
-  cerr << "  orb="  << int(ToDump->orb) << "\n";
-  cerr << "  ira="  << int(ToDump->ira) << "\n";
-  cerr << "  irb="  << int(ToDump->irb) << "\n";
-  cerr << "  ddra="  << int(ToDump->ddra) << "\n";
-  cerr << "  ddrb="  << int(ToDump->ddrb) << "\n";
-  cerr << "  acr="  << int(ToDump->acr) << "\n";
-  cerr << "  pcr="  << int(ToDump->pcr) << "\n";
-  cerr << "  ifr="  << int(ToDump->ifr) << "\n";
-  cerr << "  ier="  << int(ToDump->ier) << "\n";
-  cerr << "  timer1c="  << ToDump->timer1c << "\n";
-  cerr << "  timer2c="  << ToDump->timer2c << "\n";
-  cerr << "  timer1l="  << ToDump->timer1l << "\n";
-  cerr << "  timer2l="  << ToDump->timer2l << "\n";
-  cerr << "  timer1hasshot="  << ToDump->timer1hasshot << "\n";
-  cerr << "  timer2hasshot="  << ToDump->timer2hasshot << "\n";
-  cerr << "  ca2="  << ToDump->ca2 << "\n";
-  cerr << "  cb2="  << ToDump->cb2 << "\n";
-}
 
 void DebugViaState(const char *s, VIAState *v)
 {

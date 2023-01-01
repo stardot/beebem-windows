@@ -64,8 +64,6 @@ Boston, MA  02110-1301, USA.
 #define INLINE
 #endif
 
-using namespace std;
-
 static int CurrentInstruction;
 
 extern CArm *arm;
@@ -1179,7 +1177,6 @@ void DoInterrupt(void) {
 
 /*-------------------------------------------------------------------------*/
 void DoNMI(void) {
-  /*cerr << "Doing NMI\n"; */
   NMILock = true;
   PushWord(ProgramCounter);
   Push(PSR);

@@ -60,7 +60,6 @@ unsigned char CRTCRead(int Address);
 void VideoULAWrite(int Address, unsigned char Value);
 unsigned char VideoULARead(int Address);
 void VideoInit(void);
-void video_dumpstate(void);
 void VideoDoScanLine(void);
 void VideoGetText(char *text, int line);
 void VideoLightPenStrobe();

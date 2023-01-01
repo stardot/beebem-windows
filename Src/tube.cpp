@@ -1456,7 +1456,6 @@ void DoTubeInterrupt(void) {
 
 /*-------------------------------------------------------------------------*/
 void DoTubeNMI(void) {
-  /*cerr << "Doing NMI\n"; */
   TubeNMILock = true;
   PushWord(TubeProgramCounter);
   Push(PSR);

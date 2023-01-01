@@ -34,6 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "tube.h"
 #include "log.h"
+#include "DebugTrace.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -1181,21 +1182,23 @@ void Disc8271Write(int Address, unsigned char Value) {
       break;
 
     case 2:
-      /* cerr << "8271: Reset register write, value=0x" << hex << Value << dec << "\n"; */
-      /* The caller should write a 1 and then >11 cycles later a 0 - but I'm just going
-      to reset on both edges */
+      // DebugTrace("8271: Reset register write, value=0x%02X\n", Value);
+
+      // The caller should write a 1 and then >11 cycles later a 0 - but I'm just going
+      // to reset on both edges
       Disc8271Reset();
       break;
 
     case 4:
-      /* cerr << "8271: data register write, value=0x" << hex << Value << dec << "\n"; */
+      // DebugTrace("8271: Data register write, value=0x%02X\n", Value);
+
       StatusReg &= ~(STATUS_REG_INTERRUPT_REQUEST | STATUS_REG_NON_DMA_MODE);
       UPDATENMISTATUS;
       DataReg=Value;
       break;
 
     default:
-      /* cerr << "8271: Write to unknown register address=" << Address << ", value=0x" << hex << Value << dec << "\n"; */
+      // DebugTrace("8271: Write to unknown register address=%04X, value=%02X\n", Address, Value);
       break;
   }
 

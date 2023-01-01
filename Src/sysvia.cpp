@@ -43,8 +43,6 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "speech.h"
 #endif
 
-using namespace std;
-
 // Shift register stuff
 unsigned char SRMode;
 unsigned char SRCount;
