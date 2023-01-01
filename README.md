@@ -75,7 +75,7 @@ Thanks to Dave Gilbert for originally creating BeebEm. There's a video interview
 
 Thanks to Mike Wyatt for his contributions to BeebEm and for hosting the [BeebEm homepage](http://www.mkw.me.uk/beebem).
 
-Thanks to the maintainers and contributors for its continued development: Alistair Cree, Charles Reilly, Chris Needham, David Sharp, Greg Cook, Jon Welch, Jonathan Harston, Ken Lowe, Kieran Mockford, Laurie Whiffen, Mike Wyatt, Nigel Magnay, pstnotpd, Rich Talbot-Watkins, Richard Broadhurst, Richard Gellman, Rob O'Donnell, Robert Schmidt, Steve Insley, Steve Pick, Tadek Kijkowski, Theo Lindebaum.
+Thanks to the maintainers and contributors for its continued development: Alistair Cree, Charles Reilly, Chris Needham, David Sharp, Dominic Beesley, Greg Cook, Jon Welch, Jonathan Harston, Ken Lowe, Kieran Mockford, Laurie Whiffen, Mike Wyatt, Nigel Magnay, pstnotpd, Rich Talbot-Watkins, Richard Broadhurst, Richard Gellman, Rob O'Donnell, Robert Schmidt, Steve Insley, Steve Pick, Tadek Kijkowski, Theo Lindebaum.
 
 Copyright
 ---------

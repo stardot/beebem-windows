@@ -1,10 +1,32 @@
 BeebEm Change History
 =====================
 
-Unreleased changes
+Unreleased changes (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
 ------------
-* Added keyboard shortcuts for changing text-to-speech reading rate.
-  Enable text output reader by default when text-to-speech is enabled.
+* Fixed NMOS 6502 instructions 6B (ARR imm) and EB (SBC imm).
+* Fixed timings for instructions 83 (SAX (zp,X)), 8F (SAX abs),
+  B3 (LAX (zp),Y), and BB (LAS abs,Y).
+* Fixed 65C12 instruction timings for ADC and SBC in decimal mode, ASL, LSR,
+  ROL, ROR, and BRA.
+* Added keyboard shortcuts for changing text-to-speech reading rate. Enable
+  text output reader by default when text-to-speech is enabled.
+* Fixed crash in the debugger, where sideways RAM does not contain a normal
+  ROM image.
+* Fixed Econet source code cross-compatiblity issue.
+* Serial and tape emulation improvements:
+  - Fixed serial transmit state: Writing a master reset to the ACIA control
+    register should stop transmitting data. This was causing extra bytes to
+    be written to UEF files when saving to tape.
+  - The Tape control dialog Record button now always prompts the user to
+    create a new UEF file, rather than appending to the currently open UEF
+    file. This change also fixes a bug where the button would do nothing if
+    a CSW file was loaded.
+  - The BeebEm version number is now stored in UEF tape files.
+* Fixed Master real time clock year handling. The year is stored as the last
+  two digits. Removed the "Master 128 RTC Y2K Adjust" option. Note that the
+  Master MOS still displays years as 19xx, but will accept any century when
+  setting the time using `TIME$`.
+* Added debugger support for the BBC Master real-time clock and CMOS RAM.
 
 Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
 ------------
