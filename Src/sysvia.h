@@ -31,7 +31,6 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 
 extern VIAState SysVIAState;
 extern unsigned char IC32State;
-extern bool RTCY2KAdjust;
 
 void SysVIAWrite(int Address, unsigned char Value);
 unsigned char SysVIARead(int Address);

@@ -45,11 +45,6 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 
 using namespace std;
 
-/* Clock stuff for Master 128 RTC */
-static time_t SysTime;
-static time_t RTCTimeOffset=0;
-bool RTCY2KAdjust = true;
-
 // Shift register stuff
 unsigned char SRMode;
 unsigned char SRCount;
@@ -80,6 +75,8 @@ static bool SysViaKbdState[16][8]; // Col, row
 static int KeysDown=0;
 
 // Master 128 MC146818AP Real-Time Clock and RAM
+static time_t RTCTimeOffset = 0;
+
 struct CMOSType
 {
 	bool Enabled;
@@ -93,6 +90,22 @@ struct CMOSType
 static struct CMOSType CMOS;
 static bool OldCMOSState = false;
 unsigned char CMOSRAM[64]; // RTC registers + 50 bytes CMOS RAM
+
+// 0x0: Seconds (0 to 59)
+// 0x1: Alarm Seconds (0 to 59)
+// 0x2: Minutes (0 to 59)
+// 0x3: Alarm Minutes (0 to 59)
+// 0x4: Hours (0 to 23)
+// 0x5: Alarm Hours (0 to 23)
+// 0x6: Day of week (1 = Sun, 7 = Sat)
+// 0x7: Day of month (1 to 31)
+// 0x8: Month (1 = Jan, 12 = Dec)
+// 0x9: Year (last 2 digits)
+// 0xA: Register A
+// 0xB: Register B
+// 0xC: Register C
+// 0xD: Register D
+// 0xE to 0x3F: User RAM (50 bytes)
 
 // Backup of CMOS Defaults (RAM bytes only)
 const unsigned char CMOSDefault[50] =
@@ -395,7 +408,7 @@ void SysVIAWrite(int Address, unsigned char Value)
       SysVIAState.timer2l |= Value << 8;
       SysVIAState.timer2c=SysVIAState.timer2l * 2 + 1;
       if (SysVIAState.timer2c == 0) SysVIAState.timer2c = 0x20000; 
-      SysVIAState.ifr &=0xdf; // clear timer 2 ifr 
+      SysVIAState.ifr &= 0xdf; // Clear timer 2 IFR
       UpdateIFRTopBit();
       SysVIAState.timer2hasshot = false;
       break;
@@ -674,48 +687,63 @@ void SysVIAReset()
 }
 
 /*-------------------------------------------------------------------------*/
-time_t CMOSConvertClock()
+
+static time_t CMOSConvertClock()
 {
 	struct tm Base;
-	Base.tm_sec = BCDToBin(CMOSRAM[0]);
-	Base.tm_min = BCDToBin(CMOSRAM[2]);
-	Base.tm_hour = BCDToBin(CMOSRAM[4]);
-	Base.tm_mday = BCDToBin(CMOSRAM[7]);
-	Base.tm_mon = BCDToBin(CMOSRAM[8])-1;
-	Base.tm_year = BCDToBin(CMOSRAM[9]);
-	Base.tm_wday = -1;
-	Base.tm_yday = -1;
+	Base.tm_sec   = BCDToBin(CMOSRAM[0]);
+	Base.tm_min   = BCDToBin(CMOSRAM[2]);
+	Base.tm_hour  = BCDToBin(CMOSRAM[4]);
+	Base.tm_mday  = BCDToBin(CMOSRAM[7]);
+	Base.tm_mon   = BCDToBin(CMOSRAM[8]) - 1;
+	Base.tm_year  = BCDToBin(CMOSRAM[9]);
+	Base.tm_wday  = -1;
+	Base.tm_yday  = -1;
 	Base.tm_isdst = -1;
+
+	time_t SysTime;
+	time(&SysTime);
+	struct tm *CurTime = localtime(&SysTime);
+	Base.tm_year += (CurTime->tm_year / 100) * 100;
 
 	return mktime(&Base);
 }
+
 /*-------------------------------------------------------------------------*/
+
 void RTCInit()
 {
+	time_t SysTime;
 	time(&SysTime);
 	struct tm *CurTime = localtime(&SysTime);
+
 	CMOSRAM[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
 	CMOSRAM[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
 	CMOSRAM[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
 	CMOSRAM[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
 	CMOSRAM[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
 	CMOSRAM[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year - (RTCY2KAdjust ? 20 : 0)));
+	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+
 	RTCTimeOffset = SysTime - CMOSConvertClock();
 }
+
 /*-------------------------------------------------------------------------*/
-void RTCUpdate()
+
+static void RTCUpdate()
 {
+	time_t SysTime;
 	time(&SysTime);
 	SysTime -= RTCTimeOffset;
 	struct tm *CurTime = localtime(&SysTime);
+
 	CMOSRAM[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
 	CMOSRAM[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
 	CMOSRAM[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
 	CMOSRAM[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
 	CMOSRAM[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
 	CMOSRAM[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year));
+	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
 }
 
 /*-------------------------------------------------------------------------*/
@@ -752,9 +780,11 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 		else if ((CMOSRAM[Address] & 0x80) && !(Value & 0x80))
 		{
 			// New clock settings
+			time_t SysTime;
 			time(&SysTime);
 			RTCTimeOffset = SysTime - CMOSConvertClock();
 		}
+
 		CMOSRAM[Address] = Value;
 	}
 	else if (Address == 0xc || Address == 0xd)

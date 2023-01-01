@@ -416,7 +416,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_CAPTUREPNG                  40269
 #define IDM_CAPTURESCREEN               40270
 #define ID_FLOPPYDRIVE                  40271
-#define ID_RTCY2KADJUST                 40272
 #define ID_IP232RAW                     40274
 #define IDM_SWRAMBOARD                  40276
 #define IDM_ROMCONFIG                   40277

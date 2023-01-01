@@ -1092,7 +1092,6 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
 	CheckMenuItem(ID_USER_PORT_RTC_MODULE, RTC_Enabled);
-	CheckMenuItem(ID_RTCY2KADJUST, RTCY2KAdjust);
 
 	// Options
 	CheckMenuItem(IDM_JOYSTICK, false);
@@ -3956,12 +3955,6 @@ void BeebWin::HandleCommand(int MenuId)
 		Disc8271Enabled = !Disc8271Enabled;
 		Disc1770Enabled = !Disc1770Enabled;
 		CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
-		break;
-
-	case ID_RTCY2KADJUST:
-		RTCY2KAdjust = !RTCY2KAdjust;
-		RTCInit();
-		CheckMenuItem(ID_RTCY2KADJUST, RTCY2KAdjust);
 		break;
 
 	case IDM_TEXTTOSPEECH:

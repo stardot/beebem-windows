@@ -484,9 +484,6 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("RTCEnabled", RTC_Enabled))
 		RTC_Enabled = false;
 
-	if (!m_Preferences.GetBoolValue("RTCY2KAdjust", RTCY2KAdjust))
-		RTCY2KAdjust = true;
-
 	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
 		m_MenuIdAviResolution = dword;
 	else
@@ -719,7 +716,6 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
 		m_Preferences.SetBoolValue("RTCEnabled", RTC_Enabled);
-		m_Preferences.SetBoolValue("RTCY2KAdjust", RTCY2KAdjust);
 
 		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIdAviResolution);
 		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIdAviSkip);
