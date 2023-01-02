@@ -27,6 +27,8 @@ Unreleased changes (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
   Master MOS still displays years as 19xx, but will accept any century when
   setting the time using `TIME$`.
 * Added debugger support for the BBC Master real-time clock and CMOS RAM.
+* Added a new Music 5000 disk image (M5000-4.ssd) that uses a different
+  copy protection patch, to fix the staff editor.
 
 Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
 ------------
