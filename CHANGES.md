@@ -29,6 +29,8 @@ Unreleased changes (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
 * Added debugger support for the BBC Master real-time clock and CMOS RAM.
 * Added a new Music 5000 disk image (M5000-4.ssd) that uses a different
   copy protection patch, to fix the staff editor.
+* Added ZipFile project, to create BeebEm.zip distribution. The project
+  runs a Perl script, so requires a working Perl installation.
 
 Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
 ------------

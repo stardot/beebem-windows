@@ -31,6 +31,7 @@ If you want to compile BeebEm yourself then you will need Microsoft Visual Studi
 | `Hardware\Watford\OpusDDOS.vcxproj`  | Opus DDOS FDC project file        |
 | `Hardware\Watford\Watford.vcxproj`   | Watford FDC project file          |
 | `InnoSetup\Installer.vcxproj`        | Inno Setup installer project file |
+| `ZipFile\ZipFile.vcxproj`            | Distribution zip project file     |
 
 These project files are set up to target Windows XP, which we use to create release binaries. This requires the following optional Visual Studio 2019 components to be installed:
 
@@ -40,6 +41,8 @@ These project files are set up to target Windows XP, which we use to create rele
 You also will need to download and install the [Microsoft DirectX 9.0 SDK (June 2010)](https://www.microsoft.com/en-us/download/details.aspx?id=6812).
 
 To build the installer from within Visual Studio, you'll need to download and install [Inno Setup 5.6.1](https://files.jrsoftware.org/is/5/).
+
+To build the distribution BeebEm.zip from within Visual Studio, you'll need to install Perl, e.g., [Strawberry Perl](https://strawberryperl.com/).
 
 ### Configuration
 
