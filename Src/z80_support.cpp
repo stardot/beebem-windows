@@ -236,7 +236,7 @@ void init_z80()
 	if (TubeType == Tube::AcornZ80)
 	{
 		strcpy(path, RomPath);
-		strcat(path, "BeebFile/Z80.ROM");
+		strcat(path, "BeebFile/Z80.rom");
 		
 		FILE *f = fopen(path, "rb");
 		if (f != nullptr)
@@ -248,7 +248,7 @@ void init_z80()
 	else // Tube::TorchZ80
 	{
 		strcpy(path, RomPath);
-		strcat(path, "BeebFile/CCPN102.ROM");
+		strcat(path, "BeebFile/CCPN102.rom");
 
 		FILE *f = fopen(path, "rb");
 		if (f != nullptr)

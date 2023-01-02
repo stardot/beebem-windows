@@ -61,7 +61,7 @@ Source: ..\..\HeadSeek.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\HeadStep.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\HeadUnload.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\README.md; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\beebem.png; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\BeebEm.png; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOff.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\RelayOn.snd; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\Teletext.fnt; DestDir: {app}; Flags: ignoreversion
