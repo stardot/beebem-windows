@@ -3762,7 +3762,7 @@ void Master512CoPro::LoadBIOS()
 
 	char path[256];
 	strcpy(path, mainWin->GetUserDataPath());
-	strcat(path, "BeebFile/bios.rom");
+	strcat(path, "BeebFile/BIOS.rom");
 
 	FILE* f = fopen(path, "rb");
 
