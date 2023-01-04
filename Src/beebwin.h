@@ -427,7 +427,7 @@ public:
 	bool		m_AutoBootDisc;
 	bool		m_KeyboardTimerElapsed;
 	bool		m_BootDiscTimerElapsed;
-	unsigned char RomWritePrefs[16];
+	bool RomWritePrefs[16];
 
 	// Bitmap capture vars
 	ULONG_PTR	m_gdiplusToken;

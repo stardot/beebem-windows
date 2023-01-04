@@ -391,7 +391,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBinaryValue("SWRAMWritable", RomWritePrefs, 16))
 	{
 		for (int slot = 0; slot < 16; ++slot)
-			RomWritePrefs[slot] = 1;
+			RomWritePrefs[slot] = true;
 	}
 
 	if (!m_Preferences.GetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
