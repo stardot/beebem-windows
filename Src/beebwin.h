@@ -411,8 +411,8 @@ public:
 	char 		m_BlurIntensities[8];
 	char 		m_CommandLineFileName1[_MAX_PATH];
 	char 		m_CommandLineFileName2[_MAX_PATH];
-	char		m_KbdCmd[1024];
-	char		m_DebugScript[_MAX_PATH];
+	std::string m_KbdCmd;
+	std::string m_DebugScriptFileName;
 	std::string m_DebugLabelsFileName;
 	int		m_KbdCmdPos;
 	int		m_KbdCmdKey;

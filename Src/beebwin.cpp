@@ -191,8 +191,6 @@ BeebWin::BeebWin()
 	m_AutoSavePrefsFolders = false;
 	m_AutoSavePrefsAll = false;
 	m_AutoSavePrefsChanged = false;
-	memset(m_KbdCmd, 0, sizeof(m_KbdCmd));
-	memset(m_DebugScript, 0, sizeof(m_DebugScript));
 	m_KbdCmdPos = -1;
 	m_KbdCmdPress = false;
 	m_KbdCmdDelay = 40;
@@ -329,10 +327,10 @@ bool BeebWin::Initialise()
 	ReadROMFile(RomFile, RomConfig);
 	ApplyPrefs();
 
-	if (m_DebugScript[0] != '\0')
+	if (!m_DebugScriptFileName.empty())
 	{
 		DebugOpenDialog(hInst, m_hWnd);
-		DebugRunScript(m_DebugScript);
+		DebugRunScript(m_DebugScriptFileName.c_str());
 	}
 
 	if (!m_DebugLabelsFileName.empty())
@@ -4226,8 +4224,8 @@ void BeebWin::ParseCommandLine()
 {
 	bool invalid;
 
-	m_CommandLineFileName1[0] = 0;
-	m_CommandLineFileName2[0] = 0;
+	m_CommandLineFileName1[0] = '\0';
+	m_CommandLineFileName2[0] = '\0';
 
 	int i = 1;
 
@@ -4314,11 +4312,11 @@ void BeebWin::ParseCommandLine()
 			}
 			else if (_stricmp(__argv[i], "-KbdCmd") == 0)
 			{
-				strncpy(m_KbdCmd, __argv[++i], sizeof(m_KbdCmd));
+				m_KbdCmd = __argv[++i];
 			}
 			else if (_stricmp(__argv[i], "-DebugScript") == 0)
 			{
-				strncpy(m_DebugScript, __argv[++i], sizeof(m_DebugScript));
+				m_DebugScriptFileName = __argv[++i];
 			}
 			else if (_stricmp(__argv[i], "-DebugLabels") == 0)
 			{
@@ -4341,10 +4339,14 @@ void BeebWin::ParseCommandLine()
 			else
 			{
 				// Assume it's a file name
-				if (m_CommandLineFileName1[0] == 0)
+				if (m_CommandLineFileName1[0] == '\0')
+				{
 					strncpy(m_CommandLineFileName1, __argv[i], _MAX_PATH);
-				else if (m_CommandLineFileName2[0] == 0)
+				}
+				else if (m_CommandLineFileName2[0] == '\0')
+				{
 					strncpy(m_CommandLineFileName2, __argv[i], _MAX_PATH);
+				}
 			}
 
 			if (invalid)
@@ -4710,7 +4712,7 @@ void BeebWin::DoShiftBreak()
 
 bool BeebWin::HasKbdCmd() const
 {
-	return m_KbdCmd[0] != '\0';
+	return !m_KbdCmd.empty();
 }
 
 void BeebWin::SetKeyboardTimer()
@@ -5095,6 +5097,7 @@ void BeebWin::HandleTimer()
 	else
 	{
 		m_KbdCmdPos++;
+
 		if (m_KbdCmd[m_KbdCmdPos] == 0)
 		{
 			KillTimer(m_hWnd, 1);
@@ -5107,6 +5110,7 @@ void BeebWin::HandleTimer()
 			{
 			case '\\':
 				m_KbdCmdPos++;
+
 				switch (m_KbdCmd[m_KbdCmdPos])
 				{
 				case '\\': m_KbdCmdKey = VK_OEM_5; break;
