@@ -30,16 +30,16 @@ typedef char CHAR;
 
 int Z80_Disassemble(int adr, char *s)
 {
-UBYTE			a = ReadZ80Mem(adr);
-UBYTE			d = (a >> 3) & 7;
-UBYTE			e = a & 7;
-static const char* const reg[8] = {"B", "C", "D", "E", "H", "L", "(HL)", "A"};
-static const char* const dreg[4] = {"BC", "DE", "HL", "SP"};
-static const char* const cond[8] = {"NZ", "Z", "NC", "C", "PO", "PE", "P", "M"};
-static const char* const arith[8] = {"ADD\tA,", "ADC\tA,", "SUB\t", "SBC\tA,", "AND\t", "XOR\t", "OR\t", "CP\t"};
-CHAR			stemp[80];		// temp.String for sprintf()
-CHAR			ireg[3];		// temp.Indexregister
-int             size = 1;
+	UBYTE a = ReadZ80Mem(adr);
+	UBYTE d = (a >> 3) & 7;
+	UBYTE e = a & 7;
+	static const char* const reg[8] = {"B", "C", "D", "E", "H", "L", "(HL)", "A"};
+	static const char* const dreg[4] = {"BC", "DE", "HL", "SP"};
+	static const char* const cond[8] = {"NZ", "Z", "NC", "C", "PO", "PE", "P", "M"};
+	static const char* const arith[8] = {"ADD\tA,", "ADC\tA,", "SUB\t", "SBC\tA,", "AND\t", "XOR\t", "OR\t", "CP\t"};
+	CHAR stemp[80]; // temp.String for sprintf()
+	CHAR ireg[3]; // temp.Indexregister
+	int size = 1;
 
 	switch(a & 0xC0) {
 	case 0x00:
@@ -55,19 +55,19 @@ int             size = 1;
 			case 0x02:
 				strcpy(s,"DJNZ\t");
 				sprintf(stemp,"%4.4Xh",adr+2+(signed char)ReadZ80Mem(adr+1));strcat(s,stemp);
-                size = 2;
-                break;
+				size = 2;
+				break;
 			case 0x03:
 				strcpy(s,"JR\t");
 				sprintf(stemp,"%4.4Xh",adr+2+(signed char)ReadZ80Mem(adr+1));strcat(s,stemp);
-                size = 2;
+				size = 2;
 				break;
 			default:
 				strcpy(s,"JR\t");
 				strcat(s,cond[d & 3]);
 				strcat(s,",");
 				sprintf(stemp,"%4.4Xh",adr+2+(signed char)ReadZ80Mem(adr+1));strcat(s,stemp);
-                size = 2;
+				size = 2;
 				break;
 			}
 			break;
@@ -80,7 +80,7 @@ int             size = 1;
 				strcat(s,dreg[d >> 1]);
 				strcat(s,",");
 				sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
-                size = 3;
+				size = 3;
 			}
 			break;
 		case 0x02:
@@ -101,25 +101,25 @@ int             size = 1;
 				strcpy(s,"LD\t(");
 				sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 				strcat(s,"),HL");
-                size = 3;
+				size = 3;
 				break;
 			case 0x05:
 				strcpy(s,"LD\tHL,(");
 				sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 				strcat(s,")");
-                size = 3;
+				size = 3;
 				break;
 			case 0x06:
 				strcpy(s,"LD\t(");
 				sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 				strcat(s,"),A");
-                size = 3;
+				size = 3;
 				break;
 			case 0x07:
 				strcpy(s,"LD\tA,(");
 				sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 				strcat(s,")");
-                size = 3;
+				size = 3;
 				break;
 			}
 			break;
@@ -143,7 +143,7 @@ int             size = 1;
 			strcat(s,reg[d]);
 			strcat(s,",");
 			sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
-            size = 2;
+			size = 2;
 			break;
 		case 0x07:
 			{
@@ -202,14 +202,14 @@ int             size = 1;
 			strcat(s,cond[d]);
 			strcat(s,",");
 			sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
-            size = 3;
+			size = 3;
 			break;
 		case 0x03:
 			switch(d) {
 			case 0x00:
 				strcpy(s,"JP\t");
 				sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
-                size = 3;
+				size = 3;
 				break;
 			case 0x01:					// 0xCB
 				a = ReadZ80Mem(++adr);		// Erweiterungsopcode holen
@@ -244,19 +244,19 @@ int             size = 1;
 					strcat(s,reg[e]);
 					break;
 				}
-                size = 2;
+				size = 2;
 				break;
 			case 0x02:
 				strcpy(s,"OUT\t(");
 				sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 				strcat(s,"),A");
-                size = 2;
+				size = 2;
 				break;
 			case 0x03:
 				strcpy(s,"IN\tA,(");
 				sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 				strcat(s,")");
-                size = 2;
+				size = 2;
 				break;
 			case 0x04:
 				strcpy(s,"EX\t(SP),HL");
@@ -277,7 +277,7 @@ int             size = 1;
 			strcat(s,cond[d]);
 			strcat(s,",");
 			sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
-            size = 3;
+			size = 3;
 			break;
 		case 0x05:
 			if(d & 1) {
@@ -285,13 +285,13 @@ int             size = 1;
 				case 0x00:
 					strcpy(s,"CALL\t");
 					sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
-                    size = 3;
+					size = 3;
 					break;
 				case 0x02:				// 0xED
 					a = ReadZ80Mem(++adr);	// Erweiterungsopcode holen
 					d = (a >> 3) & 7;
 					e = a & 7;
-                    size = 2;
+					size = 2;
 					switch(a & 0xC0) {
 					case 0x40:
 						switch(e) {
@@ -319,14 +319,14 @@ int             size = 1;
 								strcat(s,",(");
 								sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 								strcat(s,")");
-                                size += 2;
-                            } else {
+								size += 2;
+							} else {
 								strcpy(s,"LD\t(");
 								sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 								strcat(s,"),");
 								strcat(s,dreg[d >> 1]);
-                                size += 2;
-                            }
+								size += 2;
+							}
 							break;
 						case 0x04:
 							{
@@ -369,7 +369,7 @@ int             size = 1;
 				default:				// 0x01 (0xDD) = IX, 0x03 (0xFD) = IY
 					strcpy(ireg,(a & 0x20)?"IY":"IX");
 					a = ReadZ80Mem(++adr);	// Erweiterungsopcode holen
-                    size = 2;
+					size = 2;
 					switch(a) {
 					case 0x09:
 						strcpy(s,"ADD\t");
@@ -386,14 +386,14 @@ int             size = 1;
 						strcat(s,ireg);
 						strcat(s,",");
 						sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
-                        size += 2;
+						size += 2;
 						break;
 					case 0x22:
 						strcpy(s,"LD\t(");
 						sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 						strcat(s,"),");
 						strcat(s,ireg);
-                        size += 2;
+						size += 2;
 						break;
 					case 0x23:
 						strcpy(s,"INC\t");
@@ -411,7 +411,7 @@ int             size = 1;
 						strcat(s,",(");
 						sprintf(stemp,"%4.4Xh",ReadZ80Mem(adr+1)+(ReadZ80Mem(adr+2)<<8));strcat(s,stemp);
 						strcat(s,")");
-                        size += 2;
+						size += 2;
 						break;
 					case 0x2B:
 						strcpy(s,"DEC\t");
@@ -423,7 +423,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0x35:
 						strcpy(s,"DEC\t(");
@@ -431,7 +431,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0x36:
 						strcpy(s,"LD\t(");
@@ -440,7 +440,7 @@ int             size = 1;
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,"),");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+2));strcat(s,stemp);
-                        size += 2;
+						size += 2;
 						break;
 					case 0x39:
 						strcpy(s,"ADD\t");
@@ -460,7 +460,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0x70:
 					case 0x71:
@@ -475,7 +475,7 @@ int             size = 1;
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,"),");
 						strcat(s,reg[a & 7]);
-                        size += 1;
+						size += 1;
 						break;
 					case 0x7E:
 						strcpy(s,"LD\tA,(");
@@ -483,7 +483,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0x86:
 						strcpy(s,"ADD\tA,(");
@@ -491,7 +491,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0x8E:
 						strcpy(s,"ADC\tA,(");
@@ -499,7 +499,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0x96:
 						strcpy(s,"SUB\t(");
@@ -507,7 +507,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0x9E:
 						strcpy(s,"SBC\tA,(");
@@ -515,7 +515,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0xA6:
 						strcpy(s,"AND\tA,(");
@@ -523,7 +523,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0xAE:
 						strcpy(s,"XOR\tA,(");
@@ -531,7 +531,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0xB6:
 						strcpy(s,"OR\tA,(");
@@ -539,7 +539,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0xBE:
 						strcpy(s,"CP\tA,(");
@@ -547,7 +547,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 1;
+						size += 1;
 						break;
 					case 0xE1:
 						strcpy(s,"POP\t");
@@ -608,7 +608,7 @@ int             size = 1;
 						strcat(s,"+");
 						sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
 						strcat(s,")");
-                        size += 2;
+						size += 2;
 						break;
 					}
 					break;
@@ -624,7 +624,7 @@ int             size = 1;
 		case 0x06:
 			strcpy(s,arith[d]);
 			sprintf(stemp,"%2.2Xh",ReadZ80Mem(adr+1));strcat(s,stemp);
-            size += 1;
+			size += 1;
 			break;
 		case 0x07:
 			strcpy(s,"RST\t");
@@ -634,5 +634,5 @@ int             size = 1;
 		break;
 	}
 
-    return size;
+	return size;
 }
