@@ -2359,22 +2359,24 @@ void BeebWin::TranslateTiming(void)
 
 void BeebWin::AdjustSpeed(bool up)
 {
-	static int speeds[] = {
-				IDM_FIXEDSPEED100,
-				IDM_FIXEDSPEED50,
-				IDM_FIXEDSPEED10,
-				IDM_FIXEDSPEED5,
-				IDM_FIXEDSPEED2,
-				IDM_FIXEDSPEED1_5,
-				IDM_FIXEDSPEED1_25,
-				IDM_FIXEDSPEED1_1,
-				IDM_REALTIME,
-				IDM_FIXEDSPEED0_9,
-				IDM_FIXEDSPEED0_75,
-				IDM_FIXEDSPEED0_5,
-				IDM_FIXEDSPEED0_25,
-				IDM_FIXEDSPEED0_1,
-				0};
+	static const int speeds[] = {
+		IDM_FIXEDSPEED100,
+		IDM_FIXEDSPEED50,
+		IDM_FIXEDSPEED10,
+		IDM_FIXEDSPEED5,
+		IDM_FIXEDSPEED2,
+		IDM_FIXEDSPEED1_5,
+		IDM_FIXEDSPEED1_25,
+		IDM_FIXEDSPEED1_1,
+		IDM_REALTIME,
+		IDM_FIXEDSPEED0_9,
+		IDM_FIXEDSPEED0_75,
+		IDM_FIXEDSPEED0_5,
+		IDM_FIXEDSPEED0_25,
+		IDM_FIXEDSPEED0_1,
+		0
+	};
+
 	int s = 0;
 	int t = m_MenuIdTiming;
 
@@ -3440,7 +3442,7 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_VIEWREADME:
 		strcpy(TmpPath, m_AppPath);
 		strcat(TmpPath, "Help\\index.html");
-		ShellExecute(m_hWnd, NULL, TmpPath, NULL, NULL, SW_SHOWNORMAL);;
+		ShellExecute(m_hWnd, NULL, TmpPath, NULL, NULL, SW_SHOWNORMAL);
 		break;
 
 	case IDM_EXIT:
