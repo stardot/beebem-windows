@@ -250,7 +250,9 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 
 		/* Write protect the disc */
 		if (m_WriteProtectOnLoad != m_WriteProtectDisc[Drive])
+		{
 			ToggleWriteProtect(Drive);
+		}
 	}
 
 	return(gotName);
@@ -262,15 +264,18 @@ void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 {
 	Disc1770Result Result = ::Load1770DiscImage(FileName, Drive, Type);
 
-	if (Result == Disc1770Result::OpenedReadWrite) {
+	if (Result == Disc1770Result::OpenedReadWrite)
+	{
 		SetImageName(FileName, Drive, Type);
-		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, true);
+		EnableMenuItem(Drive == 0 ? IDM_WRITE_PROTECT_DISC0 : IDM_WRITE_PROTECT_DISC1, true);
 	}
-	else if (Result == Disc1770Result::OpenedReadOnly) {
+	else if (Result == Disc1770Result::OpenedReadOnly)
+	{
 		SetImageName(FileName, Drive, Type);
-		EnableMenuItem(Drive == 0 ? IDM_WPDISC0 : IDM_WPDISC1, false);
+		EnableMenuItem(Drive == 0 ? IDM_WRITE_PROTECT_DISC0 : IDM_WRITE_PROTECT_DISC1, false);
 	}
-	else {
+	else
+	{
 		// Disc1770Result::Failed
 		Report(MessageType::Error, "Could not open disc file:\n  %s",
 		       FileName);
@@ -431,7 +436,10 @@ void BeebWin::NewDiscImage(int Drive)
 
 		/* Allow disc writes */
 		if (m_WriteProtectDisc[Drive])
+		{
 			ToggleWriteProtect(Drive);
+		}
+
 		DWriteable[Drive] = true;
 		DiscLoaded[Drive] = true;
 		strcpy(CDiscName[1],FileName);
@@ -577,10 +585,9 @@ void BeebWin::ToggleWriteProtect(int Drive)
 		DWriteable[Drive] = false;
 	}
 
-	if (Drive == 0)
-		CheckMenuItem(IDM_WPDISC0, m_WriteProtectDisc[0]);
-	else
-		CheckMenuItem(IDM_WPDISC1, m_WriteProtectDisc[1]);
+	int MenuItemId = Drive == 0 ? IDM_WRITE_PROTECT_DISC0 : IDM_WRITE_PROTECT_DISC1;
+
+	CheckMenuItem(MenuItemId, m_WriteProtectDisc[Drive]);
 }
 
 void BeebWin::SetDiscWriteProtects(void)
@@ -590,13 +597,13 @@ void BeebWin::SetDiscWriteProtects(void)
 		m_WriteProtectDisc[0] = !IsDiscWritable(0);
 		m_WriteProtectDisc[1] = !IsDiscWritable(1);
 
-		CheckMenuItem(IDM_WPDISC0, m_WriteProtectDisc[0]);
-		CheckMenuItem(IDM_WPDISC1, m_WriteProtectDisc[1]);
+		CheckMenuItem(IDM_WRITE_PROTECT_DISC0, m_WriteProtectDisc[0]);
+		CheckMenuItem(IDM_WRITE_PROTECT_DISC1, m_WriteProtectDisc[1]);
 	}
 	else
 	{
-		CheckMenuItem(IDM_WPDISC0, !DWriteable[0]);
-		CheckMenuItem(IDM_WPDISC1, !DWriteable[1]);
+		CheckMenuItem(IDM_WRITE_PROTECT_DISC0, !DWriteable[0]);
+		CheckMenuItem(IDM_WRITE_PROTECT_DISC1, !DWriteable[1]);
 	}
 }
 
@@ -1457,6 +1464,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	{
 		// 1770 controller
 		Get1770DiscInfo(drive, &type, szDiscFile);
+
 		if (type == DiscType::SSD)
 			heads = 1;
 		else if (type == DiscType::DSD)

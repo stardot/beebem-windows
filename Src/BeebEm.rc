@@ -387,9 +387,9 @@ BEGIN
             MENUITEM "New Disc 1...",               IDM_NEWDISC1
             MENUITEM "Eject Disc 0",                IDM_EJECTDISC0
             MENUITEM "Eject Disc 1",                IDM_EJECTDISC1
-            MENUITEM "Write Protect 0",             IDM_WPDISC0
-            MENUITEM "Write Protect 1",             IDM_WPDISC1
-            MENUITEM "Protect on Load",             IDM_WPONLOAD
+            MENUITEM "Write Protect 0",             IDM_WRITE_PROTECT_DISC0
+            MENUITEM "Write Protect 1",             IDM_WRITE_PROTECT_DISC1
+            MENUITEM "Write Protect on Load",       IDM_WRITE_PROTECT_ON_LOAD
         END
         MENUITEM SEPARATOR
         MENUITEM "R&eset",                      ID_FILE_RESET

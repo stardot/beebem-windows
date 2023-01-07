@@ -257,7 +257,7 @@ public:
 	void ParseCommandLine(void);
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
 	void FindCommandLineFile(char *CmdLineFile);
-	void HandleCommandLineFile(int drive, const char *CmdLineFile);
+	void HandleCommandLineFile(int Drive, const char *CmdLineFile);
 	void HandleEnvironmentVariables();
 	void LoadStartupDisc(int DriveNum, const char *DiscString);
 	bool CheckUserDataPath(bool Persist);

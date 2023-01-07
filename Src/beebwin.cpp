@@ -807,6 +807,7 @@ void BeebWin::CreateBeebWindow(void)
 
 	int x = m_XWinPos;
 	int y = m_YWinPos;
+
 	if (x == -1 || y == -1)
 	{
 		x = CW_USEDEFAULT;
@@ -901,9 +902,9 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(m_MenuIdAviSkip, true);
 
 	// File -> Disc Options
-	CheckMenuItem(IDM_WPDISC0, m_WriteProtectDisc[0]);
-	CheckMenuItem(IDM_WPDISC1, m_WriteProtectDisc[1]);
-	CheckMenuItem(IDM_WPONLOAD, m_WriteProtectOnLoad);
+	CheckMenuItem(IDM_WRITE_PROTECT_DISC0, m_WriteProtectDisc[0]);
+	CheckMenuItem(IDM_WRITE_PROTECT_DISC1, m_WriteProtectDisc[1]);
+	CheckMenuItem(IDM_WRITE_PROTECT_ON_LOAD, m_WriteProtectOnLoad);
 
 	// File -> Capture Options
 	CheckMenuItem(IDM_CAPTURERES_DISPLAY, false);
@@ -1366,7 +1367,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 	switch (message)
 	{
 		case WM_COMMAND:  // message: command from application menu
-			wmId	= LOWORD(wParam);
+			wmId = LOWORD(wParam);
 			wmEvent = HIWORD(wParam);
 			mainWin->HandleCommand(wmId);
 			break;
@@ -1625,6 +1626,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 		case WM_ACTIVATE:
 			mainWin->Activate(wParam != WA_INACTIVE);
+
 			if (wParam != WA_INACTIVE)
 			{
 				// Bring debug window to foreground BEHIND main window.
@@ -2752,17 +2754,17 @@ void BeebWin::HandleCommand(int MenuId)
 		EjectDiscImage(1);
 		break;
 
-	case IDM_WPDISC0:
+	case IDM_WRITE_PROTECT_DISC0:
 		ToggleWriteProtect(0);
 		break;
 
-	case IDM_WPDISC1:
+	case IDM_WRITE_PROTECT_DISC1:
 		ToggleWriteProtect(1);
 		break;
 
-	case IDM_WPONLOAD:
+	case IDM_WRITE_PROTECT_ON_LOAD:
 		m_WriteProtectOnLoad = !m_WriteProtectOnLoad;
-		CheckMenuItem(IDM_WPONLOAD, m_WriteProtectOnLoad);
+		CheckMenuItem(IDM_WRITE_PROTECT_ON_LOAD, m_WriteProtectOnLoad);
 		break;
 
 	case IDM_EDIT_COPY:
@@ -4436,7 +4438,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 		FileName = CmdLineFile;
 		strncpy(TmpPath, CmdLineFile, _MAX_PATH);
 
-		// Work out which type of files it is
+		// Work out which type of file it is
 		const char *ext = strrchr(FileName, '.');
 		if (ext != NULL)
 		{
@@ -4552,7 +4554,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 /*****************************************************************************/
 // Handle a file name passed on command line
 
-void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
+void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 {
 	bool ssd = false;
 	bool dsd = false;
@@ -4654,46 +4656,50 @@ void BeebWin::HandleCommandLineFile(int drive, const char *CmdLineFile)
 			if (dsd)
 			{
 				if (NativeFDC)
-					LoadSimpleDSDiscImage(FileName, drive, 80);
+					LoadSimpleDSDiscImage(FileName, Drive, 80);
 				else
-					Load1770DiscImage(FileName, drive, DiscType::DSD);
+					Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			}
 			else if (ssd)
 			{
 				if (NativeFDC)
-					LoadSimpleDiscImage(FileName, drive, 0, 80);
+					LoadSimpleDiscImage(FileName, Drive, 0, 80);
 				else
-					Load1770DiscImage(FileName, drive, DiscType::SSD);
+					Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			}
 			else if (adfs)
 			{
 				if (!NativeFDC)
-					Load1770DiscImage(FileName, drive, DiscType::ADFS);
+					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
 				else
 					cont = false;  // cannot load adfs with native DFS
 			}
 			else if (img)
 			{
 				if (NativeFDC)
-					LoadSimpleDiscImage(FileName, drive, 0, 80); // Treat like an ssd
+					LoadSimpleDiscImage(FileName, Drive, 0, 80); // Treat like an ssd
 				else
-					Load1770DiscImage(FileName, drive, DiscType::IMG);
+					Load1770DiscImage(FileName, Drive, DiscType::IMG);
 			}
 		}
 		else // Model::Master128
 		{
 			if (dsd)
-				Load1770DiscImage(FileName, drive, DiscType::DSD);
+				Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			else if (ssd)
-				Load1770DiscImage(FileName, drive, DiscType::SSD);
+				Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			else if (adfs)
-				Load1770DiscImage(FileName, drive, DiscType::ADFS);
+				Load1770DiscImage(FileName, Drive, DiscType::ADFS);
 			else if (img)
-				Load1770DiscImage(FileName, drive, DiscType::IMG);
+				Load1770DiscImage(FileName, Drive, DiscType::IMG);
 		}
+
+		// Write protect the disc
+		if (m_WriteProtectOnLoad != m_WriteProtectDisc[Drive])
+			ToggleWriteProtect(Drive);
 	}
 
-	if (cont && !m_NoAutoBoot && drive == 0)
+	if (cont && !m_NoAutoBoot && Drive == 0)
 	{
 		m_AutoBootDisc = true;
 

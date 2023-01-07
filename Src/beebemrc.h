@@ -243,8 +243,8 @@ Boston, MA  02110-1301, USA.
 #define IDM_DEFINEKEYMAP                40061
 #define IDM_NEWDISC0                    40062
 #define IDM_NEWDISC1                    40063
-#define IDM_WPDISC0                     40064
-#define IDM_WPDISC1                     40065
+#define IDM_WRITE_PROTECT_DISC0         40064
+#define IDM_WRITE_PROTECT_DISC1         40065
 #define IDM_SAVE_PREFS                  40066
 #define IDM_FULLSCREEN                  40067
 #define IDM_AMXONOFF                    40068
@@ -367,7 +367,7 @@ Boston, MA  02110-1301, USA.
 #define IDM_DISABLEKEYSESCAPE           40213
 #define IDM_DISABLEKEYSSHORTCUT         40214
 #define IDM_DISABLEKEYSALL              40215
-#define IDM_WPONLOAD                    40216
+#define IDM_WRITE_PROTECT_ON_LOAD       40216
 #define IDM_DISPGDI                     40217
 #define IDM_DISPDDRAW                   40218
 #define IDM_DISPDX9                     40219
