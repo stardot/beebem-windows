@@ -3821,8 +3821,10 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_CAPTURESCREEN:
 		// Prompt for file name.  Need to do this in WndProc otherwise
 		// dialog does not show in full screen mode.
-		if (GetImageFile(m_CaptureFileName))
+		if (GetImageFile(m_CaptureFileName, sizeof(m_CaptureFileName)))
+		{
 			CaptureBitmapPending(false);
+		}
 		break;
 
 	case IDM_VIDEORES1:

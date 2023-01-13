@@ -263,7 +263,7 @@ public:
 	bool CheckUserDataPath(bool Persist);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
-	bool NewTapeImage(char *FileName);
+	bool NewTapeImage(char *FileName, int Size);
 	const char *GetAppPath(void) { return m_AppPath; }
 	const char *GetUserDataPath(void) { return m_UserDataPath; }
 	void GetDataPath(const char *folder, char *path);
@@ -559,7 +559,7 @@ public:
 	                   int SourceWidth,
 	                   int SourceHeight,
 	                   bool Teletext);
-	bool GetImageFile(char *FileName);
+	bool GetImageFile(char *FileName, int Size);
 	bool GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid);
 	void InitTextToSpeech();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,

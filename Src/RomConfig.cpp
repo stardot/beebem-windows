@@ -29,7 +29,8 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #include "beebwin.h"
 #include "beebmem.h"
-#include "filedialog.h"
+#include "FileDialog.h"
+#include "ListView.h"
 #include "sysvia.h"
 
 static HWND hWndROMList = NULL;
@@ -60,48 +61,6 @@ void BeebWin::EditROMConfig(void)
 		memcpy(&RomConfig, &ROMCfg, sizeof(ROMConfigFile));
 		BeebReadRoms();
 	}
-}
-
-/****************************************************************************/
-static int LVInsertColumn(
-	HWND hWnd, UINT uCol, const LPTSTR pszText, int iAlignment, UINT uWidth)
-{
-	LVCOLUMN lc = {0};
-	lc.mask = LVCF_SUBITEM | LVCF_TEXT | LVCF_FMT | LVCF_WIDTH;
-	lc.fmt = iAlignment;
-	lc.pszText = pszText;
-	lc.iSubItem = uCol;
-	lc.cx = uWidth;
-	return ListView_InsertColumn(hWnd, uCol, &lc);
-}
-
-static int LVInsertItem(
-	HWND hWnd, UINT uRow, UINT uCol, const LPTSTR pszText, LPARAM lParam)
-{
-	LVITEM li = {0};
-	li.mask = LVIF_TEXT | LVIF_PARAM;
-	li.iItem = uRow;
-	li.iSubItem = uCol;
-	li.pszText = pszText;
-	li.lParam = (lParam ? lParam : uRow);
-	return ListView_InsertItem(hWnd, &li);
-}
-
-static void LVSetItemText(
-	HWND hWnd, UINT uRow, UINT uCol, const LPTSTR pszText)
-{
-	ListView_SetItemText(hWnd, uRow, uCol, pszText);
-}
-
-static void LVSetFocus(HWND hWnd)
-{
-	int row = ListView_GetSelectionMark(hWnd);
-	ListView_SetItemState(hWndROMList,
-	                      row,
-	                      LVIS_SELECTED | LVIS_FOCUSED,
-	                      LVIS_SELECTED | LVIS_FOCUSED);
-
-	SetFocus(hWnd);
 }
 
 /****************************************************************************/

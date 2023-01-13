@@ -90,19 +90,28 @@
     <ClCompile Include="disc8271.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="discedit.cpp">
+    <ClCompile Include="DiscEdit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="econet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="filedialog.cpp">
+    <ClCompile Include="ExportFileDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FolderSelectDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ide.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ListView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="log.cpp">
@@ -120,7 +129,10 @@
     <ClCompile Include="preferences.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="romconfig.cpp">
+    <ClCompile Include="RenameFileDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RomConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sasi.cpp">
@@ -299,7 +311,7 @@
     <ClInclude Include="disc8271.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="discedit.h">
+    <ClInclude Include="DiscEdit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="disctype.h">
@@ -308,16 +320,25 @@
     <ClInclude Include="econet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ExportFileDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ext1770.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="filedialog.h">
+    <ClInclude Include="FileDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FolderSelectDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ide.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ListView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="log.h">
@@ -345,6 +366,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="preferences.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenameFileDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sasi.h">

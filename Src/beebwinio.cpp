@@ -41,7 +41,7 @@ using std::max;
 #include "6502core.h"
 #include "beebmem.h"
 #include "beebemrc.h"
-#include "filedialog.h"
+#include "FileDialog.h"
 #include "uservia.h"
 #include "beebsound.h"
 #include "disc8271.h"
@@ -54,6 +54,7 @@ using std::max;
 #include "tube.h"
 #include "userkybd.h"
 #include "discedit.h"
+#include "ExportFileDialog.h"
 #include "version.h"
 
 using namespace Gdiplus;
@@ -144,8 +145,9 @@ void BeebWin::EjectDiscImage(int Drive)
 int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 {
 	char DefaultPath[_MAX_PATH];
-	char FileName[256];
-	int gotName = false;
+	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
 	const char* filter =
 		"Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos\0"
 		"ADFS Disc (*.adl;*.adf)\0*.adl;*.adf\0"
@@ -158,7 +160,9 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 	GetDataPath(m_UserDataPath, DefaultPath);
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-	gotName = fileDialog.Open();
+
+	bool gotName = fileDialog.Open();
+
 	if (gotName)
 	{
 		if (bCheckForPrefs)
@@ -286,7 +290,9 @@ void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 void BeebWin::LoadTape(void)
 {
 	char DefaultPath[_MAX_PATH];
-	char FileName[256];
+	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
 	const char* filter =
 		"Auto (*.uef;*.csw)\0*.uef;*.csw\0"
 		"UEF Tape File (*.uef)\0*.uef\0"
@@ -315,7 +321,7 @@ void BeebWin::LoadTape(void)
 	}
 }
 
-bool BeebWin::NewTapeImage(char *FileName)
+bool BeebWin::NewTapeImage(char *FileName, int Size)
 {
 	char DefaultPath[_MAX_PATH];
 	const char* filter = "UEF Tape File (*.uef)\0*.uef\0";
@@ -323,7 +329,7 @@ bool BeebWin::NewTapeImage(char *FileName)
 	m_Preferences.GetStringValue("TapesPath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog fileDialog(m_hWnd, FileName, 256, DefaultPath, filter);
+	FileDialog fileDialog(m_hWnd, FileName, Size, DefaultPath, filter);
 
 	bool Result = fileDialog.Save();
 
@@ -349,6 +355,8 @@ void BeebWin::SelectFDC()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[256];
+	FileName[0] = '\0';
+
 	const char* filter = "FDC Extension Board Plugin DLL (*.dll)\0*.dll\0";
 
 	strcpy(DefaultPath, m_AppPath);
@@ -375,6 +383,8 @@ void BeebWin::NewDiscImage(int Drive)
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[256];
+	FileName[0] = '\0';
+
 	const char* filter =
 		"Single Sided Disc (*.ssd)\0*.ssd\0"
 		"Double Sided Disc (*.dsd)\0*.dsd\0"
@@ -514,7 +524,9 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 void BeebWin::SaveState()
 {
 	char DefaultPath[_MAX_PATH];
-	char FileName[260];
+	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
 	const char* filter = "UEF State File (*.uef)\0*.uef\0";
 
 	m_Preferences.GetStringValue("StatesPath", DefaultPath);
@@ -544,7 +556,9 @@ void BeebWin::SaveState()
 void BeebWin::RestoreState()
 {
 	char DefaultPath[_MAX_PATH];
-	char FileName[256];
+	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
 	const char* filter = "UEF State File (*.uef)\0*.uef\0";
 
 	m_Preferences.GetStringValue("StatesPath", DefaultPath);
@@ -612,7 +626,8 @@ bool BeebWin::PrinterFile()
 {
 	char StartPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
-	bool changed;
+	FileName[0] = '\0';
+
 	const char* filter = "Printer Output (*.*)\0*.*\0";
 
 	if (strlen(m_PrinterFileName) == 0)
@@ -632,13 +647,15 @@ bool BeebWin::PrinterFile()
 	}
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), StartPath, filter);
-	changed = fileDialog.Save();
+
+	bool changed = fileDialog.Save();
+
 	if (changed)
 	{
 		strcpy(m_PrinterFileName, FileName);
 	}
 
-	return(changed);
+	return changed;
 }
 
 /****************************************************************************/
@@ -708,7 +725,7 @@ void BeebWin::TranslatePrinterPort()
 void BeebWin::CaptureVideo()
 {
 	char DefaultPath[_MAX_PATH];
-	char FileName[256];
+	char FileName[_MAX_PATH];
 	const char* filter = "AVI File (*.avi)\0*.avi\0";
 
 	m_Preferences.GetStringValue("AVIPath", DefaultPath);
@@ -1127,6 +1144,8 @@ void BeebWin::GetDataPath(const char *folder, char *path)
 void BeebWin::LoadUserKeyMap()
 {
 	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
@@ -1141,6 +1160,8 @@ void BeebWin::LoadUserKeyMap()
 void BeebWin::SaveUserKeyMap()
 {
 	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
@@ -1342,106 +1363,6 @@ void BeebWin::CopyKey(unsigned char Value)
 /****************************************************************************/
 /* Disc Import / Export */
 
-static DFS_DISC_CATALOGUE dfsCat;
-static int filesSelected[DFS_MAX_CAT_SIZE];
-static int numSelected;
-static char szExportFolder[MAX_PATH];
-
-// File export
-int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM /* lParam */, LPARAM /* lpData */)
-{
-	switch (uMsg)
-	{
-	case BFFM_INITIALIZED:
-		if (szExportFolder[0])
-		{
-			SendMessage(hwnd, BFFM_SETEXPANDED, TRUE, (LPARAM)szExportFolder);
-			SendMessage(hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)szExportFolder);
-		}
-		break;
-	}
-	return 0;
-}
-
-INT_PTR CALLBACK DiscExportDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM /* lParam */)
-{
-	char str[100];
-	char szDisplayName[MAX_PATH];
-	int i, j;
-
-	HWND hwndList = GetDlgItem(hwndDlg, IDC_EXPORTFILELIST);
-
-	switch (message)
-	{
-	case WM_INITDIALOG:
-		SendMessage(hwndList, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT), (LPARAM)MAKELPARAM(FALSE,0));
-
-		for (i = 0; i < dfsCat.numFiles; ++i)
-		{
-			sprintf(str, "%c.%-7s %06X %06X %06X",
-			        dfsCat.fileAttrs[i].directory,
-			        dfsCat.fileAttrs[i].filename,
-			        dfsCat.fileAttrs[i].loadAddr & 0xffffff,
-			        dfsCat.fileAttrs[i].execAddr & 0xffffff,
-			        dfsCat.fileAttrs[i].length);
-			j = (int)SendMessage(hwndList, LB_ADDSTRING, 0, (LPARAM)str);
-			// List is sorted so store catalogue index in list's item data
-			SendMessage(hwndList, LB_SETITEMDATA, j, (LPARAM)i);
-		}
-		return TRUE;
-		
-	case WM_COMMAND:
-		switch (LOWORD(wParam))
-		{
-		case IDOK:
-			numSelected = (int)SendMessage(hwndList,
-			                               LB_GETSELITEMS,
-			                               (WPARAM)DFS_MAX_CAT_SIZE,
-			                               (LPARAM)filesSelected);
-
-			if (numSelected)
-			{
-				// Convert list indices to catalogue indices
-				for (i = 0; i < numSelected; ++i)
-				{
-					filesSelected[i] = (int)SendMessage(hwndList, LB_GETITEMDATA, filesSelected[i], 0);
-				}
-
-				// Get folder to export to
-				BROWSEINFO bi;
-				memset(&bi, 0, sizeof(bi));
-				bi.hwndOwner = hwndDlg; // m_hWnd;
-				bi.pszDisplayName = szDisplayName;
-				bi.lpszTitle = "Select folder for exported files:";
-				bi.ulFlags = BIF_EDITBOX | BIF_NEWDIALOGSTYLE;
-				bi.lpfn = BrowseCallbackProc;
-				LPITEMIDLIST idList = SHBrowseForFolder(&bi);
-				if (idList == NULL)
-				{
-					wParam = IDCANCEL;
-				}
-				else if (!SHGetPathFromIDList(idList, szExportFolder))
-				{
-					mainWin->Report(MessageType::Warning, "Invalid folder selected");
-					wParam = IDCANCEL;
-				}
-
-				if (idList != NULL)
-					CoTaskMemFree(idList);
-			}
-
-			EndDialog(hwndDlg, wParam);
-			return TRUE;
-
-		case IDCANCEL:
-			EndDialog(hwndDlg, wParam);
-			return TRUE;
-		}
-	}
-
-	return FALSE;
-}
-
 void BeebWin::ExportDiscFiles(int menuId)
 {
 	int drive;
@@ -1490,6 +1411,8 @@ void BeebWin::ExportDiscFiles(int menuId)
 	else
 		side = 1;
 
+	DFS_DISC_CATALOGUE dfsCat;
+
 	bool success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
 
 	if (!success)
@@ -1498,22 +1421,40 @@ void BeebWin::ExportDiscFiles(int menuId)
 		return;
 	}
 
+	char szExportPath[MAX_PATH];
+	szExportPath[0] = '\0';
+
+	m_Preferences.GetStringValue("ExportPath", szExportPath);
+	GetDataPath(m_UserDataPath, szExportPath);
+
 	// Show export dialog
-	if (DialogBox(hInst, MAKEINTRESOURCE(IDD_DISCEXPORT), m_hWnd, DiscExportDlgProc) != IDOK ||
-	    numSelected == 0)
+	ExportFileDialog Dialog(hInst, m_hWnd, szDiscFile, heads, side, &dfsCat, szExportPath);
+
+	if (!Dialog.DoModal())
 	{
 		return;
 	}
 
+	const std::string& ExportPath = Dialog.GetPath();
+
+	if (m_AutoSavePrefsFolders)
+	{
+		m_Preferences.SetStringValue("ExportPath", ExportPath.c_str());
+	}
+
 	// Export the files
+	const int NumSelected = Dialog.GetNumSelected();
+	const int* FilesSelected = Dialog.GetFilesSelected();
 	int Count = 0;
 
-	for (int i = 0; i < numSelected; ++i)
+	for (int i = 0; i < NumSelected; ++i)
 	{
 		char szErrStr[500];
 
-		success = dfs_export_file(szDiscFile, heads, side, &dfsCat,
-		                          filesSelected[i], szExportFolder, szErrStr);
+		const DFS_FILE_ATTR* attr = &dfsCat.fileAttrs[FilesSelected[i]];
+
+		success = dfs_export_file(szDiscFile, heads, side, attr, ExportPath.c_str(), szErrStr);
+
 		if (success)
 		{
 			Count++;
@@ -1541,14 +1482,6 @@ void BeebWin::ImportDiscFiles(int menuId)
 	char szDiscFile[MAX_PATH];
 	int heads;
 	int side;
-	char szErrStr[500];
-	char szFolder[MAX_PATH];
-	char fileSelection[4096];
-	char baseName[MAX_PATH];
-	static char fileNames[DFS_MAX_CAT_SIZE*2][MAX_PATH]; // Allow user to select > cat size
-	int numFiles;
-	int i, n;
-	const char* filter = "INF files (*.inf)\0*.inf\0" "All files (*.*)\0*.*\0";
 
 	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_2)
 		drive = 0;
@@ -1589,6 +1522,8 @@ void BeebWin::ImportDiscFiles(int menuId)
 	else
 		side = 1;
 
+	DFS_DISC_CATALOGUE dfsCat;
+
 	bool success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
 
 	if (!success)
@@ -1598,13 +1533,21 @@ void BeebWin::ImportDiscFiles(int menuId)
 	}
 
 	// Get list of files to import
-	memset(fileSelection, 0, sizeof(fileSelection));
-	szFolder[0] = 0;
-	GetDataPath(m_UserDataPath, szFolder);
+	char fileSelection[4096];
+	fileSelection[0] = '\0';
 
-	FileDialog fileDialog(m_hWnd, fileSelection, sizeof(fileSelection), szFolder, filter);
+	char szExportPath[MAX_PATH];
+	szExportPath[0] = '\0';
+
+	m_Preferences.GetStringValue("ExportPath", szExportPath);
+	GetDataPath(m_UserDataPath, szExportPath);
+
+	const char* filter = "INF files (*.inf)\0*.inf\0" "All files (*.*)\0*.*\0";
+
+	FileDialog fileDialog(m_hWnd, fileSelection, sizeof(fileSelection), szExportPath, filter);
 	fileDialog.AllowMultiSelect();
 	fileDialog.SetTitle("Select files to import");
+
 	if (!fileDialog.Open())
 	{
 		return;
@@ -1620,23 +1563,35 @@ void BeebWin::ImportDiscFiles(int menuId)
 			*fileName = 0;
 		fileName++;
 	}
-	strcpy(szFolder, fileSelection);
+	strcpy(szExportPath, fileSelection);
 
-	numFiles = 0;
-	while (numFiles < DFS_MAX_CAT_SIZE*2 && fileName[0] != 0)
+	if (m_AutoSavePrefsFolders)
 	{
-		// Strip .INF off
+		m_Preferences.SetStringValue("ExportPath", szExportPath);
+	}
+
+	int numFiles = 0;
+
+	char fileNames[DFS_MAX_CAT_SIZE * 2][MAX_PATH]; // Allow user to select > cat size
+
+	while (numFiles < DFS_MAX_CAT_SIZE*2 && fileName[0] != '\0')
+	{
+		// Strip .inf off
+		char baseName[MAX_PATH];
 		strcpy(baseName, fileName);
-		i = (int)strlen(baseName);
-		if (i > 4 && _stricmp(baseName + i - 4, ".inf") == 0)
-			baseName[i - 4] = 0;
+		int Len = (int)strlen(baseName);
+		if (Len > 4 && _stricmp(baseName + Len - 4, ".inf") == 0)
+			baseName[Len - 4] = 0;
 
 		// Check for duplicate
+		int i;
+
 		for (i = 0; i < numFiles; ++i)
 		{
 			if (_stricmp(baseName, fileNames[i]) == 0)
 				break;
 		}
+
 		if (i == numFiles)
 		{
 			strcpy(fileNames[numFiles], baseName);
@@ -1647,13 +1602,17 @@ void BeebWin::ImportDiscFiles(int menuId)
 	}
 
 	// Import the files
-	n = 0;
-	for (i = 0; i < numFiles; ++i)
+	int NumImported = 0;
+
+	for (int i = 0; i < numFiles; ++i)
 	{
-		success = dfs_import_file(szDiscFile, heads, side, &dfsCat, fileNames[i], szFolder, szErrStr);
+		char szErrStr[500];
+
+		success = dfs_import_file(szDiscFile, heads, side, &dfsCat, fileNames[i], szExportPath, szErrStr);
+
 		if (success)
 		{
-			n++;
+			NumImported++;
 		}
 		else
 		{
@@ -1667,7 +1626,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 		}
 	}
 
-	Report(MessageType::Info, "Files successfully imported: %d", n);
+	Report(MessageType::Info, "Files successfully imported: %d", NumImported);
 
 	// Re-read disc image
 	if (MachineType != Model::Master128 && NativeFDC)
@@ -1694,7 +1653,8 @@ void BeebWin::SelectHardDriveFolder()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
-	int gotName = false;
+	FileName[0] = '\0';
+
 	const char* filter =
 		"Hard Drive Images (*.dat)\0*.dat\0"
 		"All files (*.*)\0*.*\0";
@@ -1703,8 +1663,8 @@ void BeebWin::SelectHardDriveFolder()
 	GetDataPath(m_UserDataPath, DefaultPath);
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-	gotName = fileDialog.Open();
-	if (gotName)
+
+	if (fileDialog.Open())
 	{
 		unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
 		strncpy(DefaultPath, FileName, PathLength);
@@ -1820,21 +1780,24 @@ static const WCHAR* GetCaptureFormatMimeType(UINT MenuID)
 	}
 }
 
-bool BeebWin::GetImageFile(char *FileName)
+bool BeebWin::GetImageFile(char *FileName, int Size)
 {
-	char DefaultPath[_MAX_PATH];
 	bool success = false;
-	char filter[200];
 
+	FileName[0] = '\0';
+
+	char DefaultPath[_MAX_PATH];
 	m_Preferences.GetStringValue("ImagePath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
 	const char *fileExt = GetCaptureFormatFileExt(m_MenuIdCaptureFormat);
 
 	// A literal \0 in the format string terminates the string so use %c
+	char filter[200];
 	sprintf(filter, "Image File (*%s)%c*%s%c", fileExt, 0, fileExt, 0);
 
-	FileDialog fileDialog(m_hWnd, FileName, MAX_PATH, DefaultPath, filter);
+	FileDialog fileDialog(m_hWnd, FileName, Size, DefaultPath, filter);
+
 	if (fileDialog.Save())
 	{
 		// Add extension

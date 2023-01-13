@@ -1212,8 +1212,9 @@ void TapeControlRecord()
 	{
 		// Query for new file name
 		char FileName[_MAX_PATH];
+		FileName[0] = '\0';
 
-		if (mainWin->NewTapeImage(FileName))
+		if (mainWin->NewTapeImage(FileName, sizeof(FileName)))
 		{
 			CloseTape();
 

@@ -1,7 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 1994  Nigel Magnay
-Copyright (C) 1997  Mike Wyatt
+Copyright (C) 2023 Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,37 +18,13 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#include <windows.h>
+#ifndef FILE_UTILS_HEADER
+#define FILE_UTILS_HEADER
 
-#include "filedialog.h"
+#include <string>
 
-FileDialog::FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength,
-                       LPCTSTR initialFolder, LPCTSTR filter)
-{
-	memset(&m_ofn, 0, sizeof(m_ofn));
+bool FileExists(const char* FileName);
 
-	m_ofn.lStructSize = sizeof(OPENFILENAME);
-	m_ofn.hwndOwner = hwndOwner;
-	m_ofn.lpstrFilter = filter;
-	m_ofn.nFilterIndex = 1;
-	m_ofn.lpstrFile = result;
-	m_ofn.nMaxFile = resultLength;
-	m_ofn.lpstrInitialDir = initialFolder;
-	m_ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-}
+std::string AppendPath(const std::string& BasePath, const std::string& Path);
 
-bool FileDialog::ShowDialog(bool open)
-{
-	m_ofn.lpstrFile[0] = '\0';
-
-	if (open)
-	{
-		return GetOpenFileName(&m_ofn) != 0;
-	}
-	else
-	{
-		m_ofn.Flags |= OFN_OVERWRITEPROMPT;
-
-		return GetSaveFileName(&m_ofn) != 0;
-	}
-}
+#endif
