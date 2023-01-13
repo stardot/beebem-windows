@@ -31,6 +31,11 @@ Unreleased changes (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
   copy protection patch, to fix the staff editor.
 * Added ZipFile project, to create BeebEm.zip distribution. The project
   runs a Perl script, so requires a working Perl installation.
+* The Write Protect On Load menu option is now also applied to files loaded
+  from the command line.
+* Improved the Disc Export dialog, which now detects and avoids using file
+  names that are not valid on the host filesystem. The dialog box allows you
+  to double-click an entry to rename files.
 
 Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
 ------------
