@@ -57,7 +57,6 @@ ExportFileDialog::ExportFileDialog(
 	m_hwndListView(nullptr),
 	m_NumSelected(0)
 {
-	
 	for (int i = 0; i < dfsCat->numFiles; ++i)
 	{
 		FileExportEntry Entry;
@@ -121,7 +120,11 @@ INT_PTR ExportFileDialog::DlgProc(
 		for (const FileExportEntry& Entry : m_ExportFiles)
 		{
 			// List is sorted so store catalogue index in list's item data
-			LVInsertItem(m_hwndListView, Row, 0, const_cast<LPTSTR>(Entry.BeebFileName.c_str()), reinterpret_cast<LPARAM>(&Entry));
+			LVInsertItem(m_hwndListView,
+			             Row,
+			             0,
+			             const_cast<LPTSTR>(Entry.BeebFileName.c_str()),
+			             reinterpret_cast<LPARAM>(&Entry));
 
 			char str[100];
 			sprintf(str, "%06X", Entry.DfsAttrs.loadAddr & 0xffffff);
@@ -161,16 +164,19 @@ INT_PTR ExportFileDialog::DlgProc(
 				LVGetItemData(m_hwndListView, HitTestInfo.iItem)
 			);
 
-			RenameFileDialog Dialog(hInst,
-			                        m_hwnd,
-			                        Entry->BeebFileName.c_str(),
-			                        Entry->HostFileName.c_str());
-
-			if (Dialog.DoModal())
+			if (Entry)
 			{
-				Entry->HostFileName = Dialog.GetHostFileName();
+				RenameFileDialog Dialog(hInst,
+				                        m_hwnd,
+				                        Entry->BeebFileName.c_str(),
+				                        Entry->HostFileName.c_str());
 
-				LVSetItemText(m_hwndListView, HitTestInfo.iItem, 4, const_cast<LPTSTR>(Entry->HostFileName.c_str()));
+				if (Dialog.DoModal())
+				{
+					Entry->HostFileName = Dialog.GetHostFileName();
+
+					LVSetItemText(m_hwndListView, HitTestInfo.iItem, 4, const_cast<LPTSTR>(Entry->HostFileName.c_str()));
+				}
 			}
 		}
 		break;
