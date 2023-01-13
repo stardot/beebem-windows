@@ -1441,37 +1441,6 @@ void BeebWin::ExportDiscFiles(int menuId)
 	{
 		m_Preferences.SetStringValue("ExportPath", ExportPath.c_str());
 	}
-
-	// Export the files
-	const int NumSelected = Dialog.GetNumSelected();
-	const int* FilesSelected = Dialog.GetFilesSelected();
-	int Count = 0;
-
-	for (int i = 0; i < NumSelected; ++i)
-	{
-		char szErrStr[500];
-
-		const DFS_FILE_ATTR* attr = &dfsCat.fileAttrs[FilesSelected[i]];
-
-		success = dfs_export_file(szDiscFile, heads, side, attr, ExportPath.c_str(), szErrStr);
-
-		if (success)
-		{
-			Count++;
-		}
-		else
-		{
-			success = true;
-
-			if (Report(MessageType::Confirm, szErrStr) == MessageResult::Cancel)
-			{
-				success = false;
-				break;
-			}
-		}
-	}
-
-	Report(MessageType::Info, "Files successfully exported: %d", Count);
 }
 
 // File import

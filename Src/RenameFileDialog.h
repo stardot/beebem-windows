@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2023  Chris Needham
+Copyright (C) 2023 Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,45 +23,34 @@ Boston, MA  02110-1301, USA.
 
 #include <string>
 
-class RenameFileDialog
+#include "Dialog.h"
+
+class RenameFileDialog : public Dialog
 {
-public:
-	RenameFileDialog(
-		HINSTANCE hInstance,
-		HWND hwndParent,
-		const char* pszBeebFileName,
-		const char* pszHostFileName
-	);
+	public:
+		RenameFileDialog(
+			HINSTANCE hInstance,
+			HWND hwndParent,
+			const char* pszBeebFileName,
+			const char* pszHostFileName
+		);
 
-public:
-	bool DoModal();
+	public:
+		const std::string& GetHostFileName() const;
 
-	const std::string& GetHostFileName() const;
+	private:
+		void ExportSelectedFiles();
 
-private:
-	void ExportSelectedFiles();
+	private:
+		virtual INT_PTR DlgProc(
+			UINT   nMessage,
+			WPARAM wParam,
+			LPARAM lParam
+		);
 
-private:
-	static INT_PTR CALLBACK sDlgProc(
-		HWND   hwnd,
-		UINT   nMessage,
-		WPARAM wParam,
-		LPARAM lParam
-	);
-
-	INT_PTR DlgProc(
-		HWND   hwnd,
-		UINT   nMessage,
-		WPARAM wParam,
-		LPARAM lParam
-	);
-
-private:
-	HINSTANCE m_hInstance;
-	HWND m_hwndParent;
-	std::string m_BeebFileName;
-	std::string m_HostFileName;
-	HWND m_hwnd;
+	private:
+		std::string m_BeebFileName;
+		std::string m_HostFileName;
 };
 
 #endif

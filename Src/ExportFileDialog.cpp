@@ -39,21 +39,20 @@ Boston, MA  02110-1301, USA.
 #include "StringUtils.h"
 #include "DebugTrace.h"
 
-ExportFileDialog::ExportFileDialog(
-	HINSTANCE hInstance,
-	HWND hwndParent,
-	const char* szDiscFile,
-	int NumSides,
-	int Side,
-	DFS_DISC_CATALOGUE* dfsCat,
-	const char* ExportPath) :
-	m_hInstance(hInstance),
-	m_hwndParent(hwndParent),
+/****************************************************************************/
+
+ExportFileDialog::ExportFileDialog(HINSTANCE hInstance,
+                                   HWND hwndParent,
+                                   const char* szDiscFile,
+                                   int NumSides,
+                                   int Side,
+                                   DFS_DISC_CATALOGUE* dfsCat,
+                                   const char* ExportPath) :
+	Dialog(hInstance, hwndParent, IDD_DISCEXPORT),
 	m_DiscFile(szDiscFile),
 	m_NumSides(NumSides),
 	m_Side(Side),
 	m_ExportPath(ExportPath),
-	m_hwnd(nullptr),
 	m_hwndListView(nullptr),
 	m_NumSelected(0)
 {
@@ -68,23 +67,6 @@ ExportFileDialog::ExportFileDialog(
 	}
 }
 
-bool ExportFileDialog::DoModal()
-{
-	// Show export dialog
-	int Result = DialogBoxParam(m_hInstance,
-	                            MAKEINTRESOURCE(IDD_DISCEXPORT),
-	                            m_hwndParent,
-	                            sDlgProc,
-	                            reinterpret_cast<LPARAM>(this));
-
-	if (Result != IDOK || m_NumSelected == 0)
-	{
-		return false;
-	}
-
-	return true;
-}
-
 /****************************************************************************/
 
 static LPCTSTR Columns[] = {
@@ -95,17 +77,13 @@ static LPCTSTR Columns[] = {
 	"Host File name"
 };
 
-INT_PTR ExportFileDialog::DlgProc(
-	HWND   hwnd,
-	UINT   nMessage,
-	WPARAM wParam,
-	LPARAM lParam)
+INT_PTR ExportFileDialog::DlgProc(UINT   nMessage,
+                                  WPARAM wParam,
+                                  LPARAM lParam)
 {
 	switch (nMessage)
 	{
 	case WM_INITDIALOG: {
-		m_hwnd = hwnd;
-
 		m_hwndListView = GetDlgItem(m_hwnd, IDC_EXPORTFILELIST);
 
 		ListView_SetExtendedListViewStyle(m_hwndListView, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
@@ -200,43 +178,12 @@ INT_PTR ExportFileDialog::DlgProc(
 
 /****************************************************************************/
 
-INT_PTR CALLBACK ExportFileDialog::sDlgProc(
-	HWND   hwnd,
-	UINT   nMessage,
-	WPARAM wParam,
-	LPARAM lParam)
-{
-	ExportFileDialog* dialog;
-
-	if (nMessage == WM_INITDIALOG)
-	{
-		SetWindowLongPtr(hwnd, DWLP_USER, lParam);
-		dialog = reinterpret_cast<ExportFileDialog*>(lParam);
-	}
-	else
-	{
-		dialog = reinterpret_cast<ExportFileDialog*>(
-			GetWindowLongPtr(hwnd, DWLP_USER)
-		);
-	}
-
-	return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
-}
-
-int ExportFileDialog::GetNumSelected() const
-{
-	return m_NumSelected;
-}
-
 std::string ExportFileDialog::GetPath() const
 {
 	return m_ExportPath;
 }
 
-const int* ExportFileDialog::GetFilesSelected() const
-{
-	return m_FilesSelected;
-}
+/****************************************************************************/
 
 void ExportFileDialog::ExportSelectedFiles()
 {
@@ -244,7 +191,14 @@ void ExportFileDialog::ExportSelectedFiles()
 
 	if (m_NumSelected == 0)
 	{
-		return;
+		int Count = ListView_GetItemCount(m_hwndListView);
+
+		for (int i = 0; i < Count; i++)
+		{
+			ListView_SetItemState(m_hwndListView, i, LVIS_SELECTED, LVIS_SELECTED);
+		}
+
+		m_NumSelected = Count;
 	}
 
 	// Get folder to export to
@@ -254,14 +208,19 @@ void ExportFileDialog::ExportSelectedFiles()
 
 	FolderSelectDialog::Result Result = Dialog.DoModal();
 
-	if (Result == FolderSelectDialog::Result::OK)
+	switch (Result)
 	{
-		m_ExportPath = Dialog.GetFolder();
-	}
-	else if (Result == FolderSelectDialog::Result::InvalidFolder)
-	{
-		mainWin->Report(MessageType::Warning, "Invalid folder selected");
-		return;
+		case FolderSelectDialog::Result::OK:
+			m_ExportPath = Dialog.GetFolder();
+			break;
+
+		case FolderSelectDialog::Result::InvalidFolder:
+			mainWin->Report(MessageType::Warning, "Invalid folder selected");
+			return;
+
+		case FolderSelectDialog::Result::Cancel:
+		default:
+			return;
 	}
 
 	int Item = ListView_GetNextItem(m_hwndListView, -1, LVNI_SELECTED);
@@ -306,6 +265,8 @@ void ExportFileDialog::ExportSelectedFiles()
 
 	mainWin->Report(MessageType::Info, "Files successfully exported: %d", Count);
 }
+
+/****************************************************************************/
 
 bool ExportFileDialog::ExportFile(DFS_FILE_ATTR* DfsAttrs, const char* LocalFileName)
 {

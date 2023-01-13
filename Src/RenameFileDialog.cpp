@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2023  Chris Needham
+Copyright (C) 2023 Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,49 +26,32 @@ Boston, MA  02110-1301, USA.
 #include "RenameFileDialog.h"
 #include "beebemrc.h"
 
-RenameFileDialog::RenameFileDialog(
-	HINSTANCE hInstance,
-	HWND hwndParent,
-	const char* pszBeebFileName,
-	const char* pszHostFileName) :
-	m_hInstance(hInstance),
-	m_hwndParent(hwndParent),
+/****************************************************************************/
+
+RenameFileDialog::RenameFileDialog(HINSTANCE hInstance,
+                                   HWND hwndParent,
+                                   const char* pszBeebFileName,
+                                   const char* pszHostFileName) :
+	Dialog(hInstance, hwndParent, IDD_RENAME_FILE),
 	m_BeebFileName(pszBeebFileName),
-	m_HostFileName(pszHostFileName),
-	m_hwnd(nullptr)
+	m_HostFileName(pszHostFileName)
 {
-}
-
-bool RenameFileDialog::DoModal()
-{
-	// Show export dialog
-	int Result = DialogBoxParam(m_hInstance,
-		MAKEINTRESOURCE(IDD_RENAME_FILE),
-		m_hwndParent,
-		sDlgProc,
-		reinterpret_cast<LPARAM>(this));
-
-	return Result == IDOK;
 }
 
 /****************************************************************************/
 
 INT_PTR RenameFileDialog::DlgProc(
-	HWND   hwnd,
 	UINT   nMessage,
 	WPARAM wParam,
 	LPARAM /* lParam */)
 {
 	switch (nMessage)
 	{
-	case WM_INITDIALOG: {
-		m_hwnd = hwnd;
-
+	case WM_INITDIALOG:
 		SetDlgItemText(m_hwnd, IDC_BEEB_FILE_NAME, m_BeebFileName.c_str());
 		SetDlgItemText(m_hwnd, IDC_HOST_FILE_NAME, m_HostFileName.c_str());
 
 		return TRUE;
-	}
 
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
@@ -96,36 +79,6 @@ INT_PTR RenameFileDialog::DlgProc(
 }
 
 /****************************************************************************/
-
-INT_PTR CALLBACK RenameFileDialog::sDlgProc(
-	HWND   hwnd,
-	UINT   nMessage,
-	WPARAM wParam,
-	LPARAM lParam)
-{
-	RenameFileDialog* dialog;
-
-	if (nMessage == WM_INITDIALOG)
-	{
-		SetWindowLongPtr(hwnd, DWLP_USER, lParam);
-		dialog = reinterpret_cast<RenameFileDialog*>(lParam);
-	}
-	else
-	{
-		dialog = reinterpret_cast<RenameFileDialog*>(
-			GetWindowLongPtr(hwnd, DWLP_USER)
-		);
-	}
-
-	if (dialog)
-	{
-		return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
-	}
-	else
-	{
-		return FALSE;
-	}
-}
 
 const std::string& RenameFileDialog::GetHostFileName() const
 {

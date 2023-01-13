@@ -18,58 +18,40 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef EXPORT_FILE_DIALOG_HEADER
-#define EXPORT_FILE_DIALOG_HEADER
+#ifndef DIALOG_HEADER
+#define DIALOG_HEADER
 
-#include <string>
-#include <vector>
-
-#include "Dialog.h"
-#include "DiscEdit.h"
-
-struct FileExportEntry
-{
-	DFS_FILE_ATTR DfsAttrs;
-	std::string BeebFileName;
-	std::string HostFileName;
-};
-
-class ExportFileDialog : public Dialog
+class Dialog
 {
 	public:
-		ExportFileDialog(
+		Dialog(
 			HINSTANCE hInstance,
 			HWND hwndParent,
-			const char* szDiscFile,
-			int NumSides,
-			int Side,
-			DFS_DISC_CATALOGUE* dfsCat,
-			const char* ExportPath
+			int DialogID
 		);
 
 	public:
-		std::string GetPath() const;
-
-private:
-		void ExportSelectedFiles();
-		bool ExportFile(DFS_FILE_ATTR* DfsAttrs, const char* LocalFileName);
+		bool DoModal();
 
 	private:
-		virtual INT_PTR DlgProc(
+		static INT_PTR CALLBACK sDlgProc(
+			HWND   hwnd,
 			UINT   nMessage,
 			WPARAM wParam,
 			LPARAM lParam
 		);
 
-	private:
-		const char* m_DiscFile;
-		int m_NumSides;
-		int m_Side;
-		std::vector<FileExportEntry> m_ExportFiles;
-		std::string m_ExportPath;
-		HWND m_hwndListView;
-		int m_FilesSelected[DFS_MAX_CAT_SIZE];
-		int m_NumSelected;
+		virtual INT_PTR DlgProc(
+			UINT   nMessage,
+			WPARAM wParam,
+			LPARAM lParam
+		) = 0;
+
+	protected:
+		HINSTANCE m_hInstance;
+		HWND m_hwndParent;
+		int m_DialogID;
+		HWND m_hwnd;
 };
 
 #endif
