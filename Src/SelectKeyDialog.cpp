@@ -165,7 +165,14 @@ INT_PTR CALLBACK SelectKeyDialog::sDlgProc(
 		);
 	}
 
-	return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
+	if (dialog)
+	{
+		return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 
 /****************************************************************************/

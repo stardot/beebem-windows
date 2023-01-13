@@ -174,7 +174,14 @@ INT_PTR CALLBACK UserPortBreakoutDialog::sDlgProc(
 		);
 	}
 
-	return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
+	if (dialog)
+	{
+		return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 
 INT_PTR UserPortBreakoutDialog::DlgProc(

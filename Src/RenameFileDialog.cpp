@@ -117,7 +117,14 @@ INT_PTR CALLBACK RenameFileDialog::sDlgProc(
 		);
 	}
 
-	return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
+	if (dialog)
+	{
+		return dialog->DlgProc(hwnd, nMessage, wParam, lParam);
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 
 const std::string& RenameFileDialog::GetHostFileName() const
