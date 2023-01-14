@@ -54,7 +54,6 @@ Boston, MA  02110-1301, USA.
 
 /* Configuration file strings */
 static const char *CFG_VIEW_WIN_SIZE = "WinSize";
-static const char *CFG_VIEW_SHOW_FPS = "ShowFSP";
 static const char *CFG_VIEW_MONITOR = "Monitor";
 static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
 static const char *CFG_SOUND_VOLUME = "SoundVolume";
@@ -164,8 +163,14 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio))
 		m_MaintainAspectRatio = true;
 
-	if (!m_Preferences.GetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS))
-		m_ShowSpeedAndFPS = true;
+	if (!m_Preferences.GetBoolValue("ShowFPS", m_ShowSpeedAndFPS))
+	{
+		// This option was named "ShowFSP" in BeebEm v4.18 and earlier
+		if (!m_Preferences.GetBoolValue("ShowFSP", m_ShowSpeedAndFPS))
+		{
+			m_ShowSpeedAndFPS = true;
+		}
+	}
 
 	m_PaletteType = PaletteType::RGB;
 
@@ -613,7 +618,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("WinSizeY", m_YLastWinSize);
 		m_Preferences.SetBoolValue("FullScreen", m_isFullScreen);
 		m_Preferences.SetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio);
-		m_Preferences.SetBoolValue(CFG_VIEW_SHOW_FPS, m_ShowSpeedAndFPS);
+		m_Preferences.SetBoolValue("ShowFPS", m_ShowSpeedAndFPS);
 		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &m_PaletteType, 1);
 		m_Preferences.SetBoolValue("HideMenuEnabled", m_HideMenuEnabled);
 		LEDByte = static_cast<unsigned char>(
