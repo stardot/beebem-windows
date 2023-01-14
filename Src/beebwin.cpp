@@ -2547,10 +2547,13 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		style |= WIN_STYLE;
 		SetWindowLong(m_hWnd, GWL_STYLE, style);
 
-		SetWindowPos(m_hWnd, HWND_TOP, m_XWinPos, m_YWinPos,
-					 m_XWinSize + m_XWinBorder,
-					 m_YWinSize + m_YWinBorder,
-					 !wasFullScreen ? SWP_NOMOVE : 0);
+		SetWindowPos(m_hWnd,
+		             HWND_TOP,
+		             m_XWinPos,
+		             m_YWinPos,
+		             m_XWinSize + m_XWinBorder,
+		             m_YWinSize + m_YWinBorder,
+		             !wasFullScreen ? SWP_NOMOVE : 0);
 
 		// Experiment: hide menu in full screen
 		HideMenu(false);

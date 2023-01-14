@@ -510,21 +510,21 @@ public:
 	void EnableMenuItem(UINT id, bool enabled);
 
 	// DirectX - calls DDraw or DX9 fn
-	void InitDX(void);
-	void ResetDX(void);
-	void ReinitDX(void);
-	void ExitDX(void);
-	void UpdateSmoothing(void);
+	void InitDX();
+	void ResetDX();
+	void ReinitDX();
+	void ExitDX();
+	void UpdateSmoothing();
 
 	// DirectDraw
-	HRESULT InitDirectDraw(void);
-	HRESULT InitSurfaces(void);
-	void ResetSurfaces(void);
+	HRESULT InitDirectDraw();
+	HRESULT InitSurfaces();
+	void ResetSurfaces();
 
 	// DirectX9
-	HRESULT InitDX9(void);
-	void ExitDX9(void);
-	void RenderDX9(void);
+	HRESULT InitDX9();
+	void ExitDX9();
+	void RenderDX9();
 
 	void TranslateWindowSize(void);
 	void TranslateDDSize(void);

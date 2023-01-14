@@ -33,14 +33,14 @@ Boston, MA  02110-1301, USA.
 #include "Messages.h"
 #include "DebugTrace.h"
 
-typedef HRESULT ( WINAPI* LPDIRECTDRAWCREATE )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
+typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter);
 
 extern HMODULE hFDCBoard;
 extern EDCB ExtBoard;
 extern AVIWriter *aviWriter;
 
 /****************************************************************************/
-void BeebWin::InitDX(void)
+void BeebWin::InitDX()
 {
 	HRESULT hr = E_FAIL;
 
@@ -75,7 +75,8 @@ void BeebWin::InitDX(void)
 	}
 }
 
-void BeebWin::ResetDX(void)
+/****************************************************************************/
+void BeebWin::ResetDX()
 {
 	m_DXResetPending = false;
 
@@ -94,7 +95,8 @@ void BeebWin::ResetDX(void)
 	}
 }
 
-void BeebWin::ReinitDX(void)
+/****************************************************************************/
+void BeebWin::ReinitDX()
 {
 	HRESULT hr = DD_OK;
 
@@ -118,7 +120,8 @@ void BeebWin::ReinitDX(void)
 	m_CurrentDisplayRenderer = m_DisplayRenderer;
 }
 
-void BeebWin::ExitDX(void)
+/****************************************************************************/
+void BeebWin::ExitDX()
 {
 	if (m_CurrentDisplayRenderer == IDM_DISPDX9)
 	{
@@ -131,29 +134,29 @@ void BeebWin::ExitDX(void)
 		if (m_DD2)
 		{
 			m_DD2->Release();
-			m_DD2 = NULL;
+			m_DD2 = nullptr;
 		}
 
 		if (m_DD)
 		{
 			m_DD->Release();
-			m_DD = NULL;
+			m_DD = nullptr;
 		}
 	}
 }
 
 /****************************************************************************/
-HRESULT BeebWin::InitDirectDraw(void)
+HRESULT BeebWin::InitDirectDraw()
 {
 	HRESULT ddrval = DDERR_GENERIC;
 
-	m_DD = NULL;
-	m_DD2 = NULL;
-	m_Clipper = NULL;
-	m_DDS2One = NULL;
-	m_DDSOne = NULL;
-	m_DDS2Primary = NULL;
-	m_DDSPrimary = NULL;
+	m_DD = nullptr;
+	m_DD2 = nullptr;
+	m_Clipper = nullptr;
+	m_DDS2One = nullptr;
+	m_DDSOne = nullptr;
+	m_DDS2Primary = nullptr;
+	m_DDSPrimary = nullptr;
 
 	HINSTANCE hInstDDraw = LoadLibrary("ddraw.dll");
 
@@ -161,16 +164,16 @@ HRESULT BeebWin::InitDirectDraw(void)
 	{
 		LPDIRECTDRAWCREATE pDDCreate = (LPDIRECTDRAWCREATE)GetProcAddress(hInstDDraw, "DirectDrawCreate");
 
-		if( pDDCreate )
+		if (pDDCreate != nullptr)
 		{
-			ddrval = pDDCreate( NULL, &m_DD, NULL );
+			ddrval = pDDCreate(nullptr, &m_DD, nullptr);
 
-			if( ddrval == DD_OK )
+			if (ddrval == DD_OK)
 			{
 				ddrval = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID *)&m_DD2);
 			}
 
-			if( ddrval == DD_OK )
+			if (ddrval == DD_OK)
 			{
 				ddrval = InitSurfaces();
 			}
@@ -181,40 +184,47 @@ HRESULT BeebWin::InitDirectDraw(void)
 }
 
 /****************************************************************************/
-HRESULT BeebWin::InitSurfaces(void)
+HRESULT BeebWin::InitSurfaces()
 {
-	DDSURFACEDESC ddsd;
 	HRESULT ddrval;
 
 	if (m_isFullScreen)
-		ddrval = m_DD2->SetCooperativeLevel( m_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
+	{
+		ddrval = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
+	}
 	else
-		ddrval = m_DD2->SetCooperativeLevel( m_hWnd, DDSCL_NORMAL );
-	if( ddrval == DD_OK )
+	{
+		ddrval = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);
+	}
+
+	if (ddrval == DD_OK)
 	{
 		if (m_isFullScreen)
 		{
 			ddrval = m_DD2->SetDisplayMode(m_XDXSize, m_YDXSize, 32, 0, 0);
 		}
 	}
-	if( ddrval == DD_OK )
+
+	if (ddrval == DD_OK)
 	{
-		ddsd.dwSize = sizeof( ddsd );
+		DDSURFACEDESC ddsd;
+		ddsd.dwSize = sizeof(ddsd);
 		ddsd.dwFlags = DDSD_CAPS;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-		ddrval = m_DD2->CreateSurface( &ddsd, &m_DDSPrimary, NULL );
+		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSPrimary, nullptr);
 	}
 
-	if( ddrval == DD_OK )
+	if (ddrval == DD_OK)
 		ddrval = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2Primary);
-	if( ddrval == DD_OK )
-		ddrval = m_DD2->CreateClipper( 0, &m_Clipper, NULL );
-	if( ddrval == DD_OK )
-		ddrval = m_Clipper->SetHWnd( 0, m_hWnd );
-	if( ddrval == DD_OK )
-		ddrval = m_DDS2Primary->SetClipper( m_Clipper );
-	if( ddrval == DD_OK )
+	if (ddrval == DD_OK)
+		ddrval = m_DD2->CreateClipper(0, &m_Clipper, NULL);
+	if (ddrval == DD_OK)
+		ddrval = m_Clipper->SetHWnd(0, m_hWnd);
+	if (ddrval == DD_OK)
+		ddrval = m_DDS2Primary->SetClipper(m_Clipper);
+	if (ddrval == DD_OK)
 	{
+		DDSURFACEDESC ddsd;
 		ZeroMemory(&ddsd, sizeof(ddsd));
 		ddsd.dwSize = sizeof(ddsd);
 		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
@@ -225,65 +235,73 @@ HRESULT BeebWin::InitSurfaces(void)
 			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 		ddsd.dwWidth = 800;
 		ddsd.dwHeight = 512;
-		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
+		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, nullptr);
 	}
-	if( ddrval == DD_OK )
+
+	if (ddrval == DD_OK)
 	{
 		ddrval = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
 	}
 
 	if (ddrval == DD_OK)
+	{
 		m_DXInit = true;
+	}
 
 	return ddrval;
 }
 
 /****************************************************************************/
-void BeebWin::ResetSurfaces(void)
+void BeebWin::ResetSurfaces()
 {
 	if (m_Clipper)
 	{
 		m_Clipper->Release();
-		m_Clipper = NULL;
+		m_Clipper = nullptr;
 	}
+
 	if (m_DDS2One)
 	{
 		m_DDS2One->Release();
-		m_DDS2One = NULL;
+		m_DDS2One = nullptr;
 	}
+
 	if (m_DDSOne)
 	{
 		m_DDSOne->Release();
-		m_DDSOne = NULL;
+		m_DDSOne = nullptr;
 	}
+
 	if (m_DDS2Primary)
 	{
 		m_DDS2Primary->Release();
-		m_DDS2Primary = NULL;
+		m_DDS2Primary = nullptr;
 	}
+
 	if (m_DDSPrimary)
 	{
 		m_DDSPrimary->Release();
-		m_DDSPrimary = NULL;
+		m_DDSPrimary = nullptr;
 	}
 
 	m_DXInit = false;
 }
 
 /****************************************************************************/
-HRESULT BeebWin::InitDX9(void)
+HRESULT BeebWin::InitDX9()
 {
-	CUSTOMVERTEX* pVertices = NULL;
+	CUSTOMVERTEX* pVertices = nullptr;
 	HRESULT hr = D3D_OK;
 
-	m_pD3D = NULL;
-	m_pd3dDevice = NULL;
-	m_pVB = NULL;
-	m_pTexture = NULL;
+	m_pD3D = nullptr;
+	m_pd3dDevice = nullptr;
+	m_pVB = nullptr;
+	m_pTexture = nullptr;
 
 	// Create the D3D object.
-	m_pD3D = Direct3DCreate9( D3D_SDK_VERSION );
-	if( NULL == m_pD3D )
+	m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+
+	if (m_pD3D == nullptr)
 	{
 		hr = E_FAIL;
 	}
@@ -307,9 +325,10 @@ HRESULT BeebWin::InitDX9(void)
 	{
 		// Set up the structure used to create the D3DDevice.
 		D3DPRESENT_PARAMETERS d3dpp;
-		ZeroMemory( &d3dpp, sizeof(d3dpp) );
+		ZeroMemory(&d3dpp, sizeof(d3dpp));
 
 		d3dpp.Windowed = m_isFullScreen ? FALSE : TRUE;
+
 		if (d3dpp.Windowed)
 		{
 			d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
@@ -320,6 +339,7 @@ HRESULT BeebWin::InitDX9(void)
 			d3dpp.BackBufferHeight = m_YDXSize;
 			d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
 		}
+
 		d3dpp.BackBufferCount = 1;
 		d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
 		d3dpp.hDeviceWindow = m_hWnd;
@@ -335,6 +355,7 @@ HRESULT BeebWin::InitDX9(void)
 		for (unsigned int i = 0; i < adapterCount; i++)
 		{
 			HMONITOR monToCheck = m_pD3D->GetAdapterMonitor(i);
+
 			if (monitor == monToCheck)
 			{
 				currentMonitorIndex = i;
@@ -343,64 +364,68 @@ HRESULT BeebWin::InitDX9(void)
 		}
 
 		// Create the D3DDevice
-		hr = m_pD3D->CreateDevice(
-			currentMonitorIndex, D3DDEVTYPE_HAL, m_hWnd,
-			D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-			&d3dpp, &m_pd3dDevice );
+		hr = m_pD3D->CreateDevice(currentMonitorIndex,
+		                          D3DDEVTYPE_HAL,
+		                          m_hWnd, // hFocusWindow
+		                          D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+		                          &d3dpp,
+		                          &m_pd3dDevice);
 	}
 
 	if (hr == D3D_OK)
 	{
 		// Turn off D3D lighting
-		m_pd3dDevice->SetRenderState( D3DRS_LIGHTING, FALSE );
+		m_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 
 		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
 		{
 			// Turn on bilinear interpolation so image is smoothed
-			m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
-			m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		}
 
 		// Just display a texture
-		m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP,	 D3DTOP_SELECTARG1 );
-		m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 
 		// Create the vertex buffer.
-		hr = m_pd3dDevice->CreateVertexBuffer(
-			4 * sizeof(CUSTOMVERTEX),
-			0, D3DFVF_CUSTOMVERTEX,
-			D3DPOOL_MANAGED, &m_pVB, NULL );
+		hr = m_pd3dDevice->CreateVertexBuffer(4 * sizeof(CUSTOMVERTEX),
+		                                      0, // Usage
+		                                      D3DFVF_CUSTOMVERTEX,
+		                                      D3DPOOL_MANAGED,
+		                                      &m_pVB,
+		                                      nullptr);
 	}
 
 	if (hr == D3D_OK)
 	{
 		// Fill the vertex buffer. We are setting the tu and tv texture
 		// coordinates, which range from 0.0 to 1.0
-		hr = m_pVB->Lock( 0, 0, (void**)&pVertices, 0 );
+		hr = m_pVB->Lock(0, 0, (void**)&pVertices, 0);
 	}
 
 	if (hr == D3D_OK)
 	{
-		pVertices[0].position = D3DXVECTOR3( 0.0f, -511.0f, 0.0f );
-		pVertices[0].color	  = 0x00ffffff;
-		pVertices[0].tu		  = 0.0f;
-		pVertices[0].tv		  = 1.0f;
+		pVertices[0].position = D3DXVECTOR3(0.0f, -511.0f, 0.0f);
+		pVertices[0].color    = 0x00ffffff;
+		pVertices[0].tu       = 0.0f;
+		pVertices[0].tv       = 1.0f;
 
-		pVertices[1].position = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
-		pVertices[1].color	  = 0x00ffffff;
-		pVertices[1].tu		  = 0.0f;
-		pVertices[1].tv		  = 0.0f;
+		pVertices[1].position = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		pVertices[1].color    = 0x00ffffff;
+		pVertices[1].tu       = 0.0f;
+		pVertices[1].tv       = 0.0f;
 
-		pVertices[2].position = D3DXVECTOR3( 799.0f, -511.0f, 0.0f );
-		pVertices[2].color	  = 0x00ffffff;
-		pVertices[2].tu		  = 1.0f;
-		pVertices[2].tv		  = 1.0f;
+		pVertices[2].position = D3DXVECTOR3(799.0f, -511.0f, 0.0f);
+		pVertices[2].color    = 0x00ffffff;
+		pVertices[2].tu       = 1.0f;
+		pVertices[2].tv       = 1.0f;
 
-		pVertices[3].position = D3DXVECTOR3( 799.0f, 0.0f, 0.0f );
-		pVertices[3].color	  = 0x00ffffff;
-		pVertices[3].tu		  = 1.0f;
-		pVertices[3].tv		  = 0.0f;
-	
+		pVertices[3].position = D3DXVECTOR3(799.0f, 0.0f, 0.0f);
+		pVertices[3].color    = 0x00ffffff;
+		pVertices[3].tu       = 1.0f;
+		pVertices[3].tv       = 0.0f;
+
 		m_pVB->Unlock();
 	}
 
@@ -432,14 +457,18 @@ HRESULT BeebWin::InitDX9(void)
 
 		// Identity matrix will fill window with our texture
 		D3DXMatrixIdentity(&m_TextureMatrix);
-	}		
+	}
 
 	if (hr == D3D_OK)
 	{
-		//hr = D3DXCreateTexture(m_pd3dDevice, 800, 512, 0, 0,
-		//		D3DFMT_X8R8G8B8, D3DPOOL_MANAGED, &m_pTexture);
-		hr = m_pd3dDevice->CreateTexture(800, 512, 1, 0,
-				D3DFMT_X8R8G8B8, D3DPOOL_MANAGED, &m_pTexture, NULL);
+		hr = m_pd3dDevice->CreateTexture(800,
+		                                 512,
+		                                 1, // Levels
+		                                 0, // Usage
+		                                 D3DFMT_X8R8G8B8,
+		                                 D3DPOOL_MANAGED,
+		                                 &m_pTexture,
+		                                 nullptr);
 	}
 
 	if (hr == D3D_OK)
@@ -455,49 +484,50 @@ HRESULT BeebWin::InitDX9(void)
 }
 
 /****************************************************************************/
-void BeebWin::ExitDX9(void)
+void BeebWin::ExitDX9()
 {
-	if (m_pTexture != NULL)
+	if (m_pTexture != nullptr)
 	{
 		m_pTexture->Release();
-		m_pTexture = NULL;
+		m_pTexture = nullptr;
 	}
 
-	if( m_pVB != NULL )
+	if (m_pVB != nullptr)
 	{
 		m_pVB->Release();
-		m_pVB = NULL;
+		m_pVB = nullptr;
 	}
 
-	if( m_pd3dDevice != NULL )
+	if (m_pd3dDevice != nullptr)
 	{
 		m_pd3dDevice->Release();
-		m_pd3dDevice = NULL;
+		m_pd3dDevice = nullptr;
 	}
 
-	if( m_pD3D != NULL )
+	if (m_pD3D != nullptr)
 	{
 		m_pD3D->Release();
-		m_pD3D = NULL;
+		m_pD3D = nullptr;
 	}
 
 	m_DXInit = false;
 }
 
 /****************************************************************************/
-void BeebWin::RenderDX9(void)
+void BeebWin::RenderDX9()
 {
 	// Clear the backbuffer
-	HRESULT hr = m_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET,
+	HRESULT hr = m_pd3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET,
 	                                 D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
 
 	// Begin the scene
 	hr = m_pd3dDevice->BeginScene();
+
 	if(hr == D3D_OK)
 	{
-		hr = m_pd3dDevice->SetStreamSource( 0, m_pVB, 0, sizeof(CUSTOMVERTEX) );
+		hr = m_pd3dDevice->SetStreamSource(0, m_pVB, 0, sizeof(CUSTOMVERTEX));
 		if (hr == D3D_OK)
-			hr = m_pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
+			hr = m_pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 		if (hr == D3D_OK)
 			hr = m_pd3dDevice->SetTexture(0, m_pTexture);
 		if (hr == D3D_OK)
@@ -512,7 +542,9 @@ void BeebWin::RenderDX9(void)
 
 	// Present the backbuffer contents to the display
 	if (hr == D3D_OK)
-		hr = m_pd3dDevice->Present( NULL, NULL, NULL, NULL );
+	{
+		hr = m_pd3dDevice->Present(NULL, NULL, NULL, NULL);
+	}
 
 	if (hr == D3DERR_DEVICELOST)
 	{
@@ -545,7 +577,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	// Not initialised yet?
 	if (m_screen == NULL)
 		return;
-	
+
 	// Check for text view
 	if (m_TextViewEnabled)
 	{
@@ -679,6 +711,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 				pSurface->Release();
 				RenderDX9();
 			}
+
 			if (ddrval != D3D_OK)
 			{
 				Report(MessageType::Error, "DirectX failure while updating screen\nFailure code %X\nSwitching to GDI",
@@ -728,7 +761,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 				srcRect.top    = 0;
 				srcRect.right  = TeletextEnabled ? 552 : ActualScreenWidth;
 				srcRect.bottom = TeletextEnabled ? TeletextLines : nlines;
-			
+
 				ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
 				if (ddrval == DDERR_SURFACELOST)
 				{
@@ -737,7 +770,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 						ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL );
 				}
 			}
-		
+
 			if (ddrval != DD_OK && ddrval != DDERR_WASSTILLDRAWING)
 			{
 				// Ignore DX errors for now - swapping between full screen and windowed DX
@@ -877,21 +910,21 @@ void BeebWin::UpdateWindowTitle()
 }
 
 /****************************************************************************/
-void BeebWin::UpdateSmoothing(void)
+void BeebWin::UpdateSmoothing()
 {
 	if (m_DisplayRenderer == IDM_DISPDX9)
 	{
 		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
 		{
 			// Turn on bilinear interpolation so image is smoothed
-			m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR );
-			m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR );
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 		}
 		else
 		{
 			// Turn off bilinear interpolation
-			m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MINFILTER, D3DTEXF_POINT );
-			m_pd3dDevice->SetSamplerState( 0, D3DSAMP_MAGFILTER, D3DTEXF_POINT );
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 		}
 	}
 	else
@@ -899,13 +932,13 @@ void BeebWin::UpdateSmoothing(void)
 		if (m_DDS2One)
 		{
 			m_DDS2One->Release();
-			m_DDS2One = NULL;
+			m_DDS2One = nullptr;
 		}
 
 		if (m_DDSOne)
 		{
 			m_DDSOne->Release();
-			m_DDSOne = NULL;
+			m_DDSOne = nullptr;
 		}
 
 		DDSURFACEDESC ddsd;
@@ -923,7 +956,7 @@ void BeebWin::UpdateSmoothing(void)
 
 		HRESULT ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
 
-		if( ddrval == DD_OK )
+		if (ddrval == DD_OK)
 		{
 			ddrval = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
 		}
