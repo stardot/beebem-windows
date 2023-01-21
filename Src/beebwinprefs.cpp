@@ -106,6 +106,7 @@ void BeebWin::LoadPreferences()
 	m_Preferences.EraseValue("ShowBottomCursorLine");
 	m_Preferences.EraseValue("Volume");
 	m_Preferences.EraseValue("UsePrimaryBuffer");
+	m_Preferences.EraseValue("ShowFSP");
 
 	MachineType = Model::B;
 
