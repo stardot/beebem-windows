@@ -152,6 +152,8 @@ static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
 				if (row >= 0 && row <= 16)
 				{
 					char szROMFile[MAX_PATH];
+					szROMFile[0] = '\0';
+
 					if (GetROMFile(hwndDlg, szROMFile))
 					{
 						strcpy(ROMCfg[static_cast<int>(nModel)][row], szROMFile);

@@ -726,6 +726,8 @@ void BeebWin::CaptureVideo()
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
 	const char* filter = "AVI File (*.avi)\0*.avi\0";
 
 	m_Preferences.GetStringValue("AVIPath", DefaultPath);
