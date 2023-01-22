@@ -1375,9 +1375,6 @@ INLINE static int ZeroPgYAddrModeHandler_Address()
 /* Reset processor */
 static void Reset65C02()
 {
-  FILE *TubeRom;
-  char TRN[256];
-  char *TubeRomName=TRN;
   Accumulator=XReg=YReg=0; /* For consistancy of execution */
   StackReg=0xff; /* Initial value ? */
   PSR=FlagI; /* Interrupts off for starters */
@@ -1388,15 +1385,18 @@ static void Reset65C02()
 
   //The fun part, the tube OS is copied from ROM to tube RAM before the processor starts processing
   //This makes the OS "ROM" writable in effect, but must be restored on each reset.
+  char TubeRomName[MAX_PATH];
   strcpy(TubeRomName,RomPath);
-  strcat(TubeRomName,"beebfile/6502Tube.rom");
-  TubeRom=fopen(TubeRomName,"rb");
-  if (TubeRom!=NULL) {
-	  fread(TubeRam+0xf800,1,2048,TubeRom);
-	  fclose(TubeRom);
+  strcat(TubeRomName,"BeebFile/6502Tube.rom");
+  FILE *TubeRom = fopen(TubeRomName,"rb");
+  if (TubeRom != nullptr)
+  {
+    fread(TubeRam+0xf800,1,2048,TubeRom);
+    fclose(TubeRom);
   }
 
-  TubeProgramCounter=TubeReadMem(0xfffc) | (TubeReadMem(0xfffd)<<8);
+  TubeProgramCounter = TubeReadMem(0xfffc);
+  TubeProgramCounter |= TubeReadMem(0xfffd) << 8;
   TotalTubeCycles=TotalCycles/2*3;
 }
 
