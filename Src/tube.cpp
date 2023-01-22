@@ -81,8 +81,6 @@ unsigned char TubeintStatus = 0; // bit set (nums in IRQ_Nums) if interrupt bein
 unsigned char TubeNMIStatus = 0; // bit set (nums in NMI_Nums) if NMI being caused
 static bool TubeNMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
 
-typedef int int16;
-
 /* Note how GETCFLAG is special since being bit 0 we don't need to test it to get a clean 0/1 */
 #define GETCFLAG ((PSR & FlagC))
 #define GETZFLAG ((PSR & FlagZ)>0)
@@ -728,25 +726,26 @@ INLINE static unsigned char Pop(void) {
 } /* Pop */
 
 /*----------------------------------------------------------------------------*/
-INLINE static void PushWord(int16 topush) {
+INLINE static void PushWord(int topush)
+{
   Push((topush>>8) & 255);
   Push(topush & 255);
-} /* PushWord */
+}
 
 /*----------------------------------------------------------------------------*/
-INLINE static int16 PopWord() {
-  int16 RetValue;
-
-  RetValue=Pop();
-  RetValue|=(Pop()<<8);
-  return(RetValue);
-} /* PopWord */
+INLINE static int PopWord()
+{
+  int RetValue = Pop();
+  RetValue |= Pop() << 8;
+  return RetValue;
+}
 
 /*-------------------------------------------------------------------------*/
 
 // Relative addressing mode handler
 
-INLINE static int16 RelAddrModeHandler_Data() {
+INLINE static int RelAddrModeHandler_Data()
+{
 	// For branches - is this correct - i.e. is the program counter incremented
 	// at the correct time?
 	int EffectiveAddress = (signed char)TubeRam[TubeProgramCounter++];
@@ -756,7 +755,8 @@ INLINE static int16 RelAddrModeHandler_Data() {
 }
 
 /*----------------------------------------------------------------------------*/
-INLINE static void ADCInstrHandler(int16 operand) {
+INLINE static void ADCInstrHandler(int operand)
+{
   /* NOTE! Not sure about C and V flags */
   if (!GETDFLAG) {
     int TmpResultC = Accumulator + operand + GETCFLAG;
@@ -804,37 +804,38 @@ INLINE static void ADCInstrHandler(int16 operand) {
 } /* ADCInstrHandler */
 
 /*----------------------------------------------------------------------------*/
-INLINE static void ANDInstrHandler(int16 operand) {
+INLINE static void ANDInstrHandler(int operand)
+{
   Accumulator=Accumulator & operand;
   PSR&=~(FlagZ | FlagN);
   PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
-} /* ANDInstrHandler */
+}
 
-INLINE static void ASLInstrHandler(int16 address) {
-  unsigned char oldVal,newVal;
-  oldVal=TUBEREADMEM_FAST(address);
-  newVal=(((unsigned int)oldVal)<<1) & 254;
+INLINE static void ASLInstrHandler(int address)
+{
+  unsigned char oldVal = TUBEREADMEM_FAST(address);
+  unsigned char newVal = (((unsigned int)oldVal) << 1) & 254;
   TUBEWRITEMEM_FAST(address,newVal);
   SetPSRCZN((oldVal & 128)>0, newVal==0,newVal & 128);
-} /* ASLInstrHandler */
+}
 
-INLINE static void TRBInstrHandler(int16 address) {
-	unsigned char oldVal,newVal;
-	oldVal=TUBEREADMEM_FAST(address);
-	newVal=(Accumulator ^ 255) & oldVal;
-    TUBEWRITEMEM_FAST(address,newVal);
-    PSR&=253;
-	PSR|=((Accumulator & oldVal)==0) ? 2 : 0;
-} // TRBInstrHandler
+INLINE static void TRBInstrHandler(int address)
+{
+	unsigned char oldVal = TUBEREADMEM_FAST(address);
+	unsigned char newVal = (Accumulator ^ 255) & oldVal;
+	TUBEWRITEMEM_FAST(address,newVal);
+	PSR &= 253;
+	PSR |= ((Accumulator & oldVal) == 0) ? 2 : 0;
+}
 
-INLINE static void TSBInstrHandler(int16 address) {
-	unsigned char oldVal,newVal;
-	oldVal=TUBEREADMEM_FAST(address);
-	newVal=Accumulator | oldVal;
-    TUBEWRITEMEM_FAST(address,newVal);
-    PSR&=253;
-	PSR|=((Accumulator & oldVal)==0) ? 2 : 0;
-} // TSBInstrHandler
+INLINE static void TSBInstrHandler(int address)
+{
+	unsigned char oldVal = TUBEREADMEM_FAST(address);
+	unsigned char newVal = Accumulator | oldVal;
+	TUBEWRITEMEM_FAST(address,newVal);
+	PSR &= 253;
+	PSR |= ((Accumulator & oldVal) == 0) ? 2 : 0;
+}
 
 INLINE static void ASLInstrHandler_Acc(void) {
   unsigned char oldVal,newVal;
@@ -865,13 +866,14 @@ INLINE static void BEQInstrHandler(void) {
   } else TubeProgramCounter++;
 } /* BEQInstrHandler */
 
-INLINE static void BITInstrHandler(int16 operand) {
+INLINE static void BITInstrHandler(int operand)
+{
   PSR&=~(FlagZ | FlagN | FlagV);
   /* z if result 0, and NV to top bits of operand */
   PSR|=(((Accumulator & operand)==0)<<1) | (operand & 192);
-} /* BITInstrHandler */
+}
 
-INLINE static void BITImmedInstrHandler(int16 operand)
+INLINE static void BITImmedInstrHandler(int operand)
 {
 	PSR &= ~FlagZ;
 	// Z if result 0, and NV to top bits of operand
@@ -926,7 +928,8 @@ INLINE static void BRAInstrHandler(void) {
     Branched = true;
 } /* BRAnstrHandler */
 
-INLINE static void CMPInstrHandler(int16 operand) {
+INLINE static void CMPInstrHandler(int operand)
+{
   /* NOTE! Should we consult D flag ? */
   unsigned char result = static_cast<unsigned char>(Accumulator - operand);
   unsigned char CFlag;
@@ -934,26 +937,25 @@ INLINE static void CMPInstrHandler(int16 operand) {
   SetPSRCZN(CFlag, Accumulator==operand,result & 128);
 }
 
-INLINE static void CPXInstrHandler(int16 operand) {
+INLINE static void CPXInstrHandler(int operand)
+{
   unsigned char result = static_cast<unsigned char>(XReg - operand);
   SetPSRCZN(XReg>=operand, XReg==operand,result & 128);
 }
 
-INLINE static void CPYInstrHandler(int16 operand) {
+INLINE static void CPYInstrHandler(int operand)
+{
   unsigned char result = static_cast<unsigned char>(YReg - operand);
   SetPSRCZN(YReg>=operand, YReg==operand,result & 128);
 }
 
-INLINE static void DECInstrHandler(int16 address) {
-  unsigned char val;
-
-  val=TUBEREADMEM_FAST(address);
-
+INLINE static void DECInstrHandler(int address)
+{
+  unsigned char val = TUBEREADMEM_FAST(address);
   val=(val-1);
-
   TUBEWRITEMEM_FAST(address,val);
   SetPSRZN(val);
-} /* DECInstrHandler */
+}
 
 INLINE static void DEXInstrHandler(void) {
   XReg=(XReg-1) & 255;
@@ -965,21 +967,19 @@ INLINE static void DEAInstrHandler(void) {
   SetPSRZN(Accumulator);
 } /* DEAInstrHandler */
 
-INLINE static void EORInstrHandler(int16 operand) {
+INLINE static void EORInstrHandler(int operand)
+{
   Accumulator^=operand;
   SetPSRZN(Accumulator);
-} /* EORInstrHandler */
+}
 
-INLINE static void INCInstrHandler(int16 address) {
-  unsigned char val;
-
-  val=TUBEREADMEM_FAST(address);
-
+INLINE static void INCInstrHandler(int address)
+{
+  unsigned char val = TUBEREADMEM_FAST(address);
   val=(val+1) & 255;
-
   TUBEWRITEMEM_FAST(address,val);
   SetPSRZN(val);
-} /* INCInstrHandler */
+}
 
 INLINE static void INXInstrHandler(void) {
   XReg+=1;
@@ -993,33 +993,37 @@ INLINE static void INAInstrHandler(void) {
   SetPSRZN(Accumulator);
 } /* INAInstrHandler */
 
-INLINE static void JSRInstrHandler(int16 address) {
+INLINE static void JSRInstrHandler(int address)
+{
   PushWord(TubeProgramCounter-1);
   TubeProgramCounter=address;
-} /* JSRInstrHandler */
+}
 
-INLINE static void LDAInstrHandler(int16 operand) {
+INLINE static void LDAInstrHandler(int operand)
+{
   Accumulator=operand;
   SetPSRZN(Accumulator);
 } /* LDAInstrHandler */
 
-INLINE static void LDXInstrHandler(int16 operand) {
+INLINE static void LDXInstrHandler(int operand)
+{
   XReg=operand;
   SetPSRZN(XReg);
-} /* LDXInstrHandler */
+}
 
-INLINE static void LDYInstrHandler(int16 operand) {
+INLINE static void LDYInstrHandler(int operand)
+{
   YReg=operand;
   SetPSRZN(YReg);
-} /* LDYInstrHandler */
+}
 
-INLINE static void LSRInstrHandler(int16 address) {
-  unsigned char oldVal,newVal;
-  oldVal=TUBEREADMEM_FAST(address);
-  newVal=(((unsigned int)oldVal)>>1) & 127;
+INLINE static void LSRInstrHandler(int address)
+{
+  unsigned char oldVal = TUBEREADMEM_FAST(address);
+  unsigned char newVal = (((unsigned int)oldVal) >> 1) & 127;
   TUBEWRITEMEM_FAST(address,newVal);
   SetPSRCZN((oldVal & 1)>0, newVal==0,0);
-} /* LSRInstrHandler */
+}
 
 INLINE static void LSRInstrHandler_Acc(void) {
   unsigned char oldVal,newVal;
@@ -1029,20 +1033,20 @@ INLINE static void LSRInstrHandler_Acc(void) {
   SetPSRCZN((oldVal & 1)>0, newVal==0,0);
 } /* LSRInstrHandler_Acc */
 
-INLINE static void ORAInstrHandler(int16 operand) {
+INLINE static void ORAInstrHandler(int operand)
+{
   Accumulator=Accumulator | operand;
   SetPSRZN(Accumulator);
-} /* ORAInstrHandler */
+}
 
-INLINE static void ROLInstrHandler(int16 address) {
-  unsigned char oldVal,newVal;
-
-  oldVal=TUBEREADMEM_FAST(address);
-  newVal=((unsigned int)oldVal<<1) & 254;
+INLINE static void ROLInstrHandler(int address)
+{
+  unsigned char oldVal = TUBEREADMEM_FAST(address);
+  unsigned char newVal = ((unsigned int)oldVal << 1) & 254;
   newVal+=GETCFLAG;
   TUBEWRITEMEM_FAST(address,newVal);
   SetPSRCZN((oldVal & 128)>0,newVal==0,newVal & 128);
-} /* ROLInstrHandler */
+}
 
 INLINE static void ROLInstrHandler_Acc(void) {
   unsigned char oldVal,newVal;
@@ -1054,15 +1058,14 @@ INLINE static void ROLInstrHandler_Acc(void) {
   SetPSRCZN((oldVal & 128)>0,newVal==0,newVal & 128);
 } /* ROLInstrHandler_Acc */
 
-INLINE static void RORInstrHandler(int16 address) {
-  unsigned char oldVal,newVal;
-
-  oldVal=TUBEREADMEM_FAST(address);
-  newVal=((unsigned int)oldVal>>1) & 127;
+INLINE static void RORInstrHandler(int address)
+{
+  unsigned char oldVal = TUBEREADMEM_FAST(address);
+  unsigned char newVal = ((unsigned int)oldVal >> 1) & 127;
   newVal+=GETCFLAG*128;
   TUBEWRITEMEM_FAST(address,newVal);
   SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
-} /* RORInstrHandler */
+}
 
 INLINE static void RORInstrHandler_Acc(void) {
   unsigned char oldVal,newVal;
@@ -1074,7 +1077,8 @@ INLINE static void RORInstrHandler_Acc(void) {
   SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
 } /* RORInstrHandler_Acc */
 
-INLINE static void SBCInstrHandler(int16 operand) {
+INLINE static void SBCInstrHandler(int operand)
+{
   /* NOTE! Not sure about C and V flags */
   if (!GETDFLAG) {
     int TmpResultV = (signed char)Accumulator - (signed char)operand -(1 - GETCFLAG);
@@ -1112,13 +1116,14 @@ INLINE static void SBCInstrHandler(int16 operand) {
   }
 } /* SBCInstrHandler */
 
-INLINE static void STXInstrHandler(int16 address) {
+INLINE static void STXInstrHandler(int address)
+{
   TUBEWRITEMEM_FAST(address, XReg);
-} /* STXInstrHandler */
+}
 
-INLINE static void STYInstrHandler(int16 address) {
+INLINE static void STYInstrHandler(int address) {
   TUBEWRITEMEM_FAST(address, YReg);
-} /* STYInstrHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 
@@ -1162,100 +1167,97 @@ static void BranchOnBitSet(int bit)
 
 /*-------------------------------------------------------------------------*/
 /* Absolute  addressing mode handler                                       */
-INLINE static int16 AbsAddrModeHandler_Data(void) {
-  int FullAddress;
-
+INLINE static int AbsAddrModeHandler_Data()
+{
   /* Get the address from after the instruction */
-
+  int FullAddress;
   GETTWOBYTEFROMPC(FullAddress)
 
   /* And then read it */
   return(TUBEREADMEM_FAST(FullAddress));
-} /* AbsAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Absolute  addressing mode handler                                       */
-INLINE static int16 AbsAddrModeHandler_Address(void) {
-  int FullAddress;
-
+INLINE static int AbsAddrModeHandler_Address()
+{
   /* Get the address from after the instruction */
+  int FullAddress;
   GETTWOBYTEFROMPC(FullAddress)
 
   /* And then read it */
   return(FullAddress);
-} /* AbsAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Zero page addressing mode handler                                       */
-INLINE static int16 ZeroPgAddrModeHandler_Address(void) {
+INLINE static int ZeroPgAddrModeHandler_Address()
+{
   return(TubeRam[TubeProgramCounter++]);
-} /* ZeroPgAddrModeHandler_Address */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Indexed with X preinc addressing mode handler                           */
-INLINE static int16 IndXAddrModeHandler_Data(void) {
-  unsigned char ZeroPageAddress;
-  int EffectiveAddress;
-
-  ZeroPageAddress=(TubeRam[TubeProgramCounter++]+XReg) & 255;
-
-  EffectiveAddress=TubeRam[ZeroPageAddress] | (TubeRam[ZeroPageAddress+1]<<8);
-  return(TUBEREADMEM_FAST(EffectiveAddress));
-} /* IndXAddrModeHandler_Data */
+INLINE static int IndXAddrModeHandler_Data()
+{
+	unsigned char ZeroPageAddress = (TubeRam[TubeProgramCounter++] + XReg) & 255;
+	int EffectiveAddress = TubeRam[ZeroPageAddress] | (TubeRam[ZeroPageAddress + 1] << 8);
+	return TUBEREADMEM_FAST(EffectiveAddress);
+}
 
 /*-------------------------------------------------------------------------*/
 /* Indexed with X preinc addressing mode handler                           */
-INLINE static int16 IndXAddrModeHandler_Address(void) {
-  unsigned char ZeroPageAddress;
-  int EffectiveAddress;
-
-  ZeroPageAddress=(TubeRam[TubeProgramCounter++]+XReg) & 255;
-
-  EffectiveAddress=TubeRam[ZeroPageAddress] | (TubeRam[ZeroPageAddress+1]<<8);
-  return(EffectiveAddress);
-} /* IndXAddrModeHandler_Address */
+INLINE static int IndXAddrModeHandler_Address()
+{
+	unsigned char ZeroPageAddress = (TubeRam[TubeProgramCounter++] + XReg) & 255;
+	int EffectiveAddress = TubeRam[ZeroPageAddress] | (TubeRam[ZeroPageAddress + 1] << 8);
+	return EffectiveAddress;
+}
 
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
-INLINE static int16 IndYAddrModeHandler_Data(void) {
+INLINE static int IndYAddrModeHandler_Data()
+{
   uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
   uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
   EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
 
   return(TUBEREADMEM_FAST(EffectiveAddress));
-} /* IndYAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Indexed with Y postinc addressing mode handler                          */
-INLINE static int16 IndYAddrModeHandler_Address(void) {
+INLINE static int IndYAddrModeHandler_Address()
+{
   uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
   uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
   if (EffectiveAddress>0xff) Carried();
   EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
 
   return(EffectiveAddress);
-} /* IndYAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Zero page wih X offset addressing mode handler                          */
-INLINE static int16 ZeroPgXAddrModeHandler_Data(void) {
-  int EffectiveAddress;
-  EffectiveAddress=(TubeRam[TubeProgramCounter++]+XReg) & 255;
+INLINE static int ZeroPgXAddrModeHandler_Data()
+{
+  int EffectiveAddress = (TubeRam[TubeProgramCounter++] + XReg) & 255;
   return(TubeRam[EffectiveAddress]);
-} /* ZeroPgXAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Zero page wih X offset addressing mode handler                          */
-INLINE static int16 ZeroPgXAddrModeHandler_Address(void) {
-  int EffectiveAddress;
-  EffectiveAddress=(TubeRam[TubeProgramCounter++]+XReg) & 255;
+INLINE static int ZeroPgXAddrModeHandler_Address()
+{
+  int EffectiveAddress = (TubeRam[TubeProgramCounter++] + XReg) & 255;
   return(EffectiveAddress);
-} /* ZeroPgXAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Absolute with X offset addressing mode handler                          */
-INLINE static int16 AbsXAddrModeHandler_Data(void) {
+INLINE static int AbsXAddrModeHandler_Data()
+{
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress);
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
@@ -1267,7 +1269,8 @@ INLINE static int16 AbsXAddrModeHandler_Data(void) {
 
 /*-------------------------------------------------------------------------*/
 /* Absolute with X offset addressing mode handler                          */
-INLINE static int16 AbsXAddrModeHandler_Address(void) {
+INLINE static int AbsXAddrModeHandler_Address()
+{
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress)
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
@@ -1275,11 +1278,12 @@ INLINE static int16 AbsXAddrModeHandler_Address(void) {
   EffectiveAddress&=0xffff;
 
   return(EffectiveAddress);
-} /* AbsXAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Absolute with Y offset addressing mode handler                          */
-INLINE static int16 AbsYAddrModeHandler_Data(void) {
+INLINE static int AbsYAddrModeHandler_Data()
+{
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress);
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
@@ -1287,11 +1291,12 @@ INLINE static int16 AbsYAddrModeHandler_Data(void) {
   EffectiveAddress&=0xffff;
 
   return(TUBEREADMEM_FAST(EffectiveAddress));
-} /* AbsYAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 /* Absolute with Y offset addressing mode handler                          */
-INLINE static int16 AbsYAddrModeHandler_Address(void) {
+INLINE static int AbsYAddrModeHandler_Address()
+{
   int EffectiveAddress;
   GETTWOBYTEFROMPC(EffectiveAddress)
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
