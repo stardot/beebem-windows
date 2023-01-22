@@ -1394,6 +1394,11 @@ static void Reset65C02()
     fread(TubeRam+0xf800,1,2048,TubeRom);
     fclose(TubeRom);
   }
+  else
+  {
+    mainWin->Report(MessageType::Error,
+                    "Cannot open ROM:\n %s", TubeRomName);
+  }
 
   TubeProgramCounter = TubeReadMem(0xfffc);
   TubeProgramCounter |= TubeReadMem(0xfffd) << 8;
