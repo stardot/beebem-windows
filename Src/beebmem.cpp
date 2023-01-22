@@ -398,9 +398,6 @@ unsigned char BeebReadMem(int Address) {
 		}
 	}
 
-	if (Address>=0xff00)
-		return(WholeRam[Address]);
-
 	/* IO space */
 
 	if (Address >= 0xfc00 && Address < 0xfe00) {
