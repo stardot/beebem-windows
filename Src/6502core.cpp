@@ -245,7 +245,7 @@ bool BasicHardwareOnly = false; // false = all hardware, true = basic hardware o
 // the program counter
 #define GETTWOBYTEFROMPC(var) \
 	var = ReadPaged(ProgramCounter++); \
-	var |= (ReadPaged(ProgramCounter++) << 8);
+	var |= (ReadPaged(ProgramCounter++) << 8)
 
 #define WritePaged(addr,val) BeebWriteMem(addr,val)
 #define ReadPaged(Address) BeebReadMem(Address)
@@ -491,9 +491,9 @@ INLINE static void ADCInstrHandler(int operand)
 
 INLINE static void ANDInstrHandler(int operand)
 {
-  Accumulator=Accumulator & operand;
-  PSR&=~(FlagZ | FlagN);
-  PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+	Accumulator &= operand;
+	PSR &= ~(FlagZ | FlagN);
+	PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
 }
 
 INLINE static void ASLInstrHandler(int address)
@@ -941,7 +941,7 @@ INLINE static int AbsAddrModeHandler_Data()
 {
   /* Get the address from after the instruction */
   int FullAddress;
-  GETTWOBYTEFROMPC(FullAddress)
+  GETTWOBYTEFROMPC(FullAddress);
 
   /* And then read it */
   return(ReadPaged(FullAddress));
@@ -953,7 +953,7 @@ INLINE static int AbsAddrModeHandler_Address()
 {
   /* Get the address from after the instruction */
   int FullAddress;
-  GETTWOBYTEFROMPC(FullAddress)
+  GETTWOBYTEFROMPC(FullAddress);
 
   /* And then read it */
   return(FullAddress);
@@ -1042,7 +1042,7 @@ INLINE static int AbsXAddrModeHandler_Data()
 INLINE static int AbsXAddrModeHandler_Address()
 {
   int EffectiveAddress;
-  GETTWOBYTEFROMPC(EffectiveAddress)
+  GETTWOBYTEFROMPC(EffectiveAddress);
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
   EffectiveAddress+=XReg;
   EffectiveAddress&=0xffff;
@@ -1068,7 +1068,7 @@ INLINE static int AbsYAddrModeHandler_Data()
 INLINE static int AbsYAddrModeHandler_Address()
 {
   int EffectiveAddress;
-  GETTWOBYTEFROMPC(EffectiveAddress)
+  GETTWOBYTEFROMPC(EffectiveAddress);
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
   EffectiveAddress+=YReg;
   EffectiveAddress&=0xffff;
@@ -1083,7 +1083,7 @@ INLINE static int IndAddrModeHandler_Address() {
   int VectorLocation;
   int EffectiveAddress;
 
-  GETTWOBYTEFROMPC(VectorLocation)
+  GETTWOBYTEFROMPC(VectorLocation);
 
   /* Ok kiddies, deliberate bug time.
   According to my BBC Master Reference Manual Part 2
@@ -1126,7 +1126,7 @@ INLINE static int IndAddrXModeHandler_Address()
 {
 	/* For jump indirect only */
 	int VectorLocation;
-	GETTWOBYTEFROMPC(VectorLocation)
+	GETTWOBYTEFROMPC(VectorLocation);
 
 	int EffectiveAddress = ReadPaged(VectorLocation + XReg);
 	EffectiveAddress |= ReadPaged(VectorLocation + 1 + XReg) << 8;

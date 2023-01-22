@@ -672,7 +672,7 @@ unsigned char TubeReadMem(int IOAddr) {
 // the program counter
 #define GETTWOBYTEFROMPC(var) \
 	var = TubeRam[TubeProgramCounter++]; \
-	var |= (TubeRam[TubeProgramCounter++] << 8);
+	var |= (TubeRam[TubeProgramCounter++] << 8)
 
 /*----------------------------------------------------------------------------*/
 INLINE void Carried() {
@@ -1171,7 +1171,7 @@ INLINE static int AbsAddrModeHandler_Data()
 {
   /* Get the address from after the instruction */
   int FullAddress;
-  GETTWOBYTEFROMPC(FullAddress)
+  GETTWOBYTEFROMPC(FullAddress);
 
   /* And then read it */
   return(TUBEREADMEM_FAST(FullAddress));
@@ -1183,7 +1183,7 @@ INLINE static int AbsAddrModeHandler_Address()
 {
   /* Get the address from after the instruction */
   int FullAddress;
-  GETTWOBYTEFROMPC(FullAddress)
+  GETTWOBYTEFROMPC(FullAddress);
 
   /* And then read it */
   return(FullAddress);
@@ -1272,7 +1272,7 @@ INLINE static int AbsXAddrModeHandler_Data()
 INLINE static int AbsXAddrModeHandler_Address()
 {
   int EffectiveAddress;
-  GETTWOBYTEFROMPC(EffectiveAddress)
+  GETTWOBYTEFROMPC(EffectiveAddress);
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
   EffectiveAddress+=XReg;
   EffectiveAddress&=0xffff;
@@ -1298,87 +1298,78 @@ INLINE static int AbsYAddrModeHandler_Data()
 INLINE static int AbsYAddrModeHandler_Address()
 {
   int EffectiveAddress;
-  GETTWOBYTEFROMPC(EffectiveAddress)
+  GETTWOBYTEFROMPC(EffectiveAddress);
   if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
   EffectiveAddress+=YReg;
   EffectiveAddress&=0xffff;
 
   return(EffectiveAddress);
-} /* AbsYAddrModeHandler */
+}
 
 /*-------------------------------------------------------------------------*/
 
 // Indirect addressing mode handler (for JMP indirect only)
 
-INLINE static int16 IndAddrModeHandler_Address()
+INLINE static int IndAddrModeHandler_Address()
 {
 	int VectorLocation;
 	GETTWOBYTEFROMPC(VectorLocation);
 
 	// The 65C02 fixed the bug in the 6502 concerning this addressing mode
 	// and VectorLocation == xxFF
-	int EffectiveAddress = TUBEREADMEM_FAST(VectorLocation) |
-	                       (TUBEREADMEM_FAST(VectorLocation + 1) << 8);
+	int EffectiveAddress = TUBEREADMEM_FAST(VectorLocation);
+	EffectiveAddress |= TUBEREADMEM_FAST(VectorLocation + 1) << 8;
 
 	return EffectiveAddress;
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page Indirect addressing mode handler                                        */
-INLINE static int16 ZPIndAddrModeHandler_Address(void) {
-  int VectorLocation;
-  int EffectiveAddress;
-
-  VectorLocation=TubeRam[TubeProgramCounter++];
-  EffectiveAddress=TubeRam[VectorLocation]+(TubeRam[VectorLocation+1]<<8);
-
-   // EffectiveAddress|=TUBEREADMEM_FAST(VectorLocation+1) << 8; }
-  return(EffectiveAddress);
-} /* ZPIndAddrModeHandler */
+/* Zero page Indirect addressing mode handler                              */
+INLINE static int ZPIndAddrModeHandler_Address()
+{
+	int VectorLocation = TubeRam[TubeProgramCounter++];
+	int EffectiveAddress = TubeRam[VectorLocation] + (TubeRam[VectorLocation+1] << 8);
+	return EffectiveAddress;
+}
 
 /*-------------------------------------------------------------------------*/
-/* Zero page Indirect addressing mode handler                                        */
-INLINE static int16 ZPIndAddrModeHandler_Data(void) {
-  int VectorLocation;
-  int EffectiveAddress;
-
-  VectorLocation=TubeRam[TubeProgramCounter++];
-  EffectiveAddress=TubeRam[VectorLocation]+(TubeRam[VectorLocation+1]<<8);
-
-   // EffectiveAddress|=TUBEREADMEM_FAST(VectorLocation+1) << 8; }
-  return(TubeRam[EffectiveAddress]);
-} /* ZPIndAddrModeHandler */
+/* Zero page Indirect addressing mode handler                              */
+INLINE static int ZPIndAddrModeHandler_Data()
+{
+	int VectorLocation = TubeRam[TubeProgramCounter++];
+	int EffectiveAddress = TubeRam[VectorLocation] + (TubeRam[VectorLocation + 1] << 8);
+	return TubeRam[EffectiveAddress];
+}
 
 /*-------------------------------------------------------------------------*/
-/* Pre-indexed absolute Indirect addressing mode handler                                        */
-INLINE static int16 IndAddrXModeHandler_Address(void) {
-  /* For jump indirect only */
-  int VectorLocation;
-  int EffectiveAddress;
+/* Pre-indexed absolute Indirect addressing mode handler                   */
+INLINE static int IndAddrXModeHandler_Address()
+{
+	/* For jump indirect only */
+	int VectorLocation;
+	GETTWOBYTEFROMPC(VectorLocation);
 
-  GETTWOBYTEFROMPC(VectorLocation)
-  EffectiveAddress=TUBEREADMEM_FAST(VectorLocation+XReg);
-  EffectiveAddress|=TUBEREADMEM_FAST(VectorLocation+1+XReg) << 8;
+	int EffectiveAddress = TUBEREADMEM_FAST(VectorLocation + XReg);
+	EffectiveAddress |= TUBEREADMEM_FAST(VectorLocation + 1 + XReg) << 8;
 
-   // EffectiveAddress|=TUBEREADMEM_FAST(VectorLocation+1) << 8; }
-  return(EffectiveAddress);
-} /* ZPIndAddrModeHandler */
+	return EffectiveAddress;
+}
 
 /*-------------------------------------------------------------------------*/
 /* Zero page with Y offset addressing mode handler                         */
-INLINE static int16 ZeroPgYAddrModeHandler_Data(void) {
-  int EffectiveAddress;
-  EffectiveAddress=(TubeRam[TubeProgramCounter++]+YReg) & 255;
-  return(TubeRam[EffectiveAddress]);
-} /* ZeroPgYAddrModeHandler */
+INLINE static int ZeroPgYAddrModeHandler_Data()
+{
+	int EffectiveAddress = (TubeRam[TubeProgramCounter++] + YReg) & 255;
+	return TubeRam[EffectiveAddress];
+}
 
 /*-------------------------------------------------------------------------*/
 /* Zero page with Y offset addressing mode handler                         */
-INLINE static int16 ZeroPgYAddrModeHandler_Address(void) {
-  int EffectiveAddress;
-  EffectiveAddress=(TubeRam[TubeProgramCounter++]+YReg) & 255;
-  return(EffectiveAddress);
-} /* ZeroPgYAddrModeHandler */
+INLINE static int ZeroPgYAddrModeHandler_Address()
+{
+	int EffectiveAddress = (TubeRam[TubeProgramCounter++] + YReg) & 255;
+	return EffectiveAddress;
+}
 
 /*-------------------------------------------------------------------------*/
 /* Reset processor */
