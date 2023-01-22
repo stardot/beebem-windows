@@ -1444,8 +1444,6 @@ void Init65C02core(void) {
   ResetTube();
 }
 
-#include "via.h"
-
 /*-------------------------------------------------------------------------*/
 void DoTubeInterrupt(void) {
   PushWord(TubeProgramCounter);
