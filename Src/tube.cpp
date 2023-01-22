@@ -54,22 +54,22 @@ Boston, MA  02110-1301, USA.
 #define RESETTUBEINT(a) TubeintStatus &= ~(1 << a)
 
 static int CurrentInstruction;
-unsigned char TubeRam[65536];
+static unsigned char TubeRam[65536];
 Tube TubeType;
 
-CycleCountT TotalTubeCycles = 0;
+static CycleCountT TotalTubeCycles = 0;
 
-int old_readHIOAddr = 0;
-unsigned char old_readHTmpData = 0;
+static int old_readHIOAddr = 0;
+static unsigned char old_readHTmpData = 0;
 
-unsigned char old_readPIOAddr = 0;
-unsigned char old_readPTmpData = 0;
+static unsigned char old_readPIOAddr = 0;
+static unsigned char old_readPTmpData = 0;
 
-unsigned char old_writeHIOAddr = 0;
-unsigned char old_writeHTmpData = 0;
+static unsigned char old_writeHIOAddr = 0;
+static unsigned char old_writeHTmpData = 0;
 
-unsigned char old_writePIOAddr = 0;
-unsigned char old_writePTmpData = 0;
+static unsigned char old_writePIOAddr = 0;
+static unsigned char old_writePTmpData = 0;
 
 int TubeProgramCounter;
 static int PreTPC; // Previous Tube Program Counter;
@@ -112,7 +112,7 @@ static const int TubeCyclesTable[] = {
 
 /* The number of TubeCycles to be used by the current instruction - exported to
    allow fernangling by memory subsystem */
-unsigned int TubeCycles;
+static unsigned int TubeCycles;
 
 static bool Branched; // true if the instruction branched
 
