@@ -38,5 +38,7 @@ void TeletextAdapterUpdate();
 
 #define TeletextPoll() { if (TeletextAdapterTrigger <= TotalCycles) TeletextAdapterUpdate(); }
 
+#define TELETEXTBASEPORT 19761
+
 void TeletextInit();
 void TeletextClose();
