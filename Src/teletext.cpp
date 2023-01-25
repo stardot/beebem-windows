@@ -67,8 +67,8 @@ bool TeletextFiles;
 bool TeletextLocalhost;
 bool TeletextCustom;
 
-char TeletextIP[4][20] = { "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1" };
-u_short TeletextPort[4] = { 19761, 19762, 19763, 19764 };
+char TeletextIP[4][20];
+u_short TeletextPort[4];
 char TeletextCustomIP[4][20];
 u_short TeletextCustomPort[4];
 
@@ -166,8 +166,12 @@ void TeletextInit()
             strcpy(TeletextIP[i], TeletextCustomIP[i]);
             TeletextPort[i] = TeletextCustomPort[i];
         }
+        else
+        {
+            strcpy(TeletextIP[i], "127.0.0.1");
+            TeletextPort[i] = TELETEXTBASEPORT+i;
+        }
     }
-
     if (TeletextLocalhost || TeletextCustom)
     {
         for (int i = 0; i < 4; i++)
