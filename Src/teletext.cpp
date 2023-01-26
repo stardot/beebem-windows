@@ -172,6 +172,7 @@ void TeletextInit()
             TeletextPort[i] = TELETEXTBASEPORT+i;
         }
     }
+
     if (TeletextLocalhost || TeletextCustom)
     {
         for (int i = 0; i < 4; i++)
@@ -200,6 +201,8 @@ void TeletextInit()
     }
 
     TeletextState = TTXFIELD; // within a field
+
+    SetTrigger(640, TeletextAdapterTrigger);
 }
 
 void TeletextClose()
