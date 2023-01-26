@@ -57,7 +57,7 @@ Boston, MA  02110-1301, USA.
 #include "z80.h"
 #include "econet.h"		//Rob
 #include "debug.h"		//Rob added for INTON/OFF reporting only
-#include "teletext.h"
+#include "Teletext.h"
 #include "music5000.h"
 
 unsigned char WholeRam[65536];

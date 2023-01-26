@@ -47,7 +47,7 @@ Boston, MA  02110-1301, USA.
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
-#include "teletext.h"
+#include "Teletext.h"
 #include "serialdevices.h"
 #include "Arm.h"
 #include "SprowCoPro.h"

@@ -35,7 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "music5000.h"
 #include "disc8271.h"
-#include "teletext.h"
+#include "Teletext.h"
 #include "via.h"
 #include "sysvia.h"
 #include "uservia.h"

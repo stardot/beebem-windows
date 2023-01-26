@@ -51,7 +51,7 @@ Control latch:
 #include <stdlib.h>
 #include <windows.h>
 
-#include "teletext.h"
+#include "Teletext.h"
 #include "debug.h"
 #include "6502core.h"
 #include "main.h"
@@ -71,6 +71,8 @@ char TeletextIP[4][20];
 u_short TeletextPort[4];
 char TeletextCustomIP[4][20];
 u_short TeletextCustomPort[4];
+
+constexpr int TELETEXT_BASE_PORT = 19761;
 
 enum TTXState {TTXFIELD, TTXFSYNC, TTXDEW};
 static TTXState TeletextState = TTXFIELD;
@@ -155,7 +157,10 @@ void TeletextInit()
     colPtr = 0x00;
 
     if (!TeletextAdapterEnabled)
+    {
+        ClearTrigger(TeletextAdapterTrigger);
         return;
+    }
 
     TeletextClose();
 
@@ -169,7 +174,7 @@ void TeletextInit()
         else
         {
             strcpy(TeletextIP[i], "127.0.0.1");
-            TeletextPort[i] = TELETEXTBASEPORT+i;
+            TeletextPort[i] = TELETEXT_BASE_PORT + i;
         }
     }
 
@@ -185,7 +190,7 @@ void TeletextInit()
         for (int i = 0; i < 4; i++)
         {
             char pathname[256];
-            sprintf(pathname, "%s/discims/txt%d.dat", mainWin->GetUserDataPath(), i);
+            sprintf(pathname, "%s/DiscIms/txt%d.dat", mainWin->GetUserDataPath(), i);
 
             TeletextFile[i] = fopen(pathname, "rb");
 
@@ -202,7 +207,7 @@ void TeletextInit()
 
     TeletextState = TTXFIELD; // within a field
 
-    SetTrigger(640, TeletextAdapterTrigger);
+    SetTrigger(128, TeletextAdapterTrigger); // wait for approximately 1 video line
 }
 
 void TeletextClose()
@@ -324,7 +329,6 @@ void TeletextAdapterUpdate()
 {
     if (!TeletextAdapterEnabled)
     {
-        ClearTrigger(TeletextAdapterTrigger);
         return;
     }
 

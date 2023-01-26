@@ -82,7 +82,7 @@ using std::max;
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
-#include "teletext.h"
+#include "Teletext.h"
 #include "avi.h"
 #include "csw.h"
 #include "serialdevices.h"

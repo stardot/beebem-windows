@@ -168,7 +168,7 @@
     <ClCompile Include="TapeMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="teletext.cpp">
+    <ClCompile Include="Teletext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tube.cpp">
@@ -410,7 +410,7 @@
     <ClInclude Include="TarmacGlobals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="teletext.h">
+    <ClInclude Include="Teletext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tube.h">
