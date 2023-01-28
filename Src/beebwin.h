@@ -264,8 +264,8 @@ public:
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
 	bool NewTapeImage(char *FileName, int Size);
-	const char *GetAppPath(void) { return m_AppPath; }
-	const char *GetUserDataPath(void) { return m_UserDataPath; }
+	const char *GetAppPath() const { return m_AppPath; }
+	const char *GetUserDataPath() const { return m_UserDataPath; }
 	void GetDataPath(const char *folder, char *path);
 	void QuickLoad();
 	void QuickSave();
