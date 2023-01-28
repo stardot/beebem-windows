@@ -224,29 +224,30 @@ static bool LoadROMConfigFile(HWND hWnd)
 {
 	char DefaultPath[MAX_PATH];
 	char szROMConfigPath[MAX_PATH];
-	char *pFileName = szROMConfigPath;
+	szROMConfigPath[0] = '\0';
 	bool success = false;
 	const char* filter = "ROM Config File (*.cfg)\0*.cfg\0";
 
-	szROMConfigPath[0] = 0;
-	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
-
 	if (szDefaultROMConfigPath[0])
+	{
 		strcpy(DefaultPath, szDefaultROMConfigPath);
+	}
 	else
-		strcpy(DefaultPath, szROMConfigPath);
+	{
+		strcpy(DefaultPath, mainWin->GetUserDataPath());
+	}
 
-	FileDialog fileDialog(hWnd, pFileName, MAX_PATH, DefaultPath, filter);
+	FileDialog fileDialog(hWnd, szROMConfigPath, MAX_PATH, DefaultPath, filter);
 	if (fileDialog.Open())
 	{
 		// Save directory as default for next time
-		unsigned int PathLength = (unsigned int)(strrchr(pFileName, '\\') - pFileName);
-		strncpy(szDefaultROMConfigPath, pFileName, PathLength);
+		unsigned int PathLength = (unsigned int)(strrchr(szROMConfigPath, '\\') - szROMConfigPath);
+		strncpy(szDefaultROMConfigPath, szROMConfigPath, PathLength);
 		szDefaultROMConfigPath[PathLength] = 0;
 
 		// Read the file
 		ROMConfigFile LoadedROMCfg;
-		if (ReadROMFile(pFileName, LoadedROMCfg))
+		if (ReadROMFile(szROMConfigPath, LoadedROMCfg))
 		{
 			// Copy in loaded config
 			memcpy(&ROMCfg, &LoadedROMCfg, sizeof(ROMConfigFile));
@@ -263,34 +264,35 @@ static bool SaveROMConfigFile(HWND hWnd)
 {
 	char DefaultPath[MAX_PATH];
 	char szROMConfigPath[MAX_PATH];
-	char *pFileName = szROMConfigPath;
+	szROMConfigPath[0] = '\0';
 	bool success = false;
 	const char* filter = "ROM Config File (*.cfg)\0*.cfg\0";
 
-	szROMConfigPath[0] = 0;
-	mainWin->GetDataPath(mainWin->GetUserDataPath(), szROMConfigPath);
-
 	if (szDefaultROMConfigPath[0])
+	{
 		strcpy(DefaultPath, szDefaultROMConfigPath);
+	}
 	else
-		strcpy(DefaultPath, szROMConfigPath);
+	{
+		strcpy(DefaultPath, mainWin->GetUserDataPath());
+	}
 
-	FileDialog fileDialog(hWnd, pFileName, MAX_PATH, DefaultPath, filter);
+	FileDialog fileDialog(hWnd, szROMConfigPath, MAX_PATH, DefaultPath, filter);
 	if (fileDialog.Save())
 	{
 		// Save directory as default for next time
-		unsigned int PathLength = (unsigned int)(strrchr(pFileName, '\\') - pFileName);
-		strncpy(szDefaultROMConfigPath, pFileName, PathLength);
+		unsigned int PathLength = (unsigned int)(strrchr(szROMConfigPath, '\\') - szROMConfigPath);
+		strncpy(szDefaultROMConfigPath, szROMConfigPath, PathLength);
 		szDefaultROMConfigPath[PathLength] = 0;
 
 		// Add a file extension if required
-		if (strchr(pFileName, '.') == NULL)
+		if (strchr(szROMConfigPath, '.') == NULL)
 		{
-			strcat(pFileName, ".cfg");
+			strcat(szROMConfigPath, ".cfg");
 		}
 
 		// Save the file
-		if (WriteROMFile(pFileName, ROMCfg))
+		if (WriteROMFile(szROMConfigPath, ROMCfg))
 		{
 			success = true;
 		}
