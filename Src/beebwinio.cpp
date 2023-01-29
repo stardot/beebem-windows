@@ -382,7 +382,7 @@ void BeebWin::SelectFDC()
 void BeebWin::NewDiscImage(int Drive)
 {
 	char DefaultPath[_MAX_PATH];
-	char FileName[256];
+	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* filter =
