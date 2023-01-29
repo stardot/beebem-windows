@@ -113,7 +113,6 @@ static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
                                          WPARAM wParam, LPARAM /* lParam */)
 {
 	int row;
-	char *cfg;
 
 	switch (message)
 	{
@@ -134,19 +133,22 @@ static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
 				nModel = Model::B;
 				FillROMList();
 				return TRUE;
+
 			case IDC_INTEGRAB:
 				nModel = Model::IntegraB;
 				FillROMList();
 				return TRUE;
+
 			case IDC_BBCBPLUS:
 				nModel = Model::BPlus;
 				FillROMList();
 				return TRUE;
+
 			case IDC_MASTER128:
 				nModel = Model::Master128;
 				FillROMList();
 				return TRUE;
-				
+
 			case IDC_SELECTROM:
 				row = ListView_GetSelectionMark(hWndROMList);
 				if (row >= 0 && row <= 16)
@@ -162,11 +164,12 @@ static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
 				}
 				LVSetFocus(hWndROMList);
 				break;
+
 			case IDC_MARKWRITABLE:
 				row = ListView_GetSelectionMark(hWndROMList);
 				if (row >= 1 && row <= 16)
 				{
-					cfg = ROMCfg[static_cast<int>(nModel)][row];
+					char *cfg = ROMCfg[static_cast<int>(nModel)][row];
 					if (strcmp(cfg, BANK_EMPTY) != 0 && strcmp(cfg, BANK_RAM) != 0)
 					{
 						if (strlen(cfg) > 4 && strcmp(cfg + strlen(cfg) - 4, ROM_WRITABLE) == 0)
@@ -178,6 +181,7 @@ static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
 				}
 				LVSetFocus(hWndROMList);
 				break;
+
 			case IDC_RAM:
 				row = ListView_GetSelectionMark(hWndROMList);
 				if (row >= 1 && row <= 16)
@@ -187,6 +191,7 @@ static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
 				}
 				LVSetFocus(hWndROMList);
 				break;
+
 			case IDC_EMPTY:
 				row = ListView_GetSelectionMark(hWndROMList);
 				if (row >= 1 && row <= 16)
@@ -201,15 +206,16 @@ static INT_PTR CALLBACK ROMConfigDlgProc(HWND hwndDlg, UINT message,
 				SaveROMConfigFile(hwndDlg);
 				LVSetFocus(hWndROMList);
 				break;
+
 			case IDC_LOAD:
 				LoadROMConfigFile(hwndDlg);
 				LVSetFocus(hWndROMList);
 				break;
-				
+
 			case IDOK:
 				EndDialog(hwndDlg, TRUE);
 				return TRUE;
-				
+
 			case IDCANCEL:
 				EndDialog(hwndDlg, FALSE);
 				return TRUE;
