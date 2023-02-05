@@ -423,6 +423,7 @@ void BeebWin::ApplyPrefs()
 	if (Music5000Enabled)
 		Music5000Init();
 	SetSoundMenu();
+
 #ifdef SPEECH_ENABLED
 	if (SpeechDefault)
 		tms5220_start();
@@ -439,15 +440,18 @@ void BeebWin::ApplyPrefs()
 		strcpy(IPAddress,"127.0.0.1");
 		PortNo = 25232;
 	}
-	if (SerialPortEnabled) {
+
+	if (SerialPortEnabled)
+	{
 		if (TouchScreenEnabled)
+		{
 			TouchScreenOpen();
+		}
 
 		if (EthernetPortEnabled && (IP232localhost || IP232custom))
 		{
 			if (!IP232Open())
 			{
-				Report(MessageType::Error, "Serial IP232 could not connect to specified address");
 				bSerialStateChanged = true;
 				SerialPortEnabled = false;
 				UpdateSerialMenu();
@@ -457,7 +461,7 @@ void BeebWin::ApplyPrefs()
 
 	ResetBeebSystem(MachineType, true);
 
-	// Rom write flags
+	// ROM write flags
 	for (int slot = 0; slot < 16; ++slot)
 	{
 		if (!RomWritePrefs[slot])
@@ -720,10 +724,9 @@ void BeebWin::CreateBitmap()
 #else
 	for (int i = 0; i < 64; ++i)
 	{
-		float r,g,b;
-		r = (float) (i & 1);
-		g = (float) ((i & 2) >> 1);
-		b = (float) ((i & 4) >> 2);
+		float r = (float)(i & 1);
+		float g = (float)((i & 2) != 0);
+		float b = (float)((i & 4) != 0);
 
 		if (m_PaletteType != PaletteType::RGB)
 		{
@@ -762,7 +765,7 @@ void BeebWin::CreateBitmap()
 	m_bmi.bmiColors[LED_COL_BASE+2].rgbReserved=0;	m_bmi.bmiColors[LED_COL_BASE+3].rgbReserved=0;
 
 	m_hBitmap = CreateDIBSection(m_hDCBitmap, (BITMAPINFO *)&m_bmi, DIB_RGB_COLORS,
-							(void**)&m_screen, NULL,0);
+	                             (void**)&m_screen, NULL,0);
 #endif
 
 	m_screen_blur = (char *)calloc(m_bmi.bmiHeader.biSizeImage,1);
@@ -1102,18 +1105,21 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll);
 }
 
-void BeebWin::UpdateDisplayRendererMenu() {
+void BeebWin::UpdateDisplayRendererMenu()
+{
 	CheckMenuItem(IDM_DISPGDI, m_DisplayRenderer == IDM_DISPGDI);
 	CheckMenuItem(IDM_DISPDDRAW, m_DisplayRenderer == IDM_DISPDDRAW);
 	CheckMenuItem(IDM_DISPDX9, m_DisplayRenderer == IDM_DISPDX9);
 }
 
-void BeebWin::UpdateSoundStreamerMenu() {
+void BeebWin::UpdateSoundStreamerMenu()
+{
 	CheckMenuItem(IDM_XAUDIO2, SoundConfig::Selection == SoundConfig::XAudio2);
 	CheckMenuItem(IDM_DIRECTSOUND, SoundConfig::Selection == SoundConfig::DirectSound);
 }
 
-void BeebWin::UpdateMonitorMenu() {
+void BeebWin::UpdateMonitorMenu()
+{
 	CheckMenuItem(ID_MONITOR_RGB, m_PaletteType == PaletteType::RGB);
 	CheckMenuItem(ID_MONITOR_BW, m_PaletteType == PaletteType::BW);
 	CheckMenuItem(ID_MONITOR_GREEN, m_PaletteType == PaletteType::Green);
@@ -2420,7 +2426,8 @@ void BeebWin::TranslateKeyMapping(void)
 }
 
 /****************************************************************************/
-void BeebWin::SetTapeSpeedMenu() {
+void BeebWin::SetTapeSpeedMenu()
+{
 	CheckMenuItem(ID_TAPE_FAST, TapeClockSpeed == 750);
 	CheckMenuItem(ID_TAPE_MFAST, TapeClockSpeed == 1600);
 	CheckMenuItem(ID_TAPE_MSLOW, TapeClockSpeed == 3200);
@@ -2428,8 +2435,10 @@ void BeebWin::SetTapeSpeedMenu() {
 }
 
 /****************************************************************************/
-#define ASPECT_RATIO_X 5
-#define ASPECT_RATIO_Y 4
+
+constexpr int ASPECT_RATIO_X = 5;
+constexpr int ASPECT_RATIO_Y = 4;
+
 void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
 {
 	m_XRatioAdj = 0.0f;
@@ -2441,6 +2450,7 @@ void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
 	{
 		int w = DisplayWidth * ASPECT_RATIO_Y;
 		int h = DisplayHeight * ASPECT_RATIO_X;
+
 		if (w > h)
 		{
 			m_XRatioAdj = (float)DisplayHeight / (float)DisplayWidth * (float)ASPECT_RATIO_X/(float)ASPECT_RATIO_Y;
@@ -2649,7 +2659,8 @@ void BeebWin::SelectSerialPort(const char* PortName)
 	UpdateSerialMenu();
 }
 
-void BeebWin::UpdateSerialMenu() {
+void BeebWin::UpdateSerialMenu()
+{
 	CheckMenuItem(ID_SERIAL, SerialPortEnabled);
 	CheckMenuItem(ID_TOUCHSCREEN, TouchScreenEnabled);
 	// CheckMenuItem(ID_IP232, EthernetPortEnabled);
@@ -2665,11 +2676,13 @@ void BeebWin::UpdateSerialMenu() {
 }
 
 //Rob
-void BeebWin::UpdateEconetMenu() {
+void BeebWin::UpdateEconetMenu()
+{
 	CheckMenuItem(ID_ECONET, EconetEnabled);
 }
 
-void BeebWin::UpdateLEDMenu() {
+void BeebWin::UpdateLEDMenu()
+{
 	// Update the LED Menu
 	CheckMenuItem(ID_RED_LEDS, DiscLedColour == LEDColour::Red);
 	CheckMenuItem(ID_GREEN_LEDS, DiscLedColour == LEDColour::Green);
@@ -2677,7 +2690,8 @@ void BeebWin::UpdateLEDMenu() {
 	CheckMenuItem(ID_SHOW_DISCLEDS, LEDs.ShowDisc);
 }
 
-void BeebWin::UpdateOptiMenu() {
+void BeebWin::UpdateOptiMenu()
+{
 	CheckMenuItem(ID_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
 	CheckMenuItem(ID_TELETEXTHALFMODE, TeletextHalfMode);
 	CheckMenuItem(ID_PSAMPLES, PartSamples);
@@ -2849,33 +2863,35 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_SERIAL:
-		if (SerialPortEnabled) { // so disabling..
+		if (SerialPortEnabled) // so disabling..
+		{
 			if (TouchScreenEnabled)
 			{
 				TouchScreenClose();
 				TouchScreenEnabled = false;
 			}
+
 			if (EthernetPortEnabled)
 			{
 				IP232Close();
 				EthernetPortEnabled = false;
-				// IP232custom = false;
-				// IP232localhost = false;
 			}
 		}
+
 		SerialPortEnabled = !SerialPortEnabled;
 
 		if (SerialPortEnabled && (IP232custom || IP232localhost))
 		{
 			EthernetPortEnabled = true;
+
 			if (!IP232Open())
 			{
-				Report(MessageType::Error, "Could not connect to specified address");
 				bSerialStateChanged = true;
 				UpdateSerialMenu();
 				SerialPortEnabled = false;
 			}
 		}
+
 		bSerialStateChanged = true;
 		UpdateSerialMenu();
 		break;
@@ -2950,9 +2966,10 @@ void BeebWin::HandleCommand(int MenuId)
 			strcpy(IPAddress,"127.0.0.1");
 			PortNo = 25232;
 
-			if (SerialPortEnabled) {
-				if (!IP232Open()) {
-					Report(MessageType::Error, "Could not connect to specified address");
+			if (SerialPortEnabled)
+			{
+				if (!IP232Open())
+				{
 					bSerialStateChanged = true;
 					UpdateSerialMenu();
 					SerialPortEnabled = false;
@@ -2994,9 +3011,11 @@ void BeebWin::HandleCommand(int MenuId)
 
 			strcpy(IPAddress,IP232customip);
 			PortNo = IP232customport;
-			if (SerialPortEnabled) {
-				if (!IP232Open()) {
-					Report(MessageType::Error, "Could not connect to specified address");
+
+			if (SerialPortEnabled)
+			{
+				if (!IP232Open())
+				{
 					bSerialStateChanged = true;
 					UpdateSerialMenu();
 					SerialPortEnabled = false;

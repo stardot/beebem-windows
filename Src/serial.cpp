@@ -165,6 +165,8 @@ static volatile bool bWaitingForData = false;
 static volatile bool bWaitingForStat = false;
 static volatile bool bCharReady = false;
 
+static void InitSerialPort();
+
 void SerialACIAWriteControl(unsigned char Value)
 {
 	if (DebugEnabled)
@@ -764,7 +766,8 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 {
 	DWORD dwOvRes = 0;
 
-	do {
+	while (1)
+	{
 		if (!TouchScreenEnabled && !EthernetPortEnabled &&
 		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled)
 		{
@@ -811,7 +814,7 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 		}
 
 		Sleep(0);
-	} while(1);
+	}
 
 	return 0;
 }
@@ -822,7 +825,7 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 	// This sorta runs as a seperate process in effect, checking
 	// enable status, and doing the monitoring.
 
-	do
+	while (1)
 	{
 		if (!bSerialStateChanged && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled && bWaitingForData)
 		{
@@ -856,12 +859,12 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 		}
 
 		Sleep(0);
-	} while (1);
+	}
 
 	return 0;
 }
 
-void InitSerialPort()
+static void InitSerialPort()
 {
 	// Initialise COM port
 	if (SerialPortEnabled && SerialPortName[0] != '\0')
@@ -1123,7 +1126,8 @@ void TapeControlUpdateCounter(int tape_time)
 {
 	if (TapeControlEnabled)
 	{
-		int i = 0;
+		size_t i = 0;
+
 		while (i < TapeMap.size() && TapeMap[i].time <= tape_time)
 			i++;
 

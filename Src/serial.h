@@ -63,7 +63,6 @@ extern char SerialPortName[_MAX_PATH];
 
 void SerialInit();
 void SerialPoll();
-void InitSerialPort();
 void SerialClose();
 UEFResult LoadUEFTape(const char *FileName);
 CSWResult LoadCSWTape(const char *FileName);

@@ -288,8 +288,11 @@ bool IP232Open(void)
 	if (mEthernetHandle == INVALID_SOCKET)
 	{
 		WriteLog("Unable to create IP232 socket");
+
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Unable to create socket");
+
+		mainWin->Report(MessageType::Error, "Unable to create IP232 socket");
 
 		return false; // Couldn't create the socket
 	}
@@ -303,22 +306,24 @@ bool IP232Open(void)
 
 	ip232_serv_addr.sin_family = AF_INET; // address family Internet
 	ip232_serv_addr.sin_port = htons(static_cast<u_short>(PortNo)); // Port to connect on
-	ip232_serv_addr.sin_addr.s_addr = inet_addr (IPAddress); // Target IP
+	ip232_serv_addr.sin_addr.s_addr = inet_addr(IPAddress); // Target IP
 
 	if (connect(mEthernetHandle, (SOCKADDR *)&ip232_serv_addr, sizeof(ip232_serv_addr)) == SOCKET_ERROR)
 	{
-		WriteLog("Unable to connect to IP232 server %s", IPAddress);
+		WriteLog("Unable to connect to IP232 server %s port %d", IPAddress, PortNo);
 
 		if (DebugEnabled)
 		{
 			DebugDisplayTraceF(DebugType::RemoteServer, true,
-			                   "IP232: Unable to connect to server  %s", IPAddress);
+			                   "IP232: Unable to connect to server  %s port %d", IPAddress, PortNo);
 		}
 
 		IP232Close();
 		mEthernetHandle = INVALID_SOCKET;
 
-		return false; //Couldn't connect
+		mainWin->Report(MessageType::Error, "Unable to connect to server %s port %d", IPAddress, PortNo);
+
+		return false; // Couldn't connect
 	}
 
 	if (DebugEnabled)
@@ -373,8 +378,10 @@ bool IP232Poll(void)
 
 void IP232Close(void)
 {
-	if (mEthernetHandle != INVALID_SOCKET) {
+	if (mEthernetHandle != INVALID_SOCKET)
+	{
 		WriteLog("Closing IP232 socket");
+
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Closing Sockets");
 
@@ -642,9 +649,9 @@ unsigned char EthernetPortGet(void)
 	return data;
 }
 
-
 static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
-{ // much taken from Mac version by Jon Welch
+{
+	// much taken from Mac version by Jon Welch
 	int dcd = 0;
 	int odcd = 0;
 	int rts = 0;
@@ -656,7 +663,8 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 
 	while (1)
 	{
-		if (!IP232mode) {
+		if (!IP232mode)
+		{
 			if (mEthernetHandle != INVALID_SOCKET)
 			{
 				dcd = 1;
@@ -688,7 +696,8 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 		}
 		else // IP232mode == true
 		{
-			if ((ACIA_Control & 96) == 64) {
+			if ((ACIA_Control & 96) == 64)
+			{
 				rts = 1;
 			}
 			else
