@@ -151,14 +151,11 @@ static void TapeControlStopRecording(bool RefreshControl);
 
 // This bit is the Serial Port stuff
 bool SerialPortEnabled;
-unsigned char SerialPort;
+char SerialPortName[_MAX_PATH];
 
 static HANDLE hSerialThread = nullptr;
 static HANDLE hStatThread = nullptr;
 static HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
-static char nSerialPort[5]; // Serial port name
-static const char *pnSerialPort = nSerialPort;
-bool SerialPortOpen = false; // Indicates status of serial port (on the host)
 static unsigned int SerialBuffer=0,SerialWriteBuffer=0;
 static DWORD BytesIn,BytesOut;
 static DWORD dwCommEvent;
@@ -731,7 +728,7 @@ static void InitThreads()
 	bWaitingForData = false;
 	bWaitingForStat = false;
 
-	if (SerialPortEnabled && SerialPort > 0)
+	if (SerialPortEnabled && SerialPortName[0] != '\0')
 	{
 		InitSerialPort(); // Set up the serial port if its enabled.
 
@@ -867,16 +864,22 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 void InitSerialPort()
 {
 	// Initialise COM port
-	if (SerialPortEnabled && SerialPort > 0)
+	if (SerialPortEnabled && SerialPortName[0] != '\0')
 	{
-		if (SerialPort==1) pnSerialPort="Com1";
-		if (SerialPort==2) pnSerialPort="Com2";
-		if (SerialPort==3) pnSerialPort="Com3";
-		if (SerialPort==4) pnSerialPort="Com4";
-		hSerialPort=CreateFile(pnSerialPort,GENERIC_READ|GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,0);
+		char FileName[_MAX_PATH];
+		sprintf(FileName, "\\\\.\\%s", SerialPortName);
+
+		hSerialPort = CreateFile(FileName,
+		                         GENERIC_READ | GENERIC_WRITE,
+		                         0, // dwShareMode
+		                         nullptr, // lpSecurityAttributes
+		                         OPEN_EXISTING,
+		                         FILE_FLAG_OVERLAPPED,
+		                         nullptr); // hTemplateFile
+
 		if (hSerialPort == INVALID_HANDLE_VALUE)
 		{
-			mainWin->Report(MessageType::Error, "Could not open specified serial port");
+			mainWin->Report(MessageType::Error, "Could not open serial port %s", SerialPortName);
 			bSerialStateChanged = true;
 			SerialPortEnabled = false;
 			mainWin->UpdateSerialMenu();
@@ -938,11 +941,11 @@ void SerialInit()
 	hStatThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, StatThread, nullptr, 0, nullptr));
 }
 
-void Kill_Serial()
+void SerialClose()
 {
 	CloseTape();
 
-	if (SerialPortOpen)
+	if (hSerialPort != INVALID_HANDLE_VALUE)
 	{
 		CloseHandle(hSerialPort);
 		hSerialPort = INVALID_HANDLE_VALUE;

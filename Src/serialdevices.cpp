@@ -83,7 +83,7 @@ bool IP232custom;
 bool IP232mode;
 bool IP232raw;
 unsigned int IP232customport;
-char IP232customip [20];
+char IP232customip[20];
 bool ip232_flag_received = false;
 char IPAddress[256];
 int PortNo;

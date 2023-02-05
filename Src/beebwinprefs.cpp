@@ -383,8 +383,24 @@ void BeebWin::LoadPreferences()
 	else
 		IP232customip[0] = 0;
 
-	if (!m_Preferences.GetBinaryValue("SerialPort", &SerialPort, 1))
-		SerialPort=2;
+	if (m_Preferences.GetStringValue("SerialPort", SerialPortName))
+	{
+		// For backwards compatibility with Preferences.cfg files from
+		// BeebEm 4.18 and earlier, which stored the port number as a
+		// binary value
+		if (strlen(SerialPortName) == 2 &&
+		    isxdigit(SerialPortName[0]) &&
+		    isxdigit(SerialPortName[1]))
+		{
+			int Port;
+			sscanf(SerialPortName, "%x", &Port);
+			sprintf(SerialPortName, "COM%d", Port);
+		}
+	}
+	else
+	{
+		strcpy(SerialPortName, "COM2");
+	}
 
 	if (!m_Preferences.GetBoolValue("EconetEnabled", EconetEnabled))
 		EconetEnabled = false;
@@ -690,7 +706,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("IP232customport", IP232customport);
 		m_Preferences.SetStringValue("IP232customip", m_customip);
 
-		m_Preferences.SetBinaryValue("SerialPort", &SerialPort, 1);
+		m_Preferences.SetStringValue("SerialPort", SerialPortName);
 
 		m_Preferences.SetBoolValue("EconetEnabled", EconetEnabled); // Rob
 #ifdef SPEECH_ENABLED

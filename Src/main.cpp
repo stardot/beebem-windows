@@ -111,7 +111,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
 	CloseLog();
 
-	Kill_Serial();
+	SerialClose();
 
 	delete mainWin;
 

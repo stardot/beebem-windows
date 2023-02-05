@@ -496,7 +496,7 @@ public:
 	void CreateBitmap(void);
 	void InitMenu();
 	void UpdateMonitorMenu();
-	void SelectSerialPort(unsigned char PortNumber);
+	void SelectSerialPort(const char *PortName);
 	void UpdateSerialMenu();
 	void UpdateEconetMenu();
 

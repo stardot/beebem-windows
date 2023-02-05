@@ -59,12 +59,12 @@ void SerialULAWrite(unsigned char Value);
 unsigned char SerialULARead();
 
 extern bool SerialPortEnabled;
-extern unsigned char SerialPort;
+extern char SerialPortName[_MAX_PATH];
 
 void SerialInit();
 void SerialPoll();
 void InitSerialPort();
-void Kill_Serial();
+void SerialClose();
 UEFResult LoadUEFTape(const char *FileName);
 CSWResult LoadCSWTape(const char *FileName);
 void CloseTape();

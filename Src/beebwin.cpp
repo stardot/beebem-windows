@@ -944,17 +944,7 @@ void BeebWin::InitMenu(void)
 	ModifyMenu(m_hMenu, IDM_PRINTER_FILE, MF_BYCOMMAND, IDM_PRINTER_FILE, menu_string);
 
 	// Comms -> RS423
-	CheckMenuItem(ID_SERIAL, SerialPortEnabled);
-	CheckMenuItem(ID_COM1, SerialPort == 1);
-	CheckMenuItem(ID_COM2, SerialPort == 2);
-	CheckMenuItem(ID_COM3, SerialPort == 3);
-	CheckMenuItem(ID_COM4, SerialPort == 4);
-	CheckMenuItem(ID_TOUCHSCREEN, TouchScreenEnabled);
-	// CheckMenuItem(ID_IP232, EthernetPortEnabled);
-	CheckMenuItem(ID_IP232LOCALHOST, IP232localhost);
-	CheckMenuItem(ID_IP232CUSTOM, IP232custom);
-	CheckMenuItem(ID_IP232MODE, IP232mode);
-	CheckMenuItem(ID_IP232RAW, IP232raw);
+	UpdateSerialMenu();
 
 	// View
 	UpdateDisplayRendererMenu();
@@ -2646,9 +2636,9 @@ void BeebWin::TranslateAMX(void)
 	}
 }
 
-void BeebWin::SelectSerialPort(unsigned char PortNumber)
+void BeebWin::SelectSerialPort(const char* PortName)
 {
-	SerialPort = PortNumber;
+	strcpy(SerialPortName, PortName);
 	bSerialStateChanged = true;
 	EthernetPortEnabled = false;
 	IP232custom = false;
@@ -2668,10 +2658,10 @@ void BeebWin::UpdateSerialMenu() {
 	CheckMenuItem(ID_IP232MODE, IP232mode);
 	CheckMenuItem(ID_IP232RAW, IP232raw);
 
-	CheckMenuItem(ID_COM1, SerialPort == 1);
-	CheckMenuItem(ID_COM2, SerialPort == 2);
-	CheckMenuItem(ID_COM3, SerialPort == 3);
-	CheckMenuItem(ID_COM4, SerialPort == 4);
+	CheckMenuItem(ID_COM1, strcmp(SerialPortName, "COM1") == 0);
+	CheckMenuItem(ID_COM2, strcmp(SerialPortName, "COM2") == 0);
+	CheckMenuItem(ID_COM3, strcmp(SerialPortName, "COM3") == 0);
+	CheckMenuItem(ID_COM4, strcmp(SerialPortName, "COM4") == 0);
 }
 
 //Rob
@@ -2869,8 +2859,8 @@ void BeebWin::HandleCommand(int MenuId)
 			{
 				IP232Close();
 				EthernetPortEnabled = false;
-	//			IP232custom = false;
-	//			IP232localhost = false;
+				// IP232custom = false;
+				// IP232localhost = false;
 			}
 		}
 		SerialPortEnabled = !SerialPortEnabled;
@@ -2915,10 +2905,10 @@ void BeebWin::HandleCommand(int MenuId)
 
 			SerialPortEnabled = true;
 
-			Kill_Serial();
-			SerialPort = 0;
-
+			SerialClose();
+			SerialPortName[0] = '\0';
 			bSerialStateChanged = true;
+
 			TouchScreenOpen();
 		}
 		UpdateSerialMenu();
@@ -2953,9 +2943,8 @@ void BeebWin::HandleCommand(int MenuId)
 			EthernetPortEnabled = true;
 			TouchScreenEnabled = false;
 
-			Kill_Serial();
-
-			SerialPort = 0;
+			SerialClose();
+			SerialPortName[0] = '\0';
 			bSerialStateChanged = true;
 
 			strcpy(IPAddress,"127.0.0.1");
@@ -2999,10 +2988,9 @@ void BeebWin::HandleCommand(int MenuId)
 			EthernetPortEnabled = true;
 			TouchScreenEnabled = false;
 
-			Kill_Serial();
-
-			SerialPort = 0;
-			bSerialStateChanged=TRUE;
+			SerialClose();
+			SerialPortName[0] = '\0';
+			bSerialStateChanged = true;
 
 			strcpy(IPAddress,IP232customip);
 			PortNo = IP232customport;
@@ -3026,19 +3014,19 @@ void BeebWin::HandleCommand(int MenuId)
 		break;
 
 	case ID_COM1:
-		SelectSerialPort(1);
+		SelectSerialPort("COM1");
 		break;
 
 	case ID_COM2:
-		SelectSerialPort(2);
+		SelectSerialPort("COM2");
 		break;
 
 	case ID_COM3:
-		SelectSerialPort(3);
+		SelectSerialPort("COM3");
 		break;
 
 	case ID_COM4:
-		SelectSerialPort(4);
+		SelectSerialPort("COM4");
 		break;
 
 	//Rob
