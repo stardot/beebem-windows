@@ -27,5 +27,6 @@ const UINT WM_REINITDX                         = WM_APP;
 const UINT WM_USER_KEYBOARD_DIALOG_CLOSED      = WM_APP + 1;
 const UINT WM_SELECT_KEY_DIALOG_CLOSED         = WM_APP + 2;
 const UINT WM_USER_PORT_BREAKOUT_DIALOG_CLOSED = WM_APP + 3;
+const UINT WM_ADD_DEBUG_SERIAL_CHAR            = WM_APP + 4;
 
 #endif

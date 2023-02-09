@@ -146,4 +146,6 @@ void DebugBreakExecution(DebugType type);
 void DebugInitMemoryMaps();
 bool DebugLoadMemoryMap(char* filename, int bank);
 
+void DebugSerial(unsigned char Data);
+
 #endif

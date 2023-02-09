@@ -48,6 +48,7 @@ Boston, MA  02110-1301, USA.
 #include "FileDialog.h"
 #include "StringUtils.h"
 #include "DebugTrace.h"
+#include "Messages.h"
 
 constexpr int MAX_LINES = 4096;          // Max lines in info window
 constexpr int LINES_IN_INFO = 28;        // Visible lines in info window
@@ -1106,11 +1107,13 @@ void DebugDisplayInfo(const char *info)
 	}
 
 	LinesDisplayed++;
+
 	if (LinesDisplayed > MAX_LINES)
 	{
 		SendMessage(hwndInfo, LB_DELETESTRING, 0, 0);
 		LinesDisplayed = MAX_LINES;
 	}
+
 	if (LinesDisplayed > LINES_IN_INFO)
 		SendMessage(hwndInfo, LB_SETTOPINDEX, LinesDisplayed - LINES_IN_INFO, 0);
 }
@@ -1194,6 +1197,39 @@ INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM 
 					DebugCloseDialog();
 					return TRUE;
 			}
+
+		case WM_ADD_DEBUG_SERIAL_CHAR: {
+			static unsigned char SerialBuffer[16];
+			static char Line[200];
+			static int Index = 0;
+			static char HexDigit[] = "0123456789ABCDEF";
+
+			SerialBuffer[Index] = (unsigned char)wParam;
+
+			if (++Index == 16)
+			{
+				char* psz = Line;
+
+				for (int i = 0; i < 16; i++)
+				{
+					*psz++ = HexDigit[(SerialBuffer[i] & 0xf0) >> 4];
+					*psz++ = HexDigit[SerialBuffer[i] & 0x0f];
+					*psz++ = ' ';
+				}
+
+				for (int i = 0; i < 16; i++)
+				{
+					*psz++ = isprint(SerialBuffer[i]) ? SerialBuffer[i] : '.';
+				}
+
+				*psz = '\0';
+
+				DebugDisplayInfo(Line);
+
+				Index = 0;
+			}
+			break;
+		}
 	}
 
 	return FALSE;
@@ -3431,4 +3467,9 @@ static void DebugMemoryDump(int addr, int count, bool host)
 
 		DebugDisplayInfo(info);
 	}
+}
+
+void DebugSerial(unsigned char Data)
+{
+	PostMessage(hwndDebug, WM_ADD_DEBUG_SERIAL_CHAR, Data, 0);
 }

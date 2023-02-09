@@ -733,6 +733,11 @@ void SerialPoll()
 				{
 					if (BytesIn > 0)
 					{
+						if (DebugEnabled)
+						{
+							DebugSerial(SerialBuffer);
+						}
+
 						HandleData((unsigned char)SerialBuffer);
 					}
 					else
@@ -869,6 +874,11 @@ unsigned int SerialPortReadThread::ThreadFunc()
 					// sucessful read, screw any errors.
 					if (SerialChannel == SerialDevice::RS423 && BytesIn > 0)
 					{
+						if (DebugEnabled)
+						{
+							DebugSerial(SerialBuffer);
+						}
+
 						HandleData((unsigned char)SerialBuffer);
 					}
 
