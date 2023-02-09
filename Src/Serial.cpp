@@ -735,7 +735,7 @@ void SerialPoll()
 					{
 						if (DebugEnabled)
 						{
-							DebugSerial(SerialBuffer);
+							DebugSerial((unsigned char)SerialBuffer);
 						}
 
 						HandleData((unsigned char)SerialBuffer);
@@ -876,7 +876,7 @@ unsigned int SerialPortReadThread::ThreadFunc()
 					{
 						if (DebugEnabled)
 						{
-							DebugSerial(SerialBuffer);
+							DebugSerial((unsigned char)SerialBuffer);
 						}
 
 						HandleData((unsigned char)SerialBuffer);
