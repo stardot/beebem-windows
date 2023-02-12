@@ -10,7 +10,7 @@
   <table width="100%" border="0" cellpadding="2" cellspacing="2">
     <tr>
       <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
                                align="middle" width="48" height="48" border="0" /></p>
       </td>
 
@@ -68,20 +68,26 @@ connect to a Viewdata BBS, MUD server or any other type of server.</p>
 <p>The serial IP features are selected via the IP destinations on the RS423
 Comms menu.  The "IP: localhost:25232" option is designed for use with the
 "tcpser" package, which emulates a modem.  Download a prebuilt Windows
-binary (and RC11 sources) of 
-<a href="http://www.mkw.me.uk/beebem/tcpser.zip">tcpser.zip</a>.  The tcpser
-home is <a href="http://www.jbrain.com/pub/linux/serial">here</a>.</p>
+binary of
+<a href="https://csdb.dk/release/?id=171299">tcpser.zip</a>.  The tcpser
+source code is available
+<a href="https://github.com/FozzTexx/tcpser">here</a>.</p>
 
-<p>Run the "go.bat" file to fire up an instance suitable for the localhost
-setting to talk to.  This will also allow incoming connections, as that does
+<p>Run the follwoing command fire up an instance suitable for the localhost
+setting to talk to:</p>
+
+<p><code>tcpser -v 25232 -p 6400 -l 4 -s 9600</code></p>
+
+<p>This will also allow incoming connections, as that does
 all the answering business and passes the caller onto the Beeb via the
 pre-existing connection.  This handles the handshake lines if you enable
 ip232 mode, so dropping RTS will drop an outward connection.  Similarly DCD
 going up will be passed through to CTS.</p>
 
-<p>Add the Commstar.rom to your ROM configuration (see "ROM Software" above) 
-and start up BeebEm.  On the Comms menu select the "IP: localhost:25232" 
-and "RS432 On/Off".  Type *COMMSTAR to start CommStar.  In Commstar:</p>
+<p>Add the Commstar.rom to your ROM configuration (see
+<a href="roms.html">ROM Software</a>) and start up BeebEm.
+On the Comms menu select "IP: localhost:25232" and "RS432 On/Off".
+Type *COMMSTAR to start CommStar.  In Commstar:</p>
 
 <ul>
 <li>Press M to switch to mode 0</li>
@@ -97,7 +103,9 @@ and "RS432 On/Off".  Type *COMMSTAR to start CommStar.  In Commstar:</p>
 
 <p>To make a direct connection to a server select the "IP: Custom
 destination" option.  This requires you to manually edit the "IP232customip"
-and "IP232customport" parameters in the Preferences.cfg file and reload.</p>
+and "IP232customport" parameters in the Preferences.cfg file and reload.
+Note that the "IP232customport" value must be set in hexadecimal, so
+port 25232 would be expressed as "IP232customport=6290".</p>
 
 <p>An additional option, "IP: IP232 mode", determines if the handshake lines
 are sent down the TCP/IP link or just generated locally from the presence of
@@ -109,7 +117,7 @@ tcpser).</p>
 
 <p>If on startup, or when ticking the "RS423 On/Off" menu option, BeebEm
 cannot connect to the specified server, or if it loses connection
-subsequently, it will pop up a messagebox and disable RS423.  Select the
+subsequently, it will report an error and disable RS423.  Select the
 menu option again to try to re-connect and re-enable.</p>
 
 <p>BeebEm will emulate the correct RX baud rate.  This makes for a very
