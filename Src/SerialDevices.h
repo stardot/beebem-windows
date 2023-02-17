@@ -26,35 +26,37 @@ Boston, MA  02110-1301, USA.
  *  Created by Jon Welch on 28/08/2006.
  */
 
-#ifndef SERIALDEVICES_HEADER
-#define SERIALDEVICES_HEADER
+#ifndef SERIAL_DEVICES_HEADER
+#define SERIAL_DEVICES_HEADER
 
-extern bool TouchScreenEnabled;
-void TouchScreenOpen(void);
-bool TouchScreenPoll(void);
-void TouchScreenClose(void);
+enum class SerialType {
+	SerialPort,
+	TouchScreen,
+	IP232
+};
+
+extern SerialType SerialDestination;
+
+void TouchScreenOpen();
+bool TouchScreenPoll();
+void TouchScreenClose();
 void TouchScreenWrite(unsigned char data);
-unsigned char TouchScreenRead(void);
+unsigned char TouchScreenRead();
 void TouchScreenStore(unsigned char data);
 void TouchScreenReadScreen(bool check);
 
-extern bool EthernetPortEnabled;
-extern bool IP232localhost;
-extern bool IP232custom;
-extern bool IP232mode;
-extern bool IP232raw;
-extern unsigned int IP232customport;
-extern char IP232customip [20];
+extern bool IP232Mode;
+extern bool IP232Raw;
+extern char IP232Address[256];
+extern int IP232Port;
 
-bool IP232Open(void);
-bool IP232Poll(void);
-void IP232Close(void);
+bool IP232Open();
+bool IP232Poll();
+void IP232Close();
 void IP232Write(unsigned char data);
-unsigned char IP232Read(void);
-extern char IPAddress[256];
-extern int PortNo;
+unsigned char IP232Read();
 
-unsigned char EthernetPortGet(void);
+unsigned char EthernetPortGet();
 void EthernetPortStore(unsigned char data);
 
 #endif

@@ -109,6 +109,7 @@ Boston, MA  02110-1301, USA.
 #define IDD_ROMCONFIG                   116
 #define IDD_SELECT_KEY                  117
 #define IDD_RENAME_FILE                 118
+#define IDD_SERIAL                      119
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -191,6 +192,14 @@ Boston, MA  02110-1301, USA.
 #define IDC_DEBUG_CMOS_BRK              1090
 #define IDC_BEEB_FILE_NAME              1091
 #define IDC_HOST_FILE_NAME              1092
+#define IDC_SERIAL_PORT_DESTINATION_SERIAL_PORT 1094
+#define IDC_SERIAL_PORT_DESTINATION_TOUCH_SCREEN 1095
+#define IDC_SERIAL_PORT_DESTINATION_IP  1096
+#define IDC_IP_ADDRESS                  1097
+#define IDC_IP_PORT                     1098
+#define IDC_IP323_RAW_COMMS             1099
+#define IDC_IP232_HANDSHAKE             1100
+#define IDC_SERIAL_PORT                 1101
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -298,10 +307,6 @@ Boston, MA  02110-1301, USA.
 #define ID_HIDEMENU                     40125
 #define ID_TAPESOUND                    40126
 #define ID_SERIAL                       40127
-#define ID_COM1                         40128
-#define ID_COM2                         40129
-#define ID_COM3                         40130
-#define ID_COM4                         40131
 #define ID_RED_LEDS                     40132
 #define ID_GREEN_LEDS                   40133
 #define ID_SHOW_KBLEDS                  40134
@@ -359,7 +364,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_EJECTDISC0                  40201
 #define IDM_EJECTDISC1                  40202
 #define IDM_EXPVOLUME                   40203
-#define ID_TOUCHSCREEN                  40204
 #define IDM_ANALOGUE_MOUSESTICK         40205
 #define IDM_DIGITAL_MOUSESTICK          40206
 #define ID_BREAKOUT                     40208
@@ -388,10 +392,6 @@ Boston, MA  02110-1301, USA.
 #define IDM_AUTOSAVE_PREFS_CMOS         40232
 #define IDM_AUTOSAVE_PREFS_FOLDERS      40233
 #define IDM_AUTOSAVE_PREFS_ALL          40234
-#define ID_IP232                        40236
-#define ID_IP232LOCALHOST               40238
-#define ID_IP232CUSTOM                  40239
-#define ID_IP232MODE                    40241
 #define IDM_EDIT_COPY                   40242
 #define IDM_EDIT_PASTE                  40243
 #define IDM_PRINTER_CLIPBOARD           40244
@@ -439,6 +439,7 @@ Boston, MA  02110-1301, USA.
 #define IDM_EMUPAUSED                   40296
 #define IDM_CAPTUREMOUSE                40318
 #define IDM_SELECT_HARD_DRIVE_FOLDER    40319
+#define ID_SELECT_SERIAL_DESTINATION    40320
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -447,8 +448,8 @@ Boston, MA  02110-1301, USA.
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        119
-#define _APS_NEXT_COMMAND_VALUE         40320
-#define _APS_NEXT_CONTROL_VALUE         1092
+#define _APS_NEXT_COMMAND_VALUE         40321
+#define _APS_NEXT_CONTROL_VALUE         1102
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

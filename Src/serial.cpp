@@ -44,7 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "uefstate.h"
 #include "csw.h"
-#include "serialdevices.h"
+#include "SerialDevices.h"
 #include "debug.h"
 #include "log.h"
 #include "TapeMap.h"
@@ -124,7 +124,8 @@ static const TransmitterControlBits TransmitterControl[8] =
 	{ false, false },
 };
 
-static const unsigned int Baud_Rates[8] = {
+static const unsigned int Baud_Rates[8] =
+{
 	19200, 1200, 4800, 150, 9600, 300, 2400, 75
 };
 
@@ -230,7 +231,7 @@ void SerialACIAWriteControl(unsigned char Value)
 	}
 
 	// Change serial port settings
-	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled)
+	if (SerialChannel == SerialDevice::RS423 && SerialDestination == SerialType::SerialPort)
 	{
 		DCB dcbSerialPort{}; // Serial port device control block
 		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
@@ -257,7 +258,7 @@ void SerialACIAWriteTxData(unsigned char Data)
 		                   "Serial: Write ACIA Tx %02X", (int)Data);
 	}
 
-//	WriteLog("Serial: Write ACIA Tx %02X, SerialChannel = %d\n", (int)Data, SerialChannel);
+	// WriteLog("Serial: Write ACIA Tx %02X, SerialChannel = %d\n", (int)Data, SerialChannel);
 
 	ACIA_Status &= ~MC6850_STATUS_IRQ;
 	intStatus &= ~(1 << serial);
@@ -283,17 +284,17 @@ void SerialACIAWriteTxData(unsigned char Data)
 			ACIA_Status &= ~MC6850_STATUS_TDRE;
 			SerialWriteBuffer = Data;
 
-			if (TouchScreenEnabled)
+			if (SerialDestination == SerialType::TouchScreen)
 			{
 				TouchScreenWrite(Data);
 			}
-			else if (EthernetPortEnabled)
+			else if (SerialDestination == SerialType::IP232)
 			{
 				// if (Data_Bits == 7) {
 				//	IP232Write(Data & 127);
 				// } else {
 					IP232Write(Data);
-					if (!IP232raw && Data == 255) IP232Write(Data);
+					if (!IP232Raw && Data == 255) IP232Write(Data);
 				// }
 			}
 			else
@@ -391,7 +392,7 @@ unsigned char SerialACIAReadStatus()
 	return ACIA_Status;
 }
 
-void HandleData(unsigned char Data)
+static void HandleData(unsigned char Data)
 {
 	// This proc has to dump data into the serial chip's registers
 
@@ -664,7 +665,7 @@ void SerialPoll()
 
 	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
 	{
-		if (TouchScreenEnabled)
+		if (SerialDestination == SerialType::TouchScreen)
 		{
 			if (TouchScreenPoll())
 			{
@@ -672,7 +673,7 @@ void SerialPoll()
 					HandleData(TouchScreenRead());
 			}
 		}
-		else if (EthernetPortEnabled)
+		else if (SerialDestination == SerialType::IP232)
 		{
 			if (IP232Poll())
 			{
@@ -730,7 +731,9 @@ static void InitThreads()
 	bWaitingForData = false;
 	bWaitingForStat = false;
 
-	if (SerialPortEnabled && SerialPortName[0] != '\0')
+	if (SerialPortEnabled &&
+	    SerialDestination == SerialType::SerialPort &&
+	    SerialPortName[0] != '\0')
 	{
 		InitSerialPort(); // Set up the serial port if its enabled.
 
@@ -768,8 +771,9 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 
 	while (1)
 	{
-		if (!TouchScreenEnabled && !EthernetPortEnabled &&
-		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0) && SerialPortEnabled)
+		if (SerialDestination == SerialType::SerialPort &&
+		    SerialPortEnabled &&
+		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0))
 		{
 			if (GetOverlappedResult(hSerialPort, &olStatus, &dwOvRes, FALSE))
 			{
@@ -827,7 +831,7 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 
 	while (1)
 	{
-		if (!bSerialStateChanged && SerialPortEnabled && !TouchScreenEnabled && !EthernetPortEnabled && bWaitingForData)
+		if (!bSerialStateChanged && SerialPortEnabled && SerialDestination == SerialType::SerialPort && bWaitingForData)
 		{
 			DWORD Result = WaitForSingleObject(olSerialPort.hEvent, INFINITE); // 10ms to respond
 
@@ -867,7 +871,9 @@ static unsigned int __stdcall SerialThread(void * /* lpParam */)
 static void InitSerialPort()
 {
 	// Initialise COM port
-	if (SerialPortEnabled && SerialPortName[0] != '\0')
+	if (SerialPortEnabled &&
+	    SerialDestination == SerialType::SerialPort &&
+	    SerialPortName[0] != '\0')
 	{
 		char FileName[_MAX_PATH];
 		sprintf(FileName, "\\\\.\\%s", SerialPortName);

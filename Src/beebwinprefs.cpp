@@ -48,7 +48,7 @@ Boston, MA  02110-1301, USA.
 #include "speech.h"
 #endif
 #include "Teletext.h"
-#include "serialdevices.h"
+#include "SerialDevices.h"
 #include "Arm.h"
 #include "SprowCoPro.h"
 
@@ -107,6 +107,12 @@ void BeebWin::LoadPreferences()
 	m_Preferences.EraseValue("Volume");
 	m_Preferences.EraseValue("UsePrimaryBuffer");
 	m_Preferences.EraseValue("ShowFSP");
+
+	m_Preferences.EraseValue("IP232localhost");
+	m_Preferences.EraseValue("IP232custom");
+	m_Preferences.EraseValue("IP232customport");
+	m_Preferences.EraseValue("IP232customip");
+
 
 	MachineType = Model::B;
 
@@ -358,30 +364,70 @@ void BeebWin::LoadPreferences()
 
 	if (!m_Preferences.GetBoolValue("SerialPortEnabled", SerialPortEnabled))
 		SerialPortEnabled = false;
+	bool TouchScreenEnabled;
 	if (!m_Preferences.GetBoolValue("TouchScreenEnabled", TouchScreenEnabled))
 		TouchScreenEnabled = false;
-//	if (!m_Preferences.GetBoolValue("EthernetPortEnabled", EthernetPortEnabled))
-//		EthernetPortEnabled = false;
+
+	bool IP232Enabled;
+	bool IP232localhost;
+	bool IP232custom;
+
+	if (!m_Preferences.GetBoolValue("IP232Enabled", IP232Enabled))
+		IP232Enabled = false;
 	if (!m_Preferences.GetBoolValue("IP232localhost", IP232localhost))
 		IP232localhost = false;
 	if (!m_Preferences.GetBoolValue("IP232custom", IP232custom))
 		IP232custom = false;
 
-	EthernetPortEnabled = IP232localhost || IP232custom;
+	if (TouchScreenEnabled)
+	{
+		SerialDestination = SerialType::TouchScreen;
+	}
+	else if (IP232Enabled || IP232localhost || IP232custom)
+	{
+		SerialDestination = SerialType::IP232;
+	}
+	else
+	{
+		SerialDestination = SerialType::SerialPort;
+	}
 
-	if (!m_Preferences.GetBoolValue("IP232mode", IP232mode))
-		IP232mode = false;
-	if (!m_Preferences.GetBoolValue("IP232raw", IP232raw))
-		IP232raw = false;
-	if (m_Preferences.GetDWORDValue("IP232customport",dword))
-		IP232customport = dword;
+	char IPAddress[MAX_PATH];
+
+	if (m_Preferences.GetStringValue("IP232Address", IPAddress))
+	{
+		strcpy(IP232Address, IPAddress);
+	}
+	else if (m_Preferences.GetStringValue("IP232customip", IPAddress) && IP232custom)
+	{
+		strcpy(IP232Address, IPAddress);
+	}
 	else
-		IP232customport = 25232;
-	m_customport = IP232customport;
-	if (m_Preferences.GetStringValue("IP232customip", m_customip))
-		strcpy(IP232customip, m_customip);
+	{
+		strcpy(IP232Address, "127.0.0.1");
+	}
+
+	if (m_Preferences.GetDWORDValue("IP232Port", dword))
+	{
+		IP232Port = dword;
+	}
+	else if (m_Preferences.GetDWORDValue("IP232customport", dword) && IP232custom)
+	{
+		IP232Port = dword;
+	}
 	else
-		IP232customip[0] = 0;
+	{
+		IP232Port = 25232;
+	}
+
+	if (!m_Preferences.GetBoolValue("IP232Mode", IP232Mode))
+		if (!m_Preferences.GetBoolValue("IP232mode", IP232Mode))
+			IP232Mode = false;
+
+	if (!m_Preferences.GetBoolValue("IP232Raw", IP232Raw))
+		if (!m_Preferences.GetBoolValue("IP232raw", IP232Raw))
+			IP232Raw = false;
+
 
 	if (m_Preferences.GetStringValue("SerialPort", SerialPortName))
 	{
@@ -697,14 +743,14 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue("Tape Clock Speed", &TapeClockSpeed, 2);
 		m_Preferences.SetBoolValue("UnlockTape", UnlockTape);
 		m_Preferences.SetBoolValue("SerialPortEnabled", SerialPortEnabled);
-		m_Preferences.SetBoolValue("TouchScreenEnabled", TouchScreenEnabled);
-		// m_Preferences.SetBoolValue("EthernetPortEnabled", EthernetPortEnabled);
-		m_Preferences.SetBoolValue("IP232localhost", IP232localhost);
-		m_Preferences.SetBoolValue("IP232custom", IP232custom);
-		m_Preferences.SetBoolValue("IP232mode", IP232mode);
-		m_Preferences.SetBoolValue("IP232raw", IP232raw);
-		m_Preferences.SetDWORDValue("IP232customport", IP232customport);
-		m_Preferences.SetStringValue("IP232customip", m_customip);
+		m_Preferences.SetBoolValue("TouchScreenEnabled", SerialDestination == SerialType::TouchScreen);
+		m_Preferences.SetBoolValue("IP232Enabled", SerialDestination == SerialType::IP232);
+		m_Preferences.SetStringValue("IP232Address", IP232Address);
+		m_Preferences.SetDWORDValue("IP232Port", IP232Port);
+		m_Preferences.EraseValue("IP232mode");
+		m_Preferences.SetBoolValue("IP232Mode", IP232Mode);
+		m_Preferences.EraseValue("IP232raw");
+		m_Preferences.SetBoolValue("IP232Raw", IP232Raw);
 
 		m_Preferences.SetStringValue("SerialPort", SerialPortName);
 

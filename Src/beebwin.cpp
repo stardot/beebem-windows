@@ -85,7 +85,8 @@ using std::max;
 #include "Teletext.h"
 #include "avi.h"
 #include "csw.h"
-#include "serialdevices.h"
+#include "SerialDevices.h"
+#include "SerialPortDialog.h"
 #include "Arm.h"
 #include "version.h"
 #include "SprowCoPro.h"
@@ -95,10 +96,10 @@ using std::max;
 
 using namespace Gdiplus;
 
-#define WIN_STYLE (WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_SIZEBOX)
+constexpr UINT WIN_STYLE = WS_OVERLAPPED | WS_CAPTION  | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
 
-// some LED based macros
-#define LED_COL_BASE 64
+// Some LED based constants
+constexpr int LED_COL_BASE = 64;
 
 static const char *CFG_REG_KEY = "Software\\BeebEm";
 
@@ -213,8 +214,6 @@ BeebWin::BeebWin()
 	m_DXResetPending = false;
 
 	m_JoystickCaptured = false;
-	m_customip[0] = 0;
-	m_customport = 0;
 	m_isFullScreen = false;
 	m_MaintainAspectRatio = true;
 	m_startFullScreen = false;
@@ -430,25 +429,13 @@ void BeebWin::ApplyPrefs()
 #endif
 
 	// Serial init
-	if (IP232custom)
-	{
-		strcpy(IPAddress,IP232customip);
-		PortNo = IP232customport;
-	}
-	else
-	{
-		strcpy(IPAddress,"127.0.0.1");
-		PortNo = 25232;
-	}
-
 	if (SerialPortEnabled)
 	{
-		if (TouchScreenEnabled)
+		if (SerialDestination == SerialType::TouchScreen)
 		{
 			TouchScreenOpen();
 		}
-
-		if (EthernetPortEnabled && (IP232localhost || IP232custom))
+		else if (SerialDestination == SerialType::IP232)
 		{
 			if (!IP232Open())
 			{
@@ -2499,7 +2486,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 			CalcAspectRatioAdjustment(m_XDXSize, m_YDXSize);
 
 			style = GetWindowLong(m_hWnd, GWL_STYLE);
-			style &= ~(WIN_STYLE);
+			style &= ~WIN_STYLE;
 			style |= WS_POPUP;
 			SetWindowLong(m_hWnd, GWL_STYLE, style);
 
@@ -2646,33 +2633,34 @@ void BeebWin::TranslateAMX(void)
 	}
 }
 
+void BeebWin::DisableSerial()
+{
+	/* if (SerialDestination == SerialType::SerialPort)
+	{
+		SerialClose();
+	} */
+	if (SerialDestination == SerialType::TouchScreen)
+	{
+		TouchScreenClose();
+	}
+	else if (SerialDestination == SerialType::IP232)
+	{
+		IP232Close();
+	}
+}
+
 void BeebWin::SelectSerialPort(const char* PortName)
 {
+	// DisableSerial();
 	strcpy(SerialPortName, PortName);
 	bSerialStateChanged = true;
-	EthernetPortEnabled = false;
-	IP232custom = false;
-	IP232localhost = false;
-	TouchScreenEnabled = false;
-	IP232Close();
-	TouchScreenClose();
+	SerialDestination = SerialType::SerialPort;
 	UpdateSerialMenu();
 }
 
 void BeebWin::UpdateSerialMenu()
 {
 	CheckMenuItem(ID_SERIAL, SerialPortEnabled);
-	CheckMenuItem(ID_TOUCHSCREEN, TouchScreenEnabled);
-	// CheckMenuItem(ID_IP232, EthernetPortEnabled);
-	CheckMenuItem(ID_IP232LOCALHOST, IP232localhost);
-	CheckMenuItem(ID_IP232CUSTOM, IP232custom);
-	CheckMenuItem(ID_IP232MODE, IP232mode);
-	CheckMenuItem(ID_IP232RAW, IP232raw);
-
-	CheckMenuItem(ID_COM1, strcmp(SerialPortName, "COM1") == 0);
-	CheckMenuItem(ID_COM2, strcmp(SerialPortName, "COM2") == 0);
-	CheckMenuItem(ID_COM3, strcmp(SerialPortName, "COM3") == 0);
-	CheckMenuItem(ID_COM4, strcmp(SerialPortName, "COM4") == 0);
 }
 
 //Rob
@@ -2865,25 +2853,13 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_SERIAL:
 		if (SerialPortEnabled) // so disabling..
 		{
-			if (TouchScreenEnabled)
-			{
-				TouchScreenClose();
-				TouchScreenEnabled = false;
-			}
-
-			if (EthernetPortEnabled)
-			{
-				IP232Close();
-				EthernetPortEnabled = false;
-			}
+			DisableSerial();
 		}
 
 		SerialPortEnabled = !SerialPortEnabled;
 
-		if (SerialPortEnabled && (IP232custom || IP232localhost))
+		if (SerialPortEnabled && SerialDestination == SerialType::IP232)
 		{
-			EthernetPortEnabled = true;
-
 			if (!IP232Open())
 			{
 				bSerialStateChanged = true;
@@ -2896,157 +2872,63 @@ void BeebWin::HandleCommand(int MenuId)
 		UpdateSerialMenu();
 		break;
 
-	case ID_TOUCHSCREEN:
-		if (TouchScreenEnabled)
+	case ID_SELECT_SERIAL_DESTINATION: {
+		SerialPortDialog Dialog(hInst,
+		                        m_hWnd,
+		                        SerialDestination,
+		                        SerialPortName,
+		                        IP232Address,
+		                        IP232Port,
+		                        IP232Raw,
+		                        IP232Mode);
+		if (Dialog.DoModal())
 		{
-			TouchScreenClose();
-		}
+			DisableSerial();
 
-		TouchScreenEnabled = !TouchScreenEnabled;
+			SerialDestination = Dialog.GetDestination();
 
-		if (TouchScreenEnabled)
-		{
-			// Also switch on analogue mousestick (touch screen uses
-			// mousestick position)
-			if (m_MenuIdSticks != IDM_ANALOGUE_MOUSESTICK)
-				HandleCommand(IDM_ANALOGUE_MOUSESTICK);
-
-			if (EthernetPortEnabled)
+			if (SerialDestination == SerialType::SerialPort)
 			{
-				IP232Close();
-				EthernetPortEnabled = false;
+				SelectSerialPort(Dialog.GetSerialPortName().c_str());
 			}
-			IP232custom = false;
-			IP232localhost = false;
-
-			SerialPortEnabled = true;
-
-			SerialClose();
-			SerialPortName[0] = '\0';
-			bSerialStateChanged = true;
-
-			TouchScreenOpen();
-		}
-		UpdateSerialMenu();
-		break;
-
-	case ID_IP232MODE:
-		IP232mode = !IP232mode;
-		UpdateSerialMenu();
-		break;
-
-	case ID_IP232RAW:
-		IP232raw = !IP232raw;
-		UpdateSerialMenu();
-		break;
-
-	case ID_IP232LOCALHOST:
-		if (IP232localhost)
-		{
-			IP232Close();
-		}
-
-		IP232localhost = !IP232localhost;
-
-		if (IP232localhost)
-		{
-			if (TouchScreenEnabled)
+			else if (SerialDestination == SerialType::IP232)
 			{
-				TouchScreenClose();
+				strcpy(IP232Address, Dialog.GetIPAddress().c_str());
+				IP232Port = Dialog.GetIPPort();
+				IP232Raw = Dialog.GetIP232RawComms();
+				IP232Mode = Dialog.GetIP232Handshake();
 			}
-			if (IP232custom) IP232Close();
-			IP232custom = false;
-			EthernetPortEnabled = true;
-			TouchScreenEnabled = false;
-
-			SerialClose();
-			SerialPortName[0] = '\0';
-			bSerialStateChanged = true;
-
-			strcpy(IPAddress,"127.0.0.1");
-			PortNo = 25232;
 
 			if (SerialPortEnabled)
 			{
-				if (!IP232Open())
+				if (SerialDestination == SerialType::SerialPort)
 				{
-					bSerialStateChanged = true;
-					UpdateSerialMenu();
-					SerialPortEnabled = false;
+				}
+				else if (SerialDestination == SerialType::TouchScreen)
+				{
+					// Also switch on analogue mousestick (touch screen uses
+					// mousestick position)
+					if (m_MenuIdSticks != IDM_ANALOGUE_MOUSESTICK)
+					{
+						HandleCommand(IDM_ANALOGUE_MOUSESTICK);
+					}
+
+					TouchScreenOpen();
+				}
+				else if (SerialDestination == SerialType::IP232)
+				{
+					if (!IP232Open())
+					{
+						bSerialStateChanged = true;
+						SerialPortEnabled = false;
+					}
 				}
 			}
+
+			UpdateSerialMenu();
 		}
-
-		if (!IP232localhost && !IP232custom)
-		{
-			EthernetPortEnabled = false;
-			IP232Close();
-		}
-
-		UpdateSerialMenu();
 		break;
-
-	case ID_IP232CUSTOM:
-		if (IP232custom)
-		{
-			IP232Close();
-		}
-
-		IP232custom = !IP232custom;
-
-		if (IP232custom)
-		{
-			if (TouchScreenEnabled)
-			{
-				TouchScreenClose();
-			}
-			if (IP232localhost) IP232Close();
-			IP232localhost = false;
-			EthernetPortEnabled = true;
-			TouchScreenEnabled = false;
-
-			SerialClose();
-			SerialPortName[0] = '\0';
-			bSerialStateChanged = true;
-
-			strcpy(IPAddress,IP232customip);
-			PortNo = IP232customport;
-
-			if (SerialPortEnabled)
-			{
-				if (!IP232Open())
-				{
-					bSerialStateChanged = true;
-					UpdateSerialMenu();
-					SerialPortEnabled = false;
-				}
-			}
-		}
-
-		if (!IP232localhost && !IP232custom)
-		{
-			EthernetPortEnabled = false;
-			IP232Close();
-		}
-
-		UpdateSerialMenu();
-		break;
-
-	case ID_COM1:
-		SelectSerialPort("COM1");
-		break;
-
-	case ID_COM2:
-		SelectSerialPort("COM2");
-		break;
-
-	case ID_COM3:
-		SelectSerialPort("COM3");
-		break;
-
-	case ID_COM4:
-		SelectSerialPort("COM4");
-		break;
+	}
 
 	//Rob
 	case ID_ECONET:

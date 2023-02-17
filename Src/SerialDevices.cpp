@@ -42,7 +42,7 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 
-#include "serialdevices.h"
+#include "SerialDevices.h"
 #include "6502core.h"
 #include "uef.h"
 #include "log.h"
@@ -73,39 +73,34 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
 
 // bool bEthernetSocketsCreated = false;
 
-struct sockaddr_in ip232_serv_addr; 
+static struct sockaddr_in ip232_serv_addr;
 
 // This bit is the Serial Port stuff
-bool TouchScreenEnabled;
-bool EthernetPortEnabled;
-bool IP232localhost;
-bool IP232custom;
-bool IP232mode;
-bool IP232raw;
-unsigned int IP232customport;
-char IP232customip[20];
-bool ip232_flag_received = false;
-char IPAddress[256];
-int PortNo;
+SerialType SerialDestination;
+bool IP232Mode;
+bool IP232Raw;
+char IP232Address[256];
+int IP232Port;
 
-bool mStartAgain = false;
+static bool ip232_flag_received = false;
+static bool mStartAgain = false;
 
-unsigned char ts_inbuff[TS_BUFF_SIZE];
-unsigned char ts_outbuff[TS_BUFF_SIZE];
-int ts_inhead, ts_intail, ts_inlen;
-int ts_outhead, ts_outtail, ts_outlen;
-int ts_delay;
+static unsigned char ts_inbuff[TS_BUFF_SIZE];
+static unsigned char ts_outbuff[TS_BUFF_SIZE];
+static int ts_inhead, ts_intail, ts_inlen;
+static int ts_outhead, ts_outtail, ts_outlen;
+static int ts_delay;
 
 CycleCountT IP232RxTrigger=CycleCountTMax;
 
-void TouchScreenOpen(void)
+void TouchScreenOpen()
 {
 	ts_inhead = ts_intail = ts_inlen = 0;
 	ts_outhead = ts_outtail = ts_outlen = 0;
 	ts_delay = 0;
 }
 
-bool TouchScreenPoll(void)
+bool TouchScreenPoll()
 {
 	static int mode = 0;
 
@@ -194,7 +189,7 @@ void TouchScreenWrite(unsigned char data)
 	}
 }
 
-unsigned char TouchScreenRead(void)
+unsigned char TouchScreenRead()
 {
 	unsigned char data = 0;
 
@@ -215,7 +210,7 @@ unsigned char TouchScreenRead(void)
 	return data;
 }
 
-void TouchScreenClose(void)
+void TouchScreenClose()
 {
 }
 
@@ -277,7 +272,7 @@ void TouchScreenReadScreen(bool check)
 **                                                               **
 ******************************************************************/
 
-bool IP232Open(void)
+bool IP232Open()
 {
 	ts_inhead = ts_intail = ts_outlen = 0;
 	ts_outhead = ts_outtail = ts_inlen = 0;
@@ -285,6 +280,7 @@ bool IP232Open(void)
 	// Let's prepare some IP sockets
 
 	mEthernetHandle = socket(AF_INET, SOCK_STREAM, 0);
+
 	if (mEthernetHandle == INVALID_SOCKET)
 	{
 		WriteLog("Unable to create IP232 socket");
@@ -305,23 +301,23 @@ bool IP232Open(void)
 	IP232RxTrigger = TotalCycles + IP232_CXDELAY;
 
 	ip232_serv_addr.sin_family = AF_INET; // address family Internet
-	ip232_serv_addr.sin_port = htons(static_cast<u_short>(PortNo)); // Port to connect on
-	ip232_serv_addr.sin_addr.s_addr = inet_addr(IPAddress); // Target IP
+	ip232_serv_addr.sin_port = htons(static_cast<u_short>(IP232Port)); // Port to connect on
+	ip232_serv_addr.sin_addr.s_addr = inet_addr(IP232Address); // Target IP
 
 	if (connect(mEthernetHandle, (SOCKADDR *)&ip232_serv_addr, sizeof(ip232_serv_addr)) == SOCKET_ERROR)
 	{
-		WriteLog("Unable to connect to IP232 server %s port %d", IPAddress, PortNo);
+		WriteLog("Unable to connect to IP232 server %s port %d", IP232Address, IP232Port);
 
 		if (DebugEnabled)
 		{
 			DebugDisplayTraceF(DebugType::RemoteServer, true,
-			                   "IP232: Unable to connect to server  %s port %d", IPAddress, PortNo);
+			                   "IP232: Unable to connect to server  %s port %d", IP232Address, IP232Port);
 		}
 
 		IP232Close();
 		mEthernetHandle = INVALID_SOCKET;
 
-		mainWin->Report(MessageType::Error, "Unable to connect to server %s port %d", IPAddress, PortNo);
+		mainWin->Report(MessageType::Error, "Unable to connect to server %s port %d", IP232Address, IP232Port);
 
 		return false; // Couldn't connect
 	}
@@ -345,7 +341,7 @@ bool IP232Open(void)
 	return true;
 }
 
-bool IP232Poll(void)
+bool IP232Poll()
 {
 //	fd_set	fds;
 //	timeval tv;
@@ -376,7 +372,7 @@ bool IP232Poll(void)
 	return false;
 }
 
-void IP232Close(void)
+void IP232Close()
 {
 	if (mEthernetHandle != INVALID_SOCKET)
 	{
@@ -429,7 +425,7 @@ void IP232Write(unsigned char data)
 	}
 }
 
-unsigned char IP232Read(void)
+unsigned char IP232Read()
 {
 	unsigned char data = 0;
 
@@ -452,12 +448,13 @@ unsigned char IP232Read(void)
 }
 
 static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
-{ // Much taken from Mac version by Jon Welch
+{
+	// Much taken from Mac version by Jon Welch
 	fd_set fds;
 	timeval tv;
 	int i, j;
 	unsigned char buff[256];
-	int space, bufflen;
+	int bufflen;
 
 	Sleep (3000);
 
@@ -465,7 +462,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 	{
 		if (mEthernetHandle != INVALID_SOCKET)
 		{
-			space = TS_BUFF_SIZE - ts_inlen;
+			int space = TS_BUFF_SIZE - ts_inlen;
 
 			if (space > 256)
 			// if (ts_inlen == 0)
@@ -529,7 +526,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 							}
 							else
 							{
-								if (buff[j] == 255 && !IP232raw)
+								if (buff[j] == 255 && !IP232Raw)
 								{
 									ip232_flag_received = true;
 								}
@@ -635,8 +632,9 @@ void EthernetPortStore(unsigned char data)
 	}
 }
 
-unsigned char EthernetPortGet(void)
-{ // much taken from Mac version by Jon Welch
+unsigned char EthernetPortGet()
+{
+	// much taken from Mac version by Jon Welch
 	unsigned char data = 0;
 
 	if (ts_outlen > 0)
@@ -663,7 +661,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 
 	while (1)
 	{
-		if (!IP232mode)
+		if (!IP232Mode)
 		{
 			if (mEthernetHandle != INVALID_SOCKET)
 			{

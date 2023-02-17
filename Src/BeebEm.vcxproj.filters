@@ -150,7 +150,10 @@
     <ClCompile Include="serial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="serialdevices.cpp">
+    <ClCompile Include="SerialDevices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialPortDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SoundStreamer.cpp">
@@ -389,7 +392,10 @@
     <ClInclude Include="serial.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="serialdevices.h">
+    <ClInclude Include="SerialDevices.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SerialPortDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SoundStreamer.h">

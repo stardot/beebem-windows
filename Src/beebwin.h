@@ -368,9 +368,6 @@ public:
 	bool m_DisableMenu;
 	bool m_MenuOn;
 
-	char		m_customip [20];		//IP232
-	int		m_customport;
-
 	HDC 		m_hDC;
 	HWND		m_hWnd;
 	HGDIOBJ 	m_hOldObj;
@@ -496,6 +493,7 @@ public:
 	void CreateBitmap(void);
 	void InitMenu();
 	void UpdateMonitorMenu();
+	void DisableSerial();
 	void SelectSerialPort(const char *PortName);
 	void UpdateSerialMenu();
 	void UpdateEconetMenu();
