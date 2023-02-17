@@ -19,6 +19,7 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 #include <windows.h>
+#include <vector>
 
 #include "Dialog.h"
 
@@ -78,4 +79,46 @@ INT_PTR CALLBACK Dialog::sDlgProc(HWND   hwnd,
 	{
 		return FALSE;
 	}
+}
+
+/****************************************************************************/
+
+std::string Dialog::GetDlgItemText(int nID)
+{
+	int Length = GetWindowTextLength(GetDlgItem(m_hwnd, nID));
+
+	std::vector<char> Text;
+	Text.resize(Length + 1);
+
+	::GetDlgItemText(m_hwnd, nID, &Text[0], Text.size());
+
+	return std::string(&Text[0]);
+}
+
+/****************************************************************************/
+
+void Dialog::SetDlgItemText(int nID, const std::string& str)
+{
+	SetWindowText(GetDlgItem(m_hwnd, nID), str.c_str());
+}
+
+/****************************************************************************/
+
+bool Dialog::IsDlgItemChecked(int nID)
+{
+	return SendDlgItemMessage(m_hwnd, nID, BM_GETCHECK, 0, 0) == BST_CHECKED;
+}
+
+/****************************************************************************/
+
+void Dialog::SetDlgItemChecked(int nID, bool bChecked)
+{
+	SendDlgItemMessage(m_hwnd, nID, BM_SETCHECK, bChecked ? BST_CHECKED : BST_UNCHECKED, 0);
+}
+
+/****************************************************************************/
+
+void Dialog::SetDlgItemFocus(int nID)
+{
+	SetFocus(GetDlgItem(m_hwnd, nID));
 }

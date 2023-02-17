@@ -21,6 +21,8 @@ Boston, MA  02110-1301, USA.
 #ifndef DIALOG_HEADER
 #define DIALOG_HEADER
 
+#include <string>
+
 class Dialog
 {
 	public:
@@ -46,6 +48,13 @@ class Dialog
 			WPARAM wParam,
 			LPARAM lParam
 		) = 0;
+
+	protected:
+		std::string GetDlgItemText(int nID);
+		void SetDlgItemText(int nID, const std::string& str);
+		bool IsDlgItemChecked(int nID);
+		void SetDlgItemChecked(int nID, bool bChecked);
+		void SetDlgItemFocus(int nID);
 
 	protected:
 		HINSTANCE m_hInstance;
