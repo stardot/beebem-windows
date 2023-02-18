@@ -55,8 +55,8 @@ Boston, MA  02110-1301, USA.
 #include "csw.h"
 #include "uservia.h"
 #include "atodconv.h"
+#include "RingBuffer.h"
 
-constexpr int TS_BUFF_SIZE = 10240;
 constexpr int TS_DELAY = 8192; // Cycles to wait for data to be TX'd or RX'd
 static int TouchScreenMode = 0;
 static int TouchScreenDelay;
@@ -86,22 +86,19 @@ int IP232Port;
 static bool ip232_flag_received = false;
 static bool mStartAgain = false;
 
-static unsigned char ts_inbuff[TS_BUFF_SIZE];
-static unsigned char ts_outbuff[TS_BUFF_SIZE];
-static int ts_inhead, ts_intail, ts_inlen;
-static int ts_outhead, ts_outtail, ts_outlen;
+static RingBuffer InputBuffer;
+static RingBuffer OutputBuffer;
 
 CycleCountT IP232RxTrigger=CycleCountTMax;
 
-static unsigned char EthernetPortGet();
 static void EthernetPortStore(unsigned char data);
 
 static void DebugReceivedData(unsigned char* pData, int Length);
 
 void TouchScreenOpen()
 {
-	ts_inhead = ts_intail = ts_inlen = 0;
-	ts_outhead = ts_outtail = ts_outlen = 0;
+	InputBuffer.Reset();
+	OutputBuffer.Reset();
 	TouchScreenDelay = 0;
 }
 
@@ -113,16 +110,15 @@ bool TouchScreenPoll()
 		return false;
 	}
 
-	if (ts_outlen > 0)		// Process data waiting to be received by BeebEm straight away
+	// Process data waiting to be received by BeebEm straight away
+	if (OutputBuffer.HasData())
 	{
 		return true;
 	}
 
-	if (ts_inlen > 0)
+	if (InputBuffer.HasData())
 	{
-		unsigned char data = ts_inbuff[ts_inhead];
-		ts_inhead = (ts_inhead + 1) % TS_BUFF_SIZE;
-		ts_inlen--;
+		unsigned char data = InputBuffer.GetData();
 
 		switch (data)
 		{
@@ -177,11 +173,8 @@ void TouchScreenWrite(unsigned char data)
 {
 	// DebugTrace("TouchScreenWrite 0x%02x\n", data);
 
-	if (ts_inlen != TS_BUFF_SIZE)
+	if (InputBuffer.PutData(data))
 	{
-		ts_inbuff[ts_intail] = data;
-		ts_intail = (ts_intail + 1) % TS_BUFF_SIZE;
-		ts_inlen++;
 		TouchScreenDelay = TS_DELAY;
 	}
 	else
@@ -194,11 +187,9 @@ unsigned char TouchScreenRead()
 {
 	unsigned char data = 0;
 
-	if (ts_outlen > 0)
+	if (OutputBuffer.HasData())
 	{
-		data = ts_outbuff[ts_outhead];
-		ts_outhead = (ts_outhead + 1) % TS_BUFF_SIZE;
-		ts_outlen--;
+		data = OutputBuffer.GetData();
 		TouchScreenDelay = TS_DELAY;
 	}
 	else
@@ -217,13 +208,7 @@ void TouchScreenClose()
 
 void TouchScreenStore(unsigned char data)
 {
-	if (ts_outlen != TS_BUFF_SIZE)
-	{
-		ts_outbuff[ts_outtail] = data;
-		ts_outtail = (ts_outtail + 1) % TS_BUFF_SIZE;
-		ts_outlen++;
-	}
-	else
+	if (!OutputBuffer.PutData(data))
 	{
 		DebugTrace("TouchScreenStore output buffer full\n");
 	}
@@ -265,20 +250,16 @@ void TouchScreenReadScreen(bool check)
 	}
 }
 
-/******************************************************************
-**                                                               **
-**  Note - touchscreen routines use ts_in* for data into the ts  **
-**  and ts_out* as data from the touchscreen.                    **
-**  IP232 routines use ts_in* as data coming in from the modem,  **
-**  and ts-out* for data to be sent out to the modem.            **
-**  i.e. the opposite way around!!       watch out!              **
-**                                                               **
-******************************************************************/
+// Note - touchscreen routines use InputBuffer for data into the ts
+// and OutputBuffer as data from the touchscreen.
+// IP232 routines use InputBuffer as data coming in from the modem,
+// and OutputBuffer for data to be sent out to the modem,
+// i.e., the opposite way around!!       watch out!
 
 bool IP232Open()
 {
-	ts_inhead = ts_intail = ts_outlen = 0;
-	ts_outhead = ts_outtail = ts_inlen = 0;
+	InputBuffer.Reset();
+	OutputBuffer.Reset();
 
 	// Let's prepare some IP sockets
 
@@ -382,7 +363,7 @@ bool IP232Poll()
 	}
 */
 
-	if (TotalCycles > IP232RxTrigger && ts_inlen > 0)
+	if (TotalCycles > IP232RxTrigger && InputBuffer.HasData())
 	{
 		return true;
 	}
@@ -429,13 +410,7 @@ void IP232Write(unsigned char data)
 {
 	// DebugTrace("TouchScreenWrite 0x%02x\n", data);
 
-	if (ts_outlen != TS_BUFF_SIZE)
-	{
-		ts_outbuff[ts_outtail] = data;
-		ts_outtail = (ts_outtail + 1) % TS_BUFF_SIZE;
-		ts_outlen++;
-	}
-	else
+	if (!OutputBuffer.PutData(data))
 	{
 		DebugTrace("IP232Write send buffer full\n");
 
@@ -448,11 +423,10 @@ unsigned char IP232Read()
 {
 	unsigned char data = 0;
 
-	if (ts_inlen > 0)
+	if (InputBuffer.HasData())
 	{
-		data = ts_inbuff[ts_inhead];
-		ts_inhead = (ts_inhead + 1) % TS_BUFF_SIZE;
-		ts_inlen--;
+		data = InputBuffer.GetData();
+
 		// Simulated baud rate delay between bytes..
 		IP232RxTrigger = TotalCycles + 2000000 / (Rx_Rate / 9);
 	}
@@ -482,10 +456,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 	{
 		if (mEthernetHandle != INVALID_SOCKET)
 		{
-			int space = TS_BUFF_SIZE - ts_inlen;
-
-			if (space > 256)
-			// if (ts_inlen == 0)
+			if (InputBuffer.GetSpace() > 256)
 			{
 				FD_ZERO(&fds);
 				tv.tv_sec = 0;
@@ -574,17 +545,18 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				}
 			}
 
-			if (ts_outlen > 0 && mEthernetHandle != INVALID_SOCKET)
+			if (OutputBuffer.HasData() && mEthernetHandle != INVALID_SOCKET)
 			{
-				DebugTrace("Sending to IP232 server\n");
+				DebugTrace("Sending %d bytes to IP232 server\n", OutputBuffer.GetLength());
 
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Sending to remote server");
 
 				bufflen=0;
-				while (ts_outlen)
+
+				while (OutputBuffer.HasData())
 				{
-					buff[bufflen++] = EthernetPortGet();
+					buff[bufflen++] = OutputBuffer.GetData();
 				}
 
 				FD_ZERO(&fds);
@@ -631,36 +603,17 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 	return 0;
 }
 
-static void EthernetPortStore(unsigned char data)
-{ // much taken from Mac version by Jon Welch
-	if (ts_inlen != TS_BUFF_SIZE)
-	{
-		ts_inbuff[ts_intail] = data;
-		ts_intail = (ts_intail + 1) % TS_BUFF_SIZE;
-		ts_inlen++;
-	}
-	else
+void EthernetPortStore(unsigned char data)
+{
+	// much taken from Mac version by Jon Welch
+
+	if (!InputBuffer.PutData(data))
 	{
 		DebugTrace("EthernetPortStore output buffer full\n");
 
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: EthernetPortStore output buffer full");
 	}
-}
-
-static unsigned char EthernetPortGet()
-{
-	// much taken from Mac version by Jon Welch
-	unsigned char data = 0;
-
-	if (ts_outlen > 0)
-	{
-		data = ts_outbuff[ts_outhead];
-		ts_outhead = (ts_outhead + 1) % TS_BUFF_SIZE;
-		ts_outlen--;
-	}
-
-	return data;
 }
 
 static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
@@ -732,6 +685,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 					IP232Write(255);
 					IP232Write(static_cast<unsigned char>(rts));
 				}
+
 				orts = rts;
 			}
 		}

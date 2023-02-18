@@ -206,6 +206,7 @@
     <ClCompile Include="music5000.cpp" />
     <ClCompile Include="preferences.cpp" />
     <ClCompile Include="RenameFileDialog.cpp" />
+    <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="RomConfig.cpp" />
     <ClCompile Include="sasi.cpp" />
     <ClCompile Include="scsi.cpp" />
@@ -364,6 +365,7 @@
     <ClInclude Include="port.h" />
     <ClInclude Include="preferences.h" />
     <ClInclude Include="RenameFileDialog.h" />
+    <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="sasi.h" />
     <ClInclude Include="scsi.h" />
     <ClInclude Include="SelectKeyDialog.h" />
