@@ -64,7 +64,7 @@ static int TouchScreenDelay;
 constexpr int IP232_CXDELAY = 8192; // Cycles to wait after connection
 
 // IP232
-static SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
+static SOCKET EthernetSocket = INVALID_SOCKET; // Listen socket
 static HANDLE hEthernetPortReadThread = nullptr;
 static HANDLE hEthernetPortStatusThread = nullptr;
 
@@ -258,9 +258,9 @@ bool IP232Open()
 
 	// Let's prepare some IP sockets
 
-	mEthernetHandle = socket(AF_INET, SOCK_STREAM, 0);
+	EthernetSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (mEthernetHandle == INVALID_SOCKET)
+	if (EthernetSocket == INVALID_SOCKET)
 	{
 		DebugTrace("Unable to create IP232 socket\n");
 
@@ -282,7 +282,7 @@ bool IP232Open()
 	Addr.sin_port = htons(static_cast<u_short>(IP232Port)); // Port to connect on
 	Addr.sin_addr.s_addr = inet_addr(IP232Address); // Target IP
 
-	if (connect(mEthernetHandle, (SOCKADDR *)&Addr, sizeof(Addr)) == SOCKET_ERROR)
+	if (connect(EthernetSocket, (SOCKADDR *)&Addr, sizeof(Addr)) == SOCKET_ERROR)
 	{
 		DebugTrace("Unable to connect to IP232 server %s port %d\n", IP232Address, IP232Port);
 
@@ -293,7 +293,7 @@ bool IP232Open()
 		}
 
 		IP232Close();
-		mEthernetHandle = INVALID_SOCKET;
+		EthernetSocket = INVALID_SOCKET;
 
 		mainWin->Report(MessageType::Error, "Unable to connect to server %s port %d", IP232Address, IP232Port);
 
@@ -367,15 +367,15 @@ bool IP232Poll()
 
 void IP232Close()
 {
-	if (mEthernetHandle != INVALID_SOCKET)
+	if (EthernetSocket != INVALID_SOCKET)
 	{
 		DebugTrace("Closing IP232 socket\n");
 
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Closing Sockets");
 
-		closesocket(mEthernetHandle);
-		mEthernetHandle = INVALID_SOCKET;
+		closesocket(EthernetSocket);
+		EthernetSocket = INVALID_SOCKET;
 	}
 
 /*
@@ -446,7 +446,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 
 	while (1)
 	{
-		if (mEthernetHandle != INVALID_SOCKET)
+		if (EthernetSocket != INVALID_SOCKET)
 		{
 			if (InputBuffer.GetSpace() > 256)
 			{
@@ -454,13 +454,13 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				tv.tv_sec = 0;
 				tv.tv_usec = 0;
 
-				FD_SET(mEthernetHandle, &fds);
+				FD_SET(EthernetSocket, &fds);
 
 				int NumReady = select(32, &fds, NULL, NULL, &tv); // Read
 
 				if (NumReady > 0)
 				{
-					int BytesReceived = recv(mEthernetHandle, (char *)Buffer, 256, 0);
+					int BytesReceived = recv(EthernetSocket, (char *)Buffer, 256, 0);
 
 					if (BytesReceived != SOCKET_ERROR)
 					{
@@ -494,7 +494,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				}
 			}
 
-			if (OutputBuffer.HasData() && mEthernetHandle != INVALID_SOCKET)
+			if (OutputBuffer.HasData() && EthernetSocket != INVALID_SOCKET)
 			{
 				DebugTrace("Sending %d bytes to IP232 server\n", OutputBuffer.GetLength());
 
@@ -512,7 +512,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				tv.tv_sec = 0;
 				tv.tv_usec = 0;
 
-				FD_SET(mEthernetHandle, &fds);
+				FD_SET(EthernetSocket, &fds);
 
 				int NumReady = select(32, NULL, &fds, NULL, &tv); // Write
 
@@ -525,7 +525,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				}
 				else
 				{
-					int BytesSent = send(mEthernetHandle, (char *)Buffer, BufferLength, 0);
+					int BytesSent = send(EthernetSocket, (char *)Buffer, BufferLength, 0);
 
 					if (BytesSent < BufferLength)
 					{
@@ -634,7 +634,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 	{
 		if (!IP232Mode)
 		{
-			if (mEthernetHandle != INVALID_SOCKET)
+			if (EthernetSocket != INVALID_SOCKET)
 			{
 				dcd = 1;
 			}
@@ -676,7 +676,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 
 			if (rts != orts)
 			{
-				if (mEthernetHandle != INVALID_SOCKET)
+				if (EthernetSocket != INVALID_SOCKET)
 				{
 					if (DebugEnabled)
 					{
