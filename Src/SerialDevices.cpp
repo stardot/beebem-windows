@@ -45,7 +45,6 @@ Boston, MA  02110-1301, USA.
 #include "SerialDevices.h"
 #include "6502core.h"
 #include "uef.h"
-#include "log.h"
 #include "main.h"
 #include "serial.h"
 #include "beebsound.h"
@@ -152,7 +151,7 @@ bool TouchScreenPoll()
 				 * Mode 129 seems to be send current values all time
 				 */
 
-				WriteLog("Setting touch screen mode to %d\n", mode);
+				DebugTrace("Setting touch screen mode to %d\n", mode);
 				break;
 
 			case '?' :
@@ -179,7 +178,7 @@ bool TouchScreenPoll()
 
 void TouchScreenWrite(unsigned char data)
 {
-	// WriteLog("TouchScreenWrite 0x%02x\n", data);
+	// DebugTrace("TouchScreenWrite 0x%02x\n", data);
 
 	if (ts_inlen != TS_BUFF_SIZE)
 	{
@@ -190,7 +189,7 @@ void TouchScreenWrite(unsigned char data)
 	}
 	else
 	{
-		WriteLog("TouchScreenWrite input buffer full\n");
+		DebugTrace("TouchScreenWrite input buffer full\n");
 	}
 }
 
@@ -207,10 +206,10 @@ unsigned char TouchScreenRead()
 	}
 	else
 	{
-		WriteLog("TouchScreenRead output buffer empty\n");
+		DebugTrace("TouchScreenRead output buffer empty\n");
 	}
 
-	// WriteLog("TouchScreenRead 0x%02x\n", data);
+	// DebugTrace("TouchScreenRead 0x%02x\n", data);
 
 	return data;
 }
@@ -229,7 +228,7 @@ void TouchScreenStore(unsigned char data)
 	}
 	else
 	{
-		WriteLog("TouchScreenStore output buffer full\n");
+		DebugTrace("TouchScreenStore output buffer full\n");
 	}
 }
 
@@ -242,7 +241,7 @@ void TouchScreenReadScreen(bool check)
 
 	if (last_x != x || last_y != y || last_m != AMXButtons || !check)
 	{
-		// WriteLog("JoystickX = %d, JoystickY = %d, last_x = %d, last_y = %d\n", JoystickX, JoystickY, last_x, last_y);
+		// DebugTrace("JoystickX = %d, JoystickY = %d, last_x = %d, last_y = %d\n", JoystickX, JoystickY, last_x, last_y);
 
 		if (AMXButtons & AMX_LEFT_BUTTON)
 		{
@@ -251,14 +250,14 @@ void TouchScreenReadScreen(bool check)
 			TouchScreenStore( 64 + ((y & 0xf0) >> 4) );
 			TouchScreenStore( 64 + (y & 0x0f) );
 			TouchScreenStore('.');
-			// WriteLog("Sending X = %d, Y = %d\n", x, y);
+			// DebugTrace("Sending X = %d, Y = %d\n", x, y);
 		} else {
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore( 64 + 0x0f);
 			TouchScreenStore('.');
-			// WriteLog("Screen not touched\n");
+			// DebugTrace("Screen not touched\n");
 		}
 
 		last_x = x;
@@ -288,7 +287,7 @@ bool IP232Open()
 
 	if (mEthernetHandle == INVALID_SOCKET)
 	{
-		WriteLog("Unable to create IP232 socket");
+		DebugTrace("Unable to create IP232 socket\n");
 
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Unable to create socket");
@@ -311,7 +310,7 @@ bool IP232Open()
 
 	if (connect(mEthernetHandle, (SOCKADDR *)&ip232_serv_addr, sizeof(ip232_serv_addr)) == SOCKET_ERROR)
 	{
-		WriteLog("Unable to connect to IP232 server %s port %d", IP232Address, IP232Port);
+		DebugTrace("Unable to connect to IP232 server %s port %d\n", IP232Address, IP232Port);
 
 		if (DebugEnabled)
 		{
@@ -369,7 +368,7 @@ bool IP232Poll()
 
 /*	if (mStartAgain == true)
 	{
-		WriteLog("Closing Comms\n");
+		DebugTrace("Closing Comms\n");
 		if (DebugEnabled)
 				DebugDisplayTrace(DEBUG_REMSER, true, "IP232: Comms Close");
 		// mStartAgain = false;
@@ -396,7 +395,7 @@ void IP232Close()
 {
 	if (mEthernetHandle != INVALID_SOCKET)
 	{
-		WriteLog("Closing IP232 socket");
+		DebugTrace("Closing IP232 socket\n");
 
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Closing Sockets");
@@ -429,7 +428,7 @@ void IP232Close()
 
 void IP232Write(unsigned char data)
 {
-	// WriteLog("TouchScreenWrite 0x%02x\n", data);
+	// DebugTrace("TouchScreenWrite 0x%02x\n", data);
 
 	if (ts_outlen != TS_BUFF_SIZE)
 	{
@@ -439,7 +438,8 @@ void IP232Write(unsigned char data)
 	}
 	else
 	{
-		WriteLog("IP232Write send buffer full\n");
+		DebugTrace("IP232Write send buffer full\n");
+
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Write send Buffer Full");
 	}
@@ -459,7 +459,7 @@ unsigned char IP232Read()
 	}
 	else
 	{
-		WriteLog("IP23 receive buffer empty\n");
+		DebugTrace("IP232 receive buffer empty\n");
 
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: receive buffer empty");
@@ -500,7 +500,8 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 					i = recv(mEthernetHandle, (char *) buff, 256, 0);
 					if (i > 0)
 					{
-						// WriteLog("Read %d bytes\n%s\n", i, buff);
+						// DebugTrace("Read %d bytes\n%s\n", i, buff);
+
 						if (DebugEnabled)
 						{
 							DebugReceivedData(buff, i);
@@ -551,11 +552,13 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 					{
 						// Should really check what the error was ...
 
-						// WriteLog("Read error %d\n", i);
+						// DebugTrace("Read error %d\n", i);
 
-						WriteLog("Remote session disconnected\n");
+						DebugTrace("Remote session disconnected\n");
+
 						if (DebugEnabled)
 							DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Remote session disconnected");
+
 						// mEthernetPortReadTaskID = NULL;
 						bSerialStateChanged = true;
 						SerialPortEnabled = false;
@@ -568,13 +571,14 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				}
 				else
 				{
-					// WriteLog("Nothing to read %d\n", i);
+					// DebugTrace("Nothing to read %d\n", i);
 				}
 			}
 
 			if (ts_outlen > 0 && mEthernetHandle != INVALID_SOCKET)
 			{
-				WriteLog("Sending to IP232 server");
+				DebugTrace("Sending to IP232 server\n");
+
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Sending to remote server");
 
@@ -593,7 +597,8 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				i = select(32, NULL, &fds, NULL, &tv);		// Write
 				if (i <= 0)
 				{
-					WriteLog("Select Error %i\n", i);
+					DebugTrace("Select Error %i\n", i);
+
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Select error on send");
 				}
@@ -604,7 +609,8 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 					if (i < bufflen)
 					{
 						// Should really check what the error was ...
-						WriteLog("Send Error %i\n", i);
+						DebugTrace("Send Error %i\n", i);
+
 						if (DebugEnabled)
 							DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Send Error");
 						bSerialStateChanged = true;
@@ -636,7 +642,8 @@ static void EthernetPortStore(unsigned char data)
 	}
 	else
 	{
-		WriteLog("EthernetPortStore output buffer full\n");
+		DebugTrace("EthernetPortStore output buffer full\n");
+
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: EthernetPortStore output buffer full");
 	}
