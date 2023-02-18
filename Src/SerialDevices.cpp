@@ -58,6 +58,8 @@ Boston, MA  02110-1301, USA.
 
 constexpr int TS_BUFF_SIZE = 10240;
 constexpr int TS_DELAY = 8192; // Cycles to wait for data to be TX'd or RX'd
+static int TouchScreenMode = 0;
+static int TouchScreenDelay;
 
 // constexpr int IP232_BUFF_SIZE = 128;
 constexpr int IP232_CXDELAY = 8192; // Cycles to wait after connection
@@ -88,7 +90,6 @@ static unsigned char ts_inbuff[TS_BUFF_SIZE];
 static unsigned char ts_outbuff[TS_BUFF_SIZE];
 static int ts_inhead, ts_intail, ts_inlen;
 static int ts_outhead, ts_outtail, ts_outlen;
-static int ts_delay;
 
 CycleCountT IP232RxTrigger=CycleCountTMax;
 
@@ -101,19 +102,17 @@ void TouchScreenOpen()
 {
 	ts_inhead = ts_intail = ts_inlen = 0;
 	ts_outhead = ts_outtail = ts_outlen = 0;
-	ts_delay = 0;
+	TouchScreenDelay = 0;
 }
 
 bool TouchScreenPoll()
 {
-	static int mode = 0;
-
-	if (ts_delay > 0)
+	if (TouchScreenDelay > 0)
 	{
-		ts_delay--;
+		TouchScreenDelay--;
 		return false;
 	}
-	
+
 	if (ts_outlen > 0)		// Process data waiting to be received by BeebEm straight away
 	{
 		return true;
@@ -127,49 +126,47 @@ bool TouchScreenPoll()
 
 		switch (data)
 		{
-			case 'M' :
-				mode = 0;
+			case 'M':
+				TouchScreenMode = 0;
 				break;
 
-			case '0' :
-			case '1' :
-			case '2' :
-			case '3' :
-			case '4' :
-			case '5' :
-			case '6' :
-			case '7' :
-			case '8' :
-			case '9' :
-				mode = mode * 10 + data - '0';
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				TouchScreenMode = TouchScreenMode * 10 + data - '0';
 				break;
 
-			case '.' :
-
-				/*
-				 * Mode 1 seems to be polled, sends a '?' and we reply with data
-				 * Mode 129 seems to be send current values all time
-				 */
-
-				DebugTrace("Setting touch screen mode to %d\n", mode);
+			case '.':
+				// Mode 1 seems to be polled, sends a '?' and we reply with data
+				// Mode 129 seems to be send current values all time
+				DebugTrace("Setting touch screen mode to %d\n", TouchScreenMode);
 				break;
 
-			case '?' :
-				if (mode == 1) // polled mode
+			case '?':
+				if (TouchScreenMode == 1)
 				{
+					// Polled mode
 					TouchScreenReadScreen(false);
 				}
 				break;
 		}
 	}
 
-	if (mode == 129) // real time mode
+	if (TouchScreenMode == 129)
 	{
+		// Real time mode
 		TouchScreenReadScreen(true);
 	}
-
-	if (mode == 130) // area mode - seems to be pressing with two fingers which we can't really do ??
+	else if (TouchScreenMode == 130)
 	{
+		// Area mode - seems to be pressing with two fingers which we can't really do ??
 		TouchScreenReadScreen(true);
 	}
 
@@ -185,7 +182,7 @@ void TouchScreenWrite(unsigned char data)
 		ts_inbuff[ts_intail] = data;
 		ts_intail = (ts_intail + 1) % TS_BUFF_SIZE;
 		ts_inlen++;
-		ts_delay = TS_DELAY;
+		TouchScreenDelay = TS_DELAY;
 	}
 	else
 	{
@@ -202,7 +199,7 @@ unsigned char TouchScreenRead()
 		data = ts_outbuff[ts_outhead];
 		ts_outhead = (ts_outhead + 1) % TS_BUFF_SIZE;
 		ts_outlen--;
-		ts_delay = TS_DELAY;
+		TouchScreenDelay = TS_DELAY;
 	}
 	else
 	{
@@ -245,17 +242,19 @@ void TouchScreenReadScreen(bool check)
 
 		if (AMXButtons & AMX_LEFT_BUTTON)
 		{
-			TouchScreenStore( 64 + ((x & 0xf0) >> 4) );
-			TouchScreenStore( 64 + (x & 0x0f) );
-			TouchScreenStore( 64 + ((y & 0xf0) >> 4) );
-			TouchScreenStore( 64 + (y & 0x0f) );
+			TouchScreenStore(64 + ((x & 0xf0) >> 4));
+			TouchScreenStore(64 + (x & 0x0f));
+			TouchScreenStore(64 + ((y & 0xf0) >> 4));
+			TouchScreenStore(64 + (y & 0x0f));
 			TouchScreenStore('.');
 			// DebugTrace("Sending X = %d, Y = %d\n", x, y);
-		} else {
-			TouchScreenStore( 64 + 0x0f);
-			TouchScreenStore( 64 + 0x0f);
-			TouchScreenStore( 64 + 0x0f);
-			TouchScreenStore( 64 + 0x0f);
+		}
+		else
+		{
+			TouchScreenStore(64 + 0x0f);
+			TouchScreenStore(64 + 0x0f);
+			TouchScreenStore(64 + 0x0f);
+			TouchScreenStore(64 + 0x0f);
 			TouchScreenStore('.');
 			// DebugTrace("Screen not touched\n");
 		}
