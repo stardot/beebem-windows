@@ -445,9 +445,8 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 	// Much taken from Mac version by Jon Welch
 	fd_set fds;
 	timeval tv;
-	int i, j;
-	unsigned char buff[256];
-	int bufflen;
+	unsigned char Buffer[256];
+	int BufferLength;
 
 	Sleep (3000);
 
@@ -463,25 +462,29 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 
 				FD_SET(mEthernetHandle, &fds);
 
-				i = select(32, &fds, NULL, NULL, &tv); // Read
-				if (i > 0)
+				int NumReady = select(32, &fds, NULL, NULL, &tv); // Read
+
+				if (NumReady > 0)
 				{
-					i = recv(mEthernetHandle, (char *) buff, 256, 0);
-					if (i > 0)
+					int BytesReceived = recv(mEthernetHandle, (char *)Buffer, 256, 0);
+
+					if (BytesReceived != SOCKET_ERROR)
 					{
-						// DebugTrace("Read %d bytes\n%s\n", i, buff);
+						// DebugTrace("Read %d bytes\n%s\n", BytesReceived, Buffer);
 
 						if (DebugEnabled)
 						{
-							DebugReceivedData(buff, i);
+							DebugReceivedData(Buffer, BytesReceived);
 						}
 
-						for (j = 0; j < i; j++)
+						for (int i = 0; i < BytesReceived; i++)
 						{
 							if (ip232_flag_received) 
 							{
 								ip232_flag_received = false;
-								if (buff[j] == 1) {
+
+								if (Buffer[i] == 1)
+								{
 									if (DebugEnabled)
 										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
 
@@ -489,7 +492,8 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 									ACIA_Status &= ~MC6850_STATUS_CTS; // CTS goes active low
 									ACIA_Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
 								}
-								else if (buff[j] == 0) {
+								else if (Buffer[i] == 0)
+								{
 									if (DebugEnabled)
 										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
 
@@ -497,7 +501,8 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 									ACIA_Status |= MC6850_STATUS_CTS; // CTS goes inactive high
 									ACIA_Status &= ~MC6850_STATUS_TDRE; // so TDRE goes low
 								}
-								else if (buff[j] == 255) {
+								else if (Buffer[i] == 255)
+								{
 									if (DebugEnabled)
 										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,Flag =255");
 
@@ -506,13 +511,13 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 							}
 							else
 							{
-								if (buff[j] == 255 && !IP232Raw)
+								if (Buffer[i] == 255 && !IP232Raw)
 								{
 									ip232_flag_received = true;
 								}
 								else
 								{
-									EthernetPortStore(buff[j]);
+									EthernetPortStore(Buffer[i]);
 								}
 							}
 						}
@@ -520,9 +525,9 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 					else
 					{
 						// Should really check what the error was ...
+						int Error = WSAGetLastError();
 
-						// DebugTrace("Read error %d\n", i);
-
+						DebugTrace("Read error %d\n", Error);
 						DebugTrace("Remote session disconnected\n");
 
 						if (DebugEnabled)
@@ -551,11 +556,11 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Sending to remote server");
 
-				bufflen=0;
+				BufferLength = 0;
 
 				while (OutputBuffer.HasData())
 				{
-					buff[bufflen++] = OutputBuffer.GetData();
+					Buffer[BufferLength++] = OutputBuffer.GetData();
 				}
 
 				FD_ZERO(&fds);
@@ -564,22 +569,23 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 
 				FD_SET(mEthernetHandle, &fds);
 
-				i = select(32, NULL, &fds, NULL, &tv);		// Write
-				if (i <= 0)
+				int NumReady = select(32, NULL, &fds, NULL, &tv); // Write
+
+				if (NumReady <= 0)
 				{
-					DebugTrace("Select Error %i\n", i);
+					DebugTrace("Select Error %i\n", NumReady);
 
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Select error on send");
 				}
 				else
 				{
-					i = send(mEthernetHandle, (char *) buff, bufflen, 0);
+					int BytesSent = send(mEthernetHandle, (char *)Buffer, BufferLength, 0);
 
-					if (i < bufflen)
+					if (BytesSent < BufferLength)
 					{
 						// Should really check what the error was ...
-						DebugTrace("Send Error %i\n", i);
+						DebugTrace("Send Error %i\n", BytesSent);
 
 						if (DebugEnabled)
 							DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Send Error");
