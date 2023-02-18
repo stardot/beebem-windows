@@ -74,8 +74,6 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
 
 // bool bEthernetSocketsCreated = false;
 
-static struct sockaddr_in ip232_serv_addr;
-
 // This bit is the Serial Port stuff
 SerialType SerialDestination;
 bool IP232Mode;
@@ -284,11 +282,12 @@ bool IP232Open()
 
 	IP232RxTrigger = TotalCycles + IP232_CXDELAY;
 
-	ip232_serv_addr.sin_family = AF_INET; // address family Internet
-	ip232_serv_addr.sin_port = htons(static_cast<u_short>(IP232Port)); // Port to connect on
-	ip232_serv_addr.sin_addr.s_addr = inet_addr(IP232Address); // Target IP
+	sockaddr_in Addr;
+	Addr.sin_family = AF_INET; // address family Internet
+	Addr.sin_port = htons(static_cast<u_short>(IP232Port)); // Port to connect on
+	Addr.sin_addr.s_addr = inet_addr(IP232Address); // Target IP
 
-	if (connect(mEthernetHandle, (SOCKADDR *)&ip232_serv_addr, sizeof(ip232_serv_addr)) == SOCKET_ERROR)
+	if (connect(mEthernetHandle, (SOCKADDR *)&Addr, sizeof(Addr)) == SOCKET_ERROR)
 	{
 		DebugTrace("Unable to connect to IP232 server %s port %d\n", IP232Address, IP232Port);
 
