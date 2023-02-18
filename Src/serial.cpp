@@ -914,6 +914,7 @@ static void InitSerialPort()
 			dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
 
 			bPortStat = GetCommState(hSerialPort, &dcbSerialPort);
+
 			dcbSerialPort.fBinary         = TRUE;
 			dcbSerialPort.BaudRate        = 9600;
 			dcbSerialPort.Parity          = NOPARITY;
@@ -959,8 +960,23 @@ void SerialInit()
 {
 	InitThreads();
 
-	hSerialThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, SerialThread, nullptr, 0, nullptr));
-	hStatThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, StatThread, nullptr, 0, nullptr));
+	hSerialThread = reinterpret_cast<HANDLE>(_beginthreadex(
+		nullptr,      // security
+		0,            // stack_size
+		SerialThread, // start_address
+		nullptr,      // arglist
+		0,            // initflag
+		nullptr       // thrdaddr
+	));
+
+	hStatThread = reinterpret_cast<HANDLE>(_beginthreadex(
+		nullptr,      // security
+		0,            // stack_size
+		StatThread,   // start_address
+		nullptr,      // arglist
+		0,            // initflag
+		nullptr       // thrdaddr
+	));
 }
 
 void SerialClose()
