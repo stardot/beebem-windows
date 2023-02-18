@@ -293,7 +293,6 @@ bool IP232Open()
 		}
 
 		IP232Close();
-		EthernetSocket = INVALID_SOCKET;
 
 		mainWin->Report(MessageType::Error, "Unable to connect to server %s port %d", IP232Address, IP232Port);
 
