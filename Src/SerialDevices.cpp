@@ -61,7 +61,6 @@ constexpr int TS_DELAY = 8192; // Cycles to wait for data to be TX'd or RX'd
 static int TouchScreenMode = 0;
 static int TouchScreenDelay;
 
-// constexpr int IP232_BUFF_SIZE = 128;
 constexpr int IP232_CXDELAY = 8192; // Cycles to wait after connection
 
 // IP232
@@ -72,8 +71,6 @@ static HANDLE hEthernetPortStatusThread = nullptr;
 static unsigned int __stdcall MyEthernetPortReadThread(void *parameter);
 static unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
 
-// bool bEthernetSocketsCreated = false;
-
 // This bit is the Serial Port stuff
 SerialType SerialDestination;
 bool IP232Mode;
@@ -82,7 +79,7 @@ char IP232Address[256];
 int IP232Port;
 
 static bool ip232_flag_received = false;
-static bool mStartAgain = false;
+// static bool mStartAgain = false;
 
 static RingBuffer InputBuffer;
 static RingBuffer OutputBuffer;
@@ -278,8 +275,6 @@ bool IP232Open()
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: socket created");
 
-	// bEthernetSocketsCreated = true;
-
 	IP232RxTrigger = TotalCycles + IP232_CXDELAY;
 
 	sockaddr_in Addr;
@@ -381,7 +376,6 @@ void IP232Close()
 
 		closesocket(mEthernetHandle);
 		mEthernetHandle = INVALID_SOCKET;
-		// bEthernetSocketsCreated = false;
 	}
 
 /*
@@ -448,7 +442,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 	unsigned char Buffer[256];
 	int BufferLength;
 
-	Sleep (3000);
+	Sleep(3000);
 
 	while (1)
 	{
@@ -552,8 +546,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 			}
 		}
 
-		// Sleep(1000 * 50); // sleep for 50 msec
-		Sleep (50); //+10*J); //100ms
+		Sleep(50); // Sleep for 50 msec
 	}
 
 	return 0;
@@ -635,7 +628,7 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 
 	// Put bits in here for DCD when got active IP connection
 
-	Sleep (2000);
+	Sleep(2000);
 
 	while (1)
 	{
