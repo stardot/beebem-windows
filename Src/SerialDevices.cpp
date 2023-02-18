@@ -93,6 +93,8 @@ static int ts_delay;
 
 CycleCountT IP232RxTrigger=CycleCountTMax;
 
+static void DebugReceivedData(unsigned char* pData, int Length);
+
 void TouchScreenOpen()
 {
 	ts_inhead = ts_intail = ts_inlen = 0;
@@ -455,6 +457,7 @@ unsigned char IP232Read()
 	else
 	{
 		WriteLog("IP23 receive buffer empty\n");
+
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: receive buffer empty");
 	}
@@ -497,18 +500,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 						// WriteLog("Read %d bytes\n%s\n", i, buff);
 						if (DebugEnabled)
 						{
-							char info[514];
-
-							DebugDisplayTraceF(DebugType::RemoteServer, true,
-							                   "IP232: Read %d bytes from server", i);
-
-							static const char hexval[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-							for(j = 0; j < i; j++){
-								info[j*2] = hexval[((buff[j] >> 4) & 0xF)];
-								info[(j*2) + 1] = hexval[(buff[j]) & 0x0F];
-							}
-							info[j*2] = 0;
-							DebugDisplayTrace(DebugType::RemoteServer, true, info);
+							DebugReceivedData(buff, i);
 						}
 
 						for (j = 0; j < i; j++)
@@ -744,4 +736,25 @@ static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
 	DebugTrace("Exited MySerialStatusThread\n");
 
 	return 0;
+}
+
+static void DebugReceivedData(unsigned char* pData, int Length)
+{
+	char info[514];
+	int i;
+
+	DebugDisplayTraceF(DebugType::RemoteServer, true,
+	                   "IP232: Read %d bytes from server", Length);
+
+	static const char HexDigit[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+	for (i = 0; i < Length; i++)
+	{
+		info[i * 2]       = HexDigit[(pData[i] >> 4) & 0xf];
+		info[(i * 2) + 1] = HexDigit[pData[i] & 0x0f];
+	}
+
+	info[i * 2] = 0;
+
+	DebugDisplayTrace(DebugType::RemoteServer, true, info);
 }
