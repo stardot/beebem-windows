@@ -427,7 +427,6 @@ static void HandleData(unsigned char Data)
 
 unsigned char SerialACIAReadRxData()
 {
-	unsigned char TData;
 //	if (!DCDI && DCD)
 //	{
 //		DCDClear++;
@@ -440,26 +439,40 @@ unsigned char SerialACIAReadRxData()
 	ACIA_Status &= ~MC6850_STATUS_IRQ;
 	intStatus &= ~(1 << serial);
 
-	TData=RDR; RDR=RDSR; RDSR=0;
-	if (RxD > 0) RxD--;
-	if (RxD == 0) ACIA_Status &= ~MC6850_STATUS_RDRF;
+	unsigned char Data = RDR;
+	RDR = RDSR;
+	RDSR = 0;
+
+	if (RxD > 0)
+	{
+		RxD--;
+	}
+
+	if (RxD == 0)
+	{
+		ACIA_Status &= ~MC6850_STATUS_RDRF;
+	}
+
 	if (RxD > 0 && RIE)
 	{
 		ACIA_Status |= MC6850_STATUS_IRQ;
 		intStatus |= 1 << serial;
 	}
 
-	if (DataBits == 7) TData &= 127;
+	if (DataBits == 7)
+	{
+		Data &= 127;
+	}
 
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Serial, true,
-		                   "Serial: Read ACIA Rx %02X", (int)TData);
+		                   "Serial: Read ACIA Rx %02X", (int)Data);
 	}
 
-//	WriteLog("Serial: Read ACIA Rx %02X, ACIA_Status = %02x\n", (int)TData, (int) ACIA_Status);
+	// WriteLog("Serial: Read ACIA Rx %02X, ACIA_Status = %02x\n", (int)Data, (int)ACIA_Status);
 
-	return TData;
+	return Data;
 }
 
 void SerialPoll()
