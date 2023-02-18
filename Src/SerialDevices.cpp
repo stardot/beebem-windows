@@ -89,8 +89,8 @@ static RingBuffer OutputBuffer;
 
 CycleCountT IP232RxTrigger=CycleCountTMax;
 
+static void EthernetReceivedData(unsigned char* pData, int Length);
 static void EthernetPortStore(unsigned char data);
-
 static void DebugReceivedData(unsigned char* pData, int Length);
 
 void TouchScreenOpen()
@@ -471,56 +471,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 					if (BytesReceived != SOCKET_ERROR)
 					{
 						// DebugTrace("Read %d bytes\n%s\n", BytesReceived, Buffer);
-
-						if (DebugEnabled)
-						{
-							DebugReceivedData(Buffer, BytesReceived);
-						}
-
-						for (int i = 0; i < BytesReceived; i++)
-						{
-							if (ip232_flag_received) 
-							{
-								ip232_flag_received = false;
-
-								if (Buffer[i] == 1)
-								{
-									if (DebugEnabled)
-										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
-
-									// dtr on modem high
-									ACIA_Status &= ~MC6850_STATUS_CTS; // CTS goes active low
-									ACIA_Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
-								}
-								else if (Buffer[i] == 0)
-								{
-									if (DebugEnabled)
-										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
-
-									// dtr on modem low
-									ACIA_Status |= MC6850_STATUS_CTS; // CTS goes inactive high
-									ACIA_Status &= ~MC6850_STATUS_TDRE; // so TDRE goes low
-								}
-								else if (Buffer[i] == 255)
-								{
-									if (DebugEnabled)
-										DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,Flag =255");
-
-									EthernetPortStore(255);
-								}
-							}
-							else
-							{
-								if (Buffer[i] == 255 && !IP232Raw)
-								{
-									ip232_flag_received = true;
-								}
-								else
-								{
-									EthernetPortStore(Buffer[i]);
-								}
-							}
-						}
+						EthernetReceivedData(Buffer, BytesReceived);
 					}
 					else
 					{
@@ -606,6 +557,59 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 	}
 
 	return 0;
+}
+
+static void EthernetReceivedData(unsigned char* pData, int Length)
+{
+	if (DebugEnabled)
+	{
+		DebugReceivedData(pData, Length);
+	}
+
+	for (int i = 0; i < Length; i++)
+	{
+		if (ip232_flag_received)
+		{
+			ip232_flag_received = false;
+
+			if (pData[i] == 1)
+			{
+				if (DebugEnabled)
+					DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
+
+				// dtr on modem high
+				ACIA_Status &= ~MC6850_STATUS_CTS; // CTS goes active low
+				ACIA_Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
+			}
+			else if (pData[i] == 0)
+			{
+				if (DebugEnabled)
+					DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
+
+				// dtr on modem low
+				ACIA_Status |= MC6850_STATUS_CTS; // CTS goes inactive high
+				ACIA_Status &= ~MC6850_STATUS_TDRE; // so TDRE goes low
+			}
+			else if (pData[i] == 255)
+			{
+				if (DebugEnabled)
+					DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,Flag =255");
+
+				EthernetPortStore(255);
+			}
+		}
+		else
+		{
+			if (pData[i] == 255 && !IP232Raw)
+			{
+				ip232_flag_received = true;
+			}
+			else
+			{
+				EthernetPortStore(pData[i]);
+			}
+		}
+	}
 }
 
 void EthernetPortStore(unsigned char data)
