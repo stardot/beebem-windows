@@ -56,7 +56,4 @@ void IP232Close();
 void IP232Write(unsigned char data);
 unsigned char IP232Read();
 
-unsigned char EthernetPortGet();
-void EthernetPortStore(unsigned char data);
-
 #endif

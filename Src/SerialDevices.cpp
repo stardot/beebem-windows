@@ -93,6 +93,9 @@ static int ts_delay;
 
 CycleCountT IP232RxTrigger=CycleCountTMax;
 
+static unsigned char EthernetPortGet();
+static void EthernetPortStore(unsigned char data);
+
 static void DebugReceivedData(unsigned char* pData, int Length);
 
 void TouchScreenOpen()
@@ -623,7 +626,7 @@ static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
 	return 0;
 }
 
-void EthernetPortStore(unsigned char data)
+static void EthernetPortStore(unsigned char data)
 { // much taken from Mac version by Jon Welch
 	if (ts_inlen != TS_BUFF_SIZE)
 	{
@@ -639,7 +642,7 @@ void EthernetPortStore(unsigned char data)
 	}
 }
 
-unsigned char EthernetPortGet()
+static unsigned char EthernetPortGet()
 {
 	// much taken from Mac version by Jon Welch
 	unsigned char data = 0;
