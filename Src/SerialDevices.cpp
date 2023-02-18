@@ -65,8 +65,8 @@ constexpr int IP232_CXDELAY = 8192; // Cycles to wait after connection
 
 // IP232
 static SOCKET mEthernetHandle = INVALID_SOCKET; // Listen socket
-static unsigned int mEthernetPortReadTaskID; // Thread ID
-static unsigned int mEthernetPortStatusTaskID; // Thread ID
+static HANDLE hEthernetPortReadThread = nullptr;
+static HANDLE hEthernetPortStatusThread = nullptr;
 
 static unsigned int __stdcall MyEthernetPortReadThread(void *parameter);
 static unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
@@ -332,10 +332,25 @@ bool IP232Open()
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Init, CTS low");
 
-	if (mEthernetPortReadTaskID == 0)
+	if (hEthernetPortReadThread == nullptr)
 	{
-		_beginthreadex(nullptr, 0, MyEthernetPortReadThread, nullptr, 0, &mEthernetPortReadTaskID);
-		_beginthreadex(nullptr, 0, MyEthernetPortStatusThread, nullptr, 0, &mEthernetPortStatusTaskID);
+		hEthernetPortReadThread = reinterpret_cast<HANDLE>(_beginthreadex(
+			nullptr,                  // security
+			0,                        // stack_size
+			MyEthernetPortReadThread, // start_address
+			nullptr,                  // arglist
+			0,                        // initflag
+			nullptr                   // thrdaddr
+		));
+
+		hEthernetPortStatusThread = reinterpret_cast<HANDLE>(_beginthreadex(
+			nullptr,                    // security
+			0,                          // stack_size
+			MyEthernetPortStatusThread, // start_address
+			nullptr,                    // arglist
+			0,                          // initflag
+			nullptr                     // thrdaddr
+		));
 	}
 
 	return true;
