@@ -134,8 +134,8 @@ CycleCountT TapeTrigger=CycleCountTMax;
 constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
 
 static int UEF_BUF=0,NEW_UEF_BUF=0;
-int TapeClock = 0;
-int OldClock = 0;
+static int TapeClock = 0;
+static int OldClock = 0;
 int TapeClockSpeed = 5600;
 bool UnlockTape = true;
 
@@ -380,6 +380,7 @@ unsigned char SerialACIAReadStatus()
 //			DCDClear = 0;
 //		}
 //	}
+
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Serial, true,
@@ -436,6 +437,7 @@ unsigned char SerialACIAReadRxData()
 //			DCDClear = 0;
 //		}
 //	}
+
 	ACIA_Status &= ~MC6850_STATUS_IRQ;
 	intStatus &= ~(1 << serial);
 
@@ -682,16 +684,20 @@ void SerialPoll()
 		{
 			if (TouchScreenPoll())
 			{
-				if (RxD<2)
+				if (RxD < 2)
+				{
 					HandleData(TouchScreenRead());
+				}
 			}
 		}
 		else if (SerialDestination == SerialType::IP232)
 		{
 			if (IP232Poll())
 			{
-				if (RxD<2)
+				if (RxD < 2)
+				{
 					HandleData(IP232Read());
+				}
 			}
 		}
 		else

@@ -73,7 +73,6 @@ extern volatile bool bSerialStateChanged;
 extern bool TapeControlEnabled;
 extern bool UnlockTape;
 extern unsigned char TxD,RxD;
-extern int TapeClock,OldClock;
 extern int TapeClockSpeed;
 
 void SetTapeSpeed(int speed);
