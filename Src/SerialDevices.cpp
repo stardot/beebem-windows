@@ -68,8 +68,8 @@ static SOCKET EthernetSocket = INVALID_SOCKET; // Listen socket
 static HANDLE hEthernetPortReadThread = nullptr;
 static HANDLE hEthernetPortStatusThread = nullptr;
 
-static unsigned int __stdcall MyEthernetPortReadThread(void *parameter);
-static unsigned int __stdcall MyEthernetPortStatusThread(void *parameter);
+static unsigned int __stdcall EthernetPortReadThread(void *parameter);
+static unsigned int __stdcall EthernetPortStatusThread(void *parameter);
 
 // This bit is the Serial Port stuff
 SerialType SerialDestination;
@@ -314,7 +314,7 @@ bool IP232Open()
 		hEthernetPortReadThread = reinterpret_cast<HANDLE>(_beginthreadex(
 			nullptr,                  // security
 			0,                        // stack_size
-			MyEthernetPortReadThread, // start_address
+			EthernetPortReadThread,   // start_address
 			nullptr,                  // arglist
 			0,                        // initflag
 			nullptr                   // thrdaddr
@@ -323,7 +323,7 @@ bool IP232Open()
 		hEthernetPortStatusThread = reinterpret_cast<HANDLE>(_beginthreadex(
 			nullptr,                    // security
 			0,                          // stack_size
-			MyEthernetPortStatusThread, // start_address
+			EthernetPortStatusThread,   // start_address
 			nullptr,                    // arglist
 			0,                          // initflag
 			nullptr                     // thrdaddr
@@ -433,7 +433,7 @@ unsigned char IP232Read()
 	return data;
 }
 
-static unsigned int __stdcall MyEthernetPortReadThread(void * /* parameter */)
+static unsigned int __stdcall EthernetPortReadThread(void * /* parameter */)
 {
 	// Much taken from Mac version by Jon Welch
 	fd_set fds;
@@ -617,7 +617,7 @@ void EthernetPortStore(unsigned char data)
 	}
 }
 
-static unsigned int __stdcall MyEthernetPortStatusThread(void * /* parameter */)
+static unsigned int __stdcall EthernetPortStatusThread(void * /* parameter */)
 {
 	// much taken from Mac version by Jon Welch
 	int dcd = 0;
