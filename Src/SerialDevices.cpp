@@ -275,7 +275,7 @@ bool IP232Open()
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: socket created");
 
-	IP232RxTrigger = TotalCycles + IP232_CXDELAY;
+	SetTrigger(IP232_CXDELAY, IP232RxTrigger);
 
 	sockaddr_in Addr;
 	Addr.sin_family = AF_INET; // address family Internet
@@ -420,7 +420,7 @@ unsigned char IP232Read()
 		data = InputBuffer.GetData();
 
 		// Simulated baud rate delay between bytes..
-		IP232RxTrigger = TotalCycles + 2000000 / (Rx_Rate / 9);
+		SetTrigger(2000000 / (Rx_Rate / 9), IP232RxTrigger);
 	}
 	else
 	{
