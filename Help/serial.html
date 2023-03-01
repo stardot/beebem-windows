@@ -65,10 +65,11 @@ serial port emulation in BeebEm has options to connect via TCP/IP to a local
 or remote IP address.  You can use ROMs such as CommSoft or CommStar to
 connect to a Viewdata BBS, MUD server or any other type of server.</p>
 
-<p>The serial IP features are selected via the IP destinations on the RS423
-Comms menu.  The "IP: localhost:25232" option is designed for use with the
-"tcpser" package, which emulates a modem.  Download a prebuilt Windows
-binary of
+<p>The serial IP features are selected via the RS423 dialog box, accessed
+from the Select RS423 Destination menu option.
+
+You can use the "tcpser" package, which emulates a modem. Select 127.0.0.1
+and 25232 as the IP Address and Port. Download a prebuilt Windows binary of
 <a href="https://csdb.dk/release/?id=171299">tcpser.zip</a>.  The tcpser
 source code is available
 <a href="https://github.com/FozzTexx/tcpser">here</a>.</p>
@@ -86,7 +87,8 @@ going up will be passed through to CTS.</p>
 
 <p>Add the Commstar.rom to your ROM configuration (see
 <a href="roms.html">ROM Software</a>) and start up BeebEm.
-On the Comms menu select "IP: localhost:25232" and "RS432 On/Off".
+In the RS423 dialog box, select "IP", IP Address "127.0.0.1", and Port "25232".
+Click OK to close the dialog box then select "RS432 On/Off" from the Comms menu.
 Type *COMMSTAR to start CommStar.  In Commstar:</p>
 
 <ul>
@@ -101,18 +103,15 @@ Type *COMMSTAR to start CommStar.  In Commstar:</p>
 "ATD" command.  Try connecting to the Ishar MUD server using
 "ATDishar.com:9999".</p>
 
-<p>To make a direct connection to a server select the "IP: Custom
-destination" option.  This requires you to manually edit the "IP232customip"
-and "IP232customport" parameters in the Preferences.cfg file and reload.
-Note that the "IP232customport" value must be set in hexadecimal, so
-port 25232 would be expressed as "IP232customport=6290".</p>
+<p>To make a direct connection to a server, put the server's IP address
+and port into the RS423 dialog box.</p>
 
-<p>An additional option, "IP: IP232 mode", determines if the handshake lines
+<p>An additional option, "IP232 Mode", determines if the handshake lines
 are sent down the TCP/IP link or just generated locally from the presence of
 a valid connection.</p>
 
-<p>A second additional option, "IP: RAW comms", disables special processing
-of charater 255 (used with tcpser, so leave RAW mode off when using
+<p>A second additional option, "IP232 Raw comms", disables special processing
+of charater 255 (used with tcpser, so leave Raw mode off when using
 tcpser).</p>
 
 <p>If on startup, or when ticking the "RS423 On/Off" menu option, BeebEm
