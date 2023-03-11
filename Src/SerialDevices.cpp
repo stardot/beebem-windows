@@ -29,12 +29,9 @@ Boston, MA  02110-1301, USA.
  Remote serial port & IP232 support by Rob O'Donnell Mar 2009.
  . Raw mode connects and disconnects on RTS going up and down.
  . CTS reflects connection status.
- . IP232 mode maintains contstant connection. CTS reflects DTR
+ . IP232 mode maintains constant connection. CTS reflects DTR
  . on the modem; you would normally tie this to DCD depending
  . on your application.
- . Currently "custom destination" must be specified by editing
- . Preferences.cfg after saving settings once.
-
  */
 
 #include <process.h>
@@ -61,7 +58,7 @@ constexpr int TS_DELAY = 8192; // Cycles to wait for data to be TX'd or RX'd
 static int TouchScreenMode = 0;
 static int TouchScreenDelay;
 
-constexpr int IP232_CXDELAY = 8192; // Cycles to wait after connection
+constexpr int IP232_CONNECTION_DELAY = 8192; // Cycles to wait after connection
 
 // IP232
 static SOCKET EthernetSocket = INVALID_SOCKET; // Listen socket
@@ -275,7 +272,7 @@ bool IP232Open()
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: socket created");
 
-	SetTrigger(IP232_CXDELAY, IP232RxTrigger);
+	SetTrigger(IP232_CONNECTION_DELAY, IP232RxTrigger);
 
 	sockaddr_in Addr;
 	Addr.sin_family = AF_INET; // address family Internet
