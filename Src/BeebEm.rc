@@ -783,7 +783,7 @@ BEGIN
         POPUP "Preference Options"
         BEGIN
             MENUITEM "Autosave CMOS RAM",           IDM_AUTOSAVE_PREFS_CMOS
-            MENUITEM "Autosave All Prefs",          IDM_AUTOSAVE_PREFS_ALL
+            MENUITEM "Autosave All Preferences",    IDM_AUTOSAVE_PREFS_ALL
             MENUITEM "Save Disc/Tape/State Folders", IDM_AUTOSAVE_PREFS_FOLDERS
             MENUITEM "Select User Data Folder...",  IDM_SELECT_USER_DATA_FOLDER
         END
