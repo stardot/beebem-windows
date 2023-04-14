@@ -1102,12 +1102,9 @@ char *ReadRomTitle( int bank, char *Title, int BufSize )
 bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
 {
 	bool success = true;
-	FILE *fd;
-	int model;
-	int bank;
 	char line[MAX_PATH];
 
-	fd = fopen(filename, "r");
+	FILE *fd = fopen(filename, "r");
 	if (!fd)
 	{
 		mainWin->Report(MessageType::Error,
@@ -1116,9 +1113,9 @@ bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
 		return false;
 	}
 
-	for (model = 0; model < 4 && success; ++model)
+	for (int model = 0; model < 4 && success; ++model)
 	{
-		for (bank = 0; bank < 17 && success; ++bank)
+		for (int bank = 0; bank < 17 && success; ++bank)
 		{
 			if (fgets(line, MAX_PATH, fd) == NULL)
 			{
