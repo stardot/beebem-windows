@@ -55,7 +55,6 @@ void SoundReset();
 
 // Called in sysvia.cpp when a write to one of the 76489's registers occurs
 void Sound_RegWrite(int Value);
-void DumpSound();
 void ClickRelay(bool RelayState);
 
 #define SAMPLE_RELAY_ON         0
@@ -66,9 +65,9 @@ void ClickRelay(bool RelayState);
 #define SAMPLE_HEAD_SEEK        5
 #define SAMPLE_HEAD_STEP        6
 
-#define SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK  48333  // 0.02415s per track in the sound file
-#define SAMPLE_HEAD_STEP_CYCLES           100000  // 0.05s sound file
-#define SAMPLE_HEAD_LOAD_CYCLES           400000  // 0.2s sound file
+constexpr int SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK = 48333; // 0.02415s per track in the sound file
+constexpr int SAMPLE_HEAD_STEP_CYCLES = 100000; // 0.05s sound file
+constexpr int SAMPLE_HEAD_LOAD_CYCLES = 400000; // 0.2s sound file
 
 void PlaySoundSample(int sample, bool repeat);
 void StopSoundSample(int sample);

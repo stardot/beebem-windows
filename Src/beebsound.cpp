@@ -638,9 +638,6 @@ void Sound_RegWrite(int value)
 	UpdateSound();
 }
 
-void DumpSound() {
-}
-
 void ClickRelay(bool RelayState) {
 	if (RelaySoundEnabled) {
 		if (RelayState) {
