@@ -28,7 +28,7 @@ Boston, MA  02110-1301, USA.
 #include "csw.h"
 #include "6502core.h"
 #include "uef.h"
-#include "serial.h"
+#include "Serial.h"
 #include "beebsound.h"
 #include "beebwin.h"
 #include "debug.h"

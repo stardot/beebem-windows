@@ -70,16 +70,22 @@ void CloseTape();
 void RewindTape();
 
 extern volatile bool bSerialStateChanged;
-extern bool TapeControlEnabled;
 extern bool UnlockTape;
 extern unsigned char TxD,RxD;
 extern int TapeClockSpeed;
 
-void SetTapeSpeed(int speed);
-void SetUnlockTape(bool unlock);
-void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain);
-void TapeControlAddMapLines();
-void TapeControlCloseDialog();
+extern bool TapeRecording;
+
+void SetTapeSpeed(int Speed);
+void SetUnlockTape(bool Unlock);
+void SetTapePosition(int Time);
+
+void SerialPlayTape();
+bool SerialRecordTape(const char* FileName);
+void SerialStopTape();
+void SerialStopTapeRecording(bool ReloadTape);
+void SerialEjectTape();
+int SerialGetTapeClock();
 
 void SaveSerialUEF(FILE *SUEF);
 void LoadSerialUEF(FILE *SUEF);

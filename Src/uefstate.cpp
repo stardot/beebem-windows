@@ -34,7 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "disc8271.h"
 #include "disc1770.h"
 #include "tube.h"
-#include "serial.h"
+#include "Serial.h"
 #include "atodconv.h"
 
 void fput32(unsigned int word32,FILE *fileptr) {

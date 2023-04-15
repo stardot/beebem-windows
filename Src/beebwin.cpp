@@ -65,7 +65,7 @@ using std::max;
 #include "beebemrc.h"
 #include "atodconv.h"
 #include "userkybd.h"
-#include "serial.h"
+#include "Serial.h"
 #include "econet.h"	 // Rob O'Donnell Christmas 2004.
 #include "tube.h"
 #include "ext1770.h"
@@ -93,6 +93,7 @@ using std::max;
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
 #include "DebugTrace.h"
+#include "TapeControlDialog.h"
 
 using namespace Gdiplus;
 

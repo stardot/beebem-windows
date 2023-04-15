@@ -44,7 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "log.h"
 #include "main.h"
 #include "disc1770.h"
-#include "serial.h"
+#include "Serial.h"
 #include "tube.h"
 #include "debug.h"
 #include "uefstate.h"

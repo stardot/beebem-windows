@@ -48,7 +48,7 @@ using std::max;
 #include "disc1770.h"
 #include "disctype.h"
 #include "uefstate.h"
-#include "serial.h"
+#include "Serial.h"
 #include "avi.h"
 #include "ext1770.h"
 #include "tube.h"

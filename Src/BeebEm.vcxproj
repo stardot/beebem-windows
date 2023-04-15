@@ -211,7 +211,7 @@
     <ClCompile Include="sasi.cpp" />
     <ClCompile Include="scsi.cpp" />
     <ClCompile Include="SelectKeyDialog.cpp" />
-    <ClCompile Include="serial.cpp" />
+    <ClCompile Include="Serial.cpp" />
     <ClCompile Include="SerialDevices.cpp" />
     <ClCompile Include="SerialPortDialog.cpp" />
     <ClCompile Include="SoundStreamer.cpp" />
@@ -219,6 +219,7 @@
     <ClCompile Include="StringUtils.cpp" />
     <ClCompile Include="sysvia.cpp" />
     <ClCompile Include="TapeMap.cpp" />
+    <ClCompile Include="TapeControlDialog.cpp" />
     <ClCompile Include="Teletext.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="tube.cpp" />
@@ -370,13 +371,14 @@
     <ClInclude Include="sasi.h" />
     <ClInclude Include="scsi.h" />
     <ClInclude Include="SelectKeyDialog.h" />
-    <ClInclude Include="serial.h" />
+    <ClInclude Include="Serial.h" />
     <ClInclude Include="SerialDevices.h" />
     <ClInclude Include="SerialPortDialog.h" />
     <ClInclude Include="SoundStreamer.h" />
     <ClInclude Include="SprowCoPro.h" />
     <ClInclude Include="StringUtils.h" />
     <ClInclude Include="sysvia.h" />
+    <ClInclude Include="TapeControlDialog.h" />
     <ClInclude Include="TapeMap.h" />
     <ClInclude Include="TarmacGlobals.h" />
     <ClInclude Include="Teletext.h" />

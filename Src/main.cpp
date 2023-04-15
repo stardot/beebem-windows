@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "beebwin.h"
 #include "log.h"
-#include "serial.h"
+#include "Serial.h"
 #include "SelectKeyDialog.h"
 
 Model MachineType;

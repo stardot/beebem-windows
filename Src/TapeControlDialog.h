@@ -18,20 +18,22 @@ License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
-// Serial/Cassette Support for BeebEm
-// Written by Richard Gellman
 
-#ifndef TAPE_MAP_HEADER
-#define TAPE_MAP_HEADER
+#ifndef TAPE_CONTROL_DIALOG_HEADER
+#define TAPE_CONTROL_DIALOG_HEADER
 
-#include <string>
+#include <vector>
 
-struct TapeMapEntry
-{
-	std::string desc;
-	int time;
+#include "TapeMap.h"
 
-	TapeMapEntry(const std::string& d, int t);
-};
+void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain);
+void TapeControlAddMapLines(int Time);
+void TapeControlUpdateCounter(int tape_time);
+void TapeControlStopRecording(bool RefreshControl);
+void TapeControlCloseTape();
+void TapeControlCloseDialog();
+
+extern bool TapeControlEnabled;
+extern std::vector<TapeMapEntry> TapeMap;
 
 #endif

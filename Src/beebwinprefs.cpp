@@ -35,7 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "SoundStreamer.h"
 #include "music5000.h"
 #include "beebmem.h"
-#include "serial.h"
+#include "Serial.h"
 #include "econet.h"
 #include "tube.h"
 #include "scsi.h"

@@ -47,7 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "atodconv.h"
 #include "beebmem.h"
 #include "disc1770.h"
-#include "serial.h"
+#include "Serial.h"
 #include "tube.h"
 #include "scsi.h"
 #include "sasi.h"
