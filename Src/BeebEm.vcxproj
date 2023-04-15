@@ -220,6 +220,7 @@
     <ClCompile Include="sysvia.cpp" />
     <ClCompile Include="TapeMap.cpp" />
     <ClCompile Include="Teletext.cpp" />
+    <ClCompile Include="Thread.cpp" />
     <ClCompile Include="tube.cpp" />
     <ClCompile Include="uef.cpp" />
     <ClCompile Include="uefstate.cpp" />
@@ -379,6 +380,7 @@
     <ClInclude Include="TapeMap.h" />
     <ClInclude Include="TarmacGlobals.h" />
     <ClInclude Include="Teletext.h" />
+    <ClInclude Include="Thread.h" />
     <ClInclude Include="tube.h" />
     <ClInclude Include="uef.h" />
     <ClInclude Include="uefstate.h" />

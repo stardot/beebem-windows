@@ -34,7 +34,6 @@ Boston, MA  02110-1301, USA.
  . on your application.
  */
 
-#include <process.h>
 #include <stdio.h>
 
 #include <windows.h>
@@ -53,6 +52,7 @@ Boston, MA  02110-1301, USA.
 #include "uservia.h"
 #include "atodconv.h"
 #include "RingBuffer.h"
+#include "Thread.h"
 
 constexpr int TS_DELAY = 8192; // Cycles to wait for data to be TX'd or RX'd
 static int TouchScreenMode = 0;
@@ -60,13 +60,23 @@ static int TouchScreenDelay;
 
 constexpr int IP232_CONNECTION_DELAY = 8192; // Cycles to wait after connection
 
+class EthernetPortReadThread : public Thread
+{
+	public:
+		virtual unsigned int ThreadFunc();
+};
+
+class EthernetPortStatusThread : public Thread
+{
+	public:
+		virtual unsigned int ThreadFunc();
+};
+
 // IP232
 static SOCKET EthernetSocket = INVALID_SOCKET; // Listen socket
-static HANDLE hEthernetPortReadThread = nullptr;
-static HANDLE hEthernetPortStatusThread = nullptr;
 
-static unsigned int __stdcall EthernetPortReadThread(void *parameter);
-static unsigned int __stdcall EthernetPortStatusThread(void *parameter);
+static EthernetPortReadThread EthernetReadThread;
+static EthernetPortStatusThread EthernetStatusThread;
 
 // This bit is the Serial Port stuff
 SerialType SerialDestination;
@@ -306,25 +316,10 @@ bool IP232Open()
 	if (DebugEnabled)
 		DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Init, CTS low");
 
-	if (hEthernetPortReadThread == nullptr)
+	if (!EthernetReadThread.IsStarted())
 	{
-		hEthernetPortReadThread = reinterpret_cast<HANDLE>(_beginthreadex(
-			nullptr,                  // security
-			0,                        // stack_size
-			EthernetPortReadThread,   // start_address
-			nullptr,                  // arglist
-			0,                        // initflag
-			nullptr                   // thrdaddr
-		));
-
-		hEthernetPortStatusThread = reinterpret_cast<HANDLE>(_beginthreadex(
-			nullptr,                    // security
-			0,                          // stack_size
-			EthernetPortStatusThread,   // start_address
-			nullptr,                    // arglist
-			0,                          // initflag
-			nullptr                     // thrdaddr
-		));
+		EthernetReadThread.Start();
+		EthernetStatusThread.Start();
 	}
 
 	return true;
@@ -430,15 +425,13 @@ unsigned char IP232Read()
 	return data;
 }
 
-static unsigned int __stdcall EthernetPortReadThread(void * /* parameter */)
+unsigned int EthernetPortReadThread::ThreadFunc()
 {
 	// Much taken from Mac version by Jon Welch
 	fd_set fds;
 	timeval tv;
 	unsigned char Buffer[256];
 	int BufferLength;
-
-	Sleep(3000);
 
 	while (1)
 	{
@@ -614,7 +607,7 @@ void EthernetPortStore(unsigned char data)
 	}
 }
 
-static unsigned int __stdcall EthernetPortStatusThread(void * /* parameter */)
+unsigned int EthernetPortStatusThread::ThreadFunc()
 {
 	// much taken from Mac version by Jon Welch
 	int dcd = 0;
@@ -623,8 +616,6 @@ static unsigned int __stdcall EthernetPortStatusThread(void * /* parameter */)
 	int orts = 0;
 
 	// Put bits in here for DCD when got active IP connection
-
-	Sleep(2000);
 
 	while (1)
 	{

@@ -177,6 +177,9 @@
     <ClCompile Include="Teletext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="tube.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -423,6 +426,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Teletext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tube.h">

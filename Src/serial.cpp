@@ -48,6 +48,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "log.h"
 #include "TapeMap.h"
+#include "Thread.h"
 
 // MC6850 control register bits
 constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
@@ -154,8 +155,21 @@ static void TapeControlStopRecording(bool RefreshControl);
 bool SerialPortEnabled;
 char SerialPortName[_MAX_PATH];
 
-static HANDLE hSerialThread = nullptr;
-static HANDLE hStatThread = nullptr;
+class SerialPortReadThread : public Thread
+{
+	public:
+		virtual unsigned int ThreadFunc();
+};
+
+class SerialPortStatusThread : public Thread
+{
+	public:
+		virtual unsigned int ThreadFunc();
+};
+
+SerialPortReadThread SerialReadThread;
+SerialPortStatusThread SerialStatusThread;
+
 static HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
 static unsigned int SerialBuffer=0,SerialWriteBuffer=0;
 static DWORD BytesIn,BytesOut;
@@ -784,7 +798,7 @@ static void InitThreads()
 	bSerialStateChanged = false;
 }
 
-static unsigned int __stdcall StatThread(void * /* lpParam */)
+unsigned int SerialPortStatusThread::ThreadFunc()
 {
 	DWORD dwOvRes = 0;
 
@@ -842,7 +856,7 @@ static unsigned int __stdcall StatThread(void * /* lpParam */)
 	return 0;
 }
 
-static unsigned int __stdcall SerialThread(void * /* lpParam */)
+unsigned int SerialPortReadThread::ThreadFunc()
 {
 	// New Serial port thread - 7:35pm 16/10/2001 GMT
 	// This sorta runs as a seperate process in effect, checking
@@ -966,23 +980,8 @@ void SerialInit()
 {
 	InitThreads();
 
-	hSerialThread = reinterpret_cast<HANDLE>(_beginthreadex(
-		nullptr,      // security
-		0,            // stack_size
-		SerialThread, // start_address
-		nullptr,      // arglist
-		0,            // initflag
-		nullptr       // thrdaddr
-	));
-
-	hStatThread = reinterpret_cast<HANDLE>(_beginthreadex(
-		nullptr,      // security
-		0,            // stack_size
-		StatThread,   // start_address
-		nullptr,      // arglist
-		0,            // initflag
-		nullptr       // thrdaddr
-	));
+	SerialReadThread.Start();
+	SerialStatusThread.Start();
 }
 
 void SerialClose()
