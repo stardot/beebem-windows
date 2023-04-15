@@ -50,6 +50,7 @@ Boston, MA  02110-1301, USA.
 #include "TapeControlDialog.h"
 #include "TapeMap.h"
 #include "Thread.h"
+#include "DebugTrace.h"
 
 // MC6850 control register bits
 constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
@@ -738,6 +739,8 @@ void SerialPoll()
 							DebugSerial((unsigned char)SerialBuffer);
 						}
 
+						DebugTrace("Serial read %02X\n", SerialBuffer);
+
 						HandleData((unsigned char)SerialBuffer);
 					}
 					else
@@ -775,7 +778,13 @@ static void InitThreads()
 			olSerialPort.hEvent = nullptr;
 		}
 
-		olSerialPort.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Create the serial port event signal
+		// Create the serial port event signal
+		olSerialPort.hEvent = CreateEvent(
+			nullptr, // lpEventAttributes
+			TRUE,    // bManualReset
+			FALSE,   // bInitialState
+			nullptr  // lpName
+		);
 
 		if (olSerialWrite.hEvent)
 		{
@@ -783,7 +792,13 @@ static void InitThreads()
 			olSerialWrite.hEvent = nullptr;
 		}
 
-		olSerialWrite.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Write event, not actually used.
+		// Write event, not actually used.
+		olSerialWrite.hEvent = CreateEvent(
+			nullptr, // lpEventAttributes
+			TRUE,    // bManualReset
+			FALSE,   // bInitialState
+			nullptr  // lpName
+		);
 
 		if (olStatus.hEvent)
 		{
@@ -791,7 +806,13 @@ static void InitThreads()
 			olStatus.hEvent = nullptr;
 		}
 
-		olStatus.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Status event, for WaitCommEvent
+		// Status event, for WaitCommEvent
+		olStatus.hEvent = CreateEvent(
+			nullptr, // lpEventAttributes
+			TRUE,    // bManualReset
+			FALSE,   // bInitialState
+			nullptr  // lpName
+		);
 	}
 
 	bSerialStateChanged = false;
@@ -878,6 +899,8 @@ unsigned int SerialPortReadThread::ThreadFunc()
 						{
 							DebugSerial((unsigned char)SerialBuffer);
 						}
+
+						DebugTrace("Serial read %02X\n", SerialBuffer);
 
 						HandleData((unsigned char)SerialBuffer);
 					}
