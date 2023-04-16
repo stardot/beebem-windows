@@ -92,6 +92,7 @@ static char TapeFileName[256]; // Filename of current tape file
 
 static UEFFileReader UEFReader;
 static bool UEFFileOpen = false;
+static bool CSWFileOpen = false;
 
 static bool TapePlaying = true;
 bool TapeRecording = false;
@@ -957,16 +958,23 @@ static void InitSerialPort()
 	}
 }
 
-void CloseUEF()
+static void CloseUEFFile()
 {
 	if (UEFFileOpen)
 	{
 		SerialStopTapeRecording(false);
 		UEFReader.Close();
 		UEFFileOpen = false;
-		TxD = 0;
-		RxD = 0;
-  }
+	}
+}
+
+static void CloseCSWFile()
+{
+	if (CSWFileOpen)
+	{
+		CSWClose();
+		CSWFileOpen = false;
+	}
 }
 
 void SerialInit()
@@ -1061,8 +1069,11 @@ UEFResult LoadUEFTape(const char *FileName)
 
 void CloseTape()
 {
-	CloseUEF();
-	CSWClose();
+	CloseUEFFile();
+	CloseCSWFile();
+
+	TxD = 0;
+	RxD = 0;
 
 	TapeFileName[0] = '\0';
 

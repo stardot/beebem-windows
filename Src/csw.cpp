@@ -58,7 +58,6 @@ static unsigned long csw_bufflen;
 static int csw_byte;
 int csw_pulsecount;
 static int bit_count;
-bool CSWFileOpen = false;
 int CSWPollCycles;
 
 CSWResult CSWOpen(const char *FileName)
@@ -148,13 +147,10 @@ CSWResult CSWOpen(const char *FileName)
 
 void CSWClose()
 {
-	if (CSWFileOpen)
+	if (csw_buff != nullptr)
 	{
 		free(csw_buff);
 		csw_buff = nullptr;
-		CSWFileOpen = false;
-		TxD = 0;
-		RxD = 0;
 	}
 }
 
