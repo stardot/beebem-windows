@@ -1180,7 +1180,7 @@ void BeebWin::UpdateTubeMenu()
 
 /****************************************************************************/
 
-void BeebWin::SetRomMenu(void)
+void BeebWin::SetRomMenu()
 {
 	// Set the ROM Titles in the ROM/RAM menu.
 
@@ -1189,28 +1189,31 @@ void BeebWin::SetRomMenu(void)
 		CHAR Title[19];
 
 		Title[0] = '&';
-		_itoa( i, &Title[1], 16 );
+		_itoa(i, &Title[1], 16);
 		Title[2] = ' ';
 
 		// Get the Rom Title.
-		ReadRomTitle( i, &Title[3], sizeof( Title )-4);
+		ReadRomTitle(i, &Title[3], sizeof(Title) - 4);
 
-		if ( Title[3]== '\0' )
+		if (Title[3] == '\0')
 		{
 			if (RomBankType[i] == BankType::Ram)
-				strcpy( &Title[3], "RAM" );
+			{
+				strcpy(&Title[3], "RAM");
+			}
 			else
-				strcpy( &Title[3], "Empty" );
+			{
+				strcpy(&Title[3], "Empty");
+			}
 		}
 
-		ModifyMenu(m_hMenu, // handle of menu
-		           IDM_ALLOWWRITES_ROM0 + i,
-		           MF_BYCOMMAND, // menu item to modify
-		           // MF_STRING, // menu item flags
+		ModifyMenu(m_hMenu,                  // handle of menu
+		           IDM_ALLOWWRITES_ROM0 + i, // menu item to modify
+		           MF_BYCOMMAND,
 		           IDM_ALLOWWRITES_ROM0 + i, // menu item identifier or pop-up menu handle
-		           Title); // menu item content
+		           Title);                   // menu item content
 
-		/* Disable ROM and uncheck the Rom/RAM which are NOT writable */
+		// Disable ROM and uncheck the ROM/RAM which are NOT writable
 		EnableMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankType::Ram);
 		CheckMenuItem(IDM_ALLOWWRITES_ROM0 + i, RomBankType[i] == BankType::Ram && RomWritable[i]);
 	}

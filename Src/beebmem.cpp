@@ -573,26 +573,29 @@ void DebugMemoryState()
 {
 	char sram[60];
 	char* psram = sram;
-	int i = 0;
 	int m = 0;
 	sram[0] = 0;
+
 	DebugDisplayInfo("Memory state:");
-	for(i = 0; i < 16; i++)
+
+	for (int i = 0; i < 16; i++)
 	{
-		if(RomWritable[i])
+		if (RomWritable[i])
 		{
 			psram += sprintf(psram,"%d, ",i);
 			m += 16;
 		}
 	}
-	if(strlen(sram) > 0)
+
+	if (strlen(sram) > 0)
 	{
-		sram[strlen(sram)-2] = '\0';
-		DebugDisplayInfoF("%dK sideways RAM using bank %s",m,sram);
+		sram[strlen(sram) - 2] = '\0';
+		DebugDisplayInfoF("%dK sideways RAM using bank %s", m, sram);
 	}
 
 	DebugDisplayInfoF("ROMSEL: %d", ROMSEL);
-	switch(MachineType)
+
+	switch (MachineType)
 	{
 		case Model::B:
 			break;
@@ -677,9 +680,8 @@ static void RomWriteThrough(int Address, unsigned char Value) {
 }
 
 /*----------------------------------------------------------------------------*/
-void BeebWriteMem(int Address, unsigned char Value) {
-/*  fprintf(stderr,"Write %x to 0x%x\n",Value,Address); */
-
+void BeebWriteMem(int Address, unsigned char Value)
+{
 	if (MachineType == Model::B) {
 		if (Address < 0x8000) {
 			WholeRam[Address] = Value;
@@ -786,7 +788,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			return;
 		}
 
-		 if (Address>=0xfe30 && Address<0xfe34) {
+		if (Address >= 0xfe30 && Address < 0xfe34) {
 			DoRomChange(Value);
 			MemSel = (Value & 0x80) != 0;
 			return;
@@ -845,7 +847,6 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			return;
 		}
 	}
-// Master 128 End
 
 	/* IO space */
 
@@ -883,12 +884,14 @@ void BeebWriteMem(int Address, unsigned char Value) {
 		SerialACIAWriteControl(Value);
 		return;
 	}
+
 	if (Address==0xfe09) {
 		SyncIO();
 		AdjustForIOWrite();
 		SerialACIAWriteTxData(Value);
 		return;
 	}
+
 	if (Address==0xfe10) {
 		SyncIO();
 		AdjustForIOWrite();
@@ -1084,13 +1087,16 @@ bool ReadRomInfo(int bank, RomInfo* info)
 /*----------------------------------------------------------------------------*/
 // ReadRom was replaced with BeebReadRoms.
 /*----------------------------------------------------------------------------*/
-char *ReadRomTitle( int bank, char *Title, int BufSize )
+
+char *ReadRomTitle(int bank, char *Title, int BufSize)
 {
 	int i;
 
 	// Copy the ROM Title to the Buffer
-	for( i=0; (( i<(BufSize-1)) && ( Roms[bank][i+9]>30)); i++ )
-		Title[i] = Roms[bank][i+9];
+	for (i = 0; i < (BufSize - 1) && Roms[bank][i + 9] > 30; i++)
+	{
+		Title[i] = Roms[bank][i + 9];
+	}
 
 	// Add terminating NULL.
 	Title[i] = '\0';

@@ -160,7 +160,7 @@ public:
 	void SetImageName(const char *DiscName, int Drive, DiscType DscType);
 	void SetTapeSpeedMenu(void);
 	void SetDiscWriteProtects(void);
-	void SetRomMenu(void);				// LRW  Added for individual ROM/Ram
+	void SetRomMenu(); // LRW  Added for individual ROM/RAM
 	void UpdateTubeMenu();
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
