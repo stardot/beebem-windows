@@ -17,10 +17,12 @@ Unreleased changes (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
   - Fixed serial transmit state: Writing a master reset to the ACIA control
     register should stop transmitting data. This was causing extra bytes to
     be written to UEF files when saving to tape.
-  - The Tape control dialog Record button now always prompts the user to
+  - The Tape Control dialog Record button now always prompts the user to
     create a new UEF file, rather than appending to the currently open UEF
     file. This change also fixes a bug where the button would do nothing if
     a CSW file was loaded.
+  - Opening the Tape Control dialog no longer causes Block? or Data? errors
+    during loading.
   - The BeebEm version number is now stored in UEF tape files.
 * Fixed Master real time clock year handling. The year is stored as the last
   two digits. Removed the "Master 128 RTC Y2K Adjust" option. Note that the
