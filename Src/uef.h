@@ -29,14 +29,14 @@ Boston, MA  02110-1301, USA.
 #include "zlib/zlib.h"
 
 // Some defines related to the status byte - these may change!
-constexpr int UEF_MMASK    = (3 << 16);
-constexpr int UEF_BYTEMASK = 0xff;
+constexpr int UEF_MMASK    = 0x30000;
+constexpr int UEF_BYTEMASK = 0x000ff;
 
 // Some macros for reading parts of the status byte
-constexpr int UEF_CARRIER_TONE = (0 << 16);
-constexpr int UEF_DATA         = (1 << 16);
-constexpr int UEF_GAP          = (2 << 16);
-constexpr int UEF_EOF          = (3 << 16);
+constexpr int UEF_CARRIER_TONE = 0x00000;
+constexpr int UEF_DATA         = 0x10000;
+constexpr int UEF_GAP          = 0x20000;
+constexpr int UEF_EOF          = 0x30000;
 
 constexpr int           UEFRES_TYPE(int x) { return x & UEF_MMASK;    }
 constexpr unsigned char UEFRES_BYTE(int x) { return x & UEF_BYTEMASK; }

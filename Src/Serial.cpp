@@ -68,11 +68,13 @@ static SerialDevice SerialChannel = SerialDevice::Cassette; // Device in use
 
 static unsigned char RDR, TDR; // Receive and Transmit Data Registers
 static unsigned char RDSR, TDSR; // Receive and Transmit Data Shift Registers (buffers)
-unsigned int Tx_Rate=1200,Rx_Rate=1200; // Recieve and Transmit baud rates.
-unsigned char Clk_Divide=1; // Clock divide rate
+unsigned int Tx_Rate = 1200; // Transmit baud rate
+unsigned int Rx_Rate = 1200; // Recieve baud rate
+unsigned char Clk_Divide = 1; // Clock divide rate
 
-unsigned char ACIA_Status, ACIA_Control; // 6850 ACIA Status & Control
-static unsigned char SerialULAControl; // Serial ULA / SERPROC control register;
+unsigned char ACIA_Status; // 6850 ACIA Status register
+unsigned char ACIA_Control; // 6850 ACIA Control register
+static unsigned char SerialULAControl; // Serial ULA / SERPROC control register
 
 static bool RTS;
 static bool FirstReset = true;
@@ -83,9 +85,11 @@ static unsigned char DCDClear = 0; // count to clear DCD bit
 
 static unsigned char Parity, StopBits, DataBits;
 
-bool RIE, TIE; // Receive Interrupt Enable and Transmit Interrupt Enable
+bool RIE; // Receive Interrupt Enable
+bool TIE; // Transmit Interrupt Enable
 
-unsigned char TxD,RxD; // Transmit and Receive destinations (data or shift register)
+unsigned char TxD; // Transmit destination (data or shift register)
+unsigned char RxD; // Receive destination (data or shift register)
 
 static UEFFileWriter UEFWriter;
 static char TapeFileName[256]; // Filename of current tape file
@@ -139,7 +143,8 @@ bool OldRelayState = false;
 CycleCountT TapeTrigger=CycleCountTMax;
 constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
 
-static int UEF_BUF=0,NEW_UEF_BUF=0;
+static int UEFBuf = 0;
+static int OldUEFBuf = 0;
 static int TapeClock = 0;
 static int OldClock = 0;
 int TapeClockSpeed = 5600;
@@ -208,7 +213,7 @@ void SerialACIAWriteControl(unsigned char Value)
 		ACIA_Status &= ~MC6850_STATUS_DCD;
 		DCD = false;
 		DCDI = false;
-		DCDClear = 0;
+		// DCDClear = 0;
 
 		TxD = 0;
 		ACIA_Status |= MC6850_STATUS_TDRE; // Transmit data register empty
@@ -557,136 +562,153 @@ void SerialPoll()
 				}
 			}
 
-			if (CassetteRelay && UEFFileOpen && TapeClock != OldClock)
+			if (CassetteRelay)
 			{
-				NEW_UEF_BUF = UEFReader.GetData(TapeClock);
-				OldClock = TapeClock;
-			}
-
-			if ((NEW_UEF_BUF != UEF_BUF || UEFRES_TYPE(NEW_UEF_BUF) == UEF_CARRIER_TONE || UEFRES_TYPE(NEW_UEF_BUF) == UEF_GAP) &&
-			    CassetteRelay && UEFFileOpen)
-			{
-				if (UEFRES_TYPE(UEF_BUF) != UEFRES_TYPE(NEW_UEF_BUF))
-					TapeControlUpdateCounter(TapeClock);
-
-				UEF_BUF = NEW_UEF_BUF;
-
-				// New data read in, so do something about it
-				if (UEFRES_TYPE(UEF_BUF) == UEF_CARRIER_TONE)
+				if (UEFFileOpen)
 				{
-					DCDI = true;
-					TapeAudio.Signal = 2;
-					// TapeAudio.Samples = 0;
-					TapeAudio.BytePos = 11;
+					if (TapeClock != OldClock)
+					{
+						UEFBuf = UEFReader.GetData(TapeClock);
+						OldClock = TapeClock;
+					}
+
+					if (UEFBuf != OldUEFBuf ||
+					    UEFRES_TYPE(UEFBuf) == UEF_CARRIER_TONE ||
+					    UEFRES_TYPE(UEFBuf) == UEF_GAP)
+					{
+						if (UEFRES_TYPE(UEFBuf) != UEFRES_TYPE(OldUEFBuf))
+						{
+							TapeControlUpdateCounter(TapeClock);
+						}
+
+						OldUEFBuf = UEFBuf;
+
+						// New data read in, so do something about it
+						switch (UEFRES_TYPE(UEFBuf))
+						{
+							case UEF_CARRIER_TONE:
+								DCDI = true;
+								TapeAudio.Signal = 2;
+								// TapeAudio.Samples = 0;
+								TapeAudio.BytePos = 11;
+								break;
+
+							case UEF_GAP:
+								DCDI = true;
+								TapeAudio.Signal = 0;
+								break;
+
+							case UEF_DATA: {
+								DCDI = false;
+								unsigned char Data = UEFRES_BYTE(UEFBuf);
+								HandleData(Data);
+
+								TapeAudio.Data       = (Data << 1) | 1;
+								TapeAudio.BytePos    = 1;
+								TapeAudio.CurrentBit = 0;
+								TapeAudio.Signal     = 1;
+								TapeAudio.ByteCount  = 3;
+								break;
+							}
+						}
+					}
+
+					if (RxD < 2)
+					{
+						if (TotalCycles >= TapeTrigger)
+						{
+							if (TapePlaying)
+								TapeClock++;
+
+							SetTrigger(TAPECYCLES, TapeTrigger);
+						}
+					}
+				}
+				else if (CSWFileOpen)
+				{
+					if (TapeClock != OldClock)
+					{
+						CSWState last_state = csw_state;
+
+						int Data = CSWPoll();
+						OldClock = TapeClock;
+
+						if (last_state != csw_state)
+						{
+							TapeControlUpdateCounter(csw_ptr);
+						}
+
+						switch (csw_state)
+						{
+							case CSWState::WaitingForTone:
+								DCDI = true;
+								TapeAudio.Signal = 0;
+								break;
+
+							case CSWState::Tone:
+								DCDI = true;
+								TapeAudio.Signal  = 2;
+								TapeAudio.BytePos = 11;
+								break;
+
+							case CSWState::Data:
+								if (Data >= 0)
+								{
+									// New data read in, so do something about it
+									DCDI = false;
+									HandleData((unsigned char)Data);
+
+									TapeAudio.Data       = (Data << 1) | 1;
+									TapeAudio.BytePos    = 1;
+									TapeAudio.CurrentBit = 0;
+									TapeAudio.Signal     = 1;
+									TapeAudio.ByteCount  = 3;
+								}
+								break;
+						}
+					}
+
+					if (RxD < 2)
+					{
+						if (TotalCycles >= TapeTrigger)
+						{
+							if (TapePlaying)
+								TapeClock++;
+
+							SetTrigger(CSWPollCycles, TapeTrigger);
+						}
+					}
 				}
 
-				if (UEFRES_TYPE(UEF_BUF) == UEF_GAP)
+				if (DCDI != ODCDI)
 				{
-					DCDI = true;
-					TapeAudio.Signal = 0;
+					if (DCDI)
+					{
+						// Low to high transition on the DCD line
+
+						if (RIE)
+						{
+							ACIA_Status |= MC6850_STATUS_IRQ;
+							intStatus |= 1 << serial;
+						}
+
+						DCD = true;
+						ACIA_Status |= MC6850_STATUS_DCD; // ACIA_Status &= ~MC6850_STATUS_RDRF;
+						// DCDClear = 0;
+					}
+					else // !DCDI
+					{
+						DCD = false;
+						ACIA_Status &= ~MC6850_STATUS_DCD;
+						// DCDClear = 0;
+					}
+
+					ODCDI = DCDI;
 				}
-
-				if (UEFRES_TYPE(UEF_BUF) == UEF_DATA)
-				{
-					DCDI = false;
-					HandleData(UEFRES_BYTE(UEF_BUF));
-					TapeAudio.Data       = (UEFRES_BYTE(UEF_BUF) << 1) | 1;
-					TapeAudio.BytePos    = 1;
-					TapeAudio.CurrentBit = 0;
-					TapeAudio.Signal     = 1;
-					TapeAudio.ByteCount  = 3;
-				}
-			}
-
-			if (CassetteRelay && RxD < 2 && UEFFileOpen)
-			{
-				if (TotalCycles >= TapeTrigger)
-				{
-					if (TapePlaying)
-						TapeClock++;
-
-					SetTrigger(TAPECYCLES, TapeTrigger);
-				}
-			}
-
-			// CSW stuff
-
-			if (CassetteRelay && CSWFileOpen && TapeClock != OldClock)
-			{
-				CSWState last_state = csw_state;
-
-				int Data = CSWPoll();
-				OldClock = TapeClock;
-
-				if (last_state != csw_state)
-					TapeControlUpdateCounter(csw_ptr);
-
-				if (csw_state == CSWState::WaitingForTone)
-				{
-					DCDI = true;
-					TapeAudio.Signal = 0;
-				}
-
-				// New data read in, so do something about it
-				if (csw_state == CSWState::Tone)
-				{
-					DCDI = true;
-					TapeAudio.Signal  = 2;
-					TapeAudio.BytePos = 11;
-				}
-
-				if (Data >= 0 && csw_state == CSWState::Data)
-				{
-					DCDI = false;
-					HandleData((unsigned char)Data);
-					TapeAudio.Data       = (Data << 1) | 1;
-					TapeAudio.BytePos    = 1;
-					TapeAudio.CurrentBit = 0;
-					TapeAudio.Signal     = 1;
-					TapeAudio.ByteCount  = 3;
-				}
-			}
-
-			if (CassetteRelay && RxD < 2 && CSWFileOpen)
-			{
-				if (TotalCycles >= TapeTrigger)
-				{
-					if (TapePlaying)
-						TapeClock++;
-
-					SetTrigger(CSWPollCycles, TapeTrigger);
-				}
-			}
-
-			if (DCDI && !ODCDI)
-			{
-				// low to high transition on the DCD line
-				if (RIE)
-				{
-					ACIA_Status |= MC6850_STATUS_IRQ;
-					intStatus |= 1 << serial;
-				}
-
-				DCD = true;
-				ACIA_Status |= MC6850_STATUS_DCD; // ACIA_Status &= ~MC6850_STATUS_RDRF;
-				DCDClear = 0;
-			}
-
-			if (!DCDI && ODCDI)
-			{
-				DCD = false;
-				ACIA_Status &= ~MC6850_STATUS_DCD;
-				DCDClear = 0;
-			}
-
-			if (DCDI != ODCDI)
-			{
-				ODCDI = DCDI;
 			}
 		}
 	}
-
-	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
+	else if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
 	{
 		if (SerialDestination == SerialType::TouchScreen)
 		{
@@ -708,7 +730,7 @@ void SerialPoll()
 				}
 			}
 		}
-		else
+		else // SerialType::SerialPort
 		{
 			if (!bWaitingForStat && !bSerialStateChanged)
 			{
@@ -1043,7 +1065,8 @@ UEFResult LoadUEFTape(const char *FileName)
 		UEFFileOpen = true;
 		strcpy(TapeFileName, FileName);
 
-		UEF_BUF = 0;
+		UEFBuf = 0;
+		OldUEFBuf = 0;
 		TxD = 0;
 		RxD = 0;
 		TapeClock = 0;
@@ -1087,7 +1110,8 @@ void RewindTape()
 {
 	SerialStopTapeRecording(true);
 
-	UEF_BUF = 0;
+	UEFBuf = 0;
+	OldUEFBuf = 0;
 	TapeClock = 0;
 	OldClock = 0;
 	SetTrigger(TAPECYCLES, TapeTrigger);

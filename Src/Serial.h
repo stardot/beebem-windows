@@ -71,7 +71,8 @@ void RewindTape();
 
 extern volatile bool bSerialStateChanged;
 extern bool UnlockTape;
-extern unsigned char TxD,RxD;
+extern unsigned char TxD;
+extern unsigned char RxD;
 extern int TapeClockSpeed;
 
 extern bool TapeRecording;
