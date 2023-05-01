@@ -1,7 +1,7 @@
 BeebEm Change History
 =====================
 
-Unreleased changes (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
+Version 4.19 (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
 ------------
 * Fixed NMOS 6502 instructions 6B (ARR imm) and EB (SBC imm).
 * Fixed timings for instructions 83 (SAX (zp,X)), 8F (SAX abs),
@@ -38,6 +38,7 @@ Unreleased changes (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
 * Improved the Disc Export dialog, which now detects and avoids using file
   names that are not valid on the host filesystem. The dialog box allows you
   to double-click an entry to rename files.
+* The BeebEm window on Windows 11 is now drawn with rounded corners disabled.
 
 Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
 ------------
