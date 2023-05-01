@@ -840,6 +840,13 @@ void BeebWin::CreateBeebWindow(void)
 	SetWindowAttributes(false);
 }
 
+/****************************************************************************/
+
+// Windows 11 draws windows with rounded corners by default, so this function
+// disables them, so the Beeb video image isn't affected.
+//
+// See https://stardot.org.uk/forums/viewtopic.php?f=4&t=26874
+
 void BeebWin::DisableRoundedCorners(HWND hWnd)
 {
 	HMODULE hDwmApi = LoadLibrary("dwmapi.dll");
@@ -861,19 +868,18 @@ void BeebWin::DisableRoundedCorners(HWND hWnd)
 		const DWORD DWMWA_WINDOW_CORNER_PREFERENCE = 33;
 		const DWORD CornerPreference = DWMWCP_DONOTROUND;
 
-		HRESULT Result = DwmSetWindowAttribute(
+		DwmSetWindowAttribute(
 			hWnd,
 			DWMWA_WINDOW_CORNER_PREFERENCE,
 			&CornerPreference,
 			sizeof(CornerPreference)
 		);
-
-		DebugTrace("DwmSetWindowAttribute returned %X\n", Result);
 	}
 
 	FreeLibrary(hDwmApi);
 }
 
+/****************************************************************************/
 void BeebWin::ShowMenu(bool on)
 {
 	if (m_DisableMenu)
