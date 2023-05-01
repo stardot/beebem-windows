@@ -490,6 +490,7 @@ public:
 	bool InitClass();
 	void UpdateOptiMenu();
 	void CreateBeebWindow(void);
+	void DisableRoundedCorners(HWND hWnd);
 	void CreateBitmap(void);
 	void InitMenu();
 	void UpdateMonitorMenu();

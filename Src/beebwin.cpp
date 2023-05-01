@@ -832,36 +832,78 @@ void BeebWin::CreateBeebWindow(void)
 		nullptr     // We don't use any data in our WM_CREATE
 	);
 
+	DisableRoundedCorners(m_hWnd);
+
 	ShowWindow(m_hWnd, show); // Show the window
 	UpdateWindow(m_hWnd); // Sends WM_PAINT message
 
 	SetWindowAttributes(false);
 }
 
-void BeebWin::ShowMenu(bool on) {
-	if (m_DisableMenu) {
+void BeebWin::DisableRoundedCorners(HWND hWnd)
+{
+	HMODULE hDwmApi = LoadLibrary("dwmapi.dll");
+
+	if (hDwmApi == nullptr)
+	{
+		return;
+	}
+
+	typedef HRESULT (STDAPICALLTYPE* DWM_SET_WINDOW_ATTRIBUTE)(HWND, DWORD, LPCVOID, DWORD);
+
+	DWM_SET_WINDOW_ATTRIBUTE DwmSetWindowAttribute = reinterpret_cast<DWM_SET_WINDOW_ATTRIBUTE>(
+		GetProcAddress(hDwmApi, "DwmSetWindowAttribute")
+	);
+
+	if (DwmSetWindowAttribute != nullptr)
+	{
+		const DWORD DWMWCP_DONOTROUND = 1;
+		const DWORD DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+		const DWORD CornerPreference = DWMWCP_DONOTROUND;
+
+		HRESULT Result = DwmSetWindowAttribute(
+			hWnd,
+			DWMWA_WINDOW_CORNER_PREFERENCE,
+			&CornerPreference,
+			sizeof(CornerPreference)
+		);
+
+		DebugTrace("DwmSetWindowAttribute returned %X\n", Result);
+	}
+
+	FreeLibrary(hDwmApi);
+}
+
+void BeebWin::ShowMenu(bool on)
+{
+	if (m_DisableMenu)
+	{
 		on = false;
 	}
 
-	if (on != m_MenuOn) {
+	if (on != m_MenuOn)
+	{
 		SetMenu(m_hWnd, on ? m_hMenu : nullptr);
 	}
 
 	m_MenuOn = on;
 }
 
-void BeebWin::HideMenu(bool hide) {
-	if (m_HideMenuEnabled) {
+void BeebWin::HideMenu(bool hide)
+{
+	if (m_HideMenuEnabled)
+	{
 		ShowMenu(!hide);
 	}
 }
 
-void BeebWin::TrackPopupMenu(int x, int y) {
-  ::TrackPopupMenu(m_hMenu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON,
-                   x, y,
-                   0,
-                   m_hWnd,
-                   NULL);
+void BeebWin::TrackPopupMenu(int x, int y)
+{
+	::TrackPopupMenu(m_hMenu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON,
+	               x, y,
+	               0,
+	               m_hWnd,
+	               NULL);
 }
 
 /****************************************************************************/
