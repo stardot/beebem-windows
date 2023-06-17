@@ -33,11 +33,6 @@ Name: {app}\msvcp80.dll; Type: files
 Name: {app}\msvcr80.dll; Type: files
 Name: {app}\Documents; Type: filesandordirs
 Name: {app}\Hardware; Type: filesandordirs
-Name: {userdocs}\BeebEm\Econet.cfg; Type: files
-Name: {userdocs}\BeebEm\Default.kmap; Type: files
-Name: {userdocs}\BeebEm\DefaultUser.kmap; Type: files
-Name: {userdocs}\BeebEm\Logical.kmap; Type: files
-Name: {userdocs}\BeebEm\USLogical.kmap; Type: files
 
 [Dirs]
 Name: {userdocs}\BeebEm
