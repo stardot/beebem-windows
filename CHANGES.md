@@ -1,8 +1,11 @@
 BeebEm Change History
 =====================
 
-Version 4.19 (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
+Version 4.19 (1 May 2023)
 ------------
+
+Contributors: Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree
+
 * Fixed NMOS 6502 instructions 6B (ARR imm) and EB (SBC imm).
 * Fixed timings for instructions 83 (SAX (zp,X)), 8F (SAX abs),
   B3 (LAX (zp),Y), and BB (LAS abs,Y).
@@ -40,8 +43,11 @@ Version 4.19 (Chris Needham, Mike Wyatt, Steve Inglis, Alistair Cree)
   to double-click an entry to rename files.
 * The BeebEm window on Windows 11 is now drawn with rounded corners disabled.
 
-Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
+Version 4.18 (13 Jun 2022)
 ------------
+
+Contributors: Chris Needham, Alistair Cree, Greg Cook
+
 * Fixed undocumented 6502 opcodes 2B (ANC imm) and CB (ASX imm).
 * Fixed memory reads in undocumented 6502 opcodes.
 * Hard disk support improvements:
@@ -64,8 +70,11 @@ Version 4.18 (Chris Needham, Alistair Cree, Greg Cook)
 * Removed documentation for the Emulator Traps menu option,
   which has not been implemented yet.
 
-Version 4.17 (Chris Needham, Tadek Kijkowski)
+Version 4.17 (13 Jun 2021)
 ------------
+
+Contributors: Chris Needham, Tadek Kijkowski
+
 * Writes to the sound chip are now allowed while sound is disabled.
   This ensures that the sound chip is in the right state if sound is later
   enabled.
@@ -121,8 +130,11 @@ Version 4.17 (Chris Needham, Tadek Kijkowski)
 * Added BeebEm.user.props.example file and updated the instructions
   for how to compile BeebEm.
 
-Version 4.16 (Chris Needham, Dominic Beesley)
+Version 4.16 (7 Nov 2023)
 ------------
+
+Contributors: Chris Needham, Dominic Beesley
+
 * Reintroduced Master 512 co-processor support, following change to the MAME
   source code license.
 * Added Torch Z80 utility discs and renamed ROM files.
@@ -148,10 +160,13 @@ Version 4.16 (Chris Needham, Dominic Beesley)
 * Fixed use of Jim page select register with Music 5000.
 * Added `-CustomData` command line option.
 
-Version 4.15 (Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
-Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley,
-Ken Lowe, Dominic Beesley)
+Version 4.15 (28 Jun 2020)
 ------------
+
+Contributors: Charles Reilly, Chris Needham, Kieran Mockford, pstnotpd,
+Richard Broadhurst, J.G.Harston, Mike Wyatt, Alistair Cree, Steve Insley,
+Ken Lowe, Dominic Beesley
+
 * Fixed 320x256 screen capture.
 * Enabled DirectX full screen display at current desktop screen resolution.
 * Consistent file selection dialogs.
@@ -211,8 +226,11 @@ Ken Lowe, Dominic Beesley)
 * Added `-DebugLabels` command line option to load BeebAsm compatible debug
   labels.
 
-Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
+Version 4.14 (12 Feb 2012)
 ------------
+
+Contributors: J.G.Harston, Steve Pick, Mike Wyatt
+
 * IDE hard drive interface.
   - Limited IDE_Geometry command supported, allows 4 heads x 64 sectors
     (disks up to 512M), and 16 heads x 64 sectors (disks larger than 512M).
@@ -225,8 +243,11 @@ Version 4.14 (J.G.Harston, Steve Pick, Mike Wyatt)
 * Fixed bug where disk drive sound sticks on.
 * Fixed keyboard issue for Dr Who game.
 
-Version 4.13 (Mike Wyatt)
+Version 4.13 (20 Jan 2011)
 ------------
+
+Contributors: Mike Wyatt
+
 * Added indication of unplugged ROMs to the configuration editor in Master
   128 mode.
 * Add a keyboard shortcut to exit (Alt+F4).
@@ -240,8 +261,11 @@ Version 4.13 (Mike Wyatt)
 * Made the BeebEm window resizeable.
 * Fixed an issue in the sound code that was causing garbled output.
 
-Version 4.12 (Mike Wyatt)
+Version 4.12 (22 Nov 2009)
 ------------
+
+Contributors: Mike Wyatt
+
 * Added ROM configuration editor.
 * Updated sideways RAM support:
   - Changed SW RAM write enable menu to show slots containing RAM and
@@ -255,8 +279,11 @@ Version 4.12 (Mike Wyatt)
   state file.
 * Fixed joystick capture error when enabled for a second time.
 
-Version 4.11 (Rob O'Donnell, Rich Talbot-Watkins, Mike Wyatt)
+Version 4.11
 ------------
+
+Contributors: Rob O'Donnell, Rich Talbot-Watkins, Mike Wyatt
+
 * Added AUN Econet support.
 * Added "RAW comms" option for use with the serial port IP options.
 * Updated video emulation to remove screen stretching and fix cursor
@@ -274,8 +301,11 @@ Version 4.11 (Rob O'Donnell, Rich Talbot-Watkins, Mike Wyatt)
   issues when using MOS3.5 (e.g. `*CONFIGURE`).
 * Fixed issue with file lengths in disc import option.
 
-Version 4.10 (Mike Wyatt)
+Version 4.10
 ------------
+
+Contributors: Mike Wyatt
+
 * Added screen capture options to the file menu. Resolution and file format
   can be selected. The BMP, JPEG, GIF and PNG file formats are supported.
   ALT+keypad 5 (with NumLock on) is a shortcut key for capturing the screen
@@ -291,14 +321,20 @@ Version 4.10 (Mike Wyatt)
   GPL. These two features are still available in BeebEm version 4.03, which
   is on the BeebEm website.
 
-Version 4.02 (Mike Wyatt)
+Version 4.02 (26 Apr 2009)
 ------------
+
+Contributors: Mike Wyatt
+
 * Added disc drive sound emulation.
 * Added write support for the Master real time clock.
 * Fixed teletext mode smoothing at startup in Vista.
 
-Version 4.01 (Steve Pick, Mike Wyatt)
+Version 4.01
 ------------
+
+Contributors: Steve Pick, Mike Wyatt
+
 * Rewrote debugger command interpreter:
   - Supports command names longer than one character.
   - Added command history (up/down arrows when command box focused).
@@ -328,8 +364,11 @@ Version 4.01 (Steve Pick, Mike Wyatt)
   come to foreground with main window.
 * Added option to enable DirectX smoothing when only in teletext mode.
 
-Version 4.0 (Mike Wyatt, Rob O'Donnell, Steve Pick)
+Version 4.0
 -----------
+
+Contributors: Mike Wyatt, Rob O'Donnell, Steve Pick
+
 * Added clipboard functionality from the Mac port. Clipboard can be set as
   destination for printer output, copy and paste menu options for BASIC
   programs.
@@ -366,8 +405,11 @@ Version 4.0 (Mike Wyatt, Rob O'Donnell, Steve Pick)
     formatted debugging info, `sprintf()` style.
   - Beautified the debugging UI a bit.
 
-Version 3.85 (Mike Wyatt)
+Version 3.85
 ------------
+
+Contributors: Mike Wyatt
+
 * Fixed disc formatting using the 8271 controller.
 * Video update / capture fix from Rich.
 * Reduced CPU load when execution is halted in the debugger.
@@ -376,18 +418,27 @@ Version 3.85 (Mike Wyatt)
   - `fr` to read a file into host RAM
   - `fw` to write a file from host RAM
 
-Version 3.84 (Mike Wyatt)
+Version 3.84
 ------------
+
+Contributors: Mike Wyatt
+
 * Added menu option to display cursor line at bottom of screen.
 * Added `\d` option to `-KbdCmd` command line parameters.
 * Made `-KbdCmd` processing more resilient.
 
-Version 3.83 (Mike Wyatt)
+Version 3.83
 ------------
+
+Contributors: Mike Wyatt
+
 * Added `-NoAutoBoot` command line option.
 
-Version 3.82 (Rich Talbot-Watkins, Mike Wyatt)
+Version 3.82 (30 Mar 2008)
 ------------
+
+Contributors: Rich Talbot-Watkins, Mike Wyatt
+
 * Periodic noise emulation tweak from Rich.
 * Video emulation fixes from Rich.
 * AVI capture fix. When AVI is enabled the video frame rate is now fixed
@@ -399,8 +450,11 @@ Version 3.82 (Rich Talbot-Watkins, Mike Wyatt)
 * Added `-KbdCmd` command line option to specify a key press sequence to run
   at start up (can be used to run a tape image).
 
-Version 3.81 (Mike Wyatt, Jon Welch)
+Version 3.81
 ------------
+
+Contributors: Mike Wyatt, Jon Welch
+
 * Added `-DisMenu` command line option to disable the menus.
 * Fixed issue where sound output stops after about 10 mins.
 * Corrected the fix in v3.8 for sound artifacts. Sampled sound works
@@ -410,8 +464,11 @@ Version 3.81 (Mike Wyatt, Jon Welch)
   Jonathan Bluestone).
 * Bug fix - Cursor position wrong when in column 1 in editing mode.
 
-Version 3.8 (Mike Wyatt, Jon Welch)
+Version 3.8
 -----------
+
+Contributors: Mike Wyatt, Jon Welch
+
 * Enhanced user defined key mapping support. Shifted and unshifted key
   presses can now be defined separately so custom logical mappings can be
   defined.
@@ -428,12 +485,18 @@ Version 3.8 (Mike Wyatt, Jon Welch)
 * Increased default Econet flag fill timeout to 250000. Improves Econet
   comms a bit (still not 100% though).
 
-Version 3.7 (Jon Welch)
+Version 3.7
 -----------
+
+Contributors: Jon Welch
+
 * Added ARM Second Processor support.
 
-Version 3.6 (Mike Wyatt, Jon Welch)
+Version 3.6
 -----------
+
+Contributors: Mike Wyatt, Jon Welch
+
 * Made BeebEm Vista compatible.
 * Added support for DirectX9 so image output looks good in Vista.
 * Moved all preferences from the Window registry to the Preferences.cfg
@@ -466,8 +529,11 @@ Version 3.6 (Mike Wyatt, Jon Welch)
 * Added support for Level 3 Econet User Port RTC Module.
 * Added support for mixed mode ADFS/NETFS format discs.
 
-Version 3.5 (Mike Wyatt, Theo Lindebaum, Jon Welch)
+Version 3.5
 -----------
+
+Contributors: Mike Wyatt, Theo Lindebaum, Jon Welch
+
 * Added text to speech support and screen reader compatible text view for
   use by visually impaired people.
 * Fixed support for MOS 3.50 in Master 128 mode.
@@ -479,8 +545,11 @@ Version 3.5 (Mike Wyatt, Theo Lindebaum, Jon Welch)
   work.
 * Added menu options to disable selected keys within BeebEm.
 
-Version 3.4 (Jon Welch)
+Version 3.4
 -----------
+
+Contributors: Jon Welch
+
 * Added preliminary support for loading CSW format tape images.
 * Added emulation of Microvitec touch screen (can be used with software
   from Brilliant Computing).
@@ -494,8 +563,11 @@ Version 3.4 (Jon Welch)
   state in Twin Kingdom Valley).
 * Minor VIA timing tweak to make Snapper work again.
 
-Version 3.3 (Mike Wyatt)
+Version 3.3
 -----------
+
+Contributors: Mike Wyatt
+
 * Added menu options to enable/disable Teletext adapter and hard drive
   emulation. When enabled they cause corruption of Alien8 data.
 * Removed ADFS and ATS ROMs from Model-B configuration as they were causing
@@ -513,21 +585,30 @@ Version 3.3 (Mike Wyatt)
   Seems to be a definite improvement on the linear scale. There is a menu
   option to switch between the two.
 
-Version 3.2 (Jon Welch)
+Version 3.2 (15 May 2006)
 -----------
+
+Contributors: Jon Welch
+
 * Added support for Acorn Z80 Co-Processor.
 * Added support for Master 512 Co-Processor.
 * Added support for Acorn Teletext Adapter.
 * Added some enhancements to the debugger from Thomas Horsten. Display of
   stack register and op codes for undocumented instructions.
 
-Version 3.11 (Mike Wyatt)
+Version 3.11
 ------------
+
+Contributors: Mike Wyatt
+
 * Fixed random crashes.
 * Fixed display of LEDs.
 
-Version 3.1 (Mike Wyatt, Rob O'Donnell, Jon Welch)
+Version 3.1
 -----------
+
+Contributors: Mike Wyatt, Rob O'Donnell, Jon Welch
+
 * Added econet emulation. It works in Model B mode and Master 128 mode.
   The Acorn level 1 and 2 file server software runs and stations can
   read/write files to the server. Note that the default DFS ROM in Model B
@@ -559,8 +640,11 @@ Version 3.1 (Mike Wyatt, Rob O'Donnell, Jon Welch)
   image.
 * Fixed disk formatting with the 1770 controller.
 
-Version 3.0 (Mike Wyatt)
+Version 3.0 (20 Nov 2005)
 -----------
+
+Contributors: Mike Wyatt
+
 * Improved VIA timing emulation and fixed some instruction cycle counts.
   Its still not perfect but its good enough to run various versions of the
   infamous "Kevin Edwards" protection code!  The following tapes now load
@@ -585,23 +669,32 @@ Version 3.0 (Mike Wyatt)
   screen.
 * Bumped version to 3.0 to keep in sync with the Mac version of BeebEm.
 
-Version 2.3 (Mike Wyatt, Greg Cook, Jon Welch)
+Version 2.3
 -----------
+
+Contributors: Mike Wyatt, Greg Cook, Jon Welch
+
 * Added "Motion Blur" option to view menu (suggested by Ian Bell). This
   all but stops the spaceship flicker in Elite.
 * More 1770 disc controller fixes from Greg.
 * Preliminary IDE hard disk support from Jon Welch.
 * Torch Z80 second processor emulation from Jon Welch (see README_Z80.TXT).
 
-Version 2.2 (Greg Cook & Mike Wyatt)
+Version 2.2 (12 Feb 2005)
 -----------
+
+Contributors: Greg Cook, Mike Wyatt
+
 * Fixed BeebEm hang when RS432 is enabled (Acorn Basic Editor works again).
 * Fixed LED positioning in modes other than 7.
 * Integrated Greg's 1770 disc controller fixes.
 * Fixed keyboard handling so Revs works correctly.
 
-Version 2.1 (Mike Wyatt)
+Version 2.1
 -----------
+
+Contributors: Mike Wyatt
+
 * Added a tape control window for moving the tape position.
 * Added support for saving files to UEF tape images.
 * Added support for more UEF tape chunk types.
@@ -611,8 +704,11 @@ Version 2.1 (Mike Wyatt)
 * Added tape settings to the UEF state.
 * Added BeebEm speed shortcut keys, keypad +/- change speed.
 
-Version 2.0 (Mike Wyatt)
+Version 2.0 (3 Dec 2004)
 -----------
+
+Contributors: Mike Wyatt
+
 * Added tube and 65C02 second processor emulation. It runs the Executive
   version of Elite quite nicely but you will need a reasonably fast PC.
 * Added Debugger (see Readme.txt for details).
@@ -625,8 +721,11 @@ Version 2.0 (Mike Wyatt)
 * Changed default DFS for B+ to the V2.26 Acorn 1770 DFS.
 * Rearranged menus a bit as options was getting too big.
 
-Version 1.6 (Ken Lowe & Mike Wyatt)
+Version 1.6 (16 Oct 2004)
 -----------
+
+Contributors: Ken Lowe, Mike Wyatt
+
 * Added BBC Computech IntegraB Support:
   - RTC Memory
   - Private Memory 1K from &8000 to &83FF
@@ -654,8 +753,11 @@ Version 1.6 (Ken Lowe & Mike Wyatt)
 * Removed old BeebState stuff.
 * Removed 'Allow ROM Writes - All' option, it was not implemented.
 
-Version 1.5 (Mike Wyatt)
+Version 1.5
 -----------
+
+Contributors: Mike Wyatt
+
 * Updated the speed regulation code again (should fix hangs).
 * Added some more fixed speed settings (you can now play Elite at a
   decent speed!).
@@ -682,8 +784,11 @@ Version 1.5 (Mike Wyatt)
   is now kept in a zip file.
 * Moved all preference settings into the Windows registry.
 
-Version 1.4 (Richard Gellman)
+Version 1.4 (20 Dec 2001)
 -----------
+
+Contributors: Richard Gellman
+
 Windows update only:
 * New teletext font.
 * Teletext Aspect ratio and centering fixed.
@@ -716,8 +821,11 @@ Windows update only:
 * Re-worked HSync/VSync centering routine.
 * Added option to use DirectSound primary buffer.
 
-Version 1.35 (Richard Gellman)
-------------------------------
+Version 1.35
+------------
+
+Contributors: Richard Gellman
+
 Windows update only:
 * Fixed rom menu corruption during reset bug.
 * Improved DirectSound code, makes sound smoother.
@@ -740,8 +848,11 @@ Windows update only:
 * Added End Of Conversion to VIA emulation (allows the analogue port to
   generate interrupts).
 
-Version 1.32 (Richard Gellman)
-------------------------------
+Version 1.32
+------------
+
+Contributors: Richard Gellman
+
 Windows update only:
 * *All* undocumented 6502 codes implemented.
 * Almost full 1770 FDC Support (read/write track (format) and force
@@ -759,8 +870,11 @@ Windows update only:
 * Fixed the sideways RAM bug I accidentally put in the previous version.
   Digital audio in Exile has returned!
 
-Version 1.3 (Richard Gellman)
------------------------------
+Version 1.3 (3 May 2001)
+-----------
+
+Contributors: Richard Gellman
+
 Windows update only:
 * Added full cursor support to enable cursor on/off/blink and blink rates.
 * Corrected mode 7 flashing text rate.
@@ -780,8 +894,11 @@ Windows update only:
   roms for will be available, if neither available, the program exits.
 * Added BBC Model Type Menu to Options Menu.
 
-Version 1.04 (Robert Schmidt)
+Version 1.04 (15 Sep 2000)
 ------------
+
+Contributors: Robert Schmidt
+
 Windows update only:
 * Remember last used directories for disc images and emulator states.
 * Dialog for opening disc images has 3 new filters:
@@ -798,36 +915,54 @@ Windows update only:
 * Made "Full Screen" a toggle, not a standalone mode/"window size".
 * Fixed a bug that didn't show speed/FPS in a windowed DirectDraw mode.
 
-Version 1.03 (Robert Schmidt)
+Version 1.03 (20 Aug 2000)
 ------------
+
+Contributors: Robert Schmidt
+
 Windows update only:
 * Monochrome monitor/B&W TV emulation.
 
-Version 1.02 (Mike Wyatt)
+Version 1.02 (30 Apr 1998)
 ------------
+
+Contributors: Mike Wyatt
+
 * Added Robert's Freeze when Inactive option.
 
-Version 1.01 (Mike Wyatt)
+Version 1.01 ()
 ------------
+
+Contributors: Mike Wyatt
+
 * Fixes the problem with BeebEm hanging after about 35 minutes.
 
-Version 1.0 (Mike Wyatt)
+Version 1.0 (2 Feb 1998)
 -----------
+
+Contributors: Mike Wyatt
+
 * Switchable DirectDraw and DirectSound.
 * Fixed Windows message boxes when using DirectDraw.
 * Printer support.
 * Improved ROM size checking.
 * Improved speed regulation code.
 
-Version 0.9 (Mike Wyatt)
+Version 0.9 (20 Jan 1998)
 -----------
+
+Contributors: Mike Wyatt
+
 * Added AMX mouse support.
 * Converted to use DirectX and added a full screen option.
 * Fixed a few bugs (thanks to Piers Haken for pointing out a bug in the video
   code).
 
-Version 0.8 (Mike Wyatt & Laurie Whiffen)
+Version 0.8 (1 Sep 1997)
 -----------
+
+Contributors: Mike Wyatt, Laurie Whiffen
+
 * Added disc write and format capability.
 * Changed disc load code to give a warning if disc image loaded looks like its
   been loaded using wrong type (single/doubled sided).
@@ -839,8 +974,11 @@ Version 0.8 (Mike Wyatt & Laurie Whiffen)
     file using a new menu option.
   - Added menu options for write protection and creating new disc images.
 
-Version 0.71 (Mike Wyatt)
+Version 0.71 (5 Aug 1997)
 ------------
+
+Contributors: Mike Wyatt
+
 * Changed VIA timer latches initial value to 0xffff (Castle Quest now works).
 * Fixed BCD addition and substraction and prevented mode 7 code from dividing
   by zero (Exile now works).
@@ -849,8 +987,11 @@ Version 0.71 (Mike Wyatt)
 * Fixed cursor colour in UNIX version.
 * Added sideways RAM support (so Exile can be played full screen).
 
-Version 0.7 (Mike Wyatt)
+Version 0.7 (24 Jun 1996)
 -----------
+
+Contributors: Mike Wyatt
+
 * Added conditional compilation for all the Microsoft Windows code. Should only
   need to maintain one set of source files for both the X and MS Win versions.
 * Changed sound code so it does not play a sound until both the high and low
