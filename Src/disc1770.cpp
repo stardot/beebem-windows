@@ -360,8 +360,8 @@ void Write1770Register(int Register, unsigned char Value) {
 				FDCommand = 13; // "Confusion spin"
 				SetMotor(CurrentDrive, true);
 				Status &= ~(WD1770_STATUS_SPIN_UP_COMPLETE |
-					WD1770_STATUS_RECORD_NOT_FOUND |
-					WD1770_STATUS_CRC_ERROR);
+				            WD1770_STATUS_RECORD_NOT_FOUND |
+				            WD1770_STATUS_CRC_ERROR);
 				Status |= WD1770_STATUS_BUSY;
 				LoadingCycles = ONE_REV_TIME;
 			}
