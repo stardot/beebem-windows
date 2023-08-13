@@ -1941,8 +1941,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 		else if (m_CaptureBitmapAutoFilename)
 		{
 			// Let user know bitmap has been saved
-			FlashWindow(m_hWnd, TRUE);
-			MessageBeep(MB_ICONEXCLAMATION);
+			FlashWindow();
 		}
 
 		delete bitmap;

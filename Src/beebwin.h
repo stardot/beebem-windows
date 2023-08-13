@@ -44,9 +44,6 @@ Boston, MA  02110-1301, USA.
 #include "preferences.h"
 #include "video.h"
 
-/* Used in message boxes */
-#define GETHWND (mainWin->GethWnd())
-
 // Registry defs for disabling windows keys
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
@@ -491,6 +488,7 @@ public:
 	void UpdateOptiMenu();
 	void CreateBeebWindow(void);
 	void DisableRoundedCorners(HWND hWnd);
+	void FlashWindow();
 	void CreateBitmap(void);
 	void InitMenu();
 	void UpdateMonitorMenu();

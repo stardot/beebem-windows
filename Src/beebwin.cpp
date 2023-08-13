@@ -880,6 +880,14 @@ void BeebWin::DisableRoundedCorners(HWND hWnd)
 }
 
 /****************************************************************************/
+void BeebWin::FlashWindow()
+{
+	::FlashWindow(m_hWnd, TRUE);
+
+	MessageBeep(MB_ICONEXCLAMATION);
+}
+
+/****************************************************************************/
 void BeebWin::ShowMenu(bool on)
 {
 	if (m_DisableMenu)
@@ -1539,16 +1547,14 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			{
 				mainWin->QuickSave();
 				// Let user know state has been saved
-				FlashWindow(GETHWND, TRUE);
-				MessageBeep(MB_ICONEXCLAMATION);
+				mainWin->FlashWindow();
 				break;
 			}
 			else if (wParam == 0x32 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickLoad();
 				// Let user know state has been loaded
-				FlashWindow(GETHWND, TRUE);
-				MessageBeep(MB_ICONEXCLAMATION);
+				mainWin->FlashWindow();
 				break;
 			}
 			else if (wParam == VK_OEM_PLUS && (lParam & 0x20000000))
@@ -1571,15 +1577,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			{
 				mainWin->QuickSave();
 				// Let user know state has been saved
-				FlashWindow(GETHWND, TRUE);
-				MessageBeep(MB_ICONEXCLAMATION);
+				mainWin->FlashWindow();
 			}
 			else if (wParam == VK_MULTIPLY && !mainWin->m_DisableKeysShortcut)
 			{
 				mainWin->QuickLoad();
 				// Let user know state has been loaded
-				FlashWindow(GETHWND, TRUE);
-				MessageBeep(MB_ICONEXCLAMATION);
+				mainWin->FlashWindow();
 			}
 			else if (wParam == VK_ADD && !mainWin->m_DisableKeysShortcut)
 			{
@@ -1665,10 +1669,10 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			if (wParam != WA_INACTIVE)
 			{
 				// Bring debug window to foreground BEHIND main window.
-				if(hwndDebug)
+				if (hwndDebug)
 				{
-					SetWindowPos(hwndDebug, GETHWND,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
-					SetWindowPos(GETHWND, HWND_TOP,0,0,0,0, SWP_NOMOVE | SWP_NOSIZE);
+					SetWindowPos(hwndDebug, mainWin->GethWnd(), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
+					SetWindowPos(mainWin->GethWnd(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 				}
 			}
 
