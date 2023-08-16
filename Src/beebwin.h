@@ -211,7 +211,6 @@ public:
 
 	HWND GethWnd() { return m_hWnd; }
 
-	void RealizePalette(HDC) {};
 	void ResetBeebSystem(Model NewModelType, bool LoadRoms);
 
 	void CreateArmCoPro();
@@ -236,8 +235,8 @@ public:
 	void ChangeAMXPosition(int deltaX, int deltaY);
 	void CaptureMouse();
 	void ReleaseMouse();
-	void Activate(bool active);
-	void Focus(bool gotit);
+	void Activate(bool Active);
+	void Focus(bool Focus);
 	void WinSizeChange(WPARAM size, int width, int height);
 	void WinPosChange(int x, int y);
 	bool IsFrozen();

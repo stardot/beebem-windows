@@ -1415,22 +1415,10 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			mainWin->HandleCommand(wmId);
 			break;
 
-		case WM_PALETTECHANGED:
-			if ((HWND)wParam == hWnd)
-				break;
-
-			// fall through to WM_QUERYNEWPALETTE
-		case WM_QUERYNEWPALETTE:
-			hdc = GetDC(hWnd);
-			mainWin->RealizePalette(hdc);
-			ReleaseDC(hWnd, hdc);
-			return TRUE;
-
 		case WM_PAINT:
 			{
 				PAINTSTRUCT ps;
 				HDC hDC = BeginPaint(hWnd, &ps);
-				mainWin->RealizePalette(hDC);
 				mainWin->updateLines(hDC, 0, 0);
 				EndPaint(hWnd, &ps);
 
@@ -1665,21 +1653,6 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 		case WM_ACTIVATE:
 			mainWin->Activate(wParam != WA_INACTIVE);
-
-			if (wParam != WA_INACTIVE)
-			{
-				// Bring debug window to foreground BEHIND main window.
-				if (hwndDebug)
-				{
-					SetWindowPos(hwndDebug, mainWin->GethWnd(), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
-					SetWindowPos(mainWin->GethWnd(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-				}
-			}
-
-			if (mainWin->m_MouseCaptured && wParam == WA_INACTIVE)
-			{
-				mainWin->ReleaseMouse();
-			}
 			break;
 
 		case WM_SETFOCUS:
@@ -1687,7 +1660,6 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_KILLFOCUS:
-			BeebReleaseAllKeys();
 			mainWin->Focus(false);
 			break;
 
@@ -4017,19 +3989,45 @@ void BeebWin::SetSoundMenu()
 	CheckMenuItem(IDM_MUSIC5000, Music5000Enabled);
 }
 
-void BeebWin::Activate(bool active)
+void BeebWin::Activate(bool Active)
 {
-	if (active)
+	if (Active)
+	{
 		m_frozen = false;
+	}
 	else if (m_FreezeWhenInactive)
+	{
 		m_frozen = true;
+	}
+
+	if (Active)
+	{
+		// Bring debug window to foreground BEHIND main window.
+		if (hwndDebug)
+		{
+			SetWindowPos(hwndDebug, m_hWnd, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
+			SetWindowPos(m_hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+		}
+	}
+
+	if (m_MouseCaptured && !Active)
+	{
+		ReleaseMouse();
+	}
 }
 
-void BeebWin::Focus(bool gotit)
+void BeebWin::Focus(bool Focus)
 {
-	if (gotit && m_TextViewEnabled)
+	if (Focus)
 	{
-		SetFocus(m_hTextView);
+		if (m_TextViewEnabled)
+		{
+			::SetFocus(m_hTextView);
+		}
+	}
+	else
+	{
+		BeebReleaseAllKeys();
 	}
 }
 
