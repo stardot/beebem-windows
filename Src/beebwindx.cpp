@@ -724,12 +724,14 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		{
 			// Blit the beeb bitmap onto the secondary buffer
 			ddrval = m_DDS2One->GetDC(&hdc);
+
 			if (ddrval == DDERR_SURFACELOST)
 			{
 				ddrval = m_DDS2One->Restore();
 				if (ddrval == DD_OK)
 					ddrval = m_DDS2One->GetDC(&hdc);
 			}
+
 			if (ddrval == DD_OK)
 			{
 				BitBlt(hdc, 0, 0, 800, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
@@ -791,6 +793,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		           SRCCOPY);
 
 		HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
+
 		if (hr != E_UNEXPECTED && FAILED(hr))
 		{
 			Report(MessageType::Error, "Failed to write video to AVI file");
@@ -815,8 +818,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 bool BeebWin::IsWindowMinimized() const
 {
 	WINDOWPLACEMENT wndpl;
-
 	wndpl.length = sizeof(WINDOWPLACEMENT);
+
 	if (GetWindowPlacement(m_hWnd, &wndpl))
 	{
 		if (wndpl.showCmd == SW_SHOWMINIMIZED)

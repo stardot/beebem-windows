@@ -582,6 +582,7 @@ LRESULT TextViewWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		keypress = true;
 		break;
 	}
+
 	LRESULT lr = CallWindowProc(TextViewPrevWndProc, hWnd, msg, wParam, lParam);
 
 	if (keypress)

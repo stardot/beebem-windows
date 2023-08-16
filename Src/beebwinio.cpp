@@ -1927,7 +1927,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 		SelectObject(CaptureDC, prevObj);
 
 		// Use GDI+ Bitmap to save bitmap
-		Bitmap *bitmap = new Bitmap((HBITMAP)CaptureDIB, 0);
+		Bitmap *bitmap = new Bitmap(CaptureDIB, 0);
 
 		WCHAR wFileName[MAX_PATH];
 		mbstowcs(wFileName, m_CaptureFileName, MAX_PATH);
