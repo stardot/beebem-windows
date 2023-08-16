@@ -74,7 +74,7 @@ bool DirectSoundStreamer::Init(std::size_t rate,
 		return false;
 	}
 
-	HRESULT hResult = m_pDirectSound->SetCooperativeLevel(GETHWND, DSSCL_PRIORITY);
+	HRESULT hResult = m_pDirectSound->SetCooperativeLevel(mainWin->GethWnd(), DSSCL_PRIORITY);
 
 	if (FAILED(hResult))
 	{
