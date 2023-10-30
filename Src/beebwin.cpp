@@ -1404,7 +1404,6 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
                          LPARAM lParam) // additional information
 {
 	int wmId, wmEvent;
-	HDC hdc;
 	int row, col;
 
 	switch (message)
