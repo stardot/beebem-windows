@@ -30,15 +30,20 @@ Boston, MA  02110-1301, USA.
 //
 #include <stdio.h>
 #include <windows.h>
+#include <fstream>
+#include <string>
+#include <vector>
+
 #include "main.h"
 #include "beebwin.h"
-#include "econet.h"
-#include "debug.h"
+#include "Econet.h"
+#include "Debug.h"
 #include "6502core.h"
 #include "sysvia.h"
+#include "StringUtils.h"
 
 // Configuration Options.
-// These, among others, are overridden in econet.cfg (see ReadNetwork() )
+// These, among others, are overridden in Econet.cfg, see ReadNetwork()
 
 static bool confAUNmode = false;      // Use AUN style networking
 static bool confLEARN = false;        // Add receipts from unknown hosts to network table
@@ -71,9 +76,9 @@ static unsigned int TimeBetweenBytes = 128;
 // You specify station number on command line.
 // This allows multiple different instances of the emulator to be run and
 // to communicate with each other.  Note that you STILL need to have them
-// all listed in econet.cfg so each one knows where the other area.
+// all listed in Econet.cfg so each one knows where the other area.
 unsigned char EconetStationNumber = 0; // default Station Number
-static unsigned int EconetListenPort = 0; // default Listen port
+static u_short EconetListenPort = 0; // default Listen port
 static unsigned long EconetListenIP = 0x0100007f;
 // IP settings:
 static SOCKET ListenSocket = INVALID_SOCKET; // Listen socket
@@ -209,19 +214,12 @@ static EconetPacket BeebRx;
 
 static unsigned char BeebTxCopy[6]; // size of longeconetpacket structure
 
-//unsigned char BeebRx.buff[2048];				// probably can't be bigger than 1500
-//unsigned char BeebTx.buff[2048];				// (or 1458 on my lan)  sniffed packets max 1280+hdr
-//volatile unsigned int BeebRx.Pointer=0;	// pointers etc
-//volatile unsigned int BeebRx.BytesInBuffer=0;
-//unsigned int BeebTx.Pointer=0;
-//unsigned int BeebTx.BytesInBuffer=0;
-
-// Holds data from econet.cfg file
+// Holds data from Econet.cfg file
 struct ECOLAN {							// what we we need to find a beeb?
 	unsigned char station;
 	unsigned char network;
 	unsigned long inet_addr;
-	unsigned int port;
+	u_short port;
 };
 
 struct AUNTAB {
@@ -235,13 +233,13 @@ static ECOLAN network[NETWORK_TABLE_LENGTH]; // list of my friends! :-)
 static AUNTAB aunnet[AUN_TABLE_LENGTH]; // AUNMap file for guess mode.
 
 static unsigned int networkp = 0; // how many friends do I have?
-static unsigned int aunnetp = 0;  // now many networks do i know about
+static unsigned int aunnetp = 0;  // now many networks do i know about?
 static unsigned int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 is valid..
 
-char EconetCfgPath[512]; // where's my config file saved?
+static unsigned char irqcause;   // flag to indicate cause of irq sr1b7
+static unsigned char sr1b2cause; // flag to indicate cause of irq sr1b2
 
-static unsigned char irqcause;   // flagto indicate cause of irq sr1b7
-static unsigned char sr1b2cause; // flagto indicate cause of irq sr1b2
+char EconetCfgPath[512];
 
 // A receiving station goes into flag fill mode while it is processing 
 // a message.  This stops other stations sending messages that may interfere
@@ -269,16 +267,18 @@ static MC6854 ADLCtemp;
 
 //---------------------------------------------------------------------------
 
-void EconetReset(void) {
-	char info[200];
+static bool EconetPoll_real();
+static void debugADLCprint();
+static void EconetError(const char *Format, ...);
 
-	if (DebugEnabled) {
-		DebugDisplayTrace(DebugType::Econet, true, "Econet: Reset");
-		if (EconetEnabled) {
-			DebugDisplayTrace(DebugType::Econet, true, "Econet: hardware enabled");
-		} else {
-			DebugDisplayTrace(DebugType::Econet, true, "Econet: hardware disabled");
-		}
+//---------------------------------------------------------------------------
+
+void EconetReset()
+{
+	if (DebugEnabled)
+	{
+		DebugDisplayTraceF(DebugType::Econet, true, "Econet: Reset (hardware %s)",
+		                   EconetEnabled ? "enabled" : "disabled");
 	}
 
 	// hardware operations:
@@ -292,7 +292,7 @@ void EconetReset(void) {
 	// clear all status conditions
 	ADLC.status1 = 0; // cts - clear to send line input (no collissions talking udp)
 	ADLC.status2 = 0; // dcd - no clock (until sockets initialised and open)
-	ADLC.sr2pse=0;
+	ADLC.sr2pse = 0;
 
 	//software stuff:
 	EconetRx.Pointer = 0;
@@ -312,7 +312,7 @@ void EconetReset(void) {
 	ADLC.rxffc = 0;
 	ADLC.txfptr = 0;
 	ADLC.txftl = 0;
-	
+
 	ADLC.idle = 1;
 	ADLC.cts = 0;
 
@@ -333,15 +333,14 @@ void EconetReset(void) {
 	if (!EconetEnabled)
 		return;
 
-	// Read in econet.cfg.  Done here so can refresh it on Break.
+	// Read in Econet.cfg and AUNMap.  Done here so can refresh it on Break.
 	ReadNetwork();
 
 	//----------------------
 	// Create a SOCKET for listening for incoming connection requests.
 	ListenSocket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ListenSocket == INVALID_SOCKET) {
-		sprintf(info, "Econet: Failed to open listening socket (error %ld)", WSAGetLastError());
-		EconetError(info);
+		EconetError("Econet: Failed to open listening socket (error %ld)", WSAGetLastError());
 		WSACleanup();
 		return;
 	}
@@ -365,24 +364,24 @@ void EconetReset(void) {
 			}
 		}
 
-		if (EconetListenPort != 0) {
-			service.sin_port = htons(EconetListenPort);
-			service.sin_addr.s_addr = EconetListenIP;
-
-			if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
-				sprintf(info, "Econet: Failed to bind to port %d (error %ld)", EconetListenPort, WSAGetLastError());
-				EconetError(info);
-				closesocket(ListenSocket);
-				WSACleanup();
-				return;
-			}
-		} else {
-			sprintf(info, "Econet: Failed to find station %d in econet.cfg", EconetStationNumber);
-			EconetError(info);
+		if (EconetListenPort == 0) {
+			EconetError("Econet: Failed to find station %d in Econet.cfg", EconetStationNumber);
 			WSACleanup();
 			return;
 		}
-	} else {
+
+		service.sin_port = htons(EconetListenPort);
+		service.sin_addr.s_addr = EconetListenIP;
+
+		if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
+			EconetError("Econet: Failed to bind to port %d (error %ld)", EconetListenPort, WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return;
+		}
+	}
+	else
+	{
 		// Station number not specified, find first one not already in use.
 		char localhost[256];
 		hostent *hent;
@@ -399,7 +398,8 @@ void EconetReset(void) {
 					memcpy(&localaddr, hent->h_addr_list[a], sizeof(struct in_addr));
 
 					if (network[i].inet_addr == inet_addr("127.0.0.1") ||
-					    network[i].inet_addr == localaddr.S_un.S_addr) {
+					    network[i].inet_addr == localaddr.S_un.S_addr)
+					{
 						service.sin_port = htons(network[i].port);
 						service.sin_addr.s_addr = network[i].inet_addr;
 
@@ -417,9 +417,9 @@ void EconetReset(void) {
 
 				if (confSTRICT && confAUNmode && networkp < NETWORK_TABLE_LENGTH) {
 					if (DebugEnabled)
-						DebugDisplayTrace(DebugType::Econet, true, "Econet: No free hosts in table; trying automatic mode..");
+						DebugDisplayTrace(DebugType::Econet, true, "Econet: No free hosts in table; trying automatic mode");
 
-					for (unsigned int j=0; j<aunnetp && EconetStationNumber == 0; j++) {
+					for (unsigned int j = 0; j < aunnetp && EconetStationNumber == 0; j++) {
 						for (int a = 0; hent->h_addr_list[a] != NULL && EconetStationNumber == 0; ++a) {
 							memcpy(&localaddr, hent->h_addr_list[a], sizeof(struct in_addr));
 						
@@ -447,8 +447,7 @@ void EconetReset(void) {
 				}
 			}
 		} else {
-			sprintf(info, "Econet: Failed to resolve local IP address");
-			EconetError(info);
+			EconetError("Econet: Failed to resolve local IP address");
 			WSACleanup();
 			return;
 		}
@@ -472,8 +471,7 @@ void EconetReset(void) {
 	} else {
 		SendSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (SendSocket == INVALID_SOCKET) {
- 			sprintf(info, "Econet: Failed to open sending socket (error %ld)", WSAGetLastError());
-			EconetError(info);
+			EconetError("Econet: Failed to open sending socket (error %ld)", WSAGetLastError());
 			closesocket(ListenSocket);
 			WSACleanup();
 			return;
@@ -482,9 +480,9 @@ void EconetReset(void) {
 
 	// this call is what allows broadcast packets to be sent:
 	const char broadcast = '1';
+
 	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1) {
-		sprintf(info, "Econet: Failed to set cosket for broadcasts (error %ld)", WSAGetLastError());
-		EconetError(info);
+		EconetError("Econet: Failed to set cosket for broadcasts (error %ld)", WSAGetLastError());
 		closesocket(ListenSocket);
 		WSACleanup();
 		return;
@@ -500,170 +498,256 @@ void EconetReset(void) {
 
 //---------------------------------------------------------------------------
 
-void ReadNetwork(void) {
-	// read econet.cfg file into network table
-	// probably could be done easier or better.. it's knowing where to look to 
-	// find out the functions....
-	FILE *EcoCfg;
-	char TmpPath[256];
-	char value[80];
-	char EcoNameBuf[256];
-	char *EcoName=EcoNameBuf;
-	char info[200];
-	unsigned int i;
-	unsigned int j;
-	unsigned int p;
-	unsigned int q;
-	
-	strcpy(TmpPath,EconetCfgPath);
-	strcat(TmpPath,"econet.cfg");
-	EcoCfg=fopen(TmpPath,"rt");
-	if (EcoCfg==NULL) {
-		sprintf(info, "Econet: Failed to open configuration file:\n  %s", TmpPath);
-		EconetError(info);
-		networkp = 0;
-		network[0].station = 0;
-	} else {
-		networkp = 0;
-		do {
-			if (fgets(EcoName,255,EcoCfg) == NULL) break;
-			if (DebugEnabled) {
-				DebugDisplayTraceF(DebugType::Econet, true, "Econet: ConfigFile %s", EcoName);
-			}
-			if (EcoName[0] != '#') {
-				i=0; p=0; q=0;
-				do {
-					j = 0;
-					do {
-						value[j] = EcoName[i];
-						i++; j++;
-					} while (EcoName[i] != ' ' && i < strlen(EcoName) && j<80);
-					value[j] =0;
-					if (p==0) {
-						if (_stricmp("AUNMODE",value) == 0) q = 1;
-						if (_stricmp("LEARN",value) == 0) q = 2;
-						if (_stricmp("AUNSTRICT",value) == 0) q = 3;
-						if (_stricmp("SINGLESOCKET",value) == 0) q = 4;
-						if (_stricmp("FLAGFILLTIMEOUT",value) == 0) q = 5;
-						if (_stricmp("SCACKTIMEOUT",value) == 0) q = 6;
-						if (_stricmp("TIMEBETWEENBYTES",value) == 0) q = 7;
-						if (_stricmp("FOURWAYTIMEOUT",value) == 0) q = 8;
-						if (_stricmp("MASSAGENETS",value) == 0) q = 9;
-						if ( q == 0 ) network[networkp].network = atoi(value);
-					}
-					if (p==1) {
-						if (q == 1 ) confAUNmode = (atoi(value) != 0);
-						if (q == 2 ) confLEARN = (atoi(value) != 0);
-						if (q == 3 ) confSTRICT = (atoi(value) != 0);
-						if (q == 4 ) confSingleSocket = (atoi(value) != 0);
-						if (q == 5 ) EconetFlagFillTimeout = (atoi(value));
-						if (q == 6 ) EconetSCACKtimeout = (atoi(value));
-						if (q == 7 ) TimeBetweenBytes = (atoi(value));
-						if (q == 8 ) FourWayStageTimeout = (atoi(value));
-						if (q == 9 ) MassageNetworks = (atoi(value) != 0);
-						if (q == 0 ) network[networkp].station = atoi(value);
-						else {
-								if (DebugEnabled) {
-									DebugDisplayTraceF(DebugType::Econet, true,
-									                   "Econet: Config option %i flag %s",
-									                   q, value);
-								}
-								break;
-						}
+static void ParseConfigLine(const std::string& Line, std::vector<std::string>& Tokens)
+{
+	int i = 0;
 
-					}
-					if (p==2) network[networkp].inet_addr = inet_addr(value);
-					if (p==3) network[networkp].port = atoi(value);
-					do i++; while (EcoName[i] == ' ' && i < strlen(EcoName));
-					p++;
-				} while (i < strlen(EcoName));
+	while (Line[i] != '\0')
+	{
+		std::string Token;
 
-				if (DebugEnabled && q == 0)
-				{
-					DebugDisplayTraceF(DebugType::Econet, true,
-					                   "Econet: ConfigFile Net %i Stn %i IP %08x Port %i",
-					                   network[networkp].network, network[networkp].station,
-					                   network[networkp].inet_addr, network[networkp].port);
-				}
-
-				if (q == 0 && p == 4) networkp++;	// there were correct qty fields on line
-				// otherwise pointer not incremented, next line overwrites it.
-			}
-		} while (networkp < NETWORK_TABLE_LENGTH);
-		network[networkp].station = 0;
-
-		if (MassageNetworks) {
-			inmask = 255;
-			outmask = 0;
-		} else {
-			inmask = 127;
-			outmask = 128;
+		while (Line[i] != '\0' && isspace(Line[i]))
+		{
+			i++;
 		}
 
-		fclose(EcoCfg);
+		while (Line[i] != '\0' && !isspace(Line[i]))
+		{
+			Token += Line[i++];
+		}
+
+		if (!Token.empty())
+		{
+			Tokens.push_back(Token);
+		}
+	}
+}
+
+//---------------------------------------------------------------------------
+
+// Read Econet.cfg file into network table
+
+static void ReadEconetConfigFile()
+{
+	char Path[256];
+
+	strcpy(Path, EconetCfgPath);
+	strcat(Path, "Econet.cfg");
+
+	std::ifstream Input(Path);
+
+	if (!Input)
+	{
+		EconetError("Econet: Failed to open configuration file:\n  %s", Path);
+		return;
+	}
+
+	networkp = 0;
+
+	std::string Line;
+
+	while (std::getline(Input, Line))
+	{
+		trim(Line);
+
+		// Skip blank lines and comments
+		if (Line.empty() || Line[0] == '#')
+		{
+			continue;
+		}
+
+		// Remove comments
+		std::string::size_type Pos = Line.find('#');
+
+		if (Pos != std::string::npos)
+		{
+			Line.erase(Pos);
+		}
+
+		// In BeebEm 4.19 and earlier, the default Econet.cfg file included
+		// '//' comments on some lines
+		Pos = Line.find("//");
+
+		if (Pos != std::string::npos)
+		{
+			Line.erase(Pos);
+		}
+
+		std::vector<std::string> Tokens;
+
+		ParseConfigLine(Line, Tokens);
+
+		if (Tokens.size() == 4)
+		{
+			if (networkp < NETWORK_TABLE_LENGTH)
+			{
+				try
+				{
+					network[networkp].network   = (unsigned char)std::stoi(Tokens[0]);
+					network[networkp].station   = (unsigned char)std::stoi(Tokens[1]);
+					network[networkp].inet_addr = inet_addr(Tokens[2].c_str());
+					network[networkp].port      = (u_short)std::stoi(Tokens[3]);
+
+					in_addr in;
+					in.S_un.S_addr = network[networkp].inet_addr;
+					char* ip = inet_ntoa(in);
+
+					DebugDisplayTraceF(DebugType::Econet, true,
+					                   "Econet: ConfigFile Net %i Stn %i IP %s Port %i",
+					                   network[networkp].network, network[networkp].station,
+					                   ip, network[networkp].port);
+
+					networkp++;
+				}
+				catch (const std::exception&)
+				{
+					EconetError("Invalid value in Econet config file:\n  %s", Path);
+				}
+			}
+			else
+			{
+				EconetError("Too many network entries in Econet config file:\n  %s", Path);
+			}
+		}
+		else if (Tokens.size() == 2)
+		{
+			const std::string& Key   = Tokens[0];
+			const std::string& Value = Tokens[1];
+
+			try
+			{
+				if (_stricmp(Key.c_str(), "AUNMODE") == 0)
+				{
+					confAUNmode = std::stoi(Value) != 0;
+				}
+				else if (_stricmp(Key.c_str(), "LEARN") == 0)
+				{
+					confLEARN = std::stoi(Value) != 0;
+				}
+				else if (_stricmp(Key.c_str(), "AUNSTRICT") == 0)
+				{
+					confSTRICT = std::stoi(Value) != 0;
+				}
+				else if (_stricmp(Key.c_str(), "SINGLESOCKET") == 0)
+				{
+					confSingleSocket = std::stoi(Value) != 0;
+				}
+				else if (_stricmp(Key.c_str(), "FLAGFILLTIMEOUT") == 0)
+				{
+					EconetFlagFillTimeout = std::stoi(Value);
+				}
+				else if (_stricmp(Key.c_str(), "SCACKTIMEOUT") == 0)
+				{
+					EconetSCACKtimeout = std::stoi(Value);
+				}
+				else if (_stricmp(Key.c_str(), "TIMEBETWEENBYTES") == 0)
+				{
+					TimeBetweenBytes = std::stoi(Value);
+				}
+				else if (_stricmp(Key.c_str(), "FOURWAYTIMEOUT") == 0)
+				{
+					FourWayStageTimeout = std::stoi(Value);
+				}
+				else if (_stricmp(Key.c_str(), "MASSAGENETS") == 0)
+				{
+					MassageNetworks = std::stoi(Value) != 0;
+				}
+				else
+				{
+					EconetError("Unknown entry in Econet config file: %s\n  %s", Key.c_str(), Path);
+				}
+			}
+			catch (const std::exception&)
+			{
+				EconetError("Invalid value in Econet config file: %s\n  %s", Value.c_str(), Path);
+			}
+		}
+	}
+
+	network[networkp].station = 0;
+}
+
+//---------------------------------------------------------------------------
+
+static void ReadAUNConfigFile()
+{
+	char Path[256];
+
+	strcpy(Path, EconetCfgPath);
+	strcat(Path, "AUNMap");
+
+	std::ifstream Input(Path);
+
+	if (!Input)
+	{
+		EconetError("Econet: Failed to open configuration file:\n  %s", Path);
+		return;
 	}
 
 	aunnetp = 0;
-	aunnet[0].network = 0; // terminate table
 
-	if (confAUNmode) { // don't bother reading file if not using AUN.
-		strcpy(TmpPath,EconetCfgPath);
-		strcat(TmpPath,"AUNMap");
-		EcoCfg=fopen(TmpPath,"rt");
-		if (EcoCfg==NULL) {
-			sprintf(info, "Econet: Failed to open configuration file:\n  %s", TmpPath);
-			EconetError(info);
-			aunnet[0].network = 0;
-		} else {
-			do {
-				if (fgets(EcoName,255,EcoCfg) == NULL) break;
-				if (DebugEnabled) {
-					DebugDisplayTraceF(DebugType::Econet, true,
-					                   "Econet: ConfigFile %s",
-					                   EcoName);
-				}
-				if (EcoName[0] != '#' && EcoName[0] != '|') {
-					i=0; p=0; q=0;
-					do {
-						j = 0;
-						do {
-							value[j] = EcoName[i];
-							i++; j++;
-						} while (EcoName[i] != ' ' && i < strlen(EcoName) && j<80);
-						value[j] =0;
-						if (p==0) {
-							if (_stricmp("ADDMAP",value) == 0) q = 1;
-						}
-						if (p==1) {
-							if (q == 1 ) aunnet[aunnetp].inet_addr = inet_addr(value) & 0x00FFFFFF; // stored as lsb..msb ?!?!
-						}
-						if (p==2) {
-							if (q == 1 ) aunnet[aunnetp].network = (atoi(value) & inmask); //30jun strip b7
-						}
-						do i++; while (EcoName[i] == ' ' && i < strlen(EcoName));
-						p++;
-					} while (i < strlen(EcoName));
-					if (q == 1 && p == 3) {
+	std::string Line;
+
+	while (std::getline(Input, Line))
+	{
+		trim(Line);
+
+		// Skip blank lines and comments
+		if (Line.empty() || Line[0] == '#' || Line[0] == '|')
+		{
+			continue;
+		}
+
+		// Remove comments
+		std::string::size_type Pos = Line.find('#');
+
+		if (Pos != std::string::npos)
+		{
+			Line.erase(Pos);
+		}
+
+		std::vector<std::string> Tokens;
+
+		ParseConfigLine(Line, Tokens);
+
+		if (Tokens.size() == 3 && _stricmp("ADDMAP", Tokens[0].c_str()) == 0)
+		{
+			if (aunnetp < AUN_TABLE_LENGTH)
+			{
+				try
+				{
+					aunnet[aunnetp].inet_addr = inet_addr(Tokens[1].c_str()) & 0x00FFFFFF; // stored as lsb..msb ?!?!
+					aunnet[aunnetp].network   = (unsigned char)(std::stoi(Tokens[2]) & inmask); // 30jun strip b7
+
+					if (DebugEnabled)
+					{
+						DebugDisplayTraceF(DebugType::Econet, true,
+						                   "Econet: AUNMap Net %i IP %08x",
+						                   aunnet[aunnetp].network, aunnet[aunnetp].inet_addr);
+					}
+
+					// note which network we are a part of.. this wont work on first run as listenip not set!
+					if (aunnet[aunnetp].inet_addr == (EconetListenIP & 0x00FFFFFF))
+					{
+						myaunnet = aunnetp;
+
 						if (DebugEnabled)
 						{
-							DebugDisplayTraceF(DebugType::Econet, true,
-							                   "Econet: AUNMap Net %i IP %08x",
-							                   aunnet[aunnetp].network, aunnet[aunnetp].inet_addr);
+							DebugDisplayTrace(DebugType::Econet, true, "Econet: ..and that's the one we're in");
 						}
-						// note which network we are a part of.. this wont work on first run as listenip not set!
-						if (aunnet[aunnetp].inet_addr == (EconetListenIP & 0x00FFFFFF)) {
-							myaunnet = aunnetp;
-							if (DebugEnabled) {
-								DebugDisplayTrace(DebugType::Econet, true, "Econet: ..and that's the one we're in");
-							}
-						}
-
-						aunnetp++;	// there were correct qty fields on line
 					}
-					// otherwise pointer not incremented, next line overwrites it.
+
+					aunnetp++;
 				}
-			} while (aunnetp < AUN_TABLE_LENGTH);
-			fclose(EcoCfg);
+				catch (const std::exception&)
+				{
+					EconetError("Invalid value in Econet config file:\n  %s", Path);
+				}
+			}
+			else
+			{
+				EconetError("Too many entries in Econet config file:\n  %s", Path);
+			}
 		}
 	}
 
@@ -671,9 +755,40 @@ void ReadNetwork(void) {
 }
 
 //---------------------------------------------------------------------------
+
+void ReadNetwork()
+{
+	networkp = 0;
+	network[0].station = 0;
+
+	ReadEconetConfigFile();
+
+	if (MassageNetworks)
+	{
+		inmask  = 255;
+		outmask = 0;
+	}
+	else
+	{
+		inmask  = 127;
+		outmask = 128;
+	}
+
+	aunnetp = 0;
+	aunnet[0].network = 0; // terminate table
+
+	// Don't bother reading file if not using AUN.
+	if (confAUNmode)
+	{
+		ReadAUNConfigFile();
+	}
+}
+
+//---------------------------------------------------------------------------
 // read to FE18..
 
-unsigned char Read_Econet_Station(void) {
+unsigned char Read_Econet_Station()
+{
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
@@ -681,13 +796,14 @@ unsigned char Read_Econet_Station(void) {
 		                   (int)EconetStationNumber);
 	}
 
-	return(EconetStationNumber);
+	return EconetStationNumber;
 }
 
 //---------------------------------------------------------------------------
 // read to FEA0-3
 
-unsigned char ReadEconetRegister(unsigned char Register) {
+unsigned char ReadEconetRegister(unsigned char Register)
+{
 	if (DebugEnabled) {
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "Econet: Read ADLC %02X",
@@ -695,13 +811,16 @@ unsigned char ReadEconetRegister(unsigned char Register) {
 		debugADLCprint();
 	}
 
-	if (Register==0) {
-		return (ADLC.status1);
+	if (Register == 0)
+	{
+		return ADLC.status1;
 	}
-	else if (Register==1) {
-		return (ADLC.status2);
+	else if (Register == 1)
+	{
+		return ADLC.status2;
 	}
-	else if (Register>1) {
+	else
+	{
 		if (((ADLC.control1 & 64)==0) && ADLC.rxfptr) {	// rxreset not set and someting in fifo
 			if (DebugEnabled)
 			{
@@ -756,8 +875,8 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 			ADLC.txfifo[1] = ADLC.txfifo[0];
 			ADLC.txfifo[0] = Value;
 			ADLC.txfptr++; 
-			ADLC.txftl = ADLC.txftl <<1;	///	shift txlast bits up.
-			if (Register == 3) ADLC.control2 |= 16;	// set txlast control flag ourself
+			ADLC.txftl = ADLC.txftl << 1; // shift txlast bits up.
+			if (Register == 3) ADLC.control2 |= 16; // set txlast control flag ourself
 		}
 	}
 
@@ -769,7 +888,8 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 //--------------------------------------------------------------------------------------------
 // Optimisation - only call real poll routine when something has changed
 
-bool EconetPoll() { // return NMI status
+bool EconetPoll() // return NMI status
+{
 	if (EconetStateChanged || EconetTrigger<=TotalCycles) {
 		EconetStateChanged = false;
 
@@ -791,8 +911,8 @@ bool EconetPoll() { // return NMI status
 // routines before they are checked) but for the moment I just want to get this
 // code actually working!
 
-bool EconetPoll_real(void) { // return NMI status
-	char info[200];
+bool EconetPoll_real() // return NMI status
+{
 	bool interruptnow = false;
 
 	// save flags
@@ -818,12 +938,12 @@ bool EconetPoll_real(void) { // return NMI status
 	//		automatically reset when frame aborted bvy receiving an abort flag, or DCD fails.
 	if (ADLC.control1 & 32) {
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: RxABORT is set");
-		BeebRx.Pointer =0;
+		BeebRx.Pointer = 0;
 		BeebRx.BytesInBuffer = 0;
 		ADLC.rxfptr = 0;
 		ADLC.rxap = 0;
 		ADLC.rxffc = 0;
-		ADLC.control1 &= ~32;	// reset flag
+		ADLC.control1 &= ~32; // reset flag
 		fourwaystage = FourWayStage::Idle;
 	}
 	// CR1b6 - RxRs - Receiver reset. set by cpu or when reset line goes low.
@@ -839,10 +959,10 @@ bool EconetPoll_real(void) { // return NMI status
 	// CR2b1 - 2byte/1byte mode.  set to indicate 2 byte mode. see trda status bit.
 	// CR2b2 - Flag/Mark idle select. What is transmitted when tx idle. ignored here as not needed
 	// CR2b3 - FC/TDRA mode - does status bit SR1b6 indicate 1=frame complete, 
-	//	0=tx data reg available. 1=frame tx complete.  see tdra status bit
+	//         0=tx data reg available. 1=frame tx complete.  see tdra status bit
 	// CR2b4 - TxLast - byte just put into fifo was the last byte of a packet.
 	if (ADLC.control2 & 16) { // TxLast set
-		ADLC.txftl |= 1; //	set b0 - flag for fifo[0]
+		ADLC.txftl |= 1; // set b0 - flag for fifo[0]
 		ADLC.control2 &= ~16; // clear flag.
 	}
 
@@ -862,7 +982,7 @@ bool EconetPoll_real(void) { // return NMI status
 
 		sr1b2cause = 0; // clear cause of sr2b1 going up
 		if (ADLC.control1 & 64) { // rx reset,clear buffers.
-			BeebRx.Pointer =0;
+			BeebRx.Pointer = 0;
 			BeebRx.BytesInBuffer = 0;
 			ADLC.rxfptr = 0;
 			ADLC.rxap = 0;
@@ -882,7 +1002,7 @@ bool EconetPoll_real(void) { // return NMI status
 		}
 
 		if (ADLC.control1 & 128) { // tx reset,clear buffers.
-			BeebTx.Pointer =0;
+			BeebTx.Pointer = 0;
 			BeebTx.BytesInBuffer = 0;
 			ADLC.txfptr = 0;
 			ADLC.txftl = 0;
@@ -916,7 +1036,7 @@ bool EconetPoll_real(void) { // return NMI status
 		ADLC.txfptr = 0; // reset fifo
 		ADLC.txftl = 0; // reset fifo flags
 		BeebTx.Pointer = 0;
-		BeebTx.BytesInBuffer = 0; 
+		BeebTx.BytesInBuffer = 0;
 		ADLC.control4 &= ~32; // reset flag.
 		fourwaystage = FourWayStage::Idle;
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IDLE (abort)");
@@ -926,7 +1046,7 @@ bool EconetPoll_real(void) { // return NMI status
 	// can affect timing of RTS output line (and thus CTS input) still ignored.
 	// CR4b7 - NRZI/NRZ - invert data encoding on wire. ignore.
 
-	if (EconetTrigger<=TotalCycles) {
+	if (EconetTrigger <= TotalCycles) {
 		// Only do this bit occasionally as data only comes in from
 		// line occasionally.
 		// Trickle data between fifo registers and ip packets.
@@ -938,8 +1058,8 @@ bool EconetPoll_real(void) { // return NMI status
 					DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: Write to FIFO noticed");
 				bool TXlast = false;
 				if (ADLC.txftl & powers[ADLC.txfptr-1]) TXlast = true; // TxLast set
-				if (BeebTx.Pointer + 1 >sizeof(BeebTx.buff) || // overflow IP buffer
-						(ADLC.txfptr >4 )) { // overflowed fifo
+				if (BeebTx.Pointer + 1 > sizeof(BeebTx.buff) || // overflow IP buffer
+				    (ADLC.txfptr > 4)) { // overflowed fifo
 					ADLC.status1 |= 32; // set tx underrun flag
 					BeebTx.Pointer = 0; // wipe buffer
 					BeebTx.BytesInBuffer = 0;
@@ -967,8 +1087,10 @@ bool EconetPoll_real(void) { // return NMI status
 					sockaddr_in RecvAddr;
 					bool SendMe = false;
 					int SendLen;
-					unsigned int i=0;
-					if (confAUNmode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) { // broadcast!
+					unsigned int i = 0;
+
+					if (confAUNmode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) // broadcast!
+					{
 						// TODO something
 						// Somewhere that I cannot now find suggested that 
 						// aun buffers broadcast packet, and broadcasts a simple flag. stations
@@ -979,20 +1101,23 @@ bool EconetPoll_real(void) { // return NMI status
 						// TODO lookup destnet in aunnet() and use proper ip address!
 						RecvAddr.sin_family = AF_INET;
 						RecvAddr.sin_port = htons(32768);
-						RecvAddr.sin_addr.s_addr = INADDR_BROADCAST; // ((EconetListenIP & 0x00FFFFFF) | 0xFF000000) ;
+						RecvAddr.sin_addr.s_addr = INADDR_BROADCAST; // ((EconetListenIP & 0x00FFFFFF) | 0xFF000000);
 						SendMe = true;
-					} else {
+					}
+					else
+					{
 						do {
 							// does the packet match this network table entry?
 							// SendMe = false;
 							// // check for 0.stn and mynet.stn.
 							// aunnet wont be populted if not in aun mode, but we don't need to not check
 							// it because it won't matter..
-							if ((network[i].network == (unsigned int)(BeebTx.eh.destnet)
-								|| network[i].network == aunnet[myaunnet].network ) &&
-								network[i].station == (unsigned int)(BeebTx.eh.deststn)) {
-									SendMe = true;
-									break;
+							if ((network[i].network == BeebTx.eh.destnet ||
+							     network[i].network == aunnet[myaunnet].network) &&
+							    network[i].station == BeebTx.eh.deststn)
+							{
+								SendMe = true;
+								break;
 							}
 							i++;
 						} while (i < networkp);
@@ -1038,9 +1163,10 @@ bool EconetPoll_real(void) { // return NMI status
 						                   (unsigned int)RecvAddr.sin_addr.s_addr,
 						                   (unsigned int)htons(RecvAddr.sin_port));
 
+						char info[200];
 						sprintf(info, "Econet: Packet data:");
-						for (unsigned int i = 0; i < BeebTx.Pointer; ++i) {
-							sprintf(info+strlen(info), " %02X", BeebTx.buff[i]);
+						for (unsigned int j = 0; j < BeebTx.Pointer; ++j) {
+							sprintf(info+strlen(info), " %02X", BeebTx.buff[j]);
 						}
 						DebugDisplayTrace(DebugType::Econet, true, info);
 					}
@@ -1056,7 +1182,7 @@ bool EconetPoll_real(void) { // return NMI status
 
 					// Send a datagram to the receiver
 					if (confAUNmode) {
-						unsigned int j=0;
+						unsigned int j = 0;
 						// OK. Lets do AUN ...
 						// The beeb has given us a packet .. what is it?
 						SendMe = false;
@@ -1067,11 +1193,10 @@ bool EconetPoll_real(void) { // return NMI status
 							// it came in response to our ack of a scout
 							// what we have /should/ be the data block ..
 							// CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
-							if ( BeebTx.Pointer != sizeof(BeebTx.eh) || memcmp(BeebTx.buff,BeebTxCopy,sizeof(BeebTx.eh))!= 0) { // nope
+							if (BeebTx.Pointer != sizeof(BeebTx.eh) || memcmp(BeebTx.buff, BeebTxCopy, sizeof(BeebTx.eh)) != 0) { // nope
 								// j = 0;
-								for (unsigned int k=4; k<BeebTx.Pointer; k++) {
+								for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
 									EconetTx.buff[j] = BeebTx.buff[k];
-									j++;
 								}
 								EconetTx.Pointer = j;
 								fourwaystage = FourWayStage::DataSent;
@@ -1093,9 +1218,8 @@ bool EconetPoll_real(void) { // return NMI status
 							EconetTx.destnet = BeebTx.eh.destnet | outmask; //30JUN
 							EconetTx.deststn = BeebTx.eh.deststn;
 							// j = 0;
-							for (unsigned int k=6; k<BeebTx.Pointer; k++) {
+							for (unsigned int k = 6; k < BeebTx.Pointer; k++, j++) {
 								EconetTx.buff[j] = BeebTx.buff[k];
-								j++;
 							}
 
 							EconetTx.Pointer = j;
@@ -1106,7 +1230,7 @@ bool EconetPoll_real(void) { // return NMI status
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast snt)");
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + 8;
-							} else if (EconetTx.ah.port == 0 ) {
+							} else if (EconetTx.ah.port == 0) {
 								EconetTx.ah.type = AUNType::Immediate;
 								fourwaystage = FourWayStage::ImmediateSent;
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMSENT");
@@ -1142,10 +1266,9 @@ bool EconetPoll_real(void) { // return NMI status
 							/*
 							if (sendto(SendSocket, (char *) &EconetTx.ah, SendLen, 0,
 								(SOCKADDR *) &RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR) {
-									sprintf(info, "Econet: Failed to send packet to %02x %02x (%08X :%u)",
+									EconetError("Econet: Failed to send packet to %02x %02x (%08X :%u)",
 										(unsigned int)(network[i].inet_addr), (unsigned int)network[i].station,
 										(unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
-									EconetError(info);
 							}
 							*/
 
@@ -1157,10 +1280,9 @@ bool EconetPoll_real(void) { // return NMI status
 							// it's a reply to an immediate command we just had
 							fourwaystage = FourWayStage::WaitForIdle;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (imm rcvd)");
-							//							j=0;
-							for (unsigned int k=4; k<BeebTx.Pointer; k++) {
+							// j = 0;
+							for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
 								EconetTx.buff[j] = BeebTx.buff[k];
-								j++;
 							}
 							EconetTx.Pointer = j;
 							EconetTx.ah = EconetRx.ah;
@@ -1176,23 +1298,28 @@ bool EconetPoll_real(void) { // return NMI status
 						}
 					}
 
-					if (SendMe) {
+					if (SendMe)
+					{
 						if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Sending a packet..");
-						if (confAUNmode) {
-							if (sendto(SendSocket, (char *) &EconetTx, SendLen, 0, 
-								(SOCKADDR *) &RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR) {
-									sprintf(info, "Econet: Failed to send packet to %02x %02x (%08X :%u)",
-										(unsigned int)(network[i].inet_addr), (unsigned int)network[i].station,
-										(unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
-									EconetError(info);
+
+						if (confAUNmode)
+						{
+							if (sendto(SendSocket, (char *)&EconetTx, SendLen, 0,
+							           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
+							{
+								EconetError("Econet: Failed to send packet to %02x %02x (%08X :%u)",
+								            (unsigned int)network[i].inet_addr, (unsigned int)network[i].station,
+								            (unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
 							}
-						} else {
-							if (sendto(SendSocket, (char *)BeebTx.buff, BeebTx.Pointer,
-								   0, (SOCKADDR *) &RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR) {
-								sprintf(info, "Econet: Failed to send packet to %02x %02x (%08X :%u)",
-									(unsigned int)(BeebTx.eh.destnet), (unsigned int)BeebTx.eh.deststn,
-									(unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
-								EconetError(info);
+						}
+						else
+						{
+							if (sendto(SendSocket, (char *)BeebTx.buff, BeebTx.Pointer, 0,
+							           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
+							{
+								EconetError("Econet: Failed to send packet to %02x %02x (%08X :%u)",
+								            (unsigned int)BeebTx.eh.destnet, (unsigned int)BeebTx.eh.deststn,
+								            (unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
 							}
 						}
 
@@ -1202,8 +1329,8 @@ bool EconetPoll_real(void) { // return NMI status
 						SetTrigger(EconetFlagFillTimeout, EconetFlagFillTimeoutTrigger);
 						if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill set (packet sent)");
 
-						BeebTx.Pointer = 0;					// wipe buffer
-						BeebTx.BytesInBuffer = 0;					
+						BeebTx.Pointer = 0; // wipe buffer
+						BeebTx.BytesInBuffer = 0;
 						if (DebugEnabled) debugADLCprint();
 					}
 				}
@@ -1222,8 +1349,8 @@ bool EconetPoll_real(void) { // return NMI status
 					ADLC.rxfifo[1] = ADLC.rxfifo[0];
 					ADLC.rxfifo[0] = BeebRx.buff[BeebRx.Pointer];
 					ADLC.rxfptr++;
-					ADLC.rxffc = (ADLC.rxffc <<1) & 7;
-					ADLC.rxap = (ADLC.rxap <<1) & 7;
+					ADLC.rxffc = (ADLC.rxffc << 1) & 7;
+					ADLC.rxap = (ADLC.rxap << 1) & 7;
 					if (BeebRx.Pointer == 0)
 						ADLC.rxap |= 1; // 2 bytes? adr extention mode
 					BeebRx.Pointer++;
@@ -1236,7 +1363,7 @@ bool EconetPoll_real(void) { // return NMI status
 			}
 
 			if (ADLC.rxfptr == 0) {
-				unsigned int hostno, j=0;
+				unsigned int hostno, j = 0;
 
 				// still nothing in buffers (and thus nothing in Econetrx buffer)
 				ADLC.control1 &= ~32; // reset discontinue flag
@@ -1261,10 +1388,10 @@ bool EconetPoll_real(void) { // return NMI status
 							// Read the packet
 							int sizRcvAdr = sizeof(RecvAddr);
 							if (confAUNmode) {
-								RetVal = recvfrom(ListenSocket, (char *) EconetRx.raw, sizeof(EconetRx), 0, (SOCKADDR *) &RecvAddr, (int *) &sizRcvAdr);
+								RetVal = recvfrom(ListenSocket, (char *)EconetRx.raw, sizeof(EconetRx), 0, (SOCKADDR *)&RecvAddr, (int *)&sizRcvAdr);
 								EconetRx.BytesInBuffer = RetVal;
 							} else {
-								RetVal = recvfrom(ListenSocket, (char *) BeebRx.buff, sizeof(BeebRx.buff), 0, (SOCKADDR *) &RecvAddr, (int *) &sizRcvAdr);
+								RetVal = recvfrom(ListenSocket, (char *)BeebRx.buff, sizeof(BeebRx.buff), 0, (SOCKADDR *)&RecvAddr, (int *)&sizRcvAdr);
 							}
 
 							if (RetVal > 0) {
@@ -1276,7 +1403,9 @@ bool EconetPoll_real(void) { // return NMI status
 									                   RecvAddr.sin_addr.s_addr,
 									                   htons(RecvAddr.sin_port));
 
+									char info[200];
 									sprintf(info, "EconetPoll: Packet data:");
+
 									for (int i = 0; i < RetVal; ++i) {
 										if (confAUNmode) {
 											sprintf(info+strlen(info), " %02X", EconetRx.raw[i]);
@@ -1284,18 +1413,19 @@ bool EconetPoll_real(void) { // return NMI status
 											sprintf(info+strlen(info), " %02X", BeebRx.buff[i]);
 										}
 									}
+
 									DebugDisplayTrace(DebugType::Econet, true, info);
 								}
 
 								if (confAUNmode) {
 									// convert from AUN format
 									// find station number of sender
-									hostno=0;
+									hostno = 0;
 									bool foundhost = false;
 
 									do {
 										if (RecvAddr.sin_port == htons(network[hostno].port) &&
-											RecvAddr.sin_addr.s_addr == network[hostno].inet_addr)
+										    RecvAddr.sin_addr.s_addr == network[hostno].inet_addr)
 										{
 											foundhost = true;
 											break;
@@ -1306,11 +1436,11 @@ bool EconetPoll_real(void) { // return NMI status
 									if (!foundhost) {
 										// packet from unknown host
 										if (confLEARN && networkp < NETWORK_TABLE_LENGTH) {
-											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Previusly unknown host; add entry!");
+											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Previously unknown host; add entry!");
 											network[networkp].port = ntohs(RecvAddr.sin_port);
 											network[networkp].inet_addr = RecvAddr.sin_addr.s_addr;
 											// TODO sort this out!! potential for clashes!! look for dupes
-											network[networkp].station = (network[networkp].inet_addr & 0xFF000000)>>24; 
+											network[networkp].station = (network[networkp].inet_addr & 0xFF000000) >> 24;
 											// TODO and we need to use the map file ..
 											network[networkp].network = 0; 
 
@@ -1349,15 +1479,15 @@ bool EconetPoll_real(void) { // return NMI status
 
 											BeebRx.eh.cb = EconetRx.ah.cb | 128;
 											BeebRx.eh.port = EconetRx.ah.port;
-											switch (EconetRx.ah.type) 
+
+											switch (EconetRx.ah.type)
 											{
 												case AUNType::Broadcast:
 													BeebRx.eh.deststn = 255; // wasn't just for us..
 													BeebRx.eh.destnet = 0; // TODO check if not net 0.. does it make a difference?
-													j=6;
-													for (unsigned int i=0; i<RetVal-sizeof(EconetRx.ah); i++) {
+													j = 6;
+													for (unsigned int i = 0; i < RetVal - sizeof(EconetRx.ah); i++, j++) {
 														BeebRx.buff[j] = EconetRx.buff[i];
-														j++;
 													}
 													BeebRx.BytesInBuffer = j;
 													fourwaystage = FourWayStage::WaitForIdle;
@@ -1365,10 +1495,9 @@ bool EconetPoll_real(void) { // return NMI status
 													break;
 
 												case AUNType::Immediate:
-													j=6;
-													for (unsigned int i=0; i<RetVal-sizeof(EconetRx.ah); i++) {
+													j = 6;
+													for (unsigned int i = 0; i < RetVal - sizeof(EconetRx.ah); i++, j++) {
 														BeebRx.buff[j] = EconetRx.buff[i];
-														j++;
 													}
 													BeebRx.BytesInBuffer = j;
 													fourwaystage = FourWayStage::ImmediateReceived;
@@ -1381,10 +1510,12 @@ bool EconetPoll_real(void) { // return NMI status
 													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTRCVD");
 													BeebRx.BytesInBuffer = sizeof(BeebRx.eh);
 													break;
+
 												default:
 													//ignore anything else
 													BeebRx.BytesInBuffer = 0;
 											}
+
 											BeebRx.Pointer = 0;
 											break;
 
@@ -1400,10 +1531,9 @@ bool EconetPoll_real(void) { // return NMI status
 											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
 											// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
-											j=4;
-											for (unsigned int i=0; i<RetVal-sizeof(EconetRx.ah); i++) {
+											j = 4;
+											for (unsigned int i = 0; i < RetVal - sizeof(EconetRx.ah); i++, j++) {
 												BeebRx.buff[j] = EconetRx.buff[i];
-												j++;
 											}
 											BeebRx.BytesInBuffer = j;
 											BeebRx.Pointer = 0;
@@ -1442,28 +1572,32 @@ bool EconetPoll_real(void) { // return NMI status
 								else
 								{
 									BeebRx.BytesInBuffer = RetVal;
-									BeebRx.Pointer =0;
+									BeebRx.Pointer = 0;
 								}
 
 								if ((BeebRx.eh.deststn == EconetStationNumber ||
-									BeebRx.eh.deststn == 255 ||
-									BeebRx.eh.deststn == 0) && BeebRx.BytesInBuffer > 0 ) { 
+								    BeebRx.eh.deststn == 255 ||
+								    BeebRx.eh.deststn == 0) && BeebRx.BytesInBuffer > 0)
+								{
 									// Peer sent us packet - no longer in flag fill
 									FlagFillActive = false;
+
 									if (DebugEnabled) {
 										DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill reset");
 									}
-								} else {
+								}
+								else
+								{
 									// Two other stations communicating - assume one of them will flag fill
 									FlagFillActive = true;
 									SetTrigger(EconetFlagFillTimeout, EconetFlagFillTimeoutTrigger);
+
 									if (DebugEnabled) {
 										DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill set - other station comms");
 									}
 								}
 							} else if (RetVal == SOCKET_ERROR && !confSingleSocket) {
-								sprintf(info, "Econet: Failed to receive packet (error %ld)", WSAGetLastError());
-								EconetError(info);
+								EconetError("Econet: Failed to receive packet (error %ld)", WSAGetLastError());
 							}
 						} else if (RetVal == SOCKET_ERROR) {
 							EconetError("Econet: Failed to check for new packet");
@@ -1478,8 +1612,8 @@ bool EconetPoll_real(void) { // return NMI status
 							// just got a scout from the beeb, fake an acknowledgement.
 							BeebRx.eh.deststn = EconetStationNumber;
 							BeebRx.eh.destnet = 0;
-							BeebRx.eh.srcstn = EconetTx.deststn; // use scout's dest as source of ack.
-							BeebRx.eh.srcnet = EconetTx.destnet; // & inmask; //30jun
+							BeebRx.eh.srcstn = (unsigned char)EconetTx.deststn; // use scout's dest as source of ack.
+							BeebRx.eh.srcnet = (unsigned char)EconetTx.destnet; // & inmask; //30jun
 
 							BeebRx.BytesInBuffer = 4;
 							BeebRx.Pointer = 0;
@@ -1494,12 +1628,11 @@ bool EconetPoll_real(void) { // return NMI status
 							// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun
 							// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
-							BeebRx.eh.srcstn = EconetTx.deststn;  //30jun dont think this is right..
-							BeebRx.eh.srcnet = EconetTx.destnet & inmask;
-							j=4;
-							for (unsigned int i=0; i<EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++) {
+							BeebRx.eh.srcstn = (unsigned char)EconetTx.deststn;  //30jun dont think this is right..
+							BeebRx.eh.srcnet = (unsigned char)(EconetTx.destnet & inmask);
+							j = 4;
+							for (unsigned int i = 0; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++) {
 								BeebRx.buff[j] = EconetRx.buff[i];
-								j++;
 							}
 							BeebRx.BytesInBuffer = j;
 							BeebRx.Pointer =0;
@@ -1514,10 +1647,10 @@ bool EconetPoll_real(void) { // return NMI status
 
 		// Update idle status
 		if (!(ADLC.control1 & 0x40) // not rxreset
-			&& !ADLC.rxfptr // nothing in fifo
-			&& !(ADLC.status2 & 2) // no FV
-			&& (BeebRx.BytesInBuffer == 0)) { // nothing in ip buffer
-			ADLC.idle = true;
+		    && !ADLC.rxfptr // nothing in fifo
+		    && !(ADLC.status2 & 2) // no FV
+		    && (BeebRx.BytesInBuffer == 0)) { // nothing in ip buffer
+		    ADLC.idle = true;
 		} else {
 			ADLC.idle = false;
 		}
@@ -1539,11 +1672,12 @@ bool EconetPoll_real(void) { // return NMI status
 		&& ADLC.rxfptr == 0 
 		&& ADLC.txfptr == 0 // ??
 		// && EconetSCACKtrigger > TotalCycles
-		) {
-			fourwaystage = FourWayStage::Idle;
-			Econet4Wtrigger = 0;
-			EconetSCACKtrigger = 0;
-			FlagFillActive = false;
+		)
+	{
+		fourwaystage = FourWayStage::Idle;
+		Econet4Wtrigger = 0;
+		EconetSCACKtrigger = 0;
+		FlagFillActive = false;
 	}
 
 	// timeout four way handshake - for when we get lost..
@@ -1727,10 +1861,8 @@ bool EconetPoll_real(void) { // return NMI status
 
 	// Do we need to flag an interrupt?
 	if (ADLC.status1 != ADLCtemp.status1 || ADLC.status2 != ADLCtemp.status2) { // something changed
-		unsigned char tempcause, temp2;
-
 		// SR1b1 - S2RQ - Status2 request. New bit set in S2?
-		tempcause = ((ADLC.status2 ^ ADLCtemp.status2) & ADLC.status2) & ~128;
+		unsigned char tempcause = ((ADLC.status2 ^ ADLCtemp.status2) & ADLC.status2) & ~128;
 
 		if (!(ADLC.control1 & 2)) { // RIE not set,
 			tempcause = 0;
@@ -1769,7 +1901,8 @@ bool EconetPoll_real(void) { // return NMI status
 		}
 
 		// Bit cleared in S1?
-		temp2 = ((ADLC.status1 ^ ADLCtemp.status1) & ADLCtemp.status1) & ~128;
+		unsigned char temp2 = ((ADLC.status1 ^ ADLCtemp.status1) & ADLCtemp.status1) & ~128;
+
 		if (temp2) { // something went off
 			irqcause = irqcause & ~temp2; // clear flags that went off
 			if (irqcause == 0) { // all flag gone off now
@@ -1800,7 +1933,8 @@ bool EconetPoll_real(void) { // return NMI status
 //--------------------------------------------------------------------------------------------
 // display some information
 
-void debugADLCprint(void) {
+void debugADLCprint()
+{
 	DebugDisplayTraceF(DebugType::Econet, true,
 	                   "ADLC: Ctl:%02X %02X %02X %02X St:%02X %02X TXptr:%01x rx:%01x FF:%d IRQc:%02x SR2c:%02x PC:%04x 4W:%i ",
 	                   (int)ADLC.control1, (int)ADLC.control2, (int)ADLC.control3, (int)ADLC.control4,
@@ -1812,12 +1946,17 @@ void debugADLCprint(void) {
 //--------------------------------------------------------------------------------------------
 // Display an error message box
 
-void EconetError(const char *errstr)
+static void EconetError(const char *Format, ...)
 {
+	va_list Args;
+	va_start(Args, Format);
+
 	if (DebugEnabled)
 	{
-		DebugDisplayTrace(DebugType::Econet, true, errstr);
+		DebugDisplayTraceF(DebugType::Econet, true, Format, Args);
 	}
 
-	mainWin->Report(MessageType::Error, errstr);
+	mainWin->Report(MessageType::Error, Format, Args);
+
+	va_end(Args);
 }

@@ -29,9 +29,10 @@ Boston, MA  02110-1301, USA.
 #ifndef BEEBWIN_HEADER
 #define BEEBWIN_HEADER
 
-#include <string.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string>
+#include <string.h>
 
 #include <windows.h>
 #include <d3dx9.h>
@@ -575,6 +576,7 @@ public:
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
 
 	MessageResult Report(MessageType type, const char *format, ...);
+	MessageResult Report(MessageType type, const char *format, va_list args);
 
 	bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
 	bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, void* pData, int* pnSize);

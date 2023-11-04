@@ -31,6 +31,9 @@
     <Filter Include="Header Files\zlib">
       <UniqueIdentifier>{22d01859-7df5-4fb9-a1ad-0ccb885e0b0d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UserData">
+      <UniqueIdentifier>{c98f4a0c-e1bc-4c7f-8fd4-eca857069d8e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="6502core.cpp">
@@ -96,7 +99,7 @@
     <ClCompile Include="DiscEdit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="econet.cpp">
+    <ClCompile Include="Econet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ExportFileDialog.cpp">
@@ -335,7 +338,7 @@
     <ClInclude Include="disctype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="econet.h">
+    <ClInclude Include="Econet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ExportFileDialog.h">
@@ -664,6 +667,36 @@
     </None>
     <None Include="..\Help\z80torch.html">
       <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\UserData\AUNMap">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\Default.kmap">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\DefaultUser.kmap">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\Econet.cfg">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\Logical.kmap">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\Phroms.cfg">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\Preferences.cfg">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\Roms.cfg">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\Roms_Torch.cfg">
+      <Filter>UserData</Filter>
+    </None>
+    <None Include="..\UserData\USLogical.kmap">
+      <Filter>UserData</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

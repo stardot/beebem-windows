@@ -1458,6 +1458,13 @@ void DebugDisplayTraceF(DebugType type, bool host, const char *format, ...)
 	va_list args;
 	va_start(args, format);
 
+	DebugDisplayTraceF(type, host, format, args);
+
+	va_end(args);
+}
+
+void DebugDisplayTraceF(DebugType type, bool host, const char *format, va_list args)
+{
 	// _vscprintf doesn't count terminating '\0'
 	int len = _vscprintf(format, args) + 1;
 

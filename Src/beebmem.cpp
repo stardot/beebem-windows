@@ -55,8 +55,8 @@ Boston, MA  02110-1301, USA.
 #include "uefstate.h"
 #include "z80mem.h"
 #include "z80.h"
-#include "econet.h"		//Rob
-#include "debug.h"		//Rob added for INTON/OFF reporting only
+#include "Econet.h" // Rob
+#include "Debug.h" // Rob added for INTON/OFF reporting only
 #include "Teletext.h"
 #include "music5000.h"
 

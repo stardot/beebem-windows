@@ -63,27 +63,24 @@ struct MC6854 {
 	// b6 Overrun
 	// b7 Receiver Data Avilable (see s1 b0 )
 
-	int sr2pse;					// PSE level for SR2 rx bits
+	int sr2pse; // PSE level for SR2 rx bits
 	// 0 = inactive
 	// 1 = ERR, FV, DCD, OVRN, ABT
 	// 2 = Idle
 	// 3 = AP
 	// 4 = RDA
 
-	bool cts;		// signal up
+	bool cts; // signal up
 	bool idle;
 };
 
-unsigned char Read_Econet_Station(void);
-void EconetReset(void);
+unsigned char Read_Econet_Station();
+void EconetReset();
 unsigned char ReadEconetRegister(unsigned char Register);
 void WriteEconetRegister(unsigned char Register, unsigned char Value);
-void ReadNetwork(void);
-void debugADLCprint(void); 
-void EconetError(const char *errstr);
+void ReadNetwork();
 
-bool EconetPoll(void);
-bool EconetPoll_real(void);
+bool EconetPoll();
 
 extern bool EconetEnabled;
 extern bool EconetNMIenabled;
@@ -95,7 +92,5 @@ volatile extern struct MC6854 ADLC;
 
 extern unsigned char EconetStationNumber;
 extern char EconetCfgPath[512];
-
-extern WSADATA WsaDat;							// Windows sockets info
 
 #endif

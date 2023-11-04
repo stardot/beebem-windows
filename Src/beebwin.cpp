@@ -66,7 +66,7 @@ using std::max;
 #include "atodconv.h"
 #include "userkybd.h"
 #include "Serial.h"
-#include "econet.h"	 // Rob O'Donnell Christmas 2004.
+#include "Econet.h" // Rob O'Donnell Christmas 2004.
 #include "tube.h"
 #include "ext1770.h"
 #include "uefstate.h"
@@ -5122,10 +5122,21 @@ void BeebWin::HandleTimer()
 
 MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 {
-	MessageResult Result = MessageResult::None;
+	MessageResult Result;
 
 	va_list args;
 	va_start(args, format);
+
+	Result = Report(type, format, args);
+
+	va_end(args);
+
+	return Result;
+}
+
+MessageResult BeebWin::Report(MessageType type, const char *format, va_list args)
+{
+	MessageResult Result = MessageResult::None;
 
 	// Calculate required length, +1 is for NUL terminator
 	const int length = _vscprintf(format, args) + 1;
@@ -5188,8 +5199,6 @@ MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 
 		free(buffer);
 	}
-
-	va_end(args);
 
 	return Result;
 }

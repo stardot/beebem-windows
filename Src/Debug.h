@@ -28,7 +28,9 @@ Boston, MA  02110-1301, USA.
 #define DEBUG_HEADER
 
 #include <windows.h>
+#include <stdarg.h>
 #include <string>
+
 
 #include "via.h"
 
@@ -129,6 +131,8 @@ void DebugCloseDialog(void);
 
 void DebugDisplayTrace(DebugType type, bool host, const char *info);
 void DebugDisplayTraceF(DebugType type, bool host, const char *format, ...);
+void DebugDisplayTraceF(DebugType type, bool host, const char *format, va_list args);
+
 void DebugDisplayInfo(const char *info);
 void DebugDisplayInfoF(const char *format, ...);
 

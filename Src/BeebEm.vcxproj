@@ -193,7 +193,7 @@
     <ClCompile Include="disc1770.cpp" />
     <ClCompile Include="disc8271.cpp" />
     <ClCompile Include="DiscEdit.cpp" />
-    <ClCompile Include="econet.cpp" />
+    <ClCompile Include="Econet.cpp" />
     <ClCompile Include="ExportFileDialog.cpp" />
     <ClCompile Include="FileDialog.cpp" />
     <ClCompile Include="FileUtils.cpp" />
@@ -349,7 +349,7 @@
     <ClInclude Include="disc8271.h" />
     <ClInclude Include="DiscEdit.h" />
     <ClInclude Include="disctype.h" />
-    <ClInclude Include="econet.h" />
+    <ClInclude Include="Econet.h" />
     <ClInclude Include="ExportFileDialog.h" />
     <ClInclude Include="ext1770.h" />
     <ClInclude Include="FileDialog.h" />
@@ -473,6 +473,16 @@
     <None Include="..\Help\uninstall.html" />
     <None Include="..\Help\z80copro.html" />
     <None Include="..\Help\z80torch.html" />
+    <None Include="..\UserData\AUNMap" />
+    <None Include="..\UserData\Default.kmap" />
+    <None Include="..\UserData\DefaultUser.kmap" />
+    <None Include="..\UserData\Econet.cfg" />
+    <None Include="..\UserData\Logical.kmap" />
+    <None Include="..\UserData\Phroms.cfg" />
+    <None Include="..\UserData\Preferences.cfg" />
+    <None Include="..\UserData\Roms.cfg" />
+    <None Include="..\UserData\Roms_Torch.cfg" />
+    <None Include="..\UserData\USLogical.kmap" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\CHANGES.md" />

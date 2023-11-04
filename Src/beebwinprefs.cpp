@@ -36,7 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "music5000.h"
 #include "beebmem.h"
 #include "Serial.h"
-#include "econet.h"
+#include "Econet.h"
 #include "tube.h"
 #include "scsi.h"
 #include "ide.h"
