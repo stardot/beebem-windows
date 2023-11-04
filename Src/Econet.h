@@ -26,60 +26,12 @@ Boston, MA  02110-1301, USA.
 #ifndef ECONET_HEADER
 #define ECONET_HEADER
 
-// Emulated ADLC control registers.
-// control1_b0 is AC
-// this splits register address 0x01 as control2 and control3
-// and register address 0x03 as tx-data-last-data and control4
-struct MC6854 {
-	unsigned char control1;
-	unsigned char control2;
-	unsigned char control3;
-	unsigned char control4;
-	unsigned char txfifo[3];
-	unsigned char rxfifo[3];
-	unsigned char txfptr;		// first empty byte in fifo
-	unsigned char rxfptr;		// first empty byte in fifo
-	unsigned char txftl;		// tx fifo tx lst flags. (bits relate to subscripts)
-	unsigned char rxffc;		// rx fifo fc flags bitss
-	unsigned char rxap;			// rx fifo ap flags. (bits relate to subscripts)
-
-	unsigned char status1;
-	// b0 receiver data available
-	// b1 status 2 read required (OR of all in s2)
-	// b2 loop mode.
-	// b3 flag detected
-	// b4 clear to send
-	// b5 transmitter underrun
-	// b6 tx data reg avail / frame complete
-	// b7 IRQ active
-
-	unsigned char status2;
-	// b0 Address present
-	// b1 Frame Valid
-	// b2 Rx idle
-	// b3 Rx Abort
-	// b4 Frame Check Sequence/Invalid Frame error
-	// b5 Data Carrier Detect
-	// b6 Overrun
-	// b7 Receiver Data Avilable (see s1 b0 )
-
-	int sr2pse; // PSE level for SR2 rx bits
-	// 0 = inactive
-	// 1 = ERR, FV, DCD, OVRN, ABT
-	// 2 = Idle
-	// 3 = AP
-	// 4 = RDA
-
-	bool cts; // signal up
-	bool idle;
-};
-
 unsigned char Read_Econet_Station();
 void EconetReset();
 unsigned char ReadEconetRegister(unsigned char Register);
 void WriteEconetRegister(unsigned char Register, unsigned char Value);
 void ReadNetwork();
-
+bool EconetInterruptRequest();
 bool EconetPoll();
 
 extern bool EconetEnabled;
@@ -88,7 +40,6 @@ extern bool EconetStateChanged;
 extern int EconetTrigger;
 extern int EconetFlagFillTimeoutTrigger;
 extern int EconetFlagFillTimeout;
-volatile extern struct MC6854 ADLC;
 
 extern unsigned char EconetStationNumber;
 extern char EconetCfgPath[512];

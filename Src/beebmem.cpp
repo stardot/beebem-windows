@@ -474,13 +474,19 @@ unsigned char BeebReadMem(int Address) {
 	   (NMI from the FDC is always enabled)
 	*/
 	if (EconetEnabled &&
-		((MachineType != Model::Master128 && (Address & ~3) == 0xfe20) ||
-		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe3c)) ) {
+	    ((MachineType != Model::Master128 && (Address & ~3) == 0xfe20) ||
+	     (MachineType == Model::Master128 && (Address & ~3) == 0xfe3c)))
+	{
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: INTON");
-		if (!EconetNMIenabled) {  // was off
+
+		if (!EconetNMIenabled) // was off
+		{
 			EconetNMIenabled = INTON;  // turn on
-			if (ADLC.status1 & 128) {			// irq pending?
+
+			if (EconetInterruptRequest()) // irq pending?
+			{
 				NMIStatus |= 1 << nmi_econet;
+
 				if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: delayed NMI asserted");
 			}
 		}

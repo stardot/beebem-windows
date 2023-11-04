@@ -42,6 +42,93 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "StringUtils.h"
 
+// Emulated 6854 ADLC control registers.
+// control1_b0 is AC
+// this splits register address 0x01 as control2 and control3
+// and register address 0x03 as tx-data-last-data and control4
+struct MC6854 {
+	unsigned char control1;
+	unsigned char control2;
+	unsigned char control3;
+	unsigned char control4;
+	unsigned char txfifo[3];
+	unsigned char rxfifo[3];
+	unsigned char txfptr; // first empty byte in fifo
+	unsigned char rxfptr; // first empty byte in fifo
+	unsigned char txftl; // tx fifo tx lst flags. (bits relate to subscripts)
+	unsigned char rxffc; // rx fifo fc flags bits
+	unsigned char rxap; // rx fifo ap flags (bits relate to subscripts)
+
+	unsigned char status1;
+	unsigned char status2;
+
+	int sr2pse; // PSE level for SR2 rx bits
+	// 0 = inactive
+	// 1 = ERR, FV, DCD, OVRN, ABT
+	// 2 = Idle
+	// 3 = AP
+	// 4 = RDA
+
+	bool cts; // signal up
+	bool idle;
+};
+
+const unsigned char CONTROL_REG1_ADDRESS_CONTROL               = 0x01;
+const unsigned char CONTROL_REG1_RX_INT_ENABLE                 = 0x02;
+const unsigned char CONTROL_REG1_TX_INT_ENABLE                 = 0x04;
+const unsigned char CONTROL_REG1_RDSR_MODE                     = 0x08;
+const unsigned char CONTROL_REG1_TDSR_MODE                     = 0x10;
+const unsigned char CONTROL_REG1_RX_FRAME_DISCONTINUE          = 0x20;
+const unsigned char CONTROL_REG1_RX_RESET                      = 0x40;
+const unsigned char CONTROL_REG1_TX_RESET                      = 0x80;
+
+const unsigned char CONTROL_REG2_PRIORITIZED_STATUS_ENABLE     = 0x01;
+const unsigned char CONTROL_REG2_2_BYTE_TRANSFER               = 0x02;
+const unsigned char CONTROL_REG2_FLAG_MARK_IDLE                = 0x04;
+const unsigned char CONTROL_REG2_TDRA_SELECT                   = 0x08;
+const unsigned char CONTROL_REG2_FRAME_COMPLETE                = 0x08;
+const unsigned char CONTROL_REG2_TX_LAST_DATA                  = 0x10;
+const unsigned char CONTROL_REG2_CLEAR_RX_STATUS               = 0x20;
+const unsigned char CONTROL_REG2_CLEAR_TX_STATUS               = 0x40;
+const unsigned char CONTROL_REG2_RTS_CONTROL                   = 0x80;
+
+const unsigned char CONTROL_REG3_LOGICAL_CONTROL_FIELD_SELECT  = 0x01;
+const unsigned char CONTROL_REG3_EXTENDED_CONTROL_FIELD_SELECT = 0x02;
+const unsigned char CONTROL_REG3_AUTO_ADDRESS_EXTENSION_MODE   = 0x04;
+const unsigned char CONTROL_REG3_01_11_IDLE                    = 0x08;
+const unsigned char CONTROL_REG3_FLAG_DETECTED_STATUS_ENABLE   = 0x10;
+const unsigned char CONTROL_REG3_LOOP_MODE                     = 0x20;
+const unsigned char CONTROL_REG3_GO_ACTIVE_ON_POLL             = 0x40;
+const unsigned char CONTROL_REG3_TEST                          = 0x40;
+const unsigned char CONTROL_REG3_LOOP_ONLINE_CONTROL           = 0x80;
+const unsigned char CONTROL_REG3_LOOP_DTR                      = 0x80;
+
+const unsigned char CONTROL_REG4_DOUBLE_FLAG                   = 0x01;
+const unsigned char CONTROL_REG4_TX_WORD_LENGTH                = 0x06;
+const unsigned char CONTROL_REG4_RX_WORD_LENGTH                = 0x18;
+const unsigned char CONTROL_REG4_TX_ABORT                      = 0x20;
+const unsigned char CONTROL_REG4_ABORT_EXTEND                  = 0x40;
+const unsigned char CONTROL_REG4_NRZI                          = 0x80;
+
+const unsigned char STATUS_REG1_RX_DATA_AVAILABLE              = 0x01;
+const unsigned char STATUS_REG1_STATUS2_READ_REQUEST           = 0x02;
+const unsigned char STATUS_REG1_LOOP                           = 0x04;
+const unsigned char STATUS_REG1_FLAG_DETECTED                  = 0x08;
+const unsigned char STATUS_REG1_CTS                            = 0x10;
+const unsigned char STATUS_REG1_TX_UNDERRUN                    = 0x20;
+const unsigned char STATUS_REG1_TDRA                           = 0x40;
+const unsigned char STATUS_REG1_FRAME_COMPLETE                 = 0x40;
+const unsigned char STATUS_REG1_IRQ                            = 0x80;
+
+const unsigned char STATUS_REG2_ADDRESS_PRESENT                = 0x01;
+const unsigned char STATUS_REG2_FRAME_VALID                    = 0x02;
+const unsigned char STATUS_REG2_INACTIVE_IDLE_RECEIVED         = 0x04;
+const unsigned char STATUS_REG2_ABORT_RECEIVED                 = 0x08;
+const unsigned char STATUS_REG2_FCS_ERROR                      = 0x10;
+const unsigned char STATUS_REG2_DCD                            = 0x20;
+const unsigned char STATUS_REG2_RX_OVERRUN                     = 0x40;
+const unsigned char STATUS_REG2_RX_DATA_AVAILABLE              = 0x80;
+
 // Configuration Options.
 // These, among others, are overridden in Econet.cfg, see ReadNetwork()
 
@@ -63,7 +150,7 @@ static const unsigned char powers[4] = { 1, 2, 4, 8 };
 
 // Frequency between network actions.
 // max 250Khz network clock. 2MHz system clock. one click every 8 cycles.
-// say one byte takes about 8 clocks, receive a byte every 64 cpu cycyes. ?
+// say one byte takes about 8 clocks, receive a byte every 64 cpu cycles. ?
 // (The reason for "about" 8 clocks is that as this a continuous syncronous tx,
 // there are no start/stop bits, however to avoid detecting a dead line as ffffff
 // zeros are added and removed transparently if you get more than five "1"s 
@@ -85,9 +172,11 @@ static SOCKET ListenSocket = INVALID_SOCKET; // Listen socket
 static SOCKET SendSocket = INVALID_SOCKET;
 static bool ReceiverSocketsOpen = false; // Used to flag line up and clock running
 
+const u_short DEFAULT_AUN_PORT = 32768;
+
 // Written in 2004:
 // we will be using Econet over Ethernet as per AUN,
-// however I've not got a real acorn ethernet machine to see how 
+// however I've not got a real acorn ethernet machine to see how
 // it actually works!  The only details I can find is it is:
 // "standard econet encpsulated in UDP to port 32768" and that
 // Addressing defaults to "1.0.net.stn" where net >= 128 for ethernet.
@@ -160,7 +249,7 @@ struct LongEconetPacket
 // before transmission starts. Data is sent immediately it's put into
 // the first slot.
 
-// Does econet send multiple packets for big transfers, or just one huge 
+// Does econet send multiple packets for big transfers, or just one huge
 // packet?
 // What's MTU on econet? Depends on clock speed but its big (e.g. 100K).
 // As we are using UDP, we will construct a 2048 byte buffer accept data
@@ -180,7 +269,7 @@ struct EthernetPacket
 	union {
 		unsigned char raw[8];
 		AUNHeader ah;
-	} ;
+	};
 	union {
 		unsigned char buff[ETHERNET_BUFFER_SIZE];
 		ShorEconetHeader eh;
@@ -215,7 +304,7 @@ static EconetPacket BeebRx;
 static unsigned char BeebTxCopy[6]; // size of longeconetpacket structure
 
 // Holds data from Econet.cfg file
-struct ECOLAN {							// what we we need to find a beeb?
+struct ECOLAN { // what we we need to find a beeb?
 	unsigned char station;
 	unsigned char network;
 	unsigned long inet_addr;
@@ -273,6 +362,20 @@ static void EconetError(const char *Format, ...);
 
 //---------------------------------------------------------------------------
 
+static ECOLAN* FindNetworkConfig(unsigned char Station)
+{
+	for (unsigned int i = 0; i < networkp; ++i) {
+		if (network[i].station == Station) {
+			return &network[i];
+			break;
+		}
+	}
+
+	return nullptr;
+}
+
+//---------------------------------------------------------------------------
+
 void EconetReset()
 {
 	if (DebugEnabled)
@@ -283,7 +386,7 @@ void EconetReset()
 
 	// hardware operations:
 	// set RxReset and TxReset
-	ADLC.control1 = 192;
+	ADLC.control1 = CONTROL_REG1_RX_RESET | CONTROL_REG1_TX_RESET;
 	// reset TxAbort, RTS, LoopMode, DTR
 	ADLC.control4 = 0; //ADLC.control4 & 223;
 	ADLC.control2 = 0; //ADLC.control2 & 127;
@@ -354,17 +457,18 @@ void EconetReset()
 
 	// Already have a station num? Either from command line or a free one 
 	// we found on previous reset.
-	if (EconetStationNumber != 0) {
+	if (EconetStationNumber != 0)
+	{
 		// Look up our port number in network config
-		for (unsigned int i = 0; i < networkp; ++i) {
-			if (network[i].station == EconetStationNumber) {
-				EconetListenPort = network[i].port;
-				EconetListenIP = network[i].inet_addr;
-				break;
-			}
-		}
+		ECOLAN* pNetworkConfig = FindNetworkConfig(EconetStationNumber);
 
-		if (EconetListenPort == 0) {
+		if (pNetworkConfig != nullptr)
+		{
+			EconetListenPort = pNetworkConfig->port;
+			EconetListenIP = pNetworkConfig->inet_addr;
+		}
+		else
+		{
 			EconetError("Econet: Failed to find station %d in Econet.cfg", EconetStationNumber);
 			WSACleanup();
 			return;
@@ -373,7 +477,8 @@ void EconetReset()
 		service.sin_port = htons(EconetListenPort);
 		service.sin_addr.s_addr = EconetListenIP;
 
-		if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
+		if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
+		{
 			EconetError("Econet: Failed to bind to port %d (error %ld)", EconetListenPort, WSAGetLastError());
 			closesocket(ListenSocket);
 			WSACleanup();
@@ -384,18 +489,20 @@ void EconetReset()
 	{
 		// Station number not specified, find first one not already in use.
 		char localhost[256];
-		hostent *hent;
-		struct in_addr localaddr;
+		hostent *host;
 
 		// Get localhost IP address
 		if (gethostname(localhost, 256) != SOCKET_ERROR &&
-			(hent = gethostbyname(localhost)) != NULL) {
+		    (host = gethostbyname(localhost)) != NULL)
+		{
 			// See if configured addresses match local IPs
 			for (unsigned int i = 0; i < networkp && EconetStationNumber == 0; ++i) {
 
 				// Check address for each network interface/card
-				for (int a = 0; hent->h_addr_list[a] != NULL && EconetStationNumber == 0; ++a) {
-					memcpy(&localaddr, hent->h_addr_list[a], sizeof(struct in_addr));
+				for (int a = 0; host->h_addr_list[a] != nullptr && EconetStationNumber == 0; ++a)
+				{
+					struct in_addr localaddr;
+					memcpy(&localaddr, host->h_addr_list[a], sizeof(struct in_addr));
 
 					if (network[i].inet_addr == inet_addr("127.0.0.1") ||
 					    network[i].inet_addr == localaddr.S_un.S_addr)
@@ -403,7 +510,8 @@ void EconetReset()
 						service.sin_port = htons(network[i].port);
 						service.sin_addr.s_addr = network[i].inet_addr;
 
-						if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0) {
+						if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0)
+						{
 							EconetListenPort = network[i].port;
 							EconetListenIP = network[i].inet_addr;
 							EconetStationNumber = network[i].station;
@@ -412,26 +520,33 @@ void EconetReset()
 				}
 			}
 
-			if (EconetListenPort == 0) {
+			if (EconetListenPort == 0)
+			{
 				// still can't find one ... strict mode?
 
-				if (confSTRICT && confAUNmode && networkp < NETWORK_TABLE_LENGTH) {
+				if (confSTRICT && confAUNmode && networkp < NETWORK_TABLE_LENGTH)
+				{
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true, "Econet: No free hosts in table; trying automatic mode");
 
-					for (unsigned int j = 0; j < aunnetp && EconetStationNumber == 0; j++) {
-						for (int a = 0; hent->h_addr_list[a] != NULL && EconetStationNumber == 0; ++a) {
-							memcpy(&localaddr, hent->h_addr_list[a], sizeof(struct in_addr));
+					for (unsigned int j = 0; j < aunnetp && EconetStationNumber == 0; j++)
+					{
+						for (int a = 0; host->h_addr_list[a] != NULL && EconetStationNumber == 0; ++a)
+						{
+							struct in_addr localaddr;
+							memcpy(&localaddr, host->h_addr_list[a], sizeof(struct in_addr));
 						
-							if (aunnet[j].inet_addr == (localaddr.S_un.S_addr & 0x00FFFFFF)) {
-								service.sin_port = htons(32768);
+							if (aunnet[j].inet_addr == (localaddr.S_un.S_addr & 0x00FFFFFF))
+							{
+								service.sin_port = htons(DEFAULT_AUN_PORT);
 								service.sin_addr.s_addr = localaddr.S_un.S_addr;
 
-								if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0) {
+								if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0)
+								{
 									myaunnet = j;
 									network[networkp].inet_addr = EconetListenIP = localaddr.S_un.S_addr;
-									network[networkp].port = EconetListenPort = 32768;
-									network[networkp].station = EconetStationNumber = localaddr.S_un.S_addr >>24;
+									network[networkp].port = EconetListenPort = DEFAULT_AUN_PORT;
+									network[networkp].station = EconetStationNumber = localaddr.S_un.S_addr >> 24;
 									network[networkp].network = aunnet[j].network;
 									networkp++;
 								}
@@ -440,13 +555,16 @@ void EconetReset()
 					}
 				}
 
-				if (EconetStationNumber == 0) {
+				if (EconetStationNumber == 0)
+				{
 					EconetError("Econet: Failed to find free station/port to bind to");
 					WSACleanup();
 					return;
 				}
 			}
-		} else {
+		}
+		else
+		{
 			EconetError("Econet: Failed to resolve local IP address");
 			WSACleanup();
 			return;
@@ -466,10 +584,14 @@ void EconetReset()
 
 	//---------------------
 	// Socket used to send messages.
-	if (confSingleSocket) {
+	if (confSingleSocket)
+	{
 		SendSocket = ListenSocket;
-	} else {
+	}
+	else
+	{
 		SendSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
 		if (SendSocket == INVALID_SOCKET) {
 			EconetError("Econet: Failed to open sending socket (error %ld)", WSAGetLastError());
 			closesocket(ListenSocket);
@@ -821,7 +943,9 @@ unsigned char ReadEconetRegister(unsigned char Register)
 	}
 	else
 	{
-		if (((ADLC.control1 & 64)==0) && ADLC.rxfptr) {	// rxreset not set and someting in fifo
+		// rxreset not set and someting in fifo
+		if (((ADLC.control1 & CONTROL_REG1_RX_RESET) == 0) && ADLC.rxfptr > 0)
+		{
 			if (DebugEnabled)
 			{
 				DebugDisplayTraceF(DebugType::Econet, true,
@@ -830,11 +954,14 @@ unsigned char ReadEconetRegister(unsigned char Register)
 				debugADLCprint();
 			}
 			
-			if (ADLC.rxfptr) {
+			if (ADLC.rxfptr > 0)
+			{
 				EconetStateChanged = true;
-				return (ADLC.rxfifo[--ADLC.rxfptr]);	// read rx buffer
-			} else {
-				return (0);
+				return ADLC.rxfifo[--ADLC.rxfptr]; // read rx buffer
+			}
+			else
+			{
+				return 0;
 			}
 		}
 	}
@@ -856,33 +983,52 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 	// Command registers are really just a set of flags that affect
 	// operation of the rest of the device.
 
-	if (Register == 0) { // adr 00
+	if (Register == 0)
+	{
 		ADLC.control1 = Value;
-	} else if (Register == 1 && !(ADLC.control1 & 1)) { // adr 01 & AC=0
+	}
+	else if (Register == 1 && !(ADLC.control1 & CONTROL_REG1_ADDRESS_CONTROL))
+	{
 		ADLC.control2 = Value;
-	} else if (Register == 1 && (ADLC.control1 & 1)) { // adr 01 & AC=1
+	}
+	else if (Register == 1 && (ADLC.control1 & CONTROL_REG1_ADDRESS_CONTROL))
+	{
 		ADLC.control3 = Value;
-	} else if (Register == 3 && (ADLC.control1 & 1)) { // adr 03 & AC=1
+	}
+	else if (Register == 3 && (ADLC.control1 & CONTROL_REG1_ADDRESS_CONTROL))
+	{
 		ADLC.control4 = Value;
-	} else if (Register == 2 || Register == 3) { // adr 02 or adr 03 & AC=0
+	}
+	else if (Register == 2 || Register == 3) { // adr 02 or adr 03 & AC=0
 		// cannot write an output byte if txreset is set
 		// register 2 is an output byte
 		// register 3 with c1b0=0 is output byte & finalise tx.
 		// can also finalise tx by setting a control bit.so do that automatically for reg 3 
 		// worry about actually sending stuff in the poll routines, not here.
-		if ((ADLC.control1 & 128)==0) {
+		if ((ADLC.control1 & CONTROL_REG1_TX_RESET) == 0)
+		{
 			ADLC.txfifo[2] = ADLC.txfifo[1];
 			ADLC.txfifo[1] = ADLC.txfifo[0];
 			ADLC.txfifo[0] = Value;
 			ADLC.txfptr++; 
 			ADLC.txftl = ADLC.txftl << 1; // shift txlast bits up.
-			if (Register == 3) ADLC.control2 |= 16; // set txlast control flag ourself
+			if (Register == 3)
+			{
+				ADLC.control2 |= CONTROL_REG2_TX_LAST_DATA; // set txlast control flag ourself
+			}
 		}
 	}
 
 	if (DebugEnabled) debugADLCprint();
 
 	EconetStateChanged = true;
+}
+
+//--------------------------------------------------------------------------------------------
+
+bool EconetInterruptRequest()
+{
+	return (ADLC.status1 & STATUS_REG1_IRQ) != 0;
 }
 
 //--------------------------------------------------------------------------------------------
@@ -924,36 +1070,36 @@ bool EconetPoll_real() // return NMI status
 	// look for control bit changes and take appropriate action
 
 	// CR1b0 - Address Control - only used to select between register 2/3/4
-	//		no action needed here
+	//         no action needed here
 	// CR1b1 - RIE - Receiver Interrupt Enable - Flag to allow receiver section to create interrupt.
-	//		no action needed here
+	//         no action needed here
 	// CR1b2 - TIE - Transmitter Interrupt Enable - ditto
-	//		no action needed here
+	//         no action needed here
 	// CR1b3 - RDSR mode. When set, interrupts on received data are inhibited.
-	//		unsupported - no action needed here
+	//         unsupported - no action needed here
 	// CR1b4 - TDSR mode. When set, interrupts on trasmit data are inhibited.
-	//		unsupported - no action needed here
+	//         unsupported - no action needed here
 	// CR1b5 - Discontinue - when set, discontinue reception of incoming data.
-	//	    automatically reset this when reach the end of current frame in progress
-	//		automatically reset when frame aborted bvy receiving an abort flag, or DCD fails.
-	if (ADLC.control1 & 32) {
+	//         automatically reset this when reach the end of current frame in progress
+	//         automatically reset when frame aborted bvy receiving an abort flag, or DCD fails
+	if (ADLC.control1 & CONTROL_REG1_RX_FRAME_DISCONTINUE)
+	{
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: RxABORT is set");
 		BeebRx.Pointer = 0;
 		BeebRx.BytesInBuffer = 0;
 		ADLC.rxfptr = 0;
 		ADLC.rxap = 0;
 		ADLC.rxffc = 0;
-		ADLC.control1 &= ~32; // reset flag
+		ADLC.control1 &= ~CONTROL_REG1_RX_FRAME_DISCONTINUE; // reset flag
 		fourwaystage = FourWayStage::Idle;
 	}
 	// CR1b6 - RxRs - Receiver reset. set by cpu or when reset line goes low.
-	//		all receive operations blocked (bar dcd monitoring) when this is set.
-	//		see CR2b5
+	//         all receive operations blocked (bar dcd monitoring) when this is set.
+	//         see CR2b5
 	// CR1b7 - TxRS - Transmitter reset. set by cpu or when reset line goes low.
-	//		all transmit operations blocked (bar cts monitoring) when this is set.
-	//		no action needed here; watch this bit elsewhere to inhibit actions
-			
-	// -----------------------
+	//         all transmit operations blocked (bar cts monitoring) when this is set.
+	//         no action needed here; watch this bit elsewhere to inhibit actions
+
 	// CR2b0 - PSE - priotitised status enable - adjusts how status bits show up.
 	//         See sr2pse and code in status section
 	// CR2b1 - 2byte/1byte mode.  set to indicate 2 byte mode. see trda status bit.
@@ -961,27 +1107,42 @@ bool EconetPoll_real() // return NMI status
 	// CR2b3 - FC/TDRA mode - does status bit SR1b6 indicate 1=frame complete, 
 	//         0=tx data reg available. 1=frame tx complete.  see tdra status bit
 	// CR2b4 - TxLast - byte just put into fifo was the last byte of a packet.
-	if (ADLC.control2 & 16) { // TxLast set
+	if (ADLC.control2 & CONTROL_REG2_TX_LAST_DATA)
+	{
 		ADLC.txftl |= 1; // set b0 - flag for fifo[0]
-		ADLC.control2 &= ~16; // clear flag.
+		ADLC.control2 &= ~CONTROL_REG2_TX_LAST_DATA; // clear flag.
 	}
 
 	// CR2b5 - CLR RxST - Clear Receiver Status - reset status bits
-	if ((ADLC.control2 & 32) || (ADLC.control1 & 64)) { // or rxreset
-		ADLC.control2 &= ~32; // clear this bit
-		ADLC.status1 &= ~10; // clear sr2rq, FD
-		ADLC.status2 &= ~126; // clear FV, RxIdle, RxAbt, Err, OVRN, DCD
+	if ((ADLC.control2 & CONTROL_REG2_CLEAR_RX_STATUS) || (ADLC.control1 & CONTROL_REG1_RX_RESET)) // or rxreset
+	{
+		ADLC.control2 &= ~CONTROL_REG2_CLEAR_RX_STATUS; // clear this bit
 
-		if ((ADLC.control2 & 1) && ADLC.sr2pse) { // PSE active?
+		ADLC.status1 &= ~(STATUS_REG1_STATUS2_READ_REQUEST | STATUS_REG1_FLAG_DETECTED); // clear sr2rq, FD
+
+		// clear FV, RxIdle, RxAbt, Err, OVRN, DCD
+		ADLC.status2 &= ~(STATUS_REG2_FRAME_VALID |
+		                  STATUS_REG2_INACTIVE_IDLE_RECEIVED |
+		                  STATUS_REG2_ABORT_RECEIVED |
+		                  STATUS_REG2_FCS_ERROR |
+		                  STATUS_REG2_DCD |
+		                  STATUS_REG2_RX_OVERRUN);
+
+		if ((ADLC.control2 & CONTROL_REG2_PRIORITIZED_STATUS_ENABLE) && ADLC.sr2pse) // PSE active?
+		{
 			ADLC.sr2pse++; // Advance PSE to next priority
 			if (ADLC.sr2pse > 4)
 				ADLC.sr2pse = 0;
-		} else {
+		}
+		else
+		{
 			ADLC.sr2pse = 0;
 		}
 
 		sr1b2cause = 0; // clear cause of sr2b1 going up
-		if (ADLC.control1 & 64) { // rx reset,clear buffers.
+
+		if (ADLC.control1 & CONTROL_REG1_RX_RESET) // rx reset,clear buffers.
+		{
 			BeebRx.Pointer = 0;
 			BeebRx.BytesInBuffer = 0;
 			ADLC.rxfptr = 0;
@@ -993,15 +1154,21 @@ bool EconetPoll_real() // return NMI status
 	}
 
 	// CR2b6 - CLT TxST - Clear Transmitter Status - reset status bits
-	if ((ADLC.control2 & 64) || (ADLC.control1 & 128)) { // or txreset
-		ADLC.control2 &= ~64; // clear this bit
-		ADLC.status1 &= ~0x70; // clear TXU , cts, TDRA/FC
-		if (ADLC.cts) {
-			ADLC.status1 |= 16; // cts follows signal, reset high again
-			ADLCtemp.status1 |= 16; // don't trigger another interrupt instantly
+	if ((ADLC.control2 & CONTROL_REG2_CLEAR_TX_STATUS) || (ADLC.control1 & CONTROL_REG1_TX_RESET)) // or txreset
+	{
+		ADLC.control2 &= ~CONTROL_REG2_CLEAR_TX_STATUS; // clear this bit
+		ADLC.status1 &= ~(STATUS_REG1_CTS |
+		                  STATUS_REG1_TX_UNDERRUN |
+		                  STATUS_REG1_TDRA); // clear TXU , cts, TDRA/FC
+
+		if (ADLC.cts)
+		{
+			ADLC.status1 |= STATUS_REG1_CTS; // cts follows signal, reset high again
+			ADLCtemp.status1 |= STATUS_REG1_CTS; // don't trigger another interrupt instantly
 		}
 
-		if (ADLC.control1 & 128) { // tx reset,clear buffers.
+		if (ADLC.control1 & CONTROL_REG1_TX_RESET) // tx reset,clear buffers.
+		{
 			BeebTx.Pointer = 0;
 			BeebTx.BytesInBuffer = 0;
 			ADLC.txfptr = 0;
@@ -1014,65 +1181,80 @@ bool EconetPoll_real() // return NMI status
 	// RTS gates TXD onto the econet bus. if not zero, no tx reaches it,
 	// in the B+, RTS substitutes for the collision detection circuit.
 
-	// -----------------------
 	// CR3 seems always to be all zero while debugging emulation.
 	// CR3b0 - LCF - Logical Control Field Select. if zero, no control fields in frame, ignored.
 	// CR3b1 - CEX - Extend Control Field Select - when set, control field is 16 bits. ignored.
 	// CR3b2 - AEX - When set, address will be two bytes (unless first byte is zero). ignored here.
-	// CR3b3 - 01/11 idle - idle transmission mode - ignored here,.
+	// CR3b3 - 01/11 idle - idle transmission mode - ignored here.
 	// CR3b4 - FDSE - flag detect status enable.  when set, then FD (SR1b3) + interrupr indicated a flag
 	// has been received. I don't think we use this mode, so ignoring it.
 	// CR3b5 - Loop - Loop mode. Not used.
 	// CR3b6 - GAP/TST - sets test loopback mode (when not in Loop operation mode.) ignored.
 	// CR3b7 - LOC/DTR - (when not in loop mode) controls DTR pin directly. pin not used in a BBC B
 
-	// -----------------------
 	// CR4b0 - FF/F - when clear, re-used the Flag at end of one packet as start of next packet. ignored.
 	// CR4b1,2 - TX word length. 11=8 bits. BBC uses 8 bits so ignore flags and assume 8 bits throughout
 	// CR4b3,4 - RX word length. 11=8 bits. BBC uses 8 bits so ignore flags and assume 8 bits throughout
 	// CR4b5 - TransmitABT - Abort Transmission.  Once abort starts, bit is cleared.
-	if (ADLC.control4 & 32) { // ABORT
+	if (ADLC.control4 & CONTROL_REG4_TX_ABORT)
+	{
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: TxABORT is set");
+
 		ADLC.txfptr = 0; // reset fifo
 		ADLC.txftl = 0; // reset fifo flags
 		BeebTx.Pointer = 0;
 		BeebTx.BytesInBuffer = 0;
-		ADLC.control4 &= ~32; // reset flag.
+		ADLC.control4 &= ~CONTROL_REG4_TX_ABORT; // reset flag.
 		fourwaystage = FourWayStage::Idle;
+
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IDLE (abort)");
 	}
 
-	// CR4b6 - ABTex - extend abort - adjust way the abort flag is sent.  ignore,
+	// CR4b6 - ABTex - extend abort - adjust way the abort flag is sent.  ignore.
 	// can affect timing of RTS output line (and thus CTS input) still ignored.
 	// CR4b7 - NRZI/NRZ - invert data encoding on wire. ignore.
 
-	if (EconetTrigger <= TotalCycles) {
+	if (EconetTrigger <= TotalCycles)
+	{
 		// Only do this bit occasionally as data only comes in from
 		// line occasionally.
 		// Trickle data between fifo registers and ip packets.
 
 		// Transmit data
-		if (!(ADLC.control1 & 128)) { // tx reset off
-			if (ADLC.txfptr) { // there is data is in tx fifo
+		if (!(ADLC.control1 & CONTROL_REG1_TX_RESET)) // tx reset off
+		{
+			if (ADLC.txfptr > 0) // there is data in tx fifo
+			{
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: Write to FIFO noticed");
+
 				bool TXlast = false;
-				if (ADLC.txftl & powers[ADLC.txfptr-1]) TXlast = true; // TxLast set
+
+				if (ADLC.txftl & powers[ADLC.txfptr-1]) // TxLast set
+				{
+					TXlast = true;
+				}
+
 				if (BeebTx.Pointer + 1 > sizeof(BeebTx.buff) || // overflow IP buffer
-				    (ADLC.txfptr > 4)) { // overflowed fifo
-					ADLC.status1 |= 32; // set tx underrun flag
+				    (ADLC.txfptr > 4)) // overflowed fifo
+				{
+					ADLC.status1 |= STATUS_REG1_TX_UNDERRUN; // set tx underrun flag
 					BeebTx.Pointer = 0; // wipe buffer
 					BeebTx.BytesInBuffer = 0;
 					ADLC.txfptr = 0;
 					ADLC.txftl = 0;
+
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: TxUnderun!!");
-				} else {
+				}
+				else
+				{
 					BeebTx.buff[BeebTx.Pointer] = ADLC.txfifo[--ADLC.txfptr];
 					BeebTx.Pointer++;
 				}
 
-				if (TXlast) { // TxLast set
+				if (TXlast) // TxLast set
+				{
 					if (DebugEnabled)
 					{
 						DebugDisplayTraceF(DebugType::Econet, true,
@@ -1100,7 +1282,7 @@ bool EconetPoll_real() // return NMI status
 						// ok, just send it to the local broadcast address.
 						// TODO lookup destnet in aunnet() and use proper ip address!
 						RecvAddr.sin_family = AF_INET;
-						RecvAddr.sin_port = htons(32768);
+						RecvAddr.sin_port = htons(DEFAULT_AUN_PORT);
 						RecvAddr.sin_addr.s_addr = INADDR_BROADCAST; // ((EconetListenIP & 0x00FFFFFF) | 0xFF000000);
 						SendMe = true;
 					}
@@ -1110,7 +1292,7 @@ bool EconetPoll_real() // return NMI status
 							// does the packet match this network table entry?
 							// SendMe = false;
 							// // check for 0.stn and mynet.stn.
-							// aunnet wont be populted if not in aun mode, but we don't need to not check
+							// aunnet wont be populated if not in aun mode, but we don't need to not check
 							// it because it won't matter..
 							if ((network[i].network == BeebTx.eh.destnet ||
 							     network[i].network == aunnet[myaunnet].network) &&
@@ -1123,21 +1305,28 @@ bool EconetPoll_real() // return NMI status
 						} while (i < networkp);
 
 						// guess address if not found in table
-						if (!SendMe && confSTRICT) { // didn't find it and allowed to guess
+						if (!SendMe && confSTRICT) // didn't find it and allowed to guess
+						{
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Send to unknown host; make assumptions & add entry!");
-							if (BeebTx.eh.destnet == 0 || BeebTx.eh.destnet == aunnet[myaunnet].network) {
+
+							if (BeebTx.eh.destnet == 0 || BeebTx.eh.destnet == aunnet[myaunnet].network)
+							{
 								network[i].inet_addr = aunnet[myaunnet].inet_addr | (BeebTx.eh.deststn << 24);
-								network[i].port = 32768; // default AUN port
+								network[i].port = DEFAULT_AUN_PORT;
 								network[i].network = BeebTx.eh.destnet;
 								network[i].station = BeebTx.eh.deststn;
 								SendMe = true;
 								network[++networkp].station = 0;
-							} else {
-								unsigned int j=0;
+							}
+							else
+							{
+								unsigned int j = 0;
+
 								do {
-									if (aunnet[j].network == BeebTx.eh.destnet) {
+									if (aunnet[j].network == BeebTx.eh.destnet)
+									{
 										network[i].inet_addr = aunnet[j].inet_addr | (BeebTx.eh.deststn << 24);
-										network[i].port = 32768; // default AUN port
+										network[i].port = DEFAULT_AUN_PORT;
 										network[i].network = BeebTx.eh.destnet;
 										network[i].station = BeebTx.eh.deststn;
 										SendMe = true;
@@ -1181,7 +1370,8 @@ bool EconetPoll_real() // return NMI status
 					*/
 
 					// Send a datagram to the receiver
-					if (confAUNmode) {
+					if (confAUNmode)
+					{
 						unsigned int j = 0;
 						// OK. Lets do AUN ...
 						// The beeb has given us a packet .. what is it?
@@ -1208,10 +1398,10 @@ bool EconetPoll_real() // return NMI status
 
 						case FourWayStage::Idle:
 							// not currently doing anything, so this will be a scout, 
-							memcpy(BeebTxCopy,BeebTx.buff,sizeof(BeebTx.eh));
+							memcpy(BeebTxCopy, BeebTx.buff, sizeof(BeebTx.eh));
 							// maybe a long scout or a broadcast
 							EconetTx.ah.cb = (unsigned int) (BeebTx.eh.cb) & 127; //| 128;
-							EconetTx.ah.port = (unsigned int) (BeebTx.eh.port);
+							EconetTx.ah.port = (unsigned int)BeebTx.eh.port;
 							EconetTx.ah.pad = 0;
 							EconetTx.ah.handle = (ec_sequence+=4);
 
@@ -1224,19 +1414,24 @@ bool EconetPoll_real() // return NMI status
 
 							EconetTx.Pointer = j;
 
-							if (EconetTx.deststn == 255 || EconetTx.deststn == 0) {
+							if (EconetTx.deststn == 255 || EconetTx.deststn == 0)
+							{
 								EconetTx.ah.type = AUNType::Broadcast;
 								fourwaystage = FourWayStage::WaitForIdle; // no response to broadcasts...
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast snt)");
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + 8;
-							} else if (EconetTx.ah.port == 0) {
+							}
+							else if (EconetTx.ah.port == 0)
+							{
 								EconetTx.ah.type = AUNType::Immediate;
 								fourwaystage = FourWayStage::ImmediateSent;
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMSENT");
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
-							} else {
+							}
+							else
+							{
 								EconetTx.ah.type = AUNType::Unicast;
 								fourwaystage = FourWayStage::ScoutSent;
 								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTSENT");
@@ -1295,6 +1490,7 @@ bool EconetPoll_real() // return NMI status
 							// shouldn't be here.. ignore packet and abort fourway
 							fourwaystage = FourWayStage::WaitForIdle;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (unexpected mode, packet ignored)");
+							break;
 						}
 					}
 
@@ -1338,23 +1534,31 @@ bool EconetPoll_real() // return NMI status
 		}
 
 		// Receive data
-		if (!(ADLC.control1 & 64)) { // rx reset off
-			if (BeebRx.Pointer < BeebRx.BytesInBuffer) {
+		if (!(ADLC.control1 & CONTROL_REG1_RX_RESET)) // rx reset off
+		{
+			if (BeebRx.Pointer < BeebRx.BytesInBuffer)
+			{
 				// something waiting to be given to the processor
-				if (ADLC.rxfptr < 3) { // space in fifo
+				if (ADLC.rxfptr < 3) // space in fifo
+				{
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true,
 							"EconetPoll: Time to give another byte to the beeb");
+
 					ADLC.rxfifo[2] = ADLC.rxfifo[1];
 					ADLC.rxfifo[1] = ADLC.rxfifo[0];
 					ADLC.rxfifo[0] = BeebRx.buff[BeebRx.Pointer];
 					ADLC.rxfptr++;
 					ADLC.rxffc = (ADLC.rxffc << 1) & 7;
 					ADLC.rxap = (ADLC.rxap << 1) & 7;
+
 					if (BeebRx.Pointer == 0)
+					{
 						ADLC.rxap |= 1; // 2 bytes? adr extention mode
-					BeebRx.Pointer++;
-					if (BeebRx.Pointer >= BeebRx.BytesInBuffer) { // that was last byte!
+					}
+
+					if (++BeebRx.Pointer >= BeebRx.BytesInBuffer) // that was last byte!
+					{
 						ADLC.rxffc |= 1; // set FV flag (this was last byte of frame)
 						BeebRx.Pointer = 0; // Reset read for next packet
 						BeebRx.BytesInBuffer = 0;
@@ -1362,14 +1566,16 @@ bool EconetPoll_real() // return NMI status
 				}
 			}
 
-			if (ADLC.rxfptr == 0) {
+			if (ADLC.rxfptr == 0)
+			{
 				unsigned int hostno, j = 0;
 
 				// still nothing in buffers (and thus nothing in Econetrx buffer)
-				ADLC.control1 &= ~32; // reset discontinue flag
+				ADLC.control1 &= ~CONTROL_REG1_RX_FRAME_DISCONTINUE; // reset discontinue flag
 
 				// wait for cpu to clear FV flag from last frame received
-				if (!(ADLC.status2 & 2)) {
+				if (!(ADLC.status2 & STATUS_REG2_FRAME_VALID))
+				{
 					if (!confAUNmode ||
 					    fourwaystage == FourWayStage::Idle ||
 					    fourwaystage == FourWayStage::ImmediateSent ||
@@ -1596,10 +1802,14 @@ bool EconetPoll_real() // return NMI status
 										DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill set - other station comms");
 									}
 								}
-							} else if (RetVal == SOCKET_ERROR && !confSingleSocket) {
+							}
+							else if (RetVal == SOCKET_ERROR && !confSingleSocket)
+							{
 								EconetError("Econet: Failed to receive packet (error %ld)", WSAGetLastError());
 							}
-						} else if (RetVal == SOCKET_ERROR) {
+						}
+						else if (RetVal == SOCKET_ERROR)
+						{
 							EconetError("Econet: Failed to check for new packet");
 						}
 					}
@@ -1646,12 +1856,15 @@ bool EconetPoll_real() // return NMI status
 		}
 
 		// Update idle status
-		if (!(ADLC.control1 & 0x40) // not rxreset
-		    && !ADLC.rxfptr // nothing in fifo
-		    && !(ADLC.status2 & 2) // no FV
-		    && (BeebRx.BytesInBuffer == 0)) { // nothing in ip buffer
-		    ADLC.idle = true;
-		} else {
+		if (!(ADLC.control1 & CONTROL_REG1_RX_RESET) // not rxreset
+		    && ADLC.rxfptr == 0 // nothing in fifo
+		    && !(ADLC.status2 & STATUS_REG2_FRAME_VALID) // no FV
+		    && BeebRx.BytesInBuffer == 0) // nothing in ip buffer
+		{
+			ADLC.idle = true;
+		}
+		else
+		{
 			ADLC.idle = false;
 		}
 
@@ -1660,8 +1873,10 @@ bool EconetPoll_real() // return NMI status
 	}
 
 	// Reset pseudo flag fill?
-	if (EconetFlagFillTimeoutTrigger<=TotalCycles && FlagFillActive) {
+	if (EconetFlagFillTimeoutTrigger <= TotalCycles && FlagFillActive)
+	{
 		FlagFillActive = false;
+
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill timeout reset");
 	}
@@ -1681,14 +1896,17 @@ bool EconetPoll_real() // return NMI status
 	}
 
 	// timeout four way handshake - for when we get lost..
-	if (Econet4Wtrigger == 0) {
+	if (Econet4Wtrigger == 0)
+	{
 		if (fourwaystage != FourWayStage::Idle)
-			SetTrigger(FourWayStageTimeout,Econet4Wtrigger);
+			SetTrigger(FourWayStageTimeout, Econet4Wtrigger);
 	}
-	else if (Econet4Wtrigger <= TotalCycles) {
+	else if (Econet4Wtrigger <= TotalCycles)
+	{
 		EconetSCACKtrigger = 0;
 		Econet4Wtrigger = 0;
 		fourwaystage = FourWayStage::Idle;
+
 		if (DebugEnabled) {
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: 4waystage timeout; Set FWS_IDLE");
 			debugADLCprint();
@@ -1698,22 +1916,31 @@ bool EconetPoll_real() // return NMI status
 	// Status bits need changing?
 
 	// SR1b0 - RDA - received data available.
-	if (!(ADLC.control1 & 64)) { // rx reset off
-		if ((ADLC.rxfptr && !(ADLC.control2 & 2)) // 1 byte mode
-		    || ((ADLC.rxfptr > 1) && (ADLC.control2 & 2))) // 2 byte mode
+	if (!(ADLC.control1 & CONTROL_REG1_RX_RESET)) // rx reset off
+	{
+		if ((ADLC.rxfptr > 0 && !(ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER)) // 1 byte mode
+		    || (ADLC.rxfptr > 1 && (ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER))) // 2 byte mode
 		{
-			ADLC.status1 |=  1; // set RDA copy
-			ADLC.status2 |=  128;
-		} else {
-			ADLC.status1 &= ~1;
-			ADLC.status2 &= ~128;
+			ADLC.status1 |= STATUS_REG1_RX_DATA_AVAILABLE; // set RDA copy
+			ADLC.status2 |= STATUS_REG2_RX_DATA_AVAILABLE;
+		}
+		else
+		{
+			ADLC.status1 &= ~STATUS_REG1_RX_DATA_AVAILABLE;
+			ADLC.status2 &= ~STATUS_REG2_RX_DATA_AVAILABLE;
 		}
 	}
 	// SR1b1 - S2RQ - set after SR2, see below
-	// SR1b2 - LOOP - set if in loop mode. not supported in this emulation,
+	// SR1b2 - LOOP - set if in loop mode. not supported in this emulation
 	// SR1b3 - FD - Flag detected. Hmm.
-	if (FlagFillActive) ADLC.status1 |= 8;
-	else ADLC.status1 &= ~8;
+	if (FlagFillActive)
+	{
+		ADLC.status1 |= STATUS_REG1_FLAG_DETECTED;
+	}
+	else
+	{
+		ADLC.status1 &= ~STATUS_REG1_FLAG_DETECTED;
+	}
 
 	// SR1b4 - CTS - set by ~CTS line going up, and causes IRQ if enabled.
 	//               only cleared by cpu.
@@ -1725,134 +1952,193 @@ bool EconetPoll_real() // return NMI status
 	// we will only bother checking against DCD here as can't have collisions.
 	// but nfs then loops waiting for CTS high!
 	// on the B+ there is (by default) no collission detection circuitary. instead S29
-	// links RTS in it's place, thus CTS is a NAND of not RTS & not DCD
+	// links RTS in its place, thus CTS is a NAND of not RTS & not DCD
 	// i.e. cts = ! ( !rts && !dcd ) all signals are active low.
 	// there is a delay on rts going high after cr2b7=0 - ignore this for now.
 	// cr2b7 = 1 means RTS low means not rts high means cts low
 	// sockets true means dcd low means not dcd high means cts low
 	// doing it this way finally works !!  great :-) :-)
 
-	if (ReceiverSocketsOpen && (ADLC.control2 & 128)) { // clock + RTS
+	if (ReceiverSocketsOpen && (ADLC.control2 & CONTROL_REG2_RTS_CONTROL)) // clock + RTS
+	{
 		ADLC.cts = false;
-		ADLC.status1 &= ~16;
-	} else {
+		ADLC.status1 &= ~STATUS_REG1_CTS;
+	}
+	else
+	{
 		ADLC.cts = true;
 	}
 
 	// and then set the status bit if the line is high! (status bit stays
 	// up until cpu tries to clear it) (& still stays up if cts line still high)
 
-	if (!(ADLC.control1 && 128) && ADLC.cts) {
-		ADLC.status1 |= 16; // set CTS now
+	if (!(ADLC.control1 && CONTROL_REG1_TX_RESET) && ADLC.cts) // TODO: is && right here?
+	{
+		ADLC.status1 |= STATUS_REG1_CTS; // set CTS now
 	}
 
 	// SR1b5 - TXU - Tx Underrun.
-	if (ADLC.txfptr > 4) { // probably not needed
+	if (ADLC.txfptr > 4) // probably not needed
+	{
 		if (DebugEnabled)
 		{
 			DebugDisplayTraceF(DebugType::Econet, true,
 			                   "Econet: TX Underrun - TXfptr %02x",
 			                   (unsigned int)ADLC.txfptr);
 		}
-		ADLC.status1 |= 32;
+
+		ADLC.status1 |= STATUS_REG1_TX_UNDERRUN;
 		ADLC.txfptr = 4;
 	}
 
 	// SR1b6 TDRA flag - another complicated derivation
-	if (!(ADLC.control1 & 128)) { // not txreset
-		if (!(ADLC.control2 & 8)) { // tdra mode
-			if (   (   ((ADLC.txfptr < 3) && !(ADLC.control2 & 2)) // space in fifo?
-			        || ((ADLC.txfptr < 2) && (ADLC.control2 & 2))) // space in fifo?
-			    && (!(ADLC.status1 & 16))     // clear to send is ok
-			    && (!(ADLC.status2 & 32)) ) { // DTR not high
-
-				if (DebugEnabled && !(ADLC.status1 & 64))
+	if (!(ADLC.control1 & CONTROL_REG1_TX_RESET)) // not txreset
+	{
+		if (!(ADLC.control2 & CONTROL_REG2_TDRA_SELECT)) // tdra mode
+		{
+			if (   (   ((ADLC.txfptr < 3) && !(ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER)) // space in fifo?
+			        || ((ADLC.txfptr < 2) && (ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER))) // space in fifo?
+			    && (!(ADLC.status1 & STATUS_REG1_CTS)) // clear to send is ok
+			    && (!(ADLC.status2 & STATUS_REG2_DCD)) ) // DTR not high
+			{
+				if (DebugEnabled && !(ADLC.status1 & STATUS_REG1_TDRA))
 					DebugDisplayTrace(DebugType::Econet, true, "set tdra");
-				ADLC.status1 |= 64; // set Tx Reg Data Available flag.
-			} else {
-				if (DebugEnabled && (ADLC.status1 & 64))
-					DebugDisplayTrace(DebugType::Econet, true, "clear tdra");
-				ADLC.status1 &= ~64; // clear Tx Reg Data Available flag.
+
+				ADLC.status1 |= STATUS_REG1_TDRA; // set Tx Reg Data Available flag
 			}
-		} else { // FC mode
-			if (!(ADLC.txfptr)) { // nothing in fifo
-				if (DebugEnabled && !(ADLC.status1 & 64))
+			else
+			{
+				if (DebugEnabled && (ADLC.status1 & STATUS_REG1_TDRA))
+					DebugDisplayTrace(DebugType::Econet, true, "clear tdra");
+
+				ADLC.status1 &= ~STATUS_REG1_TDRA; // clear Tx Reg Data Available flag
+			}
+		}
+		else // FC mode
+		{
+			if (ADLC.txfptr == 0) // nothing in fifo
+			{
+				if (DebugEnabled && !(ADLC.status1 & STATUS_REG1_TDRA))
 					DebugDisplayTrace(DebugType::Econet, true, "set fc");
-				ADLC.status1 |= 64; // set Tx Reg Data Available flag.
-			} else {
-				if (DebugEnabled && (ADLC.status1 & 64))
+
+				ADLC.status1 |= STATUS_REG1_TDRA; // set Tx Reg Data Available flag.
+			}
+			else
+			{
+				if (DebugEnabled && (ADLC.status1 & STATUS_REG1_TDRA))
 					DebugDisplayTrace(DebugType::Econet, true, "clear fc");
-				ADLC.status1 &= ~64; // clear Tx Reg Data Available flag.
+
+				ADLC.status1 &= ~STATUS_REG1_TDRA; // clear Tx Reg Data Available flag.
 			}
 		}
 	}
 	// SR1b7 IRQ flag - see below
 
 	// SR2b0 - AP - Address present 
-	if (!(ADLC.control1  & 64)) { // not rxreset
-		if (ADLC.rxfptr &&
-			(ADLC.rxap & (powers[ADLC.rxfptr-1]))) { // ap bits set on fifo
-			ADLC.status2 |= 1;
-		} else {
-			ADLC.status2 &= ~1;
+	if (!(ADLC.control1 & CONTROL_REG1_RX_RESET))
+	{
+		if (ADLC.rxfptr > 0 &&
+		    (ADLC.rxap & (powers[ADLC.rxfptr - 1]))) // ap bits set on fifo
+		{
+			ADLC.status2 |= STATUS_REG2_ADDRESS_PRESENT;
 		}
+		else
+		{
+			ADLC.status2 &= ~STATUS_REG2_ADDRESS_PRESENT;
+		}
+
 		// SR2b1 - FV -Frame Valid - set in rx - only reset by ClearRx or RxReset
-		if (ADLC.rxfptr &&
-			(ADLC.rxffc & (powers[ADLC.rxfptr-1]))) {
-			ADLC.status2 |= 2;
+		if (ADLC.rxfptr > 0 &&
+		    (ADLC.rxffc & (powers[ADLC.rxfptr - 1])))
+		{
+			ADLC.status2 |= STATUS_REG2_FRAME_VALID;
 		}
+
 		// SR2b2 - Inactive Idle Received - sets irq!
-		if (ADLC.idle && !FlagFillActive) {
-			ADLC.status2 |= 4;
-		} else {
-			ADLC.status2 &= ~4;
+		if (ADLC.idle && !FlagFillActive)
+		{
+			ADLC.status2 |= STATUS_REG2_INACTIVE_IDLE_RECEIVED;
+		}
+		else
+		{
+			ADLC.status2 &= ~STATUS_REG2_INACTIVE_IDLE_RECEIVED;
 		}
 	}
+
 	// SR2b3 - RxAbort - Abort received - set in rx routines above
 	// SR2b4 - Error during reception - set if error flaged in rx routine.
 	// SR2b5 - DCD
-	if (!ReceiverSocketsOpen) { // is line down?
-		ADLC.status2 |= 32; // flag error
-	} else {
-		ADLC.status2 &= ~32;
+	if (!ReceiverSocketsOpen) // is line down?
+	{
+		ADLC.status2 |= STATUS_REG2_DCD; // flag error
 	}
+	else
+	{
+		ADLC.status2 &= ~STATUS_REG2_DCD;
+	}
+
 	// SR2b6 - OVRN -receipt overrun. probably not needed 
-	if (ADLC.rxfptr>4) {
-		ADLC.status2 |= 64;
+	if (ADLC.rxfptr > 4)
+	{
+		ADLC.status2 |= STATUS_REG2_RX_OVERRUN;
 		ADLC.rxfptr = 4;
 	}
+
 	// SR2b7 - RDA. As per SR1b0 - set above.
 
 	// Handle PSE - only for SR2 Rx bits at the moment
-	int sr2psetemp = ADLC.sr2pse;
-	if (ADLC.control2 & 1) {
-		if ((ADLC.sr2pse <= 1) && (ADLC.status2 & 0x7A)) { // ERR, FV, DCD, OVRN, ABT
+	int PrevSr2pse = ADLC.sr2pse;
+
+	if (ADLC.control2 & CONTROL_REG2_PRIORITIZED_STATUS_ENABLE)
+	{
+		if (ADLC.sr2pse <= 1 && (ADLC.status2 & (STATUS_REG2_FRAME_VALID |
+		                                         STATUS_REG2_ABORT_RECEIVED |
+		                                         STATUS_REG2_FCS_ERROR |
+		                                         STATUS_REG2_DCD |
+		                                         STATUS_REG2_RX_OVERRUN)))
+		{
 			ADLC.sr2pse = 1;
-			ADLC.status2 &= ~0x85;
-		} else if ((ADLC.sr2pse <= 2) && (ADLC.status2 & 0x04)) { // Idle
+			ADLC.status2 &= ~(STATUS_REG2_ADDRESS_PRESENT |
+			                  STATUS_REG2_INACTIVE_IDLE_RECEIVED |
+			                  STATUS_REG2_RX_DATA_AVAILABLE);
+		}
+		else if (ADLC.sr2pse <= 2 && (ADLC.status2 & STATUS_REG2_INACTIVE_IDLE_RECEIVED)) // Idle
+		{
 			ADLC.sr2pse = 2;
-			ADLC.status2 &= ~0x81;
-		} else if ((ADLC.sr2pse <= 3) && (ADLC.status2 & 0x01)) { // AP
+			ADLC.status2 &= ~(STATUS_REG2_ADDRESS_PRESENT |
+			                  STATUS_REG2_RX_DATA_AVAILABLE);
+		}
+		else if (ADLC.sr2pse <= 3 && (ADLC.status2 & STATUS_REG2_ADDRESS_PRESENT))
+		{
 			ADLC.sr2pse = 3;
-			ADLC.status2 &= ~0x80;
-		} else if (ADLC.status2 & 0x80) { // RDA
+			ADLC.status2 &= ~STATUS_REG2_RX_DATA_AVAILABLE;
+		}
+		else if (ADLC.status2 & STATUS_REG2_RX_DATA_AVAILABLE)
+		{
 			ADLC.sr2pse = 4;
-			ADLC.status2 &= ~0x02;
-		} else {
+			ADLC.status2 &= ~STATUS_REG2_FRAME_VALID;
+		}
+		else
+		{
 			ADLC.sr2pse = 0; // No relevant bits set
 		}
 
 		// Set SR1 RDA copy
-		if (ADLC.status2 & 0x80)
-			ADLC.status1 |= 1;
+		if (ADLC.status2 & STATUS_REG2_RX_DATA_AVAILABLE)
+		{
+			ADLC.status1 |= STATUS_REG1_RX_DATA_AVAILABLE;
+		}
 		else
-			ADLC.status1 &= ~1;
-
-	} else { // PSE inactive
+		{
+			ADLC.status1 &= ~STATUS_REG1_RX_DATA_AVAILABLE;
+		}
+	}
+	else // PSE inactive
+	{
 		ADLC.sr2pse = 0;
 	}
 
-	if (DebugEnabled && sr2psetemp != ADLC.sr2pse)
+	if (DebugEnabled && ADLC.sr2pse != PrevSr2pse)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "ADLC: PSE SR2Rx priority changed to %d",
@@ -1860,37 +2146,50 @@ bool EconetPoll_real() // return NMI status
 	}
 
 	// Do we need to flag an interrupt?
-	if (ADLC.status1 != ADLCtemp.status1 || ADLC.status2 != ADLCtemp.status2) { // something changed
+	if (ADLC.status1 != ADLCtemp.status1 || ADLC.status2 != ADLCtemp.status2) // something changed
+	{
 		// SR1b1 - S2RQ - Status2 request. New bit set in S2?
-		unsigned char tempcause = ((ADLC.status2 ^ ADLCtemp.status2) & ADLC.status2) & ~128;
+		unsigned char tempcause = ((ADLC.status2 ^ ADLCtemp.status2) & ADLC.status2) & ~STATUS_REG2_RX_DATA_AVAILABLE;
 
-		if (!(ADLC.control1 & 2)) { // RIE not set,
+		if (!(ADLC.control1 & CONTROL_REG1_RX_INT_ENABLE)) // RIE not set
+		{
 			tempcause = 0;
 		}
 
-		if (tempcause) { //something got set
-			ADLC.status1 |= 2;
+		if (tempcause) // something got set
+		{
+			ADLC.status1 |= STATUS_REG1_STATUS2_READ_REQUEST;
 			sr1b2cause = sr1b2cause | tempcause;
-		} else if (!(ADLC.status2 & sr1b2cause)) { //cause has gone
-			ADLC.status1 &= ~2;
+		}
+		else if (!(ADLC.status2 & sr1b2cause)) // cause has gone
+		{
+			ADLC.status1 &= ~STATUS_REG1_STATUS2_READ_REQUEST;
 			sr1b2cause = 0;
 		}
 
 		// New bit set in S1?
-		tempcause = ((ADLC.status1 ^ ADLCtemp.status1) & ADLC.status1) & ~128;
+		tempcause = ((ADLC.status1 ^ ADLCtemp.status1) & ADLC.status1) & ~STATUS_REG1_IRQ;
 
-		if (!(ADLC.control1 & 2)) { // RIE not set
-			tempcause = tempcause & ~11;
-		}
-		if (!(ADLC.control1 & 4)) { // TIE not set
-			tempcause = tempcause & ~0x70;
+		if (!(ADLC.control1 & CONTROL_REG1_RX_INT_ENABLE)) // RIE not set
+		{
+			tempcause &= ~(STATUS_REG1_RX_DATA_AVAILABLE |
+			               STATUS_REG1_STATUS2_READ_REQUEST |
+			               STATUS_REG1_FLAG_DETECTED);
 		}
 
-		if (tempcause) { //something got set
+		if (!(ADLC.control1 & CONTROL_REG1_TX_INT_ENABLE)) // TIE not set
+		{
+			tempcause &= ~(STATUS_REG1_CTS |
+			               STATUS_REG1_TX_UNDERRUN |
+			               STATUS_REG1_TDRA);
+		}
+
+		if (tempcause != 0) // something got set
+		{
 			interruptnow = true;
 			irqcause = irqcause | tempcause; // remember which bit went high to flag irq
-			// SR1b7 IRQ flag
-			ADLC.status1 |= 128;
+
+			ADLC.status1 |= STATUS_REG1_IRQ;
 
 			if (DebugEnabled)
 			{
@@ -1901,16 +2200,23 @@ bool EconetPoll_real() // return NMI status
 		}
 
 		// Bit cleared in S1?
-		unsigned char temp2 = ((ADLC.status1 ^ ADLCtemp.status1) & ADLCtemp.status1) & ~128;
+		unsigned char temp2 = ((ADLC.status1 ^ ADLCtemp.status1) & ADLCtemp.status1) & ~STATUS_REG1_IRQ;
 
-		if (temp2) { // something went off
+		if (temp2) // something went off
+		{
+
 			irqcause = irqcause & ~temp2; // clear flags that went off
-			if (irqcause == 0) { // all flag gone off now
+
+			if (irqcause == 0) // all flag gone off now
+			{
 				// clear irq status bit when cause has gone.
-				ADLC.status1 &= ~128;
-			} else {
+				ADLC.status1 &= ~STATUS_REG1_IRQ;
+			}
+			else
+			{
 				// interrupt again because still have flags set
-				if (ADLC.control2 & 1) {
+				if (ADLC.control2 & CONTROL_REG2_PRIORITIZED_STATUS_ENABLE)
+				{
 					interruptnow = true;
 					DebugDisplayTrace(DebugType::Econet, true, "ADLC: S1 flags still set, interrupt");
 				}
@@ -1923,6 +2229,7 @@ bool EconetPoll_real() // return NMI status
 				                   (int)irqcause);
 			}
 		}
+
 		if (DebugEnabled) debugADLCprint();
 	}
 
