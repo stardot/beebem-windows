@@ -270,12 +270,14 @@ struct EthernetPacket
 		unsigned char raw[8];
 		AUNHeader ah;
 	};
+
 	union {
 		unsigned char buff[ETHERNET_BUFFER_SIZE];
 		ShorEconetHeader eh;
 	};
-	volatile unsigned int Pointer;
-	volatile unsigned int BytesInBuffer;
+
+	unsigned int Pointer;
+	unsigned int BytesInBuffer;
 	unsigned long inet_addr;
 	unsigned int port;
 	unsigned int deststn;
@@ -294,8 +296,9 @@ struct EconetPacket
 		LongEconetPacket eh;
 		unsigned char buff[ETHERNET_BUFFER_SIZE + 12];
 	};
-	volatile unsigned int Pointer;
-	volatile unsigned int BytesInBuffer;
+
+	unsigned int Pointer;
+	unsigned int BytesInBuffer;
 };
 
 static EconetPacket BeebTx;
@@ -351,7 +354,7 @@ static int EconetSCACKtimeout = 500; // Cycles to delay before sending ack to sc
 static int Econet4Wtrigger;
 
 // Device and temp copy!
-volatile MC6854 ADLC;
+static MC6854 ADLC;
 static MC6854 ADLCtemp;
 
 //---------------------------------------------------------------------------
