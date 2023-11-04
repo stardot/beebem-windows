@@ -360,7 +360,7 @@ static MC6854 ADLCtemp;
 //---------------------------------------------------------------------------
 
 static bool EconetPoll_real();
-static void debugADLCprint();
+static void DebugDumpADLC();
 static void EconetError(const char *Format, ...);
 
 //---------------------------------------------------------------------------
@@ -933,7 +933,7 @@ unsigned char ReadEconetRegister(unsigned char Register)
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "Econet: Read ADLC %02X",
 		                   (int)Register);
-		debugADLCprint();
+		DebugDumpADLC();
 	}
 
 	if (Register == 0)
@@ -954,7 +954,7 @@ unsigned char ReadEconetRegister(unsigned char Register)
 				DebugDisplayTraceF(DebugType::Econet, true,
 				                   "Econet: Returned fifo: %02X",
 				                   (int)ADLC.rxfifo[ADLC.rxfptr - 1]);
-				debugADLCprint();
+				DebugDumpADLC();
 			}
 			
 			if (ADLC.rxfptr > 0)
@@ -1022,7 +1022,7 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 		}
 	}
 
-	if (DebugEnabled) debugADLCprint();
+	if (DebugEnabled) DebugDumpADLC();
 
 	EconetStateChanged = true;
 }
@@ -1530,7 +1530,7 @@ bool EconetPoll_real() // return NMI status
 
 						BeebTx.Pointer = 0; // wipe buffer
 						BeebTx.BytesInBuffer = 0;
-						if (DebugEnabled) debugADLCprint();
+						if (DebugEnabled) DebugDumpADLC();
 					}
 				}
 			}
@@ -1912,7 +1912,7 @@ bool EconetPoll_real() // return NMI status
 
 		if (DebugEnabled) {
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: 4waystage timeout; Set FWS_IDLE");
-			debugADLCprint();
+			DebugDumpADLC();
 		}
 	}
 
@@ -2205,9 +2205,8 @@ bool EconetPoll_real() // return NMI status
 		// Bit cleared in S1?
 		unsigned char temp2 = ((ADLC.status1 ^ ADLCtemp.status1) & ADLCtemp.status1) & ~STATUS_REG1_IRQ;
 
-		if (temp2) // something went off
+		if (temp2 != 0) // something went off
 		{
-
 			irqcause = irqcause & ~temp2; // clear flags that went off
 
 			if (irqcause == 0) // all flag gone off now
@@ -2233,7 +2232,7 @@ bool EconetPoll_real() // return NMI status
 			}
 		}
 
-		if (DebugEnabled) debugADLCprint();
+		if (DebugEnabled) DebugDumpADLC();
 	}
 
 	return interruptnow; // flag NMI if necessary. see also INTON flag as
@@ -2243,7 +2242,7 @@ bool EconetPoll_real() // return NMI status
 //--------------------------------------------------------------------------------------------
 // display some information
 
-void debugADLCprint()
+void DebugDumpADLC()
 {
 	DebugDisplayTraceF(DebugType::Econet, true,
 	                   "ADLC: Ctl:%02X %02X %02X %02X St:%02X %02X TXptr:%01x rx:%01x FF:%d IRQc:%02x SR2c:%02x PC:%04x 4W:%i ",
