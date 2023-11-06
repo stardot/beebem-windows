@@ -1366,10 +1366,14 @@ bool EconetPoll_real() // return NMI status
 						                   (unsigned int)htons(RecvAddr.sin_port));
 
 						char info[200];
-						sprintf(info, "Econet: Packet data:");
-						for (unsigned int j = 0; j < BeebTx.Pointer; ++j) {
-							sprintf(info+strlen(info), " %02X", BeebTx.buff[j]);
+						char *s = info;
+						s += sprintf(s, "Econet: Packet data:");
+
+						for (unsigned int j = 0; j < BeebTx.Pointer; ++j)
+						{
+							s += sprintf(s, " %02X", BeebTx.buff[j]);
 						}
+
 						DebugDisplayTrace(DebugType::Econet, true, info);
 					}
 
@@ -1628,14 +1632,12 @@ bool EconetPoll_real() // return NMI status
 									                   htons(RecvAddr.sin_port));
 
 									char info[200];
-									sprintf(info, "EconetPoll: Packet data:");
+									char *s = info;
+									s += sprintf(s, "EconetPoll: Packet data:");
 
-									for (int i = 0; i < RetVal; ++i) {
-										if (confAUNmode) {
-											sprintf(info+strlen(info), " %02X", EconetRx.raw[i]);
-										} else {
-											sprintf(info+strlen(info), " %02X", BeebRx.buff[i]);
-										}
+									for (int i = 0; i < RetVal; ++i)
+									{
+										s += sprintf(s, " %02X", AUNMode ? EconetRx.raw[i] : BeebRx.buff[i]);
 									}
 
 									DebugDisplayTrace(DebugType::Econet, true, info);
@@ -1674,15 +1676,20 @@ bool EconetPoll_real() // return NMI status
 											hostno = networkp;
 											foundhost = true;
 											networkp++;
-										} else {
+										}
+										else
+										{
 											// ignore it..
 											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Packet ignored");
 										}
 									}
 
-									if (!foundhost) { // didn't find it in the table ..
-										BeebRx.BytesInBuffer = 0; //ignore the packet
-									} else {
+									if (!foundhost) // didn't find it in the table ..
+									{
+										BeebRx.BytesInBuffer = 0; // ignore the packet
+									}
+									else
+									{
 										if (DebugEnabled)
 										{
 											DebugDisplayTraceF(DebugType::Econet, true,
@@ -1741,6 +1748,7 @@ bool EconetPoll_real() // return NMI status
 												default:
 													//ignore anything else
 													BeebRx.BytesInBuffer = 0;
+													break;
 											}
 
 											BeebRx.Pointer = 0;
