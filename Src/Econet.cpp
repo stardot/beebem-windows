@@ -132,10 +132,10 @@ const unsigned char STATUS_REG2_RX_DATA_AVAILABLE              = 0x80;
 // Configuration Options.
 // These, among others, are overridden in Econet.cfg, see ReadNetwork()
 
-static bool confAUNmode = false;      // Use AUN style networking
-static bool confLEARN = false;        // Add receipts from unknown hosts to network table
-static bool confSTRICT = false;       // Assume network ip=stn number when sending to unknown hosts
-static bool confSingleSocket = true;  // use same socket for Send and receive
+static bool AUNMode = false; // Use AUN style networking
+static bool LearnMode = false; // Add receipts from unknown hosts to network table
+static bool StrictAUNMode = false; // Assume network ip=stn number when sending to unknown hosts
+static bool SingleSocket = true; // Use same socket for Send and receive
 static unsigned int FourWayStageTimeout = 500000;
 static bool MassageNetworks = false;  // massage network numbers on send/receive (add/sub 128)
 
@@ -143,7 +143,7 @@ static int inmask, outmask;
 
 bool EconetStateChanged = false;
 bool EconetEnabled;    // Enable hardware
-bool EconetNMIenabled; // 68B54 -> NMI enabled. (IC97)
+bool EconetNMIEnabled; // 68B54 -> NMI enabled. (IC97)
 int EconetTrigger;     // Poll timer
 
 static const unsigned char powers[4] = { 1, 2, 4, 8 };
@@ -252,7 +252,7 @@ struct LongEconetPacket
 // Does econet send multiple packets for big transfers, or just one huge
 // packet?
 // What's MTU on econet? Depends on clock speed but its big (e.g. 100K).
-// As we are using UDP, we will construct a 2048 byte buffer accept data
+// As we are using UDP, we will construct a 2048 byte buffer, accept data
 // into this, and send it periodically.  We will accept incoming data
 // similarly, and dribble it back into the emulated 68B54.
 // We should thus never suffer underrun errors....
@@ -429,8 +429,13 @@ void EconetReset()
 	EconetFlagFillTimeoutTrigger = 0;
 
 	// kill anything that was in use
-	if (ReceiverSocketsOpen) {
-		if (!confSingleSocket) closesocket(SendSocket);
+	if (ReceiverSocketsOpen)
+	{
+		if (!SingleSocket)
+		{
+			closesocket(SendSocket);
+		}
+
 		closesocket(ListenSocket);
 		ReceiverSocketsOpen = false;
 	}
@@ -527,7 +532,7 @@ void EconetReset()
 			{
 				// still can't find one ... strict mode?
 
-				if (confSTRICT && confAUNmode && networkp < NETWORK_TABLE_LENGTH)
+				if (AUNMode && StrictAUNMode && networkp < NETWORK_TABLE_LENGTH)
 				{
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true, "Econet: No free hosts in table; trying automatic mode");
@@ -585,9 +590,8 @@ void EconetReset()
 		CMOSWrite(0xe, EconetStationNumber);
 	}
 
-	//---------------------
 	// Socket used to send messages.
-	if (confSingleSocket)
+	if (SingleSocket)
 	{
 		SendSocket = ListenSocket;
 	}
@@ -743,19 +747,19 @@ static void ReadEconetConfigFile()
 			{
 				if (_stricmp(Key.c_str(), "AUNMODE") == 0)
 				{
-					confAUNmode = std::stoi(Value) != 0;
+					AUNMode = std::stoi(Value) != 0;
 				}
 				else if (_stricmp(Key.c_str(), "LEARN") == 0)
 				{
-					confLEARN = std::stoi(Value) != 0;
+					LearnMode = std::stoi(Value) != 0;
 				}
 				else if (_stricmp(Key.c_str(), "AUNSTRICT") == 0)
 				{
-					confSTRICT = std::stoi(Value) != 0;
+					StrictAUNMode = std::stoi(Value) != 0;
 				}
 				else if (_stricmp(Key.c_str(), "SINGLESOCKET") == 0)
 				{
-					confSingleSocket = std::stoi(Value) != 0;
+					SingleSocket = std::stoi(Value) != 0;
 				}
 				else if (_stricmp(Key.c_str(), "FLAGFILLTIMEOUT") == 0)
 				{
@@ -903,7 +907,7 @@ void ReadNetwork()
 	aunnet[0].network = 0; // terminate table
 
 	// Don't bother reading file if not using AUN.
-	if (confAUNmode)
+	if (AUNMode)
 	{
 		ReadAUNConfigFile();
 	}
@@ -975,7 +979,8 @@ unsigned char ReadEconetRegister(unsigned char Register)
 //---------------------------------------------------------------------------
 // write to FEA0-3
 
-void WriteEconetRegister(unsigned char Register, unsigned char Value) {
+void WriteEconetRegister(unsigned char Register, unsigned char Value)
+{
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
@@ -1002,7 +1007,8 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 	{
 		ADLC.control4 = Value;
 	}
-	else if (Register == 2 || Register == 3) { // adr 02 or adr 03 & AC=0
+	else if (Register == 2 || Register == 3) // adr 02 or adr 03 & AC=0
+	{
 		// cannot write an output byte if txreset is set
 		// register 2 is an output byte
 		// register 3 with c1b0=0 is output byte & finalise tx.
@@ -1015,6 +1021,7 @@ void WriteEconetRegister(unsigned char Register, unsigned char Value) {
 			ADLC.txfifo[0] = Value;
 			ADLC.txfptr++; 
 			ADLC.txftl = ADLC.txftl << 1; // shift txlast bits up.
+
 			if (Register == 3)
 			{
 				ADLC.control2 |= CONTROL_REG2_TX_LAST_DATA; // set txlast control flag ourself
@@ -1039,14 +1046,17 @@ bool EconetInterruptRequest()
 
 bool EconetPoll() // return NMI status
 {
-	if (EconetStateChanged || EconetTrigger<=TotalCycles) {
+	if (EconetStateChanged || EconetTrigger <= TotalCycles)
+	{
 		EconetStateChanged = false;
 
 		// Don't poll if failed to init sockets
-		if (ReceiverSocketsOpen) {
+		if (ReceiverSocketsOpen)
+		{
 			return EconetPoll_real();
 		}
 	}
+
 	return false;
 }
 
@@ -1131,7 +1141,7 @@ bool EconetPoll_real() // return NMI status
 		                  STATUS_REG2_DCD |
 		                  STATUS_REG2_RX_OVERRUN);
 
-		if ((ADLC.control2 & CONTROL_REG2_PRIORITIZED_STATUS_ENABLE) && ADLC.sr2pse) // PSE active?
+		if ((ADLC.control2 & CONTROL_REG2_PRIORITIZED_STATUS_ENABLE) && ADLC.sr2pse > 0) // PSE active?
 		{
 			ADLC.sr2pse++; // Advance PSE to next priority
 			if (ADLC.sr2pse > 4)
@@ -1233,7 +1243,7 @@ bool EconetPoll_real() // return NMI status
 
 				bool TXlast = false;
 
-				if (ADLC.txftl & powers[ADLC.txfptr-1]) // TxLast set
+				if (ADLC.txftl & powers[ADLC.txfptr - 1]) // TxLast set
 				{
 					TXlast = true;
 				}
@@ -1274,7 +1284,7 @@ bool EconetPoll_real() // return NMI status
 					int SendLen;
 					unsigned int i = 0;
 
-					if (confAUNmode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) // broadcast!
+					if (AUNMode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) // broadcast!
 					{
 						// TODO something
 						// Somewhere that I cannot now find suggested that 
@@ -1308,7 +1318,7 @@ bool EconetPoll_real() // return NMI status
 						} while (i < networkp);
 
 						// guess address if not found in table
-						if (!SendMe && confSTRICT) // didn't find it and allowed to guess
+						if (!SendMe && StrictAUNMode) // didn't find it and allowed to guess
 						{
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Send to unknown host; make assumptions & add entry!");
 
@@ -1364,7 +1374,7 @@ bool EconetPoll_real() // return NMI status
 					}
 
 					/*
-					if (confAUNmode && fourwaystage != FWS_IDLE) {
+					if (AUNMode && fourwaystage != FWS_IDLE) {
 						if (RecvAddr.sin_port != EconetTx.inet_addr ||
 							RecvAddr.sin_port != htons(EconetTx.port) ) {
 								EconetError("Erm.. trying to send somewhere while in the middle of talking to somewhere else.");
@@ -1373,7 +1383,7 @@ bool EconetPoll_real() // return NMI status
 					*/
 
 					// Send a datagram to the receiver
-					if (confAUNmode)
+					if (AUNMode)
 					{
 						unsigned int j = 0;
 						// OK. Lets do AUN ...
@@ -1501,7 +1511,7 @@ bool EconetPoll_real() // return NMI status
 					{
 						if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Sending a packet..");
 
-						if (confAUNmode)
+						if (AUNMode)
 						{
 							if (sendto(SendSocket, (char *)&EconetTx, SendLen, 0,
 							           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
@@ -1579,7 +1589,7 @@ bool EconetPoll_real() // return NMI status
 				// wait for cpu to clear FV flag from last frame received
 				if (!(ADLC.status2 & STATUS_REG2_FRAME_VALID))
 				{
-					if (!confAUNmode ||
+					if (!AUNMode ||
 					    fourwaystage == FourWayStage::Idle ||
 					    fourwaystage == FourWayStage::ImmediateSent ||
 					    fourwaystage == FourWayStage::DataSent)
@@ -1596,14 +1606,19 @@ bool EconetPoll_real() // return NMI status
 							sockaddr_in RecvAddr;
 							// Read the packet
 							int sizRcvAdr = sizeof(RecvAddr);
-							if (confAUNmode) {
+
+							if (AUNMode)
+							{
 								RetVal = recvfrom(ListenSocket, (char *)EconetRx.raw, sizeof(EconetRx), 0, (SOCKADDR *)&RecvAddr, (int *)&sizRcvAdr);
 								EconetRx.BytesInBuffer = RetVal;
-							} else {
+							}
+							else
+							{
 								RetVal = recvfrom(ListenSocket, (char *)BeebRx.buff, sizeof(BeebRx.buff), 0, (SOCKADDR *)&RecvAddr, (int *)&sizRcvAdr);
 							}
 
-							if (RetVal > 0) {
+							if (RetVal > 0)
+							{
 								if (DebugEnabled)
 								{
 									DebugDisplayTraceF(DebugType::Econet, true,
@@ -1626,7 +1641,8 @@ bool EconetPoll_real() // return NMI status
 									DebugDisplayTrace(DebugType::Econet, true, info);
 								}
 
-								if (confAUNmode) {
+								if (AUNMode)
+								{
 									// convert from AUN format
 									// find station number of sender
 									hostno = 0;
@@ -1642,9 +1658,11 @@ bool EconetPoll_real() // return NMI status
 										hostno++;
 									} while (hostno < networkp);
 
-									if (!foundhost) {
+									if (!foundhost)
+									{
 										// packet from unknown host
-										if (confLEARN && networkp < NETWORK_TABLE_LENGTH) {
+										if (LearnMode && networkp < NETWORK_TABLE_LENGTH)
+										{
 											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Previously unknown host; add entry!");
 											network[networkp].port = ntohs(RecvAddr.sin_port);
 											network[networkp].inet_addr = RecvAddr.sin_addr.s_addr;
@@ -1806,7 +1824,7 @@ bool EconetPoll_real() // return NMI status
 									}
 								}
 							}
-							else if (RetVal == SOCKET_ERROR && !confSingleSocket)
+							else if (RetVal == SOCKET_ERROR && !SingleSocket)
 							{
 								EconetError("Econet: Failed to receive packet (error %ld)", WSAGetLastError());
 							}
@@ -1819,7 +1837,8 @@ bool EconetPoll_real() // return NMI status
 
 					// this bit fakes the bits of the 4-way handshake that AUN doesn't do.
 
-					if (confAUNmode && EconetSCACKtrigger > TotalCycles) {
+					if (AUNMode && EconetSCACKtrigger > TotalCycles)
+					{
 						switch (fourwaystage) {
 						case FourWayStage::ScoutSent:
 							// just got a scout from the beeb, fake an acknowledgement.
@@ -1885,7 +1904,7 @@ bool EconetPoll_real() // return NMI status
 	}
 
 	// waiting for AUN to become idle?
-	if (confAUNmode && fourwaystage == FourWayStage::WaitForIdle
+	if (AUNMode && fourwaystage == FourWayStage::WaitForIdle
 		&& BeebRx.BytesInBuffer == 0 
 		&& ADLC.rxfptr == 0 
 		&& ADLC.txfptr == 0 // ??

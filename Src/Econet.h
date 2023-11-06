@@ -35,7 +35,7 @@ bool EconetInterruptRequest();
 bool EconetPoll();
 
 extern bool EconetEnabled;
-extern bool EconetNMIenabled;
+extern bool EconetNMIEnabled;
 extern bool EconetStateChanged;
 extern int EconetTrigger;
 extern int EconetFlagFillTimeoutTrigger;

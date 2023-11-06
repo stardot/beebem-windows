@@ -459,7 +459,7 @@ unsigned char BeebReadMem(int Address) {
 		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF");
-		EconetNMIenabled = INTOFF;
+		EconetNMIEnabled = INTOFF;
 		return(Read_Econet_Station());
 	}
 
@@ -479,9 +479,9 @@ unsigned char BeebReadMem(int Address) {
 	{
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: INTON");
 
-		if (!EconetNMIenabled) // was off
+		if (!EconetNMIEnabled) // was off
 		{
-			EconetNMIenabled = INTON;  // turn on
+			EconetNMIEnabled = INTON;  // turn on
 
 			if (EconetInterruptRequest()) // irq pending?
 			{
@@ -911,7 +911,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF(w)");
-		EconetNMIenabled = INTOFF;
+		EconetNMIEnabled = INTOFF;
 	}
 
 	if ((Address & ~0x7) == 0xfe18 && MachineType == Model::Master128) {

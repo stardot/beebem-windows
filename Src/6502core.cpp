@@ -3191,13 +3191,17 @@ static void PollHardware(unsigned int nCycles)
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
 	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 
-	if (EconetEnabled && EconetPoll()) {
-		if (EconetNMIenabled) {
-			NMIStatus|=1<<nmi_econet;
+	if (EconetEnabled && EconetPoll())
+	{
+		if (EconetNMIEnabled)
+		{
+			NMIStatus |= 1<<nmi_econet;
+
 			if (DebugEnabled)
 				DebugDisplayTrace(DebugType::Econet, true, "Econet: NMI asserted");
 		}
-		else {
+		else
+		{
 			if (DebugEnabled)
 				DebugDisplayTrace(DebugType::Econet, true, "Econet: NMI requested but supressed");
 		}
