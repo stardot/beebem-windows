@@ -452,7 +452,6 @@ void EconetReset()
 	ListenSocket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ListenSocket == INVALID_SOCKET) {
 		EconetError("Econet: Failed to open listening socket (error %ld)", WSAGetLastError());
-		WSACleanup();
 		return;
 	}
 
@@ -478,7 +477,6 @@ void EconetReset()
 		else
 		{
 			EconetError("Econet: Failed to find station %d in Econet.cfg", EconetStationNumber);
-			WSACleanup();
 			return;
 		}
 
@@ -489,7 +487,7 @@ void EconetReset()
 		{
 			EconetError("Econet: Failed to bind to port %d (error %ld)", EconetListenPort, WSAGetLastError());
 			closesocket(ListenSocket);
-			WSACleanup();
+			ListenSocket = INVALID_SOCKET;
 			return;
 		}
 	}
@@ -566,7 +564,6 @@ void EconetReset()
 				if (EconetStationNumber == 0)
 				{
 					EconetError("Econet: Failed to find free station/port to bind to");
-					WSACleanup();
 					return;
 				}
 			}
@@ -574,7 +571,6 @@ void EconetReset()
 		else
 		{
 			EconetError("Econet: Failed to resolve local IP address");
-			WSACleanup();
 			return;
 		}
 	}
@@ -602,7 +598,7 @@ void EconetReset()
 		if (SendSocket == INVALID_SOCKET) {
 			EconetError("Econet: Failed to open sending socket (error %ld)", WSAGetLastError());
 			closesocket(ListenSocket);
-			WSACleanup();
+			ListenSocket = INVALID_SOCKET;
 			return;
 		}
 	}
@@ -610,10 +606,11 @@ void EconetReset()
 	// this call is what allows broadcast packets to be sent:
 	const char broadcast = '1';
 
-	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1) {
+	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1)
+	{
 		EconetError("Econet: Failed to set cosket for broadcasts (error %ld)", WSAGetLastError());
 		closesocket(ListenSocket);
-		WSACleanup();
+		ListenSocket = INVALID_SOCKET;
 		return;
 	}
 
