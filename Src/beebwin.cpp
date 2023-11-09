@@ -4250,7 +4250,7 @@ void BeebWin::ParseCommandLine()
 				if (a < 1 || a > 254)
 					invalid = true;
 				else
-					EconetStationNumber = static_cast<unsigned char>(a);
+					EconetStationID = static_cast<unsigned char>(a);
 			}
 			else if (_stricmp(__argv[i], "-EcoFF") == 0)
 			{

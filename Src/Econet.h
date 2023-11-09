@@ -26,11 +26,10 @@ Boston, MA  02110-1301, USA.
 #ifndef ECONET_HEADER
 #define ECONET_HEADER
 
-unsigned char Read_Econet_Station();
 void EconetReset();
-unsigned char ReadEconetRegister(unsigned char Register);
-void WriteEconetRegister(unsigned char Register, unsigned char Value);
-void ReadNetwork();
+unsigned char EconetRead(unsigned char Register);
+void EconetWrite(unsigned char Register, unsigned char Value);
+unsigned char EconetReadStationID();
 bool EconetInterruptRequest();
 bool EconetPoll();
 
@@ -41,7 +40,7 @@ extern int EconetTrigger;
 extern int EconetFlagFillTimeoutTrigger;
 extern int EconetFlagFillTimeout;
 
-extern unsigned char EconetStationNumber;
+extern unsigned char EconetStationID;
 extern char EconetCfgPath[512];
 
 #endif

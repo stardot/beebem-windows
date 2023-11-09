@@ -164,7 +164,7 @@ static unsigned int TimeBetweenBytes = 128;
 // This allows multiple different instances of the emulator to be run and
 // to communicate with each other.  Note that you STILL need to have them
 // all listed in Econet.cfg so each one knows where the other area.
-unsigned char EconetStationNumber = 0; // default Station Number
+unsigned char EconetStationID = 0; // default Station ID
 static u_short EconetListenPort = 0; // default Listen port
 static unsigned long EconetListenIP = 0x0100007f;
 // IP settings:
@@ -359,6 +359,7 @@ static MC6854 ADLCtemp;
 
 //---------------------------------------------------------------------------
 
+static void ReadNetwork();
 static bool EconetPoll_real();
 static void DebugDumpADLC();
 static void EconetError(const char *Format, ...);
@@ -464,10 +465,10 @@ void EconetReset()
 
 	// Already have a station num? Either from command line or a free one 
 	// we found on previous reset.
-	if (EconetStationNumber != 0)
+	if (EconetStationID != 0)
 	{
 		// Look up our port number in network config
-		ECOLAN* pNetworkConfig = FindNetworkConfig(EconetStationNumber);
+		ECOLAN* pNetworkConfig = FindNetworkConfig(EconetStationID);
 
 		if (pNetworkConfig != nullptr)
 		{
@@ -476,7 +477,7 @@ void EconetReset()
 		}
 		else
 		{
-			EconetError("Econet: Failed to find station %d in Econet.cfg", EconetStationNumber);
+			EconetError("Econet: Failed to find station %d in Econet.cfg", EconetStationID);
 			return;
 		}
 
@@ -502,10 +503,10 @@ void EconetReset()
 		    (host = gethostbyname(localhost)) != NULL)
 		{
 			// See if configured addresses match local IPs
-			for (unsigned int i = 0; i < networkp && EconetStationNumber == 0; ++i) {
-
+			for (unsigned int i = 0; i < networkp && EconetStationID == 0; ++i)
+			{
 				// Check address for each network interface/card
-				for (int a = 0; host->h_addr_list[a] != nullptr && EconetStationNumber == 0; ++a)
+				for (int a = 0; host->h_addr_list[a] != nullptr && EconetStationID == 0; ++a)
 				{
 					struct in_addr localaddr;
 					memcpy(&localaddr, host->h_addr_list[a], sizeof(struct in_addr));
@@ -520,7 +521,7 @@ void EconetReset()
 						{
 							EconetListenPort = network[i].port;
 							EconetListenIP = network[i].inet_addr;
-							EconetStationNumber = network[i].station;
+							EconetStationID = network[i].station;
 						}
 					}
 				}
@@ -535,9 +536,9 @@ void EconetReset()
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true, "Econet: No free hosts in table; trying automatic mode");
 
-					for (unsigned int j = 0; j < aunnetp && EconetStationNumber == 0; j++)
+					for (unsigned int j = 0; j < aunnetp && EconetStationID == 0; j++)
 					{
-						for (int a = 0; host->h_addr_list[a] != NULL && EconetStationNumber == 0; ++a)
+						for (int a = 0; host->h_addr_list[a] != NULL && EconetStationID == 0; ++a)
 						{
 							struct in_addr localaddr;
 							memcpy(&localaddr, host->h_addr_list[a], sizeof(struct in_addr));
@@ -552,7 +553,7 @@ void EconetReset()
 									myaunnet = j;
 									network[networkp].inet_addr = EconetListenIP = localaddr.S_un.S_addr;
 									network[networkp].port = EconetListenPort = DEFAULT_AUN_PORT;
-									network[networkp].station = EconetStationNumber = localaddr.S_un.S_addr >> 24;
+									network[networkp].station = EconetStationID = localaddr.S_un.S_addr >> 24;
 									network[networkp].network = aunnet[j].network;
 									networkp++;
 								}
@@ -561,7 +562,7 @@ void EconetReset()
 					}
 				}
 
-				if (EconetStationNumber == 0)
+				if (EconetStationID == 0)
 				{
 					EconetError("Econet: Failed to find free station/port to bind to");
 					return;
@@ -578,12 +579,13 @@ void EconetReset()
 	if (DebugEnabled) {
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "Econet: Station number set to %d, port %d",
-		                   EconetStationNumber, EconetListenPort);
+		                   EconetStationID, EconetListenPort);
 	}
 
 	// On Master the station number is read from CMOS so update it
-	if (MachineType == Model::Master128) {
-		CMOSWrite(0xe, EconetStationNumber);
+	if (MachineType == Model::Master128)
+	{
+		CMOSWrite(0xe, EconetStationID);
 	}
 
 	// Socket used to send messages.
@@ -882,7 +884,7 @@ static void ReadAUNConfigFile()
 
 //---------------------------------------------------------------------------
 
-void ReadNetwork()
+static void ReadNetwork()
 {
 	networkp = 0;
 	network[0].station = 0;
@@ -913,22 +915,22 @@ void ReadNetwork()
 //---------------------------------------------------------------------------
 // read to FE18..
 
-unsigned char Read_Econet_Station()
+unsigned char EconetReadStationID()
 {
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "Econet: Read Station %02X",
-		                   (int)EconetStationNumber);
+		                   (int)EconetStationID);
 	}
 
-	return EconetStationNumber;
+	return EconetStationID;
 }
 
 //---------------------------------------------------------------------------
 // read to FEA0-3
 
-unsigned char ReadEconetRegister(unsigned char Register)
+unsigned char EconetRead(unsigned char Register)
 {
 	if (DebugEnabled) {
 		DebugDisplayTraceF(DebugType::Econet, true,
@@ -976,7 +978,7 @@ unsigned char ReadEconetRegister(unsigned char Register)
 //---------------------------------------------------------------------------
 // write to FEA0-3
 
-void WriteEconetRegister(unsigned char Register, unsigned char Value)
+void EconetWrite(unsigned char Register, unsigned char Value)
 {
 	if (DebugEnabled)
 	{
@@ -1703,9 +1705,9 @@ bool EconetPoll_real() // return NMI status
 											BeebRx.eh.srcstn = network[hostno].station;
 											BeebRx.eh.srcnet = network[hostno].network;
 
-											BeebRx.eh.deststn = EconetStationNumber; // must be for us.
+											BeebRx.eh.deststn = EconetStationID; // must be for us.
 											BeebRx.eh.destnet = 0;
-											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
+											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationID; // must be for us.
 											// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
 											BeebRx.eh.cb = EconetRx.ah.cb | 128;
@@ -1758,9 +1760,9 @@ bool EconetPoll_real() // return NMI status
 											// I'm pretty sure that real econet can't send to itself..
 											BeebRx.eh.srcstn = network[hostno].station;
 											BeebRx.eh.srcnet = network[hostno].network;
-											BeebRx.eh.deststn = EconetStationNumber; // must be for us.
+											BeebRx.eh.deststn = EconetStationID; // must be for us.
 											BeebRx.eh.destnet = 0;
-											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
+											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationID; // must be for us.
 											// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
 											j = 4;
@@ -1781,9 +1783,9 @@ bool EconetPoll_real() // return NMI status
 												// construct a final ack for the beeb
 												BeebRx.eh.srcstn = network[hostno].station;
 												BeebRx.eh.srcnet = network[hostno].network;
-												BeebRx.eh.deststn = EconetStationNumber; // must be for us.
+												BeebRx.eh.deststn = EconetStationID; // must be for us.
 												BeebRx.eh.destnet = 0;
-												// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationNumber; // must be for us.
+												// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationID; // must be for us.
 												// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
 
 												BeebRx.BytesInBuffer = 4;
@@ -1807,7 +1809,7 @@ bool EconetPoll_real() // return NMI status
 									BeebRx.Pointer = 0;
 								}
 
-								if ((BeebRx.eh.deststn == EconetStationNumber ||
+								if ((BeebRx.eh.deststn == EconetStationID ||
 								    BeebRx.eh.deststn == 255 ||
 								    BeebRx.eh.deststn == 0) && BeebRx.BytesInBuffer > 0)
 								{
@@ -1847,7 +1849,7 @@ bool EconetPoll_real() // return NMI status
 						switch (fourwaystage) {
 						case FourWayStage::ScoutSent:
 							// just got a scout from the beeb, fake an acknowledgement.
-							BeebRx.eh.deststn = EconetStationNumber;
+							BeebRx.eh.deststn = EconetStationID;
 							BeebRx.eh.destnet = 0;
 							BeebRx.eh.srcstn = (unsigned char)EconetTx.deststn; // use scout's dest as source of ack.
 							BeebRx.eh.srcnet = (unsigned char)EconetTx.destnet; // & inmask; //30jun
@@ -1860,7 +1862,7 @@ bool EconetPoll_real() // return NMI status
 
 						case FourWayStage::ScoutAckSent:
 							// beeb acked the scout we gave it, so give it the data AUN sent us earlier.
-							BeebRx.eh.deststn = EconetStationNumber; // as it is data it must be for us
+							BeebRx.eh.deststn = EconetStationID; // as it is data it must be for us
 							BeebRx.eh.destnet = 0;
 							// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun
 							// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
@@ -1945,8 +1947,8 @@ bool EconetPoll_real() // return NMI status
 	// SR1b0 - RDA - received data available.
 	if (!(ADLC.control1 & CONTROL_REG1_RX_RESET)) // rx reset off
 	{
-		if ((ADLC.rxfptr > 0 && !(ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER)) // 1 byte mode
-		    || (ADLC.rxfptr > 1 && (ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER))) // 2 byte mode
+		if ((ADLC.rxfptr > 0 && !(ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER)) || // 1 byte mode
+		    (ADLC.rxfptr > 1 &&  (ADLC.control2 & CONTROL_REG2_2_BYTE_TRANSFER))) // 2 byte mode
 		{
 			ADLC.status1 |= STATUS_REG1_RX_DATA_AVAILABLE; // set RDA copy
 			ADLC.status2 |= STATUS_REG2_RX_DATA_AVAILABLE;

@@ -456,11 +456,12 @@ unsigned char BeebReadMem(int Address) {
 	*/
 	if (EconetEnabled &&
 		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
-		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
+		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)))
+	{
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF");
 		EconetNMIEnabled = INTOFF;
-		return(Read_Econet_Station());
+		return EconetReadStationID();
 	}
 
 	if (Address >= 0xfe18 && Address <= 0xfe20 && MachineType == Model::Master128) {
@@ -520,7 +521,7 @@ unsigned char BeebReadMem(int Address) {
 
 	if ((Address & ~0x1f)==0xfea0) {
 		if (EconetEnabled)
-			return(ReadEconetRegister(Address & 3)); /* Read 68B54 ADLC */
+			return EconetRead(Address & 3); /* Read 68B54 ADLC */
 		return(0xfe); // if not enabled
 	}
 
@@ -952,7 +953,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 
 	//Rob: add econet
 	if (Address >= 0xfea0 && Address < 0xfebf && EconetEnabled) {
-		WriteEconetRegister((Address & 3), Value);
+		EconetWrite((Address & 3), Value);
 		return;
 	}
 
