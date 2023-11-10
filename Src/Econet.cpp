@@ -1612,12 +1612,12 @@ bool EconetPoll_real() // return NMI status
 
 							if (AUNMode)
 							{
-								RetVal = recvfrom(ListenSocket, (char *)EconetRx.raw, sizeof(EconetRx), 0, (SOCKADDR *)&RecvAddr, (int *)&sizRcvAdr);
+								RetVal = recvfrom(ListenSocket, (char *)EconetRx.raw, sizeof(EconetRx.raw) + sizeof(EconetRx.buff), 0, (SOCKADDR *)&RecvAddr, &sizRcvAdr);
 								EconetRx.BytesInBuffer = RetVal;
 							}
 							else
 							{
-								RetVal = recvfrom(ListenSocket, (char *)BeebRx.buff, sizeof(BeebRx.buff), 0, (SOCKADDR *)&RecvAddr, (int *)&sizRcvAdr);
+								RetVal = recvfrom(ListenSocket, (char *)BeebRx.buff, sizeof(BeebRx.buff), 0, (SOCKADDR *)&RecvAddr, &sizRcvAdr);
 							}
 
 							if (RetVal > 0)
