@@ -40,4 +40,6 @@ bool fgetbool(FILE *fileptr);
 UEFStateResult SaveUEFState(const char *StateName);
 UEFStateResult LoadUEFState(const char *StateName);
 
+bool IsUEFSaveState(const char* FileName);
+
 #endif

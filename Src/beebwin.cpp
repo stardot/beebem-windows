@@ -4571,23 +4571,14 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 		if (uef)
 		{
 			// Determine if file is a tape or a state file
-			bool stateFile = false;
-			FILE *fd = fopen(FileName, "rb");
-			if (fd != NULL)
+			if (IsUEFSaveState(FileName))
 			{
-				char buf[14];
-				fread(buf,14,1,fd);
-				if (strcmp(buf,"UEF File!")==0 && buf[12]==0x6c && buf[13]==0x04)
-				{
-					stateFile = true;
-				}
-				fclose(fd);
-			}
-
-			if (stateFile)
 				LoadUEFState(FileName);
+			}
 			else
+			{
 				LoadUEFTape(FileName);
+			}
 
 			cont = false;
 		}

@@ -182,3 +182,25 @@ UEFStateResult LoadUEFState(const char *StateName) {
 		return UEFStateResult::OpenFailed;
 	}
 }
+
+bool IsUEFSaveState(const char* FileName)
+{
+	bool IsSaveState = false;
+
+	FILE *file = fopen(FileName, "rb");
+
+	if (file != nullptr)
+	{
+		char buf[14];
+		fread(buf, sizeof(buf), 1, file);
+
+		if (strcmp(buf, "UEF File!") == 0 && buf[12] == 0x6c && buf[13] == 0x04)
+		{
+			IsSaveState = true;
+		}
+
+		fclose(file);
+	}
+
+	return IsSaveState;
+}
