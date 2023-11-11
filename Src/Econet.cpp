@@ -1643,11 +1643,14 @@ bool EconetPoll_real() // return NMI status
 					{
 						// Try and get another packet from network
 						// Check if packet is waiting without blocking
-						fd_set RdFds;
-						timeval TmOut = {0,0};
-						FD_ZERO(&RdFds);
-						FD_SET(ListenSocket, &RdFds);
-						int RetVal = select((int)ListenSocket + 1, &RdFds, NULL, NULL, &TmOut);
+						fd_set ReadFds;
+						FD_ZERO(&ReadFds);
+						FD_SET(ListenSocket, &ReadFds);
+
+						static const timeval TimeOut = {0, 0};
+
+						int RetVal = select((int)ListenSocket + 1, &ReadFds, NULL, NULL, &TimeOut);
+
 						if (RetVal > 0)
 						{
 							sockaddr_in RecvAddr;
