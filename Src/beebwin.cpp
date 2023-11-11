@@ -1403,15 +1403,13 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
                          WPARAM wParam, // additional information
                          LPARAM lParam) // additional information
 {
-	int wmId, wmEvent;
-	int row, col;
-
 	switch (message)
 	{
-		case WM_COMMAND:  // message: command from application menu
-			wmId = LOWORD(wParam);
-			wmEvent = HIWORD(wParam);
-			mainWin->HandleCommand(wmId);
+		case WM_COMMAND: // message: command from application menu
+			{
+				int wmId = LOWORD(wParam);
+				mainWin->HandleCommand(wmId);
+			}
 			break;
 
 		case WM_PAINT:
@@ -1517,6 +1515,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 						BeebKeyUp(0, 0);
 					}
 
+					int row, col;
+
 					mainWin->TranslateKey((int)wParam, false, row, col);
 				}
 			}
@@ -1591,6 +1591,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 				if (!bit)
 				{
+					int row, col;
+
 					if (mainWin->TranslateKey((int)wParam, true, row, col) < 0)
 					{
 						if (row == -2)
