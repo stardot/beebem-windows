@@ -135,7 +135,6 @@ static int parse_frame(struct tms5220 *tms, int the_first_frame);
 static void check_buffer_low(struct tms5220 *tms);
 static void set_interrupt_state(struct tms5220 *tms, int state);
 //static void tms5220_update(void *param, stream_sample_t **inputs, stream_sample_t **buffer, int length);
-static void SpeechError(const char *fmt, ...);
 
 bool SpeechDefault;
 bool SpeechEnabled;
@@ -162,7 +161,7 @@ void BeebReadPhroms(void) {
 	RomCfg=fopen(TmpPath,"rt");
 	
 	if (RomCfg==NULL) {
-		SpeechError("Cannot open PHROM Configuration file phroms.cfg\n");
+		mainWin->Report(MessageType::Error, "Cannot open PHROM Configuration file phroms.cfg");
 		return;
 	}
 
@@ -193,7 +192,7 @@ void BeebReadPhroms(void) {
 			}
 			else 
 			{
-				SpeechError("Cannot open specified PHROM: %s\n",fullname);
+				mainWin->Report(MessageType::Error, "Cannot open specified PHROM: %s", fullname);
 			}
 		}
 	 }
@@ -1189,11 +1188,3 @@ static void set_interrupt_state(struct tms5220 *tms, int state)
 
 }
 
-/*********************************************************************************************/
-
-static void SpeechError(const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	mainWin->Report(MessageType::Error, fmt, ap);
-	va_end(ap);
-}
