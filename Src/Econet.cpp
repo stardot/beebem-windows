@@ -260,7 +260,7 @@ struct LongEconetPacket
 // -- sniffed AUN between live arcs seems to max out at 1288 bytes (1280+header)
 // --- bigger packers ARE possible - UDP fragments & reassembles transparently.. doh..
 
-// 64K max.. can't see any transfers being neeeded larger than this too often!
+// 64K max.. can't see any transfers being needed larger than this too often!
 // (and that's certainly larger than acorn bridges can cope with.)
 const int ETHERNET_BUFFER_SIZE = 65536;
 
@@ -304,7 +304,7 @@ struct EconetPacket
 static EconetPacket BeebTx;
 static EconetPacket BeebRx;
 
-static unsigned char BeebTxCopy[6]; // size of longeconetpacket structure
+static unsigned char BeebTxCopy[6]; // size of LongEconetPacket structure
 
 // Holds data from Econet.cfg file
 struct ECOLAN { // what we we need to find a beeb?
@@ -324,9 +324,9 @@ const int AUN_TABLE_LENGTH = 128; // number of disparate network in AUNMap
 static ECOLAN network[NETWORK_TABLE_LENGTH]; // list of my friends! :-)
 static AUNTAB aunnet[AUN_TABLE_LENGTH]; // AUNMap file for guess mode.
 
-static unsigned int networkp = 0; // how many friends do I have?
-static unsigned int aunnetp = 0;  // now many networks do i know about?
-static unsigned int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 is valid..
+static int networkp = 0; // how many friends do I have?
+static int aunnetp = 0;  // now many networks do i know about?
+static int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 is valid..
 
 static unsigned char irqcause;   // flag to indicate cause of irq sr1b7
 static unsigned char sr1b2cause; // flag to indicate cause of irq sr1b2
@@ -368,11 +368,55 @@ static void EconetError(const char *Format, ...);
 
 static ECOLAN* FindNetworkConfig(unsigned char Station)
 {
-	for (unsigned int i = 0; i < networkp; ++i) {
-		if (network[i].station == Station) {
+	for (int i = 0; i < networkp; ++i)
+	{
+		if (network[i].station == Station)
+		{
 			return &network[i];
-			break;
 		}
+	}
+
+	return nullptr;
+}
+
+static ECOLAN* FindHost(sockaddr_in* pAddress)
+{
+	for (int i = 0; i < networkp; i++)
+	{
+		if (pAddress->sin_port == htons(network[i].port) &&
+		    pAddress->sin_addr.s_addr == network[i].inet_addr)
+		{
+			return &network[i];
+		}
+	}
+
+	return nullptr;
+}
+
+//---------------------------------------------------------------------------
+
+static ECOLAN* AddHost(sockaddr_in* pAddress)
+{
+	if (networkp < NETWORK_TABLE_LENGTH)
+	{
+		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Previously unknown host; add entry!");
+
+		ECOLAN* pHost = &network[networkp];
+
+		pHost->port = ntohs(pAddress->sin_port);
+		pHost->inet_addr = pAddress->sin_addr.s_addr;
+		// TODO sort this out!! potential for clashes!! look for dupes
+		pHost->station = (pHost->inet_addr & 0xFF000000) >> 24;
+		// TODO and we need to use the map file ..
+		pHost->network = 0;
+
+		networkp++;
+
+		return pHost;
+	}
+	else
+	{
+		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Previously unknown host; host table full");
 	}
 
 	return nullptr;
@@ -503,7 +547,7 @@ void EconetReset()
 		    (host = gethostbyname(localhost)) != NULL)
 		{
 			// See if configured addresses match local IPs
-			for (unsigned int i = 0; i < networkp && EconetStationID == 0; ++i)
+			for (int i = 0; i < networkp && EconetStationID == 0; ++i)
 			{
 				// Check address for each network interface/card
 				for (int a = 0; host->h_addr_list[a] != nullptr && EconetStationID == 0; ++a)
@@ -536,7 +580,7 @@ void EconetReset()
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true, "Econet: No free hosts in table; trying automatic mode");
 
-					for (unsigned int j = 0; j < aunnetp && EconetStationID == 0; j++)
+					for (int j = 0; j < aunnetp && EconetStationID == 0; j++)
 					{
 						for (int a = 0; host->h_addr_list[a] != NULL && EconetStationID == 0; ++a)
 						{
@@ -1281,7 +1325,7 @@ bool EconetPoll_real() // return NMI status
 					sockaddr_in RecvAddr;
 					bool SendMe = false;
 					int SendLen;
-					unsigned int i = 0;
+					int i = 0;
 
 					if (AUNMode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) // broadcast!
 					{
@@ -1332,7 +1376,7 @@ bool EconetPoll_real() // return NMI status
 							}
 							else
 							{
-								unsigned int j = 0;
+								int j = 0;
 
 								do {
 									if (aunnet[j].network == BeebTx.eh.destnet)
@@ -1416,7 +1460,7 @@ bool EconetPoll_real() // return NMI status
 							// not currently doing anything, so this will be a scout, 
 							memcpy(BeebTxCopy, BeebTx.buff, sizeof(BeebTx.eh));
 							// maybe a long scout or a broadcast
-							EconetTx.ah.cb = (unsigned int) (BeebTx.eh.cb) & 127; //| 128;
+							EconetTx.ah.cb = (unsigned int)(BeebTx.eh.cb) & 127; // | 128;
 							EconetTx.ah.port = (unsigned int)BeebTx.eh.port;
 							EconetTx.ah.pad = 0;
 							EconetTx.ah.handle = (ec_sequence+=4);
@@ -1584,7 +1628,7 @@ bool EconetPoll_real() // return NMI status
 
 			if (ADLC.rxfptr == 0)
 			{
-				unsigned int hostno, j = 0;
+				int j = 0;
 
 				// still nothing in buffers (and thus nothing in Econetrx buffer)
 				ADLC.control1 &= ~CONTROL_REG1_RX_FRAME_DISCONTINUE; // reset discontinue flag
@@ -1646,45 +1690,21 @@ bool EconetPoll_real() // return NMI status
 								{
 									// convert from AUN format
 									// find station number of sender
-									hostno = 0;
-									bool foundhost = false;
+									ECOLAN* pHost = FindHost(&RecvAddr);
 
-									do {
-										if (RecvAddr.sin_port == htons(network[hostno].port) &&
-										    RecvAddr.sin_addr.s_addr == network[hostno].inet_addr)
-										{
-											foundhost = true;
-											break;
-										}
-										hostno++;
-									} while (hostno < networkp);
-
-									if (!foundhost)
+									if (pHost == nullptr)
 									{
 										// packet from unknown host
-										if (LearnMode && networkp < NETWORK_TABLE_LENGTH)
+										if (LearnMode)
 										{
-											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Previously unknown host; add entry!");
-											network[networkp].port = ntohs(RecvAddr.sin_port);
-											network[networkp].inet_addr = RecvAddr.sin_addr.s_addr;
-											// TODO sort this out!! potential for clashes!! look for dupes
-											network[networkp].station = (network[networkp].inet_addr & 0xFF000000) >> 24;
-											// TODO and we need to use the map file ..
-											network[networkp].network = 0; 
-
-											hostno = networkp;
-											foundhost = true;
-											networkp++;
-										}
-										else
-										{
-											// ignore it..
-											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Packet ignored");
+											pHost = AddHost(&RecvAddr);
 										}
 									}
 
-									if (!foundhost) // didn't find it in the table ..
+									if (pHost == nullptr) // didn't find it in the table ..
 									{
+										if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Packet ignored");
+
 										BeebRx.BytesInBuffer = 0; // ignore the packet
 									}
 									else
@@ -1693,8 +1713,8 @@ bool EconetPoll_real() // return NMI status
 										{
 											DebugDisplayTraceF(DebugType::Econet, true,
 											                   "Econet: Packet was from %02x %02x ",
-											                   (unsigned int)network[hostno].network,
-											                   (unsigned int)network[hostno].station);
+											                   (unsigned int)pHost->network,
+											                   (unsigned int)pHost->station);
 										}
 
 										// TODO - many of these copies can use memcpy()
@@ -1702,8 +1722,8 @@ bool EconetPoll_real() // return NMI status
 										{
 										case FourWayStage::Idle:
 											// we weren't doing anything when this packet came in.
-											BeebRx.eh.srcstn = network[hostno].station;
-											BeebRx.eh.srcnet = network[hostno].network;
+											BeebRx.eh.srcstn = pHost->station;
+											BeebRx.eh.srcnet = pHost->network;
 
 											BeebRx.eh.deststn = EconetStationID; // must be for us.
 											BeebRx.eh.destnet = 0;
@@ -1758,8 +1778,8 @@ bool EconetPoll_real() // return NMI status
 											// be - *STATIONs poll sends packet to itself... packet we get
 											// here is the one we just sent out..!!!
 											// I'm pretty sure that real econet can't send to itself..
-											BeebRx.eh.srcstn = network[hostno].station;
-											BeebRx.eh.srcnet = network[hostno].network;
+											BeebRx.eh.srcstn = pHost->station;
+											BeebRx.eh.srcnet = pHost->network;
 											BeebRx.eh.deststn = EconetStationID; // must be for us.
 											BeebRx.eh.destnet = 0;
 											// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationID; // must be for us.
@@ -1781,8 +1801,8 @@ bool EconetPoll_real() // return NMI status
 												// are we expecting a (N)ACK ?
 												// TODO check it is a (n)ack for packet we just sent!!, deal with naks!
 												// construct a final ack for the beeb
-												BeebRx.eh.srcstn = network[hostno].station;
-												BeebRx.eh.srcnet = network[hostno].network;
+												BeebRx.eh.srcstn = pHost->station;
+												BeebRx.eh.srcnet = pHost->network;
 												BeebRx.eh.deststn = EconetStationID; // must be for us.
 												BeebRx.eh.destnet = 0;
 												// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun was EconetStationID; // must be for us.
