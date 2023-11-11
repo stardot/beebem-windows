@@ -88,14 +88,14 @@ struct TMS5220
 	 tms5220_speaking is true.  Else, we can play nothing as well, which is a
 	 speed-up...
 	 */
-	uint8_t tms5220_speaking; /* Speak or Speak External command in progress */
-	uint8_t speak_external; /* Speak External command in progress */
-	uint8_t talk_status; /* tms5220 is really currently speaking */
-	uint8_t first_frame; /* we have just started speaking, and we are to parse the first frame */
-	uint8_t last_frame; /* we are doing the frame of sound */
-	uint8_t buffer_low; /* FIFO has less than 8 bytes in it */
-	uint8_t buffer_empty; /* FIFO is empty*/
-	uint8_t irq_pin; /* state of the IRQ pin (output) */
+	bool tms5220_speaking; /* Speak or Speak External command in progress */
+	bool speak_external; /* Speak External command in progress */
+	bool talk_status; /* tms5220 is really currently speaking */
+	bool first_frame; /* we have just started speaking, and we are to parse the first frame */
+	bool last_frame; /* we are doing the frame of sound */
+	bool buffer_low; /* FIFO has less than 8 bytes in it */
+	bool buffer_empty; /* FIFO is empty*/
+	bool irq_pin; /* state of the IRQ pin (output) */
 
 	/* these contain data describing the current and previous voice frames */
 	uint16_t old_energy;
@@ -127,7 +127,7 @@ struct TMS5220
 	int phrom_address;
 
 	uint8_t data_register; /* data register, used by read command */
-	int RDB_flag; /* whether we should read data register or status register */
+	bool RDB_flag; /* whether we should read data register or status register */
 };
 
 /* the state of the streamed output */
@@ -263,9 +263,9 @@ static const char interp_coeff[8] = {
 /* Static function prototypes */
 static void process_command(TMS5220 *tms);
 static int extract_bits(TMS5220 *tms, int count);
-static int parse_frame(TMS5220 *tms, int the_first_frame);
+static int parse_frame(TMS5220 *tms, bool first_frame);
 static void check_buffer_low(TMS5220 *tms);
-static void set_interrupt_state(TMS5220 *tms, int state);
+static void set_interrupt_state(TMS5220 *tms, bool state);
 
 static TMS5220 *tms5220_create(void);
 static void tms5220_destroy(TMS5220 *tms);
@@ -275,9 +275,9 @@ static void tms5220_process(TMS5220 *chip, short int *buffer, unsigned int size)
 static void tms5220_reset_chip(TMS5220 *tms);
 static void tms5220_data_write(TMS5220 *tms, int data);
 static int tms5220_status_read(TMS5220 *tms);
-static int tms5220_ready_read(TMS5220 *tms);
+static bool tms5220_ready_read(TMS5220 *tms);
 static int tms5220_cycles_to_ready(TMS5220 *tms);
-static int tms5220_int_read(TMS5220 *tms);
+static bool tms5220_int_read(TMS5220 *tms);
 
 bool SpeechDefault;
 bool SpeechEnabled;
@@ -289,9 +289,6 @@ static unsigned char phrom_rom[16][16384];
 
 void BeebReadPhroms()
 {
-	char fullname[256];
-	char RomName[80];
-
 	/* Read all ROM files in the BeebFile directory */
 	// This section rewritten for V.1.32 to take account of roms.cfg file.
 	char TmpPath[256];
@@ -309,14 +306,20 @@ void BeebReadPhroms()
 	// read phroms
 	for (int romslot = 15; romslot >= 0; romslot--)
 	{
+		char RomName[80];
 		fgets(RomName, 80, RomCfg);
+
 		if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
 		if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
-		strcpy(fullname,RomName);
-		if (RomName[0] != '\\' && RomName[1] != ':') {
-			strcpy(fullname,mainWin->GetUserDataPath());
-			strcat(fullname,"Phroms/");
-			strcat(fullname,RomName);
+
+		char fullname[256];
+		strcpy(fullname, RomName);
+
+		if (RomName[0] != '\\' && RomName[1] != ':')
+		{
+			strcpy(fullname, mainWin->GetUserDataPath());
+			strcat(fullname, "Phroms/");
+			strcat(fullname, RomName);
 		}
 
 		if (strncmp(RomName, "EMPTY", 5) != 0)
@@ -344,11 +347,11 @@ void BeebReadPhroms()
 	fclose(RomCfg);
 }
 
-void my_irq(int /* state */)
+static void my_irq(int /* state */)
 {
 }
 
-int my_read(int count)
+static int my_read(int count)
 {
 	int phrom = (tms5220->chip->phrom_address >> 14) & 0xf;
 
@@ -481,7 +484,7 @@ tms5220_ready_r -- return the not ready status from the sound chip
 
 ***********************************************************************************************/
 
-int tms5220_ready_r()
+bool tms5220_ready_r()
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
@@ -489,7 +492,7 @@ int tms5220_ready_r()
 	}
 	else
 	{
-		return 0;
+		return false;
 	}
 }
 
@@ -499,7 +502,7 @@ tms5220_int_r -- return the int status from the sound chip
 
 ***********************************************************************************************/
 
-int tms5220_int_r()
+bool tms5220_int_r()
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
@@ -638,10 +641,10 @@ static void tms5220_reset_chip(TMS5220 *tms)
 	tms->fifo_head = tms->fifo_tail = tms->fifo_count = tms->fifo_bits_taken = tms->phrom_bits_taken = 0;
 
 	/* initialize the chip state */
-	/* Note that we do not actually clear IRQ on start-up : IRQ is even raised if tms->buffer_empty or tms->buffer_low are 0 */
-	tms->tms5220_speaking = tms->speak_external = tms->talk_status = tms->first_frame = tms->last_frame = tms->irq_pin = 0;
+	/* Note that we do not actually clear IRQ on start-up : IRQ is even raised if tms->buffer_empty or tms->buffer_low are false */
+	tms->tms5220_speaking = tms->speak_external = tms->talk_status = tms->first_frame = tms->last_frame = tms->irq_pin = false;
 	my_irq(0);
-	tms->buffer_empty = tms->buffer_low = 1;
+	tms->buffer_empty = tms->buffer_low = true;
 
 	tms->RDB_flag = FALSE;
 
@@ -688,7 +691,9 @@ void tms5220_data_write(TMS5220 *tms, int data)
 
 		/* if we were speaking, then we're no longer empty */
 		if (tms->speak_external)
-			tms->buffer_empty = 0;
+		{
+			tms->buffer_empty = false;
+		}
 
 		if (DEBUG_5220) logerror("Added byte to FIFO (size=%2d)\n", tms->fifo_count);
 	}
@@ -735,7 +740,7 @@ int tms5220_status_read(TMS5220 *tms)
 	if (tms->RDB_flag)
 	{
 		/* if last command was read, return data register */
-		tms->RDB_flag = FALSE;
+		tms->RDB_flag = false;
 		return tms->data_register;
 	}
 	else
@@ -743,13 +748,16 @@ int tms5220_status_read(TMS5220 *tms)
 		/* read status */
 
 		/* clear the interrupt pin */
-		set_interrupt_state(tms, 0);
+		set_interrupt_state(tms, false);
 
 		if (DEBUG_5220) logerror("Status read: TS=%d BL=%d BE=%d\n", tms->talk_status, tms->buffer_low, tms->buffer_empty);
 
-		return (tms->talk_status << 7) | (tms->buffer_low << 6) | (tms->buffer_empty << 5);
+		return (tms->talk_status  ? 0x80 : 0x00) |
+		       (tms->buffer_low   ? 0x40 : 0x00) |
+		       (tms->buffer_empty ? 0x20 : 0x00);
 	}
 }
+
 
 /**********************************************************************************************
 
@@ -757,7 +765,7 @@ tms5220_ready_read -- returns the ready state of the TMS5220
 
 ***********************************************************************************************/
 
-int tms5220_ready_read(TMS5220 *tms)
+static bool tms5220_ready_read(TMS5220 *tms)
 {
 	return tms->fifo_count < FIFO_SIZE - 1;
 }
@@ -768,9 +776,9 @@ tms5220_int_read -- returns the interrupt state of the TMS5220
 
 ***********************************************************************************************/
 
-int tms5220_int_read(TMS5220 *tms)
+static bool tms5220_int_read(TMS5220 *tms)
 {
-	return tms->irq_pin;
+	return tms->irq_pin ;
 }
 
 /**********************************************************************************************
@@ -799,9 +807,9 @@ tryagain:
 		if (tms->fifo_count < 9)
 			goto empty;
 
-		tms->talk_status = 1;
-		tms->first_frame = 1;	/* will cause the first frame to be parsed */
-		tms->buffer_empty = 0;
+		tms->talk_status = true;
+		tms->first_frame = true; /* will cause the first frame to be parsed */
+		tms->buffer_empty = false;
 	}
 
 #if 0
@@ -812,7 +820,7 @@ tryagain:
 		{
 			tms->sample_count = (tms->sample_count + 1) % 200;
 			tms->interp_count = (tms->interp_count + 1) % 25;
-			buffer[buf_count] = 0x80;	/* should be (-1 << 8) ??? (cf note in data sheet, p 10, table 4) */
+			buffer[buf_count] = 0x80; /* should be (-1 << 8) ??? (cf note in data sheet, p 10, table 4) */
 			buf_count++;
 			size--;
 		}
@@ -831,7 +839,7 @@ tryagain:
 			if (!parse_frame(tms, tms->first_frame))
 				break;
 
-			tms->first_frame = 0;
+			tms->first_frame = false;
 
 			/* Set old target as new start of frame */
 			tms->current_energy = tms->old_energy;
@@ -859,15 +867,15 @@ tryagain:
 				if (tms->tms5220_speaking)
 				{
 					/* new speech command in progress */
-					tms->first_frame = 1;
+					tms->first_frame = true;
 				}
 				else
 				{
 					/* really stop speaking */
-					tms->talk_status = 0;
+					tms->talk_status = false;
 
 					/* generate an interrupt if necessary */
-					set_interrupt_state(tms, 1);
+					set_interrupt_state(tms, true);
 				}
 
 				/* try to fetch commands again */
@@ -1049,12 +1057,12 @@ static void process_command(TMS5220 *tms)
 			case 0x10: /* read byte */
 				tms->phrom_bits_taken = 0;
 				tms->data_register = my_read(8); /* read one byte from speech ROM... */
-				tms->RDB_flag = TRUE;
+				tms->RDB_flag = true;
 				break;
 
 			case 0x30: /* read and branch */
 				if (DEBUG_5220) logerror("read and branch command received\n");
-				tms->RDB_flag = FALSE;
+				tms->RDB_flag = false;
 				my_read_and_branch();
 				break;
 
@@ -1065,29 +1073,29 @@ static void process_command(TMS5220 *tms)
 				break;
 
 			case 0x50: /* speak */
-				tms->tms5220_speaking = 1;
-				tms->speak_external = 0;
+				tms->tms5220_speaking = true;
+				tms->speak_external = false;
 				if (!tms->last_frame)
 				{
-					tms->first_frame = 1;
+					tms->first_frame = true;
 				}
 
-				tms->talk_status = 1;  /* start immediately */
+				tms->talk_status = true; /* start immediately */
 				break;
 
 			case 0x60: /* speak external */
-				tms->tms5220_speaking = tms->speak_external = 1;
+				tms->tms5220_speaking = tms->speak_external = true;
 
-				tms->RDB_flag = FALSE;
+				tms->RDB_flag = false;
 
 				/* according to the datasheet, this will cause an interrupt due to a BE condition */
 				if (!tms->buffer_empty)
 				{
-					tms->buffer_empty = 1;
-					set_interrupt_state(tms, 1);
+					tms->buffer_empty = true;
+					set_interrupt_state(tms, true);
 				}
 
-				tms->talk_status = 0;	/* wait to have 8 bytes in buffer before starting */
+				tms->talk_status = false; /* wait to have 8 bytes in buffer before starting */
 				break;
 
 			case 0x70: /* reset */
@@ -1140,12 +1148,12 @@ parse_frame -- parse a new frame's worth of data; returns 0 if not enough bits i
 
 ***********************************************************************************************/
 
-static int parse_frame(TMS5220 *tms, int the_first_frame)
+static int parse_frame(TMS5220 *tms, bool first_frame)
 {
 	int bits = 0; /* number of bits in FIFO (speak external only) */
 	int indx, i, rep_flag;
 
-	if (!the_first_frame)
+	if (!first_frame)
 	{
 		/* remember previous frame */
 		tms->old_energy = tms->new_energy;
@@ -1161,10 +1169,10 @@ static int parse_frame(TMS5220 *tms, int the_first_frame)
 		tms->new_k[i] = 0;
 
 	/* if the previous frame was a stop frame, don't do anything */
-	if (!the_first_frame && (tms->old_energy == (energytable[15] >> 6)))
+	if (!first_frame && (tms->old_energy == (energytable[15] >> 6)))
 		/*return 1;*/
 	{
-		tms->buffer_empty = 1;
+		tms->buffer_empty = true;
 		return 1;
 	}
 
@@ -1193,8 +1201,8 @@ static int parse_frame(TMS5220 *tms, int the_first_frame)
 		if (indx == 15)
 		{
 			tms->fifo_head = tms->fifo_tail = tms->fifo_count = tms->fifo_bits_taken = tms->phrom_bits_taken = 0;
-			tms->speak_external = tms->tms5220_speaking = 0;
-			tms->last_frame = 1;
+			tms->speak_external = tms->tms5220_speaking = false;
+			tms->last_frame = true;
 		}
 		goto done;
 	}
@@ -1277,7 +1285,7 @@ done:
 			logerror("Parsed a frame successfully in ROM\n");
 	}
 
-	if (the_first_frame)
+	if (first_frame)
 	{
 		/* if this is the first frame, no previous frame to take as a starting point */
 		tms->old_energy = tms->new_energy;
@@ -1294,14 +1302,14 @@ ranout:
 	if (DEBUG_5220) logerror("Ran out of bits on a parse!\n");
 
 	/* this is an error condition; mark the buffer empty and turn off speaking */
-	tms->buffer_empty = 1;
-	tms->talk_status = tms->speak_external = tms->tms5220_speaking = the_first_frame = tms->last_frame = 0;
+	tms->buffer_empty = true;
+	tms->talk_status = tms->speak_external = tms->tms5220_speaking = first_frame = tms->last_frame = false;
 	tms->fifo_count = tms->fifo_head = tms->fifo_tail = 0;
 
-	tms->RDB_flag = FALSE;
+	tms->RDB_flag = false;
 
 	/* generate an interrupt if necessary */
-	set_interrupt_state(tms, 1);
+	set_interrupt_state(tms, true);
 	return 0;
 }
 
@@ -1318,7 +1326,7 @@ static void check_buffer_low(TMS5220 *tms)
 	{
 		/* generate an interrupt if necessary */
 		if (!tms->buffer_low)
-			set_interrupt_state(tms, 1);
+			set_interrupt_state(tms, true);
 		tms->buffer_low = 1;
 
 		if (DEBUG_5220) logerror("Buffer low set\n");
@@ -1339,7 +1347,7 @@ set_interrupt_state -- generate an interrupt
 
 ***********************************************************************************************/
 
-static void set_interrupt_state(TMS5220 *tms, int state)
+static void set_interrupt_state(TMS5220 *tms, bool state)
 {
 	if (state != tms->irq_pin)
 	{

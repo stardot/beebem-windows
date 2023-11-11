@@ -25,8 +25,8 @@ void tms5220_start();
 void tms5220_stop();
 void tms5220_data_w(int data);
 int tms5220_status_r();
-int tms5220_ready_r();
-int tms5220_int_r();
+bool tms5220_ready_r();
+bool tms5220_int_r();
 void tms5220_update(unsigned char *buff, int length);
 
 extern bool SpeechDefault;
