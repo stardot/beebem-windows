@@ -47,7 +47,7 @@ using std::max;
 #include "disc8271.h"
 #include "disc1770.h"
 #include "disctype.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "Serial.h"
 #include "avi.h"
 #include "ext1770.h"

@@ -22,7 +22,7 @@ Boston, MA  02110-1301, USA.
 // UEF Game state code.
 
 #include <stdio.h>
-#include "uefstate.h"
+#include "UEFState.h"
 #include "6502core.h"
 #include "beebmem.h"
 #include "video.h"
@@ -37,32 +37,34 @@ Boston, MA  02110-1301, USA.
 #include "Serial.h"
 #include "atodconv.h"
 
-void fput32(unsigned int word32,FILE *fileptr) {
-	fputc(word32&255,fileptr);
-	fputc((word32>>8)&255,fileptr);
-	fputc((word32>>16)&255,fileptr);
-	fputc((word32>>24)&255,fileptr);
+void fput32(unsigned int word32, FILE *fileptr)
+{
+	fputc(word32 & 255, fileptr);
+	fputc((word32 >> 8) & 255, fileptr);
+	fputc((word32 >> 16) & 255, fileptr);
+	fputc((word32 >> 24) & 255, fileptr);
 }
 
-void fput16(unsigned int word16,FILE *fileptr) {
-	fputc(word16&255,fileptr);
-	fputc((word16>>8)&255,fileptr);
+void fput16(unsigned int word16, FILE *fileptr)
+{
+	fputc(word16 & 255, fileptr);
+	fputc((word16 >> 8) & 255, fileptr);
 }
 
-unsigned int fget32(FILE *fileptr) {
-	unsigned int tmpvar;
-	tmpvar =fgetc(fileptr);
-	tmpvar|=fgetc(fileptr)<<8;
-	tmpvar|=fgetc(fileptr)<<16;
-	tmpvar|=fgetc(fileptr)<<24;
-	return(tmpvar);
+unsigned int fget32(FILE *fileptr)
+{
+	unsigned int Value = fgetc(fileptr);
+	Value |= fgetc(fileptr) << 8;
+	Value |= fgetc(fileptr) << 16;
+	Value |= fgetc(fileptr) << 24;
+	return Value;
 }
 
-unsigned int fget16(FILE *fileptr) {
-	unsigned int tmpvar;
-	tmpvar =fgetc(fileptr);
-	tmpvar|=fgetc(fileptr)<<8;
-	return(tmpvar);
+unsigned int fget16(FILE *fileptr)
+{
+	unsigned int Value = fgetc(fileptr);
+	Value |= fgetc(fileptr) << 8;
+	return Value;
 }
 
 unsigned char fget8(FILE *fileptr)
@@ -75,8 +77,10 @@ bool fgetbool(FILE *fileptr)
 	return fget8(fileptr) != 0;
 }
 
-UEFStateResult SaveUEFState(const char *StateName) {
-	FILE *UEFState = fopen(StateName, "wb");
+UEFStateResult SaveUEFState(const char *FileName)
+{
+	FILE *UEFState = fopen(FileName, "wb");
+
 	if (UEFState != nullptr)
 	{
 		fprintf(UEFState,"UEF File!");
@@ -116,61 +120,136 @@ UEFStateResult SaveUEFState(const char *StateName) {
 	}
 }
 
-UEFStateResult LoadUEFState(const char *StateName) {
-	char UEFId[10];
-	// int CompletionBits=0; // These bits should be filled in
-	long RPos=0,FLength,CPos;
-	unsigned int Block,Length;
-	strcpy(UEFId,"BlankFile");
-	FILE *UEFState = fopen(StateName, "rb");
-	if (UEFState != NULL)
+UEFStateResult LoadUEFState(const char *FileName)
+{
+	FILE *UEFState = fopen(FileName, "rb");
+
+	if (UEFState != nullptr)
 	{
 		fseek(UEFState, 0, SEEK_END);
-		FLength=ftell(UEFState);
-		fseek(UEFState,0,SEEK_SET);  // Get File length for eof comparison.
-		fread(UEFId,10,1,UEFState);
-		if (strcmp(UEFId,"UEF File!")!=0) {
+		long FLength = ftell(UEFState);
+		fseek(UEFState, 0, SEEK_SET); // Get File length for eof comparison.
+
+		char UEFId[10];
+		UEFId[0] = '\0';
+
+		fread(UEFId, sizeof(UEFId), 1, UEFState);
+
+		if (strcmp(UEFId,"UEF File!") != 0)
+		{
 			fclose(UEFState);
 			return UEFStateResult::InvalidUEFFile;
 		}
 
 		const int Version = fget16(UEFState);
 
-		if (Version > 13) {
+		if (Version > 13)
+		{
 			fclose(UEFState);
 			return UEFStateResult::InvalidUEFVersion;
 		}
 
-		RPos=ftell(UEFState);
+		while (ftell(UEFState) < FLength)
+		{
+			unsigned int Block = fget16(UEFState);
+			unsigned int Length = fget32(UEFState);
+			long CPos = ftell(UEFState);
 
-		while (ftell(UEFState)<FLength) {
-			Block=fget16(UEFState);
-			Length=fget32(UEFState);
-			CPos=ftell(UEFState);
+			switch (Block)
+			{
+				case 0x046A:
+					mainWin->LoadEmuUEF(UEFState,Version);
+					break;
 
-			if (Block==0x046A) mainWin->LoadEmuUEF(UEFState,Version);
-			if (Block==0x0460) Load6502UEF(UEFState);
-			if (Block==0x0461) LoadRomRegsUEF(UEFState);
-			if (Block==0x0462) LoadMainMemUEF(UEFState);
-			if (Block==0x0463) LoadShadMemUEF(UEFState);
-			if (Block==0x0464) LoadPrivMemUEF(UEFState);
-			if (Block==0x0465) LoadFileMemUEF(UEFState);
-			if (Block==0x0466) LoadSWRamMemUEF(UEFState);
-			if (Block==0x0467) LoadViaUEF(UEFState);
-			if (Block==0x0468) LoadVideoUEF(UEFState, Version);
-			if (Block==0x046B) LoadSoundUEF(UEFState);
-			if (Block==0x046D) LoadIntegraBHiddenMemUEF(UEFState);
-			if (Block==0x046E) Load8271UEF(UEFState);
-			if (Block==0x046F) Load1770UEF(UEFState,Version);
-			if (Block==0x0470) LoadTubeUEF(UEFState);
-			if (Block==0x0471) Load65C02UEF(UEFState);
-			if (Block==0x0472) Load65C02MemUEF(UEFState);
-			if (Block==0x0473) LoadSerialUEF(UEFState);
-			if (Block==0x0474) LoadAtoDUEF(UEFState);
-			if (Block==0x0475) LoadSWRomMemUEF(UEFState);
-			if (Block==0x0476) LoadMusic5000JIMPageRegUEF(UEFState);
-			if (Block==0x0477) LoadMusic5000UEF(UEFState, Version);
-			fseek(UEFState,CPos+Length,SEEK_SET); // Skip unrecognised blocks (and over any gaps)
+				case 0x0460:
+					Load6502UEF(UEFState);
+					break;
+
+				case 0x0461:
+					LoadRomRegsUEF(UEFState);
+					break;
+
+				case 0x0462:
+					LoadMainMemUEF(UEFState);
+					break;
+
+				case 0x0463:
+					LoadShadMemUEF(UEFState);
+					break;
+
+				case 0x0464:
+					LoadPrivMemUEF(UEFState);
+					break;
+
+				case 0x0465:
+					LoadFileMemUEF(UEFState);
+					break;
+
+				case 0x0466:
+					LoadSWRamMemUEF(UEFState);
+					break;
+
+				case 0x0467:
+					LoadViaUEF(UEFState);
+					break;
+
+				case 0x0468:
+					LoadVideoUEF(UEFState, Version);
+					break;
+
+				case 0x046B:
+					LoadSoundUEF(UEFState);
+					break;
+
+				case 0x046D:
+					LoadIntegraBHiddenMemUEF(UEFState);
+					break;
+
+				case 0x046E:
+					Load8271UEF(UEFState);
+					break;
+
+				case 0x046F:
+					Load1770UEF(UEFState,Version);
+					break;
+
+				case 0x0470:
+					LoadTubeUEF(UEFState);
+					break;
+
+				case 0x0471:
+					Load65C02UEF(UEFState);
+					break;
+
+				case 0x0472:
+					Load65C02MemUEF(UEFState);
+					break;
+
+				case 0x0473:
+					LoadSerialUEF(UEFState);
+					break;
+
+				case 0x0474:
+					LoadAtoDUEF(UEFState);
+					break;
+
+				case 0x0475:
+					LoadSWRomMemUEF(UEFState);
+					break;
+
+				case 0x0476:
+					LoadMusic5000JIMPageRegUEF(UEFState);
+					break;
+
+				case 0x0477:
+					LoadMusic5000UEF(UEFState, Version);
+					break;
+
+				default:
+					break;
+			}
+
+			fseek(UEFState, CPos + Length, SEEK_SET); // Skip unrecognised blocks (and over any gaps)
 		}
 
 		fclose(UEFState);

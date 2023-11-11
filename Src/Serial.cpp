@@ -42,7 +42,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "beebemrc.h"
 #include "debug.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "csw.h"
 #include "SerialDevices.h"
 #include "debug.h"

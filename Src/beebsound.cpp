@@ -32,7 +32,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include "6502core.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "avi.h"
 #include "main.h"
 #ifdef SPEECH_ENABLED

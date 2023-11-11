@@ -52,7 +52,7 @@ Boston, MA  02110-1301, USA.
 #include "scsi.h"
 #include "sasi.h"
 #include "ide.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "Econet.h" // Rob

@@ -69,7 +69,7 @@ using std::max;
 #include "Econet.h" // Rob O'Donnell Christmas 2004.
 #include "tube.h"
 #include "ext1770.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "debug.h"
 #include "scsi.h"
 #include "sasi.h"

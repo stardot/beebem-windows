@@ -34,7 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "debug.h"
 #include "log.h"
 #include "TapeMap.h"
-#include "uefstate.h"
+#include "UEFState.h"
 
 #include "zlib/zlib.h"
 

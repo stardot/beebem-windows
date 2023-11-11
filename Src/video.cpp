@@ -33,7 +33,7 @@ Boston, MA  02110-1301, USA.
 #include "main.h"
 #include "sysvia.h"
 #include "video.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "beebsound.h"
 #include "debug.h"
 #include "DebugTrace.h"

@@ -27,7 +27,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include "sysvia.h"
 #include "uservia.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "debug.h"
 
 void VIAReset(VIAState *ToReset) {

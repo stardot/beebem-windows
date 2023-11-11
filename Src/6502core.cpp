@@ -47,7 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "Serial.h"
 #include "tube.h"
 #include "debug.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "Econet.h"

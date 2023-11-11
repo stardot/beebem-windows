@@ -192,7 +192,7 @@
     <ClCompile Include="uef.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="uefstate.cpp">
+    <ClCompile Include="UEFState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="userkybd.cpp">
@@ -446,7 +446,7 @@
     <ClInclude Include="uef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="uefstate.h">
+    <ClInclude Include="UEFState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="userkybd.h">

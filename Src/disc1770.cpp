@@ -31,7 +31,7 @@ Written by Richard Gellman - Feb 2001
 #include "6502core.h"
 #include "log.h"
 #include "main.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "z80mem.h"
 #include "beebsound.h"
 #include "sysvia.h"

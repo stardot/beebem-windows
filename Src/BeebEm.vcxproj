@@ -224,7 +224,7 @@
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="tube.cpp" />
     <ClCompile Include="uef.cpp" />
-    <ClCompile Include="uefstate.cpp" />
+    <ClCompile Include="UEFState.cpp" />
     <ClCompile Include="userkybd.cpp" />
     <ClCompile Include="UserPortBreakoutBox.cpp" />
     <ClCompile Include="uservia.cpp" />
@@ -385,7 +385,7 @@
     <ClInclude Include="Thread.h" />
     <ClInclude Include="tube.h" />
     <ClInclude Include="uef.h" />
-    <ClInclude Include="uefstate.h" />
+    <ClInclude Include="UEFState.h" />
     <ClInclude Include="userkybd.h" />
     <ClInclude Include="UserPortBreakoutBox.h" />
     <ClInclude Include="uservia.h" />

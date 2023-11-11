@@ -37,8 +37,8 @@ unsigned int fget16(FILE *fileptr);
 unsigned char fget8(FILE *fileptr);
 bool fgetbool(FILE *fileptr);
 
-UEFStateResult SaveUEFState(const char *StateName);
-UEFStateResult LoadUEFState(const char *StateName);
+UEFStateResult SaveUEFState(const char *FileName);
+UEFStateResult LoadUEFState(const char *FileName);
 
 bool IsUEFSaveState(const char* FileName);
 

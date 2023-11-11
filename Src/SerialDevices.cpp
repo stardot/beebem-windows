@@ -47,7 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "beebwin.h"
 #include "debug.h"
 #include "DebugTrace.h"
-#include "uefstate.h"
+#include "UEFState.h"
 #include "csw.h"
 #include "uservia.h"
 #include "atodconv.h"
