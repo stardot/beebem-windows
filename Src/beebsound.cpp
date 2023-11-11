@@ -168,7 +168,7 @@ void PlayUpTil(double DestTime)
 		int len = (int) (DestTime - OurTime + 1);
 		if (len > MAXBUFSIZE)
 			len = MAXBUFSIZE;
-		tms5220_update(SpeechBuf, len);
+		SpeechUpdate(SpeechBuf, len);
 	}
 
 	while (DestTime > OurTime) {

@@ -21,13 +21,13 @@ Boston, MA  02110-1301, USA.
 #ifndef SPEECH_HEADER
 #define SPEECH_HEADER
 
-void tms5220_start();
-void tms5220_stop();
-void tms5220_data_w(int data);
-int tms5220_status_r();
-bool tms5220_ready_r();
-bool tms5220_int_r();
-void tms5220_update(unsigned char *buff, int length);
+void SpeechStart();
+void SpeechStop();
+void SpeechWrite(int data);
+unsigned char SpeechRead();
+bool SpeechReady();
+bool SpeechInterrupt();
+void SpeechUpdate(unsigned char *buff, int length);
 
 extern bool SpeechDefault;
 extern bool SpeechEnabled;

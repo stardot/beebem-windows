@@ -438,7 +438,9 @@ void BeebWin::ApplyPrefs()
 	SetSoundMenu();
 
 	if (SpeechDefault)
-		tms5220_start();
+	{
+		SpeechStart();
+	}
 
 	// Serial init
 	if (SerialPortEnabled)
@@ -3183,8 +3185,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 
 		if (SpeechDefault)
 		{
-			tms5220_stop();
-			tms5220_start();
+			SpeechStop();
+			SpeechStart();
 		}
 
 		UpdateSoundStreamerMenu();
@@ -3240,8 +3242,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 
 			if (SpeechDefault)
 			{
-				tms5220_stop();
-				tms5220_start();
+				SpeechStop();
+				SpeechStart();
 			}
 		}
 		break;
@@ -3849,12 +3851,13 @@ void BeebWin::HandleCommand(UINT MenuID)
 		if (SpeechDefault)
 		{
 			CheckMenuItem(IDM_SPEECH, false);
-			tms5220_stop();
+			SpeechStop();
 			SpeechDefault = false;
 		}
 		else
 		{
-			tms5220_start();
+			SpeechStart();
+
 			if (SpeechEnabled)
 			{
 				CheckMenuItem(IDM_SPEECH, true);

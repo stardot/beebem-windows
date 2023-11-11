@@ -274,7 +274,7 @@ static void tms5220_set_frequency(int frequency);
 static void tms5220_process(TMS5220 *chip, short int *buffer, unsigned int size);
 static void tms5220_reset_chip(TMS5220 *tms);
 static void tms5220_data_write(TMS5220 *tms, int data);
-static int tms5220_status_read(TMS5220 *tms);
+static unsigned char tms5220_status_read(TMS5220 *tms);
 static bool tms5220_ready_read(TMS5220 *tms);
 static int tms5220_cycles_to_ready(TMS5220 *tms);
 static bool tms5220_int_read(TMS5220 *tms);
@@ -389,14 +389,11 @@ static void my_read_and_branch()
 	// fprintf(stderr, "In my_read_and_branch\n");
 }
 
+/*--------------------------------------------------------------------------*/
 
-/**********************************************************************************************
+// Allocate buffers and reset the 5220
 
-tms5220_start -- allocate buffers and reset the 5220
-
-***********************************************************************************************/
-
-void tms5220_start()
+void SpeechStart()
 {
 	int clock = 640000;
 
@@ -428,13 +425,11 @@ void tms5220_start()
 	SpeechEnabled = true;
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_stop -- free buffers
+// Free buffers
 
-***********************************************************************************************/
-
-void tms5220_stop()
+void SpeechStop()
 {
 	if (tms5220 != nullptr)
 	{
@@ -446,13 +441,11 @@ void tms5220_stop()
 	SpeechEnabled = false;
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_data_w -- write data to the sound chip
+// Write data to the sound chip
 
-***********************************************************************************************/
-
-void tms5220_data_w(int data)
+void SpeechWrite(int data)
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
@@ -460,13 +453,11 @@ void tms5220_data_w(int data)
 	}
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_status_r -- read status or data from the sound chip
+// Read status or data from the sound chip
 
-***********************************************************************************************/
-
-int tms5220_status_r()
+unsigned char SpeechRead()
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
@@ -478,13 +469,11 @@ int tms5220_status_r()
 	}
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_ready_r -- return the not ready status from the sound chip
+// Return the not ready status from the sound chip
 
-***********************************************************************************************/
-
-bool tms5220_ready_r()
+bool SpeechReady()
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
@@ -496,13 +485,11 @@ bool tms5220_ready_r()
 	}
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_int_r -- return the int status from the sound chip
+// Return the int status from the sound chip
 
-***********************************************************************************************/
-
-bool tms5220_int_r()
+bool SpeechInterrupt()
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
@@ -514,13 +501,11 @@ bool tms5220_int_r()
 	}
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_update -- update the sound chip so that it is in sync with CPU execution
+// update the sound chip so that it is in sync with CPU execution
 
-***********************************************************************************************/
-
-void tms5220_update(unsigned char *buff, int length)
+void SpeechUpdate(unsigned char *buff, int length)
 {
 	int16_t sample_data[MAX_SAMPLE_CHUNK];
 	int16_t *curr_data = sample_data;
@@ -735,7 +720,7 @@ Speak External command execution is terminated.
 
 ***********************************************************************************************/
 
-int tms5220_status_read(TMS5220 *tms)
+static unsigned char tms5220_status_read(TMS5220 *tms)
 {
 	if (tms->RDB_flag)
 	{

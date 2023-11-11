@@ -251,7 +251,7 @@ static void IC32Write(unsigned char Value) {
 
   if (bit == 2 && (Value & 8) == 0 && MachineType != Model::Master128) // Write Command
   {
-    tms5220_data_w(SlowDataBusWriteValue);
+    SpeechWrite(SlowDataBusWriteValue);
   }
 
   if (!(IC32State & 8) && (oldval & 8)) {
@@ -307,7 +307,7 @@ static unsigned char SlowDataBusRead() {
   }
 
   if (!(IC32State & 2) && MachineType != Model::Master128) {
-    result = tms5220_status_r();
+    result = SpeechRead();
   }
 
   if ((!(IC32State & 4)) && (MachineType != Model::Master128) ) {
@@ -492,8 +492,8 @@ unsigned char SysVIARead(int Address)
       {
         if (SpeechDefault)
         {
-          if (tms5220_int_r()) tmp |= 64;
-          if (tms5220_ready_r() == 0) tmp |= 128;
+          if (SpeechInterrupt()) tmp |= 64;
+          if (SpeechReady() == 0) tmp |= 128;
         }
         else
         {
