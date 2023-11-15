@@ -36,13 +36,13 @@ Boston, MA  02110-1301, USA.
 #include <vector>
 #include <deque>
 
-#include "main.h"
+#include "Main.h"
 #include "beebmem.h"
 #include "tube.h"
 #include "beebemrc.h"
 #include "6502core.h"
 #include "tube.h"
-#include "debug.h"
+#include "Debug.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "FileDialog.h"

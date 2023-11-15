@@ -24,9 +24,10 @@ Boston, MA  02110-1301, USA.
 #include <stdarg.h>
 #include <windows.h>
 
-#include "log.h"
+#include "Log.h"
+#include "Main.h"
 
-static FILE *tlog = nullptr;
+static FILE *LogFile = nullptr;
 
 static const char* const mon[] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -35,21 +36,27 @@ static const char* const mon[] = {
 
 void OpenLog()
 {
-	tlog = nullptr;
-	//  tlog = fopen("\\trace.log", "wt");
+	LogFile = nullptr;
+
+	char Path[256];
+	strcpy(Path, mainWin->GetUserDataPath());
+	strcat(Path, "BeebEm.log");
+
+	// LogFile = fopen(Path, "wt");
 }
 
 void CloseLog()
 {
-	if (tlog != nullptr) {
-		fclose(tlog);
-		tlog = nullptr;
+	if (LogFile != nullptr)
+	{
+		fclose(LogFile);
+		LogFile = nullptr;
 	}
 }
 
 void WriteLog(char *fmt, ...)
 {
-	if (tlog)
+	if (LogFile != nullptr)
 	{
 		va_list argptr;
 		va_start(argptr, fmt);
@@ -61,9 +68,9 @@ void WriteLog(char *fmt, ...)
 
 		SYSTEMTIME tim;
 		GetLocalTime(&tim);
-		fprintf(tlog, "[%02d-%3s-%02d %02d:%02d:%02d.%03d] ",
-			tim.wDay, mon[tim.wMonth - 1], tim.wYear % 100, tim.wHour, tim.wMinute, tim.wSecond, tim.wMilliseconds);
+		fprintf(LogFile, "[%02d-%3s-%02d %02d:%02d:%02d.%03d] ",
+		        tim.wDay, mon[tim.wMonth - 1], tim.wYear % 100, tim.wHour, tim.wMinute, tim.wSecond, tim.wMilliseconds);
 
-		fprintf(tlog, "%s", buff);
+		fprintf(LogFile, "%s", buff);
 	}
 }

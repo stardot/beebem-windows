@@ -21,8 +21,8 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <string.h>
 
-#include "log.h"
-#include "debug.h"
+#include "Log.h"
+#include "Debug.h"
 #include "z80mem.h"
 #include "z80.h"
 #include "beebmem.h"

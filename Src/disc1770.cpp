@@ -29,8 +29,8 @@ Written by Richard Gellman - Feb 2001
 #include <stdlib.h>
 #include "disc1770.h"
 #include "6502core.h"
-#include "log.h"
-#include "main.h"
+#include "Log.h"
+#include "Main.h"
 #include "UEFState.h"
 #include "z80mem.h"
 #include "beebsound.h"

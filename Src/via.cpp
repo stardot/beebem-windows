@@ -23,12 +23,13 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <iostream>
 #include <fstream>
-#include "via.h"
 #include <stdio.h>
+
+#include "via.h"
 #include "sysvia.h"
 #include "uservia.h"
 #include "UEFState.h"
-#include "debug.h"
+#include "Debug.h"
 
 void VIAReset(VIAState *ToReset) {
   ToReset->ora=ToReset->orb=0xff;

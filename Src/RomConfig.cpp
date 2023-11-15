@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 #include <commctrl.h>
 
 #include "beebemrc.h"
-#include "main.h"
+#include "Main.h"
 #include "beebwin.h"
 #include "beebmem.h"
 #include "FileDialog.h"

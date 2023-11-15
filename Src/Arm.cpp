@@ -29,7 +29,7 @@ Boston, MA  02110-1301, USA.
 #include <stdlib.h>
 #include <string.h>
 
-#include "log.h"
+#include "Log.h"
 #include "tube.h"
 #include "beebmem.h"
 

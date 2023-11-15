@@ -28,9 +28,9 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "Bcd.h"
 #include "via.h"
-#include "debug.h"
-#include "log.h"
-#include "main.h"
+#include "Debug.h"
+#include "Log.h"
+#include "Main.h"
 #include "tube.h"
 #include "UserPortBreakoutBox.h"
 

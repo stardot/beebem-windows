@@ -24,7 +24,7 @@ Boston, MA  02110-1301, USA.
 #include <windowsx.h>
 
 #include "XAudio2Streamer.h"
-#include "main.h"
+#include "Main.h"
 
 XAudio2Streamer::XAudio2Streamer() :
 	m_samples(0),

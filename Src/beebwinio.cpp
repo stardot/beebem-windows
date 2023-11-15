@@ -37,7 +37,7 @@ using std::max;
 #pragma warning(pop)
 
 #include "beebwin.h"
-#include "main.h"
+#include "Main.h"
 #include "6502core.h"
 #include "beebmem.h"
 #include "beebemrc.h"

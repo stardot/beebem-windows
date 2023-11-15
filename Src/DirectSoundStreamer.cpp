@@ -23,7 +23,7 @@ Boston, MA  02110-1301, USA.
 
 #include "DirectSoundStreamer.h"
 #include "beebwin.h"
-#include "main.h"
+#include "Main.h"
 
 DirectSoundStreamer::DirectSoundStreamer() :
 	m_pDirectSound(nullptr),

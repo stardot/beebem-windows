@@ -52,11 +52,11 @@ Control latch:
 #include <windows.h>
 
 #include "Teletext.h"
-#include "debug.h"
+#include "Debug.h"
 #include "6502core.h"
-#include "main.h"
+#include "Main.h"
 #include "beebmem.h"
-#include "log.h"
+#include "Log.h"
 
 #define ENABLE_LOG 0
 

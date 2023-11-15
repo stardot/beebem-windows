@@ -28,7 +28,7 @@ Boston, MA  02110-1301, USA.
 #include "video.h"
 #include "via.h"
 #include "beebwin.h"
-#include "main.h"
+#include "Main.h"
 #include "beebsound.h"
 #include "music5000.h"
 #include "disc8271.h"

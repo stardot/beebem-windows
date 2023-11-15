@@ -200,8 +200,8 @@
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="ide.cpp" />
     <ClCompile Include="ListView.cpp" />
-    <ClCompile Include="log.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="Master512CoPro.cpp" />
     <ClCompile Include="music5000.cpp" />
     <ClCompile Include="preferences.cpp" />
@@ -358,8 +358,8 @@
     <ClInclude Include="ListView.h" />
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
-    <ClInclude Include="log.h" />
-    <ClInclude Include="main.h" />
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="Main.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="ml675001.h" />
     <ClInclude Include="model.h" />

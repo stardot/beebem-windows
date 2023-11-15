@@ -23,7 +23,7 @@ Boston, MA  02110-1301, USA.
 #include "UserPortBreakoutBox.h"
 
 #include "beebemrc.h"
-#include "main.h"
+#include "Main.h"
 #include "Messages.h"
 #include "SelectKeyDialog.h"
 #include "uservia.h"

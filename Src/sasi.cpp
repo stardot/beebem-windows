@@ -34,8 +34,8 @@ Offset  Description                 Access
 #include <stdlib.h>
 
 #include "6502core.h"
-#include "log.h"
-#include "main.h"
+#include "Log.h"
+#include "Main.h"
 #include "sasi.h"
 #include "beebmem.h"
 

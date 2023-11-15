@@ -34,7 +34,7 @@ Boston, MA  02110-1301, USA.
 #include <string>
 #include <vector>
 
-#include "main.h"
+#include "Main.h"
 #include "beebwin.h"
 #include "Econet.h"
 #include "Debug.h"

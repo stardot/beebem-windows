@@ -31,8 +31,8 @@ Boston, MA  02110-1301, USA.
 #include "Serial.h"
 #include "beebsound.h"
 #include "beebwin.h"
-#include "debug.h"
-#include "log.h"
+#include "Debug.h"
+#include "Log.h"
 #include "TapeMap.h"
 #include "UEFState.h"
 

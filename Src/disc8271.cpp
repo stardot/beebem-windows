@@ -33,12 +33,12 @@ Boston, MA  02110-1301, USA.
 #include "beebsound.h"
 #include "sysvia.h"
 #include "tube.h"
-#include "log.h"
+#include "Log.h"
 #include "DebugTrace.h"
 
 #ifdef WIN32
 #include <windows.h>
-#include "main.h"
+#include "Main.h"
 #endif
 
 #define ENABLE_LOG 0

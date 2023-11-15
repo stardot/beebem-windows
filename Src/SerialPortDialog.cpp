@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 
 #include "SerialPortDialog.h"
 #include "beebemrc.h"
-#include "main.h"
+#include "Main.h"
 #include "DebugTrace.h"
 #include "StringUtils.h"
 

@@ -36,8 +36,8 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "beebwin.h"
 #include "sysvia.h"
 #include "via.h"
-#include "main.h"
-#include "debug.h"
+#include "Main.h"
+#include "Debug.h"
 #include "DebugTrace.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"

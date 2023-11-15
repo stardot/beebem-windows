@@ -34,7 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "UEFState.h"
 #include "avi.h"
-#include "main.h"
+#include "Main.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif

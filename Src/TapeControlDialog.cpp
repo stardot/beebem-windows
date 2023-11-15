@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 
 #include "TapeControlDialog.h"
 #include "beebemrc.h"
-#include "main.h"
+#include "Main.h"
 #include "Serial.h"
 
 // Tape control dialog box variables

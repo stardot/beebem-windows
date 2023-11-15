@@ -33,8 +33,8 @@ Offset  Description                 Access
 #include <stdio.h>
 #include <stdlib.h>
 #include "6502core.h"
-#include "log.h"
-#include "main.h"
+#include "Log.h"
+#include "Main.h"
 #include "scsi.h"
 #include "beebmem.h"
 #include "DebugTrace.h"

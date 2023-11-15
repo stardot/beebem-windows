@@ -49,7 +49,7 @@ using std::max;
 #include <gdiplus.h>
 #pragma warning(pop)
 
-#include "main.h"
+#include "Main.h"
 #include "beebwin.h"
 #include "port.h"
 #include "6502core.h"
@@ -70,7 +70,7 @@ using std::max;
 #include "tube.h"
 #include "ext1770.h"
 #include "UEFState.h"
-#include "debug.h"
+#include "Debug.h"
 #include "scsi.h"
 #include "sasi.h"
 #include "ide.h"

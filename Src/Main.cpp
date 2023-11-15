@@ -30,7 +30,7 @@ Boston, MA  02110-1301, USA.
 
 #include "6502core.h"
 #include "beebwin.h"
-#include "log.h"
+#include "Log.h"
 #include "Serial.h"
 #include "SelectKeyDialog.h"
 
@@ -45,8 +45,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 {
 	hInst = hInstance;
 
-	OpenLog();
-
 	mainWin = new(std::nothrow) BeebWin();
 
 	if (mainWin == nullptr)
@@ -59,6 +57,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 		delete mainWin;
 		return 1;
 	}
+
+	OpenLog();
 
 	// Create serial threads
 	SerialInit();

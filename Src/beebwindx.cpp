@@ -24,7 +24,7 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <ddraw.h>
 
-#include "main.h"
+#include "Main.h"
 #include "beebwin.h"
 #include "beebemrc.h"
 #include "6502core.h"

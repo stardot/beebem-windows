@@ -31,11 +31,11 @@ Boston, MA  02110-1301, USA.
 #include <stdlib.h>
 
 #include "6502core.h"
-#include "log.h"
-#include "main.h"
+#include "Log.h"
+#include "Main.h"
 #include "beebmem.h"
 #include "tube.h"
-#include "debug.h"
+#include "Debug.h"
 #include "UEFState.h"
 #include "z80mem.h"
 #include "z80.h"
