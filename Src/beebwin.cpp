@@ -91,6 +91,7 @@ using std::max;
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
 #include "DebugTrace.h"
+#include "Log.h"
 #include "TapeControlDialog.h"
 #include "TouchScreen.h"
 
@@ -432,15 +433,7 @@ void BeebWin::ApplyPrefs()
 
 	SoundReset();
 	if (SoundDefault) SoundInit();
-	Music5000Reset();
-	if (Music5000Enabled)
-		Music5000Init();
 	SetSoundMenu();
-
-	if (SpeechDefault)
-	{
-		SpeechStart();
-	}
 
 	// Serial init
 	if (SerialPortEnabled)
@@ -539,6 +532,18 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	SoundReset();
 	if (SoundDefault)
 		SoundInit();
+
+	if (SpeechDefault)
+	{
+		if (LoadRoms)
+		{
+			SpeechInit();
+		}
+
+		SpeechStop();
+		SpeechStart();
+	}
+
 	SwitchOnSound();
 	Music5000Reset();
 	if (Music5000Enabled)
@@ -666,6 +671,12 @@ void BeebWin::Break()
 	Music5000Reset();
 	if (Music5000Enabled)
 		Music5000Init();
+
+	if (SpeechDefault)
+	{
+		SpeechStop();
+		SpeechStart();
+	}
 
 	// Reset IntegraB RTC on Break
 	if (MachineType == Model::IntegraB)
@@ -3856,6 +3867,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		else
 		{
+			SpeechInit();
 			SpeechStart();
 
 			if (SpeechEnabled)

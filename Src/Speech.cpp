@@ -46,6 +46,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 
 #include "Speech.h"
+#include "6502core.h"
 #include "beebsound.h"
 #include "beebwin.h"
 #include "Main.h"
@@ -297,68 +298,6 @@ static TMS5220StreamState *tms5220;
 static unsigned char phrom_rom[16][16384];
 
 #define ENABLE_LOG 0
-
-/*----------------------------------------------------------------------------*/
-
-static void BeebReadPhroms()
-{
-	// Read all ROM files in the BeebFile directory
-	// This section rewritten for V.1.32 to take account of roms.cfg file.
-	char TmpPath[256];
-	strcpy(TmpPath, mainWin->GetUserDataPath());
-	strcat(TmpPath, "phroms.cfg");
-
-	FILE *RomCfg = fopen(TmpPath,"rt");
-
-	if (RomCfg == nullptr)
-	{
-		mainWin->Report(MessageType::Error, "Cannot open PHROM configuration file:\n  %s", Path);
-		return;
-	}
-
-	// Read phroms
-	for (int romslot = 15; romslot >= 0; romslot--)
-	{
-		char RomName[80];
-		fgets(RomName, 80, RomCfg);
-
-		if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
-		if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
-
-		char fullname[256];
-		strcpy(fullname, RomName);
-
-		if (RomName[0] != '\\' && RomName[1] != ':')
-		{
-			strcpy(fullname, mainWin->GetUserDataPath());
-			strcat(fullname, "Phroms/");
-			strcat(fullname, RomName);
-		}
-
-		if (strncmp(RomName, "EMPTY", 5) != 0)
-		{
-			for (int sc = 0; fullname[sc]; sc++)
-			{
-				if (fullname[sc] == '\\')
-				fullname[sc] = '/';
-			}
-
-			FILE *InFile = fopen(fullname,"rb");
-
-			if (InFile != nullptr)
-			{
-				fread(phrom_rom[romslot], 1, 16384, InFile);
-				fclose(InFile);
-			}
-			else
-			{
-				mainWin->Report(MessageType::Error, "Cannot open specified PHROM: %s", fullname);
-			}
-		}
-	}
-
-	fclose(RomCfg);
-}
 
 /*----------------------------------------------------------------------------*/
 
@@ -1261,8 +1200,8 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 		else
 		{
 			#if ENABLE_LOG
-			if (buffer - buff != len)
-				WriteLog("Here for some reason - mismatch in num of samples = %d, %d\n", len, buffer - buff);
+			// if (buffer - buff != length)
+			//	WriteLog("Here for some reason - mismatch in num of samples = %d, %d\n", length, buffer - buff);
 			#endif
 
 			chip.ProcessSamples(sample_data, 0);
@@ -1312,9 +1251,65 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 	curr_sample = curr;
 
 	#if ENABLE_LOG
-	if (buffer - buff != len)
-		WriteLog("At end of update - mismatch in num of samples = %d, %d\n", len, buffer - buff);
+	// if (buffer - buff != length)
+	//	WriteLog("At end of update - mismatch in num of samples = %d, %d\n", length, buffer - buff);
 	#endif
+}
+
+/*----------------------------------------------------------------------------*/
+
+void SpeechInit()
+{
+	// Read all ROM files in the BeebFile directory
+	// This section rewritten for V.1.32 to take account of roms.cfg file.
+	char Path[256];
+	strcpy(Path, mainWin->GetUserDataPath());
+	strcat(Path, "Phroms.cfg");
+
+	FILE *RomCfg = fopen(Path,"rt");
+
+	if (RomCfg == nullptr)
+	{
+		mainWin->Report(MessageType::Error, "Cannot open PHROM configuration file:\n  %s", Path);
+		return;
+	}
+
+	// Read phroms
+	for (int romslot = 15; romslot >= 0; romslot--)
+	{
+		char RomName[80];
+		fgets(RomName, 80, RomCfg);
+
+		if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
+		if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
+
+		char PhromPath[256];
+		strcpy(PhromPath, RomName);
+
+		if (RomName[0] != '\\' && RomName[1] != ':')
+		{
+			strcpy(PhromPath, mainWin->GetUserDataPath());
+			strcat(PhromPath, "Phroms/");
+			strcat(PhromPath, RomName);
+		}
+
+		if (strncmp(RomName, "EMPTY", 5) != 0)
+		{
+			FILE *InFile = fopen(PhromPath, "rb");
+
+			if (InFile != nullptr)
+			{
+				fread(phrom_rom[romslot], 1, 16384, InFile);
+				fclose(InFile);
+			}
+			else
+			{
+				mainWin->Report(MessageType::Error, "Cannot open specified PHROM:\n  %s", PhromPath);
+			}
+		}
+	}
+
+	fclose(RomCfg);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1326,8 +1321,6 @@ void SpeechStart()
 	int clock = 640000;
 
 	SpeechStop();
-
-	BeebReadPhroms();
 
 	tms5220 = new(std::nothrow) TMS5220StreamState(clock);
 

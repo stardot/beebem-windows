@@ -21,6 +21,7 @@ Boston, MA  02110-1301, USA.
 #ifndef SPEECH_HEADER
 #define SPEECH_HEADER
 
+void SpeechInit();
 void SpeechStart();
 void SpeechStop();
 void SpeechWrite(unsigned char Data);
