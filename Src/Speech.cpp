@@ -201,63 +201,63 @@ class TMS5220
 	private:
 		// These contain data that describes the 128-bit data FIFO
 		static constexpr int FIFO_SIZE = 16;
-		uint8_t fifo[FIFO_SIZE];
-		uint8_t fifo_head;
-		uint8_t fifo_tail;
-		uint8_t fifo_count;
-		uint8_t fifo_bits_taken;
-		uint8_t phrom_bits_taken;
+		uint8_t m_fifo[FIFO_SIZE];
+		uint8_t m_fifo_head;
+		uint8_t m_fifo_tail;
+		uint8_t m_fifo_count;
+		uint8_t m_fifo_bits_taken;
+		uint8_t m_phrom_bits_taken;
 
 		/* these contain global status bits */
 		/*
-		 R Nabet : speak_external is only set when a speak external command is going on.
-		 tms5220_speaking is set whenever a speak or speak external command is going on.
+		 R Nabet : m_speak_external is only set when a speak external command is going on.
+		 m_tms5220_speaking is set whenever a speak or speak external command is going on.
 		 Note that we really need to do anything in tms5220_process and play samples only when
-		 tms5220_speaking is true.  Else, we can play nothing as well, which is a
+		 m_tms5220_speaking is true.  Else, we can play nothing as well, which is a
 		 speed-up...
 		 */
-		bool tms5220_speaking; // Speak or Speak External command in progress
-		bool speak_external; // Speak External command in progress
-		bool talk_status; // tms5220 is really currently speaking
-		bool first_frame; // we have just started speaking, and we are to parse the first frame
-		bool last_frame; // we are doing the frame of sound
-		bool buffer_low; // FIFO has less than 8 bytes in it
-		bool buffer_empty; // FIFO is empty
-		bool interrupt; // true to interrupt (active high), convert to active low in SpeechInterrupt()
-		bool ready; // true if ready (active high), convert to active low in SpeechReady()
-		int ready_count; // countdown timer to reset the ready flag after read/write enable is asserted
+		bool m_tms5220_speaking; // Speak or Speak External command in progress
+		bool m_speak_external; // Speak External command in progress
+		bool m_talk_status; // tms5220 is really currently speaking
+		bool m_first_frame; // we have just started speaking, and we are to parse the first frame
+		bool m_last_frame; // we are doing the frame of sound
+		bool m_buffer_low; // If true, FIFO has less than 8 bytes in it
+		bool m_buffer_empty; // If true, FIFO is empty
+		bool m_interrupt; // true to interrupt (active high), convert to active low in SpeechInterrupt()
+		bool m_ready; // true if ready (active high), convert to active low in SpeechReady()
+		int m_ready_count; // countdown timer to reset the ready flag after read/write enable is asserted
 
 		// These contain data describing the current and previous voice frames
-		uint16_t old_energy;
-		uint16_t old_pitch;
-		int old_k[10];
+		uint16_t m_old_energy;
+		uint16_t m_old_pitch;
+		int m_old_k[10];
 
-		uint16_t new_energy;
-		uint16_t new_pitch;
-		int new_k[10];
+		uint16_t m_new_energy;
+		uint16_t m_new_pitch;
+		int m_new_k[10];
 
 		// These are all used to contain the current state of the sound generation
-		uint16_t current_energy;
-		uint16_t current_pitch;
-		int current_k[10];
+		uint16_t m_current_energy;
+		uint16_t m_current_pitch;
+		int m_current_k[10];
 
-		uint16_t target_energy;
-		uint16_t target_pitch;
-		int target_k[10];
+		uint16_t m_target_energy;
+		uint16_t m_target_pitch;
+		int m_target_k[10];
 
-		uint8_t interp_count; // Number of interp periods (0-7)
-		uint8_t sample_count; // Sample number within interp (0-24)
-		int pitch_count;
+		uint8_t m_interp_count; // Number of interp periods (0-7)
+		uint8_t m_sample_count; // Sample number within interp (0-24)
+		int m_pitch_count;
 
-		int u[11];
-		int x[10];
+		int m_u[11];
+		int m_x[10];
 
-		int8_t randbit;
+		int8_t m_randbit;
 
-		int phrom_address;
+		int m_phrom_address;
 
-		uint8_t data_register; // Data register, used by read command
-		bool RDB_flag; // Whether we should read data register or status register
+		uint8_t m_data_register; // Data register, used by read command
+		bool m_RDB_flag; // Whether we should read data register or status register
 };
 
 // The state of the streamed output
@@ -283,10 +283,10 @@ class TMS5220StreamState
 		static constexpr int FRAC_ONE  = 1 << FRAC_BITS;
 		static constexpr int FRAC_MASK = FRAC_ONE - 1;
 
-		int last_sample;
-		int curr_sample;
-		int source_step;
-		int source_pos;
+		int m_last_sample;
+		int m_curr_sample;
+		int m_source_step;
+		int m_source_pos;
 };
 
 /*----------------------------------------------------------------------------*/
@@ -319,43 +319,43 @@ TMS5220::~TMS5220()
 void TMS5220::Reset()
 {
 	// Initialize the FIFO
-	memset(fifo, 0, sizeof(fifo));
-	fifo_head = fifo_tail = fifo_count = fifo_bits_taken = phrom_bits_taken = 0;
+	memset(m_fifo, 0, sizeof(m_fifo));
+	m_fifo_head = m_fifo_tail = m_fifo_count = m_fifo_bits_taken = m_phrom_bits_taken = 0;
 
 	// Initialize the chip state
-	// Note that we do not actually clear IRQ on start-up : IRQ is even raised if buffer_empty or buffer_low are false
-	tms5220_speaking = speak_external = talk_status = first_frame = last_frame = interrupt = false;
-	buffer_empty = buffer_low = true;
+	// Note that we do not actually clear IRQ on start-up : IRQ is even raised if m_buffer_empty or buffer_low are false
+	m_tms5220_speaking = m_speak_external = m_talk_status = m_first_frame = m_last_frame = m_interrupt = false;
+	m_buffer_empty = m_buffer_low = true;
 
-	RDB_flag = false;
+	m_RDB_flag = false;
 
-	ready = true;
-	ready_count = 0;
+	m_ready = true;
+	m_ready_count = 0;
 
 	// Initialize the energy/pitch/k states
-	old_energy = new_energy = current_energy = target_energy = 0;
-	old_pitch = new_pitch = current_pitch = target_pitch = 0;
+	m_old_energy = m_new_energy = m_current_energy = m_target_energy = 0;
+	m_old_pitch = m_new_pitch = m_current_pitch = m_target_pitch = 0;
 
-	memset(old_k, 0, sizeof(old_k));
-	memset(new_k, 0, sizeof(new_k));
-	memset(current_k, 0, sizeof(current_k));
-	memset(target_k, 0, sizeof(target_k));
+	memset(m_old_k, 0, sizeof(m_old_k));
+	memset(m_new_k, 0, sizeof(m_new_k));
+	memset(m_current_k, 0, sizeof(m_current_k));
+	memset(m_target_k, 0, sizeof(m_target_k));
 
 	// Initialize the sample generators
-	interp_count = sample_count = pitch_count = 0;
-	randbit = 0;
-	memset(u, 0, sizeof(u));
-	memset(x, 0, sizeof(x));
+	m_interp_count = m_sample_count = m_pitch_count = 0;
+	m_randbit = 0;
+	memset(m_u, 0, sizeof(m_u));
+	memset(m_x, 0, sizeof(m_x));
 
-	phrom_address = 0;
+	m_phrom_address = 0;
 }
 
 /*----------------------------------------------------------------------------*/
 
 void TMS5220::ReadEnable()
 {
-	ready = false;
-	ready_count = 30;
+	m_ready = false;
+	m_ready_count = 30;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -381,29 +381,29 @@ void TMS5220::ReadEnable()
 
 unsigned char TMS5220::ReadStatus()
 {
-	ready = true;
+	m_ready = true;
 
-	if (RDB_flag)
+	if (m_RDB_flag)
 	{
 		// If last command was read, return data register
-		RDB_flag = false;
-		return data_register;
+		m_RDB_flag = false;
+		return m_data_register;
 	}
 	else
 	{
 		// Read status
 
 		// Clear the interrupt state
-		interrupt = false;
+		m_interrupt = false;
 
 		#if ENABLE_LOG
-		WriteLog("%04X TMS5220: Status read: TS=%d BL=%d BE=%d\n", PrePC, talk_status, buffer_low, buffer_empty);
+		WriteLog("%04X TMS5220: Status read: TS=%d BL=%d BE=%d\n", PrePC, m_talk_status, m_buffer_low, m_buffer_empty);
 		WriteLog("%04X TMS5220: Clear interrupt\n", PrePC);
 		#endif
 
-		return (talk_status  ? 0x80 : 0x00) |
-		       (buffer_low   ? 0x40 : 0x00) |
-		       (buffer_empty ? 0x20 : 0x00);
+		return (m_talk_status  ? 0x80 : 0x00) |
+		       (m_buffer_low   ? 0x40 : 0x00) |
+		       (m_buffer_empty ? 0x20 : 0x00);
 	}
 }
 
@@ -418,20 +418,20 @@ void TMS5220::WriteData(unsigned char data)
 	#endif
 
 	// Add this byte to the FIFO
-	if (fifo_count < FIFO_SIZE)
+	if (m_fifo_count < FIFO_SIZE)
 	{
-		fifo[fifo_tail] = data;
-		fifo_tail = (fifo_tail + 1) % FIFO_SIZE;
-		fifo_count++;
+		m_fifo[m_fifo_tail] = data;
+		m_fifo_tail = (m_fifo_tail + 1) % FIFO_SIZE;
+		m_fifo_count++;
 
 		// If we were speaking, then we're no longer empty
-		if (speak_external)
+		if (m_speak_external)
 		{
-			buffer_empty = false;
+			m_buffer_empty = false;
 		}
 
 		#if ENABLE_LOG
-		WriteLog("%04X TMS5220: Added byte to FIFO (size=%d)\n", PrePC, fifo_count);
+		WriteLog("%04X TMS5220: Added byte to FIFO (size=%d)\n", PrePC, m_fifo_count);
 		#endif
 	}
 	else
@@ -444,14 +444,14 @@ void TMS5220::WriteData(unsigned char data)
 	// Update the buffer low state
 	CheckBufferLow();
 
-	if (!speak_external)
+	if (!m_speak_external)
 	{
 		// R Nabet : we parse commands at once.  It is necessary for such commands as read.
 		ProcessCommand();
 	}
 
-	ready = false;
-	ready_count = 30;
+	m_ready = false;
+	m_ready_count = 30;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -460,32 +460,32 @@ void TMS5220::WriteData(unsigned char data)
 
 bool TMS5220::ReadInt()
 {
-	return !interrupt;
+	return !m_interrupt;
 }
 
 /*--------------------------------------------------------------------------*/
 
-// Returns the ready state of the TMS5220
+// Returns the ready state of the TMS5220 (active low)
 
 bool TMS5220::ReadReady()
 {
-	return !ready;
+	return !m_ready;
 }
 
 /*--------------------------------------------------------------------------*/
 
 void TMS5220::Poll(int Cycles)
 {
-	if (!ready)
+	if (!m_ready)
 	{
-		if (ready_count > 0)
+		if (m_ready_count > 0)
 		{
-			ready_count -= Cycles;
+			m_ready_count -= Cycles;
 
-			if (ready_count <= 0)
+			if (m_ready_count <= 0)
 			{
-				ready_count = 0;
-				ready = true;
+				m_ready_count = 0;
+				m_ready = true;
 			}
 		}
 	}
@@ -502,32 +502,32 @@ void TMS5220::ProcessSamples(int16_t *buffer, int size)
 
 tryagain:
 	// If we're not speaking, parse commands
-	// while (!speak_external && fifo_count > 0)
+	// while (!m_speak_external && m_fifo_count > 0)
 	//   process_command(tms);
 
 	// If we're empty and still not speaking, fill with nothingness
-	if (!tms5220_speaking && !last_frame)
+	if (!m_tms5220_speaking && !m_last_frame)
 		goto empty;
 
 	// If we're to speak, but haven't started, wait for the 9th byte
-	if (!talk_status && speak_external)
+	if (!m_talk_status && m_speak_external)
 	{
-		if (fifo_count < 9)
+		if (m_fifo_count < 9)
 			goto empty;
 
-		talk_status = true;
-		first_frame = true; // will cause the first frame to be parsed
-		buffer_empty = false;
+		m_talk_status = true;
+		m_first_frame = true; // will cause the first frame to be parsed
+		m_buffer_empty = false;
 	}
 
 #if 0
 	// We are to speak, yet we fill with 0s until start of next frame
-	if (first_frame)
+	if (m_first_frame)
 	{
-		while (size > 0 && (sample_count != 0 || interp_count != 0))
+		while (size > 0 && (m_sample_count != 0 || m_interp_count != 0))
 		{
-			sample_count = (sample_count + 1) % 200;
-			interp_count = (interp_count + 1) % 25;
+			m_sample_count = (m_sample_count + 1) % 200;
+			m_interp_count = (m_interp_count + 1) % 25;
 			buffer[buf_count] = 0x80; // should be (-1 << 8) ??? (cf note in data sheet, p 10, table 4)
 			buf_count++;
 			size--;
@@ -536,57 +536,57 @@ tryagain:
 #endif
 
 	// Loop until the buffer is full or we've stopped speaking
-	while (size > 0 && talk_status)
+	while (size > 0 && m_talk_status)
 	{
 		int current_val;
 
 		// If we're ready for a new frame
-		if (interp_count == 0 && sample_count == 0)
+		if (m_interp_count == 0 && m_sample_count == 0)
 		{
 			// Parse a new frame
-			if (!ParseFrame(first_frame))
+			if (!ParseFrame(m_first_frame))
 				break;
 
-			first_frame = false;
+			m_first_frame = false;
 
 			// Set old target as new start of frame
-			current_energy = old_energy;
-			current_pitch = old_pitch;
+			m_current_energy = m_old_energy;
+			m_current_pitch = m_old_pitch;
 
 			for (i = 0; i < 10; i++)
-				current_k[i] = old_k[i];
+				m_current_k[i] = m_old_k[i];
 
 			// Is this a zero energy frame?
-			if (current_energy == 0)
+			if (m_current_energy == 0)
 			{
 				// WriteLog("processing frame: zero energy\n");
-				target_energy = 0;
-				target_pitch = current_pitch;
+				m_target_energy = 0;
+				m_target_pitch = m_current_pitch;
 
 				for (i = 0; i < 10; i++)
-					target_k[i] = current_k[i];
+					m_target_k[i] = m_current_k[i];
 			}
 			// Is this a stop frame?
-			else if (current_energy == (energytable[15] >> 6))
+			else if (m_current_energy == (energytable[15] >> 6))
 			{
 				// WriteLog("processing frame: stop frame\n");
-				current_energy = energytable[0] >> 6;
-				target_energy = current_energy;
-				/* interp_count = sample_count = */ pitch_count = 0;
-				last_frame = 0;
+				m_current_energy = energytable[0] >> 6;
+				m_target_energy = m_current_energy;
+				/* m_interp_count = m_sample_count = */ m_pitch_count = 0;
+				m_last_frame = 0;
 
-				if (tms5220_speaking)
+				if (m_tms5220_speaking)
 				{
 					// New speech command in progress
-					first_frame = true;
+					m_first_frame = true;
 				}
 				else
 				{
 					// Really stop speaking
-					talk_status = false;
+					m_talk_status = false;
 
 					// Generate an interrupt if necessary
-					interrupt = true;
+					m_interrupt = true;
 
 					#if ENABLE_LOG
 					WriteLog("%04X TMS5220: Interrupt set\n", PrePC);
@@ -599,78 +599,80 @@ tryagain:
 			else
 			{
 				// Is this the ramp down frame?
-				if (new_energy == (energytable[15] >> 6))
+				if (m_new_energy == (energytable[15] >> 6))
 				{
-					target_energy = 0;
-					target_pitch = current_pitch;
+					m_target_energy = 0;
+					m_target_pitch = m_current_pitch;
 
 					for (i = 0; i < 10; i++)
-						target_k[i] = current_k[i];
+						m_target_k[i] = m_current_k[i];
 				}
 				else
 				{
 					// Reset the step size
-					target_energy = new_energy;
-					target_pitch = new_pitch;
+					m_target_energy = m_new_energy;
+					m_target_pitch = m_new_pitch;
 
 					for (i = 0; i < 4; i++)
 					{
-						target_k[i] = new_k[i];
+						m_target_k[i] = m_new_k[i];
 					}
 
-					if (current_pitch == 0)
+					if (m_current_pitch == 0)
 					{
 						for (i = 4; i < 10; i++)
 						{
-							target_k[i] = current_k[i] = 0;
+							m_target_k[i] = m_current_k[i] = 0;
 						}
 					}
 					else
 					{
 						for (i = 4; i < 10; i++)
 						{
-							target_k[i] = new_k[i];
+							m_target_k[i] = m_new_k[i];
 						}
 					}
 				}
 			}
 		}
-		else if (interp_count == 0)
+		else if (m_interp_count == 0)
 		{
 			// Update values based on step values
 
-			interp_period = sample_count / 25;
+			interp_period = m_sample_count / 25;
 
-			current_energy += (target_energy - current_energy) / interp_coeff[interp_period];
+			m_current_energy += (m_target_energy - m_current_energy) / interp_coeff[interp_period];
 
-			if (old_pitch != 0)
-				current_pitch += (target_pitch - current_pitch) / interp_coeff[interp_period];
+			if (m_old_pitch != 0)
+			{
+				m_current_pitch += (m_target_pitch - m_current_pitch) / interp_coeff[interp_period];
+			}
 
 			for (i = 0; i < 10; i++)
 			{
-				current_k[i] += (target_k[i] - current_k[i]) / interp_coeff[interp_period];
+				m_current_k[i] += (m_target_k[i] - m_current_k[i]) / interp_coeff[interp_period];
 			}
 		}
 
 		current_val = 0x00;
 
-		if (old_energy == 0)
+		if (m_old_energy == 0)
 		{
 			// Generate silent samples here
 			current_val = 0x00;
 		}
-		else if (old_pitch == 0)
+		else if (m_old_pitch == 0)
 		{
 			// Generate unvoiced samples here
-			randbit = (rand() % 2) * 2 - 1;
-			current_val = (randbit * current_energy) / 4;
+			m_randbit = (rand() % 2) * 2 - 1;
+			current_val = (m_randbit * m_current_energy) / 4;
 		}
 		else
 		{
 			// Generate voiced samples here
-			if (pitch_count < sizeof(chirptable))
+			if (m_pitch_count < sizeof(chirptable))
 			{
-				current_val = (chirptable[pitch_count] * current_energy) / 256;
+				current_val = (chirptable[m_pitch_count] * m_current_energy) / 256;
 			}
 			else
 			{
@@ -680,58 +682,58 @@ tryagain:
 
 		// Lattice filter here
 
-		u[10] = current_val;
+		m_u[10] = current_val;
 
 		for (i = 9; i >= 0; i--)
 		{
-			u[i] = u[i+1] - ((current_k[i] * x[i]) / 32768);
+			m_u[i] = m_u[i+1] - ((m_current_k[i] * m_x[i]) / 32768);
 		}
 
 		for (i = 9; i >= 1; i--)
 		{
-			x[i] = x[i-1] + ((current_k[i-1] * u[i-1]) / 32768);
+			m_x[i] = m_x[i-1] + ((m_current_k[i-1] * m_u[i - 1]) / 32768);
 		}
 
-		x[0] = u[0];
+		m_x[0] = m_u[0];
 
 		// Clipping, just like the chip
 
-		if (u[0] > 511)
+		if (m_u[0] > 511)
 		{
 			buffer[buf_count] = 255;
 		}
-		else if (u[0] < -512)
+		else if (m_u[0] < -512)
 		{
 			buffer[buf_count] = 0;
 		}
 		else
 		{
-			buffer[buf_count] = (u[0] >> 2) + 128;
+			buffer[buf_count] = (m_u[0] >> 2) + 128;
 		}
 
 		// Update all counts
 
 		size--;
-		sample_count = (sample_count + 1) % 200;
+		m_sample_count = (m_sample_count + 1) % 200;
 
-		if (current_pitch != 0)
+		if (m_current_pitch != 0)
 		{
-			pitch_count = (pitch_count + 1) % current_pitch;
+			m_pitch_count = (m_pitch_count + 1) % m_current_pitch;
 		}
 		else
 		{
-			pitch_count = 0;
+			m_pitch_count = 0;
 		}
 
-		interp_count = (interp_count + 1) % 25;
+		m_interp_count = (m_interp_count + 1) % 25;
 		buf_count++;
 	}
 
 empty:
 	while (size > 0)
 	{
-		sample_count = (sample_count + 1) % 200;
-		interp_count = (interp_count + 1) % 25;
+		m_sample_count = (m_sample_count + 1) % 200;
+		m_interp_count = (m_interp_count + 1) % 25;
 		buffer[buf_count] = 0x80; // should be (-1 << 8) ??? (cf note in data sheet, p 10, table 4)
 		buf_count++;
 		size--;
@@ -745,27 +747,27 @@ empty:
 void TMS5220::ProcessCommand()
 {
 	// If there are stray bits, ignore them
-	if (fifo_bits_taken > 0)
+	if (m_fifo_bits_taken > 0)
 	{
-		fifo_bits_taken = 0;
-		fifo_count--;
-		fifo_head = (fifo_head + 1) % FIFO_SIZE;
+		m_fifo_bits_taken = 0;
+		m_fifo_count--;
+		m_fifo_head = (m_fifo_head + 1) % FIFO_SIZE;
 	}
 
 	// Grab a full byte from the FIFO
-	if (fifo_count > 0)
+	if (m_fifo_count > 0)
 	{
-		unsigned char cmd = fifo[fifo_head];
-		fifo_count--;
-		fifo_head = (fifo_head + 1) % FIFO_SIZE;
+		unsigned char cmd = m_fifo[m_fifo_head];
+		m_fifo_count--;
+		m_fifo_head = (m_fifo_head + 1) % FIFO_SIZE;
 
 		// Parse the command
 		switch (cmd & 0x70)
 		{
 			case 0x10: // Read byte
-				phrom_bits_taken = 0;
-				data_register = ReadPhrom(8); /* read one byte from speech ROM... */
-				RDB_flag = true;
+				m_phrom_bits_taken = 0;
+				m_data_register = ReadPhrom(8); /* read one byte from speech ROM... */
+				m_RDB_flag = true;
 				break;
 
 			case 0x30: // Read and branch
@@ -773,7 +775,7 @@ void TMS5220::ProcessCommand()
 				WriteLog("%04X TMS5220: read and branch\n", PrePC);
 				#endif
 
-				RDB_flag = false;
+				m_RDB_flag = false;
 
 				// The Read and Branch command causes the VSP to initiate a Read
 				// and Branch function on the VSM. The VSP is not able to access
@@ -789,12 +791,12 @@ void TMS5220::ProcessCommand()
 				WriteLog("%04X TMS5220: load address cmd with data = 0x%02x\n", PrePC, data);
 				#endif
 
-				phrom_address >>= 4;
-				phrom_address &= 0x0ffff;
-				phrom_address |= (data << 16);
+				m_phrom_address >>= 4;
+				m_phrom_address &= 0x0ffff;
+				m_phrom_address |= (data << 16);
 
 				#if ENABLE_LOG
-				WriteLog("%04X TMS5220: load address cmd with data = 0x%02x, new address = 0x%05x\n", PrePC, data, phrom_address);
+				WriteLog("%04X TMS5220: load address cmd with data = 0x%02x, new address = 0x%05x\n", PrePC, data, m_phrom_address);
 				#endif
 
 				break;
@@ -805,15 +807,15 @@ void TMS5220::ProcessCommand()
 				WriteLog("%04X TMS5220: speak\n", PrePC);
 				#endif
 
-				tms5220_speaking = true;
-				speak_external = false;
+				m_tms5220_speaking = true;
+				m_speak_external = false;
 
-				if (!last_frame)
+				if (!m_last_frame)
 				{
-					first_frame = true;
+					m_first_frame = true;
 				}
 
-				talk_status = true; // Start immediately
+				m_talk_status = true; // Start immediately
 				break;
 
 			case 0x60: // Speak external
@@ -821,15 +823,15 @@ void TMS5220::ProcessCommand()
 				WriteLog("%04X TMS5220: speak external\n", PrePC);
 				#endif
 
-				tms5220_speaking = speak_external = true;
+				m_tms5220_speaking = m_speak_external = true;
 
-				RDB_flag = false;
+				m_RDB_flag = false;
 
 				// According to the datasheet, this will cause an interrupt due to a BE condition
-				if (!buffer_empty)
+				if (!m_buffer_empty)
 				{
-					buffer_empty = true;
-					interrupt = true;
+					m_buffer_empty = true;
+					m_interrupt = true;
 
 					#if ENABLE_LOG
 					WriteLog("%04X TMS5220: Buffer empty set\n", PrePC);
@@ -837,7 +839,7 @@ void TMS5220::ProcessCommand()
 					#endif
 				}
 
-				talk_status = false; // Wait to have 8 bytes in buffer before starting
+				m_talk_status = false; // Wait to have 8 bytes in buffer before starting
 				break;
 
 			case 0x70: // Reset
@@ -862,20 +864,20 @@ int TMS5220::ExtractBits(int count)
 {
 	int val = 0;
 
-	if (speak_external)
+	if (m_speak_external)
 	{
 		// Extract from FIFO
 		while (count--)
 		{
-			val = (val << 1) | ((fifo[fifo_head] >> fifo_bits_taken) & 1);
+			val = (val << 1) | ((m_fifo[m_fifo_head] >> m_fifo_bits_taken) & 1);
 
-			fifo_bits_taken++;
+			m_fifo_bits_taken++;
 
-			if (fifo_bits_taken >= 8)
+			if (m_fifo_bits_taken >= 8)
 			{
-				fifo_count--;
-				fifo_head = (fifo_head + 1) % FIFO_SIZE;
-				fifo_bits_taken = 0;
+				m_fifo_count--;
+				m_fifo_head = (m_fifo_head + 1) % FIFO_SIZE;
+				m_fifo_bits_taken = 0;
 			}
 		}
 	}
@@ -899,33 +901,33 @@ int TMS5220::ParseFrame(bool first)
 	if (!first)
 	{
 		// Remember previous frame
-		old_energy = new_energy;
-		old_pitch = new_pitch;
+		m_old_energy = m_new_energy;
+		m_old_pitch = m_new_pitch;
 		for (int i = 0; i < 10; i++)
-			old_k[i] = new_k[i];
+			m_old_k[i] = m_new_k[i];
 	}
 
 	// Clear out the new frame
-	new_energy = 0;
-	new_pitch = 0;
+	m_new_energy = 0;
+	m_new_pitch = 0;
 	for (int i = 0; i < 10; i++)
-		new_k[i] = 0;
+		m_new_k[i] = 0;
 
 	// If the previous frame was a stop frame, don't do anything
-	if (!first && (old_energy == (energytable[15] >> 6)))
+	if (!first && (m_old_energy == (energytable[15] >> 6)))
 	{
-		buffer_empty = true;
+		m_buffer_empty = true;
 		return 1;
 	}
 
-	if (speak_external)
+	if (m_speak_external)
 	{
 		// Count the total number of bits available
-		bits = fifo_count * 8 - fifo_bits_taken;
+		bits = m_fifo_count * 8 - m_fifo_bits_taken;
 	}
 
 	// Attempt to extract the energy index
-	if (speak_external)
+	if (m_speak_external)
 	{
 		bits -= 4;
 		if (bits < 0)
@@ -933,27 +935,27 @@ int TMS5220::ParseFrame(bool first)
 	}
 
 	int indx = ExtractBits(4);
-	new_energy = energytable[indx] >> 6;
+	m_new_energy = energytable[indx] >> 6;
 
 	// If the index is 0 or 15, we're done
 	if (indx == 0 || indx == 15)
 	{
 		#if ENABLE_LOG
-		WriteLog("%04X TMS5220:  (4-bit energy=%d frame)\n", PrePC, new_energy);
+		WriteLog("%04X TMS5220:  (4-bit energy=%d frame)\n", PrePC, m_new_energy);
 		#endif
 
 		// Clear fifo if stop frame encountered
 		if (indx == 15)
 		{
-			fifo_head = fifo_tail = fifo_count = fifo_bits_taken = phrom_bits_taken = 0;
-			speak_external = tms5220_speaking = false;
-			last_frame = true;
+			m_fifo_head = m_fifo_tail = m_fifo_count = m_fifo_bits_taken = m_phrom_bits_taken = 0;
+			m_speak_external = m_tms5220_speaking = false;
+			m_last_frame = true;
 		}
 		goto done;
 	}
 
 	// Attempt to extract the repeat flag
-	if (speak_external)
+	if (m_speak_external)
 	{
 		bits -= 1;
 		if (bits < 0)
@@ -963,7 +965,7 @@ int TMS5220::ParseFrame(bool first)
 	int rep_flag = ExtractBits(1);
 
 	// Attempt to extract the pitch
-	if (speak_external)
+	if (m_speak_external)
 	{
 		bits -= 6;
 		if (bits < 0)
@@ -971,16 +973,16 @@ int TMS5220::ParseFrame(bool first)
 	}
 
 	indx = ExtractBits(6);
-	new_pitch = pitchtable[indx] / 256;
+	m_new_pitch = pitchtable[indx] / 256;
 
 	// If this is a repeat frame, just copy the k's
 	if (rep_flag)
 	{
 		for (int i = 0; i < 10; i++)
-			new_k[i] = old_k[i];
+			m_new_k[i] = m_old_k[i];
 
 		#if ENABLE_LOG
-		WriteLog("%04X TMS5220:  (11-bit energy=%d pitch=%d rep=%d frame)\n", PrePC, new_energy, new_pitch, rep_flag);
+		WriteLog("%04X TMS5220:  (11-bit energy=%d pitch=%d rep=%d frame)\n", PrePC, m_new_energy, m_new_pitch, rep_flag);
 		#endif
 
 		goto done;
@@ -990,51 +992,51 @@ int TMS5220::ParseFrame(bool first)
 	if (indx == 0)
 	{
 		// Attempt to extract 4 K's
-		if (speak_external)
+		if (m_speak_external)
 		{
 			bits -= 18;
 			if (bits < 0)
 				goto ranout;
 		}
 
-		new_k[0] = k1table[ExtractBits(5)];
-		new_k[1] = k2table[ExtractBits(5)];
-		new_k[2] = k3table[ExtractBits(4)];
-		new_k[3] = k4table[ExtractBits(4)];
+		m_new_k[0] = k1table[ExtractBits(5)];
+		m_new_k[1] = k2table[ExtractBits(5)];
+		m_new_k[2] = k3table[ExtractBits(4)];
+		m_new_k[3] = k4table[ExtractBits(4)];
 
 		#if ENABLE_LOG
-		WriteLog("%04X TMS5220:  (29-bit energy=%d pitch=%d rep=%d 4K frame)\n", PrePC, new_energy, new_pitch, rep_flag);
+		WriteLog("%04X TMS5220:  (29-bit energy=%d pitch=%d rep=%d 4K frame)\n", PrePC, m_new_energy, m_new_pitch, rep_flag);
 		#endif
 
 		goto done;
 	}
 
 	// Else we need 10 K's
-	if (speak_external)
+	if (m_speak_external)
 	{
 		bits -= 39;
 		if (bits < 0)
 			goto ranout;
 	}
 
-	new_k[0] = k1table[ExtractBits(5)];
-	new_k[1] = k2table[ExtractBits(5)];
-	new_k[2] = k3table[ExtractBits(4)];
-	new_k[3] = k4table[ExtractBits(4)];
-	new_k[4] = k5table[ExtractBits(4)];
-	new_k[5] = k6table[ExtractBits(4)];
-	new_k[6] = k7table[ExtractBits(4)];
-	new_k[7] = k8table[ExtractBits(3)];
-	new_k[8] = k9table[ExtractBits(3)];
-	new_k[9] = k10table[ExtractBits(3)];
+	m_new_k[0] = k1table[ExtractBits(5)];
+	m_new_k[1] = k2table[ExtractBits(5)];
+	m_new_k[2] = k3table[ExtractBits(4)];
+	m_new_k[3] = k4table[ExtractBits(4)];
+	m_new_k[4] = k5table[ExtractBits(4)];
+	m_new_k[5] = k6table[ExtractBits(4)];
+	m_new_k[6] = k7table[ExtractBits(4)];
+	m_new_k[7] = k8table[ExtractBits(3)];
+	m_new_k[8] = k9table[ExtractBits(3)];
+	m_new_k[9] = k10table[ExtractBits(3)];
 
 	#if ENABLE_LOG
-	WriteLog("%04X TMS5220:  (50-bit energy=%d pitch=%d rep=%d 10K frame)\n", PrePC, new_energy, new_pitch, rep_flag);
+	WriteLog("%04X TMS5220:  (50-bit energy=%d pitch=%d rep=%d 10K frame)\n", PrePC, m_new_energy, m_new_pitch, rep_flag);
 	#endif
 
 done:
 	#if ENABLE_LOG
-	if (speak_external)
+	if (m_speak_external)
 	{
 		WriteLog("%04X TMS5220: Parsed a frame successfully in FIFO - %d bits remaining\n", PrePC, bits);
 	}
@@ -1044,17 +1046,17 @@ done:
 	}
 	#endif
 
-	if (first_frame)
+	if (m_first_frame)
 	{
 		// If this is the first frame, no previous frame to take as a starting point
-		old_energy = new_energy;
-		old_pitch = new_pitch;
+		m_old_energy = m_new_energy;
+		m_old_pitch = m_new_pitch;
 
 		for (int i = 0; i < 10; i++)
-			old_k[i] = new_k[i];
+			m_old_k[i] = m_new_k[i];
 	}
 
-	// Update the buffer_low status
+	// Update the buffer_low state
 	CheckBufferLow();
 	return 1;
 
@@ -1064,14 +1066,14 @@ ranout:
 	#endif
 
 	// This is an error condition; mark the buffer empty and turn off speaking
-	buffer_empty = true;
-	talk_status = speak_external = tms5220_speaking = first_frame = last_frame = false;
-	fifo_count = fifo_head = fifo_tail = 0;
+	m_buffer_empty = true;
+	m_talk_status = m_speak_external = m_tms5220_speaking = m_first_frame = m_last_frame = false;
+	m_fifo_count = m_fifo_head = m_fifo_tail = 0;
 
-	RDB_flag = false;
+	m_RDB_flag = false;
 
 	// Generate an interrupt if necessary
-	interrupt = true;
+	m_interrupt = true;
 
 	#if ENABLE_LOG
 	WriteLog("TMS5220: Interrupt set\n");
@@ -1086,26 +1088,26 @@ ranout:
 
 void TMS5220::CheckBufferLow()
 {
-	// Did we just become low?
-	if (fifo_count <= 8)
+	if (m_fifo_count <= 8)
 	{
-		// Generate an interrupt if necessary
-		if (!buffer_low)
+		// Generate an interrupt if necessary; if /BL was inactive and
+		// is now active, set int.
+
+		if (!m_buffer_low)
 		{
 			#if ENABLE_LOG
 			WriteLog("%04X TMS5220: Interrupt set\n", PrePC);
 			WriteLog("%04X TMS5220: Buffer low set\n", PrePC);
 			#endif
 
-			interrupt = true;
+			m_interrupt = true;
 		}
 
-		buffer_low = true;
+		m_buffer_low = true;
 	}
 	else
 	{
-		// Did we just become full?
-		buffer_low = false;
+		m_buffer_low = false;
 
 		#if ENABLE_LOG
 		WriteLog("%04X TMS5220: Buffer low cleared\n", PrePC);
@@ -1117,24 +1119,24 @@ void TMS5220::CheckBufferLow()
 
 int TMS5220::ReadPhrom(int count)
 {
-	int phrom = (phrom_address >> 14) & 0xf;
+	int phrom = (m_phrom_address >> 14) & 0xf;
 
 	#if ENABLE_LOG
-	WriteLog("%04X TMS5220: ReadPhrom, addr = 0x%04x, phrom = 0x%02x, count = %d", PrePC, phrom_address, phrom, count);
+	WriteLog("%04X TMS5220: ReadPhrom, addr = 0x%04x, phrom = 0x%02x, count = %d", PrePC, m_phrom_address, phrom, count);
 	#endif
 
 	int val = 0;
 
-	while (count--)
+	while (count-- > 0)
 	{
-		int addr = phrom_address & 0x3fff;
+		int addr = m_phrom_address & 0x3fff;
 
-		val = (val << 1) | ((phrom_rom[phrom][addr] >> phrom_bits_taken) & 1);
+		val = (val << 1) | ((phrom_rom[phrom][addr] >> m_phrom_bits_taken) & 1);
 
-		if (++phrom_bits_taken == 8)
+		if (++m_phrom_bits_taken == 8)
 		{
-			phrom_address++;
-			phrom_bits_taken = 0;
+			m_phrom_address++;
+			m_phrom_bits_taken = 0;
 		}
 	}
 
@@ -1152,10 +1154,10 @@ int TMS5220::ReadPhrom(int count)
 // usually 800000 for 10000 Hz sample rate.
 
 TMS5220StreamState::TMS5220StreamState(int Clock) :
-	last_sample(0),
-	curr_sample(0),
-	source_step((int)((double)(Clock / 80) * (double)FRAC_ONE / (double)SoundSampleRate)),
-	source_pos(0)
+	m_last_sample(0),
+	m_curr_sample(0),
+	m_source_step((int)((double)(Clock / 80) * (double)FRAC_ONE / (double)SoundSampleRate)),
+	m_source_pos(0)
 {
 	chip.Reset();
 }
@@ -1174,28 +1176,28 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 {
 	int16_t sample_data[MAX_SAMPLE_CHUNK];
 	int16_t *curr_data = sample_data;
-	int prev = last_sample;
-	int curr = curr_sample;
+	int prev = m_last_sample;
+	int curr = m_curr_sample;
 	unsigned char *buffer = buff;
 
 	// Finish off the current sample
-	if (source_pos > 0)
+	if (m_source_pos > 0)
 	{
 		// Interpolate
-		while (length > 0 && source_pos < FRAC_ONE)
+		while (length > 0 && m_source_pos < FRAC_ONE)
 		{
-			int samp = ((prev * (FRAC_ONE - source_pos)) + (curr * source_pos)) >> FRAC_BITS;
+			int samp = ((prev * (FRAC_ONE - m_source_pos)) + (curr * m_source_pos)) >> FRAC_BITS;
 			// samp = ((samp + 32768) >> 8) & 255;
 			// fprintf(stderr, "Sample = %d\n", samp);
 			*buffer++ = samp;
-			source_pos += source_step;
+			m_source_pos += m_source_step;
 			length--;
 		}
 
 		// If we're over, continue; otherwise, we're done
-		if (source_pos >= FRAC_ONE)
+		if (m_source_pos >= FRAC_ONE)
 		{
-			source_pos -= FRAC_ONE;
+			m_source_pos -= FRAC_ONE;
 		}
 		else
 		{
@@ -1210,7 +1212,7 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 	}
 
 	// Compute how many new samples we need
-	int final_pos = source_pos + length * source_step;
+	int final_pos = m_source_pos + length * m_source_step;
 	int new_samples = (final_pos + FRAC_ONE - 1) >> FRAC_BITS;
 	if (new_samples > MAX_SAMPLE_CHUNK)
 		new_samples = MAX_SAMPLE_CHUNK;
@@ -1225,20 +1227,20 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 	while (length > 0)
 	{
 		// Interpolate
-		while (length > 0 && source_pos < FRAC_ONE)
+		while (length > 0 && m_source_pos < FRAC_ONE)
 		{
-			int samp = ((prev * (FRAC_ONE - source_pos)) + (curr * source_pos)) >> FRAC_BITS;
+			int samp = ((prev * (FRAC_ONE - m_source_pos)) + (curr * m_source_pos)) >> FRAC_BITS;
 			// samp = ((samp + 32768) >> 8) & 255;
 			// fprintf(stderr, "Sample = %d\n", samp);
 			*buffer++ = samp;
-			source_pos += source_step;
+			m_source_pos += m_source_step;
 			length--;
 		}
 
 		// If we're over, grab the next samples
-		if (source_pos >= FRAC_ONE)
+		if (m_source_pos >= FRAC_ONE)
 		{
-			source_pos -= FRAC_ONE;
+			m_source_pos -= FRAC_ONE;
 			prev = curr;
 			curr = *curr_data++;
 			if (curr_data - sample_data > MAX_SAMPLE_CHUNK)
@@ -1247,8 +1249,8 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 	}
 
 	// Remember the last samples
-	last_sample = prev;
-	curr_sample = curr;
+	m_last_sample = prev;
+	m_curr_sample = curr;
 
 	#if ENABLE_LOG
 	// if (buffer - buff != length)
@@ -1318,7 +1320,7 @@ void SpeechInit()
 
 void SpeechStart()
 {
-	int clock = 640000;
+	int clock = 640000; // 640 kHz
 
 	SpeechStop();
 
