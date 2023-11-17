@@ -362,21 +362,22 @@ void TMS5220::ReadEnable()
 // Read status or data from the TMS5220
 
 // From the data sheet:
+//
 // bit 0 = TS - Talk Status is active (high) when the VSP is processing speech data.
-// Talk Status goes active at the initiation of a Speak command or after nine
-// bytes of data are loaded into the FIFO following a Speak External command. It
-// goes inactive (low) when the stop code (Energy=1111) is processed, or
-// immediately by a buffer empty condition or a reset command.
+//         Talk Status goes active at the initiation of a Speak command or after nine
+//         bytes of data are loaded into the FIFO following a Speak External command. It
+//         goes inactive (low) when the stop code (Energy=1111) is processed, or
+//         immediately by a buffer empty condition or a reset command.
 // bit 1 = BL - Buffer Low is active (high) when the FIFO buffer is more than half empty.
-// Buffer Low is set when the "Last-In" byte is shifted down past the half-full
-// boundary of the stack. Buffer Low is cleared when data is loaded to the stack
-// so that the "Last-In" byte lies above the half-full boundary and becomes the
-// ninth data byte of the stack.
+//         Buffer Low is set when the "Last-In" byte is shifted down past the half-full
+//         boundary of the stack. Buffer Low is cleared when data is loaded to the stack
+//         so that the "Last-In" byte lies above the half-full boundary and becomes the
+//         ninth data byte of the stack.
 // bit 2 = BE - Buffer Empty is active (high) when the FIFO buffer has run out of data
-// while executing a Speak External command. Buffer Empty is set when the last bit
-// of the "Last-In" byte is shifted out to the Synthesis Section. This causes
-// Talk Status to be cleared. Speed is terminated at some abnormal point and the
-// Speak External command execution is terminated.
+//         while executing a Speak External command. Buffer Empty is set when the last bit
+//         of the "Last-In" byte is shifted out to the Synthesis Section. This causes
+//         Talk Status to be cleared. Speed is terminated at some abnormal point and the
+//         Speak External command execution is terminated.
 
 unsigned char TMS5220::ReadStatus()
 {
@@ -386,13 +387,14 @@ unsigned char TMS5220::ReadStatus()
 	{
 		// If last command was read, return data register
 		m_RDB_flag = false;
+
 		return m_data_register;
 	}
 	else
 	{
 		// Read status
 
-		// Clear the interrupt state
+		// Clear the interrupt pin on status read
 		m_interrupt = false;
 
 		#if ENABLE_LOG
@@ -445,9 +447,29 @@ void TMS5220::WriteData(unsigned char data)
 
 	if (!m_speak_external)
 	{
-		// R Nabet : we parse commands at once.  It is necessary for such commands as read.
+		// R Nabet : we parse commands at once.  It is necessary for such
+		// commands as read.
 		ProcessCommand();
 	}
+
+	// How long does /READY stay inactive, when /WS is pulled low?
+	// This depends ENTIRELY on the command written, or whether the chip
+	// is in speak external mode or not...
+	//
+	// Speak external mode: ~16 cycles
+	// Command Mode:
+	// SPK: ? cycles
+	// SPKEXT: ? cycles
+	// RDBY: between 60 and 140 cycles
+	// RB: ? cycles (80?)
+	// RST: between 60 and 140 cycles
+	//
+	//
+	// TODO: actually HANDLE the timing differences! currently just assuming
+	// always 16 cycles
+	// This should take around 10-16 (closer to ~15) cycles to complete for
+	// fifo writes
+	// TODO: but actually depends on what command is written if in command mode
 
 	m_ready = false;
 	m_ready_count = 30;
