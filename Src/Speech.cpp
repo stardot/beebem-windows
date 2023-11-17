@@ -43,8 +43,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
-#include <stdlib.h>
-
 #include "Speech.h"
 #include "6502core.h"
 #include "beebsound.h"
@@ -252,7 +250,7 @@ class TMS5220
 		int m_u[11];
 		int m_x[10];
 
-		int8_t m_randbit;
+		int m_rng; // the random noise generator configuration is: 1 + x + x^3 + x^4 + x^13
 
 		int m_phrom_address;
 
@@ -343,7 +341,8 @@ void TMS5220::Reset()
 
 	// Initialize the sample generators
 	m_interp_count = m_sample_count = m_pitch_count = 0;
-	m_randbit = 0;
+	m_rng = 0x1FFF;
+
 	memset(m_u, 0, sizeof(m_u));
 	memset(m_x, 0, sizeof(m_x));
 
@@ -654,8 +653,6 @@ tryagain:
 			}
 		}
 
-		current_val = 0x00;
-
 		if (m_old_energy == 0)
 		{
 			// Generate silent samples here
@@ -664,20 +661,31 @@ tryagain:
 		else if (m_old_pitch == 0)
 		{
 			// Generate unvoiced samples here
-			m_randbit = (rand() % 2) * 2 - 1;
-			current_val = (m_randbit * m_current_energy) / 4;
+			int bitout, randbit;
+
+			if (m_rng & 1)
+			{
+				randbit = -64; // according to the patent it is (either + or -) half of the maximum value in the chirp table
+			}
+			else
+			{
+				randbit = 64;
+			}
+
+			bitout = ((m_rng >> 12) & 1) ^
+			         ((m_rng >> 10) & 1) ^
+			         ((m_rng >>  9) & 1) ^
+			         ((m_rng >>  0) & 1);
+
+			m_rng >>= 1;
+			m_rng |= bitout << 12;
+
+			current_val = (randbit * m_current_energy) / 256;
 		}
 		else
 		{
 			// Generate voiced samples here
-			if (m_pitch_count < sizeof(chirptable))
-			{
-				current_val = (chirptable[m_pitch_count] * m_current_energy) / 256;
-			}
-			else
-			{
-				current_val = 0x00;
-			}
+			current_val = (chirptable[m_pitch_count % sizeof(chirptable)] * m_current_energy) / 256;
 		}
 
 		// Lattice filter here
