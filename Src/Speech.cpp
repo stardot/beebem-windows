@@ -853,6 +853,10 @@ void TMS5220::ProcessCommand()
 				WriteLog("%04X TMS5220: speak external\n", PrePC);
 				#endif
 
+				// SPKEXT going active activates SPKEE which clears the fifo
+				m_fifo_head = m_fifo_tail = m_fifo_count = m_fifo_bits_taken = 0;
+				// SPEN is enabled when the fifo passes half full (falling edge of BL signal)
+
 				m_tms5220_speaking = m_speak_external = true;
 
 				m_RDB_flag = false;
@@ -906,6 +910,7 @@ int TMS5220::ExtractBits(int count)
 			if (m_fifo_bits_taken >= 8)
 			{
 				m_fifo_count--;
+				m_fifo[m_fifo_head] = 0; // Zero the newly depleted fifo head byte
 				m_fifo_head = (m_fifo_head + 1) % FIFO_SIZE;
 				m_fifo_bits_taken = 0;
 			}
