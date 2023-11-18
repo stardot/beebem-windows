@@ -192,7 +192,7 @@ class TMS5220
 	private:
 		void ProcessCommand();
 		int ExtractBits(int count);
-		int ParseFrame(bool first_frame);
+		bool ParseFrame(bool first_frame);
 		void CheckBufferLow();
 		int ReadPhrom(int count);
 
@@ -927,13 +927,13 @@ int TMS5220::ExtractBits(int count)
 
 /*--------------------------------------------------------------------------*/
 
-// Parse a new frame's worth of data; returns 0 if not enough bits in buffer
+// Parse a new frame's worth of data; returns false if not enough bits in buffer
 
-int TMS5220::ParseFrame(bool first)
+bool TMS5220::ParseFrame(bool first_frame)
 {
 	int bits = 0; // Number of bits in FIFO (speak external only)
 
-	if (!first)
+	if (!first_frame)
 	{
 		// Remember previous frame
 		m_old_energy = m_new_energy;
@@ -949,10 +949,10 @@ int TMS5220::ParseFrame(bool first)
 		m_new_k[i] = 0;
 
 	// If the previous frame was a stop frame, don't do anything
-	if (!first && (m_old_energy == (energytable[15] >> 6)))
+	if (!first_frame && (m_old_energy == (energytable[15] >> 6)))
 	{
 		m_buffer_empty = true;
-		return 1;
+		return true;
 	}
 
 	if (m_speak_external)
@@ -1081,7 +1081,7 @@ done:
 	}
 	#endif
 
-	if (m_first_frame)
+	if (first_frame)
 	{
 		// If this is the first frame, no previous frame to take as a starting point
 		m_old_energy = m_new_energy;
@@ -1093,7 +1093,7 @@ done:
 
 	// Update the buffer_low state
 	CheckBufferLow();
-	return 1;
+	return true;
 
 ranout:
 	#if ENABLE_LOG
@@ -1114,7 +1114,7 @@ ranout:
 	WriteLog("TMS5220: Interrupt set\n");
 	#endif
 
-	return 0;
+	return false;
 }
 
 /*--------------------------------------------------------------------------*/
