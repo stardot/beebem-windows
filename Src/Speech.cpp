@@ -259,6 +259,10 @@ class TMS5220
 
 		int m_phrom_address;
 
+		// Set after each load address, so that next read operation
+		// is preceded by a dummy read
+		// bool m_schedule_dummy_read;
+
 		uint8_t m_data_register; // Data register, used by read command
 		bool m_RDB_flag; // Whether we should read data register or status register
 };
@@ -359,6 +363,8 @@ void TMS5220::Reset()
 	m_excitation_data = 0;
 
 	m_phrom_address = 0;
+
+	// m_schedule_dummy_read = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -861,6 +867,13 @@ void TMS5220::ProcessCommand()
 		switch (cmd & 0x70)
 		{
 			case 0x10: // Read byte
+				/* if (m_schedule_dummy_read)
+				{
+					m_schedule_dummy_read = false;
+
+					ReadPhrom(1);
+				} */
+
 				m_phrom_bits_taken = 0;
 				m_data_register = ReadPhrom(8); /* read one byte from speech ROM... */
 				m_RDB_flag = true;
@@ -895,6 +908,7 @@ void TMS5220::ProcessCommand()
 				WriteLog("%04X TMS5220: load address cmd with data = 0x%02x, new address = 0x%05x\n", PrePC, data, m_phrom_address);
 				#endif
 
+				// m_schedule_dummy_read = true;
 				break;
 			}
 
@@ -902,6 +916,12 @@ void TMS5220::ProcessCommand()
 				#if ENABLE_LOG
 				WriteLog("%04X TMS5220: speak\n", PrePC);
 				#endif
+
+				/* if (m_schedule_dummy_read)
+				{
+					m_schedule_dummy_read = false;
+					ReadPhrom(1);
+				} */
 
 				m_tms5220_speaking = true;
 				m_speak_external = false;
@@ -946,6 +966,13 @@ void TMS5220::ProcessCommand()
 				#if ENABLE_LOG
 				WriteLog("%04X TMS5220: reset\n", PrePC);
 				#endif
+
+				/* if (m_schedule_dummy_read)
+				{
+					m_schedule_dummy_read = false;
+
+					ReadPhrom(1);
+				} */
 
 				Reset();
 				break;
