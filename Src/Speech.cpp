@@ -50,16 +50,16 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Main.h"
 #include "Log.h"
 
-/* TMS5220 ROM Tables */
+// TMS5220 ROM Tables
 
-/* This is the energy lookup table (4-bits -> 10-bits) */
+// This is the energy lookup table (4-bits -> 10-bits)
 
 static const unsigned short energytable[0x10] = {
 	0x0000,0x00C0,0x0140,0x01C0,0x0280,0x0380,0x0500,0x0740,
 	0x0A00,0x0E40,0x1440,0x1C80,0x2840,0x38C0,0x5040,0x7FC0
 };
 
-/* This is the pitch lookup table (6-bits -> 8-bits) */
+// This is the pitch lookup table (6-bits -> 8-bits)
 
 static const unsigned short pitchtable[0x40] = {
 	0x0000,0x1000,0x1100,0x1200,0x1300,0x1400,0x1500,0x1600,
@@ -72,9 +72,9 @@ static const unsigned short pitchtable[0x40] = {
 	0x7B00,0x8000,0x8500,0x8A00,0x8F00,0x9500,0x9A00,0xA000
 };
 
-/* These are the reflection coefficient lookup tables */
+// These are the reflection coefficient lookup tables
 
-/* K1 is (5-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K1 is (5-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k1table[0x20] = {
 	(short)0x82C0,(short)0x8380,(short)0x83C0,(short)0x8440,(short)0x84C0,(short)0x8540,(short)0x8600,(short)0x8780,
@@ -83,7 +83,7 @@ static const short k1table[0x20] = {
 	0x1440,0x2740,0x38C0,0x47C0,0x5480,0x5EC0,0x6700,0x6D40
 };
 
-/* K2 is (5-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K2 is (5-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k2table[0x20] = {
 	(short)0xAE00,(short)0xB480,(short)0xBB80,(short)0xC340,(short)0xCB80,(short)0xD440,(short)0xDDC0,(short)0xE780,
@@ -92,60 +92,60 @@ static const short k2table[0x20] = {
 	0x69C0,0x6CC0,0x6F80,0x71C0,0x73C0,0x7580,0x7700,0x7E80
 };
 
-/* K3 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K3 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k3table[0x10] = {
 	(short)0x9200,(short)0x9F00,(short)0xAD00,(short)0xBA00,(short)0xC800,(short)0xD500,(short)0xE300,(short)0xF000,
 	(short)0xFE00,0x0B00,0x1900,0x2600,0x3400,0x4100,0x4F00,0x5C00
 };
 
-/* K4 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K4 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k4table[0x10] = {
 	(short)0xAE00,(short)0xBC00,(short)0xCA00,(short)0xD800,(short)0xE600,(short)0xF400,0x0100,0x0F00,
 	0x1D00,0x2B00,0x3900,0x4700,0x5500,0x6300,0x7100,0x7E00
 };
 
-/* K5 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K5 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k5table[0x10] = {
 	(short)0xAE00,(short)0xBA00,(short)0xC500,(short)0xD100,(short)0xDD00,(short)0xE800,(short)0xF400,(short)0xFF00,
 	0x0B00,0x1700,0x2200,0x2E00,0x3900,0x4500,0x5100,0x5C00
 };
 
-/* K6 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K6 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k6table[0x10] = {
 	(short)0xC000,(short)0xCB00,(short)0xD600,(short)0xE100,(short)0xEC00,(short)0xF700,0x0300,0x0E00,
 	0x1900,0x2400,0x2F00,0x3A00,0x4500,0x5000,0x5B00,0x6600
 };
 
-/* K7 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K7 is (4-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k7table[0x10] = {
 	(short)0xB300,(short)0xBF00,(short)0xCB00,(short)0xD700,(short)0xE300,(short)0xEF00,(short)0xFB00,0x0700,
 	0x1300,0x1F00,0x2B00,0x3700,0x4300,0x4F00,0x5A00,0x6600
 };
 
-/* K8 is (3-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K8 is (3-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k8table[0x08] = {
 	(short)0xC000,(short)0xD800,(short)0xF000,0x0700,0x1F00,0x3700,0x4F00,0x6600
 };
 
-/* K9 is (3-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K9 is (3-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k9table[0x08] = {
 	(short)0xC000,(short)0xD400,(short)0xE800,(short)0xFC00,0x1000,0x2500,0x3900,0x4D00
 };
 
-/* K10 is (3-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1) */
+// K10 is (3-bits -> 9 bits+sign, 2's comp. fractional (-1 < x < 1)
 
 static const short k10table[0x08] = {
 	(short)0xCD00,(short)0xDF00,(short)0xF100,0x0400,0x1600,0x2000,0x3B00,0x4D00
 };
 
-/* chirp table */
+// Chirp table
 
 static const char chirptable[41] = {
 	0x00, 0x2a, (char)0xd4, 0x32,
@@ -190,6 +190,7 @@ class TMS5220
 		void ProcessSamples(short int *buffer, int size);
 
 	private:
+		int16_t LatticeFilter();
 		void ProcessCommand();
 		int ExtractBits(int count);
 		bool ParseFrame(bool first_frame);
@@ -243,6 +244,8 @@ class TMS5220
 		uint16_t m_target_pitch;
 		int m_target_k[10];
 
+		uint16_t m_previous_energy; // Needed for lattice filter to match patent
+
 		uint8_t m_interp_count; // Number of interp periods (0-7)
 		uint8_t m_sample_count; // Sample number within interp (0-24)
 		int m_pitch_count;
@@ -251,6 +254,8 @@ class TMS5220
 		int m_x[10];
 
 		int m_rng; // the random noise generator configuration is: 1 + x + x^3 + x^4 + x^13
+
+		int8_t m_excitation_data;
 
 		int m_phrom_address;
 
@@ -339,12 +344,19 @@ void TMS5220::Reset()
 	memset(m_current_k, 0, sizeof(m_current_k));
 	memset(m_target_k, 0, sizeof(m_target_k));
 
+	m_previous_energy = 0;
+
 	// Initialize the sample generators
-	m_interp_count = m_sample_count = m_pitch_count = 0;
-	m_rng = 0x1FFF;
+	m_interp_count = 0;
+	m_sample_count = 0;
+	m_pitch_count = 0;
 
 	memset(m_u, 0, sizeof(m_u));
 	memset(m_x, 0, sizeof(m_x));
+
+	m_rng = 0x1FFF;
+
+	m_excitation_data = 0;
 
 	m_phrom_address = 0;
 }
@@ -514,6 +526,87 @@ void TMS5220::Poll(int Cycles)
 
 /*--------------------------------------------------------------------------*/
 
+// Clips and wraps the 14 bit return value from the lattice filter to its
+// final 10 bit value (-512 to 511), and upshifts this to 16 bits
+
+static int16_t ClipAndWrap(int16_t cliptemp)
+{
+	// clipping & wrapping, just like the patent shows
+
+	if (cliptemp > 2047)
+	{
+		cliptemp = -2048 + (cliptemp - 2047);
+	}
+	else if (cliptemp < -2048)
+	{
+		cliptemp = 2047 - (cliptemp + 2048);
+	}
+
+	if (cliptemp > 511)
+	{
+		return 127 << 8;
+	}
+	else if (cliptemp < -512)
+	{
+		return -128 << 8;
+	}
+	else
+	{
+		return cliptemp << 6;
+	}
+}
+
+/*--------------------------------------------------------------------------*/
+
+// Executes one 'full run' of the lattice filter on a specific byte of
+// excitation data, and specific values of all the current k constants,
+// and returns the resulting sample.
+//
+// Note: the current_k processing here by dividing the result by 32768 is
+// necessary, as the stored parameters in the lookup table are the 10 bit
+// coefficients but are pre-multiplied by 512 for ease of storage. This is
+// undone on the real chip by a shifter here, after the multiply.
+
+int16_t TMS5220::LatticeFilter()
+{
+	// Lattice filter here
+	//
+	// Aug/05/07: redone as unrolled loop, for clarity - LN
+	// Copied verbatim from table I in US patent 4,209,804:
+	// notation equivalencies from table:
+	// Yn(i) = m_u[n-1]
+	// Kn = m_current_k[n-1]
+	// bn = m_x[n-1]
+
+	m_u[10] = (m_excitation_data * m_previous_energy) >> 8; // Y(11)
+	m_u[9]  = m_u[10] - (m_current_k[9] * m_x[9]) / 32768;
+	m_u[8]  = m_u[9]  - (m_current_k[8] * m_x[8]) / 32768;
+	m_x[9]  = m_x[8]  + (m_current_k[8] * m_u[8]) / 32768;
+	m_u[7]  = m_u[8]  - (m_current_k[7] * m_x[7]) / 32768;
+	m_x[8]  = m_x[7]  + (m_current_k[7] * m_u[7]) / 32768;
+	m_u[6]  = m_u[7]  - (m_current_k[6] * m_x[6]) / 32768;
+	m_x[7]  = m_x[6]  + (m_current_k[6] * m_u[6]) / 32768;
+	m_u[5]  = m_u[6]  - (m_current_k[5] * m_x[5]) / 32768;
+	m_x[6]  = m_x[5]  + (m_current_k[5] * m_u[5]) / 32768;
+	m_u[4]  = m_u[5]  - (m_current_k[4] * m_x[4]) / 32768;
+	m_x[5]  = m_x[4]  + (m_current_k[4] * m_u[4]) / 32768;
+	m_u[3]  = m_u[4]  - (m_current_k[3] * m_x[3]) / 32768;
+	m_x[4]  = m_x[3]  + (m_current_k[3] * m_u[3]) / 32768;
+	m_u[2]  = m_u[3]  - (m_current_k[2] * m_x[2]) / 32768;
+	m_x[3]  = m_x[2]  + (m_current_k[2] * m_u[2]) / 32768;
+	m_u[1]  = m_u[2]  - (m_current_k[1] * m_x[1]) / 32768;
+	m_x[2]  = m_x[1]  + (m_current_k[1] * m_u[1]) / 32768;
+	m_u[0]  = m_u[1]  - (m_current_k[0] * m_x[0]) / 32768;
+	m_x[1]  = m_x[0]  + (m_current_k[0] * m_u[0]) / 32768;
+	m_x[0]  = m_u[0];
+
+	m_previous_energy = m_current_energy;
+
+	return m_u[0];
+}
+
+/*--------------------------------------------------------------------------*/
+
 // Fill the buffer with a specific number of samples
 
 void TMS5220::ProcessSamples(int16_t *buffer, int size)
@@ -559,8 +652,6 @@ tryagain:
 	// Loop until the buffer is full or we've stopped speaking
 	while (size > 0 && m_talk_status)
 	{
-		int current_val;
-
 		// If we're ready for a new frame
 		if (m_interp_count == 0 && m_sample_count == 0)
 		{
@@ -678,68 +769,43 @@ tryagain:
 		if (m_old_energy == 0)
 		{
 			// Generate silent samples here
-			current_val = 0x00;
+
+			// This is NOT correct, the current_energy is forced to zero when we
+			// just passed a zero energy frame because thats what the tables hold
+			// for that value. However, this code does no harm. Will be removed later.
+			m_excitation_data = 0;
 		}
 		else if (m_old_pitch == 0)
 		{
 			// Generate unvoiced samples here
-			int bitout, randbit;
 
 			if (m_rng & 1)
 			{
-				randbit = -64; // according to the patent it is (either + or -) half of the maximum value in the chirp table
+				// According to the patent it is (either + or -) half of the maximum value
+				// in the chirp table, so +-64
+				m_excitation_data = -64;
 			}
 			else
 			{
-				randbit = 64;
+				m_excitation_data = 64;
 			}
-
-			bitout = ((m_rng >> 12) & 1) ^
-			         ((m_rng >> 10) & 1) ^
-			         ((m_rng >>  9) & 1) ^
-			         ((m_rng >>  0) & 1);
-
-			m_rng >>= 1;
-			m_rng |= bitout << 12;
-
-			current_val = (randbit * m_current_energy) / 256;
 		}
 		else
 		{
 			// Generate voiced samples here
-			current_val = (chirptable[m_pitch_count % sizeof(chirptable)] * m_current_energy) / 256;
+			m_excitation_data = chirptable[m_pitch_count % sizeof(chirptable)];
 		}
 
-		// Lattice filter here
+		int bitout = ((m_rng >> 12) & 1) ^
+		             ((m_rng >> 10) & 1) ^
+		             ((m_rng >>  9) & 1) ^
+		             ((m_rng >>  0) & 1);
 
-		m_u[10] = current_val;
+		m_rng >>= 1;
+		m_rng |= bitout << 12;
 
-		for (i = 9; i >= 0; i--)
-		{
-			m_u[i] = m_u[i+1] - ((m_current_k[i] * m_x[i]) / 32768);
-		}
-
-		for (i = 9; i >= 1; i--)
-		{
-			m_x[i] = m_x[i-1] + ((m_current_k[i-1] * m_u[i - 1]) / 32768);
-		}
-
-		m_x[0] = m_u[0];
-
-		// Clipping, just like the chip
-
-		if (m_u[0] > 511)
-		{
-			buffer[buf_count] = 255;
-		}
-		else if (m_u[0] < -512)
-		{
-			buffer[buf_count] = 0;
-		}
-		else
-		{
-			buffer[buf_count] = (m_u[0] >> 2) + 128;
-		}
+		// Execute lattice filter and clipping/wrapping
+		buffer[buf_count] = ClipAndWrap(LatticeFilter());
 
 		// Update all counts
 
@@ -1222,9 +1288,7 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 		while (length > 0 && m_source_pos < FRAC_ONE)
 		{
 			int samp = ((prev * (FRAC_ONE - m_source_pos)) + (curr * m_source_pos)) >> FRAC_BITS;
-			// samp = ((samp + 32768) >> 8) & 255;
-			// fprintf(stderr, "Sample = %d\n", samp);
-			*buffer++ = samp;
+			*buffer++ = ((samp + 32768) >> 8) & 0xff;
 			m_source_pos += m_source_step;
 			length--;
 		}
@@ -1265,9 +1329,7 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 		while (length > 0 && m_source_pos < FRAC_ONE)
 		{
 			int samp = ((prev * (FRAC_ONE - m_source_pos)) + (curr * m_source_pos)) >> FRAC_BITS;
-			// samp = ((samp + 32768) >> 8) & 255;
-			// fprintf(stderr, "Sample = %d\n", samp);
-			*buffer++ = samp;
+			*buffer++ = ((samp + 32768) >> 8) & 0xff;
 			m_source_pos += m_source_step;
 			length--;
 		}
