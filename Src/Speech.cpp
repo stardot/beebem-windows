@@ -161,10 +161,10 @@ static const char chirptable[41] = {
 	0x01
 };
 
-/* interpolation coefficients */
+// Interpolation coefficients (in rightshifts, as in actual chip)
 
 static const char interp_coeff[8] = {
-	8, 8, 8, 4, 4, 2, 2, 1
+	3, 3, 3, 2, 2, 1, 1, 0
 };
 
 /*----------------------------------------------------------------------------*/
@@ -662,16 +662,16 @@ tryagain:
 
 			interp_period = m_sample_count / 25;
 
-			m_current_energy += (m_target_energy - m_current_energy) / interp_coeff[interp_period];
+			m_current_energy += (m_target_energy - m_current_energy) >> interp_coeff[interp_period];
 
 			if (m_old_pitch != 0)
 			{
-				m_current_pitch += (m_target_pitch - m_current_pitch) / interp_coeff[interp_period];
+				m_current_pitch += (m_target_pitch - m_current_pitch) >> interp_coeff[interp_period];
 			}
 
 			for (i = 0; i < 10; i++)
 			{
-				m_current_k[i] += (m_target_k[i] - m_current_k[i]) / interp_coeff[interp_period];
+				m_current_k[i] += (m_target_k[i] - m_current_k[i]) >> interp_coeff[interp_period];
 			}
 		}
 
