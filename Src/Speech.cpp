@@ -207,14 +207,14 @@ class TMS5220
 		uint8_t m_fifo_bits_taken;
 		uint8_t m_phrom_bits_taken;
 
-		/* these contain global status bits */
-		/*
-		 R Nabet : m_speak_external is only set when a speak external command is going on.
-		 m_tms5220_speaking is set whenever a speak or speak external command is going on.
-		 Note that we really need to do anything in tms5220_process and play samples only when
-		 m_tms5220_speaking is true.  Else, we can play nothing as well, which is a
-		 speed-up...
-		 */
+		// These contain global status bits
+
+		// R Nabet : m_speak_external is only set when a speak external command is going on.
+		// m_tms5220_speaking is set whenever a speak or speak external command is going on.
+		// Note that we really need to do anything in tms5220_process and play samples only when
+		// m_tms5220_speaking is true.  Else, we can play nothing as well, which is a
+		// speed-up...
+
 		bool m_tms5220_speaking; // Speak or Speak External command in progress
 		bool m_speak_external; // Speak External command in progress
 		bool m_talk_status; // tms5220 is really currently speaking
@@ -381,17 +381,17 @@ void TMS5220::ReadEnable()
 
 // From the data sheet:
 //
-// bit 0 = TS - Talk Status is active (high) when the VSP is processing speech data.
+// bit D0(bit 7) = TS - Talk Status is active (high) when the VSP is processing speech data.
 //         Talk Status goes active at the initiation of a Speak command or after nine
 //         bytes of data are loaded into the FIFO following a Speak External command. It
 //         goes inactive (low) when the stop code (Energy=1111) is processed, or
 //         immediately by a buffer empty condition or a reset command.
-// bit 1 = BL - Buffer Low is active (high) when the FIFO buffer is more than half empty.
+// bit D1(bit 6) = BL - Buffer Low is active (high) when the FIFO buffer is more than half empty.
 //         Buffer Low is set when the "Last-In" byte is shifted down past the half-full
 //         boundary of the stack. Buffer Low is cleared when data is loaded to the stack
 //         so that the "Last-In" byte lies above the half-full boundary and becomes the
 //         ninth data byte of the stack.
-// bit 2 = BE - Buffer Empty is active (high) when the FIFO buffer has run out of data
+// bit D2(bit 5) = BE - Buffer Empty is active (high) when the FIFO buffer has run out of data
 //         while executing a Speak External command. Buffer Empty is set when the last bit
 //         of the "Last-In" byte is shifted out to the Synthesis Section. This causes
 //         Talk Status to be cleared. Speed is terminated at some abnormal point and the
