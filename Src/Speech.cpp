@@ -640,21 +640,6 @@ tryagain:
 		m_buffer_empty = false;
 	}
 
-#if 0
-	// We are to speak, yet we fill with 0s until start of next frame
-	if (m_first_frame)
-	{
-		while (size > 0 && (m_sample_count != 0 || m_interp_count != 0))
-		{
-			m_sample_count = (m_sample_count + 1) % 200;
-			m_interp_count = (m_interp_count + 1) % 25;
-			buffer[buf_count] = 0x80; // should be (-1 << 8) ??? (cf note in data sheet, p 10, table 4)
-			buf_count++;
-			size--;
-		}
-	}
-#endif
-
 	// Loop until the buffer is full or we've stopped speaking
 	while (size > 0 && m_talk_status)
 	{
