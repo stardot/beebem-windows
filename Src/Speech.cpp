@@ -147,7 +147,7 @@ static const short k10table[0x08] = {
 
 // Chirp table
 
-static const char chirptable[41] = {
+static const char chirptable[51] = {
 	0x00, 0x2a, (char)0xd4, 0x32,
 	(char)0xb2, 0x12, 0x25, 0x14,
 	0x02, (char)0xe1, (char)0xc5, 0x02,
@@ -158,7 +158,9 @@ static const char chirptable[41] = {
 	0x0f, (char)0xff, (char)0xf8, (char)0xee,
 	(char)0xed, (char)0xef, (char)0xf7, (char)0xf6,
 	(char)0xfa, 0x00, 0x03, 0x02,
-	0x01
+	0x01, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00
 };
 
 // Interpolation coefficients (in rightshifts, as in actual chip)
@@ -784,7 +786,22 @@ tryagain:
 		else
 		{
 			// Generate voiced samples here
-			m_excitation_data = chirptable[m_pitch_count % sizeof(chirptable)];
+
+			// US patent 4331836 Figure 14B shows, and logic would hold,
+			// that a pitch based chirp function has a chirp/peak and then a
+			// long chain of zeroes. The last entry of the chirp rom is at
+			// address 0b110011 (50d), the 51st sample, and if the address
+			// reaches that point the ADDRESS incrementer is disabled, forcing
+			// all samples beyond 50d to be == 50d (address 50d holds zeroes)
+
+			if (m_pitch_count > 50)
+			{
+				m_excitation_data = chirptable[50];
+			}
+			else
+			{
+				m_excitation_data = chirptable[m_pitch_count];
+			}
 		}
 
 		int bitout = ((m_rng >> 12) & 1) ^
