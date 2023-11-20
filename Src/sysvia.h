@@ -45,7 +45,6 @@ void BeebKeyDown(int row, int col);
 void BeebReleaseAllKeys(void);
 
 void SysVIATriggerCA1Int(int value);
-extern unsigned char IC32State;
 
 // Master 128 MC146818AP Real-Time Clock and RAM
 void RTCInit();

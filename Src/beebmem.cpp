@@ -57,6 +57,7 @@ Boston, MA  02110-1301, USA.
 #include "z80.h"
 #include "Econet.h" // Rob
 #include "Debug.h" // Rob added for INTON/OFF reporting only
+#include "IC32Latch.h"
 #include "Teletext.h"
 #include "music5000.h"
 
@@ -156,7 +157,7 @@ static int WrapAddr(int Address) {
     return Address;
   }
 
-  Address += offsets[(IC32State & 0x30) >> 4];
+  Address += offsets[(IC32State & IC32_SCREEN_ADDRESS) >> 4];
   Address &= 0x7fff;
 
   return Address;

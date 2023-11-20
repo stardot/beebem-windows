@@ -39,6 +39,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "Main.h"
 #include "Debug.h"
 #include "DebugTrace.h"
+#include "IC32Latch.h"
 #include "Speech.h"
 
 // Shift register stuff
@@ -54,11 +55,6 @@ bool JoystickButton[2] = { false, false };
 VIAState SysVIAState;
 char WECycles=0;
 char WEState=0;
-
-/* State of the 8bit latch IC32 - bit 0 is WE for sound gen, B1 is read
-   select on speech proc, B2 is write select on speech proc, b4,b5 select
-   screen start address offset , b6 is CAPS lock, b7 is shift lock */
-unsigned char IC32State=0;
 
 /* Last value written to the slow data bus - sound reads it later */
 static unsigned char SlowDataBusWriteValue=0;
@@ -163,8 +159,10 @@ void DoKbdIntCheck() {
   int Oldflag=(SysVIAState.ifr & 1);
 #endif
 
-  if ((KeysDown>0) && ((SysVIAState.pcr & 0xc)==4)) {
-    if ((IC32State & 8)==8) {
+  if (KeysDown > 0 && (SysVIAState.pcr & 0xc) == 4)
+  {
+    if (IC32State & IC32_KEYBOARD_WRITE)
+    {
       SysVIAState.ifr|=1; /* CA2 */
       // DebugTrace("DoKbdIntCheck: Caused interrupt case 1\n");
       UpdateIFRTopBit();
@@ -185,7 +183,7 @@ void DoKbdIntCheck() {
 #ifdef KBDDEBUG
   DebugTrace("DoKbdIntCheck KeysDown=%d pcr & c=%d IC32State & 8=%d "
              "KBDRow=%d KBDCol=%d oldIFRflag=%d Newflag=%d\n",
-             KeysDown, SysVIAState.pcr & 0xc, IC32State & 8,
+             KeysDown, SysVIAState.pcr & 0xc, IC32State & IC32_KEYBOARD_WRITE,
              KBDRow, KBDCol, Oldflag, SysVIAState.ifr & 1);
 #endif
 }
@@ -213,22 +211,29 @@ static bool KbdOP() {
 }
 
 /*--------------------------------------------------------------------------*/
-static void IC32Write(unsigned char Value) {
+
+static void IC32Write(unsigned char Value)
+{
   // Hello. This is Richard Gellman. It is 10:25pm, Friday 2nd February 2001
   // I have to do CMOS RAM now. And I think I'm going slightly potty.
   // Additional, Sunday 4th February 2001. I must have been potty. the line above did read January 2000.
-  int bit;
-  int oldval=IC32State;
+  int PrevIC32State = IC32State;
   bool tmpCMOSState;
 
-  bit=Value & 7;
-  if (Value & 8) {
-    IC32State|=(1<<bit);
-  } else {
-    IC32State&=0xff-(1<<bit);
+  int Bit = Value & 7;
+
+  if (Value & 8)
+  {
+    IC32State |= 1 << Bit;
   }
-  LEDs.CapsLock=((IC32State&64)==0);
-  LEDs.ShiftLock=((IC32State&128)==0);
+  else
+  {
+    IC32State &= ~(1 << Bit);
+  }
+
+  LEDs.CapsLock = (IC32State & IC32_CAPS_LOCK) == 0;
+  LEDs.ShiftLock = (IC32State & IC32_SHIFT_LOCK) == 0;
+
   /* hmm, CMOS RAM? */
   // Monday 5th February 2001 - Scrapped my CMOS code, and restarted as according to the bible of the god Tom Lees
   CMOS.Op = (IC32State & 2) != 0;
@@ -243,10 +248,12 @@ static void IC32Write(unsigned char Value) {
   }
 
   /* Must do sound reg access when write line changes */
-#ifdef SOUNDSUPPORT
-  if (((oldval & 1)) && (!(IC32State & 1))) { Sound_RegWrite(SlowDataBusWriteValue); }
-  // now, this was a change from 0 to 1, but my docs say its a change from 1 to 0. might work better this way.
-#endif
+
+  if ((PrevIC32State & IC32_SOUND_WRITE) && !(IC32State & IC32_SOUND_WRITE))
+  {
+    Sound_RegWrite(SlowDataBusWriteValue);
+  }
+
   // DebugTrace("IC32State now=%x\n", IC32State);
 
   if (bit == 2 && (Value & 8) == 0 && MachineType != Model::Master128) // Write Command
@@ -254,9 +261,10 @@ static void IC32Write(unsigned char Value) {
     SpeechWrite(SlowDataBusWriteValue);
   }
 
-  if (!(IC32State & 8) && (oldval & 8)) {
-    KBDRow=(SlowDataBusWriteValue>>4) & 7;
-    KBDCol=(SlowDataBusWriteValue & 0xf);
+  if (!(IC32State & IC32_KEYBOARD_WRITE) && (PrevIC32State & IC32_KEYBOARD_WRITE))
+  {
+    KBDRow = (SlowDataBusWriteValue >> 4) & 7;
+    KBDCol = (SlowDataBusWriteValue & 0xf);
     DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
   }
 }
@@ -268,46 +276,56 @@ void ChipClock(int /* nCycles */) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void SlowDataBusWrite(unsigned char Value) {
-  SlowDataBusWriteValue=Value;
+
+static void SlowDataBusWrite(unsigned char Value)
+{
+  SlowDataBusWriteValue = Value;
   // DebugTrace("Slow data bus write IC32State=%d Value=0x%02x\n", IC32State, Value);
-  if (!(IC32State & 8)) {
-    KBDRow=(Value>>4) & 7;
-    KBDCol=(Value & 0xf);
+  if ((IC32State & IC32_KEYBOARD_WRITE) == 0)
+  {
+    /* kbd write */
+    KBDRow = (Value >> 4) & 7;
+    KBDCol = Value & 0xf;
     // DebugTrace("SlowDataBusWrite to kbd  Row=%d Col=%d\n", KBDRow, KBDCol);
     DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
-  } /* kbd write */
+  }
 
   if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType == Model::Master128)
   {
     CMOSWrite(CMOS.Address,Value);
   }
 
-#ifdef SOUNDSUPPORT
-  if (!(IC32State & 1)) {
-		Sound_RegWrite(SlowDataBusWriteValue);
-  } 
-#endif
-
+  if ((IC32State & IC32_SOUND_WRITE) == 0)
+  {
+    Sound_RegWrite(SlowDataBusWriteValue);
+  }
 }
 
 /*--------------------------------------------------------------------------*/
-static unsigned char SlowDataBusRead() {
+
+static unsigned char SlowDataBusRead()
+{
   if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128)
   {
     SysVIAState.ora = CMOSRead(CMOS.Address); // SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
   }
 
   unsigned char result = SysVIAState.ora & SysVIAState.ddra;
-  if (CMOS.Enabled) result=(SysVIAState.ora & ~SysVIAState.ddra);
+  if (CMOS.Enabled) result = SysVIAState.ora & ~SysVIAState.ddra;
+
   /* I don't know this lot properly - just put in things as we figure them out */
-  if (MachineType != Model::Master128) if (!(IC32State & 8)) { if (KbdOP()) result|=128; }
-  if ((MachineType == Model::Master128) && !CMOS.Enabled) {
-    if (KbdOP()) result |= 128;
+
+  if (MachineType != Model::Master128)
+  {
+    if ((IC32State & IC32_KEYBOARD_WRITE) == 0)
+    {
+      if (KbdOP()) result |= 128;
+    }
   }
 
-  if (!(IC32State & 2) && MachineType != Model::Master128) {
-    result = SpeechRead();
+  if ((MachineType == Model::Master128) && !CMOS.Enabled)
+  {
+    if (KbdOP()) result |= 128;
   }
 
   if ((!(IC32State & 4)) && (MachineType != Model::Master128) ) {
@@ -338,10 +356,11 @@ void SysVIAWrite(int Address, unsigned char Value)
       SysVIAState.ifr&=~16;
       SysVIAState.orb = Value;
       IC32Write(Value);
+
       CMOS.Enabled = (Value & 64) != 0; // CMOS Chip select
-      CMOS.Address=(((Value & 128)>>7)) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
-      if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20)==0)) {
-        SysVIAState.ifr&=0xf7;
+      CMOS.Address = (Value & 128) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
+      if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20) == 0)) {
+        SysVIAState.ifr &= 0xf7;
         UpdateIFRTopBit();
       }
       SysVIAState.ifr&=~16;
