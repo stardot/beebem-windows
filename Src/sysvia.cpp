@@ -256,9 +256,17 @@ static void IC32Write(unsigned char Value)
 
   // DebugTrace("IC32State now=%x\n", IC32State);
 
-  if (bit == 2 && (Value & 8) == 0 && MachineType != Model::Master128) // Write Command
+  if (MachineType != Model::Master128)
   {
-    SpeechWrite(SlowDataBusWriteValue);
+    if ((PrevIC32State & IC32_SPEECH_WRITE) && !(IC32State & IC32_SPEECH_WRITE))
+    {
+      SpeechWrite(SlowDataBusWriteValue);
+    }
+
+    if ((PrevIC32State & IC32_SPEECH_READ) && !(IC32State & IC32_SPEECH_READ))
+    {
+      SpeechReadEnable();
+    }
   }
 
   if (!(IC32State & IC32_KEYBOARD_WRITE) && (PrevIC32State & IC32_KEYBOARD_WRITE))
@@ -328,8 +336,17 @@ static unsigned char SlowDataBusRead()
     if (KbdOP()) result |= 128;
   }
 
-  if ((!(IC32State & 4)) && (MachineType != Model::Master128) ) {
-    result = 0xff;
+  if (MachineType != Model::Master128)
+  {
+    if ((IC32State & IC32_SPEECH_READ) == 0)
+    {
+      result = SpeechRead();
+    }
+
+    if ((IC32State & IC32_SPEECH_WRITE) == 0)
+    {
+      result = 0xff;
+    }
   }
 
   // DebugTrace("SlowDataBusRead giving 0x%02x\n", result);
@@ -497,28 +514,44 @@ unsigned char SysVIARead(int Address)
   switch (Address) {
     case 0: /* IRB read */
 	  // Clear bit 4 of IFR from ATOD Conversion
-      SysVIAState.ifr&=~16;
-      tmp=SysVIAState.orb & SysVIAState.ddrb;
+      SysVIAState.ifr &= ~16;
+      tmp = SysVIAState.orb & SysVIAState.ddrb;
+
       if (!JoystickButton[1])
-        tmp |= 32;
-      if (!JoystickButton[0])
-        tmp |= 16;
-      if (MachineType == Model::Master128)
       {
-        tmp |= 192; /* Speech system non existant */
+        tmp |= 0x20;
+      }
+
+      if (!JoystickButton[0])
+      {
+        tmp |= 0x10;
+      }
+
+      if (MachineType == Model::Master128 || !SpeechDefault)
+      {
+        tmp |= 0xc0; // Speech system non existant
       }
       else
       {
-        if (SpeechDefault)
+        if (SpeechInterrupt()) // Flag is active low
         {
-          if (SpeechInterrupt()) tmp |= 64;
-          if (SpeechReady() == 0) tmp |= 128;
+          tmp |= 0x40;
         }
         else
         {
-          tmp |= 192; /* Speech system non existant */
+          tmp &= ~0x40;
+        }
+
+        if (SpeechReady()) // Flag is active low
+        {
+          tmp |= 0x80;
+        }
+        else
+        {
+          tmp &= ~0x80;
         }
       }
+
       UpdateIFRTopBit();
       break;
 

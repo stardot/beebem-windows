@@ -43,20 +43,13 @@ POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <time.h>
+#include <stdlib.h>
 
 #include "Speech.h"
-
-#include "6502core.h"
 #include "beebsound.h"
-#include "beebmem.h"
 #include "beebwin.h"
-#include "sysvia.h"
-#include "via.h"
 #include "Main.h"
-#include "Debug.h"
+#include "Log.h"
 
 constexpr int FRAC_BITS = 14;
 constexpr int FRAC_ONE  = 1 << FRAC_BITS;
@@ -95,7 +88,9 @@ struct TMS5220
 	bool last_frame; /* we are doing the frame of sound */
 	bool buffer_low; /* FIFO has less than 8 bytes in it */
 	bool buffer_empty; /* FIFO is empty*/
-	bool irq_pin; /* state of the IRQ pin (output) */
+	bool interrupt; /* true to interrupt (active high), convert to active low in SpeechInterrupt() */
+	bool ready; /* true if ready (active high), convert to active low in SpeechReady() */
+	int ready_count; /* countdown timer to reset the ready flag after read/write enable is asserted */
 
 	/* these contain data describing the current and previous voice frames */
 	uint16_t old_energy;
@@ -135,8 +130,8 @@ struct tms5220_info
 {
 	int last_sample;
 	int curr_sample;
-	unsigned int source_step;
-	unsigned int source_pos;
+	int source_step;
+	int source_pos;
 	int clock;
 	TMS5220 *chip;
 };
@@ -258,25 +253,22 @@ static const char interp_coeff[8] = {
 	8, 8, 8, 4, 4, 2, 2, 1
 };
 
-#define DEBUG_5220 0
+#define ENABLE_LOG 0
 
 /* Static function prototypes */
 static void process_command(TMS5220 *tms);
 static int extract_bits(TMS5220 *tms, int count);
 static int parse_frame(TMS5220 *tms, bool first_frame);
 static void check_buffer_low(TMS5220 *tms);
-static void set_interrupt_state(TMS5220 *tms, bool state);
 
-static TMS5220 *tms5220_create(void);
+static TMS5220 *tms5220_create();
 static void tms5220_destroy(TMS5220 *tms);
 static void tms5220_set_frequency(int frequency);
-//static void tms5220_update(void *param, stream_sample_t **inputs, stream_sample_t **buffer, int length);
-static void tms5220_process(TMS5220 *chip, short int *buffer, unsigned int size);
-static void tms5220_reset_chip(TMS5220 *tms);
-static void tms5220_data_write(TMS5220 *tms, int data);
+static void tms5220_process(TMS5220 *chip, short int *buffer, int size);
+static void tms5220_reset(TMS5220 *tms);
+static void tms5220_read_enable(TMS5220 *tms);
+static void tms5220_data_write(TMS5220 *tms, unsigned char data);
 static unsigned char tms5220_status_read(TMS5220 *tms);
-static bool tms5220_ready_read(TMS5220 *tms);
-static int tms5220_cycles_to_ready(TMS5220 *tms);
 static bool tms5220_int_read(TMS5220 *tms);
 
 bool SpeechDefault;
@@ -347,13 +339,9 @@ void BeebReadPhroms()
 	fclose(RomCfg);
 }
 
-static void my_irq(int /* state */)
+static int DoRead(TMS5220 *tms, int count)
 {
-}
-
-static int my_read(int count)
-{
-	int phrom = (tms5220->chip->phrom_address >> 14) & 0xf;
+	int phrom = (tms->phrom_address >> 14) & 0xf;
 
 	// fprintf(stderr, "In my_read with addr = 0x%04x, phrom = 0x%02x, count = %d", addr, phrom, count);
 
@@ -361,32 +349,21 @@ static int my_read(int count)
 
 	while (count--)
 	{
-		int addr = tms5220->chip->phrom_address & 0x3fff;
-		val = (val << 1) | ((phrom_rom[phrom][addr] >> tms5220->chip->phrom_bits_taken) & 1);
-		tms5220->chip->phrom_bits_taken++;
-		if (tms5220->chip->phrom_bits_taken >= 8)
+		int addr = tms->phrom_address & 0x3fff;
+
+		val = (val << 1) | ((phrom_rom[phrom][addr] >> tms->phrom_bits_taken) & 1);
+
+		tms->phrom_bits_taken++;
+
+		if (tms->phrom_bits_taken >= 8)
 		{
-			tms5220->chip->phrom_address++;
-			tms5220->chip->phrom_bits_taken = 0;
+			tms->phrom_address++;
+			tms->phrom_bits_taken = 0;
 		}
 	}
 
 	// fprintf(stderr, ", returning 0x%02x\n", val);
 	return val;
-}
-
-static void my_load_address(int data)
-{
-	// fprintf(stderr, "In my_load_address with data = %d\n", data);
-	tms5220->chip->phrom_address >>= 4;
-	tms5220->chip->phrom_address &= 0x0ffff;
-	tms5220->chip->phrom_address |= (data << 16);
-	// fprintf(stderr, "In my_load_address with data = 0x%02x, new address = 0x%05x\n", data, tms5220->chip->phrom_address);
-}
-
-static void my_read_and_branch()
-{
-	// fprintf(stderr, "In my_read_and_branch\n");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -407,7 +384,7 @@ void SpeechStart()
 	tms5220->clock = clock;
 
 	tms5220->chip = tms5220_create();
-	if (!tms5220->chip)
+	if (tms5220->chip == nullptr)
 	{
 		free(tms5220);
 		tms5220 = nullptr;
@@ -415,7 +392,7 @@ void SpeechStart()
 	}
 
 	/* reset the 5220 */
-	tms5220_reset_chip(tms5220->chip);
+	tms5220_reset(tms5220->chip);
 
 	/* set the initial frequency */
 	tms5220_set_frequency(clock);
@@ -445,11 +422,19 @@ void SpeechStop()
 
 // Write data to the sound chip
 
-void SpeechWrite(int data)
+void SpeechWrite(unsigned char Data)
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
-		tms5220_data_write(tms5220->chip, data);
+		tms5220_data_write(tms5220->chip, Data);
+	}
+}
+
+void SpeechReadEnable()
+{
+	if (SpeechEnabled && tms5220 != nullptr)
+	{
+		tms5220_read_enable(tms5220->chip);
 	}
 }
 
@@ -461,7 +446,14 @@ unsigned char SpeechRead()
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
-		return tms5220_status_read(tms5220->chip);
+		unsigned char Value = tms5220_status_read(tms5220->chip);
+
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220: read speech %02X\n", PrePC, Value);
+		#endif
+
+		return Value;
+
 	}
 	else
 	{
@@ -477,7 +469,7 @@ bool SpeechReady()
 {
 	if (SpeechEnabled && tms5220 != nullptr)
 	{
-		return tms5220_ready_read(tms5220->chip);
+		return !tms5220->chip->ready;
 	}
 	else
 	{
@@ -509,11 +501,9 @@ void SpeechUpdate(unsigned char *buff, int length)
 {
 	int16_t sample_data[MAX_SAMPLE_CHUNK];
 	int16_t *curr_data = sample_data;
-	int16_t prev = tms5220->last_sample;
-	int16_t curr = tms5220->curr_sample;
+	int prev = tms5220->last_sample;
+	int curr = tms5220->curr_sample;
 	unsigned char *buffer = buff;
-	uint32_t final_pos;
-	uint32_t new_samples;
 
 	/* finish off the current sample */
 	if (tms5220->source_pos > 0)
@@ -521,7 +511,7 @@ void SpeechUpdate(unsigned char *buff, int length)
 		/* interpolate */
 		while (length > 0 && tms5220->source_pos < FRAC_ONE)
 		{
-			int32_t samp = (((int32_t)prev * (int32_t)(FRAC_ONE - tms5220->source_pos)) + ((int32_t)curr * (int32_t)tms5220->source_pos)) >> FRAC_BITS;
+			int samp = ((prev * (FRAC_ONE - tms5220->source_pos)) + (curr * tms5220->source_pos)) >> FRAC_BITS;
 			// samp = ((samp + 32768) >> 8) & 255;
 			// fprintf(stderr, "Sample = %d\n", samp);
 			*buffer++ = samp;
@@ -544,8 +534,8 @@ void SpeechUpdate(unsigned char *buff, int length)
 	}
 
 	/* compute how many new samples we need */
-	final_pos = tms5220->source_pos + length * tms5220->source_step;
-	new_samples = (final_pos + FRAC_ONE - 1) >> FRAC_BITS;
+	int final_pos = tms5220->source_pos + length * tms5220->source_step;
+	int new_samples = (final_pos + FRAC_ONE - 1) >> FRAC_BITS;
 	if (new_samples > MAX_SAMPLE_CHUNK)
 		new_samples = MAX_SAMPLE_CHUNK;
 
@@ -560,7 +550,7 @@ void SpeechUpdate(unsigned char *buff, int length)
 		/* interpolate */
 		while (length > 0 && tms5220->source_pos < FRAC_ONE)
 		{
-			int32_t samp = (((INT32)prev * (int32_t)(FRAC_ONE - tms5220->source_pos)) + ((INT32)curr * (int32_t)tms5220->source_pos)) >> FRAC_BITS;
+			int samp = ((prev * (FRAC_ONE - tms5220->source_pos)) + (curr * tms5220->source_pos)) >> FRAC_BITS;
 			// samp = ((samp + 32768) >> 8) & 255;
 			// fprintf(stderr, "Sample = %d\n", samp);
 			*buffer++ = samp;
@@ -574,7 +564,7 @@ void SpeechUpdate(unsigned char *buff, int length)
 			tms5220->source_pos -= FRAC_ONE;
 			prev = curr;
 			curr = *curr_data++;
-			if ((curr_data - sample_data) > MAX_SAMPLE_CHUNK)
+			if (curr_data - sample_data > MAX_SAMPLE_CHUNK)
 				curr_data = sample_data;
 		}
 	}
@@ -595,8 +585,7 @@ tms5220_set_frequency -- adjusts the playback frequency
 
 void tms5220_set_frequency(int frequency)
 {
-	// tms5220->source_step = (UINT32)((double)(frequency / 80) * (double)FRAC_ONE / (double) 44100.0);
-	tms5220->source_step = (UINT32)((double)(frequency / 80) * (double)FRAC_ONE / (double) SoundSampleRate);
+	tms5220->source_step = (int)((double)(frequency / 80) * (double)FRAC_ONE / (double)SoundSampleRate);
 
 	// fprintf(stderr, "Source Step = %d, FRAC_ONE = %d, FRAC_BITS = %d\n", tms5220->source_step, FRAC_ONE, FRAC_BITS);
 }
@@ -613,13 +602,11 @@ void tms5220_destroy(TMS5220 *tms)
 	free(tms);
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_reset -- resets the TMS5220
+// Resets the TMS5220
 
-***********************************************************************************************/
-
-static void tms5220_reset_chip(TMS5220 *tms)
+static void tms5220_reset(TMS5220 *tms)
 {
 	/* initialize the FIFO */
 	/*memset(tms->fifo, 0, sizeof(tms->fifo));*/
@@ -627,11 +614,13 @@ static void tms5220_reset_chip(TMS5220 *tms)
 
 	/* initialize the chip state */
 	/* Note that we do not actually clear IRQ on start-up : IRQ is even raised if tms->buffer_empty or tms->buffer_low are false */
-	tms->tms5220_speaking = tms->speak_external = tms->talk_status = tms->first_frame = tms->last_frame = tms->irq_pin = false;
-	my_irq(0);
+	tms->tms5220_speaking = tms->speak_external = tms->talk_status = tms->first_frame = tms->last_frame = tms->interrupt = false;
 	tms->buffer_empty = tms->buffer_low = true;
 
-	tms->RDB_flag = FALSE;
+	tms->RDB_flag = false;
+
+	tms->ready = true;
+	tms->ready_count = 0;
 
 	/* initialize the energy/pitch/k states */
 	tms->old_energy = tms->new_energy = tms->current_energy = tms->target_energy = 0;
@@ -650,13 +639,10 @@ static void tms5220_reset_chip(TMS5220 *tms)
 	tms->phrom_address = 0;
 }
 
-static void logerror(char *text, ...)
+static void tms5220_read_enable(TMS5220 *tms)
 {
-	va_list argptr;
-
-	va_start(argptr, text);
-	vfprintf(stderr, text, argptr);
-	va_end(argptr);
+	tms->ready = false;
+	tms->ready_count = 30;
 }
 
 /**********************************************************************************************
@@ -665,8 +651,12 @@ tms5220_data_write -- handle a write to the TMS5220
 
 ***********************************************************************************************/
 
-void tms5220_data_write(TMS5220 *tms, int data)
+void tms5220_data_write(TMS5220 *tms, unsigned char data)
 {
+	#if ENABLE_LOG
+	WriteLog("%04X TMS5220: Write %02X\n", PrePC, data);
+	#endif
+
 	/* add this byte to the FIFO */
 	if (tms->fifo_count < FIFO_SIZE)
 	{
@@ -680,11 +670,15 @@ void tms5220_data_write(TMS5220 *tms, int data)
 			tms->buffer_empty = false;
 		}
 
-		if (DEBUG_5220) logerror("Added byte to FIFO (size=%2d)\n", tms->fifo_count);
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220: Added byte to FIFO (size=%d)\n", PrePC, tms->fifo_count);
+		#endif
 	}
 	else
 	{
-		if (DEBUG_5220) logerror("Ran out of room in the FIFO! - PC = 0x%04x\n", ProgramCounter);
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220: Ran out of room in the FIFO!\n", PrePC);
+		#endif
 	}
 
 	/* update the buffer low state */
@@ -693,8 +687,11 @@ void tms5220_data_write(TMS5220 *tms, int data)
 	if (!tms->speak_external)
 	{
 		/* R Nabet : we parse commands at once.  It is necessary for such commands as read. */
-		process_command(tms/*data*/);
+		process_command(tms);
 	}
+
+	tms->ready = false;
+	tms->ready_count = 30;
 }
 
 /**********************************************************************************************
@@ -722,6 +719,8 @@ Speak External command execution is terminated.
 
 static unsigned char tms5220_status_read(TMS5220 *tms)
 {
+	tms->ready = true;
+
 	if (tms->RDB_flag)
 	{
 		/* if last command was read, return data register */
@@ -732,10 +731,13 @@ static unsigned char tms5220_status_read(TMS5220 *tms)
 	{
 		/* read status */
 
-		/* clear the interrupt pin */
-		set_interrupt_state(tms, false);
+		/* clear the interrupt state */
+		tms->interrupt = false;
 
-		if (DEBUG_5220) logerror("Status read: TS=%d BL=%d BE=%d\n", tms->talk_status, tms->buffer_low, tms->buffer_empty);
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220: Status read: TS=%d BL=%d BE=%d\n", PrePC, tms->talk_status, tms->buffer_low, tms->buffer_empty);
+		WriteLog("%04X TMS5220: Clear interrupt\n", PrePC);
+		#endif
 
 		return (tms->talk_status  ? 0x80 : 0x00) |
 		       (tms->buffer_low   ? 0x40 : 0x00) |
@@ -743,36 +745,20 @@ static unsigned char tms5220_status_read(TMS5220 *tms)
 	}
 }
 
+/*--------------------------------------------------------------------------*/
 
-/**********************************************************************************************
-
-tms5220_ready_read -- returns the ready state of the TMS5220
-
-***********************************************************************************************/
-
-static bool tms5220_ready_read(TMS5220 *tms)
-{
-	return tms->fifo_count < FIFO_SIZE - 1;
-}
-
-/**********************************************************************************************
-
-tms5220_int_read -- returns the interrupt state of the TMS5220
-
-***********************************************************************************************/
+// Returns the interrupt state of the TMS5220 (active low)
 
 static bool tms5220_int_read(TMS5220 *tms)
 {
-	return tms->irq_pin ;
+	return !tms->interrupt;
 }
 
-/**********************************************************************************************
+/*--------------------------------------------------------------------------*/
 
-tms5220_process -- fill the buffer with a specific number of samples
+// Fill the buffer with a specific number of samples
 
-***********************************************************************************************/
-
-void tms5220_process(TMS5220 *tms, int16_t *buffer, unsigned int size)
+void tms5220_process(TMS5220 *tms, int16_t *buffer, int size)
 {
 	int buf_count = 0;
 	int i, interp_period;
@@ -860,7 +846,11 @@ tryagain:
 					tms->talk_status = false;
 
 					/* generate an interrupt if necessary */
-					set_interrupt_state(tms, true);
+					tms->interrupt = true;
+
+					#if ENABLE_LOG
+					WriteLog("%04X TMS5220: Interrupt set\n", PrePC);
+					#endif
 				}
 
 				/* try to fetch commands again */
@@ -871,7 +861,6 @@ tryagain:
 				/* is this the ramp down frame? */
 				if (tms->new_energy == (energytable[15] >> 6))
 				{
-					/*printf("processing frame: ramp down\n");*/
 					tms->target_energy = 0;
 					tms->target_pitch = tms->current_pitch;
 					for (i = 0; i < 10; i++)
@@ -880,10 +869,6 @@ tryagain:
 				/* Reset the step size */
 				else
 				{
-					/*printf("processing frame: Normal\n");*/
-					/*printf("*** Energy = %d\n",tms->current_energy);*/
-					/*printf("proc: %d %d\n",last_fbuf_head,fbuf_head);*/
-
 					tms->target_energy = tms->new_energy;
 					tms->target_pitch = tms->new_pitch;
 
@@ -912,14 +897,11 @@ tryagain:
 		else if (tms->interp_count == 0)
 		{
 			/* Update values based on step values */
-			/*printf("\n");*/
 
 			interp_period = tms->sample_count / 25;
 			tms->current_energy += (tms->target_energy - tms->current_energy) / interp_coeff[interp_period];
 			if (tms->old_pitch != 0)
 				tms->current_pitch += (tms->target_pitch - tms->current_pitch) / interp_coeff[interp_period];
-
-			/*printf("*** Energy = %d\n",tms->current_energy);*/
 
 			for (i = 0; i < 10; i++)
 			{
@@ -1007,7 +989,7 @@ empty:
 	{
 		tms->sample_count = (tms->sample_count + 1) % 200;
 		tms->interp_count = (tms->interp_count + 1) % 25;
-		buffer[buf_count] = 0x80;	/* should be (-1 << 8) ??? (cf note in data sheet, p 10, table 4) */
+		buffer[buf_count] = 0x80; /* should be (-1 << 8) ??? (cf note in data sheet, p 10, table 4) */
 		buf_count++;
 		size--;
 	}
@@ -1022,7 +1004,7 @@ process_command -- extract a byte from the FIFO and interpret it as a command
 static void process_command(TMS5220 *tms)
 {
 	/* if there are stray bits, ignore them */
-	if (tms->fifo_bits_taken)
+	if (tms->fifo_bits_taken > 0)
 	{
 		tms->fifo_bits_taken = 0;
 		tms->fifo_count--;
@@ -1041,25 +1023,50 @@ static void process_command(TMS5220 *tms)
 		{
 			case 0x10: /* read byte */
 				tms->phrom_bits_taken = 0;
-				tms->data_register = my_read(8); /* read one byte from speech ROM... */
+				tms->data_register = DoRead(tms, 8); /* read one byte from speech ROM... */
 				tms->RDB_flag = true;
 				break;
 
 			case 0x30: /* read and branch */
-				if (DEBUG_5220) logerror("read and branch command received\n");
+				#if ENABLE_LOG
+				WriteLog("%04X TMS5220: read and branch\n", PrePC);
+				#endif
+
 				tms->RDB_flag = false;
-				my_read_and_branch();
+
+				// The Read and Branch command causes the VSP to initiate a Read
+				// and Branch function on the VSM. The VSP is not able to access
+				// the VSM for 240 microseconds after executing this command.
 				break;
 
-			case 0x40: /* load address */
+			case 0x40: { /* load address */
 				/* tms5220 data sheet says that if we load only one 4-bit nibble, it won't work.
 				This code does not care about this. */
-				my_load_address(cmd & 0x0f);
+				unsigned char data = cmd & 0x0f;
+
+				#if ENABLE_LOG
+				WriteLog("%04X TMS5220: load address cmd with data = 0x%02x\n", PrePC, data);
+				#endif
+
+				tms->phrom_address >>= 4;
+				tms->phrom_address &= 0x0ffff;
+				tms->phrom_address |= (data << 16);
+
+				#if ENABLE_LOG
+				WriteLog("%04X TMS5220: load address cmd with data = 0x%02x, new address = 0x%05x\n", PrePC, data, tms->phrom_address);
+				#endif
+
 				break;
+			}
 
 			case 0x50: /* speak */
+				#if ENABLE_LOG
+				WriteLog("%04X TMS5220: speak\n", PrePC);
+				#endif
+
 				tms->tms5220_speaking = true;
 				tms->speak_external = false;
+
 				if (!tms->last_frame)
 				{
 					tms->first_frame = true;
@@ -1069,6 +1076,10 @@ static void process_command(TMS5220 *tms)
 				break;
 
 			case 0x60: /* speak external */
+				#if ENABLE_LOG
+				WriteLog("%04X TMS5220: speak external\n", PrePC);
+				#endif
+
 				tms->tms5220_speaking = tms->speak_external = true;
 
 				tms->RDB_flag = false;
@@ -1077,14 +1088,23 @@ static void process_command(TMS5220 *tms)
 				if (!tms->buffer_empty)
 				{
 					tms->buffer_empty = true;
-					set_interrupt_state(tms, true);
+					tms->interrupt = true;
+
+					#if ENABLE_LOG
+					WriteLog("%04X TMS5220: Buffer empty set\n", PrePC);
+					WriteLog("%04X TMS5220: Interrupt set\n", PrePC);
+					#endif
 				}
 
 				tms->talk_status = false; /* wait to have 8 bytes in buffer before starting */
 				break;
 
 			case 0x70: /* reset */
-				tms5220_reset_chip(tms);
+				#if ENABLE_LOG
+				WriteLog("%04X TMS5220: reset\n", PrePC);
+				#endif
+
+				tms5220_reset(tms);
 				break;
 		}
 	}
@@ -1109,7 +1129,9 @@ static int extract_bits(TMS5220 *tms, int count)
 		while (count--)
 		{
 			val = (val << 1) | ((tms->fifo[tms->fifo_head] >> tms->fifo_bits_taken) & 1);
+
 			tms->fifo_bits_taken++;
+
 			if (tms->fifo_bits_taken >= 8)
 			{
 				tms->fifo_count--;
@@ -1121,7 +1143,7 @@ static int extract_bits(TMS5220 *tms, int count)
 	else
 	{
 		/* extract from speech ROM */
-		val = my_read(count);
+		val = DoRead(tms, count);
 	}
 
 	return val;
@@ -1136,21 +1158,20 @@ parse_frame -- parse a new frame's worth of data; returns 0 if not enough bits i
 static int parse_frame(TMS5220 *tms, bool first_frame)
 {
 	int bits = 0; /* number of bits in FIFO (speak external only) */
-	int indx, i, rep_flag;
 
 	if (!first_frame)
 	{
 		/* remember previous frame */
 		tms->old_energy = tms->new_energy;
 		tms->old_pitch = tms->new_pitch;
-		for (i = 0; i < 10; i++)
+		for (int i = 0; i < 10; i++)
 			tms->old_k[i] = tms->new_k[i];
 	}
 
 	/* clear out the new frame */
 	tms->new_energy = 0;
 	tms->new_pitch = 0;
-	for (i = 0; i < 10; i++)
+	for (int i = 0; i < 10; i++)
 		tms->new_k[i] = 0;
 
 	/* if the previous frame was a stop frame, don't do anything */
@@ -1174,13 +1195,16 @@ static int parse_frame(TMS5220 *tms, bool first_frame)
 		if (bits < 0)
 			goto ranout;
 	}
-	indx = extract_bits(tms, 4);
+
+	int indx = extract_bits(tms, 4);
 	tms->new_energy = energytable[indx] >> 6;
 
 	/* if the index is 0 or 15, we're done */
 	if (indx == 0 || indx == 15)
 	{
-		if (DEBUG_5220) logerror("  (4-bit energy=%d frame)\n",tms->new_energy);
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220:  (4-bit energy=%d frame)\n", PrePC, tms->new_energy);
+		#endif
 
 		/* clear tms->fifo if stop frame encountered */
 		if (indx == 15)
@@ -1199,7 +1223,8 @@ static int parse_frame(TMS5220 *tms, bool first_frame)
 		if (bits < 0)
 			goto ranout;
 	}
-	rep_flag = extract_bits(tms, 1);
+
+	int rep_flag = extract_bits(tms, 1);
 
 	/* attempt to extract the pitch */
 	if (tms->speak_external)
@@ -1214,10 +1239,13 @@ static int parse_frame(TMS5220 *tms, bool first_frame)
 	/* if this is a repeat frame, just copy the k's */
 	if (rep_flag)
 	{
-		for (i = 0; i < 10; i++)
+		for (int i = 0; i < 10; i++)
 			tms->new_k[i] = tms->old_k[i];
 
-		if (DEBUG_5220) logerror("  (11-bit energy=%d pitch=%d rep=%d frame)\n", tms->new_energy, tms->new_pitch, rep_flag);
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220:  (11-bit energy=%d pitch=%d rep=%d frame)\n", PrePC, tms->new_energy, tms->new_pitch, rep_flag);
+		#endif
+
 		goto done;
 	}
 
@@ -1236,7 +1264,10 @@ static int parse_frame(TMS5220 *tms, bool first_frame)
 		tms->new_k[2] = k3table[extract_bits(tms, 4)];
 		tms->new_k[3] = k4table[extract_bits(tms, 4)];
 
-		if (DEBUG_5220) logerror("  (29-bit energy=%d pitch=%d rep=%d 4K frame)\n", tms->new_energy, tms->new_pitch, rep_flag);
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220:  (29-bit energy=%d pitch=%d rep=%d 4K frame)\n", PrePC, tms->new_energy, tms->new_pitch, rep_flag);
+		#endif
+
 		goto done;
 	}
 
@@ -1259,23 +1290,29 @@ static int parse_frame(TMS5220 *tms, bool first_frame)
 	tms->new_k[8] = k9table[extract_bits(tms, 3)];
 	tms->new_k[9] = k10table[extract_bits(tms, 3)];
 
-	if (DEBUG_5220) logerror("  (50-bit energy=%d pitch=%d rep=%d 10K frame)\n", tms->new_energy, tms->new_pitch, rep_flag);
+	#if ENABLE_LOG
+	WriteLog("%04X TMS5220:  (50-bit energy=%d pitch=%d rep=%d 10K frame)\n", PrePC, tms->new_energy, tms->new_pitch, rep_flag);
+	#endif
 
 done:
-	if (DEBUG_5220)
+	#if ENABLE_LOG
+	if (tms->speak_external)
 	{
-		if (tms->speak_external)
-			logerror("Parsed a frame successfully in FIFO - %d bits remaining\n", bits);
-		else
-			logerror("Parsed a frame successfully in ROM\n");
+		WriteLog("%04X TMS5220: Parsed a frame successfully in FIFO - %d bits remaining\n", PrePC, bits);
 	}
+	else
+	{
+		WriteLog("%04X TMS5220: Parsed a frame successfully in ROM\n", PrePC);
+	}
+	#endif
 
 	if (first_frame)
 	{
 		/* if this is the first frame, no previous frame to take as a starting point */
 		tms->old_energy = tms->new_energy;
 		tms->old_pitch = tms->new_pitch;
-		for (i = 0; i < 10; i++)
+
+		for (int i = 0; i < 10; i++)
 			tms->old_k[i] = tms->new_k[i];
 	}
 
@@ -1284,7 +1321,9 @@ done:
 	return 1;
 
 ranout:
-	if (DEBUG_5220) logerror("Ran out of bits on a parse!\n");
+	#if ENABLE_LOG
+	WriteLog("%04X TMS5220: Ran out of bits on a parse!\n", PrePC);
+	#endif
 
 	/* this is an error condition; mark the buffer empty and turn off speaking */
 	tms->buffer_empty = true;
@@ -1294,7 +1333,12 @@ ranout:
 	tms->RDB_flag = false;
 
 	/* generate an interrupt if necessary */
-	set_interrupt_state(tms, true);
+	tms->interrupt = true;
+
+	#if ENABLE_LOG
+	WriteLog("TMS5220: Interrupt set\n");
+	#endif
+
 	return 0;
 }
 
@@ -1311,33 +1355,41 @@ static void check_buffer_low(TMS5220 *tms)
 	{
 		/* generate an interrupt if necessary */
 		if (!tms->buffer_low)
-			set_interrupt_state(tms, true);
-		tms->buffer_low = 1;
+		{
+			#if ENABLE_LOG
+			WriteLog("%04X TMS5220: Interrupt set\n", PrePC);
+			WriteLog("%04X TMS5220: Buffer low set\n", PrePC);
+			#endif
 
-		if (DEBUG_5220) logerror("Buffer low set\n");
+			tms->interrupt = true;
+		}
+
+		tms->buffer_low = true;
 	}
-
-	/* did we just become full? */
 	else
 	{
-		tms->buffer_low = 0;
+		/* did we just become full? */
+		tms->buffer_low = false;
 
-		if (DEBUG_5220) logerror("Buffer low cleared\n");
+		#if ENABLE_LOG
+		WriteLog("%04X TMS5220: Buffer low cleared\n", PrePC);
+		#endif
 	}
 }
 
-/**********************************************************************************************
-
-set_interrupt_state -- generate an interrupt
-
-***********************************************************************************************/
-
-static void set_interrupt_state(TMS5220 *tms, bool state)
+void SpeechPoll(int Cycles)
 {
-	if (state != tms->irq_pin)
+	if (!tms5220->chip->ready)
 	{
-		my_irq(state);
-	}
+		if (tms5220->chip->ready_count > 0)
+		{
+			tms5220->chip->ready_count -= Cycles;
 
-	tms->irq_pin = state;
+			if (tms5220->chip->ready_count <= 0)
+			{
+				tms5220->chip->ready_count = 0;
+				tms5220->chip->ready = true;
+			}
+		}
+	}
 }

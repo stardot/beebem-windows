@@ -23,11 +23,13 @@ Boston, MA  02110-1301, USA.
 
 void SpeechStart();
 void SpeechStop();
-void SpeechWrite(int data);
+void SpeechWrite(unsigned char Data);
+void SpeechReadEnable();
 unsigned char SpeechRead();
 bool SpeechReady();
 bool SpeechInterrupt();
 void SpeechUpdate(unsigned char *buff, int length);
+void SpeechPoll(int Cycles);
 
 extern bool SpeechDefault;
 extern bool SpeechEnabled;

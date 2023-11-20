@@ -56,6 +56,7 @@ Boston, MA  02110-1301, USA.
 #include "Arm.h"
 #include "SprowCoPro.h"
 #include "Master512CoPro.h"
+#include "Speech.h"
 
 #ifdef WIN32
 #define INLINE inline
@@ -3185,6 +3186,7 @@ static void PollHardware(unsigned int nCycles)
 	Disc8271Poll();
 	Music5000Poll(nCycles);
 	SoundPoll();
+	SpeechPoll(nCycles);
 	TeletextPoll();
 
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
