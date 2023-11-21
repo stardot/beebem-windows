@@ -49,6 +49,7 @@ Boston, MA  02110-1301, USA.
 #include "TapeControlDialog.h"
 #include "TapeMap.h"
 #include "Thread.h"
+#include "TouchScreen.h"
 
 // MC6850 control register bits
 constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;

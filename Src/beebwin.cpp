@@ -94,6 +94,7 @@ using std::max;
 #include "FolderSelectDialog.h"
 #include "DebugTrace.h"
 #include "TapeControlDialog.h"
+#include "TouchScreen.h"
 
 using namespace Gdiplus;
 

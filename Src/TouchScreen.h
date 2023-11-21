@@ -19,33 +19,15 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/*
- *  serialdevices.h
- *  BeebEm3
- *
- *  Created by Jon Welch on 28/08/2006.
- */
+#ifndef TOUCH_SCREEN_HEADER
+#define TOUCH_SCREEN_HEADER
 
-#ifndef SERIAL_DEVICES_HEADER
-#define SERIAL_DEVICES_HEADER
-
-enum class SerialType {
-	SerialPort,
-	TouchScreen,
-	IP232
-};
-
-extern SerialType SerialDestination;
-
-extern bool IP232Mode;
-extern bool IP232Raw;
-extern char IP232Address[256];
-extern int IP232Port;
-
-bool IP232Open();
-bool IP232Poll();
-void IP232Close();
-void IP232Write(unsigned char data);
-unsigned char IP232Read();
+void TouchScreenOpen();
+bool TouchScreenPoll();
+void TouchScreenClose();
+void TouchScreenWrite(unsigned char Data);
+unsigned char TouchScreenRead();
+void TouchScreenStore(unsigned char Data);
+void TouchScreenReadScreen(bool Check);
 
 #endif

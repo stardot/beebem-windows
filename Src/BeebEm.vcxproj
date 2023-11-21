@@ -222,6 +222,7 @@
     <ClCompile Include="TapeControlDialog.cpp" />
     <ClCompile Include="Teletext.cpp" />
     <ClCompile Include="Thread.cpp" />
+    <ClCompile Include="TouchScreen.cpp" />
     <ClCompile Include="tube.cpp" />
     <ClCompile Include="uef.cpp" />
     <ClCompile Include="UEFState.cpp" />
@@ -383,6 +384,7 @@
     <ClInclude Include="TarmacGlobals.h" />
     <ClInclude Include="Teletext.h" />
     <ClInclude Include="Thread.h" />
+    <ClInclude Include="TouchScreen.h" />
     <ClInclude Include="tube.h" />
     <ClInclude Include="uef.h" />
     <ClInclude Include="UEFState.h" />

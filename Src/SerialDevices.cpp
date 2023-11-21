@@ -40,23 +40,13 @@ Boston, MA  02110-1301, USA.
 
 #include "SerialDevices.h"
 #include "6502core.h"
-#include "uef.h"
 #include "Main.h"
 #include "Serial.h"
-#include "beebsound.h"
 #include "beebwin.h"
 #include "Debug.h"
 #include "DebugTrace.h"
-#include "UEFState.h"
-#include "csw.h"
-#include "uservia.h"
-#include "atodconv.h"
 #include "RingBuffer.h"
 #include "Thread.h"
-
-constexpr int TS_DELAY = 8192; // Cycles to wait for data to be TX'd or RX'd
-static int TouchScreenMode = 0;
-static int TouchScreenDelay;
 
 constexpr int IP232_CONNECTION_DELAY = 8192; // Cycles to wait after connection
 
@@ -88,6 +78,8 @@ int IP232Port;
 static bool ip232_flag_received = false;
 // static bool mStartAgain = false;
 
+// IP232 routines use InputBuffer as data coming in from the modem,
+// and OutputBuffer for data to be sent out to the modem.
 static RingBuffer InputBuffer;
 static RingBuffer OutputBuffer;
 
@@ -96,167 +88,6 @@ CycleCountT IP232RxTrigger=CycleCountTMax;
 static void EthernetReceivedData(unsigned char* pData, int Length);
 static void EthernetPortStore(unsigned char data);
 static void DebugReceivedData(unsigned char* pData, int Length);
-
-void TouchScreenOpen()
-{
-	InputBuffer.Reset();
-	OutputBuffer.Reset();
-	TouchScreenDelay = 0;
-}
-
-bool TouchScreenPoll()
-{
-	if (TouchScreenDelay > 0)
-	{
-		TouchScreenDelay--;
-		return false;
-	}
-
-	// Process data waiting to be received by BeebEm straight away
-	if (OutputBuffer.HasData())
-	{
-		return true;
-	}
-
-	if (InputBuffer.HasData())
-	{
-		unsigned char data = InputBuffer.GetData();
-
-		switch (data)
-		{
-			case 'M':
-				TouchScreenMode = 0;
-				break;
-
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-				TouchScreenMode = TouchScreenMode * 10 + data - '0';
-				break;
-
-			case '.':
-				// Mode 1 seems to be polled, sends a '?' and we reply with data
-				// Mode 129 seems to be send current values all time
-				DebugTrace("Setting touch screen mode to %d\n", TouchScreenMode);
-				break;
-
-			case '?':
-				if (TouchScreenMode == 1)
-				{
-					// Polled mode
-					TouchScreenReadScreen(false);
-				}
-				break;
-		}
-	}
-
-	if (TouchScreenMode == 129)
-	{
-		// Real time mode
-		TouchScreenReadScreen(true);
-	}
-	else if (TouchScreenMode == 130)
-	{
-		// Area mode - seems to be pressing with two fingers which we can't really do ??
-		TouchScreenReadScreen(true);
-	}
-
-	return false;
-}
-
-void TouchScreenWrite(unsigned char data)
-{
-	// DebugTrace("TouchScreenWrite 0x%02x\n", data);
-
-	if (InputBuffer.PutData(data))
-	{
-		TouchScreenDelay = TS_DELAY;
-	}
-	else
-	{
-		DebugTrace("TouchScreenWrite input buffer full\n");
-	}
-}
-
-unsigned char TouchScreenRead()
-{
-	unsigned char data = 0;
-
-	if (OutputBuffer.HasData())
-	{
-		data = OutputBuffer.GetData();
-		TouchScreenDelay = TS_DELAY;
-	}
-	else
-	{
-		DebugTrace("TouchScreenRead output buffer empty\n");
-	}
-
-	// DebugTrace("TouchScreenRead 0x%02x\n", data);
-
-	return data;
-}
-
-void TouchScreenClose()
-{
-}
-
-void TouchScreenStore(unsigned char data)
-{
-	if (!OutputBuffer.PutData(data))
-	{
-		DebugTrace("TouchScreenStore output buffer full\n");
-	}
-}
-
-void TouchScreenReadScreen(bool check)
-{
-	static int last_x = -1, last_y = -1, last_m = -1;
-
-	int x = (65535 - JoystickX) / (65536 / 120) + 1;
-	int y = JoystickY / (65536 / 90) + 1;
-
-	if (last_x != x || last_y != y || last_m != AMXButtons || !check)
-	{
-		// DebugTrace("JoystickX = %d, JoystickY = %d, last_x = %d, last_y = %d\n", JoystickX, JoystickY, last_x, last_y);
-
-		if (AMXButtons & AMX_LEFT_BUTTON)
-		{
-			TouchScreenStore(64 + ((x & 0xf0) >> 4));
-			TouchScreenStore(64 + (x & 0x0f));
-			TouchScreenStore(64 + ((y & 0xf0) >> 4));
-			TouchScreenStore(64 + (y & 0x0f));
-			TouchScreenStore('.');
-			// DebugTrace("Sending X = %d, Y = %d\n", x, y);
-		}
-		else
-		{
-			TouchScreenStore(64 + 0x0f);
-			TouchScreenStore(64 + 0x0f);
-			TouchScreenStore(64 + 0x0f);
-			TouchScreenStore(64 + 0x0f);
-			TouchScreenStore('.');
-			// DebugTrace("Screen not touched\n");
-		}
-
-		last_x = x;
-		last_y = y;
-		last_m = AMXButtons;
-	}
-}
-
-// Note - touchscreen routines use InputBuffer for data into the ts
-// and OutputBuffer as data from the touchscreen.
-// IP232 routines use InputBuffer as data coming in from the modem,
-// and OutputBuffer for data to be sent out to the modem,
-// i.e., the opposite way around!!       watch out!
 
 bool IP232Open()
 {
@@ -392,8 +223,6 @@ void IP232Close()
 
 void IP232Write(unsigned char data)
 {
-	// DebugTrace("TouchScreenWrite 0x%02x\n", data);
-
 	if (!OutputBuffer.PutData(data))
 	{
 		DebugTrace("IP232Write send buffer full\n");
