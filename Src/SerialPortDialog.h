@@ -33,7 +33,7 @@ class SerialPortDialog : public Dialog
 			HINSTANCE hInstance,
 			HWND hwndParent,
 			SerialType Destination,
-			const char* SerialPortName,
+			const char* PortName,
 			const char* IPAddress,
 			int IPPort,
 			bool IP232RawComms,
