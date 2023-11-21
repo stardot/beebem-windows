@@ -42,6 +42,8 @@ Boston, MA  02110-1301, USA.
 #include "Serial.h"
 #include "Thread.h"
 
+#define _MM_ // include MM mods
+
 constexpr int IP232_CONNECTION_DELAY = 8192; // Cycles to wait after connection
 
 class EthernetPortReadThread : public Thread
@@ -55,6 +57,10 @@ class EthernetPortStatusThread : public Thread
 	public:
 		virtual unsigned int ThreadFunc();
 };
+
+#ifdef _MM_
+static CRITICAL_SECTION shared_buffer_lock;//MM 26/11/21
+#endif
 
 // IP232
 static SOCKET EthernetSocket = INVALID_SOCKET; // Listen socket
@@ -71,6 +77,10 @@ int IP232Port;
 static bool ip232_flag_received = false;
 // static bool mStartAgain = false;
 
+//#ifdef _MM_
+bool IP232reset = true;
+//#endif
+
 // IP232 routines use InputBuffer as data coming in from the modem,
 // and OutputBuffer for data to be sent out to the modem.
 static RingBuffer InputBuffer;
@@ -84,6 +94,11 @@ static void DebugReceivedData(unsigned char* pData, int Length);
 
 bool IP232Open()
 {
+#ifdef _MM_
+	InitializeCriticalSection(&shared_buffer_lock); //MM 26/11/21
+	IP232reset = true;
+#endif
+
 	InputBuffer.Reset();
 	OutputBuffer.Reset();
 
@@ -182,6 +197,10 @@ bool IP232Poll()
 
 void IP232Close()
 {
+#ifdef _MM_
+	DeleteCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
+
 	if (EthernetSocket != INVALID_SOCKET)
 	{
 		DebugTrace("Closing IP232 socket\n");
@@ -216,6 +235,10 @@ void IP232Close()
 
 void IP232Write(unsigned char data)
 {
+#ifdef _MM_
+	EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
+
 	if (!OutputBuffer.PutData(data))
 	{
 		DebugTrace("IP232Write send buffer full\n");
@@ -223,11 +246,19 @@ void IP232Write(unsigned char data)
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Write send Buffer Full");
 	}
+
+#ifdef _MM_
+	LeaveCriticalSection(&shared_buffer_lock);//MM 26/11/21
+#endif
 }
 
 unsigned char IP232Read()
 {
 	unsigned char data = 0;
+
+#ifdef _MM_
+	EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
 
 	if (InputBuffer.HasData())
 	{
@@ -243,6 +274,10 @@ unsigned char IP232Read()
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: receive buffer empty");
 	}
+
+#ifdef _MM_
+	LeaveCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
 
 	return data;
 }
@@ -314,12 +349,20 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Sending to remote server");
 
+#ifdef _MM_
+				EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
+
 				BufferLength = 0;
 
 				while (OutputBuffer.HasData())
 				{
 					Buffer[BufferLength++] = OutputBuffer.GetData();
 				}
+
+#ifdef _MM_
+				LeaveCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
 
 				FD_ZERO(&fds);
 				static const timeval TimeOut = {0, 0};
@@ -377,7 +420,11 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 		{
 			ip232_flag_received = false;
 
+#ifdef _MM_
+			if (pData[i] == 0)
+#else
 			if (pData[i] == 1)
+#endif
 			{
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
@@ -386,7 +433,11 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 				SerialACIA.Status &= ~MC6850_STATUS_CTS; // CTS goes active low
 				SerialACIA.Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
 			}
+#ifdef _MM_
+			else if (pData[i] == 1)
+#else
 			else if (pData[i] == 0)
+#endif
 			{
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
@@ -421,6 +472,10 @@ void EthernetPortStore(unsigned char data)
 {
 	// much taken from Mac version by Jon Welch
 
+#ifdef _MM_
+	EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
+
 	if (!InputBuffer.PutData(data))
 	{
 		DebugTrace("EthernetPortStore output buffer full\n");
@@ -428,6 +483,10 @@ void EthernetPortStore(unsigned char data)
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: EthernetPortStore output buffer full");
 	}
+
+#ifdef _MM_
+	LeaveCriticalSection(&shared_buffer_lock); //MM 26/11/21
+#endif
 }
 
 unsigned int EthernetPortStatusThread::ThreadFunc()
@@ -484,7 +543,11 @@ unsigned int EthernetPortStatusThread::ThreadFunc()
 				rts = 0;
 			}
 
+#ifdef _MM_
+			if (rts != orts || IP232reset)
+#else
 			if (rts != orts)
+#endif
 			{
 				if (EthernetSocket != INVALID_SOCKET)
 				{
@@ -499,6 +562,10 @@ unsigned int EthernetPortStatusThread::ThreadFunc()
 				}
 
 				orts = rts;
+
+#ifdef _MM_
+				IP232reset = false;
+#endif
 			}
 		}
 
