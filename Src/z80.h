@@ -44,10 +44,6 @@ extern WORD IFF;
 
 /* see definitions for memory in mem_mmu.h */
 
-#ifdef DEBUG
-extern volatile int stopsim;
-#endif
-
 extern FASTWORK simz80(FASTREG PC);
 
 #define FLAG_C	1
