@@ -576,7 +576,7 @@ public:
 	bool WriteKeyMap(const char *filename, KeyMap *keymap);
 
 	MessageResult Report(MessageType type, const char *format, ...);
-	MessageResult Report(MessageType type, const char *format, va_list args);
+	MessageResult ReportV(MessageType type, const char *format, va_list args);
 
 	bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
 	bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, void* pData, int* pnSize);

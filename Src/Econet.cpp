@@ -2314,7 +2314,7 @@ static void EconetError(const char *Format, ...)
 		DebugDisplayTraceF(DebugType::Econet, true, Format, Args);
 	}
 
-	mainWin->Report(MessageType::Error, Format, Args);
+	mainWin->ReportV(MessageType::Error, Format, Args);
 
 	va_end(Args);
 }

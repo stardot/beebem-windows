@@ -5115,19 +5115,17 @@ void BeebWin::HandleTimer()
 
 MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 {
-	MessageResult Result;
-
 	va_list args;
 	va_start(args, format);
 
-	Result = Report(type, format, args);
+	MessageResult Result = ReportV(type, format, args);
 
 	va_end(args);
 
 	return Result;
 }
 
-MessageResult BeebWin::Report(MessageType type, const char *format, va_list args)
+MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list args)
 {
 	MessageResult Result = MessageResult::None;
 
