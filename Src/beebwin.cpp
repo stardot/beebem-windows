@@ -84,8 +84,7 @@ using std::max;
 #endif
 #include "Teletext.h"
 #include "avi.h"
-#include "csw.h"
-#include "SerialDevices.h"
+#include "IP232.h"
 #include "SerialPortDialog.h"
 #include "Arm.h"
 #include "version.h"

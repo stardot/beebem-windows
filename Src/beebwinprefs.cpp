@@ -48,7 +48,7 @@ Boston, MA  02110-1301, USA.
 #include "speech.h"
 #endif
 #include "Teletext.h"
-#include "SerialDevices.h"
+#include "IP232.h"
 #include "Arm.h"
 #include "SprowCoPro.h"
 

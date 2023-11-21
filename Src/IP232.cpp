@@ -20,12 +20,6 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 /*
- *  serialdevices.cc
- *  BeebEm3
- *
- *  Created by Jon Welch on 28/08/2006.
- *
-
  Remote serial port & IP232 support by Rob O'Donnell Mar 2009.
  . Raw mode connects and disconnects on RTS going up and down.
  . CTS reflects connection status.
@@ -38,7 +32,7 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 
-#include "SerialDevices.h"
+#include "IP232.h"
 #include "6502core.h"
 #include "Main.h"
 #include "Serial.h"
@@ -326,12 +320,11 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 				}
 
 				FD_ZERO(&fds);
-				tv.tv_sec = 0;
-				tv.tv_usec = 0;
+				static const timeval TimeOut = {0, 0};
 
 				FD_SET(EthernetSocket, &fds);
 
-				int NumReady = select(32, NULL, &fds, NULL, &tv); // Write
+				int NumReady = select(32, NULL, &fds, NULL, &TimeOut); // Write
 
 				if (NumReady <= 0)
 				{

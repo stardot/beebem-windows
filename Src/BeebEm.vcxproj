@@ -199,6 +199,7 @@
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="ide.cpp" />
+    <ClCompile Include="IP232.cpp" />
     <ClCompile Include="ListView.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -212,7 +213,6 @@
     <ClCompile Include="scsi.cpp" />
     <ClCompile Include="SelectKeyDialog.cpp" />
     <ClCompile Include="Serial.cpp" />
-    <ClCompile Include="SerialDevices.cpp" />
     <ClCompile Include="SerialPortDialog.cpp" />
     <ClCompile Include="SoundStreamer.cpp" />
     <ClCompile Include="SprowCoPro.cpp" />
@@ -359,6 +359,7 @@
     <ClInclude Include="ListView.h" />
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
+    <ClInclude Include="IP232.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Messages.h" />
@@ -373,7 +374,6 @@
     <ClInclude Include="scsi.h" />
     <ClInclude Include="SelectKeyDialog.h" />
     <ClInclude Include="Serial.h" />
-    <ClInclude Include="SerialDevices.h" />
     <ClInclude Include="SerialPortDialog.h" />
     <ClInclude Include="SoundStreamer.h" />
     <ClInclude Include="SprowCoPro.h" />

@@ -117,6 +117,9 @@
     <ClCompile Include="ide.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="IP232.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ListView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -154,9 +157,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Serial.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SerialDevices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SerialPortDialog.cpp">
@@ -362,6 +362,9 @@
     <ClInclude Include="ide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IP232.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ListView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -408,9 +411,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Serial.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SerialDevices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SerialPortDialog.h">

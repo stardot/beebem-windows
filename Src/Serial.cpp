@@ -44,7 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "Debug.h"
 #include "UEFState.h"
 #include "csw.h"
-#include "SerialDevices.h"
+#include "IP232.h"
 #include "Log.h"
 #include "TapeControlDialog.h"
 #include "TapeMap.h"

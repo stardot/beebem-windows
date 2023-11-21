@@ -19,13 +19,6 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/*
- *  serialdevices.h
- *  BeebEm3
- *
- *  Created by Jon Welch on 28/08/2006.
- */
-
 #ifndef SERIAL_DEVICES_HEADER
 #define SERIAL_DEVICES_HEADER
 
