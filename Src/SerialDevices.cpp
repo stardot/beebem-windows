@@ -69,7 +69,6 @@ static EthernetPortReadThread EthernetReadThread;
 static EthernetPortStatusThread EthernetStatusThread;
 
 // This bit is the Serial Port stuff
-SerialType SerialDestination;
 bool IP232Mode;
 bool IP232Raw;
 char IP232Address[256];

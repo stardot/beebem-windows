@@ -58,6 +58,8 @@ constexpr unsigned char MC6850_CONTROL_WORD_SELECT      = 0x1c;
 constexpr unsigned char MC6850_CONTROL_TRANSMIT_CONTROL = 0x60;
 constexpr unsigned char MC6850_CONTROL_RIE              = 0x80;
 
+SerialType SerialDestination;
+
 enum class SerialDevice : unsigned char {
 	Cassette,
 	RS423

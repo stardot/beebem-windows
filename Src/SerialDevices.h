@@ -29,14 +29,6 @@ Boston, MA  02110-1301, USA.
 #ifndef SERIAL_DEVICES_HEADER
 #define SERIAL_DEVICES_HEADER
 
-enum class SerialType {
-	SerialPort,
-	TouchScreen,
-	IP232
-};
-
-extern SerialType SerialDestination;
-
 extern bool IP232Mode;
 extern bool IP232Raw;
 extern char IP232Address[256];

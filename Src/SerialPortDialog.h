@@ -24,7 +24,7 @@ Boston, MA  02110-1301, USA.
 #include <string>
 
 #include "Dialog.h"
-#include "SerialDevices.h"
+#include "Serial.h"
 
 class SerialPortDialog : public Dialog
 {

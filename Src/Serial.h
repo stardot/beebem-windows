@@ -26,8 +26,17 @@ Boston, MA  02110-1301, USA.
 
 #include <vector>
 
+#include "6502core.h"
 #include "csw.h"
 #include "uef.h"
+
+enum class SerialType {
+	SerialPort,
+	TouchScreen,
+	IP232
+};
+
+extern SerialType SerialDestination;
 
 extern unsigned int Tx_Rate;
 extern unsigned int Rx_Rate;
