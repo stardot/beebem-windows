@@ -171,13 +171,12 @@ ARMul_ThumbDecode (ARMul_State * state,
          subset. */
       if ((tinstr & (1 << 10)) == 0)
 	{
+	  enum opcode_type { t_norm, t_shift, t_neg, t_mul };
 	  /* Format 4 */
 	  static const struct
 	  {
 	    ARMword opcode;
-	    enum
-	    { t_norm, t_shift, t_neg, t_mul }
-	    otype;
+	    opcode_type otype;
 	  }
 	  subset[16] =
 	  {

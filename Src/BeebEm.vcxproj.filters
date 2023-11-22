@@ -228,16 +228,16 @@
     <ClCompile Include="ARMulator\armdis.cpp">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
-    <ClCompile Include="ARMulator\armemu.c">
+    <ClCompile Include="ARMulator\armemu.cpp">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
-    <ClCompile Include="ARMulator\arminit.c">
+    <ClCompile Include="ARMulator\arminit.cpp">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
-    <ClCompile Include="ARMulator\armsupp.c">
+    <ClCompile Include="ARMulator\armsupp.cpp">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
-    <ClCompile Include="ARMulator\thumbemu.c">
+    <ClCompile Include="ARMulator\thumbemu.cpp">
       <Filter>Source Files\ARMulator</Filter>
     </ClCompile>
     <ClCompile Include="zlib\adler32.c">

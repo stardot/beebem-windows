@@ -20,10 +20,8 @@
 /* Arm/Thumb command set disassembler                                   */
 /************************************************************************/
 #include <stdio.h>
-extern "C"
-{
+
 #include "armdefs.h"
-}
 #include "armdis.h"
 
 struct Opcodes {

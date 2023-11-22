@@ -170,10 +170,10 @@
     <ClCompile Include="Arm.cpp" />
     <ClCompile Include="ArmDisassembler.cpp" />
     <ClCompile Include="ARMulator\armdis.cpp" />
-    <ClCompile Include="ARMulator\armemu.c" />
-    <ClCompile Include="ARMulator\arminit.c" />
-    <ClCompile Include="ARMulator\armsupp.c" />
-    <ClCompile Include="ARMulator\thumbemu.c" />
+    <ClCompile Include="ARMulator\armemu.cpp" />
+    <ClCompile Include="ARMulator\arminit.cpp" />
+    <ClCompile Include="ARMulator\armsupp.cpp" />
+    <ClCompile Include="ARMulator\thumbemu.cpp" />
     <ClCompile Include="atodconv.cpp" />
     <ClCompile Include="avi.cpp" />
     <ClCompile Include="Bcd.cpp" />

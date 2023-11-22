@@ -23,9 +23,6 @@
 
 #ifndef __ARMDIS_H__
 #define __ARMDIS_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define DIS_VIEW_ADDRESS 1
 #define DIS_VIEW_CODE 2
@@ -34,7 +31,5 @@ extern "C" {
 
 int disThumb(ARMul_State * state, u32 opcode, char *dest, int flags);
 int disArm(ARMul_State * state, u32 offset, char *dest, int flags);
-#ifdef __cplusplus
-}
-#endif
+
 #endif // __ARMDIS_H__

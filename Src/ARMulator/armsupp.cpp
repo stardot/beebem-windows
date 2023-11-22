@@ -702,7 +702,7 @@ ARMul_CDP (ARMul_State * state, ARMword instr)
 /* This function handles Undefined instructions, as CP isntruction.  */
 
 void
-ARMul_UndefInstr (ARMul_State * state, ARMword instr ATTRIBUTE_UNUSED)
+ARMul_UndefInstr (ARMul_State * state, ARMword /* instr */)
 {
     ARMul_Abort (state, ARMul_UndefinedInstrV);
 }
@@ -738,7 +738,7 @@ IntPending (ARMul_State * state)
 /* Align a word access to a non word boundary.  */
 
 ARMword
-ARMul_Align (ARMul_State *state ATTRIBUTE_UNUSED, ARMword address, ARMword data)
+ARMul_Align (ARMul_State * /* state */, ARMword address, ARMword data)
 {
     /* This code assumes the address is really unaligned,
     as a shift by 32 is undefined in C.  */

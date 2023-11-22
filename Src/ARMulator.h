@@ -23,20 +23,12 @@ Boston, MA  02110-1301, USA.
 #ifndef _ARMULATOR_H
 #define _ARMULATOR_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "ML675001.h"
 #include "ARMulator/armopts.h"
 #include "ARMulator/armos.h"
 #include "ARMulator/ansidecl.h"
 
 int stop_simulator = 0;
-
-#ifdef __cplusplus
-}
-#endif
 
 #define IFLAG (state->IFFlags >> 1)
 #define FFLAG (state->IFFlags & 1)

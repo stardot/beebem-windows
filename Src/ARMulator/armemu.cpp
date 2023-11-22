@@ -654,12 +654,12 @@ ARMul_Emulate26 (ARMul_State * state)
         dealing with the BL instruction.  */
         if (TFLAG)
         {
-            ARMword new;
+            ARMword newinstr;
 #if _DEBUG
             // disThumb(state, pc, state->disassembly, DIS_VIEW_ADDRESS | DIS_VIEW_CODE);
 #endif
             /* Check if in Thumb mode.  */
-            switch (ARMul_ThumbDecode (state, pc, instr, &new))
+            switch (ARMul_ThumbDecode (state, pc, instr, &newinstr))
             {
             case t_undefined:
                 /* This is a Thumb instruction.  */
@@ -672,7 +672,7 @@ ARMul_Emulate26 (ARMul_State * state)
 
             case t_decoded:
                 /* ARM instruction available.  */
-                instr = new;
+                instr = newinstr;
                 /* So continue instruction decoding.  */
                 break;
             default:
@@ -707,8 +707,6 @@ ARMul_Emulate26 (ARMul_State * state)
             {
                 if (BITS (25, 27) == 5) /* BLX(1) */
                 {
-                    ARMword dest;
-
                     state->Reg[14] = pc + 4;
 
                     /* Force entry into Thumb mode.  */
@@ -783,6 +781,7 @@ ARMul_Emulate26 (ARMul_State * state)
         {
             ARMword cp14r0;
             int ok;
+            int do_int = 0;
 
             ok = state->CPRead[14] (state, 0, & cp14r0);
 
@@ -813,7 +812,6 @@ ARMul_Emulate26 (ARMul_State * state)
                 else
                 {
                     ARMword cp14r1;
-                    int do_int = 0;
 
                     state->CP14R0_CCD = (ARMword)-1;
 check_PMUintr:
@@ -840,8 +838,6 @@ check_PMUintr:
 
                     if (do_int && (cp14r0 & ARMul_CP14_R0_INTEN2))
                     {
-                        ARMword temp;
-
                         if (state->CPRead[13] (state, 8, & temp)
                             && (temp & ARMul_CP13_R8_PMUS))
                             ARMul_Abort (state, ARMul_FIQV);
@@ -1581,8 +1577,6 @@ mainswitch:
                     if (BITS (4, 7) == 3)
                     {
                         /* BLX(2) */
-                        ARMword temp;
-
                         if (TFLAG)
                             temp = (pc + 2) | 1;
                         else
@@ -1751,7 +1745,7 @@ mainswitch:
                         /* ElSegundo SMLALxy insn.  */
                         ARMdword op1 = state->Reg[BITS (0, 3)];
                         ARMdword op2 = state->Reg[BITS (8, 11)];
-                        ARMdword dest;
+                        ARMdword dest64;
 
                         if (BIT (5))
                             op1 >>= 16;
@@ -1764,11 +1758,11 @@ mainswitch:
                         if (op2 & 0x8000)
                             op2 -= 65536;
 
-                        dest = (ARMdword) state->Reg[BITS (16, 19)] << 32;
-                        dest |= state->Reg[BITS (12, 15)];
-                        dest += op1 * op2;
-                        state->Reg[BITS (12, 15)] = (ARMword)dest;
-                        state->Reg[BITS (16, 19)] = (ARMword)(dest >> 32);
+                        dest64 = (ARMdword) state->Reg[BITS (16, 19)] << 32;
+                        dest64 |= state->Reg[BITS (12, 15)];
+                        dest64 += op1 * op2;
+                        state->Reg[BITS (12, 15)] = (ARMword)dest64;
+                        state->Reg[BITS (16, 19)] = (ARMword)(dest64 >> 32);
                         break;
                     }
 
