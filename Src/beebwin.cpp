@@ -607,9 +607,12 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		// 8271 disc
 		if (DiscLoaded[0] && CDiscType[0] == DiscType::SSD) LoadSimpleDiscImage(CDiscName[0], 0, 0, 80);
 		if (DiscLoaded[0] && CDiscType[0] == DiscType::DSD) LoadSimpleDSDiscImage(CDiscName[0], 0, 80);
+		if (DiscLoaded[0] && CDiscType[0] == DiscType::FSD) LoadFSDDiscImage(CDiscName[0], 0);
 		if (DiscLoaded[1] && CDiscType[1] == DiscType::SSD) LoadSimpleDiscImage(CDiscName[1], 1, 0, 80);
 		if (DiscLoaded[1] && CDiscType[1] == DiscType::DSD) LoadSimpleDSDiscImage(CDiscName[1], 1, 80);
+		if (DiscLoaded[1] && CDiscType[1] == DiscType::FSD) LoadFSDDiscImage(CDiscName[1], 1);
 	}
+
 	if ((MachineType != Model::Master128 && !NativeFDC) || (MachineType == Model::Master128)) {
 		// 1770 Disc
 		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
