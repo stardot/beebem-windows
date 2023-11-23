@@ -420,7 +420,7 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 		{
 			ip232_flag_received = false;
 
-#ifdef _MM_
+#ifndef _MM_
 			if (pData[i] == 0)
 #else
 			if (pData[i] == 1)
@@ -433,7 +433,7 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 				SerialACIA.Status &= ~MC6850_STATUS_CTS; // CTS goes active low
 				SerialACIA.Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
 			}
-#ifdef _MM_
+#ifndef _MM_
 			else if (pData[i] == 1)
 #else
 			else if (pData[i] == 0)
