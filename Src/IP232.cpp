@@ -42,8 +42,6 @@ Boston, MA  02110-1301, USA.
 #include "Serial.h"
 #include "Thread.h"
 
-#define _MM_ // include MM mods
-
 constexpr int IP232_CONNECTION_DELAY = 8192; // Cycles to wait after connection
 
 class EthernetPortReadThread : public Thread
@@ -58,9 +56,7 @@ class EthernetPortStatusThread : public Thread
 		virtual unsigned int ThreadFunc();
 };
 
-#ifdef _MM_
-static CRITICAL_SECTION shared_buffer_lock;//MM 26/11/21
-#endif
+static CRITICAL_SECTION shared_buffer_lock; // MM 26/11/21
 
 // IP232
 static SOCKET EthernetSocket = INVALID_SOCKET; // Listen socket
@@ -74,30 +70,30 @@ bool IP232Raw;
 char IP232Address[256];
 int IP232Port;
 
-static bool ip232_flag_received = false;
+static bool IP232FlagReceived = false;
 // static bool mStartAgain = false;
 
-//#ifdef _MM_
-bool IP232reset = true;
-//#endif
+bool IP232Reset = true;
 
 // IP232 routines use InputBuffer as data coming in from the modem,
 // and OutputBuffer for data to be sent out to the modem.
 static RingBuffer InputBuffer;
 static RingBuffer OutputBuffer;
 
-CycleCountT IP232RxTrigger=CycleCountTMax;
+CycleCountT IP232RxTrigger = CycleCountTMax;
 
 static void EthernetReceivedData(unsigned char* pData, int Length);
 static void EthernetPortStore(unsigned char data);
 static void DebugReceivedData(unsigned char* pData, int Length);
 
+/*--------------------------------------------------------------------------*/
+
 bool IP232Open()
 {
-#ifdef _MM_
-	InitializeCriticalSection(&shared_buffer_lock); //MM 26/11/21
-	IP232reset = true;
-#endif
+	InitializeCriticalSection(&shared_buffer_lock); // MM 26/11/21
+	IP232Reset = true;
+
+	DebugTrace("IP232Open\n");
 
 	InputBuffer.Reset();
 	OutputBuffer.Reset();
@@ -164,6 +160,8 @@ bool IP232Open()
 	return true;
 }
 
+/*--------------------------------------------------------------------------*/
+
 bool IP232Poll()
 {
 //	fd_set	fds;
@@ -195,11 +193,11 @@ bool IP232Poll()
 	return false;
 }
 
+/*--------------------------------------------------------------------------*/
+
 void IP232Close()
 {
-#ifdef _MM_
-	DeleteCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+	DeleteCriticalSection(&shared_buffer_lock); // MM 26/11/21
 
 	if (EthernetSocket != INVALID_SOCKET)
 	{
@@ -233,11 +231,11 @@ void IP232Close()
 */
 }
 
+/*--------------------------------------------------------------------------*/
+
 void IP232Write(unsigned char data)
 {
-#ifdef _MM_
-	EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+	EnterCriticalSection(&shared_buffer_lock); // MM 26/11/21
 
 	if (!OutputBuffer.PutData(data))
 	{
@@ -247,18 +245,16 @@ void IP232Write(unsigned char data)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Write send Buffer Full");
 	}
 
-#ifdef _MM_
-	LeaveCriticalSection(&shared_buffer_lock);//MM 26/11/21
-#endif
+	LeaveCriticalSection(&shared_buffer_lock); // MM 26/11/21
 }
+
+/*--------------------------------------------------------------------------*/
 
 unsigned char IP232Read()
 {
 	unsigned char data = 0;
 
-#ifdef _MM_
-	EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+	EnterCriticalSection(&shared_buffer_lock); // MM 26/11/21
 
 	if (InputBuffer.HasData())
 	{
@@ -275,20 +271,16 @@ unsigned char IP232Read()
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: receive buffer empty");
 	}
 
-#ifdef _MM_
-	LeaveCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+	LeaveCriticalSection(&shared_buffer_lock); // MM 26/11/21
 
 	return data;
 }
 
+/*--------------------------------------------------------------------------*/
+
 unsigned int EthernetPortReadThread::ThreadFunc()
 {
 	// Much taken from Mac version by Jon Welch
-	fd_set fds;
-	timeval tv;
-	unsigned char Buffer[256];
-	int BufferLength;
 
 	while (1)
 	{
@@ -296,16 +288,18 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 		{
 			if (InputBuffer.GetSpace() > 256)
 			{
+				fd_set fds;
 				FD_ZERO(&fds);
-				tv.tv_sec = 0;
-				tv.tv_usec = 0;
+				static const timeval TimeOut = {0, 0};
 
 				FD_SET(EthernetSocket, &fds);
 
-				int NumReady = select(32, &fds, NULL, NULL, &tv); // Read
+				int NumReady = select(32, &fds, NULL, NULL, &TimeOut); // Read
 
 				if (NumReady > 0)
 				{
+					unsigned char Buffer[256];
+
 					int BytesReceived = recv(EthernetSocket, (char *)Buffer, 256, 0);
 
 					if (BytesReceived != SOCKET_ERROR)
@@ -317,6 +311,7 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 					{
 						#ifndef NDEBUG
 						// Should really check what the error was ...
+						#if !defined(NDEBUG)
 						int Error = WSAGetLastError();
 						#endif
 
@@ -349,21 +344,19 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Sending to remote server");
 
-#ifdef _MM_
-				EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+				EnterCriticalSection(&shared_buffer_lock); // MM 26/11/21
 
-				BufferLength = 0;
+				unsigned char Buffer[256];
+				int BufferLength = 0;
 
 				while (OutputBuffer.HasData())
 				{
 					Buffer[BufferLength++] = OutputBuffer.GetData();
 				}
 
-#ifdef _MM_
-				LeaveCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+				LeaveCriticalSection(&shared_buffer_lock); // MM 26/11/21
 
+				fd_set fds;
 				FD_ZERO(&fds);
 				static const timeval TimeOut = {0, 0};
 
@@ -407,6 +400,8 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 	return 0;
 }
 
+/*--------------------------------------------------------------------------*/
+
 static void EthernetReceivedData(unsigned char* pData, int Length)
 {
 	if (DebugEnabled)
@@ -416,15 +411,11 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 
 	for (int i = 0; i < Length; i++)
 	{
-		if (ip232_flag_received)
+		if (IP232FlagReceived)
 		{
-			ip232_flag_received = false;
+			IP232FlagReceived = false;
 
-#ifndef _MM_
-			if (pData[i] == 0)
-#else
 			if (pData[i] == 1)
-#endif
 			{
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
@@ -433,11 +424,7 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 				SerialACIA.Status &= ~MC6850_STATUS_CTS; // CTS goes active low
 				SerialACIA.Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
 			}
-#ifndef _MM_
-			else if (pData[i] == 1)
-#else
 			else if (pData[i] == 0)
-#endif
 			{
 				if (DebugEnabled)
 					DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
@@ -458,7 +445,9 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 		{
 			if (pData[i] == 255 && !IP232Raw)
 			{
-				ip232_flag_received = true;
+				// The next value received is the DCD state (0 or 1),
+				// or a 255 data value
+				IP232FlagReceived = true;
 			}
 			else
 			{
@@ -468,13 +457,13 @@ static void EthernetReceivedData(unsigned char* pData, int Length)
 	}
 }
 
+/*--------------------------------------------------------------------------*/
+
 void EthernetPortStore(unsigned char data)
 {
 	// much taken from Mac version by Jon Welch
 
-#ifdef _MM_
-	EnterCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+	EnterCriticalSection(&shared_buffer_lock); // MM 26/11/21
 
 	if (!InputBuffer.PutData(data))
 	{
@@ -484,10 +473,10 @@ void EthernetPortStore(unsigned char data)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: EthernetPortStore output buffer full");
 	}
 
-#ifdef _MM_
-	LeaveCriticalSection(&shared_buffer_lock); //MM 26/11/21
-#endif
+	LeaveCriticalSection(&shared_buffer_lock); // MM 26/11/21
 }
+
+/*--------------------------------------------------------------------------*/
 
 unsigned int EthernetPortStatusThread::ThreadFunc()
 {
@@ -543,11 +532,7 @@ unsigned int EthernetPortStatusThread::ThreadFunc()
 				rts = 0;
 			}
 
-#ifdef _MM_
-			if (rts != orts || IP232reset)
-#else
-			if (rts != orts)
-#endif
+			if (rts != orts || IP232Reset)
 			{
 				if (EthernetSocket != INVALID_SOCKET)
 				{
@@ -563,9 +548,7 @@ unsigned int EthernetPortStatusThread::ThreadFunc()
 
 				orts = rts;
 
-#ifdef _MM_
-				IP232reset = false;
-#endif
+				IP232Reset = false;
 			}
 		}
 
@@ -579,6 +562,8 @@ unsigned int EthernetPortStatusThread::ThreadFunc()
 
 	return 0;
 }
+
+/*--------------------------------------------------------------------------*/
 
 static void DebugReceivedData(unsigned char* pData, int Length)
 {

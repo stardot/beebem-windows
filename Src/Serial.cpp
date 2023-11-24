@@ -307,11 +307,15 @@ void Win32SerialPort::SetRTS(bool RTS)
 
 /*--------------------------------------------------------------------------*/
 
-#ifdef _MM_
-void Update_ACIA_IRQ() {//mm
-	// irq = (tie && tdre && !ncts) || (rie && (rdrf || ovr || ndcd))
-	if (SerialULA.RS423) {
-		if ((SerialACIA.TIE && ((SerialACIA.Status & 0x0a) ^ 0x08)) || (SerialACIA.RIE && (SerialACIA.Status & 0x25))) {
+// mm
+static void SerialUpdateACIAInterruptStatus()
+{
+	if (SerialULA.RS423)
+	{
+		// irq = (tie && tdre && !ncts) || (rie && (rdrf || ovr || ndcd))
+		if ((SerialACIA.TIE && ((SerialACIA.Status & (MC6850_STATUS_CTS | MC6850_STATUS_TDRE)) ^ MC6850_STATUS_CTS)) ||
+		    (SerialACIA.RIE && (SerialACIA.Status & (MC6850_STATUS_OVRN | MC6850_STATUS_DCD | MC6850_STATUS_RDRF))))
+		{
 			intStatus |= 1 << serial;
 			SerialACIA.Status |= MC6850_STATUS_IRQ;
 		}
@@ -321,7 +325,6 @@ void Update_ACIA_IRQ() {//mm
 		}
 	}
 }
-#endif
 
 /*--------------------------------------------------------------------------*/
 
@@ -359,10 +362,7 @@ void SerialACIAWriteControl(unsigned char Value)
 
 		SetTrigger(TAPECYCLES, TapeTrigger);
 
-		//mm
-#ifdef _MM_
-		IP232reset = true;//Force update of nRTS
-#endif
+		IP232Reset = true; // MM: Force update of nRTS
 	}
 
 	// Clock Divide
@@ -396,32 +396,39 @@ void SerialACIAWriteControl(unsigned char Value)
 		SerialPort.SetRTS(SerialACIA.RTS);
 	}
 
-#ifdef _MM_
-	Update_ACIA_IRQ();
-#endif
+	SerialUpdateACIAInterruptStatus();
 }
 
 /*--------------------------------------------------------------------------*/
 
-#ifdef _MM_
-void HandleTXData(unsigned char AData) {
-	/*	TxD		TDR		TDSR
-		0		EMPTY	EMPTY
-		1		EMPTY	FULL
-		2		FULL	FULL	*/
+void HandleTXData(unsigned char AData)
+{
+	/* TxD  TDR    TDSR
+	   0    EMPTY  EMPTY
+	   1    EMPTY  FULL
+	   2    FULL   FULL */
 
-	if (SerialACIA.TxD++ == 0) {//TDSR empty
+	if (SerialACIA.TxD++ == 0)
+	{
+		// TDSR empty
 		SerialACIA.TDSR = AData;
-		SerialACIA.Status |= MC6850_STATUS_TDRE;//TDRE=1
+		SerialACIA.Status |= MC6850_STATUS_TDRE; // TDRE=1
 
 		if (SerialDestination == SerialType::TouchScreen)
+		{
 			TouchScreenWrite(SerialACIA.TDSR);
-		else if (SerialDestination == SerialType::IP232) {
+		}
+		else if (SerialDestination == SerialType::IP232)
+		{
+			DebugTrace("SerialTX: %02X\n", SerialACIA.TDSR);
+
 			IP232Write(SerialACIA.TDSR);
 			if (!IP232Raw && SerialACIA.TDSR == 255) IP232Write(SerialACIA.TDSR);
 		}
-		else {
+		else
+		{
 			SerialPort.SerialWriteBuffer = SerialACIA.TDSR;
+
 			WriteFile(SerialPort.hSerialPort, &SerialPort.SerialWriteBuffer, 1, &SerialPort.BytesOut, &SerialPort.olSerialWrite);
 		}
 
@@ -430,13 +437,17 @@ void HandleTXData(unsigned char AData) {
 		int baud = SerialACIA.TxRate; // *((Clk_Divide == 1) ? 64 : (Clk_Divide == 64) ? 1 : 4);
 		TapeTrigger = TotalCycles + 2000000 / (baud / 10) * TapeState.ClockSpeed / 5600;
 	}
-	else {//TDSR full
+	else
+	{
+		// TDSR full
 		SerialACIA.TDR = AData;
-		SerialACIA.Status &= ~MC6850_STATUS_TDRE;//TDRE=0
+		SerialACIA.Status &= ~MC6850_STATUS_TDRE; // TDRE=0
 	}
-	Update_ACIA_IRQ();
+
+	SerialUpdateACIAInterruptStatus();
 }
-#endif
+
+/*--------------------------------------------------------------------------*/
 
 void SerialACIAWriteTxData(unsigned char Data)
 {
@@ -469,9 +480,8 @@ void SerialACIAWriteTxData(unsigned char Data)
 	{
 		if (SerialACIA.Status & MC6850_STATUS_TDRE)
 		{
-#ifdef _MM_
 			HandleTXData(Data);
-#else
+
 			SerialACIA.Status &= ~MC6850_STATUS_TDRE;
 			SerialPort.SerialWriteBuffer = Data;
 
@@ -494,7 +504,6 @@ void SerialACIAWriteTxData(unsigned char Data)
 			}
 
 			SerialACIA.Status |= MC6850_STATUS_TDRE;
-#endif
 		}
 	}
 }
@@ -615,10 +624,8 @@ static void HandleData(unsigned char Data)
 		intStatus |= 1 << serial;
 	}
 
-#ifdef _MM_
-	Update_ACIA_IRQ();
+	SerialUpdateACIAInterruptStatus();
 	//WriteLog("HandleData: Data=%02x Status=%02x RxD=%d\n", AData, SerialACIA.Status, RxD);
-#endif
 }
 
 /*--------------------------------------------------------------------------*/
@@ -663,10 +670,8 @@ unsigned char SerialACIAReadRxData()
 
 	// WriteLog("Serial: Read ACIA Rx %02X, SerialACIA.Status = %02x\n", (int)Data, (int)SerialACIA.Status);
 
-#ifdef _MM_
-	Update_ACIA_IRQ();
-	//WriteLog("Read_ACIA_Rx_Data: Data = %02x Status=%02x RxD=%d\n", TData, SerialACIA.Status, RxD);
-#endif
+	SerialUpdateACIAInterruptStatus();
+	// WriteLog("Read_ACIA_Rx_Data: Data = %02x Status=%02x RxD=%d\n", TData, SerialACIA.Status, RxD);
 
 	return Data;
 }
@@ -947,20 +952,17 @@ void SerialPoll(int Cycles)
 	}
 	else if (SerialULA.RS423 && SerialPortEnabled)
 	{
-
-		//************ MM
-#ifdef _MM_
-		if ((SerialACIA.TxD > 0) && (TotalCycles >= TapeTrigger))
+		// MM
+		if (SerialACIA.TxD > 0 && TotalCycles >= TapeTrigger)
 		{
 			//WriteLog("Serial: Send Tx TDSR=%02X  TIE=%d\n", TDSR, TIE);
 
-			if (SerialACIA.TxD-- == 2) {//TDR full
+			if (SerialACIA.TxD-- == 2) {
+				// TDR full
 				SerialACIA.TxD = 0;
 				HandleTXData(SerialACIA.TDR);
 			}
 		}
-#endif
-		//********************************
 
 		if (SerialDestination == SerialType::TouchScreen)
 		{
@@ -978,12 +980,8 @@ void SerialPoll(int Cycles)
 			{
 				if (SerialACIA.RxD < 2)
 				{
-#ifdef _MM_
-					if ((SerialACIA.Control & 0x60) != 0x40)//if nrts = 0
+					if ((SerialACIA.Control & 0x60) != 0x40) // if nrts = 0
 						HandleData(IP232Read());
-#else
-					HandleData(IP232Read());
-#endif
 				}
 			}
 		}

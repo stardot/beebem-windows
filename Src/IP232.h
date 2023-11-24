@@ -26,9 +26,7 @@ extern bool IP232Mode;
 extern bool IP232Raw;
 extern char IP232Address[256];
 extern int IP232Port;
-
-//mm stuff
-extern bool IP232reset;
+extern bool IP232Reset;
 
 bool IP232Open();
 bool IP232Poll();
