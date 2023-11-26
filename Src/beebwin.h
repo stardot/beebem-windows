@@ -291,204 +291,6 @@ public:
 	void SaveEmuUEF(FILE *SUEF);
 	void LoadEmuUEF(FILE *SUEF,int Version);
 
-	HMENU m_hMenu;
-	bool m_frozen;
-	char* m_screen;
-	char* m_screen_blur;
-
-	// Timing
-	bool m_ShowSpeedAndFPS;
-	UINT m_MenuIDTiming;
-	double m_RealTimeTarget;
-	int m_CyclesPerSec;
-	DWORD m_LastTickCount;
-	DWORD m_LastStatsTickCount;
-	int m_LastTotalCycles;
-	int m_LastStatsTotalCycles;
-	DWORD m_TickBase;
-	int m_CycleBase;
-	int m_MinFrameCount;
-	DWORD m_LastFPSCount;
-	int m_FPSTarget;
-
-	bool m_ShiftBooted;
-	bool m_TextToSpeechEnabled;
-	bool m_TextViewEnabled;
-	bool m_DisableKeysWindows;
-	bool m_DisableKeysBreak;
-	bool m_DisableKeysEscape;
-	bool m_DisableKeysShortcut;
-
-	UINT m_MenuIDWinSize;
-	int		m_XWinSize;
-	int		m_YWinSize;
-	int		m_XLastWinSize;
-	int		m_YLastWinSize;
-	int		m_XWinPos;
-	int		m_YWinPos;
-	int		m_XDXSize;
-	int		m_YDXSize;
-	int		m_XScrSize;
-	int		m_YScrSize;
-	int		m_XWinBorder;
-	int		m_YWinBorder;
-	float		m_XRatioAdj;
-	float		m_YRatioAdj;
-	float		m_XRatioCrop;
-	float		m_YRatioCrop;
-	UINT m_MenuIDSampleRate;
-	UINT m_MenuIDVolume;
-	bool		m_JoystickCaptured;
-	JOYCAPS		m_JoystickCaps;
-	UINT m_MenuIDSticks;
-	bool		m_HideCursor;
-	bool		m_CaptureMouse;
-	bool		m_MouseCaptured;
-	POINT		m_RelMousePos;
-	bool		m_FreezeWhenInactive;
-	UINT m_MenuIDKeyMapping;
-	bool		m_KeyMapAS;
-	bool		m_KeyMapFunc;
-	char		m_UserKeyMapPath[_MAX_PATH];
-	bool		m_ShiftPressed;
-	int		m_vkeyPressed[256][2][2];
-	char		m_AppPath[_MAX_PATH];
-	char		m_UserDataPath[_MAX_PATH];
-	bool m_CustomData;
-	char		m_DiscPath[_MAX_PATH];	// JGH
-	bool		m_WriteProtectDisc[2];
-	bool		m_WriteProtectOnLoad;
-	UINT m_MenuIDAMXSize;
-	UINT m_MenuIDAMXAdjust;
-	int		m_AMXXSize;
-	int		m_AMXYSize;
-	int		m_AMXAdjust;
-	int		m_DisplayRenderer;
-	int		m_CurrentDisplayRenderer;
-	int		m_DDFullScreenMode;
-	bool		m_isFullScreen;
-	bool		m_MaintainAspectRatio;
-	bool		m_startFullScreen;
-	bool		m_AutoSavePrefsCMOS;
-	bool		m_AutoSavePrefsFolders;
-	bool		m_AutoSavePrefsAll;
-	bool		m_AutoSavePrefsChanged;
-	bool m_HideMenuEnabled;
-	bool m_DisableMenu;
-	bool m_MenuOn;
-
-	HDC 		m_hDC;
-	HWND		m_hWnd;
-	HGDIOBJ 	m_hOldObj;
-	HDC 		m_hDCBitmap;
-	HGDIOBJ 	m_hBitmap;
-	bmiData 	m_bmi;
-	char m_szTitle[256];
-
-	int		m_ScreenRefreshCount;
-	double		m_RelativeSpeed;
-	double		m_FramesPerSecond;
-
-	static const int ClipboardBufferSize = 32768;
-
-	char m_ClipboardBuffer[ClipboardBufferSize];
-	int m_ClipboardLength;
-	int m_ClipboardIndex;
-
-	char		m_printerbuffer[1024 * 1024];
-	int		m_printerbufferlen;
-	bool		m_translateCRLF;
-
-	UINT m_MenuIDPrinterPort;
-	char m_PrinterFileName[_MAX_PATH];
-	char m_PrinterDevice[_MAX_PATH];
-
-
-	int		m_LastStartY;
-	int		m_LastNLines;
-	UINT m_MenuIDMotionBlur;
-	char 		m_BlurIntensities[8];
-	char 		m_CommandLineFileName1[_MAX_PATH];
-	char 		m_CommandLineFileName2[_MAX_PATH];
-	std::string m_KbdCmd;
-	std::string m_DebugScriptFileName;
-	std::string m_DebugLabelsFileName;
-	int		m_KbdCmdPos;
-	int		m_KbdCmdKey;
-	bool		m_KbdCmdPress;
-	int		m_KbdCmdDelay;
-	int		m_KbdCmdLastCycles;
-	bool		m_NoAutoBoot;
-	int		m_AutoBootDelay;
-	bool		m_EmuPaused;
-	bool		m_StartPaused;
-	bool		m_WasPaused;
-	bool		m_AutoBootDisc;
-	bool		m_KeyboardTimerElapsed;
-	bool		m_BootDiscTimerElapsed;
-	bool RomWritePrefs[16];
-
-	// Bitmap capture vars
-	ULONG_PTR m_gdiplusToken;
-	bool m_CaptureBitmapPending;
-	bool m_CaptureBitmapAutoFilename;
-	char m_CaptureFileName[MAX_PATH];
-	UINT m_MenuIDCaptureResolution;
-	UINT m_MenuIDCaptureFormat;
-
-	// AVI vars
-	bmiData m_Avibmi;
-	HBITMAP m_AviDIB;
-	HDC m_AviDC;
-	char* m_AviScreen;
-	int m_AviFrameSkip;
-	int m_AviFrameSkipCount;
-	int m_AviFrameCount;
-	UINT m_MenuIDAviResolution;
-	UINT m_MenuIDAviSkip;
-
-	// DirectX stuff
-	bool		m_DXInit;
-	bool		m_DXResetPending;
-
-	// DirectDraw stuff
-	LPDIRECTDRAW		m_DD;			// DirectDraw object
-	LPDIRECTDRAW2		m_DD2;			// DirectDraw object
-	LPDIRECTDRAWSURFACE	m_DDSPrimary;	// DirectDraw primary surface
-	LPDIRECTDRAWSURFACE2	m_DDS2Primary;	// DirectDraw primary surface
-	LPDIRECTDRAWSURFACE	m_DDSOne;		// Offscreen surface 1
-	LPDIRECTDRAWSURFACE2	m_DDS2One;		// Offscreen surface 1
-	bool			m_DXSmoothing;
-	bool			m_DXSmoothMode7Only;
-	LPDIRECTDRAWCLIPPER	m_Clipper;		// clipper for primary
-
-	// Direct3D9 stuff
-	LPDIRECT3D9             m_pD3D;
-	LPDIRECT3DDEVICE9       m_pd3dDevice;
-	LPDIRECT3DVERTEXBUFFER9 m_pVB;
-	LPDIRECT3DTEXTURE9      m_pTexture;
-	D3DXMATRIX              m_TextureMatrix;
-
-	// Text to speech variables
-	ISpVoice *m_SpVoice;
-	int m_SpeechLine;
-	int m_SpeechCol;
-	static const int MAX_SPEECH_LINE_LEN = 128;
-	static const int MAX_SPEECH_SENTENCE_LEN = 128*25;
-	static const int MAX_SPEECH_SCREEN_LEN = 128*32;
-	char m_SpeechText[MAX_SPEECH_LINE_LEN+1];
-	bool m_SpeechSpeakPunctuation;
-	bool m_SpeechWriteChar;
-	static const int MAX_SPEECH_BUF_LEN = 160;
-	char m_SpeechBuf[MAX_SPEECH_BUF_LEN+1];
-	int m_SpeechBufPos;
-	int m_SpeechRate;
-
-	// Text view variables
-	HWND m_hTextView;
-	static const int MAX_TEXTVIEW_SCREEN_LEN = 128*32;
-	char m_TextViewScreen[MAX_TEXTVIEW_SCREEN_LEN+1];
-
 	bool InitClass();
 	void UpdateOptiMenu();
 	void CreateBeebWindow(void);
@@ -595,11 +397,235 @@ public:
 	void LoadPreferences();
 	void SavePreferences(bool saveAll);
 
-	PaletteType m_PaletteType;
+	// Main window
+	HWND m_hWnd;
+	char m_szTitle[256];
+	bool m_isFullScreen;
+	bool m_startFullScreen;
 
+	// Menu
+	HMENU m_hMenu;
+	bool m_MenuOn;
+	bool m_HideMenuEnabled;
+	bool m_DisableMenu;
+
+	// Timing
+	bool m_ShowSpeedAndFPS;
+	UINT m_MenuIDTiming;
+	double m_RealTimeTarget;
+	int m_CyclesPerSec;
+	DWORD m_LastTickCount;
+	DWORD m_LastStatsTickCount;
+	int m_LastTotalCycles;
+	int m_LastStatsTotalCycles;
+	DWORD m_TickBase;
+	int m_CycleBase;
+	int m_MinFrameCount;
+	DWORD m_LastFPSCount;
+	int m_FPSTarget;
+	int m_ScreenRefreshCount;
+	double m_RelativeSpeed;
+	double m_FramesPerSecond;
+
+	// Pause / freeze emulation
+	bool m_StartPaused;
+	bool m_EmuPaused;
+	bool m_WasPaused;
+
+	bool m_FreezeWhenInactive;
+	bool m_Frozen;
+
+	// Window size
+	UINT m_MenuIDWinSize;
+	int m_XWinSize;
+	int m_YWinSize;
+	int m_XLastWinSize;
+	int m_YLastWinSize;
+	int m_XWinPos;
+	int m_YWinPos;
+	int m_XDXSize;
+	int m_YDXSize;
+	int m_XScrSize;
+	int m_YScrSize;
+	int m_XWinBorder;
+	int m_YWinBorder;
+	float m_XRatioAdj;
+	float m_YRatioAdj;
+	float m_XRatioCrop;
+	float m_YRatioCrop;
+
+	// Graphics rendering
+	HDC m_hDC;
+	HGDIOBJ m_hOldObj;
+	HDC m_hDCBitmap;
+	HGDIOBJ m_hBitmap;
+	bmiData m_bmi;
+	PaletteType m_PaletteType;
+	char* m_screen;
+	char* m_screen_blur;
+	int m_LastStartY;
+	int m_LastNLines;
+	UINT m_MenuIDMotionBlur;
+	char m_BlurIntensities[8];
+	bool m_MaintainAspectRatio;
+	int m_DisplayRenderer;
+	int m_CurrentDisplayRenderer;
+	int m_DDFullScreenMode;
+
+	// DirectX stuff
+	bool m_DXInit;
+	bool m_DXResetPending;
+
+	// DirectDraw stuff
+	LPDIRECTDRAW m_DD; // DirectDraw object
+	LPDIRECTDRAW2 m_DD2; // DirectDraw object
+	LPDIRECTDRAWSURFACE m_DDSPrimary; // DirectDraw primary surface
+	LPDIRECTDRAWSURFACE2 m_DDS2Primary; // DirectDraw primary surface
+	LPDIRECTDRAWSURFACE m_DDSOne; // Offscreen surface 1
+	LPDIRECTDRAWSURFACE2 m_DDS2One; // Offscreen surface 1
+	bool m_DXSmoothing;
+	bool m_DXSmoothMode7Only;
+	LPDIRECTDRAWCLIPPER m_Clipper; // clipper for primary
+
+	// Direct3D9 stuff
+	LPDIRECT3D9 m_pD3D;
+	LPDIRECT3DDEVICE9 m_pd3dDevice;
+	LPDIRECT3DVERTEXBUFFER9 m_pVB;
+	LPDIRECT3DTEXTURE9 m_pTexture;
+	D3DXMATRIX m_TextureMatrix;
+
+	// Audio
+	UINT m_MenuIDSampleRate;
+	UINT m_MenuIDVolume;
+
+	// Joystick input
+	bool m_JoystickCaptured;
+	JOYCAPS m_JoystickCaps;
+	UINT m_MenuIDSticks;
+
+	// Mouse capture
+	bool m_HideCursor;
+	bool m_CaptureMouse;
+	bool m_MouseCaptured;
+	POINT m_RelMousePos;
+
+	// Keyboard input
+	UINT m_MenuIDKeyMapping;
+	bool m_KeyMapAS;
+	bool m_KeyMapFunc;
+	char m_UserKeyMapPath[_MAX_PATH];
+	bool m_DisableKeysWindows;
+	bool m_DisableKeysBreak;
+	bool m_DisableKeysEscape;
+	bool m_DisableKeysShortcut;
+	bool m_ShiftPressed;
+	bool m_ShiftBooted;
+	int m_vkeyPressed[256][2][2];
+
+	// File paths
+	char m_AppPath[_MAX_PATH];
+	char m_UserDataPath[_MAX_PATH];
+	bool m_CustomData;
+	char m_DiscPath[_MAX_PATH]; // JGH
+	bool m_WriteProtectDisc[2];
+	bool m_WriteProtectOnLoad;
+
+	// AMX mouse
+	UINT m_MenuIDAMXSize;
+	UINT m_MenuIDAMXAdjust;
+	int m_AMXXSize;
+	int m_AMXYSize;
+	int m_AMXAdjust;
+
+	// Preferences
 	char m_PrefsFile[_MAX_PATH];
 	Preferences m_Preferences;
+	bool m_AutoSavePrefsCMOS;
+	bool m_AutoSavePrefsFolders;
+	bool m_AutoSavePrefsAll;
+	bool m_AutoSavePrefsChanged;
 
+	// Clipboard
+	static const int ClipboardBufferSize = 32768;
+	char m_ClipboardBuffer[ClipboardBufferSize];
+	int m_ClipboardLength;
+	int m_ClipboardIndex;
+
+	// Printer
+	char m_printerbuffer[1024 * 1024];
+	int m_printerbufferlen;
+	bool m_translateCRLF;
+
+	UINT m_MenuIDPrinterPort;
+	char m_PrinterFileName[_MAX_PATH];
+	char m_PrinterDevice[_MAX_PATH];
+
+	// Command line
+	char m_CommandLineFileName1[_MAX_PATH];
+	char m_CommandLineFileName2[_MAX_PATH];
+	std::string m_DebugScriptFileName;
+	std::string m_DebugLabelsFileName;
+
+	// Startup key sequence
+	std::string m_KbdCmd;
+	int m_KbdCmdPos;
+	int m_KbdCmdKey;
+	bool m_KbdCmdPress;
+	int m_KbdCmdDelay;
+	int m_KbdCmdLastCycles;
+	bool m_KeyboardTimerElapsed;
+
+	// Disc auto-boot
+	bool m_NoAutoBoot;
+	int m_AutoBootDelay;
+	bool m_AutoBootDisc;
+	bool m_BootDiscTimerElapsed;
+
+	// ROMs
+	bool RomWritePrefs[16];
+
+	// Bitmap capture
+	ULONG_PTR m_gdiplusToken;
+	bool m_CaptureBitmapPending;
+	bool m_CaptureBitmapAutoFilename;
+	char m_CaptureFileName[MAX_PATH];
+	UINT m_MenuIDCaptureResolution;
+	UINT m_MenuIDCaptureFormat;
+
+	// AVI vars
+	bmiData m_Avibmi;
+	HBITMAP m_AviDIB;
+	HDC m_AviDC;
+	char* m_AviScreen;
+	int m_AviFrameSkip;
+	int m_AviFrameSkipCount;
+	int m_AviFrameCount;
+	UINT m_MenuIDAviResolution;
+	UINT m_MenuIDAviSkip;
+
+	// Text to speech variables
+	bool m_TextToSpeechEnabled;
+	ISpVoice *m_SpVoice;
+	int m_SpeechLine;
+	int m_SpeechCol;
+	static const int MAX_SPEECH_LINE_LEN = 128;
+	static const int MAX_SPEECH_SENTENCE_LEN = 128 * 25;
+	static const int MAX_SPEECH_SCREEN_LEN = 128 * 32;
+	char m_SpeechText[MAX_SPEECH_LINE_LEN + 1];
+	bool m_SpeechSpeakPunctuation;
+	bool m_SpeechWriteChar;
+	static const int MAX_SPEECH_BUF_LEN = 160;
+	char m_SpeechBuf[MAX_SPEECH_BUF_LEN + 1];
+	int m_SpeechBufPos;
+	int m_SpeechRate;
+
+	// Text view variables
+	HWND m_hTextView;
+	bool m_TextViewEnabled;
+	static const int MAX_TEXTVIEW_SCREEN_LEN = 128 * 32;
+	char m_TextViewScreen[MAX_TEXTVIEW_SCREEN_LEN + 1];
+
+	// Debug
 	bool m_WriteInstructionCounts;
 };
 

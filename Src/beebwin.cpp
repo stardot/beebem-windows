@@ -150,8 +150,8 @@ static KeyMap *transTable = &defaultMapping;
 /****************************************************************************/
 BeebWin::BeebWin()
 {
+	m_hWnd = nullptr;
 	m_DXInit = false;
-	m_hWnd = NULL;
 	m_LastStartY = 0;
 	m_LastNLines = 256;
 	m_LastTickCount = 0;
@@ -159,6 +159,7 @@ BeebWin::BeebWin()
 	m_KeyMapFunc = false;
 	m_ShiftPressed = 0;
 	m_ShiftBooted = false;
+
 	for (int k = 0; k < 256; ++k)
 	{
 		m_vkeyPressed[k][0][0] = -1;
@@ -185,7 +186,7 @@ BeebWin::BeebWin()
 	m_CaptureBitmapPending = false;
 	m_SpVoice = NULL;
 	m_hTextView = NULL;
-	m_frozen = false;
+	m_Frozen = false;
 	aviWriter = NULL;
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
@@ -4002,11 +4003,11 @@ void BeebWin::Activate(bool Active)
 {
 	if (Active)
 	{
-		m_frozen = false;
+		m_Frozen = false;
 	}
 	else if (m_FreezeWhenInactive)
 	{
-		m_frozen = true;
+		m_Frozen = true;
 	}
 
 	if (Active)
@@ -4042,7 +4043,7 @@ void BeebWin::Focus(bool Focus)
 
 bool BeebWin::IsFrozen()
 {
-	return m_frozen;
+	return m_Frozen;
 }
 
 void BeebWin::TogglePause()
