@@ -1097,7 +1097,8 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	fputc(0,SUEF);
 }
 
-void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
+void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
+{
 	char fileName[_MAX_PATH];
 
 	int type = fgetc(SUEF);
@@ -1134,9 +1135,9 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 		TranslateKeyMapping();
 	}
 
-	mainWin->ResetBeebSystem(MachineType, true);
-	mainWin->UpdateModelMenu();
-	mainWin->UpdateTubeMenu();
+	ResetBeebSystem(MachineType, true);
+	UpdateModelMenu();
+	UpdateTubeMenu();
 }
 
 /****************************************************************************/
@@ -1343,9 +1344,9 @@ void BeebWin::doPaste()
 
 void BeebWin::ClearClipboardBuffer()
 {
-	mainWin->m_ClipboardBuffer[0] = '\0';
-	mainWin->m_ClipboardIndex = 0;
-	mainWin->m_ClipboardLength = 0;
+	m_ClipboardBuffer[0] = '\0';
+	m_ClipboardIndex = 0;
+	m_ClipboardLength = 0;
 }
 
 void BeebWin::CopyKey(unsigned char Value)

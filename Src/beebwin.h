@@ -153,6 +153,13 @@ public:
 	void ApplyPrefs();
 	void Shutdown();
 
+	static LRESULT CALLBACK WndProc(HWND hWnd,
+	                                  UINT nMessage,
+	                                  WPARAM wParam,
+	                                  LPARAM lParam);
+
+	LRESULT WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam);
+
 	void UpdateModelMenu();
 	void SetSoundMenu(void);
 	void SetImageName(const char *DiscName, int Drive, DiscType DscType);

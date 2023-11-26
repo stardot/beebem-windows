@@ -97,7 +97,7 @@ using std::max;
 
 using namespace Gdiplus;
 
-constexpr UINT WIN_STYLE = WS_OVERLAPPED | WS_CAPTION  | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
+constexpr UINT WIN_STYLE = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
 
 // Some LED based constants
 constexpr int LED_COL_BASE = 64;
@@ -114,7 +114,6 @@ CSprowCoPro *sprow = NULL;
 struct LEDType LEDs;
 
 LEDColour DiscLedColour = LEDColour::Red;
-
 
 // FDC Board extension DLL variables
 HMODULE hFDCBoard;
@@ -135,9 +134,6 @@ static const char *AboutText =
 	"ARM Second Processor\n"
 	"Sprow ARM7TDMI 64MB\n\n"
 	"Version " VERSION_STRING ", " VERSION_DATE;
-
-/* Prototypes */
-static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 // Keyboard mappings
 static KeyMap defaultMapping;
@@ -223,8 +219,8 @@ BeebWin::BeebWin()
 	m_YScrSize = GetSystemMetrics(SM_CYSCREEN);
 	m_XWinBorder = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
 	m_YWinBorder = GetSystemMetrics(SM_CYSIZEFRAME) * 2 +
-		GetSystemMetrics(SM_CYMENUSIZE) +
-		GetSystemMetrics(SM_CYCAPTION) + 1;
+	               GetSystemMetrics(SM_CYMENUSIZE) +
+	               GetSystemMetrics(SM_CYCAPTION) + 1;
 	m_HideMenuEnabled = false;
 	m_DisableMenu = false;
 	m_MenuOn = true;
@@ -504,7 +500,7 @@ void BeebWin::Shutdown()
 
 	if (m_WriteInstructionCounts) {
 		char FileName[_MAX_PATH];
-		strcpy(FileName, mainWin->m_UserDataPath);
+		strcpy(FileName, m_UserDataPath);
 		strcat(FileName, "InstructionCounts.txt");
 
 		WriteInstructionCounts(FileName);
@@ -824,7 +820,7 @@ void BeebWin::CreateBeebWindow(void)
 		nullptr,    // Overlapped windows have no parent.
 		nullptr,    // Use the window class menu.
 		hInst,      // This instance owns this window.
-		nullptr     // We don't use any data in our WM_CREATE
+		this
 	);
 
 	DisableRoundedCorners(m_hWnd);
@@ -1393,73 +1389,103 @@ void BeebWin::ChangeAMXPosition(int deltaX, int deltaY)
 }
 
 /****************************************************************************/
-LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
-                         UINT message,  // type of message
-                         WPARAM wParam, // additional information
-                         LPARAM lParam) // additional information
+
+LRESULT CALLBACK BeebWin::WndProc(HWND hWnd,
+                                  UINT nMessage,
+                                  WPARAM wParam,
+                                  LPARAM lParam)
 {
-	switch (message)
+	BeebWin* pBeebWin = nullptr;
+
+	if (nMessage == WM_NCCREATE)
+	{
+		pBeebWin = (BeebWin*)((CREATESTRUCT*)lParam)->lpCreateParams;
+
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pBeebWin);
+
+		return DefWindowProc(hWnd, nMessage, wParam, lParam);
+	}
+	else
+	{
+		pBeebWin = (BeebWin*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+	}
+
+	if (pBeebWin != nullptr)
+	{
+		return pBeebWin->WndProc(nMessage, wParam, lParam);
+	}
+	else
+	{
+		return DefWindowProc(hWnd, nMessage, wParam, lParam);
+	}
+}
+
+LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
+{
+	switch (nMessage)
 	{
 		case WM_COMMAND: // message: command from application menu
 			{
 				int wmId = LOWORD(wParam);
-				mainWin->HandleCommand(wmId);
+				HandleCommand(wmId);
 			}
 			break;
 
 		case WM_PAINT:
 			{
 				PAINTSTRUCT ps;
-				HDC hDC = BeginPaint(hWnd, &ps);
-				mainWin->updateLines(hDC, 0, 0);
-				EndPaint(hWnd, &ps);
+				HDC hDC = BeginPaint(m_hWnd, &ps);
+				updateLines(hDC, 0, 0);
+				EndPaint(m_hWnd, &ps);
 
-				if (mainWin->m_DXResetPending)
-					mainWin->ResetDX();
+				if (m_DXResetPending)
+				{
+					ResetDX();
+				}
 			}
 			break;
 
 		case WM_SIZE:
-			mainWin->WinSizeChange(wParam, LOWORD(lParam), HIWORD(lParam));
+			WinSizeChange(wParam, LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case WM_MOVE:
-			mainWin->WinPosChange(LOWORD(lParam), HIWORD(lParam));
+			WinPosChange(LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case WM_SYSKEYDOWN:
 			// DebugTrace("SysKeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
 
-			if (mainWin->m_TextToSpeechEnabled &&
-				((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
-				 wParam == VK_DECIMAL ||
-				 wParam == VK_HOME || wParam == VK_END ||
-				 wParam == VK_PRIOR || wParam == VK_NEXT ||
-				 wParam == VK_UP || wParam == VK_DOWN ||
-				 wParam == VK_LEFT || wParam == VK_RIGHT ||
-				 wParam == VK_INSERT || wParam == VK_DELETE ||
-				 wParam == VK_CLEAR))
+			if (m_TextToSpeechEnabled &&
+			    ((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
+			     wParam == VK_DECIMAL ||
+			     wParam == VK_HOME || wParam == VK_END ||
+			     wParam == VK_PRIOR || wParam == VK_NEXT ||
+			     wParam == VK_UP || wParam == VK_DOWN ||
+			     wParam == VK_LEFT || wParam == VK_RIGHT ||
+			     wParam == VK_INSERT || wParam == VK_DELETE ||
+			     wParam == VK_CLEAR))
 			{
-				mainWin->TextToSpeechKey(wParam);
+				TextToSpeechKey(wParam);
 			}
 			else if (wParam == VK_OEM_8 /* Alt ` */)
 			{
-				mainWin->TextViewSyncWithBeebCursor();
+				TextViewSyncWithBeebCursor();
 			}
 			else if (wParam == VK_RETURN && (lParam & 0x20000000))
 			{
-				mainWin->HandleCommand(IDM_FULLSCREEN);
+				HandleCommand(IDM_FULLSCREEN);
 				break;
 			}
 			else if (wParam == VK_F4 && (lParam & 0x20000000))
 			{
-				mainWin->HandleCommand(IDM_EXIT);
+				HandleCommand(IDM_EXIT);
 				break;
 			}
 			// Alt+F5 pauses the emulation
 			else if (wParam == VK_F5 && (lParam & 0x20000000))
 			{
-				mainWin->HandleCommand(IDM_EMUPAUSED);
+				HandleCommand(IDM_EMUPAUSED);
 				break;
 			}
 
@@ -1469,28 +1495,28 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 		case WM_KEYDOWN:
 			// DebugTrace("KeyD: %d, 0x%X, 0x%X\n", wParam, wParam, lParam);
 
-			if (mainWin->m_TextToSpeechEnabled &&
+			if (m_TextToSpeechEnabled &&
 				((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
-				 wParam == VK_DECIMAL ||
-				 wParam == VK_HOME || wParam == VK_END ||
-				 wParam == VK_PRIOR || wParam == VK_NEXT ||
-				 wParam == VK_UP || wParam == VK_DOWN ||
-				 wParam == VK_LEFT || wParam == VK_RIGHT ||
-				 wParam == VK_INSERT || wParam == VK_DELETE ||
-				 wParam == VK_CLEAR))
+			     wParam == VK_DECIMAL ||
+			     wParam == VK_HOME || wParam == VK_END ||
+			     wParam == VK_PRIOR || wParam == VK_NEXT ||
+			     wParam == VK_UP || wParam == VK_DOWN ||
+			     wParam == VK_LEFT || wParam == VK_RIGHT ||
+			     wParam == VK_INSERT || wParam == VK_DELETE ||
+			     wParam == VK_CLEAR))
 			{
-				mainWin->TextToSpeechKey(wParam);
+				TextToSpeechKey(wParam);
 			}
 			else if ((wParam == VK_DIVIDE || wParam == VK_MULTIPLY ||
 			         wParam == VK_ADD || wParam == VK_SUBTRACT) &&
-			         !mainWin->m_DisableKeysShortcut)
+			         !m_DisableKeysShortcut)
 			{
 				// Ignore shortcut key, handled on key up
 			}
 			else if (wParam == VK_MENU && (GetKeyState(VK_CONTROL) & 0x8000) ||
 			         wParam == VK_CONTROL && (GetKeyState(VK_MENU) & 0x8000))
 			{
-				mainWin->ReleaseMouse();
+				ReleaseMouse();
 			}
 			else
 			{
@@ -1504,15 +1530,15 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				if (!bit)
 				{
 					// Reset shift state if it was set by Run Disc
-					if (mainWin->m_ShiftBooted)
+					if (m_ShiftBooted)
 					{
-						mainWin->m_ShiftBooted = false;
+						m_ShiftBooted = false;
 						BeebKeyUp(0, 0);
 					}
 
 					int row, col;
 
-					mainWin->TranslateKey((int)wParam, false, row, col);
+					TranslateKey((int)wParam, false, row, col);
 				}
 			}
 			break;
@@ -1522,31 +1548,31 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 			if ((wParam == 0x35 || wParam == VK_NUMPAD5) && (lParam & 0x20000000))
 			{
-				mainWin->CaptureBitmapPending(true);
+				CaptureBitmapPending(true);
 				break;
 			}
-			else if (wParam == 0x31 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == 0x31 && (lParam & 0x20000000) && !m_DisableKeysShortcut)
 			{
-				mainWin->QuickSave();
+				QuickSave();
 				// Let user know state has been saved
-				mainWin->FlashWindow();
+				FlashWindow();
 				break;
 			}
-			else if (wParam == 0x32 && (lParam & 0x20000000) && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == 0x32 && (lParam & 0x20000000) && !m_DisableKeysShortcut)
 			{
-				mainWin->QuickLoad();
+				QuickLoad();
 				// Let user know state has been loaded
-				mainWin->FlashWindow();
+				FlashWindow();
 				break;
 			}
 			else if (wParam == VK_OEM_PLUS && (lParam & 0x20000000))
 			{
-				mainWin->AdjustSpeed(true);
+				AdjustSpeed(true);
 				break;
 			}
 			else if (wParam == VK_OEM_MINUS && (lParam & 0x20000000))
 			{
-				mainWin->AdjustSpeed(false);
+				AdjustSpeed(false);
 				break;
 			}
 			else if (wParam != VK_F10 && wParam != VK_CONTROL)
@@ -1555,25 +1581,25 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 		case WM_KEYUP:
 			// DebugTrace("KeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
 
-			if (wParam == VK_DIVIDE && !mainWin->m_DisableKeysShortcut)
+			if (wParam == VK_DIVIDE && !m_DisableKeysShortcut)
 			{
-				mainWin->QuickSave();
+				QuickSave();
 				// Let user know state has been saved
-				mainWin->FlashWindow();
+				FlashWindow();
 			}
-			else if (wParam == VK_MULTIPLY && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == VK_MULTIPLY && !m_DisableKeysShortcut)
 			{
-				mainWin->QuickLoad();
+				QuickLoad();
 				// Let user know state has been loaded
-				mainWin->FlashWindow();
+				FlashWindow();
 			}
-			else if (wParam == VK_ADD && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == VK_ADD && !m_DisableKeysShortcut)
 			{
-				mainWin->AdjustSpeed(true);
+				AdjustSpeed(true);
 			}
-			else if (wParam == VK_SUBTRACT && !mainWin->m_DisableKeysShortcut)
+			else if (wParam == VK_SUBTRACT && !m_DisableKeysShortcut)
 			{
-				mainWin->AdjustSpeed(false);
+				AdjustSpeed(false);
 			}
 			else
 			{
@@ -1588,7 +1614,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				{
 					int row, col;
 
-					if (mainWin->TranslateKey((int)wParam, true, row, col) < 0)
+					if (TranslateKey((int)wParam, true, row, col) < 0)
 					{
 						if (row == -2)
 						{
@@ -1613,8 +1639,8 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 							{
 								R1Status = 0;
 								ResetTube();
-								mainWin->DestroyArmCoPro();
-								mainWin->CreateArmCoPro();
+								DestroyArmCoPro();
+								CreateArmCoPro();
 							}
 							else if (TubeType == Tube::SprowArm)
 							{
@@ -1648,31 +1674,31 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_ACTIVATE:
-			mainWin->Activate(wParam != WA_INACTIVE);
+			Activate(wParam != WA_INACTIVE);
 			break;
 
 		case WM_SETFOCUS:
-			mainWin->Focus(true);
+			Focus(true);
 			break;
 
 		case WM_KILLFOCUS:
-			mainWin->Focus(false);
+			Focus(false);
 			break;
 
 		case WM_SETCURSOR:
-			if (mainWin->m_HideCursor && LOWORD(lParam) == HTCLIENT)
+			if (m_HideCursor && LOWORD(lParam) == HTCLIENT)
 			{
 				SetCursor(nullptr);
 				return TRUE;
 			}
 			else
 			{
-				return DefWindowProc(hWnd, message, wParam, lParam);
+				return DefWindowProc(m_hWnd, nMessage, wParam, lParam);
 			}
 			break;
 
 		case MM_JOY1MOVE:
-			mainWin->ScaleJoystick(LOWORD(lParam), HIWORD(lParam));
+			ScaleJoystick(LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case MM_JOY1BUTTONDOWN:
@@ -1681,7 +1707,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_INPUT:
-			if (mainWin->m_MouseCaptured)
+			if (m_MouseCaptured)
 			{
 				UINT dwSize = sizeof(RAWINPUT);
 				BYTE Buffer[sizeof(RAWINPUT)];
@@ -1700,63 +1726,63 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 				int xDelta = raw->data.mouse.lLastX;
 				int yDelta = raw->data.mouse.lLastY;
 
-				mainWin->m_RelMousePos.x += xDelta;
+				m_RelMousePos.x += xDelta;
 
-				if (mainWin->m_RelMousePos.x < 0)
+				if (m_RelMousePos.x < 0)
 				{
-					mainWin->m_RelMousePos.x = 0;
+					m_RelMousePos.x = 0;
 				}
-				else if (mainWin->m_RelMousePos.x > mainWin->m_XWinSize)
+				else if (m_RelMousePos.x > m_XWinSize)
 				{
-					mainWin->m_RelMousePos.x = mainWin->m_XWinSize;
-				}
-
-				mainWin->m_RelMousePos.y += yDelta;
-
-				if (mainWin->m_RelMousePos.y < 0)
-				{
-					mainWin->m_RelMousePos.y = 0;
-				}
-				else if (mainWin->m_RelMousePos.y > mainWin->m_YWinSize)
-				{
-					mainWin->m_RelMousePos.y = mainWin->m_YWinSize;
+					m_RelMousePos.x = m_XWinSize;
 				}
 
-				mainWin->ScaleMousestick(mainWin->m_RelMousePos.x,
-				                         mainWin->m_RelMousePos.y);
+				m_RelMousePos.y += yDelta;
 
-				mainWin->ChangeAMXPosition(xDelta, yDelta);
+				if (m_RelMousePos.y < 0)
+				{
+					m_RelMousePos.y = 0;
+				}
+				else if (m_RelMousePos.y > m_YWinSize)
+				{
+					m_RelMousePos.y = m_YWinSize;
+				}
+
+				ScaleMousestick(m_RelMousePos.x,
+				                m_RelMousePos.y);
+
+				ChangeAMXPosition(xDelta, yDelta);
 			}
 			break;
 
 		case WM_MOUSEMOVE:
-			if (!mainWin->m_MouseCaptured)
+			if (!m_MouseCaptured)
 			{
 				int xPos = GET_X_LPARAM(lParam);
 				int yPos = GET_Y_LPARAM(lParam);
 
-				mainWin->ScaleMousestick(xPos, yPos);
-				mainWin->SetAMXPosition(xPos, yPos);
+				ScaleMousestick(xPos, yPos);
+				SetAMXPosition(xPos, yPos);
 
 				// Experiment: show menu in full screen when cursor moved to top of window
-				mainWin->HideMenu(yPos > 2);
+				HideMenu(yPos > 2);
 			}
 			break;
 
 		case WM_LBUTTONDOWN:
-			if (AMXMouseEnabled && mainWin->m_CaptureMouse && !mainWin->m_MouseCaptured)
+			if (AMXMouseEnabled && m_CaptureMouse && !m_MouseCaptured)
 			{
-				mainWin->CaptureMouse();
+				CaptureMouse();
 			}
 			else
 			{
-				mainWin->SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
+				SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
 				AMXButtons |= AMX_LEFT_BUTTON;
 			}
 			break;
 
 		case WM_LBUTTONUP:
-			mainWin->SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
+			SetMousestickButton(0, (wParam & MK_LBUTTON) != 0);
 			AMXButtons &= ~AMX_LEFT_BUTTON;
 			break;
 
@@ -1769,17 +1795,17 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_RBUTTONDOWN:
-			mainWin->SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
+			SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
 			AMXButtons |= AMX_RIGHT_BUTTON;
 			break;
 
 		case WM_RBUTTONUP:
-			mainWin->SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
+			SetMousestickButton(1, (wParam & MK_RBUTTON) != 0);
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
 		case WM_DESTROY:  // message: window being destroyed
-			mainWin->Shutdown();
+			Shutdown();
 			PostQuitMessage(0);
 			break;
 
@@ -1789,7 +1815,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 
 		case WM_EXITMENULOOP:
 			SetSound(SoundState::Unmuted);
-			mainWin->ResetTiming();
+			ResetTiming();
 			break;
 
 		case WM_ENTERSIZEMOVE: // Window being moved
@@ -1801,23 +1827,23 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		case WM_REINITDX:
-			mainWin->ReinitDX();
+			ReinitDX();
 			break;
 
 		case WM_TIMER:
 			if (wParam == 1)
 			{
-				mainWin->HandleTimer();
+				HandleTimer();
 			}
 			else if (wParam == 2) // Handle timer for automatic disc boot delay
 			{
-				mainWin->KillBootDiscTimer();
-				mainWin->DoShiftBreak();
+				KillBootDiscTimer();
+				DoShiftBreak();
 			}
 			break;
 
 		case WM_USER_KEYBOARD_DIALOG_CLOSED:
-			mainWin->UserKeyboardDialogClosed();
+			UserKeyboardDialogClosed();
 			break;
 
 		case WM_USER_PORT_BREAKOUT_DIALOG_CLOSED:
@@ -1826,7 +1852,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,     // window handle
 			break;
 
 		default: // Passes it on if unproccessed
-			return DefWindowProc(hWnd, message, wParam, lParam);
+			return DefWindowProc(m_hWnd, nMessage, wParam, lParam);
 	}
 
 	return 0;
@@ -4151,7 +4177,7 @@ void BeebWin::OpenUserKeyboardDialog()
 {
 	// Pause the emulator if not already paused.
 
-	m_WasPaused = mainWin->IsPaused();
+	m_WasPaused = IsPaused();
 
 	if (!m_WasPaused)
 	{
@@ -4166,9 +4192,9 @@ void BeebWin::UserKeyboardDialogClosed()
 	// Restart the emulator if it wasn't paused before the "user keyboard"
 	// dialog box was opened.
 
-	if (!mainWin->m_WasPaused)
+	if (!m_WasPaused)
 	{
-		mainWin->TogglePause();
+		TogglePause();
 	}
 }
 
@@ -4343,7 +4369,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 
 			// Reinit with new prefs
 			SetWindowPos(m_hWnd, HWND_TOP, m_XWinPos, m_YWinPos,
-						 0, 0, SWP_NOSIZE);
+			             0, 0, SWP_NOSIZE);
 			HandleCommand(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
