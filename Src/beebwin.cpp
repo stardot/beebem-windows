@@ -71,6 +71,7 @@ using std::max;
 #include "ext1770.h"
 #include "UEFState.h"
 #include "Debug.h"
+#include "FileUtils.h"
 #include "scsi.h"
 #include "sasi.h"
 #include "ide.h"
@@ -4345,24 +4346,23 @@ void BeebWin::ParseCommandLine()
 // Check for preference files in the same directory as the file specified
 void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 {
+	if (path[0] == 0)
+		return;
+
 	char file[_MAX_PATH];
 	char drive[_MAX_DRIVE];
 	char dir[_MAX_DIR];
-	FILE *fd;
-
-	if (path[0] == 0)
-		return;
 
 	_splitpath(path, drive, dir, NULL, NULL);
 
 	// Look for prefs file
 	_makepath(file, drive, dir, "Preferences", "cfg");
-	fd = fopen(file, "r");
-	if (fd != NULL)
+
+	if (FileExists(file))
 	{
-		fclose(fd);
 		// File exists, use it
 		strcpy(m_PrefsFile, file);
+
 		if (bLoadPrefs)
 		{
 			LoadPreferences();
@@ -4380,12 +4380,12 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 
 	// Look for ROMs file
 	_makepath(file, drive, dir, "Roms", "cfg");
-	fd = fopen(file, "r");
-	if (fd != NULL)
+
+	if (FileExists(file))
 	{
-		fclose(fd);
 		// File exists, use it
 		strcpy(RomFile, file);
+
 		if (bLoadPrefs)
 		{
 			ReadROMFile(RomFile, RomConfig);
@@ -4448,11 +4448,9 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 	{
 		cont = false;
 
-		FILE *fd = fopen(FileName, "rb");
-		if (fd != NULL)
+		if (FileExists(FileName))
 		{
 			cont = true;
-			fclose(fd);
 		}
 		else if (uef)
 		{
@@ -4460,12 +4458,11 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 			strcpy(TmpPath, m_UserDataPath);
 			strcat(TmpPath, "beebstate/");
 			strcat(TmpPath, FileName);
-			fd = fopen(TmpPath, "rb");
-			if (fd != NULL)
+
+			if (FileExists(TmpPath))
 			{
 				cont = true;
 				FileName = TmpPath;
-				fclose(fd);
 			}
 			else
 			{
@@ -4473,12 +4470,11 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 				strcpy(TmpPath, m_UserDataPath);
 				strcat(TmpPath, "tapes/");
 				strcat(TmpPath, FileName);
-				fd = fopen(TmpPath, "rb");
-				if (fd != NULL)
+
+				if (FileExists(TmpPath))
 				{
 					cont = true;
 					FileName = TmpPath;
-					fclose(fd);
 				}
 			}
 		}
@@ -4488,12 +4484,11 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 			strcpy(TmpPath, m_UserDataPath);
 			strcat(TmpPath, "tapes/");
 			strcat(TmpPath, FileName);
-			fd = fopen(TmpPath, "rb");
-			if (fd != NULL)
+
+			if (FileExists(TmpPath))
 			{
 				cont = true;
 				FileName = TmpPath;
-				fclose(fd);
 			}
 		}
 		else
@@ -4502,12 +4497,11 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 			strcpy(TmpPath, m_UserDataPath);
 			strcat(TmpPath, "discims/");
 			strcat(TmpPath, FileName);
-			fd = fopen(TmpPath, "rb");
-			if (fd != NULL)
+
+			if (FileExists(TmpPath))
 			{
 				cont = true;
 				FileName = TmpPath;
-				fclose(fd);
 			}
 		}
 
@@ -4581,11 +4575,9 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 	{
 		cont = false;
 
-		FILE *fd = fopen(FileName, "rb");
-		if (fd != NULL)
+		if (FileExists(FileName))
 		{
 			cont = true;
-			fclose(fd);
 		}
 
 		if (!cont)
