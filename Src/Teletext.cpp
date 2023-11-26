@@ -72,7 +72,7 @@ u_short TeletextPort[4];
 char TeletextCustomIP[4][20];
 u_short TeletextCustomPort[4];
 
-constexpr int TELETEXT_BASE_PORT = 19761;
+constexpr u_short TELETEXT_BASE_PORT = 19761;
 
 enum TTXState {TTXFIELD, TTXFSYNC, TTXDEW};
 static TTXState TeletextState = TTXFIELD;
@@ -123,8 +123,8 @@ static int TeletextConnect(int ch)
 
     struct sockaddr_in teletext_serv_addr;
     teletext_serv_addr.sin_family = AF_INET; // address family Internet
-    teletext_serv_addr.sin_port = htons (TeletextPort[ch]); //Port to connect on
-    teletext_serv_addr.sin_addr.s_addr = inet_addr (TeletextIP[ch]); //Target IP
+    teletext_serv_addr.sin_port = htons(TeletextPort[ch]); // Port to connect on
+    teletext_serv_addr.sin_addr.s_addr = inet_addr(TeletextIP[ch]); // Target IP
 
     if (connect(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)) == SOCKET_ERROR)
     {
@@ -174,7 +174,7 @@ void TeletextInit()
         else
         {
             strcpy(TeletextIP[i], "127.0.0.1");
-            TeletextPort[i] = TELETEXT_BASE_PORT + i;
+            TeletextPort[i] = (u_short)(TELETEXT_BASE_PORT + i);
         }
     }
 
