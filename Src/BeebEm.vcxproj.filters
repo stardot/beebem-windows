@@ -48,7 +48,7 @@
     <ClCompile Include="atodconv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="avi.cpp">
+    <ClCompile Include="AVIWriter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Bcd.cpp">
@@ -293,7 +293,7 @@
     <ClInclude Include="atodconv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="avi.h">
+    <ClInclude Include="AVIWriter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Bcd.h">

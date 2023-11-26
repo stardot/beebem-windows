@@ -39,6 +39,7 @@ using std::max;
 #include "beebwin.h"
 #include "Main.h"
 #include "6502core.h"
+#include "AviWriter.h"
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "FileDialog.h"
@@ -49,7 +50,6 @@ using std::max;
 #include "disctype.h"
 #include "UEFState.h"
 #include "Serial.h"
-#include "avi.h"
 #include "ext1770.h"
 #include "tube.h"
 #include "userkybd.h"
@@ -68,7 +68,6 @@ extern char CDiscName[2][256]; // Filename of disc current in drive 0 and 1;
 extern DiscType CDiscType[2]; // Current disc types
 extern char FDCDLL[256];
 extern HMODULE hFDCBoard;
-extern AVIWriter *aviWriter;
 
 typedef void (*lGetBoardProperties)(struct DriveControlBlock *);
 typedef unsigned char (*lSetDriveControl)(unsigned char);
@@ -722,6 +721,7 @@ void BeebWin::TranslatePrinterPort()
 }
 
 /****************************************************************************/
+
 void BeebWin::CaptureVideo()
 {
 	char DefaultPath[_MAX_PATH];
@@ -734,8 +734,8 @@ void BeebWin::CaptureVideo()
 	GetDataPath(m_UserDataPath, DefaultPath);
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-	bool changed = fileDialog.Save();
-	if (changed)
+
+	if (fileDialog.Save())
 	{
 		// Add avi extension
 		if (!hasFileExt(FileName, ".avi"))
@@ -756,7 +756,9 @@ void BeebWin::CaptureVideo()
 
 		aviWriter = new AVIWriter();
 
-		WAVEFORMATEX wf, *wfp;
+		WAVEFORMATEX wf;
+		WAVEFORMATEX *wfp = nullptr;
+
 		if (SoundEnabled)
 		{
 			memset(&wf, 0, sizeof(WAVEFORMATEX));
@@ -769,16 +771,8 @@ void BeebWin::CaptureVideo()
 			wf.cbSize = 0;
 			wfp = &wf;
 		}
-		else
-		{
-			wfp = NULL;
-		}
 
 		// Create DIB for AVI frames
-		if (m_AviDIB != NULL)
-			DeleteObject(m_AviDIB);
-		if (m_AviDC != NULL)
-			DeleteDC(m_AviDC);
 		m_Avibmi = m_bmi;
 
 		if (m_MenuIDAviResolution == IDM_VIDEORES1)
@@ -798,16 +792,21 @@ void BeebWin::CaptureVideo()
 			m_Avibmi.bmiHeader.biHeight = 256;
 		}
 
-		m_Avibmi.bmiHeader.biSizeImage = m_Avibmi.bmiHeader.biWidth*m_Avibmi.bmiHeader.biHeight;
-		m_AviDC = CreateCompatibleDC(NULL);
-		m_AviDIB = CreateDIBSection(m_AviDC, (BITMAPINFO *)&m_Avibmi,
-									DIB_RGB_COLORS, (void**)&m_AviScreen, NULL, 0);
-		if (SelectObject(m_AviDC, m_AviDIB) == NULL)
+		m_Avibmi.bmiHeader.biSizeImage = m_Avibmi.bmiHeader.biWidth * m_Avibmi.bmiHeader.biHeight;
+
+		m_AviDC = CreateCompatibleDC(nullptr);
+		m_AviDIB = CreateDIBSection(m_AviDC,
+		                            (BITMAPINFO *)&m_Avibmi,
+		                            DIB_RGB_COLORS,
+		                            (void**)&m_AviScreen,
+		                            nullptr,
+		                            0);
+
+		if (SelectObject(m_AviDC, m_AviDIB) == nullptr)
 		{
 			Report(MessageType::Error, "Failed to initialise AVI buffers");
 
-			delete aviWriter;
-			aviWriter = NULL;
+			EndVideo();
 		}
 		else
 		{
@@ -822,21 +821,26 @@ void BeebWin::CaptureVideo()
 			case IDM_VIDEOSKIP5: m_AviFrameSkip = 5; break;
 			default: m_AviFrameSkip = 1; break;
 			}
+
 			m_AviFrameSkipCount = 0;
 			m_AviFrameCount = 0;
 
-			HRESULT hr = aviWriter->Initialise(FileName, wfp, &m_Avibmi,
-				(int)(50 / (m_AviFrameSkip + 1)));
+			HRESULT hr = aviWriter->Initialise(FileName,
+			                                   wfp,
+			                                   &m_Avibmi,
+			                                   (int)(50 / (m_AviFrameSkip + 1)));
+
 			if (FAILED(hr))
 			{
 				Report(MessageType::Error, "Failed to create AVI file");
 
-				delete aviWriter;
-				aviWriter = NULL;
+				EndVideo();
 			}
 		}
 	}
 }
+
+/****************************************************************************/
 
 void BeebWin::EndVideo()
 {
@@ -844,6 +848,18 @@ void BeebWin::EndVideo()
 	{
 		delete aviWriter;
 		aviWriter = nullptr;
+	}
+
+	if (m_AviDIB != nullptr)
+	{
+		DeleteObject(m_AviDIB);
+		m_AviDIB = nullptr;
+	}
+
+	if (m_AviDC != nullptr)
+	{
+		DeleteDC(m_AviDC);
+		m_AviDC = nullptr;
 	}
 }
 

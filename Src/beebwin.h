@@ -357,8 +357,11 @@ public:
 	bool PrinterFile();
 	void TogglePrinter(void);
 	void TranslatePrinterPort(void);
+
+	// AVI recording
 	void CaptureVideo();
 	void EndVideo();
+
 	void CaptureBitmap(int SourceX,
 	                   int SourceY,
 	                   int SourceWidth,
@@ -366,6 +369,7 @@ public:
 	                   bool Teletext);
 	bool GetImageFile(char *FileName, int Size);
 	bool GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid);
+
 	void InitTextToSpeech();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	                        TextToSpeechSearchType type);
@@ -374,9 +378,11 @@ public:
 	void TextToSpeechReadLine();
 	void TextToSpeechReadSentence();
 	void TextToSpeechReadScreen();
+
 	void InitTextView();
 	void TextView();
 	void TextViewSetCursorPos(int line, int col);
+
 	bool RebootSystem();
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);

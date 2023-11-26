@@ -26,10 +26,10 @@ Boston, MA  02110-1301, USA.
 
 #include "Main.h"
 #include "beebwin.h"
+#include "AviWriter.h"
 #include "beebemrc.h"
 #include "6502core.h"
 #include "ext1770.h"
-#include "avi.h"
 #include "Messages.h"
 #include "DebugTrace.h"
 
@@ -37,7 +37,6 @@ typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID FAR *lpGUID, LPDIRECTDRAW FAR 
 
 extern HMODULE hFDCBoard;
 extern EDCB ExtBoard;
-extern AVIWriter *aviWriter;
 
 /****************************************************************************/
 void BeebWin::InitDX()
@@ -785,7 +784,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		}
 	}
 
-	if (aviWriter)
+	if (aviWriter != nullptr)
 	{
 		StretchBlt(m_AviDC, 0, 0, m_Avibmi.bmiHeader.biWidth, m_Avibmi.bmiHeader.biHeight,
 		           m_hDCBitmap, 0, starty,
@@ -795,11 +794,11 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 
 		HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
 
-		if (hr != E_UNEXPECTED && FAILED(hr))
+		if (FAILED(hr) && hr != E_UNEXPECTED)
 		{
 			Report(MessageType::Error, "Failed to write video to AVI file");
-			delete aviWriter;
-			aviWriter = NULL;
+
+			EndVideo();
 		}
 	}
 

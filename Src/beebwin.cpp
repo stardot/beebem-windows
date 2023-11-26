@@ -83,7 +83,7 @@ using std::max;
 #include "speech.h"
 #endif
 #include "Teletext.h"
-#include "avi.h"
+#include "AviWriter.h"
 #include "IP232.h"
 #include "SerialPortDialog.h"
 #include "Arm.h"
@@ -115,7 +115,6 @@ struct LEDType LEDs;
 
 LEDColour DiscLedColour = LEDColour::Red;
 
-AVIWriter *aviWriter = NULL;
 
 // FDC Board extension DLL variables
 HMODULE hFDCBoard;
@@ -181,13 +180,12 @@ BeebWin::BeebWin()
 	m_RelativeSpeed = 1;
 	m_FramesPerSecond = 50;
 	strcpy(m_szTitle, WindowTitle);
-	m_AviDC = NULL;
-	m_AviDIB = NULL;
+	m_AviDC = nullptr;
+	m_AviDIB = nullptr;
 	m_CaptureBitmapPending = false;
 	m_SpVoice = NULL;
 	m_hTextView = NULL;
 	m_Frozen = false;
-	aviWriter = NULL;
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
 	m_AutoSavePrefsCMOS = false;
@@ -483,11 +481,7 @@ BeebWin::~BeebWin()
 /****************************************************************************/
 void BeebWin::Shutdown()
 {
-	if (aviWriter)
-	{
-		delete aviWriter;
-		aviWriter = nullptr;
-	}
+	EndVideo();
 
 	if (m_AutoSavePrefsCMOS || m_AutoSavePrefsFolders ||
 		m_AutoSavePrefsAll || m_AutoSavePrefsChanged)
@@ -1952,10 +1946,9 @@ int BeebWin::StartOfFrame(void)
 
 	// Force video frame rate to match AVI capture rate to avoid
 	// video and sound getting out of sync
-	if (aviWriter != NULL)
+	if (aviWriter != nullptr)
 	{
-		m_AviFrameSkipCount++;
-		if (m_AviFrameSkipCount > m_AviFrameSkip)
+		if (++m_AviFrameSkipCount > m_AviFrameSkip)
 		{
 			m_AviFrameSkipCount = 0;
 			FrameNum = 0;
@@ -1967,8 +1960,8 @@ int BeebWin::StartOfFrame(void)
 
 		// Ensure that frames captured each second (50 frames) matches
 		// the AVI capture FPS rate
-		m_AviFrameCount++;
-		if (m_AviFrameCount >= 50)
+
+		if (++m_AviFrameCount >= 50)
 		{
 			m_AviFrameCount = 0;
 			m_AviFrameSkipCount = 0;

@@ -24,6 +24,9 @@ Boston, MA  02110-1301, USA.
 // Mike Wyatt - Oct 2005
 //
 
+#ifndef AVI_WRITER_HEADER
+#define AVI_WRITER_HEADER
+
 #include <vfw.h>
 #include "beebwin.h"
 
@@ -40,8 +43,7 @@ public:
 	                   int fps);
 	void Close(void);
 
-	HRESULT WriteSound(BYTE *pBuffer,
-					   ULONG nBytesToWrite);
+	HRESULT WriteSound(BYTE *pBuffer, ULONG nBytesToWrite);
 	HRESULT WriteVideo(BYTE *pBuffer);
 
 private:
@@ -61,3 +63,7 @@ private:
 	int m_videoBufferSize;
 	LONG m_nFrame;
 };
+
+extern AVIWriter *aviWriter;
+
+#endif

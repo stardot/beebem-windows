@@ -32,15 +32,13 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include "6502core.h"
+#include "AviWriter.h"
 #include "UEFState.h"
-#include "avi.h"
 #include "Main.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
 #endif
 #include "SoundStreamer.h"
-
-extern AVIWriter *aviWriter;
 
 //  #define DEBUGSOUNDTOFILE
 
@@ -136,23 +134,25 @@ bool PartSamples = true;
 SoundStreamer *pSoundStreamer = nullptr;
 
 /****************************************************************************/
-/* Writes sound data to a sound buffer */
-static void WriteToSoundBuffer(PBYTE lpbSoundData)
+
+// Writes sound data to a sound buffer
+
+static void WriteToSoundBuffer(BYTE *pSoundData)
 {
 	if (pSoundStreamer != nullptr)
 	{
-		pSoundStreamer->Stream(lpbSoundData);
+		pSoundStreamer->Stream(pSoundData);
 	}
 
 	if (aviWriter != nullptr)
 	{
-		HRESULT hResult = aviWriter->WriteSound(lpbSoundData, SoundBufferSize);
+		HRESULT hResult = aviWriter->WriteSound(pSoundData, SoundBufferSize);
 
 		if (FAILED(hResult) && hResult != E_UNEXPECTED)
 		{
 			mainWin->Report(MessageType::Error, "Failed to write sound to AVI file");
-			delete aviWriter;
-			aviWriter = nullptr;
+
+			mainWin->EndVideo();
 		}
 	}
 }
