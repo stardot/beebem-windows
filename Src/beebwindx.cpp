@@ -613,11 +613,11 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	TeletextLines = 500 / TeletextStyle;
 
 	// Do motion blur
-	if (m_MotionBlur != IDM_BLUR_OFF)
+	if (m_MenuIDMotionBlur != IDM_BLUR_OFF)
 	{
-		if (m_MotionBlur == IDM_BLUR_2)
+		if (m_MenuIDMotionBlur == IDM_BLUR_2)
 			j = 32;
-		else if (m_MotionBlur == IDM_BLUR_4)
+		else if (m_MenuIDMotionBlur == IDM_BLUR_4)
 			j = 16;
 		else // blur 8 frames
 			j = 8;
@@ -635,6 +635,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 					m_screen_blur[i] = 0;
 			}
 		}
+
 		memcpy(m_screen, m_screen_blur, 800*512);
 	}
 

@@ -147,10 +147,11 @@ void BeebWin::LoadPreferences()
 	TranslateDDSize();
 
 	if (m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, dword))
-		m_MenuIdWinSize = dword;
+		m_MenuIDWinSize = dword;
 	else
-		m_MenuIdWinSize = IDM_640X512;
-	if (m_MenuIdWinSize == IDM_CUSTOMWINSIZE)
+		m_MenuIDWinSize = IDM_640X512;
+
+	if (m_MenuIDWinSize == IDM_CUSTOMWINSIZE)
 	{
 		if (m_Preferences.GetDWORDValue("WinSizeX", dword))
 			m_XWinSize = dword;
@@ -200,9 +201,9 @@ void BeebWin::LoadPreferences()
 	LEDs.ShowKB=LED_SHOW_KB;
 
 	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
-		m_MotionBlur = dword;
+		m_MenuIDMotionBlur = dword;
 	else
-		m_MotionBlur = IDM_BLUR_OFF;
+		m_MenuIDMotionBlur = IDM_BLUR_OFF;
 
 	if (!m_Preferences.GetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8))
 	{
@@ -220,9 +221,9 @@ void BeebWin::LoadPreferences()
 		m_TextViewEnabled = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_SPEED_TIMING, dword))
-		m_MenuIdTiming = dword;
+		m_MenuIDTiming = dword;
 	else
-		m_MenuIdTiming = IDM_REALTIME;
+		m_MenuIDTiming = IDM_REALTIME;
 	TranslateTiming();
 
 	if (!m_Preferences.GetDWORDValue("SoundConfig::Selection", dword))
@@ -236,15 +237,15 @@ void BeebWin::LoadPreferences()
 		SoundChipEnabled = true;
 
 	if (m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, dword))
-		m_MenuIdSampleRate = dword;
+		m_MenuIDSampleRate = dword;
 	else
-		m_MenuIdSampleRate = IDM_44100KHZ;
+		m_MenuIDSampleRate = IDM_44100KHZ;
 	TranslateSampleRate();
 
 	if (m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, dword))
-		m_MenuIdVolume = dword;
+		m_MenuIDVolume = dword;
 	else
-		m_MenuIdVolume = IDM_FULLVOLUME;
+		m_MenuIDVolume = IDM_FULLVOLUME;
 	TranslateVolume();
 
 	if (!m_Preferences.GetBoolValue("RelaySoundEnabled", RelaySoundEnabled))
@@ -264,9 +265,9 @@ void BeebWin::LoadPreferences()
 		Music5000Enabled = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
-		m_MenuIdSticks = dword;
+		m_MenuIDSticks = dword;
 	else
-		m_MenuIdSticks = 0;
+		m_MenuIDSticks = 0;
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
@@ -277,10 +278,10 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse))
 		m_CaptureMouse = false;
 
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING,dword))
-		m_MenuIdKeyMapping = dword;
+	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING, dword))
+		m_MenuIDKeyMapping = dword;
 	else
-		m_MenuIdKeyMapping = IDM_LOGICALKYBDMAPPING;
+		m_MenuIDKeyMapping = IDM_LOGICALKYBDMAPPING;
 
 	bool readDefault = true;
 	if (m_Preferences.GetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath))
@@ -338,21 +339,21 @@ void BeebWin::LoadPreferences()
 	else
 		AMXLRForMiddle = true;
 	if (m_Preferences.GetDWORDValue(CFG_AMX_SIZE, dword))
-		m_MenuIdAMXSize = dword;
+		m_MenuIDAMXSize = dword;
 	else
-		m_MenuIdAMXSize = IDM_AMX_320X256;
+		m_MenuIDAMXSize = IDM_AMX_320X256;
 	if (m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, dword))
-		m_MenuIdAMXAdjust = dword;
+		m_MenuIDAMXAdjust = dword;
 	else
-		m_MenuIdAMXAdjust = IDM_AMX_ADJUSTP30;
+		m_MenuIDAMXAdjust = IDM_AMX_ADJUSTP30;
 	TranslateAMX();
 
 	if (!m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
 		PrinterEnabled = false;
 	if (m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, dword))
-		m_MenuIdPrinterPort = dword;
+		m_MenuIDPrinterPort = dword;
 	else
-		m_MenuIdPrinterPort = IDM_PRINTER_LPT1;
+		m_MenuIDPrinterPort = IDM_PRINTER_LPT1;
 	if (!m_Preferences.GetStringValue(CFG_PRINTER_FILE, m_PrinterFileName))
 		m_PrinterFileName[0] = 0;
 	TranslatePrinterPort();
@@ -553,24 +554,24 @@ void BeebWin::LoadPreferences()
 		RTC_Enabled = false;
 
 	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
-		m_MenuIdAviResolution = dword;
+		m_MenuIDAviResolution = dword;
 	else
-		m_MenuIdAviResolution = IDM_VIDEORES2;
+		m_MenuIDAviResolution = IDM_VIDEORES2;
 
 	if (m_Preferences.GetDWORDValue("FrameSkip", dword))
-		m_MenuIdAviSkip = dword;
+		m_MenuIDAviSkip = dword;
 	else
-		m_MenuIdAviSkip = IDM_VIDEOSKIP1;
+		m_MenuIDAviSkip = IDM_VIDEOSKIP1;
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureResolution", dword))
-		m_MenuIdCaptureResolution = dword;
+		m_MenuIDCaptureResolution = dword;
 	else
-		m_MenuIdCaptureResolution = IDM_CAPTURERES_640;
+		m_MenuIDCaptureResolution = IDM_CAPTURERES_640;
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureFormat", dword))
-		m_MenuIdCaptureFormat = dword;
+		m_MenuIDCaptureFormat = dword;
 	else
-		m_MenuIdCaptureFormat = IDM_CAPTUREBMP;
+		m_MenuIDCaptureFormat = IDM_CAPTUREBMP;
 
 	RECT rect;
 	if (m_Preferences.GetBinaryValue("WindowPos", &rect, sizeof(rect)))
@@ -676,7 +677,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("DXSmoothing", m_DXSmoothing);
 		m_Preferences.SetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only);
 		m_Preferences.SetDWORDValue("DDFullScreenMode", m_DDFullScreenMode);
-		m_Preferences.SetDWORDValue(CFG_VIEW_WIN_SIZE, m_MenuIdWinSize);
+		m_Preferences.SetDWORDValue(CFG_VIEW_WIN_SIZE, m_MenuIDWinSize);
 		m_Preferences.SetDWORDValue("WinSizeX", m_XLastWinSize);
 		m_Preferences.SetDWORDValue("WinSizeY", m_YLastWinSize);
 		m_Preferences.SetBoolValue("FullScreen", m_isFullScreen);
@@ -690,17 +691,17 @@ void BeebWin::SavePreferences(bool saveAll)
 			(LEDs.ShowKB ? 1 : 0)
 		);
 		m_Preferences.SetBinaryValue("LED Information", &LEDByte, 1);
-		m_Preferences.SetDWORDValue("MotionBlur", m_MotionBlur);
+		m_Preferences.SetDWORDValue("MotionBlur", m_MenuIDMotionBlur);
 		m_Preferences.SetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8);
 		m_Preferences.SetBoolValue("TextViewEnabled", m_TextViewEnabled);
 
-		m_Preferences.SetDWORDValue(CFG_SPEED_TIMING, m_MenuIdTiming);
+		m_Preferences.SetDWORDValue(CFG_SPEED_TIMING, m_MenuIDTiming);
 
 		m_Preferences.SetDWORDValue("SoundConfig::Selection", SoundConfig::Selection);
 		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
 		m_Preferences.SetBoolValue("SoundChipEnabled", SoundChipEnabled);
-		m_Preferences.SetDWORDValue(CFG_SOUND_SAMPLE_RATE, m_MenuIdSampleRate);
-		m_Preferences.SetDWORDValue(CFG_SOUND_VOLUME, m_MenuIdVolume);
+		m_Preferences.SetDWORDValue(CFG_SOUND_SAMPLE_RATE, m_MenuIDSampleRate);
+		m_Preferences.SetDWORDValue(CFG_SOUND_VOLUME, m_MenuIDVolume);
 		m_Preferences.SetBoolValue("RelaySoundEnabled", RelaySoundEnabled);
 		m_Preferences.SetBoolValue("TapeSoundEnabled", TapeSoundEnabled);
 		m_Preferences.SetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled);
@@ -709,11 +710,11 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
-		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIdSticks);
+		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIDSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
-		m_Preferences.SetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIdKeyMapping);
+		m_Preferences.SetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIDKeyMapping);
 		m_Preferences.SetBoolValue("KeyMapAS", m_KeyMapAS);
 		flag = m_KeyMapFunc;
 		m_Preferences.SetBinaryValue("KeyMapFunc", &flag, 1);
@@ -733,11 +734,11 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		m_Preferences.SetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
 		m_Preferences.SetDWORDValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
-		m_Preferences.SetDWORDValue(CFG_AMX_SIZE, m_MenuIdAMXSize);
-		m_Preferences.SetDWORDValue(CFG_AMX_ADJUST, m_MenuIdAMXAdjust);
+		m_Preferences.SetDWORDValue(CFG_AMX_SIZE, m_MenuIDAMXSize);
+		m_Preferences.SetDWORDValue(CFG_AMX_ADJUST, m_MenuIDAMXAdjust);
 
 		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
-		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, m_MenuIdPrinterPort);
+		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, m_MenuIDPrinterPort);
 		m_Preferences.SetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
 
 		m_Preferences.SetBinaryValue("Tape Clock Speed", &TapeClockSpeed, 2);
@@ -785,11 +786,11 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
 		m_Preferences.SetBoolValue("RTCEnabled", RTC_Enabled);
 
-		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIdAviResolution);
-		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIdAviSkip);
+		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIDAviResolution);
+		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
 
-		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIdCaptureResolution);
-		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIdCaptureFormat);
+		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIDCaptureResolution);
+		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIDCaptureFormat);
 
 		RECT rect;
 		GetWindowRect(m_hWnd,&rect);

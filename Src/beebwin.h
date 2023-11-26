@@ -231,7 +231,7 @@ public:
 	void ScaleJoystick(unsigned int x, unsigned int y);
 	void SetMousestickButton(int index, bool button);
 	void ScaleMousestick(unsigned int x, unsigned int y);
-	void HandleCommand(int MenuId);
+	void HandleCommand(UINT MenuID);
 	void SetAMXPosition(unsigned int x, unsigned int y);
 	void ChangeAMXPosition(int deltaX, int deltaY);
 	void CaptureMouse();
@@ -291,20 +291,35 @@ public:
 	void SaveEmuUEF(FILE *SUEF);
 	void LoadEmuUEF(FILE *SUEF,int Version);
 
-	HMENU		m_hMenu;
-	bool		m_frozen;
-	char*		m_screen;
-	char*		m_screen_blur;
-	double		m_RealTimeTarget;
-	bool		m_ShiftBooted;
-	bool		m_TextToSpeechEnabled;
-	bool		m_TextViewEnabled;
-	bool		m_DisableKeysWindows;
-	bool		m_DisableKeysBreak;
-	bool		m_DisableKeysEscape;
-	bool		m_DisableKeysShortcut;
+	HMENU m_hMenu;
+	bool m_frozen;
+	char* m_screen;
+	char* m_screen_blur;
 
-	int		m_MenuIdWinSize;
+	// Timing
+	bool m_ShowSpeedAndFPS;
+	UINT m_MenuIDTiming;
+	double m_RealTimeTarget;
+	int m_CyclesPerSec;
+	DWORD m_LastTickCount;
+	DWORD m_LastStatsTickCount;
+	int m_LastTotalCycles;
+	int m_LastStatsTotalCycles;
+	DWORD m_TickBase;
+	int m_CycleBase;
+	int m_MinFrameCount;
+	DWORD m_LastFPSCount;
+	int m_FPSTarget;
+
+	bool m_ShiftBooted;
+	bool m_TextToSpeechEnabled;
+	bool m_TextViewEnabled;
+	bool m_DisableKeysWindows;
+	bool m_DisableKeysBreak;
+	bool m_DisableKeysEscape;
+	bool m_DisableKeysShortcut;
+
+	UINT m_MenuIDWinSize;
 	int		m_XWinSize;
 	int		m_YWinSize;
 	int		m_XLastWinSize;
@@ -321,20 +336,17 @@ public:
 	float		m_YRatioAdj;
 	float		m_XRatioCrop;
 	float		m_YRatioCrop;
-	bool		m_ShowSpeedAndFPS;
-	int		m_MenuIdSampleRate;
-	int		m_MenuIdVolume;
-	int		m_MenuIdTiming;
-	int		m_FPSTarget;
+	UINT m_MenuIDSampleRate;
+	UINT m_MenuIDVolume;
 	bool		m_JoystickCaptured;
 	JOYCAPS		m_JoystickCaps;
-	int		m_MenuIdSticks;
+	UINT m_MenuIDSticks;
 	bool		m_HideCursor;
 	bool		m_CaptureMouse;
 	bool		m_MouseCaptured;
 	POINT		m_RelMousePos;
 	bool		m_FreezeWhenInactive;
-	int		m_MenuIdKeyMapping;
+	UINT m_MenuIDKeyMapping;
 	bool		m_KeyMapAS;
 	bool		m_KeyMapFunc;
 	char		m_UserKeyMapPath[_MAX_PATH];
@@ -346,8 +358,8 @@ public:
 	char		m_DiscPath[_MAX_PATH];	// JGH
 	bool		m_WriteProtectDisc[2];
 	bool		m_WriteProtectOnLoad;
-	int		m_MenuIdAMXSize;
-	int		m_MenuIdAMXAdjust;
+	UINT m_MenuIDAMXSize;
+	UINT m_MenuIDAMXAdjust;
 	int		m_AMXXSize;
 	int		m_AMXYSize;
 	int		m_AMXAdjust;
@@ -387,21 +399,14 @@ public:
 	int		m_printerbufferlen;
 	bool		m_translateCRLF;
 
-	int		m_MenuIdPrinterPort;
-	char		m_PrinterFileName[_MAX_PATH];
-	char		m_PrinterDevice[_MAX_PATH];
+	UINT m_MenuIDPrinterPort;
+	char m_PrinterFileName[_MAX_PATH];
+	char m_PrinterDevice[_MAX_PATH];
 
-	DWORD		m_LastTickCount;
-	DWORD		m_LastStatsTickCount;
-	int		m_LastTotalCycles;
-	int		m_LastStatsTotalCycles;
-	DWORD		m_TickBase;
-	int		m_CycleBase;
-	int		m_MinFrameCount;
-	DWORD		m_LastFPSCount;
+
 	int		m_LastStartY;
 	int		m_LastNLines;
-	int		m_MotionBlur;
+	UINT m_MenuIDMotionBlur;
 	char 		m_BlurIntensities[8];
 	char 		m_CommandLineFileName1[_MAX_PATH];
 	char 		m_CommandLineFileName2[_MAX_PATH];
@@ -424,23 +429,23 @@ public:
 	bool RomWritePrefs[16];
 
 	// Bitmap capture vars
-	ULONG_PTR	m_gdiplusToken;
-	bool		m_CaptureBitmapPending;
-	bool		m_CaptureBitmapAutoFilename;
-	char		m_CaptureFileName[MAX_PATH];
-	int		m_MenuIdCaptureResolution;
-	int		m_MenuIdCaptureFormat;
+	ULONG_PTR m_gdiplusToken;
+	bool m_CaptureBitmapPending;
+	bool m_CaptureBitmapAutoFilename;
+	char m_CaptureFileName[MAX_PATH];
+	UINT m_MenuIDCaptureResolution;
+	UINT m_MenuIDCaptureFormat;
 
 	// AVI vars
-	bmiData 	m_Avibmi;
-	HBITMAP		m_AviDIB;
-	HDC 		m_AviDC;
-	char*		m_AviScreen;
-	int		m_AviFrameSkip;
-	int		m_AviFrameSkipCount;
-	int		m_AviFrameCount;
-	int		m_MenuIdAviResolution;
-	int		m_MenuIdAviSkip;
+	bmiData m_Avibmi;
+	HBITMAP m_AviDIB;
+	HDC m_AviDC;
+	char* m_AviScreen;
+	int m_AviFrameSkip;
+	int m_AviFrameSkipCount;
+	int m_AviFrameCount;
+	UINT m_MenuIDAviResolution;
+	UINT m_MenuIDAviSkip;
 
 	// DirectX stuff
 	bool		m_DXInit;
@@ -528,7 +533,8 @@ public:
 	void CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight);
 	void TranslateSampleRate(void);
 	void TranslateVolume(void);
-	void TranslateTiming(void);
+	void TranslateTiming();
+	void SetRealTimeTarget(double RealTimeTarget);
 	void TranslateKeyMapping(void);
 	int ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);

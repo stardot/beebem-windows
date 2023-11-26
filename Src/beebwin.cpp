@@ -411,7 +411,7 @@ void BeebWin::ApplyPrefs()
 		PrinterDisable();
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
-	if (m_MenuIdSticks == IDM_JOYSTICK)
+	if (m_MenuIDSticks == IDM_JOYSTICK)
 		InitJoystick();
 
 	LoadFDC(NULL, true);
@@ -945,8 +945,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_VIDEOSKIP3, false);
 	CheckMenuItem(IDM_VIDEOSKIP4, false);
 	CheckMenuItem(IDM_VIDEOSKIP5, false);
-	CheckMenuItem(m_MenuIdAviResolution, true);
-	CheckMenuItem(m_MenuIdAviSkip, true);
+	CheckMenuItem(m_MenuIDAviResolution, true);
+	CheckMenuItem(m_MenuIDAviSkip, true);
 
 	// File -> Disc Options
 	CheckMenuItem(IDM_WRITE_PROTECT_DISC0, m_WriteProtectDisc[0]);
@@ -962,8 +962,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_CAPTUREJPEG, false);
 	CheckMenuItem(IDM_CAPTUREGIF, false);
 	CheckMenuItem(IDM_CAPTUREPNG, false);
-	CheckMenuItem(m_MenuIdCaptureResolution, true);
-	CheckMenuItem(m_MenuIdCaptureFormat, true);
+	CheckMenuItem(m_MenuIDCaptureResolution, true);
+	CheckMenuItem(m_MenuIDCaptureFormat, true);
 
 	// Edit
 	CheckMenuItem(IDM_EDIT_CRLF, m_translateCRLF);
@@ -985,7 +985,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_PRINTER_COM2, false);
 	CheckMenuItem(IDM_PRINTER_COM3, false);
 	CheckMenuItem(IDM_PRINTER_COM4, false);
-	CheckMenuItem(m_MenuIdPrinterPort, true);
+	CheckMenuItem(m_MenuIDPrinterPort, true);
 	strcpy(menu_string, "File: ");
 	strcat(menu_string, m_PrinterFileName);
 	ModifyMenu(m_hMenu, IDM_PRINTER_FILE, MF_BYCOMMAND, IDM_PRINTER_FILE, menu_string);
@@ -1044,7 +1044,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_BLUR_2, false);
 	CheckMenuItem(IDM_BLUR_4, false);
 	CheckMenuItem(IDM_BLUR_8, false);
-	CheckMenuItem(m_MotionBlur, true);
+	CheckMenuItem(m_MenuIDMotionBlur, true);
 
 	// Speed
 	CheckMenuItem(IDM_REALTIME, false);
@@ -1066,7 +1066,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_10FPS, false);
 	CheckMenuItem(IDM_5FPS, false);
 	CheckMenuItem(IDM_1FPS, false);
-	CheckMenuItem(m_MenuIdTiming, true);
+	CheckMenuItem(m_MenuIDTiming, true);
 	// Check menu based on m_EmuPaused to take into account -StartPaused arg
 	CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
 
@@ -1082,12 +1082,12 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_44100KHZ, false);
 	CheckMenuItem(IDM_22050KHZ, false);
 	CheckMenuItem(IDM_11025KHZ, false);
-	CheckMenuItem(m_MenuIdSampleRate, true);
+	CheckMenuItem(m_MenuIDSampleRate, true);
 	CheckMenuItem(IDM_HIGHVOLUME, false);
 	CheckMenuItem(IDM_MEDIUMVOLUME, false);
 	CheckMenuItem(IDM_LOWVOLUME, false);
 	CheckMenuItem(IDM_FULLVOLUME, false);
-	CheckMenuItem(m_MenuIdVolume, true);
+	CheckMenuItem(m_MenuIDVolume, true);
 	CheckMenuItem(ID_PSAMPLES, PartSamples);
 	CheckMenuItem(IDM_EXPVOLUME, SoundExponentialVolume);
 	CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
@@ -1100,15 +1100,15 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_AMX_320X256, false);
 	CheckMenuItem(IDM_AMX_640X256, false);
 	CheckMenuItem(IDM_AMX_160X256, false);
-	CheckMenuItem(m_MenuIdAMXSize, true);
+	CheckMenuItem(m_MenuIDAMXSize, true);
 	CheckMenuItem(IDM_AMX_ADJUSTP50, false);
 	CheckMenuItem(IDM_AMX_ADJUSTP30, false);
 	CheckMenuItem(IDM_AMX_ADJUSTP10, false);
 	CheckMenuItem(IDM_AMX_ADJUSTM10, false);
 	CheckMenuItem(IDM_AMX_ADJUSTM30, false);
 	CheckMenuItem(IDM_AMX_ADJUSTM50, false);
-	if (m_MenuIdAMXAdjust != 0)
-		CheckMenuItem(m_MenuIdAMXAdjust, true);
+	if (m_MenuIDAMXAdjust != 0)
+		CheckMenuItem(m_MenuIDAMXAdjust, true);
 
 	// Hardware -> Model
 	UpdateModelMenu();
@@ -1133,14 +1133,14 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_JOYSTICK, false);
 	CheckMenuItem(IDM_ANALOGUE_MOUSESTICK, false);
 	CheckMenuItem(IDM_DIGITAL_MOUSESTICK, false);
-	if (m_MenuIdSticks != 0)
-		CheckMenuItem(m_MenuIdSticks, true);
+	if (m_MenuIDSticks != 0)
+		CheckMenuItem(m_MenuIDSticks, true);
 	CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
 	CheckMenuItem(IDM_HIDECURSOR, m_HideCursor);
 	CheckMenuItem(IDM_DEFAULTKYBDMAPPING, false);
 	CheckMenuItem(IDM_LOGICALKYBDMAPPING, false);
 	CheckMenuItem(IDM_USERKYBDMAPPING, false);
-	CheckMenuItem(m_MenuIdKeyMapping, true);
+	CheckMenuItem(m_MenuIDKeyMapping, true);
 	CheckMenuItem(IDM_MAPAS, m_KeyMapAS);
 	CheckMenuItem(IDM_MAPFUNCS, m_KeyMapFunc);
 	UpdateDisableKeysMenu();
@@ -1307,7 +1307,7 @@ void BeebWin::InitJoystick(void)
 /****************************************************************************/
 void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 {
-	if (m_MenuIdSticks == IDM_JOYSTICK)
+	if (m_MenuIDSticks == IDM_JOYSTICK)
 	{
 		/* Scale and reverse the readings */
 		JoystickX = (int)((double)(m_JoystickCaps.wXmax - x) * 65535.0 /
@@ -1329,8 +1329,8 @@ void BeebWin::ResetJoystick(void)
 /****************************************************************************/
 void BeebWin::SetMousestickButton(int index, bool button)
 {
-	if (m_MenuIdSticks == IDM_ANALOGUE_MOUSESTICK ||
-	    m_MenuIdSticks == IDM_DIGITAL_MOUSESTICK)
+	if (m_MenuIDSticks == IDM_ANALOGUE_MOUSESTICK ||
+	    m_MenuIDSticks == IDM_DIGITAL_MOUSESTICK)
 	{
 		JoystickButton[index] = button;
 	}
@@ -1342,12 +1342,12 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 	static int lastx = 32768;
 	static int lasty = 32768;
 
-	if (m_MenuIdSticks == IDM_ANALOGUE_MOUSESTICK)
+	if (m_MenuIDSticks == IDM_ANALOGUE_MOUSESTICK)
 	{
 		JoystickX = (m_XWinSize - x) * 65535 / m_XWinSize;
 		JoystickY = (m_YWinSize - y) * 65535 / m_YWinSize;
 	}
-	else if (m_MenuIdSticks == IDM_DIGITAL_MOUSESTICK)
+	else if (m_MenuIDSticks == IDM_DIGITAL_MOUSESTICK)
 	{
 		int dx = x - lastx;
 		int dy = y - lasty;
@@ -2010,25 +2010,25 @@ bool BeebWin::UpdateTiming()
 
 	DWORD TickCount = GetTickCount();
 
-	/* Don't do anything if this is the first call or there has
-	   been a long pause due to menu commands, or when something
-	   wraps. */
+	// Don't do anything if this is the first call or there has
+	// been a long pause due to menu commands, or when something
+	// wraps
 	if (m_LastTickCount == 0 ||
-		TickCount < m_LastTickCount ||
-		(TickCount - m_LastTickCount) > 1000 ||
-		TotalCycles < m_LastTotalCycles)
+	    TickCount < m_LastTickCount ||
+	    (TickCount - m_LastTickCount) > 1000 ||
+	    TotalCycles < m_LastTotalCycles)
 	{
 		ResetTiming();
 		return true;
 	}
 
-	/* Update stats every second */
+	// Update stats every second
 	if (TickCount >= m_LastStatsTickCount + 1000)
 	{
 		m_FramesPerSecond = m_ScreenRefreshCount;
 		m_ScreenRefreshCount = 0;
 		m_RelativeSpeed = ((TotalCycles - m_LastStatsTotalCycles) / 2000.0) /
-								(TickCount - m_LastStatsTickCount);
+		                  (TickCount - m_LastStatsTickCount);
 		m_LastStatsTotalCycles = TotalCycles;
 		m_LastStatsTickCount += 1000;
 		DisplayTiming();
@@ -2065,6 +2065,7 @@ bool BeebWin::UpdateTiming()
 
 			// Make sure we show at least one in 100 frames
 			++m_MinFrameCount;
+
 			if (m_MinFrameCount >= 100)
 			{
 				UpdateScreen = true;
@@ -2072,17 +2073,17 @@ bool BeebWin::UpdateTiming()
 			}
 		}
 
-		/* Move counter bases forward */
-		int CyclesPerSec = (int)(2000000.0 * m_RealTimeTarget);
-		while ((TickCount - m_TickBase) > 1000 && (TotalCycles - m_CycleBase) > CyclesPerSec)
+		// Move counter bases forward
+
+		while ((TickCount - m_TickBase) > 1000 && (TotalCycles - m_CycleBase) > m_CyclesPerSec)
 		{
 			m_TickBase += 1000;
-			m_CycleBase += CyclesPerSec;
+			m_CycleBase += m_CyclesPerSec;
 		}
 	}
 	else
 	{
-		/* Fast as possible with a certain frame rate */
+		// Fast as possible with a certain frame rate
 		if (TickCount >= m_LastFPSCount + (1000 / m_FPSTarget))
 		{
 			UpdateScreen = true;
@@ -2169,7 +2170,7 @@ void BeebWin::TranslateDDSize(void)
 /****************************************************************************/
 void BeebWin::TranslateWindowSize(void)
 {
-	switch (m_MenuIdWinSize)
+	switch (m_MenuIDWinSize)
 	{
 	case IDM_320X256:
 		m_XWinSize = 320;
@@ -2211,13 +2212,13 @@ void BeebWin::TranslateWindowSize(void)
 	m_XLastWinSize = m_XWinSize;
 	m_YLastWinSize = m_YWinSize;
 
-	m_MenuIdWinSize = IDM_CUSTOMWINSIZE;
+	m_MenuIDWinSize = IDM_CUSTOMWINSIZE;
 }
 
 /****************************************************************************/
 void BeebWin::TranslateSampleRate(void)
 {
-	switch (m_MenuIdSampleRate)
+	switch (m_MenuIDSampleRate)
 	{
 	default:
 	case IDM_44100KHZ:
@@ -2237,7 +2238,7 @@ void BeebWin::TranslateSampleRate(void)
 /****************************************************************************/
 void BeebWin::TranslateVolume(void)
 {
-	switch (m_MenuIdVolume)
+	switch (m_MenuIDVolume)
 	{
 	default:
 	case IDM_FULLVOLUME:
@@ -2259,121 +2260,128 @@ void BeebWin::TranslateVolume(void)
 }
 
 /****************************************************************************/
-void BeebWin::TranslateTiming(void)
+
+void BeebWin::TranslateTiming()
 {
 	m_FPSTarget = 0;
-	m_RealTimeTarget = 1.0;
+	SetRealTimeTarget(1.0);
 
-	if (m_MenuIdTiming == IDM_3QSPEED)
-		m_MenuIdTiming = IDM_FIXEDSPEED0_75;
-	if (m_MenuIdTiming == IDM_HALFSPEED)
-		m_MenuIdTiming = IDM_FIXEDSPEED0_5;
+	if (m_MenuIDTiming == IDM_3QSPEED)
+		m_MenuIDTiming = IDM_FIXEDSPEED0_75;
+	if (m_MenuIDTiming == IDM_HALFSPEED)
+		m_MenuIDTiming = IDM_FIXEDSPEED0_5;
 
-	switch (m_MenuIdTiming)
+	switch (m_MenuIDTiming)
 	{
 	default:
 	case IDM_REALTIME:
-		m_RealTimeTarget = 1.0;
+		SetRealTimeTarget(1.0);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED100:
-		m_RealTimeTarget = 100.0;
+		SetRealTimeTarget(100.0);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED50:
-		m_RealTimeTarget = 50.0;
+		SetRealTimeTarget(50.0);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED10:
-		m_RealTimeTarget = 10.0;
+		SetRealTimeTarget(10.0);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED5:
-		m_RealTimeTarget = 5.0;
+		SetRealTimeTarget(5.0);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED2:
-		m_RealTimeTarget = 2.0;
+		SetRealTimeTarget(2.0);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED1_5:
-		m_RealTimeTarget = 1.5;
+		SetRealTimeTarget(1.5);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED1_25:
-		m_RealTimeTarget = 1.25;
+		SetRealTimeTarget(1.25);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED1_1:
-		m_RealTimeTarget = 1.1;
+		SetRealTimeTarget(1.1);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED0_9:
-		m_RealTimeTarget = 0.9;
+		SetRealTimeTarget(0.9);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED0_5:
-		m_RealTimeTarget = 0.5;
+		SetRealTimeTarget(0.5);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED0_75:
-		m_RealTimeTarget = 0.75;
+		SetRealTimeTarget(0.75);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED0_25:
-		m_RealTimeTarget = 0.25;
+		SetRealTimeTarget(0.25);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_FIXEDSPEED0_1:
-		m_RealTimeTarget = 0.1;
+		SetRealTimeTarget(0.1);
 		m_FPSTarget = 0;
 		break;
 
 	case IDM_50FPS:
 		m_FPSTarget = 50;
-		m_RealTimeTarget = 0;
+		SetRealTimeTarget(0.0);
 		break;
 
 	case IDM_25FPS:
 		m_FPSTarget = 25;
-		m_RealTimeTarget = 0;
+		SetRealTimeTarget(0.0);
 		break;
 
 	case IDM_10FPS:
 		m_FPSTarget = 10;
-		m_RealTimeTarget = 0;
+		SetRealTimeTarget(0.0);
 		break;
 
 	case IDM_5FPS:
 		m_FPSTarget = 5;
-		m_RealTimeTarget = 0;
+		SetRealTimeTarget(0.0);
 		break;
 
 	case IDM_1FPS:
 		m_FPSTarget = 1;
-		m_RealTimeTarget = 0;
+		SetRealTimeTarget(0.0);
 		break;
 	}
 
 	ResetTiming();
 }
 
+void BeebWin::SetRealTimeTarget(double RealTimeTarget)
+{
+	m_RealTimeTarget = RealTimeTarget;
+	m_CyclesPerSec = (int)(2000000.0 * m_RealTimeTarget);
+}
+
 void BeebWin::AdjustSpeed(bool up)
 {
-	static const int speeds[] = {
+	static const UINT speeds[] = {
 		IDM_FIXEDSPEED100,
 		IDM_FIXEDSPEED50,
 		IDM_FIXEDSPEED10,
@@ -2392,31 +2400,31 @@ void BeebWin::AdjustSpeed(bool up)
 	};
 
 	int s = 0;
-	int t = m_MenuIdTiming;
+	UINT MenuItemID = m_MenuIDTiming;
 
-	while (speeds[s] != 0 && speeds[s] != m_MenuIdTiming)
+	while (speeds[s] != 0 && speeds[s] != m_MenuIDTiming)
 		s++;
 
 	if (speeds[s] == 0)
 	{
-		t = IDM_REALTIME;
+		MenuItemID = IDM_REALTIME;
 	}
 	else if (up)
 	{
 		if (s > 0)
-			t = speeds[s-1];
+			MenuItemID = speeds[s - 1];
 	}
 	else
 	{
-		if (speeds[s+1] != 0)
-			t = speeds[s+1];
+		if (speeds[s + 1] != 0)
+			MenuItemID = speeds[s + 1];
 	}
 
-	if (t != m_MenuIdTiming)
+	if (MenuItemID != m_MenuIDTiming)
 	{
-		CheckMenuItem(m_MenuIdTiming, false);
-		m_MenuIdTiming = t;
-		CheckMenuItem(m_MenuIdTiming, true);
+		CheckMenuItem(m_MenuIDTiming, false);
+		m_MenuIDTiming = MenuItemID;
+		CheckMenuItem(m_MenuIDTiming, true);
 		TranslateTiming();
 	}
 }
@@ -2424,7 +2432,7 @@ void BeebWin::AdjustSpeed(bool up)
 /****************************************************************************/
 void BeebWin::TranslateKeyMapping(void)
 {
-	switch (m_MenuIdKeyMapping)
+	switch (m_MenuIDKeyMapping)
 	{
 	default:
 	case IDM_DEFAULTKYBDMAPPING:
@@ -2618,7 +2626,7 @@ void BeebWin::WinPosChange(int /* x */, int /* y */)
 /****************************************************************************/
 void BeebWin::TranslateAMX(void)
 {
-	switch (m_MenuIdAMXSize)
+	switch (m_MenuIDAMXSize)
 	{
 	case IDM_AMX_160X256:
 		m_AMXXSize = 160;
@@ -2635,7 +2643,7 @@ void BeebWin::TranslateAMX(void)
 		break;
 	}
 
-	switch (m_MenuIdAMXAdjust)
+	switch (m_MenuIDAMXAdjust)
 	{
 	case 0:
 		m_AMXAdjust = 0;
@@ -2715,7 +2723,7 @@ void BeebWin::UpdateOptiMenu()
 }
 
 /***************************************************************************/
-void BeebWin::HandleCommand(int MenuId)
+void BeebWin::HandleCommand(UINT MenuID)
 {
 	char TmpPath[256];
 	PaletteType PrevPaletteType = m_PaletteType;
@@ -2723,7 +2731,7 @@ void BeebWin::HandleCommand(int MenuId)
 	SetSound(SoundState::Muted);
 	bool StayMuted = false;
 
-	switch (MenuId)
+	switch (MenuID)
 	{
 	case IDM_RUNDISC:
 		if (ReadDisc(0, true))
@@ -2808,14 +2816,14 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_DISC_EXPORT_1:
 	case IDM_DISC_EXPORT_2:
 	case IDM_DISC_EXPORT_3:
-		ExportDiscFiles(MenuId);
+		ExportDiscFiles(MenuID);
 		break;
 
 	case IDM_DISC_IMPORT_0:
 	case IDM_DISC_IMPORT_1:
 	case IDM_DISC_IMPORT_2:
 	case IDM_DISC_IMPORT_3:
-		ImportDiscFiles(MenuId);
+		ImportDiscFiles(MenuID);
 		break;
 
 	case IDM_PRINTER_FILE:
@@ -2834,11 +2842,11 @@ void BeebWin::HandleCommand(int MenuId)
 				MF_BYCOMMAND, IDM_PRINTER_FILE,
 				menu_string);
 
-			if (MenuId != m_MenuIdPrinterPort)
+			if (MenuID != m_MenuIDPrinterPort)
 			{
-				CheckMenuItem(m_MenuIdPrinterPort, false);
-				m_MenuIdPrinterPort = MenuId;
-				CheckMenuItem(m_MenuIdPrinterPort, true);
+				CheckMenuItem(m_MenuIDPrinterPort, false);
+				m_MenuIDPrinterPort = MenuID;
+				CheckMenuItem(m_MenuIDPrinterPort, true);
 			}
 			TranslatePrinterPort();
 		}
@@ -2848,11 +2856,11 @@ void BeebWin::HandleCommand(int MenuId)
 		if (PrinterEnabled)
 			TogglePrinter();
 
-		if (MenuId != m_MenuIdPrinterPort)
+		if (MenuID != m_MenuIDPrinterPort)
 		{
-			CheckMenuItem(m_MenuIdPrinterPort, false);
-			m_MenuIdPrinterPort = MenuId;
-			CheckMenuItem(m_MenuIdPrinterPort, true);
+			CheckMenuItem(m_MenuIDPrinterPort, false);
+			m_MenuIDPrinterPort = MenuID;
+			CheckMenuItem(m_MenuIDPrinterPort, true);
 		}
 		TranslatePrinterPort();
 		break;
@@ -2861,16 +2869,16 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_PRINTER_LPT2:
 	case IDM_PRINTER_LPT3:
 	case IDM_PRINTER_LPT4:
-		if (MenuId != m_MenuIdPrinterPort)
+		if (MenuID != m_MenuIDPrinterPort)
 		{
 			/* If printer is enabled then need to
 				disable it before changing file */
 			if (PrinterEnabled)
 				TogglePrinter();
 
-			CheckMenuItem(m_MenuIdPrinterPort, false);
-			m_MenuIdPrinterPort = MenuId;
-			CheckMenuItem(m_MenuIdPrinterPort, true);
+			CheckMenuItem(m_MenuIDPrinterPort, false);
+			m_MenuIDPrinterPort = MenuID;
+			CheckMenuItem(m_MenuIDPrinterPort, true);
 			TranslatePrinterPort();
 		}
 		break;
@@ -2937,7 +2945,7 @@ void BeebWin::HandleCommand(int MenuId)
 				{
 					// Also switch on analogue mousestick (touch screen uses
 					// mousestick position)
-					if (m_MenuIdSticks != IDM_ANALOGUE_MOUSESTICK)
+					if (m_MenuIDSticks != IDM_ANALOGUE_MOUSESTICK)
 					{
 						HandleCommand(IDM_ANALOGUE_MOUSESTICK);
 					}
@@ -2981,7 +2989,7 @@ void BeebWin::HandleCommand(int MenuId)
 	{
 		ExitDX();
 
-		m_DisplayRenderer = MenuId;
+		m_DisplayRenderer = MenuID;
 		SetWindowAttributes(m_isFullScreen);
 
 		bool DirectXEnabled = m_DisplayRenderer != IDM_DISPGDI;
@@ -3027,7 +3035,7 @@ void BeebWin::HandleCommand(int MenuId)
 			if (m_isFullScreen)
 				HandleCommand(IDM_FULLSCREEN);
 			// CheckMenuItem(m_MenuIdWinSize, false);
-			m_MenuIdWinSize = MenuId;
+			m_MenuIDWinSize = MenuID;
 			// CheckMenuItem(m_MenuIdWinSize, true);
 			TranslateWindowSize();
 			SetWindowAttributes(m_isFullScreen);
@@ -3049,10 +3057,10 @@ void BeebWin::HandleCommand(int MenuId)
 	case ID_VIEW_DD_2560X1440:
 	case ID_VIEW_DD_3840X2160:
 		// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
-		if ((MenuId != ID_VIEW_DD_SCREENRES) || !m_isFullScreen)
+		if ((MenuID != ID_VIEW_DD_SCREENRES) || !m_isFullScreen)
 		{
 			CheckMenuItem(m_DDFullScreenMode, false);
-			m_DDFullScreenMode = MenuId;
+			m_DDFullScreenMode = MenuID;
 			CheckMenuItem(m_DDFullScreenMode, true);
 			TranslateDDSize();
 
@@ -3099,7 +3107,7 @@ void BeebWin::HandleCommand(int MenuId)
 
 	case IDM_XAUDIO2:
 	case IDM_DIRECTSOUND:
-		SoundConfig::Selection = MenuId == IDM_XAUDIO2 ? SoundConfig::XAudio2 : SoundConfig::DirectSound;
+		SoundConfig::Selection = MenuID == IDM_XAUDIO2 ? SoundConfig::XAudio2 : SoundConfig::DirectSound;
 
 		if (SoundEnabled)
 		{
@@ -3159,11 +3167,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_44100KHZ:
 	case IDM_22050KHZ:
 	case IDM_11025KHZ:
-		if (MenuId != m_MenuIdSampleRate)
+		if (MenuID != m_MenuIDSampleRate)
 		{
-			CheckMenuItem(m_MenuIdSampleRate, false);
-			m_MenuIdSampleRate = MenuId;
-			CheckMenuItem(m_MenuIdSampleRate, true);
+			CheckMenuItem(m_MenuIDSampleRate, false);
+			m_MenuIDSampleRate = MenuID;
+			CheckMenuItem(m_MenuIDSampleRate, true);
 			TranslateSampleRate();
 
 			if (SoundEnabled)
@@ -3186,11 +3194,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_HIGHVOLUME:
 	case IDM_MEDIUMVOLUME:
 	case IDM_LOWVOLUME:
-		if (MenuId != m_MenuIdVolume)
+		if (MenuID != m_MenuIDVolume)
 		{
-			CheckMenuItem(m_MenuIdVolume, false);
-			m_MenuIdVolume = MenuId;
-			CheckMenuItem(m_MenuIdVolume, true);
+			CheckMenuItem(m_MenuIDVolume, false);
+			m_MenuIDVolume = MenuID;
+			CheckMenuItem(m_MenuIDVolume, true);
 			TranslateVolume();
 		}
 		break;
@@ -3221,9 +3229,9 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_ALLOWWRITES_ROME:
 	case IDM_ALLOWWRITES_ROMF:
 	{
-		int slot = MenuId-IDM_ALLOWWRITES_ROM0;
+		int slot = MenuID - IDM_ALLOWWRITES_ROM0;
 		RomWritable[slot] = !RomWritable[slot];
-		CheckMenuItem(MenuId, RomWritable[slot]);
+		CheckMenuItem(MenuID, RomWritable[slot]);
 		break;
 	}
 
@@ -3256,11 +3264,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_10FPS:
 	case IDM_5FPS:
 	case IDM_1FPS:
-		if (MenuId != m_MenuIdTiming)
+		if (MenuID != m_MenuIDTiming)
 		{
-			CheckMenuItem(m_MenuIdTiming, false);
-			m_MenuIdTiming = MenuId;
-			CheckMenuItem(m_MenuIdTiming, true);
+			CheckMenuItem(m_MenuIDTiming, false);
+			m_MenuIDTiming = MenuID;
+			CheckMenuItem(m_MenuIDTiming, true);
 			TranslateTiming();
 		}
 		break;
@@ -3273,11 +3281,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_ANALOGUE_MOUSESTICK:
 	case IDM_DIGITAL_MOUSESTICK:
 		/* Disable current selection */
-		if (m_MenuIdSticks != 0)
+		if (m_MenuIDSticks != 0)
 		{
-			CheckMenuItem(m_MenuIdSticks, false);
+			CheckMenuItem(m_MenuIDSticks, false);
 
-			if (m_MenuIdSticks == IDM_JOYSTICK)
+			if (m_MenuIDSticks == IDM_JOYSTICK)
 			{
 				ResetJoystick();
 			}
@@ -3287,17 +3295,17 @@ void BeebWin::HandleCommand(int MenuId)
 			}
 		}
 
-		if (MenuId == m_MenuIdSticks)
+		if (MenuID == m_MenuIDSticks)
 		{
 			/* Joysticks switched off completely */
-			m_MenuIdSticks = 0;
+			m_MenuIDSticks = 0;
 		}
 		else
 		{
 			/* Initialise new selection */
-			m_MenuIdSticks = MenuId;
+			m_MenuIDSticks = MenuID;
 
-			if (m_MenuIdSticks == IDM_JOYSTICK)
+			if (m_MenuIDSticks == IDM_JOYSTICK)
 			{
 				InitJoystick();
 			}
@@ -3307,9 +3315,9 @@ void BeebWin::HandleCommand(int MenuId)
 			}
 
 			if (JoystickEnabled)
-				CheckMenuItem(m_MenuIdSticks, true);
+				CheckMenuItem(m_MenuIDSticks, true);
 			else
-				m_MenuIdSticks = 0;
+				m_MenuIDSticks = 0;
 		}
 		break;
 
@@ -3339,11 +3347,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_USERKYBDMAPPING:
 	case IDM_DEFAULTKYBDMAPPING:
 	case IDM_LOGICALKYBDMAPPING:
-		if (MenuId != m_MenuIdKeyMapping)
+		if (MenuID != m_MenuIDKeyMapping)
 		{
-			CheckMenuItem(m_MenuIdKeyMapping, false);
-			m_MenuIdKeyMapping = MenuId;
-			CheckMenuItem(m_MenuIdKeyMapping, true);
+			CheckMenuItem(m_MenuIDKeyMapping, false);
+			m_MenuIDKeyMapping = MenuID;
+			CheckMenuItem(m_MenuIDKeyMapping, true);
 			TranslateKeyMapping();
 		}
 		break;
@@ -3417,11 +3425,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_AMX_160X256:
 	case IDM_AMX_320X256:
 	case IDM_AMX_640X256:
-		if (MenuId != m_MenuIdAMXSize)
+		if (MenuID != m_MenuIDAMXSize)
 		{
-			CheckMenuItem(m_MenuIdAMXSize, false);
-			m_MenuIdAMXSize = MenuId;
-			CheckMenuItem(m_MenuIdAMXSize, true);
+			CheckMenuItem(m_MenuIDAMXSize, false);
+			m_MenuIDAMXSize = MenuID;
+			CheckMenuItem(m_MenuIDAMXSize, true);
 		}
 		TranslateAMX();
 		break;
@@ -3432,19 +3440,19 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_AMX_ADJUSTM10:
 	case IDM_AMX_ADJUSTM30:
 	case IDM_AMX_ADJUSTM50:
-		if (m_MenuIdAMXAdjust != 0)
+		if (m_MenuIDAMXAdjust != 0)
 		{
-			CheckMenuItem(m_MenuIdAMXAdjust, false);
+			CheckMenuItem(m_MenuIDAMXAdjust, false);
 		}
 
-		if (MenuId != m_MenuIdAMXAdjust)
+		if (MenuID != m_MenuIDAMXAdjust)
 		{
-			m_MenuIdAMXAdjust = MenuId;
-			CheckMenuItem(m_MenuIdAMXAdjust, true);
+			m_MenuIDAMXAdjust = MenuID;
+			CheckMenuItem(m_MenuIDAMXAdjust, true);
 		}
 		else
 		{
-			m_MenuIdAMXAdjust = 0;
+			m_MenuIDAMXAdjust = 0;
 		}
 		TranslateAMX();
 		break;
@@ -3707,11 +3715,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_BLUR_2:
 	case IDM_BLUR_4:
 	case IDM_BLUR_8:
-		if (MenuId != m_MotionBlur)
+		if (MenuID != m_MenuIDMotionBlur)
 		{
-			CheckMenuItem(m_MotionBlur, false);
-			m_MotionBlur = MenuId;
-			CheckMenuItem(m_MotionBlur, true);
+			CheckMenuItem(m_MenuIDMotionBlur, false);
+			m_MenuIDMotionBlur = MenuID;
+			CheckMenuItem(m_MenuIDMotionBlur, true);
 		}
 		break;
 
@@ -3719,11 +3727,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_CAPTURERES_1280:
 	case IDM_CAPTURERES_640:
 	case IDM_CAPTURERES_320:
-		if (MenuId != m_MenuIdCaptureResolution)
+		if (MenuID != m_MenuIDCaptureResolution)
 		{
-			CheckMenuItem(m_MenuIdCaptureResolution, false);
-			m_MenuIdCaptureResolution = MenuId;
-			CheckMenuItem(m_MenuIdCaptureResolution, true);
+			CheckMenuItem(m_MenuIDCaptureResolution, false);
+			m_MenuIDCaptureResolution = MenuID;
+			CheckMenuItem(m_MenuIDCaptureResolution, true);
 		}
 		break;
 
@@ -3731,11 +3739,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_CAPTUREJPEG:
 	case IDM_CAPTUREGIF:
 	case IDM_CAPTUREPNG:
-		if (MenuId != m_MenuIdCaptureFormat)
+		if (MenuID != m_MenuIDCaptureFormat)
 		{
-			CheckMenuItem(m_MenuIdCaptureFormat, false);
-			m_MenuIdCaptureFormat = MenuId;
-			CheckMenuItem(m_MenuIdCaptureFormat, true);
+			CheckMenuItem(m_MenuIDCaptureFormat, false);
+			m_MenuIDCaptureFormat = MenuID;
+			CheckMenuItem(m_MenuIDCaptureFormat, true);
 		}
 		break;
 
@@ -3751,11 +3759,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_VIDEORES1:
 	case IDM_VIDEORES2:
 	case IDM_VIDEORES3:
-		if (MenuId != m_MenuIdAviResolution)
+		if (MenuID != m_MenuIDAviResolution)
 		{
-			CheckMenuItem(m_MenuIdAviResolution, false);
-			m_MenuIdAviResolution = MenuId;
-			CheckMenuItem(m_MenuIdAviResolution, true);
+			CheckMenuItem(m_MenuIDAviResolution, false);
+			m_MenuIDAviResolution = MenuID;
+			CheckMenuItem(m_MenuIDAviResolution, true);
 		}
 		break;
 
@@ -3765,11 +3773,11 @@ void BeebWin::HandleCommand(int MenuId)
 	case IDM_VIDEOSKIP3:
 	case IDM_VIDEOSKIP4:
 	case IDM_VIDEOSKIP5:
-		if (MenuId != m_MenuIdAviSkip)
+		if (MenuID != m_MenuIDAviSkip)
 		{
-			CheckMenuItem(m_MenuIdAviSkip, false);
-			m_MenuIdAviSkip = MenuId;
-			CheckMenuItem(m_MenuIdAviSkip, true);
+			CheckMenuItem(m_MenuIDAviSkip, false);
+			m_MenuIDAviSkip = MenuID;
+			CheckMenuItem(m_MenuIDAviSkip, true);
 		}
 		break;
 
@@ -4345,7 +4353,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 			HandleCommand(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
-			if (m_MenuIdSticks == IDM_JOYSTICK)
+			if (m_MenuIDSticks == IDM_JOYSTICK)
 				InitJoystick();
 		}
 	}

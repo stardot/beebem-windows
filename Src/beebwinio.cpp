@@ -669,7 +669,7 @@ void BeebWin::TogglePrinter()
 	}
 	else
 	{
-		if (m_MenuIdPrinterPort == IDM_PRINTER_FILE)
+		if (m_MenuIDPrinterPort == IDM_PRINTER_FILE)
 		{
 			if (strlen(m_PrinterFileName) == 0)
 			{
@@ -681,7 +681,7 @@ void BeebWin::TogglePrinter()
 				PrinterEnable(m_PrinterFileName);
 			}
 		}
-		else if (m_MenuIdPrinterPort == IDM_PRINTER_CLIPBOARD)
+		else if (m_MenuIDPrinterPort == IDM_PRINTER_CLIPBOARD)
 		{
 			PrinterEnable(NULL);
 		}
@@ -697,7 +697,7 @@ void BeebWin::TogglePrinter()
 /****************************************************************************/
 void BeebWin::TranslatePrinterPort()
 {
-	switch (m_MenuIdPrinterPort)
+	switch (m_MenuIDPrinterPort)
 	{
 	case IDM_PRINTER_FILE:
 		strcpy(m_PrinterDevice, m_PrinterFileName);
@@ -780,13 +780,14 @@ void BeebWin::CaptureVideo()
 		if (m_AviDC != NULL)
 			DeleteDC(m_AviDC);
 		m_Avibmi = m_bmi;
-		if (m_MenuIdAviResolution == IDM_VIDEORES1)
+
+		if (m_MenuIDAviResolution == IDM_VIDEORES1)
 		{
 			// Must be multiple of 4
 			m_Avibmi.bmiHeader.biWidth = m_XWinSize & (~3);
 			m_Avibmi.bmiHeader.biHeight = m_YWinSize;
 		}
-		else if (m_MenuIdAviResolution == IDM_VIDEORES2)
+		else if (m_MenuIDAviResolution == IDM_VIDEORES2)
 		{
 			m_Avibmi.bmiHeader.biWidth = 640;
 			m_Avibmi.bmiHeader.biHeight = 512;
@@ -796,6 +797,7 @@ void BeebWin::CaptureVideo()
 			m_Avibmi.bmiHeader.biWidth = 320;
 			m_Avibmi.bmiHeader.biHeight = 256;
 		}
+
 		m_Avibmi.bmiHeader.biSizeImage = m_Avibmi.bmiHeader.biWidth*m_Avibmi.bmiHeader.biHeight;
 		m_AviDC = CreateCompatibleDC(NULL);
 		m_AviDIB = CreateDIBSection(m_AviDC, (BITMAPINFO *)&m_Avibmi,
@@ -810,7 +812,7 @@ void BeebWin::CaptureVideo()
 		else
 		{
 			// Calc frame rate based on users frame skip selection
-			switch (m_MenuIdAviSkip)
+			switch (m_MenuIDAviSkip)
 			{
 			case IDM_VIDEOSKIP0: m_AviFrameSkip = 0; break;
 			case IDM_VIDEOSKIP1: m_AviFrameSkip = 1; break;
@@ -1071,8 +1073,8 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	fputc(static_cast<unsigned char>(MachineType), SUEF);
 	fputc(NativeFDC ? 0 : 1, SUEF);
 	fputc(TubeType == Tube::Acorn65C02, SUEF); // TubeEnabled // TODO: save TubeType
-	fput16(m_MenuIdKeyMapping,SUEF);
-	if (m_MenuIdKeyMapping == IDM_USERKYBDMAPPING)
+	fput16(m_MenuIDKeyMapping, SUEF);
+	if (m_MenuIDKeyMapping == IDM_USERKYBDMAPPING)
 		fwrite(m_UserKeyMapPath,1,256,SUEF);
 	else
 		fwrite(blank,1,256,SUEF);
@@ -1080,7 +1082,6 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 }
 
 void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
-	int id;
 	char fileName[_MAX_PATH];
 
 	int type = fgetc(SUEF);
@@ -1101,7 +1102,7 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 	{
 		const int UEF_KEYBOARD_MAPPING = 40060; // UEF Chunk ID
 
-		id = fget16(SUEF);
+		UINT id = fget16(SUEF);
 		if (id == UEF_KEYBOARD_MAPPING)
 		{
 			fread(fileName,1,256,SUEF);
@@ -1109,11 +1110,11 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version) {
 			if (ReadKeyMap(fileName, &UserKeymap))
 				strcpy(m_UserKeyMapPath, fileName);
 			else
-				id = m_MenuIdKeyMapping;
+				id = m_MenuIDKeyMapping;
 		}
-		CheckMenuItem(m_MenuIdKeyMapping, false);
-		m_MenuIdKeyMapping = id;
-		CheckMenuItem(m_MenuIdKeyMapping, true);
+		CheckMenuItem(m_MenuIDKeyMapping, false);
+		m_MenuIDKeyMapping = id;
+		CheckMenuItem(m_MenuIDKeyMapping, true);
 		TranslateKeyMapping();
 	}
 
@@ -1279,14 +1280,14 @@ void BeebWin::doCopy()
 	if (PrinterEnabled)
 		TogglePrinter();
 
-	if (IDM_PRINTER_CLIPBOARD != m_MenuIdPrinterPort)
+	if (IDM_PRINTER_CLIPBOARD != m_MenuIDPrinterPort)
 	{
-		CheckMenuItem(m_MenuIdPrinterPort, false);
-		m_MenuIdPrinterPort = IDM_PRINTER_CLIPBOARD;
-		CheckMenuItem(m_MenuIdPrinterPort, true);
+		CheckMenuItem(m_MenuIDPrinterPort, false);
+		m_MenuIDPrinterPort = IDM_PRINTER_CLIPBOARD;
+		CheckMenuItem(m_MenuIDPrinterPort, true);
 	}
 	TranslatePrinterPort();
-	TogglePrinter();		// Turn printer back on
+	TogglePrinter(); // Turn printer back on
 
 	m_printerbufferlen = 0;
 
@@ -1761,7 +1762,7 @@ bool BeebWin::GetImageFile(char *FileName, int Size)
 	m_Preferences.GetStringValue("ImagePath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	const char *fileExt = GetCaptureFormatFileExt(m_MenuIdCaptureFormat);
+	const char *fileExt = GetCaptureFormatFileExt(m_MenuIDCaptureFormat);
 
 	// A literal \0 in the format string terminates the string so use %c
 	char filter[200];
@@ -1797,8 +1798,8 @@ void BeebWin::CaptureBitmap(int SourceX,
                             int SourceHeight,
                             bool Teletext)
 {
-	const WCHAR *mimeType = GetCaptureFormatMimeType(m_MenuIdCaptureFormat);
-	const char *fileExt = GetCaptureFormatFileExt(m_MenuIdCaptureFormat);
+	const WCHAR *mimeType = GetCaptureFormatMimeType(m_MenuIDCaptureFormat);
+	const char *fileExt = GetCaptureFormatFileExt(m_MenuIDCaptureFormat);
 
 	CLSID encoderClsid;
 
@@ -1829,7 +1830,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 	int DestX, DestY;
 	int DestWidth, DestHeight;
 
-	switch (m_MenuIdCaptureResolution)
+	switch (m_MenuIDCaptureResolution)
 	{
 		case IDM_CAPTURERES_DISPLAY:
 			BitmapWidth  = m_XWinSize;
