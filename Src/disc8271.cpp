@@ -128,7 +128,8 @@ static unsigned char DRDSC; // FSD
 
 static unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
 
-constexpr int TRACKS_PER_DRIVE = 40 + 1; // 80
+constexpr int TRACKS_PER_DRIVE = 80;
+constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 
 /* Note Head select is done from bit 5 of the drive output register */
 #define CURRENTHEAD ((Internal_DriveControlOutputPort>>5) & 1)
@@ -1725,6 +1726,7 @@ void FreeDiscImage(int DriveNum) {
 }
 
 /*--------------------------------------------------------------------------*/
+
 void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
   if (!infile) {
@@ -1753,23 +1755,29 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
 
   FreeDiscImage(DriveNum);
 
-  for (int Head = HeadNum; Head < Heads; Head++) {
-    for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++) {
-      DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors=10;
-      DiscStore[DriveNum][Head][CurrentTrack].NSectors=10;
+  for (int Head = HeadNum; Head < Heads; Head++)
+  {
+    for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++)
+    {
+      DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors = 10;
+      DiscStore[DriveNum][Head][CurrentTrack].NSectors = 10;
+      DiscStore[DriveNum][Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
+      DiscStore[DriveNum][Head][CurrentTrack].Gap3Size = 0;
+      DiscStore[DriveNum][Head][CurrentTrack].Gap5Size = 0;
+      DiscStore[DriveNum][Head][CurrentTrack].TrackIsReadable = true;
       SectorType *SecPtr = DiscStore[DriveNum][Head][CurrentTrack].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
-      DiscStore[DriveNum][Head][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
-      DiscStore[DriveNum][Head][CurrentTrack].Gap3Size=0;
-      DiscStore[DriveNum][Head][CurrentTrack].Gap5Size=0;
 
       for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
         SecPtr[CurrentSector].IDField.LogicalTrack = CurrentTrack; // was CylinderNum
         SecPtr[CurrentSector].IDField.LogicalSector = CurrentSector; // was RecordNum
         SecPtr[CurrentSector].IDField.HeadNum = HeadNum;
         SecPtr[CurrentSector].IDField.SectorLength = 256; // was PhysRecLength
+        SecPtr[CurrentSector].RecordNum = CurrentSector;
+        SecPtr[CurrentSector].RealSectorSize = 256;
+        SecPtr[CurrentSector].Error = 0;
         SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
-        fread(SecPtr[CurrentSector].Data,1,256,infile);
+        fread(SecPtr[CurrentSector].Data, 1, 256, infile);
       }
     }
   }
@@ -1778,6 +1786,7 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
 }
 
 /*--------------------------------------------------------------------------*/
+
 void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   FILE *infile=fopen(FileName,"rb");
 
@@ -1797,23 +1806,28 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
 
   FreeDiscImage(DriveNum);
 
-  for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++) {
-    for (int HeadNum = 0; HeadNum < 2; HeadNum++) {
-      DiscStore[DriveNum][HeadNum][CurrentTrack].LogicalSectors=10;
-      DiscStore[DriveNum][HeadNum][CurrentTrack].NSectors=10;
-      SectorType *SecPtr = DiscStore[DriveNum][HeadNum][CurrentTrack].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
-      DiscStore[DriveNum][HeadNum][CurrentTrack].Gap1Size=0; /* Don't bother for the mo */
-      DiscStore[DriveNum][HeadNum][CurrentTrack].Gap3Size=0;
-      DiscStore[DriveNum][HeadNum][CurrentTrack].Gap5Size=0;
+  for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++)
+  {
+    for (int Head = 0; Head < 2; Head++)
+    {
+      DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors = 10;
+      DiscStore[DriveNum][Head][CurrentTrack].NSectors = 10;
+      DiscStore[DriveNum][Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
+      DiscStore[DriveNum][Head][CurrentTrack].Gap3Size = 0;
+      DiscStore[DriveNum][Head][CurrentTrack].Gap5Size = 0;
+      DiscStore[DriveNum][Head][CurrentTrack].TrackIsReadable = true;
+      SectorType *SecPtr = DiscStore[DriveNum][Head][CurrentTrack].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
 
       for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
-        SecPtr[CurrentSector].CylinderNum = CurrentTrack;
+        SecPtr[CurrentSector].IDField.LogicalTrack = CurrentTrack; // was CylinderNum
+        SecPtr[CurrentSector].IDField.LogicalSector = CurrentSector; // was RecordNum
+        SecPtr[CurrentSector].IDField.HeadNum = Head;
+        SecPtr[CurrentSector].IDField.SectorLength = 256; // was PhysRecLength
         SecPtr[CurrentSector].RecordNum = CurrentSector;
-        SecPtr[CurrentSector].IDField.HeadNum = HeadNum;
-        SecPtr[CurrentSector].IDSiz = 256;
+        SecPtr[CurrentSector].RealSectorSize = 256;
         SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
-        fread(SecPtr[CurrentSector].Data,1,256,infile);
+        fread(SecPtr[CurrentSector].Data, 1, 256, infile);
       }
     }
   }
@@ -1856,10 +1870,10 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   int LastTrack = fgetc(infile) ; // Read number of last track on disk image
   TotalTracks = LastTrack + 1;
 
-  if (TotalTracks > TRACKS_PER_DRIVE) {
+  if (TotalTracks > FSD_TRACKS_PER_DRIVE) {
     mainWin->Report(MessageType::Error,
                     "Could not open disc file:\n  %s\n\nExpected a maximum of %d tracks, found %d",
-                    FileName, TRACKS_PER_DRIVE, TotalTracks);
+                    FileName, FSD_TRACKS_PER_DRIVE, TotalTracks);
 
     return;
   }
