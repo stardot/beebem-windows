@@ -238,9 +238,14 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 			if (fsd)
 			{
 				if (NativeFDC)
+				{
 					LoadFSDDiscImage(FileName, Drive);
+					SetDiscWriteProtect(Drive, true);
+				}
 				else
-					MessageBox(m_hWnd, "FSD images are only supported with the 8271 FDC", "BeebEm", MB_ICONERROR | MB_OK);
+				{
+					Report(MessageType::Error, "FSD images are only supported with the 8271 FDC");
+				}
 			}
 		}
 		else
@@ -258,10 +263,10 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				Load1770DiscImage(FileName, Drive, DiscType::DOS);
 		}
 
-		/* Write protect the disc */
-		if (m_WriteProtectOnLoad != m_WriteProtectDisc[Drive])
+		// Write protect the disc
+		if (m_WriteProtectOnLoad)
 		{
-			ToggleWriteProtect(Drive);
+			SetDiscWriteProtect(Drive, true);
 		}
 	}
 
@@ -450,13 +455,9 @@ void BeebWin::NewDiscImage(int Drive)
 			}
 		}
 
-		/* Allow disc writes */
-		if (m_WriteProtectDisc[Drive])
-		{
-			ToggleWriteProtect(Drive);
-		}
+		// Allow disc writes
+		SetDiscWriteProtect(Drive, false);
 
-		DWriteable[Drive] = true;
 		DiscLoaded[Drive] = true;
 		strcpy(CDiscName[1],FileName);
 	}
@@ -589,28 +590,29 @@ void BeebWin::RestoreState()
 }
 
 /****************************************************************************/
+
 void BeebWin::ToggleWriteProtect(int Drive)
 {
-	// Keep 8271 and 1770 write enable flags in sync
-	if (m_WriteProtectDisc[Drive])
+	if (CDiscType[Drive] != DiscType::FSD)
 	{
-		m_WriteProtectDisc[Drive] = false;
-		DiscWriteEnable(Drive, true);
-		DWriteable[Drive] = true;
+		SetDiscWriteProtect(Drive, !m_WriteProtectDisc[Drive]);
 	}
-	else
-	{
-		m_WriteProtectDisc[Drive] = true;
-		DiscWriteEnable(Drive, false);
-		DWriteable[Drive] = false;
-	}
-
-	int MenuItemId = Drive == 0 ? IDM_WRITE_PROTECT_DISC0 : IDM_WRITE_PROTECT_DISC1;
-
-	CheckMenuItem(MenuItemId, m_WriteProtectDisc[Drive]);
 }
 
-void BeebWin::SetDiscWriteProtects(void)
+void BeebWin::SetDiscWriteProtect(int Drive, bool WriteProtect)
+{
+	m_WriteProtectDisc[Drive] = WriteProtect;
+
+	// Keep 8271 and 1770 write enable flags in sync
+	DiscWriteEnable(Drive, !WriteProtect);
+	DWriteable[Drive] = !WriteProtect;
+
+	int MenuItemID = Drive == 0 ? IDM_WRITE_PROTECT_DISC0 : IDM_WRITE_PROTECT_DISC1;
+
+	CheckMenuItem(MenuItemID, m_WriteProtectDisc[Drive]);
+}
+
+void BeebWin::SetDiscWriteProtects()
 {
 	if (MachineType != Model::Master128 && NativeFDC)
 	{

@@ -157,7 +157,6 @@ public:
 	void SetSoundMenu(void);
 	void SetImageName(const char *DiscName, int Drive, DiscType DscType);
 	void SetTapeSpeedMenu(void);
-	void SetDiscWriteProtects(void);
 	void SetRomMenu(); // LRW  Added for individual ROM/RAM
 	void UpdateTubeMenu();
 	void SelectFDC();
@@ -353,6 +352,8 @@ public:
 	void ImportDiscFiles(int menuId);
 	void SelectHardDriveFolder();
 	void ToggleWriteProtect(int Drive);
+	void SetDiscWriteProtect(int Drive, bool WriteProtect);
+	void SetDiscWriteProtects();
 	void SetWindowAttributes(bool wasFullScreen);
 	void TranslateAMX(void);
 	bool PrinterFile();

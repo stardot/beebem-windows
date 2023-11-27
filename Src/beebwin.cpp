@@ -4718,8 +4718,10 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 		}
 
 		// Write protect the disc
-		if (m_WriteProtectOnLoad != m_WriteProtectDisc[Drive])
-			ToggleWriteProtect(Drive);
+		if (m_WriteProtectOnLoad)
+		{
+			SetDiscWriteProtect(Drive, true);
+		}
 	}
 
 	if (cont && !m_NoAutoBoot && Drive == 0)
