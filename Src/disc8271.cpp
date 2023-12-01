@@ -169,11 +169,15 @@ struct TrackType {
   bool TrackIsReadable; // FSD - is the track readable, or just contains track ID?
 };
 
-/* All data on the disc - first param is drive number, then head. then physical track id */
-TrackType DiscStore[2][2][TRACKSPERDRIVE];
+// All data on the disc - first param is drive number, then head, then physical track ID
+TrackType DiscStore[2][2][TRACKS_PER_DRIVE];
 
-/* File names of loaded disc images */
-static char FileNames[2][256];
+struct DiscStatusType {
+    DiscType Type;
+    char FileName[256]; // File name of loaded disc image
+};
+
+static DiscStatusType DiscStatus[2];
 
 unsigned char FSDLogicalTrack;
 unsigned char FSDPhysicalTrack;
@@ -1744,7 +1748,9 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   fseek(infile, 0L, SEEK_SET);
   // JGH
 
-  strcpy(FileNames[DriveNum], FileName);
+  strcpy(DiscStatus[DriveNum].FileName, FileName);
+  DiscStatus[DriveNum].Type = DiscType::SSD;
+
   FreeDiscImage(DriveNum);
 
   for (int Head = HeadNum; Head < Heads; Head++) {
@@ -1784,7 +1790,9 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
 
   mainWin->SetImageName(FileName, DriveNum, DiscType::DSD);
 
-  strcpy(FileNames[DriveNum], FileName);
+  strcpy(DiscStatus[DriveNum].FileName, FileName);
+  DiscStatus[DriveNum].Type = DiscType::DSD;
+
   NumHeads[DriveNum] = 2; // 2 = 2 * TRACKS_PER_DRIVE DSD image
 
   FreeDiscImage(DriveNum);
@@ -1818,11 +1826,7 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
 void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   FILE *infile = fopen(FileName,"rb");
   if (!infile) {
-#ifdef WIN32
     mainWin->Report(MessageType::Error, "Could not open disc file:\n  %s", FileName);
-#else
-    cerr << "Could not open disc file " << FileName << "\n";
-#endif
     return;
   }
 
@@ -1833,7 +1837,9 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
                           // 2 = 2 * TRACKS_PER_DRIVE DSD image
   int Head = 0;
 
-  strcpy(FileNames[DriveNum], FileName);
+  strcpy(DiscStatus[DriveNum].FileName, FileName);
+  DiscStatus[DriveNum].Type = DiscType::FSD;
+
   FreeDiscImage(DriveNum);
 
   unsigned char FSDheader[8]; // FSD - Header information
@@ -1955,9 +1961,11 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
 }
 
 /*--------------------------------------------------------------------------*/
-void Eject8271DiscImage(int DriveNum) {
-  strcpy(FileNames[DriveNum], "");
-  FreeDiscImage(DriveNum);
+
+void Eject8271DiscImage(int DriveNum)
+{
+	strcpy(DiscStatus[DriveNum].FileName, "");
+	FreeDiscImage(DriveNum);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1965,11 +1973,11 @@ void Eject8271DiscImage(int DriveNum) {
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
   bool Success = true;
 
-  FILE *outfile=fopen(FileNames[DriveNum],"r+b");
+  FILE *outfile = fopen(DiscStatus[DriveNum].FileName, "r+b");
 
   if (!outfile) {
     mainWin->Report(MessageType::Error,
-                    "Could not open disc file for write:\n  %s", FileNames[DriveNum]);
+                    "Could not open disc file for write:\n  %s", DiscStatus[DriveNum].FileName);
 
     return false;
   }
@@ -2021,7 +2029,7 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
 
   if (!Success) {
     mainWin->Report(MessageType::Error,
-                    "Failed writing to disc file:\n  %s", FileNames[DriveNum]);
+                    "Failed writing to disc file:\n  %s", DiscStatus[DriveNum].FileName);
   }
 
   return Success;
@@ -2156,14 +2164,14 @@ void Save8271UEF(FILE *SUEF)
 		fwrite(blank,1,256,SUEF);
 	}
 	else {
-		fwrite(FileNames[0],1,256,SUEF);
+		fwrite(DiscStatus[0].FileName, 1, 256, SUEF);
 	}
 	if (DiscStore[1][0][0].Sectors == NULL) {
 		// No disc in drive 1
 		fwrite(blank,1,256,SUEF);
 	}
 	else {
-		fwrite(FileNames[1],1,256,SUEF);
+		fwrite(DiscStatus[1].FileName, 1, 256, SUEF);
 	}
 
 	if (Disc8271Trigger == CycleCountTMax)
@@ -2322,8 +2330,9 @@ void disc8271_dumpstate()
 }
 
 /*--------------------------------------------------------------------------*/
+
 void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads)
 {
-	strcpy(pFileName, FileNames[DriveNum]);
+	strcpy(pFileName, DiscStatus[DriveNum].FileName);
 	*Heads = NumHeads[DriveNum];
 }
