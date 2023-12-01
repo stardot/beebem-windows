@@ -680,33 +680,39 @@ static void ReadInterrupt(void) {
   WriteLog("ReadInterrupt called - DataReg=0x%02X ByteWithinSector=%d\n", DataReg, CommandStatus.ByteWithinSector);
   #endif
 
-  ResultReg = CommandStatus.CurrentSectorPtr->Error; // FSD - used to be 0
+  // FSD - use the error result from the FSD file
+  ResultReg = CommandStatus.CurrentSectorPtr->Error;
 
   // If track has no error, but the "real" size has not been read
-  if (CommandStatus.CurrentSectorPtr->Error == 0 &&
-      CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength) {
+  if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_SUCCESS &&
+      CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength)
+  {
     ResultReg = RESULT_REG_DATA_CRC_ERROR;
   }
 
-  if (SectorOverRead) {
-    if (CommandStatus.CurrentSectorPtr->Error == 0x00) {
+  if (SectorOverRead)
+  {
+    if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_SUCCESS)
+    {
       ResultReg = RESULT_REG_DATA_CRC_ERROR;
     }
-    else if (CommandStatus.CurrentSectorPtr->Error == 0x20) {
+    else if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DELETED_DATA_FOUND)
+    {
       ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
     }
-    else if (CommandStatus.CurrentSectorPtr->Error == 0x2e) {
+    else if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DELETED_DATA_CRC_ERROR)
+    {
       ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
     }
   }
 
   // Same as above, but for deleted data
-  if (CommandStatus.CurrentSectorPtr->Error == 0x20 &&
+  if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DELETED_DATA_FOUND &&
       CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength) {
     ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
   }
 
-  if ((CommandStatus.CurrentSectorPtr->Error == 0x2E) &&
+  if ((CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DELETED_DATA_CRC_ERROR) &&
       (CommandStatus.CurrentSectorPtr->IDSiz == CommandStatus.SectorLength) && !SectorOverRead) {
     ResultReg = RESULT_REG_DELETED_DATA_FOUND;
   }
@@ -726,8 +732,9 @@ static void ReadInterrupt(void) {
     ResultReg = RESULT_REG_SUCCESS;
   }
 
-  if (CommandStatus.CurrentSectorPtr->Error == 0x0E &&
-      CommandStatus.CurrentSectorPtr->RealSectorSize == CommandStatus.CurrentSectorPtr->IDSiz) {
+  if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DATA_CRC_ERROR &&
+      CommandStatus.CurrentSectorPtr->RealSectorSize == CommandStatus.CurrentSectorPtr->IDSiz)
+  {
     ResultReg = RESULT_REG_DATA_CRC_ERROR;
 
     if (CommandStatus.ByteWithinSector % 5 == 0) {
