@@ -128,7 +128,7 @@ static unsigned char DRDSC; // FSD
 
 static unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
 
-#define TRACKSPERDRIVE (40 + 1) // 80
+constexpr int TRACKS_PER_DRIVE = 40 + 1; // 80
 
 /* Note Head select is done from bit 5 of the drive output register */
 #define CURRENTHEAD ((Internal_DriveControlOutputPort>>5) & 1)
@@ -250,15 +250,23 @@ static void DoLoadHead(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Initialise our disc structures                                           */
-static void InitDiscStore(void) {
-  int head,track,drive;
-  TrackType blank={0,0,NULL,0,0,0};
 
-  for(drive=0;drive<2;drive++)
-    for(head=0;head<2;head++)
-      for(track=0;track<TRACKSPERDRIVE;track++)
-        DiscStore[drive][head][track]=blank;
+// Initialise our disc structures
+
+static void InitDiscStore()
+{
+	const TrackType Blank = { 0, 0, nullptr, 0, 0, 0, false };
+
+	for (int Drive = 0; Drive < 2; Drive++)
+	{
+		for (int Head = 0; Head < 2; Head++)
+		{
+			for (int Track = 0; Track < TRACKS_PER_DRIVE; Track++)
+			{
+				DiscStore[Drive][Head][Track] = Blank;
+			}
+		}
+	}
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1693,7 +1701,7 @@ void Disc8271_poll_real() {
 void FreeDiscImage(int DriveNum) {
   const int Head = 0;
 
-  for (int Track = 0; Track < TRACKSPERDRIVE; Track++) {
+  for (int Track = 0; Track < TRACKS_PER_DRIVE; Track++) {
     const int SectorsPerTrack = DiscStore[DriveNum][Head][Track].LogicalSectors;
 
     SectorType *SecPtr = DiscStore[DriveNum][Head][Track].Sectors;
@@ -1725,13 +1733,13 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   mainWin->SetImageName(FileName, DriveNum, DiscType::SSD);
 
   // JGH, 26-Dec-2011
-  NumHeads[DriveNum] = 1; // 1 = TRACKSPERDRIVE SSD image
-                          // 2 = 2 * TRACKSPERDRIVE DSD image
+  NumHeads[DriveNum] = 1; // 1 = TRACKS_PER_DRIVE SSD image
+                          // 2 = 2 * TRACKS_PER_DRIVE DSD image
   int Heads = 1;
   fseek(infile, 0L, SEEK_END);
-  if (ftell(infile)>0x40000) {
+  if (ftell(infile) > 0x40000) {
     Heads = 2; // Long sequential image continues onto side 1
-    NumHeads[DriveNum] = 0; // 0 = 2 * TRACKSPERDRIVE SSD image
+    NumHeads[DriveNum] = 0; // 0 = 2 * TRACKS_PER_DRIVE SSD image
   }
   fseek(infile, 0L, SEEK_SET);
   // JGH
@@ -1777,7 +1785,7 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   mainWin->SetImageName(FileName, DriveNum, DiscType::DSD);
 
   strcpy(FileNames[DriveNum], FileName);
-  NumHeads[DriveNum] = 2;		/* 2 = 2*TRACKSPERDRIVE DSD image */
+  NumHeads[DriveNum] = 2; // 2 = 2 * TRACKS_PER_DRIVE DSD image
 
   FreeDiscImage(DriveNum);
 
@@ -1821,8 +1829,8 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   mainWin->SetImageName(FileName, DriveNum, DiscType::FSD);
 
   // JGH, 26-Dec-2011
-  NumHeads[DriveNum] = 1; // 1 = TRACKSPERDRIVE SSD image
-                          // 2 = 2 * TRACKSPERDRIVE DSD image
+  NumHeads[DriveNum] = 1; // 1 = TRACKS_PER_DRIVE SSD image
+                          // 2 = 2 * TRACKS_PER_DRIVE DSD image
   int Head = 0;
 
   strcpy(FileNames[DriveNum], FileName);
@@ -1842,10 +1850,10 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   int LastTrack = fgetc(infile) ; // Read number of last track on disk image
   TotalTracks = LastTrack + 1;
 
-  if (TotalTracks > TRACKSPERDRIVE) {
+  if (TotalTracks > TRACKS_PER_DRIVE) {
     mainWin->Report(MessageType::Error,
                     "Could not open disc file:\n  %s\n\nExpected a maximum of %d tracks, found %d",
-                    FileName, TRACKSPERDRIVE, TotalTracks);
+                    FileName, TRACKS_PER_DRIVE, TotalTracks);
 
     return;
   }
@@ -1969,13 +1977,13 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
   long FileOffset;
 
   if(NumHeads[DriveNum]) {
-    FileOffset = (NumHeads[DriveNum] * TrackNum + HeadNum) * 2560; /* 1=SSD, 2=DSD */
+    FileOffset = (NumHeads[DriveNum] * TrackNum + HeadNum) * 2560; // 1=SSD, 2=DSD
   }
   else {
-    FileOffset = (TrackNum + HeadNum * TRACKSPERDRIVE) * 2560; /* 0=2-sided SSD */
+    FileOffset = (TrackNum + HeadNum * TRACKS_PER_DRIVE) * 2560; // 0=2-sided SSD
   }
 
-  /* Get the file length to check if the file needs extending */
+  // Get the file length to check if the file needs extending
   long FileLength = 0;
 
   Success = fseek(outfile, 0L, SEEK_END) == 0;
