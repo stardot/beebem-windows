@@ -53,21 +53,22 @@ const unsigned char STATUS_REG_INTERRUPT_REQUEST  = 0x08;
 const unsigned char STATUS_REG_NON_DMA_MODE       = 0x04;
 
 // 8271 Result register
-const unsigned char RESULT_REG_SUCCESS            = 0x00;
-const unsigned char RESULT_REG_SCAN_NOT_MET       = 0x00;
-const unsigned char RESULT_REG_SCAN_MET_EQUAL     = 0x02;
-const unsigned char RESULT_REG_SCAN_MET_NOT_EQUAL = 0x04;
-const unsigned char RESULT_REG_CLOCK_ERROR        = 0x08;
-const unsigned char RESULT_REG_LATE_DMA           = 0x0A;
-const unsigned char RESULT_REG_ID_CRC_ERROR       = 0x0C;
-const unsigned char RESULT_REG_DATA_CRC_ERROR     = 0x0E;
-const unsigned char RESULT_REG_DRIVE_NOT_READY    = 0x10;
-const unsigned char RESULT_REG_WRITE_PROTECT      = 0x12;
-const unsigned char RESULT_REG_TRACK_0_NOT_FOUND  = 0x14;
-const unsigned char RESULT_REG_WRITE_FAULT        = 0x16;
-const unsigned char RESULT_REG_SECTOR_NOT_FOUND   = 0x18;
-const unsigned char RESULT_REG_DRIVE_NOT_PRESENT  = 0x1E; // Undocumented, see http://beebwiki.mdfs.net/OSWORD_%267F
-const unsigned char RESULT_REG_DELETED_DATA_FOUND = 0x20;
+const unsigned char RESULT_REG_SUCCESS                = 0x00;
+const unsigned char RESULT_REG_SCAN_NOT_MET           = 0x00;
+const unsigned char RESULT_REG_SCAN_MET_EQUAL         = 0x02;
+const unsigned char RESULT_REG_SCAN_MET_NOT_EQUAL     = 0x04;
+const unsigned char RESULT_REG_CLOCK_ERROR            = 0x08;
+const unsigned char RESULT_REG_LATE_DMA               = 0x0A;
+const unsigned char RESULT_REG_ID_CRC_ERRORV          = 0x0C;
+const unsigned char RESULT_REG_DATA_CRC_ERROR         = 0x0E;
+const unsigned char RESULT_REG_DRIVE_NOT_READY        = 0x10;
+const unsigned char RESULT_REG_WRITE_PROTECT          = 0x12;
+const unsigned char RESULT_REG_TRACK_0_NOT_FOUND      = 0x14;
+const unsigned char RESULT_REG_WRITE_FAULT            = 0x16;
+const unsigned char RESULT_REG_SECTOR_NOT_FOUND       = 0x18;
+const unsigned char RESULT_REG_DRIVE_NOT_PRESENT      = 0x1E; // Undocumented, see http://beebwiki.mdfs.net/OSWORD_%267F
+const unsigned char RESULT_REG_DELETED_DATA_FOUND     = 0x20;
+const unsigned char RESULT_REG_DELETED_DATA_CRC_ERROR = 0x2E;
 
 // 8271 special registers
 const unsigned char SPECIAL_REG_SCAN_SECTOR_NUMBER        = 0x06;
@@ -679,22 +680,22 @@ static void ReadInterrupt(void) {
       ResultReg = RESULT_REG_DATA_CRC_ERROR;
     }
     else if (CommandStatus.CurrentSectorPtr->Error == 0x20) {
-      ResultReg = 0x2e;
+      ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
     }
     else if (CommandStatus.CurrentSectorPtr->Error == 0x2e) {
-      ResultReg = 0x2e;
+      ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
     }
   }
 
   // Same as above, but for deleted data
   if (CommandStatus.CurrentSectorPtr->Error == 0x20 &&
       CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength) {
-    ResultReg = 0x2E;
+    ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
   }
 
   if ((CommandStatus.CurrentSectorPtr->Error == 0x2E) &&
       (CommandStatus.CurrentSectorPtr->IDSiz == CommandStatus.SectorLength) && !SectorOverRead) {
-    ResultReg = 0x20;
+    ResultReg = RESULT_REG_DELETED_DATA_FOUND;
   }
 
   // If track has deliberate error, but the id field sector size has been read)
