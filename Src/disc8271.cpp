@@ -27,8 +27,8 @@ Boston, MA  02110-1301, USA.
 #include <stdlib.h>
 #include <string.h>
 
-#include "6502core.h"
 #include "disc8271.h"
+#include "6502core.h"
 #include "UEFState.h"
 #include "beebsound.h"
 #include "sysvia.h"
