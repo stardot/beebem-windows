@@ -1403,30 +1403,32 @@ static void DoBadCommand(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-/* The following table is used to parse commands from the command number written into
-the command register - it can't distinguish between subcommands selected from the
-first parameter */
-static const PrimaryCommandLookupType PrimaryCommandLookup[]={
-  {0x00, 0x3f, 3, DoVarLength_ScanDataCommand, NULL,  "Scan Data (Variable Length/Multi-Record)"},
-  {0x04, 0x3f, 3, DoVarLength_ScanDataAndDeldCommand, NULL,  "Scan Data & deleted data (Variable Length/Multi-Record)"},
-  {0x0a, 0x3f, 2, Do128ByteSR_WriteDataCommand, NULL, "Write Data (128 byte/single record)"},
-  {0x0b, 0x3f, 3, DoVarLength_WriteDataCommand, WriteInterrupt, "Write Data (Variable Length/Multi-Record)"},
-  {0x0e, 0x3f, 2, Do128ByteSR_WriteDeletedDataCommand, NULL, "Write Deleted Data (128 byte/single record)"},
-  {0x0f, 0x3f, 3, DoVarLength_WriteDeletedDataCommand, NULL, "Write Deleted Data (Variable Length/Multi-Record)"},
-  {0x12, 0x3f, 2, Do128ByteSR_ReadDataCommand, NULL, "Read Data (128 byte/single record)"},
-  {0x13, 0x3f, 3, DoVarLength_ReadDataCommand, ReadInterrupt, "Read Data (Variable Length/Multi-Record)"},
-  {0x16, 0x3f, 2, Do128ByteSR_ReadDataAndDeldCommand, Read128Interrupt, "Read Data & deleted data (128 byte/single record)"},
-  {0x17, 0x3f, 3, DoVarLength_ReadDataAndDeldCommand, ReadInterrupt, "Read Data & deleted data (Variable Length/Multi-Record)"},
-  {0x1b, 0x3f, 3, DoReadIDCommand, ReadIDInterrupt, "ReadID" },
-  {0x1e, 0x3f, 2, Do128ByteSR_VerifyDataAndDeldCommand, NULL, "Verify Data and Deleted Data (128 byte/single record)"},
-  {0x1f, 0x3f, 3, DoVarLength_VerifyDataAndDeldCommand, VerifyInterrupt, "Verify Data and Deleted Data (Variable Length/Multi-Record)"},
-  {0x23, 0x3f, 5, DoFormatCommand, FormatInterrupt, "Format"},
-  {0x29, 0x3f, 1, DoSeekCommand, SeekInterrupt, "Seek"},
-  {0x2c, 0x3f, 0, DoReadDriveStatusCommand, NULL, "Read drive status"},
-  {0x35, 0xff, 4, DoSpecifyCommand, NULL, "Specify" },
-  {0x3a, 0x3f, 2, DoWriteSpecialCommand, NULL, "Write special registers" },
-  {0x3d, 0x3f, 1, DoReadSpecialCommand, NULL, "Read special registers" },
-  {0,    0,    0, DoBadCommand, NULL, "Unknown command"} /* Terminator due to 0 mask matching all */
+
+// The following table is used to parse commands from the command number
+// written into the command register - it can't distinguish between subcommands
+// selected from the first parameter.
+
+static const PrimaryCommandLookupType PrimaryCommandLookup[] = {
+	{ 0x00, 0x3f, 3, DoVarLength_ScanDataCommand,          nullptr,          "Scan Data (Variable Length/Multi-Record)" },
+	{ 0x04, 0x3f, 3, DoVarLength_ScanDataAndDeldCommand,   nullptr,          "Scan Data & deleted data (Variable Length/Multi-Record)" },
+	{ 0x0a, 0x3f, 2, Do128ByteSR_WriteDataCommand,         nullptr,          "Write Data (128 byte/single record)" },
+	{ 0x0b, 0x3f, 3, DoVarLength_WriteDataCommand,         WriteInterrupt,   "Write Data (Variable Length/Multi-Record)" },
+	{ 0x0e, 0x3f, 2, Do128ByteSR_WriteDeletedDataCommand,  nullptr,          "Write Deleted Data (128 byte/single record)" },
+	{ 0x0f, 0x3f, 3, DoVarLength_WriteDeletedDataCommand,  nullptr,          "Write Deleted Data (Variable Length/Multi-Record)" },
+	{ 0x12, 0x3f, 2, Do128ByteSR_ReadDataCommand,          nullptr,          "Read Data (128 byte/single record)" },
+	{ 0x13, 0x3f, 3, DoVarLength_ReadDataCommand,          ReadInterrupt,    "Read Data (Variable Length/Multi-Record)" },
+	{ 0x16, 0x3f, 2, Do128ByteSR_ReadDataAndDeldCommand,   Read128Interrupt, "Read Data & deleted data (128 byte/single record)" },
+	{ 0x17, 0x3f, 3, DoVarLength_ReadDataAndDeldCommand,   ReadInterrupt,    "Read Data & deleted data (Variable Length/Multi-Record)" },
+	{ 0x1b, 0x3f, 3, DoReadIDCommand,                      ReadIDInterrupt,  "ReadID" },
+	{ 0x1e, 0x3f, 2, Do128ByteSR_VerifyDataAndDeldCommand, nullptr,          "Verify Data and Deleted Data (128 byte/single record)" },
+	{ 0x1f, 0x3f, 3, DoVarLength_VerifyDataAndDeldCommand, VerifyInterrupt,  "Verify Data and Deleted Data (Variable Length/Multi-Record)" },
+	{ 0x23, 0x3f, 5, DoFormatCommand,                      FormatInterrupt,  "Format" },
+	{ 0x29, 0x3f, 1, DoSeekCommand,                        SeekInterrupt,    "Seek" },
+	{ 0x2c, 0x3f, 0, DoReadDriveStatusCommand,             nullptr,          "Read drive status" },
+	{ 0x35, 0xff, 4, DoSpecifyCommand,                     nullptr,          "Specify" },
+	{ 0x3a, 0x3f, 2, DoWriteSpecialCommand,                nullptr,          "Write special registers" },
+	{ 0x3d, 0x3f, 1, DoReadSpecialCommand,                 nullptr,          "Read special registers" },
+	{ 0,    0,    0, DoBadCommand,                         nullptr,          "Unknown command" } // Terminator due to 0 mask matching all
 };
 
 /*--------------------------------------------------------------------------*/
