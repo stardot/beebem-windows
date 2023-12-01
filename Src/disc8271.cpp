@@ -133,8 +133,8 @@ static unsigned char NextInterruptIsErr; // non-zero causes error and drops this
 /* Note Head select is done from bit 5 of the drive output register */
 #define CURRENTHEAD ((Internal_DriveControlOutputPort>>5) & 1)
 
-/* Note: reads/writes one byte every 80us */
-#define TIMEBETWEENBYTES (160)
+// Note: reads/writes one byte every 80us
+constexpr int TIME_BETWEEN_BYTES = 160;
 
 struct SectorType {
 
@@ -470,7 +470,7 @@ static void DoVarLength_WriteDataCommand(void) {
 
   if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength)) {
     CommandStatus.ByteWithinSector=0;
-    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
     StatusReg = STATUS_REG_COMMAND_BUSY;
     UpdateNMIStatus();
     CommandStatus.ByteWithinSector=0;
@@ -527,7 +527,7 @@ static void WriteInterrupt(void) {
                 STATUS_REG_INTERRUPT_REQUEST |
                 STATUS_REG_NON_DMA_MODE;
     UpdateNMIStatus();
-    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
   }
 }
 
@@ -643,7 +643,7 @@ static void DoVarLength_ReadDataCommand(void) {
 
   if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength)) {
     CommandStatus.ByteWithinSector=0;
-    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
     StatusReg = STATUS_REG_COMMAND_BUSY;
     UpdateNMIStatus();
   } else {
@@ -742,8 +742,8 @@ static void ReadInterrupt(void) {
                   STATUS_REG_NON_DMA_MODE;
       UpdateNMIStatus();
       LastByte = true;
-      CommandStatus.SectorsToGo=-1; /* To let us bail out */
-      SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
+      CommandStatus.SectorsToGo = -1; // To let us bail out
+      SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger); // To pick up result
     }
   }
 
@@ -752,7 +752,7 @@ static void ReadInterrupt(void) {
                 STATUS_REG_INTERRUPT_REQUEST |
                 STATUS_REG_NON_DMA_MODE;
     UpdateNMIStatus();
-    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
   }
 }
 
@@ -805,7 +805,7 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
 
   if (ValidateSector(CommandStatus.CurrentSectorPtr, CommandStatus.TrackAddr, CommandStatus.SectorLength)) {
     CommandStatus.ByteWithinSector = 0;
-    SetTrigger(TIMEBETWEENBYTES, Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
     StatusReg = STATUS_REG_COMMAND_BUSY;
     UpdateNMIStatus();
     CommandStatus.ByteWithinSector = 0;
@@ -878,8 +878,8 @@ static void Read128Interrupt(void) {
                   STATUS_REG_NON_DMA_MODE;
       UpdateNMIStatus();
       LastByte = 1;
-      CommandStatus.SectorsToGo = -1; /* To let us bail out */
-      SetTrigger(TIMEBETWEENBYTES, Disc8271Trigger); /* To pick up result */
+      CommandStatus.SectorsToGo = -1; // To let us bail out
+      SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger); // To pick up result
     }
   }
 
@@ -888,7 +888,7 @@ static void Read128Interrupt(void) {
                 STATUS_REG_INTERRUPT_REQUEST |
                 STATUS_REG_NON_DMA_MODE;
     UpdateNMIStatus();
-    SetTrigger(TIMEBETWEENBYTES, Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
   }
 }
 
@@ -935,8 +935,8 @@ static void DoReadIDCommand(void) {
     CommandStatus.SectorsToGo = 0x20;
   }
 
-  CommandStatus.ByteWithinSector=0;
-  SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+  CommandStatus.ByteWithinSector = 0;
+  SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
   StatusReg = STATUS_REG_COMMAND_BUSY;
   UpdateNMIStatus();
 
@@ -992,8 +992,8 @@ static void ReadIDInterrupt(void) {
       UpdateNMIStatus();
       LastByte = true;
       // PositionInTrack=0; // FSD - track position to zero
-      CommandStatus.SectorsToGo=-1; /* To let us bail out */
-      SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger); /* To pick up result */
+      CommandStatus.SectorsToGo = -1; // To let us bail out
+      SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger); // To pick up result
     }
   }
 
@@ -1002,7 +1002,7 @@ static void ReadIDInterrupt(void) {
                 STATUS_REG_INTERRUPT_REQUEST |
                 STATUS_REG_NON_DMA_MODE;
     UpdateNMIStatus();
-    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
   }
 }
 
@@ -1098,7 +1098,7 @@ static void DoFormatCommand(void) {
 
   if (CommandStatus.SectorsToGo==10 && CommandStatus.SectorLength==256) {
     CommandStatus.ByteWithinSector=0;
-    SetTrigger(TIMEBETWEENBYTES,Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
     StatusReg = STATUS_REG_COMMAND_BUSY;
     UpdateNMIStatus();
     FirstWriteInt = true;
@@ -1161,7 +1161,7 @@ static void FormatInterrupt(void) {
                 STATUS_REG_INTERRUPT_REQUEST |
                 STATUS_REG_NON_DMA_MODE;
     UpdateNMIStatus();
-    SetTrigger(TIMEBETWEENBYTES * 256,Disc8271Trigger);
+    SetTrigger(TIME_BETWEEN_BYTES * 256, Disc8271Trigger);
   }
 }
 
