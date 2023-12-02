@@ -88,8 +88,6 @@ static int DriveHeadPosition[2]={0};
 static bool DriveHeadLoaded=false;
 static bool DriveHeadUnloadPending=false;
 
-static bool FirstWriteInt; // Indicates the start of a write operation
-
 static unsigned char PositionInTrack; // FSD
 static unsigned char TotalTracks; // FSD
 static bool SectorOverRead; // FSD - Was read size bigger than data stored?
@@ -188,13 +186,14 @@ static void DriveHeadScheduleUnload(void);
 struct CommandStatusType {
   int TrackAddr;
   int CurrentSector;
-  int SectorLength; /* In bytes */
+  int SectorLength; // In bytes
   int SectorsToGo;
 
   SectorType *CurrentSectorPtr;
   TrackType *CurrentTrackPtr;
 
-  int ByteWithinSector; /* Next byte in sector or ID field */
+  int ByteWithinSector; // Next byte in sector or ID field
+  bool FirstWriteInt; // Indicates the start of a write operation
 };
 
 static CommandStatusType CommandStatus;
@@ -481,7 +480,7 @@ static void DoVarLength_WriteDataCommand(void) {
     FDCState.StatusReg = STATUS_REG_COMMAND_BUSY;
     UpdateNMIStatus();
     CommandStatus.ByteWithinSector=0;
-    FirstWriteInt = true;
+    CommandStatus.FirstWriteInt = true;
   } else {
     DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
   }
@@ -497,10 +496,14 @@ static void WriteInterrupt(void) {
     return;
   }
 
-  if (!FirstWriteInt)
+  if (!CommandStatus.FirstWriteInt)
+  {
     CommandStatus.CurrentSectorPtr->Data[CommandStatus.ByteWithinSector++] = FDCState.DataReg;
+  }
   else
-    FirstWriteInt = false;
+  {
+    CommandStatus.FirstWriteInt = false;
+  }
 
   FDCState.ResultReg = RESULT_REG_SUCCESS;
 
@@ -1143,7 +1146,7 @@ static void DoFormatCommand(void) {
     SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
     FDCState.StatusReg = STATUS_REG_COMMAND_BUSY;
     UpdateNMIStatus();
-    FirstWriteInt = true;
+    CommandStatus.FirstWriteInt = true;
   } else {
     DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
   }
@@ -1159,12 +1162,15 @@ static void FormatInterrupt(void) {
     return;
   }
 
-  if (!FirstWriteInt) {
+  if (!CommandStatus.FirstWriteInt)
+  {
     /* Ignore the ID data for now - just count the bytes */
     CommandStatus.ByteWithinSector++;
   }
   else
-    FirstWriteInt = false;
+  {
+    CommandStatus.FirstWriteInt = false;
+  }
 
   FDCState.ResultReg = RESULT_REG_SUCCESS;
 
@@ -2253,7 +2259,7 @@ void Save8271UEF(FILE *SUEF)
 	fput32(FDCState.Select[1] ? 1 : 0, SUEF);
 	fput32(DiscStatus[0].Writeable ? 1 : 0,SUEF);
 	fput32(DiscStatus[1].Writeable ? 1 : 0,SUEF);
-	fput32(FirstWriteInt ? 1 : 0,SUEF);
+	fput32(CommandStatus.FirstWriteInt ? 1 : 0,SUEF);
 	fput32(NextInterruptIsErr,SUEF);
 	fput32(CommandStatus.TrackAddr,SUEF);
 	fput32(CommandStatus.CurrentSector,SUEF);
@@ -2337,7 +2343,7 @@ void Load8271UEF(FILE *SUEF)
 		FDCState.Select[1] = fget32(SUEF) != 0;
 		DiscStatus[0].Writeable = fget32(SUEF) != 0;
 		DiscStatus[1].Writeable = fget32(SUEF) != 0;
-		FirstWriteInt=fget32(SUEF) != 0;
+		CommandStatus.FirstWriteInt = fget32(SUEF) != 0;
 		NextInterruptIsErr=fget32(SUEF);
 		CommandStatus.TrackAddr=fget32(SUEF);
 		CommandStatus.CurrentSector=fget32(SUEF);
