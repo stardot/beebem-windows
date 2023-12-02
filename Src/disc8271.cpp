@@ -99,10 +99,15 @@ constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 constexpr int TIME_BETWEEN_BYTES = 160;
 
 struct IDFieldType {
-	unsigned char LogicalTrack; // FSD - renamed to track ID names
-	unsigned char HeadNum; // FSD
-	unsigned char LogicalSector; // FSD
-	unsigned char SectorLength; // FSD
+	// Cylinder Number byte which identifies the track number
+	unsigned char LogicalTrack;
+	// Head Number byte which specifies the head used (top or bottom)
+	// to access the sector
+	unsigned char HeadNum;
+	// Record Number byte identifying the sector number
+	unsigned char LogicalSector;
+	// The byte length of the sector
+	unsigned char SectorLength;
 };
 
 struct SectorType {
@@ -956,115 +961,158 @@ static void DoVarLength_ReadDataAndDeldCommand()
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoReadIDCommand(void) {
-  DoSelects();
-  DoLoadHead();
 
-  const int Drive = GetSelectedDrive();
+// The Read ID command transfers the specified number of ID fields Into
+// memory (beginning with the first ID field after Index). The CRC character
+// is checked but not transferred. These fields are entered into memory in the
+// order in which they are physically located on the disk, with the first
+// field being the one starting at the index pulse.
+//
+// The ID field is seven bytes long and is written for each sector when the
+// track is formatted. Each ID field consists of:
+//
+// * an ID field Address Mark
+// * a Cylinder Number byte which identifies the track number
+// * a Head Number byte which specifies the head used (top or bottom) to access
+//   the sector
+// * a Record Number byte identifying the sector number (1 through 26 for
+//   128 byte sectors)
+// * an N-byte specifying the byte length of the sector
+// * two CRC (Cyclic Redundancy Check) bytes
+//
+// Parameters:
+// 0: Track Address
+// 1: Zero
+// 2: Number of ID Fields
 
-  if (Drive < 0) {
-    DoErr(RESULT_REG_DRIVE_NOT_READY);
-    return;
-  }
+static void DoReadIDCommand()
+{
+	DoSelects();
+	DoLoadHead();
 
-  // Internal_CurrentTrack[Drive]=Params[0];
-  FSDPhysicalTrack = FDCState.Params[0];
-  CommandStatus.CurrentTrackPtr = GetTrackPtrPhysical(FSDPhysicalTrack);
+	const int Drive = GetSelectedDrive();
 
-  if (CommandStatus.CurrentTrackPtr == nullptr)
-  {
-    DoErr(RESULT_REG_SECTOR_NOT_FOUND); // FSD - was RESULT_REG_DRIVE_NOT_READY
-    return;
-  }
+	if (Drive < 0)
+	{
+		DoErr(RESULT_REG_DRIVE_NOT_READY);
+		return;
+	}
 
-  // FSD - was GetSectorPtr
-  CommandStatus.CurrentSectorPtr = GetSectorPtrForTrackID(CommandStatus.CurrentTrackPtr, 0, false);
+	// Internal_CurrentTrack[Drive]=Params[0];
+	FSDPhysicalTrack = FDCState.Params[0];
+	CommandStatus.CurrentTrackPtr = GetTrackPtrPhysical(FSDPhysicalTrack);
 
-  if (CommandStatus.CurrentSectorPtr == nullptr)
-  {
-    DoErr(RESULT_REG_SECTOR_NOT_FOUND); // FSD - was RESULT_REG_DRIVE_NOT_PRESENT
-    return;
-  }
+	if (CommandStatus.CurrentTrackPtr == nullptr)
+	{
+		DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+		return;
+	}
 
-  CommandStatus.TrackAddr     = FDCState.Params[0];
-  CommandStatus.CurrentSector = 0;
-  CommandStatus.SectorsToGo   = FDCState.Params[2];
+	// FSD - was GetSectorPtr
+	CommandStatus.CurrentSectorPtr = GetSectorPtrForTrackID(CommandStatus.CurrentTrackPtr, 0, false);
 
-  if (CommandStatus.SectorsToGo == 0) {
-    CommandStatus.SectorsToGo = 0x20;
-  }
+	if (CommandStatus.CurrentSectorPtr == nullptr)
+	{
+		DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+		return;
+	}
 
-  CommandStatus.ByteWithinSector = 0;
-  SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
-  FDCState.StatusReg = STATUS_REG_COMMAND_BUSY;
-  UpdateNMIStatus();
+	CommandStatus.TrackAddr     = FDCState.Params[0];
+	CommandStatus.CurrentSector = 0;
+	CommandStatus.SectorsToGo   = FDCState.Params[2];
 
-  // FSDPhysicalTrack = FSDPhysicalTrack + 1;
+	if (CommandStatus.SectorsToGo == 0)
+	{
+		CommandStatus.SectorsToGo = 0x20;
+	}
+
+	CommandStatus.ByteWithinSector = 0;
+	SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
+	FDCState.StatusReg = STATUS_REG_COMMAND_BUSY;
+	UpdateNMIStatus();
+
+	// FSDPhysicalTrack = FSDPhysicalTrack + 1;
 }
 
 /*--------------------------------------------------------------------------*/
-static void ReadIDInterrupt(void) {
-  bool LastByte = false;
 
-  if (CommandStatus.SectorsToGo<0) {
-    FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
-    UpdateNMIStatus();
-    return;
-  }
+static void ReadIDInterrupt()
+{
+	bool LastByte = false;
 
-  if (CommandStatus.ByteWithinSector == 0)
-    FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.LogicalTrack; // CylinderNum
-  else if (CommandStatus.ByteWithinSector == 1)
-    FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.HeadNum;
-  else if (CommandStatus.ByteWithinSector == 2)
-    FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.LogicalSector; // RecordNum
-  else if (CommandStatus.ByteWithinSector == 3)
-    FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.SectorLength; // was 1, for 256 byte
+	if (CommandStatus.SectorsToGo < 0)
+	{
+		FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
+		UpdateNMIStatus();
+		return;
+	}
 
-  CommandStatus.ByteWithinSector++;
+	if (CommandStatus.ByteWithinSector == 0)
+	{
+		FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.LogicalTrack;
+	}
+	else if (CommandStatus.ByteWithinSector == 1)
+	{
+		FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.HeadNum;
+	}
+	else if (CommandStatus.ByteWithinSector == 2)
+	{
+		FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.LogicalSector; // RecordNum
+	}
+	else if (CommandStatus.ByteWithinSector == 3)
+	{
+		FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.SectorLength; // was 1, for 256 byte
+	}
 
-  FDCState.ResultReg = RESULT_REG_SUCCESS;
+	CommandStatus.ByteWithinSector++;
 
-  if (CommandStatus.ByteWithinSector>=4) {
-    CommandStatus.ByteWithinSector=0;
-    if (--CommandStatus.SectorsToGo) {
-      CommandStatus.CurrentSector++;
+	FDCState.ResultReg = RESULT_REG_SUCCESS;
 
-      // FSD - IF > NUMBER OF SECTORS, GO AGAIN
-      if (CommandStatus.CurrentSector>CommandStatus.CurrentTrackPtr->NSectors-1) {
-        CommandStatus.CurrentSector = 0;
-      }
+	if (CommandStatus.ByteWithinSector >= 4)
+	{
+		CommandStatus.ByteWithinSector = 0;
 
-      PositionInTrack = CommandStatus.CurrentSector; // FSD
+		if (--CommandStatus.SectorsToGo > 0)
+		{
+			if (++CommandStatus.CurrentSector == CommandStatus.CurrentTrackPtr->NSectors)
+			{
+				CommandStatus.CurrentSector = 0;
+			}
 
-      CommandStatus.CurrentSectorPtr = GetSectorPtrForTrackID(CommandStatus.CurrentTrackPtr,
-                                                              CommandStatus.CurrentSector,
-                                                              false);
-      if (CommandStatus.CurrentSectorPtr == nullptr)
-      {
-        DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
-        return;
-      }
-    } else {
-      // Last sector done
-      FDCState.StatusReg = STATUS_REG_COMMAND_BUSY |
-                           STATUS_REG_INTERRUPT_REQUEST |
-                           STATUS_REG_NON_DMA_MODE;
-      UpdateNMIStatus();
-      LastByte = true;
-      // PositionInTrack=0; // FSD - track position to zero
-      CommandStatus.SectorsToGo = -1; // To let us bail out
-      SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger); // To pick up result
-    }
-  }
+			PositionInTrack = CommandStatus.CurrentSector; // FSD
 
-  if (!LastByte) {
-    FDCState.StatusReg = STATUS_REG_COMMAND_BUSY |
-                         STATUS_REG_INTERRUPT_REQUEST |
-                         STATUS_REG_NON_DMA_MODE;
-    UpdateNMIStatus();
-    SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
-  }
+			CommandStatus.CurrentSectorPtr = GetSectorPtrForTrackID(CommandStatus.CurrentTrackPtr,
+			                                                        CommandStatus.CurrentSector,
+			                                                        false);
+
+			if (CommandStatus.CurrentSectorPtr == nullptr)
+			{
+				DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
+				return;
+			}
+		}
+		else
+		{
+			// Last sector done
+			FDCState.StatusReg = STATUS_REG_COMMAND_BUSY |
+			                     STATUS_REG_INTERRUPT_REQUEST |
+			                     STATUS_REG_NON_DMA_MODE;
+			UpdateNMIStatus();
+			LastByte = true;
+			// PositionInTrack=0; // FSD - track position to zero
+			CommandStatus.SectorsToGo = -1; // To let us bail out
+			SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger); // To pick up result
+		}
+	}
+
+	if (!LastByte)
+	{
+		FDCState.StatusReg = STATUS_REG_COMMAND_BUSY |
+		                     STATUS_REG_INTERRUPT_REQUEST |
+		                     STATUS_REG_NON_DMA_MODE;
+		UpdateNMIStatus();
+		SetTrigger(TIME_BETWEEN_BYTES, Disc8271Trigger);
+	}
 }
 
 /*--------------------------------------------------------------------------*/
