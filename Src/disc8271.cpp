@@ -183,8 +183,6 @@ unsigned char FSDPhysicalTrack;
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
 static void DriveHeadScheduleUnload(void);
 
-typedef void (*CommandFunc)(void);
-
 /*--------------------------------------------------------------------------*/
 
 struct CommandStatusType {
@@ -200,17 +198,6 @@ struct CommandStatusType {
 };
 
 static CommandStatusType CommandStatus;
-
-/*--------------------------------------------------------------------------*/
-
-struct PrimaryCommandLookupType {
-  unsigned char CommandNum;
-  unsigned char Mask; /* Mask command with this before comparing with CommandNum - allows drive ID to be removed */
-  int NParams; /* Number of parameters to follow */
-  CommandFunc ToCall; /* Called after all paameters have arrived */
-  CommandFunc IntHandler; /* Called when interrupt requested by command is about to happen */
-  const char *Ident; /* Mainly for debugging */
-};
 
 /*--------------------------------------------------------------------------*/
 
@@ -1449,6 +1436,17 @@ static void DoBadCommand(void) {
 // The following table is used to parse commands from the command number
 // written into the command register - it can't distinguish between subcommands
 // selected from the first parameter.
+
+typedef void (*CommandFunc)();
+
+struct PrimaryCommandLookupType {
+	unsigned char CommandNum;
+	unsigned char Mask; // Mask command with this before comparing with CommandNum - allows drive ID to be removed
+	int NParams; // Number of parameters to follow
+	CommandFunc ToCall; // Called after all paameters have arrived
+	CommandFunc IntHandler; // Called when interrupt requested by command is about to happen
+	const char *Ident; // Mainly for debugging
+};
 
 static const PrimaryCommandLookupType PrimaryCommandLookup[] = {
 	{ 0x00, 0x3f, 3, DoVarLength_ScanDataCommand,          nullptr,          "Scan Data (Variable Length/Multi-Record)" },
