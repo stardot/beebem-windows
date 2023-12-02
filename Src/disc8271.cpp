@@ -1846,6 +1846,30 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
 
 /*--------------------------------------------------------------------------*/
 
+static unsigned short GetFSDSectorSize(unsigned char Index)
+{
+	switch (Index)
+	{
+		case 0:
+		default:
+			return 128;
+
+		case 1:
+			return 256;
+
+		case 2:
+			return 512;
+
+		case 3:
+			return 1024;
+
+		case 4:
+			return 2048;
+	}
+}
+
+/*--------------------------------------------------------------------------*/
+
 void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   FILE *infile = fopen(FileName,"rb");
   if (!infile) {
@@ -1858,7 +1882,7 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   // JGH, 26-Dec-2011
   NumHeads[DriveNum] = 1; // 1 = TRACKS_PER_DRIVE SSD image
                           // 2 = 2 * TRACKS_PER_DRIVE DSD image
-  int Head = 0;
+  const int Head = 0;
 
   strcpy(DiscStatus[DriveNum].FileName, FileName);
   DiscStatus[DriveNum].Type = DiscType::FSD;
@@ -1892,7 +1916,8 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
     unsigned char SectorsPerTrack = fgetc(infile); // Read number of sectors on track
     DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors = SectorsPerTrack;
 
-    if (SectorsPerTrack > 0) {
+    if (SectorsPerTrack > 0) // i.e., if the track is formatted
+    {
       unsigned char TrackIsReadable = fgetc(infile); // Is track readable?
       DiscStore[DriveNum][Head][CurrentTrack].NSectors = SectorsPerTrack; // Can be different than 10
       SectorType *SecPtr = (SectorType*)calloc(SectorsPerTrack, sizeof(SectorType));
@@ -1912,62 +1937,13 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
         SecPtr[CurrentSector].IDField.LogicalSector = LogicalSector;
         SecPtr[CurrentSector].RecordNum = CurrentSector;
 
-        unsigned short FRecLength = fgetc(infile); // Reported length of sector
+        unsigned char FRecLength = fgetc(infile); // Reported length of sector
         SecPtr[CurrentSector].IDField.SectorLength = FRecLength;
+        SecPtr[CurrentSector].IDSiz = GetFSDSectorSize(FRecLength);
 
         if (TrackIsReadable == 255) {
-          switch (FRecLength) {
-            case 0:
-            default:
-              FRecLength = 128;
-              break;
-
-            case 1:
-              FRecLength = 256;
-              break;
-
-            case 2:
-              FRecLength = 512;
-              break;
-
-            case 3:
-              FRecLength = 1024;
-              break;
-
-            case 4:
-              FRecLength = 2048;
-              break;
-          }
-        }
-
-        SecPtr[CurrentSector].IDSiz = FRecLength;
-
-        if (TrackIsReadable == 255) {
-          unsigned short FPRecLength = fgetc(infile); // Real size of sector, can be misreported as copy protection
-          unsigned short FSectorSize; // FSD - Sector size calculated from FRecLength
-
-          switch (FPRecLength) {
-            case 0:
-            default:
-              FSectorSize = 128;
-              break;
-
-            case 1:
-              FSectorSize = 256;
-              break;
-
-            case 2:
-              FSectorSize = 512;
-              break;
-
-            case 3:
-              FSectorSize = 1024;
-              break;
-
-            case 4:
-              FSectorSize = 2048;
-              break;
-          }
+          unsigned char FPRecLength = fgetc(infile); // Real size of sector, can be misreported as copy protection
+          unsigned short FSectorSize = GetFSDSectorSize(FPRecLength);
 
           SecPtr[CurrentSector].RealSectorSize = FSectorSize;
 
@@ -1976,7 +1952,7 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
           SecPtr[CurrentSector].Data = (unsigned char *)calloc(1, FSectorSize);
           fread(SecPtr[CurrentSector].Data, 1, FSectorSize, infile);
         }
-      } // if sectors per track > 0, ie formatted
+      }
     }
   }
 
