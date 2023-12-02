@@ -523,7 +523,7 @@ static void WriteInterrupt(void) {
   else
     FirstWriteInt = false;
 
-  FDCState.ResultReg = 0;
+  FDCState.ResultReg = RESULT_REG_SUCCESS;
 
   if (CommandStatus.ByteWithinSector>=CommandStatus.SectorLength) {
     CommandStatus.ByteWithinSector=0;
@@ -1016,7 +1016,7 @@ static void ReadIDInterrupt(void) {
 
   CommandStatus.ByteWithinSector++;
 
-  FDCState.ResultReg = 0;
+  FDCState.ResultReg = RESULT_REG_SUCCESS;
 
   if (CommandStatus.ByteWithinSector>=4) {
     CommandStatus.ByteWithinSector=0;
@@ -1187,7 +1187,7 @@ static void FormatInterrupt(void) {
   else
     FirstWriteInt = false;
 
-  FDCState.ResultReg = 0;
+  FDCState.ResultReg = RESULT_REG_SUCCESS;
 
   if (CommandStatus.ByteWithinSector>=4) {
     /* Fill sector with 0xe5 chars */
@@ -2159,7 +2159,7 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
 void Disc8271Reset() {
 	static bool InitialInit = true;
 
-	FDCState.ResultReg = 0;
+	FDCState.ResultReg = RESULT_REG_SUCCESS;
 	FDCState.StatusReg = 0;
 
 	UpdateNMIStatus();
