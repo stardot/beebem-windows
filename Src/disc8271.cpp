@@ -83,15 +83,6 @@ const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2     = 0x19;
 bool Disc8271Enabled = true;
 int Disc8271Trigger; // Cycle based time Disc8271Trigger
 
-static int DriveHeadPosition[2]={0};
-static bool DriveHeadLoaded=false;
-static bool DriveHeadUnloadPending=false;
-
-static unsigned char PositionInTrack; // FSD
-static bool SectorOverRead; // FSD - Was read size bigger than data stored?
-static bool UsingSpecial; // FSD - Using Special Register
-static unsigned char DRDSC; // FSD
-
 constexpr int TRACKS_PER_DRIVE = 80;
 constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 
@@ -155,6 +146,17 @@ struct FDCStateType {
 	// They also act as "drive ready" bits which are reset when the motor stops.
 	bool Select[2]; // Drive selects
 
+	int DriveHeadPosition[2];
+	bool DriveHeadLoaded;
+	bool DriveHeadUnloadPending;
+
+	unsigned char PositionInTrack; // FSD
+	bool SectorOverRead; // FSD - Was read size bigger than data stored?
+	bool UsingSpecial; // FSD - Using Special Register
+	unsigned char DRDSC; // FSD
+	unsigned char FSDLogicalTrack;
+	unsigned char FSDPhysicalTrack;
+
 	unsigned char ScanSectorNum;
 	unsigned int ScanCount; // Read as two bytes
 	unsigned char ModeReg;
@@ -175,9 +177,6 @@ static FDCStateType FDCState;
 
 // Note Head select is done from bit 5 of the drive output register
 #define CURRENT_HEAD ((FDCState.DriveControlOutputPort >> 5) & 1)
-
-unsigned char FSDLogicalTrack;
-unsigned char FSDPhysicalTrack;
 
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
 static void DriveHeadScheduleUnload(void);
@@ -315,8 +314,8 @@ static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID)
 
 	if (Drive < 0) return nullptr;
 
-	PositionInTrack = 0;
-	FSDPhysicalTrack = PhysicalTrackID;
+	FDCState.PositionInTrack = 0;
+	FDCState.FSDPhysicalTrack = PhysicalTrackID;
 
 	return &DiscStatus[Drive].Tracks[CURRENT_HEAD][PhysicalTrackID];
 }
@@ -341,7 +340,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID)
 	}
 
 	// Read two tracks extra
-	for (unsigned char Track = FSDPhysicalTrack; Track < FSDPhysicalTrack +  2; Track++)
+	for (unsigned char Track = FDCState.FSDPhysicalTrack; Track < FDCState.FSDPhysicalTrack +  2; Track++)
 	{
 		SectorType *SecPtr = DiscStatus[Drive].Tracks[CURRENT_HEAD][Track].Sectors;
 
@@ -353,8 +352,8 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID)
 
 		if (LogicalTrackID == SecPtr[0].IDField.LogicalTrack)
 		{
-			FSDPhysicalTrack = Track;
-			return &DiscStatus[Drive].Tracks[CURRENT_HEAD][FSDPhysicalTrack];
+			FDCState.FSDPhysicalTrack = Track;
+			return &DiscStatus[Drive].Tracks[CURRENT_HEAD][FDCState.FSDPhysicalTrack];
 		}
 	}
 
@@ -374,25 +373,25 @@ static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID,
 	// if logical sector from track ID is logicalsectorid passed here then return the record number
 	// and move the positionintrack to here too
 
-	for (int CurrentSector = PositionInTrack; CurrentSector < Track->NSectors; CurrentSector++)
+	for (int CurrentSector = FDCState.PositionInTrack; CurrentSector < Track->NSectors; CurrentSector++)
 	{
 		if (Track->Sectors[CurrentSector].IDField.LogicalSector == LogicalSectorID)
 		{
 			LogicalSectorID = Track->Sectors[CurrentSector].RecordNum;
-			PositionInTrack = Track->Sectors[CurrentSector].RecordNum;
+			FDCState.PositionInTrack = Track->Sectors[CurrentSector].RecordNum;
 			return &Track->Sectors[LogicalSectorID];
 		}
 	}
 
 	// As above, but from sector 0 to the current position
-	if (PositionInTrack > 0)
+	if (FDCState.PositionInTrack > 0)
 	{
-		for (int CurrentSector = 0; CurrentSector < PositionInTrack; CurrentSector++)
+		for (int CurrentSector = 0; CurrentSector < FDCState.PositionInTrack; CurrentSector++)
 		{
 			if (Track->Sectors[CurrentSector].IDField.LogicalSector == LogicalSectorID)
 			{
 				LogicalSectorID = Track->Sectors[CurrentSector].RecordNum;
-				PositionInTrack = CurrentSector;
+				FDCState.PositionInTrack = CurrentSector;
 				return &Track->Sectors[LogicalSectorID];
 			}
 		}
@@ -414,7 +413,7 @@ static SectorType *GetSectorPtrForTrackID(TrackType *Track, unsigned char Logica
 		return nullptr;
 	}
 
-	LogicalSectorID = Track->Sectors[PositionInTrack].RecordNum;
+	LogicalSectorID = Track->Sectors[FDCState.PositionInTrack].RecordNum;
 
 	return &Track->Sectors[LogicalSectorID];
 }
@@ -626,7 +625,7 @@ static void DoVarLength_ReadDataCommand()
 	DoSelects();
 	DoLoadHead();
 
-	SectorOverRead = false; // FSD - if read size was larger than data stored
+	FDCState.SectorOverRead = false; // FSD - if read size was larger than data stored
 
 	const int Drive = GetSelectedDrive();
 
@@ -644,42 +643,42 @@ static void DoVarLength_ReadDataCommand()
 	}
 
 	// FSD - if special register is NOT being used to point to track
-	if (!UsingSpecial) {
-		FSDPhysicalTrack = FDCState.Params[0];
+	if (!FDCState.UsingSpecial) {
+		FDCState.FSDPhysicalTrack = FDCState.Params[0];
 	}
 
 	// if reading a new track, then reset position
-	if (FSDLogicalTrack != FDCState.Params[0])
+	if (FDCState.FSDLogicalTrack != FDCState.Params[0])
 	{
-		PositionInTrack = 0;
+		FDCState.PositionInTrack = 0;
 	}
 
-	FSDLogicalTrack = FDCState.Params[0];
+	FDCState.FSDLogicalTrack = FDCState.Params[0];
 
-	if (DRDSC > 1)
+	if (FDCState.DRDSC > 1)
 	{
-		FSDPhysicalTrack = 0; // FSDLogicalTrack
+		FDCState.FSDPhysicalTrack = 0; // FSDLogicalTrack
 	}
 
-	DRDSC = 0;
+	FDCState.DRDSC = 0;
 
 	/* if (FSDLogicalTrack == 0)
 	{
 		FSDPhysicalTrack = 0;
 	} */
 
-	if (FSDPhysicalTrack == 0)
+	if (FDCState.FSDPhysicalTrack == 0)
 	{
-		FSDPhysicalTrack = FSDLogicalTrack;
+		FDCState.FSDPhysicalTrack = FDCState.FSDLogicalTrack;
 	}
 
 	// fixes The Music System
-	if (FSDLogicalTrack == FSDPhysicalTrack)
+	if (FDCState.FSDLogicalTrack == FDCState.FSDPhysicalTrack)
 	{
-		UsingSpecial = false;
+		FDCState.UsingSpecial = false;
 	}
 
-	CommandStatus.CurrentTrackPtr = GetTrackPtr(FSDLogicalTrack);
+	CommandStatus.CurrentTrackPtr = GetTrackPtr(FDCState.FSDLogicalTrack);
 
 	// Internal_CurrentTrack[Drive] = Params[0];
 	// CommandStatus.CurrentTrackPtr = GetTrackPtr(Params[0]);
@@ -723,7 +722,7 @@ static void DoVarLength_ReadDataCommand()
 	if (CommandStatus.SectorLength > CommandStatus.CurrentSectorPtr->RealSectorSize)
 	{
 		CommandStatus.SectorLength = CommandStatus.CurrentSectorPtr->RealSectorSize;
-		SectorOverRead = true;
+		FDCState.SectorOverRead = true;
 	}
 
 	if (ValidateSector(CommandStatus.CurrentSectorPtr, CommandStatus.TrackAddr, CommandStatus.SectorLength))
@@ -770,7 +769,7 @@ static void ReadInterrupt()
 		FDCState.ResultReg = RESULT_REG_DATA_CRC_ERROR;
 	}
 
-	if (SectorOverRead)
+	if (FDCState.SectorOverRead)
 	{
 		if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_SUCCESS)
 		{
@@ -793,8 +792,9 @@ static void ReadInterrupt()
 		FDCState.ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
 	}
 
-	if ((CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DELETED_DATA_CRC_ERROR) &&
-	    (CommandStatus.CurrentSectorPtr->IDSiz == CommandStatus.SectorLength) && !SectorOverRead)
+	if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DELETED_DATA_CRC_ERROR &&
+	    CommandStatus.CurrentSectorPtr->IDSiz == CommandStatus.SectorLength &&
+	    !FDCState.SectorOverRead)
 	{
 		FDCState.ResultReg = RESULT_REG_DELETED_DATA_FOUND;
 	}
@@ -889,9 +889,9 @@ static void Do128ByteSR_ReadDataAndDeldCommand()
 	}
 
 	// FSD - if special register is NOT being used to point to logical track
-	if (!UsingSpecial)
+	if (!FDCState.UsingSpecial)
 	{
-		FSDPhysicalTrack = FDCState.Params[0];
+		FDCState.FSDPhysicalTrack = FDCState.Params[0];
 	}
 
 	FDCState.CurrentTrack[Drive] = FDCState.Params[0];
@@ -899,7 +899,7 @@ static void Do128ByteSR_ReadDataAndDeldCommand()
 	// FSD - if internal track =0, seek track 0 too
 	if (FDCState.CurrentTrack[Drive] == 0)
 	{
-		FSDPhysicalTrack = 0;
+		FDCState.FSDPhysicalTrack = 0;
 	}
 
 	CommandStatus.CurrentTrackPtr = GetTrackPtr(FDCState.Params[0]);
@@ -971,7 +971,7 @@ static void Read128Interrupt()
 		FDCState.ResultReg = RESULT_REG_DATA_CRC_ERROR;
 	}
 
-	if (SectorOverRead)
+	if (FDCState.SectorOverRead)
 	{
 		FDCState.ResultReg = RESULT_REG_DATA_CRC_ERROR;
 	}
@@ -1085,8 +1085,8 @@ static void DoReadIDCommand()
 	}
 
 	// Internal_CurrentTrack[Drive]=Params[0];
-	FSDPhysicalTrack = FDCState.Params[0];
-	CommandStatus.CurrentTrackPtr = GetTrackPtrPhysical(FSDPhysicalTrack);
+	FDCState.FSDPhysicalTrack = FDCState.Params[0];
+	CommandStatus.CurrentTrackPtr = GetTrackPtrPhysical(FDCState.FSDPhysicalTrack);
 
 	if (CommandStatus.CurrentTrackPtr == nullptr)
 	{
@@ -1165,7 +1165,7 @@ static void ReadIDInterrupt()
 				CommandStatus.CurrentSector = 0;
 			}
 
-			PositionInTrack = CommandStatus.CurrentSector; // FSD
+			FDCState.PositionInTrack = CommandStatus.CurrentSector; // FSD
 
 			CommandStatus.CurrentSectorPtr = GetSectorPtrForTrackID(CommandStatus.CurrentTrackPtr,
 			                                                        CommandStatus.CurrentSector,
@@ -1226,9 +1226,9 @@ static void DoVarLength_VerifyDataAndDeldCommand()
 	}
 
 	FDCState.CurrentTrack[Drive] = FDCState.Params[0];
-	FSDPhysicalTrack = FDCState.Params[0];
-	FSDLogicalTrack = FDCState.Params[0];
-	CommandStatus.CurrentTrackPtr = GetTrackPtr(FSDLogicalTrack);
+	FDCState.FSDPhysicalTrack = FDCState.Params[0];
+	FDCState.FSDLogicalTrack = FDCState.Params[0];
+	CommandStatus.CurrentTrackPtr = GetTrackPtr(FDCState.FSDLogicalTrack);
 
 	if (CommandStatus.CurrentTrackPtr == nullptr)
 	{
@@ -1430,11 +1430,11 @@ static void DoSeekCommand()
 		return;
 	}
 
-	DRDSC = 0;
+	FDCState.DRDSC = 0;
 	FDCState.CurrentTrack[Drive] = FDCState.Params[0];
-	FSDPhysicalTrack = FDCState.Params[0]; // FSD - where to start seeking data store
-	UsingSpecial = false;
-	PositionInTrack = 0;
+	FDCState.FSDPhysicalTrack = FDCState.Params[0]; // FSD - where to start seeking data store
+	FDCState.UsingSpecial = false;
+	FDCState.PositionInTrack = 0;
 
 	FDCState.StatusReg = STATUS_REG_COMMAND_BUSY;
 	UpdateNMIStatus();
@@ -1461,7 +1461,7 @@ static void DoReadDriveStatusCommand()
 		WriteProt = !DiscStatus[1].Writeable;
 	}
 
-	DRDSC++;
+	FDCState.DRDSC++;
 
 	FDCState.ResultReg = 0x80 | (FDCState.Select[1] ? 0x40 : 0)
 	                          | (FDCState.Select[0] ? 0x04 : 0)
@@ -1524,10 +1524,10 @@ static void DoWriteSpecialCommand()
 
 		case SPECIAL_REG_SURFACE_0_CURRENT_TRACK:
 			FDCState.CurrentTrack[0] = FDCState.Params[1];
-			FSDLogicalTrack = FDCState.Params[1];
+			FDCState.FSDLogicalTrack = FDCState.Params[1];
 			// FSD - using special register, so different track from seek
-			UsingSpecial = FDCState.Params[1] != FSDPhysicalTrack;
-			DRDSC = 0;
+			FDCState.UsingSpecial = FDCState.Params[1] != FDCState.FSDPhysicalTrack;
+			FDCState.DRDSC = 0;
 			break;
 
 		case SPECIAL_REG_SURFACE_1_CURRENT_TRACK:
@@ -1840,9 +1840,9 @@ void Disc8271Write(int Address, unsigned char Value)
 	}
 
 	// Clear a pending head unload
-	if (DriveHeadUnloadPending)
+	if (FDCState.DriveHeadUnloadPending)
 	{
-		DriveHeadUnloadPending = false;
+		FDCState.DriveHeadUnloadPending = false;
 		ClearTrigger(Disc8271Trigger);
 	}
 
@@ -1883,10 +1883,10 @@ static void DriveHeadScheduleUnload()
 	// Schedule head unload when nothing else is pending.
 	// This is mainly for the sound effects, but it also marks the drives as
 	// not ready when the motor stops.
-	if (DriveHeadLoaded && Disc8271Trigger == CycleCountTMax)
+	if (FDCState.DriveHeadLoaded && Disc8271Trigger == CycleCountTMax)
 	{
 		SetTrigger(4000000, Disc8271Trigger); // 2s delay to unload
-		DriveHeadUnloadPending = true;
+		FDCState.DriveHeadUnloadPending = true;
 	}
 }
 
@@ -1898,15 +1898,15 @@ static bool DriveHeadMotorUpdate()
 	// not ready when the motor stops.
 	int Drive = 0;
 
-	if (DriveHeadUnloadPending)
+	if (FDCState.DriveHeadUnloadPending)
 	{
 		// Mark drives as not ready
 		FDCState.Select[0] = false;
 		FDCState.Select[1] = false;
-		DriveHeadUnloadPending = false;
-		if (DriveHeadLoaded && DiscDriveSoundEnabled)
+		FDCState.DriveHeadUnloadPending = false;
+		if (FDCState.DriveHeadLoaded && DiscDriveSoundEnabled)
 			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
-		DriveHeadLoaded = false;
+		FDCState.DriveHeadLoaded = false;
 		StopSoundSample(SAMPLE_DRIVE_MOTOR);
 		StopSoundSample(SAMPLE_HEAD_SEEK);
 
@@ -1917,17 +1917,17 @@ static bool DriveHeadMotorUpdate()
 
 	if (!DiscDriveSoundEnabled)
 	{
-		DriveHeadLoaded = true;
+		FDCState.DriveHeadLoaded = true;
 		return false;
 	}
 
-	if (!DriveHeadLoaded)
+	if (!FDCState.DriveHeadLoaded)
 	{
 		if (FDCState.Select[0]) LEDs.Disc0 = true;
 		if (FDCState.Select[1]) LEDs.Disc1 = true;
 
 		PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
-		DriveHeadLoaded = true;
+		FDCState.DriveHeadLoaded = true;
 		PlaySoundSample(SAMPLE_HEAD_LOAD, false);
 		SetTrigger(SAMPLE_HEAD_LOAD_CYCLES, Disc8271Trigger);
 		return true;
@@ -1938,9 +1938,9 @@ static bool DriveHeadMotorUpdate()
 
 	StopSoundSample(SAMPLE_HEAD_SEEK);
 
-	if (DriveHeadPosition[Drive] != FSDPhysicalTrack) // Internal_CurrentTrack[Drive]) {
+	if (FDCState.DriveHeadPosition[Drive] != FDCState.FSDPhysicalTrack)
 	{
-		int Tracks = abs(DriveHeadPosition[Drive] - FSDPhysicalTrack); // Internal_CurrentTrack[Drive]);
+		int Tracks = abs(FDCState.DriveHeadPosition[Drive] - FDCState.FSDPhysicalTrack);
 
 		if (Tracks > 1)
 		{
@@ -1953,13 +1953,13 @@ static bool DriveHeadMotorUpdate()
 			SetTrigger(SAMPLE_HEAD_STEP_CYCLES, Disc8271Trigger);
 		}
 
-		if (DriveHeadPosition[Drive] < FSDPhysicalTrack) // Internal_CurrentTrack[Drive])
+		if (FDCState.DriveHeadPosition[Drive] < FDCState.FSDPhysicalTrack)
 		{
-			DriveHeadPosition[Drive] += Tracks;
+			FDCState.DriveHeadPosition[Drive] += Tracks;
 		}
 		else
 		{
-			DriveHeadPosition[Drive] -= Tracks;
+			FDCState.DriveHeadPosition[Drive] -= Tracks;
 		}
 
 		return true;
@@ -2469,7 +2469,7 @@ void Disc8271Reset()
 	FDCState.ModeReg = 0;
 	FDCState.CurrentTrack[0] = 0; // 0/1 for surface number
 	FDCState.CurrentTrack[1] = 0;
-	UsingSpecial = false; // FSD - Using special register
+	FDCState.UsingSpecial = false; // FSD - Using special register
 	FDCState.DriveControlOutputPort = 0;
 	FDCState.DriveControlInputPort = 0;
 	FDCState.BadTracks[0][0] = 0xff; // 1st subscript is surface 0/1 and second subscript is badtrack 0/1
@@ -2483,9 +2483,9 @@ void Disc8271Reset()
 	FDCState.IndexCountBeforeHeadUnload = 12;
 	FDCState.HeadLoadTime = 8;
 
-	if (DriveHeadLoaded)
+	if (FDCState.DriveHeadLoaded)
 	{
-		DriveHeadUnloadPending = true;
+		FDCState.DriveHeadUnloadPending = true;
 		DriveHeadMotorUpdate();
 	}
 
