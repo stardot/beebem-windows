@@ -384,15 +384,16 @@ static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID,
 // Returns nullptr for Sector not found. Doesn't check cylinder/head ID
 // FSD - returns the sector IDs
 
-static SectorType *GetSectorPtrForTrackID(TrackType *Track, unsigned char LogicalSectorID, bool FindDeleted) {
-  if (Track->Sectors == nullptr)
-  {
-    return nullptr;
-  }
+static SectorType *GetSectorPtrForTrackID(TrackType *Track, unsigned char LogicalSectorID, bool FindDeleted)
+{
+	if (Track->Sectors == nullptr)
+	{
+		return nullptr;
+	}
 
-  LogicalSectorID = Track->Sectors[PositionInTrack].RecordNum;
+	LogicalSectorID = Track->Sectors[PositionInTrack].RecordNum;
 
-  return &Track->Sectors[LogicalSectorID];
+	return &Track->Sectors[LogicalSectorID];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -412,26 +413,33 @@ static void DoErr(unsigned char ErrNum)
 // Checks a few things in the sector - returns true if OK
 // FSD - Sectors are always OK
 
-static bool ValidateSector(const SectorType *Sector, int Track, int SecLength) {
-  return true;
+static bool ValidateSector(const SectorType *Sector, int Track, int SecLength)
+{
+	return true;
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoVarLength_ScanDataCommand(void) {
-  DoSelects();
-  NotImp("DoVarLength_ScanDataCommand");
+
+static void DoVarLength_ScanDataCommand()
+{
+	DoSelects();
+	NotImp("DoVarLength_ScanDataCommand");
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoVarLength_ScanDataAndDeldCommand(void) {
-  DoSelects();
-  NotImp("DoVarLength_ScanDataAndDeldCommand");
+
+static void DoVarLength_ScanDataAndDeldCommand()
+{
+	DoSelects();
+	NotImp("DoVarLength_ScanDataAndDeldCommand");
 }
 
 /*--------------------------------------------------------------------------*/
-static void Do128ByteSR_WriteDataCommand(void) {
-  DoSelects();
-  NotImp("Do128ByteSR_WriteDataCommand");
+
+static void Do128ByteSR_WriteDataCommand()
+{
+	DoSelects();
+	NotImp("Do128ByteSR_WriteDataCommand");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -544,21 +552,27 @@ static void WriteInterrupt(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void Do128ByteSR_WriteDeletedDataCommand(void) {
-  DoSelects();
-  NotImp("Do128ByteSR_WriteDeletedDataCommand");
+
+static void Do128ByteSR_WriteDeletedDataCommand()
+{
+	DoSelects();
+	NotImp("Do128ByteSR_WriteDeletedDataCommand");
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoVarLength_WriteDeletedDataCommand(void) {
-  DoSelects();
-  NotImp("DoVarLength_WriteDeletedDataCommand");
+
+static void DoVarLength_WriteDeletedDataCommand()
+{
+	DoSelects();
+	NotImp("DoVarLength_WriteDeletedDataCommand");
 }
 
 /*--------------------------------------------------------------------------*/
-static void Do128ByteSR_ReadDataCommand(void) {
-  DoSelects();
-  NotImp("Do128ByteSR_ReadDataCommand");
+
+static void Do128ByteSR_ReadDataCommand()
+{
+	DoSelects();
+	NotImp("Do128ByteSR_ReadDataCommand");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -924,9 +938,11 @@ static void Read128Interrupt(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoVarLength_ReadDataAndDeldCommand(void) {
-  /* Use normal read command for now - deleted data not supported */
-  DoVarLength_ReadDataCommand();
+
+static void DoVarLength_ReadDataAndDeldCommand()
+{
+	// Use normal read command for now - deleted data not supported
+	DoVarLength_ReadDataCommand();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1042,9 +1058,11 @@ static void ReadIDInterrupt(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void Do128ByteSR_VerifyDataAndDeldCommand(void) {
-  DoSelects();
-  NotImp("Do128ByteSR_VerifyDataAndDeldCommand");
+
+static void Do128ByteSR_VerifyDataAndDeldCommand()
+{
+	DoSelects();
+	NotImp("Do128ByteSR_VerifyDataAndDeldCommand");
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1433,7 +1451,9 @@ static void DoReadSpecialCommand(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void DoBadCommand(void) {
+
+static void DoBadCommand()
+{
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1653,23 +1673,29 @@ void Disc8271Write(int Address, unsigned char Value) {
 }
 
 /*--------------------------------------------------------------------------*/
-static void DriveHeadScheduleUnload(void) {
+
+static void DriveHeadScheduleUnload()
+{
 	// Schedule head unload when nothing else is pending.
 	// This is mainly for the sound effects, but it also marks the drives as
 	// not ready when the motor stops.
-	if (DriveHeadLoaded && Disc8271Trigger==CycleCountTMax) {
-		SetTrigger(4000000,Disc8271Trigger); // 2s delay to unload
+	if (DriveHeadLoaded && Disc8271Trigger == CycleCountTMax)
+	{
+		SetTrigger(4000000, Disc8271Trigger); // 2s delay to unload
 		DriveHeadUnloadPending = true;
 	}
 }
 
 /*--------------------------------------------------------------------------*/
-static bool DriveHeadMotorUpdate(void) {
+
+static bool DriveHeadMotorUpdate()
+{
 	// This is mainly for the sound effects, but it also marks the drives as
 	// not ready when the motor stops.
-	int Drive=0;
+	int Drive = 0;
 
-	if (DriveHeadUnloadPending) {
+	if (DriveHeadUnloadPending)
+	{
 		// Mark drives as not ready
 		FDCState.Select[0] = false;
 		FDCState.Select[1] = false;
@@ -1691,7 +1717,8 @@ static bool DriveHeadMotorUpdate(void) {
 		return false;
 	}
 
-	if (!DriveHeadLoaded) {
+	if (!DriveHeadLoaded)
+	{
 		if (FDCState.Select[0]) LEDs.Disc0 = true;
 		if (FDCState.Select[1]) LEDs.Disc1 = true;
 
@@ -1707,22 +1734,29 @@ static bool DriveHeadMotorUpdate(void) {
 
 	StopSoundSample(SAMPLE_HEAD_SEEK);
 
-	if (DriveHeadPosition[Drive] != FSDPhysicalTrack) { // Internal_CurrentTrack[Drive]) {
+	if (DriveHeadPosition[Drive] != FSDPhysicalTrack) // Internal_CurrentTrack[Drive]) {
+	{
 		int Tracks = abs(DriveHeadPosition[Drive] - FSDPhysicalTrack); // Internal_CurrentTrack[Drive]);
 
-		if (Tracks > 1) {
+		if (Tracks > 1)
+		{
 			PlaySoundSample(SAMPLE_HEAD_SEEK, true);
 			SetTrigger(Tracks * SAMPLE_HEAD_SEEK_CYCLES_PER_TRACK, Disc8271Trigger);
 		}
-		else {
+		else
+		{
 			PlaySoundSample(SAMPLE_HEAD_STEP, false);
 			SetTrigger(SAMPLE_HEAD_STEP_CYCLES, Disc8271Trigger);
 		}
 
 		if (DriveHeadPosition[Drive] < FSDPhysicalTrack) // Internal_CurrentTrack[Drive])
+		{
 			DriveHeadPosition[Drive] += Tracks;
+		}
 		else
+		{
 			DriveHeadPosition[Drive] -= Tracks;
+		}
 
 		return true;
 	}
