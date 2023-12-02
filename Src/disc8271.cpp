@@ -128,41 +128,37 @@ static unsigned char NextInterruptIsErr; // non-zero causes error and drops this
 constexpr int TRACKS_PER_DRIVE = 80;
 constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 
-/* Note Head select is done from bit 5 of the drive output register */
-#define CURRENTHEAD ((Internal_DriveControlOutputPort>>5) & 1)
+// Note Head select is done from bit 5 of the drive output register
+#define CURRENTHEAD ((Internal_DriveControlOutputPort >> 5) & 1)
 
 // Note: reads/writes one byte every 80us
 constexpr int TIME_BETWEEN_BYTES = 160;
 
+struct IDFieldType {
+  unsigned char LogicalTrack; // FSD - renamed to track ID names
+  unsigned char HeadNum; // FSD
+  unsigned char LogicalSector; // FSD
+  unsigned char SectorLength; // FSD
+};
+
 struct SectorType {
-
-  struct IDFieldType {
-    // unsigned int CylinderNum:7;
-    // unsigned int RecordNum:5;
-    // unsigned int HeadNum:1;
-    // unsigned int PhysRecLength;
-
-    unsigned char LogicalTrack; // FSD - renamed to track ID names
-    unsigned char HeadNum; // FSD
-    unsigned char LogicalSector; // FSD
-    unsigned char SectorLength; // FSD
-  } IDField;
-
+  IDFieldType IDField;
   unsigned char CylinderNum; // FSD - moved from IDField
   unsigned char RecordNum; // FSD - moved from IDField
   int IDSiz; // FSD - 2 bytes for size, could be calculated automatically?
   int RealSectorSize; // FSD - moved from IDField, PhysRecLength
-  int Error; // FSD - error code when sector was read, 20 for deleted data
-
+  unsigned char Error; // FSD - error code when sector was read, 20 for deleted data
   bool Deleted; // If true the sector is deleted - not needed with FSD error code recorded?
   unsigned char *Data;
 };
 
 struct TrackType {
-  int LogicalSectors; /* Number of sectors stated in format command */
-  int NSectors; /* i.e. the number of records we have - not anything physical */
+  int LogicalSectors; // Number of sectors stated in format command
+  int NSectors; // i.e. the number of records we have - not anything physical
   SectorType *Sectors;
-  int Gap1Size,Gap3Size,Gap5Size; /* From format command */
+  int Gap1Size; // From format command
+  int Gap3Size;
+  int Gap5Size;
 
   bool TrackIsReadable; // FSD - is the track readable, or just contains track ID?
 };
