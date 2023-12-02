@@ -1236,7 +1236,10 @@ static void DoReadDriveStatusCommand(void) {
   }
 
   DRDSC++;
-  ResultReg=0x80 | (Selects[1]?0x40:0) | (Selects[0]?0x4:0) | (Track0?2:0) | (WriteProt?8:0);
+  ResultReg = 0x80 | (Selects[1] ? 0x40 : 0)
+                   | (Selects[0] ? 0x04 : 0)
+                   | (WriteProt  ? 0x08 : 0)
+                   | (Track0     ? 0x02 : 0);
   StatusReg |= STATUS_REG_RESULT_FULL;
   UpdateNMIStatus();
 }
