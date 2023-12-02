@@ -2006,32 +2006,31 @@ void Disc8271_poll_real()
 
 /*--------------------------------------------------------------------------*/
 
-// FSD - could be causing crashes, because of different sized tracks / sectors
-
 void FreeDiscImage(int Drive)
 {
-	const int Head = 0;
-
-	for (int Track = 0; Track < TRACKS_PER_DRIVE; Track++)
+	for (int Head = 0; Head < 2; Head++)
 	{
-		const int SectorsPerTrack = DiscStatus[Drive].Tracks[Head][Track].LogicalSectors;
-
-		SectorType *SecPtr = DiscStatus[Drive].Tracks[Head][Track].Sectors;
-
-		if (SecPtr != nullptr)
+		for (int Track = 0; Track < TRACKS_PER_DRIVE; Track++)
 		{
-			for (int Sector = 0; Sector < SectorsPerTrack; Sector++)
+			const int SectorsPerTrack = DiscStatus[Drive].Tracks[Head][Track].LogicalSectors;
+
+			SectorType *SecPtr = DiscStatus[Drive].Tracks[Head][Track].Sectors;
+
+			if (SecPtr != nullptr)
 			{
-				if (SecPtr[Sector].Data != nullptr)
+				for (int Sector = 0; Sector < SectorsPerTrack; Sector++)
 				{
-					free(SecPtr[Sector].Data);
-					SecPtr[Sector].Data = nullptr;
+					if (SecPtr[Sector].Data != nullptr)
+					{
+						free(SecPtr[Sector].Data);
+						SecPtr[Sector].Data = nullptr;
+					}
 				}
+
+				free(SecPtr);
+
+				DiscStatus[Drive].Tracks[Head][Track].Sectors = nullptr;
 			}
-
-			free(SecPtr);
-
-			DiscStatus[Drive].Tracks[Head][Track].Sectors = nullptr;
 		}
 	}
 }
