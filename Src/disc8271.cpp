@@ -146,6 +146,7 @@ struct DiscStatusType {
 	DiscType Type;
 	char FileName[256]; // File name of loaded disc image
 	bool Writeable; // True if the disc is writeable
+	int NumHeads; // Number of sides of loaded disc images
 	TrackType Tracks[2][TRACKS_PER_DRIVE]; // All data on the disc - first param head, then physical track ID
 };
 
@@ -177,12 +178,9 @@ static FDCStateType FDCState;
 // Note Head select is done from bit 5 of the drive output register
 #define CURRENT_HEAD ((FDCState.DriveControlOutputPort >> 5) & 1)
 
-
 unsigned char FSDLogicalTrack;
 unsigned char FSDPhysicalTrack;
 
-/* Number of sides of loaded disc images */
-static int NumHeads[2];
 
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
 static void DriveHeadScheduleUnload(void);
@@ -1799,13 +1797,13 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   mainWin->SetImageName(FileName, DriveNum, DiscType::SSD);
 
   // JGH, 26-Dec-2011
-  NumHeads[DriveNum] = 1; // 1 = TRACKS_PER_DRIVE SSD image
-                          // 2 = 2 * TRACKS_PER_DRIVE DSD image
+  DiscStatus[DriveNum].NumHeads = 1; // 1 = TRACKS_PER_DRIVE SSD image
+                                     // 2 = 2 * TRACKS_PER_DRIVE DSD image
   int Heads = 1;
   fseek(infile, 0L, SEEK_END);
   if (ftell(infile) > 0x40000) {
     Heads = 2; // Long sequential image continues onto side 1
-    NumHeads[DriveNum] = 0; // 0 = 2 * TRACKS_PER_DRIVE SSD image
+    DiscStatus[DriveNum].NumHeads = 0; // 0 = 2 * TRACKS_PER_DRIVE SSD image
   }
   fseek(infile, 0L, SEEK_SET);
   // JGH
@@ -1862,7 +1860,7 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   strcpy(DiscStatus[DriveNum].FileName, FileName);
   DiscStatus[DriveNum].Type = DiscType::DSD;
 
-  NumHeads[DriveNum] = 2; // 2 = 2 * TRACKS_PER_DRIVE DSD image
+  DiscStatus[DriveNum].NumHeads = 2; // 2 = 2 * TRACKS_PER_DRIVE DSD image
 
   FreeDiscImage(DriveNum);
 
@@ -1932,8 +1930,8 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   mainWin->SetImageName(FileName, DriveNum, DiscType::FSD);
 
   // JGH, 26-Dec-2011
-  NumHeads[DriveNum] = 1; // 1 = TRACKS_PER_DRIVE SSD image
-                          // 2 = 2 * TRACKS_PER_DRIVE DSD image
+  DiscStatus[DriveNum].NumHeads = 1; // 1 = TRACKS_PER_DRIVE SSD image
+                                     // 2 = 2 * TRACKS_PER_DRIVE DSD image
   const int Head = 0;
 
   strcpy(DiscStatus[DriveNum].FileName, FileName);
@@ -2035,8 +2033,8 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
 
   long FileOffset;
 
-  if(NumHeads[DriveNum]) {
-    FileOffset = (NumHeads[DriveNum] * TrackNum + HeadNum) * 2560; // 1=SSD, 2=DSD
+  if (DiscStatus[DriveNum].NumHeads != 0) {
+    FileOffset = (DiscStatus[DriveNum].NumHeads * TrackNum + HeadNum) * 2560; // 1=SSD, 2=DSD
   }
   else {
     FileOffset = (TrackNum + HeadNum * TRACKS_PER_DRIVE) * 2560; // 0=2-sided SSD
@@ -2106,7 +2104,7 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
   // also be correct.
 
   if (WriteEnable) {
-    for (int HeadNum = 0; DiscOK && HeadNum < NumHeads[DriveNum]; HeadNum++) {
+    for (int HeadNum = 0; DiscOK && HeadNum < DiscStatus[DriveNum].NumHeads; HeadNum++) {
       SectorType *SecPtr = DiscStatus[DriveNum].Tracks[HeadNum][0].Sectors;
       if (SecPtr == nullptr)
         return; // No disc image!
@@ -2254,8 +2252,8 @@ void Save8271UEF(FILE *SUEF)
 	fput32(NParamsInThisCommand,SUEF);
 	fput32(PresentParam,SUEF);
 	fwrite(Params,1,16,SUEF);
-	fput32(NumHeads[0],SUEF);
-	fput32(NumHeads[1],SUEF);
+	fput32(DiscStatus[0].NumHeads, SUEF);
+	fput32(DiscStatus[1].NumHeads, SUEF);
 	fput32(Selects[0]?1:0,SUEF);
 	fput32(Selects[1]?1:0,SUEF);
 	fput32(DiscStatus[0].Writeable ? 1 : 0,SUEF);
@@ -2338,8 +2336,8 @@ void Load8271UEF(FILE *SUEF)
 		NParamsInThisCommand=fget32(SUEF);
 		PresentParam=fget32(SUEF);
 		fread(Params,1,16,SUEF);
-		NumHeads[0]=fget32(SUEF);
-		NumHeads[1]=fget32(SUEF);
+		DiscStatus[0].NumHeads = fget32(SUEF);
+		DiscStatus[1].NumHeads = fget32(SUEF);
 		Selects[0]=fget32(SUEF) != 0;
 		Selects[1]=fget32(SUEF) != 0;
 		DiscStatus[0].Writeable = fget32(SUEF) != 0;
@@ -2399,5 +2397,5 @@ void disc8271_dumpstate()
 void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads)
 {
 	strcpy(pFileName, DiscStatus[DriveNum].FileName);
-	*Heads = NumHeads[DriveNum];
+	*Heads = DiscStatus[DriveNum].NumHeads;
 }
