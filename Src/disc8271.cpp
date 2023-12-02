@@ -146,12 +146,10 @@ struct TrackType {
   bool TrackIsReadable; // FSD - is the track readable, or just contains track ID?
 };
 
-// All data on the disc - first param is drive number, then head, then physical track ID
-TrackType DiscStore[2][2][TRACKS_PER_DRIVE];
-
 struct DiscStatusType {
-    DiscType Type;
-    char FileName[256]; // File name of loaded disc image
+	DiscType Type;
+	char FileName[256]; // File name of loaded disc image
+	TrackType Tracks[2][TRACKS_PER_DRIVE]; // All data on the disc - first param head, then physical track ID
 };
 
 static DiscStatusType DiscStatus[2];
@@ -272,7 +270,7 @@ static void InitDiscStore()
 		{
 			for (int Track = 0; Track < TRACKS_PER_DRIVE; Track++)
 			{
-				DiscStore[Drive][Head][Track] = Blank;
+				DiscStatus[Drive].Tracks[Head][Track] = Blank;
 			}
 		}
 	}
@@ -312,7 +310,7 @@ static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID) {
   PositionInTrack = 0;
   FSDPhysicalTrack = PhysicalTrackID;
 
-  return &DiscStore[UnitID][CURRENTHEAD][PhysicalTrackID];
+  return &DiscStatus[UnitID].Tracks[CURRENTHEAD][PhysicalTrackID];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -349,7 +347,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
 
   // Read two tracks extra
   for (unsigned char Track = FSDPhysicalTrack; Track < FSDPhysicalTrack +  2; Track++) {
-    SectorType *SecPtr = DiscStore[Drive][CURRENTHEAD][Track].Sectors;
+    SectorType *SecPtr = DiscStatus[Drive].Tracks[CURRENTHEAD][Track].Sectors;
 
     // Fixes Krakout!
     if (SecPtr == nullptr)
@@ -359,7 +357,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
 
     if (LogicalTrackID == SecPtr[0].IDField.LogicalTrack) {
       FSDPhysicalTrack = Track;
-      return &DiscStore[Drive][CURRENTHEAD][FSDPhysicalTrack];
+      return &DiscStatus[Drive].Tracks[CURRENTHEAD][FSDPhysicalTrack];
      }
   }
 
@@ -1763,13 +1761,14 @@ void Disc8271_poll_real() {
 
 // FSD - could be causing crashes, because of different sized tracks / sectors
 
-void FreeDiscImage(int DriveNum) {
+void FreeDiscImage(int Drive)
+{
   const int Head = 0;
 
   for (int Track = 0; Track < TRACKS_PER_DRIVE; Track++) {
-    const int SectorsPerTrack = DiscStore[DriveNum][Head][Track].LogicalSectors;
+    const int SectorsPerTrack = DiscStatus[Drive].Tracks[Head][Track].LogicalSectors;
 
-    SectorType *SecPtr = DiscStore[DriveNum][Head][Track].Sectors;
+    SectorType *SecPtr = DiscStatus[Drive].Tracks[Head][Track].Sectors;
 
     if (SecPtr != nullptr) {
       for (int Sector = 0; Sector < SectorsPerTrack; Sector++) {
@@ -1780,7 +1779,7 @@ void FreeDiscImage(int DriveNum) {
       }
 
       free(SecPtr);
-      DiscStore[DriveNum][Head][Track].Sectors = nullptr;
+      DiscStatus[Drive].Tracks[Head][Track].Sectors = nullptr;
     }
   }
 }
@@ -1819,13 +1818,13 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
   {
     for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++)
     {
-      DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors = 10;
-      DiscStore[DriveNum][Head][CurrentTrack].NSectors = 10;
-      DiscStore[DriveNum][Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
-      DiscStore[DriveNum][Head][CurrentTrack].Gap3Size = 0;
-      DiscStore[DriveNum][Head][CurrentTrack].Gap5Size = 0;
-      DiscStore[DriveNum][Head][CurrentTrack].TrackIsReadable = true;
-      SectorType *SecPtr = DiscStore[DriveNum][Head][CurrentTrack].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].LogicalSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].NSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap3Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap5Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].TrackIsReadable = true;
+      SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
 
       for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
         SecPtr[CurrentSector].IDField.LogicalTrack = CurrentTrack; // was CylinderNum
@@ -1870,13 +1869,13 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
   {
     for (int Head = 0; Head < 2; Head++)
     {
-      DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors = 10;
-      DiscStore[DriveNum][Head][CurrentTrack].NSectors = 10;
-      DiscStore[DriveNum][Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
-      DiscStore[DriveNum][Head][CurrentTrack].Gap3Size = 0;
-      DiscStore[DriveNum][Head][CurrentTrack].Gap5Size = 0;
-      DiscStore[DriveNum][Head][CurrentTrack].TrackIsReadable = true;
-      SectorType *SecPtr = DiscStore[DriveNum][Head][CurrentTrack].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].LogicalSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].NSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap3Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap5Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].TrackIsReadable = true;
+      SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
 
       for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
         SecPtr[CurrentSector].IDField.LogicalTrack = CurrentTrack; // was CylinderNum
@@ -1966,15 +1965,15 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   for (int CurrentTrack = 0; CurrentTrack < TotalTracks; CurrentTrack++) {
     unsigned char fctrack = fgetc(infile); // Read current track details
     unsigned char SectorsPerTrack = fgetc(infile); // Read number of sectors on track
-    DiscStore[DriveNum][Head][CurrentTrack].LogicalSectors = SectorsPerTrack;
+    DiscStatus[DriveNum].Tracks[Head][CurrentTrack].LogicalSectors = SectorsPerTrack;
 
     if (SectorsPerTrack > 0) // i.e., if the track is formatted
     {
       unsigned char TrackIsReadable = fgetc(infile); // Is track readable?
-      DiscStore[DriveNum][Head][CurrentTrack].NSectors = SectorsPerTrack; // Can be different than 10
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].NSectors = SectorsPerTrack; // Can be different than 10
       SectorType *SecPtr = (SectorType*)calloc(SectorsPerTrack, sizeof(SectorType));
-      DiscStore[DriveNum][Head][CurrentTrack].Sectors = SecPtr;
-      DiscStore[DriveNum][Head][CurrentTrack].TrackIsReadable = TrackIsReadable != 0;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Sectors = SecPtr;
+      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].TrackIsReadable = TrackIsReadable != 0;
 
       for (int CurrentSector = 0; CurrentSector < SectorsPerTrack; CurrentSector++) {
         SecPtr[CurrentSector].CylinderNum = CurrentTrack;
@@ -2065,7 +2064,7 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
   {
     Success = fseek(outfile, FileOffset, SEEK_SET) == 0;
 
-    SectorType *SecPtr = DiscStore[DriveNum][HeadNum][TrackNum].Sectors;
+    SectorType *SecPtr = DiscStatus[DriveNum].Tracks[HeadNum][TrackNum].Sectors;
 
     for (int CurrentSector = 0; Success && CurrentSector < 10; CurrentSector++) {
       if (fwrite(SecPtr[CurrentSector].Data,1,256,outfile) != 256) {
@@ -2105,7 +2104,7 @@ void DiscWriteEnable(int DriveNum, bool WriteEnable) {
 
   if (WriteEnable) {
     for (int HeadNum = 0; DiscOK && HeadNum < NumHeads[DriveNum]; HeadNum++) {
-      SectorType *SecPtr = DiscStore[DriveNum][HeadNum][0].Sectors;
+      SectorType *SecPtr = DiscStatus[DriveNum].Tracks[HeadNum][0].Sectors;
       if (SecPtr == nullptr)
         return; // No disc image!
 
@@ -2214,7 +2213,7 @@ void Save8271UEF(FILE *SUEF)
 	fput16(0x046E,SUEF);
 	fput32(613,SUEF);
 
-	if (DiscStore[0][0][0].Sectors == nullptr) {
+	if (DiscStatus[0].Tracks[0][0].Sectors == nullptr) {
 		// No disc in drive 0
 		fwrite(blank,1,256,SUEF);
 	}
@@ -2222,7 +2221,7 @@ void Save8271UEF(FILE *SUEF)
 		fwrite(DiscStatus[0].FileName, 1, 256, SUEF);
 	}
 
-	if (DiscStore[1][0][0].Sectors == nullptr) {
+	if (DiscStatus[1].Tracks[0][0].Sectors == nullptr) {
 		// No disc in drive 1
 		fwrite(blank,1,256,SUEF);
 	}
@@ -2293,7 +2292,7 @@ void Load8271UEF(FILE *SUEF)
 		else
 			LoadSimpleDiscImage(FileName, 0, 0, 80);
 
-		if (DiscStore[0][0][0].Sectors == nullptr)
+		if (DiscStatus[0].Tracks[0][0].Sectors == nullptr)
 			LoadFailed = true;
 	}
 
@@ -2308,7 +2307,7 @@ void Load8271UEF(FILE *SUEF)
 		else
 			LoadSimpleDiscImage(FileName, 1, 0, 80);
 
-		if (DiscStore[1][0][0].Sectors == nullptr)
+		if (DiscStatus[1].Tracks[0][0].Sectors == nullptr)
 			LoadFailed = true;
 	}
 
