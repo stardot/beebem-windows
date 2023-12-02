@@ -84,13 +84,6 @@ const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2     = 0x19;
 bool Disc8271Enabled = true;
 int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 
-// State set by the Specify (initialisation) command
-// See Intel 8271 data sheet, page 15, ADUG page 39-40
-static int StepRate; // In 2ms steps
-static int HeadSettlingTime; // In 2ms steps
-static int IndexCountBeforeHeadUnload; // Number of revolutions (0 to 14), or 15 to keep loaded
-static int HeadLoadTime; // In 8ms steps
-
 static int DriveHeadPosition[2]={0};
 static bool DriveHeadLoaded=false;
 static bool DriveHeadUnloadPending=false;
@@ -175,6 +168,13 @@ struct FDCStateType {
 	unsigned char DriveControlOutputPort;
 	unsigned char DriveControlInputPort;
 	unsigned char BadTracks[2][2]; // 1st subscript is surface 0/1 and second subscript is badtrack 0/1
+
+	// State set by the Specify (initialisation) command
+	// See Intel 8271 data sheet, page 15, ADUG page 39-40
+	int StepRate; // In 2ms steps
+	int HeadSettlingTime; // In 2ms steps
+	int IndexCountBeforeHeadUnload; // Number of revolutions (0 to 14), or 15 to keep loaded
+	int HeadLoadTime; // In 8ms steps
 };
 
 static FDCStateType FDCState;
@@ -1295,10 +1295,10 @@ static void DoReadDriveStatusCommand(void) {
 static void DoSpecifyCommand(void) {
   switch (Params[0]) {
     case 0x0D: // Initialisation
-      StepRate = Params[1];
-      HeadSettlingTime = Params[2];
-      IndexCountBeforeHeadUnload = (Params[3] & 0xf0) >> 4;
-      HeadLoadTime = Params[3] & 0x0f;
+      FDCState.StepRate = Params[1];
+      FDCState.HeadSettlingTime = Params[2];
+      FDCState.IndexCountBeforeHeadUnload = (Params[3] & 0xf0) >> 4;
+      FDCState.HeadLoadTime = Params[3] & 0x0f;
       break;
 
     case 0x10: // Load bad tracks, surface 0
@@ -2178,10 +2178,10 @@ void Disc8271Reset() {
 	FDCState.BadTracks[1][1] = 0xff; 
 
 	// Default values set by Acorn DFS:
-	StepRate = 12;
-	HeadSettlingTime = 10;
-	IndexCountBeforeHeadUnload = 12;
-	HeadLoadTime = 8;
+	FDCState.StepRate = 12;
+	FDCState.HeadSettlingTime = 10;
+	FDCState.IndexCountBeforeHeadUnload = 12;
+	FDCState.HeadLoadTime = 8;
 
 	if (DriveHeadLoaded)
 	{
