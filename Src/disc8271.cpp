@@ -26,6 +26,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 
 #include "disc8271.h"
 #include "6502core.h"
@@ -36,11 +37,7 @@ Boston, MA  02110-1301, USA.
 #include "Log.h"
 #include "DebugTrace.h"
 #include "DiscType.h"
-
-#ifdef WIN32
-#include <windows.h>
 #include "Main.h"
-#endif
 
 #define ENABLE_LOG 0
 
