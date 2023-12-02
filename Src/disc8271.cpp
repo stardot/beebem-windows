@@ -89,7 +89,6 @@ static bool DriveHeadLoaded=false;
 static bool DriveHeadUnloadPending=false;
 
 static unsigned char PositionInTrack; // FSD
-static unsigned char TotalTracks; // FSD
 static bool SectorOverRead; // FSD - Was read size bigger than data stored?
 static bool UsingSpecial; // FSD - Using Special Register
 static unsigned char DRDSC; // FSD
@@ -133,6 +132,7 @@ struct DiscStatusType {
 	char FileName[256]; // File name of loaded disc image
 	bool Writeable; // True if the disc is writeable
 	int NumHeads; // Number of sides of loaded disc images
+	int TotalTracks; // Total number of tracks in FSD disk image
 	TrackType Tracks[2][TRACKS_PER_DRIVE]; // All data on the disc - first param head, then physical track ID
 };
 
@@ -1951,17 +1951,17 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum) {
   }
 
   int LastTrack = fgetc(infile) ; // Read number of last track on disk image
-  TotalTracks = LastTrack + 1;
+  DiscStatus[DriveNum].TotalTracks = LastTrack + 1;
 
-  if (TotalTracks > FSD_TRACKS_PER_DRIVE) {
+  if (DiscStatus[DriveNum].TotalTracks > FSD_TRACKS_PER_DRIVE) {
     mainWin->Report(MessageType::Error,
                     "Could not open disc file:\n  %s\n\nExpected a maximum of %d tracks, found %d",
-                    FileName, FSD_TRACKS_PER_DRIVE, TotalTracks);
+                    FileName, FSD_TRACKS_PER_DRIVE, DiscStatus[DriveNum].TotalTracks);
 
     return;
   }
 
-  for (int CurrentTrack = 0; CurrentTrack < TotalTracks; CurrentTrack++) {
+  for (int CurrentTrack = 0; CurrentTrack < DiscStatus[DriveNum].TotalTracks; CurrentTrack++) {
     unsigned char fctrack = fgetc(infile); // Read current track details
     unsigned char SectorsPerTrack = fgetc(infile); // Read number of sectors on track
     DiscStatus[DriveNum].Tracks[Head][CurrentTrack].LogicalSectors = SectorsPerTrack;
