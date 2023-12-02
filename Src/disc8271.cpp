@@ -93,9 +93,6 @@ static int NParamsInThisCommand;
 static int PresentParam; /* From 0 */
 static unsigned char Params[16]; /* Wildly more than we need */
 
-// These bools indicate which drives the last command selected.
-// They also act as "drive ready" bits which are reset when the motor stops.
-static bool Selects[2]; /* Drive selects */
 
 static bool FirstWriteInt; // Indicates the start of a write operation
 
@@ -156,6 +153,10 @@ struct FDCStateType {
 	unsigned char ResultReg;
 	unsigned char StatusReg;
 	unsigned char DataReg;
+
+	// These bools indicate which drives the last command selected.
+	// They also act as "drive ready" bits which are reset when the motor stops.
+	bool Select[2]; // Drive selects
 
 	unsigned char ScanSectorNum;
 	unsigned int ScanCount; // Read as two bytes
@@ -235,13 +236,13 @@ static void UpdateNMIStatus()
 
 static void DoSelects()
 {
-	Selects[0] = (ThisCommand & 0x40) != 0;
-	Selects[1] = (ThisCommand & 0x80) != 0;
+	FDCState.Select[0] = (ThisCommand & 0x40) != 0;
+	FDCState.Select[1] = (ThisCommand & 0x80) != 0;
 
 	FDCState.DriveControlOutputPort &= 0x3f;
 
-	if (Selects[0]) FDCState.DriveControlOutputPort |= 0x40;
-	if (Selects[1]) FDCState.DriveControlOutputPort |= 0x80;
+	if (FDCState.Select[0]) FDCState.DriveControlOutputPort |= 0x40;
+	if (FDCState.Select[1]) FDCState.DriveControlOutputPort |= 0x80;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -291,6 +292,20 @@ static int SkipBadTracks(int Unit, int trackin) {
 
 /*--------------------------------------------------------------------------*/
 
+static int GetSelectedDrive() {
+  if (FDCState.Select[0]) {
+    return 0;
+  }
+
+  if (FDCState.Select[1]) {
+    return 1;
+  }
+
+  return -1;
+}
+
+/*--------------------------------------------------------------------------*/
+
 // Returns a pointer to the data structure for a particular track. You pass
 // the logical track number, it takes into account bad tracks and the drive
 // select and head select etc.  It always returns a valid ptr - if there
@@ -299,31 +314,14 @@ static int SkipBadTracks(int Unit, int trackin) {
 // FSD - returns the physical track pointer for track ID
 
 static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID) {
-  int UnitID =- 1;
+  int Drive = GetSelectedDrive();
 
-  if (Selects[0]) UnitID = 0;
-  if (Selects[1]) UnitID = 1;
-
-  if (UnitID < 0) return nullptr;
+  if (Drive < 0) return nullptr;
 
   PositionInTrack = 0;
   FSDPhysicalTrack = PhysicalTrackID;
 
-  return &DiscStatus[UnitID].Tracks[CURRENT_HEAD][PhysicalTrackID];
-}
-
-/*--------------------------------------------------------------------------*/
-
-static int GetSelectedDrive() {
-  if (Selects[0]) {
-    return 0;
-  }
-
-  if (Selects[1]) {
-    return 1;
-  }
-
-  return -1;
+  return &DiscStatus[Drive].Tracks[CURRENT_HEAD][PhysicalTrackID];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -537,7 +535,7 @@ static void WriteInterrupt(void) {
       }
     } else {
       /* Last sector done, write the track back to disc */
-      if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
+      if (SaveTrackImage(FDCState.Select[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
         FDCState.StatusReg = STATUS_REG_RESULT_FULL;
         UpdateNMIStatus();
         LastByte = true;
@@ -1206,7 +1204,7 @@ static void FormatInterrupt(void) {
       }
     } else {
       /* Last sector done, write the track back to disc */
-      if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
+      if (SaveTrackImage(FDCState.Select[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
         FDCState.StatusReg = STATUS_REG_RESULT_FULL;
         UpdateNMIStatus();
         LastByte = true;
@@ -1277,8 +1275,8 @@ static void DoReadDriveStatusCommand(void) {
   }
 
   DRDSC++;
-  FDCState.ResultReg = 0x80 | (Selects[1] ? 0x40 : 0)
-                            | (Selects[0] ? 0x04 : 0)
+  FDCState.ResultReg = 0x80 | (FDCState.Select[1] ? 0x40 : 0)
+                            | (FDCState.Select[0] ? 0x04 : 0)
                             | (WriteProt  ? 0x08 : 0)
                             | (Track0     ? 0x02 : 0);
   FDCState.StatusReg |= STATUS_REG_RESULT_FULL;
@@ -1349,8 +1347,8 @@ static void DoWriteSpecialCommand(void) {
 
     case SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT:
       FDCState.DriveControlOutputPort = Params[1];
-      Selects[0] = (Params[1] & 0x40) != 0;
-      Selects[1] = (Params[1] & 0x80) != 0;
+      FDCState.Select[0] = (Params[1] & 0x40) != 0;
+      FDCState.Select[1] = (Params[1] & 0x80) != 0;
       break;
 
     case SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT:
@@ -1672,8 +1670,8 @@ static bool DriveHeadMotorUpdate(void) {
 
 	if (DriveHeadUnloadPending) {
 		// Mark drives as not ready
-		Selects[0] = false;
-		Selects[1] = false;
+		FDCState.Select[0] = false;
+		FDCState.Select[1] = false;
 		DriveHeadUnloadPending = false;
 		if (DriveHeadLoaded && DiscDriveSoundEnabled)
 			PlaySoundSample(SAMPLE_HEAD_UNLOAD, false);
@@ -1693,8 +1691,8 @@ static bool DriveHeadMotorUpdate(void) {
 	}
 
 	if (!DriveHeadLoaded) {
-		if (Selects[0]) LEDs.Disc0 = true;
-		if (Selects[1]) LEDs.Disc1 = true;
+		if (FDCState.Select[0]) LEDs.Disc0 = true;
+		if (FDCState.Select[1]) LEDs.Disc1 = true;
 
 		PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
 		DriveHeadLoaded = true;
@@ -1703,8 +1701,8 @@ static bool DriveHeadMotorUpdate(void) {
 		return true;
 	}
 
-	if (Selects[0]) Drive = 0;
-	if (Selects[1]) Drive = 1;
+	if (FDCState.Select[0]) Drive = 0;
+	if (FDCState.Select[1]) Drive = 1;
 
 	StopSoundSample(SAMPLE_HEAD_SEEK);
 
@@ -2194,8 +2192,8 @@ void Disc8271Reset() {
 	ThisCommand = -1;
 	NParamsInThisCommand = 0;
 	PresentParam = 0;
-	Selects[0] = false;
-	Selects[1] = false;
+	FDCState.Select[0] = false;
+	FDCState.Select[1] = false;
 
 	if (InitialInit)
 	{
@@ -2254,8 +2252,8 @@ void Save8271UEF(FILE *SUEF)
 	fwrite(Params,1,16,SUEF);
 	fput32(DiscStatus[0].NumHeads, SUEF);
 	fput32(DiscStatus[1].NumHeads, SUEF);
-	fput32(Selects[0]?1:0,SUEF);
-	fput32(Selects[1]?1:0,SUEF);
+	fput32(FDCState.Select[0] ? 1 : 0, SUEF);
+	fput32(FDCState.Select[1] ? 1 : 0, SUEF);
 	fput32(DiscStatus[0].Writeable ? 1 : 0,SUEF);
 	fput32(DiscStatus[1].Writeable ? 1 : 0,SUEF);
 	fput32(FirstWriteInt ? 1 : 0,SUEF);
@@ -2338,8 +2336,8 @@ void Load8271UEF(FILE *SUEF)
 		fread(Params,1,16,SUEF);
 		DiscStatus[0].NumHeads = fget32(SUEF);
 		DiscStatus[1].NumHeads = fget32(SUEF);
-		Selects[0]=fget32(SUEF) != 0;
-		Selects[1]=fget32(SUEF) != 0;
+		FDCState.Select[0] = fget32(SUEF) != 0;
+		FDCState.Select[1] = fget32(SUEF) != 0;
 		DiscStatus[0].Writeable = fget32(SUEF) != 0;
 		DiscStatus[1].Writeable = fget32(SUEF) != 0;
 		FirstWriteInt=fget32(SUEF) != 0;
@@ -2388,7 +2386,7 @@ void disc8271_dumpstate()
 	WriteLog("  ThisCommand=%d\n", ThisCommand);
 	WriteLog("  NParamsInThisCommand=%d\n", NParamsInThisCommand);
 	WriteLog("  PresentParam=%d\n", PresentParam);
-	WriteLog("  Selects=%d, %d\n", Selects[0], Selects[1]);
+	WriteLog("  FDCState.Select=%d, %d\n", FDCState.Select[0], FDCState.Select[1]);
 	WriteLog("  NextInterruptIsErr=%02X\n", NextInterruptIsErr);
 }
 
