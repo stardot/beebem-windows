@@ -19,9 +19,9 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-/* 04/12/1994 David Alan Gilbert: 8271 disc emulation  */
-/* 30/08/1997 Mike Wyatt: Added disc write and format support */
-/* 27/12/2011 J.G.Harston: Double-sided SSD supported */
+// 04/12/1994 David Alan Gilbert: 8271 disc emulation
+// 30/08/1997 Mike Wyatt: Added disc write and format support
+// 27/12/2011 J.G.Harston: Double-sided SSD supported
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,7 +82,7 @@ const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_1     = 0x18;
 const unsigned char SPECIAL_REG_SURFACE_1_BAD_TRACK_2     = 0x19;
 
 bool Disc8271Enabled = true;
-int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
+int Disc8271Trigger; // Cycle based time Disc8271Trigger
 
 static int DriveHeadPosition[2]={0};
 static bool DriveHeadLoaded=false;
@@ -228,14 +228,19 @@ static void DoSelects()
 }
 
 /*--------------------------------------------------------------------------*/
-static void NotImp(const char *NotImpCom) {
-  mainWin->Report(MessageType::Error,
-                  "Disc operation '%s' not supported", NotImpCom);
+
+static void NotImp(const char *Command)
+{
+	mainWin->Report(MessageType::Error,
+	                "Disc operation '%s' not supported", Command);
 }
 
 /*--------------------------------------------------------------------------*/
-/* Load the head - ignore for the moment                                    */
-static void DoLoadHead(void) {
+
+// Load the head - ignore for the moment
+
+static void DoLoadHead()
+{
 }
 
 /*--------------------------------------------------------------------------*/
@@ -259,8 +264,11 @@ static void InitDiscStore()
 }
 
 /*--------------------------------------------------------------------------*/
-/* Given a logical track number accounts for bad tracks                     */
-static int SkipBadTracks(int Unit, int trackin) {
+
+// Given a logical track number accounts for bad tracks
+
+static int SkipBadTracks(int Unit, int trackin)
+{
   /* int offset=0;
   if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
   {
@@ -364,7 +372,7 @@ static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID,
     }
   }
 
-  /* as above, but from sector 0 to the current position */
+  // As above, but from sector 0 to the current position
   if (PositionInTrack > 0) {
     for (int CurrentSector = 0; CurrentSector < PositionInTrack; CurrentSector++) {
       if (Track->Sectors[CurrentSector].IDField.LogicalSector == LogicalSectorID) {
@@ -528,13 +536,13 @@ static void WriteInterrupt(void) {
         return;
       }
     } else {
-      /* Last sector done, write the track back to disc */
+      // Last sector done, write the track back to disc
       if (SaveTrackImage(FDCState.Select[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
         FDCState.StatusReg = STATUS_REG_RESULT_FULL;
         UpdateNMIStatus();
         LastByte = true;
-        CommandStatus.SectorsToGo=-1; /* To let us bail out */
-        SetTrigger(0,Disc8271Trigger); /* To pick up result */
+        CommandStatus.SectorsToGo=-1; // To let us bail out
+        SetTrigger(0,Disc8271Trigger); // To pick up result
       }
       else {
         DoErr(RESULT_REG_WRITE_PROTECT);
@@ -760,7 +768,7 @@ static void ReadInterrupt(void) {
 
   if (CommandStatus.ByteWithinSector >= CommandStatus.SectorLength) {
     CommandStatus.ByteWithinSector = 0;
-    /* I don't know if this can cause the thing to step - I presume not for the moment */
+    // I don't know if this can cause the thing to step - I presume not for the moment
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
       CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
@@ -773,7 +781,7 @@ static void ReadInterrupt(void) {
         return;
       }
     } else {
-      /* Last sector done */
+      // Last sector done
       FDCState.StatusReg = STATUS_REG_COMMAND_BUSY |
                            STATUS_REG_RESULT_FULL |
                            STATUS_REG_INTERRUPT_REQUEST |
@@ -905,7 +913,7 @@ static void Read128Interrupt(void) {
 
   if (CommandStatus.ByteWithinSector >= CommandStatus.SectorLength) {
     CommandStatus.ByteWithinSector = 0;
-    /* I don't know if this can cause the thing to step - I presume not for the moment */
+    // I don't know if this can cause the thing to step - I presume not for the moment
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
       CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, CommandStatus.CurrentSector, false);
@@ -916,7 +924,7 @@ static void Read128Interrupt(void) {
         return;
       }
     } else {
-      /* Last sector done */
+      // Last sector done
       FDCState.StatusReg = STATUS_REG_COMMAND_BUSY |
                            STATUS_REG_RESULT_FULL |
                            STATUS_REG_INTERRUPT_REQUEST |
@@ -1036,7 +1044,7 @@ static void ReadIDInterrupt(void) {
         return;
       }
     } else {
-      /* Last sector done */
+      // Last sector done
       FDCState.StatusReg = STATUS_REG_COMMAND_BUSY |
                            STATUS_REG_INTERRUPT_REQUEST |
                            STATUS_REG_NON_DMA_MODE;
@@ -1105,7 +1113,7 @@ static void DoVarLength_VerifyDataAndDeldCommand(void) {
   }
 
   UpdateNMIStatus();
-  SetTrigger(100,Disc8271Trigger); /* A short delay to causing an interrupt */
+  SetTrigger(100,Disc8271Trigger); // A short delay to causing an interrupt
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1181,7 +1189,7 @@ static void FormatInterrupt(void) {
 
   if (!CommandStatus.FirstWriteInt)
   {
-    /* Ignore the ID data for now - just count the bytes */
+    // Ignore the ID data for now - just count the bytes
     CommandStatus.ByteWithinSector++;
   }
   else
@@ -1192,7 +1200,7 @@ static void FormatInterrupt(void) {
   FDCState.ResultReg = RESULT_REG_SUCCESS;
 
   if (CommandStatus.ByteWithinSector>=4) {
-    /* Fill sector with 0xe5 chars */
+    // Fill sector with 0xe5 chars
     for (int i = 0; i < 256; ++i) {
       CommandStatus.CurrentSectorPtr->Data[i]=(unsigned char)0xe5;
     }
@@ -1210,13 +1218,13 @@ static void FormatInterrupt(void) {
         return;
       }
     } else {
-      /* Last sector done, write the track back to disc */
+      // Last sector done, write the track back to disc
       if (SaveTrackImage(FDCState.Select[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
         FDCState.StatusReg = STATUS_REG_RESULT_FULL;
         UpdateNMIStatus();
         LastByte = true;
-        CommandStatus.SectorsToGo=-1; /* To let us bail out */
-        SetTrigger(0,Disc8271Trigger); /* To pick up result */
+        CommandStatus.SectorsToGo=-1; // To let us bail out
+        SetTrigger(0,Disc8271Trigger); // To pick up result
       }
       else {
         DoErr(RESULT_REG_WRITE_PROTECT);
@@ -1263,7 +1271,7 @@ static void DoSeekCommand(void) {
 
   FDCState.StatusReg = STATUS_REG_COMMAND_BUSY;
   UpdateNMIStatus();
-  SetTrigger(100,Disc8271Trigger); /* A short delay to causing an interrupt */
+  SetTrigger(100,Disc8271Trigger); // A short delay to causing an interrupt
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1497,9 +1505,11 @@ static const PrimaryCommandLookupType PrimaryCommandLookup[] = {
 };
 
 /*--------------------------------------------------------------------------*/
-/* returns a pointer to the data structure for the given command            */
-/* If no matching command is given, the pointer points to an entry with a 0 */
-/* mask, with a sensible function to call.                                  */
+
+// returns a pointer to the data structure for the given command
+// If no matching command is given, the pointer points to an entry with a 0
+// mask, with a sensible function to call.
+
 static const PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber) {
   const PrimaryCommandLookupType *presptr=PrimaryCommandLookup;
 
@@ -1784,7 +1794,7 @@ void Disc8271_poll_real() {
     UpdateNMIStatus();
     CommandStatus.NextInterruptIsErr = RESULT_REG_SUCCESS;
   } else {
-    /* Should only happen while a command is still active */
+    // Should only happen while a command is still active
     const PrimaryCommandLookupType *comptr = CommandPtrFromNumber(FDCState.Command);
     if (comptr->IntHandler != nullptr) comptr->IntHandler();
   }
@@ -2223,7 +2233,7 @@ void Disc8271Reset() {
 		DriveHeadMotorUpdate();
 	}
 
-	ClearTrigger(Disc8271Trigger); /* No Disc8271Triggered events yet */
+	ClearTrigger(Disc8271Trigger); // No Disc8271Triggered events yet
 
 	FDCState.Command = -1;
 	FDCState.CommandParamCount = 0;
