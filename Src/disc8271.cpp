@@ -283,12 +283,12 @@ static int SkipBadTracks(int Unit, int trackin) {
 
 /*--------------------------------------------------------------------------*/
 
-/* Returns a pointer to the data structure for a particular track.  You     */
-/* pass the logical track number, it takes into account bad tracks and the  */
-/* drive select and head select etc.  It always returns a valid ptr - if    */
-/* there aren't that many tracks then it uses the last one.                 */
-/* The one exception!!!! is that if no drives are selected it returns NULL  */
-/* FSD - returns the physical track pointer for track ID */
+// Returns a pointer to the data structure for a particular track. You pass
+// the logical track number, it takes into account bad tracks and the drive
+// select and head select etc.  It always returns a valid ptr - if there
+// aren't that many tracks then it uses the last one.
+// The one exception!!!! is that if no drives are selected it returns nullptr
+// FSD - returns the physical track pointer for track ID
 
 static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID) {
   int UnitID =- 1;
@@ -296,7 +296,7 @@ static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID) {
   if (Selects[0]) UnitID = 0;
   if (Selects[1]) UnitID = 1;
 
-  if (UnitID < 0) return NULL;
+  if (UnitID < 0) return nullptr;
 
   PositionInTrack = 0;
   FSDPhysicalTrack = PhysicalTrackID;
@@ -319,13 +319,15 @@ static int GetSelectedDrive() {
 }
 
 /*--------------------------------------------------------------------------*/
-/* Returns a pointer to the data structure for a particular track.  You     */
-/* pass the logical track number, it takes into account bad tracks and the  */
-/* drive select and head select etc.  It always returns a valid ptr - if    */
-/* there aren't that many tracks then it uses the last one.                 */
-/* The one exception!!!! is that if no drives are selected it returns NULL  */
 
-/* FSD - unsigned char because maximum &FF */
+// Returns a pointer to the data structure for a particular track.  You pass
+// the logical track number, it takes into account bad tracks and the drive
+// select and head select etc.  It always returns a valid ptr - if there
+// there aren't that many tracks then it uses the last one.
+// The one exception!!!! is that if no drives are selected it returns nullptr
+
+// FSD - unsigned char because maximum &FF
+
 static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
   int Drive = GetSelectedDrive();
 
@@ -350,17 +352,17 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
      }
   }
 
-  return NULL; // if it's not found from the above, then it doesn't exist!
+  return nullptr; // if it's not found from the above, then it doesn't exist!
 }
 
 /*--------------------------------------------------------------------------*/
 
-/* Returns a pointer to the data structure for a particular sector. Returns */
-/* NULL for Sector not found. Doesn't check cylinder/head ID              */
+// Returns a pointer to the data structure for a particular sector.
+// Returns nullptr for Sector not found. Doesn't check cylinder/head ID.
 
 static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID, bool FindDeleted) {
 
-  // if (Track->Sectors == NULL) return NULL;
+  // if (Track->Sectors == nullptr) return nullptr;
 
   // FSD - from PositionInTrack, instead of 0 to allow Mini Office II to have repeated sector ID
   // if logical sector from track ID is logicalsectorid passed here then return the record number
@@ -385,18 +387,19 @@ static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID,
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /*--------------------------------------------------------------------------*/
 
-/* Returns a pointer to the data structure for a particular sector. Returns */
-/* NULL for Sector not found. Doesn't check cylinder/head ID                */
-/* FSD - returns the sector IDs */
+// Returns a pointer to the data structure for a particular sector.
+// Returns nullptr for Sector not found. Doesn't check cylinder/head ID
+// FSD - returns the sector IDs
 
 static SectorType *GetSectorPtrForTrackID(TrackType *Track, unsigned char LogicalSectorID, bool FindDeleted) {
-  if (Track->Sectors == NULL) {
-    return NULL;
+  if (Track->Sectors == nullptr)
+  {
+    return nullptr;
   }
 
   LogicalSectorID = Track->Sectors[PositionInTrack].RecordNum;
@@ -461,13 +464,17 @@ static void DoVarLength_WriteDataCommand(void) {
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
-  if (CommandStatus.CurrentTrackPtr==NULL) {
+
+  if (CommandStatus.CurrentTrackPtr == nullptr)
+  {
     DoErr(RESULT_REG_SECTOR_NOT_FOUND);
     return;
   }
 
   CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
-  if (CommandStatus.CurrentSectorPtr==NULL) {
+
+  if (CommandStatus.CurrentSectorPtr == nullptr)
+  {
     DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
     return;
   }
@@ -512,7 +519,9 @@ static void WriteInterrupt(void) {
       CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
                                                     CommandStatus.CurrentSector,
                                                     false);
-      if (CommandStatus.CurrentSectorPtr==NULL) {
+
+      if (CommandStatus.CurrentSectorPtr == nullptr)
+      {
         DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
       }
@@ -614,7 +623,8 @@ static void DoVarLength_ReadDataCommand(void) {
   // Internal_CurrentTrack[Drive]=Params[0];
   // CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
 
-  if (CommandStatus.CurrentTrackPtr==NULL) {
+  if (CommandStatus.CurrentTrackPtr == nullptr)
+  {
     DoErr(RESULT_REG_SECTOR_NOT_FOUND);
     return;
   }
@@ -626,7 +636,9 @@ static void DoVarLength_ReadDataCommand(void) {
   }
 
   CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
-  if (CommandStatus.CurrentSectorPtr==NULL) {
+
+  if (CommandStatus.CurrentSectorPtr == nullptr)
+  {
     DoErr(RESULT_REG_SECTOR_NOT_FOUND);
     return;
   }
@@ -746,7 +758,9 @@ static void ReadInterrupt(void) {
       CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
                                                     CommandStatus.CurrentSector,
                                                     false);
-      if (CommandStatus.CurrentSectorPtr == NULL) {
+
+      if (CommandStatus.CurrentSectorPtr == nullptr)
+      {
         DoErr(RESULT_REG_SECTOR_NOT_FOUND);
         return;
       }
@@ -797,7 +811,9 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
   }
 
   CommandStatus.CurrentTrackPtr = GetTrackPtr(Params[0]);
-  if (CommandStatus.CurrentTrackPtr == NULL) {
+
+  if (CommandStatus.CurrentTrackPtr == nullptr)
+  {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
@@ -809,8 +825,10 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
   }
 
   CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
-  if (CommandStatus.CurrentSectorPtr == NULL) {
-     DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+
+  if (CommandStatus.CurrentSectorPtr == nullptr)
+  {
+    DoErr(RESULT_REG_SECTOR_NOT_FOUND);
     return;
   }
 
@@ -882,10 +900,12 @@ static void Read128Interrupt(void) {
     if (--CommandStatus.SectorsToGo) {
       CommandStatus.CurrentSector++;
       CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, CommandStatus.CurrentSector, false);
-      if (CommandStatus.CurrentSectorPtr==NULL) {
+
+      if (CommandStatus.CurrentSectorPtr == nullptr)
+      {
         DoErr(RESULT_REG_SECTOR_NOT_FOUND);
         return;
-      }/* else cerr << "all ptr for sector " << CommandStatus.CurrentSector << "\n"*/;
+      }
     } else {
       /* Last sector done */
       StatusReg = STATUS_REG_COMMAND_BUSY |
@@ -930,7 +950,8 @@ static void DoReadIDCommand(void) {
   FSDPhysicalTrack = Params[0];
   CommandStatus.CurrentTrackPtr = GetTrackPtrPhysical(FSDPhysicalTrack);
 
-  if (CommandStatus.CurrentTrackPtr==NULL) {
+  if (CommandStatus.CurrentTrackPtr == nullptr)
+  {
     DoErr(RESULT_REG_SECTOR_NOT_FOUND); // FSD - was RESULT_REG_DRIVE_NOT_READY
     return;
   }
@@ -938,7 +959,8 @@ static void DoReadIDCommand(void) {
   // FSD - was GetSectorPtr
   CommandStatus.CurrentSectorPtr = GetSectorPtrForTrackID(CommandStatus.CurrentTrackPtr, 0, false);
 
-  if (CommandStatus.CurrentSectorPtr==NULL) {
+  if (CommandStatus.CurrentSectorPtr == nullptr)
+  {
     DoErr(RESULT_REG_SECTOR_NOT_FOUND); // FSD - was RESULT_REG_DRIVE_NOT_PRESENT
     return;
   }
@@ -996,7 +1018,8 @@ static void ReadIDInterrupt(void) {
       CommandStatus.CurrentSectorPtr = GetSectorPtrForTrackID(CommandStatus.CurrentTrackPtr,
                                                               CommandStatus.CurrentSector,
                                                               false);
-      if (CommandStatus.CurrentSectorPtr==NULL) {
+      if (CommandStatus.CurrentSectorPtr == nullptr)
+      {
         DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
       }
@@ -1044,13 +1067,16 @@ static void DoVarLength_VerifyDataAndDeldCommand(void) {
   FSDLogicalTrack = Params[0];
   CommandStatus.CurrentTrackPtr = GetTrackPtr(FSDLogicalTrack);
 
-  if (CommandStatus.CurrentTrackPtr==NULL) {
+  if (CommandStatus.CurrentTrackPtr == nullptr)
+  {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
   CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
-  if (CommandStatus.CurrentSectorPtr==NULL) {
+
+  if (CommandStatus.CurrentSectorPtr == nullptr)
+  {
     DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
     return;
   }
@@ -1096,13 +1122,16 @@ static void DoFormatCommand(void) {
 
   Internal_CurrentTrack[Drive]=Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
-  if (CommandStatus.CurrentTrackPtr==NULL) {
+  if (CommandStatus.CurrentTrackPtr == nullptr)
+  {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
     return;
   }
 
   CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, 0, false);
-  if (CommandStatus.CurrentSectorPtr==NULL) {
+
+  if (CommandStatus.CurrentSectorPtr == nullptr)
+  {
     DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
     return;
   }
@@ -1153,7 +1182,9 @@ static void FormatInterrupt(void) {
       CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
                                                     CommandStatus.CurrentSector,
                                                     false);
-      if (CommandStatus.CurrentSectorPtr==NULL) {
+
+      if (CommandStatus.CurrentSectorPtr == nullptr)
+      {
         DoErr(RESULT_REG_DRIVE_NOT_PRESENT); // Sector not found
         return;
       }
@@ -1701,7 +1732,7 @@ void Disc8271_poll_real() {
   } else {
     /* Should only happen while a command is still active */
     const PrimaryCommandLookupType *comptr = CommandPtrFromNumber(ThisCommand);
-    if (comptr->IntHandler!=NULL) comptr->IntHandler();
+    if (comptr->IntHandler != nullptr) comptr->IntHandler();
   }
 
   DriveHeadScheduleUnload();
@@ -1719,16 +1750,16 @@ void FreeDiscImage(int DriveNum) {
 
     SectorType *SecPtr = DiscStore[DriveNum][Head][Track].Sectors;
 
-    if (SecPtr != NULL) {
+    if (SecPtr != nullptr) {
       for (int Sector = 0; Sector < SectorsPerTrack; Sector++) {
-        if (SecPtr[Sector].Data != NULL) {
+        if (SecPtr[Sector].Data != nullptr) {
           free(SecPtr[Sector].Data);
-          SecPtr[Sector].Data = NULL;
+          SecPtr[Sector].Data = nullptr;
         }
       }
 
       free(SecPtr);
-      DiscStore[DriveNum][Head][Track].Sectors = NULL;
+      DiscStore[DriveNum][Head][Track].Sectors = nullptr;
     }
   }
 }
@@ -2155,14 +2186,15 @@ void Save8271UEF(FILE *SUEF)
 	fput16(0x046E,SUEF);
 	fput32(613,SUEF);
 
-	if (DiscStore[0][0][0].Sectors == NULL) {
+	if (DiscStore[0][0][0].Sectors == nullptr) {
 		// No disc in drive 0
 		fwrite(blank,1,256,SUEF);
 	}
 	else {
 		fwrite(DiscStatus[0].FileName, 1, 256, SUEF);
 	}
-	if (DiscStore[1][0][0].Sectors == NULL) {
+
+	if (DiscStore[1][0][0].Sectors == nullptr) {
 		// No disc in drive 1
 		fwrite(blank,1,256,SUEF);
 	}
@@ -2223,30 +2255,32 @@ void Load8271UEF(FILE *SUEF)
 	DiscLoaded[1] = false;
 
 	fread(FileName,1,256,SUEF);
+
 	if (FileName[0]) {
 		// Load drive 0
 		Loaded = true;
 		ext = strrchr(FileName, '.');
-		if (ext != NULL && _stricmp(ext+1, "dsd") == 0)
+		if (ext != nullptr && _stricmp(ext+1, "dsd") == 0)
 			LoadSimpleDSDiscImage(FileName, 0, 80);
 		else
 			LoadSimpleDiscImage(FileName, 0, 0, 80);
 
-		if (DiscStore[0][0][0].Sectors == NULL)
+		if (DiscStore[0][0][0].Sectors == nullptr)
 			LoadFailed = true;
 	}
 
 	fread(FileName,1,256,SUEF);
+
 	if (FileName[0]) {
 		// Load drive 1
 		Loaded = true;
 		ext = strrchr(FileName, '.');
-		if (ext != NULL && _stricmp(ext+1, "dsd") == 0)
+		if (ext != nullptr && _stricmp(ext+1, "dsd") == 0)
 			LoadSimpleDSDiscImage(FileName, 1, 80);
 		else
 			LoadSimpleDiscImage(FileName, 1, 0, 80);
 
-		if (DiscStore[1][0][0].Sectors == NULL)
+		if (DiscStore[1][0][0].Sectors == nullptr)
 			LoadFailed = true;
 	}
 
@@ -2289,12 +2323,17 @@ void Load8271UEF(FILE *SUEF)
 		CommandStatus.ByteWithinSector=fget32(SUEF);
 
 		CommandStatus.CurrentTrackPtr=GetTrackPtr(CommandStatus.TrackAddr);
-		if (CommandStatus.CurrentTrackPtr!=NULL)
+
+		if (CommandStatus.CurrentTrackPtr != nullptr)
+		{
 			CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr,
 			                                              CommandStatus.CurrentSector,
 			                                              false);
+		}
 		else
-			CommandStatus.CurrentSectorPtr=NULL;
+		{
+			CommandStatus.CurrentSectorPtr = nullptr;
+		}
 	}
 }
 
