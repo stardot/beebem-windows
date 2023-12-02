@@ -86,13 +86,6 @@ int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 static unsigned char ResultReg;
 static unsigned char StatusReg;
 static unsigned char DataReg;
-static unsigned char Internal_Scan_SectorNum;
-static unsigned int Internal_Scan_Count; /* Read as two bytes */
-static unsigned char Internal_ModeReg;
-static unsigned char Internal_CurrentTrack[2]; /* 0/1 for surface number */
-static unsigned char Internal_DriveControlOutputPort;
-static unsigned char Internal_DriveControlInputPort;
-static unsigned char Internal_BadTracks[2][2]; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
 
 // State set by the Specify (initialisation) command
 // See Intel 8271 data sheet, page 15, ADUG page 39-40
@@ -129,7 +122,7 @@ constexpr int TRACKS_PER_DRIVE = 80;
 constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 
 // Note Head select is done from bit 5 of the drive output register
-#define CURRENTHEAD ((Internal_DriveControlOutputPort >> 5) & 1)
+#define CURRENTHEAD ((FDCState.DriveControlOutputPort >> 5) & 1)
 
 // Note: reads/writes one byte every 80us
 constexpr int TIME_BETWEEN_BYTES = 160;
@@ -172,6 +165,18 @@ struct DiscStatusType {
 };
 
 static DiscStatusType DiscStatus[2];
+
+struct FDCStateType {
+	unsigned char ScanSectorNum;
+	unsigned int ScanCount; // Read as two bytes
+	unsigned char ModeReg;
+	unsigned char CurrentTrack[2]; // 0/1 for surface number
+	unsigned char DriveControlOutputPort;
+	unsigned char DriveControlInputPort;
+	unsigned char BadTracks[2][2]; // 1st subscript is surface 0/1 and second subscript is badtrack 0/1
+};
+
+static FDCStateType FDCState;
 
 unsigned char FSDLogicalTrack;
 unsigned char FSDPhysicalTrack;
@@ -226,14 +231,19 @@ static void UpdateNMIStatus()
 }
 
 /*--------------------------------------------------------------------------*/
-/* For appropriate commands checks the select bits in the command code and  */
-/* selects the appropriate drive.                                           */
-static void DoSelects(void) {
-  Selects[0]=(ThisCommand & 0x40)!=0;
-  Selects[1]=(ThisCommand & 0x80)!=0;
-  Internal_DriveControlOutputPort&=0x3f;
-  if (Selects[0]) Internal_DriveControlOutputPort|=0x40;
-  if (Selects[1]) Internal_DriveControlOutputPort|=0x80;
+
+// For appropriate commands checks the select bits in the command code and
+// selects the appropriate drive.
+
+static void DoSelects()
+{
+	Selects[0] = (ThisCommand & 0x40) != 0;
+	Selects[1] = (ThisCommand & 0x80) != 0;
+
+	FDCState.DriveControlOutputPort &= 0x3f;
+
+	if (Selects[0]) FDCState.DriveControlOutputPort |= 0x40;
+	if (Selects[1]) FDCState.DriveControlOutputPort |= 0x80;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -462,8 +472,8 @@ static void DoVarLength_WriteDataCommand(void) {
     return;
   }
 
-  Internal_CurrentTrack[Drive]=Params[0];
-  CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+  FDCState.CurrentTrack[Drive] = Params[0];
+  CommandStatus.CurrentTrackPtr = GetTrackPtr(Params[0]);
 
   if (CommandStatus.CurrentTrackPtr == nullptr)
   {
@@ -803,10 +813,11 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
     FSDPhysicalTrack = Params[0];
   }
 
-  Internal_CurrentTrack[Drive] = Params[0];
+  FDCState.CurrentTrack[Drive] = Params[0];
 
   // FSD - if internal track =0, seek track 0 too
-  if (Internal_CurrentTrack[Drive] == 0) {
+  if (FDCState.CurrentTrack[Drive] == 0)
+  {
     FSDPhysicalTrack = 0;
   }
 
@@ -1062,7 +1073,7 @@ static void DoVarLength_VerifyDataAndDeldCommand(void) {
     return;
   }
 
-  Internal_CurrentTrack[Drive] = Params[0];
+  FDCState.CurrentTrack[Drive] = Params[0];
   FSDPhysicalTrack = Params[0];
   FSDLogicalTrack = Params[0];
   CommandStatus.CurrentTrackPtr = GetTrackPtr(FSDLogicalTrack);
@@ -1120,8 +1131,9 @@ static void DoFormatCommand(void) {
     return;
   }
 
-  Internal_CurrentTrack[Drive]=Params[0];
+  FDCState.CurrentTrack[Drive] = Params[0];
   CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+
   if (CommandStatus.CurrentTrackPtr == nullptr)
   {
     DoErr(RESULT_REG_DRIVE_NOT_READY);
@@ -1234,7 +1246,7 @@ static void DoSeekCommand(void) {
   }
 
   DRDSC = 0;
-  Internal_CurrentTrack[Drive] = Params[0];
+  FDCState.CurrentTrack[Drive] = Params[0];
   FSDPhysicalTrack = Params[0]; // FSD - where to start seeking data store
   UsingSpecial = false;
   PositionInTrack = 0;
@@ -1250,12 +1262,12 @@ static void DoReadDriveStatusCommand(void) {
   bool WriteProt = false;
 
   if (ThisCommand & 0x40) {
-    Track0=(Internal_CurrentTrack[0]==0);
+    Track0 = FDCState.CurrentTrack[0] == 0;
     WriteProt=(!Writeable[0]);
   }
 
   if (ThisCommand & 0x80) {
-    Track0=(Internal_CurrentTrack[1]==0);
+    Track0 = FDCState.CurrentTrack[1] == 0;
     WriteProt=(!Writeable[1]);
   }
 
@@ -1282,15 +1294,15 @@ static void DoSpecifyCommand(void) {
       break;
 
     case 0x10: // Load bad tracks, surface 0
-      Internal_BadTracks[0][0] = Params[1];
-      Internal_BadTracks[0][1] = Params[2];
-      Internal_CurrentTrack[0] = Params[3];
+      FDCState.BadTracks[0][0] = Params[1];
+      FDCState.BadTracks[0][1] = Params[2];
+      FDCState.CurrentTrack[0] = Params[3];
       break;
 
     case 0x18: // Load bad tracks, surface 1
-      Internal_BadTracks[1][0] = Params[1];
-      Internal_BadTracks[1][1] = Params[2];
-      Internal_CurrentTrack[1] = Params[3];
+      FDCState.BadTracks[1][0] = Params[1];
+      FDCState.BadTracks[1][1] = Params[2];
+      FDCState.CurrentTrack[1] = Params[3];
       break;
   }
 }
@@ -1301,21 +1313,21 @@ static void DoWriteSpecialCommand(void) {
 
   switch (Params[0]) {
     case SPECIAL_REG_SCAN_SECTOR_NUMBER:
-      Internal_Scan_SectorNum = Params[1];
+      FDCState.ScanSectorNum = Params[1];
       break;
 
     case SPECIAL_REG_SCAN_COUNT_MSB:
-      Internal_Scan_Count &= 0xff;
-      Internal_Scan_Count |= Params[1] << 8;
+      FDCState.ScanCount &= 0xff;
+      FDCState.ScanCount |= Params[1] << 8;
       break;
 
     case SPECIAL_REG_SCAN_COUNT_LSB:
-      Internal_Scan_Count &= 0xff00;
-      Internal_Scan_Count |= Params[1];
+      FDCState.ScanCount &= 0xff00;
+      FDCState.ScanCount |= Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_0_CURRENT_TRACK:
-      Internal_CurrentTrack[0] = Params[1];
+      FDCState.CurrentTrack[0] = Params[1];
       FSDLogicalTrack = Params[1];
       // FSD - using special register, so different track from seek
       UsingSpecial = Params[1] != FSDPhysicalTrack;
@@ -1323,37 +1335,37 @@ static void DoWriteSpecialCommand(void) {
       break;
 
     case SPECIAL_REG_SURFACE_1_CURRENT_TRACK:
-      Internal_CurrentTrack[1] = Params[1];
+      FDCState.CurrentTrack[1] = Params[1];
       break;
 
     case SPECIAL_REG_MODE_REGISTER:
-      Internal_ModeReg = Params[1];
+      FDCState.ModeReg = Params[1];
       break;
 
     case SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT:
-      Internal_DriveControlOutputPort = Params[1];
+      FDCState.DriveControlOutputPort = Params[1];
       Selects[0] = (Params[1] & 0x40) != 0;
       Selects[1] = (Params[1] & 0x80) != 0;
       break;
 
     case SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT:
-      Internal_DriveControlInputPort = Params[1];
+      FDCState.DriveControlInputPort = Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_0_BAD_TRACK_1:
-      Internal_BadTracks[0][0] = Params[1];
+      FDCState.BadTracks[0][0] = Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_0_BAD_TRACK_2:
-      Internal_BadTracks[0][1] = Params[1];
+      FDCState.BadTracks[0][1] = Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_1_BAD_TRACK_1:
-      Internal_BadTracks[1][0] = Params[1];
+      FDCState.BadTracks[1][0] = Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_1_BAD_TRACK_2:
-      Internal_BadTracks[1][1] = Params[1];
+      FDCState.BadTracks[1][1] = Params[1];
       break;
 
     default:
@@ -1370,51 +1382,51 @@ static void DoReadSpecialCommand(void) {
 
   switch (Params[0]) {
     case SPECIAL_REG_SCAN_SECTOR_NUMBER:
-      ResultReg = Internal_Scan_SectorNum;
+      ResultReg = FDCState.ScanSectorNum;
       break;
 
     case SPECIAL_REG_SCAN_COUNT_MSB:
-      ResultReg = (Internal_Scan_Count >> 8) & 0xff;
+      ResultReg = (FDCState.ScanCount >> 8) & 0xff;
       break;
 
     case SPECIAL_REG_SCAN_COUNT_LSB:
-      ResultReg = Internal_Scan_Count & 0xff;
+      ResultReg = FDCState.ScanCount & 0xff;
       break;
 
     case SPECIAL_REG_SURFACE_0_CURRENT_TRACK:
-      ResultReg = Internal_CurrentTrack[0];
+      ResultReg = FDCState.CurrentTrack[0];
       break;
 
     case SPECIAL_REG_SURFACE_1_CURRENT_TRACK:
-      ResultReg = Internal_CurrentTrack[1];
+      ResultReg = FDCState.CurrentTrack[1];
       break;
 
     case SPECIAL_REG_MODE_REGISTER:
-      ResultReg = Internal_ModeReg;
+      ResultReg = FDCState.ModeReg;
       break;
 
     case SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT:
-      ResultReg = Internal_DriveControlOutputPort;
+      ResultReg = FDCState.DriveControlOutputPort;
       break;
 
     case SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT:
-      ResultReg = Internal_DriveControlInputPort;
+      ResultReg = FDCState.DriveControlInputPort;
       break;
 
     case SPECIAL_REG_SURFACE_0_BAD_TRACK_1:
-      ResultReg = Internal_BadTracks[0][0];
+      ResultReg = FDCState.BadTracks[0][0];
       break;
 
     case SPECIAL_REG_SURFACE_0_BAD_TRACK_2:
-      ResultReg = Internal_BadTracks[0][1];
+      ResultReg = FDCState.BadTracks[0][1];
       break;
 
     case SPECIAL_REG_SURFACE_1_BAD_TRACK_1:
-      ResultReg = Internal_BadTracks[1][0];
+      ResultReg = FDCState.BadTracks[1][0];
       break;
 
     case SPECIAL_REG_SURFACE_1_BAD_TRACK_2:
-      ResultReg = Internal_BadTracks[1][1];
+      ResultReg = FDCState.BadTracks[1][1];
       break;
 
     default:
@@ -2143,14 +2155,18 @@ void Disc8271Reset() {
 
   UpdateNMIStatus();
 
-  Internal_Scan_SectorNum=0;
-  Internal_Scan_Count=0; /* Read as two bytes */
-  Internal_ModeReg=0;
-  Internal_CurrentTrack[0]=Internal_CurrentTrack[1]=0; /* 0/1 for surface number */
+  FDCState.ScanSectorNum = 0;
+  FDCState.ScanCount = 0; // Read as two bytes
+  FDCState.ModeReg = 0;
+  FDCState.CurrentTrack[0] = 0; // 0/1 for surface number
+  FDCState.CurrentTrack[1] = 0;
   UsingSpecial = false; // FSD - Using special register
-  Internal_DriveControlOutputPort=0;
-  Internal_DriveControlInputPort=0;
-  Internal_BadTracks[0][0]=Internal_BadTracks[0][1]=Internal_BadTracks[1][0]=Internal_BadTracks[1][1]=0xff; /* 1st subscript is surface 0/1 and second subscript is badtrack 0/1 */
+  FDCState.DriveControlOutputPort = 0;
+  FDCState.DriveControlInputPort = 0;
+  FDCState.BadTracks[0][0] = 0xff; // 1st subscript is surface 0/1 and second subscript is badtrack 0/1
+  FDCState.BadTracks[0][1] = 0xff;
+  FDCState.BadTracks[1][0] = 0xff;
+  FDCState.BadTracks[1][1] = 0xff; 
 
   // Default values set by Acorn DFS:
   StepRate = 12;
@@ -2209,17 +2225,17 @@ void Save8271UEF(FILE *SUEF)
 	fputc(ResultReg,SUEF);
 	fputc(StatusReg,SUEF);
 	fputc(DataReg,SUEF);
-	fputc(Internal_Scan_SectorNum,SUEF);
-	fput32(Internal_Scan_Count,SUEF);
-	fputc(Internal_ModeReg,SUEF);
-	fputc(Internal_CurrentTrack[0],SUEF);
-	fputc(Internal_CurrentTrack[1],SUEF);
-	fputc(Internal_DriveControlOutputPort,SUEF);
-	fputc(Internal_DriveControlInputPort,SUEF);
-	fputc(Internal_BadTracks[0][0],SUEF);
-	fputc(Internal_BadTracks[0][1],SUEF);
-	fputc(Internal_BadTracks[1][0],SUEF);
-	fputc(Internal_BadTracks[1][1],SUEF);
+	fputc(FDCState.ScanSectorNum, SUEF);
+	fput32(FDCState.ScanCount, SUEF);
+	fputc(FDCState.ModeReg, SUEF);
+	fputc(FDCState.CurrentTrack[0], SUEF);
+	fputc(FDCState.CurrentTrack[1], SUEF);
+	fputc(FDCState.DriveControlOutputPort, SUEF);
+	fputc(FDCState.DriveControlInputPort, SUEF);
+	fputc(FDCState.BadTracks[0][0], SUEF);
+	fputc(FDCState.BadTracks[0][1], SUEF);
+	fputc(FDCState.BadTracks[1][0], SUEF);
+	fputc(FDCState.BadTracks[1][1], SUEF);
 	fput32(ThisCommand,SUEF);
 	fput32(NParamsInThisCommand,SUEF);
 	fput32(PresentParam,SUEF);
@@ -2293,17 +2309,17 @@ void Load8271UEF(FILE *SUEF)
 		ResultReg = fget8(SUEF);
 		StatusReg = fget8(SUEF);
 		DataReg = fget8(SUEF);
-		Internal_Scan_SectorNum = fget8(SUEF);
-		Internal_Scan_Count=fget32(SUEF);
-		Internal_ModeReg = fget8(SUEF);
-		Internal_CurrentTrack[0] = fget8(SUEF);
-		Internal_CurrentTrack[1] = fget8(SUEF);
-		Internal_DriveControlOutputPort = fget8(SUEF);
-		Internal_DriveControlInputPort = fget8(SUEF);
-		Internal_BadTracks[0][0] = fget8(SUEF);
-		Internal_BadTracks[0][1] = fget8(SUEF);
-		Internal_BadTracks[1][0] = fget8(SUEF);
-		Internal_BadTracks[1][1] = fget8(SUEF);
+		FDCState.ScanSectorNum = fget8(SUEF);
+		FDCState.ScanCount = fget32(SUEF);
+		FDCState.ModeReg = fget8(SUEF);
+		FDCState.CurrentTrack[0] = fget8(SUEF);
+		FDCState.CurrentTrack[1] = fget8(SUEF);
+		FDCState.DriveControlOutputPort = fget8(SUEF);
+		FDCState.DriveControlInputPort = fget8(SUEF);
+		FDCState.BadTracks[0][0] = fget8(SUEF);
+		FDCState.BadTracks[0][1] = fget8(SUEF);
+		FDCState.BadTracks[1][0] = fget8(SUEF);
+		FDCState.BadTracks[1][1] = fget8(SUEF);
 		ThisCommand=fget32(SUEF);
 		NParamsInThisCommand=fget32(SUEF);
 		PresentParam=fget32(SUEF);
@@ -2345,17 +2361,17 @@ void disc8271_dumpstate()
 	WriteLog("  ResultReg=%02X\n", ResultReg);
 	WriteLog("  StatusReg=%02X\n", StatusReg);
 	WriteLog("  DataReg=%02X\n", DataReg);
-	WriteLog("  Internal_Scan_SectorNum=%d\n", Internal_Scan_SectorNum);
-	WriteLog("  Internal_Scan_Count=%u\n", Internal_Scan_Count);
-	WriteLog("  Internal_ModeReg=%02X\n", Internal_ModeReg);
-	WriteLog("  Internal_CurrentTrack=%d, %d\n", Internal_CurrentTrack[0],
-	                                             Internal_CurrentTrack[1]);
-	WriteLog("  Internal_DriveControlOutputPort=%02X\n", Internal_DriveControlOutputPort);
-	WriteLog("  Internal_DriveControlInputPort=%02X\n", Internal_DriveControlInputPort);
-	WriteLog("  Internal_BadTracks=(%d, %d) (%d, %d)\n", Internal_BadTracks[0][0],
-	                                                     Internal_BadTracks[0][1],
-	                                                     Internal_BadTracks[1][0],
-	                                                     Internal_BadTracks[1][1]);
+	WriteLog("  FDCState.ScanSectorNum=%d\n", FDCState.ScanSectorNum);
+	WriteLog("  FDCState.ScanCount=%u\n", FDCState.ScanCount);
+	WriteLog("  FDCState.ModeReg=%02X\n", FDCState.ModeReg);
+	WriteLog("  FDCState.CurrentTrack=%d, %d\n", FDCState.CurrentTrack[0],
+	                                             FDCState.CurrentTrack[1]);
+	WriteLog("  FDCState.DriveControlOutputPort=%02X\n", FDCState.DriveControlOutputPort);
+	WriteLog("  FDCState.DriveControlInputPort=%02X\n", FDCState.DriveControlInputPort);
+	WriteLog("  FDCState.BadTracks=(%d, %d) (%d, %d)\n", FDCState.BadTracks[0][0],
+	                                                     FDCState.BadTracks[0][1],
+	                                                     FDCState.BadTracks[1][0],
+	                                                     FDCState.BadTracks[1][1]);
 	WriteLog("  Disc8271Trigger=%d\n", Disc8271Trigger);
 	WriteLog("  ThisCommand=%d\n", ThisCommand);
 	WriteLog("  NParamsInThisCommand=%d\n", NParamsInThisCommand);
