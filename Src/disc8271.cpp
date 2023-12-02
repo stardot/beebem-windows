@@ -2045,59 +2045,56 @@ bool IsDiscWritable(int DriveNum) {
 
 /*--------------------------------------------------------------------------*/
 void DiscWriteEnable(int DriveNum, bool WriteEnable) {
-  int HeadNum;
-  SectorType *SecPtr;
-  unsigned char *Data;
-  int File;
-  int Catalogue, NumCatalogues;
-  int NumSecs;
-  int StartSec, LastSec;
   bool DiscOK = true;
 
   Writeable[DriveNum] = WriteEnable;
 
-  /* If disc is being made writable then check that the disc catalogue will
-     not get corrupted if new files are added.  The files in the disc catalogue
-     must be in descending sector order otherwise the DFS ROMs write over
-     files at the start of the disc.  The sector count in the catalogue must
-     also be correct. */
+  // If disc is being made writable then check that the disc catalogue will
+  // not get corrupted if new files are added.  The files in the disc catalogue
+  // must be in descending sector order otherwise the DFS ROMs write over
+  // files at the start of the disc. The sector count in the catalogue must
+  // also be correct.
+
   if (WriteEnable) {
-    for(HeadNum=0; DiscOK && HeadNum<NumHeads[DriveNum]; HeadNum++) {
-      SecPtr=DiscStore[DriveNum][HeadNum][0].Sectors;
-      if (SecPtr==NULL)
-        return; /* No disc image! */
+    for (int HeadNum = 0; DiscOK && HeadNum < NumHeads[DriveNum]; HeadNum++) {
+      SectorType *SecPtr = DiscStore[DriveNum][HeadNum][0].Sectors;
+      if (SecPtr == nullptr)
+        return; // No disc image!
 
-      Data=SecPtr[1].Data;
+      unsigned char *Data = SecPtr[1].Data;
 
-      /* Check for a Watford DFS 62 file catalogue */
-      NumCatalogues=2;
-      Data=SecPtr[2].Data;
-      for (int i=0; i<8; ++i)
-        if (Data[i]!=(unsigned char)0xaa) {
-          NumCatalogues=1;
+      // Check for a Watford DFS 62 file catalogue
+      int NumCatalogues = 2;
+      Data = SecPtr[2].Data;
+      for (int i = 0; i < 8; ++i)
+        if (Data[i] != (unsigned char)0xaa) {
+          NumCatalogues = 1;
           break;
         }
 
-      for (Catalogue=0; DiscOK && Catalogue<NumCatalogues; ++Catalogue) {
-        Data=SecPtr[Catalogue*2+1].Data;
+      for (int Catalogue = 0; DiscOK && Catalogue < NumCatalogues; ++Catalogue) {
+        Data = SecPtr[Catalogue * 2 + 1].Data;
 
-        /* First check the number of sectors */
-        NumSecs=((Data[6]&3)<<8)+Data[7];
-        if (NumSecs != 0x320 && NumSecs != 0x190) {
+        // First check the number of sectors
+        int NumSecs = ((Data[6] & 3) << 8) + Data[7];
+        if (NumSecs != 0x320 && NumSecs != 0x190)
+        {
           DiscOK = false;
-        } else {
-
-          /* Now check the start sectors of each file */
-          LastSec=0x320;
-          for (File=0; DiscOK && File<Data[5]/8; ++File) {
-            StartSec=((Data[File*8+14]&3)<<8)+Data[File*8+15];
+        }
+        else
+        {
+          // Now check the start sectors of each file
+          int LastSec = 0x320;
+          for (int File = 0; DiscOK && File < Data[5] / 8; ++File)
+          {
+            int StartSec = ((Data[File * 8 + 14] & 3) << 8) + Data[File * 8 + 15];
             if (LastSec < StartSec)
               DiscOK = false;
-            LastSec=StartSec;
+            LastSec = StartSec;
           }
-        } /* if num sectors OK */
-      } /* for catalogue */
-    } /* for disc head */
+        }
+      }
+    }
 
     if (!DiscOK)
     {
