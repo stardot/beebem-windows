@@ -2679,33 +2679,6 @@ void Load8271UEF(FILE *SUEF)
 
 /*--------------------------------------------------------------------------*/
 
-void disc8271_dumpstate()
-{
-	WriteLog("8271:\n");
-	WriteLog("  FDCState.ResultReg=%02X\n", FDCState.ResultReg);
-	WriteLog("  FDCState.StatusReg=%02X\n", FDCState.StatusReg);
-	WriteLog("  FDCState.DataReg=%02X\n", FDCState.DataReg);
-	WriteLog("  FDCState.ScanSectorNum=%d\n", FDCState.ScanSectorNum);
-	WriteLog("  FDCState.ScanCount=%u\n", FDCState.ScanCount);
-	WriteLog("  FDCState.ModeReg=%02X\n", FDCState.ModeReg);
-	WriteLog("  FDCState.CurrentTrack=%d, %d\n", FDCState.CurrentTrack[0],
-	                                             FDCState.CurrentTrack[1]);
-	WriteLog("  FDCState.DriveControlOutputPort=%02X\n", FDCState.DriveControlOutputPort);
-	WriteLog("  FDCState.DriveControlInputPort=%02X\n", FDCState.DriveControlInputPort);
-	WriteLog("  FDCState.BadTracks=(%d, %d) (%d, %d)\n", FDCState.BadTracks[0][0],
-	                                                     FDCState.BadTracks[0][1],
-	                                                     FDCState.BadTracks[1][0],
-	                                                     FDCState.BadTracks[1][1]);
-	WriteLog("  Disc8271Trigger=%d\n", Disc8271Trigger);
-	WriteLog("  FDCState.Command=%d\n", FDCState.Command);
-	WriteLog("  FDCState.CommandParamCount=%d\n", FDCState.CommandParamCount);
-	WriteLog("  FDCState.CurrentParam=%d\n", FDCState.CurrentParam);
-	WriteLog("  FDCState.Select=%d, %d\n", FDCState.Select[0], FDCState.Select[1]);
-	WriteLog("  CommandStatus.NextInterruptIsErr=%02X\n", CommandStatus.NextInterruptIsErr);
-}
-
-/*--------------------------------------------------------------------------*/
-
 void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads)
 {
 	strcpy(pFileName, DiscStatus[DriveNum].FileName);

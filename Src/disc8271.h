@@ -48,6 +48,4 @@ void Disc8271Reset();
 void Save8271UEF(FILE *SUEF);
 void Load8271UEF(FILE *SUEF);
 
-void disc8271_dumpstate();
-
 #endif
