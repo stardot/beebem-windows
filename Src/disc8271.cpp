@@ -111,9 +111,6 @@ static unsigned char NextInterruptIsErr; // non-zero causes error and drops this
 constexpr int TRACKS_PER_DRIVE = 80;
 constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 
-// Note Head select is done from bit 5 of the drive output register
-#define CURRENTHEAD ((FDCState.DriveControlOutputPort >> 5) & 1)
-
 // Note: reads/writes one byte every 80us
 constexpr int TIME_BETWEEN_BYTES = 160;
 
@@ -176,6 +173,10 @@ struct FDCStateType {
 };
 
 static FDCStateType FDCState;
+
+// Note Head select is done from bit 5 of the drive output register
+#define CURRENT_HEAD ((FDCState.DriveControlOutputPort >> 5) & 1)
+
 
 unsigned char FSDLogicalTrack;
 unsigned char FSDPhysicalTrack;
@@ -310,7 +311,7 @@ static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID) {
   PositionInTrack = 0;
   FSDPhysicalTrack = PhysicalTrackID;
 
-  return &DiscStatus[UnitID].Tracks[CURRENTHEAD][PhysicalTrackID];
+  return &DiscStatus[UnitID].Tracks[CURRENT_HEAD][PhysicalTrackID];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -347,7 +348,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
 
   // Read two tracks extra
   for (unsigned char Track = FSDPhysicalTrack; Track < FSDPhysicalTrack +  2; Track++) {
-    SectorType *SecPtr = DiscStatus[Drive].Tracks[CURRENTHEAD][Track].Sectors;
+    SectorType *SecPtr = DiscStatus[Drive].Tracks[CURRENT_HEAD][Track].Sectors;
 
     // Fixes Krakout!
     if (SecPtr == nullptr)
@@ -357,7 +358,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
 
     if (LogicalTrackID == SecPtr[0].IDField.LogicalTrack) {
       FSDPhysicalTrack = Track;
-      return &DiscStatus[Drive].Tracks[CURRENTHEAD][FSDPhysicalTrack];
+      return &DiscStatus[Drive].Tracks[CURRENT_HEAD][FSDPhysicalTrack];
      }
   }
 
@@ -538,7 +539,7 @@ static void WriteInterrupt(void) {
       }
     } else {
       /* Last sector done, write the track back to disc */
-      if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr)) {
+      if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
         FDCState.StatusReg = STATUS_REG_RESULT_FULL;
         UpdateNMIStatus();
         LastByte = true;
@@ -1207,7 +1208,7 @@ static void FormatInterrupt(void) {
       }
     } else {
       /* Last sector done, write the track back to disc */
-      if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENTHEAD, CommandStatus.TrackAddr)) {
+      if (SaveTrackImage(Selects[0] ? 0 : 1, CURRENT_HEAD, CommandStatus.TrackAddr)) {
         FDCState.StatusReg = STATUS_REG_RESULT_FULL;
         UpdateNMIStatus();
         LastByte = true;
