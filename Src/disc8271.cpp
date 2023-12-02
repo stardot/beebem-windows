@@ -96,7 +96,6 @@ static unsigned char Params[16]; /* Wildly more than we need */
 // These bools indicate which drives the last command selected.
 // They also act as "drive ready" bits which are reset when the motor stops.
 static bool Selects[2]; /* Drive selects */
-static bool Writeable[2]={false,false}; /* True if the drives are writeable */
 
 static bool FirstWriteInt; // Indicates the start of a write operation
 
@@ -146,6 +145,7 @@ struct TrackType {
 struct DiscStatusType {
 	DiscType Type;
 	char FileName[256]; // File name of loaded disc image
+	bool Writeable; // True if the disc is writeable
 	TrackType Tracks[2][TRACKS_PER_DRIVE]; // All data on the disc - first param head, then physical track ID
 };
 
@@ -468,7 +468,7 @@ static void DoVarLength_WriteDataCommand(void) {
     return;
   }
 
-  if (!Writeable[Drive]) {
+  if (!DiscStatus[Drive].Writeable) {
     DoErr(RESULT_REG_WRITE_PROTECT);
     return;
   }
@@ -1131,7 +1131,7 @@ static void DoFormatCommand(void) {
     return;
   }
 
-  if (!Writeable[Drive]) {
+  if (!DiscStatus[Drive].Writeable) {
     DoErr(RESULT_REG_WRITE_PROTECT);
     return;
   }
@@ -1270,12 +1270,12 @@ static void DoReadDriveStatusCommand(void) {
 
   if (ThisCommand & 0x40) {
     Track0 = FDCState.CurrentTrack[0] == 0;
-    WriteProt=(!Writeable[0]);
+    WriteProt = !DiscStatus[0].Writeable;
   }
 
   if (ThisCommand & 0x80) {
     Track0 = FDCState.CurrentTrack[1] == 0;
-    WriteProt=(!Writeable[1]);
+    WriteProt = !DiscStatus[1].Writeable;
   }
 
   DRDSC++;
@@ -2087,15 +2087,17 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum) {
 }
 
 /*--------------------------------------------------------------------------*/
-bool IsDiscWritable(int DriveNum) {
-  return Writeable[DriveNum];
+
+bool IsDiscWritable(int DriveNum)
+{
+	return DiscStatus[DriveNum].Writeable;
 }
 
 /*--------------------------------------------------------------------------*/
 void DiscWriteEnable(int DriveNum, bool WriteEnable) {
   bool DiscOK = true;
 
-  Writeable[DriveNum] = WriteEnable;
+  DiscStatus[DriveNum].Writeable = WriteEnable;
 
   // If disc is being made writable then check that the disc catalogue will
   // not get corrupted if new files are added.  The files in the disc catalogue
@@ -2256,8 +2258,8 @@ void Save8271UEF(FILE *SUEF)
 	fput32(NumHeads[1],SUEF);
 	fput32(Selects[0]?1:0,SUEF);
 	fput32(Selects[1]?1:0,SUEF);
-	fput32(Writeable[0]?1:0,SUEF);
-	fput32(Writeable[1]?1:0,SUEF);
+	fput32(DiscStatus[0].Writeable ? 1 : 0,SUEF);
+	fput32(DiscStatus[1].Writeable ? 1 : 0,SUEF);
 	fput32(FirstWriteInt ? 1 : 0,SUEF);
 	fput32(NextInterruptIsErr,SUEF);
 	fput32(CommandStatus.TrackAddr,SUEF);
@@ -2340,8 +2342,8 @@ void Load8271UEF(FILE *SUEF)
 		NumHeads[1]=fget32(SUEF);
 		Selects[0]=fget32(SUEF) != 0;
 		Selects[1]=fget32(SUEF) != 0;
-		Writeable[0]=fget32(SUEF) != 0;
-		Writeable[1]=fget32(SUEF) != 0;
+		DiscStatus[0].Writeable = fget32(SUEF) != 0;
+		DiscStatus[1].Writeable = fget32(SUEF) != 0;
 		FirstWriteInt=fget32(SUEF) != 0;
 		NextInterruptIsErr=fget32(SUEF);
 		CommandStatus.TrackAddr=fget32(SUEF);
