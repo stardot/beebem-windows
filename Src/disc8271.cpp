@@ -863,7 +863,7 @@ static void Read128Interrupt(void) {
   // Same as above, but for deleted data
   if ((CommandStatus.CurrentSectorPtr->Error == 0x20) &&
       (CommandStatus.CurrentSectorPtr->RealSectorSize != CommandStatus.SectorLength)) {
-    ResultReg = RESULT_REG_DELETED_DATA_FOUND | RESULT_REG_DATA_CRC_ERROR;
+    ResultReg = RESULT_REG_DELETED_DATA_CRC_ERROR;
   }
 
   // If track has deliberate error, but the id field sector size has been read
