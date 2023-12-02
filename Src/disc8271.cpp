@@ -1665,7 +1665,6 @@ static bool DriveHeadMotorUpdate(void) {
 	// This is mainly for the sound effects, but it also marks the drives as
 	// not ready when the motor stops.
 	int Drive=0;
-	int Tracks=0;
 
 	if (DriveHeadUnloadPending) {
 		// Mark drives as not ready
@@ -1706,7 +1705,7 @@ static bool DriveHeadMotorUpdate(void) {
 	StopSoundSample(SAMPLE_HEAD_SEEK);
 
 	if (DriveHeadPosition[Drive] != FSDPhysicalTrack) { // Internal_CurrentTrack[Drive]) {
-		Tracks = abs(DriveHeadPosition[Drive] - FSDPhysicalTrack); // Internal_CurrentTrack[Drive]);
+		int Tracks = abs(DriveHeadPosition[Drive] - FSDPhysicalTrack); // Internal_CurrentTrack[Drive]);
 
 		if (Tracks > 1) {
 			PlaySoundSample(SAMPLE_HEAD_SEEK, true);
@@ -1724,6 +1723,7 @@ static bool DriveHeadMotorUpdate(void) {
 
 		return true;
 	}
+
 	return false;
 }
 
