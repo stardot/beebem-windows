@@ -340,8 +340,9 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
   //   return nullptr;
   // }
 
-  for (unsigned char TwoTracksExtra = FSDPhysicalTrack; TwoTracksExtra < FSDPhysicalTrack +  2; TwoTracksExtra++) {
-    SectorType *SecPtr = DiscStore[Drive][CURRENTHEAD][TwoTracksExtra].Sectors;
+  // Read two tracks extra
+  for (unsigned char Track = FSDPhysicalTrack; Track < FSDPhysicalTrack +  2; Track++) {
+    SectorType *SecPtr = DiscStore[Drive][CURRENTHEAD][Track].Sectors;
 
     // fixes Krakout!
     if (SecPtr == NULL) {
@@ -349,7 +350,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
     }
 
     if (LogicalTrackID == SecPtr[0].IDField.LogicalTrack) {
-      FSDPhysicalTrack = TwoTracksExtra;
+      FSDPhysicalTrack = Track;
       return &DiscStore[Drive][CURRENTHEAD][FSDPhysicalTrack];
      }
   }
