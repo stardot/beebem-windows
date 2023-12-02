@@ -1812,26 +1812,26 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
 
   for (int Head = HeadNum; Head < Heads; Head++)
   {
-    for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++)
+    for (int Track = 0; Track < Tracks; Track++)
     {
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].LogicalSectors = 10;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].NSectors = 10;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap3Size = 0;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap5Size = 0;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].TrackIsReadable = true;
-      SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
+      DiscStatus[DriveNum].Tracks[Head][Track].LogicalSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][Track].NSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][Track].Gap1Size = 0; // Don't bother for the mo
+      DiscStatus[DriveNum].Tracks[Head][Track].Gap3Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][Track].Gap5Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][Track].TrackIsReadable = true;
+      SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][Track].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
 
-      for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
-        SecPtr[CurrentSector].IDField.LogicalTrack = CurrentTrack; // was CylinderNum
-        SecPtr[CurrentSector].IDField.LogicalSector = CurrentSector; // was RecordNum
-        SecPtr[CurrentSector].IDField.HeadNum = HeadNum;
-        SecPtr[CurrentSector].IDField.SectorLength = 256; // was PhysRecLength
-        SecPtr[CurrentSector].RecordNum = CurrentSector;
-        SecPtr[CurrentSector].RealSectorSize = 256;
-        SecPtr[CurrentSector].Error = RESULT_REG_SUCCESS;
-        SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
-        fread(SecPtr[CurrentSector].Data, 1, 256, infile);
+      for (int Sector = 0; Sector < 10; Sector++) {
+        SecPtr[Sector].IDField.LogicalTrack = Track; // was CylinderNum
+        SecPtr[Sector].IDField.LogicalSector = Sector; // was RecordNum
+        SecPtr[Sector].IDField.HeadNum = HeadNum;
+        SecPtr[Sector].IDField.SectorLength = 256; // was PhysRecLength
+        SecPtr[Sector].RecordNum = Sector;
+        SecPtr[Sector].RealSectorSize = 256;
+        SecPtr[Sector].Error = RESULT_REG_SUCCESS;
+        SecPtr[Sector].Data = (unsigned char *)calloc(1,256);
+        fread(SecPtr[Sector].Data, 1, 256, infile);
       }
     }
   }
@@ -1860,28 +1860,28 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
 
   FreeDiscImage(DriveNum);
 
-  for (int CurrentTrack = 0; CurrentTrack < Tracks; CurrentTrack++)
+  for (int Track = 0; Track < Tracks; Track++)
   {
     for (int Head = 0; Head < 2; Head++)
     {
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].LogicalSectors = 10;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].NSectors = 10;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap1Size = 0; // Don't bother for the mo
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap3Size = 0;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Gap5Size = 0;
-      DiscStatus[DriveNum].Tracks[Head][CurrentTrack].TrackIsReadable = true;
-      SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
+      DiscStatus[DriveNum].Tracks[Head][Track].LogicalSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][Track].NSectors = 10;
+      DiscStatus[DriveNum].Tracks[Head][Track].Gap1Size = 0; // Don't bother for the mo
+      DiscStatus[DriveNum].Tracks[Head][Track].Gap3Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][Track].Gap5Size = 0;
+      DiscStatus[DriveNum].Tracks[Head][Track].TrackIsReadable = true;
+      SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][Track].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
 
-      for (int CurrentSector = 0; CurrentSector < 10; CurrentSector++) {
-        SecPtr[CurrentSector].IDField.LogicalTrack = CurrentTrack; // was CylinderNum
-        SecPtr[CurrentSector].IDField.LogicalSector = CurrentSector; // was RecordNum
-        SecPtr[CurrentSector].IDField.HeadNum = Head;
-        SecPtr[CurrentSector].IDField.SectorLength = 256; // was PhysRecLength
-        SecPtr[CurrentSector].RecordNum = CurrentSector;
-        SecPtr[CurrentSector].RealSectorSize = 256;
-        SecPtr[CurrentSector].Error = RESULT_REG_SUCCESS;
-        SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
-        fread(SecPtr[CurrentSector].Data, 1, 256, infile);
+      for (int Sector = 0; Sector < 10; Sector++) {
+        SecPtr[Sector].IDField.LogicalTrack = Track; // was CylinderNum
+        SecPtr[Sector].IDField.LogicalSector = Sector; // was RecordNum
+        SecPtr[Sector].IDField.HeadNum = Head;
+        SecPtr[Sector].IDField.SectorLength = 256; // was PhysRecLength
+        SecPtr[Sector].RecordNum = Sector;
+        SecPtr[Sector].RealSectorSize = 256;
+        SecPtr[Sector].Error = RESULT_REG_SUCCESS;
+        SecPtr[Sector].Data = (unsigned char *)calloc(1,256);
+        fread(SecPtr[Sector].Data, 1, 256, infile);
       }
     }
   }
