@@ -2228,48 +2228,49 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 		return;
 	}
 
-	for (int CurrentTrack = 0; CurrentTrack < DiscStatus[DriveNum].TotalTracks; CurrentTrack++)
+	for (int Track = 0; Track < DiscStatus[DriveNum].TotalTracks; Track++)
 	{
 		unsigned char fctrack = fgetc(infile); // Read current track details
 		unsigned char SectorsPerTrack = fgetc(infile); // Read number of sectors on track
-		DiscStatus[DriveNum].Tracks[Head][CurrentTrack].LogicalSectors = SectorsPerTrack;
+		DiscStatus[DriveNum].Tracks[Head][Track].LogicalSectors = SectorsPerTrack;
 
 		if (SectorsPerTrack > 0) // i.e., if the track is formatted
 		{
 			unsigned char TrackIsReadable = fgetc(infile); // Is track readable?
-			DiscStatus[DriveNum].Tracks[Head][CurrentTrack].NSectors = SectorsPerTrack; // Can be different than 10
+			DiscStatus[DriveNum].Tracks[Head][Track].NSectors = SectorsPerTrack; // Can be different than 10
 			SectorType *SecPtr = (SectorType*)calloc(SectorsPerTrack, sizeof(SectorType));
-			DiscStatus[DriveNum].Tracks[Head][CurrentTrack].Sectors = SecPtr;
-			DiscStatus[DriveNum].Tracks[Head][CurrentTrack].TrackIsReadable = TrackIsReadable != 0;
+			DiscStatus[DriveNum].Tracks[Head][Track].Sectors = SecPtr;
+			DiscStatus[DriveNum].Tracks[Head][Track].TrackIsReadable = TrackIsReadable != 0;
 
-			for (int CurrentSector = 0; CurrentSector < SectorsPerTrack; CurrentSector++)
+			for (int Sector = 0; Sector < SectorsPerTrack; Sector++)
 			{
-				SecPtr[CurrentSector].CylinderNum = CurrentTrack;
+				SecPtr[Sector].CylinderNum = Track;
 
 				unsigned char LogicalTrack = fgetc(infile); // Logical track ID
-				SecPtr[CurrentSector].IDField.LogicalTrack = LogicalTrack;
+				SecPtr[Sector].IDField.LogicalTrack = LogicalTrack;
 
 				unsigned char HeadNum = fgetc(infile); // Head number
-				SecPtr[CurrentSector].IDField.HeadNum = HeadNum;
+				SecPtr[Sector].IDField.HeadNum = HeadNum;
 
 				unsigned char LogicalSector = fgetc(infile); // Logical sector ID
-				SecPtr[CurrentSector].IDField.LogicalSector = LogicalSector;
-				SecPtr[CurrentSector].RecordNum = CurrentSector;
+				SecPtr[Sector].IDField.LogicalSector = LogicalSector;
+				SecPtr[Sector].RecordNum = Sector;
 
 				unsigned char FRecLength = fgetc(infile); // Reported length of sector
-				SecPtr[CurrentSector].IDField.SectorLength = FRecLength;
-				SecPtr[CurrentSector].IDSiz = GetFSDSectorSize(FRecLength);
+				SecPtr[Sector].IDField.SectorLength = FRecLength;
+				SecPtr[Sector].IDSiz = GetFSDSectorSize(FRecLength);
 
-				if (TrackIsReadable == 255) {
+				if (TrackIsReadable == 255)
+				{
 					unsigned char FPRecLength = fgetc(infile); // Real size of sector, can be misreported as copy protection
 					unsigned short FSectorSize = GetFSDSectorSize(FPRecLength);
 
-					SecPtr[CurrentSector].RealSectorSize = FSectorSize;
+					SecPtr[Sector].RealSectorSize = FSectorSize;
 
 					unsigned char FErr = fgetc(infile); // Error code when sector was read
-					SecPtr[CurrentSector].Error = FErr;
-					SecPtr[CurrentSector].Data = (unsigned char *)calloc(1, FSectorSize);
-					fread(SecPtr[CurrentSector].Data, 1, FSectorSize, infile);
+					SecPtr[Sector].Error = FErr;
+					SecPtr[Sector].Data = (unsigned char *)calloc(1, FSectorSize);
+					fread(SecPtr[Sector].Data, 1, FSectorSize, infile);
 				}
 			}
 		}
