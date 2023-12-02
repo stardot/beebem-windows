@@ -35,7 +35,6 @@ Boston, MA  02110-1301, USA.
 #include "sysvia.h"
 #include "tube.h"
 #include "Log.h"
-#include "DebugTrace.h"
 #include "DiscType.h"
 #include "Main.h"
 
@@ -1666,23 +1665,18 @@ void Disc8271Write(int Address, unsigned char Value) {
       break;
 
     case 2:
-      // DebugTrace("8271: Reset register write, value=0x%02X\n", Value);
-
       // The caller should write a 1 and then >11 cycles later a 0 - but I'm just going
       // to reset on both edges
       Disc8271Reset();
       break;
 
     case 4:
-      // DebugTrace("8271: Data register write, value=0x%02X\n", Value);
-
       FDCState.StatusReg &= ~(STATUS_REG_INTERRUPT_REQUEST | STATUS_REG_NON_DMA_MODE);
       UpdateNMIStatus();
       FDCState.DataReg = Value;
       break;
 
     default:
-      // DebugTrace("8271: Write to unknown register address=%04X, value=%02X\n", Address, Value);
       break;
   }
 
