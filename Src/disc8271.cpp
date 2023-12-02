@@ -88,12 +88,6 @@ static int DriveHeadPosition[2]={0};
 static bool DriveHeadLoaded=false;
 static bool DriveHeadUnloadPending=false;
 
-static int ThisCommand;
-static int NParamsInThisCommand;
-static int PresentParam; /* From 0 */
-static unsigned char Params[16]; /* Wildly more than we need */
-
-
 static bool FirstWriteInt; // Indicates the start of a write operation
 
 static unsigned char PositionInTrack; // FSD
@@ -154,6 +148,11 @@ struct FDCStateType {
 	unsigned char StatusReg;
 	unsigned char DataReg;
 
+	unsigned char Command;
+	int CommandParamCount;
+	int CurrentParam; // From 0
+	unsigned char Params[16]; // Wildly more than we need
+
 	// These bools indicate which drives the last command selected.
 	// They also act as "drive ready" bits which are reset when the motor stops.
 	bool Select[2]; // Drive selects
@@ -181,7 +180,6 @@ static FDCStateType FDCState;
 
 unsigned char FSDLogicalTrack;
 unsigned char FSDPhysicalTrack;
-
 
 static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
 static void DriveHeadScheduleUnload(void);
@@ -236,8 +234,8 @@ static void UpdateNMIStatus()
 
 static void DoSelects()
 {
-	FDCState.Select[0] = (ThisCommand & 0x40) != 0;
-	FDCState.Select[1] = (ThisCommand & 0x80) != 0;
+	FDCState.Select[0] = (FDCState.Command & 0x40) != 0;
+	FDCState.Select[1] = (FDCState.Command & 0x80) != 0;
 
 	FDCState.DriveControlOutputPort &= 0x3f;
 
@@ -469,8 +467,8 @@ static void DoVarLength_WriteDataCommand(void) {
     return;
   }
 
-  FDCState.CurrentTrack[Drive] = Params[0];
-  CommandStatus.CurrentTrackPtr = GetTrackPtr(Params[0]);
+  FDCState.CurrentTrack[Drive] = FDCState.Params[0];
+  CommandStatus.CurrentTrackPtr = GetTrackPtr(FDCState.Params[0]);
 
   if (CommandStatus.CurrentTrackPtr == nullptr)
   {
@@ -478,7 +476,7 @@ static void DoVarLength_WriteDataCommand(void) {
     return;
   }
 
-  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, FDCState.Params[1], false);
 
   if (CommandStatus.CurrentSectorPtr == nullptr)
   {
@@ -486,10 +484,10 @@ static void DoVarLength_WriteDataCommand(void) {
     return;
   }
 
-  CommandStatus.TrackAddr=Params[0];
-  CommandStatus.CurrentSector=Params[1];
-  CommandStatus.SectorsToGo=Params[2] & 31;
-  CommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
+  CommandStatus.TrackAddr     = FDCState.Params[0];
+  CommandStatus.CurrentSector = FDCState.Params[1];
+  CommandStatus.SectorsToGo   = FDCState.Params[2] & 31;
+  CommandStatus.SectorLength  = 1 << (7 + ((FDCState.Params[2] >> 5) & 7));
 
   if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength)) {
     CommandStatus.ByteWithinSector=0;
@@ -597,15 +595,15 @@ static void DoVarLength_ReadDataCommand(void) {
 
   // FSD - if special register is NOT being used to point to track
   if (!UsingSpecial) {
-    FSDPhysicalTrack = Params[0];
+    FSDPhysicalTrack = FDCState.Params[0];
   }
 
   // if reading a new track, then reset position
-  if (FSDLogicalTrack != Params[0]) {
+  if (FSDLogicalTrack != FDCState.Params[0]) {
     PositionInTrack = 0;
   }
 
-  FSDLogicalTrack = Params[0];
+  FSDLogicalTrack = FDCState.Params[0];
 
   if (DRDSC > 1) {
     FSDPhysicalTrack = 0; // FSDLogicalTrack
@@ -643,7 +641,7 @@ static void DoVarLength_ReadDataCommand(void) {
     return;
   }
 
-  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, FDCState.Params[1], false);
 
   if (CommandStatus.CurrentSectorPtr == nullptr)
   {
@@ -659,10 +657,10 @@ static void DoVarLength_ReadDataCommand(void) {
     return;
   }
 
-  CommandStatus.TrackAddr=Params[0];
-  CommandStatus.CurrentSector=Params[1];
-  CommandStatus.SectorsToGo=Params[2] & 31;
-  CommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
+  CommandStatus.TrackAddr     = FDCState.Params[0];
+  CommandStatus.CurrentSector = FDCState.Params[1];
+  CommandStatus.SectorsToGo   = FDCState.Params[2] & 31;
+  CommandStatus.SectorLength  = 1 << (7 + ((FDCState.Params[2] >> 5) & 7));
 
   // FSD - if trying to read more data than is stored, Disc Duplicator 3
   if (CommandStatus.SectorLength > CommandStatus.CurrentSectorPtr->RealSectorSize) {
@@ -808,10 +806,10 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
 
   // FSD - if special register is NOT being used to point to logical track
   if (!UsingSpecial) {
-    FSDPhysicalTrack = Params[0];
+    FSDPhysicalTrack = FDCState.Params[0];
   }
 
-  FDCState.CurrentTrack[Drive] = Params[0];
+  FDCState.CurrentTrack[Drive] = FDCState.Params[0];
 
   // FSD - if internal track =0, seek track 0 too
   if (FDCState.CurrentTrack[Drive] == 0)
@@ -819,7 +817,7 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
     FSDPhysicalTrack = 0;
   }
 
-  CommandStatus.CurrentTrackPtr = GetTrackPtr(Params[0]);
+  CommandStatus.CurrentTrackPtr = GetTrackPtr(FDCState.Params[0]);
 
   if (CommandStatus.CurrentTrackPtr == nullptr)
   {
@@ -833,7 +831,7 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
     return;
   }
 
-  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, FDCState.Params[1], false);
 
   if (CommandStatus.CurrentSectorPtr == nullptr)
   {
@@ -841,10 +839,10 @@ static void Do128ByteSR_ReadDataAndDeldCommand(void) {
     return;
   }
 
-  CommandStatus.TrackAddr = Params[0];
-  CommandStatus.CurrentSector = Params[1];
-  CommandStatus.SectorsToGo = 1;
-  CommandStatus.SectorLength = 0x80;
+  CommandStatus.TrackAddr     = FDCState.Params[0];
+  CommandStatus.CurrentSector = FDCState.Params[1];
+  CommandStatus.SectorsToGo   = 1;
+  CommandStatus.SectorLength  = 0x80;
 
   if (ValidateSector(CommandStatus.CurrentSectorPtr, CommandStatus.TrackAddr, CommandStatus.SectorLength)) {
     CommandStatus.ByteWithinSector = 0;
@@ -956,7 +954,7 @@ static void DoReadIDCommand(void) {
   }
 
   // Internal_CurrentTrack[Drive]=Params[0];
-  FSDPhysicalTrack = Params[0];
+  FSDPhysicalTrack = FDCState.Params[0];
   CommandStatus.CurrentTrackPtr = GetTrackPtrPhysical(FSDPhysicalTrack);
 
   if (CommandStatus.CurrentTrackPtr == nullptr)
@@ -974,9 +972,9 @@ static void DoReadIDCommand(void) {
     return;
   }
 
-  CommandStatus.TrackAddr=Params[0];
-  CommandStatus.CurrentSector=0;
-  CommandStatus.SectorsToGo=Params[2];
+  CommandStatus.TrackAddr     = FDCState.Params[0];
+  CommandStatus.CurrentSector = 0;
+  CommandStatus.SectorsToGo   = FDCState.Params[2];
 
   if (CommandStatus.SectorsToGo == 0) {
     CommandStatus.SectorsToGo = 0x20;
@@ -1072,9 +1070,9 @@ static void DoVarLength_VerifyDataAndDeldCommand(void) {
     return;
   }
 
-  FDCState.CurrentTrack[Drive] = Params[0];
-  FSDPhysicalTrack = Params[0];
-  FSDLogicalTrack = Params[0];
+  FDCState.CurrentTrack[Drive] = FDCState.Params[0];
+  FSDPhysicalTrack = FDCState.Params[0];
+  FSDLogicalTrack = FDCState.Params[0];
   CommandStatus.CurrentTrackPtr = GetTrackPtr(FSDLogicalTrack);
 
   if (CommandStatus.CurrentTrackPtr == nullptr)
@@ -1083,7 +1081,7 @@ static void DoVarLength_VerifyDataAndDeldCommand(void) {
     return;
   }
 
-  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, Params[1], false);
+  CommandStatus.CurrentSectorPtr = GetSectorPtr(CommandStatus.CurrentTrackPtr, FDCState.Params[1], false);
 
   if (CommandStatus.CurrentSectorPtr == nullptr)
   {
@@ -1132,8 +1130,8 @@ static void DoFormatCommand(void) {
     return;
   }
 
-  FDCState.CurrentTrack[Drive] = Params[0];
-  CommandStatus.CurrentTrackPtr=GetTrackPtr(Params[0]);
+  FDCState.CurrentTrack[Drive] = FDCState.Params[0];
+  CommandStatus.CurrentTrackPtr=GetTrackPtr(FDCState.Params[0]);
 
   if (CommandStatus.CurrentTrackPtr == nullptr)
   {
@@ -1149,10 +1147,10 @@ static void DoFormatCommand(void) {
     return;
   }
 
-  CommandStatus.TrackAddr=Params[0];
-  CommandStatus.CurrentSector=0;
-  CommandStatus.SectorsToGo=Params[2] & 31;
-  CommandStatus.SectorLength=1<<(7+((Params[2] >> 5) & 7));
+  CommandStatus.TrackAddr     = FDCState.Params[0];
+  CommandStatus.CurrentSector = 0;
+  CommandStatus.SectorsToGo   = FDCState.Params[2] & 31;
+  CommandStatus.SectorLength  = 1 << (7 + ((FDCState.Params[2] >> 5) & 7));
 
   if (CommandStatus.SectorsToGo==10 && CommandStatus.SectorLength==256) {
     CommandStatus.ByteWithinSector=0;
@@ -1249,8 +1247,8 @@ static void DoSeekCommand(void) {
   }
 
   DRDSC = 0;
-  FDCState.CurrentTrack[Drive] = Params[0];
-  FSDPhysicalTrack = Params[0]; // FSD - where to start seeking data store
+  FDCState.CurrentTrack[Drive] = FDCState.Params[0];
+  FSDPhysicalTrack = FDCState.Params[0]; // FSD - where to start seeking data store
   UsingSpecial = false;
   PositionInTrack = 0;
 
@@ -1264,12 +1262,12 @@ static void DoReadDriveStatusCommand(void) {
   bool Track0 = false;
   bool WriteProt = false;
 
-  if (ThisCommand & 0x40) {
+  if (FDCState.Command & 0x40) {
     Track0 = FDCState.CurrentTrack[0] == 0;
     WriteProt = !DiscStatus[0].Writeable;
   }
 
-  if (ThisCommand & 0x80) {
+  if (FDCState.Command & 0x80) {
     Track0 = FDCState.CurrentTrack[1] == 0;
     WriteProt = !DiscStatus[1].Writeable;
   }
@@ -1288,24 +1286,24 @@ static void DoReadDriveStatusCommand(void) {
 // See Intel 8271 data sheet, page 15, ADUG page 39-40
 
 static void DoSpecifyCommand(void) {
-  switch (Params[0]) {
+  switch (FDCState.Params[0]) {
     case 0x0D: // Initialisation
-      FDCState.StepRate = Params[1];
-      FDCState.HeadSettlingTime = Params[2];
-      FDCState.IndexCountBeforeHeadUnload = (Params[3] & 0xf0) >> 4;
-      FDCState.HeadLoadTime = Params[3] & 0x0f;
+      FDCState.StepRate = FDCState.Params[1];
+      FDCState.HeadSettlingTime = FDCState.Params[2];
+      FDCState.IndexCountBeforeHeadUnload = (FDCState.Params[3] & 0xf0) >> 4;
+      FDCState.HeadLoadTime = FDCState.Params[3] & 0x0f;
       break;
 
     case 0x10: // Load bad tracks, surface 0
-      FDCState.BadTracks[0][0] = Params[1];
-      FDCState.BadTracks[0][1] = Params[2];
-      FDCState.CurrentTrack[0] = Params[3];
+      FDCState.BadTracks[0][0] = FDCState.Params[1];
+      FDCState.BadTracks[0][1] = FDCState.Params[2];
+      FDCState.CurrentTrack[0] = FDCState.Params[3];
       break;
 
     case 0x18: // Load bad tracks, surface 1
-      FDCState.BadTracks[1][0] = Params[1];
-      FDCState.BadTracks[1][1] = Params[2];
-      FDCState.CurrentTrack[1] = Params[3];
+      FDCState.BadTracks[1][0] = FDCState.Params[1];
+      FDCState.BadTracks[1][1] = FDCState.Params[2];
+      FDCState.CurrentTrack[1] = FDCState.Params[3];
       break;
   }
 }
@@ -1314,61 +1312,61 @@ static void DoSpecifyCommand(void) {
 static void DoWriteSpecialCommand(void) {
   DoSelects();
 
-  switch (Params[0]) {
+  switch (FDCState.Params[0]) {
     case SPECIAL_REG_SCAN_SECTOR_NUMBER:
-      FDCState.ScanSectorNum = Params[1];
+      FDCState.ScanSectorNum = FDCState.Params[1];
       break;
 
     case SPECIAL_REG_SCAN_COUNT_MSB:
       FDCState.ScanCount &= 0xff;
-      FDCState.ScanCount |= Params[1] << 8;
+      FDCState.ScanCount |= FDCState.Params[1] << 8;
       break;
 
     case SPECIAL_REG_SCAN_COUNT_LSB:
       FDCState.ScanCount &= 0xff00;
-      FDCState.ScanCount |= Params[1];
+      FDCState.ScanCount |= FDCState.Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_0_CURRENT_TRACK:
-      FDCState.CurrentTrack[0] = Params[1];
-      FSDLogicalTrack = Params[1];
+      FDCState.CurrentTrack[0] = FDCState.Params[1];
+      FSDLogicalTrack = FDCState.Params[1];
       // FSD - using special register, so different track from seek
-      UsingSpecial = Params[1] != FSDPhysicalTrack;
+      UsingSpecial = FDCState.Params[1] != FSDPhysicalTrack;
       DRDSC = 0;
       break;
 
     case SPECIAL_REG_SURFACE_1_CURRENT_TRACK:
-      FDCState.CurrentTrack[1] = Params[1];
+      FDCState.CurrentTrack[1] = FDCState.Params[1];
       break;
 
     case SPECIAL_REG_MODE_REGISTER:
-      FDCState.ModeReg = Params[1];
+      FDCState.ModeReg = FDCState.Params[1];
       break;
 
     case SPECIAL_REG_DRIVE_CONTROL_OUTPUT_PORT:
-      FDCState.DriveControlOutputPort = Params[1];
-      FDCState.Select[0] = (Params[1] & 0x40) != 0;
-      FDCState.Select[1] = (Params[1] & 0x80) != 0;
+      FDCState.DriveControlOutputPort = FDCState.Params[1];
+      FDCState.Select[0] = (FDCState.Params[1] & 0x40) != 0;
+      FDCState.Select[1] = (FDCState.Params[1] & 0x80) != 0;
       break;
 
     case SPECIAL_REG_DRIVE_CONTROL_INPUT_PORT:
-      FDCState.DriveControlInputPort = Params[1];
+      FDCState.DriveControlInputPort = FDCState.Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_0_BAD_TRACK_1:
-      FDCState.BadTracks[0][0] = Params[1];
+      FDCState.BadTracks[0][0] = FDCState.Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_0_BAD_TRACK_2:
-      FDCState.BadTracks[0][1] = Params[1];
+      FDCState.BadTracks[0][1] = FDCState.Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_1_BAD_TRACK_1:
-      FDCState.BadTracks[1][0] = Params[1];
+      FDCState.BadTracks[1][0] = FDCState.Params[1];
       break;
 
     case SPECIAL_REG_SURFACE_1_BAD_TRACK_2:
-      FDCState.BadTracks[1][1] = Params[1];
+      FDCState.BadTracks[1][1] = FDCState.Params[1];
       break;
 
     default:
@@ -1383,7 +1381,7 @@ static void DoWriteSpecialCommand(void) {
 static void DoReadSpecialCommand(void) {
   DoSelects();
 
-  switch (Params[0]) {
+  switch (FDCState.Params[0]) {
     case SPECIAL_REG_SCAN_SECTOR_NUMBER:
       FDCState.ResultReg = FDCState.ScanSectorNum;
       break;
@@ -1544,22 +1542,24 @@ unsigned char Disc8271Read(int Address)
 }
 
 /*--------------------------------------------------------------------------*/
-static void CommandRegWrite(int Value) {
+
+static void CommandRegWrite(unsigned char Value)
+{
   const PrimaryCommandLookupType *ptr = CommandPtrFromNumber(Value);
 
   #if ENABLE_LOG
   WriteLog("8271: Command register write value=0x%02X (Name=%s)\n", Value, ptr->Ident);
   #endif
 
-  ThisCommand=Value;
-  NParamsInThisCommand=ptr->NParams;
-  PresentParam=0;
+  FDCState.Command = Value;
+  FDCState.CommandParamCount = ptr->NParams;
+  FDCState.CurrentParam = 0;
 
   FDCState.StatusReg |= STATUS_REG_COMMAND_BUSY | STATUS_REG_RESULT_FULL; // Observed on beeb for read special
   UpdateNMIStatus();
 
   // No parameters then call routine immediately
-  if (NParamsInThisCommand==0) {
+  if (FDCState.CommandParamCount == 0) {
     FDCState.StatusReg &= 0x7e;
     UpdateNMIStatus();
     ptr->ToCall();
@@ -1570,23 +1570,23 @@ static void CommandRegWrite(int Value) {
 
 static void ParamRegWrite(unsigned char Value) {
   // Parameter wanted ?
-  if (PresentParam>=NParamsInThisCommand) {
+  if (FDCState.CurrentParam >= FDCState.CommandParamCount) {
     #if ENABLE_LOG
     WriteLog("8271: Unwanted parameter register write value=0x%02X\n", Value);
     #endif
   } else {
-    Params[PresentParam++]=Value;
+    FDCState.Params[FDCState.CurrentParam++] = Value;
 
     FDCState.StatusReg &= 0xfe; // Observed on beeb
     UpdateNMIStatus();
 
     // Got all params yet?
-    if (PresentParam>=NParamsInThisCommand) {
+    if (FDCState.CurrentParam >= FDCState.CommandParamCount) {
 
       FDCState.StatusReg &= 0x7e; // Observed on beeb
       UpdateNMIStatus();
 
-      const PrimaryCommandLookupType *ptr = CommandPtrFromNumber(ThisCommand);
+      const PrimaryCommandLookupType *ptr = CommandPtrFromNumber(FDCState.Command);
 
       #if ENABLE_LOG
       WriteLog("<Disc access> 8271: All parameters arrived for '%s':", ptr->Ident);
@@ -1747,7 +1747,7 @@ void Disc8271_poll_real() {
     NextInterruptIsErr=0;
   } else {
     /* Should only happen while a command is still active */
-    const PrimaryCommandLookupType *comptr = CommandPtrFromNumber(ThisCommand);
+    const PrimaryCommandLookupType *comptr = CommandPtrFromNumber(FDCState.Command);
     if (comptr->IntHandler != nullptr) comptr->IntHandler();
   }
 
@@ -2189,9 +2189,9 @@ void Disc8271Reset() {
 
 	ClearTrigger(Disc8271Trigger); /* No Disc8271Triggered events yet */
 
-	ThisCommand = -1;
-	NParamsInThisCommand = 0;
-	PresentParam = 0;
+	FDCState.Command = -1;
+	FDCState.CommandParamCount = 0;
+	FDCState.CurrentParam = 0;
 	FDCState.Select[0] = false;
 	FDCState.Select[1] = false;
 
@@ -2246,10 +2246,10 @@ void Save8271UEF(FILE *SUEF)
 	fputc(FDCState.BadTracks[0][1], SUEF);
 	fputc(FDCState.BadTracks[1][0], SUEF);
 	fputc(FDCState.BadTracks[1][1], SUEF);
-	fput32(ThisCommand,SUEF);
-	fput32(NParamsInThisCommand,SUEF);
-	fput32(PresentParam,SUEF);
-	fwrite(Params,1,16,SUEF);
+	fput32(FDCState.Command,SUEF);
+	fput32(FDCState.CommandParamCount, SUEF);
+	fput32(FDCState.CurrentParam, SUEF);
+	fwrite(FDCState.Params, 1, sizeof(FDCState.Params), SUEF);
 	fput32(DiscStatus[0].NumHeads, SUEF);
 	fput32(DiscStatus[1].NumHeads, SUEF);
 	fput32(FDCState.Select[0] ? 1 : 0, SUEF);
@@ -2330,10 +2330,10 @@ void Load8271UEF(FILE *SUEF)
 		FDCState.BadTracks[0][1] = fget8(SUEF);
 		FDCState.BadTracks[1][0] = fget8(SUEF);
 		FDCState.BadTracks[1][1] = fget8(SUEF);
-		ThisCommand=fget32(SUEF);
-		NParamsInThisCommand=fget32(SUEF);
-		PresentParam=fget32(SUEF);
-		fread(Params,1,16,SUEF);
+		FDCState.Command = fget32(SUEF);
+		FDCState.CommandParamCount = fget32(SUEF);
+		FDCState.CurrentParam = fget32(SUEF);
+		fread(FDCState.Params, 1, sizeof(FDCState.Params), SUEF);
 		DiscStatus[0].NumHeads = fget32(SUEF);
 		DiscStatus[1].NumHeads = fget32(SUEF);
 		FDCState.Select[0] = fget32(SUEF) != 0;
@@ -2383,9 +2383,9 @@ void disc8271_dumpstate()
 	                                                     FDCState.BadTracks[1][0],
 	                                                     FDCState.BadTracks[1][1]);
 	WriteLog("  Disc8271Trigger=%d\n", Disc8271Trigger);
-	WriteLog("  ThisCommand=%d\n", ThisCommand);
-	WriteLog("  NParamsInThisCommand=%d\n", NParamsInThisCommand);
-	WriteLog("  PresentParam=%d\n", PresentParam);
+	WriteLog("  FDCState.Command=%d\n", FDCState.Command);
+	WriteLog("  FDCState.CommandParamCount=%d\n", FDCState.CommandParamCount);
+	WriteLog("  FDCState.CurrentParam=%d\n", FDCState.CurrentParam);
 	WriteLog("  FDCState.Select=%d, %d\n", FDCState.Select[0], FDCState.Select[1]);
 	WriteLog("  NextInterruptIsErr=%02X\n", NextInterruptIsErr);
 }
