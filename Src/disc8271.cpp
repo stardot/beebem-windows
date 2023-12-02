@@ -1737,11 +1737,13 @@ void Disc8271_poll_real() {
   FDCState.StatusReg |= STATUS_REG_INTERRUPT_REQUEST;
   UpdateNMIStatus();
 
-  if (NextInterruptIsErr != 14 && NextInterruptIsErr != 32 && NextInterruptIsErr != 0) {
+  if (NextInterruptIsErr != RESULT_REG_DATA_CRC_ERROR &&
+      NextInterruptIsErr != RESULT_REG_DELETED_DATA_FOUND &&
+      NextInterruptIsErr != RESULT_REG_SUCCESS) {
     FDCState.ResultReg = NextInterruptIsErr;
     FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
     UpdateNMIStatus();
-    NextInterruptIsErr=0;
+    NextInterruptIsErr = RESULT_REG_SUCCESS;
   } else {
     /* Should only happen while a command is still active */
     const PrimaryCommandLookupType *comptr = CommandPtrFromNumber(FDCState.Command);
