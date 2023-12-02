@@ -100,31 +100,30 @@ constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 constexpr int TIME_BETWEEN_BYTES = 160;
 
 struct IDFieldType {
-  unsigned char LogicalTrack; // FSD - renamed to track ID names
-  unsigned char HeadNum; // FSD
-  unsigned char LogicalSector; // FSD
-  unsigned char SectorLength; // FSD
+	unsigned char LogicalTrack; // FSD - renamed to track ID names
+	unsigned char HeadNum; // FSD
+	unsigned char LogicalSector; // FSD
+	unsigned char SectorLength; // FSD
 };
 
 struct SectorType {
-  IDFieldType IDField;
-  unsigned char CylinderNum; // FSD - moved from IDField
-  unsigned char RecordNum; // FSD - moved from IDField
-  int IDSiz; // FSD - 2 bytes for size, could be calculated automatically?
-  int RealSectorSize; // FSD - moved from IDField, PhysRecLength
-  unsigned char Error; // FSD - error code when sector was read, 20 for deleted data
-  unsigned char *Data;
+	IDFieldType IDField;
+	unsigned char CylinderNum; // FSD - moved from IDField
+	unsigned char RecordNum; // FSD - moved from IDField
+	int IDSiz; // FSD - 2 bytes for size, could be calculated automatically?
+	int RealSectorSize; // FSD - moved from IDField, PhysRecLength
+	unsigned char Error; // FSD - error code when sector was read, 20 for deleted data
+	unsigned char *Data;
 };
 
 struct TrackType {
-  int LogicalSectors; // Number of sectors stated in format command
-  int NSectors; // i.e. the number of records we have - not anything physical
-  SectorType *Sectors;
-  int Gap1Size; // From format command
-  int Gap3Size;
-  int Gap5Size;
-
-  bool TrackIsReadable; // FSD - is the track readable, or just contains track ID?
+	int LogicalSectors; // Number of sectors stated in format command
+	int NSectors; // i.e. the number of records we have - not anything physical
+	SectorType *Sectors;
+	int Gap1Size; // From format command
+	int Gap3Size;
+	int Gap5Size;
+	bool TrackIsReadable; // FSD - is the track readable, or just contains track ID?
 };
 
 struct DiscStatusType {
@@ -182,17 +181,17 @@ static void DriveHeadScheduleUnload(void);
 /*--------------------------------------------------------------------------*/
 
 struct CommandStatusType {
-  int TrackAddr;
-  int CurrentSector;
-  int SectorLength; // In bytes
-  int SectorsToGo;
+	int TrackAddr;
+	int CurrentSector;
+	int SectorLength; // In bytes
+	int SectorsToGo;
 
-  SectorType *CurrentSectorPtr;
-  TrackType *CurrentTrackPtr;
+	SectorType *CurrentSectorPtr;
+	TrackType *CurrentTrackPtr;
 
-  int ByteWithinSector; // Next byte in sector or ID field
-  bool FirstWriteInt; // Indicates the start of a write operation
-  unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
+	int ByteWithinSector; // Next byte in sector or ID field
+	bool FirstWriteInt; // Indicates the start of a write operation
+	unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
 };
 
 static CommandStatusType CommandStatus;
@@ -269,29 +268,32 @@ static void InitDiscStore()
 
 static int SkipBadTracks(int Unit, int trackin)
 {
-  /* int offset=0;
-  if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
-  {
-    if (Internal_BadTracks[Unit][0]<=trackin) offset++;
-    if (Internal_BadTracks[Unit][1]<=trackin) offset++;
-  }
-  return(trackin+offset); */
+	/* int offset=0;
+	if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
+	{
+		if (Internal_BadTracks[Unit][0]<=trackin) offset++;
+		if (Internal_BadTracks[Unit][1]<=trackin) offset++;
+	}
+	return(trackin+offset); */
 
-  return trackin; // FSD - no bad tracks, but possible to have unformatted
+	return trackin; // FSD - no bad tracks, but possible to have unformatted
 }
 
 /*--------------------------------------------------------------------------*/
 
-static int GetSelectedDrive() {
-  if (FDCState.Select[0]) {
-    return 0;
-  }
+static int GetSelectedDrive()
+{
+	if (FDCState.Select[0])
+	{
+		return 0;
+	}
 
-  if (FDCState.Select[1]) {
-    return 1;
-  }
+	if (FDCState.Select[1])
+	{
+		return 1;
+	}
 
-  return -1;
+	return -1;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -303,15 +305,16 @@ static int GetSelectedDrive() {
 // The one exception!!!! is that if no drives are selected it returns nullptr
 // FSD - returns the physical track pointer for track ID
 
-static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID) {
-  int Drive = GetSelectedDrive();
+static TrackType *GetTrackPtrPhysical(unsigned char PhysicalTrackID)
+{
+	int Drive = GetSelectedDrive();
 
-  if (Drive < 0) return nullptr;
+	if (Drive < 0) return nullptr;
 
-  PositionInTrack = 0;
-  FSDPhysicalTrack = PhysicalTrackID;
+	PositionInTrack = 0;
+	FSDPhysicalTrack = PhysicalTrackID;
 
-  return &DiscStatus[Drive].Tracks[CURRENT_HEAD][PhysicalTrackID];
+	return &DiscStatus[Drive].Tracks[CURRENT_HEAD][PhysicalTrackID];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1510,14 +1513,18 @@ static const PrimaryCommandLookupType PrimaryCommandLookup[] = {
 // If no matching command is given, the pointer points to an entry with a 0
 // mask, with a sensible function to call.
 
-static const PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber) {
-  const PrimaryCommandLookupType *presptr=PrimaryCommandLookup;
+static const PrimaryCommandLookupType *CommandPtrFromNumber(int CommandNumber)
+{
+	const PrimaryCommandLookupType *presptr = PrimaryCommandLookup;
 
-  for(;presptr->CommandNum!=(presptr->Mask & CommandNumber);presptr++);
+	while (presptr->CommandNum != (presptr->Mask & CommandNumber))
+	{
+		presptr++;
+	}
 
-  return(presptr);
+	return presptr;
 
-  // FSD - could FSDPhysicalTrack = -1 here?
+	// FSD - could FSDPhysicalTrack = -1 here?
 }
 
 /*--------------------------------------------------------------------------*/
