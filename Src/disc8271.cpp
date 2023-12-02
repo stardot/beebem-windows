@@ -94,8 +94,6 @@ static bool SectorOverRead; // FSD - Was read size bigger than data stored?
 static bool UsingSpecial; // FSD - Using Special Register
 static unsigned char DRDSC; // FSD
 
-static unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
-
 constexpr int TRACKS_PER_DRIVE = 80;
 constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 
@@ -194,6 +192,7 @@ struct CommandStatusType {
 
   int ByteWithinSector; // Next byte in sector or ID field
   bool FirstWriteInt; // Indicates the start of a write operation
+  unsigned char NextInterruptIsErr; // non-zero causes error and drops this value into result reg
 };
 
 static CommandStatusType CommandStatus;
@@ -403,7 +402,7 @@ static SectorType *GetSectorPtrForTrackID(TrackType *Track, unsigned char Logica
 static void DoErr(unsigned char ErrNum)
 {
 	SetTrigger(50, Disc8271Trigger); // Give it a bit of time
-	NextInterruptIsErr = ErrNum;
+	CommandStatus.NextInterruptIsErr = ErrNum;
 	FDCState.StatusReg = STATUS_REG_COMMAND_BUSY; // Command is busy - come back when I have an interrupt
 	UpdateNMIStatus();
 }
@@ -1743,13 +1742,13 @@ void Disc8271_poll_real() {
   FDCState.StatusReg |= STATUS_REG_INTERRUPT_REQUEST;
   UpdateNMIStatus();
 
-  if (NextInterruptIsErr != RESULT_REG_DATA_CRC_ERROR &&
-      NextInterruptIsErr != RESULT_REG_DELETED_DATA_FOUND &&
-      NextInterruptIsErr != RESULT_REG_SUCCESS) {
-    FDCState.ResultReg = NextInterruptIsErr;
+  if (CommandStatus.NextInterruptIsErr != RESULT_REG_DATA_CRC_ERROR &&
+      CommandStatus.NextInterruptIsErr != RESULT_REG_DELETED_DATA_FOUND &&
+      CommandStatus.NextInterruptIsErr != RESULT_REG_SUCCESS) {
+    FDCState.ResultReg = CommandStatus.NextInterruptIsErr;
     FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
     UpdateNMIStatus();
-    NextInterruptIsErr = RESULT_REG_SUCCESS;
+    CommandStatus.NextInterruptIsErr = RESULT_REG_SUCCESS;
   } else {
     /* Should only happen while a command is still active */
     const PrimaryCommandLookupType *comptr = CommandPtrFromNumber(FDCState.Command);
@@ -2257,10 +2256,10 @@ void Save8271UEF(FILE *SUEF)
 	fput32(DiscStatus[1].NumHeads, SUEF);
 	fput32(FDCState.Select[0] ? 1 : 0, SUEF);
 	fput32(FDCState.Select[1] ? 1 : 0, SUEF);
-	fput32(DiscStatus[0].Writeable ? 1 : 0,SUEF);
-	fput32(DiscStatus[1].Writeable ? 1 : 0,SUEF);
-	fput32(CommandStatus.FirstWriteInt ? 1 : 0,SUEF);
-	fput32(NextInterruptIsErr,SUEF);
+	fput32(DiscStatus[0].Writeable ? 1 : 0, SUEF);
+	fput32(DiscStatus[1].Writeable ? 1 : 0, SUEF);
+	fput32(CommandStatus.FirstWriteInt ? 1 : 0, SUEF);
+	fput32(CommandStatus.NextInterruptIsErr, SUEF);
 	fput32(CommandStatus.TrackAddr,SUEF);
 	fput32(CommandStatus.CurrentSector,SUEF);
 	fput32(CommandStatus.SectorLength,SUEF);
@@ -2344,7 +2343,7 @@ void Load8271UEF(FILE *SUEF)
 		DiscStatus[0].Writeable = fget32(SUEF) != 0;
 		DiscStatus[1].Writeable = fget32(SUEF) != 0;
 		CommandStatus.FirstWriteInt = fget32(SUEF) != 0;
-		NextInterruptIsErr=fget32(SUEF);
+		CommandStatus.NextInterruptIsErr = fget32(SUEF);
 		CommandStatus.TrackAddr=fget32(SUEF);
 		CommandStatus.CurrentSector=fget32(SUEF);
 		CommandStatus.SectorLength=fget32(SUEF);
@@ -2390,7 +2389,7 @@ void disc8271_dumpstate()
 	WriteLog("  FDCState.CommandParamCount=%d\n", FDCState.CommandParamCount);
 	WriteLog("  FDCState.CurrentParam=%d\n", FDCState.CurrentParam);
 	WriteLog("  FDCState.Select=%d, %d\n", FDCState.Select[0], FDCState.Select[1]);
-	WriteLog("  NextInterruptIsErr=%02X\n", NextInterruptIsErr);
+	WriteLog("  CommandStatus.NextInterruptIsErr=%02X\n", CommandStatus.NextInterruptIsErr);
 }
 
 /*--------------------------------------------------------------------------*/
