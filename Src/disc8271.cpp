@@ -1789,7 +1789,7 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
         SecPtr[CurrentSector].IDField.SectorLength = 256; // was PhysRecLength
         SecPtr[CurrentSector].RecordNum = CurrentSector;
         SecPtr[CurrentSector].RealSectorSize = 256;
-        SecPtr[CurrentSector].Error = 0;
+        SecPtr[CurrentSector].Error = RESULT_REG_SUCCESS;
         SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data, 1, 256, infile);
@@ -1840,6 +1840,7 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
         SecPtr[CurrentSector].IDField.SectorLength = 256; // was PhysRecLength
         SecPtr[CurrentSector].RecordNum = CurrentSector;
         SecPtr[CurrentSector].RealSectorSize = 256;
+        SecPtr[CurrentSector].Error = RESULT_REG_SUCCESS;
         SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data, 1, 256, infile);
