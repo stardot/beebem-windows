@@ -336,17 +336,19 @@ static int GetSelectedDrive() {
 static TrackType *GetTrackPtr(unsigned char LogicalTrackID) {
   int Drive = GetSelectedDrive();
 
-  // if (Drive < 0) {
-  //   return nullptr;
-  // }
+  if (Drive < 0)
+  {
+    return nullptr;
+  }
 
   // Read two tracks extra
   for (unsigned char Track = FSDPhysicalTrack; Track < FSDPhysicalTrack +  2; Track++) {
     SectorType *SecPtr = DiscStore[Drive][CURRENTHEAD][Track].Sectors;
 
-    // fixes Krakout!
-    if (SecPtr == NULL) {
-      return NULL;
+    // Fixes Krakout!
+    if (SecPtr == nullptr)
+    {
+      return nullptr;
     }
 
     if (LogicalTrackID == SecPtr[0].IDField.LogicalTrack) {
