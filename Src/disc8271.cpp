@@ -118,7 +118,6 @@ struct SectorType {
   int IDSiz; // FSD - 2 bytes for size, could be calculated automatically?
   int RealSectorSize; // FSD - moved from IDField, PhysRecLength
   unsigned char Error; // FSD - error code when sector was read, 20 for deleted data
-  bool Deleted; // If true the sector is deleted - not needed with FSD error code recorded?
   unsigned char *Data;
 };
 
@@ -1831,7 +1830,6 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
         SecPtr[CurrentSector].RecordNum = CurrentSector;
         SecPtr[CurrentSector].RealSectorSize = 256;
         SecPtr[CurrentSector].Error = RESULT_REG_SUCCESS;
-        SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data, 1, 256, infile);
       }
@@ -1882,7 +1880,6 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks) {
         SecPtr[CurrentSector].RecordNum = CurrentSector;
         SecPtr[CurrentSector].RealSectorSize = 256;
         SecPtr[CurrentSector].Error = RESULT_REG_SUCCESS;
-        SecPtr[CurrentSector].Deleted = false;
         SecPtr[CurrentSector].Data = (unsigned char *)calloc(1,256);
         fread(SecPtr[CurrentSector].Data, 1, 256, infile);
       }
