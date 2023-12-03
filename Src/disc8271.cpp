@@ -442,6 +442,24 @@ static bool ValidateSector(const SectorType* /*Sector */, int /* Track */, int /
 
 /*--------------------------------------------------------------------------*/
 
+// The Scan Data Command is used to search for a specific pattern or "key"
+// from memory. The 8271 FDC operation is unique in that data is read from
+// memory and from the diskette simultaneously.
+//
+// Parameters:
+// 0: Logical Track Address (0-255)
+// 1: Logical Sector Address (0-255)
+// 2: Sector Size / Number of Sectors
+//    (bit 7-bit 5) determine the length of the disk record
+//    0 0 0  128 bytes
+//    0 0 1  256 bytes
+//    0 1 0  512 bytes
+//    0 1 1  1024 bytes
+//    1 0 0  2048 bytes
+//    1 0 1  4096 bytes
+//    1 1 0  8192 bytes
+//    1 1 1  16384 bytes
+
 static void DoVarLength_ScanDataCommand()
 {
 	DoSelects();
@@ -449,6 +467,24 @@ static void DoVarLength_ScanDataCommand()
 }
 
 /*--------------------------------------------------------------------------*/
+
+// The Scan Data and Deleted Data Command is used to search for a specific
+// pattern or "key" from memory. The 8271 FDC operation is unique in that
+// data is read from memory and from the diskette simultaneously.
+//
+// Parameters:
+// 0: Logical Track Address (0-255)
+// 1: Logical Sector Address (0-255)
+// 2: Sector Size / Number of Sectors
+//    (bit 7-bit 5) determine the length of the disk record
+//    0 0 0  128 bytes
+//    0 0 1  256 bytes
+//    0 1 0  512 bytes
+//    0 1 1  1024 bytes
+//    1 0 0  2048 bytes
+//    1 0 1  4096 bytes
+//    1 1 0  8192 bytes
+//    1 1 1  16384 bytes
 
 static void DoVarLength_ScanDataAndDeldCommand()
 {
@@ -458,6 +494,12 @@ static void DoVarLength_ScanDataAndDeldCommand()
 
 /*--------------------------------------------------------------------------*/
 
+// 128 Byte Single Record Write Data Command
+//
+// Parameters:
+// 0: Track Address (0-255)
+// 1: Sector (0-255)
+
 static void Do128ByteSR_WriteDataCommand()
 {
 	DoSelects();
@@ -465,6 +507,22 @@ static void Do128ByteSR_WriteDataCommand()
 }
 
 /*--------------------------------------------------------------------------*/
+
+// Write Data Command
+//
+// Parameters:
+// 0: Logical Track Address (0-255)
+// 1: Logical Sector Address (0-255)
+// 2: Sector Size / Number of Sectors
+//    (bit 7-bit 5) determine the length of the disk record
+//    0 0 0  128 bytes
+//    0 0 1  256 bytes
+//    0 1 0  512 bytes
+//    0 1 1  1024 bytes
+//    1 0 0  2048 bytes
+//    1 0 1  4096 bytes
+//    1 1 0  8192 bytes
+//    1 1 1  16384 bytes
 
 static void DoVarLength_WriteDataCommand()
 {
@@ -596,6 +654,12 @@ static void WriteInterrupt()
 
 /*--------------------------------------------------------------------------*/
 
+// 128 Byte Single Record Write Deleted Data Command
+//
+// Parameters:
+// 0: Track Address (0-255)
+// 1: Sector (0-255)
+
 static void Do128ByteSR_WriteDeletedDataCommand()
 {
 	DoSelects();
@@ -603,6 +667,22 @@ static void Do128ByteSR_WriteDeletedDataCommand()
 }
 
 /*--------------------------------------------------------------------------*/
+
+// Write Deleted Data Command
+//
+// Parameters:
+// 0: Logical Track Address (0-255)
+// 1: Logical Sector Address (0-255)
+// 2: Sector Size / Number of Sectors
+//    (bit 7-bit 5) determine the length of the disk record
+//    0 0 0  128 bytes
+//    0 0 1  256 bytes
+//    0 1 0  512 bytes
+//    0 1 1  1024 bytes
+//    1 0 0  2048 bytes
+//    1 0 1  4096 bytes
+//    1 1 0  8192 bytes
+//    1 1 1  16384 bytes
 
 static void DoVarLength_WriteDeletedDataCommand()
 {
@@ -612,6 +692,12 @@ static void DoVarLength_WriteDeletedDataCommand()
 
 /*--------------------------------------------------------------------------*/
 
+// 128 Byte Single Record Read Data Command
+//
+// Parameters:
+// 0: Track Address (0-255)
+// 1: Sector (0-255)
+
 static void Do128ByteSR_ReadDataCommand()
 {
 	DoSelects();
@@ -619,6 +705,23 @@ static void Do128ByteSR_ReadDataCommand()
 }
 
 /*--------------------------------------------------------------------------*/
+
+// The Read Data command transfers data from a specified disk record or
+// group of records to memory.
+//
+// Parameters:
+// 0: Logical Track Address (0-255)
+// 1: Logical Sector Address (0-255)
+// 2: Sector Size / Number of Sectors
+//    (bit 7-bit 5) determine the length of the disk record
+//    0 0 0  128 bytes
+//    0 0 1  256 bytes
+//    0 1 0  512 bytes
+//    0 1 1  1024 bytes
+//    1 0 0  2048 bytes
+//    1 0 1  4096 bytes
+//    1 1 0  8192 bytes
+//    1 1 1  16384 bytes
 
 static void DoVarLength_ReadDataCommand()
 {
@@ -877,6 +980,12 @@ static void ReadInterrupt()
 
 /*--------------------------------------------------------------------------*/
 
+// 128 Byte Single Record Read Data and Deleted Data Command
+//
+// Parameters:
+// 0: Track Address (0-255)
+// 1: Sector (0-255)
+
 static void Do128ByteSR_ReadDataAndDeldCommand()
 {
 	DoSelects();
@@ -1043,6 +1152,22 @@ static void Read128Interrupt()
 
 /*--------------------------------------------------------------------------*/
 
+// Read Data and Deleted Data Command
+//
+// Parameters:
+// 0: Logical Track Address (0-255)
+// 1: Logical Sector Address (0-255)
+// 2: Sector Size / Number of Sectors
+//    (bit 7-bit 5) determine the length of the disk record
+//    0 0 0  128 bytes
+//    0 0 1  256 bytes
+//    0 1 0  512 bytes
+//    0 1 1  1024 bytes
+//    1 0 0  2048 bytes
+//    1 0 1  4096 bytes
+//    1 1 0  8192 bytes
+//    1 1 1  16384 bytes
+
 static void DoVarLength_ReadDataAndDeldCommand()
 {
 	// Use normal read command for now - deleted data not supported
@@ -1208,6 +1333,12 @@ static void ReadIDInterrupt()
 
 /*--------------------------------------------------------------------------*/
 
+// 128 Byte Single Record Verify Data and Deleted Data Command
+//
+// Parameters:
+// 0: Track Address (0-255)
+// 1: Sector (0-255)
+
 static void Do128ByteSR_VerifyDataAndDeldCommand()
 {
 	DoSelects();
@@ -1215,6 +1346,25 @@ static void Do128ByteSR_VerifyDataAndDeldCommand()
 }
 
 /*--------------------------------------------------------------------------*/
+
+// The Verify Data and Deleted Data command is identical to the Read Data and
+// Deleted Data command except that the data is not transferred to memory.
+// This command is used to check that a record or a group of records has
+// been written correctly by verifying the CRC character.
+//
+// Parameters:
+// 0: Logical Track Address (0-255)
+// 1: Logical Sector Address (0-255)
+// 2: Sector Size / Number of Sectors
+//    (bit 7-bit 5) determine the length of the disk record
+//    0 0 0  128 bytes
+//    0 0 1  256 bytes
+//    0 1 0  512 bytes
+//    0 1 1  1024 bytes
+//    1 0 0  2048 bytes
+//    1 0 1  4096 bytes
+//    1 1 0  8192 bytes
+//    1 1 1  16384 bytes
 
 static void DoVarLength_VerifyDataAndDeldCommand()
 {
@@ -1272,6 +1422,15 @@ static void VerifyInterrupt()
 }
 
 /*--------------------------------------------------------------------------*/
+
+// Format Command
+//
+// Parameters:
+// 0: Track Address (0-255)
+// 1: Gap 3 Size minus 6
+// 2: Record Length / Number of Sectors per Track
+// 3: Gap 5 Size minus 6
+// 4: Gap 1 Size minus 6
 
 static void DoFormatCommand()
 {
@@ -1505,6 +1664,12 @@ static void DoSpecifyCommand()
 
 /*--------------------------------------------------------------------------*/
 
+// Write Special Register Command
+//
+// Parameters:
+// 0: Register Address
+// 1: Data
+
 static void DoWriteSpecialCommand()
 {
 	DoSelects();
@@ -1576,6 +1741,11 @@ static void DoWriteSpecialCommand()
 }
 
 /*--------------------------------------------------------------------------*/
+
+// Read Special Register Command
+//
+// Parameters:
+// 0: Register Address
 
 static void DoReadSpecialCommand()
 {
