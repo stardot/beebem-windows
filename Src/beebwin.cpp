@@ -591,6 +591,64 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	}
 }
 
+/****************************************************************************/
+
+void BeebWin::Break()
+{
+	// Must do a reset!
+	Init6502core();
+
+	if (TubeType == Tube::Acorn65C02)
+	{
+		Init65C02core();
+	}
+	else if (TubeType == Tube::Master512CoPro)
+	{
+		master512CoPro.Reset();
+	}
+	else if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
+	{
+		R1Status = 0;
+		ResetTube();
+		init_z80();
+	}
+	else if (TubeType == Tube::AcornArm)
+	{
+		R1Status = 0;
+		ResetTube();
+		DestroyArmCoPro();
+		CreateArmCoPro();
+	}
+	else if (TubeType == Tube::SprowArm)
+	{
+		R1Status = 0;
+		ResetTube();
+		// We don't want to throw the contents of memory away
+		// just tell the co-pro to reset itself.
+		sprow->Reset();
+	}
+
+	Disc8271Reset();
+	Reset1770();
+	if (EconetEnabled) EconetReset();//Rob
+	if (SCSIDriveEnabled) SCSIReset();
+	if (SCSIDriveEnabled) SASIReset();
+	if (IDEDriveEnabled)  IDEReset();
+	TeletextInit();
+	//SoundChipReset();
+	Music5000Reset();
+	if (Music5000Enabled)
+		Music5000Init();
+
+	// Reset IntegraB RTC on Break
+	if (MachineType == Model::IntegraB)
+	{
+		RTCReset();
+	}
+}
+
+/****************************************************************************/
+
 void BeebWin::CreateArmCoPro()
 {
 	arm = new CArm;
@@ -1447,8 +1505,10 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			WinPosChange(LOWORD(lParam), HIWORD(lParam));
 			break;
 
-		case WM_SYSKEYDOWN:
+		case WM_SYSKEYDOWN: {
 			// DebugTrace("SysKeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
+
+			bool AltPressed = (lParam & 0x20000000) != 0; // Check the context code
 
 			if (m_TextToSpeechEnabled &&
 			    ((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
@@ -1466,25 +1526,29 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			{
 				TextViewSyncWithBeebCursor();
 			}
-			else if (wParam == VK_RETURN && (lParam & 0x20000000))
+			else if (wParam == VK_RETURN && AltPressed) // Alt+Enter
 			{
 				HandleCommand(IDM_FULLSCREEN);
 				break;
 			}
-			else if (wParam == VK_F4 && (lParam & 0x20000000))
+			else if (wParam == VK_F4 && AltPressed) // Alt+F4
 			{
 				HandleCommand(IDM_EXIT);
 				break;
 			}
-			// Alt+F5 pauses the emulation
-			else if (wParam == VK_F5 && (lParam & 0x20000000))
+			else if (wParam == VK_F5 && AltPressed) // Alt+F5
 			{
 				HandleCommand(IDM_EMUPAUSED);
 				break;
 			}
 
 			if (wParam != VK_F10 && wParam != VK_CONTROL)
+			{
 				break;
+			}
+
+			// Fall through...
+		}
 
 		case WM_KEYDOWN:
 			// DebugTrace("KeyD: %d, 0x%X, 0x%X\n", wParam, wParam, lParam);
@@ -1537,40 +1601,47 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 
-		case WM_SYSKEYUP:
+		case WM_SYSKEYUP: {
 			// Debug("SysKeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
 
-			if ((wParam == 0x35 || wParam == VK_NUMPAD5) && (lParam & 0x20000000))
+			bool AltPressed = (lParam & 0x20000000) != 0; // Check the context code
+
+			if ((wParam == 0x35 || wParam == VK_NUMPAD5) && AltPressed)
 			{
 				CaptureBitmapPending(true);
 				break;
 			}
-			else if (wParam == 0x31 && (lParam & 0x20000000) && !m_DisableKeysShortcut)
+			else if (wParam == 0x31 && AltPressed && !m_DisableKeysShortcut)
 			{
 				QuickSave();
 				// Let user know state has been saved
 				FlashWindow();
 				break;
 			}
-			else if (wParam == 0x32 && (lParam & 0x20000000) && !m_DisableKeysShortcut)
+			else if (wParam == 0x32 && AltPressed && !m_DisableKeysShortcut)
 			{
 				QuickLoad();
 				// Let user know state has been loaded
 				FlashWindow();
 				break;
 			}
-			else if (wParam == VK_OEM_PLUS && (lParam & 0x20000000))
+			else if (wParam == VK_OEM_PLUS && AltPressed)
 			{
 				AdjustSpeed(true);
 				break;
 			}
-			else if (wParam == VK_OEM_MINUS && (lParam & 0x20000000))
+			else if (wParam == VK_OEM_MINUS && AltPressed)
 			{
 				AdjustSpeed(false);
 				break;
 			}
 			else if (wParam != VK_F10 && wParam != VK_CONTROL)
+			{
 				break;
+			}
+
+			// Fall through...
+		}
 
 		case WM_KEYUP:
 			// DebugTrace("KeyU: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
@@ -1612,55 +1683,12 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 					{
 						if (row == -2)
 						{
-							// Must do a reset!
-							Init6502core();
-
-							if (TubeType == Tube::Acorn65C02)
-							{
-								Init65C02core();
-							}
-							else if (TubeType == Tube::Master512CoPro)
-							{
-								master512CoPro.Reset();
-							}
-							else if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
-							{
-								R1Status = 0;
-								ResetTube();
-								init_z80();
-							}
-							else if (TubeType == Tube::AcornArm)
-							{
-								R1Status = 0;
-								ResetTube();
-								DestroyArmCoPro();
-								CreateArmCoPro();
-							}
-							else if (TubeType == Tube::SprowArm)
-							{
-								R1Status = 0;
-								ResetTube();
-								// We don't want to throw the contents of memory away
-								// just tell the co-pro to reset itself.
-								sprow->Reset();
-							}
-
-							Disc8271Reset();
-							Reset1770();
-							if (EconetEnabled) EconetReset();//Rob
-							if (SCSIDriveEnabled) SCSIReset();
-							if (SCSIDriveEnabled) SASIReset();
-							if (IDEDriveEnabled)  IDEReset();
-							TeletextInit();
-							//SoundChipReset();
-							Music5000Reset();
-							if (Music5000Enabled)
-								Music5000Init();
+							Break();
 						}
-						else if(row==-3)
+						else if (row == -3)
 						{
-							if (col==-3) SoundTuning+=0.1; // Page Up
-							if (col==-4) SoundTuning-=0.1; // Page Down
+							if (col == -3) SoundTuning += 0.1; // Page Up
+							if (col == -4) SoundTuning -= 0.1; // Page Down
 						}
 					}
 				}
@@ -1917,11 +1945,6 @@ int BeebWin::TranslateKey(int vkey, bool keyUp, int &row, int &col)
 				row = 2;
 				col = 0;
 			}
-		}
-		//Reset IntegraB RTC on Break
-		if (MachineType == Model::IntegraB && row == -2 && col == -2)
-		{
-			RTCReset();
 		}
 
 		if (m_DisableKeysShortcut && (row == -3 || row == -4))

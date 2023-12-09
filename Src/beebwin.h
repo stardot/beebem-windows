@@ -213,6 +213,7 @@ public:
 	HWND GethWnd() { return m_hWnd; }
 
 	void ResetBeebSystem(Model NewModelType, bool LoadRoms);
+	void Break();
 
 	void CreateArmCoPro();
 	void DestroyArmCoPro();
