@@ -665,6 +665,9 @@
     <None Include="..\UserData\Econet.cfg">
       <Filter>UserData</Filter>
     </None>
+    <None Include="..\UserData\ITLogical.kmap">
+      <Filter>UserData</Filter>
+    </None>
     <None Include="..\UserData\Logical.kmap">
       <Filter>UserData</Filter>
     </None>

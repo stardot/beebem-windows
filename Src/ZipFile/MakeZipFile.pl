@@ -90,6 +90,7 @@ my @files = (
     'UserData/DiscIms/Torch_standard_utilities_2.dsd',
     'UserData/DiscIms/Welcome.ssd',
     'UserData/Econet.cfg',
+    'UserData/ITLogical.kmap',
     'UserData/Logical.kmap',
     'UserData/Phroms/PHROMA',
     'UserData/Phroms/phromsus.txt',

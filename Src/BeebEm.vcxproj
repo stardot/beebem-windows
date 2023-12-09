@@ -472,6 +472,7 @@
     <None Include="..\UserData\Default.kmap" />
     <None Include="..\UserData\DefaultUser.kmap" />
     <None Include="..\UserData\Econet.cfg" />
+    <None Include="..\UserData\ITLogical.kmap" />
     <None Include="..\UserData\Logical.kmap" />
     <None Include="..\UserData\Phroms.cfg" />
     <None Include="..\UserData\Preferences.cfg" />
