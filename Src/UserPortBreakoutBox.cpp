@@ -392,7 +392,7 @@ void UserPortBreakoutDialog::ShowInputs(unsigned char data)
 
 void UserPortBreakoutDialog::ShowBitKey(int key, int ctrlID)
 {
-	SetDlgItemText(m_hwnd, ctrlID, KeyName(BitKeys[key]));
+	SetDlgItemText(m_hwnd, ctrlID, GetPCKeyName(BitKeys[key]));
 }
 
 /****************************************************************************/
@@ -403,13 +403,13 @@ void UserPortBreakoutDialog::PromptForBitKeyInput(int bitKey)
 
 	ShowBitKey(bitKey, BitKeyButtonIDs[bitKey]);
 
-	std::string UsedKey = KeyName(BitKeys[m_BitKey]);
+	std::string PCKeys = GetPCKeyName(BitKeys[m_BitKey]);
 
 	selectKeyDialog = new SelectKeyDialog(
 		m_hInstance,
 		m_hwnd,
 		"Press the key to use...",
-		UsedKey,
+		PCKeys,
 		false,
 		0,
 		0,

@@ -34,7 +34,6 @@ Boston, MA  02110-1301, USA.
 
 static void SetKeyColour(COLORREF aColour);
 static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl);
-static void SetBBCKeyForVKEY(int Key, bool shift);
 static void SetRowCol(UINT ctrlID);
 static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
                                             UINT   nMessage,
@@ -133,44 +132,6 @@ static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl)
 	);
 
 	selectKeyDialog->Open();
-}
-
-/****************************************************************************/
-
-static void SetBBCKeyForVKEY(int Key, bool Shift)
-{
-	if (Key >= 0 && Key < 256)
-	{
-		UserKeyMap[Key][static_cast<int>(Shift)].row = BBCRow;
-		UserKeyMap[Key][static_cast<int>(Shift)].col = BBCCol;
-		UserKeyMap[Key][static_cast<int>(Shift)].shift = doingShifted;
-
-		// DebugTrace("SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
-		//            Key, shift, BBCRow, BBCCol, doingShifted);
-	}
-}
-
-/****************************************************************************/
-
-// Clear any PC keys that correspond to a given BBC keyboard column, row,
-// and shift state.
-
-static void ClearBBCKeyMapping(int Row, int Column, bool Shift)
-{
-	for (int PCKey = 0; PCKey < KEYMAP_SIZE; PCKey++)
-	{
-		for (int PCShift = 0; PCShift < 2; PCShift++)
-		{
-			if (UserKeyMap[PCKey][PCShift].row == Row &&
-			    UserKeyMap[PCKey][PCShift].col == Column &&
-			    UserKeyMap[PCKey][PCShift].shift == Shift)
-			{
-				UserKeyMap[PCKey][PCShift].row = 0;
-				UserKeyMap[PCKey][PCShift].col = 0;
-				UserKeyMap[PCKey][PCShift].shift = PCShift  == 1;
-			}
-		}
-	}
 }
 
 /****************************************************************************/
@@ -302,16 +263,19 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 		return TRUE;
 
 	case WM_CLEAR_KEY_MAPPING:
-		ClearBBCKeyMapping(BBCRow, BBCCol, doingShifted);
+		ClearUserKeyMapping(BBCRow, BBCCol, doingShifted);
 		break;
 
 	case WM_SELECT_KEY_DIALOG_CLOSED:
 		if (wParam == IDOK)
 		{
 			// Assign the BBC key to the PC key.
-			SetBBCKeyForVKEY(
+			SetUserKeyMapping(
+				BBCRow,
+				BBCCol,
+				doingShifted,
 				selectKeyDialog->Key(),
-				doingShifted
+				selectKeyDialog->Shift()
 			);
 		}
 

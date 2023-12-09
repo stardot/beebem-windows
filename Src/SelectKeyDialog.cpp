@@ -204,6 +204,7 @@ bool SelectKeyDialog::HandleMessage(const MSG& msg)
 	if (msg.message == WM_KEYDOWN || msg.message == WM_SYSKEYDOWN)
 	{
 		m_Key = (int)msg.wParam;
+
 		m_Shift = IsDlgItemChecked(m_hwnd, IDC_SHIFT);
 
 		Close(IDOK);
@@ -218,6 +219,13 @@ bool SelectKeyDialog::HandleMessage(const MSG& msg)
 int SelectKeyDialog::Key() const
 {
 	return m_Key;
+}
+
+/****************************************************************************/
+
+bool SelectKeyDialog::Shift() const
+{
+	return m_Shift;
 }
 
 /****************************************************************************/

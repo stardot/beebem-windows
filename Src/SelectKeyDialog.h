@@ -43,6 +43,7 @@ class SelectKeyDialog
 		bool HandleMessage(const MSG& msg);
 
 		int Key() const;
+		bool Shift() const;
 
 	private:
 		static INT_PTR CALLBACK sDlgProc(

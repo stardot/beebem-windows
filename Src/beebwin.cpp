@@ -1490,7 +1490,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			// DebugTrace("KeyD: %d, 0x%X, 0x%X\n", wParam, wParam, lParam);
 
 			if (m_TextToSpeechEnabled &&
-				((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
+			    ((wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9) ||
 			     wParam == VK_DECIMAL ||
 			     wParam == VK_HOME || wParam == VK_END ||
 			     wParam == VK_PRIOR || wParam == VK_NEXT ||
@@ -5049,7 +5049,7 @@ void BeebWin::HandleTimer()
 
 	// Release previous key press (except shift/control)
 	if (m_KbdCmdPress &&
-		m_KbdCmdKey != VK_SHIFT && m_KbdCmdKey != VK_CONTROL)
+	    m_KbdCmdKey != VK_SHIFT && m_KbdCmdKey != VK_CONTROL)
 	{
 		TranslateKey(m_KbdCmdKey, true, row, col);
 		m_KbdCmdPress = false;
