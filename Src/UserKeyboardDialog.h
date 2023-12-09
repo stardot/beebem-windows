@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2020  Chris Needham
+Copyright (C) 1997  Laurie Whiffen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,15 +18,13 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef MESSAGES_HEADER
-#define MESSAGES_HEADER
+#ifndef USERKEYBOARDDIALOG_HEADER
+#define USERKEYBOARDDIALOG_HEADER
 
 #include <windows.h>
 
-constexpr UINT WM_REINITDX                         = WM_APP;
-constexpr UINT WM_USER_KEYBOARD_DIALOG_CLOSED      = WM_APP + 1;
-constexpr UINT WM_SELECT_KEY_DIALOG_CLOSED         = WM_APP + 2;
-constexpr UINT WM_CLEAR_KEY_MAPPING                = WM_APP + 3;
-constexpr UINT WM_USER_PORT_BREAKOUT_DIALOG_CLOSED = WM_APP + 4;
+// Public declarations.
+
+bool UserKeyboardDialog(HWND hwndParent);
 
 #endif

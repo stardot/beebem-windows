@@ -18,15 +18,38 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef USERKYBD_HEADER
-#define USERKYBD_HEADER
+#ifndef KEYMAP_HEADER
+#define KEYMAP_HEADER
 
-#include <windows.h>
+#include <string>
 
-// Public declarations.
+#include "beebwin.h"
 
-bool UserKeyboardDialog(HWND hwndParent);
+struct KeyMapping {
+	int row;    // Beeb row
+	int col;    // Beeb col
+	bool shift; // Beeb shift state
+};
 
-extern KeyMap UserKeymap;
+constexpr int KEYMAP_SIZE = 256;
+
+typedef KeyMapping KeyMap[KEYMAP_SIZE][2]; // Indices are: [Virt key][shift state]
+
+void InitKeyMap();
+
+bool ReadKeyMap(const char *filename, KeyMap *keymap);
+bool WriteKeyMap(const char *filename, KeyMap *keymap);
+
+const char* GetPCKeyName(int PCKey);
+
+void SetUserKeyMapping(int Row, int Column, bool BBCShift, int PCKey, bool PCShift);
+void ClearUserKeyMapping(int Row, int Column, bool Shift);
+std::string GetKeysUsed(int Row, int Column, bool Shift);
+
+extern KeyMap DefaultKeyMap;
+extern KeyMap LogicalKeyMap;
+extern KeyMap UserKeyMap;
+
+extern const KeyMap *transTable;
 
 #endif

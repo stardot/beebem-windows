@@ -40,6 +40,7 @@ Boston, MA  02110-1301, USA.
 #include <sapi.h>
 
 #include "disctype.h"
+#include "KeyMap.h"
 #include "model.h"
 #include "port.h"
 #include "preferences.h"
@@ -48,14 +49,6 @@ Boston, MA  02110-1301, USA.
 // Registry defs for disabling windows keys
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"
 #define CFG_SCANCODE_MAP "Scancode Map"
-
-typedef struct KeyMapping {
-	int row;    // Beeb row
-	int col;    // Beeb col
-	bool shift; // Beeb shift state
-} KeyMapping;
-
-typedef KeyMapping KeyMap[256][2]; // Indices are: [Virt key][shift state]
 
 extern const char *WindowTitle;
 
@@ -393,8 +386,6 @@ public:
 	bool RebootSystem();
 	void LoadUserKeyMap(void);
 	void SaveUserKeyMap(void);
-	bool ReadKeyMap(const char *filename, KeyMap *keymap);
-	bool WriteKeyMap(const char *filename, KeyMap *keymap);
 
 	MessageResult Report(MessageType type, const char *format, ...);
 	MessageResult ReportV(MessageType type, const char *format, va_list args);

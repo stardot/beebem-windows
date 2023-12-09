@@ -198,6 +198,7 @@
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="ide.cpp" />
+    <ClCompile Include="KeyMap.cpp" />
     <ClCompile Include="IP232.cpp" />
     <ClCompile Include="ListView.cpp" />
     <ClCompile Include="Log.cpp" />
@@ -225,7 +226,7 @@
     <ClCompile Include="tube.cpp" />
     <ClCompile Include="uef.cpp" />
     <ClCompile Include="UEFState.cpp" />
-    <ClCompile Include="userkybd.cpp" />
+    <ClCompile Include="UserKeyboardDialog.cpp" />
     <ClCompile Include="UserPortBreakoutBox.cpp" />
     <ClCompile Include="uservia.cpp" />
     <ClCompile Include="via.cpp" />
@@ -351,6 +352,7 @@
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />
     <ClInclude Include="IP232.h" />
+    <ClInclude Include="KeyMap.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Messages.h" />
@@ -379,7 +381,7 @@
     <ClInclude Include="tube.h" />
     <ClInclude Include="uef.h" />
     <ClInclude Include="UEFState.h" />
-    <ClInclude Include="userkybd.h" />
+    <ClInclude Include="UserKeyboardDialog.h" />
     <ClInclude Include="UserPortBreakoutBox.h" />
     <ClInclude Include="uservia.h" />
     <ClInclude Include="version.h" />

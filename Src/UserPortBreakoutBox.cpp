@@ -23,6 +23,7 @@ Boston, MA  02110-1301, USA.
 #include "UserPortBreakoutBox.h"
 
 #include "beebemrc.h"
+#include "KeyMap.h"
 #include "Main.h"
 #include "Messages.h"
 #include "SelectKeyDialog.h"
@@ -307,6 +308,11 @@ INT_PTR UserPortBreakoutDialog::DlgProc(
 		}
 		return TRUE;
 
+	case WM_CLEAR_KEY_MAPPING:
+		BitKeys[m_BitKey] = 0;
+		ShowBitKey(m_BitKey, BitKeyButtonIDs[m_BitKey]);
+		break;
+
 	case WM_SELECT_KEY_DIALOG_CLOSED:
 		if (wParam == IDOK)
 		{
@@ -386,7 +392,7 @@ void UserPortBreakoutDialog::ShowInputs(unsigned char data)
 
 void UserPortBreakoutDialog::ShowBitKey(int key, int ctrlID)
 {
-	SetDlgItemText(m_hwnd, ctrlID, SelectKeyDialog::KeyName(BitKeys[key]));
+	SetDlgItemText(m_hwnd, ctrlID, KeyName(BitKeys[key]));
 }
 
 /****************************************************************************/
@@ -397,13 +403,16 @@ void UserPortBreakoutDialog::PromptForBitKeyInput(int bitKey)
 
 	ShowBitKey(bitKey, BitKeyButtonIDs[bitKey]);
 
-	std::string UsedKey = SelectKeyDialog::KeyName(BitKeys[m_BitKey]);
+	std::string UsedKey = KeyName(BitKeys[m_BitKey]);
 
 	selectKeyDialog = new SelectKeyDialog(
 		m_hInstance,
 		m_hwnd,
 		"Press the key to use...",
 		UsedKey,
+		false,
+		0,
+		0,
 		false
 	);
 

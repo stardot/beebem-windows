@@ -52,15 +52,12 @@ using std::max;
 #include "Serial.h"
 #include "ext1770.h"
 #include "tube.h"
-#include "userkybd.h"
+#include "KeyMap.h"
 #include "discedit.h"
 #include "ExportFileDialog.h"
 #include "version.h"
 
 using namespace Gdiplus;
-
-// Token written to start of map file
-#define KEYMAP_TOKEN "*** BeebEm Keymap ***"
 
 extern EDCB ExtBoard;
 extern bool DiscLoaded[2]; // Set to true when a disc image has been loaded.
@@ -1124,7 +1121,7 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 		{
 			fread(fileName,1,256,SUEF);
 			GetDataPath(m_UserDataPath, fileName);
-			if (ReadKeyMap(fileName, &UserKeymap))
+			if (ReadKeyMap(fileName, &UserKeyMap))
 				strcpy(m_UserKeyMapPath, fileName);
 			else
 				id = m_MenuIDKeyMapping;
@@ -1171,7 +1168,7 @@ void BeebWin::LoadUserKeyMap()
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
 	if (fileDialog.Open())
 	{
-		if (ReadKeyMap(FileName, &UserKeymap))
+		if (ReadKeyMap(FileName, &UserKeyMap))
 			strcpy(m_UserKeyMapPath, FileName);
 	}
 }
@@ -1185,6 +1182,7 @@ void BeebWin::SaveUserKeyMap()
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
+
 	if (fileDialog.Save())
 	{
 		if (!hasFileExt(FileName, ".kmap"))
@@ -1192,101 +1190,11 @@ void BeebWin::SaveUserKeyMap()
 			strcat(FileName,".kmap");
 		}
 
-		if (WriteKeyMap(FileName, &UserKeymap))
+		if (WriteKeyMap(FileName, &UserKeyMap))
 		{
 			strcpy(m_UserKeyMapPath, FileName);
 		}
 	}
-}
-
-/****************************************************************************/
-bool BeebWin::ReadKeyMap(const char *filename, KeyMap *keymap)
-{
-	bool success = true;
-	char buf[256];
-
-	FILE *infile = fopen(filename,"r");
-
-	if (infile == NULL)
-	{
-		Report(MessageType::Error,
-		       "Failed to read key map file:\n  %s", filename);
-
-		success = false;
-	}
-	else
-	{
-		if (fgets(buf, 255, infile) == NULL || 
-			strcmp(buf, KEYMAP_TOKEN "\n") != 0)
-		{
-			Report(MessageType::Error,
-			       "Invalid key map file:\n  %s\n", filename);
-
-			success = false;
-		}
-		else
-		{
-			fgets(buf, 255, infile);
-
-			for (int i = 0; i < 256; ++i)
-			{
-				if (fgets(buf, 255, infile) == NULL)
-				{
-					Report(MessageType::Error,
-					       "Data missing from key map file:\n  %s\n", filename);
-
-					success = false;
-					break;
-				}
-
-				int shift0 = 0, shift1 = 0;
-
-				sscanf(buf, "%d %d %d %d %d %d",
-				       &(*keymap)[i][0].row,
-				       &(*keymap)[i][0].col,
-				       &shift0,
-				       &(*keymap)[i][1].row,
-				       &(*keymap)[i][1].col,
-				       &shift1);
-
-				(*keymap)[i][0].shift = shift0 != 0;
-				(*keymap)[i][1].shift = shift1 != 0;
-			}
-		}
-
-		fclose(infile);
-	}
-
-	return success;
-}
-
-/****************************************************************************/
-bool BeebWin::WriteKeyMap(const char *filename, KeyMap *keymap)
-{
-	FILE *outfile = fopen(filename, "w");
-
-	if (outfile == nullptr)
-	{
-		Report(MessageType::Error, "Failed to write key map file:\n  %s", filename);
-		return false;
-	}
-
-	fprintf(outfile, KEYMAP_TOKEN "\n\n");
-
-	for (int i = 0; i < 256; ++i)
-	{
-		fprintf(outfile, "%d %d %d %d %d %d\n",
-		        (*keymap)[i][0].row,
-		        (*keymap)[i][0].col,
-		        (*keymap)[i][0].shift,
-		        (*keymap)[i][1].row,
-		        (*keymap)[i][1].col,
-		        (*keymap)[i][1].shift);
-	}
-
-	fclose(outfile);
-
-	return true;
 }
 
 /****************************************************************************/

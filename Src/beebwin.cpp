@@ -64,7 +64,6 @@ using std::max;
 #include "beebmem.h"
 #include "beebemrc.h"
 #include "atodconv.h"
-#include "userkybd.h"
 #include "Serial.h"
 #include "Econet.h" // Rob O'Donnell Christmas 2004.
 #include "tube.h"
@@ -77,7 +76,8 @@ using std::max;
 #include "ide.h"
 #include "z80mem.h"
 #include "z80.h"
-#include "userkybd.h"
+#include "KeyMap.h"
+#include "UserKeyboardDialog.h"
 #include "UserPortBreakoutBox.h"
 #include "Messages.h"
 #ifdef SPEECH_ENABLED
@@ -136,13 +136,6 @@ static const char *AboutText =
 	"Sprow ARM7TDMI 64MB\n\n"
 	"Version " VERSION_STRING ", " VERSION_DATE;
 
-// Keyboard mappings
-static KeyMap defaultMapping;
-static KeyMap logicalMapping;
-
-/* Currently selected translation table */
-static KeyMap *transTable = &defaultMapping;
-
 /****************************************************************************/
 BeebWin::BeebWin()
 {
@@ -167,9 +160,6 @@ BeebWin::BeebWin()
 	m_DisableKeysBreak = false;
 	m_DisableKeysEscape = false;
 	m_DisableKeysShortcut = false;
-	memset(&defaultMapping, 0, sizeof(KeyMap));
-	memset(&logicalMapping, 0, sizeof(KeyMap));
-	memset(&UserKeymap, 0, sizeof(KeyMap));
 	memset(m_UserKeyMapPath, 0, sizeof(m_UserKeyMapPath));
 	m_hBitmap = m_hOldObj = m_hDCBitmap = NULL;
 	m_screen = m_screen_blur = NULL;
@@ -229,6 +219,8 @@ BeebWin::BeebWin()
 	m_WriteInstructionCounts = false;
 	m_CaptureMouse = false;
 	m_MouseCaptured = false;
+
+	InitKeyMap();
 
 	/* Get the applications path - used for non-user files */
 	char app_path[_MAX_PATH];
@@ -382,13 +374,14 @@ void BeebWin::ApplyPrefs()
 	strcpy(HardDrivePath, Path);
 
 	// Load key maps
-	char keymap[_MAX_PATH];
-	strcpy(keymap, "Logical.kmap");
-	GetDataPath(m_UserDataPath, keymap);
-	ReadKeyMap(keymap, &logicalMapping);
-	strcpy(keymap, "Default.kmap");
-	GetDataPath(m_UserDataPath, keymap);
-	ReadKeyMap(keymap, &defaultMapping);
+	char KeyMapPath[_MAX_PATH];
+	strcpy(KeyMapPath, "Logical.kmap");
+	GetDataPath(m_UserDataPath, KeyMapPath);
+	ReadKeyMap(KeyMapPath, &LogicalKeyMap);
+
+	strcpy(KeyMapPath, "Default.kmap");
+	GetDataPath(m_UserDataPath, KeyMapPath);
+	ReadKeyMap(KeyMapPath, &DefaultKeyMap);
 
 	InitMenu();
 	ShowMenu(true);
@@ -2457,15 +2450,15 @@ void BeebWin::TranslateKeyMapping(void)
 	{
 	default:
 	case IDM_DEFAULTKYBDMAPPING:
-		transTable = &defaultMapping;
+		transTable = &DefaultKeyMap;
 		break;
 
 	case IDM_LOGICALKYBDMAPPING:
-		transTable = &logicalMapping;
+		transTable = &LogicalKeyMap;
 		break;
 
 	case IDM_USERKYBDMAPPING:
-		transTable = &UserKeymap;
+		transTable = &UserKeyMap;
 		break;
 	}
 }

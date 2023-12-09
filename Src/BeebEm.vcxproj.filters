@@ -120,6 +120,9 @@
     <ClCompile Include="IP232.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="KeyMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ListView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -198,7 +201,7 @@
     <ClCompile Include="UEFState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="userkybd.cpp">
+    <ClCompile Include="UserKeyboardDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UserPortBreakoutBox.cpp">
@@ -362,6 +365,9 @@
     <ClInclude Include="IP232.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="KeyMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ListView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -452,7 +458,7 @@
     <ClInclude Include="UEFState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="userkybd.h">
+    <ClInclude Include="UserKeyboardDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UserPortBreakoutBox.h">

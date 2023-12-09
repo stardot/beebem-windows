@@ -27,6 +27,7 @@ Boston, MA  02110-1301, USA.
 #include "beebemrc.h"
 #include "SelectKeyDialog.h"
 #include "Messages.h"
+#include "KeyMap.h"
 
 /****************************************************************************/
 
@@ -41,14 +42,20 @@ SelectKeyDialog::SelectKeyDialog(
 	HWND hwndParent,
 	const std::string& Title,
 	const std::string& SelectedKey,
-	bool EnableShift) :
+	bool BeebKey,
+	int Row,
+	int Column,
+	bool DoingShifted) :
 	m_hInstance(hInstance),
 	m_hwnd(nullptr),
 	m_hwndParent(hwndParent),
 	m_Title(Title),
 	m_SelectedKey(SelectedKey),
-	m_EnableShift(EnableShift),
+	m_BeebKey(BeebKey),
 	m_Key(-1),
+	m_Row(Row),
+	m_Column(Column),
+	m_DoingShifted(DoingShifted),
 	m_Shift(false)
 {
 }
@@ -104,7 +111,7 @@ INT_PTR SelectKeyDialog::DlgProc(
 
 		SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS, m_SelectedKey.c_str());
 
-		if (!m_EnableShift)
+		if (!m_BeebKey)
 		{
 			ShowWindow(GetDlgItem(m_hwnd, IDC_SHIFT), SW_HIDE);
 		}
@@ -133,6 +140,21 @@ INT_PTR SelectKeyDialog::DlgProc(
 	case WM_COMMAND:
 		switch (wParam)
 		{
+		case IDC_CLEAR:
+			SendMessage(m_hwndParent, WM_CLEAR_KEY_MAPPING, 0, 0);
+
+			if (m_BeebKey)
+			{
+				m_SelectedKey = GetKeysUsed(m_Row, m_Column, m_DoingShifted);
+			}
+			else
+			{
+				m_SelectedKey = "";
+			}
+
+			SetDlgItemText(m_hwnd, IDC_ASSIGNED_KEYS, m_SelectedKey.c_str());
+			return TRUE;
+
 		case IDOK:
 			Close(IDCONTINUE);
 			return TRUE;
@@ -203,82 +225,4 @@ int SelectKeyDialog::Key() const
 static bool IsDlgItemChecked(HWND hDlg, int nIDDlgItem)
 {
 	return SendDlgItemMessage(hDlg, nIDDlgItem, BM_GETCHECK, 0, 0) == BST_CHECKED;
-}
-
-/****************************************************************************/
-
-LPCSTR SelectKeyDialog::KeyName(int Key)
-{
-	static CHAR Character[2]; // Used to return single characters.
-
-	switch (Key)
-	{
-	case   8: return "Backspace";
-	case   9: return "Tab";
-	case  13: return "Enter";
-	case  16: return "Shift";
-	case  17: return "Ctrl";
-	case  18: return "Alt";
-	case  19: return "Break";
-	case  20: return "Caps";
-	case  27: return "Esc";
-	case  32: return "Spacebar";
-	case  33: return "PgUp";
-	case  34: return "PgDn";
-	case  35: return "End";
-	case  36: return "Home";
-	case  37: return "Left";
-	case  38: return "Up";
-	case  39: return "Right";
-	case  40: return "Down";
-	case  45: return "Insert";
-	case  46: return "Del";
-	case  93: return "Menu";
-	case  96: return "Pad0";
-	case  97: return "Pad1";
-	case  98: return "Pad2";
-	case  99: return "Pad3";
-	case 100: return "Pad4";
-	case 101: return "Pad5";
-	case 102: return "Pad6";
-	case 103: return "Pad7";
-	case 104: return "Pad8";
-	case 105: return "Pad9";
-	case 106: return "Pad*";
-	case 107: return "Pad+";
-	case 109: return "Pad-";
-	case 110: return "Pad.";
-	case 111: return "Pad/";
-	case 112: return "F1";
-	case 113: return "F2";
-	case 114: return "F3";
-	case 115: return "F4";
-	case 116: return "F5";
-	case 117: return "F6";
-	case 118: return "F7";
-	case 119: return "F8";
-	case 120: return "F9";
-	case 121: return "F10";
-	case 122: return "F11";
-	case 123: return "F12";
-	case 144: return "NumLock";
-	case 145: return "SclLock";
-	case 186: return ";";
-	case 187: return "=";
-	case 188: return ",";
-	case 189: return "-";
-	case 190: return ".";
-	case 191: return "/";
-	case 192: return "\'";
-	case 219: return "[";
-	case 220: return "\\";
-	case 221: return "]";
-	case 222: return "#";
-	case 223: return "`";
-
-	default:
-		Character[0] = (CHAR)LOBYTE(Key);
-		Character[1] = '\0';
-		return Character;
-	}
 }

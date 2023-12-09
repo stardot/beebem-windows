@@ -31,7 +31,10 @@ class SelectKeyDialog
 			HWND hwndParent,
 			const std::string& Title,
 			const std::string& SelectedKey,
-			bool EnableShift = true
+			bool BeebKey,
+			int Row,
+			int Column,
+			bool DoingShifted
 		);
 
 		bool Open();
@@ -40,8 +43,6 @@ class SelectKeyDialog
 		bool HandleMessage(const MSG& msg);
 
 		int Key() const;
-
-		static LPCSTR KeyName(int Key);
 
 	private:
 		static INT_PTR CALLBACK sDlgProc(
@@ -64,8 +65,11 @@ class SelectKeyDialog
 		HWND m_hwndParent;
 		std::string m_Title;
 		std::string m_SelectedKey;
-		bool m_EnableShift;
+		bool m_BeebKey;
 		int m_Key;
+		int m_Row;
+		int m_Column;
+		bool m_DoingShifted;
 		bool m_Shift;
 };
 

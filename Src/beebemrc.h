@@ -200,6 +200,7 @@ Boston, MA  02110-1301, USA.
 #define IDC_IP323_RAW_COMMS             1099
 #define IDC_IP232_HANDSHAKE             1100
 #define IDC_SERIAL_PORT                 1101
+#define IDC_CLEAR                       1102
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002

@@ -25,11 +25,12 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <string>
 
-#include "Main.h"
+#include "UserKeyboardDialog.h"
 #include "beebemrc.h"
-#include "userkybd.h"
-#include "SelectKeyDialog.h"
+#include "KeyMap.h"
+#include "Main.h"
 #include "Messages.h"
+#include "SelectKeyDialog.h"
 
 static void SetKeyColour(COLORREF aColour);
 static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl);
@@ -44,7 +45,6 @@ static void DrawSides(HDC hDC, RECT rect, COLORREF TopLeft, COLORREF BottomRight
 static void DrawBorder(HDC hDC, RECT rect, BOOL Depressed);
 static void DrawText(HDC hDC, RECT rect, HWND hwndCtrl, COLORREF colour, bool Depressed);
 static COLORREF GetKeyColour(UINT ctrlID);
-static std::string GetKeysUsed();
 
 // Colour used to highlight the selected key.
 static const COLORREF HighlightColour   = 0x00FF0080; // Purple
@@ -60,9 +60,6 @@ static HWND hwndUserKeyboard;
 static int BBCRow; // Used to store the Row and Col values while we wait
 static int BBCCol; // for a key press from the User.
 static bool doingShifted; // Selecting shifted or unshifted key press
-
-// Initialised to defaultMapping.
-KeyMap UserKeymap;
 
 static const char* szSelectKeyDialogTitle[2] = {
 	"Press key for unshifted press...",
@@ -121,14 +118,18 @@ static void SelectKeyMapping(HWND hwnd, UINT ctrlID, HWND hwndCtrl)
 
 	doingShifted = false;
 
-	std::string UsedKeys = GetKeysUsed();
+	std::string UsedKeys = GetKeysUsed(BBCRow, BBCCol, doingShifted);
 
 	// Now ask the user to input the PC key to assign to the BBC key.
 	selectKeyDialog = new SelectKeyDialog(
 		hInst,
 		hwnd,
 		szSelectKeyDialogTitle[doingShifted ? 1 : 0],
-		UsedKeys
+		UsedKeys,
+		true,
+		BBCRow,
+		BBCCol,
+		doingShifted
 	);
 
 	selectKeyDialog->Open();
@@ -140,12 +141,35 @@ static void SetBBCKeyForVKEY(int Key, bool Shift)
 {
 	if (Key >= 0 && Key < 256)
 	{
-		UserKeymap[Key][static_cast<int>(Shift)].row = BBCRow;
-		UserKeymap[Key][static_cast<int>(Shift)].col = BBCCol;
-		UserKeymap[Key][static_cast<int>(Shift)].shift = doingShifted;
+		UserKeyMap[Key][static_cast<int>(Shift)].row = BBCRow;
+		UserKeyMap[Key][static_cast<int>(Shift)].col = BBCCol;
+		UserKeyMap[Key][static_cast<int>(Shift)].shift = doingShifted;
 
 		// DebugTrace("SetBBCKey: key=%d, shift=%d, row=%d, col=%d, bbcshift=%d\n",
 		//            Key, shift, BBCRow, BBCCol, doingShifted);
+	}
+}
+
+/****************************************************************************/
+
+// Clear any PC keys that correspond to a given BBC keyboard column, row,
+// and shift state.
+
+static void ClearBBCKeyMapping(int Row, int Column, bool Shift)
+{
+	for (int PCKey = 0; PCKey < KEYMAP_SIZE; PCKey++)
+	{
+		for (int PCShift = 0; PCShift < 2; PCShift++)
+		{
+			if (UserKeyMap[PCKey][PCShift].row == Row &&
+			    UserKeyMap[PCKey][PCShift].col == Column &&
+			    UserKeyMap[PCKey][PCShift].shift == Shift)
+			{
+				UserKeyMap[PCKey][PCShift].row = 0;
+				UserKeyMap[PCKey][PCShift].col = 0;
+				UserKeyMap[PCKey][PCShift].shift = PCShift  == 1;
+			}
+		}
 	}
 }
 
@@ -241,6 +265,7 @@ static void SetRowCol(UINT ctrlID)
 
 	default:
 		BBCRow = 0; BBCCol = 0;
+		break;
 	}
 }
 
@@ -276,6 +301,10 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 		OnDrawItem((UINT)wParam, (LPDRAWITEMSTRUCT)lParam);
 		return TRUE;
 
+	case WM_CLEAR_KEY_MAPPING:
+		ClearBBCKeyMapping(BBCRow, BBCCol, doingShifted);
+		break;
+
 	case WM_SELECT_KEY_DIALOG_CLOSED:
 		if (wParam == IDOK)
 		{
@@ -293,13 +322,17 @@ static INT_PTR CALLBACK UserKeyboardDlgProc(HWND   hwnd,
 		{
 			doingShifted = true;
 
-			std::string UsedKeys = GetKeysUsed();
+			std::string UsedKeys = GetKeysUsed(BBCRow, BBCCol, doingShifted);
 
 			selectKeyDialog = new SelectKeyDialog(
 				hInst,
 				hwndUserKeyboard,
 				szSelectKeyDialogTitle[doingShifted ? 1 : 0],
-				UsedKeys
+				UsedKeys,
+				true,
+				BBCRow,
+				BBCCol,
+				doingShifted
 			);
 
 			selectKeyDialog->Open();
@@ -335,22 +368,22 @@ static void OnDrawItem(UINT CtrlID, LPDRAWITEMSTRUCT lpDrawItemStruct)
 	// Draw the rectanlge.
 	SetBkColor(lpDrawItemStruct->hDC, GetKeyColour(CtrlID));
 	Rectangle(lpDrawItemStruct->hDC,
-		lpDrawItemStruct->rcItem.left,
-		lpDrawItemStruct->rcItem.top,
-		lpDrawItemStruct->rcItem.right,
-		lpDrawItemStruct->rcItem.bottom);
+	          lpDrawItemStruct->rcItem.left,
+	          lpDrawItemStruct->rcItem.top,
+	          lpDrawItemStruct->rcItem.right,
+	          lpDrawItemStruct->rcItem.bottom);
 
 	// Draw border.
 	DrawBorder(lpDrawItemStruct->hDC,
-		lpDrawItemStruct->rcItem,
-		lpDrawItemStruct->itemState == (ODS_FOCUS | ODS_SELECTED));
+	           lpDrawItemStruct->rcItem,
+	           lpDrawItemStruct->itemState == (ODS_FOCUS | ODS_SELECTED));
 
 	// Draw the text.
 	DrawText(lpDrawItemStruct->hDC,
-		lpDrawItemStruct->rcItem,
-		lpDrawItemStruct->hwndItem,
-		0x00FFFFFF,
-		lpDrawItemStruct->itemState == (ODS_FOCUS | ODS_SELECTED));
+	         lpDrawItemStruct->rcItem,
+	         lpDrawItemStruct->hwndItem,
+	         0x00FFFFFF,
+	         lpDrawItemStruct->itemState == (ODS_FOCUS | ODS_SELECTED));
 
 	// Clear up.
 	DeleteObject(SelectObject(lpDrawItemStruct->hDC, aBrush));
@@ -387,9 +420,9 @@ static void DrawBorder(HDC hDC, RECT rect, BOOL Depressed)
 {
 	// Draw outer border.
 	if (Depressed)
-		DrawSides( hDC, rect, 0x00000000, 0x00FFFFFF );
+		DrawSides(hDC, rect, 0x00000000, 0x00FFFFFF);
 	else
-		DrawSides( hDC, rect, 0x00FFFFFF, 0x00000000 );
+		DrawSides(hDC, rect, 0x00FFFFFF, 0x00000000);
 	
 	// Draw inner border.
 	rect.top++;
@@ -398,9 +431,9 @@ static void DrawBorder(HDC hDC, RECT rect, BOOL Depressed)
 	rect.bottom--;
 
 	if (Depressed)
-		DrawSides( hDC, rect, 0x00777777, 0x00FFFFFF );
+		DrawSides(hDC, rect, 0x00777777, 0x00FFFFFF);
 	else
-		DrawSides( hDC, rect, 0x00FFFFFF, 0x00777777 );
+		DrawSides(hDC, rect, 0x00FFFFFF, 0x00777777);
 }
 
 /****************************************************************************/
@@ -454,46 +487,4 @@ static COLORREF GetKeyColour(UINT ctrlID)
 	default:
 		return NormalKeyColour;
 	}
-}
-
-/****************************************************************************/
-
-static std::string GetKeysUsed()
-{
-	std::string Keys;
-
-	// First see if this key is defined.
-	if (BBCRow != 0 || BBCCol != 0)
-	{
-		for (int i = 1; i < 256; i++)
-		{
-			for (int s = 0; s < 2; ++s)
-			{
-				if (UserKeymap[i][s].row == BBCRow &&
-					UserKeymap[i][s].col == BBCCol &&
-					UserKeymap[i][s].shift == doingShifted)
-				{
-					// We have found a key that matches.
-					if (!Keys.empty())
-					{
-						Keys += ", ";
-					}
-
-					if (s == 1)
-					{
-						Keys += "Sh-";
-					}
-
-					Keys += SelectKeyDialog::KeyName(i);
-				}
-			}
-		}
-	}
-
-	if (Keys.empty())
-	{
-		Keys = "Not Assigned";
-	}
-
-	return Keys;
 }

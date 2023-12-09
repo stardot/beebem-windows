@@ -42,7 +42,7 @@ Boston, MA  02110-1301, USA.
 #include "ide.h"
 #include "z80mem.h"
 #include "z80.h"
-#include "userkybd.h"
+#include "KeyMap.h"
 #include "UserPortBreakoutBox.h"
 #ifdef SPEECH_ENABLED
 #include "speech.h"
@@ -288,7 +288,7 @@ void BeebWin::LoadPreferences()
 	{
 		strcpy(path, m_UserKeyMapPath);
 		GetDataPath(m_UserDataPath, path);
-		if (ReadKeyMap(path, &UserKeymap))
+		if (ReadKeyMap(path, &UserKeyMap))
 			readDefault = false;
 	}
 	if (readDefault)
@@ -296,7 +296,7 @@ void BeebWin::LoadPreferences()
 		strcpy(m_UserKeyMapPath, "DefaultUser.kmap");
 		strcpy(path, m_UserKeyMapPath);
 		GetDataPath(m_UserDataPath, path);
-		ReadKeyMap(path, &UserKeymap);
+		ReadKeyMap(path, &UserKeyMap);
 	}
 
 	if (!m_Preferences.GetBoolValue("KeyMapAS", m_KeyMapAS))
