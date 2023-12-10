@@ -23,7 +23,8 @@ Boston, MA  02110-1301, USA.
 
 #include <string>
 
-bool FileExists(const char* FileName);
+bool FileExists(const char* PathName);
+bool FolderExists(const char* PathName);
 
 std::string AppendPath(const std::string& BasePath, const std::string& Path);
 

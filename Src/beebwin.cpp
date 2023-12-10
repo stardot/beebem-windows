@@ -4837,9 +4837,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			m_UserDataPath[i] = '\\';
 
 	// Check that the folder exists
-	DWORD att = GetFileAttributes(m_UserDataPath);
-
-	if (att == INVALID_FILE_ATTRIBUTES || !(att & FILE_ATTRIBUTE_DIRECTORY))
+	if (!FolderExists(m_UserDataPath))
 	{
 		if (Report(MessageType::Question,
 		           "BeebEm data folder does not exist:\n  %s\n\nCreate the folder?",
@@ -4856,10 +4854,12 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			// Create the folder
 			int result = SHCreateDirectoryEx(nullptr, m_UserDataPath, nullptr);
 
-			if (result == ERROR_SUCCESS) {
+			if (result == ERROR_SUCCESS)
+			{
 				copy_user_files = true;
 			}
-			else {
+			else
+			{
 				Report(MessageType::Error, "Failed to create BeebEm data folder:\n  %s",
 				       m_UserDataPath);
 				success = false;
@@ -4870,36 +4870,37 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 	{
 		// Check that essential files are in the user data folder
 		sprintf(path, "%sBeebFile", m_UserDataPath);
-		att = GetFileAttributes(path);
-		if (att == INVALID_FILE_ATTRIBUTES || !(att & FILE_ATTRIBUTE_DIRECTORY))
+
+		if (!FolderExists(path))
 			copy_user_files = true;
+
 		if (!copy_user_files)
 		{
 			sprintf(path, "%sBeebState", m_UserDataPath);
-			att = GetFileAttributes(path);
-			if (att == INVALID_FILE_ATTRIBUTES || !(att & FILE_ATTRIBUTE_DIRECTORY))
+
+			if (!FolderExists(path))
 				copy_user_files = true;
 		}
 		if (!copy_user_files)
 		{
 			sprintf(path, "%sEconet.cfg", m_UserDataPath);
-			att = GetFileAttributes(path);
-			if (att == INVALID_FILE_ATTRIBUTES)
+
+			if (!FileExists(path))
 				copy_user_files = true;
 		}
 		if (!copy_user_files)
 		{
 			sprintf(path, "%sAUNMap", m_UserDataPath);
-			att = GetFileAttributes(path);
-			if (att == INVALID_FILE_ATTRIBUTES)
+
+			if (!FileExists(path))
 				copy_user_files = true;
 		}
 #ifdef SPEECH_ENABLED
 		if (!copy_user_files)
 		{
 			sprintf(path, "%sPhroms.cfg", m_UserDataPath);
-			att = GetFileAttributes(path);
-			if (att == INVALID_FILE_ATTRIBUTES)
+
+			if (!FileExists(path))
 				copy_user_files = true;
 		}
 #endif
@@ -4908,8 +4909,8 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			if (strcmp(RomFile, "Roms.cfg") == 0)
 			{
 				sprintf(path, "%sRoms.cfg", m_UserDataPath);
-				att = GetFileAttributes(path);
-				if (att == INVALID_FILE_ATTRIBUTES)
+
+				if (!FileExists(path))
 					copy_user_files = true;
 			}
 		}
@@ -4971,8 +4972,8 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 			sprintf(path, "%s%s", m_UserDataPath, RomFile);
 			strcpy(RomFile, path);
 		}
-		att = GetFileAttributes(RomFile);
-		if (att == INVALID_FILE_ATTRIBUTES)
+
+		if (!FileExists(RomFile))
 		{
 			Report(MessageType::Error, "Cannot open ROMs file:\n  %s", RomFile);
 			success = false;

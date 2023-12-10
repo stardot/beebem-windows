@@ -22,12 +22,20 @@ Boston, MA  02110-1301, USA.
 
 #include "FileUtils.h"
 
-bool FileExists(const char* FileName)
+bool FileExists(const char* PathName)
 {
-	DWORD dwAttrib = GetFileAttributes(FileName);
+	DWORD dwAttrib = GetFileAttributes(PathName);
 
 	return dwAttrib != INVALID_FILE_ATTRIBUTES &&
-		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+	       !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+bool FolderExists(const char* PathName)
+{
+	DWORD dwAttrib = GetFileAttributes(PathName);
+
+	return dwAttrib != INVALID_FILE_ATTRIBUTES &&
+	       (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
 std::string AppendPath(const std::string& BasePath, const std::string& Path)
