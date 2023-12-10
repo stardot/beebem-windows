@@ -1031,13 +1031,8 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 		m_Preferences.SetStringValue(CfgName, DLLName);
 
 	// Set menu options
-	if (NativeFDC) {
-		CheckMenuItem(ID_8271, true);
-		CheckMenuItem(ID_FDC_DLL, false);
-	} else {
-		CheckMenuItem(ID_8271, false);
-		CheckMenuItem(ID_FDC_DLL, true);
-	}
+	CheckMenuItem(ID_8271, NativeFDC);
+	CheckMenuItem(ID_FDC_DLL, !NativeFDC);
 
 	DisplayCycles=7000000;
 	if (NativeFDC || MachineType == Model::Master128)
