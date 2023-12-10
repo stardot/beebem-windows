@@ -332,6 +332,7 @@ static unsigned char irqcause;   // flag to indicate cause of irq sr1b7
 static unsigned char sr1b2cause; // flag to indicate cause of irq sr1b2
 
 char EconetCfgPath[512];
+char AUNMapPath[512];
 
 // A receiving station goes into flag fill mode while it is processing 
 // a message.  This stops other stations sending messages that may interfere
@@ -701,16 +702,11 @@ static void ParseConfigLine(const std::string& Line, std::vector<std::string>& T
 
 static void ReadEconetConfigFile()
 {
-	char Path[256];
-
-	strcpy(Path, EconetCfgPath);
-	strcat(Path, "Econet.cfg");
-
-	std::ifstream Input(Path);
+	std::ifstream Input(EconetCfgPath);
 
 	if (!Input)
 	{
-		EconetError("Econet: Failed to open configuration file:\n  %s", Path);
+		EconetError("Econet: Failed to open configuration file:\n  %s", EconetCfgPath);
 		return;
 	}
 
@@ -773,12 +769,12 @@ static void ReadEconetConfigFile()
 				}
 				catch (const std::exception&)
 				{
-					EconetError("Invalid value in Econet config file:\n  %s", Path);
+					EconetError("Invalid value in Econet config file:\n  %s", EconetCfgPath);
 				}
 			}
 			else
 			{
-				EconetError("Too many network entries in Econet config file:\n  %s", Path);
+				EconetError("Too many network entries in Econet config file:\n  %s", EconetCfgPath);
 			}
 		}
 		else if (Tokens.size() == 2)
@@ -826,12 +822,12 @@ static void ReadEconetConfigFile()
 				}
 				else
 				{
-					EconetError("Unknown entry in Econet config file: %s\n  %s", Key.c_str(), Path);
+					EconetError("Unknown entry in Econet config file: %s\n  %s", Key.c_str(), EconetCfgPath);
 				}
 			}
 			catch (const std::exception&)
 			{
-				EconetError("Invalid value in Econet config file: %s\n  %s", Value.c_str(), Path);
+				EconetError("Invalid value in Econet config file: %s\n  %s", Value.c_str(), EconetCfgPath);
 			}
 		}
 	}
@@ -843,16 +839,11 @@ static void ReadEconetConfigFile()
 
 static void ReadAUNConfigFile()
 {
-	char Path[256];
-
-	strcpy(Path, EconetCfgPath);
-	strcat(Path, "AUNMap");
-
-	std::ifstream Input(Path);
+	std::ifstream Input(AUNMapPath);
 
 	if (!Input)
 	{
-		EconetError("Econet: Failed to open configuration file:\n  %s", Path);
+		EconetError("Econet: Failed to open configuration file:\n  %s", AUNMapPath);
 		return;
 	}
 
@@ -913,12 +904,12 @@ static void ReadAUNConfigFile()
 				}
 				catch (const std::exception&)
 				{
-					EconetError("Invalid value in Econet config file:\n  %s", Path);
+					EconetError("Invalid value in Econet config file:\n  %s", EconetCfgPath);
 				}
 			}
 			else
 			{
-				EconetError("Too many entries in Econet config file:\n  %s", Path);
+				EconetError("Too many entries in Econet config file:\n  %s", EconetCfgPath);
 			}
 		}
 	}

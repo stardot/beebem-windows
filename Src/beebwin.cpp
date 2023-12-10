@@ -365,7 +365,33 @@ bool BeebWin::Initialise()
 void BeebWin::ApplyPrefs()
 {
 	// Set up paths
-	strcpy(EconetCfgPath, m_UserDataPath);
+
+	if (EconetCfgPath[0] == '\0')
+	{
+		strcpy(EconetCfgPath, m_UserDataPath);
+		strcat(EconetCfgPath, "Econet.cfg");
+	}
+	else if (PathIsRelative(EconetCfgPath))
+	{
+		char Filename[_MAX_PATH];
+		strcpy(Filename, EconetCfgPath);
+		strcpy(EconetCfgPath, m_UserDataPath);
+		strcat(EconetCfgPath, Filename);
+	}
+
+	if (AUNMapPath[0] == '\0')
+	{
+		strcpy(AUNMapPath, m_UserDataPath);
+		strcat(AUNMapPath, "AUNMap");
+	}
+	else if (PathIsRelative(AUNMapPath))
+	{
+		char Filename[_MAX_PATH];
+		strcpy(Filename, AUNMapPath);
+		strcpy(AUNMapPath, m_UserDataPath);
+		strcat(AUNMapPath, Filename);
+	}
+
 	strcpy(RomPath, m_UserDataPath);
 
 	char Path[_MAX_PATH];
@@ -957,10 +983,10 @@ void BeebWin::HideMenu(bool hide)
 void BeebWin::TrackPopupMenu(int x, int y)
 {
 	::TrackPopupMenu(m_hMenu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON,
-	               x, y,
-	               0,
-	               m_hWnd,
-	               NULL);
+	                 x, y,
+	                 0,
+	                 m_hWnd,
+	                 NULL);
 }
 
 /****************************************************************************/
@@ -1354,9 +1380,9 @@ void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 	{
 		/* Scale and reverse the readings */
 		JoystickX = (int)((double)(m_JoystickCaps.wXmax - x) * 65535.0 /
-						  (double)(m_JoystickCaps.wXmax - m_JoystickCaps.wXmin));
+		                  (double)(m_JoystickCaps.wXmax - m_JoystickCaps.wXmin));
 		JoystickY = (int)((double)(m_JoystickCaps.wYmax - y) * 65535.0 /
-						  (double)(m_JoystickCaps.wYmax - m_JoystickCaps.wYmin));
+		                  (double)(m_JoystickCaps.wYmax - m_JoystickCaps.wYmin));
 	}
 }
 
@@ -4289,6 +4315,14 @@ void BeebWin::ParseCommandLine()
 			else if (_stricmp(__argv[i], "-Roms") == 0)
 			{
 				strcpy(RomFile, __argv[++i]);
+			}
+			else if (_stricmp(__argv[i], "-EconetCfg") == 0)
+			{
+				strcpy(EconetCfgPath, __argv[++i]);
+			}
+			else if (_stricmp(__argv[i], "-AUNMap") == 0)
+			{
+				strcpy(AUNMapPath, __argv[++i]);
 			}
 			else if (_stricmp(__argv[i], "-EcoStn") == 0)
 			{
