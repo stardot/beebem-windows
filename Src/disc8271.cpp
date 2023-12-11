@@ -37,6 +37,7 @@ Boston, MA  02110-1301, USA.
 #include "Log.h"
 #include "DiscType.h"
 #include "Main.h"
+#include "DebugTrace.h"
 
 #define ENABLE_LOG 0
 
@@ -728,6 +729,12 @@ static void DoVarLength_ReadDataCommand()
 	DoSelects();
 	DoLoadHead();
 
+	DebugTrace("8271: Read Data (Variable Length), Track %d Sector %d, Sectors %d, SectorLength %d\n",
+	           FDCState.Params[0],
+	           FDCState.Params[1],
+	           FDCState.Params[2] & 0x1F,
+	           1 << (7 + ((FDCState.Params[2] >> 5) & 7)));
+
 	FDCState.SectorOverRead = false; // FSD - if read size was larger than data stored
 
 	const int Drive = GetSelectedDrive();
@@ -991,6 +998,10 @@ static void Do128ByteSR_ReadDataAndDeldCommand()
 	DoSelects();
 	DoLoadHead();
 
+	DebugTrace("8271: Read Data and Deleted Data (Single Record), Track %d Sector %d\n",
+	           FDCState.Params[0],
+	           FDCState.Params[1]);
+
 	const int Drive = GetSelectedDrive();
 
 	if (Drive < 0)
@@ -1204,6 +1215,10 @@ static void DoReadIDCommand()
 	DoSelects();
 	DoLoadHead();
 
+	DebugTrace("8271: Read ID, Track %d Number of ID Fields %d\n",
+	           FDCState.Params[0],
+	           FDCState.Params[2]);
+
 	const int Drive = GetSelectedDrive();
 
 	if (Drive < 0)
@@ -1369,6 +1384,12 @@ static void Do128ByteSR_VerifyDataAndDeldCommand()
 static void DoVarLength_VerifyDataAndDeldCommand()
 {
 	DoSelects();
+
+	DebugTrace("8271: Verify Data and Deleted Data (Variable Length), Track %d Sector %d, Sectors %d, SectorLength %d\n",
+	           FDCState.Params[0],
+	           FDCState.Params[1],
+	           FDCState.Params[2] & 0x1F,
+	           1 << (7 + ((FDCState.Params[2] >> 5) & 7)));
 
 	const int Drive = GetSelectedDrive();
 
@@ -1570,19 +1591,13 @@ static void FormatInterrupt()
 
 /*--------------------------------------------------------------------------*/
 
-static void SeekInterrupt()
-{
-	FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
-	UpdateNMIStatus();
-	FDCState.ResultReg = RESULT_REG_SUCCESS; // All OK
-}
-
-/*--------------------------------------------------------------------------*/
-
 static void DoSeekCommand()
 {
 	DoSelects();
 	DoLoadHead();
+
+	DebugTrace("8271: Seek, Track %d\n",
+	           FDCState.Params[0]);
 
 	int Drive = GetSelectedDrive();
 
@@ -1602,6 +1617,15 @@ static void DoSeekCommand()
 	UpdateNMIStatus();
 
 	SetTrigger(100, Disc8271Trigger); // A short delay to causing an interrupt
+}
+
+/*--------------------------------------------------------------------------*/
+
+static void SeekInterrupt()
+{
+	FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
+	UpdateNMIStatus();
+	FDCState.ResultReg = RESULT_REG_SUCCESS; // All OK
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1629,6 +1653,14 @@ static void DoReadDriveStatusCommand()
 	                          | (FDCState.Select[0] ? 0x04 : 0)
 	                          | (WriteProt  ? 0x08 : 0)
 	                          | (Track0     ? 0x02 : 0);
+
+	DebugTrace("8271: Read Drive Status, Result: %02X (Select 0: %d, Select 1: %d, WriteProt: %d, Track0: %d)\n",
+	           FDCState.ResultReg,
+	           FDCState.Select[0],
+	           FDCState.Select[1],
+	           WriteProt,
+	           Track0);
+
 	FDCState.StatusReg |= STATUS_REG_RESULT_FULL;
 	UpdateNMIStatus();
 }
@@ -1646,18 +1678,37 @@ static void DoSpecifyCommand()
 			FDCState.HeadSettlingTime = FDCState.Params[2];
 			FDCState.IndexCountBeforeHeadUnload = (FDCState.Params[3] & 0xf0) >> 4;
 			FDCState.HeadLoadTime = FDCState.Params[3] & 0x0f;
+
+			DebugTrace("8271: Specify, Type %02X (Initialisation), StepRate %d, HeadSettlingTime %d, IndexCountBeforeHeadUnload %d, HeadLoadTime %d\n",
+			           FDCState.Params[0],
+			           FDCState.StepRate,
+			           FDCState.HeadSettlingTime,
+			           FDCState.IndexCountBeforeHeadUnload,
+			           FDCState.HeadLoadTime);
 			break;
 
 		case 0x10: // Load bad tracks, surface 0
 			FDCState.BadTracks[0][0] = FDCState.Params[1];
 			FDCState.BadTracks[0][1] = FDCState.Params[2];
 			FDCState.CurrentTrack[0] = FDCState.Params[3];
+
+			DebugTrace("8271: Specify, Type %02X (Load Bad Tracks, Surface 0), Bad Track 0: %d, Bad Track 1: %d, Current Track: %d\n",
+			           FDCState.Params[0],
+			           FDCState.BadTracks[0][0],
+			           FDCState.BadTracks[0][1],
+			           FDCState.CurrentTrack[0]);
 			break;
 
 		case 0x18: // Load bad tracks, surface 1
 			FDCState.BadTracks[1][0] = FDCState.Params[1];
 			FDCState.BadTracks[1][1] = FDCState.Params[2];
 			FDCState.CurrentTrack[1] = FDCState.Params[3];
+
+			DebugTrace("8271: Specify, Type %02X (Load Bad Tracks, Surface 1), Bad Track 0: %d, Bad Track 1: %d, Current Track: %d\n",
+			           FDCState.Params[0],
+			           FDCState.BadTracks[0][0],
+			           FDCState.BadTracks[0][1],
+			           FDCState.CurrentTrack[0]);
 			break;
 	}
 }
@@ -1672,6 +1723,10 @@ static void DoSpecifyCommand()
 
 static void DoWriteSpecialCommand()
 {
+	DebugTrace("8271: Write Special Register, Register %02X, Data %02X\n",
+	           FDCState.Params[0],
+	           FDCState.Params[1]);
+
 	DoSelects();
 
 	switch (FDCState.Params[0])
@@ -1749,6 +1804,9 @@ static void DoWriteSpecialCommand()
 
 static void DoReadSpecialCommand()
 {
+	DebugTrace("8271: Read Special Register, Register %02X\n",
+	           FDCState.Params[0]);
+
 	DoSelects();
 
 	switch (FDCState.Params[0])
