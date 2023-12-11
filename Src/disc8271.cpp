@@ -2444,8 +2444,8 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 
 	FreeDiscImage(DriveNum);
 
-	unsigned char FSDHeader[8];
-	fread(FSDHeader, 1, 8, infile); // Read FSD Header
+	unsigned char FSDHeader[3];
+	fread(FSDHeader, 1, 3, infile); // Read FSD Header
 
 	if (FSDHeader[0] != 'F' || FSDHeader[1] != 'S' || FSDHeader[2] != 'D')
 	{
@@ -2454,6 +2454,16 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 		mainWin->Report(MessageType::Error, "Not a valid FSD file:\n  %s", FileName);
 		return;
 	}
+
+	unsigned char Info[5];
+	fread(Info, 1, 5, infile);
+
+	const int Day = Info[0] >> 3;
+	const int Month = Info[2] & 0x0F;
+	const int Year = ((Info[0] & 0x07) << 8) | Info[1];
+
+	const int CreatorID = Info[2] >> 4;
+	const int Release = ((Info[4] >> 6) << 8) | Info[3];
 
 	std::string DiscTitle;
 	char TitleChar = 1;
