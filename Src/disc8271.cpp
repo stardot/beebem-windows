@@ -85,7 +85,6 @@ bool Disc8271Enabled = true;
 int Disc8271Trigger; // Cycle based time Disc8271Trigger
 
 constexpr int TRACKS_PER_DRIVE = 80;
-constexpr int FSD_TRACKS_PER_DRIVE = 40 + 1;
 
 // Note: reads/writes one byte every 80us
 constexpr int TIME_BETWEEN_BYTES = 160;
@@ -94,29 +93,30 @@ struct IDFieldType {
 	// Cylinder Number byte which identifies the track number
 	unsigned char LogicalTrack;
 	// Head Number byte which specifies the head used (top or bottom)
-	// to access the sector
+	// to access the sector: 0 for single sided discs and side 0 of
+	// two sided discs, and 1 for side 1 of two sided discs
 	unsigned char HeadNum;
 	// Record Number byte identifying the sector number
 	unsigned char LogicalSector;
-	// The byte length of the sector
+	// The byte length of the sector (Physical Record Length in the 8271 datasheet)
+	// 0: 128 bytes, 1: 256 bytes, 2: 512 bytes
 	unsigned char SectorLength;
 };
 
 struct SectorType {
 	IDFieldType IDField;
-	unsigned char CylinderNum; // FSD - moved from IDField
-	unsigned char RecordNum; // FSD - moved from IDField
-	int IDSiz; // FSD - 2 bytes for size, could be calculated automatically?
-	int RealSectorSize; // FSD - moved from IDField, PhysRecLength
+	unsigned char CylinderNum; // Physical track number
+	unsigned char RecordNum; // Physical sector number
 	unsigned char Error; // FSD - error code when sector was read, 20 for deleted data
+	int RealSectorSize; // The actual size of the sector, in bytes
 	unsigned char *Data;
 };
 
 struct TrackType {
-	int LogicalSectors; // Number of sectors stated in format command
-	int NSectors; // i.e. the number of records we have - not anything physical
+	int LogicalSectors; // Number of sectors in the current track (read from FSD file)
+	int NSectors; // Number of sectors in the Sectors array
 	SectorType *Sectors;
-	int Gap1Size; // From format command
+	int Gap1Size; // From Format command
 	int Gap3Size;
 	int Gap5Size;
 	bool TrackIsReadable; // FSD - is the track readable, or just contains track ID?
@@ -176,12 +176,6 @@ struct FDCStateType {
 
 static FDCStateType FDCState;
 
-// Note Head select is done from bit 5 of the drive output register
-#define CURRENT_HEAD ((FDCState.DriveControlOutputPort >> 5) & 1)
-
-static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
-static void DriveHeadScheduleUnload(void);
-
 /*--------------------------------------------------------------------------*/
 
 struct CommandStatusType {
@@ -199,6 +193,15 @@ struct CommandStatusType {
 };
 
 static CommandStatusType CommandStatus;
+
+/*--------------------------------------------------------------------------*/
+
+// Note Head select is done from bit 5 of the drive output register
+#define CURRENT_HEAD ((FDCState.DriveControlOutputPort >> 5) & 1)
+
+static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum);
+static void DriveHeadScheduleUnload();
+static unsigned short GetFSDSectorSize(unsigned char Index);
 
 /*--------------------------------------------------------------------------*/
 
@@ -904,7 +907,7 @@ static void ReadInterrupt()
 	}
 
 	if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DELETED_DATA_CRC_ERROR &&
-	    CommandStatus.CurrentSectorPtr->IDSiz == CommandStatus.SectorLength &&
+	    GetFSDSectorSize(CommandStatus.CurrentSectorPtr->IDField.SectorLength) == CommandStatus.SectorLength &&
 	    !FDCState.SectorOverRead)
 	{
 		FDCState.ResultReg = RESULT_REG_DELETED_DATA_FOUND;
@@ -930,7 +933,7 @@ static void ReadInterrupt()
 	}
 
 	if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DATA_CRC_ERROR &&
-	    CommandStatus.CurrentSectorPtr->RealSectorSize == CommandStatus.CurrentSectorPtr->IDSiz)
+	    CommandStatus.CurrentSectorPtr->RealSectorSize == GetFSDSectorSize(CommandStatus.CurrentSectorPtr->IDField.SectorLength))
 	{
 		FDCState.ResultReg = RESULT_REG_DATA_CRC_ERROR;
 
@@ -1290,7 +1293,7 @@ static void ReadIDInterrupt()
 	}
 	else if (CommandStatus.ByteWithinSector == 3)
 	{
-		FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.SectorLength; // was 1, for 256 byte
+		FDCState.DataReg = CommandStatus.CurrentSectorPtr->IDField.SectorLength;
 	}
 
 	CommandStatus.ByteWithinSector++;
@@ -2316,14 +2319,15 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
 			DiscStatus[DriveNum].Tracks[Head][Track].TrackIsReadable = true;
 			SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][Track].Sectors = (SectorType*)calloc(10, sizeof(SectorType));
 
-			for (unsigned char Sector = 0; Sector < 10; Sector++) {
-				SecPtr[Sector].IDField.LogicalTrack = Track; // was CylinderNum
-				SecPtr[Sector].IDField.LogicalSector = Sector; // was RecordNum
+			for (unsigned char Sector = 0; Sector < 10; Sector++)
+			{
+				SecPtr[Sector].IDField.LogicalTrack = Track;
+				SecPtr[Sector].IDField.LogicalSector = Sector;
 				SecPtr[Sector].IDField.HeadNum = (unsigned char)HeadNum;
-				SecPtr[Sector].IDField.SectorLength = 256; // was PhysRecLength
+				SecPtr[Sector].IDField.SectorLength = 1; // 1 means 256 byte sectors
 				SecPtr[Sector].RecordNum = Sector;
-				SecPtr[Sector].RealSectorSize = 256;
 				SecPtr[Sector].Error = RESULT_REG_SUCCESS;
+				SecPtr[Sector].RealSectorSize = 256;
 				SecPtr[Sector].Data = (unsigned char *)calloc(1,256);
 				fread(SecPtr[Sector].Data, 1, 256, infile);
 			}
@@ -2368,14 +2372,15 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks)
 			DiscStatus[DriveNum].Tracks[Head][Track].TrackIsReadable = true;
 			SectorType *SecPtr = DiscStatus[DriveNum].Tracks[Head][Track].Sectors = (SectorType *)calloc(10,sizeof(SectorType));
 
-			for (unsigned char Sector = 0; Sector < 10; Sector++) {
-				SecPtr[Sector].IDField.LogicalTrack = Track; // was CylinderNum
-				SecPtr[Sector].IDField.LogicalSector = Sector; // was RecordNum
+			for (unsigned char Sector = 0; Sector < 10; Sector++)
+			{
+				SecPtr[Sector].IDField.LogicalTrack = Track;
+				SecPtr[Sector].IDField.LogicalSector = Sector;
 				SecPtr[Sector].IDField.HeadNum = (unsigned char)Head;
-				SecPtr[Sector].IDField.SectorLength = 256; // was PhysRecLength
+				SecPtr[Sector].IDField.SectorLength = 1; // 1 means 256 byte sectors
 				SecPtr[Sector].RecordNum = Sector;
-				SecPtr[Sector].RealSectorSize = 256;
 				SecPtr[Sector].Error = RESULT_REG_SUCCESS;
+				SecPtr[Sector].RealSectorSize = 256;
 				SecPtr[Sector].Data = (unsigned char *)calloc(1,256);
 				fread(SecPtr[Sector].Data, 1, 256, infile);
 			}
@@ -2421,8 +2426,6 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 		return;
 	}
 
-	mainWin->SetImageName(FileName, DriveNum, DiscType::FSD);
-
 	// JGH, 26-Dec-2011
 	DiscStatus[DriveNum].NumHeads = 1; // 1 = TRACKS_PER_DRIVE SSD image
 	                                   // 2 = 2 * TRACKS_PER_DRIVE DSD image
@@ -2434,33 +2437,41 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 
 	FreeDiscImage(DriveNum);
 
-	unsigned char FSDheader[8]; // FSD - Header information
-	fread(FSDheader, 1, 8, infile); // Skip FSD Header
+	unsigned char FSDHeader[8];
+	fread(FSDHeader, 1, 8, infile); // Read FSD Header
 
-	std::string disctitle;
-	char dtchar = 1;
-
-	while (dtchar != 0)
+	if (FSDHeader[0] != 'F' || FSDHeader[1] != 'S' || FSDHeader[2] != 'D')
 	{
-		dtchar = fgetc(infile);
-		disctitle = disctitle + dtchar;
+		fclose(infile);
+
+		mainWin->Report(MessageType::Error, "Not a valid FSD file:\n  %s", FileName);
+		return;
+	}
+
+	std::string DiscTitle;
+	char TitleChar = 1;
+
+	while (TitleChar != '\0')
+	{
+		TitleChar = fgetc(infile);
+		DiscTitle += TitleChar;
 	}
 
 	int LastTrack = fgetc(infile) ; // Read number of last track on disk image
 	DiscStatus[DriveNum].TotalTracks = LastTrack + 1;
 
-	if (DiscStatus[DriveNum].TotalTracks > FSD_TRACKS_PER_DRIVE)
+	if (DiscStatus[DriveNum].TotalTracks > TRACKS_PER_DRIVE)
 	{
 		mainWin->Report(MessageType::Error,
 		                "Could not open disc file:\n  %s\n\nExpected a maximum of %d tracks, found %d",
-		                FileName, FSD_TRACKS_PER_DRIVE, DiscStatus[DriveNum].TotalTracks);
+		                FileName, TRACKS_PER_DRIVE, DiscStatus[DriveNum].TotalTracks);
 
 		return;
 	}
 
 	for (int Track = 0; Track < DiscStatus[DriveNum].TotalTracks; Track++)
 	{
-		unsigned char fctrack = fgetc(infile); // Read current track details
+		unsigned char TrackNumber = fgetc(infile); // Read current track details
 		unsigned char SectorsPerTrack = fgetc(infile); // Read number of sectors on track
 		DiscStatus[DriveNum].Tracks[Head][Track].LogicalSectors = SectorsPerTrack;
 
@@ -2470,7 +2481,7 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 			DiscStatus[DriveNum].Tracks[Head][Track].NSectors = SectorsPerTrack; // Can be different than 10
 			SectorType *SecPtr = (SectorType*)calloc(SectorsPerTrack, sizeof(SectorType));
 			DiscStatus[DriveNum].Tracks[Head][Track].Sectors = SecPtr;
-			DiscStatus[DriveNum].Tracks[Head][Track].TrackIsReadable = TrackIsReadable != 0;
+			DiscStatus[DriveNum].Tracks[Head][Track].TrackIsReadable = TrackIsReadable == 255;
 
 			for (int Sector = 0; Sector < SectorsPerTrack; Sector++)
 			{
@@ -2486,27 +2497,28 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 				SecPtr[Sector].IDField.LogicalSector = LogicalSector;
 				SecPtr[Sector].RecordNum = Sector;
 
-				unsigned char FRecLength = fgetc(infile); // Reported length of sector
-				SecPtr[Sector].IDField.SectorLength = FRecLength;
-				SecPtr[Sector].IDSiz = GetFSDSectorSize(FRecLength);
+				unsigned char SectorSize = fgetc(infile); // Reported length of sector
+				SecPtr[Sector].IDField.SectorLength = SectorSize;
 
 				if (TrackIsReadable == 255)
 				{
-					unsigned char FPRecLength = fgetc(infile); // Real size of sector, can be misreported as copy protection
-					unsigned short FSectorSize = GetFSDSectorSize(FPRecLength);
+					SectorSize = fgetc(infile); // Real size of sector, can be misreported as copy protection
+					unsigned short RealSectorSize = GetFSDSectorSize(SectorSize);
 
-					SecPtr[Sector].RealSectorSize = FSectorSize;
+					SecPtr[Sector].RealSectorSize = RealSectorSize;
 
-					unsigned char FErr = fgetc(infile); // Error code when sector was read
-					SecPtr[Sector].Error = FErr;
-					SecPtr[Sector].Data = (unsigned char *)calloc(1, FSectorSize);
-					fread(SecPtr[Sector].Data, 1, FSectorSize, infile);
+					unsigned char SectorError = fgetc(infile); // Error code when sector was read
+					SecPtr[Sector].Error = SectorError;
+					SecPtr[Sector].Data = (unsigned char *)calloc(1, RealSectorSize);
+					fread(SecPtr[Sector].Data, 1, RealSectorSize, infile);
 				}
 			}
 		}
 	}
 
 	fclose(infile);
+
+	mainWin->SetImageName(FileName, DriveNum, DiscType::FSD);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -2587,7 +2599,8 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum)
 		Success = false;
 	}
 
-	if (!Success) {
+	if (!Success)
+	{
 		mainWin->Report(MessageType::Error,
 		                "Failed writing to disc file:\n  %s", DiscStatus[DriveNum].FileName);
 	}
