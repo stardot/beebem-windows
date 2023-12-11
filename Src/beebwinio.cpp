@@ -138,7 +138,8 @@ void BeebWin::EjectDiscImage(int Drive)
 }
 
 /****************************************************************************/
-int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
+
+bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 {
 	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
@@ -245,6 +246,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				else
 				{
 					Report(MessageType::Error, "FSD images are only supported with the 8271 FDC");
+					return false;
 				}
 			}
 		}
@@ -261,6 +263,11 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				Load1770DiscImage(FileName, Drive, DiscType::IMG);
 			if (dos)
 				Load1770DiscImage(FileName, Drive, DiscType::DOS);
+			if (fsd)
+			{
+				Report(MessageType::Error, "FSD images are only supported with the 8271 FDC");
+				return false;
+			}
 		}
 
 		// Write protect the disc

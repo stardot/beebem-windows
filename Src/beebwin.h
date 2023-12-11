@@ -338,7 +338,7 @@ public:
 	void TranslateTiming();
 	void SetRealTimeTarget(double RealTimeTarget);
 	void TranslateKeyMapping(void);
-	int ReadDisc(int Drive, bool bCheckForPrefs);
+	bool ReadDisc(int Drive, bool bCheckForPrefs);
 	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	void LoadTape(void);
 	void InitJoystick(void);

@@ -4461,6 +4461,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 	bool uef = false;
 	bool csw = false;
 	bool img = false;
+	bool fsd = false;
 
 	// See if file is readable
 	if (CmdLineFile[0] != 0)
@@ -4487,6 +4488,8 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 				csw = true;
 			else if (_stricmp(ext+1, "img") == 0)
 				img = true;
+			else if (_stricmp(ext+1, "fsd") == 0)
+				fsd = true;
 			else
 			{
 				Report(MessageType::Error, "Unrecognised file type:\n  %s",
@@ -4697,24 +4700,42 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 				else
 					Load1770DiscImage(FileName, Drive, DiscType::IMG);
 			}
-			if (fsd)
+			else if (fsd)
 			{
 				if (NativeFDC)
+				{
 					LoadFSDDiscImage(FileName, Drive);
+				}
 				else
-					MessageBox(m_hWnd, "FSD images are only supported with the 8271 FDC", "BeebEm", MB_ICONERROR | MB_OK);
+				{
+					Report(MessageType::Error, "FSD images are only supported with the 8271 FDC");
+					return;
+				}
 			}
 		}
 		else // Model::Master128
 		{
 			if (dsd)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::DSD);
+			}
 			else if (ssd)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::SSD);
+			}
 			else if (adfs)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::ADFS);
+			}
 			else if (img)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::IMG);
+			}
+			else if (fsd)
+			{
+				Report(MessageType::Error, "FSD images are only supported with the 8271 FDC");
+				return;
+			}
 		}
 
 		// Write protect the disc
