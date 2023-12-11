@@ -273,17 +273,24 @@ static void InitDiscStore()
 
 // Given a logical track number accounts for bad tracks
 
-static int SkipBadTracks(int /* Unit */, int trackin)
+static int SkipBadTracks(int Drive, int trackin)
 {
-	/* int offset=0;
-	if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
+	if (DiscStatus[Drive].Type == DiscType::FSD)
 	{
-		if (Internal_BadTracks[Unit][0]<=trackin) offset++;
-		if (Internal_BadTracks[Unit][1]<=trackin) offset++;
+		return trackin; // FSD - no bad tracks, but possible to have unformatted
 	}
-	return(trackin+offset); */
+	else
+	{
+		int offset=0;
 
-	return trackin; // FSD - no bad tracks, but possible to have unformatted
+		if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
+		{
+			if (FDCState.BadTracks[Drive][0] <= trackin) offset++;
+			if (FDCState.BadTracks[Drive][1] <= trackin) offset++;
+		}
+
+		return trackin + offset;
+	}
 }
 
 /*--------------------------------------------------------------------------*/
