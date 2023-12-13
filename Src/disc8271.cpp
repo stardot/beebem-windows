@@ -951,23 +951,21 @@ static void ReadInterrupt()
 		FDCState.ResultReg = RESULT_REG_DELETED_DATA_FOUND;
 	}
 
-	// If track has deliberate error, but the id field sector size has been read)
-	if (CommandStatus.CurrentSectorPtr->Error == 0xE1 && CommandStatus.SectorLength != 256)
+	// If track has deliberate error, but the id field sector size has been read.
+	if (CommandStatus.CurrentSectorPtr->Error == 0xE0)
 	{
-		FDCState.ResultReg = RESULT_REG_DATA_CRC_ERROR;
+		FDCState.ResultReg = CommandStatus.SectorLength == 128 ?
+		                     RESULT_REG_SUCCESS : RESULT_REG_DATA_CRC_ERROR;
 	}
-	else if (CommandStatus.CurrentSectorPtr->Error == 0xE1 && CommandStatus.SectorLength == 256)
+	else if (CommandStatus.CurrentSectorPtr->Error == 0xE1)
 	{
-		FDCState.ResultReg = RESULT_REG_SUCCESS;
+		FDCState.ResultReg = CommandStatus.SectorLength == 256 ?
+		                     RESULT_REG_SUCCESS : RESULT_REG_DATA_CRC_ERROR;
 	}
-
-	if (CommandStatus.CurrentSectorPtr->Error == 0xE0 && CommandStatus.SectorLength != 128)
+	else if (CommandStatus.CurrentSectorPtr->Error == 0xE2)
 	{
-		FDCState.ResultReg = RESULT_REG_DATA_CRC_ERROR;
-	}
-	else if (CommandStatus.CurrentSectorPtr->Error == 0xE0 && CommandStatus.SectorLength == 128)
-	{
-		FDCState.ResultReg = RESULT_REG_SUCCESS;
+		FDCState.ResultReg = CommandStatus.SectorLength == 512 ?
+		                     RESULT_REG_SUCCESS : RESULT_REG_DATA_CRC_ERROR;
 	}
 
 	if (CommandStatus.CurrentSectorPtr->Error == RESULT_REG_DATA_CRC_ERROR &&
@@ -977,7 +975,7 @@ static void ReadInterrupt()
 
 		if (CommandStatus.ByteWithinSector % 5 == 0)
 		{
-			FDCState.DataReg = FDCState.DataReg >> rand() % 8;
+			FDCState.DataReg >>= rand() % 8;
 		}
 	}
 
