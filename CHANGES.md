@@ -4,8 +4,10 @@ BeebEm Change History
 Unreleased changes
 ------------
 
-Contributors: Chris Needham, Mauro Varischetti
+Contributors: Chris Needham, Mauro Varischetti, billcarr2005
 
+* Added support for FSD format disk images. This currently only works
+  with the 8271 and not the 1770 disk controller.
 * Econet improvements:
   - Added -EconetCfg and -AUNMap options, to allow the location of these
     config files to be set on the command line.
