@@ -63,7 +63,6 @@ static bool LightsOn[2] = { false, false };
 static bool HeadLoaded[2] = { false,false };
 // End of control bits
 static int ByteCount = 0;
-static long DataPos;
 
 bool Disc1770Enabled = true;
 
@@ -692,8 +691,7 @@ void Poll1770(int NCycles) {
 			            WD1770_STATUS_SPIN_UP_COMPLETE |
 			            WD1770_STATUS_LOST_DATA);
 			ByteCount = SecSize[CurrentDrive] + 1;
-			DataPos = ftell(CurrentDisc);
-			HeadPos[CurrentDrive] = DataPos;
+			HeadPos[CurrentDrive] = ftell(CurrentDisc);
 			LoadingCycles = 45;
 			fseek(CurrentDisc, DiscStrt[CurrentDrive] + (DiscStep[CurrentDrive] * Track) + (Sector * SecSize[CurrentDrive]), SEEK_SET);
 		}
@@ -859,8 +857,7 @@ void Poll1770(int NCycles) {
 		fseek(CurrentDisc, DiscStrt[CurrentDrive] + (DiscStep[CurrentDrive] * Track), SEEK_SET);
 		Sector = 0;
 		ByteCount = 0;
-		DataPos = ftell(CurrentDisc);
-		HeadPos[CurrentDrive] = DataPos;
+		HeadPos[CurrentDrive] = ftell(CurrentDisc);
 		// WriteLog("Read/Write Track Prepare - Disc = %d, Track = %d\n", CurrentDrive, Track);
 	}
 
@@ -1307,7 +1304,7 @@ void Save1770UEF(FILE *SUEF)
 	fputc(LightsOn[0],SUEF);
 	fputc(LightsOn[1],SUEF);
 	fput32(ByteCount,SUEF);
-	fput32(DataPos,SUEF);
+	fput32(0,SUEF); // Was DataPos
 	fputc(ExtControl,SUEF);
 	fputc(CurrentDrive,SUEF);
 	fput32(HeadPos[0],SUEF);
@@ -1389,7 +1386,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 		LightsOn[0] = fgetbool(SUEF);
 		LightsOn[1] = fgetbool(SUEF);
 		ByteCount = fget32(SUEF);
-		DataPos = fget32(SUEF);
+		long DataPos = fget32(SUEF);
 		ExtControl = fget8(SUEF);
 		CurrentDrive = fget8(SUEF);
 		HeadPos[0] = fget32(SUEF);
