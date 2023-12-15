@@ -86,7 +86,7 @@ UEFStateResult SaveUEFState(const char *FileName)
 		fprintf(UEFState,"UEF File!");
 		fputc(0,UEFState); // UEF Header
 
-		const unsigned char UEFMinorVersion = 13;
+		const unsigned char UEFMinorVersion = 14;
 		const unsigned char UEFMajorVersion = 0;
 
 		fputc(UEFMinorVersion, UEFState);
@@ -143,7 +143,7 @@ UEFStateResult LoadUEFState(const char *FileName)
 
 		const int Version = fget16(UEFState);
 
-		if (Version > 13)
+		if (Version > 14)
 		{
 			fclose(UEFState);
 			return UEFStateResult::InvalidUEFVersion;
@@ -158,7 +158,7 @@ UEFStateResult LoadUEFState(const char *FileName)
 			switch (Block)
 			{
 				case 0x046A:
-					mainWin->LoadEmuUEF(UEFState,Version);
+					mainWin->LoadEmuUEF(UEFState, Version);
 					break;
 
 				case 0x0460:
@@ -206,7 +206,7 @@ UEFStateResult LoadUEFState(const char *FileName)
 					break;
 
 				case 0x046E:
-					Load8271UEF(UEFState);
+					Load8271UEF(UEFState, Version);
 					break;
 
 				case 0x046F:

@@ -145,7 +145,7 @@ struct FDCStateType {
 	// They also act as "drive ready" bits which are reset when the motor stops.
 	bool Select[2]; // Drive selects
 
-	int DriveHeadPosition[2];
+	unsigned char DriveHeadPosition[2];
 	bool DriveHeadLoaded;
 	bool DriveHeadUnloadPending;
 
@@ -2869,9 +2869,29 @@ void Save8271UEF(FILE *SUEF)
 	fput32(CommandStatus.SectorLength, SUEF);
 	fput32(CommandStatus.SectorsToGo, SUEF);
 	fput32(CommandStatus.ByteWithinSector, SUEF);
+
+	fputc(FDCState.StepRate, SUEF);
+	fputc(FDCState.HeadSettlingTime, SUEF);
+	fputc(FDCState.IndexCountBeforeHeadUnload, SUEF);
+	fputc(FDCState.HeadLoadTime, SUEF);
+	fputc(FDCState.DriveHeadLoaded, SUEF);
+	fputc(FDCState.DriveHeadUnloadPending, SUEF);
+
+	// Load FSD-specific state
+	fputc(FDCState.DriveHeadPosition[0], SUEF);
+	fputc(FDCState.DriveHeadPosition[1], SUEF);
+	fputc(FDCState.PositionInTrack[0], SUEF);
+	fputc(FDCState.PositionInTrack[1], SUEF);
+	fputc(FDCState.SectorOverRead, SUEF);
+	fputc(FDCState.UsingSpecial, SUEF);
+	fputc(FDCState.DRDSC, SUEF);
+	fputc(FDCState.FSDLogicalTrack[0], SUEF);
+	fputc(FDCState.FSDLogicalTrack[1], SUEF);
+	fputc(FDCState.FSDPhysicalTrack[0], SUEF);
+	fputc(FDCState.FSDPhysicalTrack[1], SUEF);
 }
 
-void Load8271UEF(FILE *SUEF)
+void Load8271UEF(FILE *SUEF, int Version)
 {
 	extern bool DiscLoaded[2];
 	char FileName[256];
@@ -2893,10 +2913,18 @@ void Load8271UEF(FILE *SUEF)
 		// Load drive 0
 		Loaded = true;
 		ext = strrchr(FileName, '.');
-		if (ext != nullptr && _stricmp(ext+1, "dsd") == 0)
+		if (ext != nullptr && _stricmp(ext + 1, "dsd") == 0)
+		{
 			LoadSimpleDSDiscImage(FileName, 0, 80);
+		}
+		else if (Version >= 14 && ext != nullptr && _stricmp(ext + 1, "fsd") == 0)
+		{
+			LoadFSDDiscImage(FileName, 0);
+		}
 		else
+		{
 			LoadSimpleDiscImage(FileName, 0, 0, 80);
+		}
 
 		if (DiscStatus[0].Tracks[0][0].Sectors == nullptr)
 			LoadFailed = true;
@@ -2909,11 +2937,18 @@ void Load8271UEF(FILE *SUEF)
 		// Load drive 1
 		Loaded = true;
 		ext = strrchr(FileName, '.');
-		if (ext != nullptr && _stricmp(ext+1, "dsd") == 0)
+		if (ext != nullptr && _stricmp(ext + 1, "dsd") == 0)
+		{
 			LoadSimpleDSDiscImage(FileName, 1, 80);
+		}
+		else if (Version >= 14 && ext != nullptr && _stricmp(ext + 1, "fsd") == 0)
+		{
+			LoadFSDDiscImage(FileName, 1);
+		}
 		else
+		{
 			LoadSimpleDiscImage(FileName, 1, 0, 80);
-
+		}
 		if (DiscStatus[1].Tracks[0][0].Sectors == nullptr)
 			LoadFailed = true;
 	}
@@ -2955,6 +2990,30 @@ void Load8271UEF(FILE *SUEF)
 		CommandStatus.SectorLength = fget32(SUEF);
 		CommandStatus.SectorsToGo = fget32(SUEF);
 		CommandStatus.ByteWithinSector = fget32(SUEF);
+
+		if (Version >= 14)
+		{
+			// Load 8271 state
+			FDCState.StepRate = fget8(SUEF);
+			FDCState.HeadSettlingTime = fget8(SUEF);
+			FDCState.IndexCountBeforeHeadUnload = fget8(SUEF);
+			FDCState.HeadLoadTime = fget8(SUEF);
+			FDCState.DriveHeadLoaded = fget8(SUEF) != 0;
+			FDCState.DriveHeadUnloadPending = fget8(SUEF) != 0;
+
+			// Load FSD-specific state
+			FDCState.DriveHeadPosition[0] = fget8(SUEF);
+			FDCState.DriveHeadPosition[1] = fget8(SUEF);
+			FDCState.PositionInTrack[0] = fget8(SUEF);
+			FDCState.PositionInTrack[1] = fget8(SUEF);
+			FDCState.SectorOverRead = fget8(SUEF) != 0;
+			FDCState.UsingSpecial = fget8(SUEF) != 0;
+			FDCState.DRDSC = fget8(SUEF);
+			FDCState.FSDLogicalTrack[0] = fget8(SUEF);
+			FDCState.FSDLogicalTrack[1] = fget8(SUEF);
+			FDCState.FSDPhysicalTrack[0] = fget8(SUEF);
+			FDCState.FSDPhysicalTrack[1] = fget8(SUEF);
+		}
 
 		CommandStatus.CurrentTrackPtr = GetTrackPtr(CommandStatus.TrackAddr);
 
