@@ -483,6 +483,9 @@
   <ItemGroup>
     <Text Include="..\CHANGES.md" />
     <Text Include="..\COPYRIGHT.txt" />
+    <Text Include="..\Documents\FSDFileFormat.txt" />
+    <Text Include="..\Documents\Ibos.txt" />
+    <Text Include="..\Documents\KeyMapInfo.txt" />
     <Text Include="..\README-SPROW.txt" />
     <Text Include="..\README.md" />
   </ItemGroup>

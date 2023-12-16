@@ -34,6 +34,9 @@
     <Filter Include="UserData">
       <UniqueIdentifier>{c98f4a0c-e1bc-4c7f-8fd4-eca857069d8e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Documents\Documents">
+      <UniqueIdentifier>{29b5506a-ed8b-449d-a25f-c4f9778205e1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="6502core.cpp">
@@ -699,6 +702,15 @@
     </Text>
     <Text Include="..\README-SPROW.txt">
       <Filter>Documents</Filter>
+    </Text>
+    <Text Include="..\Documents\FSDFileFormat.txt">
+      <Filter>Documents\Documents</Filter>
+    </Text>
+    <Text Include="..\Documents\Ibos.txt">
+      <Filter>Documents\Documents</Filter>
+    </Text>
+    <Text Include="..\Documents\KeyMapInfo.txt">
+      <Filter>Documents\Documents</Filter>
     </Text>
   </ItemGroup>
 </Project>

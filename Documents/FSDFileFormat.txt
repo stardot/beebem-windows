@@ -1,0 +1,64 @@
+FSD File Format
+===============
+
+Source: https://www.stardot.org.uk/forums/viewtopic.php?p=195518#p195518
+
+Header:
+=======
+Identifier: "FSD"  string literal 3 bytes
+   Creator:        5 bytes; date of creation/author
+     Title:        Character string (unlimited length; may contain any but null)
+ Title_End: 0x00   byte literal 1 byte
+    Num_Tr: xx     1 byte, number of last track = number of tracks - 1
+
+For each track
+==============
+   track_num: 1 byte (physical track number starting from 0)
+     num_sec: 1 byte (00 == unformatted)
+    readable: 1 byte (00 == unreadable, ff == readable)
+
+     For each sector
+     ===============
+           Track_ID: 1 byte
+        Head_number: 1 byte
+          Sector_ID: 1 byte
+      reported_size: 1 byte (2^{7+x}; 0 ==> 128, 1 ==> 256, 2 ==> 512, 3 ==> 1024 etc)
+        If the track is readable each sector also has:
+        ==============================================
+          real_size: 1 byte (2^{7+x})
+         error_code: 1 byte (see below)
+               data: <real_size> bytes
+
+Error codes:
+============
+00 = No error
+0E = Data CRC Error
+18 = Sector not found - TODO: Possibly bad FSD
+20 = Deleted Data
+E0 = CRC valid for reads of 128 bytes, return CRC error otherwise
+E1 = CRC valid for reads of 256 bytes, return CRC error otherwise
+E2 = CRC valid for reads of 512 bytes, return CRC error otherwise
+
+The error numbers less than 0x40 match the OSWORD &7F result byte
+
+Decoding of the "creator" 5 byte field:
+=======================================
+   (byte1 byte2 byte3 byte4 byte5)
+
+       Date_DD = (byte1 AND &F8)/8
+       Date_MM = (byte3 AND &0F)
+     Date_YYYY = (byte1 AND &07)*256+byte2
+    Creator_ID = (byte3 AND &F0)/16
+   Release_num = ((byte5 AND &C0)/64)*256 + byte4
+
+Notes
+=====
+The E1 error code represents a sector that is really 256 bytes long but
+declares itself as something longer, for example 512 bytes. The FSD
+format stores the over-read data so both the reported and real sizes are
+512 bytes, but the CRC is only correct for a read of 256 bytes.
+The E0 and E2 codes work similarly.
+
+Some titles (specifically from Sherston Software) expect the data to be
+modified if there is a CRC error.  TODO: How does this interact with the
+E? error codes?
