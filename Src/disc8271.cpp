@@ -605,7 +605,7 @@ static void DoVarLength_WriteDataCommand()
 	CommandStatus.SectorsToGo   = FDCState.Params[2] & 0x1F;
 	CommandStatus.SectorLength  = 1 << (7 + ((FDCState.Params[2] >> 5) & 7));
 
-	if (ValidateSector(CommandStatus.CurrentSectorPtr,CommandStatus.TrackAddr,CommandStatus.SectorLength))
+	if (ValidateSector(CommandStatus.CurrentSectorPtr, CommandStatus.TrackAddr, CommandStatus.SectorLength))
 	{
 		CommandStatus.ByteWithinSector = 0;
 		CommandStatus.FirstWriteInt = true;
@@ -626,6 +626,12 @@ static void DoVarLength_WriteDataCommand()
 static void WriteInterrupt()
 {
 	bool LastByte = false;
+
+	if (CommandStatus.CurrentSectorPtr == nullptr)
+	{
+		DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+		return;
+	}
 
 	if (CommandStatus.SectorsToGo < 0)
 	{
@@ -896,6 +902,12 @@ static void ReadInterrupt()
 {
 	bool LastByte = false;
 
+	if (CommandStatus.CurrentSectorPtr == nullptr)
+	{
+		DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+		return;
+	}
+
 	if (CommandStatus.SectorsToGo < 0)
 	{
 		FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
@@ -1110,6 +1122,12 @@ static void Read128Interrupt()
 {
 	int LastByte = 0;
 
+	if (CommandStatus.CurrentSectorPtr == nullptr)
+	{
+		DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+		return;
+	}
+
 	if (CommandStatus.SectorsToGo < 0)
 	{
 		FDCState.StatusReg = STATUS_REG_RESULT_FULL | STATUS_REG_INTERRUPT_REQUEST;
@@ -1305,6 +1323,12 @@ static void DoReadIDCommand()
 static void ReadIDInterrupt()
 {
 	bool LastByte = false;
+
+	if (CommandStatus.CurrentSectorPtr == nullptr)
+	{
+		DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+		return;
+	}
 
 	if (CommandStatus.SectorsToGo < 0)
 	{
@@ -1554,6 +1578,12 @@ static void DoFormatCommand()
 static void FormatInterrupt()
 {
 	bool LastByte = false;
+
+	if (CommandStatus.CurrentSectorPtr == nullptr)
+	{
+		DoErr(RESULT_REG_SECTOR_NOT_FOUND);
+		return;
+	}
 
 	if (CommandStatus.SectorsToGo < 0)
 	{
@@ -2304,6 +2334,9 @@ void FreeDiscImage(int Drive)
 			}
 		}
 	}
+
+	CommandStatus.CurrentTrackPtr = nullptr;
+	CommandStatus.CurrentSectorPtr = nullptr;
 }
 
 /*--------------------------------------------------------------------------*/
