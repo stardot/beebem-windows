@@ -26,8 +26,6 @@ Boston, MA  02110-1301, USA.
 #ifndef TUBE6502_HEADER
 #define TUBE6502_HEADER
 
-#include "port.h"
-
 enum class Tube : unsigned char {
 	None,
 	Acorn65C02,
@@ -65,8 +63,6 @@ void Init65C02core(void);
 /* Execute one 6502 instruction, move program counter on                   */
 void Exec65C02Instruction(void);
 
-void DoTubeNMI(void);
-void DoTubeInterrupt(void);
 void WrapTubeCycles(void);
 void SyncTubeProcessor(void);
 unsigned char ReadTubeFromHostSide(int IOAddr);
@@ -88,9 +84,5 @@ void Save65C02MemUEF(FILE *SUEF);
 void LoadTubeUEF(FILE *SUEF);
 void Load65C02UEF(FILE *SUEF);
 void Load65C02MemUEF(FILE *SUEF);
-
-void UpdateR1Interrupt(void);
-void UpdateR3Interrupt(void);
-void UpdateR4Interrupt(void);
 
 #endif

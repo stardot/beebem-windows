@@ -166,22 +166,27 @@ unsigned char R4HPData;
 unsigned char R4PStatus;
 
 /*-------------------------------------------------------------------*/
+
 // Tube interupt functions
-void UpdateR1Interrupt(void) {
+
+static void UpdateR1Interrupt()
+{
 	if ((R1Status & TubeI) && (R1PStatus & TubeDataAv))
 		SETTUBEINT(R1);
 	else
 		RESETTUBEINT(R1);
 }
 
-void UpdateR4Interrupt(void) {
+static void UpdateR4Interrupt()
+{
 	if ((R1Status & TubeJ) && (R4PStatus & TubeDataAv))
 		SETTUBEINT(R4);
 	else
 		RESETTUBEINT(R4);
 }
 
-void UpdateR3Interrupt(void) {
+static void UpdateR3Interrupt()
+{
 	if ((R1Status & TubeM) && !(R1Status & TubeV) &&
 		( (R3HPPtr > 0) || (R3PHPtr == 0) ))
 		TubeNMIStatus|=(1<<R3);
@@ -192,7 +197,8 @@ void UpdateR3Interrupt(void) {
 		TubeNMIStatus&=~(1<<R3);
 }
 
-void UpdateHostR4Interrupt(void) {
+static void UpdateHostR4Interrupt()
+{
 	if ((R1Status & TubeQ) && (R4HStatus & TubeDataAv))
 		intStatus|=(1<<tube);
 	else
@@ -1445,23 +1451,27 @@ void Init65C02core(void) {
 }
 
 /*-------------------------------------------------------------------------*/
-void DoTubeInterrupt(void) {
+
+static void DoTubeInterrupt()
+{
   PushWord(TubeProgramCounter);
   Push(PSR & ~FlagB);
   TubeProgramCounter=TubeReadMem(0xfffe) | (TubeReadMem(0xffff)<<8);
   SetPSR(FlagI,0,0,1,0,0,0,0);
   IRQCycles=7;
-} /* DoInterrupt */
+}
 
 /*-------------------------------------------------------------------------*/
-void DoTubeNMI(void) {
+
+static void DoTubeNMI()
+{
   TubeNMILock = true;
   PushWord(TubeProgramCounter);
   Push(PSR);
   TubeProgramCounter=TubeReadMem(0xfffa) | (TubeReadMem(0xfffb)<<8);
   SetPSR(FlagI,0,0,1,0,0,0,0); /* Normal interrupts should be disabled during NMI ? */
   IRQCycles=7;
-} /* DoNMI */
+}
 
 /*-------------------------------------------------------------------------*/
 
