@@ -23,11 +23,11 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 #include <string>
 
-#include "Main.h"
-#include "beebemrc.h"
 #include "SelectKeyDialog.h"
-#include "Messages.h"
 #include "KeyMap.h"
+#include "Main.h"
+#include "Messages.h"
+#include "Resource.h"
 
 /****************************************************************************/
 

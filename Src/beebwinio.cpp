@@ -41,7 +41,7 @@ using std::max;
 #include "6502core.h"
 #include "AviWriter.h"
 #include "beebmem.h"
-#include "beebemrc.h"
+#include "Resource.h"
 #include "FileDialog.h"
 #include "uservia.h"
 #include "beebsound.h"

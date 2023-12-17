@@ -46,7 +46,7 @@ Offset  Description             Access
 
 #include "6502core.h"
 #include "Main.h"
-#include "beebemrc.h"
+#include "Resource.h"
 #include "ide.h"
 #include "beebwin.h"
 #include "beebmem.h"

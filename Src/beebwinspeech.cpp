@@ -25,7 +25,7 @@ Boston, MA  02110-1301, USA.
 
 #include "Main.h"
 #include "beebwin.h"
-#include "beebemrc.h"
+#include "Resource.h"
 
 /****************************************************************************/
 void BeebWin::InitTextToSpeech()

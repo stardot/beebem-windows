@@ -27,10 +27,10 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "beebwin.h"
 #include "AviWriter.h"
-#include "beebemrc.h"
 #include "6502core.h"
 #include "ext1770.h"
 #include "Messages.h"
+#include "Resource.h"
 #include "DebugTrace.h"
 
 typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter);

@@ -311,9 +311,6 @@
     <ClInclude Include="Bcd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="beebemrc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="beebmem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -557,11 +554,11 @@
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="BeebEm.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="..\Help\bbcmicro.png">
       <Filter>Help Files</Filter>
     </Image>
@@ -574,38 +571,36 @@
     <Image Include="..\Help\startup.jpg">
       <Filter>Help Files</Filter>
     </Image>
-    <Image Include="ADF.ico">
+    <Image Include="res\ADF.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="ADL.ico">
+    <Image Include="res\ADL.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="ADM.ico">
+    <Image Include="res\ADM.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="ADS.ico">
+    <Image Include="res\ADS.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="CSW.ico">
+    <Image Include="res\BeebEm.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="DSD.ico">
+    <Image Include="res\CSW.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="FSD.ico">
+    <Image Include="res\DSD.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="SSD.ico">
+    <Image Include="res\FSD.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="UEF.ico">
+    <Image Include="res\SSD.ico">
       <Filter>Resource Files</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="BeebEm.rc">
+    <Image Include="res\UEF.ico">
       <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Help\65c02copro.html">
@@ -728,6 +723,12 @@
     <None Include="..\UserData\USLogical.kmap">
       <Filter>UserData</Filter>
     </None>
+    <None Include="res\BeebEm.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Version.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\CHANGES.md">
@@ -751,5 +752,10 @@
     <Text Include="..\Documents\KeyMapInfo.txt">
       <Filter>Documents\Documents</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="BeebEm.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

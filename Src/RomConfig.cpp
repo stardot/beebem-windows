@@ -25,12 +25,12 @@ Boston, MA  02110-1301, USA.
 #include <windowsx.h>
 #include <commctrl.h>
 
-#include "beebemrc.h"
 #include "Main.h"
 #include "beebwin.h"
 #include "beebmem.h"
 #include "FileDialog.h"
 #include "ListView.h"
+#include "Resource.h"
 #include "sysvia.h"
 
 static HWND hWndROMList = NULL;

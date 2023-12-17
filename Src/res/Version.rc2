@@ -1,0 +1,36 @@
+#include "Version.h"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+1 VERSIONINFO
+FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
+FILEFLAGSMASK 0x3FL
+#ifdef _DEBUG
+    FILEFLAGS 0x1L
+#else
+    FILEFLAGS 0x0L
+#endif
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4" // LangID = US English, CharsetID = Windows Multilingual.
+        BEGIN
+            VALUE "Comments", "BeebEm - BBC Micro Emulator"
+            VALUE "CompanyName", "Mike Wyatt"
+            VALUE "FileDescription", "BeebEm"
+            VALUE "FileVersion", VERSION_STRING
+            VALUE "InternalName", "BeebEm"
+            VALUE "LegalCopyright", "Copyright � 2009"
+            VALUE "OriginalFilename", "BeebEm.exe"
+            VALUE "ProductName", "BeebEm"
+            VALUE "ProductVersion", VERSION_STRING
+        END
+    END
+END

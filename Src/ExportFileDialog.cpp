@@ -28,7 +28,6 @@ Boston, MA  02110-1301, USA.
 #include <string>
 
 #include "ExportFileDialog.h"
-#include "beebemrc.h"
 #include "DiscEdit.h"
 #include "FileDialog.h"
 #include "FileUtils.h"
@@ -36,6 +35,7 @@ Boston, MA  02110-1301, USA.
 #include "ListView.h"
 #include "Main.h"
 #include "RenameFileDialog.h"
+#include "Resource.h"
 #include "StringUtils.h"
 #include "DebugTrace.h"
 

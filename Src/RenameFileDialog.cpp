@@ -24,7 +24,7 @@ Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "RenameFileDialog.h"
-#include "beebemrc.h"
+#include "Resource.h"
 
 /****************************************************************************/
 

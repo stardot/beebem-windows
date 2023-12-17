@@ -331,7 +331,6 @@
     <ClInclude Include="atodconv.h" />
     <ClInclude Include="AVIWriter.h" />
     <ClInclude Include="Bcd.h" />
-    <ClInclude Include="beebemrc.h" />
     <ClInclude Include="beebmem.h" />
     <ClInclude Include="beebsound.h" />
     <ClInclude Include="beebwin.h" />
@@ -365,6 +364,7 @@
     <ClInclude Include="port.h" />
     <ClInclude Include="preferences.h" />
     <ClInclude Include="RenameFileDialog.h" />
+    <ClInclude Include="Resource.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="sasi.h" />
     <ClInclude Include="scsi.h" />
@@ -411,16 +411,16 @@
     <Image Include="..\Help\beeb.gif" />
     <Image Include="..\Help\keyboard.jpg" />
     <Image Include="..\Help\startup.jpg" />
-    <Image Include="ADF.ico" />
-    <Image Include="ADL.ico" />
-    <Image Include="ADM.ico" />
-    <Image Include="ADS.ico" />
-    <Image Include="BeebEm.ico" />
-    <Image Include="CSW.ico" />
-    <Image Include="DSD.ico" />
-    <Image Include="FSD.ico" />
-    <Image Include="SSD.ico" />
-    <Image Include="UEF.ico" />
+    <Image Include="res\ADF.ico" />
+    <Image Include="res\ADL.ico" />
+    <Image Include="res\ADM.ico" />
+    <Image Include="res\ADS.ico" />
+    <Image Include="res\BeebEm.ico" />
+    <Image Include="res\CSW.ico" />
+    <Image Include="res\DSD.ico" />
+    <Image Include="res\FSD.ico" />
+    <Image Include="res\SSD.ico" />
+    <Image Include="res\UEF.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="BeebEm.rc" />
@@ -492,6 +492,8 @@
     <None Include="..\UserData\Roms.cfg" />
     <None Include="..\UserData\Roms_Torch.cfg" />
     <None Include="..\UserData\USLogical.kmap" />
+    <None Include="res\BeebEm.rc2" />
+    <None Include="res\Version.rc2" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\CHANGES.md" />

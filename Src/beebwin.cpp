@@ -62,7 +62,6 @@ using std::max;
 #include "SoundStreamer.h"
 #include "music5000.h"
 #include "beebmem.h"
-#include "beebemrc.h"
 #include "atodconv.h"
 #include "Serial.h"
 #include "Econet.h" // Rob O'Donnell Christmas 2004.
@@ -77,6 +76,7 @@ using std::max;
 #include "z80mem.h"
 #include "z80.h"
 #include "KeyMap.h"
+#include "Resource.h"
 #include "UserKeyboardDialog.h"
 #include "UserPortBreakoutBox.h"
 #include "Messages.h"

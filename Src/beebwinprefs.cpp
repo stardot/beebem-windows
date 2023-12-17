@@ -24,7 +24,6 @@ Boston, MA  02110-1301, USA.
 
 #include "Main.h"
 #include "beebwin.h"
-#include "beebemrc.h"
 #include "6502core.h"
 #include "disc8271.h"
 #include "disc1770.h"
@@ -42,13 +41,14 @@ Boston, MA  02110-1301, USA.
 #include "ide.h"
 #include "z80mem.h"
 #include "z80.h"
-#include "KeyMap.h"
-#include "UserPortBreakoutBox.h"
-#include "Speech.h"
-#include "Teletext.h"
-#include "IP232.h"
 #include "Arm.h"
+#include "IP232.h"
+#include "KeyMap.h"
+#include "Resource.h"
+#include "Speech.h"
 #include "SprowCoPro.h"
+#include "Teletext.h"
+#include "UserPortBreakoutBox.h"
 
 /* Configuration file strings */
 static const char *CFG_VIEW_WIN_SIZE = "WinSize";
