@@ -4,10 +4,14 @@ BeebEm Change History
 Unreleased changes
 ------------
 
-Contributors: Chris Needham, Mauro Varischetti, billcarr2005
+Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
+* Added icons for disk and tape image file types. The installer now allows
+  you to create file associations for these, and saved state files.
+* BeebEm saved state files now use the .uefstate file extension, to distinguish
+  them from UEF tape images.
 * Econet improvements:
   - Added -EconetCfg and -AUNMap options, to allow the location of these
     config files to be set on the command line.
