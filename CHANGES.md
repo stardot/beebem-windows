@@ -17,9 +17,11 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
     config files to be set on the command line.
   - Fixed Econet.cfg file parsing.
   - Fixed potential buffer overflow bug.
-* Added Clear button to the key selection dialog box, when defining
-  a user keyboard mapping.
-* Added Italian logical keyboard mapping file.
+* Keyboard mapping improvements:
+  * Added Clear button to the key selection dialog box, when defining
+    a user keyboard mapping.
+  * Added Italian logical keyboard mapping file.
+  * Shift Lock is now mapped to the F11 key by default.
 * Fixed installer to not delete Econet and key map config files.
 
 Version 4.19 (1 May 2023)
