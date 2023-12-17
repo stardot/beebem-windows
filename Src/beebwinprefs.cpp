@@ -450,8 +450,12 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("EconetEnabled", EconetEnabled))
 		EconetEnabled = false;
 
+	#if ENABLE_SPEECH
+
 	if (!m_Preferences.GetBoolValue("SpeechEnabled", SpeechDefault))
 		SpeechDefault = false;
+
+	#endif
 
 	if (!m_Preferences.GetBinaryValue("SWRAMWritable", RomWritePrefs, 16))
 	{
@@ -752,7 +756,12 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetStringValue("SerialPort", SerialPortName);
 
 		m_Preferences.SetBoolValue("EconetEnabled", EconetEnabled); // Rob
+
+		#if ENABLE_SPEECH
 		m_Preferences.SetBoolValue("SpeechEnabled", SpeechDefault);
+		#else
+		m_Preferences.SetBoolValue("SpeechEnabled", false);
+		#endif
 
 		for (int slot = 0; slot < 16; ++slot)
 			RomWritePrefs[slot] = RomWritable[slot];

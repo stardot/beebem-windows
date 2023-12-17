@@ -50,6 +50,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Main.h"
 #include "Log.h"
 
+#if ENABLE_SPEECH
+
 // TMS5220 ROM Tables
 
 // This is the energy lookup table (4-bits -> 10-bits)
@@ -1572,3 +1574,5 @@ void SpeechPoll(int Cycles)
 }
 
 /*--------------------------------------------------------------------------*/
+
+#endif

@@ -533,6 +533,8 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	if (SoundDefault)
 		SoundInit();
 
+	#if ENABLE_SPEECH
+
 	if (SpeechDefault)
 	{
 		if (LoadRoms)
@@ -543,6 +545,8 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		SpeechStop();
 		SpeechStart();
 	}
+
+	#endif
 
 	SwitchOnSound();
 	Music5000Reset();
@@ -672,11 +676,15 @@ void BeebWin::Break()
 	if (Music5000Enabled)
 		Music5000Init();
 
+	#if ENABLE_SPEECH
+
 	if (SpeechDefault)
 	{
 		SpeechStop();
 		SpeechStart();
 	}
+
+	#endif
 
 	// Reset IntegraB RTC on Break
 	if (MachineType == Model::IntegraB)
@@ -1154,7 +1162,13 @@ void BeebWin::InitMenu(void)
 	// Sound
 	UpdateSoundStreamerMenu();
 	SetSoundMenu();
+
+	#if ENABLE_SPEECH
 	CheckMenuItem(IDM_SPEECH, SpeechDefault);
+	#else
+	RemoveMenu(m_hMenu, IDM_SPEECH, MF_BYCOMMAND);
+	#endif
+
 	CheckMenuItem(IDM_SOUNDCHIP, SoundChipEnabled);
 	UpdateSFXMenu();
 	CheckMenuItem(ID_TAPESOUND, TapeSoundEnabled);
@@ -3194,11 +3208,15 @@ void BeebWin::HandleCommand(UINT MenuID)
 			Music5000Init();
 		}
 
+		#if ENABLE_SPEECH
+
 		if (SpeechDefault)
 		{
 			SpeechStop();
 			SpeechStart();
 		}
+
+		#endif
 
 		UpdateSoundStreamerMenu();
 		break;
@@ -3251,11 +3269,15 @@ void BeebWin::HandleCommand(UINT MenuID)
 				SoundInit();
 			}
 
+			#if ENABLE_SPEECH
+
 			if (SpeechDefault)
 			{
 				SpeechStop();
 				SpeechStart();
 			}
+
+			#endif
 		}
 		break;
 
@@ -3858,6 +3880,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 		EndVideo();
 		break;
 
+	#if ENABLE_SPEECH
+
 	case IDM_SPEECH:
 		if (SpeechDefault)
 		{
@@ -3877,6 +3901,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 			}
 		}
 		break;
+
+	#endif
 
 	case ID_TELETEXT:
 		TeletextAdapterEnabled = !TeletextAdapterEnabled;

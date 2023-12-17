@@ -256,6 +256,8 @@ static void IC32Write(unsigned char Value)
 
   // DebugTrace("IC32State now=%x\n", IC32State);
 
+  #if ENABLE_SPEECH
+
   if (MachineType != Model::Master128)
   {
     if ((PrevIC32State & IC32_SPEECH_WRITE) && !(IC32State & IC32_SPEECH_WRITE))
@@ -268,6 +270,8 @@ static void IC32Write(unsigned char Value)
       SpeechReadEnable();
     }
   }
+
+  #endif
 
   if (!(IC32State & IC32_KEYBOARD_WRITE) && (PrevIC32State & IC32_KEYBOARD_WRITE))
   {
@@ -338,10 +342,15 @@ static unsigned char SlowDataBusRead()
 
   if (MachineType != Model::Master128)
   {
+
+    #if ENABLE_SPEECH
+
     if ((IC32State & IC32_SPEECH_READ) == 0)
     {
       result = SpeechRead();
     }
+
+    #endif
 
     if ((IC32State & IC32_SPEECH_WRITE) == 0)
     {
@@ -527,6 +536,8 @@ unsigned char SysVIARead(int Address)
         tmp |= 0x10;
       }
 
+      #if ENABLE_SPEECH
+
       if (MachineType == Model::Master128 || !SpeechDefault)
       {
         tmp |= 0xc0; // Speech system non existant
@@ -551,6 +562,12 @@ unsigned char SysVIARead(int Address)
           tmp &= ~0x80;
         }
       }
+
+      #else
+
+      tmp |= 0xc0; // Speech system non existant
+
+      #endif
 
       UpdateIFRTopBit();
       break;

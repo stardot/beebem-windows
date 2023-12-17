@@ -3186,7 +3186,11 @@ static void PollHardware(unsigned int nCycles)
 	Disc8271Poll();
 	Music5000Poll(nCycles);
 	SoundPoll();
+
+	#if ENABLE_SPEECH
 	SpeechPoll(nCycles);
+	#endif
+
 	TeletextPoll();
 
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
