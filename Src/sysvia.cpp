@@ -240,11 +240,18 @@ static void IC32Write(unsigned char Value)
   tmpCMOSState = (IC32State & 4) != 0;
   CMOS.DataStrobe = (tmpCMOSState == OldCMOSState) ? false : true;
   OldCMOSState = tmpCMOSState;
-  if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType == Model::Master128) {
-    CMOSWrite(CMOS.Address, SlowDataBusWriteValue);
-  }
-  if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128) {
-    SysVIAState.ora = CMOSRead(CMOS.Address);
+
+  if (MachineType == Model::Master128)
+  {
+    if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
+    {
+      CMOSWrite(CMOS.Address, SlowDataBusWriteValue);
+    }
+
+    if (CMOS.Enabled && CMOS.Op)
+    {
+      SysVIAState.ora = CMOSRead(CMOS.Address);
+    }
   }
 
   /* Must do sound reg access when write line changes */
@@ -302,9 +309,12 @@ static void SlowDataBusWrite(unsigned char Value)
     DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
   }
 
-  if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op && MachineType == Model::Master128)
+  if (MachineType == Model::Master128)
   {
-    CMOSWrite(CMOS.Address,Value);
+    if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
+    {
+      CMOSWrite(CMOS.Address,Value);
+    }
   }
 
   if ((IC32State & IC32_SOUND_WRITE) == 0)
