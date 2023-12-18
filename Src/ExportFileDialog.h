@@ -50,7 +50,7 @@ class ExportFileDialog : public Dialog
 	public:
 		std::string GetPath() const;
 
-private:
+	private:
 		void ExportSelectedFiles();
 		bool ExportFile(DFS_FILE_ATTR* DfsAttrs, const char* LocalFileName);
 

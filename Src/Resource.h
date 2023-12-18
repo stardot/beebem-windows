@@ -80,15 +80,15 @@
 #define IDI_BEEBEM                      101
 #define IDI_SSD                         102
 #define IDI_DSD                         103
+#define IDD_USERKYBRD                   103
 #define IDI_FSD                         104
 #define IDI_UEF                         105
 #define IDI_CSW                         106
+#define IDD_KEYBOARD_LINKS              106
 #define IDI_ADF                         107
 #define IDI_ADS                         108
 #define IDI_ADM                         109
 #define IDI_ADL                         110
-#define IDD_USERKYBRD                   103
-#define IDD_KEYBOARD_LINKS              106
 #define IDD_DEBUG                       110
 #define IDD_TAPECONTROL                 112
 #define IDD_BREAKOUT                    113
@@ -98,6 +98,7 @@
 #define IDD_SELECT_KEY                  117
 #define IDD_RENAME_FILE                 118
 #define IDD_SERIAL                      119
+#define IDD_ABOUT                       120
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -189,6 +190,8 @@
 #define IDC_IP232_HANDSHAKE             1100
 #define IDC_SERIAL_PORT                 1101
 #define IDC_CLEAR                       1102
+#define IDC_VERSION                     1102
+#define IDC_COPYRIGHT                   1103
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -429,16 +432,15 @@
 #define IDM_CAPTUREMOUSE                40318
 #define IDM_SELECT_HARD_DRIVE_FOLDER    40319
 #define ID_SELECT_SERIAL_DESTINATION    40320
-#define IDC_STATIC                      -1
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        119
+#define _APS_NEXT_RESOURCE_VALUE        121
 #define _APS_NEXT_COMMAND_VALUE         40321
-#define _APS_NEXT_CONTROL_VALUE         1102
+#define _APS_NEXT_CONTROL_VALUE         1104
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -167,6 +167,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="6502core.cpp" />
+    <ClCompile Include="AboutDialog.cpp" />
     <ClCompile Include="Arm.cpp" />
     <ClCompile Include="ArmDisassembler.cpp" />
     <ClCompile Include="ARMulator\armdis.cpp" />
@@ -318,6 +319,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h" />
+    <ClInclude Include="AboutDialog.h" />
     <ClInclude Include="Arm.h" />
     <ClInclude Include="ArmDisassembler.h" />
     <ClInclude Include="ARMulator\ansidecl.h" />

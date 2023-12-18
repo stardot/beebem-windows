@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2009  Mike Wyatt
+Copyright (C) 2023 Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,9 +18,25 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-// BeebEm version
-#define VERSION_MAJOR     4
-#define VERSION_MINOR     19
-#define VERSION_STRING    "4.19"
-#define VERSION_DATE      "1 May 2023"
-#define VERSION_COPYRIGHT "Copyright (c) 2023 BeebEm contributors"
+#ifndef ABOUTDIALOG_HEADER
+#define ABOUTDIALOG_HEADER
+
+#include "Dialog.h"
+
+class AboutDialog : public Dialog
+{
+	public:
+		AboutDialog(
+			HINSTANCE hInstance,
+			HWND hwndParent
+		);
+
+	private:
+		virtual INT_PTR DlgProc(
+			UINT   nMessage,
+			WPARAM wParam,
+			LPARAM lParam
+		);
+};
+
+#endif

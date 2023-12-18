@@ -50,6 +50,7 @@ using std::max;
 #pragma warning(pop)
 
 #include "Main.h"
+#include "AboutDialog.h"
 #include "beebwin.h"
 #include "port.h"
 #include "6502core.h"
@@ -125,15 +126,6 @@ DiscType CDiscType[2]; // Current disc types
 char FDCDLL[256]={0};
 
 const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
-static const char *AboutText =
-	"BeebEm - Emulating:\n\nBBC Micro Model B\nBBC Micro Model B + IntegraB\n"
-	"BBC Micro Model B Plus (128)\nAcorn Master 128\n\n"
-	"Acorn 65C02 Second Processor\n"
-	"Torch Z80 Second Processor\nAcorn Z80 Second Processor\n"
-	"Master 512 Second Processor\n"
-	"ARM Second Processor\n"
-	"Sprow ARM7TDMI 64MB\n\n"
-	"Version " VERSION_STRING ", " VERSION_DATE;
 
 /****************************************************************************/
 BeebWin::BeebWin()
@@ -3457,9 +3449,11 @@ void BeebWin::HandleCommand(UINT MenuID)
 		CheckMenuItem(IDM_MAPFUNCS, m_KeyMapFunc);
 		break;
 
-	case IDM_ABOUT:
-		MessageBox(m_hWnd, AboutText, WindowTitle, MB_OK);
+	case IDM_ABOUT: {
+		AboutDialog Dialog(hInst, m_hWnd);
+		Dialog.DoModal();
 		break;
+	}
 
 	case IDM_VIEWREADME:
 		strcpy(TmpPath, m_AppPath);

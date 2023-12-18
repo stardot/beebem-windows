@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2023 Chris Needham
+Copyright (C) 2009  Mike Wyatt
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,52 +18,9 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef DIALOG_HEADER
-#define DIALOG_HEADER
-
-#include <string>
-
-class Dialog
-{
-	public:
-		Dialog(
-			HINSTANCE hInstance,
-			HWND hwndParent,
-			int DialogID
-		);
-
-	public:
-		bool DoModal();
-
-	private:
-		static INT_PTR CALLBACK sDlgProc(
-			HWND   hwnd,
-			UINT   nMessage,
-			WPARAM wParam,
-			LPARAM lParam
-		);
-
-		virtual INT_PTR DlgProc(
-			UINT   nMessage,
-			WPARAM wParam,
-			LPARAM lParam
-		) = 0;
-
-	protected:
-		std::string GetDlgItemText(int nID);
-		void SetDlgItemText(int nID, const std::string& str);
-		bool IsDlgItemChecked(int nID);
-		void SetDlgItemChecked(int nID, bool bChecked);
-		void SetDlgItemFocus(int nID);
-
-	private:
-		void CenterDialog();
-
-	protected:
-		HINSTANCE m_hInstance;
-		HWND m_hwndParent;
-		int m_DialogID;
-		HWND m_hwnd;
-};
-
-#endif
+// BeebEm version
+#define VERSION_MAJOR     4
+#define VERSION_MINOR     19
+#define VERSION_STRING    "4.19"
+#define VERSION_DATE      "1 May 2023"
+#define VERSION_COPYRIGHT "Copyright (c) 1995-2023 BeebEm contributors"

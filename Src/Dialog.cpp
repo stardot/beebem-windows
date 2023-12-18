@@ -40,11 +40,11 @@ Dialog::Dialog(HINSTANCE hInstance,
 bool Dialog::DoModal()
 {
 	// Show dialog box
-	int Result = DialogBoxParam(m_hInstance,
-	                            MAKEINTRESOURCE(m_DialogID),
-	                            m_hwndParent,
-	                            sDlgProc,
-	                            reinterpret_cast<LPARAM>(this));
+	INT_PTR Result = DialogBoxParam(m_hInstance,
+	                                MAKEINTRESOURCE(m_DialogID),
+	                                m_hwndParent,
+	                                sDlgProc,
+	                                reinterpret_cast<LPARAM>(this));
 
 	return Result == IDOK;
 }
@@ -63,12 +63,14 @@ INT_PTR CALLBACK Dialog::sDlgProc(HWND   hwnd,
 		SetWindowLongPtr(hwnd, DWLP_USER, lParam);
 		dialog = reinterpret_cast<Dialog*>(lParam);
 		dialog->m_hwnd = hwnd;
+
+		dialog->CenterDialog();
 	}
 	else
 	{
 		dialog = reinterpret_cast<Dialog*>(
 			GetWindowLongPtr(hwnd, DWLP_USER)
-			);
+		);
 	}
 
 	if (dialog)
@@ -90,7 +92,7 @@ std::string Dialog::GetDlgItemText(int nID)
 	std::vector<char> Text;
 	Text.resize(Length + 1);
 
-	::GetDlgItemText(m_hwnd, nID, &Text[0], Text.size());
+	::GetDlgItemText(m_hwnd, nID, &Text[0], (int)Text.size());
 
 	return std::string(&Text[0]);
 }
@@ -121,4 +123,36 @@ void Dialog::SetDlgItemChecked(int nID, bool bChecked)
 void Dialog::SetDlgItemFocus(int nID)
 {
 	SetFocus(GetDlgItem(m_hwnd, nID));
+}
+
+/****************************************************************************/
+
+void Dialog::CenterDialog()
+{
+	RECT rcOwner;
+	GetWindowRect(m_hwndParent, &rcOwner);
+
+	RECT rcDialog;
+	GetWindowRect(m_hwnd, &rcDialog);
+
+	RECT rc;
+	CopyRect(&rc, &rcOwner);
+
+	// Offset the owner and dialog box rectangles so that right and bottom
+	// values represent the width and height, and then offset the owner again
+	// to discard space taken up by the dialog box.
+
+	OffsetRect(&rcDialog, -rcDialog.left, -rcDialog.top);
+	OffsetRect(&rc, -rc.left, -rc.top);
+	OffsetRect(&rc, -rcDialog.right, -rcDialog.bottom);
+
+	// The new position is the sum of half the remaining space and the owner's
+	// original position.
+
+	SetWindowPos(m_hwnd,
+	             HWND_TOP,
+	             rcOwner.left + (rc.right / 2),
+	             rcOwner.top + (rc.bottom / 2),
+	             0, 0, // Ignores size arguments.
+	             SWP_NOSIZE);
 }
