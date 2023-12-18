@@ -24,6 +24,8 @@ Boston, MA  02110-1301, USA.
 #ifndef DISC8271_HEADER
 #define DISC8271_HEADER
 
+#include "DiscType.h"
+
 extern int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 extern bool Disc8271Enabled;
 
@@ -34,7 +36,7 @@ bool IsDiscWritable(int DriveNum);
 void DiscWriteEnable(int DriveNum, bool WriteEnable);
 void FreeDiscImage(int DriveNum);
 void Eject8271DiscImage(int DriveNum);
-void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads);
+void Get8271DiscInfo(int DriveNum, char *pFileName, DiscType *pType, int *pHeads);
 
 unsigned char Disc8271Read(int Address);
 void Disc8271Write(int Address, unsigned char Value);

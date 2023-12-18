@@ -3065,8 +3065,10 @@ void Load8271UEF(FILE *SUEF, int Version)
 
 /*--------------------------------------------------------------------------*/
 
-void Get8271DiscInfo(int DriveNum, char *pFileName, int *Heads)
+void Get8271DiscInfo(int DriveNum, char *pFileName, DiscType *pType, int *pHeads)
 {
 	strcpy(pFileName, DiscStatus[DriveNum].FileName);
-	*Heads = DiscStatus[DriveNum].NumHeads;
+
+	*pType = DiscStatus[DriveNum].Type;
+	*pHeads = DiscStatus[DriveNum].NumHeads;
 }

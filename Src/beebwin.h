@@ -155,7 +155,7 @@ public:
 
 	void UpdateModelMenu();
 	void SetSoundMenu(void);
-	void SetImageName(const char *DiscName, int Drive, DiscType DscType);
+	void SetImageName(const char *DiscName, int Drive, DiscType Type);
 	void SetTapeSpeedMenu(void);
 	void SetRomMenu(); // LRW  Added for individual ROM/RAM
 	void UpdateTubeMenu();

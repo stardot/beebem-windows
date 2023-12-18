@@ -84,9 +84,11 @@ static bool hasFileExt(const char* fileName, const char* fileExt)
 }
 
 /****************************************************************************/
-void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType DscType) {
+
+void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType Type)
+{
 	strcpy(CDiscName[Drive],DiscName);
-	CDiscType[Drive] = DscType;
+	CDiscType[Drive] = Type;
 	DiscLoaded[Drive] = true;
 
 	const int maxMenuItemLen = 100;
@@ -135,6 +137,7 @@ void BeebWin::EjectDiscImage(int Drive)
 		mii.dwTypeData = "Eject Disc 1";
 		SetMenuItemInfo(m_hMenu, IDM_EJECTDISC1, FALSE, &mii);
 	}
+
 	SetDiscWriteProtects();
 }
 
@@ -1322,31 +1325,45 @@ void BeebWin::CopyKey(unsigned char Value)
 
 void BeebWin::ExportDiscFiles(int menuId)
 {
-	int drive;
-	DiscType type;
+	int Drive;
+	DiscType Type;
 	char szDiscFile[MAX_PATH];
-	int heads;
-	int side;
+	int Heads;
+	int Side;
 
 	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_2)
-		drive = 0;
+	{
+		Drive = 0;
+	}
 	else
-		drive = 1;
+	{
+		Drive = 1;
+	}
 
 	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
-		Get8271DiscInfo(drive, szDiscFile, &heads);
+		Get8271DiscInfo(Drive, szDiscFile, &Type, &Heads);
+
+		if (Type == DiscType::FSD)
+		{
+			Report(MessageType::Warning, "Export from FSD disc not supported");
+			return;
+		}
 	}
 	else
 	{
 		// 1770 controller
-		Get1770DiscInfo(drive, &type, szDiscFile);
+		Get1770DiscInfo(Drive, &Type, szDiscFile);
 
-		if (type == DiscType::SSD)
-			heads = 1;
-		else if (type == DiscType::DSD)
-			heads = 2;
+		if (Type == DiscType::SSD)
+		{
+			Heads = 1;
+		}
+		else if (Type == DiscType::DSD)
+		{
+			Heads = 2;
+		}
 		else
 		{
 			// ADFS - not currently supported
@@ -1356,7 +1373,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	}
 
 	// Check for no disk loaded
-	if (szDiscFile[0] == 0 || heads == 1 && (menuId == IDM_DISC_EXPORT_2 || menuId == IDM_DISC_EXPORT_3))
+	if (szDiscFile[0] == 0 || Heads == 1 && (menuId == IDM_DISC_EXPORT_2 || menuId == IDM_DISC_EXPORT_3))
 	{
 		Report(MessageType::Warning, "No disc loaded in drive %d", menuId - IDM_DISC_EXPORT_0);
 		return;
@@ -1364,15 +1381,19 @@ void BeebWin::ExportDiscFiles(int menuId)
 
 	// Read the catalogue
 	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_1)
-		side = 0;
+	{
+		Side = 0;
+	}
 	else
-		side = 1;
+	{
+		Side = 1;
+	}
 
 	DFS_DISC_CATALOGUE dfsCat;
 
-	bool success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+	bool Success = dfs_get_catalogue(szDiscFile, Heads, Side, &dfsCat);
 
-	if (!success)
+	if (!Success)
 	{
 		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
 		return;
@@ -1385,7 +1406,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	GetDataPath(m_UserDataPath, szExportPath);
 
 	// Show export dialog
-	ExportFileDialog Dialog(hInst, m_hWnd, szDiscFile, heads, side, &dfsCat, szExportPath);
+	ExportFileDialog Dialog(hInst, m_hWnd, szDiscFile, Heads, Side, &dfsCat, szExportPath);
 
 	if (!Dialog.DoModal())
 	{
@@ -1403,30 +1424,45 @@ void BeebWin::ExportDiscFiles(int menuId)
 // File import
 void BeebWin::ImportDiscFiles(int menuId)
 {
-	int drive;
-	DiscType type;
+	int Drive;
+	DiscType Type;
 	char szDiscFile[MAX_PATH];
-	int heads;
-	int side;
+	int Heads;
+	int Side;
 
 	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_2)
-		drive = 0;
+	{
+		Drive = 0;
+	}
 	else
-		drive = 1;
+	{
+		Drive = 1;
+	}
 
 	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
-		Get8271DiscInfo(drive, szDiscFile, &heads);
+		Get8271DiscInfo(Drive, szDiscFile, &Type, &Heads);
+
+		if (Type == DiscType::FSD)
+		{
+			Report(MessageType::Warning, "Import to FSD disc not supported");
+			return;
+		}
 	}
 	else
 	{
 		// 1770 controller
-		Get1770DiscInfo(drive, &type, szDiscFile);
-		if (type == DiscType::SSD)
-			heads = 1;
-		else if (type == DiscType::DSD)
-			heads = 2;
+		Get1770DiscInfo(Drive, &Type, szDiscFile);
+
+		if (Type == DiscType::SSD)
+		{
+			Heads = 1;
+		}
+		else if (Type == DiscType::DSD)
+		{
+			Heads = 2;
+		}
 		else
 		{
 			// ADFS - not currently supported
@@ -1436,7 +1472,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	}
 
 	// Check for no disk loaded
-	if (szDiscFile[0] == 0 || heads == 1 && (menuId == IDM_DISC_IMPORT_2 || menuId == IDM_DISC_IMPORT_3))
+	if (szDiscFile[0] == 0 || Heads == 1 && (menuId == IDM_DISC_IMPORT_2 || menuId == IDM_DISC_IMPORT_3))
 	{
 		Report(MessageType::Warning, "No disc loaded in drive %d", menuId - IDM_DISC_IMPORT_0);
 		return;
@@ -1444,15 +1480,19 @@ void BeebWin::ImportDiscFiles(int menuId)
 
 	// Read the catalogue
 	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_1)
-		side = 0;
+	{
+		Side = 0;
+	}
 	else
-		side = 1;
+	{
+		Side = 1;
+	}
 
 	DFS_DISC_CATALOGUE dfsCat;
 
-	bool success = dfs_get_catalogue(szDiscFile, heads, side, &dfsCat);
+	bool Success = dfs_get_catalogue(szDiscFile, Heads, Side, &dfsCat);
 
-	if (!success)
+	if (!Success)
 	{
 		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
 		return;
@@ -1534,19 +1574,19 @@ void BeebWin::ImportDiscFiles(int menuId)
 	{
 		char szErrStr[500];
 
-		success = dfs_import_file(szDiscFile, heads, side, &dfsCat, fileNames[i], szExportPath, szErrStr);
+		Success = dfs_import_file(szDiscFile, Heads, Side, &dfsCat, fileNames[i], szExportPath, szErrStr);
 
-		if (success)
+		if (Success)
 		{
 			NumImported++;
 		}
 		else
 		{
-			success = true;
+			Success = true;
 
 			if (Report(MessageType::Confirm, szErrStr) == MessageResult::Cancel)
 			{
-				success = false;
+				Success = false;
 				break;
 			}
 		}
@@ -1558,20 +1598,30 @@ void BeebWin::ImportDiscFiles(int menuId)
 	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
-		Eject8271DiscImage(drive);
-		if (heads == 2)
-			LoadSimpleDSDiscImage(szDiscFile, drive, 80);
+		Eject8271DiscImage(Drive);
+
+		if (Heads == 2)
+		{
+			LoadSimpleDSDiscImage(szDiscFile, Drive, 80);
+		}
 		else
-			LoadSimpleDiscImage(szDiscFile, drive, 0, 80);
+		{
+			LoadSimpleDiscImage(szDiscFile, Drive, 0, 80);
+		}
 	}
 	else
 	{
 		// 1770 controller
-		Close1770Disc(drive);
-		if (heads == 2)
-			Load1770DiscImage(szDiscFile, drive, DiscType::DSD);
+		Close1770Disc(Drive);
+
+		if (Heads == 2)
+		{
+			Load1770DiscImage(szDiscFile, Drive, DiscType::DSD);
+		}
 		else
-			Load1770DiscImage(szDiscFile, drive, DiscType::SSD);
+		{
+			Load1770DiscImage(szDiscFile, Drive, DiscType::SSD);
+		}
 	}
 }
 
