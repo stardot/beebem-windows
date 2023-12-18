@@ -8,29 +8,33 @@
 1 VERSIONINFO
 FILEVERSION VERSION_MAJOR,VERSION_MINOR,0,0
 PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,0,0
-FILEFLAGSMASK 0x3FL
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
-    FILEFLAGS 0x1L
+    FILEFLAGS VS_FF_DEBUG
 #else
     FILEFLAGS 0x0L
 #endif
-FILEOS 0x40004L
-FILETYPE 0x1L
-FILESUBTYPE 0x0L
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904E4" // LangID = US English, CharsetID = Windows Multilingual.
         BEGIN
-            VALUE "Comments", "BeebEm - BBC Micro Emulator"
-            VALUE "CompanyName", "Mike Wyatt"
-            VALUE "FileDescription", "BeebEm"
-            VALUE "FileVersion", VERSION_STRING
-            VALUE "InternalName", "BeebEm"
-            VALUE "LegalCopyright", "Copyright � 2009"
+            VALUE "Comments",         "BeebEm - BBC Micro Emulator"
+            VALUE "CompanyName",      "BeebEm"
+            VALUE "FileDescription",  "BeebEm"
+            VALUE "FileVersion",      VERSION_STRING
+            VALUE "InternalName",     "BeebEm"
+            VALUE "LegalCopyright",   VERSION_COPYRIGHT
             VALUE "OriginalFilename", "BeebEm.exe"
-            VALUE "ProductName", "BeebEm"
-            VALUE "ProductVersion", VERSION_STRING
+            VALUE "ProductName",      "BeebEm"
+            VALUE "ProductVersion",   VERSION_STRING
         END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
     END
 END

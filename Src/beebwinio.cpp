@@ -56,7 +56,7 @@ using std::max;
 #include "discedit.h"
 #include "ExportFileDialog.h"
 #include "FileUtils.h"
-#include "version.h"
+#include "Version.h"
 
 using namespace Gdiplus;
 

@@ -388,7 +388,7 @@
     <ClInclude Include="UserKeyboardDialog.h" />
     <ClInclude Include="UserPortBreakoutBox.h" />
     <ClInclude Include="uservia.h" />
-    <ClInclude Include="version.h" />
+    <ClInclude Include="Version.h" />
     <ClInclude Include="via.h" />
     <ClInclude Include="video.h" />
     <ClInclude Include="XAudio2Streamer.h" />

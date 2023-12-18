@@ -86,7 +86,6 @@ using std::max;
 #include "IP232.h"
 #include "SerialPortDialog.h"
 #include "Arm.h"
-#include "version.h"
 #include "SprowCoPro.h"
 #include "Master512CoPro.h"
 #include "FolderSelectDialog.h"
@@ -94,6 +93,7 @@ using std::max;
 #include "Log.h"
 #include "TapeControlDialog.h"
 #include "TouchScreen.h"
+#include "Version.h"
 
 using namespace Gdiplus;
 

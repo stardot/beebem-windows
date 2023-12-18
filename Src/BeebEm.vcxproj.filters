@@ -479,7 +479,7 @@
     <ClInclude Include="uservia.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="version.h">
+    <ClInclude Include="Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="via.h">
