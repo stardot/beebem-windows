@@ -1001,7 +1001,7 @@ static void SetDlgItemChecked(HWND hDlg, int nIDDlgItem, bool checked)
 
 void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 {
-	if (hwndInvisibleOwner == 0)
+	if (hwndInvisibleOwner == nullptr)
 	{
 		// Keep the debugger off the taskbar with an invisible owner window.
 		// This persists until the process closes.
@@ -1009,45 +1009,47 @@ void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 			CreateWindowEx(0, "STATIC", 0, 0, 0, 0, 0, 0, 0, 0, hinst, 0);
 	}
 
+	if (hwndDebug != nullptr)
+	{
+		DebugCloseDialog();
+	}
+
 	DebugEnabled = true;
 
-	if (!IsWindow(hwndDebug))
-	{
-		DebugHistory.clear();
+	DebugHistory.clear();
 
-		haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
-		hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
-		                         hwndInvisibleOwner, DebugDlgProc);
+	haccelDebug = LoadAccelerators(hinst, MAKEINTRESOURCE(IDR_ACCELERATORS));
+	hwndDebug = CreateDialog(hinst, MAKEINTRESOURCE(IDD_DEBUG),
+	                         hwndInvisibleOwner, DebugDlgProc);
 
-		hCurrentDialog = hwndDebug;
-		hCurrentAccelTable = haccelDebug;
-		ShowWindow(hwndDebug, SW_SHOW);
+	hCurrentDialog = hwndDebug;
+	hCurrentAccelTable = haccelDebug;
+	ShowWindow(hwndDebug, SW_SHOW);
 
-		hwndInfo = GetDlgItem(hwndDebug, IDC_DEBUGINFO);
-		SendMessage(hwndInfo, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
-		            (LPARAM)MAKELPARAM(FALSE,0));
+	hwndInfo = GetDlgItem(hwndDebug, IDC_DEBUGINFO);
+	SendMessage(hwndInfo, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
+	            MAKELPARAM(FALSE, 0));
 
-		hwndBP = GetDlgItem(hwndDebug, IDC_DEBUGBREAKPOINTS);
-		SendMessage(hwndBP, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
-		            (LPARAM)MAKELPARAM(FALSE,0));
+	hwndBP = GetDlgItem(hwndDebug, IDC_DEBUGBREAKPOINTS);
+	SendMessage(hwndBP, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
+	            MAKELPARAM(FALSE, 0));
 
-		hwndW = GetDlgItem(hwndDebug, IDC_DEBUGWATCHES);
-		SendMessage(hwndW, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
-		            (LPARAM)MAKELPARAM(FALSE,0));
+	hwndW = GetDlgItem(hwndDebug, IDC_DEBUGWATCHES);
+	SendMessage(hwndW, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT),
+	            MAKELPARAM(FALSE, 0));
 
-		SetDlgItemChecked(hwndDebug, IDC_DEBUGBPS, true);
-		SetDlgItemChecked(hwndDebug, IDC_DEBUGHOST, true);
-	}
+	SetDlgItemChecked(hwndDebug, IDC_DEBUGBPS, true);
+	SetDlgItemChecked(hwndDebug, IDC_DEBUGHOST, true);
 }
 
 void DebugCloseDialog()
 {
 	DestroyWindow(hwndDebug);
-	hwndDebug = NULL;
-	hwndInfo = NULL;
+	hwndDebug = nullptr;
+	hwndInfo = nullptr;
+	hCurrentDialog = nullptr;
+	hCurrentAccelTable = nullptr;
 	DebugEnabled = false;
-	hCurrentDialog = NULL;
-	hCurrentAccelTable = NULL;
 	DebugSource = DebugType::None;
 	LinesDisplayed = 0;
 	InstCount = 0;
@@ -2233,7 +2235,7 @@ static void DebugHistoryMove(int delta)
 		return;
 	}
 
-	const int HistorySize = DebugHistory.size();
+	const int HistorySize = (int)DebugHistory.size();
 
 	if (newIndex >= HistorySize)
 	{
@@ -3337,7 +3339,7 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
 	*p++ = (PSR & FlagN) ? 'N' : '.';
 	*p = '\0';
 
-	return p - opstr;
+	return (int)(p - opstr);
 }
 
 static int DebugDisassembleCommand(int addr, int count, bool host)
