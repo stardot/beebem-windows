@@ -66,6 +66,8 @@ static unsigned int KBDCol=0;
 static bool SysViaKbdState[16][8]; // Col, row
 static int KeysDown=0;
 
+unsigned char KeyboardLinks = 0;
+
 // Master 128 MC146818AP Real-Time Clock and RAM
 static time_t RTCTimeOffset = 0;
 
@@ -128,24 +130,39 @@ void PulseSysViaCB1(void) {
 }
 
 /*--------------------------------------------------------------------------*/
-void BeebKeyUp(int row,int col) {
-  if (row<0 || col<0) return;
 
-  /* Update keys down count - unless its shift/control */
-  if ((SysViaKbdState[col][row]) && (row!=0)) KeysDown--;
+static void TranslateKeyboardLinks(unsigned char Value)
+{
+	for (int i = 0; i < 8; i++)
+	{
+		const int Row = 0;
+		const int Column = 9 - i;
 
-  SysViaKbdState[col][row] = false;
+		if (Value & (1 << i))
+		{
+			BeebKeyDown(Row, Column);
+		}
+	}
 }
 
 /*--------------------------------------------------------------------------*/
-void BeebReleaseAllKeys() {
-  KeysDown = 0;
 
-  for (int row = 0;row < 8; row++) {
-    for (int col = 0; col < 16; col++) {
-      SysViaKbdState[col][row] = false;
-    }
-  }
+void BeebReleaseAllKeys()
+{
+	KeysDown = 0;
+
+	for (int Row = 0; Row < 8; Row++)
+	{
+		for (int Column = 0; Column < 16; Column++)
+		{
+			SysViaKbdState[Column][Row] = false;
+		}
+	}
+
+	if (MachineType != Model::Master128)
+	{
+		TranslateKeyboardLinks(KeyboardLinks);
+	}
 }
 
 /*--------------------------------------------------------------------------*/
@@ -189,15 +206,41 @@ void DoKbdIntCheck() {
 }
 
 /*--------------------------------------------------------------------------*/
-void BeebKeyDown(int row,int col) {
-  if (row<0 || col<0) return;
 
-  /* Update keys down count - unless its shift/control */
-  if ((!SysViaKbdState[col][row]) && (row!=0)) KeysDown++;
+void BeebKeyDown(int Row, int Column)
+{
+	if (Row < 0 || Column < 0)
+	{
+		return;
+	}
 
-  SysViaKbdState[col][row] = true;
+	// Update keys down count - unless it's shift/control
+	if (!SysViaKbdState[Column][Row] && Row != 0)
+	{
+		KeysDown++;
+	}
 
-  DoKbdIntCheck();
+	SysViaKbdState[Column][Row] = true;
+
+	DoKbdIntCheck();
+}
+
+/*--------------------------------------------------------------------------*/
+
+void BeebKeyUp(int Row, int Column)
+{
+	if (Row < 0 || Column < 0)
+	{
+		return;
+	}
+
+	// Update keys down count - unless it's shift/control
+	if (SysViaKbdState[Column][Row] && Row != 0)
+	{
+		KeysDown--;
+	}
+
+	SysViaKbdState[Column][Row] = false;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -742,11 +785,12 @@ void SysVIA_poll(unsigned int ncycles) {
 }
 
 /*--------------------------------------------------------------------------*/
+
 void SysVIAReset()
 {
 	VIAReset(&SysVIAState);
 
-	// Make it no keys down and no dip switches set
+	// Make it no keys down and set dip switches
 	BeebReleaseAllKeys();
 
 	SRData = 0;

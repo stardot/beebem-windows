@@ -22,6 +22,8 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
     a user keyboard mapping.
   * Added Italian logical keyboard mapping file.
   * Shift Lock is now mapped to the F11 key by default.
+* Added Set Keyboard Links command, which allows you to change the default
+  screen mode and other options (Model B/B+ only).
 * Fixed installer to not delete Econet and key map config files.
 * Removed BeebDiscLoad and BeebVideoRefreshFreq environment variables.
 

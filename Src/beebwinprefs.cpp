@@ -540,6 +540,10 @@ void BeebWin::LoadPreferences()
 			strcpy(TeletextCustomIP[ch], "127.0.0.1");
 	}
 
+	dword = 0;
+	m_Preferences.GetDWORDValue("KeyboardLinks", dword);
+	KeyboardLinks = (unsigned char)dword;
+
 	if (!m_Preferences.GetBoolValue("FloppyDriveEnabled", Disc8271Enabled))
 		Disc8271Enabled = true;
 	Disc1770Enabled = Disc8271Enabled;
@@ -783,6 +787,8 @@ void BeebWin::SavePreferences(bool saveAll)
 			sprintf(key, "TeletextCustomIP%d", ch);
 			m_Preferences.SetStringValue(key, TeletextCustomIP[ch]);
 		}
+
+		m_Preferences.SetDWORDValue("KeyboardLinks", KeyboardLinks);
 
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);

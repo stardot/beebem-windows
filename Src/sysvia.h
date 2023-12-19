@@ -32,9 +32,11 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 extern VIAState SysVIAState;
 extern unsigned char IC32State;
 
+extern unsigned char KeyboardLinks;
+
 void SysVIAWrite(int Address, unsigned char Value);
 unsigned char SysVIARead(int Address);
-void SysVIAReset(void);
+void SysVIAReset();
 
 void SysVIA_poll_real(void);
 

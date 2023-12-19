@@ -192,6 +192,14 @@
 #define IDC_CLEAR                       1102
 #define IDC_VERSION                     1102
 #define IDC_COPYRIGHT                   1103
+#define IDC_KEYBOARD_BIT7               1104
+#define IDC_KEYBOARD_BIT6               1105
+#define IDC_KEYBOARD_BIT5               1106
+#define IDC_KEYBOARD_BIT4               1107
+#define IDC_KEYBOARD_BIT3               1108
+#define IDC_KEYBOARD_BIT2               1109
+#define IDC_KEYBOARD_BIT1               1110
+#define IDC_KEYBOARD_BIT0               1111
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -432,6 +440,7 @@
 #define IDM_CAPTUREMOUSE                40318
 #define IDM_SELECT_HARD_DRIVE_FOLDER    40319
 #define ID_SELECT_SERIAL_DESTINATION    40320
+#define IDM_SET_KEYBOARD_LINKS          40321
 
 // Next default values for new objects
 // 
@@ -439,8 +448,8 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        121
-#define _APS_NEXT_COMMAND_VALUE         40321
-#define _APS_NEXT_CONTROL_VALUE         1104
+#define _APS_NEXT_COMMAND_VALUE         40322
+#define _APS_NEXT_CONTROL_VALUE         1112
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

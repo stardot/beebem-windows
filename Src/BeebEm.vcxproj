@@ -200,6 +200,7 @@
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="IC32Latch.cpp" />
     <ClCompile Include="ide.cpp" />
+    <ClCompile Include="KeyboardLinksDialog.cpp" />
     <ClCompile Include="KeyMap.cpp" />
     <ClCompile Include="IP232.cpp" />
     <ClCompile Include="ListView.cpp" />
@@ -352,6 +353,7 @@
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="FolderSelectDialog.h" />
     <ClInclude Include="IC32Latch.h" />
+    <ClInclude Include="KeyboardLinksDialog.h" />
     <ClInclude Include="ListView.h" />
     <ClInclude Include="Master512CoPro.h" />
     <ClInclude Include="ide.h" />

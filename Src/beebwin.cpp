@@ -80,6 +80,7 @@ using std::max;
 #include "Resource.h"
 #include "UserKeyboardDialog.h"
 #include "UserPortBreakoutBox.h"
+#include "KeyboardLinksDialog.h"
 #include "Messages.h"
 #include "Speech.h"
 #include "Teletext.h"
@@ -147,6 +148,7 @@ BeebWin::BeebWin()
 		m_vkeyPressed[k][0][1] = -1;
 		m_vkeyPressed[k][1][1] = -1;
 	}
+
 	m_DisableKeysWindows = false;
 	m_DisableKeysBreak = false;
 	m_DisableKeysEscape = false;
@@ -3945,6 +3947,16 @@ void BeebWin::HandleCommand(UINT MenuID)
 		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
 		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
 		break;
+
+	case IDM_SET_KEYBOARD_LINKS: {
+		KeyboardLinksDialog Dialog(hInst, m_hWnd, KeyboardLinks);
+
+		if (Dialog.DoModal())
+		{
+			KeyboardLinks = Dialog.GetValue();
+		}
+		break;
+	}
 
 	case ID_HARDDRIVE:
 		SCSIDriveEnabled = !SCSIDriveEnabled;
