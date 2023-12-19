@@ -338,8 +338,6 @@ bool BeebWin::Initialise()
 	HandleCommandLineFile(1, m_CommandLineFileName2);
 	HandleCommandLineFile(0, m_CommandLineFileName1);
 
-	HandleEnvironmentVariables();
-
 	if (!m_StartPaused)
 	{
 		// Schedule first key press if keyboard command supplied
@@ -4836,86 +4834,6 @@ void BeebWin::KillBootDiscTimer()
 {
 	m_BootDiscTimerElapsed = true;
 	KillTimer(m_hWnd, 2);
-}
-
-
-/****************************************************************************/
-void BeebWin::HandleEnvironmentVariables()
-{
-	const char *DiscString = getenv("BeebDiscLoad");
-	if (DiscString == nullptr)
-		DiscString = getenv("BeebDiscLoad0");
-	if (DiscString != nullptr)
-		LoadStartupDisc(0, DiscString);
-	else {
-#ifndef WIN32
-		LoadStartupDisc(0, "S:80:discims/test.ssd");
-#endif
-	}
-
-	DiscString = getenv("BeebDiscLoad1");
-	if (DiscString != nullptr)
-		LoadStartupDisc(1, DiscString);
-
-	if (getenv("BeebDiscWrites") != nullptr) {
-		DiscWriteEnable(0, true);
-		DiscWriteEnable(1, true);
-	}
-}
-
-/****************************************************************************/
-void BeebWin::LoadStartupDisc(int DriveNum, const char *DiscString)
-{
-	char DoubleSided;
-	int Tracks;
-	char Name[1024];
-	int scanfres;
-
-	if (scanfres = sscanf(DiscString, "%c:%d:%s", &DoubleSided, &Tracks, Name),
-		scanfres != 3) {
-		Report(MessageType::Error, "Incorrect format for BeebDiscLoad, "
-		                           "correct format is D|S|A:tracks:filename");
-	}
-	else {
-		switch (DoubleSided) {
-		case 'd':
-		case 'D':
-			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(Name, DriveNum, DiscType::DSD);
-			}
-			else {
-				LoadSimpleDSDiscImage(Name, DriveNum, Tracks);
-			}
-			break;
-
-		case 'S':
-		case 's':
-			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(Name, DriveNum, DiscType::SSD);
-			}
-			else {
-				LoadSimpleDiscImage(Name, DriveNum, 0, Tracks);
-			}
-			break;
-
-		case 'A':
-		case 'a':
-			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(Name, DriveNum, DiscType::ADFS);
-			}
-			else {
-				Report(MessageType::Error, "The 8271 FDC cannot load the ADFS disc image "
-				                           "specified in the BeebDiscLoad environment variable");
-			}
-			break;
-
-		default:
-			Report(MessageType::Error, "BeebDiscLoad disc type incorrect, "
-			                           "use S for single sided, "
-			                           "D for double sided and A for ADFS");
-			break;
-		}
-	}
 }
 
 /****************************************************************************/

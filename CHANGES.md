@@ -23,6 +23,7 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
   * Added Italian logical keyboard mapping file.
   * Shift Lock is now mapped to the F11 key by default.
 * Fixed installer to not delete Econet and key map config files.
+* Removed BeebDiscLoad and BeebVideoRefreshFreq environment variables.
 
 Version 4.19 (1 May 2023)
 ------------

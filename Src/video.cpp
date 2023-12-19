@@ -1302,12 +1302,6 @@ void VideoInit(void) {
   SetTrigger(99,VideoTriggerCount); /* Give time for OS to set mode up before doing anything silly */
   FastTable_Valid = false;
 
-#ifndef WIN32
-  char *environptr=getenv("BeebVideoRefreshFreq");
-  if (environptr!=NULL) Video_RefreshFrequency=atoi(environptr);
-  if (Video_RefreshFrequency<1) Video_RefreshFrequency=1;
-#endif
-
   FrameNum=Video_RefreshFrequency;
   VideoState.PixmapLine=0;
   VideoState.FirstPixmapLine=-1;
