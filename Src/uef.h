@@ -105,13 +105,13 @@ class UEFFileReader
 
 	private:
 		UEFResult LoadData(const char *FileName);
-		UEFChunkInfo* FindChunk(int Time);
+		const UEFChunkInfo* FindChunk(int Time);
 
 	private:
 		std::string m_FileName;
 		std::vector<UEFChunkInfo> m_Chunks;
 		int m_ClockSpeed;
-		UEFChunkInfo *m_LastChunk;
+		const UEFChunkInfo *m_LastChunk;
 		bool m_Unlock;
 };
 

@@ -370,7 +370,7 @@ UEFResult UEFFileReader::LoadData(const char *FileName)
 	return Result;
 }
 
-UEFChunkInfo* UEFFileReader::FindChunk(int Time)
+const UEFChunkInfo* UEFFileReader::FindChunk(int Time)
 {
 	if (m_LastChunk != nullptr &&
 	    Time >= m_LastChunk->start_time && Time < m_LastChunk->end_time)
@@ -379,7 +379,7 @@ UEFChunkInfo* UEFFileReader::FindChunk(int Time)
 	}
 	else
 	{
-		for (UEFChunkInfo& chunk : m_Chunks)
+		for (const UEFChunkInfo& chunk : m_Chunks)
 		{
 			if (Time >= chunk.start_time && Time < chunk.end_time)
 			{
@@ -394,7 +394,7 @@ UEFChunkInfo* UEFFileReader::FindChunk(int Time)
 
 int UEFFileReader::GetData(int Time)
 {
-	UEFChunkInfo *ch = FindChunk(Time);
+	const UEFChunkInfo *ch = FindChunk(Time);
 
 	if (ch == nullptr)
 		return UEF_EOF;
