@@ -993,6 +993,26 @@ void Poll1770(int NCycles) {
 	}
 }
 
+static unsigned char GetMaxSectors(DiscType Type)
+{
+	switch (Type)
+	{
+		case DiscType::SSD:
+		case DiscType::DSD:
+		default:
+			return 9;
+
+		case DiscType::ADFS:
+			return 15;
+
+		case DiscType::IMG:
+			return 4;
+
+		case DiscType::DOS:
+			return 8;
+	}
+}
+
 Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 {
 	Disc1770Result Result = Disc1770Result::Failed;
@@ -1108,12 +1128,11 @@ Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 	}
 
 	DscType[Drive] = Type;
-	MaxSects[Drive] = (Type == DiscType::SSD || Type == DiscType::DSD) ? 9 : 15;
-	if (Type == DiscType::IMG) MaxSects[Drive] = 4;
-	if (Type == DiscType::DOS) MaxSects[Drive] = 8;
+	MaxSects[Drive] = GetMaxSectors(Type);
 
 	return Result;
 }
+
 
 // This function writes the control register at &FE24.
 
@@ -1172,12 +1191,8 @@ void Reset1770() {
 	SetMotor(1, false);
 	Status = 0;
 	ExtControl = DRIVE_CONTROL_SELECT_DRIVE_0; // Drive 0 selected, single density, side 0
-	MaxSects[0] = (DscType[0] == DiscType::SSD || DscType[0] == DiscType::DSD) ? 9 : 15;
-	MaxSects[1] = (DscType[1] == DiscType::SSD || DscType[1] == DiscType::DSD) ? 9 : 15;
-	if (DscType[0] == DiscType::IMG) MaxSects[0] = 4;
-	if (DscType[1] == DiscType::IMG) MaxSects[1] = 4;
-	if (DscType[0] == DiscType::DOS) MaxSects[0] = 8;
-	if (DscType[1] == DiscType::DOS) MaxSects[1] = 8;
+	MaxSects[0] = GetMaxSectors(DscType[0]);
+	MaxSects[1] = GetMaxSectors(DscType[1]);
 }
 
 void Close1770Disc(int Drive)
