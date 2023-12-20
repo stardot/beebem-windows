@@ -2211,8 +2211,8 @@ static bool DriveHeadMotorUpdate()
 		StopSoundSample(SAMPLE_DRIVE_MOTOR);
 		StopSoundSample(SAMPLE_HEAD_SEEK);
 
-		LEDs.Disc0 = false;
-		LEDs.Disc1 = false;
+		LEDs.FloppyDisc[0] = false;
+		LEDs.FloppyDisc[1] = false;
 		return true;
 	}
 
@@ -2224,8 +2224,8 @@ static bool DriveHeadMotorUpdate()
 
 	if (!FDCState.DriveHeadLoaded)
 	{
-		if (FDCState.Select[0]) LEDs.Disc0 = true;
-		if (FDCState.Select[1]) LEDs.Disc1 = true;
+		if (FDCState.Select[0]) LEDs.FloppyDisc[0] = true;
+		if (FDCState.Select[1]) LEDs.FloppyDisc[1] = true;
 
 		PlaySoundSample(SAMPLE_DRIVE_MOTOR, true);
 		FDCState.DriveHeadLoaded = true;

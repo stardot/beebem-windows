@@ -69,8 +69,7 @@ bool Disc1770Enabled = true;
 /* File names of loaded disc images */
 static char DscFileNames[2][256];
 
-static FILE *Disc0; // File handlers for the disc drives 0 and 1
-static FILE *Disc1;
+static FILE *DiscFile[2]; // File handlers for the disc drives 0 and 1
 static FILE *CurrentDisc; // Current Disc Handle
 
 static unsigned char ExtControl; // FDC External Control Register
@@ -191,13 +190,9 @@ unsigned char Read1770Register(int Register) {
 	return 0;
 }
 
-static void SetMotor(int Drive, bool State) {
-	if (Drive == 0) {
-		LEDs.Disc0 = State;
-	}
-	else {
-		LEDs.Disc1 = State;
-	}
+static void SetMotor(int Drive, bool State)
+{
+	LEDs.FloppyDisc[Drive] = State;
 
 	if (State) {
 		Status |= WD1770_STATUS_MOTOR_ON;
@@ -1002,72 +997,24 @@ Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 {
 	Disc1770Result Result = Disc1770Result::Failed;
 
-	FILE* DiscLoaded = nullptr;
-
-	if (Drive == 0)
+	if (DiscFile[Drive] != nullptr)
 	{
-		if (Disc0 != nullptr)
-		{
-			fclose(Disc0);
-		}
-
-		Disc0 = fopen(FileName, "rb+");
-
-		if (Disc0 != nullptr)
-		{
-			Result = Disc1770Result::OpenedReadWrite;
-		}
-		else
-		{
-			Disc0 = fopen(FileName, "rb");
-
-			if (Disc0 != nullptr)
-			{
-				Result = Disc1770Result::OpenedReadOnly;
-			}
-		}
-
-		if (Disc0 != nullptr)
-		{
-			if (CurrentDrive == 0)
-			{
-				CurrentDisc = Disc0;
-			}
-
-			DiscLoaded = Disc0;
-		}
+		fclose(DiscFile[Drive]);
 	}
-	else if (Drive == 1)
+
+	DiscFile[Drive] = fopen(FileName, "rb+");
+
+	if (DiscFile[Drive] != nullptr)
 	{
-		if (Disc1 != nullptr)
+		Result = Disc1770Result::OpenedReadWrite;
+	}
+	else
+	{
+		DiscFile[Drive] = fopen(FileName, "rb");
+
+		if (DiscFile[Drive] != nullptr)
 		{
-			fclose(Disc1);
-		}
-
-		Disc1 = fopen(FileName, "rb+");
-
-		if (Disc1 != nullptr)
-		{
-			Result = Disc1770Result::OpenedReadWrite;
-		}
-		else
-		{
-			Disc1 = fopen(FileName, "rb");
-
-			if (Disc1 != nullptr)
-			{
-				Result = Disc1770Result::OpenedReadOnly;
-			}
-		}
-
-		if (Disc1 != nullptr)
-		{
-			if (CurrentDrive == 1)
-			{
-				CurrentDisc = Disc1;
-			}
-
-			DiscLoaded = Disc1;
+			Result = Disc1770Result::OpenedReadOnly;
 		}
 	}
 
@@ -1075,6 +1022,8 @@ Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 	{
 		return Result;
 	}
+
+	CurrentDisc = DiscFile[Drive];
 
 	strcpy(DscFileNames[Drive], FileName);
 
@@ -1126,9 +1075,9 @@ Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 		TrkLen[Drive] = 256 * 16;
 
 		// Get file length
-		fseek(DiscLoaded, 0, SEEK_END);
-		long FileLength = ftell(DiscLoaded);
-		fseek(DiscLoaded, 0, SEEK_SET);
+		fseek(CurrentDisc, 0, SEEK_END);
+		long FileLength = ftell(CurrentDisc);
+		fseek(CurrentDisc, 0, SEEK_SET);
 
 		long NumSectors = FileLength / 256;
 
@@ -1137,11 +1086,11 @@ Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 		// In an ADFS L disc, this is 0xa00 (160 Tracks)
 		// for and ADFS M disc, this is 0x500 (80 Tracks)
 		// and for the dreaded ADFS S disc, this is 0x280
-		fseek(DiscLoaded, 0xfc, SEEK_SET);
-		long TotalSectors = fgetc(DiscLoaded);
-		TotalSectors |= fgetc(DiscLoaded) << 8;
-		TotalSectors |= fgetc(DiscLoaded) << 16;
-		fseek(DiscLoaded, 0, SEEK_SET);
+		fseek(CurrentDisc, 0xfc, SEEK_SET);
+		long TotalSectors = fgetc(CurrentDisc);
+		TotalSectors |= fgetc(CurrentDisc) << 8;
+		TotalSectors |= fgetc(CurrentDisc) << 16;
+		fseek(CurrentDisc, 0, SEEK_SET);
 
 		// Hack to fix PIAS-ADFS_E.adf that misreports the total number of
 		// sectors
@@ -1174,12 +1123,12 @@ void WriteFDCControlReg(unsigned char Value) {
 	ExtControl = Value;
 
 	if (ExtControl & DRIVE_CONTROL_SELECT_DRIVE_0) {
-		CurrentDisc = Disc0;
+		CurrentDisc = DiscFile[0];
 		CurrentDrive = 0;
 	}
 
 	if (ExtControl & DRIVE_CONTROL_SELECT_DRIVE_1) {
-		CurrentDisc = Disc1;
+		CurrentDisc = DiscFile[1];
 		CurrentDrive = 1;
 	}
 
@@ -1211,14 +1160,14 @@ unsigned char ReadFDCControlReg() {
 }
 
 void Reset1770() {
-	CurrentDisc = Disc0;
+	CurrentDisc = DiscFile[0];
 	CurrentDrive = 0;
 	CurrentHead[0] = 0;
 	CurrentHead[1] = 0;
 	DiscStrt[0] = 0;
 	DiscStrt[1] = 0;
-	if (Disc0) fseek(Disc0, 0, SEEK_SET);
-	if (Disc1) fseek(Disc1, 0, SEEK_SET);
+	if (DiscFile[0]) fseek(DiscFile[0], 0, SEEK_SET);
+	if (DiscFile[1]) fseek(DiscFile[1], 0, SEEK_SET);
 	SetMotor(0, false);
 	SetMotor(1, false);
 	Status = 0;
@@ -1233,16 +1182,11 @@ void Reset1770() {
 
 void Close1770Disc(int Drive)
 {
-	if (Drive == 0 && Disc0 != nullptr) {
-		fclose(Disc0);
-		Disc0 = nullptr;
-		DscFileNames[0][0] = 0;
-	}
-
-	if (Drive == 1 && Disc1 != nullptr) {
-		fclose(Disc1);
-		Disc1 = nullptr;
-		DscFileNames[1][0] = 0;
+	if (DiscFile[Drive] != nullptr)
+	{
+		fclose(DiscFile[Drive]);
+		DiscFile[Drive] = nullptr;
+		DscFileNames[Drive][0] = '\0';
 	}
 }
 
@@ -1305,18 +1249,22 @@ void Save1770UEF(FILE *SUEF)
 	fputc(static_cast<int>(DscType[0]), SUEF);
 	fputc(static_cast<int>(DscType[1]), SUEF);
 
-	if (Disc0 != nullptr) {
+	if (DiscFile[0] != nullptr)
+	{
 		fwrite(CDiscName[0],1,256,SUEF);
 	}
-	else {
+	else
+	{
 		// No disc in drive 0
 		fwrite(blank,1,256,SUEF);
 	}
 
-	if (Disc1 != nullptr) {
+	if (DiscFile[1] != nullptr)
+	{
 		fwrite(CDiscName[1],1,256,SUEF);
 	}
-	else {
+	else
+	{
 		// No disc in drive 1
 		fwrite(blank,1,256,SUEF);
 	}
@@ -1389,7 +1337,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 		// Load drive 0
 		Loaded = true;
 		mainWin->Load1770DiscImage(FileName, 0, DscType[0]);
-		if (Disc0 == nullptr)
+		if (DiscFile[0] == nullptr)
 			LoadFailed = true;
 	}
 
@@ -1398,7 +1346,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 		// Load drive 1
 		Loaded = true;
 		mainWin->Load1770DiscImage(FileName, 1, DscType[1]);
-		if (Disc1 == nullptr)
+		if (DiscFile[1] == nullptr)
 			LoadFailed = true;
 	}
 

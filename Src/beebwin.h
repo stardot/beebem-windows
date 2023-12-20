@@ -68,17 +68,18 @@ typedef struct bmiData
 	RGBQUAD			bmiColors[256];
 } bmiData;
 
-struct LEDType {
+struct LEDType
+{
 	bool ShiftLock;
 	bool CapsLock;
 	bool Motor;
-	bool Disc0;
-	bool Disc1;
+	bool FloppyDisc[2];
 	bool HDisc[4];
 	bool ShowDisc;
 	bool ShowKB;
 };
-extern struct LEDType LEDs;
+
+extern LEDType LEDs;
 
 enum class LEDColour {
 	Red,

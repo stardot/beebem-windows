@@ -1588,12 +1588,12 @@ void VideoAddLEDs(void) {
 
 	if (LEDs.ShowDisc) {
 		int adj = TeletextEnabled ? 86 : 0;
-		mainWin->doLED(578-adj,LEDs.HDisc[0]);
-		mainWin->doLED(588-adj,LEDs.HDisc[1]);
-		mainWin->doLED(598-adj,LEDs.HDisc[2]);
-		mainWin->doLED(608-adj,LEDs.HDisc[3]);
-		mainWin->doLED(618-adj,LEDs.Disc0);
-		mainWin->doLED(628-adj,LEDs.Disc1);
+		mainWin->doLED(578 - adj, LEDs.HDisc[0]);
+		mainWin->doLED(588 - adj, LEDs.HDisc[1]);
+		mainWin->doLED(598 - adj, LEDs.HDisc[2]);
+		mainWin->doLED(608 - adj, LEDs.HDisc[3]);
+		mainWin->doLED(618 - adj, LEDs.FloppyDisc[0]);
+		mainWin->doLED(628 - adj, LEDs.FloppyDisc[1]);
 	}
 }
 

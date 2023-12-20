@@ -113,7 +113,7 @@ static const unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
 CArm *arm = NULL;
 CSprowCoPro *sprow = NULL;
 
-struct LEDType LEDs;
+LEDType LEDs;
 
 LEDColour DiscLedColour = LEDColour::Red;
 
