@@ -189,7 +189,7 @@
     <ClCompile Include="StringUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sysvia.cpp">
+    <ClCompile Include="SysVia.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TapeControlDialog.cpp">
@@ -455,7 +455,7 @@
     <ClInclude Include="StringUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sysvia.h">
+    <ClInclude Include="SysVia.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TapeControlDialog.h">

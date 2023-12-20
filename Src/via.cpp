@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include "via.h"
-#include "sysvia.h"
+#include "SysVia.h"
 #include "uservia.h"
 #include "UEFState.h"
 #include "Debug.h"

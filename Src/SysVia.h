@@ -42,9 +42,9 @@ void SysVIA_poll_real(void);
 
 void SysVIA_poll(unsigned int ncycles);
 
-void BeebKeyUp(int row, int col);
-void BeebKeyDown(int row, int col);
-void BeebReleaseAllKeys(void);
+void BeebKeyUp(int Row, int Column);
+void BeebKeyDown(int Row, int Column);
+void BeebReleaseAllKeys();
 
 void SysVIATriggerCA1Int(int value);
 

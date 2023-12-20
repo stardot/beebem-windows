@@ -39,7 +39,7 @@ Boston, MA  02110-1301, USA.
 #include "Econet.h"
 #include "Debug.h"
 #include "6502core.h"
-#include "sysvia.h"
+#include "SysVia.h"
 #include "StringUtils.h"
 
 // Emulated 6854 ADLC control registers.

@@ -221,7 +221,7 @@
     <ClCompile Include="Speech.cpp" />
     <ClCompile Include="SprowCoPro.cpp" />
     <ClCompile Include="StringUtils.cpp" />
-    <ClCompile Include="sysvia.cpp" />
+    <ClCompile Include="SysVia.cpp" />
     <ClCompile Include="TapeMap.cpp" />
     <ClCompile Include="TapeControlDialog.cpp" />
     <ClCompile Include="Teletext.cpp" />
@@ -379,7 +379,7 @@
     <ClInclude Include="Speech.h" />
     <ClInclude Include="SprowCoPro.h" />
     <ClInclude Include="StringUtils.h" />
-    <ClInclude Include="sysvia.h" />
+    <ClInclude Include="SysVia.h" />
     <ClInclude Include="TapeControlDialog.h" />
     <ClInclude Include="TapeMap.h" />
     <ClInclude Include="TarmacGlobals.h" />

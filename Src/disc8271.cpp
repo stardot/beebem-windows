@@ -30,7 +30,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "UEFState.h"
 #include "beebsound.h"
-#include "sysvia.h"
+#include "SysVia.h"
 #include "tube.h"
 #include "Log.h"
 #include "DiscType.h"

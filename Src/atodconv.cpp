@@ -29,7 +29,7 @@ Boston, MA  02110-1301, USA.
 
 #include "6502core.h"
 #include "atodconv.h"
-#include "sysvia.h"
+#include "SysVia.h"
 #include "UEFState.h"
 
 bool JoystickEnabled = false;

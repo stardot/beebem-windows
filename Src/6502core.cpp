@@ -37,7 +37,7 @@ Boston, MA  02110-1301, USA.
 #include "disc8271.h"
 #include "Teletext.h"
 #include "via.h"
-#include "sysvia.h"
+#include "SysVia.h"
 #include "uservia.h"
 #include "video.h"
 #include "atodconv.h"

@@ -34,7 +34,7 @@ Written by Richard Gellman - Feb 2001
 #include "UEFState.h"
 #include "z80mem.h"
 #include "beebsound.h"
-#include "sysvia.h"
+#include "SysVia.h"
 
 // Control/Status Register, Track, Sector, and Data Registers
 static unsigned char FormatBuffer[2048];

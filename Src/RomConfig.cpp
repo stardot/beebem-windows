@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "FileDialog.h"
 #include "ListView.h"
 #include "Resource.h"
-#include "sysvia.h"
+#include "SysVia.h"
 
 static HWND hWndROMList = NULL;
 static HWND hWndModel = NULL;

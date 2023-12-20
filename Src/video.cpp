@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "beebmem.h"
 #include "beebwin.h"
 #include "Main.h"
-#include "sysvia.h"
+#include "SysVia.h"
 #include "video.h"
 #include "UEFState.h"
 #include "beebsound.h"
