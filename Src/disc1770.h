@@ -39,7 +39,7 @@ enum class Disc1770Result {
 
 unsigned char Read1770Register(int Register);
 void Write1770Register(int Register, unsigned char Value);
-Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type);
+Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 void WriteFDCControlReg(unsigned char Value);
 unsigned char ReadFDCControlReg();
 void Reset1770();

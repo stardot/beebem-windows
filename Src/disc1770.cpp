@@ -998,57 +998,72 @@ void Poll1770(int NCycles) {
 	}
 }
 
-Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type) {
+Disc1770Result Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
+{
 	Disc1770Result Result = Disc1770Result::Failed;
 
 	FILE* DiscLoaded = nullptr;
 
-	if (DscDrive == 0) {
-		if (Disc0 != nullptr) {
+	if (Drive == 0)
+	{
+		if (Disc0 != nullptr)
+		{
 			fclose(Disc0);
 		}
 
-		Disc0 = fopen(DscFileName, "rb+");
+		Disc0 = fopen(FileName, "rb+");
 
-		if (Disc0 != nullptr) {
+		if (Disc0 != nullptr)
+		{
 			Result = Disc1770Result::OpenedReadWrite;
 		}
-		else {
-			Disc0 = fopen(DscFileName, "rb");
+		else
+		{
+			Disc0 = fopen(FileName, "rb");
 
-			if (Disc0 != nullptr) {
+			if (Disc0 != nullptr)
+			{
 				Result = Disc1770Result::OpenedReadOnly;
 			}
 		}
 
-		if (Disc0 != nullptr) {
-			if (CurrentDrive == 0) {
+		if (Disc0 != nullptr)
+		{
+			if (CurrentDrive == 0)
+			{
 				CurrentDisc = Disc0;
 			}
 
 			DiscLoaded = Disc0;
 		}
 	}
-	else if (DscDrive == 1) {
-		if (Disc1 != nullptr) {
+	else if (Drive == 1)
+	{
+		if (Disc1 != nullptr)
+		{
 			fclose(Disc1);
 		}
 
-		Disc1 = fopen(DscFileName, "rb+");
+		Disc1 = fopen(FileName, "rb+");
 
-		if (Disc1 != nullptr) {
+		if (Disc1 != nullptr)
+		{
 			Result = Disc1770Result::OpenedReadWrite;
 		}
-		else {
-			Disc1 = fopen(DscFileName, "rb");
+		else
+		{
+			Disc1 = fopen(FileName, "rb");
 
-			if (Disc1 != nullptr) {
+			if (Disc1 != nullptr)
+			{
 				Result = Disc1770Result::OpenedReadOnly;
 			}
 		}
 
-		if (Disc1 != nullptr) {
-			if (CurrentDrive == 1) {
+		if (Disc1 != nullptr)
+		{
+			if (CurrentDrive == 1)
+			{
 				CurrentDisc = Disc1;
 			}
 
@@ -1056,76 +1071,97 @@ Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType
 		}
 	}
 
-	if (Result == Disc1770Result::Failed) {
+	if (Result == Disc1770Result::Failed)
+	{
 		return Result;
 	}
 
-	strcpy(DscFileNames[DscDrive], DscFileName);
+	strcpy(DscFileNames[Drive], FileName);
 
 	// if (discType = DiscType::SSD) CurrentHead[DscDrive]=0;
 	// Feb 14th 2001 - Valentines Day - Bah Humbug - ADFS Support added here
-	if (Type == DiscType::SSD) {
-		SecSize[DscDrive] = 256;
-		DiskDensity[DscDrive] = 1;
-		DiscStep[DscDrive] = 2560;
-		DiscStrt[DscDrive] = 0;
-		DefStart[DscDrive] = 80 * 10 * 256; // 0;
-		TrkLen[DscDrive] = 2560;
+	if (Type == DiscType::SSD)
+	{
+		SecSize[Drive] = 256;
+		DiskDensity[Drive] = 1;
+		DiscStep[Drive] = 256 * 10;
+		DiscStrt[Drive] = 0;
+		DefStart[Drive] = 80 * 10 * 256;
+		TrkLen[Drive] = 256 * 10;
 	}
-	else if (Type == DiscType::DSD) {
-		SecSize[DscDrive] = 256;
-		DiskDensity[DscDrive] = 1;
-		DiscStep[DscDrive] = 5120;
-		DiscStrt[DscDrive] = CurrentHead[DscDrive] * 2560;
-		DefStart[DscDrive] = 2560;
-		TrkLen[DscDrive] = 2560;
+	else if (Type == DiscType::DSD)
+	{
+		SecSize[Drive] = 256;
+		DiskDensity[Drive] = 1;
+		DiscStep[Drive] = 256 * 10 * 2;
+		DiscStrt[Drive] = CurrentHead[Drive] * 256 * 10;
+		DefStart[Drive] = 256 * 10;
+		TrkLen[Drive] = 256 * 10;
 	}
-	else if (Type == DiscType::IMG) {
-		SecSize[DscDrive] = 1024;
-		DiskDensity[DscDrive] = 0;
-		DiscStep[DscDrive] = 1024 * 5 * 2;
-		DiscStrt[DscDrive] = CurrentHead[DscDrive] * 1024 * 5;
-		DefStart[DscDrive] = 1024 * 5;
-		TrkLen[DscDrive] = 1024 * 5;
+	else if (Type == DiscType::IMG)
+	{
+		SecSize[Drive] = 1024;
+		DiskDensity[Drive] = 0;
+		DiscStep[Drive] = 1024 * 5 * 2;
+		DiscStrt[Drive] = CurrentHead[Drive] * 1024 * 5;
+		DefStart[Drive] = 1024 * 5;
+		TrkLen[Drive] = 1024 * 5;
 	}
-	else if (Type == DiscType::DOS) {
-		SecSize[DscDrive] = 512;
-		DiskDensity[DscDrive] = 0;
-		DiscStep[DscDrive] = 512 * 9 * 2;
-		DiscStrt[DscDrive] = CurrentHead[DscDrive] * 512 * 9;
-		DefStart[DscDrive] = 512 * 9;
-		TrkLen[DscDrive] = 512 * 9;
+	else if (Type == DiscType::DOS)
+	{
+		SecSize[Drive] = 512;
+		DiskDensity[Drive] = 0;
+		DiscStep[Drive] = 512 * 9 * 2;
+		DiscStrt[Drive] = CurrentHead[Drive] * 512 * 9;
+		DefStart[Drive] = 512 * 9;
+		TrkLen[Drive] = 512 * 9;
 	}
-	else if (Type == DiscType::ADFS) {
-		SecSize[DscDrive] = 256;
-		DiskDensity[DscDrive] = 0;
-		DiscStep[DscDrive] = 8192;
-		DiscStrt[DscDrive] = CurrentHead[DscDrive] * 4096;
-		DefStart[DscDrive] = 4096;
-		TrkLen[DscDrive] = 4096;
+	else if (Type == DiscType::ADFS)
+	{
+		SecSize[Drive] = 256;
+		DiskDensity[Drive] = 0;
+		DiscStep[Drive] = 256 * 16 * 2; // Assume interleaved
+		DiscStrt[Drive] = CurrentHead[Drive] * 4096;
+		DefStart[Drive] = 4096;
+		TrkLen[Drive] = 256 * 16;
+
+		// Get file length
+		fseek(DiscLoaded, 0, SEEK_END);
+		long FileLength = ftell(DiscLoaded);
+		fseek(DiscLoaded, 0, SEEK_SET);
+
+		long NumSectors = FileLength / 256;
+
 		// This is a quick check to see what type of disc the ADFS disc is.
 		// Bytes 0xfc - 0xfe is the total number of sectors.
 		// In an ADFS L disc, this is 0xa00 (160 Tracks)
 		// for and ADFS M disc, this is 0x500 (80 Tracks)
 		// and for the dreaded ADFS S disc, this is 0x280
-		long HeadStore = ftell(DiscLoaded);
 		fseek(DiscLoaded, 0xfc, SEEK_SET);
 		long TotalSectors = fgetc(DiscLoaded);
 		TotalSectors |= fgetc(DiscLoaded) << 8;
 		TotalSectors |= fgetc(DiscLoaded) << 16;
-		fseek(DiscLoaded, HeadStore, SEEK_SET);
-		if (TotalSectors == 0x500 || TotalSectors == 0x280) { // Just so 1024 sector mixed mode ADFS/NET discs can be recognised as dbl sided
-			DiscStep[DscDrive] = 4096;
-			DiscStrt[DscDrive] = 0;
-			DefStart[DscDrive] = 0;
-			TrkLen[DscDrive] = 4096;
+		fseek(DiscLoaded, 0, SEEK_SET);
+
+		// Hack to fix PIAS-ADFS_E.adf that misreports the total number of
+		// sectors
+		if (FileLength == 327680 && TotalSectors > NumSectors)
+		{
+			TotalSectors = NumSectors;
+		}
+
+		if (TotalSectors == 0x500 || TotalSectors == 0x280) // Just so 1024 sector mixed mode ADFS/NET discs can be recognised as dbl sided
+		{
+			DiscStep[Drive] = 256 * 16;
+			DiscStrt[Drive] = 0;
+			DefStart[Drive] = 0;
 		}
 	}
 
-	DscType[DscDrive] = Type;
-	MaxSects[DscDrive] = (Type == DiscType::SSD || Type == DiscType::DSD) ? 9 : 15;
-	if (Type == DiscType::IMG) MaxSects[DscDrive] = 4;
-	if (Type == DiscType::DOS) MaxSects[DscDrive] = 8;
+	DscType[Drive] = Type;
+	MaxSects[Drive] = (Type == DiscType::SSD || Type == DiscType::DSD) ? 9 : 15;
+	if (Type == DiscType::IMG) MaxSects[Drive] = 4;
+	if (Type == DiscType::DOS) MaxSects[Drive] = 8;
 
 	return Result;
 }
