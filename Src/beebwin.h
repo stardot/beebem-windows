@@ -338,14 +338,15 @@ public:
 	void SetRealTimeTarget(double RealTimeTarget);
 	void TranslateKeyMapping(void);
 	bool ReadDisc(int Drive, bool bCheckForPrefs);
-	void Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
+	bool Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
+	bool Load8271DiscImage(const char *FileName, int Drive, int Tracks, DiscType Type);
 	void LoadTape(void);
 	void InitJoystick(void);
 	void ResetJoystick(void);
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);
-	void CreateDiscImage(const char *FileName, int DriveNum, int Heads, int Tracks);
+	void CreateDFSDiscImage(const char *FileName, int Drive, int Heads, int Tracks);
 	void EjectDiscImage(int Drive);
 	void ExportDiscFiles(int menuId);
 	void ImportDiscFiles(int menuId);

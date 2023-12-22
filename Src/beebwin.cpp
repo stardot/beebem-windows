@@ -56,6 +56,7 @@ using std::max;
 #include "6502core.h"
 #include "disc8271.h"
 #include "disc1770.h"
+#include "DiscInfo.h"
 #include "SysVia.h"
 #include "uservia.h"
 #include "video.h"
@@ -119,11 +120,7 @@ LEDColour DiscLedColour = LEDColour::Red;
 
 // FDC Board extension DLL variables
 HMODULE hFDCBoard;
-
 EDCB ExtBoard={0,0,NULL};
-bool DiscLoaded[2] = { false, false }; // Set to true when a disc image has been loaded
-char CDiscName[2][256]; // Filename of disc current in drive 0 and 1
-DiscType CDiscType[2]; // Current disc types
 char FDCDLL[256]={0};
 
 const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
@@ -586,11 +583,18 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	Reset1770();
 	AtoDInit();
 	SetRomMenu();
-	FreeDiscImage(0);
-	// Keep the disc images loaded
-	FreeDiscImage(1);
-	Close1770Disc(0);
-	Close1770Disc(1);
+
+	char szDiscName[2][MAX_PATH];
+	strcpy(szDiscName[0], DiscInfo[0].FileName);
+	strcpy(szDiscName[1], DiscInfo[1].FileName);
+
+	DiscType Type[2];
+	Type[0] = DiscInfo[0].Type;
+	Type[1] = DiscInfo[1].Type;
+
+	EjectDiscImage(0);
+	EjectDiscImage(1);
+
 	if (SCSIDriveEnabled) SCSIReset();
 	if (SCSIDriveEnabled) SASIReset();
 	if (IDEDriveEnabled)  IDEReset();
@@ -602,20 +606,54 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		LoadFDC(NULL, false);
 	}
 
-	if (MachineType != Model::Master128 && NativeFDC) {
+	// Keep the disc images loaded
+
+	if (MachineType != Model::Master128 && NativeFDC)
+	{
 		// 8271 disc
-		if (DiscLoaded[0] && CDiscType[0] == DiscType::SSD) LoadSimpleDiscImage(CDiscName[0], 0, 0, 80);
-		if (DiscLoaded[0] && CDiscType[0] == DiscType::DSD) LoadSimpleDSDiscImage(CDiscName[0], 0, 80);
-		if (DiscLoaded[0] && CDiscType[0] == DiscType::FSD) LoadFSDDiscImage(CDiscName[0], 0);
-		if (DiscLoaded[1] && CDiscType[1] == DiscType::SSD) LoadSimpleDiscImage(CDiscName[1], 1, 0, 80);
-		if (DiscLoaded[1] && CDiscType[1] == DiscType::DSD) LoadSimpleDSDiscImage(CDiscName[1], 1, 80);
-		if (DiscLoaded[1] && CDiscType[1] == DiscType::FSD) LoadFSDDiscImage(CDiscName[1], 1);
+		if (szDiscName[0][0] != '\0')
+		{
+			if (Type[0] == DiscType::SSD || Type[0] == DiscType::DSD)
+			{
+				Load8271DiscImage(szDiscName[0], 0, 80, Type[0]);
+			}
+			else if (Type[0] == DiscType::FSD)
+			{
+				LoadFSDDiscImage(szDiscName[0], 0);
+			}
+		}
+
+		if (szDiscName[1][0] != '\0')
+		{
+			if (Type[1] == DiscType::SSD || Type[1] == DiscType::DSD)
+			{
+				Load8271DiscImage(szDiscName[1], 1, 80, Type[1]);
+			}
+			else if (Type[1] == DiscType::FSD)
+			{
+				LoadFSDDiscImage(szDiscName[1], 1);
+			}
+		}
 	}
 
-	if ((MachineType != Model::Master128 && !NativeFDC) || (MachineType == Model::Master128)) {
+	if ((MachineType != Model::Master128 && !NativeFDC) || (MachineType == Model::Master128))
+	{
 		// 1770 Disc
-		if (DiscLoaded[0]) Load1770DiscImage(CDiscName[0], 0, CDiscType[0]);
-		if (DiscLoaded[1]) Load1770DiscImage(CDiscName[1], 1, CDiscType[1]);
+		if (szDiscName[0][0] != '\0')
+		{
+			if (Type[0] != DiscType::FSD)
+			{
+				Load1770DiscImage(szDiscName[0], 0, Type[0]);
+			}
+		}
+
+		if (szDiscName[1][0] != '\0')
+		{
+			if (Type[1] != DiscType::FSD)
+			{
+				Load1770DiscImage(szDiscName[1], 1, Type[1]);
+			}
+		}
 	}
 }
 
@@ -4723,7 +4761,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 			{
 				if (NativeFDC)
 				{
-					LoadSimpleDSDiscImage(FileName, Drive, 80);
+					Load8271DiscImage(FileName, Drive, 80, DiscType::DSD);
 				}
 				else
 				{
@@ -4734,7 +4772,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 			{
 				if (NativeFDC)
 				{
-					LoadSimpleDiscImage(FileName, Drive, 0, 80);
+					Load8271DiscImage(FileName, Drive, 80, DiscType::SSD);
 				}
 				else
 				{
@@ -4756,7 +4794,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 			{
 				if (NativeFDC)
 				{
-					LoadSimpleDiscImage(FileName, Drive, 0, 80); // Treat like an ssd
+					Load8271DiscImage(FileName, Drive, 80, DiscType::SSD); // Treat like an ssd
 				}
 				else
 				{
@@ -4778,7 +4816,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 		}
 		else // Model::Master128
 		{
-			if (Type == FileType::DSD)
+			if (Type == FileType::FSD)
 			{
 				Load1770DiscImage(FileName, Drive, DiscType::DSD);
 			}

@@ -193,6 +193,7 @@
     <ClCompile Include="disc1770.cpp" />
     <ClCompile Include="disc8271.cpp" />
     <ClCompile Include="DiscEdit.cpp" />
+    <ClCompile Include="DiscInfo.cpp" />
     <ClCompile Include="Econet.cpp" />
     <ClCompile Include="ExportFileDialog.cpp" />
     <ClCompile Include="FileDialog.cpp" />
@@ -345,6 +346,7 @@
     <ClInclude Include="disc1770.h" />
     <ClInclude Include="disc8271.h" />
     <ClInclude Include="DiscEdit.h" />
+    <ClInclude Include="DiscInfo.h" />
     <ClInclude Include="DiscType.h" />
     <ClInclude Include="Econet.h" />
     <ClInclude Include="ExportFileDialog.h" />

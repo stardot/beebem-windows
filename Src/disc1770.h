@@ -48,6 +48,5 @@ bool CreateADFSImage(const char *FileName, int Tracks);
 void Close1770Disc(int Drive);
 void Save1770UEF(FILE *SUEF);
 void Load1770UEF(FILE *SUEF,int Version);
-void Get1770DiscInfo(int DscDrive, DiscType *Type, char *pFileName);
 
 #endif

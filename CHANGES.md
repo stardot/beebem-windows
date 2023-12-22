@@ -8,6 +8,9 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
+* Fixed support for double-sided SSD disk images (where side 1 tracks
+  follow side 0, as opposed to DSD images, where tracks from side 0 and 1 are
+  interleaved). This only works for 80-track double-sided SSDs, not 40-track.
 * Added icons for disk and tape image file types. The installer now allows
   you to create file associations for these, and saved state files.
 * BeebEm saved state files now use the .uefstate file extension, to distinguish

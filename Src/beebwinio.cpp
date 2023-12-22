@@ -21,6 +21,7 @@ Boston, MA  02110-1301, USA.
 
 // BeebEm IO support - disk, tape, state, printer, AVI capture
 
+#include <assert.h>
 #include <stdio.h>
 #include <algorithm>
 
@@ -47,6 +48,7 @@ using std::max;
 #include "beebsound.h"
 #include "disc8271.h"
 #include "disc1770.h"
+#include "DiscInfo.h"
 #include "DiscType.h"
 #include "UEFState.h"
 #include "Serial.h"
@@ -61,9 +63,6 @@ using std::max;
 using namespace Gdiplus;
 
 extern EDCB ExtBoard;
-extern bool DiscLoaded[2]; // Set to true when a disc image has been loaded.
-extern char CDiscName[2][256]; // Filename of disc current in drive 0 and 1;
-extern DiscType CDiscType[2]; // Current disc types
 extern char FDCDLL[256];
 extern HMODULE hFDCBoard;
 
@@ -74,30 +73,21 @@ lGetBoardProperties PGetBoardProperties;
 lSetDriveControl PSetDriveControl;
 lGetDriveControl PGetDriveControl;
 
-static bool hasFileExt(const char* fileName, const char* fileExt)
-{
-	const size_t fileExtLen = strlen(fileExt);
-	const size_t fileNameLen = strlen(fileName);
-
-	return fileNameLen >= fileExtLen &&
-	       _stricmp(fileName + fileNameLen - fileExtLen, fileExt) == 0;
-}
-
 /****************************************************************************/
 
 void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType Type)
 {
-	strcpy(CDiscName[Drive],DiscName);
-	CDiscType[Drive] = Type;
-	DiscLoaded[Drive] = true;
+	strcpy(DiscInfo[Drive].FileName, DiscName);
+	DiscInfo[Drive].Type = Type;
+	DiscInfo[Drive].Loaded = true;
 
 	const int maxMenuItemLen = 100;
 	char menuStr[maxMenuItemLen+1];
-	char *fname = strrchr(CDiscName[Drive], '\\');
+	char *fname = strrchr(DiscInfo[Drive].FileName, '\\');
 	if (fname == NULL)
-		fname = strrchr(CDiscName[Drive], '/');
+		fname = strrchr(DiscInfo[Drive].FileName, '/');
 	if (fname == NULL)
-		fname = CDiscName[Drive];
+		fname = DiscInfo[Drive].FileName;
 	else
 		fname++;
 
@@ -113,14 +103,16 @@ void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType Type)
 	SetMenuItemInfo(m_hMenu, Drive == 0 ? IDM_EJECTDISC0 : IDM_EJECTDISC1, FALSE, &mii);
 }
 
+/****************************************************************************/
+
 void BeebWin::EjectDiscImage(int Drive)
 {
-	Eject8271DiscImage(Drive);
+	FreeDiscImage(Drive);
 	Close1770Disc(Drive);
 
-	strcpy(CDiscName[Drive], "");
-	CDiscType[Drive] = DiscType::SSD;
-	DiscLoaded[Drive] = false;
+	DiscInfo[Drive].FileName[0] = '\0';
+	DiscInfo[Drive].Type = DiscType::SSD;
+	DiscInfo[Drive].Loaded = false;
 
 	MENUITEMINFO mii = {0};
 	mii.cbSize = sizeof(mii);
@@ -180,6 +172,7 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 			m_Preferences.SetStringValue("DiscsPath", DefaultPath);
 		}
 
+		bool ssd = false;
 		bool dsd = false;
 		bool adfs = false;
 		bool img = false;
@@ -188,59 +181,67 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 
 		switch (fileDialog.GetFilterIndex())
 		{
-		case 1:
+		case 1: {
+			char *ext = strrchr(FileName, '.');
+			if (ext != nullptr)
 			{
-				char *ext = strrchr(FileName, '.');
-				if (ext != nullptr)
-				{
-					if (_stricmp(ext+1, "dsd") == 0)
-						dsd = true;
-					else if (_stricmp(ext+1, "adl") == 0)
-						adfs = true;
-					else if (_stricmp(ext+1, "adf") == 0)
-						adfs = true;
-					else if (_stricmp(ext+1, "img") == 0)
-						img = true;
-					else if (_stricmp(ext+1, "dos") == 0)
-						dos = true;
-					else if (_stricmp(ext+1, "fsd") == 0)
-						fsd = true;
-				}
-				break;
+				if (_stricmp(ext+1, "ssd") == 0)
+					ssd = true;
+				else if (_stricmp(ext+1, "dsd") == 0)
+					dsd = true;
+				else if (_stricmp(ext+1, "adl") == 0)
+					adfs = true;
+				else if (_stricmp(ext+1, "adf") == 0)
+					adfs = true;
+				else if (_stricmp(ext+1, "img") == 0)
+					img = true;
+				else if (_stricmp(ext+1, "dos") == 0)
+					dos = true;
+				else if (_stricmp(ext+1, "fsd") == 0)
+					fsd = true;
 			}
+			break;
+		}
 		case 2:
 			adfs = true;
 			break;
+
+		case 3:
+		case 5:
+			ssd = true;
+			break;
+
 		case 4:
 		case 6:
 			dsd = true;
+			break;
 		}
 
 		// Another Master 128 Update, brought to you by Richard Gellman
 		if (MachineType != Model::Master128)
 		{
-			if (dsd)
+			if (ssd)
 			{
 				if (NativeFDC)
-					LoadSimpleDSDiscImage(FileName, Drive, 80);
-				else
-					Load1770DiscImage(FileName, Drive, DiscType::DSD);
-			}
-			if (!dsd && !adfs && !dos && !fsd)
-			{
-				if (NativeFDC)
-					LoadSimpleDiscImage(FileName, Drive, 0, 80);
+					Load8271DiscImage(FileName, Drive, 80, DiscType::SSD);
 				else
 					Load1770DiscImage(FileName, Drive, DiscType::SSD);
 			}
-			if (adfs)
+			else if (dsd)
+			{
+				if (NativeFDC)
+					Load8271DiscImage(FileName, Drive, 80, DiscType::DSD);
+				else
+					Load1770DiscImage(FileName, Drive, DiscType::DSD);
+			}
+			else if (adfs)
 			{
 				if (NativeFDC)
 					Report(MessageType::Error, "The native 8271 FDC cannot read ADFS discs");
 				else
 					Load1770DiscImage(FileName, Drive, DiscType::ADFS);
 			}
-			if (fsd)
+			else if (fsd)
 			{
 				if (NativeFDC)
 				{
@@ -253,21 +254,36 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 					return false;
 				}
 			}
+			else if (dos || img)
+			{
+				Report(MessageType::Error, "DOS and IMG format discs can only be opened when in Master 128 mode");
+				return false;
+			}
 		}
 		else
 		{
 			// Master 128
-			if (dsd)
-				Load1770DiscImage(FileName, Drive, DiscType::DSD);
-			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
+			if (ssd)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::SSD);
-			if (adfs)
+			}
+			else if (dsd)
+			{
+				Load1770DiscImage(FileName, Drive, DiscType::DSD);
+			}
+			else if (adfs)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::ADFS); // ADFS OO La La!
-			if (img)
+			}
+			else if (img)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::IMG);
-			if (dos)
+			}
+			else if (dos)
+			{
 				Load1770DiscImage(FileName, Drive, DiscType::DOS);
-			if (fsd)
+			}
+			else if (fsd)
 			{
 				Report(MessageType::Error, "FSD images are only supported with the 8271 FDC");
 				return false;
@@ -286,7 +302,7 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 
 /****************************************************************************/
 
-void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
+bool BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 {
 	Disc1770Result Result = ::Load1770DiscImage(FileName, Drive, Type);
 
@@ -294,21 +310,74 @@ void BeebWin::Load1770DiscImage(const char *FileName, int Drive, DiscType Type)
 	{
 		SetImageName(FileName, Drive, Type);
 		EnableMenuItem(Drive == 0 ? IDM_WRITE_PROTECT_DISC0 : IDM_WRITE_PROTECT_DISC1, true);
+
+		return true;
 	}
 	else if (Result == Disc1770Result::OpenedReadOnly)
 	{
 		SetImageName(FileName, Drive, Type);
 		EnableMenuItem(Drive == 0 ? IDM_WRITE_PROTECT_DISC0 : IDM_WRITE_PROTECT_DISC1, false);
+
+		return true;
 	}
 	else
 	{
 		// Disc1770Result::Failed
 		Report(MessageType::Error, "Could not open disc file:\n  %s",
 		       FileName);
+
+		return false;
 	}
 }
 
 /****************************************************************************/
+
+bool BeebWin::Load8271DiscImage(const char *FileName, int Drive, int Tracks, DiscType Type)
+{
+	Disc8271Result Result;
+
+	if (Type == DiscType::SSD)
+	{
+		Result = LoadSimpleDiscImage(FileName, Drive, 0, Tracks);
+	}
+	else if (Type == DiscType::DSD)
+	{
+		Result = LoadSimpleDSDiscImage(FileName, Drive, Tracks);
+	}
+	else
+	{
+		assert(Type == DiscType::FSD);
+		Result = ::LoadFSDDiscImage(FileName, Drive);
+	}
+
+	if (Result == Disc8271Result::Success)
+	{
+		SetImageName(FileName, Drive, Type);
+
+		return true;
+	}
+	else if (Result == Disc8271Result::InvalidFSD)
+	{
+		Report(MessageType::Error, "Not a valid FSD file:\n  %s", FileName);
+	}
+	else if (Result == Disc8271Result::InvalidTracks)
+	{
+		Report(MessageType::Error,
+		       "Could not open disc file:\n  %s\n\nInvalid number of tracks",
+		       FileName);
+
+		Report(MessageType::Error, "Not a valid FSD file:\n  %s", FileName);
+	}
+	else
+	{
+		Report(MessageType::Error, "Could not open disc file:\n  %s", FileName);
+	}
+
+	return false;
+}
+
+/****************************************************************************/
+
 void BeebWin::LoadTape(void)
 {
 	char DefaultPath[_MAX_PATH];
@@ -334,14 +403,18 @@ void BeebWin::LoadTape(void)
 			m_Preferences.SetStringValue("TapesPath", DefaultPath);
 		}
 
-		if (hasFileExt(FileName, ".uef")) {
+		if (HasFileExt(FileName, ".uef"))
+		{
 			LoadUEFTape(FileName);
 		}
-		else if (hasFileExt(FileName, ".csw")) {
+		else if (HasFileExt(FileName, ".csw"))
+		{
 			LoadCSWTape(FileName);
 		}
 	}
 }
+
+/****************************************************************************/
 
 bool BeebWin::NewTapeImage(char *FileName, int Size)
 {
@@ -444,19 +517,19 @@ void BeebWin::NewDiscImage(int Drive)
 		{
 			if (filterIndex == 1 || filterIndex == 3)
 				strcat(FileName, ".ssd");
-			if (filterIndex == 2 || filterIndex == 4)
+			else if (filterIndex == 2 || filterIndex == 4)
 				strcat(FileName, ".dsd");
-			if (filterIndex==5)
+			else if (filterIndex == 5)
 				strcat(FileName, ".adf");
-			if (filterIndex==6)
+			else if (filterIndex == 6)
 				strcat(FileName, ".adl");
 		}
 
 		if (filterIndex == 1 || filterIndex == 3) {
-			CreateDiscImage(FileName, Drive, 1, 80);
+			CreateDFSDiscImage(FileName, Drive, 1, 80);
 		}
 		else if (filterIndex == 2 || filterIndex == 4) {
-			CreateDiscImage(FileName, Drive, 2, 80);
+			CreateDFSDiscImage(FileName, Drive, 2, 80);
 		}
 		else if (filterIndex == 5 || filterIndex == 6) {
 			const int Tracks = filterIndex == 5 ? 80 : 160;
@@ -469,14 +542,14 @@ void BeebWin::NewDiscImage(int Drive)
 		// Allow disc writes
 		SetDiscWriteProtect(Drive, false);
 
-		DiscLoaded[Drive] = true;
-		strcpy(CDiscName[1],FileName);
+		DiscInfo[Drive].Loaded = true;
+		strcpy(DiscInfo[Drive].FileName, FileName);
 	}
 }
 
 /****************************************************************************/
-void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
-                              int Heads, int Tracks)
+void BeebWin::CreateDFSDiscImage(const char *FileName, int Drive,
+                                 int Heads, int Tracks)
 {
 	FILE *outfile = fopen(FileName, "wb");
 
@@ -493,7 +566,8 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 
 	// Create the first two sectors on each side - the rest will get created when
 	// data is written to it
-	for (int Sector = 0; Success && Sector < (Heads == 1 ? 2 : 12); Sector++) {
+	for (int Sector = 0; Success && Sector < (Heads == 1 ? 2 : 12); Sector++)
+	{
 		unsigned char SecData[256];
 		memset(SecData, 0, sizeof(SecData));
 
@@ -510,30 +584,22 @@ void BeebWin::CreateDiscImage(const char *FileName, int DriveNum,
 	if (fclose(outfile) != 0)
 		Success = false;
 
-	if (!Success) {
+	if (!Success)
+	{
 		Report(MessageType::Error, "Failed writing to disc file:\n  %s",
 		       FileName);
 	}
 	else
 	{
 		// Now load the new image into the correct drive
-		if (Heads == 1)
+
+		if (MachineType == Model::Master128 || !NativeFDC)
 		{
-			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(FileName, DriveNum, DiscType::SSD);
-			}
-			else {
-				LoadSimpleDiscImage(FileName, DriveNum, 0, Tracks);
-			}
+			Load1770DiscImage(FileName, Drive, Heads == 1 ? DiscType::SSD : DiscType::DSD);
 		}
 		else
 		{
-			if (MachineType == Model::Master128 || !NativeFDC) {
-				Load1770DiscImage(FileName, DriveNum, DiscType::DSD);
-			}
-			else {
-				LoadSimpleDSDiscImage(FileName, DriveNum, Tracks);
-			}
+			Load8271DiscImage(FileName, Drive, Tracks, Heads == 1 ? DiscType::SSD : DiscType::DSD);
 		}
 	}
 }
@@ -562,10 +628,11 @@ void BeebWin::SaveState()
 		}
 
 		// Add UEF extension if not already set and is UEF
-		if (!hasFileExt(FileName, ".uefstate"))
+		if (!HasFileExt(FileName, ".uefstate"))
 		{
 			strcat(FileName, ".uefstate");
 		}
+
 		SaveUEFState(FileName);
 	}
 }
@@ -604,7 +671,7 @@ void BeebWin::RestoreState()
 
 void BeebWin::ToggleWriteProtect(int Drive)
 {
-	if (CDiscType[Drive] != DiscType::FSD)
+	if (DiscInfo[Drive].Type != DiscType::FSD)
 	{
 		SetDiscWriteProtect(Drive, !m_WriteProtectDisc[Drive]);
 	}
@@ -758,7 +825,7 @@ void BeebWin::CaptureVideo()
 	if (fileDialog.Save())
 	{
 		// Add avi extension
-		if (!hasFileExt(FileName, ".avi"))
+		if (!HasFileExt(FileName, ".avi"))
 		{
 			strcat(FileName,".avi");
 		}
@@ -928,6 +995,8 @@ void BeebWin::QuickSave()
 	SaveUEFState(FileName2);
 }
 
+/****************************************************************************/
+
 void BeebWin::LoadUEFState(const char *FileName)
 {
 	UEFStateResult Result = ::LoadUEFState(FileName);
@@ -956,6 +1025,8 @@ void BeebWin::LoadUEFState(const char *FileName)
 	}
 }
 
+/****************************************************************************/
+
 void BeebWin::SaveUEFState(const char *FileName)
 {
 	UEFStateResult Result = ::SaveUEFState(FileName);
@@ -970,6 +1041,8 @@ void BeebWin::SaveUEFState(const char *FileName)
 			break;
 	}
 }
+
+/****************************************************************************/
 
 void BeebWin::LoadUEFTape(const char *FileName)
 {
@@ -991,6 +1064,8 @@ void BeebWin::LoadUEFTape(const char *FileName)
 			break;
 	}
 }
+
+/****************************************************************************/
 
 void BeebWin::LoadCSWTape(const char *FileName)
 {
@@ -1021,13 +1096,18 @@ void BeebWin::LoadCSWTape(const char *FileName)
 // if DLLName is NULL then FDC setting is read from the registry
 // else the named DLL is read in
 // if save is true then DLL selection is saved in registry
-void BeebWin::LoadFDC(char *DLLName, bool save) {
-	char CfgName[20];
 
+void BeebWin::LoadFDC(char *DLLName, bool save)
+{
+	char CfgName[20];
 	sprintf(CfgName, "FDCDLL%d", static_cast<int>(MachineType));
 
-	if (hFDCBoard!=NULL) FreeLibrary(hFDCBoard); 
-	hFDCBoard = NULL;
+	if (hFDCBoard != nullptr)
+	{
+		FreeLibrary(hFDCBoard);
+		hFDCBoard = nullptr;
+	}
+
 	NativeFDC = true;
 
 	if (DLLName == NULL) {
@@ -1076,10 +1156,13 @@ void BeebWin::LoadFDC(char *DLLName, bool save) {
 		DisplayCycles=0;
 }
 
-void BeebWin::KillDLLs(void) {
-	if (hFDCBoard!=NULL)
+void BeebWin::KillDLLs()
+{
+	if (hFDCBoard != nullptr)
+	{
 		FreeLibrary(hFDCBoard);
-	hFDCBoard=NULL;
+		hFDCBoard = nullptr;
+	}
 }
 
 void BeebWin::SetDriveControl(unsigned char value) {
@@ -1217,7 +1300,7 @@ void BeebWin::SaveUserKeyMap()
 
 	if (fileDialog.Save())
 	{
-		if (!hasFileExt(FileName, ".kmap"))
+		if (!HasFileExt(FileName, ".kmap"))
 		{
 			strcat(FileName,".kmap");
 		}
@@ -1325,27 +1408,12 @@ void BeebWin::CopyKey(unsigned char Value)
 
 void BeebWin::ExportDiscFiles(int menuId)
 {
-	int Drive;
-	DiscType Type;
-	char szDiscFile[MAX_PATH];
-	int Heads;
-	int Side;
-
-	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_2)
-	{
-		Drive = 0;
-	}
-	else
-	{
-		Drive = 1;
-	}
+	const int Drive = menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_2 ? 0 : 1;
 
 	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
-		Get8271DiscInfo(Drive, szDiscFile, &Type, &Heads);
-
-		if (Type == DiscType::FSD)
+		if (DiscInfo[Drive].Type == DiscType::FSD)
 		{
 			Report(MessageType::Warning, "Export from FSD disc not supported");
 			return;
@@ -1354,17 +1422,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	else
 	{
 		// 1770 controller
-		Get1770DiscInfo(Drive, &Type, szDiscFile);
-
-		if (Type == DiscType::SSD)
-		{
-			Heads = 1;
-		}
-		else if (Type == DiscType::DSD)
-		{
-			Heads = 2;
-		}
-		else
+		if (DiscInfo[Drive].Type != DiscType::SSD && DiscInfo[Drive].Type != DiscType::DSD)
 		{
 			// ADFS - not currently supported
 			Report(MessageType::Warning, "Export from ADFS disc not supported");
@@ -1373,29 +1431,24 @@ void BeebWin::ExportDiscFiles(int menuId)
 	}
 
 	// Check for no disk loaded
-	if (szDiscFile[0] == 0 || Heads == 1 && (menuId == IDM_DISC_EXPORT_2 || menuId == IDM_DISC_EXPORT_3))
+	if (DiscInfo[Drive].FileName[0] == '\0' ||
+	    (DiscInfo[Drive].Type == DiscType::SSD && !DiscInfo[Drive].DoubleSidedSSD && (menuId == IDM_DISC_EXPORT_2 || menuId == IDM_DISC_EXPORT_3)))
 	{
 		Report(MessageType::Warning, "No disc loaded in drive %d", menuId - IDM_DISC_EXPORT_0);
 		return;
 	}
 
 	// Read the catalogue
-	if (menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_1)
-	{
-		Side = 0;
-	}
-	else
-	{
-		Side = 1;
-	}
+	const int Heads = DiscInfo[Drive].Type == DiscType::DSD || DiscInfo[Drive].DoubleSidedSSD ? 2 : 1;
+	const int Side = menuId == IDM_DISC_EXPORT_0 || menuId == IDM_DISC_EXPORT_1 ? 0 : 1;
 
 	DFS_DISC_CATALOGUE dfsCat;
 
-	bool Success = dfs_get_catalogue(szDiscFile, Heads, Side, &dfsCat);
+	bool Success = dfs_get_catalogue(DiscInfo[Drive].FileName, Heads, Side, &dfsCat);
 
 	if (!Success)
 	{
-		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
+		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", DiscInfo[Drive].FileName);
 		return;
 	}
 
@@ -1406,7 +1459,7 @@ void BeebWin::ExportDiscFiles(int menuId)
 	GetDataPath(m_UserDataPath, szExportPath);
 
 	// Show export dialog
-	ExportFileDialog Dialog(hInst, m_hWnd, szDiscFile, Heads, Side, &dfsCat, szExportPath);
+	ExportFileDialog Dialog(hInst, m_hWnd, DiscInfo[Drive].FileName, Heads, Side, &dfsCat, szExportPath);
 
 	if (!Dialog.DoModal())
 	{
@@ -1424,27 +1477,12 @@ void BeebWin::ExportDiscFiles(int menuId)
 // File import
 void BeebWin::ImportDiscFiles(int menuId)
 {
-	int Drive;
-	DiscType Type;
-	char szDiscFile[MAX_PATH];
-	int Heads;
-	int Side;
-
-	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_2)
-	{
-		Drive = 0;
-	}
-	else
-	{
-		Drive = 1;
-	}
+	const int Drive = menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_2 ? 0 : 1;
 
 	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
-		Get8271DiscInfo(Drive, szDiscFile, &Type, &Heads);
-
-		if (Type == DiscType::FSD)
+		if (DiscInfo[Drive].Type == DiscType::FSD)
 		{
 			Report(MessageType::Warning, "Import to FSD disc not supported");
 			return;
@@ -1453,17 +1491,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	else
 	{
 		// 1770 controller
-		Get1770DiscInfo(Drive, &Type, szDiscFile);
-
-		if (Type == DiscType::SSD)
-		{
-			Heads = 1;
-		}
-		else if (Type == DiscType::DSD)
-		{
-			Heads = 2;
-		}
-		else
+		if (DiscInfo[Drive].Type != DiscType::SSD && DiscInfo[Drive].Type != DiscType::DSD)
 		{
 			// ADFS - not currently supported
 			Report(MessageType::Error, "Import to ADFS disc not supported");
@@ -1472,29 +1500,24 @@ void BeebWin::ImportDiscFiles(int menuId)
 	}
 
 	// Check for no disk loaded
-	if (szDiscFile[0] == 0 || Heads == 1 && (menuId == IDM_DISC_IMPORT_2 || menuId == IDM_DISC_IMPORT_3))
+	if (DiscInfo[Drive].FileName[0] == '\0' ||
+	    (DiscInfo[Drive].Type == DiscType::SSD && !DiscInfo[Drive].DoubleSidedSSD && (menuId == IDM_DISC_IMPORT_2 || menuId == IDM_DISC_IMPORT_3)))
 	{
 		Report(MessageType::Warning, "No disc loaded in drive %d", menuId - IDM_DISC_IMPORT_0);
 		return;
 	}
 
 	// Read the catalogue
-	if (menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_1)
-	{
-		Side = 0;
-	}
-	else
-	{
-		Side = 1;
-	}
+	const int Heads = DiscInfo[Drive].Type == DiscType::DSD || DiscInfo[Drive].DoubleSidedSSD ? 2 : 1;
+	const int Side = menuId == IDM_DISC_IMPORT_0 || menuId == IDM_DISC_IMPORT_1 ? 0 : 1;
 
 	DFS_DISC_CATALOGUE dfsCat;
 
-	bool Success = dfs_get_catalogue(szDiscFile, Heads, Side, &dfsCat);
+	bool Success = dfs_get_catalogue(DiscInfo[Drive].FileName, Heads, Side, &dfsCat);
 
 	if (!Success)
 	{
-		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", szDiscFile);
+		Report(MessageType::Error, "Failed to read catalogue from disc:\n  %s", DiscInfo[Drive].FileName);
 		return;
 	}
 
@@ -1574,7 +1597,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 	{
 		char szErrStr[500];
 
-		Success = dfs_import_file(szDiscFile, Heads, Side, &dfsCat, fileNames[i], szExportPath, szErrStr);
+		Success = dfs_import_file(DiscInfo[Drive].FileName, Heads, Side, &dfsCat, fileNames[i], szExportPath, szErrStr);
 
 		if (Success)
 		{
@@ -1595,33 +1618,22 @@ void BeebWin::ImportDiscFiles(int menuId)
 	Report(MessageType::Info, "Files successfully imported: %d", NumImported);
 
 	// Re-read disc image
+	char szFileName[MAX_PATH];
+	strcpy(szFileName, DiscInfo[Drive].FileName);
+
 	if (MachineType != Model::Master128 && NativeFDC)
 	{
 		// 8271 controller
-		Eject8271DiscImage(Drive);
+		FreeDiscImage(Drive);
 
-		if (Heads == 2)
-		{
-			LoadSimpleDSDiscImage(szDiscFile, Drive, 80);
-		}
-		else
-		{
-			LoadSimpleDiscImage(szDiscFile, Drive, 0, 80);
-		}
+		Load8271DiscImage(szFileName, Drive, 80, DiscInfo[Drive].Type);
 	}
 	else
 	{
 		// 1770 controller
 		Close1770Disc(Drive);
 
-		if (Heads == 2)
-		{
-			Load1770DiscImage(szDiscFile, Drive, DiscType::DSD);
-		}
-		else
-		{
-			Load1770DiscImage(szDiscFile, Drive, DiscType::SSD);
-		}
+		Load1770DiscImage(szFileName, Drive, DiscInfo[Drive].Type);
 	}
 }
 
@@ -1777,7 +1789,7 @@ bool BeebWin::GetImageFile(char *FileName, int Size)
 	if (fileDialog.Save())
 	{
 		// Add extension
-		if (!hasFileExt(FileName, fileExt))
+		if (!HasFileExt(FileName, fileExt))
 		{
 			strcat(FileName, fileExt);
 		}

@@ -29,14 +29,20 @@ Boston, MA  02110-1301, USA.
 extern int Disc8271Trigger; /* Cycle based time Disc8271Trigger */
 extern bool Disc8271Enabled;
 
-void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks);
-void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks);
-void LoadFSDDiscImage(const char *FileName, int DriveNum);
-bool IsDiscWritable(int DriveNum);
-void DiscWriteEnable(int DriveNum, bool WriteEnable);
-void FreeDiscImage(int DriveNum);
-void Eject8271DiscImage(int DriveNum);
-void Get8271DiscInfo(int DriveNum, char *pFileName, DiscType *pType, int *pHeads);
+enum class Disc8271Result {
+	Success,
+	Failed,
+	InvalidFSD,
+	InvalidTracks
+};
+
+Disc8271Result LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks);
+Disc8271Result LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks);
+Disc8271Result LoadFSDDiscImage(const char *FileName, int DriveNum);
+
+bool IsDiscWritable(int Drive);
+void DiscWriteEnable(int Drive, bool WriteEnable);
+void FreeDiscImage(int Drive);
 
 unsigned char Disc8271Read(int Address);
 void Disc8271Write(int Address, unsigned char Value);

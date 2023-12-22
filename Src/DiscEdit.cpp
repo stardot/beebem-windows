@@ -33,7 +33,9 @@ Boston, MA  02110-1301, USA.
 #include <string>
 
 #include "DiscEdit.h"
+#include "DiscInfo.h"
 #include "FileDialog.h"
+#include "FileUtils.h"
 
 static int DFS_LENGTH_TO_SECTORS(int Length)
 {
@@ -102,18 +104,28 @@ bool dfs_get_catalogue(const char *szDiscFile,
 
 	FILE* fd = fopen(szDiscFile, "rb");
 
-	if (fd == NULL)
+	if (fd == nullptr)
 	{
 		success = false;
 	}
 	else
 	{
+		bool DoubleSidedSSD = IsDoubleSidedSSD(szDiscFile, fd);
+
 		int catOffset = 0;
 
 		if (numSides == 2 && side == 1)
 		{
-			// Tracks are interleaved in a double sided disc image
-			catOffset = DFS_SECTORS_PER_TRACK * DFS_SECTOR_SIZE;
+			if (DoubleSidedSSD)
+			{
+				// Tracks are not interleaved, so side 2 appears after side 1
+				catOffset = 80 * DFS_SECTORS_PER_TRACK * DFS_SECTOR_SIZE;
+			}
+			else
+			{
+				// Tracks are interleaved in a double sided disc image
+				catOffset = DFS_SECTORS_PER_TRACK * DFS_SECTOR_SIZE;
+			}
 		}
 
 		if (fseek(fd, catOffset, SEEK_SET) != 0)
@@ -187,7 +199,7 @@ bool dfs_export_file(const char *szDiscFile,
 
 	FILE *discfd = fopen(szDiscFile, "rb");
 
-	if (discfd == NULL)
+	if (discfd == nullptr)
 	{
 		sprintf(szErrStr, "Failed to open disc file:\n  %s", szDiscFile);
 		return false;
@@ -202,6 +214,8 @@ bool dfs_export_file(const char *szDiscFile,
 	}
 	else
 	{
+		bool DoubleSidedSSD = IsDoubleSidedSSD(szDiscFile, discfd);
+
 		// Export the data
 		int sector = attr->startSector;
 		int len = attr->length;
@@ -217,10 +231,18 @@ bool dfs_export_file(const char *szDiscFile,
 			}
 			else
 			{
-				track = sector / DFS_SECTORS_PER_TRACK;
-				offset = (track * 2 + side) * DFS_SECTORS_PER_TRACK;
-				offset += (sector % DFS_SECTORS_PER_TRACK);
-				offset *= DFS_SECTOR_SIZE;
+				if (DoubleSidedSSD)
+				{
+					offset = 80 * DFS_SECTORS_PER_TRACK * DFS_SECTOR_SIZE;
+					offset += sector * DFS_SECTOR_SIZE;
+				}
+				else
+				{
+					track = sector / DFS_SECTORS_PER_TRACK;
+					offset = (track * 2 + side) * DFS_SECTORS_PER_TRACK;
+					offset += (sector % DFS_SECTORS_PER_TRACK);
+					offset *= DFS_SECTOR_SIZE;
+				}
 			}
 
 			// Read next sector

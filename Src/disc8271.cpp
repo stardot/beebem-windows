@@ -33,6 +33,8 @@ Boston, MA  02110-1301, USA.
 #include "SysVia.h"
 #include "tube.h"
 #include "Log.h"
+#include "DiscEdit.h"
+#include "DiscInfo.h"
 #include "DiscType.h"
 #include "Main.h"
 #include "DebugTrace.h"
@@ -121,8 +123,6 @@ struct TrackType {
 };
 
 struct DiscStatusType {
-	DiscType Type;
-	char FileName[256]; // File name of loaded disc image
 	bool Writeable; // True if the disc is writeable
 	int NumHeads; // Number of sides of loaded disc images
 	int TotalTracks; // Total number of tracks in FSD disk image
@@ -273,7 +273,7 @@ static void InitDiscStore()
 
 static unsigned char SkipBadTracks(int Drive, unsigned char Track)
 {
-	if (DiscStatus[Drive].Type == DiscType::FSD)
+	if (DiscInfo[Drive].Type == DiscType::FSD)
 	{
 		return Track; // FSD - no bad tracks, but possible to have unformatted
 	}
@@ -348,7 +348,7 @@ static TrackType *GetTrackPtr(unsigned char LogicalTrackID)
 		return nullptr;
 	}
 
-	if (DiscStatus[Drive].Type == DiscType::FSD)
+	if (DiscInfo[Drive].Type == DiscType::FSD)
 	{
 		// Read two tracks extra
 		for (unsigned char Track = FDCState.FSDPhysicalTrack[Drive]; Track < FDCState.FSDPhysicalTrack[Drive] +  2; Track++)
@@ -2341,37 +2341,37 @@ void FreeDiscImage(int Drive)
 
 /*--------------------------------------------------------------------------*/
 
-void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks)
+Disc8271Result LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tracks)
 {
 	std::ifstream Input(FileName, std::ios::in | std::ios::binary);
 
 	if (!Input)
 	{
-		mainWin->Report(MessageType::Error,
-		                "Could not open disc file:\n  %s", FileName);
-
-		return;
+		return Disc8271Result::Failed;
 	}
+
+	Disc8271Result Result = Disc8271Result::Success;
 
 	// JGH, 26-Dec-2011
 	DiscStatus[DriveNum].NumHeads = 1; // 1 = TRACKS_PER_DRIVE SSD image
-	                                   // 2 = 2 * TRACKS_PER_DRIVE DSD image
+	                                   // 2 = 2 * TRACKS_PER_DRIVE DSD or SSD image
+	DiscInfo[DriveNum].DoubleSidedSSD = false;
 
+	// Check for non-interleaved double-sided SSD image.
+	// Example file: SmallC72.ssd from https://mdfs.net/Mirror/Archive/JGH/
 	int Heads = 1;
 
 	Input.seekg(0, std::ios::end);
 
-	if (Input.tellg() > 0x40000)
+	if (Input.tellg() > 80 * DFS_SECTORS_PER_TRACK * DFS_SECTOR_SIZE)
 	{
 		Heads = 2; // Long sequential image continues onto side 1
-		DiscStatus[DriveNum].NumHeads = 0; // 0 = 2 * TRACKS_PER_DRIVE SSD image
+		DiscStatus[DriveNum].NumHeads = 2;
+		DiscInfo[DriveNum].DoubleSidedSSD = true;
 	}
 
 	Input.seekg(0, std::ios::beg);
 	// JGH
-
-	strcpy(DiscStatus[DriveNum].FileName, FileName);
-	DiscStatus[DriveNum].Type = DiscType::SSD;
 
 	FreeDiscImage(DriveNum);
 
@@ -2402,25 +2402,22 @@ void LoadSimpleDiscImage(const char *FileName, int DriveNum, int HeadNum, int Tr
 		}
 	}
 
-	mainWin->SetImageName(FileName, DriveNum, DiscType::SSD);
+	return Result;
 }
 
 /*--------------------------------------------------------------------------*/
 
-void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks)
+// Load DSD image file, where track data from Head 0 and Head 1
+// are interleaved.
+
+Disc8271Result LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks)
 {
 	std::ifstream Input(FileName, std::ios::in | std::ios::binary);
 
 	if (!Input)
 	{
-		mainWin->Report(MessageType::Error,
-		                "Could not open disc file:\n  %s", FileName);
-
-		return;
+		return Disc8271Result::Failed;
 	}
-
-	strcpy(DiscStatus[DriveNum].FileName, FileName);
-	DiscStatus[DriveNum].Type = DiscType::DSD;
 
 	DiscStatus[DriveNum].NumHeads = 2; // 2 = 2 * TRACKS_PER_DRIVE DSD image
 
@@ -2453,7 +2450,7 @@ void LoadSimpleDSDiscImage(const char *FileName, int DriveNum, int Tracks)
 		}
 	}
 
-	mainWin->SetImageName(FileName, DriveNum, DiscType::DSD);
+	return Disc8271Result::Success;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -2482,15 +2479,14 @@ static unsigned short GetFSDSectorSize(unsigned char Index)
 
 /*--------------------------------------------------------------------------*/
 
-void LoadFSDDiscImage(const char *FileName, int DriveNum)
+Disc8271Result LoadFSDDiscImage(const char *FileName, int DriveNum)
 {
 	std::ifstream Input(FileName, std::ios::in | std::ios::binary);
 	Input.exceptions(std::ios::failbit | std::ios::badbit);
 
 	if (!Input)
 	{
-		mainWin->Report(MessageType::Error, "Could not open disc file:\n  %s", FileName);
-		return;
+		return Disc8271Result::Failed;
 	}
 
 	// JGH, 26-Dec-2011
@@ -2498,9 +2494,6 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 	                                   // 2 = 2 * TRACKS_PER_DRIVE DSD image
 
 	const int Head = 0;
-
-	strcpy(DiscStatus[DriveNum].FileName, FileName);
-	DiscStatus[DriveNum].Type = DiscType::FSD;
 
 	FreeDiscImage(DriveNum);
 
@@ -2511,8 +2504,7 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 
 		if (FSDHeader[0] != 'F' || FSDHeader[1] != 'S' || FSDHeader[2] != 'D')
 		{
-			mainWin->Report(MessageType::Error, "Not a valid FSD file:\n  %s", FileName);
-			return;
+			return Disc8271Result::InvalidFSD;
 		}
 
 		unsigned char Info[5];
@@ -2539,11 +2531,7 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 
 		if (DiscStatus[DriveNum].TotalTracks > TRACKS_PER_DRIVE)
 		{
-			mainWin->Report(MessageType::Error,
-			                "Could not open disc file:\n  %s\n\nExpected a maximum of %d tracks, found %d",
-			                FileName, TRACKS_PER_DRIVE, DiscStatus[DriveNum].TotalTracks);
-
-			return;
+			return Disc8271Result::InvalidTracks;
 		}
 
 		for (int Track = 0; Track < DiscStatus[DriveNum].TotalTracks; Track++)
@@ -2592,50 +2580,40 @@ void LoadFSDDiscImage(const char *FileName, int DriveNum)
 				}
 			}
 		}
-
-		mainWin->SetImageName(FileName, DriveNum, DiscType::FSD);
 	}
 	catch (const std::exception&)
 	{
-		mainWin->Report(MessageType::Error,
-		                "Failed to read disc file:\n  %s",
-		                FileName, TRACKS_PER_DRIVE, DiscStatus[DriveNum].TotalTracks);
-
 		FreeDiscImage(DriveNum);
+
+		return Disc8271Result::Failed;
 	}
+
+	return Disc8271Result::Success;
 }
 
 /*--------------------------------------------------------------------------*/
 
-void Eject8271DiscImage(int DriveNum)
+static bool SaveTrackImage(int Drive, int Head, int Track)
 {
-	strcpy(DiscStatus[DriveNum].FileName, "");
-	FreeDiscImage(DriveNum);
-}
-
-/*--------------------------------------------------------------------------*/
-
-static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum)
-{
-	FILE *outfile = fopen(DiscStatus[DriveNum].FileName, "r+b");
+	FILE *outfile = fopen(DiscInfo[Drive].FileName, "r+b");
 
 	if (outfile == nullptr)
 	{
 		mainWin->Report(MessageType::Error,
-		                "Could not open disc file for write:\n  %s", DiscStatus[DriveNum].FileName);
+		                "Could not open disc file for write:\n  %s", DiscInfo[Drive].FileName);
 
 		return false;
 	}
 
 	long FileOffset;
 
-	if (DiscStatus[DriveNum].NumHeads != 0)
+	if (DiscInfo[Drive].DoubleSidedSSD)
 	{
-		FileOffset = (DiscStatus[DriveNum].NumHeads * TrackNum + HeadNum) * 2560; // 1=SSD, 2=DSD
+		FileOffset = (Track + Head * TRACKS_PER_DRIVE) * DFS_SECTORS_PER_TRACK * DFS_SECTOR_SIZE; // 0=2-sided SSD
 	}
 	else
 	{
-		FileOffset = (TrackNum + HeadNum * TRACKS_PER_DRIVE) * 2560; // 0=2-sided SSD
+		FileOffset = (DiscStatus[Drive].NumHeads * Track + Head) * DFS_SECTORS_PER_TRACK * DFS_SECTOR_SIZE; // 1=SSD, 2=DSD
 	}
 
 	// Get the file length to check if the file needs extending
@@ -2667,7 +2645,7 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum)
 	{
 		Success = fseek(outfile, FileOffset, SEEK_SET) == 0;
 
-		SectorType *SecPtr = DiscStatus[DriveNum].Tracks[HeadNum][TrackNum].Sectors;
+		SectorType *SecPtr = DiscStatus[Drive].Tracks[Head][Track].Sectors;
 
 		for (int CurrentSector = 0; Success && CurrentSector < 10; CurrentSector++)
 		{
@@ -2686,7 +2664,7 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum)
 	if (!Success)
 	{
 		mainWin->Report(MessageType::Error,
-		                "Failed writing to disc file:\n  %s", DiscStatus[DriveNum].FileName);
+		                "Failed writing to disc file:\n  %s", DiscInfo[Drive].FileName);
 	}
 
 	return Success;
@@ -2694,9 +2672,9 @@ static bool SaveTrackImage(int DriveNum, int HeadNum, int TrackNum)
 
 /*--------------------------------------------------------------------------*/
 
-bool IsDiscWritable(int DriveNum)
+bool IsDiscWritable(int Drive)
 {
-	return DiscStatus[DriveNum].Writeable;
+	return DiscStatus[Drive].Writeable;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -2849,7 +2827,7 @@ void Save8271UEF(FILE *SUEF)
 	}
 	else
 	{
-		fwrite(DiscStatus[0].FileName, 1, 256, SUEF);
+		fwrite(DiscInfo[0].FileName, 1, 256, SUEF);
 	}
 
 	if (DiscStatus[1].Tracks[0][0].Sectors == nullptr)
@@ -2859,7 +2837,7 @@ void Save8271UEF(FILE *SUEF)
 	}
 	else
 	{
-		fwrite(DiscStatus[1].FileName, 1, 256, SUEF);
+		fwrite(DiscInfo[1].FileName, 1, 256, SUEF);
 	}
 
 	if (Disc8271Trigger == CycleCountTMax)
@@ -2926,67 +2904,65 @@ void Save8271UEF(FILE *SUEF)
 
 void Load8271UEF(FILE *SUEF, int Version)
 {
-	extern bool DiscLoaded[2];
-	char FileName[256];
-	char *ext;
 	bool Loaded = false;
-	bool LoadFailed = false;
+	bool LoadSuccess = true;
 
 	// Clear out current images, don't want them corrupted if
 	// saved state was in middle of writing to disc.
 	FreeDiscImage(0);
 	FreeDiscImage(1);
-	DiscLoaded[0] = false;
-	DiscLoaded[1] = false;
 
+	DiscInfo[0].Loaded = false;
+	DiscInfo[1].Loaded = false;
+
+	char FileName[256];
 	fread(FileName,1,256,SUEF);
 
-	if (FileName[0])
+	if (FileName[0] != '\0')
 	{
 		// Load drive 0
 		Loaded = true;
-		ext = strrchr(FileName, '.');
+
+		const char *ext = strrchr(FileName, '.');
+
 		if (ext != nullptr && _stricmp(ext + 1, "dsd") == 0)
 		{
-			LoadSimpleDSDiscImage(FileName, 0, 80);
+			LoadSuccess = mainWin->Load8271DiscImage(FileName, 0, 80, DiscType::DSD);
 		}
 		else if (Version >= 14 && ext != nullptr && _stricmp(ext + 1, "fsd") == 0)
 		{
-			LoadFSDDiscImage(FileName, 0);
+			LoadSuccess = mainWin->Load8271DiscImage(FileName, 0, 80, DiscType::FSD);
 		}
 		else
 		{
-			LoadSimpleDiscImage(FileName, 0, 0, 80);
+			LoadSuccess = mainWin->Load8271DiscImage(FileName, 0, 80, DiscType::SSD);
 		}
-
-		if (DiscStatus[0].Tracks[0][0].Sectors == nullptr)
-			LoadFailed = true;
 	}
 
 	fread(FileName,1,256,SUEF);
 
-	if (FileName[0])
+	if (FileName[0] != '\0')
 	{
 		// Load drive 1
 		Loaded = true;
-		ext = strrchr(FileName, '.');
+
+		const char *ext = strrchr(FileName, '.');
+
 		if (ext != nullptr && _stricmp(ext + 1, "dsd") == 0)
 		{
-			LoadSimpleDSDiscImage(FileName, 1, 80);
+			LoadSuccess = mainWin->Load8271DiscImage(FileName, 1, 80, DiscType::DSD);
 		}
 		else if (Version >= 14 && ext != nullptr && _stricmp(ext + 1, "fsd") == 0)
 		{
-			LoadFSDDiscImage(FileName, 1);
+			LoadSuccess = mainWin->Load8271DiscImage(FileName, 1, 80, DiscType::FSD);
 		}
 		else
 		{
-			LoadSimpleDiscImage(FileName, 1, 0, 80);
+			LoadSuccess = mainWin->Load8271DiscImage(FileName, 1, 80, DiscType::SSD);
 		}
-		if (DiscStatus[1].Tracks[0][0].Sectors == nullptr)
-			LoadFailed = true;
 	}
 
-	if (Loaded && !LoadFailed)
+	if (Loaded && LoadSuccess)
 	{
 		Disc8271Trigger = fget32(SUEF);
 		if (Disc8271Trigger != CycleCountTMax)
@@ -3061,14 +3037,4 @@ void Load8271UEF(FILE *SUEF, int Version)
 			CommandStatus.CurrentSectorPtr = nullptr;
 		}
 	}
-}
-
-/*--------------------------------------------------------------------------*/
-
-void Get8271DiscInfo(int DriveNum, char *pFileName, DiscType *pType, int *pHeads)
-{
-	strcpy(pFileName, DiscStatus[DriveNum].FileName);
-
-	*pType = DiscStatus[DriveNum].Type;
-	*pHeads = DiscStatus[DriveNum].NumHeads;
 }

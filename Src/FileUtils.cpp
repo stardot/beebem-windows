@@ -56,3 +56,12 @@ std::string AppendPath(const std::string& BasePath, const std::string& Path)
 
 	return PathName;
 }
+
+bool HasFileExt(const char* FileName, const char* Ext)
+{
+	const size_t ExtLen = strlen(Ext);
+	const size_t FileNameLen = strlen(FileName);
+
+	return FileNameLen >= ExtLen &&
+	       _stricmp(FileName + FileNameLen - ExtLen, Ext) == 0;
+}

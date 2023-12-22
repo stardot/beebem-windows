@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2023 Chris Needham
+Copyright (C) 2009  Mike Wyatt
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -12,22 +12,27 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public
-License along with this program; if not, write to the Free
+You should have received a copy of the GNU General Public 
+License along with this program; if not, write to the Free 
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef FILE_UTILS_HEADER
-#define FILE_UTILS_HEADER
+#ifndef DISCINFO_HEADER
+#define DISCINFO_HEADER
 
-#include <string>
+#include "DiscType.h"
 
-bool FileExists(const char* PathName);
-bool FolderExists(const char* PathName);
+struct DiscInfoType
+{
+    bool Loaded; // Set to true when a disc image has been loaded
+    char FileName[256]; // Filename of disc currently in drive 0 and 1
+    DiscType Type; // Current disc type
+    bool DoubleSidedSSD; // Non-interleaved double sided disk image
+};
 
-std::string AppendPath(const std::string& BasePath, const std::string& Path);
+extern DiscInfoType DiscInfo[2];
 
-bool HasFileExt(const char* FileName, const char* Ext);
+bool IsDoubleSidedSSD(const char *FileName, FILE *pFile);
 
 #endif
