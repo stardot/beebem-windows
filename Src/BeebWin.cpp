@@ -120,11 +120,6 @@ LEDType LEDs;
 
 LEDColour DiscLedColour = LEDColour::Red;
 
-// FDC Board extension DLL variables
-HMODULE hFDCBoard;
-EDCB ExtBoard={0,0,NULL};
-char FDCDLL[256]={0};
-
 const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 
 /****************************************************************************/
@@ -3744,8 +3739,10 @@ void BeebWin::HandleCommand(UINT MenuID)
 	case ID_8271:
 		KillDLLs();
 		NativeFDC = true;
+
 		CheckMenuItem(ID_8271, true);
 		CheckMenuItem(ID_FDC_DLL, false);
+
 		if (MachineType != Model::Master128)
 		{
 			char CfgName[20];

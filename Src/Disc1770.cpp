@@ -31,6 +31,7 @@ Written by Richard Gellman - Feb 2001
 #include "Disc1770.h"
 #include "6502core.h"
 #include "DiscInfo.h"
+#include "Ext1770.h"
 #include "FileUtils.h"
 #include "Log.h"
 #include "Main.h"
@@ -1265,7 +1266,6 @@ bool CreateADFSImage(const char *FileName, int Tracks) {
 
 void Save1770UEF(FILE *SUEF)
 {
-	extern char FDCDLL[256];
 	char blank[256];
 	memset(blank,0,256);
 
@@ -1341,7 +1341,6 @@ void Save1770UEF(FILE *SUEF)
 
 void Load1770UEF(FILE *SUEF, int Version)
 {
-	extern char FDCDLL[256];
 	char FileName[256];
 	bool Loaded = false;
 	bool LoadFailed = false;

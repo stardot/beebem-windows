@@ -63,17 +63,6 @@ using std::max;
 
 using namespace Gdiplus;
 
-extern EDCB ExtBoard;
-extern char FDCDLL[256];
-extern HMODULE hFDCBoard;
-
-typedef void (*lGetBoardProperties)(struct DriveControlBlock *);
-typedef unsigned char (*lSetDriveControl)(unsigned char);
-typedef unsigned char (*lGetDriveControl)(unsigned char);
-lGetBoardProperties PGetBoardProperties;
-lSetDriveControl PSetDriveControl;
-lGetDriveControl PGetDriveControl;
-
 /****************************************************************************/
 
 void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType Type)
@@ -468,8 +457,9 @@ void BeebWin::SelectFDC()
 		}
 		else
 		{
-			strcpy(FDCDLL,FileName);
+			strcpy(FDCDLL, FileName);
 		}
+
 		LoadFDC(FDCDLL, true);
 	}
 }
@@ -1103,80 +1093,74 @@ void BeebWin::LoadFDC(char *DLLName, bool save)
 	char CfgName[20];
 	sprintf(CfgName, "FDCDLL%d", static_cast<int>(MachineType));
 
-	if (hFDCBoard != nullptr)
-	{
-		FreeLibrary(hFDCBoard);
-		hFDCBoard = nullptr;
-	}
+	Ext1770Reset();
 
 	NativeFDC = true;
 
-	if (DLLName == NULL) {
+	if (DLLName == nullptr)
+	{
 		if (!m_Preferences.GetStringValue(CfgName, FDCDLL))
-			strcpy(FDCDLL,"None");
+			strcpy(FDCDLL, "None");
 		DLLName = FDCDLL;
 	}
 
-	if (strcmp(DLLName, "None")) {
+	if (strcmp(DLLName, "None") != 0)
+	{
 		char path[_MAX_PATH];
 		strcpy(path, DLLName);
 		GetDataPath(m_AppPath, path);
 
-		hFDCBoard=LoadLibrary(path);
-		if (hFDCBoard==NULL) {
+		Ext1770Result Result = Ext1770Init(path);
+
+		if (Result == Ext1770Result::Success)
+		{
+			NativeFDC = false; // at last, a working DLL!
+		}
+		else if (Result == Ext1770Result::LoadFailed)
+		{
 			Report(MessageType::Error, "Unable to load FDD Extension Board DLL\nReverting to native 8271");
 			strcpy(DLLName, "None");
 		}
-		else {
-			PGetBoardProperties=(lGetBoardProperties) GetProcAddress(hFDCBoard,"GetBoardProperties");
-			PSetDriveControl=(lSetDriveControl) GetProcAddress(hFDCBoard,"SetDriveControl");
-			PGetDriveControl=(lGetDriveControl) GetProcAddress(hFDCBoard,"GetDriveControl");
-			if ((PGetBoardProperties==NULL) || (PSetDriveControl==NULL) || (PGetDriveControl==NULL)) {
-				Report(MessageType::Error, "Invalid FDD Extension Board DLL\nReverting to native 8271");
-				strcpy(DLLName, "None");
-			}
-			else {
-				PGetBoardProperties(&ExtBoard);
-				EFDCAddr=ExtBoard.FDCAddress;
-				EDCAddr=ExtBoard.DCAddress;
-				NativeFDC = false; // at last, a working DLL!
-				InvertTR00=ExtBoard.TR00_ActiveHigh;
-			}
-		} 
+		else // if (Result == InvalidDLL)
+		{
+			Report(MessageType::Error, "Invalid FDD Extension Board DLL\nReverting to native 8271");
+			strcpy(DLLName, "None");
+		}
 	}
 
 	if (save)
+	{
 		m_Preferences.SetStringValue(CfgName, DLLName);
+	}
 
 	// Set menu options
 	CheckMenuItem(ID_8271, NativeFDC);
 	CheckMenuItem(ID_FDC_DLL, !NativeFDC);
 
-	DisplayCycles=7000000;
+	DisplayCycles = 7000000;
+
 	if (NativeFDC || MachineType == Model::Master128)
-		DisplayCycles=0;
+		DisplayCycles = 0;
 }
 
 void BeebWin::KillDLLs()
 {
-	if (hFDCBoard != nullptr)
-	{
-		FreeLibrary(hFDCBoard);
-		hFDCBoard = nullptr;
-	}
+	Ext1770Reset();
 }
 
-void BeebWin::SetDriveControl(unsigned char value) {
-	// This takes a value from the mem/io decoder, as written by the cpu, runs it through the
-	// DLL's translator, then sends it on to the 1770 FDC in master 128 form.
-	WriteFDCControlReg(PSetDriveControl(value));
+void BeebWin::SetDriveControl(unsigned char Value)
+{
+	// This takes a value from the mem/io decoder, as written by the CPU,
+	// runs it through the DLL's translator, then sends it on to the
+	// 1770 FDC in Master 128 form.
+	WriteFDCControlReg(::SetDriveControl(Value));
 }
 
-unsigned char BeebWin::GetDriveControl(void) {
-	// Same as above, but in reverse, i.e. reading
-	unsigned char temp=ReadFDCControlReg();
-	unsigned char temp2=PGetDriveControl(temp);
-	return(temp2);
+unsigned char BeebWin::GetDriveControl()
+{
+	// Same as above, but in reverse, i.e., reading.
+	unsigned char temp = ReadFDCControlReg();
+	return ::GetDriveControl(temp);
 }
 
 /****************************************************************************/

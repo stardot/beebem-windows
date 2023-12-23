@@ -12,19 +12,33 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 // Opus DDFS Board Drive Controller Chip DLL
 // (C) September 2001 - Richard Gellman
 
-struct DriveControlBlock {
-	int FDCAddress; // 1770 FDC chip address
-	int DCAddress; // Drive Control Register Address
-	char *BoardName; // FDC Board name
-	bool TR00_ActiveHigh; // Set true if the TR00 input is Active High
+#ifndef EXT1770_HEADER
+#define EXT1770_HEADER
+
+enum class Ext1770Result
+{
+	Success,
+	LoadFailed,
+	InvalidDLL
 };
 
-#define EDCB struct DriveControlBlock
+void Ext1770Reset();
+Ext1770Result Ext1770Init(const char *FileName);
+bool HasFDCBoard();
+
+unsigned char SetDriveControl(unsigned char Value);
+unsigned char GetDriveControl(unsigned char Value);
+
+const char* GetFDCBoardName();
+
+extern char FDCDLL[256];
+
+#endif

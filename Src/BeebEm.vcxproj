@@ -179,6 +179,7 @@
     <ClCompile Include="AviWriter.cpp" />
     <ClCompile Include="Bcd.cpp" />
     <ClCompile Include="BeebMem.cpp" />
+    <ClCompile Include="Ext1770.cpp" />
     <ClCompile Include="Sound.cpp" />
     <ClCompile Include="BeebWin.cpp" />
     <ClCompile Include="BeebWinDx.cpp" />

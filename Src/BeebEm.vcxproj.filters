@@ -114,6 +114,9 @@
     <ClCompile Include="ExportFileDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Ext1770.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="FileDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

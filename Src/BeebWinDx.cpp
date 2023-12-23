@@ -36,9 +36,6 @@ Boston, MA  02110-1301, USA.
 
 typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter);
 
-extern HMODULE hFDCBoard;
-extern EDCB ExtBoard;
-
 /****************************************************************************/
 void BeebWin::InitDX()
 {
@@ -855,11 +852,13 @@ void BeebWin::DisplayClientAreaText(HDC hdc)
 /****************************************************************************/
 void BeebWin::DisplayFDCBoardInfo(HDC hDC, int x, int y)
 {
-	if (DisplayCycles > 0 && hFDCBoard != NULL)
+	if (DisplayCycles > 0 && HasFDCBoard())
 	{
+		const char* BoardName = GetFDCBoardName();
+
 		SetBkMode(hDC, TRANSPARENT);
 		SetTextColor(hDC, 0x808080);
-		TextOut(hDC, x, y, ExtBoard.BoardName, (int)strlen(ExtBoard.BoardName));
+		TextOut(hDC, x, y, BoardName, (int)strlen(BoardName));
 	}
 }
 
