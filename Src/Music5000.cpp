@@ -25,10 +25,12 @@ Boston, MA  02110-1301, USA.
 //
 
 #include <windows.h>
+
 #include <stdio.h>
+
+#include "Music5000.h"
 #include "SoundStreamer.h"
-#include "music5000.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 bool Music5000Enabled = false;
 UINT8 JimPageSelectRegister;

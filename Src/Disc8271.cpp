@@ -23,21 +23,22 @@ Boston, MA  02110-1301, USA.
 // 30/08/1997 Mike Wyatt: Added disc write and format support
 // 27/12/2011 J.G.Harston: Double-sided SSD supported
 
-#include <fstream>
 #include <windows.h>
 
-#include "disc8271.h"
+#include <fstream>
+
+#include "Disc8271.h"
 #include "6502core.h"
-#include "UEFState.h"
-#include "beebsound.h"
-#include "SysVia.h"
-#include "tube.h"
-#include "Log.h"
+#include "DebugTrace.h"
 #include "DiscEdit.h"
 #include "DiscInfo.h"
 #include "DiscType.h"
+#include "Log.h"
 #include "Main.h"
-#include "DebugTrace.h"
+#include "Sound.h"
+#include "SysVia.h"
+#include "Tube.h"
+#include "UefState.h"
 
 #define ENABLE_LOG 0
 

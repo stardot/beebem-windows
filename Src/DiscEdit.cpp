@@ -26,10 +26,11 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+
 #include <string>
 
 #include "DiscEdit.h"

@@ -51,37 +51,37 @@
     <ClCompile Include="ArmDisassembler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="atodconv.cpp">
+    <ClCompile Include="AtoDConv.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AVIWriter.cpp">
+    <ClCompile Include="AviWriter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Bcd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="beebmem.cpp">
+    <ClCompile Include="BeebMem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="beebsound.cpp">
+    <ClCompile Include="Sound.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="beebwin.cpp">
+    <ClCompile Include="BeebWin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="beebwindx.cpp">
+    <ClCompile Include="BeebWinDx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="beebwinio.cpp">
+    <ClCompile Include="BeebWinIo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="beebwinprefs.cpp">
+    <ClCompile Include="BeebWinPrefs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="beebwinspeech.cpp">
+    <ClCompile Include="BeebWinSpeech.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="csw.cpp">
+    <ClCompile Include="Csw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Debug.cpp">
@@ -96,10 +96,10 @@
     <ClCompile Include="DirectSoundStreamer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="disc1770.cpp">
+    <ClCompile Include="Disc1770.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="disc8271.cpp">
+    <ClCompile Include="Disc8271.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DiscEdit.cpp">
@@ -126,7 +126,7 @@
     <ClCompile Include="IC32Latch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ide.cpp">
+    <ClCompile Include="Ide.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="IP232.cpp">
@@ -150,10 +150,10 @@
     <ClCompile Include="Master512CoPro.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="music5000.cpp">
+    <ClCompile Include="Music5000.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="preferences.cpp">
+    <ClCompile Include="Preferences.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenameFileDialog.cpp">
@@ -165,10 +165,10 @@
     <ClCompile Include="RomConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sasi.cpp">
+    <ClCompile Include="Sasi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scsi.cpp">
+    <ClCompile Include="Scsi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SelectKeyDialog.cpp">
@@ -210,13 +210,13 @@
     <ClCompile Include="TouchScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tube.cpp">
+    <ClCompile Include="Tube.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="uef.cpp">
+    <ClCompile Include="Uef.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UEFState.cpp">
+    <ClCompile Include="UefState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UserKeyboardDialog.cpp">
@@ -225,25 +225,25 @@
     <ClCompile Include="UserPortBreakoutBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="uservia.cpp">
+    <ClCompile Include="UserVia.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="via.cpp">
+    <ClCompile Include="Via.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="video.cpp">
+    <ClCompile Include="Video.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="XAudio2Streamer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="z80.cpp">
+    <ClCompile Include="Z80.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="z80_support.cpp">
+    <ClCompile Include="Z80Support.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="z80dis.cpp">
+    <ClCompile Include="Z80dis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ARMulator\armdis.cpp">
@@ -314,25 +314,28 @@
     <ClInclude Include="ArmDisassembler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="atodconv.h">
+    <ClInclude Include="ARMulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AVIWriter.h">
+    <ClInclude Include="AtoDConv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AviWriter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Bcd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="beebmem.h">
+    <ClInclude Include="BeebMem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="beebsound.h">
+    <ClInclude Include="Sound.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="beebwin.h">
+    <ClInclude Include="BeebWin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="csw.h">
+    <ClInclude Include="Csw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Debug.h">
@@ -347,10 +350,10 @@
     <ClInclude Include="DirectSoundStreamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="disc1770.h">
+    <ClInclude Include="Disc1770.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="disc8271.h">
+    <ClInclude Include="Disc8271.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DiscEdit.h">
@@ -368,7 +371,7 @@
     <ClInclude Include="ExportFileDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ext1770.h">
+    <ClInclude Include="Ext1770.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FileDialog.h">
@@ -383,7 +386,7 @@
     <ClInclude Include="IC32Latch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ide.h">
+    <ClInclude Include="Ide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IP232.h">
@@ -410,19 +413,19 @@
     <ClInclude Include="Messages.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ml675001.h">
+    <ClInclude Include="ML675001.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="model.h">
+    <ClInclude Include="Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="music5000.h">
+    <ClInclude Include="Music5000.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="port.h">
+    <ClInclude Include="Port.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="preferences.h">
+    <ClInclude Include="Preferences.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenameFileDialog.h">
@@ -434,10 +437,10 @@
     <ClInclude Include="RingBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sasi.h">
+    <ClInclude Include="Sasi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="scsi.h">
+    <ClInclude Include="Scsi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SelectKeyDialog.h">
@@ -482,13 +485,13 @@
     <ClInclude Include="TouchScreen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tube.h">
+    <ClInclude Include="Tube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="uef.h">
+    <ClInclude Include="Uef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UEFState.h">
+    <ClInclude Include="UefState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UserKeyboardDialog.h">
@@ -497,25 +500,25 @@
     <ClInclude Include="UserPortBreakoutBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="uservia.h">
+    <ClInclude Include="UserVia.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="via.h">
+    <ClInclude Include="Via.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="video.h">
+    <ClInclude Include="Video.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="XAudio2Streamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="z80.h">
+    <ClInclude Include="Z80.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="z80mem.h">
+    <ClInclude Include="Z80mem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ARMulator\ansidecl.h">

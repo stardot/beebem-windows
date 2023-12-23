@@ -19,10 +19,10 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 #include <string.h>
-#include "memory.h"
-#include "tube.h"
-#include "z80mem.h"
-#include "z80.h"
+
+#include "Z80mem.h"
+#include "Z80.h"
+#include "Tube.h"
 
 typedef unsigned char UBYTE;
 typedef char * STR;

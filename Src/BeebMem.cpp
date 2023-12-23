@@ -26,40 +26,39 @@ Boston, MA  02110-1301, USA.
 // Econet emulation: Rob O'Donnell robert@irrelevant.com 28/12/2004
 // IDE Interface: JGH jgh@mdfs.net 25/12/2011
 
-#ifdef WIN32
 #include <windows.h>
-#endif
 
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <iostream>
-#include <fstream>
 
+#include <fstream>
+#include <iostream>
+
+#include "BeebMem.h"
 #include "6502core.h"
-#include "disc8271.h"
-#include "Main.h"
-#include "SysVia.h"
-#include "uservia.h"
-#include "video.h"
-#include "atodconv.h"
-#include "beebmem.h"
-#include "disc1770.h"
-#include "Serial.h"
-#include "tube.h"
-#include "scsi.h"
-#include "sasi.h"
-#include "ide.h"
-#include "UEFState.h"
-#include "z80mem.h"
-#include "z80.h"
-#include "Econet.h" // Rob
+#include "AtoDConv.h"
 #include "Debug.h" // Rob added for INTON/OFF reporting only
+#include "Disc1770.h"
+#include "Disc8271.h"
+#include "Econet.h" // Rob
 #include "IC32Latch.h"
+#include "Ide.h"
+#include "Main.h"
+#include "Music5000.h"
+#include "Sasi.h"
+#include "Scsi.h"
+#include "Serial.h"
+#include "SysVia.h"
 #include "Teletext.h"
-#include "music5000.h"
+#include "Tube.h"
+#include "UefState.h"
+#include "UserVia.h"
+#include "Video.h"
+#include "Z80mem.h"
+#include "Z80.h"
 
 unsigned char WholeRam[65536];
 unsigned char Roms[16][16384];

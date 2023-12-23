@@ -41,10 +41,10 @@ Boston, MA  02110-1301, USA.
 
 #include "DiscType.h"
 #include "KeyMap.h"
-#include "model.h"
-#include "port.h"
-#include "preferences.h"
-#include "video.h"
+#include "Model.h"
+#include "Port.h"
+#include "Preferences.h"
+#include "Video.h"
 
 // Registry defs for disabling windows keys
 #define CFG_KEYBOARD_LAYOUT "SYSTEM\\CurrentControlSet\\Control\\Keyboard Layout"

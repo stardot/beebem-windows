@@ -21,16 +21,14 @@ Boston, MA  02110-1301, USA.
 /* Analogue to digital converter support file for the beeb emulator -
    Mike Wyatt 7/6/97 */
 
-#ifdef WIN32
 #include <windows.h>
-#endif
 
 #include <stdio.h>
 
 #include "6502core.h"
-#include "atodconv.h"
+#include "AtoDConv.h"
 #include "SysVia.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 bool JoystickEnabled = false;
 

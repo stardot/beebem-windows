@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 #ifndef USERVIA_HEADER
 #define USERVIA_HEADER
 
-#include "via.h"
+#include "Via.h"
 
 extern VIAState UserVIAState;
 extern bool RTC_Enabled;

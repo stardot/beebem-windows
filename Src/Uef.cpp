@@ -23,15 +23,16 @@ Boston, MA  02110-1301, USA.
 // See UEF file format at
 // http://electrem.emuunlim.com/UEFSpecs.html
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include <string>
 #include <vector>
 
-#include "uef.h"
+#include "Uef.h"
+#include "DebugTrace.h"
 #include "Version.h"
 #include "zlib/zlib.h"
 
@@ -622,6 +623,8 @@ void UEFFileReader::CreateTapeMap(std::vector<TapeMapEntry>& TapeMap)
 		i++;
 	}
 }
+
+//------------------------------------------------------------------------------
 
 static void UEFUnlockOffsetAndCRC(UEFChunkInfo& chunk)
 {

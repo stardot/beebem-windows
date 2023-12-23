@@ -21,20 +21,21 @@ Boston, MA  02110-1301, USA.
 // Created by Jon Welch on 27/08/2006.
 
 #include <windows.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "csw.h"
+#include "Csw.h"
 #include "6502core.h"
-#include "uef.h"
-#include "Serial.h"
-#include "beebsound.h"
-#include "beebwin.h"
+#include "BeebWin.h"
 #include "Debug.h"
 #include "Log.h"
+#include "Serial.h"
+#include "Sound.h"
 #include "TapeMap.h"
-#include "UEFState.h"
+#include "Uef.h"
+#include "UefState.h"
 
 #include "zlib/zlib.h"
 

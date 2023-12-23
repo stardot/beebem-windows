@@ -47,16 +47,17 @@ Control latch:
    6-7      Not latched
 */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <windows.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "Teletext.h"
-#include "Debug.h"
 #include "6502core.h"
-#include "Main.h"
-#include "beebmem.h"
+#include "BeebMem.h"
+#include "Debug.h"
 #include "Log.h"
+#include "Main.h"
 
 #define ENABLE_LOG 0
 

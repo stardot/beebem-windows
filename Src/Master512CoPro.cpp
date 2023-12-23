@@ -45,15 +45,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Master 512 80186 Coprocessor
 
-#include "Master512CoPro.h"
-#include "Main.h"
-#include "tube.h"
-#include "Log.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <string>
+
+#include "Master512CoPro.h"
+#include "Main.h"
+#include "Log.h"
+#include "Tube.h"
 
 Master512CoPro master512CoPro;
 

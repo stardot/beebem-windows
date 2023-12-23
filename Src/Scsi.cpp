@@ -32,12 +32,13 @@ Offset  Description                 Access
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "Scsi.h"
 #include "6502core.h"
+#include "BeebMem.h"
+#include "DebugTrace.h"
 #include "Log.h"
 #include "Main.h"
-#include "scsi.h"
-#include "beebmem.h"
-#include "DebugTrace.h"
 
 static unsigned char ReadData();
 static void WriteData(unsigned char data);

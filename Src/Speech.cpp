@@ -45,10 +45,10 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "Speech.h"
 #include "6502core.h"
-#include "beebsound.h"
-#include "beebwin.h"
-#include "Main.h"
+#include "BeebWin.h"
 #include "Log.h"
+#include "Main.h"
+#include "Sound.h"
 
 #if ENABLE_SPEECH
 

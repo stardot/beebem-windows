@@ -25,22 +25,23 @@ Boston, MA  02110-1301, USA.
 keyboard emulation - David Alan Gilbert 30/10/94 */
 /* CMOS Ram finalised 06/01/2001 - Richard Gellman */
 
-#include <stdio.h>
-#include <time.h>
 #include <windows.h>
 
+#include <stdio.h>
+#include <time.h>
+
+#include "SysVia.h"
 #include "6502core.h"
 #include "Bcd.h"
-#include "beebsound.h"
-#include "beebmem.h"
-#include "beebwin.h"
-#include "SysVia.h"
-#include "via.h"
-#include "Main.h"
+#include "BeebMem.h"
+#include "BeebWin.h"
 #include "Debug.h"
 #include "DebugTrace.h"
 #include "IC32Latch.h"
+#include "Main.h"
+#include "Sound.h"
 #include "Speech.h"
+#include "Via.h"
 
 // Shift register stuff
 unsigned char SRMode;

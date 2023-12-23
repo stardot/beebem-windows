@@ -20,16 +20,17 @@ Boston, MA  02110-1301, USA.
 
 // BeebWin ROM Configuration Dialog
 
-#include <stdio.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
 
-#include "Main.h"
-#include "beebwin.h"
-#include "beebmem.h"
+#include <stdio.h>
+
+#include "BeebWin.h"
+#include "BeebMem.h"
 #include "FileDialog.h"
 #include "ListView.h"
+#include "Main.h"
 #include "Resource.h"
 #include "SysVia.h"
 

@@ -29,11 +29,9 @@ Boston, MA  02110-1301, USA.
 // 28/12/2004: Econet added Rob O'Donnell. robert@irrelevant.com.
 // 26/12/2011: Added IDE Drive to Hardware options, JGH
 
-#include <stdio.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <initguid.h>
-#include <algorithm>
 
 #pragma warning(push)
 #pragma warning(disable: 4091) // ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
@@ -42,6 +40,10 @@ Boston, MA  02110-1301, USA.
 
 #include <shlwapi.h>
 
+#include <stdio.h>
+
+#include <algorithm>
+
 #pragma warning(push)
 #pragma warning(disable: 4458) // declaration of 'xxx' hides class member
 using std::min;
@@ -49,54 +51,54 @@ using std::max;
 #include <gdiplus.h>
 #pragma warning(pop)
 
-#include "Main.h"
-#include "AboutDialog.h"
-#include "beebwin.h"
-#include "port.h"
+#include "BeebWin.h"
 #include "6502core.h"
-#include "disc8271.h"
-#include "disc1770.h"
-#include "DiscInfo.h"
-#include "SysVia.h"
-#include "uservia.h"
-#include "video.h"
-#include "beebsound.h"
-#include "SoundStreamer.h"
-#include "music5000.h"
-#include "beebmem.h"
-#include "atodconv.h"
-#include "Serial.h"
-#include "Econet.h" // Rob O'Donnell Christmas 2004.
-#include "tube.h"
-#include "ext1770.h"
-#include "UEFState.h"
+#include "AboutDialog.h"
+#include "Arm.h"
+#include "AtoDConv.h"
+#include "AviWriter.h"
+#include "BeebMem.h"
 #include "Debug.h"
+#include "DebugTrace.h"
+#include "Disc1770.h"
+#include "Disc8271.h"
+#include "DiscInfo.h"
+#include "Econet.h" // Rob O'Donnell Christmas 2004.
+#include "Ext1770.h"
+#include "FolderSelectDialog.h"
 #include "FileUtils.h"
-#include "scsi.h"
-#include "sasi.h"
-#include "ide.h"
-#include "z80mem.h"
-#include "z80.h"
+#include "Ide.h"
+#include "IP232.h"
+#include "KeyboardLinksDialog.h"
 #include "KeyMap.h"
+#include "Log.h"
+#include "Main.h"
+#include "Master512CoPro.h"
+#include "Messages.h"
+#include "Music5000.h"
+#include "Port.h"
 #include "Resource.h"
+#include "Sasi.h"
+#include "Scsi.h"
+#include "Serial.h"
+#include "SerialPortDialog.h"
+#include "Sound.h"
+#include "SoundStreamer.h"
+#include "Speech.h"
+#include "SprowCoPro.h"
+#include "SysVia.h"
+#include "TapeControlDialog.h"
+#include "Teletext.h"
+#include "TouchScreen.h"
+#include "Tube.h"
+#include "UefState.h"
 #include "UserKeyboardDialog.h"
 #include "UserPortBreakoutBox.h"
-#include "KeyboardLinksDialog.h"
-#include "Messages.h"
-#include "Speech.h"
-#include "Teletext.h"
-#include "AviWriter.h"
-#include "IP232.h"
-#include "SerialPortDialog.h"
-#include "Arm.h"
-#include "SprowCoPro.h"
-#include "Master512CoPro.h"
-#include "FolderSelectDialog.h"
-#include "DebugTrace.h"
-#include "Log.h"
-#include "TapeControlDialog.h"
-#include "TouchScreen.h"
+#include "UserVia.h"
 #include "Version.h"
+#include "Video.h"
+#include "Z80mem.h"
+#include "Z80.h"
 
 using namespace Gdiplus;
 

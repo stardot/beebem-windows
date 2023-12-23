@@ -20,9 +20,11 @@ Boston, MA  02110-1301, USA.
 
 // User defined keyboard functionality.
 
-#include <stdio.h>
 #include <windows.h>
+
+#include <stdio.h>
 #include <string.h>
+
 #include <string>
 
 #include "UserKeyboardDialog.h"

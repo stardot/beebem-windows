@@ -22,21 +22,22 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#include <iostream>
-#include <fstream>
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <fstream>
+#include <iostream>
+
+#include "Video.h"
 #include "6502core.h"
-#include "beebmem.h"
-#include "beebwin.h"
-#include "Main.h"
-#include "SysVia.h"
-#include "video.h"
-#include "UEFState.h"
-#include "beebsound.h"
+#include "BeebMem.h"
+#include "BeebWin.h"
 #include "Debug.h"
 #include "DebugTrace.h"
+#include "Main.h"
+#include "Sound.h"
+#include "SysVia.h"
+#include "UEFState.h"
 
 #ifdef BEEB_DOTIME
 #include <sys/times.h>

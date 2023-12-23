@@ -21,12 +21,12 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <string.h>
 
-#include "Log.h"
+#include "Z80mem.h"
+#include "Z80.h"
+#include "BeebMem.h"
 #include "Debug.h"
-#include "z80mem.h"
-#include "z80.h"
-#include "beebmem.h"
-#include "tube.h"
+#include "Log.h"
+#include "Tube.h"
 
 bool trace_z80 = false;
 int PreZPC = 0; // Previous Z80 PC

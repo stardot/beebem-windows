@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 #include <stdarg.h>
 #include <string>
 
-#include "via.h"
+#include "Via.h"
 
 extern bool DebugEnabled;
 

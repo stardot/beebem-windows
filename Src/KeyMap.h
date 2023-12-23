@@ -23,7 +23,7 @@ Boston, MA  02110-1301, USA.
 
 #include <string>
 
-#include "beebwin.h"
+#include "BeebWin.h"
 
 struct KeyMapping {
 	int row;    // Beeb row

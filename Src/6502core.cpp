@@ -20,43 +20,41 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifdef WIN32
 #include <windows.h>
-#endif
 
-#include <iostream>
-#include <fstream>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "6502core.h"
-#include "beebmem.h"
-#include "beebsound.h"
-#include "music5000.h"
-#include "disc8271.h"
-#include "Teletext.h"
-#include "via.h"
-#include "SysVia.h"
-#include "uservia.h"
-#include "video.h"
-#include "atodconv.h"
+#include "Arm.h"
+#include "AtoDConv.h"
+#include "BeebMem.h"
+#include "Debug.h"
+#include "Disc1770.h"
+#include "Disc8271.h"
+#include "Econet.h"
+#include "Ide.h"
 #include "Log.h"
 #include "Main.h"
-#include "disc1770.h"
-#include "Serial.h"
-#include "tube.h"
-#include "Debug.h"
-#include "UEFState.h"
-#include "z80mem.h"
-#include "z80.h"
-#include "Econet.h"
-#include "scsi.h"
-#include "ide.h"
-#include "Arm.h"
-#include "SprowCoPro.h"
 #include "Master512CoPro.h"
+#include "Music5000.h"
+#include "Sound.h"
+#include "Teletext.h"
+#include "Scsi.h"
+#include "Serial.h"
 #include "Speech.h"
+#include "SprowCoPro.h"
+#include "SysVia.h"
+#include "Tube.h"
+#include "UserVia.h"
+#include "Video.h"
+#include "UefState.h"
+#include "Z80mem.h"
+#include "Z80.h"
 
 #ifdef WIN32
 #define INLINE inline

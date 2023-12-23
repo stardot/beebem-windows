@@ -20,18 +20,19 @@ Boston, MA  02110-1301, USA.
 
 // BeebWin DirectX and display rendering support
 
-#include <stdio.h>
 #include <windows.h>
 #include <ddraw.h>
 
-#include "Main.h"
-#include "beebwin.h"
-#include "AviWriter.h"
+#include <stdio.h>
+
+#include "BeebWin.h"
 #include "6502core.h"
-#include "ext1770.h"
+#include "AviWriter.h"
+#include "DebugTrace.h"
+#include "Ext1770.h"
+#include "Main.h"
 #include "Messages.h"
 #include "Resource.h"
-#include "DebugTrace.h"
 
 typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter);
 

@@ -19,11 +19,13 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
+#include <stdio.h>
+
 #include "TouchScreen.h"
+#include "AtoDConv.h"
 #include "DebugTrace.h"
-#include "uservia.h"
-#include "atodconv.h"
 #include "RingBuffer.h"
+#include "UserVia.h"
 
 /*--------------------------------------------------------------------------*/
 

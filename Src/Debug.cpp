@@ -27,27 +27,28 @@ Boston, MA  02110-1301, USA.
 // Econet added Rob O'Donnell 2004-12-28.
 
 #include <windows.h>
+
 #include <ctype.h>
-#include <string.h>
 #include <stdarg.h>
+#include <string.h>
+
 #include <algorithm>
+#include <deque>
 #include <fstream>
 #include <string>
 #include <vector>
-#include <deque>
 
-#include "Main.h"
-#include "beebmem.h"
-#include "tube.h"
-#include "6502core.h"
-#include "tube.h"
 #include "Debug.h"
-#include "z80mem.h"
-#include "z80.h"
+#include "6502core.h"
+#include "BeebMem.h"
+#include "DebugTrace.h"
 #include "FileDialog.h"
+#include "Main.h"
 #include "Resource.h"
 #include "StringUtils.h"
-#include "DebugTrace.h"
+#include "Tube.h"
+#include "Z80mem.h"
+#include "Z80.h"
 
 constexpr int MAX_LINES = 4096;          // Max lines in info window
 constexpr int LINES_IN_INFO = 28;        // Visible lines in info window

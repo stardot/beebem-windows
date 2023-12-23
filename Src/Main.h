@@ -26,8 +26,8 @@ Boston, MA  02110-1301, USA.
 #define MAIN_HEADER
 
 #include <windows.h>
-#include "beebwin.h"
-#include "model.h"
+#include "BeebWin.h"
+#include "Model.h"
 
 extern Model MachineType;
 extern BeebWin *mainWin;

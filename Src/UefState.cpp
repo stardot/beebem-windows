@@ -22,20 +22,21 @@ Boston, MA  02110-1301, USA.
 // UEF Game state code.
 
 #include <stdio.h>
+
 #include "UEFState.h"
 #include "6502core.h"
-#include "beebmem.h"
-#include "video.h"
-#include "via.h"
-#include "beebwin.h"
+#include "AtoDConv.h"
+#include "BeebMem.h"
+#include "BeebWin.h"
+#include "Disc1770.h"
+#include "Disc8271.h"
 #include "Main.h"
-#include "beebsound.h"
-#include "music5000.h"
-#include "disc8271.h"
-#include "disc1770.h"
-#include "tube.h"
+#include "Music5000.h"
 #include "Serial.h"
-#include "atodconv.h"
+#include "Sound.h"
+#include "Tube.h"
+#include "Via.h"
+#include "Video.h"
 
 void fput32(unsigned int word32, FILE *fileptr)
 {

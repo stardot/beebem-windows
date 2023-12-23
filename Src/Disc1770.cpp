@@ -28,15 +28,15 @@ Written by Richard Gellman - Feb 2001
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "disc1770.h"
+#include "Disc1770.h"
 #include "6502core.h"
 #include "DiscInfo.h"
 #include "FileUtils.h"
 #include "Log.h"
 #include "Main.h"
-#include "UEFState.h"
-#include "beebsound.h"
+#include "Sound.h"
 #include "SysVia.h"
+#include "UEFState.h"
 
 // Control/Status Register, Track, Sector, and Data Registers
 static unsigned char FormatBuffer[2048];

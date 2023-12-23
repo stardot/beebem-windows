@@ -27,8 +27,8 @@ Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "6502core.h"
-#include "csw.h"
-#include "uef.h"
+#include "Csw.h"
+#include "Uef.h"
 
 enum class SerialType {
 	SerialPort,

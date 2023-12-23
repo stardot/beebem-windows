@@ -37,9 +37,9 @@ const char *perl_params =
 	"dfd_inline=1,"
 	"ed_inline=1";
 
+#include "Z80mem.h"
+#include "Z80.h"
 #include "Main.h"
-#include "z80mem.h"
-#include "z80.h"
 
 /* Z80 registers */
 WORD af[2];			/* accumulator and flags (2 banks) */

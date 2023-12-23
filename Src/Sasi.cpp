@@ -33,11 +33,11 @@ Offset  Description                 Access
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "Sasi.h"
 #include "6502core.h"
+#include "BeebMem.h"
 #include "Log.h"
 #include "Main.h"
-#include "sasi.h"
-#include "beebmem.h"
 
 static unsigned char SASIReadData();
 static void SASIWriteData(unsigned char data);

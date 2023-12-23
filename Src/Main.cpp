@@ -22,17 +22,19 @@ Boston, MA  02110-1301, USA.
 
 /* Mike Wyatt and NRM's port to win32 - 7/6/97 */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <new>
-
 #include <windows.h>
 
+#include <stdarg.h>
+#include <stdio.h>
+
+#include <new>
+
+#include "Main.h"
 #include "6502core.h"
-#include "beebwin.h"
+#include "BeebWin.h"
 #include "Log.h"
-#include "Serial.h"
 #include "SelectKeyDialog.h"
+#include "Serial.h"
 
 Model MachineType;
 BeebWin *mainWin = nullptr;

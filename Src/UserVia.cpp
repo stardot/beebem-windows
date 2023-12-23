@@ -21,18 +21,19 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 #include <windows.h>
+
 #include <stdio.h>
 #include <time.h>
 
-#include "uservia.h"
+#include "UserVia.h"
 #include "6502core.h"
 #include "Bcd.h"
-#include "via.h"
 #include "Debug.h"
 #include "Log.h"
 #include "Main.h"
-#include "tube.h"
+#include "Tube.h"
 #include "UserPortBreakoutBox.h"
+#include "Via.h"
 
 /* Real Time Clock */
 bool RTC_Enabled = false;
@@ -44,7 +45,7 @@ static unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x0
 
 static void RTCWrite(int Value, int lastValue);
 
-/* AMX mouse (see uservia.h) */
+// AMX mouse (see UserVia.h)
 bool AMXMouseEnabled = false;
 bool AMXLRForMiddle = false;
 int AMXTrigger = 0;

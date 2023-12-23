@@ -28,17 +28,20 @@ Boston, MA  02110-1301, USA.
 // Search TODO for some issues that need addressing.
 //
 //
-#include <stdio.h>
+
 #include <windows.h>
+
+#include <stdio.h>
+
 #include <fstream>
 #include <string>
 #include <vector>
 
-#include "Main.h"
-#include "beebwin.h"
 #include "Econet.h"
-#include "Debug.h"
 #include "6502core.h"
+#include "BeebWin.h"
+#include "Debug.h"
+#include "Main.h"
 #include "SysVia.h"
 #include "StringUtils.h"
 

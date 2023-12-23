@@ -24,19 +24,18 @@ Boston, MA  02110-1301, USA.
 /* Win32 port - Mike Wyatt 7/6/97 */
 /* Conveted Win32 port to use DirectSound - Mike Wyatt 11/1/98 */
 
-#include "beebsound.h"
-
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
+#include "Sound.h"
 #include "6502core.h"
 #include "AviWriter.h"
-#include "UEFState.h"
 #include "Main.h"
-#include "Speech.h"
 #include "SoundStreamer.h"
+#include "Speech.h"
+#include "UEFState.h"
 
 //  #define DEBUGSOUNDTOFILE
 

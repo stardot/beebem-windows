@@ -28,7 +28,8 @@ Boston, MA  02110-1301, USA.
 #define AVI_WRITER_HEADER
 
 #include <vfw.h>
-#include "beebwin.h"
+
+#include "BeebWin.h"
 
 class AVIWriter
 {

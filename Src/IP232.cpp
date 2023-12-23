@@ -28,18 +28,18 @@ Boston, MA  02110-1301, USA.
  . on your application.
  */
 
-#include <stdio.h>
-
 #include <windows.h>
+
+#include <stdio.h>
 
 #include "IP232.h"
 #include "6502core.h"
-#include "Main.h"
-#include "Serial.h"
-#include "beebwin.h"
+#include "BeebWin.h"
 #include "Debug.h"
 #include "DebugTrace.h"
+#include "Main.h"
 #include "RingBuffer.h"
+#include "Serial.h"
 #include "Thread.h"
 
 constexpr int IP232_CONNECTION_DELAY = 8192; // Cycles to wait after connection

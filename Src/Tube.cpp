@@ -24,23 +24,24 @@ Boston, MA  02110-1301, USA.
 /* Mike Wyatt 7/6/97 - Added undocumented instructions */
 /* Copied for 65C02 Tube core - 13/04/01 */
 
-#include <iostream>
-#include <fstream>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <fstream>
+#include <iostream>
+
+#include "Tube.h"
 #include "6502core.h"
+#include "Arm.h"
+#include "BeebMem.h"
+#include "Debug.h"
 #include "Log.h"
 #include "Main.h"
-#include "beebmem.h"
-#include "tube.h"
-#include "Debug.h"
-#include "UEFState.h"
-#include "z80mem.h"
-#include "z80.h"
-#include "Arm.h"
 #include "SprowCoPro.h"
+#include "UEFState.h"
+#include "Z80mem.h"
+#include "Z80.h"
 
 #ifdef WIN32
 #include <windows.h>

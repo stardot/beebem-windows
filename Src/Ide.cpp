@@ -40,16 +40,17 @@ Offset  Description             Access
 +07     status/command            RW
 */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <windows.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "Ide.h"
 #include "6502core.h"
+#include "BeebMem.h"
+#include "BeebWin.h"
 #include "Main.h"
 #include "Resource.h"
-#include "ide.h"
-#include "beebwin.h"
-#include "beebmem.h"
 
 bool IDEDriveEnabled = false;
 

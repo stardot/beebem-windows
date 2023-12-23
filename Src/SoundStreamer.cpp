@@ -22,8 +22,8 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 #include "SoundStreamer.h"
-#include "Main.h"
 #include "DirectSoundStreamer.h"
+#include "Main.h"
 #include "XAudio2Streamer.h"
 
 std::list<SoundStreamer*> SoundStreamer::m_streamers;

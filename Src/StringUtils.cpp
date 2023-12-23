@@ -18,10 +18,10 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#include "StringUtils.h"
-
 #include <algorithm>
 #include <cctype>
+
+#include "StringUtils.h"
 
 static void trimLeft(std::string& str)
 {

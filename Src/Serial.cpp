@@ -28,28 +28,29 @@ Boston, MA  02110-1301, USA.
 // and http://electrem.emuunlim.com/UEFSpecs.html
 
 #include <windows.h>
+
 #include <process.h>
 #include <stdio.h>
 
 #include <algorithm>
 #include <string>
 
-#include "6502core.h"
-#include "uef.h"
-#include "Main.h"
 #include "Serial.h"
-#include "beebsound.h"
-#include "beebwin.h"
+#include "6502core.h"
+#include "BeebWin.h"
+#include "Csw.h"
 #include "Debug.h"
-#include "UEFState.h"
-#include "csw.h"
 #include "IP232.h"
 #include "Log.h"
+#include "Main.h"
 #include "Resource.h"
+#include "Sound.h"
 #include "TapeControlDialog.h"
 #include "TapeMap.h"
 #include "Thread.h"
 #include "TouchScreen.h"
+#include "Uef.h"
+#include "UEFState.h"
 
 // MC6850 control register bits
 constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
@@ -1056,7 +1057,7 @@ UEFResult LoadUEFTape(const char *FileName)
 
 	// Clock values:
 	// 5600 - Normal speed - anything higher is a bit slow
-	// 750 - Recommended minium settings, fastest reliable load
+	// 750 - Recommended minimum setting, fastest reliable load
 	UEFReader.SetClock(TapeClockSpeed);
 	SetUnlockTape(UnlockTape);
 

@@ -21,17 +21,18 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 #include <windows.h>
-
-#include <map>
 #include <stdio.h>
+
 #include <stdlib.h>
 
-#include "Log.h"
-#include "tube.h"
+#include <map>
 
-#include "beebmem.h"
-#include "armulator.h"
 #include "SprowCoPro.h"
+#include "BeebMem.h"
+#include "Log.h"
+#include "Tube.h"
+
+#include "ARMulator.h"
 
 std::map<int, int> registers;
 DWORD ticks = 0;

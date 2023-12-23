@@ -20,11 +20,12 @@ Boston, MA  02110-1301, USA.
 
 // BeebWin text to speech support
 
-#include <stdio.h>
 #include <windows.h>
 
+#include <stdio.h>
+
+#include "BeebWin.h"
 #include "Main.h"
-#include "beebwin.h"
 #include "Resource.h"
 
 /****************************************************************************/

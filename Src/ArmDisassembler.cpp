@@ -27,6 +27,7 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 #include <string.h>
+
 #include "ArmDisassembler.h"
 
 char *Arm_disassemble(uint32 address, uint32 instruction, char *buff)

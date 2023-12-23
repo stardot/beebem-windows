@@ -21,6 +21,7 @@ Boston, MA  02110-1301, USA.
 // User defined keyboard functionality.
 
 #include <windows.h>
+
 #include <string>
 
 #include "SelectKeyDialog.h"

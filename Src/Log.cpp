@@ -20,9 +20,10 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#include <stdio.h>
-#include <stdarg.h>
 #include <windows.h>
+
+#include <stdarg.h>
+#include <stdio.h>
 
 #include "Log.h"
 #include "Main.h"

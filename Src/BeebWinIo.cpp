@@ -21,14 +21,15 @@ Boston, MA  02110-1301, USA.
 
 // BeebEm IO support - disk, tape, state, printer, AVI capture
 
-#include <assert.h>
-#include <stdio.h>
-#include <algorithm>
-
 #pragma warning(push)
 #pragma warning(disable: 4091) // ignored on left of 'tagGPFIDL_FLAGS' when no variable is declared
 #include <shlobj.h>
 #pragma warning(pop)
+
+#include <assert.h>
+#include <stdio.h>
+
+#include <algorithm>
 
 #pragma warning(push)
 #pragma warning(disable: 4458) // declaration of 'xxx' hides class member
@@ -37,27 +38,27 @@ using std::max;
 #include <gdiplus.h>
 #pragma warning(pop)
 
-#include "beebwin.h"
-#include "Main.h"
+#include "BeebWin.h"
 #include "6502core.h"
 #include "AviWriter.h"
-#include "beebmem.h"
-#include "Resource.h"
-#include "FileDialog.h"
-#include "uservia.h"
-#include "beebsound.h"
-#include "disc8271.h"
-#include "disc1770.h"
+#include "BeebMem.h"
+#include "Disc1770.h"
+#include "Disc8271.h"
+#include "DiscEdit.h"
 #include "DiscInfo.h"
 #include "DiscType.h"
-#include "UEFState.h"
-#include "Serial.h"
-#include "ext1770.h"
-#include "tube.h"
-#include "KeyMap.h"
-#include "discedit.h"
 #include "ExportFileDialog.h"
+#include "Ext1770.h"
+#include "FileDialog.h"
 #include "FileUtils.h"
+#include "KeyMap.h"
+#include "Main.h"
+#include "Resource.h"
+#include "Serial.h"
+#include "Sound.h"
+#include "Tube.h"
+#include "UEFState.h"
+#include "UserVia.h"
 #include "Version.h"
 
 using namespace Gdiplus;

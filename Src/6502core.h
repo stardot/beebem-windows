@@ -25,8 +25,9 @@ Boston, MA  02110-1301, USA.
 #ifndef CORE6502_HEADER
 #define CORE6502_HEADER
 
-#include "port.h"
 #include <stdio.h>
+
+#include "Port.h"
 
 enum IRQ_Nums {
   sysVia,
