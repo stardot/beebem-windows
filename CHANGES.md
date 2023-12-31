@@ -15,6 +15,8 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
   you to create file associations for these, and saved state files.
 * BeebEm saved state files now use the .uefstate file extension, to distinguish
   them from UEF tape images.
+* Saved state files now include the Master 512, Acorn Z80, Torch Z80, ARM,
+  ARM7TDMI co-processor state, if currently selected.
 * Econet improvements:
   - Added -EconetCfg and -AUNMap options, to allow the location of these
     config files to be set on the command line.
@@ -25,6 +27,10 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
     a user keyboard mapping.
   * Added Italian logical keyboard mapping file.
   * Shift Lock is now mapped to the F11 key by default.
+* Tape emulation improvements:
+  * Improved tape input data carrier detect emulation.
+  * Tape state is now preserved when loading and saving savestate files,
+    for both UEF and CSW files.
 * Added Set Keyboard Links command, which allows you to change the default
   screen mode and other options (Model B/B+ only).
 * Fixed installer to not delete Econet and key map config files.
