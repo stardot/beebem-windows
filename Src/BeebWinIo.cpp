@@ -1206,7 +1206,7 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	// the UEF has been determined to be from BeebEm (Block 046C)
 	fputc(static_cast<unsigned char>(MachineType), SUEF);
 	fputc(NativeFDC ? 0 : 1, SUEF);
-	fputc(TubeType == Tube::Acorn65C02, SUEF); // TubeEnabled // TODO: save TubeType
+	fputc(static_cast<unsigned char>(TubeType), SUEF);
 	fput16(m_MenuIDKeyMapping, SUEF);
 	if (m_MenuIDKeyMapping == IDM_USERKYBDMAPPING)
 		fwrite(m_UserKeyMapPath,1,256,SUEF);
@@ -1226,12 +1226,7 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 		MachineType = static_cast<Model>(type);
 
 	NativeFDC = fgetc(SUEF) == 0;
-	int TubeEnabled = fgetc(SUEF) != 0; // TODO: get TubeType
-
-	if (TubeEnabled)
-	{
-		TubeType = Tube::Acorn65C02;
-	}
+	TubeType = static_cast<Tube>(fgetc(SUEF));
 
 	if (Version >= 11)
 	{

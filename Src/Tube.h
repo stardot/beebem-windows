@@ -27,13 +27,13 @@ Boston, MA  02110-1301, USA.
 #define TUBE6502_HEADER
 
 enum class Tube : unsigned char {
-	None,
-	Acorn65C02,
-	Master512CoPro,
-	AcornZ80,
-	TorchZ80,
-	AcornArm,
-	SprowArm
+	None = 0,
+	Acorn65C02 = 1,
+	Master512CoPro = 2,
+	AcornZ80 = 3,
+	TorchZ80 = 4,
+	AcornArm = 5,
+	SprowArm = 6
 };
 
 extern Tube TubeType;

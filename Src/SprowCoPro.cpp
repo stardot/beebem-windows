@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "BeebMem.h"
 #include "Log.h"
 #include "Tube.h"
+#include "UEFState.h"
 
 #include "ARMulator.h"
 
@@ -817,4 +818,162 @@ ARMul_SafeWriteByte (ARMul_State * state, ARMword address, ARMword data)
     PutWord (state, address,
         (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
         FALSE);
+}
+
+void CSprowCoPro::SaveState(FILE* SUEF)
+{
+	fput16(0x047A, SUEF); // UEF Chunk ID
+	fput32(0, SUEF); // Chunk length (updated after writing data)
+	long StartPos = ftell(SUEF);
+
+	fput32(m_CycleCount, SUEF);
+	fputc(m_State->Emulate, SUEF);
+	fput32(m_State->EndCondition, SUEF);
+
+	for (int i = 0; i < 16; i++)
+	{
+		fput32(m_State->Reg[i], SUEF);
+	}
+
+	for (int i = 0; i < 7; i++)
+	{
+		for (int j = 0; j < 16; j++)
+		{
+			fput32(m_State->RegBank[i][j], SUEF);
+		}
+	}
+
+	fput64(m_State->Accumulator, SUEF);
+	fput32(m_State->Cpsr, SUEF);
+
+	for (int i = 0; i < 7; i++)
+	{
+		fput32(m_State->Spsr[i], SUEF);
+	}
+
+	fputc(m_State->NFlag, SUEF);
+	fputc(m_State->ZFlag, SUEF);
+	fputc(m_State->CFlag, SUEF);
+	fputc(m_State->VFlag, SUEF);
+	fputc(m_State->IFFlags, SUEF);
+	fputc(m_State->SFlag, SUEF);
+	fputc(m_State->TFlag, SUEF);
+	fputc(m_State->Bank, SUEF);
+	fputc(m_State->Mode, SUEF);
+	fput32(m_State->instr, SUEF);
+	fput32(m_State->pc, SUEF);
+	fput32(m_State->temp, SUEF);
+	fput32(m_State->loaded, SUEF);
+	fput32(m_State->decoded, SUEF);
+	fput32(m_State->NumScycles, SUEF);
+	fput32(m_State->NumNcycles, SUEF);
+	fput32(m_State->NumIcycles, SUEF);
+	fput32(m_State->NumCcycles, SUEF);
+	fput32(m_State->NumFcycles, SUEF);
+	fput32(m_State->NextInstr, SUEF);
+
+	fwrite(m_State->MemDataPtr, 1, 0x4000000, SUEF);
+	fput32(m_State->remapControlRegister, SUEF);
+	fput32(m_State->romSelectRegister, SUEF);
+	fput32(m_State->LastTime, SUEF);
+	fput32(m_State->CP14R0_CCD, SUEF);
+	fput32(m_State->Now, SUEF);
+	fputc(m_State->Exception, SUEF);
+	fputc(m_State->NresetSig, SUEF);
+	fputc(m_State->NfiqSig, SUEF);
+	fputc(m_State->NirqSig, SUEF);
+	fputc(m_State->abortSig, SUEF);
+	fputc(m_State->NtransSig, SUEF);
+	fputc(m_State->Aborted, SUEF);
+	fputc(m_State->Base, SUEF);
+	fputc(m_State->AbortAddr, SUEF);
+
+	fput32((unsigned int)registers.size(), SUEF);
+
+	for (const auto& Register : registers)
+	{
+		fput32(Register.first, SUEF);
+		fput32(Register.second, SUEF);
+	}
+
+	long EndPos = ftell(SUEF);
+	long Length = EndPos - StartPos;
+	fseek(SUEF, StartPos - 4, SEEK_SET);
+	fput32(Length, SUEF); // Size
+	fseek(SUEF, EndPos, SEEK_SET);
+}
+
+void CSprowCoPro::LoadState(FILE* SUEF)
+{
+	m_CycleCount = fget32(SUEF);
+	m_State->Emulate = fget8(SUEF);
+	m_State->EndCondition = fget32(SUEF);
+
+	for (int i = 0; i < 16; i++)
+	{
+		m_State->Reg[i] = fget32(SUEF);
+	}
+
+	for (int i = 0; i < 7; i++)
+	{
+		for (int j = 0; j < 16; j++)
+		{
+			m_State->RegBank[i][j] = fget32(SUEF);
+		}
+	}
+
+	m_State->Accumulator = fget64(SUEF);
+	m_State->Cpsr = fget32(SUEF);
+
+	for (int i = 0; i < 7; i++)
+	{
+		m_State->Spsr[i] = fget32(SUEF);
+	}
+
+	m_State->NFlag = fget8(SUEF);
+	m_State->ZFlag = fget8(SUEF);
+	m_State->CFlag = fget8(SUEF);
+	m_State->VFlag = fget8(SUEF);
+	m_State->IFFlags = fget8(SUEF);
+	m_State->SFlag = fget8(SUEF);
+	m_State->TFlag = fget8(SUEF);
+	m_State->Bank = fget8(SUEF);
+	m_State->Mode = fget8(SUEF);
+	m_State->instr = fget32(SUEF);
+	m_State->pc = fget32(SUEF);
+	m_State->temp = fget32(SUEF);
+	m_State->loaded = fget32(SUEF);
+	m_State->decoded = fget32(SUEF);
+	m_State->NumScycles = fget32(SUEF);
+	m_State->NumNcycles = fget32(SUEF);
+	m_State->NumIcycles = fget32(SUEF);
+	m_State->NumCcycles = fget32(SUEF);
+	m_State->NumFcycles = fget32(SUEF);
+	m_State->NextInstr = fget32(SUEF);
+
+	fread(m_State->MemDataPtr, 1, 0x4000000, SUEF);
+	m_State->remapControlRegister = fget32(SUEF);
+	m_State->romSelectRegister = fget32(SUEF);
+	m_State->LastTime = fget32(SUEF);
+	m_State->CP14R0_CCD = fget32(SUEF);
+	m_State->Now = fget32(SUEF);
+	m_State->Exception = fget8(SUEF);
+	m_State->NresetSig = fget8(SUEF);
+	m_State->NfiqSig = fget8(SUEF);
+	m_State->NirqSig = fget8(SUEF);
+	m_State->abortSig = fget8(SUEF);
+	m_State->NtransSig = fget8(SUEF);
+	m_State->Aborted = fget8(SUEF);
+	m_State->Base = fget8(SUEF);
+	m_State->AbortAddr = fget8(SUEF);
+
+	unsigned int Size = fget32(SUEF);
+
+	for (unsigned int i = 0; i < Size; i++)
+	{
+		int Register = fget32(SUEF);
+		int Value = fget32(SUEF);
+
+		registers[Register] = Value;
+	}
 }

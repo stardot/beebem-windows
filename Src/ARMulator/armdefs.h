@@ -109,8 +109,7 @@ struct ARMul_State
   unsigned char *CPData[16];	/* Coprocessor data */
   unsigned char const *CPRegWords[16];	/* map of coprocessor register sizes */
   unsigned long LastTime;	/* Value of last call to ARMul_Time() */
-  ARMword CP14R0_CCD;		/* used to count 64 clock cycles with CP14 R0 bit
-				   3 set */
+  ARMword CP14R0_CCD;		/* used to count 64 clock cycles with CP14 R0 bit 3 set */
 
   unsigned EventSet;		/* the number of events in the queue */
   unsigned long Now;		/* time to the nearest cycle */

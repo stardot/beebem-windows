@@ -55,6 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Main.h"
 #include "Log.h"
 #include "Tube.h"
+#include "UEFState.h"
 
 Master512CoPro master512CoPro;
 
@@ -3798,4 +3799,148 @@ void Master512CoPro::DoDMA()
 		io_write_byte_8(m_dma[0].dest, data);
 		m_dma[0].source++;
 	}
+}
+
+void Master512CoPro::SaveState(FILE *SUEF)
+{
+	fput16(0x047B, SUEF); // UEF Chunk ID
+	fput32(0, SUEF); // Chunk length (updated after writing data)
+	long StartPos = ftell(SUEF);
+
+	fwrite(m_Memory, 1, 0x100000, SUEF);
+
+	for (int i = 0; i < 8; i++)
+	{
+		fput16(m_regs.w[i], SUEF);
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		fput16(m_sregs[i], SUEF);
+	}
+
+	fputc(m_TF, SUEF);
+	fputc(m_IF, SUEF);
+	fputc(m_DF, SUEF);
+	fputc(m_IOPL, SUEF);
+	fputc(m_NT, SUEF);
+	fputc(m_MF, SUEF);
+
+	fput16(m_ip, SUEF);
+	fput16(m_prev_ip, SUEF);
+
+	fput32(m_SignVal, SUEF);
+	fput32(m_AuxVal, SUEF);
+	fput32(m_OverVal, SUEF);
+	fput32(m_ZeroVal, SUEF);
+	fput32(m_CarryVal, SUEF);
+	fput32(m_ParityVal, SUEF);
+
+	fput32(m_pending_irq, SUEF);
+	fput32(m_nmi_state, SUEF);
+	fput32(m_irq_state, SUEF);
+	fputc(m_no_interrupt, SUEF);
+	fputc(m_fire_trap, SUEF);
+	fputc(m_test_state, SUEF);
+
+	fput32(m_icount, SUEF);
+
+	fput32(m_prefix_seg, SUEF);
+	fputc(m_seg_prefix, SUEF);
+	fputc(m_seg_prefix_next, SUEF);
+
+	fput32(m_ea, SUEF);
+	fput16(m_eo, SUEF);
+	fput32(m_easeg, SUEF);
+
+	fputc(m_modrm, SUEF);
+	fput32(m_dst, SUEF);
+	fput32(m_src, SUEF);
+	fput32(m_pc, SUEF);
+
+	fputc(m_halt, SUEF);
+
+	for (int i = 0; i < 2; i++)
+	{
+		fputc(m_dma[i].drq_state, SUEF);
+		fput32(m_dma[i].source, SUEF);
+		fput32(m_dma[i].dest, SUEF);
+		fput16(m_dma[i].count, SUEF);
+		fput16(m_dma[i].control, SUEF);
+	}
+
+	fputc(m_last_dma, SUEF);
+
+	long EndPos = ftell(SUEF);
+	long Length = EndPos - StartPos;
+	fseek(SUEF, StartPos - 4, SEEK_SET);
+	fput32(Length, SUEF); // Size
+	fseek(SUEF, EndPos, SEEK_SET);
+}
+
+void Master512CoPro::LoadState(FILE *SUEF)
+{
+	fread(m_Memory, 1, 0x100000, SUEF);
+
+	for (int i = 0; i < 8; i++)
+	{
+		m_regs.w[i] = fget16(SUEF);
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		m_sregs[i] = fget16(SUEF);
+	}
+
+	m_TF = fget8(SUEF);
+	m_IF = fget8(SUEF);
+	m_DF = fget8(SUEF);
+	m_IOPL = fget8(SUEF);
+	m_NT = fget8(SUEF);
+	m_MF = fget8(SUEF);
+
+	m_ip = fget16(SUEF);
+	m_prev_ip = fget16(SUEF);
+
+	m_SignVal = fget32(SUEF);
+	m_AuxVal = fget32(SUEF);
+	m_OverVal = fget32(SUEF);
+	m_ZeroVal = fget32(SUEF);
+	m_CarryVal = fget32(SUEF);
+	m_ParityVal = fget32(SUEF);
+
+	m_pending_irq = fget32(SUEF);
+	m_nmi_state = fget32(SUEF);
+	m_irq_state = fget32(SUEF);
+	m_no_interrupt = fget8(SUEF);
+	m_fire_trap = fget8(SUEF);
+	m_test_state = fget8(SUEF);
+
+	m_icount = fget32(SUEF);
+
+	m_prefix_seg = fget32(SUEF);
+	m_seg_prefix = fgetbool(SUEF);
+	m_seg_prefix_next = fgetbool(SUEF);
+
+	m_ea = fget32(SUEF);
+	m_eo = fget16(SUEF);
+	m_easeg = fget32(SUEF);
+
+	m_modrm = fget8(SUEF);
+	m_dst = fget32(SUEF);
+	m_src = fget32(SUEF);
+	m_pc = fget32(SUEF);
+
+	m_halt = fgetbool(SUEF);
+
+	for (int i = 0; i < 2; i++)
+	{
+		m_dma[i].drq_state = fgetbool(SUEF);
+		m_dma[i].source = fget32(SUEF);
+		m_dma[i].dest = fget32(SUEF);
+		m_dma[i].count = fget16(SUEF);
+		m_dma[i].control = fget16(SUEF);
+	}
+
+	m_last_dma = fgetbool(SUEF);
 }

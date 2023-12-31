@@ -19,6 +19,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. */
 
+#ifndef Z80_HEADER
+#define Z80_HEADER
+
 /* SEE limits and BYTE-, WORD- and FASTREG - defintions im MEM_MMU.h */
 
 typedef unsigned short WORD;
@@ -40,7 +43,8 @@ extern WORD ix;
 extern WORD iy;
 extern WORD sp;
 extern WORD pc;
-extern WORD IFF;
+extern WORD IFF1;
+extern WORD IFF2;
 
 /* see definitions for memory in mem_mmu.h */
 
@@ -95,3 +99,7 @@ void z80_IRQ_Interrupt(void);
 void set_Z80_irq_line(bool state);
 void set_Z80_nmi_line(bool state);
 
+void SaveZ80UEF(FILE *SUEF);
+void LoadZ80UEF(FILE *SUEF);
+
+#endif

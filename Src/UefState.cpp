@@ -21,22 +21,37 @@ Boston, MA  02110-1301, USA.
 
 // UEF Game state code.
 
-#include <stdio.h>
-
 #include "UEFState.h"
 #include "6502core.h"
+#include "Arm.h"
 #include "AtoDConv.h"
 #include "BeebMem.h"
 #include "BeebWin.h"
 #include "Disc1770.h"
 #include "Disc8271.h"
 #include "Main.h"
+#include "Master512CoPro.h"
 #include "Music5000.h"
 #include "Serial.h"
 #include "Sound.h"
+#include "SprowCoPro.h"
 #include "Tube.h"
 #include "Via.h"
 #include "Video.h"
+#include "Z80mem.h"
+#include "Z80.h"
+
+void fput64(uint64_t word64, FILE *fileptr)
+{
+	fputc(word64 & 255, fileptr);
+	fputc((word64 >> 8) & 255, fileptr);
+	fputc((word64 >> 16) & 255, fileptr);
+	fputc((word64 >> 24) & 255, fileptr);
+	fputc((word64 >> 32) & 255, fileptr);
+	fputc((word64 >> 40) & 255, fileptr);
+	fputc((word64 >> 48) & 255, fileptr);
+	fputc((word64 >> 56) & 255, fileptr);
+}
 
 void fput32(unsigned int word32, FILE *fileptr)
 {
@@ -50,6 +65,23 @@ void fput16(unsigned int word16, FILE *fileptr)
 {
 	fputc(word16 & 255, fileptr);
 	fputc((word16 >> 8) & 255, fileptr);
+}
+
+uint64_t fget64(FILE *fileptr)
+{
+	uint64_t Result = 0;
+	uint64_t Value;
+
+	Value = fgetc(fileptr); Result |= Value;
+	Value = fgetc(fileptr); Result |= Value << 8;
+	Value = fgetc(fileptr); Result |= Value << 16;
+	Value = fgetc(fileptr); Result |= Value << 24;
+	Value = fgetc(fileptr); Result |= Value << 32;
+	Value = fgetc(fileptr); Result |= Value << 40;
+	Value = fgetc(fileptr); Result |= Value << 48;
+	Value = fgetc(fileptr); Result |= Value << 56;
+
+	return Result;
 }
 
 unsigned int fget32(FILE *fileptr)
@@ -103,11 +135,40 @@ UEFStateResult SaveUEFState(const char *FileName)
 			Save8271UEF(UEFState);
 		else
 			Save1770UEF(UEFState);
-		if (TubeType == Tube::Acorn65C02) {
-			SaveTubeUEF(UEFState); // TODO: Save Tube state for all co-pros?
-			Save65C02UEF(UEFState);
-			Save65C02MemUEF(UEFState);
+
+		if (TubeType != Tube::None)
+		{
+			SaveTubeUEF(UEFState);
 		}
+
+		switch (TubeType)
+		{
+			case Tube::Acorn65C02:
+				Save65C02UEF(UEFState);
+				Save65C02MemUEF(UEFState);
+				break;
+
+			case Tube::Master512CoPro:
+				master512CoPro.SaveState(UEFState);
+				break;
+
+			case Tube::AcornZ80:
+				SaveZ80UEF(UEFState);
+				break;
+
+			case Tube::TorchZ80:
+				SaveZ80UEF(UEFState);
+				break;
+
+			case Tube::AcornArm:
+				arm->SaveState(UEFState);
+				break;
+
+			case Tube::SprowArm:
+				sprow->SaveState(UEFState);
+				break;
+		}
+
 		SaveSerialUEF(UEFState);
 		SaveAtoDUEF(UEFState);
 		SaveMusic5000UEF(UEFState);
@@ -244,6 +305,22 @@ UEFStateResult LoadUEFState(const char *FileName)
 
 				case 0x0477:
 					LoadMusic5000UEF(UEFState, Version);
+					break;
+
+				case 0x0478:
+					LoadZ80UEF(UEFState);
+					break;
+
+				case 0x0479:
+					arm->LoadState(UEFState);
+					break;
+
+				case 0x047A:
+					sprow->LoadState(UEFState);
+					break;
+
+				case 0x047B:
+					master512CoPro.LoadState(UEFState);
 					break;
 
 				default:

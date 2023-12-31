@@ -38,6 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Master 512 80186 Coprocessor
 
 #include <stdint.h>
+#include <stdio.h>
 
 // constants for expression endianness
 enum endianness_t
@@ -66,6 +67,9 @@ class Master512CoPro
 	public:
 		void Reset();
 		void Execute(int Cycles);
+
+		void SaveState(FILE *SUEF);
+		void LoadState(FILE *SUEF);
 
 	private:
 		void LoadBIOS();

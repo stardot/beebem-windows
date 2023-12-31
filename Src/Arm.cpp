@@ -34,6 +34,7 @@ Boston, MA  02110-1301, USA.
 #include "BeebMem.h"
 #include "Log.h"
 #include "Tube.h"
+#include "UefState.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -51,7 +52,7 @@ CArm::InitResult CArm::init(const char *ROMPath)
 	curR[IRQ_MODE] = irqR;
 	curR[FIQ_MODE] = fiqR;
 
-	// construct look up table of real values for encoded immediate 
+	// construct look up table of real values for encoded immediate
 	// values in data processing instructions
 	for(int rotate=0; rotate<16; rotate++)
 	{
@@ -89,7 +90,7 @@ CArm::InitResult CArm::init(const char *ROMPath)
 	// ??? profiling usage of different exceptions
 	if(dynamicProfilingExceptionFreq)
 	{
-		resetCounter = 0;
+		// resetCounter = 0;
 		undefCounter = 0;
 		swiCounter = 0;
 		prefAbortCounter = 0;
@@ -4904,4 +4905,82 @@ void CArm::dynamicProfilingCoprocessorUsage(uint32 instruction)
 {
 	WriteLog("copro number=%d instructions=%d\n", getField(instruction, 8, 11), executionCount - lastCopro);
 	lastCopro = executionCount;
+}
+
+void CArm::SaveState(FILE* SUEF)
+{
+	fput16(0x0479, SUEF); // UEF Chunk ID
+	fput32(0, SUEF); // Chunk length (updated after writing data)
+	long StartPos = ftell(SUEF);
+
+	fput32(pc, SUEF);
+	fputc(processorMode, SUEF);
+	fputc(interruptDisableFlag, SUEF);
+	fputc(fastInterruptDisableFlag, SUEF);
+	fputc(conditionFlags, SUEF);
+	fputc(prefetchInvalid, SUEF);
+	fput32(prefetchInstruction, SUEF);
+	fput32(currentInstruction, SUEF);
+
+	for (int i = 0; i < 16; i++)
+	{
+		fput32(r[i], SUEF);
+	}
+
+	for (int i = 0; i < 16; i++)
+	{
+		fput32(usrR[i], SUEF);
+	}
+
+	for (int i = 0; i < 16; i++)
+	{
+		fput32(svcR[i], SUEF);
+	}
+
+	for (int i = 0; i < 16; i++)
+	{
+		fput32(irqR[i], SUEF);
+	}
+
+	fwrite(ramMemory, 1, sizeof(ramMemory), SUEF);
+
+	long EndPos = ftell(SUEF);
+	long Length = EndPos - StartPos;
+	fseek(SUEF, StartPos - 4, SEEK_SET);
+	fput32(Length, SUEF); // Size
+	fseek(SUEF, EndPos, SEEK_SET);
+}
+
+void CArm::LoadState(FILE* SUEF)
+{
+	pc = fget32(SUEF);
+	processorMode = fget8(SUEF);
+	interruptDisableFlag = fget8(SUEF);
+	fastInterruptDisableFlag = fget8(SUEF);
+	conditionFlags = fget8(SUEF);
+	prefetchInvalid = fgetbool(SUEF);
+	prefetchInstruction = fget32(SUEF);
+	currentInstruction = fget32(SUEF);
+
+	for (int i = 0; i < 16; i++)
+	{
+		r[i] = fget32(SUEF);
+	}
+
+	for (int i = 0; i < 16; i++)
+	{
+		usrR[i] = fget32(SUEF);
+	}
+
+	for (int i = 0; i < 16; i++)
+	{
+		svcR[i] = fget32(SUEF);
+	}
+
+	for (int i = 0; i < 16; i++)
+	{
+		irqR[i] = fget32(SUEF);
+	}
+
+	fread(ramMemory, 1, sizeof(ramMemory), SUEF);
 }

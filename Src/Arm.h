@@ -208,6 +208,9 @@ public:
 	CArm();
 	virtual ~CArm();
 
+	void SaveState(FILE* SUEF);
+	void LoadState(FILE* SUEF);
+
 private:
 	uint32 lastCopro;				// num of instructions executed since last copro instruction profiled
 	void dynamicProfilingConditionalExe(uint32 currentInstruction);

@@ -637,4 +637,10 @@ public:
 	bool m_WriteInstructionCounts;
 };
 
+class CArm;
+class CSprowCoPro;
+
+extern CArm *arm;
+extern CSprowCoPro *sprow;
+
 #endif

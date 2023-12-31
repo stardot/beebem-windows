@@ -22,6 +22,9 @@ Boston, MA  02110-1301, USA.
 #ifndef UEFSTATE_HEADER
 #define UEFSTATE_HEADER
 
+#include <stdint.h>
+#include <stdio.h>
+
 enum class UEFStateResult {
 	Success,
 	OpenFailed,
@@ -30,8 +33,11 @@ enum class UEFStateResult {
 	InvalidUEFVersion
 };
 
-void fput32(unsigned int word32,FILE *fileptr);
-void fput16(unsigned int word16,FILE *fileptr);
+void fput64(uint64_t word64, FILE *fileptr);
+void fput32(unsigned int word32, FILE *fileptr);
+void fput16(unsigned int word16, FILE *fileptr);
+
+uint64_t fget64(FILE *fileptr);
 unsigned int fget32(FILE *fileptr);
 unsigned int fget16(FILE *fileptr);
 unsigned char fget8(FILE *fileptr);

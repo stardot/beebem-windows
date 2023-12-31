@@ -64,9 +64,6 @@ Boston, MA  02110-1301, USA.
 
 static int CurrentInstruction;
 
-extern CArm *arm;
-extern CSprowCoPro *sprow;
-
 CycleCountT TotalCycles=0;
 
 static bool trace = false;

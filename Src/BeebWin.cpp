@@ -113,8 +113,8 @@ static const unsigned char CFG_DISABLE_WINDOWS_KEYS[24] = {
 	00,00,00,00,00,00,00,00,03,00,00,00,00,00,0x5B,0xE0,00,00,0x5C,0xE0,00,00,00,00
 };
 
-CArm *arm = NULL;
-CSprowCoPro *sprow = NULL;
+CArm *arm = nullptr;
+CSprowCoPro *sprow = nullptr;
 
 LEDType LEDs;
 
@@ -509,6 +509,8 @@ void BeebWin::Shutdown()
 
 	DestroyArmCoPro();
 	DestroySprowCoPro();
+
+	TubeType = Tube::None;
 }
 
 /****************************************************************************/

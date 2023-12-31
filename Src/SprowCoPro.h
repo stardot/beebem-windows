@@ -40,6 +40,9 @@ class CSprowCoPro
 		void Execute(int Count);
 		void Reset();
 
+		void SaveState(FILE* SUEF);
+		void LoadState(FILE* SUEF);
+
 	private:
 		unsigned char m_ROMMemory[0x80000]; // 512 KBytes of rom memory
 		ARMul_State *m_State;

@@ -27,12 +27,13 @@ Boston, MA  02110-1301, USA.
 #include "Debug.h"
 #include "Log.h"
 #include "Tube.h"
+#include "UEFState.h"
 
 bool trace_z80 = false;
 int PreZPC = 0; // Previous Z80 PC
 
-unsigned char z80_rom[65536L];
-unsigned char z80_ram[65536L];
+unsigned char z80_rom[65536];
+unsigned char z80_ram[65536];
 
 bool inROM = true;
 
@@ -185,7 +186,7 @@ void out(unsigned int addr, unsigned char value)
 	}
 	else
 	{
-		if ( (addr == 0x00) || (addr == 0x04) )
+		if (addr == 0x00 || addr == 0x04)
 		{
 			WriteTorchTubeFromParasiteSide(1, value);
 		}
@@ -343,3 +344,74 @@ void PrintHex(int addr)
 	WriteLog("%s\n", buff);
 }
 
+void SaveZ80UEF(FILE *SUEF)
+{
+	fput16(0x0478, SUEF); // UEF Chunk ID
+	fput32(0, SUEF); // Chunk length (updated after writing data)
+	long StartPos = ftell(SUEF);
+
+	fwrite(z80_ram, 1, sizeof(z80_ram), SUEF);
+
+	// Z80 registers
+	fput16(af[0], SUEF);
+	fput16(af[1], SUEF);
+	fputc(af_sel, SUEF);
+
+	for (int i = 0; i < 2; i++)
+	{
+		fput16(regs[i].bc, SUEF);
+		fput16(regs[i].de, SUEF);
+		fput16(regs[i].hl, SUEF);
+	}
+
+	fputc(regs_sel, SUEF);
+
+	fput16(ir, SUEF);
+	fput16(ix, SUEF);
+	fput16(iy, SUEF);
+	fput16(sp, SUEF);
+	fput16(pc, SUEF);
+	fput16(IFF1, SUEF);
+	fput16(IFF2, SUEF);
+
+	fput16(pc, SUEF);
+	fput16(PreZPC, SUEF);
+	fputc(inROM, SUEF);
+
+	long EndPos = ftell(SUEF);
+	long Length = EndPos - StartPos;
+	fseek(SUEF, StartPos - 4, SEEK_SET);
+	fput32(Length, SUEF); // Size
+	fseek(SUEF, EndPos, SEEK_SET);
+}
+
+void LoadZ80UEF(FILE *SUEF)
+{
+	fread(z80_ram, 1, sizeof(z80_ram), SUEF);
+
+	// Z80 registers
+	af[0] = (WORD)fget16(SUEF);
+	af[1] = (WORD)fget16(SUEF);
+	af_sel = fget8(SUEF);
+
+	for (int i = 0; i < 2; i++)
+	{
+		regs[i].bc = (WORD)fget16(SUEF);
+		regs[i].de = (WORD)fget16(SUEF);
+		regs[i].hl = (WORD)fget16(SUEF);
+	}
+
+	regs_sel = fget8(SUEF);
+
+	ir = (WORD)fget16(SUEF);
+	ix = (WORD)fget16(SUEF);
+	iy = (WORD)fget16(SUEF);
+	sp = (WORD)fget16(SUEF);
+	pc = (WORD)fget16(SUEF);
+	IFF1 = (WORD)fget16(SUEF);
+	IFF2 = (WORD)fget16(SUEF);
+
+	pc = fget16(SUEF);
+	PreZPC = fget16(SUEF);
+	inROM = fget8(SUEF);
+}
