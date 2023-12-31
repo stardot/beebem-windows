@@ -33,6 +33,7 @@ void TapeControlStopRecording(bool RefreshControl);
 void TapeControlCloseTape();
 void TapeControlCloseDialog();
 void TapeControlSetFileName(const char *FileName);
+void TapeControlSetUnlock(bool Unlock);
 
 extern bool TapeControlEnabled;
 extern std::vector<TapeMapEntry> TapeMap;

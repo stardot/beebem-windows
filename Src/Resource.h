@@ -206,6 +206,8 @@
 #define IDC_STOPPED                     1116
 #define IDC_TAPE_FILENAME               1117
 #define IDC_TAPE_CONTROL_LOAD_TAPE      1118
+#define IDC_UNLOCK                      1119
+#define IDC_TAPE_CONTROL_UNLOCK         1119
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -455,7 +457,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        121
 #define _APS_NEXT_COMMAND_VALUE         40322
-#define _APS_NEXT_CONTROL_VALUE         1119
+#define _APS_NEXT_CONTROL_VALUE         1120
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

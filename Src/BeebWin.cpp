@@ -2565,6 +2565,7 @@ void BeebWin::TranslateKeyMapping(void)
 }
 
 /****************************************************************************/
+
 void BeebWin::SetTapeSpeedMenu()
 {
 	CheckMenuItem(ID_TAPE_FAST, TapeState.ClockSpeed == 750);
@@ -2573,11 +2574,19 @@ void BeebWin::SetTapeSpeedMenu()
 	CheckMenuItem(ID_TAPE_NORMAL, TapeState.ClockSpeed == 5600);
 }
 
+/****************************************************************************/
+
 void BeebWin::SetUnlockTape(bool Unlock)
 {
 	TapeState.Unlock = Unlock;
 	::SetUnlockTape(TapeState.Unlock);
+
 	CheckMenuItem(ID_UNLOCKTAPE, TapeState.Unlock);
+
+	if (TapeControlEnabled)
+	{
+		TapeControlSetUnlock(Unlock);
+	}
 }
 
 /****************************************************************************/
