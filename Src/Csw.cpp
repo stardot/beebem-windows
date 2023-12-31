@@ -190,7 +190,7 @@ void CSWCreateTapeMap(std::vector<TapeMapEntry>& TapeMap)
 	bool std_last_block = true;
 	int last_tone = 0;
 
-	Clk_Divide = 16;
+	SerialACIA.ClkDivide = 16;
 
 	TapeMap.clear();
 
@@ -223,18 +223,18 @@ again:
 			// WriteLog("Decoded Block of length %d, starting at %d\n", block_ptr, start_time);
 			// HexDump(block, block_ptr);
 
-			if (block_ptr == 1 && block[0] == 0x80 && Clk_Divide != 64) // 300 baud block?
+			if (block_ptr == 1 && block[0] == 0x80 && SerialACIA.ClkDivide != 64) // 300 baud block?
 			{
-				Clk_Divide = 64;
+				SerialACIA.ClkDivide = 64;
 				csw_ptr = last_tone;
 				csw_state = CSWState::Tone;
 				// WriteLog("Detected 300 baud block, resetting ptr to %d\n", csw_ptr);
 				goto again;
 			}
 
-			if (block_ptr == 3 && Clk_Divide != 16) // 1200 baud block ?
+			if (block_ptr == 3 && SerialACIA.ClkDivide != 16) // 1200 baud block ?
 			{
-				Clk_Divide = 16;
+				SerialACIA.ClkDivide = 16;
 				csw_ptr = last_tone;
 				csw_state = CSWState::Tone;
 				// WriteLog("Detected 1200 baud block, resetting ptr to %d\n", csw_ptr);
@@ -329,19 +329,11 @@ again:
 
 int csw_data()
 {
-	static int last = -1;
-
 	int t = 0;
 	int j = 1;
 
-	if (last != Clk_Divide)
-	{
-		// WriteLog("Baud Rate changed to %s\n", (Clk_Divide == 16) ? "1200" : "300");
-		last = Clk_Divide;
-	}
-
-	if (Clk_Divide == 16) j = 1; // 1200 baud
-	if (Clk_Divide == 64) j = 4; // 300 baud
+	if (SerialACIA.ClkDivide == 16) j = 1; // 1200 baud
+	if (SerialACIA.ClkDivide == 64) j = 4; // 300 baud
 
 	// JW 18/11/06
 	// For 300 baud, just average 4 samples
@@ -443,7 +435,7 @@ int CSWPoll()
 				// Not in tone any more - data start bit
 				// WriteLog("Entered data at %d\n", csw_pulsecount);
 
-				if (Clk_Divide == 64)
+				if (SerialACIA.ClkDivide == 64)
 				{
 					// Skip 300 baud data
 					csw_data();
@@ -453,7 +445,7 @@ int CSWPoll()
 
 				bit_count = csw_data(); // Skip next half of wave
 
-				if (Clk_Divide == 64)
+				if (SerialACIA.ClkDivide == 64)
 				{
 					// Skip 300 baud data
 					csw_data();

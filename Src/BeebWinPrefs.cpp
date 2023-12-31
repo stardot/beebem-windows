@@ -356,10 +356,10 @@ void BeebWin::LoadPreferences()
 		m_PrinterFileName[0] = 0;
 	TranslatePrinterPort();
 
-	if (!m_Preferences.GetBinaryValue("Tape Clock Speed", &TapeClockSpeed, 2))
-		TapeClockSpeed=5600;
-	if (!m_Preferences.GetBoolValue("UnlockTape", UnlockTape))
-		UnlockTape = false;
+	if (!m_Preferences.GetBinaryValue("Tape Clock Speed", &TapeState.ClockSpeed, 2))
+		TapeState.ClockSpeed = 5600;
+	if (!m_Preferences.GetBoolValue("UnlockTape", TapeState.Unlock))
+		TapeState.Unlock = false;
 
 	if (!m_Preferences.GetBoolValue("SerialPortEnabled", SerialPortEnabled))
 		SerialPortEnabled = false;
@@ -745,8 +745,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, m_MenuIDPrinterPort);
 		m_Preferences.SetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
 
-		m_Preferences.SetBinaryValue("Tape Clock Speed", &TapeClockSpeed, 2);
-		m_Preferences.SetBoolValue("UnlockTape", UnlockTape);
+		m_Preferences.SetBinaryValue("Tape Clock Speed", &TapeState.ClockSpeed, 2);
+		m_Preferences.SetBoolValue("UnlockTape", TapeState.Unlock);
 		m_Preferences.SetBoolValue("SerialPortEnabled", SerialPortEnabled);
 		m_Preferences.SetBoolValue("TouchScreenEnabled", SerialDestination == SerialType::TouchScreen);
 		m_Preferences.SetBoolValue("IP232Enabled", SerialDestination == SerialType::IP232);

@@ -38,9 +38,34 @@ enum class SerialType {
 
 extern SerialType SerialDestination;
 
-extern unsigned int Tx_Rate;
-extern unsigned int Rx_Rate;
-extern unsigned char Clk_Divide;
+struct SerialACIAType
+{
+	unsigned char Status; // 6850 ACIA Status Register
+	unsigned char Control; // 6850 ACIA Control Register
+	unsigned char RDR; // Receive Data Register
+	unsigned char TDR; // Transmit Data Register
+	unsigned char RDSR; // Receive Data Shift Register (buffer)
+	unsigned char TDSR; // Transmit Data Shift Register (buffer)
+
+	unsigned char TxD; // Transmit destination (data or shift register)
+	unsigned char RxD; // Receive destination (data or shift register)
+
+	bool RIE; // Receive Interrupt Enable
+	bool TIE; // Transmit Interrupt Enable
+
+	bool RTS;
+	bool DCD; // DCD input
+
+	unsigned int TxRate; // Transmit baud rate
+	unsigned int RxRate; // Recieve baud rate
+	unsigned char ClkDivide; // Clock divide rate
+
+	unsigned char DataBits;
+	unsigned char StopBits;
+	unsigned char Parity;
+};
+
+extern SerialACIAType SerialACIA;
 
 // MC6850 status register bits
 constexpr unsigned char MC6850_STATUS_RDRF = 0x01;
@@ -51,9 +76,6 @@ constexpr unsigned char MC6850_STATUS_FE   = 0x10;
 constexpr unsigned char MC6850_STATUS_OVRN = 0x20;
 constexpr unsigned char MC6850_STATUS_PE   = 0x40;
 constexpr unsigned char MC6850_STATUS_IRQ  = 0x80;
-
-extern unsigned char ACIA_Status;
-extern unsigned char ACIA_Control;
 
 extern CycleCountT TapeTrigger;
 extern CycleCountT IP232RxTrigger;
@@ -80,12 +102,20 @@ void CloseTape();
 void RewindTape();
 
 extern volatile bool bSerialStateChanged;
-extern bool UnlockTape;
-extern unsigned char TxD;
-extern unsigned char RxD;
-extern int TapeClockSpeed;
 
-extern bool TapeRecording;
+struct TapeStateType
+{
+	bool Playing;
+	bool Recording;
+	int ClockSpeed;
+	bool Unlock;
+	int UEFBuf;
+	int OldUEFBuf;
+	int Clock;
+	int OldClock;
+};
+
+extern TapeStateType TapeState;
 
 void SetTapeSpeed(int Speed);
 void SetUnlockTape(bool Unlock);

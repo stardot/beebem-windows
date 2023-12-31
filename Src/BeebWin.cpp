@@ -1089,7 +1089,7 @@ void BeebWin::InitMenu(void)
 	SetTapeSpeedMenu();
 
 	// Comms
-	CheckMenuItem(ID_UNLOCKTAPE, UnlockTape);
+	CheckMenuItem(ID_UNLOCKTAPE, TapeState.Unlock);
 	CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
 
 	// Comms -> Printer
@@ -2567,17 +2567,17 @@ void BeebWin::TranslateKeyMapping(void)
 /****************************************************************************/
 void BeebWin::SetTapeSpeedMenu()
 {
-	CheckMenuItem(ID_TAPE_FAST, TapeClockSpeed == 750);
-	CheckMenuItem(ID_TAPE_MFAST, TapeClockSpeed == 1600);
-	CheckMenuItem(ID_TAPE_MSLOW, TapeClockSpeed == 3200);
-	CheckMenuItem(ID_TAPE_NORMAL, TapeClockSpeed == 5600);
+	CheckMenuItem(ID_TAPE_FAST, TapeState.ClockSpeed == 750);
+	CheckMenuItem(ID_TAPE_MFAST, TapeState.ClockSpeed == 1600);
+	CheckMenuItem(ID_TAPE_MSLOW, TapeState.ClockSpeed == 3200);
+	CheckMenuItem(ID_TAPE_NORMAL, TapeState.ClockSpeed == 5600);
 }
 
 void BeebWin::SetUnlockTape(bool Unlock)
 {
-	UnlockTape = Unlock;
-	::SetUnlockTape(UnlockTape);
-	CheckMenuItem(ID_UNLOCKTAPE, UnlockTape);
+	TapeState.Unlock = Unlock;
+	::SetUnlockTape(TapeState.Unlock);
+	CheckMenuItem(ID_UNLOCKTAPE, TapeState.Unlock);
 }
 
 /****************************************************************************/
@@ -3709,7 +3709,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case ID_UNLOCKTAPE:
-		SetUnlockTape(!UnlockTape);
+		SetUnlockTape(!TapeState.Unlock);
 		break;
 
 	case ID_HIDEMENU:

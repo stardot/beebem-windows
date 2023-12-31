@@ -63,45 +63,17 @@ constexpr unsigned char MC6850_CONTROL_RIE              = 0x80;
 
 SerialType SerialDestination;
 
-enum class SerialDevice : unsigned char {
-	Cassette,
-	RS423
-};
-
-static bool CassetteRelay = false; // Cassette Relay state
-static SerialDevice SerialChannel = SerialDevice::Cassette; // Device in use
-
-static unsigned char RDR, TDR; // Receive and Transmit Data Registers
-static unsigned char RDSR, TDSR; // Receive and Transmit Data Shift Registers (buffers)
-unsigned int Tx_Rate = 1200; // Transmit baud rate
-unsigned int Rx_Rate = 1200; // Recieve baud rate
-unsigned char Clk_Divide = 1; // Clock divide rate
-
-unsigned char ACIA_Status; // 6850 ACIA Status register
-unsigned char ACIA_Control; // 6850 ACIA Control register
-static unsigned char SerialULAControl; // Serial ULA / SERPROC control register
-
-static bool RTS;
-static bool DCD; // ACIA DCD input
-
 static bool FirstReset = true;
-static unsigned char Parity, StopBits, DataBits;
-
-bool RIE; // Receive Interrupt Enable
-bool TIE; // Transmit Interrupt Enable
-
-unsigned char TxD; // Transmit destination (data or shift register)
-unsigned char RxD; // Receive destination (data or shift register)
-
-static UEFFileWriter UEFWriter;
-static char TapeFileName[256]; // Filename of current tape file
 
 static UEFFileReader UEFReader;
+static UEFFileWriter UEFWriter;
+
+static char TapeFileName[256]; // Filename of current tape file
+
 static bool UEFFileOpen = false;
 static bool CSWFileOpen = false;
 
-static bool TapePlaying = true;
-bool TapeRecording = false;
+TapeStateType TapeState;
 
 struct WordSelectBits
 {
@@ -141,18 +113,8 @@ static const unsigned int Baud_Rates[8] =
 	19200, 1200, 4800, 150, 9600, 300, 2400, 75
 };
 
-CycleCountT TapeTrigger=CycleCountTMax;
-constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
-
-static int UEFBuf = 0;
-static int OldUEFBuf = 0;
-static int TapeClock = 0;
-static int OldClock = 0;
-int TapeClockSpeed = 5600;
-bool UnlockTape = true;
-
-static bool TapeCarrier; // Serial ULA carrier high tone detected
-static int CarrierCycleCount; // Countdown timer to assert ACIA DCD when carrier detected
+CycleCountT TapeTrigger = CycleCountTMax;
+constexpr int TAPECYCLES = CPU_CYCLES_PER_SECOND / 5600; // 5600 is normal tape speed
 
 // This bit is the Serial Port stuff
 bool SerialPortEnabled;
@@ -172,18 +134,176 @@ class SerialPortStatusThread : public Thread
 
 SerialPortReadThread SerialReadThread;
 SerialPortStatusThread SerialStatusThread;
-
-static HANDLE hSerialPort = INVALID_HANDLE_VALUE; // Serial port handle
-static unsigned int SerialBuffer=0,SerialWriteBuffer=0;
-static DWORD BytesIn,BytesOut;
-static DWORD dwCommEvent;
-static OVERLAPPED olSerialPort={0},olSerialWrite={0},olStatus={0};
 volatile bool bSerialStateChanged = false;
-static volatile bool bWaitingForData = false;
-static volatile bool bWaitingForStat = false;
-static volatile bool bCharReady = false;
+
+class Win32SerialPort
+{
+	public:
+		Win32SerialPort();
+
+		bool Init(const char* PortName);
+		void Close();
+		void SetBaudRate(int BaudRate);
+		void Configure(unsigned char DataBits, unsigned char StopBits, unsigned char Parity);
+		void SetRTS(bool RTS);
+
+	public:
+		HANDLE hSerialPort; // Serial port handle
+		unsigned int SerialBuffer;
+		unsigned int SerialWriteBuffer;
+		DWORD BytesIn;
+		DWORD BytesOut;
+		DWORD dwCommEvent;
+		OVERLAPPED olSerialPort;
+		OVERLAPPED olSerialWrite;
+		OVERLAPPED olStatus;
+		volatile bool bWaitingForData;
+		volatile bool bWaitingForStat;
+		volatile bool bCharReady;
+};
+
+static Win32SerialPort SerialPort;
 
 static void InitSerialPort();
+
+SerialACIAType SerialACIA;
+
+struct SerialULAType
+{
+	unsigned char Control; // Serial ULA / SERPROC control register
+	bool CassetteRelay; // Cassette relay state
+	bool RS423; // Device in use (RS423 or cassette)
+	bool TapeCarrier; // Carrier high tone detected
+	int CarrierCycleCount; // Countdown timer to assert DCD when carrier detected
+};
+
+static SerialULAType SerialULA;
+
+/*--------------------------------------------------------------------------*/
+
+Win32SerialPort::Win32SerialPort() :
+	hSerialPort(INVALID_HANDLE_VALUE),
+	SerialBuffer(0),
+	SerialWriteBuffer(0),
+	BytesIn(0),
+	BytesOut(0),
+	dwCommEvent(0),
+	bWaitingForData(false),
+	bWaitingForStat(false),
+	bCharReady(false)
+{
+	memset(&olSerialPort, 0, sizeof(olSerialPort));
+	memset(&olSerialWrite, 0, sizeof(olSerialWrite));
+	memset(&olStatus, 0, sizeof(olStatus));
+}
+
+/*--------------------------------------------------------------------------*/
+
+bool Win32SerialPort::Init(const char* PortName)
+{
+	char FileName[_MAX_PATH];
+	sprintf(FileName, "\\\\.\\%s", PortName);
+
+	SerialPort.hSerialPort = CreateFile(FileName,
+	                                    GENERIC_READ | GENERIC_WRITE,
+	                                    0, // dwShareMode
+	                                    nullptr, // lpSecurityAttributes
+	                                    OPEN_EXISTING,
+	                                    FILE_FLAG_OVERLAPPED,
+	                                    nullptr); // hTemplateFile
+
+	if (SerialPort.hSerialPort == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+	else
+	{
+		BOOL bPortStat = SetupComm(hSerialPort, 1280, 1280);
+
+		DCB dcbSerialPort{}; // Serial port device control block
+		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
+		bPortStat = GetCommState(hSerialPort, &dcbSerialPort);
+
+		dcbSerialPort.fBinary         = TRUE;
+		dcbSerialPort.BaudRate        = 9600;
+		dcbSerialPort.Parity          = NOPARITY;
+		dcbSerialPort.StopBits        = ONESTOPBIT;
+		dcbSerialPort.ByteSize        = 8;
+		dcbSerialPort.fDtrControl     = DTR_CONTROL_DISABLE;
+		dcbSerialPort.fOutxCtsFlow    = FALSE;
+		dcbSerialPort.fOutxDsrFlow    = FALSE;
+		dcbSerialPort.fOutX           = FALSE;
+		dcbSerialPort.fDsrSensitivity = FALSE;
+		dcbSerialPort.fInX            = FALSE;
+		dcbSerialPort.fRtsControl     = RTS_CONTROL_DISABLE; // Leave it low (do not send) for now
+
+		bPortStat = SetCommState(hSerialPort, &dcbSerialPort);
+
+		COMMTIMEOUTS CommTimeOuts{};
+		CommTimeOuts.ReadIntervalTimeout         = MAXDWORD;
+		CommTimeOuts.ReadTotalTimeoutConstant    = 0;
+		CommTimeOuts.ReadTotalTimeoutMultiplier  = 0;
+		CommTimeOuts.WriteTotalTimeoutConstant   = 0;
+		CommTimeOuts.WriteTotalTimeoutMultiplier = 0;
+
+		SetCommTimeouts(hSerialPort, &CommTimeOuts);
+
+		SetCommMask(hSerialPort, EV_CTS | EV_RXCHAR | EV_ERR);
+
+		return true;
+	}
+}
+
+/*--------------------------------------------------------------------------*/
+
+void Win32SerialPort::Close()
+{
+	if (hSerialPort != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hSerialPort);
+		hSerialPort = INVALID_HANDLE_VALUE;
+	}
+}
+
+/*--------------------------------------------------------------------------*/
+
+void Win32SerialPort::SetBaudRate(int BaudRate)
+{
+	DCB dcbSerialPort{}; // Serial port device control block
+	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
+	GetCommState(hSerialPort, &dcbSerialPort);
+	dcbSerialPort.BaudRate  = BaudRate;
+	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+	SetCommState(hSerialPort, &dcbSerialPort);
+}
+
+/*--------------------------------------------------------------------------*/
+
+void Win32SerialPort::Configure(unsigned char DataBits, unsigned char StopBits, unsigned char Parity)
+{
+	DCB dcbSerialPort{}; // Serial port device control block
+	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
+	GetCommState(hSerialPort, &dcbSerialPort);
+
+	dcbSerialPort.ByteSize  = DataBits;
+	dcbSerialPort.StopBits  = (StopBits == 1) ? ONESTOPBIT : TWOSTOPBITS;
+	dcbSerialPort.Parity    = Parity;
+	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+
+	SetCommState(hSerialPort, &dcbSerialPort);
+}
+
+/*--------------------------------------------------------------------------*/
+
+void Win32SerialPort::SetRTS(bool RTS)
+{
+	EscapeCommFunction(hSerialPort, RTS ? CLRRTS : SETRTS);
+}
+
+/*--------------------------------------------------------------------------*/
 
 void SerialACIAWriteControl(unsigned char Value)
 {
@@ -193,74 +313,66 @@ void SerialACIAWriteControl(unsigned char Value)
 		                   "Serial: Write ACIA control %02X", (int)Value);
 	}
 
-	ACIA_Control = Value; // This is done for safe keeping
+	SerialACIA.Control = Value; // This is done for safe keeping
 
 	// Master reset - clear all bits in the status register, except for
 	// external conditions on CTS and DCD.
 	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == MC6850_CONTROL_MASTER_RESET)
 	{
-		ACIA_Status &= MC6850_STATUS_CTS;
-		ACIA_Status &= ~MC6850_STATUS_DCD;
+		SerialACIA.Status &= MC6850_STATUS_CTS;
+		SerialACIA.Status &= ~MC6850_STATUS_DCD;
 
 		// Master reset clears IRQ
-		ACIA_Status &= ~MC6850_STATUS_IRQ;
+		SerialACIA.Status &= ~MC6850_STATUS_IRQ;
 		intStatus &= ~(1 << serial);
 
 		if (FirstReset)
 		{
 			// RTS High on first Master reset.
-			ACIA_Status |= MC6850_STATUS_CTS;
+			SerialACIA.Status |= MC6850_STATUS_CTS;
 			FirstReset = false;
-			RTS = true;
+			SerialACIA.RTS = true;
 		}
 
-		TxD = 0;
-		ACIA_Status |= MC6850_STATUS_TDRE; // Transmit data register empty
+		SerialACIA.TxD = 0;
+		SerialACIA.Status |= MC6850_STATUS_TDRE; // Transmit data register empty
 
 		SetTrigger(TAPECYCLES, TapeTrigger);
 	}
 
 	// Clock Divide
-	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x00) Clk_Divide = 1;
-	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x01) Clk_Divide = 16;
-	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x02) Clk_Divide = 64;
+	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x00) SerialACIA.ClkDivide = 1;
+	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x01) SerialACIA.ClkDivide = 16;
+	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == 0x02) SerialACIA.ClkDivide = 64;
 
 	// Word select
-	Parity   = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].Parity;
-	StopBits = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].StopBits;
-	DataBits = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].DataBits;
+	SerialACIA.Parity   = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].Parity;
+	SerialACIA.StopBits = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].StopBits;
+	SerialACIA.DataBits = WordSelect[(Value & MC6850_CONTROL_WORD_SELECT) >> 2].DataBits;
 
 	// Transmitter control
-	RTS = TransmitterControl[(Value & MC6850_CONTROL_TRANSMIT_CONTROL) >> 5].RTS;
-	TIE = TransmitterControl[(Value & MC6850_CONTROL_TRANSMIT_CONTROL) >> 5].TIE;
-	RIE = (Value & MC6850_CONTROL_RIE) != 0;
+	SerialACIA.RTS = TransmitterControl[(Value & MC6850_CONTROL_TRANSMIT_CONTROL) >> 5].RTS;
+	SerialACIA.TIE = TransmitterControl[(Value & MC6850_CONTROL_TRANSMIT_CONTROL) >> 5].TIE;
+	SerialACIA.RIE = (Value & MC6850_CONTROL_RIE) != 0;
 
 	// Seem to need an interrupt immediately for tape writing when TIE set
-	if (SerialChannel == SerialDevice::Cassette && TIE && CassetteRelay)
+	if (!SerialULA.RS423 && SerialACIA.TIE && SerialULA.CassetteRelay)
 	{
-		ACIA_Status |= MC6850_STATUS_IRQ;
+		SerialACIA.Status |= MC6850_STATUS_IRQ;
 		intStatus |= 1 << serial;
 	}
 
 	// Change serial port settings
-	if (SerialChannel == SerialDevice::RS423 && SerialDestination == SerialType::SerialPort)
+	if (SerialULA.RS423 && SerialDestination == SerialType::SerialPort)
 	{
-		DCB dcbSerialPort{}; // Serial port device control block
-		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
-
-		GetCommState(hSerialPort, &dcbSerialPort);
-
-		dcbSerialPort.ByteSize  = DataBits;
-		dcbSerialPort.StopBits  = (StopBits == 1) ? ONESTOPBIT : TWOSTOPBITS;
-		dcbSerialPort.Parity    = Parity;
-		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
-
-		SetCommState(hSerialPort, &dcbSerialPort);
+		SerialPort.Configure(SerialACIA.DataBits, SerialACIA.StopBits, SerialACIA.Parity);
 
 		// Check RTS
-		EscapeCommFunction(hSerialPort, RTS ? CLRRTS : SETRTS);
+		SerialPort.SetRTS(SerialACIA.RTS);
 	}
 }
+
+/*--------------------------------------------------------------------------*/
 
 void SerialACIAWriteTxData(unsigned char Data)
 {
@@ -272,29 +384,29 @@ void SerialACIAWriteTxData(unsigned char Data)
 
 	// WriteLog("Serial: Write ACIA Tx %02X, SerialChannel = %d\n", (int)Data, SerialChannel);
 
-	ACIA_Status &= ~MC6850_STATUS_IRQ;
+	SerialACIA.Status &= ~MC6850_STATUS_IRQ;
 	intStatus &= ~(1 << serial);
 
 	// 10/09/06
 	// JW - A bug in swarm loader overwrites the rs423 output buffer counter
 	// Unless we do something with the data, the loader hangs so just swallow it (see below)
 
-	if (SerialChannel == SerialDevice::Cassette || (SerialChannel == SerialDevice::RS423 && !SerialPortEnabled))
+	if (!SerialULA.RS423 || (SerialULA.RS423 && !SerialPortEnabled))
 	{
-		TDR = Data;
-		TxD = 1;
-		ACIA_Status &= ~MC6850_STATUS_TDRE;
-		int baud = Tx_Rate * ((Clk_Divide == 1) ? 64 : (Clk_Divide==64) ? 1 : 4);
+		SerialACIA.TDR = Data;
+		SerialACIA.TxD = 1;
+		SerialACIA.Status &= ~MC6850_STATUS_TDRE;
+		int Baud = SerialACIA.TxRate * ((SerialACIA.ClkDivide == 1) ? 64 : (SerialACIA.ClkDivide == 64) ? 1 : 4);
 
-		SetTrigger(2000000 / (baud / 8) * TapeClockSpeed / 5600, TapeTrigger);
+		SetTrigger(2000000 / (Baud / 8) * TapeState.ClockSpeed / 5600, TapeTrigger);
 	}
 
-	if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
+	if (SerialULA.RS423 && SerialPortEnabled)
 	{
-		if (ACIA_Status & MC6850_STATUS_TDRE)
+		if (SerialACIA.Status & MC6850_STATUS_TDRE)
 		{
-			ACIA_Status &= ~MC6850_STATUS_TDRE;
-			SerialWriteBuffer = Data;
+			SerialACIA.Status &= ~MC6850_STATUS_TDRE;
+			SerialPort.SerialWriteBuffer = Data;
 
 			if (SerialDestination == SerialType::TouchScreen)
 			{
@@ -311,13 +423,15 @@ void SerialACIAWriteTxData(unsigned char Data)
 			}
 			else
 			{
-				WriteFile(hSerialPort, &SerialWriteBuffer, 1, &BytesOut, &olSerialWrite);
+				WriteFile(SerialPort.hSerialPort, &SerialPort.SerialWriteBuffer, 1, &SerialPort.BytesOut, &SerialPort.olSerialWrite);
 			}
 
-			ACIA_Status |= MC6850_STATUS_TDRE;
+			SerialACIA.Status |= MC6850_STATUS_TDRE;
 		}
 	}
 }
+
+/*--------------------------------------------------------------------------*/
 
 // The Serial ULA control register controls the cassette motor relay,
 // transmit and receive baud rates, and RS423/cassette switch
@@ -330,132 +444,135 @@ void SerialULAWrite(unsigned char Value)
 		                   "Serial: Write serial ULA %02X", (int)Value);
 	}
 
-	SerialULAControl = Value;
+	SerialULA.Control = Value;
 
 	// Slightly easier this time.
 	// just the Rx and Tx baud rates, and the selectors.
-	bool OldRelayState = CassetteRelay;
-	CassetteRelay = (Value & 0x80) != 0;
-	TapeAudio.Enabled = CassetteRelay && (TapePlaying || TapeRecording);
-	LEDs.Motor = CassetteRelay;
+	bool CassetteRelay = SerialULA.CassetteRelay;
 
-	if (CassetteRelay)
+	SerialULA.CassetteRelay = (Value & 0x80) != 0;
+	TapeAudio.Enabled = SerialULA.CassetteRelay && (TapeState.Playing || TapeState.Recording);
+	LEDs.Motor = SerialULA.CassetteRelay;
+
+	if (SerialULA.CassetteRelay)
 	{
 		SetTrigger(TAPECYCLES, TapeTrigger);
 	}
 
-	if (CassetteRelay != OldRelayState)
+	if (SerialULA.CassetteRelay != CassetteRelay)
 	{
-		ClickRelay(CassetteRelay);
+		ClickRelay(SerialULA.CassetteRelay);
 	}
 
-	SerialChannel = (Value & 0x40) != 0 ? SerialDevice::RS423 : SerialDevice::Cassette;
-	Tx_Rate = Baud_Rates[(Value & 0x07)];
-	Rx_Rate = Baud_Rates[(Value & 0x38) >> 3];
+	SerialULA.RS423 = (Value & 0x40) != 0;
+	SerialACIA.TxRate = Baud_Rates[(Value & 0x07)];
+	SerialACIA.RxRate = Baud_Rates[(Value & 0x38) >> 3];
 
-	// Note, the PC serial port (or at least win32) does not allow different
-	// transmit/receive rates So we will use the higher of the two
+	// Note, the PC serial port (or at least Win32) does not allow different
+	// transmit/receive rates, so we will use the higher of the two.
 
-	if (SerialChannel == SerialDevice::RS423)
+	if (SerialULA.RS423)
 	{
-		unsigned int HigherRate = std::max(Rx_Rate, Tx_Rate);
+		unsigned int BaudRate = std::max(SerialACIA.RxRate, SerialACIA.TxRate);
 
-		DCB dcbSerialPort{}; // Serial port device control block
-		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
-
-		GetCommState(hSerialPort, &dcbSerialPort);
-		dcbSerialPort.BaudRate  = HigherRate;
-		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
-		SetCommState(hSerialPort, &dcbSerialPort);
+		SerialPort.SetBaudRate(BaudRate);
 	}
 }
+
+/*--------------------------------------------------------------------------*/
 
 unsigned char SerialULARead()
 {
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Serial, true,
-		                   "Serial: Read serial ULA %02X", (int)SerialULAControl);
+		                   "Serial: Read serial ULA %02X", (int)SerialULA.Control);
 	}
 
-	return SerialULAControl;
+	return SerialULA.Control;
 }
+
+/*--------------------------------------------------------------------------*/
 
 unsigned char SerialACIAReadStatus()
 {
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Serial, true,
-		                   "Serial: Read ACIA status %02X", (int)ACIA_Status);
+		                   "Serial: Read ACIA status %02X", (int)SerialACIA.Status);
 	}
 
 	// WriteLog("Serial: Read ACIA status %02X\n", (int)ACIA_Status);
 
 	// See https://github.com/stardot/beebem-windows/issues/47
-	return ACIA_Status;
+	return SerialACIA.Status;
 }
+
+/*--------------------------------------------------------------------------*/
 
 static void HandleData(unsigned char Data)
 {
 	// This proc has to dump data into the serial chip's registers
 
-	ACIA_Status &= ~MC6850_STATUS_OVRN;
+	SerialACIA.Status &= ~MC6850_STATUS_OVRN;
 
-	if (RxD == 0)
+	if (SerialACIA.RxD == 0)
 	{
-		RDR = Data;
-		ACIA_Status |= MC6850_STATUS_RDRF; // Rx Reg full
-		RxD++;
+		SerialACIA.RDR = Data;
+		SerialACIA.Status |= MC6850_STATUS_RDRF; // Rx Reg full
+		SerialACIA.RxD++;
 	}
-	else if (RxD == 1)
+	else if (SerialACIA.RxD == 1)
 	{
-		RDSR = Data;
-		ACIA_Status |= MC6850_STATUS_RDRF;
-		RxD++;
+		SerialACIA.RDSR = Data;
+		SerialACIA.Status |= MC6850_STATUS_RDRF;
+		SerialACIA.RxD++;
 	}
-	else if (RxD == 2)
+	else if (SerialACIA.RxD == 2)
 	{
-		RDR = RDSR;
-		RDSR = Data;
-		ACIA_Status |= MC6850_STATUS_OVRN;
+		SerialACIA.RDR = SerialACIA.RDSR;
+		SerialACIA.RDSR = Data;
+		SerialACIA.Status |= MC6850_STATUS_OVRN;
 	}
 
-	if (RIE)
+	if (SerialACIA.RIE)
 	{
 		// interrupt on receive/overun
-		ACIA_Status |= MC6850_STATUS_IRQ;
+		SerialACIA.Status |= MC6850_STATUS_IRQ;
 		intStatus |= 1 << serial;
 	}
 }
 
+/*--------------------------------------------------------------------------*/
+
 unsigned char SerialACIAReadRxData()
 {
-	ACIA_Status &= ~MC6850_STATUS_DCD;
+	SerialACIA.Status &= ~MC6850_STATUS_DCD;
 
-	ACIA_Status &= ~MC6850_STATUS_IRQ;
+	SerialACIA.Status &= ~MC6850_STATUS_IRQ;
 	intStatus &= ~(1 << serial);
 
-	unsigned char Data = RDR;
-	RDR = RDSR;
-	RDSR = 0;
+	unsigned char Data = SerialACIA.RDR;
+	SerialACIA.RDR = SerialACIA.RDSR;
+	SerialACIA.RDSR = 0;
 
-	if (RxD > 0)
+	if (SerialACIA.RxD > 0)
 	{
-		RxD--;
+		SerialACIA.RxD--;
 	}
 
-	if (RxD == 0)
+	if (SerialACIA.RxD == 0)
 	{
-		ACIA_Status &= ~MC6850_STATUS_RDRF;
+		SerialACIA.Status &= ~MC6850_STATUS_RDRF;
 	}
 
-	if (RxD > 0 && RIE)
+	if (SerialACIA.RxD > 0 && SerialACIA.RIE)
 	{
-		ACIA_Status |= MC6850_STATUS_IRQ;
+		SerialACIA.Status |= MC6850_STATUS_IRQ;
 		intStatus |= 1 << serial;
 	}
 
-	if (DataBits == 7)
+	if (SerialACIA.DataBits == 7)
 	{
 		Data &= 127;
 	}
@@ -475,7 +592,7 @@ unsigned char SerialACIAReadRxData()
 
 void SerialPoll(int Cycles)
 {
-	if (SerialChannel == SerialDevice::Cassette)
+	if (!SerialULA.RS423)
 	{
 		// Tape input
 
@@ -488,43 +605,43 @@ void SerialPoll(int Cycles)
 		//
 		// See https://stardot.org.uk/forums/viewtopic.php?p=327136#p327136
 
-		if (CarrierCycleCount > 0)
+		if (SerialULA.CarrierCycleCount > 0)
 		{
-			CarrierCycleCount -= Cycles;
+			SerialULA.CarrierCycleCount -= Cycles;
 
-			if (CarrierCycleCount <= 0)
+			if (SerialULA.CarrierCycleCount <= 0)
 			{
-				if (TapeCarrier && !DCD)
+				if (SerialULA.TapeCarrier && !SerialACIA.DCD)
 				{
 					DebugTrace("Serial: Set DCD\n");
-					DCD = true;
-					ACIA_Status |= MC6850_STATUS_DCD;
+					SerialACIA.DCD = true;
+					SerialACIA.Status |= MC6850_STATUS_DCD;
 
-					ACIA_Status |= MC6850_STATUS_IRQ;
+					SerialACIA.Status |= MC6850_STATUS_IRQ;
 					intStatus |= 1 << serial;
 
-					CarrierCycleCount = MicrosecondsToCycles(200); // To reset DCD
+					SerialULA.CarrierCycleCount = MicrosecondsToCycles(200); // To reset DCD
 				}
 				else
 				{
 					DebugTrace("Serial: Clear DCD\n");
-					DCD = false;
-					ACIA_Status &= ~MC6850_STATUS_DCD;
+					SerialACIA.DCD = false;
+					SerialACIA.Status &= ~MC6850_STATUS_DCD;
 				}
 			}
 		}
 
-		bool NewTapeCarrierState = false;
+		bool TapeCarrier = false;
 		bool UpdateTapeCarrier = false;
 
-		if (TapeRecording)
+		if (TapeState.Recording)
 		{
-			if (CassetteRelay && UEFFileOpen && TotalCycles >= TapeTrigger)
+			if (SerialULA.CassetteRelay && UEFFileOpen && TotalCycles >= TapeTrigger)
 			{
-				if (TxD > 0)
+				if (SerialACIA.TxD > 0)
 				{
 					// Writing data
-					if (UEFWriter.PutData(TDR | UEF_DATA, TapeClock) != UEFResult::Success)
+					if (UEFWriter.PutData(SerialACIA.TDR | UEF_DATA, TapeState.Clock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", TapeFileName);
@@ -532,16 +649,16 @@ void SerialPoll(int Cycles)
 						SerialStopTapeRecording(true);
 					}
 
-					TxD = 0;
-					ACIA_Status |= MC6850_STATUS_TDRE;
+					SerialACIA.TxD = 0;
+					SerialACIA.Status |= MC6850_STATUS_TDRE;
 
-					if (TIE)
+					if (SerialACIA.TIE)
 					{
-						ACIA_Status |= MC6850_STATUS_IRQ;
+						SerialACIA.Status |= MC6850_STATUS_IRQ;
 						intStatus |= 1 << serial;
 					}
 
-					TapeAudio.Data       = (TDR << 1) | 1;
+					TapeAudio.Data       = (SerialACIA.TDR << 1) | 1;
 					TapeAudio.BytePos    = 1;
 					TapeAudio.CurrentBit = 0;
 					TapeAudio.Signal     = 1;
@@ -550,7 +667,7 @@ void SerialPoll(int Cycles)
 				else
 				{
 					// Tone
-					if (UEFWriter.PutData(UEF_CARRIER_TONE, TapeClock) != UEFResult::Success)
+					if (UEFWriter.PutData(UEF_CARRIER_TONE, TapeState.Clock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", TapeFileName);
@@ -563,7 +680,7 @@ void SerialPoll(int Cycles)
 				}
 
 				SetTrigger(TAPECYCLES, TapeTrigger);
-				TapeClock++;
+				TapeState.Clock++;
 			}
 		}
 		else // Playing or stopped
@@ -571,46 +688,46 @@ void SerialPoll(int Cycles)
 			// 10/09/06
 			// JW - If trying to write data when not recording, just ignore
 
-			if (TxD > 0 && TotalCycles >= TapeTrigger)
+			if (SerialACIA.TxD > 0 && TotalCycles >= TapeTrigger)
 			{
 				// WriteLog("Ignoring Writes\n");
 
-				TxD = 0;
-				ACIA_Status |= MC6850_STATUS_TDRE;
+				SerialACIA.TxD = 0;
+				SerialACIA.Status |= MC6850_STATUS_TDRE;
 
-				if (TIE)
+				if (SerialACIA.TIE)
 				{
-					ACIA_Status |= MC6850_STATUS_IRQ;
+					SerialACIA.Status |= MC6850_STATUS_IRQ;
 					intStatus |= 1 << serial;
 				}
 			}
 
-			if (CassetteRelay)
+			if (SerialULA.CassetteRelay)
 			{
 				if (UEFFileOpen)
 				{
-					if (TapeClock != OldClock)
+					if (TapeState.Clock != TapeState.OldClock)
 					{
-						UEFBuf = UEFReader.GetData(TapeClock);
-						OldClock = TapeClock;
+						TapeState.UEFBuf = UEFReader.GetData(TapeState.Clock);
+						TapeState.OldClock = TapeState.Clock;
 					}
 
-					if (UEFBuf != OldUEFBuf ||
-					    UEFRES_TYPE(UEFBuf) == UEF_CARRIER_TONE ||
-					    UEFRES_TYPE(UEFBuf) == UEF_GAP)
+					if (TapeState.UEFBuf != TapeState.OldUEFBuf ||
+					    UEFRES_TYPE(TapeState.UEFBuf) == UEF_CARRIER_TONE ||
+					    UEFRES_TYPE(TapeState.UEFBuf) == UEF_GAP)
 					{
-						if (UEFRES_TYPE(UEFBuf) != UEFRES_TYPE(OldUEFBuf))
+						if (UEFRES_TYPE(TapeState.UEFBuf) != UEFRES_TYPE(TapeState.OldUEFBuf))
 						{
-							TapeControlUpdateCounter(TapeClock);
+							TapeControlUpdateCounter(TapeState.Clock);
 						}
 
-						OldUEFBuf = UEFBuf;
+						TapeState.OldUEFBuf = TapeState.UEFBuf;
 
 						// New data read in, so do something about it
-						switch (UEFRES_TYPE(UEFBuf))
+						switch (UEFRES_TYPE(TapeState.UEFBuf))
 						{
 							case UEF_CARRIER_TONE:
-								NewTapeCarrierState = true;
+								TapeCarrier = true;
 								UpdateTapeCarrier = true;
 
 								TapeAudio.Signal = 2;
@@ -619,17 +736,17 @@ void SerialPoll(int Cycles)
 								break;
 
 							case UEF_GAP:
-								NewTapeCarrierState = false;
+								TapeCarrier = false;
 								UpdateTapeCarrier = true;
 
 								TapeAudio.Signal = 0;
 								break;
 
 							case UEF_DATA: {
-								NewTapeCarrierState = false;
+								TapeCarrier = false;
 								UpdateTapeCarrier = true;
 
-								unsigned char Data = UEFRES_BYTE(UEFBuf);
+								unsigned char Data = UEFRES_BYTE(TapeState.UEFBuf);
 								HandleData(Data);
 
 								TapeAudio.Data       = (Data << 1) | 1;
@@ -642,12 +759,14 @@ void SerialPoll(int Cycles)
 						}
 					}
 
-					if (RxD < 2)
+					if (SerialACIA.RxD < 2)
 					{
 						if (TotalCycles >= TapeTrigger)
 						{
-							if (TapePlaying)
-								TapeClock++;
+							if (TapeState.Playing)
+							{
+								TapeState.Clock++;
+							}
 
 							SetTrigger(TAPECYCLES, TapeTrigger);
 						}
@@ -655,12 +774,12 @@ void SerialPoll(int Cycles)
 				}
 				else if (CSWFileOpen)
 				{
-					if (TapeClock != OldClock)
+					if (TapeState.Clock != TapeState.OldClock)
 					{
 						CSWState last_state = csw_state;
 
 						int Data = CSWPoll();
-						OldClock = TapeClock;
+						TapeState.OldClock = TapeState.Clock;
 
 						if (last_state != csw_state)
 						{
@@ -670,14 +789,14 @@ void SerialPoll(int Cycles)
 						switch (csw_state)
 						{
 							case CSWState::WaitingForTone:
-								NewTapeCarrierState = false;
+								TapeCarrier = false;
 								UpdateTapeCarrier = true;
 
 								TapeAudio.Signal = 0;
 								break;
 
 							case CSWState::Tone:
-								NewTapeCarrierState = true;
+								TapeCarrier = true;
 								UpdateTapeCarrier = true;
 
 								TapeAudio.Signal  = 2;
@@ -688,7 +807,7 @@ void SerialPoll(int Cycles)
 								if (Data >= 0)
 								{
 									// New data read in, so do something about it
-									NewTapeCarrierState = false;
+									TapeCarrier = false;
 									UpdateTapeCarrier = true;
 
 									HandleData((unsigned char)Data);
@@ -703,48 +822,50 @@ void SerialPoll(int Cycles)
 						}
 					}
 
-					if (RxD < 2)
+					if (SerialACIA.RxD < 2)
 					{
 						if (TotalCycles >= TapeTrigger)
 						{
-							if (TapePlaying)
-								TapeClock++;
+							if (TapeState.Playing)
+							{
+								TapeState.Clock++;
+							}
 
 							SetTrigger(CSWPollCycles, TapeTrigger);
 						}
 					}
 				}
 
-				if (UpdateTapeCarrier && NewTapeCarrierState != TapeCarrier)
+				if (UpdateTapeCarrier && TapeCarrier != SerialULA.TapeCarrier)
 				{
-					if (NewTapeCarrierState && !TapeCarrier)
+					if (TapeCarrier && !SerialULA.TapeCarrier)
 					{
 						DebugTrace("Serial: Tape carrier detected\n");
 
 						// Onset of carrier tone. Set DCD after about 200ms.
 						// Reduce the delay if using fast tape speed.
-						const int Delay = TapeClockSpeed == 5600 ? 200 : 5;
+						const int Delay = TapeState.ClockSpeed == 5600 ? 200 : 5;
 
-						CarrierCycleCount = MillisecondsToCycles(Delay);
+						SerialULA.CarrierCycleCount = MillisecondsToCycles(Delay);
 					}
-					else if (!NewTapeCarrierState && TapeCarrier)
+					else if (!TapeCarrier && SerialULA.TapeCarrier)
 					{
 						DebugTrace("Serial: Tape carrier gone\n");
-						CarrierCycleCount = 0;
+						SerialULA.CarrierCycleCount = 0;
 					}
 
-					TapeCarrier = NewTapeCarrierState;
+					SerialULA.TapeCarrier = TapeCarrier;
 				}
 			}
 		}
 	}
-	else if (SerialChannel == SerialDevice::RS423 && SerialPortEnabled)
+	else if (SerialULA.RS423 && SerialPortEnabled)
 	{
 		if (SerialDestination == SerialType::TouchScreen)
 		{
 			if (TouchScreenPoll())
 			{
-				if (RxD < 2)
+				if (SerialACIA.RxD < 2)
 				{
 					HandleData(TouchScreenRead());
 				}
@@ -754,7 +875,7 @@ void SerialPoll(int Cycles)
 		{
 			if (IP232Poll())
 			{
-				if (RxD < 2)
+				if (SerialACIA.RxD < 2)
 				{
 					HandleData(IP232Read());
 				}
@@ -762,19 +883,19 @@ void SerialPoll(int Cycles)
 		}
 		else // SerialType::SerialPort
 		{
-			if (!bWaitingForStat && !bSerialStateChanged)
+			if (!SerialPort.bWaitingForStat && !bSerialStateChanged)
 			{
-				WaitCommEvent(hSerialPort, &dwCommEvent, &olStatus);
-				bWaitingForStat = true;
+				WaitCommEvent(SerialPort.hSerialPort, &SerialPort.dwCommEvent, &SerialPort.olStatus);
+				SerialPort.bWaitingForStat = true;
 			}
 
-			if (!bSerialStateChanged && bCharReady && !bWaitingForData && RxD < 2)
+			if (!bSerialStateChanged && SerialPort.bCharReady && !SerialPort.bWaitingForData && SerialACIA.RxD < 2)
 			{
-				if (!ReadFile(hSerialPort, &SerialBuffer, 1, &BytesIn, &olSerialPort))
+				if (!ReadFile(SerialPort.hSerialPort, &SerialPort.SerialBuffer, 1, &SerialPort.BytesIn, &SerialPort.olSerialPort))
 				{
 					if (GetLastError() == ERROR_IO_PENDING)
 					{
-						bWaitingForData = true;
+						SerialPort.bWaitingForData = true;
 					}
 					else
 					{
@@ -783,15 +904,15 @@ void SerialPoll(int Cycles)
 				}
 				else
 				{
-					if (BytesIn > 0)
+					if (SerialPort.BytesIn > 0)
 					{
-						HandleData((unsigned char)SerialBuffer);
+						HandleData((unsigned char)SerialPort.SerialBuffer);
 					}
 					else
 					{
 						DWORD CommError;
-						ClearCommError(hSerialPort, &CommError, nullptr);
-						bCharReady = false;
+						ClearCommError(SerialPort.hSerialPort, &CommError, nullptr);
+						SerialPort.bCharReady = false;
 					}
 				}
 			}
@@ -799,16 +920,14 @@ void SerialPoll(int Cycles)
 	}
 }
 
+/*--------------------------------------------------------------------------*/
+
 static void InitThreads()
 {
-	if (hSerialPort != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(hSerialPort);
-		hSerialPort = INVALID_HANDLE_VALUE;
-	}
+	SerialPort.Close();
 
-	bWaitingForData = false;
-	bWaitingForStat = false;
+	SerialPort.bWaitingForData = false;
+	SerialPort.bWaitingForStat = false;
 
 	if (SerialPortEnabled &&
 	    SerialDestination == SerialType::SerialPort &&
@@ -816,33 +935,35 @@ static void InitThreads()
 	{
 		InitSerialPort(); // Set up the serial port if its enabled.
 
-		if (olSerialPort.hEvent)
+		if (SerialPort.olSerialPort.hEvent)
 		{
-			CloseHandle(olSerialPort.hEvent);
-			olSerialPort.hEvent = nullptr;
+			CloseHandle(SerialPort.olSerialPort.hEvent);
+			SerialPort.olSerialPort.hEvent = nullptr;
 		}
 
-		olSerialPort.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Create the serial port event signal
+		SerialPort.olSerialPort.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Create the serial port event signal
 
-		if (olSerialWrite.hEvent)
+		if (SerialPort.olSerialWrite.hEvent)
 		{
-			CloseHandle(olSerialWrite.hEvent);
-			olSerialWrite.hEvent = nullptr;
+			CloseHandle(SerialPort.olSerialWrite.hEvent);
+			SerialPort.olSerialWrite.hEvent = nullptr;
 		}
 
-		olSerialWrite.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Write event, not actually used.
+		SerialPort.olSerialWrite.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Write event, not actually used.
 
-		if (olStatus.hEvent)
+		if (SerialPort.olStatus.hEvent)
 		{
-			CloseHandle(olStatus.hEvent);
-			olStatus.hEvent = nullptr;
+			CloseHandle(SerialPort.olStatus.hEvent);
+			SerialPort.olStatus.hEvent = nullptr;
 		}
 
-		olStatus.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Status event, for WaitCommEvent
+		SerialPort.olStatus.hEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr); // Status event, for WaitCommEvent
 	}
 
 	bSerialStateChanged = false;
 }
+
+/*--------------------------------------------------------------------------*/
 
 unsigned int SerialPortStatusThread::ThreadFunc()
 {
@@ -852,44 +973,44 @@ unsigned int SerialPortStatusThread::ThreadFunc()
 	{
 		if (SerialDestination == SerialType::SerialPort &&
 		    SerialPortEnabled &&
-		    (WaitForSingleObject(olStatus.hEvent, 10) == WAIT_OBJECT_0))
+		    (WaitForSingleObject(SerialPort.olStatus.hEvent, 10) == WAIT_OBJECT_0))
 		{
-			if (GetOverlappedResult(hSerialPort, &olStatus, &dwOvRes, FALSE))
+			if (GetOverlappedResult(SerialPort.hSerialPort, &SerialPort.olStatus, &dwOvRes, FALSE))
 			{
 				// Event waiting in dwCommEvent
-				if ((dwCommEvent & EV_RXCHAR) && !bWaitingForData)
+				if ((SerialPort.dwCommEvent & EV_RXCHAR) && !SerialPort.bWaitingForData)
 				{
-					bCharReady = true;
+					SerialPort.bCharReady = true;
 				}
 
-				if (dwCommEvent & EV_CTS)
+				if (SerialPort.dwCommEvent & EV_CTS)
 				{
 					// CTS line change
 					DWORD LineStat;
-					GetCommModemStatus(hSerialPort, &LineStat);
+					GetCommModemStatus(SerialPort.hSerialPort, &LineStat);
 
 					// Invert for CTS bit, Keep for TDRE bit
 					if (LineStat & MS_CTS_ON)
 					{
-						ACIA_Status &= ~MC6850_STATUS_CTS;
-						ACIA_Status |= MC6850_STATUS_TDRE;
+						SerialACIA.Status &= ~MC6850_STATUS_CTS;
+						SerialACIA.Status |= MC6850_STATUS_TDRE;
 					}
 					else
 					{
-						ACIA_Status |= MC6850_STATUS_CTS;
-						ACIA_Status &= ~MC6850_STATUS_TDRE;
+						SerialACIA.Status |= MC6850_STATUS_CTS;
+						SerialACIA.Status &= ~MC6850_STATUS_TDRE;
 					}
 				}
 			}
 
-			bWaitingForStat = false;
+			SerialPort.bWaitingForStat = false;
 		}
 		else
 		{
 			Sleep(100); // Don't hog CPU if nothing happening
 		}
 
-		if (bSerialStateChanged && !bWaitingForData)
+		if (bSerialStateChanged && !SerialPort.bWaitingForData)
 		{
 			// Shut off serial port, and re-initialise
 			InitThreads();
@@ -902,6 +1023,8 @@ unsigned int SerialPortStatusThread::ThreadFunc()
 	return 0;
 }
 
+/*--------------------------------------------------------------------------*/
+
 unsigned int SerialPortReadThread::ThreadFunc()
 {
 	// New Serial port thread - 7:35pm 16/10/2001 GMT
@@ -910,29 +1033,29 @@ unsigned int SerialPortReadThread::ThreadFunc()
 
 	while (1)
 	{
-		if (!bSerialStateChanged && SerialPortEnabled && SerialDestination == SerialType::SerialPort && bWaitingForData)
+		if (!bSerialStateChanged && SerialPortEnabled && SerialDestination == SerialType::SerialPort && SerialPort.bWaitingForData)
 		{
-			DWORD Result = WaitForSingleObject(olSerialPort.hEvent, INFINITE); // 10ms to respond
+			DWORD Result = WaitForSingleObject(SerialPort.olSerialPort.hEvent, INFINITE); // 10ms to respond
 
 			if (Result == WAIT_OBJECT_0)
 			{
-				if (GetOverlappedResult(hSerialPort, &olSerialPort, &BytesIn, FALSE))
+				if (GetOverlappedResult(SerialPort.hSerialPort, &SerialPort.olSerialPort, &SerialPort.BytesIn, FALSE))
 				{
 					// sucessful read, screw any errors.
-					if (SerialChannel == SerialDevice::RS423 && BytesIn > 0)
+					if (SerialULA.RS423 && SerialPort.BytesIn > 0)
 					{
-						HandleData((unsigned char)SerialBuffer);
+						HandleData((unsigned char)SerialPort.SerialBuffer);
 					}
 
-					if (BytesIn == 0)
+					if (SerialPort.BytesIn == 0)
 					{
-						bCharReady = false;
+						SerialPort.bCharReady = false;
 
 						DWORD CommError;
-						ClearCommError(hSerialPort, &CommError, nullptr);
+						ClearCommError(SerialPort.hSerialPort, &CommError, nullptr);
 					}
 
-					bWaitingForData = false;
+					SerialPort.bWaitingForData = false;
 				}
 			}
 		}
@@ -947,6 +1070,8 @@ unsigned int SerialPortReadThread::ThreadFunc()
 	return 0;
 }
 
+/*--------------------------------------------------------------------------*/
+
 static void InitSerialPort()
 {
 	// Initialise COM port
@@ -954,61 +1079,17 @@ static void InitSerialPort()
 	    SerialDestination == SerialType::SerialPort &&
 	    SerialPortName[0] != '\0')
 	{
-		char FileName[_MAX_PATH];
-		sprintf(FileName, "\\\\.\\%s", SerialPortName);
-
-		hSerialPort = CreateFile(FileName,
-		                         GENERIC_READ | GENERIC_WRITE,
-		                         0, // dwShareMode
-		                         nullptr, // lpSecurityAttributes
-		                         OPEN_EXISTING,
-		                         FILE_FLAG_OVERLAPPED,
-		                         nullptr); // hTemplateFile
-
-		if (hSerialPort == INVALID_HANDLE_VALUE)
+		if (!SerialPort.Init(SerialPortName))
 		{
 			mainWin->Report(MessageType::Error, "Could not open serial port %s", SerialPortName);
 			bSerialStateChanged = true;
 			SerialPortEnabled = false;
 			mainWin->UpdateSerialMenu();
 		}
-		else
-		{
-			BOOL bPortStat = SetupComm(hSerialPort, 1280, 1280);
-
-			DCB dcbSerialPort{}; // Serial port device control block
-			dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
-
-			bPortStat = GetCommState(hSerialPort, &dcbSerialPort);
-
-			dcbSerialPort.fBinary         = TRUE;
-			dcbSerialPort.BaudRate        = 9600;
-			dcbSerialPort.Parity          = NOPARITY;
-			dcbSerialPort.StopBits        = ONESTOPBIT;
-			dcbSerialPort.ByteSize        = 8;
-			dcbSerialPort.fDtrControl     = DTR_CONTROL_DISABLE;
-			dcbSerialPort.fOutxCtsFlow    = FALSE;
-			dcbSerialPort.fOutxDsrFlow    = FALSE;
-			dcbSerialPort.fOutX           = FALSE;
-			dcbSerialPort.fDsrSensitivity = FALSE;
-			dcbSerialPort.fInX            = FALSE;
-			dcbSerialPort.fRtsControl     = RTS_CONTROL_DISABLE; // Leave it low (do not send) for now
-
-			bPortStat = SetCommState(hSerialPort, &dcbSerialPort);
-
-			COMMTIMEOUTS CommTimeOuts{};
-			CommTimeOuts.ReadIntervalTimeout         = MAXDWORD;
-			CommTimeOuts.ReadTotalTimeoutConstant    = 0;
-			CommTimeOuts.ReadTotalTimeoutMultiplier  = 0;
-			CommTimeOuts.WriteTotalTimeoutConstant   = 0;
-			CommTimeOuts.WriteTotalTimeoutMultiplier = 0;
-
-			SetCommTimeouts(hSerialPort, &CommTimeOuts);
-
-			SetCommMask(hSerialPort, EV_CTS | EV_RXCHAR | EV_ERR);
-		}
 	}
 }
+
+/*--------------------------------------------------------------------------*/
 
 static void CloseUEFFile()
 {
@@ -1020,6 +1101,8 @@ static void CloseUEFFile()
 	}
 }
 
+/*--------------------------------------------------------------------------*/
+
 static void CloseCSWFile()
 {
 	if (CSWFileOpen)
@@ -1028,6 +1111,8 @@ static void CloseCSWFile()
 		CSWFileOpen = false;
 	}
 }
+
+/*--------------------------------------------------------------------------*/
 
 void SerialInit()
 {
@@ -1041,19 +1126,19 @@ void SerialInit()
 
 void SerialReset()
 {
-	DCD = false;
-	Tx_Rate = 1200;
-	Rx_Rate = 1200;
-	Clk_Divide = 1;
+	SerialACIA.DCD = false;
+	SerialACIA.TxRate = 1200;
+	SerialACIA.RxRate = 1200;
+	SerialACIA.ClkDivide = 1;
 
-	CassetteRelay = false;
-	SerialChannel = SerialDevice::Cassette;
-	TapeCarrier = false;
-	CarrierCycleCount = 0;
+	SerialULA.CassetteRelay = false;
+	SerialULA.RS423 = false;
+	SerialULA.TapeCarrier = false;
+	SerialULA.CarrierCycleCount = 0;
 
-	TapeRecording = false;
-	TapePlaying = true;
-	TapeClockSpeed = 5600;
+	TapeState.Recording = false;
+	TapeState.Playing = true;
+	TapeState.ClockSpeed = 5600;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1061,13 +1146,10 @@ void SerialReset()
 void SerialClose()
 {
 	CloseTape();
-
-	if (hSerialPort != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(hSerialPort);
-		hSerialPort = INVALID_HANDLE_VALUE;
-	}
+	SerialPort.Close();
 }
+
+/*--------------------------------------------------------------------------*/
 
 CSWResult LoadCSWTape(const char *FileName)
 {
@@ -1080,10 +1162,11 @@ CSWResult LoadCSWTape(const char *FileName)
 		CSWFileOpen = true;
 		strcpy(TapeFileName, FileName);
 
-		TxD = 0;
-		RxD = 0;
-		TapeClock = 0;
-		OldClock = 0;
+		SerialACIA.TxD = 0;
+		SerialACIA.RxD = 0;
+		TapeState.Clock = 0;
+		TapeState.OldClock = 0;
+
 		SetTrigger(CSWPollCycles, TapeTrigger);
 
 		CSWCreateTapeMap(TapeMap);
@@ -1099,6 +1182,8 @@ CSWResult LoadCSWTape(const char *FileName)
 	return Result;
 }
 
+/*--------------------------------------------------------------------------*/
+
 UEFResult LoadUEFTape(const char *FileName)
 {
 	CloseTape();
@@ -1106,8 +1191,8 @@ UEFResult LoadUEFTape(const char *FileName)
 	// Clock values:
 	// 5600 - Normal speed - anything higher is a bit slow
 	// 750 - Recommended minimum setting, fastest reliable load
-	UEFReader.SetClock(TapeClockSpeed);
-	SetUnlockTape(UnlockTape);
+	UEFReader.SetClock(TapeState.ClockSpeed);
+	SetUnlockTape(TapeState.Unlock);
 
 	UEFResult Result = UEFReader.Open(FileName);
 
@@ -1116,38 +1201,40 @@ UEFResult LoadUEFTape(const char *FileName)
 		UEFFileOpen = true;
 		strcpy(TapeFileName, FileName);
 
-		UEFBuf = 0;
-		OldUEFBuf = 0;
-		TxD = 0;
-		RxD = 0;
-		TapeClock = 0;
-		OldClock = 0;
-		SetTrigger(TAPECYCLES, TapeTrigger);
+		TapeState.UEFBuf = 0;
+		TapeState.OldUEFBuf = 0;
+		TapeState.Clock = 0;
+		TapeState.OldClock = 0;
 
-		int Clock = TapeClock;
+		SerialACIA.TxD = 0;
+		SerialACIA.RxD = 0;
+
+		SetTrigger(TAPECYCLES, TapeTrigger);
 
 		UEFReader.CreateTapeMap(TapeMap);
 
-		TapeClock = Clock;
+		TapeState.Clock = 0;
 
 		if (TapeControlEnabled)
 		{
-			TapeControlAddMapLines(TapeClock);
+			TapeControlAddMapLines(TapeState.Clock);
 		}
 
-		TapeControlUpdateCounter(TapeClock);
+		TapeControlUpdateCounter(TapeState.Clock);
 	}
 
 	return Result;
 }
+
+/*--------------------------------------------------------------------------*/
 
 void CloseTape()
 {
 	CloseUEFFile();
 	CloseCSWFile();
 
-	TxD = 0;
-	RxD = 0;
+	SerialACIA.TxD = 0;
+	SerialACIA.RxD = 0;
 
 	TapeFileName[0] = '\0';
 
@@ -1157,17 +1244,22 @@ void CloseTape()
 	}
 }
 
+/*--------------------------------------------------------------------------*/
+
 void RewindTape()
 {
 	SerialStopTapeRecording(true);
 
-	UEFBuf = 0;
-	OldUEFBuf = 0;
-	TapeClock = 0;
-	OldClock = 0;
+	TapeState.UEFBuf = 0;
+	TapeState.OldUEFBuf = 0;
+	TapeState.Clock = 0;
+	TapeState.OldClock = 0;
+	SerialULA.TapeCarrier = false;
+	SerialULA.CarrierCycleCount = 0;
+
 	SetTrigger(TAPECYCLES, TapeTrigger);
 
-	TapeControlUpdateCounter(TapeClock);
+	TapeControlUpdateCounter(0);
 
 	csw_state = CSWState::WaitingForTone;
 	csw_bit = 0;
@@ -1176,10 +1268,12 @@ void RewindTape()
 	csw_pulsecount = -1;
 }
 
+/*--------------------------------------------------------------------------*/
+
 void SetTapeSpeed(int Speed)
 {
-	int NewClock = (int)((double)TapeClock * ((double)Speed / TapeClockSpeed));
-	TapeClockSpeed = Speed;
+	int NewClock = (int)((double)TapeState.Clock * ((double)Speed / TapeState.ClockSpeed));
+	TapeState.ClockSpeed = Speed;
 
 	if (UEFFileOpen)
 	{
@@ -1188,13 +1282,17 @@ void SetTapeSpeed(int Speed)
 		LoadUEFTape(FileName.c_str());
 	}
 
-	TapeClock = NewClock;
+	TapeState.Clock = NewClock;
 }
+
+/*--------------------------------------------------------------------------*/
 
 void SetUnlockTape(bool Unlock)
 {
 	UEFReader.SetUnlock(Unlock);
 }
+
+/*--------------------------------------------------------------------------*/
 
 void SetTapePosition(int Time)
 {
@@ -1204,19 +1302,23 @@ void SetTapePosition(int Time)
 	}
 	else
 	{
-		TapeClock = Time;
+		TapeState.Clock = Time;
 	}
 
-	OldClock = 0;
+	TapeState.OldClock = 0;
 
 	SetTrigger(TAPECYCLES, TapeTrigger);
 }
 
+/*--------------------------------------------------------------------------*/
+
 void SerialPlayTape()
 {
-	TapePlaying = true;
-	TapeAudio.Enabled = CassetteRelay;
+	TapeState.Playing = true;
+	TapeAudio.Enabled = SerialULA.CassetteRelay;
 }
+
+/*--------------------------------------------------------------------------*/
 
 bool SerialRecordTape(const char* FileName)
 {
@@ -1226,9 +1328,9 @@ bool SerialRecordTape(const char* FileName)
 		strcpy(TapeFileName, FileName);
 		UEFFileOpen = true;
 
-		TapeRecording = true;
-		TapePlaying = false;
-		TapeAudio.Enabled = CassetteRelay;
+		TapeState.Recording = true;
+		TapeState.Playing = false;
+		TapeAudio.Enabled = SerialULA.CassetteRelay;
 		return true;
 	}
 	else
@@ -1238,20 +1340,24 @@ bool SerialRecordTape(const char* FileName)
 	}
 }
 
+/*--------------------------------------------------------------------------*/
+
 void SerialStopTape()
 {
-	TapePlaying = false;
+	TapeState.Playing = false;
 	TapeAudio.Enabled = false;
 }
 
+/*--------------------------------------------------------------------------*/
+
 void SerialStopTapeRecording(bool ReloadTape)
 {
-	if (TapeRecording)
+	if (TapeState.Recording)
 	{
 		UEFWriter.PutData(UEF_EOF, 0);
 		UEFWriter.Close();
 
-		TapeRecording = false;
+		TapeState.Recording = false;
 
 		if (ReloadTape)
 		{
@@ -1261,6 +1367,8 @@ void SerialStopTapeRecording(bool ReloadTape)
 		}
 	}
 }
+
+/*--------------------------------------------------------------------------*/
 
 void SerialEjectTape()
 {
@@ -1272,7 +1380,7 @@ int SerialGetTapeClock()
 {
 	if (UEFFileOpen)
 	{
-		return TapeClock;
+		return TapeState.Clock;
 	}
 	else if (CSWFileOpen)
 	{
@@ -1296,40 +1404,40 @@ void SaveSerialUEF(FILE *SUEF)
 		fput32(0, SUEF); // Chunk length (updated after writing data)
 		long StartPos = ftell(SUEF);
 
-		fputc(static_cast<int>(SerialChannel),SUEF);
-		fwrite(TapeFileName,1,256,SUEF);
-		fputc(CassetteRelay,SUEF);
-		fput32(Tx_Rate,SUEF);
-		fput32(Rx_Rate,SUEF);
-		fputc(Clk_Divide,SUEF);
-		fputc(Parity,SUEF);
-		fputc(StopBits,SUEF);
-		fputc(DataBits,SUEF);
-		fputc(RIE,SUEF);
-		fputc(TIE,SUEF);
-		fputc(TxD,SUEF);
-		fputc(RxD,SUEF);
-		fputc(RDR,SUEF);
-		fputc(TDR,SUEF);
-		fputc(RDSR,SUEF);
-		fputc(TDSR,SUEF);
-		fputc(ACIA_Status,SUEF);
-		fputc(ACIA_Control,SUEF);
-		fputc(SerialULAControl,SUEF);
+		fputc(SerialULA.RS423, SUEF);
+		fwrite(TapeFileName, 1, 256, SUEF);
+		fputc(SerialULA.CassetteRelay, SUEF);
+		fput32(SerialACIA.TxRate, SUEF);
+		fput32(SerialACIA.RxRate, SUEF);
+		fputc(SerialACIA.ClkDivide, SUEF);
+		fputc(SerialACIA.Parity, SUEF);
+		fputc(SerialACIA.StopBits, SUEF);
+		fputc(SerialACIA.DataBits, SUEF);
+		fputc(SerialACIA.RIE, SUEF);
+		fputc(SerialACIA.TIE, SUEF);
+		fputc(SerialACIA.TxD, SUEF);
+		fputc(SerialACIA.RxD, SUEF);
+		fputc(SerialACIA.RDR, SUEF);
+		fputc(SerialACIA.TDR, SUEF);
+		fputc(SerialACIA.RDSR, SUEF);
+		fputc(SerialACIA.TDSR, SUEF);
+		fputc(SerialACIA.Status, SUEF);
+		fputc(SerialACIA.Control, SUEF);
+		fputc(SerialULA.Control, SUEF);
 		fputc(0, SUEF); // DCD
 		fputc(0, SUEF); // DCDI
 		fputc(0, SUEF); // ODCDI
 		fputc(0, SUEF); // DCDClear
-		fput32(TapeClock,SUEF);
-		fput32(TapeClockSpeed,SUEF);
-		fputc(TapeCarrier, SUEF);
-		fput32(CarrierCycleCount, SUEF);
-		fputc(TapePlaying, SUEF);
-		fputc(TapeRecording, SUEF);
-		fputc(UnlockTape, SUEF);
-		fput32(UEFBuf, SUEF);
-		fput32(OldUEFBuf, SUEF);
-		fput32(OldClock, SUEF);
+		fput32(TapeState.Clock, SUEF);
+		fput32(TapeState.ClockSpeed, SUEF);
+		fputc(SerialULA.TapeCarrier, SUEF);
+		fput32(SerialULA.CarrierCycleCount, SUEF);
+		fputc(TapeState.Playing, SUEF);
+		fputc(TapeState.Recording, SUEF);
+		fputc(TapeState.Unlock, SUEF);
+		fput32(TapeState.UEFBuf, SUEF);
+		fput32(TapeState.OldUEFBuf, SUEF);
+		fput32(TapeState.OldClock, SUEF);
 
 		long EndPos = ftell(SUEF);
 		long Length = EndPos - StartPos;
@@ -1345,7 +1453,7 @@ void LoadSerialUEF(FILE *SUEF, int Version)
 {
 	CloseTape();
 
-	SerialChannel = static_cast<SerialDevice>(fgetc(SUEF));
+	SerialULA.RS423 = fgetbool(SUEF);
 
 	char FileName[256];
 	fread(FileName,1,256,SUEF);
@@ -1362,55 +1470,54 @@ void LoadSerialUEF(FILE *SUEF, int Version)
 		}
 		else
 		{
-			CassetteRelay = fgetbool(SUEF);
-			Tx_Rate = fget32(SUEF);
-			Rx_Rate = fget32(SUEF);
-			Clk_Divide = fget8(SUEF);
-			Parity = fget8(SUEF);
-			StopBits = fget8(SUEF);
-			DataBits = fget8(SUEF);
-			RIE = fgetbool(SUEF);
-			TIE = fgetbool(SUEF);
-			TxD = fget8(SUEF);
-			RxD = fget8(SUEF);
-			RDR = fget8(SUEF);
-			TDR = fget8(SUEF);
-			RDSR = fget8(SUEF);
-			TDSR = fget8(SUEF);
-			ACIA_Status = fget8(SUEF);
-			ACIA_Control = fget8(SUEF);
-			SerialULAControl = fget8(SUEF);
+			SerialULA.CassetteRelay = fgetbool(SUEF);
+			SerialACIA.TxRate = fget32(SUEF);
+			SerialACIA.RxRate = fget32(SUEF);
+			SerialACIA.ClkDivide = fget8(SUEF);
+			SerialACIA.Parity = fget8(SUEF);
+			SerialACIA.StopBits = fget8(SUEF);
+			SerialACIA.DataBits = fget8(SUEF);
+			SerialACIA.RIE = fgetbool(SUEF);
+			SerialACIA.TIE = fgetbool(SUEF);
+			SerialACIA.TxD = fget8(SUEF);
+			SerialACIA.RxD = fget8(SUEF);
+			SerialACIA.RDR = fget8(SUEF);
+			SerialACIA.TDR = fget8(SUEF);
+			SerialACIA.RDSR = fget8(SUEF);
+			SerialACIA.TDSR = fget8(SUEF);
+			SerialACIA.Status = fget8(SUEF);
+			SerialACIA.Control = fget8(SUEF);
+			SerialULA.Control = fget8(SUEF);
 			fgetbool(SUEF); // DCD
 			fgetbool(SUEF); // DCDI
 			fgetbool(SUEF); // ODCDI
 			fget8(SUEF); // DCDClear
-			TapeClock = fget32(SUEF);
-			TapeClockSpeed = fget32(SUEF);
+			TapeState.Clock = fget32(SUEF);
 
 			int Speed = fget32(SUEF);
-			if (Speed != TapeClockSpeed)
+			if (Speed != TapeState.ClockSpeed)
 			{
-				TapeClock = (int)((double)TapeClock * ((double)TapeClockSpeed / Speed));
+				TapeState.Clock = (int)((double)TapeState.Clock * ((double)TapeState.ClockSpeed / Speed));
 			}
 
 			if (Version >= 14)
 			{
 				// These replace DCD, DCDI, ODCDI, DCDClear from
 				// previous BeebEm versions.
-				TapeCarrier = fgetbool(SUEF);
-				CarrierCycleCount = fget32(SUEF);
+				SerialULA.TapeCarrier = fgetbool(SUEF);
+				SerialULA.CarrierCycleCount = fget32(SUEF);
 
-				TapePlaying = fgetbool(SUEF);
-				TapeRecording = fgetbool(SUEF);
-				bool Unlock  = fgetbool(SUEF);
-				UEFBuf = fget32(SUEF);
-				OldUEFBuf = fget32(SUEF);
-				OldClock = fget32(SUEF);
+				TapeState.Playing = fgetbool(SUEF);
+				TapeState.Recording = fgetbool(SUEF);
+				bool Unlock = fgetbool(SUEF);
+				TapeState.UEFBuf = fget32(SUEF);
+				TapeState.OldUEFBuf = fget32(SUEF);
+				TapeState.OldClock = fget32(SUEF);
 
 				mainWin->SetUnlockTape(Unlock);
 			}
 
-			TapeControlUpdateCounter(TapeClock);
+			TapeControlUpdateCounter(TapeState.Clock);
 		}
 	}
 }

@@ -158,7 +158,7 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 
 void TapeControlRecord()
 {
-	if (!TapeRecording)
+	if (!TapeState.Recording)
 	{
 		// Query for new file name
 		char FileName[_MAX_PATH];
