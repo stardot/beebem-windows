@@ -1355,8 +1355,11 @@ static void ClipboardCNPVHandler()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void) {
+
+// Execute one 6502 instruction, move program counter on.
+
+void Exec6502Instruction()
+{
 	static unsigned char OldNMIStatus;
 	int OldPC;
 	bool iFlagJustCleared;
@@ -1364,7 +1367,8 @@ void Exec6502Instruction(void) {
 
 	const int Count = DebugEnabled ? 1 : 1024; // Makes debug window more responsive
 
-	for (int i = 0; i < Count; i++) {
+	for (int i = 0; i < Count; i++)
+	{
 		// Output debug info
 		if (DebugEnabled && !DebugDisassembler(ProgramCounter, PrePC, Accumulator, XReg, YReg, PSR, StackReg, true))
 		{
@@ -1417,7 +1421,8 @@ void Exec6502Instruction(void) {
 		ViaCycles=0;
 		AdvanceCyclesForMemRead();
 
-		switch (CurrentInstruction) {
+		switch (CurrentInstruction)
+		{
 			case 0x00:
 				// BRK
 				BRKInstrHandler();
@@ -1592,7 +1597,7 @@ void Exec6502Instruction(void) {
 				break;
 			case 0x18:
 				// CLC
-				PSR &= 255 - FlagC;
+				PSR &= ~FlagC;
 				break;
 			case 0x19:
 				// ORA abs,Y
@@ -1998,7 +2003,7 @@ void Exec6502Instruction(void) {
 				if (PSR & FlagI) {
 					iFlagJustCleared = true;
 				}
-				PSR &= 255 - FlagI;
+				PSR &= ~FlagI;
 				break;
 			case 0x59:
 				// EOR abs,Y
@@ -2638,7 +2643,7 @@ void Exec6502Instruction(void) {
 				break;
 			case 0xb8:
 				// CLV
-				PSR &= 255 - FlagV;
+				PSR &= ~FlagV;
 				break;
 			case 0xb9:
 				// LDA abs,Y
@@ -2825,7 +2830,7 @@ void Exec6502Instruction(void) {
 				break;
 			case 0xd8:
 				// CLD
-				PSR &= 255 - FlagD;
+				PSR &= ~FlagD;
 				break;
 			case 0xd9:
 				// CMP abs,Y
@@ -3082,7 +3087,7 @@ void Exec6502Instruction(void) {
 		}
 
 		Cycles += CyclesTable[CurrentInstruction] -
-			CyclesToMemRead[CurrentInstruction] - CyclesToMemWrite[CurrentInstruction];
+		          CyclesToMemRead[CurrentInstruction] - CyclesToMemWrite[CurrentInstruction];
 
 		PollVIAs(Cycles - ViaCycles);
 		PollHardware(Cycles);
@@ -3090,26 +3095,27 @@ void Exec6502Instruction(void) {
 		// Check for IRQ
 		DoIntCheck();
 		if (IntDue && (!GETIFLAG || iFlagJustSet) &&
-			(CyclesToInt <= (-2-IOCycles) && !iFlagJustCleared))
+		    (CyclesToInt <= (-2 - IOCycles) && !iFlagJustCleared))
 		{
 			// Int noticed 2 cycles before end of instruction - interrupt now
 			CyclesToInt = NO_TIMER_INT_DUE;
 			DoInterrupt();
 			PollHardware(IRQCycles);
 			PollVIAs(IRQCycles);
-			IRQCycles=0;
+			IRQCycles = 0;
 		}
 
 		// Check for NMI
-		if ((NMIStatus && !OldNMIStatus) || (NMIStatus & 1<<nmi_econet))
+		if ((NMIStatus && !OldNMIStatus) || (NMIStatus & 1 << nmi_econet))
 		{
 			NMIStatus &= ~(1<<nmi_econet);
 			DoNMI();
 			PollHardware(IRQCycles);
 			PollVIAs(IRQCycles);
-			IRQCycles=0;
+			IRQCycles = 0;
 		}
-		OldNMIStatus=NMIStatus;
+
+		OldNMIStatus = NMIStatus;
 
 		switch (TubeType) {
 			case Tube::Acorn65C02: // 3MHz

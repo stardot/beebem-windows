@@ -1629,7 +1629,7 @@ void Exec65C02Instruction() {
 			break;
 		case 0x18:
 			// CLC
-			PSR &= 255 - FlagC;
+			PSR &= ~FlagC;
 			break;
 		case 0x19:
 			// ORA abs,Y
@@ -1846,7 +1846,7 @@ void Exec65C02Instruction() {
 			break;
 		case 0x58:
 			// CLI
-			PSR &= 255 - FlagI;
+			PSR &= ~FlagI;
 			break;
 		case 0x59:
 			// EOR abs,Y
@@ -2181,7 +2181,7 @@ void Exec65C02Instruction() {
 			break;
 		case 0xb8:
 			// CLV
-			PSR &= 255 - FlagV;
+			PSR &= ~FlagV;
 			break;
 		case 0xb9:
 			// LDA abs,Y
@@ -2291,7 +2291,7 @@ void Exec65C02Instruction() {
 			break;
 		case 0xd8:
 			// CLD
-			PSR &= 255 - FlagD;
+			PSR &= ~FlagD;
 			break;
 		case 0xd9:
 			// CMP abs,Y
