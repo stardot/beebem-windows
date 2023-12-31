@@ -268,8 +268,8 @@ public:
 	void QuickSave();
 	void LoadUEFState(const char *FileName);
 	void SaveUEFState(const char *FileName);
-	void LoadUEFTape(const char *FileName);
-	void LoadCSWTape(const char *FileName);
+	bool LoadUEFTape(const char *FileName);
+	bool LoadCSWTape(const char *FileName);
 
 	void Speak(const char *text, DWORD flags);
 	void SpeakChar(unsigned char c);
@@ -341,7 +341,8 @@ public:
 	bool ReadDisc(int Drive, bool bCheckForPrefs);
 	bool Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	bool Load8271DiscImage(const char *FileName, int Drive, int Tracks, DiscType Type);
-	void LoadTape(void);
+	void LoadTape();
+	bool LoadTape(const char *FileName);
 	void InitJoystick(void);
 	void ResetJoystick(void);
 	void RestoreState(void);

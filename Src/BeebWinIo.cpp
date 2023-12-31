@@ -393,15 +393,30 @@ void BeebWin::LoadTape(void)
 			m_Preferences.SetStringValue("TapesPath", DefaultPath);
 		}
 
-		if (HasFileExt(FileName, ".uef"))
-		{
-			LoadUEFTape(FileName);
-		}
-		else if (HasFileExt(FileName, ".csw"))
-		{
-			LoadCSWTape(FileName);
-		}
+		LoadTape(FileName);
 	}
+}
+
+/****************************************************************************/
+
+bool BeebWin::LoadTape(const char *FileName)
+{
+	bool Success = false;
+
+	if (HasFileExt(FileName, ".uef"))
+	{
+		Success = LoadUEFTape(FileName);
+	}
+	else if (HasFileExt(FileName, ".csw"))
+	{
+		Success = LoadCSWTape(FileName);
+	}
+	else
+	{
+		Report(MessageType::Error, "Unknown tape format:\n  %a", FileName);
+	}
+
+	return Success;
 }
 
 /****************************************************************************/
@@ -1035,51 +1050,51 @@ void BeebWin::SaveUEFState(const char *FileName)
 
 /****************************************************************************/
 
-void BeebWin::LoadUEFTape(const char *FileName)
+bool BeebWin::LoadUEFTape(const char *FileName)
 {
 	UEFResult Result = ::LoadUEFTape(FileName);
 
 	switch (Result) {
 		case UEFResult::Success:
-			break;
+			return true;
 
 		case UEFResult::NotUEF:
 		case UEFResult::NotTape:
 			Report(MessageType::Error, "The file selected is not a UEF tape image:\n  %s",
 			       FileName);
-			break;
+			return false;
 
 		case UEFResult::NoFile:
 		default:
 			Report(MessageType::Error, "Cannot open UEF file:\n  %s", FileName);
-			break;
+			return false;
 	}
 }
 
 /****************************************************************************/
 
-void BeebWin::LoadCSWTape(const char *FileName)
+bool BeebWin::LoadCSWTape(const char *FileName)
 {
 	CSWResult Result = ::LoadCSWTape(FileName);
 
 	switch (Result) {
 		case CSWResult::Success:
-			break;
+			return true;
 
 		case CSWResult::InvalidCSWFile:
 			Report(MessageType::Error, "The file selected is not a CSW file:\n  %s",
 			       FileName);
-			break;
+			return false;
 
 		case CSWResult::InvalidHeaderExtension:
 			Report(MessageType::Error, "Failed to read CSW header extension:\n  %s",
 			       FileName);
-			break;
+			return false;
 
 		case CSWResult::OpenFailed:
 		default:
 			Report(MessageType::Error, "Cannot open CSW file:\n  %s", FileName);
-			break;
+			return false;
 	}
 }
 

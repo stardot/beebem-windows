@@ -543,3 +543,25 @@ int CSWPoll()
 
 	return ret;
 }
+
+void SaveCSWState(FILE *SUEF)
+{
+	fputc((char)csw_state, SUEF);
+	fputc((char)csw_datastate, SUEF);
+	fputc(csw_bit, SUEF);
+	fput32(csw_pulselen, SUEF);
+	fput32(csw_ptr, SUEF);
+	fput32(csw_byte, SUEF);
+	fput32(bit_count, SUEF);
+}
+
+void LoadCSWState(FILE *SUEF)
+{
+	csw_state = static_cast<CSWState>(fget8(SUEF));
+	csw_datastate = static_cast<CSWDataState>(fget8(SUEF));
+	csw_bit = fget8(SUEF);
+	csw_pulselen = fget32(SUEF);
+	csw_ptr = fget32(SUEF);
+	csw_byte = fget32(SUEF);
+	bit_count = fget32(SUEF);
+}

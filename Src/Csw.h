@@ -55,4 +55,7 @@ extern int csw_ptr;
 extern int csw_pulsecount;
 extern int CSWPollCycles;
 
+void SaveCSWState(FILE* SUEF);
+void LoadCSWState(FILE* SUEF);
+
 #endif
