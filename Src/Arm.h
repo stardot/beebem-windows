@@ -245,7 +245,6 @@ private:
 	bool keepRunning;				// keep calling run()
 //	CArmDecoder decoder;			// create instance of disassembler
 	uint32 executionCount;
-	uint32 executionCountThresh;	// executionCount value to start dumping diss at
 	uint32 previousProcessorMode;
 	uint32 modeCounter;
 	uint32 modeTotal[4];

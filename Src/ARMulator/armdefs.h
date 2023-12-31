@@ -134,8 +134,6 @@ struct ARMul_State
   ARMword Base;			/* extra hand for base writeback */
   ARMword AbortAddr;		/* to keep track of Prefetch aborts */
 
-  const struct Dbg_HostosInterface *hostif;
-
   unsigned is_v4;		/* Are we emulating a v4 architecture (or higher) ?  */
   unsigned is_v5;		/* Are we emulating a v5 architecture ?  */
   unsigned is_v5e;		/* Are we emulating a v5e architecture ?  */
@@ -143,7 +141,6 @@ struct ARMul_State
   unsigned is_XScale;		/* Are we emulating an XScale architecture ?  */
   unsigned is_iWMMXt;		/* Are we emulating an iWMMXt co-processor ?  */
   unsigned is_ep9312;		/* Are we emulating a Cirrus Maverick co-processor ?  */
-  unsigned verbose;		/* Print various messages like the banner */
   char disassembly[256];
 };
 
