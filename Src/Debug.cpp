@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "FileDialog.h"
 #include "Main.h"
 #include "Resource.h"
+#include "Serial.h"
 #include "StringUtils.h"
 #include "Tube.h"
 #include "Z80mem.h"
@@ -177,7 +178,7 @@ static const DebugCmd DebugCmdTable[] = {
 	{ "d",          DebugCmdCode,          "", ""}, // Alias of "code"
 	{ "watch",      DebugCmdWatch,         "[p] addr [b/w/d] [name]", "Sets/Clears a byte/word/dword watch at addr." },
 	{ "e",          DebugCmdWatch,         "", ""}, // Alias of "watch"
-	{ "state",      DebugCmdState,         "v/u/s/t/m/r", "Displays state of Video/UserVIA/SysVIA/Tube/Memory/Roms." },
+	{ "state",      DebugCmdState,         "v/u/s/e/t/m/r", "Displays state of Video/UserVIA/SysVIA/Serial/Tube/Memory/Roms." },
 	{ "s",          DebugCmdState,         "", ""}, // Alias of "state"
 	{ "save",       DebugCmdSave,          "[count] [file]", "Writes console lines to file." },
 	{ "w",          DebugCmdSave,          "", ""}, // Alias of "save"
@@ -2610,31 +2611,42 @@ static bool DebugCmdSave(char* args)
 
 static bool DebugCmdState(char* args)
 {
-	RomInfo rom;
-	char flags[50] = "";
 	switch (tolower(args[0]))
 	{
 		case 'v': // Video state
 			DebugVideoState();
 			break;
+
 		case 'u': // User via state
 			DebugUserViaState();
 			break;
+
 		case 's': // Sys via state
 			DebugSysViaState();
 			break;
+
+		case 'e': // Serial ACIA / ULA state
+			DebugSerialState();
+			break;
+
 		case 't': // Tube state
 			DebugTubeState();
 			break;
+
 		case 'm': // Memory state
 			DebugMemoryState();
 			break;
+
 		case 'r': // ROM state
 			DebugDisplayInfo("ROMs by priority:");
 			for (int i = 15; i >= 0; i--)
 			{
+				RomInfo rom;
+
+				char flags[50];
 				flags[0] = '\0';
-				if(ReadRomInfo(i, &rom))
+
+				if (ReadRomInfo(i, &rom))
 				{
 					if(RomWritable[i])
 						strcat(flags, "Writable, ");
@@ -2662,9 +2674,11 @@ static bool DebugCmdState(char* args)
 				}
 			}
 			break;
+
 		default:
 			return false;
 	}
+
 	return true;
 }
 

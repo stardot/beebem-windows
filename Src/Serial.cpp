@@ -1521,3 +1521,37 @@ void LoadSerialUEF(FILE *SUEF, int Version)
 		TapeControlUpdateCounter(CSWFileOpen ? csw_ptr : TapeState.Clock);
 	}
 }
+
+/*--------------------------------------------------------------------------*/
+
+void DebugSerialState()
+{
+	DebugDisplayInfo("");
+
+	static const char* szParity[] = { "N", "O", "E" };
+
+	DebugDisplayInfoF("SerialACIA ControlReg: RIE=%d TIE=%d RTS=%d WordSelect=%d%s%d CounterDivide=%02X",
+		(SerialACIA.Control & MC6850_CONTROL_RIE) != 0,
+		SerialACIA.TIE,
+		SerialACIA.RTS,
+		SerialACIA.DataBits,
+		szParity[SerialACIA.Parity],
+		SerialACIA.StopBits,
+		SerialACIA.Control & MC6850_CONTROL_COUNTER_DIVIDE);
+
+	DebugDisplayInfoF("SerialACIA StatusReg: IRQ=%d PE=%d OVRN=%d FE=%d CTS=%d DCD=%d TDRE=%d RDRF=%d",
+		(SerialACIA.Status & MC6850_STATUS_IRQ) != 0,
+		(SerialACIA.Status & MC6850_STATUS_PE) != 0,
+		(SerialACIA.Status & MC6850_STATUS_OVRN) != 0,
+		(SerialACIA.Status & MC6850_STATUS_FE) != 0,
+		(SerialACIA.Status & MC6850_STATUS_CTS) != 0,
+		(SerialACIA.Status & MC6850_STATUS_DCD) != 0,
+		(SerialACIA.Status & MC6850_STATUS_TDRE) != 0,
+		(SerialACIA.Status & MC6850_STATUS_RDRF) != 0);
+
+	DebugDisplayInfoF("SerialULA ControlReg: Relay=%d RS423=%d RxRate=%d TxRate=%d",
+		SerialULA.CassetteRelay,
+		SerialULA.RS423,
+		SerialACIA.RxRate,
+		SerialACIA.TxRate);
+}

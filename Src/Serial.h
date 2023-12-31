@@ -131,4 +131,6 @@ int SerialGetTapeClock();
 void SaveSerialUEF(FILE *SUEF);
 void LoadSerialUEF(FILE *SUEF, int Version);
 
+void DebugSerialState();
+
 #endif
