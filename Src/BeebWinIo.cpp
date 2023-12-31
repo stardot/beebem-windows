@@ -56,6 +56,7 @@ using std::max;
 #include "Resource.h"
 #include "Serial.h"
 #include "Sound.h"
+#include "TapeControlDialog.h"
 #include "Tube.h"
 #include "UEFState.h"
 #include "UserVia.h"
@@ -414,6 +415,11 @@ bool BeebWin::LoadTape(const char *FileName)
 	else
 	{
 		Report(MessageType::Error, "Unknown tape format:\n  %a", FileName);
+	}
+
+	if (Success && TapeControlEnabled)
+	{
+		TapeControlSetFileName(FileName);
 	}
 
 	return Success;

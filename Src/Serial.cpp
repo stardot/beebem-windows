@@ -68,7 +68,7 @@ static bool FirstReset = true;
 static UEFFileReader UEFReader;
 static UEFFileWriter UEFWriter;
 
-static char TapeFileName[256]; // Filename of current tape file
+char TapeFileName[256]; // Filename of current tape file
 
 static bool UEFFileOpen = false;
 static bool CSWFileOpen = false;
@@ -1175,7 +1175,8 @@ CSWResult LoadCSWTape(const char *FileName)
 
 		if (TapeControlEnabled)
 		{
-			TapeControlAddMapLines(csw_ptr);
+			TapeControlAddMapLines();
+			TapeControlUpdateCounter(csw_ptr);
 		}
 	}
 
@@ -1217,10 +1218,9 @@ UEFResult LoadUEFTape(const char *FileName)
 
 		if (TapeControlEnabled)
 		{
-			TapeControlAddMapLines(TapeState.Clock);
+			TapeControlAddMapLines();
+			TapeControlUpdateCounter(TapeState.Clock);
 		}
-
-		TapeControlUpdateCounter(TapeState.Clock);
 	}
 
 	return Result;
@@ -1375,6 +1375,30 @@ void SerialEjectTape()
 	TapeAudio.Enabled = false;
 	CloseTape();
 }
+
+/*--------------------------------------------------------------------------*/
+
+SerialTapeState SerialGetTapeState()
+{
+	if (!UEFFileOpen && !CSWFileOpen)
+	{
+		return SerialTapeState::NoTape;
+	}
+
+	if (TapeState.Recording)
+	{
+		return SerialTapeState::Recording;
+	}
+
+	if (TapeState.Playing)
+	{
+		return SerialTapeState::Playing;
+	}
+
+	return SerialTapeState::Stopped;
+}
+
+/*--------------------------------------------------------------------------*/
 
 int SerialGetTapeClock()
 {

@@ -27,11 +27,12 @@ Boston, MA  02110-1301, USA.
 #include "TapeMap.h"
 
 void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain);
-void TapeControlAddMapLines(int Time);
-void TapeControlUpdateCounter(int tape_time);
+void TapeControlAddMapLines();
+void TapeControlUpdateCounter(int Time);
 void TapeControlStopRecording(bool RefreshControl);
 void TapeControlCloseTape();
 void TapeControlCloseDialog();
+void TapeControlSetFileName(const char *FileName);
 
 extern bool TapeControlEnabled;
 extern std::vector<TapeMapEntry> TapeMap;

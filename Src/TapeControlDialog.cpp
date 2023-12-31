@@ -35,6 +35,7 @@ static HWND hwndTapeControl;
 static HWND hwndMap;
 
 static void TapeControlRecord();
+static void UpdateState(HWND hwndDlg);
 
 static INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -54,7 +55,8 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 		            (LPARAM)MAKELPARAM(FALSE,0));
 
 		int Time = SerialGetTapeClock();
-		TapeControlAddMapLines(Time);
+		TapeControlAddMapLines();
+		TapeControlUpdateCounter(Time);
 	}
 }
 
@@ -67,7 +69,7 @@ void TapeControlCloseDialog()
 	hCurrentDialog = nullptr;
 }
 
-void TapeControlAddMapLines(int Time)
+void TapeControlAddMapLines()
 {
 	SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
 
@@ -76,7 +78,7 @@ void TapeControlAddMapLines(int Time)
 		SendMessage(hwndMap, LB_ADDSTRING, 0, (LPARAM)line.desc.c_str());
 	}
 
-	TapeControlUpdateCounter(Time);
+	UpdateState(hwndTapeControl);
 }
 
 void TapeControlUpdateCounter(int tape_time)
@@ -95,11 +97,75 @@ void TapeControlUpdateCounter(int tape_time)
 	}
 }
 
-INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wParam, LPARAM /* lParam */)
+static void UpdateState(HWND hwndDlg)
+{
+	SetFocus(hwndDlg);
+
+	SerialTapeState State = SerialGetTapeState();
+
+	UINT nIDCheckButton;
+
+	switch (State)
+	{
+		case SerialTapeState::Playing:
+			nIDCheckButton = IDC_PLAYING;
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_PLAY), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_STOP), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_EJECT), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_REWIND), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_LOAD_TAPE), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_RECORD), FALSE);
+			break;
+
+		case SerialTapeState::Recording:
+			nIDCheckButton = IDC_RECORDING;
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_PLAY), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_STOP), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_EJECT), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_REWIND), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_LOAD_TAPE), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_RECORD), FALSE);
+			break;
+
+		case SerialTapeState::Stopped:
+			nIDCheckButton = IDC_STOPPED;
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_PLAY), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_STOP), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_EJECT), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_REWIND), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_LOAD_TAPE), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_RECORD), TRUE);
+			break;
+
+		case SerialTapeState::NoTape:
+		default:
+			nIDCheckButton = IDC_STOPPED;
+
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_PLAY), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_STOP), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_EJECT), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_REWIND), FALSE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_LOAD_TAPE), TRUE);
+			EnableWindow(GetDlgItem(hwndDlg, IDC_TAPE_CONTROL_RECORD), TRUE);
+			break;
+	}
+
+	CheckRadioButton(hwndDlg,
+	                 IDC_PLAYING,
+	                 IDC_STOPPED,
+	                 nIDCheckButton);
+}
+
+INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM /* lParam */)
 {
 	switch (message)
 	{
 		case WM_INITDIALOG:
+			SetWindowText(GetDlgItem(hwndDlg, IDC_TAPE_FILENAME), TapeFileName);
+			UpdateState(hwndDlg);
 			return TRUE;
 
 		case WM_ACTIVATE:
@@ -131,20 +197,34 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND /* hwndDlg */, UINT message, WPARAM wPa
 				case IDC_TAPE_CONTROL_PLAY:
 					SerialStopTapeRecording(true);
 					SerialPlayTape();
+					UpdateState(hwndDlg);
 					return TRUE;
 
 				case IDC_TAPE_CONTROL_STOP:
 					SerialStopTapeRecording(true);
 					SerialStopTape();
+					UpdateState(hwndDlg);
 					return TRUE;
 
 				case IDC_TAPE_CONTROL_EJECT:
 					SerialStopTapeRecording(false);
 					SerialEjectTape();
+					SetWindowText(GetDlgItem(hwndDlg, IDC_TAPE_FILENAME), "");
+					UpdateState(hwndDlg);
 					return TRUE;
+
+				case IDC_TAPE_CONTROL_REWIND:
+					RewindTape();
+					UpdateState(hwndDlg);
+					return TRUE;
+
+				case IDC_TAPE_CONTROL_LOAD_TAPE:
+					mainWin->LoadTape();
+					break;
 
 				case IDC_TAPE_CONTROL_RECORD:
 					TapeControlRecord();
+					UpdateState(hwndDlg);
 					return TRUE;
 
 				case IDCANCEL:
@@ -176,9 +256,22 @@ void TapeControlRecord()
 			}
 		}
 	}
+
+	UpdateState(hwndTapeControl);
 }
 
 void TapeControlCloseTape()
 {
 	SendMessage(hwndMap, LB_RESETCONTENT, 0, 0);
+	UpdateState(hwndTapeControl);
+}
+
+void TapeControlSetFileName(const char *FileName)
+{
+	HWND hwndFileName = GetDlgItem(hwndTapeControl, IDC_TAPE_FILENAME);
+
+	if (hwndFileName)
+	{
+		SetWindowText(hwndFileName, FileName);
+	}
 }

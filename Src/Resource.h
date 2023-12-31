@@ -200,6 +200,12 @@
 #define IDC_KEYBOARD_BIT2               1109
 #define IDC_KEYBOARD_BIT1               1110
 #define IDC_KEYBOARD_BIT0               1111
+#define IDC_TAPE_CONTROL_REWIND         1112
+#define IDC_PLAYING                     1114
+#define IDC_RECORDING                   1115
+#define IDC_STOPPED                     1116
+#define IDC_TAPE_FILENAME               1117
+#define IDC_TAPE_CONTROL_LOAD_TAPE      1118
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -449,7 +455,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        121
 #define _APS_NEXT_COMMAND_VALUE         40322
-#define _APS_NEXT_CONTROL_VALUE         1112
+#define _APS_NEXT_CONTROL_VALUE         1119
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

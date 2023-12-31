@@ -128,6 +128,18 @@ void SerialStopTapeRecording(bool ReloadTape);
 void SerialEjectTape();
 int SerialGetTapeClock();
 
+extern char TapeFileName[256];
+
+enum SerialTapeState
+{
+	Playing,
+	Recording,
+	Stopped,
+	NoTape
+};
+
+SerialTapeState SerialGetTapeState();
+
 void SaveSerialUEF(FILE *SUEF);
 void LoadSerialUEF(FILE *SUEF, int Version);
 
