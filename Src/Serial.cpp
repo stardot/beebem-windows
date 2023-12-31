@@ -476,6 +476,11 @@ void SerialULAWrite(unsigned char Value)
 		unsigned int BaudRate = std::max(SerialACIA.RxRate, SerialACIA.TxRate);
 
 		SerialPort.SetBaudRate(BaudRate);
+
+		// AUG p.389 says DCD will always be low when the RS423 interface
+		// is selected.
+		SerialACIA.DCD = false;
+		SerialACIA.Status &= ~MC6850_STATUS_DCD;
 	}
 }
 
