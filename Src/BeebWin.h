@@ -157,7 +157,8 @@ public:
 	void UpdateModelMenu();
 	void SetSoundMenu(void);
 	void SetImageName(const char *DiscName, int Drive, DiscType Type);
-	void SetTapeSpeedMenu(void);
+	void SetTapeSpeedMenu();
+	void SetUnlockTape(bool Unlock);
 	void SetRomMenu(); // LRW  Added for individual ROM/RAM
 	void UpdateTubeMenu();
 	void SelectFDC();

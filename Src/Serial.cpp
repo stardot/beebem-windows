@@ -26,6 +26,7 @@ Boston, MA  02110-1301, USA.
 //
 // See https://beebwiki.mdfs.net/Acorn_cassette_format
 // and http://electrem.emuunlim.com/UEFSpecs.html
+// and https://stardot.org.uk/forums/viewtopic.php?t=22935
 
 #include <windows.h>
 
@@ -40,6 +41,7 @@ Boston, MA  02110-1301, USA.
 #include "BeebWin.h"
 #include "Csw.h"
 #include "Debug.h"
+#include "DebugTrace.h"
 #include "IP232.h"
 #include "Log.h"
 #include "Main.h"
@@ -80,12 +82,9 @@ unsigned char ACIA_Control; // 6850 ACIA Control register
 static unsigned char SerialULAControl; // Serial ULA / SERPROC control register
 
 static bool RTS;
-static bool FirstReset = true;
-static bool DCD = false;
-static bool DCDI = true;
-static bool ODCDI = true;
-static unsigned char DCDClear = 0; // count to clear DCD bit
+static bool DCD; // ACIA DCD input
 
+static bool FirstReset = true;
 static unsigned char Parity, StopBits, DataBits;
 
 bool RIE; // Receive Interrupt Enable
@@ -142,7 +141,6 @@ static const unsigned int Baud_Rates[8] =
 	19200, 1200, 4800, 150, 9600, 300, 2400, 75
 };
 
-bool OldRelayState = false;
 CycleCountT TapeTrigger=CycleCountTMax;
 constexpr int TAPECYCLES = 2000000 / 5600; // 5600 is normal tape speed
 
@@ -152,6 +150,9 @@ static int TapeClock = 0;
 static int OldClock = 0;
 int TapeClockSpeed = 5600;
 bool UnlockTape = true;
+
+static bool TapeCarrier; // Serial ULA carrier high tone detected
+static int CarrierCycleCount; // Countdown timer to assert ACIA DCD when carrier detected
 
 // This bit is the Serial Port stuff
 bool SerialPortEnabled;
@@ -199,7 +200,7 @@ void SerialACIAWriteControl(unsigned char Value)
 	if ((Value & MC6850_CONTROL_COUNTER_DIVIDE) == MC6850_CONTROL_MASTER_RESET)
 	{
 		ACIA_Status &= MC6850_STATUS_CTS;
-		ACIA_Status |= MC6850_STATUS_DCD;
+		ACIA_Status &= ~MC6850_STATUS_DCD;
 
 		// Master reset clears IRQ
 		ACIA_Status &= ~MC6850_STATUS_IRQ;
@@ -212,11 +213,6 @@ void SerialACIAWriteControl(unsigned char Value)
 			FirstReset = false;
 			RTS = true;
 		}
-
-		ACIA_Status &= ~MC6850_STATUS_DCD;
-		DCD = false;
-		DCDI = false;
-		// DCDClear = 0;
 
 		TxD = 0;
 		ACIA_Status |= MC6850_STATUS_TDRE; // Transmit data register empty
@@ -338,6 +334,7 @@ void SerialULAWrite(unsigned char Value)
 
 	// Slightly easier this time.
 	// just the Rx and Tx baud rates, and the selectors.
+	bool OldRelayState = CassetteRelay;
 	CassetteRelay = (Value & 0x80) != 0;
 	TapeAudio.Enabled = CassetteRelay && (TapePlaying || TapeRecording);
 	LEDs.Motor = CassetteRelay;
@@ -349,7 +346,6 @@ void SerialULAWrite(unsigned char Value)
 
 	if (CassetteRelay != OldRelayState)
 	{
-		OldRelayState = CassetteRelay;
 		ClickRelay(CassetteRelay);
 	}
 
@@ -387,16 +383,6 @@ unsigned char SerialULARead()
 
 unsigned char SerialACIAReadStatus()
 {
-//	if (!DCDI && DCD)
-//	{
-//		DCDClear++;
-//		if (DCDClear > 1) {
-//			DCD = false;
-//			ACIA_Status &= ~(1 << MC6850_STATUS_DCS);
-//			DCDClear = 0;
-//		}
-//	}
-
 	if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Serial, true,
@@ -444,15 +430,7 @@ static void HandleData(unsigned char Data)
 
 unsigned char SerialACIAReadRxData()
 {
-//	if (!DCDI && DCD)
-//	{
-//		DCDClear++;
-//		if (DCDClear > 1) {
-//			DCD = false;
-//			ACIA_Status &= ~(1 << MC6850_STATUS_DCS);
-//			DCDClear = 0;
-//		}
-//	}
+	ACIA_Status &= ~MC6850_STATUS_DCD;
 
 	ACIA_Status &= ~MC6850_STATUS_IRQ;
 	intStatus &= ~(1 << serial);
@@ -493,10 +471,52 @@ unsigned char SerialACIAReadRxData()
 	return Data;
 }
 
-void SerialPoll()
+/*--------------------------------------------------------------------------*/
+
+void SerialPoll(int Cycles)
 {
 	if (SerialChannel == SerialDevice::Cassette)
 	{
+		// Tape input
+
+		// The following code controls the timing of the DCD output from
+		// the Serial ULA to the ACIA. Normally, the ACIA DCD input is
+		// active low (i.e., logic high indicates carrier not detected),
+		// but the Beeb's tape input pulses this high when carrier tone
+		// is detected. The pulse starts after about 200ms of 2400Hz
+		// carrier tone and lasts about 200us.
+		//
+		// See https://stardot.org.uk/forums/viewtopic.php?p=327136#p327136
+
+		if (CarrierCycleCount > 0)
+		{
+			CarrierCycleCount -= Cycles;
+
+			if (CarrierCycleCount <= 0)
+			{
+				if (TapeCarrier && !DCD)
+				{
+					DebugTrace("Serial: Set DCD\n");
+					DCD = true;
+					ACIA_Status |= MC6850_STATUS_DCD;
+
+					ACIA_Status |= MC6850_STATUS_IRQ;
+					intStatus |= 1 << serial;
+
+					CarrierCycleCount = MicrosecondsToCycles(200); // To reset DCD
+				}
+				else
+				{
+					DebugTrace("Serial: Clear DCD\n");
+					DCD = false;
+					ACIA_Status &= ~MC6850_STATUS_DCD;
+				}
+			}
+		}
+
+		bool NewTapeCarrierState = false;
+		bool UpdateTapeCarrier = false;
+
 		if (TapeRecording)
 		{
 			if (CassetteRelay && UEFFileOpen && TotalCycles >= TapeTrigger)
@@ -590,19 +610,25 @@ void SerialPoll()
 						switch (UEFRES_TYPE(UEFBuf))
 						{
 							case UEF_CARRIER_TONE:
-								DCDI = true;
+								NewTapeCarrierState = true;
+								UpdateTapeCarrier = true;
+
 								TapeAudio.Signal = 2;
 								// TapeAudio.Samples = 0;
 								TapeAudio.BytePos = 11;
 								break;
 
 							case UEF_GAP:
-								DCDI = true;
+								NewTapeCarrierState = false;
+								UpdateTapeCarrier = true;
+
 								TapeAudio.Signal = 0;
 								break;
 
 							case UEF_DATA: {
-								DCDI = false;
+								NewTapeCarrierState = false;
+								UpdateTapeCarrier = true;
+
 								unsigned char Data = UEFRES_BYTE(UEFBuf);
 								HandleData(Data);
 
@@ -644,12 +670,16 @@ void SerialPoll()
 						switch (csw_state)
 						{
 							case CSWState::WaitingForTone:
-								DCDI = true;
+								NewTapeCarrierState = false;
+								UpdateTapeCarrier = true;
+
 								TapeAudio.Signal = 0;
 								break;
 
 							case CSWState::Tone:
-								DCDI = true;
+								NewTapeCarrierState = true;
+								UpdateTapeCarrier = true;
+
 								TapeAudio.Signal  = 2;
 								TapeAudio.BytePos = 11;
 								break;
@@ -658,7 +688,9 @@ void SerialPoll()
 								if (Data >= 0)
 								{
 									// New data read in, so do something about it
-									DCDI = false;
+									NewTapeCarrierState = false;
+									UpdateTapeCarrier = true;
+
 									HandleData((unsigned char)Data);
 
 									TapeAudio.Data       = (Data << 1) | 1;
@@ -683,30 +715,25 @@ void SerialPoll()
 					}
 				}
 
-				if (DCDI != ODCDI)
+				if (UpdateTapeCarrier && NewTapeCarrierState != TapeCarrier)
 				{
-					if (DCDI)
+					if (NewTapeCarrierState && !TapeCarrier)
 					{
-						// Low to high transition on the DCD line
+						DebugTrace("Serial: Tape carrier detected\n");
 
-						if (RIE)
-						{
-							ACIA_Status |= MC6850_STATUS_IRQ;
-							intStatus |= 1 << serial;
-						}
+						// Onset of carrier tone. Set DCD after about 200ms.
+						// Reduce the delay if using fast tape speed.
+						const int Delay = TapeClockSpeed == 5600 ? 200 : 5;
 
-						DCD = true;
-						ACIA_Status |= MC6850_STATUS_DCD; // ACIA_Status &= ~MC6850_STATUS_RDRF;
-						// DCDClear = 0;
+						CarrierCycleCount = MillisecondsToCycles(Delay);
 					}
-					else // !DCDI
+					else if (!NewTapeCarrierState && TapeCarrier)
 					{
-						DCD = false;
-						ACIA_Status &= ~MC6850_STATUS_DCD;
-						// DCDClear = 0;
+						DebugTrace("Serial: Tape carrier gone\n");
+						CarrierCycleCount = 0;
 					}
 
-					ODCDI = DCDI;
+					TapeCarrier = NewTapeCarrierState;
 				}
 			}
 		}
@@ -1010,6 +1037,27 @@ void SerialInit()
 	SerialStatusThread.Start();
 }
 
+/*--------------------------------------------------------------------------*/
+
+void SerialReset()
+{
+	DCD = false;
+	Tx_Rate = 1200;
+	Rx_Rate = 1200;
+	Clk_Divide = 1;
+
+	CassetteRelay = false;
+	SerialChannel = SerialDevice::Cassette;
+	TapeCarrier = false;
+	CarrierCycleCount = 0;
+
+	TapeRecording = false;
+	TapePlaying = true;
+	TapeClockSpeed = 5600;
+}
+
+/*--------------------------------------------------------------------------*/
+
 void SerialClose()
 {
 	CloseTape();
@@ -1236,7 +1284,7 @@ int SerialGetTapeClock()
 	}
 }
 
-//*******************************************************************
+/*--------------------------------------------------------------------------*/
 
 void SaveSerialUEF(FILE *SUEF)
 {
@@ -1244,8 +1292,10 @@ void SaveSerialUEF(FILE *SUEF)
 
 	if (UEFFileOpen)
 	{
-		fput16(0x0473,SUEF);
-		fput32(293,SUEF);
+		fput16(0x0473, SUEF); // UEF Chunk ID
+		fput32(0, SUEF); // Chunk length (updated after writing data)
+		long StartPos = ftell(SUEF);
+
 		fputc(static_cast<int>(SerialChannel),SUEF);
 		fwrite(TapeFileName,1,256,SUEF);
 		fputc(CassetteRelay,SUEF);
@@ -1266,16 +1316,32 @@ void SaveSerialUEF(FILE *SUEF)
 		fputc(ACIA_Status,SUEF);
 		fputc(ACIA_Control,SUEF);
 		fputc(SerialULAControl,SUEF);
-		fputc(DCD,SUEF);
-		fputc(DCDI,SUEF);
-		fputc(ODCDI,SUEF);
-		fputc(DCDClear,SUEF);
+		fputc(0, SUEF); // DCD
+		fputc(0, SUEF); // DCDI
+		fputc(0, SUEF); // ODCDI
+		fputc(0, SUEF); // DCDClear
 		fput32(TapeClock,SUEF);
 		fput32(TapeClockSpeed,SUEF);
+		fputc(TapeCarrier, SUEF);
+		fput32(CarrierCycleCount, SUEF);
+		fputc(TapePlaying, SUEF);
+		fputc(TapeRecording, SUEF);
+		fputc(UnlockTape, SUEF);
+		fput32(UEFBuf, SUEF);
+		fput32(OldUEFBuf, SUEF);
+		fput32(OldClock, SUEF);
+
+		long EndPos = ftell(SUEF);
+		long Length = EndPos - StartPos;
+		fseek(SUEF, StartPos - 4, SEEK_SET);
+		fput32(Length, SUEF); // Size
+		fseek(SUEF, EndPos, SEEK_SET);
 	}
 }
 
-void LoadSerialUEF(FILE *SUEF)
+/*--------------------------------------------------------------------------*/
+
+void LoadSerialUEF(FILE *SUEF, int Version)
 {
 	CloseTape();
 
@@ -1314,16 +1380,36 @@ void LoadSerialUEF(FILE *SUEF)
 			ACIA_Status = fget8(SUEF);
 			ACIA_Control = fget8(SUEF);
 			SerialULAControl = fget8(SUEF);
-			DCD = fgetbool(SUEF);
-			DCDI = fgetbool(SUEF);
-			ODCDI = fgetbool(SUEF);
-			DCDClear = fget8(SUEF);
-			TapeClock=fget32(SUEF);
+			fgetbool(SUEF); // DCD
+			fgetbool(SUEF); // DCDI
+			fgetbool(SUEF); // ODCDI
+			fget8(SUEF); // DCDClear
+			TapeClock = fget32(SUEF);
+			TapeClockSpeed = fget32(SUEF);
+
 			int Speed = fget32(SUEF);
 			if (Speed != TapeClockSpeed)
 			{
 				TapeClock = (int)((double)TapeClock * ((double)TapeClockSpeed / Speed));
 			}
+
+			if (Version >= 14)
+			{
+				// These replace DCD, DCDI, ODCDI, DCDClear from
+				// previous BeebEm versions.
+				TapeCarrier = fgetbool(SUEF);
+				CarrierCycleCount = fget32(SUEF);
+
+				TapePlaying = fgetbool(SUEF);
+				TapeRecording = fgetbool(SUEF);
+				bool Unlock  = fgetbool(SUEF);
+				UEFBuf = fget32(SUEF);
+				OldUEFBuf = fget32(SUEF);
+				OldClock = fget32(SUEF);
+
+				mainWin->SetUnlockTape(Unlock);
+			}
+
 			TapeControlUpdateCounter(TapeClock);
 		}
 	}

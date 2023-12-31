@@ -57,6 +57,8 @@ enum PSR_Flags
 extern unsigned char intStatus;
 extern unsigned char NMIStatus;
 
+constexpr int CPU_CYCLES_PER_SECOND = 2000000;
+
 extern int ProgramCounter;
 extern int PrePC;
 extern CycleCountT TotalCycles;
@@ -93,5 +95,8 @@ extern int OpCodes;
 extern bool BasicHardwareOnly;
 
 void WriteInstructionCounts(const char *FileName);
+
+int MillisecondsToCycles(int Time);
+int MicrosecondsToCycles(int Time);
 
 #endif

@@ -573,6 +573,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	SysVIAReset();
 	UserVIAReset();
+	SerialReset();
 	VideoInit();
 	SetDiscWriteProtects();
 	Disc8271Reset();
@@ -2572,6 +2573,13 @@ void BeebWin::SetTapeSpeedMenu()
 	CheckMenuItem(ID_TAPE_NORMAL, TapeClockSpeed == 5600);
 }
 
+void BeebWin::SetUnlockTape(bool Unlock)
+{
+	UnlockTape = Unlock;
+	::SetUnlockTape(UnlockTape);
+	CheckMenuItem(ID_UNLOCKTAPE, UnlockTape);
+}
+
 /****************************************************************************/
 
 constexpr int ASPECT_RATIO_X = 5;
@@ -3701,9 +3709,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case ID_UNLOCKTAPE:
-		UnlockTape = !UnlockTape;
-		SetUnlockTape(UnlockTape);
-		CheckMenuItem(ID_UNLOCKTAPE, UnlockTape);
+		SetUnlockTape(!UnlockTape);
 		break;
 
 	case ID_HIDEMENU:

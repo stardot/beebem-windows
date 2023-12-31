@@ -227,7 +227,7 @@ UEFStateResult LoadUEFState(const char *FileName)
 					break;
 
 				case 0x0473:
-					LoadSerialUEF(UEFState);
+					LoadSerialUEF(UEFState, Version);
 					break;
 
 				case 0x0474:

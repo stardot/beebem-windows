@@ -71,7 +71,8 @@ extern bool SerialPortEnabled;
 extern char SerialPortName[_MAX_PATH];
 
 void SerialInit();
-void SerialPoll();
+void SerialReset();
+void SerialPoll(int Cycles);
 void SerialClose();
 UEFResult LoadUEFTape(const char *FileName);
 CSWResult LoadCSWTape(const char *FileName);
@@ -98,6 +99,6 @@ void SerialEjectTape();
 int SerialGetTapeClock();
 
 void SaveSerialUEF(FILE *SUEF);
-void LoadSerialUEF(FILE *SUEF);
+void LoadSerialUEF(FILE *SUEF, int Version);
 
 #endif

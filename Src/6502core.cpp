@@ -3179,7 +3179,7 @@ static void PollHardware(unsigned int nCycles)
 	VideoPoll(nCycles);
 	if (!BasicHardwareOnly) {
 		AtoD_poll(nCycles);
-		SerialPoll();
+		SerialPoll(nCycles);
 	}
 	Disc8271Poll();
 	Music5000Poll(nCycles);
@@ -3212,6 +3212,25 @@ static void PollHardware(unsigned int nCycles)
 }
 
 /*-------------------------------------------------------------------------*/
+
+// Covert time in milliseconds to cycles at 2MHz.
+
+int MillisecondsToCycles(int Time)
+{
+	return Time * CPU_CYCLES_PER_SECOND / 1000;
+}
+
+/*-------------------------------------------------------------------------*/
+
+// Covert time in microeconds to cycles at 2MHz.
+
+int MicrosecondsToCycles(int Time)
+{
+	return Time * CPU_CYCLES_PER_SECOND / 1000000;
+}
+
+/*-------------------------------------------------------------------------*/
+
 void Save6502UEF(FILE *SUEF) {
 	fput16(0x0460,SUEF);
 	fput32(16,SUEF);
