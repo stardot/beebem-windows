@@ -33,15 +33,17 @@ enum class UEFStateResult {
 	InvalidUEFVersion
 };
 
-void fput64(uint64_t word64, FILE *fileptr);
-void fput32(unsigned int word32, FILE *fileptr);
-void fput16(unsigned int word16, FILE *fileptr);
+void fput64(uint64_t Value, FILE *pFile);
+void fput32(unsigned int Value, FILE *pFile);
+void fput16(unsigned int Value, FILE *pFile);
+void fputstring(const char* String, FILE *pFile);
 
-uint64_t fget64(FILE *fileptr);
-unsigned int fget32(FILE *fileptr);
-unsigned int fget16(FILE *fileptr);
-unsigned char fget8(FILE *fileptr);
-bool fgetbool(FILE *fileptr);
+uint64_t fget64(FILE *pFile);
+uint32_t fget32(FILE *pFile);
+uint16_t fget16(FILE *pFile);
+uint8_t fget8(FILE *pFile);
+bool fgetbool(FILE *pFile);
+void fgetstring(char* String, unsigned int BufSize, FILE *pFile);
 
 UEFStateResult SaveUEFState(const char *FileName);
 UEFStateResult LoadUEFState(const char *FileName);

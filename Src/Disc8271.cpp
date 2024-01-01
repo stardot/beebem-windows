@@ -2821,21 +2821,21 @@ void Save8271UEF(FILE *SUEF)
 	if (DiscStatus[0].Tracks[0][0].Sectors == nullptr)
 	{
 		// No disc in drive 0
-		fwrite(blank, 1, 256, SUEF);
+		fputstring("", SUEF);
 	}
 	else
 	{
-		fwrite(DiscInfo[0].FileName, 1, 256, SUEF);
+		fputstring(DiscInfo[0].FileName, SUEF);
 	}
 
 	if (DiscStatus[1].Tracks[0][0].Sectors == nullptr)
 	{
 		// No disc in drive 1
-		fwrite(blank, 1, 256, SUEF);
+		fputstring("", SUEF);
 	}
 	else
 	{
-		fwrite(DiscInfo[1].FileName, 1, 256, SUEF);
+		fputstring(DiscInfo[1].FileName, SUEF);
 	}
 
 	if (Disc8271Trigger == CycleCountTMax)
@@ -2914,7 +2914,16 @@ void Load8271UEF(FILE *SUEF, int Version)
 	DiscInfo[1].Loaded = false;
 
 	char FileName[256];
-	fread(FileName,1,256,SUEF);
+	memset(FileName, 0, sizeof(FileName));
+
+	if (Version >= 14)
+	{
+		fgetstring(FileName, sizeof(FileName), SUEF);
+	}
+	else
+	{
+		fread(FileName, 1, sizeof(FileName), SUEF);
+	}
 
 	if (FileName[0] != '\0')
 	{
@@ -2937,7 +2946,16 @@ void Load8271UEF(FILE *SUEF, int Version)
 		}
 	}
 
-	fread(FileName,1,256,SUEF);
+	memset(FileName, 0, sizeof(FileName));
+
+	if (Version >= 14)
+	{
+		fgetstring(FileName, sizeof(FileName), SUEF);
+	}
+	else
+	{
+		fread(FileName, 1, sizeof(FileName), SUEF);
+	}
 
 	if (FileName[0] != '\0')
 	{

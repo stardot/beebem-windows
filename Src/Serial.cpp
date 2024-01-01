@@ -1426,7 +1426,7 @@ int SerialGetTapeClock()
 void SaveSerialUEF(FILE *SUEF)
 {
 	fputc(SerialULA.RS423, SUEF);
-	fwrite(TapeFileName, 1, 256, SUEF);
+	fputstring(TapeFileName, SUEF);
 	fputc(SerialULA.CassetteRelay, SUEF);
 	fput32(SerialACIA.TxRate, SUEF);
 	fput32(SerialACIA.RxRate, SUEF);
@@ -1475,7 +1475,16 @@ void LoadSerialUEF(FILE *SUEF, int Version)
 	SerialULA.RS423 = fgetbool(SUEF);
 
 	char FileName[256];
-	fread(FileName,1,256,SUEF);
+	memset(FileName, 0, sizeof(FileName));
+
+	if (Version >= 14)
+	{
+		fgetstring(FileName, sizeof(FileName), SUEF);
+	}
+	else
+	{
+		fread(FileName, 1, 256, SUEF);
+	}
 
 	if (FileName[0])
 	{

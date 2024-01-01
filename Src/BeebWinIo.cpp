@@ -1209,7 +1209,7 @@ void BeebWin::SaveEmuUEF(FILE *SUEF)
 	fput16(m_MenuIDKeyMapping, SUEF);
 	if (m_MenuIDKeyMapping == IDM_USERKYBDMAPPING)
 	{
-		fwrite(m_UserKeyMapPath,1,256,SUEF);
+		fputstring(m_UserKeyMapPath, SUEF);
 	}
 	else
 	{
@@ -1224,13 +1224,16 @@ void BeebWin::SaveEmuUEF(FILE *SUEF)
 
 void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 {
-	char fileName[_MAX_PATH];
+	int Type = fgetc(SUEF);
 
-	int type = fgetc(SUEF);
-	if (Version <= 8 && type == 1)
+	if (Version <= 8 && Type == 1)
+	{
 		MachineType = Model::Master128;
+	}
 	else
-		MachineType = static_cast<Model>(type);
+	{
+		MachineType = static_cast<Model>(Type);
+	}
 
 	NativeFDC = fgetc(SUEF) == 0;
 	TubeType = static_cast<Tube>(fgetc(SUEF));
@@ -1240,14 +1243,31 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 		const int UEF_KEYBOARD_MAPPING = 40060; // UEF Chunk ID
 
 		UINT id = fget16(SUEF);
+
 		if (id == UEF_KEYBOARD_MAPPING)
 		{
-			fread(fileName,1,256,SUEF);
-			GetDataPath(m_UserDataPath, fileName);
-			if (ReadKeyMap(fileName, &UserKeyMap))
-				strcpy(m_UserKeyMapPath, fileName);
+			char FileName[256];
+			memset(FileName, 0, sizeof(FileName));
+
+			if (Version >= 14)
+			{
+				fgetstring(FileName, sizeof(FileName), SUEF);
+			}
 			else
+			{
+				fread(FileName, 1, sizeof(FileName), SUEF);
+			}
+
+			GetDataPath(m_UserDataPath, FileName);
+
+			if (ReadKeyMap(FileName, &UserKeyMap))
+			{
+				strcpy(m_UserKeyMapPath, FileName);
+			}
+			else
+			{
 				id = m_MenuIDKeyMapping;
+			}
 		}
 		CheckMenuItem(m_MenuIDKeyMapping, false);
 		m_MenuIDKeyMapping = id;

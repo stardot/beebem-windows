@@ -1266,30 +1266,27 @@ bool CreateADFSImage(const char *FileName, int Tracks) {
 
 void Save1770UEF(FILE *SUEF)
 {
-	char blank[256];
-	memset(blank,0,256);
-
 	fputc(static_cast<int>(DiscInfo[0].Type), SUEF);
 	fputc(static_cast<int>(DiscInfo[1].Type), SUEF);
 
 	if (DiscFile[0] != nullptr)
 	{
-		fwrite(DiscInfo[0].FileName, 1, 256, SUEF);
+		fputstring(DiscInfo[0].FileName, SUEF);
 	}
 	else
 	{
 		// No disc in drive 0
-		fwrite(blank,1,256,SUEF);
+		fputstring("", SUEF);
 	}
 
 	if (DiscFile[1] != nullptr)
 	{
-		fwrite(DiscInfo[1].FileName, 1, 256, SUEF);
+		fputstring(DiscInfo[1].FileName, SUEF);
 	}
 	else
 	{
 		// No disc in drive 1
-		fwrite(blank,1,256,SUEF);
+		fputstring("", SUEF);
 	}
 
 	fputc(Status,SUEF);
@@ -1334,12 +1331,11 @@ void Save1770UEF(FILE *SUEF)
 	fputc(DiskDensity[1],SUEF);
 	fputc(SelectedDensity,SUEF);
 	fputc(RotSect,SUEF);
-	fwrite(FDCDLL,1,256,SUEF);
+	fputstring(FDCDLL, SUEF);
 }
 
 void Load1770UEF(FILE *SUEF, int Version)
 {
-	char FileName[256];
 	bool Loaded = false;
 	bool LoadFailed = false;
 
@@ -1354,8 +1350,20 @@ void Load1770UEF(FILE *SUEF, int Version)
 	DiscInfo[0].Type = static_cast<DiscType>(fgetc(SUEF));
 	DiscInfo[1].Type = static_cast<DiscType>(fgetc(SUEF));
 
-	fread(FileName,1,256,SUEF);
-	if (FileName[0]) {
+	char FileName[256];
+	memset(FileName, 0, sizeof(FileName));
+
+	if (Version >= 14)
+	{
+		fgetstring(FileName, sizeof(FileName), SUEF);
+	}
+	else
+	{
+		fread(FileName, 1, sizeof(FileName), SUEF);
+	}
+
+	if (FileName[0] != '\0')
+	{
 		// Load drive 0
 		Loaded = true;
 		mainWin->Load1770DiscImage(FileName, 0, DiscInfo[0].Type);
@@ -1363,8 +1371,19 @@ void Load1770UEF(FILE *SUEF, int Version)
 			LoadFailed = true;
 	}
 
-	fread(FileName,1,256,SUEF);
-	if (FileName[0]) {
+	memset(FileName, 0, sizeof(FileName));
+
+	if (Version >= 14)
+	{
+		fgetstring(FileName, sizeof(FileName), SUEF);
+	}
+	else
+	{
+		fread(FileName, 1, sizeof(FileName), SUEF);
+	}
+
+	if (FileName[0] != '\0')
+	{
 		// Load drive 1
 		Loaded = true;
 		mainWin->Load1770DiscImage(FileName, 1, DiscInfo[1].Type);
@@ -1372,7 +1391,8 @@ void Load1770UEF(FILE *SUEF, int Version)
 			LoadFailed = true;
 	}
 
-	if (Loaded && !LoadFailed) {
+	if (Loaded && !LoadFailed)
+	{
 		Status = fget8(SUEF);
 		Data = fget8(SUEF);
 		Track = fget8(SUEF);
@@ -1418,9 +1438,20 @@ void Load1770UEF(FILE *SUEF, int Version)
 			DiskDensity[1] = fgetbool(SUEF);
 		SelectedDensity = fgetbool(SUEF);
 		RotSect = fget8(SUEF);
-		fread(FDCDLL,1,256,SUEF);
 
-		if (MachineType != Model::Master128) {
+		memset(FDCDLL, 0, sizeof(FDCDLL));
+
+		if (Version >= 14)
+		{
+			fgetstring(FDCDLL, sizeof(FDCDLL), SUEF);
+		}
+		else
+		{
+			fread(FDCDLL, 1, sizeof(FDCDLL), SUEF);
+		}
+
+		if (MachineType != Model::Master128)
+		{
 			mainWin->LoadFDC(FDCDLL, false);
 		}
 	}

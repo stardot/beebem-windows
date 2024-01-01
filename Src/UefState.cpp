@@ -45,75 +45,111 @@ Boston, MA  02110-1301, USA.
 
 /*-------------------------------------------------------------------------*/
 
-void fput64(uint64_t word64, FILE *fileptr)
+void fput64(uint64_t Value, FILE *pFile)
 {
-	fputc(word64 & 255, fileptr);
-	fputc((word64 >> 8) & 255, fileptr);
-	fputc((word64 >> 16) & 255, fileptr);
-	fputc((word64 >> 24) & 255, fileptr);
-	fputc((word64 >> 32) & 255, fileptr);
-	fputc((word64 >> 40) & 255, fileptr);
-	fputc((word64 >> 48) & 255, fileptr);
-	fputc((word64 >> 56) & 255, fileptr);
+	fputc(Value & 0xFF, pFile);
+	fputc((Value >> 8) & 0xFF, pFile);
+	fputc((Value >> 16) & 0xFF, pFile);
+	fputc((Value >> 24) & 0xFF, pFile);
+	fputc((Value >> 32) & 0xFF, pFile);
+	fputc((Value >> 40) & 0xFF, pFile);
+	fputc((Value >> 48) & 0xFF, pFile);
+	fputc((Value >> 56) & 0xFF, pFile);
 }
 
-void fput32(unsigned int word32, FILE *fileptr)
+void fput32(unsigned int Value, FILE *pFile)
 {
-	fputc(word32 & 255, fileptr);
-	fputc((word32 >> 8) & 255, fileptr);
-	fputc((word32 >> 16) & 255, fileptr);
-	fputc((word32 >> 24) & 255, fileptr);
+	fputc(Value & 0xFF, pFile);
+	fputc((Value >> 8) & 0xFF, pFile);
+	fputc((Value >> 16) & 0xFF, pFile);
+	fputc((Value >> 24) & 0xFF, pFile);
 }
 
-void fput16(unsigned int word16, FILE *fileptr)
+void fput16(unsigned int Value, FILE *pFile)
 {
-	fputc(word16 & 255, fileptr);
-	fputc((word16 >> 8) & 255, fileptr);
+	fputc(Value & 0xFF, pFile);
+	fputc((Value >> 8) & 0xFF, pFile);
+}
+
+void fputstring(const char* String, FILE *pFile)
+{
+	unsigned int Length = (unsigned int)strlen(String);
+
+	fput32(Length, pFile);
+
+	if (Length > 0)
+	{
+		fwrite(String, 1, Length, pFile);
+	}
 }
 
 /*-------------------------------------------------------------------------*/
 
-uint64_t fget64(FILE *fileptr)
+uint64_t fget64(FILE *pFile)
 {
 	uint64_t Result = 0;
 	uint64_t Value;
 
-	Value = fgetc(fileptr); Result |= Value;
-	Value = fgetc(fileptr); Result |= Value << 8;
-	Value = fgetc(fileptr); Result |= Value << 16;
-	Value = fgetc(fileptr); Result |= Value << 24;
-	Value = fgetc(fileptr); Result |= Value << 32;
-	Value = fgetc(fileptr); Result |= Value << 40;
-	Value = fgetc(fileptr); Result |= Value << 48;
-	Value = fgetc(fileptr); Result |= Value << 56;
+	Value = fgetc(pFile); Result |= Value;
+	Value = fgetc(pFile); Result |= Value << 8;
+	Value = fgetc(pFile); Result |= Value << 16;
+	Value = fgetc(pFile); Result |= Value << 24;
+	Value = fgetc(pFile); Result |= Value << 32;
+	Value = fgetc(pFile); Result |= Value << 40;
+	Value = fgetc(pFile); Result |= Value << 48;
+	Value = fgetc(pFile); Result |= Value << 56;
 
 	return Result;
 }
 
-unsigned int fget32(FILE *fileptr)
+uint32_t fget32(FILE *pFile)
 {
-	unsigned int Value = fgetc(fileptr);
-	Value |= fgetc(fileptr) << 8;
-	Value |= fgetc(fileptr) << 16;
-	Value |= fgetc(fileptr) << 24;
+	uint32_t Value = fgetc(pFile);
+	Value |= fgetc(pFile) << 8;
+	Value |= fgetc(pFile) << 16;
+	Value |= fgetc(pFile) << 24;
+
 	return Value;
 }
 
-unsigned int fget16(FILE *fileptr)
+uint16_t fget16(FILE *pFile)
 {
-	unsigned int Value = fgetc(fileptr);
-	Value |= fgetc(fileptr) << 8;
+	uint16_t Value = fgetc(pFile);
+	Value |= fgetc(pFile) << 8;
+
 	return Value;
 }
 
-unsigned char fget8(FILE *fileptr)
+uint8_t fget8(FILE *pFile)
 {
-	return (unsigned char)fgetc(fileptr);
+	return (uint8_t)fgetc(pFile);
 }
 
-bool fgetbool(FILE *fileptr)
+bool fgetbool(FILE *pFile)
 {
-	return fget8(fileptr) != 0;
+	return fget8(pFile) != 0;
+}
+
+void fgetstring(char* String, unsigned int BufSize, FILE *pFile)
+{
+	unsigned int Length = fget32(pFile);
+
+	unsigned int i;
+
+	for (i = 0; i < Length && i < BufSize - 1; i++)
+	{
+		String[i] = fget8(pFile);
+	}
+
+	String[i] = '\0';
+
+	// Discard remaining characters, if stored string is longer than
+	// the given buffer.
+
+	for (; i < Length; i++)
+	{
+		fget8(pFile);
+	}
 }
 
 /*-------------------------------------------------------------------------*/
