@@ -160,9 +160,9 @@ void AtoDDisable(void)
 }
 
 /*--------------------------------------------------------------------------*/
-void SaveAtoDUEF(FILE *SUEF) {
-	fput16(0x0474,SUEF);
-	fput32(8,SUEF);
+
+void SaveAtoDUEF(FILE *SUEF)
+{
 	fputc(AtoDState.datalatch,SUEF);
 	fputc(AtoDState.status,SUEF);
 	fputc(AtoDState.high,SUEF);
@@ -172,7 +172,9 @@ void SaveAtoDUEF(FILE *SUEF) {
 	else
 		fput32(AtoDTrigger - TotalCycles,SUEF);
 }
-void LoadAtoDUEF(FILE *SUEF) {
+
+void LoadAtoDUEF(FILE *SUEF)
+{
 	AtoDState.datalatch = fget8(SUEF);
 	AtoDState.status = fget8(SUEF);
 	AtoDState.high = fget8(SUEF);

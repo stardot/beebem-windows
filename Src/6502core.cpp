@@ -3234,9 +3234,8 @@ int MicrosecondsToCycles(int Time)
 
 /*-------------------------------------------------------------------------*/
 
-void Save6502UEF(FILE *SUEF) {
-	fput16(0x0460,SUEF);
-	fput32(16,SUEF);
+void Save6502UEF(FILE *SUEF)
+{
 	fput16(ProgramCounter,SUEF);
 	fputc(Accumulator,SUEF);
 	fputc(XReg,SUEF);
@@ -3250,7 +3249,8 @@ void Save6502UEF(FILE *SUEF) {
 	fput16(0,SUEF);
 }
 
-void Load6502UEF(FILE *SUEF) {
+void Load6502UEF(FILE *SUEF)
+{
 	ProgramCounter = fget16(SUEF);
 	Accumulator = fget8(SUEF);
 	XReg = fget8(SUEF);

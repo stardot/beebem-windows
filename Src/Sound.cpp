@@ -711,9 +711,8 @@ void LoadSoundUEF(FILE *SUEF) {
 	GenIndex[3]=fget16(SUEF);
 }
 
-void SaveSoundUEF(FILE *SUEF) {
-	fput16(0x046B,SUEF);
-	fput32(20,SUEF);
+void SaveSoundUEF(FILE *SUEF)
+{
 	// Sound Block
 	fput16(BeebState76489.ToneFreq[2],SUEF);
 	fput16(BeebState76489.ToneFreq[1],SUEF);

@@ -822,10 +822,6 @@ ARMul_SafeWriteByte (ARMul_State * state, ARMword address, ARMword data)
 
 void CSprowCoPro::SaveState(FILE* SUEF)
 {
-	fput16(0x047A, SUEF); // UEF Chunk ID
-	fput32(0, SUEF); // Chunk length (updated after writing data)
-	long StartPos = ftell(SUEF);
-
 	fput32(m_CycleCount, SUEF);
 	fputc(m_State->Emulate, SUEF);
 	fput32(m_State->EndCondition, SUEF);
@@ -895,12 +891,6 @@ void CSprowCoPro::SaveState(FILE* SUEF)
 		fput32(Register.first, SUEF);
 		fput32(Register.second, SUEF);
 	}
-
-	long EndPos = ftell(SUEF);
-	long Length = EndPos - StartPos;
-	fseek(SUEF, StartPos - 4, SEEK_SET);
-	fput32(Length, SUEF); // Size
-	fseek(SUEF, EndPos, SEEK_SET);
 }
 
 void CSprowCoPro::LoadState(FILE* SUEF)

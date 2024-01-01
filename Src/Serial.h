@@ -130,7 +130,7 @@ int SerialGetTapeClock();
 
 extern char TapeFileName[256];
 
-enum SerialTapeState
+enum class SerialTapeState
 {
 	Playing,
 	Recording,

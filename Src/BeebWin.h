@@ -288,6 +288,7 @@ public:
 	void SetBootDiscTimer();
 	void KillBootDiscTimer();
 
+	void SaveBeebEmID(FILE *SUEF);
 	void SaveEmuUEF(FILE *SUEF);
 	void LoadEmuUEF(FILE *SUEF,int Version);
 

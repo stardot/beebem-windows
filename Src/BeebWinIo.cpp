@@ -1185,22 +1185,21 @@ unsigned char BeebWin::GetDriveControl()
 }
 
 /****************************************************************************/
-void BeebWin::SaveEmuUEF(FILE *SUEF) {
+
+void BeebWin::SaveBeebEmID(FILE *SUEF)
+{
 	char EmuName[16];
-	char blank[256];
-	memset(blank,0,256);
+	memset(EmuName, 0, sizeof(EmuName));
 
-	fput16(0x046C,SUEF);
-	fput32(16,SUEF);
 	// BeebEm Title Block
-	memset(EmuName,0,sizeof(EmuName));
-	strcpy(EmuName,"BeebEm");
-	EmuName[14]=VERSION_MAJOR;
-	EmuName[15]=VERSION_MINOR;
-	fwrite(EmuName,16,1,SUEF);
+	strcpy(EmuName, "BeebEm");
+	EmuName[14] = VERSION_MAJOR;
+	EmuName[15] = VERSION_MINOR;
+	fwrite(EmuName, 1, sizeof(EmuName), SUEF);
+}
 
-	fput16(0x046a,SUEF);
-	fput32(262,SUEF);
+void BeebWin::SaveEmuUEF(FILE *SUEF)
+{
 	// Emulator Specifics
 	// Note about this block: It should only be handled by beebem from uefstate.cpp if
 	// the UEF has been determined to be from BeebEm (Block 046C)
@@ -1209,9 +1208,17 @@ void BeebWin::SaveEmuUEF(FILE *SUEF) {
 	fputc(static_cast<unsigned char>(TubeType), SUEF);
 	fput16(m_MenuIDKeyMapping, SUEF);
 	if (m_MenuIDKeyMapping == IDM_USERKYBDMAPPING)
+	{
 		fwrite(m_UserKeyMapPath,1,256,SUEF);
+	}
 	else
-		fwrite(blank,1,256,SUEF);
+	{
+		char blank[256];
+		memset(blank, 0, sizeof(blank));
+
+		fwrite(blank, 1, sizeof(blank), SUEF);
+	}
+
 	fputc(0,SUEF);
 }
 

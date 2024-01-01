@@ -2818,10 +2818,6 @@ void Save8271UEF(FILE *SUEF)
 	char blank[256];
 	memset(blank,0,256);
 
-	fput16(0x046E, SUEF); // UEF Chunk ID
-	fput32(0, SUEF); // Chunk length (updated after writing data)
-	long StartPos = ftell(SUEF);
-
 	if (DiscStatus[0].Tracks[0][0].Sectors == nullptr)
 	{
 		// No disc in drive 0
@@ -2902,12 +2898,6 @@ void Save8271UEF(FILE *SUEF)
 	fputc(FDCState.FSDLogicalTrack[1], SUEF);
 	fputc(FDCState.FSDPhysicalTrack[0], SUEF);
 	fputc(FDCState.FSDPhysicalTrack[1], SUEF);
-
-	long EndPos = ftell(SUEF);
-	long Length = EndPos - StartPos;
-	fseek(SUEF, StartPos - 4, SEEK_SET);
-	fput32(Length, SUEF); // Size
-	fseek(SUEF, EndPos, SEEK_SET);
 }
 
 void Load8271UEF(FILE *SUEF, int Version)

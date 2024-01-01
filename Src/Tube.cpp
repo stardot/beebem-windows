@@ -2499,9 +2499,9 @@ void DebugTubeState(void)
 }
 
 /*-------------------------------------------------------------------------*/
-void SaveTubeUEF(FILE *SUEF) {
-	fput16(0x0470,SUEF);
-	fput32(45,SUEF);
+
+void SaveTubeUEF(FILE *SUEF)
+{
 	fputc(R1Status,SUEF);
 	fwrite(R1PHData,1,TubeBufferLength,SUEF);
 	fputc(R1PHPtr,SUEF);
@@ -2526,9 +2526,8 @@ void SaveTubeUEF(FILE *SUEF) {
 	fputc(R4PStatus,SUEF);
 }
 
-void Save65C02UEF(FILE *SUEF) {
-	fput16(0x0471,SUEF);
-	fput32(16,SUEF);
+void Save65C02UEF(FILE *SUEF)
+{
 	fput16(TubeProgramCounter,SUEF);
 	fputc(Accumulator,SUEF);
 	fputc(XReg,SUEF);
@@ -2542,13 +2541,13 @@ void Save65C02UEF(FILE *SUEF) {
 	fput16(0,SUEF);
 }
 
-void Save65C02MemUEF(FILE *SUEF) {
-	fput16(0x0472,SUEF);
-	fput32(65536,SUEF);
+void Save65C02MemUEF(FILE *SUEF)
+{
 	fwrite(TubeRam,1,65536,SUEF);
 }
 
-void LoadTubeUEF(FILE *SUEF) {
+void LoadTubeUEF(FILE *SUEF)
+{
 	R1Status = fget8(SUEF);
 	fread(R1PHData,1,TubeBufferLength,SUEF);
 	R1PHPtr = fget8(SUEF);
@@ -2573,7 +2572,8 @@ void LoadTubeUEF(FILE *SUEF) {
 	R4PStatus = fget8(SUEF);
 }
 
-void Load65C02UEF(FILE *SUEF) {
+void Load65C02UEF(FILE *SUEF)
+{
 	TubeProgramCounter = fget16(SUEF);
 	Accumulator = fget8(SUEF);
 	XReg = fget8(SUEF);
@@ -2587,6 +2587,7 @@ void Load65C02UEF(FILE *SUEF) {
 	TubeNMILock = fgetbool(SUEF);
 }
 
-void Load65C02MemUEF(FILE *SUEF) {
+void Load65C02MemUEF(FILE *SUEF)
+{
 	fread(TubeRam,1,65536,SUEF);
 }

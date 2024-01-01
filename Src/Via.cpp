@@ -78,10 +78,11 @@ void DebugViaState(const char *s, VIAState *v)
 		(int)v->ca2, (int)v->cb2);
 }
 
-void SaveVIAUEF(FILE *SUEF) {
-	VIAState *VIAPtr;
-	for (int n=0;n<2;n++) {
-		if (!n) VIAPtr=&SysVIAState; else VIAPtr=&UserVIAState;
+void SaveVIAUEF(FILE *SUEF)
+{
+	for (int n = 0; n < 2; n++)
+	{
+		const VIAState *VIAPtr = (n == 0) ? &SysVIAState : &UserVIAState;
 		fput16(0x0467,SUEF);
 		fput32(22,SUEF);
 		fputc(n,SUEF);
@@ -105,7 +106,8 @@ void SaveVIAUEF(FILE *SUEF) {
 	}
 }
 
-void LoadViaUEF(FILE *SUEF) {
+void LoadViaUEF(FILE *SUEF)
+{
 	int VIAType = fget8(SUEF);
 	VIAState *VIAPtr = VIAType ? &UserVIAState : &SysVIAState;
 	VIAPtr->orb = fget8(SUEF);
@@ -126,6 +128,6 @@ void LoadViaUEF(FILE *SUEF) {
 	VIAPtr->timer2hasshot = fgetbool(SUEF);
 	if (!VIAType) IC32State = fget8(SUEF);
 
-  VIAPtr->ca2 = ((VIAPtr->pcr & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH);
-  VIAPtr->cb2 = ((VIAPtr->pcr & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_HIGH);
+	VIAPtr->ca2 = ((VIAPtr->pcr & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH);
+	VIAPtr->cb2 = ((VIAPtr->pcr & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_HIGH);
 }

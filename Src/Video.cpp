@@ -1599,9 +1599,9 @@ void VideoAddLEDs(void) {
 }
 
 /*-------------------------------------------------------------------------*/
-void SaveVideoUEF(FILE *SUEF) {
-	fput16(0x0468,SUEF);
-	fput32(112, SUEF);
+
+void SaveVideoUEF(FILE *SUEF)
+{
 	// Save CRTC state
 	fputc(CRTC_HorizontalTotal, SUEF);
 	fputc(CRTC_HorizontalDisplayed, SUEF);
@@ -1654,7 +1654,8 @@ void SaveVideoUEF(FILE *SUEF) {
 	fput32(VideoTriggerCount - TotalCycles, SUEF);
 }
 
-void LoadVideoUEF(FILE *SUEF, int Version) {
+void LoadVideoUEF(FILE *SUEF, int Version)
+{
 	CRTC_HorizontalTotal = fget8(SUEF);
 	CRTC_HorizontalDisplayed = fget8(SUEF);
 	CRTC_HorizontalSyncPos = fget8(SUEF);

@@ -1269,8 +1269,6 @@ void Save1770UEF(FILE *SUEF)
 	char blank[256];
 	memset(blank,0,256);
 
-	fput16(0x046F,SUEF);
-	fput32(857,SUEF);
 	fputc(static_cast<int>(DiscInfo[0].Type), SUEF);
 	fputc(static_cast<int>(DiscInfo[1].Type), SUEF);
 

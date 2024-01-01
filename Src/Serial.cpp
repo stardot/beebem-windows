@@ -1425,57 +1425,44 @@ int SerialGetTapeClock()
 
 void SaveSerialUEF(FILE *SUEF)
 {
-	if (UEFFileOpen || CSWFileOpen)
+	fputc(SerialULA.RS423, SUEF);
+	fwrite(TapeFileName, 1, 256, SUEF);
+	fputc(SerialULA.CassetteRelay, SUEF);
+	fput32(SerialACIA.TxRate, SUEF);
+	fput32(SerialACIA.RxRate, SUEF);
+	fputc(SerialACIA.ClkDivide, SUEF);
+	fputc(SerialACIA.Parity, SUEF);
+	fputc(SerialACIA.StopBits, SUEF);
+	fputc(SerialACIA.DataBits, SUEF);
+	fputc(SerialACIA.RIE, SUEF);
+	fputc(SerialACIA.TIE, SUEF);
+	fputc(SerialACIA.TxD, SUEF);
+	fputc(SerialACIA.RxD, SUEF);
+	fputc(SerialACIA.RDR, SUEF);
+	fputc(SerialACIA.TDR, SUEF);
+	fputc(SerialACIA.RDSR, SUEF);
+	fputc(SerialACIA.TDSR, SUEF);
+	fputc(SerialACIA.Status, SUEF);
+	fputc(SerialACIA.Control, SUEF);
+	fputc(SerialULA.Control, SUEF);
+	fputc(0, SUEF); // DCD
+	fputc(0, SUEF); // DCDI
+	fputc(0, SUEF); // ODCDI
+	fputc(0, SUEF); // DCDClear
+	fput32(TapeState.Clock, SUEF);
+	fput32(TapeState.ClockSpeed, SUEF);
+	fputc(SerialULA.TapeCarrier, SUEF);
+	fput32(SerialULA.CarrierCycleCount, SUEF);
+	fputc(TapeState.Playing, SUEF);
+	fputc(TapeState.Recording, SUEF);
+	fputc(TapeState.Unlock, SUEF);
+	fput32(TapeState.UEFBuf, SUEF);
+	fput32(TapeState.OldUEFBuf, SUEF);
+	fput32(TapeState.OldClock, SUEF);
+
+	if (CSWFileOpen)
 	{
-		fput16(0x0473, SUEF); // UEF Chunk ID
-		fput32(0, SUEF); // Chunk length (updated after writing data)
-		long StartPos = ftell(SUEF);
-
-		fputc(SerialULA.RS423, SUEF);
-		fwrite(TapeFileName, 1, 256, SUEF);
-		fputc(SerialULA.CassetteRelay, SUEF);
-		fput32(SerialACIA.TxRate, SUEF);
-		fput32(SerialACIA.RxRate, SUEF);
-		fputc(SerialACIA.ClkDivide, SUEF);
-		fputc(SerialACIA.Parity, SUEF);
-		fputc(SerialACIA.StopBits, SUEF);
-		fputc(SerialACIA.DataBits, SUEF);
-		fputc(SerialACIA.RIE, SUEF);
-		fputc(SerialACIA.TIE, SUEF);
-		fputc(SerialACIA.TxD, SUEF);
-		fputc(SerialACIA.RxD, SUEF);
-		fputc(SerialACIA.RDR, SUEF);
-		fputc(SerialACIA.TDR, SUEF);
-		fputc(SerialACIA.RDSR, SUEF);
-		fputc(SerialACIA.TDSR, SUEF);
-		fputc(SerialACIA.Status, SUEF);
-		fputc(SerialACIA.Control, SUEF);
-		fputc(SerialULA.Control, SUEF);
-		fputc(0, SUEF); // DCD
-		fputc(0, SUEF); // DCDI
-		fputc(0, SUEF); // ODCDI
-		fputc(0, SUEF); // DCDClear
-		fput32(TapeState.Clock, SUEF);
-		fput32(TapeState.ClockSpeed, SUEF);
-		fputc(SerialULA.TapeCarrier, SUEF);
-		fput32(SerialULA.CarrierCycleCount, SUEF);
-		fputc(TapeState.Playing, SUEF);
-		fputc(TapeState.Recording, SUEF);
-		fputc(TapeState.Unlock, SUEF);
-		fput32(TapeState.UEFBuf, SUEF);
-		fput32(TapeState.OldUEFBuf, SUEF);
-		fput32(TapeState.OldClock, SUEF);
-
-		if (CSWFileOpen)
-		{
-			SaveCSWState(SUEF);
-		}
-
-		long EndPos = ftell(SUEF);
-		long Length = EndPos - StartPos;
-		fseek(SUEF, StartPos - 4, SEEK_SET);
-		fput32(Length, SUEF); // Size
-		fseek(SUEF, EndPos, SEEK_SET);
+		SaveCSWState(SUEF);
 	}
 }
 

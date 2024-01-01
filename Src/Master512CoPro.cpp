@@ -3803,10 +3803,6 @@ void Master512CoPro::DoDMA()
 
 void Master512CoPro::SaveState(FILE *SUEF)
 {
-	fput16(0x047B, SUEF); // UEF Chunk ID
-	fput32(0, SUEF); // Chunk length (updated after writing data)
-	long StartPos = ftell(SUEF);
-
 	fwrite(m_Memory, 1, 0x100000, SUEF);
 
 	for (int i = 0; i < 8; i++)
@@ -3870,12 +3866,6 @@ void Master512CoPro::SaveState(FILE *SUEF)
 	}
 
 	fputc(m_last_dma, SUEF);
-
-	long EndPos = ftell(SUEF);
-	long Length = EndPos - StartPos;
-	fseek(SUEF, StartPos - 4, SEEK_SET);
-	fput32(Length, SUEF); // Size
-	fseek(SUEF, EndPos, SEEK_SET);
 }
 
 void Master512CoPro::LoadState(FILE *SUEF)

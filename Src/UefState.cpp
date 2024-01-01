@@ -21,6 +21,8 @@ Boston, MA  02110-1301, USA.
 
 // UEF Game state code.
 
+#include <functional>
+
 #include "UEFState.h"
 #include "6502core.h"
 #include "Arm.h"
@@ -40,6 +42,8 @@ Boston, MA  02110-1301, USA.
 #include "Video.h"
 #include "Z80mem.h"
 #include "Z80.h"
+
+/*-------------------------------------------------------------------------*/
 
 void fput64(uint64_t word64, FILE *fileptr)
 {
@@ -66,6 +70,8 @@ void fput16(unsigned int word16, FILE *fileptr)
 	fputc(word16 & 255, fileptr);
 	fputc((word16 >> 8) & 255, fileptr);
 }
+
+/*-------------------------------------------------------------------------*/
 
 uint64_t fget64(FILE *fileptr)
 {
@@ -110,8 +116,32 @@ bool fgetbool(FILE *fileptr)
 	return fget8(fileptr) != 0;
 }
 
+/*-------------------------------------------------------------------------*/
+
+// Writes a chunk to the UEF file and updates the chunk length
+
+template<typename SaveStateFunctionType>
+void SaveState(SaveStateFunctionType SaveStateFunction, int ChunkID, FILE *SUEF)
+{
+	fput16(ChunkID, SUEF); // UEF Chunk ID
+	fput32(0, SUEF); // Chunk length (updated after writing data)
+	long StartPos = ftell(SUEF);
+
+	SaveStateFunction(SUEF);
+
+	long EndPos = ftell(SUEF);
+	long Length = EndPos - StartPos;
+	fseek(SUEF, StartPos - 4, SEEK_SET);
+	fput32(Length, SUEF); // Size
+	fseek(SUEF, EndPos, SEEK_SET);
+}
+
+/*-------------------------------------------------------------------------*/
+
 UEFStateResult SaveUEFState(const char *FileName)
 {
+	using std::placeholders::_1;
+
 	FILE *UEFState = fopen(FileName, "wb");
 
 	if (UEFState != nullptr)
@@ -125,53 +155,68 @@ UEFStateResult SaveUEFState(const char *FileName)
 		fputc(UEFMinorVersion, UEFState);
 		fputc(UEFMajorVersion, UEFState);
 
-		mainWin->SaveEmuUEF(UEFState);
-		Save6502UEF(UEFState);
+		SaveState(std::bind(&BeebWin::SaveBeebEmID, mainWin, _1), 0x046C, UEFState);
+		SaveState(std::bind(&BeebWin::SaveEmuUEF, mainWin, _1), 0x046A, UEFState);
+		SaveState(Save6502UEF, 0x0460, UEFState);
 		SaveMemUEF(UEFState);
-		SaveVideoUEF(UEFState);
+		SaveState(SaveVideoUEF, 0x0468, UEFState);
 		SaveVIAUEF(UEFState);
-		SaveSoundUEF(UEFState);
+		SaveState(SaveSoundUEF, 0x046B, UEFState);
+
 		if (MachineType != Model::Master128 && NativeFDC)
-			Save8271UEF(UEFState);
+		{
+			SaveState(Save8271UEF, 0x046E, UEFState);
+		}
 		else
-			Save1770UEF(UEFState);
+		{
+			SaveState(Save1770UEF, 0x046F, UEFState);
+		}
 
 		if (TubeType != Tube::None)
 		{
-			SaveTubeUEF(UEFState);
+			SaveState(SaveTubeUEF, 0x0470, UEFState);
 		}
 
 		switch (TubeType)
 		{
 			case Tube::Acorn65C02:
-				Save65C02UEF(UEFState);
-				Save65C02MemUEF(UEFState);
+				SaveState(Save65C02UEF, 0x0471, UEFState);
+				SaveState(Save65C02MemUEF, 0x0472, UEFState);
 				break;
 
 			case Tube::Master512CoPro:
-				master512CoPro.SaveState(UEFState);
+				SaveState(std::bind(&Master512CoPro::SaveState, &master512CoPro, _1), 0x047B, UEFState);
 				break;
 
 			case Tube::AcornZ80:
-				SaveZ80UEF(UEFState);
+				SaveState(SaveZ80UEF, 0x0478, UEFState);
 				break;
 
 			case Tube::TorchZ80:
-				SaveZ80UEF(UEFState);
+				SaveState(SaveZ80UEF, 0x0478, UEFState);
 				break;
 
 			case Tube::AcornArm:
-				arm->SaveState(UEFState);
+				SaveState(std::bind(&CArm::SaveState, arm, _1), 0x0479, UEFState);
 				break;
 
 			case Tube::SprowArm:
-				sprow->SaveState(UEFState);
+				SaveState(std::bind(&CSprowCoPro::SaveState, sprow, _1), 0x047A, UEFState);
 				break;
 		}
 
-		SaveSerialUEF(UEFState);
-		SaveAtoDUEF(UEFState);
-		SaveMusic5000UEF(UEFState);
+		if (SerialGetTapeState() != SerialTapeState::NoTape)
+		{
+			SaveState(SaveSerialUEF, 0x0473, UEFState);
+		}
+
+		SaveState(SaveAtoDUEF, 0x0474, UEFState);
+
+		if (Music5000Enabled)
+		{
+			SaveState(SaveMusic5000UEF, 0x0477, UEFState);
+		}
+
 		fclose(UEFState);
 
 		return UEFStateResult::Success;
@@ -181,6 +226,8 @@ UEFStateResult SaveUEFState(const char *FileName)
 		return UEFStateResult::WriteFailed;
 	}
 }
+
+/*-------------------------------------------------------------------------*/
 
 UEFStateResult LoadUEFState(const char *FileName)
 {
@@ -339,6 +386,8 @@ UEFStateResult LoadUEFState(const char *FileName)
 		return UEFStateResult::OpenFailed;
 	}
 }
+
+/*-------------------------------------------------------------------------*/
 
 bool IsUEFSaveState(const char* FileName)
 {

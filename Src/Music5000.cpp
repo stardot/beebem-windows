@@ -321,12 +321,6 @@ void Music5000Update(UINT cycles)
 
 void SaveMusic5000UEF(FILE *SUEF)
 {
-	if (!Music5000Enabled)
-		return;
-
-	unsigned int sz = RAM_SIZE + sizeof(PhaseRam) + 4 + 8 + 1;
-	fput16(0x0477,SUEF);
-	fput32(sz,SUEF);
 	fwrite(WaveRam,1,RAM_SIZE,SUEF);
 	fwrite(PhaseRam,1,sizeof(PhaseRam),SUEF);
 	fputc(CurCh,SUEF);

@@ -346,10 +346,6 @@ void PrintHex(int addr)
 
 void SaveZ80UEF(FILE *SUEF)
 {
-	fput16(0x0478, SUEF); // UEF Chunk ID
-	fput32(0, SUEF); // Chunk length (updated after writing data)
-	long StartPos = ftell(SUEF);
-
 	fwrite(z80_ram, 1, sizeof(z80_ram), SUEF);
 
 	// Z80 registers
@@ -377,12 +373,6 @@ void SaveZ80UEF(FILE *SUEF)
 	fput16(pc, SUEF);
 	fput16(PreZPC, SUEF);
 	fputc(inROM, SUEF);
-
-	long EndPos = ftell(SUEF);
-	long Length = EndPos - StartPos;
-	fseek(SUEF, StartPos - 4, SEEK_SET);
-	fput32(Length, SUEF); // Size
-	fseek(SUEF, EndPos, SEEK_SET);
 }
 
 void LoadZ80UEF(FILE *SUEF)

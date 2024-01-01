@@ -4909,10 +4909,6 @@ void CArm::dynamicProfilingCoprocessorUsage(uint32 instruction)
 
 void CArm::SaveState(FILE* SUEF)
 {
-	fput16(0x0479, SUEF); // UEF Chunk ID
-	fput32(0, SUEF); // Chunk length (updated after writing data)
-	long StartPos = ftell(SUEF);
-
 	fput32(pc, SUEF);
 	fputc(processorMode, SUEF);
 	fputc(interruptDisableFlag, SUEF);
@@ -4943,12 +4939,6 @@ void CArm::SaveState(FILE* SUEF)
 	}
 
 	fwrite(ramMemory, 1, sizeof(ramMemory), SUEF);
-
-	long EndPos = ftell(SUEF);
-	long Length = EndPos - StartPos;
-	fseek(SUEF, StartPos - 4, SEEK_SET);
-	fput32(Length, SUEF); // Size
-	fseek(SUEF, EndPos, SEEK_SET);
 }
 
 void CArm::LoadState(FILE* SUEF)
