@@ -1569,10 +1569,6 @@ bool DebugDisassembler(int addr,
                        unsigned char StackReg,
                        bool host)
 {
-	char str[150];
-	AddrInfo addrInfo;
-	RomInfo romInfo;
-
 	// Update memory watches. Prevent emulator slowdown by limiting updates
 	// to every 100ms, or on timer wrap-around.
 	static DWORD LastTickCount = 0;
@@ -1642,6 +1638,8 @@ bool DebugDisassembler(int addr,
 		{
 			if (!LastAddrInBIOS)
 			{
+				AddrInfo addrInfo;
+
 				if (DebugLookupAddress(addr, &addrInfo))
 				{
 					DebugDisplayInfoF("Entered BIOS (0xF800-0xFFFF) at 0x%04X (%s)",
@@ -1668,6 +1666,8 @@ bool DebugDisassembler(int addr,
 		{
 			if (!LastAddrInOS)
 			{
+				AddrInfo addrInfo;
+
 				if (DebugLookupAddress(addr, &addrInfo))
 				{
 					DebugDisplayInfoF("Entered OS (0xC000-0xFBFF) at 0x%04X (%s)", addr, addrInfo.desc.c_str());
@@ -1690,6 +1690,8 @@ bool DebugDisassembler(int addr,
 		{
 			if (!LastAddrInROM)
 			{
+				RomInfo romInfo;
+
 				if (ReadRomInfo(ROMSEL, &romInfo))
 				{
 					DebugDisplayInfoF("Entered paged ROM bank %d \"%s\" (0x8000-0xBFFF) at 0x%04X", ROMSEL, romInfo.Title, addr);
@@ -1715,6 +1717,8 @@ bool DebugDisassembler(int addr,
 	}
 
 	DebugAssertBreak(addr, prevAddr, host);
+
+	char str[150];
 
 	// Parasite instructions:
 	if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
