@@ -403,5 +403,5 @@ void LoadZ80UEF(FILE *SUEF)
 
 	pc = fget16(SUEF);
 	PreZPC = fget16(SUEF);
-	inROM = fget8(SUEF);
+	inROM = fgetbool(SUEF);
 }
