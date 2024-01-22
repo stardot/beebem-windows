@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.34301.259
+# Visual Studio Version 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BeebEm", "BeebEm.vcxproj", "{DFAD47ED-5BDD-4ED8-B868-E03ACC223303}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -21,6 +21,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Installer", "InnoSetup\Inst
 		{DFAD47ED-5BDD-4ED8-B868-E03ACC223303} = {DFAD47ED-5BDD-4ED8-B868-E03ACC223303}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZipFile", "ZipFile\ZipFile.vcxproj", "{E78486CF-7C3D-4BB5-99CE-64D871D31518}"
+ 	ProjectSection(ProjectDependencies) = postProject
+ 		{5DAB9939-5B75-495E-BF2A-9092356CA552} = {5DAB9939-5B75-495E-BF2A-9092356CA552}
+ 		{E33A4367-F853-4725-A5F8-4886B7B2BAB8} = {E33A4367-F853-4725-A5F8-4886B7B2BAB8}
+ 		{DFAD47ED-5BDD-4ED8-B868-E03ACC223303} = {DFAD47ED-5BDD-4ED8-B868-E03ACC223303}
+ 		{B9D30FFD-4215-4BF2-9226-487A86BE2637} = {B9D30FFD-4215-4BF2-9226-487A86BE2637}
+ 	EndProjectSection
+ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
