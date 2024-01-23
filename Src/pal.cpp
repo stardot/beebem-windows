@@ -7,10 +7,11 @@
  *
  ******************************************************************************/
 
-#include "pal.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "pal.h"
 #include "zlib/zlib.h"
 
 largeRom ERom[4];
@@ -40,7 +41,6 @@ uint8_t ccibase_device(int ROMSEL, int offset)
     }
 
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
-
 }
 
 uint8_t ccispell_device(int ROMSEL, int offset)
@@ -71,7 +71,7 @@ uint8_t acotrilogy(int ROMSEL, int offset)
     {
         case 0x3ff8: ERom[ROMSEL].m_bank = offset & 0x03; break;
     }
-    
+
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
 }
 
@@ -153,11 +153,7 @@ uint8_t wapted_device(int ROMSEL, int offset)
     } else {
         return ERom[ROMSEL].rom[offset & 0x1fff];
     }
-
 }
-
-
-
 
 uint8_t ExtendedRom(int ROMSEL, int offset)
 {
@@ -193,16 +189,16 @@ uint8_t ExtendedRom(int ROMSEL, int offset)
     {
         return (watqst_device(ROMSEL, offset));
     }
-   if (ERom[ROMSEL].type == PALRomType::watwap)
+    if (ERom[ROMSEL].type == PALRomType::watwap)
     {
         return (watwap_device(ROMSEL, offset));
     }
-   if (ERom[ROMSEL].type == PALRomType::watted)
+    if (ERom[ROMSEL].type == PALRomType::watted)
     {
         return (wapted_device(ROMSEL, offset));
     }
 
-  return ERom[ROMSEL].rom[offset];
+    return ERom[ROMSEL].rom[offset];
 }
 
 uint32_t GetRomFileSize(FILE *handle)
@@ -214,9 +210,10 @@ uint32_t GetRomFileSize(FILE *handle)
         fseek(handle, 0L, SEEK_END);
         rom_size = ftell(handle);
         fseek(handle, 0L, SEEK_SET);
-    } 
-  // fallthrough
-  return rom_size;
+    }
+
+    // fallthrough
+    return rom_size;
 }
 
 void GuessRomType(int rom, uint32_t size)
@@ -224,17 +221,15 @@ void GuessRomType(int rom, uint32_t size)
     char rom_name[11];
     memcpy(rom_name, &ERom[rom].rom[9],10);
     rom_name[10] = '\0';
-    //int crc = crc32b(rom);
     int crc = crc32(0, ERom[rom].rom, size);
-    fprintf(stderr, "CRC was %08X\n",crc);
 
     if (rom < 4)
     {
-    if (size <= 16384) ERom[rom].type = PALRomType::none;
-    if (strstr(rom_name, "ViewSpell") && crc == 0xE56B0E01)
-            {
-                if (size == 65536) ERom[rom].type = PALRomType::acotrilogy;
-            }
+        if (size <= 16384) ERom[rom].type = PALRomType::none;
+        if (strstr(rom_name, "ViewSpell") && crc == 0xE56B0E01)
+        {
+            if (size == 65536) ERom[rom].type = PALRomType::acotrilogy;
+        }
     }
 
     if (strstr(rom_name, "MegaROM") && crc == 0xFAAC60BB)
@@ -251,7 +246,7 @@ void GuessRomType(int rom, uint32_t size)
             ERom[rom].type = PALRomType::ccibase;
         }
     }
-    
+
     if (strstr(rom_name, "INTER-WORD") && crc == 0xC93E3C33)
     {
         if (size == 32768)
@@ -283,7 +278,6 @@ void GuessRomType(int rom, uint32_t size)
         {
             ERom[rom].type = PALRomType::presabe;
         }
-
     }
 
     if (strstr(rom_name, "The BASIC") && crc == 0x7E3A119A)
@@ -292,7 +286,6 @@ void GuessRomType(int rom, uint32_t size)
         {
             ERom[rom].type = PALRomType::presabep;
         }
-        
     }
 
     if (strstr(rom_name, "QUEST") && (crc == 0x7880EB9A || crc == 0x839A9B34))
@@ -326,26 +319,4 @@ void GuessRomType(int rom, uint32_t size)
             ERom[rom].type = PALRomType::watqst;
         }
     }
-
-
-
-}
-
-uint32_t crc32b(int ROMSEL) {
-   int i, j;
-   unsigned int byte, crc, mask;
-
-   i = 0;
-   crc = 0xFFFFFFFF;
-   while (ERom[ROMSEL].rom[i] != 0) {
-      byte = ERom[ROMSEL].rom[i];            // Get next byte.
-      crc = crc ^ byte;
-      for (j = 7; j >= 0; j--) {    // Do eight times.
-          mask = (crc & 1);
-          mask = mask - 1;
-         crc = (crc >> 1) ^ (0xEDB88320 & mask);
-      }
-      i = i + 1;
-   }
-   return ~crc;
 }

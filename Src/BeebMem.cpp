@@ -319,7 +319,7 @@ unsigned char BeebReadMem(int Address) {
 		}
 		if (Address >= 0x8000 && Address < 0xc000) {
 			if (ROMSEL > MAX_EROMS) return Roms[ROMSEL][Address - 0x8000];
-if (ROMSEL <= MAX_EROMS) return ExtendedRom(ROMSEL,Address - 0x8000);
+			if (ROMSEL <= MAX_EROMS) return ExtendedRom(ROMSEL,Address - 0x8000);
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
@@ -384,7 +384,7 @@ if (ROMSEL <= MAX_EROMS) return ExtendedRom(ROMSEL,Address - 0x8000);
 			} else {
 				if (ROMSEL > MAX_EROMS) {
 					return(Roms[ROMSEL][Address - 0x8000]);
-}
+				}
 				if (ROMSEL <= MAX_EROMS) {
 					return (ExtendedRom(ROMSEL, Address - 0x8000));
 				}
@@ -393,9 +393,9 @@ if (ROMSEL <= MAX_EROMS) return ExtendedRom(ROMSEL,Address - 0x8000);
 		case 9:
 		case 0xa:
 		case 0xb:
-			if (ROMSEL > MAX_EROMS)
-				return(Roms[ROMSEL][Address-0x8000]);
-			if (ROMSEL <= MAX_EROMS)
+if (ROMSEL > 3)
+			return(Roms[ROMSEL][Address-0x8000]);
+if (ROMSEL < 4)
 				return(ExtendedRom(ROMSEL, Address - 0x8000));
 			break;
 		case 0xc:
@@ -1264,8 +1264,9 @@ void BeebReadRoms(void) {
 				RomWritable[bank] = false;
 			}
 
-			InFile=fopen(fullname,"rb");
-			if	(InFile!=NULL)
+			InFile = fopen(fullname, "rb");
+
+			if (InFile != nullptr)
 			{
 				// Read ROM:
 				if (bank > MAX_EROMS) {
@@ -1283,7 +1284,7 @@ void BeebReadRoms(void) {
 					if (rom_size <= 131072)
 					{
 						fread(ERom[bank].rom,1,rom_size,InFile);
-					    fseek(InFile, 0L, SEEK_SET);
+						fseek(InFile, 0L, SEEK_SET);
 						fread(Roms[bank],1,16384, InFile); // copy to base ROM as used by other functionality
 						GuessRomType(bank, rom_size);
 						fclose(InFile);
@@ -1293,7 +1294,7 @@ void BeebReadRoms(void) {
 						strncat(fullname, ".map", _MAX_PATH);
 						DebugLoadMemoryMap(fullname, bank);
 					}
-				 }
+				}
 			}
 			else {
 				mainWin->Report(MessageType::Error,
