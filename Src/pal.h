@@ -3,7 +3,7 @@
  * Work based on original work by Nigel Barnes (Mame)
  * (C) Nigel Barnes (Original Work)
  * (S) Steve Inglis (derivative work for beebem5)
- * 
+ *
  * The original work and all the heavy lifting was done by Nigel
  *
  *
@@ -12,9 +12,8 @@
 #ifndef ROM_PAL_H
 #define ROM_PAL_H
 
-#pragma once
-#include<stdint.h>
-#include<stdio.h>
+#include <stdint.h>
+#include <stdio.h>
 
 enum class PALRomType {
     none,
@@ -27,7 +26,6 @@ enum class PALRomType {
     watqst,
     watwap,
     watted
-
 };
 
 struct largeRom {
@@ -45,7 +43,5 @@ uint8_t pres_device(int romsel, int offset);
 uint8_t ExtendedRom(int romsel, int offset);
 uint32_t GetRomFileSize(FILE *handle);
 void GuessRomType(int rom, uint32_t size);
-uint32_t crc32b(int romsel);
 
 #endif
-
