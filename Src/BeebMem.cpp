@@ -393,10 +393,10 @@ unsigned char BeebReadMem(int Address) {
 		case 9:
 		case 0xa:
 		case 0xb:
-if (ROMSEL > 3)
-			return(Roms[ROMSEL][Address-0x8000]);
-if (ROMSEL < 4)
-				return(ExtendedRom(ROMSEL, Address - 0x8000));
+			if (ROMSEL > 3)
+				return Roms[ROMSEL][Address-0x8000];
+			if (ROMSEL < 4)
+				return ExtendedRom(ROMSEL, Address - 0x8000);
 			break;
 		case 0xc:
 		case 0xd:
@@ -1270,14 +1270,14 @@ void BeebReadRoms(void) {
 			{
 				// Read ROM:
 				if (bank > MAX_EROMS) {
-				fread(Roms[bank],1,16384,InFile);
-				fclose(InFile);
-				// Try to read ROM memory map:
-				if((extension = strrchr(fullname, '.')) != NULL)
-					*extension = 0;
-				strncat(fullname, ".map", _MAX_PATH);
-				DebugLoadMemoryMap(fullname, bank);
-}
+					fread(Roms[bank],1,16384,InFile);
+					fclose(InFile);
+					// Try to read ROM memory map:
+					if((extension = strrchr(fullname, '.')) != NULL)
+						*extension = 0;
+					strncat(fullname, ".map", _MAX_PATH);
+					DebugLoadMemoryMap(fullname, bank);
+				}
 			     if (bank <= MAX_EROMS) {
 					// 128k rom stuff goes here
 					int rom_size = GetRomFileSize(InFile);
