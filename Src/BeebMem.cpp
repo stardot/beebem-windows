@@ -61,9 +61,11 @@ Boston, MA  02110-1301, USA.
 #include "Z80.h"
 #include "pal.h"
 
+constexpr int MAX_EROMS =7;
+
 unsigned char WholeRam[65536];
 unsigned char Roms[16][16384];
-extern largeRom ERom[4];
+extern largeRom ERom[MAX_EROMS];
 
 /* Each Rom now has a Ram/Rom flag */
 bool RomWritable[16] = {
@@ -289,9 +291,9 @@ unsigned char BeebReadMem(int Address) {
 
 	if (MachineType == Model::B) {
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ROMSEL > 3)
+			if (ROMSEL > MAX_EROMS)
 				return Roms[ROMSEL][Address - 0x8000];
-  			if (ROMSEL < 4)
+  			if (ROMSEL <= MAX_EROMS)
 				return ExtendedRom(ROMSEL, Address - 0x8000);
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
@@ -316,8 +318,8 @@ unsigned char BeebReadMem(int Address) {
 			}
 		}
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ROMSEL > 3) return Roms[ROMSEL][Address - 0x8000];
-if (ROMSEL < 4) return ExtendedRom(ROMSEL,Address - 0x8000);
+			if (ROMSEL > MAX_EROMS) return Roms[ROMSEL][Address - 0x8000];
+if (ROMSEL <= MAX_EROMS) return ExtendedRom(ROMSEL,Address - 0x8000);
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
@@ -345,9 +347,9 @@ if (ROMSEL < 4) return ExtendedRom(ROMSEL,Address - 0x8000);
 		if (Address < 0x8000) return WholeRam[Address];
 		if (Address < 0xB000 && MemSel) return Private[Address-0x8000];
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ROMSEL > 3)
+			if (ROMSEL > MAX_EROMS)
 				return Roms[ROMSEL][Address - 0x8000];
-if (ROMSEL < 4)
+			if (ROMSEL <= MAX_EROMS)
 				return ExtendedRom(ROMSEL, Address - 0x8000);
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
@@ -380,10 +382,10 @@ if (ROMSEL < 4)
 			if (PrivateRAMSelect) {
 				return(PrivateRAM[Address-0x8000]);
 			} else {
-				if (ROMSEL > 3) {
+				if (ROMSEL > MAX_EROMS) {
 					return(Roms[ROMSEL][Address - 0x8000]);
 }
-				if (ROMSEL < 4) {
+				if (ROMSEL <= MAX_EROMS) {
 					return (ExtendedRom(ROMSEL, Address - 0x8000));
 				}
 			}
@@ -391,9 +393,9 @@ if (ROMSEL < 4)
 		case 9:
 		case 0xa:
 		case 0xb:
-if (ROMSEL > 3)
-			return(Roms[ROMSEL][Address-0x8000]);
-if (ROMSEL < 4)
+			if (ROMSEL > MAX_EROMS)
+				return(Roms[ROMSEL][Address-0x8000]);
+			if (ROMSEL <= MAX_EROMS)
 				return(ExtendedRom(ROMSEL, Address - 0x8000));
 			break;
 		case 0xc:
@@ -1266,7 +1268,7 @@ void BeebReadRoms(void) {
 			if	(InFile!=NULL)
 			{
 				// Read ROM:
-if (bank > 3) {
+				if (bank > MAX_EROMS) {
 				fread(Roms[bank],1,16384,InFile);
 				fclose(InFile);
 				// Try to read ROM memory map:
@@ -1275,7 +1277,7 @@ if (bank > 3) {
 				strncat(fullname, ".map", _MAX_PATH);
 				DebugLoadMemoryMap(fullname, bank);
 }
-			     if (bank < 4) {
+			     if (bank <= MAX_EROMS) {
 					// 128k rom stuff goes here
 					int rom_size = GetRomFileSize(InFile);
 					if (rom_size <= 131072)
