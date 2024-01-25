@@ -14,7 +14,7 @@
 #include "pal.h"
 #include "zlib/zlib.h"
 
-largeRom ERom[4];
+largeRom ERom[MAX_EROMS];
 
 uint8_t cciword_device(int ROMSEL, int offset)
 {

@@ -103,7 +103,7 @@ using std::max;
 
 using namespace Gdiplus;
 
-extern largeRom ERom[4];
+extern largeRom ERom[MAX_EROMS];
 
 constexpr UINT WIN_STYLE = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
 

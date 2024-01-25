@@ -28,9 +28,11 @@ enum class PALRomType {
     watted
 };
 
+constexpr int MAX_EROMS = 16;
+
 struct largeRom {
     unsigned char rom[131072];
-    PALRomType type;
+    PALRomType type  = PALRomType::none;
     uint8_t m_bank = 0;
 };
 

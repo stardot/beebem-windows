@@ -61,8 +61,6 @@ Boston, MA  02110-1301, USA.
 #include "Z80.h"
 #include "pal.h"
 
-constexpr int MAX_EROMS =7;
-
 unsigned char WholeRam[65536];
 unsigned char Roms[16][16384];
 extern largeRom ERom[MAX_EROMS];
@@ -291,10 +289,11 @@ unsigned char BeebReadMem(int Address) {
 
 	if (MachineType == Model::B) {
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ROMSEL > MAX_EROMS)
+			if (ERom[ROMSEL].type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
-  			if (ROMSEL <= MAX_EROMS)
+			} else {
 				return ExtendedRom(ROMSEL, Address - 0x8000);
+			}
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
@@ -318,8 +317,12 @@ unsigned char BeebReadMem(int Address) {
 			}
 		}
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ROMSEL > MAX_EROMS) return Roms[ROMSEL][Address - 0x8000];
-			if (ROMSEL <= MAX_EROMS) return ExtendedRom(ROMSEL,Address - 0x8000);
+			if (ERom[ROMSEL].type == PALRomType::none) {
+				return Roms[ROMSEL][Address - 0x8000];
+			}
+			else {
+				return ExtendedRom(ROMSEL, Address - 0x8000);
+			}
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
@@ -347,10 +350,13 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0x8000) return WholeRam[Address];
 		if (Address < 0xB000 && MemSel) return Private[Address-0x8000];
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ROMSEL > MAX_EROMS)
+			if (ERom[ROMSEL].type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
-			if (ROMSEL <= MAX_EROMS)
+			}
+			else {
 				return ExtendedRom(ROMSEL, Address - 0x8000);
+			}
+
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
@@ -382,21 +388,24 @@ unsigned char BeebReadMem(int Address) {
 			if (PrivateRAMSelect) {
 				return(PrivateRAM[Address-0x8000]);
 			} else {
-				if (ROMSEL > MAX_EROMS) {
-					return(Roms[ROMSEL][Address - 0x8000]);
+				if (ERom[ROMSEL].type == PALRomType::none) {
+					return Roms[ROMSEL][Address - 0x8000];
 				}
-				if (ROMSEL <= MAX_EROMS) {
-					return (ExtendedRom(ROMSEL, Address - 0x8000));
+				else {
+					return ExtendedRom(ROMSEL, Address - 0x8000);
 				}
 			}
 			break;
 		case 9:
 		case 0xa:
 		case 0xb:
-			if (ROMSEL > 3)
-				return Roms[ROMSEL][Address-0x8000];
-			if (ROMSEL < 4)
+			if (ERom[ROMSEL].type == PALRomType::none) {
+				return Roms[ROMSEL][Address - 0x8000];
+			}
+			else {
 				return ExtendedRom(ROMSEL, Address - 0x8000);
+			}
+
 			break;
 		case 0xc:
 		case 0xd:
@@ -1201,6 +1210,7 @@ void BeebReadRoms(void) {
 		RomWritable[bank] = false;
 		RomBankType[bank] = BankType::Empty;
 		memset(Roms[bank], 0, 0x4000);
+		if (bank <= MAX_EROMS) memset(ERom[bank].rom, 0, 0x4000);
 	}
 
 	// Read OS ROM
@@ -1269,32 +1279,19 @@ void BeebReadRoms(void) {
 			if (InFile != nullptr)
 			{
 				// Read ROM:
-				if (bank > MAX_EROMS) {
-					fread(Roms[bank],1,16384,InFile);
-					fclose(InFile);
-					// Try to read ROM memory map:
-					if((extension = strrchr(fullname, '.')) != NULL)
-						*extension = 0;
-					strncat(fullname, ".map", _MAX_PATH);
-					DebugLoadMemoryMap(fullname, bank);
-				}
-			     if (bank <= MAX_EROMS) {
-					// 128k rom stuff goes here
+				if (bank <= MAX_EROMS) {
 					int rom_size = GetRomFileSize(InFile);
-					if (rom_size <= 131072)
-					{
-						fread(ERom[bank].rom,1,rom_size,InFile);
-						fseek(InFile, 0L, SEEK_SET);
-						fread(Roms[bank],1,16384, InFile); // copy to base ROM as used by other functionality
-						GuessRomType(bank, rom_size);
-						fclose(InFile);
-						// Try to read ROM memory map:
-						if((extension = strrchr(fullname, '.')) != NULL)
-							*extension = 0;
-						strncat(fullname, ".map", _MAX_PATH);
-						DebugLoadMemoryMap(fullname, bank);
-					}
+					fread(ERom[bank].rom, 1, rom_size, InFile);
+					fseek(InFile, 0L, SEEK_SET);
+					GuessRomType(bank, rom_size);
 				}
+				fread(Roms[bank],1,16384,InFile);
+				fclose(InFile);
+				// Try to read ROM memory map:
+				if((extension = strrchr(fullname, '.')) != NULL)
+					*extension = 0;
+				strncat(fullname, ".map", _MAX_PATH);
+				DebugLoadMemoryMap(fullname, bank);
 			}
 			else {
 				mainWin->Report(MessageType::Error,
