@@ -16,7 +16,7 @@
 
 largeRom ERom[MAX_EROMS];
 
-uint8_t cciword_device(int ROMSEL, int offset)
+static uint8_t cciword_device(int ROMSEL, int offset)
 {
     switch (offset & 0x3fe0)
     {
@@ -30,7 +30,7 @@ uint8_t cciword_device(int ROMSEL, int offset)
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
 }
 
-uint8_t ccibase_device(int ROMSEL, int offset)
+static uint8_t ccibase_device(int ROMSEL, int offset)
 {
     switch (offset & 0x3fe0)
     {
@@ -43,7 +43,7 @@ uint8_t ccibase_device(int ROMSEL, int offset)
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
 }
 
-uint8_t ccispell_device(int ROMSEL, int offset)
+static uint8_t ccispell_device(int ROMSEL, int offset)
 {
     if (offset == 0x3fe0)
     {
@@ -65,7 +65,7 @@ uint8_t ccispell_device(int ROMSEL, int offset)
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
 }
 
-uint8_t acotrilogy(int ROMSEL, int offset)
+static uint8_t acotrilogy(int ROMSEL, int offset)
 {
     switch (offset & 0x3ff8)
     {
@@ -75,7 +75,7 @@ uint8_t acotrilogy(int ROMSEL, int offset)
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
 }
 
-uint8_t pres_abepdevice(int ROMSEL, int offset)
+static uint8_t pres_abepdevice(int ROMSEL, int offset)
 {
     switch (offset & 0x3ffc)
     {
@@ -86,7 +86,7 @@ uint8_t pres_abepdevice(int ROMSEL, int offset)
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
 }
 
-uint8_t pres_abedevice(int ROMSEL, int offset)
+static uint8_t pres_abedevice(int ROMSEL, int offset)
 {
     switch (offset & 0x3ffc)
     {
@@ -97,7 +97,7 @@ uint8_t pres_abedevice(int ROMSEL, int offset)
     return ERom[ROMSEL].rom[(offset & 0x3fff) | (ERom[ROMSEL].m_bank << 14)];
 }
 
-uint8_t watqst_device(int ROMSEL, int offset)
+static uint8_t watqst_device(int ROMSEL, int offset)
 {
     switch (offset & 0x3fe0)
     {
@@ -115,7 +115,7 @@ uint8_t watqst_device(int ROMSEL, int offset)
     }
 }
 
-uint8_t watwap_device(int ROMSEL, int offset)
+static uint8_t watwap_device(int ROMSEL, int offset)
 {
     switch (offset & 0x3fe0)
     {
@@ -137,7 +137,7 @@ uint8_t watwap_device(int ROMSEL, int offset)
     }
 }
 
-uint8_t wapted_device(int ROMSEL, int offset)
+static uint8_t wapted_device(int ROMSEL, int offset)
 {
     switch (offset & 0x3fe0)
     {

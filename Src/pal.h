@@ -40,12 +40,6 @@ constexpr int MAX_EROMS = 16;
 
 extern largeRom ERom[MAX_EROMS];
 
-uint8_t cciword_device(int romsel, int offset);
-uint8_t ccibase_device(int romsel, int offset);
-uint8_t ccispell_device(int romsel, int offset);
-uint8_t acotrilogy(int romsel, int offset);
-uint8_t pres_device(int romsel, int offset);
-
 uint8_t ExtendedRom(int romsel, int offset);
 void GuessRomType(int rom, uint32_t size);
 
