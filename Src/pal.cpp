@@ -201,21 +201,6 @@ uint8_t ExtendedRom(int ROMSEL, int offset)
     return ERom[ROMSEL].rom[offset];
 }
 
-uint32_t GetRomFileSize(FILE *handle)
-{
-    int rom_size = 0;
-
-    if (handle != nullptr)
-    {
-        fseek(handle, 0L, SEEK_END);
-        rom_size = ftell(handle);
-        fseek(handle, 0L, SEEK_SET);
-    }
-
-    // fallthrough
-    return rom_size;
-}
-
 void GuessRomType(int rom, uint32_t size)
 {
     char rom_name[11];

@@ -47,7 +47,6 @@ uint8_t acotrilogy(int romsel, int offset);
 uint8_t pres_device(int romsel, int offset);
 
 uint8_t ExtendedRom(int romsel, int offset);
-uint32_t GetRomFileSize(FILE *handle);
 void GuessRomType(int rom, uint32_t size);
 
 #endif
