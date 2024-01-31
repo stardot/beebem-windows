@@ -1217,8 +1217,10 @@ void BeebReadRoms(void) {
 	{
 		RomWritable[bank] = false;
 		RomBankType[bank] = BankType::Empty;
-		memset(Roms[bank], 0, 0x4000);
-		if (bank <= MAX_EROMS) memset(ERom[bank].rom, 0, 0x4000);
+		memset(Roms[bank], 0, sizeof(Roms[bank]));
+		memset(ERom[bank].rom, 0, sizeof(ERom[bank].rom));
+		ERom[bank].type = PALRomType::none;
+		ERom[bank].m_bank = 0;
 	}
 
 	// Read OS ROM
