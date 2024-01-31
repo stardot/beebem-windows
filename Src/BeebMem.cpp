@@ -1284,20 +1284,33 @@ void BeebReadRoms(void) {
 
 			if (InFile != nullptr)
 			{
-				// Read ROM:
-				if (bank <= MAX_EROMS) {
-					int rom_size = GetRomFileSize(InFile);
-					fread(ERom[bank].rom, 1, rom_size, InFile);
+				fseek(InFile, 0, SEEK_END);
+				long Size = ftell(InFile);
+				fseek(InFile, 0, SEEK_SET);
+
+				if (Size <= MAX_PALROM_SIZE)
+				{
+					// Read ROM:
+					fread(Roms[bank], 1, 16384, InFile);
+
+					// Read PAL ROM:
 					fseek(InFile, 0L, SEEK_SET);
-					GuessRomType(bank, rom_size);
+					fread(ERom[bank].rom, 1, Size, InFile);
+					GuessRomType(bank, Size);
+
+					fclose(InFile);
+
+					// Try to read ROM memory map:
+					if((extension = strrchr(fullname, '.')) != NULL)
+						*extension = 0;
+					strncat(fullname, ".map", _MAX_PATH);
+					DebugLoadMemoryMap(fullname, bank);
 				}
-				fread(Roms[bank],1,16384,InFile);
-				fclose(InFile);
-				// Try to read ROM memory map:
-				if((extension = strrchr(fullname, '.')) != NULL)
-					*extension = 0;
-				strncat(fullname, ".map", _MAX_PATH);
-				DebugLoadMemoryMap(fullname, bank);
+				else
+				{
+					mainWin->Report(MessageType::Error,
+					                "ROM file too large:\n %s", fullname);
+				}
 			}
 			else {
 				mainWin->Report(MessageType::Error,
