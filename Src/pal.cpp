@@ -200,96 +200,53 @@ void GuessRomType(int rom, uint32_t size)
     rom_name[10] = '\0';
     int crc = crc32(0, ERom[rom].Rom, size);
 
-    if (strstr(rom_name, "ViewSpell") && crc == 0xE56B0E01)
+    if (strstr(rom_name, "ViewSpell") && size == 65536 && crc == 0xE56B0E01)
     {
-        if (size == 65536) ERom[rom].Type = PALRomType::acotrilogy;
+        ERom[rom].Type = PALRomType::acotrilogy;
     }
-
-    if (strstr(rom_name, "MegaROM") && crc == 0xFAAC60BB)
+    else if (strstr(rom_name, "MegaROM") && size == 131072 && crc == 0xFAAC60BB)
     {
-        if (size == 131072)
-        {
-            ERom[rom].Type = PALRomType::ccispell;
-        }
+        ERom[rom].Type = PALRomType::ccispell;
     }
-    if (strstr(rom_name, "INTER-BASE") && crc == 0x4332ED95)
+    else if (strstr(rom_name, "INTER-BASE") && size == 65536 && crc == 0x4332ED95)
     {
-        if (size == 65536)
-        {
-            ERom[rom].Type = PALRomType::ccibase;
-        }
+        ERom[rom].Type = PALRomType::ccibase;
     }
-
-    if (strstr(rom_name, "INTER-WORD") && crc == 0xC93E3C33)
+    else if (strstr(rom_name, "INTER-WORD") && size == 32768 && crc == 0xC93E3C33)
     {
-        if (size == 32768)
-        {
-            ERom[rom].Type = PALRomType::cciword;
-        }
+        ERom[rom].Type = PALRomType::cciword;
     }
-
-    if (strstr(rom_name, "AMX") && crc == 0xA72E2E59)
+    else if (strstr(rom_name, "AMX") && size == 32768 && crc == 0xA72E2E59)
     {
         // outstanding needs updated crc
-        if (size == 32768)
-        {
-            ERom[rom].Type = PALRomType::cciword;
-        }
+        ERom[rom].Type = PALRomType::cciword;
     }
-
-    if (strstr(rom_name, "SPELLMASTE") && crc == 0xC26533EC)
+    else if (strstr(rom_name, "SPELLMASTE") && size == 131072 && crc == 0xC26533EC)
     {
-        if (size == 131072)
-        {
-            ERom[rom].Type = PALRomType::ccispell;
-        }
+        ERom[rom].Type = PALRomType::ccispell;
     }
-
-    if (strstr(rom_name, "Advanced") && crc == 0xE0B93F43)
+    else if (strstr(rom_name, "Advanced") && size == 32768 && crc == 0xE0B93F43)
     {
-        if (size == 32768)
-        {
-            ERom[rom].Type = PALRomType::presabe;
-        }
+        ERom[rom].Type = PALRomType::presabe;
     }
-
-    if (strstr(rom_name, "The BASIC") && crc == 0x7E3A119A)
+    else if (strstr(rom_name, "The BASIC") && size == 32768 && crc == 0x7E3A119A)
     {
-        if (size == 32768)
-        {
-            ERom[rom].Type = PALRomType::presabep;
-        }
+        ERom[rom].Type = PALRomType::presabep;
     }
-
-    if (strstr(rom_name, "QUEST") && (crc == 0x7880EB9A || crc == 0x839A9B34))
+    else if (strstr(rom_name, "QUEST") && size == 32768 && (crc == 0x7880EB9A || crc == 0x839A9B34))
     {
-        if (size == 32768)
-        {
-            ERom[rom].Type = PALRomType::watqst;
-        }
+        ERom[rom].Type = PALRomType::watqst;
     }
-
-    if (strstr(rom_name, "WAPPING ED") && crc == 0x26431B44)
+    else if (strstr(rom_name, "WAPPING ED") && size == 65536 && crc == 0x26431B44)
     {
-        if (size == 65536)
-        {
-            ERom[rom].Type = PALRomType::watwap;
-        }
+        ERom[rom].Type = PALRomType::watwap;
     }
-
-    if (strstr(rom_name, "TED 32K\0 1") && crc == 0x2D4C6458)
+    else if (strstr(rom_name, "TED 32K\0 1") && size == 32768 && crc == 0x2D4C6458)
     {
-        if (size == 32768)
-        {
-            ERom[rom].Type = PALRomType::watted;
-        }
+        ERom[rom].Type = PALRomType::watted;
     }
-
-    if (strstr(rom_name, "CONQUEST") && crc == 0xF9634ECE)
+    else if (strstr(rom_name, "CONQUEST") && size == 32768 && crc == 0xF9634ECE)
     {
-        if (size == 32768)
-        {
-            ERom[rom].Type = PALRomType::watqst;
-        }
+        ERom[rom].Type = PALRomType::watqst;
     }
 }
