@@ -200,13 +200,9 @@ void GuessRomType(int rom, uint32_t size)
     rom_name[10] = '\0';
     int crc = crc32(0, ERom[rom].Rom, size);
 
-    if (rom < 4)
+    if (strstr(rom_name, "ViewSpell") && crc == 0xE56B0E01)
     {
-        if (size <= 16384) ERom[rom].Type = PALRomType::none;
-        if (strstr(rom_name, "ViewSpell") && crc == 0xE56B0E01)
-        {
-            if (size == 65536) ERom[rom].Type = PALRomType::acotrilogy;
-        }
+        if (size == 65536) ERom[rom].Type = PALRomType::acotrilogy;
     }
 
     if (strstr(rom_name, "MegaROM") && crc == 0xFAAC60BB)
