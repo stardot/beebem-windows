@@ -1365,7 +1365,7 @@ void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
   }
 
   /* Put first ROM in */
-  memcpy(WholeRam+0x8000,Roms[0xf],0x4000);
+  memcpy(WholeRam + 0x8000, Roms[0xf], MAX_ROM_SIZE);
   PagedRomReg=0xf;
 }
 
@@ -1437,6 +1437,7 @@ void SaveMemUEF(FILE *SUEF) {
 		fwrite(FSRam,1,8192,SUEF);
 		break;
 	}
+
 	for (bank=0;bank<16;bank++) {
 		switch (RomBankType[bank])
 		{
@@ -1544,6 +1545,7 @@ void LoadSWRamMemUEF(FILE *SUEF) {
 	RomBankType[Rom] = BankType::Ram;
 	fread(Roms[Rom], 1, MAX_ROM_SIZE, SUEF);
 }
+
 void LoadSWRomMemUEF(FILE *SUEF) {
 	int Rom;
 	Rom=fgetc(SUEF);
@@ -1555,7 +1557,7 @@ void LoadSWRomMemUEF(FILE *SUEF) {
 		fread(Roms[Rom], 1, MAX_ROM_SIZE, SUEF);
 		break;
 	case BankType::Empty:
-		memset(Roms[Rom], 0, 0x4000);
+		memset(Roms[Rom], 0, MAX_ROM_SIZE);
 		break;
 	}
 }
