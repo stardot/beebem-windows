@@ -62,7 +62,10 @@ Boston, MA  02110-1301, USA.
 #include "pal.h"
 
 unsigned char WholeRam[65536];
-unsigned char Roms[16][16384];
+
+constexpr int MAX_ROM_SIZE = 16384;
+
+unsigned char Roms[16][MAX_ROM_SIZE];
 
 /* Each Rom now has a Ram/Rom flag */
 bool RomWritable[16] = {
@@ -1230,7 +1233,7 @@ void BeebReadRoms(void) {
 	InFile=fopen(fullname,"rb");
 	if (InFile!=NULL)
 	{
-		fread(WholeRam+0xc000,1,16384,InFile);
+		fread(WholeRam + 0xc000, 1, MAX_ROM_SIZE, InFile);
 		fclose(InFile);
 		// Try to read OS ROM memory map:
 		if((extension = strrchr(fullname, '.')) != NULL)
@@ -1290,7 +1293,7 @@ void BeebReadRoms(void) {
 				if (Size <= MAX_PALROM_SIZE)
 				{
 					// Read ROM:
-					fread(Roms[bank], 1, 16384, InFile);
+					fread(Roms[bank], 1, MAX_ROM_SIZE, InFile);
 
 					// Read PAL ROM:
 					fseek(InFile, 0L, SEEK_SET);
@@ -1439,14 +1442,14 @@ void SaveMemUEF(FILE *SUEF) {
 			fput16(0x0466,SUEF); // RAM bank
 			fput32(16385,SUEF);
 			fputc(bank,SUEF);
-			fwrite(Roms[bank],1,16384,SUEF);
+			fwrite(Roms[bank], 1, MAX_ROM_SIZE, SUEF);
 			break;
 		case BankType::Rom:
 			fput16(0x0475,SUEF); // ROM bank
 			fput32(16386,SUEF);
 			fputc(bank,SUEF);
 			fputc(static_cast<int>(BankType::Rom),SUEF);
-			fwrite(Roms[bank],1,16384,SUEF);
+			fwrite(Roms[bank], 1, MAX_ROM_SIZE, SUEF);
 			break;
 		case BankType::Empty:
 			fput16(0x0475,SUEF); // ROM bank
@@ -1537,7 +1540,7 @@ void LoadSWRamMemUEF(FILE *SUEF) {
 	Rom=fgetc(SUEF);
 	RomWritable[Rom] = true;
 	RomBankType[Rom] = BankType::Ram;
-	fread(Roms[Rom],1,16384,SUEF);
+	fread(Roms[Rom], 1, MAX_ROM_SIZE, SUEF);
 }
 void LoadSWRomMemUEF(FILE *SUEF) {
 	int Rom;
@@ -1547,7 +1550,7 @@ void LoadSWRomMemUEF(FILE *SUEF) {
 	{
 	case BankType::Rom:
 		RomWritable[Rom] = false;
-		fread(Roms[Rom],1,16384,SUEF);
+		fread(Roms[Rom], 1, MAX_ROM_SIZE, SUEF);
 		break;
 	case BankType::Empty:
 		memset(Roms[Rom], 0, 0x4000);
