@@ -28,7 +28,6 @@ enum class PALRomType {
     watted
 };
 
-constexpr int MAX_EROMS = 16;
 constexpr int MAX_PALROM_SIZE = 131072;
 
 struct largeRom {
@@ -36,6 +35,10 @@ struct largeRom {
     PALRomType type  = PALRomType::none;
     uint8_t m_bank = 0;
 };
+
+constexpr int MAX_EROMS = 16;
+
+extern largeRom ERom[MAX_EROMS];
 
 uint8_t cciword_device(int romsel, int offset);
 uint8_t ccibase_device(int romsel, int offset);

@@ -63,7 +63,6 @@ Boston, MA  02110-1301, USA.
 
 unsigned char WholeRam[65536];
 unsigned char Roms[16][16384];
-extern largeRom ERom[MAX_EROMS];
 
 /* Each Rom now has a Ram/Rom flag */
 bool RomWritable[16] = {
