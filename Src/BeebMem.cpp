@@ -770,8 +770,8 @@ void BeebWriteMem(int Address, unsigned char Value)
 
 		if (Address < 0xc000 && Address >= 0x8000) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] = Value;
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
 			// else RomWriteThrough(Address, Value); // Not supported on Integra-B
+			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
 			return;
 		}
 
@@ -828,8 +828,8 @@ void BeebWriteMem(int Address, unsigned char Value)
 
 		if ((Address < 0xc000) && (Address >= 0x8000)) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
 			//else RomWriteThrough(Address, Value); //Not supported on B+
+			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
 			return;
 		}
 
@@ -872,16 +872,16 @@ void BeebWriteMem(int Address, unsigned char Value)
 				}
 				else {
 					if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
-					if (ERom[ROMSEL].type != PALRomType::none) ERom[ROMSEL].type = PALRomType::none;
 					//else RomWriteThrough(Address, Value); //Not supported on Master
+					if (ERom[ROMSEL].type != PALRomType::none) ERom[ROMSEL].type = PALRomType::none;
 				}
 				break;
 			case 9:
 			case 0xa:
 			case 0xb:
 				if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
-				if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
 				//else RomWriteThrough(Address, Value); //Not supported on Master
+				if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
 				break;
 			case 0xc:
 			case 0xd:
