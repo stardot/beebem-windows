@@ -1370,8 +1370,8 @@ void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
 }
 
 /*-------------------------------------------------------------------------*/
-void SaveMemUEF(FILE *SUEF) {
-	int bank;
+void SaveMemUEF(FILE *SUEF)
+{
 	switch (MachineType) {
 	case Model::B:
 	case Model::Master128:
@@ -1438,7 +1438,8 @@ void SaveMemUEF(FILE *SUEF) {
 		break;
 	}
 
-	for (bank=0;bank<16;bank++) {
+	for (int bank = 0; bank < 16; bank++)
+	{
 		switch (RomBankType[bank])
 		{
 		case BankType::Ram:
@@ -1448,11 +1449,24 @@ void SaveMemUEF(FILE *SUEF) {
 			fwrite(Roms[bank], 1, MAX_ROM_SIZE, SUEF);
 			break;
 		case BankType::Rom:
-			fput16(0x0475,SUEF); // ROM bank
-			fput32(16386,SUEF);
-			fputc(bank,SUEF);
-			fputc(static_cast<int>(BankType::Rom),SUEF);
-			fwrite(Roms[bank], 1, MAX_ROM_SIZE, SUEF);
+			if (ERom[bank].type == PALRomType::none)
+			{
+				fput16(0x0475, SUEF); // ROM bank
+				fput32(MAX_ROM_SIZE + 2, SUEF);
+				fputc(bank, SUEF);
+				fputc(static_cast<int>(BankType::Rom), SUEF);
+				fwrite(Roms[bank], 1, MAX_ROM_SIZE, SUEF);
+			}
+			else
+			{
+				fput16(0x047C, SUEF); // PAL ROM bank
+				fput32(MAX_PALROM_SIZE + 4, SUEF);
+				fputc(bank, SUEF);
+				fputc(static_cast<int>(BankType::Rom), SUEF);
+				fputc(static_cast<int>(ERom[bank].type), SUEF);
+				fputc(ERom[bank].m_bank, SUEF);
+				fwrite(ERom[bank].rom, 1, MAX_PALROM_SIZE, SUEF);
+			}
 			break;
 		case BankType::Empty:
 			fput16(0x0475,SUEF); // ROM bank
@@ -1539,17 +1553,16 @@ void LoadIntegraBHiddenMemUEF(FILE *SUEF) {
 }
 
 void LoadSWRamMemUEF(FILE *SUEF) {
-	int Rom;
-	Rom=fgetc(SUEF);
+	int Rom = fgetc(SUEF);
 	RomWritable[Rom] = true;
 	RomBankType[Rom] = BankType::Ram;
 	fread(Roms[Rom], 1, MAX_ROM_SIZE, SUEF);
 }
 
 void LoadSWRomMemUEF(FILE *SUEF) {
-	int Rom;
-	Rom=fgetc(SUEF);
+	int Rom = fgetc(SUEF);
 	RomBankType[Rom] = static_cast<BankType>(fgetc(SUEF));
+
 	switch (RomBankType[Rom])
 	{
 	case BankType::Rom:
@@ -1562,3 +1575,35 @@ void LoadSWRomMemUEF(FILE *SUEF) {
 	}
 }
 
+bool LoadPALRomEUF(FILE *SUEF, unsigned int ChunkLength)
+{
+	int Bank = fgetc(SUEF);
+	RomBankType[Bank] = static_cast<BankType>(fgetc(SUEF));
+	ERom[Bank].type = static_cast<PALRomType>(fgetc(SUEF));
+	ERom[Bank].m_bank = fgetc(SUEF);
+
+	unsigned int Size = ChunkLength - 4;
+
+	if (Size == MAX_PALROM_SIZE)
+	{
+		switch (RomBankType[Bank])
+		{
+			case BankType::Rom:
+				RomWritable[Bank] = false;
+				fread(ERom[Bank].rom, 1, MAX_PALROM_SIZE, SUEF);
+				memcpy(Roms[Bank], ERom[Bank].rom, MAX_ROM_SIZE);
+				break;
+
+			case BankType::Empty:
+				memset(Roms[Bank], 0, MAX_ROM_SIZE);
+				memset(ERom[Bank].rom, 0, MAX_PALROM_SIZE);
+				ERom[Bank].type = PALRomType::none;
+				ERom[Bank].m_bank = 0;
+				break;
+		}
+
+		return true;
+	}
+
+	return false;
+}

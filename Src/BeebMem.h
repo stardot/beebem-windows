@@ -120,6 +120,7 @@ void LoadPrivMemUEF(FILE *SUEF);
 void LoadFileMemUEF(FILE *SUEF);
 void LoadSWRamMemUEF(FILE *SUEF);
 void LoadSWRomMemUEF(FILE *SUEF);
+bool LoadPALRomEUF(FILE *SUEF, unsigned int ChunkLength);
 void LoadIntegraBHiddenMemUEF(FILE *SUEF);
 //void LoadJIMPageRegUEF(FILE *SUEF);
 void DebugMemoryState();
