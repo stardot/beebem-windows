@@ -291,7 +291,7 @@ unsigned char BeebReadMem(int Address) {
 
 	if (MachineType == Model::B) {
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ERom[ROMSEL].type == PALRomType::none) {
+			if (ERom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			} else {
 				return ExtendedRom(ROMSEL, Address - 0x8000);
@@ -319,7 +319,7 @@ unsigned char BeebReadMem(int Address) {
 			}
 		}
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ERom[ROMSEL].type == PALRomType::none) {
+			if (ERom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
@@ -352,7 +352,7 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0x8000) return WholeRam[Address];
 		if (Address < 0xB000 && MemSel) return Private[Address-0x8000];
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ERom[ROMSEL].type == PALRomType::none) {
+			if (ERom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
@@ -390,7 +390,7 @@ unsigned char BeebReadMem(int Address) {
 			if (PrivateRAMSelect) {
 				return(PrivateRAM[Address-0x8000]);
 			} else {
-				if (ERom[ROMSEL].type == PALRomType::none) {
+				if (ERom[ROMSEL].Type == PALRomType::none) {
 					return Roms[ROMSEL][Address - 0x8000];
 				}
 				else {
@@ -401,7 +401,7 @@ unsigned char BeebReadMem(int Address) {
 		case 9:
 		case 0xa:
 		case 0xb:
-			if (ERom[ROMSEL].type == PALRomType::none) {
+			if (ERom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
@@ -720,7 +720,7 @@ static void RomWriteThrough(int Address, unsigned char Value) {
 
 	if (bank < 16)
 		Roms[bank][Address-0x8000]=Value;
-	if (bank < MAX_EROMS) ERom[bank].type = PALRomType::none;
+	if (bank < MAX_EROMS) ERom[bank].Type = PALRomType::none;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -735,7 +735,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		if (Address < 0xc000 && Address >= 0x8000) {
 			if (!SWRAMBoardEnabled && RomWritable[ROMSEL]) Roms[ROMSEL][Address -0x8000] =Value;
 			else RomWriteThrough(Address, Value);
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
+			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 	}
@@ -773,7 +773,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		if (Address < 0xc000 && Address >= 0x8000) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] = Value;
 			// else RomWriteThrough(Address, Value); // Not supported on Integra-B
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
+			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 
@@ -831,7 +831,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		if ((Address < 0xc000) && (Address >= 0x8000)) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 			//else RomWriteThrough(Address, Value); //Not supported on B+
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
+			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 
@@ -875,7 +875,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 				else {
 					if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 					//else RomWriteThrough(Address, Value); //Not supported on Master
-					if (ERom[ROMSEL].type != PALRomType::none) ERom[ROMSEL].type = PALRomType::none;
+					if (ERom[ROMSEL].Type != PALRomType::none) ERom[ROMSEL].Type = PALRomType::none;
 				}
 				break;
 			case 9:
@@ -883,7 +883,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 			case 0xb:
 				if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 				//else RomWriteThrough(Address, Value); //Not supported on Master
-				if (ROMSEL < MAX_EROMS) ERom[ROMSEL].type = PALRomType::none;
+				if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
 				break;
 			case 0xc:
 			case 0xd:
@@ -1218,9 +1218,9 @@ void BeebReadRoms(void) {
 		RomWritable[bank] = false;
 		RomBankType[bank] = BankType::Empty;
 		memset(Roms[bank], 0, sizeof(Roms[bank]));
-		memset(ERom[bank].rom, 0, sizeof(ERom[bank].rom));
-		ERom[bank].type = PALRomType::none;
-		ERom[bank].m_bank = 0;
+		memset(ERom[bank].Rom, 0, sizeof(ERom[bank].Rom));
+		ERom[bank].Type = PALRomType::none;
+		ERom[bank].Bank = 0;
 	}
 
 	// Read OS ROM
@@ -1299,7 +1299,7 @@ void BeebReadRoms(void) {
 
 					// Read PAL ROM:
 					fseek(InFile, 0L, SEEK_SET);
-					fread(ERom[bank].rom, 1, Size, InFile);
+					fread(ERom[bank].Rom, 1, Size, InFile);
 					GuessRomType(bank, Size);
 
 					fclose(InFile);
@@ -1449,7 +1449,7 @@ void SaveMemUEF(FILE *SUEF)
 			fwrite(Roms[bank], 1, MAX_ROM_SIZE, SUEF);
 			break;
 		case BankType::Rom:
-			if (ERom[bank].type == PALRomType::none)
+			if (ERom[bank].Type == PALRomType::none)
 			{
 				fput16(0x0475, SUEF); // ROM bank
 				fput32(MAX_ROM_SIZE + 2, SUEF);
@@ -1463,9 +1463,9 @@ void SaveMemUEF(FILE *SUEF)
 				fput32(MAX_PALROM_SIZE + 4, SUEF);
 				fputc(bank, SUEF);
 				fputc(static_cast<int>(BankType::Rom), SUEF);
-				fputc(static_cast<int>(ERom[bank].type), SUEF);
-				fputc(ERom[bank].m_bank, SUEF);
-				fwrite(ERom[bank].rom, 1, MAX_PALROM_SIZE, SUEF);
+				fputc(static_cast<int>(ERom[bank].Type), SUEF);
+				fputc(ERom[bank].Bank, SUEF);
+				fwrite(ERom[bank].Rom, 1, MAX_PALROM_SIZE, SUEF);
 			}
 			break;
 		case BankType::Empty:
@@ -1579,8 +1579,8 @@ bool LoadPALRomEUF(FILE *SUEF, unsigned int ChunkLength)
 {
 	int Bank = fgetc(SUEF);
 	RomBankType[Bank] = static_cast<BankType>(fgetc(SUEF));
-	ERom[Bank].type = static_cast<PALRomType>(fgetc(SUEF));
-	ERom[Bank].m_bank = fgetc(SUEF);
+	ERom[Bank].Type = static_cast<PALRomType>(fgetc(SUEF));
+	ERom[Bank].Bank = static_cast<uint8_t>(fgetc(SUEF));
 
 	unsigned int Size = ChunkLength - 4;
 
@@ -1590,15 +1590,15 @@ bool LoadPALRomEUF(FILE *SUEF, unsigned int ChunkLength)
 		{
 			case BankType::Rom:
 				RomWritable[Bank] = false;
-				fread(ERom[Bank].rom, 1, MAX_PALROM_SIZE, SUEF);
-				memcpy(Roms[Bank], ERom[Bank].rom, MAX_ROM_SIZE);
+				fread(ERom[Bank].Rom, 1, MAX_PALROM_SIZE, SUEF);
+				memcpy(Roms[Bank], ERom[Bank].Rom, MAX_ROM_SIZE);
 				break;
 
 			case BankType::Empty:
 				memset(Roms[Bank], 0, MAX_ROM_SIZE);
-				memset(ERom[Bank].rom, 0, MAX_PALROM_SIZE);
-				ERom[Bank].type = PALRomType::none;
-				ERom[Bank].m_bank = 0;
+				memset(ERom[Bank].Rom, 0, MAX_PALROM_SIZE);
+				ERom[Bank].Type = PALRomType::none;
+				ERom[Bank].Bank = 0;
 				break;
 		}
 

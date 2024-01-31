@@ -31,9 +31,9 @@ enum class PALRomType {
 constexpr int MAX_PALROM_SIZE = 131072;
 
 struct largeRom {
-    unsigned char rom[MAX_PALROM_SIZE];
-    PALRomType type  = PALRomType::none;
-    uint8_t m_bank = 0;
+    unsigned char Rom[MAX_PALROM_SIZE];
+    PALRomType Type  = PALRomType::none;
+    uint8_t Bank = 0;
 };
 
 constexpr int MAX_EROMS = 16;
