@@ -48,6 +48,7 @@ Boston, MA  02110-1301, USA.
 #include "Ide.h"
 #include "Main.h"
 #include "Music5000.h"
+#include "PALRom.h"
 #include "Sasi.h"
 #include "Scsi.h"
 #include "Serial.h"
@@ -59,7 +60,6 @@ Boston, MA  02110-1301, USA.
 #include "Video.h"
 #include "Z80mem.h"
 #include "Z80.h"
-#include "pal.h"
 
 unsigned char WholeRam[65536];
 
@@ -291,7 +291,7 @@ unsigned char BeebReadMem(int Address) {
 
 	if (MachineType == Model::B) {
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ERom[ROMSEL].Type == PALRomType::none) {
+			if (PALRom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			} else {
 				return ExtendedRom(ROMSEL, Address - 0x8000);
@@ -319,7 +319,7 @@ unsigned char BeebReadMem(int Address) {
 			}
 		}
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ERom[ROMSEL].Type == PALRomType::none) {
+			if (PALRom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
@@ -352,13 +352,12 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0x8000) return WholeRam[Address];
 		if (Address < 0xB000 && MemSel) return Private[Address-0x8000];
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (ERom[ROMSEL].Type == PALRomType::none) {
+			if (PALRom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
 				return ExtendedRom(ROMSEL, Address - 0x8000);
 			}
-
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
@@ -369,7 +368,6 @@ unsigned char BeebReadMem(int Address) {
 		case 1:
 		case 2:
 			return(WholeRam[Address]); // Low memory - not paged.
-			break;
 		case 3:
 		case 4:
 		case 5:
@@ -390,7 +388,7 @@ unsigned char BeebReadMem(int Address) {
 			if (PrivateRAMSelect) {
 				return(PrivateRAM[Address-0x8000]);
 			} else {
-				if (ERom[ROMSEL].Type == PALRomType::none) {
+				if (PALRom[ROMSEL].Type == PALRomType::none) {
 					return Roms[ROMSEL][Address - 0x8000];
 				}
 				else {
@@ -401,13 +399,12 @@ unsigned char BeebReadMem(int Address) {
 		case 9:
 		case 0xa:
 		case 0xb:
-			if (ERom[ROMSEL].Type == PALRomType::none) {
+			if (PALRom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
 				return ExtendedRom(ROMSEL, Address - 0x8000);
 			}
-
 			break;
 		case 0xc:
 		case 0xd:
@@ -422,7 +419,6 @@ unsigned char BeebReadMem(int Address) {
 			break;
 		case 0xe:
 			return(WholeRam[Address]);
-			break;
 		case 0xf:
 			if (Address<0xfc00 || Address>=0xff00) { return(WholeRam[Address]); }
 			if ((ACCCON & 0x40) && Address>=0xfc00 && Address<0xff00) {
@@ -585,7 +581,7 @@ unsigned char BeebReadMem(int Address) {
 	}
 
 	if ((Address & ~0x7)==0xfc40) {
-		if (IDEDriveEnabled)  return(IDERead(Address & 0x7));
+		if (IDEDriveEnabled) return IDERead(Address & 0x7);
 	}
 
 	// DB: M5000 will only return its fcff select register or
@@ -719,8 +715,10 @@ static void RomWriteThrough(int Address, unsigned char Value) {
 	}
 
 	if (bank < 16)
+	{
 		Roms[bank][Address-0x8000]=Value;
-	if (bank < MAX_EROMS) ERom[bank].Type = PALRomType::none;
+		PALRom[bank].Type = PALRomType::none;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -732,10 +730,10 @@ void BeebWriteMem(int Address, unsigned char Value)
 			return;
 		}
 
-		if (Address < 0xc000 && Address >= 0x8000) {
-			if (!SWRAMBoardEnabled && RomWritable[ROMSEL]) Roms[ROMSEL][Address -0x8000] =Value;
+		if (Address >= 0x8000 && Address < 0xc000) {
+			if (!SWRAMBoardEnabled && RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] =Value;
 			else RomWriteThrough(Address, Value);
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
+			PALRom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 	}
@@ -773,7 +771,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		if (Address < 0xc000 && Address >= 0x8000) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] = Value;
 			// else RomWriteThrough(Address, Value); // Not supported on Integra-B
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
+			PALRom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 
@@ -826,12 +824,12 @@ void BeebWriteMem(int Address, unsigned char Value)
 		if (Address < 0xb000 && MemSel) {
 			Private[Address - 0x8000] = Value;
 			return;
-		 }
+		}
 
 		if ((Address < 0xc000) && (Address >= 0x8000)) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 			//else RomWriteThrough(Address, Value); //Not supported on B+
-			if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
+			PALRom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 
@@ -875,7 +873,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 				else {
 					if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 					//else RomWriteThrough(Address, Value); //Not supported on Master
-					if (ERom[ROMSEL].Type != PALRomType::none) ERom[ROMSEL].Type = PALRomType::none;
+					if (PALRom[ROMSEL].Type != PALRomType::none) PALRom[ROMSEL].Type = PALRomType::none;
 				}
 				break;
 			case 9:
@@ -883,7 +881,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 			case 0xb:
 				if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 				//else RomWriteThrough(Address, Value); //Not supported on Master
-				if (ROMSEL < MAX_EROMS) ERom[ROMSEL].Type = PALRomType::none;
+				PALRom[ROMSEL].Type = PALRomType::none;
 				break;
 			case 0xc:
 			case 0xd:
@@ -1218,9 +1216,9 @@ void BeebReadRoms(void) {
 		RomWritable[bank] = false;
 		RomBankType[bank] = BankType::Empty;
 		memset(Roms[bank], 0, sizeof(Roms[bank]));
-		memset(ERom[bank].Rom, 0, sizeof(ERom[bank].Rom));
-		ERom[bank].Type = PALRomType::none;
-		ERom[bank].Bank = 0;
+		memset(PALRom[bank].Rom, 0, sizeof(PALRom[bank].Rom));
+		PALRom[bank].Type = PALRomType::none;
+		PALRom[bank].Bank = 0;
 	}
 
 	// Read OS ROM
@@ -1299,7 +1297,7 @@ void BeebReadRoms(void) {
 
 					// Read PAL ROM:
 					fseek(InFile, 0L, SEEK_SET);
-					fread(ERom[bank].Rom, 1, Size, InFile);
+					fread(PALRom[bank].Rom, 1, Size, InFile);
 					GuessRomType(bank, Size);
 
 					fclose(InFile);
@@ -1449,7 +1447,7 @@ void SaveMemUEF(FILE *SUEF)
 			fwrite(Roms[bank], 1, MAX_ROM_SIZE, SUEF);
 			break;
 		case BankType::Rom:
-			if (ERom[bank].Type == PALRomType::none)
+			if (PALRom[bank].Type == PALRomType::none)
 			{
 				fput16(0x0475, SUEF); // ROM bank
 				fput32(MAX_ROM_SIZE + 2, SUEF);
@@ -1463,9 +1461,9 @@ void SaveMemUEF(FILE *SUEF)
 				fput32(MAX_PALROM_SIZE + 4, SUEF);
 				fputc(bank, SUEF);
 				fputc(static_cast<int>(BankType::Rom), SUEF);
-				fputc(static_cast<int>(ERom[bank].Type), SUEF);
-				fputc(ERom[bank].Bank, SUEF);
-				fwrite(ERom[bank].Rom, 1, MAX_PALROM_SIZE, SUEF);
+				fputc(static_cast<int>(PALRom[bank].Type), SUEF);
+				fputc(PALRom[bank].Bank, SUEF);
+				fwrite(PALRom[bank].Rom, 1, MAX_PALROM_SIZE, SUEF);
 			}
 			break;
 		case BankType::Empty:
@@ -1579,8 +1577,8 @@ bool LoadPALRomEUF(FILE *SUEF, unsigned int ChunkLength)
 {
 	int Bank = fgetc(SUEF);
 	RomBankType[Bank] = static_cast<BankType>(fgetc(SUEF));
-	ERom[Bank].Type = static_cast<PALRomType>(fgetc(SUEF));
-	ERom[Bank].Bank = static_cast<uint8_t>(fgetc(SUEF));
+	PALRom[Bank].Type = static_cast<PALRomType>(fgetc(SUEF));
+	PALRom[Bank].Bank = static_cast<uint8_t>(fgetc(SUEF));
 
 	unsigned int Size = ChunkLength - 4;
 
@@ -1590,15 +1588,15 @@ bool LoadPALRomEUF(FILE *SUEF, unsigned int ChunkLength)
 		{
 			case BankType::Rom:
 				RomWritable[Bank] = false;
-				fread(ERom[Bank].Rom, 1, MAX_PALROM_SIZE, SUEF);
-				memcpy(Roms[Bank], ERom[Bank].Rom, MAX_ROM_SIZE);
+				fread(PALRom[Bank].Rom, 1, MAX_PALROM_SIZE, SUEF);
+				memcpy(Roms[Bank], PALRom[Bank].Rom, MAX_ROM_SIZE);
 				break;
 
 			case BankType::Empty:
 				memset(Roms[Bank], 0, MAX_ROM_SIZE);
-				memset(ERom[Bank].Rom, 0, MAX_PALROM_SIZE);
-				ERom[Bank].Type = PALRomType::none;
-				ERom[Bank].Bank = 0;
+				memset(PALRom[Bank].Rom, 0, MAX_PALROM_SIZE);
+				PALRom[Bank].Type = PALRomType::none;
+				PALRom[Bank].Bank = 0;
 				break;
 		}
 

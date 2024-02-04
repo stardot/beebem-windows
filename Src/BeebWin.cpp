@@ -99,11 +99,8 @@ using std::max;
 #include "Video.h"
 #include "Z80mem.h"
 #include "Z80.h"
-#include "pal.h"
 
 using namespace Gdiplus;
-
-extern largeRom ERom[MAX_EROMS];
 
 constexpr UINT WIN_STYLE = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
 

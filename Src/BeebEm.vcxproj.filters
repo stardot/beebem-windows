@@ -303,7 +303,7 @@
     <ClCompile Include="zlib\zutil.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="pal.cpp">
+    <ClCompile Include="PALRom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -584,7 +584,7 @@
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
-    <ClInclude Include="pal.h">
+    <ClInclude Include="PALRom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
