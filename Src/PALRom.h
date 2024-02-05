@@ -45,7 +45,10 @@ enum class PALRomType {
     watted
 };
 
-constexpr int MAX_PALROM_SIZE = 131072;
+constexpr int PALROM_32K = 32768;
+constexpr int PALROM_64K = 65536;
+constexpr int PALROM_128K = 131072;
+constexpr int MAX_PALROM_SIZE = PALROM_128K;
 
 struct PALRomState {
     unsigned char Rom[MAX_PALROM_SIZE];
