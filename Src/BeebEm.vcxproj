@@ -482,6 +482,7 @@
     <None Include="..\Help\serial.html" />
     <None Include="..\Help\sources.html" />
     <None Include="..\Help\speech.html" />
+    <None Include="..\Help\sprowcopro.html" />
     <None Include="..\Help\state.html" />
     <None Include="..\Help\tapes.html" />
     <None Include="..\Help\teletext.html" />

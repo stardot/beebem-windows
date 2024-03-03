@@ -693,6 +693,9 @@
     <None Include="..\Help\speech.html">
       <Filter>Help Files</Filter>
     </None>
+    <None Include="..\Help\sprowcopro.html">
+      <Filter>Help Files</Filter>
+    </None>
     <None Include="..\Help\state.html">
       <Filter>Help Files</Filter>
     </None>
