@@ -380,6 +380,7 @@ public:
 	void CloseTextToSpeech();
 	bool InitTextToSpeechVoices();
 	void SetTextToSpeechVoice(int Index);
+	void TextToSpeechClearBuffer();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	                        TextToSpeechSearchType type);
 	void TextToSpeechReadChar();

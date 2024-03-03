@@ -45,7 +45,6 @@ bool BeebWin::InitTextToSpeech()
 	m_SpeechWriteChar = true;
 	m_SpeechBufPos = 0;
 	memset(m_SpeechBuf, 0, MAX_SPEECH_BUF_LEN+1);
-	m_SpeechBufPos = 0;
 
 	HRESULT hResult = CoCreateInstance(
 		CLSID_SpVoice,
@@ -301,6 +300,17 @@ void BeebWin::SpeakChar(unsigned char c)
 	}
 }
 
+void BeebWin::TextToSpeechClearBuffer()
+{
+	if (m_SpVoice != nullptr)
+	{
+		m_SpeechBufPos = 0;
+
+		// Stop speaking.
+		m_SpVoice->Speak(nullptr, SPF_PURGEBEFORESPEAK, nullptr);
+	}
+}
+
 #define IS_ENDSENTENCE(c) (c == '.' || c == '!' || c == '?')
 
 bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
@@ -376,6 +386,7 @@ bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
 					found = true;
 				}
 				break;
+
 			case TTS_NONBLANK:
 				if (m_SpeechText[m_SpeechCol] != ' ')
 				{
@@ -383,6 +394,7 @@ bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
 					found = true;
 				}
 				break;
+
 			case TTS_ENDSENTENCE:
 				if (IS_ENDSENTENCE(m_SpeechText[m_SpeechCol]))
 				{
@@ -597,6 +609,10 @@ void BeebWin::TextToSpeechKey(WPARAM wParam)
 
 				// Now speak current word
 				TextToSpeechKey(VK_CLEAR);
+			}
+			else if (AltPressed)
+			{
+				TextToSpeechClearBuffer();
 			}
 			else
 			{
