@@ -20,6 +20,8 @@ Boston, MA  02110-1301, USA.
 
 #include <algorithm>
 #include <cctype>
+#include <codecvt>
+#include <locale>
 
 #include "StringUtils.h"
 
@@ -77,4 +79,18 @@ bool ParseNumber(const std::string& str, int* pValue)
 	*pValue = Value;
 
 	return true;
+}
+
+std::string WStr2Str(const std::wstring& str)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> Converter;
+
+	return Converter.to_bytes(str);
+}
+
+std::wstring Str2WStr(const std::string& str)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> Converter;
+
+	return Converter.from_bytes(str);
 }

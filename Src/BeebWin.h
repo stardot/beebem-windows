@@ -33,6 +33,7 @@ Boston, MA  02110-1301, USA.
 #include <stdlib.h>
 #include <string>
 #include <string.h>
+#include <vector>
 
 #include <windows.h>
 #include <d3dx9.h>
@@ -375,7 +376,10 @@ public:
 	bool GetImageFile(char *FileName, int Size);
 	bool GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid);
 
-	void InitTextToSpeech();
+	bool InitTextToSpeech();
+	void CloseTextToSpeech();
+	bool InitTextToSpeechVoices();
+	void SetTextToSpeechVoice(int Index);
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	                        TextToSpeechSearchType type);
 	void TextToSpeechReadChar();
@@ -614,6 +618,8 @@ public:
 
 	// Text to speech variables
 	bool m_TextToSpeechEnabled;
+	std::vector<std::string> m_TextToSpeechVoiceIDs;
+	HMENU m_hVoiceMenu;
 	ISpVoice *m_SpVoice;
 	int m_SpeechLine;
 	int m_SpeechCol;

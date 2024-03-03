@@ -22,14 +22,21 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 
+#define STRSAFE_NO_DEPRECATE
+#include <sphelper.h>
+
+#include <assert.h>
 #include <stdio.h>
 
 #include "BeebWin.h"
+#include "DebugTrace.h"
 #include "Main.h"
+#include "Messages.h"
 #include "Resource.h"
+#include "StringUtils.h"
 
 /****************************************************************************/
-void BeebWin::InitTextToSpeech()
+bool BeebWin::InitTextToSpeech()
 {
 	m_SpeechLine = 0;
 	m_SpeechCol = 0;
@@ -39,45 +46,238 @@ void BeebWin::InitTextToSpeech()
 	m_SpeechBufPos = 0;
 	memset(m_SpeechBuf, 0, MAX_SPEECH_BUF_LEN+1);
 	m_SpeechBufPos = 0;
-	m_SpeechRate = 6;
 
-	if (m_TextToSpeechEnabled && m_SpVoice == NULL)
+	HRESULT hResult = CoCreateInstance(
+		CLSID_SpVoice,
+		NULL,
+		CLSCTX_ALL,
+		IID_ISpVoice,
+		(void **)&m_SpVoice
+	);
+
+	if (FAILED(hResult))
 	{
-		HRESULT hr = CoCreateInstance(
-			CLSID_SpVoice,
-			NULL,
-			CLSCTX_ALL,
-			IID_ISpVoice,
-			(void **)&m_SpVoice
-		);
+		m_TextToSpeechEnabled = false;
+		Report(MessageType::Error, "Failed to initialise text-to-speech engine");
+		return false;
+	}
 
-		if (FAILED(hr))
+	ISpObjectToken* pToken = nullptr;
+
+	char TokenId[_MAX_PATH];
+	TokenId[0] = '\0';
+
+	UINT SelectedVoice = 0;
+
+	m_Preferences.GetStringValue("TextToSpeechVoice", TokenId);
+
+	for (std::size_t i = 0; i < m_TextToSpeechVoiceIDs.size(); i++)
+	{
+		if (m_TextToSpeechVoiceIDs[i] == TokenId)
 		{
-			m_SpVoice = NULL;
-			m_TextToSpeechEnabled = false;
-			Report(MessageType::Error, "Failed to initialise text-to-speech engine");
+			SpGetTokenFromId(Str2WStr(m_TextToSpeechVoiceIDs[i]).c_str(), &pToken);
+
+			if (pToken != nullptr)
+			{
+				SelectedVoice = static_cast<UINT>(i);
+				break;
+			}
 		}
 	}
 
-	CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
+	size_t LastMenuItemID = m_TextToSpeechVoiceIDs.size() > 0 ?
+	                        ID_TEXT_TO_SPEECH_VOICE_BASE + m_TextToSpeechVoiceIDs.size() - 1 :
+	                        ID_TEXT_TO_SPEECH_VOICE_BASE;
 
-	if (m_TextToSpeechEnabled)
+	CheckMenuRadioItem(m_hVoiceMenu,
+	                   ID_TEXT_TO_SPEECH_VOICE_BASE,
+	                   static_cast<UINT>(LastMenuItemID),
+	                   ID_TEXT_TO_SPEECH_VOICE_BASE + SelectedVoice,
+	                   MF_BYCOMMAND);
+
+	m_SpVoice->SetVoice(pToken);
+
+	m_SpVoice->SetRate(m_SpeechRate);
+	m_SpVoice->Speak(L"<SILENCE MSEC='800'/>BeebEm text to speech output enabled",
+	                 SPF_ASYNC, nullptr);
+
+	return true;
+}
+
+void BeebWin::CloseTextToSpeech()
+{
+	if (m_SpVoice != nullptr)
 	{
-		m_SpVoice->SetRate(m_SpeechRate);
-		m_SpVoice->Speak(L"<SILENCE MSEC='800'/>BeebEm text to speech output enabled",
-		                 SPF_ASYNC, NULL);
+		m_SpVoice->Release();
+		m_SpVoice = nullptr;
+	}
+}
+
+static int GetMenuItemPosition(HMENU hMenu, UINT nMenuItemID)
+{
+	int Count = GetMenuItemCount(hMenu);
+
+	for (int i = 0; i < Count; ++i)
+	{
+		UINT ID = GetMenuItemID(hMenu, i);
+
+		if (ID == nMenuItemID)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+bool BeebWin::InitTextToSpeechVoices()
+{
+	m_TextToSpeechVoiceIDs.clear();
+
+	// The popup menu is destroyed automatically after inserting it
+	// into the main menu.
+	m_hVoiceMenu = CreatePopupMenu();
+
+	HMENU hSoundMenu = GetSubMenu(m_hMenu, 5);
+	assert(hSoundMenu != nullptr);
+
+	int Pos = GetMenuItemPosition(hSoundMenu, IDM_TEXTTOSPEECH);
+	assert(Pos != -1);
+
+	BOOL Result = InsertMenu(hSoundMenu,
+	                         Pos + 1,
+	                         MF_BYPOSITION | MF_POPUP | MF_STRING,
+	                         (UINT_PTR)m_hVoiceMenu,
+	                         "&Voice");
+
+	m_TextToSpeechVoiceIDs.push_back(""); // Default voice
+
+	UINT nMenuItemID = ID_TEXT_TO_SPEECH_VOICE_BASE;
+
+	Result = AppendMenu(m_hVoiceMenu,
+	                    MF_STRING | MF_ENABLED,
+	                    nMenuItemID++,
+	                    "&Default");
+
+	IEnumSpObjectTokens *pEnumerator = nullptr;
+	ULONG VoiceCount = 0;
+	ISpObjectToken* pVoiceToken = nullptr;
+
+	HRESULT hResult = SpEnumTokens(SPCAT_VOICES, nullptr, nullptr, &pEnumerator);
+
+	if (FAILED(hResult))
+	{
+		goto Exit;
+	}
+
+	hResult = pEnumerator->GetCount(&VoiceCount);
+
+	if (FAILED(hResult))
+	{
+		goto Exit;
+	}
+
+	// Only allow 10 entries in the menu
+	if (VoiceCount > 10)
+	{
+		VoiceCount = 10;
+	}
+
+	for (ULONG i = 0; i < VoiceCount; i++)
+	{
+		if (pVoiceToken != nullptr)
+		{
+			pVoiceToken->Release();
+			pVoiceToken = nullptr;
+		}
+
+		hResult = pEnumerator->Next(1, &pVoiceToken, nullptr);
+
+		if (FAILED(hResult))
+		{
+			goto Exit;
+		}
+
+		WCHAR* pszDescription = nullptr;
+		SpGetDescription(pVoiceToken, &pszDescription);
+
+		WCHAR* pszTokenId = nullptr;
+		pVoiceToken->GetId(&pszTokenId);
+
+		if (pszDescription != nullptr && pszTokenId != nullptr)
+		{
+			m_TextToSpeechVoiceIDs.push_back(WStr2Str(pszTokenId));
+
+			Result = AppendMenuW(m_hVoiceMenu,
+			                     MF_STRING | MF_ENABLED,
+			                     nMenuItemID++,
+			                     pszDescription);
+		}
+
+		if (pszDescription != nullptr)
+		{
+			CoTaskMemFree(pszDescription);
+			pszDescription = nullptr;
+		}
+
+		if (pszTokenId != nullptr)
+		{
+			CoTaskMemFree(pszTokenId);
+			pszTokenId = nullptr;
+		}
+	}
+
+Exit:
+	if (pEnumerator != nullptr)
+	{
+		pEnumerator->Release();
+		pEnumerator = nullptr;
+	}
+
+	return SUCCEEDED(hResult);
+}
+
+void BeebWin::SetTextToSpeechVoice(int Index)
+{
+	ISpObjectToken *pToken = nullptr;
+
+	if (Index >= 0 && Index < m_TextToSpeechVoiceIDs.size())
+	{
+		std::wstring TokenId = Str2WStr(m_TextToSpeechVoiceIDs[Index]);
+
+		SpGetTokenFromId(TokenId.c_str(), &pToken);
+
+		m_Preferences.SetStringValue("TextToSpeechVoice", m_TextToSpeechVoiceIDs[Index].c_str());
+	}
+	else
+	{
+		m_Preferences.SetStringValue("TextToSpeechVoice", ""); // Default
+	}
+
+	size_t LastMenuItemID = m_TextToSpeechVoiceIDs.size() > 0 ?
+	                        ID_TEXT_TO_SPEECH_VOICE_BASE + m_TextToSpeechVoiceIDs.size() - 1 :
+	                        ID_TEXT_TO_SPEECH_VOICE_BASE;
+
+	CheckMenuRadioItem(m_hVoiceMenu,
+	                   ID_TEXT_TO_SPEECH_VOICE_BASE,
+	                   static_cast<UINT>(LastMenuItemID),
+	                   ID_TEXT_TO_SPEECH_VOICE_BASE + Index,
+	                   MF_BYCOMMAND);
+
+	if (m_SpVoice != nullptr)
+	{
+		m_SpVoice->SetVoice(pToken);
+
+		m_SpVoice->Speak(L"BeebEm text to speech output enabled",
+		                 SPF_ASYNC, nullptr);
 	}
 }
 
 void BeebWin::Speak(const char *text, DWORD flags)
 {
-	if (m_TextToSpeechEnabled)
+	if (m_SpVoice != nullptr)
 	{
-		int len = MultiByteToWideChar(CP_ACP, 0, text, -1, 0, 0) + 1;
-		WCHAR *wtext = (WCHAR*)malloc(len * sizeof(WCHAR));
-		MultiByteToWideChar(CP_ACP, 0, text, -1, wtext, len);
-		m_SpVoice->Speak(wtext, SPF_ASYNC | SPF_IS_NOT_XML | flags, NULL);
-		free(wtext);
+		m_SpVoice->Speak(Str2WStr(text).c_str(), SPF_ASYNC | SPF_IS_NOT_XML | flags, nullptr);
 	}
 }
 
@@ -91,8 +291,8 @@ void BeebWin::SpeakChar(unsigned char c)
 		}
 
 		if (m_SpeechBufPos > 0 &&
-			(m_SpeechBufPos == MAX_SPEECH_BUF_LEN ||
-			 (c == '.' || c == '!' || c == '?' || c == '!' || c < 32 || c > 126) ))
+		    (m_SpeechBufPos == MAX_SPEECH_BUF_LEN ||
+		     (c == '.' || c == '!' || c == '?' || c == '!' || c < 32 || c > 126)))
 		{
 			m_SpeechBuf[m_SpeechBufPos] = '\0';
 			Speak(m_SpeechBuf, 0);
@@ -241,7 +441,7 @@ void BeebWin::TextToSpeechReadLine()
 	char text[MAX_SPEECH_LINE_LEN+1];
 	bool blank = true;
 	strcpy(text, m_SpeechText);
-	for (int c = 0; text[c] != 0; ++c)
+	for (int c = 0; text[c] != '\0'; ++c)
 	{
 		if (text[c] != ' ')
 		{
@@ -328,21 +528,21 @@ void BeebWin::TextToSpeechReadScreen()
 	      (m_SpeechSpeakPunctuation ? SPF_NLP_SPEAK_PUNC : 0));
 }
 
-void BeebWin::TextToSpeechKey(WPARAM uParam)
+void BeebWin::TextToSpeechKey(WPARAM wParam)
 {
 	char text[MAX_SPEECH_LINE_LEN+1];
-	bool found;
 
 	if (!TeletextEnabled &&
-	    uParam != VK_NUMPAD0 && uParam != VK_INSERT &&
-	    uParam != VK_END && uParam != VK_NUMPAD1)
+	    wParam != VK_NUMPAD0 && wParam != VK_INSERT &&
+	    wParam != VK_END && wParam != VK_NUMPAD1)
 	{
 		Speak("Not in text mode.", SPF_PURGEBEFORESPEAK);
 	}
 	else
 	{
-		bool altPressed = (GetKeyState(VK_MENU) < 0);
-		bool insPressed = (GetKeyState(VK_INSERT) < 0) || (GetKeyState(VK_NUMPAD0) < 0);
+		bool AltPressed = GetKeyState(VK_MENU) < 0;
+		bool InsPressed = (GetKeyState(VK_INSERT) < 0) || (GetKeyState(VK_NUMPAD0) < 0);
+		bool RightCtrlPressed = GetKeyState(VK_RCONTROL) < 0;
 
 		// Check that current position is still on screen
 		if (m_SpeechCol >= CRTC_HorizontalDisplayed)
@@ -352,15 +552,15 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		VideoGetText(m_SpeechText, m_SpeechLine);
 
-		// Key assignments are based on the keys used by the 
+		// Key assignments are based on the keys used by the
 		// Freedom Scientific JAWS package.
-		switch (uParam)
+		switch (wParam)
 		{
 		case VK_CLEAR:
 		case VK_HOME:
 		case VK_NUMPAD5:
 		case VK_NUMPAD7:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Speak current word
 				if (m_SpeechText[m_SpeechCol] != ' ')
@@ -370,11 +570,11 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 				TextToSpeechReadWord();
 			}
-			else if (altPressed)
+			else if (AltPressed)
 			{
 				// Speak current sentence
-				found = TextToSpeechSearch(TTS_BACKWARDS, TTS_ENDSENTENCE);
-				if (found || m_SpeechText[m_SpeechCol] == ' ')
+				bool Found = TextToSpeechSearch(TTS_BACKWARDS, TTS_ENDSENTENCE);
+				if (Found || m_SpeechText[m_SpeechCol] == ' ')
 					TextToSpeechSearch(TTS_FORWARDS, TTS_NONBLANK);
 
 				TextToSpeechReadSentence();
@@ -388,7 +588,7 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		case VK_LEFT:
 		case VK_NUMPAD4:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Speak previous word
 				if (m_SpeechText[m_SpeechCol] != ' ')
@@ -408,7 +608,7 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		case VK_RIGHT:
 		case VK_NUMPAD6:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Speak next word
 				if (m_SpeechText[m_SpeechCol] != ' ')
@@ -427,12 +627,12 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		case VK_UP:
 		case VK_NUMPAD8:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Read current line
 				TextToSpeechReadLine();
 			}
-			else if (altPressed)
+			else if (AltPressed)
 			{
 				// Read previous sentence
 				TextToSpeechSearch(TTS_BACKWARDS, TTS_ENDSENTENCE);
@@ -458,16 +658,16 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		case VK_DOWN:
 		case VK_NUMPAD2:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Read entire screen
 				TextToSpeechReadScreen();
 			}
-			else if (altPressed)
+			else if (AltPressed)
 			{
 				// Read next sentence
-				found = TextToSpeechSearch(TTS_FORWARDS, TTS_ENDSENTENCE);
-				if (found)
+				bool Found = TextToSpeechSearch(TTS_FORWARDS, TTS_ENDSENTENCE);
+				if (Found)
 					TextToSpeechSearch(TTS_FORWARDS, TTS_NONBLANK);
 
 				TextToSpeechReadSentence();
@@ -490,13 +690,13 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		case VK_PRIOR:
 		case VK_NUMPAD9:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Output current cursor location
 				sprintf(text, "Line %d column %d", m_SpeechLine, m_SpeechCol);
 				Speak(text, SPF_PURGEBEFORESPEAK);
 			}
-			else if (altPressed)
+			else if (AltPressed)
 			{
 				if (m_SpeechRate < 10)
 				{
@@ -516,7 +716,7 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		case VK_END:
 		case VK_NUMPAD1:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Toggle text to speech for all text writes through WRCHV
 				m_SpeechWriteChar = !m_SpeechWriteChar;
@@ -535,7 +735,7 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 
 		case VK_NEXT:
 		case VK_NUMPAD3:
-			if (insPressed)
+			if (InsPressed || RightCtrlPressed)
 			{
 				// Toggle speaking of punctuation
 				m_SpeechSpeakPunctuation = !m_SpeechSpeakPunctuation;
@@ -544,7 +744,7 @@ void BeebWin::TextToSpeechKey(WPARAM uParam)
 				else
 					Speak("Speak punctuation disabled.", SPF_PURGEBEFORESPEAK);
 			}
-			else if (altPressed)
+			else if (AltPressed)
 			{
 				if (m_SpeechRate > -10)
 				{
@@ -599,6 +799,7 @@ void BeebWin::InitTextView()
 		DestroyWindow(m_hTextView);
 		m_hTextView = NULL;
 	}
+
 	m_TextViewScreen[0] = 0;
 
 	if (m_TextViewEnabled)

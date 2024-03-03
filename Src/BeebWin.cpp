@@ -207,6 +207,10 @@ BeebWin::BeebWin()
 	m_CaptureMouse = false;
 	m_MouseCaptured = false;
 
+	m_TextToSpeechEnabled = false;
+	m_hVoiceMenu = nullptr;
+	m_SpVoice = nullptr;
+
 	InitKeyMap();
 
 	/* Get the applications path - used for non-user files */
@@ -401,6 +405,7 @@ void BeebWin::ApplyPrefs()
 	if (m_DisplayRenderer != IDM_DISPGDI)
 		InitDX();
 
+	InitTextToSpeechVoices();
 	InitTextToSpeech();
 	InitTextView();
 
@@ -477,19 +482,17 @@ void BeebWin::Shutdown()
 	EndVideo();
 
 	if (m_AutoSavePrefsCMOS || m_AutoSavePrefsFolders ||
-		m_AutoSavePrefsAll || m_AutoSavePrefsChanged)
+	    m_AutoSavePrefsAll || m_AutoSavePrefsChanged)
+	{
 		SavePreferences(m_AutoSavePrefsAll);
+	}
 
 	if (SoundEnabled)
 		SoundReset();
 
 	Music5000Reset();
 
-	if (m_SpVoice)
-	{
-		m_SpVoice->Release();
-		m_SpVoice = nullptr;
-	}
+	CloseTextToSpeech();
 
 	IP232Close();
 
@@ -1586,7 +1589,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_SYSKEYDOWN: {
-			// DebugTrace("SysKeyD: %d, 0x%X, 0x%X\n", uParam, uParam, lParam);
+			// DebugTrace("SysKeyD: %d, 0x%X, 0x%X\n", wParam, wParam, lParam);
 
 			bool AltPressed = (lParam & 0x20000000) != 0; // Check the context code
 
@@ -1602,7 +1605,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			{
 				TextToSpeechKey(wParam);
 			}
-			else if (wParam == VK_OEM_8 /* Alt ` */)
+			else if (wParam == VK_OEM_8) // Alt `
 			{
 				TextViewSyncWithBeebCursor();
 			}
@@ -1646,7 +1649,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 				TextToSpeechKey(wParam);
 			}
 			else if ((wParam == VK_DIVIDE || wParam == VK_MULTIPLY ||
-			         wParam == VK_ADD || wParam == VK_SUBTRACT) &&
+			          wParam == VK_ADD || wParam == VK_SUBTRACT) &&
 			         !m_DisableKeysShortcut)
 			{
 				// Ignore shortcut key, handled on key up
@@ -4044,8 +4047,30 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_TEXTTOSPEECH:
-		m_TextToSpeechEnabled = !m_TextToSpeechEnabled;
-		InitTextToSpeech();
+		if (m_TextToSpeechEnabled)
+		{
+			CloseTextToSpeech();
+			m_TextToSpeechEnabled = false;
+		}
+		else
+		{
+			m_TextToSpeechEnabled = InitTextToSpeech();
+		}
+
+		CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
+		break;
+
+	case ID_TEXT_TO_SPEECH_VOICE_BASE:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 1:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 2:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 3:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 4:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 5:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 6:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 7:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 8:
+	case ID_TEXT_TO_SPEECH_VOICE_BASE + 9:
+		SetTextToSpeechVoice(MenuID - ID_TEXT_TO_SPEECH_VOICE_BASE);
 		break;
 
 	case IDM_TEXTVIEW:

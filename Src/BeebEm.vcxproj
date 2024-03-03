@@ -461,7 +461,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Help\65c02copro.html" />
-    <None Include="..\Help\accessiblity.html" />
+    <None Include="..\Help\accessibility.html" />
     <None Include="..\Help\armcopro.html" />
     <None Include="..\Help\commandline.html" />
     <None Include="..\Help\contents.html" />

@@ -630,7 +630,7 @@
     <None Include="..\Help\65c02copro.html">
       <Filter>Help Files</Filter>
     </None>
-    <None Include="..\Help\accessiblity.html">
+    <None Include="..\Help\accessibility.html">
       <Filter>Help Files</Filter>
     </None>
     <None Include="..\Help\armcopro.html">

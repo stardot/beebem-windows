@@ -259,6 +259,16 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled))
 		m_TextToSpeechEnabled = false;
 
+	DWORD TextToSpeechRate;
+	if (m_Preferences.GetDWORDValue("TextToSpeechRate", TextToSpeechRate))
+	{
+		m_SpeechRate = TextToSpeechRate;
+	}
+	else
+	{
+		m_SpeechRate = 0;
+	}
+
 	if (!m_Preferences.GetBoolValue("Music5000Enabled", Music5000Enabled))
 		Music5000Enabled = false;
 
@@ -712,6 +722,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("Part Samples", PartSamples);
 		m_Preferences.SetBoolValue("ExponentialVolume", SoundExponentialVolume);
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
+		m_Preferences.SetDWORDValue("TextToSpeechRate", m_SpeechRate);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
 		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIDSticks);
