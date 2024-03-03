@@ -35,6 +35,13 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
   screen mode and other options (Model B/B+ only).
 * Fixed installer to not delete Econet and key map config files.
 * Removed BeebDiscLoad and BeebVideoRefreshFreq environment variables.
+* Text to speech improvements:
+  * Added menu items to select the text to speech voice.
+  * The selected voice and speed are now stored in preferences.
+  * Right-Ctrl can now be used instead of Insert to control text to speech
+    output.
+  * Speech output can now be stopped and the buffer cleared by pressing
+    Alt+Num Pad 4.
 
 Version 4.19 (1 May 2023)
 ------------
