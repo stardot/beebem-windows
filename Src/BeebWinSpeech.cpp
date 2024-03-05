@@ -38,13 +38,7 @@ Boston, MA  02110-1301, USA.
 /****************************************************************************/
 bool BeebWin::InitTextToSpeech()
 {
-	m_SpeechLine = 0;
-	m_SpeechCol = 0;
-	memset(m_SpeechText, 0, MAX_SPEECH_LINE_LEN+1);
-	m_SpeechSpeakPunctuation = false;
-	m_SpeechWriteChar = true;
-	m_SpeechBufPos = 0;
-	memset(m_SpeechBuf, 0, MAX_SPEECH_BUF_LEN+1);
+	TextToSpeechResetState();
 
 	HRESULT hResult = CoCreateInstance(
 		CLSID_SpVoice,
@@ -56,51 +50,30 @@ bool BeebWin::InitTextToSpeech()
 
 	if (FAILED(hResult))
 	{
-		m_TextToSpeechEnabled = false;
 		Report(MessageType::Error, "Failed to initialise text-to-speech engine");
 		return false;
 	}
 
-	ISpObjectToken* pToken = nullptr;
+	ISpObjectToken* pToken = TextToSpeechGetSelectedVoiceToken();
 
-	char TokenId[_MAX_PATH];
-	TokenId[0] = '\0';
+	TextToSpeechSetVoice(pToken);
 
-	UINT SelectedVoice = 0;
-
-	m_Preferences.GetStringValue("TextToSpeechVoice", TokenId);
-
-	for (std::size_t i = 0; i < m_TextToSpeechVoiceIDs.size(); i++)
-	{
-		if (m_TextToSpeechVoiceIDs[i] == TokenId)
-		{
-			SpGetTokenFromId(Str2WStr(m_TextToSpeechVoiceIDs[i]).c_str(), &pToken);
-
-			if (pToken != nullptr)
-			{
-				SelectedVoice = static_cast<UINT>(i);
-				break;
-			}
-		}
-	}
-
-	size_t LastMenuItemID = m_TextToSpeechVoiceIDs.size() > 0 ?
-	                        ID_TEXT_TO_SPEECH_VOICE_BASE + m_TextToSpeechVoiceIDs.size() - 1 :
-	                        ID_TEXT_TO_SPEECH_VOICE_BASE;
-
-	CheckMenuRadioItem(m_hVoiceMenu,
-	                   ID_TEXT_TO_SPEECH_VOICE_BASE,
-	                   static_cast<UINT>(LastMenuItemID),
-	                   ID_TEXT_TO_SPEECH_VOICE_BASE + SelectedVoice,
-	                   MF_BYCOMMAND);
-
-	m_SpVoice->SetVoice(pToken);
+	pToken->Release();
 
 	m_SpVoice->SetRate(m_SpeechRate);
-	m_SpVoice->Speak(L"<SILENCE MSEC='800'/>BeebEm text to speech output enabled",
-	                 SPF_ASYNC, nullptr);
 
 	return true;
+}
+
+void BeebWin::TextToSpeechResetState()
+{
+	m_SpeechLine = 0;
+	m_SpeechCol = 0;
+	memset(m_SpeechText, 0, MAX_SPEECH_LINE_LEN+1);
+	m_SpeechSpeakPunctuation = false;
+	m_SpeechWriteChar = true;
+	memset(m_SpeechBuf, 0, MAX_SPEECH_BUF_LEN+1);
+	m_SpeechBufPos = 0;
 }
 
 void BeebWin::CloseTextToSpeech()
@@ -233,14 +206,53 @@ Exit:
 		pEnumerator = nullptr;
 	}
 
+	int Index = TextToSpeechGetSelectedVoice();
+
+	TextToSpeechSelectVoiceMenuItem(Index);
+
 	return SUCCEEDED(hResult);
 }
 
-void BeebWin::SetTextToSpeechVoice(int Index)
+ISpObjectToken* BeebWin::TextToSpeechGetSelectedVoiceToken()
+{
+	ISpObjectToken* pToken = nullptr;
+
+	int Index = TextToSpeechGetSelectedVoice();
+
+	if (Index > 0)
+	{
+		SpGetTokenFromId(Str2WStr(m_TextToSpeechVoiceIDs[Index]).c_str(), &pToken);
+	}
+
+	return pToken;
+}
+
+int BeebWin::TextToSpeechGetSelectedVoice()
+{
+	char TokenId[_MAX_PATH];
+	TokenId[0] = '\0';
+
+	int Index = 0;
+
+	m_Preferences.GetStringValue("TextToSpeechVoice", TokenId);
+
+	for (std::size_t i = 0; i < m_TextToSpeechVoiceIDs.size(); i++)
+	{
+		if (m_TextToSpeechVoiceIDs[i] == TokenId)
+		{
+			Index = static_cast<int>(i);
+			break;
+		}
+	}
+
+	return Index;
+}
+
+void BeebWin::TextToSpeechSetVoice(int Index)
 {
 	ISpObjectToken *pToken = nullptr;
 
-	if (Index >= 0 && Index < m_TextToSpeechVoiceIDs.size())
+	if (Index >= 0 && Index < (int)m_TextToSpeechVoiceIDs.size())
 	{
 		std::wstring TokenId = Str2WStr(m_TextToSpeechVoiceIDs[Index]);
 
@@ -253,6 +265,29 @@ void BeebWin::SetTextToSpeechVoice(int Index)
 		m_Preferences.SetStringValue("TextToSpeechVoice", ""); // Default
 	}
 
+	TextToSpeechSelectVoiceMenuItem(Index);
+
+	TextToSpeechSetVoice(pToken);
+
+	if (pToken != nullptr)
+	{
+		pToken->Release();
+	}
+}
+
+void BeebWin::TextToSpeechSetVoice(ISpObjectToken* pToken)
+{
+	if (m_SpVoice != nullptr)
+	{
+		m_SpVoice->SetVoice(pToken);
+
+		m_SpVoice->Speak(L"<SILENCE MSEC='800'/>BeebEm text to speech output enabled",
+		                 SPF_ASYNC, nullptr);
+	}
+}
+
+void BeebWin::TextToSpeechSelectVoiceMenuItem(int Index)
+{
 	size_t LastMenuItemID = m_TextToSpeechVoiceIDs.size() > 0 ?
 	                        ID_TEXT_TO_SPEECH_VOICE_BASE + m_TextToSpeechVoiceIDs.size() - 1 :
 	                        ID_TEXT_TO_SPEECH_VOICE_BASE;
@@ -262,14 +297,6 @@ void BeebWin::SetTextToSpeechVoice(int Index)
 	                   static_cast<UINT>(LastMenuItemID),
 	                   ID_TEXT_TO_SPEECH_VOICE_BASE + Index,
 	                   MF_BYCOMMAND);
-
-	if (m_SpVoice != nullptr)
-	{
-		m_SpVoice->SetVoice(pToken);
-
-		m_SpVoice->Speak(L"BeebEm text to speech output enabled",
-		                 SPF_ASYNC, nullptr);
-	}
 }
 
 void BeebWin::Speak(const char *text, DWORD flags)
@@ -311,7 +338,10 @@ void BeebWin::TextToSpeechClearBuffer()
 	}
 }
 
-#define IS_ENDSENTENCE(c) (c == '.' || c == '!' || c == '?')
+static constexpr bool IsEndSentence(char c)
+{
+	return c == '.' || c == '!' || c == '?';
+}
 
 bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
                                  TextToSpeechSearchType type)
@@ -396,7 +426,7 @@ bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
 				break;
 
 			case TTS_ENDSENTENCE:
-				if (IS_ENDSENTENCE(m_SpeechText[m_SpeechCol]))
+				if (IsEndSentence(m_SpeechText[m_SpeechCol]))
 				{
 					done = true;
 					found = true;
@@ -487,7 +517,7 @@ void BeebWin::TextToSpeechReadSentence()
 			if (textLine[c] != ' ')
 				blank = false;
 
-			if (IS_ENDSENTENCE(textLine[c]))
+			if (IsEndSentence(textLine[c]))
 			{
 				done = true;
 				break;

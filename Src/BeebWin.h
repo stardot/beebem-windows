@@ -377,9 +377,14 @@ public:
 	bool GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid);
 
 	bool InitTextToSpeech();
+	void TextToSpeechResetState();
 	void CloseTextToSpeech();
 	bool InitTextToSpeechVoices();
-	void SetTextToSpeechVoice(int Index);
+	int TextToSpeechGetSelectedVoice();
+	ISpObjectToken* TextToSpeechGetSelectedVoiceToken();
+	void TextToSpeechSelectVoiceMenuItem(int Index);
+	void TextToSpeechSetVoice(int Index);
+	void TextToSpeechSetVoice(ISpObjectToken* pToken);
 	void TextToSpeechClearBuffer();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	                        TextToSpeechSearchType type);

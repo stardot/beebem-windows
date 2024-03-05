@@ -210,6 +210,8 @@ BeebWin::BeebWin()
 	m_TextToSpeechEnabled = false;
 	m_hVoiceMenu = nullptr;
 	m_SpVoice = nullptr;
+	m_SpeechRate = 0;
+	TextToSpeechResetState();
 
 	InitKeyMap();
 
@@ -406,7 +408,12 @@ void BeebWin::ApplyPrefs()
 		InitDX();
 
 	InitTextToSpeechVoices();
-	InitTextToSpeech();
+
+	if (m_TextToSpeechEnabled)
+	{
+		m_TextToSpeechEnabled = InitTextToSpeech();
+	}
+
 	InitTextView();
 
 	/* Initialise printer */
@@ -4070,7 +4077,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 	case ID_TEXT_TO_SPEECH_VOICE_BASE + 7:
 	case ID_TEXT_TO_SPEECH_VOICE_BASE + 8:
 	case ID_TEXT_TO_SPEECH_VOICE_BASE + 9:
-		SetTextToSpeechVoice(MenuID - ID_TEXT_TO_SPEECH_VOICE_BASE);
+		TextToSpeechSetVoice(MenuID - ID_TEXT_TO_SPEECH_VOICE_BASE);
 		break;
 
 	case IDM_TEXTVIEW:
