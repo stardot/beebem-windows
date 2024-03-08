@@ -408,6 +408,7 @@ void BeebWin::ApplyPrefs()
 		InitDX();
 
 	InitTextToSpeechVoices();
+	InitVoiceMenu();
 
 	if (m_TextToSpeechEnabled)
 	{

@@ -103,6 +103,12 @@ enum TextToSpeechSearchType
 	TTS_ENDSENTENCE
 };
 
+struct TextToSpeechVoice
+{
+	std::string Id;
+	std::string Description;
+};
+
 // A structure for our custom vertex type. We added texture coordinates
 struct CUSTOMVERTEX
 {
@@ -272,11 +278,6 @@ public:
 	bool LoadUEFTape(const char *FileName);
 	bool LoadCSWTape(const char *FileName);
 
-	void Speak(const char *text, DWORD flags);
-	void SpeakChar(unsigned char c);
-	void TextToSpeechKey(WPARAM uParam);
-	void TextViewSpeechSync(void);
-	void TextViewSyncWithBeebCursor(void);
 	void HandleTimer(void);
 	void doCopy(void);
 	void doPaste(void);
@@ -380,11 +381,14 @@ public:
 	void TextToSpeechResetState();
 	void CloseTextToSpeech();
 	bool InitTextToSpeechVoices();
+	void InitVoiceMenu();
 	int TextToSpeechGetSelectedVoice();
 	ISpObjectToken* TextToSpeechGetSelectedVoiceToken();
-	void TextToSpeechSelectVoiceMenuItem(int Index);
 	void TextToSpeechSetVoice(int Index);
 	void TextToSpeechSetVoice(ISpObjectToken* pToken);
+	void TextToSpeechSelectVoiceMenuItem(int Index);
+	void Speak(const char *text, DWORD flags);
+	void SpeakChar(unsigned char c);
 	void TextToSpeechClearBuffer();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	                        TextToSpeechSearchType type);
@@ -393,10 +397,13 @@ public:
 	void TextToSpeechReadLine();
 	void TextToSpeechReadSentence();
 	void TextToSpeechReadScreen();
+	void TextToSpeechKey(WPARAM wParam);
 
 	void InitTextView();
 	void TextView();
+	void TextViewSpeechSync();
 	void TextViewSetCursorPos(int line, int col);
+	void TextViewSyncWithBeebCursor();
 
 	bool RebootSystem();
 	void LoadUserKeyMap(void);
@@ -624,7 +631,7 @@ public:
 
 	// Text to speech variables
 	bool m_TextToSpeechEnabled;
-	std::vector<std::string> m_TextToSpeechVoiceIDs;
+	std::vector<TextToSpeechVoice> m_TextToSpeechVoices;
 	HMENU m_hVoiceMenu;
 	ISpVoice *m_SpVoice;
 	int m_SpeechLine;
