@@ -338,7 +338,7 @@ bool BeebWin::Load8271DiscImage(const char *FileName, int Drive, int Tracks, Dis
 	else
 	{
 		assert(Type == DiscType::FSD);
-		Result = ::LoadFSDDiscImage(FileName, Drive);
+		Result = LoadFSDDiscImage(FileName, Drive);
 	}
 
 	if (Result == Disc8271Result::Success)
@@ -660,7 +660,7 @@ void BeebWin::RestoreState()
 
 	m_Preferences.GetStringValue("StatesPath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
-  
+
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
 	if (fileDialog.Open())
 	{
@@ -1734,7 +1734,7 @@ bool BeebWin::GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid)
 	}
 
 	for (i = 0; i < num; ++i)
-	{ 
+	{
 		if (wcscmp(pImageCodecInfo[i].MimeType, mimeType) == 0)
 		{
 			*encoderClsid = pImageCodecInfo[i].Clsid;

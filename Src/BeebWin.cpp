@@ -624,25 +624,17 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		// 8271 disc
 		if (szDiscName[0][0] != '\0')
 		{
-			if (Type[0] == DiscType::SSD || Type[0] == DiscType::DSD)
+			if (Type[0] == DiscType::SSD || Type[0] == DiscType::DSD || Type[0] == DiscType::FSD)
 			{
 				Load8271DiscImage(szDiscName[0], 0, 80, Type[0]);
-			}
-			else if (Type[0] == DiscType::FSD)
-			{
-				LoadFSDDiscImage(szDiscName[0], 0);
 			}
 		}
 
 		if (szDiscName[1][0] != '\0')
 		{
-			if (Type[1] == DiscType::SSD || Type[1] == DiscType::DSD)
+			if (Type[1] == DiscType::SSD || Type[1] == DiscType::DSD || Type[1] == DiscType::FSD)
 			{
 				Load8271DiscImage(szDiscName[1], 1, 80, Type[1]);
-			}
-			else if (Type[1] == DiscType::FSD)
-			{
-				LoadFSDDiscImage(szDiscName[1], 1);
 			}
 		}
 	}
@@ -4519,7 +4511,7 @@ void BeebWin::ParseCommandLine()
 // Check for preference files in the same directory as the file specified
 void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 {
-	if (path[0] == 0)
+	if (path[0] == '\0')
 		return;
 
 	char file[_MAX_PATH];
@@ -4639,7 +4631,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 	FileType Type = FileType::None;
 
 	// See if file is readable
-	if (CmdLineFile[0] != 0)
+	if (CmdLineFile[0] != '\0')
 	{
 		FileName = CmdLineFile;
 		strncpy(TmpPath, CmdLineFile, _MAX_PATH);
@@ -4647,7 +4639,11 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 		// Work out which type of file it is
 		Type = GetFileTypeFromExtension(FileName);
 
-		if (Type == FileType::None)
+		if (Type != FileType::None)
+		{
+			cont = true;
+		}
+		else
 		{
 			Report(MessageType::Error, "Unrecognised file type:\n  %s",
 			       FileName);
@@ -4729,7 +4725,7 @@ void BeebWin::FindCommandLineFile(char *CmdLineFile)
 	}
 	else
 	{
-		CmdLineFile[0] = 0;
+		CmdLineFile[0] = '\0';
 	}
 }
 
@@ -4744,14 +4740,18 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 
 	m_AutoBootDisc = false;
 
-	if (CmdLineFile[0] != 0)
+	if (CmdLineFile[0] != '\0')
 	{
 		FileName = CmdLineFile;
 
 		// Work out which type of files it is
 		Type = GetFileTypeFromExtension(FileName);
 
-		if (Type == FileType::None)
+		if (Type != FileType::None)
+		{
+			cont = true;
+		}
+		else
 		{
 			Report(MessageType::Error, "Unrecognised file type:\n  %s",
 			       FileName);
@@ -4762,12 +4762,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 
 	if (cont)
 	{
-		cont = false;
-
-		if (FileExists(FileName))
-		{
-			cont = true;
-		}
+		cont = FileExists(FileName);
 
 		if (!cont)
 		{
@@ -4854,7 +4849,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 			{
 				if (NativeFDC)
 				{
-					LoadFSDDiscImage(FileName, Drive);
+					Load8271DiscImage(FileName, Drive, 80, DiscType::FSD);
 				}
 				else
 				{

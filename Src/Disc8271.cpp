@@ -2782,7 +2782,7 @@ void Disc8271Reset()
 	FDCState.BadTracks[0][0] = 0xff; // 1st subscript is surface 0/1 and second subscript is badtrack 0/1
 	FDCState.BadTracks[0][1] = 0xff;
 	FDCState.BadTracks[1][0] = 0xff;
-	FDCState.BadTracks[1][1] = 0xff; 
+	FDCState.BadTracks[1][1] = 0xff;
 
 	// Default values set by Acorn DFS:
 	FDCState.StepRate = 12;
