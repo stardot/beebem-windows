@@ -864,13 +864,9 @@ LRESULT TextViewWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 void BeebWin::InitTextView()
 {
-	if (m_hTextView != NULL)
-	{
-		DestroyWindow(m_hTextView);
-		m_hTextView = NULL;
-	}
+	CloseTextView();
 
-	m_TextViewScreen[0] = 0;
+	m_TextViewScreen[0] = '\0';
 
 	if (m_TextViewEnabled)
 	{
@@ -902,6 +898,15 @@ void BeebWin::InitTextView()
 	}
 
 	CheckMenuItem(IDM_TEXTVIEW, m_TextViewEnabled);
+}
+
+void BeebWin::CloseTextView()
+{
+	if (m_hTextView != nullptr)
+	{
+		DestroyWindow(m_hTextView);
+		m_hTextView = nullptr;
+	}
 }
 
 void BeebWin::TextView()

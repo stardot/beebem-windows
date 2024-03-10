@@ -400,6 +400,7 @@ public:
 	void TextToSpeechKey(WPARAM wParam);
 
 	void InitTextView();
+	void CloseTextView();
 	void TextView();
 	void TextViewSpeechSync();
 	void TextViewSetCursorPos(int line, int col);

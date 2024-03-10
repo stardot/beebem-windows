@@ -501,6 +501,7 @@ void BeebWin::Shutdown()
 	Music5000Reset();
 
 	CloseTextToSpeech();
+	CloseTextView();
 
 	IP232Close();
 
