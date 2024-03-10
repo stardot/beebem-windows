@@ -157,8 +157,9 @@ BeebWin::BeebWin()
 	m_AviDC = nullptr;
 	m_AviDIB = nullptr;
 	m_CaptureBitmapPending = false;
-	m_SpVoice = NULL;
-	m_hTextView = NULL;
+	m_SpVoice = nullptr;
+	m_hTextView = nullptr;
+	m_TextViewPrevWndProc = nullptr;
 	m_Frozen = false;
 	m_WriteProtectDisc[0] = !IsDiscWritable(0);
 	m_WriteProtectDisc[1] = !IsDiscWritable(1);
@@ -2751,6 +2752,11 @@ void BeebWin::WinSizeChange(WPARAM size, int width, int height)
 	{
 		m_XLastWinSize = m_XWinSize;
 		m_YLastWinSize = m_YWinSize;
+	}
+
+	if (m_hTextView)
+	{
+		MoveWindow(m_hTextView, 0, 0, width, height, TRUE);
 	}
 }
 

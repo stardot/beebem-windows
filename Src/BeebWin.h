@@ -651,6 +651,7 @@ public:
 	// Text view variables
 	HWND m_hTextView;
 	bool m_TextViewEnabled;
+	WNDPROC m_TextViewPrevWndProc;
 	static const int MAX_TEXTVIEW_SCREEN_LEN = 128 * 32;
 	char m_TextViewScreen[MAX_TEXTVIEW_SCREEN_LEN + 1];
 

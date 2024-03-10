@@ -837,8 +837,6 @@ void BeebWin::TextToSpeechKey(WPARAM wParam)
 
 /****************************************************************************/
 
-static WNDPROC TextViewPrevWndProc;
-
 LRESULT TextViewWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	bool keypress = false;
@@ -854,7 +852,7 @@ LRESULT TextViewWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 
-	LRESULT lr = CallWindowProc(TextViewPrevWndProc, hWnd, msg, wParam, lParam);
+	LRESULT lr = CallWindowProc(mainWin->m_TextViewPrevWndProc, hWnd, msg, wParam, lParam);
 
 	if (keypress)
 		mainWin->TextViewSpeechSync();
@@ -880,6 +878,7 @@ void BeebWin::InitTextView()
 		                           NULL,
 		                           hInst,
 		                           NULL);
+
 		if (m_hTextView == NULL)
 		{
 			m_TextViewEnabled = false;
@@ -889,10 +888,8 @@ void BeebWin::InitTextView()
 			SendMessage(m_hTextView, WM_SETFONT,
 			            (WPARAM)GetStockObject(ANSI_FIXED_FONT), 0);
 
-			LONG_PTR lPtr = GetWindowLongPtr(m_hTextView, GWLP_WNDPROC);
-			TextViewPrevWndProc = (WNDPROC)lPtr;
-			lPtr = reinterpret_cast<LONG_PTR>(TextViewWndProc);
-			SetWindowLongPtr(m_hTextView, GWLP_WNDPROC, lPtr);
+			m_TextViewPrevWndProc = (WNDPROC)GetWindowLongPtr(m_hTextView, GWLP_WNDPROC);
+			SetWindowLongPtr(m_hTextView, GWLP_WNDPROC, (LONG_PTR)m_TextViewPrevWndProc);
 			SetFocus(m_hTextView);
 		}
 	}
@@ -906,6 +903,7 @@ void BeebWin::CloseTextView()
 	{
 		DestroyWindow(m_hTextView);
 		m_hTextView = nullptr;
+		m_TextViewPrevWndProc = nullptr;
 	}
 }
 
@@ -914,13 +912,12 @@ void BeebWin::TextView()
 	char text[MAX_SPEECH_LINE_LEN+1];
 	char screen[MAX_TEXTVIEW_SCREEN_LEN+1];
 	char *s = screen;
-	int line;
 
 	int selpos = (int)SendMessage(m_hTextView, EM_GETSEL, 0, 0) & 0xffff;
 
 	if (TeletextEnabled)
 	{
-		for (line = 0; line < CRTC_VerticalDisplayed; ++line)
+		for (int line = 0; line < CRTC_VerticalDisplayed; ++line)
 		{
 			VideoGetText(text, line);
 			strcpy(s, text);
