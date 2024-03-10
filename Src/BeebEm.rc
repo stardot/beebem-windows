@@ -289,7 +289,12 @@ BEGIN
         MENUITEM "Part S&amples",               ID_PSAMPLES
         MENUITEM "Exponential Volume",          IDM_EXPVOLUME
         MENUITEM SEPARATOR
-        MENUITEM "&Text To Speech",             IDM_TEXTTOSPEECH
+        POPUP "&Text To Speech"
+        BEGIN
+            MENUITEM "&Enable",                     IDM_TEXTTOSPEECH_ENABLE
+            MENUITEM "Speak &Automatically",        IDM_TEXTTOSPEECH_AUTO_SPEAK
+            MENUITEM "Speak &Punctuation",          IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION
+        END
         MENUITEM SEPARATOR
         MENUITEM "Music &5000",                 IDM_MUSIC5000
     END

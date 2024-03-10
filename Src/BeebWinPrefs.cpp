@@ -258,6 +258,10 @@ void BeebWin::LoadPreferences()
 		SoundExponentialVolume = true;
 	if (!m_Preferences.GetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled))
 		m_TextToSpeechEnabled = false;
+	if (!m_Preferences.GetBoolValue("TextToSpeechAutoSpeak", m_SpeechWriteChar))
+		m_SpeechWriteChar = true;
+	if (!m_Preferences.GetBoolValue("TextToSpeechSpeakPunctuation", m_SpeechSpeakPunctuation))
+		m_SpeechSpeakPunctuation = false;
 
 	DWORD TextToSpeechRate;
 	if (m_Preferences.GetDWORDValue("TextToSpeechRate", TextToSpeechRate))
@@ -723,13 +727,15 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("ExponentialVolume", SoundExponentialVolume);
 		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
 		m_Preferences.SetDWORDValue("TextToSpeechRate", m_SpeechRate);
+		m_Preferences.SetBoolValue("TextToSpeechAutoSpeak", m_SpeechWriteChar);
+		m_Preferences.SetBoolValue("TextToSpeechSpeakPunctuation", m_SpeechSpeakPunctuation);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
-		m_Preferences.SetDWORDValue( CFG_OPTIONS_STICKS, m_MenuIDSticks);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIDSticks);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
-		m_Preferences.SetDWORDValue( CFG_OPTIONS_KEY_MAPPING, m_MenuIDKeyMapping);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_KEY_MAPPING, m_MenuIDKeyMapping);
 		m_Preferences.SetBoolValue("KeyMapAS", m_KeyMapAS);
 		flag = m_KeyMapFunc;
 		m_Preferences.SetBinaryValue("KeyMapFunc", &flag, 1);

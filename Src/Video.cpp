@@ -1750,8 +1750,8 @@ void VideoGetText(char *text, int line)
 {
 	int x;
 
-	text[0] = 0;
-	text[1] = 0;
+	text[0] = '\0';
+	text[1] = '\0';
 
 	if (!VideoState.IsTeletext || line >= CRTC_VerticalDisplayed)
 		return;

@@ -1218,7 +1218,9 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(m_MenuIDVolume, true);
 	CheckMenuItem(ID_PSAMPLES, PartSamples);
 	CheckMenuItem(IDM_EXPVOLUME, SoundExponentialVolume);
-	CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
+	CheckMenuItem(IDM_TEXTTOSPEECH_ENABLE, m_TextToSpeechEnabled);
+	CheckMenuItem(IDM_TEXTTOSPEECH_AUTO_SPEAK, m_SpeechWriteChar);
+	CheckMenuItem(IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION, m_SpeechSpeakPunctuation);
 
 	// AMX
 	CheckMenuItem(IDM_AMXONOFF, AMXMouseEnabled);
@@ -4053,7 +4055,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 		break;
 
-	case IDM_TEXTTOSPEECH:
+	case IDM_TEXTTOSPEECH_ENABLE:
 		if (m_TextToSpeechEnabled)
 		{
 			CloseTextToSpeech();
@@ -4064,7 +4066,17 @@ void BeebWin::HandleCommand(UINT MenuID)
 			m_TextToSpeechEnabled = InitTextToSpeech();
 		}
 
-		CheckMenuItem(IDM_TEXTTOSPEECH, m_TextToSpeechEnabled);
+		CheckMenuItem(IDM_TEXTTOSPEECH_ENABLE, m_TextToSpeechEnabled);
+		break;
+
+	case IDM_TEXTTOSPEECH_AUTO_SPEAK:
+		TextToSpeechToggleAutoSpeak();
+		CheckMenuItem(IDM_TEXTTOSPEECH_AUTO_SPEAK, m_SpeechWriteChar);
+		break;
+
+	case IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION:
+		TextToSpeechToggleSpeakPunctuation();
+		CheckMenuItem(IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION, m_SpeechSpeakPunctuation);
 		break;
 
 	case ID_TEXT_TO_SPEECH_VOICE_BASE:

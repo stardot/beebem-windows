@@ -58,7 +58,10 @@ bool BeebWin::InitTextToSpeech()
 
 	TextToSpeechSetVoice(pToken);
 
-	pToken->Release();
+	if (pToken != nullptr)
+	{
+		pToken->Release();
+	}
 
 	m_SpVoice->SetRate(m_SpeechRate);
 
@@ -70,8 +73,6 @@ void BeebWin::TextToSpeechResetState()
 	m_SpeechLine = 0;
 	m_SpeechCol = 0;
 	memset(m_SpeechText, 0, MAX_SPEECH_LINE_LEN+1);
-	m_SpeechSpeakPunctuation = false;
-	m_SpeechWriteChar = true;
 	memset(m_SpeechBuf, 0, MAX_SPEECH_BUF_LEN+1);
 	m_SpeechBufPos = 0;
 }
@@ -83,23 +84,6 @@ void BeebWin::CloseTextToSpeech()
 		m_SpVoice->Release();
 		m_SpVoice = nullptr;
 	}
-}
-
-static int GetMenuItemPosition(HMENU hMenu, UINT nMenuItemID)
-{
-	int Count = GetMenuItemCount(hMenu);
-
-	for (int i = 0; i < Count; ++i)
-	{
-		UINT ID = GetMenuItemID(hMenu, i);
-
-		if (ID == nMenuItemID)
-		{
-			return i;
-		}
-	}
-
-	return -1;
 }
 
 bool BeebWin::InitTextToSpeechVoices()
@@ -189,6 +173,38 @@ Exit:
 	return SUCCEEDED(hResult);
 }
 
+static int GetMenuItemPosition(HMENU hMenu, const char *pszMenuItem)
+{
+	int Index = -1;
+	int Count = GetMenuItemCount(hMenu);
+
+	for (int i = 0; i < Count && Index == -1; ++i)
+	{
+		MENUITEMINFO Info;
+		ZeroMemory(&Info, sizeof(Info));
+		Info.cbSize = sizeof(Info);
+		Info.fMask = MIIM_STRING;
+
+		GetMenuItemInfo(hMenu, i, TRUE, &Info);
+
+		Info.cch += 1;
+
+		char *str = (char*)malloc(Info.cch);
+		Info.dwTypeData = str;
+
+		GetMenuItemInfo(hMenu, i, TRUE, &Info);
+
+		if (strcmp(str, pszMenuItem) == 0)
+		{
+			Index = i; // Found it
+		}
+
+		free(str);
+	}
+
+	return Index;
+}
+
 void BeebWin::InitVoiceMenu()
 {
 	// The popup menu is destroyed automatically after inserting it
@@ -198,7 +214,7 @@ void BeebWin::InitVoiceMenu()
 	HMENU hSoundMenu = GetSubMenu(m_hMenu, 5);
 	assert(hSoundMenu != nullptr);
 
-	int Pos = GetMenuItemPosition(hSoundMenu, IDM_TEXTTOSPEECH);
+	int Pos = GetMenuItemPosition(hSoundMenu, "&Text To Speech");
 	assert(Pos != -1);
 
 	BOOL Result = InsertMenu(hSoundMenu,
@@ -242,6 +258,8 @@ int BeebWin::TextToSpeechGetSelectedVoice()
 
 	return Index;
 }
+
+// Returns the token for the selected voice, or nullptr to use the default voice.
 
 ISpObjectToken* BeebWin::TextToSpeechGetSelectedVoiceToken()
 {
@@ -350,6 +368,40 @@ void BeebWin::TextToSpeechClearBuffer()
 
 		// Stop speaking.
 		m_SpVoice->Speak(nullptr, SPF_PURGEBEFORESPEAK, nullptr);
+	}
+}
+
+// Toggle text to speech for all text writes through WRCHV
+
+void BeebWin::TextToSpeechToggleAutoSpeak()
+{
+	m_SpeechWriteChar = !m_SpeechWriteChar;
+
+	if (m_SpeechWriteChar)
+	{
+		Speak("Writes to screen enabled.", SPF_PURGEBEFORESPEAK);
+	}
+	else
+	{
+		Speak("Writes to screen disabled.", SPF_PURGEBEFORESPEAK);
+	}
+
+	m_SpeechBufPos = 0;
+}
+
+// Toggle speaking of punctuation
+
+void BeebWin::TextToSpeechToggleSpeakPunctuation()
+{
+	m_SpeechSpeakPunctuation = !m_SpeechSpeakPunctuation;
+
+	if (m_SpeechSpeakPunctuation)
+	{
+		Speak("Speak punctuation enabled.", SPF_PURGEBEFORESPEAK);
+	}
+	else
+	{
+		Speak("Speak punctuation disabled.", SPF_PURGEBEFORESPEAK);
 	}
 }
 
@@ -777,19 +829,7 @@ void BeebWin::TextToSpeechKey(WPARAM wParam)
 		case VK_NUMPAD1:
 			if (InsPressed || RightCtrlPressed)
 			{
-				// Toggle text to speech for all text writes through WRCHV
-				m_SpeechWriteChar = !m_SpeechWriteChar;
-
-				if (m_SpeechWriteChar)
-				{
-					Speak("Writes to screen enabled.", SPF_PURGEBEFORESPEAK);
-				}
-				else
-				{
-					Speak("Writes to screen disabled.", SPF_PURGEBEFORESPEAK);
-				}
-
-				m_SpeechBufPos = 0;
+				TextToSpeechToggleAutoSpeak();
 			}
 			else
 			{
@@ -802,17 +842,7 @@ void BeebWin::TextToSpeechKey(WPARAM wParam)
 		case VK_NUMPAD3:
 			if (InsPressed || RightCtrlPressed)
 			{
-				// Toggle speaking of punctuation
-				m_SpeechSpeakPunctuation = !m_SpeechSpeakPunctuation;
-
-				if (m_SpeechSpeakPunctuation)
-				{
-					Speak("Speak punctuation enabled.", SPF_PURGEBEFORESPEAK);
-				}
-				else
-				{
-					Speak("Speak punctuation disabled.", SPF_PURGEBEFORESPEAK);
-				}
+				TextToSpeechToggleSpeakPunctuation();
 			}
 			else if (AltPressed)
 			{
@@ -852,12 +882,12 @@ LRESULT TextViewWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 
-	LRESULT lr = CallWindowProc(mainWin->m_TextViewPrevWndProc, hWnd, msg, wParam, lParam);
+	LRESULT Result = CallWindowProc(mainWin->m_TextViewPrevWndProc, hWnd, msg, wParam, lParam);
 
 	if (keypress)
 		mainWin->TextViewSpeechSync();
 
-	return lr;
+	return Result;
 }
 
 void BeebWin::InitTextView()

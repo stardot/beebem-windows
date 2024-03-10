@@ -375,7 +375,7 @@
 #define IDM_ANALOGUE_MOUSESTICK         40205
 #define IDM_DIGITAL_MOUSESTICK          40206
 #define ID_BREAKOUT                     40208
-#define IDM_TEXTTOSPEECH                40209
+#define IDM_TEXTTOSPEECH_ENABLE         40209
 #define IDM_TEXTVIEW                    40210
 #define IDM_DISABLEKEYSWINDOWS          40211
 #define IDM_DISABLEKEYSBREAK            40212
@@ -449,14 +449,16 @@
 #define IDM_SELECT_HARD_DRIVE_FOLDER    40319
 #define ID_SELECT_SERIAL_DESTINATION    40320
 #define IDM_SET_KEYBOARD_LINKS          40321
+#define IDM_TEXTTOSPEECH_AUTO_SPEAK     40322
+#define IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION 40323
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        121
-#define _APS_NEXT_COMMAND_VALUE         40322
+#define _APS_NEXT_COMMAND_VALUE         40324
 #define _APS_NEXT_CONTROL_VALUE         1120
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

@@ -390,6 +390,8 @@ public:
 	void Speak(const char *text, DWORD flags);
 	void SpeakChar(unsigned char c);
 	void TextToSpeechClearBuffer();
+	void TextToSpeechToggleAutoSpeak();
+	void TextToSpeechToggleSpeakPunctuation();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	                        TextToSpeechSearchType type);
 	void TextToSpeechReadChar();
@@ -398,6 +400,7 @@ public:
 	void TextToSpeechReadSentence();
 	void TextToSpeechReadScreen();
 	void TextToSpeechKey(WPARAM wParam);
+
 
 	void InitTextView();
 	void CloseTextView();
