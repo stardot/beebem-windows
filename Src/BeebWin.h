@@ -392,6 +392,8 @@ public:
 	void TextToSpeechClearBuffer();
 	void TextToSpeechToggleAutoSpeak();
 	void TextToSpeechToggleSpeakPunctuation();
+	void TextToSpeechIncreaseRate();
+	void TextToSpeechDecreaseRate();
 	bool TextToSpeechSearch(TextToSpeechSearchDirection dir,
 	                        TextToSpeechSearchType type);
 	void TextToSpeechReadChar();

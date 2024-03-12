@@ -405,6 +405,34 @@ void BeebWin::TextToSpeechToggleSpeakPunctuation()
 	}
 }
 
+void BeebWin::TextToSpeechIncreaseRate()
+{
+	if (m_SpeechRate < 10)
+	{
+		m_SpeechRate++;
+		m_SpVoice->SetRate(m_SpeechRate);
+
+		char Text[20];
+		sprintf(Text, "Rate %d", m_SpeechRate);
+
+		Speak(Text, SPF_PURGEBEFORESPEAK);
+	}
+}
+
+void BeebWin::TextToSpeechDecreaseRate()
+{
+	if (m_SpeechRate > -10)
+	{
+		m_SpeechRate--;
+		m_SpVoice->SetRate(m_SpeechRate);
+
+		char Text[20];
+		sprintf(Text, "Rate %d", m_SpeechRate);
+
+		Speak(Text, SPF_PURGEBEFORESPEAK);
+	}
+}
+
 bool BeebWin::TextToSpeechSearch(TextToSpeechSearchDirection dir,
                                  TextToSpeechSearchType type)
 {
@@ -809,13 +837,7 @@ void BeebWin::TextToSpeechKey(WPARAM wParam)
 			}
 			else if (AltPressed)
 			{
-				if (m_SpeechRate < 10)
-				{
-					m_SpeechRate++;
-					m_SpVoice->SetRate(m_SpeechRate);
-					sprintf(text, "Rate %d", m_SpeechRate);
-					Speak(text, SPF_PURGEBEFORESPEAK);
-				}
+				TextToSpeechDecreaseRate();
 			}
 			else
 			{
@@ -846,13 +868,7 @@ void BeebWin::TextToSpeechKey(WPARAM wParam)
 			}
 			else if (AltPressed)
 			{
-				if (m_SpeechRate > -10)
-				{
-					m_SpeechRate--;
-					m_SpVoice->SetRate(m_SpeechRate);
-					sprintf(text, "Rate %d", m_SpeechRate);
-					Speak(text, SPF_PURGEBEFORESPEAK);
-				}
+				TextToSpeechIncreaseRate();
 			}
 			else
 			{

@@ -294,6 +294,9 @@ BEGIN
             MENUITEM "&Enable",                     IDM_TEXTTOSPEECH_ENABLE
             MENUITEM "Speak &Automatically",        IDM_TEXTTOSPEECH_AUTO_SPEAK
             MENUITEM "Speak &Punctuation",          IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION
+            MENUITEM SEPARATOR
+            MENUITEM "&Increase Rate",              IDM_TEXTTOSPEECH_INCREASE_RATE
+            MENUITEM "&Decrease Rate",              IDM_TEXTTOSPEECH_DECREASE_RATE
         END
         MENUITEM SEPARATOR
         MENUITEM "Music &5000",                 IDM_MUSIC5000

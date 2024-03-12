@@ -451,6 +451,8 @@
 #define IDM_SET_KEYBOARD_LINKS          40321
 #define IDM_TEXTTOSPEECH_AUTO_SPEAK     40322
 #define IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION 40323
+#define IDM_TEXTTOSPEECH_INCREASE_RATE  40324
+#define IDM_TEXTTOSPEECH_DECREASE_RATE  40325
 
 // Next default values for new objects
 //
@@ -458,7 +460,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        121
-#define _APS_NEXT_COMMAND_VALUE         40324
+#define _APS_NEXT_COMMAND_VALUE         40326
 #define _APS_NEXT_CONTROL_VALUE         1120
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

@@ -20,6 +20,7 @@ Boston, MA  02110-1301, USA.
 
 // BeebWin preferences support
 
+#include <algorithm>
 #include <stdio.h>
 
 #include "BeebWin.h"
@@ -76,6 +77,11 @@ static const char *CFG_TUBE_TYPE = "TubeType";
 #define LED_COLOUR_TYPE (LEDByte&4)>>2
 #define LED_SHOW_KB (LEDByte&1)
 #define LED_SHOW_DISC (LEDByte&2)>>1
+
+static int Clamp(int Value, int MinValue, int MaxValue)
+{
+	return std::min(std::max(Value, MinValue), MaxValue);
+}
 
 void BeebWin::LoadPreferences()
 {
@@ -266,7 +272,7 @@ void BeebWin::LoadPreferences()
 	DWORD TextToSpeechRate;
 	if (m_Preferences.GetDWORDValue("TextToSpeechRate", TextToSpeechRate))
 	{
-		m_SpeechRate = TextToSpeechRate;
+		m_SpeechRate = Clamp(TextToSpeechRate, -10, 10);
 	}
 	else
 	{
