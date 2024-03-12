@@ -935,7 +935,8 @@ void BeebWin::InitTextView()
 			            (WPARAM)GetStockObject(ANSI_FIXED_FONT), 0);
 
 			m_TextViewPrevWndProc = (WNDPROC)GetWindowLongPtr(m_hTextView, GWLP_WNDPROC);
-			SetWindowLongPtr(m_hTextView, GWLP_WNDPROC, (LONG_PTR)m_TextViewPrevWndProc);
+			SetWindowLongPtr(m_hTextView, GWLP_WNDPROC, (LONG_PTR)TextViewWndProc);
+
 			SetFocus(m_hTextView);
 		}
 	}
