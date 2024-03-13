@@ -1221,6 +1221,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_TEXTTOSPEECH_ENABLE, m_TextToSpeechEnabled);
 	CheckMenuItem(IDM_TEXTTOSPEECH_AUTO_SPEAK, m_SpeechWriteChar);
 	CheckMenuItem(IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION, m_SpeechSpeakPunctuation);
+	EnableMenuItem(IDM_TEXTTOSPEECH_INCREASE_RATE, m_SpeechRate < 10);
+	EnableMenuItem(IDM_TEXTTOSPEECH_DECREASE_RATE, m_SpeechRate > -10);
 
 	// AMX
 	CheckMenuItem(IDM_AMXONOFF, AMXMouseEnabled);
@@ -4077,6 +4079,18 @@ void BeebWin::HandleCommand(UINT MenuID)
 	case IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION:
 		TextToSpeechToggleSpeakPunctuation();
 		CheckMenuItem(IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION, m_SpeechSpeakPunctuation);
+		break;
+
+	case IDM_TEXTTOSPEECH_INCREASE_RATE:
+		TextToSpeechIncreaseRate();
+		EnableMenuItem(IDM_TEXTTOSPEECH_INCREASE_RATE, m_SpeechRate < 10);
+		EnableMenuItem(IDM_TEXTTOSPEECH_DECREASE_RATE, m_SpeechRate > -10);
+		break;
+
+	case IDM_TEXTTOSPEECH_DECREASE_RATE:
+		TextToSpeechDecreaseRate();
+		EnableMenuItem(IDM_TEXTTOSPEECH_INCREASE_RATE, m_SpeechRate < 10);
+		EnableMenuItem(IDM_TEXTTOSPEECH_DECREASE_RATE, m_SpeechRate > -10);
 		break;
 
 	case ID_TEXT_TO_SPEECH_VOICE_BASE:
