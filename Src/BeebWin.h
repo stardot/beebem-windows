@@ -53,21 +53,23 @@ Boston, MA  02110-1301, USA.
 
 extern const char *WindowTitle;
 
-typedef union EightUChars {
+union EightUChars
+{
 	unsigned char data[8];
 	EightByteType eightbyte;
-} EightUChars;
+};
 
-typedef union SixteenUChars {
+union SixteenUChars
+{
 	unsigned char data[16];
 	EightByteType eightbytes[2];
-} SixteenUChars;
+};
 
-typedef struct bmiData
+struct bmiData
 {
-	BITMAPINFOHEADER	bmiHeader;
-	RGBQUAD			bmiColors[256];
-} bmiData;
+	BITMAPINFOHEADER bmiHeader;
+	RGBQUAD bmiColors[256];
+};
 
 struct LEDType
 {
