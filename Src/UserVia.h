@@ -66,7 +66,7 @@ extern int AMXButtons;
 
 /* Printer enabled */
 extern bool PrinterEnabled;
-void PrinterEnable(char *FileName);
+void PrinterEnable(const char *FileName);
 void PrinterDisable();
 
 /* Trigger for checking for printer ready. */
