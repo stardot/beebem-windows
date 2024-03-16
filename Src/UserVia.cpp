@@ -610,13 +610,23 @@ void AMXMouseMovement()
 }
 
 /*-------------------------------------------------------------------------*/
-void PrinterEnable(char *FileName) {
-	/* Close file if already open */
-	if (PrinterFileHandle != NULL)
+
+// Close file if already open
+
+static void ClosePrinterOutputFile()
+{
+	if (PrinterFileHandle != nullptr)
 	{
 		fclose(PrinterFileHandle);
-		PrinterFileHandle = NULL;
+		PrinterFileHandle = nullptr;
 	}
+}
+
+/*-------------------------------------------------------------------------*/
+
+void PrinterEnable(char *FileName)
+{
+	ClosePrinterOutputFile();
 
 	if (FileName == NULL)
 	{
@@ -639,23 +649,24 @@ void PrinterEnable(char *FileName) {
 }
 
 /*-------------------------------------------------------------------------*/
-void PrinterDisable() {
-	if (PrinterFileHandle != NULL)
-	{
-		fclose(PrinterFileHandle);
-		PrinterFileHandle = NULL;
-	}
+
+void PrinterDisable()
+{
+	ClosePrinterOutputFile();
 
 	PrinterEnabled = false;
 	ClearTrigger(PrinterTrigger);
 }
+
 /*-------------------------------------------------------------------------*/
-void PrinterPoll() {
+
+void PrinterPoll()
+{
 	ClearTrigger(PrinterTrigger);
 	UserVIATriggerCA1Int();
 
-	/* The CA1 interrupt is not always picked up,
-		set up a trigger just in case. */
+	// The CA1 interrupt is not always picked up,
+	// set up a trigger just in case.
 	SetTrigger(100000, PrinterTrigger);
 }
 
@@ -724,7 +735,7 @@ void RTCWrite(int Value, int lastValue)
 					RTC_data = RTC_ram[7];
 					break;
 				}
-				
+
 				WriteLog("RTC Read cmd : 0x%03x, reg : 0x%02x, data : 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
 			}
 		}
