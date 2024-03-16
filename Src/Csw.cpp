@@ -104,7 +104,7 @@ CSWResult CSWOpen(const char *FileName)
 
 	file_buf[0x33] = 0;
 	// WriteLog("Enc appl: %s\n", &file_buf[0x24]);
-	
+
 	// Read header extension bytes
 	if (fread(file_buf, 1, header_ext, csw_file) != header_ext)
 	{
@@ -409,7 +409,8 @@ int CSWPoll()
 	switch (csw_state)
 	{
 		case CSWState::WaitingForTone:
-			if (csw_pulselen < 0x0d) {
+			if (csw_pulselen < 13)
+			{
 				// Count tone pulses
 				csw_tonecount++;
 				if (csw_tonecount > 20) // Arbitary figure
@@ -418,19 +419,20 @@ int CSWPoll()
 					csw_state = CSWState::Tone;
 				}
 			}
-			else {
+			else
+			{
 				csw_tonecount = 0;
 			}
 			break;
 
 		case CSWState::Tone:
-			if (csw_pulselen > 0x14)
+			if (csw_pulselen > 20)
 			{
 				// Noise so reset back to wait for tone again
 				csw_state = CSWState::WaitingForTone;
 				csw_tonecount = 0;
 			}
-			else if (csw_pulselen > 0x0d && csw_pulselen < 0x14)
+			else if (csw_pulselen > 13 && csw_pulselen < 20)
 			{
 				// Not in tone any more - data start bit
 				// WriteLog("Entered data at %d\n", csw_pulsecount);
@@ -467,15 +469,14 @@ int CSWPoll()
 					bit_count = csw_data(); // Skip next half of wave
 					csw_byte >>= 1;
 
-					if (csw_pulselen > 0x14)
+					if (csw_pulselen > 20)
 					{
 						// Noisy pulse so reset to tone
 						csw_state = CSWState::WaitingForTone;
 						csw_tonecount = 0;
 						break;
 					}
-
-					if (csw_pulselen <= 0x0d)
+					else if (csw_pulselen <= 13)
 					{
 						bit_count += csw_data();
 						bit_count += csw_data();
@@ -493,15 +494,14 @@ int CSWPoll()
 				case CSWDataState::StopBits:
 					bit_count = csw_data();
 
-					if (csw_pulselen > 0x14)
+					if (csw_pulselen > 20)
 					{
 						// Noisy pulse so reset to tone
 						csw_state = CSWState::WaitingForTone;
 						csw_tonecount = 0;
 						break;
 					}
-
-					if (csw_pulselen <= 0x0d)
+					else if (csw_pulselen <= 13)
 					{
 						bit_count += csw_data();
 						bit_count += csw_data();
@@ -511,15 +511,14 @@ int CSWPoll()
 					break;
 
 				case CSWDataState::ToneOrStartBit:
-					if (csw_pulselen > 0x14)
+					if (csw_pulselen > 20)
 					{
 						// Noisy pulse so reset to tone
 						csw_state = CSWState::WaitingForTone;
 						csw_tonecount = 0;
 						break;
 					}
-
-					if (csw_pulselen <= 0x0d) // Back in tone again
+					else if (csw_pulselen <= 13) // Back in tone again
 					{
 						// WriteLog("Back in tone again at %d\n", csw_pulsecount);
 						csw_state = CSWState::WaitingForTone;
