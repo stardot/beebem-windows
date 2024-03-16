@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -128,16 +128,22 @@ void BeebWin::ExitDX()
 	{
 		ResetSurfaces();
 
-		if (m_DD2)
+		if (m_DD2 != nullptr)
 		{
 			m_DD2->Release();
 			m_DD2 = nullptr;
 		}
 
-		if (m_DD)
+		if (m_DD != nullptr)
 		{
 			m_DD->Release();
 			m_DD = nullptr;
+		}
+
+		if (m_hInstDDraw != nullptr)
+		{
+			FreeLibrary(m_hInstDDraw);
+			m_hInstDDraw = nullptr;
 		}
 	}
 }
@@ -147,6 +153,7 @@ HRESULT BeebWin::InitDirectDraw()
 {
 	HRESULT ddrval = DDERR_GENERIC;
 
+	m_hInstDDraw = nullptr;
 	m_DD = nullptr;
 	m_DD2 = nullptr;
 	m_Clipper = nullptr;
@@ -155,11 +162,11 @@ HRESULT BeebWin::InitDirectDraw()
 	m_DDS2Primary = nullptr;
 	m_DDSPrimary = nullptr;
 
-	HINSTANCE hInstDDraw = LoadLibrary("ddraw.dll");
+	m_hInstDDraw = LoadLibrary("ddraw.dll");
 
-	if(hInstDDraw)
+	if (m_hInstDDraw != nullptr)
 	{
-		LPDIRECTDRAWCREATE pDDCreate = (LPDIRECTDRAWCREATE)GetProcAddress(hInstDDraw, "DirectDrawCreate");
+		LPDIRECTDRAWCREATE pDDCreate = (LPDIRECTDRAWCREATE)GetProcAddress(m_hInstDDraw, "DirectDrawCreate");
 
 		if (pDDCreate != nullptr)
 		{

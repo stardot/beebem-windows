@@ -509,6 +509,7 @@ public:
 	bool m_DXResetPending;
 
 	// DirectDraw stuff
+	HINSTANCE m_hInstDDraw;
 	LPDIRECTDRAW m_DD; // DirectDraw object
 	LPDIRECTDRAW2 m_DD2; // DirectDraw object
 	LPDIRECTDRAWSURFACE m_DDSPrimary; // DirectDraw primary surface
