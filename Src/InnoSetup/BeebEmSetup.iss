@@ -116,9 +116,9 @@ Name: {userdocs}\BeebEm\BeebState; Flags: uninsneveruninstall
 
 [Files]
 Source: ..\Release\BeebEm.exe;             DestDir: {app};                                                                               Flags: ignoreversion
-Source: ..\Release\Hardware\Acorn1770.dll; DestDir: {app}\Hardware;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\Release\Hardware\OpusDDOS.dll;  DestDir: {app}\Hardware;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\Release\Hardware\Watford.dll;   DestDir: {app}\Hardware;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\Release\Hardware\Acorn1770.dll; DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
+Source: ..\Release\Hardware\OpusDDOS.dll;  DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
+Source: ..\Release\Hardware\Watford.dll;   DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
 Source: ..\..\Documents\*;                 DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\Help\*;                      DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\UserData\*;                  DestDir: {app}\UserData;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
