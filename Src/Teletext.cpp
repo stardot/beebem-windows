@@ -94,13 +94,13 @@ static int TeletextCurrentFrame = 0;
 static unsigned char row[16][64] = {0};
 
 static SOCKET TeletextSocket[4] = { INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET };
-static bool TeletextSocketConnected[4] = { false, false, false, false };
+static int TeletextConnectTimeout[4] = { 0, 0, 0, 0 };
 
 // Initiate connection on socket
 
 static int TeletextConnect(int ch)
 {
-    TeletextSocketConnected[ch] = false;
+    TeletextConnectTimeout[ch] = 0;
 
     TeletextSocket[ch] = socket(AF_INET, SOCK_STREAM, 0);
     if (TeletextSocket[ch] == INVALID_SOCKET)
@@ -143,8 +143,13 @@ static int TeletextConnect(int ch)
             return 1;
         }
     }
-
-    TeletextSocketConnected[ch] = true;
+    
+    /* This is a nasty hack around a race condition. Because we use a non-blocking connect() on each socket,
+       we can end up trying to read from it before it has completed. Winsock will give WSAENOTCONN in this 
+       situation, but we want to give it a little longer to connect over a slow network connection, so let
+       BeebEm wait a few video fields for the connection to be established */
+    TeletextConnectTimeout[ch] = 15; // 20ms should be plenty for LAN connections, but lets give it 300 just in case!
+    
     return 0;
 }
 
@@ -226,7 +231,7 @@ void TeletextClose()
 
             closesocket(TeletextSocket[ch]);
             TeletextSocket[ch] = INVALID_SOCKET;
-            TeletextSocketConnected[ch] = false;
+            TeletextConnectTimeout[ch] = 0;
         }
 
         if (TeletextFile[ch])
@@ -363,6 +368,12 @@ void TeletextAdapterUpdate()
                             int err = WSAGetLastError();
                             if (err == WSAEWOULDBLOCK)
                                 break; // not fatal, ignore
+                            
+                            if (err == WSAENOTCONN)
+                            {
+                                if (TeletextConnectTimeout[i]-- > 0)
+                                    break; // connect() may still not have completed, ignore the error until next field
+                            }
 
                             if (DebugEnabled)
                             {
@@ -371,9 +382,10 @@ void TeletextAdapterUpdate()
                                                    err, i);
                             }
                             closesocket(TeletextSocket[i]);
-                            TeletextSocketConnected[i] = false;
                             TeletextSocket[i] = INVALID_SOCKET;
                         }
+                        
+                        TeletextConnectTimeout[i] = 0; // connection is up so we want to immediately detect any further WSAENOTCONN
                     }
                 }
 
