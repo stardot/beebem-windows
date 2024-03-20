@@ -356,25 +356,34 @@ void TeletextAdapterUpdate()
             if (TeletextLocalhost || TeletextCustom)
             {
                 char socketBuff[4][672] = {0};
+                char tmpBuff[672];
 
                 for (int i = 0; i < 4; i++)
                 {
                     if (TeletextSocket[i] != INVALID_SOCKET)
                     {
-                        int result = recv(TeletextSocket[i], socketBuff[i], 672, 0);
-
-                        if (result == SOCKET_ERROR)
+                        int err;
+                        int result = recv(TeletextSocket[i], tmpBuff, 672, MSG_PEEK);
+                        if (result == 0 || result == SOCKET_ERROR)
                         {
-                            int err = WSAGetLastError();
-                            if (err == WSAEWOULDBLOCK)
-                                break; // not fatal, ignore
-                            
+                            err = WSAGetLastError();
                             if (err == WSAENOTCONN)
                             {
                                 if (TeletextConnectTimeout[i]-- > 0)
-                                    break; // connect() may still not have completed, ignore the error until next field
+                                    continue; // connect() may still not have completed, ignore the error until next field
                             }
-
+                            
+                            if (err == WSAEWOULDBLOCK)
+                            {
+                                if (DebugEnabled)
+                                {
+                                    DebugDisplayTraceF(DebugType::Teletext, true,
+                                                       "Teletext: WSAEWOULDBLOCK in socket %d. Skipping field",i);
+                                }
+                                if (TeletextConnectTimeout[i]-- > 0)
+                                    continue; // reuse the connect() timeout to catch hanging sockets where the server has gone away
+                            }
+                            
                             if (DebugEnabled)
                             {
                                 DebugDisplayTraceF(DebugType::Teletext, true,
@@ -384,8 +393,35 @@ void TeletextAdapterUpdate()
                             closesocket(TeletextSocket[i]);
                             TeletextSocket[i] = INVALID_SOCKET;
                         }
+                        else if (result != 672)
+                        {
+                            if (DebugEnabled)
+                            {
+                                DebugDisplayTraceF(DebugType::Teletext, true,
+                                                   "Teletext: short recv detected on socket %d, %d bytes. Skipping field",
+                                                   i, result);
+                            }
+                            continue; // skip this frame until there's enough data waiting
+                        }
+                        else
+                        {
+                            result = recv(TeletextSocket[i], socketBuff[i], 672, 0); // do the read again for real to remove it from the input buffer
+                            if (result != 672)
+                            {
+                                // second read failed, probably fatal.
+                                err = WSAGetLastError();
+                                if (DebugEnabled)
+                                {
+                                    DebugDisplayTraceF(DebugType::Teletext, true,
+                                                       "Teletext: second recv error %d. Closing socket %d",
+                                                       err, i);
+                                }
+                                closesocket(TeletextSocket[i]);
+                                TeletextSocket[i] = INVALID_SOCKET;
+                            }
+                        }
                         
-                        TeletextConnectTimeout[i] = 0; // connection is up so we want to immediately detect any further WSAENOTCONN
+                        TeletextConnectTimeout[i] = 15; // connection is ok, reset the timeout
                     }
                 }
 
