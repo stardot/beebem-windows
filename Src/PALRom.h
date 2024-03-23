@@ -60,7 +60,7 @@ constexpr int MAX_PAL_ROMS = 16;
 
 extern PALRomState PALRom[MAX_PAL_ROMS];
 
-uint8_t ExtendedRom(int romsel, int offset);
-void GuessRomType(int rom, uint32_t size);
+uint8_t PALRomRead(int romsel, int offset);
+PALRomType GuessRomType(uint8_t *Rom, uint32_t size);
 
 #endif

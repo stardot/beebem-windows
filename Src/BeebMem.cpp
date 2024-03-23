@@ -294,7 +294,7 @@ unsigned char BeebReadMem(int Address) {
 			if (PALRom[ROMSEL].Type == PALRomType::none) {
 				return Roms[ROMSEL][Address - 0x8000];
 			} else {
-				return ExtendedRom(ROMSEL, Address - 0x8000);
+				return PALRomRead(ROMSEL, Address - 0x8000);
 			}
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
@@ -323,7 +323,7 @@ unsigned char BeebReadMem(int Address) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
-				return ExtendedRom(ROMSEL, Address - 0x8000);
+				return PALRomRead(ROMSEL, Address - 0x8000);
 			}
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
@@ -356,7 +356,7 @@ unsigned char BeebReadMem(int Address) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
-				return ExtendedRom(ROMSEL, Address - 0x8000);
+				return PALRomRead(ROMSEL, Address - 0x8000);
 			}
 		}
 		if (Address < 0xfc00) return WholeRam[Address];
@@ -392,7 +392,7 @@ unsigned char BeebReadMem(int Address) {
 					return Roms[ROMSEL][Address - 0x8000];
 				}
 				else {
-					return ExtendedRom(ROMSEL, Address - 0x8000);
+					return PALRomRead(ROMSEL, Address - 0x8000);
 				}
 			}
 			break;
@@ -403,7 +403,7 @@ unsigned char BeebReadMem(int Address) {
 				return Roms[ROMSEL][Address - 0x8000];
 			}
 			else {
-				return ExtendedRom(ROMSEL, Address - 0x8000);
+				return PALRomRead(ROMSEL, Address - 0x8000);
 			}
 			break;
 		case 0xc:
@@ -1257,19 +1257,19 @@ void BeebReadRoms(void) {
 			strcat(fullname,RomName);
 		}
 
-		if (strcmp(RomName,BANK_EMPTY)==0)
+		if (stricmp(RomName, BANK_EMPTY) == 0)
 		{
 			RomBankType[bank] = BankType::Empty;
 			RomWritable[bank] = false;
 		}
-		else if (strcmp(RomName,BANK_RAM)==0)
+		else if (stricmp(RomName, BANK_RAM) == 0)
 		{
 			RomBankType[bank] = BankType::Ram;
 			RomWritable[bank] = true;
 		}
 		else
 		{
-			if (strncmp(RomName+(strlen(RomName)-4),ROM_WRITABLE,4)==0)
+			if (strlen(RomName) >= 4 && strnicmp(RomName + strlen(RomName) - 4, ROM_WRITABLE, 4) == 0)
 			{
 				// Writable ROM
 				RomBankType[bank] = BankType::Ram;
@@ -1298,7 +1298,7 @@ void BeebReadRoms(void) {
 					// Read PAL ROM:
 					fseek(InFile, 0L, SEEK_SET);
 					fread(PALRom[bank].Rom, 1, Size, InFile);
-					GuessRomType(bank, Size);
+					PALRom[bank].Type = GuessRomType(PALRom[bank].Rom, Size);
 
 					fclose(InFile);
 
