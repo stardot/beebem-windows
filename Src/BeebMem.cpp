@@ -1152,7 +1152,8 @@ char *ReadRomTitle(int bank, char *Title, int BufSize)
 }
 
 /*----------------------------------------------------------------------------*/
-bool ReadROMFile(const char *filename, ROMConfigFile ROMConfig)
+
+bool ReadROMConfigFile(const char *filename, ROMConfigFile ROMConfig)
 {
 	bool success = true;
 	char line[MAX_PATH];

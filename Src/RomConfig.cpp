@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -47,7 +47,7 @@ static INT_PTR CALLBACK ROMConfigDlgProc(
 static bool LoadROMConfigFile(HWND hWnd);
 static bool SaveROMConfigFile(HWND hWnd);
 static bool GetROMFile(HWND hWnd, char *pFileName);
-static bool WriteROMFile(const char *filename, ROMConfigFile RomConfig);
+static bool WriteROMConfigFile(const char *filename, ROMConfigFile RomConfig);
 
 /****************************************************************************/
 void BeebWin::EditROMConfig(void)
@@ -254,7 +254,7 @@ static bool LoadROMConfigFile(HWND hWnd)
 
 		// Read the file
 		ROMConfigFile LoadedROMCfg;
-		if (ReadROMFile(szROMConfigPath, LoadedROMCfg))
+		if (ReadROMConfigFile(szROMConfigPath, LoadedROMCfg))
 		{
 			// Copy in loaded config
 			memcpy(&ROMCfg, &LoadedROMCfg, sizeof(ROMConfigFile));
@@ -299,7 +299,7 @@ static bool SaveROMConfigFile(HWND hWnd)
 		}
 
 		// Save the file
-		if (WriteROMFile(szROMConfigPath, ROMCfg))
+		if (WriteROMConfigFile(szROMConfigPath, ROMCfg))
 		{
 			success = true;
 		}
@@ -309,7 +309,8 @@ static bool SaveROMConfigFile(HWND hWnd)
 }
 
 /****************************************************************************/
-bool WriteROMFile(const char *filename, ROMConfigFile ROMConfig)
+
+static bool WriteROMConfigFile(const char *filename, ROMConfigFile ROMConfig)
 {
 	FILE *fd = fopen(filename, "w");
 	if (!fd)
