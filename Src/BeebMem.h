@@ -99,7 +99,7 @@ void BeebWriteMem(int Address, unsigned char Value);
 #define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address] = Value
 const unsigned char *BeebMemPtrWithWrap(int Address, int Length);
 const unsigned char *BeebMemPtrWithWrapMode7(int Address, int Length);
-bool ReadROMFile(const char *filename, ROMConfigFile RomConfig);
+bool ReadROMConfigFile(const char *filename, ROMConfigFile RomConfig);
 void BeebReadRoms(void);
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);
 void RTCReset(void);

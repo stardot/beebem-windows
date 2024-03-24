@@ -213,7 +213,7 @@
     <ClCompile Include="Preferences.cpp" />
     <ClCompile Include="RenameFileDialog.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
-    <ClCompile Include="RomConfig.cpp" />
+    <ClCompile Include="RomConfigDialog.cpp" />
     <ClCompile Include="Sasi.cpp" />
     <ClCompile Include="Scsi.cpp" />
     <ClCompile Include="SelectKeyDialog.cpp" />
@@ -338,6 +338,7 @@
     <ClInclude Include="AviWriter.h" />
     <ClInclude Include="Bcd.h" />
     <ClInclude Include="BeebMem.h" />
+    <ClInclude Include="RomConfigDialog.h" />
     <ClInclude Include="Sound.h" />
     <ClInclude Include="BeebWin.h" />
     <ClInclude Include="Csw.h" />

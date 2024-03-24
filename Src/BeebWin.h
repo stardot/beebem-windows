@@ -254,6 +254,7 @@ public:
 	bool IsFrozen();
 	void TogglePause();
 	bool IsPaused();
+	void EditRomConfig();
 	void OpenUserKeyboardDialog();
 	void UserKeyboardDialogClosed();
 	void ShowMenu(bool on);
@@ -425,7 +426,6 @@ public:
 	bool RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, const void* pData, int* pnSize);
 	bool RegGetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, LPSTR pData, DWORD dwSize);
 	bool RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue, LPCSTR pData);
-	void EditROMConfig(void);
 
 	// Preferences
 	void LoadPreferences();

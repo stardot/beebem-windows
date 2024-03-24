@@ -78,6 +78,7 @@ using std::max;
 #include "Music5000.h"
 #include "Port.h"
 #include "Resource.h"
+#include "RomConfigDialog.h"
 #include "Sasi.h"
 #include "Scsi.h"
 #include "Serial.h"
@@ -306,7 +307,7 @@ bool BeebWin::Initialise()
 	m_hMenu = GetMenu(m_hWnd);
 	m_hDC = GetDC(m_hWnd);
 
-	ReadROMFile(RomFile, RomConfig);
+	ReadROMConfigFile(RomFile, RomConfig);
 	ApplyPrefs();
 
 	if (!m_DebugScriptFileName.empty())
@@ -1408,6 +1409,7 @@ void BeebWin::SetRomMenu()
 }
 
 /****************************************************************************/
+
 void BeebWin::InitJoystick(void)
 {
 	MMRESULT mmresult = JOYERR_NOERROR;
@@ -3392,7 +3394,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_ROMCONFIG:
-		EditROMConfig();
+		EditRomConfig();
 		SetRomMenu();
 		break;
 
@@ -4290,6 +4292,22 @@ bool BeebWin::IsPaused()
 	return m_EmuPaused;
 }
 
+/****************************************************************************/
+
+void BeebWin::EditRomConfig()
+{
+	RomConfigDialog Dialog(hInst, m_hWnd, RomConfig);
+
+	if (Dialog.DoModal())
+	{
+		// Copy in new config and read ROMs
+		memcpy(RomConfig, Dialog.GetRomConfig(), sizeof(ROMConfigFile));
+		BeebReadRoms();
+	}
+}
+
+/****************************************************************************/
+
 #ifndef HID_USAGE_PAGE_GENERIC
 #define HID_USAGE_PAGE_GENERIC ((USHORT)0x01)
 #endif
@@ -4586,7 +4604,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 
 		if (bLoadPrefs)
 		{
-			ReadROMFile(RomFile, RomConfig);
+			ReadROMConfigFile(RomFile, RomConfig);
 			BeebReadRoms();
 		}
 	}

@@ -165,7 +165,7 @@
     <ClCompile Include="RingBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RomConfig.cpp">
+    <ClCompile Include="RomConfigDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Sasi.cpp">
@@ -438,6 +438,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RingBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RomConfigDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Sasi.h">
