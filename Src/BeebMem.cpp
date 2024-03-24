@@ -717,7 +717,7 @@ static void RomWriteThrough(int Address, unsigned char Value) {
 	if (bank < 16)
 	{
 		Roms[bank][Address-0x8000]=Value;
-		PALRom[bank].Type = PALRomType::none;
+		// PALRom[bank].Type = PALRomType::none;
 	}
 }
 
@@ -731,9 +731,8 @@ void BeebWriteMem(int Address, unsigned char Value)
 		}
 
 		if (Address >= 0x8000 && Address < 0xc000) {
-			if (!SWRAMBoardEnabled && RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] =Value;
+			if (!SWRAMBoardEnabled && RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] = Value;
 			else RomWriteThrough(Address, Value);
-			PALRom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 	}
@@ -771,7 +770,6 @@ void BeebWriteMem(int Address, unsigned char Value)
 		if (Address < 0xc000 && Address >= 0x8000) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address - 0x8000] = Value;
 			// else RomWriteThrough(Address, Value); // Not supported on Integra-B
-			PALRom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 
@@ -829,7 +827,6 @@ void BeebWriteMem(int Address, unsigned char Value)
 		if ((Address < 0xc000) && (Address >= 0x8000)) {
 			if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 			//else RomWriteThrough(Address, Value); //Not supported on B+
-			PALRom[ROMSEL].Type = PALRomType::none;
 			return;
 		}
 
@@ -873,7 +870,6 @@ void BeebWriteMem(int Address, unsigned char Value)
 				else {
 					if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 					//else RomWriteThrough(Address, Value); //Not supported on Master
-					if (PALRom[ROMSEL].Type != PALRomType::none) PALRom[ROMSEL].Type = PALRomType::none;
 				}
 				break;
 			case 9:
@@ -881,7 +877,6 @@ void BeebWriteMem(int Address, unsigned char Value)
 			case 0xb:
 				if (RomWritable[ROMSEL]) Roms[ROMSEL][Address-0x8000]=Value;
 				//else RomWriteThrough(Address, Value); //Not supported on Master
-				PALRom[ROMSEL].Type = PALRomType::none;
 				break;
 			case 0xc:
 			case 0xd:
@@ -1299,9 +1294,15 @@ void BeebReadRoms(void) {
 					// Read PAL ROM:
 					fseek(InFile, 0L, SEEK_SET);
 					fread(PALRom[bank].Rom, 1, Size, InFile);
+					fclose(InFile);
+
 					PALRom[bank].Type = GuessRomType(PALRom[bank].Rom, Size);
 
-					fclose(InFile);
+					if (PALRom[bank].Type != PALRomType::none)
+					{
+						RomBankType[bank] = BankType::Rom;
+						RomWritable[bank] = false;
+					}
 
 					// Try to read ROM memory map:
 					if((extension = strrchr(fullname, '.')) != NULL)
