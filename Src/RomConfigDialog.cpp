@@ -18,7 +18,7 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-// BeebWin ROM Configuration Dialog
+// BeebEm ROM Configuration Dialog
 
 #include <windows.h>
 #include <windowsx.h>
@@ -27,8 +27,8 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include "RomConfigDialog.h"
-#include "BeebWin.h"
 #include "BeebMem.h"
+#include "BeebWin.h"
 #include "FileDialog.h"
 #include "ListView.h"
 #include "Main.h"
