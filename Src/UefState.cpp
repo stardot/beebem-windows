@@ -406,6 +406,10 @@ UEFStateResult LoadUEFState(const char *FileName)
 					master512CoPro.LoadState(UEFState);
 					break;
 
+				case 0x047C:
+					LoadPALRomEUF(UEFState, Length);
+					break;
+
 				default:
 					break;
 			}

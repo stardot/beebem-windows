@@ -156,6 +156,9 @@
     <ClCompile Include="Music5000.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PALRom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Preferences.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -423,6 +426,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Music5000.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PALRom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Port.h">

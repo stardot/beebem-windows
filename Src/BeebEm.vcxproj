@@ -179,8 +179,6 @@
     <ClCompile Include="AviWriter.cpp" />
     <ClCompile Include="Bcd.cpp" />
     <ClCompile Include="BeebMem.cpp" />
-    <ClCompile Include="Ext1770.cpp" />
-    <ClCompile Include="Sound.cpp" />
     <ClCompile Include="BeebWin.cpp" />
     <ClCompile Include="BeebWinDx.cpp" />
     <ClCompile Include="BeebWinIo.cpp" />
@@ -197,6 +195,7 @@
     <ClCompile Include="DiscInfo.cpp" />
     <ClCompile Include="Econet.cpp" />
     <ClCompile Include="ExportFileDialog.cpp" />
+    <ClCompile Include="Ext1770.cpp" />
     <ClCompile Include="FileDialog.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="FolderSelectDialog.cpp" />
@@ -210,6 +209,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Master512CoPro.cpp" />
     <ClCompile Include="Music5000.cpp" />
+    <ClCompile Include="PALRom.cpp" />
     <ClCompile Include="Preferences.cpp" />
     <ClCompile Include="RenameFileDialog.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
@@ -219,6 +219,7 @@
     <ClCompile Include="SelectKeyDialog.cpp" />
     <ClCompile Include="Serial.cpp" />
     <ClCompile Include="SerialPortDialog.cpp" />
+    <ClCompile Include="Sound.cpp" />
     <ClCompile Include="SoundStreamer.cpp" />
     <ClCompile Include="Speech.cpp" />
     <ClCompile Include="SprowCoPro.cpp" />
@@ -338,8 +339,6 @@
     <ClInclude Include="AviWriter.h" />
     <ClInclude Include="Bcd.h" />
     <ClInclude Include="BeebMem.h" />
-    <ClInclude Include="RomConfigDialog.h" />
-    <ClInclude Include="Sound.h" />
     <ClInclude Include="BeebWin.h" />
     <ClInclude Include="Csw.h" />
     <ClInclude Include="Debug.h" />
@@ -370,16 +369,19 @@
     <ClInclude Include="ML675001.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="Music5000.h" />
+    <ClInclude Include="PALRom.h" />
     <ClInclude Include="Port.h" />
     <ClInclude Include="Preferences.h" />
     <ClInclude Include="RenameFileDialog.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="RomConfigDialog.h" />
     <ClInclude Include="Sasi.h" />
     <ClInclude Include="Scsi.h" />
     <ClInclude Include="SelectKeyDialog.h" />
     <ClInclude Include="Serial.h" />
     <ClInclude Include="SerialPortDialog.h" />
+    <ClInclude Include="Sound.h" />
     <ClInclude Include="SoundStreamer.h" />
     <ClInclude Include="Speech.h" />
     <ClInclude Include="SprowCoPro.h" />
