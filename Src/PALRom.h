@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2924 Steve Inglis
+Copyright (C) 2024 Steve Inglis
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,7 +22,7 @@ Boston, MA  02110-1301, USA.
  * BBC Micro PALPROM carrier board
  * Work based on original work by Nigel Barnes (Mame)
  * (C) Nigel Barnes (Original Work)
- * (S) Steve Inglis (derivative work for beebem5)
+ * (S) Steve Inglis (derivative work for BeebEm)
  *
  * The original work and all the heavy lifting was done by Nigel
  */
