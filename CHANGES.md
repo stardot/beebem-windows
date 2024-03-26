@@ -4,7 +4,7 @@ BeebEm Change History
 Unreleased changes
 ------------
 
-Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
+Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, Steve Inglis
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
@@ -42,6 +42,9 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore
     output.
   * Speech output can now be stopped and the buffer cleared by pressing
     Alt+Num Pad 4.
+* Added support for ROMs larger than 16kbytes, such as Inter-Word, that
+  use a logic carrier board. Several of these ROM images are now included
+  when you install BeebEm.
 
 Version 4.19 (1 May 2023)
 ------------

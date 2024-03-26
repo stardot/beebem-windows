@@ -130,7 +130,9 @@ static uint8_t watqst_device(int ROMSEL, int offset)
     if (offset & 0x2000)
     {
         return PALRom[ROMSEL].Rom[(offset & 0x1fff) | (PALRom[ROMSEL].Bank << 13)];
-    } else {
+    }
+    else
+    {
         return PALRom[ROMSEL].Rom[(offset & 0x1fff)];
     }
 }
@@ -152,7 +154,9 @@ static uint8_t watwap_device(int ROMSEL, int offset)
     if (offset & 0x2000)
     {
         return PALRom[ROMSEL].Rom[(offset & 0x1fff) | (PALRom[ROMSEL].Bank << 13)];
-    } else {
+    }
+    else
+    {
         return PALRom[ROMSEL].Rom[offset & 0x1fff];
     }
 }
@@ -170,7 +174,9 @@ static uint8_t wapted_device(int ROMSEL, int offset)
     if (offset & 0x2000)
     {
         return PALRom[ROMSEL].Rom[(offset & 0x1fff) | (PALRom[ROMSEL].Bank << 13)];
-    } else {
+    }
+    else
+    {
         return PALRom[ROMSEL].Rom[offset & 0x1fff];
     }
 }
