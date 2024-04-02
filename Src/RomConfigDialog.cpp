@@ -79,7 +79,7 @@ void RomConfigDialog::UpdateROMField(int Row)
 		}
 		else if (Bank >= 8 && Bank <= 15)
 		{
-			Unplugged = (CMOSRAM[21] & (1 << (Bank - 8))) ? false : true;
+			Unplugged = (CMOSRAM[21] & (1 << (Bank - 8))) == 0;
 		}
 	}
 
