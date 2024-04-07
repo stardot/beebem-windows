@@ -144,11 +144,8 @@ static int TeletextConnect(int ch)
         }
     }
     
-    /* This is a nasty hack around a race condition. Because we use a non-blocking connect() on each socket,
-       we can end up trying to read from it before it has completed. Winsock will give WSAENOTCONN in this 
-       situation, but we want to give it a little longer to connect over a slow network connection, so let
-       BeebEm wait a few video fields for the connection to be established */
-    TeletextConnectTimeout[ch] = 15; // 20ms should be plenty for LAN connections, but lets give it 300 just in case!
+    /* How long should we wait (in emulated video fields) for a connection to complete? */
+    TeletextConnectTimeout[ch] = 50; // allow a full second
     
     return 0;
 }
@@ -365,128 +362,117 @@ void TeletextAdapterUpdate()
                         int err;
                         int result;
                         
-                        // do a MSG_PEEK read into a temporary buffer to check we are able to get a full field of data at once
-                        result = recv(TeletextSocket[i], tmpBuff, 672, MSG_PEEK);
-                        if (result == 0 || result == SOCKET_ERROR)
+                        // find out how much data is buffered on the socket
+                        unsigned long n;
+                        if (ioctlsocket(TeletextSocket[i], FIONREAD, &n) == SOCKET_ERROR)
                         {
                             err = WSAGetLastError();
-                            if (err == WSAENOTCONN)
-                            {
-                                if (TeletextConnectTimeout[i] > 0)
-                                {
-                                    TeletextConnectTimeout[i]--;
-                                    continue; // connect() may still not have completed, ignore the error until next field
-                                }
-                            }
-                            
-                            if (err == WSAEWOULDBLOCK)
-                            {
-                                if (DebugEnabled)
-                                {
-                                    DebugDisplayTraceF(DebugType::Teletext, true,
-                                                       "Teletext: WSAEWOULDBLOCK in socket %d. Skipping field",i);
-                                }
-                                if (TeletextConnectTimeout[i] > 0)
-                                {
-                                    TeletextConnectTimeout[i]--;
-                                    continue; // reuse the connect() timeout to catch hanging sockets where the server has gone away
-                                }
-                            }
-                            
                             if (DebugEnabled)
                             {
                                 DebugDisplayTraceF(DebugType::Teletext, true,
-                                                   "Teletext: recv error %d. Closing socket %d",
+                                                   "Teletext: FIONREAD error %d. Closing socket %d",
                                                    err, i);
                             }
                             closesocket(TeletextSocket[i]);
                             TeletextSocket[i] = INVALID_SOCKET;
                             TeletextConnectTimeout[i] = 0;
-                            
                         }
-                        else if (result != 672)
+                        else if (n > (672*50)) // over 50 fields of data are queued on the socket
                         {
-                            // recv was successful but didn't get a whole field, so skip and and try again next field
+                            // skip forward 25 fields (half a second) to attempt to catch up with server
+                            // this occurs when emulation has been paused by moving the BeebEm window, or interacting with menus
+                            // If these delays are allowed to accumulate we will eventually fill the buffer and drop the connection
+                            // we should end up somewhere between 25 to 50 fields behind "live"
+                            
                             if (DebugEnabled)
                             {
                                 DebugDisplayTraceF(DebugType::Teletext, true,
-                                                   "Teletext: short recv detected on socket %d, %d bytes. Skipping field",
-                                                   i, result);
+                                                   "Teletext: Skipping forward 0.5 seconds on socket %d",
+                                                   i);
                             }
-                            continue; // skip this frame until there's enough data waiting
-                        }
-                        else
-                        {
-                            // recv was successful and can get a whole field at once.
                             
-                            // now find out how much more data is buffered on the socket
-                            unsigned long n;
-                            if (ioctlsocket(TeletextSocket[i], FIONREAD, &n) == SOCKET_ERROR)
+                            result = recv(TeletextSocket[i], tmpBuff, 672*25, 0);
+                            if (result != (672*25))
                             {
+                                // read failed, probably fatal.
                                 err = WSAGetLastError();
                                 if (DebugEnabled)
                                 {
                                     DebugDisplayTraceF(DebugType::Teletext, true,
-                                                       "Teletext: FIONREAD error %d. Closing socket %d",
+                                                       "Teletext: discard recv error %d. Closing socket %d",
+                                                       err, i);
+                                }
+                                closesocket(TeletextSocket[i]);
+                                TeletextSocket[i] = INVALID_SOCKET;
+                                TeletextConnectTimeout[i] = 0;
+                            } else {
+                                TeletextConnectTimeout[i] = 15; // connection is ok, reset the timeout
+                            }
+                        }
+                        else if (n > 672)
+                        {
+                            // attempt to read a full field of data
+                            result = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+                            if (result == 0 || result == SOCKET_ERROR)
+                            {
+                                err = WSAGetLastError();
+                                
+                                if (err == WSAEWOULDBLOCK)
+                                {
+                                    if (DebugEnabled)
+                                    {
+                                        DebugDisplayTraceF(DebugType::Teletext, true,
+                                                           "Teletext: WSAEWOULDBLOCK in socket %d. Skipping field",i);
+                                    }
+                                    if (TeletextConnectTimeout[i] > 0)
+                                    {
+                                        TeletextConnectTimeout[i]--;
+                                        continue; // reuse the connect() timeout to catch hanging sockets where the server has gone away
+                                    }
+                                }
+                                
+                                if (DebugEnabled)
+                                {
+                                    DebugDisplayTraceF(DebugType::Teletext, true,
+                                                       "Teletext: recv error %d. Closing socket %d",
                                                        err, i);
                                 }
                                 closesocket(TeletextSocket[i]);
                                 TeletextSocket[i] = INVALID_SOCKET;
                                 TeletextConnectTimeout[i] = 0;
                             }
-                            else if (n > (672*50)) // over 50 fields of data are queued on the socket
+                            else if (result != 672)
                             {
-                                // skip forward 25 fields (half a second) to attempt to catch up with server
-                                // this occurs when emulation has been paused by moving the BeebEm window, or interacting with menus
-                                // If these delays are allowed to accumulate we will eventually fill the buffer and drop the connection
-                                // we should end up somewhere between 25 to 50 fields behind "live"
-                                
+                                // failed to read a complete field 
                                 if (DebugEnabled)
                                 {
                                     DebugDisplayTraceF(DebugType::Teletext, true,
-                                                       "Teletext: Skipping forward 0.5 seconds on socket %d",
-                                                       i);
+                                                       "Teletext: short recv detected, received %d bytes. Closing socket %d",
+                                                       result, i);
                                 }
-                                
-                                result = recv(TeletextSocket[i], tmpBuff, 672*25, 0);
-                                if (result != (672*25))
-                                {
-                                    // read failed, probably fatal.
-                                    err = WSAGetLastError();
-                                    if (DebugEnabled)
-                                    {
-                                        DebugDisplayTraceF(DebugType::Teletext, true,
-                                                           "Teletext: discard recv error %d. Closing socket %d",
-                                                           err, i);
-                                    }
-                                    closesocket(TeletextSocket[i]);
-                                    TeletextSocket[i] = INVALID_SOCKET;
-                                    TeletextConnectTimeout[i] = 0;
-                                }
+                                closesocket(TeletextSocket[i]);
+                                TeletextSocket[i] = INVALID_SOCKET;
+                                TeletextConnectTimeout[i] = 0;
                             }
                             else
                             {
-                                // do the read for real to our socketBuff to remove it from the input buffer
-                                result = recv(TeletextSocket[i], socketBuff[i], 672, 0);
-                                if (result != 672)
-                                {
-                                    // read failed, probably fatal.
-                                    err = WSAGetLastError();
-                                    if (DebugEnabled)
-                                    {
-                                        DebugDisplayTraceF(DebugType::Teletext, true,
-                                                           "Teletext: second recv error %d. Closing socket %d",
-                                                           err, i);
-                                    }
-                                    closesocket(TeletextSocket[i]);
-                                    TeletextSocket[i] = INVALID_SOCKET;
-                                    TeletextConnectTimeout[i] = 0;
-                                }
-                                else
-                                {
-                                    TeletextConnectTimeout[i] = 15; // connection is ok, reset the timeout
-                                }
+                                TeletextConnectTimeout[i] = 50; // connection is ok, reset the timeout
                             }
+                        } else {
+                            if (TeletextConnectTimeout[i] > 0)
+                            {
+                                TeletextConnectTimeout[i]--;
+                                continue;
+                            }
+                            if (DebugEnabled)
+                            {
+                                DebugDisplayTraceF(DebugType::Teletext, true,
+                                                   "Teletext: no data. Closing socket %d",
+                                                   i);
+                            }
+                            closesocket(TeletextSocket[i]);
+                            TeletextSocket[i] = INVALID_SOCKET;
+                            TeletextConnectTimeout[i] = 0;
                         }
                     }
                 }
