@@ -130,7 +130,7 @@ void DebugCloseDialog(void);
 
 void DebugDisplayTrace(DebugType type, bool host, const char *info);
 void DebugDisplayTraceF(DebugType type, bool host, const char *format, ...);
-void DebugDisplayTraceF(DebugType type, bool host, const char *format, va_list args);
+void DebugDisplayTraceV(DebugType type, bool host, const char *format, va_list args);
 
 void DebugDisplayInfo(const char *info);
 void DebugDisplayInfoF(const char *format, ...);

@@ -2305,7 +2305,7 @@ static void EconetError(const char *Format, ...)
 
 	if (DebugEnabled)
 	{
-		DebugDisplayTraceF(DebugType::Econet, true, Format, Args);
+		DebugDisplayTraceV(DebugType::Econet, true, Format, Args);
 	}
 
 	mainWin->ReportV(MessageType::Error, Format, Args);
