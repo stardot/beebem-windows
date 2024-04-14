@@ -380,6 +380,23 @@ static const char* IpAddressStr(unsigned long inet_addr)
 
 //---------------------------------------------------------------------------
 
+static std::string BytesToString(const unsigned char* pData, int Length)
+{
+	std::string str;
+
+	for (int i = 0; i < Length; i++)
+	{
+		char sz[10];
+		sprintf(sz, " %02X", pData[i]);
+
+		str += sz;
+	}
+
+	return str;
+}
+
+//---------------------------------------------------------------------------
+
 static ECOLAN* FindNetworkConfig(unsigned char Station)
 {
 	for (int i = 0; i < networkp; ++i)
@@ -1106,7 +1123,7 @@ bool EconetPoll() // return NMI status
 //--------------------------------------------------------------------------------------------
 // Run when state changed or time to check comms.
 // The majority of this code is to handle the status registers.
-// These are just flags that depend on the tx & rx satus, and the control flags.
+// These are just flags that depend on the tx & rx status, and the control flags.
 // These change immediately anything happens, so need refreshing all the time,
 // as rx and tx operations can depend on them too.  It /might/ be possible to
 // only re-calculate them when needed (e.g. on a memory-read or in the receive
@@ -1399,7 +1416,8 @@ bool EconetPoll_real() // return NMI status
 						RecvAddr.sin_addr.s_addr = network[i].inet_addr;
 					}
 
-					if (DebugEnabled) {
+					if (DebugEnabled)
+					{
 						DebugDisplayTraceF(DebugType::Econet, true,
 						                   "Econet: TXLast set - Send %d byte packet to %02x %02x (%08X :%u)",
 						                   BeebTx.Pointer,
@@ -1408,16 +1426,9 @@ bool EconetPoll_real() // return NMI status
 						                   (unsigned int)RecvAddr.sin_addr.s_addr,
 						                   (unsigned int)htons(RecvAddr.sin_port));
 
-						char info[200];
-						char *s = info;
-						s += sprintf(s, "Econet: Packet data:");
+						std::string str = "Econet: Packet data:" + BytesToString(BeebTx.buff, BeebTx.Pointer);
 
-						for (unsigned int j = 0; j < BeebTx.Pointer; ++j)
-						{
-							s += sprintf(s, " %02X", BeebTx.buff[j]);
-						}
-
-						DebugDisplayTrace(DebugType::Econet, true, info);
+						DebugDisplayTrace(DebugType::Econet, true, str.c_str());
 					}
 
 					/*
@@ -1677,16 +1688,9 @@ bool EconetPoll_real() // return NMI status
 									                   RecvAddr.sin_addr.s_addr,
 									                   htons(RecvAddr.sin_port));
 
-									char info[200];
-									char *s = info;
-									s += sprintf(s, "EconetPoll: Packet data:");
+									std::string str = "EconetPoll: Packet data:" + BytesToString(AUNMode ? EconetRx.raw : BeebRx.buff, RetVal);
 
-									for (int i = 0; i < RetVal; ++i)
-									{
-										s += sprintf(s, " %02X", AUNMode ? EconetRx.raw[i] : BeebRx.buff[i]);
-									}
-
-									DebugDisplayTrace(DebugType::Econet, true, info);
+									DebugDisplayTrace(DebugType::Econet, true, str.c_str());
 								}
 
 								if (AUNMode)
