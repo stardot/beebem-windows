@@ -1573,7 +1573,7 @@ bool EconetPoll_real() // return NMI status
 							if (sendto(SendSocket, (char *)BeebTx.buff, BeebTx.Pointer, 0,
 							           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
 							{
-								EconetError("Econet: Failed to send packet to %02x %02x (%s port %u)",
+								EconetError("Econet: Failed to send packet to network %d station %d (%s port %u)",
 								            (unsigned int)BeebTx.eh.destnet, (unsigned int)BeebTx.eh.deststn,
 								            IpAddressStr(network[i].inet_addr), (unsigned int)network[i].port);
 							}
