@@ -1450,11 +1450,36 @@ bool EconetPoll_real() // return NMI status
 
 						switch (fourwaystage)
 						{
-						case FourWayStage::ScoutAckReceived:
+						/* case FourWayStage::ScoutAckReceived:
 							// it came in response to our ack of a scout
 							// what we have /should/ be the data block ..
 							// CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
 							if (BeebTx.Pointer != sizeof(BeebTx.eh) || memcmp(BeebTx.buff, BeebTxCopy, sizeof(BeebTx.eh)) != 0) { // nope
+								// j = 0;
+								for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
+									EconetTx.buff[j] = BeebTx.buff[k];
+								}
+								EconetTx.Pointer = j;
+								fourwaystage = FourWayStage::DataSent;
+								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATASENT");
+								SendMe = true;
+								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
+								break;
+							} // else fall through... */
+							
+						case FourWayStage::ScoutAckReceived:
+							// it came in response to our ack of a scout
+							// what we have /should/ be the data block ..
+							// CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
+
+							if (EconetTx.ah.port == 0x00) {
+								if (EconetTx.ah.cb == (0x82 & 0x7f))
+									j = 8;
+								else if (EconetTx.ah.cb >= (0x83 & 0x7f) && EconetTx.ah.cb <= (0x85 &0x7f))
+									j = 4;
+							}
+
+							if (BeebTx.Pointer != sizeof(BeebTx.eh) + j || memcmp(BeebTx.buff, BeebTxCopy, sizeof(BeebTx.eh) + j) != 0) { // nope
 								// j = 0;
 								for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
 									EconetTx.buff[j] = BeebTx.buff[k];
@@ -1493,7 +1518,8 @@ bool EconetPoll_real() // return NMI status
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + 8;
 							}
-							else if (EconetTx.ah.port == 0)
+							// else if (EconetTx.ah.port == 0)
+							else if (EconetTx.ah.port == 0 && (EconetTx.ah.cb < (0x82 & 0x7f) || EconetTx.ah.cb > (0x85 & 0x7f)))
 							{
 								EconetTx.ah.type = AUNType::Immediate;
 								fourwaystage = FourWayStage::ImmediateSent;
@@ -1764,11 +1790,35 @@ bool EconetPoll_real() // return NMI status
 													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMRCVD");
 													break;
 
-												case AUNType::Unicast:
+												/* case AUNType::Unicast:
 													// we're assuming things here..
 													fourwaystage = FourWayStage::ScoutReceived;
 													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTRCVD");
 													BeebRx.BytesInBuffer = sizeof(BeebRx.eh);
+													break; */
+
+												case AUNType::Unicast:
+													// we're assuming things here..
+													if (EconetRx.ah.port == 0 && EconetRx.ah.cb == (0x82 & 0x7f)) {
+														j = 6;
+														for (unsigned int i = 0; i < 8; i++, j++) {
+															BeebRx.buff[j] = EconetRx.buff[i];
+														}
+														BeebRx.BytesInBuffer = j;
+													}
+
+													else if (EconetRx.ah.port == 0 && EconetRx.ah.cb >= (0x83 & 0x7f) && EconetRx.ah.cb <= (0x85 & 0x7f)) {
+														j = 6;
+														for (unsigned int i = 0; i < 4; i++, j++) {
+															BeebRx.buff[j] = EconetRx.buff[i];
+														}
+														BeebRx.BytesInBuffer = j;
+													}
+													
+													else BeebRx.BytesInBuffer = sizeof(BeebRx.eh);
+
+													fourwaystage = FourWayStage::ScoutReceived;
+													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTRCVD");
 													break;
 
 												default:
@@ -1887,7 +1937,7 @@ bool EconetPoll_real() // return NMI status
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKRCVD");
 							break;
 
-						case FourWayStage::ScoutAckSent:
+						/* case FourWayStage::ScoutAckSent:
 							// beeb acked the scout we gave it, so give it the data AUN sent us earlier.
 							BeebRx.eh.deststn = EconetStationID; // as it is data it must be for us
 							BeebRx.eh.destnet = 0;
@@ -1904,7 +1954,41 @@ bool EconetPoll_real() // return NMI status
 							BeebRx.Pointer =0;
 							fourwaystage = FourWayStage::DataReceived;
 							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATARCVD");
-							break;
+							break; */
+
+						case FourWayStage::ScoutAckSent:
+							// beeb acked the scout we gave it, so give it the data AUN sent us earlier.
+							BeebRx.eh.deststn = EconetStationID; // as it is data it must be for us
+							BeebRx.eh.destnet = 0;
+							// BeebRx.eh.deststn = EconetRx.eh.deststn ; // 30jun
+							// BeebRx.eh.destnet = EconetRx.eh.destnet & inmask ; // 30jun was 0
+
+							BeebRx.eh.srcstn = (unsigned char)EconetTx.deststn;  //30jun dont think this is right..
+							BeebRx.eh.srcnet = (unsigned char)(EconetTx.destnet & inmask);
+							j = 4;
+
+							if (EconetRx.ah.port == 0 && EconetRx.ah.cb == (0x82 & 0x7f)) {
+								for (unsigned int i = 8; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++) {
+									BeebRx.buff[j] = EconetRx.buff[i];
+								}
+							}
+
+							else if (EconetRx.ah.port == 0 && EconetRx.ah.cb >= (0x83 & 0x7f) && EconetRx.ah.cb <= (0x85 & 0x7f)) {
+								for (unsigned int i = 4; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++) {
+									BeebRx.buff[j] = EconetRx.buff[i];
+								}
+							}
+							else {
+								for (unsigned int i = 0; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++) {
+									BeebRx.buff[j] = EconetRx.buff[i];
+								}
+							}
+	
+							BeebRx.BytesInBuffer = j;
+							BeebRx.Pointer =0;
+							fourwaystage = FourWayStage::DataReceived;
+							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATARCVD");
+							break;						
 						}
 					}
 				}
