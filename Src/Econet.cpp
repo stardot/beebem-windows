@@ -1419,11 +1419,11 @@ bool EconetPoll_real() // return NMI status
 					if (DebugEnabled)
 					{
 						DebugDisplayTraceF(DebugType::Econet, true,
-						                   "Econet: TXLast set - Send %d byte packet to %02x %02x (%08X :%u)",
+						                   "Econet: TXLast set: Send %d byte packet to network %d station %d (%s port %u)",
 						                   BeebTx.Pointer,
 						                   (unsigned int)BeebTx.eh.destnet,
 						                   (unsigned int)BeebTx.eh.deststn,
-						                   (unsigned int)RecvAddr.sin_addr.s_addr,
+						                   IpAddressStr(RecvAddr.sin_addr.s_addr),
 						                   (unsigned int)htons(RecvAddr.sin_port));
 
 						std::string str = "Econet: Packet data:" + BytesToString(BeebTx.buff, BeebTx.Pointer);
@@ -1683,9 +1683,9 @@ bool EconetPoll_real() // return NMI status
 								if (DebugEnabled)
 								{
 									DebugDisplayTraceF(DebugType::Econet, true,
-									                   "EconetPoll: Packet received. %u bytes from %08X :%u)",
+									                   "EconetPoll: Packet received: %u bytes from %s port %u",
 									                   (int)RetVal,
-									                   RecvAddr.sin_addr.s_addr,
+									                   IpAddressStr(RecvAddr.sin_addr.s_addr),
 									                   htons(RecvAddr.sin_port));
 
 									std::string str = "EconetPoll: Packet data:" + BytesToString(AUNMode ? EconetRx.raw : BeebRx.buff, RetVal);
