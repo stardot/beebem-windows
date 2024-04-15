@@ -1493,7 +1493,7 @@ void LoadRomRegsUEF(FILE *SUEF) {
 		Prvs8 = (ACCCON & 0x40) != 0;
 		Prvs4 = (ACCCON & 0x20) != 0;
 		Prvs1 = (ACCCON & 0x10) != 0;
-		HidAdd = fgetbool(SUEF);
+		HidAdd = fget8(SUEF);
 		break;
 
 	case Model::BPlus:
