@@ -97,7 +97,7 @@ unsigned char Hidden[256];
 unsigned char Private[12288];
 unsigned char ShadowRam[20480];
 
-static const unsigned char HiddenDefault[31] = {
+static const unsigned char HiddenDefault[32] = {
 	// Addresses 0x0 thru 0x9: RTC Data: Sec, SecAlm, Min, MinAlm, Hr, HrAlm, Day, Date, Month, Year
 	0, 0, 0, 0, 0, 0, 2, 1, 1, 0,
 	// Addresses 0xA thru 0xD: Registers A, B, C & D
@@ -107,7 +107,10 @@ static const unsigned char HiddenDefault[31] = {
 	0,
 	// Addresses 0xE thru 0x12: ?
 	0, 0, 0, 0, 0,
-	0xed, // Address 0x13: 0xED LANGUAGE in bank E. FILE SYSTEM in bank D. ROMS.cfg should match this, but IBOS reset will correct if wrong
+	0xee, // Address 0x13: 0xEE IBOS <  1.26 0-3: File system in bank E / 4-7: non-tube-LANG in bank E.
+		  // Address 0x13: 0xEE IBOS >= 1.26 0-3 :non-tube-LANG in bank E / 4-7: tube-LANG in bank E
+		  // Note: If suitable lang or file is not found in Bank E then IBOS will search lower banks for
+		  //       lang or file. Typically lang (BASIC) will be in bank E, and file will be in lower bank.
 	0xff, // Address 0x14: 0xFF *INSERT status for ROMS &0F to &08. Default: &FF (All 8 ROMS enabled)
 	0xff, // Address 0x15: 0xFF *INSERT status for ROMS &07 to &00. Default: &FF (All 8 ROMS enabled)
 	0x78,
@@ -118,7 +121,8 @@ static const unsigned char HiddenDefault[31] = {
 	5,    // Address 0x1B: 0x05 0-7: Keyboard Repeat
 	0x0a, // Address 0x1C: 0x0A 0-7: Printer Ignore
 	0x2d, // Address 0x1D: 0x2D 0: Tube / 2-4: BAUD / 5-7: Printer
-	0xa1  // Address 0x1E: 0xA1 0: File system / 4: Boot / 5-7: Data. Default was &A0. Changed to &A1
+	0xa1, // Address 0x1E: 0xA1 0: File system / 4: Boot / 5-7: Data. Default was &A0. Changed to &A1
+	0xfe  // Address 0x1F: 0xFF 0-3: FILE / 4-7: spare. Only used in IBOS >= 1.26
 };
 // End of Computech (&B+) Specific Stuff
 
@@ -1352,7 +1356,7 @@ void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
   if (!SkipIntegraBConfig)
   {
 	  memset(Hidden,0,256);
-	  memcpy(Hidden, HiddenDefault, 31);
+	  memcpy(Hidden, HiddenDefault, 32);
   }
 
   if (LoadRoms) {
