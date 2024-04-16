@@ -1382,6 +1382,13 @@ void DebugAssertBreak(int addr, int prevAddr, bool host)
 
 void DebugDisplayTrace(DebugType type, bool host, const char *info)
 {
+	if (type == DebugType::Econet)
+	{
+		DebugTrace(info);
+		DebugTrace("\n");
+		return;
+	}
+
 	if (DebugEnabled && ((DebugHost && host) || (DebugParasite && !host)))
 	{
 		switch (type)

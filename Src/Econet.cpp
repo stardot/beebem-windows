@@ -41,6 +41,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "BeebWin.h"
 #include "Debug.h"
+#include "DebugTrace.h"
 #include "Main.h"
 #include "SysVia.h"
 #include "StringUtils.h"
@@ -685,7 +686,7 @@ void EconetReset()
 
 	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1)
 	{
-		EconetError("Econet: Failed to set cosket for broadcasts (error %ld)", WSAGetLastError());
+		EconetError("Econet: Failed to set socket for broadcasts (error %ld)", WSAGetLastError());
 		closesocket(ListenSocket);
 		ListenSocket = INVALID_SOCKET;
 		return;
@@ -978,7 +979,7 @@ static void ReadNetwork()
 
 unsigned char EconetReadStationID()
 {
-	if (DebugEnabled)
+	//if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "Econet: Read Station %02X",
@@ -993,7 +994,8 @@ unsigned char EconetReadStationID()
 
 unsigned char EconetRead(unsigned char Register)
 {
-	if (DebugEnabled) {
+	//if (DebugEnabled)
+	{
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "Econet: Read ADLC %02X",
 		                   (int)Register);
@@ -1013,7 +1015,7 @@ unsigned char EconetRead(unsigned char Register)
 		// rxreset not set and someting in fifo
 		if (((ADLC.control1 & CONTROL_REG1_RX_RESET) == 0) && ADLC.rxfptr > 0)
 		{
-			if (DebugEnabled)
+			//if (DebugEnabled)
 			{
 				DebugDisplayTraceF(DebugType::Econet, true,
 				                   "Econet: Returned fifo: %02X",
@@ -1041,7 +1043,7 @@ unsigned char EconetRead(unsigned char Register)
 
 void EconetWrite(unsigned char Register, unsigned char Value)
 {
-	if (DebugEnabled)
+	//if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "Econet: Write ADLC %02X = %02X",
@@ -1271,7 +1273,8 @@ bool EconetPoll_real() // return NMI status
 	// CR4b5 - TransmitABT - Abort Transmission.  Once abort starts, bit is cleared.
 	if (ADLC.control4 & CONTROL_REG4_TX_ABORT)
 	{
-		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: TxABORT is set");
+		//if (DebugEnabled)
+			DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: TxABORT is set");
 
 		ADLC.txfptr = 0; // reset fifo
 		ADLC.txftl = 0; // reset fifo flags
@@ -1280,7 +1283,8 @@ bool EconetPoll_real() // return NMI status
 		ADLC.control4 &= ~CONTROL_REG4_TX_ABORT; // reset flag.
 		fourwaystage = FourWayStage::Idle;
 
-		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IDLE (abort)");
+		//if (DebugEnabled)
+			DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IDLE (abort)");
 	}
 
 	// CR4b6 - ABTex - extend abort - adjust way the abort flag is sent.  ignore.
@@ -1298,7 +1302,7 @@ bool EconetPoll_real() // return NMI status
 		{
 			if (ADLC.txfptr > 0) // there is data in tx fifo
 			{
-				if (DebugEnabled)
+				//if (DebugEnabled)
 					DebugDisplayTrace(DebugType::Econet, true, "EconetPoll: Write to FIFO noticed");
 
 				bool TXlast = false;
@@ -1380,7 +1384,8 @@ bool EconetPoll_real() // return NMI status
 						// guess address if not found in table
 						if (!SendMe && StrictAUNMode) // didn't find it and allowed to guess
 						{
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Send to unknown host; make assumptions & add entry!");
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Send to unknown host; make assumptions & add entry!");
 
 							if (BeebTx.eh.destnet == 0 || BeebTx.eh.destnet == aunnet[myaunnet].network)
 							{
@@ -1416,7 +1421,7 @@ bool EconetPoll_real() // return NMI status
 						RecvAddr.sin_addr.s_addr = network[i].inet_addr;
 					}
 
-					if (DebugEnabled)
+					//if (DebugEnabled)
 					{
 						DebugDisplayTraceF(DebugType::Econet, true,
 						                   "Econet: TXLast set: Send %d byte packet to network %d station %d (%s port %u)",
@@ -1496,15 +1501,17 @@ bool EconetPoll_real() // return NMI status
 							{
 								EconetTx.ah.type = AUNType::Broadcast;
 								fourwaystage = FourWayStage::WaitForIdle; // no response to broadcasts...
-								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast snt)");
+								//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast snt)");
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + 8;
 							}
-							else if (EconetTx.ah.port == 0 && (EconetTx.ah.cb < (0x82 & 0x7f) || EconetTx.ah.cb >(0x85 & 0x7f)))
+							else if (EconetTx.ah.port == 0 && (EconetTx.ah.cb < (0x82 & 0x7f) || EconetTx.ah.cb > (0x85 & 0x7f)))
 							{
 								EconetTx.ah.type = AUNType::Immediate;
 								fourwaystage = FourWayStage::ImmediateSent;
-								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMSENT");
+								//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMSENT");
 								SendMe = true; // send packet ...
 								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
 							}
@@ -1512,19 +1519,23 @@ bool EconetPoll_real() // return NMI status
 							{
 								EconetTx.ah.type = AUNType::Unicast;
 								fourwaystage = FourWayStage::ScoutSent;
-								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTSENT");
+								//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTSENT");
 								// dont send anything but set wait anyway
 								SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
-								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
+								//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
 							} // else BROADCAST !!!!
 							break;
 
 						case FourWayStage::ScoutReceived:
 							// it's an ack for a scout which we sent the beeb. just drop it, but move on.
 							fourwaystage = FourWayStage::ScoutAckSent;
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKSENT");
-								SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKSENT");
+							SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
 							break;
 
 						case FourWayStage::DataReceived:
@@ -1546,13 +1557,15 @@ bool EconetPoll_real() // return NMI status
 							*/
 
 							fourwaystage = FourWayStage::WaitForIdle;
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (final ack sent)");
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (final ack sent)");
 							break;
 
 						case FourWayStage::ImmediateReceived:
 							// it's a reply to an immediate command we just had
 							fourwaystage = FourWayStage::WaitForIdle;
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (imm rcvd)");
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (imm rcvd)");
 							// j = 0;
 							for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
 								EconetTx.buff[j] = BeebTx.buff[k];
@@ -1567,14 +1580,16 @@ bool EconetPoll_real() // return NMI status
 						default:
 							// shouldn't be here.. ignore packet and abort fourway
 							fourwaystage = FourWayStage::WaitForIdle;
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (unexpected mode, packet ignored)");
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (unexpected mode, packet ignored)");
 							break;
 						}
 					}
 
 					if (SendMe)
 					{
-						if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Sending a packet..");
+						//if (DebugEnabled)
+							DebugDisplayTrace(DebugType::Econet, true, "Econet: Sending a packet..");
 
 						if (AUNMode)
 						{
@@ -1601,11 +1616,13 @@ bool EconetPoll_real() // return NMI status
 						// it deals with it
 						FlagFillActive = true;
 						SetTrigger(EconetFlagFillTimeout, EconetFlagFillTimeoutTrigger);
-						if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill set (packet sent)");
+						//if (DebugEnabled)
+							DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill set (packet sent)");
 
 						BeebTx.Pointer = 0; // wipe buffer
 						BeebTx.BytesInBuffer = 0;
-						if (DebugEnabled) DebugDumpADLC();
+						//if (DebugEnabled)
+							DebugDumpADLC();
 					}
 				}
 			}
@@ -1619,7 +1636,7 @@ bool EconetPoll_real() // return NMI status
 				// something waiting to be given to the processor
 				if (ADLC.rxfptr < 3) // space in fifo
 				{
-					if (DebugEnabled)
+					//if (DebugEnabled)
 						DebugDisplayTrace(DebugType::Econet, true,
 							"EconetPoll: Time to give another byte to the beeb");
 
@@ -1687,7 +1704,7 @@ bool EconetPoll_real() // return NMI status
 
 							if (RetVal > 0)
 							{
-								if (DebugEnabled)
+								//if (DebugEnabled)
 								{
 									DebugDisplayTraceF(DebugType::Econet, true,
 									                   "EconetPoll: Packet received: %u bytes from %s port %u",
@@ -1717,13 +1734,14 @@ bool EconetPoll_real() // return NMI status
 
 									if (pHost == nullptr) // didn't find it in the table ..
 									{
-										if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Packet ignored");
+										//if (DebugEnabled)
+											DebugDisplayTrace(DebugType::Econet, true, "Econet: Packet ignored");
 
 										BeebRx.BytesInBuffer = 0; // ignore the packet
 									}
 									else
 									{
-										if (DebugEnabled)
+										//if (DebugEnabled)
 										{
 											DebugDisplayTraceF(DebugType::Econet, true,
 											                   "Econet: Packet was from %02x %02x ",
@@ -1758,7 +1776,8 @@ bool EconetPoll_real() // return NMI status
 													}
 													BeebRx.BytesInBuffer = j;
 													fourwaystage = FourWayStage::WaitForIdle;
-													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast received)");
+													//if (DebugEnabled)
+														DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast received)");
 													break;
 
 												case AUNType::Immediate:
@@ -1768,7 +1787,8 @@ bool EconetPoll_real() // return NMI status
 													}
 													BeebRx.BytesInBuffer = j;
 													fourwaystage = FourWayStage::ImmediateReceived;
-													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMRCVD");
+													//if (DebugEnabled)
+														DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMRCVD");
 													break;
 
 												case AUNType::Unicast:
@@ -1791,7 +1811,8 @@ bool EconetPoll_real() // return NMI status
 
 													else BeebRx.BytesInBuffer = sizeof(BeebRx.eh);
 													fourwaystage = FourWayStage::ScoutReceived;
-													if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTRCVD");
+													//if (DebugEnabled)
+														DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTRCVD");
 													break;
 
 												default:
@@ -1822,7 +1843,8 @@ bool EconetPoll_real() // return NMI status
 											BeebRx.BytesInBuffer = j;
 											BeebRx.Pointer = 0;
 											fourwaystage = FourWayStage::WaitForIdle;
-											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (ack received from remote AUN server)");
+											//if (DebugEnabled)
+												DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (ack received from remote AUN server)");
 											break;
 
 										case FourWayStage::DataSent:
@@ -1840,7 +1862,8 @@ bool EconetPoll_real() // return NMI status
 
 												BeebRx.BytesInBuffer = 4;
 												BeebRx.Pointer = 0;
-												if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (aun ack rxd)");
+												//if (DebugEnabled)
+													DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (aun ack rxd)");
 												fourwaystage = FourWayStage::WaitForIdle;
 												break;
 											} // else unexpected packet - ignore it.TODO: queue it?
@@ -1848,7 +1871,8 @@ bool EconetPoll_real() // return NMI status
 										default: // erm, what are we doing here?
 											// ignore packet
 											fourwaystage = FourWayStage::WaitForIdle;
-											if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (ack received from remote AUN server)");
+											//if (DebugEnabled)
+												DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (ack received from remote AUN server)");
 											break;
 										}
 									}
@@ -1866,7 +1890,8 @@ bool EconetPoll_real() // return NMI status
 									// Peer sent us packet - no longer in flag fill
 									FlagFillActive = false;
 
-									if (DebugEnabled) {
+									//if (DebugEnabled)
+									{
 										DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill reset");
 									}
 								}
@@ -1876,7 +1901,8 @@ bool EconetPoll_real() // return NMI status
 									FlagFillActive = true;
 									SetTrigger(EconetFlagFillTimeout, EconetFlagFillTimeoutTrigger);
 
-									if (DebugEnabled) {
+									//if (DebugEnabled)
+									{
 										DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill set - other station comms");
 									}
 								}
@@ -1907,7 +1933,8 @@ bool EconetPoll_real() // return NMI status
 							BeebRx.BytesInBuffer = 4;
 							BeebRx.Pointer = 0;
 							fourwaystage = FourWayStage::ScoutAckReceived;
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKRCVD");
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKRCVD");
 							break;
 
 						case FourWayStage::ScoutAckSent:
@@ -1919,21 +1946,27 @@ bool EconetPoll_real() // return NMI status
 
 							BeebRx.eh.srcstn = (unsigned char)EconetTx.deststn;  //30jun dont think this is right..
 							BeebRx.eh.srcnet = (unsigned char)(EconetTx.destnet & inmask);
+
 							j = 4;
-							if (EconetRx.ah.port == 0 && EconetRx.ah.cb == (0x82 & 0x7f)) {
-								for (unsigned int i = 8; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++) {
+
+							if (EconetRx.ah.port == 0 && EconetRx.ah.cb == (0x82 & 0x7f))
+							{
+								for (unsigned int i = 8; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++)
+								{
 									BeebRx.buff[j] = EconetRx.buff[i];
 								}
 							}
-
-							else if (EconetRx.ah.port == 0 && EconetRx.ah.cb >= (0x83 & 0x7f) && EconetRx.ah.cb <= (0x85 & 0x7f)) {
-								for (unsigned int i = 4; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++) {
+							else if (EconetRx.ah.port == 0 && EconetRx.ah.cb >= (0x83 & 0x7f) && EconetRx.ah.cb <= (0x85 & 0x7f))
+							{
+								for (unsigned int i = 4; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++)
+								{
 									BeebRx.buff[j] = EconetRx.buff[i];
 								}
 							}
-
-							else {
-								for (unsigned int i = 0; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++) {
+							else
+							{
+								for (unsigned int i = 0; i < EconetRx.BytesInBuffer - sizeof(EconetRx.ah); i++, j++)
+								{
 									BeebRx.buff[j] = EconetRx.buff[i];
 								}
 							}
@@ -1941,7 +1974,8 @@ bool EconetPoll_real() // return NMI status
 							BeebRx.BytesInBuffer = j;
 							BeebRx.Pointer =0;
 							fourwaystage = FourWayStage::DataReceived;
-							if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATARCVD");
+							//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATARCVD");
 							break;
 						}
 					}
@@ -1971,7 +2005,7 @@ bool EconetPoll_real() // return NMI status
 	{
 		FlagFillActive = false;
 
-		if (DebugEnabled)
+		//if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: FlagFill timeout reset");
 	}
 
@@ -2001,7 +2035,8 @@ bool EconetPoll_real() // return NMI status
 		Econet4Wtrigger = 0;
 		fourwaystage = FourWayStage::Idle;
 
-		if (DebugEnabled) {
+		//if (DebugEnabled)
+		{
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: 4waystage timeout; Set FWS_IDLE");
 			DebugDumpADLC();
 		}
@@ -2074,7 +2109,7 @@ bool EconetPoll_real() // return NMI status
 	// SR1b5 - TXU - Tx Underrun.
 	if (ADLC.txfptr > 4) // probably not needed
 	{
-		if (DebugEnabled)
+		//if (DebugEnabled)
 		{
 			DebugDisplayTraceF(DebugType::Econet, true,
 			                   "Econet: TX Underrun - TXfptr %02x",
@@ -2095,14 +2130,14 @@ bool EconetPoll_real() // return NMI status
 			    && (!(ADLC.status1 & STATUS_REG1_CTS)) // clear to send is ok
 			    && (!(ADLC.status2 & STATUS_REG2_DCD)) ) // DTR not high
 			{
-				if (DebugEnabled && !(ADLC.status1 & STATUS_REG1_TDRA))
+				if (/* DebugEnabled && */!(ADLC.status1 & STATUS_REG1_TDRA))
 					DebugDisplayTrace(DebugType::Econet, true, "set tdra");
 
 				ADLC.status1 |= STATUS_REG1_TDRA; // set Tx Reg Data Available flag
 			}
 			else
 			{
-				if (DebugEnabled && (ADLC.status1 & STATUS_REG1_TDRA))
+				if (/*DebugEnabled && */(ADLC.status1 & STATUS_REG1_TDRA))
 					DebugDisplayTrace(DebugType::Econet, true, "clear tdra");
 
 				ADLC.status1 &= ~STATUS_REG1_TDRA; // clear Tx Reg Data Available flag
@@ -2112,14 +2147,14 @@ bool EconetPoll_real() // return NMI status
 		{
 			if (ADLC.txfptr == 0) // nothing in fifo
 			{
-				if (DebugEnabled && !(ADLC.status1 & STATUS_REG1_TDRA))
+				if (/*DebugEnabled && */!(ADLC.status1 & STATUS_REG1_TDRA))
 					DebugDisplayTrace(DebugType::Econet, true, "set fc");
 
 				ADLC.status1 |= STATUS_REG1_TDRA; // set Tx Reg Data Available flag.
 			}
 			else
 			{
-				if (DebugEnabled && (ADLC.status1 & STATUS_REG1_TDRA))
+				if (/*DebugEnabled && */(ADLC.status1 & STATUS_REG1_TDRA))
 					DebugDisplayTrace(DebugType::Econet, true, "clear fc");
 
 				ADLC.status1 &= ~STATUS_REG1_TDRA; // clear Tx Reg Data Available flag.
@@ -2232,7 +2267,7 @@ bool EconetPoll_real() // return NMI status
 		ADLC.sr2pse = 0;
 	}
 
-	if (DebugEnabled && ADLC.sr2pse != PrevSr2pse)
+	if (/*DebugEnabled && */ADLC.sr2pse != PrevSr2pse)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
 		                   "ADLC: PSE SR2Rx priority changed to %d",
@@ -2285,7 +2320,7 @@ bool EconetPoll_real() // return NMI status
 
 			ADLC.status1 |= STATUS_REG1_IRQ;
 
-			if (DebugEnabled)
+			//if (DebugEnabled)
 			{
 				DebugDisplayTraceF(DebugType::Econet, true,
 				                  "ADLC: Status1 bit got set %02x, interrupt",
@@ -2311,11 +2346,13 @@ bool EconetPoll_real() // return NMI status
 				if (ADLC.control2 & CONTROL_REG2_PRIORITIZED_STATUS_ENABLE)
 				{
 					interruptnow = true;
-					DebugDisplayTrace(DebugType::Econet, true, "ADLC: S1 flags still set, interrupt");
+
+					//if (DebugEnabled)
+						DebugDisplayTrace(DebugType::Econet, true, "ADLC: S1 flags still set, interrupt");
 				}
 			}
 
-			if (DebugEnabled)
+			//if (DebugEnabled)
 			{
 				DebugDisplayTraceF(DebugType::Econet, true,
 				                   "ADLC: IRQ cause reset, irqcause %02x",
@@ -2323,7 +2360,8 @@ bool EconetPoll_real() // return NMI status
 			}
 		}
 
-		if (DebugEnabled) DebugDumpADLC();
+		//if (DebugEnabled)
+			DebugDumpADLC();
 	}
 
 	return interruptnow; // flag NMI if necessary. see also INTON flag as
