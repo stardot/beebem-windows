@@ -1345,7 +1345,7 @@ bool EconetPoll_real() // return NMI status
 
 					sockaddr_in RecvAddr;
 					bool SendMe = false;
-					int SendLen;
+					int SendLen = 0;
 					int i = 0;
 
 					if (AUNMode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) // broadcast!
