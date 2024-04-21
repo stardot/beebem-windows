@@ -982,7 +982,7 @@ unsigned char EconetReadStationID()
 	//if (DebugEnabled)
 	{
 		DebugDisplayTraceF(DebugType::Econet, true,
-		                   "Econet: Read Station %02X",
+		                   "Econet: Read Station: %d",
 		                   (int)EconetStationID);
 	}
 
@@ -1335,9 +1335,9 @@ bool EconetPoll_real() // return NMI status
 					if (DebugEnabled)
 					{
 						DebugDisplayTraceF(DebugType::Econet, true,
-						                   "Econet: TXLast set - Send packet to %02x %02x",
-						                   (unsigned int)BeebTx.eh.destnet,
-						                   (unsigned int)BeebTx.eh.deststn);
+						                   "Econet: TXLast set - Send packet to network %d station %d",
+						                   (int)BeebTx.eh.destnet,
+						                   (int)BeebTx.eh.deststn);
 					}
 
 					// first two bytes of BeebTx.buff contain the destination address
