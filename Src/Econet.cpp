@@ -496,8 +496,8 @@ void EconetReset()
 	ADLC.txfptr = 0;
 	ADLC.txftl = 0;
 
-	ADLC.idle = 1;
-	ADLC.cts = 0;
+	ADLC.idle = true;
+	ADLC.cts = false;
 
 	irqcause = 0;
 	sr1b2cause = 0;
