@@ -36,7 +36,7 @@ Status register:
    5        DEW (High during the teletext portion of the TV frame)
    6        DOR (Set by a failure to clear the status flags before start of DEW)
    7        INT (Set by trailing edge of DEW)
-  
+
 Control latch:
    Bits     Function
    0-1      Channel select
@@ -143,16 +143,17 @@ static int TeletextConnect(int ch)
             return 1;
         }
     }
-    
-    /* How long should we wait (in emulated video fields) for a connection to complete? */
+
+    // How long should we wait (in emulated video fields) for a connection
+    // to complete?
     TeletextConnectTimeout[ch] = 50; // allow a full second
-    
+
     return 0;
 }
 
 void TeletextInit()
 {
-    TeletextStatus = 0x0f; /* low nibble comes from LK4-7 and mystery links which are left floating */
+    TeletextStatus = 0x0f; // Low nibble comes from LK4-7 and mystery links which are left floating
     TeletextInts = false;
     TeletextEnable = false;
     TeletextChannel = 0;
@@ -215,7 +216,7 @@ void TeletextInit()
 
 void TeletextClose()
 {
-    /* close any connected teletext sockets or files */
+    // Close any connected teletext sockets or files
     for (int ch = 0; ch < 4; ch++)
     {
         if (TeletextSocket[ch] != INVALID_SOCKET)
@@ -231,7 +232,7 @@ void TeletextClose()
             TeletextConnectTimeout[ch] = 0;
         }
 
-        if (TeletextFile[ch])
+        if (TeletextFile[ch] != nullptr)
         {
             fclose(TeletextFile[ch]);
             TeletextFile[ch] = nullptr;
@@ -239,7 +240,7 @@ void TeletextClose()
     }
 }
 
-void TeletextWrite(int Address, int Value) 
+void TeletextWrite(int Address, int Value)
 {
     if (!TeletextAdapterEnabled)
         return;
@@ -361,7 +362,7 @@ void TeletextAdapterUpdate()
                     {
                         int err;
                         int result;
-                        
+
                         // find out how much data is buffered on the socket
                         unsigned long n;
                         if (ioctlsocket(TeletextSocket[i], FIONREAD, &n) == SOCKET_ERROR)
@@ -379,18 +380,21 @@ void TeletextAdapterUpdate()
                         }
                         else if (n > (672*50)) // over 50 fields of data are queued on the socket
                         {
-                            // skip forward 25 fields (half a second) to attempt to catch up with server
-                            // this occurs when emulation has been paused by moving the BeebEm window, or interacting with menus
-                            // If these delays are allowed to accumulate we will eventually fill the buffer and drop the connection
-                            // we should end up somewhere between 25 to 50 fields behind "live"
-                            
+                            // Skip forward 25 fields (half a second) to attempt
+                            // to catch up with server. This occurs when emulation
+                            // has been paused by moving the BeebEm window or
+                            // interacting with menus. If these delays are allowed
+                            // to accumulate we will eventually fill the buffer and
+                            // drop the connection we should end up somewhere between
+                            // 25 to 50 fields behind "live".
+
                             if (DebugEnabled)
                             {
                                 DebugDisplayTraceF(DebugType::Teletext, true,
                                                    "Teletext: Skipping forward 0.5 seconds on socket %d",
                                                    i);
                             }
-                            
+
                             result = recv(TeletextSocket[i], tmpBuff, 672*25, 0);
                             if (result != (672*25))
                             {
@@ -416,7 +420,7 @@ void TeletextAdapterUpdate()
                             if (result == 0 || result == SOCKET_ERROR)
                             {
                                 err = WSAGetLastError();
-                                
+
                                 if (err == WSAEWOULDBLOCK)
                                 {
                                     if (DebugEnabled)
@@ -430,7 +434,7 @@ void TeletextAdapterUpdate()
                                         continue; // reuse the connect() timeout to catch hanging sockets where the server has gone away
                                     }
                                 }
-                                
+
                                 if (DebugEnabled)
                                 {
                                     DebugDisplayTraceF(DebugType::Teletext, true,
@@ -443,7 +447,7 @@ void TeletextAdapterUpdate()
                             }
                             else if (result != 672)
                             {
-                                // failed to read a complete field 
+                                // failed to read a complete field
                                 if (DebugEnabled)
                                 {
                                     DebugDisplayTraceF(DebugType::Teletext, true,
