@@ -96,13 +96,21 @@ static unsigned char row[16][64] = {0};
 static SOCKET TeletextSocket[4] = { INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET, INVALID_SOCKET };
 static int TeletextConnectTimeout[4] = { 0, 0, 0, 0 };
 
+/*--------------------------------------------------------------------------*/
+
+static bool TeletextConnect(int ch);
+static void CloseTeletextSocket(int Index);
+
+/*--------------------------------------------------------------------------*/
+
 // Initiate connection on socket
 
-static int TeletextConnect(int ch)
+static bool TeletextConnect(int ch)
 {
     TeletextConnectTimeout[ch] = 0;
 
     TeletextSocket[ch] = socket(AF_INET, SOCK_STREAM, 0);
+
     if (TeletextSocket[ch] == INVALID_SOCKET)
     {
         if (DebugEnabled)
@@ -138,9 +146,9 @@ static int TeletextConnect(int ch)
                                    ch, TeletextIP[ch], TeletextPort[ch],
                                    WSAGetLastError());
             }
-            closesocket(TeletextSocket[ch]);
-            TeletextSocket[ch] = INVALID_SOCKET;
-            return 1;
+
+            CloseTeletextSocket(ch);
+            return false;
         }
     }
 
@@ -148,8 +156,19 @@ static int TeletextConnect(int ch)
     // to complete?
     TeletextConnectTimeout[ch] = 50; // allow a full second
 
-    return 0;
+    return true;
 }
+
+/*--------------------------------------------------------------------------*/
+
+static void CloseTeletextSocket(int Index)
+{
+    closesocket(TeletextSocket[Index]);
+    TeletextSocket[Index] = INVALID_SOCKET;
+    TeletextConnectTimeout[Index] = 0;
+}
+
+/*--------------------------------------------------------------------------*/
 
 void TeletextInit()
 {
@@ -214,6 +233,8 @@ void TeletextInit()
     SetTrigger(128, TeletextAdapterTrigger); // wait for approximately 1 video line
 }
 
+/*--------------------------------------------------------------------------*/
+
 void TeletextClose()
 {
     // Close any connected teletext sockets or files
@@ -227,9 +248,7 @@ void TeletextClose()
                                    "Teletext: closing socket %d", ch);
             }
 
-            closesocket(TeletextSocket[ch]);
-            TeletextSocket[ch] = INVALID_SOCKET;
-            TeletextConnectTimeout[ch] = 0;
+            CloseTeletextSocket(ch);
         }
 
         if (TeletextFile[ch] != nullptr)
@@ -239,6 +258,8 @@ void TeletextClose()
         }
     }
 }
+
+/*--------------------------------------------------------------------------*/
 
 void TeletextWrite(int Address, int Value)
 {
@@ -287,6 +308,8 @@ void TeletextWrite(int Address, int Value)
     }
 }
 
+/*--------------------------------------------------------------------------*/
+
 unsigned char TeletextRead(int Address)
 {
     if (!TeletextAdapterEnabled)
@@ -328,6 +351,8 @@ unsigned char TeletextRead(int Address)
 
     return data;
 }
+
+/*--------------------------------------------------------------------------*/
 
 void TeletextAdapterUpdate()
 {
@@ -374,9 +399,8 @@ void TeletextAdapterUpdate()
                                                    "Teletext: FIONREAD error %d. Closing socket %d",
                                                    err, i);
                             }
-                            closesocket(TeletextSocket[i]);
-                            TeletextSocket[i] = INVALID_SOCKET;
-                            TeletextConnectTimeout[i] = 0;
+
+                            CloseTeletextSocket(i);
                         }
                         else if (n > (672*50)) // over 50 fields of data are queued on the socket
                         {
@@ -406,10 +430,11 @@ void TeletextAdapterUpdate()
                                                        "Teletext: discard recv error %d. Closing socket %d",
                                                        err, i);
                                 }
-                                closesocket(TeletextSocket[i]);
-                                TeletextSocket[i] = INVALID_SOCKET;
-                                TeletextConnectTimeout[i] = 0;
-                            } else {
+
+                                CloseTeletextSocket(i);
+                            }
+                            else
+                            {
                                 TeletextConnectTimeout[i] = 15; // connection is ok, reset the timeout
                             }
                         }
@@ -417,6 +442,7 @@ void TeletextAdapterUpdate()
                         {
                             // attempt to read a full field of data
                             result = recv(TeletextSocket[i], socketBuff[i], 672, 0);
+
                             if (result == 0 || result == SOCKET_ERROR)
                             {
                                 err = WSAGetLastError();
@@ -441,9 +467,8 @@ void TeletextAdapterUpdate()
                                                        "Teletext: recv error %d. Closing socket %d",
                                                        err, i);
                                 }
-                                closesocket(TeletextSocket[i]);
-                                TeletextSocket[i] = INVALID_SOCKET;
-                                TeletextConnectTimeout[i] = 0;
+
+                                CloseTeletextSocket(i);
                             }
                             else if (result != 672)
                             {
@@ -454,29 +479,30 @@ void TeletextAdapterUpdate()
                                                        "Teletext: short recv detected, received %d bytes. Closing socket %d",
                                                        result, i);
                                 }
-                                closesocket(TeletextSocket[i]);
-                                TeletextSocket[i] = INVALID_SOCKET;
-                                TeletextConnectTimeout[i] = 0;
+
+                                CloseTeletextSocket(i);
                             }
                             else
                             {
                                 TeletextConnectTimeout[i] = 50; // connection is ok, reset the timeout
                             }
-                        } else {
+                        }
+                        else
+                        {
                             if (TeletextConnectTimeout[i] > 0)
                             {
                                 TeletextConnectTimeout[i]--;
                                 continue;
                             }
+
                             if (DebugEnabled)
                             {
                                 DebugDisplayTraceF(DebugType::Teletext, true,
                                                    "Teletext: no data. Closing socket %d",
                                                    i);
                             }
-                            closesocket(TeletextSocket[i]);
-                            TeletextSocket[i] = INVALID_SOCKET;
-                            TeletextConnectTimeout[i] = 0;
+
+                            CloseTeletextSocket(i);
                         }
                     }
                 }
