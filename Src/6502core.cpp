@@ -1201,7 +1201,7 @@ static void Dis6502()
 	char str[256];
 
 	int Length = DebugDisassembleInstructionWithCPUStatus(
-		ProgramCounter, true, Accumulator, XReg, YReg, StackReg, PSR, str
+		ProgramCounter, true, Accumulator, XReg, YReg, StackReg, PSR, Branched, str
 	);
 
 	str[Length] = '\n';
@@ -1351,6 +1351,26 @@ static void ClipboardCNPVHandler()
 	CurrentInstruction = 0x60; // RTS
 }
 
+
+bool isBranchInstruction(int CurrentInstruction) {
+
+	if ((CurrentInstruction == Inst_BPL_rel) ||
+		(CurrentInstruction == Inst_BMI_rel) ||
+		(CurrentInstruction == Inst_BVC_rel) ||
+		(CurrentInstruction == Inst_BVS_rel) ||
+		(CurrentInstruction == Inst_BRA_rel && MachineType == Model::Master128) ||
+		(CurrentInstruction == Inst_BCC_rel) ||
+		(CurrentInstruction == Inst_BCS_rel) ||
+		(CurrentInstruction == Inst_BNE_rel) ||
+		(CurrentInstruction == Inst_BEQ_rel))
+	{
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 /*-------------------------------------------------------------------------*/
 
 // Execute one 6502 instruction, move program counter on.
@@ -1367,7 +1387,8 @@ void Exec6502Instruction()
 	for (int i = 0; i < Count; i++)
 	{
 		// Output debug info
-		if (DebugEnabled && !DebugDisassembler(ProgramCounter, PrePC, Accumulator, XReg, YReg, PSR, StackReg, true))
+		bool showBranchCharacter = isBranchInstruction(CurrentInstruction) && Branched;
+		if (DebugEnabled && !DebugDisassembler(ProgramCounter, PrePC, Accumulator, XReg, YReg, PSR, StackReg, true, showBranchCharacter))
 		{
 			Sleep(10);  // Ease up on CPU when halted
 			continue;
@@ -3065,16 +3086,7 @@ void Exec6502Instruction()
 
 
 		// This block corrects the cycle count for the branch instructions
-		if ((CurrentInstruction == Inst_BPL_rel) ||
-		    (CurrentInstruction == Inst_BMI_rel) ||
-		    (CurrentInstruction == Inst_BVC_rel) ||
-		    (CurrentInstruction == Inst_BVS_rel) ||
-		    (CurrentInstruction == Inst_BRA_rel && MachineType == Model::Master128) ||
-		    (CurrentInstruction == Inst_BCC_rel) ||
-		    (CurrentInstruction == Inst_BCS_rel) ||
-		    (CurrentInstruction == Inst_BNE_rel) ||
-		    (CurrentInstruction == Inst_BEQ_rel))
-		{
+		if (isBranchInstruction(CurrentInstruction)) {
 			if (Branched)
 			{
 				Cycles++;

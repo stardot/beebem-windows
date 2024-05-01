@@ -1484,7 +1484,7 @@ void Exec65C02Instruction() {
 
 	// Output debug info
 	if (DebugEnabled) {
-		DebugDisassembler(TubeProgramCounter, PreTPC, Accumulator, XReg, YReg, PSR, StackReg, false);
+		DebugDisassembler(TubeProgramCounter, PreTPC, Accumulator, XReg, YReg, PSR, StackReg, false, Branched);
 	}
 
 	// For the Master, check Shadow Ram Presence

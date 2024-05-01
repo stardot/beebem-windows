@@ -114,7 +114,8 @@ bool DebugDisassembler(int addr,
                        int YReg,
                        unsigned char PSR,
                        unsigned char StackReg,
-                       bool host);
+                       bool host,
+                       bool branched);
 int DebugDisassembleInstruction(int addr, bool host, char *opstr);
 int DebugDisassembleInstructionWithCPUStatus(int addr,
                                              bool host,
@@ -123,6 +124,7 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
                                              int YReg,
                                              unsigned char StackReg,
                                              unsigned char PSR,
+                                             bool branched,
                                              char *opstr);
 
 void DebugOpenDialog(HINSTANCE hinst, HWND hwndMain);

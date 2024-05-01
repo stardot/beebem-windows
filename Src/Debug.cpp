@@ -1215,7 +1215,7 @@ static void DebugToggleRun()
 	else
 	{
 		// Cause manual break
-		static bool haveShownFreezeHint = false; 
+		static bool haveShownFreezeHint = false;
 		if (haveShownFreezeHint == false) {
 			DebugDisplayInfo("Remember to unselect 'Options->Freeze When Inactive'");
 			haveShownFreezeHint = true;
@@ -1579,7 +1579,8 @@ bool DebugDisassembler(int addr,
                        int YReg,
                        unsigned char PSR,
                        unsigned char StackReg,
-                       bool host)
+                       bool host,
+                       bool branched)
 {
 	// Update memory watches. Prevent emulator slowdown by limiting updates
 	// to every 100ms, or on timer wrap-around.
@@ -1747,7 +1748,7 @@ bool DebugDisassembler(int addr,
 	else
 	{
 		int Length = DebugDisassembleInstructionWithCPUStatus(
-			addr, host, Accumulator, XReg, YReg, StackReg, PSR, str
+			addr, host, Accumulator, XReg, YReg, StackReg, PSR, branched, str
 		);
 
 		if (!host)
@@ -2758,7 +2759,7 @@ static bool DebugCmdOver(char* args)
 	// otherwise do a regular 'Next'
 	int Instruction = DebugReadMem(PrePC, true);
 
-	if (Instruction == 0x20)
+	if (Instruction == Inst_JSR_abs)
 	{
 		StepOver = true;
 		InstCount = 1;
@@ -3340,7 +3341,7 @@ int DebugDisassembleInstruction(int addr, bool host, char *opstr)
 	}
 
 	if (host) {
-		s += sprintf(s, "            ");
+		s += sprintf(s, " - ");
 	}
 
 	return ip->bytes;
@@ -3353,15 +3354,21 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
                                              int YReg,
                                              unsigned char StackReg,
                                              unsigned char PSR,
+	                                           bool branched,
                                              char *opstr)
 {
 	DebugDisassembleInstruction(addr, host, opstr);
 
 	char* p = opstr + strlen(opstr);
 
-	// TODO: Duncan, what if we just expose this text via a TCP connection for just now? 
+	// TODO: Duncan, what if we just expose this text via a TCP connection for just now?
 	// Like, a debugserver?
-	p += sprintf(p, "A=%02X X=%02X Y=%02X S=%02X ", Accumulator, XReg, YReg, StackReg);
+	if (branched) {
+		p += sprintf(p, "A=%02X X=%02X Y=%02X S=%02X BR(%d) ", Accumulator, XReg, YReg, StackReg, branched);
+	}
+	else {
+		p += sprintf(p, "A=%02X X=%02X Y=%02X S=%02X BR(_) ", Accumulator, XReg, YReg, StackReg);
+	}
 
 	*p++ = (PSR & FlagC) ? 'C' : '.';
 	*p++ = (PSR & FlagZ) ? 'Z' : '.';
