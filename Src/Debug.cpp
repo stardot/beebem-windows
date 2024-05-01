@@ -1215,6 +1215,11 @@ static void DebugToggleRun()
 	else
 	{
 		// Cause manual break
+		static bool haveShownFreezeHint = false; 
+		if (haveShownFreezeHint == false) {
+			DebugDisplayInfo("Remember to unselect 'Options->Freeze When Inactive'");
+			haveShownFreezeHint = true;
+		}
 		DebugBreakExecution(DebugType::Manual);
 	}
 }
@@ -3354,6 +3359,8 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
 
 	char* p = opstr + strlen(opstr);
 
+	// TODO: Duncan, what if we just expose this text via a TCP connection for just now? 
+	// Like, a debugserver?
 	p += sprintf(p, "A=%02X X=%02X Y=%02X S=%02X ", Accumulator, XReg, YReg, StackReg);
 
 	*p++ = (PSR & FlagC) ? 'C' : '.';
