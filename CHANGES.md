@@ -4,7 +4,7 @@ BeebEm Change History
 Unreleased changes
 ------------
 
-Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, Steve Inglis, Alistair Cree
+Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, Steve Inglis, Alistair Cree, Ken Lowe
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
@@ -22,39 +22,45 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, St
     config files to be set on the command line.
   - Fixed Econet.cfg file parsing.
   - Fixed potential buffer overflow bug.
+  - Added support for immediate operations, used by the *VIEW and *NOTIFY
+    commands. These currently only work under Master 128 emulation.
 * Keyboard mapping improvements:
-  * Added Clear button to the key selection dialog box, when defining
+  - Added Clear button to the key selection dialog box, when defining
     a user keyboard mapping.
-  * Added Italian logical keyboard mapping file.
-  * Shift Lock is now mapped to the F11 key by default.
+  - Added Italian logical keyboard mapping file.
+  - Shift Lock is now mapped to the F11 key by default.
 * Tape emulation improvements:
-  * Improved tape input data carrier detect emulation.
-  * Tape state is now preserved when loading and saving savestate files,
+  - Improved tape input data carrier detect emulation.
+  - Tape state is now preserved when loading and saving savestate files,
     for both UEF and CSW files.
 * Added Set Keyboard Links command, which allows you to change the default
   screen mode and other options (Model B/B+ only).
 * Fixed installer to not delete Econet and key map config files.
 * Removed BeebDiscLoad and BeebVideoRefreshFreq environment variables.
 * Text to speech improvements:
-  * Added menu items to select the text to speech voice.
-  * The selected voice and speed are now stored in preferences.
-  * Right-Ctrl can now be used instead of Insert to control text to speech
+  - Added menu items to select the text to speech voice.
+  - The selected voice and speed are now stored in preferences.
+  - Right-Ctrl can now be used instead of Insert to control text to speech
     output.
-  * Speech output can now be stopped and the buffer cleared by pressing
+  - Speech output can now be stopped and the buffer cleared by pressing
     Alt+Num Pad 4.
 * Added support for ROMs larger than 16kbytes, such as Inter-Word, that
   use a logic carrier board. Several of these ROM images are now included
   when you install BeebEm.
 * Teletext adapter emulation improvements:
-  * Improved teletext TCP/IP client resilience, to properly close the
+  - Improved teletext TCP/IP client resilience, to properly close the
     socket if server has disappeared, and to keep up with the latest
     data from the teletext stream to catch up after the emulation has
     been paused.
-  * Added a dialog box to configure the file names or IP address and port
+  - Added a dialog box to configure the file names or IP address and port
     to connect to.
 * The "Freeze when inactive" option is now automatically switched off
   when opening the Debugger window, to ensure the emulation keeps running
   while the Debugger window is active.
+* Added Integra-B IBOS1.26 ROM, and modified the default LANG / FILE
+  parameters for compatibility with both IBOS1.26 and the original
+  Computech IBOS1.20 / 1.20P ROMs. IBOS1.26 is now the default IBOS
+  ROM, and Watford DFS has been replaced by Acorn DNFS, in Roms.cfg.
 
 Version 4.19 (1 May 2023)
 ------------
