@@ -254,6 +254,7 @@ public:
 	bool IsFrozen();
 	void TogglePause();
 	bool IsPaused();
+	void SetFreezeWhenInactive(bool State);
 	void EditRomConfig();
 	void OpenUserKeyboardDialog();
 	void UserKeyboardDialogClosed();
@@ -380,6 +381,9 @@ public:
 	bool GetImageFile(char *FileName, int Size);
 	bool GetImageEncoderClsid(const WCHAR *mimeType, CLSID *encoderClsid);
 
+	// Debugger
+	void OpenDebugWindow();
+
 	bool InitTextToSpeech();
 	void TextToSpeechResetState();
 	void CloseTextToSpeech();
@@ -405,7 +409,6 @@ public:
 	void TextToSpeechReadSentence();
 	void TextToSpeechReadScreen();
 	void TextToSpeechKey(WPARAM wParam);
-
 
 	void InitTextView();
 	void CloseTextView();

@@ -314,7 +314,7 @@ bool BeebWin::Initialise()
 
 	if (!m_DebugScriptFileName.empty())
 	{
-		DebugOpenDialog(hInst, m_hWnd);
+		OpenDebugWindow();
 		DebugRunScript(m_DebugScriptFileName.c_str());
 	}
 
@@ -3474,8 +3474,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_FREEZEINACTIVE:
-		m_FreezeWhenInactive = !m_FreezeWhenInactive;
-		CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
+		SetFreezeWhenInactive(!m_FreezeWhenInactive);
 		break;
 
 	case IDM_HIDECURSOR:
@@ -3862,7 +3861,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		if (DebugEnabled)
 			DebugCloseDialog();
 		else
-			DebugOpenDialog(hInst, m_hWnd);
+			OpenDebugWindow();
 		break;
 
 	case IDM_BLUR_OFF:
@@ -3973,7 +3972,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
 		break;
 
-	case ID_SELECT_TELETEXT_DATA_SOURCE: {
+	case IDM_SELECT_TELETEXT_DATA_SOURCE: {
 		std::string DiscsPath;
 		m_Preferences.GetStringValue("DiscsPath", DiscsPath);
 
@@ -4273,6 +4272,12 @@ void BeebWin::TogglePause()
 bool BeebWin::IsPaused()
 {
 	return m_EmuPaused;
+}
+
+void BeebWin::SetFreezeWhenInactive(bool State)
+{
+	m_FreezeWhenInactive = State;
+	CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
 }
 
 /****************************************************************************/
@@ -5317,6 +5322,14 @@ void BeebWin::HandleTimer()
 			SetTimer(m_hWnd, 1, m_KbdCmdDelay, NULL);
 		}
 	}
+}
+
+/****************************************************************************/
+
+void BeebWin::OpenDebugWindow()
+{
+	SetFreezeWhenInactive(false);
+	DebugOpenDialog(hInst, m_hWnd);
 }
 
 /****************************************************************************/
