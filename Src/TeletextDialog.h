@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2023 Chris Needham
+Copyright (C) 2024 Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,53 +18,56 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef DIALOG_HEADER
-#define DIALOG_HEADER
+#ifndef TELETEXT_DIALOG_HEADER
+#define TELETEXT_DIALOG_HEADER
 
 #include <string>
 
-class Dialog
+#include "Dialog.h"
+#include "Teletext.h"
+
+class TeletextDialog : public Dialog
 {
 	public:
-		Dialog(
+		TeletextDialog(
 			HINSTANCE hInstance,
 			HWND hwndParent,
-			int DialogID
+			TeletextSourceType Source,
+			const std::string& DiscsPath,
+			const std::string* FileName,
+			const std::string* IPAddress,
+			const u_short* IPPort
 		);
 
 	public:
-		bool DoModal();
+		TeletextSourceType GetSource() const;
+		const std::string& GetFileName(int Index) const;
+		const std::string& GetIPAddress(int Index) const;
+		u_short GetPort(int Index) const;
 
 	private:
-		static INT_PTR CALLBACK sDlgProc(
-			HWND   hwnd,
-			UINT   nMessage,
-			WPARAM wParam,
-			LPARAM lParam
-		);
-
 		virtual INT_PTR DlgProc(
 			UINT   nMessage,
 			WPARAM wParam,
 			LPARAM lParam
-		) = 0;
+		);
 
-	protected:
-		std::string GetDlgItemText(int nID);
-		void SetDlgItemText(int nID, const std::string& str);
-		bool IsDlgItemChecked(int nID);
-		void SetDlgItemChecked(int nID, bool bChecked);
-		void SetDlgItemFocus(int nID);
-		void EnableDlgItem(int nID, bool bEnable);
+		INT_PTR OnCommand(int Notification, int nCommandID);
+
+		void SelectFile(int Channel);
+
+		BOOL GetChannelIPControls(int Channel);
+		void SetChannelIPControls(int Channel);
+
+		void EnableFileControls(bool bEnable);
+		void EnableIPControls(bool bEnable);
 
 	private:
-		void CenterDialog();
-
-	protected:
-		HINSTANCE m_hInstance;
-		HWND m_hwndParent;
-		int m_DialogID;
-		HWND m_hwnd;
+		TeletextSourceType m_TeletextSource;
+		std::string m_DiscsPath;
+		std::string m_FileName[4];
+		std::string m_IPAddress[4];
+		u_short m_IPPort[4];
 };
 
 #endif

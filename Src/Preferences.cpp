@@ -183,6 +183,33 @@ void Preferences::SetStringValue(const char *id, const char *str)
 
 //-----------------------------------------------------------------------------
 
+bool Preferences::GetStringValue(const char *id, std::string& str)
+{
+	bool found = true;
+
+	PrefsMap::const_iterator i = m_Prefs.find(id);
+
+	if (i != m_Prefs.end())
+	{
+		str = i->second;
+	}
+	else
+	{
+		found = false;
+	}
+
+	return found;
+}
+
+//-----------------------------------------------------------------------------
+
+void Preferences::SetStringValue(const char *id, const std::string& str)
+{
+	m_Prefs[id] = str;
+}
+
+//-----------------------------------------------------------------------------
+
 bool Preferences::GetDWORDValue(const char *id, DWORD &dw)
 {
 	bool found = true;

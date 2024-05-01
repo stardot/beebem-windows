@@ -117,6 +117,34 @@ void BeebWin::LoadPreferences()
 	m_Preferences.EraseValue("IP232customport");
 	m_Preferences.EraseValue("IP232customip");
 
+	// Set file path defaults
+	if (!m_Preferences.HasValue("DiscsPath")) {
+		m_Preferences.SetStringValue("DiscsPath", "DiscIms");
+	}
+
+	if (!m_Preferences.HasValue("DiscsFilter")) {
+		m_Preferences.SetDWORDValue("DiscsFilter", 0);
+	}
+
+	if (!m_Preferences.HasValue("TapesPath")) {
+		m_Preferences.SetStringValue("TapesPath", "Tapes");
+	}
+
+	if (!m_Preferences.HasValue("StatesPath")) {
+		m_Preferences.SetStringValue("StatesPath", "BeebState");
+	}
+
+	if (!m_Preferences.HasValue("AVIPath")) {
+		m_Preferences.SetStringValue("AVIPath", "");
+	}
+
+	if (!m_Preferences.HasValue("ImagePath")) {
+		m_Preferences.SetStringValue("ImagePath", "");
+	}
+
+	if (!m_Preferences.HasValue("HardDrivePath")) {
+		m_Preferences.SetStringValue("HardDrivePath", "DiscIms");
+	}
 
 	MachineType = Model::B;
 
@@ -538,26 +566,90 @@ void BeebWin::LoadPreferences()
 
 	if (!m_Preferences.GetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled))
 		TeletextAdapterEnabled = false;
-	if (!m_Preferences.GetBoolValue("TeletextLocalhost", TeletextLocalhost))
-		TeletextLocalhost = false;
-	if (!m_Preferences.GetBoolValue("TeletextCustom", TeletextCustom))
-		TeletextCustom = false;
-	if (!(TeletextLocalhost || TeletextCustom))
-		TeletextFiles = true; // default to Files
+
+
+	TeletextSource = TeletextSourceType::IP;
+
+	unsigned char TeletextAdapterSource = 0;
+
+	if (m_Preferences.GetBinaryValue("TeletextAdapterSource", &TeletextAdapterSource, 1))
+	{
+		if (TeletextAdapterSource < static_cast<unsigned char>(TeletextSourceType::Last))
+		{
+			TeletextSource = static_cast<TeletextSourceType>(TeletextAdapterSource);
+		}
+	}
+	else
+	{
+		bool TeletextLocalhost = false;
+		bool TeletextCustom = false;
+
+		m_Preferences.GetBoolValue("TeletextLocalhost", TeletextLocalhost);
+		m_Preferences.GetBoolValue("TeletextCustom", TeletextCustom);
+
+		if (!(TeletextLocalhost || TeletextCustom))
+			TeletextSource = TeletextSourceType::File;
+	}
 
 	char key[20];
-	for (int ch=0; ch<4; ch++)
+
+	for (int ch = 0; ch < TELETEXT_CHANNEL_COUNT; ch++)
 	{
-		sprintf(key, "TeletextCustomPort%d", ch);
-		if (m_Preferences.GetDWORDValue(key,dword))
-			TeletextCustomPort[ch] = (u_short)dword;
+		sprintf(key, "TeletextFile%d", ch);
+
+		if (!m_Preferences.GetStringValue(key, TeletextFileName[ch]))
+		{
+			char DiscsPath[MAX_PATH];
+			m_Preferences.GetStringValue("DiscsPath", DiscsPath);
+			GetDataPath(m_UserDataPath, DiscsPath);
+
+			char TeletextFile[256];
+			sprintf(TeletextFile, "%s\\txt%d.dat", DiscsPath, ch);
+
+			TeletextFileName[ch] = TeletextFile;
+		}
+
+		std::string TeletextIPAddress;
+
+		sprintf(key, "TeletextIP%d", ch);
+
+		if (m_Preferences.GetStringValue(key, TeletextIPAddress))
+		{
+			TeletextIP[ch] = TeletextIPAddress;
+		}
 		else
-			TeletextCustomPort[ch] = (u_short)(19761 + ch);
-		sprintf(key, "TeletextCustomIP%d", ch);
-		if (m_Preferences.GetStringValue(key, keyData))
-			strncpy(TeletextCustomIP[ch], keyData, 16);
+		{
+			sprintf(key, "TeletextCustomIP%d", ch);
+
+			if (m_Preferences.GetStringValue(key, TeletextIPAddress))
+			{
+				TeletextIP[ch] = TeletextIPAddress;
+			}
+			else
+			{
+				TeletextIP[ch] = "127.0.0.1";
+			}
+		}
+
+		sprintf(key, "TeletextPort%d", ch);
+
+		if (m_Preferences.GetDWORDValue(key, dword))
+		{
+			TeletextPort[ch] = (u_short)dword;
+		}
 		else
-			strcpy(TeletextCustomIP[ch], "127.0.0.1");
+		{
+			sprintf(key, "TeletextCustomPort%d", ch);
+
+			if (m_Preferences.GetDWORDValue(key, dword))
+			{
+				TeletextPort[ch] = (u_short)dword;
+			}
+			else
+			{
+				TeletextPort[ch] = (u_short)(TELETEXT_BASE_PORT + ch);
+			}
+		}
 	}
 
 	dword = 0;
@@ -640,35 +732,6 @@ void BeebWin::LoadPreferences()
 				strcpy(path, "None");
 			m_Preferences.SetStringValue(CfgName, path);
 		}
-	}
-
-	// Set file path defaults
-	if (!m_Preferences.HasValue("DiscsPath")) {
-		m_Preferences.SetStringValue("DiscsPath", "DiscIms");
-	}
-
-	if (!m_Preferences.HasValue("DiscsFilter")) {
-		m_Preferences.SetDWORDValue("DiscsFilter", 0);
-	}
-
-	if (!m_Preferences.HasValue("TapesPath")) {
-		m_Preferences.SetStringValue("TapesPath", "Tapes");
-	}
-
-	if (!m_Preferences.HasValue("StatesPath")) {
-		m_Preferences.SetStringValue("StatesPath", "BeebState");
-	}
-
-	if (!m_Preferences.HasValue("AVIPath")) {
-		m_Preferences.SetStringValue("AVIPath", "");
-	}
-
-	if (!m_Preferences.HasValue("ImagePath")) {
-		m_Preferences.SetStringValue("ImagePath", "");
-	}
-
-	if (!m_Preferences.HasValue("HardDrivePath")) {
-		m_Preferences.SetStringValue("HardDrivePath", "DiscIms");
 	}
 
 	// Update prefs version
@@ -800,15 +863,18 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);
 		m_Preferences.SetBoolValue("Teletext Half Mode", TeletextHalfMode);
 		m_Preferences.SetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled);
-		m_Preferences.SetBoolValue("TeletextLocalhost", TeletextLocalhost);
-		m_Preferences.SetBoolValue("TeletextCustom", TeletextCustom);
+		m_Preferences.SetBinaryValue("TeletextAdapterSource", &TeletextSource, 1);
+
 		char key[20];
-		for (int ch=0; ch<4; ch++)
+
+		for (int ch = 0; ch < TELETEXT_CHANNEL_COUNT; ch++)
 		{
-			sprintf(key, "TeletextCustomPort%d", ch);
-			m_Preferences.SetDWORDValue(key, TeletextCustomPort[ch]);
-			sprintf(key, "TeletextCustomIP%d", ch);
-			m_Preferences.SetStringValue(key, TeletextCustomIP[ch]);
+			sprintf(key, "TeletextFile%d", ch);
+			m_Preferences.SetStringValue(key, TeletextFileName[ch]);
+			sprintf(key, "TeletextPort%d", ch);
+			m_Preferences.SetDWORDValue(key, TeletextPort[ch]);
+			sprintf(key, "TeletextIP%d", ch);
+			m_Preferences.SetStringValue(key, TeletextIP[ch]);
 		}
 
 		m_Preferences.SetDWORDValue("KeyboardLinks", KeyboardLinks);

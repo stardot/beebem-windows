@@ -128,6 +128,13 @@ void Dialog::SetDlgItemFocus(int nID)
 
 /****************************************************************************/
 
+void Dialog::EnableDlgItem(int nID, bool bEnable)
+{
+	EnableWindow(GetDlgItem(m_hwnd, nID), bEnable);
+}
+
+/****************************************************************************/
+
 void Dialog::CenterDialog()
 {
 	RECT rcOwner;

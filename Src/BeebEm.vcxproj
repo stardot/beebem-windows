@@ -228,6 +228,7 @@
     <ClCompile Include="TapeMap.cpp" />
     <ClCompile Include="TapeControlDialog.cpp" />
     <ClCompile Include="Teletext.cpp" />
+    <ClCompile Include="TeletextDialog.cpp" />
     <ClCompile Include="Thread.cpp" />
     <ClCompile Include="TouchScreen.cpp" />
     <ClCompile Include="Tube.cpp" />
@@ -391,6 +392,7 @@
     <ClInclude Include="TapeMap.h" />
     <ClInclude Include="TarmacGlobals.h" />
     <ClInclude Include="Teletext.h" />
+    <ClInclude Include="TeletextDialog.h" />
     <ClInclude Include="Thread.h" />
     <ClInclude Include="TouchScreen.h" />
     <ClInclude Include="Tube.h" />

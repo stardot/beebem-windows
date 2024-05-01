@@ -43,6 +43,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include <algorithm>
+#include <string>
 
 #pragma warning(push)
 #pragma warning(disable: 4458) // declaration of 'xxx' hides class member
@@ -90,6 +91,7 @@ using std::max;
 #include "SysVia.h"
 #include "TapeControlDialog.h"
 #include "Teletext.h"
+#include "TeletextDialog.h"
 #include "TouchScreen.h"
 #include "Tube.h"
 #include "UefState.h"
@@ -1254,9 +1256,6 @@ void BeebWin::InitMenu(void)
 	UpdateOptiMenu();
 	UpdateEconetMenu();
 	CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
-	CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
-	CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
-	CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
 	CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
@@ -3974,49 +3973,33 @@ void BeebWin::HandleCommand(UINT MenuID)
 		CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
 		break;
 
-	case ID_TELETEXTFILES:
-		if (!TeletextFiles)
-		{
-			TeletextFiles = true;
-			TeletextLocalhost = false;
-			TeletextCustom = false;
-			TeletextInit();
-		}
-		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
-		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
-		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
-		break;
+	case ID_SELECT_TELETEXT_DATA_SOURCE: {
+		std::string DiscsPath;
+		m_Preferences.GetStringValue("DiscsPath", DiscsPath);
 
-	case ID_TELETEXTLOCALHOST:
-		if (!TeletextLocalhost)
-		{
-			TeletextFiles = false;
-			TeletextLocalhost = true;
-			TeletextCustom = false;
-			TeletextInit();
-		}
-		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
-		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
-		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
-		break;
+		TeletextDialog Dialog(hInst,
+		                      m_hWnd,
+		                      TeletextSource,
+		                      DiscsPath,
+		                      TeletextFileName,
+		                      TeletextIP,
+		                      TeletextPort);
 
-	case ID_TELETEXTCUSTOM:
-		if (!TeletextCustom)
+		if (Dialog.DoModal())
 		{
-			TeletextFiles = false;
-			TeletextLocalhost = false;
-			TeletextCustom = true;
-			for (int ch=0; ch<4; ch++)
+			TeletextSource = Dialog.GetSource();
+
+			for (int i = 0; i < TELETEXT_CHANNEL_COUNT; i++)
 			{
-				strcpy(TeletextIP[ch],TeletextCustomIP[ch]);
-				TeletextPort[ch] = TeletextCustomPort[ch];
+				TeletextFileName[i] = Dialog.GetFileName(i);
+				TeletextIP[i] = Dialog.GetIPAddress(i);
+				TeletextPort[i] = Dialog.GetPort(i);
 			}
+
 			TeletextInit();
 		}
-		CheckMenuItem(ID_TELETEXTFILES, TeletextFiles);
-		CheckMenuItem(ID_TELETEXTLOCALHOST, TeletextLocalhost);
-		CheckMenuItem(ID_TELETEXTCUSTOM, TeletextCustom);
 		break;
+	}
 
 	case IDM_SET_KEYBOARD_LINKS: {
 		KeyboardLinksDialog Dialog(hInst, m_hWnd, KeyboardLinks);

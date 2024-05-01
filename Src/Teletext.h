@@ -26,14 +26,21 @@ Boston, MA  02110-1301, USA.
 extern bool TeletextAdapterEnabled;
 extern int TeletextAdapterTrigger;
 
-extern bool TeletextFiles;
-extern bool TeletextLocalhost;
-extern bool TeletextCustom;
+enum class TeletextSourceType : unsigned char {
+    IP = 0,
+    File,
+    Last
+};
 
-extern char TeletextIP[4][20];
+extern TeletextSourceType TeletextSource;
+
+constexpr int TELETEXT_CHANNEL_COUNT = 4;
+
+constexpr u_short TELETEXT_BASE_PORT = 19761;
+
+extern std::string TeletextFileName[4];
+extern std::string TeletextIP[4];
 extern u_short TeletextPort[4];
-extern char TeletextCustomIP[4][20];
-extern u_short TeletextCustomPort[4];
 
 void TeletextWrite(int Address, int Value);
 unsigned char TeletextRead(int Address);

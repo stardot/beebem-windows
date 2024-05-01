@@ -99,6 +99,7 @@
 #define IDD_RENAME_FILE                 118
 #define IDD_SERIAL                      119
 #define IDD_ABOUT                       120
+#define IDD_TELETEXT                    121
 #define IDC_DEBUGBREAK                  1010
 #define IDC_DEBUGINFO                   1015
 #define IDC_DEBUGCOMMAND                1016
@@ -208,6 +209,31 @@
 #define IDC_TAPE_CONTROL_LOAD_TAPE      1118
 #define IDC_UNLOCK                      1119
 #define IDC_TAPE_CONTROL_UNLOCK         1119
+#define IDC_TELETEXT_SOURCE             1120
+#define IDC_FILE1                       1121
+#define IDC_FILE2                       1122
+#define IDC_FILE3                       1123
+#define IDC_FILE4                       1124
+#define IDC_SELECT_FILE1                1125
+#define IDC_SELECT_FILE2                1126
+#define IDC_SELECT_FILE3                1127
+#define IDC_SELECT_FILE4                1128
+#define IDC_IP_ADDRESS1                 1129
+#define IDC_IP_ADDRESS2                 1130
+#define IDC_IP_ADDRESS3                 1131
+#define IDC_IP_ADDRESS4                 1132
+#define IDC_IP_PORT1                    1133
+#define IDC_IP_PORT2                    1134
+#define IDC_IP_PORT3                    1135
+#define IDC_IP_PORT4                    1136
+#define IDC_IP_ADDRESS1_STATIC          1137
+#define IDC_IP_ADDRESS2_STATIC          1138
+#define IDC_IP_ADDRESS3_STATIC          1139
+#define IDC_IP_ADDRESS4_STATIC          1140
+#define IDC_PORT1_STATIC                1141
+#define IDC_PORT2_STATIC                1142
+#define IDC_PORT3_STATIC                1143
+#define IDC_PORT4_STATIC                1144
 #define IDM_ABOUT                       40001
 #define IDM_DISC                        40002
 #define IDM_LOADDISC0                   40002
@@ -439,9 +465,6 @@
 #define ID_IDEDRIVE                     40287
 #define ID_VIEW_DD_1280X720             40288
 #define ID_VIEW_DD_1920X1080            40289
-#define ID_TELETEXTFILES                40291
-#define ID_TELETEXTLOCALHOST            40292
-#define ID_TELETEXTCUSTOM               40293
 #define ID_VIEW_DD_2560X1440            40294
 #define ID_VIEW_DD_3840X2160            40295
 #define IDM_EMUPAUSED                   40296
@@ -453,15 +476,16 @@
 #define IDM_TEXTTOSPEECH_SPEAK_PUNCTUATION 40323
 #define IDM_TEXTTOSPEECH_INCREASE_RATE  40324
 #define IDM_TEXTTOSPEECH_DECREASE_RATE  40325
+#define IDM_SELECT_TELETEXT_DATA_SOURCE 40326
 
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        121
-#define _APS_NEXT_COMMAND_VALUE         40326
-#define _APS_NEXT_CONTROL_VALUE         1120
+#define _APS_NEXT_RESOURCE_VALUE        122
+#define _APS_NEXT_COMMAND_VALUE         40327
+#define _APS_NEXT_CONTROL_VALUE         1145
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

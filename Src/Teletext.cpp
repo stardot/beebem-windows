@@ -49,6 +49,8 @@ Control latch:
 
 #include <windows.h>
 
+#include <string>
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -64,16 +66,11 @@ Control latch:
 bool TeletextAdapterEnabled = false;
 int TeletextAdapterTrigger;
 
-bool TeletextFiles;
-bool TeletextLocalhost;
-bool TeletextCustom;
+TeletextSourceType TeletextSource;
 
-char TeletextIP[4][20];
+std::string TeletextFileName[4];
+std::string TeletextIP[4];
 u_short TeletextPort[4];
-char TeletextCustomIP[4][20];
-u_short TeletextCustomPort[4];
-
-constexpr u_short TELETEXT_BASE_PORT = 19761;
 
 enum TTXState {TTXFIELD, TTXFSYNC, TTXDEW};
 static TTXState TeletextState = TTXFIELD;
@@ -118,7 +115,8 @@ static bool TeletextConnect(int ch)
             DebugDisplayTraceF(DebugType::Teletext, true,
                                "Teletext: Unable to create socket %d", ch);
         }
-        return 1;
+
+        return false;
     }
 
     if (DebugEnabled)
@@ -133,7 +131,7 @@ static bool TeletextConnect(int ch)
     struct sockaddr_in teletext_serv_addr;
     teletext_serv_addr.sin_family = AF_INET; // address family Internet
     teletext_serv_addr.sin_port = htons(TeletextPort[ch]); // Port to connect on
-    teletext_serv_addr.sin_addr.s_addr = inet_addr(TeletextIP[ch]); // Target IP
+    teletext_serv_addr.sin_addr.s_addr = inet_addr(TeletextIP[ch].c_str()); // Target IP
 
     if (connect(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)) == SOCKET_ERROR)
     {
@@ -187,41 +185,32 @@ void TeletextInit()
 
     TeletextClose();
 
-    for (int i = 0; i < 4; i++)
+    if (TeletextSource == TeletextSourceType::IP)
     {
-        if (TeletextCustom)
-        {
-            strcpy(TeletextIP[i], TeletextCustomIP[i]);
-            TeletextPort[i] = TeletextCustomPort[i];
-        }
-        else
-        {
-            strcpy(TeletextIP[i], "127.0.0.1");
-            TeletextPort[i] = (u_short)(TELETEXT_BASE_PORT + i);
-        }
-    }
-
-    if (TeletextLocalhost || TeletextCustom)
-    {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < TELETEXT_CHANNEL_COUNT; i++)
         {
             TeletextConnect(i);
         }
     }
     else
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < TELETEXT_CHANNEL_COUNT; i++)
         {
-            char pathname[256];
-            sprintf(pathname, "%s/DiscIms/txt%d.dat", mainWin->GetUserDataPath(), i);
-
-            TeletextFile[i] = fopen(pathname, "rb");
-
-            if (TeletextFile[i] != nullptr)
+            if (!TeletextFileName[i].empty())
             {
-                fseek(TeletextFile[i], 0L, SEEK_END);
-                TeletextFrameCount[i] = ftell(TeletextFile[i]) / TELETEXT_FRAME_SIZE;
-                fseek(TeletextFile[i], 0L, SEEK_SET);
+                TeletextFile[i] = fopen(TeletextFileName[i].c_str(), "rb");
+
+                if (TeletextFile[i] != nullptr)
+                {
+                    fseek(TeletextFile[i], 0L, SEEK_END);
+                    TeletextFrameCount[i] = ftell(TeletextFile[i]) / TELETEXT_FRAME_SIZE;
+                    fseek(TeletextFile[i], 0L, SEEK_SET);
+                }
+                else
+                {
+                    mainWin->Report(MessageType::Error,
+                                    "Cannot open teletext data file:\n %s", TeletextFileName[i].c_str());
+                }
             }
         }
 
@@ -238,7 +227,7 @@ void TeletextInit()
 void TeletextClose()
 {
     // Close any connected teletext sockets or files
-    for (int ch = 0; ch < 4; ch++)
+    for (int ch = 0; ch < TELETEXT_CHANNEL_COUNT; ch++)
     {
         if (TeletextSocket[ch] != INVALID_SOCKET)
         {
@@ -376,23 +365,23 @@ void TeletextAdapterUpdate()
             IncTrigger(2176, TeletextAdapterTrigger); // wait for approximately 17 video lines
             TeletextState = TTXDEW;
 
-            if (TeletextLocalhost || TeletextCustom)
+            if (TeletextSource == TeletextSourceType::IP)
             {
                 char socketBuff[4][672] = {0};
                 char tmpBuff[672*25]; // big enough to hold 25 fields of data
 
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < TELETEXT_CHANNEL_COUNT; i++)
                 {
                     if (TeletextSocket[i] != INVALID_SOCKET)
                     {
-                        int err;
                         int result;
 
                         // find out how much data is buffered on the socket
                         unsigned long n;
                         if (ioctlsocket(TeletextSocket[i], FIONREAD, &n) == SOCKET_ERROR)
                         {
-                            err = WSAGetLastError();
+                            int err = WSAGetLastError();
+
                             if (DebugEnabled)
                             {
                                 DebugDisplayTraceF(DebugType::Teletext, true,
@@ -420,10 +409,12 @@ void TeletextAdapterUpdate()
                             }
 
                             result = recv(TeletextSocket[i], tmpBuff, 672*25, 0);
+
                             if (result != (672*25))
                             {
                                 // read failed, probably fatal.
-                                err = WSAGetLastError();
+                                int err = WSAGetLastError();
+
                                 if (DebugEnabled)
                                 {
                                     DebugDisplayTraceF(DebugType::Teletext, true,
@@ -445,7 +436,7 @@ void TeletextAdapterUpdate()
 
                             if (result == 0 || result == SOCKET_ERROR)
                             {
-                                err = WSAGetLastError();
+                                int err = WSAGetLastError();
 
                                 if (err == WSAEWOULDBLOCK)
                                 {

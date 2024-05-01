@@ -24,7 +24,6 @@ Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "SerialPortDialog.h"
-#include "DebugTrace.h"
 #include "Main.h"
 #include "Resource.h"
 #include "StringUtils.h"
@@ -161,17 +160,17 @@ INT_PTR SerialPortDialog::DlgProc(UINT   nMessage,
 
 void SerialPortDialog::EnableSerialPortControls(bool bEnable)
 {
-	EnableWindow(GetDlgItem(m_hwnd, IDC_SERIAL_PORT), bEnable);
+	EnableDlgItem(IDC_SERIAL_PORT, bEnable);
 }
 
 /****************************************************************************/
 
 void SerialPortDialog::EnableIP232Controls(bool bEnable)
 {
-	EnableWindow(GetDlgItem(m_hwnd, IDC_IP_ADDRESS), bEnable);
-	EnableWindow(GetDlgItem(m_hwnd, IDC_IP_PORT), bEnable);
-	EnableWindow(GetDlgItem(m_hwnd, IDC_IP323_RAW_COMMS), bEnable);
-	EnableWindow(GetDlgItem(m_hwnd, IDC_IP232_HANDSHAKE), bEnable);
+	EnableDlgItem(IDC_IP_ADDRESS, bEnable);
+	EnableDlgItem(IDC_IP_PORT, bEnable);
+	EnableDlgItem(IDC_IP323_RAW_COMMS, bEnable);
+	EnableDlgItem(IDC_IP232_HANDSHAKE, bEnable);
 }
 
 /****************************************************************************/
