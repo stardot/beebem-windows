@@ -4,7 +4,7 @@ BeebEm Change History
 Unreleased changes
 ------------
 
-Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, Steve Inglis
+Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, Steve Inglis, Alistair Cree
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
@@ -45,6 +45,16 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, St
 * Added support for ROMs larger than 16kbytes, such as Inter-Word, that
   use a logic carrier board. Several of these ROM images are now included
   when you install BeebEm.
+* Teletext adapter emulation improvements:
+  * Improved teletext TCP/IP client resilience, to properly close the
+    socket if server has disappeared, and to keep up with the latest
+    data from the teletext stream to catch up after the emulation has
+    been paused.
+  * Added a dialog box to configure the file names or IP address and port
+    to connect to.
+* The "Freeze when inactive" option is now automatically switched off
+  when opening the Debugger window, to ensure the emulation keeps running
+  while the Debugger window is active.
 
 Version 4.19 (1 May 2023)
 ------------
