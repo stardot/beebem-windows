@@ -64,6 +64,10 @@ main figure {
     text-align: center;
 }
 
+.ui {
+    font-weight: bold;
+}
+
 footer {
     border-top: 1px solid #004080;
     border-bottom: 1px solid #004080;

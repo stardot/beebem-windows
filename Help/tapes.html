@@ -83,8 +83,9 @@
       </table>
 
       <p>
-        Note that tape emulation disabled when the Hardware/Basic Hardware
-        Only menu option is ticked. See the <a href="menus.html">Menu Options</a>
+        Note that tape emulation disabled when the <span class="ui">Hardware
+        &rarr;Basic Hardware Only</span> menu option is ticked. See the <a
+        href="menus.html">Menu Options</a>
         section.
       </p>
 
@@ -94,45 +95,51 @@
         Most tapes can be run by typing:
       </p>
 
-      <pre>
+      <blockquote>
+        <code>
         *TAPE
         CH.""
-      </pre>
+        </code>
+      </blockquote>
 
       <p>
         If that does not work, rewind the tape and try:
       </p>
 
-      <pre>
-        *TAPE
-        *RUN
-      </pre>
+      <blockquote>
+        <code>
+          *TAPE
+          *RUN
+        </code>
+      </blockquote>
 
       <p>
         Tape loading can be quite slow so BeebEm has menu options to
-        artificially speed up loading. You can also use the speed menu (or
-        keypad +/-) to speed up the whole emulation, which speeds up tape
-        loading.
+        artificially speed up loading. You can also use the <span
+        class="ui">Speed</span> menu (or keypad +/-) to speed up the whole
+        emulation, which speeds up tape loading.
       </p>
 
       <h2>Tape Position Control</h2>
 
       <p>
-        BeebEm has a Tape Control window that enables you to move the tape
-        position around by clicking on the block you want to load next. If a
-        block is missed when loading from a tape you will need to move the tape
-        position back to retry the block.
+        BeebEm has a <span class="ui">Tape Control</span> window that enables
+        you to move the tape position around by clicking on the block you want
+        to load next. If a block is missed when loading from a tape you will
+        need to move the tape position back to retry the block.
       </p>
 
       <h2>Writing to Tape Images</h2>
 
       <p>
-        If you want to save files to a tape image then you can use the 'Record'
-        button on the Tape Control. If you have a tape loaded then pressing
-        Record will append saved files to the end of the tape image. If you
-        want to create a new tape image then eject the current tape and press
-        Record. The tape block list will be updated when recording finishes
-        (press Stop when the save completes).
+        If you want to save files to a tape image then you can use the <span
+        class="ui">Record</span> button on the <span class="ui">Tape
+        Control</span> window. If you have a tape loaded then pressing
+        <span class="ui">Record</span> will append saved files to the end of the
+        tape image. If you want to create a new tape image then eject the
+        current tape and press <span class="ui">Record</span>. The tape block
+        list will be updated when recording finishes (press
+        <span class="ui">Stop</span> when the save completes).
       </p>
     </main>
 
