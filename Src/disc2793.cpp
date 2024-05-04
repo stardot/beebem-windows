@@ -22,7 +22,9 @@ Boston, MA  02110-1301, USA.
 /*
 WD2793 FDC Disc Support for BeebEm
 
-Written by Richard Gellman - Feb 2001
+1770 written by Richard Gellman - Feb 2001
+2793 adaptation by Mark Usher - Jan 2022
+
 */
 
 #include <stdio.h>

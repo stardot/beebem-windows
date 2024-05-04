@@ -1389,6 +1389,32 @@ void DebugDisplayTrace(DebugType type, bool host, const char *info)
 	}
 }
 
+void DebugDisplayTraceF(DebugType type, bool host, const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+
+	DebugDisplayTraceV(type, host, format, args);
+
+	va_end(args);
+}
+
+void DebugDisplayTraceV(DebugType type, bool host, const char* format, va_list args)
+{
+	// _vscprintf doesn't count terminating '\0'
+	int len = _vscprintf(format, args) + 1;
+
+	char* buffer = (char*)malloc(len * sizeof(char));
+
+	if (buffer != nullptr)
+	{
+		vsprintf_s(buffer, len * sizeof(char), format, args);
+
+		DebugDisplayTrace(type, host, buffer);
+		free(buffer);
+	}
+}
+
 static void DebugUpdateWatches(bool all)
 {
 	int value = 0;

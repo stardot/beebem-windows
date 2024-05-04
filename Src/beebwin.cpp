@@ -390,7 +390,33 @@ bool BeebWin::Initialise()
 void BeebWin::ApplyPrefs()
 {
 	// Set up paths
-	strcpy(EconetCfgPath, m_UserDataPath);
+
+	if (EconetCfgPath[0] == '\0')
+	{
+		strcpy(EconetCfgPath, m_UserDataPath);
+		strcat(EconetCfgPath, "Econet.cfg");
+	}
+	else if (PathIsRelative(EconetCfgPath))
+	{
+		char Filename[_MAX_PATH];
+		strcpy(Filename, EconetCfgPath);
+		strcpy(EconetCfgPath, m_UserDataPath);
+		strcat(EconetCfgPath, Filename);
+	}
+
+	if (AUNMapPath[0] == '\0')
+	{
+		strcpy(AUNMapPath, m_UserDataPath);
+		strcat(AUNMapPath, "AUNMap");
+	}
+	else if (PathIsRelative(AUNMapPath))
+	{
+		char Filename[_MAX_PATH];
+		strcpy(Filename, AUNMapPath);
+		strcpy(AUNMapPath, m_UserDataPath);
+		strcat(AUNMapPath, Filename);
+	}
+
 	strcpy(RomPath, m_UserDataPath);
 
 	char Path[_MAX_PATH];
@@ -4669,7 +4695,7 @@ void BeebWin::ParseCommandLine()
 				if (a < 1 || a > 254)
 					invalid = true;
 				else
-					EconetStationNumber = static_cast<unsigned char>(a);
+					EconetStationID = static_cast<unsigned char>(a);
 			}
 			else if (_stricmp(__argv[i], "-EcoFF") == 0)
 			{
@@ -5550,17 +5576,26 @@ void BeebWin::HandleTimer()
 
 /****************************************************************************/
 
-MessageResult BeebWin::Report(MessageType type, const char *format, ...)
+MessageResult BeebWin::Report(MessageType type, const char* format, ...)
 {
-	MessageResult Result = MessageResult::None;
-
 	va_list args;
 	va_start(args, format);
+
+	MessageResult Result = ReportV(type, format, args);
+
+	va_end(args);
+
+	return Result;
+}
+
+MessageResult BeebWin::ReportV(MessageType type, const char* format, va_list args)
+{
+	MessageResult Result = MessageResult::None;
 
 	// Calculate required length, +1 is for NUL terminator
 	const int length = _vscprintf(format, args) + 1;
 
-	char *buffer = (char*)malloc(length);
+	char* buffer = (char*)malloc(length);
 
 	if (buffer != nullptr)
 	{
@@ -5570,25 +5605,25 @@ MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 
 		switch (type)
 		{
-			case MessageType::Error:
-			default:
-				Type = MB_ICONERROR;
-				break;
+		case MessageType::Error:
+		default:
+			Type = MB_ICONERROR;
+			break;
 
-			case MessageType::Warning:
-				Type = MB_ICONWARNING;
-				break;
+		case MessageType::Warning:
+			Type = MB_ICONWARNING;
+			break;
 
-			case MessageType::Info:
-				Type = MB_ICONINFORMATION;
-				break;
+		case MessageType::Info:
+			Type = MB_ICONINFORMATION;
+			break;
 
-			case MessageType::Question:
-				Type = MB_ICONQUESTION | MB_YESNO;
-				break;
+		case MessageType::Question:
+			Type = MB_ICONQUESTION | MB_YESNO;
+			break;
 
-			case MessageType::Confirm:
-				Type = MB_ICONWARNING | MB_OKCANCEL;
+		case MessageType::Confirm:
+			Type = MB_ICONWARNING | MB_OKCANCEL;
 		}
 
 		int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
@@ -5597,32 +5632,31 @@ MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 		{
 			switch (ID)
 			{
-				case IDYES:
-					Result = MessageResult::Yes;
-					break;
+			case IDYES:
+				Result = MessageResult::Yes;
+				break;
 
-				case IDNO:
-					Result = MessageResult::No;
-					break;
+			case IDNO:
+				Result = MessageResult::No;
+				break;
 
-				case IDOK:
-					Result = MessageResult::OK;
-					break;
+			case IDOK:
+				Result = MessageResult::OK;
+				break;
 
-				case IDCANCEL:
-				default:
-					Result = MessageResult::Cancel;
-					break;
+			case IDCANCEL:
+			default:
+				Result = MessageResult::Cancel;
+				break;
 			}
 		}
 
 		free(buffer);
 	}
 
-	va_end(args);
-
 	return Result;
 }
+
 
 /****************************************************************************/
 bool BeebWin::RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey)

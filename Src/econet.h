@@ -74,29 +74,33 @@ struct MC6854 {
 	bool idle;
 };
 
-unsigned char Read_Econet_Station(void);
-void EconetReset(void);
-unsigned char ReadEconetRegister(unsigned char Register);
-void WriteEconetRegister(unsigned char Register, unsigned char Value);
-void ReadNetwork(void);
-void debugADLCprint(void); 
-void EconetError(const char *errstr);
+void EconetReset();
+unsigned char EconetRead(unsigned char Register);
+void EconetWrite(unsigned char Register, unsigned char Value);
+unsigned char EconetReadStationID();
+bool EconetInterruptRequest();
+
+//void ReadNetwork(void);
+//void DebugDumpADLC();
 
 bool EconetPoll(void);
-bool EconetPoll_real(void);
+//bool EconetPoll_real(void);
 
 extern bool EconetEnabled;
-extern bool EconetNMIenabled;
+extern bool EconetNMIEnabled;
 extern bool EconetStateChanged;
 extern int EconetTrigger;
 extern int EconetFlagFillTimeoutTrigger;
 extern int EconetFlagFillTimeout;
+
 volatile extern struct MC6854 ADLC;
 
-extern unsigned char EconetStationNumber;
-extern unsigned int EconetListenPort;
-extern char EconetCfgPath[512];
+extern unsigned char EconetStationID;
 
-extern WSADATA WsaDat;							// Windows sockets info
+//extern u_short EconetListenPort;
+
+extern char EconetCfgPath[512];
+extern char AUNMapPath[512];
+
 
 #endif
