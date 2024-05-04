@@ -35,7 +35,7 @@ enum class Model : unsigned char {
 
 enum class CPU : unsigned char {
 	CPU6502,
-	CPU65C02
+	CPU65C12
 };
 
 const char* GetModelName(Model model);
