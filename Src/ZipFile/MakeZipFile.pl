@@ -8,7 +8,6 @@ my @files = (
     'UserData/BeebFile/6502Tube.rom',
     'UserData/BeebFile/AdvancedBASICEditor-1.00-32k.rom',
     'UserData/BeebFile/AdvancedBASICEditorPlus-1.00-32k.rom',
-
     'UserData/BeebFile/AMPLE.rom',
     'UserData/BeebFile/AMXDesign-1.00.rom',
     'UserData/BeebFile/ARMeval_100.rom',
@@ -23,6 +22,7 @@ my @files = (
     'UserData/BeebFile/BBCINT/BASIC2.rom',
     'UserData/BeebFile/BBCINT/DNFS.rom',
     'UserData/BeebFile/BBCINT/IBOS.rom',
+    'UserData/BeebFile/BBCINT/IBOS126.rom',
     'UserData/BeebFile/BBCINT/IBOS12P.rom',
     'UserData/BeebFile/BBCINT/OS12.rom',
     'UserData/BeebFile/BBCINT/WDFS.rom',
