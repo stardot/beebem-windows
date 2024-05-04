@@ -492,6 +492,7 @@
     <None Include="..\Help\speech.html" />
     <None Include="..\Help\sprowcopro.html" />
     <None Include="..\Help\state.html" />
+    <None Include="..\Help\style.css" />
     <None Include="..\Help\tapes.html" />
     <None Include="..\Help\teletext.html" />
     <None Include="..\Help\troubleshooting.html" />

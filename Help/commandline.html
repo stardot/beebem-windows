@@ -1,324 +1,392 @@
-<html>
-<head>
-  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
-
-  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
-</head>
-
-<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
-
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
-
-      <td>
-        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
-      </td>
-
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
-    </tr>
-  </table>
-
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="10%"></td>
-
-      <td width="20%">
-        <p align="center"><a href="index.html">Home</a></p>
-      </td>
-
-      <td width="20%">
-        <p align="center"><a href="contents.html">Help Contents</a></p>
-      </td>
-
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
-      </td>
-
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
-      </td>
-
-      <td width="10%"></td>
-    </tr>
-  </table>
-
-  <hr size="1" color="#004080" />
-
-  <table width="100%" border="0" cellpadding="5" cellspacing="0">
-    <tr>
-      <td width="10%"></td>
-
-      <td width="80%">
-      <!-- Start of content -->
-
-<h1 align="center">Command Line Options</a></h1>
-
-<p>The following command line options can be passed to BeebEm:</p>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">-Data &lt;directory&gt;</td>
-    <td width="80%">Use a specified data directory and set as the new default data directory</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-CustomData &lt;directory&gt;</td>
-    <td width="80%">Use a specified data directory without changing the default data directory</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-Prefs &lt;file&gt;</td>
-    <td width="80%">Preferences file to load. This can be a file name, relative to the data directory, or a full path name</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-Roms &lt;file&gt;</td>
-    <td width="80%">ROMs configuration file to load. This can be a file name, relative to the data directory, or a full path name</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-EconetCfg &lt;file&gt;</td>
-    <td width="80%">Econet config file to load. This can be a file name, relative to the data directory, or a full path name</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-AUNMap &lt;file&gt;</td>
-    <td width="80%">Econet AUN map file to load. This can be a file name, relative to the data directory, or a full path name</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-EcoStn &lt;station&gt;</td>
-    <td width="80%">Econet station number</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-EcoFF &lt;timeout&gt;</td>
-    <td width="80%">Econet flag fill timeout, see the econet section</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-FullScreen</td>
-    <td width="80%">Start in full screen mode</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-DisMenu</td>
-    <td width="80%">Disables the drop down menus</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-KbdCmd &lt;cmd&gt;</td>
-    <td width="80%">Keyboard command string to run (see below)</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-NoAutoBoot</td>
-    <td width="80%">Disable auto-boot when disk image specified</td>
-  </tr>
-
-  <tr>
-      <td width="20%">-AutoBootDelay &lt;milliseconds&gt;</td>
-      <td width="80%">Sets a delay between initial boot and Shift+Break to boot disk if disk image file specified</td>
-  </tr>
-
-  <tr>
-      <td width="20%">-StartPaused</td>
-      <td width="80%">Starts BeebEm with the emulation paused.  Other boot actions occur after emulation is unpaused.</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-DebugScript &lt;file&gt;</td>
-    <td width="80%">Open debugger and execute the commands</td>
-  </tr>
-
-  <tr>
-    <td width="20%">-DebugLabels &lt;file&gt;</td>
-    <td width="80%">Load Swift / BeebAsm format labels</td>
-  </tr>
-
-  <tr>
-    <td width="20%">&lt;disk image file&gt;</td>
-    <td width="80%">Disk image file to load.  Two files can be specified for drives 0 and 1.</td>
-  </tr>
-
-  <tr>
-    <td width="20%">&lt;tape file&gt;</td>
-    <td width="80%">Tape file to load</td>
-  </tr>
-
-  <tr>
-    <td width="20%">&lt;state file&gt;</td>
-    <td width="80%">Save state file to load</td>
-  </tr>
-</table>
-
-<p>Note: Command line options -Model and -Tube are no longer supported.
-Use the -Prefs option with different preferences files instead.</p>
-
-<p>If you create a shortcut to BeebEm.exe on your desktop and edit the
-properties (right click the icon) you can add command line options and a
-disc, tape or state file name to the target box.  Running the shortcut will
-then run the file.</p>
-
-<p>These command lines can be put into Windows scripts.  See the
-BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.</p>
-
-<p>The BeebEm installer allows you to associate files with .ssd, .dsd or .uef
-extensions with BeebEm. Double clicking on one of these files will
-automatically run it in BeebEm.</p>
-
-<h2>Command line examples:</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="40%">Run Zalaga with its own preferences</td>
-    <td width="60%">BeebEm -Prefs ZalagaPrefs.cfg Zalaga.ssd</td>
-  </tr>
-
-  <tr>
-    <td width="40%">Run the Torch Z80 with its own preferences</td>
-    <td width="60%">BeebEm -Prefs Torch.cfg -Roms Roms_Torch.cfg</td>
-  </tr>
-
-  <tr>
-    <td width="40%">Run BeebEm with an alternative set of data files</td>
-    <td width="60%">BeebEm -Data \Users\Mike\Documents\BeebEmGames</td>
-  </tr>
-
-  <tr>
-    <td width="40%">To run BeebEm from a USB drive and access the local USB drive data</td>
-    <td width="60%">BeebEm -Data -</td>
-  </tr>
-
-  <tr>
-    <td width="40%">To load and run the test tape image</td>
-    <td width="60%">BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</td>
-  </tr>
-</table>
-
-<h2>Command Line Parameter Notes</h2>
-
-<p>If the data directory specified using the -Data or -CustomData option
-does not exist, BeebEm will offer to create it. BeebEm will copy a default
-set of data to the data directory. The default data directory is
-'My Documents\BeebEm'. If a data directory of "-" is specified BeebEm will
-use the "UserData" directory where the BeebEm.exe file exists (this is
-useful for running from a USB drive).</p>
-
-<p>The -Data option tells BeebEm to use a new data directory as the default
-data directory. The default is stored in the Windows Registry under
-'HKEY_CURRENT_USER\Software\BeebEm\UserDataFolder'. The -CustomData option
-tells BeebEm to use a new data directory without changing the default.</p>
-
-<p>If a disk image or a state file name is passed to BeebEm on the command
-line it will be run automatically (but see -NoAutoBoot option).  The name
-can include the full path or it can just be the name of a file in the
-'DiscIms' or 'BeebState' directory.</p>
-
-<p>If a tape image name is passed to BeebEm on the command line it will be
-loaded.  The name can include the full path or it can just be the name of a
-file in the 'Tapes' directory.  To run the tape image use the -KbdCmd
-option.</p>
-
-<p>-StartPaused is useful if you are scripting the launch of BeebEm and you
-want to manipulate the window, its position or perform other tasks before
-the emulated machine boots. In this kind of script, launch BeebEm, then
-send an Alt+F5 keypress when you are ready to un-pause. E.g., if using
-AutoHotKey, including the following in your script will toggle the pause
-state:</p>
-
-<blockquote><code>SendInput !{F5}</code></blockquote>
-
-<p>If -StartPaused is used, the timer for -AutoBootDelay will start after
-unpausing, but will reset if paused again. The -KbdCmd option will also
-only apply when the emulator is unpaused for the first time.</p>
-
-<h2>Startup Key Sequence</h2>
-
-<p>The -KbdCmd option allows a string of key presses to be passed to BeebEm.
-The string can include the following key sequences:</p>
-
-<table width="60%" border="1" cellpadding="2" cellspacing="0">
-  <tr>
-    <th width="20%" align="center">String</th>
-    <th width="80%" align="center">Key Sequence</th>
-  </tr>
-  <tr>
-    <td width="20%" align="center">\n</td>
-    <td width="80%" align="center">press and release of enter/return</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">\s</td>
-    <td width="80%" align="center">press shift</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">\S</td>
-    <td width="80%" align="center">release shift</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">\c</td>
-    <td width="80%" align="center">press control</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">\C</td>
-    <td width="80%" align="center">release control</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">\\</td>
-    <td width="80%" align="center">press and release of \ key</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">0-9</td>
-    <td width="80%" align="center">press and release of a number key</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">A-Z</td>
-    <td width="80%" align="center">press and release of a letter key</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">'-=[];'#,./</td>
-    <td width="80%" align="center">press and release of a symbol key</td>
-  </tr>
-
-  <tr>
-    <td width="20%" align="center">\dNNNN</td>
-    <td width="80%" align="center">set inter-keypress delay to NNNN
-      milliseconds. Note that very low delays can result in loss of
-      presses.</td>
-  </tr>
-</table>
-
-<p>So, for example, run a tape image using commands such as:</p>
-
-<blockquote>
-  <p><code>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef</code></p>
-  <p><code>BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef</code></p>
-</blockquote>
-
-      <!-- End of content -->
-      </td>
-
-      <td width="10%"></td>
-    </tr>
-  </table>
-
-  <hr size="1" color="#004080" />
-  <p>Copyright &copy; 2020 Mike Wyatt</a></p>
-  <hr size="1" color="#004080" />
-</body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=us-ascii">
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+    <header>
+      <div class="title">
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+        <h1>
+          BeebEm - BBC Micro and Master 128 Emulator
+        </h1>
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+      </div>
+
+      <nav>
+        <div>
+          <a href="index.html">Home</a>
+        </div>
+        <div>
+          <a href="contents.html">Help Contents</a>
+        </div>
+        <div>
+          <a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a>
+        </div>
+          <div>
+          <a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Command Line Options</h1>
+
+      <p>
+        The following command line options can be passed to BeebEm:
+      </p>
+
+      <table>
+        <tr>
+          <th>Option</th>
+          <th>Description</th>
+        </tr>
+
+        <tr>
+          <td>-Data &lt;directory&gt;</td>
+          <td>
+            Use a specified data directory and set as the new default data
+            directory
+          </td>
+        </tr>
+
+        <tr>
+          <td>-CustomData &lt;directory&gt;</td>
+          <td>
+            Use a specified data directory without changing the default data
+            directory
+          </td>
+        </tr>
+
+        <tr>
+          <td>-Prefs &lt;file&gt;</td>
+          <td>
+            Preferences file to load. This can be a file name, relative to the
+            data directory, or a full path name
+          </td>
+
+        </tr>
+
+        <tr>
+          <td>-Roms &lt;file&gt;</td>
+          <td>
+            ROMs configuration file to load. This can be a file name, relative to
+            the data directory, or a full path name
+          </td>
+        </tr>
+
+        <tr>
+          <td>-EconetCfg &lt;file&gt;</td>
+          <td>
+            Econet config file to load. This can be a file name, relative to the
+            data directory, or a full path name
+          </td>
+        </tr>
+
+        <tr>
+          <td>-AUNMap &lt;file&gt;</td>
+          <td>
+            Econet AUN map file to load. This can be a file name, relative to the
+            data directory, or a full path name
+          </td>
+        </tr>
+
+        <tr>
+          <td>-EcoStn &lt;station&gt;</td>
+          <td>Econet station number</td>
+        </tr>
+
+        <tr>
+          <td>-EcoFF &lt;timeout&gt;</td>
+          <td>Econet flag fill timeout, see the econet section</td>
+        </tr>
+
+        <tr>
+          <td>-FullScreen</td>
+          <td>Start in full screen mode</td>
+        </tr>
+
+        <tr>
+          <td>-DisMenu</td>
+          <td>Disables the drop down menus</td>
+        </tr>
+
+        <tr>
+          <td>-KbdCmd &lt;cmd&gt;</td>
+          <td>Keyboard command string to run (see below)</td>
+        </tr>
+
+        <tr>
+          <td>-NoAutoBoot</td>
+          <td>Disable auto-boot when disk image specified</td>
+        </tr>
+
+        <tr>
+          <td>-AutoBootDelay &lt;milliseconds&gt;</td>
+          <td>
+            Sets a delay between initial boot and Shift+Break to boot disk if disk
+            image file specified
+          </td>
+        </tr>
+
+        <tr>
+          <td>-StartPaused</td>
+          <td>
+            Starts BeebEm with the emulation paused.  Other boot actions occur
+            after emulation is unpaused
+          </td>
+        </tr>
+
+        <tr>
+          <td>-DebugScript &lt;file&gt;</td>
+          <td>Open debugger and execute the commands</td>
+        </tr>
+
+        <tr>
+          <td>-DebugLabels &lt;file&gt;</td>
+          <td>Load Swift / BeebAsm format labels</td>
+        </tr>
+
+        <tr>
+          <td>&lt;disk image file&gt;</td>
+          <td>
+            Disk image file to load. Two files can be specified for drives 0 and 1
+          </td>
+        </tr>
+
+        <tr>
+          <td>&lt;tape file&gt;</td>
+          <td>Tape file to load</td>
+        </tr>
+
+        <tr>
+          <td>&lt;state file&gt;</td>
+          <td>Save state file to load</td>
+        </tr>
+      </table>
+
+      <p>
+        Note: Command line options -Model and -Tube are no longer supported.
+        Use the -Prefs option with different preferences files instead.
+      </p>
+
+      <p>
+        If you create a shortcut to BeebEm.exe on your desktop and edit the
+        properties (right click the icon) you can add command line options and a
+        disc, tape or state file name to the target box.  Running the shortcut
+        will then run the file.
+      </p>
+
+      <p>
+        These command lines can be put into Windows scripts.  See the
+        BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.
+      </p>
+
+      <p>
+        The BeebEm installer allows you to associate files with .ssd, .dsd or
+        .uef extensions with BeebEm. Double clicking on one of these files will
+        automatically run it in BeebEm.
+      </p>
+
+      <h2>Command line examples</h2>
+
+      <p>
+        Run Zalaga with its own preferences:
+      </p>
+
+      <blockquote>
+        <code>
+          BeebEm -Prefs ZalagaPrefs.cfg Zalaga.ssd
+        </code>
+      </blockquote>
+
+      <p>
+        Run the Torch Z80 with its own preferences:
+      </p>
+
+      <blockquote>
+        <code>
+          BeebEm -Prefs Torch.cfg -Roms Roms_Torch.cfg
+        </code>
+      </blockquote>
+
+      <p>
+        Run BeebEm with an alternative set of data files:
+      </p>
+
+      <blockquote>
+        <code>
+          BeebEm -Data \Users\Mike\Documents\BeebEmGames
+        </code>
+      </blockquote>
+
+      <p>
+        Run BeebEm from a USB drive and access the local USB drive data:
+      </p>
+
+      <blockquote>
+        <code>
+          BeebEm -Data -
+        </code>
+      </blockquote>
+
+      <p>
+        Load and run the test tape image:
+      </p>
+
+      <blockquote>
+        <code>
+          BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef
+        </code>
+      </blockquote>
+
+      <h2>Command Line Parameter Notes</h2>
+
+      <p>
+        If the data directory specified using the -Data or -CustomData option
+        does not exist, BeebEm will offer to create it. BeebEm will copy a
+        default set of data to the data directory. The default data directory is
+        'My Documents\BeebEm'. If a data directory of "-" is specified BeebEm
+        will use the "UserData" directory where the BeebEm.exe file exists (this
+        is useful for running from a USB drive).
+      </p>
+
+      <p>
+        The -Data option tells BeebEm to use a new data directory as the default
+        data directory. The default is stored in the Windows Registry under
+        'HKEY_CURRENT_USER\Software\BeebEm\UserDataFolder'. The -CustomData
+        option tells BeebEm to use a new data directory without changing the
+        default.
+      </p>
+
+      <p>
+        If a disk image or a state file name is passed to BeebEm on the command
+        line it will be run automatically (but see -NoAutoBoot option). The name
+        can include the full path or it can just be the name of a file in the
+        'DiscIms' or 'BeebState' directory.
+       </p>
+
+      <p>
+        If a tape image name is passed to BeebEm on the command line it will be
+        loaded. The name can include the full path or it can just be the name
+        of a file in the 'Tapes' directory. To run the tape image use the
+        -KbdCmd option.
+      </p>
+
+      <p>
+        -StartPaused is useful if you are scripting the launch of BeebEm and you
+        want to manipulate the window, its position or perform other tasks
+        before the emulated machine boots. In this kind of script, launch
+        BeebEm, then send an Alt+F5 keypress when you are ready to un-pause.
+        For example, if using AutoHotKey, including the following in your script
+        will toggle the pause state:
+      </p>
+
+      <blockquote>
+        <code>
+          SendInput !{F5}
+        </code>
+      </blockquote>
+
+      <p>
+        If -StartPaused is used, the timer for -AutoBootDelay will start after
+        unpausing, but will reset if paused again. The -KbdCmd option will also
+        only apply when the emulator is unpaused for the first time.
+      </p>
+
+      <h2>Startup Key Sequence</h2>
+
+      <p>
+        The -KbdCmd option allows a string of key presses to be passed to
+        BeebEm. The string can include the following key sequences:
+      </p>
+
+      <table>
+        <tr>
+          <th>String</th>
+          <th>Key Sequence</th>
+        </tr>
+
+        <tr>
+          <td>\n</td>
+          <td>Press and release of enter/return</td>
+        </tr>
+
+        <tr>
+          <td>\s</td>
+          <td>Press shift</td>
+        </tr>
+
+        <tr>
+          <td>\S</td>
+          <td>Release shift</td>
+        </tr>
+
+        <tr>
+          <td>\c</td>
+          <td>Press control</td>
+        </tr>
+
+        <tr>
+          <td>\C</td>
+          <td>Release control</td>
+        </tr>
+
+        <tr>
+          <td>\\</td>
+          <td>Press and release of \ key</td>
+        </tr>
+
+        <tr>
+          <td>0-9</td>
+          <td>Press and release of a number key</td>
+        </tr>
+
+        <tr>
+          <td>A-Z</td>
+          <td>Press and release of a letter key</td>
+        </tr>
+
+        <tr>
+          <td>'-=[];'#,./</td>
+          <td>Press and release of a symbol key</td>
+        </tr>
+
+        <tr>
+          <td>\dNNNN</td>
+          <td>
+            Set inter-keypress delay to NNNN milliseconds. Note that very low
+            delays can result in loss of presses
+          </td>
+        </tr>
+      </table>
+
+      <p>
+        So, for example, run a tape image using commands such as:
+      </p>
+
+      <blockquote>
+        <code>
+          BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nPAGE=3584\nCH.\s22\S\n" test.uef
+        </code>
+      </blockquote>
+
+      <blockquote>
+        <code>
+          BeebEm -KbdCmd "OSCLI\s2\STAPE\s2\S\nOSCLI\s2\SRUN\s2\S\n" game.uef
+        </code>
+      </blockquote>
+    </main>
+
+    <footer>
+      <p>Copyright &copy; 2020 Mike Wyatt</p>
+     </footer>
+  </body>
 </html>
