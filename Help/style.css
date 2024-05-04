@@ -68,6 +68,14 @@ main figure {
     font-weight: bold;
 }
 
+.cmd {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+main pre {
+    font-family: 'Courier New', Courier, monospace;
+}
+
 footer {
     border-top: 1px solid #004080;
     border-bottom: 1px solid #004080;

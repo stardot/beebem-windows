@@ -59,47 +59,47 @@
         </tr>
 
         <tr>
-          <td>*CAT</td>
+          <td><span class="cmd">*CAT</span></td>
           <td>List files on the disc</td>
         </tr>
 
         <tr>
-          <td>*DRIVE &lt;drive&gt;</td>
+          <td><span class="cmd">*DRIVE &lt;drive&gt;</span></td>
           <td>Change default drive number (0, 1, 2 or 3)</td>
         </tr>
 
         <tr>
-          <td>LOAD "&lt;file&gt;"</td>
+          <td><span class="cmd">LOAD "&lt;file&gt;"</span></td>
           <td>Load a BASIC program</td>
         </tr>
 
         <tr>
-          <td>CHAIN "&lt;file&gt;"</td>
+          <td><span class="cmd">CHAIN "&lt;file&gt;"</span></td>
           <td>Load and run a BASIC program</td>
         </tr>
 
         <tr>
-          <td>SAVE "&lt;file&gt;"</td>
+          <td><span class="cmd">SAVE "&lt;file&gt;"</span></td>
           <td>Save a BASIC program</td>
         </tr>
 
         <tr>
-          <td>*DELETE &lt;file&gt;</td>
+          <td><span class="cmd">*DELETE &lt;file&gt;</span></td>
           <td>Delete a file</td>
         </tr>
 
         <tr>
-          <td>*RUN &lt;file&gt;</td>
+          <td><span class="cmd">*RUN &lt;file&gt;</span></td>
           <td>Load and run a binary program</td>
         </tr>
 
         <tr>
-          <td>*TITLE &lt;title&gt;</td>
+          <td><span class="cmd">*TITLE &lt;title&gt;</span></td>
           <td>Put a title on the disc</td>
         </tr>
 
         <tr>
-          <td>*BUILD &lt;file&gt;</td>
+          <td><span class="cmd">*BUILD &lt;file&gt;</span></td>
           <td>
             Create a file on the disc containing a set of commands
             you type in. Press Escape to end
@@ -107,10 +107,10 @@
         </tr>
 
         <tr>
-          <td>*EXEC &lt;file&gt;</td>
+          <td><span class="cmd">*EXEC &lt;file&gt;</span></td>
           <td>
             Execute the commands contained in a file (created with
-            *BUILD for example)
+            <span class="cmd">*BUILD</span> for example)
           </td>
         </tr>
       </table>
@@ -129,9 +129,10 @@
       <p>
         If you want to make a disc bootable you will need to create a file
         called !BOOT containing the commands to execute when the disc is booted.
-        The *BUILD command can be used to create the !BOOT file. The disc image
-        file also needs to be configured to run the !BOOT file when its booted.
-        This can be done by running the command <b>*OPT4,3</b>.
+        The <span class="cmd">*BUILD</span> command can be used to create the
+        !BOOT file. The disc image file also needs to be configured to run the
+        !BOOT file when its booted. This can be done by running the command
+        <span class="cmd">*OPT4,3</span>.
       </p>
 
       <p>
@@ -174,20 +175,18 @@
         numbers, e.g.:
       </p>
 
-      <blockquote>
-        <code>
-          A.DARE    004000 006691 002700
-          $.CHUCKIE 001100 0029AB 002700
-        </code>
-      </blockquote>
+      <pre>
+        A.DARE    004000 006691 002700
+        $.CHUCKIE 001100 0029AB 002700
+      </pre>
 
       <h2>ADFS Discs</h2>
 
       <p>
         If you want to use ADFS discs in the Master 128 mode then load an ADFS
         disk image (such as the MasterWelcome.adl image in the DiscIms folder)
-        and type <b>*ADFS</b> to mount it. You can also press A & F12 to mount
-        an ADFS disc.
+        and type <span class="cmd">*ADFS</span> to mount it. You can also press
+        A & F12 to mount an ADFS disc.
       </p>
 
       <p>

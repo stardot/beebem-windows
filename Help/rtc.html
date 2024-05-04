@@ -40,9 +40,10 @@
       <h1>Real-Time Clock</h1>
 
       <p>
-        The RTC can be used in Master 128 mode. The BASIC TIME$ variable can be
-        used to read and update the clock. When BeebEm starts it sets the clock
-        to the current time from the PC's clock.
+        The RTC can be used in Master 128 mode. The BASIC <span
+        class="cmd">TIME$</span> variable can be used to read and update the
+        clock. When BeebEm starts it sets the clock to the current time from the
+        PC's clock.
       </p>
 
       <p>
@@ -56,14 +57,12 @@
         Some examples of reading and setting the clock:
       </p>
 
-      <blockquote>
-        <code>
-          PRINT TIME$
-          TIME$="Mon,22 Jan 1996"
-          TIME$="23:10:42"
-          TIME$="Mon,22 Jan 1996.23:10:42"
-        </code>
-      </blockquote>
+      <pre>
+        PRINT TIME$
+        TIME$="Mon,22 Jan 1996"
+        TIME$="23:10:42"
+        TIME$="Mon,22 Jan 1996.23:10:42"
+      </pre>
     </main>
 
     <footer>

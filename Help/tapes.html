@@ -52,32 +52,32 @@
 
       <table>
         <tr>
-          <td>*TAPE</td>
+          <td><span class="cmd">*TAPE</span></td>
           <td>Select tape filing system</td>
         </tr>
 
         <tr>
-          <td>*CAT</td>
+          <td><span class="cmd">*CAT</span></td>
           <td>List files on the tape image</td>
         </tr>
 
         <tr>
-          <td>LOAD ""</td>
+          <td><span class="cmd">LOAD ""</span></td>
           <td>Load a BASIC program from the tape image</td>
         </tr>
 
         <tr>
-          <td>CHAIN ""</td>
+          <td><span class="cmd">CHAIN ""</span></td>
           <td>Load and run a BASIC program</td>
         </tr>
 
         <tr>
-          <td>SAVE "&lt;file&gt;"</td>
+          <td><span class="cmd">SAVE "&lt;file&gt;"</span></td>
           <td>Save a BASIC program to the tape image</td>
         </tr>
 
         <tr>
-          <td>*RUN</td>
+          <td><span class="cmd">*RUN</span></td>
           <td>Load and run a binary program</td>
         </tr>
       </table>
@@ -95,23 +95,19 @@
         Most tapes can be run by typing:
       </p>
 
-      <blockquote>
-        <code>
+      <pre>
         *TAPE
         CH.""
-        </code>
-      </blockquote>
+      </pre>
 
       <p>
         If that does not work, rewind the tape and try:
       </p>
 
-      <blockquote>
-        <code>
-          *TAPE
-          *RUN
-        </code>
-      </blockquote>
+      <pre>
+        *TAPE
+        *RUN
+      </pre>
 
       <p>
         Tape loading can be quite slow so BeebEm has menu options to
