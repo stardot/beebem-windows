@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2017  Chris Needham
+Copyright (C) 2021  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,26 +18,18 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef MODEL_HEADER
-#define MODEL_HEADER
+#include "Model.h"
 
-enum class Model : unsigned char {
-	B,             // 0: BBC B
-	IntegraB,      // 1: BBC B with Integra B
-	BPlus,         // 2: BBC B+
-	Master128,     // 3: BBC Master 128
-	MasterET,      // 4: BBC Master ET
-	MasterCompact, // 5: BBC Master Compact
-	FileStoreE01,  // 6: Acorn FileStore E01
-	FileStoreE01S, // 7: Acorn FileStore E01S
-	Last
+static const char* const szModel[] = {
+	"BBC Model B",
+	"BBC Model B + Integra-B",
+	"BBC Model B Plus",
+	"BBC Master 128",
+	"Filestore E01",
+	"Filestore E01S",
 };
 
-enum class CPU : unsigned char {
-	CPU6502,
-	CPU65C12
-};
-
-const char* GetModelName(Model model);
-
-#endif
+const char* GetModelName(Model model)
+{
+	return szModel[static_cast<int>(model)];
+}
