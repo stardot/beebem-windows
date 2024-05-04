@@ -62,6 +62,7 @@ Boston, MA  02110-1301, USA.
 #define INLINE
 #endif
 
+static CPU CPUType;
 static int CurrentInstruction;
 
 CycleCountT TotalCycles=0;
@@ -256,7 +257,7 @@ static unsigned int InstructionCount[256];
 
 static INLINE void Carried()
 {
-	if (MachineType == Model::Master128)
+	if (CPUType == CPU::CPU65C12)
 	{
 		if (CurrentInstruction == 0x1e ||
 		    CurrentInstruction == 0x3e ||
@@ -472,7 +473,7 @@ INLINE static void ADCInstrHandler(int operand)
 
     Accumulator = hn | ln;
 
-    if (MachineType == Model::Master128) {
+    if (CPUType == CPU::CPU65C12) {
       ZFlag = Accumulator == 0;
       NFlag = Accumulator & 128;
       Cycles++;
@@ -798,7 +799,7 @@ INLINE static void SBCInstrHandler(int operand)
       ((Accumulator & 128) > 0) ^ ((TmpResultV & 256) != 0),
       Accumulator & 128);
   } else {
-    if (MachineType == Model::Master128) {
+    if (CPUType == CPU::CPU65C12) {
       // int ohn = operand & 0xf0;
       int oln = operand & 0x0f;
 
@@ -1084,7 +1085,7 @@ INLINE static int IndAddrModeHandler_Address() {
   According to my BBC Master Reference Manual Part 2
   the 6502 has a bug concerning this addressing mode and VectorLocation==xxFF
   so, we're going to emulate that bug -- Richard Gellman */
-  if ((VectorLocation & 0xff) != 0xff || MachineType == Model::Master128) {
+  if ((VectorLocation & 0xff) != 0xff || CPUType == CPU::CPU65C12) {
    EffectiveAddress=ReadPaged(VectorLocation);
    EffectiveAddress|=ReadPaged(VectorLocation+1) << 8;
   }
@@ -1152,7 +1153,24 @@ INLINE static int ZeroPgYAddrModeHandler_Address()
 
 void Init6502core()
 {
-	if (MachineType == Model::Master128) {
+	switch (MachineType) {
+		case Model::Master128:
+		case Model::MasterET:
+		case Model::MasterCompact:
+		case Model::FileStoreE01:
+		case Model::FileStoreE01S:
+			CPUType = CPU::CPU65C12;
+			break;
+
+		case Model::B:
+		case Model::IntegraB:
+		case Model::BPlus:
+		default:
+			CPUType = CPU::CPU6502;
+			break;
+	}
+
+	if (CPUType == CPU::CPU65C12) {
 		CyclesTable = CyclesTable65C02;
 		CyclesToMemRead = CyclesToMemRead65C02;
 		CyclesToMemWrite = CyclesToMemWrite65C02;
@@ -1432,7 +1450,7 @@ void Exec6502Instruction()
 			case 0x22:
 			case 0x42:
 			case 0x62:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP imm
 					ReadPaged(ProgramCounter++);
 				}
@@ -1442,7 +1460,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x03:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1453,7 +1471,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x04:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// TSB zp
 					TSBInstrHandler(ZeroPgAddrModeHandler_Address());
 				}
@@ -1471,7 +1489,7 @@ void Exec6502Instruction()
 				ASLInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
 			case 0x07:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1495,7 +1513,7 @@ void Exec6502Instruction()
 				break;
 			case 0x0b:
 			case 0x2b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1506,7 +1524,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x0c:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// TSB abs
 					TSBInstrHandler(AbsAddrModeHandler_Address());
 				}
@@ -1524,7 +1542,7 @@ void Exec6502Instruction()
 				ASLInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0x0f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1543,7 +1561,7 @@ void Exec6502Instruction()
 				ORAInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x12:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// ORA (zp)
 					ORAInstrHandler(ZPIndAddrModeHandler_Data());
 				}
@@ -1553,7 +1571,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x13:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1564,7 +1582,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x14:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// TRB zp
 					TRBInstrHandler(ZeroPgAddrModeHandler_Address());
 				}
@@ -1582,7 +1600,7 @@ void Exec6502Instruction()
 				ASLInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0x17:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1601,7 +1619,7 @@ void Exec6502Instruction()
 				ORAInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x1a:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// INC A
 					INAInstrHandler();
 				}
@@ -1610,7 +1628,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x1b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1621,7 +1639,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x1c:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// TRB abs
 					TRBInstrHandler(AbsAddrModeHandler_Address());
 				}
@@ -1639,7 +1657,7 @@ void Exec6502Instruction()
 				ASLInstrHandler(AbsXAddrModeHandler_Address());
 				break;
 			case 0x1f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1658,7 +1676,7 @@ void Exec6502Instruction()
 				ANDInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0x23:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1681,7 +1699,7 @@ void Exec6502Instruction()
 				ROLInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
 			case 0x27:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1727,7 +1745,7 @@ void Exec6502Instruction()
 				ROLInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0x2f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1746,7 +1764,7 @@ void Exec6502Instruction()
 				ANDInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x32:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// AND (zp)
 					ANDInstrHandler(ZPIndAddrModeHandler_Data());
 				}
@@ -1756,7 +1774,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x33:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1767,7 +1785,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x34:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// BIT abs,X
 					BITInstrHandler(ZeroPgXAddrModeHandler_Data());
 				}
@@ -1785,7 +1803,7 @@ void Exec6502Instruction()
 				ROLInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0x37:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1804,7 +1822,7 @@ void Exec6502Instruction()
 				ANDInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x3a:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// DEC A
 					DEAInstrHandler();
 				}
@@ -1813,7 +1831,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x3b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1824,7 +1842,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x3c:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// BIT abs,X
 					BITInstrHandler(AbsXAddrModeHandler_Data());
 				}
@@ -1842,7 +1860,7 @@ void Exec6502Instruction()
 				ROLInstrHandler(AbsXAddrModeHandler_Address());
 				break;
 			case 0x3f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1863,7 +1881,7 @@ void Exec6502Instruction()
 				EORInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0x43:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1886,7 +1904,7 @@ void Exec6502Instruction()
 				LSRInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
 			case 0x47:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1909,7 +1927,7 @@ void Exec6502Instruction()
 				LSRInstrHandler_Acc();
 				break;
 			case 0x4b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1931,7 +1949,7 @@ void Exec6502Instruction()
 				LSRInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0x4f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1950,7 +1968,7 @@ void Exec6502Instruction()
 				EORInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x52:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// EOR (zp)
 					EORInstrHandler(ZPIndAddrModeHandler_Data());
 				}
@@ -1960,7 +1978,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x53:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -1985,7 +2003,7 @@ void Exec6502Instruction()
 				LSRInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0x57:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2007,7 +2025,7 @@ void Exec6502Instruction()
 				EORInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x5a:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// PHY
 					Push(YReg);
 				}
@@ -2016,7 +2034,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x5b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2027,7 +2045,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x5c:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP abs
 					AbsAddrModeHandler_Address();
 				}
@@ -2045,7 +2063,7 @@ void Exec6502Instruction()
 				LSRInstrHandler(AbsXAddrModeHandler_Address());
 				break;
 			case 0x5f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2064,7 +2082,7 @@ void Exec6502Instruction()
 				ADCInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0x63:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2075,7 +2093,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x64:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// STZ zp
 					BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(), 0);
 				}
@@ -2093,7 +2111,7 @@ void Exec6502Instruction()
 				RORInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
 			case 0x67:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2117,7 +2135,7 @@ void Exec6502Instruction()
 				RORInstrHandler_Acc();
 				break;
 			case 0x6b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2138,7 +2156,7 @@ void Exec6502Instruction()
 				RORInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0x6f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2157,7 +2175,7 @@ void Exec6502Instruction()
 				ADCInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0x72:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// ADC (zp)
 					ADCInstrHandler(ZPIndAddrModeHandler_Data());
 				}
@@ -2167,7 +2185,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x73:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2178,7 +2196,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x74:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// STZ zp,X
 					BEEBWRITEMEM_DIRECT(ZeroPgXAddrModeHandler_Address(), 0);
 				}
@@ -2196,7 +2214,7 @@ void Exec6502Instruction()
 				RORInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0x77:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2218,7 +2236,7 @@ void Exec6502Instruction()
 				ADCInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0x7a:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// PLY
 					YReg = Pop();
 					SetPSRZN(YReg);
@@ -2228,7 +2246,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x7b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2239,7 +2257,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x7c:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// JMP abs,X
 					ProgramCounter = IndAddrXModeHandler_Address();
 				}
@@ -2257,7 +2275,7 @@ void Exec6502Instruction()
 				RORInstrHandler(AbsXAddrModeHandler_Address());
 				break;
 			case 0x7f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2268,7 +2286,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x80:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// BRA rel
 					BRAInstrHandler();
 				}
@@ -2289,7 +2307,7 @@ void Exec6502Instruction()
 				ReadPaged(ProgramCounter++);
 				break;
 			case 0x83:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2314,7 +2332,7 @@ void Exec6502Instruction()
 				BEEBWRITEMEM_DIRECT(ZeroPgAddrModeHandler_Address(), XReg);
 				break;
 			case 0x87:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2330,7 +2348,7 @@ void Exec6502Instruction()
 				SetPSRZN(YReg);
 				break;
 			case 0x89:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// BIT imm
 					BITImmedInstrHandler(ReadPaged(ProgramCounter++));
 				}
@@ -2345,7 +2363,7 @@ void Exec6502Instruction()
 				SetPSRZN(Accumulator);
 				break;
 			case 0x8b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2371,7 +2389,7 @@ void Exec6502Instruction()
 				STXInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0x8f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2389,7 +2407,7 @@ void Exec6502Instruction()
 				WritePaged(IndYAddrModeHandler_Address(), Accumulator);
 				break;
 			case 0x92:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// STA (zp)
 					AdvanceCyclesForMemWrite();
 					WritePaged(ZPIndAddrModeHandler_Address(), Accumulator);
@@ -2400,7 +2418,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x93:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2426,7 +2444,7 @@ void Exec6502Instruction()
 				STXInstrHandler(ZeroPgYAddrModeHandler_Address());
 				break;
 			case 0x97:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2450,7 +2468,7 @@ void Exec6502Instruction()
 				StackReg = XReg;
 				break;
 			case 0x9b:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2459,7 +2477,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x9c:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// STZ abs
 					WritePaged(AbsAddrModeHandler_Address(), 0);
 				}
@@ -2475,7 +2493,7 @@ void Exec6502Instruction()
 				WritePaged(AbsXAddrModeHandler_Address(), Accumulator);
 				break;
 			case 0x9e:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// STZ abs,x
 					AdvanceCyclesForMemWrite();
 					WritePaged(AbsXAddrModeHandler_Address(), 0);
@@ -2487,7 +2505,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0x9f:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2510,7 +2528,7 @@ void Exec6502Instruction()
 				LDXInstrHandler(ReadPaged(ProgramCounter++));
 				break;
 			case 0xa3:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2532,7 +2550,7 @@ void Exec6502Instruction()
 				LDXInstrHandler(WholeRam[ReadPaged(ProgramCounter++)]);
 				break;
 			case 0xa7:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2557,7 +2575,7 @@ void Exec6502Instruction()
 				SetPSRZN(Accumulator);
 				break;
 			case 0xab:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2579,7 +2597,7 @@ void Exec6502Instruction()
 				LDXInstrHandler(AbsAddrModeHandler_Data());
 				break;
 			case 0xaf:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2597,7 +2615,7 @@ void Exec6502Instruction()
 				LDAInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0xb2:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// LDA (zp)
 					LDAInstrHandler(ZPIndAddrModeHandler_Data());
 				}
@@ -2607,7 +2625,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0xb3:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2629,7 +2647,7 @@ void Exec6502Instruction()
 				LDXInstrHandler(ZeroPgYAddrModeHandler_Data());
 				break;
 			case 0xb7:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2652,7 +2670,7 @@ void Exec6502Instruction()
 				SetPSRZN(XReg);
 				break;
 			case 0xbb:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2675,7 +2693,7 @@ void Exec6502Instruction()
 				LDXInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0xbf:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2693,7 +2711,7 @@ void Exec6502Instruction()
 				CMPInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0xc3:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2716,7 +2734,7 @@ void Exec6502Instruction()
 				DECInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
 			case 0xc7:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2741,7 +2759,7 @@ void Exec6502Instruction()
 				DEXInstrHandler();
 				break;
 			case 0xcb:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2767,7 +2785,7 @@ void Exec6502Instruction()
 				DECInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0xcf:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2786,7 +2804,7 @@ void Exec6502Instruction()
 				CMPInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0xd2:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// CMP (zp)
 					CMPInstrHandler(ZPIndAddrModeHandler_Data());
 				}
@@ -2796,7 +2814,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0xd3:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2815,7 +2833,7 @@ void Exec6502Instruction()
 				DECInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0xd7:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2834,7 +2852,7 @@ void Exec6502Instruction()
 				CMPInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0xda:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// PHX
 					Push(XReg);
 				}
@@ -2843,7 +2861,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0xdb:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2855,7 +2873,7 @@ void Exec6502Instruction()
 				break;
 			case 0xdc:
 			case 0xfc:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP abs
 					AbsAddrModeHandler_Address();
 				}
@@ -2873,7 +2891,7 @@ void Exec6502Instruction()
 				DECInstrHandler(AbsXAddrModeHandler_Address());
 				break;
 			case 0xdf:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2892,7 +2910,7 @@ void Exec6502Instruction()
 				SBCInstrHandler(IndXAddrModeHandler_Data());
 				break;
 			case 0xe3:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2915,7 +2933,7 @@ void Exec6502Instruction()
 				INCInstrHandler(ZeroPgAddrModeHandler_Address());
 				break;
 			case 0xe7:
-				if (MachineType != Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// Undocumented instruction: ISC zp
 					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
 					INCInstrHandler(ZeroPageAddress);
@@ -2934,7 +2952,7 @@ void Exec6502Instruction()
 				// NOP
 				break;
 			case 0xeb:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2955,7 +2973,7 @@ void Exec6502Instruction()
 				INCInstrHandler(AbsAddrModeHandler_Address());
 				break;
 			case 0xef:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -2974,7 +2992,7 @@ void Exec6502Instruction()
 				SBCInstrHandler(IndYAddrModeHandler_Data());
 				break;
 			case 0xf2:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// SBC (zp)
 					SBCInstrHandler(ZPIndAddrModeHandler_Data());
 				}
@@ -2984,7 +3002,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0xf3:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -3003,7 +3021,7 @@ void Exec6502Instruction()
 				INCInstrHandler(ZeroPgXAddrModeHandler_Address());
 				break;
 			case 0xf7:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -3022,7 +3040,7 @@ void Exec6502Instruction()
 				SBCInstrHandler(AbsYAddrModeHandler_Data());
 				break;
 			case 0xfa:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// PLX
 					XReg = Pop();
 					SetPSRZN(XReg);
@@ -3032,7 +3050,7 @@ void Exec6502Instruction()
 				}
 				break;
 			case 0xfb:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -3051,7 +3069,7 @@ void Exec6502Instruction()
 				INCInstrHandler(AbsXAddrModeHandler_Address());
 				break;
 			case 0xff:
-				if (MachineType == Model::Master128) {
+				if (CPUType == CPU::CPU65C12) {
 					// NOP
 				}
 				else {
@@ -3068,7 +3086,7 @@ void Exec6502Instruction()
 		    (CurrentInstruction == 0x30) ||
 		    (CurrentInstruction == 0x50) ||
 		    (CurrentInstruction == 0x70) ||
-		    (CurrentInstruction == 0x80 && MachineType == Model::Master128) ||
+		    (CurrentInstruction == 0x80 && CPUType == CPU::CPU65C12) ||
 		    (CurrentInstruction == 0x90) ||
 		    (CurrentInstruction == 0xb0) ||
 		    (CurrentInstruction == 0xd0) ||
@@ -3195,7 +3213,7 @@ static void PollHardware(unsigned int nCycles)
 	TeletextPoll();
 
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
-	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
+	if (MachineType == Model::Master128 || Model::MasterCompact || Model::MasterET || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 
 	if (EconetEnabled && EconetPoll())
 	{
