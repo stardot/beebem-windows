@@ -610,12 +610,6 @@
     <Image Include="..\Help\startup.jpg">
       <Filter>Help Files</Filter>
     </Image>
-    <Image Include="..\Help\teletext-files.png">
-      <Filter>Help Files</Filter>
-    </Image>
-    <Image Include="..\Help\teletext-ip.png">
-      <Filter>Help Files</Filter>
-    </Image>
     <Image Include="res\ADF.ico">
       <Filter>Resource Files</Filter>
     </Image>
@@ -645,6 +639,12 @@
     </Image>
     <Image Include="res\UEF.ico">
       <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\Help\teletext-files.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\teletext-ip.png">
+      <Filter>Help Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
@@ -718,6 +718,9 @@
       <Filter>Help Files</Filter>
     </None>
     <None Include="..\Help\state.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\style.css">
       <Filter>Help Files</Filter>
     </None>
     <None Include="..\Help\tapes.html">

@@ -1,0 +1,70 @@
+body {
+    background-color: #FFFFC0;
+}
+
+header {
+    padding-bottom: 0.75em;
+    border-bottom: 1px solid #004080;
+}
+
+header .title {
+    display: grid;
+    grid-template-columns: 10% 80% 10%;
+    align-items: center;
+}
+
+header div.title div.logo {
+    text-align: center;
+}
+
+header div.title h1 {
+    text-align: center;
+}
+
+header nav {
+    margin-left: 10%;
+    margin-right: 10%;
+    padding-top: 0.75em;
+    display: grid;
+    grid-template-columns: 25% 25% 25% 25%;
+}
+
+header nav div {
+    text-align: center;
+}
+
+main {
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+main h1 {
+    text-align: center;
+}
+
+main .beeb {
+    float: right;
+}
+
+main table {
+    border-collapse: collapse;
+}
+
+main table th {
+    border: 1px solid black;
+    padding: 0.2em 0.4em 0.2em 0.4em;
+}
+
+main table td {
+    border: 1px solid black;
+    padding: 0.2em 0.4em 0.2em 0.4em;
+}
+
+main figure {
+    text-align: center;
+}
+
+footer {
+    border-top: 1px solid #004080;
+    border-bottom: 1px solid #004080;
+}

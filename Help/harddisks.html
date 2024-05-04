@@ -1,122 +1,119 @@
-<html>
-<head>
-  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=us-ascii">
+    <link rel="stylesheet" href="style.css">
+  </head>
 
-  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
-</head>
+  <body>
+    <header>
+      <div class="title">
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+        <h1>
+          BeebEm - BBC Micro and Master 128 Emulator
+        </h1>
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+      </div>
 
-<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+      <nav>
+        <div>
+          <a href="index.html">Home</a>
+        </div>
+        <div>
+          <a href="contents.html">Help Contents</a>
+        </div>
+        <div>
+          <a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a>
+        </div>
+          <div>
+          <a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a>
+        </div>
+      </nav>
+    </header>
 
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
+    <main>
+      <h1>Hard Disks</h1>
 
-      <td>
-        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
-      </td>
+      <p>
+        BeebEm supports emulated SCSI, SASI and IDE hard disks. You can only
+        have one of either SCSI or IDE hard drive enabled at a time.
+      </p>
 
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
-    </tr>
-  </table>
+      <p>
+        There are some preformatted ADFS disk images in the DiscIms
+        folder. The disks can be used in Model B (you will need to add a
+        suitable ADFS ROM to the ROM configuration, see below), B Plus or
+        Master 128 mode. To use the disk images enable hard drive emulation on
+        the Hardware menu and press A & F12 to boot in ADFS mode (ignore the
+        error for drive 4 if in Master mode). The hard disks then appear as
+        drives 0 to 3. Floppy disks can still be accessed as drives 4 and 5.
+      </p>
 
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="10%"></td>
+      <p>
+        You need to use the ADFS 1.30 ROM (BBC) and ADFS 1.50 ROM (Master) to
+        use the SCSI interface, and the ADFS 1.33 ROM (BBC) and ADFS 1.53 ROM
+        (Master) to use the IDE interface. HADFS 5.30 and later use the IDE
+        interface.
+      </p>
 
-      <td width="20%">
-        <p align="center"><a href="index.html">Home</a></p>
-      </td>
+      <p>
+        There are 4 10MB pre-formatted ADFS SCSI disk images in the DiscIms
+        folder (the scsi?.dat files). There are 4 4MB blank IDE drive images in
+        the DiscIms folder (the ide?.dat files).
+      </p>
 
-      <td width="20%">
-        <p align="center"><a href="contents.html">Help Contents</a></p>
-      </td>
+      <p>
+        There are some demo tunes in scsi0.dat which you can listen to with the
+        PLAY program.
+      </p>
 
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
-      </td>
+      <p>
+        There is also the sasi0.dat file which is a Torch Z80 hard disc image
+        (see the <a href="z80torch.html">Torch Z80</a> section).
+      </p>
 
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
-      </td>
+      <p>
+        You can use the Hardware &rarr; Select Hard Drive Folder menu option to
+        select an alternative folder containing hard disk image files. The
+        folder should contain scsi?.dat, sasi?.dat or ide?.dat files, together
+        with corresponding .dsc files.
+      </p>
 
-      <td width="10%"></td>
-    </tr>
-  </table>
+      <p>
+        Use the Options &rarr; Save Preferences menu option to save the setting
+        to the BeebEm preferences file.
+      </p>
 
-  <hr size="1" color="#004080" />
+      <p>
+        Note that if you replace the scsi?.dat files, the scsi?.dsc files may
+        also need changing to configure the size of the hard disk image. Bytes
+        in the scsi?.dsc file used by BeebEm (with offsets starting at 0):
+      </p>
 
-  <table width="100%" border="0" cellpadding="5" cellspacing="0">
-    <tr>
-      <td width="10%"></td>
+      <ul>
+        <li>Byte offset 13 = number of cyclinders (high byte)</li>
+        <li>Byte offset 14 = number of cyclinders (low byte)</li>
+        <li>Byte offset 15 = number of heads</li>
+      </ul>
 
-      <td width="80%">
-      <!-- Start of content -->
+      <p>
+        The number of 256 byte sectors in the hard disk image is calculated
+        as:
+      </p>
 
-<h1 align="center">Hard Disks</a></h1>
+      <blockquote>
+        Sectors = heads * (cyclinders high byte * 256 + cyclinders low byte)
+        * 33
+      </blockquote>
+    </main>
 
-<p>BeebEm supports emulated SCSI, SASI and IDE hard disks.  You can only
-have one of either SCSI or IDE hard drive enabled at a time.</p>
-
-<p>There are some preformatted ADFS disk images in the DiscIms
-directory. The disks can be used in Model B (you will need to add a suitable
-ADFS ROM to the ROM configuration, see below), B Plus or Master 128 mode.
-To use the disk images enable hard drive emulation on the Hardware menu and
-press A & F12 to boot in ADFS mode (ignore the error for drive 4 if in
-Master mode).  The hard disks then appear as drives 0 to 3.  Floppy disks
-can still be accessed as drives 4 and 5.</p>
-
-<p>You need to use the ADFS 1.30 ROM (BBC) and ADFS 1.50 ROM (Master) to use
-the SCSI interface, and the ADFS 1.33 ROM (BBC) and ADFS 1.53 ROM (Master)
-to use the IDE interface. HADFS 5.30 and later use the IDE interface.</p>
-
-<p>There are 4 10MB pre-formatted ADFS SCSI disk images in the discims
-directory (the scsi?.dat files). There are 4 4MB blank IDE drive images in
-the DiscIms directory (the ide?.dat files).</p>
-
-<p>There are some demo tunes in scsi0.dat which you can listen to with the
-PLAY program.</p>
-
-<p>There is also the sasi0.dat file which is a Torch Z80 hard disc image
-(see the <a href="z80torch.html">Torch Z80</a> section).</p>
-
-<p>You can use the Hardware &rarr; Select Hard Drive Folder menu option to
-select an alternative folder containing hard disk image files.  The folder
-should contain scsi?.dat, sasi?.dat or ide?.dat files, together with
-corresponding .dsc files.</p>
-
-<p>Use the Options &rarr; Save Preferences menu option to save the setting
-to the BeebEm preferences file</p>
-
-<p>Note that if you replace the scsi?.dat files, the scsi?.dsc files may also
-need changing to configure the size of the hard disk image.  Bytes in the
-scsi?.dsc file used by BeebEm (with offsets starting at 0):</p>
-
-<ul>
-<li>Byte offset 13 = number of cyclinders (high byte)</li>
-<li>Byte offset 14 = number of cyclinders (low byte)</li>
-<li>Byte offset 15 = number of heads</li>
-</ul>
-
-<p>The number of 256 byte sectors in the hard disk image is calculated
-as:</p>
-
-<p>Sectors = heads * (cyclinders high byte * 256 + cyclinders low byte) * 33</p>
-
-      <!-- End of content -->
-      </td>
-
-      <td width="10%"></td>
-    </tr>
-  </table>
-
-  <hr size="1" color="#004080" />
-  <p>Copyright &copy; 2020 Mike Wyatt</a></p>
-  <hr size="1" color="#004080" />
-</body>
+    <footer>
+      <p>Copyright &copy; 2020 Mike Wyatt</p>
+     </footer>
+  </body>
 </html>

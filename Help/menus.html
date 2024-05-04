@@ -1,940 +1,890 @@
-<html>
-<head>
-  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
-
-  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
-</head>
-
-<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
-
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
-
-      <td>
-        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
-      </td>
-
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
-    </tr>
-  </table>
-
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="10%"></td>
-
-      <td width="20%">
-        <p align="center"><a href="index.html">Home</a></p>
-      </td>
-
-      <td width="20%">
-        <p align="center"><a href="contents.html">Help Contents</a></p>
-      </td>
-
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
-      </td>
-
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
-      </td>
-
-      <td width="10%"></td>
-    </tr>
-  </table>
-
-  <hr size="1" color="#004080" />
-
-  <table width="100%" border="0" cellpadding="5" cellspacing="0">
-    <tr>
-      <td width="10%"></td>
-
-      <td width="80%">
-      <!-- Start of content -->
-
-<h1 align="center">Menu Options</a></h1>
-
-<h2>File Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Run Disc</td>
-    <td width="80%">Loads a disc image into drive 0 and boots (runs) it.</td>
-  </tr>
-
-  <tr>
-    <td width="20%">Load Disc 0 / 1</td>
-    <td width="80%">Load a disc image into drive 0 or 1.  Discs are write
-      protected when loaded to prevent any accidental data loss.
-      Boot a disc by pressing Shift & F12.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Load Tape</td>
-    <td width="80%">Load a tape image.
-      See the <a href="tapes.html">Tape Images</a> section for info on
-      running a tape.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">New Disc 0 / 1</td>
-    <td width="80%">Creates a new disc image in drive 0 or 1.  Use the file
-      type field to select the type of disc image to create.
-      New disc images are write enabled when created.  The images
-      have a standard 31 file catalogue by default.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Eject Disc 0 / 1</td>
-    <td width="80%">Ejects the disc image currently loaded.  The name of the
-      file currently loaded is shown next to the menu option.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Write Protect 0 / 1</td>
-    <td width="80%">Toggles write protection for drive 0 or 1.  Keep discs
-      write protected unless you intend to write to them.  Also see the
-      WARNING in the <a href="disks.html">Disc Images</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Write Protect on Load</td>
-    <td width="80%">Indicates if a disc should be write protected when it
-      is loaded.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Reset</td>
-    <td width="80%">"Power-On" reset for when a game crashes.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Load State / Save State</td>
-    <td width="80%">Load or save the state of BeebEm.  This is useful for
-      saving your position in a game for example.  State files
-      are put in the 'BeebState' directory by default.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Quick Load / Quick Save</td>
-    <td width="80%">Quickly load or save BeebEm state without having to
-      specify the filename.  The state is saved and loaded from
-      the 'BeebState/quicksave.uef' file.  Quicksave now keeps
-      the last 10 quicksave files so you can go back to an
-      earlier state using the load state menu option.
-      There are keyboard shortcuts for Quicksave (keypad /) and
-      Quickload (keypad *) so you can save and load without
-      having to go through the menus.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Screen Capture Options</td>
-    <td width="80%">Select the resolution and file format for screen
-      capture to file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Capture Screen</td>
-    <td width="80%">Capture the BeebEm screen to a file.  You will be
-      prompted for a file name.  Note that you can also use
-      the ALT+keypad 5 shortcut to capture the screen to file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Video Options</td>
-    <td width="80%">Select the resolution and how many frames get skipped for
-      video capture.  If video and audio get out of sync when
-      playing back then try selecting a lower resolution and
-      lower frame rate (more skipped frames).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Capture Video</td>
-    <td width="80%">Start video capture.  Video is recorded at a maximum of 25
-      frames per second at a resolution of 640x512.  Sound is
-      captured at the sample rate selected in the sound menu. If
-      sound is disabled when capture is started then sound is
-      not recorded in the AVI file.  You can edit the AVIs using
-      Movie Maker and save them as more compact WMV files.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">End Video</td>
-    <td width="80%">Stops video capture.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Exit</td>
-    <td width="80%">Exit BeebEm
-    </td>
-  </tr>
-</table>
-
-<h2>Edit Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Copy</td>
-    <td width="80%">Copy BASIC program to the clipboard. Sets the printer
-      destination to the clipboard, enables the printer
-      output and lists the current program.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Paste</td>
-    <td width="80%">Pastes the clipboard content into BeebEm.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Translate CR-LF</td>
-    <td width="80%">Adds/removes linefeed characters as text is copied and
-      pasted from the clipboard.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Import Files to Disc</td>
-    <td width="80%">Allows files to be added to a DFS disc image.
-      BeebEm will look for a .INF file containing file
-      attributes but files without .INF files can also
-      be imported.  If a file name matches one already
-      in the disc image the imported file will
-      overwrite the one in the image.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Export Files from Disc</td>
-    <td width="80%">Allows files to be exported from a DFS disc
-      image. BeebEm will create a .INF file for each
-      file exported to hold the file attributes.
-    </td>
-  </tr>
-</table>
-
-<h2>Comms Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Tape Speed</td>
-    <td width="80%">Select the speed at which tape software loads and
-      saves.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Rewind Tape</td>
-    <td width="80%">Reset the tape position to the start.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Unlock Tape</td>
-    <td width="80%">Removed the lock flag from files as they are loaded.
-      This enables you to *LOAD a locked file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Tape Control</td>
-    <td width="80%">Opens the tape control.
-      See the <a href="tapes.html">Tape Images</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Printer On/Off</td>
-    <td width="80%">Switches printer capture on or off.  To start and
-      stop printing within BeebEm use the VDU2 and VDU3
-      commands or Ctrl B and Ctrl C.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Printer Destination</td>
-    <td width="80%">Select where to send the printer output.
-      WARNING: if you direct printer output to an LPT
-      port that is not attached to anything BeebEm may
-      hang.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">RS423 On/Off</td>
-    <td width="80%">Switches the Beeb's serial communications port on
-      or off.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Select RS423 Destination</td>
-    <td width="80%">Select where to send the serial port data.
-      Select Microvitec Touch Screen to enable touch
-      screen support. Select an IP option to route data to a TCP/IP
-      port. See the <a href="serial.html">Serial Port</a> section.
-    </td>
-  </tr>
-</table>
-
-<h2>View Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Display Renderer</td>
-    <td width="80%">Selects how BeebEm draws to the screen.
-      DirectX9 will probably be the fastest.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">DirectX Smoothing</td>
-    <td width="80%">When using DirectDraw or DirectX9 enabling smoothing
-      will switch on bilinear interpolation.  This will
-      blur the display slightly which will give it a
-      smoother look.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Smooth Teletext Only</td>
-    <td width="80%">Enable DX smoothing for mode 7 only.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Speed and FPS On/Off</td>
-    <td width="80%">Show or hide the relative speed and the number of
-      frames per second.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Full Screen</td>
-    <td width="80%">Switch to full screen mode.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Maintain Aspect Ratio in Full Screen</td>
-    <td width="80%">Enables 5:4 aspect ratio output in
-      full-screen mode.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Window Sizes</td>
-    <td width="80%">Sets the window size.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">DirectX Full Screen Modes</td>
-    <td width="80%">Screen resolution to use in full screen
-      mode.  The higher resolutions may look better.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Monitor Type</td>
-    <td width="80%">Selects the type of monitor to emulate.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Hide Menu</td>
-    <td width="80%">Hides the menu.  Makes full screen mode look just
-      like a real Beeb!
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">LEDs</td>
-    <td width="80%">The Beeb keyboard and disc (1770 only) LEDs can be
-      shown at the bottom of the BeebEm window.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Motion Blur</td>
-    <td width="80%">Fades out contents of previous frames rather than
-      blanking them out (like phosphor persistence).  Can improve flicker in
-      some games.  The % intensities of the 8 frames can be edited in the
-      preferences file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Screen Reader Text View</td>
-    <td width="80%">Switch screen reader compatible text view on or off.
-      See the <a href="accessibility.html">Accessibility Features</a> section.
-    </td>
-  </tr>
-</table>
-
-<h2>Speed Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Real Time</td>
-    <td width="80%">Runs BeebEm at the same speed as a real BBC Micro.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Fixed Speed</td>
-    <td width="80%">Runs BeebEm at a fixed speed relative to a real BBC Micro.
-      The frame rate may need to be reduced for the higher
-      speeds.  The keypad +/- keys will change between fixed
-      speeds.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">50/25/10/5/1 FPS</td>
-    <td width="80%">Runs BeebEm at a constant frame rate.  The slower the frame
-      rate the faster BeebEm runs relative to a BBC Micro.
-    </td>
-  </tr>
-
-  <tr>
-      <td width="20%">Pause Emulation</td>
-      <td width="80%">
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=us-ascii">
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+    <header>
+      <div class="title">
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+        <h1>
+          BeebEm - BBC Micro and Master 128 Emulator
+        </h1>
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+      </div>
+
+      <nav>
+        <div>
+          <a href="index.html">Home</a>
+        </div>
+        <div>
+          <a href="contents.html">Help Contents</a>
+        </div>
+        <div>
+          <a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a>
+        </div>
+          <div>
+          <a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Menu Options</h1>
+
+      <section id="file">
+        <h2>File Menu</h2>
+
+        <h3>Run Disc</h3>
+
+        <p>Loads a disc image into drive 0 and boots (runs) it.</p>
+
+        <h3>Load Disc 0 / 1</h3>
+
+        <p>
+          Load a disc image into drive 0 or 1. Discs are write
+          protected when loaded to prevent any accidental data loss.
+          Boot a disc by pressing Shift & F12.
+        </p>
+
+        <h3>Load Tape</h3>
+
+        <p>
+          Load a tape image.
+          See the <a href="tapes.html">Tape Images</a> section for info on
+          running a tape.
+        </p>
+
+        <h3>New Disc 0 / 1</h3>
+
+        <p>
+          Creates a new disc image in drive 0 or 1. Use the file
+          type field to select the type of disc image to create.
+          New disc images are write enabled when created. The images
+          have a standard 31 file catalogue by default.
+        </p>
+
+        <h3>Eject Disc 0 / 1</h3>
+
+        <p>
+          Ejects the disc image currently loaded. The name of the
+          file currently loaded is shown next to the menu option.
+        </p>
+
+        <h3>Write Protect 0 / 1</h3>
+
+        <p>
+          Toggles write protection for drive 0 or 1. Keep discs
+          write protected unless you intend to write to them. Also see the
+          WARNING in the <a href="disks.html">Disc Images</a> section.
+        </p>
+
+        <h3>Write Protect on Load</h3>
+
+        <p>
+          Indicates if a disc should be write protected when it is loaded.
+        </p>
+
+        <h3>Reset</h3>
+
+        <p>
+          "Power-On" reset for when a game crashes.
+        </p>
+
+        <h3>Load State / Save State</h3>
+
+        <p>
+          Load or save the state of BeebEm. This is useful for
+          saving your position in a game for example. State files
+          are put in the 'BeebState' directory by default.
+        </p>
+
+        <h3>Quick Load / Quick Save</h3>
+
+        <p>
+          Quickly load or save BeebEm state without having to
+          specify the filename. The state is saved and loaded from
+          the 'BeebState/quicksave.uef' file. Quicksave now keeps
+          the last 10 quicksave files so you can go back to an
+          earlier state using the load state menu option.
+          There are keyboard shortcuts for Quicksave (keypad /) and
+          Quickload (keypad *) so you can save and load without
+          having to go through the menus.
+        </p>
+
+        <h3>Screen Capture Options</h3>
+
+        <p>
+          Select the resolution and file format for screen
+          capture to file.
+        </p>
+
+        <h3>Capture Screen</h3>
+
+        <p>
+          Capture the BeebEm screen to a file. You will be
+          prompted for a file name. Note that you can also use
+          the ALT+keypad 5 shortcut to capture the screen to file.
+        </p>
+
+        <h3>Video Options</h3>
+
+        <p>
+          Select the resolution and how many frames get skipped for
+          video capture. If video and audio get out of sync when
+          playing back then try selecting a lower resolution and
+          lower frame rate (more skipped frames).
+        </p>
+
+        <h3>Capture Video</h3>
+
+        <p>
+          Start video capture. Video is recorded at a maximum of 25
+          frames per second at a resolution of 640x512. Sound is
+          captured at the sample rate selected in the sound menu. If
+          sound is disabled when capture is started then sound is
+          not recorded in the AVI file. You can edit the AVIs using
+          Movie Maker and save them as more compact WMV files.
+        </p>
+
+        <h3>End Video</h3>
+
+        <p>
+          Stops video capture.
+        </p>
+
+        <h3>Exit</h3>
+
+        <p>
+          Exit BeebEm
+        </p>
+      </section>
+
+      <section id="edit">
+        <h2>Edit Menu</h2>
+
+        <h3>Copy</h3>
+
+        <p>
+          Copy BASIC program to the clipboard. Sets the printer
+          destination to the clipboard, enables the printer
+          output and lists the current program.
+        </p>
+
+        <h3>Paste</h3>
+
+        <p>
+          Pastes the clipboard content into BeebEm.
+        </p>
+
+        <h3>Translate CR-LF</h3>
+
+        <p>
+          Adds/removes linefeed characters as text is copied and
+          pasted from the clipboard.
+        </p>
+
+        <h3>Import Files to Disc</h3>
+
+        <p>
+          Allows files to be added to a DFS disc image.
+          BeebEm will look for a .INF file containing file
+          attributes but files without .INF files can also
+          be imported. If a file name matches one already
+          in the disc image the imported file will
+          overwrite the one in the image.
+        </p>
+
+        <h3>Export Files from Disc</h3>
+
+        <p>
+          Allows files to be exported from a DFS disc
+          image. BeebEm will create a .INF file for each
+          file exported to hold the file attributes.
+        </p>
+      </section>
+
+      <section id="comms">
+        <h2>Comms Menu</h2>
+
+        <h3>Tape Speed</h3>
+
+        <p>
+          Select the speed at which tape software loads and saves.
+        </p>
+
+        <h3>Rewind Tape</h3>
+
+        <p>
+          Reset the tape position to the start.
+        </p>
+
+        <h3>Unlock Tape</h3>
+
+        <p>
+          Removed the lock flag from files as they are loaded.
+          This enables you to *LOAD a locked file.
+        </p>
+
+        <h3>Tape Control</h3>
+
+        <p>
+          Opens the tape control.
+          See the <a href="tapes.html">Tape Images</a> section.
+        </p>
+
+        <h3>Printer On/Off</h3>
+
+        <p>
+          Switches printer capture on or off. To start and
+          stop printing within BeebEm use the VDU2 and VDU3
+          commands or Ctrl B and Ctrl C.
+        </p>
+
+        <h3>Printer Destination</h3>
+
+        <p>
+          Select where to send the printer output.
+          WARNING: if you direct printer output to an LPT
+          port that is not attached to anything BeebEm may
+          hang.
+        </p>
+
+        <h3>RS423 On/Off</h3>
+
+        <p>
+          Switches the Beeb's serial communications port on
+          or off.
+        </p>
+
+        <h3>Select RS423 Destination</h3>
+
+        <p>
+          Select where to send the serial port data.
+          Select Microvitec Touch Screen to enable touch
+          screen support. Select an IP option to route data to a TCP/IP
+          port. See the <a href="serial.html">Serial Port</a> section.
+        </p>
+      </section>
+
+      <section id="view">
+        <h2>View Menu</h2>
+
+        <h3>Display Renderer</h3>
+
+        <p>
+          Selects how BeebEm draws to the screen.
+          DirectX9 will probably be the fastest.
+        </p>
+
+        <h3>DirectX Smoothing</h3>
+
+        <p>
+          When using DirectDraw or DirectX9 enabling smoothing
+          will switch on bilinear interpolation. This will
+          blur the display slightly which will give it a
+          smoother look.
+        </p>
+
+        <h3>Smooth Teletext Only</h3>
+
+        <p>
+          Enable DX smoothing for mode 7 only.
+        </p>
+
+        <h3>Speed and FPS On/Off</h3>
+
+        <p>
+          Show or hide the relative speed and the number of
+          frames per second.
+        </p>
+
+        <h3>Full Screen</h3>
+
+        <p>
+          Switch to full screen mode.
+        </p>
+
+        <h3>Maintain Aspect Ratio in Full Screen</h3>
+
+        <p>
+          Enables 5:4 aspect ratio output in full-screen mode.
+        </p>
+
+        <h3>Window Sizes</h3>
+
+        <p>
+          Sets the window size.
+        </p>
+
+        <h3>DirectX Full Screen Modes</h3>
+
+        <p>
+          Screen resolution to use in full screen
+          mode. The higher resolutions may look better.
+        </p>
+
+        <h3>Monitor Type</h3>
+
+        <p>
+          Selects the type of monitor to emulate.
+        </p>
+
+        <h3>Hide Menu</h3>
+
+        <p>
+          Hides the menu. Makes full screen mode look just
+          like a real Beeb!
+        </p>
+
+        <h3>LEDs</h3>
+
+        <p>
+          The Beeb keyboard and disc (1770 only) LEDs can be
+          shown at the bottom of the BeebEm window.
+        </p>
+
+        <h3>Motion Blur</h3>
+
+        <p>
+          Fades out contents of previous frames rather than
+          blanking them out (like phosphor persistence). Can improve flicker in
+          some games. The % intensities of the 8 frames can be edited in the
+          preferences file.
+        </p>
+
+        <h3>Screen Reader Text View</h3>
+
+        <p>
+          Switch screen reader compatible text view on or off.
+          See the <a href="accessibility.html">Accessibility Features</a> section.
+        </p>
+      </section>
+
+      <section id="speed">
+        <h2>Speed Menu</h2>
+
+        <h3>Real Time</h3>
+
+        <p>
+          Runs BeebEm at the same speed as a real BBC Micro.
+        </p>
+
+        <h3>Fixed Speed</h3>
+
+        <p>
+          Runs BeebEm at a fixed speed relative to a real BBC Micro.
+          The frame rate may need to be reduced for the higher
+          speeds. The keypad +/- keys will change between fixed
+          speeds.
+        </p>
+
+        <h3>50/25/10/5/1 FPS</h3>
+
+        <p>
+          Runs BeebEm at a constant frame rate. The slower the frame
+          rate the faster BeebEm runs relative to a BBC Micro.
+        </p>
+
+        <h3>Pause Emulation</h3>
+
+        <p>
           Pauses the emulation.
-      </td>
-  </tr>
-</table>
-
-<h2>Sound Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Sound Streamer</td>
-    <td width="80%">
-      Select the sound streaming interface for BeebEm to use.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Sound On/Off</td>
-    <td width="80%">
-      Switch sound on or off.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Sound Chip</td>
-    <td width="80%">
-      Switches the sound chip on or off. Useful when you want
-      to hear the cassette sounds.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Sound Effects</td>
-    <td width="80%">
-      Options for switching on emulation of cassette motor, tape
-      software loading and disc drive noise.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">44.1/22.05/11.025 kHz</td>
-    <td width="80%">
-      Sets the sound sample rate. The higher it is the better
-      the sound quality but the slower BeebEm runs.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Full/High/Medium/Low Volume</td>
-    <td width="80%">
-      Set the sound volume.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Part Samples</td>
-    <td width="80%">
-      Smooths sound sampling. Using part samples usually
-      sounds better.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Exponential Volume</td>
-    <td width="80%">
-      Enables an exponential volume scale. Makes the
-      sound output better.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Text To Speech</td>
-    <td width="80%">
-      Opens a sub-menu with options that control text to speech generation.
-      See the <a href="accessibility.html">Accessibility Features</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Enable</td>
-    <td width="80%">
-      Switch text to speech generation on or off.
-      See the <a href="accessibility.html">Accessibility Features</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Speak Automatically</td>
-    <td width="80%">
-      Toggle auto-read of text as it is written to the BBC micro screen.
-      See the <a href="accessibility.html">Accessibility Features</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Speak Punctuation</td>
-    <td width="80%">
-      Toggle speaking of punctuation. Support for this feature depends
-      on the capabilities of the selected voice.
-      See the <a href="accessibility.html">Accessibility Features</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Voice</td>
-    <td width="80%">
-       Selects the voice used for text to speech.
-       See the <a href="accessibility.html">Accessibility Features</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Music 5000</td>
-    <td width="80%">
-      Enable/disable the Music 5000 Synthesiser emulation.
-    </td>
-  </tr>
-</table>
-
-<h2>AMX Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">On/Off</td>
-    <td width="80%">Switch AMX mouse on or off.  It may be useful to hide
-      the Windows cursor as well (see the Options menu).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">L+R for Middle</td>
-    <td width="80%">Simulates a middle button press when you press the left
-      and right buttons together.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Map to 160x256 / 320x256 / 640x256</td>
-    <td width="80%">Coordinate range to map the Windows mouse position to.
-      Pick the one that gives AMX mouse movements nearest to
-      your Windows mouse movements.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Adjust +50%/+30%/+10%/etc.</td>
-    <td width="80%">Percentage to increase or decrease the AMX map sizes.
-      Pick the one that gives AMX mouse movements that are
-      slightly greater than the corresponding Windows mouse
-      movements.  You can then match up the AMX and Windows
-      pointer positions by moving the Windows pointer to the
-      edges of the BeebEm Window.  This is easiest to do in
-      full screen mode.
-    </td>
-  </tr>
-</table>
-
-<h2>Hardware Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">BBC Model</td>
-    <td width="80%">Allows you to switch between the BBC Model B types
-      and Master 128 emulation.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Model B Floppy Controller</td>
-    <td width="80%">Allows you to select the Model B disc hardware
-      emulation.  To use an alternative floppy disc
-      controller (FDC) board you will need to use an
-      appropriate ROM (e.g. Acorn DFS2.26 for the Acorn
-      1770 board).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">65C02 Second Processor</td>
-    <td width="80%">Enables/disables the 65C02 second processor
-      emulation.  Note that in Master 128 mode the second
-      processor may be disabled in the CMOS settings.
-      To enable it type "*CONFIGURE TUBE" and press break (F12).
-      See the <a href="65c02copro.html">Acorn 65C02 Co-Processor</a>
-      section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Acorn Z80 Second Processor</td>
-    <td width="80%">Enables/disables the Acorn Z80 second processor
-      emulation.  See the <a href="z80copro.html">Acorn Z80 Co-Processor</a>
-      section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Torch Z80 Second Processor</td>
-    <td width="80%">Enables/disables the Torch Z80 second processor
-      emulation.  See the <a href="z80torch.html">Torch Z80 Co-Processor</a>
-      section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">ARM Second Processor</td>
-    <td width="80%">Enables/disables the ARM second processor
-      emulation.  See the <a href="armcopro.html">Acorn ARM Second Processor</a>
-      section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">ARM7TDMI Co-Processor</td>
-    <td width="80%">Enables/disables the Sprow ARM7TDMI co-processor
-      emulation.  See the <a href="sprowcopro.html">Sprow ARM7TDMI Co-Processor</a>
-      section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Allow SW RAM Write</td>
-    <td width="80%">Enable/disable writes for each sideways RAM slot.
-      See the <a href="roms.html">ROM Software</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">SW RAM Board On/Off</td>
-    <td width="80%">Enables Solidisk SW RAM board emulation.  The RAM
-      bank that is enabled for writing is selected via the
-      User VIA port B.  Set port B bits 0-3 to output
-      (e.g. ?&FE62=15) and select the bank via port B
-      (e.g. ?&FE60=4).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Edit ROM Configuration</td>
-    <td width="80%">Allow you to edit the ROM configuration.
-      Note that you will usually have to press the
-      Break key (F12) before a new ROM configuration
-      is recognised.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Basic Hardware Only</td>
-    <td width="80%">Switches off Analogue to Digital (Joystick) and
-      Serial (printing, comms & tape) emulation.  May
-      speed BeebEm up.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Teletext Half Mode</td>
-    <td width="80%">Uses half the number of screen lines for teletext
-      mode 7. May speed BeebEm up.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Econet On/Off</td>
-    <td width="80%">Switch Econet emulation on or off.
-      See the <a href="econet.html">Econet</a> section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Teletext Adapter On/Off</td>
-    <td width="80%">Switch Teletext adapter emulation on or off.  See the
-      <a href="teletext.html">Teletext</a> section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Select Teletext Data Source</td>
-    <td width="80%">Selects the capture files or packet server to use as
-      source data for the teletext adapter.  See the
-      <a href="teletext.html">Teletext</a> section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Set Keyboard Links</td>
-    <td width="80%">Sets the keyboard links, which allow you to change the
-      default screen mode and other options (Model B/B+ only).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Floppy Drive On/Off</td>
-    <td width="80%">Switch floppy drive emulation on or off.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">SCSI Hard Drive On/Off</td>
-    <td width="80%">Switch SCSI/SASI hard drive emulation on or off.
-      See the <a href="harddisks.html">Hard Disks</a> section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">IDE Hard Drive On/Off</td>
-    <td width="80%">Switch IDE hard drive emulation on or off.
-      See the <a href="harddisks.html">Hard Disks</a> section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Select Hard Drive Folder</td>
-    <td width="80%">Select the location for hard drive image files.
-      See the <a href="harddisks.html">Hard Disks</a> section for more details.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">User Port Breakout Box</td>
-    <td width="80%">Opens the user port breakout box dialog.  The
-      breakout box allows keys to be assigned for switch
-      box emulation.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">User Port RTC Module</td>
-    <td width="80%">Enables the real time clock module.  This is used
-      by the Econet file server software.
-    </td>
-  </tr>
-</table>
-
-<h2>Options Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">Joystick</td>
-    <td width="80%">Switch on or off PC/Beeb analogue joystick support.
-      Calibrate the joystick through the Windows control panel.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Analogue Mousestick</td>
-    <td width="80%">Switch on or off the mapping of Mouse position to
-      analogue Beeb joystick position.  Allows you to use the mouse
-      as a joystick. The left mouse button controls the joystick 1
-      fire button and the right mouse button controls the joystick 2
-      fire button.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Digital Mousestick</td>
-    <td width="80%">Switch on or off the mapping of Mouse movements to
-      digital Beeb joystick movements. The left mouse button controls
-      the joystick 1 fire button and the right mouse button controls
-      the joystick 2 fire button.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Freeze when inactive</td>
-    <td width="80%">When selected BeebEm will freeze when you switch
-      to another Window. This option is automatically switched off if you
-      open the <a href="debugger.html">Debugger</a> window.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Hide Cursor</td>
-    <td width="80%">Show or hide the mouse cursor while it is over the
-      BeebEm window (useful when using the Mousestick or
-      the AMX mouse).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Define User Key Mapping</td>
-    <td width="80%">Allows you to define your own keyboard mapping.
-      See the <a href="keyboard.html">Keyboard Mappings</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Load User Key Mapping</td>
-    <td width="80%">Loads a user defined key mapping from a file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Save User Key Mapping</td>
-    <td width="80%">Saves a user defined key mapping to a file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">User Defined Mapping</td>
-    <td width="80%">Selects the currently loaded user defined keyboard
-      mapping.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Default Keyboard Mapping</td>
-    <td width="80%">Selects the default keyboard map.
-      See the <a href="keyboard.html">Keyboard Mappings</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Logical Keyboard Mapping</td>
-    <td width="80%">Selects the logical keyboard map.
-      See the <a href="keyboard.html">Keyboard Mappings</a> section.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Map A,S to CAPS,CTRL</td>
-    <td width="80%">Maps the A and S keys to CAPS and CTRL keys on the
-      Beeb keyboard. This is good for some games (e.g. Zalaga).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Map F1-F10 to f0-f9</td>
-    <td width="80%">Selects a slightly different mapping for the
-      function keys.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Disable Keys</td>
-    <td width="80%">Allows you to disable selected keys within BeebEm.
-      The Windows (start) keys can also be disabled but
-      note that this affects all Windows applications,
-      not just BeebEm.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Debugger </td>
-    <td width="80%">Opens the debugger window (see the
-      <a href="debugger.html">Debugger</a> section).
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Save Preferences</td>
-    <td width="80%">Saves the BeebEm settings to the current
-      preferences file.  Settings include the selected
-      menu options, user defined keyboard, Window
-      position and CMOS RAM contents.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Autosave CMOS RAM</td>
-    <td width="80%">Automatically saves the Master 128 CMOS RAM
-      on exit from BeebEm.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Autosave All Preferences</td>
-    <td width="80%">Automatically saves all preferences on exit from
-      BeebEm.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Save Disc/Tape/State Folders</td>
-    <td width="80%">When enabled BeebEm will remember where
-      the folders where you last loaded or saved disc,
-      tape or state files.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">Select User Data Folder</td>
-    <td width="80%">Select the location for the BeebEm data files.
-      When creating a new folder BeebEm will copy a
-      default set of data files into the folder.
-      BeebEm will default to using the last folder selected.
-    </td>
-  </tr>
-</table>
-
-<h2>Help Menu</h2>
-
-<table width="100%" border="0" cellpadding="4" cellspacing="0">
-  <tr>
-    <td width="20%">View Help </td>
-    <td width="80%">View this file.
-    </td>
-  </tr>
-
-  <tr>
-    <td width="20%">About BeebEm</td>
-    <td width="80%">Show version number and date of BeebEm.
-    </td>
-  </tr>
-</table>
-
-
-      <!-- End of content -->
-      </td>
-
-      <td width="10%"></td>
-    </tr>
-  </table>
-
-  <hr size="1" color="#004080" />
-  <p>Copyright &copy; 2020 Mike Wyatt</a></p>
-  <hr size="1" color="#004080" />
-</body>
+        </p>
+      </section>
+
+      <section id="sound">
+        <h2>Sound Menu</h2>
+
+        <h3>Sound Streamer</h3>
+
+        <p>
+          Select the sound streaming interface for BeebEm to use.
+        </p>
+
+        <h3>Sound On/Off</h3>
+
+        <p>
+          Switch sound on or off.
+        </p>
+
+        <h3>Sound Chip</h3>
+
+        <p>
+          Switches the sound chip on or off. Useful when you want
+          to hear the cassette sounds.
+        </p>
+
+        <h3>Sound Effects</h3>
+
+        <p>
+          Options for switching on emulation of cassette motor, tape
+          software loading and disc drive noise.
+        </p>
+
+        <h3>44.1/22.05/11.025 kHz</h3>
+
+        <p>
+          Sets the sound sample rate. The higher it is the better
+          the sound quality but the slower BeebEm runs.
+        </p>
+
+        <h3>Full/High/Medium/Low Volume</h3>
+
+        <p>
+          Set the sound volume.
+        </p>
+
+        <h3>Part Samples</h3>
+
+        <p>
+          Smooths sound sampling. Using part samples usually
+          sounds better.
+        </p>
+
+        <h3>Exponential Volume</h3>
+
+        <p>
+          Enables an exponential volume scale. Makes the
+          sound output better.
+        </p>
+
+        <h3>Text To Speech</h3>
+
+        <p>
+          Opens a sub-menu with options that control text to speech generation.
+          See the <a href="accessibility.html">Accessibility Features</a> section.
+        </p>
+
+        <h3>Enable</h3>
+
+        <p>
+          Switch text to speech generation on or off.
+          See the <a href="accessibility.html">Accessibility Features</a> section.
+        </p>
+
+        <h3>Speak Automatically</h3>
+
+        <p>
+          Toggle auto-read of text as it is written to the BBC micro screen.
+          See the <a href="accessibility.html">Accessibility Features</a> section.
+        </p>
+
+        <h3>Speak Punctuation</h3>
+
+        <p>
+          Toggle speaking of punctuation. Support for this feature depends
+          on the capabilities of the selected voice.
+          See the <a href="accessibility.html">Accessibility Features</a> section.
+        </p>
+
+        <h3>Voice</h3>
+
+        <p>
+          Selects the voice used for text to speech.
+          See the <a href="accessibility.html">Accessibility Features</a> section.
+        </p>
+
+        <h3>Music 5000</h3>
+
+        <p>
+          Enable/disable the Music 5000 Synthesiser emulation.
+        </p>
+      </section>
+
+      <section id="amx">
+        <h2>AMX Menu</h2>
+
+        <h3>On/Off</h3>
+
+        <p>
+          Switch AMX mouse on or off. It may be useful to hide
+          the Windows cursor as well (see the Options menu).
+        </p>
+
+        <h3>L+R for Middle</h3>
+
+        <p>
+          Simulates a middle button press when you press the left
+          and right buttons together.
+        </p>
+
+        <h3>Map to 160x256 / 320x256 / 640x256</h3>
+
+        <p>
+          Coordinate range to map the Windows mouse position to.
+          Pick the one that gives AMX mouse movements nearest to
+          your Windows mouse movements.
+        </p>
+
+        <h3>Adjust +50%/+30%/+10%/etc.</h3>
+
+        <p>
+          Percentage to increase or decrease the AMX map sizes.
+          Pick the one that gives AMX mouse movements that are
+          slightly greater than the corresponding Windows mouse
+          movements. You can then match up the AMX and Windows
+          pointer positions by moving the Windows pointer to the
+          edges of the BeebEm Window. This is easiest to do in
+          full screen mode.
+        </p>
+      </section>
+
+      <section id="hardware">
+        <h2>Hardware Menu</h2>
+
+        <h3>BBC Model</h3>
+
+        <p>
+          Allows you to switch between the BBC Model B types
+          and Master 128 emulation.
+        </p>
+
+        <h3>Model B Floppy Controller</h3>
+
+        <p>
+          Allows you to select the Model B disc hardware
+          emulation. To use an alternative floppy disc
+          controller (FDC) board you will need to use an
+          appropriate ROM (e.g. Acorn DFS2.26 for the Acorn
+          1770 board).
+        </p>
+
+        <h3>65C02 Second Processor</h3>
+
+        <p>
+          Enables/disables the 65C02 second processor
+          emulation. Note that in Master 128 mode the second
+          processor may be disabled in the CMOS settings.
+          To enable it type "*CONFIGURE TUBE" and press break (F12).
+          See the <a href="65c02copro.html">Acorn 65C02 Co-Processor</a>
+          section for more details.
+        </p>
+
+        <h3>Acorn Z80 Second Processor</h3>
+
+        <p>
+          Enables/disables the Acorn Z80 second processor
+          emulation. See the <a href="z80copro.html">Acorn Z80 Co-Processor</a>
+          section for more details.
+        </p>
+
+        <h3>Torch Z80 Second Processor</h3>
+
+        <p>
+          Enables/disables the Torch Z80 second processor
+          emulation. See the <a href="z80torch.html">Torch Z80 Co-Processor</a>
+          section for more details.
+        </p>
+
+        <h3>ARM Second Processor</h3>
+
+        <p>
+          Enables/disables the ARM second processor
+          emulation. See the <a href="armcopro.html">Acorn ARM Second Processor</a>
+          section for more details.
+        </p>
+
+        <h3>ARM7TDMI Co-Processor</h3>
+
+        <p>
+          Enables/disables the Sprow ARM7TDMI co-processor
+          emulation. See the <a href="sprowcopro.html">Sprow ARM7TDMI Co-Processor</a>
+          section for more details.
+        </p>
+
+        <h3>Allow SW RAM Write</h3>
+
+        <p>
+          Enable/disable writes for each sideways RAM slot.
+          See the <a href="roms.html">ROM Software</a> section.
+        </p>
+
+        <h3>SW RAM Board On/Off</h3>
+
+        <p>
+          Enables Solidisk SW RAM board emulation. The RAM
+          bank that is enabled for writing is selected via the
+          User VIA port B. Set port B bits 0-3 to output
+          (e.g., ?&FE62=15) and select the bank via port B
+          (e.g., ?&FE60=4).
+        </p>
+
+        <h3>Edit ROM Configuration</h3>
+
+        <p>
+          Allow you to edit the ROM configuration.
+          Note that you will usually have to press the
+          Break key (F12) before a new ROM configuration
+          is recognised.
+        </p>
+
+        <h3>Basic Hardware Only</h3>
+
+        <p>
+          Switches off Analogue to Digital (Joystick) and
+          Serial (printing, comms & tape) emulation. May
+          speed BeebEm up.
+        </p>
+
+        <h3>Teletext Half Mode</h3>
+
+        <p>
+          Uses half the number of screen lines for teletext
+          mode 7. May speed BeebEm up.
+        </p>
+
+        <h3>Econet On/Off</h3>
+
+        <p>
+          Switch Econet emulation on or off.
+          See the <a href="econet.html">Econet</a> section for more details.
+        </p>
+
+        <h3>Teletext Adapter On/Off</h3>
+
+        <p>
+          Switch Teletext adapter emulation on or off. See the
+          <a href="teletext.html">Teletext</a> section for more details.
+        </p>
+
+        <h3>Select Teletext Data Source</h3>
+
+        <p>
+          Selects the capture files or packet server to use as
+          source data for the teletext adapter. See the
+          <a href="teletext.html">Teletext</a> section for more details.
+        </p>
+
+        <h3>Set Keyboard Links</h3>
+
+        <p>
+          Sets the keyboard links, which allow you to change the
+          default screen mode and other options (Model B/B+ only).
+        </p>
+
+        <h3>Floppy Drive On/Off</h3>
+
+        <p>
+          Switch floppy drive emulation on or off.
+        </p>
+
+        <h3>SCSI Hard Drive On/Off</h3>
+
+        <p>
+          Switch SCSI/SASI hard drive emulation on or off.
+          See the <a href="harddisks.html">Hard Disks</a> section for more details.
+        </p>
+
+        <h3>IDE Hard Drive On/Off</h3>
+
+        <p>
+          Switch IDE hard drive emulation on or off.
+          See the <a href="harddisks.html">Hard Disks</a> section for more details.
+        </p>
+
+        <h3>Select Hard Drive Folder</h3>
+
+        <p>
+          Select the location for hard drive image files.
+          See the <a href="harddisks.html">Hard Disks</a> section for more details.
+        </p>
+
+        <h3>User Port Breakout Box</h3>
+
+        <p>
+          Opens the user port breakout box dialog. The
+          breakout box allows keys to be assigned for switch
+          box emulation.
+        </p>
+
+        <h3>User Port RTC Module</h3>
+
+        <p>
+          Enables the real time clock module. This is used
+          by the Econet file server software.
+        </p>
+      </section>
+
+      <section id="options">
+        <h2>Options Menu</h2>
+
+        <h3>Joystick</h3>
+
+        <p>
+          Switch on or off PC/Beeb analogue joystick support.
+          Calibrate the joystick through the Windows control panel.
+        </p>
+
+        <h3>Analogue Mousestick</h3>
+
+        <p>
+          Switch on or off the mapping of Mouse position to
+          analogue Beeb joystick position. Allows you to use the mouse
+          as a joystick. The left mouse button controls the joystick 1
+          fire button and the right mouse button controls the joystick 2
+          fire button.
+        </p>
+
+        <h3>Digital Mousestick</h3>
+
+        <p>
+          Switch on or off the mapping of Mouse movements to
+          digital Beeb joystick movements. The left mouse button controls
+          the joystick 1 fire button and the right mouse button controls
+          the joystick 2 fire button.
+        </p>
+
+        <h3>Freeze when inactive</h3>
+
+        <p>
+          When selected BeebEm will freeze when you switch
+          to another Window. This option is automatically switched off if you
+          open the <a href="debugger.html">Debugger</a> window.
+        </p>
+
+        <h3>Hide Cursor</h3>
+
+        <p>
+          Show or hide the mouse cursor while it is over the
+          BeebEm window (useful when using the Mousestick or
+          the AMX mouse).
+        </p>
+
+        <h3>Define User Key Mapping</h3>
+
+        <p>
+          Allows you to define your own keyboard mapping.
+          See the <a href="keyboard.html">Keyboard Mappings</a> section.
+        </p>
+
+        <h3>Load User Key Mapping</h3>
+
+        <p>
+          Loads a user defined key mapping from a file.
+        </p>
+
+        <h3>Save User Key Mapping</h3>
+
+        <p>
+          Saves a user defined key mapping to a file.
+        </p>
+
+        <h3>User Defined Mapping</h3>
+
+        <p>
+          Selects the currently loaded user defined keyboard
+          mapping.
+        </p>
+
+        <h3>Default Keyboard Mapping</h3>
+
+        <p>
+          Selects the default keyboard map.
+          See the <a href="keyboard.html">Keyboard Mappings</a> section.
+        </p>
+
+        <h3>Logical Keyboard Mapping</h3>
+
+        <p>Selects the logical keyboard map.
+          See the <a href="keyboard.html">Keyboard Mappings</a> section.
+        </p>
+
+        <h3>Map A,S to CAPS,CTRL</h3>
+
+        <p>Maps the A and S keys to CAPS and CTRL keys on the
+          Beeb keyboard. This is good for some games (e.g., Zalaga).
+        </p>
+
+        <h3>Map F1-F10 to f0-f9</h3>
+
+        <p>
+          Selects a slightly different mapping for the function keys.
+        </p>
+
+        <h3>Disable Keys</h3>
+
+        <p>
+          Allows you to disable selected keys within BeebEm.
+          The Windows (start) keys can also be disabled but
+          note that this affects all Windows applications,
+          not just BeebEm.
+        </p>
+
+        <h3>Debugger </h3>
+
+        <p>
+          Opens the debugger window (see the
+          <a href="debugger.html">Debugger</a> section).
+        </p>
+
+        <h3>Save Preferences</h3>
+
+        <p>
+          Saves the BeebEm settings to the current
+          preferences file. Settings include the selected
+          menu options, user defined keyboard, Window
+          position and CMOS RAM contents.
+        </p>
+
+        <h3>Autosave CMOS RAM</h3>
+
+        <p>
+          Automatically saves the Master 128 CMOS RAM
+          on exit from BeebEm.
+        </p>
+
+        <h3>Autosave All Preferences</h3>
+
+        <p>
+          Automatically saves all preferences on exit from
+          BeebEm.
+        </p>
+
+        <h3>Save Disc/Tape/State Folders</h3>
+
+        <p>
+          When enabled BeebEm will remember where
+          the folders where you last loaded or saved disc,
+          tape or state files.
+        </p>
+
+        <h3>Select User Data Folder</h3>
+
+        <p>
+          Select the location for the BeebEm data files.
+          When creating a new folder BeebEm will copy a
+          default set of data files into the folder.
+          BeebEm will default to using the last folder selected.
+        </p>
+      </section>
+
+      <section id="help">
+        <h2>Help Menu</h2>
+
+        <h3>View Help </h3>
+
+        <p>
+          View this file.
+        </p>
+
+        <h3>About BeebEm</h3>
+
+        <p>
+          Show version number and date of BeebEm.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p>Copyright &copy; 2020 Mike Wyatt</p>
+     </footer>
+  </body>
 </html>

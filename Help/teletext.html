@@ -1,110 +1,104 @@
-<html>
-<head>
-  <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=us-ascii">
+    <link rel="stylesheet" href="style.css">
+  </head>
 
-  <meta http-equiv="Content-Type" content="text/html;charset=us-ascii" />
-</head>
+  <body>
+    <header>
+      <div class="title">
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+        <h1>
+          BeebEm - BBC Micro and Master 128 Emulator
+        </h1>
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+      </div>
 
-<body lang="en-GB" bgcolor="#FFFFC0" dir="ltr">
+      <nav>
+        <div>
+          <a href="index.html">Home</a>
+        </div>
+        <div>
+          <a href="contents.html">Help Contents</a>
+        </div>
+        <div>
+          <a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a>
+        </div>
+          <div>
+          <a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a>
+        </div>
+      </nav>
+    </header>
 
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
+    <main>
+      <h1>Acorn Teletext Adapter</h1>
 
-      <td>
-        <h1 align="center">BeebEm - BBC Micro and Master 128 Emulator</h1>
-      </td>
+      <p>
+        BeebEm emulates the Acorn ANE01 Teletext Adapter. It can be used in
+        two ways: either by loading files containing captured teletext signals,
+        or by connecting to packet servers providing real-time teletext signals.
+      </p>
 
-      <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
-                               align="middle" width="48" height="48" border="0" /></p>
-      </td>
-    </tr>
-  </table>
+      <p>
+        The ATS-3.0-1.rom must be added to the ROM configuration and
+        Hardware &rarr; Teletext Adapter On/Off enabled.
+      </p>
 
-  <table width="100%" border="0" cellpadding="2" cellspacing="2">
-    <tr>
-      <td width="10%"></td>
+      <p>
+        Use the Hardware &rarr; Select Teletext Data Source menu item to select
+        the capture files or packet server to use as source data for the
+        teletext adapter.
+      </p>
 
-      <td width="20%">
-        <p align="center"><a href="index.html">Home</a></p>
-      </td>
+      <h2>Capture Files</h2>
 
-      <td width="20%">
-        <p align="center"><a href="contents.html">Help Contents</a></p>
-      </td>
+      <p>
+        By default, teletext capture files named <em>txt0.dat</em>,
+        <em>txt1.dat</em>, <em>txt2.dat</em>, and <em>txt3.dat</em>, are read
+        from your <em>DiscIms</em> folder when <em>Capture Files</em> is
+        selected as the source. Use the Browse buttons to select the files to
+        use for each channel.
+      </p>
 
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a></p>
-      </td>
+      <p>
+        You can download some sample teletext data from
+        <a href="http://www.g7jjf.com/teletext.htm">Jon Welch's website</a>.
+      </p>
 
-      <td width="20%">
-        <p align="center"><a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a></p>
-      </td>
+      <figure>
+        <img src="teletext-files.png" width="520" height="229">
+      </figure>
 
-      <td width="10%"></td>
-    </tr>
-  </table>
+      <h2>Packet Server</h2>
 
-  <hr size="1" color="#004080" />
+      <p>
+        Real-time teletext packet input is supported using a simple TCP stream
+        interface. An example packet server written in Python is available
+        <a href="https://github.com/ZXGuesser/teletext-packet-server">on
+        GitHub</a>. By default BeebEm will attempt four connections to ports
+        19761 to 19764 on the host PC (IP address 127.0.0.1) for the four tuner
+        presets respectively.
+      </p>
 
-  <table width="100%" border="0" cellpadding="5" cellspacing="0">
-    <tr>
-      <td width="10%"></td>
+      <p>
+        Alternative IP addresses and ports can be set by changing the Source to
+        TCP/IP, but note that the teletext adapter emulation is only intended
+        for use over high bandwidth local network connections.
+      </p>
 
-      <td width="80%">
-      <!-- Start of content -->
+      <figure>
+        <img src="teletext-ip.png" width="520" height="229">
+      </figure>
+    </main>
 
-<h1 align="center">Acorn Teletext Adapter</a></h1>
-
-<p>BeebEm emulates the Acorn ANE01 Teletext Adapter. It can be used in two ways:
-either by loading files containing captured teletext signals, or by connecting to
-packet servers providing real-time teletext signals.</p>
-
-<p>The ATS-3.0-1.rom must be added to the ROM configuration and
-Hardware &rarr; Teletext Adapter On/Off enabled.</p>
-
-<p>Use the Hardware &rarr; Select Teletext Data Source menu item to select the
-capture files or packet server to use as source data for the teletext adapter.</p>
-
-<h2>Capture Files</h2>
-
-<p>By default, teletext capture files named <em>txt0.dat</em>, <em>txt1.dat</em>,
-<em>txt2.dat</em>, and <em>txt3.dat</em>, are read from your <em>DiscIms</em>
-folder when <em>Capture Files</em> is selected as the source. Use the Browse
-buttons to select the files to use for each channel.</p>
-
-<p>You can download some sample teletext data from
-<a href="http://www.g7jjf.com/teletext.htm">Jon Welch's website</a>.</p>
-
-<p align="center"><img src="teletext-files.png" width="520" height="229"></p>
-
-<h2>Packet Server</h2>
-
-<p>Real-time teletext packet input is supported using a simple TCP stream interface.
-An example packet server written in Python is available
-<a href="https://github.com/ZXGuesser/teletext-packet-server">on GitHub</a>.
-By default BeebEm will attempt four connections to ports 19761 to 19764 on the
-host PC (IP address 127.0.0.1) for the four tuner presets respectively.</p>
-
-<p>Alternative IP addresses and ports can be set by changing the Source to TCP/IP,
-but note that the teletext adapter emulation is only intended for use over high
-bandwidth local network connections.</p>
-
-<p align="center"><img src="teletext-ip.png" width="520" height="229"></p>
-
-      <!-- End of content -->
-      </td>
-
-      <td width="10%"></td>
-    </tr>
-  </table>
-
-  <hr size="1" color="#004080" />
-  <p>Copyright &copy; 2020 Mike Wyatt</a></p>
-  <hr size="1" color="#004080" />
-</body>
+    <footer>
+      <p>Copyright &copy; 2020 Mike Wyatt</p>
+     </footer>
+  </body>
 </html>
