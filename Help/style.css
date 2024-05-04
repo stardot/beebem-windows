@@ -76,6 +76,12 @@ main pre {
     font-family: 'Courier New', Courier, monospace;
 }
 
+kbd {
+    border-radius: 2px;
+    padding: 2px;
+    border: 1px solid black;
+}
+
 footer {
     border-top: 1px solid #004080;
     border-bottom: 1px solid #004080;
