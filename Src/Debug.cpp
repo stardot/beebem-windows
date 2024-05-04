@@ -2293,7 +2293,7 @@ static void DebugParseCommand(char *command)
 	while(command[0] == '\n' || command[0] == '\r' || command[0] == '\t' || command[0] == ' ')
 		command++;
 
-	if (strlen(command) == 0 || command[0] == '/' || command[0] == ';' || command[0] == '#')
+	if (command[0] == '\0' || command[0] == '/' || command[0] == ';' || command[0] == '#')
 		return;
 
 	DebugHistoryAdd(command);
@@ -3371,6 +3371,8 @@ int DebugDisassembleInstructionWithCPUStatus(int addr,
 static int DebugDisassembleCommand(int addr, int count, bool host)
 {
 	char opstr[80];
+	char *s = opstr;
+
 	int saddr = addr;
 
 //	if (DebugSource == DEBUG_NONE)
@@ -3387,39 +3389,40 @@ static int DebugDisassembleCommand(int addr, int count, bool host)
 		if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
 		{
 			char buff[64];
+			int Len = Z80_Disassemble(addr, buff);
 
-			sprintf(opstr, "%04X ", addr);
-			char *s = opstr + strlen(opstr);
-			int l = Z80_Disassemble(addr, buff);
+			s += sprintf(s, "%04X ", addr);
 
-			switch (l) {
+			switch (Len)
+			{
 				case 1:
-					sprintf(s, "%02X           ", DebugReadMem(addr, host));
+					s += sprintf(s, "%02X           ", DebugReadMem(addr, host));
 					break;
 				case 2:
-					sprintf(s, "%02X %02X        ", DebugReadMem(addr, host), DebugReadMem(addr+1, host));
+					s += sprintf(s, "%02X %02X        ", DebugReadMem(addr, host), DebugReadMem(addr+1, host));
 					break;
 				case 3:
-					sprintf(s, "%02X %02X %02X     ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host));
+					s += sprintf(s, "%02X %02X %02X     ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host));
 					break;
 				case 4:
-					sprintf(s, "%02X %02X %02X %02X  ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host), DebugReadMem(addr+3, host));
+					s += sprintf(s, "%02X %02X %02X %02X  ", DebugReadMem(addr, host), DebugReadMem(addr+1, host), DebugReadMem(addr+2, host), DebugReadMem(addr+3, host));
 					break;
 			}
 
-			strcat(opstr, buff);
+			strcpy(s, buff);
 
-			addr += l;
+			addr += Len;
 		}
 		else
 		{
 			addr += DebugDisassembleInstruction(addr, host, opstr);
 		}
+
 		DebugDisplayInfo(opstr);
 		count--;
 	}
 
-	return(addr - saddr);
+	return addr - saddr;
 }
 
 static void DebugMemoryDump(int addr, int count, bool host)
@@ -3432,24 +3435,27 @@ static void DebugMemoryDump(int addr, int count, bool host)
 
 	if (e > 0xffff)
 		e = 0xffff;
+
 	DebugDisplayInfo("       0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F 0123456789ABCDEF");
+
 	for (int a = s; a < e; a += 16)
 	{
 		char info[80];
-		sprintf(info, "%04X  ", a);
+		char* p = info;
+		p += sprintf(p, "%04X  ", a);
 
 		if (host && a >= 0xfc00 && a < 0xff00)
 		{
-			sprintf(info+strlen(info), "IO space");
+			p += sprintf(p, "IO space");
 		}
 		else
 		{
 			for (int b = 0; b < 16; ++b)
 			{
 				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80))
-					sprintf(info+strlen(info), "IO ");
+					p += sprintf(p, "IO ");
 				else
-					sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, host));
+					p += sprintf(p, "%02X ", DebugReadMem(a+b, host));
 			}
 
 			for (int b = 0; b < 16; ++b)
@@ -3459,7 +3465,8 @@ static void DebugMemoryDump(int addr, int count, bool host)
 					int v = DebugReadMem(a+b, host);
 					if (v < 32 || v > 127)
 						v = '.';
-					sprintf(info+strlen(info), "%c", v);
+					*p++ = (char)v;
+					*p = '\0';
 				}
 			}
 		}
