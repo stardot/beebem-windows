@@ -208,6 +208,7 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Master512CoPro.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Music5000.cpp" />
     <ClCompile Include="PALRom.cpp" />
     <ClCompile Include="Preferences.cpp" />
