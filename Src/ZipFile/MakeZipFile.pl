@@ -150,6 +150,8 @@ my @files = (
     'Help/state.html',
     'Help/tapes.html',
     'Help/teletext.html',
+    'Help/teletext-files.png',
+    'Help/teletext-ip.png',
     'Help/troubleshooting.html',
     'Help/uninstall.html',
     'Help/z80copro.html',

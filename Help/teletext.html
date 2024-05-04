@@ -10,7 +10,7 @@
   <table width="100%" border="0" cellpadding="2" cellspacing="2">
     <tr>
       <td width="100">
-        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro" 
+        <p align="center"><img src="beeb.gif" name="BeebEm" alt="BBC Micro"
                                align="middle" width="48" height="48" border="0" /></p>
       </td>
 
@@ -64,12 +64,37 @@
 either by loading files containing captured teletext signals, or by connecting to
 packet servers providing real-time teletext signals.</p>
 
-<p>Teletext capture files, named <em>txt0.dat</em>, <em>txt1.dat</em>, <em>txt2.dat</em>, and <em>txt3.dat</em>, are read from your <em>discimg</em> directory when <em>Capture files</em> is selected in <em>Hardware->Teletext data</em>. You can download some sample teletext data from Jon Welch's site - <a href="http://www.g7jjf.com/teletext.htm">teletext data</a>.</p>
+<p>The ATS-3.0-1.rom must be added to the ROM configuration and
+Hardware &rarr; Teletext Adapter On/Off enabled.</p>
 
-<p>Real-time teletext packet input is supported using a simple TCP stream interface. An example packet server written in Python is available <a href="https://github.com/ZXGuesser/teletext-packet-server">on GitHub</a>. By default BeebEm will attempt four connections to ports 19761 to 19764 on the host PC for the four tuner presets respectively when selecting <em>Hardware->Teletext data->IP: localhost</em>.</p>
-<p>Alternative addresses and ports set via the <em>Preferences.cfg</em> file can be used by selecting <em>Hardware->Teletext data->IP: Custom destination</em> (this is only intended for use over high bandwidth local network connections).</p>
+<p>Use the Hardware &rarr; Select Teletext Data Source menu item to select the
+capture files or packet server to use as source data for the teletext adapter.</p>
 
-<p>The ATS-3.0-1.rom must be added to the ROM configuration and <em>Hardware->Teletext Adapter On/Off</em> enabled.</p>
+<h2>Capture Files</h2>
+
+<p>By default, teletext capture files named <em>txt0.dat</em>, <em>txt1.dat</em>,
+<em>txt2.dat</em>, and <em>txt3.dat</em>, are read from your <em>DiscIms</em>
+folder when <em>Capture Files</em> is selected as the source. Use the Browse
+buttons to select the files to use for each channel.</p>
+
+<p>You can download some sample teletext data from
+<a href="http://www.g7jjf.com/teletext.htm">Jon Welch's website</a>.</p>
+
+<p align="center"><img src="teletext-files.png" width="520" height="229"></p>
+
+<h2>Packet Server</h2>
+
+<p>Real-time teletext packet input is supported using a simple TCP stream interface.
+An example packet server written in Python is available
+<a href="https://github.com/ZXGuesser/teletext-packet-server">on GitHub</a>.
+By default BeebEm will attempt four connections to ports 19761 to 19764 on the
+host PC (IP address 127.0.0.1) for the four tuner presets respectively.</p>
+
+<p>Alternative IP addresses and ports can be set by changing the Source to TCP/IP,
+but note that the teletext adapter emulation is only intended for use over high
+bandwidth local network connections.</p>
+
+<p align="center"><img src="teletext-ip.png" width="520" height="229"></p>
 
       <!-- End of content -->
       </td>

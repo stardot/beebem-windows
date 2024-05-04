@@ -424,6 +424,8 @@
     <Image Include="..\Help\beeb.gif" />
     <Image Include="..\Help\keyboard.jpg" />
     <Image Include="..\Help\startup.jpg" />
+    <Image Include="..\Help\teletext-files.png" />
+    <Image Include="..\Help\teletext-ip.png" />
     <Image Include="res\ADF.ico" />
     <Image Include="res\ADL.ico" />
     <Image Include="res\ADM.ico" />
