@@ -53,9 +53,9 @@
         readers such as JAWS can move the edit cursor around the screen and read
         the text in the control. Note that BeebEm can only convert text when in
         teletext mode 7. In other modes the text edit will contain the string
-        "Not in text mode". A special key press, ALT + ` (back quote) is
-        available to synchronise the cursor position in the text view with the
-        BBC Micro cursor position.
+        "Not in text mode". A special key press, <kbd>Alt</kbd> + <kbd>`</kbd>
+        (back quote) is available to synchronise the cursor position in the text
+        view with the BBC Micro cursor position.
       </p>
 
       <h2>Text to Speech</h2>
@@ -69,9 +69,9 @@
       </p>
 
       <p>
-        Text conversion is driven using the numeric keypad keys 0 to 9.
-        The key assignments are based on the basic JAWS screen reading keys
-        with some additions. The key assignments are:
+        Text conversion is driven using the numeric keypad keys <kbd>0</kbd> to
+        <kbd>9</kbd>. The key assignments are based on the basic JAWS screen
+        reading keys with some additions. The key assignments are:
       </p>
 
       <table>
@@ -80,122 +80,123 @@
           <th>Function</th>
         </tr>
         <tr>
-          <td>Num Pad 5</td>
+          <td><kbd>Num Pad 5</kbd></td>
           <td>Read current character</td>
         </tr>
         <tr>
-          <td>Num Pad 6</td>
+          <td><kbd>Num Pad 6</kbd></td>
           <td>Read next character</td>
         </tr>
         <tr>
-          <td>Num Pad 4</td>
+          <td><kbd>Num Pad 4</kbd></td>
           <td>Read prior character</td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 5</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 5</kbd></td>
           <td>Read current word</td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 6</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 6</kbd></td>
           <td>Read next word</td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 4</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 4</kbd></td>
           <td>Read prior word</td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 8</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 8</kbd></td>
           <td>Read current line</td>
         </tr>
         <tr>
-          <td>Num Pad 2</td>
+          <td><kbd>Num Pad 2</kbd></td>
           <td>Read next line</td>
         </tr>
         <tr>
-          <td>Num Pad 8</td>
+          <td><kbd>Num Pad 8</kbd></td>
           <td>Read prior line</td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 2</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 2</kbd></td>
           <td>Read entire screen (say all)</td>
         </tr>
         <tr>
-          <td>Alt + Num Pad 5</td>
+          <td><kbd>Alt</kbd> + <kbd>Num Pad 5</kbd></td>
           <td>Read current sentence</td>
         </tr>
         <tr>
-          <td>Alt + Num Pad 4</td>
+          <td><kbd>Alt</kbd> + <kbd>Num Pad 4</kbd></td>
           <td>Stop speaking and clear buffered speech</td>
         </tr>
         <tr>
-          <td>Alt + Num Pad 2</td>
+          <td><kbd>Alt</kbd> + <kbd>Num Pad 2</kbd></td>
           <td>Read next sentence</td>
         </tr>
         <tr>
-          <td>Alt + Num Pad 8</td>
+          <td><kbd>Alt</kbd> + <kbd>Num Pad 8</kbd></td>
           <td>Read prior sentence</td>
         </tr>
         <tr>
-          <td>Num Pad 9</td>
+          <td><kbd>Num Pad 9</kbd></td>
           <td>Move speech cursor to top of screen</td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 9</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 9</kbd></td>
           <td>Speak speech cursor position</td>
         </tr>
         <tr>
-          <td>Num Pad 3</td>
+          <td><kbd>Num Pad 3</kbd></td>
           <td>Move speech cursor to bottom of screen</td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 3</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 3</kbd></td>
           <td>
             Toggle speaking of punctuation. Support for this feature depends on
             the capabilities of the selected voice
           </td>
         </tr>
         <tr>
-          <td>Insert or Right-Ctrl + Num Pad 1</td>
+          <td><kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> + <kbd>Num Pad 1</kbd></td>
           <td>
             Toggle auto-read of text as it is written to the BBC micro screen
           </td>
         </tr>
         <tr>
-          <td>Num Pad 1</td>
+          <td><kbd>Num Pad 1</kbd></td>
           <td>Read any buffered auto-read text</td>
         </tr>
         <tr>
-          <td>Alt + Num Pad 9</td>
+          <td><kbd>Alt</kbd> + <kbd>Num Pad 9</kbd></td>
           <td>Increase speech rate</td>
         </tr>
         <tr>
-          <td>Alt + Num Pad 3</td>
+          <td><kbd>Alt</kbd> + <kbd>Num Pad 3</kbd></td>
           <td>Decrease speech rate</td>
         </tr>
       </table>
 
       <p>
         If you are running JAWS you may find that it intercepts some of the key
-        presses listed above and stops BeebEm from receiving them.
-        In particular it may intercept num pad 5 presses, so try num pad 7
-        instead as BeebEm interprets num pad 7 in the same way as 5. The BeebEm
-        key assignments will also work when Num Lock is switched on so you could
-        try that as well. You may be able to configure JAWS so it does not say
-        the num pad key names.
+        presses listed above and stops BeebEm from receiving them. In particular
+        it may intercept <kbd>Num Pad 5</kbd> presses, so try <kbd>Num Pad
+        7</kbd> instead as BeebEm interprets <kbd>Num Pad 7</kbd> in the same
+        way as <kbd>5</kbd>. The BeebEm key assignments will also work when
+        <kbd>Num Lock</kbd> is switched on so you could try that as well.
+        You may be able to configure JAWS so it does not say the num pad key
+        names.
       </p>
 
       <p>
         Under normal use you may find the auto-read function useful so this is
-        enabled by default (Insert or Right-Ctrl + Num Pad 1). This will read
-        text as it gets written to the BBC micro screen. This works when using
-        the BASIC command prompt and in many of the text based adventure games
-        available for the BBC micro.
+        enabled by default (<kbd>Insert</kbd> or <kbd>Right-Ctrl</kbd> +
+        <kbd>Num Pad 1</kbd>). This will read text as it gets written to the BBC
+        micro screen. This works when using the BASIC command prompt and in many
+        of the text based adventure games available for the BBC micro.
       </p>
 
       <p>
-        As with the text view support the ALT + ` (back quote) key press is
-        available to synchronise the speech cursor position with the BBC Micro
-        cursor position.
+        As with the text view support the <kbd>Alt</kbd> + <kbd>`</kbd> (back
+        quote) key press is available to synchronise the speech cursor position
+        with the BBC Micro cursor position.
       </p>
     </main>
 
