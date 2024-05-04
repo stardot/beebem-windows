@@ -101,22 +101,22 @@
         <h3>Load State / Save State</h3>
 
         <p>
-          Load or save the state of BeebEm. This is useful for
-          saving your position in a game for example. State files
-          are put in the 'BeebState' directory by default.
+          Load or save the state of BeebEm as a .uefstate file. This is useful
+          for saving your position in a game for example. State files are put in
+          the 'BeebState' directory by default.
         </p>
 
         <h3>Quick Load / Quick Save</h3>
 
         <p>
-          Quickly load or save BeebEm state without having to
-          specify the filename. The state is saved and loaded from
-          the 'BeebState/quicksave.uef' file. Quicksave now keeps
-          the last 10 quicksave files so you can go back to an
-          earlier state using the load state menu option.
-          There are keyboard shortcuts for Quicksave (keypad /) and
-          Quickload (keypad *) so you can save and load without
-          having to go through the menus.
+          Quickly load or save BeebEm state without having to specify the
+          filename. The state is saved and loaded from the
+          'BeebState/quicksave.uefstate' file. Quicksave now keeps the last 10
+          quicksave files so you can go back to an earlier state using the load
+          state menu option. There are keyboard shortcuts for <span
+          class="ui">Quick Save</span> (keypad /) and
+          <span class="ui">Quick Load</span> (keypad *) so you can save and
+          load without having to go through the menus.
         </p>
 
         <h3>Screen Capture Options</h3>
@@ -146,12 +146,12 @@
         <h3>Capture Video</h3>
 
         <p>
-          Start video capture. Video is recorded at a maximum of 25
-          frames per second at a resolution of 640x512. Sound is
-          captured at the sample rate selected in the sound menu. If
-          sound is disabled when capture is started then sound is
-          not recorded in the AVI file. You can edit the AVIs using
-          Movie Maker and save them as more compact WMV files.
+          Start video capture. Video is recorded at a maximum of 25 frames per
+          second at a resolution of 640x512. Sound is captured at the sample
+          rate selected in the <span class="ui">Sound</span> menu. If sound is
+          disabled when capture is started then sound is not recorded in the AVI
+          file. You can edit the AVIs using Movie Maker and save them as more
+          compact WMV files.
         </p>
 
         <h3>End Video</h3>
@@ -173,9 +173,9 @@
         <h3>Copy</h3>
 
         <p>
-          Copy BASIC program to the clipboard. Sets the printer
-          destination to the clipboard, enables the printer
-          output and lists the current program.
+          Copies the current BASIC program to the clipboard. Sets the printer
+          destination to the clipboard, enables the printer output and lists the
+          current program.
         </p>
 
         <h3>Paste</h3>
@@ -195,8 +195,8 @@
 
         <p>
           Allows files to be added to a DFS disc image.
-          BeebEm will look for a .INF file containing file
-          attributes but files without .INF files can also
+          BeebEm will look for a .inf file containing file
+          attributes but files without .inf files can also
           be imported. If a file name matches one already
           in the disc image the imported file will
           overwrite the one in the image.
@@ -206,7 +206,7 @@
 
         <p>
           Allows files to be exported from a DFS disc
-          image. BeebEm will create a .INF file for each
+          image. BeebEm will create a .inf file for each
           file exported to hold the file attributes.
         </p>
       </section>
@@ -287,7 +287,7 @@
         <h3>DirectX Smoothing</h3>
 
         <p>
-          When using DirectDraw or DirectX9 enabling smoothing
+          When using DirectDraw or DirectX9, enabling smoothing
           will switch on bilinear interpolation. This will
           blur the display slightly which will give it a
           smoother look.
@@ -296,7 +296,7 @@
         <h3>Smooth Teletext Only</h3>
 
         <p>
-          Enable DX smoothing for mode 7 only.
+          Enable DirectX smoothing for mode 7 only.
         </p>
 
         <h3>Speed and FPS On/Off</h3>
@@ -505,7 +505,7 @@
         <h3>On/Off</h3>
 
         <p>
-          Switch AMX mouse on or off. It may be useful to hide
+          Switches AMX mouse support on or off. It may be useful to hide
           the Windows cursor as well (see the Options menu).
         </p>
 
@@ -519,21 +519,19 @@
         <h3>Map to 160x256 / 320x256 / 640x256</h3>
 
         <p>
-          Coordinate range to map the Windows mouse position to.
-          Pick the one that gives AMX mouse movements nearest to
-          your Windows mouse movements.
+          Sets the coordinate range to map the Windows mouse position to. Pick
+          the one that gives AMX mouse movements nearest to your Windows mouse
+          movements.
         </p>
 
         <h3>Adjust +50%/+30%/+10%/etc.</h3>
 
         <p>
-          Percentage to increase or decrease the AMX map sizes.
-          Pick the one that gives AMX mouse movements that are
-          slightly greater than the corresponding Windows mouse
-          movements. You can then match up the AMX and Windows
-          pointer positions by moving the Windows pointer to the
-          edges of the BeebEm Window. This is easiest to do in
-          full screen mode.
+          Sets the percentage to increase or decrease the AMX map sizes. Pick
+          the one that gives AMX mouse movements that are slightly greater than
+          the corresponding Windows mouse movements. You can then match up the
+          AMX and Windows pointer positions by moving the Windows pointer to the
+          edges of the BeebEm Window. This is easiest to do in full screen mode.
         </p>
       </section>
 
@@ -553,7 +551,7 @@
           Allows you to select the Model B disc hardware
           emulation. To use an alternative floppy disc
           controller (FDC) board you will need to use an
-          appropriate ROM (e.g. Acorn DFS2.26 for the Acorn
+          appropriate ROM (e.g., Acorn DFS2.26 for the Acorn
           1770 board).
         </p>
 
@@ -620,7 +618,7 @@
         <h3>Edit ROM Configuration</h3>
 
         <p>
-          Allow you to edit the ROM configuration.
+          Allows you to edit the ROM configuration.
           Note that you will usually have to press the
           Break key (F12) before a new ROM configuration
           is recognised.
@@ -630,7 +628,7 @@
 
         <p>
           Switches off Analogue to Digital (Joystick) and
-          Serial (printing, comms & tape) emulation. May
+          Serial (printing, comms, and tape) emulation. May
           speed BeebEm up.
         </p>
 
@@ -644,14 +642,14 @@
         <h3>Econet On/Off</h3>
 
         <p>
-          Switch Econet emulation on or off.
+          Switches Econet emulation on or off.
           See the <a href="econet.html">Econet</a> section for more details.
         </p>
 
         <h3>Teletext Adapter On/Off</h3>
 
         <p>
-          Switch Teletext adapter emulation on or off. See the
+          Switches Teletext adapter emulation on or off. See the
           <a href="teletext.html">Teletext</a> section for more details.
         </p>
 
@@ -673,36 +671,35 @@
         <h3>Floppy Drive On/Off</h3>
 
         <p>
-          Switch floppy drive emulation on or off.
+          Switches floppy drive emulation on or off.
         </p>
 
         <h3>SCSI Hard Drive On/Off</h3>
 
         <p>
-          Switch SCSI/SASI hard drive emulation on or off.
+          Switches SCSI/SASI hard drive emulation on or off.
           See the <a href="harddisks.html">Hard Disks</a> section for more details.
         </p>
 
         <h3>IDE Hard Drive On/Off</h3>
 
         <p>
-          Switch IDE hard drive emulation on or off.
+          Switches IDE hard drive emulation on or off.
           See the <a href="harddisks.html">Hard Disks</a> section for more details.
         </p>
 
         <h3>Select Hard Drive Folder</h3>
 
         <p>
-          Select the location for hard drive image files.
+          Selects the location for hard drive image files.
           See the <a href="harddisks.html">Hard Disks</a> section for more details.
         </p>
 
         <h3>User Port Breakout Box</h3>
 
         <p>
-          Opens the user port breakout box dialog. The
-          breakout box allows keys to be assigned for switch
-          box emulation.
+          Opens the <span class="ui">User Port Breakout Box</span> dialog. The
+          breakout box allows keys to be assigned for switch box emulation.
         </p>
 
         <h3>User Port RTC Module</h3>
@@ -719,14 +716,14 @@
         <h3>Joystick</h3>
 
         <p>
-          Switch on or off PC/Beeb analogue joystick support.
-          Calibrate the joystick through the Windows control panel.
+          Switches on or off PC/Beeb analogue joystick support.
+          Calibrate the joystick through the Windows Control Panel.
         </p>
 
         <h3>Analogue Mousestick</h3>
 
         <p>
-          Switch on or off the mapping of Mouse position to
+          Switches on or off the mapping of mouse position to
           analogue Beeb joystick position. Allows you to use the mouse
           as a joystick. The left mouse button controls the joystick 1
           fire button and the right mouse button controls the joystick 2
@@ -736,7 +733,7 @@
         <h3>Digital Mousestick</h3>
 
         <p>
-          Switch on or off the mapping of Mouse movements to
+          Switches on or off the mapping of mouse movements to
           digital Beeb joystick movements. The left mouse button controls
           the joystick 1 fire button and the right mouse button controls
           the joystick 2 fire button.
@@ -745,15 +742,15 @@
         <h3>Freeze when inactive</h3>
 
         <p>
-          When selected BeebEm will freeze when you switch
-          to another Window. This option is automatically switched off if you
+          When selected, BeebEm will freeze when you switch
+          to another window. This option is automatically switched off if you
           open the <a href="debugger.html">Debugger</a> window.
         </p>
 
         <h3>Hide Cursor</h3>
 
         <p>
-          Show or hide the mouse cursor while it is over the
+          Shows or hides the mouse cursor while it is over the
           BeebEm window (useful when using the Mousestick or
           the AMX mouse).
         </p>
@@ -787,13 +784,13 @@
         <h3>Default Keyboard Mapping</h3>
 
         <p>
-          Selects the default keyboard map.
+          Selects the default keyboard mapping.
           See the <a href="keyboard.html">Keyboard Mappings</a> section.
         </p>
 
         <h3>Logical Keyboard Mapping</h3>
 
-        <p>Selects the logical keyboard map.
+        <p>Selects the logical keyboard mapping.
           See the <a href="keyboard.html">Keyboard Mappings</a> section.
         </p>
 
@@ -818,7 +815,7 @@
           not just BeebEm.
         </p>
 
-        <h3>Debugger </h3>
+        <h3>Debugger</h3>
 
         <p>
           Opens the debugger window (see the
@@ -830,7 +827,7 @@
         <p>
           Saves the BeebEm settings to the current
           preferences file. Settings include the selected
-          menu options, user defined keyboard, Window
+          menu options, user defined keyboard, window
           position and CMOS RAM contents.
         </p>
 
@@ -851,7 +848,7 @@
         <h3>Save Disc/Tape/State Folders</h3>
 
         <p>
-          When enabled BeebEm will remember where
+          When enabled, BeebEm will remember where
           the folders where you last loaded or saved disc,
           tape or state files.
         </p>
@@ -859,7 +856,7 @@
         <h3>Select User Data Folder</h3>
 
         <p>
-          Select the location for the BeebEm data files.
+          Selects the location for the BeebEm data files.
           When creating a new folder BeebEm will copy a
           default set of data files into the folder.
           BeebEm will default to using the last folder selected.
@@ -869,16 +866,16 @@
       <section id="help">
         <h2>Help Menu</h2>
 
-        <h3>View Help </h3>
+        <h3>View Help</h3>
 
         <p>
-          View this file.
+          Opens the BeebEm help documentation.
         </p>
 
         <h3>About BeebEm</h3>
 
         <p>
-          Show version number and date of BeebEm.
+          Shows the BeebEm version number and release date.
         </p>
       </section>
     </main>

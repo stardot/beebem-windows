@@ -42,9 +42,10 @@
       <p>
         The Debugger is a 6502/Z80/ARM disassembler and monitoring tool. When
         the debug window is first opened it leaves BeebEm running. It's best to
-        leave the 'Freeze when inactive' option switched off (which happens
-        automatically when you open the Debugger window) otherwise BeebEm will
-        only run when you bring the main window to the front.
+        leave the <span class="ui">Freeze when inactive</span> option switched
+        off (which happens automatically when you open the Debugger window)
+        otherwise BeebEm will only run when you bring the main window to the
+        front.
       </p>
 
       <p>
@@ -58,7 +59,7 @@
         </tr>
 
         <tr>
-          <td>Break</td>
+          <td><span class="ui">Break</span></td>
           <td>
             Stops BeebEm running. If currently executing in the OS or ROM area
             and OS/ROM debug is not enabled then BeebEm will only stop when
@@ -68,47 +69,47 @@
         </tr>
 
         <tr>
-          <td>Continue/Cancel</td>
+          <td><span class="ui">Continue</span> / <span class="ui">Cancel</span></td>
           <td>Starts BeebEm running</td>
         </tr>
 
         <tr>
-          <td>Trace</td>
+          <td><span class="ui">Trace</span></td>
           <td>Shows accesses to the various bits of hardware</td>
         </tr>
 
         <tr>
-          <td>Break</td>
+          <td><span class="ui">Break</span></td>
           <td>Breaks execution when the hardware is accessed</td>
         </tr>
 
         <tr>
-          <td>BRK instruction</td>
+          <td><span class="ui">BRK instruction</span></td>
           <td>Breaks when the BRK instruction is executed</td>
         </tr>
 
         <tr>
-          <td>Attach to Host</td>
+          <td><span class="ui">Attach to Host</span></td>
           <td>Debugs the host processor</td>
         </tr>
 
         <tr>
-          <td>Attach to Parasite</td>
+          <td><span class="ui">Attach to Parasite</span></td>
           <td>Debugs the second processor</td>
         </tr>
 
         <tr>
-          <td>Attach to ROM</td>
+          <td><span class="ui">Attach to ROM</span></td>
           <td>Debugs the ROM code (addresses 8000-BFFF)</td>
         </tr>
 
         <tr>
-          <td>Attach to OS</td>
+          <td><span class="ui">Attach to OS</span></td>
           <td>Debugs the OS code (addresses C000-FFFF)</td>
         </tr>
 
         <tr>
-          <td>Breakpoints</td>
+          <td><span class="ui">Breakpoints</span></td>
           <td>
             Breaks execution when the address hits one of the configured
             breakpoints
@@ -116,28 +117,29 @@
         </tr>
 
         <tr>
-          <td>Watches</td>
+          <td><span class="ui">Watches</span></td>
           <td>Shows contents of configured memory locations</td>
         </tr>
 
         <tr>
-          <td>Execute Command</td>
+          <td><span class="ui">Execute Command</span></td>
           <td>Runs the debug command entered into the command box</td>
         </tr>
       </table>
 
       <p>
-        To get a list of the debug commands available type ? into the Execute
-        Command box. Note that all values are specified in hex!
+        To get a list of the debug commands available type ? into the
+        <span class="ui">Execute Command</span> box. Note that all values are
+        specified in hex!
       </p>
 
       <p>
         The disassembler shows the following information:
       </p>
 
-      <p>
+      <blockquote>
         <b>Address OPCodes Instruction A X Y SR Flags</b>
-      </p>
+      </blockquote>
 
       <p>
         Parasite instructions are shifted right so it's easier to follow both

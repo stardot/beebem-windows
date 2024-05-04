@@ -41,13 +41,14 @@
 
       <p>
         BeebEm emulates two double sided floppy disc drives, know as drive 0
-        (second side 2) and drive 1 (second side 3).  You can load a disc image
-        file into either drive 0 or 1 using the File menu in BeebEm.
+        (second side 2) and drive 1 (second side 3). You can load a disc image
+        file into either drive 0 or 1 using the <span class="ui">File</span>
+        menu in BeebEm.
       </p>
 
       <p>
         Once a disc image is loaded you can use the BASIC interpreter and BBC
-        operating system to access the files in the disc.  Some useful disc
+        operating system to access the files in the disc. Some useful disc
         commands are:
       </p>
 
@@ -119,7 +120,7 @@
       <p>
         Many disc images that can be downloaded from the Internet have been
         set up to be "bootable" (i.e., configured to run a particular program).
-        To boot a disc press <b>Shift & F12</b> (i.e., hold the shift key down
+        To boot a disc press <b>Shift & F12</b> (i.e., hold the Shift key down
         and press F12). If a disc does not boot it is probably because it has
         not been set up to be bootable. Non-bootable disc can be accessed using
         the commands shown above.
@@ -128,15 +129,16 @@
       <p>
         If you want to make a disc bootable you will need to create a file
         called !BOOT containing the commands to execute when the disc is booted.
-        The *BUILD command can be used to create the !BOOT file.  The disc image
+        The *BUILD command can be used to create the !BOOT file. The disc image
         file also needs to be configured to run the !BOOT file when its booted.
         This can be done by running the command <b>*OPT4,3</b>.
       </p>
 
       <p>
         If you want to write data to a disc image (e.g., save a game position)
-        you will need to make sure that 'Write Protect' is switched off on the
-        File menu for the drive you are using.  Disc writes will then write data
+        you will need to make sure that <span class="ui">Write Protect</span> is
+        switched off on the <span class="ui">File &rarr; Disc Options</span>
+        menu for the drive you are using. Disc writes will then write data
         straight back to the image file on your PC disc.
       </p>
 
@@ -148,41 +150,43 @@
       <h2>Modifying Disc Image Files</h2>
 
       <p>
-        The BeebEm File menu provides options to create new disc image files.
-        The Edit menu provides options to export and import files from/to a disc
-        image file.
+        The BeebEm <span class="ui">File menu</span> provides options to create
+        new disc image files. The Edit menu provides options to export and
+        import files from/to a disc image file.
       </p>
 
       <p>
         When importing and exporting files BeebEm will look for or create an
-        additional file with a '.INF' extension to accompany the data file.
-        The .INF file contains load address, execution address and file length
-        information for the data file.  The format of the data in the .INF file
+        additional file with a '.inf' extension to accompany the data file.
+        The .inf file contains load address, execution address and file length
+        information for the data file. The format of the data in the .inf file
         is:
       </p>
 
-      <p>
+      <blockquote>
         <b>&lt;file name&gt; &lt;load address&gt;
         &lt;execution address&gt; &lt;file length&gt;</b>
-      </p>
+      </blockquote>
 
       <p>
         The file name must include the DFS directory prefix for the file and it
-        must be 9 characters long.  The addresses and length are 6 digit hex
+        must be 9 characters long. The addresses and length are 6 digit hex
         numbers, e.g.:
       </p>
 
-      <pre>
-        A.DARE    004000 006691 002700
-        $.CHUCKIE 001100 0029AB 002700
-      </pre>
+      <blockquote>
+        <code>
+          A.DARE    004000 006691 002700
+          $.CHUCKIE 001100 0029AB 002700
+        </code>
+      </blockquote>
 
       <h2>ADFS Discs</h2>
 
       <p>
         If you want to use ADFS discs in the Master 128 mode then load an ADFS
         disk image (such as the MasterWelcome.adl image in the DiscIms folder)
-        and type <b>*ADFS</b> to mount it.  You can also press A & F12 to mount
+        and type <b>*ADFS</b> to mount it. You can also press A & F12 to mount
         an ADFS disc.
       </p>
 
@@ -250,7 +254,7 @@
       </ol>
 
       <p>
-        The new image will now have a valid catalogue.  If you are using double
+        The new image will now have a valid catalogue. If you are using double
         sided images then remember to format and copy both sides (the second
         sides of disc 0 and 1 are 2 and 3).
       </p>

@@ -48,20 +48,20 @@
       </p>
 
       <p>
-        The serial IP features are selected via the RS423 dialog box, accessed
-        from the Select RS423 Destination menu option.
-
-        You can use the "tcpser" package, which emulates a modem. Select
-        127.0.0.1 and 25232 as the IP Address and Port. Download a prebuilt
-        Windows binary of
+        The serial IP features are selected via the <span
+        class="ui">RS423</span> dialog box, accessed from the <span
+        class="ui"></span>Select RS423 Destination</span> menu option. You can
+        use the "tcpser" package, which emulates a modem. Select 127.0.0.1 and
+        25232 as the <span class="ui">IP Address</span> and <span
+        class="ui">Port</span>. Download a prebuilt Windows binary of
         <a href="https://csdb.dk/release/?id=171299">tcpser.zip</a>. The tcpser
         source code is available
         <a href="https://github.com/FozzTexx/tcpser">here</a>.
       </p>
 
       <p>
-        Run the follwoing command fire up an instance suitable for the localhost
-        setting to talk to:
+        Run the following command to start up an instance suitable for the
+        localhost setting to talk to:
       </p>
 
       <p>
@@ -78,10 +78,13 @@
 
       <p>
         Add the Commstar.rom to your ROM configuration (see
-        <a href="roms.html">ROM Software</a>) and start up BeebEm.
-        In the RS423 dialog box, select "IP", IP Address "127.0.0.1", and Port
-        "25232". Click OK to close the dialog box then select "RS432 On/Off"
-        from the Comms menu. Type *COMMSTAR to start CommStar. In Commstar:
+        <a href="roms.html">ROM Software</a>) and start up BeebEm. In the <span
+        class="ui">RS423</span> dialog box, select <span class="ui">IP</span>,
+        <span class="ui">IP Address</span> "127.0.0.1", and <span
+        class="ui">Port</span> "25232". Click <span class="ui">OK</span> to
+        close the dialog box then select <span class="ui">RS432 On/Off</span>
+        from the <span class="ui">Comms</span> menu. Type *COMMSTAR to start
+        CommStar. In Commstar:
       </p>
 
       <ul>
@@ -100,32 +103,32 @@
 
       <p>
         To make a direct connection to a server, put the server's IP address
-        and port into the RS423 dialog box.
+        and port into the <span class="ui">RS423</span> dialog box.
       </p>
 
       <p>
-        An additional option, "IP232 Mode", determines if the handshake lines
-        are sent down the TCP/IP link or just generated locally from the
-        presence of a valid connection.
+        An additional option, <span class="ui">IP232 Mode</span>, determines if
+        the handshake lines are sent down the TCP/IP link or just generated
+        locally from the presence of a valid connection.
       </p>
 
       <p>
-        A second additional option, "IP232 Raw comms", disables special
-        processing of charater 255 (used with tcpser, so leave Raw mode off
-        when using tcpser).
+        A second additional option, <span class="ui">IP232 Raw comms</span>,
+        disables special processing of charater 255 (used with tcpser, so leave
+        Raw mode off when using tcpser).
       </p>
 
       <p>
-        If on startup, or when ticking the "RS423 On/Off" menu option, BeebEm
-        cannot connect to the specified server, or if it loses connection
-        subsequently, it will report an error and disable RS423. Select the
-        menu option again to try to re-connect and re-enable.
+        If on startup, or when ticking the <span class="ui">RS423 On/Off</span>
+        menu option, BeebEm cannot connect to the specified server, or if it
+        loses connection subsequently, it will report an error and disable
+        RS423. Select the menu option again to try to re-connect and re-enable.
       </p>
 
       <p>
-        BeebEm will emulate the correct RX baud rate. This makes for a very
-        realistic experience when talking at 1200 baud to a Viewdata host! TX is
-        just sent out as fast as it will go.
+        BeebEm will emulate the correct receive baud rate. This makes for a very
+        realistic experience when talking at 1200 baud to a Viewdata host!
+        Transmitted data is just sent out as fast as it will go.
       </p>
     </main>
 
