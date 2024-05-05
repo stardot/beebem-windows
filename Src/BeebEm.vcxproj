@@ -75,19 +75,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);C:\Duncan\Emulation\beebem-windows\Src\gdb_server\headers;</IncludePath>
+    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);$(ProjectDir)\gdb_server\headers;$(MSBuildProgramFiles32)\\Microsoft DirectX SDK (June 2010)\Include\</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);C:\Duncan\Emulation\beebem-windows\Src\gdb_server\headers;</IncludePath>
+    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);$(ProjectDir)\gdb_server\headers;$(MSBuildProgramFiles32)\\Microsoft DirectX SDK (June 2010)\Include\</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);C:\Duncan\Emulation\beebem-windows\Src\gdb_server\headers;</IncludePath>
+    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);$(ProjectDir)\gdb_server\headers;$(MSBuildProgramFiles32)\\Microsoft DirectX SDK (June 2010)\Include\</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);C:\Duncan\Emulation\beebem-windows\Src\gdb_server\headers;</IncludePath>
+    <IncludePath>$(DXSDK_DIR)\Include;$(IncludePath);$(ProjectDir)\gdb_server\headers;$(MSBuildProgramFiles32)\\Microsoft DirectX SDK (June 2010)\Include\</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -202,6 +202,7 @@
     <ClCompile Include="gdb_server\gdb_server.cpp" />
     <ClCompile Include="gdb_server\rsp_connection.cpp" />
     <ClCompile Include="gdb_server\rsp_packet.cpp" />
+    <ClCompile Include="gdb_server_utils.cpp" />
     <ClCompile Include="IC32Latch.cpp" />
     <ClCompile Include="Ide.cpp" />
     <ClCompile Include="KeyboardLinksDialog.cpp" />

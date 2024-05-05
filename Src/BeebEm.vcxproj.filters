@@ -324,6 +324,9 @@
     <ClCompile Include="gdb_server\rsp_packet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gdb_server_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h">
