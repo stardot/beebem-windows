@@ -65,6 +65,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 	// Create serial threads
 	SerialInit();
 
+	mainWin->GdbStartServer();
+
 	for (;;)
 	{
 		MSG msg;

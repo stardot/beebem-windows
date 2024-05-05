@@ -33,7 +33,7 @@
 #include <cstdint>
 #include <rsp_connection.hpp>
 #include <rsp_packet.hpp>
-#include <simulation_controller_interface.hpp>
+#include <i_simulation_control.hpp>
 
 //! Module implementing a GDB RSP server.
 
@@ -48,7 +48,7 @@ public:
    * @param simCtrl Pointer to simulation controller
    * @param rspPort gdb server listening port
    */
-  GdbServer(SimulationControlInterface* simCtrl, int rspPort);
+  GdbServer(ISimulationControl* simCtrl, int rspPort);
   ~GdbServer();
 
   // SystemC thread to listen for and service RSP requests
@@ -70,7 +70,7 @@ private:
   static const uint32_t EXCEPT_RESET = 0x100;  //!< Reset
 
   //! Simulation control interface
-  SimulationControlInterface* m_simCtrl;
+  ISimulationControl* m_simCtrl;
 
   //! Our associated RSP interface (which we create)
   RspConnection* rsp;

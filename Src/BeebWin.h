@@ -383,6 +383,7 @@ public:
 
 	// Debugger
 	void OpenDebugWindow();
+	void GdbStartServer();
 
 	bool InitTextToSpeech();
 	void TextToSpeechResetState();

@@ -5335,6 +5335,187 @@ void BeebWin::OpenDebugWindow()
 	DebugOpenDialog(hInst, m_hWnd);
 }
 
+#include <chrono>
+#include <thread>
+#include <i_simulation_control.hpp>
+#include <gdb_server.hpp>
+
+#pragma once
+
+class _6502SimControl : public ISimulationControl {
+public:
+    // Control and report
+    void kill() override;
+    void reset() override;
+    void stall() override;
+    void unstall() override;
+    bool isStalled() override;
+    void step() override;
+
+    // Breakpoints
+    void insertBreakpoint(unsigned addr) override;
+    void removeBreakpoint(unsigned addr) override;
+
+    // Register access
+    uint32_t readReg(std::size_t num) override;
+    void writeReg(std::size_t num, uint32_t value) override;
+
+    // Memory access
+    bool readMem(uint8_t* out, unsigned addr, std::size_t len) override;
+    bool writeMem(uint8_t* src, unsigned addr, std::size_t len) override;
+
+    // Target info
+    uint32_t pcRegNum() override;
+    uint32_t nRegs() override;
+    uint32_t wordSize() override;
+
+    // Control debugger
+    void stopServer() override;
+    bool shouldStopServer() override;
+    bool isServerRunning() override;
+    void setServerRunning(bool status) override;
+
+    // Target utilities
+    uint32_t htotl(uint32_t hostVal) override;
+    uint32_t ttohl(uint32_t targetVal) override;
+};
+
+
+// Control and report
+void _6502SimControl::kill() {
+    // TODO: Implement kill functionality
+    // ...
+}
+
+void _6502SimControl::reset() {
+    // TODO: Implement reset functionality
+    // ...
+}
+
+void _6502SimControl::stall() {
+    // TODO: Implement stall functionality
+    // ...
+}
+
+void _6502SimControl::unstall() {
+    // TODO: Implement unstall functionality
+    // ...
+}
+
+bool _6502SimControl::isStalled() {
+    // TODO: Implement isStalled functionality
+    // ...
+    return false; // Placeholder return value
+}
+
+void _6502SimControl::step() {
+    // TODO: Implement step functionality
+    // ...
+}
+
+// Breakpoints
+void _6502SimControl::insertBreakpoint(unsigned addr) {
+    // TODO: Implement insertBreakpoint functionality
+    // ...
+}
+
+void _6502SimControl::removeBreakpoint(unsigned addr) {
+    // TODO: Implement removeBreakpoint functionality
+    // ...
+}
+
+// Register access
+uint32_t _6502SimControl::readReg(std::size_t num) {
+    // TODO: Implement readReg functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+void _6502SimControl::writeReg(std::size_t num, uint32_t value) {
+    // TODO: Implement writeReg functionality
+    // ...
+}
+
+// Memory access
+bool _6502SimControl::readMem(uint8_t* out, unsigned addr, std::size_t len) {
+    // TODO: Implement readMem functionality
+    // ...
+    return false; // Placeholder return value
+}
+
+bool _6502SimControl::writeMem(uint8_t* src, unsigned addr, std::size_t len) {
+    // TODO: Implement writeMem functionality
+    // ...
+    return false; // Placeholder return value
+}
+
+// Target info
+uint32_t _6502SimControl::pcRegNum() {
+    // TODO: Implement pcRegNum functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+uint32_t _6502SimControl::nRegs() {
+    // TODO: Implement nRegs functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+uint32_t _6502SimControl::wordSize() {
+    // TODO: Implement wordSize functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+// Control debugger
+void _6502SimControl::stopServer() {
+    // TODO: Implement stopServer functionality
+    // ...
+}
+
+bool _6502SimControl::shouldStopServer() {
+    // TODO: Implement shouldStopServer functionality
+    // ...
+    return false; // Placeholder return value
+}
+
+bool _6502SimControl::isServerRunning() {
+    // TODO: Implement isServerRunning functionality
+    // ...
+    return false; // Placeholder return value
+}
+
+void _6502SimControl::setServerRunning(bool status) {
+    // TODO: Implement setServerRunning functionality
+    // ...
+}
+
+// Target utilities
+uint32_t _6502SimControl::htotl(uint32_t hostVal) {
+    // TODO: Implement htotl functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+uint32_t _6502SimControl::ttohl(uint32_t targetVal) {
+    // TODO: Implement ttohl functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+
+void BeebWin::GdbStartServer()
+{
+	static bool serverStarted{ false };
+	static _6502SimControl simControl = _6502SimControl();
+	static GdbServer gdbServer(/*Simulation controller =*/&simControl, /*tcp port=*/51000);
+
+	if (serverStarted == false) {
+		std::thread gdbThread(&GdbServer::serverThread, gdbServer);
+	}
+}
+
 /****************************************************************************/
 
 MessageResult BeebWin::Report(MessageType type, const char *format, ...)

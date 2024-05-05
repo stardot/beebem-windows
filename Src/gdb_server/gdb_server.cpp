@@ -25,7 +25,7 @@
 
 #include <chrono>
 #include <gdb_server.hpp>
-#include <simulation_controller_interface.hpp>
+#include <i_simulation_control.hpp>
 #include <rsp_connection.hpp>
 #include <rsp_packet.hpp>
 #include <gdb_server_utils.hpp>
@@ -38,7 +38,7 @@ using std::dec;
 using std::endl;
 using std::hex;
 
-GdbServer::GdbServer(SimulationControlInterface* simCtrl, int rspPort)
+GdbServer::GdbServer(ISimulationControl* simCtrl, int rspPort)
   : m_simCtrl(simCtrl) {
   pkt = new RspPacket(RSP_PKT_MAX);
   rsp = new RspConnection(rspPort, true);

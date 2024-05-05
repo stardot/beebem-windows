@@ -10,14 +10,14 @@
 #include <cstdint>
 
  /**
- * @brief SimulationControlInterface Interface to control and interact with
+ * @brief ISimulationControl Interface to control and interact with
  * simulation from an independent outside program, e.g. from a debug server.
  */
-class SimulationControlInterface {
+class ISimulationControl {
 public:
   /* ------ Public methods ------ */
 
-  virtual ~SimulationControlInterface() {};
+  virtual ~ISimulationControl() {};
 
   // Control and report
   /**
