@@ -5512,7 +5512,7 @@ void BeebWin::GdbStartServer()
 	static GdbServer gdbServer(/*Simulation controller =*/&simControl, /*tcp port=*/51000);
 
 	if (serverStarted == false) {
-		std::thread gdbThread(&GdbServer::serverThread, gdbServer);
+		static std::thread gdbThread(&GdbServer::serverThread, gdbServer);
 	}
 }
 
