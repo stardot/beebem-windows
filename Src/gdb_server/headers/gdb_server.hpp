@@ -51,6 +51,74 @@ public:
   GdbServer(SimulationControlInterface* simCtrl, int rspPort);
   ~GdbServer();
 
+  // SystemC thread to listen for and service RSP requests
+  void serverThread();
+
+
+private:
+  //! Definition of GDB target signals.
+
+  //! Data taken from the GDB 6.8 source. Only those we use defined here.
+  enum TargetSignal { TARGET_SIGNAL_NONE = 0, TARGET_SIGNAL_TRAP = 5 };
+
+  //! Maximum size of a GDB RSP packet
+  //  static const int  RSP_PKT_MAX  = NUM_REGS * 8 + 1;
+  static const int RSP_PKT_MAX = 512;  // qSupported pkt can be >240 byte
+
+  // OpenRISC exception addresses. Only the ones we need to know about
+  static const uint32_t EXCEPT_NONE = 0x000;   //!< No exception
+  static const uint32_t EXCEPT_RESET = 0x100;  //!< Reset
+
+  //! Simulation control interface
+  SimulationControlInterface* m_simCtrl;
+
+  //! Our associated RSP interface (which we create)
+  RspConnection* rsp;
+
+  //! The packet pointer. There is only ever one packet in use at one time, so
+  //! there is no need to repeatedly allocate and delete it.
+  RspPacket* pkt;
+
+  //! Is the target stopped
+  bool targetStopped;
+
+  // Main RSP request handler
+  void rspClientRequest();
+
+  // Handle the various RSP requests
+  void rspReportException();
+  void rspContinue();
+  void rspContinue(uint32_t except);
+  void rspContinue(uint32_t addr, uint32_t except);
+
+  void rspReadAllRegs();
+  void rspWriteAllRegs();
+  void rspReadMem();
+  void rspWriteMem();
+  void rspReadReg();
+  void rspWriteReg();
+  void rspQuery();
+  void rspCommand();
+  void qSupported();
+  void rspSet();
+  void rspRestart();
+  void rspStep();
+  void rspStep(uint32_t except);
+  void rspStep(uint32_t addr, uint32_t except);
+  void rspVpkt();
+  void rspWriteMemBin();
+  void rspRemoveMatchpoint();
+  void rspInsertMatchpoint();
+
+  enum MpType {
+    BP_MEMORY = 0,
+    BP_HARDWARE = 1,
+    WP_WRITE = 2,
+    WP_READ = 3,
+    WP_ACCESS = 4
+  };
+
+
 
 
 };  // GdbServer ()

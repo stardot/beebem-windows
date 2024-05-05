@@ -27,7 +27,7 @@
 #include <cstdio>
 #include <cstring>
 #include <rsp_packet.hpp>
-// #include <gdb-server/Utils.hpp>
+#include <gdb_server_utils.hpp>
 #include <iomanip>
 #include <iostream>
 

@@ -45,12 +45,24 @@ public:
   RspConnection(const char* _serviceName = DEFAULT_RSP_SERVICE);
   ~RspConnection();
 
+  // Public interface: manage client connections
+  bool rspConnect();
+  bool rspConnectWindows();
+  void rspClose();
   bool isConnected();
+
+  bool getPkt(RspPacket* pkt); 
+  bool putPkt(RspPacket* pkt);
 
 private:
   // Generic initializer
   void rspInit(int _portNum, const char* _serviceName);
-  void RspConnection::rspClose();
+
+  // Internal routines to handle individual chars
+  bool putRspChar(char c);
+  bool putRspStr(char* const c, const size_t len);
+  int getRspChar();
+
 
   //! The port number to listen on
   int portNum;
@@ -59,12 +71,14 @@ private:
   const char* serviceName;
 
   //! The client file descriptor
-  int clientFd;
+  int m_clientFd;
 
   bool m_useWindows;
 
 };  // RspConnection ()
 
+
 #endif  // RSP_CONNECTION__H
+
 
 
