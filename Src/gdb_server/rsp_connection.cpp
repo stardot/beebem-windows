@@ -32,7 +32,6 @@
 #include <iomanip>
 #include <rsp_connection.hpp>
 
-#include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdlib.h>
@@ -66,7 +65,7 @@ using namespace std;
 //! @param[in] _serviceName   The service name to use (if PortNum == 0).
 //-----------------------------------------------------------------------------
 void RspConnection::rspInit(int _portNum, const char* _serviceName) {
-  portNum = _portNum;
+  m_portNum = _portNum;
   serviceName = _serviceName;
   m_clientFd = -1;
 }  // init ()
@@ -103,8 +102,12 @@ bool RspConnection::rspConnectWindows()
   hints.ai_protocol = IPPROTO_TCP;
   hints.ai_flags = AI_PASSIVE;
 
+  constexpr uint8_t MAX_PORT_NUMBER_LEN{40};
+  static char portNumber[MAX_PORT_NUMBER_LEN];
+  snprintf(portNumber,MAX_PORT_NUMBER_LEN,"%d", m_portNum);
+
   // Resolve the server address and port
-  iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
+  iResult = getaddrinfo("localhost", portNumber, &hints, &result);
   if (iResult != 0) {
     printf("getaddrinfo failed with error: %d\n", iResult);
     WSACleanup();

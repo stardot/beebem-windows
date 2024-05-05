@@ -5378,6 +5378,9 @@ public:
     // Target utilities
     uint32_t htotl(uint32_t hostVal) override;
     uint32_t ttohl(uint32_t targetVal) override;
+
+private:
+	bool m_serverRunning{ false };
 };
 
 
@@ -5489,6 +5492,7 @@ bool _6502SimControl::isServerRunning() {
 void _6502SimControl::setServerRunning(bool status) {
     // TODO: Implement setServerRunning functionality
     // ...
+	m_serverRunning = status;
 }
 
 // Target utilities
@@ -5509,7 +5513,7 @@ void BeebWin::GdbStartServer()
 {
 	static bool serverStarted{ false };
 	static _6502SimControl simControl = _6502SimControl();
-	static GdbServer gdbServer(/*Simulation controller =*/&simControl, /*tcp port=*/51000);
+	static GdbServer gdbServer(/*Simulation controller =*/&simControl, /*tcp port=*/17901);
 
 	if (serverStarted == false) {
 		static std::thread gdbThread(&GdbServer::serverThread, gdbServer);

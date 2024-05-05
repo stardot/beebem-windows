@@ -65,7 +65,7 @@ private:
 
 
   //! The port number to listen on
-  int portNum;
+  int m_portNum;
 
   //! The service name to listen on
   const char* serviceName;
