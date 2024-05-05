@@ -51,7 +51,7 @@ public:
   void rspClose();
   bool isConnected();
 
-  bool getPkt(RspPacket* pkt); 
+  bool getPkt(RspPacket* pkt);
   bool putPkt(RspPacket* pkt);
 
 private:
@@ -77,8 +77,6 @@ private:
 
 };  // RspConnection ()
 
-
 #endif  // RSP_CONNECTION__H
-
 
 

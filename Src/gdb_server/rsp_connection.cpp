@@ -410,6 +410,104 @@ bool RspConnection::putPkt(RspPacket* pkt) {
 }  // putPkt ()
 
 
+
+//-----------------------------------------------------------------------------
+//! Put a single character out on the RSP connection
+
+//! Utility routine. This should only be called if the client is open, but we
+//! check for safety.
+
+//! @param[in] c         The character to put out
+
+//! @return  TRUE if char sent OK, FALSE if not (communications failure)
+//-----------------------------------------------------------------------------
+bool RspConnection::putRspChar(char c) {
+  if (-1 == m_clientFd) {
+    cerr << "Warning: Attempt to write '" << c
+      << "' to unopened RSP client: Ignored" << endl;
+    return false;
+  }
+
+  int result = 0;
+
+  if (m_useWindows) {
+    result = send(m_clientFd, &c, sizeof(c), 0);
+  }
+  else {
+    result = write(m_clientFd, &c, sizeof(c));
+  }
+
+  // Write until successful (we retry after interrupts) or catastrophic
+  // failure.
+  while (true) {
+    switch (result) {
+    case -1:
+      // Error: only allow interrupts or would block
+      if ((EAGAIN != errno) && (EINTR != errno)) {
+        cerr << "Warning: Failed to write to RSP client: "
+          << "Closing client connection: " << strerror(errno) << endl;
+        return false;
+      }
+      break;
+    case 0:
+      break;  // Nothing written! Try again
+
+    default:
+      return true;  // Success, we can return
+    }
+  }
+}  // putRspChar ()
+
+//-----------------------------------------------------------------------------
+//! Put a string out on the RSP connection
+//! Utility routine. This should only be called if the client is open, but we
+//! check for safety.
+//! @param[in] c         The string to transmit
+//! @param[in] len       length of string
+//! @return  TRUE if char sent OK, FALSE if not (communications failure)
+//-----------------------------------------------------------------------------
+bool RspConnection::putRspStr(char* const buf, const size_t len) {
+  if (-1 == m_clientFd) {
+    cerr << "Warning: Attempt to write '" << std::string(buf)
+      << "' to unopened RSP client: Ignored" << endl;
+    return false;
+  }
+
+  // Write until successful (we retry after interrupts) or catastrophic
+  // failure.
+  while (true) {
+
+    int result = 0;
+
+    if (m_useWindows) {
+      result = send(m_clientFd, buf, len, 0);
+    }
+    else {
+      result = write(m_clientFd, buf, len);
+    }
+
+    switch (result) {
+    case -1:
+      // Error: only allow interrupts or would block
+      if ((EAGAIN != errno) && (EINTR != errno)) {
+        cerr << "Warning: Failed to write to RSP client: "
+          << "Closing client connection: " << strerror(errno) << endl;
+        return false;
+      }
+
+      break;
+
+    case 0:
+      break;  // Nothing written! Try again
+
+    default:
+      return true;  // Success, we can return
+    }
+  }
+}  // putRspChar ()
+
+
+
 //-----------------------------------------------------------------------------
 //! Get a single character from the RSP connection
 
@@ -458,52 +556,4 @@ int RspConnection::getRspChar() {
 
 }  // getRspChar ()
 
-
-//-----------------------------------------------------------------------------
-//! Get a single character from the RSP connection
-
-//! Utility routine. This should only be called if the client is open, but we
-//! check for safety.
-
-//! @return  The character received or -1 on failure
-//-----------------------------------------------------------------------------
-int RspConnection::getRspChar() {
-  if (-1 == m_clientFd) {
-    cerr << "Warning: Attempt to read from "
-      << "unopened RSP client: Ignored" << endl;
-    return -1;
-  }
-
-  // Blocking read until successful (we retry after interrupts) or
-  // catastrophic failure.
-  while (true) {
-    char c;
-    int result = 0;
-    if (m_useWindows) {
-      result = recv(m_clientFd, &c, sizeof(c), 0);
-    }
-    else {
-      result = read(m_clientFd, &c, sizeof(c));
-
-    }
-
-    switch (result) {
-    case -1:
-      // Error: only allow interrupts
-      if (EINTR != errno) {
-        cerr << "Warning: Failed to read from RSP client: "
-          << "Closing client connection: " << strerror(errno) << endl;
-        return -1;
-      }
-      break;
-
-    case 0:
-      return -1;
-
-    default:
-      return c & 0xff;  // Success, we can return (no sign extend!)
-    }
-  }
-
-}  // getRspChar ()
 
