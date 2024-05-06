@@ -24,4 +24,7 @@ Src/InnoSetup/Debug
 Src/InnoSetup/Release
 Src/InnoSetup/x64/Debug
 Src/InnoSetup/x64/Release
+Src/ZipFile/Debug
 Src/ZipFile/Release
+Src/ZipFile/x64/Debug
+Src/ZipFile/x64/Release
