@@ -55,7 +55,7 @@ Boston, MA  02110-1301, USA.
 #include "ide.h"
 #include "debug.h"
 #include "Arm.h"
-#include "SprowCoPro.h"
+#include "sprowcopro.h"
 #include "Master512CoPro.h"
 
 #ifdef WIN32
@@ -3120,22 +3120,28 @@ static void PollHardware(unsigned int nCycles)
 	if (TotalCycles > CycleCountWrap)
 	{
 		TotalCycles -= CycleCountWrap;
-
 		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
 			AdjustTrigger(AtoDTrigger);
 			AdjustTrigger(Disc8271Trigger);
 			AdjustTrigger(SoundTrigger);
 			AdjustTrigger(AMXTrigger);
+		}
+
+		AdjustTrigger(PrinterTrigger);
+
+		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
 			AdjustTrigger(VideoTriggerCount);
 			AdjustTrigger(TapeTrigger);
+		}
+
+		AdjustTrigger(EconetTrigger);
+		AdjustTrigger(EconetFlagFillTimeoutTrigger);
+
+		if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S) {
 			AdjustTrigger(IP232RxTrigger);
 			if (TubeType == Tube::Acorn65C02)
 				WrapTubeCycles();
 		}
-
-		AdjustTrigger(PrinterTrigger);
-		AdjustTrigger(EconetTrigger);
-		AdjustTrigger(EconetFlagFillTimeoutTrigger);
 	}
 
 	if (MachineType == Model::FileStoreE01 || MachineType == Model::FileStoreE01S)
@@ -3145,7 +3151,10 @@ static void PollHardware(unsigned int nCycles)
 	else
 	{
 		VideoPoll(nCycles);
+	}
 
+	if (MachineType != Model::FileStoreE01 && MachineType != Model::FileStoreE01S)
+	{
 		if (!BasicHardwareOnly) {
 			AtoD_poll(nCycles);
 			Serial_Poll();
@@ -3162,7 +3171,7 @@ static void PollHardware(unsigned int nCycles)
 		Poll2793(nCycles); // Do 2793 FDC Background stuff
 
 	if (EconetEnabled && EconetPoll()) {
-		if (EconetNMIEnabled) {
+		if (EconetNMIenabled) {
 			NMIStatus|=1<<nmi_econet;
 			if (DebugEnabled)
 				DebugDisplayTrace(DebugType::Econet, true, "Econet: NMI asserted");
