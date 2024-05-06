@@ -50,7 +50,7 @@
         </tr>
 
         <tr>
-          <td>-Data &lt;directory&gt;</td>
+          <td><span class="cmd">-Data &lt;directory&gt;</span></td>
           <td>
             Use a specified data directory and set as the new default data
             directory
@@ -58,7 +58,7 @@
         </tr>
 
         <tr>
-          <td>-CustomData &lt;directory&gt;</td>
+          <td><span class="cmd">-CustomData &lt;directory&gt;</span></td>
           <td>
             Use a specified data directory without changing the default data
             directory
@@ -66,7 +66,7 @@
         </tr>
 
         <tr>
-          <td>-Prefs &lt;file&gt;</td>
+          <td><span class="cmd">-Prefs &lt;file&gt;</span></td>
           <td>
             Preferences file to load. This can be a file name, relative to the
             data directory, or a full path name
@@ -75,7 +75,7 @@
         </tr>
 
         <tr>
-          <td>-Roms &lt;file&gt;</td>
+          <td><span class="cmd">-Roms &lt;file&gt;</span></td>
           <td>
             ROMs configuration file to load. This can be a file name, relative to
             the data directory, or a full path name
@@ -83,7 +83,7 @@
         </tr>
 
         <tr>
-          <td>-EconetCfg &lt;file&gt;</td>
+          <td><span class="cmd">-EconetCfg &lt;file&gt;</span></td>
           <td>
             Econet config file to load. This can be a file name, relative to the
             data directory, or a full path name
@@ -91,7 +91,7 @@
         </tr>
 
         <tr>
-          <td>-AUNMap &lt;file&gt;</td>
+          <td><span class="cmd">-AUNMap &lt;file&gt;</span></td>
           <td>
             Econet AUN map file to load. This can be a file name, relative to the
             data directory, or a full path name
@@ -99,37 +99,40 @@
         </tr>
 
         <tr>
-          <td>-EcoStn &lt;station&gt;</td>
+          <td><span class="cmd">-EcoStn &lt;station&gt;</span></td>
           <td>Econet station number</td>
         </tr>
 
         <tr>
-          <td>-EcoFF &lt;timeout&gt;</td>
-          <td>Econet flag fill timeout, see the econet section</td>
+          <td><span class="cmd">-EcoFF &lt;timeout&gt;</span></td>
+          <td>
+            Econet flag fill timeout, see the <a href="econet.html">Econet
+            Support</a> section
+          </td>
         </tr>
 
         <tr>
-          <td>-FullScreen</td>
+          <td><span class="cmd">-FullScreen</span></td>
           <td>Start in full screen mode</td>
         </tr>
 
         <tr>
-          <td>-DisMenu</td>
+          <td><span class="cmd">-DisMenu</span></td>
           <td>Disables the drop down menus</td>
         </tr>
 
         <tr>
-          <td>-KbdCmd &lt;cmd&gt;</td>
+          <td><span class="cmd">-KbdCmd &lt;cmd&gt;</span></td>
           <td>Keyboard command string to run (see below)</td>
         </tr>
 
         <tr>
-          <td>-NoAutoBoot</td>
+          <td><span class="cmd">-NoAutoBoot</span></td>
           <td>Disable auto-boot when disk image specified</td>
         </tr>
 
         <tr>
-          <td>-AutoBootDelay &lt;milliseconds&gt;</td>
+          <td><span class="cmd">-AutoBootDelay &lt;milliseconds&gt;</span></td>
           <td>
             Sets a delay between initial boot and Shift+Break to boot disk if disk
             image file specified
@@ -137,7 +140,7 @@
         </tr>
 
         <tr>
-          <td>-StartPaused</td>
+          <td><span class="cmd">-StartPaused</span></td>
           <td>
             Starts BeebEm with the emulation paused. Other boot actions occur
             after emulation is unpaused
@@ -145,36 +148,38 @@
         </tr>
 
         <tr>
-          <td>-DebugScript &lt;file&gt;</td>
+          <td><span class="cmd">-DebugScript &lt;file&gt;</span></td>
           <td>Open debugger and execute the commands</td>
         </tr>
 
         <tr>
-          <td>-DebugLabels &lt;file&gt;</td>
+          <td><span class="cmd">-DebugLabels &lt;file&gt;</span></td>
           <td>Load Swift / BeebAsm format labels</td>
         </tr>
 
         <tr>
-          <td>&lt;disk image file&gt;</td>
+          <td><span class="cmd">&lt;disk image file&gt;</span></td>
           <td>
             Disk image file to load. Two files can be specified for drives 0 and 1
           </td>
         </tr>
 
         <tr>
-          <td>&lt;tape file&gt;</td>
+          <td><span class="cmd">&lt;tape file&gt;</span></td>
           <td>Tape file to load</td>
         </tr>
 
         <tr>
-          <td>&lt;state file&gt;</td>
+          <td><span class="cmd">&lt;state file&gt;</span></td>
           <td>Save state file to load</td>
         </tr>
       </table>
 
       <p>
-        Note: Command line options -Model and -Tube are no longer supported.
-        Use the -Prefs option with different preferences files instead.
+        Note: Command line options <span class="cmd">-Model</span> and <span
+        class="cmd">-Tube</span> are no longer supported. Use the <span
+        class="cmd">-Prefs</span> option with different preferences files
+        instead.
       </p>
 
       <p>
@@ -186,13 +191,15 @@
 
       <p>
         These command lines can be put into Windows scripts. See the
-        BeebEmLocal.vbs and BeebEmTorch.vbs scripts for examples.
+        <span class="file">BeebEmLocal.vbs</span> and
+        <span class="file">BeebEmTorch.vbs</span> scripts for examples.
       </p>
 
       <p>
-        The BeebEm installer allows you to associate files with .ssd, .dsd or
-        .uef extensions with BeebEm. Double clicking on one of these files will
-        automatically run it in BeebEm.
+        The BeebEm installer allows you to associate files with <span
+        class="file">.ssd</span>, <span class="file">.dsd</span> or
+        <span class="file">.uef</span> extensions with BeebEm. Double clicking
+        on one of these files will automatically run it in BeebEm.
       </p>
 
       <h2>Command line examples</h2>
@@ -240,43 +247,51 @@
       <h2>Command Line Parameter Notes</h2>
 
       <p>
-        If the data directory specified using the -Data or -CustomData option
-        does not exist, BeebEm will offer to create it. BeebEm will copy a
-        default set of data to the data directory. The default data directory is
-        'My Documents\BeebEm'. If a data directory of "-" is specified BeebEm
-        will use the "UserData" directory where the BeebEm.exe file exists (this
+        If the data directory specified using the <span class="cmd">-Data</span>
+        or <span class="cmd">-CustomData</span> option does not exist, BeebEm
+        will offer to create it. BeebEm will copy a default set of data to the
+        data directory. The default data directory is <span class="file">My
+        Documents\BeebEm</span>. If a data directory of "-" is specified BeebEm
+        will use the <span class="file">UserData</span>
+        directory where the <span class="file">BeebEm.exe</span> file exists (this
         is useful for running from a USB drive).
       </p>
 
       <p>
-        The -Data option tells BeebEm to use a new data directory as the default
-        data directory. The default is stored in the Windows Registry under
-        'HKEY_CURRENT_USER\Software\BeebEm\UserDataFolder'. The -CustomData
+        The <span class="cmd">-Data</span> option tells BeebEm to use a new data
+        directory as the default data directory. The default is stored in the
+        Windows Registry under
+        <span class="file">HKEY_CURRENT_USER\Software\BeebEm\UserDataFolder</span>.
+        The <span class="cmd">-CustomData</span>
         option tells BeebEm to use a new data directory without changing the
         default.
       </p>
 
       <p>
         If a disk image or a state file name is passed to BeebEm on the command
-        line it will be run automatically (but see -NoAutoBoot option). The name
-        can include the full path or it can just be the name of a file in the
-        'DiscIms' or 'BeebState' directory.
+        line it will be run automatically (but see <span
+        class="cmd">-NoAutoBoot</span> option). The name can include the full
+        path or it can just be the name of a file in the <span
+        class="file">DiscIms</span> or
+        <span class="file">BeebState</span> directory.
        </p>
 
       <p>
         If a tape image name is passed to BeebEm on the command line it will be
-        loaded. The name can include the full path or it can just be the name
-        of a file in the 'Tapes' directory. To run the tape image use the
-        -KbdCmd option.
+        loaded. The name can include the full path or it can just be the name of
+        a file in the <span class="file">Tapes</span> directory. To run the tape
+        image use the
+        <span class="cmd">-KbdCmd</span> option.
       </p>
 
       <p>
-        -StartPaused is useful if you are scripting the launch of BeebEm and you
-        want to manipulate the window, its position or perform other tasks
-        before the emulated machine boots. In this kind of script, launch
-        BeebEm, then send an Alt+F5 keypress when you are ready to un-pause.
-        For example, if using AutoHotKey, including the following in your script
-        will toggle the pause state:
+        The <span class="cmd">-StartPaused</span> option is useful if you are
+        scripting the launch of BeebEm and you want to manipulate the window,
+        its position or perform other tasks before the emulated machine boots.
+        In this kind of script, launch BeebEm, then send an Alt+F5 keypress when
+        you are ready to un-pause. For example, if using
+        <a href="https://www.autohotkey.com">AutoHotKey</a>, including
+        the following in your script will toggle the pause state:
       </p>
 
       <blockquote>
@@ -284,16 +299,18 @@
       </blockquote>
 
       <p>
-        If -StartPaused is used, the timer for -AutoBootDelay will start after
-        unpausing, but will reset if paused again. The -KbdCmd option will also
-        only apply when the emulator is unpaused for the first time.
+        If <span class="cmd">-StartPaused</span> is used, the timer for <span
+        class="cmd">-AutoBootDelay</span> will start after unpausing, but will
+        reset if paused again. The <span class="cmd">-KbdCmd</span> option will
+        also only apply when the emulator is unpaused for the first time.
       </p>
 
       <h2>Startup Key Sequence</h2>
 
       <p>
-        The -KbdCmd option allows a string of key presses to be passed to
-        BeebEm. The string can include the following key sequences:
+        The <span class="cmd">-KbdCmd</span> option allows a string of key
+        presses to be passed to BeebEm. The string can include the following key
+        sequences:
       </p>
 
       <table>
@@ -303,52 +320,52 @@
         </tr>
 
         <tr>
-          <td>\n</td>
+          <td><span class="cmd">\n</span></td>
           <td>Press and release of <kbd>Return</kbd></td>
         </tr>
 
         <tr>
-          <td>\s</td>
+          <td><span class="cmd">\s</span></td>
           <td>Press <kbd>Shift</kbd></td>
         </tr>
 
         <tr>
-          <td>\S</td>
+          <td><span class="cmd">\S</span></td>
           <td>Release <kbd>Shift</kbd></td>
         </tr>
 
         <tr>
-          <td>\c</td>
+          <td><span class="cmd">\c</span></td>
           <td>Press <kbd>Control</kbd></td>
         </tr>
 
         <tr>
-          <td>\C</td>
+          <td><span class="cmd">\C</span></td>
           <td>Release <kbd>Control</kbd></td>
         </tr>
 
         <tr>
-          <td>\\</td>
+          <td><span class="cmd">\\</span></td>
           <td>Press and release of <kbd>\</kbd> key</td>
         </tr>
 
         <tr>
-          <td>0-9</td>
+          <td><span class="cmd">0-9</span></td>
           <td>Press and release of a number key</td>
         </tr>
 
         <tr>
-          <td>A-Z</td>
+          <td><span class="cmd">A-Z</span></td>
           <td>Press and release of a letter key</td>
         </tr>
 
         <tr>
-          <td>'-=[];'#,./</td>
+          <td><span class="cmd">'-=[];'#,./</span></td>
           <td>Press and release of a symbol key</td>
         </tr>
 
         <tr>
-          <td>\dNNNN</td>
+          <td><span class="cmd">\dNNNN</span></td>
           <td>
             Set inter-keypress delay to NNNN milliseconds. Note that very low
             delays can result in loss of presses

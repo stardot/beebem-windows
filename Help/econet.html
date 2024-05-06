@@ -47,9 +47,10 @@
       </p>
 
       <p>
-        Econet support is enabled from the Hardware menu in BeebEm. Also switch
-        off <span class="ui">Freeze when inactive</span> if you intend to run
-        multiple instances of BeebEm so they can all run at the same time.
+        Econet support is enabled from the <span class="ui">Hardware</span> menu
+        in BeebEm. Also switch off <span class="ui">Freeze when inactive</span>
+        if you intend to run multiple instances of BeebEm so they can all run at
+        the same time.
       </p>
 
       <p>
@@ -63,30 +64,34 @@
         network needs a unique IP address and port number combination. Each
         instance of BeebEm needs to know the address and port number of the
         other instances on the network, this information is configured in the
-        'Econet.cfg' and 'AUNMap' files.
+        <span class="file">Econet.cfg</span> and
+        <span class="file">AUNMap</span> files.
       </p>
 
       <p>
-        The default Econet.cfg file has been set up to enable AUN mode. Read the
-        notes in the Econet.cfg and AUNMap files for more information on
-        configuring AUN mode.
+        The default <span class="file">Econet.cfg</span> file has been set up to
+        enable AUN mode. Read the notes in the <span
+        class="file">Econet.cfg</span> and <span class="file">AUNMap</span>
+        files for more information on configuring AUN mode.
       </p>
 
       <p>
         If you just want to run a few instances of BeebEm on a single PC then
-        the simplest way to is to edit the Econet.cfg file and disable AUN mode
-        (set AUNMODE to 0) and uncomment the example network configuration for
-        IP addresses 127.0.0.1 (near the end of Econet.cfg). With this
-        configured the first 5 instances of BeebEm run on a single PC will get
-        allocated unique station and port numbers. The first instance will be
-        allocated a station number 254 (file server) and next 4 will be
-        allocated station numbers 101 to 104. See the notes in Econet.cfg for
-        more details.
+        the simplest way to is to edit the <span class="file">Econet.cfg</span>
+        file and disable AUN mode (set AUNMODE to 0) and uncomment the example
+        network configuration for IP addresses 127.0.0.1 (near the end of <span
+        class="file">Econet.cfg</span>). With this configured the first 5
+        instances of BeebEm run on a single PC will get allocated unique station
+        and port numbers. The first instance will be allocated a station number
+        254 (file server) and next 4 will be allocated station numbers 101 to
+        104. See the notes in <span class="file">Econet.cfg</span> for more
+        details.
       </p>
 
       <p>
-        You can also specify the Econet.cfg and AUNMap file names on the command
-        line, using the <code>-EconetCfg</code> and <code>-AUNMap</code>
+        You can also specify the <span class="file">Econet.cfg</span> and <span
+        class="file">AUNMap</span> file names on the command line, using the
+        <code>-EconetCfg</code> and <code>-AUNMap</code>
         options. Refer to the <a href="commandline.html">command line
         options</a> for more details.
       </p>
@@ -102,9 +107,9 @@
       </p>
 
       <p>
-        To run the level 1 server, load the 'econet_level_1_utils.ssd' disk
-        image and run the file server by typing <span
-        class="cmd">CH."FS"</span>.
+        To run the level 1 server, load the <span
+        class="file">econet_level_1_utils.ssd</span> disk image and run the file
+        server by typing <span class="cmd">CH."FS"</span>.
       </p>
 
       <p>
@@ -138,10 +143,10 @@
         To use the econet file system from a station you will need to have a ROM
         installed that supports the econet file system (such as the Acorn DNFS
         ROM installed in Model B mode). To switch a station into econet file
-        system mode press N & F12. The econet station number should be shown on
-        screen. To switch without pressing the break key type <span
-        class="cmd">*NET</span>. You can then use commands such as <span
-        class="cmd">*CAT</span>, <span class="cmd">LOAD</span>, <span
+        system mode press <kbd>N</kbd> + <kbd>F12</kbd>. The econet station
+        number should be shown on screen. To switch without pressing the break
+        key type <span class="cmd">*NET</span>. You can then use commands such
+        as <span class="cmd">*CAT</span>, <span class="cmd">LOAD</span>, <span
         class="cmd">SAVE</span> and <span class="cmd">CHAIN</span> to access
         files on the server.
       </p>
@@ -156,8 +161,9 @@
         interfere with each other and cause a "Net Error" to be reported. If it
         is too long a station can report "Line Jammed". The waiting time is set
         by default to 100000 cycles (0.05s) but can be overridden by a command
-        line option '-EcoFF'. If you see "Net Error" report try a '-EcoFF
-        500000', for "Line Jammed" try '-EcoFF 50000'.
+        line option <span class="cmd">-EcoFF</span>. If you see "Net Error"
+        report try a <span class="cmd">-EcoFF 500000</span>, for "Line Jammed"
+        try <span class="cmd">-EcoFF 50000</span>.
       </p>
     </main>
 
