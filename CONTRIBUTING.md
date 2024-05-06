@@ -8,7 +8,7 @@ Contributions to BeebEm are welcome and encouraged.
 
 * As maintainer, I (@chrisn) will work with you to develop and integrate the feature.
 
-* Please avoid making commits directly to your copy of the `master` branch. This branch is reserved for aggregating changes from other people, and for mainline development from the maintainers. If you commit to `master`, it's likely that your local fork will diverge from the [stardot/beebem-windows](https://github.com/stardot/beebem-windows).
+* Please avoid making commits directly to your copy of the `master` branch. This branch is reserved for aggregating changes from other people, and for mainline development from the maintainers. If you commit to `master`, it's likely that your local fork will diverge from the [stardot/beebem-windows](https://github.com/stardot/beebem-windows) repository.
 
 * Before working on a change, please ensure your local fork is up to date with the code in the [stardot/beebem-windows](https://github.com/stardot/beebem-windows) repository, and create a [feature branch](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow) for your changes.
 
