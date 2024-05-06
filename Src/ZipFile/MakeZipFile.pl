@@ -146,7 +146,7 @@ my @files = (
     'Help/sources.html',
     'Help/speech.html',
     'Help/sprowcopro.html',
-    'Help/startup.jpg',
+    'Help/startup.png',
     'Help/state.html',
     'Help/tapes.html',
     'Help/teletext.html',
