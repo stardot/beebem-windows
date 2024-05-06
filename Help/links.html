@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=us-ascii">
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+    <header>
+      <div class="title">
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+        <h1>
+          BeebEm - BBC Micro and Master 128 Emulator
+        </h1>
+        <div class="logo">
+          <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
+        </div>
+      </div>
+
+      <nav>
+        <div>
+          <a href="index.html">Home</a>
+        </div>
+        <div>
+          <a href="contents.html">Help Contents</a>
+        </div>
+        <div>
+          <a href="http://www.mkw.me.uk/beebem/software.html">Download Software</a>
+        </div>
+          <div>
+          <a href="http://www.mkw.me.uk/beebem/index.html">BeebEm Website</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Keyboard Links</h1>
+
+      <p>
+        The BBC Model B (and B+) features a set of eight links as part of
+        the keyboard interface. These links control certain behaviours
+        of the OS or DFS, described in the Advanced User Guide, page 274.
+      </p>
+
+      <figure>
+        <img src="links.png" alt="Beeb Keyboard" width="310" height="253">
+      </figure>
+
+      <h2>Default filing system</h2>
+
+      <p>
+        Bit 7 selects the default filing system, either NFS (when set)
+        or DFS (when clear).
+      </p>
+
+      <h2>Disc drive timing</h2>
+
+      <p>
+        Bit 5 and bit 4 control disc drive timings, depending on the
+        type of floppy disc controller. BeebEm currently ignores these
+        settings.
+      </p>
+
+      <table>
+        <tr>
+          <th>Bit 5</th>
+          <th>Bit 4</th>
+          <th>8271 Timings</th>
+          <th>1770 Timings</th>
+          <th>1772 Timings</th>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>0</td>
+          <td>Step: 24 ms, settle: 20 ms, head load: 64 ms</td>
+          <td>Step: 30 ms, settle: 30 ms</td>
+          <td>Step: 3 ms, settle: 15 ms</td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>1</td>
+          <td>Step: 6 ms, settle: 50 ms, head load: 32 ms</td>
+          <td>Step: 20 ms, settle: 30 ms</td>
+          <td>Step: 2 ms, settle: 15 ms</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>0</td>
+          <td>Step: 6 ms, settle: 16 ms, head load: 0 ms</td>
+          <td>Step: 12 ms, settle: 30 ms</td>
+          <td>Step: 12 ms, settle: 15 ms</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>1</td>
+          <td>Step: 4 ms, settle: 16 ms, head load: 0 ms</td>
+          <td>Step: 6 ms, settle: 30 ms</td>
+          <td>Step: 6 ms, settle: 15 ms</td>
+        </tr>
+      </table>
+
+      <h2>Reverse <kbd>Shift</kbd> + <kbd>Break</kbd> action</h2>
+
+      <p>
+        Bit 3 reverses the action taken on <kbd>Shift</kbd> +
+        <kbd>Break</kbd>, i.e., if this bit is set (ticked), pressing
+        <kbd>Break</kbd> will cause DFS to boot from floppy disc.
+      </p>
+
+      <h2>Screen mode</h2>
+
+      <p>
+        Bits 0 to 2 select the default screen mode enabled on start up.
+        Set these bits as shown below to select a given screen mode.
+      </p>
+
+      <table>
+        <tr>
+          <th>Bit 2</th>
+          <th>Bit 1</th>
+          <th>Bit 0</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td>Mode 7</td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>0</td>
+          <td>1</td>
+          <td>Mode 6</td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>1</td>
+          <td>0</td>
+          <td>Mode 5</td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>1</td>
+          <td>1</td>
+          <td>Mode 4</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>0</td>
+          <td>0</td>
+          <td>Mode 3</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>0</td>
+          <td>1</td>
+          <td>Mode 2</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>1</td>
+          <td>0</td>
+          <td>Mode 1</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>1</td>
+          <td>1</td>
+          <td>Mode 0</td>
+        </tr> 
+      </table>
+    </main>
+
+    <footer>
+      <p>Copyright &copy; 2020 Mike Wyatt</p>
+     </footer>
+  </body>
+</html>

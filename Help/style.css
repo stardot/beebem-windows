@@ -91,6 +91,7 @@ kbd {
 }
 
 footer {
+    margin-top: 1em;
     border-top: 1px solid #004080;
     border-bottom: 1px solid #004080;
 }
