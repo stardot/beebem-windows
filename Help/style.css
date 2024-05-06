@@ -72,7 +72,15 @@ main figure {
     font-family: 'Courier New', Courier, monospace;
 }
 
+.file {
+    font-style: italic;
+}
+
 main pre {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+main blockquote code {
     font-family: 'Courier New', Courier, monospace;
 }
 
