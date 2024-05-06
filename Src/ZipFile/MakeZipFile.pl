@@ -137,6 +137,8 @@ my @files = (
     'Help/index.html',
     'Help/keyboard.html',
     'Help/keyboard.jpg',
+    'Help/links.html',
+    'Help/links.png',
     'Help/m5000.html',
     'Help/mastercopro.html',
     'Help/menus.html',
