@@ -40,19 +40,31 @@
       <h1>Serial Port</h1>
 
       <p>
-        In addition to connecting to the standard serial ports on the PC the
+        In addition to connecting to the standard serial ports on the PC, the
         serial port emulation in BeebEm has options to connect via TCP/IP to a
         local or remote IP address. You can use ROMs such as CommSoft or
         CommStar to connect to a Viewdata BBS, MUD server or any other type of
-        server.
+        server. Also supported is the
+        <a href="https://www.retro-kit.co.uk/page.cfm/content/Microvitec-Touchtech-501/">Microvitec
+        Touch Screen</a>, a device that connects to the BBC Micro's RS423 serial
+        port.
       </p>
 
       <p>
         The serial IP features are selected via the <span
         class="ui">RS423</span> dialog box, accessed from the <span
-        class="ui"></span>Select RS423 Destination</span> menu option. You can
-        use the "tcpser" package, which emulates a modem. Select 127.0.0.1 and
-        25232 as the <span class="ui">IP Address</span> and <span
+        class="ui">Select RS423 Destination</span> menu option.
+      </p>
+
+      <figure>
+        <img src="rs423.png" width="331" height="292">
+      </figure>
+
+      <h2>Serial over IP</h2>
+
+      <p>
+        You can use the "tcpser" package, which emulates a modem. Select
+        127.0.0.1 and 25232 as the <span class="ui">IP Address</span> and <span
         class="ui">Port</span>. Download a prebuilt Windows binary of
         <a href="https://csdb.dk/release/?id=171299">tcpser.zip</a>. The tcpser
         source code is available
@@ -103,20 +115,21 @@
       </p>
 
       <p>
-        To make a direct connection to a server, put the server's IP address
-        and port into the <span class="ui">RS423</span> dialog box.
+        To make a direct connection to a server, select <span class="ui">IP</span>
+        and put the server's IP address and port into the <span
+        class="ui">RS423</span> dialog box.
       </p>
 
       <p>
-        An additional option, <span class="ui">IP232 Mode</span>, determines if
-        the handshake lines are sent down the TCP/IP link or just generated
-        locally from the presence of a valid connection.
+        The <span class="ui">IP232 Raw Comms</span> option disables special
+        processing of charater 255 (used with tcpser, so leave Raw mode off when
+        using tcpser).
       </p>
 
       <p>
-        A second additional option, <span class="ui">IP232 Raw comms</span>,
-        disables special processing of charater 255 (used with tcpser, so leave
-        Raw mode off when using tcpser).
+        The <span class="ui">IP232 Handshake</span>, determines if the handshake
+        lines are sent down the TCP/IP link or just generated locally from the
+        presence of a valid connection.
       </p>
 
       <p>
@@ -130,6 +143,18 @@
         BeebEm will emulate the correct receive baud rate. This makes for a very
         realistic experience when talking at 1200 baud to a Viewdata host!
         Transmitted data is just sent out as fast as it will go.
+      </p>
+
+      <h2>Microvitec Touchtech 501</h2>
+
+      <p>
+        When the <span class="ui">Microvitec Touch Screen</span> option is
+        selected, together with the <span class="ui">Options &rarr; Analogue
+        Mousestick</span> option, mouse input in the BeebEm window is translated
+        into touch screen input. Software for the Microvitec Touchtech 501
+        can be downloaded from
+        <a href="https://www.retro-kit.co.uk/page.cfm/content/Microvitec-Touchtech-501/">Paul
+        Vernon's website</a>.
       </p>
     </main>
 
