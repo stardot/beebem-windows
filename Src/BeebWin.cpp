@@ -125,6 +125,9 @@ LEDColour DiscLedColour = LEDColour::Red;
 
 const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
 
+constexpr int TIMER_KEYBOARD       = 1;
+constexpr int TIMER_AUTOBOOT_DELAY = 2;
+
 /****************************************************************************/
 BeebWin::BeebWin()
 {
@@ -1943,11 +1946,11 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_TIMER:
-			if (wParam == 1)
+			if (wParam == TIMER_KEYBOARD)
 			{
 				HandleTimer();
 			}
-			else if (wParam == 2) // Handle timer for automatic disc boot delay
+			else if (wParam == TIMER_AUTOBOOT_DELAY) // Handle timer for automatic disc boot delay
 			{
 				KillBootDiscTimer();
 				DoShiftBreak();
@@ -4252,8 +4255,8 @@ void BeebWin::TogglePause()
 
 	if (m_EmuPaused)
 	{
-		KillTimer(m_hWnd, 1);
-		KillTimer(m_hWnd, 2);
+		KillTimer(m_hWnd, TIMER_KEYBOARD);
+		KillTimer(m_hWnd, TIMER_AUTOBOOT_DELAY);
 	}
 	else
 	{
@@ -4955,18 +4958,18 @@ bool BeebWin::HasKbdCmd() const
 
 void BeebWin::SetKeyboardTimer()
 {
-	SetTimer(m_hWnd, 1, 1000, NULL);
+	SetTimer(m_hWnd, TIMER_KEYBOARD, 1000, NULL);
 }
 
 void BeebWin::SetBootDiscTimer()
 {
-	SetTimer(m_hWnd, 2, m_AutoBootDelay, NULL);
+	SetTimer(m_hWnd, TIMER_AUTOBOOT_DELAY, m_AutoBootDelay, NULL);
 }
 
 void BeebWin::KillBootDiscTimer()
 {
 	m_BootDiscTimerElapsed = true;
-	KillTimer(m_hWnd, 2);
+	KillTimer(m_hWnd, TIMER_AUTOBOOT_DELAY);
 }
 
 /****************************************************************************/
@@ -5242,7 +5245,7 @@ void BeebWin::HandleTimer()
 	// Do nothing if emulation is not running (e.g. if Window is being moved)
 	if ((TotalCycles - m_KbdCmdLastCycles) / 2000 < m_KbdCmdDelay)
 	{
-		SetTimer(m_hWnd, 1, m_KbdCmdDelay, NULL);
+		SetTimer(m_hWnd, TIMER_KEYBOARD, m_KbdCmdDelay, NULL);
 		return;
 	}
 	m_KbdCmdLastCycles = TotalCycles;
@@ -5253,7 +5256,7 @@ void BeebWin::HandleTimer()
 	{
 		TranslateKey(m_KbdCmdKey, true, row, col);
 		m_KbdCmdPress = false;
-		SetTimer(m_hWnd, 1, m_KbdCmdDelay, NULL);
+		SetTimer(m_hWnd, TIMER_KEYBOARD, m_KbdCmdDelay, NULL);
 	}
 	else
 	{
@@ -5261,7 +5264,7 @@ void BeebWin::HandleTimer()
 
 		if (m_KbdCmd[m_KbdCmdPos] == 0)
 		{
-			KillTimer(m_hWnd, 1);
+			KillTimer(m_hWnd, TIMER_KEYBOARD);
 		}
 		else
 		{
@@ -5319,7 +5322,7 @@ void BeebWin::HandleTimer()
 					TranslateKey(m_KbdCmdKey, true, row, col);
 			}
 
-			SetTimer(m_hWnd, 1, m_KbdCmdDelay, NULL);
+			SetTimer(m_hWnd, TIMER_KEYBOARD, m_KbdCmdDelay, NULL);
 		}
 	}
 }
