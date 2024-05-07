@@ -393,7 +393,7 @@ void GdbServer::rspContinue(uint32_t addr, uint32_t except) {
 //-----------------------------------------------------------------------------
 void GdbServer::rspReadAllRegs() {
   for (int r = 0; r < m_simCtrl->nRegs(); r++) {
-    GdbServerUtils::reg2Hex(m_simCtrl->htotl(m_simCtrl->readReg(r)),
+    GdbServerUtils::reg2Hex(m_simCtrl->readReg(r),
       &(pkt->data[r * 8]));
   }
   pkt->data[m_simCtrl->nRegs() * 8] = 0;
@@ -547,7 +547,7 @@ void GdbServer::rspReadReg() {
     return;
   }
 
-  GdbServerUtils::reg2Hex(m_simCtrl->htotl(m_simCtrl->readReg(regNum)), pkt->data);
+  GdbServerUtils::reg2Hex(m_simCtrl->readReg(regNum), pkt->data);
   pkt->setLen(strlen(pkt->data));
   rsp->putPkt(pkt);
 
@@ -643,9 +643,12 @@ void GdbServer::rspQuery() {
     // supported as well. Note that the packet size allows for 'G' + all the
     // registers sent to us, or a reply to 'g' with all the registers and an
     // EOS so the buffer is a well formed string.
-    sprintf(pkt->data, "PacketSize=%x", pkt->getBufSize());
-    pkt->setLen(strlen(pkt->data));
-    rsp->putPkt(pkt);
+
+    qSupported();
+
+    //sprintf(pkt->data, "PacketSize=%x", pkt->getBufSize());
+    //pkt->setLen(strlen(pkt->data));
+    //rsp->putPkt(pkt);
   }
   else if (0 == strncmp("qSymbol:", pkt->data, strlen("qSymbol:"))) {
     // Offer to look up symbols. Nothing we want (for now). TODO. This just
@@ -786,8 +789,17 @@ void GdbServer::qSupported() {
       response += responseLen;
       totLen += responseLen;
     }
+    else {
+      // Ignore any unrecognised queries
+      // TODO: Fix this to change this to handle name-
+      // for instances such as xmlRegisters=i386.
+      // Though the manual is a bit vague on this, to be fair.
+      while ((query < queryEnd) && (*query != ';')) {
+        query++;
+      }
+    }
 
-    // Ignore any unrecognised queries
+
 
     if (*query == ';') {
       // Proceed to next command

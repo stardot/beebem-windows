@@ -5342,8 +5342,22 @@ void BeebWin::OpenDebugWindow()
 
 #pragma once
 
+constexpr uint8_t REG_PC = 0;
+constexpr uint8_t REG_A = 1;
+constexpr uint8_t REG_X = 2;
+constexpr uint8_t REG_Y = 3;
+constexpr uint8_t REG_SP = 4;
+constexpr uint8_t REG_SR = 5;
+constexpr uint8_t REG_COUNT = 6;
+
+static uint8_t localRegisters[REG_COUNT] = { REG_PC, REG_A, REG_X, REG_Y, REG_SP, REG_SR };
+
+static uint8_t m_localMemory[(1014 * 1024) * 20] {};
+
 class _6502SimControl : public ISimulationControl {
 public:
+
+
     // Control and report
     void kill() override;
     void reset() override;
@@ -5429,46 +5443,57 @@ void _6502SimControl::removeBreakpoint(unsigned addr) {
 
 // Register access
 uint32_t _6502SimControl::readReg(std::size_t num) {
-    // TODO: Implement readReg functionality
-    // ...
-    return 0; // Placeholder return value
+	if (num < REG_COUNT) {
+		return localRegisters[num];
+	}
+	else {
+		return 0xff;
+	}
 }
 
 void _6502SimControl::writeReg(std::size_t num, uint32_t value) {
-    // TODO: Implement writeReg functionality
-    // ...
+	if (num < REG_COUNT) {
+		localRegisters[num] = value & 0xff;
+	}
 }
 
 // Memory access
 bool _6502SimControl::readMem(uint8_t* out, unsigned addr, std::size_t len) {
-    // TODO: Implement readMem functionality
-    // ...
-    return false; // Placeholder return value
+
+  for (uint32_t index = addr; index < addr + len; index++) {
+    *out = m_localMemory[index] & 0xff;
+		out++;
+  }
+
+  return true; // Placeholder return value
 }
 
 bool _6502SimControl::writeMem(uint8_t* src, unsigned addr, std::size_t len) {
-    // TODO: Implement writeMem functionality
-    // ...
-    return false; // Placeholder return value
+
+  for (uint32_t index = addr; index < addr + len; index++) {
+    m_localMemory[index] = *src & 0xff;
+		src++;
+  }
+  return false; // Placeholder return value
 }
 
 // Target info
 uint32_t _6502SimControl::pcRegNum() {
     // TODO: Implement pcRegNum functionality
     // ...
-    return 0; // Placeholder return value
+    return REG_PC; // 0 = PC
 }
 
 uint32_t _6502SimControl::nRegs() {
     // TODO: Implement nRegs functionality
     // ...
-    return 0; // Placeholder return value
+    return REG_COUNT; // PC, A, X, Y, , SR, SP
 }
 
 uint32_t _6502SimControl::wordSize() {
     // TODO: Implement wordSize functionality
     // ...
-    return 0; // Placeholder return value
+    return 2; // Placeholder return value
 }
 
 // Control debugger
@@ -5516,6 +5541,7 @@ void BeebWin::GdbStartServer()
 	static GdbServer gdbServer(/*Simulation controller =*/&simControl, /*tcp port=*/17901);
 
 	if (serverStarted == false) {
+		serverStarted = true;
 		static std::thread gdbThread(&GdbServer::serverThread, gdbServer);
 	}
 }
