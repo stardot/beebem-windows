@@ -29,4 +29,6 @@ enum class Model : unsigned char {
 	Last
 };
 
+const char* GetModelName(Model model);
+
 #endif

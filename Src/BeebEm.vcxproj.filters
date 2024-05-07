@@ -153,6 +153,9 @@
     <ClCompile Include="Master512CoPro.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Music5000.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

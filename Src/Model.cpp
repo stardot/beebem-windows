@@ -1,7 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2009 Mike Wyatt
-Copyright (C) 2024 Chris Needham
+Copyright (C) 2024  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,44 +18,23 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef ROM_CONFIG_DIALOG_HEADER
-#define ROM_CONFIG_DIALOG_HEADER
-
-#include "BeebMem.h"
-#include "Dialog.h"
 #include "Model.h"
 
-class RomConfigDialog : public Dialog
+/****************************************************************************/
+
+static const char* const szModel[] =
 {
-	public:
-		RomConfigDialog(
-			HINSTANCE hInstance,
-			HWND hwndParent,
-			ROMConfigFile Config
-		);
-
-	public:
-		const ROMConfigFile* GetRomConfig() const;
-
-	private:
-		virtual INT_PTR DlgProc(
-			UINT   nMessage,
-			WPARAM wParam,
-			LPARAM lParam
-		);
-
-		void UpdateROMField(int Row);
-		void FillModelList();
-		void FillROMList();
-		bool LoadROMConfigFile();
-		bool SaveROMConfigFile();
-		bool GetROMFile(char *pszFileName);
-
-	private:
-		HWND m_hWndROMList;
-		HWND m_hWndModel;
-		ROMConfigFile m_RomConfig;
-		Model m_Model;
+	"BBC Model B",
+	"BBC Model B + Integra-B",
+	"BBC Model B Plus",
+	"BBC Master 128",
 };
 
-#endif
+/****************************************************************************/
+
+const char* GetModelName(Model model)
+{
+	return szModel[static_cast<int>(model)];
+}
+
+/****************************************************************************/
