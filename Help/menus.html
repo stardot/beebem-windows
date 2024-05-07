@@ -49,7 +49,7 @@
         <h3>Load Disc 0 / 1</h3>
 
         <p>
-          Load a disc image into drive 0 or 1. Discs are write
+          Loads a disc image into drive 0 or 1. Discs are write
           protected when loaded to prevent any accidental data loss.
           Boot a disc by pressing <kbd>Shift</kbd> + <kbd>F12</kbd>.
         </p>
@@ -57,7 +57,7 @@
         <h3>Load Tape</h3>
 
         <p>
-          Load a tape image.
+          Loads a tape image.
           See the <a href="tapes.html">Tape Images</a> section for info on
           running a tape.
         </p>
@@ -95,13 +95,13 @@
         <h3>Reset</h3>
 
         <p>
-          "Power-On" reset for when a game crashes.
+          Does a power-on reset of the emulated Beeb, useful for when a game crashes.
         </p>
 
         <h3>Load State / Save State</h3>
 
         <p>
-          Load or save the state of BeebEm as a
+          Loads or saves the state of BeebEm as a
           <span class="file">.uefstate</span> file. This is useful
           for saving your position in a game for example. State files are put in
           the <span class="file">BeebState</span> directory by default.
@@ -110,7 +110,7 @@
         <h3>Quick Load / Quick Save</h3>
 
         <p>
-          Quickly load or save BeebEm state without having to specify the
+          Loads or saves BeebEm state without having to specify the
           filename. The state is saved and loaded from the
           <span class="file">BeebState/quicksave.uefstate</span> file. BeebEm
           keeps the last 10 quicksave files so you can go back to an earlier
@@ -124,13 +124,13 @@
         <h3>Screen Capture Options</h3>
 
         <p>
-          Select the resolution and file format for screen capture to file.
+          Selects the resolution and file format for screen capture to file.
         </p>
 
         <h3>Capture Screen</h3>
 
         <p>
-          Capture the BeebEm screen to a file. You will be prompted for a file
+          Captures the BeebEm screen to a file. You will be prompted for a file
           name. Note that you can also use the <kbd>Alt</kbd> + <kbd>Keypad
           5</kbd> shortcut to capture the screen to file.
         </p>
@@ -138,7 +138,7 @@
         <h3>Video Options</h3>
 
         <p>
-          Select the resolution and how many frames get skipped for
+          Selects the resolution and how many frames get skipped for
           video capture. If video and audio get out of sync when
           playing back then try selecting a lower resolution and
           lower frame rate (more skipped frames).
@@ -147,7 +147,7 @@
         <h3>Capture Video</h3>
 
         <p>
-          Start video capture. Video is recorded at a maximum of 25 frames per
+          Starts video capture. Video is recorded at a maximum of 25 frames per
           second at a resolution of 640x512. Sound is captured at the sample
           rate selected in the <span class="ui">Sound</span> menu. If sound is
           disabled when capture is started then sound is not recorded in the AVI
@@ -217,19 +217,19 @@
         <h3>Tape Speed</h3>
 
         <p>
-          Select the speed at which tape software loads and saves.
+          Selects the speed at which tape software loads and saves.
         </p>
 
         <h3>Rewind Tape</h3>
 
         <p>
-          Reset the tape position to the start.
+          Resets the tape position to the start.
         </p>
 
         <h3>Unlock Tape</h3>
 
         <p>
-          Removed the lock flag from files as they are loaded. This enables you
+          Removes the lock flag from files as they are loaded. This enables you
           to <span class="cmd">*LOAD</span> a locked file.
         </p>
 
@@ -252,7 +252,7 @@
         <h3>Printer Destination</h3>
 
         <p>
-          Select where to send the printer output.
+          Selects where to send the printer output.
           WARNING: if you direct printer output to an LPT
           port that is not attached to anything BeebEm may
           hang.
@@ -268,7 +268,7 @@
         <h3>Select RS423 Destination</h3>
 
         <p>
-          Select where to send the serial port data.
+          Selects where to send the serial port data.
           Select <span class="ui">Microvitec Touch Screen</span> to enable touch
           screen support. Select an IP option to route data to a TCP/IP
           port. See the <a href="serial.html">Serial Port</a> section.
@@ -288,10 +288,10 @@
         <h3>DirectX Smoothing</h3>
 
         <p>
-          When using DirectDraw or DirectX9, enabling smoothing
-          will switch on bilinear interpolation. This will
-          blur the display slightly which will give it a
-          smoother look.
+          Enables smoothing, which blurs the display slightly and gives it a
+          smoother look, using bilinear interpolation. This option only
+          applies when using DirectDraw or DirectX9 display rendering.
+
         </p>
 
         <h3>Smooth Teletext Only</h3>
@@ -348,8 +348,8 @@
         <h3>LEDs</h3>
 
         <p>
-          The Beeb keyboard and disc LEDs can be
-          shown at the bottom of the BeebEm window.
+          Shows or hides the Beeb keyboard and disc LEDs at the bottom of the
+          BeebEm window.
         </p>
 
         <h3>Motion Blur</h3>
@@ -407,13 +407,13 @@
         <h3>Sound Streamer</h3>
 
         <p>
-          Select the sound streaming interface for BeebEm to use.
+          Selects the sound streaming interface for BeebEm to use.
         </p>
 
         <h3>Sound On/Off</h3>
 
         <p>
-          Switch sound on or off.
+          Switches sound on or off.
         </p>
 
         <h3>Sound Chip</h3>
@@ -440,7 +440,7 @@
         <h3>Full/High/Medium/Low Volume</h3>
 
         <p>
-          Set the sound volume.
+          Sets the sound volume.
         </p>
 
         <h3>Part Samples</h3>
@@ -552,7 +552,7 @@
         <p>
           Allows you to select the Model B disc hardware emulation. To use an
           alternative floppy disc controller (FDC) board you will need to use an
-          appropriate ROM (e.g., Acorn DFS2.26 for the Acorn 1770 board).
+          appropriate ROM (e.g., Acorn DFS 2.26 for the Acorn 1770 board).
         </p>
 
         <h3>65C02 Second Processor</h3>
@@ -561,8 +561,9 @@
           Enables/disables the 65C02 second processor emulation. Note that in
           Master 128 mode the second processor may be disabled in the CMOS
           settings. To enable it type <span class="cmd">*CONFIGURE TUBE</span>
-          and press <kbd>Break</kbd> (F12). See the <a href="65c02copro.html">Acorn 65C02
-          Co-Processor</a> section for more details.
+          and press <kbd>Break</kbd> (<kbd>F12</kbd>). See the
+          <a href="65c02copro.html">Acorn 65C02 Co-Processor</a> section for
+          more details.
         </p>
 
         <h3>Acorn Z80 Second Processor</h3>
@@ -740,8 +741,8 @@
         <h3>Freeze when inactive</h3>
 
         <p>
-          When selected, BeebEm will freeze when you switch
-          to another window. This option is automatically switched off if you
+          Enables or disables freezing BeebEm you switch to another window.
+          This option is automatically switched off if you
           open the <a href="debugger.html">Debugger</a> window.
         </p>
 
@@ -846,8 +847,8 @@
         <h3>Save Disc/Tape/State Folders</h3>
 
         <p>
-          When enabled, BeebEm will remember where the folders where you last
-          loaded or saved disc, tape or state files.
+          Enables or disables BeebEm automatically remembering where the folders
+          where you last loaded or saved disc, tape or state files.
         </p>
 
         <h3>Select User Data Folder</h3>
