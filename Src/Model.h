@@ -22,20 +22,11 @@ Boston, MA  02110-1301, USA.
 #define MODEL_HEADER
 
 enum class Model : unsigned char {
-	B,             // 0: BBC B
-	IntegraB,      // 1: BBC B with Integra B
-	BPlus,         // 2: BBC B+
-	Master128,     // 3: BBC Master 128
-	MasterET,      // 4: Master ET
-/*	MasterCompact, // 5: Master Compact
-	FileStoreE01,  // 6: Acorn FileStore E01
-	FileStoreE01S, // 7: Acorn FileStore E01S
-*/	Last
-};
-
-enum class CPU : unsigned char {
-	CPU6502,
-	CPU65C12
+	B,         // 0: BBC B
+	IntegraB,  // 1: BBC B with Integra B
+	BPlus,     // 2: BBC B+
+	Master128, // 3: BBC Master 128
+	Last
 };
 
 const char* GetModelName(Model model);
