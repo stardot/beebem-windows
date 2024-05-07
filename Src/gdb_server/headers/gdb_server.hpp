@@ -54,6 +54,8 @@ public:
   // SystemC thread to listen for and service RSP requests
   void serverThread();
 
+  static constexpr uint8_t REG_COUNT = 6;
+  static constexpr uint8_t REG_ARRAY_LEN = REG_COUNT + 4;
 
 private:
   //! Definition of GDB target signals.

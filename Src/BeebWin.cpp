@@ -5342,16 +5342,36 @@ void BeebWin::OpenDebugWindow()
 
 #pragma once
 
-constexpr uint8_t REG_PC = 0;
-constexpr uint8_t REG_A = 1;
-constexpr uint8_t REG_X = 2;
-constexpr uint8_t REG_Y = 3;
-constexpr uint8_t REG_SP = 4;
-constexpr uint8_t REG_SR = 5;
-constexpr uint8_t REG_COUNT = 6;
+enum class REG_INDEX : uint8_t {
+	REG_A = 0,   // eax
+	REG_X = 1,   // ecx
+	REG_Y = 2,   // edx
+	// ebx
+	REG_SP = 4,  // esp
+	// ebp, esi, edi
+	REG_PC = 8,  // eip
+	REG_SR = 9,  // eflags
+};
 
-static uint8_t localRegisters[REG_COUNT] = { REG_PC, REG_A, REG_X, REG_Y, REG_SP, REG_SR };
+bool isValidRegIndex(uint8_t value) {
+	REG_INDEX valueToTest = static_cast<REG_INDEX>(value);
+	if (valueToTest == REG_INDEX::REG_A ||
+		valueToTest == REG_INDEX::REG_X ||
+		valueToTest == REG_INDEX::REG_Y ||
+		valueToTest == REG_INDEX::REG_SP ||
+		valueToTest == REG_INDEX::REG_PC ||
+		valueToTest == REG_INDEX::REG_SR ) {
+		return true;
+	}	else {
+		return false;
+	}
+}
 
+uint8_t getIntValueFrom(REG_INDEX reg) {
+	return static_cast<uint8_t>(reg);
+}
+
+static uint8_t localRegisters[GdbServer::REG_ARRAY_LEN] = { 0, 1, 2, 255, 3, 255, 255, 255, 4, 5 };
 static uint8_t m_localMemory[(1014 * 1024) * 20] {};
 
 class _6502SimControl : public ISimulationControl {
@@ -5443,16 +5463,16 @@ void _6502SimControl::removeBreakpoint(unsigned addr) {
 
 // Register access
 uint32_t _6502SimControl::readReg(std::size_t num) {
-	if (num < REG_COUNT) {
+
+	if (isValidRegIndex(static_cast<uint8_t>(num))) {
 		return localRegisters[num];
-	}
-	else {
+	}	else {
 		return 0xff;
 	}
 }
 
 void _6502SimControl::writeReg(std::size_t num, uint32_t value) {
-	if (num < REG_COUNT) {
+	if(isValidRegIndex(static_cast<uint8_t>(num))) {
 		localRegisters[num] = value & 0xff;
 	}
 }
@@ -5481,19 +5501,19 @@ bool _6502SimControl::writeMem(uint8_t* src, unsigned addr, std::size_t len) {
 uint32_t _6502SimControl::pcRegNum() {
     // TODO: Implement pcRegNum functionality
     // ...
-    return REG_PC; // 0 = PC
+    return static_cast<uint32_t>(REG_INDEX::REG_PC); // 8 = PC ( To match Intel )
 }
 
 uint32_t _6502SimControl::nRegs() {
     // TODO: Implement nRegs functionality
     // ...
-    return REG_COUNT; // PC, A, X, Y, , SR, SP
+    return GdbServer::REG_COUNT; // A, X, Y, SP, PC, SR
 }
 
 uint32_t _6502SimControl::wordSize() {
     // TODO: Implement wordSize functionality
     // ...
-    return 2; // Placeholder return value
+    return 1; // Placeholder return value
 }
 
 // Control debugger
@@ -5511,7 +5531,7 @@ bool _6502SimControl::shouldStopServer() {
 bool _6502SimControl::isServerRunning() {
     // TODO: Implement isServerRunning functionality
     // ...
-    return false; // Placeholder return value
+    return true; // Placeholder return value
 }
 
 void _6502SimControl::setServerRunning(bool status) {

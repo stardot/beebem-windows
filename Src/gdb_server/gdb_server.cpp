@@ -392,7 +392,7 @@ void GdbServer::rspContinue(uint32_t addr, uint32_t except) {
 //! Each byte is packed as a pair of hex digits.
 //-----------------------------------------------------------------------------
 void GdbServer::rspReadAllRegs() {
-  for (int r = 0; r < m_simCtrl->nRegs(); r++) {
+  for (uint8_t r = 0; r < GdbServer::REG_ARRAY_LEN; r++) {
     GdbServerUtils::reg2Hex(m_simCtrl->readReg(r),
       &(pkt->data[r * 8]));
   }
