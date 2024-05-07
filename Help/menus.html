@@ -65,9 +65,9 @@
         <h3>New Disc 0 / 1</h3>
 
         <p>
-          Creates a new disc image in drive 0 or 1. Use the file
-          type field to select the type of disc image to create.
-          New disc images are write enabled when created. The images
+          Creates a new disc image in drive 0 or 1. Use the <span
+          class="ui">Save as type</span> field to select the type of disc image
+          to create. New disc images are write enabled when created. The images
           have a standard 31 file catalogue by default.
         </p>
 
@@ -83,7 +83,7 @@
         <p>
           Toggles write protection for drive 0 or 1. Keep discs
           write protected unless you intend to write to them. Also see the
-          WARNING in the <a href="disks.html">Disc Images</a> section.
+          warning in the <a href="disks.html#corrupt">Disc Images</a> section.
         </p>
 
         <h3>Write Protect on Load</h3>
@@ -101,9 +101,10 @@
         <h3>Load State / Save State</h3>
 
         <p>
-          Load or save the state of BeebEm as a .uefstate file. This is useful
+          Load or save the state of BeebEm as a
+          <span class="file">.uefstate</span> file. This is useful
           for saving your position in a game for example. State files are put in
-          the 'BeebState' directory by default.
+          the <span class="file">BeebState</span> directory by default.
         </p>
 
         <h3>Quick Load / Quick Save</h3>
@@ -111,27 +112,27 @@
         <p>
           Quickly load or save BeebEm state without having to specify the
           filename. The state is saved and loaded from the
-          'BeebState/quicksave.uefstate' file. Quicksave now keeps the last 10
-          quicksave files so you can go back to an earlier state using the load
-          state menu option. There are keyboard shortcuts for <span
-          class="ui">Quick Save</span> (keypad /) and
-          <span class="ui">Quick Load</span> (keypad *) so you can save and
-          load without having to go through the menus.
+          <span class="file">BeebState/quicksave.uefstate</span> file. BeebEm
+          keeps the last 10 quicksave files so you can go back to an earlier
+          state using the <span class="ui">Load State</span> menu option. There
+          are keyboard shortcuts for <span class="ui">Quick Save</span>
+          (<kbd>Keypad /</kbd>) and <span class="ui">Quick Load</span>
+          (<kbd>Keypad *</kbd>) so you can save and load without having to go
+          through the menus.
         </p>
 
         <h3>Screen Capture Options</h3>
 
         <p>
-          Select the resolution and file format for screen
-          capture to file.
+          Select the resolution and file format for screen capture to file.
         </p>
 
         <h3>Capture Screen</h3>
 
         <p>
-          Capture the BeebEm screen to a file. You will be
-          prompted for a file name. Note that you can also use
-          the ALT+keypad 5 shortcut to capture the screen to file.
+          Capture the BeebEm screen to a file. You will be prompted for a file
+          name. Note that you can also use the <kbd>Alt</kbd> + <kbd>Keypad
+          5</kbd> shortcut to capture the screen to file.
         </p>
 
         <h3>Video Options</h3>
@@ -163,7 +164,7 @@
         <h3>Exit</h3>
 
         <p>
-          Exit BeebEm
+          Exits BeebEm.
         </p>
       </section>
 
@@ -194,20 +195,19 @@
         <h3>Import Files to Disc</h3>
 
         <p>
-          Allows files to be added to a DFS disc image.
-          BeebEm will look for a .inf file containing file
-          attributes but files without .inf files can also
-          be imported. If a file name matches one already
-          in the disc image the imported file will
-          overwrite the one in the image.
+          Allows files to be added to a DFS disc image. BeebEm will look for a
+          <span class="file">.inf</span> file containing file attributes but
+          files without <span class="file">.inf</span> files can also be
+          imported. If a file name matches one already in the disc image the
+          imported file will overwrite the one in the image.
         </p>
 
         <h3>Export Files from Disc</h3>
 
         <p>
-          Allows files to be exported from a DFS disc
-          image. BeebEm will create a .inf file for each
-          file exported to hold the file attributes.
+          Allows files to be exported from a DFS disc image. BeebEm will create
+          a <span class="file">.inf</span> file for each file exported to hold
+          the file attributes.
         </p>
       </section>
 
@@ -245,8 +245,8 @@
         <p>
           Switches printer capture on or off. To start and stop printing within
           BeebEm use the <span class="cmd">VDU2</span> and <span
-          class="cmd">VDU3</span>
-          commands or Ctrl B and Ctrl C.
+          class="cmd">VDU3</span> commands or <kbd>Ctrl</kbd> + <kbd>B</kbd> and
+          <kbd>Ctrl</kbd> + <kbd>C</kbd>.
         </p>
 
         <h3>Printer Destination</h3>
@@ -269,7 +269,7 @@
 
         <p>
           Select where to send the serial port data.
-          Select Microvitec Touch Screen to enable touch
+          Select <span class="ui">Microvitec Touch Screen</span> to enable touch
           screen support. Select an IP option to route data to a TCP/IP
           port. See the <a href="serial.html">Serial Port</a> section.
         </p>
@@ -297,20 +297,20 @@
         <h3>Smooth Teletext Only</h3>
 
         <p>
-          Enable DirectX smoothing for mode 7 only.
+          Enables DirectX smoothing for mode 7 only.
         </p>
 
         <h3>Speed and FPS On/Off</h3>
 
         <p>
-          Show or hide the relative speed and the number of
+          Shows or hides the relative speed and the number of
           frames per second.
         </p>
 
         <h3>Full Screen</h3>
 
         <p>
-          Switch to full screen mode.
+          Switches to full screen mode.
         </p>
 
         <h3>Maintain Aspect Ratio in Full Screen</h3>
@@ -328,7 +328,7 @@
         <h3>DirectX Full Screen Modes</h3>
 
         <p>
-          Screen resolution to use in full screen
+          Sets the screen resolution to use in full screen
           mode. The higher resolutions may look better.
         </p>
 
@@ -348,14 +348,14 @@
         <h3>LEDs</h3>
 
         <p>
-          The Beeb keyboard and disc (1770 only) LEDs can be
+          The Beeb keyboard and disc LEDs can be
           shown at the bottom of the BeebEm window.
         </p>
 
         <h3>Motion Blur</h3>
 
         <p>
-          Fades out contents of previous frames rather than
+          Fades out the contents of previous frames rather than
           blanking them out (like phosphor persistence). Can improve flicker in
           some games. The % intensities of the 8 frames can be edited in the
           preferences file.
@@ -364,7 +364,7 @@
         <h3>Screen Reader Text View</h3>
 
         <p>
-          Switch screen reader compatible text view on or off.
+          Switches screen reader compatible text view on or off.
           See the <a href="accessibility.html">Accessibility Features</a> section.
         </p>
       </section>
@@ -383,8 +383,8 @@
         <p>
           Runs BeebEm at a fixed speed relative to a real BBC Micro.
           The frame rate may need to be reduced for the higher
-          speeds. The keypad +/- keys will change between fixed
-          speeds.
+          speeds. The <kbd>Keypad +</kbd> and <kbd>Keypad -</kbd> keys will
+          change between fixed speeds.
         </p>
 
         <h3>50/25/10/5/1 FPS</h3>
@@ -467,21 +467,21 @@
         <h3>Enable</h3>
 
         <p>
-          Switch text to speech generation on or off.
+          Switches text to speech generation on or off.
           See the <a href="accessibility.html">Accessibility Features</a> section.
         </p>
 
         <h3>Speak Automatically</h3>
 
         <p>
-          Toggle auto-read of text as it is written to the BBC micro screen.
+          Toggles auto-read of text as it is written to the BBC micro screen.
           See the <a href="accessibility.html">Accessibility Features</a> section.
         </p>
 
         <h3>Speak Punctuation</h3>
 
         <p>
-          Toggle speaking of punctuation. Support for this feature depends
+          Toggles speaking of punctuation. Support for this feature depends
           on the capabilities of the selected voice.
           See the <a href="accessibility.html">Accessibility Features</a> section.
         </p>
@@ -496,7 +496,7 @@
         <h3>Music 5000</h3>
 
         <p>
-          Enable/disable the Music 5000 Synthesiser emulation.
+          Enables or disables the Music 5000 Synthesiser emulation.
         </p>
       </section>
 
@@ -507,14 +507,15 @@
 
         <p>
           Switches AMX mouse support on or off. It may be useful to hide
-          the Windows cursor as well (see the Options menu).
+          the Windows cursor as well (see the <span class="ui">Options</span>
+          menu).
         </p>
 
         <h3>L+R for Middle</h3>
 
         <p>
           Simulates a middle button press when you press the left
-          and right buttons together.
+          and right mouse buttons together.
         </p>
 
         <h3>Map to 160x256 / 320x256 / 640x256</h3>
@@ -599,7 +600,7 @@
         <h3>Allow SW RAM Write</h3>
 
         <p>
-          Enable/disable writes for each sideways RAM slot.
+          Enables or disables writes for each sideways RAM slot.
           See the <a href="roms.html">ROM Software</a> section.
         </p>
 
@@ -616,8 +617,8 @@
 
         <p>
           Allows you to edit the ROM configuration. Note that you will usually
-          have to press the <kbd>Break</kbd> key (F12) before a new ROM
-          configuration is recognised.
+          have to press the <kbd>Break</kbd> key (<kbd>F12</kbd>) before a new
+          ROM configuration is recognised.
         </p>
 
         <h3>Basic Hardware Only</h3>
@@ -787,15 +788,17 @@
 
         <h3>Logical Keyboard Mapping</h3>
 
-        <p>Selects the logical keyboard mapping.
+        <p>
+          Selects the logical keyboard mapping.
           See the <a href="keyboard.html">Keyboard Mappings</a> section.
         </p>
 
         <h3>Map A,S to CAPS,CTRL</h3>
 
-        <p>Maps the PC's <kbd>A</kbd> and <kbd>S</kbd> keys to <kbd>CAPS</kbd>
-        and <kbd>CTRL</kbd> keys on the Beeb keyboard. This is good for some
-        games (e.g., Zalaga).
+        <p>
+          Maps the PC's <kbd>A</kbd> and <kbd>S</kbd> keys to <kbd>CAPS</kbd>
+          and <kbd>CTRL</kbd> keys on the Beeb keyboard. This is good for some
+          games (e.g., Zalaga).
         </p>
 
         <h3>Map F1-F10 to f0-f9</h3>
