@@ -5464,10 +5464,25 @@ void _6502SimControl::removeBreakpoint(unsigned addr) {
 // Register access
 uint32_t _6502SimControl::readReg(std::size_t num) {
 
-	if (isValidRegIndex(static_cast<uint8_t>(num))) {
-		return localRegisters[num];
-	}	else {
-		return 0xff;
+	if (isValidRegIndex(num)) {
+		REG_INDEX request = static_cast<REG_INDEX>(num);
+
+		switch (request) {
+		case REG_INDEX::REG_A:
+			return Accumulator;
+		case REG_INDEX::REG_X:
+			return XReg;
+		case REG_INDEX::REG_Y:
+			return YReg;
+		case REG_INDEX::REG_PC:
+			return ProgramCounter;
+		case REG_INDEX::REG_SR:
+			return PSR;
+		case REG_INDEX::REG_SP:
+			return StackReg;
+		default:
+			return 0xdd;
+		}
 	}
 }
 
