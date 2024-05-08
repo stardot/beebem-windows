@@ -5481,7 +5481,7 @@ void _6502SimControl::writeReg(std::size_t num, uint32_t value) {
 bool _6502SimControl::readMem(uint8_t* out, unsigned addr, std::size_t len) {
 
   for (uint32_t index = addr; index < addr + len; index++) {
-    *out = m_localMemory[index] & 0xff;
+    *out =  BeebReadMem(index) & 0xff;
 		out++;
   }
 
@@ -5491,7 +5491,7 @@ bool _6502SimControl::readMem(uint8_t* out, unsigned addr, std::size_t len) {
 bool _6502SimControl::writeMem(uint8_t* src, unsigned addr, std::size_t len) {
 
   for (uint32_t index = addr; index < addr + len; index++) {
-    m_localMemory[index] = *src & 0xff;
+		BeebWriteMem(index, (*src) & 0xff);
 		src++;
   }
   return false; // Placeholder return value
