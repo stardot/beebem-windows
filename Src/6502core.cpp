@@ -70,8 +70,11 @@ CycleCountT TotalCycles=0;
 static bool trace = false;
 int ProgramCounter;
 int PrePC;
-static int Accumulator,XReg,YReg;
-static unsigned char StackReg,PSR;
+int Accumulator; 
+int XReg;
+int YReg;
+unsigned char StackReg; 
+unsigned char PSR;
 static unsigned char IRQCycles;
 int DisplayCycles=0;
 

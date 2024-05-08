@@ -61,6 +61,12 @@ constexpr int CPU_CYCLES_PER_SECOND = 2000000;
 
 extern int ProgramCounter;
 extern int PrePC;
+extern int Accumulator;
+extern int XReg;
+extern int YReg;
+extern unsigned char StackReg;
+extern unsigned char PSR;
+
 extern CycleCountT TotalCycles;
 extern bool NMILock;
 extern int DisplayCycles;
