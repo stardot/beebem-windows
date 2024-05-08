@@ -24,6 +24,7 @@ Boston, MA  02110-1301, USA.
 #include <windowsx.h>
 #include <commctrl.h>
 
+#include <algorithm>
 #include <stdio.h>
 
 #include "RomConfigDialog.h"
@@ -32,10 +33,10 @@ Boston, MA  02110-1301, USA.
 #include "FileDialog.h"
 #include "ListView.h"
 #include "Main.h"
+#include "Model.h"
 #include "Resource.h"
 #include "SysVia.h"
 
-static const char* szModel[] = { "BBC B", "Integra-B", "B Plus", "Master 128" };
 static char szDefaultROMPath[MAX_PATH] = {0};
 static char szDefaultROMConfigPath[MAX_PATH] = {0};
 
@@ -95,10 +96,22 @@ void RomConfigDialog::UpdateROMField(int Row)
 
 /****************************************************************************/
 
+void RomConfigDialog::FillModelList()
+{
+	HWND hWndModel = GetDlgItem(m_hwnd, IDC_MODEL);
+
+	for (int i = 0; i < static_cast<int>(Model::Last); i++)
+	{
+		ComboBox_AddString(hWndModel, GetModelName(static_cast<Model>(i)));
+	}
+
+	ComboBox_SetCurSel(hWndModel, static_cast<int>(m_Model));
+}
+
+/****************************************************************************/
+
 void RomConfigDialog::FillROMList()
 {
-	Edit_SetText(m_hWndModel, szModel[static_cast<int>(m_Model)]);
-
 	ListView_DeleteAllItems(m_hWndROMList);
 
 	int Row = 0;
@@ -126,38 +139,31 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 	switch (nMessage)
 	{
 		case WM_INITDIALOG:
-			m_hWndModel = GetDlgItem(m_hwnd, IDC_MODEL);
 			m_hWndROMList = GetDlgItem(m_hwnd, IDC_ROMLIST);
 
 			ListView_SetExtendedListViewStyle(m_hWndROMList, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 			LVInsertColumn(m_hWndROMList, 0, "Bank", LVCFMT_LEFT, 45);
-			LVInsertColumn(m_hWndROMList, 1, "ROM File", LVCFMT_LEFT, 283);
+			LVInsertColumn(m_hWndROMList, 1, "ROM File", LVCFMT_LEFT, 200);
+			ListView_SetColumnWidth(m_hWndROMList, 1, LVSCW_AUTOSIZE_USEHEADER);
 
+			FillModelList();
 			FillROMList();
 			return TRUE;
 
-		case WM_COMMAND:
-			switch (LOWORD(wParam))
+		case WM_COMMAND: {
+			int nDlgItemID = GET_WM_COMMAND_ID(wParam, lParam);
+			int Notification = GET_WM_COMMAND_CMD(wParam, lParam);
+
+			switch (nDlgItemID)
 			{
-			case IDC_BBCB:
-				m_Model = Model::B;
-				FillROMList();
-				return TRUE;
-
-			case IDC_INTEGRAB:
-				m_Model = Model::IntegraB;
-				FillROMList();
-				return TRUE;
-
-			case IDC_BBCBPLUS:
-				m_Model = Model::BPlus;
-				FillROMList();
-				return TRUE;
-
-			case IDC_MASTER128:
-				m_Model = Model::Master128;
-				FillROMList();
-				return TRUE;
+			case IDC_MODEL:
+				if (Notification == CBN_SELCHANGE)
+				{
+					HWND hWndModelCombo = GetDlgItem(m_hwnd, IDC_MODEL);
+					m_Model = static_cast<Model>(ComboBox_GetCurSel(hWndModelCombo));
+					FillROMList();
+				}
+				break;
 
 			case IDC_SELECTROM: {
 				int Row = ListView_GetSelectionMark(m_hWndROMList);
@@ -238,6 +244,54 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 				break;
 			}
 
+			case IDC_UP: {
+				int Row = ListView_GetSelectionMark(m_hWndROMList);
+
+				if (Row >= 2)
+				{
+					int PreviousRow = Row - 1;
+
+					std::swap(
+						m_RomConfig[static_cast<int>(m_Model)][PreviousRow],
+						m_RomConfig[static_cast<int>(m_Model)][Row]
+					);
+
+					UpdateROMField(PreviousRow);
+					UpdateROMField(Row);
+
+					ListView_SetSelectionMark(m_hWndROMList, PreviousRow);
+				}
+
+				LVSetFocus(m_hWndROMList);
+				break;
+			}
+
+			case IDC_DOWN: {
+				int Row = ListView_GetSelectionMark(m_hWndROMList);
+
+				if (Row > 0)
+				{
+					const int NextRow = Row + 1;
+					const int Count = ListView_GetItemCount(m_hWndROMList);
+
+					if (NextRow < Count)
+					{
+						std::swap(
+							m_RomConfig[static_cast<int>(m_Model)][Row],
+							m_RomConfig[static_cast<int>(m_Model)][NextRow]
+						);
+
+						UpdateROMField(Row);
+						UpdateROMField(NextRow);
+
+						ListView_SetSelectionMark(m_hWndROMList, NextRow);
+					}
+
+					LVSetFocus(m_hWndROMList);
+				}
+				break;
+			}
+
 			case IDC_SAVE:
 				SaveROMConfigFile();
 				LVSetFocus(m_hWndROMList);
@@ -257,6 +311,7 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 				return TRUE;
 			}
 			break;
+		}
 	}
 
 	return FALSE;

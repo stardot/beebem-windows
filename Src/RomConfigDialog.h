@@ -46,6 +46,7 @@ class RomConfigDialog : public Dialog
 		);
 
 		void UpdateROMField(int Row);
+		void FillModelList();
 		void FillROMList();
 		bool LoadROMConfigFile();
 		bool SaveROMConfigFile();

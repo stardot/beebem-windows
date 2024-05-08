@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2021  Chris Needham
+Copyright (C) 2024  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -31,7 +31,11 @@ static const char* const szModel[] = {
 	"Filestore E01S",
 };
 
+/****************************************************************************/
+
 const char* GetModelName(Model model)
 {
 	return szModel[static_cast<int>(model)];
 }
+
+/****************************************************************************/

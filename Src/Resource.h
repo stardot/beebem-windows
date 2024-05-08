@@ -162,10 +162,8 @@
 #define IDC_WATCHENDIAN                 1072
 #define IDC_DEBUGBRK                    1073
 #define IDC_DEBUGGRP                    1074
-#define IDC_BBCB                        1075
-#define IDC_INTEGRAB                    1076
-#define IDC_BBCBPLUS                    1077
-#define IDC_MASTER128                   1078
+#define IDC_DOWN                        1075
+#define IDC_UP                          1076
 #define IDC_MODEL                       1079
 #define IDC_ROMLIST                     1080
 #define IDC_SELECTROM                   1081
