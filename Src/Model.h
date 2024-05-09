@@ -30,6 +30,11 @@ enum class Model : unsigned char {
 	Last
 };
 
+enum class CPU {
+	CPU6502,
+	CPU65C12
+};
+
 const char* GetModelName(Model model);
 
 #endif
