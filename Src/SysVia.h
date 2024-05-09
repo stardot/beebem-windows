@@ -55,7 +55,8 @@ void CMOSWrite(unsigned char Address, unsigned char Value);
 unsigned char CMOSRead(unsigned char Address);
 extern unsigned char CMOSRAM[(static_cast<int>(Model::Last) -3)][64]; // RTC registers + 50 bytes CMOS RAM
 
-extern const unsigned char CMOSDefault_Master[50];
+extern const unsigned char CMOSDefault_Master128[50];
+extern const unsigned char CMOSDefault_MasterET[50];
 
 unsigned char BCD(int nonBCD);
 unsigned char BCDToBin(unsigned char BCD);

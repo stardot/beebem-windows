@@ -110,24 +110,34 @@ const unsigned char RegisterC = 0x0C;
 const unsigned char RegisterD = 0x0D;
 
 // Register A
-const unsigned char UIP = 0x80; // bit7
+const unsigned char UIP = 0x80;  // bit7
 
 // Register B
-const unsigned char SET = 0x80; // bit7
-const unsigned char UIE = 0x10; // bit4
-const unsigned char SQWE = 0x08; // bit3
-const unsigned char DM = 0x04; // bit2
+const unsigned char  SET = 0x80;	// bit7
+const unsigned char  UIE = 0x10;	// bit4
+const unsigned char SQWE = 0x08;	// bit3
+const unsigned char   DM = 0x04;	// bit2
 
 // Register C
-const unsigned char IRQF = 0x80; // bit7
-const unsigned char UF = 0x10; // bit4
+const unsigned char IRQF = 0x80;	// bit7
+const unsigned char   UF = 0x10;	// bit4
 
 
-// Backup of Master Series CMOS Defaults from byte 14 (RAM bytes only)
-const unsigned char CMOSDefault_Master[50] =
+// Backup of Master 128 CMOS Defaults from byte 14 (RAM bytes only)
+const unsigned char CMOSDefault_Master128[50] =
 {
-	0x00, 0xFE, 0x00, 0xFE, 0x00,
+	0x00, 0xFE, 0x00, 0xEA, 0x00,
 	0xc9, 0xff, 0xfe, 0x32, 0x00,
+	0x07, 0xc1, 0x1e, 0x05, 0x00,
+	0x59, 0xa2
+};
+
+
+// Backup of Master ET CMOS Defaults from byte 14 (RAM bytes only)
+const unsigned char CMOSDefault_MasterET[50] =
+{
+	0x00, 0xFE, 0x00, 0xEA, 0x00,
+	0xde, 0xff, 0xff, 0x32, 0x00,
 	0x07, 0xc1, 0x1e, 0x05, 0x00,
 	0x59, 0xa2
 };
@@ -165,7 +175,7 @@ void BeebReleaseAllKeys()
 		}
 	}
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 	{
 		TranslateKeyboardLinks(KeyboardLinks);
 	}
@@ -328,7 +338,7 @@ static void IC32Write(unsigned char Value)
 	CMOS.DataStrobe = (tmpCMOSState == OldCMOSState) ? false : true;
 	OldCMOSState = tmpCMOSState;
 
-	if (MachineType == Model::Master128)
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
 		if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
 		{
@@ -352,7 +362,7 @@ static void IC32Write(unsigned char Value)
 
 	#if ENABLE_SPEECH
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET )
 	{
 		if ((PrevIC32State & IC32_SPEECH_WRITE) && !(IC32State & IC32_SPEECH_WRITE))
 		{
@@ -398,7 +408,7 @@ static void SlowDataBusWrite(unsigned char Value)
 		DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
 	}
 
-	if (MachineType == Model::Master128)
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
 		if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
 		{
@@ -416,7 +426,7 @@ static void SlowDataBusWrite(unsigned char Value)
 
 static unsigned char SlowDataBusRead()
 {
-	if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128)
+	if (CMOS.Enabled && CMOS.Op && (MachineType == Model::Master128 || MachineType == Model::MasterET))
 	{
 		SysVIAState.ora = CMOSRead(CMOS.Address); // SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
 	}
@@ -426,7 +436,7 @@ static unsigned char SlowDataBusRead()
 
 	// I don't know this lot properly - just put in things as we figure them out
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 	{
 		if ((IC32State & IC32_KEYBOARD_WRITE) == 0)
 		{
@@ -434,12 +444,12 @@ static unsigned char SlowDataBusRead()
 		}
 	}
 
-	if ((MachineType == Model::Master128) && !CMOS.Enabled)
+	if ((MachineType == Model::Master128 || MachineType == Model::MasterET) && !CMOS.Enabled)
 	{
 		if (KbdOP()) result |= 128;
 	}
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 	{
 		#if ENABLE_SPEECH
 

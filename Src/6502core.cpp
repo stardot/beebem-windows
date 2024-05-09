@@ -41,6 +41,7 @@ Boston, MA  02110-1301, USA.
 #include "Log.h"
 #include "Main.h"
 #include "Master512CoPro.h"
+#include "Model.h"
 #include "Music5000.h"
 #include "Sound.h"
 #include "Teletext.h"
@@ -3210,7 +3211,7 @@ static void PollHardware(unsigned int nCycles)
 	TeletextPoll();
 
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
-	if (MachineType == Model::Master128 || MachineType == Model::MasterET || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
+	if (MachineType == Model::Master128 || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 
 	if (EconetEnabled && EconetPoll())
 	{

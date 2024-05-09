@@ -380,7 +380,17 @@ unsigned char ReadTubeFromHostSide(int IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
 	if (TubeType == Tube::None)
-		return MachineType == Model::Master128 ? 0xff : 0xfe;
+	{
+		switch (MachineType) 
+		{
+		case Model::MasterET:
+			return MachineType == Model::MasterET ? 0xff : 0xfe;
+			break;
+		default:
+			return MachineType == Model::Master128 ? 0xff : 0xfe;
+		}
+
+	}
 
 	switch (IOAddr) {
 	case 0:
@@ -435,7 +445,14 @@ unsigned char ReadTubeFromHostSide(int IOAddr) {
 		break;
 
 	default:
-		return MachineType == Model::Master128 ? 0xff : 0xfe;
+		switch (MachineType)
+		{
+		case Model::MasterET:
+			return MachineType == Model::MasterET ? 0xff : 0xfe;
+			break;
+		default:
+			return MachineType == Model::Master128 ? 0xff : 0xfe;
+		}
 	}
 
 	if (DebugEnabled && (old_readHIOAddr != IOAddr || old_readHTmpData != TmpData))
