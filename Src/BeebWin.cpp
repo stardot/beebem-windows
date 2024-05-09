@@ -557,7 +557,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	SwitchOnSound();
 	Music5000Reset();
-	if (Music5000Enabled)
+	if ((Music5000Enabled) && MachineType != Model::MasterET)
 		Music5000Init();
 	MachineType=NewModelType;
 	BeebMemInit(LoadRoms, m_ShiftBooted);
@@ -616,14 +616,21 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	EjectDiscImage(0);
 	EjectDiscImage(1);
 
-	if (SCSIDriveEnabled) SCSIReset();
-	if (SCSIDriveEnabled) SASIReset();
-	if (IDEDriveEnabled)  IDEReset();
-	TeletextInit();
-	if (MachineType == Model::Master128) {
+	if (MachineType != Model::MasterET)
+	{
+		if (SCSIDriveEnabled) SCSIReset();
+		if (SCSIDriveEnabled) SASIReset();
+		if (IDEDriveEnabled)  IDEReset();
+
+		TeletextInit();
+	}
+
+	if (MachineType == Model::Master128) 
+	{
 		InvertTR00 = false;
 	}
-	else {
+	else
+	{
 		LoadFDC(NULL, false);
 	}
 
@@ -707,28 +714,38 @@ void BeebWin::Break()
 		sprow->Reset();
 	}
 
-	Disc8271Reset();
-	Reset1770();
-	if (EconetEnabled) EconetReset();//Rob
-	if (SCSIDriveEnabled) SCSIReset();
-	if (SCSIDriveEnabled) SASIReset();
-	if (IDEDriveEnabled)  IDEReset();
-	TeletextInit();
-	//SoundChipReset();
-	Music5000Reset();
-	if (Music5000Enabled)
-		Music5000Init();
-
-	#if ENABLE_SPEECH
-
-	if (SpeechDefault)
+	if (MachineType != Model::MasterET)
 	{
-		SpeechStop();
-		SpeechStart();
+		Disc8271Reset();
+		Reset1770();
 	}
 
-	#endif
+	if (EconetEnabled) EconetReset();//Rob
 
+	if (MachineType != Model::MasterET)
+	{
+		if (SCSIDriveEnabled) SCSIReset();
+		if (SCSIDriveEnabled) SASIReset();
+		if (IDEDriveEnabled)  IDEReset();
+		TeletextInit();
+
+		//SoundChipReset();
+		Music5000Reset();
+
+		if (Music5000Enabled)
+			Music5000Init();
+	}
+
+#if ENABLE_SPEECH
+
+		if (SpeechDefault)
+		{
+			SpeechStop();
+			SpeechStart();
+		}
+
+#endif
+	
 	// Reset IntegraB RTC on Break
 	if (MachineType == Model::IntegraB)
 	{
@@ -1334,6 +1351,95 @@ void BeebWin::UpdateModelMenu()
 	{
 		EnableMenuItem(ID_FDC_DLL, true);
 	}
+
+	bool b_Not_MasterET = !(MachineType == Model::MasterET);
+	bool b_ModelB = (MachineType == Model::B || MachineType == Model::BPlus || MachineType == Model::IntegraB);
+	
+	// File Menu Item
+	EnableMenuItem(IDM_RUNDISC, b_Not_MasterET);
+	EnableMenuItem(IDM_LOADDISC0, b_Not_MasterET);
+	EnableMenuItem(IDM_LOADDISC1, b_Not_MasterET);
+    // Disc Options sub-menu
+	EnableMenuItem(IDM_NEWDISC0, b_Not_MasterET);
+	EnableMenuItem(IDM_NEWDISC1, b_Not_MasterET);
+	EnableMenuItem(IDM_EJECTDISC0, b_Not_MasterET);
+	EnableMenuItem(IDM_EJECTDISC1, b_Not_MasterET);
+	EnableMenuItem(IDM_WRITE_PROTECT_DISC0, b_Not_MasterET);
+	EnableMenuItem(IDM_WRITE_PROTECT_DISC1, b_Not_MasterET);
+	EnableMenuItem(IDM_WRITE_PROTECT_ON_LOAD, b_Not_MasterET);
+
+	EnableMenuItem(ID_LOADTAPE, b_Not_MasterET);
+
+	// Edit Menu Item
+	EnableMenuItem(IDM_DISC_IMPORT_0 , b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_IMPORT_1, b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_IMPORT_2, b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_IMPORT_3, b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_0, b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_1, b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_2, b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_3, b_Not_MasterET);
+
+	// Comms Menu Item
+	// Tape speed sub-menu
+	EnableMenuItem(ID_TAPE_FAST, b_Not_MasterET);
+	EnableMenuItem(ID_TAPE_MFAST, b_Not_MasterET);
+	EnableMenuItem(ID_TAPE_MSLOW, b_Not_MasterET);
+	EnableMenuItem(ID_TAPE_NORMAL, b_Not_MasterET);
+
+	EnableMenuItem(ID_REWINDTAPE, b_Not_MasterET);
+	EnableMenuItem(ID_UNLOCKTAPE, b_Not_MasterET);
+	EnableMenuItem(ID_TAPECONTROL, b_Not_MasterET);
+	EnableMenuItem(ID_SERIAL, b_Not_MasterET);
+	EnableMenuItem(ID_SELECT_SERIAL_DESTINATION, b_Not_MasterET);
+
+	// View Menu Item
+    // LED sub-menu
+	EnableMenuItem(ID_RED_LEDS, b_Not_MasterET);
+	EnableMenuItem(ID_GREEN_LEDS, b_Not_MasterET);
+	EnableMenuItem(ID_GREEN_LEDS, b_Not_MasterET);
+	EnableMenuItem(ID_SHOW_DISCLEDS, b_Not_MasterET);
+
+	// Sound Menu Item
+	EnableMenuItem(IDM_MUSIC5000, b_Not_MasterET);
+
+	// AMX Menu Item
+	EnableMenuItem(IDM_AMXONOFF, b_Not_MasterET);
+	EnableMenuItem(IDM_CAPTUREMOUSE, AMXMouseEnabled && b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_LRFORMIDDLE, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_LRFORMIDDLE, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_160X256, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_320X256, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_640X256, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTP50, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTP30, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTP10, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTM10, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTM30, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTM50, b_Not_MasterET);
+
+	// Hardware Menu
+	EnableMenuItem(IDM_AMX_ADJUSTM50, b_Not_MasterET);
+	// Model B Floppy Controller sub-menu
+	EnableMenuItem(ID_8271, b_ModelB);
+	EnableMenuItem(ID_FDC_DLL, b_ModelB);
+
+	EnableMenuItem(ID_BASIC_HARDWARE_ONLY, b_Not_MasterET);
+	EnableMenuItem(ID_TELETEXT, b_Not_MasterET);
+	EnableMenuItem(IDM_SELECT_TELETEXT_DATA_SOURCE, b_Not_MasterET);
+	EnableMenuItem(IDM_SET_KEYBOARD_LINKS, b_ModelB);
+	EnableMenuItem(ID_FLOPPYDRIVE, b_Not_MasterET);
+	EnableMenuItem(ID_HARDDRIVE, b_Not_MasterET);
+	EnableMenuItem(ID_IDEDRIVE, b_Not_MasterET);
+	EnableMenuItem(IDM_SELECT_HARD_DRIVE_FOLDER, b_Not_MasterET);
+	EnableMenuItem(ID_BREAKOUT, b_Not_MasterET);
+	EnableMenuItem(ID_USER_PORT_RTC_MODULE, b_Not_MasterET);
+
+	// Options Menu
+	EnableMenuItem(IDM_JOYSTICK, b_Not_MasterET);
+	EnableMenuItem(IDM_ANALOGUE_MOUSESTICK, b_Not_MasterET);
+	EnableMenuItem(IDM_DIGITAL_MOUSESTICK, b_Not_MasterET);
+
 }
 
 void BeebWin::UpdateSFXMenu() {
@@ -1506,7 +1612,7 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 /****************************************************************************/
 void BeebWin::SetAMXPosition(unsigned int x, unsigned int y)
 {
-	if (AMXMouseEnabled)
+	if (AMXMouseEnabled && (MachineType != Model::MasterET))
 	{
 		// Scale the window coords to the beeb screen coords
 		AMXTargetX = x * m_AMXXSize * (100 + m_AMXAdjust) / 100 / m_XWinSize;
@@ -1519,7 +1625,7 @@ void BeebWin::SetAMXPosition(unsigned int x, unsigned int y)
 /****************************************************************************/
 void BeebWin::ChangeAMXPosition(int deltaX, int deltaY)
 {
-	if (AMXMouseEnabled)
+	if (AMXMouseEnabled && (MachineType != Model::MasterET))
 	{
 		static int remX = 0;
 		static int remY = 0;
@@ -3270,7 +3376,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 			SoundInit();
 		}
 
-		if (Music5000Enabled)
+		if ((Music5000Enabled) && (MachineType != Model::MasterET))
 		{
 			Music5000Reset();
 			Music5000Init();
@@ -4592,7 +4698,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 			HandleCommand(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
-			if (m_MenuIDSticks == IDM_JOYSTICK)
+			if (m_MenuIDSticks == IDM_JOYSTICK && MachineType != Model::MasterET)
 				InitJoystick();
 		}
 	}
