@@ -28,6 +28,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #define SYSVIA_HEADER
 
 #include "Via.h"
+#include "Model.h"
 
 extern VIAState SysVIAState;
 extern unsigned char IC32State;
@@ -52,8 +53,12 @@ void SysVIATriggerCA1Int(int value);
 void RTCInit();
 void CMOSWrite(unsigned char Address, unsigned char Value);
 unsigned char CMOSRead(unsigned char Address);
-extern unsigned char CMOSRAM[64]; // RTC registers + 50 bytes CMOS RAM
-extern const unsigned char CMOSDefault[50];
+extern unsigned char CMOSRAM[(static_cast<int>(Model::Last) -3)][64]; // RTC registers + 50 bytes CMOS RAM
+
+extern const unsigned char CMOSDefault_Master[50];
+
+unsigned char BCD(int nonBCD);
+unsigned char BCDToBin(unsigned char BCD);
 
 void PulseSysViaCB1(void);
 

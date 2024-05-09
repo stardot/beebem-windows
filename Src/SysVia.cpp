@@ -39,6 +39,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "DebugTrace.h"
 #include "IC32Latch.h"
 #include "Main.h"
+#include "Model.h"
 #include "Sound.h"
 #include "Speech.h"
 #include "Via.h"
@@ -84,7 +85,7 @@ struct CMOSType
 
 static struct CMOSType CMOS;
 static bool OldCMOSState = false;
-unsigned char CMOSRAM[64]; // RTC registers + 50 bytes CMOS RAM
+unsigned char CMOSRAM[(static_cast<int>(Model::Last) - 3)][64]; // RTC registers + 50 bytes CMOS RAM for each machine type from MASTER 128
 
 // 0x0: Seconds (0 to 59)
 // 0x1: Alarm Seconds (0 to 59)
@@ -102,14 +103,37 @@ unsigned char CMOSRAM[64]; // RTC registers + 50 bytes CMOS RAM
 // 0xD: Register D
 // 0xE to 0x3F: User RAM (50 bytes)
 
-// Backup of CMOS Defaults (RAM bytes only)
-const unsigned char CMOSDefault[50] =
+// RTC Registers in memory
+const unsigned char RegisterA = 0x0A;
+const unsigned char RegisterB = 0x0B;
+const unsigned char RegisterC = 0x0C;
+const unsigned char RegisterD = 0x0D;
+
+// Register A
+const unsigned char UIP = 0x80; // bit7
+
+// Register B
+const unsigned char SET = 0x80; // bit7
+const unsigned char UIE = 0x10; // bit4
+const unsigned char SQWE = 0x08; // bit3
+const unsigned char DM = 0x04; // bit2
+
+// Register C
+const unsigned char IRQF = 0x80; // bit7
+const unsigned char UF = 0x10; // bit4
+
+
+// Backup of Master Series CMOS Defaults from byte 14 (RAM bytes only)
+const unsigned char CMOSDefault_Master[50] =
 {
-	0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0xFE, 0x00, 0xFE, 0x00,
 	0xc9, 0xff, 0xfe, 0x32, 0x00,
 	0x07, 0xc1, 0x1e, 0x05, 0x00,
 	0x59, 0xa2
 };
+
+// pointer used to switch between the CMOS RAM for the different machines
+unsigned char* pCMOS;
 
 /*--------------------------------------------------------------------------*/
 
@@ -874,12 +898,25 @@ void SysVIAReset()
 static time_t CMOSConvertClock()
 {
 	struct tm Base;
-	Base.tm_sec   = BCDToBin(CMOSRAM[0]);
-	Base.tm_min   = BCDToBin(CMOSRAM[2]);
-	Base.tm_hour  = BCDToBin(CMOSRAM[4]);
-	Base.tm_mday  = BCDToBin(CMOSRAM[7]);
-	Base.tm_mon   = BCDToBin(CMOSRAM[8]) - 1;
-	Base.tm_year  = BCDToBin(CMOSRAM[9]);
+
+
+	if (!(pCMOS[RegisterB] & DM)) {
+		Base.tm_sec  = BCDToBin(pCMOS[0]);
+		Base.tm_min  = BCDToBin(pCMOS[2]);
+		Base.tm_hour = BCDToBin(pCMOS[4]);
+		Base.tm_mday = BCDToBin(pCMOS[7]);
+		Base.tm_mon  = BCDToBin(pCMOS[8]) - 1;
+		Base.tm_year = BCDToBin(pCMOS[9]);
+	}
+	else {
+		Base.tm_sec  = pCMOS[0];
+		Base.tm_min  = pCMOS[2];
+		Base.tm_hour = pCMOS[4];
+		Base.tm_mday = pCMOS[7];
+		Base.tm_mon  = pCMOS[8] - 1;
+		Base.tm_year = pCMOS[9];
+	}
+
 	Base.tm_wday  = -1;
 	Base.tm_yday  = -1;
 	Base.tm_isdst = -1;
@@ -900,13 +937,51 @@ void RTCInit()
 	time(&SysTime);
 	struct tm *CurTime = localtime(&SysTime);
 
-	CMOSRAM[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-	CMOSRAM[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-	CMOSRAM[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-	CMOSRAM[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-	CMOSRAM[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-	CMOSRAM[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+	switch (MachineType)			// select CMOS memory
+	{
+	case Model::Master128:
+		pCMOS = &CMOSRAM[0][0];		// pointer to Master 128 CMOS
+		break;
+	case Model::MasterET:
+		pCMOS = &CMOSRAM[1][0];		// pointer to Master ET CMOS
+		break;
+	default:						// machine doesn't use CMOS
+		KillTimer(mainWin->m_hWnd, 3);
+		pCMOS = NULL;
+		if (DebugEnabled)
+			DebugDisplayTrace(DebugType::CMOS, true, "RTC: Timer off");
+		return;
+	}
+
+	// Clear Registers A-D
+	for (unsigned char reg = RegisterA; reg <= RegisterD; reg++)
+	{
+		pCMOS[reg] = 0x00;
+	}
+
+	if (!(pCMOS[RegisterB] & DM))
+	{
+		// intialise with current time values in BCD format
+		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
+		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
+		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
+		pCMOS[6] = BCD(static_cast<unsigned char>((CurTime->tm_wday) + 1));
+		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
+		pCMOS[8] = BCD(static_cast<unsigned char>((CurTime->tm_mon) + 1));
+		pCMOS[9] = BCD(static_cast<unsigned char>((CurTime->tm_year) % 100));
+	}
+	else
+	{
+		// intialise with current time values in binary format
+		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
+		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
+		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
+		pCMOS[6] = static_cast<unsigned char>((CurTime->tm_wday) + 1 );
+		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
+		pCMOS[8] = static_cast<unsigned char>((CurTime->tm_mon) + 1);
+		pCMOS[9] = static_cast<unsigned char>((CurTime->tm_year) % 100);
+	}
+
 
 	RTCTimeOffset = SysTime - CMOSConvertClock();
 }
@@ -920,16 +995,34 @@ static void RTCUpdate()
 	SysTime -= RTCTimeOffset;
 	struct tm *CurTime = localtime(&SysTime);
 
-	CMOSRAM[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-	CMOSRAM[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-	CMOSRAM[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-	CMOSRAM[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-	CMOSRAM[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-	CMOSRAM[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-	CMOSRAM[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+	if (!(pCMOS[RegisterB] & DM))
+	{
+		// update with current time values in BCD format
+		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
+		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
+		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
+		pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
+		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
+		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
+		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+	}
+	else 
+	{
+		// update with current time values in binary format
+		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
+		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
+		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
+		pCMOS[6] = static_cast<unsigned char>(CurTime->tm_wday + 1);
+		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
+		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
+		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
+	}
+
 }
 
-/*-------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------
+* Write values directly to Clock, Registers A,B,C,D or the CMOS area
+* -------------------------------------------------------------------------*/
 
 void CMOSWrite(unsigned char Address, unsigned char Value)
 {
@@ -942,42 +1035,57 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 
 	// Many thanks to Tom Lees for supplying me with info on the 146818 registers
 	// for these two functions.
-	if (Address <= 0x9)
+	switch (Address)
 	{
-		// Clock registers
-		CMOSRAM[Address] = Value;
-	}
-	else if (Address == 0xa)
-	{
-		// Control register A
-		CMOSRAM[Address] = Value & 0x7f; // Top bit not writable
-	}
-	else if (Address == 0xb)
-	{
-		// Control register B
-		// Bit-7 SET - 0=clock running, 1=clock update halted
-		if (Value & 0x80)
+	case 1: // clock data
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+	case 8:
+	case 9:
+		if (!(pCMOS[RegisterB] & DM)) // BCD or binary format
+		{
+			pCMOS[Value] = BCD(Value);
+		}
+		else
+		{
+			pCMOS[Value] = Value;
+		}
+		break;
+	case RegisterA:
+		pCMOS[RegisterA] = Value & 0x7f; // Top bit not writable
+		break;
+	case RegisterB:
+		// Bit-7 SET - When the SET bit is 0, the update cycle functions normally by advancing the 
+		// counts once per second. When 1, any update is aborted and the program may write the time
+		// and calendar bytes without an update occuring
+
+		if (Value & 0x80)	// SET Bit being written
 		{
 			RTCUpdate();
 		}
-		else if ((CMOSRAM[Address] & 0x80) && !(Value & 0x80))
+		else if ((pCMOS[RegisterB] & 0x80) && !(Value & 0x80))
 		{
 			// New clock settings
 			time_t SysTime;
 			time(&SysTime);
 			RTCTimeOffset = SysTime - CMOSConvertClock();
 		}
-
-		CMOSRAM[Address] = Value;
-	}
-	else if (Address == 0xc || Address == 0xd)
-	{
-		// Control register C and D - read only
-	}
-	else if (Address <= 0x3f)
-	{
-		// User RAM
-		CMOSRAM[Address] = Value;
+		pCMOS[Address] = Value;  // write the value to CMOS anyway
+		break;
+	case RegisterC: // do nothing, read only
+		break;
+	case RegisterD: // do nothing, read only
+		break;
+	default:   // otherwise User RAM
+		if (Address < 64)
+		{
+			pCMOS[Address] = Value;
+		}
+		break;
 	}
 }
 
@@ -993,7 +1101,7 @@ unsigned char CMOSRead(unsigned char Address)
 		RTCUpdate();
 	}
 
-	unsigned char Value = CMOSRAM[Address];
+	unsigned char Value = pCMOS[Address];
 
 	if (DebugEnabled)
 	{
