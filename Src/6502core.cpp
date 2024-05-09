@@ -1156,9 +1156,6 @@ void Init6502core()
 	switch (MachineType) {
 		case Model::Master128:
 		case Model::MasterET:
-		case Model::MasterCompact:
-		case Model::FileStoreE01:
-		case Model::FileStoreE01S:
 			CPUType = CPU::CPU65C12;
 			break;
 
@@ -3213,7 +3210,7 @@ static void PollHardware(unsigned int nCycles)
 	TeletextPoll();
 
 	if (DisplayCycles>0) DisplayCycles-=nCycles; // Countdown time till end of display of info.
-	if (MachineType == Model::Master128 || MachineType == Model::MasterCompact || MachineType == Model::MasterET || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET || !NativeFDC) Poll1770(nCycles); // Do 1770 Background stuff
 
 	if (EconetEnabled && EconetPoll())
 	{

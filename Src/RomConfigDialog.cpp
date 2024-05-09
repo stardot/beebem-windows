@@ -70,17 +70,17 @@ void RomConfigDialog::UpdateROMField(int Row)
 	bool Unplugged = false;
 	int Bank;
 
-	if (m_Model == Model::Master128)
+	if (m_Model == Model::Master128 || m_Model == Model::MasterET)
 	{
 		Bank = 16 - Row;
 
 		if (Bank >= 0 && Bank <= 7)
 		{
-			Unplugged = (CMOSRAM[20] & (1 << Bank)) == 0;
+			Unplugged = (CMOSRAM[(int(m_Model) - 3)][20] & (1 << Bank)) == 0;
 		}
 		else if (Bank >= 8 && Bank <= 15)
 		{
-			Unplugged = (CMOSRAM[21] & (1 << (Bank - 8))) == 0;
+			Unplugged = (CMOSRAM[(int(m_Model)-3)][21] & (1 << (Bank - 8))) == 0;
 		}
 	}
 

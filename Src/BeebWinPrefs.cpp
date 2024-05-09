@@ -714,8 +714,11 @@ void BeebWin::LoadPreferences()
 	}
 
 	// CMOS RAM now in prefs file
-	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[14], 50))
-		memcpy(&CMOSRAM[14], CMOSDefault, 50);
+	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50)) // Master 128
+		memcpy(&CMOSRAM[0][14], CMOSDefault_Master, 50);
+
+	if (!m_Preferences.GetBinaryValue("CMOSRamMET", &CMOSRAM[1][14], 50)) // Master ET
+		memcpy(&CMOSRAM[1][14], CMOSDefault_Master, 50);
 
 	// Set FDC defaults if not already set
 	for (int machine = 0; machine < 3; ++machine)
@@ -898,7 +901,8 @@ void BeebWin::SavePreferences(bool saveAll)
 	// CMOS RAM now in prefs file
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
-		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[14], 50);
+		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50); // Master 128
+		m_Preferences.SetBinaryValue("CMOSRamMET", &CMOSRAM[1][14], 50); // Master 128
 	}
 
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);

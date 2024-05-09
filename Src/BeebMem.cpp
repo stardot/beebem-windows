@@ -366,7 +366,7 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
 	}
-	else if (MachineType == Model::Master128) {
+	else if (MachineType == Model::Master128 || MachineType == Model::MasterET) {
 		switch ((Address&0xf000)>>12) {
 		case 0:
 		case 1:
@@ -678,7 +678,7 @@ static void DoRomChange(unsigned char NewBank)
   }
 
   // Master Specific stuff
-  if (MachineType == Model::Master128) {
+  if (MachineType == Model::Master128 || MachineType == Model::MasterET) {
     PagedRomReg = NewBank;
     PrivateRAMSelect = (PagedRomReg & 0x80) != 0;
   }
@@ -844,7 +844,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 			return;
 		}
 	}
-	else if (MachineType == Model::Master128) {
+	else if (MachineType == Model::Master128 || MachineType == Model::MasterET) {
 		if (Address < 0xfc00) {
 			switch ((Address&0xf000)>>12) {
 			case 0:
@@ -977,12 +977,12 @@ void BeebWriteMem(int Address, unsigned char Value)
 	}
 
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-	if (Address >= 0xfe34 && Address < 0xfe38 && MachineType == Model::Master128) {
+	if (Address >= 0xfe34 && Address < 0xfe38 && (MachineType == Model::Master128 || MachineType == Model::MasterET)) {
 		FiddleACCCON(Value);
 		return;
 	}
 
-	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128) && NativeFDC) {
+	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128) && (MachineType == Model::MasterET) && NativeFDC) {
 		Disc8271Write((Address & 7), Value);
 		return;
 	}
@@ -1163,7 +1163,7 @@ bool ReadROMConfigFile(const char *filename, ROMConfigFile ROMConfig)
 		return false;
 	}
 
-	for (int model = 0; model < 4 && success; ++model)
+	for (int model = 0; model < static_cast<int>(Model::Last) && success; ++model)
 	{
 		for (int bank = 0; bank < 17 && success; ++bank)
 		{

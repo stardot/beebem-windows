@@ -27,10 +27,10 @@ enum class Model : unsigned char {
 	BPlus,         // 2: BBC B+
 	Master128,     // 3: BBC Master 128
 	MasterET,      // 4: Master ET
-	MasterCompact, // 5: Master Compact
+/*	MasterCompact, // 5: Master Compact
 	FileStoreE01,  // 6: Acorn FileStore E01
 	FileStoreE01S, // 7: Acorn FileStore E01S
-	Last
+*/	Last
 };
 
 enum class CPU : unsigned char {
