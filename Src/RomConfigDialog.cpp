@@ -80,7 +80,7 @@ void RomConfigDialog::UpdateROMField(int Row)
 		}
 		else if (Bank >= 8 && Bank <= 15)
 		{
-			Unplugged = (CMOSRAM[(int(m_Model)-3)][21] & (1 << (Bank - 8))) == 0;
+			Unplugged = (CMOSRAM[(int(m_Model) - 3)][21] & (1 << (Bank - 8))) == 0;
 		}
 	}
 
@@ -416,7 +416,7 @@ static bool WriteROMConfigFile(const char *filename, ROMConfigFile ROMConfig)
 		return false;
 	}
 
-	for (int Model = 0; Model < 4; ++Model)
+	for (int Model = 0; Model < static_cast<int>(Model::Last); ++Model)
 	{
 		for (int Bank = 0; Bank < 17; ++Bank)
 		{
