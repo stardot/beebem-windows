@@ -188,7 +188,7 @@ const unsigned char *BeebMemPtrWithWrap(int Address, int Length) {
   int EndAddress = WrapAddr(Address + Length - 1);
 
   // On Master the FSRam area is displayed if start addr below shadow area
-  if ((MachineType == Model::Master128 || MachineType == Model::MasterET) && Address <= EndAddress && Sh_Display && Address < 0x3000) {
+  if (MachineType == Model::Master128 && Address <= EndAddress && Sh_Display && Address < 0x3000) {
     if (0x3000 - Address < Length) {
       int toCopy = 0x3000 - Address;
       if (toCopy > Length) toCopy = Length;
@@ -491,8 +491,8 @@ unsigned char BeebReadMem(int Address) {
 	   shows the read-station select line is also INTOFF. (and it's any access to FE18, not just a read.)
 	*/
 	if (EconetEnabled &&
-		(((MachineType != Model::Master128 && MachineType !=Model::MasterET) && (Address & ~3) == 0xfe18) ||
-		 ((MachineType == Model::Master128 || MachineType == Model::MasterET) && (Address & ~3) == 0xfe38)))
+		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
+		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)))
 	{
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF");
@@ -500,7 +500,7 @@ unsigned char BeebReadMem(int Address) {
 		return EconetReadStationID();
 	}
 
-	if (Address >= 0xfe18 && Address <= 0xfe20 && (MachineType == Model::Master128 || MachineType == Model::MasterET)) {
+	if (Address >= 0xfe18 && Address <= 0xfe20 && MachineType == Model::Master128) {
 		return(AtoDRead(Address - 0xfe18));
 	}
 
@@ -511,8 +511,8 @@ unsigned char BeebReadMem(int Address) {
 	   (NMI from the FDC is always enabled)
 	*/
 	if (EconetEnabled &&
-	    (((MachineType != Model::Master128 && MachineType != Model::MasterET) && (Address & ~3) == 0xfe20) ||
-	     ((MachineType == Model::Master128 || MachineType == Model::MasterET) && (Address & ~3) == 0xfe3c)))
+	    ((MachineType != Model::Master128 && (Address & ~3) == 0xfe20) ||
+	     (MachineType == Model::Master128 && (Address & ~3) == 0xfe3c)))
 	{
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: INTON");
 
@@ -547,11 +547,11 @@ unsigned char BeebReadMem(int Address) {
 		                     // correct me if im wrong. - Richard Gellman
 	}
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-	if ((Address & ~3) == 0xfe34 && (MachineType == Model::Master128 || MachineType == Model::MasterET)) {
+	if ((Address & ~3) == 0xfe34 && MachineType == Model::Master128) {
 		return(ACCCON);
 	}
 
-	if ((Address & ~0x1f) == 0xfe80 && (MachineType != Model::Master128 && MachineType != Model::MasterET) && NativeFDC) {
+	if ((Address & ~0x1f) == 0xfe80 && MachineType != Model::Master128 && NativeFDC) {
 		return Disc8271Read(Address & 0x7);
 	}
 
@@ -561,7 +561,7 @@ unsigned char BeebReadMem(int Address) {
 		return(0xfe); // if not enabled
 	}
 
-	if ((Address & ~0x1f) == 0xfec0 && (MachineType != Model::Master128 /* && MachineType != Model::MasterET */)) {
+	if ((Address & ~0x1f) == 0xfec0 && MachineType != Model::Master128) {
 		SyncIO();
 		Value = AtoDRead(Address & 0xf);
 		AdjustForIORead();
@@ -600,12 +600,12 @@ unsigned char BeebReadMem(int Address) {
 		return(SASIRead(Address & 0x3));
 	}
 
-	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
+	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
 		// mainWin->Report(MessageType::Error, "Read of 1770 Extension Board");
 		return Read1770Register(Address - EFDCAddr);
 	}
 
-	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address == EDCAddr && !NativeFDC) {
+	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
 		return(mainWin->GetDriveControl());
 	}
 
@@ -652,7 +652,6 @@ void DebugMemoryState()
 			DebugDisplayInfoF("Private RAM: %s", MemSel ? "enabled" : "disabled");
 			break;
 		case Model::Master128:
-		case Model::MasterET:
 			DebugDisplayInfoF("ACCCON: IRR:%s TST:%s IFJ:%s ITU:%s Y:%s X:%s E:%s D:%s",
 				(intStatus & 0x80) != 0 ? "on" : "off",
 				(ACCCON & 0x40) != 0 ? "on" : "off",
@@ -672,7 +671,7 @@ static void DoRomChange(unsigned char NewBank)
 {
   ROMSEL = NewBank & 0xf;
 
-  if (MachineType != Model::Master128 && MachineType != Model::MasterET) {
+  if (MachineType != Model::Master128) {
     NewBank&=0xf; // strip top bit if Model B
     PagedRomReg=NewBank;
     return;
@@ -945,14 +944,14 @@ void BeebWriteMem(int Address, unsigned char Value)
 
 	//Rob: econet NMI mask
 	if (EconetEnabled &&
-		(((MachineType != Model::Master128 && MachineType != Model::MasterET) && (Address & ~3) == 0xfe18) ||
-		 ((MachineType == Model::Master128 || MachineType == Model::MasterET) && (Address & ~3) == 0xfe38)) ) {
+		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
+		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF(w)");
 		EconetNMIEnabled = INTOFF;
 	}
 
-	if ((Address & ~0x7) == 0xfe18 && (MachineType == Model::Master128 /* || MachineType == Model::MasterET */)) {
+	if ((Address & ~0x7) == 0xfe18 && MachineType == Model::Master128) {
 		AtoDWrite((Address & 0x7),Value);
 		return;
 	}
@@ -983,7 +982,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		return;
 	}
 
-	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128 && MachineType != Model::MasterET) && NativeFDC) {
+	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128) && (MachineType == Model::MasterET) && NativeFDC) {
 		Disc8271Write((Address & 7), Value);
 		return;
 	}
@@ -994,7 +993,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		return;
 	}
 
-	if ((Address & ~0x1f) == 0xfec0 && (MachineType != Model::Master128 /* && MachineType != Model::MasterET */)) {
+	if ((Address & ~0x1f) == 0xfec0 && MachineType != Model::Master128) {
 		SyncIO();
 		AdjustForIOWrite();
 		AtoDWrite((Address & 0xf),Value);
@@ -1035,10 +1034,10 @@ void BeebWriteMem(int Address, unsigned char Value)
 		return;
 	}
 
-	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address == EDCAddr && !NativeFDC) {
+	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
 		mainWin->SetDriveControl(Value);
 	}
-	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address >= EFDCAddr && Address < (EFDCAddr + 4) && !NativeFDC) {
+	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr + 4) && !NativeFDC) {
 		Write1770Register(Address-EFDCAddr,Value);
 	}
 }
@@ -1123,7 +1122,7 @@ bool ReadRomInfo(int bank, RomInfo* info)
 	// On Master 128 this is done with bit 7 and bit 6 with %00 (pointing to low
 	// memory) and %11 (pointing to FSRAM) being active and %01 (pointing to
 	// screen memory) and %10 (pointing to SROM) being inactive.
-	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
+	if (MachineType != Model::Master128)
 		info->WorkspaceAddr &= 0x7FFF;
 	return true;
 }
@@ -1378,7 +1377,6 @@ void SaveMemUEF(FILE *SUEF)
 	switch (MachineType) {
 	case Model::B:
 	case Model::Master128:
-	case Model::MasterET:
 		fput16(0x0461,SUEF); // Memory Control State
 		fput32(2,SUEF);
 		fputc(PagedRomReg,SUEF);
@@ -1429,7 +1427,6 @@ void SaveMemUEF(FILE *SUEF)
 		break;
 
 	case Model::Master128:
-	case Model::MasterET:
 		fput16(0x0463,SUEF); // Shadow RAM
 		fput32(32770,SUEF);
 		fput16(0,SUEF);
@@ -1506,7 +1503,6 @@ void LoadRomRegsUEF(FILE *SUEF) {
 		break;
 
 	case Model::Master128:
-	case Model::MasterET:
 		PrivateRAMSelect = (PagedRomReg & 0x80) != 0;
 		Sh_Display = (ACCCON & 1) != 0;
 		Sh_CPUX = (ACCCON & 4) != 0;
@@ -1530,7 +1526,6 @@ void LoadShadMemUEF(FILE *SUEF) {
 		fread(ShadowRAM,1,32768,SUEF);
 		break;
 	case Model::Master128:
-	case Model::MasterET:
 		SAddr=fget16(SUEF);
 		fread(ShadowRAM+SAddr,1,32768,SUEF);
 		break;
@@ -1546,7 +1541,6 @@ void LoadPrivMemUEF(FILE *SUEF) {
 		fread(Private,1,12288,SUEF);
 		break;
 	case Model::Master128:
-	case Model::MasterET:
 		fread(PrivateRAM,1,4096,SUEF);
 		break;
 	}

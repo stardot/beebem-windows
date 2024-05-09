@@ -229,7 +229,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
 		LEDByte=0;
 	DiscLedColour=static_cast<LEDColour>(LED_COLOUR_TYPE);
-	LEDs.ShowDisc=(LED_SHOW_DISC != 0) && MachineType != Model::MasterET;
+	LEDs.ShowDisc=(LED_SHOW_DISC != 0);
 	LEDs.ShowKB=LED_SHOW_KB;
 
 	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
@@ -715,13 +715,13 @@ void BeebWin::LoadPreferences()
 
 	// CMOS RAM now in prefs file
 	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50)) // Master 128
-		memcpy(&CMOSRAM[0][14], CMOSDefault_Master128, 50);
+		memcpy(&CMOSRAM[0][14], CMOSDefault_Master, 50);
 
 	if (!m_Preferences.GetBinaryValue("CMOSRamMET", &CMOSRAM[1][14], 50)) // Master ET
-		memcpy(&CMOSRAM[1][14], CMOSDefault_MasterET, 50);
+		memcpy(&CMOSRAM[1][14], CMOSDefault_Master, 50);
 
 	// Set FDC defaults if not already set
-	for (int machine = 0; machine < static_cast<int>(Model::Master128); ++machine)
+	for (int machine = 0; machine < 3; ++machine)
 	{
 		char CfgName[256];
 		sprintf(CfgName, "FDCDLL%d", machine);
@@ -901,8 +901,8 @@ void BeebWin::SavePreferences(bool saveAll)
 	// CMOS RAM now in prefs file
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
-		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50);    // Master 128
-		m_Preferences.SetBinaryValue("CMOSRamMET", &CMOSRAM[1][14], 50); // Master ET
+		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50); // Master 128
+		m_Preferences.SetBinaryValue("CMOSRamMET", &CMOSRAM[1][14], 50); // Master 128
 	}
 
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
