@@ -123,7 +123,7 @@ LEDType LEDs;
 
 LEDColour DiscLedColour = LEDColour::Red;
 
-const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
+const char *WindowTitle = "BeebEm - BBC Model B / Master Series Emulator";
 
 constexpr int TIMER_KEYBOARD       = 1;
 constexpr int TIMER_AUTOBOOT_DELAY = 2;
