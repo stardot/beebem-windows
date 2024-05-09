@@ -229,7 +229,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
 		LEDByte=0;
 	DiscLedColour=static_cast<LEDColour>(LED_COLOUR_TYPE);
-	LEDs.ShowDisc=(LED_SHOW_DISC != 0);
+	LEDs.ShowDisc=(LED_SHOW_DISC != 0) && MachineType != Model::MasterET;
 	LEDs.ShowKB=LED_SHOW_KB;
 
 	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
@@ -721,7 +721,7 @@ void BeebWin::LoadPreferences()
 		memcpy(&CMOSRAM[1][14], CMOSDefault_MasterET, 50);
 
 	// Set FDC defaults if not already set
-	for (int machine = 0; machine < 3; ++machine)
+	for (int machine = 0; machine < static_cast<int>(Model::Master128); ++machine)
 	{
 		char CfgName[256];
 		sprintf(CfgName, "FDCDLL%d", machine);
