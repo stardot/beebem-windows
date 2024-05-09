@@ -123,7 +123,7 @@ LEDType LEDs;
 
 LEDColour DiscLedColour = LEDColour::Red;
 
-const char *WindowTitle = "BeebEm - BBC Model B / Master 128 Emulator";
+const char *WindowTitle = "BeebEm - BBC Model B / Master Series Emulator";
 
 /****************************************************************************/
 BeebWin::BeebWin()
