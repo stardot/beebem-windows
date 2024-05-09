@@ -327,6 +327,7 @@ BEGIN
             MENUITEM "BBC Model B + &Integra-B",    ID_MODELBINT
             MENUITEM "BBC Model B &Plus",           ID_MODELBPLUS
             MENUITEM "BBC &Master 128",             ID_MASTER128
+            MENUITEM "BBC Master &ET",              ID_MASTER_ET
         END
         POPUP "Model B &Floppy Controller"
         BEGIN
