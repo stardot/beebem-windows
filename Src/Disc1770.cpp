@@ -1450,7 +1450,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 			fread(FDCDLL, 1, sizeof(FDCDLL), SUEF);
 		}
 
-		if (MachineType != Model::Master128)
+		if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 		{
 			mainWin->LoadFDC(FDCDLL, false);
 		}

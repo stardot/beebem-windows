@@ -1577,7 +1577,7 @@ void VideoLightPenStrobe()
 void VideoAddLEDs(void) {
 	// now add some keyboard leds
 	if (LEDs.ShowKB) {
-		if (MachineType == Model::Master128) {
+		if (MachineType == Model::Master128 || MachineType == Model::MasterET) {
 			mainWin->doLED(4, true);
 		}
 		else {

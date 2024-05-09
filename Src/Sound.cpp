@@ -161,7 +161,7 @@ void PlayUpTil(double DestTime)
 
 	int SpeechPtr = 0;
 
-	if (MachineType != Model::Master128 && SpeechEnabled)
+	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && SpeechEnabled)
 	{
 		SpeechPtr = 0;
 		memset(SpeechBuf, 128, sizeof(SpeechBuf));
@@ -313,7 +313,7 @@ void PlayUpTil(double DestTime)
 			#if ENABLE_SPEECH
 
 			// Mix in speech sound
-			if (SpeechEnabled && MachineType != Model::Master128) {
+			if (SpeechEnabled && (MachineType != Model::Master128 && MachineType != Model::MasterET) {
 				tmptotal += (SpeechBuf[SpeechPtr++] - 128) * 2;
 			}
 

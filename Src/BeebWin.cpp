@@ -560,6 +560,8 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	BeebMemInit(LoadRoms, m_ShiftBooted);
 	Init6502core();
 
+	RTCInit();
+
 	if (TubeType == Tube::Acorn65C02)
 	{
 		Init65C02core();
@@ -624,7 +626,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	// Keep the disc images loaded
 
-	if (MachineType != Model::Master128 && NativeFDC)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET && NativeFDC)
 	{
 		// 8271 disc
 		if (szDiscName[0][0] != '\0')
@@ -1309,6 +1311,7 @@ void BeebWin::UpdateModelMenu()
 		{ Model::IntegraB,  ID_MODELBINT },
 		{ Model::BPlus,     ID_MODELBPLUS },
 		{ Model::Master128, ID_MASTER128 },
+		{ Model::MasterET,  ID_MASTER_ET },
 	};
 
 	UINT SelectedMenuItem = ModelMenuItems.find(MachineType)->second;
@@ -1316,7 +1319,7 @@ void BeebWin::UpdateModelMenu()
 	CheckMenuRadioItem(
 		m_hMenu,
 		ID_MODELB,
-		ID_MASTER128,
+		ID_MASTER_ET,
 		SelectedMenuItem,
 		MF_BYCOMMAND
 	);
@@ -1324,7 +1327,8 @@ void BeebWin::UpdateModelMenu()
 	if (MachineType == Model::Master128) {
 		EnableMenuItem(ID_FDC_DLL, false);
 	}
-	else {
+	else if (MachineType != Model::MasterET)
+	{
 		EnableMenuItem(ID_FDC_DLL, true);
 	}
 }
@@ -3729,6 +3733,14 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
+	case ID_MASTER_ET:
+		if (MachineType != Model::MasterET)
+		{
+			ResetBeebSystem(Model::MasterET, true);
+			UpdateModelMenu();
+		}
+		break;
+
 	case ID_REWINDTAPE:
 		RewindTape();
 		break;
@@ -3763,7 +3775,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case ID_FDC_DLL:
-		if (MachineType != Model::Master128)
+		if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 			SelectFDC();
 		break;
 
@@ -3774,7 +3786,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		CheckMenuItem(ID_8271, true);
 		CheckMenuItem(ID_FDC_DLL, false);
 
-		if (MachineType != Model::Master128)
+		if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 		{
 			char CfgName[20];
 			sprintf(CfgName, "FDCDLL%d", static_cast<int>(MachineType));
@@ -4838,7 +4850,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 
 	if (cont)
 	{
-		if (MachineType != Model::Master128)
+		if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 		{
 			if (Type == FileType::DSD)
 			{
@@ -4897,7 +4909,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 				}
 			}
 		}
-		else // Model::Master128
+		else if (MachineType == Model::Master128) // Model::Master128
 		{
 			if (Type == FileType::FSD)
 			{
