@@ -132,3 +132,28 @@ Ignoring packet error, continuing...
   [remote] Received Ack
   [remote] Packet received: 50e4b1fa701b48c898d003bd47e49dd8
 0x0000e46c in ?? ()
+
+
+
+/* Build GDB / BinUtils on WSL2 Windows 11 Ubuntu */
+cd ~
+git clone  https://sourceware.org/git/binutils-gdb.git
+cd binutils-gdb/
+mkdir build
+cd build/
+
+sudo apt install build-essential
+sudo apt install gambas3-gb-gmp
+sudo apt install libmath-mpfr-perl
+sudo apt intsall automake
+sudo apt-get install libmpc-dev
+sudo apt install makeinfo
+sudo apt install texinfo
+sudo apt install bison
+sudo apt install flex
+sudo apt install libgmp-dev
+sudo apt install libmpfr-dev
+
+../configure
+
+make -j 10
