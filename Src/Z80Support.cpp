@@ -205,7 +205,7 @@ void z80_execute()
 
 	// Output debug info
 	if (DebugEnabled)
-		DebugDisassembler(pc, PreZPC, 0, 0, 0, 0, 0, false);
+		DebugDisassembler(pc, PreZPC, 0, 0, 0, 0, 0, false, false);
 
 	PreZPC = pc;
 	pc = (WORD)simz80(pc);
