@@ -15,8 +15,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -53,7 +53,7 @@ void SysVIATriggerCA1Int(int value);
 void RTCInit();
 void CMOSWrite(unsigned char Address, unsigned char Value);
 unsigned char CMOSRead(unsigned char Address);
-extern unsigned char CMOSRAM[(static_cast<int>(Model::Last) -3)][64]; // RTC registers + 50 bytes CMOS RAM
+extern unsigned char CMOSRAM[MODEL_COUNT - 3][64]; // RTC registers + 50 bytes CMOS RAM
 
 extern const unsigned char CMOSDefault_Master128[50];
 extern const unsigned char CMOSDefault_MasterET[50];

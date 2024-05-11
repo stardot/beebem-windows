@@ -312,7 +312,7 @@ bool BeebWin::Initialise()
 	m_hMenu = GetMenu(m_hWnd);
 	m_hDC = GetDC(m_hWnd);
 
-	ReadROMConfigFile(RomFile, RomConfig);
+	RomConfig.Load(RomFile);
 	ApplyPrefs();
 
 	if (!m_DebugScriptFileName.empty())
@@ -625,7 +625,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 		TeletextInit();
 	}
 
-	if (MachineType == Model::Master128) 
+	if (MachineType == Model::Master128)
 	{
 		InvertTR00 = false;
 	}
@@ -745,7 +745,7 @@ void BeebWin::Break()
 		}
 
 #endif
-	
+
 	// Reset IntegraB RTC on Break
 	if (MachineType == Model::IntegraB)
 	{
@@ -1354,7 +1354,7 @@ void BeebWin::UpdateModelMenu()
 
 	bool b_Not_MasterET = !(MachineType == Model::MasterET);
 	bool b_ModelB = (MachineType == Model::B || MachineType == Model::BPlus || MachineType == Model::IntegraB);
-	
+
 	// File Menu Item
 	EnableMenuItem(IDM_RUNDISC, b_Not_MasterET);
 	EnableMenuItem(IDM_LOADDISC0, b_Not_MasterET);
@@ -4410,7 +4410,7 @@ void BeebWin::EditRomConfig()
 	if (Dialog.DoModal())
 	{
 		// Copy in new config and read ROMs
-		memcpy(RomConfig, Dialog.GetRomConfig(), sizeof(ROMConfigFile));
+		RomConfig = Dialog.GetRomConfig();
 		BeebReadRoms();
 	}
 }
@@ -4713,7 +4713,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 
 		if (bLoadPrefs)
 		{
-			ReadROMConfigFile(RomFile, RomConfig);
+			RomConfig.Load(RomFile);
 			BeebReadRoms();
 		}
 	}

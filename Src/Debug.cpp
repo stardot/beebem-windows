@@ -1978,7 +1978,7 @@ void DebugInitMemoryMaps()
 	}
 }
 
-bool DebugLoadMemoryMap(char* filename, int bank)
+bool DebugLoadMemoryMap(const char* filename, int bank)
 {
 	if (bank < 0 || bank > 16)
 		return false;

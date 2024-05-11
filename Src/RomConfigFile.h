@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2020  Chris Needham
+Copyright (C) 2024  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,15 +18,34 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef STRING_UTILS_HEADER
-#define STRING_UTILS_HEADER
+#ifndef ROM_CONFIG_FILE_HEADER
+#define ROM_CONFIG_FILE_HEADER
+
+#include "Model.h"
 
 #include <string>
 
-void trim(std::string& str);
-bool ParseNumber(const std::string& str, int* pValue);
-bool StringEndsWith(const std::string& str, const std::string& suffix);
-std::string WStr2Str(const std::wstring& str);
-std::wstring Str2WStr(const std::string& str);
+constexpr int ROM_BANK_COUNT = 16;
+
+class RomConfigFile
+{
+	public:
+		void Reset();
+
+		bool Load(const char *FileName);
+		bool Save(const char *FileName);
+
+		const std::string& GetFileName(Model model, int index) const;
+		void SetFileName(Model model, int index, const std::string& FileName);
+
+		void Swap(Model model, int First, int Second);
+
+	private:
+		std::string m_FileName[MODEL_COUNT][ROM_BANK_COUNT + 1];
+};
+
+extern const char *BANK_EMPTY;
+extern const char *BANK_RAM;
+extern const char *ROM_WRITABLE;
 
 #endif

@@ -85,7 +85,7 @@ struct CMOSType
 
 static struct CMOSType CMOS;
 static bool OldCMOSState = false;
-unsigned char CMOSRAM[(static_cast<int>(Model::Last) - 3)][64]; // RTC registers + 50 bytes CMOS RAM for each machine type from MASTER 128
+unsigned char CMOSRAM[MODEL_COUNT - 3][64]; // RTC registers + 50 bytes CMOS RAM for each machine type from MASTER 128
 
 // 0x0: Seconds (0 to 59)
 // 0x1: Alarm Seconds (0 to 59)
@@ -557,7 +557,7 @@ void SysVIAWrite(int Address, unsigned char Value)
 			SysVIAState.timer2l &= 0xff;
 			SysVIAState.timer2l |= Value << 8;
 			SysVIAState.timer2c=SysVIAState.timer2l * 2 + 1;
-			if (SysVIAState.timer2c == 0) SysVIAState.timer2c = 0x20000; 
+			if (SysVIAState.timer2c == 0) SysVIAState.timer2c = 0x20000;
 			SysVIAState.ifr &= 0xdf; // Clear timer 2 IFR
 			UpdateIFRTopBit();
 			SysVIAState.timer2hasshot = false;
@@ -1016,7 +1016,7 @@ static void RTCUpdate()
 		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
 		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
 	}
-	else 
+	else
 	{
 		// update with current time values in binary format
 		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
@@ -1069,7 +1069,7 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 		pCMOS[RegisterA] = Value & 0x7f; // Top bit not writable
 		break;
 	case RegisterB:
-		// Bit-7 SET - When the SET bit is 0, the update cycle functions normally by advancing the 
+		// Bit-7 SET - When the SET bit is 0, the update cycle functions normally by advancing the
 		// counts once per second. When 1, any update is aborted and the program may write the time
 		// and calendar bytes without an update occuring
 

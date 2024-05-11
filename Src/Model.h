@@ -30,6 +30,8 @@ enum class Model : unsigned char {
 	Last
 };
 
+constexpr int MODEL_COUNT = 5;
+
 enum class CPU {
 	CPU6502,
 	CPU65C12
