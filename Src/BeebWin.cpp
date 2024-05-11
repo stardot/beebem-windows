@@ -1331,7 +1331,7 @@ void BeebWin::UpdateModelMenu()
 		{ Model::IntegraB,  ID_MODELBINT },
 		{ Model::BPlus,     ID_MODELBPLUS },
 		{ Model::Master128, ID_MASTER128 },
-		{ Model::MasterET,  ID_MASTER_ET },
+		{ Model::MasterET,  ID_MASTER_ET }
 	};
 
 	UINT SelectedMenuItem = ModelMenuItems.find(MachineType)->second;
@@ -1352,94 +1352,93 @@ void BeebWin::UpdateModelMenu()
 		EnableMenuItem(ID_FDC_DLL, true);
 	}
 
-	bool b_Not_MasterET = !(MachineType == Model::MasterET);
-	bool b_ModelB = (MachineType == Model::B || MachineType == Model::BPlus || MachineType == Model::IntegraB);
+	const bool IsMasterET = MachineType == Model::MasterET;
+	const bool IsModelB = MachineType == Model::B || MachineType == Model::BPlus || MachineType == Model::IntegraB;
 
 	// File Menu Item
-	EnableMenuItem(IDM_RUNDISC, b_Not_MasterET);
-	EnableMenuItem(IDM_LOADDISC0, b_Not_MasterET);
-	EnableMenuItem(IDM_LOADDISC1, b_Not_MasterET);
-    // Disc Options sub-menu
-	EnableMenuItem(IDM_NEWDISC0, b_Not_MasterET);
-	EnableMenuItem(IDM_NEWDISC1, b_Not_MasterET);
-	EnableMenuItem(IDM_EJECTDISC0, b_Not_MasterET);
-	EnableMenuItem(IDM_EJECTDISC1, b_Not_MasterET);
-	EnableMenuItem(IDM_WRITE_PROTECT_DISC0, b_Not_MasterET);
-	EnableMenuItem(IDM_WRITE_PROTECT_DISC1, b_Not_MasterET);
-	EnableMenuItem(IDM_WRITE_PROTECT_ON_LOAD, b_Not_MasterET);
+	EnableMenuItem(IDM_RUNDISC, !IsMasterET);
+	EnableMenuItem(IDM_LOADDISC0, !IsMasterET);
+	EnableMenuItem(IDM_LOADDISC1, !IsMasterET);
+	// Disc Options sub-menu
+	EnableMenuItem(IDM_NEWDISC0, !IsMasterET);
+	EnableMenuItem(IDM_NEWDISC1, !IsMasterET);
+	EnableMenuItem(IDM_EJECTDISC0, !IsMasterET);
+	EnableMenuItem(IDM_EJECTDISC1, !IsMasterET);
+	EnableMenuItem(IDM_WRITE_PROTECT_DISC0, !IsMasterET);
+	EnableMenuItem(IDM_WRITE_PROTECT_DISC1, !IsMasterET);
+	EnableMenuItem(IDM_WRITE_PROTECT_ON_LOAD, !IsMasterET);
 
-	EnableMenuItem(ID_LOADTAPE, b_Not_MasterET);
+	EnableMenuItem(ID_LOADTAPE, !IsMasterET);
 
 	// Edit Menu Item
-	EnableMenuItem(IDM_DISC_IMPORT_0 , b_Not_MasterET);
-	EnableMenuItem(IDM_DISC_IMPORT_1, b_Not_MasterET);
-	EnableMenuItem(IDM_DISC_IMPORT_2, b_Not_MasterET);
-	EnableMenuItem(IDM_DISC_IMPORT_3, b_Not_MasterET);
-	EnableMenuItem(IDM_DISC_EXPORT_0, b_Not_MasterET);
-	EnableMenuItem(IDM_DISC_EXPORT_1, b_Not_MasterET);
-	EnableMenuItem(IDM_DISC_EXPORT_2, b_Not_MasterET);
-	EnableMenuItem(IDM_DISC_EXPORT_3, b_Not_MasterET);
+	EnableMenuItem(IDM_DISC_IMPORT_0 , !IsMasterET);
+	EnableMenuItem(IDM_DISC_IMPORT_1, !IsMasterET);
+	EnableMenuItem(IDM_DISC_IMPORT_2, !IsMasterET);
+	EnableMenuItem(IDM_DISC_IMPORT_3, !IsMasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_0, !IsMasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_1, !IsMasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_2, !IsMasterET);
+	EnableMenuItem(IDM_DISC_EXPORT_3, !IsMasterET);
 
 	// Comms Menu Item
 	// Tape speed sub-menu
-	EnableMenuItem(ID_TAPE_FAST, b_Not_MasterET);
-	EnableMenuItem(ID_TAPE_MFAST, b_Not_MasterET);
-	EnableMenuItem(ID_TAPE_MSLOW, b_Not_MasterET);
-	EnableMenuItem(ID_TAPE_NORMAL, b_Not_MasterET);
+	EnableMenuItem(ID_TAPE_FAST, !IsMasterET);
+	EnableMenuItem(ID_TAPE_MFAST, !IsMasterET);
+	EnableMenuItem(ID_TAPE_MSLOW, !IsMasterET);
+	EnableMenuItem(ID_TAPE_NORMAL, !IsMasterET);
 
-	EnableMenuItem(ID_REWINDTAPE, b_Not_MasterET);
-	EnableMenuItem(ID_UNLOCKTAPE, b_Not_MasterET);
-	EnableMenuItem(ID_TAPECONTROL, b_Not_MasterET);
-	EnableMenuItem(ID_SERIAL, b_Not_MasterET);
-	EnableMenuItem(ID_SELECT_SERIAL_DESTINATION, b_Not_MasterET);
+	EnableMenuItem(ID_REWINDTAPE, !IsMasterET);
+	EnableMenuItem(ID_UNLOCKTAPE, !IsMasterET);
+	EnableMenuItem(ID_TAPECONTROL, !IsMasterET);
+	EnableMenuItem(ID_SERIAL, !IsMasterET);
+	EnableMenuItem(ID_SELECT_SERIAL_DESTINATION, !IsMasterET);
 
 	// View Menu Item
-    // LED sub-menu
-	EnableMenuItem(ID_RED_LEDS, b_Not_MasterET);
-	EnableMenuItem(ID_GREEN_LEDS, b_Not_MasterET);
-	EnableMenuItem(ID_GREEN_LEDS, b_Not_MasterET);
-	EnableMenuItem(ID_SHOW_DISCLEDS, b_Not_MasterET);
+	// LED sub-menu
+	EnableMenuItem(ID_RED_LEDS, !IsMasterET);
+	EnableMenuItem(ID_GREEN_LEDS, !IsMasterET);
+	EnableMenuItem(ID_GREEN_LEDS, !IsMasterET);
+	EnableMenuItem(ID_SHOW_DISCLEDS, !IsMasterET);
 
 	// Sound Menu Item
-	EnableMenuItem(IDM_MUSIC5000, b_Not_MasterET);
+	EnableMenuItem(IDM_MUSIC5000, !IsMasterET);
 
 	// AMX Menu Item
-	EnableMenuItem(IDM_AMXONOFF, b_Not_MasterET);
-	EnableMenuItem(IDM_CAPTUREMOUSE, AMXMouseEnabled && b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_LRFORMIDDLE, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_LRFORMIDDLE, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_160X256, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_320X256, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_640X256, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_ADJUSTP50, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_ADJUSTP30, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_ADJUSTP10, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_ADJUSTM10, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_ADJUSTM30, b_Not_MasterET);
-	EnableMenuItem(IDM_AMX_ADJUSTM50, b_Not_MasterET);
+	EnableMenuItem(IDM_AMXONOFF, !IsMasterET);
+	EnableMenuItem(IDM_CAPTUREMOUSE, AMXMouseEnabled && !IsMasterET);
+	EnableMenuItem(IDM_AMX_LRFORMIDDLE, !IsMasterET);
+	EnableMenuItem(IDM_AMX_LRFORMIDDLE, !IsMasterET);
+	EnableMenuItem(IDM_AMX_160X256, !IsMasterET);
+	EnableMenuItem(IDM_AMX_320X256, !IsMasterET);
+	EnableMenuItem(IDM_AMX_640X256, !IsMasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTP50, !IsMasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTP30, !IsMasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTP10, !IsMasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTM10, !IsMasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTM30, !IsMasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTM50, !IsMasterET);
 
 	// Hardware Menu
-	EnableMenuItem(IDM_AMX_ADJUSTM50, b_Not_MasterET);
+	EnableMenuItem(IDM_AMX_ADJUSTM50, !IsMasterET);
 	// Model B Floppy Controller sub-menu
-	EnableMenuItem(ID_8271, b_ModelB);
-	EnableMenuItem(ID_FDC_DLL, b_ModelB);
+	EnableMenuItem(ID_8271, IsModelB);
+	EnableMenuItem(ID_FDC_DLL, IsModelB);
 
-	EnableMenuItem(ID_BASIC_HARDWARE_ONLY, b_Not_MasterET);
-	EnableMenuItem(ID_TELETEXT, b_Not_MasterET);
-	EnableMenuItem(IDM_SELECT_TELETEXT_DATA_SOURCE, b_Not_MasterET);
-	EnableMenuItem(IDM_SET_KEYBOARD_LINKS, b_ModelB);
-	EnableMenuItem(ID_FLOPPYDRIVE, b_Not_MasterET);
-	EnableMenuItem(ID_HARDDRIVE, b_Not_MasterET);
-	EnableMenuItem(ID_IDEDRIVE, b_Not_MasterET);
-	EnableMenuItem(IDM_SELECT_HARD_DRIVE_FOLDER, b_Not_MasterET);
-	EnableMenuItem(ID_BREAKOUT, b_Not_MasterET);
-	EnableMenuItem(ID_USER_PORT_RTC_MODULE, b_Not_MasterET);
+	EnableMenuItem(ID_BASIC_HARDWARE_ONLY, !IsMasterET);
+	EnableMenuItem(ID_TELETEXT, !IsMasterET);
+	EnableMenuItem(IDM_SELECT_TELETEXT_DATA_SOURCE, !IsMasterET);
+	EnableMenuItem(IDM_SET_KEYBOARD_LINKS, IsModelB);
+	EnableMenuItem(ID_FLOPPYDRIVE, !IsMasterET);
+	EnableMenuItem(ID_HARDDRIVE, !IsMasterET);
+	EnableMenuItem(ID_IDEDRIVE, !IsMasterET);
+	EnableMenuItem(IDM_SELECT_HARD_DRIVE_FOLDER, !IsMasterET);
+	EnableMenuItem(ID_BREAKOUT, !IsMasterET);
+	EnableMenuItem(ID_USER_PORT_RTC_MODULE, !IsMasterET);
 
 	// Options Menu
-	EnableMenuItem(IDM_JOYSTICK, b_Not_MasterET);
-	EnableMenuItem(IDM_ANALOGUE_MOUSESTICK, b_Not_MasterET);
-	EnableMenuItem(IDM_DIGITAL_MOUSESTICK, b_Not_MasterET);
-
+	EnableMenuItem(IDM_JOYSTICK, !IsMasterET);
+	EnableMenuItem(IDM_ANALOGUE_MOUSESTICK, !IsMasterET);
+	EnableMenuItem(IDM_DIGITAL_MOUSESTICK, !IsMasterET);
 }
 
 void BeebWin::UpdateSFXMenu() {
