@@ -26,5 +26,15 @@ Src/InnoSetup/x64/Debug
 Src/InnoSetup/x64/Release
 Src/ZipFile/Debug
 Src/ZipFile/Release
-Src/ZipFile/x64/Debug
-Src/ZipFile/x64/Release
+/.vs/beebem-windows latest/v16/.suo
+/.vs/beebem-windows latest/v16/Browse.VC.db
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
+/.vs/VSWorkspaceState.json
+/Src/ZipFile/x64/Debug/ZipFile.tlog/ZipFile.lastbuildstate
+/Src/ZipFile/x64/Debug/ZipFile.exe.recipe
+/Src/ZipFile/x64/Debug/ZipFile.log
+/Src/ZipFile/x64/Release/ZipFile.tlog/ZipFile.lastbuildstate
+/Src/ZipFile/x64/Release/ZipFile.exe.recipe
+/Src/ZipFile/x64/Release/ZipFile.log
+/UserData

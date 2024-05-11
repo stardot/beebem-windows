@@ -1,0 +1,159 @@
+// Please read these!
+// https://developer.apple.com/library/archive/documentation/DeveloperTools/gdb/gdb/gdb_18.html
+// https://www.reddit.com/r/gcc/comments/140xd3q/build_a_gcc_13_compiler_from_source_for_windows/
+
+// Building GCC.
+// Congigure it.
+// ./gdb/configure --enable-targets=all
+// Build it
+// ./gdb/gdb_buildall.sh -j 10  .  /c/Duncan/source/OpenSource/binBuild
+
+
+// https://medium.com/@tatsuo.nomura/implement-gdb-remote-debug-protocol-stub-from-scratch-2-5e3025f0e987
+// https://sourceware.org/gdb/current/onlinedocs/gdb.html/Packets.html#vCont-packet
+// https://beebwiki.mdfs.net/MODE
+
+// Started with
+set debug remote 1
+target extended-remote localhost:17901
+
+// set architecture
+// set processor
+
+// Treat memory as bytes and show 6 of them in hex from address..
+x/64cbx 0xdef0
+
+// Understand this conversation.
+remote] Sending packet: $vKill;a410#33
+[remote] Received Ack
+[remote] Packet received: OK
+[remote] packet_ok: Packet vKill (kill) is supported
+[Inferior 1 (Remote target) killed]
+(gdb) set debug remote 1
+(gdb) target extended-remote localhost:17901
+Already connected to a remote target.  Disconnect? (y or n) y
+Remote debugging using localhost:17901
+[remote] start_remote_1: enter
+  [remote] Sending packet: $qSupported:multiprocess+;swbreak+;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+;memory-tagging+;xmlRegisters=i386#77
+  [remote] Received Ack
+  [remote] Packet received: multiprocess-;swbreak-;hwbreak+;qRelocInsn-;fork-events-;vfork-events-;vfork-events-;vContSupported+;QThreadEvents-;no-resumed-;
+  [remote] packet_ok: Packet qSupported (supported-packets) is supported
+  [remote] Sending packet: $vCont?#49
+  [remote] Received Ack
+  [remote] Packet received: vCont;s;c
+  [remote] packet_ok: Packet vCont (verbose-resume) is NOT supported
+  [remote] Sending packet: $vMustReplyEmpty#3a
+  [remote] Received Ack
+  [remote] Packet received:
+  [remote] Sending packet: $!#21
+  [remote] Received Ack
+  [remote] Packet received: OK
+  [remote] Sending packet: $Hg0#df
+  [remote] Received Ack
+  [remote] Packet received: OK
+  [remote] Sending packet: $qTStatus#49
+  [remote] Received Ack
+  [remote] Packet received:
+  [remote] packet_ok: Packet qTStatus (trace-status) is NOT supported
+  [remote] Sending packet: $?#3f
+  [remote] Received Ack
+  [remote] Packet received: S05
+  [remote] Sending packet: $qfThreadInfo#bb
+  [remote] Received Ack
+  [remote] Packet received: m0
+  [remote] Sending packet: $qsThreadInfo#c8
+  [remote] Received Ack
+  [remote] Packet received: l
+  [remote] Sending packet: $qAttached#8f
+  [remote] Received Ack
+  [remote] Packet received: 1
+  [remote] packet_ok: Packet qAttached (query-attached) is supported
+warning: No executable has been specified and target does not support
+determining executable automatically.  Try using the "file" command.
+  [remote] Sending packet: $Hc-1#09
+  [remote] Received Ack
+  [remote] Packet received: OK
+  [remote] Sending packet: $qC#b4
+  [remote] Received Ack
+  [remote] Packet received: QC0
+  [remote] wait: enter
+    [remote] select_thread_for_ambiguous_stop_reply: enter
+      [remote] select_thread_for_ambiguous_stop_reply: process_wide_stop = 0
+      [remote] select_thread_for_ambiguous_stop_reply: first resumed thread is Remote target
+      [remote] select_thread_for_ambiguous_stop_reply: is this guess ambiguous? = 0
+    [remote] select_thread_for_ambiguous_stop_reply: exit
+  [remote] wait: exit
+  [remote] Sending packet: $g#67
+  [remote] Received Ack
+  [remote] getpkt: Timed out.
+  [remote] getpkt: Timed out.
+  [remote] getpkt: Timed out.
+Ignoring packet error, continuing...
+  [remote] send_g_packet: Bad register packet; fetching a new packet
+  [remote] getpkt: Timed out.
+  [remote] getpkt: Timed out.
+  [remote] getpkt: Timed out.
+Ignoring packet error, continuing...
+  [remote] send_g_packet: Bad register packet; fetching a new packet
+  [remote] getpkt: Timed out.
+  [remote] getpkt: Timed out.
+  [remote] getpkt: Timed out.
+Ignoring packet error, continuing...
+  [remote] send_g_packet: Bad register packet; fetching a new packet
+  [remote] getpkt: Timed out.
+  [remote] getpkt: Timed out.
+  [remote] Packet received: 000000000100000002000000ff000000f3000000ff000000
+  [remote] Sending packet: $p8#a8
+  [remote] putpkt_binary: Packet instead of Ack, ignoring it
+  [remote] putpkt_binary: Packet instead of Ack, ignoring it
+  [remote] putpkt_binary: Packet instead of Ack, ignoring it
+  [remote] Received Ack
+  [remote] Packet received: 6ce40000
+  [remote] packet_ok: Packet p (fetch-register) is supported
+  [remote] Sending packet: $qfThreadInfo#bb
+  [remote] Received Ack
+  [remote] Packet received: m0
+  [remote] Sending packet: $qsThreadInfo#c8
+  [remote] Received Ack
+  [remote] Packet received: l
+  [remote] Sending packet: $me46c,1#fc
+  [remote] Received Ack
+  [remote] Packet received: f0
+  [remote] Sending packet: $me46c,1#fc
+  [remote] Received Ack
+  [remote] Packet received: f0
+  [remote] Sending packet: $me440,18#ff
+  [remote] Received Ack
+  [remote] Packet received: c0c05060708000e00040c0f0f0f0f0c0bd3ee485fabd35e4
+  [remote] Sending packet: $me458,18#08
+  [remote] Received Ack
+  [remote] Packet received: 85fb602cb7d97001b86c2c020878bdd802dde102f072a820
+  [remote] Sending packet: $me470,10#fa
+  [remote] Received Ack
+  [remote] Packet received: 50e4b1fa701b48c898d003bd47e49dd8
+0x0000e46c in ?? ()
+
+
+
+/* Build GDB / BinUtils on WSL2 Windows 11 Ubuntu */
+cd ~
+git clone  https://sourceware.org/git/binutils-gdb.git
+cd binutils-gdb/
+mkdir build
+cd build/
+
+sudo apt install build-essential
+sudo apt install gambas3-gb-gmp
+sudo apt install libmath-mpfr-perl
+sudo apt intsall automake
+sudo apt-get install libmpc-dev
+sudo apt install makeinfo
+sudo apt install texinfo
+sudo apt install bison
+sudo apt install flex
+sudo apt install libgmp-dev
+sudo apt install libmpfr-dev
+
+../configure
+
+make -j 10

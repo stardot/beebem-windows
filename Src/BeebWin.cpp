@@ -5335,6 +5335,252 @@ void BeebWin::OpenDebugWindow()
 	DebugOpenDialog(hInst, m_hWnd);
 }
 
+#include <chrono>
+#include <thread>
+#include <i_simulation_control.hpp>
+#include <gdb_server.hpp>
+
+#pragma once
+
+enum class REG_INDEX : uint8_t {
+	REG_A = 0,   // eax
+	REG_X = 1,   // ecx
+	REG_Y = 2,   // edx
+	// ebx
+	REG_SP = 4,  // esp
+	// ebp, esi, edi
+	REG_PC = 8,  // eip
+	REG_SR = 9,  // eflags
+};
+
+bool isValidRegIndex(uint8_t value) {
+	REG_INDEX valueToTest = static_cast<REG_INDEX>(value);
+	if (valueToTest == REG_INDEX::REG_A ||
+		valueToTest == REG_INDEX::REG_X ||
+		valueToTest == REG_INDEX::REG_Y ||
+		valueToTest == REG_INDEX::REG_SP ||
+		valueToTest == REG_INDEX::REG_PC ||
+		valueToTest == REG_INDEX::REG_SR ) {
+		return true;
+	}	else {
+		return false;
+	}
+}
+
+uint8_t getIntValueFrom(REG_INDEX reg) {
+	return static_cast<uint8_t>(reg);
+}
+
+static uint8_t localRegisters[GdbServer::REG_ARRAY_LEN] = { 0, 1, 2, 255, 3, 255, 255, 255, 4, 5 };
+static uint8_t m_localMemory[(1014 * 1024) * 20] {};
+
+class _6502SimControl : public ISimulationControl {
+public:
+
+
+    // Control and report
+    void kill() override;
+    void reset() override;
+    void stall() override;
+    void unstall() override;
+    bool isStalled() override;
+    void step() override;
+
+    // Breakpoints
+    void insertBreakpoint(unsigned addr) override;
+    void removeBreakpoint(unsigned addr) override;
+
+    // Register access
+    uint32_t readReg(std::size_t num) override;
+    void writeReg(std::size_t num, uint32_t value) override;
+
+    // Memory access
+    bool readMem(uint8_t* out, unsigned addr, std::size_t len) override;
+    bool writeMem(uint8_t* src, unsigned addr, std::size_t len) override;
+
+    // Target info
+    uint32_t pcRegNum() override;
+    uint32_t nRegs() override;
+    uint32_t wordSize() override;
+
+    // Control debugger
+    void stopServer() override;
+    bool shouldStopServer() override;
+    bool isServerRunning() override;
+    void setServerRunning(bool status) override;
+
+    // Target utilities
+    uint32_t htotl(uint32_t hostVal) override;
+    uint32_t ttohl(uint32_t targetVal) override;
+
+private:
+	bool m_serverRunning{ false };
+};
+
+
+// Control and report
+void _6502SimControl::kill() {
+    // TODO: Implement kill functionality
+    // ...
+}
+
+void _6502SimControl::reset() {
+    // TODO: Implement reset functionality
+    // ...
+}
+
+void _6502SimControl::stall() {
+    // TODO: Implement stall functionality
+    // ...
+}
+
+void _6502SimControl::unstall() {
+    // TODO: Implement unstall functionality
+    // ...
+}
+
+bool _6502SimControl::isStalled() {
+    // TODO: Implement isStalled functionality
+    // ...
+    return false; // Placeholder return value
+}
+
+void _6502SimControl::step() {
+    // TODO: Implement step functionality
+    // ...
+}
+
+// Breakpoints
+void _6502SimControl::insertBreakpoint(unsigned addr) {
+    // TODO: Implement insertBreakpoint functionality
+    // ...
+}
+
+void _6502SimControl::removeBreakpoint(unsigned addr) {
+    // TODO: Implement removeBreakpoint functionality
+    // ...
+}
+
+// Register access
+uint32_t _6502SimControl::readReg(std::size_t num) {
+
+	if (isValidRegIndex(num)) {
+		REG_INDEX request = static_cast<REG_INDEX>(num);
+
+		switch (request) {
+		case REG_INDEX::REG_A:
+			return Accumulator;
+		case REG_INDEX::REG_X:
+			return XReg;
+		case REG_INDEX::REG_Y:
+			return YReg;
+		case REG_INDEX::REG_PC:
+			return ProgramCounter;
+		case REG_INDEX::REG_SR:
+			return PSR;
+		case REG_INDEX::REG_SP:
+			return StackReg;
+		default:
+			return 0xdd;
+		}
+	}
+}
+
+void _6502SimControl::writeReg(std::size_t num, uint32_t value) {
+	if(isValidRegIndex(static_cast<uint8_t>(num))) {
+		localRegisters[num] = value & 0xff;
+	}
+}
+
+// Memory access
+bool _6502SimControl::readMem(uint8_t* out, unsigned addr, std::size_t len) {
+
+  for (uint32_t index = addr; index < addr + len; index++) {
+    *out =  BeebReadMem(index) & 0xff;
+		out++;
+  }
+
+  return true; // Placeholder return value
+}
+
+bool _6502SimControl::writeMem(uint8_t* src, unsigned addr, std::size_t len) {
+
+  for (uint32_t index = addr; index < addr + len; index++) {
+		BeebWriteMem(index, (*src) & 0xff);
+		src++;
+  }
+  return false; // Placeholder return value
+}
+
+// Target info
+uint32_t _6502SimControl::pcRegNum() {
+    // TODO: Implement pcRegNum functionality
+    // ...
+    return static_cast<uint32_t>(REG_INDEX::REG_PC); // 8 = PC ( To match Intel )
+}
+
+uint32_t _6502SimControl::nRegs() {
+    // TODO: Implement nRegs functionality
+    // ...
+    return GdbServer::REG_COUNT; // A, X, Y, SP, PC, SR
+}
+
+uint32_t _6502SimControl::wordSize() {
+    // TODO: Implement wordSize functionality
+    // ...
+    return 1; // Placeholder return value
+}
+
+// Control debugger
+void _6502SimControl::stopServer() {
+    // TODO: Implement stopServer functionality
+    // ...
+}
+
+bool _6502SimControl::shouldStopServer() {
+    // TODO: Implement shouldStopServer functionality
+    // ...
+    return false; // Placeholder return value
+}
+
+bool _6502SimControl::isServerRunning() {
+    // TODO: Implement isServerRunning functionality
+    // ...
+    return true; // Placeholder return value
+}
+
+void _6502SimControl::setServerRunning(bool status) {
+    // TODO: Implement setServerRunning functionality
+    // ...
+	m_serverRunning = status;
+}
+
+// Target utilities
+uint32_t _6502SimControl::htotl(uint32_t hostVal) {
+    // TODO: Implement htotl functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+uint32_t _6502SimControl::ttohl(uint32_t targetVal) {
+    // TODO: Implement ttohl functionality
+    // ...
+    return 0; // Placeholder return value
+}
+
+
+void BeebWin::GdbStartServer()
+{
+	static bool serverStarted{ false };
+	static _6502SimControl simControl = _6502SimControl();
+	static GdbServer gdbServer(/*Simulation controller =*/&simControl, /*tcp port=*/17901);
+
+	if (serverStarted == false) {
+		serverStarted = true;
+		static std::thread gdbThread(&GdbServer::serverThread, gdbServer);
+	}
+}
+
 /****************************************************************************/
 
 MessageResult BeebWin::Report(MessageType type, const char *format, ...)
