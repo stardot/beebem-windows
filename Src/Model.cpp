@@ -28,6 +28,7 @@ static const char* const szModel[] =
 	"BBC Model B + Integra-B",
 	"BBC Model B Plus",
 	"BBC Master 128",
+	"BBC Master ET"
 };
 
 /****************************************************************************/
