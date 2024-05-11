@@ -152,7 +152,7 @@ void BeebWin::LoadPreferences()
 
 	if (m_Preferences.GetBinaryValue(CFG_MACHINE_TYPE, &type, 1))
 	{
-		if (type < static_cast<unsigned char>(Model::Last))
+		if (type < MODEL_COUNT)
 		{
 			MachineType = static_cast<Model>(type);
 		}
