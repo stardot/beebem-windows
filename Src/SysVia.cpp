@@ -111,7 +111,7 @@ const unsigned char RTC146818_REG_D = 0x0D;
 // 0xD: Register D
 // 0xE to 0x3F: User RAM (50 bytes)
 
-// Backup of CMOS Defaults (RAM bytes only)
+// Backup of Master 128 CMOS defaults from byte 14 (RAM bytes only)
 const unsigned char CMOSDefault_Master128[50] =
 {
 	0x01, 0xFE, 0x00, 0xEA, 0x00,
@@ -120,7 +120,7 @@ const unsigned char CMOSDefault_Master128[50] =
 	0x59, 0xa2
 };
 
-// Backup of Master ET CMOS Defaults from byte 14 (RAM bytes only)
+// Backup of Master ET CMOS defaults from byte 14 (RAM bytes only)
 const unsigned char CMOSDefault_MasterET[50] =
 {
 	0x01, 0xFE, 0x00, 0xEA, 0x00,
@@ -442,7 +442,7 @@ static unsigned char SlowDataBusRead()
 		}
 	}
 
-	if (MachineType != Model::Master128 && MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 	{
 		#if ENABLE_SPEECH
 
