@@ -49,11 +49,13 @@ void BeebReleaseAllKeys();
 
 void SysVIATriggerCA1Int(int value);
 
-// Master 128 MC146818AP Real-Time Clock and RAM
+// Master Series MC146818AP Real-Time Clock and RAM
 void RTCInit();
 void CMOSWrite(unsigned char Address, unsigned char Value);
 unsigned char CMOSRead(unsigned char Address);
-extern unsigned char CMOSRAM[MODEL_COUNT - 3][64]; // RTC registers + 50 bytes CMOS RAM
+
+// RTC registers + 50 bytes CMOS RAM for Master 128 and Master ET
+extern unsigned char CMOSRAM[2][64];
 
 extern const unsigned char CMOSDefault_Master128[50];
 extern const unsigned char CMOSDefault_MasterET[50];
