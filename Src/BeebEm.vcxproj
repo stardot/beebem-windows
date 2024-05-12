@@ -238,6 +238,7 @@
     <ClCompile Include="UefState.cpp" />
     <ClCompile Include="UserKeyboardDialog.cpp" />
     <ClCompile Include="UserPortBreakoutBox.cpp" />
+    <ClCompile Include="UserPortRTC.cpp" />
     <ClCompile Include="UserVia.cpp" />
     <ClCompile Include="Via.cpp" />
     <ClCompile Include="Video.cpp" />
@@ -403,6 +404,7 @@
     <ClInclude Include="UefState.h" />
     <ClInclude Include="UserKeyboardDialog.h" />
     <ClInclude Include="UserPortBreakoutBox.h" />
+    <ClInclude Include="UserPortRTC.h" />
     <ClInclude Include="UserVia.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="Via.h" />

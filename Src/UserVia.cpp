@@ -33,17 +33,8 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Tube.h"
 #include "UserPortBreakoutBox.h"
+#include "UserPortRTC.h"
 #include "Via.h"
-
-/* Real Time Clock */
-bool RTC_Enabled = false;
-
-static int RTC_bit = 0;
-static int RTC_cmd = 0;
-static int RTC_data = 0;        // Mon    Yr   Day         Hour        Min
-static unsigned char RTC_ram[8] = {0x12, 0x01, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
-
-static void RTCWrite(int Value, int lastValue);
 
 // AMX mouse (see UserVia.h)
 bool AMXMouseEnabled = false;
@@ -95,8 +86,6 @@ static void UpdateIFRTopBit()
 /* Address is in the range 0-f - with the fe60 stripped out */
 void UserVIAWrite(int Address, unsigned char Value)
 {
-	static unsigned char lastValue = 0xff;
-
 	// DebugTrace("UserVIAWrite: Address=0x%02x Value=0x%02x\n", Address, Value);
 
 	if (DebugEnabled)
@@ -120,10 +109,10 @@ void UserVIAWrite(int Address, unsigned char Value)
 			if (userPortBreakoutDialog != nullptr)
 				userPortBreakoutDialog->ShowOutputs(UserVIAState.orb);
 
-			if (RTC_Enabled)
-				RTCWrite(Value, lastValue);
-
-			lastValue = Value;
+			if (UserPortRTCEnabled)
+			{
+				UserPortRTCWrite(Value);
+			}
 			break;
 
 		case 1:
@@ -157,7 +146,14 @@ void UserVIAWrite(int Address, unsigned char Value)
 
 		case 2:
 			UserVIAState.ddrb = Value;
-			if (RTC_Enabled && ((Value & 0x07) == 0x07)) RTC_bit = 0;
+
+			if (UserPortRTCEnabled)
+			{
+				if ((Value & 0x07) == 0x07)
+				{
+					UserPortRTCResetWrite();
+				}
+			}
 			break;
 
 		case 3:
@@ -263,10 +259,9 @@ unsigned char UserVIARead(int Address)
 		case 0: /* IRB read */
 			tmp = (UserVIAState.orb & UserVIAState.ddrb) | (UserVIAState.irb & ~UserVIAState.ddrb);
 
-			if (RTC_Enabled)
+			if (UserPortRTCEnabled)
 			{
-				tmp = (tmp & 0xfe) | (RTC_data & 0x01);
-				RTC_data = RTC_data >> 1;
+				tmp = (tmp & 0xfe) | (unsigned char)UserPortRTCReadBit();
 			}
 
 			if (userPortBreakoutDialog != nullptr)
@@ -282,14 +277,14 @@ unsigned char UserVIARead(int Address)
 
 				if (TubeType == Tube::Master512CoPro)
 				{
-						tmp &= 0xf8;
-						tmp |= (amxButtons ^ 7);
+					tmp &= 0xf8;
+					tmp |= (amxButtons ^ 7);
 				}
 				else
 				{
-						tmp &= 0x1f;
-						tmp |= (amxButtons ^ 7) << 5;
-						UserVIAState.ifr &= 0xe7;
+					tmp &= 0x1f;
+					tmp |= (amxButtons ^ 7) << 5;
+					UserVIAState.ifr &= 0xe7;
 				}
 
 				UpdateIFRTopBit();
@@ -673,78 +668,7 @@ void PrinterPoll()
 }
 
 /*--------------------------------------------------------------------------*/
-void RTCWrite(int Value, int lastValue)
-{
-	if ( ((lastValue & 0x02) == 0x02) && ((Value & 0x02) == 0x00) )		// falling clock edge
-	{
-		if ((Value & 0x04) == 0x04)
-		{
-			RTC_cmd = (RTC_cmd >> 1) | ((Value & 0x01) << 15);
-			RTC_bit++;
 
-			WriteLog("RTC Shift cmd : 0x%03x, bit : %d\n", RTC_cmd, RTC_bit);
-		}
-		else
-		{
-			if (RTC_bit == 11) // Write data
-			{
-				RTC_cmd >>= 5;
-
-				WriteLog("RTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_cmd >> 4);
-
-				RTC_ram[(RTC_cmd & 0x0f) >> 1] = (unsigned char)(RTC_cmd >> 4);
-			}
-			else
-			{
-				RTC_cmd >>= 12;
-
-				time_t SysTime;
-				time(&SysTime);
-
-				struct tm* CurTime = localtime(&SysTime);
-
-				switch ((RTC_cmd & 0x0f) >> 1)
-				{
-				case 0:
-					RTC_data = BCD((unsigned char)(CurTime->tm_mon + 1));
-					break;
-
-				case 1:
-					RTC_data = BCD((CurTime->tm_year % 100) - 1);
-					break;
-
-				case 2:
-					RTC_data = BCD((unsigned char)CurTime->tm_mday);
-					break;
-
-				case 3:
-					RTC_data = RTC_ram[3];
-					break;
-
-				case 4:
-					RTC_data = BCD((unsigned char)CurTime->tm_hour);
-					break;
-
-				case 5:
-					RTC_data = RTC_ram[5];
-					break;
-
-				case 6:
-					RTC_data = BCD((unsigned char)CurTime->tm_min);
-					break;
-
-				case 7:
-					RTC_data = RTC_ram[7];
-					break;
-				}
-
-				WriteLog("RTC Read cmd : 0x%03x, reg : 0x%02x, data : 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
-			}
-		}
-	}
-}
-
-/*--------------------------------------------------------------------------*/
 void DebugUserViaState()
 {
 	DebugViaState("UserVia", &UserVIAState);

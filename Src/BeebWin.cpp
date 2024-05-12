@@ -97,6 +97,7 @@ using std::max;
 #include "UefState.h"
 #include "UserKeyboardDialog.h"
 #include "UserPortBreakoutBox.h"
+#include "UserPortRTC.h"
 #include "UserVia.h"
 #include "Version.h"
 #include "Video.h"
@@ -1281,7 +1282,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
 	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
 	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
-	CheckMenuItem(ID_USER_PORT_RTC_MODULE, RTC_Enabled);
+	CheckMenuItem(ID_USER_PORT_RTC_MODULE, UserPortRTCEnabled);
 
 	// Options
 	CheckMenuItem(IDM_JOYSTICK, false);
@@ -3953,8 +3954,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case ID_USER_PORT_RTC_MODULE:
-		RTC_Enabled = !RTC_Enabled;
-		CheckMenuItem(ID_USER_PORT_RTC_MODULE, RTC_Enabled);
+		UserPortRTCEnabled = !UserPortRTCEnabled;
+		CheckMenuItem(ID_USER_PORT_RTC_MODULE, UserPortRTCEnabled);
 		break;
 
 	case ID_TELETEXTHALFMODE:

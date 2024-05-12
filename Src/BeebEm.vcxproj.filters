@@ -240,6 +240,9 @@
     <ClCompile Include="UserPortBreakoutBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UserPortRTC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="UserVia.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -528,6 +531,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UserPortBreakoutBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserPortRTC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UserVia.h">
