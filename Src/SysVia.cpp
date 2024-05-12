@@ -111,6 +111,9 @@ const unsigned char RTC146818_REG_D = 0x0D;
 // 0xD: Register D
 // 0xE to 0x3F: User RAM (50 bytes)
 
+const unsigned char RTC146818_REG_B_SET    = 0x80;
+const unsigned char RTC146818_REG_B_BINARY = 0x04;
+
 // Backup of Master 128 CMOS defaults from byte 14 (RAM bytes only)
 const unsigned char CMOSDefault_Master128[50] =
 {
@@ -901,12 +904,26 @@ void SysVIAReset()
 static time_t CMOSConvertClock()
 {
 	struct tm Base;
-	Base.tm_sec   = BCDToBin(pCMOS[0]);
-	Base.tm_min   = BCDToBin(pCMOS[2]);
-	Base.tm_hour  = BCDToBin(pCMOS[4]);
-	Base.tm_mday  = BCDToBin(pCMOS[7]);
-	Base.tm_mon   = BCDToBin(pCMOS[8]) - 1;
-	Base.tm_year  = BCDToBin(pCMOS[9]);
+
+	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
+	{
+		Base.tm_sec   = pCMOS[0];
+		Base.tm_min   = pCMOS[2];
+		Base.tm_hour  = pCMOS[4];
+		Base.tm_mday  = pCMOS[7];
+		Base.tm_mon   = pCMOS[8] - 1;
+		Base.tm_year  = pCMOS[9];
+	}
+	else
+	{
+		Base.tm_sec   = BCDToBin(pCMOS[0]);
+		Base.tm_min   = BCDToBin(pCMOS[2]);
+		Base.tm_hour  = BCDToBin(pCMOS[4]);
+		Base.tm_mday  = BCDToBin(pCMOS[7]);
+		Base.tm_mon   = BCDToBin(pCMOS[8]) - 1;
+		Base.tm_year  = BCDToBin(pCMOS[9]);
+	}
+
 	Base.tm_wday  = -1;
 	Base.tm_yday  = -1;
 	Base.tm_isdst = -1;
@@ -945,13 +962,26 @@ void RTCInit()
 	time(&SysTime);
 	struct tm *CurTime = localtime(&SysTime);
 
-	pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-	pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-	pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-	pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-	pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-	pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-	pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
+	{
+		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
+		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
+		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
+		pCMOS[6] = static_cast<unsigned char>(CurTime->tm_wday + 1);
+		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
+		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
+		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
+	}
+	else
+	{
+		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
+		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
+		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
+		pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
+		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
+		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
+		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+	}
 
 	RTCTimeOffset = SysTime - CMOSConvertClock();
 }
@@ -965,13 +995,28 @@ static void RTCUpdate()
 	SysTime -= RTCTimeOffset;
 	struct tm *CurTime = localtime(&SysTime);
 
-	pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-	pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-	pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-	pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-	pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-	pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-	pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
+	{
+		// Update with current time values in binary format
+		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
+		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
+		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
+		pCMOS[6] = static_cast<unsigned char>(CurTime->tm_wday + 1);
+		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
+		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
+		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
+	}
+	else
+	{
+		// Update with current time values in BCD format
+		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
+		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
+		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
+		pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
+		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
+		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
+		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
+	}
 }
 
 /*-------------------------------------------------------------------------*/
@@ -990,7 +1035,16 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 	if (Address <= 0x9)
 	{
 		// Clock registers
-		pCMOS[Address] = Value;
+
+		// BCD or binary format?
+		if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
+		{
+			pCMOS[Address] = Value;
+		}
+		else
+		{
+			pCMOS[Address] = BCD(Value);
+		}
 	}
 	else if (Address == RTC146818_REG_A)
 	{
@@ -1001,11 +1055,11 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 	{
 		// Control register B
 		// Bit-7 SET - 0=clock running, 1=clock update halted
-		if (Value & 0x80)
+		if (Value & RTC146818_REG_B_SET)
 		{
 			RTCUpdate();
 		}
-		else if ((pCMOS[Address] & 0x80) && !(Value & 0x80))
+		else if ((pCMOS[RTC146818_REG_B] & RTC146818_REG_B_SET) && !(Value & RTC146818_REG_B_SET))
 		{
 			// New clock settings
 			time_t SysTime;
