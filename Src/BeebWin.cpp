@@ -737,15 +737,15 @@ void BeebWin::Break()
 			Music5000Init();
 	}
 
-#if ENABLE_SPEECH
+	#if ENABLE_SPEECH
 
-		if (SpeechDefault)
-		{
-			SpeechStop();
-			SpeechStart();
-		}
+	if (SpeechDefault)
+	{
+		SpeechStop();
+		SpeechStart();
+	}
 
-#endif
+	#endif
 
 	// Reset IntegraB RTC on Break
 	if (MachineType == Model::IntegraB)
@@ -3376,7 +3376,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 			SoundInit();
 		}
 
-		if ((Music5000Enabled) && (MachineType != Model::MasterET))
+		if (Music5000Enabled && MachineType != Model::MasterET)
 		{
 			Music5000Reset();
 			Music5000Init();
@@ -5018,7 +5018,7 @@ void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
 				}
 			}
 		}
-		else if (MachineType == Model::Master128) // Model::Master128
+		else if (MachineType == Model::Master128)
 		{
 			if (Type == FileType::FSD)
 			{
