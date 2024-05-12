@@ -72,13 +72,15 @@ void RomConfigDialog::UpdateROMField(int Row)
 	{
 		Bank = 16 - Row;
 
+		const int CMOSIndex = m_Model == Model::Master128 ? 0 : 1;
+
 		if (Bank >= 0 && Bank <= 7)
 		{
-			Unplugged = (CMOSRAM[(int(m_Model) - 3)][20] & (1 << Bank)) == 0;
+			Unplugged = (CMOSRAM[CMOSIndex][20] & (1 << Bank)) == 0;
 		}
 		else if (Bank >= 8 && Bank <= 15)
 		{
-			Unplugged = (CMOSRAM[(int(m_Model) - 3)][21] & (1 << (Bank - 8))) == 0;
+			Unplugged = (CMOSRAM[CMOSIndex][21] & (1 << (Bank - 8))) == 0;
 		}
 	}
 
