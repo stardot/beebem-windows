@@ -89,6 +89,12 @@ static bool OldCMOSState = false;
 // RTC registers + 50 bytes CMOS RAM for Master 128 and Master ET
 unsigned char CMOSRAM[2][64];
 
+// RTC Registers in memory
+const unsigned char RTC146818_REG_A = 0x0A;
+const unsigned char RTC146818_REG_B = 0x0B;
+const unsigned char RTC146818_REG_C = 0x0C;
+const unsigned char RTC146818_REG_D = 0x0D;
+
 // 0x0: Seconds (0 to 59)
 // 0x1: Alarm Seconds (0 to 59)
 // 0x2: Minutes (0 to 59)
@@ -123,8 +129,8 @@ const unsigned char CMOSDefault_MasterET[50] =
 	0x59, 0xa2
 };
 
-// pointer used to switch between the CMOS RAM for the different machines
-unsigned char* pCMOS = CMOSRAM[0];
+// Pointer used to switch between the CMOS RAM for the different machines
+unsigned char* pCMOS = nullptr;
 
 /*--------------------------------------------------------------------------*/
 
@@ -917,6 +923,24 @@ static time_t CMOSConvertClock()
 
 void RTCInit()
 {
+	// Select CMOS memory
+	switch (MachineType)
+	{
+		case Model::Master128:
+			pCMOS = CMOSRAM[0]; // Pointer to Master 128 CMOS
+			break;
+
+		case Model::MasterET:
+			pCMOS = CMOSRAM[1]; // Pointer to Master ET CMOS
+			break;
+
+		default: // Machine doesn't use CMOS
+			pCMOS = nullptr;
+			if (DebugEnabled)
+					DebugDisplayTrace(DebugType::CMOS, true, "RTC: Timer off");
+			return;
+	}
+
 	time_t SysTime;
 	time(&SysTime);
 	struct tm *CurTime = localtime(&SysTime);
@@ -968,12 +992,12 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 		// Clock registers
 		pCMOS[Address] = Value;
 	}
-	else if (Address == 0xa)
+	else if (Address == RTC146818_REG_A)
 	{
 		// Control register A
 		pCMOS[Address] = Value & 0x7f; // Top bit not writable
 	}
-	else if (Address == 0xb)
+	else if (Address == RTC146818_REG_B)
 	{
 		// Control register B
 		// Bit-7 SET - 0=clock running, 1=clock update halted
@@ -991,11 +1015,11 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 
 		pCMOS[Address] = Value;
 	}
-	else if (Address == 0xc || Address == 0xd)
+	else if (Address == RTC146818_REG_C || Address == RTC146818_REG_D)
 	{
 		// Control register C and D - read only
 	}
-	else if (Address <= 0x3f)
+	else if (Address < 0x40)
 	{
 		// User RAM
 		pCMOS[Address] = Value;
@@ -1027,6 +1051,7 @@ unsigned char CMOSRead(unsigned char Address)
 }
 
 /*--------------------------------------------------------------------------*/
+
 void DebugSysViaState()
 {
 	DebugViaState("SysVia", &SysVIAState);
