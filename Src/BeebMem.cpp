@@ -334,20 +334,41 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
 
-		if (Address==0xfe3c) {
-			time_t long_time; // Clock for Computech Integra-B
-			time(&long_time);
-			struct tm* time = localtime(&long_time);
+		if (Address == 0xfe3c)
+		{
+			// CDP6818E Clock for Computech Integra-B
+			SYSTEMTIME Time;
+			GetLocalTime(&Time);
 
-			if (HidAdd==0) return (unsigned char)time->tm_sec;
-			if (HidAdd==2) return (unsigned char)time->tm_min;
-			if (HidAdd==4) return (unsigned char)time->tm_hour;
-			if (HidAdd==6) return (unsigned char)(time->tm_wday + 1);
-			if (HidAdd==7) return (unsigned char)(time->tm_mday);
-			if (HidAdd==8) return (unsigned char)(time->tm_mon + 1);
-			if (HidAdd==9) return (unsigned char)(time->tm_year % 100);
-			if (HidAdd==0xa) return(0x0);
-			return(Hidden[HidAdd]);
+			switch (HidAdd)
+			{
+				case 0:
+					return (unsigned char)Time.wSecond;
+
+				case 2:
+					return (unsigned char)Time.wMinute;
+
+				case 4:
+					return (unsigned char)Time.wHour;
+
+				case 6:
+					return (unsigned char)Time.wDayOfWeek + 1;
+
+				case 7:
+					return (unsigned char)Time.wDay;
+
+				case 8:
+					return (unsigned char)Time.wMonth;
+
+				case 9:
+					return (unsigned char)(Time.wYear % 100);
+
+				case 0xa:
+					return 0x00;
+
+				default:
+					return Hidden[HidAdd];
+			}
 		}
 	}
 	else if (MachineType == Model::BPlus) {
@@ -1302,12 +1323,17 @@ void BeebReadRoms()
 }
 
 /*----------------------------------------------------------------------------*/
-void RTCReset(void) {
+
+void IntegraBRTCReset()
+{
 	Hidden[0xb] &= 0x87; /* clear bits in register B */
 	Hidden[0xc] = 0;
 }
+
 /*----------------------------------------------------------------------------*/
-void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
+
+void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig)
+{
   // Reset everything
   memset(WholeRam,0,0x8000);
   memset(FSRam,0,0x2000);

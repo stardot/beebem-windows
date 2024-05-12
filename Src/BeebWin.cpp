@@ -750,7 +750,7 @@ void BeebWin::Break()
 	// Reset IntegraB RTC on Break
 	if (MachineType == Model::IntegraB)
 	{
-		RTCReset();
+		IntegraBRTCReset();
 	}
 }
 

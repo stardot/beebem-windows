@@ -99,7 +99,7 @@ const unsigned char *BeebMemPtrWithWrap(int Address, int Length);
 const unsigned char *BeebMemPtrWithWrapMode7(int Address, int Length);
 void BeebReadRoms(void);
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);
-void RTCReset(void);
+void IntegraBRTCReset();
 
 /* used by debugger */
 bool ReadRomInfo(int bank, RomInfo* info);
