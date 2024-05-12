@@ -117,7 +117,7 @@ const unsigned char RTC146818_REG_B_BINARY = 0x04;
 // Backup of Master 128 CMOS defaults from byte 14 (RAM bytes only)
 const unsigned char CMOSDefault_Master128[50] =
 {
-	0x01, 0xFE, 0x00, 0xEA, 0x00,
+	0x01, 0xfe, 0x00, 0xea, 0x00,
 	0xc9, 0xff, 0xfe, 0x32, 0x00,
 	0x07, 0xc1, 0x1e, 0x05, 0x00,
 	0x59, 0xa2
@@ -126,7 +126,7 @@ const unsigned char CMOSDefault_Master128[50] =
 // Backup of Master ET CMOS defaults from byte 14 (RAM bytes only)
 const unsigned char CMOSDefault_MasterET[50] =
 {
-	0x01, 0xFE, 0x00, 0xEA, 0x00,
+	0x01, 0xfe, 0x00, 0xea, 0x00,
 	0xde, 0xff, 0xff, 0x32, 0x00,
 	0x07, 0xc1, 0x1e, 0x05, 0x00,
 	0x59, 0xa2
@@ -492,6 +492,7 @@ void SysVIAWrite(int Address, unsigned char Value)
 
 			CMOS.Enabled = (Value & 64) != 0; // CMOS Chip select
 			CMOS.Address = (Value & 128) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
+
 			if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20) == 0))
 			{
 				SysVIAState.ifr &= 0xf7;
@@ -1039,11 +1040,11 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 		// BCD or binary format?
 		if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
 		{
-			pCMOS[Address] = Value;
+			pCMOS[Address] = BCD(Value);
 		}
 		else
 		{
-			pCMOS[Address] = BCD(Value);
+			pCMOS[Address] = Value;
 		}
 	}
 	else if (Address == RTC146818_REG_A)
@@ -1059,7 +1060,7 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 		{
 			RTCUpdate();
 		}
-		else if ((pCMOS[RTC146818_REG_B] & RTC146818_REG_B_SET) && !(Value & RTC146818_REG_B_SET))
+		else if ((pCMOS[Address] & RTC146818_REG_B_SET) && !(Value & RTC146818_REG_B_SET))
 		{
 			// New clock settings
 			time_t SysTime;
@@ -1067,6 +1068,7 @@ void CMOSWrite(unsigned char Address, unsigned char Value)
 			RTCTimeOffset = SysTime - CMOSConvertClock();
 		}
 
+		// Write the value to CMOS anyway
 		pCMOS[Address] = Value;
 	}
 	else if (Address == RTC146818_REG_C || Address == RTC146818_REG_D)
