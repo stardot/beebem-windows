@@ -156,7 +156,7 @@ void BeebReleaseAllKeys()
 		}
 	}
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 	{
 		TranslateKeyboardLinks(KeyboardLinks);
 	}
@@ -319,7 +319,7 @@ static void IC32Write(unsigned char Value)
 	CMOS.DataStrobe = (tmpCMOSState == OldCMOSState) ? false : true;
 	OldCMOSState = tmpCMOSState;
 
-	if (MachineType == Model::Master128)
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
 		if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
 		{
@@ -343,7 +343,7 @@ static void IC32Write(unsigned char Value)
 
 	#if ENABLE_SPEECH
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 	{
 		if ((PrevIC32State & IC32_SPEECH_WRITE) && !(IC32State & IC32_SPEECH_WRITE))
 		{
@@ -389,7 +389,7 @@ static void SlowDataBusWrite(unsigned char Value)
 		DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
 	}
 
-	if (MachineType == Model::Master128)
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
 		if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
 		{
@@ -407,9 +407,12 @@ static void SlowDataBusWrite(unsigned char Value)
 
 static unsigned char SlowDataBusRead()
 {
-	if (CMOS.Enabled && CMOS.Op && MachineType == Model::Master128)
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
-		SysVIAState.ora = CMOSRead(CMOS.Address); // SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
+		if (CMOS.Enabled && CMOS.Op)
+		{
+			SysVIAState.ora = CMOSRead(CMOS.Address); // SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
+		}
 	}
 
 	unsigned char result = SysVIAState.ora & SysVIAState.ddra;
@@ -417,7 +420,7 @@ static unsigned char SlowDataBusRead()
 
 	// I don't know this lot properly - just put in things as we figure them out
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 	{
 		if ((IC32State & IC32_KEYBOARD_WRITE) == 0)
 		{
@@ -425,12 +428,15 @@ static unsigned char SlowDataBusRead()
 		}
 	}
 
-	if ((MachineType == Model::Master128) && !CMOS.Enabled)
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
-		if (KbdOP()) result |= 128;
+		if (!CMOS.Enabled)
+		{
+			if (KbdOP()) result |= 128;
+		}
 	}
 
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::Master128)
 	{
 		#if ENABLE_SPEECH
 
