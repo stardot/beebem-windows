@@ -513,7 +513,7 @@ unsigned char BeebReadMem(int Address) {
 	   shows the read-station select line is also INTOFF. (and it's any access to FE18, not just a read.)
 	*/
 	if (EconetEnabled &&
-		(((MachineType != Model::Master128 && MachineType !=Model::MasterET) && (Address & ~3) == 0xfe18) ||
+		(((MachineType != Model::Master128 && MachineType != Model::MasterET) && (Address & ~3) == 0xfe18) ||
 		 ((MachineType == Model::Master128 || MachineType == Model::MasterET) && (Address & ~3) == 0xfe38)))
 	{
 		if (DebugEnabled)

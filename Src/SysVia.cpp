@@ -909,8 +909,8 @@ static time_t CMOSConvertClock()
 {
 	struct tm Base;
 
-
-	if (!(pCMOS[RegisterB] & DM)) {
+	if (!(pCMOS[RegisterB] & DM))
+	{
 		Base.tm_sec  = BCDToBin(pCMOS[0]);
 		Base.tm_min  = BCDToBin(pCMOS[2]);
 		Base.tm_hour = BCDToBin(pCMOS[4]);
@@ -918,7 +918,8 @@ static time_t CMOSConvertClock()
 		Base.tm_mon  = BCDToBin(pCMOS[8]) - 1;
 		Base.tm_year = BCDToBin(pCMOS[9]);
 	}
-	else {
+	else
+	{
 		Base.tm_sec  = pCMOS[0];
 		Base.tm_min  = pCMOS[2];
 		Base.tm_hour = pCMOS[4];
@@ -992,7 +993,6 @@ void RTCInit()
 		pCMOS[9] = static_cast<unsigned char>((CurTime->tm_year) % 100);
 	}
 
-
 	RTCTimeOffset = SysTime - CMOSConvertClock();
 }
 
@@ -1027,7 +1027,6 @@ static void RTCUpdate()
 		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
 		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
 	}
-
 }
 
 /*-------------------------------------------------------------------------
