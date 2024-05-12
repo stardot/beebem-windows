@@ -46,6 +46,7 @@ Boston, MA  02110-1301, USA.
 #include "Teletext.h"
 #include "Tube.h"
 #include "UserPortBreakoutBox.h"
+#include "UserPortRTC.h"
 #include "UserVia.h"
 #include "Video.h"
 #include "Z80mem.h"
@@ -666,8 +667,18 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
 		IDEDriveEnabled = false;
 
-	if (!m_Preferences.GetBoolValue("RTCEnabled", RTC_Enabled))
-		RTC_Enabled = false;
+	if (!m_Preferences.GetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled))
+	{
+		if (!m_Preferences.GetBoolValue("RTCEnabled", UserPortRTCEnabled))
+		{
+			UserPortRTCEnabled = false;
+		}
+	}
+
+	if (!m_Preferences.GetBinaryValue("UserPortRTCRegisters", UserPortRTCRegisters, sizeof(UserPortRTCRegisters)))
+	{
+		ZeroMemory(UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
+	}
 
 	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
 		m_MenuIDAviResolution = dword;
@@ -885,7 +896,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
-		m_Preferences.SetBoolValue("RTCEnabled", RTC_Enabled);
+		m_Preferences.SetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled);
 
 		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIDAviResolution);
 		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
@@ -903,6 +914,8 @@ void BeebWin::SavePreferences(bool saveAll)
 	{
 		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50); // Master 128
 		m_Preferences.SetBinaryValue("CMOSRamMasterET", &CMOSRAM[1][14], 50); // Master ET
+
+		m_Preferences.SetBinaryValue("UserPortRTCRegisters", UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
 	}
 
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
