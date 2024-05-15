@@ -26,15 +26,15 @@ Contributions to BeebEm are welcome and encouraged.
 
 ### Preparing a new release
 
-* When it's time to publish a new release version, create a single commit on `master` with the following changes only:
+* When it's time to publish a new release version, first check that any new files that should be distributed with BeebEm have been added to [Src/InnoSetup/BeebEmSetup.iss](https://github.com/stardot/beebem-windows/blob/master/Src/InnoSetup/BeebEmSetup.iss) and [Src/ZipFile/MakeZipFile.pl](https://github.com/stardot/beebem-windows/blob/master/Src/ZipFile/MakeZipFile.pl).
+
+* Create a single commit on `master` with the following changes only:
 
   * Increment the version number in [Src/Version.h](https://github.com/stardot/beebem-windows/blob/master/Src/Version.h) and set `VERSION_DATE` to today's date.
 
   * Increment the following values in [Src/InnoSetup/BeebEmSetup.iss](https://github.com/stardot/beebem-windows/blob/master/Src/InnoSetup/BeebEmSetup.iss): `AppVerName`, `VersionInfoVersion`, and the `HKLM\SOFTWARE\BeebEm\Version` registry key
 
   * Describe the new features in this release in [CHANGES.md](https://github.com/stardot/beebem-windows/blob/master/CHANGES.md).
-
-  * Ensure any new files that should be distributed with BeebEm are added to [Src/InnoSetup/BeebEmSetup.iss](https://github.com/stardot/beebem-windows/blob/master/Src/InnoSetup/BeebEmSetup.iss) and [Src/ZipFile/MakeZipFile.pl](https://github.com/stardot/beebem-windows/blob/master/Src/ZipFile/MakeZipFile.pl).
 
 * Tag this commit using the form `X.Y` and push the commit using `git push origin master --tags`.
 
