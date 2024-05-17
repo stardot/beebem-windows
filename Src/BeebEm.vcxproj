@@ -216,6 +216,7 @@
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="RomConfigDialog.cpp" />
     <ClCompile Include="RomConfigFile.cpp" />
+    <ClCompile Include="Rtc.cpp" />
     <ClCompile Include="Sasi.cpp" />
     <ClCompile Include="Scsi.cpp" />
     <ClCompile Include="SelectKeyDialog.cpp" />
@@ -369,6 +370,7 @@
     <ClInclude Include="KeyMap.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="Rtc.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="ML675001.h" />
     <ClInclude Include="Model.h" />

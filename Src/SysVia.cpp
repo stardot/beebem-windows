@@ -40,23 +40,28 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "IC32Latch.h"
 #include "Main.h"
 #include "Model.h"
+#include "Rtc.h"
 #include "Sound.h"
 #include "Speech.h"
 #include "Via.h"
 
+#define DEBUG_IC32
+// #define DEBUG_KEYBOARD
+// #define DEBUG_SLOW_DATA_BUS
+
 // Shift register stuff
-unsigned char SRMode;
-unsigned char SRCount;
-unsigned char SRData;
-unsigned char SREnabled;
+static unsigned char SRMode;
+static unsigned char SRCount;
+static unsigned char SRData;
+static unsigned char SREnabled;
 
 // Fire button for joystick 1 and 2, false=not pressed, true=pressed
 bool JoystickButton[2] = { false, false };
 
 // My raw VIA state
 VIAState SysVIAState;
-char WECycles = 0;
-char WEState = 0;
+static char WECycles = 0;
+static char WEState = 0;
 
 // Last value written to the slow data bus - sound reads it later
 static unsigned char SlowDataBusWriteValue = 0;
@@ -69,71 +74,6 @@ static bool SysViaKbdState[16][8]; // Col, row
 static int KeysDown=0;
 
 unsigned char KeyboardLinks = 0;
-
-// Master 128 MC146818AP Real-Time Clock and RAM
-static time_t RTCTimeOffset = 0;
-
-struct CMOSType
-{
-	bool Enabled;
-	// unsigned char ChipSelect;
-	unsigned char Address;
-	// unsigned char StrobedData;
-	bool DataStrobe;
-	bool Op;
-};
-
-static struct CMOSType CMOS;
-static bool OldCMOSState = false;
-
-// RTC registers + 50 bytes CMOS RAM for Master 128 and Master ET
-unsigned char CMOSRAM[2][64];
-
-// RTC Registers in memory
-const unsigned char RTC146818_REG_A = 0x0A;
-const unsigned char RTC146818_REG_B = 0x0B;
-const unsigned char RTC146818_REG_C = 0x0C;
-const unsigned char RTC146818_REG_D = 0x0D;
-
-// 0x0: Seconds (0 to 59)
-// 0x1: Alarm Seconds (0 to 59)
-// 0x2: Minutes (0 to 59)
-// 0x3: Alarm Minutes (0 to 59)
-// 0x4: Hours (0 to 23)
-// 0x5: Alarm Hours (0 to 23)
-// 0x6: Day of week (1 = Sun, 7 = Sat)
-// 0x7: Day of month (1 to 31)
-// 0x8: Month (1 = Jan, 12 = Dec)
-// 0x9: Year (last 2 digits)
-// 0xA: Register A
-// 0xB: Register B
-// 0xC: Register C
-// 0xD: Register D
-// 0xE to 0x3F: User RAM (50 bytes)
-
-const unsigned char RTC146818_REG_B_SET    = 0x80;
-const unsigned char RTC146818_REG_B_BINARY = 0x04;
-
-// Backup of Master 128 CMOS defaults from byte 14 (RAM bytes only)
-const unsigned char CMOSDefault_Master128[50] =
-{
-	0x01, 0xfe, 0x00, 0xea, 0x00,
-	0xc9, 0xff, 0xfe, 0x32, 0x00,
-	0x07, 0xc1, 0x1e, 0x05, 0x00,
-	0x59, 0xa2
-};
-
-// Backup of Master ET CMOS defaults from byte 14 (RAM bytes only)
-const unsigned char CMOSDefault_MasterET[50] =
-{
-	0x01, 0xfe, 0x00, 0xea, 0x00,
-	0xde, 0xff, 0xff, 0x32, 0x00,
-	0x07, 0xc1, 0x1e, 0x05, 0x00,
-	0x59, 0xa2
-};
-
-// Pointer used to switch between the CMOS RAM for the different machines
-unsigned char* pCMOS = nullptr;
 
 /*--------------------------------------------------------------------------*/
 
@@ -188,6 +128,8 @@ static void UpdateIFRTopBit()
 	}
 }
 
+/*--------------------------------------------------------------------------*/
+
 void PulseSysViaCB1()
 {
 	// Set IFR bit 4 - AtoD end of conversion interrupt
@@ -207,7 +149,7 @@ void DoKbdIntCheck()
 	// Two cases - write enable is OFF the keyboard - basically any key will cause an
 	// interrupt in a few cycles.
 
-	#ifdef KBDDEBUG
+	#ifdef DEBUG_KEYBOARD
 	int Oldflag = (SysVIAState.ifr & 1);
 	#endif
 
@@ -216,7 +158,7 @@ void DoKbdIntCheck()
 		if (IC32State & IC32_KEYBOARD_WRITE)
 		{
 			SysVIAState.ifr |= 1; // CA2
-			// DebugTrace("DoKbdIntCheck: Caused interrupt case 1\n");
+			//DebugTrace("DoKbdIntCheck: Caused interrupt case 1\n");
 			UpdateIFRTopBit();
 		}
 		else
@@ -236,7 +178,7 @@ void DoKbdIntCheck()
 		} // WriteEnable on
 	} // Keys down and CA2 input enabled
 
-	#ifdef KBDDEBUG
+	#ifdef DEBUG_KEYBOARD
 
 	DebugTrace("DoKbdIntCheck KeysDown=%d pcr & c=%d IC32State & 8=%d "
 	           "KBDRow=%d KBDCol=%d oldIFRflag=%d Newflag=%d\n",
@@ -305,39 +247,61 @@ static void IC32Write(unsigned char Value)
 	// I have to do CMOS RAM now. And I think I'm going slightly potty.
 	// Additional, Sunday 4th February 2001. I must have been potty. the line above did read January 2000.
 	int PrevIC32State = IC32State;
-	bool tmpCMOSState;
 
 	int Bit = Value & 7;
 
 	if (Value & 8)
 	{
+		#ifdef DEBUG_IC32
+
+		if (!(IC32State & (1 << Bit)))
+		{
+			DebugTrace("IC32 set bit %d (0x%02d)\n", Bit, 1 << Bit);
+		}
+
+		#endif
+
 		IC32State |= 1 << Bit;
 	}
 	else
 	{
+		#ifdef DEBUG_IC32
+
+		if (IC32State & (1 << Bit))
+		{
+			DebugTrace("IC32 clear bit %d (0x%02d)\n", Bit, 1 << Bit);
+		}
+
+		#endif
+
 		IC32State &= ~(1 << Bit);
 	}
 
 	LEDs.CapsLock = (IC32State & IC32_CAPS_LOCK) == 0;
 	LEDs.ShiftLock = (IC32State & IC32_SHIFT_LOCK) == 0;
 
-	// hmm, CMOS RAM?
-	// Monday 5th February 2001 - Scrapped my CMOS code, and restarted as according to the bible of the god Tom Lees
-	CMOS.Op = (IC32State & 2) != 0;
-	tmpCMOSState = (IC32State & 4) != 0;
-	CMOS.DataStrobe = (tmpCMOSState == OldCMOSState) ? false : true;
-	OldCMOSState = tmpCMOSState;
-
 	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
-		if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
+		if (RTCIsChipEnable())
 		{
-			CMOSWrite(CMOS.Address, SlowDataBusWriteValue);
-		}
-
-		if (CMOS.Enabled && CMOS.Op)
-		{
-			SysVIAState.ora = CMOSRead(CMOS.Address);
+			if (IC32State & IC32_RTC_READ)
+			{
+				// During read cycles, DS signifies the time that the RTC
+				// is to drive the bidirectional bus.
+				if (!(PrevIC32State & IC32_RTC_DATA_STROBE) && (IC32State & IC32_RTC_DATA_STROBE))
+				{
+					SysVIAState.ora = RTCReadData();
+				}
+			}
+			else
+			{
+				// In write cycles, the trailing edge of DS causes the RTC
+				// to latch the written data.
+				if ((PrevIC32State & IC32_RTC_DATA_STROBE) && !(IC32State & IC32_RTC_DATA_STROBE))
+				{
+					RTCWriteData(SysVIAState.ora);
+				}
+			}
 		}
 	}
 
@@ -347,8 +311,6 @@ static void IC32Write(unsigned char Value)
 	{
 		Sound_RegWrite(SlowDataBusWriteValue);
 	}
-
-	// DebugTrace("IC32State now=%x\n", IC32State);
 
 	#if ENABLE_SPEECH
 
@@ -387,7 +349,9 @@ static void SlowDataBusWrite(unsigned char Value)
 {
 	SlowDataBusWriteValue = Value;
 
-	// DebugTrace("Slow data bus write IC32State=%d Value=0x%02x\n", IC32State, Value);
+	#ifdef DEBUG_SLOW_DATA_BUS
+	DebugTrace("Slow data bus write IC32State=%d Value=0x%02x\n", IC32State, Value);
+	#endif
 
 	if ((IC32State & IC32_KEYBOARD_WRITE) == 0)
 	{
@@ -396,14 +360,6 @@ static void SlowDataBusWrite(unsigned char Value)
 		KBDCol = Value & 0xf;
 		// DebugTrace("SlowDataBusWrite to kbd  Row=%d Col=%d\n", KBDRow, KBDCol);
 		DoKbdIntCheck(); /* Should really only if write enable on KBD changes */
-	}
-
-	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
-	{
-		if (CMOS.DataStrobe && CMOS.Enabled && !CMOS.Op)
-		{
-			CMOSWrite(CMOS.Address,Value);
-		}
 	}
 
 	if ((IC32State & IC32_SOUND_WRITE) == 0)
@@ -418,35 +374,27 @@ static unsigned char SlowDataBusRead()
 {
 	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
-		if (CMOS.Enabled && CMOS.Op)
+		if (RTCIsChipEnable() && (IC32State & IC32_RTC_READ))
 		{
-			SysVIAState.ora = CMOSRead(CMOS.Address); // SysVIAState.ddra ^ CMOSRAM[CMOS.Address];
+			return SysVIAState.ora & ~SysVIAState.ddra;
 		}
 	}
 
 	unsigned char result = SysVIAState.ora & SysVIAState.ddra;
-	if (CMOS.Enabled) result = SysVIAState.ora & ~SysVIAState.ddra;
 
-	// I don't know this lot properly - just put in things as we figure them out
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
+	{
+		// I don't know this lot properly - just put in things as we figure them out
 
-	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
+		if (KbdOP()) result |= 128;
+	}
+	else
 	{
 		if ((IC32State & IC32_KEYBOARD_WRITE) == 0)
 		{
 			if (KbdOP()) result |= 128;
 		}
-	}
 
-	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
-	{
-		if (!CMOS.Enabled)
-		{
-			if (KbdOP()) result |= 128;
-		}
-	}
-
-	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
-	{
 		#if ENABLE_SPEECH
 
 		if ((IC32State & IC32_SPEECH_READ) == 0)
@@ -462,7 +410,9 @@ static unsigned char SlowDataBusRead()
 		}
 	}
 
-	// DebugTrace("SlowDataBusRead giving 0x%02x\n", result);
+	#ifdef DEBUG_SLOW_DATA_BUS
+	DebugTrace("SlowDataBusRead giving 0x%02x\n", result);
+	#endif
 
 	return result;
 }
@@ -484,14 +434,28 @@ void SysVIAWrite(int Address, unsigned char Value)
 
 	switch (Address)
 	{
-		case 0:
-			// Clear bit 4 of IFR from ATOD Conversion
+		case 0: // ORB
+			// Clear bit 4 of IFR from AtoD Conversion
 			SysVIAState.ifr &= ~16;
 			SysVIAState.orb = Value;
-			IC32Write(Value);
 
-			CMOS.Enabled = (Value & 64) != 0; // CMOS Chip select
-			CMOS.Address = (Value & 128) ? SysVIAState.ora : CMOS.Address; // CMOS Address strobe
+			if (MachineType == Model::Master128 || MachineType == Model::MasterET)
+			{
+				// In the Master series, PB6 is the MC146818AP RTC Chip Enable
+				// and PB7 is the MC146818AP RTC Address Strobe (AS)
+
+				RTCChipEnable((Value & 0x40) != 0);
+
+				if ((Value & 0xC0)== 0xC0)
+				{
+					// Address must be valid just prior to the fall of AS,
+					// at which time the address is latched.
+					RTCWriteAddress(SysVIAState.ora);
+				}
+			}
+
+			// The bottom 4 bits of ORB connect to the IC32 latch.
+			IC32Write(Value);
 
 			if ((SysVIAState.ifr & 8) && ((SysVIAState.pcr & 0x20) == 0))
 			{
@@ -502,7 +466,7 @@ void SysVIAWrite(int Address, unsigned char Value)
 			UpdateIFRTopBit();
 			break;
 
-		case 1:
+		case 1: // ORA
 			SysVIAState.ora = Value;
 			SlowDataBusWrite(Value);
 			SysVIAState.ifr&=0xfc;
@@ -637,7 +601,7 @@ unsigned char SysVIARead(int Address)
 	switch (Address)
 	{
 		case 0: // IRB read
-			// Clear bit 4 of IFR from ATOD Conversion
+			// Clear bit 4 of IFR from AtoD Conversion
 			SysVIAState.ifr &= ~16;
 			tmp = SysVIAState.orb & SysVIAState.ddrb;
 
@@ -752,9 +716,11 @@ unsigned char SysVIARead(int Address)
 
 		case 13:
 			UpdateIFRTopBit();
-			#ifdef KBDDEBUG
+
+			#ifdef DEBUG_KEYBOARD
 			// DebugTrace("Read IFR got=0x%02x\n", SysVIAState.ifr);
 			#endif
+
 			tmp = SysVIAState.ifr;
 			break;
 
@@ -900,215 +866,11 @@ void SysVIAReset()
 	SREnabled = 0; // Disable Shift register shifting shiftily. (I am nuts) - Richard Gellman
 }
 
-/*-------------------------------------------------------------------------*/
-
-static time_t CMOSConvertClock()
-{
-	struct tm Base;
-
-	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
-	{
-		Base.tm_sec   = pCMOS[0];
-		Base.tm_min   = pCMOS[2];
-		Base.tm_hour  = pCMOS[4];
-		Base.tm_mday  = pCMOS[7];
-		Base.tm_mon   = pCMOS[8] - 1;
-		Base.tm_year  = pCMOS[9];
-	}
-	else
-	{
-		Base.tm_sec   = BCDToBin(pCMOS[0]);
-		Base.tm_min   = BCDToBin(pCMOS[2]);
-		Base.tm_hour  = BCDToBin(pCMOS[4]);
-		Base.tm_mday  = BCDToBin(pCMOS[7]);
-		Base.tm_mon   = BCDToBin(pCMOS[8]) - 1;
-		Base.tm_year  = BCDToBin(pCMOS[9]);
-	}
-
-	Base.tm_wday  = -1;
-	Base.tm_yday  = -1;
-	Base.tm_isdst = -1;
-
-	time_t SysTime;
-	time(&SysTime);
-	struct tm *CurTime = localtime(&SysTime);
-	Base.tm_year += (CurTime->tm_year / 100) * 100;
-
-	return mktime(&Base);
-}
-
-/*-------------------------------------------------------------------------*/
-
-void RTCInit()
-{
-	// Select CMOS memory
-	switch (MachineType)
-	{
-		case Model::Master128:
-			pCMOS = CMOSRAM[0]; // Pointer to Master 128 CMOS
-			break;
-
-		case Model::MasterET:
-			pCMOS = CMOSRAM[1]; // Pointer to Master ET CMOS
-			break;
-
-		default: // Machine doesn't use CMOS
-			pCMOS = nullptr;
-			if (DebugEnabled)
-					DebugDisplayTrace(DebugType::CMOS, true, "RTC: Timer off");
-			return;
-	}
-
-	time_t SysTime;
-	time(&SysTime);
-	struct tm *CurTime = localtime(&SysTime);
-
-	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
-	{
-		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
-		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
-		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
-		pCMOS[6] = static_cast<unsigned char>(CurTime->tm_wday + 1);
-		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
-		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
-		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
-	}
-	else
-	{
-		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-		pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
-	}
-
-	RTCTimeOffset = SysTime - CMOSConvertClock();
-}
-
-/*-------------------------------------------------------------------------*/
-
-static void RTCUpdate()
-{
-	time_t SysTime;
-	time(&SysTime);
-	SysTime -= RTCTimeOffset;
-	struct tm *CurTime = localtime(&SysTime);
-
-	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
-	{
-		// Update with current time values in binary format
-		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
-		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
-		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
-		pCMOS[6] = static_cast<unsigned char>(CurTime->tm_wday + 1);
-		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
-		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
-		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
-	}
-	else
-	{
-		// Update with current time values in BCD format
-		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-		pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
-	}
-}
-
-/*-------------------------------------------------------------------------*/
-
-void CMOSWrite(unsigned char Address, unsigned char Value)
-{
-	if (DebugEnabled)
-	{
-	  DebugDisplayTraceF(DebugType::CMOS, true,
-	                     "CMOS: Write address %X value %02X",
-	                     Address, Value);
-	}
-
-	// Many thanks to Tom Lees for supplying me with info on the 146818 registers
-	// for these two functions.
-	if (Address <= 0x9)
-	{
-		// Clock registers
-
-		// BCD or binary format?
-		if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
-		{
-			pCMOS[Address] = BCD(Value);
-		}
-		else
-		{
-			pCMOS[Address] = Value;
-		}
-	}
-	else if (Address == RTC146818_REG_A)
-	{
-		// Control register A
-		pCMOS[Address] = Value & 0x7f; // Top bit not writable
-	}
-	else if (Address == RTC146818_REG_B)
-	{
-		// Control register B
-		// Bit-7 SET - 0=clock running, 1=clock update halted
-		if (Value & RTC146818_REG_B_SET)
-		{
-			RTCUpdate();
-		}
-		else if ((pCMOS[Address] & RTC146818_REG_B_SET) && !(Value & RTC146818_REG_B_SET))
-		{
-			// New clock settings
-			time_t SysTime;
-			time(&SysTime);
-			RTCTimeOffset = SysTime - CMOSConvertClock();
-		}
-
-		// Write the value to CMOS anyway
-		pCMOS[Address] = Value;
-	}
-	else if (Address == RTC146818_REG_C || Address == RTC146818_REG_D)
-	{
-		// Control register C and D - read only
-	}
-	else if (Address < 0x40)
-	{
-		// User RAM
-		pCMOS[Address] = Value;
-	}
-}
-
-/*-------------------------------------------------------------------------*/
-
-unsigned char CMOSRead(unsigned char Address)
-{
-	// 0x0 to 0x9 - Clock
-	// 0xa to 0xd - Regs
-	// 0xe to 0x3f - RAM
-	if (Address <= 0x9)
-	{
-		RTCUpdate();
-	}
-
-	unsigned char Value = pCMOS[Address];
-
-	if (DebugEnabled)
-	{
-	  DebugDisplayTraceF(DebugType::CMOS, true,
-	                     "CMOS: Read address %X value %02X",
-	                     Address, Value);
-	}
-
-	return Value;
-}
-
 /*--------------------------------------------------------------------------*/
 
 void DebugSysViaState()
 {
 	DebugViaState("SysVia", &SysVIAState);
 }
+
+/*--------------------------------------------------------------------------*/
