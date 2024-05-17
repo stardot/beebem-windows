@@ -21,13 +21,15 @@ Boston, MA  02110-1301, USA.
 #ifndef IC32LATCH_HEADER
 #define IC32LATCH_HEADER
 
-constexpr unsigned char IC32_SOUND_WRITE    = 0x01;
-constexpr unsigned char IC32_SPEECH_READ    = 0x02;
-constexpr unsigned char IC32_SPEECH_WRITE   = 0x04;
-constexpr unsigned char IC32_KEYBOARD_WRITE = 0x08;
-constexpr unsigned char IC32_SCREEN_ADDRESS = 0x30;
-constexpr unsigned char IC32_CAPS_LOCK      = 0x40;
-constexpr unsigned char IC32_SHIFT_LOCK     = 0x80;
+constexpr unsigned char IC32_SOUND_WRITE     = 0x01;
+constexpr unsigned char IC32_SPEECH_READ     = 0x02; // BBC B only
+constexpr unsigned char IC32_SPEECH_WRITE    = 0x04; // BBC B only
+constexpr unsigned char IC32_RTC_READ        = 0x02; // Master only
+constexpr unsigned char IC32_RTC_DATA_STROBE = 0x04; // Master only
+constexpr unsigned char IC32_KEYBOARD_WRITE  = 0x08;
+constexpr unsigned char IC32_SCREEN_ADDRESS  = 0x30;
+constexpr unsigned char IC32_CAPS_LOCK       = 0x40;
+constexpr unsigned char IC32_SHIFT_LOCK      = 0x80;
 
 extern unsigned char IC32State;
 

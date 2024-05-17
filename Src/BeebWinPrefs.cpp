@@ -36,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Music5000.h"
 #include "Resource.h"
+#include "Rtc.h"
 #include "Scsi.h"
 #include "Serial.h"
 #include "Sound.h"
@@ -725,11 +726,25 @@ void BeebWin::LoadPreferences()
 	}
 
 	// CMOS RAM now in prefs file
-	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50)) // Master 128
-		memcpy(&CMOSRAM[0][14], CMOSDefault_Master128, 50);
+	unsigned char Data[50];
 
-	if (!m_Preferences.GetBinaryValue("CMOSRamMasterET", &CMOSRAM[1][14], 50)) // Master ET
-		memcpy(&CMOSRAM[1][14], CMOSDefault_MasterET, 50);
+	if (m_Preferences.GetBinaryValue("CMOSRam", Data, 50))
+	{
+		RTCSetCMOSData(Model::Master128, Data, 50);
+	}
+	else
+	{
+		RTCSetCMOSDefaults(Model::Master128);
+	}
+
+	if (m_Preferences.GetBinaryValue("CMOSRamMasterET", Data, 50))
+	{
+		RTCSetCMOSData(Model::MasterET, Data, 50);
+	}
+	else
+	{
+		RTCSetCMOSDefaults(Model::MasterET);
+	}
 
 	// Set FDC defaults if not already set
 	for (int machine = 0; machine < static_cast<int>(Model::Master128); ++machine)
@@ -912,8 +927,8 @@ void BeebWin::SavePreferences(bool saveAll)
 	// CMOS RAM now in prefs file
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
-		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[0][14], 50); // Master 128
-		m_Preferences.SetBinaryValue("CMOSRamMasterET", &CMOSRAM[1][14], 50); // Master ET
+		m_Preferences.SetBinaryValue("CMOSRam", RTCGetCMOSData(Model::Master128), 50);
+		m_Preferences.SetBinaryValue("CMOSRamMasterET", RTCGetCMOSData(Model::MasterET), 50);
 
 		m_Preferences.SetBinaryValue("UserPortRTCRegisters", UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
 	}

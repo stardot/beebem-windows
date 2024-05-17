@@ -36,7 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "Model.h"
 #include "Resource.h"
 #include "StringUtils.h"
-#include "SysVia.h"
+#include "Rtc.h"
 
 static char szDefaultROMPath[MAX_PATH] = {0};
 static char szDefaultROMConfigPath[MAX_PATH] = {0};
@@ -72,15 +72,13 @@ void RomConfigDialog::UpdateROMField(int Row)
 	{
 		Bank = 16 - Row;
 
-		const int CMOSIndex = m_Model == Model::Master128 ? 0 : 1;
-
 		if (Bank >= 0 && Bank <= 7)
 		{
-			Unplugged = (CMOSRAM[CMOSIndex][20] & (1 << Bank)) == 0;
+			Unplugged = (RTCGetData(m_Model, 20) & (1 << Bank)) == 0;
 		}
 		else if (Bank >= 8 && Bank <= 15)
 		{
-			Unplugged = (CMOSRAM[CMOSIndex][21] & (1 << (Bank - 8))) == 0;
+			Unplugged = (RTCGetData(m_Model, 21) & (1 << (Bank - 8))) == 0;
 		}
 	}
 

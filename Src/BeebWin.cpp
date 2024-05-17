@@ -80,6 +80,7 @@ using std::max;
 #include "Port.h"
 #include "Resource.h"
 #include "RomConfigDialog.h"
+#include "Rtc.h"
 #include "Sasi.h"
 #include "Scsi.h"
 #include "Serial.h"
