@@ -79,6 +79,7 @@ int DisplayCycles=0;
 unsigned char intStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caused */
 unsigned char NMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
 bool NMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
+static unsigned char OldNMIStatus;
 
 #define GETCFLAG ((PSR & FlagC) != 0)
 #define GETZFLAG ((PSR & FlagZ) != 0)
@@ -1372,8 +1373,6 @@ static void ClipboardCNPVHandler()
 
 void Exec6502Instruction()
 {
-	static unsigned char OldNMIStatus;
-	int OldPC;
 	bool iFlagJustCleared;
 	bool iFlagJustSet;
 
@@ -1401,7 +1400,6 @@ void Exec6502Instruction()
 		IntDue = false;
 		CurrentInstruction = -1;
 
-		OldPC = ProgramCounter;
 		PrePC = ProgramCounter;
 
 		// Check for WRCHV, send char to speech output
@@ -3092,7 +3090,8 @@ void Exec6502Instruction()
 			if (Branched)
 			{
 				Cycles++;
-				if ((ProgramCounter & 0xff00) != ((OldPC+2) & 0xff00)) {
+
+				if ((ProgramCounter & 0xff00) != ((PrePC + 2) & 0xff00)) {
 					Cycles++;
 				}
 			}
