@@ -68,7 +68,6 @@ static int CurrentInstruction;
 
 CycleCountT TotalCycles=0;
 
-static bool trace = false;
 int ProgramCounter;
 int PrePC;
 static int Accumulator,XReg,YReg;
@@ -1212,51 +1211,6 @@ void DoNMI(void) {
   IRQCycles=7;
 } /* DoNMI */
 
-static void Dis6502()
-{
-	char str[256];
-
-	int Length = DebugDisassembleInstructionWithCPUStatus(
-		ProgramCounter, true, Accumulator, XReg, YReg, StackReg, PSR, str
-	);
-
-	str[Length] = '\n';
-	str[Length + 1] = '\0';
-
-	WriteLog(str);
-}
-
-void MemoryDump6502(int addr, int count)
-{
-	char info[80];
-
-	int s = addr & 0xffff0;
-	int e = (addr + count - 1) | 0xf;
-
-	if (e > 0xfffff)
-		e = 0xfffff;
-
-	for (int a = s; a < e; a += 16)
-	{
-		sprintf(info, "%04X  ", a);
-
-		for (int b = 0; b < 16; ++b)
-		{
-			sprintf(info+strlen(info), "%02X ", DebugReadMem(a+b, true));
-		}
-
-		for (int b = 0; b < 16; ++b)
-		{
-			unsigned char v = DebugReadMem(a+b, true);
-			if (v < 32 || v > 127)
-				v = '.';
-			sprintf(info+strlen(info), "%c", v);
-		}
-
-		WriteLog("%s\n", info);
-	}
-}
-
 /*-------------------------------------------------------------------------*/
 
 // The routine indirected through the REMV vector is used by the operating
@@ -1385,11 +1339,6 @@ void Exec6502Instruction()
 		{
 			Sleep(10);  // Ease up on CPU when halted
 			continue;
-		}
-
-		if (trace)
-		{
-			Dis6502();
 		}
 
 		Branched = false;
