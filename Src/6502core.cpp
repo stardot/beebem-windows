@@ -80,14 +80,13 @@ unsigned char intStatus=0; /* bit set (nums in IRQ_Nums) if interrupt being caus
 unsigned char NMIStatus=0; /* bit set (nums in NMI_Nums) if NMI being caused */
 bool NMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
 
-/* Note how GETCFLAG is special since being bit 0 we don't need to test it to get a clean 0/1 */
-#define GETCFLAG ((PSR & FlagC))
-#define GETZFLAG ((PSR & FlagZ)>0)
-#define GETIFLAG ((PSR & FlagI)>0)
-#define GETDFLAG ((PSR & FlagD)>0)
-#define GETBFLAG ((PSR & FlagB)>0)
-#define GETVFLAG ((PSR & FlagV)>0)
-#define GETNFLAG ((PSR & FlagN)>0)
+#define GETCFLAG ((PSR & FlagC) != 0)
+#define GETZFLAG ((PSR & FlagZ) != 0)
+#define GETIFLAG ((PSR & FlagI) != 0)
+#define GETDFLAG ((PSR & FlagD) != 0)
+#define GETBFLAG ((PSR & FlagB) != 0)
+#define GETVFLAG ((PSR & FlagV) != 0)
+#define GETNFLAG ((PSR & FlagN) != 0)
 
 static const int CyclesTable6502[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
