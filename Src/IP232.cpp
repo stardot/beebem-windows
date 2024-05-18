@@ -280,8 +280,10 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 					}
 					else
 					{
+						#ifndef NDEBUG
 						// Should really check what the error was ...
 						int Error = WSAGetLastError();
+						#endif
 
 						DebugTrace("Read error %d\n", Error);
 						DebugTrace("Remote session disconnected\n");

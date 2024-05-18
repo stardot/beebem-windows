@@ -1412,7 +1412,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 		LightsOn[0] = fgetbool(SUEF);
 		LightsOn[1] = fgetbool(SUEF);
 		ByteCount = fget32(SUEF);
-		long DataPos = fget32(SUEF);
+		/* long DataPos = */fget32(SUEF);
 		ExtControl = fget8(SUEF);
 		CurrentDrive = fget8(SUEF);
 		HeadPos[0] = fget32(SUEF);
