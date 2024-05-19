@@ -70,8 +70,8 @@ CycleCountT TotalCycles=0;
 
 int ProgramCounter;
 int PrePC;
-static int Accumulator,XReg,YReg;
-static unsigned char StackReg,PSR;
+static unsigned char Accumulator, XReg, YReg;
+static unsigned char StackReg, PSR;
 static unsigned char IRQCycles;
 int DisplayCycles=0;
 
