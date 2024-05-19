@@ -63,14 +63,8 @@ static CycleCountT TotalTubeCycles = 0;
 static int old_readHIOAddr = 0;
 static unsigned char old_readHTmpData = 0;
 
-static unsigned char old_readPIOAddr = 0;
+static int old_readPIOAddr = 0;
 static unsigned char old_readPTmpData = 0;
-
-static unsigned char old_writeHIOAddr = 0;
-static unsigned char old_writeHTmpData = 0;
-
-static unsigned char old_writePIOAddr = 0;
-static unsigned char old_writePTmpData = 0;
 
 int TubeProgramCounter;
 static int TubePrePC; // Previous Tube Program Counter
@@ -521,11 +515,12 @@ void WriteTubeFromHostSide(int IOAddr, unsigned char IOData) {
 	// UpdateInterrupts();
 }
 
-unsigned char ReadTubeFromParasiteSide(int IOAddr) {
-	unsigned char TmpData;
-
+unsigned char ReadTubeFromParasiteSide(int IOAddr)
+{
 	if (TubeType == Tube::TorchZ80)
 		return ReadTorchTubeFromHostSide(IOAddr);
+
+	unsigned char TmpData;
 
 	switch (IOAddr) {
 	case 0:
