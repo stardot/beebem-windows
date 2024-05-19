@@ -931,13 +931,11 @@ INLINE static void BRAInstrHandler(void) {
     Branched = true;
 } /* BRAnstrHandler */
 
-INLINE static void CMPInstrHandler(int operand)
+INLINE static void CMPInstrHandler(unsigned char Operand)
 {
-  /* NOTE! Should we consult D flag ? */
-  unsigned char result = static_cast<unsigned char>(Accumulator - operand);
-  unsigned char CFlag;
-  CFlag=0; if (Accumulator>=operand) CFlag=FlagC;
-  SetPSRCZN(CFlag, Accumulator==operand,result & 128);
+	unsigned char Result = Accumulator - Operand;
+	unsigned char CFlag = (Accumulator >= Operand) ? FlagC : 0;
+	SetPSRCZN(CFlag, Accumulator == Operand, Result & 0x80);
 }
 
 INLINE static void CPXInstrHandler(int operand)
