@@ -1080,16 +1080,23 @@ INLINE static unsigned char AbsXAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Absolute with X offset addressing mode handler                          */
+
+// Absolute with X offset addressing mode handler
+
 INLINE static int AbsXAddrModeHandler_Address()
 {
-  int EffectiveAddress;
-  GETTWOBYTEFROMPC(EffectiveAddress);
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
-  EffectiveAddress+=XReg;
-  EffectiveAddress&=0xffff;
+	int EffectiveAddress;
+	GETTWOBYTEFROMPC(EffectiveAddress);
 
-  return EffectiveAddress;
+	if ((EffectiveAddress & 0xff00) != ((EffectiveAddress + XReg) & 0xff00))
+	{
+		Carried();
+	}
+
+	EffectiveAddress += XReg;
+	EffectiveAddress &= 0xffff;
+
+	return EffectiveAddress;
 }
 
 /*-------------------------------------------------------------------------*/
