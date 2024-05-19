@@ -819,36 +819,34 @@ INLINE static void ROLInstrHandler(int Address)
 	Cycles += CyclesToMemWrite[CurrentInstruction] - 1;
 	PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
 	WritePaged(Address, NewValue);
-	SetPSRCZN((OldValue & 128) != 0, NewValue == 0, NewValue & 128);
+	SetPSRCZN((OldValue & 0x80) != 0, NewValue == 0, NewValue & 0x80);
 }
 
 INLINE static void ROLInstrHandler_Acc()
 {
 	unsigned char OldValue = Accumulator;
 	Accumulator = (OldValue << 1) + GETCFLAG;
-	SetPSRCZN((OldValue & 128) != 0, Accumulator == 0, Accumulator & 128);
+	SetPSRCZN((OldValue & 0x80) != 0, Accumulator == 0, Accumulator & 0x80);
 }
 
-INLINE static void RORInstrHandler(int address)
+INLINE static void RORInstrHandler(int Address)
 {
-  unsigned char oldVal = ReadPaged(address);
-  Cycles+=1;
-  PollVIAs(1);
-  WritePaged(address,oldVal);
-  unsigned char newVal = ((unsigned int)oldVal >> 1) & 127;
-  newVal+=GETCFLAG*128;
-  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
-  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
-  WritePaged(address,newVal);
-  SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
+	unsigned char OldValue = ReadPaged(Address);
+	Cycles++;
+	PollVIAs(1);
+	WritePaged(Address, OldValue);
+	unsigned char NewValue = (OldValue >> 1) + (GETCFLAG << 7);
+	Cycles += CyclesToMemWrite[CurrentInstruction] - 1;
+	PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
+	WritePaged(Address, NewValue);
+	SetPSRCZN(OldValue & 1, NewValue == 0, NewValue & 0x80);
 }
 
-INLINE static void RORInstrHandler_Acc(void) {
-  unsigned char oldVal = Accumulator;
-  unsigned char newVal = ((unsigned int)oldVal >> 1) & 127;
-  newVal+=GETCFLAG*128;
-  Accumulator=newVal;
-  SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
+INLINE static void RORInstrHandler_Acc()
+{
+	unsigned char OldValue = Accumulator;
+	Accumulator = (OldValue >> 1) + (GETCFLAG << 7);
+	SetPSRCZN(OldValue & 1, Accumulator == 0, Accumulator & 0x80);
 }
 
 INLINE static void SBCInstrHandler(unsigned char Operand)
