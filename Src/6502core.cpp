@@ -783,18 +783,18 @@ INLINE static void LDYInstrHandler(unsigned char Operand)
 	SetPSRZN(YReg);
 }
 
-INLINE static void LSRInstrHandler(int address)
+INLINE static void LSRInstrHandler(int Address)
 {
-  unsigned char oldVal = ReadPaged(address);
-  Cycles+=1;
-  PollVIAs(1);
-  WritePaged(address,oldVal);
-  unsigned char newVal = (((unsigned int)oldVal) >> 1) & 127;
-  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
-  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
-  WritePaged(address,newVal);
-  SetPSRCZN((oldVal & 1)>0, newVal==0,0);
-} /* LSRInstrHandler */
+	unsigned char OldValue = ReadPaged(Address);
+	Cycles++;
+	PollVIAs(1);
+	WritePaged(Address, OldValue);
+	unsigned char NewValue = OldValue >> 1;
+	Cycles += CyclesToMemWrite[CurrentInstruction] - 1;
+	PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
+	WritePaged(Address, NewValue);
+	SetPSRCZN((OldValue & 1) != 0, NewValue == 0, 0);
+}
 
 INLINE static void LSRInstrHandler_Acc(void) {
   unsigned char oldVal,newVal;

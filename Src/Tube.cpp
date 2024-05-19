@@ -1087,12 +1087,12 @@ INLINE static void LDYInstrHandler(unsigned char Operand)
 	SetPSRZN(YReg);
 }
 
-INLINE static void LSRInstrHandler(int address)
+INLINE static void LSRInstrHandler(int Address)
 {
-  unsigned char oldVal = TUBEREADMEM_FAST(address);
-  unsigned char newVal = (((unsigned int)oldVal) >> 1) & 127;
-  TUBEWRITEMEM_FAST(address,newVal);
-  SetPSRCZN((oldVal & 1)>0, newVal==0,0);
+	unsigned char OldValue = TUBEREADMEM_FAST(Address);
+	unsigned char NewValue = OldValue >> 1;
+	TUBEWRITEMEM_FAST(Address, NewValue);
+	SetPSRCZN((OldValue & 1) != 0, NewValue == 0, 0);
 }
 
 INLINE static void LSRInstrHandler_Acc(void) {
