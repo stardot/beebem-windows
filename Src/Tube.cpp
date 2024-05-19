@@ -811,11 +811,12 @@ INLINE static void ADCInstrHandler(int operand)
 } /* ADCInstrHandler */
 
 /*----------------------------------------------------------------------------*/
-INLINE static void ANDInstrHandler(int operand)
+
+INLINE static void ANDInstrHandler(unsigned char Operand)
 {
-  Accumulator=Accumulator & operand;
-  PSR&=~(FlagZ | FlagN);
-  PSR|=((Accumulator==0)<<1) | (Accumulator & 128);
+	Accumulator &= Operand;
+	PSR &= ~(FlagZ | FlagN);
+	PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
 }
 
 INLINE static void ASLInstrHandler(int address)

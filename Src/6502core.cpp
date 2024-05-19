@@ -485,9 +485,9 @@ INLINE static void ADCInstrHandler(int operand)
 
 /*----------------------------------------------------------------------------*/
 
-INLINE static void ANDInstrHandler(int operand)
+INLINE static void ANDInstrHandler(unsigned char Operand)
 {
-	Accumulator &= operand;
+	Accumulator &= Operand;
 	PSR &= ~(FlagZ | FlagN);
 	PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
 }
