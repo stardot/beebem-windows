@@ -2878,6 +2878,9 @@ void Exec6502Instruction()
 				break;
 			case 0xe7:
 				if (CPUType == CPU::CPU65C12) {
+					// NOP
+				}
+				else {
 					// Undocumented instruction: ISC zp
 					int ZeroPageAddress = ZeroPgAddrModeHandler_Address();
 					INCInstrHandler(ZeroPageAddress);
