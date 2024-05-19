@@ -560,11 +560,11 @@ INLINE static void BITInstrHandler(unsigned char Operand)
 	PSR |= (((Accumulator & Operand) == 0) << 1) | (Operand & 0xc0);
 }
 
-INLINE static void BITImmedInstrHandler(int operand)
+INLINE static void BITImmedInstrHandler(unsigned char Operand)
 {
-  PSR&=~FlagZ;
-  /* z if result 0, and NV to top bits of operand */
-  PSR|=(((Accumulator & operand)==0)<<1);
+	PSR &= ~FlagZ;
+	// z if result 0, and NV to top bits of operand
+	PSR |= ((Accumulator & Operand) == 0) << 1;
 }
 
 INLINE static void BMIInstrHandler(void) {
