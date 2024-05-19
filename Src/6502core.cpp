@@ -432,56 +432,60 @@ INLINE static int RelAddrModeHandler_Data()
 
 /*----------------------------------------------------------------------------*/
 
-INLINE static void ADCInstrHandler(int operand)
+INLINE static void ADCInstrHandler(unsigned char Operand)
 {
-  /* NOTE! Not sure about C and V flags */
-  if (!GETDFLAG) {
-    int TmpResultC = Accumulator + operand + GETCFLAG;
-    int TmpResultV = (signed char)Accumulator + (signed char)operand + GETCFLAG;
-    Accumulator = TmpResultC & 255;
-    SetPSR(FlagC | FlagZ | FlagV | FlagN, (TmpResultC & 256) > 0,
-      Accumulator == 0, 0, 0, 0, ((Accumulator & 128) > 0) ^ (TmpResultV < 0),
-      Accumulator & 128);
-  } else {
-    /* Z flag determined from 2's compl result, not BCD result! */
-    int TmpResult = Accumulator + operand + GETCFLAG;
-    int ZFlag = (TmpResult & 0xff) == 0;
+	// NOTE! Not sure about C and V flags
+	if (!GETDFLAG)
+	{
+		int TmpResultC = Accumulator + Operand + GETCFLAG;
+		int TmpResultV = (signed char)Accumulator + (signed char)Operand + GETCFLAG;
+		Accumulator = TmpResultC & 255;
+		SetPSR(FlagC | FlagZ | FlagV | FlagN, (TmpResultC & 256) != 0,
+			Accumulator == 0, 0, 0, 0, ((Accumulator & 128) != 0) ^ (TmpResultV < 0),
+			Accumulator & 128);
+	}
+	else
+	{
+		// Z flag determined from 2's compl result, not BCD result!
+		int TmpResult = Accumulator + Operand + GETCFLAG;
+		int ZFlag = (TmpResult & 0xff) == 0;
 
-    int ln = (Accumulator & 0xf) + (operand & 0xf) + GETCFLAG;
+		int ln = (Accumulator & 0xf) + (Operand & 0xf) + GETCFLAG;
 
-    int TmpCarry = 0;
+		int TmpCarry = 0;
 
-    if (ln > 9) {
-      ln += 6;
-      ln &= 0xf;
-      TmpCarry = 0x10;
-    }
+		if (ln > 9)
+		{
+			ln += 6;
+			ln &= 0xf;
+			TmpCarry = 0x10;
+		}
 
-    int hn = (Accumulator & 0xf0) + (operand & 0xf0) + TmpCarry;
-    /* N and V flags are determined before high nibble is adjusted.
-       NOTE: V is not always correct */
-    int NFlag = hn & 128;
-    int VFlag = (hn ^ Accumulator) & 128 && !((Accumulator ^ operand) & 128);
+		int hn = (Accumulator & 0xf0) + (Operand & 0xf0) + TmpCarry;
+		// N and V flags are determined before high nibble is adjusted.
+		// NOTE: V is not always correct
+		int NFlag = hn & 128;
+		int VFlag = (hn ^ Accumulator) & 128 && !((Accumulator ^ Operand) & 128);
 
-    int CFlag = 0;
+		int CFlag = 0;
 
-    if (hn > 0x90) {
-      hn += 0x60;
-      hn &= 0xf0;
-      CFlag = 1;
-    }
+		if (hn > 0x90) {
+			hn += 0x60;
+			hn &= 0xf0;
+			CFlag = 1;
+		}
 
-    Accumulator = (unsigned char)(hn | ln);
+		Accumulator = (unsigned char)(hn | ln);
 
-    if (CPUType == CPU::CPU65C12) {
-      ZFlag = Accumulator == 0;
-      NFlag = Accumulator & 128;
-      Cycles++;
-    }
+		if (CPUType == CPU::CPU65C12) {
+			ZFlag = Accumulator == 0;
+			NFlag = Accumulator & 128;
+			Cycles++;
+		}
 
-    SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
-  }
-} /* ADCInstrHandler */
+		SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 
@@ -799,87 +803,95 @@ INLINE static void RORInstrHandler_Acc(void) {
   SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
 }
 
-INLINE static void SBCInstrHandler(int operand)
+INLINE static void SBCInstrHandler(unsigned char Operand)
 {
-  /* NOTE! Not sure about C and V flags */
-  if (!GETDFLAG) {
-    int TmpResultV = (signed char)Accumulator - (signed char)operand - (1 - GETCFLAG);
-    int TmpResultC = Accumulator - operand - (1 - GETCFLAG);
-    Accumulator = TmpResultC & 255;
-    SetPSR(FlagC | FlagZ | FlagV | FlagN, TmpResultC >= 0,
-      Accumulator == 0, 0, 0, 0,
-      ((Accumulator & 128) > 0) ^ ((TmpResultV & 256) != 0),
-      Accumulator & 128);
-  } else {
-    if (CPUType == CPU::CPU65C12) {
-      // int ohn = operand & 0xf0;
-      int oln = operand & 0x0f;
+	// NOTE! Not sure about C and V flags
+	if (!GETDFLAG)
+	{
+		int TmpResultV = (signed char)Accumulator - (signed char)Operand - (1 - GETCFLAG);
+		int TmpResultC = Accumulator - Operand - (1 - GETCFLAG);
+		Accumulator = TmpResultC & 255;
+		SetPSR(FlagC | FlagZ | FlagV | FlagN, TmpResultC >= 0,
+			Accumulator == 0, 0, 0, 0,
+			((Accumulator & 128) != 0) ^ ((TmpResultV & 256) != 0),
+			Accumulator & 128);
+	}
+	else
+	{
+		if (CPUType == CPU::CPU65C12)
+		{
+			// int ohn = Operand & 0xf0;
+			int oln = Operand & 0x0f;
 
-      int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);
-      int TmpResult = Accumulator - operand - (1 - GETCFLAG);
+			int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);
+			int TmpResult = Accumulator - Operand - (1 - GETCFLAG);
 
-      int TmpResultV = (signed char)Accumulator - (signed char)operand - (1 - GETCFLAG);
-      int VFlag = ((TmpResultV < -128) || (TmpResultV > 127));
+			int TmpResultV = (signed char)Accumulator - (signed char)Operand - (1 - GETCFLAG);
+			int VFlag = ((TmpResultV < -128) || (TmpResultV > 127));
 
-      int CFlag = (TmpResult & 256) == 0;
+			int CFlag = (TmpResult & 256) == 0;
 
-      if (TmpResult < 0) {
-        TmpResult -= 0x60;
-      }
+			if (TmpResult < 0)
+			{
+				TmpResult -= 0x60;
+			}
 
-      if (ln < 0) {
-        TmpResult -= 0x06;
-      }
+			if (ln < 0)
+			{
+				TmpResult -= 0x06;
+			}
 
-      int NFlag = TmpResult & 128;
-      Accumulator = TmpResult & 0xFF;
-      int ZFlag = (Accumulator == 0);
+			int NFlag = TmpResult & 128;
+			Accumulator = TmpResult & 0xFF;
+			int ZFlag = (Accumulator == 0);
 
-      SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
+			SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
 
-      Cycles++;
-    } else {
-      /* Z flag determined from 2's compl result, not BCD result! */
-      int TmpResult = Accumulator - operand - (1 - GETCFLAG);
-      int ZFlag = ((TmpResult & 0xff) == 0);
+			Cycles++;
+		}
+		else
+		{
+			// Z flag determined from 2's compl result, not BCD result!
+			int TmpResult = Accumulator - Operand - (1 - GETCFLAG);
+			int ZFlag = ((TmpResult & 0xff) == 0);
 
-      int ohn = operand & 0xf0;
-      int oln = operand & 0xf;
+			int ohn = Operand & 0xf0;
+			int oln = Operand & 0xf;
 
-      int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);
-      if (ln & 0x10) {
-        ln -= 6;
-      }
+			int ln = (Accumulator & 0xf) - oln - (1 - GETCFLAG);
+			if (ln & 0x10) {
+				ln -= 6;
+			}
 
-      int TmpCarry = 0;
+			int TmpCarry = 0;
 
-      if (ln & 0x20) {
-        TmpCarry = 0x10;
-      }
+			if (ln & 0x20) {
+				TmpCarry = 0x10;
+			}
 
-      ln &= 0xf;
-      int hn = (Accumulator & 0xf0) - ohn - TmpCarry;
-      /* N and V flags are determined before high nibble is adjusted.
-         NOTE: V is not always correct */
-      int NFlag = hn & 128;
+			ln &= 0xf;
+			int hn = (Accumulator & 0xf0) - ohn - TmpCarry;
+			/* N and V flags are determined before high nibble is adjusted.
+			NOTE: V is not always correct */
+			int NFlag = hn & 128;
 
-      int TmpResultV = (signed char)Accumulator - (signed char)operand - (1 - GETCFLAG);
-      int VFlag = ((TmpResultV < -128) || (TmpResultV > 127));
+			int TmpResultV = (signed char)Accumulator - (signed char)Operand - (1 - GETCFLAG);
+			int VFlag = ((TmpResultV < -128) || (TmpResultV > 127));
 
-      int CFlag = 1;
+			int CFlag = 1;
 
-      if (hn & 0x100) {
-        hn -= 0x60;
-        hn &= 0xf0;
-        CFlag = 0;
-      }
+			if (hn & 0x100) {
+				hn -= 0x60;
+				hn &= 0xf0;
+				CFlag = 0;
+			}
 
-      Accumulator = (unsigned char)(hn | ln);
+			Accumulator = (unsigned char)(hn | ln);
 
-      SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
-    }
-  }
-} /* SBCInstrHandler */
+			SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
+		}
+	}
+}
 
 INLINE static void STXInstrHandler(int address)
 {
