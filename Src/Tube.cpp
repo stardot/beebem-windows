@@ -1005,12 +1005,12 @@ INLINE static void CPYInstrHandler(unsigned char Operand)
 	SetPSRCZN(YReg >= Operand, YReg == Operand, Result & 0x80);
 }
 
-INLINE static void DECInstrHandler(int address)
+INLINE static void DECInstrHandler(int Address)
 {
-  unsigned char val = TUBEREADMEM_FAST(address);
-  val=(val-1);
-  TUBEWRITEMEM_FAST(address,val);
-  SetPSRZN(val);
+	unsigned char Value = TUBEREADMEM_FAST(Address);
+	Value--;
+	TUBEWRITEMEM_FAST(Address, Value);
+	SetPSRZN(Value);
 }
 
 INLINE static void DEAInstrHandler()
