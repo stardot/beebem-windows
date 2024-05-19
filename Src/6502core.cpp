@@ -932,15 +932,17 @@ INLINE static void KILInstrHandler() {
 }
 
 /*-------------------------------------------------------------------------*/
-/* Absolute  addressing mode handler                                       */
-INLINE static int AbsAddrModeHandler_Data()
-{
-  /* Get the address from after the instruction */
-  int FullAddress;
-  GETTWOBYTEFROMPC(FullAddress);
 
-  /* And then read it */
-  return(ReadPaged(FullAddress));
+// Absolute addressing mode handler
+
+INLINE static unsigned char AbsAddrModeHandler_Data()
+{
+	// Get the address from after the instruction.
+	int FullAddress;
+	GETTWOBYTEFROMPC(FullAddress);
+
+	// And then read it.
+	return ReadPaged(FullAddress);
 }
 
 /*-------------------------------------------------------------------------*/
