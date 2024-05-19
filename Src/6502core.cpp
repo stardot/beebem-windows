@@ -696,22 +696,22 @@ INLINE static void JSRInstrHandler(int address)
   ProgramCounter=address;
 } /* JSRInstrHandler */
 
-INLINE static void LDAInstrHandler(int operand)
+INLINE static void LDAInstrHandler(unsigned char Operand)
 {
-  Accumulator = operand;
-  SetPSRZN(Accumulator);
+	Accumulator = Operand;
+	SetPSRZN(Accumulator);
 }
 
-INLINE static void LDXInstrHandler(int operand)
+INLINE static void LDXInstrHandler(unsigned char Operand)
 {
-  XReg = operand;
-  SetPSRZN(XReg);
+	XReg = Operand;
+	SetPSRZN(XReg);
 }
 
-INLINE static void LDYInstrHandler(int operand)
+INLINE static void LDYInstrHandler(unsigned char Operand)
 {
-  YReg = operand;
-  SetPSRZN(YReg);
+	YReg = Operand;
+	SetPSRZN(YReg);
 }
 
 INLINE static void LSRInstrHandler(int address)

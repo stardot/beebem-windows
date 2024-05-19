@@ -1002,22 +1002,22 @@ INLINE static void JSRInstrHandler(int address)
   TubeProgramCounter=address;
 }
 
-INLINE static void LDAInstrHandler(int operand)
+INLINE static void LDAInstrHandler(unsigned char Operand)
 {
-  Accumulator=operand;
-  SetPSRZN(Accumulator);
-} /* LDAInstrHandler */
-
-INLINE static void LDXInstrHandler(int operand)
-{
-  XReg=operand;
-  SetPSRZN(XReg);
+	Accumulator = Operand;
+	SetPSRZN(Accumulator);
 }
 
-INLINE static void LDYInstrHandler(int operand)
+INLINE static void LDXInstrHandler(unsigned char Operand)
 {
-  YReg=operand;
-  SetPSRZN(YReg);
+	XReg = Operand;
+	SetPSRZN(XReg);
+}
+
+INLINE static void LDYInstrHandler(unsigned char Operand)
+{
+	YReg = Operand;
+	SetPSRZN(YReg);
 }
 
 INLINE static void LSRInstrHandler(int address)
