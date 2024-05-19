@@ -938,16 +938,16 @@ INLINE static void CMPInstrHandler(unsigned char Operand)
 	SetPSRCZN(CFlag, Accumulator == Operand, Result & 0x80);
 }
 
-INLINE static void CPXInstrHandler(int operand)
+INLINE static void CPXInstrHandler(unsigned char Operand)
 {
-  unsigned char result = static_cast<unsigned char>(XReg - operand);
-  SetPSRCZN(XReg>=operand, XReg==operand,result & 128);
+	unsigned char Result = XReg - Operand;
+	SetPSRCZN(XReg >= Operand, XReg == Operand, Result & 0x80);
 }
 
-INLINE static void CPYInstrHandler(int operand)
+INLINE static void CPYInstrHandler(unsigned char Operand)
 {
-  unsigned char result = static_cast<unsigned char>(YReg - operand);
-  SetPSRCZN(YReg>=operand, YReg==operand,result & 128);
+	unsigned char Result = YReg - Operand;
+	SetPSRCZN(YReg >= Operand, YReg == Operand, Result & 0x80);
 }
 
 INLINE static void DECInstrHandler(int address)
