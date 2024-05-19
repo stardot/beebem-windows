@@ -1389,10 +1389,12 @@ INLINE static int IndAddrXModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page with Y offset addressing mode handler                         */
-INLINE static int ZeroPgYAddrModeHandler_Data()
+
+// Zero page with Y offset addressing mode handler
+
+INLINE static unsigned char ZeroPgYAddrModeHandler_Data()
 {
-	int EffectiveAddress = (TubeRam[TubeProgramCounter++] + YReg) & 255;
+	unsigned char EffectiveAddress = TubeRam[TubeProgramCounter++] + YReg;
 	return TubeRam[EffectiveAddress];
 }
 
