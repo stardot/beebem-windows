@@ -530,13 +530,12 @@ INLINE static void TSBInstrHandler(int Address)
 	PSR |= ((Accumulator & OldValue) == 0) ? FlagZ : 0;
 }
 
-INLINE static void ASLInstrHandler_Acc(void) {
-  unsigned char oldVal,newVal;
-  /* Accumulator */
-  oldVal=Accumulator;
-  Accumulator=newVal=(((unsigned int)Accumulator)<<1) & 254;
-  SetPSRCZN((oldVal & 128)>0, newVal==0,newVal & 128);
-} /* ASLInstrHandler_Acc */
+INLINE static void ASLInstrHandler_Acc()
+{
+	unsigned char OldValue = Accumulator;
+	Accumulator <<= 1;
+	SetPSRCZN((OldValue & 128) != 0, Accumulator == 0, Accumulator & 128);
+}
 
 INLINE static void BCCInstrHandler(void) {
   if (!GETCFLAG) {
