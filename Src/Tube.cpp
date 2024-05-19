@@ -1219,21 +1219,29 @@ INLINE static int IndXAddrModeHandler_Data()
 /* Indexed with X preinc addressing mode handler                           */
 INLINE static int IndXAddrModeHandler_Address()
 {
-	unsigned char ZeroPageAddress = (TubeRam[TubeProgramCounter++] + XReg) & 255;
+	unsigned char ZeroPageAddress = TubeRam[TubeProgramCounter++] + XReg;
 	int EffectiveAddress = TubeRam[ZeroPageAddress] | (TubeRam[ZeroPageAddress + 1] << 8);
 	return EffectiveAddress;
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indexed with Y postinc addressing mode handler                          */
-INLINE static int IndYAddrModeHandler_Data()
-{
-  uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
-  uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
 
-  return(TUBEREADMEM_FAST(EffectiveAddress));
+// Indexed with Y postinc addressing mode handler
+
+INLINE static unsigned char IndYAddrModeHandler_Data()
+{
+	unsigned char ZeroPageAddress = TubeRam[TubeProgramCounter++];
+	int EffectiveAddress = TubeRam[ZeroPageAddress] + YReg;
+
+	if (EffectiveAddress > 0xff)
+	{
+		Carried();
+	}
+
+	EffectiveAddress += TubeRam[(unsigned char)(ZeroPageAddress + 1)] << 8;
+	EffectiveAddress &= 0xffff;
+
+	return TUBEREADMEM_FAST(EffectiveAddress);
 }
 
 /*-------------------------------------------------------------------------*/

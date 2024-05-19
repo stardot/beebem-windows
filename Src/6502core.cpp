@@ -983,15 +983,23 @@ INLINE static int IndXAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indexed with Y postinc addressing mode handler                          */
-INLINE static int IndYAddrModeHandler_Data()
-{
-  uint8_t ZPAddr=ReadPaged(ProgramCounter++);
-  uint16_t EffectiveAddress=WholeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(WholeRam[(uint8_t)(ZPAddr+1)]<<8);
 
-  return(ReadPaged(EffectiveAddress));
+// Indexed with Y postinc addressing mode handler
+
+INLINE static unsigned char IndYAddrModeHandler_Data()
+{
+	unsigned char ZeroPageAddress = ReadPaged(ProgramCounter++);
+	int EffectiveAddress = WholeRam[ZeroPageAddress] + YReg;
+
+	if (EffectiveAddress > 0xff)
+	{
+		Carried();
+	}
+
+	EffectiveAddress += WholeRam[(unsigned char)(ZeroPageAddress + 1)] << 8;
+	EffectiveAddress &= 0xffff;
+
+	return ReadPaged(EffectiveAddress);
 }
 
 /*-------------------------------------------------------------------------*/
