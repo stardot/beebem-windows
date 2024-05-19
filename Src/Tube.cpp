@@ -820,12 +820,12 @@ INLINE static void ANDInstrHandler(unsigned char Operand)
 	PSR |= ((Accumulator == 0) << 1) | (Accumulator & 128);
 }
 
-INLINE static void ASLInstrHandler(int address)
+INLINE static void ASLInstrHandler(int Address)
 {
-  unsigned char oldVal = TUBEREADMEM_FAST(address);
-  unsigned char newVal = (((unsigned int)oldVal) << 1) & 254;
-  TUBEWRITEMEM_FAST(address,newVal);
-  SetPSRCZN((oldVal & 128)>0, newVal==0,newVal & 128);
+	unsigned char OldValue = TUBEREADMEM_FAST(Address);
+	unsigned char NewValue = OldValue << 1;
+	TUBEWRITEMEM_FAST(Address, NewValue);
+	SetPSRCZN((OldValue & 128) != 0, NewValue == 0, NewValue & 128);
 }
 
 INLINE static void TRBInstrHandler(int address)
