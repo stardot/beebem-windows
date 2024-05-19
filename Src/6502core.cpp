@@ -1051,11 +1051,12 @@ INLINE static unsigned char ZeroPgXAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page wih X offset addressing mode handler                          */
+
+// Zero page wih X offset addressing mode handler
+
 INLINE static int ZeroPgXAddrModeHandler_Address()
 {
-	int EffectiveAddress = (ReadPaged(ProgramCounter++) + XReg) & 255;
-	return EffectiveAddress;
+	return (ReadPaged(ProgramCounter++) + XReg) & 0xff;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1196,11 +1197,12 @@ INLINE static unsigned char ZeroPgYAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page with Y offset addressing mode handler                         */
+
+// Zero page with Y offset addressing mode handler
+
 INLINE static int ZeroPgYAddrModeHandler_Address()
 {
-  int EffectiveAddress = (ReadPaged(ProgramCounter++) + YReg) & 255;
-  return EffectiveAddress;
+	return (ReadPaged(ProgramCounter++) + YReg) & 0xff;
 }
 
 /*-------------------------------------------------------------------------*/
