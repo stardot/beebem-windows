@@ -945,13 +945,14 @@ INLINE static void BPLInstrHandler()
 	}
 }
 
-INLINE static void BRKInstrHandler(void) {
-  PushWord(TubeProgramCounter+1);
-  SetPSR(FlagB,0,0,0,0,1,0,0); /* Set B before pushing */
-  Push(PSR);
-  SetPSR(FlagI,0,0,1,0,0,0,0); /* Set I after pushing - see Birnbaum */
-  TubeProgramCounter=TubeReadMem(0xfffe) | (TubeReadMem(0xffff)<<8);
-} /* BRKInstrHandler */
+INLINE static void BRKInstrHandler()
+{
+	PushWord(TubeProgramCounter + 1);
+	PSR |= FlagB; // Set B before pushing
+	Push(PSR);
+	PSR |= FlagI; // Set I after pushing - see Birnbaum
+	TubeProgramCounter = TubeReadMem(0xfffe) | (TubeReadMem(0xffff) << 8);
+}
 
 INLINE static void BVCInstrHandler()
 {

@@ -631,13 +631,14 @@ INLINE static void BPLInstrHandler()
 	}
 }
 
-INLINE static void BRKInstrHandler(void) {
-  PushWord(ProgramCounter+1);
-  SetPSR(FlagB,0,0,0,0,1,0,0); /* Set B before pushing */
-  Push(PSR);
-  SetPSR(FlagI,0,0,1,0,0,0,0); /* Set I after pushing - see Birnbaum */
-  ProgramCounter=BeebReadMem(0xfffe) | (BeebReadMem(0xffff)<<8);
-} /* BRKInstrHandler */
+INLINE static void BRKInstrHandler()
+{
+	PushWord(ProgramCounter + 1);
+	PSR |= FlagB; // Set B before pushing
+	Push(PSR);
+	PSR |= FlagI; // Set I after pushing - see Birnbaum
+	ProgramCounter = BeebReadMem(0xfffe) | (BeebReadMem(0xffff) << 8);
+}
 
 INLINE static void BVCInstrHandler()
 {
