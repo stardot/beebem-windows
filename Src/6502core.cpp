@@ -1169,7 +1169,9 @@ INLINE static int IndAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page Indirect addressing mode handler                              */
+
+// Zero page indirect addressing mode handler
+
 INLINE static int ZPIndAddrModeHandler_Address()
 {
 	int VectorLocation = ReadPaged(ProgramCounter++);
@@ -1180,7 +1182,7 @@ INLINE static int ZPIndAddrModeHandler_Address()
 
 /*-------------------------------------------------------------------------*/
 
-// Zero page Indirect addressing mode handler
+// Zero page indirect addressing mode handler
 
 INLINE static unsigned char ZPIndAddrModeHandler_Data()
 {
@@ -1191,16 +1193,17 @@ INLINE static unsigned char ZPIndAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Pre-indexed absolute Indirect addressing mode handler                   */
+
+// Pre-indexed absolute Indirect addressing mode handler
+// (for jump indirect only)
+
 INLINE static int IndAddrXModeHandler_Address()
 {
-	/* For jump indirect only */
 	int VectorLocation;
 	GETTWOBYTEFROMPC(VectorLocation);
 
 	int EffectiveAddress = ReadPaged(VectorLocation + XReg);
 	EffectiveAddress |= ReadPaged(VectorLocation + 1 + XReg) << 8;
-	EffectiveAddress &= 0xffff;
 
 	return EffectiveAddress;
 }
