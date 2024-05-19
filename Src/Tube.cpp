@@ -1036,10 +1036,10 @@ INLINE static void LSRInstrHandler_Acc(void) {
   SetPSRCZN((oldVal & 1)>0, newVal==0,0);
 } /* LSRInstrHandler_Acc */
 
-INLINE static void ORAInstrHandler(int operand)
+INLINE static void ORAInstrHandler(unsigned char Operand)
 {
-  Accumulator=Accumulator | operand;
-  SetPSRZN(Accumulator);
+	Accumulator |= Operand;
+	SetPSRZN(Accumulator);
 }
 
 INLINE static void ROLInstrHandler(int address)
