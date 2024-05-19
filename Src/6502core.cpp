@@ -665,11 +665,11 @@ INLINE static void DEYInstrHandler()
 	SetPSRZN(YReg);
 }
 
-INLINE static void EORInstrHandler(int operand)
+INLINE static void EORInstrHandler(unsigned char Operand)
 {
-  Accumulator^=operand;
-  SetPSRZN(Accumulator);
-} /* EORInstrHandler */
+	Accumulator ^= Operand;
+	SetPSRZN(Accumulator);
+}
 
 INLINE static void INCInstrHandler(int address)
 {
