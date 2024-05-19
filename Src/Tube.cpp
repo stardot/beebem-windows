@@ -990,17 +990,23 @@ INLINE static void INCInstrHandler(int address)
   SetPSRZN(val);
 }
 
-INLINE static void INXInstrHandler(void) {
-  XReg+=1;
-  XReg&=255;
-  SetPSRZN(XReg);
-} /* INXInstrHandler */
-
-INLINE static void INAInstrHandler(void) {
-  Accumulator+=1;
-  Accumulator&=255;
+INLINE static void INAInstrHandler()
+{
+  Accumulator++;
   SetPSRZN(Accumulator);
-} /* INAInstrHandler */
+}
+
+INLINE static void INXInstrHandler()
+{
+  XReg++;
+  SetPSRZN(XReg);
+}
+
+INLINE static void INYInstrHandler()
+{
+  YReg++;
+  SetPSRZN(YReg);
+}
 
 INLINE static void JSRInstrHandler(int address)
 {
@@ -2265,9 +2271,7 @@ void Exec65C02Instruction() {
 			break;
 		case 0xc8:
 			// INY
-			YReg += 1;
-			YReg &= 255;
-			SetPSRZN(YReg);
+			INYInstrHandler();
 			break;
 		case 0xc9:
 			// CMP imm
