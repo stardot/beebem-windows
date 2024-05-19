@@ -1265,17 +1265,24 @@ INLINE static int ZeroPgXAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Absolute with X offset addressing mode handler                          */
-INLINE static int AbsXAddrModeHandler_Data()
-{
-  int EffectiveAddress;
-  GETTWOBYTEFROMPC(EffectiveAddress);
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+XReg) & 0xff00)) Carried();
-  EffectiveAddress+=XReg;
-  EffectiveAddress&=0xffff;
 
-  return(TUBEREADMEM_FAST(EffectiveAddress));
-} /* AbsXAddrModeHandler */
+// Absolute with X offset addressing mode handler
+
+INLINE static unsigned char AbsXAddrModeHandler_Data()
+{
+	int EffectiveAddress;
+	GETTWOBYTEFROMPC(EffectiveAddress);
+
+	if ((EffectiveAddress & 0xff00) != ((EffectiveAddress + XReg) & 0xff00))
+	{
+		Carried();
+	}
+
+	EffectiveAddress += XReg;
+	EffectiveAddress &= 0xffff;
+
+	return TUBEREADMEM_FAST(EffectiveAddress);
+}
 
 /*-------------------------------------------------------------------------*/
 /* Absolute with X offset addressing mode handler                          */
