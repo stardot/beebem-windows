@@ -796,13 +796,12 @@ INLINE static void LSRInstrHandler(int Address)
 	SetPSRCZN((OldValue & 1) != 0, NewValue == 0, 0);
 }
 
-INLINE static void LSRInstrHandler_Acc(void) {
-  unsigned char oldVal,newVal;
-  /* Accumulator */
-  oldVal=Accumulator;
-  Accumulator=newVal=(((unsigned int)Accumulator)>>1) & 127;
-  SetPSRCZN((oldVal & 1)>0, newVal==0,0);
-} /* LSRInstrHandler_Acc */
+INLINE static void LSRInstrHandler_Acc()
+{
+	unsigned char OldValue = Accumulator;
+	Accumulator >>= 1;
+	SetPSRCZN((OldValue & 1) != 0, Accumulator == 0, 0);
+}
 
 INLINE static void ORAInstrHandler(unsigned char Operand)
 {
