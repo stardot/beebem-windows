@@ -1140,27 +1140,32 @@ INLINE static int AbsYAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indirect addressing mode handler                                        */
-INLINE static int IndAddrModeHandler_Address() {
-  /* For jump indirect only */
-  int VectorLocation;
-  int EffectiveAddress;
 
-  GETTWOBYTEFROMPC(VectorLocation);
+// Indirect addressing mode handler (for JMP indirect only)
 
-  /* Ok kiddies, deliberate bug time.
-  According to my BBC Master Reference Manual Part 2
-  the 6502 has a bug concerning this addressing mode and VectorLocation==xxFF
-  so, we're going to emulate that bug -- Richard Gellman */
-  if ((VectorLocation & 0xff) != 0xff || CPUType == CPU::CPU65C12) {
-   EffectiveAddress=ReadPaged(VectorLocation);
-   EffectiveAddress|=ReadPaged(VectorLocation+1) << 8;
-  }
-  else {
-   EffectiveAddress=ReadPaged(VectorLocation);
-   EffectiveAddress|=ReadPaged(VectorLocation-255) << 8;
-  }
-  return EffectiveAddress;
+INLINE static int IndAddrModeHandler_Address()
+{
+	int VectorLocation;
+	GETTWOBYTEFROMPC(VectorLocation);
+
+	int EffectiveAddress;
+
+	// Ok kiddies, deliberate bug time.
+	// According to my BBC Master Reference Manual Part 2
+	// the 6502 has a bug concerning this addressing mode and VectorLocation == xxFF
+	// so, we're going to emulate that bug -- Richard Gellman
+	if ((VectorLocation & 0xff) != 0xff || CPUType == CPU::CPU65C12)
+	{
+		EffectiveAddress = ReadPaged(VectorLocation);
+		EffectiveAddress |= ReadPaged(VectorLocation + 1) << 8;
+	}
+	else
+	{
+		EffectiveAddress = ReadPaged(VectorLocation);
+		EffectiveAddress |= ReadPaged(VectorLocation - 0xff) << 8;
+	}
+
+	return EffectiveAddress;
 }
 
 /*-------------------------------------------------------------------------*/
