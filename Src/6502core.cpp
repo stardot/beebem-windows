@@ -1109,11 +1109,13 @@ INLINE static int ZPIndAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page Indirect addressing mode handler                              */
-INLINE static int ZPIndAddrModeHandler_Data()
+
+// Zero page Indirect addressing mode handler
+
+INLINE static unsigned char ZPIndAddrModeHandler_Data()
 {
-	int VectorLocation=ReadPaged(ProgramCounter++);
-	int EffectiveAddress=ReadPaged(VectorLocation);
+	unsigned char VectorLocation = ReadPaged(ProgramCounter++);
+	int EffectiveAddress = ReadPaged(VectorLocation);
 	EffectiveAddress |= ReadPaged(VectorLocation + 1) << 8;
 	return ReadPaged(EffectiveAddress);
 }
