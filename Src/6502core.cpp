@@ -728,18 +728,18 @@ INLINE static void EORInstrHandler(unsigned char Operand)
 	SetPSRZN(Accumulator);
 }
 
-INLINE static void INCInstrHandler(int address)
+INLINE static void INCInstrHandler(int Address)
 {
-  unsigned char val = ReadPaged(address);
-  Cycles+=1;
-  PollVIAs(1);
-  WritePaged(address,val);
-  val=(val+1) & 255;
-  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
-  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
-  WritePaged(address,val);
-  SetPSRZN(val);
-} /* INCInstrHandler */
+	unsigned char Value = ReadPaged(Address);
+	Cycles++;
+	PollVIAs(1);
+	WritePaged(Address, Value);
+	Value++;
+	Cycles += CyclesToMemWrite[CurrentInstruction] - 1;
+	PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
+	WritePaged(Address, Value);
+	SetPSRZN(Value);
+}
 
 INLINE static void INAInstrHandler()
 {

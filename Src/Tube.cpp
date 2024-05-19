@@ -1037,12 +1037,12 @@ INLINE static void EORInstrHandler(unsigned char Operand)
 	SetPSRZN(Accumulator);
 }
 
-INLINE static void INCInstrHandler(int address)
+INLINE static void INCInstrHandler(int Address)
 {
-  unsigned char val = TUBEREADMEM_FAST(address);
-  val=(val+1) & 255;
-  TUBEWRITEMEM_FAST(address,val);
-  SetPSRZN(val);
+	unsigned char Value = TUBEREADMEM_FAST(Address);
+	Value++;
+	TUBEWRITEMEM_FAST(Address, Value);
+	SetPSRZN(Value);
 }
 
 INLINE static void INAInstrHandler()
