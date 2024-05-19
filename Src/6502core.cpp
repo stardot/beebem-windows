@@ -537,26 +537,46 @@ INLINE static void ASLInstrHandler_Acc()
 	SetPSRCZN((OldValue & 128) != 0, Accumulator == 0, Accumulator & 128);
 }
 
-INLINE static void BCCInstrHandler(void) {
-  if (!GETCFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
-} /* BCCInstrHandler */
+/*----------------------------------------------------------------------------*/
 
-INLINE static void BCSInstrHandler(void) {
-  if (GETCFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
-} /* BCSInstrHandler */
+INLINE static void BCCInstrHandler()
+{
+	if (!GETCFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
+}
 
-INLINE static void BEQInstrHandler(void) {
-  if (GETZFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
-} /* BEQInstrHandler */
+INLINE static void BCSInstrHandler()
+{
+	if (GETCFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
+}
+
+INLINE static void BEQInstrHandler()
+{
+	if (GETZFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
+}
 
 INLINE static void BITInstrHandler(unsigned char Operand)
 {
@@ -572,25 +592,43 @@ INLINE static void BITImmedInstrHandler(unsigned char Operand)
 	PSR |= ((Accumulator & Operand) == 0) << 1;
 }
 
-INLINE static void BMIInstrHandler(void) {
-  if (GETNFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
-} /* BMIInstrHandler */
+INLINE static void BMIInstrHandler()
+{
+	if (GETNFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
+}
 
-INLINE static void BNEInstrHandler(void) {
-  if (!GETZFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
-} /* BNEInstrHandler */
+INLINE static void BNEInstrHandler()
+{
+	if (!GETZFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
+}
 
-INLINE static void BPLInstrHandler(void) {
-  if (!GETNFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
+INLINE static void BPLInstrHandler()
+{
+	if (!GETNFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
 }
 
 INLINE static void BRKInstrHandler(void) {
@@ -601,24 +639,37 @@ INLINE static void BRKInstrHandler(void) {
   ProgramCounter=BeebReadMem(0xfffe) | (BeebReadMem(0xffff)<<8);
 } /* BRKInstrHandler */
 
-INLINE static void BVCInstrHandler(void) {
-  if (!GETVFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
-} /* BVCInstrHandler */
+INLINE static void BVCInstrHandler()
+{
+	if (!GETVFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
+}
 
-INLINE static void BVSInstrHandler(void) {
-  if (GETVFLAG) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-  } else ProgramCounter++;
-} /* BVSInstrHandler */
+INLINE static void BVSInstrHandler()
+{
+	if (GETVFLAG)
+	{
+		ProgramCounter = RelAddrModeHandler_Data();
+		Branched = true;
+	}
+	else
+	{
+		ProgramCounter++;
+	}
+}
 
-INLINE static void BRAInstrHandler(void) {
-    ProgramCounter=RelAddrModeHandler_Data();
-    Branched = true;
-} /* BRAnstrHandler */
+INLINE static void BRAInstrHandler()
+{
+	ProgramCounter = RelAddrModeHandler_Data();
+	Branched = true;
+}
 
 INLINE static void CMPInstrHandler(unsigned char Operand)
 {
