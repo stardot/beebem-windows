@@ -74,7 +74,7 @@ static unsigned char old_writePTmpData = 0;
 
 int TubeProgramCounter;
 static int TubePrePC; // Previous Tube Program Counter
-static int Accumulator, XReg, YReg;
+static unsigned char Accumulator, XReg, YReg;
 static unsigned char StackReg, PSR;
 static unsigned char IRQCycles;
 
