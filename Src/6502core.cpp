@@ -512,13 +512,13 @@ INLINE static void ASLInstrHandler(int Address)
 	SetPSRCZN((OldValue & 128) != 0, NewValue == 0, NewValue & 128);
 }
 
-INLINE static void TRBInstrHandler(int address)
+INLINE static void TRBInstrHandler(int Address)
 {
-	unsigned char oldVal = ReadPaged(address);
-	unsigned char newVal = (Accumulator ^ 255) & oldVal;
-	WritePaged(address, newVal);
-	PSR &= 253;
-	PSR |= ((Accumulator & oldVal)==0) ? 2 : 0;
+	unsigned char OldValue = ReadPaged(Address);
+	unsigned char NewValue = (Accumulator ^ 0xff) & OldValue;
+	WritePaged(Address, NewValue);
+	PSR &= ~FlagZ;
+	PSR |= ((Accumulator & OldValue) == 0) ? FlagZ : 0;
 }
 
 INLINE static void TSBInstrHandler(int address)
