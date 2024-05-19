@@ -1113,34 +1113,30 @@ INLINE static void ROLInstrHandler(int Address)
 	unsigned char OldValue = TUBEREADMEM_FAST(Address);
 	unsigned char NewValue = (OldValue << 1) + GETCFLAG;
 	TUBEWRITEMEM_FAST(Address, NewValue);
-	SetPSRCZN((OldValue & 128) != 0, NewValue == 0, NewValue & 128);
+	SetPSRCZN((OldValue & 0x80) != 0, NewValue == 0, NewValue & 0x80);
 }
 
 INLINE static void ROLInstrHandler_Acc()
 {
 	unsigned char OldValue = Accumulator;
 	Accumulator = (OldValue << 1) + GETCFLAG;
-	SetPSRCZN((OldValue & 128) != 0, Accumulator == 0, Accumulator & 128);
+	SetPSRCZN((OldValue & 0x80) != 0, Accumulator == 0, Accumulator & 0x80);
 }
 
-INLINE static void RORInstrHandler(int address)
+INLINE static void RORInstrHandler(int Address)
 {
-  unsigned char oldVal = TUBEREADMEM_FAST(address);
-  unsigned char newVal = ((unsigned int)oldVal >> 1) & 127;
-  newVal+=GETCFLAG*128;
-  TUBEWRITEMEM_FAST(address,newVal);
-  SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
+	unsigned char OldValue = TUBEREADMEM_FAST(Address);
+	unsigned char NewValue = (OldValue >> 1) + (GETCFLAG << 7);
+	TUBEWRITEMEM_FAST(Address, NewValue);
+	SetPSRCZN(OldValue & 1, NewValue == 0, NewValue & 0x80);
 }
 
-INLINE static void RORInstrHandler_Acc(void) {
-  unsigned char oldVal,newVal;
-
-  oldVal=Accumulator;
-  newVal=((unsigned int)oldVal>>1) & 127;
-  newVal+=GETCFLAG*128;
-  Accumulator=newVal;
-  SetPSRCZN(oldVal & 1,newVal==0,newVal & 128);
-} /* RORInstrHandler_Acc */
+INLINE static void RORInstrHandler_Acc()
+{
+	unsigned char OldValue = Accumulator;
+	Accumulator = (OldValue >> 1) + (GETCFLAG << 7);
+	SetPSRCZN(OldValue & 1, Accumulator == 0, Accumulator & 0x80);
+}
 
 INLINE static void SBCInstrHandler(unsigned char Operand)
 {
