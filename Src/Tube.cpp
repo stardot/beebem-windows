@@ -1108,24 +1108,20 @@ INLINE static void ORAInstrHandler(unsigned char Operand)
 	SetPSRZN(Accumulator);
 }
 
-INLINE static void ROLInstrHandler(int address)
+INLINE static void ROLInstrHandler(int Address)
 {
-  unsigned char oldVal = TUBEREADMEM_FAST(address);
-  unsigned char newVal = ((unsigned int)oldVal << 1) & 254;
-  newVal+=GETCFLAG;
-  TUBEWRITEMEM_FAST(address,newVal);
-  SetPSRCZN((oldVal & 128)>0,newVal==0,newVal & 128);
+	unsigned char OldValue = TUBEREADMEM_FAST(Address);
+	unsigned char NewValue = (OldValue << 1) + GETCFLAG;
+	TUBEWRITEMEM_FAST(Address, NewValue);
+	SetPSRCZN((OldValue & 128) != 0, NewValue == 0, NewValue & 128);
 }
 
-INLINE static void ROLInstrHandler_Acc(void) {
-  unsigned char oldVal,newVal;
-
-  oldVal=Accumulator;
-  newVal=((unsigned int)oldVal<<1) & 254;
-  newVal+=GETCFLAG;
-  Accumulator=newVal;
-  SetPSRCZN((oldVal & 128)>0,newVal==0,newVal & 128);
-} /* ROLInstrHandler_Acc */
+INLINE static void ROLInstrHandler_Acc()
+{
+	unsigned char OldValue = Accumulator;
+	Accumulator = (OldValue << 1) + GETCFLAG;
+	SetPSRCZN((OldValue & 128) != 0, Accumulator == 0, Accumulator & 128);
+}
 
 INLINE static void RORInstrHandler(int address)
 {
