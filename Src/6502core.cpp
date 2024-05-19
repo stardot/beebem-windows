@@ -691,17 +691,17 @@ INLINE static void CPYInstrHandler(unsigned char Operand)
 	SetPSRCZN(YReg >= Operand, YReg == Operand, Result & 0x80);
 }
 
-INLINE static void DECInstrHandler(int address)
+INLINE static void DECInstrHandler(int Address)
 {
-  unsigned char val = ReadPaged(address);
-  Cycles+=1;
-  PollVIAs(1);
-  WritePaged(address,val);
-  val=(val-1);
-  Cycles+=CyclesToMemWrite[CurrentInstruction] - 1;
-  PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
-  WritePaged(address,val);
-  SetPSRZN(val);
+	unsigned char Value = ReadPaged(Address);
+	Cycles++;
+	PollVIAs(1);
+	WritePaged(Address, Value);
+	Value--;
+	Cycles += CyclesToMemWrite[CurrentInstruction] - 1;
+	PollVIAs(CyclesToMemWrite[CurrentInstruction] - 1);
+	WritePaged(Address, Value);
+	SetPSRZN(Value);
 }
 
 INLINE static void DEAInstrHandler()
