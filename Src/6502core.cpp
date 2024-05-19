@@ -471,7 +471,7 @@ INLINE static void ADCInstrHandler(int operand)
       CFlag = 1;
     }
 
-    Accumulator = hn | ln;
+    Accumulator = (unsigned char)(hn | ln);
 
     if (CPUType == CPU::CPU65C12) {
       ZFlag = Accumulator == 0;
@@ -862,7 +862,7 @@ INLINE static void SBCInstrHandler(int operand)
         CFlag = 0;
       }
 
-      Accumulator = hn | ln;
+      Accumulator = (unsigned char)(hn | ln);
 
       SetPSR(FlagC | FlagZ | FlagV | FlagN, CFlag, ZFlag, 0, 0, 0, VFlag, NFlag);
     }

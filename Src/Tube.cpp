@@ -796,7 +796,7 @@ INLINE static void ADCInstrHandler(int operand)
       CFlag = 1;
     }
 
-    Accumulator = hn | ln;
+    Accumulator = (unsigned char)(hn | ln);
 
     ZFlag = Accumulator == 0;
     NFlag = Accumulator & 128;
