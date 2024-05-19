@@ -521,13 +521,13 @@ INLINE static void TRBInstrHandler(int Address)
 	PSR |= ((Accumulator & OldValue) == 0) ? FlagZ : 0;
 }
 
-INLINE static void TSBInstrHandler(int address)
+INLINE static void TSBInstrHandler(int Address)
 {
-	unsigned char oldVal = ReadPaged(address);
-	unsigned char newVal = Accumulator | oldVal;
-	WritePaged(address,newVal);
-	PSR &= 253;
-	PSR |= ((Accumulator & oldVal)==0) ? 2 : 0;
+	unsigned char OldValue = ReadPaged(Address);
+	unsigned char NewValue = Accumulator | OldValue;
+	WritePaged(Address, NewValue);
+	PSR &= ~FlagZ;
+	PSR |= ((Accumulator & OldValue) == 0) ? FlagZ : 0;
 }
 
 INLINE static void ASLInstrHandler_Acc(void) {
