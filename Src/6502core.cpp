@@ -939,14 +939,14 @@ INLINE static void SBCInstrHandler(unsigned char Operand)
 	}
 }
 
-INLINE static void STXInstrHandler(int address)
+INLINE static void STXInstrHandler(int Address)
 {
-  WritePaged(address,XReg);
+	WritePaged(Address, XReg);
 }
 
-INLINE static void STYInstrHandler(int address)
+INLINE static void STYInstrHandler(int Address)
 {
-  WritePaged(address,YReg);
+	WritePaged(Address, YReg);
 }
 
 // ARR instruction hander.
@@ -996,7 +996,8 @@ INLINE static void ARRInstrHandler(unsigned char Operand)
 
 // KIL (Halt) instruction handler.
 
-INLINE static void KILInstrHandler() {
+INLINE static void KILInstrHandler()
+{
 	// Just repeat the instruction indefinitely.
 	ProgramCounter--;
 }
