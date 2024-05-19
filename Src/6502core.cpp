@@ -1017,19 +1017,23 @@ INLINE static unsigned char AbsAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Absolute  addressing mode handler                                       */
+
+// Absolute addressing mode handler
+
 INLINE static int AbsAddrModeHandler_Address()
 {
-  /* Get the address from after the instruction */
-  int FullAddress;
-  GETTWOBYTEFROMPC(FullAddress);
+	// Get the address from after the instruction.
+	int FullAddress;
+	GETTWOBYTEFROMPC(FullAddress);
 
-  /* And then read it */
-  return(FullAddress);
+	// And then read it.
+	return FullAddress;
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page addressing mode handler                                       */
+
+// Zero page addressing mode handler
+
 INLINE static int ZeroPgAddrModeHandler_Address()
 {
 	return ReadPaged(ProgramCounter++);
@@ -1047,12 +1051,14 @@ INLINE static unsigned char IndXAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indexed with X preinc addressing mode handler                           */
+
+// Indexed with X preinc addressing mode handler
+
 INLINE static int IndXAddrModeHandler_Address()
 {
-  unsigned char ZeroPageAddress = (ReadPaged(ProgramCounter++) + XReg) & 0xff;
-  int EffectiveAddress = WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress + 1] << 8);
-  return EffectiveAddress;
+	unsigned char ZeroPageAddress = ReadPaged(ProgramCounter++) + XReg;
+	int EffectiveAddress = WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress + 1] << 8);
+	return EffectiveAddress;
 }
 
 /*-------------------------------------------------------------------------*/
