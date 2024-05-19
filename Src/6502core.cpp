@@ -647,15 +647,23 @@ INLINE static void DECInstrHandler(int address)
   SetPSRZN(val);
 }
 
-INLINE static void DEXInstrHandler(void) {
-  XReg=(XReg-1) & 255;
-  SetPSRZN(XReg);
-} /* DEXInstrHandler */
+INLINE static void DEAInstrHandler()
+{
+	Accumulator--;
+	SetPSRZN(Accumulator);
+}
 
-INLINE static void DEAInstrHandler(void) {
-  Accumulator=(Accumulator-1) & 255;
-  SetPSRZN(Accumulator);
-} /* DEAInstrHandler */
+INLINE static void DEXInstrHandler()
+{
+	XReg--;
+	SetPSRZN(XReg);
+}
+
+INLINE static void DEYInstrHandler()
+{
+	YReg--;
+	SetPSRZN(YReg);
+}
 
 INLINE static void EORInstrHandler(int operand)
 {
@@ -2318,8 +2326,7 @@ void Exec6502Instruction()
 				break;
 			case 0x88:
 				// DEY
-				YReg = (YReg - 1) & 255;
-				SetPSRZN(YReg);
+				DEYInstrHandler();
 				break;
 			case 0x89:
 				if (CPUType == CPU::CPU65C12) {
