@@ -215,6 +215,8 @@
     <ClCompile Include="RenameFileDialog.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="RomConfigDialog.cpp" />
+    <ClCompile Include="RomConfigFile.cpp" />
+    <ClCompile Include="Rtc.cpp" />
     <ClCompile Include="Sasi.cpp" />
     <ClCompile Include="Scsi.cpp" />
     <ClCompile Include="SelectKeyDialog.cpp" />
@@ -237,6 +239,7 @@
     <ClCompile Include="UefState.cpp" />
     <ClCompile Include="UserKeyboardDialog.cpp" />
     <ClCompile Include="UserPortBreakoutBox.cpp" />
+    <ClCompile Include="UserPortRTC.cpp" />
     <ClCompile Include="UserVia.cpp" />
     <ClCompile Include="Via.cpp" />
     <ClCompile Include="Video.cpp" />
@@ -367,6 +370,7 @@
     <ClInclude Include="KeyMap.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Main.h" />
+    <ClInclude Include="Rtc.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="ML675001.h" />
     <ClInclude Include="Model.h" />
@@ -378,6 +382,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="RomConfigDialog.h" />
+    <ClInclude Include="RomConfigFile.h" />
     <ClInclude Include="Sasi.h" />
     <ClInclude Include="Scsi.h" />
     <ClInclude Include="SelectKeyDialog.h" />
@@ -401,6 +406,7 @@
     <ClInclude Include="UefState.h" />
     <ClInclude Include="UserKeyboardDialog.h" />
     <ClInclude Include="UserPortBreakoutBox.h" />
+    <ClInclude Include="UserPortRTC.h" />
     <ClInclude Include="UserVia.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="Via.h" />

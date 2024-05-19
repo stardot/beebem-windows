@@ -36,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Music5000.h"
 #include "Resource.h"
+#include "Rtc.h"
 #include "Scsi.h"
 #include "Serial.h"
 #include "Sound.h"
@@ -46,6 +47,7 @@ Boston, MA  02110-1301, USA.
 #include "Teletext.h"
 #include "Tube.h"
 #include "UserPortBreakoutBox.h"
+#include "UserPortRTC.h"
 #include "UserVia.h"
 #include "Video.h"
 #include "Z80mem.h"
@@ -152,7 +154,7 @@ void BeebWin::LoadPreferences()
 
 	if (m_Preferences.GetBinaryValue(CFG_MACHINE_TYPE, &type, 1))
 	{
-		if (type < static_cast<unsigned char>(Model::Last))
+		if (type < MODEL_COUNT)
 		{
 			MachineType = static_cast<Model>(type);
 		}
@@ -229,7 +231,7 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
 		LEDByte=0;
 	DiscLedColour=static_cast<LEDColour>(LED_COLOUR_TYPE);
-	LEDs.ShowDisc=(LED_SHOW_DISC != 0);
+	LEDs.ShowDisc=(LED_SHOW_DISC != 0) && MachineType != Model::MasterET;
 	LEDs.ShowKB=LED_SHOW_KB;
 
 	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
@@ -666,8 +668,18 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
 		IDEDriveEnabled = false;
 
-	if (!m_Preferences.GetBoolValue("RTCEnabled", RTC_Enabled))
-		RTC_Enabled = false;
+	if (!m_Preferences.GetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled))
+	{
+		if (!m_Preferences.GetBoolValue("RTCEnabled", UserPortRTCEnabled))
+		{
+			UserPortRTCEnabled = false;
+		}
+	}
+
+	if (!m_Preferences.GetBinaryValue("UserPortRTCRegisters", UserPortRTCRegisters, sizeof(UserPortRTCRegisters)))
+	{
+		ZeroMemory(UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
+	}
 
 	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
 		m_MenuIDAviResolution = dword;
@@ -714,11 +726,28 @@ void BeebWin::LoadPreferences()
 	}
 
 	// CMOS RAM now in prefs file
-	if (!m_Preferences.GetBinaryValue("CMOSRam", &CMOSRAM[14], 50))
-		memcpy(&CMOSRAM[14], CMOSDefault, 50);
+	unsigned char Data[50];
+
+	if (m_Preferences.GetBinaryValue("CMOSRam", Data, 50))
+	{
+		RTCSetCMOSData(Model::Master128, Data, 50);
+	}
+	else
+	{
+		RTCSetCMOSDefaults(Model::Master128);
+	}
+
+	if (m_Preferences.GetBinaryValue("CMOSRamMasterET", Data, 50))
+	{
+		RTCSetCMOSData(Model::MasterET, Data, 50);
+	}
+	else
+	{
+		RTCSetCMOSDefaults(Model::MasterET);
+	}
 
 	// Set FDC defaults if not already set
-	for (int machine = 0; machine < 3; ++machine)
+	for (int machine = 0; machine < static_cast<int>(Model::Master128); ++machine)
 	{
 		char CfgName[256];
 		sprintf(CfgName, "FDCDLL%d", machine);
@@ -882,7 +911,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
 		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
-		m_Preferences.SetBoolValue("RTCEnabled", RTC_Enabled);
+		m_Preferences.SetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled);
 
 		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIDAviResolution);
 		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
@@ -898,7 +927,10 @@ void BeebWin::SavePreferences(bool saveAll)
 	// CMOS RAM now in prefs file
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
-		m_Preferences.SetBinaryValue("CMOSRam", &CMOSRAM[14], 50);
+		m_Preferences.SetBinaryValue("CMOSRam", RTCGetCMOSData(Model::Master128), 50);
+		m_Preferences.SetBinaryValue("CMOSRamMasterET", RTCGetCMOSData(Model::MasterET), 50);
+
+		m_Preferences.SetBinaryValue("UserPortRTCRegisters", UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
 	}
 
 	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);

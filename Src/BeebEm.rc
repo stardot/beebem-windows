@@ -327,6 +327,7 @@ BEGIN
             MENUITEM "BBC Model B + &Integra-B",    ID_MODELBINT
             MENUITEM "BBC Model B &Plus",           ID_MODELBPLUS
             MENUITEM "BBC &Master 128",             ID_MASTER128
+            MENUITEM "BBC Master &ET",              ID_MASTER_ET
         END
         POPUP "Model B &Floppy Controller"
         BEGIN
@@ -741,7 +742,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,152,66,50,14
     ICON            IDI_BEEBEM,IDC_STATIC,7,7,21,20
     LTEXT           "BeebEm",IDC_STATIC,41,10,26,8
-    LTEXT           "BBC Model B / Master 128 Emulator",IDC_STATIC,41,23,120,8
+    LTEXT           "BBC Model B / Master Series Emulator",IDC_STATIC,41,23,120,8
     LTEXT           "Version",IDC_VERSION,41,36,161,8
     LTEXT           "Copyright",IDC_COPYRIGHT,41,49,161,8
 END

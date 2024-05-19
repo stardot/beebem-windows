@@ -141,7 +141,7 @@ static bool TeletextConnect(int ch)
             {
                 DebugDisplayTraceF(DebugType::Teletext, true,
                                    "Teletext: Socket %d unable to connect to server %s:%d %d",
-                                   ch, TeletextIP[ch], TeletextPort[ch],
+                                   ch, TeletextIP[ch].c_str(), TeletextPort[ch],
                                    WSAGetLastError());
             }
 

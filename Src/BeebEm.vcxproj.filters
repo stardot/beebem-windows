@@ -174,6 +174,9 @@
     <ClCompile Include="RomConfigDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RomConfigFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Sasi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -235,6 +238,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UserPortBreakoutBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UserPortRTC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UserVia.cpp">
@@ -311,6 +317,9 @@
     </ClCompile>
     <ClCompile Include="zlib\zutil.c">
       <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="Rtc.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -455,6 +464,9 @@
     <ClInclude Include="RomConfigDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RomConfigFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Sasi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -519,6 +531,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UserPortBreakoutBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserPortRTC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UserVia.h">
@@ -598,6 +613,9 @@
     </ClInclude>
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="Rtc.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

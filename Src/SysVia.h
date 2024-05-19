@@ -15,8 +15,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -28,9 +28,12 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #define SYSVIA_HEADER
 
 #include "Via.h"
+#include "Model.h"
 
 extern VIAState SysVIAState;
 extern unsigned char IC32State;
+
+extern bool JoystickButton[2];
 
 extern unsigned char KeyboardLinks;
 
@@ -48,15 +51,6 @@ void BeebReleaseAllKeys();
 
 void SysVIATriggerCA1Int(int value);
 
-// Master 128 MC146818AP Real-Time Clock and RAM
-void RTCInit();
-void CMOSWrite(unsigned char Address, unsigned char Value);
-unsigned char CMOSRead(unsigned char Address);
-extern unsigned char CMOSRAM[64]; // RTC registers + 50 bytes CMOS RAM
-extern const unsigned char CMOSDefault[50];
-
 void PulseSysViaCB1(void);
-
-extern bool JoystickButton[2];
 
 #endif

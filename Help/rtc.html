@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>BeebEm - BBC Micro and Master 128 Emulator</title>
+    <title>BeebEm - BBC Micro and Master Series Emulator</title>
     <meta http-equiv="Content-Type" content="text/html;charset=us-ascii">
     <link rel="stylesheet" href="style.css">
   </head>
@@ -13,7 +13,7 @@
           <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
         </div>
         <h1>
-          BeebEm - BBC Micro and Master 128 Emulator
+          BeebEm - BBC Micro and Master Series Emulator
         </h1>
         <div class="logo">
           <img src="beeb.gif" alt="BBC Micro" width="48" height="48">
@@ -40,29 +40,93 @@
       <h1>Real-Time Clock</h1>
 
       <p>
-        The RTC can be used in Master 128 mode. The BASIC <span
-        class="cmd">TIME$</span> variable can be used to read and update the
-        clock. When BeebEm starts it sets the clock to the current time from the
-        PC's clock.
+        BeebEm emulates three different real-time clock modules: the 146818 in
+        the BBC Master Series, the Acorn Econet Level 3 File Server Real Time
+        Clock Module, which uses an SAF3019P, and the CDP6818E in the Computech
+        Integra-&beta;.
       </p>
 
-      <p>
-        Note that the Master 128 MOS does not display dates from the year 2000
-        onwards correctly (Y2K issue). When the <span class="ui">RTC Y2K
-        Adjust</span> option is enabled (on the <span class="ui">Options</span>
-        menu) BeebEm will subtract 20 years from the current time and use that.
-      </p>
+      <section id="master">
+        <h2>BBC Master Series</h2>
 
-      <p>
-        Some examples of reading and setting the clock:
-      </p>
+        <p>
+          The RTC can be used in Master 128 and Master ET modes. The BASIC <span
+          class="cmd">TIME$</span> variable can be used to read and update the
+          clock. When BeebEm starts it sets the clock to the current time from
+          the PC's clock.
+        </p>
 
-      <pre>
-        PRINT TIME$
-        TIME$="Mon,22 Jan 1996"
-        TIME$="23:10:42"
-        TIME$="Mon,22 Jan 1996.23:10:42"
-      </pre>
+        <p>
+          Note that the Master MOS does not display dates from the year 2000
+          onwards correctly. Only the last two digits of the year are stored.
+          The MOS still displays years as 19xx, but will accept any century when
+          setting the time using <span class="cmd">TIME$</span>.
+        </p>
+
+        <p>
+          Some examples of reading and setting the clock:
+        </p>
+
+        <pre>
+          PRINT TIME$
+          TIME$="Mon,22 Jan 1996"
+          TIME$="23:10:42"
+          TIME$="Mon,22 Jan 1996.23:10:42"
+        </pre>
+      </section>
+
+      <section id="user-port">
+        <h2>User Port Real-Time Clock</h2>
+
+        <p>
+          The <span class="ui">Hardware</span> &rarr; <span class="ui">User Port
+          RTC Module</span> menu option enables or disables the Acorn Econet
+          Level 3 File Server Real Time Clock Module, which connects to the BBC
+          Micro's User Port (pictured below). You should enable this option when
+          running the Level 3 File Server software.
+        </p>
+
+        <p>
+          This module uses the SAF3019P clock/timer. The SAF3019P only counts
+          minutes, hours, days, and months, and not the year, so the year is
+          typically stored in the registers usually dedicated to the alarm
+          function on this RTC device. Use software in the emulated Beeb to set
+          the current year. The state of the RTC registers is stored in <span
+          class="file">Preferences.cfg</span>, and you can either save the state
+          manually using <span class="ui">Options</span> &rarr; <span
+          class="ui">Save Preferences</span>, or automatically by enabling
+          <span class="ui">Options</span> &rarr; <span class="ui">Preference
+          Options</span> &rarr; <span class="ui">Autosave CMOS RAM</span>.
+        </p>
+
+        <figure>
+          <img src="user-port-rtc.jpg" width="350" height="111" alt="Acorn Econet Level 3 File Server Real Time Clock Module">
+        </figure>
+      </section>
+
+      <section id="integrab">
+        <h2>Computech Integra-&beta; Real-Time Clock</h2>
+
+        <p>
+          BeebEm emulates the Computech Integra-&beta; expansion board's
+          CDP6818E real-time clock, and the date and time report the time from
+          the host PC's clock.
+        </p>
+
+        <p>
+          You can use the <span class="cmd">*DATE</span> and <span
+          class="cmd">*TIME</span> commands to display the current date and
+          time, but using <span class="cmd">*DATE =</span> or <span
+          class="cmd">*TIME =</span> to change the clock is not supported.
+        </p>
+
+        <pre>
+          *DATE
+          Sun,12 May 2024.
+          *TIME
+          Sun,12 May 2024.12:32:33
+        </pre>
+      </section>
     </main>
 
     <footer>

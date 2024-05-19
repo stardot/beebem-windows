@@ -73,7 +73,7 @@ static unsigned char old_writePIOAddr = 0;
 static unsigned char old_writePTmpData = 0;
 
 int TubeProgramCounter;
-static int PreTPC; // Previous Tube Program Counter;
+static int TubePrePC; // Previous Tube Program Counter
 static int Accumulator, XReg, YReg;
 static unsigned char StackReg, PSR;
 static unsigned char IRQCycles;
@@ -81,15 +81,15 @@ static unsigned char IRQCycles;
 unsigned char TubeintStatus = 0; // bit set (nums in IRQ_Nums) if interrupt being caused
 unsigned char TubeNMIStatus = 0; // bit set (nums in NMI_Nums) if NMI being caused
 static bool TubeNMILock = false; // Well I think NMI's are maskable - to stop repeated NMI's - the lock is released when an RTI is done
+static unsigned char OldTubeNMIStatus;
 
-/* Note how GETCFLAG is special since being bit 0 we don't need to test it to get a clean 0/1 */
-#define GETCFLAG ((PSR & FlagC))
-#define GETZFLAG ((PSR & FlagZ)>0)
-#define GETIFLAG ((PSR & FlagI)>0)
-#define GETDFLAG ((PSR & FlagD)>0)
-#define GETBFLAG ((PSR & FlagB)>0)
-#define GETVFLAG ((PSR & FlagV)>0)
-#define GETNFLAG ((PSR & FlagN)>0)
+#define GETCFLAG ((PSR & FlagC) != 0)
+#define GETZFLAG ((PSR & FlagZ) != 0)
+#define GETIFLAG ((PSR & FlagI) != 0)
+#define GETDFLAG ((PSR & FlagD) != 0)
+#define GETBFLAG ((PSR & FlagB) != 0)
+#define GETVFLAG ((PSR & FlagV) != 0)
+#define GETNFLAG ((PSR & FlagN) != 0)
 
 static const int TubeCyclesTable[] = {
 /*0 1 2 3 4 5 6 7 8 9 a b c d e f */
@@ -380,7 +380,7 @@ unsigned char ReadTubeFromHostSide(int IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
 	if (TubeType == Tube::None)
-		return MachineType == Model::Master128 ? 0xff : 0xfe;
+		return (MachineType == Model::Master128 || MachineType == Model::MasterET) ? 0xff : 0xfe;
 
 	switch (IOAddr) {
 	case 0:
@@ -435,7 +435,7 @@ unsigned char ReadTubeFromHostSide(int IOAddr) {
 		break;
 
 	default:
-		return MachineType == Model::Master128 ? 0xff : 0xfe;
+		return (MachineType == Model::Master128 || MachineType == Model::MasterET) ? 0xff : 0xfe;
 	}
 
 	if (DebugEnabled && (old_readHIOAddr != IOAddr || old_readHTmpData != TmpData))
@@ -1480,17 +1480,15 @@ static void DoTubeNMI()
 
 void Exec65C02Instruction() {
 	static int tmpaddr;
-	static unsigned char OldTubeNMIStatus;
 
 	// Output debug info
 	if (DebugEnabled) {
-		DebugDisassembler(TubeProgramCounter, PreTPC, Accumulator, XReg, YReg, PSR, StackReg, false);
+		DebugDisassembler(TubeProgramCounter, TubePrePC, Accumulator, XReg, YReg, PSR, StackReg, false);
 	}
 
 	// For the Master, check Shadow Ram Presence
 	// Note, this has to be done BEFORE reading an instruction due to Bit E and the PC
-	int OldPC = TubeProgramCounter;
-	PreTPC = TubeProgramCounter;
+	TubePrePC = TubeProgramCounter;
 
 	// Read an instruction and post inc program counter
 	CurrentInstruction = TubeRam[TubeProgramCounter++];
@@ -2441,7 +2439,7 @@ void Exec65C02Instruction() {
 		if (Branched)
 		{
 			TubeCycles++;
-			if ((TubeProgramCounter & 0xff00) != ((OldPC+2) & 0xff00)) {
+			if ((TubeProgramCounter & 0xff00) != ((TubePrePC + 2) & 0xff00)) {
 				TubeCycles++;
 			}
 		}
