@@ -1007,10 +1007,12 @@ INLINE static int IndYAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page wih X offset addressing mode handler                          */
-INLINE static int ZeroPgXAddrModeHandler_Data()
+
+// Zero page wih X offset addressing mode handler
+
+INLINE static unsigned char ZeroPgXAddrModeHandler_Data()
 {
-	int EffectiveAddress = (ReadPaged(ProgramCounter++) + XReg) & 255;
+	unsigned char EffectiveAddress = ReadPaged(ProgramCounter++) + XReg;
 	return WholeRam[EffectiveAddress];
 }
 
