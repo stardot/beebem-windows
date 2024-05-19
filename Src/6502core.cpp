@@ -882,13 +882,13 @@ INLINE static void STYInstrHandler(int address)
 // ARR instruction hander.
 // See http://www.zimmers.net/anonftp/pub/cbm/documents/chipdata/64doc
 
-INLINE static void ARRInstrHandler(int Operand)
+INLINE static void ARRInstrHandler(unsigned char Operand)
 {
 	if (GETDFLAG)
 	{
-		const int Temp = Accumulator & Operand;
-		const int HighBits = Temp >> 4;
-		const int LowBits  = Temp & 0x0f;
+		const unsigned char Temp = Accumulator & Operand;
+		const unsigned char HighBits = Temp >> 4;
+		const unsigned char LowBits  = Temp & 0x0f;
 
 		Accumulator = (Temp >> 1) | (GETCFLAG << 7); // ROR
 		SetPSRZN(Accumulator);
