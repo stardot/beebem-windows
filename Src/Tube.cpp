@@ -1287,11 +1287,12 @@ INLINE static unsigned char ZeroPgXAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page wih X offset addressing mode handler                          */
+
+// Zero page wih X offset addressing mode handler
+
 INLINE static int ZeroPgXAddrModeHandler_Address()
 {
-  int EffectiveAddress = (TubeRam[TubeProgramCounter++] + XReg) & 255;
-  return(EffectiveAddress);
+	return (TubeRam[TubeProgramCounter++] + XReg) & 0xff;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1422,11 +1423,12 @@ INLINE static unsigned char ZeroPgYAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Zero page with Y offset addressing mode handler                         */
+
+// Zero page with Y offset addressing mode handler
+
 INLINE static int ZeroPgYAddrModeHandler_Address()
 {
-	int EffectiveAddress = (TubeRam[TubeProgramCounter++] + YReg) & 255;
-	return EffectiveAddress;
+	return (TubeRam[TubeProgramCounter++] + YReg) & 0xff;
 }
 
 /*-------------------------------------------------------------------------*/
