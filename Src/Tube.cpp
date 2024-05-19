@@ -1298,16 +1298,23 @@ INLINE static int AbsXAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Absolute with Y offset addressing mode handler                          */
-INLINE static int AbsYAddrModeHandler_Data()
-{
-  int EffectiveAddress;
-  GETTWOBYTEFROMPC(EffectiveAddress);
-  if ((EffectiveAddress & 0xff00)!=((EffectiveAddress+YReg) & 0xff00)) Carried();
-  EffectiveAddress+=YReg;
-  EffectiveAddress&=0xffff;
 
-  return(TUBEREADMEM_FAST(EffectiveAddress));
+// Absolute with Y offset addressing mode handler
+
+INLINE static unsigned char AbsYAddrModeHandler_Data()
+{
+	int EffectiveAddress;
+	GETTWOBYTEFROMPC(EffectiveAddress);
+
+	if ((EffectiveAddress & 0xff00) != ((EffectiveAddress + YReg) & 0xff00))
+	{
+		Carried();
+	}
+
+	EffectiveAddress += YReg;
+	EffectiveAddress &= 0xffff;
+
+	return TUBEREADMEM_FAST(EffectiveAddress);
 }
 
 /*-------------------------------------------------------------------------*/
