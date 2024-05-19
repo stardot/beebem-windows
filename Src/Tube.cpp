@@ -1182,13 +1182,14 @@ INLINE static void SBCInstrHandler(unsigned char Operand)
 	}
 }
 
-INLINE static void STXInstrHandler(int address)
+INLINE static void STXInstrHandler(int Address)
 {
-  TUBEWRITEMEM_FAST(address, XReg);
+	TUBEWRITEMEM_FAST(Address, XReg);
 }
 
-INLINE static void STYInstrHandler(int address) {
-  TUBEWRITEMEM_FAST(address, YReg);
+INLINE static void STYInstrHandler(int Address)
+{
+	TUBEWRITEMEM_FAST(Address, YReg);
 }
 
 /*-------------------------------------------------------------------------*/
