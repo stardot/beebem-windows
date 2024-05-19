@@ -553,11 +553,11 @@ INLINE static void BEQInstrHandler(void) {
   } else ProgramCounter++;
 } /* BEQInstrHandler */
 
-INLINE static void BITInstrHandler(int operand)
+INLINE static void BITInstrHandler(unsigned char Operand)
 {
-  PSR&=~(FlagZ | FlagN | FlagV);
-  /* z if result 0, and NV to top bits of operand */
-  PSR|=(((Accumulator & operand)==0)<<1) | (operand & 192);
+	PSR &= ~(FlagZ | FlagN | FlagV);
+	// z if result 0, and NV to top bits of operand
+	PSR |= (((Accumulator & Operand) == 0) << 1) | (Operand & 0xc0);
 }
 
 INLINE static void BITImmedInstrHandler(int operand)
