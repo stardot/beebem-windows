@@ -1047,26 +1047,26 @@ INLINE static void INCInstrHandler(int Address)
 
 INLINE static void INAInstrHandler()
 {
-  Accumulator++;
-  SetPSRZN(Accumulator);
+	Accumulator++;
+	SetPSRZN(Accumulator);
 }
 
 INLINE static void INXInstrHandler()
 {
-  XReg++;
-  SetPSRZN(XReg);
+	XReg++;
+	SetPSRZN(XReg);
 }
 
 INLINE static void INYInstrHandler()
 {
-  YReg++;
-  SetPSRZN(YReg);
+	YReg++;
+	SetPSRZN(YReg);
 }
 
-INLINE static void JSRInstrHandler(int address)
+INLINE static void JSRInstrHandler(int Address)
 {
-  PushWord(TubeProgramCounter-1);
-  TubeProgramCounter=address;
+	PushWord(TubeProgramCounter - 1);
+	TubeProgramCounter = Address;
 }
 
 INLINE static void LDAInstrHandler(unsigned char Operand)
