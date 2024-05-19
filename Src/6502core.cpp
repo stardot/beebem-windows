@@ -965,11 +965,13 @@ INLINE static int ZeroPgAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indexed with X preinc addressing mode handler                           */
-INLINE static int IndXAddrModeHandler_Data()
+
+// Indexed with X preinc addressing mode handler
+
+INLINE static unsigned char IndXAddrModeHandler_Data()
 {
-	unsigned char ZeroPageAddress = (ReadPaged(ProgramCounter++) + XReg) & 255;
-	int EffectiveAddress=WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress + 1] << 8);
+	unsigned char ZeroPageAddress = ReadPaged(ProgramCounter++) + XReg;
+	int EffectiveAddress = WholeRam[ZeroPageAddress] | (WholeRam[ZeroPageAddress + 1] << 8);
 	return ReadPaged(EffectiveAddress);
 }
 

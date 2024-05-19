@@ -1207,10 +1207,12 @@ INLINE static int ZeroPgAddrModeHandler_Address()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indexed with X preinc addressing mode handler                           */
-INLINE static int IndXAddrModeHandler_Data()
+
+// Indexed with X preinc addressing mode handler
+
+INLINE static unsigned char IndXAddrModeHandler_Data()
 {
-	unsigned char ZeroPageAddress = (TubeRam[TubeProgramCounter++] + XReg) & 255;
+	unsigned char ZeroPageAddress = TubeRam[TubeProgramCounter++] + XReg;
 	int EffectiveAddress = TubeRam[ZeroPageAddress] | (TubeRam[ZeroPageAddress + 1] << 8);
 	return TUBEREADMEM_FAST(EffectiveAddress);
 }
