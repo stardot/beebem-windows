@@ -677,7 +677,9 @@ unsigned char TubeReadMem(int IOAddr) {
 	var |= (TubeRam[TubeProgramCounter++] << 8)
 
 /*----------------------------------------------------------------------------*/
-INLINE void Carried() {
+
+INLINE void Carried()
+{
 	// Correct cycle count for indirection across page boundary
 	if (((CurrentInstruction & 0xf) == 0x1 ||
 	     (CurrentInstruction & 0xf) == 0x9 ||
@@ -694,52 +696,67 @@ INLINE void Carried() {
 }
 
 /*----------------------------------------------------------------------------*/
-/* Set the Z flag if 'in' is 0, and N if bit 7 is set - leave all other bits  */
-/* untouched.                                                                 */
-INLINE static void SetPSRZN(const unsigned char in) {
-  PSR&=~(FlagZ | FlagN);
-  PSR|=((in==0)<<1) | (in & 128);
-}
 
-/*----------------------------------------------------------------------------*/
-/* Note: n is 128 for true - not 1                                            */
-INLINE static void SetPSR(int mask,int c,int z,int i,int d,int b, int v, int n) {
-  PSR&=~mask;
-  PSR|=c | (z<<1) | (i<<2) | (d<<3) | (b<<4) | (v<<6) | n;
-}
+// Set the Z flag if 'in' is 0, and N if bit 7 is set - leave all other bits
+// untouched.
 
-/*----------------------------------------------------------------------------*/
-/* NOTE!!!!! n is 128 or 0 - not 1 or 0                                       */
-INLINE static void SetPSRCZN(int c,int z, int n) {
-  PSR&=~(FlagC | FlagZ | FlagN);
-  PSR|=c | (z<<1) | n;
-}
-
-/*----------------------------------------------------------------------------*/
-INLINE static void Push(unsigned char ToPush) {
-  TUBEWRITEMEM_DIRECT(0x100+StackReg,ToPush);
-  StackReg--;
-} /* Push */
-
-/*----------------------------------------------------------------------------*/
-INLINE static unsigned char Pop(void) {
-  StackReg++;
-  return(TubeRam[0x100+StackReg]);
-} /* Pop */
-
-/*----------------------------------------------------------------------------*/
-INLINE static void PushWord(int topush)
+INLINE static void SetPSRZN(const unsigned char Value)
 {
-  Push((topush>>8) & 255);
-  Push(topush & 255);
+	PSR &= ~(FlagZ | FlagN);
+	PSR |= ((Value == 0) << 1) | (Value & 0x80);
 }
 
 /*----------------------------------------------------------------------------*/
+
+// Note: n is 128 for true - not 1
+
+INLINE static void SetPSR(int Mask, int c, int z, int i, int d, int b, int v, int n)
+{
+	PSR &= ~Mask;
+	PSR |= c | (z << 1) | (i << 2) | (d << 3) | (b << 4) | (v << 6) | n;
+}
+
+/*----------------------------------------------------------------------------*/
+
+// NOTE!!!!! n is 128 or 0 - not 1 or 0
+
+INLINE static void SetPSRCZN(int c, int z, int n)
+{
+	PSR &= ~(FlagC | FlagZ | FlagN);
+	PSR |= c | (z << 1) | n;
+}
+
+/*----------------------------------------------------------------------------*/
+
+INLINE static void Push(unsigned char Value)
+{
+	TUBEWRITEMEM_DIRECT(0x100 + StackReg, Value);
+	StackReg--;
+}
+
+/*----------------------------------------------------------------------------*/
+
+INLINE static unsigned char Pop()
+{
+	StackReg++;
+	return TubeRam[0x100 + StackReg];
+}
+
+/*----------------------------------------------------------------------------*/
+
+INLINE static void PushWord(int Value)
+{
+	Push((Value >> 8) & 0xff);
+	Push(Value & 0xff);
+}
+
+/*----------------------------------------------------------------------------*/
+
 INLINE static int PopWord()
 {
-  int RetValue = Pop();
-  RetValue |= Pop() << 8;
-  return RetValue;
+	int Value = Pop();
+	Value |= Pop() << 8;
+	return Value;
 }
 
 /*-------------------------------------------------------------------------*/
