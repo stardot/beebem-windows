@@ -106,7 +106,7 @@ ARMul_NewState (void)
     state->MemSize = 0;
     state->ROMDataPtr = NULL;
 
-    state->CP14R0_CCD = -1;
+    state->CP14R0_CCD = (ARMword)-1;
     state->LastTime = 0;
 
     state->EventSet = 0;
