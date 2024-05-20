@@ -283,7 +283,6 @@ void
 ARMul_Abort (ARMul_State * state, ARMword vector)
 {
     ARMword temp;
-    int isize = INSN_SIZE;
     int esize = (TFLAG ? 0 : 4);
     int e2size = (TFLAG ? -4 : 0);
 
