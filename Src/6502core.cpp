@@ -1082,15 +1082,22 @@ INLINE static unsigned char IndYAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indexed with Y postinc addressing mode handler                          */
+
+// Indexed with Y postinc addressing mode handler
+
 INLINE static int IndYAddrModeHandler_Address()
 {
-  uint8_t ZPAddr=ReadPaged(ProgramCounter++);
-  uint16_t EffectiveAddress=WholeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(WholeRam[(uint8_t)(ZPAddr+1)]<<8);
+	unsigned char ZeroPageAddress = ReadPaged(ProgramCounter++);
+	uint16_t EffectiveAddress = WholeRam[ZeroPageAddress] + YReg;
 
-  return(EffectiveAddress);
+	if (EffectiveAddress > 0xff)
+	{
+		Carried();
+	}
+
+	EffectiveAddress += WholeRam[(unsigned char)(ZeroPageAddress + 1)] << 8;
+
+	return EffectiveAddress;
 }
 
 /*-------------------------------------------------------------------------*/
