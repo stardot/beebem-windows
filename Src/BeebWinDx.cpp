@@ -567,16 +567,11 @@ void BeebWin::RenderDX9()
 }
 
 /****************************************************************************/
-void BeebWin::updateLines(HDC hDC, int starty, int nlines)
+
+void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 {
 	static bool LastTeletextEnabled = false;
 	static bool First = true;
-
-	HRESULT ddrval;
-	HDC hdc;
-	int TeletextLines = 0;
-	int TextStart=240;
-	int i,j;
 
 	// Not initialised yet?
 	if (m_screen == NULL)
@@ -602,23 +597,25 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	}
 
 	// Use last stored params?
-	if (starty == 0 && nlines == 0)
+	if (StartY == 0 && NLines == 0)
 	{
-		starty = m_LastStartY;
-		nlines = m_LastNLines;
+		StartY = m_LastStartY;
+		NLines = m_LastNLines;
 	}
 	else
 	{
-		m_LastStartY = starty;
-		m_LastNLines = nlines;
+		m_LastStartY = StartY;
+		m_LastNLines = NLines;
 	}
 
 	++m_ScreenRefreshCount;
-	TeletextLines = 500 / TeletextStyle;
+	int TeletextLines = 500 / TeletextStyle;
 
 	// Do motion blur
 	if (m_MenuIDMotionBlur != IDM_BLUR_OFF)
 	{
+		char j;
+
 		if (m_MenuIDMotionBlur == IDM_BLUR_2)
 			j = 32;
 		else if (m_MenuIDMotionBlur == IDM_BLUR_4)
@@ -626,7 +623,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		else // blur 8 frames
 			j = 8;
 
-		for (i = 0; i < 800*512; ++i)
+		for (int i = 0; i < 800*512; ++i)
 		{
 			if (m_screen[i] != 0)
 			{
@@ -648,7 +645,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		RECT destRect;
 		GetClientRect(m_hWnd, &destRect);
 		int win_nlines = destRect.bottom;
-		TextStart = win_nlines - 20;
+		int TextStart = win_nlines - 20;
 
 		int xAdj = 0;
 		int yAdj = 0;
@@ -661,9 +658,9 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		}
 
 		StretchBlt(hDC, xAdj, yAdj, m_XWinSize - xAdj * 2, win_nlines - yAdj * 2,
-		           m_hDCBitmap, 0, starty,
+		           m_hDCBitmap, 0, StartY,
 		           TeletextEnabled ? 552 : ActualScreenWidth,
-		           TeletextEnabled ? TeletextLines : nlines,
+		           TeletextEnabled ? TeletextLines : NLines,
 		           SRCCOPY);
 
 		DisplayFDCBoardInfo(hDC, 0, TextStart);
@@ -679,19 +676,22 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		if (m_DisplayRenderer == IDM_DISPDX9)
 		{
 			IDirect3DSurface9 *pSurface;
-			ddrval = m_pTexture->GetSurfaceLevel(0, &pSurface);
+			HRESULT ddrval = m_pTexture->GetSurfaceLevel(0, &pSurface);
+
 			if (ddrval == D3D_OK)
 			{
+				HDC hdc;
 				ddrval = pSurface->GetDC(&hdc);
+
 				if (ddrval == D3D_OK)
 				{
-					BitBlt(hdc, 0, 0, 800, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
+					BitBlt(hdc, 0, 0, 800, NLines, m_hDCBitmap, 0, StartY, SRCCOPY);
 					DisplayClientAreaText(hdc);
 					pSurface->ReleaseDC(hdc);
 
 					// Scale beeb screen to fill the D3D texture
 					int width  = TeletextEnabled ? 552 : ActualScreenWidth;
-					int height = TeletextEnabled ? TeletextLines : nlines;
+					int height = TeletextEnabled ? TeletextLines : NLines;
 					//D3DXMatrixScaling(&m_TextureMatrix,
 					//				  800.0f/(float)width, 512.0f/(float)height, 1.0f);
 					D3DXMatrixIdentity(&m_TextureMatrix);
@@ -728,7 +728,8 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 		else
 		{
 			// Blit the beeb bitmap onto the secondary buffer
-			ddrval = m_DDS2One->GetDC(&hdc);
+			HDC hdc;
+			HRESULT ddrval = m_DDS2One->GetDC(&hdc);
 
 			if (ddrval == DDERR_SURFACELOST)
 			{
@@ -739,7 +740,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 
 			if (ddrval == DD_OK)
 			{
-				BitBlt(hdc, 0, 0, 800, nlines, m_hDCBitmap, 0, starty, SRCCOPY);
+				BitBlt(hdc, 0, 0, 800, NLines, m_hDCBitmap, 0, StartY, SRCCOPY);
 				DisplayClientAreaText(hdc);
 				m_DDS2One->ReleaseDC(hdc);
 
@@ -767,7 +768,7 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 				srcRect.left   = 0;
 				srcRect.top    = 0;
 				srcRect.right  = TeletextEnabled ? 552 : ActualScreenWidth;
-				srcRect.bottom = TeletextEnabled ? TeletextLines : nlines;
+				srcRect.bottom = TeletextEnabled ? TeletextLines : NLines;
 
 				ddrval = m_DDS2Primary->Blt( &destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
 				if (ddrval == DDERR_SURFACELOST)
@@ -792,9 +793,9 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	if (aviWriter != nullptr)
 	{
 		StretchBlt(m_AviDC, 0, 0, m_Avibmi.bmiHeader.biWidth, m_Avibmi.bmiHeader.biHeight,
-		           m_hDCBitmap, 0, starty,
+		           m_hDCBitmap, 0, StartY,
 		           TeletextEnabled ? 552 : ActualScreenWidth,
-		           TeletextEnabled ? TeletextLines : nlines,
+		           TeletextEnabled ? TeletextLines : NLines,
 		           SRCCOPY);
 
 		HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
@@ -810,9 +811,9 @@ void BeebWin::updateLines(HDC hDC, int starty, int nlines)
 	if (m_CaptureBitmapPending)
 	{
 		CaptureBitmap(0,
-		              starty,
+		              StartY,
 		              TeletextEnabled ? 552 : ActualScreenWidth,
-		              TeletextEnabled ? TeletextLines : nlines,
+		              TeletextEnabled ? TeletextLines : NLines,
 		              TeletextEnabled);
 
 		m_CaptureBitmapPending = false;

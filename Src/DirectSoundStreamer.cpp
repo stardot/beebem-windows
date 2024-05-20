@@ -152,7 +152,7 @@ void DirectSoundStreamer::Stream(const void *pSamples)
 		return;
 
 	if (write < play)
-		write += m_physical;
+		write += (DWORD)m_physical;
 
 	std::size_t begin = m_begin;
 

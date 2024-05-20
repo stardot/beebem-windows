@@ -177,9 +177,9 @@ public:
 	void SetDriveControl(unsigned char value);
 	unsigned char GetDriveControl(void);
 	void doLED(int sx,bool on);
-	void updateLines(HDC hDC, int starty, int nlines);
-	void updateLines(int starty, int nlines) {
-		updateLines(m_hDC, starty, nlines);
+	void updateLines(HDC hDC, int StartY, int NLines);
+	void updateLines(int StartY, int NLines) {
+		updateLines(m_hDC, StartY, NLines);
 	}
 
 	void doHorizLine(int Colour, int y, int sx, int width) {
