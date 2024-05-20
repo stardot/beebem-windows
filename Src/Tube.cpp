@@ -1312,15 +1312,22 @@ INLINE static unsigned char IndYAddrModeHandler_Data()
 }
 
 /*-------------------------------------------------------------------------*/
-/* Indexed with Y postinc addressing mode handler                          */
+
+// Indexed with Y postinc addressing mode handler
+
 INLINE static int IndYAddrModeHandler_Address()
 {
-  uint8_t ZPAddr=TubeRam[TubeProgramCounter++];
-  uint16_t EffectiveAddress=TubeRam[ZPAddr]+YReg;
-  if (EffectiveAddress>0xff) Carried();
-  EffectiveAddress+=(TubeRam[(uint8_t)(ZPAddr+1)]<<8);
+	unsigned char ZeroPageAddress = TubeRam[TubeProgramCounter++];
+	uint16_t EffectiveAddress = TubeRam[ZeroPageAddress] + YReg;
 
-  return(EffectiveAddress);
+	if (EffectiveAddress > 0xff)
+	{
+		Carried();
+	}
+
+	EffectiveAddress += TubeRam[(unsigned char)(ZeroPageAddress + 1)] << 8;
+
+	return EffectiveAddress;
 }
 
 /*-------------------------------------------------------------------------*/
