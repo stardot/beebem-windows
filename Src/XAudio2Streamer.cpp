@@ -15,8 +15,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -88,7 +88,7 @@ bool XAudio2Streamer::Init(std::size_t rate,
 
 	wfx.wFormatTag      = WAVE_FORMAT_PCM;
 	wfx.nChannels       = (WORD)m_channels;
-	wfx.nSamplesPerSec  = m_rate;
+	wfx.nSamplesPerSec  = (DWORD)m_rate;
 	wfx.wBitsPerSample  = (WORD)(m_bytespersample * 8);
 	wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
 	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
@@ -135,7 +135,7 @@ void XAudio2Streamer::Stream(const void *pSamples)
 
 	// Submit buffer to voice
 	XAUDIO2_BUFFER Buffer = {};
-	Buffer.AudioBytes = m_size * m_bytespersample * m_channels;
+	Buffer.AudioBytes = (UINT32)(m_size * m_bytespersample * m_channels);
 	Buffer.pAudioData = (BYTE *)pBuffer;
 
 	if (FAILED(m_pXAudio2SourceVoice->SubmitSourceBuffer(&Buffer)))
