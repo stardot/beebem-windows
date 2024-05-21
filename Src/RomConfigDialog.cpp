@@ -35,63 +35,61 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Model.h"
 #include "Resource.h"
-#include "SysVia.h"
+#include "StringUtils.h"
+#include "Rtc.h"
 
 static char szDefaultROMPath[MAX_PATH] = {0};
 static char szDefaultROMConfigPath[MAX_PATH] = {0};
-
-static bool WriteROMConfigFile(const char *filename, ROMConfigFile RomConfig);
 
 /****************************************************************************/
 
 RomConfigDialog::RomConfigDialog(HINSTANCE hInstance,
                                  HWND hwndParent,
-                                 ROMConfigFile Config) :
+                                 const RomConfigFile& Config) :
 	Dialog(hInstance, hwndParent, IDD_ROMCONFIG),
 	m_hWndROMList(nullptr),
 	m_hWndModel(nullptr),
-	m_Model(MachineType)
+	m_Model(MachineType),
+	m_RomConfig(Config)
 {
-	memcpy(m_RomConfig, Config, sizeof(ROMConfigFile));
 }
 
 /****************************************************************************/
 
-const ROMConfigFile* RomConfigDialog::GetRomConfig() const
+const RomConfigFile& RomConfigDialog::GetRomConfig() const
 {
-	return &m_RomConfig;
+	return m_RomConfig;
 }
 
 /****************************************************************************/
 
 void RomConfigDialog::UpdateROMField(int Row)
 {
-	char szROMFile[_MAX_PATH];
 	bool Unplugged = false;
 	int Bank;
 
-	if (m_Model == Model::Master128)
+	if (m_Model == Model::Master128 || m_Model == Model::MasterET)
 	{
 		Bank = 16 - Row;
 
 		if (Bank >= 0 && Bank <= 7)
 		{
-			Unplugged = (CMOSRAM[20] & (1 << Bank)) == 0;
+			Unplugged = (RTCGetData(m_Model, 20) & (1 << Bank)) == 0;
 		}
 		else if (Bank >= 8 && Bank <= 15)
 		{
-			Unplugged = (CMOSRAM[21] & (1 << (Bank - 8))) == 0;
+			Unplugged = (RTCGetData(m_Model, 21) & (1 << (Bank - 8))) == 0;
 		}
 	}
 
-	strncpy(szROMFile, m_RomConfig[static_cast<int>(m_Model)][Row], _MAX_PATH);
+	std::string RomFileName = m_RomConfig.GetFileName(m_Model, Row);
 
 	if (Unplugged)
 	{
-		strncat(szROMFile, " (unplugged)", _MAX_PATH);
+		RomFileName += " (unplugged)";
 	}
 
-	LVSetItemText(m_hWndROMList, Row, 1, szROMFile);
+	LVSetItemText(m_hWndROMList, Row, 1, (LPTSTR)RomFileName.c_str());
 }
 
 /****************************************************************************/
@@ -100,7 +98,7 @@ void RomConfigDialog::FillModelList()
 {
 	HWND hWndModel = GetDlgItem(m_hwnd, IDC_MODEL);
 
-	for (int i = 0; i < static_cast<int>(Model::Last); i++)
+	for (int i = 0; i < MODEL_COUNT; i++)
 	{
 		ComboBox_AddString(hWndModel, GetModelName(static_cast<Model>(i)));
 	}
@@ -116,7 +114,7 @@ void RomConfigDialog::FillROMList()
 
 	int Row = 0;
 	LVInsertItem(m_hWndROMList, Row, 0, "OS", 16);
-	LVSetItemText(m_hWndROMList, Row, 1, m_RomConfig[static_cast<int>(m_Model)][0]);
+	LVSetItemText(m_hWndROMList, Row, 1, (LPTSTR)m_RomConfig.GetFileName(m_Model, 0).c_str());
 
 	for (Row = 1; Row <= 16; ++Row)
 	{
@@ -187,7 +185,7 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 							strcpy(szROMFile, szROMFile + nROMPathLen + 1);
 						}
 
-						strcpy(m_RomConfig[static_cast<int>(m_Model)][Row], szROMFile);
+						m_RomConfig.SetFileName(m_Model, Row, szROMFile);
 						UpdateROMField(Row);
 					}
 				}
@@ -201,14 +199,20 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 
 				if (Row >= 1 && Row <= 16)
 				{
-					char *cfg = m_RomConfig[static_cast<int>(m_Model)][Row];
+					std::string RomFileName = m_RomConfig.GetFileName(m_Model, Row);
 
-					if (strcmp(cfg, BANK_EMPTY) != 0 && strcmp(cfg, BANK_RAM) != 0)
+					if (RomFileName != BANK_EMPTY && RomFileName != BANK_RAM)
 					{
-						if (strlen(cfg) > 4 && strcmp(cfg + strlen(cfg) - 4, ROM_WRITABLE) == 0)
-							cfg[strlen(cfg) - 4] = 0;
+						if (StringEndsWith(RomFileName, ROM_WRITABLE))
+						{
+							RomFileName = RomFileName.substr(0, RomFileName.size() - strlen(ROM_WRITABLE));
+						}
 						else
-							strcat(cfg, ROM_WRITABLE);
+						{
+							RomFileName += ROM_WRITABLE;
+						}
+
+						m_RomConfig.SetFileName(m_Model, Row, RomFileName);
 
 						UpdateROMField(Row);
 					}
@@ -223,7 +227,7 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 
 				if (Row >= 1 && Row <= 16)
 				{
-					strcpy(m_RomConfig[static_cast<int>(m_Model)][Row], BANK_RAM);
+					m_RomConfig.SetFileName(m_Model, Row, BANK_RAM);
 					UpdateROMField(Row);
 				}
 
@@ -236,7 +240,7 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 
 				if (Row >= 1 && Row <= 16)
 				{
-					strcpy(m_RomConfig[static_cast<int>(m_Model)][Row], BANK_EMPTY);
+					m_RomConfig.SetFileName(m_Model, Row, BANK_EMPTY);
 					UpdateROMField(Row);
 				}
 
@@ -251,10 +255,7 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 				{
 					int PreviousRow = Row - 1;
 
-					std::swap(
-						m_RomConfig[static_cast<int>(m_Model)][PreviousRow],
-						m_RomConfig[static_cast<int>(m_Model)][Row]
-					);
+					m_RomConfig.Swap(m_Model, PreviousRow, Row);
 
 					UpdateROMField(PreviousRow);
 					UpdateROMField(Row);
@@ -276,10 +277,7 @@ INT_PTR RomConfigDialog::DlgProc(UINT   nMessage,
 
 					if (NextRow < Count)
 					{
-						std::swap(
-							m_RomConfig[static_cast<int>(m_Model)][Row],
-							m_RomConfig[static_cast<int>(m_Model)][NextRow]
-						);
+						m_RomConfig.Swap(m_Model, Row, NextRow);
 
 						UpdateROMField(Row);
 						UpdateROMField(NextRow);
@@ -336,9 +334,9 @@ bool RomConfigDialog::LoadROMConfigFile()
 		strcpy(DefaultPath, mainWin->GetUserDataPath());
 	}
 
-	FileDialog fileDialog(m_hwnd, szROMConfigPath, MAX_PATH, DefaultPath, filter);
+	FileDialog Dialog(m_hwnd, szROMConfigPath, MAX_PATH, DefaultPath, filter);
 
-	if (fileDialog.Open())
+	if (Dialog.Open())
 	{
 		// Save directory as default for next time
 		unsigned int PathLength = (unsigned int)(strrchr(szROMConfigPath, '\\') - szROMConfigPath);
@@ -346,11 +344,11 @@ bool RomConfigDialog::LoadROMConfigFile()
 		szDefaultROMConfigPath[PathLength] = 0;
 
 		// Read the file
-		ROMConfigFile LoadedROMCfg;
-		if (ReadROMConfigFile(szROMConfigPath, LoadedROMCfg))
+		RomConfigFile LoadedRomConfig;
+		if (LoadedRomConfig.Load(szROMConfigPath))
 		{
 			// Copy in loaded config
-			memcpy(&m_RomConfig, &LoadedROMCfg, sizeof(ROMConfigFile));
+			m_RomConfig = LoadedRomConfig;
 			FillROMList();
 			success = true;
 		}
@@ -378,9 +376,9 @@ bool RomConfigDialog::SaveROMConfigFile()
 		strcpy(DefaultPath, mainWin->GetUserDataPath());
 	}
 
-	FileDialog fileDialog(m_hwnd, szROMConfigPath, MAX_PATH, DefaultPath, filter);
+	FileDialog Dialog(m_hwnd, szROMConfigPath, MAX_PATH, DefaultPath, filter);
 
-	if (fileDialog.Save())
+	if (Dialog.Save())
 	{
 		// Save directory as default for next time
 		unsigned int PathLength = (unsigned int)(strrchr(szROMConfigPath, '\\') - szROMConfigPath);
@@ -394,39 +392,13 @@ bool RomConfigDialog::SaveROMConfigFile()
 		}
 
 		// Save the file
-		if (WriteROMConfigFile(szROMConfigPath, m_RomConfig))
+		if (m_RomConfig.Save(szROMConfigPath))
 		{
 			success = true;
 		}
 	}
 
 	return success;
-}
-
-/****************************************************************************/
-
-static bool WriteROMConfigFile(const char *filename, ROMConfigFile ROMConfig)
-{
-	FILE *fd = fopen(filename, "w");
-	if (!fd)
-	{
-		mainWin->Report(MessageType::Error,
-		                "Failed to write ROM configuration file:\n  %s", filename);
-
-		return false;
-	}
-
-	for (int Model = 0; Model < 4; ++Model)
-	{
-		for (int Bank = 0; Bank < 17; ++Bank)
-		{
-			fprintf(fd, "%s\n", ROMConfig[Model][Bank]);
-		}
-	}
-
-	fclose(fd);
-
-	return true;
 }
 
 /****************************************************************************/
@@ -446,9 +418,9 @@ bool RomConfigDialog::GetROMFile(char *pszFileName)
 	else
 		strcpy(DefaultPath, szROMPath);
 
-	FileDialog fileDialog(m_hwnd, pszFileName, MAX_PATH, DefaultPath, filter);
+	FileDialog Dialog(m_hwnd, pszFileName, MAX_PATH, DefaultPath, filter);
 
-	if (fileDialog.Open())
+	if (Dialog.Open())
 	{
 		// Save directory as default for next time
 		unsigned int PathLength = (unsigned int)(strrchr(pszFileName, '\\') - pszFileName);

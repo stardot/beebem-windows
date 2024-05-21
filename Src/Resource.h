@@ -326,6 +326,7 @@
 #define ID_MODELBINT                    40105
 #define ID_MODELBPLUS                   40106
 #define ID_MASTER128                    40107
+#define ID_MASTER_ET                    40327
 #define ID_LOADTAPE                     40108
 #define ID_REWINDTAPE                   40116
 #define ID_SFX_RELAY                    40117
@@ -477,12 +478,12 @@
 #define IDM_SELECT_TELETEXT_DATA_SOURCE 40326
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        122
-#define _APS_NEXT_COMMAND_VALUE         40327
+#define _APS_NEXT_COMMAND_VALUE         40328
 #define _APS_NEXT_CONTROL_VALUE         1145
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

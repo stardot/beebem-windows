@@ -43,7 +43,7 @@ Boston, MA  02110-1301, USA.
 #include "Debug.h"
 #include "DebugTrace.h"
 #include "Main.h"
-#include "SysVia.h"
+#include "Rtc.h"
 #include "StringUtils.h"
 
 // Emulated 6854 ADLC control registers.
@@ -659,9 +659,10 @@ void EconetReset()
 	}
 
 	// On Master the station number is read from CMOS so update it
-	if (MachineType == Model::Master128)
+	if (MachineType == Model::Master128 || MachineType == Model::MasterET)
 	{
-		CMOSWrite(0xe, EconetStationID);
+		RTCWriteAddress(0xE);
+		RTCWriteData(EconetStationID);
 	}
 
 	// Socket used to send messages.

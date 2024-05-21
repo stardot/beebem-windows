@@ -179,7 +179,7 @@ begin
   FileAssociationsPage.Add('DFS Disk Images (.ssd, .dsd, .fsd)'); FileAssociationsPage.Values[0] := True;
   FileAssociationsPage.Add('ADFS Disk Images (.adf, .ads, .adm, .adl)'); FileAssociationsPage.Values[1] := True;
   FileAssociationsPage.Add('Tape Images (.uef)'); FileAssociationsPage.Values[2] := True;
-  FileAssociationsPage.Add('Tape Images (.csw )'); FileAssociationsPage.Values[3] := True;
+  FileAssociationsPage.Add('Tape Images (.csw)'); FileAssociationsPage.Values[3] := True;
   FileAssociationsPage.Add('BeebEm Saved States (.uefstate)'); FileAssociationsPage.Values[4] := True;
 end;
 
@@ -187,8 +187,26 @@ function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := False;
 
-  if PageID = FileAssociationsPage.ID then begin
+  if PageID = FileAssociationsPage.ID then
+  begin
     Result := not IsTaskSelected('fileassociations');
+
+    if IsTaskSelected('fileassociations') then
+    begin
+      Result := False;
+    end
+    else
+    begin
+      // All file associations are enabled by default if the page is shown,
+      // so disable if the user chooses not to enable the fileassociations
+      // task.
+      FileAssociationsPage.Values[0] := False;
+      FileAssociationsPage.Values[1] := False;
+      FileAssociationsPage.Values[2] := False;
+      FileAssociationsPage.Values[3] := False;
+      FileAssociationsPage.Values[4] := False;
+      Result := True;
+    end;
   end;
 end;
 

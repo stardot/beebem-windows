@@ -25,6 +25,7 @@ Boston, MA  02110-1301, USA.
 
 void trim(std::string& str);
 bool ParseNumber(const std::string& str, int* pValue);
+bool StringEndsWith(const std::string& str, const std::string& suffix);
 std::string WStr2Str(const std::wstring& str);
 std::wstring Str2WStr(const std::string& str);
 

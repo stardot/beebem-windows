@@ -161,7 +161,7 @@ void PlayUpTil(double DestTime)
 
 	int SpeechPtr = 0;
 
-	if (MachineType != Model::Master128 && SpeechEnabled)
+	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && SpeechEnabled)
 	{
 		SpeechPtr = 0;
 		memset(SpeechBuf, 128, sizeof(SpeechBuf));
@@ -313,7 +313,7 @@ void PlayUpTil(double DestTime)
 			#if ENABLE_SPEECH
 
 			// Mix in speech sound
-			if (SpeechEnabled && MachineType != Model::Master128) {
+			if (SpeechEnabled && (MachineType != Model::Master128 && MachineType != Model::MasterET) {
 				tmptotal += (SpeechBuf[SpeechPtr++] - 128) * 2;
 			}
 
@@ -551,7 +551,7 @@ void SoundInit() {
   if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000;
   if (SoundSampleRate == 22050) SoundAutoTriggerTime = 10000;
   if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000;
-  SoundBufferSize = pSoundStreamer ? pSoundStreamer->BufferSize() : SoundSampleRate / 50;
+  SoundBufferSize = (int)(pSoundStreamer ? pSoundStreamer->BufferSize() : SoundSampleRate / 50);
   LoadSoundSamples();
   SoundTrigger = TotalCycles + SoundAutoTriggerTime;
 }

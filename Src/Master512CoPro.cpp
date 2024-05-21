@@ -298,42 +298,42 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0x00: // i_add_br8
 			DEF_br8();
 			set_CFB(ADDB());
-			PutbackRMByte(m_dst);
+			PutbackRMByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
 
 		case 0x01: // i_add_wr16
 			DEF_wr16();
 			set_CFW(ADDX());
-			PutbackRMWord(m_dst);
+			PutbackRMWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_MR16);
 			break;
 
 		case 0x02: // i_add_r8b
 			DEF_r8b();
 			set_CFB(ADDB());
-			RegByte(m_dst);
+			RegByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
 		case 0x03: // i_add_r16w
 			DEF_r16w();
 			set_CFW(ADDX());
-			RegWord(m_dst);
+			RegWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
 		case 0x04: // i_add_ald8
 			DEF_ald8();
 			set_CFB(ADDB());
-			m_regs.b[AL] = m_dst;
+			m_regs.b[AL] = (uint8_t)m_dst;
 			CLK(ALU_RI8);
 			break;
 
 		case 0x05: // i_add_axd16
 			DEF_axd16();
 			set_CFW(ADDX());
-			m_regs.w[AX] = m_dst;
+			m_regs.w[AX] = (uint16_t)m_dst;
 			CLK(ALU_RI16);
 			break;
 
@@ -350,42 +350,42 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0x08: // i_or_br8
 			DEF_br8();
 			ORB();
-			PutbackRMByte(m_dst);
+			PutbackRMByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
 
 		case 0x09: // i_or_wr16
 			DEF_wr16();
 			ORW();
-			PutbackRMWord(m_dst);
+			PutbackRMWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_MR16);
 			break;
 
 		case 0x0a: // i_or_r8b
 			DEF_r8b();
 			ORB();
-			RegByte(m_dst);
+			RegByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
 		case 0x0b: // i_or_r16w
 			DEF_r16w();
 			ORW();
-			RegWord(m_dst);
+			RegWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
 		case 0x0c: // i_or_ald8
 			DEF_ald8();
 			ORB();
-			m_regs.b[AL] = m_dst;
+			m_regs.b[AL] = (uint8_t)m_dst;
 			CLK(ALU_RI8);
 			break;
 
 		case 0x0d: // i_or_axd16
 			DEF_axd16();
 			ORW();
-			m_regs.w[AX] = m_dst;
+			m_regs.w[AX] = (uint16_t)m_dst;
 			CLK(ALU_RI16);
 			break;
 
@@ -399,7 +399,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_br8();
 			m_src += CF ? 1 : 0;
 			uint32_t tmpcf = ADDB();
-			PutbackRMByte(m_dst);
+			PutbackRMByte((uint8_t)m_dst);
 			set_CFB(tmpcf);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
@@ -410,7 +410,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_wr16();
 			m_src += CF ? 1 : 0;
 			uint32_t tmpcf = ADDX();
-			PutbackRMWord(m_dst);
+			PutbackRMWord((uint16_t)m_dst);
 			set_CFW(tmpcf);
 			CLKM(ALU_RR16,ALU_MR16);
 			break;
@@ -420,7 +420,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_r8b();
 			m_src += CF ? 1 : 0;
 			set_CFB(ADDB());
-			RegByte(m_dst);
+			RegByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
@@ -428,7 +428,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_r16w();
 			m_src += CF ? 1 : 0;
 			set_CFW(ADDX());
-			RegWord(m_dst);
+			RegWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
@@ -436,7 +436,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_ald8();
 			m_src += CF ? 1 : 0;
 			set_CFB(ADDB());
-			m_regs.b[AL] = m_dst;
+			m_regs.b[AL] = (uint8_t)m_dst;
 			CLK(ALU_RI8);
 			break;
 
@@ -444,7 +444,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_axd16();
 			m_src += CF ? 1 : 0;
 			set_CFW(ADDX());
-			m_regs.w[AX] = m_dst;
+			m_regs.w[AX] = (uint16_t)m_dst;
 			CLK(ALU_RI16);
 			break;
 
@@ -464,7 +464,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_br8();
 			m_src += CF ? 1 : 0;
 			uint32_t tmpcf = SUBB();
-			PutbackRMByte(m_dst);
+			PutbackRMByte((uint8_t)m_dst);
 			set_CFB(tmpcf);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
@@ -475,7 +475,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_wr16();
 			m_src += CF ? 1 : 0;
 			uint32_t tmpcf = SUBX();
-			PutbackRMWord(m_dst);
+			PutbackRMWord((uint16_t)m_dst);
 			set_CFW(tmpcf);
 			CLKM(ALU_RR16,ALU_MR16);
 			break;
@@ -485,7 +485,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_r8b();
 			m_src += CF ? 1 : 0;
 			set_CFB(SUBB());
-			RegByte(m_dst);
+			RegByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
@@ -493,7 +493,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_r16w();
 			m_src += CF ? 1 : 0;
 			set_CFW(SUBX());
-			RegWord(m_dst);
+			RegWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
@@ -501,7 +501,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_ald8();
 			m_src += CF ? 1 : 0;
 			set_CFB(SUBB());
-			m_regs.b[AL] = m_dst;
+			m_regs.b[AL] = (uint8_t)m_dst;
 			CLK(ALU_RI8);
 			break;
 
@@ -509,7 +509,7 @@ bool Master512CoPro::common_op(uint8_t op)
 			DEF_axd16();
 			m_src += CF ? 1 : 0;
 			set_CFW(SUBX());
-			m_regs.w[AX] = m_dst;
+			m_regs.w[AX] = (uint16_t)m_dst;
 			CLK(ALU_RI16);
 			break;
 
@@ -526,42 +526,42 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0x20: // i_and_br8
 			DEF_br8();
 			ANDB();
-			PutbackRMByte(m_dst);
+			PutbackRMByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
 
 		case 0x21: // i_and_wr16
 			DEF_wr16();
 			ANDX();
-			PutbackRMWord(m_dst);
+			PutbackRMWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_MR16);
 			break;
 
 		case 0x22: // i_and_r8b
 			DEF_r8b();
 			ANDB();
-			RegByte(m_dst);
+			RegByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
 		case 0x23: // i_and_r16w
 			DEF_r16w();
 			ANDX();
-			RegWord(m_dst);
+			RegWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
 		case 0x24: // i_and_ald8
 			DEF_ald8();
 			ANDB();
-			m_regs.b[AL] = m_dst;
+			m_regs.b[AL] = (uint8_t)m_dst;
 			CLK(ALU_RI8);
 			break;
 
 		case 0x25: // i_and_axd16
 			DEF_axd16();
 			ANDX();
-			m_regs.w[AX] = m_dst;
+			m_regs.w[AX] = (uint16_t)m_dst;
 			CLK(ALU_RI16);
 			break;
 
@@ -579,42 +579,42 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0x28: // i_sub_br8
 			DEF_br8();
 			set_CFB(SUBB());
-			PutbackRMByte(m_dst);
+			PutbackRMByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
 
 		case 0x29: // i_sub_wr16
 			DEF_wr16();
 			set_CFW(SUBX());
-			PutbackRMWord(m_dst);
+			PutbackRMWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_MR16);
 			break;
 
 		case 0x2a: // i_sub_r8b
 			DEF_r8b();
 			set_CFB(SUBB());
-			RegByte(m_dst);
+			RegByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
 		case 0x2b: // i_sub_r16w
 			DEF_r16w();
 			set_CFW(SUBX());
-			RegWord(m_dst);
+			RegWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
 		case 0x2c: // i_sub_ald8
 			DEF_ald8();
 			set_CFB(SUBB());
-			m_regs.b[AL] = m_dst;
+			m_regs.b[AL] = (uint8_t)m_dst;
 			CLK(ALU_RI8);
 			break;
 
 		case 0x2d: // i_sub_axd16
 			DEF_axd16();
 			set_CFW(SUBX());
-			m_regs.w[AX] = m_dst;
+			m_regs.w[AX] = (uint16_t)m_dst;
 			CLK(ALU_RI16);
 			break;
 
@@ -632,42 +632,42 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0x30: // i_xor_br8
 			DEF_br8();
 			XORB();
-			PutbackRMByte(m_dst);
+			PutbackRMByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
 
 		case 0x31: // i_xor_wr16
 			DEF_wr16();
 			XORW();
-			PutbackRMWord(m_dst);
+			PutbackRMWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
 		case 0x32: // i_xor_r8b
 			DEF_r8b();
 			XORB();
-			RegByte(m_dst);
+			RegByte((uint8_t)m_dst);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
 		case 0x33: // i_xor_r16w
 			DEF_r16w();
 			XORW();
-			RegWord(m_dst);
+			RegWord((uint16_t)m_dst);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
 		case 0x34: // i_xor_ald8
 			DEF_ald8();
 			XORB();
-			m_regs.b[AL] = m_dst;
+			m_regs.b[AL] = (uint8_t)m_dst;
 			CLK(ALU_RI8);
 			break;
 
 		case 0x35: // i_xor_axd16
 			DEF_axd16();
 			XORW();
-			m_regs.w[AX] = m_dst;
+			m_regs.w[AX] = (uint16_t)m_dst;
 			CLK(ALU_RI16);
 			break;
 
@@ -988,14 +988,14 @@ bool Master512CoPro::common_op(uint8_t op)
 			else                             { CLK(ALU_MI8); }
 			switch (m_modrm & 0x38)
 			{
-			case 0x00:                      set_CFB(ADDB()); PutbackRMByte(m_dst);   break;
-			case 0x08:                      ORB();  PutbackRMByte(m_dst);   break;
-			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDB(); PutbackRMByte(m_dst); set_CFB(tmpcf); break;
-			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBB(); PutbackRMByte(m_dst); set_CFB(tmpcf); break;
-			case 0x20:                      ANDB(); PutbackRMByte(m_dst);   break;
-			case 0x28:                      set_CFB(SUBB()); PutbackRMByte(m_dst);   break;
-			case 0x30:                      XORB(); PutbackRMByte(m_dst);   break;
-			case 0x38:                      set_CFB(SUBB());                         break;  /* CMP */
+			case 0x00:                      set_CFB(ADDB()); PutbackRMByte((uint8_t)m_dst); break;
+			case 0x08:                      ORB();           PutbackRMByte((uint8_t)m_dst); break;
+			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDB();  PutbackRMByte((uint8_t)m_dst); set_CFB(tmpcf); break;
+			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBB();  PutbackRMByte((uint8_t)m_dst); set_CFB(tmpcf); break;
+			case 0x20:                      ANDB();          PutbackRMByte((uint8_t)m_dst); break;
+			case 0x28:                      set_CFB(SUBB()); PutbackRMByte((uint8_t)m_dst); break;
+			case 0x30:                      XORB();          PutbackRMByte((uint8_t)m_dst); break;
+			case 0x38:                      set_CFB(SUBB()); break; // CMP
 			}
 			break;
 		}
@@ -1011,14 +1011,14 @@ bool Master512CoPro::common_op(uint8_t op)
 			else                             { CLK(ALU_MI16); }
 			switch (m_modrm & 0x38)
 			{
-			case 0x00:                      set_CFW(ADDX()); PutbackRMWord(m_dst);   break;
-			case 0x08:                      ORW();  PutbackRMWord(m_dst);   break;
-			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDX(); PutbackRMWord(m_dst); set_CFW(tmpcf); break;
-			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBX(); PutbackRMWord(m_dst); set_CFW(tmpcf); break;
-			case 0x20:                      ANDX(); PutbackRMWord(m_dst);   break;
-			case 0x28:                      set_CFW(SUBX()); PutbackRMWord(m_dst);   break;
-			case 0x30:                      XORW(); PutbackRMWord(m_dst);   break;
-			case 0x38:                      set_CFW(SUBX());                         break;  /* CMP */
+			case 0x00:                      set_CFW(ADDX()); PutbackRMWord((uint16_t)m_dst);   break;
+			case 0x08:                      ORW();           PutbackRMWord((uint16_t)m_dst);   break;
+			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDX();  PutbackRMWord((uint16_t)m_dst); set_CFW(tmpcf); break;
+			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBX();  PutbackRMWord((uint16_t)m_dst); set_CFW(tmpcf); break;
+			case 0x20:                      ANDX();          PutbackRMWord((uint16_t)m_dst);   break;
+			case 0x28:                      set_CFW(SUBX()); PutbackRMWord((uint16_t)m_dst);   break;
+			case 0x30:                      XORW();          PutbackRMWord((uint16_t)m_dst);   break;
+			case 0x38:                      set_CFW(SUBX()); break;  // CMP
 			}
 			break;
 		}
@@ -1034,14 +1034,14 @@ bool Master512CoPro::common_op(uint8_t op)
 			else                             { CLK(ALU_MI8); }
 			switch (m_modrm & 0x38)
 			{
-			case 0x00:                      set_CFB(ADDB()); PutbackRMByte(m_dst);   break;
-			case 0x08:                      ORB();  PutbackRMByte(m_dst);   break;
-			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDB(); PutbackRMByte(m_dst); set_CFB(tmpcf); break;
-			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBB(); PutbackRMByte(m_dst); set_CFB(tmpcf); break;
-			case 0x20:                      ANDB(); PutbackRMByte(m_dst);   break;
-			case 0x28:                      set_CFB(SUBB()); PutbackRMByte(m_dst);   break;
-			case 0x30:                      XORB(); PutbackRMByte(m_dst);   break;
-			case 0x38:                      set_CFB(SUBB());                         break; /* CMP */
+			case 0x00:                      set_CFB(ADDB()); PutbackRMByte((uint8_t)m_dst);   break;
+			case 0x08:                      ORB();           PutbackRMByte((uint8_t)m_dst);   break;
+			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDB();  PutbackRMByte((uint8_t)m_dst); set_CFB(tmpcf); break;
+			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBB();  PutbackRMByte((uint8_t)m_dst); set_CFB(tmpcf); break;
+			case 0x20:                      ANDB();          PutbackRMByte((uint8_t)m_dst);   break;
+			case 0x28:                      set_CFB(SUBB()); PutbackRMByte((uint8_t)m_dst);   break;
+			case 0x30:                      XORB();          PutbackRMByte((uint8_t)m_dst);   break;
+			case 0x38:                      set_CFB(SUBB()); break; // CMP
 			}
 			break;
 		}
@@ -1057,13 +1057,13 @@ bool Master512CoPro::common_op(uint8_t op)
 			else                             { CLK(ALU_M16I8); }
 			switch (m_modrm & 0x38)
 			{
-			case 0x00:                      set_CFW(ADDX()); PutbackRMWord(m_dst); break;
-			case 0x08:                      ORW();  PutbackRMWord(m_dst); break;
-			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDX(); PutbackRMWord(m_dst); set_CFW(tmpcf); break;
-			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBX(); PutbackRMWord(m_dst); set_CFW(tmpcf); break;
-			case 0x20:                      ANDX(); PutbackRMWord(m_dst); break;
-			case 0x28:                      set_CFW(SUBX()); PutbackRMWord(m_dst); break;
-			case 0x30:                      XORW(); PutbackRMWord(m_dst); break;
+			case 0x00:                      set_CFW(ADDX()); PutbackRMWord((uint16_t)m_dst); break;
+			case 0x08:                      ORW();  PutbackRMWord((uint16_t)m_dst); break;
+			case 0x10: m_src += CF ? 1 : 0; tmpcf = ADDX(); PutbackRMWord((uint16_t)m_dst); set_CFW(tmpcf); break;
+			case 0x18: m_src += CF ? 1 : 0; tmpcf = SUBX(); PutbackRMWord((uint16_t)m_dst); set_CFW(tmpcf); break;
+			case 0x20:                      ANDX(); PutbackRMWord((uint16_t)m_dst); break;
+			case 0x28:                      set_CFW(SUBX()); PutbackRMWord((uint16_t)m_dst); break;
+			case 0x30:                      XORW(); PutbackRMWord((uint16_t)m_dst); break;
 			case 0x38:                      set_CFW(SUBX());                       break; /* CMP */
 			}
 			break;
@@ -1083,43 +1083,43 @@ bool Master512CoPro::common_op(uint8_t op)
 
 		case 0x86: // i_xchg_br8
 			DEF_br8();
-			RegByte(m_dst);
-			PutbackRMByte(m_src);
+			RegByte((uint8_t)m_dst);
+			PutbackRMByte((uint8_t)m_src);
 			CLKM(XCHG_RR8,XCHG_RM8);
 			break;
 
 		case 0x87: // i_xchg_wr16
 			DEF_wr16();
-			RegWord(m_dst);
-			PutbackRMWord(m_src);
+			RegWord((uint16_t)m_dst);
+			PutbackRMWord((uint16_t)m_src);
 			CLKM(XCHG_RR16,XCHG_RM16);
 			break;
 
 		case 0x88: // i_mov_br8
 			m_modrm = fetch();
 			m_src = RegByte();
-			PutRMByte(m_src);
+			PutRMByte((uint8_t)m_src);
 			CLKM(ALU_RR8,ALU_MR8);
 			break;
 
 		case 0x89: // i_mov_wr16
 			m_modrm = fetch();
 			m_src = RegWord();
-			PutRMWord(m_src);
+			PutRMWord((uint16_t)m_src);
 			CLKM(ALU_RR16,ALU_MR16);
 			break;
 
 		case 0x8a: // i_mov_r8b
 			m_modrm = fetch();
 			m_src = GetRMByte();
-			RegByte(m_src);
+			RegByte((uint8_t)m_src);
 			CLKM(ALU_RR8,ALU_RM8);
 			break;
 
 		case 0x8b: // i_mov_r16w
 			m_modrm = fetch();
 			m_src = GetRMWord();
-			RegWord(m_src);
+			RegWord((uint16_t)m_src);
 			CLKM(ALU_RR16,ALU_RM16);
 			break;
 
@@ -1139,7 +1139,7 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0x8e: // i_mov_sregw
 			m_modrm = fetch();
 			m_src = GetRMWord();
-			m_sregs[(m_modrm & 0x18) >> 3] = m_src; // confirmed on hw: modrm bit 5 ignored
+			m_sregs[(m_modrm & 0x18) >> 3] = (uint16_t)m_src; // confirmed on hw: modrm bit 5 ignored
 			CLKM(MOV_SR,MOV_SM);
 			m_no_interrupt = 1; // Disable IRQ after load segment register.
 			break;
@@ -1233,20 +1233,20 @@ bool Master512CoPro::common_op(uint8_t op)
 
 		case 0x9e: // i_sahf
 			{
-				uint32_t tmp = (CompressFlags() & 0xff00) | (m_regs.b[AH] & 0xd5);
+				uint16_t tmp = (CompressFlags() & 0xff00) | (m_regs.b[AH] & 0xd5);
 				ExpandFlags(tmp);
 				CLK(SAHF);
 			}
 			break;
 
 		case 0x9f: // i_lahf
-			m_regs.b[AH] = CompressFlags();
+			m_regs.b[AH] = (uint8_t)CompressFlags();
 			CLK(LAHF);
 			break;
 
 		case 0xa0: // i_mov_aldisp
 			{
-				uint32_t addr = fetch_word();
+				uint16_t addr = fetch_word();
 				m_regs.b[AL] = GetMemB(DS, addr);
 				CLK(MOV_AM8);
 			}
@@ -1254,7 +1254,7 @@ bool Master512CoPro::common_op(uint8_t op)
 
 		case 0xa1: // i_mov_axdisp
 			{
-				uint32_t addr = fetch_word();
+				uint16_t addr = fetch_word();
 				m_regs.w[AX] = GetMemW(DS, addr);
 				CLK(MOV_AM16);
 			}
@@ -1262,7 +1262,7 @@ bool Master512CoPro::common_op(uint8_t op)
 
 		case 0xa2: // i_mov_dispal
 			{
-				uint32_t addr = fetch_word();
+				uint16_t addr = fetch_word();
 				PutMemB(DS, addr, m_regs.b[AL]);
 				CLK(MOV_MA8);
 			}
@@ -1270,7 +1270,7 @@ bool Master512CoPro::common_op(uint8_t op)
 
 		case 0xa3: // i_mov_dispax
 			{
-				uint32_t addr = fetch_word();
+				uint16_t addr = fetch_word();
 				PutMemW(DS, addr, m_regs.w[AX]);
 				CLK(MOV_MA16);
 			}
@@ -1419,7 +1419,7 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0xc0: // 0xc0 is 0xc2 - see (*)
 		case 0xc2: // i_ret_d16
 			{
-				uint32_t count = fetch_word();
+				uint16_t count = fetch_word();
 				m_ip = POP();
 				m_regs.w[SP] += count;
 				CLK(RET_NEAR_IMM);
@@ -1461,7 +1461,7 @@ bool Master512CoPro::common_op(uint8_t op)
 		case 0xc8: // 0xc8 = 0xca - see (*)
 		case 0xca: // i_retf_d16
 			{
-				uint32_t count = fetch_word();
+				uint16_t count = fetch_word();
 				m_ip = POP();
 				m_sregs[CS] = POP();
 				m_regs.w[SP] += count;
@@ -1510,10 +1510,10 @@ bool Master512CoPro::common_op(uint8_t op)
 			CLKM(ROT_REG_1,ROT_M8_1);
 			switch (m_modrm & 0x38)
 			{
-			case 0x00: ROL_BYTE();  PutbackRMByte(m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
-			case 0x08: ROR_BYTE();  PutbackRMByte(m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
-			case 0x10: ROLC_BYTE(); PutbackRMByte(m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
-			case 0x18: RORC_BYTE(); PutbackRMByte(m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
+			case 0x00: ROL_BYTE();  PutbackRMByte((uint8_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
+			case 0x08: ROR_BYTE();  PutbackRMByte((uint8_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
+			case 0x10: ROLC_BYTE(); PutbackRMByte((uint8_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
+			case 0x18: RORC_BYTE(); PutbackRMByte((uint8_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x80; break;
 			case 0x30:
 			case 0x20: SHL_BYTE(1); m_OverVal = (m_src ^ m_dst) & 0x80; break;
 			case 0x28: SHR_BYTE(1); m_OverVal = (m_src ^ m_dst) & 0x80; break;
@@ -1528,10 +1528,10 @@ bool Master512CoPro::common_op(uint8_t op)
 			CLKM(ROT_REG_1,ROT_M8_1);
 			switch (m_modrm & 0x38)
 			{
-			case 0x00: ROL_WORD();  PutbackRMWord(m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
-			case 0x08: ROR_WORD();  PutbackRMWord(m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
-			case 0x10: ROLC_WORD(); PutbackRMWord(m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
-			case 0x18: RORC_WORD(); PutbackRMWord(m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
+			case 0x00: ROL_WORD();  PutbackRMWord((uint16_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
+			case 0x08: ROR_WORD();  PutbackRMWord((uint16_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
+			case 0x10: ROLC_WORD(); PutbackRMWord((uint16_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
+			case 0x18: RORC_WORD(); PutbackRMWord((uint16_t)m_dst); m_OverVal = (m_src ^ m_dst) & 0x8000; break;
 			case 0x30:
 			case 0x20: SHL_WORD(1); m_OverVal = (m_src ^ m_dst) & 0x8000;  break;
 			case 0x28: SHR_WORD(1); m_OverVal = (m_src ^ m_dst) & 0x8000;  break;
@@ -1715,12 +1715,8 @@ bool Master512CoPro::common_op(uint8_t op)
 			break;
 
 		case 0xed: // i_inaxdx
-			{
-				uint32_t port = m_regs.w[DX];
-
-				m_regs.w[AX] = read_port_word(port);
-				CLK(IN_DX16);
-			}
+			m_regs.w[AX] = read_port_word(m_regs.w[DX]);
+			CLK(IN_DX16);
 			break;
 
 		case 0xee: // i_outdxal
@@ -1729,12 +1725,8 @@ bool Master512CoPro::common_op(uint8_t op)
 			break;
 
 		case 0xef: // i_outdxax
-			{
-				uint32_t port = m_regs.w[DX];
-
-				write_port_word(port, m_regs.w[AX]);
-				CLK(OUT_DX16);
-			}
+			write_port_word(m_regs.w[DX], m_regs.w[AX]);
+			CLK(OUT_DX16);
 			break;
 
 		case 0xf0: // i_lock
@@ -1841,7 +1833,7 @@ bool Master512CoPro::common_op(uint8_t op)
 					break;
 
 				case 0x10:  // NOT
-					PutbackRMByte(~tmp);
+					PutbackRMByte((uint8_t)~tmp);
 					CLKM(NEGNOT_R8,NEGNOT_M8);
 					break;
 
@@ -1849,7 +1841,7 @@ bool Master512CoPro::common_op(uint8_t op)
 					m_CarryVal = (tmp!=0) ? 1 : 0;
 					tmp = (~tmp) + 1;
 					set_SZPF_Byte(tmp);
-					PutbackRMByte(tmp & 0xff);
+					PutbackRMByte((uint8_t)tmp);
 					CLKM(NEGNOT_R8,NEGNOT_M8);
 					break;
 
@@ -1880,8 +1872,8 @@ bool Master512CoPro::common_op(uint8_t op)
 						}
 						else
 						{
-							m_regs.b[AL] = uresult;
-							m_regs.b[AH] = uresult2;
+							m_regs.b[AL] = (uint8_t)uresult;
+							m_regs.b[AH] = (uint8_t)uresult2;
 						}
 					}
 					else
@@ -1902,8 +1894,8 @@ bool Master512CoPro::common_op(uint8_t op)
 						}
 						else
 						{
-							m_regs.b[AL] = result;
-							m_regs.b[AH] = result2;
+							m_regs.b[AL] = (uint8_t)result;
+							m_regs.b[AH] = (uint8_t)result2;
 						}
 					}
 					else
@@ -1937,7 +1929,7 @@ bool Master512CoPro::common_op(uint8_t op)
 					break;
 
 				case 0x10:  // NOT
-					PutbackRMWord(~tmp);
+					PutbackRMWord((uint16_t)~tmp);
 					CLKM(NEGNOT_R16,NEGNOT_M16);
 					break;
 
@@ -1945,7 +1937,7 @@ bool Master512CoPro::common_op(uint8_t op)
 					m_CarryVal = (tmp!=0) ? 1 : 0;
 					tmp = (~tmp) + 1;
 					set_SZPF_Word(tmp);
-					PutbackRMWord(tmp);
+					PutbackRMWord((uint16_t)tmp);
 					CLKM(NEGNOT_R16,NEGNOT_M16);
 					break;
 
@@ -1978,8 +1970,8 @@ bool Master512CoPro::common_op(uint8_t op)
 						}
 						else
 						{
-							m_regs.w[AX] = uresult;
-							m_regs.w[DX] = uresult2;
+							m_regs.w[AX] = (uint16_t)uresult;
+							m_regs.w[DX] = (uint16_t)uresult2;
 						}
 					}
 					else
@@ -2000,8 +1992,8 @@ bool Master512CoPro::common_op(uint8_t op)
 						}
 						else
 						{
-							m_regs.w[AX] = result;
-							m_regs.w[DX] = result2;
+							m_regs.w[AX] = (uint16_t)result;
+							m_regs.w[DX] = (uint16_t)result2;
 						}
 					}
 					else
@@ -2058,7 +2050,7 @@ bool Master512CoPro::common_op(uint8_t op)
 					m_OverVal = (tmp == 0x7f);
 					set_AF(tmp1, tmp, 1);
 					set_SZPF_Byte(tmp1);
-					PutbackRMByte(tmp1);
+					PutbackRMByte((uint8_t)tmp1);
 					CLKM(INCDEC_R8, INCDEC_M8);
 					break;
 
@@ -2067,7 +2059,7 @@ bool Master512CoPro::common_op(uint8_t op)
 					m_OverVal = (tmp == 0x80);
 					set_AF(tmp1, tmp, 1);
 					set_SZPF_Byte(tmp1);
-					PutbackRMByte(tmp1);
+					PutbackRMByte((uint8_t)tmp1);
 					CLKM(INCDEC_R8, INCDEC_M8);
 					break;
 
@@ -2091,7 +2083,7 @@ bool Master512CoPro::common_op(uint8_t op)
 					m_OverVal = (tmp == 0x7fff);
 					set_AF(tmp1, tmp, 1);
 					set_SZPF_Word(tmp1);
-					PutbackRMWord(tmp1);
+					PutbackRMWord((uint16_t)tmp1);
 					CLKM(INCDEC_R16, INCDEC_M16);
 					break;
 
@@ -2100,38 +2092,38 @@ bool Master512CoPro::common_op(uint8_t op)
 					m_OverVal = (tmp == 0x8000);
 					set_AF(tmp1, tmp, 1);
 					set_SZPF_Word(tmp1);
-					PutbackRMWord(tmp1);
+					PutbackRMWord((uint16_t)tmp1);
 					CLKM(INCDEC_R16, INCDEC_M16);
 					break;
 
 				case 0x10:  /* CALL */
 					PUSH(m_ip);
-					m_ip = tmp;
+					m_ip = (uint16_t)tmp;
 					CLKM(CALL_R16, CALL_M16);
 					break;
 
 				case 0x18:  /* CALL FAR */
 					tmp1 = m_sregs[CS];
 					m_sregs[CS] = GetnextRMWord();
-					PUSH(tmp1);
+					PUSH((uint16_t)tmp1);
 					PUSH(m_ip);
-					m_ip = tmp;
+					m_ip = (uint16_t)tmp;
 					CLK(CALL_M32);
 					break;
 
 				case 0x20:  /* JMP */
-					m_ip = tmp;
+					m_ip = (uint16_t)tmp;
 					CLKM(JMP_R16,JMP_M16);
 					break;
 
 				case 0x28:  /* JMP FAR */
-					m_ip = tmp;
+					m_ip = (uint16_t)tmp;
 					m_sregs[CS] = GetnextRMWord();
 					CLK(JMP_M32);
 					break;
 
 				case 0x30:
-					PUSH(tmp);
+					PUSH((uint16_t)tmp);
 					CLKM(PUSH_R16, PUSH_M16);
 					break;
 
@@ -2389,7 +2381,7 @@ void Master512CoPro::Execute(int Cycles)
 					PUSH(m_regs.w[CX]);
 					PUSH(m_regs.w[DX]);
 					PUSH(m_regs.w[BX]);
-					PUSH(tmp);
+					PUSH((uint16_t)tmp);
 					PUSH(m_regs.w[BP]);
 					PUSH(m_regs.w[SI]);
 					PUSH(m_regs.w[DI]);
@@ -2433,7 +2425,7 @@ void Master512CoPro::Execute(int Cycles)
 					uint32_t tmp = fetch_word();
 					m_dst = (int32_t)((int16_t)m_src)*(int32_t)((int16_t)tmp);
 					m_CarryVal = m_OverVal = (((int32_t)m_dst) >> 15 != 0) && (((int32_t)m_dst) >> 15 != -1);
-					RegWord(m_dst);
+					RegWord((uint16_t)m_dst);
 					CLKM(IMUL_RRI16, IMUL_RMI16);
 				}
 				break;
@@ -2449,7 +2441,7 @@ void Master512CoPro::Execute(int Cycles)
 					uint32_t src2 = (uint16_t)((int16_t)((int8_t)fetch()));
 					m_dst = (int32_t)((int16_t)m_src)*(int32_t)((int16_t)src2);
 					m_CarryVal = m_OverVal = (((int32_t)m_dst) >> 15 != 0) && (((int32_t)m_dst) >> 15 != -1);
-					RegWord(m_dst);
+					RegWord((uint16_t)m_dst);
 					CLKM(IMUL_RRI8, IMUL_RMI8);
 				}
 				break;
@@ -2477,14 +2469,14 @@ void Master512CoPro::Execute(int Cycles)
 				switch (m_modrm & 0x38)
 				{
 				case 0x00: // mov es,ew
-					m_sregs[ES] = m_src;
+					m_sregs[ES] = (uint16_t)m_src;
 					break;
 				case 0x10: // mov ss,ew
-					m_sregs[SS] = m_src;
+					m_sregs[SS] = (uint16_t)m_src;
 					m_no_interrupt = 1;
 					break;
 				case 0x18: // mov ds,ew
-					m_sregs[DS] = m_src;
+					m_sregs[DS] = (uint16_t)m_src;
 					break;
 				default:
 					WriteLog("%06x: Mov Sreg - Invalid register\n", m_pc);
@@ -2506,10 +2498,10 @@ void Master512CoPro::Execute(int Cycles)
 					{
 						switch (m_modrm & 0x38)
 						{
-						case 0x00: do { ROL_BYTE();  c--; } while (c>0); PutbackRMByte(m_dst); break;
-						case 0x08: do { ROR_BYTE();  c--; } while (c>0); PutbackRMByte(m_dst); break;
-						case 0x10: do { ROLC_BYTE(); c--; } while (c>0); PutbackRMByte(m_dst); break;
-						case 0x18: do { RORC_BYTE(); c--; } while (c>0); PutbackRMByte(m_dst); break;
+						case 0x00: do { ROL_BYTE();  c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
+						case 0x08: do { ROR_BYTE();  c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
+						case 0x10: do { ROLC_BYTE(); c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
+						case 0x18: do { RORC_BYTE(); c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
 						case 0x30:
 						case 0x20: SHL_BYTE(c); break;
 						case 0x28: SHR_BYTE(c); break;
@@ -2531,10 +2523,10 @@ void Master512CoPro::Execute(int Cycles)
 					{
 						switch (m_modrm & 0x38)
 						{
-						case 0x00: do { ROL_WORD();  c--; } while (c>0); PutbackRMWord(m_dst); break;
-						case 0x08: do { ROR_WORD();  c--; } while (c>0); PutbackRMWord(m_dst); break;
-						case 0x10: do { ROLC_WORD(); c--; } while (c>0); PutbackRMWord(m_dst); break;
-						case 0x18: do { RORC_WORD(); c--; } while (c>0); PutbackRMWord(m_dst); break;
+						case 0x00: do { ROL_WORD();  c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
+						case 0x08: do { ROR_WORD();  c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
+						case 0x10: do { ROLC_WORD(); c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
+						case 0x18: do { RORC_WORD(); c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
 						case 0x30:
 						case 0x20: SHL_WORD(c); break;
 						case 0x28: SHR_WORD(c); break;
@@ -2548,14 +2540,14 @@ void Master512CoPro::Execute(int Cycles)
 				{
 					uint16_t nb = fetch();
 					nb |= fetch() << 8;
-					uint32_t level = fetch();
-					CLK(!level ? ENTER0 : (level == 1) ? ENTER1 : ENTER_BASE);
+					uint8_t level = fetch();
+					CLK((uint8_t)(!level ? ENTER0 : (level == 1) ? ENTER1 : ENTER_BASE));
 					if (level > 1)
 						m_icount -= level * Timing[ENTER_COUNT];
 					PUSH(m_regs.w[BP]);
 					m_regs.w[BP] = m_regs.w[SP];
 					m_regs.w[SP] -= nb;
-					for (unsigned int i = 1; i < level; i++)
+					for (uint8_t i = 1; i < level; i++)
 					{
 						PUSH(GetMemW(SS, m_regs.w[BP] - i * 2));
 					}
@@ -2584,10 +2576,10 @@ void Master512CoPro::Execute(int Cycles)
 					{
 						switch (m_modrm & 0x38)
 						{
-						case 0x00: do { ROL_BYTE();  c--; } while (c>0); PutbackRMByte(m_dst); break;
-						case 0x08: do { ROR_BYTE();  c--; } while (c>0); PutbackRMByte(m_dst); break;
-						case 0x10: do { ROLC_BYTE(); c--; } while (c>0); PutbackRMByte(m_dst); break;
-						case 0x18: do { RORC_BYTE(); c--; } while (c>0); PutbackRMByte(m_dst); break;
+						case 0x00: do { ROL_BYTE();  c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
+						case 0x08: do { ROR_BYTE();  c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
+						case 0x10: do { ROLC_BYTE(); c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
+						case 0x18: do { RORC_BYTE(); c--; } while (c>0); PutbackRMByte((uint8_t)m_dst); break;
 						case 0x30:
 						case 0x20: SHL_BYTE(c); break;
 						case 0x28: SHR_BYTE(c); break;
@@ -2609,10 +2601,10 @@ void Master512CoPro::Execute(int Cycles)
 					{
 						switch (m_modrm & 0x38)
 						{
-							case 0x00: do { ROL_WORD();  c--; } while (c>0); PutbackRMWord(m_dst); break;
-							case 0x08: do { ROR_WORD();  c--; } while (c>0); PutbackRMWord(m_dst); break;
-							case 0x10: do { ROLC_WORD(); c--; } while (c>0); PutbackRMWord(m_dst); break;
-							case 0x18: do { RORC_WORD(); c--; } while (c>0); PutbackRMWord(m_dst); break;
+							case 0x00: do { ROL_WORD();  c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
+							case 0x08: do { ROR_WORD();  c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
+							case 0x10: do { ROLC_WORD(); c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
+							case 0x18: do { RORC_WORD(); c--; } while (c>0); PutbackRMWord((uint16_t)m_dst); break;
 							case 0x30:
 							case 0x20: SHL_WORD(c); break;
 							case 0x28: SHR_WORD(c); break;
@@ -2729,7 +2721,7 @@ inline uint16_t Master512CoPro::POP()
 
 inline void Master512CoPro::JMP(bool cond)
 {
-	int rel = (int)((int8_t)fetch());
+	int8_t rel = (int8_t)fetch();
 
 	if (cond)
 	{
@@ -2737,7 +2729,9 @@ inline void Master512CoPro::JMP(bool cond)
 		CLK(JCC_T);
 	}
 	else
+	{
 		CLK(JCC_NT);
+	}
 }
 
 void Master512CoPro::ADJ4(int8_t param1, int8_t param2)
@@ -2745,7 +2739,7 @@ void Master512CoPro::ADJ4(int8_t param1, int8_t param2)
 	if (AF || ((m_regs.b[AL] & 0xf) > 9))
 	{
 		uint16_t tmp = m_regs.b[AL] + param1;
-		m_regs.b[AL] = tmp;
+		m_regs.b[AL] = (uint8_t)tmp;
 		m_AuxVal = 1;
 		m_CarryVal |= tmp & 0x100;
 	}
@@ -2986,7 +2980,7 @@ inline void Master512CoPro::i_scasw()
 
 inline void Master512CoPro::i_popf()
 {
-	uint32_t tmp = POP();
+	uint16_t tmp = POP();
 
 	ExpandFlags(tmp | 0xf000);
 	CLK(POPF);
@@ -3004,7 +2998,7 @@ inline void Master512CoPro::IncWordReg(uint8_t reg)
 	m_OverVal = (tmp == 0x7fff);
 	set_AF(tmp1, tmp, 1);
 	set_SZPF_Word(tmp1);
-	m_regs.w[reg] = tmp1;
+	m_regs.w[reg] = (uint16_t)tmp1;
 }
 
 inline void Master512CoPro::DecWordReg(uint8_t reg)
@@ -3015,7 +3009,7 @@ inline void Master512CoPro::DecWordReg(uint8_t reg)
 	m_OverVal = (tmp == 0x8000);
 	set_AF(tmp1, tmp, 1);
 	set_SZPF_Word(tmp1);
-	m_regs.w[reg] = tmp1;
+	m_regs.w[reg] = (uint16_t)tmp1;
 }
 
 inline void Master512CoPro::ROL_BYTE()
@@ -3075,7 +3069,7 @@ inline void Master512CoPro::SHL_BYTE(uint8_t c)
 
 	set_CFB(m_dst);
 	set_SZPF_Byte(m_dst);
-	PutbackRMByte(m_dst);
+	PutbackRMByte((uint8_t)m_dst);
 }
 
 inline void Master512CoPro::SHL_WORD(uint8_t c)
@@ -3085,7 +3079,7 @@ inline void Master512CoPro::SHL_WORD(uint8_t c)
 
 	set_CFW(m_dst);
 	set_SZPF_Word(m_dst);
-	PutbackRMWord(m_dst);
+	PutbackRMWord((uint16_t)m_dst);
 }
 
 inline void Master512CoPro::SHR_BYTE(uint8_t c)
@@ -3097,7 +3091,7 @@ inline void Master512CoPro::SHR_BYTE(uint8_t c)
 	}
 
 	set_SZPF_Byte(m_dst);
-	PutbackRMByte(m_dst);
+	PutbackRMByte((uint8_t)m_dst);
 }
 
 inline void Master512CoPro::SHR_WORD(uint8_t c)
@@ -3109,7 +3103,7 @@ inline void Master512CoPro::SHR_WORD(uint8_t c)
 	}
 
 	set_SZPF_Word(m_dst);
-	PutbackRMWord(m_dst);
+	PutbackRMWord((uint16_t)m_dst);
 }
 
 inline void Master512CoPro::SHRA_BYTE(uint8_t c)
@@ -3121,7 +3115,7 @@ inline void Master512CoPro::SHRA_BYTE(uint8_t c)
 	}
 
 	set_SZPF_Byte(m_dst);
-	PutbackRMByte(m_dst);
+	PutbackRMByte((uint8_t)m_dst);
 }
 
 inline void Master512CoPro::SHRA_WORD(uint8_t c)
@@ -3133,7 +3127,7 @@ inline void Master512CoPro::SHRA_WORD(uint8_t c)
 	}
 
 	set_SZPF_Word(m_dst);
-	PutbackRMWord(m_dst);
+	PutbackRMWord((uint16_t)m_dst);
 }
 
 inline void Master512CoPro::XchgAXReg(uint8_t reg)
@@ -3788,7 +3782,7 @@ void Master512CoPro::DoDMA()
 	if (m_dma[0].source < 0x100)
 	{
 		// I/O to MEM
-		uint8_t data = io_read_byte_8(m_dma[0].source);
+		uint8_t data = io_read_byte_8((uint16_t)m_dma[0].source);
 		program_write_byte_8(m_dma[0].dest, data);
 		m_dma[0].dest++;
 	}
@@ -3796,7 +3790,7 @@ void Master512CoPro::DoDMA()
 	{
 		// MEM to I/O
 		uint8_t data = program_read_byte_8(m_dma[0].source);
-		io_write_byte_8(m_dma[0].dest, data);
+		io_write_byte_8((uint16_t)m_dma[0].dest, data);
 		m_dma[0].source++;
 	}
 }

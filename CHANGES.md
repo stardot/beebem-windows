@@ -4,7 +4,8 @@ BeebEm Change History
 Unreleased changes
 ------------
 
-Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, Steve Inglis, Alistair Cree, Ken Lowe
+Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore,
+Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
@@ -23,7 +24,11 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, St
   - Fixed Econet.cfg file parsing.
   - Fixed potential buffer overflow bug.
   - Added support for immediate operations, used by the *VIEW and *NOTIFY
-    commands. These currently only work under Master 128 emulation.
+    commands. These currently only work under Master series emulation.
+* Added Master ET support.
+* ROM config files (e.g., Roms.cfg) can now include comments. Note that
+  files with comments are not backwards compatible with older BeebEm
+  versions.
 * Keyboard mapping improvements:
   - Added Clear button to the key selection dialog box, when defining
     a user keyboard mapping.
@@ -61,6 +66,7 @@ Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore, St
   parameters for compatibility with both IBOS1.26 and the original
   Computech IBOS1.20 / 1.20P ROMs. IBOS1.26 is now the default IBOS
   ROM, and Watford DFS has been replaced by Acorn DNFS, in Roms.cfg.
+* Rewrote the Master 146818 RTC and CMOS emulation.
 
 Version 4.19 (1 May 2023)
 ------------

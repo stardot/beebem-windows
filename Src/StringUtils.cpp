@@ -81,6 +81,12 @@ bool ParseNumber(const std::string& str, int* pValue)
 	return true;
 }
 
+bool StringEndsWith(const std::string& str, const std::string& suffix)
+{
+	return str.size() >= suffix.size() &&
+		str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 std::string WStr2Str(const std::wstring& str)
 {
 	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> Converter;

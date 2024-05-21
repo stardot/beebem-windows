@@ -44,6 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "Disc1770.h"
 #include "Disc8271.h"
 #include "Econet.h" // Rob
+#include "FileUtils.h"
 #include "IC32Latch.h"
 #include "Ide.h"
 #include "Main.h"
@@ -52,6 +53,7 @@ Boston, MA  02110-1301, USA.
 #include "Sasi.h"
 #include "Scsi.h"
 #include "Serial.h"
+#include "StringUtils.h"
 #include "SysVia.h"
 #include "Teletext.h"
 #include "Tube.h"
@@ -64,17 +66,16 @@ Boston, MA  02110-1301, USA.
 unsigned char WholeRam[65536];
 
 constexpr int MAX_ROM_SIZE = 16384;
-
-unsigned char Roms[16][MAX_ROM_SIZE];
+unsigned char Roms[ROM_BANK_COUNT][MAX_ROM_SIZE];
 
 /* Each Rom now has a Ram/Rom flag */
-bool RomWritable[16] = {
+bool RomWritable[ROM_BANK_COUNT] = {
 	true, true, true, true, true, true, true, true,
 	true, true, true, true, true, true, true, true
 };
 
 /* Identifies what is in each bank */
-BankType RomBankType[16] = {
+BankType RomBankType[ROM_BANK_COUNT] = {
 	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty,
 	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty,
 	BankType::Empty, BankType::Empty, BankType::Empty, BankType::Empty,
@@ -141,7 +142,7 @@ static bool Sh_CPUX, Sh_CPUE;
 /* ROM file data */
 char RomPath[_MAX_PATH];
 char RomFile[_MAX_PATH];
-ROMConfigFile RomConfig;
+RomConfigFile RomConfig;
 
 // SCSI and IDE hard drive file location
 char HardDrivePath[_MAX_PATH]; // JGH
@@ -188,7 +189,7 @@ const unsigned char *BeebMemPtrWithWrap(int Address, int Length) {
   int EndAddress = WrapAddr(Address + Length - 1);
 
   // On Master the FSRam area is displayed if start addr below shadow area
-  if (MachineType == Model::Master128 && Address <= EndAddress && Sh_Display && Address < 0x3000) {
+  if ((MachineType == Model::Master128 || MachineType == Model::MasterET) && Address <= EndAddress && Sh_Display && Address < 0x3000) {
     if (0x3000 - Address < Length) {
       int toCopy = 0x3000 - Address;
       if (toCopy > Length) toCopy = Length;
@@ -333,20 +334,41 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
 
-		if (Address==0xfe3c) {
-			time_t long_time; // Clock for Computech Integra-B
-			time(&long_time);
-			struct tm* time = localtime(&long_time);
+		if (Address == 0xfe3c)
+		{
+			// CDP6818E Clock for Computech Integra-B
+			SYSTEMTIME Time;
+			GetLocalTime(&Time);
 
-			if (HidAdd==0) return (unsigned char)time->tm_sec;
-			if (HidAdd==2) return (unsigned char)time->tm_min;
-			if (HidAdd==4) return (unsigned char)time->tm_hour;
-			if (HidAdd==6) return (unsigned char)(time->tm_wday + 1);
-			if (HidAdd==7) return (unsigned char)(time->tm_mday);
-			if (HidAdd==8) return (unsigned char)(time->tm_mon + 1);
-			if (HidAdd==9) return (unsigned char)(time->tm_year % 100);
-			if (HidAdd==0xa) return(0x0);
-			return(Hidden[HidAdd]);
+			switch (HidAdd)
+			{
+				case 0:
+					return (unsigned char)Time.wSecond;
+
+				case 2:
+					return (unsigned char)Time.wMinute;
+
+				case 4:
+					return (unsigned char)Time.wHour;
+
+				case 6:
+					return (unsigned char)Time.wDayOfWeek + 1;
+
+				case 7:
+					return (unsigned char)Time.wDay;
+
+				case 8:
+					return (unsigned char)Time.wMonth;
+
+				case 9:
+					return (unsigned char)(Time.wYear % 100);
+
+				case 0xa:
+					return 0x00;
+
+				default:
+					return Hidden[HidAdd];
+			}
 		}
 	}
 	else if (MachineType == Model::BPlus) {
@@ -366,7 +388,7 @@ unsigned char BeebReadMem(int Address) {
 		if (Address < 0xfc00) return WholeRam[Address];
 		if (Address >= 0xff00) return WholeRam[Address];
 	}
-	else if (MachineType == Model::Master128) {
+	else if (MachineType == Model::Master128 || MachineType == Model::MasterET) {
 		switch ((Address&0xf000)>>12) {
 		case 0:
 		case 1:
@@ -491,8 +513,8 @@ unsigned char BeebReadMem(int Address) {
 	   shows the read-station select line is also INTOFF. (and it's any access to FE18, not just a read.)
 	*/
 	if (EconetEnabled &&
-		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
-		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)))
+		(((MachineType != Model::Master128 && MachineType != Model::MasterET) && (Address & ~3) == 0xfe18) ||
+		 ((MachineType == Model::Master128 || MachineType == Model::MasterET) && (Address & ~3) == 0xfe38)))
 	{
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF");
@@ -500,7 +522,7 @@ unsigned char BeebReadMem(int Address) {
 		return EconetReadStationID();
 	}
 
-	if (Address >= 0xfe18 && Address <= 0xfe20 && MachineType == Model::Master128) {
+	if (Address >= 0xfe18 && Address <= 0xfe20 && (MachineType == Model::Master128 || MachineType == Model::MasterET)) {
 		return(AtoDRead(Address - 0xfe18));
 	}
 
@@ -511,8 +533,8 @@ unsigned char BeebReadMem(int Address) {
 	   (NMI from the FDC is always enabled)
 	*/
 	if (EconetEnabled &&
-	    ((MachineType != Model::Master128 && (Address & ~3) == 0xfe20) ||
-	     (MachineType == Model::Master128 && (Address & ~3) == 0xfe3c)))
+	    (((MachineType != Model::Master128 && MachineType != Model::MasterET) && (Address & ~3) == 0xfe20) ||
+	     ((MachineType == Model::Master128 || MachineType == Model::MasterET) && (Address & ~3) == 0xfe3c)))
 	{
 		if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: INTON");
 
@@ -547,11 +569,11 @@ unsigned char BeebReadMem(int Address) {
 		                     // correct me if im wrong. - Richard Gellman
 	}
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-	if ((Address & ~3) == 0xfe34 && MachineType == Model::Master128) {
+	if ((Address & ~3) == 0xfe34 && (MachineType == Model::Master128 || MachineType == Model::MasterET)) {
 		return(ACCCON);
 	}
 
-	if ((Address & ~0x1f) == 0xfe80 && MachineType != Model::Master128 && NativeFDC) {
+	if ((Address & ~0x1f) == 0xfe80 && (MachineType != Model::Master128 && MachineType != Model::MasterET) && NativeFDC) {
 		return Disc8271Read(Address & 0x7);
 	}
 
@@ -561,7 +583,7 @@ unsigned char BeebReadMem(int Address) {
 		return(0xfe); // if not enabled
 	}
 
-	if ((Address & ~0x1f) == 0xfec0 && MachineType != Model::Master128) {
+	if ((Address & ~0x1f) == 0xfec0 && (MachineType != Model::Master128 /* && MachineType != Model::MasterET */)) {
 		SyncIO();
 		Value = AtoDRead(Address & 0xf);
 		AdjustForIORead();
@@ -600,12 +622,12 @@ unsigned char BeebReadMem(int Address) {
 		return(SASIRead(Address & 0x3));
 	}
 
-	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
+	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address >= EFDCAddr && Address < (EFDCAddr+4) && !NativeFDC) {
 		// mainWin->Report(MessageType::Error, "Read of 1770 Extension Board");
 		return Read1770Register(Address - EFDCAddr);
 	}
 
-	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
+	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address == EDCAddr && !NativeFDC) {
 		return(mainWin->GetDriveControl());
 	}
 
@@ -621,7 +643,7 @@ void DebugMemoryState()
 
 	DebugDisplayInfo("Memory state:");
 
-	for (int i = 0; i < 16; i++)
+	for (int i = 0; i < ROM_BANK_COUNT; i++)
 	{
 		if (RomWritable[i])
 		{
@@ -652,6 +674,7 @@ void DebugMemoryState()
 			DebugDisplayInfoF("Private RAM: %s", MemSel ? "enabled" : "disabled");
 			break;
 		case Model::Master128:
+		case Model::MasterET:
 			DebugDisplayInfoF("ACCCON: IRR:%s TST:%s IFJ:%s ITU:%s Y:%s X:%s E:%s D:%s",
 				(intStatus & 0x80) != 0 ? "on" : "off",
 				(ACCCON & 0x40) != 0 ? "on" : "off",
@@ -671,14 +694,14 @@ static void DoRomChange(unsigned char NewBank)
 {
   ROMSEL = NewBank & 0xf;
 
-  if (MachineType != Model::Master128) {
+  if (MachineType != Model::Master128 && MachineType != Model::MasterET) {
     NewBank&=0xf; // strip top bit if Model B
     PagedRomReg=NewBank;
     return;
   }
 
   // Master Specific stuff
-  if (MachineType == Model::Master128) {
+  if (MachineType == Model::Master128 || MachineType == Model::MasterET) {
     PagedRomReg = NewBank;
     PrivateRAMSelect = (PagedRomReg & 0x80) != 0;
   }
@@ -708,18 +731,25 @@ static void RomWriteThrough(int Address, unsigned char Value) {
 	if (SWRAMBoardEnabled)
 	{
 		bank = (UserVIAState.orb & UserVIAState.ddrb) & 0xf;
+
 		if (!RomWritable[bank])
-			bank = 16;
+		{
+			bank = ROM_BANK_COUNT;
+		}
 	}
 	else
 	{
 		// Find first writable bank
-		while (bank < 16 && !RomWritable[bank])
+		while (bank < ROM_BANK_COUNT && !RomWritable[bank])
+		{
 			++bank;
+		}
 	}
 
-	if (bank < 16)
-		Roms[bank][Address-0x8000]=Value;
+	if (bank < ROM_BANK_COUNT)
+	{
+		Roms[bank][Address - 0x8000] = Value;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -844,7 +874,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 			return;
 		}
 	}
-	else if (MachineType == Model::Master128) {
+	else if (MachineType == Model::Master128 || MachineType == Model::MasterET) {
 		if (Address < 0xfc00) {
 			switch ((Address&0xf000)>>12) {
 			case 0:
@@ -944,14 +974,14 @@ void BeebWriteMem(int Address, unsigned char Value)
 
 	//Rob: econet NMI mask
 	if (EconetEnabled &&
-		((MachineType != Model::Master128 && (Address & ~3) == 0xfe18) ||
-		 (MachineType == Model::Master128 && (Address & ~3) == 0xfe38)) ) {
+		(((MachineType != Model::Master128 && MachineType != Model::MasterET) && (Address & ~3) == 0xfe18) ||
+		 ((MachineType == Model::Master128 || MachineType == Model::MasterET) && (Address & ~3) == 0xfe38)) ) {
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::Econet, true, "Econet: INTOFF(w)");
 		EconetNMIEnabled = INTOFF;
 	}
 
-	if ((Address & ~0x7) == 0xfe18 && MachineType == Model::Master128) {
+	if ((Address & ~0x7) == 0xfe18 && (MachineType == Model::Master128 /* || MachineType == Model::MasterET */)) {
 		AtoDWrite((Address & 0x7),Value);
 		return;
 	}
@@ -977,12 +1007,12 @@ void BeebWriteMem(int Address, unsigned char Value)
 	}
 
 	// In the Master at least, ROMSEL/ACCCON seem to be duplicated over a 4 byte block.
-	if (Address >= 0xfe34 && Address < 0xfe38 && MachineType == Model::Master128) {
+	if (Address >= 0xfe34 && Address < 0xfe38 && (MachineType == Model::Master128 || MachineType == Model::MasterET)) {
 		FiddleACCCON(Value);
 		return;
 	}
 
-	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128) && NativeFDC) {
+	if (((Address & ~0x1f) == 0xfe80) && (MachineType != Model::Master128 && MachineType != Model::MasterET) && NativeFDC) {
 		Disc8271Write((Address & 7), Value);
 		return;
 	}
@@ -993,7 +1023,7 @@ void BeebWriteMem(int Address, unsigned char Value)
 		return;
 	}
 
-	if ((Address & ~0x1f) == 0xfec0 && MachineType != Model::Master128) {
+	if ((Address & ~0x1f) == 0xfec0 && (MachineType != Model::Master128 /* && MachineType != Model::MasterET */)) {
 		SyncIO();
 		AdjustForIOWrite();
 		AtoDWrite((Address & 0xf),Value);
@@ -1034,10 +1064,10 @@ void BeebWriteMem(int Address, unsigned char Value)
 		return;
 	}
 
-	if (MachineType != Model::Master128 && Address == EDCAddr && !NativeFDC) {
+	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address == EDCAddr && !NativeFDC) {
 		mainWin->SetDriveControl(Value);
 	}
-	if (MachineType != Model::Master128 && Address >= EFDCAddr && Address < (EFDCAddr + 4) && !NativeFDC) {
+	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && Address >= EFDCAddr && Address < (EFDCAddr + 4) && !NativeFDC) {
 		Write1770Register(Address-EFDCAddr,Value);
 	}
 }
@@ -1122,7 +1152,7 @@ bool ReadRomInfo(int bank, RomInfo* info)
 	// On Master 128 this is done with bit 7 and bit 6 with %00 (pointing to low
 	// memory) and %11 (pointing to FSRAM) being active and %01 (pointing to
 	// screen memory) and %10 (pointing to SROM) being inactive.
-	if (MachineType != Model::Master128)
+	if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 		info->WorkspaceAddr &= 0x7FFF;
 	return true;
 }
@@ -1149,66 +1179,82 @@ char *ReadRomTitle(int bank, char *Title, int BufSize)
 
 /*----------------------------------------------------------------------------*/
 
-bool ReadROMConfigFile(const char *filename, ROMConfigFile ROMConfig)
+static std::string GetRomFileName(const std::string& RomName)
 {
-	bool success = true;
-	char line[MAX_PATH];
+	if (RomName[0] != '\\' && RomName[1] != ':')
+	{
+		std::string RomFileName = RomPath;
+		RomFileName += "BeebFile\\";
+		RomFileName += RomName;
 
-	FILE *fd = fopen(filename, "r");
-	if (!fd)
+		return RomFileName;
+	}
+	else
+	{
+		return RomName;
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+
+static bool ReadRom(const std::string& RomFileName, int Bank)
+{
+	FILE *File = fopen(RomFileName.c_str(), "rb");
+
+	if (File != nullptr)
+	{
+		fseek(File, 0, SEEK_END);
+		long Size = ftell(File);
+		fseek(File, 0, SEEK_SET);
+
+		if (Size <= MAX_PALROM_SIZE)
+		{
+			// Read ROM:
+			fread(Roms[Bank], 1, MAX_ROM_SIZE, File);
+
+			// Read PAL ROM:
+			fseek(File, 0L, SEEK_SET);
+			fread(PALRom[Bank].Rom, 1, Size, File);
+			fclose(File);
+
+			PALRom[Bank].Type = GuessRomType(PALRom[Bank].Rom, Size);
+
+			if (PALRom[Bank].Type != PALRomType::none)
+			{
+				RomBankType[Bank] = BankType::Rom;
+				RomWritable[Bank] = false;
+			}
+
+			// Try to read ROM memory map:
+			std::string MapFileName = ReplaceFileExt(RomFileName, ".map");
+
+			DebugLoadMemoryMap(MapFileName.c_str(), Bank);
+		}
+		else
+		{
+			mainWin->Report(MessageType::Error,
+			                "ROM file too large:\n %s", RomFileName.c_str());
+
+			return false;
+		}
+	}
+	else
 	{
 		mainWin->Report(MessageType::Error,
-		                "Cannot open ROM configuration file:\n  %s", filename);
+		                "Cannot open specified ROM:\n %s", RomFileName.c_str());
 
 		return false;
 	}
 
-	for (int model = 0; model < 4 && success; ++model)
-	{
-		for (int bank = 0; bank < 17 && success; ++bank)
-		{
-			if (fgets(line, MAX_PATH, fd) == NULL)
-			{
-				success = false;
-			}
-			else
-			{
-				if (strchr(line, 13)) *strchr(line, 13) = 0;
-				if (strchr(line, 10)) *strchr(line, 10) = 0;
-				strcpy(ROMConfig[model][bank], line);
-			}
-		}
-	}
-
-	if (success && fgets(line, MAX_PATH, fd) != NULL)
-	{
-		// Too many lines
-		success = false;
-	}
-
-	fclose(fd);
-
-	if (!success)
-	{
-		mainWin->Report(MessageType::Error,
-		                "Invalid ROM configuration file:\n  %s", filename);
-
-		memset(ROMConfig, 0, sizeof(ROMConfigFile));
-	}
-
-	return success;
+	return true;
 }
 
 /*----------------------------------------------------------------------------*/
-void BeebReadRoms(void) {
-	FILE *InFile;
-	char fullname[_MAX_PATH];
-	int bank;
-	char *RomName;
-	char *extension;
 
+void BeebReadRoms()
+{
 	// Clear ROMs
-	for (bank = 0; bank < 16; bank++)
+	for (int bank = 0; bank < ROM_BANK_COUNT; bank++)
 	{
 		RomWritable[bank] = false;
 		RomBankType[bank] = BankType::Empty;
@@ -1219,59 +1265,51 @@ void BeebReadRoms(void) {
 	}
 
 	// Read OS ROM
-	RomName = RomConfig[static_cast<int>(MachineType)][0];
-	strcpy(fullname,RomName);
-	if ((RomName[0]!='\\') && (RomName[1]!=':')) {
-		strcpy(fullname,RomPath);
-		strcat(fullname,"BeebFile/");
-		strcat(fullname,RomName);
-	}
+	const std::string& OSRomName = RomConfig.GetFileName(MachineType, 0);
+	std::string OSRomFileName = GetRomFileName(OSRomName);
 
-	InFile=fopen(fullname,"rb");
-	if (InFile!=NULL)
+	FILE *InFile = fopen(OSRomFileName.c_str(), "rb");
+
+	if (InFile != nullptr)
 	{
 		fread(WholeRam + 0xc000, 1, MAX_ROM_SIZE, InFile);
 		fclose(InFile);
+
 		// Try to read OS ROM memory map:
-		if((extension = strrchr(fullname, '.')) != NULL)
-			*extension = 0;
-		strncat(fullname, ".map", _MAX_PATH);
-		DebugLoadMemoryMap(fullname, 16);
+		std::string MapFileName = ReplaceFileExt(OSRomFileName, ".map");
+
+		DebugLoadMemoryMap(MapFileName.c_str(), 16);
 	}
 	else {
 		mainWin->Report(MessageType::Error,
-		                "Cannot open specified OS ROM:\n %s", fullname);
+		                "Cannot open specified OS ROM:\n %s", OSRomFileName.c_str());
 	}
 
-	// read paged ROMs
-	for (bank=15;bank>=0;bank--)
+	// Read paged ROMs
+	for (int bank = ROM_BANK_COUNT - 1; bank >= 0; bank--)
 	{
-		RomName = RomConfig[static_cast<int>(MachineType)][16-bank];
-		strcpy(fullname,RomName);
-		if ((RomName[0]!='\\') && (RomName[1]!=':')) {
-			strcpy(fullname,RomPath);
-			strcat(fullname,"BeebFile/");
-			strcat(fullname,RomName);
-		}
+		const std::string& RomName = RomConfig.GetFileName(MachineType, ROM_BANK_COUNT - bank);
 
-		if (stricmp(RomName, BANK_EMPTY) == 0)
+		if (RomName == BANK_EMPTY)
 		{
 			RomBankType[bank] = BankType::Empty;
 			RomWritable[bank] = false;
 		}
-		else if (stricmp(RomName, BANK_RAM) == 0)
+		else if (RomName == BANK_RAM)
 		{
 			RomBankType[bank] = BankType::Ram;
 			RomWritable[bank] = true;
 		}
 		else
 		{
-			if (strlen(RomName) >= 4 && strnicmp(RomName + strlen(RomName) - 4, ROM_WRITABLE, 4) == 0)
+			std::string RomFileName = GetRomFileName(RomName);
+
+			if (StringEndsWith(RomName, ROM_WRITABLE))
 			{
 				// Writable ROM
 				RomBankType[bank] = BankType::Ram;
 				RomWritable[bank] = true;
-				fullname[strlen(fullname)-4]=0;
+				RomFileName = std::string(RomFileName, 0, RomFileName.size() - strlen(ROM_WRITABLE));
 			}
 			else
 			{
@@ -1279,58 +1317,23 @@ void BeebReadRoms(void) {
 				RomWritable[bank] = false;
 			}
 
-			InFile = fopen(fullname, "rb");
-
-			if (InFile != nullptr)
-			{
-				fseek(InFile, 0, SEEK_END);
-				long Size = ftell(InFile);
-				fseek(InFile, 0, SEEK_SET);
-
-				if (Size <= MAX_PALROM_SIZE)
-				{
-					// Read ROM:
-					fread(Roms[bank], 1, MAX_ROM_SIZE, InFile);
-
-					// Read PAL ROM:
-					fseek(InFile, 0L, SEEK_SET);
-					fread(PALRom[bank].Rom, 1, Size, InFile);
-					fclose(InFile);
-
-					PALRom[bank].Type = GuessRomType(PALRom[bank].Rom, Size);
-
-					if (PALRom[bank].Type != PALRomType::none)
-					{
-						RomBankType[bank] = BankType::Rom;
-						RomWritable[bank] = false;
-					}
-
-					// Try to read ROM memory map:
-					if((extension = strrchr(fullname, '.')) != NULL)
-						*extension = 0;
-					strncat(fullname, ".map", _MAX_PATH);
-					DebugLoadMemoryMap(fullname, bank);
-				}
-				else
-				{
-					mainWin->Report(MessageType::Error,
-					                "ROM file too large:\n %s", fullname);
-				}
-			}
-			else {
-				mainWin->Report(MessageType::Error,
-				                "Cannot open specified ROM:\n %s", fullname);
-			}
+			ReadRom(RomFileName, bank);
 		}
 	}
 }
+
 /*----------------------------------------------------------------------------*/
-void RTCReset(void) {
+
+void IntegraBRTCReset()
+{
 	Hidden[0xb] &= 0x87; /* clear bits in register B */
 	Hidden[0xc] = 0;
 }
+
 /*----------------------------------------------------------------------------*/
-void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig) {
+
+void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig)
+{
   // Reset everything
   memset(WholeRam,0,0x8000);
   memset(FSRam,0,0x2000);
@@ -1377,6 +1380,7 @@ void SaveMemUEF(FILE *SUEF)
 	switch (MachineType) {
 	case Model::B:
 	case Model::Master128:
+	case Model::MasterET:
 		fput16(0x0461,SUEF); // Memory Control State
 		fput32(2,SUEF);
 		fputc(PagedRomReg,SUEF);
@@ -1427,6 +1431,7 @@ void SaveMemUEF(FILE *SUEF)
 		break;
 
 	case Model::Master128:
+	case Model::MasterET:
 		fput16(0x0463,SUEF); // Shadow RAM
 		fput32(32770,SUEF);
 		fput16(0,SUEF);
@@ -1440,7 +1445,7 @@ void SaveMemUEF(FILE *SUEF)
 		break;
 	}
 
-	for (int bank = 0; bank < 16; bank++)
+	for (int bank = 0; bank < ROM_BANK_COUNT; bank++)
 	{
 		switch (RomBankType[bank])
 		{
@@ -1503,6 +1508,7 @@ void LoadRomRegsUEF(FILE *SUEF) {
 		break;
 
 	case Model::Master128:
+	case Model::MasterET:
 		PrivateRAMSelect = (PagedRomReg & 0x80) != 0;
 		Sh_Display = (ACCCON & 1) != 0;
 		Sh_CPUX = (ACCCON & 4) != 0;
@@ -1526,6 +1532,7 @@ void LoadShadMemUEF(FILE *SUEF) {
 		fread(ShadowRAM,1,32768,SUEF);
 		break;
 	case Model::Master128:
+	case Model::MasterET:
 		SAddr=fget16(SUEF);
 		fread(ShadowRAM+SAddr,1,32768,SUEF);
 		break;
@@ -1541,6 +1548,7 @@ void LoadPrivMemUEF(FILE *SUEF) {
 		fread(Private,1,12288,SUEF);
 		break;
 	case Model::Master128:
+	case Model::MasterET:
 		fread(PrivateRAM,1,4096,SUEF);
 		break;
 	}

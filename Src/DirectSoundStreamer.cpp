@@ -15,8 +15,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -87,7 +87,7 @@ bool DirectSoundStreamer::Init(std::size_t rate,
 
 	wfx.wFormatTag      = WAVE_FORMAT_PCM;
 	wfx.nChannels       = (WORD)m_channels;
-	wfx.nSamplesPerSec  = m_rate;
+	wfx.nSamplesPerSec  = (DWORD)m_rate;
 	wfx.wBitsPerSample  = (WORD)(m_bytespersample * 8);
 	wfx.nBlockAlign     = wfx.nChannels * wfx.wBitsPerSample / 8;
 	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
@@ -97,7 +97,7 @@ bool DirectSoundStreamer::Init(std::size_t rate,
 
 	BufferDesc.dwSize          = sizeof(DSBUFFERDESC);
 	BufferDesc.dwFlags         = DSBCAPS_GETCURRENTPOSITION2;
-	BufferDesc.dwBufferBytes   = m_physical;
+	BufferDesc.dwBufferBytes   = (DWORD)m_physical;
 	BufferDesc.lpwfxFormat     = &wfx;
 	BufferDesc.guid3DAlgorithm = DS3DALG_DEFAULT;
 
@@ -152,7 +152,7 @@ void DirectSoundStreamer::Stream(const void *pSamples)
 		return;
 
 	if (write < play)
-		write += m_physical;
+		write += (DWORD)m_physical;
 
 	std::size_t begin = m_begin;
 

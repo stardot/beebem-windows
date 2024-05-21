@@ -137,7 +137,7 @@ void Music5000Init()
 	else
 	{
 		pSoundStreamer->Play();
-		SampleBufSize = pSoundStreamer->BufferSize();
+		SampleBufSize = (UINT32)pSoundStreamer->BufferSize();
 		if (SampleBuf)
 			free(SampleBuf);
 		SampleBuf = (INT16*)malloc(SampleBufSize * 4);

@@ -30,10 +30,8 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef char ROMConfigFile[4][17][_MAX_PATH];
-static const char *BANK_EMPTY = "EMPTY";
-static const char *BANK_RAM = "RAM";
-static const char *ROM_WRITABLE = ":RAM";
+#include "Model.h"
+#include "RomConfigFile.h"
 
 enum class BankType
 {
@@ -42,11 +40,11 @@ enum class BankType
 	Empty
 };
 
-extern bool RomWritable[16]; // Allow writing to banks on an individual basis
-extern BankType RomBankType[16]; // Identifies what is in each bank
+extern bool RomWritable[ROM_BANK_COUNT]; // Allow writing to banks on an individual basis
+extern BankType RomBankType[ROM_BANK_COUNT]; // Identifies what is in each bank
 
 extern unsigned char WholeRam[65536];
-extern unsigned char Roms[16][16384];
+extern unsigned char Roms[ROM_BANK_COUNT][16384];
 extern unsigned char ROMSEL;
 extern unsigned char PagedRomReg;
 
@@ -88,7 +86,7 @@ struct RomInfo {
 extern bool Sh_Display;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 
-extern ROMConfigFile RomConfig;
+extern RomConfigFile RomConfig;
 extern char RomPath[_MAX_PATH];
 extern char RomFile[_MAX_PATH];
 
@@ -99,10 +97,9 @@ void BeebWriteMem(int Address, unsigned char Value);
 #define BEEBWRITEMEM_DIRECT(Address, Value) WholeRam[Address] = Value
 const unsigned char *BeebMemPtrWithWrap(int Address, int Length);
 const unsigned char *BeebMemPtrWithWrapMode7(int Address, int Length);
-bool ReadROMConfigFile(const char *filename, ROMConfigFile RomConfig);
 void BeebReadRoms(void);
 void BeebMemInit(bool LoadRoms, bool SkipIntegraBConfig);
-void RTCReset(void);
+void IntegraBRTCReset();
 
 /* used by debugger */
 bool ReadRomInfo(int bank, RomInfo* info);
