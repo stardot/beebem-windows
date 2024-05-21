@@ -227,7 +227,7 @@ class Master512CoPro
 
 		// Eight general registers, viewed as 16-bit or as 8-bit registers
 		union
-		{ 
+		{
 			uint16_t w[8];
 			uint8_t  b[16];
 		} m_regs;
@@ -277,11 +277,11 @@ class Master512CoPro
 		uint32_t m_ParityVal;
 
 		uint32_t m_pending_irq;
-		uint32_t m_nmi_state;
-		uint32_t m_irq_state;
+		int m_nmi_state;
+		int m_irq_state;
 		uint8_t m_no_interrupt;
 		uint8_t m_fire_trap;
-		uint8_t m_test_state;
+		int m_test_state;
 
 		int m_icount;
 

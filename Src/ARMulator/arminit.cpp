@@ -106,7 +106,7 @@ ARMul_NewState (void)
     state->MemSize = 0;
     state->ROMDataPtr = NULL;
 
-    state->CP14R0_CCD = -1;
+    state->CP14R0_CCD = (ARMword)-1;
     state->LastTime = 0;
 
     state->EventSet = 0;
@@ -283,7 +283,6 @@ void
 ARMul_Abort (ARMul_State * state, ARMword vector)
 {
     ARMword temp;
-    int isize = INSN_SIZE;
     int esize = (TFLAG ? 0 : 4);
     int e2size = (TFLAG ? -4 : 0);
 

@@ -551,7 +551,7 @@ void SoundInit() {
   if (SoundSampleRate == 44100) SoundAutoTriggerTime = 5000;
   if (SoundSampleRate == 22050) SoundAutoTriggerTime = 10000;
   if (SoundSampleRate == 11025) SoundAutoTriggerTime = 20000;
-  SoundBufferSize = pSoundStreamer ? pSoundStreamer->BufferSize() : SoundSampleRate / 50;
+  SoundBufferSize = (int)(pSoundStreamer ? pSoundStreamer->BufferSize() : SoundSampleRate / 50);
   LoadSoundSamples();
   SoundTrigger = TotalCycles + SoundAutoTriggerTime;
 }
