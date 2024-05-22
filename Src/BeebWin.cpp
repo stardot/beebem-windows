@@ -1375,11 +1375,45 @@ void BeebWin::UpdateDisplayRendererMenu()
 
 /****************************************************************************/
 
+void BeebWin::SetSoundStreamer(SoundStreamerType StreamerType)
+{
+	SelectedSoundStreamer = StreamerType;
+
+	if (SoundEnabled)
+	{
+		SoundReset();
+		SoundInit();
+	}
+
+	if (Music5000Enabled && MachineType != Model::MasterET)
+	{
+		Music5000Reset();
+		Music5000Init();
+	}
+
+	#if ENABLE_SPEECH
+
+	if (SpeechDefault)
+	{
+		SpeechStop();
+		SpeechStart();
+	}
+
+	#endif
+
+	UpdateSoundStreamerMenu();
+}
+
 void BeebWin::UpdateSoundStreamerMenu()
 {
-	CheckMenuItem(IDM_XAUDIO2, SoundConfig::Selection == SoundConfig::XAudio2);
-	CheckMenuItem(IDM_DIRECTSOUND, SoundConfig::Selection == SoundConfig::DirectSound);
+	CheckMenuRadioItem(
+		IDM_XAUDIO2,
+		IDM_DIRECTSOUND,
+		SelectedSoundStreamer == SoundStreamerType::XAudio2 ? IDM_XAUDIO2 : IDM_DIRECTSOUND
+	);
 }
+
+/****************************************************************************/
 
 void BeebWin::UpdateMonitorMenu()
 {
@@ -3453,32 +3487,11 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_XAUDIO2:
+		SetSoundStreamer(SoundStreamerType::XAudio2);
+		break;
+
 	case IDM_DIRECTSOUND:
-		SoundConfig::Selection = MenuID == IDM_XAUDIO2 ? SoundConfig::XAudio2 : SoundConfig::DirectSound;
-
-		if (SoundEnabled)
-		{
-			SoundReset();
-			SoundInit();
-		}
-
-		if (Music5000Enabled && MachineType != Model::MasterET)
-		{
-			Music5000Reset();
-			Music5000Init();
-		}
-
-		#if ENABLE_SPEECH
-
-		if (SpeechDefault)
-		{
-			SpeechStop();
-			SpeechStart();
-		}
-
-		#endif
-
-		UpdateSoundStreamerMenu();
+		SetSoundStreamer(SoundStreamerType::DirectSound);
 		break;
 
 	case IDM_SOUNDONOFF:

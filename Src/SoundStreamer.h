@@ -26,16 +26,6 @@ Boston, MA  02110-1301, USA.
 
 #include <list>
 
-namespace SoundConfig
-{
-	extern enum Option
-	{
-		XAudio2,
-		DirectSound
-	}
-	Selection;
-}
-
 class SoundStreamer
 {
 	public:

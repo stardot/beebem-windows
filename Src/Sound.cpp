@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 #include "Sound.h"
 #include "6502core.h"
 #include "AviWriter.h"
+#include "BeebWin.h"
 #include "Main.h"
 #include "SoundStreamer.h"
 #include "Speech.h"
@@ -70,7 +71,7 @@ const int NUM_SOUND_SAMPLES = sizeof(SoundSamples) / sizeof(SoundSample);
 
 static bool SoundSamplesLoaded = false;
 
-SoundConfig::Option SoundConfig::Selection;
+SoundStreamerType SelectedSoundStreamer;
 bool SoundEnabled = false;
 bool RelaySoundEnabled = false;
 bool DiscDriveSoundEnabled = false;

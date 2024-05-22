@@ -152,6 +152,11 @@ enum class DisplayRendererType {
 	DirectX9
 };
 
+enum class SoundStreamerType {
+	XAudio2,
+	DirectSound
+};
+
 class BeebWin
 {
 public:
@@ -323,6 +328,7 @@ public:
 	void SetDisplayRenderer(DisplayRendererType DisplayRenderer);
 	void UpdateDisplayRendererMenu();
 
+	void SetSoundStreamer(SoundStreamerType StreamerType);
 	void UpdateSoundStreamerMenu();
 
 	void CheckMenuItem(UINT id, bool checked);

@@ -267,11 +267,21 @@ void BeebWin::LoadPreferences()
 		m_MenuIDTiming = dword;
 	else
 		m_MenuIDTiming = IDM_REALTIME;
+
 	TranslateTiming();
 
-	if (!m_Preferences.GetDWORDValue("SoundConfig::Selection", dword))
-		dword = 0;
-	SoundConfig::Selection = SoundConfig::Option(dword);
+	if (m_Preferences.GetDWORDValue("SoundConfig::Selection", dword))
+	{
+		switch (dword)
+		{
+			case 0: default: SelectedSoundStreamer = SoundStreamerType::XAudio2; break;
+			case 1:          SelectedSoundStreamer = SoundStreamerType::DirectSound; break;
+		}
+	}
+	else
+	{
+		SelectedSoundStreamer = SoundStreamerType::XAudio2;
+	}
 
 	if (!m_Preferences.GetBoolValue(CFG_SOUND_ENABLED, SoundDefault))
 		SoundDefault = true;
@@ -822,7 +832,7 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		m_Preferences.SetDWORDValue(CFG_SPEED_TIMING, m_MenuIDTiming);
 
-		m_Preferences.SetDWORDValue("SoundConfig::Selection", SoundConfig::Selection);
+		m_Preferences.SetDWORDValue("SoundConfig::Selection", (DWORD)SelectedSoundStreamer);
 		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
 		m_Preferences.SetBoolValue("SoundChipEnabled", SoundChipEnabled);
 		m_Preferences.SetDWORDValue(CFG_SOUND_SAMPLE_RATE, m_MenuIDSampleRate);
