@@ -448,7 +448,7 @@ void BeebWin::ApplyPrefs()
 		PrinterDisable();
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
-	if (m_MenuIDSticks == IDM_JOYSTICK)
+	if (m_JoystickOption == JoystickOption::Joystick)
 		InitJoystick();
 
 	LoadFDC(NULL, true);
@@ -1303,11 +1303,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(ID_USER_PORT_RTC_MODULE, UserPortRTCEnabled);
 
 	// Options
-	CheckMenuItem(IDM_JOYSTICK, false);
-	CheckMenuItem(IDM_ANALOGUE_MOUSESTICK, false);
-	CheckMenuItem(IDM_DIGITAL_MOUSESTICK, false);
-	if (m_MenuIDSticks != 0)
-		CheckMenuItem(m_MenuIDSticks, true);
+	UpdateJoystickMenu();
 	CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
 	CheckMenuItem(IDM_HIDECURSOR, m_HideCursor);
 	CheckMenuItem(IDM_DEFAULTKYBDMAPPING, false);
@@ -1624,12 +1620,14 @@ void BeebWin::UpdateModelMenu()
 	EnableMenuItem(IDM_DIGITAL_MOUSESTICK, !IsMasterET);
 }
 
-void BeebWin::UpdateSFXMenu() {
+void BeebWin::UpdateSFXMenu()
+{
 	CheckMenuItem(ID_SFX_RELAY, RelaySoundEnabled);
 	CheckMenuItem(ID_SFX_DISCDRIVES, DiscDriveSoundEnabled);
 }
 
-void BeebWin::UpdateDisableKeysMenu() {
+void BeebWin::UpdateDisableKeysMenu()
+{
 	CheckMenuItem(IDM_DISABLEKEYSWINDOWS, m_DisableKeysWindows);
 	CheckMenuItem(IDM_DISABLEKEYSBREAK, m_DisableKeysBreak);
 	CheckMenuItem(IDM_DISABLEKEYSESCAPE, m_DisableKeysEscape);
@@ -1708,7 +1706,67 @@ void BeebWin::SetRomMenu()
 
 /****************************************************************************/
 
-void BeebWin::InitJoystick(void)
+void BeebWin::SetJoystickOption(JoystickOption Option)
+{
+	// Disable current selection.
+	if (m_JoystickOption == JoystickOption::Joystick)
+	{
+		ResetJoystick();
+	}
+	else if (m_JoystickOption == JoystickOption::AnalogueMouseStick ||
+	         m_JoystickOption == JoystickOption::DigitalMouseStick)
+	{
+		AtoDDisable();
+	}
+
+	// Initialise new selection.
+	m_JoystickOption = Option;
+
+	if (m_JoystickOption == JoystickOption::Joystick)
+	{
+		InitJoystick();
+	}
+	else if (m_JoystickOption == JoystickOption::AnalogueMouseStick ||
+	         m_JoystickOption == JoystickOption::DigitalMouseStick)
+	{
+		AtoDEnable();
+	}
+
+	if (!JoystickEnabled)
+	{
+		m_JoystickOption = JoystickOption::Disabled;
+	}
+
+	UpdateJoystickMenu();
+}
+
+void BeebWin::UpdateJoystickMenu()
+{
+	static const struct { UINT ID; JoystickOption Joystick; } MenuItems[] =
+	{
+		{ IDM_JOYSTICK_DISABLED,   JoystickOption::Disabled },
+		{ IDM_JOYSTICK,            JoystickOption::Joystick },
+		{ IDM_ANALOGUE_MOUSESTICK, JoystickOption::AnalogueMouseStick },
+		{ IDM_DIGITAL_MOUSESTICK,  JoystickOption::DigitalMouseStick }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_JoystickOption == MenuItems[i].Joystick)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_JOYSTICK_DISABLED, IDM_DIGITAL_MOUSESTICK, SelectedMenuItemID);
+}
+
+/****************************************************************************/
+
+void BeebWin::InitJoystick()
 {
 	MMRESULT mmresult = JOYERR_NOERROR;
 
@@ -1739,7 +1797,7 @@ void BeebWin::InitJoystick(void)
 /****************************************************************************/
 void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 {
-	if (m_MenuIDSticks == IDM_JOYSTICK)
+	if (m_JoystickOption == JoystickOption::Joystick)
 	{
 		/* Scale and reverse the readings */
 		JoystickX = (int)((double)(m_JoystickCaps.wXmax - x) * 65535.0 /
@@ -1750,7 +1808,8 @@ void BeebWin::ScaleJoystick(unsigned int x, unsigned int y)
 }
 
 /****************************************************************************/
-void BeebWin::ResetJoystick(void)
+
+void BeebWin::ResetJoystick()
 {
 	// joySetCapture() fails after a joyReleaseCapture() call (not sure why)
 	// so leave joystick captured.
@@ -1761,8 +1820,8 @@ void BeebWin::ResetJoystick(void)
 /****************************************************************************/
 void BeebWin::SetMousestickButton(int index, bool button)
 {
-	if (m_MenuIDSticks == IDM_ANALOGUE_MOUSESTICK ||
-	    m_MenuIDSticks == IDM_DIGITAL_MOUSESTICK)
+	if (m_JoystickOption == JoystickOption::AnalogueMouseStick ||
+	    m_JoystickOption == JoystickOption::DigitalMouseStick)
 	{
 		JoystickButton[index] = button;
 	}
@@ -1774,12 +1833,12 @@ void BeebWin::ScaleMousestick(unsigned int x, unsigned int y)
 	static int lastx = 32768;
 	static int lasty = 32768;
 
-	if (m_MenuIDSticks == IDM_ANALOGUE_MOUSESTICK)
+	if (m_JoystickOption == JoystickOption::AnalogueMouseStick)
 	{
 		JoystickX = (m_XWinSize - x) * 65535 / m_XWinSize;
 		JoystickY = (m_YWinSize - y) * 65535 / m_YWinSize;
 	}
-	else if (m_MenuIDSticks == IDM_DIGITAL_MOUSESTICK)
+	else if (m_JoystickOption == JoystickOption::DigitalMouseStick)
 	{
 		int dx = x - lastx;
 		int dy = y - lasty;
@@ -3370,7 +3429,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 				{
 					// Also switch on analogue mousestick (touch screen uses
 					// mousestick position)
-					if (m_MenuIDSticks != IDM_ANALOGUE_MOUSESTICK)
+					if (m_JoystickOption != JoystickOption::AnalogueMouseStick)
 					{
 						HandleCommand(IDM_ANALOGUE_MOUSESTICK);
 					}
@@ -3664,48 +3723,20 @@ void BeebWin::HandleCommand(UINT MenuID)
 		TogglePause();
 		break;
 
+	case IDM_JOYSTICK_DISABLED:
+		SetJoystickOption(JoystickOption::Disabled);
+		break;
+
 	case IDM_JOYSTICK:
+		SetJoystickOption(JoystickOption::Joystick);
+		break;
+
 	case IDM_ANALOGUE_MOUSESTICK:
+		SetJoystickOption(JoystickOption::AnalogueMouseStick);
+		break;
+
 	case IDM_DIGITAL_MOUSESTICK:
-		/* Disable current selection */
-		if (m_MenuIDSticks != 0)
-		{
-			CheckMenuItem(m_MenuIDSticks, false);
-
-			if (m_MenuIDSticks == IDM_JOYSTICK)
-			{
-				ResetJoystick();
-			}
-			else /* mousestick */
-			{
-				AtoDDisable();
-			}
-		}
-
-		if (MenuID == m_MenuIDSticks)
-		{
-			/* Joysticks switched off completely */
-			m_MenuIDSticks = 0;
-		}
-		else
-		{
-			/* Initialise new selection */
-			m_MenuIDSticks = MenuID;
-
-			if (m_MenuIDSticks == IDM_JOYSTICK)
-			{
-				InitJoystick();
-			}
-			else /* mousestick */
-			{
-				AtoDEnable();
-			}
-
-			if (JoystickEnabled)
-				CheckMenuItem(m_MenuIDSticks, true);
-			else
-				m_MenuIDSticks = 0;
-		}
+		SetJoystickOption(JoystickOption::DigitalMouseStick);
 		break;
 
 	case IDM_FREEZEINACTIVE:
@@ -4820,8 +4851,11 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 			SetDisplayRenderer(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
-			if (m_MenuIDSticks == IDM_JOYSTICK && MachineType != Model::MasterET)
+
+			if (m_JoystickOption == JoystickOption::Joystick && MachineType != Model::MasterET)
+			{
 				InitJoystick();
+			}
 		}
 	}
 

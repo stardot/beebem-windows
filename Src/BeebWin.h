@@ -157,6 +157,13 @@ enum class SoundStreamerType {
 	DirectSound
 };
 
+enum class JoystickOption {
+	Disabled,
+	Joystick,
+	AnalogueMouseStick,
+	DigitalMouseStick
+};
+
 class BeebWin
 {
 public:
@@ -372,8 +379,12 @@ public:
 	bool Load8271DiscImage(const char *FileName, int Drive, int Tracks, DiscType Type);
 	void LoadTape();
 	bool LoadTape(const char *FileName);
-	void InitJoystick(void);
-	void ResetJoystick(void);
+
+	void SetJoystickOption(JoystickOption Option);
+	void UpdateJoystickMenu();
+	void InitJoystick();
+	void ResetJoystick();
+
 	void RestoreState(void);
 	void SaveState(void);
 	void NewDiscImage(int Drive);
@@ -560,7 +571,7 @@ public:
 	// Joystick input
 	bool m_JoystickCaptured;
 	JOYCAPS m_JoystickCaps;
-	UINT m_MenuIDSticks;
+	JoystickOption m_JoystickOption;
 
 	// Mouse capture
 	bool m_HideCursor;

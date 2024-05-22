@@ -371,9 +371,19 @@ void BeebWin::LoadPreferences()
 		Music5000Enabled = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
-		m_MenuIDSticks = dword;
+	{
+		switch (dword)
+		{
+			case 1: case 40030: m_JoystickOption = JoystickOption::Joystick; break;
+			case 2: case 40205: m_JoystickOption = JoystickOption::AnalogueMouseStick; break;
+			case 3: case 40206: m_JoystickOption = JoystickOption::DigitalMouseStick; break;
+			case 0: default:    m_JoystickOption = JoystickOption::Disabled; break;
+		}
+	}
 	else
-		m_MenuIDSticks = 0;
+	{
+		m_JoystickOption = JoystickOption::Disabled;
+	}
 
 	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
 		m_FreezeWhenInactive = true;
@@ -887,7 +897,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("TextToSpeechSpeakPunctuation", m_SpeechSpeakPunctuation);
 		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
 
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIDSticks);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, (DWORD)m_JoystickOption);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);

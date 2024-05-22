@@ -257,7 +257,6 @@
 #define IDM_10FPS                       40027
 #define IDM_5FPS                        40028
 #define IDM_1FPS                        40029
-#define IDM_JOYSTICK                    40030
 #define IDM_HIDECURSOR                  40032
 #define IDM_DEFAULTKYBDMAPPING          40034
 #define IDM_LOGICALKYBDMAPPING          40035
@@ -397,8 +396,10 @@
 #define IDM_EJECTDISC0                  40201
 #define IDM_EJECTDISC1                  40202
 #define IDM_EXPVOLUME                   40203
-#define IDM_ANALOGUE_MOUSESTICK         40205
-#define IDM_DIGITAL_MOUSESTICK          40206
+#define IDM_JOYSTICK_DISABLED           40204
+#define IDM_JOYSTICK                    40205
+#define IDM_ANALOGUE_MOUSESTICK         40206
+#define IDM_DIGITAL_MOUSESTICK          40207
 #define ID_BREAKOUT                     40208
 #define IDM_TEXTTOSPEECH_ENABLE         40209
 #define IDM_TEXTVIEW                    40210
