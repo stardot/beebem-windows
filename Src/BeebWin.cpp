@@ -1258,15 +1258,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_SOUNDCHIP, SoundChipEnabled);
 	UpdateSFXMenu();
 	CheckMenuItem(ID_TAPESOUND, TapeSoundEnabled);
-	CheckMenuItem(IDM_44100KHZ, false);
-	CheckMenuItem(IDM_22050KHZ, false);
-	CheckMenuItem(IDM_11025KHZ, false);
-	CheckMenuItem(m_MenuIDSampleRate, true);
-	CheckMenuItem(IDM_HIGHVOLUME, false);
-	CheckMenuItem(IDM_MEDIUMVOLUME, false);
-	CheckMenuItem(IDM_LOWVOLUME, false);
-	CheckMenuItem(IDM_FULLVOLUME, false);
-	CheckMenuItem(m_MenuIDVolume, true);
+	UpdateSoundSampleRateMenu();
+	UpdateSoundVolumeMenu();
 	CheckMenuItem(ID_PSAMPLES, PartSamples);
 	CheckMenuItem(IDM_EXPVOLUME, SoundExponentialVolume);
 	CheckMenuItem(IDM_TEXTTOSPEECH_ENABLE, m_TextToSpeechEnabled);
@@ -1411,6 +1404,93 @@ void BeebWin::UpdateSoundStreamerMenu()
 		IDM_DIRECTSOUND,
 		SelectedSoundStreamer == SoundStreamerType::XAudio2 ? IDM_XAUDIO2 : IDM_DIRECTSOUND
 	);
+}
+
+/****************************************************************************/
+
+void BeebWin::SetSoundSampleRate(int SampleRate)
+{
+	if (SampleRate != m_SampleRate)
+	{
+		m_SampleRate = SampleRate;
+
+		UpdateSoundSampleRateMenu();
+
+		if (SoundEnabled)
+		{
+			SoundReset();
+			SoundInit();
+		}
+
+		#if ENABLE_SPEECH
+
+		if (SpeechDefault)
+		{
+			SpeechStop();
+			SpeechStart();
+		}
+
+		#endif
+	}
+}
+
+void BeebWin::UpdateSoundSampleRateMenu()
+{
+	static const struct { UINT ID; int SampleRate; } MenuItems[] =
+	{
+		{ IDM_44100KHZ, 44100 },
+		{ IDM_22050KHZ, 22050 },
+		{ IDM_11025KHZ, 11025 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_SampleRate == MenuItems[i].SampleRate)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_44100KHZ, IDM_11025KHZ, SelectedMenuItemID);
+}
+
+/****************************************************************************/
+
+void BeebWin::SetSoundVolume(int Volume)
+{
+	if (Volume != m_SoundVolume)
+	{
+		m_SoundVolume = Volume;
+
+		UpdateSoundVolumeMenu();
+	}
+}
+
+void BeebWin::UpdateSoundVolumeMenu()
+{
+	static const struct { UINT ID; int Volume; } MenuItems[] =
+	{
+		{ IDM_FULLVOLUME,   100 },
+		{ IDM_HIGHVOLUME,   75 },
+		{ IDM_MEDIUMVOLUME, 50 },
+		{ IDM_LOWVOLUME,    25 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_SoundVolume == MenuItems[i].Volume)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_FULLVOLUME, IDM_LOWVOLUME, SelectedMenuItemID);
 }
 
 /****************************************************************************/
@@ -2567,50 +2647,6 @@ void BeebWin::TranslateWindowSize(void)
 }
 
 /****************************************************************************/
-void BeebWin::TranslateSampleRate(void)
-{
-	switch (m_MenuIDSampleRate)
-	{
-	default:
-	case IDM_44100KHZ:
-		SoundSampleRate = 44100;
-		break;
-
-	case IDM_22050KHZ:
-		SoundSampleRate = 22050;
-		break;
-
-	case IDM_11025KHZ:
-		SoundSampleRate = 11025;
-		break;
-	}
-}
-
-/****************************************************************************/
-void BeebWin::TranslateVolume(void)
-{
-	switch (m_MenuIDVolume)
-	{
-	default:
-	case IDM_FULLVOLUME:
-		SoundVolume = 100;
-		break;
-
-	case IDM_HIGHVOLUME:
-		SoundVolume = 75;
-		break;
-
-	case IDM_MEDIUMVOLUME:
-		SoundVolume = 50;
-		break;
-
-	case IDM_LOWVOLUME:
-		SoundVolume = 25;
-		break;
-	}
-}
-
-/****************************************************************************/
 
 void BeebWin::TranslateTiming()
 {
@@ -3527,44 +3563,31 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_44100KHZ:
+		SetSoundSampleRate(44100);
+		break;
+
 	case IDM_22050KHZ:
+		SetSoundSampleRate(22050);
+		break;
+
 	case IDM_11025KHZ:
-		if (MenuID != m_MenuIDSampleRate)
-		{
-			CheckMenuItem(m_MenuIDSampleRate, false);
-			m_MenuIDSampleRate = MenuID;
-			CheckMenuItem(m_MenuIDSampleRate, true);
-			TranslateSampleRate();
-
-			if (SoundEnabled)
-			{
-				SoundReset();
-				SoundInit();
-			}
-
-			#if ENABLE_SPEECH
-
-			if (SpeechDefault)
-			{
-				SpeechStop();
-				SpeechStart();
-			}
-
-			#endif
-		}
+		SetSoundSampleRate(11025);
 		break;
 
 	case IDM_FULLVOLUME:
+		SetSoundVolume(100);
+		break;
+
 	case IDM_HIGHVOLUME:
+		SetSoundVolume(75);
+		break;
+
 	case IDM_MEDIUMVOLUME:
+		SetSoundVolume(50);
+		break;
+
 	case IDM_LOWVOLUME:
-		if (MenuID != m_MenuIDVolume)
-		{
-			CheckMenuItem(m_MenuIDVolume, false);
-			m_MenuIDVolume = MenuID;
-			CheckMenuItem(m_MenuIDVolume, true);
-			TranslateVolume();
-		}
+		SetSoundVolume(25);
 		break;
 
 	case IDM_MUSIC5000:

@@ -331,6 +331,12 @@ public:
 	void SetSoundStreamer(SoundStreamerType StreamerType);
 	void UpdateSoundStreamerMenu();
 
+	void SetSoundSampleRate(int SampleRate);
+	void UpdateSoundSampleRateMenu();
+
+	void SetSoundVolume(int Volume);
+	void UpdateSoundVolumeMenu();
+
 	void CheckMenuItem(UINT id, bool checked);
 	void CheckMenuRadioItem(UINT FirstID, UINT LastID, UINT SelectedID);
 	void EnableMenuItem(UINT id, bool enabled);
@@ -358,8 +364,6 @@ public:
 	void TranslateWindowSize(void);
 	void TranslateDDSize(void);
 	void CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight);
-	void TranslateSampleRate(void);
-	void TranslateVolume(void);
 	void TranslateTiming();
 	void SetRealTimeTarget(double RealTimeTarget);
 	void TranslateKeyMapping(void);
@@ -550,8 +554,8 @@ public:
 	D3DXMATRIX m_TextureMatrix;
 
 	// Audio
-	UINT m_MenuIDSampleRate;
-	UINT m_MenuIDVolume;
+	int m_SampleRate;
+	int m_SoundVolume;
 
 	// Joystick input
 	bool m_JoystickCaptured;

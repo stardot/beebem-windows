@@ -289,17 +289,56 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("SoundChipEnabled", SoundChipEnabled))
 		SoundChipEnabled = true;
 
-	if (m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, dword))
-		m_MenuIDSampleRate = dword;
+	if (m_Preferences.GetDecimalValue(CFG_SOUND_SAMPLE_RATE, dword))
+	{
+		if (dword == 11025 || dword == 22050 || dword == 44100)
+		{
+			m_SampleRate = dword;
+		}
+		else
+		{
+			m_SampleRate = 44100;
+		}
+	}
+	else if (m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, dword))
+	{
+		switch (dword)
+		{
+			case 40016:          m_SampleRate = 11025; break;
+			case 40015:          m_SampleRate = 22050; break;
+			case 40014: default: m_SampleRate = 44100; break;
+		}
+	}
 	else
-		m_MenuIDSampleRate = IDM_44100KHZ;
-	TranslateSampleRate();
+	{
+		m_SampleRate = 44100;
+	}
 
-	if (m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, dword))
-		m_MenuIDVolume = dword;
+	if (m_Preferences.GetDecimalValue(CFG_SOUND_VOLUME, dword))
+	{
+		if (dword == 25 || dword == 50 || dword == 75 || dword == 100)
+		{
+			m_SoundVolume = dword;
+		}
+		else
+		{
+			m_SoundVolume = 100;
+		}
+	}
+	else if (m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, dword))
+	{
+		switch (dword)
+		{
+			case 40017:          m_SoundVolume = 75; break;
+			case 40018:          m_SoundVolume = 50; break;
+			case 40019:          m_SoundVolume = 25; break;
+			case 40021: default: m_SoundVolume = 100; break;
+		}
+	}
 	else
-		m_MenuIDVolume = IDM_FULLVOLUME;
-	TranslateVolume();
+	{
+		m_SoundVolume = 100;
+	}
 
 	if (!m_Preferences.GetBoolValue("RelaySoundEnabled", RelaySoundEnabled))
 		RelaySoundEnabled = false;
@@ -835,8 +874,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("SoundConfig::Selection", (DWORD)SelectedSoundStreamer);
 		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
 		m_Preferences.SetBoolValue("SoundChipEnabled", SoundChipEnabled);
-		m_Preferences.SetDWORDValue(CFG_SOUND_SAMPLE_RATE, m_MenuIDSampleRate);
-		m_Preferences.SetDWORDValue(CFG_SOUND_VOLUME, m_MenuIDVolume);
+		m_Preferences.SetDecimalValue(CFG_SOUND_SAMPLE_RATE, m_SampleRate);
+		m_Preferences.SetDecimalValue(CFG_SOUND_VOLUME, m_SoundVolume);
 		m_Preferences.SetBoolValue("RelaySoundEnabled", RelaySoundEnabled);
 		m_Preferences.SetBoolValue("TapeSoundEnabled", TapeSoundEnabled);
 		m_Preferences.SetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled);

@@ -21,6 +21,7 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 
 #include "Preferences.h"
+#include "StringUtils.h"
 
 //-----------------------------------------------------------------------------
 
@@ -233,6 +234,37 @@ void Preferences::SetDWORDValue(const char *id, DWORD dw)
 	char hx[MAX_PREFS_LINE_LEN];
 	sprintf(hx, "%08x", dw);
 	m_Prefs[id] = hx;
+}
+
+//-----------------------------------------------------------------------------
+
+bool Preferences::GetDecimalValue(const char *id, DWORD &Value)
+{
+	PrefsMap::iterator i = m_Prefs.find(id);
+
+	if (i == m_Prefs.end())
+	{
+		return false;
+	}
+
+	int IntValue;
+
+	if (ParseNumber(i->second, &IntValue))
+	{
+		Value = (DWORD)IntValue;
+		return true;
+	}
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+
+bool Preferences::SetDecimalValue(const char *id, DWORD Value)
+{
+	m_Prefs[id] = std::to_string(Value);
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------

@@ -246,10 +246,10 @@
 #define IDM_44100KHZ                    40014
 #define IDM_22050KHZ                    40015
 #define IDM_11025KHZ                    40016
-#define IDM_HIGHVOLUME                  40017
-#define IDM_MEDIUMVOLUME                40018
-#define IDM_LOWVOLUME                   40019
-#define IDM_FULLVOLUME                  40021
+#define IDM_FULLVOLUME                  40017
+#define IDM_HIGHVOLUME                  40018
+#define IDM_MEDIUMVOLUME                40019
+#define IDM_LOWVOLUME                   40020
 #define IDM_LOADDISC1                   40023
 #define IDM_REALTIME                    40024
 #define IDM_50FPS                       40025
@@ -478,7 +478,7 @@
 #define IDM_SELECT_TELETEXT_DATA_SOURCE 40326
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
