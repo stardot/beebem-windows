@@ -191,7 +191,7 @@ BeebWin::BeebWin()
 	m_ClipboardIndex = 0;
 	m_printerbufferlen = 0;
 	m_translateCRLF = true;
-	m_CurrentDisplayRenderer = 0;
+	m_CurrentDisplayRenderer = DisplayRendererType::GDI;
 	m_hInstDDraw = nullptr;
 	m_DD = nullptr;
 	m_DD2  = nullptr;
@@ -428,7 +428,7 @@ void BeebWin::ApplyPrefs()
 	ShowMenu(true);
 
 	ExitDX();
-	if (m_DisplayRenderer != IDM_DISPGDI)
+	if (m_DisplayRenderer != DisplayRendererType::GDI)
 		InitDX();
 
 	InitTextToSpeechVoices();
@@ -489,9 +489,10 @@ void BeebWin::ApplyPrefs()
 }
 
 /****************************************************************************/
+
 BeebWin::~BeebWin()
 {
-	if (m_DisplayRenderer != IDM_DISPGDI)
+	if (m_DisplayRenderer != DisplayRendererType::GDI)
 		ExitDX();
 
 	CloseDX9();
@@ -975,10 +976,10 @@ void BeebWin::CreateBeebWindow(void)
 		m_YWinPos = 0;
 	}
 
-	if (m_DisplayRenderer == IDM_DISPGDI && m_isFullScreen)
+	if (m_DisplayRenderer == DisplayRendererType::GDI && m_isFullScreen)
 		show = SW_MAXIMIZE;
 
-	if (m_DisplayRenderer != IDM_DISPGDI && m_isFullScreen)
+	if (m_DisplayRenderer != DisplayRendererType::GDI && m_isFullScreen)
 	{
 		style = WS_POPUP;
 	}
@@ -1170,7 +1171,7 @@ void BeebWin::InitMenu(void)
 	// View
 	UpdateDisplayRendererMenu();
 
-	const bool DirectXEnabled = m_DisplayRenderer != IDM_DISPGDI;
+	const bool DirectXEnabled = m_DisplayRenderer != DisplayRendererType::GDI;
 	EnableMenuItem(IDM_DXSMOOTHING, DirectXEnabled);
 	EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, DirectXEnabled);
 
@@ -1328,12 +1329,51 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_AUTOSAVE_PREFS_ALL, m_AutoSavePrefsAll);
 }
 
+/****************************************************************************/
+
+void BeebWin::SetDisplayRenderer(DisplayRendererType DisplayRenderer)
+{
+	ExitDX();
+
+	m_DisplayRenderer = DisplayRenderer;
+	SetWindowAttributes(m_isFullScreen);
+
+	bool DirectXEnabled = m_DisplayRenderer != DisplayRendererType::GDI;
+
+	if (DirectXEnabled)
+	{
+		InitDX();
+	}
+
+	UpdateDisplayRendererMenu();
+	EnableMenuItem(IDM_DXSMOOTHING, DirectXEnabled);
+	EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, DirectXEnabled);
+}
+
 void BeebWin::UpdateDisplayRendererMenu()
 {
-	CheckMenuItem(IDM_DISPGDI, m_DisplayRenderer == IDM_DISPGDI);
-	CheckMenuItem(IDM_DISPDDRAW, m_DisplayRenderer == IDM_DISPDDRAW);
-	CheckMenuItem(IDM_DISPDX9, m_DisplayRenderer == IDM_DISPDX9);
+	static const struct { UINT ID; DisplayRendererType DisplayRenderer; } MenuItems[] =
+	{
+		{ IDM_DISPGDI,   DisplayRendererType::GDI },
+		{ IDM_DISPDDRAW, DisplayRendererType::DirectDraw },
+		{ IDM_DISPDX9,   DisplayRendererType::DirectX9 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_DisplayRenderer == MenuItems[i].DisplayRenderer)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_DISPGDI, IDM_DISPDX9, SelectedMenuItemID);
 }
+
+/****************************************************************************/
 
 void BeebWin::UpdateSoundStreamerMenu()
 {
@@ -2825,7 +2865,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 			m_YWinPos = wndrect.top;
 		}
 
-		if (m_DisplayRenderer != IDM_DISPGDI)
+		if (m_DisplayRenderer != DisplayRendererType::GDI)
 		{
 			m_XWinSize = m_XDXSize;
 			m_YWinSize = m_YDXSize;
@@ -2867,7 +2907,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		int xs = m_XLastWinSize;
 		int ys = m_YLastWinSize;
 
-		if (m_DisplayRenderer != IDM_DISPGDI && m_DXInit)
+		if (m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
 		{
 			ResetDX();
 		}
@@ -2899,21 +2939,22 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 }
 
 /*****************************************************************************/
+
 void BeebWin::WinSizeChange(WPARAM size, int width, int height)
 {
-	if (m_DisplayRenderer == IDM_DISPGDI && size == SIZE_RESTORED && m_isFullScreen)
+	if (m_DisplayRenderer == DisplayRendererType::GDI && size == SIZE_RESTORED && m_isFullScreen)
 	{
 		m_isFullScreen = false;
 		CheckMenuItem(IDM_FULLSCREEN, false);
 	}
 
-	if (!m_isFullScreen || m_DisplayRenderer == IDM_DISPGDI)
+	if (!m_isFullScreen || m_DisplayRenderer == DisplayRendererType::GDI)
 	{
 		m_XWinSize = width;
 		m_YWinSize = height;
 		CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
 
-		if (size != SIZE_MINIMIZED && m_DisplayRenderer != IDM_DISPGDI && m_DXInit)
+		if (size != SIZE_MINIMIZED && m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
 		{
 			m_DXResetPending = true;
 		}
@@ -3298,31 +3339,22 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_DISPGDI:
-	case IDM_DISPDDRAW:
-	case IDM_DISPDX9:
-	{
-		ExitDX();
-
-		m_DisplayRenderer = MenuID;
-		SetWindowAttributes(m_isFullScreen);
-
-		bool DirectXEnabled = m_DisplayRenderer != IDM_DISPGDI;
-
-		if (DirectXEnabled)
-		{
-			InitDX();
-		}
-
-		UpdateDisplayRendererMenu();
-		EnableMenuItem(IDM_DXSMOOTHING, DirectXEnabled);
-		EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, DirectXEnabled);
+		SetDisplayRenderer(DisplayRendererType::GDI);
 		break;
-	}
+
+	case IDM_DISPDDRAW:
+		SetDisplayRenderer(DisplayRendererType::DirectDraw);
+		break;
+
+	case IDM_DISPDX9:
+		SetDisplayRenderer(DisplayRendererType::DirectX9);
+		break;
 
 	case IDM_DXSMOOTHING:
 		m_DXSmoothing = !m_DXSmoothing;
 		CheckMenuItem(IDM_DXSMOOTHING, m_DXSmoothing);
-		if (m_DisplayRenderer != IDM_DISPGDI)
+
+		if (m_DisplayRenderer != DisplayRendererType::GDI)
 		{
 			UpdateSmoothing();
 		}
@@ -3331,7 +3363,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 	case IDM_DXSMOOTHMODE7ONLY:
 		m_DXSmoothMode7Only = !m_DXSmoothMode7Only;
 		CheckMenuItem(IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only);
-		if (m_DisplayRenderer != IDM_DISPGDI)
+
+		if (m_DisplayRenderer != DisplayRendererType::GDI)
 		{
 			UpdateSmoothing();
 		}
@@ -3378,7 +3411,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 			CheckMenuItem(m_DDFullScreenMode, true);
 			TranslateDDSize();
 
-			if (m_isFullScreen && m_DisplayRenderer != IDM_DISPGDI)
+			if (m_isFullScreen && m_DisplayRenderer != DisplayRendererType::GDI)
 			{
 				SetWindowAttributes(m_isFullScreen);
 			}
@@ -4748,7 +4781,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 			// Reinit with new prefs
 			SetWindowPos(m_hWnd, HWND_TOP, m_XWinPos, m_YWinPos,
 			             0, 0, SWP_NOSIZE);
-			HandleCommand(m_DisplayRenderer);
+			SetDisplayRenderer(m_DisplayRenderer);
 			InitMenu();
 			SetWindowText(m_hWnd, WindowTitle);
 			if (m_MenuIDSticks == IDM_JOYSTICK && MachineType != Model::MasterET)

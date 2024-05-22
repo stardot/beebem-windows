@@ -44,7 +44,7 @@ void BeebWin::InitDX()
 {
 	HRESULT hr = E_FAIL;
 
-	if (m_DisplayRenderer == IDM_DISPDX9)
+	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		hr = InitD3DDevice();
 
@@ -56,7 +56,7 @@ void BeebWin::InitDX()
 			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPDDRAW, 0);
 		}
 	}
-	else if (m_DisplayRenderer == IDM_DISPDDRAW)
+	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		hr = InitDirectDraw();
 
@@ -85,7 +85,7 @@ void BeebWin::ResetDX()
 
 	m_DXResetPending = false;
 
-	if (m_CurrentDisplayRenderer == IDM_DISPDX9)
+	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		CloseD3DDevice();
 
@@ -93,7 +93,7 @@ void BeebWin::ResetDX()
 		// odd artifacts are seen when changing window size.
 		PostMessage(m_hWnd, WM_REINITDX, 0, 0);
 	}
-	else if (m_CurrentDisplayRenderer == IDM_DISPDDRAW)
+	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		CloseSurfaces();
 		ReinitDX();
@@ -110,11 +110,11 @@ void BeebWin::ReinitDX()
 
 	HRESULT hr = DD_OK;
 
-	if (m_DisplayRenderer == IDM_DISPDX9)
+	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		hr = InitD3DDevice();
 	}
-	else if (m_DisplayRenderer == IDM_DISPDDRAW)
+	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		hr = InitSurfaces();
 	}
@@ -134,11 +134,11 @@ void BeebWin::ReinitDX()
 
 void BeebWin::ExitDX()
 {
-	if (m_CurrentDisplayRenderer == IDM_DISPDX9)
+	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		CloseD3DDevice();
 	}
-	else if (m_CurrentDisplayRenderer == IDM_DISPDDRAW)
+	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		CloseSurfaces();
 
@@ -717,7 +717,7 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 	// Changed to/from teletext mode?
 	if (LastTeletextEnabled != TeletextEnabled || First)
 	{
-		if (m_DisplayRenderer != IDM_DISPGDI && m_DXSmoothing && m_DXSmoothMode7Only)
+		if (m_DisplayRenderer != DisplayRendererType::GDI && m_DXSmoothing && m_DXSmoothMode7Only)
 		{
 			UpdateSmoothing();
 		}
@@ -771,7 +771,7 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 		memcpy(m_screen, m_screen_blur, 800*512);
 	}
 
-	if (m_DisplayRenderer == IDM_DISPGDI)
+	if (m_DisplayRenderer == DisplayRendererType::GDI)
 	{
 		RECT destRect;
 		GetClientRect(m_hWnd, &destRect);
@@ -804,7 +804,7 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 		if (IsWindowMinimized())
 			return;
 
-		if (m_DisplayRenderer == IDM_DISPDX9)
+		if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 		{
 			if (m_DXDeviceLost) return;
 
@@ -1014,7 +1014,7 @@ static const char* pszReleaseCaptureMessage = "(Press Ctrl+Alt to release mouse)
 
 bool BeebWin::ShouldDisplayTiming() const
 {
-	return m_ShowSpeedAndFPS && (m_DisplayRenderer == IDM_DISPGDI || !m_isFullScreen);
+	return m_ShowSpeedAndFPS && (m_DisplayRenderer == DisplayRendererType::GDI || !m_isFullScreen);
 }
 
 void BeebWin::DisplayTiming()
@@ -1062,7 +1062,7 @@ void BeebWin::UpdateWindowTitle()
 
 void BeebWin::UpdateSmoothing()
 {
-	if (m_DisplayRenderer == IDM_DISPDX9)
+	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
 		{

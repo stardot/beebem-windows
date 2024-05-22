@@ -164,9 +164,18 @@ void BeebWin::LoadPreferences()
 		m_WriteProtectOnLoad = true;
 
 	if (m_Preferences.GetDWORDValue("DisplayRenderer", dword))
-		m_DisplayRenderer = dword;
+	{
+		switch (dword)
+		{
+			case 0: case 40217: m_DisplayRenderer = DisplayRendererType::GDI; break;
+			case 1: case 40218: m_DisplayRenderer = DisplayRendererType::DirectDraw; break;
+			default:            m_DisplayRenderer = DisplayRendererType::DirectX9; break;
+		}
+	}
 	else
-		m_DisplayRenderer = IDM_DISPDX9;
+	{
+		m_DisplayRenderer = DisplayRendererType::DirectX9;
+	}
 
 	if (!m_Preferences.GetBoolValue("DXSmoothing", m_DXSmoothing))
 		m_DXSmoothing = true;
@@ -789,7 +798,7 @@ void BeebWin::SavePreferences(bool saveAll)
 	{
 		m_Preferences.SetBinaryValue(CFG_MACHINE_TYPE, &MachineType, 1);
 		m_Preferences.SetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad);
-		m_Preferences.SetDWORDValue("DisplayRenderer", m_DisplayRenderer);
+		m_Preferences.SetDWORDValue("DisplayRenderer", (DWORD)m_DisplayRenderer);
 		m_Preferences.SetBoolValue("DXSmoothing", m_DXSmoothing);
 		m_Preferences.SetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only);
 		m_Preferences.SetDWORDValue("DDFullScreenMode", m_DDFullScreenMode);

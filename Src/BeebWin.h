@@ -146,8 +146,14 @@ enum class PaletteType : char {
 	Last
 };
 
-class BeebWin {
+enum class DisplayRendererType {
+	GDI,
+	DirectDraw,
+	DirectX9
+};
 
+class BeebWin
+{
 public:
 	BeebWin();
 	~BeebWin();
@@ -313,6 +319,8 @@ public:
 
 	void UpdateSFXMenu();
 	void UpdateDisableKeysMenu();
+
+	void SetDisplayRenderer(DisplayRendererType DisplayRenderer);
 	void UpdateDisplayRendererMenu();
 
 	void UpdateSoundStreamerMenu();
@@ -507,8 +515,8 @@ public:
 	UINT m_MenuIDMotionBlur;
 	char m_BlurIntensities[8];
 	bool m_MaintainAspectRatio;
-	int m_DisplayRenderer;
-	int m_CurrentDisplayRenderer;
+	DisplayRendererType m_DisplayRenderer;
+	DisplayRendererType m_CurrentDisplayRenderer;
 	int m_DDFullScreenMode;
 
 	// DirectX stuff
