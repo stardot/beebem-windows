@@ -1258,10 +1258,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_CAPTUREMOUSE, m_CaptureMouse);
 	EnableMenuItem(IDM_CAPTUREMOUSE, AMXMouseEnabled);
 	CheckMenuItem(IDM_AMX_LRFORMIDDLE, AMXLRForMiddle);
-	CheckMenuItem(IDM_AMX_320X256, false);
-	CheckMenuItem(IDM_AMX_640X256, false);
-	CheckMenuItem(IDM_AMX_160X256, false);
-	CheckMenuItem(m_MenuIDAMXSize, true);
+	UpdateAMXSizeMenu();
 	CheckMenuItem(IDM_AMX_ADJUSTP50, false);
 	CheckMenuItem(IDM_AMX_ADJUSTP30, false);
 	CheckMenuItem(IDM_AMX_ADJUSTP10, false);
@@ -3123,23 +3120,57 @@ void BeebWin::WinPosChange(int /* x */, int /* y */)
 }
 
 /****************************************************************************/
-void BeebWin::TranslateAMX(void)
+
+void BeebWin::SetAMXSize(AMXSizeType Size)
 {
-	switch (m_MenuIDAMXSize)
+	m_AMXSize = Size;
+
+	TranslateAMX();
+	UpdateAMXSizeMenu();
+}
+
+void BeebWin::UpdateAMXSizeMenu()
+{
+	static const struct { UINT ID; AMXSizeType AMXSize; } MenuItems[] =
 	{
-	case IDM_AMX_160X256:
-		m_AMXXSize = 160;
-		m_AMXYSize = 256;
-		break;
-	default:
-	case IDM_AMX_320X256:
-		m_AMXXSize = 320;
-		m_AMXYSize = 256;
-		break;
-	case IDM_AMX_640X256:
-		m_AMXXSize = 640;
-		m_AMXYSize = 256;
-		break;
+		{ IDM_AMX_160X256, AMXSizeType::_160x256 },
+		{ IDM_AMX_320X256, AMXSizeType::_320x256 },
+		{ IDM_AMX_640X256, AMXSizeType::_640x256 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_AMXSize == MenuItems[i].AMXSize)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_AMX_160X256, IDM_AMX_640X256, SelectedMenuItemID);
+}
+
+void BeebWin::TranslateAMX()
+{
+	switch (m_AMXSize)
+	{
+		case AMXSizeType::_160x256:
+			m_AMXXSize = 160;
+			m_AMXYSize = 256;
+			break;
+
+		default:
+		case AMXSizeType::_320x256:
+			m_AMXXSize = 320;
+			m_AMXYSize = 256;
+			break;
+
+		case AMXSizeType::_640x256:
+			m_AMXXSize = 640;
+			m_AMXYSize = 256;
+			break;
 	}
 
 	switch (m_MenuIDAMXAdjust)
@@ -3857,15 +3888,15 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_AMX_160X256:
+		SetAMXSize(AMXSizeType::_160x256);
+		break;
+
 	case IDM_AMX_320X256:
+		SetAMXSize(AMXSizeType::_320x256);
+		break;
+
 	case IDM_AMX_640X256:
-		if (MenuID != m_MenuIDAMXSize)
-		{
-			CheckMenuItem(m_MenuIDAMXSize, false);
-			m_MenuIDAMXSize = MenuID;
-			CheckMenuItem(m_MenuIDAMXSize, true);
-		}
-		TranslateAMX();
+		SetAMXSize(AMXSizeType::_640x256);
 		break;
 
 	case IDM_AMX_ADJUSTP50:

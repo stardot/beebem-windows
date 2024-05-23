@@ -291,9 +291,9 @@
 #define IDM_SAVE_PREFS                  40066
 #define IDM_FULLSCREEN                  40067
 #define IDM_AMXONOFF                    40068
-#define IDM_AMX_320X256                 40069
-#define IDM_AMX_640X256                 40070
-#define IDM_AMX_160X256                 40071
+#define IDM_AMX_160X256                 40069
+#define IDM_AMX_320X256                 40070
+#define IDM_AMX_640X256                 40071
 #define IDM_AMX_ADJUSTP50               40072
 #define IDM_AMX_ADJUSTP30               40073
 #define IDM_AMX_ADJUSTP10               40074

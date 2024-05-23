@@ -190,6 +190,12 @@ enum class KeyboardMappingType {
 	Logical
 };
 
+enum class AMXSizeType {
+	_160x256,
+	_320x256,
+	_640x256
+};
+
 class BeebWin
 {
 public:
@@ -434,7 +440,11 @@ public:
 	void SetDiscWriteProtect(int Drive, bool WriteProtect);
 	void SetDiscWriteProtects();
 	void SetWindowAttributes(bool wasFullScreen);
-	void TranslateAMX(void);
+
+	void SetAMXSize(AMXSizeType Size);
+	void UpdateAMXSizeMenu();
+	void TranslateAMX();
+
 	bool PrinterFile();
 	void TogglePrinter(void);
 	void TranslatePrinterPort(void);
@@ -640,7 +650,7 @@ public:
 	bool m_WriteProtectOnLoad;
 
 	// AMX mouse
-	UINT m_MenuIDAMXSize;
+	AMXSizeType m_AMXSize;
 	UINT m_MenuIDAMXAdjust;
 	int m_AMXXSize;
 	int m_AMXYSize;

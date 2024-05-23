@@ -473,10 +473,21 @@ void BeebWin::LoadPreferences()
 		AMXLRForMiddle = dword != 0;
 	else
 		AMXLRForMiddle = true;
+
 	if (m_Preferences.GetDWORDValue(CFG_AMX_SIZE, dword))
-		m_MenuIDAMXSize = dword;
+	{
+		switch (dword)
+		{
+			case 0: case IDM_AMX_160X256:          m_AMXSize = AMXSizeType::_160x256; break;
+			case 1: case IDM_AMX_320X256: default: m_AMXSize = AMXSizeType::_320x256; break;
+			case 2: case IDM_AMX_640X256:          m_AMXSize = AMXSizeType::_640x256; break;
+		}
+	}
 	else
-		m_MenuIDAMXSize = IDM_AMX_320X256;
+	{
+		m_AMXSize = AMXSizeType::_320x256;
+	}
+
 	if (m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, dword))
 		m_MenuIDAMXAdjust = dword;
 	else
@@ -969,7 +980,7 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		m_Preferences.SetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
 		m_Preferences.SetDWORDValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
-		m_Preferences.SetDWORDValue(CFG_AMX_SIZE, m_MenuIDAMXSize);
+		m_Preferences.SetDWORDValue(CFG_AMX_SIZE, (DWORD)m_AMXSize);
 		m_Preferences.SetDWORDValue(CFG_AMX_ADJUST, m_MenuIDAMXAdjust);
 
 		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
