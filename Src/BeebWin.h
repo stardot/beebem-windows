@@ -178,6 +178,12 @@ enum class BitmapCaptureResolution {
 	_320x256
 };
 
+enum class VideoCaptureResolution {
+	Display,
+	_640x512,
+	_320x256
+};
+
 class BeebWin
 {
 public:
@@ -423,6 +429,8 @@ public:
 	void TranslatePrinterPort(void);
 
 	// AVI recording
+	void SetVideoCaptureResolution(VideoCaptureResolution Resolution);
+	void UpdateVideoCaptureResolutionMenu();
 	void CaptureVideo();
 	void EndVideo();
 
@@ -690,7 +698,7 @@ public:
 	int m_AviFrameSkip;
 	int m_AviFrameSkipCount;
 	int m_AviFrameCount;
-	UINT m_MenuIDAviResolution;
+	VideoCaptureResolution m_VideoCaptureResolution;
 	UINT m_MenuIDAviSkip;
 
 	// Text to speech variables

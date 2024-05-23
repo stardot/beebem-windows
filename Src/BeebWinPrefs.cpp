@@ -750,9 +750,18 @@ void BeebWin::LoadPreferences()
 	}
 
 	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
-		m_MenuIDAviResolution = dword;
+	{
+		switch (dword)
+		{
+			case 0: case 40185:          m_VideoCaptureResolution = VideoCaptureResolution::Display;
+			case 1: case 40186: default: m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
+			case 2: case 40187:          m_VideoCaptureResolution = VideoCaptureResolution::_320x256;
+		}
+	}
 	else
-		m_MenuIDAviResolution = IDM_VIDEORES2;
+	{
+		m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
+	}
 
 	if (m_Preferences.GetDWORDValue("FrameSkip", dword))
 		m_MenuIDAviSkip = dword;
@@ -1001,7 +1010,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
 		m_Preferences.SetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled);
 
-		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIDAviResolution);
+		m_Preferences.SetDWORDValue("CaptureResolution", (DWORD)m_VideoCaptureResolution);
 		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
 
 		m_Preferences.SetDWORDValue("BitmapCaptureResolution", (DWORD)m_BitmapCaptureResolution);

@@ -793,6 +793,7 @@ void BeebWin::TogglePrinter()
 }
 
 /****************************************************************************/
+
 void BeebWin::TranslatePrinterPort()
 {
 	switch (m_MenuIDPrinterPort)
@@ -817,6 +818,39 @@ void BeebWin::TranslatePrinterPort()
 		strcpy(m_PrinterDevice, "LPT4");
 		break;
 	}
+}
+
+/****************************************************************************/
+
+void BeebWin::SetVideoCaptureResolution(VideoCaptureResolution Resolution)
+{
+	m_VideoCaptureResolution = Resolution;
+
+	UpdateVideoCaptureResolutionMenu();
+}
+
+void BeebWin::UpdateVideoCaptureResolutionMenu()
+{
+	static const struct { UINT ID; VideoCaptureResolution Resolution; } MenuItems[] =
+	{
+		{ IDM_VIDEORES1, VideoCaptureResolution::Display },
+		{ IDM_VIDEORES2, VideoCaptureResolution::_640x512 },
+		{ IDM_VIDEORES3, VideoCaptureResolution::_320x256 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_VideoCaptureResolution == MenuItems[i].Resolution)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+		}
+
+		EnableMenuItem(MenuItems[i].ID, !IsCapturing());
+	}
+
+	CheckMenuRadioItem(IDM_VIDEORES1, IDM_VIDEORES3, SelectedMenuItemID);
 }
 
 /****************************************************************************/
@@ -874,13 +908,13 @@ void BeebWin::CaptureVideo()
 		// Create DIB for AVI frames
 		m_Avibmi = m_bmi;
 
-		if (m_MenuIDAviResolution == IDM_VIDEORES1)
+		if (m_VideoCaptureResolution == VideoCaptureResolution::Display)
 		{
 			// Must be multiple of 4
 			m_Avibmi.bmiHeader.biWidth = m_XWinSize & (~3);
 			m_Avibmi.bmiHeader.biHeight = m_YWinSize;
 		}
-		else if (m_MenuIDAviResolution == IDM_VIDEORES2)
+		else if (m_VideoCaptureResolution == VideoCaptureResolution::_640x512)
 		{
 			m_Avibmi.bmiHeader.biWidth = 640;
 			m_Avibmi.bmiHeader.biHeight = 512;

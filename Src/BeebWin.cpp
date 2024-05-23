@@ -1111,16 +1111,13 @@ void BeebWin::InitMenu(void)
 	char menu_string[256];
 
 	// File -> Video Options
-	CheckMenuItem(IDM_VIDEORES1, false);
-	CheckMenuItem(IDM_VIDEORES2, false);
-	CheckMenuItem(IDM_VIDEORES3, false);
+	UpdateVideoCaptureResolutionMenu();
 	CheckMenuItem(IDM_VIDEOSKIP0, false);
 	CheckMenuItem(IDM_VIDEOSKIP1, false);
 	CheckMenuItem(IDM_VIDEOSKIP2, false);
 	CheckMenuItem(IDM_VIDEOSKIP3, false);
 	CheckMenuItem(IDM_VIDEOSKIP4, false);
 	CheckMenuItem(IDM_VIDEOSKIP5, false);
-	CheckMenuItem(m_MenuIDAviResolution, true);
 	CheckMenuItem(m_MenuIDAviSkip, true);
 
 	// File -> Disc Options
@@ -4184,14 +4181,15 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_VIDEORES1:
+		SetVideoCaptureResolution(VideoCaptureResolution::Display);
+		break;
+
 	case IDM_VIDEORES2:
+		SetVideoCaptureResolution(VideoCaptureResolution::_640x512);
+		break;
+
 	case IDM_VIDEORES3:
-		if (MenuID != m_MenuIDAviResolution)
-		{
-			CheckMenuItem(m_MenuIDAviResolution, false);
-			m_MenuIDAviResolution = MenuID;
-			CheckMenuItem(m_MenuIDAviResolution, true);
-		}
+		SetVideoCaptureResolution(VideoCaptureResolution::_320x256);
 		break;
 
 	case IDM_VIDEOSKIP0:
