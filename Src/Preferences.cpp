@@ -238,7 +238,7 @@ void Preferences::SetDWORDValue(const char *id, DWORD dw)
 
 //-----------------------------------------------------------------------------
 
-bool Preferences::GetDecimalValue(const char *id, DWORD &Value)
+bool Preferences::GetDecimalValue(const char *id, int &Value)
 {
 	PrefsMap::iterator i = m_Prefs.find(id);
 
@@ -247,11 +247,8 @@ bool Preferences::GetDecimalValue(const char *id, DWORD &Value)
 		return false;
 	}
 
-	int IntValue;
-
-	if (ParseNumber(i->second, &IntValue))
+	if (ParseNumber(i->second, &Value))
 	{
-		Value = (DWORD)IntValue;
 		return true;
 	}
 
@@ -260,7 +257,7 @@ bool Preferences::GetDecimalValue(const char *id, DWORD &Value)
 
 //-----------------------------------------------------------------------------
 
-bool Preferences::SetDecimalValue(const char *id, DWORD Value)
+bool Preferences::SetDecimalValue(const char *id, int Value)
 {
 	m_Prefs[id] = std::to_string(Value);
 

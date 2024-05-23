@@ -1259,14 +1259,7 @@ void BeebWin::InitMenu(void)
 	EnableMenuItem(IDM_CAPTUREMOUSE, AMXMouseEnabled);
 	CheckMenuItem(IDM_AMX_LRFORMIDDLE, AMXLRForMiddle);
 	UpdateAMXSizeMenu();
-	CheckMenuItem(IDM_AMX_ADJUSTP50, false);
-	CheckMenuItem(IDM_AMX_ADJUSTP30, false);
-	CheckMenuItem(IDM_AMX_ADJUSTP10, false);
-	CheckMenuItem(IDM_AMX_ADJUSTM10, false);
-	CheckMenuItem(IDM_AMX_ADJUSTM30, false);
-	CheckMenuItem(IDM_AMX_ADJUSTM50, false);
-	if (m_MenuIDAMXAdjust != 0)
-		CheckMenuItem(m_MenuIDAMXAdjust, true);
+	UpdateAMXAdjustMenu();
 
 	// Hardware -> Model
 	UpdateModelMenu();
@@ -3172,32 +3165,51 @@ void BeebWin::TranslateAMX()
 			m_AMXYSize = 256;
 			break;
 	}
+}
 
-	switch (m_MenuIDAMXAdjust)
+void BeebWin::SetAMXAdjust(int Adjust)
+{
+	if (Adjust == m_AMXAdjust)
 	{
-	case 0:
 		m_AMXAdjust = 0;
-		break;
-	case IDM_AMX_ADJUSTP50:
-		m_AMXAdjust = 50;
-		break;
-	default:
-	case IDM_AMX_ADJUSTP30:
-		m_AMXAdjust = 30;
-		break;
-	case IDM_AMX_ADJUSTP10:
-		m_AMXAdjust = 10;
-		break;
-	case IDM_AMX_ADJUSTM10:
-		m_AMXAdjust = -10;
-		break;
-	case IDM_AMX_ADJUSTM30:
-		m_AMXAdjust = -30;
-		break;
-	case IDM_AMX_ADJUSTM50:
-		m_AMXAdjust = -50;
-		break;
 	}
+	else
+	{
+		m_AMXAdjust = Adjust;
+	}
+
+	UpdateAMXAdjustMenu();
+}
+
+void BeebWin::UpdateAMXAdjustMenu()
+{
+	static const struct { UINT ID; int AMXAdjust; } MenuItems[] =
+	{
+		{ IDM_AMX_ADJUSTP50, 50 },
+		{ IDM_AMX_ADJUSTP30, 30 },
+		{ IDM_AMX_ADJUSTP10, 10 },
+		{ IDM_AMX_ADJUSTM10, -10 },
+		{ IDM_AMX_ADJUSTM10, -10 },
+		{ IDM_AMX_ADJUSTM30, -30 },
+		{ IDM_AMX_ADJUSTM50, -50 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_AMXAdjust == MenuItems[i].AMXAdjust)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(
+		IDM_AMX_ADJUSTP50,
+		IDM_AMX_ADJUSTM50,
+		SelectedMenuItemID
+	);
 }
 
 void BeebWin::DisableSerial()
@@ -3900,26 +3912,27 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_AMX_ADJUSTP50:
-	case IDM_AMX_ADJUSTP30:
-	case IDM_AMX_ADJUSTP10:
-	case IDM_AMX_ADJUSTM10:
-	case IDM_AMX_ADJUSTM30:
-	case IDM_AMX_ADJUSTM50:
-		if (m_MenuIDAMXAdjust != 0)
-		{
-			CheckMenuItem(m_MenuIDAMXAdjust, false);
-		}
+		SetAMXAdjust(50);
+		break;
 
-		if (MenuID != m_MenuIDAMXAdjust)
-		{
-			m_MenuIDAMXAdjust = MenuID;
-			CheckMenuItem(m_MenuIDAMXAdjust, true);
-		}
-		else
-		{
-			m_MenuIDAMXAdjust = 0;
-		}
-		TranslateAMX();
+	case IDM_AMX_ADJUSTP30:
+		SetAMXAdjust(30);
+		break;
+
+	case IDM_AMX_ADJUSTP10:
+		SetAMXAdjust(10);
+		break;
+
+	case IDM_AMX_ADJUSTM10:
+		SetAMXAdjust(-10);
+		break;
+
+	case IDM_AMX_ADJUSTM30:
+		SetAMXAdjust(-30);
+		break;
+
+	case IDM_AMX_ADJUSTM50:
+		SetAMXAdjust(-50);
 		break;
 
 	case ID_MONITOR_RGB:

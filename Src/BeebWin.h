@@ -444,6 +444,8 @@ public:
 	void SetAMXSize(AMXSizeType Size);
 	void UpdateAMXSizeMenu();
 	void TranslateAMX();
+	void SetAMXAdjust(int Adjust);
+	void UpdateAMXAdjustMenu();
 
 	bool PrinterFile();
 	void TogglePrinter(void);
@@ -651,7 +653,6 @@ public:
 
 	// AMX mouse
 	AMXSizeType m_AMXSize;
-	UINT m_MenuIDAMXAdjust;
 	int m_AMXXSize;
 	int m_AMXYSize;
 	int m_AMXAdjust;

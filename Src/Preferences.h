@@ -51,8 +51,8 @@ class Preferences {
 		void SetStringValue(const char *id, const std::string& str);
 		bool GetDWORDValue(const char *id, DWORD &dw);
 		void SetDWORDValue(const char *id, DWORD dw);
-		bool GetDecimalValue(const char *id, DWORD &Value);
-		bool SetDecimalValue(const char *id, DWORD Value);
+		bool GetDecimalValue(const char *id, int &Value);
+		bool SetDecimalValue(const char *id, int Value);
 		bool GetBoolValue(const char *id, bool &b);
 		void SetBoolValue(const char *id, bool b);
 		void EraseValue(const char *id);

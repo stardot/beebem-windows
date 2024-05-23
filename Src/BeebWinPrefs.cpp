@@ -105,6 +105,7 @@ void BeebWin::LoadPreferences()
 	char keyData[256];
 	unsigned char flag;
 	DWORD dword;
+	int Value;
 
 	// Remove obsolete prefs
 	m_Preferences.EraseValue("UserKeyMapRow");
@@ -299,11 +300,11 @@ void BeebWin::LoadPreferences()
 	if (!m_Preferences.GetBoolValue("SoundChipEnabled", SoundChipEnabled))
 		SoundChipEnabled = true;
 
-	if (m_Preferences.GetDecimalValue(CFG_SOUND_SAMPLE_RATE, dword))
+	if (m_Preferences.GetDecimalValue(CFG_SOUND_SAMPLE_RATE, Value))
 	{
-		if (dword == 11025 || dword == 22050 || dword == 44100)
+		if (Value == 11025 || Value == 22050 || Value == 44100)
 		{
-			m_SampleRate = dword;
+			m_SampleRate = Value;
 		}
 		else
 		{
@@ -324,11 +325,11 @@ void BeebWin::LoadPreferences()
 		m_SampleRate = 44100;
 	}
 
-	if (m_Preferences.GetDecimalValue(CFG_SOUND_VOLUME, dword))
+	if (m_Preferences.GetDecimalValue(CFG_SOUND_VOLUME, Value))
 	{
-		if (dword == 25 || dword == 50 || dword == 75 || dword == 100)
+		if (Value == 25 || Value == 50 || Value == 75 || Value == 100)
 		{
-			m_SoundVolume = dword;
+			m_SoundVolume = Value;
 		}
 		else
 		{
@@ -488,11 +489,34 @@ void BeebWin::LoadPreferences()
 		m_AMXSize = AMXSizeType::_320x256;
 	}
 
-	if (m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, dword))
-		m_MenuIDAMXAdjust = dword;
+	if (m_Preferences.GetDecimalValue(CFG_AMX_ADJUST, Value))
+	{
+		if (Value == 0 || Value == 10 || Value == 30 || Value == 50 ||
+		    Value == -10 || Value == -30 || Value == -50)
+		{
+			m_AMXAdjust = Value;
+		}
+		else
+		{
+			m_AMXAdjust = 30;
+		}
+	}
+	else if (m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, dword))
+	{
+		switch (dword)
+		{
+			case 40072:          m_AMXAdjust = 50; break;
+			case 40073: default: m_AMXAdjust = 30; break;
+			case 40074:          m_AMXAdjust = 10; break;
+			case 40075:          m_AMXAdjust = -10; break;
+			case 40076:          m_AMXAdjust = -30; break;
+			case 40077:          m_AMXAdjust = -50; break;
+		}
+	}
 	else
-		m_MenuIDAMXAdjust = IDM_AMX_ADJUSTP30;
-	TranslateAMX();
+	{
+		m_AMXAdjust = 30;
+	}
 
 	if (!m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
 		PrinterEnabled = false;
@@ -981,7 +1005,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
 		m_Preferences.SetDWORDValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
 		m_Preferences.SetDWORDValue(CFG_AMX_SIZE, (DWORD)m_AMXSize);
-		m_Preferences.SetDWORDValue(CFG_AMX_ADJUST, m_MenuIDAMXAdjust);
+		m_Preferences.SetDecimalValue(CFG_AMX_ADJUST, m_AMXAdjust);
 
 		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
 		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, m_MenuIDPrinterPort);
