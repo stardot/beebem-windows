@@ -405,9 +405,18 @@ void BeebWin::LoadPreferences()
 		m_CaptureMouse = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING, dword))
-		m_MenuIDKeyMapping = dword;
+	{
+		switch (dword)
+		{
+			case 0: case 40060:          m_KeyboardMapping = KeyboardMappingType::User; break;
+			case 1: case 40034:          m_KeyboardMapping = KeyboardMappingType::Default; break;
+			case 2: case 40035: default: m_KeyboardMapping = KeyboardMappingType::Logical; break;
+		}
+	}
 	else
-		m_MenuIDKeyMapping = IDM_LOGICALKYBDMAPPING;
+	{
+		m_KeyboardMapping = KeyboardMappingType::Logical;
+	}
 
 	bool readDefault = true;
 	if (m_Preferences.GetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath))
@@ -940,7 +949,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_KEY_MAPPING, m_MenuIDKeyMapping);
+		m_Preferences.SetDWORDValue(CFG_OPTIONS_KEY_MAPPING, (DWORD)m_KeyboardMapping);
 		m_Preferences.SetBoolValue("KeyMapAS", m_KeyMapAS);
 		flag = m_KeyMapFunc;
 		m_Preferences.SetBinaryValue("KeyMapFunc", &flag, 1);

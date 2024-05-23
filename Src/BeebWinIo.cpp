@@ -1240,8 +1240,8 @@ void BeebWin::SaveEmuUEF(FILE *SUEF)
 	fputc(static_cast<unsigned char>(MachineType), SUEF);
 	fputc(NativeFDC ? 0 : 1, SUEF);
 	fputc(static_cast<unsigned char>(TubeType), SUEF);
-	fput16(m_MenuIDKeyMapping, SUEF);
-	if (m_MenuIDKeyMapping == IDM_USERKYBDMAPPING)
+	fput16((int)m_KeyboardMapping, SUEF);
+	if (m_KeyboardMapping == KeyboardMappingType::User)
 	{
 		fputstring(m_UserKeyMapPath, SUEF);
 	}
@@ -1274,11 +1274,11 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 
 	if (Version >= 11)
 	{
-		const int UEF_KEYBOARD_MAPPING = 40060; // UEF Chunk ID
+		int KeyboardMapping = fget16(SUEF);
 
-		UINT id = fget16(SUEF);
+		const int UEF_USER_KEYBOARD_MAPPING = 40060; // Was a menu item ID in BeebEm <= 4.19
 
-		if (id == UEF_KEYBOARD_MAPPING)
+		if (KeyboardMapping = (int)KeyboardMappingType::User || KeyboardMapping == UEF_USER_KEYBOARD_MAPPING)
 		{
 			char FileName[256];
 			memset(FileName, 0, sizeof(FileName));
@@ -1300,13 +1300,11 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 			}
 			else
 			{
-				id = m_MenuIDKeyMapping;
+				KeyboardMapping = (int)m_KeyboardMapping;
 			}
 		}
-		CheckMenuItem(m_MenuIDKeyMapping, false);
-		m_MenuIDKeyMapping = id;
-		CheckMenuItem(m_MenuIDKeyMapping, true);
-		TranslateKeyMapping();
+
+		SetKeyboardMapping(static_cast<KeyboardMappingType>(KeyboardMapping));
 	}
 
 	ResetBeebSystem(MachineType, true);

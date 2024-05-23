@@ -258,6 +258,7 @@
 #define IDM_5FPS                        40028
 #define IDM_1FPS                        40029
 #define IDM_HIDECURSOR                  40032
+#define IDM_USERKYBDMAPPING             40033
 #define IDM_DEFAULTKYBDMAPPING          40034
 #define IDM_LOGICALKYBDMAPPING          40035
 #define IDM_3QSPEED                     40036
@@ -282,7 +283,6 @@
 #define IDM_ALLOWWRITES_ROMD            40056
 #define IDM_ALLOWWRITES_ROME            40057
 #define IDM_ALLOWWRITES_ROMF            40058
-#define IDM_USERKYBDMAPPING             40060
 #define IDM_DEFINEKEYMAP                40061
 #define IDM_NEWDISC0                    40062
 #define IDM_NEWDISC1                    40063

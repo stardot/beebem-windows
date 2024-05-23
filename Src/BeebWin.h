@@ -184,6 +184,12 @@ enum class VideoCaptureResolution {
 	_320x256
 };
 
+enum class KeyboardMappingType {
+	User,
+	Default,
+	Logical
+};
+
 class BeebWin
 {
 public:
@@ -402,7 +408,9 @@ public:
 	void CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight);
 	void TranslateTiming();
 	void SetRealTimeTarget(double RealTimeTarget);
-	void TranslateKeyMapping(void);
+	void SetKeyboardMapping(KeyboardMappingType KeyboardMapping);
+	void UpdateKeyboardMappingMenu();
+	void TranslateKeyMapping();
 	bool ReadDisc(int Drive, bool bCheckForPrefs);
 	bool Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	bool Load8271DiscImage(const char *FileName, int Drive, int Tracks, DiscType Type);
@@ -611,7 +619,7 @@ public:
 	POINT m_RelMousePos;
 
 	// Keyboard input
-	UINT m_MenuIDKeyMapping;
+	KeyboardMappingType m_KeyboardMapping;
 	bool m_KeyMapAS;
 	bool m_KeyMapFunc;
 	char m_UserKeyMapPath[_MAX_PATH];

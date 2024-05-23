@@ -1291,10 +1291,7 @@ void BeebWin::InitMenu(void)
 	UpdateJoystickMenu();
 	CheckMenuItem(IDM_FREEZEINACTIVE, m_FreezeWhenInactive);
 	CheckMenuItem(IDM_HIDECURSOR, m_HideCursor);
-	CheckMenuItem(IDM_DEFAULTKYBDMAPPING, false);
-	CheckMenuItem(IDM_LOGICALKYBDMAPPING, false);
-	CheckMenuItem(IDM_USERKYBDMAPPING, false);
-	CheckMenuItem(m_MenuIDKeyMapping, true);
+	UpdateKeyboardMappingMenu();
 	CheckMenuItem(IDM_MAPAS, m_KeyMapAS);
 	CheckMenuItem(IDM_MAPFUNCS, m_KeyMapFunc);
 	UpdateDisableKeysMenu();
@@ -2861,22 +2858,55 @@ void BeebWin::AdjustSpeed(bool up)
 }
 
 /****************************************************************************/
-void BeebWin::TranslateKeyMapping(void)
+
+void BeebWin::SetKeyboardMapping(KeyboardMappingType KeyboardMapping)
 {
-	switch (m_MenuIDKeyMapping)
+	m_KeyboardMapping = KeyboardMapping;
+
+	TranslateKeyMapping();
+	UpdateKeyboardMappingMenu();
+}
+
+void BeebWin::UpdateKeyboardMappingMenu()
+{
+	static const struct { UINT ID; KeyboardMappingType Type; } MenuItems[] =
 	{
-	default:
-	case IDM_DEFAULTKYBDMAPPING:
-		transTable = &DefaultKeyMap;
-		break;
+		{ IDM_USERKYBDMAPPING,    KeyboardMappingType::User },
+		{ IDM_DEFAULTKYBDMAPPING, KeyboardMappingType::Default },
+		{ IDM_LOGICALKYBDMAPPING, KeyboardMappingType::Logical }
+	};
 
-	case IDM_LOGICALKYBDMAPPING:
-		transTable = &LogicalKeyMap;
-		break;
+	UINT SelectedMenuItemID = 0;
 
-	case IDM_USERKYBDMAPPING:
-		transTable = &UserKeyMap;
-		break;
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_KeyboardMapping == MenuItems[i].Type)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_USERKYBDMAPPING, IDM_LOGICALKYBDMAPPING, SelectedMenuItemID);
+}
+
+void BeebWin::TranslateKeyMapping()
+{
+	switch (m_KeyboardMapping)
+	{
+		case KeyboardMappingType::Logical:
+			transTable = &LogicalKeyMap;
+			break;
+
+		case KeyboardMappingType::User:
+			transTable = &UserKeyMap;
+			break;
+
+		case KeyboardMappingType::Default:
+		default:
+			transTable = &DefaultKeyMap;
+			break;
+
 	}
 }
 
@@ -3747,15 +3777,15 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_USERKYBDMAPPING:
+		SetKeyboardMapping(KeyboardMappingType::User);
+		break;
+
 	case IDM_DEFAULTKYBDMAPPING:
+		SetKeyboardMapping(KeyboardMappingType::Default);
+		break;
+
 	case IDM_LOGICALKYBDMAPPING:
-		if (MenuID != m_MenuIDKeyMapping)
-		{
-			CheckMenuItem(m_MenuIDKeyMapping, false);
-			m_MenuIDKeyMapping = MenuID;
-			CheckMenuItem(m_MenuIDKeyMapping, true);
-			TranslateKeyMapping();
-		}
+		SetKeyboardMapping(KeyboardMappingType::Logical);
 		break;
 
 	case IDM_MAPAS:
