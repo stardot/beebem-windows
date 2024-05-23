@@ -742,13 +742,13 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 	int TeletextLines = 500 / TeletextStyle;
 
 	// Do motion blur
-	if (m_MenuIDMotionBlur != IDM_BLUR_OFF)
+	if (m_MotionBlur != 0)
 	{
 		char j;
 
-		if (m_MenuIDMotionBlur == IDM_BLUR_2)
+		if (m_MotionBlur == 2)
 			j = 32;
-		else if (m_MenuIDMotionBlur == IDM_BLUR_4)
+		else if (m_MotionBlur == 4)
 			j = 16;
 		else // blur 8 frames
 			j = 8;
@@ -1112,3 +1112,38 @@ void BeebWin::UpdateSmoothing()
 		}
 	}
 }
+
+/****************************************************************************/
+
+void BeebWin::SetMotionBlur(int MotionBlur)
+{
+	m_MotionBlur = MotionBlur;
+
+	UpdateMotionBlurMenu();
+}
+
+void BeebWin::UpdateMotionBlurMenu()
+{
+	static const struct { UINT ID; int MotionBlur; } MenuItems[] =
+	{
+		{ IDM_BLUR_OFF, 0 },
+		{ IDM_BLUR_2,   2 },
+		{ IDM_BLUR_4,   4 },
+		{ IDM_BLUR_8,   8 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_MotionBlur == MenuItems[i].MotionBlur)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_BLUR_OFF, IDM_BLUR_8, SelectedMenuItemID);
+}
+
+/****************************************************************************/

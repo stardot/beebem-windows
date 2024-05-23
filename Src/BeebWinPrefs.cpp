@@ -244,9 +244,19 @@ void BeebWin::LoadPreferences()
 	LEDs.ShowKB=LED_SHOW_KB;
 
 	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
-		m_MenuIDMotionBlur = dword;
+	{
+		switch (dword)
+		{
+			case 0: case 40177: default: m_MotionBlur = 0; break;
+			case 2: case 40178:          m_MotionBlur = 2; break;
+			case 4: case 40179:          m_MotionBlur = 4; break;
+			case 8: case 40180:          m_MotionBlur = 8; break;
+		}
+	}
 	else
-		m_MenuIDMotionBlur = IDM_BLUR_OFF;
+	{
+		m_MotionBlur = 0;
+	}
 
 	if (!m_Preferences.GetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8))
 	{
@@ -904,7 +914,7 @@ void BeebWin::SavePreferences(bool saveAll)
 			(LEDs.ShowKB ? 1 : 0)
 		);
 		m_Preferences.SetBinaryValue("LED Information", &LEDByte, 1);
-		m_Preferences.SetDWORDValue("MotionBlur", m_MenuIDMotionBlur);
+		m_Preferences.SetDWORDValue("MotionBlur", (DWORD)m_MotionBlur);
 		m_Preferences.SetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8);
 		m_Preferences.SetBoolValue("TextViewEnabled", m_TextViewEnabled);
 

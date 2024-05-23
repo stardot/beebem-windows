@@ -1204,11 +1204,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(m_DDFullScreenMode, true);
 
 	// View -> Motion blur
-	CheckMenuItem(IDM_BLUR_OFF, false);
-	CheckMenuItem(IDM_BLUR_2, false);
-	CheckMenuItem(IDM_BLUR_4, false);
-	CheckMenuItem(IDM_BLUR_8, false);
-	CheckMenuItem(m_MenuIDMotionBlur, true);
+	UpdateMotionBlurMenu();
 
 	// Speed
 	CheckMenuItem(IDM_REALTIME, false);
@@ -4128,15 +4124,19 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_BLUR_OFF:
+		SetMotionBlur(0);
+		break;
+
 	case IDM_BLUR_2:
+		SetMotionBlur(2);
+		break;
+
 	case IDM_BLUR_4:
+		SetMotionBlur(4);
+		break;
+
 	case IDM_BLUR_8:
-		if (MenuID != m_MenuIDMotionBlur)
-		{
-			CheckMenuItem(m_MenuIDMotionBlur, false);
-			m_MenuIDMotionBlur = MenuID;
-			CheckMenuItem(m_MenuIDMotionBlur, true);
-		}
+		SetMotionBlur(8);
 		break;
 
 	case IDM_CAPTURERES_DISPLAY:

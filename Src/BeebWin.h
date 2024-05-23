@@ -381,6 +381,9 @@ public:
 	void ExitDX();
 	void UpdateSmoothing();
 
+	void SetMotionBlur(int MotionBlur);
+	void UpdateMotionBlurMenu();
+
 	// DirectDraw
 	HRESULT InitDirectDraw();
 	HRESULT InitSurfaces();
@@ -561,7 +564,7 @@ public:
 	char* m_screen_blur;
 	int m_LastStartY;
 	int m_LastNLines;
-	UINT m_MenuIDMotionBlur;
+	int m_MotionBlur;
 	char m_BlurIntensities[8];
 	bool m_MaintainAspectRatio;
 	DisplayRendererType m_DisplayRenderer;
