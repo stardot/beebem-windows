@@ -171,6 +171,13 @@ enum class BitmapCaptureFormat {
 	Png
 };
 
+enum class BitmapCaptureResolution {
+	Display,
+	_1280x1024,
+	_640x512,
+	_320x256
+};
+
 class BeebWin
 {
 public:
@@ -315,6 +322,8 @@ public:
 
 	void SetBitmapCaptureFormat(BitmapCaptureFormat Format);
 	void UpdateBitmapCaptureFormatMenu();
+	void SetBitmapCaptureResolution(BitmapCaptureResolution Resolution);
+	void UpdateBitmapCaptureResolutionMenu();
 	void CaptureBitmapPending(bool autoFilename);
 
 	void DoShiftBreak();
@@ -670,7 +679,7 @@ public:
 	bool m_CaptureBitmapPending;
 	bool m_CaptureBitmapAutoFilename;
 	char m_CaptureFileName[MAX_PATH];
-	UINT m_MenuIDCaptureResolution;
+	BitmapCaptureResolution m_BitmapCaptureResolution;
 	BitmapCaptureFormat m_BitmapCaptureFormat;
 
 	// AVI vars

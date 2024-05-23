@@ -1129,12 +1129,8 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_WRITE_PROTECT_ON_LOAD, m_WriteProtectOnLoad);
 
 	// File -> Capture Options
-	CheckMenuItem(IDM_CAPTURERES_DISPLAY, false);
-	CheckMenuItem(IDM_CAPTURERES_1280, false);
-	CheckMenuItem(IDM_CAPTURERES_640, false);
-	CheckMenuItem(IDM_CAPTURERES_320, false);
 	UpdateBitmapCaptureFormatMenu();
-	CheckMenuItem(m_MenuIDCaptureResolution, true);
+	UpdateBitmapCaptureResolutionMenu();
 
 	// Edit
 	CheckMenuItem(IDM_EDIT_CRLF, m_translateCRLF);
@@ -4147,15 +4143,19 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_CAPTURERES_DISPLAY:
+		SetBitmapCaptureResolution(BitmapCaptureResolution::Display);
+		break;
+
 	case IDM_CAPTURERES_1280:
+		SetBitmapCaptureResolution(BitmapCaptureResolution::_1280x1024);
+		break;
+
 	case IDM_CAPTURERES_640:
+		SetBitmapCaptureResolution(BitmapCaptureResolution::_640x512);
+		break;
+
 	case IDM_CAPTURERES_320:
-		if (MenuID != m_MenuIDCaptureResolution)
-		{
-			CheckMenuItem(m_MenuIDCaptureResolution, false);
-			m_MenuIDCaptureResolution = MenuID;
-			CheckMenuItem(m_MenuIDCaptureResolution, true);
-		}
+		SetBitmapCaptureResolution(BitmapCaptureResolution::_320x256);
 		break;
 
 	case IDM_CAPTUREBMP:

@@ -1734,6 +1734,37 @@ void BeebWin::UpdateBitmapCaptureFormatMenu()
 	CheckMenuRadioItem(IDM_CAPTUREBMP, IDM_CAPTUREPNG, SelectedMenuItemID);
 }
 
+void BeebWin::SetBitmapCaptureResolution(BitmapCaptureResolution Resolution)
+{
+	m_BitmapCaptureResolution = Resolution;
+
+	UpdateBitmapCaptureResolutionMenu();
+}
+
+void BeebWin::UpdateBitmapCaptureResolutionMenu()
+{
+	static const struct { UINT ID; BitmapCaptureResolution Resolution; } MenuItems[] =
+	{
+		{ IDM_CAPTURERES_DISPLAY, BitmapCaptureResolution::Display },
+		{ IDM_CAPTURERES_1280,    BitmapCaptureResolution::_1280x1024 },
+		{ IDM_CAPTURERES_640,     BitmapCaptureResolution::_640x512 },
+		{ IDM_CAPTURERES_320,     BitmapCaptureResolution::_320x256 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_BitmapCaptureResolution == MenuItems[i].Resolution)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_CAPTURERES_DISPLAY, IDM_CAPTURERES_320, SelectedMenuItemID);
+}
+
 void BeebWin::CaptureBitmapPending(bool autoFilename)
 {
 	m_CaptureBitmapPending = true;
@@ -1907,9 +1938,9 @@ void BeebWin::CaptureBitmap(int SourceX,
 	int DestX, DestY;
 	int DestWidth, DestHeight;
 
-	switch (m_MenuIDCaptureResolution)
+	switch (m_BitmapCaptureResolution)
 	{
-		case IDM_CAPTURERES_DISPLAY:
+		case BitmapCaptureResolution::Display:
 			BitmapWidth  = m_XWinSize;
 			BitmapHeight = m_YWinSize;
 			DestWidth  = BitmapWidth;
@@ -1918,7 +1949,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 			DestY = 0;
 			break;
 
-		case IDM_CAPTURERES_1280:
+		case BitmapCaptureResolution::_1280x1024:
 			BitmapWidth  = 1280;
 			BitmapHeight = 1024;
 
@@ -1938,7 +1969,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 			}
 			break;
 
-		case IDM_CAPTURERES_640:
+		case BitmapCaptureResolution::_640x512:
 		default:
 			BitmapWidth  = 640;
 			BitmapHeight = 512;
@@ -1959,7 +1990,7 @@ void BeebWin::CaptureBitmap(int SourceX,
 			}
 			break;
 
-		case IDM_CAPTURERES_320:
+		case BitmapCaptureResolution::_320x256:
 			BitmapWidth  = 320;
 			BitmapHeight = 256;
 			DestWidth  = BitmapWidth;

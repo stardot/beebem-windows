@@ -760,9 +760,19 @@ void BeebWin::LoadPreferences()
 		m_MenuIDAviSkip = IDM_VIDEOSKIP1;
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureResolution", dword))
-		m_MenuIDCaptureResolution = dword;
+	{
+		switch (dword)
+		{
+			case 0: case 40262:          m_BitmapCaptureResolution = BitmapCaptureResolution::Display; break;
+			case 1: case 40263:          m_BitmapCaptureResolution = BitmapCaptureResolution::_1280x1024; break;
+			case 2: case 40264: default: m_BitmapCaptureResolution = BitmapCaptureResolution::_640x512; break;
+			case 3: case 40265:          m_BitmapCaptureResolution = BitmapCaptureResolution::_320x256; break;
+		}
+	}
 	else
-		m_MenuIDCaptureResolution = IDM_CAPTURERES_640;
+	{
+		m_BitmapCaptureResolution = BitmapCaptureResolution::_640x512;
+	}
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureFormat", dword))
 	{
@@ -994,7 +1004,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIDAviResolution);
 		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
 
-		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIDCaptureResolution);
+		m_Preferences.SetDWORDValue("BitmapCaptureResolution", (DWORD)m_BitmapCaptureResolution);
 		m_Preferences.SetDWORDValue("BitmapCaptureFormat", (DWORD)m_BitmapCaptureFormat);
 
 		RECT rect;
