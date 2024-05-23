@@ -765,9 +765,19 @@ void BeebWin::LoadPreferences()
 		m_MenuIDCaptureResolution = IDM_CAPTURERES_640;
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureFormat", dword))
-		m_MenuIDCaptureFormat = dword;
+	{
+		switch (dword)
+		{
+			case 0: case 40266: default: m_BitmapCaptureFormat = BitmapCaptureFormat::Bmp; break;
+			case 1: case 40267:          m_BitmapCaptureFormat = BitmapCaptureFormat::Jpeg; break;
+			case 2: case 40268:          m_BitmapCaptureFormat = BitmapCaptureFormat::Gif; break;
+			case 3: case 40269:          m_BitmapCaptureFormat = BitmapCaptureFormat::Png; break;
+		}
+	}
 	else
-		m_MenuIDCaptureFormat = IDM_CAPTUREBMP;
+	{
+		m_BitmapCaptureFormat = BitmapCaptureFormat::Bmp;
+	}
 
 	RECT rect;
 	if (m_Preferences.GetBinaryValue("WindowPos", &rect, sizeof(rect)))
@@ -985,7 +995,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
 
 		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIDCaptureResolution);
-		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIDCaptureFormat);
+		m_Preferences.SetDWORDValue("BitmapCaptureFormat", (DWORD)m_BitmapCaptureFormat);
 
 		RECT rect;
 		GetWindowRect(m_hWnd,&rect);

@@ -164,6 +164,13 @@ enum class JoystickOption {
 	DigitalMouseStick
 };
 
+enum class BitmapCaptureFormat {
+	Bmp,
+	Jpeg,
+	Gif,
+	Png
+};
+
 class BeebWin
 {
 public:
@@ -305,7 +312,11 @@ public:
 	void doPaste(void);
 	void ClearClipboardBuffer();
 	void CopyKey(unsigned char Value);
+
+	void SetBitmapCaptureFormat(BitmapCaptureFormat Format);
+	void UpdateBitmapCaptureFormatMenu();
 	void CaptureBitmapPending(bool autoFilename);
+
 	void DoShiftBreak();
 	bool HasKbdCmd() const;
 	void SetKeyboardTimer();
@@ -660,7 +671,7 @@ public:
 	bool m_CaptureBitmapAutoFilename;
 	char m_CaptureFileName[MAX_PATH];
 	UINT m_MenuIDCaptureResolution;
-	UINT m_MenuIDCaptureFormat;
+	BitmapCaptureFormat m_BitmapCaptureFormat;
 
 	// AVI vars
 	bmiData m_Avibmi;

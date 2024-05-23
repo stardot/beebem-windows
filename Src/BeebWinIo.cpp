@@ -1700,7 +1700,40 @@ void BeebWin::SelectHardDriveFolder()
 }
 
 /****************************************************************************/
-/* Bitmap capture support */
+
+// Bitmap capture support
+
+void BeebWin::SetBitmapCaptureFormat(BitmapCaptureFormat Format)
+{
+	m_BitmapCaptureFormat = Format;
+
+	UpdateBitmapCaptureFormatMenu();
+}
+
+void BeebWin::UpdateBitmapCaptureFormatMenu()
+{
+	static const struct { UINT ID; BitmapCaptureFormat Format; } MenuItems[] =
+	{
+		{ IDM_CAPTUREBMP,  BitmapCaptureFormat::Bmp },
+		{ IDM_CAPTUREJPEG, BitmapCaptureFormat::Jpeg },
+		{ IDM_CAPTUREGIF,  BitmapCaptureFormat::Gif },
+		{ IDM_CAPTUREPNG,  BitmapCaptureFormat::Png }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_BitmapCaptureFormat == MenuItems[i].Format)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_CAPTUREBMP, IDM_CAPTUREPNG, SelectedMenuItemID);
+}
+
 void BeebWin::CaptureBitmapPending(bool autoFilename)
 {
 	m_CaptureBitmapPending = true;
@@ -1758,40 +1791,40 @@ Exit:
 	return Success;
 }
 
-static const char* GetCaptureFormatFileExt(UINT MenuID)
+static const char* GetCaptureFormatFileExt(BitmapCaptureFormat Format)
 {
-	switch (MenuID)
+	switch (Format)
 	{
-		case IDM_CAPTUREBMP:
+		case BitmapCaptureFormat::Bmp:
 		default:
 			return ".bmp";
 
-		case IDM_CAPTUREJPEG:
+		case BitmapCaptureFormat::Jpeg:
 			return ".jpg";
 
-		case IDM_CAPTUREGIF:
+		case BitmapCaptureFormat::Gif:
 			return ".gif";
 
-		case IDM_CAPTUREPNG:
+		case BitmapCaptureFormat::Png:
 			return ".png";
 	}
 }
 
-static const WCHAR* GetCaptureFormatMimeType(UINT MenuID)
+static const WCHAR* GetCaptureFormatMimeType(BitmapCaptureFormat Format)
 {
-	switch (MenuID)
+	switch (Format)
 	{
-		case IDM_CAPTUREBMP:
+		case BitmapCaptureFormat::Bmp:
 		default:
 			return L"image/bmp";
 
-		case IDM_CAPTUREJPEG:
+		case BitmapCaptureFormat::Jpeg:
 			return L"image/jpeg";
 
-		case IDM_CAPTUREGIF:
+		case BitmapCaptureFormat::Gif:
 			return L"image/gif";
 
-		case IDM_CAPTUREPNG:
+		case BitmapCaptureFormat::Png:
 			return L"image/png";
 	}
 }
@@ -1806,7 +1839,7 @@ bool BeebWin::GetImageFile(char *FileName, int Size)
 	m_Preferences.GetStringValue("ImagePath", DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	const char *fileExt = GetCaptureFormatFileExt(m_MenuIDCaptureFormat);
+	const char *fileExt = GetCaptureFormatFileExt(m_BitmapCaptureFormat);
 
 	// A literal \0 in the format string terminates the string so use %c
 	char filter[200];
@@ -1842,8 +1875,8 @@ void BeebWin::CaptureBitmap(int SourceX,
                             int SourceHeight,
                             bool Teletext)
 {
-	const WCHAR *mimeType = GetCaptureFormatMimeType(m_MenuIDCaptureFormat);
-	const char *fileExt = GetCaptureFormatFileExt(m_MenuIDCaptureFormat);
+	const WCHAR *mimeType = GetCaptureFormatMimeType(m_BitmapCaptureFormat);
+	const char *fileExt = GetCaptureFormatFileExt(m_BitmapCaptureFormat);
 
 	CLSID encoderClsid;
 
