@@ -323,6 +323,13 @@ struct AUNTAB {
 	unsigned char network;
 };
 
+struct NetStn {
+	unsigned char network;
+	unsigned char station;
+};
+
+static NetStn LastError;
+
 const int NETWORK_TABLE_LENGTH = 512; // total number of hosts we can know about
 const int AUN_TABLE_LENGTH = 128; // number of disparate network in AUNMap
 static ECOLAN network[NETWORK_TABLE_LENGTH]; // list of my friends! :-)
@@ -1447,153 +1454,154 @@ bool EconetPoll_real() // return NMI status
 					*/
 
 					// Send a datagram to the receiver
-					if (AUNMode)
-					{
-						unsigned int j = 0;
-						// OK. Lets do AUN ...
-						// The beeb has given us a packet .. what is it?
-						SendMe = false;
-
-						switch (fourwaystage)
-						{
-						case FourWayStage::ScoutAckReceived:
-							// it came in response to our ack of a scout
-							// what we have /should/ be the data block ..
-							// CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
-							if (EconetTx.ah.port == 0x00) {
-								if (EconetTx.ah.cb == (0x82 & 0x7f))
-									j = 8;
-								else if (EconetTx.ah.cb >= (0x83 & 0x7f) && EconetTx.ah.cb <= (0x85 & 0x7f))
-									j = 4;
-							}
-
-							if (BeebTx.Pointer != sizeof(BeebTx.eh) + j || memcmp(BeebTx.buff, BeebTxCopy, sizeof(BeebTx.eh) + j) != 0) { // nope
-								// j = 0;
-								for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
-									EconetTx.buff[j] = BeebTx.buff[k];
-								}
-								EconetTx.Pointer = j;
-								fourwaystage = FourWayStage::DataSent;
-								if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATASENT");
-								SendMe = true;
-								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
-								break;
-							} // else fall through...
-
-						case FourWayStage::Idle:
-							// not currently doing anything, so this will be a scout,
-							memcpy(BeebTxCopy, BeebTx.buff, sizeof(BeebTx.eh));
-							// maybe a long scout or a broadcast
-							EconetTx.ah.cb = (unsigned int)(BeebTx.eh.cb) & 127; // | 128;
-							EconetTx.ah.port = (unsigned int)BeebTx.eh.port;
-							EconetTx.ah.pad = 0;
-							EconetTx.ah.handle = (ec_sequence+=4);
-
-							EconetTx.destnet = BeebTx.eh.destnet | outmask; //30JUN
-							EconetTx.deststn = BeebTx.eh.deststn;
-							// j = 0;
-							for (unsigned int k = 6; k < BeebTx.Pointer; k++, j++) {
-								EconetTx.buff[j] = BeebTx.buff[k];
-							}
-
-							EconetTx.Pointer = j;
-
-							if (EconetTx.deststn == 255 || EconetTx.deststn == 0)
-							{
-								EconetTx.ah.type = AUNType::Broadcast;
-								fourwaystage = FourWayStage::WaitForIdle; // no response to broadcasts...
-								//if (DebugEnabled)
-									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast snt)");
-								SendMe = true; // send packet ...
-								SendLen = sizeof(EconetTx.ah) + 8;
-							}
-							else if (EconetTx.ah.port == 0 && (EconetTx.ah.cb < (0x82 & 0x7f) || EconetTx.ah.cb > (0x85 & 0x7f)))
-							{
-								EconetTx.ah.type = AUNType::Immediate;
-								fourwaystage = FourWayStage::ImmediateSent;
-								//if (DebugEnabled)
-									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMSENT");
-								SendMe = true; // send packet ...
-								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
-							}
-							else
-							{
-								EconetTx.ah.type = AUNType::Unicast;
-								fourwaystage = FourWayStage::ScoutSent;
-								//if (DebugEnabled)
-									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTSENT");
-								// dont send anything but set wait anyway
-								SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
-								//if (DebugEnabled)
-									DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
-							} // else BROADCAST !!!!
-							break;
-
-						case FourWayStage::ScoutReceived:
-							// it's an ack for a scout which we sent the beeb. just drop it, but move on.
-							fourwaystage = FourWayStage::ScoutAckSent;
-							//if (DebugEnabled)
-								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKSENT");
-							SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
-							//if (DebugEnabled)
-								DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
-							break;
-
-						case FourWayStage::DataReceived:
-							// this must be ack for data just receved
-							// now we really need to send an ack to the far AUN host...
-							// send header of last block received straight back.
-							// this ought to work, but only because the beeb can only talk to one machine at any time..
-							SendLen = sizeof(EconetRx.ah);
-							EconetTx.ah = EconetRx.ah;
-							EconetTx.ah.type = AUNType::Ack;
-							SendMe = true;
-							/*
-							if (sendto(SendSocket, (char *) &EconetTx.ah, SendLen, 0,
-								(SOCKADDR *) &RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR) {
-									EconetError("Econet: Failed to send packet to %02x %02x (%08X :%u)",
-										(unsigned int)(network[i].inet_addr), (unsigned int)network[i].station,
-										(unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
-							}
-							*/
-
-							fourwaystage = FourWayStage::WaitForIdle;
-							//if (DebugEnabled)
-								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (final ack sent)");
-							break;
-
-						case FourWayStage::ImmediateReceived:
-							// it's a reply to an immediate command we just had
-							fourwaystage = FourWayStage::WaitForIdle;
-							//if (DebugEnabled)
-								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (imm rcvd)");
-							// j = 0;
-							for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
-								EconetTx.buff[j] = BeebTx.buff[k];
-							}
-							EconetTx.Pointer = j;
-							EconetTx.ah = EconetRx.ah;
-							EconetTx.ah.type = AUNType::ImmReply;
-							SendMe = true;
-							SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
-							break;
-
-						default:
-							// shouldn't be here.. ignore packet and abort fourway
-							fourwaystage = FourWayStage::WaitForIdle;
-							//if (DebugEnabled)
-								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (unexpected mode, packet ignored)");
-							break;
-						}
-					}
-
 					if (SendMe)
 					{
+						LastError.network = 0; // reset the network & station where the last send error occurred
+						LastError.station = 0;
+
 						//if (DebugEnabled)
 							DebugDisplayTrace(DebugType::Econet, true, "Econet: Sending a packet..");
 
 						if (AUNMode)
 						{
+							unsigned int j = 0;
+							// OK. Lets do AUN ...
+							// The beeb has given us a packet .. what is it?
+							SendMe = false;
+
+							switch (fourwaystage)
+							{
+							case FourWayStage::ScoutAckReceived:
+								// it came in response to our ack of a scout
+								// what we have /should/ be the data block ..
+								// CLUDGE WARNING is this a scout sent again immediately?? TODO fix this?!?!
+								if (EconetTx.ah.port == 0x00) {
+									if (EconetTx.ah.cb == (0x82 & 0x7f))
+										j = 8;
+									else if (EconetTx.ah.cb >= (0x83 & 0x7f) && EconetTx.ah.cb <= (0x85 & 0x7f))
+										j = 4;
+								}
+
+								if (BeebTx.Pointer != sizeof(BeebTx.eh) + j || memcmp(BeebTx.buff, BeebTxCopy, sizeof(BeebTx.eh) + j) != 0) { // nope
+									// j = 0;
+									for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
+										EconetTx.buff[j] = BeebTx.buff[k];
+									}
+									EconetTx.Pointer = j;
+									fourwaystage = FourWayStage::DataSent;
+									if (DebugEnabled) DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATASENT");
+									SendMe = true;
+									SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
+									break;
+								} // else fall through...
+
+							case FourWayStage::Idle:
+								// not currently doing anything, so this will be a scout,
+								memcpy(BeebTxCopy, BeebTx.buff, sizeof(BeebTx.eh));
+								// maybe a long scout or a broadcast
+								EconetTx.ah.cb = (unsigned int)(BeebTx.eh.cb) & 127; // | 128;
+								EconetTx.ah.port = (unsigned int)BeebTx.eh.port;
+								EconetTx.ah.pad = 0;
+								EconetTx.ah.handle = (ec_sequence += 4);
+
+								EconetTx.destnet = BeebTx.eh.destnet | outmask; //30JUN
+								EconetTx.deststn = BeebTx.eh.deststn;
+								// j = 0;
+								for (unsigned int k = 6; k < BeebTx.Pointer; k++, j++) {
+									EconetTx.buff[j] = BeebTx.buff[k];
+								}
+
+								EconetTx.Pointer = j;
+
+								if (EconetTx.deststn == 255 || EconetTx.deststn == 0)
+								{
+									EconetTx.ah.type = AUNType::Broadcast;
+									fourwaystage = FourWayStage::WaitForIdle; // no response to broadcasts...
+									//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (broadcast snt)");
+									SendMe = true; // send packet ...
+									SendLen = sizeof(EconetTx.ah) + 8;
+								}
+								else if (EconetTx.ah.port == 0 && (EconetTx.ah.cb < (0x82 & 0x7f) || EconetTx.ah.cb >(0x85 & 0x7f)))
+								{
+									EconetTx.ah.type = AUNType::Immediate;
+									fourwaystage = FourWayStage::ImmediateSent;
+									//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_IMMSENT");
+									SendMe = true; // send packet ...
+									SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
+								}
+								else
+								{
+									EconetTx.ah.type = AUNType::Unicast;
+									fourwaystage = FourWayStage::ScoutSent;
+									//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTSENT");
+									// dont send anything but set wait anyway
+									SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
+									//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
+								} // else BROADCAST !!!!
+								break;
+
+							case FourWayStage::ScoutReceived:
+								// it's an ack for a scout which we sent the beeb. just drop it, but move on.
+								fourwaystage = FourWayStage::ScoutAckSent;
+								//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKSENT");
+								SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
+								//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
+								break;
+
+							case FourWayStage::DataReceived:
+								// this must be ack for data just receved
+								// now we really need to send an ack to the far AUN host...
+								// send header of last block received straight back.
+								// this ought to work, but only because the beeb can only talk to one machine at any time..
+								SendLen = sizeof(EconetRx.ah);
+								EconetTx.ah = EconetRx.ah;
+								EconetTx.ah.type = AUNType::Ack;
+								SendMe = true;
+								/*
+								if (sendto(SendSocket, (char *) &EconetTx.ah, SendLen, 0,
+									(SOCKADDR *) &RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR) {
+										EconetError("Econet: Failed to send packet to %02x %02x (%08X :%u)",
+											(unsigned int)(network[i].inet_addr), (unsigned int)network[i].station,
+											(unsigned int)network[i].inet_addr, (unsigned int)network[i].port);
+								}
+								*/
+
+								fourwaystage = FourWayStage::WaitForIdle;
+								//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (final ack sent)");
+								break;
+
+							case FourWayStage::ImmediateReceived:
+								// it's a reply to an immediate command we just had
+								fourwaystage = FourWayStage::WaitForIdle;
+								//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (imm rcvd)");
+								// j = 0;
+								for (unsigned int k = 4; k < BeebTx.Pointer; k++, j++) {
+									EconetTx.buff[j] = BeebTx.buff[k];
+								}
+								EconetTx.Pointer = j;
+								EconetTx.ah = EconetRx.ah;
+								EconetTx.ah.type = AUNType::ImmReply;
+								SendMe = true;
+								SendLen = sizeof(EconetTx.ah) + EconetTx.Pointer;
+								break;
+
+							default:
+								// shouldn't be here.. ignore packet and abort fourway
+								fourwaystage = FourWayStage::WaitForIdle;
+								//if (DebugEnabled)
+								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_WAIT4IDLE (unexpected mode, packet ignored)");
+								break;
+							}
+
+
 							if (sendto(SendSocket, (char *)&EconetTx, SendLen, 0,
 							           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
 							{
@@ -1625,6 +1633,27 @@ bool EconetPoll_real() // return NMI status
 						//if (DebugEnabled)
 							DebugDumpADLC();
 					}
+					else
+					{
+						if ((LastError.network != BeebTx.eh.destnet) && (LastError.station != BeebTx.eh.deststn))
+						{
+							if (AUNMode)
+							{
+								EconetError("Econet: Station %d.%d not found in AUN Map or Econet.cfg",
+								            (unsigned int)BeebTx.eh.destnet,
+								            (unsigned int)BeebTx.eh.deststn);
+							}
+							else
+							{
+								EconetError("Econet: Station %d.%d not found in Econet.cfg",
+								            (unsigned int)BeebTx.eh.destnet,
+								            (unsigned int)BeebTx.eh.deststn);
+							}
+
+							LastError.network = BeebTx.eh.destnet; // if there is a send error, remember the network and station
+							LastError.station = BeebTx.eh.deststn; // to prevent the user being notified on each retry
+						}
+					 }
 				}
 			}
 		}
