@@ -191,6 +191,7 @@ BeebWin::BeebWin()
 	m_ClipboardIndex = 0;
 	m_printerbufferlen = 0;
 	m_translateCRLF = true;
+	m_PrinterPort = PrinterPortType::Lpt1;
 	m_CurrentDisplayRenderer = DisplayRendererType::GDI;
 	m_hInstDDraw = nullptr;
 	m_DD = nullptr;
@@ -1108,8 +1109,6 @@ void BeebWin::EnableMenuItem(UINT id, bool enabled)
 
 void BeebWin::InitMenu(void)
 {
-	char menu_string[256];
-
 	// File -> Video Options
 	UpdateVideoCaptureResolutionMenu();
 	CheckMenuItem(IDM_VIDEOSKIP0, false);
@@ -1140,19 +1139,11 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
 
 	// Comms -> Printer
-	CheckMenuItem(IDM_PRINTER_FILE, false);
-	CheckMenuItem(IDM_PRINTER_LPT1, false);
-	CheckMenuItem(IDM_PRINTER_LPT2, false);
-	CheckMenuItem(IDM_PRINTER_LPT3, false);
-	CheckMenuItem(IDM_PRINTER_LPT4, false);
-	CheckMenuItem(IDM_PRINTER_COM1, false);
-	CheckMenuItem(IDM_PRINTER_COM2, false);
-	CheckMenuItem(IDM_PRINTER_COM3, false);
-	CheckMenuItem(IDM_PRINTER_COM4, false);
-	CheckMenuItem(m_MenuIDPrinterPort, true);
-	strcpy(menu_string, "File: ");
-	strcat(menu_string, m_PrinterFileName);
-	ModifyMenu(m_hMenu, IDM_PRINTER_FILE, MF_BYCOMMAND, IDM_PRINTER_FILE, menu_string);
+	UpdatePrinterPortMenu();
+
+	std::string MenuString = "File: ";
+	MenuString += m_PrinterFileName;
+	ModifyMenu(m_hMenu, IDM_PRINTER_FILE, MF_BYCOMMAND, IDM_PRINTER_FILE, MenuString.c_str());
 
 	// Comms -> RS423
 	UpdateSerialMenu();
@@ -3369,60 +3360,27 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_PRINTER_FILE:
-		if (PrinterFile())
-		{
-			/* If printer is enabled then need to
-				disable it before changing file */
-			if (PrinterEnabled)
-				TogglePrinter();
-
-			/* Add file name to menu */
-			char menu_string[256];
-			strcpy(menu_string, "File: ");
-			strcat(menu_string, m_PrinterFileName);
-			ModifyMenu(m_hMenu, IDM_PRINTER_FILE,
-				MF_BYCOMMAND, IDM_PRINTER_FILE,
-				menu_string);
-
-			if (MenuID != m_MenuIDPrinterPort)
-			{
-				CheckMenuItem(m_MenuIDPrinterPort, false);
-				m_MenuIDPrinterPort = MenuID;
-				CheckMenuItem(m_MenuIDPrinterPort, true);
-			}
-			TranslatePrinterPort();
-		}
+		SetPrinterPort(PrinterPortType::File);
 		break;
 
 	case IDM_PRINTER_CLIPBOARD:
-		if (PrinterEnabled)
-			TogglePrinter();
-
-		if (MenuID != m_MenuIDPrinterPort)
-		{
-			CheckMenuItem(m_MenuIDPrinterPort, false);
-			m_MenuIDPrinterPort = MenuID;
-			CheckMenuItem(m_MenuIDPrinterPort, true);
-		}
-		TranslatePrinterPort();
+		SetPrinterPort(PrinterPortType::Clipboard);
 		break;
 
 	case IDM_PRINTER_LPT1:
-	case IDM_PRINTER_LPT2:
-	case IDM_PRINTER_LPT3:
-	case IDM_PRINTER_LPT4:
-		if (MenuID != m_MenuIDPrinterPort)
-		{
-			/* If printer is enabled then need to
-				disable it before changing file */
-			if (PrinterEnabled)
-				TogglePrinter();
+		SetPrinterPort(PrinterPortType::Lpt1);
+		break;
 
-			CheckMenuItem(m_MenuIDPrinterPort, false);
-			m_MenuIDPrinterPort = MenuID;
-			CheckMenuItem(m_MenuIDPrinterPort, true);
-			TranslatePrinterPort();
-		}
+	case IDM_PRINTER_LPT2:
+		SetPrinterPort(PrinterPortType::Lpt2);
+		break;
+
+	case IDM_PRINTER_LPT3:
+		SetPrinterPort(PrinterPortType::Lpt3);
+		break;
+
+	case IDM_PRINTER_LPT4:
+		SetPrinterPort(PrinterPortType::Lpt4);
 		break;
 
 	case IDM_PRINTERONOFF:

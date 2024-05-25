@@ -720,7 +720,96 @@ void BeebWin::SetDiscWriteProtects()
 }
 
 /****************************************************************************/
-bool BeebWin::PrinterFile()
+
+void BeebWin::SetPrinterPort(PrinterPortType PrinterPort)
+{
+	if (PrinterPort == PrinterPortType::File)
+	{
+		if (GetPrinterFileName())
+		{
+			// If printer is enabled then need to
+			// disable it before changing file
+			if (PrinterEnabled)
+				TogglePrinter();
+
+			// Add file name to menu
+			std::string MenuString = "File: ";
+			MenuString += m_PrinterFileName;
+
+			ModifyMenu(m_hMenu, IDM_PRINTER_FILE,
+			           MF_BYCOMMAND, IDM_PRINTER_FILE,
+			           MenuString.c_str());
+
+			m_PrinterPort = PrinterPort;
+
+			TranslatePrinterPort();
+		}
+	}
+	else if (PrinterPort == PrinterPortType::Clipboard)
+	{
+		if (PrinterEnabled)
+			TogglePrinter();
+
+		m_PrinterPort = PrinterPort;
+
+		TranslatePrinterPort();
+	}
+	else
+	{
+		if (PrinterPort != m_PrinterPort)
+		{
+			// If printer is enabled then need to
+			// disable it before changing file
+			if (PrinterEnabled)
+				TogglePrinter();
+
+			m_PrinterPort = PrinterPort;
+
+			TranslatePrinterPort();
+		}
+	}
+
+	UpdatePrinterPortMenu();
+}
+
+void BeebWin::UpdatePrinterPortMenu()
+{
+	static struct { UINT ID; PrinterPortType PrinterPort; } MenuItems[] =
+	{
+		{ IDM_PRINTER_FILE,      PrinterPortType::File },
+		{ IDM_PRINTER_CLIPBOARD, PrinterPortType::Clipboard },
+		{ IDM_PRINTER_LPT1,      PrinterPortType::Lpt1 },
+		{ IDM_PRINTER_LPT2,      PrinterPortType::Lpt2 },
+		{ IDM_PRINTER_LPT3,      PrinterPortType::Lpt3 },
+		{ IDM_PRINTER_LPT4,      PrinterPortType::Lpt4 },
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_PrinterPort == MenuItems[i].PrinterPort)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(
+		IDM_PRINTER_FILE,
+		IDM_PRINTER_LPT4,
+		SelectedMenuItemID
+	);
+
+	EnableMenuItem(IDM_PRINTER_FILE, !PrinterEnabled);
+	EnableMenuItem(IDM_PRINTER_CLIPBOARD, !PrinterEnabled);
+	EnableMenuItem(IDM_PRINTER_LPT1, !PrinterEnabled);
+	EnableMenuItem(IDM_PRINTER_LPT2, !PrinterEnabled);
+	EnableMenuItem(IDM_PRINTER_LPT3, !PrinterEnabled);
+	EnableMenuItem(IDM_PRINTER_LPT4, !PrinterEnabled);
+}
+
+bool BeebWin::GetPrinterFileName()
 {
 	char StartPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
@@ -757,8 +846,11 @@ bool BeebWin::PrinterFile()
 }
 
 /****************************************************************************/
-void BeebWin::TogglePrinter()
+
+bool BeebWin::TogglePrinter()
 {
+	bool Success = true;
+
 	m_printerbufferlen = 0;
 
 	if (PrinterEnabled)
@@ -767,56 +859,68 @@ void BeebWin::TogglePrinter()
 	}
 	else
 	{
-		if (m_MenuIDPrinterPort == IDM_PRINTER_FILE)
+		if (m_PrinterPort == PrinterPortType::File)
 		{
 			if (strlen(m_PrinterFileName) == 0)
 			{
-				PrinterFile();
+				GetPrinterFileName();
 			}
 
 			if (strlen(m_PrinterFileName) != 0)
 			{
-				PrinterEnable(m_PrinterFileName);
+				Success = PrinterEnable(m_PrinterFileName);
 			}
 		}
-		else if (m_MenuIDPrinterPort == IDM_PRINTER_CLIPBOARD)
+		else if (m_PrinterPort == PrinterPortType::Clipboard)
 		{
-			PrinterEnable(NULL);
+			Success = PrinterEnable(nullptr);
 		}
 		else
 		{
-			PrinterEnable(m_PrinterDevice);
+			Success = PrinterEnable(m_PrinterDevice);
 		}
 	}
 
-	CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
+	if (Success)
+	{
+		CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
+	}
+
+	UpdatePrinterPortMenu();
+
+	return Success;
 }
 
 /****************************************************************************/
 
 void BeebWin::TranslatePrinterPort()
 {
-	switch (m_MenuIDPrinterPort)
+	switch (m_PrinterPort)
 	{
-	case IDM_PRINTER_FILE:
-		strcpy(m_PrinterDevice, m_PrinterFileName);
-		break;
-	case IDM_PRINTER_CLIPBOARD:
-		strcpy(m_PrinterDevice, "CLIPBOARD");
-		break;
-	default:
-	case IDM_PRINTER_LPT1:
-		strcpy(m_PrinterDevice, "LPT1");
-		break;
-	case IDM_PRINTER_LPT2:
-		strcpy(m_PrinterDevice, "LPT2");
-		break;
-	case IDM_PRINTER_LPT3:
-		strcpy(m_PrinterDevice, "LPT3");
-		break;
-	case IDM_PRINTER_LPT4:
-		strcpy(m_PrinterDevice, "LPT4");
-		break;
+		case PrinterPortType::File:
+			strcpy(m_PrinterDevice, m_PrinterFileName);
+			break;
+
+		case PrinterPortType::Clipboard:
+			strcpy(m_PrinterDevice, "CLIPBOARD");
+			break;
+
+		case PrinterPortType::Lpt1:
+		default:
+			strcpy(m_PrinterDevice, "LPT1");
+			break;
+
+		case PrinterPortType::Lpt2:
+			strcpy(m_PrinterDevice, "LPT2");
+			break;
+
+		case PrinterPortType::Lpt3:
+			strcpy(m_PrinterDevice, "LPT3");
+			break;
+
+		case PrinterPortType::Lpt4:
+			strcpy(m_PrinterDevice, "LPT4");
+			break;
 	}
 }
 
@@ -1278,7 +1382,7 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 
 		const int UEF_USER_KEYBOARD_MAPPING = 40060; // Was a menu item ID in BeebEm <= 4.19
 
-		if (KeyboardMapping = (int)KeyboardMappingType::User || KeyboardMapping == UEF_USER_KEYBOARD_MAPPING)
+		if (KeyboardMapping == (int)KeyboardMappingType::User || KeyboardMapping == UEF_USER_KEYBOARD_MAPPING)
 		{
 			char FileName[256];
 			memset(FileName, 0, sizeof(FileName));
@@ -1380,14 +1484,11 @@ void BeebWin::doCopy()
 	if (PrinterEnabled)
 		TogglePrinter();
 
-	if (IDM_PRINTER_CLIPBOARD != m_MenuIDPrinterPort)
-	{
-		CheckMenuItem(m_MenuIDPrinterPort, false);
-		m_MenuIDPrinterPort = IDM_PRINTER_CLIPBOARD;
-		CheckMenuItem(m_MenuIDPrinterPort, true);
-	}
+	m_PrinterPort = PrinterPortType::Clipboard;
+
 	TranslatePrinterPort();
 	TogglePrinter(); // Turn printer back on
+	UpdatePrinterPortMenu();
 
 	m_printerbufferlen = 0;
 

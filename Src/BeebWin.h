@@ -196,6 +196,15 @@ enum class AMXSizeType {
 	_640x256
 };
 
+enum class PrinterPortType {
+	File,
+	Clipboard,
+	Lpt1,
+	Lpt2,
+	Lpt3,
+	Lpt4
+};
+
 class BeebWin
 {
 public:
@@ -447,9 +456,11 @@ public:
 	void SetAMXAdjust(int Adjust);
 	void UpdateAMXAdjustMenu();
 
-	bool PrinterFile();
-	void TogglePrinter(void);
-	void TranslatePrinterPort(void);
+	void SetPrinterPort(PrinterPortType PrinterPort);
+	void UpdatePrinterPortMenu();
+	bool GetPrinterFileName();
+	bool TogglePrinter();
+	void TranslatePrinterPort();
 
 	// AVI recording
 	void SetVideoCaptureResolution(VideoCaptureResolution Resolution);
@@ -676,7 +687,7 @@ public:
 	int m_printerbufferlen;
 	bool m_translateCRLF;
 
-	UINT m_MenuIDPrinterPort;
+	PrinterPortType m_PrinterPort;
 	char m_PrinterFileName[_MAX_PATH];
 	char m_PrinterDevice[_MAX_PATH];
 

@@ -520,12 +520,23 @@ void BeebWin::LoadPreferences()
 
 	if (!m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
 		PrinterEnabled = false;
+
 	if (m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, dword))
-		m_MenuIDPrinterPort = dword;
-	else
-		m_MenuIDPrinterPort = IDM_PRINTER_LPT1;
+	{
+		switch (dword)
+		{
+			case 0: case 40081:          m_PrinterPort = PrinterPortType::File; break;
+			case 1: case 40244:          m_PrinterPort = PrinterPortType::Clipboard; break;
+			case 2: case 40082: default: m_PrinterPort = PrinterPortType::Lpt1; break;
+			case 3: case 40083:          m_PrinterPort = PrinterPortType::Lpt2; break;
+			case 4: case 40084:          m_PrinterPort = PrinterPortType::Lpt3; break;
+			case 5: case 40085:          m_PrinterPort = PrinterPortType::Lpt4; break;
+		}
+	}
+
 	if (!m_Preferences.GetStringValue(CFG_PRINTER_FILE, m_PrinterFileName))
 		m_PrinterFileName[0] = 0;
+
 	TranslatePrinterPort();
 
 	if (!m_Preferences.GetBinaryValue("Tape Clock Speed", &TapeState.ClockSpeed, 2))
@@ -1008,7 +1019,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDecimalValue(CFG_AMX_ADJUST, m_AMXAdjust);
 
 		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
-		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, m_MenuIDPrinterPort);
+		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, (DWORD)m_PrinterPort);
 		m_Preferences.SetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
 
 		m_Preferences.SetBinaryValue("Tape Clock Speed", &TapeState.ClockSpeed, 2);

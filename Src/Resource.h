@@ -301,16 +301,13 @@
 #define IDM_AMX_ADJUSTM30               40076
 #define IDM_AMX_ADJUSTM50               40077
 #define IDM_AMX_LRFORMIDDLE             40078
-#define IDM_PRINTERONOFF                40080
-#define IDM_PRINTER_FILE                40081
+#define IDM_PRINTERONOFF                40079
+#define IDM_PRINTER_FILE                40080
+#define IDM_PRINTER_CLIPBOARD           40081
 #define IDM_PRINTER_LPT1                40082
 #define IDM_PRINTER_LPT2                40083
 #define IDM_PRINTER_LPT3                40084
 #define IDM_PRINTER_LPT4                40085
-#define IDM_PRINTER_COM1                40086
-#define IDM_PRINTER_COM2                40087
-#define IDM_PRINTER_COM3                40088
-#define IDM_PRINTER_COM4                40089
 #define IDM_FREEZEINACTIVE              40093
 #define ID_MONITOR_RGB                  40095
 #define ID_MONITOR_BW                   40096
@@ -428,7 +425,6 @@
 #define IDM_AUTOSAVE_PREFS_ALL          40234
 #define IDM_EDIT_COPY                   40242
 #define IDM_EDIT_PASTE                  40243
-#define IDM_PRINTER_CLIPBOARD           40244
 #define IDM_EDIT_CRLF                   40245
 #define IDM_DISC_IMPORT_0               40246
 #define IDM_DISC_IMPORT_1               40247
@@ -453,7 +449,6 @@
 #define IDM_CAPTUREPNG                  40269
 #define IDM_CAPTURESCREEN               40270
 #define ID_FLOPPYDRIVE                  40271
-#define ID_IP232RAW                     40274
 #define IDM_SWRAMBOARD                  40276
 #define IDM_ROMCONFIG                   40277
 #define IDM_MAINTAINASPECTRATIO         40278

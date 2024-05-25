@@ -619,7 +619,7 @@ static void ClosePrinterOutputFile()
 
 /*-------------------------------------------------------------------------*/
 
-void PrinterEnable(const char *FileName)
+bool PrinterEnable(const char *FileName)
 {
 	ClosePrinterOutputFile();
 
@@ -627,7 +627,7 @@ void PrinterEnable(const char *FileName)
 	{
 		PrinterEnabled = true;
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
-		return;
+		return true;
 	}
 
 	strcpy(PrinterFileName, FileName);
@@ -637,11 +637,13 @@ void PrinterEnable(const char *FileName)
 	if (PrinterFileHandle == nullptr)
 	{
 		mainWin->Report(MessageType::Error, "Failed to open printer:\n  %s", PrinterFileName);
+		return false;
 	}
 	else
 	{
 		PrinterEnabled = true;
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+		return true;
 	}
 }
 
