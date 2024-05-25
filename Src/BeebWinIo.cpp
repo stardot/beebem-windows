@@ -933,6 +933,22 @@ void BeebWin::SetVideoCaptureResolution(VideoCaptureResolution Resolution)
 	UpdateVideoCaptureResolutionMenu();
 }
 
+void BeebWin::SetVideoCaptureFrameSkip(int FrameSkip)
+{
+	m_AviFrameSkip = FrameSkip;
+
+	UpdateVideoCaptureFrameSkipMenu();
+}
+
+void BeebWin::UpdateVideoCaptureMenu()
+{
+	UpdateVideoCaptureResolutionMenu();
+	UpdateVideoCaptureFrameSkipMenu();
+
+	EnableMenuItem(IDM_CAPTUREVIDEO, !IsCapturing());
+	EnableMenuItem(IDM_ENDVIDEO, IsCapturing());
+}
+
 void BeebWin::UpdateVideoCaptureResolutionMenu()
 {
 	static const struct { UINT ID; VideoCaptureResolution Resolution; } MenuItems[] =
@@ -955,6 +971,33 @@ void BeebWin::UpdateVideoCaptureResolutionMenu()
 	}
 
 	CheckMenuRadioItem(IDM_VIDEORES1, IDM_VIDEORES3, SelectedMenuItemID);
+}
+
+void BeebWin::UpdateVideoCaptureFrameSkipMenu()
+{
+	static const struct { UINT ID; int FrameSkip; } MenuItems[] =
+	{
+		{ IDM_VIDEOSKIP0, 0 },
+		{ IDM_VIDEOSKIP1, 1 },
+		{ IDM_VIDEOSKIP2, 2 },
+		{ IDM_VIDEOSKIP3, 3 },
+		{ IDM_VIDEOSKIP4, 4 },
+		{ IDM_VIDEOSKIP5, 5 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_AviFrameSkip == MenuItems[i].FrameSkip)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+		}
+
+		EnableMenuItem(MenuItems[i].ID, !IsCapturing());
+	}
+
+	CheckMenuRadioItem(IDM_VIDEOSKIP0, IDM_VIDEOSKIP5, SelectedMenuItemID);
 }
 
 /****************************************************************************/
@@ -1047,18 +1090,6 @@ void BeebWin::CaptureVideo()
 		}
 		else
 		{
-			// Calc frame rate based on users frame skip selection
-			switch (m_MenuIDAviSkip)
-			{
-			case IDM_VIDEOSKIP0: m_AviFrameSkip = 0; break;
-			case IDM_VIDEOSKIP1: m_AviFrameSkip = 1; break;
-			case IDM_VIDEOSKIP2: m_AviFrameSkip = 2; break;
-			case IDM_VIDEOSKIP3: m_AviFrameSkip = 3; break;
-			case IDM_VIDEOSKIP4: m_AviFrameSkip = 4; break;
-			case IDM_VIDEOSKIP5: m_AviFrameSkip = 5; break;
-			default: m_AviFrameSkip = 1; break;
-			}
-
 			m_AviFrameSkipCount = 0;
 			m_AviFrameCount = 0;
 
@@ -1098,6 +1129,11 @@ void BeebWin::EndVideo()
 		DeleteDC(m_AviDC);
 		m_AviDC = nullptr;
 	}
+}
+
+bool BeebWin::IsCapturing() const
+{
+	return aviWriter != nullptr;
 }
 
 /****************************************************************************/

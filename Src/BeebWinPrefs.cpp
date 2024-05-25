@@ -828,10 +828,33 @@ void BeebWin::LoadPreferences()
 		m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
 	}
 
-	if (m_Preferences.GetDWORDValue("FrameSkip", dword))
-		m_MenuIDAviSkip = dword;
+	if (m_Preferences.GetDecimalValue("CaptureFrameSkip", Value))
+	{
+		if (Value >= 0 && Value <= 5)
+		{
+			m_AviFrameSkip = Value;
+		}
+		else
+		{
+			m_AviFrameSkip = 1;
+		}
+	}
+	else if (m_Preferences.GetDWORDValue("FrameSkip", dword))
+	{
+		switch (dword)
+		{
+			case 40188:          m_AviFrameSkip = 0; break;
+			case 40189: default: m_AviFrameSkip = 1; break;
+			case 40190:          m_AviFrameSkip = 2; break;
+			case 40191:          m_AviFrameSkip = 3; break;
+			case 40192:          m_AviFrameSkip = 4; break;
+			case 40193:          m_AviFrameSkip = 5; break;
+		}
+	}
 	else
-		m_MenuIDAviSkip = IDM_VIDEOSKIP1;
+	{
+		m_AviFrameSkip = 1;
+	}
 
 	if (m_Preferences.GetDWORDValue("BitmapCaptureResolution", dword))
 	{
@@ -1076,7 +1099,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled);
 
 		m_Preferences.SetDWORDValue("CaptureResolution", (DWORD)m_VideoCaptureResolution);
-		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
+		m_Preferences.SetDecimalValue("CaptureFrameSkip", m_AviFrameSkip);
+		m_Preferences.EraseValue("FrameSkip");
 
 		m_Preferences.SetDWORDValue("BitmapCaptureResolution", (DWORD)m_BitmapCaptureResolution);
 		m_Preferences.SetDWORDValue("BitmapCaptureFormat", (DWORD)m_BitmapCaptureFormat);

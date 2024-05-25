@@ -1110,14 +1110,7 @@ void BeebWin::EnableMenuItem(UINT id, bool enabled)
 void BeebWin::InitMenu(void)
 {
 	// File -> Video Options
-	UpdateVideoCaptureResolutionMenu();
-	CheckMenuItem(IDM_VIDEOSKIP0, false);
-	CheckMenuItem(IDM_VIDEOSKIP1, false);
-	CheckMenuItem(IDM_VIDEOSKIP2, false);
-	CheckMenuItem(IDM_VIDEOSKIP3, false);
-	CheckMenuItem(IDM_VIDEOSKIP4, false);
-	CheckMenuItem(IDM_VIDEOSKIP5, false);
-	CheckMenuItem(m_MenuIDAviSkip, true);
+	UpdateVideoCaptureMenu();
 
 	// File -> Disc Options
 	CheckMenuItem(IDM_WRITE_PROTECT_DISC0, m_WriteProtectDisc[0]);
@@ -4225,25 +4218,37 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_VIDEOSKIP0:
+		SetVideoCaptureFrameSkip(0);
+		break;
+
 	case IDM_VIDEOSKIP1:
+		SetVideoCaptureFrameSkip(1);
+		break;
+
 	case IDM_VIDEOSKIP2:
+		SetVideoCaptureFrameSkip(2);
+		break;
+
 	case IDM_VIDEOSKIP3:
+		SetVideoCaptureFrameSkip(3);
+		break;
+
 	case IDM_VIDEOSKIP4:
+		SetVideoCaptureFrameSkip(4);
+		break;
+
 	case IDM_VIDEOSKIP5:
-		if (MenuID != m_MenuIDAviSkip)
-		{
-			CheckMenuItem(m_MenuIDAviSkip, false);
-			m_MenuIDAviSkip = MenuID;
-			CheckMenuItem(m_MenuIDAviSkip, true);
-		}
+		SetVideoCaptureFrameSkip(5);
 		break;
 
 	case IDM_CAPTUREVIDEO:
 		CaptureVideo();
+		UpdateVideoCaptureMenu();
 		break;
 
 	case IDM_ENDVIDEO:
 		EndVideo();
+		UpdateVideoCaptureMenu();
 		break;
 
 	#if ENABLE_SPEECH

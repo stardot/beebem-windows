@@ -464,10 +464,15 @@ public:
 
 	// AVI recording
 	void SetVideoCaptureResolution(VideoCaptureResolution Resolution);
+	void SetVideoCaptureFrameSkip(int FrameSkip);
 	void UpdateVideoCaptureResolutionMenu();
+	void UpdateVideoCaptureFrameSkipMenu();
+	void UpdateVideoCaptureMenu();
 	void CaptureVideo();
 	void EndVideo();
+	bool IsCapturing() const;
 
+	// Bitmap capture
 	void CaptureBitmap(int SourceX,
 	                   int SourceY,
 	                   int SourceWidth,
@@ -732,7 +737,6 @@ public:
 	int m_AviFrameSkipCount;
 	int m_AviFrameCount;
 	VideoCaptureResolution m_VideoCaptureResolution;
-	UINT m_MenuIDAviSkip;
 
 	// Text to speech variables
 	bool m_TextToSpeechEnabled;
