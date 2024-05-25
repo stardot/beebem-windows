@@ -43,6 +43,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include <algorithm>
+#include <array>
 #include <string>
 
 #pragma warning(push)
@@ -1191,26 +1192,7 @@ void BeebWin::InitMenu(void)
 	UpdateMotionBlurMenu();
 
 	// Speed
-	CheckMenuItem(IDM_REALTIME, false);
-	CheckMenuItem(IDM_FIXEDSPEED100, false);
-	CheckMenuItem(IDM_FIXEDSPEED50, false);
-	CheckMenuItem(IDM_FIXEDSPEED10, false);
-	CheckMenuItem(IDM_FIXEDSPEED5, false);
-	CheckMenuItem(IDM_FIXEDSPEED2, false);
-	CheckMenuItem(IDM_FIXEDSPEED1_5, false);
-	CheckMenuItem(IDM_FIXEDSPEED1_25, false);
-	CheckMenuItem(IDM_FIXEDSPEED1_1, false);
-	CheckMenuItem(IDM_FIXEDSPEED0_9, false);
-	CheckMenuItem(IDM_FIXEDSPEED0_5, false);
-	CheckMenuItem(IDM_FIXEDSPEED0_75, false);
-	CheckMenuItem(IDM_FIXEDSPEED0_25, false);
-	CheckMenuItem(IDM_FIXEDSPEED0_1, false);
-	CheckMenuItem(IDM_50FPS, false);
-	CheckMenuItem(IDM_25FPS, false);
-	CheckMenuItem(IDM_10FPS, false);
-	CheckMenuItem(IDM_5FPS, false);
-	CheckMenuItem(IDM_1FPS, false);
-	CheckMenuItem(m_MenuIDTiming, true);
+	UpdateSpeedMenu();
 	// Check menu based on m_EmuPaused to take into account -StartPaused arg
 	CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
 
@@ -2663,116 +2645,53 @@ void BeebWin::TranslateWindowSize(void)
 
 /****************************************************************************/
 
+void BeebWin::UpdateSpeedMenu()
+{
+	CheckMenuItem(IDM_REALTIME,       m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 100);
+	CheckMenuItem(IDM_FIXEDSPEED100,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 10000);
+	CheckMenuItem(IDM_FIXEDSPEED50,   m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 5000);
+	CheckMenuItem(IDM_FIXEDSPEED10,   m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 1000);
+	CheckMenuItem(IDM_FIXEDSPEED5,    m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 500);
+	CheckMenuItem(IDM_FIXEDSPEED2,    m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 200);
+	CheckMenuItem(IDM_FIXEDSPEED1_5,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 150);
+	CheckMenuItem(IDM_FIXEDSPEED1_25, m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 125);
+	CheckMenuItem(IDM_FIXEDSPEED1_1,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 110);
+	CheckMenuItem(IDM_FIXEDSPEED0_9,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 90);
+	CheckMenuItem(IDM_FIXEDSPEED0_5,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 50);
+	CheckMenuItem(IDM_FIXEDSPEED0_75, m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 75);
+	CheckMenuItem(IDM_FIXEDSPEED0_25, m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 25);
+	CheckMenuItem(IDM_FIXEDSPEED0_1,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 10);
+	CheckMenuItem(IDM_50FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 50);
+	CheckMenuItem(IDM_25FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 25);
+	CheckMenuItem(IDM_10FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 10);
+	CheckMenuItem(IDM_5FPS,           m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 5);
+	CheckMenuItem(IDM_1FPS,           m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 1);
+}
+
 void BeebWin::TranslateTiming()
 {
-	m_FPSTarget = 0;
-	SetRealTimeTarget(1.0);
-
-	if (m_MenuIDTiming == IDM_3QSPEED)
-		m_MenuIDTiming = IDM_FIXEDSPEED0_75;
-	if (m_MenuIDTiming == IDM_HALFSPEED)
-		m_MenuIDTiming = IDM_FIXEDSPEED0_5;
-
-	switch (m_MenuIDTiming)
+	switch (m_TimingType)
 	{
-	default:
-	case IDM_REALTIME:
-		SetRealTimeTarget(1.0);
-		m_FPSTarget = 0;
-		break;
+		case TimingType::FixedSpeed:
+			SetRealTimeTarget((double)m_TimingSpeed / 100.0);
+			m_FPSTarget = 0;
+			break;
 
-	case IDM_FIXEDSPEED100:
-		SetRealTimeTarget(100.0);
-		m_FPSTarget = 0;
-		break;
+		case TimingType::FixedFPS:
+			SetRealTimeTarget(0.0);
+			m_FPSTarget = m_TimingSpeed;
+			break;
 
-	case IDM_FIXEDSPEED50:
-		SetRealTimeTarget(50.0);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED10:
-		SetRealTimeTarget(10.0);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED5:
-		SetRealTimeTarget(5.0);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED2:
-		SetRealTimeTarget(2.0);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED1_5:
-		SetRealTimeTarget(1.5);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED1_25:
-		SetRealTimeTarget(1.25);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED1_1:
-		SetRealTimeTarget(1.1);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED0_9:
-		SetRealTimeTarget(0.9);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED0_5:
-		SetRealTimeTarget(0.5);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED0_75:
-		SetRealTimeTarget(0.75);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED0_25:
-		SetRealTimeTarget(0.25);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_FIXEDSPEED0_1:
-		SetRealTimeTarget(0.1);
-		m_FPSTarget = 0;
-		break;
-
-	case IDM_50FPS:
-		m_FPSTarget = 50;
-		SetRealTimeTarget(0.0);
-		break;
-
-	case IDM_25FPS:
-		m_FPSTarget = 25;
-		SetRealTimeTarget(0.0);
-		break;
-
-	case IDM_10FPS:
-		m_FPSTarget = 10;
-		SetRealTimeTarget(0.0);
-		break;
-
-	case IDM_5FPS:
-		m_FPSTarget = 5;
-		SetRealTimeTarget(0.0);
-		break;
-
-	case IDM_1FPS:
-		m_FPSTarget = 1;
-		SetRealTimeTarget(0.0);
-		break;
+		default:
+			// Real time
+			SetRealTimeTarget(1.0);
+			m_FPSTarget = 0;
+			break;
 	}
 
 	ResetTiming();
+
+	UpdateSpeedMenu();
 }
 
 void BeebWin::SetRealTimeTarget(double RealTimeTarget)
@@ -2781,54 +2700,57 @@ void BeebWin::SetRealTimeTarget(double RealTimeTarget)
 	m_CyclesPerSec = (int)(2000000.0 * m_RealTimeTarget);
 }
 
-void BeebWin::AdjustSpeed(bool up)
+void BeebWin::AdjustSpeed(bool Up)
 {
-	static const UINT speeds[] = {
-		IDM_FIXEDSPEED100,
-		IDM_FIXEDSPEED50,
-		IDM_FIXEDSPEED10,
-		IDM_FIXEDSPEED5,
-		IDM_FIXEDSPEED2,
-		IDM_FIXEDSPEED1_5,
-		IDM_FIXEDSPEED1_25,
-		IDM_FIXEDSPEED1_1,
-		IDM_REALTIME,
-		IDM_FIXEDSPEED0_9,
-		IDM_FIXEDSPEED0_75,
-		IDM_FIXEDSPEED0_5,
-		IDM_FIXEDSPEED0_25,
-		IDM_FIXEDSPEED0_1,
-		0
+	static const std::array<int, 14> Speeds = {
+		10000,
+		5000,
+		1000,
+		500,
+		200,
+		150,
+		125,
+		110,
+		100,
+		90,
+		75,
+		50,
+		25,
+		10
 	};
 
-	int s = 0;
-	UINT MenuItemID = m_MenuIDTiming;
+	int Index = 0;
 
-	while (speeds[s] != 0 && speeds[s] != m_MenuIDTiming)
-		s++;
-
-	if (speeds[s] == 0)
+	if (m_TimingType == TimingType::FixedFPS)
 	{
-		MenuItemID = IDM_REALTIME;
-	}
-	else if (up)
-	{
-		if (s > 0)
-			MenuItemID = speeds[s - 1];
+		Index = 8;
+		m_TimingType = TimingType::FixedSpeed;
 	}
 	else
 	{
-		if (speeds[s + 1] != 0)
-			MenuItemID = speeds[s + 1];
+		auto it = std::find(Speeds.begin(), Speeds.end(), m_TimingSpeed);
+
+		if (it != Speeds.end())
+		{
+			if (Up && it != Speeds.begin())
+			{
+				it--;
+			}
+			else if (!Up && it != Speeds.begin())
+			{
+				it++;
+
+				if (it == Speeds.end())
+				{
+					it--;
+				}
+			}
+		}
+
+		m_TimingSpeed = *it;
 	}
 
-	if (MenuItemID != m_MenuIDTiming)
-	{
-		CheckMenuItem(m_MenuIDTiming, false);
-		m_MenuIDTiming = MenuItemID;
-		CheckMenuItem(m_MenuIDTiming, true);
-		TranslateTiming();
-	}
+	TranslateTiming();
 }
 
 /****************************************************************************/
@@ -3701,31 +3623,117 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_REALTIME:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 100;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED100:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 10000;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED50:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 5000;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED10:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 1000;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED5:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 500;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED2:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 200;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED1_5:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 150;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED1_25:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 125;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED1_1:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 110;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED0_9:
-	case IDM_FIXEDSPEED0_5:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 90;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED0_75:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 75;
+		TranslateTiming();
+		break;
+
+	case IDM_FIXEDSPEED0_5:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 50;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED0_25:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 25;
+		TranslateTiming();
+		break;
+
 	case IDM_FIXEDSPEED0_1:
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 10;
+		TranslateTiming();
+		break;
+
 	case IDM_50FPS:
+		m_TimingType = TimingType::FixedFPS;
+		m_TimingSpeed = 50;
+		TranslateTiming();
+		break;
+
 	case IDM_25FPS:
+		m_TimingType = TimingType::FixedFPS;
+		m_TimingSpeed = 25;
+		TranslateTiming();
+		break;
+
 	case IDM_10FPS:
+		m_TimingType = TimingType::FixedFPS;
+		m_TimingSpeed = 10;
+		TranslateTiming();
+		break;
+
 	case IDM_5FPS:
+		m_TimingType = TimingType::FixedFPS;
+		m_TimingSpeed = 5;
+		TranslateTiming();
+		break;
+
 	case IDM_1FPS:
-		if (MenuID != m_MenuIDTiming)
-		{
-			CheckMenuItem(m_MenuIDTiming, false);
-			m_MenuIDTiming = MenuID;
-			CheckMenuItem(m_MenuIDTiming, true);
-			TranslateTiming();
-		}
+		m_TimingType = TimingType::FixedFPS;
+		m_TimingSpeed = 1;
+		TranslateTiming();
 		break;
 
 	case IDM_EMUPAUSED:

@@ -275,9 +275,74 @@ void BeebWin::LoadPreferences()
 		m_TextViewEnabled = false;
 
 	if (m_Preferences.GetDWORDValue(CFG_SPEED_TIMING, dword))
-		m_MenuIDTiming = dword;
+	{
+		if (dword >= 0 && dword < 3)
+		{
+			m_TimingType = static_cast<TimingType>(dword);
+
+			if (m_Preferences.GetDecimalValue("Speed", Value))
+			{
+				if (m_TimingType == TimingType::FixedFPS)
+				{
+					if (Value == 50 || Value == 25 || Value == 10 || Value == 5 || Value == 1)
+					{
+						m_TimingSpeed = Value;
+					}
+					else
+					{
+						m_TimingSpeed = 50;
+					}
+				}
+				else if (m_TimingType == TimingType::FixedSpeed)
+				{
+					if (Value == 10000 || Value == 5000 || Value == 1000 || Value == 500 ||
+					    Value == 200 || Value == 150 || Value == 125 || Value == 110 ||
+					    Value == 90 || Value == 75 || Value == 50 || Value == 25 || Value == 10)
+					{
+						m_TimingSpeed = Value;
+					}
+					else
+					{
+						m_TimingSpeed = 100;
+					}
+				}
+			}
+			else
+			{
+				m_TimingSpeed = 100;
+			}
+		}
+		else
+		{
+			switch (dword)
+			{
+				case 40024: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 100; break;
+				case 40025: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 50; break;
+				case 40026: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 25; break;
+				case 40027: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 10; break;
+				case 40028: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 5; break;
+				case 40029: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 1; break;
+				case 40151: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10000; break;
+				case 40154: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 500; break;
+				case 40155: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 200; break;
+				case 40156: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 150; break;
+				case 40157: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 125; break;
+				case 40158: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 110; break;
+				case 40159: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 90; break;
+				case 40160: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 75; break;
+				case 40161: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 5000; break;
+				case 40162: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 25; break;
+				case 40163: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 1000; break;
+				case 40164: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 50; break;
+				case 40165: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10; break;
+			}
+		}
+	}
 	else
-		m_MenuIDTiming = IDM_REALTIME;
+	{
+		m_TimingType = TimingType::FixedSpeed;
+		m_TimingSpeed = 100;
+	}
 
 	TranslateTiming();
 
@@ -996,7 +1061,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8);
 		m_Preferences.SetBoolValue("TextViewEnabled", m_TextViewEnabled);
 
-		m_Preferences.SetDWORDValue(CFG_SPEED_TIMING, m_MenuIDTiming);
+		m_Preferences.SetDWORDValue(CFG_SPEED_TIMING, (DWORD)m_TimingType);
+		m_Preferences.SetDecimalValue("Speed", m_TimingSpeed);
 
 		m_Preferences.SetDWORDValue("SoundConfig::Selection", (DWORD)SelectedSoundStreamer);
 		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);

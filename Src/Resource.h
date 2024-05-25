@@ -261,8 +261,6 @@
 #define IDM_USERKYBDMAPPING             40033
 #define IDM_DEFAULTKYBDMAPPING          40034
 #define IDM_LOGICALKYBDMAPPING          40035
-#define IDM_3QSPEED                     40036
-#define IDM_HALFSPEED                   40037
 #define IDM_SAVESTATE                   40039
 #define IDM_QUICKSAVE                   40040
 #define IDM_QUICKLOAD                   40041

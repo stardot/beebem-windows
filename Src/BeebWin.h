@@ -205,6 +205,11 @@ enum class PrinterPortType {
 	Lpt4
 };
 
+enum class TimingType {
+	FixedSpeed,
+	FixedFPS
+};
+
 class BeebWin
 {
 public:
@@ -421,8 +426,12 @@ public:
 	void TranslateWindowSize(void);
 	void TranslateDDSize(void);
 	void CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight);
+
+	// Timing
+	void UpdateSpeedMenu();
 	void TranslateTiming();
 	void SetRealTimeTarget(double RealTimeTarget);
+
 	void SetKeyboardMapping(KeyboardMappingType KeyboardMapping);
 	void UpdateKeyboardMappingMenu();
 	void TranslateKeyMapping();
@@ -548,7 +557,8 @@ public:
 
 	// Timing
 	bool m_ShowSpeedAndFPS;
-	UINT m_MenuIDTiming;
+	TimingType m_TimingType;
+	int m_TimingSpeed;
 	double m_RealTimeTarget;
 	int m_CyclesPerSec;
 	DWORD m_LastTickCount;
