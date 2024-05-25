@@ -90,34 +90,83 @@ void UserPortRTCWrite(unsigned char Value)
 				switch ((RTC_cmd & 0x0f) >> 1)
 				{
 					case 0: // Month counter (1-12)
-						RTC_data = BCD((unsigned char)(Time.wMonth));
+						if ((UserPortRTCRegisters[0] > 0) && (UserPortRTCRegisters[0] < 13))
+						{
+							RTC_data = UserPortRTCRegisters[0];
+						}
+						else
+						{
+							RTC_data = BCD((unsigned char)(Time.wMonth));
+						}
 						break;
 
-					case 1: // Month register
-						RTC_data = UserPortRTCRegisters[1];
+					case 1: // Month alarm register  NOTE: The SAF3019P only uses the first 5 bits of this register, so values >19 have their top 3 bits removed.
+						if (UserPortRTCRegisters[1] != 0)
+						{
+							RTC_data = UserPortRTCRegisters[1];
+						}
+						else
+						{
+							RTC_data = BCD((unsigned char)(Time.wYear - 1981));
+						}
 						break;
 
-					case 2: // Date counter (1-31)
-						RTC_data = BCD((unsigned char)Time.wDay);
+					case 2: // Day counter (1-31)
+						if ((UserPortRTCRegisters[2] != 0) && (UserPortRTCRegisters[2] < 32))
+						{
+							RTC_data = UserPortRTCRegisters[2];
+						}
+						else
+						{
+							RTC_data = BCD((unsigned char)Time.wDay);
+						}
 						break;
 
-					case 3: // Date register
+					case 3: // Day alarm register
 						RTC_data = UserPortRTCRegisters[3];
 						break;
 
 					case 4: // Hour counter (0-23)
-						RTC_data = BCD((unsigned char)Time.wHour);
+						if ((UserPortRTCRegisters[4] >= 0) && (UserPortRTCRegisters[6] <= 24))
+						{
+							if (UserPortRTCRegisters[4] == 24)
+							{
+								RTC_data = 0;
+							}
+							else
+							{
+								RTC_data = UserPortRTCRegisters[4];
+							}
+						}
+						else
+						{
+							RTC_data = BCD((unsigned char)Time.wHour);
+						}
 						break;
 
-					case 5: // Hour register
+					case 5: // Hour alarm register
 						RTC_data = UserPortRTCRegisters[5];
 						break;
 
 					case 6: // Minute counter (0-59)
-						RTC_data = BCD((unsigned char)Time.wMinute);
+						if ((UserPortRTCRegisters[6] >= 0) && (UserPortRTCRegisters[6] <= 60))
+						{
+							if (UserPortRTCRegisters[6] == 60)
+							{
+								RTC_data = 0;
+							}
+							else
+							{
+							RTC_data = UserPortRTCRegisters[6];
+							}
+						}
+						else
+						{
+							RTC_data = BCD((unsigned char)Time.wMinute);
+						}
 						break;
 
-					case 7: // Minute register
+					case 7: // Minute alarm register
 						RTC_data = UserPortRTCRegisters[7];
 						break;
 				}
