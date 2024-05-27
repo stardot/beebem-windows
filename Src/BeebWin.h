@@ -210,6 +210,23 @@ enum class TimingType {
 	FixedFPS
 };
 
+enum class DirectXFullScreenMode {
+	ScreenResolution,
+	_640x480,
+	_720x576,
+	_800x600,
+	_1024x768,
+	_1280x720,
+	_1280x1024,
+	_1280x768,
+	_1280x960,
+	_1440x900,
+	_1600x1200,
+	_1920x1080,
+	_2560x1440,
+	_3840x2160
+};
+
 class BeebWin
 {
 public:
@@ -424,7 +441,10 @@ public:
 
 	void SetWindowSize(int Width, int Height);
 	void UpdateWindowSizeMenu();
-	void TranslateDDSize(void);
+	void SetDirectXFullScreenMode(DirectXFullScreenMode Mode);
+	void TranslateDDSize();
+	void UpdateDirectXFullScreenModeMenu();
+	void ToggleFullScreen();
 	void CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight);
 
 	// Timing
@@ -612,7 +632,7 @@ public:
 	bool m_MaintainAspectRatio;
 	DisplayRendererType m_DisplayRenderer;
 	DisplayRendererType m_CurrentDisplayRenderer;
-	int m_DDFullScreenMode;
+	DirectXFullScreenMode m_DDFullScreenMode;
 
 	// DirectX stuff
 	bool m_DXInit;

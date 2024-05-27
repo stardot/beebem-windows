@@ -185,9 +185,30 @@ void BeebWin::LoadPreferences()
 		m_DXSmoothMode7Only = false;
 
 	if (m_Preferences.GetDWORDValue("DDFullScreenMode", dword))
-		m_DDFullScreenMode = dword;
+	{
+		switch (dword)
+		{
+			case 0: case 40102: default: m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution; break;
+			case 1: case 40099:          m_DDFullScreenMode = DirectXFullScreenMode::_640x480; break;
+			case 2: case 40279:          m_DDFullScreenMode = DirectXFullScreenMode::_720x576; break;
+			case 3: case 40280:          m_DDFullScreenMode = DirectXFullScreenMode::_800x600; break;
+			case 4: case 40100:          m_DDFullScreenMode = DirectXFullScreenMode::_1024x768; break;
+			case 5: case 40288:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x720; break;
+			case 6: case 40101:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x1024; break;
+			case 7: case 40221:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x768; break;
+			case 8: case 40222:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x960; break;
+			case 9: case 40223:          m_DDFullScreenMode = DirectXFullScreenMode::_1440x900; break;
+			case 10: case 40224:         m_DDFullScreenMode = DirectXFullScreenMode::_1600x1200; break;
+			case 11: case 40289:         m_DDFullScreenMode = DirectXFullScreenMode::_1920x1080; break;
+			case 12: case 40294:         m_DDFullScreenMode = DirectXFullScreenMode::_2560x1440; break;
+			case 13: case 40295:         m_DDFullScreenMode = DirectXFullScreenMode::_3840x2160; break;
+		}
+	}
 	else
-		m_DDFullScreenMode = ID_VIEW_DD_SCREENRES;
+	{
+		m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution;
+	}
+
 	TranslateDDSize();
 
 	if (m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, dword))
@@ -1077,7 +1098,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDWORDValue("DisplayRenderer", (DWORD)m_DisplayRenderer);
 		m_Preferences.SetBoolValue("DXSmoothing", m_DXSmoothing);
 		m_Preferences.SetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only);
-		m_Preferences.SetDWORDValue("DDFullScreenMode", m_DDFullScreenMode);
+		m_Preferences.SetDWORDValue("DDFullScreenMode", (DWORD)m_DDFullScreenMode);
 		m_Preferences.EraseValue(CFG_VIEW_WIN_SIZE);
 		m_Preferences.SetDWORDValue("WinSizeX", m_XLastWinSize);
 		m_Preferences.SetDWORDValue("WinSizeY", m_YLastWinSize);

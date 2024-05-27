@@ -1163,21 +1163,7 @@ void BeebWin::InitMenu(void)
 	UpdateWindowSizeMenu();
 
 	// View -> DD mode
-	CheckMenuItem(ID_VIEW_DD_SCREENRES, false);
-	CheckMenuItem(ID_VIEW_DD_640X480, false);
-	CheckMenuItem(ID_VIEW_DD_720X576, false);
-	CheckMenuItem(ID_VIEW_DD_800X600, false);
-	CheckMenuItem(ID_VIEW_DD_1024X768, false);
-	CheckMenuItem(ID_VIEW_DD_1280X720, false);
-	CheckMenuItem(ID_VIEW_DD_1280X1024, false);
-	CheckMenuItem(ID_VIEW_DD_1280X768, false);
-	CheckMenuItem(ID_VIEW_DD_1280X960, false);
-	CheckMenuItem(ID_VIEW_DD_1440X900, false);
-	CheckMenuItem(ID_VIEW_DD_1600X1200, false);
-	CheckMenuItem(ID_VIEW_DD_1920X1080, false);
-	CheckMenuItem(ID_VIEW_DD_2560X1440, false);
-	CheckMenuItem(ID_VIEW_DD_3840X2160, false);
-	CheckMenuItem(m_DDFullScreenMode, true);
+	UpdateDirectXFullScreenModeMenu();
 
 	// View -> Motion blur
 	UpdateMotionBlurMenu();
@@ -2513,68 +2499,150 @@ bool BeebWin::UpdateTiming()
 }
 
 /****************************************************************************/
-void BeebWin::TranslateDDSize(void)
+
+void BeebWin::SetDirectXFullScreenMode(DirectXFullScreenMode Mode)
+{
+	// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
+	if ((Mode != DirectXFullScreenMode::ScreenResolution) || !m_isFullScreen)
+	{
+		m_DDFullScreenMode = Mode;
+
+		TranslateDDSize();
+
+		if (m_isFullScreen && m_DisplayRenderer != DisplayRendererType::GDI)
+		{
+			SetWindowAttributes(m_isFullScreen);
+		}
+
+		UpdateDirectXFullScreenModeMenu();
+	}
+}
+
+void BeebWin::TranslateDDSize()
 {
 	switch (m_DDFullScreenMode)
 	{
-	default:
-	case ID_VIEW_DD_640X480:
-		m_XDXSize = 640;
-		m_YDXSize = 480;
-		break;
-	case ID_VIEW_DD_720X576:
-		m_XDXSize = 720;
-		m_YDXSize = 576;
-		break;
-	case ID_VIEW_DD_800X600:
-		m_XDXSize = 800;
-		m_YDXSize = 600;
-		break;
-	case ID_VIEW_DD_1024X768:
-		m_XDXSize = 1024;
-		m_YDXSize = 768;
-		break;
-	case ID_VIEW_DD_1280X720:
-		m_XDXSize = 1280;
-		m_YDXSize = 720;
-		break;
-	case ID_VIEW_DD_1280X768:
-		m_XDXSize = 1280;
-		m_YDXSize = 768;
-		break;
-	case ID_VIEW_DD_1280X960:
-		m_XDXSize = 1280;
-		m_YDXSize = 960;
-		break;
-	case ID_VIEW_DD_1280X1024:
-		m_XDXSize = 1280;
-		m_YDXSize = 1024;
-		break;
-	case ID_VIEW_DD_1440X900:
-		m_XDXSize = 1440;
-		m_YDXSize = 900;
-		break;
-	case ID_VIEW_DD_1600X1200:
-		m_XDXSize = 1600;
-		m_YDXSize = 1200;
-		break;
-	case ID_VIEW_DD_1920X1080:
-		m_XDXSize = 1920;
-		m_YDXSize = 1080;
-		break;
-	case ID_VIEW_DD_2560X1440:
-		m_XDXSize = 2560;
-		m_YDXSize = 1440;
-		break;
-	case ID_VIEW_DD_3840X2160:
-		m_XDXSize = 3840;
-		m_YDXSize = 2160;
-		break;
-	case ID_VIEW_DD_SCREENRES:
-		// Pixel size of default monitor
-		m_XDXSize = GetSystemMetrics(SM_CXSCREEN);
-		m_YDXSize = GetSystemMetrics(SM_CYSCREEN);
-		break;
+		case DirectXFullScreenMode::_640x480:
+			m_XDXSize = 640;
+			m_YDXSize = 480;
+			break;
+
+		case DirectXFullScreenMode::_720x576:
+			m_XDXSize = 720;
+			m_YDXSize = 576;
+			break;
+
+		case DirectXFullScreenMode::_800x600:
+			m_XDXSize = 800;
+			m_YDXSize = 600;
+			break;
+
+		case DirectXFullScreenMode::_1024x768:
+			m_XDXSize = 1024;
+			m_YDXSize = 768;
+			break;
+
+		case DirectXFullScreenMode::_1280x720:
+			m_XDXSize = 1280;
+			m_YDXSize = 720;
+			break;
+
+		case DirectXFullScreenMode::_1280x768:
+			m_XDXSize = 1280;
+			m_YDXSize = 768;
+			break;
+
+		case DirectXFullScreenMode::_1280x960:
+			m_XDXSize = 1280;
+			m_YDXSize = 960;
+			break;
+
+		case DirectXFullScreenMode::_1280x1024:
+			m_XDXSize = 1280;
+			m_YDXSize = 1024;
+			break;
+
+		case DirectXFullScreenMode::_1440x900:
+			m_XDXSize = 1440;
+			m_YDXSize = 900;
+			break;
+
+		case DirectXFullScreenMode::_1600x1200:
+			m_XDXSize = 1600;
+			m_YDXSize = 1200;
+			break;
+
+		case DirectXFullScreenMode::_1920x1080:
+			m_XDXSize = 1920;
+			m_YDXSize = 1080;
+			break;
+
+		case DirectXFullScreenMode::_2560x1440:
+			m_XDXSize = 2560;
+			m_YDXSize = 1440;
+			break;
+
+		case DirectXFullScreenMode::_3840x2160:
+			m_XDXSize = 3840;
+			m_YDXSize = 2160;
+			break;
+
+		case DirectXFullScreenMode::ScreenResolution:
+		default:
+			// Pixel size of default monitor
+			m_XDXSize = GetSystemMetrics(SM_CXSCREEN);
+			m_YDXSize = GetSystemMetrics(SM_CYSCREEN);
+			break;
+	}
+}
+
+void BeebWin::UpdateDirectXFullScreenModeMenu()
+{
+	static const struct { UINT ID; DirectXFullScreenMode Mode; } MenuItems[] =
+	{
+		{ ID_VIEW_DD_SCREENRES, DirectXFullScreenMode::ScreenResolution },
+		{ ID_VIEW_DD_640X480,   DirectXFullScreenMode::_640x480 },
+		{ ID_VIEW_DD_720X576,   DirectXFullScreenMode::_720x576 },
+		{ ID_VIEW_DD_800X600,   DirectXFullScreenMode::_800x600 },
+		{ ID_VIEW_DD_1024X768,  DirectXFullScreenMode::_1024x768 },
+		{ ID_VIEW_DD_1280X720,  DirectXFullScreenMode::_1280x720 },
+		{ ID_VIEW_DD_1280X768,  DirectXFullScreenMode::_1280x768 },
+		{ ID_VIEW_DD_1280X960,  DirectXFullScreenMode::_1280x960 },
+		{ ID_VIEW_DD_1280X1024, DirectXFullScreenMode::_1280x1024 },
+		{ ID_VIEW_DD_1440X900,  DirectXFullScreenMode::_1440x900 },
+		{ ID_VIEW_DD_1600X1200, DirectXFullScreenMode::_1600x1200 },
+		{ ID_VIEW_DD_1920X1080, DirectXFullScreenMode::_1920x1080 },
+		{ ID_VIEW_DD_2560X1440, DirectXFullScreenMode::_2560x1440 },
+		{ ID_VIEW_DD_3840X2160, DirectXFullScreenMode::_3840x2160 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_DDFullScreenMode == MenuItems[i].Mode)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(
+		ID_VIEW_DD_SCREENRES,
+		ID_VIEW_DD_3840X2160,
+		SelectedMenuItemID
+	);
+}
+
+void BeebWin::ToggleFullScreen()
+{
+	m_isFullScreen = !m_isFullScreen;
+	CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
+	SetWindowAttributes(!m_isFullScreen);
+
+	if (m_MouseCaptured)
+	{
+		ReleaseMouse();
 	}
 }
 
@@ -2871,7 +2939,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 	if (m_isFullScreen)
 	{
 		// Get the monitor that the BeebEm window is on to account for multiple monitors
-		if (m_DDFullScreenMode == ID_VIEW_DD_SCREENRES)
+		if (m_DDFullScreenMode == DirectXFullScreenMode::ScreenResolution)
 		{
 			HMONITOR monitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 			MONITORINFO info;
@@ -3448,40 +3516,63 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case ID_VIEW_DD_SCREENRES:
-	case ID_VIEW_DD_640X480:
-	case ID_VIEW_DD_720X576:
-	case ID_VIEW_DD_800X600:
-	case ID_VIEW_DD_1024X768:
-	case ID_VIEW_DD_1280X720:
-	case ID_VIEW_DD_1280X768:
-	case ID_VIEW_DD_1280X960:
-	case ID_VIEW_DD_1280X1024:
-	case ID_VIEW_DD_1440X900:
-	case ID_VIEW_DD_1600X1200:
-	case ID_VIEW_DD_1920X1080:
-	case ID_VIEW_DD_2560X1440:
-	case ID_VIEW_DD_3840X2160:
-		// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
-		if ((MenuID != ID_VIEW_DD_SCREENRES) || !m_isFullScreen)
-		{
-			CheckMenuItem(m_DDFullScreenMode, false);
-			m_DDFullScreenMode = MenuID;
-			CheckMenuItem(m_DDFullScreenMode, true);
-			TranslateDDSize();
+		SetDirectXFullScreenMode(DirectXFullScreenMode::ScreenResolution);
+		break;
 
-			if (m_isFullScreen && m_DisplayRenderer != DisplayRendererType::GDI)
-			{
-				SetWindowAttributes(m_isFullScreen);
-			}
-		}
+	case ID_VIEW_DD_640X480:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_640x480);
+		break;
+
+	case ID_VIEW_DD_720X576:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_720x576);
+		break;
+
+	case ID_VIEW_DD_800X600:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_800x600);
+		break;
+
+	case ID_VIEW_DD_1024X768:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1024x768);
+		break;
+
+	case ID_VIEW_DD_1280X720:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x720);
+		break;
+
+	case ID_VIEW_DD_1280X768:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x768);
+		break;
+
+	case ID_VIEW_DD_1280X960:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x960);
+		break;
+
+	case ID_VIEW_DD_1280X1024:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x1024);
+		break;
+
+	case ID_VIEW_DD_1440X900:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1440x900);
+		break;
+
+	case ID_VIEW_DD_1600X1200:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1600x1200);
+		break;
+
+	case ID_VIEW_DD_1920X1080:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_1920x1080);
+		break;
+
+	case ID_VIEW_DD_2560X1440:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_2560x1440);
+		break;
+
+	case ID_VIEW_DD_3840X2160:
+		SetDirectXFullScreenMode(DirectXFullScreenMode::_3840x2160);
 		break;
 
 	case IDM_FULLSCREEN:
-		m_isFullScreen = !m_isFullScreen;
-		CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
-		SetWindowAttributes(!m_isFullScreen);
-		if (m_MouseCaptured)
-			ReleaseMouse();
+		ToggleFullScreen();
 		break;
 
 	case IDM_MAINTAINASPECTRATIO:
