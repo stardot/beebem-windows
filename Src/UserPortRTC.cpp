@@ -90,14 +90,7 @@ void UserPortRTCWrite(unsigned char Value)
 				switch ((RTC_cmd & 0x0f) >> 1)
 				{
 					case 0: // Month counter (1-12)
-						if ((UserPortRTCRegisters[0] > 0) && (UserPortRTCRegisters[0] < 13))
-						{
-							RTC_data = UserPortRTCRegisters[0];
-						}
-						else
-						{
-							RTC_data = BCD((unsigned char)(Time.wMonth));
-						}
+						RTC_data = BCD((unsigned char)(Time.wMonth));
 						break;
 
 					case 1: // Month alarm register  NOTE: The SAF3019P only uses the first 5 bits of this register, so values >19 have their top 3 bits removed.
@@ -112,14 +105,7 @@ void UserPortRTCWrite(unsigned char Value)
 						break;
 
 					case 2: // Day counter (1-31)
-						if ((UserPortRTCRegisters[2] != 0) && (UserPortRTCRegisters[2] < 32))
-						{
-							RTC_data = UserPortRTCRegisters[2];
-						}
-						else
-						{
-							RTC_data = BCD((unsigned char)Time.wDay);
-						}
+						RTC_data = BCD((unsigned char)Time.wDay);
 						break;
 
 					case 3: // Day alarm register
@@ -127,21 +113,7 @@ void UserPortRTCWrite(unsigned char Value)
 						break;
 
 					case 4: // Hour counter (0-23)
-						if ((UserPortRTCRegisters[4] >= 0) && (UserPortRTCRegisters[6] <= 24))
-						{
-							if (UserPortRTCRegisters[4] == 24)
-							{
-								RTC_data = 0;
-							}
-							else
-							{
-								RTC_data = UserPortRTCRegisters[4];
-							}
-						}
-						else
-						{
-							RTC_data = BCD((unsigned char)Time.wHour);
-						}
+						RTC_data = BCD((unsigned char)Time.wHour);
 						break;
 
 					case 5: // Hour alarm register
@@ -149,21 +121,7 @@ void UserPortRTCWrite(unsigned char Value)
 						break;
 
 					case 6: // Minute counter (0-59)
-						if ((UserPortRTCRegisters[6] >= 0) && (UserPortRTCRegisters[6] <= 60))
-						{
-							if (UserPortRTCRegisters[6] == 60)
-							{
-								RTC_data = 0;
-							}
-							else
-							{
-							RTC_data = UserPortRTCRegisters[6];
-							}
-						}
-						else
-						{
-							RTC_data = BCD((unsigned char)Time.wMinute);
-						}
+						RTC_data = BCD((unsigned char)Time.wMinute);
 						break;
 
 					case 7: // Minute alarm register
