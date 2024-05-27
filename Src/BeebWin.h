@@ -313,8 +313,7 @@ public:
 	void ReleaseMouse();
 	void Activate(bool Active);
 	void Focus(bool Focus);
-	void WinSizeChange(WPARAM size, int width, int height);
-	void WinPosChange(int x, int y);
+	void OnSize(WPARAM ResizeType, int Width, int Height);
 	bool IsFrozen() const;
 	void TogglePause();
 	bool IsPaused() const;
@@ -423,7 +422,8 @@ public:
 	void RenderDX9();
 	void OnDeviceLost();
 
-	void TranslateWindowSize(void);
+	void SetWindowSize(int Width, int Height);
+	void UpdateWindowSizeMenu();
 	void TranslateDDSize(void);
 	void CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight);
 
@@ -583,7 +583,6 @@ public:
 	bool m_Frozen;
 
 	// Window size
-	UINT m_MenuIDWinSize;
 	int m_XWinSize;
 	int m_YWinSize;
 	int m_XLastWinSize;
@@ -592,8 +591,6 @@ public:
 	int m_YWinPos;
 	int m_XDXSize;
 	int m_YDXSize;
-	int m_XWinBorder;
-	int m_YWinBorder;
 	float m_XRatioAdj;
 	float m_YRatioAdj;
 	float m_XRatioCrop;

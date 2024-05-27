@@ -191,26 +191,61 @@ void BeebWin::LoadPreferences()
 	TranslateDDSize();
 
 	if (m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, dword))
-		m_MenuIDWinSize = dword;
-	else
-		m_MenuIDWinSize = IDM_640X512;
+	{
+		switch (dword)
+		{
+			case 40005:          m_XWinSize = 320; m_YWinSize = 256; break;
+			case 40006: default: m_XWinSize = 640; m_YWinSize = 512; break;
+			case 40007:          m_XWinSize = 800; m_YWinSize = 600; break;
+			case 40008:          m_XWinSize = 1024; m_YWinSize = 768; break;
+			case 40009:          m_XWinSize = 1024; m_YWinSize = 512; break;
+			case 40225:          m_XWinSize = 1280; m_YWinSize = 1024; break;
+			case 40226:          m_XWinSize = 1440; m_YWinSize = 1080; break;
+			case 40227:          m_XWinSize = 1600; m_YWinSize = 1200; break;
+			case 40281: // Custom
+				if (m_Preferences.GetDWORDValue("WinSizeX", dword))
+				{
+					m_XWinSize = dword;
+				}
+				else
+				{
+					m_XWinSize = 640;
+				}
 
-	if (m_MenuIDWinSize == IDM_CUSTOMWINSIZE)
+				if (m_Preferences.GetDWORDValue("WinSizeY", dword))
+				{
+					m_YWinSize = dword;
+				}
+				else
+				{
+					m_YWinSize = 512;
+				}
+				break;
+		}
+	}
+	else
 	{
 		if (m_Preferences.GetDWORDValue("WinSizeX", dword))
+		{
 			m_XWinSize = dword;
+		}
 		else
+		{
 			m_XWinSize = 640;
+		}
+
 		if (m_Preferences.GetDWORDValue("WinSizeY", dword))
+		{
 			m_YWinSize = dword;
+		}
 		else
+		{
 			m_YWinSize = 512;
+		}
 	}
 
 	if (!m_Preferences.GetBoolValue("FullScreen", m_isFullScreen))
 		m_isFullScreen = false;
-
-	TranslateWindowSize();
 
 	if (!m_Preferences.GetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio))
 		m_MaintainAspectRatio = true;
@@ -1043,7 +1078,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue("DXSmoothing", m_DXSmoothing);
 		m_Preferences.SetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only);
 		m_Preferences.SetDWORDValue("DDFullScreenMode", m_DDFullScreenMode);
-		m_Preferences.SetDWORDValue(CFG_VIEW_WIN_SIZE, m_MenuIDWinSize);
+		m_Preferences.EraseValue(CFG_VIEW_WIN_SIZE);
 		m_Preferences.SetDWORDValue("WinSizeX", m_XLastWinSize);
 		m_Preferences.SetDWORDValue("WinSizeY", m_YLastWinSize);
 		m_Preferences.SetBoolValue("FullScreen", m_isFullScreen);

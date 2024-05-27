@@ -108,8 +108,6 @@ using std::max;
 
 using namespace Gdiplus;
 
-constexpr UINT WIN_STYLE = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
-
 // Some LED based constants
 constexpr int LED_COL_BASE = 64;
 
@@ -221,10 +219,6 @@ BeebWin::BeebWin()
 	m_startFullScreen = false;
 	m_XDXSize = 640;
 	m_YDXSize = 480;
-	m_XWinBorder = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
-	m_YWinBorder = GetSystemMetrics(SM_CYSIZEFRAME) * 2 +
-	               GetSystemMetrics(SM_CYMENUSIZE) +
-	               GetSystemMetrics(SM_CYCAPTION) + 1;
 	m_HideMenuEnabled = false;
 	m_DisableMenu = false;
 	m_MenuOn = true;
@@ -962,11 +956,9 @@ bool BeebWin::InitClass()
 }
 
 /****************************************************************************/
-void BeebWin::CreateBeebWindow(void)
-{
-	DWORD style;
-	int show = SW_SHOW;
 
+void BeebWin::CreateBeebWindow()
+{
 	int x = m_XWinPos;
 	int y = m_YWinPos;
 
@@ -978,25 +970,32 @@ void BeebWin::CreateBeebWindow(void)
 		m_YWinPos = 0;
 	}
 
+	int nCmdShow = SW_SHOWNORMAL;
+
 	if (m_DisplayRenderer == DisplayRendererType::GDI && m_isFullScreen)
-		show = SW_MAXIMIZE;
+	{
+		nCmdShow = SW_MAXIMIZE;
+	}
+
+	DWORD dwStyle;
 
 	if (m_DisplayRenderer != DisplayRendererType::GDI && m_isFullScreen)
 	{
-		style = WS_POPUP;
+		dwStyle = WS_POPUP;
 	}
 	else
 	{
-		style = WIN_STYLE;
+		dwStyle = WS_OVERLAPPEDWINDOW;
 	}
 
 	m_hWnd = CreateWindow(
 		"BEEBWIN",  // See RegisterClass() call.
 		m_szTitle,  // Text for window title bar.
-		style,
-		x, y,
-		m_XWinSize + m_XWinBorder,
-		m_YWinSize + m_YWinBorder,
+		dwStyle,    // Window style
+		x,
+		y,
+		m_XWinSize, // See SetWindowAttributes()
+		m_YWinSize,
 		nullptr,    // Overlapped windows have no parent.
 		nullptr,    // Use the window class menu.
 		hInst,      // This instance owns this window.
@@ -1005,7 +1004,7 @@ void BeebWin::CreateBeebWindow(void)
 
 	DisableRoundedCorners(m_hWnd);
 
-	ShowWindow(m_hWnd, show); // Show the window
+	ShowWindow(m_hWnd, nCmdShow); // Show the window
 	UpdateWindow(m_hWnd); // Sends WM_PAINT message
 
 	SetWindowAttributes(false);
@@ -1160,16 +1159,8 @@ void BeebWin::InitMenu(void)
 	UpdateLEDMenu();
 	CheckMenuItem(IDM_TEXTVIEW, m_TextViewEnabled);
 
-	// View -> Win size
-	CheckMenuItem(IDM_320X256, false);
-	CheckMenuItem(IDM_640X512, false);
-	CheckMenuItem(IDM_800X600, false);
-	CheckMenuItem(IDM_1024X768, false);
-	CheckMenuItem(IDM_1024X512, false);
-	CheckMenuItem(IDM_1280X1024, false);
-	CheckMenuItem(IDM_1440X1080, false);
-	CheckMenuItem(IDM_1600X1200, false);
-	// CheckMenuItem(m_MenuIdWinSize, true);
+	// View -> Window Sizes
+	UpdateWindowSizeMenu();
 
 	// View -> DD mode
 	CheckMenuItem(ID_VIEW_DD_SCREENRES, false);
@@ -1863,32 +1854,24 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 	switch (nMessage)
 	{
 		case WM_COMMAND: // message: command from application menu
-			{
-				int wmId = LOWORD(wParam);
-				HandleCommand(wmId);
-			}
+			HandleCommand(LOWORD(wParam));
 			break;
 
-		case WM_PAINT:
-			{
-				PAINTSTRUCT ps;
-				HDC hDC = BeginPaint(m_hWnd, &ps);
-				updateLines(hDC, 0, 0);
-				EndPaint(m_hWnd, &ps);
+		case WM_PAINT: {
+			PAINTSTRUCT ps;
+			HDC hDC = BeginPaint(m_hWnd, &ps);
+			updateLines(hDC, 0, 0);
+			EndPaint(m_hWnd, &ps);
 
-				if (m_DXResetPending)
-				{
-					ResetDX();
-				}
+			if (m_DXResetPending)
+			{
+				ResetDX();
 			}
 			break;
+		}
 
 		case WM_SIZE:
-			WinSizeChange(wParam, LOWORD(lParam), HIWORD(lParam));
-			break;
-
-		case WM_MOVE:
-			WinPosChange(LOWORD(lParam), HIWORD(lParam));
+			OnSize(wParam, LOWORD(lParam), HIWORD(lParam));
 			break;
 
 		case WM_SYSKEYDOWN: {
@@ -2596,51 +2579,55 @@ void BeebWin::TranslateDDSize(void)
 }
 
 /****************************************************************************/
-void BeebWin::TranslateWindowSize(void)
+
+void BeebWin::SetWindowSize(int Width, int Height)
 {
-	switch (m_MenuIDWinSize)
+	if (m_isFullScreen)
 	{
-	case IDM_320X256:
-		m_XWinSize = 320;
-		m_YWinSize = 256;
-		break;
-	default:
-	case IDM_640X512:
-		m_XWinSize = 640;
-		m_YWinSize = 512;
-		break;
-	case IDM_800X600:
-		m_XWinSize = 800;
-		m_YWinSize = 600;
-		break;
-	case IDM_1024X512:
-		m_XWinSize = 1024;
-		m_YWinSize = 512;
-		break;
-	case IDM_1024X768:
-		m_XWinSize = 1024;
-		m_YWinSize = 768;
-		break;
-	case IDM_1280X1024:
-		m_XWinSize = 1280;
-		m_YWinSize = 1024;
-		break;
-	case IDM_1440X1080:
-		m_XWinSize = 1440;
-		m_YWinSize = 1080;
-		break;
-	case IDM_1600X1200:
-		m_XWinSize = 1600;
-		m_YWinSize = 1200;
-		break;
-	case IDM_CUSTOMWINSIZE:
-		break;
+		HandleCommand(IDM_FULLSCREEN);
 	}
+
+	m_XWinSize = Width;
+	m_YWinSize = Height;
 
 	m_XLastWinSize = m_XWinSize;
 	m_YLastWinSize = m_YWinSize;
 
-	m_MenuIDWinSize = IDM_CUSTOMWINSIZE;
+	UpdateWindowSizeMenu();
+
+	SetWindowAttributes(m_isFullScreen);
+}
+
+void BeebWin::UpdateWindowSizeMenu()
+{
+	static const struct { UINT ID; int Width; int Height; } MenuItems[] =
+	{
+		{ IDM_320X256,   320, 256 },
+		{ IDM_640X512,   640, 512 },
+		{ IDM_800X600,   800, 600 },
+		{ IDM_1024X768,  1024, 768 },
+		{ IDM_1024X512,  1024, 512 },
+		{ IDM_1280X1024, 1280, 1024 },
+		{ IDM_1440X1080, 1440, 1080 },
+		{ IDM_1600X1200, 1600, 1200 }
+	};
+
+	int SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_XWinSize == MenuItems[i].Width &&
+		    m_YWinSize == MenuItems[i].Height)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	if (SelectedMenuItemID != 0)
+	{
+		CheckMenuRadioItem(IDM_320X256, IDM_1600X1200, SelectedMenuItemID);
+	}
 }
 
 /****************************************************************************/
@@ -2878,11 +2865,9 @@ void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
 }
 
 /****************************************************************************/
+
 void BeebWin::SetWindowAttributes(bool wasFullScreen)
 {
-	RECT wndrect;
-	long style;
-
 	if (m_isFullScreen)
 	{
 		// Get the monitor that the BeebEm window is on to account for multiple monitors
@@ -2900,9 +2885,11 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 
 		if (!wasFullScreen)
 		{
-			GetWindowRect(m_hWnd, &wndrect);
-			m_XWinPos = wndrect.left;
-			m_YWinPos = wndrect.top;
+			RECT Rect;
+			GetWindowRect(m_hWnd, &Rect);
+
+			m_XWinPos = Rect.left;
+			m_YWinPos = Rect.top;
 		}
 
 		if (m_DisplayRenderer != DisplayRendererType::GDI)
@@ -2911,10 +2898,10 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 			m_YWinSize = m_YDXSize;
 			CalcAspectRatioAdjustment(m_XDXSize, m_YDXSize);
 
-			style = GetWindowLong(m_hWnd, GWL_STYLE);
-			style &= ~WIN_STYLE;
-			style |= WS_POPUP;
-			SetWindowLong(m_hWnd, GWL_STYLE, style);
+			DWORD dwStyle = GetWindowLong(m_hWnd, GWL_STYLE);
+			dwStyle &= ~WS_OVERLAPPEDWINDOW;
+			dwStyle |= WS_POPUP;
+			SetWindowLong(m_hWnd, GWL_STYLE, dwStyle);
 
 			if (m_DXInit)
 			{
@@ -2925,10 +2912,10 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		{
 			CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
 
-			style = GetWindowLong(m_hWnd, GWL_STYLE);
-			style &= ~WS_POPUP;
-			style |= WIN_STYLE;
-			SetWindowLong(m_hWnd, GWL_STYLE, style);
+			DWORD dwStyle = GetWindowLong(m_hWnd, GWL_STYLE);
+			dwStyle &= ~WS_POPUP;
+			dwStyle |= WS_OVERLAPPEDWINDOW;
+			SetWindowLong(m_hWnd, GWL_STYLE, dwStyle);
 
 			ShowWindow(m_hWnd, SW_MAXIMIZE);
 		}
@@ -2955,17 +2942,20 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		m_XWinSize = xs;
 		m_YWinSize = ys;
 
-		style = GetWindowLong(m_hWnd, GWL_STYLE);
-		style &= ~WS_POPUP;
-		style |= WIN_STYLE;
-		SetWindowLong(m_hWnd, GWL_STYLE, style);
+		DWORD dwStyle = GetWindowLong(m_hWnd, GWL_STYLE);
+		dwStyle &= ~WS_POPUP;
+		dwStyle |= WS_OVERLAPPEDWINDOW;
+		SetWindowLong(m_hWnd, GWL_STYLE, dwStyle);
+
+		RECT Rect{ 0, 0, m_XWinSize, m_YWinSize };
+		AdjustWindowRect(&Rect, dwStyle, TRUE);
 
 		SetWindowPos(m_hWnd,
 		             HWND_TOP,
 		             m_XWinPos,
 		             m_YWinPos,
-		             m_XWinSize + m_XWinBorder,
-		             m_YWinSize + m_YWinBorder,
+		             Rect.right - Rect.left,
+		             Rect.bottom - Rect.top,
 		             !wasFullScreen ? SWP_NOMOVE : 0);
 
 		// Experiment: hide menu in full screen
@@ -2973,16 +2963,16 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 	}
 
 	// Clear unused areas of screen
-	RECT rc;
-	GetClientRect(m_hWnd, &rc);
-	InvalidateRect(m_hWnd, &rc, TRUE);
+	RECT Rect;
+	GetClientRect(m_hWnd, &Rect);
+	InvalidateRect(m_hWnd, &Rect, TRUE);
 }
 
 /*****************************************************************************/
 
-void BeebWin::WinSizeChange(WPARAM size, int width, int height)
+void BeebWin::OnSize(WPARAM ResizeType, int Width, int Height)
 {
-	if (m_DisplayRenderer == DisplayRendererType::GDI && size == SIZE_RESTORED && m_isFullScreen)
+	if (m_DisplayRenderer == DisplayRendererType::GDI && ResizeType == SIZE_RESTORED && m_isFullScreen)
 	{
 		m_isFullScreen = false;
 		CheckMenuItem(IDM_FULLSCREEN, false);
@@ -2990,11 +2980,11 @@ void BeebWin::WinSizeChange(WPARAM size, int width, int height)
 
 	if (!m_isFullScreen || m_DisplayRenderer == DisplayRendererType::GDI)
 	{
-		m_XWinSize = width;
-		m_YWinSize = height;
+		m_XWinSize = Width;
+		m_YWinSize = Height;
 		CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
 
-		if (size != SIZE_MINIMIZED && m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
+		if (ResizeType != SIZE_MINIMIZED && m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
 		{
 			m_DXResetPending = true;
 		}
@@ -3006,16 +2996,10 @@ void BeebWin::WinSizeChange(WPARAM size, int width, int height)
 		m_YLastWinSize = m_YWinSize;
 	}
 
-	if (m_hTextView)
+	if (m_hTextView != nullptr)
 	{
-		MoveWindow(m_hTextView, 0, 0, width, height, TRUE);
+		MoveWindow(m_hTextView, 0, 0, Width, Height, TRUE);
 	}
-}
-
-/****************************************************************************/
-void BeebWin::WinPosChange(int /* x */, int /* y */)
-{
-	// DebugTrace("WM_MOVE %d, %d (%d, %d)\n", x, y, m_XWinPos, m_YWinPos);
 }
 
 /****************************************************************************/
@@ -3333,6 +3317,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		                        IP232Port,
 		                        IP232Raw,
 		                        IP232Mode);
+
 		if (Dialog.DoModal())
 		{
 			DisableSerial();
@@ -3431,22 +3416,35 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_320X256:
+		SetWindowSize(320, 256);
+		break;
+
 	case IDM_640X512:
+		SetWindowSize(640, 512);
+		break;
+
 	case IDM_800X600:
+		SetWindowSize(800, 600);
+		break;
+
 	case IDM_1024X512:
+		SetWindowSize(1024, 512);
+		break;
+
 	case IDM_1024X768:
+		SetWindowSize(1024, 768);
+		break;
+
 	case IDM_1280X1024:
+		SetWindowSize(1280, 1024);
+		break;
+
 	case IDM_1440X1080:
+		SetWindowSize(1440, 1080);
+		break;
+
 	case IDM_1600X1200:
-		{
-			if (m_isFullScreen)
-				HandleCommand(IDM_FULLSCREEN);
-			// CheckMenuItem(m_MenuIdWinSize, false);
-			m_MenuIDWinSize = MenuID;
-			// CheckMenuItem(m_MenuIdWinSize, true);
-			TranslateWindowSize();
-			SetWindowAttributes(m_isFullScreen);
-		}
+		SetWindowSize(1600, 1200);
 		break;
 
 	case ID_VIEW_DD_SCREENRES:
@@ -3813,7 +3811,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_EXIT:
-		PostMessage(m_hWnd, WM_CLOSE, 0, 0L);
+		PostMessage(m_hWnd, WM_CLOSE, 0, 0);
 		break;
 
 	case IDM_SAVE_PREFS:
