@@ -192,9 +192,26 @@ BeebWin::BeebWin()
 	m_printerbufferlen = 0;
 	m_translateCRLF = true;
 	m_CurrentDisplayRenderer = 0;
+	m_hInstDDraw = nullptr;
+	m_DD = nullptr;
+	m_DD2  = nullptr;
+	m_DDSPrimary = nullptr;
+	m_DDS2Primary = nullptr;
+	m_DDSOne = nullptr;
+	m_DDS2One = nullptr;
 	m_DXSmoothing = true;
 	m_DXSmoothMode7Only = false;
+	m_Clipper = nullptr;
+
+	m_pD3D = nullptr;
+	m_pd3dDevice = nullptr;
+	m_pVB = nullptr;
+	m_pTexture = nullptr;
+	ZeroMemory(&m_TextureMatrix, sizeof(m_TextureMatrix));
+
+	m_DXInit = false;
 	m_DXResetPending = false;
+	m_DXDeviceLost = false;
 
 	m_JoystickCaptured = false;
 	m_isFullScreen = false;
@@ -202,8 +219,6 @@ BeebWin::BeebWin()
 	m_startFullScreen = false;
 	m_XDXSize = 640;
 	m_YDXSize = 480;
-	m_XScrSize = GetSystemMetrics(SM_CXSCREEN);
-	m_YScrSize = GetSystemMetrics(SM_CYSCREEN);
 	m_XWinBorder = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
 	m_YWinBorder = GetSystemMetrics(SM_CYSIZEFRAME) * 2 +
 	               GetSystemMetrics(SM_CYMENUSIZE) +
@@ -478,6 +493,8 @@ BeebWin::~BeebWin()
 {
 	if (m_DisplayRenderer != IDM_DISPGDI)
 		ExitDX();
+
+	CloseDX9();
 
 	ReleaseDC(m_hWnd, m_hDC);
 
@@ -2053,6 +2070,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_REINITDX:
+			DebugTrace("WM_REINITDX\n");
 			ReinitDX();
 			break;
 
@@ -2075,6 +2093,10 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 		case WM_USER_PORT_BREAKOUT_DIALOG_CLOSED:
 			delete userPortBreakoutDialog;
 			userPortBreakoutDialog = nullptr;
+			break;
+
+		case WM_DIRECTX9_DEVICE_LOST:
+			OnDeviceLost();
 			break;
 
 		default: // Passes it on if unproccessed

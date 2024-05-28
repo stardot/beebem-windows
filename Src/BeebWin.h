@@ -261,7 +261,7 @@ public:
 	void ShowMenu(bool on);
 	void HideMenu(bool hide);
 	void TrackPopupMenu(int x, int y);
-	bool IsFullScreen() { return m_isFullScreen; }
+	bool IsFullScreen() const { return m_isFullScreen; }
 	void ResetTiming(void);
 	int TranslateKey(int vkey, bool keyUp, int &row, int &col);
 	void ParseCommandLine(void);
@@ -330,12 +330,15 @@ public:
 	// DirectDraw
 	HRESULT InitDirectDraw();
 	HRESULT InitSurfaces();
-	void ResetSurfaces();
+	void CloseSurfaces();
 
 	// DirectX9
-	HRESULT InitDX9();
-	void ExitDX9();
+	bool InitDX9();
+	void CloseDX9();
+	HRESULT InitD3DDevice();
+	void CloseD3DDevice();
 	void RenderDX9();
+	void OnDeviceLost();
 
 	void TranslateWindowSize(void);
 	void TranslateDDSize(void);
@@ -482,8 +485,6 @@ public:
 	int m_YWinPos;
 	int m_XDXSize;
 	int m_YDXSize;
-	int m_XScrSize;
-	int m_YScrSize;
 	int m_XWinBorder;
 	int m_YWinBorder;
 	float m_XRatioAdj;
@@ -512,6 +513,7 @@ public:
 	// DirectX stuff
 	bool m_DXInit;
 	bool m_DXResetPending;
+	bool m_DXDeviceLost;
 
 	// DirectDraw stuff
 	HINSTANCE m_hInstDDraw;
