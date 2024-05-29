@@ -3171,7 +3171,7 @@ static void PollHardware(unsigned int nCycles)
 		Poll2793(nCycles); // Do 2793 FDC Background stuff
 
 	if (EconetEnabled && EconetPoll()) {
-		if (EconetNMIenabled) {
+		if (EconetNMIEnabled) {
 			NMIStatus|=1<<nmi_econet;
 			if (DebugEnabled)
 				DebugDisplayTrace(DebugType::Econet, true, "Econet: NMI asserted");
