@@ -251,9 +251,9 @@ public:
 	void Focus(bool Focus);
 	void WinSizeChange(WPARAM size, int width, int height);
 	void WinPosChange(int x, int y);
-	bool IsFrozen();
+	bool IsFrozen() const;
 	void TogglePause();
-	bool IsPaused();
+	bool IsPaused() const;
 	void SetFreezeWhenInactive(bool State);
 	void EditRomConfig();
 	void OpenUserKeyboardDialog();

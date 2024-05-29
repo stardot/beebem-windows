@@ -4357,7 +4357,7 @@ void BeebWin::Focus(bool Focus)
 	}
 }
 
-bool BeebWin::IsFrozen()
+bool BeebWin::IsFrozen() const
 {
 	return m_Frozen;
 }
@@ -4391,7 +4391,7 @@ void BeebWin::TogglePause()
 	}
 }
 
-bool BeebWin::IsPaused()
+bool BeebWin::IsPaused() const
 {
 	return m_EmuPaused;
 }
