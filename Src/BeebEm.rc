@@ -205,7 +205,7 @@ BEGIN
             MENUITEM "3840x2160 (4K)",              ID_VIEW_DD_3840X2160
         END
         MENUITEM SEPARATOR
-        POPUP "Monitor type"
+        POPUP "Monitor Type"
         BEGIN
             MENUITEM "RGB",                         ID_MONITOR_RGB
             MENUITEM "B/W",                         ID_MONITOR_BW

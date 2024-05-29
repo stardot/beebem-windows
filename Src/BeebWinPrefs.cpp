@@ -280,13 +280,14 @@ void BeebWin::LoadPreferences()
 		}
 	}
 
-	m_PaletteType = PaletteType::RGB;
-
 	if (m_Preferences.GetBinaryValue(CFG_VIEW_MONITOR, &flag, 1))
 	{
-		if (flag < static_cast<unsigned char>(PaletteType::Last))
+		switch (flag)
 		{
-			m_PaletteType = static_cast<PaletteType>(flag);
+			case 0: default: m_PaletteType = PaletteType::RGB; break;
+			case 1:          m_PaletteType = PaletteType::BW; break;
+			case 2:          m_PaletteType = PaletteType::Amber; break;
+			case 3:          m_PaletteType = PaletteType::Green; break;
 		}
 	}
 

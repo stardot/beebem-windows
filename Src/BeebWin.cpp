@@ -155,8 +155,13 @@ BeebWin::BeebWin()
 	m_DisableKeysEscape = false;
 	m_DisableKeysShortcut = false;
 	memset(m_UserKeyMapPath, 0, sizeof(m_UserKeyMapPath));
-	m_hBitmap = m_hOldObj = m_hDCBitmap = NULL;
-	m_screen = m_screen_blur = NULL;
+	m_hDC = nullptr;
+	m_hOldObj = nullptr;
+	m_hDCBitmap = nullptr;
+	m_hBitmap = nullptr;
+	m_PaletteType = PaletteType::RGB;
+	m_screen = nullptr;
+	m_screen_blur = nullptr;
 	m_ScreenRefreshCount = 0;
 	m_RelativeSpeed = 1;
 	m_FramesPerSecond = 50;
@@ -1408,10 +1413,26 @@ void BeebWin::UpdateSoundVolumeMenu()
 
 void BeebWin::UpdateMonitorMenu()
 {
-	CheckMenuItem(ID_MONITOR_RGB, m_PaletteType == PaletteType::RGB);
-	CheckMenuItem(ID_MONITOR_BW, m_PaletteType == PaletteType::BW);
-	CheckMenuItem(ID_MONITOR_GREEN, m_PaletteType == PaletteType::Green);
-	CheckMenuItem(ID_MONITOR_AMBER, m_PaletteType == PaletteType::Amber);
+	static const struct { UINT ID; PaletteType Type; } MenuItems[] =
+	{
+		{ ID_MONITOR_RGB,   PaletteType::RGB   },
+		{ ID_MONITOR_BW,    PaletteType::BW    },
+		{ ID_MONITOR_AMBER, PaletteType::Amber },
+		{ ID_MONITOR_GREEN, PaletteType::Green }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (m_PaletteType == MenuItems[i].Type)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(ID_MONITOR_RGB, ID_MONITOR_GREEN, SelectedMenuItemID);
 }
 
 void BeebWin::UpdateModelMenu()

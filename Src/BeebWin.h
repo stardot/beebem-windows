@@ -142,8 +142,7 @@ enum class PaletteType : char {
 	RGB,
 	BW,
 	Amber,
-	Green,
-	Last
+	Green
 };
 
 enum class DisplayRendererType {
