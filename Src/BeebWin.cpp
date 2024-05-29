@@ -122,8 +122,6 @@ CSprowCoPro *sprow = nullptr;
 
 LEDType LEDs;
 
-LEDColour DiscLedColour = LEDColour::Red;
-
 const char *WindowTitle = "BeebEm - BBC Model B / Master Series Emulator";
 
 constexpr int TIMER_KEYBOARD       = 1;
@@ -217,6 +215,7 @@ BeebWin::BeebWin()
 	m_DXInit = false;
 	m_DXResetPending = false;
 	m_DXDeviceLost = false;
+	m_DiscLedColour = LEDColour::Red;
 
 	m_JoystickCaptured = false;
 	m_isFullScreen = false;
@@ -2397,7 +2396,7 @@ int BeebWin::StartOfFrame(void)
 
 void BeebWin::doLED(int sx,bool on) {
 	int tsy;
-	int colbase = static_cast<int>(DiscLedColour) * 2 + LED_COL_BASE; // colour will be 0 for red, 1 for green.
+	int colbase = static_cast<int>(m_DiscLedColour) * 2 + LED_COL_BASE; // colour will be 0 for red, 1 for green.
 	if (sx<100) colbase=LED_COL_BASE; // Red leds for keyboard always
 	if (TeletextEnabled)
 		tsy=496;
@@ -3229,9 +3228,12 @@ void BeebWin::UpdateEconetMenu()
 
 void BeebWin::UpdateLEDMenu()
 {
-	// Update the LED Menu
-	CheckMenuItem(ID_RED_LEDS, DiscLedColour == LEDColour::Red);
-	CheckMenuItem(ID_GREEN_LEDS, DiscLedColour == LEDColour::Green);
+	CheckMenuRadioItem(
+		ID_RED_LEDS,
+		ID_GREEN_LEDS,
+		m_DiscLedColour == LEDColour::Red ? ID_RED_LEDS : ID_GREEN_LEDS
+	);
+
 	CheckMenuItem(ID_SHOW_KBLEDS, LEDs.ShowKB);
 	CheckMenuItem(ID_SHOW_DISCLEDS, LEDs.ShowDisc);
 }
@@ -4145,12 +4147,12 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case ID_RED_LEDS:
-		DiscLedColour = LEDColour::Red;
+		m_DiscLedColour = LEDColour::Red;
 		UpdateLEDMenu();
 		break;
 
 	case ID_GREEN_LEDS:
-		DiscLedColour = LEDColour::Green;
+		m_DiscLedColour = LEDColour::Green;
 		UpdateLEDMenu();
 		break;
 

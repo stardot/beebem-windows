@@ -89,8 +89,6 @@ enum class LEDColour {
 	Green
 };
 
-extern LEDColour DiscLedColour;
-
 enum TextToSpeechSearchDirection
 {
 	TTS_FORWARDS,
@@ -632,6 +630,7 @@ public:
 	DisplayRendererType m_DisplayRenderer;
 	DisplayRendererType m_CurrentDisplayRenderer;
 	DirectXFullScreenMode m_DDFullScreenMode;
+	LEDColour m_DiscLedColour;
 
 	// DirectX stuff
 	bool m_DXInit;

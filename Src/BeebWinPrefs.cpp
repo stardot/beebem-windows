@@ -295,11 +295,17 @@ void BeebWin::LoadPreferences()
 		m_HideMenuEnabled = false;
 
 	unsigned char LEDByte = 0;
-	if (!m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
-		LEDByte=0;
-	DiscLedColour=static_cast<LEDColour>(LED_COLOUR_TYPE);
-	LEDs.ShowDisc=(LED_SHOW_DISC != 0) && MachineType != Model::MasterET;
-	LEDs.ShowKB=LED_SHOW_KB;
+
+	if (m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
+	{
+		if (LEDByte == 0 || LEDByte == 1)
+		{
+			m_DiscLedColour = static_cast<LEDColour>(LED_COLOUR_TYPE);
+		}
+	}
+
+	LEDs.ShowDisc = (LED_SHOW_DISC != 0) && MachineType != Model::MasterET;
+	LEDs.ShowKB = LED_SHOW_KB;
 
 	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
 	{
@@ -1109,7 +1115,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &m_PaletteType, 1);
 		m_Preferences.SetBoolValue("HideMenuEnabled", m_HideMenuEnabled);
 		LEDByte = static_cast<unsigned char>(
-			(DiscLedColour == LEDColour::Green ? 4 : 0) |
+			(m_DiscLedColour == LEDColour::Green ? 4 : 0) |
 			(LEDs.ShowDisc ? 2 : 0) |
 			(LEDs.ShowKB ? 1 : 0)
 		);
