@@ -318,6 +318,7 @@ public:
 	void UpdateSoundStreamerMenu();
 
 	void CheckMenuItem(UINT id, bool checked);
+	void CheckMenuRadioItem(UINT FirstID, UINT LastID, UINT SelectedID);
 	void EnableMenuItem(UINT id, bool enabled);
 
 	// DirectX - calls DDraw or DX9 fn

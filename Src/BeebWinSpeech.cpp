@@ -319,11 +319,11 @@ void BeebWin::TextToSpeechSelectVoiceMenuItem(int Index)
 	                        ID_TEXT_TO_SPEECH_VOICE_BASE + m_TextToSpeechVoices.size() - 1 :
 	                        ID_TEXT_TO_SPEECH_VOICE_BASE;
 
-	CheckMenuRadioItem(m_hVoiceMenu,
-	                   ID_TEXT_TO_SPEECH_VOICE_BASE,
-	                   static_cast<UINT>(LastMenuItemID),
-	                   ID_TEXT_TO_SPEECH_VOICE_BASE + Index,
-	                   MF_BYCOMMAND);
+	::CheckMenuRadioItem(m_hVoiceMenu,
+	                     ID_TEXT_TO_SPEECH_VOICE_BASE,
+	                     static_cast<UINT>(LastMenuItemID),
+	                     ID_TEXT_TO_SPEECH_VOICE_BASE + Index,
+	                     MF_BYCOMMAND);
 }
 
 void BeebWin::Speak(const char *text, DWORD flags)

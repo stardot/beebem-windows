@@ -1089,9 +1089,15 @@ void BeebWin::TrackPopupMenu(int x, int y)
 }
 
 /****************************************************************************/
+
 void BeebWin::CheckMenuItem(UINT id, bool checked)
 {
 	::CheckMenuItem(m_hMenu, id, checked ? MF_CHECKED : MF_UNCHECKED);
+}
+
+void BeebWin::CheckMenuRadioItem(UINT FirstID, UINT LastID, UINT SelectedID)
+{
+	::CheckMenuRadioItem(m_hMenu, FirstID, LastID, SelectedID, MF_BYCOMMAND);
 }
 
 void BeebWin::EnableMenuItem(UINT id, bool enabled)
@@ -1355,13 +1361,7 @@ void BeebWin::UpdateModelMenu()
 
 	UINT SelectedMenuItem = ModelMenuItems.find(MachineType)->second;
 
-	CheckMenuRadioItem(
-		m_hMenu,
-		ID_MODELB,
-		ID_MASTER_ET,
-		SelectedMenuItem,
-		MF_BYCOMMAND
-	);
+	CheckMenuRadioItem(ID_MODELB, ID_MASTER_ET, SelectedMenuItem);
 
 	if (MachineType == Model::Master128) {
 		EnableMenuItem(ID_FDC_DLL, false);
@@ -1488,13 +1488,7 @@ void BeebWin::UpdateTubeMenu()
 
 	UINT SelectedMenuItem = TubeMenuItems.find(TubeType)->second;
 
-	CheckMenuRadioItem(
-		m_hMenu,
-		IDM_TUBE_NONE,
-		IDM_TUBE_SPROWARM,
-		SelectedMenuItem,
-		MF_BYCOMMAND
-	);
+	CheckMenuRadioItem(IDM_TUBE_NONE, IDM_TUBE_SPROWARM, SelectedMenuItem);
 }
 
 /****************************************************************************/
@@ -2716,10 +2710,26 @@ void BeebWin::TranslateKeyMapping(void)
 
 void BeebWin::SetTapeSpeedMenu()
 {
-	CheckMenuItem(ID_TAPE_FAST, TapeState.ClockSpeed == 750);
-	CheckMenuItem(ID_TAPE_MFAST, TapeState.ClockSpeed == 1600);
-	CheckMenuItem(ID_TAPE_MSLOW, TapeState.ClockSpeed == 3200);
-	CheckMenuItem(ID_TAPE_NORMAL, TapeState.ClockSpeed == 5600);
+	static const struct { UINT ID; int ClockSpeed; } MenuItems[] =
+	{
+		{ ID_TAPE_FAST,   750 },
+		{ ID_TAPE_MFAST,  1600 },
+		{ ID_TAPE_MSLOW,  3200 },
+		{ ID_TAPE_NORMAL, 5600 }
+	};
+
+	UINT SelectedMenuItemID = 0;
+
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (TapeState.ClockSpeed == MenuItems[i].ClockSpeed)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(ID_TAPE_FAST, ID_TAPE_NORMAL, SelectedMenuItemID);
 }
 
 /****************************************************************************/
