@@ -548,7 +548,7 @@ unsigned char BeebReadMem(int Address) {
 		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
 		unsigned char tmp = 0;
 		// adjust the registers for the FileStore as 1770 expects 00-04, not 0c-0f
-		WriteLog("BeebMem: Read of FDC Register %d - Value is %02X\n", ((Address & 0x00FF) - 0x0C), tmp);
+		//WriteLog("BeebMem: Read of FDC Register %d - Value is %02X\n", ((Address & 0x00FF) - 0x0C), tmp);
 		tmp = Read2793Register(((Address & 0x00FF) - 0x0C));
 		return tmp;
 //		return(Read1770Register(Address-0x0C));
@@ -1079,7 +1079,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 	if ((Address >= 0xfc0c && Address <= 0xfc0f) &&
 		((MachineType == Model::FileStoreE01) || (MachineType == Model::FileStoreE01S))) {
 			// adjust the registers for the FileStore as 1770 expects 00-04, not 0c-0f
-			WriteLog("BeebMem: Write of FDC Register %d - Value is %02X\n", ((Address&0x00FF) - 0x0C), Value);
+			//WriteLog("BeebMem: Write of FDC Register %d - Value is %02X\n", ((Address&0x00FF) - 0x0C), Value);
 			Write2793Register(((Address & 0x00FF) - 0x0C), Value);
 			return;
 	}
@@ -1243,7 +1243,7 @@ void BeebWriteMem(int Address, unsigned char Value) {
 			if (FS_Status.FloppySide) tmp |= 0x10;  // bit4
 			if (FS_Status.FDCDEN) tmp |= 0x20;      // bit5
 			if (FS_Status.FDCRST) {					// if reset is off (high)
-				WriteLog("BeebMem: Write Control Register Value is %02X\n", tmp);
+				//WriteLog("BeebMem: Write Control Register Value is %02X\n", tmp);
 				WriteFDC2793ControlReg(tmp);
 			}
 			return;

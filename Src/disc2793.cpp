@@ -172,7 +172,7 @@ unsigned char Read2793Register(unsigned char Register) {
 		return 0xFF;
 
 //	if ((Status != lastStatus) && (Register != lastRegister)) {
-		WriteLog("Disc2793: Read of FDC FDCommand %d. Register %d - Value is %02X\n", FDCommand, Register, Status);
+//		WriteLog("Disc2793: Read of FDC FDCommand %d. Register %d - Value is %02X\n", FDCommand, Register, Status);
 
 //		lastStatus = Status;
 //		lastRegister = Register;
@@ -251,7 +251,7 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 	if (!Disc2793Enabled)
 		return;
 
-	WriteLog("Disc2793: Write of FDC Register %d - Value is %02X\n", Register, Value);
+	// WriteLog("Disc2793: Write of FDC Register %d - Value is %02X\n", Register, Value);
 
 	if (Register == WD2793_CONTROL_REGISTER) {
 		NMIStatus &= ~(1 << nmi_floppy); // reset INTRQ
@@ -266,31 +266,31 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 			Status |= WD2793_STATUS_BUSY;
 			Status &= ~(WD2793_STATUS_RECORD_NOT_FOUND |
 			            WD2793_STATUS_CRC_ERROR);
-			WriteLog("Disc2793: T1 Command. Status changed from %02X to %02X.\n", oldStatus, Status);
+			// WriteLog("Disc2793: T1 Command. Status changed from %02X to %02X.\n", oldStatus, Status);
 
 			if (HComBits == WD2793_COMMAND_STEP_IN) {
-				WriteLog("Disc2793: Type I:Command Step In.FD Command set to 4\n");
+				// WriteLog("Disc2793: Type I:Command Step In.FD Command set to 4\n");
 				FDCommand = 4;
 				HeadDir = true;
 				UpdateTrack = (Value & WD2793_CMD_FLAGS_UPDATE_TRACK_REGISTER) != 0;
 			}
 			else if (HComBits == WD2793_COMMAND_STEP_OUT) {
-				WriteLog("Disc2793: Type I:Command Step Out. FD Command set to 5\n");
+				// WriteLog("Disc2793: Type I:Command Step Out. FD Command set to 5\n");
 				FDCommand = 5;
 				HeadDir = false;
 				UpdateTrack = (Value & WD2793_CMD_FLAGS_UPDATE_TRACK_REGISTER) != 0;
 			}
 			else if (HComBits == WD2793_COMMAND_STEP) {
-				WriteLog("Disc2793: Type I:Command Step. FD Command set to 3\n");
+				// WriteLog("Disc2793: Type I:Command Step. FD Command set to 3\n");
 				FDCommand = 3;
 				UpdateTrack = (Value & WD2793_CMD_FLAGS_UPDATE_TRACK_REGISTER) != 0;
 			}
 			else if (ComBits == WD2793_COMMAND_SEEK) {
-				WriteLog("Disc2793: Type I:Command Seek. FD Command set to 2\n");
+				// WriteLog("Disc2793: Type I:Command Seek. FD Command set to 2\n");
 				FDCommand = 2; // Seek
 			}
 			else if (ComBits == WD2793_COMMAND_RESTORE) {
-				WriteLog("Disc2793: Type I:Command Restore. FD Command set to 1\n");
+				// WriteLog("Disc2793: Type I:Command Restore. FD Command set to 1\n");
 				// Restore (Seek to Track 00)
 //				Status &= ~WD2793_STATUS_INDEX;  // **mine
 
@@ -298,6 +298,7 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 			}
 
 			if (FDCommand < 6) {
+				/*
 				if (Status & WD2793_STATUS_SPIN_UP_COMPLETE)
 					WriteLog("Disc2793: Spin up complete.\n");
 				else
@@ -307,20 +308,20 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 					WriteLog("Disc2793: Status Busy.\n");
 				else
 					WriteLog("Disc2793: Status not busy.\n");
-
+				*/
 				Status &= ~WD2793_STATUS_SPIN_UP_COMPLETE; // turn off spin up complete
 				Status |= WD2793_STATUS_BUSY;              // turn on Status busy
-				WriteLog("Disc2793: Type I, Status:%02X. \n", Status);
+				// WriteLog("Disc2793: Type I, Status:%02X. \n", Status);
 
 				// Now set some control bits for Type 1 Commands
 				SpinUp = (Value & !WD2793_CMD_FLAGS_DISABLE_SPIN_UP) != 0;
 				Verify = (Value & WD2793_CMD_FLAGS_VERIFY) != 0;
 				StepRate = StepRates[Value & WD2793_CMD_FLAGS_STEP_RATE]; // Make sure the step rate time is added to the delay time.
-				WriteLog("Disc2793: Type I Command Spinup:%02X, Verify:%02X, StepRate:%02X\n", SpinUp, Verify, StepRate);
+				// WriteLog("Disc2793: Type I Command Spinup:%02X, Verify:%02X, StepRate:%02X\n", SpinUp, Verify, StepRate);
 
 				// Is the Motor on?
 				if (!(Status & !WD2793_STATUS_MOTOR_ON)) {
-					WriteLog("Disc2793: Motor On. Spin up delay.\n");
+					// WriteLog("Disc2793: Motor On. Spin up delay.\n");
 					NextFDCommand = FDCommand;
 					FDCommand = 11; /* Spin-Up delay */
 					LoadingCycles = SPIN_UP_TIME;
@@ -332,7 +333,7 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 				}
 
 				if (DiskDensity[CurrentDrive] != SelectedDensity) {
-					WriteLog("Disc2793: Density mismatch.\n");
+					// WriteLog("Disc2793: Density mismatch.\n");
 					// Density mismatch
 					FDCommand = 13; // "Confusion spin"
 					SetMotor(CurrentDrive, true);
@@ -356,17 +357,17 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 			FDCommand = 8;
 			MultiSect = (Value & WD2793_CMD_FLAGS_MULTIPLE_SECTORS) != 0;
 			Status &= ~WD2793_STATUS_DATA_REQUEST;
-			WriteLog("Disc2793: Type II Command READ SECTOR. RotSect:%02X, Status:%02X\n", RotSect, Status);
+			// WriteLog("Disc2793: Type II Command READ SECTOR. RotSect:%02X, Status:%02X\n", RotSect, Status);
 		}
 		else if (HComBits == WD2793_COMMAND_WRITE_SECTOR) {
 			RotSect = Sector;
 			Status |= WD2793_STATUS_BUSY;
 			FDCommand = 9;
 			MultiSect = (Value & WD2793_CMD_FLAGS_MULTIPLE_SECTORS) != 0;
-			WriteLog("Disc2793: Type II Command WRITE SECTOR. RotSect:%02X, Status:%02X\n", RotSect, Status);
+			// WriteLog("Disc2793: Type II Command WRITE SECTOR. RotSect:%02X, Status:%02X\n", RotSect, Status);
 		}
 		else if (ComBits == WD2793_COMMAND_READ_TRACK) { // Not implemented yet
-			WriteLog("Disc2793: Type II Command READ TRACK. Value=%02X ** NOT IMPLEMENTED ** \n", Value);
+			// WriteLog("Disc2793: Type II Command READ TRACK. Value=%02X ** NOT IMPLEMENTED ** \n", Value);
 //			Sector = 0;
 //			Track = Data;
 //			RotSect = Sector;
@@ -375,14 +376,14 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 //			Status &= ~WD2793_STATUS_DATA_REQUEST;
 		}
 		else if (ComBits == WD2793_COMMAND_WRITE_TRACK) {
-			WriteLog("Disc2793: Type II Command WRITE TRACK. Value=%02X ** NOT IMPLEMENTED ** \n", Value);
+			// WriteLog("Disc2793: Type II Command WRITE TRACK. Value=%02X ** NOT IMPLEMENTED ** \n", Value);
 			Sector = 0;
 			RotSect=Sector;
 			Status |= WD2793_STATUS_BUSY;
 			FDCommand = 21;
 		}
 		else if (ComBits == WD2793_COMMAND_FORCE_INTERRUPT) {
-			WriteLog("Disc2793: FORCE INTERRUPT. FD Command:%02X\n", FDCommand);
+			// WriteLog("Disc2793: FORCE INTERRUPT. FD Command:%02X\n", FDCommand);
 			if (FDCommand != 0) {
 				Status &= ~WD2793_STATUS_BUSY;
 			}
@@ -409,7 +410,7 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 			FDCommand = 14;
 			Status |= WD2793_STATUS_BUSY;
 			ByteCount = 6;
-			WriteLog("Disc2793: Read Address. Status:%02X\n", Status);
+			// WriteLog("Disc2793: Read Address. Status:%02X\n", Status);
 			if (!(Status & !WD2793_STATUS_MOTOR_ON)) {
 				NextFDCommand = FDCommand;
 				FDCommand = 11; // Spin-Up delay
@@ -423,7 +424,7 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 		}
 
 		if (FDCommand == 8 || FDCommand == 9) {
-			WriteLog("Disc2793: FD Command Read/Write Sector. Status:%02X\n", Status);
+			// WriteLog("Disc2793: FD Command Read/Write Sector. Status:%02X\n", Status);
 
 			Status &= ~WD2793_STATUS_DATA_REQUEST;
 
@@ -459,19 +460,19 @@ void Write2793Register(unsigned char Register, unsigned char Value) {
 	else if (Register == WD2793_TRACK_REGISTER) {
 		Track = Value;
 		ATrack = Value;
-		WriteLog("Disc2793: TRACK REGISTER. Track:%02X\n", Track);
+		// WriteLog("Disc2793: TRACK REGISTER. Track:%02X\n", Track);
 	}
 	else if (Register == WD2793_SECTOR_REGISTER) {
 		if (DscType[CurrentDrive] == DiscType::IMG || DscType[CurrentDrive] == DiscType::DOS)
 			Sector = Value - 1;
 		else
 			Sector = Value;
-		WriteLog("Disc2793: SECTOR REGISTER. Sector:%02X\n", Sector);
+		// WriteLog("Disc2793: SECTOR REGISTER. Sector:%02X\n", Sector);
 	}
 	else if (Register == WD2793_DATA_REGISTER) {
 		Data = Value;
 
-		WriteLog("Disc2793: DATA REGISTER. Data:%02X\n", Value);
+		// WriteLog("Disc2793: DATA REGISTER. Data:%02X\n", Value);
 
 		if (FDCommand > 5) {
 			Status &= ~WD2793_STATUS_DATA_REQUEST;
@@ -804,18 +805,21 @@ void Poll2793(int NCycles) {
 		if (LoadingCycles > 0) {
 			return;
 		}
+
+		/*
 		WriteLog("Format Status=%02X\n",Status);
 		if (Status & WD2793_STATUS_DATA_REQUEST)
 			WriteLog("Disc2793:Enter FDC23 Status Data Request:TRUE\n");
 		else
 			WriteLog("Disc2793:Enter FDC23 Status Data Request:FALSE\n");
+*/
 
 		if (!(Status & WD2793_STATUS_DATA_REQUEST)) {
 
-			WriteLog("Entered Loop. ByteCount=%02X\n", ByteCount);
+			// WriteLog("Entered Loop. ByteCount=%02X\n", ByteCount);
 
-			if (ByteCount == 0)
-				WriteLog("Formatting Track %d, Sector %d\n", Track, Sector);
+			//if (ByteCount == 0)
+				// WriteLog("Formatting Track %d, Sector %d\n", Track, Sector);
 
 			NextFDCommand = 0;
 			Status &= ~(WD2793_STATUS_SPIN_UP_COMPLETE |
@@ -917,7 +921,7 @@ void Poll2793(int NCycles) {
 
 	if (FDCommand == 23 && !DWriteable[CurrentDrive]) {
 		// WriteLog(tlog, "Disc Write Protected\n");
-		WriteLog("Disc Write Protected\n");
+		// WriteLog("Disc Write Protected\n");
 				Status |= WD2793_STATUS_WRITE_PROTECT;
 		NMIStatus |= 1 << nmi_floppy;
 		FDCommand = 0;
@@ -934,11 +938,11 @@ void Poll2793(int NCycles) {
 		ByteCount = 0;
 		DataPos = ftell(CurrentDisc);
 		HeadPos[CurrentDrive] = DataPos;
-		WriteLog("Read/Write Track Prepare - Disc = %d, Track = %d\n", CurrentDrive, Track);
+		// WriteLog("Read/Write Track Prepare - Disc = %d, Track = %d\n", CurrentDrive, Track);
 	}
 
 	if (FDCommand >= 20 && !CurrentDiscOpen() && FDCommand <= 21) { // Read Track
-		WriteLog("ResetStatus(0) Here 8\n");
+		// WriteLog("ResetStatus(0) Here 8\n");
 		Status &= ~WD2793_STATUS_BUSY;
 		Status |= WD2793_STATUS_RECORD_NOT_FOUND;
 		NMIStatus |= 1 << nmi_floppy;
@@ -950,16 +954,16 @@ void Poll2793(int NCycles) {
 	}
 
 	if (FDCommand == 21 && CurrentDiscOpen()) {	// Write Track format
-		WriteLog("Disc2793:Set FDCommand=23\n", CurrentDrive, Track);
+		// WriteLog("Disc2793:Set FDCommand=23\n", CurrentDrive, Track);
 		FDCommand = 23;
 		FormatState = 0;
 		Status |= WD2793_STATUS_DATA_REQUEST;
-		WriteLog("Disc2793:Status after setting FDCommand=23 :%02X\n", Status);
+		/* WriteLog("Disc2793:Status after setting FDCommand=23 :%02X\n", Status);
 		if (Status & WD2793_STATUS_DATA_REQUEST)
 			WriteLog("Disc2793:Status Data Request:TRUE\n");
 		else
 			WriteLog("Disc2793:Status Data Request:FALSE\n");
-		
+		*/
 		NMIStatus |= 1 << nmi_floppy;
 	}
 
@@ -1220,7 +1224,7 @@ void WriteFDC2793ControlReg(unsigned char Value) {
 	ExtControl = Value;
 
 //	if (oldCTLRegValue !=Value) {
-		WriteLog("Disc2793: CTRL REG write of %02X\n", Value);
+		//WriteLog("Disc2793: CTRL REG write of %02X\n", Value);
 //		oldCTLRegValue = Value;
 //	}
 
@@ -1262,7 +1266,7 @@ unsigned char ReadFDC2793ControlReg() {
 }
 
 void Reset2793() {
-	WriteLog("Disc2793: RESET\n");
+	// WriteLog("Disc2793: RESET\n");
 	CurrentDisc = Disc0;
 	CurrentDrive = 0;
 	CurrentHead[0] = 0;
