@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -30,15 +30,16 @@ extern int JoystickY;  /* 16 bit number, 0 = down */
 
 void AtoDWrite(int Address, unsigned char Value);
 unsigned char AtoDRead(int Address);
-void AtoDInit(void);
-void AtoDEnable(void);
-void AtoDDisable(void);
+void AtoDInit();
+void AtoDEnable();
+void AtoDDisable();
 void SaveAtoDUEF(FILE *SUEF);
 void LoadAtoDUEF(FILE *SUEF);
 
 extern int AtoDTrigger;  /* For next A to D conversion completion */
 
-void AtoD_poll_real(void);
-#define AtoD_poll(ncycles) if (AtoDTrigger<=TotalCycles) AtoD_poll_real();
+void AtoDPollReal();
+
+#define AtoDPoll(ncycles) if (AtoDTrigger<=TotalCycles) AtoDPollReal();
 
 #endif

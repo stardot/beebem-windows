@@ -3300,7 +3300,7 @@ static void PollHardware(unsigned int nCycles)
 
 	VideoPoll(nCycles);
 	if (!BasicHardwareOnly) {
-		AtoD_poll(nCycles);
+		AtoDPoll(nCycles);
 		SerialPoll(nCycles);
 	}
 	Disc8271Poll();
