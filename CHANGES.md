@@ -67,6 +67,9 @@ Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher
   Computech IBOS1.20 / 1.20P ROMs. IBOS1.26 is now the default IBOS
   ROM, and Watford DFS has been replaced by Acorn DNFS, in Roms.cfg.
 * Rewrote the Master 146818 RTC and CMOS emulation.
+* Fixed the DirectX9 graphics renderer, where BeebEm would revert to GDI
+  rendering after the host PC resumes from being suspended or in some cases
+  enter a loop continually resetting the screen mode on entering full screen.
 
 Version 4.19 (1 May 2023)
 ------------
