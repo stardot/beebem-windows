@@ -2723,6 +2723,11 @@ void BeebWin::UpdateWindowSizeMenu()
 void BeebWin::UpdateSpeedMenu()
 {
 	CheckMenuItem(IDM_REALTIME,       m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 100);
+	CheckMenuItem(IDM_50FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 50);
+	CheckMenuItem(IDM_25FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 25);
+	CheckMenuItem(IDM_10FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 10);
+	CheckMenuItem(IDM_5FPS,           m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 5);
+	CheckMenuItem(IDM_1FPS,           m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 1);
 	CheckMenuItem(IDM_FIXEDSPEED100,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 10000);
 	CheckMenuItem(IDM_FIXEDSPEED50,   m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 5000);
 	CheckMenuItem(IDM_FIXEDSPEED10,   m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 1000);
@@ -2732,15 +2737,10 @@ void BeebWin::UpdateSpeedMenu()
 	CheckMenuItem(IDM_FIXEDSPEED1_25, m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 125);
 	CheckMenuItem(IDM_FIXEDSPEED1_1,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 110);
 	CheckMenuItem(IDM_FIXEDSPEED0_9,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 90);
-	CheckMenuItem(IDM_FIXEDSPEED0_5,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 50);
 	CheckMenuItem(IDM_FIXEDSPEED0_75, m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 75);
+	CheckMenuItem(IDM_FIXEDSPEED0_5,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 50);
 	CheckMenuItem(IDM_FIXEDSPEED0_25, m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 25);
 	CheckMenuItem(IDM_FIXEDSPEED0_1,  m_TimingType == TimingType::FixedSpeed && m_TimingSpeed == 10);
-	CheckMenuItem(IDM_50FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 50);
-	CheckMenuItem(IDM_25FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 25);
-	CheckMenuItem(IDM_10FPS,          m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 10);
-	CheckMenuItem(IDM_5FPS,           m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 5);
-	CheckMenuItem(IDM_1FPS,           m_TimingType == TimingType::FixedFPS && m_TimingSpeed == 1);
 }
 
 void BeebWin::TranslateTiming()
