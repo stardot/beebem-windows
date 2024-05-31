@@ -40,6 +40,31 @@ typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID FAR *lpGUID, LPDIRECTDRAW FAR 
 
 /****************************************************************************/
 
+static void D3DMatrixIdentity(D3DMATRIX *pMatrix)
+{
+	pMatrix->_11 = 1.f;
+	pMatrix->_12 = 0.f;
+	pMatrix->_13 = 0.f;
+	pMatrix->_14 = 0.f;
+
+	pMatrix->_21 = 0.f;
+	pMatrix->_22 = 1.f;
+	pMatrix->_23 = 0.f;
+	pMatrix->_24 = 0.f;
+
+	pMatrix->_31 = 0.f;
+	pMatrix->_32 = 0.f;
+	pMatrix->_33 = 1.f;
+	pMatrix->_34 = 0.f;
+
+	pMatrix->_41 = 0.f;
+	pMatrix->_42 = 0.f;
+	pMatrix->_43 = 0.f;
+	pMatrix->_44 = 1.f;
+}
+
+/****************************************************************************/
+
 void BeebWin::InitDX()
 {
 	HRESULT hr = E_FAIL;
@@ -371,8 +396,8 @@ HRESULT BeebWin::InitD3DDevice()
 	m_pVB = nullptr;
 	m_pTexture = nullptr;
 
-	D3DXMATRIX Ortho2D;
-	D3DXMATRIX Ident;
+	D3DMATRIX Ortho2D;
+	D3DMATRIX Ident;
 
 	// Create the D3D object on first use.
 	if (m_pD3D == nullptr)
@@ -503,23 +528,23 @@ HRESULT BeebWin::InitD3DDevice()
 		goto Fail;
 	}
 
-	pVertices[0].position = D3DXVECTOR3(0.0f, -511.0f, 0.0f);
-	pVertices[0].color    = 0x00ffffff;
+	pVertices[0].position = {0.0f, -511.0f, 0.0f};
+	pVertices[0].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
 	pVertices[0].tu       = 0.0f;
 	pVertices[0].tv       = 1.0f;
 
-	pVertices[1].position = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pVertices[1].color    = 0x00ffffff;
+	pVertices[1].position = {0.0f, 0.0f, 0.0f};
+	pVertices[1].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
 	pVertices[1].tu       = 0.0f;
 	pVertices[1].tv       = 0.0f;
 
-	pVertices[2].position = D3DXVECTOR3(799.0f, -511.0f, 0.0f);
-	pVertices[2].color    = 0x00ffffff;
+	pVertices[2].position = {799.0f, -511.0f, 0.0f};
+	pVertices[2].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
 	pVertices[2].tu       = 1.0f;
 	pVertices[2].tv       = 1.0f;
 
-	pVertices[3].position = D3DXVECTOR3(799.0f, 0.0f, 0.0f);
-	pVertices[3].color    = 0x00ffffff;
+	pVertices[3].position = {799.0f, 0.0f, 0.0f};
+	pVertices[3].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
 	pVertices[3].tu       = 1.0f;
 	pVertices[3].tv       = 0.0f;
 
@@ -527,7 +552,7 @@ HRESULT BeebWin::InitD3DDevice()
 
 	// Set up matrices
 	//D3DXMatrixOrthoOffCenterLH(&Ortho2D, 0.0f, 800.0f, -512.0f, 0.0f, 0.0f, 1.0f);
-	D3DXMatrixIdentity(&Ortho2D);
+	D3DMatrixIdentity(&Ortho2D);
 	// const float l = 0.0f;
 	const float r = 800.0f;
 	const float b = -512.0f;
@@ -543,12 +568,12 @@ HRESULT BeebWin::InitD3DDevice()
 
 	m_pd3dDevice->SetTransform(D3DTS_PROJECTION, &Ortho2D);
 
-	D3DXMatrixIdentity(&Ident);
+	D3DMatrixIdentity(&Ident);
 	m_pd3dDevice->SetTransform(D3DTS_VIEW, &Ident);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD, &Ident);
 
 	// Identity matrix will fill window with our texture
-	D3DXMatrixIdentity(&m_TextureMatrix);
+	D3DMatrixIdentity(&m_TextureMatrix);
 
 	hResult = m_pd3dDevice->CreateTexture(800,
 	                                      512,
@@ -831,7 +856,7 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 					int height = TeletextEnabled ? TeletextLines : NLines;
 					// D3DXMatrixScaling(&m_TextureMatrix,
 					//                   800.0f / (float)width, 512.0f / (float)height, 1.0f);
-					D3DXMatrixIdentity(&m_TextureMatrix);
+					D3DMatrixIdentity(&m_TextureMatrix);
 					m_TextureMatrix._11 = 800.0f/(float)width;
 					m_TextureMatrix._22 = 512.0f/(float)height;
 

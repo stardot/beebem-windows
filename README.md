@@ -33,12 +33,17 @@ If you want to compile BeebEm yourself then you will need Microsoft Visual Studi
 | `InnoSetup\Installer.vcxproj`        | Inno Setup installer project file |
 | `ZipFile\ZipFile.vcxproj`            | Distribution zip project file     |
 
-These project files are set up to target Windows XP, which we use to create release binaries. This requires the following optional Visual Studio 2019 components to be installed:
+Please note that these project files are set up to target Windows XP, which we use to create release binaries. This requires the following optional Visual Studio 2019 components to be installed:
 
 * MSVC v140 - VS 2015 C++ build tools (v14.00)
 * C++ Windows XP Support for VS 2017 (v141) tools [Deprecated]
 
-You also will need to download and install the [Microsoft DirectX 9.0 SDK (June 2010)](https://www.microsoft.com/en-us/download/details.aspx?id=6812).
+To build for Windows XP you will also need to download and install the [Microsoft DirectX 9.0 SDK (June 2010)](https://www.microsoft.com/en-us/download/details.aspx?id=6812). If you are building for Windows 10 or later only, you don't need to do this. Instead ensure the following Visual Studio 2019 components are installed:
+
+* MSVC v142 - VS 2019 C++ X64/X86 build tools
+* C++ MFC for latest v142 build tools (x86 & x64)
+
+and see [Instructions for people who only need Windows 10 compatibility](#instructions-for-people-who-only-need-windows-10-compatibility).
 
 To build the installer from within Visual Studio, you'll need to download and install [Inno Setup 5.6.1](https://files.jrsoftware.org/is/5/).
 
@@ -54,18 +59,31 @@ Select the **View** menu, then **Other Windows**, then **Property Manager**. In 
 
 This opens the BeebEm.user properties. Select **User Macros** from the list in the left column, under **Common Properties**, then set the following macro values:
 
-* Set DXSDK_Dir to the path to the DirectX SDK, e.g:
+* Set `DXSDK_Dir` to the path to the DirectX SDK, e.g:
 
-  Name:  DXSDK_Dir
-  Value: C:\Program Files\Microsoft DirectX SDK (June 2010)
+  Name:  `DXSDK_Dir`
+  Value: `C:\Program Files\Microsoft DirectX SDK (June 2010)`
 
-* Set ISCC_Dir to the path to the Inno Setup compiler, e.g:
+* Set `ISCC_Dir` to the path to the Inno Setup compiler, e.g:
 
-  Name:  ISCC_Dir
-  Value: C:\Program Files\Inno Setup 5
+  Name:  `ISCC_Dir`
+  Value: `C:\Program Files\Inno Setup 5`
 
-The "Set this macro as an environment variable in the build environment"
-option does not need to be ticked.
+The **Set this macro as an environment variable in the build environment** option does not need to be ticked.
+
+### Instructions for people who only need Windows 10 compatibility
+
+If you don't mind targeting Windows 10, you may attempt the following unsupported steps. The advantage of doing this is that you don't need to install anything apart from Visual Studio 2019; the disadvantage is that the EXE will only support Windows 10, and the installer and distribution aren't supported.
+
+Firstly, ensure `C++ MFC for latest v142 build tools (x86 & x64)` is installed.
+
+1. Allow Visual Studio to retarget projects to v141_xp
+2. Get properties for the BeebEm project, and select **All Configurations** and **All Platforms**
+3. In **General**, set **Platform Toolset** to `Visual Studio 2019 (v142)`, and click OK
+4. Get properties for the BeebEm project, and select **All Configurations** and **All Platforms**
+5. In **General**, set **Windows SDK Version** to **10.0 (latest installed version)**, and click OK
+
+Now build.
 
 ### Other Operating Systems
 
@@ -78,7 +96,7 @@ Thanks to Dave Gilbert for originally creating BeebEm. There's an interview with
 
 Thanks to Mike Wyatt for his contributions to BeebEm and for hosting the [BeebEm homepage](http://www.mkw.me.uk/beebem).
 
-Thanks to the maintainers and contributors for its continued development: Alistair Cree, Bill Carr, Charles Reilly, Chris Needham, David Sharp, Daniel Beardsmore, Dominic Beesley, Greg Cook, Jon Welch, Jonathan Harston, Ken Lowe, Kieran Mockford, Laurie Whiffen, Mark Usher, Mauro Varischetti, Mike Wyatt, Nigel Magnay, pstnotpd, Rich Talbot-Watkins, Richard Broadhurst, Richard Gellman, Rob O'Donnell, Robert Schmidt, Steve Inglis, Steve Insley, Steve Pick, Tadek Kijkowski, Theo Lindebaum.
+Thanks to the maintainers and contributors for its continued development: Alistair Cree, Bill Carr, Charles Reilly, Chris Needham, David Sharp, Daniel Beardsmore, Dominic Beesley, Greg Cook, Jon Welch, Jonathan Harston, Ken Lowe, Kieran Mockford, Laurie Whiffen, Mark Usher, Mauro Varischetti, Mike Wyatt, Nigel Magnay, pstnotpd, Rich Talbot-Watkins, Richard Broadhurst, Richard Gellman, Rob O'Donnell, Robert Schmidt, Steve Inglis, Steve Insley, Steve Pick, Tadek Kijkowski, Theo Lindebaum, Tom Seddon.
 
 Copyright
 ---------

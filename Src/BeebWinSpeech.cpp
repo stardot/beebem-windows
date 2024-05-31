@@ -22,8 +22,13 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 
+// If building for Windows 10, you get a C4996 warning from sphelper.h. But it's
+// an error! Even though warnings are not set to be errors.
+#pragma warning(push)
+#pragma warning(default: 4996)
 #define STRSAFE_NO_DEPRECATE
 #include <sphelper.h>
+#pragma warning(pop)
 
 #include <assert.h>
 #include <stdio.h>

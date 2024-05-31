@@ -36,7 +36,7 @@ Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include <windows.h>
-#include <d3dx9.h>
+#include <d3d9.h>
 #include <ddraw.h>
 #include <sapi.h>
 
@@ -114,9 +114,10 @@ struct TextToSpeechVoice
 // A structure for our custom vertex type. We added texture coordinates
 struct CUSTOMVERTEX
 {
-	D3DXVECTOR3 position; // The position
-	D3DCOLOR	color;	  // The color
-	FLOAT		tu, tv;	  // The texture coordinates
+	D3DVECTOR position; // The position
+	D3DCOLOR color; // The colour
+	FLOAT tu; // The texture coordinates
+	FLOAT tv;
 };
 
 // Our custom FVF, which describes our custom vertex structure
@@ -695,7 +696,7 @@ public:
 	LPDIRECT3DDEVICE9 m_pd3dDevice;
 	LPDIRECT3DVERTEXBUFFER9 m_pVB;
 	LPDIRECT3DTEXTURE9 m_pTexture;
-	D3DXMATRIX m_TextureMatrix;
+	D3DMATRIX m_TextureMatrix;
 
 	// Joystick input
 	bool m_JoystickCaptured;
