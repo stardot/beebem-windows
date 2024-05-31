@@ -1351,17 +1351,27 @@ void BeebWin::UpdateMonitorMenu()
 
 void BeebWin::UpdateModelMenu()
 {
-	static const std::map<Model, UINT> ModelMenuItems{
-		{ Model::B,         ID_MODELB },
-		{ Model::IntegraB,  ID_MODELBINT },
-		{ Model::BPlus,     ID_MODELBPLUS },
-		{ Model::Master128, ID_MASTER128 },
-		{ Model::MasterET,  ID_MASTER_ET }
+	static const struct { UINT ID; Model Type; } MenuItems[] =
+	{
+		{ ID_MODELB,     Model::B },
+		{ ID_MODELBINT,  Model::IntegraB },
+		{ ID_MODELBPLUS, Model::BPlus },
+		{ ID_MASTER128,  Model::Master128 },
+		{ ID_MASTER_ET,  Model::MasterET }
 	};
 
-	UINT SelectedMenuItem = ModelMenuItems.find(MachineType)->second;
+	UINT SelectedMenuItemID = 0;
 
-	CheckMenuRadioItem(ID_MODELB, ID_MASTER_ET, SelectedMenuItem);
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (MachineType == MenuItems[i].Type)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(ID_MODELB, ID_MASTER_ET, SelectedMenuItemID);
 
 	if (MachineType == Model::Master128) {
 		EnableMenuItem(ID_FDC_DLL, false);
