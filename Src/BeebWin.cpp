@@ -1486,19 +1486,29 @@ void BeebWin::UpdateDisableKeysMenu() {
 
 void BeebWin::UpdateTubeMenu()
 {
-	static const std::map<Tube, UINT> TubeMenuItems{
-		{ Tube::None,           IDM_TUBE_NONE },
-		{ Tube::Acorn65C02,     IDM_TUBE_ACORN65C02 },
-		{ Tube::Master512CoPro, IDM_TUBE_MASTER512 },
-		{ Tube::AcornZ80,       IDM_TUBE_ACORNZ80 },
-		{ Tube::TorchZ80,       IDM_TUBE_TORCHZ80 },
-		{ Tube::AcornArm,       IDM_TUBE_ACORNARM },
-		{ Tube::SprowArm,       IDM_TUBE_SPROWARM }
+	static const struct { UINT ID; Tube Type; } MenuItems[] =
+	{
+		{ IDM_TUBE_NONE,       Tube::None },
+		{ IDM_TUBE_ACORN65C02, Tube::Acorn65C02 },
+		{ IDM_TUBE_MASTER512,  Tube::Master512CoPro },
+		{ IDM_TUBE_ACORNZ80,   Tube::AcornZ80 },
+		{ IDM_TUBE_TORCHZ80,   Tube::TorchZ80 },
+		{ IDM_TUBE_ACORNARM,   Tube::AcornArm },
+		{ IDM_TUBE_SPROWARM,   Tube::SprowArm }
 	};
 
-	UINT SelectedMenuItem = TubeMenuItems.find(TubeType)->second;
+	UINT SelectedMenuItemID = 0;
 
-	CheckMenuRadioItem(IDM_TUBE_NONE, IDM_TUBE_SPROWARM, SelectedMenuItem);
+	for (int i = 0; i < _countof(MenuItems); i++)
+	{
+		if (TubeType == MenuItems[i].Type)
+		{
+			SelectedMenuItemID = MenuItems[i].ID;
+			break;
+		}
+	}
+
+	CheckMenuRadioItem(IDM_TUBE_NONE, IDM_TUBE_SPROWARM, SelectedMenuItemID);
 }
 
 /****************************************************************************/
