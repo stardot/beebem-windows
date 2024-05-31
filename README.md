@@ -33,12 +33,14 @@ If you want to compile BeebEm yourself then you will need Microsoft Visual Studi
 | `InnoSetup\Installer.vcxproj`        | Inno Setup installer project file |
 | `ZipFile\ZipFile.vcxproj`            | Distribution zip project file     |
 
-These project files are set up to target Windows XP, which we use to create release binaries. This requires the following optional Visual Studio 2019 components to be installed:
+Please note that these project files are set up to target Windows XP, which we use to create release binaries. This requires the following optional Visual Studio 2019 components to be installed:
 
 * MSVC v140 - VS 2015 C++ build tools (v14.00)
 * C++ Windows XP Support for VS 2017 (v141) tools [Deprecated]
 
-You also will need to download and install the [Microsoft DirectX 9.0 SDK (June 2010)](https://www.microsoft.com/en-us/download/details.aspx?id=6812).
+If you're building on Windows 10, and don't want to install anything else, see the section below for people only need Windows 10 compatibility.
+
+Otherwise: you also will need to download and install the [Microsoft DirectX 9.0 SDK (June 2010)](https://www.microsoft.com/en-us/download/details.aspx?id=6812).
 
 To build the installer from within Visual Studio, you'll need to download and install [Inno Setup 5.6.1](https://files.jrsoftware.org/is/5/).
 
@@ -66,6 +68,20 @@ This opens the BeebEm.user properties. Select **User Macros** from the list in t
 
 The "Set this macro as an environment variable in the build environment"
 option does not need to be ticked.
+
+### Instructions for people who only need Windows 10 compatibility
+
+If you don't mind targeting Windows 10, you may attempt the following unsupported steps. The advantage of doing this is that you don't need to install anything apart from Visual Studio 2019; the disadvantage is that the EXE will only support Windows 10, and the installer and distribution aren't supported.
+
+Firstly, ensure `C++ MFC for latest v142 build tools (x86 & x64)` is installed.
+
+1. Allow Visual Studio to retarget projects to v141_xp
+2. Get properties for the BeebEm project, and select `All Configurations` and `All Platforms`
+3. In `General`, set `Platform Toolset` to `Visual Studio 2019 (v142)`, and click OK
+4. Get properties for the BeebEm project, and select `All Configurations` and `All Platforms`
+5. In `General`, set `Windows SDK Version` to `10.0 (latest installed version)`, and click OK
+
+Now build.
 
 ### Other Operating Systems
 
