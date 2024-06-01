@@ -555,48 +555,57 @@
           appropriate ROM (e.g., Acorn DFS 2.26 for the Acorn 1770 board).
         </p>
 
-        <h3>65C02 Second Processor</h3>
+        <h3>Second Processor</h3>
 
         <p>
-          Enables/disables the 65C02 second processor emulation. Note that in
-          Master 128 mode the second processor may be disabled in the CMOS
-          settings. To enable it type <span class="cmd">*CONFIGURE TUBE</span>
-          and press <kbd>Break</kbd> (<kbd>F12</kbd>). See the
-          <a href="65c02copro.html">Acorn 65C02 Co-Processor</a> section for
-          more details.
+          Allows you to select a second processor, connected via the Beeb's Tube
+          interface. The following second processors are supported:
         </p>
 
-        <h3>Acorn Z80 Second Processor</h3>
+        <ul>
+          <li><b>65C02 Second Processor</b></li>
 
-        <p>
-          Enables/disables the Acorn Z80 second processor
-          emulation. See the <a href="z80copro.html">Acorn Z80 Co-Processor</a>
-          section for more details.
-        </p>
+          <p>
+            Enables/disables the 65C02 second processor emulation. Note that in
+            Master 128 mode the second processor may be disabled in the CMOS
+            settings. To enable it type <span class="cmd">*CONFIGURE TUBE</span>
+            and press <kbd>Break</kbd> (<kbd>F12</kbd>). See the
+            <a href="65c02copro.html">Acorn 65C02 Co-Processor</a> section for
+            more details.
+          </p>
 
-        <h3>Torch Z80 Second Processor</h3>
+          <li><b>Acorn Z80 Second Processor</b></li>
 
-        <p>
-          Enables/disables the Torch Z80 second processor
-          emulation. See the <a href="z80torch.html">Torch Z80 Co-Processor</a>
-          section for more details.
-        </p>
+          <p>
+            Enables/disables the Acorn Z80 second processor
+            emulation. See the <a href="z80copro.html">Acorn Z80 Co-Processor</a>
+            section for more details.
+          </p>
 
-        <h3>ARM Second Processor</h3>
+          <li><b>Torch Z80 Second Processor</b></li>
 
-        <p>
-          Enables/disables the ARM second processor
-          emulation. See the <a href="armcopro.html">Acorn ARM Second Processor</a>
-          section for more details.
-        </p>
+          <p>
+            Enables/disables the Torch Z80 second processor
+            emulation. See the <a href="z80torch.html">Torch Z80 Co-Processor</a>
+            section for more details.
+          </p>
 
-        <h3>ARM7TDMI Co-Processor</h3>
+          <li><b>ARM Second Processor</b></li>
 
-        <p>
-          Enables/disables the Sprow ARM7TDMI co-processor
-          emulation. See the <a href="sprowcopro.html">Sprow ARM7TDMI Co-Processor</a>
-          section for more details.
-        </p>
+          <p>
+            Enables/disables the ARM second processor
+            emulation. See the <a href="armcopro.html">Acorn ARM Second Processor</a>
+            section for more details.
+          </p>
+
+          <li><b>ARM7TDMI Co-Processor</b></li>
+
+          <p>
+            Enables/disables the Sprow ARM7TDMI co-processor
+            emulation. See the <a href="sprowcopro.html">Sprow ARM7TDMI Co-Processor</a>
+            section for more details.
+          </p>
+        </ul>
 
         <h3>Allow SW RAM Write</h3>
 
@@ -719,27 +728,42 @@
 
         <p>
           Switches on or off PC/Beeb analogue joystick support.
-          Calibrate the joystick through the Windows Control Panel.
         </p>
 
-        <h3>Analogue Mousestick</h3>
+        <ul>
+          <li><b>Off</b></li>
 
-        <p>
-          Switches on or off the mapping of mouse position to
-          analogue Beeb joystick position. Allows you to use the mouse
-          as a joystick. The left mouse button controls the joystick 1
-          fire button and the right mouse button controls the joystick 2
-          fire button.
-        </p>
+          <p>
+            Switches joystick support off.
+          </p>
 
-        <h3>Digital Mousestick</h3>
+          <li><b>Joystick</b></li>
 
-        <p>
-          Switches on or off the mapping of mouse movements to
-          digital Beeb joystick movements. The left mouse button controls
-          the joystick 1 fire button and the right mouse button controls
-          the joystick 2 fire button.
-        </p>
+          <p>
+            Enables use of a joystick or other game input controller
+            connected to the PC. Use the Windows Control Panel to
+            calibrate the joystick.
+          </p>
+
+          <li><b>Analogue Mousestick</b></li>
+
+          <p>
+            Switches on or off the mapping of mouse position to
+            analogue Beeb joystick position. Allows you to use the mouse
+            as a joystick. The left mouse button controls the joystick 1
+            fire button and the right mouse button controls the joystick 2
+            fire button.
+          </p>
+
+          <li><b>Digital Mousestick</b></li>
+
+          <p>
+            Switches on or off the mapping of mouse movements to
+            digital Beeb joystick movements. The left mouse button controls
+            the joystick 1 fire button and the right mouse button controls
+            the joystick 2 fire button.
+          </p>
+        </ul>
 
         <h3>Freeze When Inactive</h3>
 
