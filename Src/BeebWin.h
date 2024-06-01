@@ -595,7 +595,6 @@ public:
 	bool m_StartPaused;
 	bool m_EmuPaused;
 	bool m_WasPaused;
-
 	bool m_FreezeWhenInactive;
 	bool m_Frozen;
 
@@ -716,7 +715,6 @@ public:
 	char m_printerbuffer[1024 * 1024];
 	int m_printerbufferlen;
 	bool m_translateCRLF;
-
 	PrinterPortType m_PrinterPort;
 	char m_PrinterFileName[_MAX_PATH];
 	char m_PrinterDevice[_MAX_PATH];
@@ -753,7 +751,7 @@ public:
 	BitmapCaptureResolution m_BitmapCaptureResolution;
 	BitmapCaptureFormat m_BitmapCaptureFormat;
 
-	// AVI vars
+	// Video capture
 	bmiData m_Avibmi;
 	HBITMAP m_AviDIB;
 	HDC m_AviDC;
@@ -763,7 +761,7 @@ public:
 	int m_AviFrameCount;
 	VideoCaptureResolution m_VideoCaptureResolution;
 
-	// Text to speech variables
+	// Text to speech
 	bool m_TextToSpeechEnabled;
 	std::vector<TextToSpeechVoice> m_TextToSpeechVoices;
 	HMENU m_hVoiceMenu;
@@ -781,7 +779,7 @@ public:
 	int m_SpeechBufPos;
 	int m_SpeechRate;
 
-	// Text view variables
+	// Text view
 	HWND m_hTextView;
 	bool m_TextViewEnabled;
 	WNDPROC m_TextViewPrevWndProc;
@@ -797,5 +795,7 @@ class CSprowCoPro;
 
 extern CArm *arm;
 extern CSprowCoPro *sprow;
+
+extern const char DefaultBlurIntensities[8];
 
 #endif

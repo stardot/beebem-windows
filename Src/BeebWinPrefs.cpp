@@ -168,9 +168,9 @@ void BeebWin::LoadPreferences()
 	{
 		switch (dword)
 		{
-			case 0: case 40217: m_DisplayRenderer = DisplayRendererType::GDI; break;
-			case 1: case 40218: m_DisplayRenderer = DisplayRendererType::DirectDraw; break;
-			default:            m_DisplayRenderer = DisplayRendererType::DirectX9; break;
+			case 0: case 40217:          m_DisplayRenderer = DisplayRendererType::GDI; break;
+			case 1: case 40218:          m_DisplayRenderer = DisplayRendererType::DirectDraw; break;
+			case 2: case 40219: default: m_DisplayRenderer = DisplayRendererType::DirectX9; break;
 		}
 	}
 	else
@@ -324,14 +324,7 @@ void BeebWin::LoadPreferences()
 
 	if (!m_Preferences.GetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8))
 	{
-		m_BlurIntensities[0]=100;
-		m_BlurIntensities[1]=88;
-		m_BlurIntensities[2]=75;
-		m_BlurIntensities[3]=62;
-		m_BlurIntensities[4]=50;
-		m_BlurIntensities[5]=38;
-		m_BlurIntensities[6]=25;
-		m_BlurIntensities[7]=12;
+		memcpy(m_BlurIntensities, DefaultBlurIntensities, sizeof(m_BlurIntensities));
 	}
 
 	if (!m_Preferences.GetBoolValue("TextViewEnabled", m_TextViewEnabled))

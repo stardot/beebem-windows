@@ -127,74 +127,89 @@ const char *WindowTitle = "BeebEm - BBC Model B / Master Series Emulator";
 constexpr int TIMER_KEYBOARD       = 1;
 constexpr int TIMER_AUTOBOOT_DELAY = 2;
 
+const char DefaultBlurIntensities[8] = { 100, 88, 75, 62, 50, 38, 25, 12 };
+
 /****************************************************************************/
+
 BeebWin::BeebWin()
 {
+	// Main window
 	m_hWnd = nullptr;
-	m_DXInit = false;
-	m_LastStartY = 0;
-	m_LastNLines = 256;
+	strcpy(m_szTitle, WindowTitle);
+	m_isFullScreen = false;
+	m_startFullScreen = false;
+
+	// Menu
+	m_hMenu = nullptr;
+	m_MenuOn = false;
+	m_HideMenuEnabled = false;
+	m_DisableMenu = false;
+
+	// Timing
+	m_ShowSpeedAndFPS = false;
+	m_TimingType = TimingType::FixedSpeed;
+	m_TimingSpeed = 100;
+	m_RealTimeTarget = 0.0;
+	m_CyclesPerSec = 0;
 	m_LastTickCount = 0;
-	m_KeyMapAS = false;
-	m_KeyMapFunc = false;
-	m_ShiftPressed = 0;
-	m_ShiftBooted = false;
+	m_LastStatsTickCount = 0;
+	m_LastTotalCycles = 0;
+	m_LastStatsTotalCycles = 0;
+	m_TickBase = 0;
+	m_CycleBase = 0;
+	m_MinFrameCount = 0;
+	m_LastFPSCount = 0;
+	m_FPSTarget = 0;
+	m_ScreenRefreshCount = 0;
+	m_RelativeSpeed = 1.0;
+	m_FramesPerSecond = 50.0;
 
-	for (int k = 0; k < 256; ++k)
-	{
-		m_vkeyPressed[k][0][0] = -1;
-		m_vkeyPressed[k][1][0] = -1;
-		m_vkeyPressed[k][0][1] = -1;
-		m_vkeyPressed[k][1][1] = -1;
-	}
+	// Pause / freeze emulation
+	m_StartPaused = false;
+	m_EmuPaused = false;
+	m_WasPaused = false;
+	m_FreezeWhenInactive = false;
+	m_Frozen = false;
 
-	m_DisableKeysWindows = false;
-	m_DisableKeysBreak = false;
-	m_DisableKeysEscape = false;
-	m_DisableKeysShortcut = false;
-	memset(m_UserKeyMapPath, 0, sizeof(m_UserKeyMapPath));
+	// Window size
+	m_XWinSize = 640;
+	m_YWinSize = 512;
+	m_XLastWinSize = m_XWinSize;
+	m_YLastWinSize = m_YWinSize;
+	m_XWinPos = -1; // ???
+	m_YWinPos = -1;
+	m_XDXSize = 640;
+	m_YDXSize = 480;
+	m_XRatioAdj = 0.0f;
+	m_YRatioAdj = 0.0f;
+	m_XRatioCrop = 0.0f;
+	m_YRatioCrop = 0.0f;
+
+	// Graphics rendering
 	m_hDC = nullptr;
 	m_hOldObj = nullptr;
 	m_hDCBitmap = nullptr;
 	m_hBitmap = nullptr;
+	ZeroMemory(&m_bmi, sizeof(m_bmi));
 	m_PaletteType = PaletteType::RGB;
 	m_screen = nullptr;
 	m_screen_blur = nullptr;
-	m_ScreenRefreshCount = 0;
-	m_RelativeSpeed = 1;
-	m_FramesPerSecond = 50;
-	strcpy(m_szTitle, WindowTitle);
-	m_AviDC = nullptr;
-	m_AviDIB = nullptr;
-	m_CaptureBitmapPending = false;
-	m_SpVoice = nullptr;
-	m_hTextView = nullptr;
-	m_TextViewPrevWndProc = nullptr;
-	m_Frozen = false;
-	m_WriteProtectDisc[0] = !IsDiscWritable(0);
-	m_WriteProtectDisc[1] = !IsDiscWritable(1);
-	m_AutoSavePrefsCMOS = false;
-	m_AutoSavePrefsFolders = false;
-	m_AutoSavePrefsAll = false;
-	m_AutoSavePrefsChanged = false;
-	m_KbdCmdPos = -1;
-	m_KbdCmdPress = false;
-	m_KbdCmdDelay = 40;
-	m_KbdCmdLastCycles = 0;
-	m_NoAutoBoot = false;
-	m_AutoBootDelay = 0;
-	m_EmuPaused = false;
-	m_StartPaused = false;
-	m_WasPaused = false;
-	m_KeyboardTimerElapsed = false;
-	m_BootDiscTimerElapsed = false;
-	memset(m_ClipboardBuffer, 0, sizeof(m_ClipboardBuffer));
-	m_ClipboardLength = 0;
-	m_ClipboardIndex = 0;
-	m_printerbufferlen = 0;
-	m_translateCRLF = true;
-	m_PrinterPort = PrinterPortType::Lpt1;
+	m_LastStartY = 0;
+	m_LastNLines = 256;
+	m_MotionBlur = 0;
+	memcpy(m_BlurIntensities, DefaultBlurIntensities, sizeof(m_BlurIntensities));
+	m_MaintainAspectRatio = true;
+	m_DisplayRenderer = DisplayRendererType::DirectX9;
 	m_CurrentDisplayRenderer = DisplayRendererType::GDI;
+	m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution;
+	m_DiscLedColour = LEDColour::Red;
+
+	// DirectX stuff
+	m_DXInit = false;
+	m_DXResetPending = false;
+	m_DXDeviceLost = false;
+
+	// DirectDraw stuff
 	m_hInstDDraw = nullptr;
 	m_DD = nullptr;
 	m_DD2  = nullptr;
@@ -206,46 +221,59 @@ BeebWin::BeebWin()
 	m_DXSmoothMode7Only = false;
 	m_Clipper = nullptr;
 
+	// Direct3D9 stuff
 	m_pD3D = nullptr;
 	m_pd3dDevice = nullptr;
 	m_pVB = nullptr;
 	m_pTexture = nullptr;
 	ZeroMemory(&m_TextureMatrix, sizeof(m_TextureMatrix));
 
-	m_DXInit = false;
-	m_DXResetPending = false;
-	m_DXDeviceLost = false;
-	m_DiscLedColour = LEDColour::Red;
+	// Audio
+	m_SampleRate = 44100;
+	m_SoundVolume = 100;
 
+	// Joystick input
 	m_JoystickCaptured = false;
-	m_isFullScreen = false;
-	m_MaintainAspectRatio = true;
-	m_startFullScreen = false;
-	m_XDXSize = 640;
-	m_YDXSize = 480;
-	m_HideMenuEnabled = false;
-	m_DisableMenu = false;
-	m_MenuOn = true;
-	m_PaletteType = PaletteType::RGB;
-	m_WriteInstructionCounts = false;
+	ZeroMemory(&m_JoystickCaps, sizeof(m_JoystickCaps));
+	m_JoystickOption = JoystickOption::Disabled;
+
+	// Mouse capture
+	m_HideCursor = false;
 	m_CaptureMouse = false;
 	m_MouseCaptured = false;
+	m_RelMousePos = { 0, 0 };
 
-	m_TextToSpeechEnabled = false;
-	m_hVoiceMenu = nullptr;
-	m_SpVoice = nullptr;
-	m_SpeechRate = 0;
-	TextToSpeechResetState();
+	// Keyboard input
+	m_KeyboardMapping = KeyboardMappingType::Logical;
+	m_KeyMapAS = false;
+	m_KeyMapFunc = false;
+	ZeroMemory(m_UserKeyMapPath, sizeof(m_UserKeyMapPath));
+	m_DisableKeysWindows = false;
+	m_DisableKeysBreak = false;
+	m_DisableKeysEscape = false;
+	m_DisableKeysShortcut = false;
+	m_ShiftPressed = false;
+	m_ShiftBooted = false;
+
+	for (int k = 0; k < 256; ++k)
+	{
+		m_vkeyPressed[k][0][0] = -1;
+		m_vkeyPressed[k][1][0] = -1;
+		m_vkeyPressed[k][0][1] = -1;
+		m_vkeyPressed[k][1][1] = -1;
+	}
 
 	InitKeyMap();
 
-	/* Get the applications path - used for non-user files */
-	char app_path[_MAX_PATH];
-	char app_drive[_MAX_DRIVE];
-	char app_dir[_MAX_DIR];
-	GetModuleFileName(NULL, app_path, _MAX_PATH);
-	_splitpath(app_path, app_drive, app_dir, NULL, NULL);
-	_makepath(m_AppPath, app_drive, app_dir, NULL, NULL);
+	// File paths
+
+	// Get the applications path - used for non-user files
+	char AppPath[_MAX_PATH];
+	char AppDrive[_MAX_DRIVE];
+	char AppDir[_MAX_DIR];
+	GetModuleFileName(nullptr, AppPath, _MAX_PATH);
+	_splitpath(AppPath, AppDrive, AppDir, nullptr, nullptr);
+	_makepath(m_AppPath, AppDrive, AppDir, nullptr, nullptr);
 
 	// Read user data path from registry
 	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "UserDataFolder",
@@ -259,10 +287,94 @@ BeebWin::BeebWin()
 	}
 
 	m_CustomData = false;
+	ZeroMemory(m_DiscPath, sizeof(m_DiscPath)); // Set in BeebWin::Initialise()
+	m_WriteProtectDisc[0] = !IsDiscWritable(0);
+	m_WriteProtectDisc[1] = !IsDiscWritable(1);
+	m_WriteProtectOnLoad = true;
 
-	// Set default files, may be overridden by command line parameters.
-	strcpy(m_PrefsFile, "Preferences.cfg");
-	strcpy(RomFile, "Roms.cfg");
+	// AMX mouse
+	m_AMXSize = AMXSizeType::_320x256;
+	m_AMXXSize = 320;
+	m_AMXYSize = 256;
+	m_AMXAdjust = 30;
+
+	// Preferences
+	strcpy(m_PrefsFile, "Preferences.cfg"); // May be overridden by command line parameter.
+	m_AutoSavePrefsCMOS = false;
+	m_AutoSavePrefsFolders = false;
+	m_AutoSavePrefsAll = false;
+	m_AutoSavePrefsChanged = false;
+
+	// Clipboard
+	ZeroMemory(m_ClipboardBuffer, sizeof(m_ClipboardBuffer));
+	m_ClipboardLength = 0;
+	m_ClipboardIndex = 0;
+
+	// Printer
+	ZeroMemory(m_printerbuffer, sizeof(m_printerbuffer));
+	m_printerbufferlen = 0;
+	m_translateCRLF = true;
+	m_PrinterPort = PrinterPortType::Lpt1;
+	ZeroMemory(m_PrinterFileName, sizeof(m_PrinterFileName));
+	ZeroMemory(m_PrinterDevice, sizeof(m_PrinterDevice));
+
+	// Command line
+	ZeroMemory(m_CommandLineFileName1, sizeof(m_CommandLineFileName1));
+	ZeroMemory(m_CommandLineFileName2, sizeof(m_CommandLineFileName2));
+
+	// Startup key sequence
+	m_KbdCmdPos = -1;
+	m_KbdCmdKey = 0;
+	m_KbdCmdPress = false;
+	m_KbdCmdDelay = 40;
+	m_KbdCmdLastCycles = 0;
+	m_KeyboardTimerElapsed = false;
+
+	// Disc auto-boot
+	m_NoAutoBoot = false;
+	m_AutoBootDelay = 0;
+	m_AutoBootDisc = false;
+	m_BootDiscTimerElapsed = false;
+
+	// ROMs
+	ZeroMemory(RomWritePrefs, sizeof(RomWritePrefs));
+	strcpy(RomFile, "Roms.cfg"); // May be overridden by command line parameter.
+
+	// Bitmap capture
+	m_gdiplusToken = 0;
+	m_CaptureBitmapPending = false;
+	m_CaptureBitmapAutoFilename = false;
+	ZeroMemory(m_CaptureFileName, sizeof(m_CaptureFileName));
+	m_BitmapCaptureResolution = BitmapCaptureResolution::_640x512;
+	m_BitmapCaptureFormat = BitmapCaptureFormat::Bmp;
+
+	// Video capture
+	ZeroMemory(&m_Avibmi, sizeof(m_Avibmi));
+	m_AviDIB = nullptr;
+	m_AviDC = nullptr;
+	m_AviScreen = nullptr;
+	m_AviFrameSkip = 1;
+	m_AviFrameSkipCount = 0;
+	m_AviFrameCount = 0;
+	m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
+
+	// Text to speech
+	m_TextToSpeechEnabled = false;
+	m_hVoiceMenu = nullptr;
+	m_SpVoice = nullptr;
+	TextToSpeechResetState();
+	m_SpeechSpeakPunctuation = false;
+	m_SpeechWriteChar = true;
+	m_SpeechRate = 0;
+
+	// Text view
+	m_hTextView = nullptr;
+	m_TextViewEnabled = false;
+	m_TextViewPrevWndProc = nullptr;
+	ZeroMemory(m_TextViewScreen, sizeof(m_TextViewScreen));
+
+	// Debug
+	m_WriteInstructionCounts = false;
 }
 
 /****************************************************************************/

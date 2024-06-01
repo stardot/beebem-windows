@@ -72,8 +72,8 @@ void BeebWin::TextToSpeechResetState()
 {
 	m_SpeechLine = 0;
 	m_SpeechCol = 0;
-	memset(m_SpeechText, 0, MAX_SPEECH_LINE_LEN+1);
-	memset(m_SpeechBuf, 0, MAX_SPEECH_BUF_LEN+1);
+	ZeroMemory(m_SpeechText, sizeof(m_SpeechText));
+	ZeroMemory(m_SpeechBuf, sizeof(m_SpeechBuf));
 	m_SpeechBufPos = 0;
 }
 
