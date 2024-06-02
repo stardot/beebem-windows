@@ -36,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "KeyMap.h"
 #include "Main.h"
 #include "Music5000.h"
+#include "Registry.h"
 #include "Resource.h"
 #include "Rtc.h"
 #include "Scsi.h"

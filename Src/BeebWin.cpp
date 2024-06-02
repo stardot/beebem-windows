@@ -79,6 +79,7 @@ using std::max;
 #include "Messages.h"
 #include "Music5000.h"
 #include "Port.h"
+#include "Registry.h"
 #include "Resource.h"
 #include "RomConfigDialog.h"
 #include "Rtc.h"
@@ -5960,102 +5961,3 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 }
 
 /****************************************************************************/
-bool BeebWin::RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey)
-{
-	bool rc = false;
-	HKEY hKeyResult;
-	if ((RegCreateKeyEx(hKeyRoot, lpSubKey, 0, NULL, 0, KEY_ALL_ACCESS,
-						NULL, &hKeyResult, NULL)) == ERROR_SUCCESS)
-	{
-		RegCloseKey(hKeyResult);
-		rc = true;
-	}
-	return rc;
-}
-
-bool BeebWin::RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
-                                void* pData, int* pnSize)
-{
-	bool rc = false;
-	HKEY hKeyResult;
-	DWORD dwType = REG_BINARY;
-	DWORD dwSize = *pnSize;
-	LONG lRes = 0;
-
-	if ((RegOpenKeyEx(hKeyRoot, lpSubKey, 0, KEY_ALL_ACCESS, &hKeyResult)) == ERROR_SUCCESS)
-	{
-		lRes = RegQueryValueEx(hKeyResult, lpValue, NULL, &dwType, (LPBYTE)pData, &dwSize);
-		if (lRes == ERROR_SUCCESS && dwType == REG_BINARY)
-		{
-			*pnSize = dwSize;
-			rc = true;
-		}
-		RegCloseKey(hKeyResult);
-	}
-
-	return rc;
-}
-
-bool BeebWin::RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
-                                const void* pData, int* pnSize)
-{
-	bool rc = false;
-	HKEY hKeyResult;
-	DWORD dwSize = *pnSize;
-	LONG  lRes = 0;
-
-	if ((RegOpenKeyEx(hKeyRoot, lpSubKey, 0, KEY_ALL_ACCESS, &hKeyResult)) == ERROR_SUCCESS)
-	{
-		lRes = RegSetValueEx(hKeyResult, lpValue, 0, REG_BINARY, reinterpret_cast<const BYTE*>(pData), dwSize);
-		if (lRes == ERROR_SUCCESS)
-		{
-			*pnSize = dwSize;
-			rc = true;
-		}
-		RegCloseKey(hKeyResult);
-	}
-
-	return rc;
-}
-
-bool BeebWin::RegGetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
-                                LPSTR pData, DWORD dwSize)
-{
-	bool rc = false;
-	HKEY hKeyResult;
-	DWORD dwType = REG_SZ;
-	LONG lRes = 0;
-
-	if ((RegOpenKeyEx(hKeyRoot, lpSubKey, 0, KEY_ALL_ACCESS, &hKeyResult)) == ERROR_SUCCESS)
-	{
-		lRes = RegQueryValueEx(hKeyResult, lpValue, NULL, &dwType, (LPBYTE)pData, &dwSize);
-		if (lRes == ERROR_SUCCESS && dwType == REG_SZ)
-		{
-			rc = true;
-		}
-		RegCloseKey(hKeyResult);
-	}
-
-	return rc;
-}
-
-bool BeebWin::RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
-                                LPCSTR pData)
-{
-	bool rc = false;
-	HKEY hKeyResult;
-	DWORD dwSize = (DWORD)strlen(pData);
-	LONG  lRes = 0;
-
-	if ((RegOpenKeyEx(hKeyRoot, lpSubKey, 0, KEY_ALL_ACCESS, &hKeyResult)) == ERROR_SUCCESS)
-	{
-		lRes = RegSetValueEx(hKeyResult, lpValue, 0, REG_SZ, reinterpret_cast<const BYTE*>(pData), dwSize);
-		if (lRes == ERROR_SUCCESS)
-		{
-			rc = true;
-		}
-		RegCloseKey(hKeyResult);
-	}
-
-	return rc;
-}
