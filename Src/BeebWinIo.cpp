@@ -1335,8 +1335,8 @@ void BeebWin::LoadFDC(char *DLLName, bool save)
 	}
 
 	// Set menu options
-	CheckMenuItem(ID_8271, NativeFDC);
-	CheckMenuItem(ID_FDC_DLL, !NativeFDC);
+	CheckMenuItem(IDM_8271, NativeFDC);
+	CheckMenuItem(IDM_FDC_DLL, !NativeFDC);
 
 	DisplayCycles = 7000000;
 

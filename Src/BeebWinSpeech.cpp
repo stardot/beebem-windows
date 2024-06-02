@@ -224,7 +224,7 @@ void BeebWin::InitVoiceMenu()
 	                         (UINT_PTR)m_hVoiceMenu,
 	                         "&Voice");
 
-	UINT nMenuItemID = ID_TEXT_TO_SPEECH_VOICE_BASE;
+	UINT nMenuItemID = IDM_TEXT_TO_SPEECH_VOICE_BASE;
 
 	for (size_t i = 0; i < m_TextToSpeechVoices.size(); i++)
 	{
@@ -317,13 +317,13 @@ void BeebWin::TextToSpeechSetVoice(ISpObjectToken* pToken)
 void BeebWin::TextToSpeechSelectVoiceMenuItem(int Index)
 {
 	size_t LastMenuItemID = m_TextToSpeechVoices.size() > 0 ?
-	                        ID_TEXT_TO_SPEECH_VOICE_BASE + m_TextToSpeechVoices.size() - 1 :
-	                        ID_TEXT_TO_SPEECH_VOICE_BASE;
+	                        IDM_TEXT_TO_SPEECH_VOICE_BASE + m_TextToSpeechVoices.size() - 1 :
+	                        IDM_TEXT_TO_SPEECH_VOICE_BASE;
 
 	::CheckMenuRadioItem(m_hVoiceMenu,
-	                     ID_TEXT_TO_SPEECH_VOICE_BASE,
+	                     IDM_TEXT_TO_SPEECH_VOICE_BASE,
 	                     static_cast<UINT>(LastMenuItemID),
-	                     ID_TEXT_TO_SPEECH_VOICE_BASE + Index,
+	                     IDM_TEXT_TO_SPEECH_VOICE_BASE + Index,
 	                     MF_BYCOMMAND);
 }
 

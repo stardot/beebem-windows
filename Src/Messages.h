@@ -31,6 +31,6 @@ constexpr UINT WM_USER_PORT_BREAKOUT_DIALOG_CLOSED = WM_APP + 4;
 constexpr UINT WM_DIRECTX9_DEVICE_LOST             = WM_APP + 5;
 
 // Menu item IDs
-constexpr UINT ID_TEXT_TO_SPEECH_VOICE_BASE = 50000;
+constexpr UINT IDM_TEXT_TO_SPEECH_VOICE_BASE = 50000;
 
 #endif

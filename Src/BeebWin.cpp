@@ -1245,7 +1245,7 @@ void BeebWin::InitMenu(void)
 	SetTapeSpeedMenu();
 
 	// Comms
-	CheckMenuItem(ID_UNLOCKTAPE, TapeState.Unlock);
+	CheckMenuItem(IDM_UNLOCKTAPE, TapeState.Unlock);
 	CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
 
 	// Comms -> Printer
@@ -1272,7 +1272,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
 	CheckMenuItem(IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio);
 	UpdateMonitorMenu();
-	CheckMenuItem(ID_HIDEMENU, m_HideMenuEnabled);
+	CheckMenuItem(IDM_HIDEMENU, m_HideMenuEnabled);
 	UpdateLEDMenu();
 	CheckMenuItem(IDM_TEXTVIEW, m_TextViewEnabled);
 
@@ -1302,10 +1302,10 @@ void BeebWin::InitMenu(void)
 
 	CheckMenuItem(IDM_SOUNDCHIP, SoundChipEnabled);
 	UpdateSFXMenu();
-	CheckMenuItem(ID_TAPESOUND, TapeSoundEnabled);
+	CheckMenuItem(IDM_TAPESOUND, TapeSoundEnabled);
 	UpdateSoundSampleRateMenu();
 	UpdateSoundVolumeMenu();
-	CheckMenuItem(ID_PSAMPLES, PartSamples);
+	CheckMenuItem(IDM_PART_SAMPLES, PartSamples);
 	CheckMenuItem(IDM_EXPVOLUME, SoundExponentialVolume);
 	CheckMenuItem(IDM_TEXTTOSPEECH_ENABLE, m_TextToSpeechEnabled);
 	CheckMenuItem(IDM_TEXTTOSPEECH_AUTO_SPEAK, m_SpeechWriteChar);
@@ -1331,11 +1331,11 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_SWRAMBOARD, SWRAMBoardEnabled);
 	UpdateOptiMenu();
 	UpdateEconetMenu();
-	CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
-	CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
-	CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
-	CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
-	CheckMenuItem(ID_USER_PORT_RTC_MODULE, UserPortRTCEnabled);
+	CheckMenuItem(IDM_TELETEXT, TeletextAdapterEnabled);
+	CheckMenuItem(IDM_FLOPPY_DRIVE, Disc8271Enabled);
+	CheckMenuItem(IDM_SCSI_HARD_DRIVE, SCSIDriveEnabled);
+	CheckMenuItem(IDM_IDE_HARD_DRIVE, IDEDriveEnabled);
+	CheckMenuItem(IDM_USER_PORT_RTC_MODULE, UserPortRTCEnabled);
 
 	// Options
 	UpdateJoystickMenu();
@@ -1527,10 +1527,10 @@ void BeebWin::UpdateMonitorMenu()
 {
 	static const struct { UINT ID; PaletteType Type; } MenuItems[] =
 	{
-		{ ID_MONITOR_RGB,   PaletteType::RGB   },
-		{ ID_MONITOR_BW,    PaletteType::BW    },
-		{ ID_MONITOR_AMBER, PaletteType::Amber },
-		{ ID_MONITOR_GREEN, PaletteType::Green }
+		{ IDM_MONITOR_RGB,   PaletteType::RGB   },
+		{ IDM_MONITOR_BW,    PaletteType::BW    },
+		{ IDM_MONITOR_AMBER, PaletteType::Amber },
+		{ IDM_MONITOR_GREEN, PaletteType::Green }
 	};
 
 	UINT SelectedMenuItemID = 0;
@@ -1544,18 +1544,18 @@ void BeebWin::UpdateMonitorMenu()
 		}
 	}
 
-	CheckMenuRadioItem(ID_MONITOR_RGB, ID_MONITOR_GREEN, SelectedMenuItemID);
+	CheckMenuRadioItem(IDM_MONITOR_RGB, IDM_MONITOR_GREEN, SelectedMenuItemID);
 }
 
 void BeebWin::UpdateModelMenu()
 {
 	static const struct { UINT ID; Model Type; } MenuItems[] =
 	{
-		{ ID_MODELB,     Model::B },
-		{ ID_MODELBINT,  Model::IntegraB },
-		{ ID_MODELBPLUS, Model::BPlus },
-		{ ID_MASTER128,  Model::Master128 },
-		{ ID_MASTER_ET,  Model::MasterET }
+		{ IDM_MODELB,     Model::B },
+		{ IDM_MODELBINT,  Model::IntegraB },
+		{ IDM_MODELBPLUS, Model::BPlus },
+		{ IDM_MASTER128,  Model::Master128 },
+		{ IDM_MASTER_ET,  Model::MasterET }
 	};
 
 	UINT SelectedMenuItemID = 0;
@@ -1569,14 +1569,15 @@ void BeebWin::UpdateModelMenu()
 		}
 	}
 
-	CheckMenuRadioItem(ID_MODELB, ID_MASTER_ET, SelectedMenuItemID);
+	CheckMenuRadioItem(IDM_MODELB, IDM_MASTER_ET, SelectedMenuItemID);
 
-	if (MachineType == Model::Master128) {
-		EnableMenuItem(ID_FDC_DLL, false);
+	if (MachineType == Model::Master128)
+	{
+		EnableMenuItem(IDM_FDC_DLL, false);
 	}
 	else if (MachineType != Model::MasterET)
 	{
-		EnableMenuItem(ID_FDC_DLL, true);
+		EnableMenuItem(IDM_FDC_DLL, true);
 	}
 
 	const bool IsMasterET = MachineType == Model::MasterET;
@@ -1595,7 +1596,7 @@ void BeebWin::UpdateModelMenu()
 	EnableMenuItem(IDM_WRITE_PROTECT_DISC1, !IsMasterET);
 	EnableMenuItem(IDM_WRITE_PROTECT_ON_LOAD, !IsMasterET);
 
-	EnableMenuItem(ID_LOADTAPE, !IsMasterET);
+	EnableMenuItem(IDM_LOADTAPE, !IsMasterET);
 
 	// Edit Menu Item
 	EnableMenuItem(IDM_DISC_IMPORT_0 , !IsMasterET);
@@ -1609,23 +1610,22 @@ void BeebWin::UpdateModelMenu()
 
 	// Comms Menu Item
 	// Tape speed sub-menu
-	EnableMenuItem(ID_TAPE_FAST, !IsMasterET);
-	EnableMenuItem(ID_TAPE_MFAST, !IsMasterET);
-	EnableMenuItem(ID_TAPE_MSLOW, !IsMasterET);
-	EnableMenuItem(ID_TAPE_NORMAL, !IsMasterET);
+	EnableMenuItem(IDM_TAPE_FAST, !IsMasterET);
+	EnableMenuItem(IDM_TAPE_MFAST, !IsMasterET);
+	EnableMenuItem(IDM_TAPE_MSLOW, !IsMasterET);
+	EnableMenuItem(IDM_TAPE_NORMAL, !IsMasterET);
 
-	EnableMenuItem(ID_REWINDTAPE, !IsMasterET);
-	EnableMenuItem(ID_UNLOCKTAPE, !IsMasterET);
-	EnableMenuItem(ID_TAPECONTROL, !IsMasterET);
-	EnableMenuItem(ID_SERIAL, !IsMasterET);
-	EnableMenuItem(ID_SELECT_SERIAL_DESTINATION, !IsMasterET);
+	EnableMenuItem(IDM_REWINDTAPE, !IsMasterET);
+	EnableMenuItem(IDM_UNLOCKTAPE, !IsMasterET);
+	EnableMenuItem(IDM_TAPECONTROL, !IsMasterET);
+	EnableMenuItem(IDM_SERIAL, !IsMasterET);
+	EnableMenuItem(IDM_SELECT_SERIAL_DESTINATION, !IsMasterET);
 
 	// View Menu Item
 	// LED sub-menu
-	EnableMenuItem(ID_RED_LEDS, !IsMasterET);
-	EnableMenuItem(ID_GREEN_LEDS, !IsMasterET);
-	EnableMenuItem(ID_GREEN_LEDS, !IsMasterET);
-	EnableMenuItem(ID_SHOW_DISCLEDS, !IsMasterET);
+	EnableMenuItem(IDM_RED_LEDS, !IsMasterET);
+	EnableMenuItem(IDM_GREEN_LEDS, !IsMasterET);
+	EnableMenuItem(IDM_SHOW_DISCLEDS, !IsMasterET);
 
 	// Sound Menu Item
 	EnableMenuItem(IDM_MUSIC5000, !IsMasterET);
@@ -1648,19 +1648,19 @@ void BeebWin::UpdateModelMenu()
 	// Hardware Menu
 	EnableMenuItem(IDM_AMX_ADJUSTM50, !IsMasterET);
 	// Model B Floppy Controller sub-menu
-	EnableMenuItem(ID_8271, IsModelB);
-	EnableMenuItem(ID_FDC_DLL, IsModelB);
+	EnableMenuItem(IDM_8271, IsModelB);
+	EnableMenuItem(IDM_FDC_DLL, IsModelB);
 
-	EnableMenuItem(ID_BASIC_HARDWARE_ONLY, !IsMasterET);
-	EnableMenuItem(ID_TELETEXT, !IsMasterET);
+	EnableMenuItem(IDM_BASIC_HARDWARE_ONLY, !IsMasterET);
+	EnableMenuItem(IDM_TELETEXT, !IsMasterET);
 	EnableMenuItem(IDM_SELECT_TELETEXT_DATA_SOURCE, !IsMasterET);
 	EnableMenuItem(IDM_SET_KEYBOARD_LINKS, IsModelB);
-	EnableMenuItem(ID_FLOPPYDRIVE, !IsMasterET);
-	EnableMenuItem(ID_HARDDRIVE, !IsMasterET);
-	EnableMenuItem(ID_IDEDRIVE, !IsMasterET);
+	EnableMenuItem(IDM_FLOPPY_DRIVE, !IsMasterET);
+	EnableMenuItem(IDM_SCSI_HARD_DRIVE, !IsMasterET);
+	EnableMenuItem(IDM_IDE_HARD_DRIVE, !IsMasterET);
 	EnableMenuItem(IDM_SELECT_HARD_DRIVE_FOLDER, !IsMasterET);
-	EnableMenuItem(ID_BREAKOUT, !IsMasterET);
-	EnableMenuItem(ID_USER_PORT_RTC_MODULE, !IsMasterET);
+	EnableMenuItem(IDM_BREAKOUT, !IsMasterET);
+	EnableMenuItem(IDM_USER_PORT_RTC_MODULE, !IsMasterET);
 
 	// Options Menu
 	EnableMenuItem(IDM_JOYSTICK, !IsMasterET);
@@ -1670,8 +1670,8 @@ void BeebWin::UpdateModelMenu()
 
 void BeebWin::UpdateSFXMenu()
 {
-	CheckMenuItem(ID_SFX_RELAY, RelaySoundEnabled);
-	CheckMenuItem(ID_SFX_DISCDRIVES, DiscDriveSoundEnabled);
+	CheckMenuItem(IDM_SFX_RELAY, RelaySoundEnabled);
+	CheckMenuItem(IDM_SFX_DISCDRIVES, DiscDriveSoundEnabled);
 }
 
 void BeebWin::UpdateDisableKeysMenu()
@@ -2635,7 +2635,7 @@ bool BeebWin::UpdateTiming()
 
 void BeebWin::SetDirectXFullScreenMode(DirectXFullScreenMode Mode)
 {
-	// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
+	// Ignore IDM_VIEW_DD_SCREENRES if already in full screen mode
 	if ((Mode != DirectXFullScreenMode::ScreenResolution) || !m_FullScreen)
 	{
 		m_DDFullScreenMode = Mode;
@@ -2733,20 +2733,20 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 {
 	static const struct { UINT ID; DirectXFullScreenMode Mode; } MenuItems[] =
 	{
-		{ ID_VIEW_DD_SCREENRES, DirectXFullScreenMode::ScreenResolution },
-		{ ID_VIEW_DD_640X480,   DirectXFullScreenMode::_640x480 },
-		{ ID_VIEW_DD_720X576,   DirectXFullScreenMode::_720x576 },
-		{ ID_VIEW_DD_800X600,   DirectXFullScreenMode::_800x600 },
-		{ ID_VIEW_DD_1024X768,  DirectXFullScreenMode::_1024x768 },
-		{ ID_VIEW_DD_1280X720,  DirectXFullScreenMode::_1280x720 },
-		{ ID_VIEW_DD_1280X768,  DirectXFullScreenMode::_1280x768 },
-		{ ID_VIEW_DD_1280X960,  DirectXFullScreenMode::_1280x960 },
-		{ ID_VIEW_DD_1280X1024, DirectXFullScreenMode::_1280x1024 },
-		{ ID_VIEW_DD_1440X900,  DirectXFullScreenMode::_1440x900 },
-		{ ID_VIEW_DD_1600X1200, DirectXFullScreenMode::_1600x1200 },
-		{ ID_VIEW_DD_1920X1080, DirectXFullScreenMode::_1920x1080 },
-		{ ID_VIEW_DD_2560X1440, DirectXFullScreenMode::_2560x1440 },
-		{ ID_VIEW_DD_3840X2160, DirectXFullScreenMode::_3840x2160 }
+		{ IDM_VIEW_DD_SCREENRES, DirectXFullScreenMode::ScreenResolution },
+		{ IDM_VIEW_DD_640X480,   DirectXFullScreenMode::_640x480 },
+		{ IDM_VIEW_DD_720X576,   DirectXFullScreenMode::_720x576 },
+		{ IDM_VIEW_DD_800X600,   DirectXFullScreenMode::_800x600 },
+		{ IDM_VIEW_DD_1024X768,  DirectXFullScreenMode::_1024x768 },
+		{ IDM_VIEW_DD_1280X720,  DirectXFullScreenMode::_1280x720 },
+		{ IDM_VIEW_DD_1280X768,  DirectXFullScreenMode::_1280x768 },
+		{ IDM_VIEW_DD_1280X960,  DirectXFullScreenMode::_1280x960 },
+		{ IDM_VIEW_DD_1280X1024, DirectXFullScreenMode::_1280x1024 },
+		{ IDM_VIEW_DD_1440X900,  DirectXFullScreenMode::_1440x900 },
+		{ IDM_VIEW_DD_1600X1200, DirectXFullScreenMode::_1600x1200 },
+		{ IDM_VIEW_DD_1920X1080, DirectXFullScreenMode::_1920x1080 },
+		{ IDM_VIEW_DD_2560X1440, DirectXFullScreenMode::_2560x1440 },
+		{ IDM_VIEW_DD_3840X2160, DirectXFullScreenMode::_3840x2160 }
 	};
 
 	UINT SelectedMenuItemID = 0;
@@ -2761,8 +2761,8 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 	}
 
 	CheckMenuRadioItem(
-		ID_VIEW_DD_SCREENRES,
-		ID_VIEW_DD_3840X2160,
+		IDM_VIEW_DD_SCREENRES,
+		IDM_VIEW_DD_3840X2160,
 		SelectedMenuItemID
 	);
 }
@@ -3000,10 +3000,10 @@ void BeebWin::SetTapeSpeedMenu()
 {
 	static const struct { UINT ID; int ClockSpeed; } MenuItems[] =
 	{
-		{ ID_TAPE_FAST,   750 },
-		{ ID_TAPE_MFAST,  1600 },
-		{ ID_TAPE_MSLOW,  3200 },
-		{ ID_TAPE_NORMAL, 5600 }
+		{ IDM_TAPE_FAST,   750 },
+		{ IDM_TAPE_MFAST,  1600 },
+		{ IDM_TAPE_MSLOW,  3200 },
+		{ IDM_TAPE_NORMAL, 5600 }
 	};
 
 	UINT SelectedMenuItemID = 0;
@@ -3017,7 +3017,7 @@ void BeebWin::SetTapeSpeedMenu()
 		}
 	}
 
-	CheckMenuRadioItem(ID_TAPE_FAST, ID_TAPE_NORMAL, SelectedMenuItemID);
+	CheckMenuRadioItem(IDM_TAPE_FAST, IDM_TAPE_NORMAL, SelectedMenuItemID);
 }
 
 /****************************************************************************/
@@ -3027,7 +3027,7 @@ void BeebWin::SetUnlockTape(bool Unlock)
 	TapeState.Unlock = Unlock;
 	::SetUnlockTape(TapeState.Unlock);
 
-	CheckMenuItem(ID_UNLOCKTAPE, TapeState.Unlock);
+	CheckMenuItem(IDM_UNLOCKTAPE, TapeState.Unlock);
 
 	if (TapeControlEnabled)
 	{
@@ -3330,32 +3330,32 @@ void BeebWin::SelectSerialPort(const char* PortName)
 
 void BeebWin::UpdateSerialMenu()
 {
-	CheckMenuItem(ID_SERIAL, SerialPortEnabled);
+	CheckMenuItem(IDM_SERIAL, SerialPortEnabled);
 }
 
 //Rob
 void BeebWin::UpdateEconetMenu()
 {
-	CheckMenuItem(ID_ECONET, EconetEnabled);
+	CheckMenuItem(IDM_ECONET, EconetEnabled);
 }
 
 void BeebWin::UpdateLEDMenu()
 {
 	CheckMenuRadioItem(
-		ID_RED_LEDS,
-		ID_GREEN_LEDS,
-		m_DiscLedColour == LEDColour::Red ? ID_RED_LEDS : ID_GREEN_LEDS
+		IDM_RED_LEDS,
+		IDM_GREEN_LEDS,
+		m_DiscLedColour == LEDColour::Red ? IDM_RED_LEDS : IDM_GREEN_LEDS
 	);
 
-	CheckMenuItem(ID_SHOW_KBLEDS, LEDs.ShowKB);
-	CheckMenuItem(ID_SHOW_DISCLEDS, LEDs.ShowDisc);
+	CheckMenuItem(IDM_SHOW_KBLEDS, LEDs.ShowKB);
+	CheckMenuItem(IDM_SHOW_DISCLEDS, LEDs.ShowDisc);
 }
 
 void BeebWin::UpdateOptiMenu()
 {
-	CheckMenuItem(ID_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
-	CheckMenuItem(ID_TELETEXTHALFMODE, TeletextHalfMode);
-	CheckMenuItem(ID_PSAMPLES, PartSamples);
+	CheckMenuItem(IDM_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
+	CheckMenuItem(IDM_TELETEXTHALFMODE, TeletextHalfMode);
+	CheckMenuItem(IDM_PART_SAMPLES, PartSamples);
 }
 
 /***************************************************************************/
@@ -3402,7 +3402,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		ReadDisc(1, false);
 		break;
 
-	case ID_LOADTAPE:
+	case IDM_LOADTAPE:
 		LoadTape();
 		break;
 
@@ -3490,7 +3490,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		TogglePrinter();
 		break;
 
-	case ID_SERIAL:
+	case IDM_SERIAL:
 		if (SerialPortEnabled) // so disabling..
 		{
 			DisableSerial();
@@ -3512,7 +3512,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		UpdateSerialMenu();
 		break;
 
-	case ID_SELECT_SERIAL_DESTINATION: {
+	case IDM_SELECT_SERIAL_DESTINATION: {
 		SerialPortDialog Dialog(hInst,
 		                        m_hWnd,
 		                        SerialDestination,
@@ -3572,7 +3572,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 	}
 
 	//Rob
-	case ID_ECONET:
+	case IDM_ECONET:
 		EconetEnabled = !EconetEnabled;
 		if (EconetEnabled)
 		{
@@ -3651,59 +3651,59 @@ void BeebWin::HandleCommand(UINT MenuID)
 		SetWindowSize(1600, 1200);
 		break;
 
-	case ID_VIEW_DD_SCREENRES:
+	case IDM_VIEW_DD_SCREENRES:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::ScreenResolution);
 		break;
 
-	case ID_VIEW_DD_640X480:
+	case IDM_VIEW_DD_640X480:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_640x480);
 		break;
 
-	case ID_VIEW_DD_720X576:
+	case IDM_VIEW_DD_720X576:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_720x576);
 		break;
 
-	case ID_VIEW_DD_800X600:
+	case IDM_VIEW_DD_800X600:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_800x600);
 		break;
 
-	case ID_VIEW_DD_1024X768:
+	case IDM_VIEW_DD_1024X768:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1024x768);
 		break;
 
-	case ID_VIEW_DD_1280X720:
+	case IDM_VIEW_DD_1280X720:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x720);
 		break;
 
-	case ID_VIEW_DD_1280X768:
+	case IDM_VIEW_DD_1280X768:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x768);
 		break;
 
-	case ID_VIEW_DD_1280X960:
+	case IDM_VIEW_DD_1280X960:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x960);
 		break;
 
-	case ID_VIEW_DD_1280X1024:
+	case IDM_VIEW_DD_1280X1024:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1280x1024);
 		break;
 
-	case ID_VIEW_DD_1440X900:
+	case IDM_VIEW_DD_1440X900:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1440x900);
 		break;
 
-	case ID_VIEW_DD_1600X1200:
+	case IDM_VIEW_DD_1600X1200:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1600x1200);
 		break;
 
-	case ID_VIEW_DD_1920X1080:
+	case IDM_VIEW_DD_1920X1080:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_1920x1080);
 		break;
 
-	case ID_VIEW_DD_2560X1440:
+	case IDM_VIEW_DD_2560X1440:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_2560x1440);
 		break;
 
-	case ID_VIEW_DD_3840X2160:
+	case IDM_VIEW_DD_3840X2160:
 		SetDirectXFullScreenMode(DirectXFullScreenMode::_3840x2160);
 		break;
 
@@ -3767,14 +3767,14 @@ void BeebWin::HandleCommand(UINT MenuID)
 		CheckMenuItem(IDM_SOUNDCHIP, SoundChipEnabled);
 		break;
 
-	case ID_SFX_RELAY:
+	case IDM_SFX_RELAY:
 		RelaySoundEnabled = !RelaySoundEnabled;
-		CheckMenuItem(ID_SFX_RELAY, RelaySoundEnabled);
+		CheckMenuItem(IDM_SFX_RELAY, RelaySoundEnabled);
 		break;
 
-	case ID_SFX_DISCDRIVES:
+	case IDM_SFX_DISCDRIVES:
 		DiscDriveSoundEnabled = !DiscDriveSoundEnabled;
-		CheckMenuItem(ID_SFX_DISCDRIVES, DiscDriveSoundEnabled);
+		CheckMenuItem(IDM_SFX_DISCDRIVES, DiscDriveSoundEnabled);
 		break;
 
 	case IDM_44100KHZ:
@@ -4119,22 +4119,22 @@ void BeebWin::HandleCommand(UINT MenuID)
 		SetAMXAdjust(-50);
 		break;
 
-	case ID_MONITOR_RGB:
+	case IDM_MONITOR_RGB:
 		m_PaletteType = PaletteType::RGB;
 		CreateBitmap();
 		break;
 
-	case ID_MONITOR_BW:
+	case IDM_MONITOR_BW:
 		m_PaletteType = PaletteType::BW;
 		CreateBitmap();
 		break;
 
-	case ID_MONITOR_GREEN:
+	case IDM_MONITOR_GREEN:
 		m_PaletteType = PaletteType::Green;
 		CreateBitmap();
 		break;
 
-	case ID_MONITOR_AMBER:
+	case IDM_MONITOR_AMBER:
 		m_PaletteType = PaletteType::Amber;
 		CreateBitmap();
 		break;
@@ -4202,11 +4202,11 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_FILE_RESET:
+	case IDM_FILE_RESET:
 		ResetBeebSystem(MachineType, false);
 		break;
 
-	case ID_MODELB:
+	case IDM_MODELB:
 		if (MachineType != Model::B)
 		{
 			ResetBeebSystem(Model::B, true);
@@ -4214,7 +4214,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_MODELBINT:
+	case IDM_MODELBINT:
 		if (MachineType != Model::IntegraB)
 		{
 			ResetBeebSystem(Model::IntegraB, true);
@@ -4222,7 +4222,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_MODELBPLUS:
+	case IDM_MODELBPLUS:
 		if (MachineType != Model::BPlus)
 		{
 			ResetBeebSystem(Model::BPlus, true);
@@ -4230,7 +4230,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_MASTER128:
+	case IDM_MASTER128:
 		if (MachineType != Model::Master128)
 		{
 			ResetBeebSystem(Model::Master128, true);
@@ -4238,7 +4238,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_MASTER_ET:
+	case IDM_MASTER_ET:
 		if (MachineType != Model::MasterET)
 		{
 			ResetBeebSystem(Model::MasterET, true);
@@ -4246,50 +4246,50 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_REWINDTAPE:
+	case IDM_REWINDTAPE:
 		RewindTape();
 		break;
 
-	case ID_UNLOCKTAPE:
+	case IDM_UNLOCKTAPE:
 		SetUnlockTape(!TapeState.Unlock);
 		break;
 
-	case ID_HIDEMENU:
+	case IDM_HIDEMENU:
 		m_HideMenuEnabled = !m_HideMenuEnabled;
-		CheckMenuItem(ID_HIDEMENU, m_HideMenuEnabled);
+		CheckMenuItem(IDM_HIDEMENU, m_HideMenuEnabled);
 		break;
 
-	case ID_RED_LEDS:
+	case IDM_RED_LEDS:
 		m_DiscLedColour = LEDColour::Red;
 		UpdateLEDMenu();
 		break;
 
-	case ID_GREEN_LEDS:
+	case IDM_GREEN_LEDS:
 		m_DiscLedColour = LEDColour::Green;
 		UpdateLEDMenu();
 		break;
 
-	case ID_SHOW_KBLEDS:
+	case IDM_SHOW_KBLEDS:
 		LEDs.ShowKB = !LEDs.ShowKB;
 		UpdateLEDMenu();
 		break;
 
-	case ID_SHOW_DISCLEDS:
+	case IDM_SHOW_DISCLEDS:
 		LEDs.ShowDisc = !LEDs.ShowDisc;
 		UpdateLEDMenu();
 		break;
 
-	case ID_FDC_DLL:
+	case IDM_FDC_DLL:
 		if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 			SelectFDC();
 		break;
 
-	case ID_8271:
+	case IDM_8271:
 		KillDLLs();
 		NativeFDC = true;
 
-		CheckMenuItem(ID_8271, true);
-		CheckMenuItem(ID_FDC_DLL, false);
+		CheckMenuItem(IDM_8271, true);
+		CheckMenuItem(IDM_FDC_DLL, false);
 
 		if (MachineType != Model::Master128 && MachineType != Model::MasterET)
 		{
@@ -4299,32 +4299,32 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_TAPE_FAST:
+	case IDM_TAPE_FAST:
 		SetTapeSpeed(750);
 		SetTapeSpeedMenu();
 		break;
 
-	case ID_TAPE_MFAST:
+	case IDM_TAPE_MFAST:
 		SetTapeSpeed(1600);
 		SetTapeSpeedMenu();
 		break;
 
-	case ID_TAPE_MSLOW:
+	case IDM_TAPE_MSLOW:
 		SetTapeSpeed(3200);
 		SetTapeSpeedMenu();
 		break;
 
-	case ID_TAPE_NORMAL:
+	case IDM_TAPE_NORMAL:
 		SetTapeSpeed(5600);
 		SetTapeSpeedMenu();
 		break;
 
-	case ID_TAPESOUND:
+	case IDM_TAPESOUND:
 		TapeSoundEnabled = !TapeSoundEnabled;
-		CheckMenuItem(ID_TAPESOUND, TapeSoundEnabled);
+		CheckMenuItem(IDM_TAPESOUND, TapeSoundEnabled);
 		break;
 
-	case ID_TAPECONTROL:
+	case IDM_TAPECONTROL:
 		if (TapeControlEnabled)
 		{
 			TapeControlCloseDialog();
@@ -4335,7 +4335,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_BREAKOUT:
+	case IDM_BREAKOUT:
 		if (userPortBreakoutDialog != nullptr)
 		{
 			userPortBreakoutDialog->Close();
@@ -4349,22 +4349,22 @@ void BeebWin::HandleCommand(UINT MenuID)
 		}
 		break;
 
-	case ID_USER_PORT_RTC_MODULE:
+	case IDM_USER_PORT_RTC_MODULE:
 		UserPortRTCEnabled = !UserPortRTCEnabled;
-		CheckMenuItem(ID_USER_PORT_RTC_MODULE, UserPortRTCEnabled);
+		CheckMenuItem(IDM_USER_PORT_RTC_MODULE, UserPortRTCEnabled);
 		break;
 
-	case ID_TELETEXTHALFMODE:
+	case IDM_TELETEXTHALFMODE:
 		TeletextHalfMode = !TeletextHalfMode;
 		UpdateOptiMenu();
 		break;
 
-	case ID_BASIC_HARDWARE_ONLY:
+	case IDM_BASIC_HARDWARE_ONLY:
 		BasicHardwareOnly = !BasicHardwareOnly;
 		UpdateOptiMenu();
 		break;
 
-	case ID_PSAMPLES:
+	case IDM_PART_SAMPLES:
 		PartSamples = !PartSamples;
 		UpdateOptiMenu();
 		break;
@@ -4508,10 +4508,10 @@ void BeebWin::HandleCommand(UINT MenuID)
 
 	#endif
 
-	case ID_TELETEXT:
+	case IDM_TELETEXT:
 		TeletextAdapterEnabled = !TeletextAdapterEnabled;
 		TeletextInit();
-		CheckMenuItem(ID_TELETEXT, TeletextAdapterEnabled);
+		CheckMenuItem(IDM_TELETEXT, TeletextAdapterEnabled);
 		break;
 
 	case IDM_SELECT_TELETEXT_DATA_SOURCE: {
@@ -4552,24 +4552,24 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 	}
 
-	case ID_HARDDRIVE:
+	case IDM_SCSI_HARD_DRIVE:
 		SCSIDriveEnabled = !SCSIDriveEnabled;
 		SCSIReset();
 		SASIReset();
-		CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
+		CheckMenuItem(IDM_SCSI_HARD_DRIVE, SCSIDriveEnabled);
 		if (SCSIDriveEnabled) {
 			IDEDriveEnabled = false;
-			CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
+			CheckMenuItem(IDM_IDE_HARD_DRIVE, IDEDriveEnabled);
 		}
 		break;
 
-	case ID_IDEDRIVE:
+	case IDM_IDE_HARD_DRIVE:
 		IDEDriveEnabled = !IDEDriveEnabled;
 		IDEReset();
-		CheckMenuItem(ID_IDEDRIVE, IDEDriveEnabled);
+		CheckMenuItem(IDM_IDE_HARD_DRIVE, IDEDriveEnabled);
 		if (IDEDriveEnabled) {
 			SCSIDriveEnabled = false;
-			CheckMenuItem(ID_HARDDRIVE, SCSIDriveEnabled);
+			CheckMenuItem(IDM_SCSI_HARD_DRIVE, SCSIDriveEnabled);
 		}
 		break;
 
@@ -4577,10 +4577,10 @@ void BeebWin::HandleCommand(UINT MenuID)
 		SelectHardDriveFolder();
 		break;
 
-	case ID_FLOPPYDRIVE:
+	case IDM_FLOPPY_DRIVE:
 		Disc8271Enabled = !Disc8271Enabled;
 		Disc1770Enabled = !Disc1770Enabled;
-		CheckMenuItem(ID_FLOPPYDRIVE, Disc8271Enabled);
+		CheckMenuItem(IDM_FLOPPY_DRIVE, Disc8271Enabled);
 		break;
 
 	case IDM_TEXTTOSPEECH_ENABLE:
@@ -4619,17 +4619,17 @@ void BeebWin::HandleCommand(UINT MenuID)
 		EnableMenuItem(IDM_TEXTTOSPEECH_DECREASE_RATE, m_SpeechRate > -10);
 		break;
 
-	case ID_TEXT_TO_SPEECH_VOICE_BASE:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 1:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 2:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 3:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 4:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 5:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 6:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 7:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 8:
-	case ID_TEXT_TO_SPEECH_VOICE_BASE + 9:
-		TextToSpeechSetVoice(MenuID - ID_TEXT_TO_SPEECH_VOICE_BASE);
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 1:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 2:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 3:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 4:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 5:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 6:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 7:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 8:
+	case IDM_TEXT_TO_SPEECH_VOICE_BASE + 9:
+		TextToSpeechSetVoice(MenuID - IDM_TEXT_TO_SPEECH_VOICE_BASE);
 		break;
 
 	case IDM_TEXTVIEW:
