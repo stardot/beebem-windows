@@ -361,6 +361,7 @@
     </ClInclude>
     <ClInclude Include="BeebWinPrefs.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Csw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
