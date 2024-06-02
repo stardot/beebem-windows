@@ -312,9 +312,9 @@ BeebWin::BeebWin()
 	m_ClipboardIndex = 0;
 
 	// Printer
-	ZeroMemory(m_printerbuffer, sizeof(m_printerbuffer));
-	m_printerbufferlen = 0;
-	m_translateCRLF = true;
+	ZeroMemory(m_PrinterBuffer, sizeof(m_PrinterBuffer));
+	m_PrinterBufferLen = 0;
+	m_TranslateCRLF = true;
 	m_PrinterPort = PrinterPortType::Lpt1;
 	ZeroMemory(m_PrinterFileName, sizeof(m_PrinterFileName));
 	ZeroMemory(m_PrinterDevice, sizeof(m_PrinterDevice));
@@ -1239,7 +1239,7 @@ void BeebWin::InitMenu(void)
 	UpdateBitmapCaptureResolutionMenu();
 
 	// Edit
-	CheckMenuItem(IDM_EDIT_CRLF, m_translateCRLF);
+	CheckMenuItem(IDM_EDIT_CRLF, m_TranslateCRLF);
 
 	// Comms -> Tape Speed
 	SetTapeSpeedMenu();
@@ -3444,8 +3444,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_EDIT_CRLF:
-		m_translateCRLF = !m_translateCRLF;
-		CheckMenuItem(IDM_EDIT_CRLF, m_translateCRLF);
+		m_TranslateCRLF = !m_TranslateCRLF;
+		CheckMenuItem(IDM_EDIT_CRLF, m_TranslateCRLF);
 		break;
 
 	case IDM_DISC_EXPORT_0:

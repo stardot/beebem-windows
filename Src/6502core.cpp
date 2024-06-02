@@ -1411,7 +1411,7 @@ static void ClipboardREMVHandler()
 				// Convert pound sign
 				c = 0x60;
 			}
-			else if (mainWin->m_translateCRLF) {
+			else if (mainWin->m_TranslateCRLF) {
 				if (c == 0x0a) {
 					// Convert LF to CR
 					c = 0x0d;

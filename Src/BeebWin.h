@@ -730,9 +730,10 @@ public:
 	int m_ClipboardIndex;
 
 	// Printer
-	char m_printerbuffer[1024 * 1024];
-	int m_printerbufferlen;
-	bool m_translateCRLF;
+	static const int PrinterBufferSize = 1024 * 1024;
+	char m_PrinterBuffer[PrinterBufferSize];
+	int m_PrinterBufferLen;
+	bool m_TranslateCRLF;
 	PrinterPortType m_PrinterPort;
 	char m_PrinterFileName[_MAX_PATH];
 	char m_PrinterDevice[_MAX_PATH];

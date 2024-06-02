@@ -857,7 +857,7 @@ bool BeebWin::TogglePrinter()
 {
 	bool Success = true;
 
-	m_printerbufferlen = 0;
+	m_PrinterBufferLen = 0;
 
 	if (PrinterEnabled)
 	{
@@ -1532,7 +1532,7 @@ void BeebWin::doCopy()
 	TogglePrinter(); // Turn printer back on
 	UpdatePrinterPortMenu();
 
-	m_printerbufferlen = 0;
+	m_PrinterBufferLen = 0;
 
 	m_ClipboardBuffer[0] = 2;
 	m_ClipboardBuffer[1] = 'L';
@@ -1541,7 +1541,6 @@ void BeebWin::doCopy()
 	m_ClipboardBuffer[4] = 3;
 	m_ClipboardLength = 5;
 	m_ClipboardIndex = 0;
-	m_printerbufferlen = 0;
 }
 
 void BeebWin::doPaste()
@@ -1577,19 +1576,19 @@ void BeebWin::ClearClipboardBuffer()
 
 void BeebWin::CopyKey(unsigned char Value)
 {
-	if (m_printerbufferlen >= 1024 * 1024)
+	if (m_PrinterBufferLen >= PrinterBufferSize)
 		return;
 
-	m_printerbuffer[m_printerbufferlen++] = static_cast<char>(Value);
-	if (m_translateCRLF && Value == 0xD)
-		m_printerbuffer[m_printerbufferlen++] = 0xA;
+	m_PrinterBuffer[m_PrinterBufferLen++] = static_cast<char>(Value);
+	if (m_TranslateCRLF && Value == 0xD)
+		m_PrinterBuffer[m_PrinterBufferLen++] = 0xA;
 
 	if (!OpenClipboard(m_hWnd))
 		return;
 
 	EmptyClipboard();
 
-	HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, m_printerbufferlen + 1);
+	HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, m_PrinterBufferLen + 1);
 	if (hglbCopy == NULL)
 	{
 		CloseClipboard();
@@ -1597,8 +1596,8 @@ void BeebWin::CopyKey(unsigned char Value)
 	}
 
 	LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
-	memcpy(lptstrCopy, m_printerbuffer, m_printerbufferlen);
-	lptstrCopy[m_printerbufferlen] = 0;
+	memcpy(lptstrCopy, m_PrinterBuffer, m_PrinterBufferLen);
+	lptstrCopy[m_PrinterBufferLen] = 0;
 	GlobalUnlock(hglbCopy);
 
 	SetClipboardData(CF_TEXT, hglbCopy);
