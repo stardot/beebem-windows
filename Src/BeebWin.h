@@ -558,6 +558,30 @@ public:
 
 	// Preferences
 	void LoadPreferences();
+	void LoadHardwarePreferences();
+	void LoadTubePreferences();
+	void LoadWindowPosPreferences(int Version);
+	void LoadTimingPreferences(int Version);
+	void LoadDisplayPreferences(int Version);
+	void LoadSoundPreferences(int Version);
+	void LoadInputPreferences(int Version);
+	void LoadAMXMousePreferences(int Version);
+	void LoadPrinterPreferences(int Version);
+	void LoadTextToSpeechPreferences();
+	void LoadUIPreferences(int Version);
+	void LoadTapePreferences(int Version);
+	void LoadSerialPortPreferences(int Version);
+	void LoadTeletextAdapterPreferences(int Version);
+	void LoadCapturePreferences(int Version);
+	void LoadDiskPreferences();
+	void LoadUserPortRTCPreferences();
+	void LoadDebugPreferences();
+	void LoadKeyMapPreferences();
+	void LoadAutoSavePreferences();
+	void LoadCMOSPreferences();
+	void LoadSWRAMPreferences();
+	void LoadFilePathPreferences();
+	void LoadUserPortBreakoutPreferences();
 	void SavePreferences(bool saveAll);
 
 	// Main window

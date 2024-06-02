@@ -345,6 +345,7 @@
     <ClInclude Include="Bcd.h" />
     <ClInclude Include="BeebMem.h" />
     <ClInclude Include="BeebWin.h" />
+    <ClInclude Include="BeebWinPrefs.h" />
     <ClInclude Include="Csw.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DebugTrace.h" />

@@ -176,7 +176,7 @@ BeebWin::BeebWin()
 	m_YWinSize = 512;
 	m_XLastWinSize = m_XWinSize;
 	m_YLastWinSize = m_YWinSize;
-	m_XWinPos = -1; // ???
+	m_XWinPos = -1;
 	m_YWinPos = -1;
 	m_XDXSize = 640;
 	m_YDXSize = 480;

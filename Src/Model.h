@@ -26,8 +26,7 @@ enum class Model : unsigned char {
 	IntegraB,  // 1: BBC B with Integra B
 	BPlus,     // 2: BBC B+
 	Master128, // 3: BBC Master 128
-	MasterET,  // 4: Master ET
-	Last
+	MasterET   // 4: Master ET
 };
 
 constexpr int MODEL_COUNT = 5;

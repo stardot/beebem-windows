@@ -29,6 +29,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include "BeebWin.h"
+#include "BeebWinPrefs.h"
 #include "DebugTrace.h"
 #include "Main.h"
 #include "Messages.h"
@@ -245,7 +246,7 @@ int BeebWin::TextToSpeechGetSelectedVoice()
 
 	int Index = 0;
 
-	m_Preferences.GetStringValue("TextToSpeechVoice", TokenId);
+	m_Preferences.GetStringValue(CFG_TEXT_TO_SPEECH_VOICE, TokenId);
 
 	for (std::size_t i = 0; i < m_TextToSpeechVoices.size(); i++)
 	{
@@ -285,11 +286,11 @@ void BeebWin::TextToSpeechSetVoice(int Index)
 
 		SpGetTokenFromId(TokenId.c_str(), &pToken);
 
-		m_Preferences.SetStringValue("TextToSpeechVoice", m_TextToSpeechVoices[Index].Id.c_str());
+		m_Preferences.SetStringValue(CFG_TEXT_TO_SPEECH_VOICE, m_TextToSpeechVoices[Index].Id.c_str());
 	}
 	else
 	{
-		m_Preferences.SetStringValue("TextToSpeechVoice", ""); // Default
+		m_Preferences.SetStringValue(CFG_TEXT_TO_SPEECH_VOICE, ""); // Default
 	}
 
 	TextToSpeechSelectVoiceMenuItem(Index);

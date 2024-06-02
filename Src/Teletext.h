@@ -28,8 +28,7 @@ extern int TeletextAdapterTrigger;
 
 enum class TeletextSourceType : unsigned char {
     IP = 0,
-    File,
-    Last
+    File
 };
 
 extern TeletextSourceType TeletextSource;
