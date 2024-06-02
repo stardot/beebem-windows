@@ -208,7 +208,7 @@ HRESULT BeebWin::InitSurfaces()
 {
 	HRESULT ddrval;
 
-	if (m_isFullScreen)
+	if (m_FullScreen)
 	{
 		ddrval = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
 	}
@@ -219,7 +219,7 @@ HRESULT BeebWin::InitSurfaces()
 
 	if (ddrval == DD_OK)
 	{
-		if (m_isFullScreen)
+		if (m_FullScreen)
 		{
 			ddrval = m_DD2->SetDisplayMode(m_XDXSize, m_YDXSize, 32, 0, 0);
 		}
@@ -410,7 +410,7 @@ HRESULT BeebWin::InitD3DDevice()
 	D3DPRESENT_PARAMETERS d3dpp;
 	ZeroMemory(&d3dpp, sizeof(d3dpp));
 
-	d3dpp.Windowed = m_isFullScreen ? FALSE : TRUE;
+	d3dpp.Windowed = m_FullScreen ? FALSE : TRUE;
 
 	if (d3dpp.Windowed)
 	{
@@ -781,7 +781,7 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 		int xAdj = 0;
 		int yAdj = 0;
 
-		if (m_isFullScreen && m_MaintainAspectRatio)
+		if (m_FullScreen && m_MaintainAspectRatio)
 		{
 			// Aspect ratio adjustment
 			xAdj = (int)(m_XRatioCrop * (float)m_XWinSize);
@@ -831,7 +831,7 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 					m_TextureMatrix._11 = 800.0f/(float)width;
 					m_TextureMatrix._22 = 512.0f/(float)height;
 
-					if (m_isFullScreen && m_MaintainAspectRatio)
+					if (m_FullScreen && m_MaintainAspectRatio)
 					{
 						// Aspect ratio adjustment
 						if (m_XRatioAdj > 0.0f)
@@ -888,7 +888,7 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 				ClientToScreen( m_hWnd, &pt );
 				OffsetRect(&destRect, pt.x, pt.y);
 
-				if (m_isFullScreen && m_MaintainAspectRatio)
+				if (m_FullScreen && m_MaintainAspectRatio)
 				{
 					// Aspect ratio adjustment
 					int xAdj = (int)(m_XRatioCrop * (float)(destRect.right - destRect.left));
@@ -981,7 +981,7 @@ void BeebWin::DisplayClientAreaText(HDC hdc)
 
 	DisplayFDCBoardInfo(hdc, 0, TextStart);
 
-	if (m_ShowSpeedAndFPS && m_isFullScreen)
+	if (m_ShowSpeedAndFPS && m_FullScreen)
 	{
 		char fps[50];
 		if (!m_EmuPaused)
@@ -1014,7 +1014,7 @@ static const char* pszReleaseCaptureMessage = "(Press Ctrl+Alt to release mouse)
 
 bool BeebWin::ShouldDisplayTiming() const
 {
-	return m_ShowSpeedAndFPS && (m_DisplayRenderer == DisplayRendererType::GDI || !m_isFullScreen);
+	return m_ShowSpeedAndFPS && (m_DisplayRenderer == DisplayRendererType::GDI || !m_FullScreen);
 }
 
 void BeebWin::DisplayTiming()

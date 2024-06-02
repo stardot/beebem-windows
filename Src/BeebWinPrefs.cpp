@@ -464,8 +464,8 @@ void BeebWin::LoadDisplayPreferences(int Version)
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_FULL_SCREEN, m_isFullScreen))
-		m_isFullScreen = false;
+	if (!m_Preferences.GetBoolValue(CFG_FULL_SCREEN, m_FullScreen))
+		m_FullScreen = false;
 
 	if (Version >= 3)
 	{
@@ -1636,7 +1636,7 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		// Display
 		m_Preferences.SetDecimalValue(CFG_DISPLAY_RENDERER, (int)m_DisplayRenderer);
-		m_Preferences.SetBoolValue(CFG_FULL_SCREEN, m_isFullScreen);
+		m_Preferences.SetBoolValue(CFG_FULL_SCREEN, m_FullScreen);
 		m_Preferences.SetDecimalValue(CFG_DX_FULL_SCREEN_MODE, (int)m_DDFullScreenMode);
 		m_Preferences.EraseValue(CFG_DX_FULL_SCREEN_MODE_OLD);
 		m_Preferences.SetBoolValue(CFG_MAINTAIN_ASPECT_RATIO, m_MaintainAspectRatio);

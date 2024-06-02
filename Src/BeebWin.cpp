@@ -137,8 +137,8 @@ BeebWin::BeebWin()
 	// Main window
 	m_hWnd = nullptr;
 	strcpy(m_szTitle, WindowTitle);
-	m_isFullScreen = false;
-	m_startFullScreen = false;
+	m_FullScreen = false;
+	m_StartFullScreen = false;
 
 	// Menu
 	m_hMenu = nullptr;
@@ -407,9 +407,9 @@ bool BeebWin::Initialise()
 	}
 
 	// Override full screen?
-	if (m_startFullScreen)
+	if (m_StartFullScreen)
 	{
-		m_isFullScreen = true;
+		m_FullScreen = true;
 	}
 
 	if (FAILED(CoInitialize(NULL)))
@@ -1089,14 +1089,14 @@ void BeebWin::CreateBeebWindow()
 
 	int nCmdShow = SW_SHOWNORMAL;
 
-	if (m_DisplayRenderer == DisplayRendererType::GDI && m_isFullScreen)
+	if (m_DisplayRenderer == DisplayRendererType::GDI && m_FullScreen)
 	{
 		nCmdShow = SW_MAXIMIZE;
 	}
 
 	DWORD dwStyle;
 
-	if (m_DisplayRenderer != DisplayRendererType::GDI && m_isFullScreen)
+	if (m_DisplayRenderer != DisplayRendererType::GDI && m_FullScreen)
 	{
 		dwStyle = WS_POPUP;
 	}
@@ -1269,7 +1269,7 @@ void BeebWin::InitMenu(void)
 	CheckMenuItem(IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only);
 
 	CheckMenuItem(IDM_SPEEDANDFPS, m_ShowSpeedAndFPS);
-	CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
+	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
 	CheckMenuItem(IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio);
 	UpdateMonitorMenu();
 	CheckMenuItem(ID_HIDEMENU, m_HideMenuEnabled);
@@ -1357,7 +1357,7 @@ void BeebWin::SetDisplayRenderer(DisplayRendererType DisplayRenderer)
 	ExitDX();
 
 	m_DisplayRenderer = DisplayRenderer;
-	SetWindowAttributes(m_isFullScreen);
+	SetWindowAttributes(m_FullScreen);
 
 	bool DirectXEnabled = m_DisplayRenderer != DisplayRendererType::GDI;
 
@@ -2636,15 +2636,15 @@ bool BeebWin::UpdateTiming()
 void BeebWin::SetDirectXFullScreenMode(DirectXFullScreenMode Mode)
 {
 	// Ignore ID_VIEW_DD_SCREENRES if already in full screen mode
-	if ((Mode != DirectXFullScreenMode::ScreenResolution) || !m_isFullScreen)
+	if ((Mode != DirectXFullScreenMode::ScreenResolution) || !m_FullScreen)
 	{
 		m_DDFullScreenMode = Mode;
 
 		TranslateDDSize();
 
-		if (m_isFullScreen && m_DisplayRenderer != DisplayRendererType::GDI)
+		if (m_FullScreen && m_DisplayRenderer != DisplayRendererType::GDI)
 		{
-			SetWindowAttributes(m_isFullScreen);
+			SetWindowAttributes(m_FullScreen);
 		}
 
 		UpdateDirectXFullScreenModeMenu();
@@ -2769,9 +2769,9 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 
 void BeebWin::ToggleFullScreen()
 {
-	m_isFullScreen = !m_isFullScreen;
-	CheckMenuItem(IDM_FULLSCREEN, m_isFullScreen);
-	SetWindowAttributes(!m_isFullScreen);
+	m_FullScreen = !m_FullScreen;
+	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
+	SetWindowAttributes(!m_FullScreen);
 
 	if (m_MouseCaptured)
 	{
@@ -2783,7 +2783,7 @@ void BeebWin::ToggleFullScreen()
 
 void BeebWin::SetWindowSize(int Width, int Height)
 {
-	if (m_isFullScreen)
+	if (m_FullScreen)
 	{
 		HandleCommand(IDM_FULLSCREEN);
 	}
@@ -2796,7 +2796,7 @@ void BeebWin::SetWindowSize(int Width, int Height)
 
 	UpdateWindowSizeMenu();
 
-	SetWindowAttributes(m_isFullScreen);
+	SetWindowAttributes(m_FullScreen);
 }
 
 void BeebWin::UpdateWindowSizeMenu()
@@ -3047,7 +3047,7 @@ void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
 	m_XRatioCrop = 0.0f;
 	m_YRatioCrop = 0.0f;
 
-	if (m_isFullScreen)
+	if (m_FullScreen)
 	{
 		int w = DisplayWidth * ASPECT_RATIO_Y;
 		int h = DisplayHeight * ASPECT_RATIO_X;
@@ -3069,7 +3069,7 @@ void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
 
 void BeebWin::SetWindowAttributes(bool wasFullScreen)
 {
-	if (m_isFullScreen)
+	if (m_FullScreen)
 	{
 		// Get the monitor that the BeebEm window is on to account for multiple monitors
 		if (m_DDFullScreenMode == DirectXFullScreenMode::ScreenResolution)
@@ -3173,13 +3173,13 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 
 void BeebWin::OnSize(WPARAM ResizeType, int Width, int Height)
 {
-	if (m_DisplayRenderer == DisplayRendererType::GDI && ResizeType == SIZE_RESTORED && m_isFullScreen)
+	if (m_DisplayRenderer == DisplayRendererType::GDI && ResizeType == SIZE_RESTORED && m_FullScreen)
 	{
-		m_isFullScreen = false;
+		m_FullScreen = false;
 		CheckMenuItem(IDM_FULLSCREEN, false);
 	}
 
-	if (!m_isFullScreen || m_DisplayRenderer == DisplayRendererType::GDI)
+	if (!m_FullScreen || m_DisplayRenderer == DisplayRendererType::GDI)
 	{
 		m_XWinSize = Width;
 		m_YWinSize = Height;
@@ -3191,7 +3191,7 @@ void BeebWin::OnSize(WPARAM ResizeType, int Width, int Height)
 		}
 	}
 
-	if (!m_isFullScreen)
+	if (!m_FullScreen)
 	{
 		m_XLastWinSize = m_XWinSize;
 		m_YLastWinSize = m_YWinSize;
@@ -3714,7 +3714,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 	case IDM_MAINTAINASPECTRATIO:
 		m_MaintainAspectRatio = !m_MaintainAspectRatio;
 		CheckMenuItem(IDM_MAINTAINASPECTRATIO, m_MaintainAspectRatio);
-		if (m_isFullScreen)
+		if (m_FullScreen)
 		{
 			// Clear unused areas of screen
 			RECT rc;
@@ -4967,7 +4967,7 @@ void BeebWin::ParseCommandLine()
 		}
 		else if (_stricmp(__argv[i], "-FullScreen") == 0)
 		{
-			m_startFullScreen = true;
+			m_StartFullScreen = true;
 		}
 		else if (__argv[i][0] == '-' && i+1 >= __argc)
 		{

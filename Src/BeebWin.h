@@ -338,7 +338,7 @@ public:
 	void ShowMenu(bool on);
 	void HideMenu(bool hide);
 	void TrackPopupMenu(int x, int y);
-	bool IsFullScreen() const { return m_isFullScreen; }
+	bool IsFullScreen() const { return m_FullScreen; }
 	void ResetTiming(void);
 	int TranslateKey(int vkey, bool keyUp, int &row, int &col);
 	void ParseCommandLine(void);
@@ -581,8 +581,8 @@ public:
 	// Main window
 	HWND m_hWnd;
 	char m_szTitle[256];
-	bool m_isFullScreen;
-	bool m_startFullScreen;
+	bool m_FullScreen;
+	bool m_StartFullScreen;
 
 	// Menu
 	HMENU m_hMenu;
