@@ -504,8 +504,8 @@ void BeebWin::NewDiscImage(int Drive)
 	m_Preferences.GetStringValue(CFG_DISCS_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	int FilterIndex = 1;
-	m_Preferences.GetDecimalValue(CFG_DISCS_FILTER, FilterIndex);
+	int FilterIndex;
+	m_Preferences.GetDecimalValue(CFG_DISCS_FILTER, FilterIndex, 1);
 
 	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && NativeFDC && FilterIndex >= 5)
 		FilterIndex = 1;

@@ -50,10 +50,11 @@ class Preferences
 		bool GetStringValue(const char* id, std::string& Value) const;
 		void SetStringValue(const char* id, const std::string& Value);
 		bool GetDWORDValue(const char* id, DWORD& Value) const;
+		bool GetDWORDValue(const char* id, DWORD& Value, DWORD Default) const;
 		void SetDWORDValue(const char* id, DWORD Value);
-		bool GetDecimalValue(const char* id, int& Value) const;
+		bool GetDecimalValue(const char* id, int& Value, int Default) const;
 		bool SetDecimalValue(const char* id, int Value);
-		bool GetBoolValue(const char* id, bool& Value) const;
+		bool GetBoolValue(const char* id, bool& Value, bool Default) const;
 		void SetBoolValue(const char* id, bool Value);
 		void EraseValue(const char* id);
 		bool HasValue(const char* id) const;

@@ -582,7 +582,9 @@ Fail:
 
 void BeebWin::CloseD3DDevice()
 {
+	#ifdef DEBUG_DX9
 	DebugTrace("BeebWin::CloseD3DDevice\n");
+	#endif
 
 	if (m_pTexture != nullptr)
 	{
@@ -641,7 +643,9 @@ void BeebWin::RenderDX9()
 
 	if (hr == D3DERR_DEVICELOST)
 	{
+		#ifdef DEBUG_DX9
 		DebugTrace("BeebWin::RenderDX9 - D3DERR_DEVICELOST\n");
+		#endif
 
 		// Can be generated when switching in/out of fullscreen - need to reset
 		m_DXDeviceLost = true;

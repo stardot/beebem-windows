@@ -168,8 +168,7 @@ void BeebWin::LoadHardwarePreferences()
 {
 	int Value;
 
-	if (!m_Preferences.GetDecimalValue(CFG_MACHINE_TYPE, Value))
-		Value = 0;
+	m_Preferences.GetDecimalValue(CFG_MACHINE_TYPE, Value, 0);
 
 	switch (Value)
 	{
@@ -180,19 +179,18 @@ void BeebWin::LoadHardwarePreferences()
 		case 4:          MachineType = Model::MasterET; break;
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY, BasicHardwareOnly))
-		if (!m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY_OLD, BasicHardwareOnly))
-			BasicHardwareOnly = false;
+	if (!m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY, BasicHardwareOnly, false))
+	{
+		m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY_OLD, BasicHardwareOnly, false);
+	}
 
 	#if ENABLE_SPEECH
 
-	if (!m_Preferences.GetBoolValue(CFG_SPEECH_ENABLED, SpeechDefault))
-		SpeechDefault = false;
+	m_Preferences.GetBoolValue(CFG_SPEECH_ENABLED, SpeechDefault, false);
 
 	#endif
 
-	if (!m_Preferences.GetBoolValue(CFG_ECONET_ENABLED, EconetEnabled))
-		EconetEnabled = false;
+	m_Preferences.GetBoolValue(CFG_ECONET_ENABLED, EconetEnabled, false);
 
 	if (!m_Preferences.GetBinaryValue(CFG_KEYBOARD_LINKS, &KeyboardLinks, sizeof(KeyboardLinks)))
 		KeyboardLinks = 0x00;
@@ -204,7 +202,7 @@ void BeebWin::LoadTubePreferences()
 {
 	int Value;
 
-	if (m_Preferences.GetDecimalValue(CFG_TUBE_TYPE, Value))
+	if (m_Preferences.GetDecimalValue(CFG_TUBE_TYPE, Value, 0))
 	{
 		switch (Value)
 		{
@@ -220,17 +218,17 @@ void BeebWin::LoadTubePreferences()
 	else
 	{
 		// For backwards compatibility with BeebEm 4.14 or earlier.
-		bool TubeEnabled = false;
-		bool AcornZ80 = false;
-		bool TorchTube = false;
-		bool Tube186Enabled = false;
-		bool ArmTube = false;
+		bool TubeEnabled;
+		bool AcornZ80;
+		bool TorchTube;
+		bool Tube186Enabled;
+		bool ArmTube;
 
-		m_Preferences.GetBoolValue(CFG_TUBE_ENABLED_OLD, TubeEnabled);
-		m_Preferences.GetBoolValue(CFG_TUBE_ACORN_Z80_OLD, AcornZ80);
-		m_Preferences.GetBoolValue(CFG_TUBE_TORCH_Z80_OLD, TorchTube);
-		m_Preferences.GetBoolValue(CFG_TUBE_186_OLD, Tube186Enabled);
-		m_Preferences.GetBoolValue(CFG_TUBE_ARM_OLD, ArmTube);
+		m_Preferences.GetBoolValue(CFG_TUBE_ENABLED_OLD, TubeEnabled, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_ACORN_Z80_OLD, AcornZ80, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_TORCH_Z80_OLD, TorchTube, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_186_OLD, Tube186Enabled, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_ARM_OLD, ArmTube, false);
 
 		if (TubeEnabled)
 		{
@@ -265,24 +263,14 @@ void BeebWin::LoadWindowPosPreferences(int Version)
 {
 	if (Version >= 3)
 	{
-		int Value;
-
-		if (!m_Preferences.GetDecimalValue(CFG_VIEW_WIN_SIZE_X, Value))
-			Value = 640;
-
-		m_XWinSize = Value;
-
-		if (!m_Preferences.GetDecimalValue(CFG_VIEW_WIN_SIZE_Y, Value))
-			Value = 512;
-
-		m_YWinSize = Value;
+		m_Preferences.GetDecimalValue(CFG_VIEW_WIN_SIZE_X, m_XWinSize, 640);
+		m_Preferences.GetDecimalValue(CFG_VIEW_WIN_SIZE_Y, m_YWinSize, 512);
 	}
 	else
 	{
 		DWORD Value;
 
-		if (!m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, Value))
-			Value = 40006;
+		m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, Value, 40006);
 
 		switch (Value)
 		{
@@ -295,30 +283,19 @@ void BeebWin::LoadWindowPosPreferences(int Version)
 			case 40226:          m_XWinSize = 1440; m_YWinSize = 1080; break;
 			case 40227:          m_XWinSize = 1600; m_YWinSize = 1200; break;
 			case 40281: // Custom
-				if (!m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE_X, Value))
-					Value = 640;
-
+				m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE_X, Value, 640);
 				m_XWinSize = Value;
 
-				if (!m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE_Y, Value))
-					Value = 512;
-
+				m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE_Y, Value, 512);
 				m_YWinSize = Value;
 				break;
 		}
 	}
 
-	// Pos can get corrupted if two BeebEm's exited at same time
-	RECT WorkAreaRect;
-	SystemParametersInfo(SPI_GETWORKAREA, 0, &WorkAreaRect, 0);
-
 	if (Version >= 3)
 	{
-		if (!m_Preferences.GetDecimalValue(CFG_VIEW_WINDOW_POS_X, m_XWinPos))
-			m_XWinPos = -1;
-
-		if (!m_Preferences.GetDecimalValue(CFG_VIEW_WINDOW_POS_Y, m_YWinPos))
-			m_YWinPos = -1;
+		m_Preferences.GetDecimalValue(CFG_VIEW_WINDOW_POS_X, m_XWinPos, -1);
+		m_Preferences.GetDecimalValue(CFG_VIEW_WINDOW_POS_Y, m_YWinPos, -1);
 	}
 	else
 	{
@@ -336,6 +313,10 @@ void BeebWin::LoadWindowPosPreferences(int Version)
 		}
 	}
 
+	// Pos can get corrupted if two BeebEm's exited at same time
+	RECT WorkAreaRect;
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &WorkAreaRect, 0);
+
 	if (m_XWinPos > WorkAreaRect.right - 80)
 		m_XWinPos = -1;
 
@@ -351,8 +332,7 @@ void BeebWin::LoadTimingPreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_SPEED_TIMING, Value))
-			Value = 0;
+		m_Preferences.GetDecimalValue(CFG_SPEED_TIMING, Value, 0);
 
 		switch (Value)
 		{
@@ -360,8 +340,7 @@ void BeebWin::LoadTimingPreferences(int Version)
 			case 1:          m_TimingType = TimingType::FixedFPS; break;
 		}
 
-		if (!m_Preferences.GetDecimalValue(CFG_SPEED, Value))
-			Value = 100;
+		m_Preferences.GetDecimalValue(CFG_SPEED, Value, 100);
 
 		if (m_TimingType == TimingType::FixedFPS)
 		{
@@ -400,30 +379,29 @@ void BeebWin::LoadTimingPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_SPEED_TIMING, Value))
-			Value = 40024;
+		m_Preferences.GetDWORDValue(CFG_SPEED_TIMING, Value, 40024);
 
 		switch (Value)
 		{
-			case 40024: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 100; break;
-			case 40025: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 50; break;
-			case 40026: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 25; break;
-			case 40027: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 10; break;
-			case 40028: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 5; break;
-			case 40029: m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 1; break;
-			case 40151: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10000; break;
-			case 40154: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 500; break;
-			case 40155: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 200; break;
-			case 40156: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 150; break;
-			case 40157: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 125; break;
-			case 40158: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 110; break;
-			case 40159: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 90; break;
-			case 40160: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 75; break;
-			case 40161: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 5000; break;
-			case 40162: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 25; break;
-			case 40163: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 1000; break;
-			case 40164: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 50; break;
-			case 40165: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10; break;
+			case 40024: default: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 100; break;
+			case 40025:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 50; break;
+			case 40026:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 25; break;
+			case 40027:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 10; break;
+			case 40028:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 5; break;
+			case 40029:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 1; break;
+			case 40151:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10000; break;
+			case 40154:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 500; break;
+			case 40155:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 200; break;
+			case 40156:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 150; break;
+			case 40157:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 125; break;
+			case 40158:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 110; break;
+			case 40159:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 90; break;
+			case 40160:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 75; break;
+			case 40161:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 5000; break;
+			case 40162:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 25; break;
+			case 40163:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 1000; break;
+			case 40164:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 50; break;
+			case 40165:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10; break;
 		}
 	}
 
@@ -438,8 +416,7 @@ void BeebWin::LoadDisplayPreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_DISPLAY_RENDERER, Value))
-			Value = 2;
+		m_Preferences.GetDecimalValue(CFG_DISPLAY_RENDERER, Value, 2);
 
 		switch (Value)
 		{
@@ -453,8 +430,7 @@ void BeebWin::LoadDisplayPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_DISPLAY_RENDERER, Value))
-			Value = 40219;
+		m_Preferences.GetDWORDValue(CFG_DISPLAY_RENDERER, Value, 40219);
 
 		switch (Value)
 		{
@@ -464,15 +440,13 @@ void BeebWin::LoadDisplayPreferences(int Version)
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_FULL_SCREEN, m_FullScreen))
-		m_FullScreen = false;
+	m_Preferences.GetBoolValue(CFG_FULL_SCREEN, m_FullScreen, false);
 
 	if (Version >= 3)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_DX_FULL_SCREEN_MODE, Value))
-			Value = 0;
+		m_Preferences.GetDecimalValue(CFG_DX_FULL_SCREEN_MODE, Value, 0);
 
 		switch (Value)
 		{
@@ -497,8 +471,7 @@ void BeebWin::LoadDisplayPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_DX_FULL_SCREEN_MODE_OLD, Value))
-			Value = 40102;
+		m_Preferences.GetDWORDValue(CFG_DX_FULL_SCREEN_MODE_OLD, Value, 40102);
 
 		switch (Value)
 		{
@@ -521,25 +494,22 @@ void BeebWin::LoadDisplayPreferences(int Version)
 
 	TranslateDDSize();
 
-	if (!m_Preferences.GetBoolValue(CFG_MAINTAIN_ASPECT_RATIO, m_MaintainAspectRatio))
-		m_MaintainAspectRatio = true;
+	m_Preferences.GetBoolValue(CFG_MAINTAIN_ASPECT_RATIO, m_MaintainAspectRatio, true);
 
-	if (!m_Preferences.GetBoolValue(CFG_DX_SMOOTHING, m_DXSmoothing))
-		m_DXSmoothing = true;
+	m_Preferences.GetBoolValue(CFG_DX_SMOOTHING, m_DXSmoothing, true);
 
-	if (!m_Preferences.GetBoolValue(CFG_DX_SMOOTH_MODE7_ONLY, m_DXSmoothMode7Only))
-		m_DXSmoothMode7Only = false;
+	m_Preferences.GetBoolValue(CFG_DX_SMOOTH_MODE7_ONLY, m_DXSmoothMode7Only, false);
 
-	if (!m_Preferences.GetBoolValue(CFG_TELETEXT_HALF_MODE, TeletextHalfMode))
-		if (!m_Preferences.GetBoolValue(CFG_TELETEXT_HALF_MODE_OLD, TeletextHalfMode))
-			TeletextHalfMode = false;
+	if (!m_Preferences.GetBoolValue(CFG_TELETEXT_HALF_MODE, TeletextHalfMode, false))
+	{
+		m_Preferences.GetBoolValue(CFG_TELETEXT_HALF_MODE_OLD, TeletextHalfMode, false);
+	}
 
 	if (Version >= 3)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_MOTION_BLUR, Value))
-			Value = 0;
+		m_Preferences.GetDecimalValue(CFG_MOTION_BLUR, Value, 0);
 
 		switch (Value)
 		{
@@ -554,8 +524,7 @@ void BeebWin::LoadDisplayPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_MOTION_BLUR, Value))
-			Value = 40177;
+		m_Preferences.GetDWORDValue(CFG_MOTION_BLUR, Value, 40177);
 
 		switch (Value)
 		{
@@ -578,12 +547,9 @@ void BeebWin::LoadSoundPreferences(int Version)
 {
 	DWORD SoundStreamerValue;
 
-	if (!m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER, SoundStreamerValue))
+	if (!m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER, SoundStreamerValue, 0))
 	{
-		if (!m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER_OLD, SoundStreamerValue))
-		{
-			SoundStreamerValue = 0;
-		}
+		m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER_OLD, SoundStreamerValue, 0);
 	}
 
 	switch (SoundStreamerValue)
@@ -596,8 +562,7 @@ void BeebWin::LoadSoundPreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_SOUND_SAMPLE_RATE, Value))
-			Value = 44100;
+		m_Preferences.GetDecimalValue(CFG_SOUND_SAMPLE_RATE, Value, 44100);
 
 		switch (Value)
 		{
@@ -611,8 +576,7 @@ void BeebWin::LoadSoundPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, Value))
-			Value = 40014;
+		m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, Value, 40014);
 
 		switch (Value)
 		{
@@ -626,8 +590,7 @@ void BeebWin::LoadSoundPreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_SOUND_VOLUME, Value))
-			Value = 100;
+		m_Preferences.GetDecimalValue(CFG_SOUND_VOLUME, Value, 0100);
 
 		switch (Value)
 		{
@@ -642,8 +605,7 @@ void BeebWin::LoadSoundPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, Value))
-			Value = 40021;
+		m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, Value, 40021);
 
 		switch (Value)
 		{
@@ -654,34 +616,19 @@ void BeebWin::LoadSoundPreferences(int Version)
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_SOUND_ENABLED, SoundDefault))
-		SoundDefault = true;
+	m_Preferences.GetBoolValue(CFG_SOUND_ENABLED, SoundDefault, true);
+	m_Preferences.GetBoolValue(CFG_SOUND_CHIP_ENABLED, SoundChipEnabled, true);
+	m_Preferences.GetBoolValue(CFG_SOUND_EXPONENTIAL_VOLUME, SoundExponentialVolume, true);
+	m_Preferences.GetBoolValue(CFG_RELAY_SOUND_ENABLED, RelaySoundEnabled, false);
+	m_Preferences.GetBoolValue(CFG_TAPE_SOUND_ENABLED, TapeSoundEnabled, false);
+	m_Preferences.GetBoolValue(CFG_DISC_SOUND_ENABLED, DiscDriveSoundEnabled, true);
 
-	if (!m_Preferences.GetBoolValue(CFG_SOUND_CHIP_ENABLED, SoundChipEnabled))
-		SoundChipEnabled = true;
-
-	if (!m_Preferences.GetBoolValue(CFG_SOUND_EXPONENTIAL_VOLUME, SoundExponentialVolume))
-		SoundExponentialVolume = true;
-
-	if (!m_Preferences.GetBoolValue(CFG_RELAY_SOUND_ENABLED, RelaySoundEnabled))
-		RelaySoundEnabled = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_TAPE_SOUND_ENABLED, TapeSoundEnabled))
-		TapeSoundEnabled = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_DISC_SOUND_ENABLED, DiscDriveSoundEnabled))
-		DiscDriveSoundEnabled = true;
-
-	if (!m_Preferences.GetBoolValue(CFG_SOUND_PART_SAMPLES, PartSamples))
+	if (!m_Preferences.GetBoolValue(CFG_SOUND_PART_SAMPLES, PartSamples, true))
 	{
-		if (!m_Preferences.GetBoolValue(CFG_SOUND_PART_SAMPLES_OLD, PartSamples))
-		{
-			PartSamples = true;
-		}
+		m_Preferences.GetBoolValue(CFG_SOUND_PART_SAMPLES_OLD, PartSamples, true);
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_MUSIC5000_ENABLED, Music5000Enabled))
-		Music5000Enabled = false;
+	m_Preferences.GetBoolValue(CFG_MUSIC5000_ENABLED, Music5000Enabled, false);
 }
 
 /****************************************************************************/
@@ -692,8 +639,7 @@ void BeebWin::LoadInputPreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_OPTIONS_STICKS, Value))
-			Value = 0;
+		m_Preferences.GetDecimalValue(CFG_OPTIONS_STICKS, Value, 0);
 
 		switch (Value)
 		{
@@ -708,8 +654,7 @@ void BeebWin::LoadInputPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, Value))
-			Value = 0;
+		m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, Value, 0);
 
 		switch (Value)
 		{
@@ -724,8 +669,7 @@ void BeebWin::LoadInputPreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_OPTIONS_KEY_MAPPING, Value))
-			Value = 2;
+		m_Preferences.GetDecimalValue(CFG_OPTIONS_KEY_MAPPING, Value, 2);
 
 		switch (Value)
 		{
@@ -739,8 +683,7 @@ void BeebWin::LoadInputPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING, Value))
-			Value = 2;
+		m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING, Value, 2);
 
 		switch (Value)
 		{
@@ -774,21 +717,15 @@ void BeebWin::LoadInputPreferences(int Version)
 
 void BeebWin::LoadAMXMousePreferences(int Version)
 {
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse))
-		m_CaptureMouse = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled))
-		AMXMouseEnabled = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle))
-		AMXLRForMiddle = true;
+	m_Preferences.GetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse, false);
+	m_Preferences.GetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled, false);
+	m_Preferences.GetBoolValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle, true);
 
 	if (Version >= 3)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_AMX_SIZE, Value))
-			Value = 1;
+		m_Preferences.GetDecimalValue(CFG_AMX_SIZE, Value, 1);
 
 		switch (Value)
 		{
@@ -802,8 +739,7 @@ void BeebWin::LoadAMXMousePreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_AMX_SIZE, Value))
-			Value = 1;
+		m_Preferences.GetDWORDValue(CFG_AMX_SIZE, Value, 1);
 
 		switch (Value)
 		{
@@ -817,8 +753,7 @@ void BeebWin::LoadAMXMousePreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_AMX_ADJUST, Value))
-			Value = 30;
+		m_Preferences.GetDecimalValue(CFG_AMX_ADJUST, Value, 30);
 
 		switch (Value)
 		{
@@ -835,8 +770,7 @@ void BeebWin::LoadAMXMousePreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, Value))
-			Value = 40073;
+		m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, Value, 40073);
 
 		switch (Value)
 		{
@@ -854,15 +788,13 @@ void BeebWin::LoadAMXMousePreferences(int Version)
 
 void BeebWin::LoadPrinterPreferences(int Version)
 {
-	if (!m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
-		PrinterEnabled = false;
+	m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled, false);
 
 	if (Version >= 3)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_PRINTER_PORT, Value))
-			Value = 2;
+		m_Preferences.GetDecimalValue(CFG_PRINTER_PORT, Value, 2);
 
 		switch (Value)
 		{
@@ -879,8 +811,7 @@ void BeebWin::LoadPrinterPreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, Value))
-			Value = 40082;
+		m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, Value, 40082);
 
 		switch (Value)
 		{
@@ -903,17 +834,10 @@ void BeebWin::LoadPrinterPreferences(int Version)
 
 void BeebWin::LoadTextToSpeechPreferences()
 {
-	if (!m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_ENABLED, m_TextToSpeechEnabled))
-		m_TextToSpeechEnabled = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_AUTO_SPEAK, m_SpeechWriteChar))
-		m_SpeechWriteChar = true;
-
-	if (!m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_PUNCTUATION, m_SpeechSpeakPunctuation))
-		m_SpeechSpeakPunctuation = false;
-
-	if (!m_Preferences.GetDecimalValue(CFG_TEXT_TO_SPEECH_RATE, m_SpeechRate))
-		m_SpeechRate = 0;
+	m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_ENABLED, m_TextToSpeechEnabled, false);
+	m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_AUTO_SPEAK, m_SpeechWriteChar, true);
+	m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_PUNCTUATION, m_SpeechSpeakPunctuation, false);
+	m_Preferences.GetDecimalValue(CFG_TEXT_TO_SPEECH_RATE, m_SpeechRate, 0);
 
 	m_SpeechRate = Clamp(m_SpeechRate, -10, 10);
 }
@@ -922,20 +846,16 @@ void BeebWin::LoadTextToSpeechPreferences()
 
 void BeebWin::LoadUIPreferences(int Version)
 {
-	if (!m_Preferences.GetBoolValue(CFG_SHOW_FPS, m_ShowSpeedAndFPS))
+	if (!m_Preferences.GetBoolValue(CFG_SHOW_FPS, m_ShowSpeedAndFPS, true))
 	{
-		if (!m_Preferences.GetBoolValue(CFG_SHOW_FPS_OLD, m_ShowSpeedAndFPS))
-		{
-			m_ShowSpeedAndFPS = true;
-		}
+		m_Preferences.GetBoolValue(CFG_SHOW_FPS_OLD, m_ShowSpeedAndFPS, true);
 	}
 
 	if (Version >= 3)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_DISC_LED_COLOUR, Value))
-			Value = 0;
+		m_Preferences.GetDecimalValue(CFG_DISC_LED_COLOUR, Value, 0);
 
 		switch (Value)
 		{
@@ -943,11 +863,8 @@ void BeebWin::LoadUIPreferences(int Version)
 			case 1:          m_DiscLedColour = LEDColour::Green; break;
 		}
 
-		if (!m_Preferences.GetBoolValue(CFG_SHOW_KEYBOARD_LEDS, LEDs.ShowKB))
-			LEDs.ShowKB = false;
-
-		if (!m_Preferences.GetBoolValue(CFG_SHOW_DISC_LEDS, LEDs.ShowDisc))
-			LEDs.ShowDisc = false;
+		m_Preferences.GetBoolValue(CFG_SHOW_KEYBOARD_LEDS, LEDs.ShowKB, false);
+		m_Preferences.GetBoolValue(CFG_SHOW_DISC_LEDS, LEDs.ShowDisc, false);
 	}
 	else
 	{
@@ -961,13 +878,11 @@ void BeebWin::LoadUIPreferences(int Version)
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_HIDE_MENU_ENABLED, m_HideMenuEnabled))
-		m_HideMenuEnabled = false;
+	m_Preferences.GetBoolValue(CFG_HIDE_MENU_ENABLED, m_HideMenuEnabled, false);
 
 	int Value;
 
-	if (!m_Preferences.GetDecimalValue(CFG_VIEW_MONITOR, Value))
-		Value = 0;
+	m_Preferences.GetDecimalValue(CFG_VIEW_MONITOR, Value, 0);
 
 	switch (Value)
 	{
@@ -977,14 +892,9 @@ void BeebWin::LoadUIPreferences(int Version)
 		case 3:          m_PaletteType = PaletteType::Green; break;
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor))
-		m_HideCursor = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
-		m_FreezeWhenInactive = true;
-
-	if (!m_Preferences.GetBoolValue(CFG_TEXT_VIEW_ENABLED, m_TextViewEnabled))
-		m_TextViewEnabled = false;
+	m_Preferences.GetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor, false);
+	m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive, true);
+	m_Preferences.GetBoolValue(CFG_TEXT_VIEW_ENABLED, m_TextViewEnabled, false);
 }
 
 /****************************************************************************/
@@ -993,17 +903,17 @@ void BeebWin::LoadTapePreferences(int Version)
 {
 	if (Version >= 3)
 	{
-		if (!m_Preferences.GetDecimalValue(CFG_TAPE_CLOCK_SPEED, TapeState.ClockSpeed))
-			TapeState.ClockSpeed = 5600;
+		m_Preferences.GetDecimalValue(CFG_TAPE_CLOCK_SPEED, TapeState.ClockSpeed, 5600);
 	}
 	else
 	{
 		if (!m_Preferences.GetBinaryValue(CFG_TAPE_CLOCK_SPEED_OLD, &TapeState.ClockSpeed, 2))
+		{
 			TapeState.ClockSpeed = 5600;
+		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_UNLOCK_TAPE, TapeState.Unlock))
-		TapeState.Unlock = false;
+	m_Preferences.GetBoolValue(CFG_UNLOCK_TAPE, TapeState.Unlock, false);
 }
 
 /****************************************************************************/
@@ -1029,23 +939,19 @@ void BeebWin::LoadSerialPortPreferences(int Version)
 		strcpy(SerialPortName, "COM2");
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_SERIAL_PORT_ENABLED, SerialPortEnabled))
-		SerialPortEnabled = false;
+	m_Preferences.GetBoolValue(CFG_SERIAL_PORT_ENABLED, SerialPortEnabled, false);
 
 	bool TouchScreenEnabled;
-	if (!m_Preferences.GetBoolValue(CFG_TOUCH_SCREEN_ENABLED, TouchScreenEnabled))
-		TouchScreenEnabled = false;
+
+	m_Preferences.GetBoolValue(CFG_TOUCH_SCREEN_ENABLED, TouchScreenEnabled, false);
 
 	bool IP232Enabled;
 	bool IP232localhost;
 	bool IP232custom;
 
-	if (!m_Preferences.GetBoolValue(CFG_IP232_ENABLED, IP232Enabled))
-		IP232Enabled = false;
-	if (!m_Preferences.GetBoolValue(CFG_IP232_LOCALHOST_OLD, IP232localhost))
-		IP232localhost = false;
-	if (!m_Preferences.GetBoolValue(CFG_IP232_CUSTOM_OLD, IP232custom))
-		IP232custom = false;
+	m_Preferences.GetBoolValue(CFG_IP232_ENABLED, IP232Enabled, false);
+	m_Preferences.GetBoolValue(CFG_IP232_LOCALHOST_OLD, IP232localhost, false);
+	m_Preferences.GetBoolValue(CFG_IP232_CUSTOM_OLD, IP232custom, false);
 
 	if (TouchScreenEnabled)
 	{
@@ -1080,8 +986,7 @@ void BeebWin::LoadSerialPortPreferences(int Version)
 		int Value;
 
 		// From BeebEm 4.20, port numbers are stored in decimal.
-		if (!m_Preferences.GetDecimalValue(CFG_IP232_PORT, Value))
-			Value = 25232;
+		m_Preferences.GetDecimalValue(CFG_IP232_PORT, Value, 25232);
 
 		if (Value >= 0 && Value <= 65535)
 		{
@@ -1110,25 +1015,26 @@ void BeebWin::LoadSerialPortPreferences(int Version)
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_IP232_MODE, IP232Mode))
-		if (!m_Preferences.GetBoolValue(CFG_IP232_MODE_OLD, IP232Mode))
-			IP232Mode = false;
+	if (!m_Preferences.GetBoolValue(CFG_IP232_MODE, IP232Mode, false))
+	{
+		m_Preferences.GetBoolValue(CFG_IP232_MODE_OLD, IP232Mode, false);
+	}
 
-	if (!m_Preferences.GetBoolValue(CFG_IP232_RAW, IP232Raw))
-		if (!m_Preferences.GetBoolValue(CFG_IP232_RAW_OLD, IP232Raw))
-			IP232Raw = false;
+	if (!m_Preferences.GetBoolValue(CFG_IP232_RAW, IP232Raw, false))
+	{
+		m_Preferences.GetBoolValue(CFG_IP232_RAW_OLD, IP232Raw, false);
+	}
 }
 
 /****************************************************************************/
 
 void BeebWin::LoadTeletextAdapterPreferences(int Version)
 {
-	if (!m_Preferences.GetBoolValue(CFG_TELETEXT_ADAPTER_ENABLED, TeletextAdapterEnabled))
-		TeletextAdapterEnabled = false;
+	m_Preferences.GetBoolValue(CFG_TELETEXT_ADAPTER_ENABLED, TeletextAdapterEnabled, false);
 
 	int SourceValue;
 
-	if (m_Preferences.GetDecimalValue(CFG_TELETEXT_ADAPTER_SOURCE, SourceValue))
+	if (m_Preferences.GetDecimalValue(CFG_TELETEXT_ADAPTER_SOURCE, SourceValue, 0))
 	{
 		switch (SourceValue)
 		{
@@ -1138,11 +1044,11 @@ void BeebWin::LoadTeletextAdapterPreferences(int Version)
 	}
 	else
 	{
-		bool TeletextLocalhost = false;
-		bool TeletextCustom = false;
+		bool TeletextLocalhost;
+		bool TeletextCustom;
 
-		m_Preferences.GetBoolValue(CFG_TELETEXT_LOCALHOST_OLD, TeletextLocalhost);
-		m_Preferences.GetBoolValue(CFG_TELETEXT_CUSTOM_IP_OLD, TeletextCustom);
+		m_Preferences.GetBoolValue(CFG_TELETEXT_LOCALHOST_OLD, TeletextLocalhost, false);
+		m_Preferences.GetBoolValue(CFG_TELETEXT_CUSTOM_IP_OLD, TeletextCustom, false);
 
 		if (!(TeletextLocalhost || TeletextCustom))
 		{
@@ -1208,8 +1114,7 @@ void BeebWin::LoadTeletextAdapterPreferences(int Version)
 			sprintf(key, CFG_TELETEXT_PORT, ch);
 
 			// From BeebEm 4.20, port numbers are stored in decimal.
-			if (!m_Preferences.GetDecimalValue(key, Value))
-				Value = TELETEXT_BASE_PORT + ch;
+			m_Preferences.GetDecimalValue(key, Value, TELETEXT_BASE_PORT + ch);
 
 			if (Value >= 0 && Value <= 65535)
 			{
@@ -1226,8 +1131,7 @@ void BeebWin::LoadTeletextAdapterPreferences(int Version)
 
 			sprintf(key, CFG_TELETEXT_PORT_OLD, ch);
 
-			if (!m_Preferences.GetDWORDValue(key, Value))
-				Value = TELETEXT_BASE_PORT + ch;
+			m_Preferences.GetDWORDValue(key, Value, TELETEXT_BASE_PORT + ch);
 
 			if (Value >= 0 && Value <= 65535)
 			{
@@ -1249,8 +1153,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value))
-			Value = 2;
+		m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value, 2);
 
 		switch (Value)
 		{
@@ -1265,8 +1168,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value))
-			Value = 2;
+		m_Preferences.GetDWORDValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value, 2);
 
 		switch (Value)
 		{
@@ -1281,8 +1183,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_FORMAT, Value))
-			Value = 0;
+		m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_FORMAT, Value, 0);
 
 		switch (Value)
 		{
@@ -1297,8 +1198,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_BITMAP_CAPTURE_FORMAT, Value))
-			Value = 40266;
+		m_Preferences.GetDWORDValue(CFG_BITMAP_CAPTURE_FORMAT, Value, 40266);
 
 		switch (Value)
 		{
@@ -1313,8 +1213,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value))
-			Value = 1;
+		m_Preferences.GetDecimalValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value, 1);
 
 		switch (Value)
 		{
@@ -1328,8 +1227,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value))
-			Value = 40186;
+		m_Preferences.GetDWORDValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value, 40186);
 
 		switch (Value)
 		{
@@ -1343,8 +1241,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 	{
 		int Value;
 
-		if (!m_Preferences.GetDecimalValue(CFG_VIDEO_CAPTURE_FRAME_SKIP, Value))
-			Value = 1;
+		m_Preferences.GetDecimalValue(CFG_VIDEO_CAPTURE_FRAME_SKIP, Value, 1);
 
 		if (Value >= 0 && Value <= 5)
 		{
@@ -1360,8 +1257,7 @@ void BeebWin::LoadCapturePreferences(int Version)
 		DWORD Value;
 
 		// BeebEm 4.19 and earlier stored a menu item ID.
-		if (!m_Preferences.GetDWORDValue(CFG_VIDEO_CAPTURE_FRAME_SKIP_OLD, Value))
-			Value = 40189;
+		m_Preferences.GetDWORDValue(CFG_VIDEO_CAPTURE_FRAME_SKIP_OLD, Value, 40189);
 
 		switch (Value)
 		{
@@ -1379,31 +1275,22 @@ void BeebWin::LoadCapturePreferences(int Version)
 
 void BeebWin::LoadDiskPreferences()
 {
-	if (!m_Preferences.GetBoolValue(CFG_WRITE_PROTECT_ON_LOAD, m_WriteProtectOnLoad))
-		m_WriteProtectOnLoad = true;
-
-	if (!m_Preferences.GetBoolValue(CFG_FLOPPY_DRIVE_ENABLED, Disc8271Enabled))
-		Disc8271Enabled = true;
+	m_Preferences.GetBoolValue(CFG_WRITE_PROTECT_ON_LOAD, m_WriteProtectOnLoad, true);
+	m_Preferences.GetBoolValue(CFG_FLOPPY_DRIVE_ENABLED, Disc8271Enabled, true);
 
 	Disc1770Enabled = Disc8271Enabled;
 
-	if (!m_Preferences.GetBoolValue(CFG_SCSI_DRIVE_ENABLED, SCSIDriveEnabled))
-		SCSIDriveEnabled = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_IDE_DRIVE_ENABLED, IDEDriveEnabled))
-		IDEDriveEnabled = false;
+	m_Preferences.GetBoolValue(CFG_SCSI_DRIVE_ENABLED, SCSIDriveEnabled, false);
+	m_Preferences.GetBoolValue(CFG_IDE_DRIVE_ENABLED, IDEDriveEnabled, false);
 }
 
 /****************************************************************************/
 
 void BeebWin::LoadUserPortRTCPreferences()
 {
-	if (!m_Preferences.GetBoolValue(CFG_USER_PORT_RTC_ENABLED, UserPortRTCEnabled))
+	if (!m_Preferences.GetBoolValue(CFG_USER_PORT_RTC_ENABLED, UserPortRTCEnabled, false))
 	{
-		if (!m_Preferences.GetBoolValue(CFG_USER_PORT_RTC_ENABLED_OLD, UserPortRTCEnabled))
-		{
-			UserPortRTCEnabled = false;
-		}
+		m_Preferences.GetBoolValue(CFG_USER_PORT_RTC_ENABLED_OLD, UserPortRTCEnabled, false);
 	}
 
 	if (!m_Preferences.GetBinaryValue(CFG_USER_PORT_RTC_REGISTERS, UserPortRTCRegisters, sizeof(UserPortRTCRegisters)))
@@ -1416,30 +1303,21 @@ void BeebWin::LoadUserPortRTCPreferences()
 
 void BeebWin::LoadDebugPreferences()
 {
-	if (!m_Preferences.GetBoolValue(CFG_WRITE_INSTRUCTION_COUNTS, m_WriteInstructionCounts))
-		m_WriteInstructionCounts = false;
+	m_Preferences.GetBoolValue(CFG_WRITE_INSTRUCTION_COUNTS, m_WriteInstructionCounts, false);
 }
 
 /****************************************************************************/
 
 void BeebWin::LoadKeyMapPreferences()
 {
-	if (!m_Preferences.GetBoolValue(CFG_KEY_MAP_AS, m_KeyMapAS))
-		m_KeyMapAS = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_KEY_MAP_FUNC, m_KeyMapFunc))
-		m_KeyMapFunc = false;
+	m_Preferences.GetBoolValue(CFG_KEY_MAP_AS, m_KeyMapAS, false);
+	m_Preferences.GetBoolValue(CFG_KEY_MAP_FUNC, m_KeyMapFunc, false);
 
 	TranslateKeyMapping();
 
-	if (!m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_BREAK, m_DisableKeysBreak))
-		m_DisableKeysBreak = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_ESCAPE, m_DisableKeysEscape))
-		m_DisableKeysEscape = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_SHORTCUT, m_DisableKeysShortcut))
-		m_DisableKeysShortcut = false;
+	m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_BREAK, m_DisableKeysBreak, false);
+	m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_ESCAPE, m_DisableKeysEscape, false);
+	m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_SHORTCUT, m_DisableKeysShortcut, false);
 
 	// Windows key enable/disable still comes from registry
 	int Size = 24;
@@ -1460,14 +1338,9 @@ void BeebWin::LoadKeyMapPreferences()
 
 void BeebWin::LoadAutoSavePreferences()
 {
-	if (!m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_CMOS, m_AutoSavePrefsCMOS))
-		m_AutoSavePrefsCMOS = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders))
-		m_AutoSavePrefsFolders = false;
-
-	if (!m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_ALL, m_AutoSavePrefsAll))
-		m_AutoSavePrefsAll = false;
+	m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_CMOS, m_AutoSavePrefsCMOS, false);
+	m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders, false);
+	m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_ALL, m_AutoSavePrefsAll, false);
 }
 
 /****************************************************************************/
@@ -1507,8 +1380,7 @@ void BeebWin::LoadSWRAMPreferences()
 			RomWritePrefs[slot] = true;
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_SWRAM_BOARD_ENABLED, SWRAMBoardEnabled))
-		SWRAMBoardEnabled = false;
+	m_Preferences.GetBoolValue(CFG_SWRAM_BOARD_ENABLED, SWRAMBoardEnabled, false);
 }
 
 /****************************************************************************/

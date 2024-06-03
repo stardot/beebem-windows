@@ -224,20 +224,37 @@ void Preferences::SetStringValue(const char* id, const std::string& Value)
 
 bool Preferences::GetDWORDValue(const char* id, DWORD& Value) const
 {
-	bool found = true;
-
 	PrefsMap::const_iterator i = m_Prefs.find(id);
 
-	if (i != m_Prefs.end())
+	if (i == m_Prefs.end())
 	{
-		sscanf(i->second.c_str(), "%x", &Value);
-	}
-	else
-	{
-		found = false;
+		return false;
 	}
 
-	return found;
+	try
+	{
+		Value = std::stoul(i->second, nullptr, 16);
+	}
+	catch (std::exception&)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool Preferences::GetDWORDValue(const char* id, DWORD& Value, DWORD Default) const
+{
+	bool Found = GetDWORDValue(id, Value);
+
+	if (!Found)
+	{
+		Value = Default;
+	}
+
+	return Found;
 }
 
 //-----------------------------------------------------------------------------
@@ -251,12 +268,13 @@ void Preferences::SetDWORDValue(const char* id, DWORD Value)
 
 //-----------------------------------------------------------------------------
 
-bool Preferences::GetDecimalValue(const char* id, int& Value) const
+bool Preferences::GetDecimalValue(const char* id, int& Value, int Default) const
 {
 	PrefsMap::const_iterator i = m_Prefs.find(id);
 
 	if (i == m_Prefs.end())
 	{
+		Value = Default;
 		return false;
 	}
 
@@ -264,6 +282,8 @@ bool Preferences::GetDecimalValue(const char* id, int& Value) const
 	{
 		return true;
 	}
+
+	Value = Default;
 
 	return false;
 }
@@ -279,12 +299,13 @@ bool Preferences::SetDecimalValue(const char* id, int Value)
 
 //-----------------------------------------------------------------------------
 
-bool Preferences::GetBoolValue(const char* id, bool& Value) const
+bool Preferences::GetBoolValue(const char* id, bool& Value, bool Default) const
 {
 	PrefsMap::const_iterator i = m_Prefs.find(id);
 
 	if (i == m_Prefs.end())
 	{
+		Value = Default;
 		return false;
 	}
 
@@ -294,6 +315,7 @@ bool Preferences::GetBoolValue(const char* id, bool& Value) const
 	}
 	catch (std::exception&)
 	{
+		Value = Default;
 		return false;
 	}
 
