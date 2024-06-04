@@ -52,8 +52,8 @@ bool UserPortRTCEnabled = false;
 
 static int RTC_bit = 0;
 static int RTC_cmd = 0;
-static int RTC_data = 0;              // Mon   Year  Day         Hour        Min
-unsigned char UserPortRTCRegisters[8] = {0x12, 0x00, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00};
+static int RTC_data = 0;               // Mon   Year  Day         Hour        Min
+unsigned char UserPortRTCRegisters[8] = { 0x12, 0x00, 0x05, 0x00, 0x05, 0x00, 0x07, 0x00 };
 
 static unsigned char LastValue = 0xff;
 
@@ -76,9 +76,128 @@ void UserPortRTCWrite(unsigned char Value)
 			{
 				RTC_cmd >>= 5;
 
-				DebugTrace("UserPortRTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_cmd >> 4);
+				const int Register = (RTC_cmd & 0x0f) >> 1;
+				unsigned char Data = (unsigned char)(RTC_cmd >> 4);
 
-				UserPortRTCRegisters[(RTC_cmd & 0x0f) >> 1] = (unsigned char)(RTC_cmd >> 4);
+				switch (Register)
+				{
+					case 0: // Month counter (1-12)
+						if (Data == 0)
+						{
+							// Write is ignored
+						}
+						else if (Data >= 1 && Data < 20)
+						{
+							UserPortRTCRegisters[Register] = Data;
+						}
+						else if (Data >= 20 && Data < 60)
+						{
+							UserPortRTCRegisters[Register] = 19;
+						}
+						else if (Data >= 60 && Data < 80)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 60);
+						}
+						else if (Data >= 80 && Data < 100)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 80);
+						}
+						else if (Data >= 100 && Data < 120)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 100);
+						}
+						else if (Data >= 120 && Data < 160)
+						{
+							UserPortRTCRegisters[Register] = 19;
+						}
+						else if (Data >= 160 && Data < 180)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 160);
+						}
+						else if (Data >= 180 && Data < 200)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 180);
+						}
+						else if (Data >= 200 && Data < 220)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 200);
+						}
+						else if (Data >= 220)
+						{
+							UserPortRTCRegisters[Register] = 19;
+						}
+						break;
+
+					case 1: // Month register (alarm)
+						UserPortRTCRegisters[Register] = (unsigned char)(Data % 20);
+						break;
+
+					case 2: // Date counter (1-31)
+					case 3: // Date register (alarm)
+					case 4: // Hour counter (0-23)
+					case 5: // Hour register (alarm)
+						if (Data < 40)
+						{
+							UserPortRTCRegisters[Register] = Data;
+						}
+						else if (Data >= 40 && Data < 80)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 40);
+						}
+						else if (Data >= 80 && Data < 100)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 80);
+						}
+						else if (Data >= 100 && Data < 140)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 100);
+						}
+						else if (Data >= 140 && Data < 180)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 140);
+						}
+						else if (Data >= 180 && Data < 200)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 180);
+						}
+						else if (Data >= 200 && Data < 240)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 200);
+						}
+						else
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 240);
+						}
+						break;
+
+					case 6: // Minute counter (0-59)
+					case 7: // Minute register (alarm)
+						if (Data < 80)
+						{
+							UserPortRTCRegisters[Register] = Data;
+						}
+						else if (Data >= 80 && Data < 100)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 80);
+						}
+						else if (Data >= 100 && Data < 180)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 100);
+						}
+						else if (Data >= 180 && Data < 200)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 180);
+						}
+						else if (Data >= 200)
+						{
+							UserPortRTCRegisters[Register] = (unsigned char)(Data - 200);
+						}
+						break;
+				}
+
+				DebugTrace("UserPortRTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x, wrapped = 0x%02x\n", RTC_cmd, Register, (unsigned char)(RTC_cmd >> 4), Data);
+
+				UserPortRTCRegisters[Register] = Data;
 			}
 			else
 			{
@@ -93,7 +212,7 @@ void UserPortRTCWrite(unsigned char Value)
 						RTC_data = BCD((unsigned char)(Time.wMonth));
 						break;
 
-					case 1: // Month register
+					case 1: // Month register (alarm)
 						RTC_data = UserPortRTCRegisters[1];
 						break;
 
@@ -101,7 +220,7 @@ void UserPortRTCWrite(unsigned char Value)
 						RTC_data = BCD((unsigned char)Time.wDay);
 						break;
 
-					case 3: // Date register
+					case 3: // Date register (alarm)
 						RTC_data = UserPortRTCRegisters[3];
 						break;
 
@@ -109,7 +228,7 @@ void UserPortRTCWrite(unsigned char Value)
 						RTC_data = BCD((unsigned char)Time.wHour);
 						break;
 
-					case 5: // Hour register
+					case 5: // Hour register (alarm)
 						RTC_data = UserPortRTCRegisters[5];
 						break;
 
@@ -117,7 +236,7 @@ void UserPortRTCWrite(unsigned char Value)
 						RTC_data = BCD((unsigned char)Time.wMinute);
 						break;
 
-					case 7: // Minute register
+					case 7: // Minute register (alarm)
 						RTC_data = UserPortRTCRegisters[7];
 						break;
 				}
