@@ -1551,16 +1551,23 @@ void BeebWin::doPaste()
 	if (!OpenClipboard(m_hWnd))
 		return;
 
-	HGLOBAL hglb = GetClipboardData(CF_TEXT);
-	if (hglb != NULL)
+	HGLOBAL hClipboardData = GetClipboardData(CF_TEXT);
+
+	if (hClipboardData != nullptr)
 	{
-		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
-		if (lptstr != NULL)
+		size_t Size = GlobalSize(hClipboardData); // Includes NUL-terminator
+
+		LPTSTR pData = (LPTSTR)GlobalLock(hClipboardData);
+
+		if (pData != nullptr)
 		{
-			strncpy(m_ClipboardBuffer, lptstr, ClipboardBufferSize - 1);
-			GlobalUnlock(hglb);
+			m_ClipboardBuffer.resize(Size);
+			memcpy(&m_ClipboardBuffer[0], pData, Size);
+
+			GlobalUnlock(hClipboardData);
+
 			m_ClipboardIndex = 0;
-			m_ClipboardLength = (int)strlen(m_ClipboardBuffer);
+			m_ClipboardLength = Size - 1;
 		}
 	}
 
@@ -1569,7 +1576,7 @@ void BeebWin::doPaste()
 
 void BeebWin::ClearClipboardBuffer()
 {
-	m_ClipboardBuffer[0] = '\0';
+	m_ClipboardBuffer.clear();
 	m_ClipboardIndex = 0;
 	m_ClipboardLength = 0;
 }

@@ -724,10 +724,9 @@ public:
 	bool m_AutoSavePrefsChanged;
 
 	// Clipboard
-	static const int ClipboardBufferSize = 32768;
-	char m_ClipboardBuffer[ClipboardBufferSize];
-	int m_ClipboardLength;
-	int m_ClipboardIndex;
+	std::vector<char> m_ClipboardBuffer;
+	size_t m_ClipboardLength;
+	size_t m_ClipboardIndex;
 
 	// Printer
 	static const int PrinterBufferSize = 1024 * 1024;

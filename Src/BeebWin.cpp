@@ -307,7 +307,6 @@ BeebWin::BeebWin()
 	m_AutoSavePrefsChanged = false;
 
 	// Clipboard
-	ZeroMemory(m_ClipboardBuffer, sizeof(m_ClipboardBuffer));
 	m_ClipboardLength = 0;
 	m_ClipboardIndex = 0;
 
