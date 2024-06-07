@@ -584,7 +584,7 @@ public:
 	bool m_AutoSavePrefsChanged;
 
 	// Clipboard
-	static const int ClipboardBufferSize = 32768;
+	static const int ClipboardBufferSize = 65536;
 	char m_ClipboardBuffer[ClipboardBufferSize];
 	int m_ClipboardLength;
 	int m_ClipboardIndex;
