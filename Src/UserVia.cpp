@@ -138,7 +138,7 @@ void UserVIAWrite(int Address, unsigned char Value)
 				else
 				{
 					// Write to clipboard
-					mainWin->CopyKey(UserVIAState.ora);
+					mainWin->PrintChar(UserVIAState.ora);
 					SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
 				}
 			}

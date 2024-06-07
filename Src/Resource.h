@@ -415,7 +415,7 @@
 #define IDM_AUTOSAVE_PREFS_ALL          40234
 #define IDM_EDIT_COPY                   40242
 #define IDM_EDIT_PASTE                  40243
-#define IDM_EDIT_CRLF                   40245
+#define IDM_TRANSLATE_CRLF              40245
 #define IDM_DISC_IMPORT_0               40246
 #define IDM_DISC_IMPORT_1               40247
 #define IDM_DISC_IMPORT_2               40248

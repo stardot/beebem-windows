@@ -857,7 +857,7 @@ bool BeebWin::TogglePrinter()
 {
 	bool Success = true;
 
-	m_PrinterBufferLen = 0;
+	m_PrinterBuffer.clear();
 
 	if (PrinterEnabled)
 	{
@@ -1519,9 +1519,12 @@ void BeebWin::SaveUserKeyMap()
 }
 
 /****************************************************************************/
-/* Clipboard support */
 
-void BeebWin::doCopy()
+// Clipboard support
+
+// Handles the Edit/Copy menu command
+
+void BeebWin::OnCopy()
 {
 	if (PrinterEnabled)
 		TogglePrinter();
@@ -1532,18 +1535,19 @@ void BeebWin::doCopy()
 	TogglePrinter(); // Turn printer back on
 	UpdatePrinterPortMenu();
 
-	m_PrinterBufferLen = 0;
+	m_PrinterBuffer.resize(5);
 
 	m_ClipboardBuffer[0] = 2;
 	m_ClipboardBuffer[1] = 'L';
 	m_ClipboardBuffer[2] = '.';
 	m_ClipboardBuffer[3] = 13;
 	m_ClipboardBuffer[4] = 3;
-	m_ClipboardLength = 5;
 	m_ClipboardIndex = 0;
 }
 
-void BeebWin::doPaste()
+// Handles the Edit/Paste menu command
+
+void BeebWin::OnPaste()
 {
 	if (!IsClipboardFormatAvailable(CF_TEXT))
 		return;
@@ -1581,33 +1585,46 @@ void BeebWin::ClearClipboardBuffer()
 	m_ClipboardLength = 0;
 }
 
-void BeebWin::CopyKey(unsigned char Value)
+/****************************************************************************/
+
+// Called when a character is written to the Beeb's printer port,
+// and adds to the data buffered to send to the clipboard
+
+void BeebWin::PrintChar(unsigned char Value)
 {
-	if (m_PrinterBufferLen >= PrinterBufferSize)
-		return;
+	m_PrinterBuffer.push_back(Value);
 
-	m_PrinterBuffer[m_PrinterBufferLen++] = static_cast<char>(Value);
 	if (m_TranslateCRLF && Value == 0xD)
-		m_PrinterBuffer[m_PrinterBufferLen++] = 0xA;
+	{
+		m_PrinterBuffer.push_back(0xA);
+	}
 
+	// To avoid unnecessary copies, wait 1 second after the last write
+	// to put the data into the clipboard.
+	SetTimer(m_hWnd, TIMER_PRINTER, 1000, nullptr);
+}
+
+void BeebWin::CopyPrinterBufferToClipboard()
+{
 	if (!OpenClipboard(m_hWnd))
 		return;
 
 	EmptyClipboard();
 
-	HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, m_PrinterBufferLen + 1);
-	if (hglbCopy == NULL)
+	HGLOBAL hClipboardData = GlobalAlloc(GMEM_MOVEABLE, m_PrinterBuffer.size() + 1);
+
+	if (hClipboardData == nullptr)
 	{
 		CloseClipboard();
 		return;
 	}
 
-	LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
-	memcpy(lptstrCopy, m_PrinterBuffer, m_PrinterBufferLen);
-	lptstrCopy[m_PrinterBufferLen] = 0;
-	GlobalUnlock(hglbCopy);
+	unsigned char* pData = (unsigned char*)GlobalLock(hClipboardData);
+	memcpy(pData, &m_PrinterBuffer[0], m_PrinterBuffer.size());
+	pData[m_PrinterBuffer.size()] = '\0';
+	GlobalUnlock(hClipboardData);
 
-	SetClipboardData(CF_TEXT, hglbCopy);
+	SetClipboardData(CF_TEXT, hClipboardData);
 
 	CloseClipboard();
 }

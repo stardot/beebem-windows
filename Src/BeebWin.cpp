@@ -125,9 +125,6 @@ LEDType LEDs;
 
 const char *WindowTitle = "BeebEm - BBC Model B / Master Series Emulator";
 
-constexpr int TIMER_KEYBOARD       = 1;
-constexpr int TIMER_AUTOBOOT_DELAY = 2;
-
 const char DefaultBlurIntensities[8] = { 100, 88, 75, 62, 50, 38, 25, 12 };
 
 /****************************************************************************/
@@ -311,8 +308,6 @@ BeebWin::BeebWin()
 	m_ClipboardIndex = 0;
 
 	// Printer
-	ZeroMemory(m_PrinterBuffer, sizeof(m_PrinterBuffer));
-	m_PrinterBufferLen = 0;
 	m_TranslateCRLF = true;
 	m_PrinterPort = PrinterPortType::Lpt1;
 	ZeroMemory(m_PrinterFileName, sizeof(m_PrinterFileName));
@@ -1238,7 +1233,7 @@ void BeebWin::InitMenu(void)
 	UpdateBitmapCaptureResolutionMenu();
 
 	// Edit
-	CheckMenuItem(IDM_EDIT_CRLF, m_TranslateCRLF);
+	CheckMenuItem(IDM_TRANSLATE_CRLF, m_TranslateCRLF);
 
 	// Comms -> Tape Speed
 	SetTapeSpeedMenu();
@@ -2343,12 +2338,16 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 		case WM_TIMER:
 			if (wParam == TIMER_KEYBOARD)
 			{
-				HandleTimer();
+				HandleKeyboardTimer();
 			}
 			else if (wParam == TIMER_AUTOBOOT_DELAY) // Handle timer for automatic disc boot delay
 			{
 				KillBootDiscTimer();
 				DoShiftBreak();
+			}
+			else if (wParam == TIMER_PRINTER)
+			{
+				CopyPrinterBufferToClipboard();
 			}
 			break;
 
@@ -3435,16 +3434,16 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_EDIT_COPY:
-		doCopy();
+		OnCopy();
 		break;
 
 	case IDM_EDIT_PASTE:
-		doPaste();
+		OnPaste();
 		break;
 
-	case IDM_EDIT_CRLF:
+	case IDM_TRANSLATE_CRLF:
 		m_TranslateCRLF = !m_TranslateCRLF;
-		CheckMenuItem(IDM_EDIT_CRLF, m_TranslateCRLF);
+		CheckMenuItem(IDM_TRANSLATE_CRLF, m_TranslateCRLF);
 		break;
 
 	case IDM_DISC_EXPORT_0:
@@ -5776,7 +5775,8 @@ void BeebWin::SelectUserDataPath()
 }
 
 /****************************************************************************/
-void BeebWin::HandleTimer()
+
+void BeebWin::HandleKeyboardTimer()
 {
 	int row,col;
 	char delay[10];

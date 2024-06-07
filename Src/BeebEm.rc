@@ -117,7 +117,7 @@ BEGIN
     BEGIN
         MENUITEM "&Copy",                       IDM_EDIT_COPY
         MENUITEM "&Paste",                      IDM_EDIT_PASTE
-        MENUITEM "&Translate CR-LF On/Off",     IDM_EDIT_CRLF
+        MENUITEM "&Translate CR-LF",            IDM_TRANSLATE_CRLF
         MENUITEM SEPARATOR
         POPUP "Import Files to Disc"
         BEGIN

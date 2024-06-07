@@ -359,11 +359,12 @@ public:
 	bool LoadUEFTape(const char *FileName);
 	bool LoadCSWTape(const char *FileName);
 
-	void HandleTimer(void);
-	void doCopy(void);
-	void doPaste(void);
+	void HandleKeyboardTimer();
+	void OnCopy();
+	void OnPaste();
 	void ClearClipboardBuffer();
-	void CopyKey(unsigned char Value);
+	void PrintChar(unsigned char Value);
+	void CopyPrinterBufferToClipboard();
 
 	void SetBitmapCaptureFormat(BitmapCaptureFormat Format);
 	void UpdateBitmapCaptureFormatMenu();
@@ -578,6 +579,11 @@ public:
 	void LoadUserPortBreakoutPreferences();
 	void SavePreferences(bool saveAll);
 
+	// Timers
+	const int TIMER_KEYBOARD       = 1;
+	const int TIMER_AUTOBOOT_DELAY = 2;
+	const int TIMER_PRINTER        = 3;
+
 	// Main window
 	HWND m_hWnd;
 	char m_szTitle[256];
@@ -729,9 +735,7 @@ public:
 	size_t m_ClipboardIndex;
 
 	// Printer
-	static const int PrinterBufferSize = 1024 * 1024;
-	char m_PrinterBuffer[PrinterBufferSize];
-	int m_PrinterBufferLen;
+	std::vector<unsigned char> m_PrinterBuffer;
 	bool m_TranslateCRLF;
 	PrinterPortType m_PrinterPort;
 	char m_PrinterFileName[_MAX_PATH];
