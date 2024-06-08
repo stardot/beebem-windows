@@ -825,7 +825,9 @@ void BeebWin::LoadPrinterPreferences(int Version)
 	}
 
 	if (!m_Preferences.GetStringValue(CFG_PRINTER_FILE, m_PrinterFileName))
-		m_PrinterFileName[0] = 0;
+	{
+		m_PrinterFileName.clear();
+	}
 
 	TranslatePrinterPort();
 }
