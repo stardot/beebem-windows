@@ -821,9 +821,9 @@ bool BeebWin::GetPrinterFileName()
 	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
-	const char* filter = "Printer Output (*.*)\0*.*\0";
+	const char* Filter = "Printer Output (*.*)\0*.*\0";
 
-	if (strlen(m_PrinterFileName) == 0)
+	if (m_PrinterFileName.empty())
 	{
 		strcpy(StartPath, m_UserDataPath);
 		FileName[0] = '\0';
@@ -834,18 +834,18 @@ bool BeebWin::GetPrinterFileName()
 		char dir[_MAX_DIR];
 		char fname[_MAX_FNAME];
 		char ext[_MAX_EXT];
-		_splitpath(m_PrinterFileName, drive, dir, fname, ext);
+		_splitpath(m_PrinterFileName.c_str(), drive, dir, fname, ext);
 		_makepath(StartPath, drive, dir, NULL, NULL);
 		_makepath(FileName, NULL, NULL, fname, ext);
 	}
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), StartPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), StartPath, Filter);
 
-	bool changed = fileDialog.Save();
+	bool changed = Dialog.Save();
 
 	if (changed)
 	{
-		strcpy(m_PrinterFileName, FileName);
+		m_PrinterFileName = FileName;
 	}
 
 	return changed;
@@ -867,14 +867,14 @@ bool BeebWin::TogglePrinter()
 	{
 		if (m_PrinterPort == PrinterPortType::File)
 		{
-			if (strlen(m_PrinterFileName) == 0)
+			if (m_PrinterFileName.empty())
 			{
 				GetPrinterFileName();
 			}
 
-			if (strlen(m_PrinterFileName) != 0)
+			if (!m_PrinterFileName.empty())
 			{
-				Success = PrinterEnable(m_PrinterFileName);
+				Success = PrinterEnable(m_PrinterFileName.c_str());
 			}
 		}
 		else if (m_PrinterPort == PrinterPortType::Clipboard)
@@ -904,7 +904,7 @@ void BeebWin::TranslatePrinterPort()
 	switch (m_PrinterPort)
 	{
 		case PrinterPortType::File:
-			strcpy(m_PrinterDevice, m_PrinterFileName);
+			strcpy(m_PrinterDevice, m_PrinterFileName.c_str());
 			break;
 
 		case PrinterPortType::Clipboard:

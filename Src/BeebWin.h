@@ -738,7 +738,7 @@ public:
 	std::vector<unsigned char> m_PrinterBuffer;
 	bool m_TranslateCRLF;
 	PrinterPortType m_PrinterPort;
-	char m_PrinterFileName[_MAX_PATH];
+	std::string m_PrinterFileName;
 	char m_PrinterDevice[_MAX_PATH];
 
 	// Command line

@@ -310,7 +310,6 @@ BeebWin::BeebWin()
 	// Printer
 	m_TranslateCRLF = true;
 	m_PrinterPort = PrinterPortType::Lpt1;
-	ZeroMemory(m_PrinterFileName, sizeof(m_PrinterFileName));
 	ZeroMemory(m_PrinterDevice, sizeof(m_PrinterDevice));
 
 	// Command line
