@@ -33,7 +33,6 @@ Boston, MA  02110-1301, USA.
 
 // Acorn Econet Level 3 File Server Real Time Clock (SAF3019P clock/timer)
 //
-//
 // From https://stardot.org.uk/forums/viewtopic.php?p=351865#p351865
 //
 // "The even numbered registers (0,2,4,6) are the current time registers months,
@@ -84,7 +83,16 @@ void UserPortRTCWrite(unsigned char Value)
 					case 0: // Month counter (1-12)
 						if (Data == 0)
 						{
-							// Write is ignored
+							// Write is ignored. The SAF3019P datasheet says
+							// that this should reset the seconds counter:
+							//
+							// "The prescaler and seconds counter are reset with the TIME SET
+							// instruction when S = 0, AO = 0, A1 = 0 (addressed for month)
+							// and UC = 0. If the seconds counter is between 30 and 59,
+							// this instruction generates a transfer for the minutes counter.
+							// Therefore, this instruction may be used for a very simple
+							// correction of the time counter if the deviation is within
+							// +/- 30 seconds."
 						}
 						else if (Data >= 1 && Data < 20)
 						{
