@@ -739,7 +739,7 @@ public:
 	bool m_TranslateCRLF;
 	PrinterPortType m_PrinterPort;
 	std::string m_PrinterFileName;
-	char m_PrinterDevice[_MAX_PATH];
+	std::string m_PrinterDevice;
 
 	// Command line
 	char m_CommandLineFileName1[_MAX_PATH];

@@ -310,7 +310,6 @@ BeebWin::BeebWin()
 	// Printer
 	m_TranslateCRLF = true;
 	m_PrinterPort = PrinterPortType::Lpt1;
-	ZeroMemory(m_PrinterDevice, sizeof(m_PrinterDevice));
 
 	// Command line
 	ZeroMemory(m_CommandLineFileName1, sizeof(m_CommandLineFileName1));
@@ -547,11 +546,15 @@ void BeebWin::ApplyPrefs()
 
 	InitTextView();
 
-	/* Initialise printer */
+	// Initialise printer
 	if (PrinterEnabled)
-		PrinterEnable(m_PrinterDevice);
+	{
+		PrinterEnable(m_PrinterDevice.c_str());
+	}
 	else
+	{
 		PrinterDisable();
+	}
 
 	/* Joysticks can only be initialised after the window is created (needs hwnd) */
 	if (m_JoystickOption == JoystickOption::Joystick)

@@ -883,7 +883,7 @@ bool BeebWin::TogglePrinter()
 		}
 		else
 		{
-			Success = PrinterEnable(m_PrinterDevice);
+			Success = PrinterEnable(m_PrinterDevice.c_str());
 		}
 	}
 
@@ -904,28 +904,28 @@ void BeebWin::TranslatePrinterPort()
 	switch (m_PrinterPort)
 	{
 		case PrinterPortType::File:
-			strcpy(m_PrinterDevice, m_PrinterFileName.c_str());
+			m_PrinterDevice = m_PrinterFileName;
 			break;
 
 		case PrinterPortType::Clipboard:
-			strcpy(m_PrinterDevice, "CLIPBOARD");
+			m_PrinterDevice.clear();
 			break;
 
 		case PrinterPortType::Lpt1:
 		default:
-			strcpy(m_PrinterDevice, "LPT1");
+			m_PrinterDevice = "LPT1";
 			break;
 
 		case PrinterPortType::Lpt2:
-			strcpy(m_PrinterDevice, "LPT2");
+			m_PrinterDevice = "LPT2";
 			break;
 
 		case PrinterPortType::Lpt3:
-			strcpy(m_PrinterDevice, "LPT3");
+			m_PrinterDevice = "LPT3";
 			break;
 
 		case PrinterPortType::Lpt4:
-			strcpy(m_PrinterDevice, "LPT4");
+			m_PrinterDevice = "LPT4";
 			break;
 	}
 }
