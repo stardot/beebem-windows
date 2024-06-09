@@ -343,7 +343,7 @@ public:
 	int TranslateKey(int vkey, bool keyUp, int &row, int &col);
 	void ParseCommandLine(void);
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
-	void FindCommandLineFile(char *CmdLineFile);
+	bool FindCommandLineFile(char *FileName);
 	void HandleCommandLineFile(int Drive, const char *CmdLineFile);
 	bool CheckUserDataPath(bool Persist);
 	void SelectUserDataPath(void);
