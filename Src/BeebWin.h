@@ -722,7 +722,7 @@ public:
 	int m_AMXAdjust;
 
 	// Preferences
-	char m_PrefsFile[_MAX_PATH];
+	std::string m_PrefsFileName;
 	Preferences m_Preferences;
 	bool m_AutoSavePrefsCMOS;
 	bool m_AutoSavePrefsFolders;

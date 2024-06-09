@@ -111,20 +111,20 @@ static int GetPreferencesVersion(const Preferences& Prefs)
 
 void BeebWin::LoadPreferences()
 {
-	Preferences::Result result = m_Preferences.Load(m_PrefsFile);
+	Preferences::Result result = m_Preferences.Load(m_PrefsFileName.c_str());
 
 	if (result == Preferences::Result::Failed)
 	{
 		// No prefs file, will use defaults
 		Report(MessageType::Error,
 		       "Cannot open preferences file:\n  %s\n\nUsing default preferences",
-		       m_PrefsFile);
+		       m_PrefsFileName.c_str());
 	}
 	else if (result == Preferences::Result::InvalidFormat)
 	{
 		Report(MessageType::Error,
 		       "Invalid preferences file:\n  %s\n\nUsing default preferences",
-		       m_PrefsFile);
+		       m_PrefsFileName.c_str());
 	}
 
 	const int Version = GetPreferencesVersion(m_Preferences);
@@ -133,7 +133,7 @@ void BeebWin::LoadPreferences()
 	{
 		Report(MessageType::Warning,
 		       "Using preferences file from a more recent BeebEm version:\n  %s\n\nThis may cause unexpected results",
-		       m_PrefsFile);
+		       m_PrefsFileName.c_str());
 	}
 
 	LoadHardwarePreferences();
@@ -1675,7 +1675,7 @@ void BeebWin::SavePreferences(bool saveAll)
 	m_Preferences.SetBoolValue(CFG_AUTO_SAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders);
 	m_Preferences.SetBoolValue(CFG_AUTO_SAVE_PREFS_ALL, m_AutoSavePrefsAll);
 
-	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success)
+	if (m_Preferences.Save(m_PrefsFileName.c_str()) == Preferences::Result::Success)
 	{
 		m_AutoSavePrefsChanged = false;
 	}
@@ -1683,6 +1683,6 @@ void BeebWin::SavePreferences(bool saveAll)
 	{
 		Report(MessageType::Error,
 		       "Failed to write preferences file:\n  %s",
-		       m_PrefsFile);
+		       m_PrefsFileName.c_str());
 	}
 }

@@ -297,7 +297,7 @@ BeebWin::BeebWin()
 	m_AMXAdjust = 30;
 
 	// Preferences
-	strcpy(m_PrefsFile, "Preferences.cfg"); // May be overridden by command line parameter.
+	m_PrefsFileName = "Preferences.cfg"; // May be overridden by command line parameter.
 	m_AutoSavePrefsCMOS = false;
 	m_AutoSavePrefsFolders = false;
 	m_AutoSavePrefsAll = false;
@@ -5006,7 +5006,7 @@ void BeebWin::ParseCommandLine()
 			}
 			else if (_stricmp(__argv[i], "-Prefs") == 0)
 			{
-				strcpy(m_PrefsFile, __argv[++i]);
+				m_PrefsFileName = __argv[++i];
 			}
 			else if (_stricmp(__argv[i], "-Roms") == 0)
 			{
@@ -5107,7 +5107,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 	if (FileExists(file))
 	{
 		// File exists, use it
-		strcpy(m_PrefsFile, file);
+		m_PrefsFileName = file;
 
 		if (bLoadPrefs)
 		{
@@ -5704,10 +5704,10 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 	if (success)
 	{
 		// Fill out full path of prefs file
-		if (PathIsRelative(m_PrefsFile))
+		if (PathIsRelative(m_PrefsFileName.c_str()))
 		{
-			sprintf(path, "%s%s", m_UserDataPath, m_PrefsFile);
-			strcpy(m_PrefsFile, path);
+			sprintf(path, "%s%s", m_UserDataPath, m_PrefsFileName.c_str());
+			m_PrefsFileName = path;
 		}
 	}
 
@@ -5760,7 +5760,7 @@ void BeebWin::SelectUserDataPath()
 				StoreUserDataPath();
 
 				// Reset prefs and roms file paths
-				strcpy(m_PrefsFile, "Preferences.cfg");
+				m_PrefsFileName = "Preferences.cfg";
 				strcpy(RomFile, "Roms.cfg");
 				CheckForLocalPrefs(m_UserDataPath, true);
 
