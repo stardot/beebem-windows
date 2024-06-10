@@ -197,6 +197,7 @@
     <ClCompile Include="ExportFileDialog.cpp" />
     <ClCompile Include="Ext1770.cpp" />
     <ClCompile Include="FileDialog.cpp" />
+    <ClCompile Include="FileType.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="IC32Latch.cpp" />
@@ -361,6 +362,7 @@
     <ClInclude Include="ExportFileDialog.h" />
     <ClInclude Include="Ext1770.h" />
     <ClInclude Include="FileDialog.h" />
+    <ClInclude Include="FileType.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="FolderSelectDialog.h" />
     <ClInclude Include="IC32Latch.h" />

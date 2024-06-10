@@ -68,6 +68,7 @@ using std::max;
 #include "Econet.h" // Rob O'Donnell Christmas 2004.
 #include "Ext1770.h"
 #include "FolderSelectDialog.h"
+#include "FileType.h"
 #include "FileUtils.h"
 #include "Ide.h"
 #include "IP232.h"
@@ -5145,67 +5146,6 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 			BeebReadRoms();
 		}
 	}
-}
-
-enum class FileType {
-	None,
-	SSD,
-	DSD,
-	ADFS,
-	UEF,
-	UEFState,
-	CSW,
-	IMG,
-	FSD
-};
-
-static FileType GetFileTypeFromExtension(const char* FileName)
-{
-	FileType Type = FileType::None;
-
-	const char *Ext = strrchr(FileName, '.');
-
-	if (Ext != nullptr)
-	{
-		if (_stricmp(Ext + 1, "ssd") == 0)
-		{
-			Type = FileType::SSD;
-		}
-		else if (_stricmp(Ext + 1, "dsd") == 0)
-		{
-			Type = FileType::DSD;
-		}
-		else if (_stricmp(Ext + 1, "adl") == 0)
-		{
-			Type = FileType::ADFS;
-		}
-		else if (_stricmp(Ext + 1, "adf") == 0)
-		{
-			Type = FileType::ADFS;
-		}
-		else if (_stricmp(Ext + 1, "uef") == 0)
-		{
-			Type = FileType::UEF;
-		}
-		else if (_stricmp(Ext + 1, "uefstate") == 0)
-		{
-			Type = FileType::UEFState;
-		}
-		else if (_stricmp(Ext + 1, "csw") == 0)
-		{
-			Type = FileType::CSW;
-		}
-		else if (_stricmp(Ext + 1, "img") == 0)
-		{
-			Type = FileType::IMG;
-		}
-		else if (_stricmp(Ext + 1, "fsd") == 0)
-		{
-			Type = FileType::FSD;
-		}
-	}
-
-	return Type;
 }
 
 /*****************************************************************************/

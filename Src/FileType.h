@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2018  Chris Needham
+Copyright (C) 2024  Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,17 +18,23 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef DISCTYPE_HEADER
-#define DISCTYPE_HEADER
+#ifndef FILE_TYPE_HEADER
+#define FILE_TYPE_HEADER
 
-enum class DiscType
+enum class FileType
 {
-	SSD  = 0,
-	DSD  = 1,
-	ADFS = 2,
-	IMG  = 3,
-	DOS  = 4,
-	FSD  = 5
+	None,
+	SSD,
+	DSD,
+	ADFS,
+	UEF,
+	UEFState,
+	CSW,
+	IMG,
+	DOS,
+	FSD
 };
+
+FileType GetFileTypeFromExtension(const char* FileName);
 
 #endif
