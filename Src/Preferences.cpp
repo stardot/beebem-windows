@@ -20,15 +20,17 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 
+#include <assert.h>
+#include <fstream>
+#include <string>
+
 #include "Preferences.h"
 #include "StringUtils.h"
 
 //-----------------------------------------------------------------------------
 
-static const int MAX_PREFS_LINE_LEN = 1024;
-
 // Token written to start of pref files
-#define PREFS_TOKEN "*** BeebEm Preferences ***"
+static const char* PREFS_TOKEN = "*** BeebEm Preferences ***";
 
 //-----------------------------------------------------------------------------
 
@@ -54,40 +56,48 @@ static int Hex2Int(int hex)
 
 Preferences::Result Preferences::Load(const char* FileName)
 {
-	FILE *fd = fopen(FileName, "r");
+	std::ifstream Input(FileName);
 
-	if (fd == nullptr)
+	if (!Input)
 	{
 		return Result::Failed;
 	}
 
-	char buf[MAX_PREFS_LINE_LEN];
+	std::string Line;
 
-	if (fgets(buf, MAX_PREFS_LINE_LEN - 1, fd) != nullptr)
+	std::getline(Input, Line);
+
+	if (!Input || Line != PREFS_TOKEN)
 	{
-		if (strcmp(buf, PREFS_TOKEN "\n") != 0)
+		return Result::InvalidFormat;
+	}
+
+	while (std::getline(Input, Line))
+	{
+		trim(Line);
+
+		// Skip blank lines and comments
+		if (Line.empty() || Line[0] == '#')
 		{
-			fclose(fd);
-			return Result::InvalidFormat;
+			continue;
+		}
+
+		std::string::size_type Pos = Line.find('=');
+
+		if (Pos != std::string::npos)
+		{
+			std::string Key(Line, 0, Pos);
+			std::string Value(Line, Pos + 1, Line.size());
+
+			trim(Key);
+			trim(Value);
+
+			m_Prefs[Key] = Value;
 		}
 		else
 		{
-			while (fgets(buf, MAX_PREFS_LINE_LEN - 1, fd) != nullptr)
-			{
-				char *val = strchr(buf, '=');
-
-				if (val)
-				{
-					*val = 0;
-					++val;
-					if (val[strlen(val) - 1] == '\n')
-						val[strlen(val) - 1] = 0;
-					m_Prefs[buf] = val;
-				}
-			}
+			return Result::InvalidFormat;
 		}
-
-		fclose(fd);
 	}
 
 	return Result::Success;
@@ -97,22 +107,28 @@ Preferences::Result Preferences::Load(const char* FileName)
 
 Preferences::Result Preferences::Save(const char* FileName)
 {
-	// Write the file
-	FILE *fd = fopen(FileName, "w");
+	std::ofstream Output(FileName);
 
-	if (fd == nullptr)
+	if (!Output)
 	{
 		return Result::Failed;
 	}
 
-	fprintf(fd, PREFS_TOKEN "\n\n");
+	Output.exceptions(std::ios::badbit | std::ios::failbit);
 
-	for (const auto& i : m_Prefs)
+	try
 	{
-		fprintf(fd, "%s=%s\n", i.first.c_str(), i.second.c_str());
-	}
+		Output << PREFS_TOKEN << "\n\n";
 
-	fclose(fd);
+		for (const auto& i : m_Prefs)
+		{
+			Output << i.first << '=' << i.second << '\n';
+		}
+	}
+	catch (const std::exception&)
+	{
+		return Result::Failed;
+	}
 
 	return Result::Success;
 }
@@ -155,7 +171,9 @@ bool Preferences::GetBinaryValue(const char* id, void* Value, size_t Size) const
 
 void Preferences::SetBinaryValue(const char* id, const void* Value, size_t Size)
 {
-	char hx[MAX_PREFS_LINE_LEN];
+	assert(Size <= 512);
+
+	char hx[1024];
 	const unsigned char* BinValue = reinterpret_cast<const unsigned char *>(Value);
 
 	for (size_t b = 0; b < Size; ++b)
@@ -261,7 +279,7 @@ bool Preferences::GetDWORDValue(const char* id, DWORD& Value, DWORD Default) con
 
 void Preferences::SetDWORDValue(const char* id, DWORD Value)
 {
-	char hx[MAX_PREFS_LINE_LEN];
+	char hx[10];
 	sprintf(hx, "%08x", Value);
 	m_Prefs[id] = hx;
 }
