@@ -344,7 +344,7 @@ public:
 	void ParseCommandLine(void);
 	void CheckForLocalPrefs(const char *path, bool bLoadPrefs);
 	bool FindCommandLineFile(char *FileName);
-	void HandleCommandLineFile(int Drive, const char *CmdLineFile);
+	void HandleCommandLineFile(int Drive, const char *FileName);
 	bool CheckUserDataPath(bool Persist);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);

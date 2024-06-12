@@ -5160,15 +5160,13 @@ bool BeebWin::FindCommandLineFile(char *FileName)
 		return false;
 	}
 
-	FileType Type = FileType::None;
-
 	// Work out which type of file it is
-	Type = GetFileTypeFromExtension(FileName);
+	FileType Type = GetFileTypeFromExtension(FileName);
 
 	if (Type == FileType::None)
 	{
 		Report(MessageType::Error, "Unrecognised file type:\n  %s",
-			    FileName);
+		       FileName);
 
 		return false;
 	}
@@ -5226,16 +5224,14 @@ bool BeebWin::FindCommandLineFile(char *FileName)
 /*****************************************************************************/
 // Handle a file name passed on command line
 
-void BeebWin::HandleCommandLineFile(int Drive, const char *CmdLineFile)
+void BeebWin::HandleCommandLineFile(int Drive, const char *FileName)
 {
-	if (CmdLineFile[0] == '\0')
+	if (FileName[0] == '\0')
 	{
 		return;
 	}
 
 	m_AutoBootDisc = false;
-
-	const char *FileName = CmdLineFile;
 
 	// Work out which type of files it is
 	FileType Type = GetFileTypeFromExtension(FileName);
