@@ -532,16 +532,12 @@ void TeletextAdapterUpdate()
                     {
                         if (buff[i*43] != 0)
                         {
-                            row[i][0] = 0x67;
+                            row[i][0] = 0x27;
                             memcpy(&(row[i][1]), buff + i * 43, 42);
-                        }
-                        else
-                        {
-                            row[i][0] = 0x00;
                         }
                     }
                 }
-
+                
                 TeletextCurrentFrame++;
             }
 
