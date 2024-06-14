@@ -45,7 +45,7 @@ keyboard emulation - David Alan Gilbert 30/10/94 */
 #include "Speech.h"
 #include "Via.h"
 
-#define DEBUG_IC32
+// #define DEBUG_IC32
 // #define DEBUG_KEYBOARD
 // #define DEBUG_SLOW_DATA_BUS
 

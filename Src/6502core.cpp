@@ -1391,32 +1391,39 @@ void DoNMI(void) {
 
 static void ClipboardREMVHandler()
 {
-	if (GETVFLAG) {
+	if (GETVFLAG)
+	{
 		// Examine buffer state
 
-		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength) {
+		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength)
+		{
 			Accumulator = mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex];
 			PSR &= ~FlagC;
 		}
-		else {
+		else
+		{
 			PSR |= FlagC;
 		}
 	}
 	else {
 		// Remove character from buffer
-		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength) {
+		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength)
+		{
 			unsigned char c = mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex++];
 
 			if (c == 0xa3) {
 				// Convert pound sign
 				c = 0x60;
 			}
-			else if (mainWin->m_translateCRLF) {
-				if (c == 0x0a) {
+			else if (mainWin->m_TranslateCRLF)
+			{
+				if (c == 0x0a)
+				{
 					// Convert LF to CR
 					c = 0x0d;
 				}
-				else if (c == 0x0d && mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex] == 0x0a) {
+				else if (c == 0x0d && mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex] == 0x0a)
+				{
 					// Drop LF after CR
 					mainWin->m_ClipboardIndex++;
 				}
@@ -1426,7 +1433,8 @@ static void ClipboardREMVHandler()
 			YReg = c;
 			PSR &= ~FlagC;
 		}
-		else {
+		else
+		{
 			// We've reached the end of the clipboard contents
 			mainWin->ClearClipboardBuffer();
 
@@ -1459,17 +1467,20 @@ static void ClipboardREMVHandler()
 
 static void ClipboardCNPVHandler()
 {
-	if (GETVFLAG) {
+	if (GETVFLAG)
+	{
 		mainWin->ClearClipboardBuffer();
 	}
-	else {
-		if (GETCFLAG) {
+	else
+	{
+		if (GETCFLAG)
+		{
 			XReg = 0;
 			YReg = 0;
 		}
-		else {
-			int Length = mainWin->m_ClipboardLength - mainWin->m_ClipboardIndex;
-			XReg = Length > 0;
+		else
+		{
+			XReg = mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength;
 			YReg = 0;
 		}
 	}
@@ -1512,7 +1523,7 @@ void Exec6502Instruction()
 			ProgramCounter == (WholeRam[0x20e] | (WholeRam[0x20f] << 8))) {
 			mainWin->SpeakChar(Accumulator);
 		}
-		else if (mainWin->m_ClipboardBuffer[0] != '\0') {
+		else if (mainWin->m_ClipboardLength > 0) {
 			// Check for REMV (Remove from buffer vector) and CNPV (Count/purge buffer
 			// vector). X register contains the buffer number (0 indicates the keyboard
 			// buffer). See AUG p.263/264 and p.138
@@ -3300,7 +3311,7 @@ static void PollHardware(unsigned int nCycles)
 
 	VideoPoll(nCycles);
 	if (!BasicHardwareOnly) {
-		AtoD_poll(nCycles);
+		AtoDPoll(nCycles);
 		SerialPoll(nCycles);
 	}
 	Disc8271Poll();

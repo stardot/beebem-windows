@@ -37,6 +37,115 @@ Boston, MA  02110-1301, USA.
 
 /*-------------------------------------------------------------------------*/
 
+// The Acorn Master Series uses a HD146818. This provides a RTC (Real Time
+// Clock), a programmable periodic interrupt and square wave generator
+// (which BeebEm doesn't emulate), and 50 bytes CMOS RAM.
+//
+//                                 Memory Map
+//
+// +----+----+-------------------------------------------------+---------------+
+// | Address | Description                                     |   DM=0    =1  |
+// +----+----+-------------------------------------------------+---------------+
+// | 00 | 00 | Seconds                                         | Binary or BCD |
+// | 01 | 01 | Seconds Alarm                                   | Binary or BCD |
+// | 02 | 02 | Minutes                                         | Binary or BCD |
+// | 03 | 03 | Minutes Alarm                                   | Binary or BCD |
+// | 04 | 04 | Hours                                           | Binary or BCD |
+// | 05 | 05 | Hours Alarm                                     | Binary or BCD |
+// | 06 | 06 | Day of Week (1 = Sun, 7 = Sat)                  | Binary or BCD |
+// | 07 | 07 | Date of Month                                   | Binary or BCD |
+// | 08 | 08 | Month (1 = Jan, 12 = Dec)                       | Binary or BCD |
+// | 09 | 09 | Year                                            | Binary or BCD |
+// +----+----+-------------------------------------------------+---------------+
+// | 10 | 0A | Register A  |  UIP | DV2 | DV1 | DV0 |  RS3 | RS2 |  RS1  | RS0 |
+// | 11 | 0B | Register B  |  SET | PIE | AIE | UIE | SQWE |  DM | 24/12 | DSE |
+// | 12 | 0C | Register C  | IRQF | PF  | AF  | UF  |   -  |  -  |   -   |  -  |
+// | 13 | 0D | Register D  |  VRT |  -  |  -  |  -  |   -  |  -  |   -   |  -  |
+// +----+----+-----------------------------------------------------------------+
+// | 50 bytes of user RAM                                                      |
+// |---------------------------------------------------------------------------|
+// | Master 128 http://beebwiki.mdfs.net/CMOS_configuration_RAM_allocation     |
+// | See https://chrisacorns.computinghistory.org.uk/docs/Acorn/AN/203.pdf for |
+// | factory default settings                                                  |
+// |---------------------------------------------------------------------------|
+// | 14 | 0E |       Econet station number                *SetStation nnn      |
+// | 15 | 0F |       file server number                   *CO. FS nnn          |
+// | 16 | 10 |       File server network                  *CO. FS nnn.sss      |
+// | 17 | 11 |       Printer server number                *CO. PS nnn          |
+// | 18 | 12 |       Printer server network               *CO. PS nnn.sss      |
+// | 19 | 13 | b0-b3 Default filing system ROM            *CO. File nn         |
+// |    |    | b4-b7 Default lanugage ROM                 *CO. Lang nn         |
+// | 20 | 14 |       ROMs 0-7 unplugged/inserted          *Insert n/*Unplug n  |
+// | 21 | 15 |       ROMs 8-F unplugged/inserted          *Insert n/*Unplug n  |
+// | 22 | 16 | b0-b2 EDIT screen mode                                          |
+// |    |    | b3    EDIT TAB to columns/words                                 |
+// |    |    | b4    EDIT overwrite/instert                                    |
+// |    |    | b5    EDIT display/returns                                      |
+// |    |    | b6-b7 Not used                                                  |
+// | 23 | 17 |       Telecoms software                                         |
+// | 24 | 18 | b0-b2 Default screen mode                  *CO. Mode nn         |
+// |    |    | b3    Shadow screen mode (128-135)                              |
+// |    |    | b4    Default TV interlace                 *CO. TV xx,n         |
+// |    |    | b5-b7 Default TV position 0-3, -4 to -1    *CO. TV nn,x         |
+// | 25 | 19 | b0-b2 Default floppy speed                 *CO. FDrive n        |
+// |    |    | b3    Shift Caps on startup                *CO. ShCaps          |
+// |    |    | b4    No CAPS lock on startup              *CO. NoCaps          |
+// |    |    | b5    CAPS lock on startup                 *CO. Caps            |
+// |    |    | b6    ADFS load dir on startup             *CO. NoDir/Dir       |
+// |    |    | b7    ADFS floppy/hard drive on startup    *CO. Floppy/Hard     |
+// | 26 | 1A |       Keyboard repeat delay                *CO. Delay nnn       |
+// | 27 | 1B |       Keyboard repeat rate                 *CO. Repeat nnn      |
+// | 28 | 1C |       Printer ignore character             *CO. Ignore nnn      |
+// | 29 | 1D | b0    Ignore/enable Tube                   *CO. NoTube/Tube     |
+// |    |    | b1    Ignore printer ignore character      *CO. Ignore nnn      |
+// |    |    | b2-b4 Default RS232 serial speed, 0-7      *CO. Baud n          |
+// |    |    | b5-b7 Default printer device, 0-7          *CO. Print n         |
+// | 30 | 1E | b0    Default to shadow screen on start    *CO. Shadow          |
+// |    |    | b1    Default BELL (Ctrl+G) volume         *CO. Quiet/Loud      |
+// |    |    | b2    Internal/External Tube               *CO. InTube/ExTube   |
+// |    |    | b3    Scrolling enabled/protected          *CO. Scroll/NoScroll |
+// |    |    | b4    Noboot/boot on reset                 *CO. NoBoot/Boot     |
+// |    |    | b5-b7 Default serial data format           *CO. Data n          |
+// | 31 | 1F | b0    ANFS raise 2 pages of workspace      *CO. NoSpace/Space   |
+// |    |    | b1    ANFS run *FindLib on logon           *-Net-Opt 5,n        |
+// |    |    | b2    ANFS uses &0Bxx-&0Cxx or &0Exx-&0Fxx *-Net-Opt 6,n        |
+// |    |    | b3-b5 Unused                                                    |
+// |    |    | b6    ANFS protected                       *-Net-Opt 8,n        |
+// |    |    | b7    Display version number on startup                         |
+// | 32 | 20 |       Unused                                                    |
+// | 33 | 21 |       Unused                                                    |
+// | 34 | 22 |       34-43 Reserved for Acorn future expansion                 |
+// | 35 | 23 |                                                                 |
+// | 36 | 24 |                                                                 |
+// | 37 | 25 |                                                                 |
+// | 38 | 26 |                                                                 |
+// | 39 | 27 |                                                                 |
+// | 40 | 28 |                                                                 |
+// | 41 | 29 |                                                                 |
+// | 42 | 2A |                                                                 |
+// | 43 | 2B |                                                                 |
+// | 44 | 2C |       44-53 Reserved for use by commercial third parties        |
+// | 45 | 2D |                                                                 |
+// | 46 | 2E |                                                                 |
+// | 47 | 2F |                                                                 |
+// | 48 | 30 |                                                                 |
+// | 49 | 31 |                                                                 |
+// | 50 | 32 |                                                                 |
+// | 51 | 33 |                                                                 |
+// | 52 | 34 |                                                                 |
+// | 53 | 35 |                                                                 |
+// | 54 | 36 |       54-63 Reserved for use by users                           |
+// | 55 | 37 |                                                                 |
+// | 56 | 38 |                                                                 |
+// | 57 | 39 |                                                                 |
+// | 58 | 3A |                                                                 |
+// | 59 | 3B |                                                                 |
+// | 60 | 3C |                                                                 |
+// | 61 | 3D |                                                                 |
+// | 62 | 3E |                                                                 |
+// | 63 | 3F |                                                                 |
+// +----+----+-----------------------------------------------------------------+
+
 // Master 128 MC146818AP Real-Time Clock and RAM
 static time_t RTCTimeOffset = 0;
 
@@ -50,24 +159,6 @@ struct CMOSType
 
 static CMOSType CMOS;
 
-// RTC Registers in memory
-//
-// 0x0: Seconds (0 to 59)
-// 0x1: Alarm Seconds (0 to 59)
-// 0x2: Minutes (0 to 59)
-// 0x3: Alarm Minutes (0 to 59)
-// 0x4: Hours (0 to 23)
-// 0x5: Alarm Hours (0 to 23)
-// 0x6: Day of week (1 = Sun, 7 = Sat)
-// 0x7: Day of month (1 to 31)
-// 0x8: Month (1 = Jan, 12 = Dec)
-// 0x9: Year (last 2 digits)
-// 0xA: Register A
-// 0xB: Register B
-// 0xC: Register C
-// 0xD: Register D
-// 0xE to 0x3F: User RAM (50 bytes)
-
 const unsigned char RTC146818_REG_A = 0x0A;
 const unsigned char RTC146818_REG_B = 0x0B;
 const unsigned char RTC146818_REG_C = 0x0C;
@@ -76,22 +167,50 @@ const unsigned char RTC146818_REG_D = 0x0D;
 const unsigned char RTC146818_REG_B_SET    = 0x80;
 const unsigned char RTC146818_REG_B_BINARY = 0x04;
 
-// Backup of Master 128 CMOS defaults from byte 14 (RAM bytes only)
+// Master 128 CMOS defaults from byte 14 (RAM bytes only)
+
 const unsigned char CMOSDefault_Master128[50] =
 {
-	0x01, 0xfe, 0x00, 0xea, 0x00,
-	0xc9, 0xff, 0xfe, 0x32, 0x00,
-	0x07, 0xc1, 0x1e, 0x05, 0x00,
-	0x59, 0xa2
+	0x01, // 14 - Econet station number: 1
+	0xfe, // 15 - File server number: 254
+	0x00, // 16 - File server network: 0
+	0xea, // 17 - Printer server number: 235
+	0x00, // 18 - Printer server network: 0
+	0xc9, // 19 - Default language ROM: 12, Default filing system ROM: 9
+	0xff, // 20 - ROMS 0-7 unplugged/inserted
+	0xfe, // 21 - ROMS 8-F unplugged/inserted
+	0x32, // 22 - Edit mode K
+	0x00, // 23
+	0x07, // 24 - Default screen mode 7, *TV 0, 0
+	0xc0, // 25 - Default floppy speed: 10, Floppy, NoDir, Caps
+	0x1e, // 26 - Keyboard auto-repeat delay: 30cs
+	0x08, // 27 - Keyboard repeat rate: 8cs
+	0x00, // 28 - Printer ignore character
+	0x31, // 29 - Parallel port printer, RS232 1200 baud, Tube enabled
+	0xa2  // 30 - Serial format 8N1, no boot on reset, scroll enabled, external tube, Loud
 };
 
-// Backup of Master ET CMOS defaults from byte 14 (RAM bytes only)
+// Master ET CMOS defaults from byte 14 (RAM bytes only)
+
 const unsigned char CMOSDefault_MasterET[50] =
 {
-	0x01, 0xfe, 0x00, 0xea, 0x00,
-	0xde, 0xff, 0xff, 0x32, 0x00,
-	0x07, 0xc1, 0x1e, 0x05, 0x00,
-	0x59, 0xa2
+	0x01, // 14 - Econet station number: 1
+	0xfe, // 15 - File server number: 254
+	0x00, // 16 - File server network: 0
+	0xea, // 17 - Printer server number: 235
+	0x00, // 18 - Printer server network: 0
+	0xde,
+	0xff, // 20 - ROMS 0-7 unplugged/inserted
+	0xff, // 21 - ROMS 8-F unplugged/inserted
+	0x32, // 22 - Edit mode K
+	0x00, // 23
+	0x07, // 24 - Default screen mode 7, *TV 0, 0
+	0xc0, // 25 - Default floppy speed: 10, Floppy, NoDir, Caps
+	0x1e, // 26 - Keyboard auto-repeat delay: 30cs
+	0x08, // 27 - Keyboard repeat rate: 8cs
+	0x00, // 28 - Printer ignore character
+	0x31, // 29 - Parallel port printer, RS232 1200 baud, Tube enabled
+	0xa2  // 30 - Serial format 8N1, no boot on reset, scroll enabled, external tube, Loud
 };
 
 // Pointer used to switch between the CMOS RAM for the different machines

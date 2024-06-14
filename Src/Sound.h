@@ -33,11 +33,14 @@ Boston, MA  02110-1301, USA.
 
 #include <stdio.h>
 
+#include "BeebWin.h"
+
 enum class SoundState : char {
 	Muted,
 	Unmuted
 };
 
+extern SoundStreamerType SelectedSoundStreamer;
 extern bool SoundDefault; // Default sound state (enabled/disabled via sound menu)
 extern bool SoundEnabled; // Sound on/off flag - will be off if DirectSound init fails
 extern bool RelaySoundEnabled; // Relay Click noise enable

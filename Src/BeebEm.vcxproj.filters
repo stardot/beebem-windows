@@ -120,6 +120,9 @@
     <ClCompile Include="FileDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileType.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="FileUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -165,6 +168,9 @@
     <ClCompile Include="Preferences.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Registry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="RenameFileDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -175,6 +181,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RomConfigFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rtc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Sasi.cpp">
@@ -318,9 +327,6 @@
     <ClCompile Include="zlib\zutil.c">
       <Filter>Source Files\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="Rtc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="6502core.h">
@@ -354,6 +360,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="BeebWin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BeebWinPrefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Csw.h">
@@ -396,6 +405,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FileDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FileUtils.h">
@@ -452,6 +464,9 @@
     <ClInclude Include="Preferences.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Registry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="RenameFileDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -465,6 +480,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RomConfigFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rtc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Sasi.h">
@@ -613,9 +631,6 @@
     </ClInclude>
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
-    </ClInclude>
-    <ClInclude Include="Rtc.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

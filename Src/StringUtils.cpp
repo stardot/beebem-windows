@@ -51,32 +51,14 @@ void trim(std::string& str)
 
 bool ParseNumber(const std::string& str, int* pValue)
 {
-	if (str.empty())
+	try
+	{
+		*pValue = std::stoi(str);
+	}
+	catch (std::exception&)
 	{
 		return false;
 	}
-
-	int Value = 0;
-
-	for (char c : str)
-	{
-		if (isdigit(c))
-		{
-			if (Value >= INT_MAX / 10)
-			{
-				return false;
-			}
-
-			Value *= 10;
-			Value += c - '0';
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	*pValue = Value;
 
 	return true;
 }

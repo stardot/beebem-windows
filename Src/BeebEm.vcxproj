@@ -197,6 +197,7 @@
     <ClCompile Include="ExportFileDialog.cpp" />
     <ClCompile Include="Ext1770.cpp" />
     <ClCompile Include="FileDialog.cpp" />
+    <ClCompile Include="FileType.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="FolderSelectDialog.cpp" />
     <ClCompile Include="IC32Latch.cpp" />
@@ -212,6 +213,7 @@
     <ClCompile Include="Music5000.cpp" />
     <ClCompile Include="PALRom.cpp" />
     <ClCompile Include="Preferences.cpp" />
+    <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenameFileDialog.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="RomConfigDialog.cpp" />
@@ -345,6 +347,7 @@
     <ClInclude Include="Bcd.h" />
     <ClInclude Include="BeebMem.h" />
     <ClInclude Include="BeebWin.h" />
+    <ClInclude Include="BeebWinPrefs.h" />
     <ClInclude Include="Csw.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DebugTrace.h" />
@@ -359,6 +362,7 @@
     <ClInclude Include="ExportFileDialog.h" />
     <ClInclude Include="Ext1770.h" />
     <ClInclude Include="FileDialog.h" />
+    <ClInclude Include="FileType.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="FolderSelectDialog.h" />
     <ClInclude Include="IC32Latch.h" />
@@ -370,7 +374,6 @@
     <ClInclude Include="KeyMap.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="Rtc.h" />
     <ClInclude Include="Messages.h" />
     <ClInclude Include="ML675001.h" />
     <ClInclude Include="Model.h" />
@@ -379,10 +382,12 @@
     <ClInclude Include="Port.h" />
     <ClInclude Include="Preferences.h" />
     <ClInclude Include="RenameFileDialog.h" />
+    <ClInclude Include="Registry.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="RomConfigDialog.h" />
     <ClInclude Include="RomConfigFile.h" />
+    <ClInclude Include="Rtc.h" />
     <ClInclude Include="Sasi.h" />
     <ClInclude Include="Scsi.h" />
     <ClInclude Include="SelectKeyDialog.h" />

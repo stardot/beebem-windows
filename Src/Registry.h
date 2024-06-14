@@ -1,9 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 1994  David Alan Gilbert
-Copyright (C) 1997  Mike Wyatt
-Copyright (C) 2001  Richard Gellman
-Copyright (C) 2008  Rich Talbot-Watkins
+Copyright (C) 2001  David Overton
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,35 +18,21 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef SOUND_STREAMER_HEADER
-#define SOUND_STREAMER_HEADER
+#ifndef REGISTRY_HEADER
+#define REGISTRY_HEADER
 
-#include <list>
+bool RegCreateKey(HKEY hKeyRoot, LPCSTR lpSubKey);
 
-class SoundStreamer
-{
-	public:
-		SoundStreamer();
-		virtual ~SoundStreamer();
+bool RegGetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                       void* pData, int* pnSize);
 
-		virtual bool Init(std::size_t samplerate,
-		                  std::size_t bits_per_sample,
-		                  std::size_t channels) = 0;
+bool RegSetBinaryValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                       const void* pData, int* pnSize);
 
-		virtual std::size_t BufferSize() const = 0;
+bool RegGetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                       LPSTR pData, DWORD dwSize);
 
-		virtual void Play() = 0;
-		virtual void Pause() = 0;
-
-		virtual void Stream(const void *pSamples) = 0;
-
-		static void PlayAll();
-		static void PauseAll();
-
-	private:
-		static std::list<SoundStreamer*> m_streamers;
-};
-
-SoundStreamer *CreateSoundStreamer(int samplerate, int bits_per_sample, int channels);
+bool RegSetStringValue(HKEY hKeyRoot, LPCSTR lpSubKey, LPCSTR lpValue,
+                       LPCSTR pData);
 
 #endif

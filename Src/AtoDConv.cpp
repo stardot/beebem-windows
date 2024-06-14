@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -32,37 +32,40 @@ Boston, MA  02110-1301, USA.
 
 bool JoystickEnabled = false;
 
-/* X and Y positions for joystick 1 */
+// X and Y positions for joystick 1
 int JoystickX;
 int JoystickY;
 
 /* A to D state */
-typedef struct AtoDStateT{
-	unsigned char datalatch;
-	unsigned char status;
-	unsigned char high;
-	unsigned char low;
-} AtoDStateT;
+struct AtoDState
+{
+	unsigned char DataLatch;
+	unsigned char Status;
+	unsigned char High;
+	unsigned char Low;
+};
 
-AtoDStateT AtoDState;
+static AtoDState AtoD;
 
-int AtoDTrigger;  /* For next A to D conversion completion */
+int AtoDTrigger; // For next A to D conversion completion
 
 /*--------------------------------------------------------------------------*/
-/* Address is in the range 0-f - with the fec0 stripped out */
+
+// Address is in the range 0-f - with the fec0 stripped out
+
 void AtoDWrite(int Address, unsigned char Value)
 {
 	if (Address == 0)
 	{
-		AtoDState.datalatch = Value;
+		AtoD.DataLatch = Value;
 
-		const int TimeToConvert = (AtoDState.datalatch & 8) ?
+		const int TimeToConvert = (AtoD.DataLatch & 8) ?
 		                          20000 : // 10 bit conversion, 10 ms
 		                          8000;   // 8 bit conversion, 4 ms
 
 		SetTrigger(TimeToConvert, AtoDTrigger);
 
-		AtoDState.status = (AtoDState.datalatch & 0xf) | 0x80; // busy, not complete
+		AtoD.Status = (AtoD.DataLatch & 0xf) | 0x80; // busy, not complete
 	}
 }
 
@@ -77,15 +80,15 @@ unsigned char AtoDRead(int Address)
 	switch (Address)
 	{
 	case 0:
-		Value = AtoDState.status;
+		Value = AtoD.Status;
 		break;
 
 	case 1:
-		Value = AtoDState.high;
+		Value = AtoD.High;
 		break;
 
 	case 2:
-		Value = AtoDState.low;
+		Value = AtoD.Low;
 		break;
 	}
 
@@ -93,68 +96,75 @@ unsigned char AtoDRead(int Address)
 }
 
 /*--------------------------------------------------------------------------*/
-void AtoD_poll_real(void)
-{
-	int value;
 
+void AtoDPollReal()
+{
 	ClearTrigger(AtoDTrigger);
-	AtoDState.status &= 0xf;
-	AtoDState.status |= 0x40; /* not busy */
+
+	AtoD.Status &= 0xf;
+	AtoD.Status |= 0x40; // Not busy
+
 	PulseSysViaCB1();
 
-	switch (AtoDState.status & 3)
+	int Value;
+
+	switch (AtoD.Status & 3)
 	{
 	case 0:
-		value = JoystickX;
+		Value = JoystickX;
 		break;
 	case 1:
-		value = JoystickY;
+		Value = JoystickY;
 		break;
 	default:
-		value = 0;
+		Value = 0;
 		break;
 	}
 
-	AtoDState.status |= (value & 0xc000) >> 10;
-	AtoDState.high = (unsigned char)(value >> 8);
-	AtoDState.low = value & 0xf0;
+	AtoD.Status |= (Value & 0xc000) >> 10;
+	AtoD.High = (unsigned char)(Value >> 8);
+	AtoD.Low = Value & 0xf0;
 }
 
 /*--------------------------------------------------------------------------*/
-void AtoDInit(void)
+
+void AtoDInit()
 {
-	AtoDState.datalatch = 0;
-	AtoDState.high = 0;
-	AtoDState.low = 0;
+	AtoD.DataLatch = 0;
+	AtoD.High = 0;
+	AtoD.Low = 0;
 	ClearTrigger(AtoDTrigger);
 
-	/* Move joystick to middle */
+	// Move joystick to middle
 	JoystickX = 32767;
 	JoystickY = 32767;
 
-	/* Not busy, conversion complete (OS1.2 will then request another conversion) */
-	AtoDState.status = 0x40;
+	// Not busy, conversion complete (OS1.2 will then request another conversion)
+	AtoD.Status = 0x40;
 	PulseSysViaCB1();
 }
 
 /*--------------------------------------------------------------------------*/
-void AtoDEnable(void)
+
+void AtoDEnable()
 {
 	JoystickEnabled = true;
 	AtoDInit();
 }
 
 /*--------------------------------------------------------------------------*/
-void AtoDDisable(void)
+
+void AtoDDisable()
 {
 	JoystickEnabled = false;
-	AtoDState.datalatch = 0;
-	AtoDState.status = 0x80; /* busy, conversion not complete */
-	AtoDState.high = 0;
-	AtoDState.low = 0;
+	AtoD.DataLatch = 0;
+	AtoD.Status = 0x80; // Busy, conversion not complete
+	AtoD.High = 0;
+	AtoD.Low = 0;
 	ClearTrigger(AtoDTrigger);
 
-	/* Move joystick to middle (superpool looks at joystick even when not selected) */
+	// Move joystick to middle (Super Pool looks at joystick even when
+	// not selected)
 	JoystickX = 32767;
 	JoystickY = 32767;
 }
@@ -163,23 +173,23 @@ void AtoDDisable(void)
 
 void SaveAtoDUEF(FILE *SUEF)
 {
-	fputc(AtoDState.datalatch,SUEF);
-	fputc(AtoDState.status,SUEF);
-	fputc(AtoDState.high,SUEF);
-	fputc(AtoDState.low,SUEF);
+	fputc(AtoD.DataLatch, SUEF);
+	fputc(AtoD.Status, SUEF);
+	fputc(AtoD.High, SUEF);
+	fputc(AtoD.Low, SUEF);
 	if (AtoDTrigger == CycleCountTMax)
-		fput32(AtoDTrigger,SUEF);
+		fput32(AtoDTrigger, SUEF);
 	else
-		fput32(AtoDTrigger - TotalCycles,SUEF);
+		fput32(AtoDTrigger - TotalCycles, SUEF);
 }
 
 void LoadAtoDUEF(FILE *SUEF)
 {
-	AtoDState.datalatch = fget8(SUEF);
-	AtoDState.status = fget8(SUEF);
-	AtoDState.high = fget8(SUEF);
-	AtoDState.low = fget8(SUEF);
+	AtoD.DataLatch = fget8(SUEF);
+	AtoD.Status = fget8(SUEF);
+	AtoD.High = fget8(SUEF);
+	AtoD.Low = fget8(SUEF);
 	AtoDTrigger = fget32(SUEF);
 	if (AtoDTrigger != CycleCountTMax)
-		AtoDTrigger+=TotalCycles;
+		AtoDTrigger += TotalCycles;
 }

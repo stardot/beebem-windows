@@ -21,7 +21,8 @@ Boston, MA  02110-1301, USA.
 #ifndef DISCTYPE_HEADER
 #define DISCTYPE_HEADER
 
-enum class DiscType : unsigned char {
+enum class DiscType
+{
 	SSD  = 0,
 	DSD  = 1,
 	ADFS = 2,

@@ -23,6 +23,7 @@ Boston, MA  02110-1301, USA.
 #include <windows.h>
 
 #include <stdio.h>
+#include <string>
 #include <time.h>
 
 #include "UserVia.h"
@@ -48,24 +49,29 @@ int AMXCurrentY = 0;
 int AMXDeltaX = 0;
 int AMXDeltaY = 0;
 
-/* Printer port */
+// Printer port
 bool PrinterEnabled = false;
 int PrinterTrigger = 0;
-static char PrinterFileName[256];
-static FILE *PrinterFileHandle = NULL;
+static std::string PrinterFileName;
+static FILE *PrinterFileHandle = nullptr;
 
 // Shift Register
 static int SRTrigger = 0;
 static void SRPoll();
 static void UpdateSRState(bool SRrw);
 
-/* SW RAM board */
+// SW RAM board
 bool SWRAMBoardEnabled = false;
 
-/* My raw VIA state */
+// My raw VIA state
 VIAState UserVIAState;
 
 /*--------------------------------------------------------------------------*/
+
+static void WriteToPrinter(unsigned char Value);
+
+/*--------------------------------------------------------------------------*/
+
 static void UpdateIFRTopBit()
 {
 	/* Update top bit of IFR */
@@ -122,25 +128,7 @@ void UserVIAWrite(int Address, unsigned char Value)
 
 			if (PrinterEnabled)
 			{
-				if (PrinterFileHandle != nullptr)
-				{
-					if (fputc(UserVIAState.ora, PrinterFileHandle) == EOF)
-					{
-						mainWin->Report(MessageType::Error,
-						                "Failed to write to printer file:\n  %s", PrinterFileName);
-					}
-					else
-					{
-						fflush(PrinterFileHandle);
-						SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
-					}
-				}
-				else
-				{
-					// Write to clipboard
-					mainWin->CopyKey(UserVIAState.ora);
-					SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
-				}
+				WriteToPrinter(UserVIAState.ora);
 			}
 			break;
 
@@ -619,29 +607,32 @@ static void ClosePrinterOutputFile()
 
 /*-------------------------------------------------------------------------*/
 
-void PrinterEnable(const char *FileName)
+bool PrinterEnable(const char *FileName)
 {
 	ClosePrinterOutputFile();
 
-	if (FileName == nullptr)
+	if (FileName != nullptr)
 	{
 		PrinterEnabled = true;
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
-		return;
+		return true;
 	}
 
-	strcpy(PrinterFileName, FileName);
+	PrinterFileName = FileName;
 
-	PrinterFileHandle = fopen(FileName, "wb");
+	PrinterFileHandle = fopen(PrinterFileName.c_str(), "wb");
 
 	if (PrinterFileHandle == nullptr)
 	{
-		mainWin->Report(MessageType::Error, "Failed to open printer:\n  %s", PrinterFileName);
+		mainWin->Report(MessageType::Error,
+		                "Failed to open printer:\n  %s", PrinterFileName.c_str());
+		return false;
 	}
 	else
 	{
 		PrinterEnabled = true;
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+		return true;
 	}
 }
 
@@ -665,6 +656,34 @@ void PrinterPoll()
 	// The CA1 interrupt is not always picked up,
 	// set up a trigger just in case.
 	SetTrigger(100000, PrinterTrigger);
+}
+
+/*--------------------------------------------------------------------------*/
+
+static void WriteToPrinter(unsigned char Value)
+{
+	if (PrinterFileHandle != nullptr)
+	{
+		if (fputc(Value, PrinterFileHandle) == EOF)
+		{
+			mainWin->Report(MessageType::Error,
+			                "Failed to write to printer file:\n  %s", PrinterFileName.c_str());
+
+			fclose(PrinterFileHandle);
+			PrinterFileHandle = nullptr;
+		}
+		else
+		{
+			fflush(PrinterFileHandle);
+			SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+		}
+	}
+	else
+	{
+		// Write to clipboard
+		mainWin->PrintChar(Value);
+		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+	}
 }
 
 /*--------------------------------------------------------------------------*/

@@ -114,7 +114,7 @@ INT_PTR SerialPortDialog::DlgProc(UINT   nMessage,
 
 				bool bSuccess = ParseNumber(Port, &m_IPPort);
 
-				if (!bSuccess || m_IPPort > 65535)
+				if (!bSuccess || m_IPPort < 0 || m_IPPort > 65535)
 				{
 					mainWin->Report(MessageType::Error, "Please enter a valid port number");
 					SetDlgItemFocus(IDC_IP_PORT);
