@@ -679,10 +679,6 @@ public:
 	LPDIRECT3DTEXTURE9 m_pTexture;
 	D3DXMATRIX m_TextureMatrix;
 
-	// Audio
-	int m_SampleRate;
-	int m_SoundVolume;
-
 	// Joystick input
 	bool m_JoystickCaptured;
 	JOYCAPS m_JoystickCaps;

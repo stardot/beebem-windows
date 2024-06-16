@@ -227,10 +227,6 @@ BeebWin::BeebWin()
 	m_pTexture = nullptr;
 	ZeroMemory(&m_TextureMatrix, sizeof(m_TextureMatrix));
 
-	// Audio
-	m_SampleRate = 44100;
-	m_SoundVolume = 100;
-
 	// Joystick input
 	m_JoystickCaptured = false;
 	ZeroMemory(&m_JoystickCaps, sizeof(m_JoystickCaps));
@@ -1439,9 +1435,9 @@ void BeebWin::UpdateSoundStreamerMenu()
 
 void BeebWin::SetSoundSampleRate(int SampleRate)
 {
-	if (SampleRate != m_SampleRate)
+	if (SampleRate != SoundSampleRate)
 	{
-		m_SampleRate = SampleRate;
+		SoundSampleRate = SampleRate;
 
 		UpdateSoundSampleRateMenu();
 
@@ -1476,7 +1472,7 @@ void BeebWin::UpdateSoundSampleRateMenu()
 
 	for (int i = 0; i < _countof(MenuItems); i++)
 	{
-		if (m_SampleRate == MenuItems[i].SampleRate)
+		if (SoundSampleRate == MenuItems[i].SampleRate)
 		{
 			SelectedMenuItemID = MenuItems[i].ID;
 			break;
@@ -1490,9 +1486,9 @@ void BeebWin::UpdateSoundSampleRateMenu()
 
 void BeebWin::SetSoundVolume(int Volume)
 {
-	if (Volume != m_SoundVolume)
+	if (Volume != SoundVolume)
 	{
-		m_SoundVolume = Volume;
+		SoundVolume = Volume;
 
 		UpdateSoundVolumeMenu();
 	}
@@ -1512,7 +1508,7 @@ void BeebWin::UpdateSoundVolumeMenu()
 
 	for (int i = 0; i < _countof(MenuItems); i++)
 	{
-		if (m_SoundVolume == MenuItems[i].Volume)
+		if (SoundVolume == MenuItems[i].Volume)
 		{
 			SelectedMenuItemID = MenuItems[i].ID;
 			break;
