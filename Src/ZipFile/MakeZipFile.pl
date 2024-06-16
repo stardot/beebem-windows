@@ -68,6 +68,7 @@ my @files = (
     'UserData/BeebFile/ViewTrilogy-64k.rom',
     'UserData/BeebFile/WappingEditor-1.30.rom',
     'UserData/BeebFile/Z80.rom',
+    'UserData/BeebFile/Z80-1.20.rom',
     'UserData/BeebState/.keep',
     'UserData/Default.kmap',
     'UserData/DefaultUser.kmap',
