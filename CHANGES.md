@@ -38,6 +38,7 @@ Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher
   - Improved tape input data carrier detect emulation.
   - Tape state is now preserved when loading and saving savestate files,
     for both UEF and CSW files.
+  - Fixed loading CSW files from the command line.
 * Added Set Keyboard Links command, which allows you to change the default
   screen mode and other options (Model B/B+ only).
 * Fixed installer to not delete Econet and key map config files.
@@ -66,12 +67,17 @@ Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher
   parameters for compatibility with both IBOS1.26 and the original
   Computech IBOS1.20 / 1.20P ROMs. IBOS1.26 is now the default IBOS
   ROM, and Watford DFS has been replaced by Acorn DNFS, in Roms.cfg.
+* Replaced the Acorn Z80 Co-processor ROM with Jonathan Harston's patched
+  version 1.21, which includes a number of bug fixes.
 * Rewrote the Master 146818 RTC and CMOS emulation.
 * Improved the User Port real time clock (SAF3019P) emulation. Thanks to
   Ian Wolstenholme for confirming the register write behaviour.
 * Fixed the DirectX9 graphics renderer, where BeebEm would revert to GDI
   rendering after the host PC resumes from being suspended or in some cases
   enter a loop continually resetting the screen mode on entering full screen.
+* Fixed sound register reinitialisation after changing the sound sample rate.
+* Fixed printing to the Windows clipboard, which would previously cause the
+  emulator to slow down or stall.
 * Lots of help documentation improvements.
 
 Version 4.19 (1 May 2023)
