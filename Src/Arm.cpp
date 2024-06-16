@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -62,7 +62,7 @@ CArm::InitResult CArm::init(const char *ROMPath)
 			int index = (rotate<<8) | immediate;
 
 			immediateValue[index] = rorOperator(immediate, rotate<<1);
-			
+
 			// should carry be set
 			if( getBit(immediateValue[index], 31) )
 			{
@@ -141,7 +141,7 @@ CArm::InitResult CArm::init(const char *ROMPath)
 	trace = 0;
 
 	WriteLog("init_arm()\n");
-	
+
 	// load file into test memory
 	FILE *ROMFile = fopen(ROMPath, "rb");
 
@@ -154,7 +154,7 @@ CArm::InitResult CArm::init(const char *ROMPath)
 	{
 		return InitResult::FileNotFound;
 	}
-	
+
 	memset(ramMemory, 0, 0x400000);
 	memcpy(ramMemory, romMemory, 0x4000);
 
@@ -173,20 +173,20 @@ void CArm::exec(int count)
 	uint32 ci;
 	char disassembly[256];
 	char addressS[64];
-	
+
 	while (count > 0)
 	{
 		if (trace)
 		{
 			uint32 val;
 			readWord(0xc50c, val);
-		
+
 			if (prefetchInvalid)
 			{
 				(void) readWord(pc, ci);
 
 				Arm_disassemble(pc, ci, disassembly);
-		
+
 				sprintf(addressS, "0x%08x : %02x %02x %02x %02x ", pc,
 						ci & 0xff, (ci >> 8) & 0xff, (ci >> 16) & 0xff, (ci >> 24) & 0xff );
 
@@ -202,7 +202,7 @@ void CArm::exec(int count)
 			}
 
 			WriteLog(" r0 = %08x r1 = %08x r2 = %08x r3 = %08x r4 = %08x r5 = %08x r6 = %08x r7 = %08x r8 = %08x : ",
-					 getRegister(0), getRegister(1), getRegister(2), getRegister(3), getRegister(4), 
+					 getRegister(0), getRegister(1), getRegister(2), getRegister(3), getRegister(4),
 					 getRegister(5), getRegister(6), getRegister(7), getRegister(8));
 
 			WriteLog("%s : %08x : %s\n", addressS, val, disassembly);
@@ -214,7 +214,7 @@ void CArm::exec(int count)
 		// {
 		//	trace = 100;
 		// }
-	
+
 		run();
 		count--;
 	}
@@ -275,7 +275,7 @@ void CArm::run()
 	}
 
 	// prefetched instruction becomes the current instruction
-	currentInstruction = prefetchInstruction;	
+	currentInstruction = prefetchInstruction;
 	// prefetch next instruction
 	if( !readWord(pc, prefetchInstruction) )
 	{
@@ -285,7 +285,7 @@ void CArm::run()
 
 	// increment total instruction executed counter
 	executionCount++;
-	
+
 	if(dynamicProfilingConditionalExecution)
 		dynamicProfilingConditionalExe(currentInstruction);
 
@@ -325,7 +325,7 @@ void CArm::run()
 				else
 				{
 					// andS rd, rn, rm
-					setDestinationS( andOperatorS( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2S()) ); 
+					setDestinationS( andOperatorS( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2S()) );
 				}
 				break;
 			}
@@ -361,7 +361,7 @@ void CArm::run()
 				}
 				break;
 			}
-			// sub rd, rn, rm 
+			// sub rd, rn, rm
 			case 0x04:
 			{
 				setDestination( subOperator( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2() ) );
@@ -373,7 +373,7 @@ void CArm::run()
 				setDestinationS( subOperatorS( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2() ) );
 				break;
 			}
-			// rsb rd, rn, rm 
+			// rsb rd, rn, rm
 			case 0x06:
 			{
 				// note reversal of operand 1 and 2
@@ -386,7 +386,7 @@ void CArm::run()
 				setDestinationS( subOperatorS( getDataProcessingRegisterOperand2(), getDataProcessingRegisterOperand1() ) );
 				break;
 			}
-			// add rd, rn, rm 
+			// add rd, rn, rm
 			case 0x08:
 			{
 				setDestination( addOperator( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2() ) );
@@ -410,7 +410,7 @@ void CArm::run()
 				setDestinationS( adcOperatorS( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2() ) );
 				break;
 			}
-			// sbc rd, rn, rm 
+			// sbc rd, rn, rm
 			case 0x0C:
 			{
 				setDestination( sbcOperator( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2() ) );
@@ -477,7 +477,7 @@ void CArm::run()
 				// ARM6 - MSR
 				break;
 			}
-			// teqP (PSR), rn, rm 
+			// teqP (PSR), rn, rm
 			// teq rn, rm
 			case 0x13:
 			{
@@ -527,7 +527,7 @@ void CArm::run()
 					(void)subOperatorS( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2() );
 				}
 				break;
-				
+
 			}
 			// cmn rd, rn, rm - NOP
 			case 0x16:
@@ -536,7 +536,7 @@ void CArm::run()
 				// ARM6 - MSR
 				break;
 			}
-			// cmnP (PSR), rn, rm 
+			// cmnP (PSR), rn, rm
 			// cmn rn, rm
 			case 0x17:
 			{
@@ -553,7 +553,7 @@ void CArm::run()
 				}
 				break;
 			}
-			// orr rd, rn, rm 
+			// orr rd, rn, rm
 			case 0x18:
 			{
 				setDestination( orrOperator( getDataProcessingRegisterOperand1(), getDataProcessingRegisterOperand2() ) );
@@ -584,7 +584,7 @@ void CArm::run()
 				setDestinationS( value );
 				break;
 			}
-			// bic rd, rn, rm 
+			// bic rd, rn, rm
 			case 0x1C:
 			{
 				// and with inverted operand2
@@ -597,7 +597,7 @@ void CArm::run()
 				setDestinationS( andOperatorS( getDataProcessingRegisterOperand1(), ~getDataProcessingRegisterOperand2S() ) );
 				break;
 			}
-			// mvn rd, rn, rm 
+			// mvn rd, rn, rm
 			case 0x1E:
 			{
 				setDestination( ~getDataProcessingRegisterOperand2() );
@@ -638,7 +638,7 @@ void CArm::run()
 				setDestinationS( eorOperatorS( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2S() ) );
 				break;
 			}
-			// sub rd, rn, imm 
+			// sub rd, rn, imm
 			case 0x24:
 			{
 				setDestination( subOperator( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2() ) );
@@ -650,25 +650,25 @@ void CArm::run()
 				setDestinationS( subOperatorS( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2() ) );
 				break;
 			}
-			// rsb rd, rn, imm 
+			// rsb rd, rn, imm
 			case 0x26:
 			{
 				setDestination( subOperator( getDataProcessingImmediateOperand2(), getDataProcessingImmediateOperand1() ) );
 				break;
 			}
-			// rsbS rd, rn, imm 
+			// rsbS rd, rn, imm
 			case 0x27:
 			{
 				setDestinationS( subOperatorS( getDataProcessingImmediateOperand2(), getDataProcessingImmediateOperand1() ) );
 				break;
 			}
-			// add rd, rn, imm 
+			// add rd, rn, imm
 			case 0x28:
 			{
 				setDestination( addOperator( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2() ) );
 				break;
 			}
-			// addS rd, rn, imm 
+			// addS rd, rn, imm
 			case 0x29:
 			{
 				setDestinationS( addOperatorS( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2() ) );
@@ -751,7 +751,7 @@ void CArm::run()
 				else
 				{
 					// tst rn, imm
-					(void)eorOperatorS( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2S() ); 
+					(void)eorOperatorS( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2S() );
 				}
 
 				break;
@@ -785,7 +785,7 @@ void CArm::run()
 				// S flag (bit 20) not set so NOP
 				break;
 			}
-			// cmnP (PSR), rn, imm 
+			// cmnP (PSR), rn, imm
 			// cmn rn, imm
 			case 0x37:
 			{
@@ -817,7 +817,7 @@ void CArm::run()
 			// mov rd, rn, imm		(rn is ignored)
 			case 0x3A:
 			{
-				// literally just fetch operand and set the destination to it 
+				// literally just fetch operand and set the destination to it
 				setDestination( getDataProcessingImmediateOperand2() );
 				break;
 			}
@@ -865,7 +865,7 @@ void CArm::run()
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
 				uint32 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
-				
+
 				// if str performed ok
 				if( performDataTransferStoreWord(baseAddress, storeValue) )
 				{
@@ -900,7 +900,7 @@ void CArm::run()
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
 				uint32 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
-				
+
 				clearTrans();
 
 				// if str performed ok
@@ -933,12 +933,12 @@ void CArm::run()
 				{
 					// update base address
 					setRegisterWithPrefetch(rn, baseAddress - getDataTransferValueImmediate() );
-					
+
 					if(processorMode != USR_MODE)
 					{
 						setTrans();
 					}
-					
+
 					// set register value
 					setRegisterWithPrefetch(rd, location);
 				}
@@ -1021,17 +1021,17 @@ void CArm::run()
 				{
 					// then update base register
 					setRegisterWithPrefetch(rn, baseAddress - getDataTransferValueImmediate() );
-				
+
 					if(processorMode != USR_MODE)
 					{
 						setTrans();
 					}
-				
+
 					setRegisterWithPrefetch(rd, location);
 				}
 				break;
 			}
-			
+
 			// repeats opcodes 0x40 - 0x47 except that immediate offset is added rather
 			// than subtracted from the base register
 
@@ -1042,7 +1042,7 @@ void CArm::run()
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
 				uint32 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
-				
+
 				// if str performed ok
 				if( performDataTransferStoreWord(baseAddress, storeValue) )
 				{
@@ -1077,7 +1077,7 @@ void CArm::run()
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
 				uint32 storeValue = getRegisterWithPSRAndPipelining( getField(currentInstruction, 12, 15));
-				
+
 				clearTrans();
 
 				// if str performed ok
@@ -1109,12 +1109,12 @@ void CArm::run()
 				{
 					// update base address
 					setRegisterWithPrefetch(rn, baseAddress + getDataTransferValueImmediate() );
-					
+
 					if(processorMode != USR_MODE)
 					{
 						setTrans();
 					}
-					
+
 					// set register value
 					setRegisterWithPrefetch(rd, location);
 				}
@@ -1164,7 +1164,7 @@ void CArm::run()
 				uint32 baseAddress = getRegister( rn ); // get base address from rn
 				// get value to store from rd
 				uint8 storeValue = (uint8)getRegisterWithPSRAndPipelining(getField(currentInstruction, 12, 15));
-				
+
 				clearTrans();
 
 				// if str performed ok
@@ -1197,12 +1197,12 @@ void CArm::run()
 				{
 					// then update base register
 					setRegisterWithPrefetch(rn, baseAddress + getDataTransferValueImmediate() );
-				
+
 					if(processorMode != USR_MODE)
 					{
 						setTrans();
 					}
-				
+
 					setRegisterWithPrefetch(rd, location);
 				}
 				break;
@@ -1456,7 +1456,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn);
-			
+
 				clearTrans();
 
 				if( performDataTransferStoreWord( address, getRegisterWithPSRAndPipelining(rd) ) )
@@ -1481,7 +1481,7 @@ void CArm::run()
 				uint rd = getField(currentInstruction, 12, 15); // get register to load to
 				uint32 address = getRegister(rn);
 				uint32 location;
-				
+
 				clearTrans();
 
 				if( performDataTransferLoadWord( address, location) )
@@ -1542,7 +1542,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn);
-				
+
 				clearTrans();
 
 				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
@@ -1567,7 +1567,7 @@ void CArm::run()
 				uint rd = getField(currentInstruction, 12, 15); // get register to load to
 				uint32 address = getRegister(rn);
 				uint8 location;
-				
+
 				clearTrans();
 
 				if( performDataTransferLoadByte( address, location) )
@@ -1631,7 +1631,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn);
-				
+
 				clearTrans();
 
 				if( performDataTransferStoreWord( address, getRegisterWithPSRAndPipelining(rd) ) )
@@ -1656,7 +1656,7 @@ void CArm::run()
 				uint rd = getField(currentInstruction, 12, 15); // get register to load to
 				uint32 address = getRegister(rn);
 				uint32 location;
-				
+
 				clearTrans();
 
 				if( performDataTransferLoadWord( address, location) )
@@ -1717,7 +1717,7 @@ void CArm::run()
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
 				uint32 address = getRegister(rn);
-				
+
 				clearTrans();
 
 				if (performDataTransferStoreByte(address, (uint8)getRegisterWithPSRAndPipelining(rd)))
@@ -1742,7 +1742,7 @@ void CArm::run()
 				uint rd = getField(currentInstruction, 12, 15); // get register to load to
 				uint32 address = getRegister(rn);
 				uint8 location;
-				
+
 				clearTrans();
 
 				if( performDataTransferLoadByte( address, location) )
@@ -2437,7 +2437,7 @@ void CArm::run()
 				{
 					setRegisterWithPrefetch(rn, address - coprocessorDataTransferOffset() );
 				}
-				
+
 				if( processorMode != USR_MODE )
 				{
 					setTrans();
@@ -2499,7 +2499,7 @@ void CArm::run()
 				{
 					setRegisterWithPrefetch(rn, address + coprocessorDataTransferOffset() );
 				}
-				
+
 				if( processorMode != USR_MODE )
 				{
 					setTrans();
@@ -2605,7 +2605,7 @@ void CArm::run()
 				}
 				break;
 			}
-		
+
 			// MRC
 			// CDO
 			case 0xE0:
@@ -2653,7 +2653,7 @@ void CArm::run()
 				break;
 				break;
 			}
-			
+
 			// software interrupt
 			case 0xF0:
 			case 0xF1:
@@ -2696,7 +2696,7 @@ void CArm::run()
 				exceptionSoftwareInterrupt();
 				break;
 			}
-			
+
 			default :	// ??? DISPLAY ERROR MESSAGE - I'VE MISSED OUT AN INSTRUCTION CASE
 						WriteLog("ERROR UNKNOWN OPCODE %02x\n", getField(currentInstruction, 20, 27) );
 						break;
@@ -2710,7 +2710,7 @@ void CArm::run()
 		pc = getRegister(15);
 		// adjust PC but don't change prefetch
 		setRegister( 15, (getRegister(15) + 8) & PC_MASK );
-		
+
 		prefetchInvalid = false;
 
 		if( !readWord(pc, prefetchInstruction) )
@@ -2780,19 +2780,19 @@ inline bool CArm::executeConditionally(uint32 instruction)
 		0x0f0f,		// NE,	0000111100001111 x0xx
 		0xcccc,		// CS,  1100110011001100 xx1x
 		0x3333,		// CC,	0011001100110011 xx0x
-		0xff00,		// MI,	1111111100000000 1xxx 
+		0xff00,		// MI,	1111111100000000 1xxx
 		0x00ff,		// PL,	0000000011111111 0xxx
 		0xaaaa,		// VS,  1010101010101010 xxx1
 		0x5555,		// VC,  0101010101010101 xxx0
 		0x0c0c,		// HI,  0000110000001100 x01x
 		0xf3f3,		// LS,  1111001111110011 xx0x or x1xx
-		0xaa55,		// GE,	1010101001010101 1xx1 or 0xx0 
-		0x55aa,		// LT,	0101010110101010 1xx0 or 0xx1 
+		0xaa55,		// GE,	1010101001010101 1xx1 or 0xx0
+		0x55aa,		// LT,	0101010110101010 1xx0 or 0xx1
 		0x0a05,		// GT,	0000101000000101 10x1 or 00x0
 		0xf5fa,		// LE,  1111010111111010 1xx0 or 0xx1 or x1xx
-		0xffff,		// AL,	1111111111111111 1111 
-		0x0000,		// NV,	0000000000000000 0000 
-	}; 
+		0xffff,		// AL,	1111111111111111 1111
+		0x0000,		// NV,	0000000000000000 0000
+	};
 
 	return getBit(test[instruction>>28], conditionFlags);
 	*/
@@ -2891,7 +2891,7 @@ inline void CArm::performMulS()
 
 			// update N and Z flags
 			updateNZFlags(result);
-		}	
+		}
 	}
 	// if rd is 15 then nothing happens
 }
@@ -2917,7 +2917,7 @@ inline void CArm::performMla()
 			uint rn = getField(currentInstruction, 12, 15);
 			// get register number of second multiplicand
 			uint rs = getField(currentInstruction, 8, 11);
-			
+
 			uint32 result = ( getRegisterWithPSRAndPipelining(rm) * getRegister(rs) ) + getRegisterWithPSR(rn);
 
 			setRegister(rd, result);
@@ -2953,7 +2953,7 @@ inline void CArm::performMlaS()
 			uint rn = getField(currentInstruction, 12, 15);
 			// get register number of second multiplicand
 			uint rs = getField(currentInstruction, 8, 11);
-						
+
 			uint32 result = ( getRegisterWithPSRAndPipelining(rm) * getRegister(rs) ) + getRegisterWithPSR(rn);
 
 			updateNZFlags(result);
@@ -2981,7 +2981,7 @@ inline void CArm::performBranch()
 // of semaphores.
 inline void CArm::performSingleDataSwapWord()
 {
-	
+
 	uint32 rn = getField(currentInstruction,16,19);	// address in memory to read value from
 	// get address to read from and write to
 	uint32 address = getRegisterWithPSR(rn);
@@ -3001,7 +3001,7 @@ inline void CArm::performSingleDataSwapWord()
 			if( writeWord(address, writeValue) )
 			{
 				// get register to store value to
-				uint32 rd = getField(currentInstruction,12,15);	
+				uint32 rd = getField(currentInstruction,12,15);
 				// update destination register
 				setRegisterWithPrefetch(rd, readValue);
 			}
@@ -3025,7 +3025,7 @@ inline void CArm::performSingleDataSwapWord()
 		exceptionAddress();
 		return;
 	}
-	
+
 }
 
 // single data swap for byte
@@ -3124,7 +3124,7 @@ inline uint32 CArm::addOperator(uint32 operand1, uint32 operand2)
 inline uint32 CArm::addOperatorS(uint32 operand1, uint32 operand2)
 {
 	uint32 result = operand1 + operand2;
-	
+
 	updateAddFlags(operand1, operand2, result);
 
 	return result;
@@ -3201,7 +3201,7 @@ inline uint32 CArm::sbcOperatorS(uint32 operand1, uint32 operand2)
 
 	// if operand1 >= operand2 and the top bit of either operand was set
 	updateSubFlags(operand1, operand2, result);
-	
+
 	return result;
 }
 
@@ -3282,7 +3282,7 @@ inline uint32 CArm::getDataProcessingRegisterOperand2()
 {
 	// get register number to be shifted
 	uint32 rm = getField(currentInstruction, 0, 3);
-	
+
 	// if there's no shift specified (as commonly happens) then don't go through all the steps
 	// just return the specified register value
 	if( !getField(currentInstruction,4,11) )
@@ -3297,7 +3297,7 @@ inline uint32 CArm::getDataProcessingRegisterOperand2()
 		uint8 shiftAmount = getRegister(rs) & 0xff;
 		// get register value to be shifted
 		uint32 regValue = getRegisterWithPSRAndPipelining(rm);
-		
+
 		if(shiftAmount == 0)
 		{
 			// nothing happens
@@ -3314,7 +3314,7 @@ inline uint32 CArm::getDataProcessingRegisterOperand2()
 				case ROR : return rorOperator(regValue, shiftAmount); break;
 			}
 		}
-		else	
+		else
 		{
 			// shiftAmount >= 32
 			// switch on shift type
@@ -3328,7 +3328,7 @@ inline uint32 CArm::getDataProcessingRegisterOperand2()
 				{
 					return 0; break;
 				}
-				case ASR : 
+				case ASR :
 				{
 					return asrOperator(regValue, 31); break;
 				}
@@ -3386,12 +3386,12 @@ inline uint32 CArm::getDataProcessingRegisterOperand2S()
 {
 	// get register number to be shifted
 	uint32 rm = getField(currentInstruction, 0, 3);
-	
+
 	// if there's no shift specified (as commonly happens) then don't go through all the steps
 	// just return the specified register value
 	if( !getField(currentInstruction, 4, 11) )
 		return getRegisterWithPSR(rm);
-	
+
 	uint32 carry = 0;
 	uint32 result = 0;
 
@@ -3402,10 +3402,10 @@ inline uint32 CArm::getDataProcessingRegisterOperand2S()
 		uint rs = getField(currentInstruction, 8, 11);
 		// get shift amount
 		uint8 shiftAmount = getRegister(rs) & 0xff;
-		
+
 		// get register value to be shifted pipelining effect
 		uint32 regValue = getRegisterWithPSRAndPipelining(rm);
-		
+
 		if( shiftAmount == 0 )
 		{
 			// has no effect
@@ -3435,7 +3435,7 @@ inline uint32 CArm::getDataProcessingRegisterOperand2S()
 					case ROR : carry = getBit(regValue, 31); result = regValue; break;
 				}
 			}
-			else 
+			else
 			{
 				// shift < 32
 				switch( getField(currentInstruction, 5, 6) )
@@ -3695,7 +3695,7 @@ inline bool CArm::readWord(uint32 address, uint32& destination)
 {
 	// read word at address into destination, return TRUE if ok
 	uint32 value = 0;
-	
+
 	if (address < 0x1000000)
 	{
 		value |= ramMemory[(address & 0x3fffff)];
@@ -3753,7 +3753,7 @@ inline bool CArm::readByte(uint32 address, uint8 &destination)
 {
 	// read word at address into destination, return TRUE if ok
 	uint32 value = 0;
-	
+
 	if (address < 0x1000000)
 	{
 		value |= ramMemory[(address & 0x3fffff)];
@@ -3788,15 +3788,15 @@ inline bool CArm::writeByte(uint32 address, uint8 value)
 /*
 		if ( ( (value & 0xff) == 0) && (address == 0xc501) )
 		{
-	
+
 			uint32 val;
 			readWord(0xc500, val);
-	
+
 			WriteLog("Write 0 to 0xc501 - %08x\n", val);
 			trace = 10;
 		}
 */
-		
+
 		ramMemory[(address & 0x3fffff)] = value & 0xff;
 
 //		if ((value & 0xff) == 255)
@@ -3810,7 +3810,7 @@ inline bool CArm::writeByte(uint32 address, uint8 value)
 
 	if ((address & ~0x1f) == 0x1000000)
 	{
-//		WriteLog("Write byte %02x (%c) to tube %08x, reg %d\n", value, 
+//		WriteLog("Write byte %02x (%c) to tube %08x, reg %d\n", value,
 //			((value & 127) > 31) && ((value & 127) != 127) ? value & 127 : '.',
 //			address, (address & 0x1c) >> 2);
         WriteTubeFromParasiteSide((address & 0x1c) >> 2, value);
@@ -3874,7 +3874,7 @@ inline bool CArm::performBlockDataTransferStore(uint rn, uint32 initialAddress, 
 		// ??? again rn is highly unlikely to be r15 and result is unpredictable anyway
 		if(rn != 15)
 			setRegister(rn, finalAddress);
-	
+
 		// store all the remaining registers if specified
 		index++;					// update index to next bit to check
 		for( ; index<15; index++)	// intentionally uninitialised
@@ -3910,7 +3910,7 @@ inline bool CArm::performBlockDataTransferStore(uint rn, uint32 initialAddress, 
 		// has no noticable effect on emulation quality
 		//if (rn != 15)
 		//	setRegister(rn, finalAddress);
-		
+
 		exceptionAddress();
 		return false;
 	}
@@ -3960,7 +3960,7 @@ inline bool CArm::performBlockDataTransferStoreS(uint rn, uint32 initialAddress,
 		if(rn != 15 && getBit(currentInstruction,21) )
 			setRegister(rn, finalAddress);
 		// ??? again rn is highly unlikely to be r15 and result is unpredictable anyway
-		
+
 		if(!dataAbortOccurred)
 		{
 			// update index to next bit to check
@@ -4009,7 +4009,7 @@ inline bool CArm::performBlockDataTransferStoreS(uint rn, uint32 initialAddress,
 		// 000
 		//if (rn != 15)
 		//	setRegister(rn, finalAddress);
-		
+
 		exceptionAddress();
 		return false;
 	}
@@ -4065,7 +4065,7 @@ inline bool CArm::performBlockDataTransferLoad(uint rn, uint32 initialAddress, u
 		// 000
 		//if (rn != 15)
 		//	setRegister(rn, finalAddress);
-		
+
 		exceptionAddress();
 		return false;
 	}
@@ -4131,7 +4131,7 @@ inline bool CArm::performBlockDataTransferLoadS(uint rn, uint32 initialAddress, 
 					}
 
 					break; // get out of loop
-					
+
 				}
 				// if load was ok then update value read to appropriate register
 				setRegister(index, location);
@@ -4260,7 +4260,7 @@ inline void CArm::setProcessorMode(uint newMode)
 		switch(newMode)
 		{
 			case USR_MODE:
-			{	
+			{
 				// change r13
 				oldR[13] = r[13];
 				r[13] = usrR[13];
@@ -4268,7 +4268,7 @@ inline void CArm::setProcessorMode(uint newMode)
 				oldR[14] = r[14];
 				r[14] = usrR[14];
 				break;
-			}	
+			}
 			case FIQ_MODE:
 			{
 				// change r13
@@ -4277,7 +4277,7 @@ inline void CArm::setProcessorMode(uint newMode)
 				// change r14
 				oldR[14] = r[14];
 				r[14] = fiqR[14];
-				
+
 				// save out user r8-r12 and copy in fiq r8-r12
 				// no need to check if fiq regs are already visible, as we already know
 				// that the previous mode != FIQ_MODE
@@ -4480,13 +4480,13 @@ inline uint CArm::getConditionFlag(uint32 flagValue)
 inline void CArm::updateNZFlags(uint32 value)
 {
 	clearConditionFlags( N_FLAG | Z_FLAG );
-	
+
 	// check N and Z flags
 	if(value == 0)
 	{
 		setConditionFlags(Z_FLAG);
 	}
-	else 
+	else
 	{
 		if( getNegative(value) )
 		{
@@ -4521,7 +4521,7 @@ inline void CArm::updateSubFlags(uint32 operand1, uint32 operand2, uint32 result
 	{
 		setConditionFlags(Z_FLAG);
 	}
-	else 
+	else
 	{
 		if( getNegative(result) )
 		{
@@ -4561,7 +4561,7 @@ inline void CArm::updateAddFlags(uint32 operand1, uint32 operand2, uint32 result
 	{
 		setConditionFlags(Z_FLAG);
 	}
-	else 
+	else
 	{
 		if( getNegative(result) )
 		{
@@ -4637,7 +4637,7 @@ inline void CArm::exceptionUndefinedInstruction()
 	// copy PC and PSR from r15 to r14 (link register)
 	// adjust PC -4
 	setRegister(14, (getRegister(15) - 4) | psrCopy );
-	
+
 	// jump to address exception vector
 	setRegisterWithPrefetch(15, UNDEFINED_INSTRUCTION_VECTOR);
 
@@ -4656,7 +4656,7 @@ inline void CArm::exceptionSoftwareInterrupt()
 	// copy PC and PSR from r15 to r14 (link register)
 	// adjust PC -4
 	setRegister(14, (getRegister(15) - 4) | psrCopy );
-	
+
 	// jump to address exception vector
 	setRegisterWithPrefetch(15, SOFTWARE_INTERRUPT_VECTOR);
 
@@ -4694,7 +4694,7 @@ inline void CArm::exceptionDataAbort()
 	// copy PC and PSR from r15 to r14 (link register)
 	//  note from RS, PC does not need adjusting - 4
 	setRegister(14, getRegister(15) | psrCopy );
-	
+
 	// jump to vector
 	setRegisterWithPrefetch(15, DATA_ABORT_VECTOR);
 
@@ -4714,7 +4714,7 @@ inline void CArm::exceptionInterruptRequest()
 	// copy PC and PSR from r15 to r14 (link register)
 	// adjust PC -4
 	setRegister(14, (getRegister(15) - 4) | psrCopy );
-	
+
 	// jump to vector
 	setRegisterWithPrefetch(15, INTERRUPT_REQUEST_VECTOR);
 
@@ -4733,12 +4733,12 @@ inline void CArm::exceptionFastInterruptRequest()
 	// copy PC and PSR from r15 to r14 (link register)
 	// adjust PC -4
 	setRegister(14, (getRegister(15) - 4) | psrCopy );
-	
+
 	// jump to vector
 	setRegisterWithPrefetch(15, FAST_INTERRUPT_REQUEST_VECTOR);
 
 	if(dynamicProfilingExceptionFreq)
-		dynamicProfilingExceptionFrequency("FIQ Exception", fiqCounter);	
+		dynamicProfilingExceptionFrequency("FIQ Exception", fiqCounter);
 }
 
 // only occurs on 26 bit architectures
@@ -4754,7 +4754,7 @@ inline void CArm::exceptionAddress()
 	// copy PC and PSR from r15 to r14 (link register)
 	// adjust PC -4
 	setRegister(14, (getRegister(15) - 4) | psrCopy );
-	
+
 	// jump to vector
 	setRegisterWithPrefetch(15, ADDRESS_EXCEPTION_VECTOR);
 
@@ -4810,7 +4810,7 @@ inline bool CArm::coprocessorRegisterTransferRead()
 	return false;
 }
 
-// perform a data operation (e.g. logic/arithmetic) on the coprocessor 
+// perform a data operation (e.g. logic/arithmetic) on the coprocessor
 inline bool CArm::coprocessorDataOperation()
 {
 	// uint coprocessorNumber = getField(currentInstruction, 8, 11);
@@ -4909,68 +4909,68 @@ void CArm::dynamicProfilingCoprocessorUsage(uint32 instruction)
 
 void CArm::SaveState(FILE* SUEF)
 {
-	fput32(pc, SUEF);
-	fputc(processorMode, SUEF);
-	fputc(interruptDisableFlag, SUEF);
-	fputc(fastInterruptDisableFlag, SUEF);
-	fputc(conditionFlags, SUEF);
-	fputc(prefetchInvalid, SUEF);
-	fput32(prefetchInstruction, SUEF);
-	fput32(currentInstruction, SUEF);
+	UEFWrite32(pc, SUEF);
+	UEFWrite8(processorMode, SUEF);
+	UEFWrite8(interruptDisableFlag, SUEF);
+	UEFWrite8(fastInterruptDisableFlag, SUEF);
+	UEFWrite8(conditionFlags, SUEF);
+	UEFWrite8(prefetchInvalid, SUEF);
+	UEFWrite32(prefetchInstruction, SUEF);
+	UEFWrite32(currentInstruction, SUEF);
 
 	for (int i = 0; i < 16; i++)
 	{
-		fput32(r[i], SUEF);
+		UEFWrite32(r[i], SUEF);
 	}
 
 	for (int i = 0; i < 16; i++)
 	{
-		fput32(usrR[i], SUEF);
+		UEFWrite32(usrR[i], SUEF);
 	}
 
 	for (int i = 0; i < 16; i++)
 	{
-		fput32(svcR[i], SUEF);
+		UEFWrite32(svcR[i], SUEF);
 	}
 
 	for (int i = 0; i < 16; i++)
 	{
-		fput32(irqR[i], SUEF);
+		UEFWrite32(irqR[i], SUEF);
 	}
 
-	fwrite(ramMemory, 1, sizeof(ramMemory), SUEF);
+	UEFWriteBuf(ramMemory, sizeof(ramMemory), SUEF);
 }
 
 void CArm::LoadState(FILE* SUEF)
 {
-	pc = fget32(SUEF);
-	processorMode = fget8(SUEF);
-	interruptDisableFlag = fget8(SUEF);
-	fastInterruptDisableFlag = fget8(SUEF);
-	conditionFlags = fget8(SUEF);
-	prefetchInvalid = fgetbool(SUEF);
-	prefetchInstruction = fget32(SUEF);
-	currentInstruction = fget32(SUEF);
+	pc = UEFRead32(SUEF);
+	processorMode = UEFRead8(SUEF);
+	interruptDisableFlag = UEFRead8(SUEF);
+	fastInterruptDisableFlag = UEFRead8(SUEF);
+	conditionFlags = UEFRead8(SUEF);
+	prefetchInvalid = UEFReadBool(SUEF);
+	prefetchInstruction = UEFRead32(SUEF);
+	currentInstruction = UEFRead32(SUEF);
 
 	for (int i = 0; i < 16; i++)
 	{
-		r[i] = fget32(SUEF);
+		r[i] = UEFRead32(SUEF);
 	}
 
 	for (int i = 0; i < 16; i++)
 	{
-		usrR[i] = fget32(SUEF);
+		usrR[i] = UEFRead32(SUEF);
 	}
 
 	for (int i = 0; i < 16; i++)
 	{
-		svcR[i] = fget32(SUEF);
+		svcR[i] = UEFRead32(SUEF);
 	}
 
 	for (int i = 0; i < 16; i++)
 	{
-		irqR[i] = fget32(SUEF);
+		irqR[i] = UEFRead32(SUEF);
 	}
 
-	fread(ramMemory, 1, sizeof(ramMemory), SUEF);
+	UEFReadBuf(ramMemory, sizeof(ramMemory), SUEF);
 }

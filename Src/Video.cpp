@@ -192,7 +192,25 @@ bool BuildMode7Font(const char *filename)
 		// Read 18 lines of 16 pixels each from the file.
 		for (int y = 2; y < 20; y++)
 		{
-			unsigned int Bitmap =  fget16(TeletextFontFile);
+			int Value = fgetc(TeletextFontFile);
+
+			if (Value == EOF)
+			{
+				fclose(TeletextFontFile);
+				return false;
+			}
+
+			int Bitmap = Value;
+
+			Value = fgetc(TeletextFontFile);
+
+			if (Value == EOF)
+			{
+				fclose(TeletextFontFile);
+				return false;
+			}
+
+			Bitmap |= Value << 8;
 
 			Mode7Font[0][Character - 32][y] = Bitmap << 2; // Text bank
 			Mode7Font[1][Character - 32][y] = Bitmap << 2; // Contiguous graphics bank
@@ -1603,86 +1621,86 @@ void VideoAddLEDs(void) {
 void SaveVideoUEF(FILE *SUEF)
 {
 	// Save CRTC state
-	fputc(CRTC_HorizontalTotal, SUEF);
-	fputc(CRTC_HorizontalDisplayed, SUEF);
-	fputc(CRTC_HorizontalSyncPos, SUEF);
-	fputc(CRTC_SyncWidth, SUEF);
-	fputc(CRTC_VerticalTotal, SUEF);
-	fputc(CRTC_VerticalTotalAdjust, SUEF);
-	fputc(CRTC_VerticalDisplayed, SUEF);
-	fputc(CRTC_VerticalSyncPos, SUEF);
-	fputc(CRTC_InterlaceAndDelay, SUEF);
-	fputc(CRTC_ScanLinesPerChar, SUEF);
-	fputc(CRTC_CursorStart, SUEF);
-	fputc(CRTC_CursorEnd, SUEF);
-	fputc(CRTC_ScreenStartHigh, SUEF);
-	fputc(CRTC_ScreenStartLow, SUEF);
-	fputc(CRTC_CursorPosHigh, SUEF);
-	fputc(CRTC_CursorPosLow, SUEF);
-	fputc(CRTC_LightPenHigh, SUEF);
-	fputc(CRTC_LightPenLow, SUEF);
+	UEFWrite8(CRTC_HorizontalTotal, SUEF);
+	UEFWrite8(CRTC_HorizontalDisplayed, SUEF);
+	UEFWrite8(CRTC_HorizontalSyncPos, SUEF);
+	UEFWrite8(CRTC_SyncWidth, SUEF);
+	UEFWrite8(CRTC_VerticalTotal, SUEF);
+	UEFWrite8(CRTC_VerticalTotalAdjust, SUEF);
+	UEFWrite8(CRTC_VerticalDisplayed, SUEF);
+	UEFWrite8(CRTC_VerticalSyncPos, SUEF);
+	UEFWrite8(CRTC_InterlaceAndDelay, SUEF);
+	UEFWrite8(CRTC_ScanLinesPerChar, SUEF);
+	UEFWrite8(CRTC_CursorStart, SUEF);
+	UEFWrite8(CRTC_CursorEnd, SUEF);
+	UEFWrite8(CRTC_ScreenStartHigh, SUEF);
+	UEFWrite8(CRTC_ScreenStartLow, SUEF);
+	UEFWrite8(CRTC_CursorPosHigh, SUEF);
+	UEFWrite8(CRTC_CursorPosLow, SUEF);
+	UEFWrite8(CRTC_LightPenHigh, SUEF);
+	UEFWrite8(CRTC_LightPenLow, SUEF);
 	// VIDPROC
-	fputc(VideoULA_ControlReg, SUEF);
+	UEFWrite8(VideoULA_ControlReg, SUEF);
 	for (int col = 0; col < 16; ++col) {
-		fputc(VideoULA_Palette[col] ^ 7,SUEF); // Use real ULA values
+		UEFWrite8(VideoULA_Palette[col] ^ 7,SUEF); // Use real ULA values
 	}
-	fput16(ActualScreenWidth, SUEF);
-	fput32(ScreenAdjust, SUEF);
-	fputc(CRTCControlReg, SUEF);
-	fputc(TeletextStyle, SUEF);
+	UEFWrite16(ActualScreenWidth, SUEF);
+	UEFWrite32(ScreenAdjust, SUEF);
+	UEFWrite8(CRTCControlReg, SUEF);
+	UEFWrite8(TeletextStyle, SUEF);
 
-	fput32(VideoState.Addr, SUEF);
-	fput32(VideoState.StartAddr, SUEF);
-	fput32(VideoState.PixmapLine, SUEF);
-	fput32(VideoState.FirstPixmapLine, SUEF);
-	fput32(VideoState.PreviousFirstPixmapLine, SUEF);
-	fput32(VideoState.LastPixmapLine, SUEF);
-	fput32(VideoState.PreviousLastPixmapLine, SUEF);
-	fput32(VideoState.CharLine, SUEF);
-	fput32(VideoState.InCharLineUp, SUEF);
-	fput32(VideoState.VSyncState, SUEF);
-	fputc(VideoState.IsNewTVFrame, SUEF);
-	fputc(VideoState.InterlaceFrame, SUEF);
-	fputc(VideoState.DoCA1Int, SUEF);
-	fput32(ova, SUEF);
-	fput32(ovn, SUEF);
-	fput32(CursorFieldCount, SUEF);
-	fputc(CursorOnState, SUEF);
-	fput32(CurY, SUEF);
-	fput32(Mode7FlashTrigger, SUEF);
-	fputc(Mode7FlashOn, SUEF);
-	fput32(VideoTriggerCount - TotalCycles, SUEF);
+	UEFWrite32(VideoState.Addr, SUEF);
+	UEFWrite32(VideoState.StartAddr, SUEF);
+	UEFWrite32(VideoState.PixmapLine, SUEF);
+	UEFWrite32(VideoState.FirstPixmapLine, SUEF);
+	UEFWrite32(VideoState.PreviousFirstPixmapLine, SUEF);
+	UEFWrite32(VideoState.LastPixmapLine, SUEF);
+	UEFWrite32(VideoState.PreviousLastPixmapLine, SUEF);
+	UEFWrite32(VideoState.CharLine, SUEF);
+	UEFWrite32(VideoState.InCharLineUp, SUEF);
+	UEFWrite32(VideoState.VSyncState, SUEF);
+	UEFWrite8(VideoState.IsNewTVFrame, SUEF);
+	UEFWrite8(VideoState.InterlaceFrame, SUEF);
+	UEFWrite8(VideoState.DoCA1Int, SUEF);
+	UEFWrite32(ova, SUEF);
+	UEFWrite32(ovn, SUEF);
+	UEFWrite32(CursorFieldCount, SUEF);
+	UEFWrite8(CursorOnState, SUEF);
+	UEFWrite32(CurY, SUEF);
+	UEFWrite32(Mode7FlashTrigger, SUEF);
+	UEFWrite8(Mode7FlashOn, SUEF);
+	UEFWrite32(VideoTriggerCount - TotalCycles, SUEF);
 }
 
 void LoadVideoUEF(FILE *SUEF, int Version)
 {
-	CRTC_HorizontalTotal = fget8(SUEF);
-	CRTC_HorizontalDisplayed = fget8(SUEF);
-	CRTC_HorizontalSyncPos = fget8(SUEF);
-	CRTC_SyncWidth = fget8(SUEF);
-	CRTC_VerticalTotal = fget8(SUEF);
-	CRTC_VerticalTotalAdjust = fget8(SUEF);
-	CRTC_VerticalDisplayed = fget8(SUEF);
-	CRTC_VerticalSyncPos = fget8(SUEF);
-	CRTC_InterlaceAndDelay = fget8(SUEF);
-	CRTC_ScanLinesPerChar = fget8(SUEF);
-	CRTC_CursorStart = fget8(SUEF);
-	CRTC_CursorEnd = fget8(SUEF);
-	CRTC_ScreenStartHigh = fget8(SUEF);
-	CRTC_ScreenStartLow = fget8(SUEF);
-	CRTC_CursorPosHigh = fget8(SUEF);
-	CRTC_CursorPosLow = fget8(SUEF);
-	CRTC_LightPenHigh = fget8(SUEF);
-	CRTC_LightPenLow = fget8(SUEF);
+	CRTC_HorizontalTotal = UEFRead8(SUEF);
+	CRTC_HorizontalDisplayed = UEFRead8(SUEF);
+	CRTC_HorizontalSyncPos = UEFRead8(SUEF);
+	CRTC_SyncWidth = UEFRead8(SUEF);
+	CRTC_VerticalTotal = UEFRead8(SUEF);
+	CRTC_VerticalTotalAdjust = UEFRead8(SUEF);
+	CRTC_VerticalDisplayed = UEFRead8(SUEF);
+	CRTC_VerticalSyncPos = UEFRead8(SUEF);
+	CRTC_InterlaceAndDelay = UEFRead8(SUEF);
+	CRTC_ScanLinesPerChar = UEFRead8(SUEF);
+	CRTC_CursorStart = UEFRead8(SUEF);
+	CRTC_CursorEnd = UEFRead8(SUEF);
+	CRTC_ScreenStartHigh = UEFRead8(SUEF);
+	CRTC_ScreenStartLow = UEFRead8(SUEF);
+	CRTC_CursorPosHigh = UEFRead8(SUEF);
+	CRTC_CursorPosLow = UEFRead8(SUEF);
+	CRTC_LightPenHigh = UEFRead8(SUEF);
+	CRTC_LightPenLow = UEFRead8(SUEF);
 	// VIDPROC
-	VideoULA_ControlReg = fget8(SUEF);
+	VideoULA_ControlReg = UEFRead8(SUEF);
 	for (int col = 0; col < 16; ++col) {
-		VideoULA_Palette[col] = fget8(SUEF) ^ 7; // Use real ULA values
+		VideoULA_Palette[col] = UEFRead8(SUEF) ^ 7; // Use real ULA values
 	}
-	ActualScreenWidth=fget16(SUEF);
-	ScreenAdjust=fget32(SUEF);
-	CRTCControlReg = fget8(SUEF);
-	TeletextStyle = fget8(SUEF);
+	ActualScreenWidth = UEFRead16(SUEF);
+	ScreenAdjust = UEFRead32(SUEF);
+	CRTCControlReg = UEFRead8(SUEF);
+	TeletextStyle = UEFRead8(SUEF);
 
 	VideoInit();
 
@@ -1690,30 +1708,31 @@ void LoadVideoUEF(FILE *SUEF, int Version)
 	if (VideoULA_ControlReg & 16) HSyncModifier=8; else HSyncModifier=16;
 	if (VideoULA_ControlReg & 2) HSyncModifier=12;
 
-	if (Version >= 13) {
-		VideoState.Addr = fget32(SUEF);
-		VideoState.StartAddr = fget32(SUEF);
-		VideoState.PixmapLine = fget32(SUEF);
-		VideoState.FirstPixmapLine = fget32(SUEF);
-		VideoState.PreviousFirstPixmapLine = fget32(SUEF);
-		VideoState.LastPixmapLine = fget32(SUEF);
-		VideoState.PreviousLastPixmapLine = fget32(SUEF);
+	if (Version >= 13)
+    {
+		VideoState.Addr = UEFRead32(SUEF);
+		VideoState.StartAddr = UEFRead32(SUEF);
+		VideoState.PixmapLine = UEFRead32(SUEF);
+		VideoState.FirstPixmapLine = UEFRead32(SUEF);
+		VideoState.PreviousFirstPixmapLine = UEFRead32(SUEF);
+		VideoState.LastPixmapLine = UEFRead32(SUEF);
+		VideoState.PreviousLastPixmapLine = UEFRead32(SUEF);
 		// VideoState.IsTeletext - computed in VideoStartOfFrame(), called from VideoInit()
 		// VideoState.DataPtr - computed in VideoStartOfFrame(), called from VideoInit()
-		VideoState.CharLine = fget32(SUEF);
-		VideoState.InCharLineUp = fget32(SUEF);
-		VideoState.VSyncState = fget32(SUEF);
-		VideoState.IsNewTVFrame = fgetbool(SUEF);
-		VideoState.InterlaceFrame = fgetbool(SUEF);
-		VideoState.DoCA1Int = fgetbool(SUEF);
-		ova = fget32(SUEF);
-		ovn = fget32(SUEF);
-		CursorFieldCount = fget32(SUEF);
-		CursorOnState = fgetbool(SUEF);
-		CurY = fget32(SUEF);
-		Mode7FlashTrigger = fget32(SUEF);
-		Mode7FlashOn = fgetbool(SUEF);
-		VideoTriggerCount = TotalCycles + fget32(SUEF);
+		VideoState.CharLine = UEFRead32(SUEF);
+		VideoState.InCharLineUp = UEFRead32(SUEF);
+		VideoState.VSyncState = UEFRead32(SUEF);
+		VideoState.IsNewTVFrame = UEFReadBool(SUEF);
+		VideoState.InterlaceFrame = UEFReadBool(SUEF);
+		VideoState.DoCA1Int = UEFReadBool(SUEF);
+		ova = UEFRead32(SUEF);
+		ovn = UEFRead32(SUEF);
+		CursorFieldCount = UEFRead32(SUEF);
+		CursorOnState = UEFReadBool(SUEF);
+		CurY = UEFRead32(SUEF);
+		Mode7FlashTrigger = UEFRead32(SUEF);
+		Mode7FlashOn = UEFReadBool(SUEF);
+		VideoTriggerCount = TotalCycles + UEFRead32(SUEF);
 	}
 }
 

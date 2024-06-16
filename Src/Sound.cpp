@@ -847,7 +847,7 @@ void LoadSoundUEF(FILE *SUEF)
 
 	for (int Channel = 1; Channel <= 3; Channel++)
 	{
-		Data = fget16(SUEF);
+		Data = UEFRead16(SUEF);
 		// Send the data direct to Sound_RegWrite()
 		RegVal = (((Channel - 1) * 2) << 4) | 128;
 		RegVal |= (Data & 15);
@@ -858,7 +858,7 @@ void LoadSoundUEF(FILE *SUEF)
 
 	for (int Channel = 1; Channel <= 3; Channel++)
 	{
-		Data = fgetc(SUEF);
+		Data = UEFRead8(SUEF);
 		RegVal = ((((Channel - 1) * 2) + 1) << 4) | 128;
 		RegVal |= Data & 15;
 		Sound_RegWrite(RegVal);
@@ -866,18 +866,18 @@ void LoadSoundUEF(FILE *SUEF)
 		ActiveChannel[4 - Channel] = Data != 15;
 	}
 
-	RegVal = 224 | (fgetc(SUEF) & 7);
+	RegVal = 224 | (UEFRead8(SUEF) & 7);
 	Sound_RegWrite(RegVal);
-	Data = fgetc(SUEF);
+	Data = UEFRead8(SUEF);
 	RegVal = 240 | (Data & 15);
 	Sound_RegWrite(RegVal);
 	BeebState76489.ToneVolume[0] = GetVol(15 - Data);
 	ActiveChannel[0] = Data != 15;
-	BeebState76489.LastToneFreqSet = fgetc(SUEF);
-	GenIndex[0] = fget16(SUEF);
-	GenIndex[1] = fget16(SUEF);
-	GenIndex[2] = fget16(SUEF);
-	GenIndex[3] = fget16(SUEF);
+	BeebState76489.LastToneFreqSet = UEFRead8(SUEF);
+	GenIndex[0] = UEFRead16(SUEF);
+	GenIndex[1] = UEFRead16(SUEF);
+	GenIndex[2] = UEFRead16(SUEF);
+	GenIndex[3] = UEFRead16(SUEF);
 }
 
 /****************************************************************************/
@@ -885,22 +885,22 @@ void LoadSoundUEF(FILE *SUEF)
 void SaveSoundUEF(FILE *SUEF)
 {
 	// Sound Block
-	fput16(BeebState76489.ToneFreq[2], SUEF);
-	fput16(BeebState76489.ToneFreq[1], SUEF);
-	fput16(BeebState76489.ToneFreq[0], SUEF);
-	fputc(RealVolumes[3], SUEF);
-	fputc(RealVolumes[2], SUEF);
-	fputc(RealVolumes[1], SUEF);
+	UEFWrite16(BeebState76489.ToneFreq[2], SUEF);
+	UEFWrite16(BeebState76489.ToneFreq[1], SUEF);
+	UEFWrite16(BeebState76489.ToneFreq[0], SUEF);
+	UEFWrite8(RealVolumes[3], SUEF);
+	UEFWrite8(RealVolumes[2], SUEF);
+	UEFWrite8(RealVolumes[1], SUEF);
 	unsigned char Noise = (unsigned char)(
 		BeebState76489.Noise.Freq | (BeebState76489.Noise.FB << 2)
 	);
-	fputc(Noise, SUEF);
-	fputc(RealVolumes[0], SUEF);
-	fputc(BeebState76489.LastToneFreqSet, SUEF);
-	fput16(GenIndex[0], SUEF);
-	fput16(GenIndex[1], SUEF);
-	fput16(GenIndex[2], SUEF);
-	fput16(GenIndex[3], SUEF);
+	UEFWrite8(Noise, SUEF);
+	UEFWrite8(RealVolumes[0], SUEF);
+	UEFWrite8(BeebState76489.LastToneFreqSet, SUEF);
+	UEFWrite16(GenIndex[0], SUEF);
+	UEFWrite16(GenIndex[1], SUEF);
+	UEFWrite16(GenIndex[2], SUEF);
+	UEFWrite16(GenIndex[3], SUEF);
 }
 
 /****************************************************************************/

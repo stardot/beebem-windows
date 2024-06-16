@@ -3797,134 +3797,134 @@ void Master512CoPro::DoDMA()
 
 void Master512CoPro::SaveState(FILE *SUEF)
 {
-	fwrite(m_Memory, 1, 0x100000, SUEF);
+	UEFWriteBuf(m_Memory, 0x100000, SUEF);
 
 	for (int i = 0; i < 8; i++)
 	{
-		fput16(m_regs.w[i], SUEF);
+		UEFWrite16(m_regs.w[i], SUEF);
 	}
 
 	for (int i = 0; i < 4; i++)
 	{
-		fput16(m_sregs[i], SUEF);
+		UEFWrite16(m_sregs[i], SUEF);
 	}
 
-	fputc(m_TF, SUEF);
-	fputc(m_IF, SUEF);
-	fputc(m_DF, SUEF);
-	fputc(m_IOPL, SUEF);
-	fputc(m_NT, SUEF);
-	fputc(m_MF, SUEF);
+	UEFWrite8(m_TF, SUEF);
+	UEFWrite8(m_IF, SUEF);
+	UEFWrite8(m_DF, SUEF);
+	UEFWrite8(m_IOPL, SUEF);
+	UEFWrite8(m_NT, SUEF);
+	UEFWrite8(m_MF, SUEF);
 
-	fput16(m_ip, SUEF);
-	fput16(m_prev_ip, SUEF);
+	UEFWrite16(m_ip, SUEF);
+	UEFWrite16(m_prev_ip, SUEF);
 
-	fput32(m_SignVal, SUEF);
-	fput32(m_AuxVal, SUEF);
-	fput32(m_OverVal, SUEF);
-	fput32(m_ZeroVal, SUEF);
-	fput32(m_CarryVal, SUEF);
-	fput32(m_ParityVal, SUEF);
+	UEFWrite32(m_SignVal, SUEF);
+	UEFWrite32(m_AuxVal, SUEF);
+	UEFWrite32(m_OverVal, SUEF);
+	UEFWrite32(m_ZeroVal, SUEF);
+	UEFWrite32(m_CarryVal, SUEF);
+	UEFWrite32(m_ParityVal, SUEF);
 
-	fput32(m_pending_irq, SUEF);
-	fput32(m_nmi_state, SUEF);
-	fput32(m_irq_state, SUEF);
-	fputc(m_no_interrupt, SUEF);
-	fputc(m_fire_trap, SUEF);
-	fputc(m_test_state, SUEF);
+	UEFWrite32(m_pending_irq, SUEF);
+	UEFWrite32(m_nmi_state, SUEF);
+	UEFWrite32(m_irq_state, SUEF);
+	UEFWrite8(m_no_interrupt, SUEF);
+	UEFWrite8(m_fire_trap, SUEF);
+	UEFWrite8(m_test_state, SUEF);
 
-	fput32(m_icount, SUEF);
+	UEFWrite32(m_icount, SUEF);
 
-	fput32(m_prefix_seg, SUEF);
-	fputc(m_seg_prefix, SUEF);
-	fputc(m_seg_prefix_next, SUEF);
+	UEFWrite32(m_prefix_seg, SUEF);
+	UEFWrite8(m_seg_prefix, SUEF);
+	UEFWrite8(m_seg_prefix_next, SUEF);
 
-	fput32(m_ea, SUEF);
-	fput16(m_eo, SUEF);
-	fput32(m_easeg, SUEF);
+	UEFWrite32(m_ea, SUEF);
+	UEFWrite16(m_eo, SUEF);
+	UEFWrite32(m_easeg, SUEF);
 
-	fputc(m_modrm, SUEF);
-	fput32(m_dst, SUEF);
-	fput32(m_src, SUEF);
-	fput32(m_pc, SUEF);
+	UEFWrite8(m_modrm, SUEF);
+	UEFWrite32(m_dst, SUEF);
+	UEFWrite32(m_src, SUEF);
+	UEFWrite32(m_pc, SUEF);
 
-	fputc(m_halt, SUEF);
+	UEFWrite8(m_halt, SUEF);
 
 	for (int i = 0; i < 2; i++)
 	{
-		fputc(m_dma[i].drq_state, SUEF);
-		fput32(m_dma[i].source, SUEF);
-		fput32(m_dma[i].dest, SUEF);
-		fput16(m_dma[i].count, SUEF);
-		fput16(m_dma[i].control, SUEF);
+		UEFWrite8(m_dma[i].drq_state, SUEF);
+		UEFWrite32(m_dma[i].source, SUEF);
+		UEFWrite32(m_dma[i].dest, SUEF);
+		UEFWrite16(m_dma[i].count, SUEF);
+		UEFWrite16(m_dma[i].control, SUEF);
 	}
 
-	fputc(m_last_dma, SUEF);
+	UEFWrite8(m_last_dma, SUEF);
 }
 
 void Master512CoPro::LoadState(FILE *SUEF)
 {
-	fread(m_Memory, 1, 0x100000, SUEF);
+	UEFReadBuf(m_Memory, 0x100000, SUEF);
 
 	for (int i = 0; i < 8; i++)
 	{
-		m_regs.w[i] = fget16(SUEF);
+		m_regs.w[i] = UEFRead16(SUEF);
 	}
 
 	for (int i = 0; i < 4; i++)
 	{
-		m_sregs[i] = fget16(SUEF);
+		m_sregs[i] = UEFRead16(SUEF);
 	}
 
-	m_TF = fget8(SUEF);
-	m_IF = fget8(SUEF);
-	m_DF = fget8(SUEF);
-	m_IOPL = fget8(SUEF);
-	m_NT = fget8(SUEF);
-	m_MF = fget8(SUEF);
+	m_TF = UEFRead8(SUEF);
+	m_IF = UEFRead8(SUEF);
+	m_DF = UEFRead8(SUEF);
+	m_IOPL = UEFRead8(SUEF);
+	m_NT = UEFRead8(SUEF);
+	m_MF = UEFRead8(SUEF);
 
-	m_ip = fget16(SUEF);
-	m_prev_ip = fget16(SUEF);
+	m_ip = UEFRead16(SUEF);
+	m_prev_ip = UEFRead16(SUEF);
 
-	m_SignVal = fget32(SUEF);
-	m_AuxVal = fget32(SUEF);
-	m_OverVal = fget32(SUEF);
-	m_ZeroVal = fget32(SUEF);
-	m_CarryVal = fget32(SUEF);
-	m_ParityVal = fget32(SUEF);
+	m_SignVal = UEFRead32(SUEF);
+	m_AuxVal = UEFRead32(SUEF);
+	m_OverVal = UEFRead32(SUEF);
+	m_ZeroVal = UEFRead32(SUEF);
+	m_CarryVal = UEFRead32(SUEF);
+	m_ParityVal = UEFRead32(SUEF);
 
-	m_pending_irq = fget32(SUEF);
-	m_nmi_state = fget32(SUEF);
-	m_irq_state = fget32(SUEF);
-	m_no_interrupt = fget8(SUEF);
-	m_fire_trap = fget8(SUEF);
-	m_test_state = fget8(SUEF);
+	m_pending_irq = UEFRead32(SUEF);
+	m_nmi_state = UEFRead32(SUEF);
+	m_irq_state = UEFRead32(SUEF);
+	m_no_interrupt = UEFRead8(SUEF);
+	m_fire_trap = UEFRead8(SUEF);
+	m_test_state = UEFRead8(SUEF);
 
-	m_icount = fget32(SUEF);
+	m_icount = UEFRead32(SUEF);
 
-	m_prefix_seg = fget32(SUEF);
-	m_seg_prefix = fgetbool(SUEF);
-	m_seg_prefix_next = fgetbool(SUEF);
+	m_prefix_seg = UEFRead32(SUEF);
+	m_seg_prefix = UEFReadBool(SUEF);
+	m_seg_prefix_next = UEFReadBool(SUEF);
 
-	m_ea = fget32(SUEF);
-	m_eo = fget16(SUEF);
-	m_easeg = fget32(SUEF);
+	m_ea = UEFRead32(SUEF);
+	m_eo = UEFRead16(SUEF);
+	m_easeg = UEFRead32(SUEF);
 
-	m_modrm = fget8(SUEF);
-	m_dst = fget32(SUEF);
-	m_src = fget32(SUEF);
-	m_pc = fget32(SUEF);
+	m_modrm = UEFRead8(SUEF);
+	m_dst = UEFRead32(SUEF);
+	m_src = UEFRead32(SUEF);
+	m_pc = UEFRead32(SUEF);
 
-	m_halt = fgetbool(SUEF);
+	m_halt = UEFReadBool(SUEF);
 
 	for (int i = 0; i < 2; i++)
 	{
-		m_dma[i].drq_state = fgetbool(SUEF);
-		m_dma[i].source = fget32(SUEF);
-		m_dma[i].dest = fget32(SUEF);
-		m_dma[i].count = fget16(SUEF);
-		m_dma[i].control = fget16(SUEF);
+		m_dma[i].drq_state = UEFReadBool(SUEF);
+		m_dma[i].source = UEFRead32(SUEF);
+		m_dma[i].dest = UEFRead32(SUEF);
+		m_dma[i].count = UEFRead16(SUEF);
+		m_dma[i].control = UEFRead16(SUEF);
 	}
 
-	m_last_dma = fgetbool(SUEF);
+	m_last_dma = UEFReadBool(SUEF);
 }

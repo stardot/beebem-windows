@@ -2639,92 +2639,92 @@ void DebugTubeState(void)
 
 void SaveTubeUEF(FILE *SUEF)
 {
-	fputc(R1Status,SUEF);
-	fwrite(R1PHData,1,TubeBufferLength,SUEF);
-	fputc(R1PHPtr,SUEF);
-	fputc(R1HStatus,SUEF);
-	fputc(R1HPData,SUEF);
-	fputc(R1PStatus,SUEF);
-	fputc(R2PHData,SUEF);
-	fputc(R2HStatus,SUEF);
-	fputc(R2HPData,SUEF);
-	fputc(R2PStatus,SUEF);
-	fputc(R3PHData[0],SUEF);
-	fputc(R3PHData[1],SUEF);
-	fputc(R3PHPtr,SUEF);
-	fputc(R3HStatus,SUEF);
-	fputc(R3HPData[0],SUEF);
-	fputc(R3HPData[1],SUEF);
-	fputc(R3HPPtr,SUEF);
-	fputc(R3PStatus,SUEF);
-	fputc(R4PHData,SUEF);
-	fputc(R4HStatus,SUEF);
-	fputc(R4HPData,SUEF);
-	fputc(R4PStatus,SUEF);
+	UEFWrite8(R1Status, SUEF);
+	UEFWriteBuf(R1PHData, TubeBufferLength, SUEF);
+	UEFWrite8(R1PHPtr, SUEF);
+	UEFWrite8(R1HStatus, SUEF);
+	UEFWrite8(R1HPData, SUEF);
+	UEFWrite8(R1PStatus, SUEF);
+	UEFWrite8(R2PHData, SUEF);
+	UEFWrite8(R2HStatus, SUEF);
+	UEFWrite8(R2HPData, SUEF);
+	UEFWrite8(R2PStatus, SUEF);
+	UEFWrite8(R3PHData[ 0],SUEF);
+	UEFWrite8(R3PHData[ 1],SUEF);
+	UEFWrite8(R3PHPtr, SUEF);
+	UEFWrite8(R3HStatus, SUEF);
+	UEFWrite8(R3HPData[ 0],SUEF);
+	UEFWrite8(R3HPData[ 1],SUEF);
+	UEFWrite8(R3HPPtr, SUEF);
+	UEFWrite8(R3PStatus, SUEF);
+	UEFWrite8(R4PHData, SUEF);
+	UEFWrite8(R4HStatus, SUEF);
+	UEFWrite8(R4HPData, SUEF);
+	UEFWrite8(R4PStatus, SUEF);
 }
 
 void Save65C02UEF(FILE *SUEF)
 {
-	fput16(TubeProgramCounter,SUEF);
-	fputc(Accumulator,SUEF);
-	fputc(XReg,SUEF);
-	fputc(YReg,SUEF);
-	fputc(StackReg,SUEF);
-	fputc(PSR,SUEF);
-	fput32(TotalTubeCycles,SUEF);
-	fputc(TubeintStatus,SUEF);
-	fputc(TubeNMIStatus,SUEF);
-	fputc(TubeNMILock,SUEF);
-	fput16(0,SUEF);
+	UEFWrite16(TubeProgramCounter, SUEF);
+	UEFWrite8(Accumulator, SUEF);
+	UEFWrite8(XReg, SUEF);
+	UEFWrite8(YReg, SUEF);
+	UEFWrite8(StackReg, SUEF);
+	UEFWrite8(PSR, SUEF);
+	UEFWrite32(TotalTubeCycles, SUEF);
+	UEFWrite8(TubeintStatus, SUEF);
+	UEFWrite8(TubeNMIStatus, SUEF);
+	UEFWrite8(TubeNMILock, SUEF);
+	UEFWrite16(0, SUEF);
 }
 
 void Save65C02MemUEF(FILE *SUEF)
 {
-	fwrite(TubeRam,1,65536,SUEF);
+	UEFWriteBuf(TubeRam, 65536, SUEF);
 }
 
 void LoadTubeUEF(FILE *SUEF)
 {
-	R1Status = fget8(SUEF);
-	fread(R1PHData,1,TubeBufferLength,SUEF);
-	R1PHPtr = fget8(SUEF);
-	R1HStatus = fget8(SUEF);
-	R1HPData = fget8(SUEF);
-	R1PStatus = fget8(SUEF);
-	R2PHData = fget8(SUEF);
-	R2HStatus = fget8(SUEF);
-	R2HPData = fget8(SUEF);
-	R2PStatus = fget8(SUEF);
-	R3PHData[0] = fget8(SUEF);
-	R3PHData[1] = fget8(SUEF);
-	R3PHPtr = fget8(SUEF);
-	R3HStatus = fget8(SUEF);
-	R3HPData[0] = fget8(SUEF);
-	R3HPData[1] = fget8(SUEF);
-	R3HPPtr = fget8(SUEF);
-	R3PStatus = fget8(SUEF);
-	R4PHData = fget8(SUEF);
-	R4HStatus = fget8(SUEF);
-	R4HPData = fget8(SUEF);
-	R4PStatus = fget8(SUEF);
+	R1Status = UEFRead8(SUEF);
+	UEFReadBuf(R1PHData, TubeBufferLength, SUEF);
+	R1PHPtr = UEFRead8(SUEF);
+	R1HStatus = UEFRead8(SUEF);
+	R1HPData = UEFRead8(SUEF);
+	R1PStatus = UEFRead8(SUEF);
+	R2PHData = UEFRead8(SUEF);
+	R2HStatus = UEFRead8(SUEF);
+	R2HPData = UEFRead8(SUEF);
+	R2PStatus = UEFRead8(SUEF);
+	R3PHData[0] = UEFRead8(SUEF);
+	R3PHData[1] = UEFRead8(SUEF);
+	R3PHPtr = UEFRead8(SUEF);
+	R3HStatus = UEFRead8(SUEF);
+	R3HPData[0] = UEFRead8(SUEF);
+	R3HPData[1] = UEFRead8(SUEF);
+	R3HPPtr = UEFRead8(SUEF);
+	R3PStatus = UEFRead8(SUEF);
+	R4PHData = UEFRead8(SUEF);
+	R4HStatus = UEFRead8(SUEF);
+	R4HPData = UEFRead8(SUEF);
+	R4PStatus = UEFRead8(SUEF);
 }
 
 void Load65C02UEF(FILE *SUEF)
 {
-	TubeProgramCounter = fget16(SUEF);
-	Accumulator = fget8(SUEF);
-	XReg = fget8(SUEF);
-	YReg = fget8(SUEF);
-	StackReg = fget8(SUEF);
-	PSR = fget8(SUEF);
-	// TotalTubeCycles = fget32(SUEF);
-	fget32(SUEF); // Unused, was: Dlong
-	TubeintStatus = fget8(SUEF);
-	TubeNMIStatus = fget8(SUEF);
-	TubeNMILock = fgetbool(SUEF);
+	TubeProgramCounter = UEFRead16(SUEF);
+	Accumulator = UEFRead8(SUEF);
+	XReg = UEFRead8(SUEF);
+	YReg = UEFRead8(SUEF);
+	StackReg = UEFRead8(SUEF);
+	PSR = UEFRead8(SUEF);
+	// TotalTubeCycles = UEFRead32(SUEF);
+	UEFRead32(SUEF); // Unused, was: Dlong
+	TubeintStatus = UEFRead8(SUEF);
+	TubeNMIStatus = UEFRead8(SUEF);
+	TubeNMILock = UEFReadBool(SUEF);
 }
 
 void Load65C02MemUEF(FILE *SUEF)
 {
-	fread(TubeRam,1,65536,SUEF);
+	UEFReadBuf(TubeRam, 65536, SUEF);
 }

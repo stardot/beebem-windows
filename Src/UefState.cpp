@@ -19,7 +19,7 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-// UEF Game state code.
+// UEF savestate code.
 
 #include <functional>
 
@@ -45,100 +45,194 @@ Boston, MA  02110-1301, USA.
 
 /*-------------------------------------------------------------------------*/
 
-void fput64(uint64_t Value, FILE *pFile)
+void UEFWrite64(uint64_t Value, FILE *pFile)
 {
-	fputc(Value & 0xFF, pFile);
-	fputc((Value >> 8) & 0xFF, pFile);
-	fputc((Value >> 16) & 0xFF, pFile);
-	fputc((Value >> 24) & 0xFF, pFile);
-	fputc((Value >> 32) & 0xFF, pFile);
-	fputc((Value >> 40) & 0xFF, pFile);
-	fputc((Value >> 48) & 0xFF, pFile);
-	fputc((Value >> 56) & 0xFF, pFile);
-}
-
-void fput32(unsigned int Value, FILE *pFile)
-{
-	fputc(Value & 0xFF, pFile);
-	fputc((Value >> 8) & 0xFF, pFile);
-	fputc((Value >> 16) & 0xFF, pFile);
-	fputc((Value >> 24) & 0xFF, pFile);
-}
-
-void fput16(unsigned int Value, FILE *pFile)
-{
-	fputc(Value & 0xFF, pFile);
-	fputc((Value >> 8) & 0xFF, pFile);
-}
-
-void fputstring(const char* String, FILE *pFile)
-{
-	unsigned int Length = (unsigned int)strlen(String);
-
-	fput32(Length, pFile);
-
-	if (Length > 0)
+	for (int Shift = 0; Shift < 64; Shift += 8)
 	{
-		fwrite(String, 1, Length, pFile);
+		int Result = fputc((Value >> Shift) & 0xFF, pFile);
+
+		if (Result == EOF)
+		{
+			throw UEFStateResult::WriteFailed;
+		}
 	}
 }
 
 /*-------------------------------------------------------------------------*/
 
-uint64_t fget64(FILE *pFile)
+void UEFWrite32(unsigned int Value, FILE *pFile)
+{
+	for (int Shift = 0; Shift < 32; Shift += 8)
+	{
+		int Result = fputc((Value >> Shift) & 0xFF, pFile);
+
+		if (Result == EOF)
+		{
+			throw UEFStateResult::WriteFailed;
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+
+void UEFWrite16(unsigned int Value, FILE *pFile)
+{
+	for (int Shift = 0; Shift < 16; Shift += 8)
+	{
+		int Result = fputc((Value >> Shift) & 0xFF, pFile);
+
+		if (Result == EOF)
+		{
+			throw UEFStateResult::WriteFailed;
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+
+void UEFWriteBuf(const void* pData, size_t Size, FILE *pFile)
+{
+	size_t Result = fwrite(pData, 1, Size, pFile);
+
+	if (Result < Size)
+	{
+		throw UEFStateResult::WriteFailed;
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+
+void UEFWrite8(unsigned int Value, FILE *pFile)
+{
+	int Result = fputc(Value & 0xFF, pFile);
+
+	if (Result == EOF)
+	{
+		throw UEFStateResult::WriteFailed;
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+
+void UEFWriteString(const char* String, FILE *pFile)
+{
+	unsigned int Length = (unsigned int)strlen(String);
+
+	UEFWrite32(Length, pFile);
+
+	if (Length > 0)
+	{
+		UEFWriteBuf(String, Length, pFile);
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+
+uint64_t UEFRead64(FILE *pFile)
 {
 	uint64_t Result = 0;
-	uint64_t Value;
 
-	Value = fgetc(pFile); Result |= Value;
-	Value = fgetc(pFile); Result |= Value << 8;
-	Value = fgetc(pFile); Result |= Value << 16;
-	Value = fgetc(pFile); Result |= Value << 24;
-	Value = fgetc(pFile); Result |= Value << 32;
-	Value = fgetc(pFile); Result |= Value << 40;
-	Value = fgetc(pFile); Result |= Value << 48;
-	Value = fgetc(pFile); Result |= Value << 56;
+	for (int Shift = 0; Shift < 64; Shift += 8)
+	{
+		int Value = fgetc(pFile);
+
+		if (Value == EOF)
+		{
+			throw UEFStateResult::ReadFailed;
+		}
+
+		Result |= Value << Shift;
+	}
 
 	return Result;
 }
 
-uint32_t fget32(FILE *pFile)
-{
-	uint32_t Value = fgetc(pFile);
-	Value |= fgetc(pFile) << 8;
-	Value |= fgetc(pFile) << 16;
-	Value |= fgetc(pFile) << 24;
+/*-------------------------------------------------------------------------*/
 
-	return Value;
+uint32_t UEFRead32(FILE *pFile)
+{
+	uint32_t Result = 0;
+
+	for (int Shift = 0; Shift < 32; Shift += 8)
+	{
+		int Value = fgetc(pFile);
+
+		if (Value == EOF)
+		{
+			throw UEFStateResult::ReadFailed;
+		}
+
+		Result |= Value << Shift;
+	}
+
+	return Result;
 }
 
-uint16_t fget16(FILE *pFile)
-{
-	uint16_t Value = fgetc(pFile);
-	Value |= fgetc(pFile) << 8;
+/*-------------------------------------------------------------------------*/
 
-	return Value;
+uint16_t UEFRead16(FILE *pFile)
+{
+	uint16_t Result = 0;
+
+	for (int Shift = 0; Shift < 16; Shift += 8)
+	{
+		int Value = fgetc(pFile);
+
+		if (Value == EOF)
+		{
+			throw UEFStateResult::ReadFailed;
+		}
+
+		Result |= Value << Shift;
+	}
+
+	return Result;
 }
 
-uint8_t fget8(FILE *pFile)
+/*-------------------------------------------------------------------------*/
+
+uint8_t UEFRead8(FILE *pFile)
 {
-	return (uint8_t)fgetc(pFile);
+	int Value = fgetc(pFile);
+
+	if (Value == EOF)
+	{
+		throw UEFStateResult::ReadFailed;
+	}
+
+	return (uint8_t)Value;
 }
 
-bool fgetbool(FILE *pFile)
+/*-------------------------------------------------------------------------*/
+
+void UEFReadBuf(void* pData, size_t Size, FILE *pFile)
 {
-	return fget8(pFile) != 0;
+	size_t Result = fread(pData, 1, Size, pFile);
+
+	if (Result < Size)
+	{
+		throw UEFStateResult::ReadFailed;
+	}
 }
 
-void fgetstring(char* String, unsigned int BufSize, FILE *pFile)
+/*-------------------------------------------------------------------------*/
+
+bool UEFReadBool(FILE *pFile)
 {
-	unsigned int Length = fget32(pFile);
+	return UEFRead8(pFile) != 0;
+}
+
+/*-------------------------------------------------------------------------*/
+
+void UEFReadString(char* String, unsigned int BufSize, FILE *pFile)
+{
+	unsigned int Length = UEFRead32(pFile);
 
 	unsigned int i;
 
 	for (i = 0; i < Length && i < BufSize - 1; i++)
 	{
-		String[i] = fget8(pFile);
+		String[i] = UEFRead8(pFile);
 	}
 
 	String[i] = '\0';
@@ -148,7 +242,7 @@ void fgetstring(char* String, unsigned int BufSize, FILE *pFile)
 
 	for (; i < Length; i++)
 	{
-		fget8(pFile);
+		UEFRead8(pFile);
 	}
 }
 
@@ -159,8 +253,8 @@ void fgetstring(char* String, unsigned int BufSize, FILE *pFile)
 template<typename SaveStateFunctionType>
 void SaveState(SaveStateFunctionType SaveStateFunction, int ChunkID, FILE *SUEF)
 {
-	fput16(ChunkID, SUEF); // UEF Chunk ID
-	fput32(0, SUEF); // Chunk length (updated after writing data)
+	UEFWrite16(ChunkID, SUEF); // UEF Chunk ID
+	UEFWrite32(0, SUEF); // Chunk length (updated after writing data)
 	long StartPos = ftell(SUEF);
 
 	SaveStateFunction(SUEF);
@@ -168,7 +262,7 @@ void SaveState(SaveStateFunctionType SaveStateFunction, int ChunkID, FILE *SUEF)
 	long EndPos = ftell(SUEF);
 	long Length = EndPos - StartPos;
 	fseek(SUEF, StartPos - 4, SEEK_SET);
-	fput32(Length, SUEF); // Size
+	UEFWrite32(Length, SUEF); // Size
 	fseek(SUEF, EndPos, SEEK_SET);
 }
 
@@ -180,10 +274,15 @@ UEFStateResult SaveUEFState(const char *FileName)
 
 	FILE *UEFState = fopen(FileName, "wb");
 
-	if (UEFState != nullptr)
+	if (UEFState == nullptr)
+	{
+		return UEFStateResult::WriteFailed;
+	}
+
+	try
 	{
 		fprintf(UEFState,"UEF File!");
-		fputc(0,UEFState); // UEF Header
+		fputc(0, UEFState); // UEF Header
 
 		const unsigned char UEFMinorVersion = 14;
 		const unsigned char UEFMajorVersion = 0;
@@ -257,9 +356,11 @@ UEFStateResult SaveUEFState(const char *FileName)
 
 		return UEFStateResult::Success;
 	}
-	else
+	catch (UEFStateResult Result)
 	{
-		return UEFStateResult::WriteFailed;
+		fclose(UEFState);
+
+		return Result;
 	}
 }
 
@@ -269,7 +370,12 @@ UEFStateResult LoadUEFState(const char *FileName)
 {
 	FILE *UEFState = fopen(FileName, "rb");
 
-	if (UEFState != nullptr)
+	if (UEFState == nullptr)
+	{
+		return UEFStateResult::OpenFailed;
+	}
+
+	try
 	{
 		fseek(UEFState, 0, SEEK_END);
 		long FLength = ftell(UEFState);
@@ -280,13 +386,13 @@ UEFStateResult LoadUEFState(const char *FileName)
 
 		fread(UEFId, sizeof(UEFId), 1, UEFState);
 
-		if (strcmp(UEFId,"UEF File!") != 0)
+		if (strcmp(UEFId, "UEF File!") != 0)
 		{
 			fclose(UEFState);
 			return UEFStateResult::InvalidUEFFile;
 		}
 
-		const int Version = fget16(UEFState);
+		const int Version = UEFRead16(UEFState);
 
 		if (Version > 14)
 		{
@@ -296,8 +402,8 @@ UEFStateResult LoadUEFState(const char *FileName)
 
 		while (ftell(UEFState) < FLength)
 		{
-			unsigned int Block = fget16(UEFState);
-			unsigned int Length = fget32(UEFState);
+			unsigned int Block = UEFRead16(UEFState);
+			unsigned int Length = UEFRead32(UEFState);
 			long CPos = ftell(UEFState);
 
 			switch (Block)
@@ -414,16 +520,17 @@ UEFStateResult LoadUEFState(const char *FileName)
 					break;
 			}
 
-			fseek(UEFState, CPos + Length, SEEK_SET); // Skip unrecognised blocks (and over any gaps)
+			// Skip unrecognised blocks (and over any gaps)
+			fseek(UEFState, CPos + Length, SEEK_SET);
 		}
 
 		fclose(UEFState);
 
 		return UEFStateResult::Success;
 	}
-	else
+	catch (UEFStateResult Result)
 	{
-		return UEFStateResult::OpenFailed;
+		return Result;
 	}
 }
 
@@ -450,3 +557,5 @@ bool IsUEFSaveState(const char* FileName)
 
 	return IsSaveState;
 }
+
+/*-------------------------------------------------------------------------*/

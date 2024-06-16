@@ -25,25 +25,30 @@ Boston, MA  02110-1301, USA.
 #include <stdint.h>
 #include <stdio.h>
 
-enum class UEFStateResult {
+enum class UEFStateResult
+{
 	Success,
 	OpenFailed,
+	ReadFailed,
 	WriteFailed,
 	InvalidUEFFile,
 	InvalidUEFVersion
 };
 
-void fput64(uint64_t Value, FILE *pFile);
-void fput32(unsigned int Value, FILE *pFile);
-void fput16(unsigned int Value, FILE *pFile);
-void fputstring(const char* String, FILE *pFile);
+void UEFWrite64(uint64_t Value, FILE *pFile);
+void UEFWrite32(unsigned int Value, FILE *pFile);
+void UEFWrite16(unsigned int Value, FILE *pFile);
+void UEFWrite8(unsigned int Value, FILE *pFile);
+void UEFWriteBuf(const void* pData, size_t Size, FILE *pFile);
+void UEFWriteString(const char* String, FILE *pFile);
 
-uint64_t fget64(FILE *pFile);
-uint32_t fget32(FILE *pFile);
-uint16_t fget16(FILE *pFile);
-uint8_t fget8(FILE *pFile);
-bool fgetbool(FILE *pFile);
-void fgetstring(char* String, unsigned int BufSize, FILE *pFile);
+uint64_t UEFRead64(FILE *pFile);
+uint32_t UEFRead32(FILE *pFile);
+uint16_t UEFRead16(FILE *pFile);
+uint8_t UEFRead8(FILE *pFile);
+bool UEFReadBool(FILE *pFile);
+void UEFReadBuf(void* pData, size_t Size, FILE *pFile);
+void UEFReadString(char* String, unsigned int BufSize, FILE *pFile);
 
 UEFStateResult SaveUEFState(const char *FileName);
 UEFStateResult LoadUEFState(const char *FileName);

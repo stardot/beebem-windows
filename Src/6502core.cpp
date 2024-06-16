@@ -3366,32 +3366,32 @@ int MicrosecondsToCycles(int Time)
 
 void Save6502UEF(FILE *SUEF)
 {
-	fput16(ProgramCounter,SUEF);
-	fputc(Accumulator,SUEF);
-	fputc(XReg,SUEF);
-	fputc(YReg,SUEF);
-	fputc(StackReg,SUEF);
-	fputc(PSR,SUEF);
-	fput32(TotalCycles,SUEF);
-	fputc(intStatus,SUEF);
-	fputc(NMIStatus,SUEF);
-	fputc(NMILock,SUEF);
-	fput16(0,SUEF);
+	UEFWrite16(ProgramCounter, SUEF);
+	UEFWrite8(Accumulator, SUEF);
+	UEFWrite8(XReg, SUEF);
+	UEFWrite8(YReg, SUEF);
+	UEFWrite8(StackReg, SUEF);
+	UEFWrite8(PSR, SUEF);
+	UEFWrite32(TotalCycles, SUEF);
+	UEFWrite8(intStatus, SUEF);
+	UEFWrite8(NMIStatus, SUEF);
+	UEFWrite8(NMILock, SUEF);
+	UEFWrite16(0, SUEF);
 }
 
 void Load6502UEF(FILE *SUEF)
 {
-	ProgramCounter = fget16(SUEF);
-	Accumulator = fget8(SUEF);
-	XReg = fget8(SUEF);
-	YReg = fget8(SUEF);
-	StackReg = fget8(SUEF);
-	PSR = fget8(SUEF);
+	ProgramCounter = UEFRead16(SUEF);
+	Accumulator = UEFRead8(SUEF);
+	XReg = UEFRead8(SUEF);
+	YReg = UEFRead8(SUEF);
+	StackReg = UEFRead8(SUEF);
+	PSR = UEFRead8(SUEF);
 	// TotalCycles = fget32(SUEF);
-	fget32(SUEF); // Unused, was: Dlong
-	intStatus = fget8(SUEF);
-	NMIStatus = fget8(SUEF);
-	NMILock = fgetbool(SUEF);
+	UEFRead32(SUEF); // Unused, was: Dlong
+	intStatus = UEFRead8(SUEF);
+	NMIStatus = UEFRead8(SUEF);
+	NMILock = UEFReadBool(SUEF);
 	// AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
 }
 
