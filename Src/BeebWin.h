@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "Model.h"
 #include "Port.h"
 #include "Preferences.h"
+#include "Tube.h"
 #include "Video.h"
 
 // Registry defs for disabling windows keys
@@ -247,6 +248,7 @@ public:
 	void SetTapeSpeedMenu();
 	void SetUnlockTape(bool Unlock);
 	void SetRomMenu(); // LRW  Added for individual ROM/RAM
+	void SelectTube(TubeDevice Device);
 	void UpdateTubeMenu();
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
@@ -404,7 +406,7 @@ public:
 	void SetSoundStreamer(SoundStreamerType StreamerType);
 	void UpdateSoundStreamerMenu();
 
-	void SetSoundSampleRate(int SampleRate);
+	void SetSoundSampleRate(unsigned int SampleRate);
 	void UpdateSoundSampleRateMenu();
 
 	void SetSoundVolume(int Volume);
@@ -678,10 +680,6 @@ public:
 	LPDIRECT3DVERTEXBUFFER9 m_pVB;
 	LPDIRECT3DTEXTURE9 m_pTexture;
 	D3DXMATRIX m_TextureMatrix;
-
-	// Audio
-	int m_SampleRate;
-	int m_SoundVolume;
 
 	// Joystick input
 	bool m_JoystickCaptured;

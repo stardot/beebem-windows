@@ -321,33 +321,35 @@ void Music5000Update(UINT cycles)
 
 void SaveMusic5000UEF(FILE *SUEF)
 {
-	fwrite(WaveRam,1,RAM_SIZE,SUEF);
-	fwrite(PhaseRam,1,sizeof(PhaseRam),SUEF);
-	fputc(CurCh,SUEF);
-	fputc(CycleCount,SUEF);
-	fputc(ActiveRegSet,SUEF);
-	fputc(0,SUEF);//Unused pad
-	fput32(SampleLeft,SUEF);
-	fput32(SampleRight,SUEF);
-	fputc(JimPageSelectRegister,SUEF);
+	UEFWriteBuf(WaveRam, RAM_SIZE, SUEF);
+	UEFWriteBuf(PhaseRam, sizeof(PhaseRam), SUEF);
+	UEFWrite8(CurCh, SUEF);
+	UEFWrite8(CycleCount, SUEF);
+	UEFWrite8(ActiveRegSet, SUEF);
+	UEFWrite8(0, SUEF); // Unused pad
+	UEFWrite32(SampleLeft, SUEF);
+	UEFWrite32(SampleRight, SUEF);
+	UEFWrite8(JimPageSelectRegister, SUEF);
 }
 
 void LoadMusic5000UEF(FILE *SUEF, int Version)
 {
-	fread(WaveRam,1,RAM_SIZE,SUEF);
-	fread(PhaseRam,1,sizeof(PhaseRam),SUEF);
-	CurCh=fgetc(SUEF);
-	CycleCount=fgetc(SUEF);
-	ActiveRegSet=fgetc(SUEF);
-	fgetc(SUEF);//Unused pad
-	SampleLeft=fget32(SUEF);
-	SampleRight=fget32(SUEF);
-	if (Version >= 13) {
-		JimPageSelectRegister = fget8(SUEF);
+	UEFReadBuf(WaveRam, RAM_SIZE, SUEF);
+	UEFReadBuf(PhaseRam, sizeof(PhaseRam), SUEF);
+	CurCh = UEFRead8(SUEF);
+	CycleCount = UEFRead8(SUEF);
+	ActiveRegSet = UEFRead8(SUEF);
+	UEFRead8(SUEF); // Unused pad
+	SampleLeft = UEFRead32(SUEF);
+	SampleRight = UEFRead32(SUEF);
+
+	if (Version >= 13)
+	{
+		JimPageSelectRegister = UEFRead8(SUEF);
 	}
 }
 
 void LoadMusic5000JIMPageRegUEF(FILE *SUEF)
 {
-	JimPageSelectRegister = fget8(SUEF);
+	JimPageSelectRegister = UEFRead8(SUEF);
 }

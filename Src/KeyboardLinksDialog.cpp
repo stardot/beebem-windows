@@ -52,36 +52,36 @@ INT_PTR KeyboardLinksDialog::DlgProc(UINT   nMessage,
 {
 	switch (nMessage)
 	{
-		case WM_INITDIALOG: {
+		case WM_INITDIALOG:
 			for (int i = 0; i < 8; i++)
 			{
 				SetDlgItemChecked(nControlIDs[i], (m_Value & (1 << i)) != 0);
 			}
-			
+
 			return TRUE;
-		}
 
 		case WM_COMMAND:
 			switch (LOWORD(wParam))
 			{
-			case IDOK:
-				m_Value = 0;
+				case IDOK:
+					m_Value = 0;
 
-				for (int i = 0; i < 8; i++)
-				{
-					if (IsDlgItemChecked(nControlIDs[i]))
+					for (int i = 0; i < 8; i++)
 					{
-						m_Value |= 1 << i;
+						if (IsDlgItemChecked(nControlIDs[i]))
+						{
+							m_Value |= 1 << i;
+						}
 					}
-				}
 
-				EndDialog(m_hwnd, wParam);
-				return TRUE;
+					EndDialog(m_hwnd, wParam);
+					return TRUE;
 
-			case IDCANCEL:
-				EndDialog(m_hwnd, wParam);
-				return TRUE;
+				case IDCANCEL:
+					EndDialog(m_hwnd, wParam);
+					return TRUE;
 			}
+			break;
 	}
 
 	return FALSE;

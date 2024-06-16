@@ -1196,6 +1196,11 @@ void BeebWin::LoadUEFState(const char *FileName)
 			       FileName);
 			break;
 
+		case UEFStateResult::ReadFailed:
+			Report(MessageType::Error, "Failed to read state file:\n  %s",
+			       FileName);
+			break;
+
 		case UEFStateResult::InvalidUEFFile:
 			Report(MessageType::Error, "The file selected is not a UEF file:\n  %s",
 			       FileName);
@@ -1370,7 +1375,7 @@ void BeebWin::SaveBeebEmID(FILE *SUEF)
 	strcpy(EmuName, "BeebEm");
 	EmuName[14] = VERSION_MAJOR;
 	EmuName[15] = VERSION_MINOR;
-	fwrite(EmuName, 1, sizeof(EmuName), SUEF);
+	UEFWriteBuf(EmuName, sizeof(EmuName), SUEF);
 }
 
 void BeebWin::SaveEmuUEF(FILE *SUEF)
@@ -1378,28 +1383,28 @@ void BeebWin::SaveEmuUEF(FILE *SUEF)
 	// Emulator Specifics
 	// Note about this block: It should only be handled by beebem from uefstate.cpp if
 	// the UEF has been determined to be from BeebEm (Block 046C)
-	fputc(static_cast<unsigned char>(MachineType), SUEF);
-	fputc(NativeFDC ? 0 : 1, SUEF);
-	fputc(static_cast<unsigned char>(TubeType), SUEF);
-	fput16((int)m_KeyboardMapping, SUEF);
+	UEFWrite8(static_cast<unsigned char>(MachineType), SUEF);
+	UEFWrite8(NativeFDC ? 0 : 1, SUEF);
+	UEFWrite8(static_cast<unsigned char>(TubeType), SUEF);
+	UEFWrite16((int)m_KeyboardMapping, SUEF);
 	if (m_KeyboardMapping == KeyboardMappingType::User)
 	{
-		fputstring(m_UserKeyMapPath, SUEF);
+		UEFWriteString(m_UserKeyMapPath, SUEF);
 	}
 	else
 	{
 		char blank[256];
 		memset(blank, 0, sizeof(blank));
 
-		fwrite(blank, 1, sizeof(blank), SUEF);
+		UEFWriteBuf(blank, sizeof(blank), SUEF);
 	}
 
-	fputc(0,SUEF);
+	UEFWrite8(0, SUEF);
 }
 
 void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 {
-	int Type = fgetc(SUEF);
+	int Type = UEFRead8(SUEF);
 
 	if (Version <= 8 && Type == 1)
 	{
@@ -1410,12 +1415,12 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 		MachineType = static_cast<Model>(Type);
 	}
 
-	NativeFDC = fgetc(SUEF) == 0;
-	TubeType = static_cast<Tube>(fgetc(SUEF));
+	NativeFDC = UEFRead8(SUEF) == 0;
+	TubeType = static_cast<TubeDevice>(UEFRead8(SUEF));
 
 	if (Version >= 11)
 	{
-		int KeyboardMapping = fget16(SUEF);
+		int KeyboardMapping = UEFRead16(SUEF);
 
 		const int UEF_USER_KEYBOARD_MAPPING = 40060; // Was a menu item ID in BeebEm <= 4.19
 
@@ -1426,11 +1431,11 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 
 			if (Version >= 14)
 			{
-				fgetstring(FileName, sizeof(FileName), SUEF);
+				UEFReadString(FileName, sizeof(FileName), SUEF);
 			}
 			else
 			{
-				fread(FileName, 1, sizeof(FileName), SUEF);
+				UEFReadBuf(FileName, sizeof(FileName), SUEF);
 			}
 
 			GetDataPath(m_UserDataPath, FileName);

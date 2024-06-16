@@ -39,7 +39,7 @@ bool inROM = true;
 
 unsigned char ReadZ80Mem(int addr)
 {
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		if (addr >= 0x8000) inROM = false;
 	}
@@ -150,7 +150,7 @@ unsigned char in(unsigned int addr)
 
 	addr &= 0xff;
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		value = ReadTubeFromParasiteSide(addr);
 	}
@@ -180,7 +180,7 @@ void out(unsigned int addr, unsigned char value)
 {
 	addr &= 255;
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		WriteTubeFromParasiteSide(addr, value);
 	}
@@ -210,7 +210,7 @@ void z80_execute()
 	PreZPC = pc;
 	pc = (WORD)simz80(pc);
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		if (TubeintStatus & (1 << R1))
 			set_Z80_irq_line(true);
@@ -234,7 +234,7 @@ void init_z80()
 
 	WriteLog("init_z80()\n");
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		strcpy(path, RomPath);
 		strcat(path, "BeebFile/Z80.rom");
@@ -346,62 +346,62 @@ void PrintHex(int addr)
 
 void SaveZ80UEF(FILE *SUEF)
 {
-	fwrite(z80_ram, 1, sizeof(z80_ram), SUEF);
+	UEFWriteBuf(z80_ram, sizeof(z80_ram), SUEF);
 
 	// Z80 registers
-	fput16(af[0], SUEF);
-	fput16(af[1], SUEF);
-	fputc(af_sel, SUEF);
+	UEFWrite16(af[0], SUEF);
+	UEFWrite16(af[1], SUEF);
+	UEFWrite8(af_sel, SUEF);
 
 	for (int i = 0; i < 2; i++)
 	{
-		fput16(regs[i].bc, SUEF);
-		fput16(regs[i].de, SUEF);
-		fput16(regs[i].hl, SUEF);
+		UEFWrite16(regs[i].bc, SUEF);
+		UEFWrite16(regs[i].de, SUEF);
+		UEFWrite16(regs[i].hl, SUEF);
 	}
 
-	fputc(regs_sel, SUEF);
+	UEFWrite8(regs_sel, SUEF);
 
-	fput16(ir, SUEF);
-	fput16(ix, SUEF);
-	fput16(iy, SUEF);
-	fput16(sp, SUEF);
-	fput16(pc, SUEF);
-	fput16(IFF1, SUEF);
-	fput16(IFF2, SUEF);
+	UEFWrite16(ir, SUEF);
+	UEFWrite16(ix, SUEF);
+	UEFWrite16(iy, SUEF);
+	UEFWrite16(sp, SUEF);
+	UEFWrite16(pc, SUEF);
+	UEFWrite16(IFF1, SUEF);
+	UEFWrite16(IFF2, SUEF);
 
-	fput16(pc, SUEF);
-	fput16(PreZPC, SUEF);
-	fputc(inROM, SUEF);
+	UEFWrite16(pc, SUEF);
+	UEFWrite16(PreZPC, SUEF);
+	UEFWrite8(inROM, SUEF);
 }
 
 void LoadZ80UEF(FILE *SUEF)
 {
-	fread(z80_ram, 1, sizeof(z80_ram), SUEF);
+	UEFReadBuf(z80_ram, sizeof(z80_ram), SUEF);
 
 	// Z80 registers
-	af[0] = (WORD)fget16(SUEF);
-	af[1] = (WORD)fget16(SUEF);
-	af_sel = fget8(SUEF);
+	af[0] = UEFRead16(SUEF);
+	af[1] = UEFRead16(SUEF);
+	af_sel = UEFRead8(SUEF);
 
 	for (int i = 0; i < 2; i++)
 	{
-		regs[i].bc = (WORD)fget16(SUEF);
-		regs[i].de = (WORD)fget16(SUEF);
-		regs[i].hl = (WORD)fget16(SUEF);
+		regs[i].bc = UEFRead16(SUEF);
+		regs[i].de = UEFRead16(SUEF);
+		regs[i].hl = UEFRead16(SUEF);
 	}
 
-	regs_sel = fget8(SUEF);
+	regs_sel = UEFRead8(SUEF);
 
-	ir = (WORD)fget16(SUEF);
-	ix = (WORD)fget16(SUEF);
-	iy = (WORD)fget16(SUEF);
-	sp = (WORD)fget16(SUEF);
-	pc = (WORD)fget16(SUEF);
-	IFF1 = (WORD)fget16(SUEF);
-	IFF2 = (WORD)fget16(SUEF);
+	ir = UEFRead16(SUEF);
+	ix = UEFRead16(SUEF);
+	iy = UEFRead16(SUEF);
+	sp = UEFRead16(SUEF);
+	pc = UEFRead16(SUEF);
+	IFF1 = UEFRead16(SUEF);
+	IFF2 = UEFRead16(SUEF);
 
-	pc = fget16(SUEF);
-	PreZPC = fget16(SUEF);
-	inROM = fgetbool(SUEF);
+	pc = UEFRead16(SUEF);
+	PreZPC = UEFRead16(SUEF);
+	inROM = UEFReadBool(SUEF);
 }

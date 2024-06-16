@@ -206,13 +206,13 @@ void BeebWin::LoadTubePreferences()
 	{
 		switch (Value)
 		{
-			case 0: default: TubeType = Tube::None; break;
-			case 1:          TubeType = Tube::Acorn65C02; break;
-			case 2:          TubeType = Tube::Master512CoPro; break;
-			case 3:          TubeType = Tube::AcornZ80; break;
-			case 4:          TubeType = Tube::TorchZ80; break;
-			case 5:          TubeType = Tube::AcornArm; break;
-			case 6:          TubeType = Tube::SprowArm; break;
+			case 0: default: TubeType = TubeDevice::None; break;
+			case 1:          TubeType = TubeDevice::Acorn65C02; break;
+			case 2:          TubeType = TubeDevice::Master512CoPro; break;
+			case 3:          TubeType = TubeDevice::AcornZ80; break;
+			case 4:          TubeType = TubeDevice::TorchZ80; break;
+			case 5:          TubeType = TubeDevice::AcornArm; break;
+			case 6:          TubeType = TubeDevice::SprowArm; break;
 		}
 	}
 	else
@@ -232,27 +232,27 @@ void BeebWin::LoadTubePreferences()
 
 		if (TubeEnabled)
 		{
-			TubeType = Tube::Acorn65C02;
+			TubeType = TubeDevice::Acorn65C02;
 		}
 		else if (AcornZ80)
 		{
-			TubeType = Tube::AcornZ80;
+			TubeType = TubeDevice::AcornZ80;
 		}
 		else if (TorchTube)
 		{
-			TubeType = Tube::TorchZ80;
+			TubeType = TubeDevice::TorchZ80;
 		}
 		else if (Tube186Enabled)
 		{
-			TubeType = Tube::Master512CoPro;
+			TubeType = TubeDevice::Master512CoPro;
 		}
 		else if (ArmTube)
 		{
-			TubeType = Tube::AcornArm;
+			TubeType = TubeDevice::AcornArm;
 		}
 		else
 		{
-			TubeType = Tube::None;
+			TubeType = TubeDevice::None;
 		}
 	}
 }
@@ -566,9 +566,9 @@ void BeebWin::LoadSoundPreferences(int Version)
 
 		switch (Value)
 		{
-			case 11025:          m_SampleRate = 11025; break;
-			case 22050:          m_SampleRate = 22050; break;
-			case 44100: default: m_SampleRate = 44100; break;
+			case 11025:          SoundSampleRate = 11025; break;
+			case 22050:          SoundSampleRate = 22050; break;
+			case 44100: default: SoundSampleRate = 44100; break;
 		}
 	}
 	else
@@ -580,9 +580,9 @@ void BeebWin::LoadSoundPreferences(int Version)
 
 		switch (Value)
 		{
-			case 40016:          m_SampleRate = 11025; break;
-			case 40015:          m_SampleRate = 22050; break;
-			case 40014: default: m_SampleRate = 44100; break;
+			case 40016:          SoundSampleRate = 11025; break;
+			case 40015:          SoundSampleRate = 22050; break;
+			case 40014: default: SoundSampleRate = 44100; break;
 		}
 	}
 
@@ -594,10 +594,10 @@ void BeebWin::LoadSoundPreferences(int Version)
 
 		switch (Value)
 		{
-			case 75:           m_SoundVolume = 75; break;
-			case 50:           m_SoundVolume = 50; break;
-			case 25:           m_SoundVolume = 25; break;
-			case 100: default: m_SoundVolume = 100; break;
+			case 75:           SoundVolume = 75; break;
+			case 50:           SoundVolume = 50; break;
+			case 25:           SoundVolume = 25; break;
+			case 100: default: SoundVolume = 100; break;
 		}
 	}
 	else
@@ -609,10 +609,10 @@ void BeebWin::LoadSoundPreferences(int Version)
 
 		switch (Value)
 		{
-			case 40017:          m_SoundVolume = 75; break;
-			case 40018:          m_SoundVolume = 50; break;
-			case 40019:          m_SoundVolume = 25; break;
-			case 40021: default: m_SoundVolume = 100; break;
+			case 40017:          SoundVolume = 75; break;
+			case 40018:          SoundVolume = 50; break;
+			case 40019:          SoundVolume = 25; break;
+			case 40021: default: SoundVolume = 100; break;
 		}
 	}
 
@@ -1524,8 +1524,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		// Sound
 		m_Preferences.SetDecimalValue(CFG_SOUND_STREAMER, (int)SelectedSoundStreamer);
 		m_Preferences.EraseValue(CFG_SOUND_STREAMER_OLD);
-		m_Preferences.SetDecimalValue(CFG_SOUND_SAMPLE_RATE, m_SampleRate);
-		m_Preferences.SetDecimalValue(CFG_SOUND_VOLUME, m_SoundVolume);
+		m_Preferences.SetDecimalValue(CFG_SOUND_SAMPLE_RATE, SoundSampleRate);
+		m_Preferences.SetDecimalValue(CFG_SOUND_VOLUME, SoundVolume);
 		m_Preferences.SetBoolValue(CFG_SOUND_EXPONENTIAL_VOLUME, SoundExponentialVolume);
 		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
 		m_Preferences.SetBoolValue(CFG_SOUND_CHIP_ENABLED, SoundChipEnabled);

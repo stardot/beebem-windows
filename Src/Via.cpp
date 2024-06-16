@@ -83,50 +83,50 @@ void SaveVIAUEF(FILE *SUEF)
 	for (int n = 0; n < 2; n++)
 	{
 		const VIAState *VIAPtr = (n == 0) ? &SysVIAState : &UserVIAState;
-		fput16(0x0467,SUEF);
-		fput32(22,SUEF);
-		fputc(n,SUEF);
-		fputc(VIAPtr->orb,SUEF);
-		fputc(VIAPtr->irb,SUEF);
-		fputc(VIAPtr->ora,SUEF);
-		fputc(VIAPtr->ira,SUEF);
-		fputc(VIAPtr->ddrb,SUEF);
-		fputc(VIAPtr->ddra,SUEF);
-		fput16(VIAPtr->timer1c / 2,SUEF);
-		fput16(VIAPtr->timer1l,SUEF);
-		fput16(VIAPtr->timer2c / 2,SUEF);
-		fput16(VIAPtr->timer2l,SUEF);
-		fputc(VIAPtr->acr,SUEF);
-		fputc(VIAPtr->pcr,SUEF);
-		fputc(VIAPtr->ifr,SUEF);
-		fputc(VIAPtr->ier,SUEF);
-		fputc(VIAPtr->timer1hasshot,SUEF);
-		fputc(VIAPtr->timer2hasshot,SUEF);
-		if (!n) fputc(IC32State,SUEF); else fputc(0,SUEF);
+		UEFWrite16(0x0467, SUEF);
+		UEFWrite32(22, SUEF);
+		UEFWrite8(n, SUEF);
+		UEFWrite8(VIAPtr->orb, SUEF);
+		UEFWrite8(VIAPtr->irb, SUEF);
+		UEFWrite8(VIAPtr->ora, SUEF);
+		UEFWrite8(VIAPtr->ira, SUEF);
+		UEFWrite8(VIAPtr->ddrb, SUEF);
+		UEFWrite8(VIAPtr->ddra, SUEF);
+		UEFWrite16(VIAPtr->timer1c / 2, SUEF);
+		UEFWrite16(VIAPtr->timer1l, SUEF);
+		UEFWrite16(VIAPtr->timer2c / 2, SUEF);
+		UEFWrite16(VIAPtr->timer2l, SUEF);
+		UEFWrite8(VIAPtr->acr, SUEF);
+		UEFWrite8(VIAPtr->pcr, SUEF);
+		UEFWrite8(VIAPtr->ifr, SUEF);
+		UEFWrite8(VIAPtr->ier, SUEF);
+		UEFWrite8(VIAPtr->timer1hasshot, SUEF);
+		UEFWrite8(VIAPtr->timer2hasshot, SUEF);
+		if (!n) UEFWrite8(IC32State, SUEF); else UEFWrite8(0, SUEF);
 	}
 }
 
 void LoadViaUEF(FILE *SUEF)
 {
-	int VIAType = fget8(SUEF);
+	int VIAType = UEFRead8(SUEF);
 	VIAState *VIAPtr = VIAType ? &UserVIAState : &SysVIAState;
-	VIAPtr->orb = fget8(SUEF);
-	VIAPtr->irb = fget8(SUEF);
-	VIAPtr->ora = fget8(SUEF);
-	VIAPtr->ira = fget8(SUEF);
-	VIAPtr->ddrb = fget8(SUEF);
-	VIAPtr->ddra = fget8(SUEF);
-	VIAPtr->timer1c = fget16(SUEF) * 2;
-	VIAPtr->timer1l = fget16(SUEF);
-	VIAPtr->timer2c = fget16(SUEF) * 2;
-	VIAPtr->timer2l = fget16(SUEF);
-	VIAPtr->acr = fget8(SUEF);
-	VIAPtr->pcr = fget8(SUEF);
-	VIAPtr->ifr = fget8(SUEF);
-	VIAPtr->ier = fget8(SUEF);
-	VIAPtr->timer1hasshot = fgetbool(SUEF);
-	VIAPtr->timer2hasshot = fgetbool(SUEF);
-	if (!VIAType) IC32State = fget8(SUEF);
+	VIAPtr->orb = UEFRead8(SUEF);
+	VIAPtr->irb = UEFRead8(SUEF);
+	VIAPtr->ora = UEFRead8(SUEF);
+	VIAPtr->ira = UEFRead8(SUEF);
+	VIAPtr->ddrb = UEFRead8(SUEF);
+	VIAPtr->ddra = UEFRead8(SUEF);
+	VIAPtr->timer1c = UEFRead16(SUEF) * 2;
+	VIAPtr->timer1l = UEFRead16(SUEF);
+	VIAPtr->timer2c = UEFRead16(SUEF) * 2;
+	VIAPtr->timer2l = UEFRead16(SUEF);
+	VIAPtr->acr = UEFRead8(SUEF);
+	VIAPtr->pcr = UEFRead8(SUEF);
+	VIAPtr->ifr = UEFRead8(SUEF);
+	VIAPtr->ier = UEFRead8(SUEF);
+	VIAPtr->timer1hasshot = UEFReadBool(SUEF);
+	VIAPtr->timer2hasshot = UEFReadBool(SUEF);
+	if (!VIAType) IC32State = UEFRead8(SUEF);
 
 	VIAPtr->ca2 = ((VIAPtr->pcr & PCR_CA2_CONTROL) == PCR_CA2_OUTPUT_HIGH);
 	VIAPtr->cb2 = ((VIAPtr->pcr & PCR_CB2_CONTROL) == PCR_CB2_OUTPUT_HIGH);

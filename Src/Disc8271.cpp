@@ -282,7 +282,7 @@ static unsigned char SkipBadTracks(int Drive, unsigned char Track)
 	{
 		int Offset = 0;
 
-		if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
+		if (TubeType != TubeDevice::TorchZ80) // If running under Torch Z80, ignore bad tracks
 		{
 			if (FDCState.BadTracks[Drive][0] <= Track) Offset++;
 			if (FDCState.BadTracks[Drive][1] <= Track) Offset++;
@@ -2821,83 +2821,83 @@ void Save8271UEF(FILE *SUEF)
 	if (DiscStatus[0].Tracks[0][0].Sectors == nullptr)
 	{
 		// No disc in drive 0
-		fputstring("", SUEF);
+		UEFWriteString("", SUEF);
 	}
 	else
 	{
-		fputstring(DiscInfo[0].FileName, SUEF);
+		UEFWriteString(DiscInfo[0].FileName, SUEF);
 	}
 
 	if (DiscStatus[1].Tracks[0][0].Sectors == nullptr)
 	{
 		// No disc in drive 1
-		fputstring("", SUEF);
+		UEFWriteString("", SUEF);
 	}
 	else
 	{
-		fputstring(DiscInfo[1].FileName, SUEF);
+		UEFWriteString(DiscInfo[1].FileName, SUEF);
 	}
 
 	if (Disc8271Trigger == CycleCountTMax)
 	{
-		fput32(Disc8271Trigger, SUEF);
+		UEFWrite32(Disc8271Trigger, SUEF);
 	}
 	else
 	{
-		fput32(Disc8271Trigger - TotalCycles, SUEF);
+		UEFWrite32(Disc8271Trigger - TotalCycles, SUEF);
 	}
 
-	fputc(FDCState.ResultReg, SUEF);
-	fputc(FDCState.StatusReg, SUEF);
-	fputc(FDCState.DataReg, SUEF);
-	fputc(FDCState.ScanSectorNum, SUEF);
-	fput32(FDCState.ScanCount, SUEF);
-	fputc(FDCState.ModeReg, SUEF);
-	fputc(FDCState.CurrentTrack[0], SUEF);
-	fputc(FDCState.CurrentTrack[1], SUEF);
-	fputc(FDCState.DriveControlOutputPort, SUEF);
-	fputc(FDCState.DriveControlInputPort, SUEF);
-	fputc(FDCState.BadTracks[0][0], SUEF);
-	fputc(FDCState.BadTracks[0][1], SUEF);
-	fputc(FDCState.BadTracks[1][0], SUEF);
-	fputc(FDCState.BadTracks[1][1], SUEF);
-	fput32(FDCState.Command,SUEF);
-	fput32(FDCState.CommandParamCount, SUEF);
-	fput32(FDCState.CurrentParam, SUEF);
-	fwrite(FDCState.Params, 1, sizeof(FDCState.Params), SUEF);
-	fput32(DiscStatus[0].NumHeads, SUEF);
-	fput32(DiscStatus[1].NumHeads, SUEF);
-	fput32(FDCState.Select[0] ? 1 : 0, SUEF);
-	fput32(FDCState.Select[1] ? 1 : 0, SUEF);
-	fput32(DiscStatus[0].Writeable ? 1 : 0, SUEF);
-	fput32(DiscStatus[1].Writeable ? 1 : 0, SUEF);
-	fput32(CommandStatus.FirstWriteInt ? 1 : 0, SUEF);
-	fput32(CommandStatus.NextInterruptIsErr, SUEF);
-	fput32(CommandStatus.TrackAddr, SUEF);
-	fput32(CommandStatus.CurrentSector, SUEF);
-	fput32(CommandStatus.SectorLength, SUEF);
-	fput32(CommandStatus.SectorsToGo, SUEF);
-	fput32(CommandStatus.ByteWithinSector, SUEF);
+	UEFWrite8(FDCState.ResultReg, SUEF);
+	UEFWrite8(FDCState.StatusReg, SUEF);
+	UEFWrite8(FDCState.DataReg, SUEF);
+	UEFWrite8(FDCState.ScanSectorNum, SUEF);
+	UEFWrite32(FDCState.ScanCount, SUEF);
+	UEFWrite8(FDCState.ModeReg, SUEF);
+	UEFWrite8(FDCState.CurrentTrack[0], SUEF);
+	UEFWrite8(FDCState.CurrentTrack[1], SUEF);
+	UEFWrite8(FDCState.DriveControlOutputPort, SUEF);
+	UEFWrite8(FDCState.DriveControlInputPort, SUEF);
+	UEFWrite8(FDCState.BadTracks[0][0], SUEF);
+	UEFWrite8(FDCState.BadTracks[0][1], SUEF);
+	UEFWrite8(FDCState.BadTracks[1][0], SUEF);
+	UEFWrite8(FDCState.BadTracks[1][1], SUEF);
+	UEFWrite32(FDCState.Command,SUEF);
+	UEFWrite32(FDCState.CommandParamCount, SUEF);
+	UEFWrite32(FDCState.CurrentParam, SUEF);
+	UEFWriteBuf(FDCState.Params, sizeof(FDCState.Params), SUEF);
+	UEFWrite32(DiscStatus[0].NumHeads, SUEF);
+	UEFWrite32(DiscStatus[1].NumHeads, SUEF);
+	UEFWrite32(FDCState.Select[0] ? 1 : 0, SUEF);
+	UEFWrite32(FDCState.Select[1] ? 1 : 0, SUEF);
+	UEFWrite32(DiscStatus[0].Writeable ? 1 : 0, SUEF);
+	UEFWrite32(DiscStatus[1].Writeable ? 1 : 0, SUEF);
+	UEFWrite32(CommandStatus.FirstWriteInt ? 1 : 0, SUEF);
+	UEFWrite32(CommandStatus.NextInterruptIsErr, SUEF);
+	UEFWrite32(CommandStatus.TrackAddr, SUEF);
+	UEFWrite32(CommandStatus.CurrentSector, SUEF);
+	UEFWrite32(CommandStatus.SectorLength, SUEF);
+	UEFWrite32(CommandStatus.SectorsToGo, SUEF);
+	UEFWrite32(CommandStatus.ByteWithinSector, SUEF);
 
-	fputc(FDCState.StepRate, SUEF);
-	fputc(FDCState.HeadSettlingTime, SUEF);
-	fputc(FDCState.IndexCountBeforeHeadUnload, SUEF);
-	fputc(FDCState.HeadLoadTime, SUEF);
-	fputc(FDCState.DriveHeadLoaded, SUEF);
-	fputc(FDCState.DriveHeadUnloadPending, SUEF);
+	UEFWrite8(FDCState.StepRate, SUEF);
+	UEFWrite8(FDCState.HeadSettlingTime, SUEF);
+	UEFWrite8(FDCState.IndexCountBeforeHeadUnload, SUEF);
+	UEFWrite8(FDCState.HeadLoadTime, SUEF);
+	UEFWrite8(FDCState.DriveHeadLoaded, SUEF);
+	UEFWrite8(FDCState.DriveHeadUnloadPending, SUEF);
 
 	// Load FSD-specific state
-	fputc(FDCState.DriveHeadPosition[0], SUEF);
-	fputc(FDCState.DriveHeadPosition[1], SUEF);
-	fputc(FDCState.PositionInTrack[0], SUEF);
-	fputc(FDCState.PositionInTrack[1], SUEF);
-	fputc(FDCState.SectorOverRead, SUEF);
-	fputc(FDCState.UsingSpecial, SUEF);
-	fputc(FDCState.DRDSC, SUEF);
-	fputc(FDCState.FSDLogicalTrack[0], SUEF);
-	fputc(FDCState.FSDLogicalTrack[1], SUEF);
-	fputc(FDCState.FSDPhysicalTrack[0], SUEF);
-	fputc(FDCState.FSDPhysicalTrack[1], SUEF);
+	UEFWrite8(FDCState.DriveHeadPosition[0], SUEF);
+	UEFWrite8(FDCState.DriveHeadPosition[1], SUEF);
+	UEFWrite8(FDCState.PositionInTrack[0], SUEF);
+	UEFWrite8(FDCState.PositionInTrack[1], SUEF);
+	UEFWrite8(FDCState.SectorOverRead, SUEF);
+	UEFWrite8(FDCState.UsingSpecial, SUEF);
+	UEFWrite8(FDCState.DRDSC, SUEF);
+	UEFWrite8(FDCState.FSDLogicalTrack[0], SUEF);
+	UEFWrite8(FDCState.FSDLogicalTrack[1], SUEF);
+	UEFWrite8(FDCState.FSDPhysicalTrack[0], SUEF);
+	UEFWrite8(FDCState.FSDPhysicalTrack[1], SUEF);
 }
 
 void Load8271UEF(FILE *SUEF, int Version)
@@ -2918,11 +2918,11 @@ void Load8271UEF(FILE *SUEF, int Version)
 
 	if (Version >= 14)
 	{
-		fgetstring(FileName, sizeof(FileName), SUEF);
+		UEFReadString(FileName, sizeof(FileName), SUEF);
 	}
 	else
 	{
-		fread(FileName, 1, sizeof(FileName), SUEF);
+		UEFReadBuf(FileName, sizeof(FileName), SUEF);
 	}
 
 	if (FileName[0] != '\0')
@@ -2950,11 +2950,11 @@ void Load8271UEF(FILE *SUEF, int Version)
 
 	if (Version >= 14)
 	{
-		fgetstring(FileName, sizeof(FileName), SUEF);
+		UEFReadString(FileName, sizeof(FileName), SUEF);
 	}
 	else
 	{
-		fread(FileName, 1, sizeof(FileName), SUEF);
+		UEFReadBuf(FileName, sizeof(FileName), SUEF);
 	}
 
 	if (FileName[0] != '\0')
@@ -2980,64 +2980,64 @@ void Load8271UEF(FILE *SUEF, int Version)
 
 	if (Loaded && LoadSuccess)
 	{
-		Disc8271Trigger = fget32(SUEF);
+		Disc8271Trigger = UEFRead32(SUEF);
 		if (Disc8271Trigger != CycleCountTMax)
 			Disc8271Trigger += TotalCycles;
 
-		FDCState.ResultReg = fget8(SUEF);
-		FDCState.StatusReg = fget8(SUEF);
-		FDCState.DataReg = fget8(SUEF);
-		FDCState.ScanSectorNum = fget8(SUEF);
-		FDCState.ScanCount = fget32(SUEF);
-		FDCState.ModeReg = fget8(SUEF);
-		FDCState.CurrentTrack[0] = fget8(SUEF);
-		FDCState.CurrentTrack[1] = fget8(SUEF);
-		FDCState.DriveControlOutputPort = fget8(SUEF);
-		FDCState.DriveControlInputPort = fget8(SUEF);
-		FDCState.BadTracks[0][0] = fget8(SUEF);
-		FDCState.BadTracks[0][1] = fget8(SUEF);
-		FDCState.BadTracks[1][0] = fget8(SUEF);
-		FDCState.BadTracks[1][1] = fget8(SUEF);
-		FDCState.Command = (unsigned char)fget32(SUEF);
-		FDCState.CommandParamCount = fget32(SUEF);
-		FDCState.CurrentParam = fget32(SUEF);
-		fread(FDCState.Params, 1, sizeof(FDCState.Params), SUEF);
-		DiscStatus[0].NumHeads = fget32(SUEF);
-		DiscStatus[1].NumHeads = fget32(SUEF);
-		FDCState.Select[0] = fget32(SUEF) != 0;
-		FDCState.Select[1] = fget32(SUEF) != 0;
-		DiscStatus[0].Writeable = fget32(SUEF) != 0;
-		DiscStatus[1].Writeable = fget32(SUEF) != 0;
-		CommandStatus.FirstWriteInt = fget32(SUEF) != 0;
-		CommandStatus.NextInterruptIsErr = (unsigned char)fget32(SUEF);
-		CommandStatus.TrackAddr = (unsigned char)fget32(SUEF);
-		CommandStatus.CurrentSector = (unsigned char)fget32(SUEF);
-		CommandStatus.SectorLength = fget32(SUEF);
-		CommandStatus.SectorsToGo = fget32(SUEF);
-		CommandStatus.ByteWithinSector = fget32(SUEF);
+		FDCState.ResultReg = UEFRead8(SUEF);
+		FDCState.StatusReg = UEFRead8(SUEF);
+		FDCState.DataReg = UEFRead8(SUEF);
+		FDCState.ScanSectorNum = UEFRead8(SUEF);
+		FDCState.ScanCount = UEFRead32(SUEF);
+		FDCState.ModeReg = UEFRead8(SUEF);
+		FDCState.CurrentTrack[0] = UEFRead8(SUEF);
+		FDCState.CurrentTrack[1] = UEFRead8(SUEF);
+		FDCState.DriveControlOutputPort = UEFRead8(SUEF);
+		FDCState.DriveControlInputPort = UEFRead8(SUEF);
+		FDCState.BadTracks[0][0] = UEFRead8(SUEF);
+		FDCState.BadTracks[0][1] = UEFRead8(SUEF);
+		FDCState.BadTracks[1][0] = UEFRead8(SUEF);
+		FDCState.BadTracks[1][1] = UEFRead8(SUEF);
+		FDCState.Command = (unsigned char)UEFRead32(SUEF);
+		FDCState.CommandParamCount = UEFRead32(SUEF);
+		FDCState.CurrentParam = UEFRead32(SUEF);
+		UEFReadBuf(FDCState.Params, sizeof(FDCState.Params), SUEF);
+		DiscStatus[0].NumHeads = UEFRead32(SUEF);
+		DiscStatus[1].NumHeads = UEFRead32(SUEF);
+		FDCState.Select[0] = UEFRead32(SUEF) != 0;
+		FDCState.Select[1] = UEFRead32(SUEF) != 0;
+		DiscStatus[0].Writeable = UEFRead32(SUEF) != 0;
+		DiscStatus[1].Writeable = UEFRead32(SUEF) != 0;
+		CommandStatus.FirstWriteInt = UEFRead32(SUEF) != 0;
+		CommandStatus.NextInterruptIsErr = (unsigned char)UEFRead32(SUEF);
+		CommandStatus.TrackAddr = (unsigned char)UEFRead32(SUEF);
+		CommandStatus.CurrentSector = (unsigned char)UEFRead32(SUEF);
+		CommandStatus.SectorLength = UEFRead32(SUEF);
+		CommandStatus.SectorsToGo = UEFRead32(SUEF);
+		CommandStatus.ByteWithinSector = UEFRead32(SUEF);
 
 		if (Version >= 14)
 		{
 			// Load 8271 state
-			FDCState.StepRate = fget8(SUEF);
-			FDCState.HeadSettlingTime = fget8(SUEF);
-			FDCState.IndexCountBeforeHeadUnload = fget8(SUEF);
-			FDCState.HeadLoadTime = fget8(SUEF);
-			FDCState.DriveHeadLoaded = fget8(SUEF) != 0;
-			FDCState.DriveHeadUnloadPending = fget8(SUEF) != 0;
+			FDCState.StepRate = UEFRead8(SUEF);
+			FDCState.HeadSettlingTime = UEFRead8(SUEF);
+			FDCState.IndexCountBeforeHeadUnload = UEFRead8(SUEF);
+			FDCState.HeadLoadTime = UEFRead8(SUEF);
+			FDCState.DriveHeadLoaded = UEFRead8(SUEF) != 0;
+			FDCState.DriveHeadUnloadPending = UEFRead8(SUEF) != 0;
 
 			// Load FSD-specific state
-			FDCState.DriveHeadPosition[0] = fget8(SUEF);
-			FDCState.DriveHeadPosition[1] = fget8(SUEF);
-			FDCState.PositionInTrack[0] = fget8(SUEF);
-			FDCState.PositionInTrack[1] = fget8(SUEF);
-			FDCState.SectorOverRead = fget8(SUEF) != 0;
-			FDCState.UsingSpecial = fget8(SUEF) != 0;
-			FDCState.DRDSC = fget8(SUEF);
-			FDCState.FSDLogicalTrack[0] = fget8(SUEF);
-			FDCState.FSDLogicalTrack[1] = fget8(SUEF);
-			FDCState.FSDPhysicalTrack[0] = fget8(SUEF);
-			FDCState.FSDPhysicalTrack[1] = fget8(SUEF);
+			FDCState.DriveHeadPosition[0] = UEFRead8(SUEF);
+			FDCState.DriveHeadPosition[1] = UEFRead8(SUEF);
+			FDCState.PositionInTrack[0] = UEFRead8(SUEF);
+			FDCState.PositionInTrack[1] = UEFRead8(SUEF);
+			FDCState.SectorOverRead = UEFRead8(SUEF) != 0;
+			FDCState.UsingSpecial = UEFRead8(SUEF) != 0;
+			FDCState.DRDSC = UEFRead8(SUEF);
+			FDCState.FSDLogicalTrack[0] = UEFRead8(SUEF);
+			FDCState.FSDLogicalTrack[1] = UEFRead8(SUEF);
+			FDCState.FSDPhysicalTrack[0] = UEFRead8(SUEF);
+			FDCState.FSDPhysicalTrack[1] = UEFRead8(SUEF);
 		}
 
 		CommandStatus.CurrentTrackPtr = GetTrackPtr(CommandStatus.TrackAddr);

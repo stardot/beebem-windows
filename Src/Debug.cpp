@@ -1639,7 +1639,7 @@ bool DebugDisassembler(int addr,
 		return true;
 	}
 
-	if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
+	if ((TubeType == TubeDevice::AcornZ80 || TubeType == TubeDevice::TorchZ80) && !host)
 	{
 		if (!DebugOS && addr >= 0xf800 && addr <= 0xffff)
 		{
@@ -1728,7 +1728,7 @@ bool DebugDisassembler(int addr,
 	char str[150];
 
 	// Parasite instructions:
-	if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
+	if ((TubeType == TubeDevice::AcornZ80 || TubeType == TubeDevice::TorchZ80) && !host)
 	{
 		char buff[128];
 		Z80_Disassemble(addr, buff);
@@ -3195,7 +3195,7 @@ unsigned char DebugReadMem(int addr, bool host)
 	if (host)
 		return BeebReadMem(addr);
 
-	if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
+	if (TubeType == TubeDevice::AcornZ80 || TubeType == TubeDevice::TorchZ80)
 		return ReadZ80Mem(addr);
 
 	return TubeReadMem(addr);
@@ -3206,7 +3206,7 @@ static void DebugWriteMem(int addr, bool host, unsigned char data)
 	if (host)
 		BeebWriteMem(addr, data);
 
-	if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
+	if (TubeType == TubeDevice::AcornZ80 || TubeType == TubeDevice::TorchZ80)
 		WriteZ80Mem(addr, data);
 
 	TubeWriteMem(addr, data);
@@ -3386,7 +3386,7 @@ static int DebugDisassembleCommand(int addr, int count, bool host)
 
 	while (count > 0 && addr <= 0xffff)
 	{
-		if ((TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80) && !host)
+		if ((TubeType == TubeDevice::AcornZ80 || TubeType == TubeDevice::TorchZ80) && !host)
 		{
 			char buff[64];
 			int Len = Z80_Disassemble(addr, buff);
@@ -3452,7 +3452,7 @@ static void DebugMemoryDump(int addr, int count, bool host)
 		{
 			for (int b = 0; b < 16; ++b)
 			{
-				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80))
+				if (!host && (a+b) >= 0xfef8 && (a+b) < 0xff00 && !(TubeType == TubeDevice::AcornZ80 || TubeType == TubeDevice::TorchZ80))
 					p += sprintf(p, "IO ");
 				else
 					p += sprintf(p, "%02X ", DebugReadMem(a+b, host));

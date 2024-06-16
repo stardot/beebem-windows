@@ -1425,40 +1425,40 @@ int SerialGetTapeClock()
 
 void SaveSerialUEF(FILE *SUEF)
 {
-	fputc(SerialULA.RS423, SUEF);
-	fputstring(TapeFileName, SUEF);
-	fputc(SerialULA.CassetteRelay, SUEF);
-	fput32(SerialACIA.TxRate, SUEF);
-	fput32(SerialACIA.RxRate, SUEF);
-	fputc(SerialACIA.ClkDivide, SUEF);
-	fputc(SerialACIA.Parity, SUEF);
-	fputc(SerialACIA.StopBits, SUEF);
-	fputc(SerialACIA.DataBits, SUEF);
-	fputc(SerialACIA.RIE, SUEF);
-	fputc(SerialACIA.TIE, SUEF);
-	fputc(SerialACIA.TxD, SUEF);
-	fputc(SerialACIA.RxD, SUEF);
-	fputc(SerialACIA.RDR, SUEF);
-	fputc(SerialACIA.TDR, SUEF);
-	fputc(SerialACIA.RDSR, SUEF);
-	fputc(SerialACIA.TDSR, SUEF);
-	fputc(SerialACIA.Status, SUEF);
-	fputc(SerialACIA.Control, SUEF);
-	fputc(SerialULA.Control, SUEF);
-	fputc(0, SUEF); // DCD
-	fputc(0, SUEF); // DCDI
-	fputc(0, SUEF); // ODCDI
-	fputc(0, SUEF); // DCDClear
-	fput32(TapeState.Clock, SUEF);
-	fput32(TapeState.ClockSpeed, SUEF);
-	fputc(SerialULA.TapeCarrier, SUEF);
-	fput32(SerialULA.CarrierCycleCount, SUEF);
-	fputc(TapeState.Playing, SUEF);
-	fputc(TapeState.Recording, SUEF);
-	fputc(TapeState.Unlock, SUEF);
-	fput32(TapeState.UEFBuf, SUEF);
-	fput32(TapeState.OldUEFBuf, SUEF);
-	fput32(TapeState.OldClock, SUEF);
+	UEFWrite8(SerialULA.RS423, SUEF);
+	UEFWriteString(TapeFileName, SUEF);
+	UEFWrite8(SerialULA.CassetteRelay, SUEF);
+	UEFWrite32(SerialACIA.TxRate, SUEF);
+	UEFWrite32(SerialACIA.RxRate, SUEF);
+	UEFWrite8(SerialACIA.ClkDivide, SUEF);
+	UEFWrite8(SerialACIA.Parity, SUEF);
+	UEFWrite8(SerialACIA.StopBits, SUEF);
+	UEFWrite8(SerialACIA.DataBits, SUEF);
+	UEFWrite8(SerialACIA.RIE, SUEF);
+	UEFWrite8(SerialACIA.TIE, SUEF);
+	UEFWrite8(SerialACIA.TxD, SUEF);
+	UEFWrite8(SerialACIA.RxD, SUEF);
+	UEFWrite8(SerialACIA.RDR, SUEF);
+	UEFWrite8(SerialACIA.TDR, SUEF);
+	UEFWrite8(SerialACIA.RDSR, SUEF);
+	UEFWrite8(SerialACIA.TDSR, SUEF);
+	UEFWrite8(SerialACIA.Status, SUEF);
+	UEFWrite8(SerialACIA.Control, SUEF);
+	UEFWrite8(SerialULA.Control, SUEF);
+	UEFWrite8(0, SUEF); // DCD
+	UEFWrite8(0, SUEF); // DCDI
+	UEFWrite8(0, SUEF); // ODCDI
+	UEFWrite8(0, SUEF); // DCDClear
+	UEFWrite32(TapeState.Clock, SUEF);
+	UEFWrite32(TapeState.ClockSpeed, SUEF);
+	UEFWrite8(SerialULA.TapeCarrier, SUEF);
+	UEFWrite32(SerialULA.CarrierCycleCount, SUEF);
+	UEFWrite8(TapeState.Playing, SUEF);
+	UEFWrite8(TapeState.Recording, SUEF);
+	UEFWrite8(TapeState.Unlock, SUEF);
+	UEFWrite32(TapeState.UEFBuf, SUEF);
+	UEFWrite32(TapeState.OldUEFBuf, SUEF);
+	UEFWrite32(TapeState.OldClock, SUEF);
 
 	if (CSWFileOpen)
 	{
@@ -1472,49 +1472,50 @@ void LoadSerialUEF(FILE *SUEF, int Version)
 {
 	CloseTape();
 
-	SerialULA.RS423 = fgetbool(SUEF);
+	SerialULA.RS423 = UEFReadBool(SUEF);
 
 	char FileName[256];
 	memset(FileName, 0, sizeof(FileName));
 
 	if (Version >= 14)
 	{
-		fgetstring(FileName, sizeof(FileName), SUEF);
+		UEFReadString(FileName, sizeof(FileName), SUEF);
 	}
 	else
 	{
-		fread(FileName, 1, 256, SUEF);
+		UEFReadBuf(FileName, 256, SUEF);
 	}
 
 	if (FileName[0])
 	{
 		mainWin->LoadTape(FileName);
 
-		SerialULA.CassetteRelay = fgetbool(SUEF);
-		SerialACIA.TxRate = fget32(SUEF);
-		SerialACIA.RxRate = fget32(SUEF);
-		SerialACIA.ClkDivide = fget8(SUEF);
-		SerialACIA.Parity = fget8(SUEF);
-		SerialACIA.StopBits = fget8(SUEF);
-		SerialACIA.DataBits = fget8(SUEF);
-		SerialACIA.RIE = fgetbool(SUEF);
-		SerialACIA.TIE = fgetbool(SUEF);
-		SerialACIA.TxD = fget8(SUEF);
-		SerialACIA.RxD = fget8(SUEF);
-		SerialACIA.RDR = fget8(SUEF);
-		SerialACIA.TDR = fget8(SUEF);
-		SerialACIA.RDSR = fget8(SUEF);
-		SerialACIA.TDSR = fget8(SUEF);
-		SerialACIA.Status = fget8(SUEF);
-		SerialACIA.Control = fget8(SUEF);
-		SerialULA.Control = fget8(SUEF);
-		fgetbool(SUEF); // DCD
-		fgetbool(SUEF); // DCDI
-		fgetbool(SUEF); // ODCDI
-		fget8(SUEF); // DCDClear
-		TapeState.Clock = fget32(SUEF);
+		SerialULA.CassetteRelay = UEFReadBool(SUEF);
+		SerialACIA.TxRate = UEFRead32(SUEF);
+		SerialACIA.RxRate = UEFRead32(SUEF);
+		SerialACIA.ClkDivide = UEFRead8(SUEF);
+		SerialACIA.Parity = UEFRead8(SUEF);
+		SerialACIA.StopBits = UEFRead8(SUEF);
+		SerialACIA.DataBits = UEFRead8(SUEF);
+		SerialACIA.RIE = UEFReadBool(SUEF);
+		SerialACIA.TIE = UEFReadBool(SUEF);
+		SerialACIA.TxD = UEFRead8(SUEF);
+		SerialACIA.RxD = UEFRead8(SUEF);
+		SerialACIA.RDR = UEFRead8(SUEF);
+		SerialACIA.TDR = UEFRead8(SUEF);
+		SerialACIA.RDSR = UEFRead8(SUEF);
+		SerialACIA.TDSR = UEFRead8(SUEF);
+		SerialACIA.Status = UEFRead8(SUEF);
+		SerialACIA.Control = UEFRead8(SUEF);
+		SerialULA.Control = UEFRead8(SUEF);
+		UEFReadBool(SUEF); // DCD
+		UEFReadBool(SUEF); // DCDI
+		UEFReadBool(SUEF); // ODCDI
+		UEFRead8(SUEF); // DCDClear
+		TapeState.Clock = UEFRead32(SUEF);
 
-		int Speed = fget32(SUEF);
+		int Speed = UEFRead32(SUEF);
+
 		if (Speed != TapeState.ClockSpeed)
 		{
 			TapeState.Clock = (int)((double)TapeState.Clock * ((double)TapeState.ClockSpeed / Speed));
@@ -1524,15 +1525,15 @@ void LoadSerialUEF(FILE *SUEF, int Version)
 		{
 			// These replace DCD, DCDI, ODCDI, DCDClear from
 			// previous BeebEm versions.
-			SerialULA.TapeCarrier = fgetbool(SUEF);
-			SerialULA.CarrierCycleCount = fget32(SUEF);
+			SerialULA.TapeCarrier = UEFReadBool(SUEF);
+			SerialULA.CarrierCycleCount = UEFRead32(SUEF);
 
-			TapeState.Playing = fgetbool(SUEF);
-			TapeState.Recording = fgetbool(SUEF);
-			bool Unlock = fgetbool(SUEF);
-			TapeState.UEFBuf = fget32(SUEF);
-			TapeState.OldUEFBuf = fget32(SUEF);
-			TapeState.OldClock = fget32(SUEF);
+			TapeState.Playing = UEFReadBool(SUEF);
+			TapeState.Recording = UEFReadBool(SUEF);
+			bool Unlock = UEFReadBool(SUEF);
+			TapeState.UEFBuf = UEFRead32(SUEF);
+			TapeState.OldUEFBuf = UEFRead32(SUEF);
+			TapeState.OldClock = UEFRead32(SUEF);
 
 			// Read CSW state
 			if (CSWFileOpen)

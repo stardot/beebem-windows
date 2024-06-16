@@ -173,23 +173,23 @@ void AtoDDisable()
 
 void SaveAtoDUEF(FILE *SUEF)
 {
-	fputc(AtoD.DataLatch, SUEF);
-	fputc(AtoD.Status, SUEF);
-	fputc(AtoD.High, SUEF);
-	fputc(AtoD.Low, SUEF);
+	UEFWrite8(AtoD.DataLatch, SUEF);
+	UEFWrite8(AtoD.Status, SUEF);
+	UEFWrite8(AtoD.High, SUEF);
+	UEFWrite8(AtoD.Low, SUEF);
 	if (AtoDTrigger == CycleCountTMax)
-		fput32(AtoDTrigger, SUEF);
+		UEFWrite32(AtoDTrigger, SUEF);
 	else
-		fput32(AtoDTrigger - TotalCycles, SUEF);
+		UEFWrite32(AtoDTrigger - TotalCycles, SUEF);
 }
 
 void LoadAtoDUEF(FILE *SUEF)
 {
-	AtoD.DataLatch = fget8(SUEF);
-	AtoD.Status = fget8(SUEF);
-	AtoD.High = fget8(SUEF);
-	AtoD.Low = fget8(SUEF);
-	AtoDTrigger = fget32(SUEF);
+	AtoD.DataLatch = UEFRead8(SUEF);
+	AtoD.Status = UEFRead8(SUEF);
+	AtoD.High = UEFRead8(SUEF);
+	AtoD.Low = UEFRead8(SUEF);
+	AtoDTrigger = UEFRead32(SUEF);
 	if (AtoDTrigger != CycleCountTMax)
 		AtoDTrigger += TotalCycles;
 }

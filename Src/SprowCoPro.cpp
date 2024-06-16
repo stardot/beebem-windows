@@ -14,8 +14,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -822,147 +822,147 @@ ARMul_SafeWriteByte (ARMul_State * state, ARMword address, ARMword data)
 
 void CSprowCoPro::SaveState(FILE* SUEF)
 {
-	fput32(m_CycleCount, SUEF);
-	fputc(m_State->Emulate, SUEF);
-	fput32(m_State->EndCondition, SUEF);
+	UEFWrite32(m_CycleCount, SUEF);
+	UEFWrite8(m_State->Emulate, SUEF);
+	UEFWrite32(m_State->EndCondition, SUEF);
 
 	for (int i = 0; i < 16; i++)
 	{
-		fput32(m_State->Reg[i], SUEF);
+		UEFWrite32(m_State->Reg[i], SUEF);
 	}
 
 	for (int i = 0; i < 7; i++)
 	{
 		for (int j = 0; j < 16; j++)
 		{
-			fput32(m_State->RegBank[i][j], SUEF);
+			UEFWrite32(m_State->RegBank[i][j], SUEF);
 		}
 	}
 
-	fput64(m_State->Accumulator, SUEF);
-	fput32(m_State->Cpsr, SUEF);
+	UEFWrite64(m_State->Accumulator, SUEF);
+	UEFWrite32(m_State->Cpsr, SUEF);
 
 	for (int i = 0; i < 7; i++)
 	{
-		fput32(m_State->Spsr[i], SUEF);
+		UEFWrite32(m_State->Spsr[i], SUEF);
 	}
 
-	fputc(m_State->NFlag, SUEF);
-	fputc(m_State->ZFlag, SUEF);
-	fputc(m_State->CFlag, SUEF);
-	fputc(m_State->VFlag, SUEF);
-	fputc(m_State->IFFlags, SUEF);
-	fputc(m_State->SFlag, SUEF);
-	fputc(m_State->TFlag, SUEF);
-	fputc(m_State->Bank, SUEF);
-	fputc(m_State->Mode, SUEF);
-	fput32(m_State->instr, SUEF);
-	fput32(m_State->pc, SUEF);
-	fput32(m_State->temp, SUEF);
-	fput32(m_State->loaded, SUEF);
-	fput32(m_State->decoded, SUEF);
-	fput32(m_State->NumScycles, SUEF);
-	fput32(m_State->NumNcycles, SUEF);
-	fput32(m_State->NumIcycles, SUEF);
-	fput32(m_State->NumCcycles, SUEF);
-	fput32(m_State->NumFcycles, SUEF);
-	fput32(m_State->NextInstr, SUEF);
+	UEFWrite8(m_State->NFlag, SUEF);
+	UEFWrite8(m_State->ZFlag, SUEF);
+	UEFWrite8(m_State->CFlag, SUEF);
+	UEFWrite8(m_State->VFlag, SUEF);
+	UEFWrite8(m_State->IFFlags, SUEF);
+	UEFWrite8(m_State->SFlag, SUEF);
+	UEFWrite8(m_State->TFlag, SUEF);
+	UEFWrite8(m_State->Bank, SUEF);
+	UEFWrite8(m_State->Mode, SUEF);
+	UEFWrite32(m_State->instr, SUEF);
+	UEFWrite32(m_State->pc, SUEF);
+	UEFWrite32(m_State->temp, SUEF);
+	UEFWrite32(m_State->loaded, SUEF);
+	UEFWrite32(m_State->decoded, SUEF);
+	UEFWrite32(m_State->NumScycles, SUEF);
+	UEFWrite32(m_State->NumNcycles, SUEF);
+	UEFWrite32(m_State->NumIcycles, SUEF);
+	UEFWrite32(m_State->NumCcycles, SUEF);
+	UEFWrite32(m_State->NumFcycles, SUEF);
+	UEFWrite32(m_State->NextInstr, SUEF);
 
-	fwrite(m_State->MemDataPtr, 1, 0x4000000, SUEF);
-	fput32(m_State->remapControlRegister, SUEF);
-	fput32(m_State->romSelectRegister, SUEF);
-	fput32(m_State->LastTime, SUEF);
-	fput32(m_State->CP14R0_CCD, SUEF);
-	fput32(m_State->Now, SUEF);
-	fputc(m_State->Exception, SUEF);
-	fputc(m_State->NresetSig, SUEF);
-	fputc(m_State->NfiqSig, SUEF);
-	fputc(m_State->NirqSig, SUEF);
-	fputc(m_State->abortSig, SUEF);
-	fputc(m_State->NtransSig, SUEF);
-	fputc(m_State->Aborted, SUEF);
-	fputc(m_State->Base, SUEF);
-	fputc(m_State->AbortAddr, SUEF);
+	UEFWriteBuf(m_State->MemDataPtr, 0x4000000, SUEF);
+	UEFWrite32(m_State->remapControlRegister, SUEF);
+	UEFWrite32(m_State->romSelectRegister, SUEF);
+	UEFWrite32(m_State->LastTime, SUEF);
+	UEFWrite32(m_State->CP14R0_CCD, SUEF);
+	UEFWrite32(m_State->Now, SUEF);
+	UEFWrite8(m_State->Exception, SUEF);
+	UEFWrite8(m_State->NresetSig, SUEF);
+	UEFWrite8(m_State->NfiqSig, SUEF);
+	UEFWrite8(m_State->NirqSig, SUEF);
+	UEFWrite8(m_State->abortSig, SUEF);
+	UEFWrite8(m_State->NtransSig, SUEF);
+	UEFWrite8(m_State->Aborted, SUEF);
+	UEFWrite8(m_State->Base, SUEF);
+	UEFWrite8(m_State->AbortAddr, SUEF);
 
-	fput32((unsigned int)registers.size(), SUEF);
+	UEFWrite32((unsigned int)registers.size(), SUEF);
 
 	for (const auto& Register : registers)
 	{
-		fput32(Register.first, SUEF);
-		fput32(Register.second, SUEF);
+		UEFWrite32(Register.first, SUEF);
+		UEFWrite32(Register.second, SUEF);
 	}
 }
 
 void CSprowCoPro::LoadState(FILE* SUEF)
 {
-	m_CycleCount = fget32(SUEF);
-	m_State->Emulate = fget8(SUEF);
-	m_State->EndCondition = fget32(SUEF);
+	m_CycleCount = UEFRead32(SUEF);
+	m_State->Emulate = UEFRead8(SUEF);
+	m_State->EndCondition = UEFRead32(SUEF);
 
 	for (int i = 0; i < 16; i++)
 	{
-		m_State->Reg[i] = fget32(SUEF);
+		m_State->Reg[i] = UEFRead32(SUEF);
 	}
 
 	for (int i = 0; i < 7; i++)
 	{
 		for (int j = 0; j < 16; j++)
 		{
-			m_State->RegBank[i][j] = fget32(SUEF);
+			m_State->RegBank[i][j] = UEFRead32(SUEF);
 		}
 	}
 
-	m_State->Accumulator = fget64(SUEF);
-	m_State->Cpsr = fget32(SUEF);
+	m_State->Accumulator = UEFRead64(SUEF);
+	m_State->Cpsr = UEFRead32(SUEF);
 
 	for (int i = 0; i < 7; i++)
 	{
-		m_State->Spsr[i] = fget32(SUEF);
+		m_State->Spsr[i] = UEFRead32(SUEF);
 	}
 
-	m_State->NFlag = fget8(SUEF);
-	m_State->ZFlag = fget8(SUEF);
-	m_State->CFlag = fget8(SUEF);
-	m_State->VFlag = fget8(SUEF);
-	m_State->IFFlags = fget8(SUEF);
-	m_State->SFlag = fget8(SUEF);
-	m_State->TFlag = fget8(SUEF);
-	m_State->Bank = fget8(SUEF);
-	m_State->Mode = fget8(SUEF);
-	m_State->instr = fget32(SUEF);
-	m_State->pc = fget32(SUEF);
-	m_State->temp = fget32(SUEF);
-	m_State->loaded = fget32(SUEF);
-	m_State->decoded = fget32(SUEF);
-	m_State->NumScycles = fget32(SUEF);
-	m_State->NumNcycles = fget32(SUEF);
-	m_State->NumIcycles = fget32(SUEF);
-	m_State->NumCcycles = fget32(SUEF);
-	m_State->NumFcycles = fget32(SUEF);
-	m_State->NextInstr = fget32(SUEF);
+	m_State->NFlag = UEFRead8(SUEF);
+	m_State->ZFlag = UEFRead8(SUEF);
+	m_State->CFlag = UEFRead8(SUEF);
+	m_State->VFlag = UEFRead8(SUEF);
+	m_State->IFFlags = UEFRead8(SUEF);
+	m_State->SFlag = UEFRead8(SUEF);
+	m_State->TFlag = UEFRead8(SUEF);
+	m_State->Bank = UEFRead8(SUEF);
+	m_State->Mode = UEFRead8(SUEF);
+	m_State->instr = UEFRead32(SUEF);
+	m_State->pc = UEFRead32(SUEF);
+	m_State->temp = UEFRead32(SUEF);
+	m_State->loaded = UEFRead32(SUEF);
+	m_State->decoded = UEFRead32(SUEF);
+	m_State->NumScycles = UEFRead32(SUEF);
+	m_State->NumNcycles = UEFRead32(SUEF);
+	m_State->NumIcycles = UEFRead32(SUEF);
+	m_State->NumCcycles = UEFRead32(SUEF);
+	m_State->NumFcycles = UEFRead32(SUEF);
+	m_State->NextInstr = UEFRead32(SUEF);
 
-	fread(m_State->MemDataPtr, 1, 0x4000000, SUEF);
-	m_State->remapControlRegister = fget32(SUEF);
-	m_State->romSelectRegister = fget32(SUEF);
-	m_State->LastTime = fget32(SUEF);
-	m_State->CP14R0_CCD = fget32(SUEF);
-	m_State->Now = fget32(SUEF);
-	m_State->Exception = fget8(SUEF);
-	m_State->NresetSig = fget8(SUEF);
-	m_State->NfiqSig = fget8(SUEF);
-	m_State->NirqSig = fget8(SUEF);
-	m_State->abortSig = fget8(SUEF);
-	m_State->NtransSig = fget8(SUEF);
-	m_State->Aborted = fget8(SUEF);
-	m_State->Base = fget8(SUEF);
-	m_State->AbortAddr = fget8(SUEF);
+	UEFReadBuf(m_State->MemDataPtr, 0x4000000, SUEF);
+	m_State->remapControlRegister = UEFRead32(SUEF);
+	m_State->romSelectRegister = UEFRead32(SUEF);
+	m_State->LastTime = UEFRead32(SUEF);
+	m_State->CP14R0_CCD = UEFRead32(SUEF);
+	m_State->Now = UEFRead32(SUEF);
+	m_State->Exception = UEFRead8(SUEF);
+	m_State->NresetSig = UEFRead8(SUEF);
+	m_State->NfiqSig = UEFRead8(SUEF);
+	m_State->NirqSig = UEFRead8(SUEF);
+	m_State->abortSig = UEFRead8(SUEF);
+	m_State->NtransSig = UEFRead8(SUEF);
+	m_State->Aborted = UEFRead8(SUEF);
+	m_State->Base = UEFRead8(SUEF);
+	m_State->AbortAddr = UEFRead8(SUEF);
 
-	unsigned int Size = fget32(SUEF);
+	unsigned int Size = UEFRead32(SUEF);
 
 	for (unsigned int i = 0; i < Size; i++)
 	{
-		int Register = fget32(SUEF);
-		int Value = fget32(SUEF);
+		int Register = UEFRead32(SUEF);
+		int Value = UEFRead32(SUEF);
 
 		registers[Register] = Value;
 	}
