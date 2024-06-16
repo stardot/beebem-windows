@@ -406,7 +406,7 @@ public:
 	void SetSoundStreamer(SoundStreamerType StreamerType);
 	void UpdateSoundStreamerMenu();
 
-	void SetSoundSampleRate(int SampleRate);
+	void SetSoundSampleRate(unsigned int SampleRate);
 	void UpdateSoundSampleRateMenu();
 
 	void SetSoundVolume(int Volume);

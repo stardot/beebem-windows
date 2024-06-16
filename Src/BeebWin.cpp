@@ -1433,7 +1433,7 @@ void BeebWin::UpdateSoundStreamerMenu()
 
 /****************************************************************************/
 
-void BeebWin::SetSoundSampleRate(int SampleRate)
+void BeebWin::SetSoundSampleRate(unsigned int SampleRate)
 {
 	if (SampleRate != SoundSampleRate)
 	{
@@ -1461,7 +1461,7 @@ void BeebWin::SetSoundSampleRate(int SampleRate)
 
 void BeebWin::UpdateSoundSampleRateMenu()
 {
-	static const struct { UINT ID; int SampleRate; } MenuItems[] =
+	static const struct { UINT ID; unsigned int SampleRate; } MenuItems[] =
 	{
 		{ IDM_44100KHZ, 44100 },
 		{ IDM_22050KHZ, 22050 },
