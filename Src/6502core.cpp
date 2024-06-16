@@ -3245,20 +3245,20 @@ void Exec6502Instruction()
 		OldNMIStatus = NMIStatus;
 
 		switch (TubeType) {
-			case Tube::Acorn65C02: // 3MHz
+			case TubeDevice::Acorn65C02: // 3MHz
 				SyncTubeProcessor();
 				break;
 
-			case Tube::AcornZ80: // TODO: 6MHz
-			case Tube::TorchZ80: // TODO: 4MHz
+			case TubeDevice::AcornZ80: // TODO: 6MHz
+			case TubeDevice::TorchZ80: // TODO: 4MHz
 				z80_execute();
 				break;
 
-			case Tube::AcornArm: // TODO: 8MHz
+			case TubeDevice::AcornArm: // TODO: 8MHz
 				arm->exec(4);
 				break;
 
-			case Tube::SprowArm: // 64MHz
+			case TubeDevice::SprowArm: // 64MHz
 				#if _DEBUG
 				sprow->Execute(2);
 				#else
@@ -3266,7 +3266,7 @@ void Exec6502Instruction()
 				#endif
 				break;
 
-			case Tube::Master512CoPro: // 8MHz
+			case TubeDevice::Master512CoPro: // 8MHz
 				master512CoPro.Execute(4 * Cycles);
 				break;
 		}
@@ -3305,7 +3305,7 @@ static void PollHardware(unsigned int nCycles)
 		AdjustTrigger(EconetTrigger);
 		AdjustTrigger(EconetFlagFillTimeoutTrigger);
 		AdjustTrigger(IP232RxTrigger);
-		if (TubeType == Tube::Acorn65C02)
+		if (TubeType == TubeDevice::Acorn65C02)
 			WrapTubeCycles();
 	}
 

@@ -659,7 +659,7 @@ void BeebWin::Shutdown()
 	DestroyArmCoPro();
 	DestroySprowCoPro();
 
-	TubeType = Tube::None;
+	TubeType = TubeDevice::None;
 }
 
 /****************************************************************************/
@@ -695,28 +695,28 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	RTCInit();
 
-	if (TubeType == Tube::Acorn65C02)
+	if (TubeType == TubeDevice::Acorn65C02)
 	{
 		Init65C02core();
 	}
-	else if (TubeType == Tube::Master512CoPro)
+	else if (TubeType == TubeDevice::Master512CoPro)
 	{
 		master512CoPro.Reset();
 	}
-	else if (TubeType == Tube::TorchZ80 || TubeType == Tube::AcornZ80)
+	else if (TubeType == TubeDevice::TorchZ80 || TubeType == TubeDevice::AcornZ80)
 	{
 		R1Status = 0;
 		ResetTube();
 		init_z80();
 	}
-	else if (TubeType == Tube::AcornArm)
+	else if (TubeType == TubeDevice::AcornArm)
 	{
 		R1Status = 0;
 		ResetTube();
 		DestroyArmCoPro();
 		CreateArmCoPro();
 	}
-	else if (TubeType == Tube::SprowArm)
+	else if (TubeType == TubeDevice::SprowArm)
 	{
 		R1Status = 0;
 		ResetTube();
@@ -814,28 +814,28 @@ void BeebWin::Break()
 	// Must do a reset!
 	Init6502core();
 
-	if (TubeType == Tube::Acorn65C02)
+	if (TubeType == TubeDevice::Acorn65C02)
 	{
 		Init65C02core();
 	}
-	else if (TubeType == Tube::Master512CoPro)
+	else if (TubeType == TubeDevice::Master512CoPro)
 	{
 		master512CoPro.Reset();
 	}
-	else if (TubeType == Tube::AcornZ80 || TubeType == Tube::TorchZ80)
+	else if (TubeType == TubeDevice::AcornZ80 || TubeType == TubeDevice::TorchZ80)
 	{
 		R1Status = 0;
 		ResetTube();
 		init_z80();
 	}
-	else if (TubeType == Tube::AcornArm)
+	else if (TubeType == TubeDevice::AcornArm)
 	{
 		R1Status = 0;
 		ResetTube();
 		DestroyArmCoPro();
 		CreateArmCoPro();
 	}
-	else if (TubeType == Tube::SprowArm)
+	else if (TubeType == TubeDevice::SprowArm)
 	{
 		R1Status = 0;
 		ResetTube();
@@ -903,7 +903,7 @@ void BeebWin::CreateArmCoPro()
 
 			DestroyArmCoPro();
 
-			TubeType = Tube::None;
+			TubeType = TubeDevice::None;
 			UpdateTubeMenu();
 			break;
 
@@ -938,7 +938,7 @@ void BeebWin::CreateSprowCoPro()
 
 			DestroySprowCoPro();
 
-			TubeType = Tube::None;
+			TubeType = TubeDevice::None;
 			UpdateTubeMenu();
 			break;
 
@@ -1681,24 +1681,36 @@ void BeebWin::UpdateDisableKeysMenu()
 
 /****************************************************************************/
 
+void BeebWin::SelectTube(TubeDevice Device)
+{
+	if (TubeType != Device)
+	{
+		TubeType = Device;
+		UpdateTubeMenu();
+		ResetBeebSystem(MachineType, false);
+	}
+}
+
+/****************************************************************************/
+
 void BeebWin::UpdateTubeMenu()
 {
-	static const struct { UINT ID; Tube Type; } MenuItems[] =
+	static const struct { UINT ID; TubeDevice Device; } MenuItems[] =
 	{
-		{ IDM_TUBE_NONE,       Tube::None },
-		{ IDM_TUBE_ACORN65C02, Tube::Acorn65C02 },
-		{ IDM_TUBE_MASTER512,  Tube::Master512CoPro },
-		{ IDM_TUBE_ACORNZ80,   Tube::AcornZ80 },
-		{ IDM_TUBE_TORCHZ80,   Tube::TorchZ80 },
-		{ IDM_TUBE_ACORNARM,   Tube::AcornArm },
-		{ IDM_TUBE_SPROWARM,   Tube::SprowArm }
+		{ IDM_TUBE_NONE,       TubeDevice::None },
+		{ IDM_TUBE_ACORN65C02, TubeDevice::Acorn65C02 },
+		{ IDM_TUBE_MASTER512,  TubeDevice::Master512CoPro },
+		{ IDM_TUBE_ACORNZ80,   TubeDevice::AcornZ80 },
+		{ IDM_TUBE_TORCHZ80,   TubeDevice::TorchZ80 },
+		{ IDM_TUBE_ACORNARM,   TubeDevice::AcornArm },
+		{ IDM_TUBE_SPROWARM,   TubeDevice::SprowArm }
 	};
 
 	UINT SelectedMenuItemID = 0;
 
 	for (int i = 0; i < _countof(MenuItems); i++)
 	{
-		if (TubeType == MenuItems[i].Type)
+		if (TubeType == MenuItems[i].Device)
 		{
 			SelectedMenuItemID = MenuItems[i].ID;
 			break;
@@ -4141,66 +4153,31 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_TUBE_NONE:
-		if (TubeType != Tube::None)
-		{
-			TubeType = Tube::None;
-			UpdateTubeMenu();
-			ResetBeebSystem(MachineType, false);
-		}
+		SelectTube(TubeDevice::None);
 		break;
 
 	case IDM_TUBE_ACORN65C02:
-		if (TubeType != Tube::Acorn65C02)
-		{
-			TubeType = Tube::Acorn65C02;
-			UpdateTubeMenu();
-			ResetBeebSystem(MachineType, false);
-		}
+		SelectTube(TubeDevice::Acorn65C02);
 		break;
 
 	case IDM_TUBE_MASTER512:
-		if (TubeType != Tube::Master512CoPro)
-		{
-			TubeType = Tube::Master512CoPro;
-			UpdateTubeMenu();
-			ResetBeebSystem(MachineType, false);
-		}
+		SelectTube(TubeDevice::Master512CoPro);
 		break;
 
 	case IDM_TUBE_ACORNZ80:
-		if (TubeType != Tube::AcornZ80)
-		{
-			TubeType = Tube::AcornZ80;
-			UpdateTubeMenu();
-			ResetBeebSystem(MachineType, false);
-		}
+		SelectTube(TubeDevice::AcornZ80);
 		break;
 
 	case IDM_TUBE_TORCHZ80:
-		if (TubeType != Tube::TorchZ80)
-		{
-			TubeType = Tube::TorchZ80;
-			UpdateTubeMenu();
-			ResetBeebSystem(MachineType, false);
-		}
+		SelectTube(TubeDevice::TorchZ80);
 		break;
 
 	case IDM_TUBE_ACORNARM:
-		if (TubeType != Tube::AcornArm)
-		{
-			TubeType = Tube::AcornArm;
-			UpdateTubeMenu();
-			ResetBeebSystem(MachineType, false);
-		}
+		SelectTube(TubeDevice::AcornArm);
 		break;
 
 	case IDM_TUBE_SPROWARM:
-		if (TubeType != Tube::SprowArm)
-		{
-			TubeType = Tube::SprowArm;
-			UpdateTubeMenu();
-			ResetBeebSystem(MachineType, false);
-		}
+		SelectTube(TubeDevice::SprowArm);
 		break;
 
 	case IDM_FILE_RESET:

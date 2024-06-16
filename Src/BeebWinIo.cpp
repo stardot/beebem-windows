@@ -1411,7 +1411,7 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 	}
 
 	NativeFDC = fgetc(SUEF) == 0;
-	TubeType = static_cast<Tube>(fgetc(SUEF));
+	TubeType = static_cast<TubeDevice>(fgetc(SUEF));
 
 	if (Version >= 11)
 	{

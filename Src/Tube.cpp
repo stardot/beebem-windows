@@ -56,7 +56,7 @@ Boston, MA  02110-1301, USA.
 
 static int CurrentInstruction;
 static unsigned char TubeRam[65536];
-Tube TubeType;
+TubeDevice TubeType;
 
 static CycleCountT TotalTubeCycles = 0;
 
@@ -373,7 +373,7 @@ void WriteTorchTubeFromParasiteSide(int IOAddr,unsigned char IOData)
 unsigned char ReadTubeFromHostSide(int IOAddr) {
 	unsigned char TmpData,TmpCntr;
 
-	if (TubeType == Tube::None)
+	if (TubeType == TubeDevice::None)
 		return (MachineType == Model::Master128 || MachineType == Model::MasterET) ? 0xff : 0xfe;
 
 	switch (IOAddr) {
@@ -446,7 +446,7 @@ unsigned char ReadTubeFromHostSide(int IOAddr) {
 }
 
 void WriteTubeFromHostSide(int IOAddr, unsigned char IOData) {
-	if (TubeType == Tube::None)
+	if (TubeType == TubeDevice::None)
 		return;
 
 	if (DebugEnabled)
@@ -517,7 +517,7 @@ void WriteTubeFromHostSide(int IOAddr, unsigned char IOData) {
 
 unsigned char ReadTubeFromParasiteSide(int IOAddr)
 {
-	if (TubeType == Tube::TorchZ80)
+	if (TubeType == TubeDevice::TorchZ80)
 		return ReadTorchTubeFromHostSide(IOAddr);
 
 	unsigned char TmpData;
@@ -597,7 +597,7 @@ unsigned char ReadTubeFromParasiteSide(int IOAddr)
 
 void WriteTubeFromParasiteSide(int IOAddr, unsigned char IOData)
 {
-	if (TubeType == Tube::TorchZ80)
+	if (TubeType == TubeDevice::TorchZ80)
 	{
 		WriteTorchTubeFromParasiteSide(IOAddr, IOData);
 		return;

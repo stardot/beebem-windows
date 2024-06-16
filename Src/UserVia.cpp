@@ -263,7 +263,7 @@ unsigned char UserVIARead(int Address)
 						amxButtons = AMX_MIDDLE_BUTTON;
 				}
 
-				if (TubeType == Tube::Master512CoPro)
+				if (TubeType == TubeDevice::Master512CoPro)
 				{
 					tmp &= 0xf8;
 					tmp |= (amxButtons ^ 7);
@@ -532,7 +532,7 @@ void AMXMouseMovement()
 
 			int xpulse, ypulse;
 
-			if (TubeType == Tube::Master512CoPro)
+			if (TubeType == TubeDevice::Master512CoPro)
 			{
 				xpulse = 0x08;
 				ypulse = 0x10;

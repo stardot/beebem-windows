@@ -208,35 +208,35 @@ UEFStateResult SaveUEFState(const char *FileName)
 			SaveState(Save1770UEF, 0x046F, UEFState);
 		}
 
-		if (TubeType != Tube::None)
+		if (TubeType != TubeDevice::None)
 		{
 			SaveState(SaveTubeUEF, 0x0470, UEFState);
 		}
 
 		switch (TubeType)
 		{
-			case Tube::Acorn65C02:
+			case TubeDevice::Acorn65C02:
 				SaveState(Save65C02UEF, 0x0471, UEFState);
 				SaveState(Save65C02MemUEF, 0x0472, UEFState);
 				break;
 
-			case Tube::Master512CoPro:
+			case TubeDevice::Master512CoPro:
 				SaveState(std::bind(&Master512CoPro::SaveState, &master512CoPro, _1), 0x047B, UEFState);
 				break;
 
-			case Tube::AcornZ80:
+			case TubeDevice::AcornZ80:
 				SaveState(SaveZ80UEF, 0x0478, UEFState);
 				break;
 
-			case Tube::TorchZ80:
+			case TubeDevice::TorchZ80:
 				SaveState(SaveZ80UEF, 0x0478, UEFState);
 				break;
 
-			case Tube::AcornArm:
+			case TubeDevice::AcornArm:
 				SaveState(std::bind(&CArm::SaveState, arm, _1), 0x0479, UEFState);
 				break;
 
-			case Tube::SprowArm:
+			case TubeDevice::SprowArm:
 				SaveState(std::bind(&CSprowCoPro::SaveState, sprow, _1), 0x047A, UEFState);
 				break;
 		}

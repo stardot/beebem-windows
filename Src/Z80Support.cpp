@@ -39,7 +39,7 @@ bool inROM = true;
 
 unsigned char ReadZ80Mem(int addr)
 {
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		if (addr >= 0x8000) inROM = false;
 	}
@@ -150,7 +150,7 @@ unsigned char in(unsigned int addr)
 
 	addr &= 0xff;
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		value = ReadTubeFromParasiteSide(addr);
 	}
@@ -180,7 +180,7 @@ void out(unsigned int addr, unsigned char value)
 {
 	addr &= 255;
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		WriteTubeFromParasiteSide(addr, value);
 	}
@@ -210,7 +210,7 @@ void z80_execute()
 	PreZPC = pc;
 	pc = (WORD)simz80(pc);
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		if (TubeintStatus & (1 << R1))
 			set_Z80_irq_line(true);
@@ -234,7 +234,7 @@ void init_z80()
 
 	WriteLog("init_z80()\n");
 
-	if (TubeType == Tube::AcornZ80)
+	if (TubeType == TubeDevice::AcornZ80)
 	{
 		strcpy(path, RomPath);
 		strcat(path, "BeebFile/Z80.rom");

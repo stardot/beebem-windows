@@ -282,7 +282,7 @@ static unsigned char SkipBadTracks(int Drive, unsigned char Track)
 	{
 		int Offset = 0;
 
-		if (TubeType != Tube::TorchZ80) // If running under Torch Z80, ignore bad tracks
+		if (TubeType != TubeDevice::TorchZ80) // If running under Torch Z80, ignore bad tracks
 		{
 			if (FDCState.BadTracks[Drive][0] <= Track) Offset++;
 			if (FDCState.BadTracks[Drive][1] <= Track) Offset++;

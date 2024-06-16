@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "Model.h"
 #include "Port.h"
 #include "Preferences.h"
+#include "Tube.h"
 #include "Video.h"
 
 // Registry defs for disabling windows keys
@@ -247,6 +248,7 @@ public:
 	void SetTapeSpeedMenu();
 	void SetUnlockTape(bool Unlock);
 	void SetRomMenu(); // LRW  Added for individual ROM/RAM
+	void SelectTube(TubeDevice Device);
 	void UpdateTubeMenu();
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);

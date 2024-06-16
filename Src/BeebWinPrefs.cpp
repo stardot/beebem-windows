@@ -206,13 +206,13 @@ void BeebWin::LoadTubePreferences()
 	{
 		switch (Value)
 		{
-			case 0: default: TubeType = Tube::None; break;
-			case 1:          TubeType = Tube::Acorn65C02; break;
-			case 2:          TubeType = Tube::Master512CoPro; break;
-			case 3:          TubeType = Tube::AcornZ80; break;
-			case 4:          TubeType = Tube::TorchZ80; break;
-			case 5:          TubeType = Tube::AcornArm; break;
-			case 6:          TubeType = Tube::SprowArm; break;
+			case 0: default: TubeType = TubeDevice::None; break;
+			case 1:          TubeType = TubeDevice::Acorn65C02; break;
+			case 2:          TubeType = TubeDevice::Master512CoPro; break;
+			case 3:          TubeType = TubeDevice::AcornZ80; break;
+			case 4:          TubeType = TubeDevice::TorchZ80; break;
+			case 5:          TubeType = TubeDevice::AcornArm; break;
+			case 6:          TubeType = TubeDevice::SprowArm; break;
 		}
 	}
 	else
@@ -232,27 +232,27 @@ void BeebWin::LoadTubePreferences()
 
 		if (TubeEnabled)
 		{
-			TubeType = Tube::Acorn65C02;
+			TubeType = TubeDevice::Acorn65C02;
 		}
 		else if (AcornZ80)
 		{
-			TubeType = Tube::AcornZ80;
+			TubeType = TubeDevice::AcornZ80;
 		}
 		else if (TorchTube)
 		{
-			TubeType = Tube::TorchZ80;
+			TubeType = TubeDevice::TorchZ80;
 		}
 		else if (Tube186Enabled)
 		{
-			TubeType = Tube::Master512CoPro;
+			TubeType = TubeDevice::Master512CoPro;
 		}
 		else if (ArmTube)
 		{
-			TubeType = Tube::AcornArm;
+			TubeType = TubeDevice::AcornArm;
 		}
 		else
 		{
-			TubeType = Tube::None;
+			TubeType = TubeDevice::None;
 		}
 	}
 }
