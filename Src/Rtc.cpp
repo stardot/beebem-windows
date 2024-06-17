@@ -50,24 +50,6 @@ struct CMOSType
 
 static CMOSType CMOS;
 
-// RTC Registers in memory
-//
-// 0x0: Seconds (0 to 59)
-// 0x1: Alarm Seconds (0 to 59)
-// 0x2: Minutes (0 to 59)
-// 0x3: Alarm Minutes (0 to 59)
-// 0x4: Hours (0 to 23)
-// 0x5: Alarm Hours (0 to 23)
-// 0x6: Day of week (1 = Sun, 7 = Sat)
-// 0x7: Day of month (1 to 31)
-// 0x8: Month (1 = Jan, 12 = Dec)
-// 0x9: Year (last 2 digits)
-// 0xA: Register A
-// 0xB: Register B
-// 0xC: Register C
-// 0xD: Register D
-// 0xE to 0x3F: User RAM (50 bytes)
-
 const unsigned char RTC146818_REG_A = 0x0A;
 const unsigned char RTC146818_REG_B = 0x0B;
 const unsigned char RTC146818_REG_C = 0x0C;
@@ -76,22 +58,50 @@ const unsigned char RTC146818_REG_D = 0x0D;
 const unsigned char RTC146818_REG_B_SET    = 0x80;
 const unsigned char RTC146818_REG_B_BINARY = 0x04;
 
-// Backup of Master 128 CMOS defaults from byte 14 (RAM bytes only)
+// Master 128 CMOS defaults from byte 14 (RAM bytes only)
+
 const unsigned char CMOSDefault_Master128[50] =
 {
-	0x01, 0xfe, 0x00, 0xeb, 0x00,
-	0xcd, 0xff, 0xfe, 0x32, 0x00,
-	0x17, 0xe0, 0x1e, 0x08, 0x00,
-	0x0d, 0x80, 0x42
+	0x01, // 14 - Econet station number: 1
+	0xfe, // 15 - File server number: 254
+	0x00, // 16 - File server network: 0
+	0xea, // 17 - Printer server number: 235
+	0x00, // 18 - Printer server network: 0
+	0xc9, // 19 - Default language ROM: 12, Default filing system ROM: 9
+	0xff, // 20 - ROMS 0-7 unplugged/inserted
+	0xfe, // 21 - ROMS 8-F unplugged/inserted
+	0x32, // 22 - Edit mode K
+	0x00, // 23
+	0x07, // 24 - Default screen mode 7, *TV 0, 0
+	0xc0, // 25 - Default floppy speed: 10, Floppy, NoDir, Caps
+	0x1e, // 26 - Keyboard auto-repeat delay: 30cs
+	0x08, // 27 - Keyboard repeat rate: 8cs
+	0x00, // 28 - Printer ignore character
+	0x31, // 29 - Parallel port printer, RS232 1200 baud, Tube enabled
+	0xa2  // 30 - Serial format 8N1, no boot on reset, scroll enabled, external tube, Loud
 };
 
-// Backup of Master ET CMOS defaults from byte 14 (RAM bytes only)
+// Master ET CMOS defaults from byte 14 (RAM bytes only)
+
 const unsigned char CMOSDefault_MasterET[50] =
 {
-	0x01, 0xfe, 0x00, 0xeb, 0x00,
-	0xde, 0xff, 0xff, 0x32, 0x00,
-	0x17, 0x20, 0x1e, 0x08, 0x00,
-	0x01, 0x08, 0x42
+	0x01, // 14 - Econet station number: 1
+	0xfe, // 15 - File server number: 254
+	0x00, // 16 - File server network: 0
+	0xea, // 17 - Printer server number: 235
+	0x00, // 18 - Printer server network: 0
+	0xde, // 19 - Default language ROM: 13, Default filing system ROM: 14
+	0xff, // 20 - ROMS 0-7 unplugged/inserted
+	0xff, // 21 - ROMS 8-F unplugged/inserted
+	0x32, // 22 - Edit mode K
+	0x00, // 23
+	0x07, // 24 - Default screen mode 7, *TV 0, 0
+	0xc0, // 25 - Default floppy speed: 10, Floppy, NoDir, Caps
+	0x1e, // 26 - Keyboard auto-repeat delay: 30cs
+	0x08, // 27 - Keyboard repeat rate: 8cs
+	0x00, // 28 - Printer ignore character
+	0x31, // 29 - Parallel port printer, RS232 1200 baud, Tube enabled
+	0xa2  // 30 - Serial format 8N1, no boot on reset, scroll enabled, external tube, Loud
 };
 
 // Pointer used to switch between the CMOS RAM for the different machines
