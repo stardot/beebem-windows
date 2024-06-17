@@ -233,6 +233,20 @@ bool Preferences::GetStringValue(const char* id, std::string& Value) const
 
 //-----------------------------------------------------------------------------
 
+bool Preferences::GetStringValue(const char* id, std::string& Value, const char* Default) const
+{
+	bool Found = GetStringValue(id, Value);
+
+	if (!Found)
+	{
+		Value = Default;
+	}
+
+	return Found;
+}
+
+//-----------------------------------------------------------------------------
+
 void Preferences::SetStringValue(const char* id, const std::string& Value)
 {
 	m_Prefs[id] = Value;

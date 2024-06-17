@@ -42,7 +42,7 @@ Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher
 * Added Set Keyboard Links command, which allows you to change the default
   screen mode and other options (Model B/B+ only).
 * Fixed installer to not delete Econet and key map config files.
-* Removed BeebDiscLoad and BeebVideoRefreshFreq environment variables.
+* Removed the BeebDiscLoad and BeebVideoRefreshFreq environment variables.
 * Text to speech improvements:
   - Added menu items to select the text to speech voice.
   - The selected voice and speed are now stored in preferences.

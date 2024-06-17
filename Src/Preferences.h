@@ -48,6 +48,7 @@ class Preferences
 		bool GetStringValue(const char* id, char* Value) const;
 		void SetStringValue(const char* id, const char* Value);
 		bool GetStringValue(const char* id, std::string& Value) const;
+		bool GetStringValue(const char* id, std::string& Value, const char* Default) const;
 		void SetStringValue(const char* id, const std::string& Value);
 		bool GetDWORDValue(const char* id, DWORD& Value) const;
 		bool GetDWORDValue(const char* id, DWORD& Value, DWORD Default) const;

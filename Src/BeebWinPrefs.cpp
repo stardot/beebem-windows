@@ -59,6 +59,175 @@ Boston, MA  02110-1301, USA.
 
 const int PREFERENCES_VERSION = 3;
 
+static const char* const MachineTypeStr[] =
+{
+	"ModelB",
+	"IntegraB",
+	"BPlus",
+	"Master128",
+	"MasterET",
+	nullptr
+};
+
+static const char* const TubeDeviceStr[] =
+{
+	"None",
+	"Acorn65C02",
+	"Master512CoPro",
+	"AcornZ80",
+	"TorchZ80",
+	"AcornArm",
+	"SprowArm",
+	nullptr
+};
+
+static const char* const TimingTypeStr[] =
+{
+	"FixedSpeed",
+	"FixedFPS",
+	nullptr
+};
+
+static const char* const DisplayRendererTypeStr[] =
+{
+	"GDI",
+	"DirectDraw",
+	"DirectX9",
+	nullptr
+};
+
+static const char* const DirectXFullScreenModeStr[] =
+{
+	"ScreenResolution",
+	"640x480",
+	"720x576",
+	"800x600",
+	"1024x768",
+	"1280x720",
+	"1280x1024",
+	"1280x768",
+	"1280x960",
+	"1440x900",
+	"1600x1200",
+	"1920x1080",
+	"2560x1440",
+	"3840x2160",
+	nullptr
+};
+
+static const char* const SoundStreamerTypeStr[] =
+{
+	"XAudio2",
+	"DirectSound",
+	nullptr
+};
+
+static const char* const JoystickOptionStr[] =
+{
+	"Disabled",
+	"Joystick",
+	"AnalogueMouseStick",
+	"DigitalMouseStick",
+	nullptr
+};
+
+static const char* const KeyboardMappingTypeStr[] =
+{
+	"User",
+	"Default",
+	"Logical",
+	nullptr
+};
+
+static const char* const AMXSizeTypeStr[] =
+{
+	"160x256",
+	"320x256",
+	"640x256",
+	nullptr
+};
+
+static const char* const PrinterPortTypeStr[] =
+{
+	"File",
+	"Clipboard",
+	"LPT1",
+	"LPT2",
+	"LPT3",
+	"LPT4",
+	nullptr
+};
+
+static const char* const LEDColourStr[] =
+{
+	"Red",
+	"Green",
+	nullptr
+};
+
+static const char* const MonitorTypeStr[] =
+{
+	"RGB",
+	"BW",
+	"Amber",
+	"Green",
+	nullptr
+};
+
+static const char* const BitmapCaptureResolutionStr[] =
+{
+	"Display",
+	"1280x1024",
+	"640x512",
+	"320x256",
+	nullptr
+};
+
+static const char* const BitmapCaptureFormatStr[] =
+{
+	"BMP",
+	"JPEG",
+	"GIF",
+	"PNG",
+	nullptr
+};
+
+static const char* const VideoCaptureResolutionStr[] =
+{
+	"Display",
+	"640x512",
+	"320x256",
+	nullptr
+};
+
+static const char* const TeletextSourceTypeStr[] =
+{
+	"IP",
+	"File",
+	nullptr
+};
+
+/****************************************************************************/
+
+static int FindEnum(const std::string& Value, const char* const* Names, int Default)
+{
+	int Index = Default;
+	int i = 0;
+
+	while (Names[i] != nullptr)
+	{
+		if (stricmp(Value.c_str(), Names[i]) == 0)
+		{
+			Index = i;
+			break;
+		}
+
+		i++;
+	}
+
+	return Index;
+}
+
 /****************************************************************************/
 
 static int Clamp(int Value, int MinValue, int MaxValue)
@@ -162,22 +331,17 @@ void BeebWin::LoadPreferences()
 	LoadUserPortBreakoutPreferences();
 }
 
+#define CASE(var, str, value) if (stricmp(Value.c_str(), str) == 0) var = value;
+
 /****************************************************************************/
 
 void BeebWin::LoadHardwarePreferences()
 {
-	int Value;
+	std::string Value;
 
-	m_Preferences.GetDecimalValue(CFG_MACHINE_TYPE, Value, 0);
+	m_Preferences.GetStringValue(CFG_MACHINE_TYPE, Value, MachineTypeStr[0]);
 
-	switch (Value)
-	{
-		case 0: default: MachineType = Model::B; break;
-		case 1:          MachineType = Model::IntegraB; break;
-		case 2:          MachineType = Model::BPlus; break;
-		case 3:          MachineType = Model::Master128; break;
-		case 4:          MachineType = Model::MasterET; break;
-	}
+	MachineType = static_cast<Model>(FindEnum(Value, MachineTypeStr, 0));
 
 	if (!m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY, BasicHardwareOnly, false))
 	{
@@ -200,20 +364,11 @@ void BeebWin::LoadHardwarePreferences()
 
 void BeebWin::LoadTubePreferences()
 {
-	int Value;
+	std::string Value;
 
-	if (m_Preferences.GetDecimalValue(CFG_TUBE_TYPE, Value, 0))
+	if (m_Preferences.GetStringValue(CFG_TUBE_TYPE, Value, TubeDeviceStr[0]))
 	{
-		switch (Value)
-		{
-			case 0: default: TubeType = TubeDevice::None; break;
-			case 1:          TubeType = TubeDevice::Acorn65C02; break;
-			case 2:          TubeType = TubeDevice::Master512CoPro; break;
-			case 3:          TubeType = TubeDevice::AcornZ80; break;
-			case 4:          TubeType = TubeDevice::TorchZ80; break;
-			case 5:          TubeType = TubeDevice::AcornArm; break;
-			case 6:          TubeType = TubeDevice::SprowArm; break;
-		}
+		TubeType = static_cast<TubeDevice>(FindEnum(Value, TubeDeviceStr, 0));
 	}
 	else
 	{
@@ -330,47 +485,57 @@ void BeebWin::LoadTimingPreferences(int Version)
 {
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_SPEED_TIMING, Value, 0);
+		m_Preferences.GetStringValue(CFG_SPEED_TIMING, Value, TimingTypeStr[0]);
 
-		switch (Value)
-		{
-			case 0: default: m_TimingType = TimingType::FixedSpeed; break;
-			case 1:          m_TimingType = TimingType::FixedFPS; break;
-		}
+		m_TimingType = static_cast<TimingType>(FindEnum(Value, TimingTypeStr, 0));
 
-		m_Preferences.GetDecimalValue(CFG_SPEED, Value, 100);
+		int Speed;
+
+		m_Preferences.GetDecimalValue(CFG_SPEED, Speed, 100);
 
 		if (m_TimingType == TimingType::FixedFPS)
 		{
-			switch (Value)
+			switch (Speed)
 			{
-				case 50: default: m_TimingSpeed = 50; break;
-				case 25:          m_TimingSpeed = 25; break;
-				case 10:          m_TimingSpeed = 10; break;
-				case 5:           m_TimingSpeed = 5; break;
-				case 1:           m_TimingSpeed = 1; break;
+				case 50:
+				case 25:
+				case 10:
+				case 5:
+				case 1:
+					m_TimingSpeed = Speed;
+					break;
+
+				default:
+					m_TimingSpeed = 50;
+					break;
 			}
 		}
 		else if (m_TimingType == TimingType::FixedSpeed)
 		{
-			switch (Value)
+			switch (Speed)
 			{
-				case 10000:          m_TimingSpeed = 10000; break;
-				case 5000:           m_TimingSpeed = 5000; break;
-				case 1000:           m_TimingSpeed = 1000; break;
-				case 500:            m_TimingSpeed = 500; break;
-				case 200:            m_TimingSpeed = 200; break;
-				case 150:            m_TimingSpeed = 150; break;
-				case 125:            m_TimingSpeed = 125; break;
-				case 110:            m_TimingSpeed = 110; break;
-				case 100: default:   m_TimingSpeed = 100; break;
-				case 90:             m_TimingSpeed = 90; break;
-				case 75:             m_TimingSpeed = 75; break;
-				case 50:             m_TimingSpeed = 50; break;
-				case 25:             m_TimingSpeed = 25; break;
-				case 10:             m_TimingSpeed = 10; break;
+				case 10000:
+				case 5000:
+				case 1000:
+				case 500:
+				case 200:
+				case 150:
+				case 125:
+				case 110:
+				case 100:
+				case 90:
+				case 75:
+				case 50:
+				case 25:
+				case 10:
+					m_TimingSpeed = Speed;
+					break;
+
+				default:
+					m_TimingSpeed = 100;
+					break;
 			}
 		}
 	}
@@ -414,16 +579,11 @@ void BeebWin::LoadDisplayPreferences(int Version)
 {
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_DISPLAY_RENDERER, Value, 2);
+		m_Preferences.GetStringValue(CFG_DISPLAY_RENDERER, Value, DisplayRendererTypeStr[2]);
 
-		switch (Value)
-		{
-			case 0:          m_DisplayRenderer = DisplayRendererType::GDI; break;
-			case 1:          m_DisplayRenderer = DisplayRendererType::DirectDraw; break;
-			case 2: default: m_DisplayRenderer = DisplayRendererType::DirectX9; break;
-		}
+		m_DisplayRenderer = static_cast<DisplayRendererType>(FindEnum(Value, DisplayRendererTypeStr, 2));
 	}
 	else
 	{
@@ -444,27 +604,11 @@ void BeebWin::LoadDisplayPreferences(int Version)
 
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_DX_FULL_SCREEN_MODE, Value, 0);
+		m_Preferences.GetStringValue(CFG_DX_FULL_SCREEN_MODE, Value, DirectXFullScreenModeStr[0]);
 
-		switch (Value)
-		{
-			case 0: default: m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution; break;
-			case 1:          m_DDFullScreenMode = DirectXFullScreenMode::_640x480; break;
-			case 2:          m_DDFullScreenMode = DirectXFullScreenMode::_720x576; break;
-			case 3:          m_DDFullScreenMode = DirectXFullScreenMode::_800x600; break;
-			case 4:          m_DDFullScreenMode = DirectXFullScreenMode::_1024x768; break;
-			case 5:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x720; break;
-			case 6:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x1024; break;
-			case 7:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x768; break;
-			case 8:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x960; break;
-			case 9:          m_DDFullScreenMode = DirectXFullScreenMode::_1440x900; break;
-			case 10:         m_DDFullScreenMode = DirectXFullScreenMode::_1600x1200; break;
-			case 11:         m_DDFullScreenMode = DirectXFullScreenMode::_1920x1080; break;
-			case 12:         m_DDFullScreenMode = DirectXFullScreenMode::_2560x1440; break;
-			case 13:         m_DDFullScreenMode = DirectXFullScreenMode::_3840x2160; break;
-		}
+		m_DDFullScreenMode = static_cast<DirectXFullScreenMode>(FindEnum(Value, DirectXFullScreenModeStr, 0));
 	}
 	else
 	{
@@ -513,10 +657,16 @@ void BeebWin::LoadDisplayPreferences(int Version)
 
 		switch (Value)
 		{
-			case 0: default: m_MotionBlur = 0; break;
-			case 2:          m_MotionBlur = 2; break;
-			case 4:          m_MotionBlur = 4; break;
-			case 8:          m_MotionBlur = 8; break;
+			case 0:
+			case 2:
+			case 4:
+			case 8:
+				m_MotionBlur = Value;
+				break;
+
+			default:
+				m_MotionBlur = 0;
+				break;
 		}
 	}
 	else
@@ -545,17 +695,30 @@ void BeebWin::LoadDisplayPreferences(int Version)
 
 void BeebWin::LoadSoundPreferences(int Version)
 {
-	DWORD SoundStreamerValue;
-
-	if (!m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER, SoundStreamerValue, 0))
+	if (Version >= 3)
 	{
-		m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER_OLD, SoundStreamerValue, 0);
+		std::string Value;
+
+		m_Preferences.GetStringValue(CFG_SOUND_STREAMER, Value, SoundStreamerTypeStr[0]);
+
+		SelectedSoundStreamer = static_cast<SoundStreamerType>(FindEnum(Value, SoundStreamerTypeStr, 0));
 	}
-
-	switch (SoundStreamerValue)
+	else
 	{
-		case 0: default: SelectedSoundStreamer = SoundStreamerType::XAudio2; break;
-		case 1:          SelectedSoundStreamer = SoundStreamerType::DirectSound; break;
+		DWORD Value;
+		m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER_OLD, Value, 0);
+
+		switch (Value)
+		{
+			case 0:
+			default:
+				SelectedSoundStreamer = SoundStreamerType::XAudio2;
+				break;
+
+			case 1:
+				SelectedSoundStreamer = SoundStreamerType::DirectSound;
+				break;
+		}
 	}
 
 	if (Version >= 3)
@@ -566,9 +729,15 @@ void BeebWin::LoadSoundPreferences(int Version)
 
 		switch (Value)
 		{
-			case 11025:          SoundSampleRate = 11025; break;
-			case 22050:          SoundSampleRate = 22050; break;
-			case 44100: default: SoundSampleRate = 44100; break;
+			case 11025:
+			case 22050:
+			case 44100:
+				SoundSampleRate = Value;
+				break;
+
+			default:
+				SoundSampleRate = 44100;
+				break;
 		}
 	}
 	else
@@ -594,10 +763,16 @@ void BeebWin::LoadSoundPreferences(int Version)
 
 		switch (Value)
 		{
-			case 75:           SoundVolume = 75; break;
-			case 50:           SoundVolume = 50; break;
-			case 25:           SoundVolume = 25; break;
-			case 100: default: SoundVolume = 100; break;
+			case 25:
+			case 50:
+			case 75:
+			case 100:
+				SoundVolume = Value;
+				break;
+
+			default:
+				SoundVolume = 100;
+				break;
 		}
 	}
 	else
@@ -637,17 +812,11 @@ void BeebWin::LoadInputPreferences(int Version)
 {
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_OPTIONS_STICKS, Value, 0);
+		m_Preferences.GetStringValue(CFG_OPTIONS_STICKS, Value, JoystickOptionStr[0]);
 
-		switch (Value)
-		{
-			case 0: default:    m_JoystickOption = JoystickOption::Disabled; break;
-			case 1:             m_JoystickOption = JoystickOption::Joystick; break;
-			case 2:             m_JoystickOption = JoystickOption::AnalogueMouseStick; break;
-			case 3:             m_JoystickOption = JoystickOption::DigitalMouseStick; break;
-		}
+		m_JoystickOption = static_cast<JoystickOption>(FindEnum(Value, JoystickOptionStr, 0));
 	}
 	else
 	{
@@ -667,16 +836,11 @@ void BeebWin::LoadInputPreferences(int Version)
 
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_OPTIONS_KEY_MAPPING, Value, 2);
+		m_Preferences.GetStringValue(CFG_OPTIONS_KEY_MAPPING, Value, KeyboardMappingTypeStr[2]);
 
-		switch (Value)
-		{
-			case 0:          m_KeyboardMapping = KeyboardMappingType::User; break;
-			case 1:          m_KeyboardMapping = KeyboardMappingType::Default; break;
-			case 2: default: m_KeyboardMapping = KeyboardMappingType::Logical; break;
-		}
+		m_KeyboardMapping = static_cast<KeyboardMappingType>(FindEnum(Value, KeyboardMappingTypeStr, 2));
 	}
 	else
 	{
@@ -723,16 +887,11 @@ void BeebWin::LoadAMXMousePreferences(int Version)
 
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_AMX_SIZE, Value, 1);
+		m_Preferences.GetStringValue(CFG_AMX_SIZE, Value, AMXSizeTypeStr[1]);
 
-		switch (Value)
-		{
-			case 0:          m_AMXSize = AMXSizeType::_160x256; break;
-			case 1: default: m_AMXSize = AMXSizeType::_320x256; break;
-			case 2:          m_AMXSize = AMXSizeType::_640x256; break;
-		}
+		m_AMXSize = static_cast<AMXSizeType>(FindEnum(Value, AMXSizeTypeStr, 1));
 	}
 	else
 	{
@@ -757,12 +916,18 @@ void BeebWin::LoadAMXMousePreferences(int Version)
 
 		switch (Value)
 		{
-			case 50:          m_AMXAdjust = 50; break;
-			case 30: default: m_AMXAdjust = 30; break;
-			case 10:          m_AMXAdjust = 10; break;
-			case -10:         m_AMXAdjust = -10; break;
-			case -30:         m_AMXAdjust = -30; break;
-			case -50:         m_AMXAdjust = -50; break;
+			case 50:
+			case 30:
+			case 10:
+			case -10:
+			case -30:
+			case -50:
+				m_AMXAdjust = Value;
+				break;
+
+			default:
+				m_AMXAdjust = 30;
+				break;
 		}
 	}
 	else
@@ -792,19 +957,11 @@ void BeebWin::LoadPrinterPreferences(int Version)
 
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_PRINTER_PORT, Value, 2);
+		m_Preferences.GetStringValue(CFG_PRINTER_PORT, Value, PrinterPortTypeStr[2]);
 
-		switch (Value)
-		{
-			case 0:          m_PrinterPort = PrinterPortType::File; break;
-			case 1:          m_PrinterPort = PrinterPortType::Clipboard; break;
-			case 2: default: m_PrinterPort = PrinterPortType::Lpt1; break;
-			case 3:          m_PrinterPort = PrinterPortType::Lpt2; break;
-			case 4:          m_PrinterPort = PrinterPortType::Lpt3; break;
-			case 5:          m_PrinterPort = PrinterPortType::Lpt4; break;
-		}
+		m_PrinterPort = static_cast<PrinterPortType>(FindEnum(Value, PrinterPortTypeStr, 2));
 	}
 	else
 	{
@@ -855,15 +1012,11 @@ void BeebWin::LoadUIPreferences(int Version)
 
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_DISC_LED_COLOUR, Value, 0);
+		m_Preferences.GetStringValue(CFG_DISC_LED_COLOUR, Value, LEDColourStr[0]);
 
-		switch (Value)
-		{
-			case 0: default: m_DiscLedColour = LEDColour::Red; break;
-			case 1:          m_DiscLedColour = LEDColour::Green; break;
-		}
+		m_DiscLedColour = static_cast<LEDColour>(FindEnum(Value, LEDColourStr, 0));
 
 		m_Preferences.GetBoolValue(CFG_SHOW_KEYBOARD_LEDS, LEDs.ShowKB, false);
 		m_Preferences.GetBoolValue(CFG_SHOW_DISC_LEDS, LEDs.ShowDisc, false);
@@ -882,16 +1035,27 @@ void BeebWin::LoadUIPreferences(int Version)
 
 	m_Preferences.GetBoolValue(CFG_HIDE_MENU_ENABLED, m_HideMenuEnabled, false);
 
-	int Value;
-
-	m_Preferences.GetDecimalValue(CFG_VIEW_MONITOR, Value, 0);
-
-	switch (Value)
+	if (Version >= 3)
 	{
-		case 0: default: m_PaletteType = PaletteType::RGB; break;
-		case 1:          m_PaletteType = PaletteType::BW; break;
-		case 2:          m_PaletteType = PaletteType::Amber; break;
-		case 3:          m_PaletteType = PaletteType::Green; break;
+		std::string Value;
+
+		m_Preferences.GetStringValue(CFG_VIEW_MONITOR, Value, MonitorTypeStr[0]);
+
+		m_MonitorType = static_cast<MonitorType>(FindEnum(Value, MonitorTypeStr, 0));
+	}
+	else
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_VIEW_MONITOR, Value, 0);
+
+		switch (Value)
+		{
+			case 0: default: m_MonitorType = MonitorType::RGB; break;
+			case 1:          m_MonitorType = MonitorType::BW; break;
+			case 2:          m_MonitorType = MonitorType::Amber; break;
+			case 3:          m_MonitorType = MonitorType::Green; break;
+		}
 	}
 
 	m_Preferences.GetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor, false);
@@ -1034,15 +1198,11 @@ void BeebWin::LoadTeletextAdapterPreferences(int Version)
 {
 	m_Preferences.GetBoolValue(CFG_TELETEXT_ADAPTER_ENABLED, TeletextAdapterEnabled, false);
 
-	int SourceValue;
+	std::string SourceValue;
 
-	if (m_Preferences.GetDecimalValue(CFG_TELETEXT_ADAPTER_SOURCE, SourceValue, 0))
+	if (m_Preferences.GetStringValue(CFG_TELETEXT_ADAPTER_SOURCE, SourceValue, TeletextSourceTypeStr[0]))
 	{
-		switch (SourceValue)
-		{
-			case 0: default: TeletextSource = TeletextSourceType::IP;   break;
-			case 1:          TeletextSource = TeletextSourceType::File; break;
-		}
+		TeletextSource = static_cast<TeletextSourceType>(FindEnum(SourceValue, TeletextSourceTypeStr, 0));
 	}
 	else
 	{
@@ -1153,17 +1313,11 @@ void BeebWin::LoadCapturePreferences(int Version)
 {
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value, 2);
+		m_Preferences.GetStringValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value, BitmapCaptureResolutionStr[2]);
 
-		switch (Value)
-		{
-			case 0:          m_BitmapCaptureResolution = BitmapCaptureResolution::Display; break;
-			case 1:          m_BitmapCaptureResolution = BitmapCaptureResolution::_1280x1024; break;
-			case 2: default: m_BitmapCaptureResolution = BitmapCaptureResolution::_640x512; break;
-			case 3:          m_BitmapCaptureResolution = BitmapCaptureResolution::_320x256; break;
-		}
+		m_BitmapCaptureResolution = static_cast<BitmapCaptureResolution>(FindEnum(Value, BitmapCaptureResolutionStr, 2));
 	}
 	else
 	{
@@ -1183,17 +1337,11 @@ void BeebWin::LoadCapturePreferences(int Version)
 
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_FORMAT, Value, 0);
+		m_Preferences.GetStringValue(CFG_BITMAP_CAPTURE_FORMAT, Value, BitmapCaptureFormatStr[0]);
 
-		switch (Value)
-		{
-			case 0: default: m_BitmapCaptureFormat = BitmapCaptureFormat::Bmp; break;
-			case 1:          m_BitmapCaptureFormat = BitmapCaptureFormat::Jpeg; break;
-			case 2:          m_BitmapCaptureFormat = BitmapCaptureFormat::Gif; break;
-			case 3:          m_BitmapCaptureFormat = BitmapCaptureFormat::Png; break;
-		}
+		m_BitmapCaptureFormat = static_cast<BitmapCaptureFormat>(FindEnum(Value, BitmapCaptureFormatStr, 0));
 	}
 	else
 	{
@@ -1213,16 +1361,11 @@ void BeebWin::LoadCapturePreferences(int Version)
 
 	if (Version >= 3)
 	{
-		int Value;
+		std::string Value;
 
-		m_Preferences.GetDecimalValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value, 1);
+		m_Preferences.GetStringValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value, VideoCaptureResolutionStr[1]);
 
-		switch (Value)
-		{
-			case 0:          m_VideoCaptureResolution = VideoCaptureResolution::Display;
-			case 1: default: m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
-			case 2:          m_VideoCaptureResolution = VideoCaptureResolution::_320x256;
-		}
+		m_VideoCaptureResolution = static_cast<VideoCaptureResolution>(FindEnum(Value, VideoCaptureResolutionStr, 1));
 	}
 	else
 	{
@@ -1369,7 +1512,6 @@ void BeebWin::LoadCMOSPreferences()
 	{
 		RTCSetCMOSDefaults(Model::MasterET);
 	}
-
 }
 
 /****************************************************************************/
@@ -1472,7 +1614,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.EraseValue("OpCodes");
 
 		// Hardware
-		m_Preferences.SetDecimalValue(CFG_MACHINE_TYPE, (int)MachineType);
+		m_Preferences.SetStringValue(CFG_MACHINE_TYPE, MachineTypeStr[(int)MachineType]);
 		m_Preferences.SetBoolValue(CFG_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
 		m_Preferences.EraseValue(CFG_BASIC_HARDWARE_ONLY_OLD);
 
@@ -1505,13 +1647,13 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDecimalValue(CFG_VIEW_WINDOW_POS_Y, Rect.top);
 
 		// Emulation speed
-		m_Preferences.SetDecimalValue(CFG_SPEED_TIMING, (DWORD)m_TimingType);
+		m_Preferences.SetStringValue(CFG_SPEED_TIMING, TimingTypeStr[(int)m_TimingType]);
 		m_Preferences.SetDecimalValue(CFG_SPEED, m_TimingSpeed);
 
 		// Display
-		m_Preferences.SetDecimalValue(CFG_DISPLAY_RENDERER, (int)m_DisplayRenderer);
+		m_Preferences.SetStringValue(CFG_DISPLAY_RENDERER, DisplayRendererTypeStr[(int)m_DisplayRenderer]);
 		m_Preferences.SetBoolValue(CFG_FULL_SCREEN, m_FullScreen);
-		m_Preferences.SetDecimalValue(CFG_DX_FULL_SCREEN_MODE, (int)m_DDFullScreenMode);
+		m_Preferences.SetStringValue(CFG_DX_FULL_SCREEN_MODE, DirectXFullScreenModeStr[(int)m_DDFullScreenMode]);
 		m_Preferences.EraseValue(CFG_DX_FULL_SCREEN_MODE_OLD);
 		m_Preferences.SetBoolValue(CFG_MAINTAIN_ASPECT_RATIO, m_MaintainAspectRatio);
 		m_Preferences.SetBoolValue(CFG_DX_SMOOTHING, m_DXSmoothing);
@@ -1522,7 +1664,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue(CFG_MOTION_BLUR_INTENSITIES, m_BlurIntensities, 8);
 
 		// Sound
-		m_Preferences.SetDecimalValue(CFG_SOUND_STREAMER, (int)SelectedSoundStreamer);
+		m_Preferences.SetStringValue(CFG_SOUND_STREAMER, SoundStreamerTypeStr[(int)SelectedSoundStreamer]);
 		m_Preferences.EraseValue(CFG_SOUND_STREAMER_OLD);
 		m_Preferences.SetDecimalValue(CFG_SOUND_SAMPLE_RATE, SoundSampleRate);
 		m_Preferences.SetDecimalValue(CFG_SOUND_VOLUME, SoundVolume);
@@ -1537,20 +1679,20 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue(CFG_MUSIC5000_ENABLED, Music5000Enabled);
 
 		// Keyboard and joystick
-		m_Preferences.SetDecimalValue(CFG_OPTIONS_STICKS, (int)m_JoystickOption);
-		m_Preferences.SetDecimalValue(CFG_OPTIONS_KEY_MAPPING, (int)m_KeyboardMapping);
+		m_Preferences.SetStringValue(CFG_OPTIONS_STICKS, JoystickOptionStr[(int)m_JoystickOption]);
+		m_Preferences.SetStringValue(CFG_OPTIONS_KEY_MAPPING, KeyboardMappingTypeStr[(int)m_KeyboardMapping]);
 		m_Preferences.SetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath);
 
 		// AMX mouse
 		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
 		m_Preferences.SetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
 		m_Preferences.SetBoolValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
-		m_Preferences.SetDecimalValue(CFG_AMX_SIZE, (int)m_AMXSize);
+		m_Preferences.SetStringValue(CFG_AMX_SIZE, AMXSizeTypeStr[(int)m_AMXSize]);
 		m_Preferences.SetDecimalValue(CFG_AMX_ADJUST, m_AMXAdjust);
 
 		// Printer
 		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
-		m_Preferences.SetDecimalValue(CFG_PRINTER_PORT, (int)m_PrinterPort);
+		m_Preferences.SetStringValue(CFG_PRINTER_PORT, PrinterPortTypeStr[(int)m_PrinterPort]);
 		m_Preferences.SetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
 
 		// Text to speech
@@ -1567,7 +1709,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetDecimalValue(CFG_DISC_LED_COLOUR, (int)m_DiscLedColour);
 		m_Preferences.EraseValue(CFG_LED_INFORMATION_OLD);
 		m_Preferences.SetBoolValue(CFG_HIDE_MENU_ENABLED, m_HideMenuEnabled);
-		m_Preferences.SetDecimalValue(CFG_VIEW_MONITOR, (int)m_PaletteType);
+		m_Preferences.SetStringValue(CFG_VIEW_MONITOR, MonitorTypeStr[(int)m_MonitorType]);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
 		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
 		m_Preferences.SetBoolValue(CFG_TEXT_VIEW_ENABLED, m_TextViewEnabled);
@@ -1595,7 +1737,7 @@ void BeebWin::SavePreferences(bool saveAll)
 
 		// Teletext adapter
 		m_Preferences.SetBoolValue(CFG_TELETEXT_ADAPTER_ENABLED, TeletextAdapterEnabled);
-		m_Preferences.SetDecimalValue(CFG_TELETEXT_ADAPTER_SOURCE, (int)TeletextSource);
+		m_Preferences.SetStringValue(CFG_TELETEXT_ADAPTER_SOURCE, TeletextSourceTypeStr[(int)TeletextSource]);
 
 		char key[20];
 
@@ -1617,9 +1759,9 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.EraseValue(CFG_TELETEXT_CUSTOM_IP_OLD);
 
 		// Image and video capture
-		m_Preferences.SetDecimalValue(CFG_BITMAP_CAPTURE_RESOLUTION, (int)m_BitmapCaptureResolution);
-		m_Preferences.SetDecimalValue(CFG_BITMAP_CAPTURE_FORMAT, (int)m_BitmapCaptureFormat);
-		m_Preferences.SetDecimalValue(CFG_VIDEO_CAPTURE_RESOLUTION, (int)m_VideoCaptureResolution);
+		m_Preferences.SetStringValue(CFG_BITMAP_CAPTURE_RESOLUTION, BitmapCaptureResolutionStr[(int)m_BitmapCaptureResolution]);
+		m_Preferences.SetStringValue(CFG_BITMAP_CAPTURE_FORMAT, BitmapCaptureFormatStr[(int)m_BitmapCaptureFormat]);
+		m_Preferences.SetStringValue(CFG_VIDEO_CAPTURE_RESOLUTION, VideoCaptureResolutionStr[(int)m_VideoCaptureResolution]);
 		m_Preferences.SetDecimalValue(CFG_VIDEO_CAPTURE_FRAME_SKIP, m_AviFrameSkip);
 		m_Preferences.EraseValue(CFG_VIDEO_CAPTURE_FRAME_SKIP_OLD);
 

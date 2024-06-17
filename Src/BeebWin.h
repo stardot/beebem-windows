@@ -85,7 +85,8 @@ struct LEDType
 
 extern LEDType LEDs;
 
-enum class LEDColour {
+enum class LEDColour
+{
 	Red,
 	Green
 };
@@ -121,7 +122,8 @@ struct CUSTOMVERTEX
 // Our custom FVF, which describes our custom vertex structure
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_TEX1)
 
-enum class MessageType {
+enum class MessageType
+{
 	Error,
 	Warning,
 	Info,
@@ -129,7 +131,8 @@ enum class MessageType {
 	Confirm
 };
 
-enum class MessageResult {
+enum class MessageResult
+{
 	None,
 	Yes,
 	No,
@@ -137,64 +140,74 @@ enum class MessageResult {
 	Cancel
 };
 
-enum class PaletteType : char {
+enum class MonitorType
+{
 	RGB,
 	BW,
 	Amber,
 	Green
 };
 
-enum class DisplayRendererType {
+enum class DisplayRendererType
+{
 	GDI,
 	DirectDraw,
 	DirectX9
 };
 
-enum class SoundStreamerType {
+enum class SoundStreamerType
+{
 	XAudio2,
 	DirectSound
 };
 
-enum class JoystickOption {
+enum class JoystickOption
+{
 	Disabled,
 	Joystick,
 	AnalogueMouseStick,
 	DigitalMouseStick
 };
 
-enum class BitmapCaptureFormat {
+enum class BitmapCaptureFormat
+{
 	Bmp,
 	Jpeg,
 	Gif,
 	Png
 };
 
-enum class BitmapCaptureResolution {
+enum class BitmapCaptureResolution
+{
 	Display,
 	_1280x1024,
 	_640x512,
 	_320x256
 };
 
-enum class VideoCaptureResolution {
+enum class VideoCaptureResolution
+{
 	Display,
 	_640x512,
 	_320x256
 };
 
-enum class KeyboardMappingType {
+enum class KeyboardMappingType
+{
 	User,
 	Default,
 	Logical
 };
 
-enum class AMXSizeType {
+enum class AMXSizeType
+{
 	_160x256,
 	_320x256,
 	_640x256
 };
 
-enum class PrinterPortType {
+enum class PrinterPortType
+{
 	File,
 	Clipboard,
 	Lpt1,
@@ -203,12 +216,14 @@ enum class PrinterPortType {
 	Lpt4
 };
 
-enum class TimingType {
+enum class TimingType
+{
 	FixedSpeed,
 	FixedFPS
 };
 
-enum class DirectXFullScreenMode {
+enum class DirectXFullScreenMode
+{
 	ScreenResolution,
 	_640x480,
 	_720x576,
@@ -391,6 +406,7 @@ public:
 	void FlashWindow();
 	void CreateBitmap(void);
 	void InitMenu();
+	void SetMonitorType(MonitorType Type);
 	void UpdateMonitorMenu();
 	void DisableSerial();
 	void SelectSerialPort(const char *PortName);
@@ -644,7 +660,7 @@ public:
 	HDC m_hDCBitmap;
 	HGDIOBJ m_hBitmap;
 	bmiData m_bmi;
-	PaletteType m_PaletteType;
+	MonitorType m_MonitorType;
 	char* m_screen;
 	char* m_screen_blur;
 	int m_LastStartY;

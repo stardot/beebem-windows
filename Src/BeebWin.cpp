@@ -190,7 +190,7 @@ BeebWin::BeebWin()
 	m_hDCBitmap = nullptr;
 	m_hBitmap = nullptr;
 	ZeroMemory(&m_bmi, sizeof(m_bmi));
-	m_PaletteType = PaletteType::RGB;
+	m_MonitorType = MonitorType::RGB;
 	m_screen = nullptr;
 	m_screen_blur = nullptr;
 	m_LastStartY = 0;
@@ -995,18 +995,18 @@ void BeebWin::CreateBitmap()
 		float g = (float)((i & 2) != 0);
 		float b = (float)((i & 4) != 0);
 
-		if (m_PaletteType != PaletteType::RGB)
+		if (m_MonitorType != MonitorType::RGB)
 		{
 			r = g = b = (float) (0.299 * r + 0.587 * g + 0.114 * b);
 
-			switch (m_PaletteType)
+			switch (m_MonitorType)
 			{
-			case PaletteType::Amber:
+			case MonitorType::Amber:
 				r *= (float) 1.0;
 				g *= (float) 0.8;
 				b *= (float) 0.1;
 				break;
-			case PaletteType::Green:
+			case MonitorType::Green:
 				r *= (float) 0.2;
 				g *= (float) 0.9;
 				b *= (float) 0.1;
@@ -1520,21 +1520,31 @@ void BeebWin::UpdateSoundVolumeMenu()
 
 /****************************************************************************/
 
+void BeebWin::SetMonitorType(MonitorType Type)
+{
+	m_MonitorType = Type;
+	CreateBitmap();
+
+	UpdateMonitorMenu();
+}
+
+/****************************************************************************/
+
 void BeebWin::UpdateMonitorMenu()
 {
-	static const struct { UINT ID; PaletteType Type; } MenuItems[] =
+	static const struct { UINT ID; MonitorType Type; } MenuItems[] =
 	{
-		{ IDM_MONITOR_RGB,   PaletteType::RGB   },
-		{ IDM_MONITOR_BW,    PaletteType::BW    },
-		{ IDM_MONITOR_AMBER, PaletteType::Amber },
-		{ IDM_MONITOR_GREEN, PaletteType::Green }
+		{ IDM_MONITOR_RGB,   MonitorType::RGB   },
+		{ IDM_MONITOR_BW,    MonitorType::BW    },
+		{ IDM_MONITOR_AMBER, MonitorType::Amber },
+		{ IDM_MONITOR_GREEN, MonitorType::Green }
 	};
 
 	UINT SelectedMenuItemID = 0;
 
 	for (int i = 0; i < _countof(MenuItems); i++)
 	{
-		if (m_PaletteType == MenuItems[i].Type)
+		if (m_MonitorType == MenuItems[i].Type)
 		{
 			SelectedMenuItemID = MenuItems[i].ID;
 			break;
@@ -3375,7 +3385,6 @@ void BeebWin::UpdateOptiMenu()
 void BeebWin::HandleCommand(UINT MenuID)
 {
 	char TmpPath[256];
-	PaletteType PrevPaletteType = m_PaletteType;
 
 	SetSound(SoundState::Muted);
 	bool StayMuted = false;
@@ -4133,23 +4142,19 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_MONITOR_RGB:
-		m_PaletteType = PaletteType::RGB;
-		CreateBitmap();
+		SetMonitorType(MonitorType::RGB);
 		break;
 
 	case IDM_MONITOR_BW:
-		m_PaletteType = PaletteType::BW;
-		CreateBitmap();
+		SetMonitorType(MonitorType::BW);
 		break;
 
 	case IDM_MONITOR_GREEN:
-		m_PaletteType = PaletteType::Green;
-		CreateBitmap();
+		SetMonitorType(MonitorType::Green);
 		break;
 
 	case IDM_MONITOR_AMBER:
-		m_PaletteType = PaletteType::Amber;
-		CreateBitmap();
+		SetMonitorType(MonitorType::Amber);
 		break;
 
 	case IDM_TUBE_NONE:
@@ -4698,12 +4703,6 @@ void BeebWin::HandleCommand(UINT MenuID)
 	if (!StayMuted)
 	{
 		SetSound(SoundState::Unmuted);
-	}
-
-	if (m_PaletteType != PrevPaletteType)
-	{
-		CreateBitmap();
-		UpdateMonitorMenu();
 	}
 }
 
