@@ -26,7 +26,8 @@ Boston, MA  02110-1301, USA.
 #ifndef TUBE6502_HEADER
 #define TUBE6502_HEADER
 
-enum class Tube : unsigned char {
+enum class TubeDevice
+{
 	None = 0,
 	Acorn65C02 = 1,
 	Master512CoPro = 2,
@@ -36,7 +37,7 @@ enum class Tube : unsigned char {
 	SprowArm = 6
 };
 
-extern Tube TubeType;
+extern TubeDevice TubeType;
 
 extern unsigned char R1Status;
 void ResetTube(void);

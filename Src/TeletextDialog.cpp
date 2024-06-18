@@ -252,7 +252,7 @@ BOOL TeletextDialog::GetChannelIPControls(int Channel)
 
 	bool bSuccess = ParseNumber(strPort, &Port);
 
-	if (bSuccess && Port <= 65535)
+	if (bSuccess && Port >= 0 && Port <= 65535)
 	{
 		m_IPPort[Channel] = static_cast<u_short>(Port);
 	}

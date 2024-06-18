@@ -1266,72 +1266,72 @@ bool CreateADFSImage(const char *FileName, int Tracks) {
 
 void Save1770UEF(FILE *SUEF)
 {
-	fputc(static_cast<int>(DiscInfo[0].Type), SUEF);
-	fputc(static_cast<int>(DiscInfo[1].Type), SUEF);
+	UEFWrite8(static_cast<int>(DiscInfo[0].Type), SUEF);
+	UEFWrite8(static_cast<int>(DiscInfo[1].Type), SUEF);
 
 	if (DiscFile[0] != nullptr)
 	{
-		fputstring(DiscInfo[0].FileName, SUEF);
+		UEFWriteString(DiscInfo[0].FileName, SUEF);
 	}
 	else
 	{
 		// No disc in drive 0
-		fputstring("", SUEF);
+		UEFWriteString("", SUEF);
 	}
 
 	if (DiscFile[1] != nullptr)
 	{
-		fputstring(DiscInfo[1].FileName, SUEF);
+		UEFWriteString(DiscInfo[1].FileName, SUEF);
 	}
 	else
 	{
 		// No disc in drive 1
-		fputstring("", SUEF);
+		UEFWriteString("", SUEF);
 	}
 
-	fputc(Status,SUEF);
-	fputc(Data,SUEF);
-	fputc(Track,SUEF);
-	fputc(ATrack,SUEF);
-	fputc(Sector,SUEF);
-	fputc(HeadDir,SUEF);
-	fputc(FDCommand,SUEF);
-	fputc(NextFDCommand,SUEF);
-	fput32(LoadingCycles,SUEF);
-	fput32(SpinDown[0],SUEF);
-	fput32(SpinDown[1],SUEF);
-	fputc(UpdateTrack,SUEF);
-	fputc(MultiSect,SUEF);
-	fputc(StepRate,SUEF);
-	fputc(SpinUp,SUEF);
-	fputc(Verify,SUEF);
-	fputc(LightsOn[0],SUEF);
-	fputc(LightsOn[1],SUEF);
-	fput32(ByteCount,SUEF);
-	fput32(0,SUEF); // Was DataPos
-	fputc(ExtControl,SUEF);
-	fputc(CurrentDrive,SUEF);
-	fput32(HeadPos[0],SUEF);
-	fput32(HeadPos[1],SUEF);
-	fputc(CurrentHead[0],SUEF);
-	fputc(CurrentHead[1],SUEF);
-	fput32(DiscStep[0],SUEF);
-	fput32(DiscStep[1],SUEF);
-	fput32(DiscStrt[0],SUEF);
-	fput32(DiscStrt[1],SUEF);
-	fputc(MaxSects[0],SUEF);
-	fputc(MaxSects[1],SUEF);
-	fput32(DefStart[0],SUEF);
-	fput32(DefStart[1],SUEF);
-	fput32(TrkLen[0],SUEF);
-	fput32(TrkLen[1],SUEF);
-	fputc(DWriteable[0],SUEF);
-	fputc(DWriteable[1],SUEF);
-	fputc(DiskDensity[0],SUEF);
-	fputc(DiskDensity[1],SUEF);
-	fputc(SelectedDensity,SUEF);
-	fputc(RotSect,SUEF);
-	fputstring(FDCDLL, SUEF);
+	UEFWrite8(Status, SUEF);
+	UEFWrite8(Data, SUEF);
+	UEFWrite8(Track, SUEF);
+	UEFWrite8(ATrack, SUEF);
+	UEFWrite8(Sector, SUEF);
+	UEFWrite8(HeadDir, SUEF);
+	UEFWrite8(FDCommand, SUEF);
+	UEFWrite8(NextFDCommand, SUEF);
+	UEFWrite32(LoadingCycles, SUEF);
+	UEFWrite32(SpinDown[0], SUEF);
+	UEFWrite32(SpinDown[1], SUEF);
+	UEFWrite8(UpdateTrack, SUEF);
+	UEFWrite8(MultiSect, SUEF);
+	UEFWrite8(StepRate, SUEF);
+	UEFWrite8(SpinUp, SUEF);
+	UEFWrite8(Verify, SUEF);
+	UEFWrite8(LightsOn[0], SUEF);
+	UEFWrite8(LightsOn[1], SUEF);
+	UEFWrite32(ByteCount, SUEF);
+	UEFWrite32(0, SUEF); // Was DataPos
+	UEFWrite8(ExtControl, SUEF);
+	UEFWrite8(CurrentDrive, SUEF);
+	UEFWrite32(HeadPos[0], SUEF);
+	UEFWrite32(HeadPos[1], SUEF);
+	UEFWrite8(CurrentHead[0], SUEF);
+	UEFWrite8(CurrentHead[1], SUEF);
+	UEFWrite32(DiscStep[0], SUEF);
+	UEFWrite32(DiscStep[1], SUEF);
+	UEFWrite32(DiscStrt[0], SUEF);
+	UEFWrite32(DiscStrt[1], SUEF);
+	UEFWrite8(MaxSects[0], SUEF);
+	UEFWrite8(MaxSects[1], SUEF);
+	UEFWrite32(DefStart[0], SUEF);
+	UEFWrite32(DefStart[1], SUEF);
+	UEFWrite32(TrkLen[0], SUEF);
+	UEFWrite32(TrkLen[1], SUEF);
+	UEFWrite8(DWriteable[0], SUEF);
+	UEFWrite8(DWriteable[1], SUEF);
+	UEFWrite8(DiskDensity[0], SUEF);
+	UEFWrite8(DiskDensity[1], SUEF);
+	UEFWrite8(SelectedDensity, SUEF);
+	UEFWrite8(RotSect, SUEF);
+	UEFWriteString(FDCDLL, SUEF);
 }
 
 void Load1770UEF(FILE *SUEF, int Version)
@@ -1347,19 +1347,19 @@ void Load1770UEF(FILE *SUEF, int Version)
 	DiscInfo[0].Loaded = false;
 	DiscInfo[1].Loaded = false;
 
-	DiscInfo[0].Type = static_cast<DiscType>(fgetc(SUEF));
-	DiscInfo[1].Type = static_cast<DiscType>(fgetc(SUEF));
+	DiscInfo[0].Type = static_cast<DiscType>(UEFRead8(SUEF));
+	DiscInfo[1].Type = static_cast<DiscType>(UEFRead8(SUEF));
 
 	char FileName[256];
 	memset(FileName, 0, sizeof(FileName));
 
 	if (Version >= 14)
 	{
-		fgetstring(FileName, sizeof(FileName), SUEF);
+		UEFReadString(FileName, sizeof(FileName), SUEF);
 	}
 	else
 	{
-		fread(FileName, 1, sizeof(FileName), SUEF);
+		UEFReadBuf(FileName, sizeof(FileName), SUEF);
 	}
 
 	if (FileName[0] != '\0')
@@ -1375,11 +1375,11 @@ void Load1770UEF(FILE *SUEF, int Version)
 
 	if (Version >= 14)
 	{
-		fgetstring(FileName, sizeof(FileName), SUEF);
+		UEFReadString(FileName, sizeof(FileName), SUEF);
 	}
 	else
 	{
-		fread(FileName, 1, sizeof(FileName), SUEF);
+		UEFReadBuf(FileName, sizeof(FileName), SUEF);
 	}
 
 	if (FileName[0] != '\0')
@@ -1393,61 +1393,61 @@ void Load1770UEF(FILE *SUEF, int Version)
 
 	if (Loaded && !LoadFailed)
 	{
-		Status = fget8(SUEF);
-		Data = fget8(SUEF);
-		Track = fget8(SUEF);
-		ATrack = fget8(SUEF);
-		Sector = fget8(SUEF);
-		HeadDir = fgetbool(SUEF);
-		FDCommand = fget8(SUEF);
-		NextFDCommand = fget8(SUEF);
-		LoadingCycles = fget32(SUEF);
-		SpinDown[0] = fget32(SUEF);
-		SpinDown[1] = fget32(SUEF);
-		UpdateTrack = fgetbool(SUEF);
-		MultiSect = fgetbool(SUEF);
-		StepRate = fget8(SUEF);
-		SpinUp = fgetbool(SUEF);
-		Verify = fgetbool(SUEF);
-		LightsOn[0] = fgetbool(SUEF);
-		LightsOn[1] = fgetbool(SUEF);
-		ByteCount = fget32(SUEF);
-		/* long DataPos = */fget32(SUEF);
-		ExtControl = fget8(SUEF);
-		CurrentDrive = fget8(SUEF);
-		HeadPos[0] = fget32(SUEF);
-		HeadPos[1] = fget32(SUEF);
-		CurrentHead[0] = fget8(SUEF);
-		CurrentHead[1] = fget8(SUEF);
-		DiscStep[0] = fget32(SUEF);
-		DiscStep[1] = fget32(SUEF);
-		DiscStrt[0] = fget32(SUEF);
-		DiscStrt[1] = fget32(SUEF);
-		MaxSects[0] = fget8(SUEF);
-		MaxSects[1] = fget8(SUEF);
-		DefStart[0] = fget32(SUEF);
-		DefStart[1] = fget32(SUEF);
-		TrkLen[0] = fget32(SUEF);
-		TrkLen[1] = fget32(SUEF);
-		DWriteable[0] = fgetbool(SUEF);
-		DWriteable[1] = fgetbool(SUEF);
-		DiskDensity[0] = fgetbool(SUEF);
+		Status = UEFRead8(SUEF);
+		Data = UEFRead8(SUEF);
+		Track = UEFRead8(SUEF);
+		ATrack = UEFRead8(SUEF);
+		Sector = UEFRead8(SUEF);
+		HeadDir = UEFReadBool(SUEF);
+		FDCommand = UEFRead8(SUEF);
+		NextFDCommand = UEFRead8(SUEF);
+		LoadingCycles = UEFRead32(SUEF);
+		SpinDown[0] = UEFRead32(SUEF);
+		SpinDown[1] = UEFRead32(SUEF);
+		UpdateTrack = UEFReadBool(SUEF);
+		MultiSect = UEFReadBool(SUEF);
+		StepRate = UEFRead8(SUEF);
+		SpinUp = UEFReadBool(SUEF);
+		Verify = UEFReadBool(SUEF);
+		LightsOn[0] = UEFReadBool(SUEF);
+		LightsOn[1] = UEFReadBool(SUEF);
+		ByteCount = UEFRead32(SUEF);
+		/* long DataPos = */UEFRead32(SUEF);
+		ExtControl = UEFRead8(SUEF);
+		CurrentDrive = UEFRead8(SUEF);
+		HeadPos[0] = UEFRead32(SUEF);
+		HeadPos[1] = UEFRead32(SUEF);
+		CurrentHead[0] = UEFRead8(SUEF);
+		CurrentHead[1] = UEFRead8(SUEF);
+		DiscStep[0] = UEFRead32(SUEF);
+		DiscStep[1] = UEFRead32(SUEF);
+		DiscStrt[0] = UEFRead32(SUEF);
+		DiscStrt[1] = UEFRead32(SUEF);
+		MaxSects[0] = UEFRead8(SUEF);
+		MaxSects[1] = UEFRead8(SUEF);
+		DefStart[0] = UEFRead32(SUEF);
+		DefStart[1] = UEFRead32(SUEF);
+		TrkLen[0] = UEFRead32(SUEF);
+		TrkLen[1] = UEFRead32(SUEF);
+		DWriteable[0] = UEFReadBool(SUEF);
+		DWriteable[1] = UEFReadBool(SUEF);
+		DiskDensity[0] = UEFReadBool(SUEF);
 		if (Version <= 9)
 			DiskDensity[1] = DiskDensity[0];
 		else
-			DiskDensity[1] = fgetbool(SUEF);
-		SelectedDensity = fgetbool(SUEF);
-		RotSect = fget8(SUEF);
+			DiskDensity[1] = UEFReadBool(SUEF);
+		SelectedDensity = UEFReadBool(SUEF);
+		RotSect = UEFRead8(SUEF);
 
 		memset(FDCDLL, 0, sizeof(FDCDLL));
 
 		if (Version >= 14)
 		{
-			fgetstring(FDCDLL, sizeof(FDCDLL), SUEF);
+			UEFReadString(FDCDLL, sizeof(FDCDLL), SUEF);
 		}
 		else
 		{
-			fread(FDCDLL, 1, sizeof(FDCDLL), SUEF);
+			UEFReadBuf(FDCDLL, sizeof(FDCDLL), SUEF);
 		}
 
 		if (MachineType != Model::Master128 && MachineType != Model::MasterET)

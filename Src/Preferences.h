@@ -30,8 +30,8 @@ Boston, MA  02110-1301, USA.
 #include <map>
 #include <string>
 
-class Preferences {
-
+class Preferences
+{
 	public:
 		enum class Result {
 			Success,
@@ -40,21 +40,24 @@ class Preferences {
 		};
 
 	public:
-		Result Load(const char *fileName);
-		Result Save(const char *fileName);
+		Result Load(const char* FileName);
+		Result Save(const char* FileName);
 
-		bool GetBinaryValue(const char *id, void *bin, size_t binsize);
-		void SetBinaryValue(const char *id, const void *bin, size_t binsize);
-		bool GetStringValue(const char *id, char *str);
-		void SetStringValue(const char *id, const char *str);
-		bool GetStringValue(const char *id, std::string& str);
-		void SetStringValue(const char *id, const std::string& str);
-		bool GetDWORDValue(const char *id, DWORD &dw);
-		void SetDWORDValue(const char *id, DWORD dw);
-		bool GetBoolValue(const char *id, bool &b);
-		void SetBoolValue(const char *id, bool b);
-		void EraseValue(const char *id);
-		bool HasValue(const char *id);
+		bool GetBinaryValue(const char* id, void* Value, size_t Size) const;
+		void SetBinaryValue(const char* id, const void* Value, size_t Size);
+		bool GetStringValue(const char* id, char* Value) const;
+		void SetStringValue(const char* id, const char* Value);
+		bool GetStringValue(const char* id, std::string& Value) const;
+		void SetStringValue(const char* id, const std::string& Value);
+		bool GetDWORDValue(const char* id, DWORD& Value) const;
+		bool GetDWORDValue(const char* id, DWORD& Value, DWORD Default) const;
+		void SetDWORDValue(const char* id, DWORD Value);
+		bool GetDecimalValue(const char* id, int& Value, int Default) const;
+		bool SetDecimalValue(const char* id, int Value);
+		bool GetBoolValue(const char* id, bool& Value, bool Default) const;
+		void SetBoolValue(const char* id, bool Value);
+		void EraseValue(const char* id);
+		bool HasValue(const char* id) const;
 
 	private:
 		typedef std::map<std::string, std::string> PrefsMap;

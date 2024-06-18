@@ -24,6 +24,7 @@ Boston, MA  02110-1301, USA.
 #include "SoundStreamer.h"
 #include "DirectSoundStreamer.h"
 #include "Main.h"
+#include "Sound.h"
 #include "XAudio2Streamer.h"
 
 std::list<SoundStreamer*> SoundStreamer::m_streamers;
@@ -54,7 +55,7 @@ void SoundStreamer::PauseAll()
 
 SoundStreamer *CreateSoundStreamer(int samplerate, int bits_per_sample, int channels)
 {
-	if (SoundConfig::Selection == SoundConfig::XAudio2)
+	if (SelectedSoundStreamer == SoundStreamerType::XAudio2)
 	{
 		SoundStreamer *pSoundStreamer = new XAudio2Streamer();
 
@@ -67,7 +68,7 @@ SoundStreamer *CreateSoundStreamer(int samplerate, int bits_per_sample, int chan
 			delete pSoundStreamer;
 			pSoundStreamer= nullptr;
 
-			SoundConfig::Selection = SoundConfig::DirectSound;
+			SelectedSoundStreamer = SoundStreamerType::DirectSound;
 		}
 	}
 

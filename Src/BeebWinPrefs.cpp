@@ -27,6 +27,7 @@ Boston, MA  02110-1301, USA.
 #include "6502core.h"
 #include "Arm.h"
 #include "BeebMem.h"
+#include "BeebWinPrefs.h"
 #include "Disc1770.h"
 #include "Disc8271.h"
 #include "Econet.h"
@@ -35,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "KeyMap.h"
 #include "Main.h"
 #include "Music5000.h"
+#include "Registry.h"
 #include "Resource.h"
 #include "Rtc.h"
 #include "Scsi.h"
@@ -53,432 +55,874 @@ Boston, MA  02110-1301, USA.
 #include "Z80mem.h"
 #include "Z80.h"
 
-/* Configuration file strings */
-static const char *CFG_VIEW_WIN_SIZE = "WinSize";
-static const char *CFG_VIEW_MONITOR = "Monitor";
-static const char *CFG_SOUND_SAMPLE_RATE = "SampleRate";
-static const char *CFG_SOUND_VOLUME = "SoundVolume";
-static const char *CFG_SOUND_ENABLED = "SoundEnabled";
-static const char *CFG_OPTIONS_STICKS = "Sticks";
-static const char *CFG_OPTIONS_KEY_MAPPING = "KeyMapping";
-static const char *CFG_OPTIONS_USER_KEY_MAP_FILE = "UserKeyMapFile";
-static const char *CFG_OPTIONS_FREEZEINACTIVE = "FreezeWhenInactive";
-static const char *CFG_OPTIONS_HIDE_CURSOR = "HideCursor";
-static const char* CFG_OPTIONS_CAPTURE_MOUSE = "CaptureMouse";
-static const char *CFG_SPEED_TIMING = "Timing";
-static const char *CFG_AMX_ENABLED = "AMXMouseEnabled";
-static const char *CFG_AMX_LRFORMIDDLE = "AMXMouseLRForMiddle";
-static const char *CFG_AMX_SIZE = "AMXMouseSize";
-static const char *CFG_AMX_ADJUST = "AMXMouseAdjust";
-static const char *CFG_PRINTER_ENABLED = "PrinterEnabled";
-static const char *CFG_PRINTER_PORT = "PrinterPort";
-static const char *CFG_PRINTER_FILE = "PrinterFile";
-static const char *CFG_MACHINE_TYPE = "MachineType";
-static const char *CFG_TUBE_TYPE = "TubeType";
+/****************************************************************************/
 
-#define LED_COLOUR_TYPE (LEDByte&4)>>2
-#define LED_SHOW_KB (LEDByte&1)
-#define LED_SHOW_DISC (LEDByte&2)>>1
+const int PREFERENCES_VERSION = 3;
+
+/****************************************************************************/
 
 static int Clamp(int Value, int MinValue, int MaxValue)
 {
 	return std::min(std::max(Value, MinValue), MaxValue);
 }
 
+/****************************************************************************/
+
+static int GetPreferencesVersion(const Preferences& Prefs)
+{
+	int Version;
+
+	std::string VersionStr;
+
+	Prefs.GetStringValue(CFG_PREFERENCES_VERSION, VersionStr);
+
+	if (!VersionStr.empty())
+	{
+		try
+		{
+			// Prior to BeebEm 4.20, versions were of the form
+			// major.minor, but we only need to take the major number
+			// BeebEm v4.20 onwards uses a single number, see
+			// PREFERENCES_VERSION.
+			//
+			// 2.1 (BeebEm v4.15)
+			// 1.9 (BeebEm v4.14)
+			// 1.8 (BeebEm v4.13)
+			// 1.7 (BeebEm v4.12)
+			// 1.4 (BeebEm v4.02)
+			// 1.2 (BeebEm v3.82)
+			// 1.0 (BeebEm v3.7)
+			Version = std::stoi(VersionStr);
+		}
+		catch (std::exception&)
+		{
+			Version = 0;
+		}
+	}
+	else
+	{
+		Version = 0;
+	}
+
+	return Version;
+}
+
+/****************************************************************************/
+
 void BeebWin::LoadPreferences()
 {
-	Preferences::Result result = m_Preferences.Load(m_PrefsFile);
+	Preferences::Result result = m_Preferences.Load(m_PrefsFileName.c_str());
 
-	if (result == Preferences::Result::Failed) {
+	if (result == Preferences::Result::Failed)
+	{
 		// No prefs file, will use defaults
 		Report(MessageType::Error,
 		       "Cannot open preferences file:\n  %s\n\nUsing default preferences",
-		       m_PrefsFile);
+		       m_PrefsFileName.c_str());
 	}
-	else if (result == Preferences::Result::InvalidFormat) {
+	else if (result == Preferences::Result::InvalidFormat)
+	{
 		Report(MessageType::Error,
 		       "Invalid preferences file:\n  %s\n\nUsing default preferences",
-		       m_PrefsFile);
+		       m_PrefsFileName.c_str());
 	}
 
-	char path[_MAX_PATH];
-	char keyData[256];
-	unsigned char flag;
-	DWORD dword;
+	const int Version = GetPreferencesVersion(m_Preferences);
 
-	// Remove obsolete prefs
-	m_Preferences.EraseValue("UserKeyMapRow");
-	m_Preferences.EraseValue("UserKeyMapCol");
-	m_Preferences.EraseValue("ShowBottomCursorLine");
-	m_Preferences.EraseValue("Volume");
-	m_Preferences.EraseValue("UsePrimaryBuffer");
-	m_Preferences.EraseValue("ShowFSP");
-
-	m_Preferences.EraseValue("IP232localhost");
-	m_Preferences.EraseValue("IP232custom");
-	m_Preferences.EraseValue("IP232customport");
-	m_Preferences.EraseValue("IP232customip");
-
-	// Set file path defaults
-	if (!m_Preferences.HasValue("DiscsPath")) {
-		m_Preferences.SetStringValue("DiscsPath", "DiscIms");
-	}
-
-	if (!m_Preferences.HasValue("DiscsFilter")) {
-		m_Preferences.SetDWORDValue("DiscsFilter", 0);
-	}
-
-	if (!m_Preferences.HasValue("TapesPath")) {
-		m_Preferences.SetStringValue("TapesPath", "Tapes");
-	}
-
-	if (!m_Preferences.HasValue("StatesPath")) {
-		m_Preferences.SetStringValue("StatesPath", "BeebState");
-	}
-
-	if (!m_Preferences.HasValue("AVIPath")) {
-		m_Preferences.SetStringValue("AVIPath", "");
-	}
-
-	if (!m_Preferences.HasValue("ImagePath")) {
-		m_Preferences.SetStringValue("ImagePath", "");
-	}
-
-	if (!m_Preferences.HasValue("HardDrivePath")) {
-		m_Preferences.SetStringValue("HardDrivePath", "DiscIms");
-	}
-
-	MachineType = Model::B;
-
-	unsigned char type = 0;
-
-	if (m_Preferences.GetBinaryValue(CFG_MACHINE_TYPE, &type, 1))
+	if (Version > PREFERENCES_VERSION)
 	{
-		if (type < MODEL_COUNT)
+		Report(MessageType::Warning,
+		       "Using preferences file from a more recent BeebEm version:\n  %s\n\nThis may cause unexpected results",
+		       m_PrefsFileName.c_str());
+	}
+
+	LoadHardwarePreferences();
+	LoadTubePreferences();
+	LoadWindowPosPreferences(Version);
+	LoadTimingPreferences(Version);
+	LoadDisplayPreferences(Version);
+	LoadSoundPreferences(Version);
+	LoadInputPreferences(Version);
+	LoadAMXMousePreferences(Version);
+	LoadPrinterPreferences(Version);
+	LoadTextToSpeechPreferences();
+	LoadUIPreferences(Version);
+	LoadTapePreferences(Version);
+	LoadSerialPortPreferences(Version);
+	LoadTeletextAdapterPreferences(Version);
+	LoadCapturePreferences(Version);
+	LoadDiskPreferences();
+	LoadUserPortRTCPreferences();
+	LoadDebugPreferences();
+	LoadKeyMapPreferences();
+	LoadAutoSavePreferences();
+	LoadCMOSPreferences();
+	LoadSWRAMPreferences();
+	LoadFilePathPreferences();
+	LoadUserPortBreakoutPreferences();
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadHardwarePreferences()
+{
+	int Value;
+
+	m_Preferences.GetDecimalValue(CFG_MACHINE_TYPE, Value, 0);
+
+	switch (Value)
+	{
+		case 0: default: MachineType = Model::B; break;
+		case 1:          MachineType = Model::IntegraB; break;
+		case 2:          MachineType = Model::BPlus; break;
+		case 3:          MachineType = Model::Master128; break;
+		case 4:          MachineType = Model::MasterET; break;
+	}
+
+	if (!m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY, BasicHardwareOnly, false))
+	{
+		m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY_OLD, BasicHardwareOnly, false);
+	}
+
+	#if ENABLE_SPEECH
+
+	m_Preferences.GetBoolValue(CFG_SPEECH_ENABLED, SpeechDefault, false);
+
+	#endif
+
+	m_Preferences.GetBoolValue(CFG_ECONET_ENABLED, EconetEnabled, false);
+
+	if (!m_Preferences.GetBinaryValue(CFG_KEYBOARD_LINKS, &KeyboardLinks, sizeof(KeyboardLinks)))
+		KeyboardLinks = 0x00;
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadTubePreferences()
+{
+	int Value;
+
+	if (m_Preferences.GetDecimalValue(CFG_TUBE_TYPE, Value, 0))
+	{
+		switch (Value)
 		{
-			MachineType = static_cast<Model>(type);
+			case 0: default: TubeType = TubeDevice::None; break;
+			case 1:          TubeType = TubeDevice::Acorn65C02; break;
+			case 2:          TubeType = TubeDevice::Master512CoPro; break;
+			case 3:          TubeType = TubeDevice::AcornZ80; break;
+			case 4:          TubeType = TubeDevice::TorchZ80; break;
+			case 5:          TubeType = TubeDevice::AcornArm; break;
+			case 6:          TubeType = TubeDevice::SprowArm; break;
+		}
+	}
+	else
+	{
+		// For backwards compatibility with BeebEm 4.14 or earlier.
+		bool TubeEnabled;
+		bool AcornZ80;
+		bool TorchTube;
+		bool Tube186Enabled;
+		bool ArmTube;
+
+		m_Preferences.GetBoolValue(CFG_TUBE_ENABLED_OLD, TubeEnabled, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_ACORN_Z80_OLD, AcornZ80, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_TORCH_Z80_OLD, TorchTube, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_186_OLD, Tube186Enabled, false);
+		m_Preferences.GetBoolValue(CFG_TUBE_ARM_OLD, ArmTube, false);
+
+		if (TubeEnabled)
+		{
+			TubeType = TubeDevice::Acorn65C02;
+		}
+		else if (AcornZ80)
+		{
+			TubeType = TubeDevice::AcornZ80;
+		}
+		else if (TorchTube)
+		{
+			TubeType = TubeDevice::TorchZ80;
+		}
+		else if (Tube186Enabled)
+		{
+			TubeType = TubeDevice::Master512CoPro;
+		}
+		else if (ArmTube)
+		{
+			TubeType = TubeDevice::AcornArm;
+		}
+		else
+		{
+			TubeType = TubeDevice::None;
+		}
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadWindowPosPreferences(int Version)
+{
+	if (Version >= 3)
+	{
+		m_Preferences.GetDecimalValue(CFG_VIEW_WIN_SIZE_X, m_XWinSize, 640);
+		m_Preferences.GetDecimalValue(CFG_VIEW_WIN_SIZE_Y, m_YWinSize, 512);
+	}
+	else
+	{
+		DWORD Value;
+
+		m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, Value, 40006);
+
+		switch (Value)
+		{
+			case 40005:          m_XWinSize = 320;  m_YWinSize = 256; break;
+			case 40006: default: m_XWinSize = 640;  m_YWinSize = 512; break;
+			case 40007:          m_XWinSize = 800;  m_YWinSize = 600; break;
+			case 40008:          m_XWinSize = 1024; m_YWinSize = 768; break;
+			case 40009:          m_XWinSize = 1024; m_YWinSize = 512; break;
+			case 40225:          m_XWinSize = 1280; m_YWinSize = 1024; break;
+			case 40226:          m_XWinSize = 1440; m_YWinSize = 1080; break;
+			case 40227:          m_XWinSize = 1600; m_YWinSize = 1200; break;
+			case 40281: // Custom
+				m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE_X, Value, 640);
+				m_XWinSize = Value;
+
+				m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE_Y, Value, 512);
+				m_YWinSize = Value;
+				break;
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad))
-		m_WriteProtectOnLoad = true;
-
-	if (m_Preferences.GetDWORDValue("DisplayRenderer", dword))
-		m_DisplayRenderer = dword;
+	if (Version >= 3)
+	{
+		m_Preferences.GetDecimalValue(CFG_VIEW_WINDOW_POS_X, m_XWinPos, -1);
+		m_Preferences.GetDecimalValue(CFG_VIEW_WINDOW_POS_Y, m_YWinPos, -1);
+	}
 	else
-		m_DisplayRenderer = IDM_DISPDX9;
+	{
+		RECT rect;
 
-	if (!m_Preferences.GetBoolValue("DXSmoothing", m_DXSmoothing))
-		m_DXSmoothing = true;
+		if (m_Preferences.GetBinaryValue(CFG_VIEW_WINDOW_POS_OLD, &rect, sizeof(rect)))
+		{
+			m_XWinPos = rect.left;
+			m_YWinPos = rect.top;
+		}
+		else
+		{
+			m_XWinPos = -1;
+			m_YWinPos = -1;
+		}
+	}
 
-	if (!m_Preferences.GetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only))
-		m_DXSmoothMode7Only = false;
+	// Pos can get corrupted if two BeebEm's exited at same time
+	RECT WorkAreaRect;
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &WorkAreaRect, 0);
 
-	if (m_Preferences.GetDWORDValue("DDFullScreenMode", dword))
-		m_DDFullScreenMode = dword;
+	if (m_XWinPos > WorkAreaRect.right - 80)
+		m_XWinPos = -1;
+
+	if (m_YWinPos > WorkAreaRect.bottom - 80)
+		m_YWinPos = -1;
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadTimingPreferences(int Version)
+{
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_SPEED_TIMING, Value, 0);
+
+		switch (Value)
+		{
+			case 0: default: m_TimingType = TimingType::FixedSpeed; break;
+			case 1:          m_TimingType = TimingType::FixedFPS; break;
+		}
+
+		m_Preferences.GetDecimalValue(CFG_SPEED, Value, 100);
+
+		if (m_TimingType == TimingType::FixedFPS)
+		{
+			switch (Value)
+			{
+				case 50: default: m_TimingSpeed = 50; break;
+				case 25:          m_TimingSpeed = 25; break;
+				case 10:          m_TimingSpeed = 10; break;
+				case 5:           m_TimingSpeed = 5; break;
+				case 1:           m_TimingSpeed = 1; break;
+			}
+		}
+		else if (m_TimingType == TimingType::FixedSpeed)
+		{
+			switch (Value)
+			{
+				case 10000:          m_TimingSpeed = 10000; break;
+				case 5000:           m_TimingSpeed = 5000; break;
+				case 1000:           m_TimingSpeed = 1000; break;
+				case 500:            m_TimingSpeed = 500; break;
+				case 200:            m_TimingSpeed = 200; break;
+				case 150:            m_TimingSpeed = 150; break;
+				case 125:            m_TimingSpeed = 125; break;
+				case 110:            m_TimingSpeed = 110; break;
+				case 100: default:   m_TimingSpeed = 100; break;
+				case 90:             m_TimingSpeed = 90; break;
+				case 75:             m_TimingSpeed = 75; break;
+				case 50:             m_TimingSpeed = 50; break;
+				case 25:             m_TimingSpeed = 25; break;
+				case 10:             m_TimingSpeed = 10; break;
+			}
+		}
+	}
 	else
-		m_DDFullScreenMode = ID_VIEW_DD_SCREENRES;
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_SPEED_TIMING, Value, 40024);
+
+		switch (Value)
+		{
+			case 40024: default: m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 100; break;
+			case 40025:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 50; break;
+			case 40026:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 25; break;
+			case 40027:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 10; break;
+			case 40028:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 5; break;
+			case 40029:          m_TimingType = TimingType::FixedFPS;   m_TimingSpeed = 1; break;
+			case 40151:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10000; break;
+			case 40154:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 500; break;
+			case 40155:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 200; break;
+			case 40156:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 150; break;
+			case 40157:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 125; break;
+			case 40158:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 110; break;
+			case 40159:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 90; break;
+			case 40160:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 75; break;
+			case 40161:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 5000; break;
+			case 40162:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 25; break;
+			case 40163:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 1000; break;
+			case 40164:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 50; break;
+			case 40165:          m_TimingType = TimingType::FixedSpeed; m_TimingSpeed = 10; break;
+		}
+	}
+
+	TranslateTiming();
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadDisplayPreferences(int Version)
+{
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_DISPLAY_RENDERER, Value, 2);
+
+		switch (Value)
+		{
+			case 0:          m_DisplayRenderer = DisplayRendererType::GDI; break;
+			case 1:          m_DisplayRenderer = DisplayRendererType::DirectDraw; break;
+			case 2: default: m_DisplayRenderer = DisplayRendererType::DirectX9; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_DISPLAY_RENDERER, Value, 40219);
+
+		switch (Value)
+		{
+			case 40217:          m_DisplayRenderer = DisplayRendererType::GDI; break;
+			case 40218:          m_DisplayRenderer = DisplayRendererType::DirectDraw; break;
+			case 40219: default: m_DisplayRenderer = DisplayRendererType::DirectX9; break;
+		}
+	}
+
+	m_Preferences.GetBoolValue(CFG_FULL_SCREEN, m_FullScreen, false);
+
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_DX_FULL_SCREEN_MODE, Value, 0);
+
+		switch (Value)
+		{
+			case 0: default: m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution; break;
+			case 1:          m_DDFullScreenMode = DirectXFullScreenMode::_640x480; break;
+			case 2:          m_DDFullScreenMode = DirectXFullScreenMode::_720x576; break;
+			case 3:          m_DDFullScreenMode = DirectXFullScreenMode::_800x600; break;
+			case 4:          m_DDFullScreenMode = DirectXFullScreenMode::_1024x768; break;
+			case 5:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x720; break;
+			case 6:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x1024; break;
+			case 7:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x768; break;
+			case 8:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x960; break;
+			case 9:          m_DDFullScreenMode = DirectXFullScreenMode::_1440x900; break;
+			case 10:         m_DDFullScreenMode = DirectXFullScreenMode::_1600x1200; break;
+			case 11:         m_DDFullScreenMode = DirectXFullScreenMode::_1920x1080; break;
+			case 12:         m_DDFullScreenMode = DirectXFullScreenMode::_2560x1440; break;
+			case 13:         m_DDFullScreenMode = DirectXFullScreenMode::_3840x2160; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_DX_FULL_SCREEN_MODE_OLD, Value, 40102);
+
+		switch (Value)
+		{
+			case 40102: default: m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution; break;
+			case 40099:          m_DDFullScreenMode = DirectXFullScreenMode::_640x480; break;
+			case 40279:          m_DDFullScreenMode = DirectXFullScreenMode::_720x576; break;
+			case 40280:          m_DDFullScreenMode = DirectXFullScreenMode::_800x600; break;
+			case 40100:          m_DDFullScreenMode = DirectXFullScreenMode::_1024x768; break;
+			case 40288:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x720; break;
+			case 40101:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x1024; break;
+			case 40221:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x768; break;
+			case 40222:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x960; break;
+			case 40223:          m_DDFullScreenMode = DirectXFullScreenMode::_1440x900; break;
+			case 40224:          m_DDFullScreenMode = DirectXFullScreenMode::_1600x1200; break;
+			case 40289:          m_DDFullScreenMode = DirectXFullScreenMode::_1920x1080; break;
+			case 40294:          m_DDFullScreenMode = DirectXFullScreenMode::_2560x1440; break;
+			case 40295:          m_DDFullScreenMode = DirectXFullScreenMode::_3840x2160; break;
+		}
+	}
+
 	TranslateDDSize();
 
-	if (m_Preferences.GetDWORDValue(CFG_VIEW_WIN_SIZE, dword))
-		m_MenuIDWinSize = dword;
-	else
-		m_MenuIDWinSize = IDM_640X512;
+	m_Preferences.GetBoolValue(CFG_MAINTAIN_ASPECT_RATIO, m_MaintainAspectRatio, true);
 
-	if (m_MenuIDWinSize == IDM_CUSTOMWINSIZE)
+	m_Preferences.GetBoolValue(CFG_DX_SMOOTHING, m_DXSmoothing, true);
+
+	m_Preferences.GetBoolValue(CFG_DX_SMOOTH_MODE7_ONLY, m_DXSmoothMode7Only, false);
+
+	if (!m_Preferences.GetBoolValue(CFG_TELETEXT_HALF_MODE, TeletextHalfMode, false))
 	{
-		if (m_Preferences.GetDWORDValue("WinSizeX", dword))
-			m_XWinSize = dword;
-		else
-			m_XWinSize = 640;
-		if (m_Preferences.GetDWORDValue("WinSizeY", dword))
-			m_YWinSize = dword;
-		else
-			m_YWinSize = 512;
+		m_Preferences.GetBoolValue(CFG_TELETEXT_HALF_MODE_OLD, TeletextHalfMode, false);
 	}
 
-	if (!m_Preferences.GetBoolValue("FullScreen", m_isFullScreen))
-		m_isFullScreen = false;
-
-	TranslateWindowSize();
-
-	if (!m_Preferences.GetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio))
-		m_MaintainAspectRatio = true;
-
-	if (!m_Preferences.GetBoolValue("ShowFPS", m_ShowSpeedAndFPS))
+	if (Version >= 3)
 	{
-		// This option was named "ShowFSP" in BeebEm v4.18 and earlier
-		if (!m_Preferences.GetBoolValue("ShowFSP", m_ShowSpeedAndFPS))
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_MOTION_BLUR, Value, 0);
+
+		switch (Value)
 		{
-			m_ShowSpeedAndFPS = true;
+			case 0: default: m_MotionBlur = 0; break;
+			case 2:          m_MotionBlur = 2; break;
+			case 4:          m_MotionBlur = 4; break;
+			case 8:          m_MotionBlur = 8; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_MOTION_BLUR, Value, 40177);
+
+		switch (Value)
+		{
+			case 40177: default: m_MotionBlur = 0; break;
+			case 40178:          m_MotionBlur = 2; break;
+			case 40179:          m_MotionBlur = 4; break;
+			case 40180:          m_MotionBlur = 8; break;
 		}
 	}
 
-	m_PaletteType = PaletteType::RGB;
-
-	if (m_Preferences.GetBinaryValue(CFG_VIEW_MONITOR, &flag, 1))
+	if (!m_Preferences.GetBinaryValue(CFG_MOTION_BLUR_INTENSITIES, m_BlurIntensities, 8))
 	{
-		if (flag < static_cast<unsigned char>(PaletteType::Last))
+		memcpy(m_BlurIntensities, DefaultBlurIntensities, sizeof(m_BlurIntensities));
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadSoundPreferences(int Version)
+{
+	DWORD SoundStreamerValue;
+
+	if (!m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER, SoundStreamerValue, 0))
+	{
+		m_Preferences.GetDWORDValue(CFG_SOUND_STREAMER_OLD, SoundStreamerValue, 0);
+	}
+
+	switch (SoundStreamerValue)
+	{
+		case 0: default: SelectedSoundStreamer = SoundStreamerType::XAudio2; break;
+		case 1:          SelectedSoundStreamer = SoundStreamerType::DirectSound; break;
+	}
+
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_SOUND_SAMPLE_RATE, Value, 44100);
+
+		switch (Value)
 		{
-			m_PaletteType = static_cast<PaletteType>(flag);
+			case 11025:          SoundSampleRate = 11025; break;
+			case 22050:          SoundSampleRate = 22050; break;
+			case 44100: default: SoundSampleRate = 44100; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, Value, 40014);
+
+		switch (Value)
+		{
+			case 40016:          SoundSampleRate = 11025; break;
+			case 40015:          SoundSampleRate = 22050; break;
+			case 40014: default: SoundSampleRate = 44100; break;
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue("HideMenuEnabled", m_HideMenuEnabled))
-		m_HideMenuEnabled = false;
-
-	unsigned char LEDByte = 0;
-	if (!m_Preferences.GetBinaryValue("LED Information", &LEDByte, 1))
-		LEDByte=0;
-	DiscLedColour=static_cast<LEDColour>(LED_COLOUR_TYPE);
-	LEDs.ShowDisc=(LED_SHOW_DISC != 0);
-	LEDs.ShowKB=LED_SHOW_KB;
-
-	if (m_Preferences.GetDWORDValue("MotionBlur", dword))
-		m_MenuIDMotionBlur = dword;
-	else
-		m_MenuIDMotionBlur = IDM_BLUR_OFF;
-
-	if (!m_Preferences.GetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8))
+	if (Version >= 3)
 	{
-		m_BlurIntensities[0]=100;
-		m_BlurIntensities[1]=88;
-		m_BlurIntensities[2]=75;
-		m_BlurIntensities[3]=62;
-		m_BlurIntensities[4]=50;
-		m_BlurIntensities[5]=38;
-		m_BlurIntensities[6]=25;
-		m_BlurIntensities[7]=12;
-	}
+		int Value;
 
-	if (!m_Preferences.GetBoolValue("TextViewEnabled", m_TextViewEnabled))
-		m_TextViewEnabled = false;
+		m_Preferences.GetDecimalValue(CFG_SOUND_VOLUME, Value, 0100);
 
-	if (m_Preferences.GetDWORDValue(CFG_SPEED_TIMING, dword))
-		m_MenuIDTiming = dword;
-	else
-		m_MenuIDTiming = IDM_REALTIME;
-	TranslateTiming();
-
-	if (!m_Preferences.GetDWORDValue("SoundConfig::Selection", dword))
-		dword = 0;
-	SoundConfig::Selection = SoundConfig::Option(dword);
-
-	if (!m_Preferences.GetBoolValue(CFG_SOUND_ENABLED, SoundDefault))
-		SoundDefault = true;
-
-	if (!m_Preferences.GetBoolValue("SoundChipEnabled", SoundChipEnabled))
-		SoundChipEnabled = true;
-
-	if (m_Preferences.GetDWORDValue(CFG_SOUND_SAMPLE_RATE, dword))
-		m_MenuIDSampleRate = dword;
-	else
-		m_MenuIDSampleRate = IDM_44100KHZ;
-	TranslateSampleRate();
-
-	if (m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, dword))
-		m_MenuIDVolume = dword;
-	else
-		m_MenuIDVolume = IDM_FULLVOLUME;
-	TranslateVolume();
-
-	if (!m_Preferences.GetBoolValue("RelaySoundEnabled", RelaySoundEnabled))
-		RelaySoundEnabled = false;
-	if (!m_Preferences.GetBoolValue("TapeSoundEnabled", TapeSoundEnabled))
-		TapeSoundEnabled = false;
-	if (!m_Preferences.GetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled))
-		DiscDriveSoundEnabled = true;
-	if (!m_Preferences.GetBoolValue("Part Samples", PartSamples))
-		PartSamples = true;
-	if (!m_Preferences.GetBoolValue("ExponentialVolume", SoundExponentialVolume))
-		SoundExponentialVolume = true;
-	if (!m_Preferences.GetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled))
-		m_TextToSpeechEnabled = false;
-	if (!m_Preferences.GetBoolValue("TextToSpeechAutoSpeak", m_SpeechWriteChar))
-		m_SpeechWriteChar = true;
-	if (!m_Preferences.GetBoolValue("TextToSpeechSpeakPunctuation", m_SpeechSpeakPunctuation))
-		m_SpeechSpeakPunctuation = false;
-
-	DWORD TextToSpeechRate;
-	if (m_Preferences.GetDWORDValue("TextToSpeechRate", TextToSpeechRate))
-	{
-		m_SpeechRate = Clamp(TextToSpeechRate, -10, 10);
+		switch (Value)
+		{
+			case 75:           SoundVolume = 75; break;
+			case 50:           SoundVolume = 50; break;
+			case 25:           SoundVolume = 25; break;
+			case 100: default: SoundVolume = 100; break;
+		}
 	}
 	else
 	{
-		m_SpeechRate = 0;
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_SOUND_VOLUME, Value, 40021);
+
+		switch (Value)
+		{
+			case 40017:          SoundVolume = 75; break;
+			case 40018:          SoundVolume = 50; break;
+			case 40019:          SoundVolume = 25; break;
+			case 40021: default: SoundVolume = 100; break;
+		}
 	}
 
-	if (!m_Preferences.GetBoolValue("Music5000Enabled", Music5000Enabled))
-		Music5000Enabled = false;
+	m_Preferences.GetBoolValue(CFG_SOUND_ENABLED, SoundDefault, true);
+	m_Preferences.GetBoolValue(CFG_SOUND_CHIP_ENABLED, SoundChipEnabled, true);
+	m_Preferences.GetBoolValue(CFG_SOUND_EXPONENTIAL_VOLUME, SoundExponentialVolume, true);
+	m_Preferences.GetBoolValue(CFG_RELAY_SOUND_ENABLED, RelaySoundEnabled, false);
+	m_Preferences.GetBoolValue(CFG_TAPE_SOUND_ENABLED, TapeSoundEnabled, false);
+	m_Preferences.GetBoolValue(CFG_DISC_SOUND_ENABLED, DiscDriveSoundEnabled, true);
 
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, dword))
-		m_MenuIDSticks = dword;
+	if (!m_Preferences.GetBoolValue(CFG_SOUND_PART_SAMPLES, PartSamples, true))
+	{
+		m_Preferences.GetBoolValue(CFG_SOUND_PART_SAMPLES_OLD, PartSamples, true);
+	}
+
+	m_Preferences.GetBoolValue(CFG_MUSIC5000_ENABLED, Music5000Enabled, false);
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadInputPreferences(int Version)
+{
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_OPTIONS_STICKS, Value, 0);
+
+		switch (Value)
+		{
+			case 0: default:    m_JoystickOption = JoystickOption::Disabled; break;
+			case 1:             m_JoystickOption = JoystickOption::Joystick; break;
+			case 2:             m_JoystickOption = JoystickOption::AnalogueMouseStick; break;
+			case 3:             m_JoystickOption = JoystickOption::DigitalMouseStick; break;
+		}
+	}
 	else
-		m_MenuIDSticks = 0;
+	{
+		DWORD Value;
 
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive))
-		m_FreezeWhenInactive = true;
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_OPTIONS_STICKS, Value, 0);
 
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor))
-		m_HideCursor = false;
+		switch (Value)
+		{
+			case 40030:          m_JoystickOption = JoystickOption::Joystick; break;
+			case 40205:          m_JoystickOption = JoystickOption::AnalogueMouseStick; break;
+			case 40206:          m_JoystickOption = JoystickOption::DigitalMouseStick; break;
+			case 0:     default: m_JoystickOption = JoystickOption::Disabled; break;
+		}
+	}
 
-	if (!m_Preferences.GetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse))
-		m_CaptureMouse = false;
+	if (Version >= 3)
+	{
+		int Value;
 
-	if (m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING, dword))
-		m_MenuIDKeyMapping = dword;
+		m_Preferences.GetDecimalValue(CFG_OPTIONS_KEY_MAPPING, Value, 2);
+
+		switch (Value)
+		{
+			case 0:          m_KeyboardMapping = KeyboardMappingType::User; break;
+			case 1:          m_KeyboardMapping = KeyboardMappingType::Default; break;
+			case 2: default: m_KeyboardMapping = KeyboardMappingType::Logical; break;
+		}
+	}
 	else
-		m_MenuIDKeyMapping = IDM_LOGICALKYBDMAPPING;
+	{
+		DWORD Value;
 
-	bool readDefault = true;
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_OPTIONS_KEY_MAPPING, Value, 2);
+
+		switch (Value)
+		{
+			case 40060:          m_KeyboardMapping = KeyboardMappingType::User; break;
+			case 40034:          m_KeyboardMapping = KeyboardMappingType::Default; break;
+			case 40035: default: m_KeyboardMapping = KeyboardMappingType::Logical; break;
+		}
+	}
+
+	bool ReadDefault = true;
+	char Path[MAX_PATH];
+
 	if (m_Preferences.GetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath))
 	{
-		strcpy(path, m_UserKeyMapPath);
-		GetDataPath(m_UserDataPath, path);
-		if (ReadKeyMap(path, &UserKeyMap))
-			readDefault = false;
+		strcpy(Path, m_UserKeyMapPath);
+		GetDataPath(m_UserDataPath, Path);
+		if (ReadKeyMap(Path, &UserKeyMap))
+			ReadDefault = false;
 	}
-	if (readDefault)
+
+	if (ReadDefault)
 	{
 		strcpy(m_UserKeyMapPath, "DefaultUser.kmap");
-		strcpy(path, m_UserKeyMapPath);
-		GetDataPath(m_UserDataPath, path);
-		ReadKeyMap(path, &UserKeyMap);
+		strcpy(Path, m_UserKeyMapPath);
+		GetDataPath(m_UserDataPath, Path);
+		ReadKeyMap(Path, &UserKeyMap);
 	}
+}
 
-	if (!m_Preferences.GetBoolValue("KeyMapAS", m_KeyMapAS))
-		m_KeyMapAS = false;
+/****************************************************************************/
 
-	if (!m_Preferences.GetBoolValue("KeyMapFunc", m_KeyMapFunc))
-		m_KeyMapFunc = false;
+void BeebWin::LoadAMXMousePreferences(int Version)
+{
+	m_Preferences.GetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse, false);
+	m_Preferences.GetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled, false);
+	m_Preferences.GetBoolValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle, true);
 
-	TranslateKeyMapping();
-
-	if (!m_Preferences.GetBoolValue("DisableKeysBreak", m_DisableKeysBreak))
-		m_DisableKeysBreak = false;
-
-	if (!m_Preferences.GetBoolValue("DisableKeysEscape", m_DisableKeysEscape))
-		m_DisableKeysEscape = false;
-
-	if (!m_Preferences.GetBoolValue("DisableKeysShortcut", m_DisableKeysShortcut))
-		m_DisableKeysShortcut = false;
-
-	if (!m_Preferences.GetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS))
-		m_AutoSavePrefsCMOS = false;
-
-	if (!m_Preferences.GetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders))
-		m_AutoSavePrefsFolders = false;
-
-	if (!m_Preferences.GetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll))
-		m_AutoSavePrefsAll = false;
-
-	if (m_Preferences.GetBinaryValue("BitKeys", keyData, 8))
+	if (Version >= 3)
 	{
-		for (int key=0; key<8; ++key)
-			BitKeys[key] = keyData[key];
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_AMX_SIZE, Value, 1);
+
+		switch (Value)
+		{
+			case 0:          m_AMXSize = AMXSizeType::_160x256; break;
+			case 1: default: m_AMXSize = AMXSizeType::_320x256; break;
+			case 2:          m_AMXSize = AMXSizeType::_640x256; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_AMX_SIZE, Value, 1);
+
+		switch (Value)
+		{
+			case 40069:          m_AMXSize = AMXSizeType::_160x256; break;
+			case 40070: default: m_AMXSize = AMXSizeType::_320x256; break;
+			case 40071:          m_AMXSize = AMXSizeType::_640x256; break;
+		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled))
-		AMXMouseEnabled = false;
+	if (Version >= 3)
+	{
+		int Value;
 
-	if (m_Preferences.GetDWORDValue(CFG_AMX_LRFORMIDDLE, dword))
-		AMXLRForMiddle = dword != 0;
-	else
-		AMXLRForMiddle = true;
-	if (m_Preferences.GetDWORDValue(CFG_AMX_SIZE, dword))
-		m_MenuIDAMXSize = dword;
-	else
-		m_MenuIDAMXSize = IDM_AMX_320X256;
-	if (m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, dword))
-		m_MenuIDAMXAdjust = dword;
-	else
-		m_MenuIDAMXAdjust = IDM_AMX_ADJUSTP30;
-	TranslateAMX();
+		m_Preferences.GetDecimalValue(CFG_AMX_ADJUST, Value, 30);
 
-	if (!m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled))
-		PrinterEnabled = false;
-	if (m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, dword))
-		m_MenuIDPrinterPort = dword;
+		switch (Value)
+		{
+			case 50:          m_AMXAdjust = 50; break;
+			case 30: default: m_AMXAdjust = 30; break;
+			case 10:          m_AMXAdjust = 10; break;
+			case -10:         m_AMXAdjust = -10; break;
+			case -30:         m_AMXAdjust = -30; break;
+			case -50:         m_AMXAdjust = -50; break;
+		}
+	}
 	else
-		m_MenuIDPrinterPort = IDM_PRINTER_LPT1;
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_AMX_ADJUST, Value, 40073);
+
+		switch (Value)
+		{
+			case 40072:          m_AMXAdjust = 50; break;
+			case 40073: default: m_AMXAdjust = 30; break;
+			case 40074:          m_AMXAdjust = 10; break;
+			case 40075:          m_AMXAdjust = -10; break;
+			case 40076:          m_AMXAdjust = -30; break;
+			case 40077:          m_AMXAdjust = -50; break;
+		}
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadPrinterPreferences(int Version)
+{
+	m_Preferences.GetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled, false);
+
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_PRINTER_PORT, Value, 2);
+
+		switch (Value)
+		{
+			case 0:          m_PrinterPort = PrinterPortType::File; break;
+			case 1:          m_PrinterPort = PrinterPortType::Clipboard; break;
+			case 2: default: m_PrinterPort = PrinterPortType::Lpt1; break;
+			case 3:          m_PrinterPort = PrinterPortType::Lpt2; break;
+			case 4:          m_PrinterPort = PrinterPortType::Lpt3; break;
+			case 5:          m_PrinterPort = PrinterPortType::Lpt4; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_PRINTER_PORT, Value, 40082);
+
+		switch (Value)
+		{
+			case 40081:          m_PrinterPort = PrinterPortType::File; break;
+			case 40244:          m_PrinterPort = PrinterPortType::Clipboard; break;
+			case 40082: default: m_PrinterPort = PrinterPortType::Lpt1; break;
+			case 40083:          m_PrinterPort = PrinterPortType::Lpt2; break;
+			case 40084:          m_PrinterPort = PrinterPortType::Lpt3; break;
+			case 40085:          m_PrinterPort = PrinterPortType::Lpt4; break;
+		}
+	}
+
 	if (!m_Preferences.GetStringValue(CFG_PRINTER_FILE, m_PrinterFileName))
-		m_PrinterFileName[0] = 0;
+	{
+		m_PrinterFileName.clear();
+	}
+
 	TranslatePrinterPort();
+}
 
-	if (!m_Preferences.GetBinaryValue("Tape Clock Speed", &TapeState.ClockSpeed, 2))
-		TapeState.ClockSpeed = 5600;
-	if (!m_Preferences.GetBoolValue("UnlockTape", TapeState.Unlock))
-		TapeState.Unlock = false;
+/****************************************************************************/
 
-	if (!m_Preferences.GetBoolValue("SerialPortEnabled", SerialPortEnabled))
-		SerialPortEnabled = false;
-	bool TouchScreenEnabled;
-	if (!m_Preferences.GetBoolValue("TouchScreenEnabled", TouchScreenEnabled))
-		TouchScreenEnabled = false;
+void BeebWin::LoadTextToSpeechPreferences()
+{
+	m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_ENABLED, m_TextToSpeechEnabled, false);
+	m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_AUTO_SPEAK, m_SpeechWriteChar, true);
+	m_Preferences.GetBoolValue(CFG_TEXT_TO_SPEECH_PUNCTUATION, m_SpeechSpeakPunctuation, false);
+	m_Preferences.GetDecimalValue(CFG_TEXT_TO_SPEECH_RATE, m_SpeechRate, 0);
 
-	bool IP232Enabled;
-	bool IP232localhost;
-	bool IP232custom;
+	m_SpeechRate = Clamp(m_SpeechRate, -10, 10);
+}
 
-	if (!m_Preferences.GetBoolValue("IP232Enabled", IP232Enabled))
-		IP232Enabled = false;
-	if (!m_Preferences.GetBoolValue("IP232localhost", IP232localhost))
-		IP232localhost = false;
-	if (!m_Preferences.GetBoolValue("IP232custom", IP232custom))
-		IP232custom = false;
+/****************************************************************************/
 
-	if (TouchScreenEnabled)
+void BeebWin::LoadUIPreferences(int Version)
+{
+	if (!m_Preferences.GetBoolValue(CFG_SHOW_FPS, m_ShowSpeedAndFPS, true))
 	{
-		SerialDestination = SerialType::TouchScreen;
-	}
-	else if (IP232Enabled || IP232localhost || IP232custom)
-	{
-		SerialDestination = SerialType::IP232;
-	}
-	else
-	{
-		SerialDestination = SerialType::SerialPort;
+		m_Preferences.GetBoolValue(CFG_SHOW_FPS_OLD, m_ShowSpeedAndFPS, true);
 	}
 
-	char IPAddress[MAX_PATH];
+	if (Version >= 3)
+	{
+		int Value;
 
-	if (m_Preferences.GetStringValue("IP232Address", IPAddress))
-	{
-		strcpy(IP232Address, IPAddress);
-	}
-	else if (m_Preferences.GetStringValue("IP232customip", IPAddress) && IP232custom)
-	{
-		strcpy(IP232Address, IPAddress);
+		m_Preferences.GetDecimalValue(CFG_DISC_LED_COLOUR, Value, 0);
+
+		switch (Value)
+		{
+			case 0: default: m_DiscLedColour = LEDColour::Red; break;
+			case 1:          m_DiscLedColour = LEDColour::Green; break;
+		}
+
+		m_Preferences.GetBoolValue(CFG_SHOW_KEYBOARD_LEDS, LEDs.ShowKB, false);
+		m_Preferences.GetBoolValue(CFG_SHOW_DISC_LEDS, LEDs.ShowDisc, false);
 	}
 	else
 	{
-		strcpy(IP232Address, "127.0.0.1");
+		unsigned char LEDByte = 0;
+
+		if (m_Preferences.GetBinaryValue(CFG_LED_INFORMATION_OLD, &LEDByte, 1))
+		{
+			m_DiscLedColour = ((LEDByte & 0x04) != 0) ? LEDColour::Green : LEDColour::Red;
+			LEDs.ShowDisc = ((LEDByte & 0x02) != 0) && MachineType != Model::MasterET;
+			LEDs.ShowKB = (LEDByte & 0x01) != 0;
+		}
 	}
 
-	if (m_Preferences.GetDWORDValue("IP232Port", dword))
+	m_Preferences.GetBoolValue(CFG_HIDE_MENU_ENABLED, m_HideMenuEnabled, false);
+
+	int Value;
+
+	m_Preferences.GetDecimalValue(CFG_VIEW_MONITOR, Value, 0);
+
+	switch (Value)
 	{
-		IP232Port = dword;
+		case 0: default: m_PaletteType = PaletteType::RGB; break;
+		case 1:          m_PaletteType = PaletteType::BW; break;
+		case 2:          m_PaletteType = PaletteType::Amber; break;
+		case 3:          m_PaletteType = PaletteType::Green; break;
 	}
-	else if (m_Preferences.GetDWORDValue("IP232customport", dword) && IP232custom)
+
+	m_Preferences.GetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor, false);
+	m_Preferences.GetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive, true);
+	m_Preferences.GetBoolValue(CFG_TEXT_VIEW_ENABLED, m_TextViewEnabled, false);
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadTapePreferences(int Version)
+{
+	if (Version >= 3)
 	{
-		IP232Port = dword;
+		m_Preferences.GetDecimalValue(CFG_TAPE_CLOCK_SPEED, TapeState.ClockSpeed, 5600);
 	}
 	else
 	{
-		IP232Port = 25232;
+		if (!m_Preferences.GetBinaryValue(CFG_TAPE_CLOCK_SPEED_OLD, &TapeState.ClockSpeed, 2))
+		{
+			TapeState.ClockSpeed = 5600;
+		}
 	}
 
-	if (!m_Preferences.GetBoolValue("IP232Mode", IP232Mode))
-		if (!m_Preferences.GetBoolValue("IP232mode", IP232Mode))
-			IP232Mode = false;
+	m_Preferences.GetBoolValue(CFG_UNLOCK_TAPE, TapeState.Unlock, false);
+}
 
-	if (!m_Preferences.GetBoolValue("IP232Raw", IP232Raw))
-		if (!m_Preferences.GetBoolValue("IP232raw", IP232Raw))
-			IP232Raw = false;
+/****************************************************************************/
 
-
-	if (m_Preferences.GetStringValue("SerialPort", SerialPortName))
+void BeebWin::LoadSerialPortPreferences(int Version)
+{
+	if (m_Preferences.GetStringValue(CFG_SERIAL_PORT, SerialPortName))
 	{
 		// For backwards compatibility with Preferences.cfg files from
 		// BeebEm 4.18 and earlier, which stored the port number as a
@@ -497,107 +941,132 @@ void BeebWin::LoadPreferences()
 		strcpy(SerialPortName, "COM2");
 	}
 
-	if (!m_Preferences.GetBoolValue("EconetEnabled", EconetEnabled))
-		EconetEnabled = false;
+	m_Preferences.GetBoolValue(CFG_SERIAL_PORT_ENABLED, SerialPortEnabled, false);
 
-	#if ENABLE_SPEECH
+	bool TouchScreenEnabled;
 
-	if (!m_Preferences.GetBoolValue("SpeechEnabled", SpeechDefault))
-		SpeechDefault = false;
+	m_Preferences.GetBoolValue(CFG_TOUCH_SCREEN_ENABLED, TouchScreenEnabled, false);
 
-	#endif
+	bool IP232Enabled;
+	bool IP232localhost;
+	bool IP232custom;
 
-	if (!m_Preferences.GetBinaryValue("SWRAMWritable", RomWritePrefs, 16))
+	m_Preferences.GetBoolValue(CFG_IP232_ENABLED, IP232Enabled, false);
+	m_Preferences.GetBoolValue(CFG_IP232_LOCALHOST_OLD, IP232localhost, false);
+	m_Preferences.GetBoolValue(CFG_IP232_CUSTOM_OLD, IP232custom, false);
+
+	if (TouchScreenEnabled)
 	{
-		for (int slot = 0; slot < 16; ++slot)
-			RomWritePrefs[slot] = true;
+		SerialDestination = SerialType::TouchScreen;
 	}
-
-	if (!m_Preferences.GetBoolValue("SWRAMBoard", SWRAMBoardEnabled))
-		SWRAMBoardEnabled = false;
-
-	if (m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &type, 1))
+	else if (IP232Enabled || IP232localhost || IP232custom)
 	{
-		TubeType = static_cast<Tube>(type);
+		SerialDestination = SerialType::IP232;
 	}
 	else
 	{
-		// For backwards compatibility with BeebEm 4.14 or earlier:
-		unsigned char TubeEnabled = 0;
-		unsigned char AcornZ80 = 0;
-		unsigned char TorchTube = 0;
-		unsigned char Tube186Enabled = 0;
-		unsigned char ArmTube = 0;
+		SerialDestination = SerialType::SerialPort;
+	}
 
-		m_Preferences.GetBinaryValue("TubeEnabled", &TubeEnabled, 1);
-		m_Preferences.GetBinaryValue("AcornZ80", &AcornZ80, 1);
-		m_Preferences.GetBinaryValue("TorchTube", &TorchTube, 1);
-		m_Preferences.GetBinaryValue("Tube186Enabled", &Tube186Enabled, 1);
-		m_Preferences.GetBinaryValue("ArmTube", &ArmTube, 1);
+	char IPAddress[MAX_PATH];
 
-		if (TubeEnabled)
+	if (m_Preferences.GetStringValue(CFG_IP232_ADDRESS, IPAddress))
+	{
+		strcpy(IP232Address, IPAddress);
+	}
+	else if (m_Preferences.GetStringValue(CFG_IP232_CUSTOM_IP_OLD, IPAddress) && IP232custom)
+	{
+		strcpy(IP232Address, IPAddress);
+	}
+	else
+	{
+		strcpy(IP232Address, "127.0.0.1");
+	}
+
+	if (Version >= 3)
+	{
+		int Value;
+
+		// From BeebEm 4.20, port numbers are stored in decimal.
+		m_Preferences.GetDecimalValue(CFG_IP232_PORT, Value, 25232);
+
+		if (Value >= 0 && Value <= 65535)
 		{
-			TubeType = Tube::Acorn65C02;
-		}
-		else if (AcornZ80)
-		{
-			TubeType = Tube::AcornZ80;
-		}
-		else if (TorchTube)
-		{
-			TubeType = Tube::TorchZ80;
-		}
-		else if (Tube186Enabled)
-		{
-			TubeType = Tube::Master512CoPro;
-		}
-		else if (ArmTube)
-		{
-			TubeType = Tube::AcornArm;
+			IP232Port = Value;
 		}
 		else
 		{
-			TubeType = Tube::None;
-		}
-	}
-
-	if (!m_Preferences.GetBoolValue("Basic Hardware", BasicHardwareOnly))
-		BasicHardwareOnly = false;
-	if (!m_Preferences.GetBoolValue("Teletext Half Mode", TeletextHalfMode))
-		TeletextHalfMode = false;
-
-	if (!m_Preferences.GetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled))
-		TeletextAdapterEnabled = false;
-
-
-	TeletextSource = TeletextSourceType::IP;
-
-	unsigned char TeletextAdapterSource = 0;
-
-	if (m_Preferences.GetBinaryValue("TeletextAdapterSource", &TeletextAdapterSource, 1))
-	{
-		if (TeletextAdapterSource < static_cast<unsigned char>(TeletextSourceType::Last))
-		{
-			TeletextSource = static_cast<TeletextSourceType>(TeletextAdapterSource);
+			Value = 25232;
 		}
 	}
 	else
 	{
-		bool TeletextLocalhost = false;
-		bool TeletextCustom = false;
+		DWORD Value;
 
-		m_Preferences.GetBoolValue("TeletextLocalhost", TeletextLocalhost);
-		m_Preferences.GetBoolValue("TeletextCustom", TeletextCustom);
+		if (m_Preferences.GetDWORDValue(CFG_IP232_PORT, Value))
+		{
+			IP232Port = Value;
+		}
+		else if (m_Preferences.GetDWORDValue(CFG_IP232_CUSTOM_PORT_OLD, Value) && IP232custom)
+		{
+			IP232Port = Value;
+		}
+		else
+		{
+			IP232Port = 25232;
+		}
+	}
+
+	if (!m_Preferences.GetBoolValue(CFG_IP232_MODE, IP232Mode, false))
+	{
+		m_Preferences.GetBoolValue(CFG_IP232_MODE_OLD, IP232Mode, false);
+	}
+
+	if (!m_Preferences.GetBoolValue(CFG_IP232_RAW, IP232Raw, false))
+	{
+		m_Preferences.GetBoolValue(CFG_IP232_RAW_OLD, IP232Raw, false);
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadTeletextAdapterPreferences(int Version)
+{
+	m_Preferences.GetBoolValue(CFG_TELETEXT_ADAPTER_ENABLED, TeletextAdapterEnabled, false);
+
+	int SourceValue;
+
+	if (m_Preferences.GetDecimalValue(CFG_TELETEXT_ADAPTER_SOURCE, SourceValue, 0))
+	{
+		switch (SourceValue)
+		{
+			case 0: default: TeletextSource = TeletextSourceType::IP;   break;
+			case 1:          TeletextSource = TeletextSourceType::File; break;
+		}
+	}
+	else
+	{
+		bool TeletextLocalhost;
+		bool TeletextCustom;
+
+		m_Preferences.GetBoolValue(CFG_TELETEXT_LOCALHOST_OLD, TeletextLocalhost, false);
+		m_Preferences.GetBoolValue(CFG_TELETEXT_CUSTOM_IP_OLD, TeletextCustom, false);
 
 		if (!(TeletextLocalhost || TeletextCustom))
+		{
 			TeletextSource = TeletextSourceType::File;
+		}
+		else
+		{
+			TeletextSource = TeletextSourceType::IP;
+		}
 	}
 
 	char key[20];
 
 	for (int ch = 0; ch < TELETEXT_CHANNEL_COUNT; ch++)
 	{
-		sprintf(key, "TeletextFile%d", ch);
+		sprintf(key, CFG_TELETEXT_FILE, ch);
 
 		if (!m_Preferences.GetStringValue(key, TeletextFileName[ch]))
 		{
@@ -613,15 +1082,22 @@ void BeebWin::LoadPreferences()
 
 		std::string TeletextIPAddress;
 
-		sprintf(key, "TeletextIP%d", ch);
-
-		if (m_Preferences.GetStringValue(key, TeletextIPAddress))
+		if (Version >= 3)
 		{
-			TeletextIP[ch] = TeletextIPAddress;
+			sprintf(key, CFG_TELETEXT_IP, ch);
+
+			if (m_Preferences.GetStringValue(key, TeletextIPAddress))
+			{
+				TeletextIP[ch] = TeletextIPAddress;
+			}
+			else
+			{
+				TeletextIP[ch] = "127.0.0.1";
+			}
 		}
 		else
 		{
-			sprintf(key, "TeletextCustomIP%d", ch);
+			sprintf(key, CFG_TELETEXT_IP_OLD, ch);
 
 			if (m_Preferences.GetStringValue(key, TeletextIPAddress))
 			{
@@ -633,19 +1109,35 @@ void BeebWin::LoadPreferences()
 			}
 		}
 
-		sprintf(key, "TeletextPort%d", ch);
-
-		if (m_Preferences.GetDWORDValue(key, dword))
+		if (Version >= 3)
 		{
-			TeletextPort[ch] = (u_short)dword;
+			int Value;
+
+			sprintf(key, CFG_TELETEXT_PORT, ch);
+
+			// From BeebEm 4.20, port numbers are stored in decimal.
+			m_Preferences.GetDecimalValue(key, Value, TELETEXT_BASE_PORT + ch);
+
+			if (Value >= 0 && Value <= 65535)
+			{
+				TeletextPort[ch] = (u_short)Value;
+			}
+			else
+			{
+				TeletextPort[ch] = (u_short)(TELETEXT_BASE_PORT + ch);
+			}
 		}
 		else
 		{
-			sprintf(key, "TeletextCustomPort%d", ch);
+			DWORD Value;
 
-			if (m_Preferences.GetDWORDValue(key, dword))
+			sprintf(key, CFG_TELETEXT_PORT_OLD, ch);
+
+			m_Preferences.GetDWORDValue(key, Value, TELETEXT_BASE_PORT + ch);
+
+			if (Value >= 0 && Value <= 65535)
 			{
-				TeletextPort[ch] = (u_short)dword;
+				TeletextPort[ch] = (u_short)Value;
 			}
 			else
 			{
@@ -653,298 +1145,544 @@ void BeebWin::LoadPreferences()
 			}
 		}
 	}
+}
 
-	dword = 0;
-	m_Preferences.GetDWORDValue("KeyboardLinks", dword);
-	KeyboardLinks = (unsigned char)dword;
+/****************************************************************************/
 
-	if (!m_Preferences.GetBoolValue("FloppyDriveEnabled", Disc8271Enabled))
-		Disc8271Enabled = true;
-	Disc1770Enabled = Disc8271Enabled;
-
-	if (!m_Preferences.GetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled))
-		SCSIDriveEnabled = false;
-
-	if (!m_Preferences.GetBoolValue("IDEDriveEnabled", IDEDriveEnabled))
-		IDEDriveEnabled = false;
-
-	if (!m_Preferences.GetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled))
+void BeebWin::LoadCapturePreferences(int Version)
+{
+	if (Version >= 3)
 	{
-		if (!m_Preferences.GetBoolValue("RTCEnabled", UserPortRTCEnabled))
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value, 2);
+
+		switch (Value)
 		{
-			UserPortRTCEnabled = false;
+			case 0:          m_BitmapCaptureResolution = BitmapCaptureResolution::Display; break;
+			case 1:          m_BitmapCaptureResolution = BitmapCaptureResolution::_1280x1024; break;
+			case 2: default: m_BitmapCaptureResolution = BitmapCaptureResolution::_640x512; break;
+			case 3:          m_BitmapCaptureResolution = BitmapCaptureResolution::_320x256; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_BITMAP_CAPTURE_RESOLUTION, Value, 2);
+
+		switch (Value)
+		{
+			case 40262:          m_BitmapCaptureResolution = BitmapCaptureResolution::Display; break;
+			case 40263:          m_BitmapCaptureResolution = BitmapCaptureResolution::_1280x1024; break;
+			case 40264: default: m_BitmapCaptureResolution = BitmapCaptureResolution::_640x512; break;
+			case 40265:          m_BitmapCaptureResolution = BitmapCaptureResolution::_320x256; break;
 		}
 	}
 
-	if (!m_Preferences.GetBinaryValue("UserPortRTCRegisters", UserPortRTCRegisters, sizeof(UserPortRTCRegisters)))
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_BITMAP_CAPTURE_FORMAT, Value, 0);
+
+		switch (Value)
+		{
+			case 0: default: m_BitmapCaptureFormat = BitmapCaptureFormat::Bmp; break;
+			case 1:          m_BitmapCaptureFormat = BitmapCaptureFormat::Jpeg; break;
+			case 2:          m_BitmapCaptureFormat = BitmapCaptureFormat::Gif; break;
+			case 3:          m_BitmapCaptureFormat = BitmapCaptureFormat::Png; break;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_BITMAP_CAPTURE_FORMAT, Value, 40266);
+
+		switch (Value)
+		{
+			case 40266: default: m_BitmapCaptureFormat = BitmapCaptureFormat::Bmp; break;
+			case 40267:          m_BitmapCaptureFormat = BitmapCaptureFormat::Jpeg; break;
+			case 40268:          m_BitmapCaptureFormat = BitmapCaptureFormat::Gif; break;
+			case 40269:          m_BitmapCaptureFormat = BitmapCaptureFormat::Png; break;
+		}
+	}
+
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value, 1);
+
+		switch (Value)
+		{
+			case 0:          m_VideoCaptureResolution = VideoCaptureResolution::Display;
+			case 1: default: m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
+			case 2:          m_VideoCaptureResolution = VideoCaptureResolution::_320x256;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_VIDEO_CAPTURE_RESOLUTION, Value, 40186);
+
+		switch (Value)
+		{
+			case 40185:          m_VideoCaptureResolution = VideoCaptureResolution::Display;
+			case 40186: default: m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
+			case 40187:          m_VideoCaptureResolution = VideoCaptureResolution::_320x256;
+		}
+	}
+
+	if (Version >= 3)
+	{
+		int Value;
+
+		m_Preferences.GetDecimalValue(CFG_VIDEO_CAPTURE_FRAME_SKIP, Value, 1);
+
+		if (Value >= 0 && Value <= 5)
+		{
+			m_AviFrameSkip = Value;
+		}
+		else
+		{
+			m_AviFrameSkip = 1;
+		}
+	}
+	else
+	{
+		DWORD Value;
+
+		// BeebEm 4.19 and earlier stored a menu item ID.
+		m_Preferences.GetDWORDValue(CFG_VIDEO_CAPTURE_FRAME_SKIP_OLD, Value, 40189);
+
+		switch (Value)
+		{
+			case 40188:          m_AviFrameSkip = 0; break;
+			case 40189: default: m_AviFrameSkip = 1; break;
+			case 40190:          m_AviFrameSkip = 2; break;
+			case 40191:          m_AviFrameSkip = 3; break;
+			case 40192:          m_AviFrameSkip = 4; break;
+			case 40193:          m_AviFrameSkip = 5; break;
+		}
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadDiskPreferences()
+{
+	m_Preferences.GetBoolValue(CFG_WRITE_PROTECT_ON_LOAD, m_WriteProtectOnLoad, true);
+	m_Preferences.GetBoolValue(CFG_FLOPPY_DRIVE_ENABLED, Disc8271Enabled, true);
+
+	Disc1770Enabled = Disc8271Enabled;
+
+	m_Preferences.GetBoolValue(CFG_SCSI_DRIVE_ENABLED, SCSIDriveEnabled, false);
+	m_Preferences.GetBoolValue(CFG_IDE_DRIVE_ENABLED, IDEDriveEnabled, false);
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadUserPortRTCPreferences()
+{
+	if (!m_Preferences.GetBoolValue(CFG_USER_PORT_RTC_ENABLED, UserPortRTCEnabled, false))
+	{
+		m_Preferences.GetBoolValue(CFG_USER_PORT_RTC_ENABLED_OLD, UserPortRTCEnabled, false);
+	}
+
+	if (!m_Preferences.GetBinaryValue(CFG_USER_PORT_RTC_REGISTERS, UserPortRTCRegisters, sizeof(UserPortRTCRegisters)))
 	{
 		ZeroMemory(UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
 	}
+}
 
-	if (m_Preferences.GetDWORDValue("CaptureResolution", dword))
-		m_MenuIDAviResolution = dword;
-	else
-		m_MenuIDAviResolution = IDM_VIDEORES2;
+/****************************************************************************/
 
-	if (m_Preferences.GetDWORDValue("FrameSkip", dword))
-		m_MenuIDAviSkip = dword;
-	else
-		m_MenuIDAviSkip = IDM_VIDEOSKIP1;
+void BeebWin::LoadDebugPreferences()
+{
+	m_Preferences.GetBoolValue(CFG_WRITE_INSTRUCTION_COUNTS, m_WriteInstructionCounts, false);
+}
 
-	if (m_Preferences.GetDWORDValue("BitmapCaptureResolution", dword))
-		m_MenuIDCaptureResolution = dword;
-	else
-		m_MenuIDCaptureResolution = IDM_CAPTURERES_640;
+/****************************************************************************/
 
-	if (m_Preferences.GetDWORDValue("BitmapCaptureFormat", dword))
-		m_MenuIDCaptureFormat = dword;
-	else
-		m_MenuIDCaptureFormat = IDM_CAPTUREBMP;
+void BeebWin::LoadKeyMapPreferences()
+{
+	m_Preferences.GetBoolValue(CFG_KEY_MAP_AS, m_KeyMapAS, false);
+	m_Preferences.GetBoolValue(CFG_KEY_MAP_FUNC, m_KeyMapFunc, false);
 
-	RECT rect;
-	if (m_Preferences.GetBinaryValue("WindowPos", &rect, sizeof(rect)))
+	TranslateKeyMapping();
+
+	m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_BREAK, m_DisableKeysBreak, false);
+	m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_ESCAPE, m_DisableKeysEscape, false);
+	m_Preferences.GetBoolValue(CFG_DISABLE_KEYS_SHORTCUT, m_DisableKeysShortcut, false);
+
+	// Windows key enable/disable still comes from registry
+	int Size = 24;
+	unsigned char KeyData[24];
+
+	if (RegGetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
+	                      CFG_SCANCODE_MAP, KeyData, &Size) && Size == 24)
 	{
-		m_XWinPos = rect.left;
-		m_YWinPos = rect.top;
-
-		// Pos can get corrupted if two BeebEm's exited at same time
-		RECT scrrect;
-		SystemParametersInfo(SPI_GETWORKAREA, 0, (PVOID)&scrrect, 0);
-		if (m_XWinPos < 0)
-			m_XWinPos = 0;
-		if (m_XWinPos > scrrect.right - 80)
-			m_XWinPos = 0;
-		if (m_YWinPos < 0)
-			m_YWinPos = 0;
-		if (m_YWinPos > scrrect.bottom - 80)
-			m_YWinPos = 0;
+		m_DisableKeysWindows = true;
 	}
 	else
 	{
-		m_XWinPos = -1;
-		m_YWinPos = -1;
+		m_DisableKeysWindows = false;
 	}
+}
 
+/****************************************************************************/
+
+void BeebWin::LoadAutoSavePreferences()
+{
+	m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_CMOS, m_AutoSavePrefsCMOS, false);
+	m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders, false);
+	m_Preferences.GetBoolValue(CFG_AUTO_SAVE_PREFS_ALL, m_AutoSavePrefsAll, false);
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadCMOSPreferences()
+{
 	// CMOS RAM now in prefs file
-	unsigned char Data[50];
+	unsigned char CMOSData[50];
 
-	if (m_Preferences.GetBinaryValue("CMOSRam", Data, 50))
+	if (m_Preferences.GetBinaryValue(CFG_CMOS_MASTER128, CMOSData, 50))
 	{
-		RTCSetCMOSData(Model::Master128, Data, 50);
+		RTCSetCMOSData(Model::Master128, CMOSData, 50);
 	}
 	else
 	{
 		RTCSetCMOSDefaults(Model::Master128);
 	}
 
-	if (m_Preferences.GetBinaryValue("CMOSRamMasterET", Data, 50))
+	if (m_Preferences.GetBinaryValue(CFG_CMOS_MASTER_ET, CMOSData, 50))
 	{
-		RTCSetCMOSData(Model::MasterET, Data, 50);
+		RTCSetCMOSData(Model::MasterET, CMOSData, 50);
 	}
 	else
 	{
 		RTCSetCMOSDefaults(Model::MasterET);
 	}
 
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadSWRAMPreferences()
+{
+	if (!m_Preferences.GetBinaryValue(CFG_SWRAM_WRITABLE, RomWritePrefs, 16))
+	{
+		for (int slot = 0; slot < 16; ++slot)
+			RomWritePrefs[slot] = true;
+	}
+
+	m_Preferences.GetBoolValue(CFG_SWRAM_BOARD_ENABLED, SWRAMBoardEnabled, false);
+}
+
+/****************************************************************************/
+
+void BeebWin::LoadFilePathPreferences()
+{
+	// Set file path defaults
+	if (!m_Preferences.HasValue(CFG_DISCS_PATH)) {
+		m_Preferences.SetStringValue(CFG_DISCS_PATH, "DiscIms");
+	}
+
+	if (!m_Preferences.HasValue(CFG_DISCS_FILTER)) {
+		m_Preferences.SetDecimalValue(CFG_DISCS_FILTER, 0);
+	}
+
+	if (!m_Preferences.HasValue(CFG_TAPES_PATH)) {
+		m_Preferences.SetStringValue(CFG_TAPES_PATH, "Tapes");
+	}
+
+	if (!m_Preferences.HasValue(CFG_STATES_PATH)) {
+		m_Preferences.SetStringValue(CFG_STATES_PATH, "BeebState");
+	}
+
+	if (!m_Preferences.HasValue(CFG_AVI_PATH)) {
+		m_Preferences.SetStringValue(CFG_AVI_PATH, "");
+	}
+
+	if (!m_Preferences.HasValue(CFG_IMAGE_PATH)) {
+		m_Preferences.SetStringValue(CFG_IMAGE_PATH, "");
+	}
+
+	if (!m_Preferences.HasValue(CFG_HARD_DRIVE_PATH)) {
+		m_Preferences.SetStringValue(CFG_HARD_DRIVE_PATH, "DiscIms");
+	}
+
 	// Set FDC defaults if not already set
-	for (int machine = 0; machine < 3; ++machine)
+	for (int machine = 0; machine < static_cast<int>(Model::Master128); ++machine)
 	{
 		char CfgName[256];
-		sprintf(CfgName, "FDCDLL%d", machine);
+		sprintf(CfgName, CFG_FDC_DLL, machine);
 
 		if (!m_Preferences.HasValue(CfgName))
 		{
 			// Default B+ to Acorn FDC
 			if (machine == static_cast<int>(Model::BPlus))
-				strcpy(path, "Hardware\\Acorn1770.dll");
+			{
+				m_Preferences.SetStringValue(CfgName, "Hardware\\Acorn1770.dll");
+			}
 			else
-				strcpy(path, "None");
-			m_Preferences.SetStringValue(CfgName, path);
+			{
+				m_Preferences.SetStringValue(CfgName, "None");
+			}
 		}
 	}
-
-	// Update prefs version
-	m_Preferences.SetStringValue("PrefsVersion", "2.1");
-
-	// Windows key enable/disable still comes from registry
-	int binsize = 24;
-	if (RegGetBinaryValue(HKEY_LOCAL_MACHINE,CFG_KEYBOARD_LAYOUT,
-						  CFG_SCANCODE_MAP,keyData,&binsize) && binsize==24)
-		m_DisableKeysWindows = true;
-	else
-		m_DisableKeysWindows = false;
-
-	if (!m_Preferences.GetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts))
-		m_WriteInstructionCounts = false;
 }
 
 /****************************************************************************/
+
+void BeebWin::LoadUserPortBreakoutPreferences()
+{
+	char Keys[8];
+
+	if (m_Preferences.GetBinaryValue(CFG_BIT_KEYS, Keys, 8))
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			BitKeys[i] = Keys[i];
+		}
+	}
+}
+
+/****************************************************************************/
+
 void BeebWin::SavePreferences(bool saveAll)
 {
-	unsigned char LEDByte = 0;
-	unsigned char flag;
-	char keyData[256];
-
 	if (saveAll)
 	{
-		m_Preferences.SetBinaryValue(CFG_MACHINE_TYPE, &MachineType, 1);
-		m_Preferences.SetBoolValue("WriteProtectOnLoad", m_WriteProtectOnLoad);
-		m_Preferences.SetDWORDValue("DisplayRenderer", m_DisplayRenderer);
-		m_Preferences.SetBoolValue("DXSmoothing", m_DXSmoothing);
-		m_Preferences.SetBoolValue("DXSmoothMode7Only", m_DXSmoothMode7Only);
-		m_Preferences.SetDWORDValue("DDFullScreenMode", m_DDFullScreenMode);
-		m_Preferences.SetDWORDValue(CFG_VIEW_WIN_SIZE, m_MenuIDWinSize);
-		m_Preferences.SetDWORDValue("WinSizeX", m_XLastWinSize);
-		m_Preferences.SetDWORDValue("WinSizeY", m_YLastWinSize);
-		m_Preferences.SetBoolValue("FullScreen", m_isFullScreen);
-		m_Preferences.SetBoolValue("MaintainAspectRatio", m_MaintainAspectRatio);
-		m_Preferences.SetBoolValue("ShowFPS", m_ShowSpeedAndFPS);
-		m_Preferences.SetBinaryValue(CFG_VIEW_MONITOR, &m_PaletteType, 1);
-		m_Preferences.SetBoolValue("HideMenuEnabled", m_HideMenuEnabled);
-		LEDByte = static_cast<unsigned char>(
-			(DiscLedColour == LEDColour::Green ? 4 : 0) |
-			(LEDs.ShowDisc ? 2 : 0) |
-			(LEDs.ShowKB ? 1 : 0)
-		);
-		m_Preferences.SetBinaryValue("LED Information", &LEDByte, 1);
-		m_Preferences.SetDWORDValue("MotionBlur", m_MenuIDMotionBlur);
-		m_Preferences.SetBinaryValue("MotionBlurIntensities", m_BlurIntensities, 8);
-		m_Preferences.SetBoolValue("TextViewEnabled", m_TextViewEnabled);
+		// Update prefs version
+		m_Preferences.SetDecimalValue(CFG_PREFERENCES_VERSION, PREFERENCES_VERSION);
 
-		m_Preferences.SetDWORDValue(CFG_SPEED_TIMING, m_MenuIDTiming);
+		// Remove obsolete prefs
+		m_Preferences.EraseValue("UserKeyMapRow");
+		m_Preferences.EraseValue("UserKeyMapCol");
+		m_Preferences.EraseValue("ShowBottomCursorLine");
+		m_Preferences.EraseValue("Volume");
+		m_Preferences.EraseValue("UsePrimaryBuffer");
+		m_Preferences.EraseValue("OpCodes");
 
-		m_Preferences.SetDWORDValue("SoundConfig::Selection", SoundConfig::Selection);
-		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
-		m_Preferences.SetBoolValue("SoundChipEnabled", SoundChipEnabled);
-		m_Preferences.SetDWORDValue(CFG_SOUND_SAMPLE_RATE, m_MenuIDSampleRate);
-		m_Preferences.SetDWORDValue(CFG_SOUND_VOLUME, m_MenuIDVolume);
-		m_Preferences.SetBoolValue("RelaySoundEnabled", RelaySoundEnabled);
-		m_Preferences.SetBoolValue("TapeSoundEnabled", TapeSoundEnabled);
-		m_Preferences.SetBoolValue("DiscDriveSoundEnabled", DiscDriveSoundEnabled);
-		m_Preferences.SetBoolValue("Part Samples", PartSamples);
-		m_Preferences.SetBoolValue("ExponentialVolume", SoundExponentialVolume);
-		m_Preferences.SetBoolValue("TextToSpeechEnabled", m_TextToSpeechEnabled);
-		m_Preferences.SetDWORDValue("TextToSpeechRate", m_SpeechRate);
-		m_Preferences.SetBoolValue("TextToSpeechAutoSpeak", m_SpeechWriteChar);
-		m_Preferences.SetBoolValue("TextToSpeechSpeakPunctuation", m_SpeechSpeakPunctuation);
-		m_Preferences.SetBoolValue("Music5000Enabled", Music5000Enabled);
-
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_STICKS, m_MenuIDSticks);
-		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
-		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
-		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
-		m_Preferences.SetDWORDValue(CFG_OPTIONS_KEY_MAPPING, m_MenuIDKeyMapping);
-		m_Preferences.SetBoolValue("KeyMapAS", m_KeyMapAS);
-		flag = m_KeyMapFunc;
-		m_Preferences.SetBinaryValue("KeyMapFunc", &flag, 1);
-
-		m_Preferences.SetBoolValue("DisableKeysBreak", m_DisableKeysBreak);
-		m_Preferences.SetBoolValue("DisableKeysEscape", m_DisableKeysEscape);
-		m_Preferences.SetBoolValue("DisableKeysShortcut", m_DisableKeysShortcut);
-
-		for (int key = 0; key < 8; ++key)
-		{
-			keyData[key] = static_cast<char>(BitKeys[key]);
-		}
-
-		m_Preferences.SetBinaryValue("BitKeys", keyData, 8);
-
-		m_Preferences.SetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath);
-
-		m_Preferences.SetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
-		m_Preferences.SetDWORDValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
-		m_Preferences.SetDWORDValue(CFG_AMX_SIZE, m_MenuIDAMXSize);
-		m_Preferences.SetDWORDValue(CFG_AMX_ADJUST, m_MenuIDAMXAdjust);
-
-		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
-		m_Preferences.SetDWORDValue(CFG_PRINTER_PORT, m_MenuIDPrinterPort);
-		m_Preferences.SetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
-
-		m_Preferences.SetBinaryValue("Tape Clock Speed", &TapeState.ClockSpeed, 2);
-		m_Preferences.SetBoolValue("UnlockTape", TapeState.Unlock);
-		m_Preferences.SetBoolValue("SerialPortEnabled", SerialPortEnabled);
-		m_Preferences.SetBoolValue("TouchScreenEnabled", SerialDestination == SerialType::TouchScreen);
-		m_Preferences.SetBoolValue("IP232Enabled", SerialDestination == SerialType::IP232);
-		m_Preferences.SetStringValue("IP232Address", IP232Address);
-		m_Preferences.SetDWORDValue("IP232Port", IP232Port);
-		m_Preferences.EraseValue("IP232mode");
-		m_Preferences.SetBoolValue("IP232Mode", IP232Mode);
-		m_Preferences.EraseValue("IP232raw");
-		m_Preferences.SetBoolValue("IP232Raw", IP232Raw);
-
-		m_Preferences.SetStringValue("SerialPort", SerialPortName);
-
-		m_Preferences.SetBoolValue("EconetEnabled", EconetEnabled); // Rob
+		// Hardware
+		m_Preferences.SetDecimalValue(CFG_MACHINE_TYPE, (int)MachineType);
+		m_Preferences.SetBoolValue(CFG_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
+		m_Preferences.EraseValue(CFG_BASIC_HARDWARE_ONLY_OLD);
 
 		#if ENABLE_SPEECH
-		m_Preferences.SetBoolValue("SpeechEnabled", SpeechDefault);
+		m_Preferences.SetBoolValue(CFG_SPEECH_ENABLED, SpeechDefault);
 		#else
-		m_Preferences.SetBoolValue("SpeechEnabled", false);
+		m_Preferences.SetBoolValue(CFG_SPEECH_ENABLED, false);
 		#endif
 
-		for (int slot = 0; slot < 16; ++slot)
-			RomWritePrefs[slot] = RomWritable[slot];
-		m_Preferences.SetBinaryValue("SWRAMWritable", RomWritePrefs, 16);
-		m_Preferences.SetBoolValue("SWRAMBoard", SWRAMBoardEnabled);
+		m_Preferences.SetBoolValue(CFG_ECONET_ENABLED, EconetEnabled); // Rob
+		m_Preferences.SetBinaryValue(CFG_KEYBOARD_LINKS, &KeyboardLinks, sizeof(KeyboardLinks));
 
-		m_Preferences.SetBinaryValue(CFG_TUBE_TYPE, &TubeType, 1);
+		// Second processors
+		m_Preferences.SetDecimalValue(CFG_TUBE_TYPE, (int)TubeType);
+		m_Preferences.EraseValue(CFG_TUBE_ENABLED_OLD);
+		m_Preferences.EraseValue(CFG_TUBE_ACORN_Z80_OLD);
+		m_Preferences.EraseValue(CFG_TUBE_TORCH_Z80_OLD);
+		m_Preferences.EraseValue(CFG_TUBE_186_OLD);
+		m_Preferences.EraseValue(CFG_TUBE_ARM_OLD);
 
-		m_Preferences.SetBoolValue("Basic Hardware", BasicHardwareOnly);
-		m_Preferences.SetBoolValue("Teletext Half Mode", TeletextHalfMode);
-		m_Preferences.SetBoolValue("TeletextAdapterEnabled", TeletextAdapterEnabled);
-		m_Preferences.SetBinaryValue("TeletextAdapterSource", &TeletextSource, 1);
+		// Window size and position
+		m_Preferences.SetDecimalValue(CFG_VIEW_WIN_SIZE_X, m_XLastWinSize);
+		m_Preferences.SetDecimalValue(CFG_VIEW_WIN_SIZE_Y, m_YLastWinSize);
+		m_Preferences.EraseValue(CFG_VIEW_WIN_SIZE);
+
+		RECT Rect;
+		GetWindowRect(m_hWnd, &Rect);
+
+		m_Preferences.SetDecimalValue(CFG_VIEW_WINDOW_POS_X, Rect.left);
+		m_Preferences.SetDecimalValue(CFG_VIEW_WINDOW_POS_Y, Rect.top);
+
+		// Emulation speed
+		m_Preferences.SetDecimalValue(CFG_SPEED_TIMING, (DWORD)m_TimingType);
+		m_Preferences.SetDecimalValue(CFG_SPEED, m_TimingSpeed);
+
+		// Display
+		m_Preferences.SetDecimalValue(CFG_DISPLAY_RENDERER, (int)m_DisplayRenderer);
+		m_Preferences.SetBoolValue(CFG_FULL_SCREEN, m_FullScreen);
+		m_Preferences.SetDecimalValue(CFG_DX_FULL_SCREEN_MODE, (int)m_DDFullScreenMode);
+		m_Preferences.EraseValue(CFG_DX_FULL_SCREEN_MODE_OLD);
+		m_Preferences.SetBoolValue(CFG_MAINTAIN_ASPECT_RATIO, m_MaintainAspectRatio);
+		m_Preferences.SetBoolValue(CFG_DX_SMOOTHING, m_DXSmoothing);
+		m_Preferences.SetBoolValue(CFG_DX_SMOOTH_MODE7_ONLY, m_DXSmoothMode7Only);
+		m_Preferences.SetBoolValue(CFG_TELETEXT_HALF_MODE, TeletextHalfMode);
+		m_Preferences.EraseValue(CFG_TELETEXT_HALF_MODE_OLD);
+		m_Preferences.SetDecimalValue(CFG_MOTION_BLUR, (int)m_MotionBlur);
+		m_Preferences.SetBinaryValue(CFG_MOTION_BLUR_INTENSITIES, m_BlurIntensities, 8);
+
+		// Sound
+		m_Preferences.SetDecimalValue(CFG_SOUND_STREAMER, (int)SelectedSoundStreamer);
+		m_Preferences.EraseValue(CFG_SOUND_STREAMER_OLD);
+		m_Preferences.SetDecimalValue(CFG_SOUND_SAMPLE_RATE, SoundSampleRate);
+		m_Preferences.SetDecimalValue(CFG_SOUND_VOLUME, SoundVolume);
+		m_Preferences.SetBoolValue(CFG_SOUND_EXPONENTIAL_VOLUME, SoundExponentialVolume);
+		m_Preferences.SetBoolValue(CFG_SOUND_ENABLED, SoundDefault);
+		m_Preferences.SetBoolValue(CFG_SOUND_CHIP_ENABLED, SoundChipEnabled);
+		m_Preferences.SetBoolValue(CFG_RELAY_SOUND_ENABLED, RelaySoundEnabled);
+		m_Preferences.SetBoolValue(CFG_TAPE_SOUND_ENABLED, TapeSoundEnabled);
+		m_Preferences.SetBoolValue(CFG_DISC_SOUND_ENABLED, DiscDriveSoundEnabled);
+		m_Preferences.SetBoolValue(CFG_SOUND_PART_SAMPLES, PartSamples);
+		m_Preferences.EraseValue(CFG_SOUND_PART_SAMPLES_OLD);
+		m_Preferences.SetBoolValue(CFG_MUSIC5000_ENABLED, Music5000Enabled);
+
+		// Keyboard and joystick
+		m_Preferences.SetDecimalValue(CFG_OPTIONS_STICKS, (int)m_JoystickOption);
+		m_Preferences.SetDecimalValue(CFG_OPTIONS_KEY_MAPPING, (int)m_KeyboardMapping);
+		m_Preferences.SetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath);
+
+		// AMX mouse
+		m_Preferences.SetBoolValue(CFG_OPTIONS_CAPTURE_MOUSE, m_CaptureMouse);
+		m_Preferences.SetBoolValue(CFG_AMX_ENABLED, AMXMouseEnabled);
+		m_Preferences.SetBoolValue(CFG_AMX_LRFORMIDDLE, AMXLRForMiddle);
+		m_Preferences.SetDecimalValue(CFG_AMX_SIZE, (int)m_AMXSize);
+		m_Preferences.SetDecimalValue(CFG_AMX_ADJUST, m_AMXAdjust);
+
+		// Printer
+		m_Preferences.SetBoolValue(CFG_PRINTER_ENABLED, PrinterEnabled);
+		m_Preferences.SetDecimalValue(CFG_PRINTER_PORT, (int)m_PrinterPort);
+		m_Preferences.SetStringValue(CFG_PRINTER_FILE, m_PrinterFileName);
+
+		// Text to speech
+		m_Preferences.SetBoolValue(CFG_TEXT_TO_SPEECH_ENABLED, m_TextToSpeechEnabled);
+		m_Preferences.SetBoolValue(CFG_TEXT_TO_SPEECH_AUTO_SPEAK, m_SpeechWriteChar);
+		m_Preferences.SetBoolValue(CFG_TEXT_TO_SPEECH_PUNCTUATION, m_SpeechSpeakPunctuation);
+		m_Preferences.SetDecimalValue(CFG_TEXT_TO_SPEECH_RATE, m_SpeechRate);
+
+		// UI
+		m_Preferences.SetBoolValue(CFG_SHOW_FPS, m_ShowSpeedAndFPS);
+		m_Preferences.EraseValue(CFG_SHOW_FPS_OLD);
+		m_Preferences.SetBoolValue(CFG_SHOW_KEYBOARD_LEDS, LEDs.ShowKB);
+		m_Preferences.SetBoolValue(CFG_SHOW_DISC_LEDS, LEDs.ShowDisc);
+		m_Preferences.SetDecimalValue(CFG_DISC_LED_COLOUR, (int)m_DiscLedColour);
+		m_Preferences.EraseValue(CFG_LED_INFORMATION_OLD);
+		m_Preferences.SetBoolValue(CFG_HIDE_MENU_ENABLED, m_HideMenuEnabled);
+		m_Preferences.SetDecimalValue(CFG_VIEW_MONITOR, (int)m_PaletteType);
+		m_Preferences.SetBoolValue(CFG_OPTIONS_HIDE_CURSOR, m_HideCursor);
+		m_Preferences.SetBoolValue(CFG_OPTIONS_FREEZEINACTIVE, m_FreezeWhenInactive);
+		m_Preferences.SetBoolValue(CFG_TEXT_VIEW_ENABLED, m_TextViewEnabled);
+
+		// Tape
+		m_Preferences.SetDecimalValue(CFG_TAPE_CLOCK_SPEED, TapeState.ClockSpeed);
+		m_Preferences.EraseValue(CFG_TAPE_CLOCK_SPEED_OLD);
+		m_Preferences.SetBoolValue(CFG_UNLOCK_TAPE, TapeState.Unlock);
+
+		// Serial port
+		m_Preferences.SetStringValue(CFG_SERIAL_PORT, SerialPortName);
+		m_Preferences.SetBoolValue(CFG_SERIAL_PORT_ENABLED, SerialPortEnabled);
+		m_Preferences.SetBoolValue(CFG_TOUCH_SCREEN_ENABLED, SerialDestination == SerialType::TouchScreen);
+		m_Preferences.SetBoolValue(CFG_IP232_ENABLED, SerialDestination == SerialType::IP232);
+		m_Preferences.EraseValue(CFG_IP232_LOCALHOST_OLD);
+		m_Preferences.EraseValue(CFG_IP232_CUSTOM_OLD);
+		m_Preferences.SetBoolValue(CFG_IP232_MODE, IP232Mode);
+		m_Preferences.EraseValue(CFG_IP232_MODE_OLD);
+		m_Preferences.SetBoolValue(CFG_IP232_RAW, IP232Raw);
+		m_Preferences.EraseValue(CFG_IP232_RAW_OLD);
+		m_Preferences.SetStringValue(CFG_IP232_ADDRESS, IP232Address);
+		m_Preferences.EraseValue(CFG_IP232_CUSTOM_IP_OLD);
+		m_Preferences.SetDecimalValue(CFG_IP232_PORT, IP232Port);
+		m_Preferences.EraseValue(CFG_IP232_CUSTOM_PORT_OLD);
+
+		// Teletext adapter
+		m_Preferences.SetBoolValue(CFG_TELETEXT_ADAPTER_ENABLED, TeletextAdapterEnabled);
+		m_Preferences.SetDecimalValue(CFG_TELETEXT_ADAPTER_SOURCE, (int)TeletextSource);
 
 		char key[20];
 
 		for (int ch = 0; ch < TELETEXT_CHANNEL_COUNT; ch++)
 		{
-			sprintf(key, "TeletextFile%d", ch);
+			sprintf(key, CFG_TELETEXT_FILE, ch);
 			m_Preferences.SetStringValue(key, TeletextFileName[ch]);
-			sprintf(key, "TeletextPort%d", ch);
-			m_Preferences.SetDWORDValue(key, TeletextPort[ch]);
-			sprintf(key, "TeletextIP%d", ch);
+			sprintf(key, CFG_TELETEXT_PORT, ch);
+			m_Preferences.SetDecimalValue(key, TeletextPort[ch]);
+			sprintf(key, CFG_TELETEXT_PORT_OLD, ch);
+			m_Preferences.EraseValue(key);
+			sprintf(key, CFG_TELETEXT_IP, ch);
 			m_Preferences.SetStringValue(key, TeletextIP[ch]);
+			sprintf(key, CFG_TELETEXT_IP_OLD, ch);
+			m_Preferences.EraseValue(key);
 		}
 
-		m_Preferences.SetDWORDValue("KeyboardLinks", KeyboardLinks);
+		m_Preferences.EraseValue(CFG_TELETEXT_LOCALHOST_OLD);
+		m_Preferences.EraseValue(CFG_TELETEXT_CUSTOM_IP_OLD);
 
-		m_Preferences.SetBoolValue("FloppyDriveEnabled", Disc8271Enabled);
-		m_Preferences.SetBoolValue("SCSIDriveEnabled", SCSIDriveEnabled);
-		m_Preferences.SetBoolValue("IDEDriveEnabled", IDEDriveEnabled);
-		m_Preferences.SetBoolValue("UserPortRTCEnabled", UserPortRTCEnabled);
+		// Image and video capture
+		m_Preferences.SetDecimalValue(CFG_BITMAP_CAPTURE_RESOLUTION, (int)m_BitmapCaptureResolution);
+		m_Preferences.SetDecimalValue(CFG_BITMAP_CAPTURE_FORMAT, (int)m_BitmapCaptureFormat);
+		m_Preferences.SetDecimalValue(CFG_VIDEO_CAPTURE_RESOLUTION, (int)m_VideoCaptureResolution);
+		m_Preferences.SetDecimalValue(CFG_VIDEO_CAPTURE_FRAME_SKIP, m_AviFrameSkip);
+		m_Preferences.EraseValue(CFG_VIDEO_CAPTURE_FRAME_SKIP_OLD);
 
-		m_Preferences.SetDWORDValue("CaptureResolution", m_MenuIDAviResolution);
-		m_Preferences.SetDWORDValue("FrameSkip", m_MenuIDAviSkip);
+		// Floppy and hard drives
+		m_Preferences.SetBoolValue(CFG_WRITE_PROTECT_ON_LOAD, m_WriteProtectOnLoad);
+		m_Preferences.SetBoolValue(CFG_FLOPPY_DRIVE_ENABLED, Disc8271Enabled);
+		m_Preferences.SetBoolValue(CFG_SCSI_DRIVE_ENABLED, SCSIDriveEnabled);
+		m_Preferences.SetBoolValue(CFG_IDE_DRIVE_ENABLED, IDEDriveEnabled);
 
-		m_Preferences.SetDWORDValue("BitmapCaptureResolution", m_MenuIDCaptureResolution);
-		m_Preferences.SetDWORDValue("BitmapCaptureFormat", m_MenuIDCaptureFormat);
+		// User port RTC
+		m_Preferences.SetBoolValue(CFG_USER_PORT_RTC_ENABLED, UserPortRTCEnabled);
+		m_Preferences.EraseValue(CFG_USER_PORT_RTC_ENABLED_OLD);
 
-		RECT rect;
-		GetWindowRect(m_hWnd,&rect);
-		m_Preferences.SetBinaryValue("WindowPos", &rect, sizeof(rect));
+		// Debug
+		m_Preferences.SetBoolValue(CFG_WRITE_INSTRUCTION_COUNTS, m_WriteInstructionCounts);
+
+		// Key mappings
+		m_Preferences.SetBoolValue(CFG_KEY_MAP_AS, m_KeyMapAS);
+		m_Preferences.SetBoolValue(CFG_KEY_MAP_FUNC, m_KeyMapFunc);
+		m_Preferences.SetBoolValue(CFG_DISABLE_KEYS_BREAK, m_DisableKeysBreak);
+		m_Preferences.SetBoolValue(CFG_DISABLE_KEYS_ESCAPE, m_DisableKeysEscape);
+		m_Preferences.SetBoolValue(CFG_DISABLE_KEYS_SHORTCUT, m_DisableKeysShortcut);
+
+		// Sideways RAM
+		for (int slot = 0; slot < 16; ++slot)
+			RomWritePrefs[slot] = RomWritable[slot];
+		m_Preferences.SetBinaryValue(CFG_SWRAM_WRITABLE, RomWritePrefs, 16);
+		m_Preferences.SetBoolValue(CFG_SWRAM_BOARD_ENABLED, SWRAMBoardEnabled);
+
+		// User port breakout box
+		char KeyData[256];
+
+		for (int Key = 0; Key < 8; Key++)
+		{
+			KeyData[Key] = static_cast<char>(BitKeys[Key]);
+		}
+
+		m_Preferences.SetBinaryValue(CFG_BIT_KEYS, KeyData, 8);
 	}
 
 	// CMOS RAM now in prefs file
 	if (saveAll || m_AutoSavePrefsCMOS)
 	{
-		m_Preferences.SetBinaryValue("CMOSRam", RTCGetCMOSData(Model::Master128), 50);
-		m_Preferences.SetBinaryValue("CMOSRamMasterET", RTCGetCMOSData(Model::MasterET), 50);
+		// CMOS
+		m_Preferences.SetBinaryValue(CFG_CMOS_MASTER128, RTCGetCMOSData(Model::Master128), 50);
+		m_Preferences.SetBinaryValue(CFG_CMOS_MASTER_ET, RTCGetCMOSData(Model::MasterET), 50);
 
-		m_Preferences.SetBinaryValue("UserPortRTCRegisters", UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
+		m_Preferences.SetBinaryValue(CFG_USER_PORT_RTC_REGISTERS, UserPortRTCRegisters, sizeof(UserPortRTCRegisters));
 	}
 
-	m_Preferences.SetBoolValue("AutoSavePrefsCMOS", m_AutoSavePrefsCMOS);
-	m_Preferences.SetBoolValue("AutoSavePrefsFolders", m_AutoSavePrefsFolders);
-	m_Preferences.SetBoolValue("AutoSavePrefsAll", m_AutoSavePrefsAll);
+	// Preferences auto-save
+	m_Preferences.SetBoolValue(CFG_AUTO_SAVE_PREFS_CMOS, m_AutoSavePrefsCMOS);
+	m_Preferences.SetBoolValue(CFG_AUTO_SAVE_PREFS_FOLDERS, m_AutoSavePrefsFolders);
+	m_Preferences.SetBoolValue(CFG_AUTO_SAVE_PREFS_ALL, m_AutoSavePrefsAll);
 
-	m_Preferences.SetBoolValue("WriteInstructionCounts", m_WriteInstructionCounts);
-
-	if (m_Preferences.Save(m_PrefsFile) == Preferences::Result::Success) {
+	if (m_Preferences.Save(m_PrefsFileName.c_str()) == Preferences::Result::Success)
+	{
 		m_AutoSavePrefsChanged = false;
 	}
-	else {
+	else
+	{
 		Report(MessageType::Error,
 		       "Failed to write preferences file:\n  %s",
-		       m_PrefsFile);
+		       m_PrefsFileName.c_str());
 	}
 }

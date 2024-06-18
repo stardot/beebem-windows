@@ -26,27 +26,25 @@ Boston, MA  02110-1301, USA.
 #ifndef SOUND_HEADER
 #define SOUND_HEADER
 
-#ifdef WIN32
-/* Always compile sound code - it is switched on and off using SoundEnabled */
-#include <windows.h>
-#endif
-
 #include <stdio.h>
+
+#include "BeebWin.h"
 
 enum class SoundState : char {
 	Muted,
 	Unmuted
 };
 
+extern SoundStreamerType SelectedSoundStreamer;
 extern bool SoundDefault; // Default sound state (enabled/disabled via sound menu)
 extern bool SoundEnabled; // Sound on/off flag - will be off if DirectSound init fails
 extern bool RelaySoundEnabled; // Relay Click noise enable
 extern bool DiscDriveSoundEnabled; // Disc drive sound enable
 extern unsigned int SoundSampleRate; // Sample rate, 11025, 22050 or 44100 Hz
-extern int SoundVolume;     /* Volume, 1(full),2,3 or 4(low) */
+extern int SoundVolume; // Volume: 1 (full), 2, 3 or 4 (low)
 extern bool SoundExponentialVolume;
 
-extern int SoundTrigger; /* Cycle based trigger on sound */
+extern int SoundTrigger; // Cycle based trigger on sound
 extern double SoundTuning;
 
 void SoundInit();

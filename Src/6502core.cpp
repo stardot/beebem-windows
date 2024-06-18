@@ -1391,32 +1391,39 @@ void DoNMI(void) {
 
 static void ClipboardREMVHandler()
 {
-	if (GETVFLAG) {
+	if (GETVFLAG)
+	{
 		// Examine buffer state
 
-		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength) {
+		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength)
+		{
 			Accumulator = mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex];
 			PSR &= ~FlagC;
 		}
-		else {
+		else
+		{
 			PSR |= FlagC;
 		}
 	}
 	else {
 		// Remove character from buffer
-		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength) {
+		if (mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength)
+		{
 			unsigned char c = mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex++];
 
 			if (c == 0xa3) {
 				// Convert pound sign
 				c = 0x60;
 			}
-			else if (mainWin->m_translateCRLF) {
-				if (c == 0x0a) {
+			else if (mainWin->m_TranslateCRLF)
+			{
+				if (c == 0x0a)
+				{
 					// Convert LF to CR
 					c = 0x0d;
 				}
-				else if (c == 0x0d && mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex] == 0x0a) {
+				else if (c == 0x0d && mainWin->m_ClipboardBuffer[mainWin->m_ClipboardIndex] == 0x0a)
+				{
 					// Drop LF after CR
 					mainWin->m_ClipboardIndex++;
 				}
@@ -1426,7 +1433,8 @@ static void ClipboardREMVHandler()
 			YReg = c;
 			PSR &= ~FlagC;
 		}
-		else {
+		else
+		{
 			// We've reached the end of the clipboard contents
 			mainWin->ClearClipboardBuffer();
 
@@ -1459,17 +1467,20 @@ static void ClipboardREMVHandler()
 
 static void ClipboardCNPVHandler()
 {
-	if (GETVFLAG) {
+	if (GETVFLAG)
+	{
 		mainWin->ClearClipboardBuffer();
 	}
-	else {
-		if (GETCFLAG) {
+	else
+	{
+		if (GETCFLAG)
+		{
 			XReg = 0;
 			YReg = 0;
 		}
-		else {
-			int Length = mainWin->m_ClipboardLength - mainWin->m_ClipboardIndex;
-			XReg = Length > 0;
+		else
+		{
+			XReg = mainWin->m_ClipboardIndex < mainWin->m_ClipboardLength;
 			YReg = 0;
 		}
 	}
@@ -1512,7 +1523,7 @@ void Exec6502Instruction()
 			ProgramCounter == (WholeRam[0x20e] | (WholeRam[0x20f] << 8))) {
 			mainWin->SpeakChar(Accumulator);
 		}
-		else if (mainWin->m_ClipboardBuffer[0] != '\0') {
+		else if (mainWin->m_ClipboardLength > 0) {
 			// Check for REMV (Remove from buffer vector) and CNPV (Count/purge buffer
 			// vector). X register contains the buffer number (0 indicates the keyboard
 			// buffer). See AUG p.263/264 and p.138
@@ -3234,20 +3245,20 @@ void Exec6502Instruction()
 		OldNMIStatus = NMIStatus;
 
 		switch (TubeType) {
-			case Tube::Acorn65C02: // 3MHz
+			case TubeDevice::Acorn65C02: // 3MHz
 				SyncTubeProcessor();
 				break;
 
-			case Tube::AcornZ80: // TODO: 6MHz
-			case Tube::TorchZ80: // TODO: 4MHz
+			case TubeDevice::AcornZ80: // TODO: 6MHz
+			case TubeDevice::TorchZ80: // TODO: 4MHz
 				z80_execute();
 				break;
 
-			case Tube::AcornArm: // TODO: 8MHz
+			case TubeDevice::AcornArm: // TODO: 8MHz
 				arm->exec(4);
 				break;
 
-			case Tube::SprowArm: // 64MHz
+			case TubeDevice::SprowArm: // 64MHz
 				#if _DEBUG
 				sprow->Execute(2);
 				#else
@@ -3255,7 +3266,7 @@ void Exec6502Instruction()
 				#endif
 				break;
 
-			case Tube::Master512CoPro: // 8MHz
+			case TubeDevice::Master512CoPro: // 8MHz
 				master512CoPro.Execute(4 * Cycles);
 				break;
 		}
@@ -3294,13 +3305,13 @@ static void PollHardware(unsigned int nCycles)
 		AdjustTrigger(EconetTrigger);
 		AdjustTrigger(EconetFlagFillTimeoutTrigger);
 		AdjustTrigger(IP232RxTrigger);
-		if (TubeType == Tube::Acorn65C02)
+		if (TubeType == TubeDevice::Acorn65C02)
 			WrapTubeCycles();
 	}
 
 	VideoPoll(nCycles);
 	if (!BasicHardwareOnly) {
-		AtoD_poll(nCycles);
+		AtoDPoll(nCycles);
 		SerialPoll(nCycles);
 	}
 	Disc8271Poll();
@@ -3355,32 +3366,32 @@ int MicrosecondsToCycles(int Time)
 
 void Save6502UEF(FILE *SUEF)
 {
-	fput16(ProgramCounter,SUEF);
-	fputc(Accumulator,SUEF);
-	fputc(XReg,SUEF);
-	fputc(YReg,SUEF);
-	fputc(StackReg,SUEF);
-	fputc(PSR,SUEF);
-	fput32(TotalCycles,SUEF);
-	fputc(intStatus,SUEF);
-	fputc(NMIStatus,SUEF);
-	fputc(NMILock,SUEF);
-	fput16(0,SUEF);
+	UEFWrite16(ProgramCounter, SUEF);
+	UEFWrite8(Accumulator, SUEF);
+	UEFWrite8(XReg, SUEF);
+	UEFWrite8(YReg, SUEF);
+	UEFWrite8(StackReg, SUEF);
+	UEFWrite8(PSR, SUEF);
+	UEFWrite32(TotalCycles, SUEF);
+	UEFWrite8(intStatus, SUEF);
+	UEFWrite8(NMIStatus, SUEF);
+	UEFWrite8(NMILock, SUEF);
+	UEFWrite16(0, SUEF);
 }
 
 void Load6502UEF(FILE *SUEF)
 {
-	ProgramCounter = fget16(SUEF);
-	Accumulator = fget8(SUEF);
-	XReg = fget8(SUEF);
-	YReg = fget8(SUEF);
-	StackReg = fget8(SUEF);
-	PSR = fget8(SUEF);
+	ProgramCounter = UEFRead16(SUEF);
+	Accumulator = UEFRead8(SUEF);
+	XReg = UEFRead8(SUEF);
+	YReg = UEFRead8(SUEF);
+	StackReg = UEFRead8(SUEF);
+	PSR = UEFRead8(SUEF);
 	// TotalCycles = fget32(SUEF);
-	fget32(SUEF); // Unused, was: Dlong
-	intStatus = fget8(SUEF);
-	NMIStatus = fget8(SUEF);
-	NMILock = fgetbool(SUEF);
+	UEFRead32(SUEF); // Unused, was: Dlong
+	intStatus = UEFRead8(SUEF);
+	NMIStatus = UEFRead8(SUEF);
+	NMILock = UEFReadBool(SUEF);
 	// AtoDTrigger=Disc8271Trigger=AMXTrigger=PrinterTrigger=VideoTriggerCount=TotalCycles+100;
 }
 

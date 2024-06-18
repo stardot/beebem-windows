@@ -36,20 +36,20 @@ unsigned char UserVIARead(int Address);
 void UserVIAReset(void);
 void UserVIA_poll(unsigned int ncycles);
 
-/* AMX mouse enabled */
+// AMX mouse enabled
 extern bool AMXMouseEnabled;
 
-/* Map Left+Right button presses to a middle button press */
+// Map Left+Right button presses to a middle button press
 extern bool AMXLRForMiddle;
 
-/* Number of cycles between each mouse interrupt */
-#define AMX_TRIGGER 250
+// Number of cycles between each mouse interrupt
+constexpr int AMX_TRIGGER = 250;
 extern int AMXTrigger;
 
-/* Checks if a movement interrupt should be generated */
+// Checks if a movement interrupt should be generated
 void AMXMouseMovement();
 
-/* Target and current positions for mouse */
+// Target and current positions for mouse
 extern int AMXTargetX;
 extern int AMXTargetY;
 extern int AMXCurrentX;
@@ -57,19 +57,20 @@ extern int AMXCurrentY;
 extern int AMXDeltaX;
 extern int AMXDeltaY;
 
-/* Button states */
-#define AMX_LEFT_BUTTON 1
-#define AMX_MIDDLE_BUTTON 2
-#define AMX_RIGHT_BUTTON 4
+// Button states
+constexpr int AMX_LEFT_BUTTON   = 1;
+constexpr int AMX_MIDDLE_BUTTON = 2;
+constexpr int AMX_RIGHT_BUTTON  = 4;
 extern int AMXButtons;
 
-/* Printer enabled */
+// Printer enabled
 extern bool PrinterEnabled;
-void PrinterEnable(const char *FileName);
+bool PrinterEnable(const char *FileName);
 void PrinterDisable();
 
-/* Trigger for checking for printer ready. */
-#define PRINTER_TRIGGER 25
+// Trigger for checking for printer ready.
+constexpr int PRINTER_TRIGGER = 25;
+
 extern int PrinterTrigger;
 void PrinterPoll();
 

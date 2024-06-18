@@ -61,7 +61,7 @@ BEGIN
         MENUITEM "Load Disc &0...",             IDM_LOADDISC0
         MENUITEM "Load Disc &1...",             IDM_LOADDISC1
         MENUITEM SEPARATOR
-        MENUITEM "Load &Tape...",               ID_LOADTAPE
+        MENUITEM "Load &Tape...",               IDM_LOADTAPE
         MENUITEM SEPARATOR
         POPUP "Disc Options"
         BEGIN
@@ -74,7 +74,7 @@ BEGIN
             MENUITEM "Write Protect on Load",       IDM_WRITE_PROTECT_ON_LOAD
         END
         MENUITEM SEPARATOR
-        MENUITEM "R&eset",                      ID_FILE_RESET
+        MENUITEM "R&eset",                      IDM_FILE_RESET
         MENUITEM SEPARATOR
         MENUITEM "&Load State...",              IDM_LOADSTATE
         MENUITEM "&Save State...",              IDM_SAVESTATE
@@ -117,7 +117,7 @@ BEGIN
     BEGIN
         MENUITEM "&Copy",                       IDM_EDIT_COPY
         MENUITEM "&Paste",                      IDM_EDIT_PASTE
-        MENUITEM "&Translate CR-LF On/Off",     IDM_EDIT_CRLF
+        MENUITEM "&Translate CR-LF",            IDM_TRANSLATE_CRLF
         MENUITEM SEPARATOR
         POPUP "Import Files to Disc"
         BEGIN
@@ -138,14 +138,14 @@ BEGIN
     BEGIN
         POPUP "Tape Speed"
         BEGIN
-            MENUITEM "Fast",                        ID_TAPE_FAST
-            MENUITEM "Medium Fast",                 ID_TAPE_MFAST
-            MENUITEM "Medium Slow",                 ID_TAPE_MSLOW
-            MENUITEM "Normal",                      ID_TAPE_NORMAL
+            MENUITEM "Fast",                        IDM_TAPE_FAST
+            MENUITEM "Medium Fast",                 IDM_TAPE_MFAST
+            MENUITEM "Medium Slow",                 IDM_TAPE_MSLOW
+            MENUITEM "Normal",                      IDM_TAPE_NORMAL
         END
-        MENUITEM "Rewind &Tape",                ID_REWINDTAPE
-        MENUITEM "&Unlock Tape",                ID_UNLOCKTAPE
-        MENUITEM "Tape &Control",               ID_TAPECONTROL
+        MENUITEM "Rewind &Tape",                IDM_REWINDTAPE
+        MENUITEM "&Unlock Tape",                IDM_UNLOCKTAPE
+        MENUITEM "Tape &Control",               IDM_TAPECONTROL
         MENUITEM SEPARATOR
         MENUITEM "&Printer On/Off",             IDM_PRINTERONOFF
         POPUP "Printer &Destination"
@@ -158,8 +158,8 @@ BEGIN
             MENUITEM "LPT4:",                       IDM_PRINTER_LPT4
         END
         MENUITEM SEPARATOR
-        MENUITEM "RS423 On/Off",                ID_SERIAL
-        MENUITEM "Select &RS423 Destination",   ID_SELECT_SERIAL_DESTINATION
+        MENUITEM "RS423 On/Off",                IDM_SERIAL
+        MENUITEM "Select &RS423 Destination",   IDM_SELECT_SERIAL_DESTINATION
     END
     POPUP "&View"
     BEGIN
@@ -189,37 +189,37 @@ BEGIN
         END
         POPUP "DirectX Full Screen Modes"
         BEGIN
-            MENUITEM "Current Screen Resolution",   ID_VIEW_DD_SCREENRES
-            MENUITEM "640x480",                     ID_VIEW_DD_640X480
-            MENUITEM "720x576",                     ID_VIEW_DD_720X576
-            MENUITEM "800x600",                     ID_VIEW_DD_800X600
-            MENUITEM "1024x768",                    ID_VIEW_DD_1024X768
-            MENUITEM "1280x720 (720p)",             ID_VIEW_DD_1280X720
-            MENUITEM "1280x768",                    ID_VIEW_DD_1280X768
-            MENUITEM "1280x960",                    ID_VIEW_DD_1280X960
-            MENUITEM "1280x1024",                   ID_VIEW_DD_1280X1024
-            MENUITEM "1440x900",                    ID_VIEW_DD_1440X900
-            MENUITEM "1600x1200",                   ID_VIEW_DD_1600X1200
-            MENUITEM "1920x1080 (1080p)",           ID_VIEW_DD_1920X1080
-            MENUITEM "2560x1440",                   ID_VIEW_DD_2560X1440
-            MENUITEM "3840x2160 (4K)",              ID_VIEW_DD_3840X2160
+            MENUITEM "Current Screen Resolution",   IDM_VIEW_DD_SCREENRES
+            MENUITEM "640x480",                     IDM_VIEW_DD_640X480
+            MENUITEM "720x576",                     IDM_VIEW_DD_720X576
+            MENUITEM "800x600",                     IDM_VIEW_DD_800X600
+            MENUITEM "1024x768",                    IDM_VIEW_DD_1024X768
+            MENUITEM "1280x720 (720p)",             IDM_VIEW_DD_1280X720
+            MENUITEM "1280x768",                    IDM_VIEW_DD_1280X768
+            MENUITEM "1280x960",                    IDM_VIEW_DD_1280X960
+            MENUITEM "1280x1024",                   IDM_VIEW_DD_1280X1024
+            MENUITEM "1440x900",                    IDM_VIEW_DD_1440X900
+            MENUITEM "1600x1200",                   IDM_VIEW_DD_1600X1200
+            MENUITEM "1920x1080 (1080p)",           IDM_VIEW_DD_1920X1080
+            MENUITEM "2560x1440",                   IDM_VIEW_DD_2560X1440
+            MENUITEM "3840x2160 (4K)",              IDM_VIEW_DD_3840X2160
         END
         MENUITEM SEPARATOR
-        POPUP "Monitor type"
+        POPUP "Monitor Type"
         BEGIN
-            MENUITEM "RGB",                         ID_MONITOR_RGB
-            MENUITEM "B/W",                         ID_MONITOR_BW
-            MENUITEM "Amber",                       ID_MONITOR_AMBER
-            MENUITEM "Green",                       ID_MONITOR_GREEN
+            MENUITEM "RGB",                         IDM_MONITOR_RGB
+            MENUITEM "B/W",                         IDM_MONITOR_BW
+            MENUITEM "Amber",                       IDM_MONITOR_AMBER
+            MENUITEM "Green",                       IDM_MONITOR_GREEN
         END
-        MENUITEM "&Hide Menu",                  ID_HIDEMENU
+        MENUITEM "&Hide Menu",                  IDM_HIDEMENU
         POPUP "&LEDs"
         BEGIN
-            MENUITEM "&Red Disc LEDs",              ID_RED_LEDS
-            MENUITEM "&Green Disc LEDs",            ID_GREEN_LEDS
+            MENUITEM "&Red Disc LEDs",              IDM_RED_LEDS
+            MENUITEM "&Green Disc LEDs",            IDM_GREEN_LEDS
             MENUITEM SEPARATOR
-            MENUITEM "Show &Keyboard LEDs",         ID_SHOW_KBLEDS
-            MENUITEM "Show &Disc LEDs",             ID_SHOW_DISCLEDS
+            MENUITEM "Show &Keyboard LEDs",         IDM_SHOW_KBLEDS
+            MENUITEM "Show &Disc LEDs",             IDM_SHOW_DISCLEDS
         END
         POPUP "&Motion Blur"
         BEGIN
@@ -272,9 +272,9 @@ BEGIN
         MENUITEM SEPARATOR
         POPUP "Sound &Effects"
         BEGIN
-            MENUITEM "Cassette &Relay",             ID_SFX_RELAY
-            MENUITEM "&Cassette Input",             ID_TAPESOUND
-            MENUITEM "&Disc Drives",                ID_SFX_DISCDRIVES
+            MENUITEM "Cassette &Relay",             IDM_SFX_RELAY
+            MENUITEM "&Cassette Input",             IDM_TAPESOUND
+            MENUITEM "&Disc Drives",                IDM_SFX_DISCDRIVES
         END
         MENUITEM SEPARATOR
         MENUITEM "44.1 kHz",                    IDM_44100KHZ
@@ -286,7 +286,7 @@ BEGIN
         MENUITEM "&Medium Volume",              IDM_MEDIUMVOLUME
         MENUITEM "&Low Volume",                 IDM_LOWVOLUME
         MENUITEM SEPARATOR
-        MENUITEM "Part S&amples",               ID_PSAMPLES
+        MENUITEM "Part S&amples",               IDM_PART_SAMPLES
         MENUITEM "Exponential Volume",          IDM_EXPVOLUME
         MENUITEM SEPARATOR
         POPUP "&Text To Speech"
@@ -323,16 +323,16 @@ BEGIN
     BEGIN
         POPUP "&BBC Model"
         BEGIN
-            MENUITEM "BBC Model &B",                ID_MODELB, CHECKED
-            MENUITEM "BBC Model B + &Integra-B",    ID_MODELBINT
-            MENUITEM "BBC Model B &Plus",           ID_MODELBPLUS
-            MENUITEM "BBC &Master 128",             ID_MASTER128
-            MENUITEM "BBC Master &ET",              ID_MASTER_ET
+            MENUITEM "BBC Model &B",                IDM_MODELB
+            MENUITEM "BBC Model B + &Integra-B",    IDM_MODELBINT
+            MENUITEM "BBC Model B &Plus",           IDM_MODELBPLUS
+            MENUITEM "BBC &Master 128",             IDM_MASTER128
+            MENUITEM "BBC Master &ET",              IDM_MASTER_ET
         END
         POPUP "Model B &Floppy Controller"
         BEGIN
-            MENUITEM "Native &8271",                ID_8271
-            MENUITEM "&Select FDC Board...",        ID_FDC_DLL
+            MENUITEM "Native &8271",                IDM_8271
+            MENUITEM "&Select FDC Board...",        IDM_FDC_DLL
         END
         POPUP "&Second Processor"
         BEGIN
@@ -367,29 +367,34 @@ BEGIN
         MENUITEM "SW RAM Board On/Off",         IDM_SWRAMBOARD
         MENUITEM "Edit ROM Configuration",      IDM_ROMCONFIG
         MENUITEM SEPARATOR
-        MENUITEM "Basic &Hardware Only",        ID_BASIC_HARDWARE_ONLY
-        MENUITEM "&Teletext Half Mode",         ID_TELETEXTHALFMODE
+        MENUITEM "Basic &Hardware Only",        IDM_BASIC_HARDWARE_ONLY
+        MENUITEM "&Teletext Half Mode",         IDM_TELETEXTHALFMODE
         MENUITEM SEPARATOR
-        MENUITEM "Econet On/Off",               ID_ECONET
-        MENUITEM "Teletext Adapter On/Off",     ID_TELETEXT
+        MENUITEM "Econet On/Off",               IDM_ECONET
+        MENUITEM "Teletext Adapter On/Off",     IDM_TELETEXT
         MENUITEM "Select &Teletext Data Source", IDM_SELECT_TELETEXT_DATA_SOURCE
         MENUITEM SEPARATOR
         MENUITEM "Set &Keyboard Links...",      IDM_SET_KEYBOARD_LINKS
         MENUITEM SEPARATOR
-        MENUITEM "Floppy Drive On/Off",         ID_FLOPPYDRIVE
-        MENUITEM "SCSI Hard Drive On/Off",      ID_HARDDRIVE
-        MENUITEM "IDE Hard Drive On/Off",       ID_IDEDRIVE
+        MENUITEM "Floppy Drive On/Off",         IDM_FLOPPY_DRIVE
+        MENUITEM "SCSI Hard Drive On/Off",      IDM_SCSI_HARD_DRIVE
+        MENUITEM "IDE Hard Drive On/Off",       IDM_IDE_HARD_DRIVE
         MENUITEM "Select Hard Drive Folder...", IDM_SELECT_HARD_DRIVE_FOLDER
         MENUITEM SEPARATOR
-        MENUITEM "User Port Breakout Box",      ID_BREAKOUT
-        MENUITEM "User Port RTC Module",        ID_USER_PORT_RTC_MODULE
+        MENUITEM "User Port Breakout Box",      IDM_BREAKOUT
+        MENUITEM "User Port RTC Module",        IDM_USER_PORT_RTC_MODULE
     END
     POPUP "&Options"
     BEGIN
-        MENUITEM "&Joystick",                   IDM_JOYSTICK
-        MENUITEM "&Analogue Mousestick",        IDM_ANALOGUE_MOUSESTICK
-        MENUITEM "&Digital Mousestick",         IDM_DIGITAL_MOUSESTICK
-        MENUITEM "&Freeze when inactive",       IDM_FREEZEINACTIVE
+        POPUP "&Joystick"
+        BEGIN
+            MENUITEM "&None",                       IDM_JOYSTICK_DISABLED
+            MENUITEM "&Joystick",                   IDM_JOYSTICK
+            MENUITEM "&Analogue Mousestick",        IDM_ANALOGUE_MOUSESTICK
+            MENUITEM "&Digital Mousestick",         IDM_DIGITAL_MOUSESTICK
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "&Freeze When Inactive",       IDM_FREEZEINACTIVE
         MENUITEM "&Hide Cursor",                IDM_HIDECURSOR
         MENUITEM SEPARATOR
         MENUITEM "&Define User Key Mapping",    IDM_DEFINEKEYMAP
@@ -898,18 +903,18 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "Resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
     "#define _AFX_NO_OLE_RESOURCES\r\n"
