@@ -959,9 +959,9 @@ void BeebWin::LoadPrinterPreferences(int Version)
 	{
 		std::string Value;
 
-		m_Preferences.GetStringValue(CFG_PRINTER_PORT, Value, PrinterPortTypeStr[2]);
+		m_Preferences.GetStringValue(CFG_PRINTER_PORT, Value, PrinterPortTypeStr[1]);
 
-		m_PrinterPort = static_cast<PrinterPortType>(FindEnum(Value, PrinterPortTypeStr, 2));
+		m_PrinterPort = static_cast<PrinterPortType>(FindEnum(Value, PrinterPortTypeStr, 1));
 	}
 	else
 	{
@@ -973,8 +973,8 @@ void BeebWin::LoadPrinterPreferences(int Version)
 		switch (Value)
 		{
 			case 40081:          m_PrinterPort = PrinterPortType::File; break;
-			case 40244:          m_PrinterPort = PrinterPortType::Clipboard; break;
-			case 40082: default: m_PrinterPort = PrinterPortType::Lpt1; break;
+			case 40244: default: m_PrinterPort = PrinterPortType::Clipboard; break;
+			case 40082:          m_PrinterPort = PrinterPortType::Lpt1; break;
 			case 40083:          m_PrinterPort = PrinterPortType::Lpt2; break;
 			case 40084:          m_PrinterPort = PrinterPortType::Lpt3; break;
 			case 40085:          m_PrinterPort = PrinterPortType::Lpt4; break;
