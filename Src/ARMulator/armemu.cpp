@@ -795,7 +795,7 @@ ARMul_Emulate26 (ARMul_State * state)
                 if (cp14r0 & ARMul_CP14_R0_CCD)
                 {
                     if (state->CP14R0_CCD == -1)
-                        state->CP14R0_CCD = newcycles;
+                        state->CP14R0_CCD = (ARMword)newcycles;
                     else
                         state->CP14R0_CCD += newcycles;
 
@@ -804,7 +804,10 @@ ARMul_Emulate26 (ARMul_State * state)
                         newcycles = 0;
 
                         while (state->CP14R0_CCD >= 64)
-                            state->CP14R0_CCD -= 64, newcycles++;
+                        {
+                            state->CP14R0_CCD -= 64;
+                            newcycles++;
+                        }
 
                         goto check_PMUintr;
                     }

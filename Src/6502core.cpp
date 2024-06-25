@@ -3244,7 +3244,8 @@ void Exec6502Instruction()
 
 		OldNMIStatus = NMIStatus;
 
-		switch (TubeType) {
+		switch (TubeType)
+		{
 			case TubeDevice::Acorn65C02: // 3MHz
 				SyncTubeProcessor();
 				break;
@@ -3268,6 +3269,9 @@ void Exec6502Instruction()
 
 			case TubeDevice::Master512CoPro: // 8MHz
 				master512CoPro.Execute(4 * Cycles);
+				break;
+
+			default:
 				break;
 		}
 	}

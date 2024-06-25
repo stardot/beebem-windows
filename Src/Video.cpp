@@ -37,7 +37,7 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Sound.h"
 #include "SysVia.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 #ifdef BEEB_DOTIME
 #include <sys/times.h>

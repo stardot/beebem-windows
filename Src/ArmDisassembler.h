@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -28,10 +28,10 @@ Boston, MA  02110-1301, USA.
 #include "TarmacGlobals.h"
 
 char *Arm_disassemble(uint32 address, uint32 instruction, char *buff);
-char *decodeRegisterList(uint32 instruction);
+const char *decodeRegisterList(uint32 instruction);
 char *decodeSingleDataSwap(uint32 address, uint32 instruction, char *buff);
 char *decodeMultiply(uint32 address, uint32 instruction, char *buff);
-char *decodeConditionCode(uint32 instruction);
+const char *decodeConditionCode(uint32 instruction);
 char *decodeSoftwareInterrupt(uint32 address, uint32 instruction, char *buff);
 char *decodeCoProRegTransferOrDataOperation(uint32 address, uint32 instruction, char *buff);
 char *decodeCoProDTPostIndex(uint32 address, uint32 instruction, char *buff);
@@ -46,4 +46,4 @@ char *decodeSingleDTImmOffsetPreIndex(uint32 address, uint32 instruction, char *
 char *decodeSingleDTImmOffsetPostIndex(uint32 address, uint32 instruction, char *buff);
 char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff);
 char *decodeSingleDataSwapOrDataProcessing(uint32 address, uint32 instruction, char *buff);
-char *decodeMultiplyOrDataProcessing(uint32 address, uint32 instruction, char *buff);					
+char *decodeMultiplyOrDataProcessing(uint32 address, uint32 instruction, char *buff);

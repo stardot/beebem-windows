@@ -37,7 +37,7 @@ Written by Richard Gellman - Feb 2001
 #include "Main.h"
 #include "Sound.h"
 #include "SysVia.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 // Control/Status Register, Track, Sector, and Data Registers
 static unsigned char FormatBuffer[2048];

@@ -2007,6 +2007,9 @@ bool EconetPoll_real() // return NMI status
 							//if (DebugEnabled)
 								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_DATARCVD");
 							break;
+
+						default:
+							break;
 						}
 					}
 				}

@@ -52,7 +52,7 @@ ARMul_EmulateInit (void)
 
     for (i = 0; i < 4096; i++)
     {				/* the values of 12 bit dp rhs's */
-        ARMul_ImmedTable[i] = ROTATER (i & 0xffL, (i >> 7L) & 0x1eL);
+        ARMul_ImmedTable[i] = (ARMword)(ROTATER (i & 0xffL, (i >> 7L) & 0x1eL));
     }
 
     for (i = 0; i < 256; ARMul_BitList[i++] = 0);	/* how many bits in LSM */

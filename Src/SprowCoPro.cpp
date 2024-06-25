@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "BeebMem.h"
 #include "Log.h"
 #include "Tube.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 #include "ARMulator.h"
 
@@ -682,7 +682,7 @@ ARMul_StoreHalfWord (ARMul_State * state, ARMword address, ARMword data)
     temp = ARMul_ReadWord (state, address);
     ARMword offset = (((ARMword) state->bigendSig * 2) ^ (address & 2)) << 3;	/* bit offset into the word */
     PutWord (state, address,
-        (temp & ~(0xffffL << offset)) | ((data & 0xffffL) << offset),
+        (ARMword)((temp & ~(0xffffL << offset)) | ((data & 0xffffL) << offset)),
         TRUE);
     //temp = ARMul_ReadWord (state, address);
     //temp = temp & 0xFFFF0000;
@@ -716,7 +716,7 @@ ARMul_WriteByte (ARMul_State * state, ARMword address, ARMword data)
     ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;	/* bit offset into the word */
 
     PutWord (state, address,
-        (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
+        (ARMword)((temp & ~(0xffL << offset)) | ((data & 0xffL) << offset)),
         TRUE);
     //temp = temp & 0xFFFFFF00;
     //temp = temp | (data & 0xFF);
@@ -816,7 +816,7 @@ ARMul_SafeWriteByte (ARMul_State * state, ARMword address, ARMword data)
     ARMword offset = (((ARMword) state->bigendSig * 3) ^ (address & 3)) << 3;
 
     PutWord (state, address,
-        (temp & ~(0xffL << offset)) | ((data & 0xffL) << offset),
+        (ARMword)((temp & ~(0xffL << offset)) | ((data & 0xffL) << offset)),
         FALSE);
 }
 

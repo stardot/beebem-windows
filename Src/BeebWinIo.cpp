@@ -60,7 +60,7 @@ using std::max;
 #include "Sound.h"
 #include "TapeControlDialog.h"
 #include "Tube.h"
-#include "UEFState.h"
+#include "UefState.h"
 #include "UserVia.h"
 #include "Version.h"
 
@@ -1211,6 +1211,9 @@ void BeebWin::LoadUEFState(const char *FileName)
 			       "Cannot open state file:\n  %s\n\nPlease upgrade to the latest version of BeebEm",
 			       FileName);
 			break;
+
+		default:
+			break;
 	}
 }
 
@@ -1228,6 +1231,9 @@ void BeebWin::SaveUEFState(const char *FileName)
 		case UEFStateResult::WriteFailed:
 			Report(MessageType::Error, "Failed to write state file:\n  %s",
 			       FileName);
+			break;
+
+		default:
 			break;
 	}
 }

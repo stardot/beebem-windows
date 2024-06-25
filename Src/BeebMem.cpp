@@ -663,16 +663,20 @@ void DebugMemoryState()
 	switch (MachineType)
 	{
 		case Model::B:
+		default:
 			break;
+
 		case Model::IntegraB:
 			DebugDisplayInfoF("Shadow RAM: %s, %s",ShEn ? "enabled" : "disabled", !MemSel && ShEn ? "selected" : "not selected");
 			DebugDisplayInfoF("Private areas: %s; 1K %s, 4K %s, 8K %s",PrvEn ? "enabled" : "disabled", Prvs1 ? "on" : "off", Prvs4 ? "on" : "off", Prvs8 ? "on" : "off");
 			DebugDisplayInfoF("Hidden area address: 0x%01X", HidAdd);
 			break;
+
 		case Model::BPlus:
 			DebugDisplayInfoF("Shadow RAM: %s, %s", Sh_Display ? "enabled" : "disabled", Sh_Display && ((PrePC >= 0xC000 && PrePC < 0xE000) || (MemSel && PrePC >= 0xA000 && PrePC < 0xB000)) ? "selected" : "not selected");
 			DebugDisplayInfoF("Private RAM: %s", MemSel ? "enabled" : "disabled");
 			break;
+
 		case Model::Master128:
 		case Model::MasterET:
 			DebugDisplayInfoF("ACCCON: IRR:%s TST:%s IFJ:%s ITU:%s Y:%s X:%s E:%s D:%s",
@@ -1382,6 +1386,7 @@ void SaveMemUEF(FILE *SUEF)
 		case Model::B:
 		case Model::Master128:
 		case Model::MasterET:
+		default:
 			UEFWrite16(0x0461, SUEF); // Memory Control State
 			UEFWrite32(2, SUEF);
 			UEFWrite8(PagedRomReg, SUEF);
@@ -1411,6 +1416,10 @@ void SaveMemUEF(FILE *SUEF)
 
 	switch (MachineType)
 	{
+		case Model::B:
+		default:
+			break;
+
 		case Model::IntegraB:
 			UEFWrite16(0x0463, SUEF); // Shadow RAM
 			UEFWrite32(20480, SUEF);
@@ -1480,6 +1489,7 @@ void SaveMemUEF(FILE *SUEF)
 				break;
 
 			case BankType::Empty:
+			default:
 				UEFWrite16(0x0475, SUEF); // ROM bank
 				UEFWrite32(2, SUEF);
 				UEFWrite8(bank, SUEF);
@@ -1497,6 +1507,10 @@ void LoadRomRegsUEF(FILE *SUEF)
 
 	switch (MachineType)
 	{
+		case Model::B:
+		default:
+			break;
+
 		case Model::IntegraB:
 			MemSel = (PagedRomReg & 0x80) != 0;
 			PrvEn = (PagedRomReg & 0x40) != 0;
@@ -1534,6 +1548,10 @@ void LoadShadMemUEF(FILE *SUEF)
 {
 	switch (MachineType)
 	{
+		case Model::B:
+		default:
+			break;
+
 		case Model::IntegraB:
 			UEFReadBuf(ShadowRam, 20480, SUEF);
 			break;
@@ -1556,6 +1574,10 @@ void LoadPrivMemUEF(FILE *SUEF)
 {
 	switch (MachineType)
 	{
+		case Model::B:
+		default:
+			break;
+
 		case Model::IntegraB:
 			UEFReadBuf(Private, 12288, SUEF);
 			break;
@@ -1604,6 +1626,10 @@ void LoadSWRomMemUEF(FILE *SUEF)
 		case BankType::Empty:
 			memset(Roms[Rom], 0, MAX_ROM_SIZE);
 			break;
+
+		case BankType::Ram:
+		default:
+			break;
 	}
 }
 
@@ -1631,6 +1657,10 @@ bool LoadPALRomEUF(FILE *SUEF, unsigned int ChunkLength)
 				memset(PALRom[Bank].Rom, 0, MAX_PALROM_SIZE);
 				PALRom[Bank].Type = PALRomType::none;
 				PALRom[Bank].Bank = 0;
+				break;
+
+			case BankType::Ram:
+			default:
 				break;
 		}
 

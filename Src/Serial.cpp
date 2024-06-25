@@ -52,7 +52,7 @@ Boston, MA  02110-1301, USA.
 #include "Thread.h"
 #include "TouchScreen.h"
 #include "Uef.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 // MC6850 control register bits
 constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
@@ -823,6 +823,9 @@ void SerialPoll(int Cycles)
 									TapeAudio.Signal     = 1;
 									TapeAudio.ByteCount  = 3;
 								}
+								break;
+
+							default:
 								break;
 						}
 					}

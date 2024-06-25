@@ -36,7 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "SoundStreamer.h"
 #include "Speech.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 /****************************************************************************/
 

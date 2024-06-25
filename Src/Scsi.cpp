@@ -388,6 +388,9 @@ static void WriteData(unsigned char data)
 			scsi.next++;
 			scsi.offset = 0;
 			return;
+
+		default:
+			break;
 	}
 
 	BusFree();

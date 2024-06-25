@@ -24,21 +24,18 @@ Boston, MA  02110-1301, USA.
 #include "Z80.h"
 #include "Tube.h"
 
-typedef unsigned char UBYTE;
-typedef char * STR;
-typedef char CHAR;
-
 int Z80_Disassemble(int adr, char *s)
 {
-	UBYTE a = ReadZ80Mem(adr);
-	UBYTE d = (a >> 3) & 7;
-	UBYTE e = a & 7;
+	unsigned char a = ReadZ80Mem(adr);
+	unsigned char d = (a >> 3) & 7;
+	unsigned char e = a & 7;
+
 	static const char* const reg[8] = {"B", "C", "D", "E", "H", "L", "(HL)", "A"};
 	static const char* const dreg[4] = {"BC", "DE", "HL", "SP"};
 	static const char* const cond[8] = {"NZ", "Z", "NC", "C", "PO", "PE", "P", "M"};
 	static const char* const arith[8] = {"ADD\tA,", "ADC\tA,", "SUB\t", "SBC\tA,", "AND\t", "XOR\t", "OR\t", "CP\t"};
-	CHAR stemp[80]; // temp.String for sprintf()
-	CHAR ireg[3]; // temp.Indexregister
+	char stemp[80]; // temp.String for sprintf()
+	char ireg[3]; // temp.Indexregister
 	int size = 1;
 
 	switch(a & 0xC0) {
@@ -219,7 +216,7 @@ int Z80_Disassemble(int adr, char *s)
 				switch(a & 0xC0) {
 				case 0x00:
 					{
-					static STR str[8] = {"RLC","RRC","RL","RR","SLA","SRA","???","SRL"};
+					static const char* const str[8] = {"RLC","RRC","RL","RR","SLA","SRA","???","SRL"};
 					strcpy(s,str[d]);
 					}
 					strcat(s,"\t");
@@ -330,13 +327,13 @@ int Z80_Disassemble(int adr, char *s)
 							break;
 						case 0x04:
 							{
-							static STR str[8] = {"NEG","???","???","???","???","???","???","???"};
+							static const char* const str[8] = {"NEG","???","???","???","???","???","???","???"};
 							strcpy(s,str[d]);
 							}
 							break;
 						case 0x05:
 							{
-							static STR str[8] = {"RETN","RETI","???","???","???","???","???","???"};
+							static const char* const str[8] = {"RETN","RETI","???","???","???","???","???","???"};
 							strcpy(s,str[d]);
 							}
 							break;
@@ -347,7 +344,7 @@ int Z80_Disassemble(int adr, char *s)
 							break;
 						case 0x07:
 							{
-							static STR str[8] = {"LD\tI,A","???","LD\tA,I","???","RRD","RLD","???","???"};
+							static const char* const str[8] = {"LD\tI,A","???","LD\tA,I","???","RRD","RLD","???","???"};
 							strcpy(s,str[d]);
 							}
 							break;

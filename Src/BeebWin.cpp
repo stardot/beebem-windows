@@ -997,20 +997,24 @@ void BeebWin::CreateBitmap()
 
 		if (m_MonitorType != MonitorType::RGB)
 		{
-			r = g = b = (float) (0.299 * r + 0.587 * g + 0.114 * b);
-
 			switch (m_MonitorType)
 			{
-			case MonitorType::Amber:
-				r *= (float) 1.0;
-				g *= (float) 0.8;
-				b *= (float) 0.1;
-				break;
-			case MonitorType::Green:
-				r *= (float) 0.2;
-				g *= (float) 0.9;
-				b *= (float) 0.1;
-				break;
+				case MonitorType::BW:
+				default:
+					r = g = b = (float) (0.299 * r + 0.587 * g + 0.114 * b);
+					break;
+
+				case MonitorType::Amber:
+					r *= 1.0f;
+					g *= 0.8f;
+					b *= 0.1f;
+					break;
+
+				case MonitorType::Green:
+					r *= 0.2f;
+					g *= 0.9f;
+					b *= 0.1f;
+					break;
 			}
 		}
 
@@ -5638,6 +5642,10 @@ void BeebWin::SelectUserDataPath()
 
 		case FolderSelectDialog::Result::InvalidFolder:
 			Report(MessageType::Warning, "Invalid folder selected");
+			break;
+
+		case FolderSelectDialog::Result::Cancel:
+		default:
 			break;
 	}
 }

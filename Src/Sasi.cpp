@@ -347,6 +347,9 @@ static void SASIWriteData(unsigned char data)
 			sasi.next++;
 			sasi.offset = 0;
 			return;
+
+		default:
+			break;
 	}
 
 	SASIBusFree();

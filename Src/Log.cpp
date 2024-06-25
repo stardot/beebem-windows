@@ -55,7 +55,7 @@ void CloseLog()
 	}
 }
 
-void WriteLog(char *fmt, ...)
+void WriteLog(const char *fmt, ...)
 {
 	if (LogFile != nullptr)
 	{

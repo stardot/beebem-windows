@@ -418,7 +418,7 @@ static SectorType *GetSectorPtr(TrackType *Track, unsigned char LogicalSectorID,
 	}
 
 	// As above, but from sector 0 to the current position
-	if (FDCState.PositionInTrack > 0)
+	if (FDCState.PositionInTrack[Drive] > 0)
 	{
 		for (unsigned char CurrentSector = 0; CurrentSector < FDCState.PositionInTrack[Drive]; CurrentSector++)
 		{

@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -32,7 +32,6 @@ Boston, MA  02110-1301, USA.
 
 char *Arm_disassemble(uint32 address, uint32 instruction, char *buff)
 {
-
 	// decode based on bits 24 - 27 of instruction
 	switch( getField(instruction, 24, 27) )
 	{
@@ -61,7 +60,7 @@ char *Arm_disassemble(uint32 address, uint32 instruction, char *buff)
 char *decodeMultiplyOrDataProcessing(uint32 address, uint32 instruction, char *buff)
 {
 	// check for bit pattern 1001 in bits 4-7
-	if(	getField(instruction, 4,7) == 0x09 ) 
+	if(	getField(instruction, 4,7) == 0x09 )
 	{
 		// multiply
 		return decodeMultiply(address, instruction, buff);
@@ -144,9 +143,9 @@ char *decodeDataProcessing(uint32 /* address */, uint32 instruction, char *buff)
 	{
 			strcat(buff, " ");
 	}
-	
+
 	char registerNumber[10];
-	
+
 	if(useRd[getField(instruction, 21,24)] )
 	{
 		// add destination register
@@ -174,7 +173,7 @@ char *decodeDataProcessing(uint32 /* address */, uint32 instruction, char *buff)
 	if( getBit(instruction, 25) )
 	{
 		// 2nd operand is immediate
-		
+
 		// get immediate value from bits 0-7
 		uint32 immediate = getField(instruction, 0,7);
 
@@ -221,7 +220,7 @@ char *decodeDataProcessing(uint32 /* address */, uint32 instruction, char *buff)
 			if( getBit(instruction, 4) )
 			{
 				// shifted by amount in register
-			
+
 				// add register to shift by from bits 8-11
 				sprintf(registerNumber, "r%d", getField(instruction, 8,11) );
 				strcat(buff, registerNumber);
@@ -243,7 +242,7 @@ char *decodeDataProcessing(uint32 /* address */, uint32 instruction, char *buff)
 
 char *decodeSingleDTImmOffsetPostIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
-	
+
 	// decode whether load or store from bit 20
 	if( getBit(instruction, 20) )
 	{
@@ -268,16 +267,16 @@ char *decodeSingleDTImmOffsetPostIndex(uint32 /* address */, uint32 instruction,
 
 	// check for trans bit
 	if( getBit(instruction, 21) )
-        strcat(buff, "t");
+		strcat(buff, "t");
 
 	// append spaces as necessary, so mnemonic with suffixes is 8 characters long
 	while( strlen(buff) < 8 )
 	{
-			strcat(buff, " ");
+		strcat(buff, " ");
 	}
 
 	char registerNumber[12];
-	
+
 	// add source/destination register from bits 12-15
 	sprintf(registerNumber, "r%d,[", getField(instruction, 12,15) );
 	strcat(buff, registerNumber);
@@ -328,11 +327,11 @@ char *decodeSingleDTImmOffsetPreIndex(uint32 /* address */, uint32 instruction, 
 	// append spaces as necessary, so mnemonic with suffixes is 8 characters long
 	while( strlen(buff) < 8 )
 	{
-			strcat(buff, " ");
+		strcat(buff, " ");
 	}
 
 	char registerNumber[12];
-	
+
 	// add source/destination register from bits 12-15
 	sprintf(registerNumber, "r%d,[", getField(instruction, 12,15) );
 	strcat(buff, registerNumber);
@@ -389,24 +388,24 @@ char *decodeSingleDTRegOffsetPostIndex(uint32 /* address */, uint32 instruction,
 
 	// check for trans bit
 	if( getBit(instruction, 21) )
-        strcat(buff, "t");
+		strcat(buff, "t");
 
 	// append spaces as necessary, so mnemonic with suffixes is 8 characters long
 	while( strlen(buff) < 8 )
 	{
-			strcat(buff, " ");
+		strcat(buff, " ");
 	}
 
 	char registerNumber[12];
-	
+
 	// add source/destination register from bits 12-15
 	sprintf(registerNumber, "r%d,[", getField(instruction, 12,15) );
 	strcat(buff, registerNumber);
-	
+
 	// add base register from bits 16-19
 	sprintf(registerNumber, "r%d],", getField(instruction, 16,19) );
 	strcat(buff, registerNumber);
-	
+
 	// ??? it would seem perverse to have an up/down bit apply to a signed register
 	// however this needs to be confirmed.
 
@@ -427,7 +426,6 @@ char *decodeSingleDTRegOffsetPostIndex(uint32 /* address */, uint32 instruction,
 	// if not LSL #0
 	if( !( (strcmp(shiftType, "lsl") == 0) && imm ==0) )
 	{
-
 		strcat(buff, ",");
 
 		// add shift mnemonic from bits 5-6
@@ -441,8 +439,8 @@ char *decodeSingleDTRegOffsetPostIndex(uint32 /* address */, uint32 instruction,
 		char immediateValue[12];
 		sprintf(immediateValue, "%d", imm );
 		strcat(buff, immediateValue);
-
 	}
+
 	return buff;
 }
 
@@ -469,15 +467,15 @@ char *decodeSingleDTRegOffsetPreIndex(uint32 /* address */, uint32 instruction, 
 		// byte quantity
 		strcat(buff, "b");
 	}
-	
+
 	// append spaces as necessary, so mnemonic with suffixes is 8 characters long
 	while( strlen(buff) < 8 )
 	{
-			strcat(buff, " ");
+		strcat(buff, " ");
 	}
 
 	char registerNumber[12];
-	
+
 	// add source/destination register from bits 12-15
 	sprintf(registerNumber, "r%d,[", getField(instruction, 12,15) );
 	strcat(buff, registerNumber);
@@ -496,17 +494,16 @@ char *decodeSingleDTRegOffsetPreIndex(uint32 /* address */, uint32 instruction, 
 	uint32 imm = getField(instruction, 7,11);
 
 	// table of shift mnemonics
-	char *shiftMnemonic[4] =
+	const char* const shiftMnemonic[4] =
 	{
 		"lsl", "lsr", "asr", "ror"
 	};
 
-	char *shiftType = shiftMnemonic[ getField(instruction, 5,6) ];
+	const char *shiftType = shiftMnemonic[ getField(instruction, 5,6) ];
 
 	// if not LSL #0
 	if( !( (strcmp(shiftType, "lsl") == 0) && imm == 0) )
 	{
-
 		strcat(buff, ",");
 
 		// add shift mnemonic from bits 5-6
@@ -520,7 +517,6 @@ char *decodeSingleDTRegOffsetPreIndex(uint32 /* address */, uint32 instruction, 
 		char immediateValue[12];
 		sprintf(immediateValue, "%d", imm );
 		strcat(buff, immediateValue);
-
 	}
 
 	strcat(buff, "]");
@@ -537,7 +533,6 @@ char *decodeSingleDTRegOffsetPreIndex(uint32 /* address */, uint32 instruction, 
 
 char *decodeBlockDTPostIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
-	
 	// decode whether to load from or store to memory from bit 20
 	if( getBit(instruction, 20) )
 	{
@@ -664,16 +659,16 @@ char *decodeBlockDTPreIndex(uint32 /* address */, uint32 instruction, char *buff
 	return buff;
 }
 
-char registerList[128];
+static char registerList[128];
 
-char *decodeRegisterList(uint32 instruction)
+const char *decodeRegisterList(uint32 instruction)
 {
 	uint8 run = 0;
 	char registerNumber[12];
 
 	bool commaNeeded = false;	// comma not needed
 	strcpy(registerList, "");
-	
+
 	// for each of the 16 registers, r0 to r15
 	for(uint8 regNumber=0; regNumber<16; regNumber++)
 	{
@@ -684,7 +679,7 @@ char *decodeRegisterList(uint32 instruction)
 				// bit set
 				if( regNumber<15 && getBit(instruction, regNumber+1) )
 				{
-					// if we're second element in the run add - 
+					// if we're second element in the run add -
 					if(run == 1)
 						strcat(registerList, "-");
 					run++;
@@ -694,7 +689,7 @@ char *decodeRegisterList(uint32 instruction)
 					// if run was only 1 reg then need to add a comma
 					if(run == 1)
 						strcat(registerList, ",");
-					
+
 					// next bit not set or dealing with r15
 					// we're at the end of a list
 					sprintf(registerNumber, "r%d",regNumber);
@@ -721,11 +716,11 @@ char *decodeRegisterList(uint32 instruction)
 				if( regNumber<15 && getBit(instruction, regNumber+1) )
 				{
 					// if next bit set, then we're first of run
-					
+
 					// place comma if needed
 					if(commaNeeded)
 						strcat(registerList, ",");
-					
+
 					sprintf(registerNumber, "r%d",regNumber);
 					strcat(registerList, registerNumber);
 
@@ -735,11 +730,11 @@ char *decodeRegisterList(uint32 instruction)
 				{
 					if(commaNeeded)
 						strcat(registerList, ",");
-					
+
 					// next bit not set or we're looking at r15 (end list)
 					sprintf(registerNumber, "r%d",regNumber);
 					strcat(registerList, registerNumber);
-					
+
 					run = 0;
 					commaNeeded = true;
 				}
@@ -775,7 +770,7 @@ char *decodeBranch(uint32 address, uint32 instruction, char *buff)
 	uint32 branchAddress = address + offset + 8;
 	// limit size to 26 bit address
 	branchAddress &= (1<<26)-1;
-	
+
 	// output branch address in hex
 	char branchAddressHex[12];
 	sprintf(branchAddressHex, "0x%08x", branchAddress);
@@ -806,12 +801,12 @@ char *decodeBranchWithLink(uint32 address, uint32 instruction, char *buff)
 	uint32 branchAddress = address + offset + 8;
 	// limit size to 26 bit address
 	branchAddress &= (1<<26)-1;
-	
+
 	// output branch address in hex
 	char branchAddressHex[12];
 	sprintf(branchAddressHex, "0x%08x", branchAddress);
 	strcat(buff, branchAddressHex);
-	
+
 	return buff;
 }
 
@@ -837,22 +832,23 @@ char *decodeSoftwareInterrupt(uint32 /* address */, uint32 instruction, char *bu
 {
 	strcpy(buff, "swi");
 	strcat(buff, decodeConditionCode(instruction));
-	
-	char *swiList[] = { "WriteC", "WriteS", "Write0", "NewLine", "ReadC", "CLI", "Byte",
-					   "Word", "File", "Args", "BGet", "BPut", "Multiple", "Open",
-					   "ReadLine", "Control", "GetEnv", "Exit", "SetEnv",
-					   "IntOn", "IntOff", "CallBack", "EnterOS", "BreakPT",
-					   "BreakCT", "UnUsed", "SetMEMC", "SetCallB" } ;
 
-	
+	const char* const swiList[] = {
+		"WriteC", "WriteS", "Write0", "NewLine", "ReadC", "CLI", "Byte",
+		"Word", "File", "Args", "BGet", "BPut", "Multiple", "Open",
+		"ReadLine", "Control", "GetEnv", "Exit", "SetEnv",
+		"IntOn", "IntOff", "CallBack", "EnterOS", "BreakPT",
+		"BreakCT", "UnUsed", "SetMEMC", "SetCallB"
+	};
+
 	// append spaces as necessary, so mnemonic with suffixes is 8 characters long
 	while( strlen(buff) < 8 )
 	{
-			strcat(buff, " ");
+		strcat(buff, " ");
 	}
 
 	char swiNumber[12];
-	
+
 	int ins = getField(instruction, 0,23) & 0xffff;
 
 	if (ins <= 27)
@@ -868,7 +864,7 @@ char *decodeSoftwareInterrupt(uint32 /* address */, uint32 instruction, char *bu
 	} else {
 		sprintf(swiNumber, "0x%02x", ins);
 	}
-	
+
 	strcat(buff, swiNumber);
 
 	return buff;
@@ -967,22 +963,16 @@ char *decodeSingleDataSwap(uint32 /* address */, uint32 instruction, char *buff)
 	return buff;
 }
 
-char *decodeConditionCode(uint32 instruction)
+const char *decodeConditionCode(uint32 instruction)
 {
 	// table of condition code meanings, note that as convention dictates, AL is blank
-	char *conditionCodes[16] =
+	const char* const conditionCodes[16] =
 	{
 		"eq", "ne", "cs", "cc",
 		"mi", "pl", "vs", "vc",
 		"hi", "ls", "ge", "lt",
 		"gt", "le", "", "nv"
 	};
-	
+
 	return conditionCodes[ getField(instruction, 28,31) ];
 }
-
-
-
-
-
-

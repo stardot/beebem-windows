@@ -27,7 +27,7 @@ Boston, MA  02110-1301, USA.
 #include "Debug.h"
 #include "Log.h"
 #include "Tube.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 bool trace_z80 = false;
 int PreZPC = 0; // Previous Z80 PC

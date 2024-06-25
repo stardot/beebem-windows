@@ -23,7 +23,7 @@ Boston, MA  02110-1301, USA.
 
 #include <functional>
 
-#include "UEFState.h"
+#include "UefState.h"
 #include "6502core.h"
 #include "Arm.h"
 #include "AtoDConv.h"
@@ -337,6 +337,9 @@ UEFStateResult SaveUEFState(const char *FileName)
 
 			case TubeDevice::SprowArm:
 				SaveState(std::bind(&CSprowCoPro::SaveState, sprow, _1), 0x047A, UEFState);
+				break;
+
+			default:
 				break;
 		}
 
