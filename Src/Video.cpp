@@ -1645,7 +1645,7 @@ void SaveVideoUEF(FILE *SUEF)
 		UEFWrite8(VideoULA_Palette[col] ^ 7,SUEF); // Use real ULA values
 	}
 	UEFWrite16(ActualScreenWidth, SUEF);
-	UEFWrite32(ScreenAdjust, SUEF);
+	UEFWrite32((unsigned int)ScreenAdjust, SUEF);
 	UEFWrite8(CRTCControlReg, SUEF);
 	UEFWrite8(TeletextStyle, SUEF);
 

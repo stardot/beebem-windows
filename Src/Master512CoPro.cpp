@@ -55,7 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Main.h"
 #include "Log.h"
 #include "Tube.h"
-#include "UEFState.h"
+#include "UefState.h"
 
 Master512CoPro master512CoPro;
 

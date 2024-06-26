@@ -331,8 +331,6 @@ void BeebWin::LoadPreferences()
 	LoadUserPortBreakoutPreferences();
 }
 
-#define CASE(var, str, value) if (stricmp(Value.c_str(), str) == 0) var = value;
-
 /****************************************************************************/
 
 void BeebWin::LoadHardwarePreferences()

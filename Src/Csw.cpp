@@ -536,6 +536,9 @@ int CSWPoll()
 					break;
 			}
 			break;
+
+		default:
+			break;
 	}
 
 	bit_count += csw_data(); // Get next bit

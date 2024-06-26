@@ -262,7 +262,7 @@ void SaveState(SaveStateFunctionType SaveStateFunction, int ChunkID, FILE *SUEF)
 	long EndPos = ftell(SUEF);
 	long Length = EndPos - StartPos;
 	fseek(SUEF, StartPos - 4, SEEK_SET);
-	UEFWrite32(Length, SUEF); // Size
+	UEFWrite32((unsigned int)Length, SUEF); // Size
 	fseek(SUEF, EndPos, SEEK_SET);
 }
 

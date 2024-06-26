@@ -1601,7 +1601,6 @@ bool EconetPoll_real() // return NMI status
 								break;
 							}
 
-
 							if (sendto(SendSocket, (char *)&EconetTx, SendLen, 0,
 							           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
 							{
