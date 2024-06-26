@@ -4835,7 +4835,7 @@ inline uint32 CArm::coprocessorDataTransferOffset()
 // Dynamic Profiling routines, for testing ARM feature usage
 //////////////////////////////////////////////////////////////////////
 
-void CArm::dynamicProfilingExceptionFrequency(char *exceptionName, uint32 &counter)
+void CArm::dynamicProfilingExceptionFrequency(const char *exceptionName, uint32 &counter)
 {
 	WriteLog("%s executionCount=%d\n", exceptionName, executionCount - exceptionLastExecutionCount);
 	exceptionLastExecutionCount = executionCount;

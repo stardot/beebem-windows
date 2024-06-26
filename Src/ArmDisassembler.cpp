@@ -242,7 +242,6 @@ char *decodeDataProcessing(uint32 /* address */, uint32 instruction, char *buff)
 
 char *decodeSingleDTImmOffsetPostIndex(uint32 /* address */, uint32 instruction, char *buff)
 {
-
 	// decode whether load or store from bit 20
 	if( getBit(instruction, 20) )
 	{

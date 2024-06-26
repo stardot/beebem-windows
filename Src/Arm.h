@@ -90,7 +90,7 @@ public:
 public:
 	void dynamicProfilingCoprocessorUsage(uint32 currentInstruction);
 	void dynamicProfilingExceptionFrequencyReport();
-	void dynamicProfilingExceptionFrequency(char *exceptionName, uint32& counter);
+	void dynamicProfilingExceptionFrequency(const char *exceptionName, uint32& counter);
 
 	uint32 pc;
 	inline void performBranch();
