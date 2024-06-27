@@ -33,5 +33,4 @@ std::string ReplaceFileExt(const std::string& FileName, const char* Ext);
 
 /*----------------------------------------------------------------------------*/
 
-
 #endif

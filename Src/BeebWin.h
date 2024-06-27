@@ -401,7 +401,7 @@ public:
 	void LoadEmuUEF(FILE *SUEF,int Version);
 
 	bool InitClass();
-	void UpdateOptiMenu();
+	void UpdateOptionsMenu();
 	void CreateBeebWindow(void);
 	void DisableRoundedCorners(HWND hWnd);
 	void FlashWindow();
@@ -409,9 +409,11 @@ public:
 	void InitMenu();
 	void SetMonitorType(MonitorType Type);
 	void UpdateMonitorMenu();
+
 	void DisableSerial();
 	void SelectSerialPort(const char *PortName);
 	void UpdateSerialMenu();
+
 	void UpdateEconetMenu();
 
 	void UpdateSFXMenu();

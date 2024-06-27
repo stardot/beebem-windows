@@ -1330,7 +1330,7 @@ void BeebWin::InitMenu(void)
 
 	SetRomMenu();
 	CheckMenuItem(IDM_SWRAMBOARD, SWRAMBoardEnabled);
-	UpdateOptiMenu();
+	UpdateOptionsMenu();
 	UpdateEconetMenu();
 	CheckMenuItem(IDM_TELETEXT, TeletextAdapterEnabled);
 	CheckMenuItem(IDM_FLOPPY_DRIVE, Disc8271Enabled);
@@ -3378,7 +3378,7 @@ void BeebWin::UpdateLEDMenu()
 	CheckMenuItem(IDM_SHOW_DISCLEDS, LEDs.ShowDisc);
 }
 
-void BeebWin::UpdateOptiMenu()
+void BeebWin::UpdateOptionsMenu()
 {
 	CheckMenuItem(IDM_BASIC_HARDWARE_ONLY, BasicHardwareOnly);
 	CheckMenuItem(IDM_TELETEXTHALFMODE, TeletextHalfMode);
@@ -3386,6 +3386,7 @@ void BeebWin::UpdateOptiMenu()
 }
 
 /***************************************************************************/
+
 void BeebWin::HandleCommand(UINT MenuID)
 {
 	char TmpPath[256];
@@ -4343,17 +4344,17 @@ void BeebWin::HandleCommand(UINT MenuID)
 
 	case IDM_TELETEXTHALFMODE:
 		TeletextHalfMode = !TeletextHalfMode;
-		UpdateOptiMenu();
+		UpdateOptionsMenu();
 		break;
 
 	case IDM_BASIC_HARDWARE_ONLY:
 		BasicHardwareOnly = !BasicHardwareOnly;
-		UpdateOptiMenu();
+		UpdateOptionsMenu();
 		break;
 
 	case IDM_PART_SAMPLES:
 		PartSamples = !PartSamples;
-		UpdateOptiMenu();
+		UpdateOptionsMenu();
 		break;
 
 	case IDM_EXPVOLUME:

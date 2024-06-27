@@ -376,6 +376,7 @@ void BeebWin::LoadTape(void)
 	GetDataPath(m_UserDataPath, DefaultPath);
 
 	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+
 	if (fileDialog.Open())
 	{
 		if (m_AutoSavePrefsFolders)
