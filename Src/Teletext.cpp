@@ -32,8 +32,8 @@ Offset           Read               Write
 Status register:
    Bits     Function
    0-3      Link settings (connected to 1, 0, AFC, or 'spare' bit D5)
-   4        Frame Sync Flag (Set by a frame sync pulse)
-   5        DEW (High during the teletext portion of the TV frame)
+   4        Field Sync Flag (Set by a field sync pulse)
+   5        DEW (High during the teletext portion of the TV field)
    6        DOR (Set by a failure to clear the status flags before start of DEW)
    7        INT (Set by trailing edge of DEW)
 
@@ -84,9 +84,9 @@ static int rowPtr = 0x00;
 static int colPtr = 0x00;
 
 static FILE *TeletextFile[4] = { nullptr, nullptr, nullptr, nullptr };
-static int TeletextFrameCount[4] = { 0, 0, 0, 0 };
-constexpr int TELETEXT_FRAME_SIZE = 860;
-static int TeletextCurrentFrame = 0;
+static int TeletextFieldCount[4] = { 0, 0, 0, 0 };
+constexpr int TELETEXT_FIELD_SIZE = 860;
+static int TeletextCurrentField = 0;
 
 static unsigned char row[16][64] = {0};
 
@@ -203,7 +203,7 @@ void TeletextInit()
                 if (TeletextFile[i] != nullptr)
                 {
                     fseek(TeletextFile[i], 0L, SEEK_END);
-                    TeletextFrameCount[i] = ftell(TeletextFile[i]) / TELETEXT_FRAME_SIZE;
+                    TeletextFieldCount[i] = (ftell(TeletextFile[i]) / TELETEXT_FIELD_SIZE) & ~1; // ignore trailing odd fields
                     fseek(TeletextFile[i], 0L, SEEK_SET);
                 }
                 else
@@ -214,7 +214,7 @@ void TeletextInit()
             }
         }
 
-        TeletextCurrentFrame = 0;
+        TeletextCurrentField = 0;
     }
 
     TeletextState = TTXFIELD; // within a field
@@ -354,14 +354,17 @@ void TeletextAdapterUpdate()
     {
         default:
         case TTXFIELD: // transition to FSYNC state
+            // (SAA5030 FS goes high around 40us after the true field sync point)
             TeletextState = TTXFSYNC;
             TeletextStatus |= 0x10; // latch FSYNC
-            IncTrigger(640, TeletextAdapterTrigger); // wait for approximately 5 video lines
+            // DEW goes high approximately 290us after FSYNC on an even field, or 320us after FSYNC on an odd field
+            IncTrigger((TeletextCurrentField&1)?640:580, TeletextAdapterTrigger); // wait appropriately depending on field
             break;
 
         case TTXFSYNC: // transition to DEW state
             TeletextStatus &= 0xBF;
-            TeletextStatus |= ((TeletextStatus & 0xF0) >> 1); // latch INT into DOR
+            TeletextStatus |= ((TeletextStatus & 0x80) >> 1); // latch INT into DOR
+            // the DEW signal remains high for 17 video lines (17 * 128 cycles)
             IncTrigger(2176, TeletextAdapterTrigger); // wait for approximately 17 video lines
             TeletextState = TTXDEW;
 
@@ -510,6 +513,8 @@ void TeletextAdapterUpdate()
                         }
                     }
                 }
+                
+                TeletextCurrentField ^= 1; // toggle field
             }
             else
             {
@@ -517,12 +522,12 @@ void TeletextAdapterUpdate()
 
                 if (TeletextFile[TeletextChannel] != nullptr)
                 {
-                    if (TeletextCurrentFrame >= TeletextFrameCount[TeletextChannel])
+                    if (TeletextCurrentField >= TeletextFieldCount[TeletextChannel])
                     {
-                        TeletextCurrentFrame = 0;
+                        TeletextCurrentField = 0;
                     }
 
-                    fseek(TeletextFile[TeletextChannel], TeletextCurrentFrame * TELETEXT_FRAME_SIZE + 3L * 43L, SEEK_SET);
+                    fseek(TeletextFile[TeletextChannel], TeletextCurrentField * TELETEXT_FIELD_SIZE + 3L * 43L, SEEK_SET);
                     fread(buff, 16 * 43, 1, TeletextFile[TeletextChannel]);
                 }
 
@@ -538,7 +543,7 @@ void TeletextAdapterUpdate()
                     }
                 }
 
-                TeletextCurrentFrame++;
+                TeletextCurrentField++;
             }
 
             rowPtr = 0x00;
@@ -546,9 +551,12 @@ void TeletextAdapterUpdate()
             break;
 
         case TTXDEW: // transition to field state
-            TeletextStatus &= 0x7F;
             TeletextStatus |= 0x80; // latch INT
-            IncTrigger(37184, TeletextAdapterTrigger); // wait for approximately 290.5 video lines
+            // FSYNC raises every 20000us. Field duration is 40000 cycles minus 17 lines of DEW and the delay between start of FSYNC and DEW
+            // even: 40000 - ((128 * 17) - 640) = 37244
+            // odd:  40000 - ((128 * 17) - 580) = 37184
+            // TeletextCurrentField has updated in TTXDEW!
+            IncTrigger((!(TeletextCurrentField&1))?37184:37244, TeletextAdapterTrigger);
             TeletextState = TTXFIELD;
 
             if (TeletextInts)
