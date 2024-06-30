@@ -5,7 +5,7 @@ Unreleased changes
 ------------
 
 Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore,
-Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher
+Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher, Martin Mather, Tom Seddon
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
@@ -39,6 +39,8 @@ Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher
   - Tape state is now preserved when loading and saving savestate files,
     for both UEF and CSW files.
   - Fixed loading CSW files from the command line.
+* Improved serial port emulation, and fixed data loss when using
+  serial over a TCP connection.
 * Added Set Keyboard Links command, which allows you to change the default
   screen mode and other options (Model B/B+ only).
 * Fixed installer to not delete Econet and key map config files.
