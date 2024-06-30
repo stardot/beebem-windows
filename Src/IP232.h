@@ -19,19 +19,25 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef SERIAL_DEVICES_HEADER
-#define SERIAL_DEVICES_HEADER
+#ifndef IP232_HEADER
+#define IP232_HEADER
 
-extern bool IP232Mode;
+extern bool IP232Handshake;
 extern bool IP232Raw;
 extern char IP232Address[256];
 extern int IP232Port;
-extern bool IP232Reset;
 
 bool IP232Open();
-bool IP232Poll();
 void IP232Close();
-void IP232Write(unsigned char data);
+
+bool IP232Poll();
+bool IP232PollStatus();
+void IP232Write(unsigned char Data);
+void IP232SetRTS(bool RTS);
 unsigned char IP232Read();
+unsigned char IP232ReadStatus();
+
+constexpr unsigned char IP232_DTR_LOW  = 0;
+constexpr unsigned char IP232_DTR_HIGH = 1;
 
 #endif

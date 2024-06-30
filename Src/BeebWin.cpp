@@ -579,7 +579,6 @@ void BeebWin::ApplyPrefs()
 		{
 			if (!IP232Open())
 			{
-				bSerialStateChanged = true;
 				SerialPortEnabled = false;
 				UpdateSerialMenu();
 			}
@@ -2393,7 +2392,11 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			OnDeviceLost();
 			break;
 
-		default: // Passes it on if unproccessed
+		case WM_IP232_ERROR:
+			OnIP232Error((int)wParam);
+			break;
+
+		default: // Passes it on if unprocessed
 			return DefWindowProc(m_hWnd, nMessage, wParam, lParam);
 	}
 
@@ -3330,6 +3333,94 @@ void BeebWin::UpdateAMXAdjustMenu()
 	);
 }
 
+/****************************************************************************/
+
+void BeebWin::ToggleSerial()
+{
+	if (SerialPortEnabled) // so disabling..
+	{
+		DisableSerial();
+	}
+
+	SerialPortEnabled = !SerialPortEnabled;
+
+	if (SerialPortEnabled && SerialDestination == SerialType::IP232)
+	{
+		if (!IP232Open())
+		{
+			SerialPortEnabled = false;
+			UpdateSerialMenu();
+		}
+	}
+
+	if (SerialDestination == SerialType::SerialPort)
+	{
+		bSerialStateChanged = true;
+	}
+
+	UpdateSerialMenu();
+}
+
+void BeebWin::ConfigureSerial()
+{
+	SerialPortDialog Dialog(hInst,
+	                        m_hWnd,
+	                        SerialDestination,
+	                        SerialPortName,
+	                        IP232Address,
+	                        IP232Port,
+	                        IP232Raw,
+	                        IP232Handshake);
+
+	if (Dialog.DoModal())
+	{
+		bool WasEnabled = SerialPortEnabled;
+
+		DisableSerial();
+
+		SerialDestination = Dialog.GetDestination();
+
+		if (SerialDestination == SerialType::SerialPort)
+		{
+			SelectSerialPort(Dialog.GetSerialPortName().c_str());
+		}
+		else if (SerialDestination == SerialType::IP232)
+		{
+			strcpy(IP232Address, Dialog.GetIPAddress().c_str());
+			IP232Port = Dialog.GetIPPort();
+			IP232Raw = Dialog.GetIP232RawComms();
+			IP232Handshake = Dialog.GetIP232Handshake();
+		}
+
+		if (WasEnabled)
+		{
+			if (SerialDestination == SerialType::SerialPort)
+			{
+				SerialPortEnabled = true;
+			}
+			else if (SerialDestination == SerialType::TouchScreen)
+			{
+				// Also switch on analogue mousestick (touch screen uses
+				// mousestick position)
+				if (m_JoystickOption != JoystickOption::AnalogueMouseStick)
+				{
+					HandleCommand(IDM_ANALOGUE_MOUSESTICK);
+				}
+
+				TouchScreenOpen();
+
+				SerialPortEnabled = true;
+			}
+			else if (SerialDestination == SerialType::IP232)
+			{
+				SerialPortEnabled = IP232Open();
+			}
+		}
+
+		UpdateSerialMenu();
+	}
+}
+
 void BeebWin::DisableSerial()
 {
 	/* if (SerialDestination == SerialType::SerialPort)
@@ -3350,14 +3441,29 @@ void BeebWin::SelectSerialPort(const char* PortName)
 {
 	// DisableSerial();
 	strcpy(SerialPortName, PortName);
-	bSerialStateChanged = true;
 	SerialDestination = SerialType::SerialPort;
+	bSerialStateChanged = true;
+
 	UpdateSerialMenu();
 }
 
 void BeebWin::UpdateSerialMenu()
 {
 	CheckMenuItem(IDM_SERIAL, SerialPortEnabled);
+}
+
+void BeebWin::OnIP232Error(int Error)
+{
+	if (DebugEnabled)
+		DebugDisplayTraceF(DebugType::RemoteServer, true, "IP232: Remote session disconnected (%d)", Error);
+
+	IP232Close();
+
+	SerialPortEnabled = false;
+	UpdateSerialMenu();
+
+	Report(MessageType::Error,
+	       "Lost connection. Serial port has been disabled");
 }
 
 //Rob
@@ -3518,85 +3624,12 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_SERIAL:
-		if (SerialPortEnabled) // so disabling..
-		{
-			DisableSerial();
-		}
-
-		SerialPortEnabled = !SerialPortEnabled;
-
-		if (SerialPortEnabled && SerialDestination == SerialType::IP232)
-		{
-			if (!IP232Open())
-			{
-				bSerialStateChanged = true;
-				UpdateSerialMenu();
-				SerialPortEnabled = false;
-			}
-		}
-
-		bSerialStateChanged = true;
-		UpdateSerialMenu();
+		ToggleSerial();
 		break;
 
-	case IDM_SELECT_SERIAL_DESTINATION: {
-		SerialPortDialog Dialog(hInst,
-		                        m_hWnd,
-		                        SerialDestination,
-		                        SerialPortName,
-		                        IP232Address,
-		                        IP232Port,
-		                        IP232Raw,
-		                        IP232Mode);
-
-		if (Dialog.DoModal())
-		{
-			DisableSerial();
-
-			SerialDestination = Dialog.GetDestination();
-
-			if (SerialDestination == SerialType::SerialPort)
-			{
-				SelectSerialPort(Dialog.GetSerialPortName().c_str());
-			}
-			else if (SerialDestination == SerialType::IP232)
-			{
-				strcpy(IP232Address, Dialog.GetIPAddress().c_str());
-				IP232Port = Dialog.GetIPPort();
-				IP232Raw = Dialog.GetIP232RawComms();
-				IP232Mode = Dialog.GetIP232Handshake();
-			}
-
-			if (SerialPortEnabled)
-			{
-				if (SerialDestination == SerialType::SerialPort)
-				{
-				}
-				else if (SerialDestination == SerialType::TouchScreen)
-				{
-					// Also switch on analogue mousestick (touch screen uses
-					// mousestick position)
-					if (m_JoystickOption != JoystickOption::AnalogueMouseStick)
-					{
-						HandleCommand(IDM_ANALOGUE_MOUSESTICK);
-					}
-
-					TouchScreenOpen();
-				}
-				else if (SerialDestination == SerialType::IP232)
-				{
-					if (!IP232Open())
-					{
-						bSerialStateChanged = true;
-						SerialPortEnabled = false;
-					}
-				}
-			}
-
-			UpdateSerialMenu();
-		}
+	case IDM_SELECT_SERIAL_DESTINATION:
+		ConfigureSerial();
 		break;
-	}
 
 	//Rob
 	case IDM_ECONET:

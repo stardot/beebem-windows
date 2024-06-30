@@ -410,9 +410,12 @@ public:
 	void SetMonitorType(MonitorType Type);
 	void UpdateMonitorMenu();
 
+	void ToggleSerial();
 	void DisableSerial();
+	void ConfigureSerial();
 	void SelectSerialPort(const char *PortName);
 	void UpdateSerialMenu();
+	void OnIP232Error(int Error);
 
 	void UpdateEconetMenu();
 

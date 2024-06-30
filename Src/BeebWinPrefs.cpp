@@ -1179,9 +1179,9 @@ void BeebWin::LoadSerialPortPreferences(int Version)
 		}
 	}
 
-	if (!m_Preferences.GetBoolValue(CFG_IP232_MODE, IP232Mode, false))
+	if (!m_Preferences.GetBoolValue(CFG_IP232_HANDSHAKE, IP232Handshake, false))
 	{
-		m_Preferences.GetBoolValue(CFG_IP232_MODE_OLD, IP232Mode, false);
+		m_Preferences.GetBoolValue(CFG_IP232_HANDSHAKE_OLD, IP232Handshake, false);
 	}
 
 	if (!m_Preferences.GetBoolValue(CFG_IP232_RAW, IP232Raw, false))
@@ -1724,8 +1724,8 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue(CFG_IP232_ENABLED, SerialDestination == SerialType::IP232);
 		m_Preferences.EraseValue(CFG_IP232_LOCALHOST_OLD);
 		m_Preferences.EraseValue(CFG_IP232_CUSTOM_OLD);
-		m_Preferences.SetBoolValue(CFG_IP232_MODE, IP232Mode);
-		m_Preferences.EraseValue(CFG_IP232_MODE_OLD);
+		m_Preferences.SetBoolValue(CFG_IP232_HANDSHAKE, IP232Handshake);
+		m_Preferences.EraseValue(CFG_IP232_HANDSHAKE_OLD);
 		m_Preferences.SetBoolValue(CFG_IP232_RAW, IP232Raw);
 		m_Preferences.EraseValue(CFG_IP232_RAW_OLD);
 		m_Preferences.SetStringValue(CFG_IP232_ADDRESS, IP232Address);

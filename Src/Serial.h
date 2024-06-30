@@ -30,7 +30,8 @@ Boston, MA  02110-1301, USA.
 #include "Csw.h"
 #include "Uef.h"
 
-enum class SerialType {
+enum class SerialType
+{
 	SerialPort,
 	TouchScreen,
 	IP232
@@ -66,6 +67,13 @@ struct SerialACIAType
 };
 
 extern SerialACIAType SerialACIA;
+
+// MC6850 control register bits
+constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
+constexpr unsigned char MC6850_CONTROL_MASTER_RESET     = 0x03;
+constexpr unsigned char MC6850_CONTROL_WORD_SELECT      = 0x1c;
+constexpr unsigned char MC6850_CONTROL_TRANSMIT_CONTROL = 0x60;
+constexpr unsigned char MC6850_CONTROL_RIE              = 0x80;
 
 // MC6850 status register bits
 constexpr unsigned char MC6850_STATUS_RDRF = 0x01;

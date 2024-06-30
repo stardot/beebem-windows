@@ -84,7 +84,7 @@
         This will also allow incoming connections, as that does all the
         answering business and passes the caller onto the Beeb via the
         pre-existing connection. This handles the handshake lines if you enable
-        ip232 mode, so dropping RTS will drop an outward connection. Similarly
+        IP232 mode, so dropping RTS will drop an outward connection. Similarly
         DCD going up will be passed through to CTS.
       </p>
 
@@ -121,22 +121,25 @@
       </p>
 
       <p>
-        The <span class="ui">IP232 Raw Comms</span> option disables special
-        processing of charater 255 (used with tcpser, so leave Raw mode off when
-        using tcpser).
+        The <span class="ui">IP232 Raw Comms</span> option controls special
+        processing of character 255. When enabled, no special handling is
+        applied. When disabled, for use with tcpser, when character 255 is
+        received followed by either 0 or 1 indicates the modem's DTR state,
+        which updates the CTS input on the Beeb's 6850 ACIA.
       </p>
 
       <p>
-        The <span class="ui">IP232 Handshake</span>, determines if the handshake
-        lines are sent down the TCP/IP link or just generated locally from the
-        presence of a valid connection.
+        The <span class="ui">IP232 Handshake</span> option determines if the
+        RTS handshake line is sent down the TCP/IP link or just generated locally
+        from the presence of a valid connection. When enabled, a change in RTS
+        is sent via the TCP connection as character 255 then either 0 or 1.
       </p>
 
       <p>
         If on startup, or when ticking the <span class="ui">RS423 On/Off</span>
         menu option, BeebEm cannot connect to the specified server, or if it
         loses connection subsequently, it will report an error and disable
-        RS423. Select the menu option again to try to re-connect and re-enable.
+        RS423. Select the menu option again to try to reconnect.
       </p>
 
       <p>

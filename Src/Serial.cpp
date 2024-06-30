@@ -54,15 +54,6 @@ Boston, MA  02110-1301, USA.
 #include "Uef.h"
 #include "UefState.h"
 
-#define _MM_ //include MM mods
-
-// MC6850 control register bits
-constexpr unsigned char MC6850_CONTROL_COUNTER_DIVIDE   = 0x03;
-constexpr unsigned char MC6850_CONTROL_MASTER_RESET     = 0x03;
-constexpr unsigned char MC6850_CONTROL_WORD_SELECT      = 0x1c;
-constexpr unsigned char MC6850_CONTROL_TRANSMIT_CONTROL = 0x60;
-constexpr unsigned char MC6850_CONTROL_RIE              = 0x80;
-
 SerialType SerialDestination;
 
 static bool FirstReset = true;
@@ -206,15 +197,15 @@ bool Win32SerialPort::Init(const char* PortName)
 	char FileName[_MAX_PATH];
 	sprintf(FileName, "\\\\.\\%s", PortName);
 
-	SerialPort.hSerialPort = CreateFile(FileName,
-	                                    GENERIC_READ | GENERIC_WRITE,
-	                                    0, // dwShareMode
-	                                    nullptr, // lpSecurityAttributes
-	                                    OPEN_EXISTING,
-	                                    FILE_FLAG_OVERLAPPED,
-	                                    nullptr); // hTemplateFile
+	hSerialPort = CreateFile(FileName,
+	                         GENERIC_READ | GENERIC_WRITE,
+	                         0, // dwShareMode
+	                         nullptr, // lpSecurityAttributes
+	                         OPEN_EXISTING,
+	                         FILE_FLAG_OVERLAPPED,
+	                         nullptr); // hTemplateFile
 
-	if (SerialPort.hSerialPort == INVALID_HANDLE_VALUE)
+	if (hSerialPort == INVALID_HANDLE_VALUE)
 	{
 		return false;
 	}
@@ -319,7 +310,8 @@ static void SerialUpdateACIAInterruptStatus()
 			intStatus |= 1 << serial;
 			SerialACIA.Status |= MC6850_STATUS_IRQ;
 		}
-		else {
+		else
+		{
 			intStatus &= ~(1 << serial);
 			SerialACIA.Status &= ~MC6850_STATUS_IRQ;
 		}
@@ -355,14 +347,17 @@ void SerialACIAWriteControl(unsigned char Value)
 			SerialACIA.Status |= MC6850_STATUS_CTS;
 			FirstReset = false;
 			SerialACIA.RTS = true;
+
+			if (SerialDestination == SerialType::IP232)
+			{
+				IP232SetRTS(SerialACIA.RTS);
+			}
 		}
 
 		SerialACIA.TxD = 0;
 		SerialACIA.Status |= MC6850_STATUS_TDRE; // Transmit data register empty
 
 		SetTrigger(TAPECYCLES, TapeTrigger);
-
-		IP232Reset = true; // MM: Force update of nRTS
 	}
 
 	// Clock Divide
@@ -388,12 +383,19 @@ void SerialACIAWriteControl(unsigned char Value)
 	}
 
 	// Change serial port settings
-	if (SerialULA.RS423 && SerialDestination == SerialType::SerialPort)
+	if (SerialULA.RS423)
 	{
-		SerialPort.Configure(SerialACIA.DataBits, SerialACIA.StopBits, SerialACIA.Parity);
+		if (SerialDestination == SerialType::SerialPort)
+		{
+			SerialPort.Configure(SerialACIA.DataBits, SerialACIA.StopBits, SerialACIA.Parity);
 
-		// Check RTS
-		SerialPort.SetRTS(SerialACIA.RTS);
+			// Check RTS
+			SerialPort.SetRTS(SerialACIA.RTS);
+		}
+		else if (SerialDestination == SerialType::IP232)
+		{
+			IP232SetRTS(SerialACIA.RTS);
+		}
 	}
 
 	SerialUpdateACIAInterruptStatus();
@@ -401,7 +403,7 @@ void SerialACIAWriteControl(unsigned char Value)
 
 /*--------------------------------------------------------------------------*/
 
-void HandleTXData(unsigned char AData)
+static void HandleTXData(unsigned char Data)
 {
 	/* TxD  TDR    TDSR
 	   0    EMPTY  EMPTY
@@ -411,8 +413,8 @@ void HandleTXData(unsigned char AData)
 	if (SerialACIA.TxD++ == 0)
 	{
 		// TDSR empty
-		SerialACIA.TDSR = AData;
-		SerialACIA.Status |= MC6850_STATUS_TDRE; // TDRE=1
+		SerialACIA.TDSR = Data;
+		SerialACIA.Status |= MC6850_STATUS_TDRE;
 
 		if (SerialDestination == SerialType::TouchScreen)
 		{
@@ -434,14 +436,14 @@ void HandleTXData(unsigned char AData)
 
 		//WriteLog("Serial: TX TDR=%02X, TDSR=%02x TxD=%d Status=%02x Tx_Rate=%d\n", TDR, TDSR, TxD, SerialACIA.Status, Tx_Rate);
 
-		int baud = SerialACIA.TxRate; // *((Clk_Divide == 1) ? 64 : (Clk_Divide == 64) ? 1 : 4);
-		TapeTrigger = TotalCycles + 2000000 / (baud / 10) * TapeState.ClockSpeed / 5600;
+		int Baud = SerialACIA.TxRate; // *((Clk_Divide == 1) ? 64 : (Clk_Divide == 64) ? 1 : 4);
+		TapeTrigger = TotalCycles + 2000000 / (Baud / 10) * TapeState.ClockSpeed / 5600;
 	}
 	else
 	{
 		// TDSR full
-		SerialACIA.TDR = AData;
-		SerialACIA.Status &= ~MC6850_STATUS_TDRE; // TDRE=0
+		SerialACIA.TDR = Data;
+		SerialACIA.Status &= ~MC6850_STATUS_TDRE;
 	}
 
 	SerialUpdateACIAInterruptStatus();
@@ -481,29 +483,6 @@ void SerialACIAWriteTxData(unsigned char Data)
 		if (SerialACIA.Status & MC6850_STATUS_TDRE)
 		{
 			HandleTXData(Data);
-
-			SerialACIA.Status &= ~MC6850_STATUS_TDRE;
-			SerialPort.SerialWriteBuffer = Data;
-
-			if (SerialDestination == SerialType::TouchScreen)
-			{
-				TouchScreenWrite(Data);
-			}
-			else if (SerialDestination == SerialType::IP232)
-			{
-				// if (Data_Bits == 7) {
-				//	IP232Write(Data & 127);
-				// } else {
-					IP232Write(Data);
-					if (!IP232Raw && Data == 255) IP232Write(Data);
-				// }
-			}
-			else
-			{
-				WriteFile(SerialPort.hSerialPort, &SerialPort.SerialWriteBuffer, 1, &SerialPort.BytesOut, &SerialPort.olSerialWrite);
-			}
-
-			SerialACIA.Status |= MC6850_STATUS_TDRE;
 		}
 	}
 }
@@ -571,6 +550,7 @@ unsigned char SerialULARead()
 		                   "Serial: Read serial ULA %02X", (int)SerialULA.Control);
 	}
 
+	// See https://github.com/stardot/beebem-windows/issues/47
 	return SerialULA.Control;
 }
 
@@ -586,7 +566,6 @@ unsigned char SerialACIAReadStatus()
 
 	// WriteLog("Serial: Read ACIA status %02X\n", (int)SerialACIA.Status);
 
-	// See https://github.com/stardot/beebem-windows/issues/47
 	return SerialACIA.Status;
 }
 
@@ -980,8 +959,39 @@ void SerialPoll(int Cycles)
 			{
 				if (SerialACIA.RxD < 2)
 				{
-					if ((SerialACIA.Control & 0x60) != 0x40) // if nrts = 0
-						HandleData(IP232Read());
+					// if ((SerialACIA.Control & 0x60) != 0x40) // if nrts = 0
+					HandleData(IP232Read());
+				}
+			}
+
+			if (IP232PollStatus())
+			{
+				unsigned char Status = IP232ReadStatus();
+
+				switch (Status)
+				{
+					case IP232_DTR_HIGH:
+						DebugTrace("IP232_DTR_HIGH\n");
+
+						if (DebugEnabled)
+							DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,1 DCD True, CTS");
+
+						SerialACIA.Status &= ~MC6850_STATUS_CTS; // CTS goes active low
+						SerialACIA.Status |= MC6850_STATUS_TDRE; // so TDRE goes high ??
+						break;
+
+					case IP232_DTR_LOW:
+						DebugTrace("IP232_DTR_LOW\n");
+
+						if (DebugEnabled)
+							DebugDisplayTrace(DebugType::RemoteServer, true, "Flag,0 DCD False, clear CTS");
+
+						SerialACIA.Status |= MC6850_STATUS_CTS; // CTS goes inactive high
+						SerialACIA.Status &= ~MC6850_STATUS_TDRE; // so TDRE goes low
+						break;
+
+					default:
+						break;
 				}
 			}
 		}

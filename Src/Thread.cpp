@@ -24,18 +24,26 @@ Boston, MA  02110-1301, USA.
 
 #include "Thread.h"
 
+/****************************************************************************/
+
 Thread::Thread() :
 	m_hThread(nullptr),
-	m_hStartEvent(nullptr)
+	m_hStartEvent(nullptr),
+	m_bQuit(false)
 {
 }
+
+/****************************************************************************/
 
 Thread::~Thread()
 {
 }
 
+/****************************************************************************/
+
 bool Thread::Start()
 {
+	m_bQuit = false;
 	m_hStartEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 
 	if (m_hStartEvent == nullptr)
@@ -65,10 +73,33 @@ bool Thread::Start()
 	return bSuccess;
 }
 
+/****************************************************************************/
+
 bool Thread::IsStarted() const
 {
 	return m_hThread != nullptr;
 }
+
+/****************************************************************************/
+
+void Thread::Join()
+{
+	m_bQuit = true;
+
+	WaitForSingleObject(m_hThread, INFINITE);
+
+	CloseHandle(m_hThread);
+	m_hThread = nullptr;
+}
+
+/****************************************************************************/
+
+bool Thread::ShouldQuit() const
+{
+	return m_bQuit;
+}
+
+/****************************************************************************/
 
 unsigned int __stdcall Thread::s_ThreadFunc(void *parameter)
 {
@@ -79,3 +110,5 @@ unsigned int __stdcall Thread::s_ThreadFunc(void *parameter)
 
 	return pThread->ThreadFunc();
 }
+
+/****************************************************************************/
