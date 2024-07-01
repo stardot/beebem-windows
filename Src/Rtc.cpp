@@ -199,7 +199,7 @@ const unsigned char CMOSDefault_MasterET[50] =
 	0x00, // 16 - File server network: 0
 	0xea, // 17 - Printer server number: 235
 	0x00, // 18 - Printer server network: 0
-	0xde,
+	0xde, // 19 - Default language ROM: 13, Default filing system ROM: 14
 	0xff, // 20 - ROMS 0-7 unplugged/inserted
 	0xff, // 21 - ROMS 8-F unplugged/inserted
 	0x32, // 22 - Edit mode K
