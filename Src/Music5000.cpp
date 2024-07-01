@@ -130,6 +130,7 @@ void Music5000Init()
 	// Init the streamer
 	delete pSoundStreamer;
 	pSoundStreamer = CreateSoundStreamer(46875, 16, 2);
+
 	if (!pSoundStreamer)
 	{
 		Music5000Enabled = false;

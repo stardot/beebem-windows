@@ -681,6 +681,17 @@ void BeebWin::Shutdown()
 
 /****************************************************************************/
 
+void BeebWin::SetModel(Model NewModelType)
+{
+	if (MachineType != NewModelType)
+	{
+		ResetBeebSystem(NewModelType, true);
+		UpdateModelMenu();
+	}
+}
+
+/****************************************************************************/
+
 void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 {
 	SoundReset();
@@ -704,9 +715,22 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	SwitchOnSound();
 	Music5000Reset();
-	if ((Music5000Enabled) && MachineType != Model::MasterET)
-		Music5000Init();
-	MachineType=NewModelType;
+
+	MachineType = NewModelType;
+
+	if (MachineType == Model::MasterET)
+	{
+		Music5000Enabled = false;
+		SetSoundMenu();
+	}
+	else
+	{
+		if (Music5000Enabled)
+		{
+			Music5000Init();
+		}
+	}
+
 	BeebMemInit(LoadRoms, m_ShiftBooted);
 	Init6502core();
 
@@ -1227,9 +1251,9 @@ void BeebWin::TrackPopupMenu(int x, int y)
 
 /****************************************************************************/
 
-void BeebWin::CheckMenuItem(UINT id, bool checked)
+void BeebWin::CheckMenuItem(UINT id, bool Checked)
 {
-	::CheckMenuItem(m_hMenu, id, checked ? MF_CHECKED : MF_UNCHECKED);
+	::CheckMenuItem(m_hMenu, id, Checked ? MF_CHECKED : MF_UNCHECKED);
 }
 
 void BeebWin::CheckMenuRadioItem(UINT FirstID, UINT LastID, UINT SelectedID)
@@ -1237,9 +1261,9 @@ void BeebWin::CheckMenuRadioItem(UINT FirstID, UINT LastID, UINT SelectedID)
 	::CheckMenuRadioItem(m_hMenu, FirstID, LastID, SelectedID, MF_BYCOMMAND);
 }
 
-void BeebWin::EnableMenuItem(UINT id, bool enabled)
+void BeebWin::EnableMenuItem(UINT id, bool Enabled)
 {
-	::EnableMenuItem(m_hMenu, id, enabled ? MF_ENABLED : MF_GRAYED);
+	::EnableMenuItem(m_hMenu, id, Enabled ? MF_ENABLED : MF_GRAYED);
 }
 
 void BeebWin::InitMenu(void)
@@ -1424,7 +1448,7 @@ void BeebWin::SetSoundStreamer(SoundStreamerType StreamerType)
 		SoundInit();
 	}
 
-	if (Music5000Enabled && MachineType != Model::MasterET)
+	if (Music5000Enabled)
 	{
 		Music5000Reset();
 		Music5000Init();
@@ -4246,43 +4270,23 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_MODELB:
-		if (MachineType != Model::B)
-		{
-			ResetBeebSystem(Model::B, true);
-			UpdateModelMenu();
-		}
+		SetModel(Model::B);
 		break;
 
 	case IDM_MODELBINT:
-		if (MachineType != Model::IntegraB)
-		{
-			ResetBeebSystem(Model::IntegraB, true);
-			UpdateModelMenu();
-		}
+		SetModel(Model::IntegraB);
 		break;
 
 	case IDM_MODELBPLUS:
-		if (MachineType != Model::BPlus)
-		{
-			ResetBeebSystem(Model::BPlus, true);
-			UpdateModelMenu();
-		}
+		SetModel(Model::BPlus);
 		break;
 
 	case IDM_MASTER128:
-		if (MachineType != Model::Master128)
-		{
-			ResetBeebSystem(Model::Master128, true);
-			UpdateModelMenu();
-		}
+		SetModel(Model::Master128);
 		break;
 
 	case IDM_MASTER_ET:
-		if (MachineType != Model::MasterET)
-		{
-			ResetBeebSystem(Model::MasterET, true);
-			UpdateModelMenu();
-		}
+		SetModel(Model::MasterET);
 		break;
 
 	case IDM_REWINDTAPE:

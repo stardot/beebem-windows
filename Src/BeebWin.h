@@ -318,6 +318,7 @@ public:
 
 	HWND GethWnd() { return m_hWnd; }
 
+	void SetModel(Model NewModelType);
 	void ResetBeebSystem(Model NewModelType, bool LoadRoms);
 	void Break();
 
@@ -434,9 +435,9 @@ public:
 	void SetSoundVolume(int Volume);
 	void UpdateSoundVolumeMenu();
 
-	void CheckMenuItem(UINT id, bool checked);
+	void CheckMenuItem(UINT id, bool Checked);
 	void CheckMenuRadioItem(UINT FirstID, UINT LastID, UINT SelectedID);
-	void EnableMenuItem(UINT id, bool enabled);
+	void EnableMenuItem(UINT id, bool Enabled);
 
 	// DirectX - calls DDraw or DX9 fn
 	void InitDX();
