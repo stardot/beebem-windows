@@ -5483,9 +5483,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 	char path[_MAX_PATH];
 
 	// Change all '/' to '\'
-	for (size_t i = 0; i < strlen(m_UserDataPath); ++i)
-		if (m_UserDataPath[i] == '/')
-			m_UserDataPath[i] = '\\';
+	MakePreferredPath(m_UserDataPath);
 
 	// Check that the folder exists
 	if (!FolderExists(m_UserDataPath))

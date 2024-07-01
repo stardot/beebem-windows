@@ -140,3 +140,16 @@ void MakeFileName(char* Path, size_t /* Size */, const char* DirName, const char
 }
 
 /****************************************************************************/
+
+void MakePreferredPath(char* PathName)
+{
+	for (size_t i = 0; i < strlen(PathName); ++i)
+	{
+		if (PathName[i] == '/')
+		{
+			PathName[i] = DIR_SEPARATOR;
+		}
+	}
+}
+
+/****************************************************************************/
