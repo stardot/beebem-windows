@@ -49,6 +49,7 @@ Offset  Description             Access
 #include "6502core.h"
 #include "BeebMem.h"
 #include "BeebWin.h"
+#include "FileUtils.h"
 #include "Main.h"
 #include "Resource.h"
 
@@ -78,17 +79,18 @@ void IDEReset()
 	// NB: Only mount drives 0-IDEDriveMax
 	for (int i = 0; i < IDEDriveMax; ++i)
 	{
-		char buff[256];
-		sprintf(buff, "%s\\ide%d.dat", HardDrivePath, i);
-		IDEDisc[i] = fopen(buff, "rb+");
+		char FileName[MAX_PATH];
+		MakeFileName(FileName, MAX_PATH, HardDrivePath, "ide%d.dat", i);
+
+		IDEDisc[i] = fopen(FileName, "rb+");
 
 		if (IDEDisc[i] == nullptr)
 		{
-			char *error = _strerror(nullptr);
-			error[strlen(error) - 1] = '\0'; // Remove trailing '\n'
+			char* Error = _strerror(nullptr);
+			Error[strlen(Error) - 1] = '\0'; // Remove trailing '\n'
 
 			mainWin->Report(MessageType::Error,
-											"Could not open IDE disc image:\n  %s\n\n%s", buff, error);
+			                "Could not open IDE disc image:\n  %s\n\n%s", FileName, Error);
 		}
 	}
 }

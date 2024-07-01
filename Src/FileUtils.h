@@ -30,6 +30,8 @@ std::string AppendPath(const std::string& BasePath, const std::string& Path);
 
 bool HasFileExt(const char* FileName, const char* Ext);
 std::string ReplaceFileExt(const std::string& FileName, const char* Ext);
+void GetPathFromFileName(const char* FileName, char* Path, size_t Size);
+void MakeFileName(char* Path, size_t Size, const char* DirName, const char* FileName, ...);
 
 /*----------------------------------------------------------------------------*/
 

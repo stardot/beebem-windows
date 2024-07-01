@@ -130,11 +130,10 @@ void BeebWin::EjectDiscImage(int Drive)
 
 bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 {
-	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
-	const char* filter =
+	const char* Filter =
 		"Auto (*.ssd;*.dsd;*.ad*;*.img;*.dos;*.fsd)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos;*.fsd\0"
 		"ADFS Disc (*.adl;*.adf)\0*.adl;*.adf\0"
 		"Single Sided Disc (*.ssd)\0*.ssd\0"
@@ -142,10 +141,13 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		"Single Sided Disc (*.*)\0*.*\0"
 		"Double Sided Disc (*.*)\0*.*\0";
 
+	char DefaultPath[_MAX_PATH];
+	DefaultPath[0] = '\0';
+
 	m_Preferences.GetStringValue(CFG_DISCS_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, Filter);
 
 	bool gotName = Dialog.Open();
 
@@ -159,9 +161,8 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 
 		if (m_AutoSavePrefsFolders)
 		{
-			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
-			strncpy(DefaultPath, FileName, PathLength);
-			DefaultPath[PathLength] = 0;
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
 			m_Preferences.SetStringValue(CFG_DISCS_PATH, DefaultPath);
 		}
 
@@ -363,27 +364,28 @@ bool BeebWin::Load8271DiscImage(const char *FileName, int Drive, int Tracks, Dis
 
 void BeebWin::LoadTape(void)
 {
-	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
-	const char* filter =
+	const char* Filter =
 		"Auto (*.uef;*.csw)\0*.uef;*.csw\0"
 		"UEF Tape File (*.uef)\0*.uef\0"
 		"CSW Tape File (*.csw)\0*.csw\0";
 
+	char DefaultPath[_MAX_PATH];
+	DefaultPath[0] = '\0';
+
 	m_Preferences.GetStringValue(CFG_TAPES_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, Filter);
 
-	if (fileDialog.Open())
+	if (Dialog.Open())
 	{
 		if (m_AutoSavePrefsFolders)
 		{
-			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
-			strncpy(DefaultPath, FileName, PathLength);
-			DefaultPath[PathLength] = 0;
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
 			m_Preferences.SetStringValue(CFG_TAPES_PATH, DefaultPath);
 		}
 
@@ -481,17 +483,16 @@ void BeebWin::SelectFDC()
 /****************************************************************************/
 void BeebWin::NewDiscImage(int Drive)
 {
-	char DefaultPath[_MAX_PATH];
-	char FileName[_MAX_PATH];
-	FileName[0] = '\0';
-
-	const char* filter =
+	const char* Filter =
 		"Single Sided Disc (*.ssd)\0*.ssd\0"
 		"Double Sided Disc (*.dsd)\0*.dsd\0"
 		"Single Sided Disc (*.*)\0*.*\0"
 		"Double Sided Disc (*.*)\0*.*\0"
 		"ADFS M (80 Track) Disc (*.adf)\0*.adf\0"
 		"ADFS L (160 Track) Disc (*.adl)\0*.adl\0";
+
+	char DefaultPath[_MAX_PATH];
+	DefaultPath[0] = '\0';
 
 	m_Preferences.GetStringValue(CFG_DISCS_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
@@ -502,7 +503,10 @@ void BeebWin::NewDiscImage(int Drive)
 	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && NativeFDC && FilterIndex >= 5)
 		FilterIndex = 1;
 
-	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	char FileName[_MAX_PATH];
+	FileName[0] = '\0';
+
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, Filter);
 	Dialog.SetFilterIndex(FilterIndex);
 
 	if (Dialog.Save())
@@ -511,9 +515,8 @@ void BeebWin::NewDiscImage(int Drive)
 
 		if (m_AutoSavePrefsFolders)
 		{
-			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
-			strncpy(DefaultPath, FileName, PathLength);
-			DefaultPath[PathLength] = 0;
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
 			m_Preferences.SetStringValue(CFG_DISCS_PATH, DefaultPath);
 			m_Preferences.SetDecimalValue(CFG_DISCS_FILTER, FilterIndex);
 		}
@@ -617,23 +620,25 @@ void BeebWin::CreateDFSDiscImage(const char *FileName, int Drive,
 /****************************************************************************/
 void BeebWin::SaveState()
 {
-	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
-	const char* filter = "UEF State File (*.uefstate)\0*.uefstate\0";
+	const char* Filter = "UEF State File (*.uefstate)\0*.uefstate\0";
+
+	char DefaultPath[_MAX_PATH];
+	DefaultPath[0] = '\0';
 
 	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-	if (fileDialog.Save())
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, Filter);
+
+	if (Dialog.Save())
 	{
 		if (m_AutoSavePrefsFolders)
 		{
-			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
-			strncpy(DefaultPath, FileName, PathLength);
-			DefaultPath[PathLength] = 0;
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
 			m_Preferences.SetStringValue(CFG_STATES_PATH, DefaultPath);
 		}
 
@@ -650,26 +655,28 @@ void BeebWin::SaveState()
 /****************************************************************************/
 void BeebWin::RestoreState()
 {
-	char DefaultPath[_MAX_PATH];
 	char FileName[_MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* filter = "UEF State File (*.uefstate; *.uef)\0*.uefstate;*.uef\0";
 
+	char DefaultPath[_MAX_PATH];
+	DefaultPath[0] = '\0';
+
 	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-	if (fileDialog.Open())
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+
+	if (Dialog.Open())
 	{
 		// Check for file specific preferences files
 		CheckForLocalPrefs(FileName, true);
 
 		if (m_AutoSavePrefsFolders)
 		{
-			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
-			strncpy(DefaultPath, FileName, PathLength);
-			DefaultPath[PathLength] = 0;
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
 			m_Preferences.SetStringValue(CFG_STATES_PATH, DefaultPath);
 		}
 
@@ -1011,9 +1018,9 @@ void BeebWin::CaptureVideo()
 	m_Preferences.GetStringValue(CFG_AVI_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
 
-	if (fileDialog.Save())
+	if (Dialog.Save())
 	{
 		// Add avi extension
 		if (!HasFileExt(FileName, ".avi"))
@@ -1023,9 +1030,8 @@ void BeebWin::CaptureVideo()
 
 		if (m_AutoSavePrefsFolders)
 		{
-			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
-			strncpy(DefaultPath, FileName, PathLength);
-			DefaultPath[PathLength] = 0;
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
 			m_Preferences.SetStringValue(CFG_AVI_PATH, DefaultPath);
 		}
 
@@ -1764,13 +1770,13 @@ void BeebWin::ImportDiscFiles(int menuId)
 	m_Preferences.GetStringValue(CFG_EXPORT_PATH, szExportPath);
 	GetDataPath(m_UserDataPath, szExportPath);
 
-	const char* filter = "INF files (*.inf)\0*.inf\0" "All files (*.*)\0*.*\0";
+	const char* Filter = "INF files (*.inf)\0*.inf\0" "All files (*.*)\0*.*\0";
 
-	FileDialog fileDialog(m_hWnd, fileSelection, sizeof(fileSelection), szExportPath, filter);
-	fileDialog.AllowMultiSelect();
-	fileDialog.SetTitle("Select files to import");
+	FileDialog Dialog(m_hWnd, fileSelection, sizeof(fileSelection), szExportPath, Filter);
+	Dialog.AllowMultiSelect();
+	Dialog.SetTitle("Select files to import");
 
-	if (!fileDialog.Open())
+	if (!Dialog.Open())
 	{
 		return;
 	}
@@ -2081,9 +2087,9 @@ bool BeebWin::GetImageFile(char *FileName, int Size)
 	char filter[200];
 	sprintf(filter, "Image File (*%s)%c*%s%c", fileExt, 0, fileExt, 0);
 
-	FileDialog fileDialog(m_hWnd, FileName, Size, DefaultPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, Size, DefaultPath, filter);
 
-	if (fileDialog.Save())
+	if (Dialog.Save())
 	{
 		// Add extension
 		if (!HasFileExt(FileName, fileExt))
@@ -2093,9 +2099,8 @@ bool BeebWin::GetImageFile(char *FileName, int Size)
 
 		if (m_AutoSavePrefsFolders)
 		{
-			unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
-			strncpy(DefaultPath, FileName, PathLength);
-			DefaultPath[PathLength] = 0;
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
 			m_Preferences.SetStringValue(CFG_IMAGE_PATH, DefaultPath);
 		}
 

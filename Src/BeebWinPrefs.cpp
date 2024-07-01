@@ -31,6 +31,7 @@ Boston, MA  02110-1301, USA.
 #include "Disc1770.h"
 #include "Disc8271.h"
 #include "Econet.h"
+#include "FileUtils.h"
 #include "Ide.h"
 #include "IP232.h"
 #include "KeyMap.h"
@@ -1232,8 +1233,8 @@ void BeebWin::LoadTeletextAdapterPreferences(int Version)
 			m_Preferences.GetStringValue("DiscsPath", DiscsPath);
 			GetDataPath(m_UserDataPath, DiscsPath);
 
-			char TeletextFile[256];
-			sprintf(TeletextFile, "%s\\txt%d.dat", DiscsPath, ch);
+			char TeletextFile[MAX_PATH];
+			MakeFileName(TeletextFile, MAX_PATH, DiscsPath, "txt%d.dat", ch);
 
 			TeletextFileName[ch] = TeletextFile;
 		}
