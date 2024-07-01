@@ -1751,6 +1751,58 @@ void BeebWin::UpdateSFXMenu()
 	CheckMenuItem(IDM_SFX_DISCDRIVES, DiscDriveSoundEnabled);
 }
 
+/****************************************************************************/
+
+void BeebWin::DisableWindowsKeys()
+{
+	bool Reboot = false;
+
+	m_DisableKeysWindows = !m_DisableKeysWindows;
+	UpdateDisableKeysMenu();
+
+	if (m_DisableKeysWindows)
+	{
+		// Give user warning
+		if (Report(MessageType::Question,
+		           "Disabling the Windows keys will affect the whole PC.\n"
+		           "Go ahead and disable the Windows keys?") == MessageResult::Yes)
+		{
+			int BinSize = sizeof(CFG_DISABLE_WINDOWS_KEYS);
+
+			RegSetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
+			                  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &BinSize);
+
+			Reboot = true;
+		}
+		else
+		{
+			m_DisableKeysWindows = false;
+			UpdateDisableKeysMenu();
+		}
+	}
+	else
+	{
+		int BinSize = 0;
+
+		RegSetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
+		                  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &BinSize);
+
+		Reboot = true;
+	}
+
+	if (Reboot)
+	{
+		// Ask user for reboot
+		if (Report(MessageType::Question,
+		           "Reboot required for key change to\ntake effect. Reboot now?") == MessageResult::Yes)
+		{
+			RebootSystem();
+		}
+	}
+}
+
+/****************************************************************************/
+
 void BeebWin::UpdateDisableKeysMenu()
 {
 	CheckMenuItem(IDM_DISABLEKEYSWINDOWS, m_DisableKeysWindows);
@@ -4706,47 +4758,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_DISABLEKEYSWINDOWS:
-	{
-		bool reboot = false;
-		m_DisableKeysWindows = !m_DisableKeysWindows;
-		UpdateDisableKeysMenu();
-		if (m_DisableKeysWindows)
-		{
-			// Give user warning
-			if (Report(MessageType::Question,
-			           "Disabling the Windows keys will affect the whole PC.\n"
-			           "Go ahead and disable the Windows keys?") == MessageResult::Yes)
-			{
-				int binsize=sizeof(CFG_DISABLE_WINDOWS_KEYS);
-				RegSetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
-				                  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &binsize);
-				reboot = true;
-			}
-			else
-			{
-				m_DisableKeysWindows = false;
-				UpdateDisableKeysMenu();
-			}
-		}
-		else
-		{
-			int binsize=0;
-			RegSetBinaryValue(HKEY_LOCAL_MACHINE, CFG_KEYBOARD_LAYOUT,
-			                  CFG_SCANCODE_MAP, CFG_DISABLE_WINDOWS_KEYS, &binsize);
-			reboot = true;
-		}
-
-		if (reboot)
-		{
-			// Ask user for reboot
-			if (Report(MessageType::Question,
-			           "Reboot required for key change to\ntake effect. Reboot now?") == MessageResult::Yes)
-			{
-				RebootSystem();
-			}
-		}
+		DisableWindowsKeys();
 		break;
-	}
 
 	case IDM_DISABLEKEYSBREAK:
 		m_DisableKeysBreak = !m_DisableKeysBreak;

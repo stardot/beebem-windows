@@ -421,6 +421,8 @@ public:
 	void UpdateEconetMenu();
 
 	void UpdateSFXMenu();
+
+	void DisableWindowsKeys();
 	void UpdateDisableKeysMenu();
 
 	void SetDisplayRenderer(DisplayRendererType DisplayRenderer);
