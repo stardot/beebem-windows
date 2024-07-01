@@ -424,7 +424,7 @@ PutWord (ARMul_State * state, ARMword address, ARMword data, int /* check */)
 \***************************************************************************/
 
 unsigned
-ARMul_MemoryInit (ARMul_State * state, unsigned long initmemsize)
+ARMul_MemoryInit (ARMul_State * state, ARMword initmemsize)
 {
     if (initmemsize)
         state->MemSize = initmemsize;

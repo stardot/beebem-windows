@@ -63,7 +63,7 @@ extern unsigned char TubeintStatus;
 extern unsigned char TubeNMIStatus;
 
 // All pre-i286 CPUs have a 1MB address space
-const uint32_t AMASK = 0xfffff;
+// const uint32_t AMASK = 0xfffff;
 
 #define CF      (m_CarryVal!=0)
 #define SF      (m_SignVal<0)

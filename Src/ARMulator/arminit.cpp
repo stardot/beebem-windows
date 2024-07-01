@@ -216,12 +216,7 @@ ARMul_Reset (ARMul_State * state)
     state->NumFcycles = 0;
     state->remapControlRegister = 0;
     state->romSelectRegister = 1;
-#ifdef ASIM
-    (void) ARMul_MemoryInit ();
-    ARMul_OSInit (state);
-#endif
 }
-
 
 /***************************************************************************\
 * Emulate the execution of an entire program.  Start the correct emulator   *
