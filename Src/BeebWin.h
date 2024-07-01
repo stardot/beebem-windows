@@ -603,6 +603,8 @@ public:
 	void LoadUserPortBreakoutPreferences();
 	void SavePreferences(bool saveAll);
 
+	int FindEnum(const std::string& Value, const char* const* Names, int Default);
+
 	// Timers
 	const int TIMER_KEYBOARD       = 1;
 	const int TIMER_AUTOBOOT_DELAY = 2;
@@ -766,6 +768,10 @@ public:
 	char m_CommandLineFileName2[_MAX_PATH];
 	std::string m_DebugScriptFileName;
 	std::string m_DebugLabelsFileName;
+	bool m_HasCommandLineModel;
+	Model m_CommandLineModel;
+	bool m_HasCommandLineTube;
+	TubeDevice m_CommandLineTube;
 
 	// Startup key sequence
 	std::string m_KbdCmd;
@@ -839,5 +845,8 @@ extern CArm *arm;
 extern CSprowCoPro *sprow;
 
 extern const char DefaultBlurIntensities[8];
+
+extern const char* const MachineTypeStr[];
+extern const char* const TubeDeviceStr[];
 
 #endif

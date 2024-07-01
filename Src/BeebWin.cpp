@@ -311,6 +311,10 @@ BeebWin::BeebWin()
 	// Command line
 	ZeroMemory(m_CommandLineFileName1, sizeof(m_CommandLineFileName1));
 	ZeroMemory(m_CommandLineFileName2, sizeof(m_CommandLineFileName2));
+	m_HasCommandLineModel = false;
+	m_CommandLineModel = Model::B;
+	m_HasCommandLineTube = false;
+	m_CommandLineTube = TubeDevice::None;
 
 	// Startup key sequence
 	m_KbdCmdPos = -1;
@@ -368,6 +372,7 @@ BeebWin::BeebWin()
 }
 
 /****************************************************************************/
+
 bool BeebWin::Initialise()
 {
 	// Parse command line
@@ -403,6 +408,17 @@ bool BeebWin::Initialise()
 	if (m_StartFullScreen)
 	{
 		m_FullScreen = true;
+	}
+
+	// Was model or tube type set on the command line?
+	if (m_HasCommandLineModel)
+	{
+		MachineType = m_CommandLineModel;
+	}
+
+	if (m_HasCommandLineTube)
+	{
+		TubeType = m_CommandLineTube;
 	}
 
 	if (FAILED(CoInitialize(NULL)))
@@ -483,6 +499,7 @@ bool BeebWin::Initialise()
 }
 
 /****************************************************************************/
+
 void BeebWin::ApplyPrefs()
 {
 	// Set up paths
@@ -621,6 +638,7 @@ BeebWin::~BeebWin()
 }
 
 /****************************************************************************/
+
 void BeebWin::Shutdown()
 {
 	EndVideo();
@@ -5073,6 +5091,16 @@ void BeebWin::ParseCommandLine()
 					invalid = true;
 				else
 					m_AutoBootDelay = a;
+			}
+			else if (_stricmp(__argv[i], "-Model") == 0)
+			{
+				m_CommandLineModel = static_cast<Model>(FindEnum(__argv[++i], MachineTypeStr, 0));
+				m_HasCommandLineModel = true;
+			}
+			else if (_stricmp(__argv[i], "-Tube") == 0)
+			{
+				m_HasCommandLineTube = true;
+				m_CommandLineTube = static_cast<TubeDevice>(FindEnum(__argv[++i], TubeDeviceStr, 0));
 			}
 			else if (__argv[i][0] == '-')
 			{

@@ -29,6 +29,9 @@ Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher, Martin Mather, Tom Seddon
 * ROM config files (e.g., Roms.cfg) can now include comments. Note that
   files with comments are not backwards compatible with older BeebEm
   versions.
+* Added -Model and -Tube options, to allow the Beeb model and second processor
+  to be set on the command line. These options override the settings in the
+  preferences file.
 * Keyboard mapping improvements:
   - Added Clear button to the key selection dialog box, when defining
     a user keyboard mapping.

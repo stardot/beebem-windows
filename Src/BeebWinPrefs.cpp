@@ -60,7 +60,7 @@ Boston, MA  02110-1301, USA.
 
 const int PREFERENCES_VERSION = 3;
 
-static const char* const MachineTypeStr[] =
+const char* const MachineTypeStr[] =
 {
 	"ModelB",
 	"IntegraB",
@@ -70,7 +70,7 @@ static const char* const MachineTypeStr[] =
 	nullptr
 };
 
-static const char* const TubeDeviceStr[] =
+const char* const TubeDeviceStr[] =
 {
 	"None",
 	"Acorn65C02",
@@ -210,7 +210,7 @@ static const char* const TeletextSourceTypeStr[] =
 
 /****************************************************************************/
 
-static int FindEnum(const std::string& Value, const char* const* Names, int Default)
+int BeebWin::FindEnum(const std::string& Value, const char* const* Names, int Default)
 {
 	int Index = Default;
 	int i = 0;

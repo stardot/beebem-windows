@@ -83,6 +83,29 @@
         </tr>
 
         <tr>
+          <td><span class="cmd">-Model &lt;model&gt;</span></td>
+          <td>
+            Sets the model, from one of the following values: <span
+            class="cmd">ModelB</span>, <span class="cmd">BPlus</span>, <span
+            class="cmd">IntegraB</span>, <span class="cmd">Master128</span>, and
+            <span class="cmd">MasterET</span>. This option overrides the setting
+            in the Preferences file.
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">-Tube &lt;tube&gt;</span></td>
+          <td>
+            Sets the second processor, from one of the following values: <span
+            class="cmd">None</span>, <span class="cmd">Acorn65C02</span>, <span
+            class="cmd">Master512CoPro</span>, <span class="cmd">AcornZ80</span>,
+            <span class="cmd">TorchZ80</span>, <span class="cmd">AcornArm</span>,
+            and <span class="cmd">SprowArm</span>. This option overrides the
+            setting in the Preferences file.
+          </td>
+        </tr>
+
+        <tr>
           <td><span class="cmd">-EconetCfg &lt;file&gt;</span></td>
           <td>
             Econet config file to load. This can be a file name, relative to the
@@ -174,13 +197,6 @@
           <td>Save state file to load</td>
         </tr>
       </table>
-
-      <p>
-        Note: Command line options <span class="cmd">-Model</span> and <span
-        class="cmd">-Tube</span> are no longer supported. Use the <span
-        class="cmd">-Prefs</span> option with different preferences files
-        instead.
-      </p>
 
       <p>
         If you create a shortcut to BeebEm.exe on your desktop and edit the
