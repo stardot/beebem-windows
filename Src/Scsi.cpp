@@ -111,8 +111,6 @@ bool SCSIDriveEnabled = false;
 
 void SCSIReset()
 {
-	char FileName[MAX_PATH];
-
 	scsi.code = 0x00;
 	scsi.sector = 0x00;
 
@@ -125,6 +123,7 @@ void SCSIReset()
 
 	for (int i = 0; i < 4; ++i)
 	{
+		char FileName[MAX_PATH];
 		MakeFileName(FileName, MAX_PATH, HardDrivePath, "scsi%d.dat", i);
 
 		SCSIDisc[i] = fopen(FileName, "rb+");

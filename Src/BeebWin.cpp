@@ -695,8 +695,11 @@ void BeebWin::SetModel(Model NewModelType)
 void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 {
 	SoundReset();
+
 	if (SoundDefault)
+	{
 		SoundInit();
+	}
 
 	#if ENABLE_SPEECH
 
@@ -787,12 +790,34 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	EjectDiscImage(0);
 	EjectDiscImage(1);
 
-	if (MachineType != Model::MasterET)
+	SCSIClose();
+	SASIClose();
+	IDEClose();
+
+	if (MachineType == Model::MasterET)
+	{
+		SCSIDriveEnabled = false;
+		IDEDriveEnabled = false;
+
+		CheckMenuItem(IDM_SCSI_HARD_DRIVE, SCSIDriveEnabled);
+		CheckMenuItem(IDM_IDE_HARD_DRIVE, IDEDriveEnabled);
+	}
+	else
 	{
 		if (SCSIDriveEnabled) SCSIReset();
 		if (SCSIDriveEnabled) SASIReset();
-		if (IDEDriveEnabled)  IDEReset();
+		if (IDEDriveEnabled) IDEReset();
+	}
 
+	TeletextClose();
+
+	if (MachineType == Model::MasterET)
+	{
+		TeletextAdapterEnabled = false;
+		CheckMenuItem(IDM_TELETEXT, TeletextAdapterEnabled);
+	}
+	else
+	{
 		TeletextInit();
 	}
 

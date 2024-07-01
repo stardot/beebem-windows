@@ -108,8 +108,6 @@ extern bool SCSIDriveEnabled;
 
 void SASIReset()
 {
-	char FileName[MAX_PATH];
-
 	sasi.code = 0x00;
 	sasi.sector = 0x00;
 
@@ -124,6 +122,7 @@ void SASIReset()
 		if (!SCSIDriveEnabled)
 			continue;
 
+		char FileName[MAX_PATH];
 		MakeFileName(FileName, MAX_PATH, HardDrivePath, "sasi%d.dat", i);
 
 		SASIDisc[i] = fopen(FileName, "rb+");
