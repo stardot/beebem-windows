@@ -60,8 +60,8 @@ bool JoystickButton[2] = { false, false };
 
 // My raw VIA state
 VIAState SysVIAState;
-static char WECycles = 0;
-static char WEState = 0;
+// static char WECycles = 0;
+// static char WEState = 0;
 
 // Last value written to the slow data bus - sound reads it later
 static unsigned char SlowDataBusWriteValue = 0;
