@@ -65,7 +65,7 @@ INT_PTR CALLBACK Dialog::sDlgProc(HWND   hwnd,
 		dialog = reinterpret_cast<Dialog*>(lParam);
 		dialog->m_hwnd = hwnd;
 
-		dialog->CenterDialog();
+		CenterDialog(dialog->m_hwndParent, hwnd);
 	}
 	else
 	{
@@ -135,16 +135,16 @@ void Dialog::EnableDlgItem(int nID, bool bEnable)
 
 /****************************************************************************/
 
-void Dialog::CenterDialog()
+void CenterDialog(HWND hWndParent, HWND hWnd)
 {
-	RECT rcOwner;
-	GetWindowRect(m_hwndParent, &rcOwner);
+	RECT rcParent;
+	GetWindowRect(hWndParent, &rcParent);
 
 	RECT rcDialog;
-	GetWindowRect(m_hwnd, &rcDialog);
+	GetWindowRect(hWnd, &rcDialog);
 
 	RECT rc;
-	CopyRect(&rc, &rcOwner);
+	CopyRect(&rc, &rcParent);
 
 	// Offset the owner and dialog box rectangles so that right and bottom
 	// values represent the width and height, and then offset the owner again
@@ -157,10 +157,12 @@ void Dialog::CenterDialog()
 	// The new position is the sum of half the remaining space and the owner's
 	// original position.
 
-	SetWindowPos(m_hwnd,
+	SetWindowPos(hWnd,
 	             HWND_TOP,
-	             rcOwner.left + (rc.right / 2),
-	             rcOwner.top + (rc.bottom / 2),
+	             rcParent.left + (rc.right / 2),
+	             rcParent.top + (rc.bottom / 2),
 	             0, 0, // Ignores size arguments.
 	             SWP_NOSIZE);
 }
+
+/****************************************************************************/

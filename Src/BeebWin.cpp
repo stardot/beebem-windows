@@ -5856,6 +5856,9 @@ void BeebWin::OpenDebugWindow()
 
 /****************************************************************************/
 
+static HHOOK hCBTHook = nullptr;
+static LRESULT CALLBACK CBTMessageBox(int Message, WPARAM wParam, LPARAM lParam);
+
 MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 {
 	va_list args;
@@ -5906,7 +5909,12 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 				Type = MB_ICONWARNING | MB_OKCANCEL;
 		}
 
+		hCBTHook = SetWindowsHookEx(WH_CBT, CBTMessageBox, nullptr, GetCurrentThreadId());
+
 		int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
+
+		UnhookWindowsHookEx(hCBTHook);
+		hCBTHook = nullptr;
 
 		if (type == MessageType::Question)
 		{
@@ -5935,6 +5943,20 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 	}
 
 	return Result;
+}
+
+/****************************************************************************/
+
+LRESULT CALLBACK CBTMessageBox(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	if (nCode == HCBT_ACTIVATE)
+	{
+		HWND hWnd = (HWND)wParam;
+
+		CenterDialog(mainWin->GethWnd(), hWnd);
+	}
+
+	return CallNextHookEx(hCBTHook, nCode, wParam, lParam);
 }
 
 /****************************************************************************/

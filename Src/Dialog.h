@@ -57,14 +57,13 @@ class Dialog
 		void SetDlgItemFocus(int nID);
 		void EnableDlgItem(int nID, bool bEnable);
 
-	private:
-		void CenterDialog();
-
 	protected:
 		HINSTANCE m_hInstance;
 		HWND m_hwndParent;
 		int m_DialogID;
 		HWND m_hwnd;
 };
+
+void CenterDialog(HWND hWndParent, HWND hWnd);
 
 #endif
