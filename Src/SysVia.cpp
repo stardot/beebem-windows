@@ -617,7 +617,7 @@ unsigned char SysVIARead(int Address)
 
 			#if ENABLE_SPEECH
 
-			if (MachineType == Model::Master128 || !SpeechDefault)
+			if (!SpeechStarted)
 			{
 				tmp |= 0xc0; // Speech system non existant
 			}

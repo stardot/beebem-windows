@@ -437,6 +437,10 @@ public:
 	void SetSoundVolume(int Volume);
 	void UpdateSoundVolumeMenu();
 
+	#if ENABLE_SPEECH
+	void EnableSpeech(bool Enable);
+	#endif
+
 	void CheckMenuItem(UINT id, bool Checked);
 	void CheckMenuRadioItem(UINT FirstID, UINT LastID, UINT SelectedID);
 	void EnableMenuItem(UINT id, bool Enabled);

@@ -23,7 +23,7 @@ Boston, MA  02110-1301, USA.
 
 #if ENABLE_SPEECH
 
-void SpeechInit();
+bool SpeechInit();
 void SpeechStart();
 void SpeechStop();
 void SpeechWrite(unsigned char Data);
@@ -34,8 +34,8 @@ bool SpeechInterrupt();
 void SpeechUpdate(unsigned char *buff, int length);
 void SpeechPoll(int Cycles);
 
-extern bool SpeechDefault;
 extern bool SpeechEnabled;
+extern bool SpeechStarted;
 
 #endif
 

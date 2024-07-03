@@ -349,7 +349,7 @@ void BeebWin::LoadHardwarePreferences()
 
 	#if ENABLE_SPEECH
 
-	m_Preferences.GetBoolValue(CFG_SPEECH_ENABLED, SpeechDefault, false);
+	m_Preferences.GetBoolValue(CFG_SPEECH_ENABLED, SpeechEnabled, false);
 
 	#endif
 
@@ -1618,7 +1618,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.EraseValue(CFG_BASIC_HARDWARE_ONLY_OLD);
 
 		#if ENABLE_SPEECH
-		m_Preferences.SetBoolValue(CFG_SPEECH_ENABLED, SpeechDefault);
+		m_Preferences.SetBoolValue(CFG_SPEECH_ENABLED, SpeechEnabled);
 		#else
 		m_Preferences.SetBoolValue(CFG_SPEECH_ENABLED, false);
 		#endif

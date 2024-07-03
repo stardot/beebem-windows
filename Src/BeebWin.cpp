@@ -703,15 +703,32 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 
 	#if ENABLE_SPEECH
 
-	if (SpeechDefault)
+	SpeechStop();
+
+	if (NewModelType == Model::Master128 || NewModelType == Model::MasterET)
 	{
-		if (LoadRoms)
+		SpeechEnabled = false;
+		CheckMenuItem(IDM_SPEECH, false);
+		EnableMenuItem(IDM_SPEECH, false);
+	}
+	else
+	{
+		EnableMenuItem(IDM_SPEECH, true);
+
+		if (SpeechEnabled)
 		{
-			SpeechInit();
+			if (LoadRoms)
+			{
+				SpeechEnabled = SpeechInit();
+			}
+
+			if (SpeechEnabled)
+			{
+				SpeechStart();
+			}
 		}
 
-		SpeechStop();
-		SpeechStart();
+		CheckMenuItem(IDM_SPEECH, SpeechEnabled);
 	}
 
 	#endif
@@ -934,7 +951,7 @@ void BeebWin::Break()
 
 	#if ENABLE_SPEECH
 
-	if (SpeechDefault)
+	if (SpeechEnabled)
 	{
 		SpeechStop();
 		SpeechStart();
@@ -1362,7 +1379,7 @@ void BeebWin::InitMenu(void)
 	SetSoundMenu();
 
 	#if ENABLE_SPEECH
-	CheckMenuItem(IDM_SPEECH, SpeechDefault);
+	CheckMenuItem(IDM_SPEECH, SpeechEnabled);
 	#else
 	RemoveMenu(m_hMenu, IDM_SPEECH, MF_BYCOMMAND);
 	#endif
@@ -1481,7 +1498,7 @@ void BeebWin::SetSoundStreamer(SoundStreamerType StreamerType)
 
 	#if ENABLE_SPEECH
 
-	if (SpeechDefault)
+	if (SpeechEnabled)
 	{
 		SpeechStop();
 		SpeechStart();
@@ -1519,7 +1536,7 @@ void BeebWin::SetSoundSampleRate(unsigned int SampleRate)
 
 		#if ENABLE_SPEECH
 
-		if (SpeechDefault)
+		if (SpeechEnabled)
 		{
 			SpeechStop();
 			SpeechStart();
@@ -1587,6 +1604,34 @@ void BeebWin::UpdateSoundVolumeMenu()
 
 	CheckMenuRadioItem(IDM_FULLVOLUME, IDM_LOWVOLUME, SelectedMenuItemID);
 }
+
+/****************************************************************************/
+
+#if ENABLE_SPEECH
+
+void BeebWin::EnableSpeech(bool Enable)
+{
+	if (Enable)
+	{
+		bool Success = SpeechInit();
+
+		if (Success)
+		{
+			SpeechStart();
+		}
+
+		SpeechEnabled = Success;
+	}
+	else
+	{
+		SpeechStop();
+		SpeechEnabled = false;
+	}
+
+	CheckMenuItem(IDM_SPEECH, SpeechEnabled);
+}
+
+#endif
 
 /****************************************************************************/
 
@@ -4607,23 +4652,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 	#if ENABLE_SPEECH
 
 	case IDM_SPEECH:
-		if (SpeechDefault)
-		{
-			CheckMenuItem(IDM_SPEECH, false);
-			SpeechStop();
-			SpeechDefault = false;
-		}
-		else
-		{
-			SpeechInit();
-			SpeechStart();
-
-			if (SpeechEnabled)
-			{
-				CheckMenuItem(IDM_SPEECH, true);
-				SpeechDefault = true;
-			}
-		}
+		EnableSpeech(!SpeechEnabled);
 		break;
 
 	#endif
@@ -5517,6 +5546,7 @@ bool BeebWin::RebootSystem()
 }
 
 /****************************************************************************/
+
 bool BeebWin::CheckUserDataPath(bool Persist)
 {
 	bool success = true;
@@ -5713,9 +5743,10 @@ void BeebWin::SelectUserDataPath()
 		m_UserDataPath
 	);
 
-	FolderSelectDialog::Result result = Dialog.DoModal();
+	FolderSelectDialog::Result Result = Dialog.DoModal();
 
-	switch (result) {
+	switch (Result)
+	{
 		case FolderSelectDialog::Result::OK:
 			PathBackup = m_UserDataPath;
 			strcpy(m_UserDataPath, Dialog.GetFolder().c_str());

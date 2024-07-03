@@ -302,8 +302,8 @@ class TMS5220StreamState
 
 /*----------------------------------------------------------------------------*/
 
-bool SpeechDefault;
 bool SpeechEnabled;
+bool SpeechStarted;
 
 static TMS5220StreamState *tms5220;
 static unsigned char phrom_rom[16][16384];
@@ -1388,21 +1388,23 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 
 /*----------------------------------------------------------------------------*/
 
-void SpeechInit()
+bool SpeechInit()
 {
 	// Read all ROM files in the BeebFile directory
 	// This section rewritten for V.1.32 to take account of roms.cfg file.
-	char Path[256];
+	char Path[MAX_PATH];
 	strcpy(Path, mainWin->GetUserDataPath());
 	strcat(Path, "Phroms.cfg");
 
-	FILE *RomCfg = fopen(Path,"rt");
+	FILE *RomCfg = fopen(Path, "rt");
 
 	if (RomCfg == nullptr)
 	{
 		mainWin->Report(MessageType::Error, "Cannot open PHROM configuration file:\n  %s", Path);
-		return;
+		return false;
 	}
+
+	bool Success = true;
 
 	// Read phroms
 	for (int romslot = 15; romslot >= 0; romslot--)
@@ -1413,13 +1415,13 @@ void SpeechInit()
 		if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
 		if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
 
-		char PhromPath[256];
+		char PhromPath[MAX_PATH];
 		strcpy(PhromPath, RomName);
 
 		if (RomName[0] != '\\' && RomName[1] != ':')
 		{
 			strcpy(PhromPath, mainWin->GetUserDataPath());
-			strcat(PhromPath, "Phroms/");
+			strcat(PhromPath, "Phroms\\");
 			strcat(PhromPath, RomName);
 		}
 
@@ -1434,12 +1436,15 @@ void SpeechInit()
 			}
 			else
 			{
-				mainWin->Report(MessageType::Error, "Cannot open specified PHROM:\n  %s", PhromPath);
+				mainWin->Report(MessageType::Error, "Cannot open specified PHROM:\n\n%s", PhromPath);
+				Success = false;
 			}
 		}
 	}
 
 	fclose(RomCfg);
+
+	return Success;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1459,7 +1464,7 @@ void SpeechStart()
 		return;
 	}
 
-	SpeechEnabled = true;
+	SpeechStarted = true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1474,7 +1479,7 @@ void SpeechStop()
 		tms5220 = nullptr;
 	}
 
-	SpeechEnabled = false;
+	SpeechStarted = false;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1483,7 +1488,7 @@ void SpeechStop()
 
 void SpeechWrite(unsigned char Data)
 {
-	if (SpeechEnabled && tms5220 != nullptr)
+	if (SpeechStarted)
 	{
 		tms5220->chip.WriteData(Data);
 	}
@@ -1493,7 +1498,7 @@ void SpeechWrite(unsigned char Data)
 
 void SpeechReadEnable()
 {
-	if (SpeechEnabled && tms5220 != nullptr)
+	if (SpeechStarted)
 	{
 		tms5220->chip.ReadEnable();
 	}
@@ -1505,7 +1510,7 @@ void SpeechReadEnable()
 
 unsigned char SpeechRead()
 {
-	if (SpeechEnabled && tms5220 != nullptr)
+	if (SpeechStarted)
 	{
 		unsigned char Value = tms5220->chip.ReadStatus();
 
@@ -1527,7 +1532,7 @@ unsigned char SpeechRead()
 
 bool SpeechReady()
 {
-	if (SpeechEnabled && tms5220 != nullptr)
+	if (SpeechStarted)
 	{
 		return tms5220->chip.ReadReady();
 	}
@@ -1543,7 +1548,7 @@ bool SpeechReady()
 
 bool SpeechInterrupt()
 {
-	if (SpeechEnabled && tms5220 != nullptr)
+	if (SpeechStarted)
 	{
 		return tms5220->chip.ReadInt();
 	}
@@ -1557,7 +1562,7 @@ bool SpeechInterrupt()
 
 void SpeechUpdate(unsigned char *buff, int length)
 {
-	if (SpeechEnabled && tms5220 != nullptr)
+	if (SpeechStarted)
 	{
 		tms5220->Update(buff, length);
 	}
@@ -1567,7 +1572,7 @@ void SpeechUpdate(unsigned char *buff, int length)
 
 void SpeechPoll(int Cycles)
 {
-	if (tms5220 != nullptr)
+	if (SpeechStarted)
 	{
 		tms5220->chip.Poll(Cycles);
 	}
