@@ -114,8 +114,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
 	mainWin->Shutdown();
 
-	mainWin->KillDLLs();
-
 	CloseLog();
 
 	SerialClose();

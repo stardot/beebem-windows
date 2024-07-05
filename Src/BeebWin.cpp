@@ -678,6 +678,9 @@ void BeebWin::Shutdown()
 	DestroySprowCoPro();
 
 	TubeType = TubeDevice::None;
+
+	// Release FDC DLL.
+	Ext1770Reset();
 }
 
 /****************************************************************************/
@@ -4450,7 +4453,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_8271:
-		KillDLLs();
+		Ext1770Reset();
 		NativeFDC = true;
 
 		CheckMenuItem(IDM_8271, true);

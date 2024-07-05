@@ -268,7 +268,6 @@ public:
 	void UpdateTubeMenu();
 	void SelectFDC();
 	void LoadFDC(char *DLLName, bool save);
-	void KillDLLs(void);
 	void UpdateLEDMenu();
 	void SetDriveControl(unsigned char value);
 	unsigned char GetDriveControl(void);
