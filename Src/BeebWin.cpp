@@ -653,6 +653,7 @@ void BeebWin::Shutdown()
 		SoundReset();
 
 	Music5000Reset();
+	Music5000Enabled = false;
 
 	CloseTextToSpeech();
 	CloseTextView();
@@ -2500,8 +2501,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			AMXButtons &= ~AMX_RIGHT_BUTTON;
 			break;
 
-		case WM_DESTROY:  // message: window being destroyed
-			Shutdown();
+		case WM_DESTROY: // Main window being destroyed
 			PostQuitMessage(0);
 			break;
 

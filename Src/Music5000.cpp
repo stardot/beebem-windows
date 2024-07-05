@@ -88,7 +88,7 @@ static const INT StereoRight[16] = { 100,100,100,100,100,100,100,100,  0,  0,  0
 // 6MHz clock, 128 cycles to update all channels
 static UINT CycleCount = 0;
 
-static INT16 *SampleBuf = NULL;
+static INT16 *SampleBuf = nullptr;
 static UINT32 SampleBufSize = 0;
 static UINT32 SampleWritePtr = 0;
 
@@ -97,7 +97,7 @@ static UINT ActiveRegSet;
 static INT SampleLeft;
 static INT SampleRight;
 
-static SoundStreamer *pSoundStreamer = NULL;
+static SoundStreamer *pSoundStreamer = nullptr;
 
 void Music5000Init()
 {
@@ -142,7 +142,7 @@ void Music5000Init()
 		if (SampleBuf)
 			free(SampleBuf);
 		SampleBuf = (INT16*)malloc(SampleBufSize * 4);
-		if (SampleBuf == NULL)
+		if (SampleBuf == nullptr)
 		{
 			Music5000Enabled = false;
 		}
@@ -152,7 +152,7 @@ void Music5000Init()
 void Music5000Reset()
 {
 	delete pSoundStreamer;
-	pSoundStreamer = NULL;
+	pSoundStreamer = nullptr;
 	JimPageSelectRegister = 0;
 }
 

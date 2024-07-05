@@ -75,7 +75,10 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 			                NULL,   // handle of window receiving the message
 			                0,      // lowest message to examine
 			                0))
-				break; // Quit the app on WM_QUIT
+			{
+				// Quit the app on WM_QUIT
+				break;
+			}
 
 			if (hCurrentDialog != nullptr && hCurrentAccelTable != nullptr)
 			{
@@ -108,6 +111,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 			Exec6502Instruction();
 		}
 	}
+
+	mainWin->Shutdown();
 
 	mainWin->KillDLLs();
 
