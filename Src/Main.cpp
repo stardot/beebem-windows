@@ -112,8 +112,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 		}
 	}
 
-	mainWin->Shutdown();
-
 	CloseLog();
 
 	SerialClose();

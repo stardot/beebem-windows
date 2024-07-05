@@ -641,6 +641,8 @@ BeebWin::~BeebWin()
 
 void BeebWin::Shutdown()
 {
+	m_Frozen = true;
+
 	EndVideo();
 
 	if (m_AutoSavePrefsCMOS || m_AutoSavePrefsFolders ||
@@ -2505,6 +2507,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_DESTROY: // Main window being destroyed
+			Shutdown();
 			PostQuitMessage(0);
 			break;
 
