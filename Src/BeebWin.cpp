@@ -802,6 +802,11 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	AtoDInit();
 	SetRomMenu();
 
+	if (NewModelType == Model::MasterET)
+	{
+		SetJoystickOption(JoystickOption::Disabled);
+	}
+
 	char szDiscName[2][MAX_PATH];
 	strcpy(szDiscName[0], DiscInfo[0].FileName);
 	strcpy(szDiscName[1], DiscInfo[1].FileName);
@@ -5944,6 +5949,7 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 
 			case MessageType::Confirm:
 				Type = MB_ICONWARNING | MB_OKCANCEL;
+				break;
 		}
 
 		hCBTHook = SetWindowsHookEx(WH_CBT, CBTMessageBox, nullptr, GetCurrentThreadId());
