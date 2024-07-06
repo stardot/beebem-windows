@@ -1357,11 +1357,6 @@ void BeebWin::LoadFDC(char *DLLName, bool save)
 		DisplayCycles = 0;
 }
 
-void BeebWin::KillDLLs()
-{
-	Ext1770Reset();
-}
-
 void BeebWin::SetDriveControl(unsigned char Value)
 {
 	// This takes a value from the mem/io decoder, as written by the CPU,
