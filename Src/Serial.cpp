@@ -136,9 +136,11 @@ class Win32SerialPort
 
 		bool Init(const char* PortName);
 		void Close();
-		void SetBaudRate(int BaudRate);
-		void Configure(unsigned char DataBits, unsigned char StopBits, unsigned char Parity);
-		void SetRTS(bool RTS);
+		bool SetBaudRate(int BaudRate);
+		bool Configure(unsigned char DataBits, unsigned char StopBits, unsigned char Parity);
+		bool SetRTS(bool RTS);
+
+		bool WriteChar(unsigned char Data);
 
 	public:
 		HANDLE hSerialPort; // Serial port handle
@@ -185,17 +187,20 @@ Win32SerialPort::Win32SerialPort() :
 	bWaitingForStat(false),
 	bCharReady(false)
 {
-	memset(&olSerialPort, 0, sizeof(olSerialPort));
-	memset(&olSerialWrite, 0, sizeof(olSerialWrite));
-	memset(&olStatus, 0, sizeof(olStatus));
+	ZeroMemory(&olSerialPort, sizeof(olSerialPort));
+	ZeroMemory(&olSerialWrite, sizeof(olSerialWrite));
+	ZeroMemory(&olStatus, sizeof(olStatus));
 }
 
 /*--------------------------------------------------------------------------*/
 
 bool Win32SerialPort::Init(const char* PortName)
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	sprintf(FileName, "\\\\.\\%s", PortName);
+
+	COMMTIMEOUTS CommTimeOuts{};
+	DCB dcb{}; // Serial port device control block
 
 	hSerialPort = CreateFile(FileName,
 	                         GENERIC_READ | GENERIC_WRITE,
@@ -209,43 +214,59 @@ bool Win32SerialPort::Init(const char* PortName)
 	{
 		return false;
 	}
-	else
+
+	if (!SetupComm(hSerialPort, 1024, 1024))
 	{
-		BOOL bPortStat = SetupComm(hSerialPort, 1280, 1280);
-
-		DCB dcbSerialPort{}; // Serial port device control block
-		dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
-
-		bPortStat = GetCommState(hSerialPort, &dcbSerialPort);
-
-		dcbSerialPort.fBinary         = TRUE;
-		dcbSerialPort.BaudRate        = 9600;
-		dcbSerialPort.Parity          = NOPARITY;
-		dcbSerialPort.StopBits        = ONESTOPBIT;
-		dcbSerialPort.ByteSize        = 8;
-		dcbSerialPort.fDtrControl     = DTR_CONTROL_DISABLE;
-		dcbSerialPort.fOutxCtsFlow    = FALSE;
-		dcbSerialPort.fOutxDsrFlow    = FALSE;
-		dcbSerialPort.fOutX           = FALSE;
-		dcbSerialPort.fDsrSensitivity = FALSE;
-		dcbSerialPort.fInX            = FALSE;
-		dcbSerialPort.fRtsControl     = RTS_CONTROL_DISABLE; // Leave it low (do not send) for now
-
-		bPortStat = SetCommState(hSerialPort, &dcbSerialPort);
-
-		COMMTIMEOUTS CommTimeOuts{};
-		CommTimeOuts.ReadIntervalTimeout         = MAXDWORD;
-		CommTimeOuts.ReadTotalTimeoutConstant    = 0;
-		CommTimeOuts.ReadTotalTimeoutMultiplier  = 0;
-		CommTimeOuts.WriteTotalTimeoutConstant   = 0;
-		CommTimeOuts.WriteTotalTimeoutMultiplier = 0;
-
-		SetCommTimeouts(hSerialPort, &CommTimeOuts);
-
-		SetCommMask(hSerialPort, EV_CTS | EV_RXCHAR | EV_ERR);
-
-		return true;
+		goto Fail;
 	}
+
+	dcb.DCBlength = sizeof(dcb);
+
+	if (!GetCommState(hSerialPort, &dcb))
+	{
+		goto Fail;
+	}
+
+	dcb.fBinary         = TRUE;
+	dcb.BaudRate        = 9600;
+	dcb.Parity          = NOPARITY;
+	dcb.StopBits        = ONESTOPBIT;
+	dcb.ByteSize        = 8;
+	dcb.fDtrControl     = DTR_CONTROL_DISABLE;
+	dcb.fOutxCtsFlow    = FALSE;
+	dcb.fOutxDsrFlow    = FALSE;
+	dcb.fOutX           = FALSE;
+	dcb.fDsrSensitivity = FALSE;
+	dcb.fInX            = FALSE;
+	dcb.fRtsControl     = RTS_CONTROL_DISABLE; // Leave it low (do not send) for now
+
+	if (!SetCommState(hSerialPort, &dcb))
+	{
+		goto Fail;
+	}
+
+	CommTimeOuts.ReadIntervalTimeout         = MAXDWORD;
+	CommTimeOuts.ReadTotalTimeoutConstant    = 0;
+	CommTimeOuts.ReadTotalTimeoutMultiplier  = 0;
+	CommTimeOuts.WriteTotalTimeoutConstant   = 0;
+	CommTimeOuts.WriteTotalTimeoutMultiplier = 0;
+
+	if (!SetCommTimeouts(hSerialPort, &CommTimeOuts))
+	{
+		goto Fail;
+	}
+
+	if (!SetCommMask(hSerialPort, EV_CTS | EV_RXCHAR | EV_ERR))
+	{
+		goto Fail;
+	}
+
+	return true;
+
+Fail:
+	Close();
+
+	return false;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -261,39 +282,73 @@ void Win32SerialPort::Close()
 
 /*--------------------------------------------------------------------------*/
 
-void Win32SerialPort::SetBaudRate(int BaudRate)
+bool Win32SerialPort::SetBaudRate(int BaudRate)
 {
-	DCB dcbSerialPort{}; // Serial port device control block
-	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+	DCB dcb{}; // Serial port device control block
+	dcb.DCBlength = sizeof(dcb);
 
-	GetCommState(hSerialPort, &dcbSerialPort);
-	dcbSerialPort.BaudRate  = BaudRate;
-	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
-	SetCommState(hSerialPort, &dcbSerialPort);
+	if (!GetCommState(hSerialPort, &dcb))
+	{
+		return false;
+	}
+
+	dcb.BaudRate  = BaudRate;
+	dcb.DCBlength = sizeof(dcb);
+
+	if (!SetCommState(hSerialPort, &dcb))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 /*--------------------------------------------------------------------------*/
 
-void Win32SerialPort::Configure(unsigned char DataBits, unsigned char StopBits, unsigned char Parity)
+bool Win32SerialPort::Configure(unsigned char DataBits, unsigned char StopBits, unsigned char Parity)
 {
-	DCB dcbSerialPort{}; // Serial port device control block
-	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+	DCB dcb{}; // Serial port device control block
+	dcb.DCBlength = sizeof(dcb);
 
-	GetCommState(hSerialPort, &dcbSerialPort);
+	if (!GetCommState(hSerialPort, &dcb))
+	{
+		return false;
+	}
 
-	dcbSerialPort.ByteSize  = DataBits;
-	dcbSerialPort.StopBits  = (StopBits == 1) ? ONESTOPBIT : TWOSTOPBITS;
-	dcbSerialPort.Parity    = Parity;
-	dcbSerialPort.DCBlength = sizeof(dcbSerialPort);
+	dcb.ByteSize  = DataBits;
+	dcb.StopBits  = (StopBits == 1) ? ONESTOPBIT : TWOSTOPBITS;
+	dcb.Parity    = Parity;
+	dcb.DCBlength = sizeof(dcb);
 
-	SetCommState(hSerialPort, &dcbSerialPort);
+	if (!SetCommState(hSerialPort, &dcb))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 /*--------------------------------------------------------------------------*/
 
-void Win32SerialPort::SetRTS(bool RTS)
+bool Win32SerialPort::SetRTS(bool RTS)
 {
-	EscapeCommFunction(hSerialPort, RTS ? CLRRTS : SETRTS);
+	if (!EscapeCommFunction(hSerialPort, RTS ? CLRRTS : SETRTS))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+/*--------------------------------------------------------------------------*/
+
+bool Win32SerialPort::WriteChar(unsigned char Data)
+{
+	SerialWriteBuffer = Data;
+
+	WriteFile(hSerialPort, &SerialWriteBuffer, 1, &BytesOut, &olSerialWrite);
+
+	return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -429,9 +484,7 @@ static void HandleTXData(unsigned char Data)
 		}
 		else
 		{
-			SerialPort.SerialWriteBuffer = SerialACIA.TDSR;
-
-			WriteFile(SerialPort.hSerialPort, &SerialPort.SerialWriteBuffer, 1, &SerialPort.BytesOut, &SerialPort.olSerialWrite);
+			SerialPort.WriteChar(SerialACIA.TDSR);
 		}
 
 		//WriteLog("Serial: TX TDR=%02X, TDSR=%02x TxD=%d Status=%02x Tx_Rate=%d\n", TDR, TDSR, TxD, SerialACIA.Status, Tx_Rate);
