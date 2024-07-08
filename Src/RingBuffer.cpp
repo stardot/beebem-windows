@@ -24,9 +24,18 @@ Boston, MA  02110-1301, USA.
 
 /*****************************************************************************/
 
-RingBuffer::RingBuffer()
+RingBuffer::RingBuffer(int Size) :
+	m_pBuffer(new unsigned char[Size]),
+	m_Size(Size)
 {
 	Reset();
+}
+
+/*****************************************************************************/
+
+RingBuffer::~RingBuffer()
+{
+	delete [] m_pBuffer;
 }
 
 /*****************************************************************************/
@@ -51,8 +60,8 @@ unsigned char RingBuffer::GetData()
 {
 	assert(m_Length > 0);
 
-	unsigned char Data = m_Buffer[m_Head];
-	m_Head = (m_Head + 1) % BUFFER_SIZE;
+	unsigned char Data = m_pBuffer[m_Head];
+	m_Head = (m_Head + 1) % m_Size;
 	m_Length--;
 
 	return Data;
@@ -62,10 +71,10 @@ unsigned char RingBuffer::GetData()
 
 bool RingBuffer::PutData(unsigned char Data)
 {
-	if (m_Length != BUFFER_SIZE)
+	if (m_Length != m_Size)
 	{
-		m_Buffer[m_Tail] = Data;
-		m_Tail = (m_Tail + 1) % BUFFER_SIZE;
+		m_pBuffer[m_Tail] = Data;
+		m_Tail = (m_Tail + 1) % m_Size;
 		m_Length++;
 		return true;
 	}
@@ -77,7 +86,7 @@ bool RingBuffer::PutData(unsigned char Data)
 
 int RingBuffer::GetSpace() const
 {
-	return BUFFER_SIZE - m_Length;
+	return m_Size - m_Length;
 }
 
 /*****************************************************************************/

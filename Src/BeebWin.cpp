@@ -661,6 +661,8 @@ void BeebWin::Shutdown()
 	CloseTextView();
 
 	IP232Close();
+	SerialClose();
+	CloseTape();
 
 	WSACleanup();
 
@@ -3519,18 +3521,27 @@ void BeebWin::ToggleSerial()
 
 	SerialPortEnabled = !SerialPortEnabled;
 
-	if (SerialPortEnabled && SerialDestination == SerialType::IP232)
+	if (SerialPortEnabled)
 	{
-		if (!IP232Open())
+		if (SerialDestination == SerialType::IP232)
 		{
-			SerialPortEnabled = false;
-			UpdateSerialMenu();
+			if (!IP232Open())
+			{
+				SerialPortEnabled = false;
+				UpdateSerialMenu();
+			}
 		}
-	}
+		else if (SerialDestination == SerialType::SerialPort)
+		{
+			if (!SerialInit(m_SerialPort.c_str()))
+			{
+				Report(MessageType::Error,
+				       "Could not open serial port %s", m_SerialPort.c_str());
 
-	if (SerialDestination == SerialType::SerialPort)
-	{
-		bSerialStateChanged = true;
+				SerialPortEnabled = false;
+				UpdateSerialMenu();
+			}
+		}
 	}
 
 	UpdateSerialMenu();
@@ -3541,7 +3552,7 @@ void BeebWin::ConfigureSerial()
 	SerialPortDialog Dialog(hInst,
 	                        m_hWnd,
 	                        SerialDestination,
-	                        SerialPortName,
+	                        m_SerialPort.c_str(),
 	                        IP232Address,
 	                        IP232Port,
 	                        IP232Raw,
@@ -3557,7 +3568,7 @@ void BeebWin::ConfigureSerial()
 
 		if (SerialDestination == SerialType::SerialPort)
 		{
-			SelectSerialPort(Dialog.GetSerialPortName().c_str());
+			m_SerialPort = Dialog.GetSerialPortName();
 		}
 		else if (SerialDestination == SerialType::IP232)
 		{
@@ -3571,7 +3582,13 @@ void BeebWin::ConfigureSerial()
 		{
 			if (SerialDestination == SerialType::SerialPort)
 			{
-				SerialPortEnabled = true;
+				SerialPortEnabled = SerialInit(m_SerialPort.c_str());
+
+				if (!SerialPortEnabled)
+				{
+					Report(MessageType::Error,
+					       "Could not open serial port %s", m_SerialPort.c_str());
+				}
 			}
 			else if (SerialDestination == SerialType::TouchScreen)
 			{
@@ -3598,11 +3615,11 @@ void BeebWin::ConfigureSerial()
 
 void BeebWin::DisableSerial()
 {
-	/* if (SerialDestination == SerialType::SerialPort)
+	if (SerialDestination == SerialType::SerialPort)
 	{
 		SerialClose();
-	} */
-	if (SerialDestination == SerialType::TouchScreen)
+	}
+	else if (SerialDestination == SerialType::TouchScreen)
 	{
 		TouchScreenClose();
 	}
@@ -3610,16 +3627,6 @@ void BeebWin::DisableSerial()
 	{
 		IP232Close();
 	}
-}
-
-void BeebWin::SelectSerialPort(const char* PortName)
-{
-	// DisableSerial();
-	strcpy(SerialPortName, PortName);
-	SerialDestination = SerialType::SerialPort;
-	bSerialStateChanged = true;
-
-	UpdateSerialMenu();
 }
 
 void BeebWin::UpdateSerialMenu()

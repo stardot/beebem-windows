@@ -252,9 +252,9 @@ public:
 	void Shutdown();
 
 	static LRESULT CALLBACK WndProc(HWND hWnd,
-	                                  UINT nMessage,
-	                                  WPARAM wParam,
-	                                  LPARAM lParam);
+	                                UINT nMessage,
+	                                WPARAM wParam,
+	                                LPARAM lParam);
 
 	LRESULT WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam);
 
@@ -413,7 +413,6 @@ public:
 	void ToggleSerial();
 	void DisableSerial();
 	void ConfigureSerial();
-	void SelectSerialPort(const char *PortName);
 	void UpdateSerialMenu();
 	void OnIP232Error(int Error);
 
@@ -768,6 +767,9 @@ public:
 	PrinterPortType m_PrinterPort;
 	std::string m_PrinterFileName;
 	std::string m_PrinterDevice;
+
+	// Serial
+	std::string m_SerialPort;
 
 	// Command line
 	char m_CommandLineFileName1[_MAX_PATH];

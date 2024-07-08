@@ -98,9 +98,8 @@ void SerialULAWrite(unsigned char Value);
 unsigned char SerialULARead();
 
 extern bool SerialPortEnabled;
-extern char SerialPortName[_MAX_PATH];
 
-void SerialInit();
+bool SerialInit(const char* PortName);
 void SerialReset();
 void SerialPoll(int Cycles);
 void SerialClose();
@@ -108,8 +107,6 @@ UEFResult LoadUEFTape(const char *FileName);
 CSWResult LoadCSWTape(const char *FileName);
 void CloseTape();
 void RewindTape();
-
-extern volatile bool bSerialStateChanged;
 
 struct TapeStateType
 {
@@ -136,7 +133,7 @@ void SerialStopTapeRecording(bool ReloadTape);
 void SerialEjectTape();
 int SerialGetTapeClock();
 
-extern char TapeFileName[256];
+extern char TapeFileName[MAX_PATH];
 
 enum class SerialTapeState
 {

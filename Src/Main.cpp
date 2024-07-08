@@ -34,13 +34,16 @@ Boston, MA  02110-1301, USA.
 #include "BeebWin.h"
 #include "Log.h"
 #include "SelectKeyDialog.h"
-#include "Serial.h"
+
+/****************************************************************************/
 
 Model MachineType;
 BeebWin *mainWin = nullptr;
 HINSTANCE hInst;
 HWND hCurrentDialog = nullptr;
 HACCEL hCurrentAccelTable = nullptr;
+
+/****************************************************************************/
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
                      LPSTR /* lpszCmdLine */, int /* nCmdShow */)
@@ -61,9 +64,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 	}
 
 	OpenLog();
-
-	// Create serial threads
-	SerialInit();
 
 	for (;;)
 	{
@@ -107,16 +107,17 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 			}
 		}
 
-		if (!mainWin->IsFrozen() && !mainWin->IsPaused()) {
+		if (!mainWin->IsFrozen() && !mainWin->IsPaused())
+		{
 			Exec6502Instruction();
 		}
 	}
 
 	CloseLog();
 
-	SerialClose();
-
 	delete mainWin;
 
 	return 0;
 }
+
+/****************************************************************************/

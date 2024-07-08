@@ -70,15 +70,13 @@ int IP232Port;
 
 static bool IP232FlagReceived = false;
 
-static bool IP232RTS = false;
-
 // IP232 routines use InputBuffer as data coming in from the modem,
 // and OutputBuffer for data to be sent out to the modem.
 // StatusBuffer is used for changes to the serial ACIA status
 // registers
-static RingBuffer InputBuffer;
-static RingBuffer OutputBuffer;
-static RingBuffer StatusBuffer;
+static RingBuffer InputBuffer(1024);
+static RingBuffer OutputBuffer(1024);
+static RingBuffer StatusBuffer(128);
 
 CycleCountT IP232RxTrigger = CycleCountTMax;
 
@@ -284,17 +282,12 @@ unsigned char IP232ReadStatus()
 
 void IP232SetRTS(bool RTS)
 {
-	if (RTS != IP232RTS)
+	DebugTrace("IP232SetRTS: RTS=%d\n", (int)RTS);
+
+	if (IP232Handshake)
 	{
-		DebugTrace("IP232SetRTS: RTS=%d\n", (int)RTS);
-
-		if (IP232Handshake)
-		{
-			IP232Write(255);
-			IP232Write(static_cast<unsigned char>(RTS));
-		}
-
-		IP232RTS = RTS;
+		IP232Write(255);
+		IP232Write(static_cast<unsigned char>(RTS));
 	}
 }
 

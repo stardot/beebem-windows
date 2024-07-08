@@ -1085,23 +1085,26 @@ void BeebWin::LoadTapePreferences(int Version)
 
 void BeebWin::LoadSerialPortPreferences(int Version)
 {
-	if (m_Preferences.GetStringValue(CFG_SERIAL_PORT, SerialPortName))
+	if (m_Preferences.GetStringValue(CFG_SERIAL_PORT, m_SerialPort))
 	{
 		// For backwards compatibility with Preferences.cfg files from
 		// BeebEm 4.18 and earlier, which stored the port number as a
 		// binary value
-		if (strlen(SerialPortName) == 2 &&
-		    isxdigit(SerialPortName[0]) &&
-		    isxdigit(SerialPortName[1]))
+		if (m_SerialPort.size() == 2 &&
+		    isxdigit(m_SerialPort[0]) &&
+		    isxdigit(m_SerialPort[1]))
 		{
 			int Port;
-			sscanf(SerialPortName, "%x", &Port);
-			sprintf(SerialPortName, "COM%d", Port);
+			sscanf(m_SerialPort.c_str(), "%x", &Port);
+
+			char PortName[20];
+			sprintf(PortName, "COM%d", Port);
+			m_SerialPort = PortName;
 		}
 	}
 	else
 	{
-		strcpy(SerialPortName, "COM2");
+		m_SerialPort = "COM2";
 	}
 
 	m_Preferences.GetBoolValue(CFG_SERIAL_PORT_ENABLED, SerialPortEnabled, false);
@@ -1719,7 +1722,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBoolValue(CFG_UNLOCK_TAPE, TapeState.Unlock);
 
 		// Serial port
-		m_Preferences.SetStringValue(CFG_SERIAL_PORT, SerialPortName);
+		m_Preferences.SetStringValue(CFG_SERIAL_PORT, m_SerialPort);
 		m_Preferences.SetBoolValue(CFG_SERIAL_PORT_ENABLED, SerialPortEnabled);
 		m_Preferences.SetBoolValue(CFG_TOUCH_SCREEN_ENABLED, SerialDestination == SerialType::TouchScreen);
 		m_Preferences.SetBoolValue(CFG_IP232_ENABLED, SerialDestination == SerialType::IP232);

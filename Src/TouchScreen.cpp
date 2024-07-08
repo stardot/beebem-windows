@@ -36,8 +36,8 @@ static int TouchScreenDelay;
 // Note: Touchscreen routines use InputBuffer for data into the
 // touchscreen and OutputBuffer as data from the touchscreen.
 
-static RingBuffer InputBuffer;
-static RingBuffer OutputBuffer;
+static RingBuffer InputBuffer(1024);
+static RingBuffer OutputBuffer(1024);
 
 /*--------------------------------------------------------------------------*/
 

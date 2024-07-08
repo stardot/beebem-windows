@@ -24,9 +24,10 @@ Boston, MA  02110-1301, USA.
 class RingBuffer
 {
 	public:
-		RingBuffer();
+		explicit RingBuffer(int Size);
 		RingBuffer(const RingBuffer&) = delete;
 		RingBuffer& operator=(const RingBuffer&) = delete;
+		~RingBuffer();
 
 	public:
 		void Reset();
@@ -37,8 +38,8 @@ class RingBuffer
 		int GetLength() const;
 
 	private:
-		static const int BUFFER_SIZE = 10240;
-		unsigned char m_Buffer[BUFFER_SIZE];
+		unsigned char* m_pBuffer;
+		int m_Size;
 		int m_Head;
 		int m_Tail;
 		int m_Length;
