@@ -2281,11 +2281,11 @@ static bool DriveHeadMotorUpdate()
 
 		if (FDCState.DriveHeadPosition[Drive] < FDCState.FSDPhysicalTrack[Drive])
 		{
-			FDCState.DriveHeadPosition[Drive] += Tracks;
+			FDCState.DriveHeadPosition[Drive] = (unsigned char)(FDCState.DriveHeadPosition[Drive] + Tracks);
 		}
 		else
 		{
-			FDCState.DriveHeadPosition[Drive] -= Tracks;
+			FDCState.DriveHeadPosition[Drive] = (unsigned char)(FDCState.DriveHeadPosition[Drive] - Tracks);
 		}
 
 		return true;

@@ -12,8 +12,8 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public 
-License along with this program; if not, write to the Free 
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the Free
 Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
@@ -153,7 +153,7 @@ bool dfs_get_catalogue(const char *szDiscFile,
 				dfsCat->numFiles   = buffer[DFS_SECTOR_SIZE + 5] / 8;
 				dfsCat->numSectors = ((buffer[DFS_SECTOR_SIZE + 6] & 3) << 8) + buffer[DFS_SECTOR_SIZE + 7];
 				dfsCat->bootOpts   = (buffer[DFS_SECTOR_SIZE + 6] >> 4) & 3;
-			
+
 				// Read first 31 files
 				dfs_get_files_from_cat(buffer, buffer + DFS_SECTOR_SIZE, dfsCat->numFiles, dfsCat->fileAttrs);
 
@@ -371,7 +371,7 @@ bool dfs_import_file(const char *szDiscFile,
 	}
 
 	// Build file names
-	char filename[_MAX_PATH];
+	char filename[MAX_PATH];
 
 	strcpy(filename, szImportFolder);
 	strcat(filename, "/");
@@ -622,13 +622,13 @@ bool dfs_import_file(const char *szDiscFile,
 
 				// Update catalogue sectors
 				n = (dfsCat->numFiles > 31) ? 31 : dfsCat->numFiles;
-				buffer[DFS_SECTOR_SIZE + 5] = n * 8;
+				buffer[DFS_SECTOR_SIZE + 5] = (unsigned char)(n * 8);
 				dfs_write_files_to_cat(buffer, buffer + DFS_SECTOR_SIZE, n, attrs);
 
 				if (dfsCat->watford62)
 				{
 					n = (dfsCat->numFiles > 31) ? dfsCat->numFiles - 31 : 0;
-					buffer[DFS_SECTOR_SIZE * 3 + 5] = n * 8;
+					buffer[DFS_SECTOR_SIZE * 3 + 5] = (unsigned char)(n * 8);
 					dfs_write_files_to_cat(buffer + DFS_SECTOR_SIZE * 2, buffer + DFS_SECTOR_SIZE * 3,
 					                       n, &attrs[31]);
 				}

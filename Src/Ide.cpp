@@ -131,7 +131,7 @@ void IDEWrite(int Address, unsigned char Value)
 
 unsigned char IDERead(int Address)
 {
-	unsigned char data = 0xff;
+	unsigned char Data = 0xff;
 
 	switch (Address)
 	{
@@ -152,31 +152,36 @@ unsigned char IDERead(int Address)
 			// If in data read cycle, read data byte from file
 			if (IDEData > 0)
 			{
-				data = fgetc(IDEDisc[IDEDrive]);
-				IDEData--;
+				int Value = fgetc(IDEDisc[IDEDrive]);
 
-				// If read all data, reset Data Ready
-				if (IDEData == 0)
+				if (Value != EOF)
 				{
-					IDEStatus &= ~0x08;
+					Data = (unsigned char)Value;
+					IDEData--;
+
+					// If read all data, reset Data Ready
+					if (IDEData == 0)
+					{
+						IDEStatus &= ~0x08;
+					}
 				}
 			}
 			break;
 
 		case 0x01: // Error
-			data = IDEError;
+			Data = IDEError;
 			break;
 
 		case 0x07: // Status
-			data = IDEStatus;
+			Data = IDEStatus;
 			break;
 
 		default: // Other registers
-			data = IDERegs[Address];
+			Data = IDERegs[Address];
 			break;
 	}
 
-	return data;
+	return Data;
 }
 
 void IDEClose()

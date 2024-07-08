@@ -568,10 +568,16 @@ void Poll1770(int NCycles) {
 				// If reading multiple sectors, and ByteCount== :-
 				// 256..2: read + DRQ (255x)
 				//      1: read + DRQ + rotate disc + go back to 256
-				if (ByteCount > 0 && !feof(CurrentDisc)) {
-					Data = fgetc(CurrentDisc);
-					Status |= WD1770_STATUS_DATA_REQUEST;
-					NMIStatus |= 1 << nmi_floppy;
+				if (ByteCount > 0 && !feof(CurrentDisc))
+				{
+					int Value = fgetc(CurrentDisc);
+
+					if (Value != EOF)
+					{
+						Data = (unsigned char)Value;
+						Status |= WD1770_STATUS_DATA_REQUEST;
+						NMIStatus |= 1 << nmi_floppy;
+					}
 				}
 
 				if (ByteCount == 0 || (ByteCount == 1 && MultiSect)) {
