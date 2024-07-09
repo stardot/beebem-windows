@@ -60,14 +60,41 @@
         <img src="rs423.png" alt="BeebEm RS423 dialog box" width="331" height="292">
       </figure>
 
+      <h2>Serial Port</h2>
+
+      <p>
+        When the <span class="ui">Serial Port</span> option is selected, BeebEm
+        will use one of the host PC's serial ports. Enter the port name, e.g.,
+        <span class="ui">COM1</span> into the <span class="ui">Port</span> field.
+      </p>
+
+      <h2>Microvitec Touchtech 501</h2>
+
+      <p>
+        When the <span class="ui">Microvitec Touch Screen</span> option is
+        selected, together with the <span class="ui">Options &rarr; Analogue
+        Mousestick</span> option, mouse input in the BeebEm window is translated
+        into touch screen input. Software for the Microvitec Touchtech 501
+        can be downloaded from
+        <a href="https://www.retro-kit.co.uk/page.cfm/content/Microvitec-Touchtech-501/">Paul
+        Vernon's website</a>.
+      </p>
+
       <h2>Serial over IP</h2>
 
       <p>
-        You can use the "tcpser" package, which emulates a modem. Select
-        127.0.0.1 and 25232 as the <span class="ui">IP Address</span> and <span
-        class="ui">Port</span>. Download a prebuilt Windows binary of
-        <a href="https://csdb.dk/release/?id=171299">tcpser.zip</a>. The tcpser
-        source code is available
+        When the <span class="ui">IP</span> option is selected, BeebEm will
+        make a TCP connection to the specified <span class="ui">IP Address</span>.
+        and <span class="ui">Port</span>. This could be the address of a host
+        to connect to over the internet, or the "tcpser" package, which emulates
+        a modem and handles the connection to a remote system.
+      </p>
+
+      <p>
+        To use tcpser, select 127.0.0.1 and 25232 as the <span class="ui">IP
+        Address</span> and <span class="ui">Port</span>. Download a prebuilt
+        Windows binary of <a href="https://csdb.dk/release/?id=171299">tcpser.zip</a>.
+        The tcpser source code is available
         <a href="https://github.com/FozzTexx/tcpser">here</a>.
       </p>
 
@@ -92,8 +119,8 @@
         Add the Commstar.rom to your ROM configuration (see
         <a href="roms.html">ROM Software</a>) and start up BeebEm. In the <span
         class="ui">RS423</span> dialog box, select <span class="ui">IP</span>,
-        <span class="ui">IP Address</span> "127.0.0.1", and <span
-        class="ui">Port</span> "25232". Click <span class="ui">OK</span> to
+        <span class="ui">IP Address</span> 127.0.0.1, and <span
+        class="ui">Port</span> 25232. Click <span class="ui">OK</span> to
         close the dialog box then select <span class="ui">RS432 On/Off</span>
         from the <span class="ui">Comms</span> menu. Type
         <span class="cmd">*COMMSTAR</span> to start CommStar. In Commstar:
@@ -112,12 +139,6 @@
         back. You can now "dial" into a server using the
         <span class="cmd">ATD</span> command. Try connecting to the Ishar MUD
         server using <span class="cmd">ATDishar.com:9999</span>.
-      </p>
-
-      <p>
-        To make a direct connection to a server, select <span class="ui">IP</span>
-        and put the server's IP address and port into the <span
-        class="ui">RS423</span> dialog box.
       </p>
 
       <p>
@@ -146,18 +167,6 @@
         BeebEm will emulate the correct receive baud rate. This makes for a very
         realistic experience when talking at 1200 baud to a Viewdata host!
         Transmitted data is just sent out as fast as it will go.
-      </p>
-
-      <h2>Microvitec Touchtech 501</h2>
-
-      <p>
-        When the <span class="ui">Microvitec Touch Screen</span> option is
-        selected, together with the <span class="ui">Options &rarr; Analogue
-        Mousestick</span> option, mouse input in the BeebEm window is translated
-        into touch screen input. Software for the Microvitec Touchtech 501
-        can be downloaded from
-        <a href="https://www.retro-kit.co.uk/page.cfm/content/Microvitec-Touchtech-501/">Paul
-        Vernon's website</a>.
       </p>
     </main>
 
