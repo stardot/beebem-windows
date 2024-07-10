@@ -1630,7 +1630,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		m_Preferences.SetBinaryValue(CFG_KEYBOARD_LINKS, &KeyboardLinks, sizeof(KeyboardLinks));
 
 		// Second processors
-		m_Preferences.SetDecimalValue(CFG_TUBE_TYPE, (int)TubeType);
+		m_Preferences.SetStringValue(CFG_TUBE_TYPE, TubeDeviceStr[(int)TubeType]);
 		m_Preferences.EraseValue(CFG_TUBE_ENABLED_OLD);
 		m_Preferences.EraseValue(CFG_TUBE_ACORN_Z80_OLD);
 		m_Preferences.EraseValue(CFG_TUBE_TORCH_Z80_OLD);
