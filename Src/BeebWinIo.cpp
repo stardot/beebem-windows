@@ -735,7 +735,9 @@ void BeebWin::SetPrinterPort(PrinterPortType PrinterPort)
 			// If printer is enabled then need to
 			// disable it before changing file
 			if (PrinterEnabled)
+			{
 				TogglePrinter();
+			}
 
 			// Add file name to menu
 			std::string MenuString = "File: ";
@@ -753,7 +755,9 @@ void BeebWin::SetPrinterPort(PrinterPortType PrinterPort)
 	else if (PrinterPort == PrinterPortType::Clipboard)
 	{
 		if (PrinterEnabled)
+		{
 			TogglePrinter();
+		}
 
 		m_PrinterPort = PrinterPort;
 
@@ -766,7 +770,9 @@ void BeebWin::SetPrinterPort(PrinterPortType PrinterPort)
 			// If printer is enabled then need to
 			// disable it before changing file
 			if (PrinterEnabled)
+			{
 				TogglePrinter();
+			}
 
 			m_PrinterPort = PrinterPort;
 
@@ -856,14 +862,15 @@ bool BeebWin::TogglePrinter()
 {
 	bool Success = true;
 
-	m_PrinterBuffer.clear();
-
 	if (PrinterEnabled)
 	{
 		PrinterDisable();
 	}
 	else
 	{
+		m_PrinterBuffer.clear();
+		KillTimer(m_hWnd, TIMER_PRINTER);
+
 		if (m_PrinterPort == PrinterPortType::File)
 		{
 			if (m_PrinterFileName.empty())
@@ -1535,7 +1542,9 @@ void BeebWin::SaveUserKeyMap()
 void BeebWin::OnCopy()
 {
 	if (PrinterEnabled)
+	{
 		TogglePrinter();
+	}
 
 	m_PrinterPort = PrinterPortType::Clipboard;
 
@@ -1614,8 +1623,15 @@ void BeebWin::PrintChar(unsigned char Value)
 
 void BeebWin::CopyPrinterBufferToClipboard()
 {
-	if (!OpenClipboard(m_hWnd))
+	if (m_PrinterBuffer.size() == 0)
+	{
 		return;
+	}
+
+	if (!OpenClipboard(m_hWnd))
+	{
+		return;
+	}
 
 	EmptyClipboard();
 
@@ -1628,11 +1644,15 @@ void BeebWin::CopyPrinterBufferToClipboard()
 	}
 
 	unsigned char* pData = (unsigned char*)GlobalLock(hClipboardData);
-	memcpy(pData, &m_PrinterBuffer[0], m_PrinterBuffer.size());
-	pData[m_PrinterBuffer.size()] = '\0';
-	GlobalUnlock(hClipboardData);
 
-	SetClipboardData(CF_TEXT, hClipboardData);
+	if (pData != nullptr)
+	{
+		memcpy(pData, &m_PrinterBuffer[0], m_PrinterBuffer.size());
+		pData[m_PrinterBuffer.size()] = '\0';
+		GlobalUnlock(hClipboardData);
+
+		SetClipboardData(CF_TEXT, hClipboardData);
+	}
 
 	CloseClipboard();
 }

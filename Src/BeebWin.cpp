@@ -2552,6 +2552,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			}
 			else if (wParam == TIMER_PRINTER)
 			{
+				KillTimer(m_hWnd, TIMER_PRINTER);
 				CopyPrinterBufferToClipboard();
 			}
 			break;

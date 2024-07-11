@@ -611,7 +611,7 @@ bool PrinterEnable(const char *FileName)
 {
 	ClosePrinterOutputFile();
 
-	if (FileName != nullptr)
+	if (FileName == nullptr)
 	{
 		PrinterEnabled = true;
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
