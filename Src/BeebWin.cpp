@@ -431,10 +431,16 @@ bool BeebWin::Initialise()
 	INITCOMMONCONTROLSEX cc;
 	cc.dwSize = sizeof(cc);
 	cc.dwICC = ICC_LISTVIEW_CLASSES;
-	InitCommonControlsEx(&cc);
+	if (!InitCommonControlsEx(&cc))
+	{
+		return false;
+	}
 
 	GdiplusStartupInput gdiplusStartupInput;
-	GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL);
+	if (GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL) != Status::Ok)
+	{
+		return false;
+	}
 
 	WSADATA WsaData;
 
@@ -444,8 +450,16 @@ bool BeebWin::Initialise()
 		return false;
 	}
 
-	InitClass();
-	CreateBeebWindow();
+	if (!InitClass())
+	{
+		return false;
+	}
+
+	if (!CreateBeebWindow())
+	{
+		return false;
+	}
+
 	CreateBitmap();
 
 	m_hMenu = GetMenu(m_hWnd);
@@ -1171,7 +1185,7 @@ bool BeebWin::InitClass()
 
 /****************************************************************************/
 
-void BeebWin::CreateBeebWindow()
+bool BeebWin::CreateBeebWindow()
 {
 	int x = m_XWinPos;
 	int y = m_YWinPos;
@@ -1216,12 +1230,19 @@ void BeebWin::CreateBeebWindow()
 		this
 	);
 
+	if (m_hWnd == nullptr)
+	{
+		return false;
+	}
+
 	DisableRoundedCorners(m_hWnd);
 
 	ShowWindow(m_hWnd, nCmdShow); // Show the window
 	UpdateWindow(m_hWnd); // Sends WM_PAINT message
 
 	SetWindowAttributes(false);
+
+	return true;
 }
 
 /****************************************************************************/
