@@ -1493,75 +1493,77 @@ void DebugDisplayTraceV(DebugType type, bool host, const char *format, va_list a
 static void DebugUpdateWatches(bool all)
 {
 	int value = 0;
-	char str[200];
 
 	for (size_t i = 0; i < Watches.size(); ++i)
 	{
-		switch (Watches[i].type)
+		Watch& watch = Watches[i];
+
+		switch (watch.type)
 		{
 			case 'b':
-				value = DebugReadMem(Watches[i].start, Watches[i].host);
+				value = DebugReadMem(watch.start, watch.host);
 				break;
 
 			case 'w':
 				if (WatchBigEndian)
 				{
-					value = (DebugReadMem(Watches[i].start,     Watches[i].host) << 8) +
-					         DebugReadMem(Watches[i].start + 1, Watches[i].host);
+					value = (DebugReadMem(watch.start,     watch.host) << 8) +
+					         DebugReadMem(watch.start + 1, watch.host);
 				}
 				else
 				{
-					value = (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
-					         DebugReadMem(Watches[i].start,     Watches[i].host);
+					value = (DebugReadMem(watch.start + 1, watch.host) << 8) +
+					         DebugReadMem(watch.start,     watch.host);
 				}
 				break;
 
 			case 'd':
 				if (WatchBigEndian)
 				{
-					value = (DebugReadMem(Watches[i].start,     Watches[i].host) << 24) +
-					        (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 16) +
-					        (DebugReadMem(Watches[i].start + 2, Watches[i].host) << 8) +
-					         DebugReadMem(Watches[i].start + 3, Watches[i].host);
+					value = (DebugReadMem(watch.start,     watch.host) << 24) +
+					        (DebugReadMem(watch.start + 1, watch.host) << 16) +
+					        (DebugReadMem(watch.start + 2, watch.host) << 8) +
+					         DebugReadMem(watch.start + 3, watch.host);
 				}
 				else
 				{
-					value = (DebugReadMem(Watches[i].start + 3, Watches[i].host) << 24) +
-					        (DebugReadMem(Watches[i].start + 2, Watches[i].host) << 16) +
-					        (DebugReadMem(Watches[i].start + 1, Watches[i].host) << 8) +
-					         DebugReadMem(Watches[i].start,     Watches[i].host);
+					value = (DebugReadMem(watch.start + 3, watch.host) << 24) +
+					        (DebugReadMem(watch.start + 2, watch.host) << 16) +
+					        (DebugReadMem(watch.start + 1, watch.host) << 8) +
+					         DebugReadMem(watch.start,     watch.host);
 				}
 				break;
 		}
 
-		if (all || value != Watches[i].value)
+		if (all || value != watch.value)
 		{
-			Watches[i].value = value;
+			watch.value = value;
 
-			SendMessage(hwndW, LB_DELETESTRING, i, 0);
+			char str[200];
 
 			if (WatchDecimal)
 			{
-				sprintf(str, "%s%04X %s=%d (%c)", (Watches[i].host ? "" : "p"), Watches[i].start, Watches[i].name.c_str(), Watches[i].value, Watches[i].type);
+				sprintf(str, "%s%04X %s=%d (%c)", (watch.host ? "" : "p"), watch.start, watch.name.c_str(), watch.value, watch.type);
 			}
 			else
 			{
-				switch (Watches[i].type)
+				switch (watch.type)
 				{
 					case 'b':
-						sprintf(str, "%s%04X %s=$%02X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name.c_str(), Watches[i].value);
+						sprintf(str, "%s%04X %s=$%02X", watch.host ? "" : "p", watch.start, watch.name.c_str(), watch.value);
 						break;
 
 					case 'w':
-						sprintf(str, "%s%04X %s=$%04X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name.c_str(), Watches[i].value);
+						sprintf(str, "%s%04X %s=$%04X", watch.host ? "" : "p", watch.start, watch.name.c_str(), watch.value);
 						break;
 
 					case 'd':
-						sprintf(str, "%s%04X %s=$%08X", Watches[i].host ? "" : "p", Watches[i].start, Watches[i].name.c_str(), Watches[i].value);
+						sprintf(str, "%s%04X %s=$%08X", watch.host ? "" : "p", watch.start, watch.name.c_str(), watch.value);
 						break;
 				}
 			}
 
+			SendMessage(hwndW, LB_DELETESTRING, i, 0);
 			SendMessage(hwndW, LB_INSERTSTRING, i, (LPARAM)str);
 		}
 	}
