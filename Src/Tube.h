@@ -57,12 +57,13 @@ enum TubeNMI {
 };
 
 /*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init65C02core(void);
 
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec65C02Instruction(void);
+// Initialise 6502core
+
+void Init65C02Core();
+
+// Execute one 6502 instruction, move program counter on.
+void Exec65C02Instruction();
 
 void WrapTubeCycles(void);
 void SyncTubeProcessor(void);

@@ -1307,9 +1307,10 @@ INLINE static int ZeroPgYAddrModeHandler_Address()
 
 // Initialise 6502core
 
-void Init6502core()
+void Init6502Core()
 {
-	switch (MachineType) {
+	switch (MachineType)
+	{
 		case Model::Master128:
 		case Model::MasterET:
 			CPUType = CPU::CPU65C12;
@@ -1544,7 +1545,7 @@ void Exec6502Instruction()
 		InstructionCount[CurrentInstruction]++;
 
 		// Advance VIAs to point where mem read happens
-		ViaCycles=0;
+		ViaCycles = 0;
 		AdvanceCyclesForMemRead();
 
 		switch (CurrentInstruction)

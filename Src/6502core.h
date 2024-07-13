@@ -76,12 +76,12 @@ extern int CyclesToInt;
 #define AdjustTrigger(var) if (var!=CycleCountTMax) var-=CycleCountWrap;
 
 /*-------------------------------------------------------------------------*/
-/* Initialise 6502core                                                     */
-void Init6502core(void);
 
-/*-------------------------------------------------------------------------*/
-/* Execute one 6502 instruction, move program counter on                   */
-void Exec6502Instruction(void);
+// Initialise 6502core
+void Init6502Core();
+
+// Execute one 6502 instruction, move program counter on.
+void Exec6502Instruction();
 
 void DoNMI(void);
 void DoInterrupt(void);

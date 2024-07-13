@@ -774,13 +774,13 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	}
 
 	BeebMemInit(LoadRoms, m_ShiftBooted);
-	Init6502core();
+	Init6502Core();
 
 	RTCInit();
 
 	if (TubeType == TubeDevice::Acorn65C02)
 	{
-		Init65C02core();
+		Init65C02Core();
 	}
 	else if (TubeType == TubeDevice::Master512CoPro)
 	{
@@ -922,11 +922,11 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 void BeebWin::Break()
 {
 	// Must do a reset!
-	Init6502core();
+	Init6502Core();
 
 	if (TubeType == TubeDevice::Acorn65C02)
 	{
-		Init65C02core();
+		Init65C02Core();
 	}
 	else if (TubeType == TubeDevice::Master512CoPro)
 	{
