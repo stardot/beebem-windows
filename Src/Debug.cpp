@@ -1615,8 +1615,10 @@ bool DebugDisassembler(int addr,
 	// Check breakpoints
 	if (BPSOn && DebugSource != DebugType::Breakpoint)
 	{
-		for (const Breakpoint& bp : Breakpoints)
+		for (size_t i = 0; i < Breakpoints.size(); i++)
 		{
+			const Breakpoint& bp = Breakpoints[i];
+
 			if (bp.end == -1)
 			{
 				if (addr == bp.start)
@@ -1753,8 +1755,8 @@ bool DebugDisassembler(int addr,
 
 	DebugDisplayInfo(str);
 
-	// If host debug is enable then only count host instructions
-	// and display all parasite inst (otherwise we lose them).
+	// If host debug is enabled then only count host instructions
+	// and display all parasite instructions (otherwise we lose them).
 	if ((DebugHost && host) || !DebugHost)
 	{
 		if (InstCount > 0)
