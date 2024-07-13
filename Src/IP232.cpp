@@ -208,8 +208,7 @@ void IP232Close()
 
 		if (Result == SOCKET_ERROR)
 		{
-			int Error = WSAGetLastError();
-			DebugTrace("closesocket() returned error %d\n", Error);
+			DebugTrace("closesocket() returned error %d\n", WSAGetLastError());
 		}
 
 		EthernetSocket = INVALID_SOCKET;
