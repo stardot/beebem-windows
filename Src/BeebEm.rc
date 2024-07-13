@@ -257,7 +257,7 @@ BEGIN
         MENUITEM "5 FPS",                       IDM_5FPS
         MENUITEM "1 FPS",                       IDM_1FPS
         MENUITEM SEPARATOR
-        MENUITEM "&Pause Emulation",            IDM_EMUPAUSED
+        MENUITEM "&Pause Emulation",            IDM_PAUSE
     END
     POPUP "&Sound"
     BEGIN

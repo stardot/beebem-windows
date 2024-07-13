@@ -1002,24 +1002,30 @@ bool BeebWin::IsWindowMinimized() const
 
 /****************************************************************************/
 
-void BeebWin::DisplayClientAreaText(HDC hdc)
+void BeebWin::DisplayClientAreaText(HDC hDC)
 {
 	int TextStart=240;
 	if (TeletextEnabled)
 		TextStart=(480/TeletextStyle)-((TeletextStyle==2)?12:0);
 
-	DisplayFDCBoardInfo(hdc, 0, TextStart);
+	DisplayFDCBoardInfo(hDC, 0, TextStart);
 
 	if (m_ShowSpeedAndFPS && m_FullScreen)
 	{
 		char fps[50];
-		if (!m_EmuPaused)
+
+		if (!m_Paused)
+		{
 			sprintf(fps, "%2.2f %2d", m_RelativeSpeed, (int)m_FramesPerSecond);
+		}
 		else
+		{
 			sprintf(fps, "Paused");
-		SetBkMode(hdc,TRANSPARENT);
-		SetTextColor(hdc,0x808080);
-		TextOut(hdc, TeletextEnabled ? 490 : 580, TextStart, fps, (int)strlen(fps));
+		}
+
+		SetBkMode(hDC, TRANSPARENT);
+		SetTextColor(hDC, 0x808080);
+		TextOut(hDC, TeletextEnabled ? 490 : 580, TextStart, fps, (int)strlen(fps));
 	}
 }
 

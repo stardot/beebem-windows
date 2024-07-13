@@ -165,7 +165,7 @@ BeebWin::BeebWin()
 
 	// Pause / freeze emulation
 	m_StartPaused = false;
-	m_EmuPaused = false;
+	m_Paused = false;
 	m_WasPaused = false;
 	m_FreezeWhenInactive = false;
 	m_Frozen = false;
@@ -1405,8 +1405,8 @@ void BeebWin::InitMenu(void)
 
 	// Speed
 	UpdateSpeedMenu();
-	// Check menu based on m_EmuPaused to take into account -StartPaused arg
-	CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
+	// Check menu based on m_Paused to take into account -StartPaused arg
+	CheckMenuItem(IDM_PAUSE, m_Paused);
 
 	// Sound
 	UpdateSoundStreamerMenu();
@@ -2246,7 +2246,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			}
 			else if (wParam == VK_F5 && AltPressed) // Alt+F5
 			{
-				HandleCommand(IDM_EMUPAUSED);
+				HandleCommand(IDM_PAUSE);
 				break;
 			}
 
@@ -4225,7 +4225,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		TranslateTiming();
 		break;
 
-	case IDM_EMUPAUSED:
+	case IDM_PAUSE:
 		TogglePause();
 		break;
 
@@ -4928,15 +4928,17 @@ bool BeebWin::IsFrozen() const
 
 void BeebWin::TogglePause()
 {
-	m_EmuPaused = !m_EmuPaused;
-	CheckMenuItem(IDM_EMUPAUSED, m_EmuPaused);
-	if (m_ShowSpeedAndFPS && m_EmuPaused)
+	m_Paused = !m_Paused;
+
+	CheckMenuItem(IDM_PAUSE, m_Paused);
+
+	if (m_ShowSpeedAndFPS && m_Paused)
 	{
 		sprintf(m_szTitle, "%s  Paused", WindowTitle);
 		SetWindowText(m_hWnd, m_szTitle);
 	}
 
-	if (m_EmuPaused)
+	if (m_Paused)
 	{
 		KillTimer(m_hWnd, TIMER_KEYBOARD);
 		KillTimer(m_hWnd, TIMER_AUTOBOOT_DELAY);
@@ -4957,7 +4959,7 @@ void BeebWin::TogglePause()
 
 bool BeebWin::IsPaused() const
 {
-	return m_EmuPaused;
+	return m_Paused;
 }
 
 void BeebWin::SetFreezeWhenInactive(bool State)
@@ -5107,7 +5109,7 @@ void BeebWin::ParseCommandLine()
 		else if (_stricmp(__argv[i], "-StartPaused") == 0)
 		{
 			m_StartPaused = true;
-			m_EmuPaused = true;
+			m_Paused = true;
 		}
 		else if (_stricmp(__argv[i], "-FullScreen") == 0)
 		{

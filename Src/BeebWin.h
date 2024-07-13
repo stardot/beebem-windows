@@ -333,7 +333,7 @@ public:
 	void DisplayTiming();
 	void UpdateWindowTitle();
 	bool IsWindowMinimized() const;
-	void DisplayClientAreaText(HDC hdc);
+	void DisplayClientAreaText(HDC hDC);
 	void DisplayFDCBoardInfo(HDC hDC, int x, int y);
 	void ScaleJoystick(unsigned int x, unsigned int y);
 	void SetMousestickButton(int index, bool button);
@@ -648,7 +648,7 @@ public:
 
 	// Pause / freeze emulation
 	bool m_StartPaused;
-	bool m_EmuPaused;
+	bool m_Paused;
 	bool m_WasPaused;
 	bool m_FreezeWhenInactive;
 	bool m_Frozen;

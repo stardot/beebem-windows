@@ -445,7 +445,7 @@
 #define IDM_XAUDIO2                     40285
 #define IDM_DIRECTSOUND                 40286
 #define IDM_IDE_HARD_DRIVE              40287
-#define IDM_EMUPAUSED                   40296
+#define IDM_PAUSE                       40296
 #define IDM_VIEW_DD_SCREENRES           40297
 #define IDM_VIEW_DD_640X480             40298
 #define IDM_VIEW_DD_720X576             40299
