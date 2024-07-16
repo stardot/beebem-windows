@@ -116,21 +116,21 @@ C407 C408 Mask table for 2 colour modes
 C409 C40C Mask table for 4 colour modes
 C40D C414 Mask table for 4 colour modes font flag mask table
 C414 C41B Number of colours per mode look up table
-C41C C425 Gcol plot options processing look up table
+C41C C425 GCOL plot options processing look up table
 C424 C425 2 colour modes parameter look up table
 C426 C429 4 colour modes parameter look up table
 C42A C439 16 colour modes parameter look up table
 C43A C441 Display mode pixels/byte-1 look up table
 C440 C447 Screen display memory index look up table
 C441 C444 Sound pitch offset by channel look up table
-C44B C44E Crtc set up parameters table 1
-C44F C453 Crtc set up parameters table 2
+C44B C44E CRTC set up parameters table 1
+C44F C453 CRTC set up parameters table 2
 C447 C458 VDU section control numbers
-C459 C45D Msb of memory occupied by screen buffer
-C45E C462 Msb of first location occupied by screen buffer
+C459 C45D MSB of memory occupied by screen buffer
+C45E C462 MSB of first location occupied by screen buffer
 C463 C465 Number of bytes per row
 C466 C468 Row multipliaction table pointer to look up table
-C469 C46D Crtc cursor end register setting look up table
+C469 C46D CRTC cursor end register setting look up table
 C46E C479 6845 registers 0-11 for modes 0-2
 C47A C485 6845 registers 0-11 for mode 3
 C486 C491 6845 registers 0-11 for modes 4-5
@@ -140,7 +140,7 @@ C4AA C4AD VDU rotine vector addresses
 C4AE C4B1 VDU routine branch vector address lo
 C4B2 C4B5 VDU routine branch vector address hi
 C4B6 C4B9 Teletext character conversion table
-C4BA C4BF Soft character ram allocation
+C4BA C4BF Soft character RAM allocation
 C4C0 C533 OSWRCH main routine, entry from E0C5, parameter parse
 C534 C542 VDU 1 send next character to printer only
 C545 C55C OSWRCH further parameter parse - deal with no params
@@ -185,7 +185,7 @@ C8F1 C937 VDU 23 - Define characters 9 parameters
 C938 C93C VDU extension (jumps to VDUV)
 C93F C98B VDU 23 - set CRTC parameter
 C98C C991 VDU 25 plot entry point - jumps to VDU extension or PLOT routines
-C994 C9BB Adjust screen ram addresses (called by cursor routines)
+C994 C9BB Adjust screen RAM addresses (called by cursor routines)
 C9BD C9FF VDU 26 set default windows 0 parameters
 CA02 CA38 Set cursor position
 CA39 CA7E VDU 24 define graphics window 8 parameters
@@ -242,8 +242,8 @@ D940 D974 Default vector table (loaded at 0x0200)
 D976 D9CC MOS variables default settings
 D9CD D9E6 Boot: System reset
 D9E7 DA00 Boot: Clear RAM
-DA03 DA05 Boot: Set up system via
-DA08 DA25 Boot: Set addressable latch IC 32 for peripherals via PORT B
+DA03 DA05 Boot: Set up system VIA
+DA08 DA25 Boot: Set addressable latch IC 32 for peripherals VIA port B
 DA26 DA68 Boot: Set up page 2
 DA6B DABA Boot: Clear interrupt and enable registers of both VIAs
 DABD DB0F Boot: Check sideways ROMs and make catalogue
@@ -259,7 +259,7 @@ DBE7 DC05 OSBYTE 142 enter language rom at 0x8000
 DC08 DC08 Tube found - Enter Tube environment
 DC0B DC1B OSRDRM
 DC1C DC24 Main IRQ handler - calls IRQ1V or Main BRK handler if BRK flag set
-DC27 DC51 Main BRK handler - issues service call 6 to roms, calls BRKV
+DC27 DC51 Main BRK handler - issues service call 6 to ROMs, calls BRKV
 DC54 DC92 Default BRK handler - BRKV points here by default
 DC93 DD03 Default IRQ handler - IRQ1V points here by default
 DD06 DD44 VIA interupt dispatch
@@ -274,7 +274,7 @@ DE8C DEBA OSBYTE 17 start conversion
 DEBB DEC3 Set up timer for OSBYTE 129
 DEC5 DEFE OSRDCH
 E114 E17A Printer driver
-E17C E190 OSBYTE 156 update acia setting and ram copy
+E17C E190 OSBYTE 156 update ACIA setting and RAM copy
 E191 E194 Handle user printer
 E197 E1AA OSBYTE 123 warn printer driver going dormant
 E1AD E1D0 Buffer handling
@@ -319,8 +319,8 @@ E6F9 E704 OSBYTE 13/14 disable/enable events
 E706 E712 OSBYTE 16 select a/d channel
 E713 E731 OSBYTE 129 read key within time limit
 E732 E73E Check occupancy of input or free space of output buffer
-E741 E74E Check rs423 input buffer
-E74F E771 OSBYTE 128 read adc channel
+E741 E74E Check RS423 input buffer
+E74F E771 OSBYTE 128 read ADC channel
 E772 E7EA Default BYTEV handler (OSBYTE)
 E7EB E801 Default WORDV handler (OSWORD)
 E803 E80A OSWORD 05 entry point
@@ -339,31 +339,31 @@ E8E8 E901 OSWORD 02 entry point
 E902 E975 OSWORD 00 entry point
 E976 E986 OSBYTE 05 entry point
 E988 E98A OSBYTE 01/06 entry point
-E98C E993 OSBYTE 0c entry point
-E995 E996 OSBYTE 0b entry point
+E98C E993 OSBYTE 0C entry point
+E995 E996 OSBYTE 0B entry point
 E997 E99B OSBYTE 03/04
-E99C E9AC OSBYTE a6-ff entry point
+E99C E9AC OSBYTE A6-FF entry point
 E9AD E9B5 Serial baud rate look up table
 E9B6 E9BE OSBYTE &13 entry point
 E9C0 E9C7 OSBYTE 160 entry point
 E9C8 E9D8 OSBYTE 18 entry point
 E9D9 E9E9 OSBYTE &76 (118) set leds to keyboard status
 E9EA E9F7 Turn on keyboard lights and test escape flag
-E9F8 E9FE Write a to system via register b
-E9FF EA0F OSBYTE 154 (&9a) set video ula
-EA10 EA1C OSBYTE &9b (155) write to pallette register
+E9F8 E9FE Write A to system VIA register B
+E9FF EA0F OSBYTE &9A (154) set video ULA
+EA10 EA1C OSBYTE &9B (155) write to pallette register
 EA1D EA2E GSINIT string initialisation
 EA2F EAD1 GSREAD string read routine
 EAD2 EAD8 "/!BOOT\n"
-EAD9 EAE0 OSBYTE &f7 (247) intercept break
-EAE3 EAF3 OSBYTE &90 (144) *tv
+EAD9 EAE0 OSBYTE &F7 (247) intercept break
+EAE3 EAF3 OSBYTE &90 (144) *TV
 EAF4 EAF8 OSBYTE &93 (147) write to FRED
 EAF9 EAFD OSBYTE &95 (149) write to JIM
 EAFE EB02 OSBYTE &97 (151) write to SHEILA
 EB03 EDFA Sound routines
 EDFB EE06 Pitch look up table 1
 EE07 EE12 Pitch look up table 2
-EE13 EE17 Set current filing system rom/phrom
+EE13 EE17 Set current filing system ROM/PHROM
 EE18 EE4F Get byte from data ROM
 EE51 EE61 ROM service
 EE62 EE6B PHROM service
@@ -388,9 +388,9 @@ F09B F0A4 Key translation table 7
 F0A5 F0A7 Jump to EVENTV
 F0A8 F0B2 OSBYTE 15 flush selected buffer class
 F0B4 F0B8 OSBYTE 21 flush specific buffer
-F0B9 F0CB Issue *help to roms
+F0B9 F0CB Issue *help to ROMs
 F0CC F0CD OSBYTE 122 keyboard scan from &10 (16)
-F0CF F134 OSBYTE 121 keyboard scan from value in x
+F0CF F134 OSBYTE 121 keyboard scan from value in X
 F135 F13D OSBYTE 140/141 *TAPE/*ROM
 F140 F157 Set cassette options
 F159 F166 Reset FILEV,ARGSV,BGETV,BPUTV,GBPBV,FINDV,FSCV
@@ -422,13 +422,13 @@ F68B F6AB *EXEC
 F6AC F72C CFS: Read a block
 F72D F785 CFS: Pick up a header
 F787 F796 CFS: Terminator found
-F797 F7AD CFS: Get character from file and do crc
-F7B0 F7EB CFS: Perform crc
+F797 F7AD CFS: Get character from file and do CRC
+F7B0 F7EB CFS: Perform CRC
 F7EC F81F CFS: Save a block
 F821 F874 CFS: Deal with rest of header
-F875 F878 CFS: Transfer byte to cfs and do crc
+F875 F878 CFS: Transfer byte to CFS and do CFC
 F87B F880 CFS: Save checksum to tape reset buffer flag
-F882 F891 CFS: Save byte to buffer, transfer to cfs & reset flag
+F882 F891 CFS: Save byte to buffer, transfer to CFS & reset flag
 F892 F8A8 CFS: Generate delays
 F8A9 F933 CFS: Generate screen reports
 F934 F967 CFS: Prompt 'RECORD then RETURN', wait for RETURN
@@ -439,10 +439,10 @@ F991 F993 CFS: Print a space
 F995 F9B3 CFS: Confirm CFS not operating, nor escape flag set
 F9B4 FA6F CFS: Load
 FA72 FAE5 CFS: Compare filenames
-FAE8 FB19 CFS: Sound bell, reset acia, motor off
+FAE8 FB19 CFS: Sound bell, reset ACIA, motor off
 FB1A FB25 Claim serial system for sequential access
 FB27 FB48 Claim serial system for cassette etc.
-FB4A FB4E CFS: Set acia control register
+FB4A FB4E CFS: Set ACIA control register
 FB50 FB7A CFS: Control cassette system
 FB7C FB80 CFS: Clear checksum bytes
 FB81 FB8E CFS: Copy sought filename routine
@@ -471,8 +471,8 @@ FE00 FEFF SHEILA - system hardware memory-mapped I/O
 
 
 FF00 FF88 Extended vector entry points
-FF89 FFA6 Return address from rom indirection
-FFA7 FFA8 OSBYTE &9d fast BPUT
+FF89 FFA6 Return address from ROM indirection
+FFA7 FFA8 OSBYTE &9D fast BPUT
 FFAA FFAD OSBYTE &92 read a byte from FRED
 FFAE FFB1 OSBYTE &94 read a byte from JIM
 FFB2 FFB5 OSBYTE &96 read a byte from SHEILA
