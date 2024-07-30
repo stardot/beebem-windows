@@ -63,6 +63,16 @@ bool ParseNumber(const std::string& str, int* pValue)
 	return true;
 }
 
+char ToHexDigit(int Value)
+{
+	static const char HexDigit[16] =
+	{
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+	};
+
+	return HexDigit[Value];
+}
+
 bool StringEndsWith(const std::string& str, const std::string& suffix)
 {
 	return str.size() >= suffix.size() &&

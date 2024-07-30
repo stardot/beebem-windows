@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "Messages.h"
 #include "RingBuffer.h"
 #include "Serial.h"
+#include "StringUtils.h"
 #include "Thread.h"
 
 constexpr int IP232_CONNECTION_DELAY = 8192; // Cycles to wait after connection
@@ -502,12 +503,10 @@ static void DebugReceivedData(unsigned char* pData, int Length)
 	DebugDisplayTraceF(DebugType::RemoteServer, true,
 	                   "IP232: Read %d bytes from server", Length);
 
-	static const char HexDigit[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
 	for (i = 0; i < Length; i++)
 	{
-		info[i * 2]       = HexDigit[(pData[i] >> 4) & 0xf];
-		info[(i * 2) + 1] = HexDigit[pData[i] & 0x0f];
+		info[i * 2]       = ToHexDigit((pData[i] >> 4) & 0xf);
+		info[(i * 2) + 1] = ToHexDigit(pData[i] & 0x0f);
 	}
 
 	info[i * 2] = 0;

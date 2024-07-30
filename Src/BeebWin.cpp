@@ -92,6 +92,7 @@ using std::max;
 #include "SoundStreamer.h"
 #include "Speech.h"
 #include "SprowCoPro.h"
+#include "StringUtils.h"
 #include "SysVia.h"
 #include "TapeControlDialog.h"
 #include "Teletext.h"
@@ -1934,7 +1935,7 @@ void BeebWin::SetRomMenu()
 		CHAR Title[19];
 
 		Title[0] = '&';
-		_itoa(i, &Title[1], 16);
+		Title[1] = ToHexDigit(i);
 		Title[2] = ' ';
 
 		// Get the Rom Title.
