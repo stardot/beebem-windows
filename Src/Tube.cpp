@@ -24,6 +24,8 @@ Boston, MA  02110-1301, USA.
 /* Mike Wyatt 7/6/97 - Added undocumented instructions */
 /* Copied for 65C02 Tube core - 13/04/01 */
 
+#include <windows.h>
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,12 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "Z80mem.h"
 #include "Z80.h"
 
-#ifdef WIN32
-#include <windows.h>
 #define INLINE inline
-#else
-#define INLINE
-#endif
 
 // Some interrupt set macros
 #define SETTUBEINT(a) TubeintStatus |= 1 << a

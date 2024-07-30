@@ -57,11 +57,7 @@ Boston, MA  02110-1301, USA.
 #include "Z80mem.h"
 #include "Z80.h"
 
-#ifdef WIN32
 #define INLINE inline
-#else
-#define INLINE
-#endif
 
 static CPU CPUType;
 static int CurrentInstruction;
