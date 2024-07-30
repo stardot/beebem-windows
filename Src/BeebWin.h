@@ -355,7 +355,6 @@ public:
 	void UserKeyboardDialogClosed();
 	void ShowMenu(bool on);
 	void HideMenu(bool hide);
-	void TrackPopupMenu(int x, int y);
 	bool IsFullScreen() const { return m_FullScreen; }
 	void ResetTiming(void);
 	int TranslateKey(int vkey, bool keyUp, int &row, int &col);

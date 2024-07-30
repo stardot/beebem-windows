@@ -1317,15 +1317,6 @@ void BeebWin::HideMenu(bool hide)
 	}
 }
 
-void BeebWin::TrackPopupMenu(int x, int y)
-{
-	::TrackPopupMenu(m_hMenu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON,
-	                 x, y,
-	                 0,
-	                 m_hWnd,
-	                 NULL);
-}
-
 /****************************************************************************/
 
 void BeebWin::CheckMenuItem(UINT id, bool Checked)
