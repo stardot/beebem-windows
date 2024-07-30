@@ -1501,7 +1501,7 @@ void BeebWin::UpdateDisplayRendererMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_DisplayRenderer == MenuItems[i].DisplayRenderer)
 		{
@@ -1592,7 +1592,7 @@ void BeebWin::UpdateSoundSampleRateMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (SoundSampleRate == MenuItems[i].SampleRate)
 		{
@@ -1628,7 +1628,7 @@ void BeebWin::UpdateSoundVolumeMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (SoundVolume == MenuItems[i].Volume)
 		{
@@ -1692,7 +1692,7 @@ void BeebWin::UpdateMonitorMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_MonitorType == MenuItems[i].Type)
 		{
@@ -1717,7 +1717,7 @@ void BeebWin::UpdateModelMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (MachineType == MenuItems[i].Type)
 		{
@@ -1920,7 +1920,7 @@ void BeebWin::UpdateTubeMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (TubeType == MenuItems[i].Device)
 		{
@@ -2021,7 +2021,7 @@ void BeebWin::UpdateJoystickMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_JoystickOption == MenuItems[i].Joystick)
 		{
@@ -2981,7 +2981,7 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_DDFullScreenMode == MenuItems[i].Mode)
 		{
@@ -3045,7 +3045,7 @@ void BeebWin::UpdateWindowSizeMenu()
 
 	int SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_XWinSize == MenuItems[i].Width &&
 		    m_YWinSize == MenuItems[i].Height)
@@ -3192,7 +3192,7 @@ void BeebWin::UpdateKeyboardMappingMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_KeyboardMapping == MenuItems[i].Type)
 		{
@@ -3238,7 +3238,7 @@ void BeebWin::SetTapeSpeedMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (TapeState.ClockSpeed == MenuItems[i].ClockSpeed)
 		{
@@ -3454,7 +3454,7 @@ void BeebWin::UpdateAMXSizeMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_AMXSize == MenuItems[i].AMXSize)
 		{
@@ -3517,7 +3517,7 @@ void BeebWin::UpdateAMXAdjustMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_AMXAdjust == MenuItems[i].AMXAdjust)
 		{
@@ -4094,8 +4094,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 	case IDM_ALLOWWRITES_ROMC:
 	case IDM_ALLOWWRITES_ROMD:
 	case IDM_ALLOWWRITES_ROME:
-	case IDM_ALLOWWRITES_ROMF:
-	{
+	case IDM_ALLOWWRITES_ROMF: {
 		int slot = MenuID - IDM_ALLOWWRITES_ROM0;
 		RomWritable[slot] = !RomWritable[slot];
 		CheckMenuItem(MenuID, RomWritable[slot]);
