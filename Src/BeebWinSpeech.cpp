@@ -246,7 +246,7 @@ void BeebWin::InitVoiceMenu()
 
 int BeebWin::TextToSpeechGetSelectedVoice()
 {
-	char TokenId[_MAX_PATH];
+	char TokenId[MAX_PATH];
 	TokenId[0] = '\0';
 
 	int Index = 0;

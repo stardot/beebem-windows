@@ -184,7 +184,7 @@ bool RomConfigFile::Load(const char *FileName)
 			continue;
 		}
 
-		if (Line.size() >= _MAX_PATH)
+		if (Line.size() >= MAX_PATH)
 		{
 			Success = false;
 			break;

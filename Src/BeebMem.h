@@ -87,10 +87,10 @@ extern bool Sh_Display;
 /* End of Master 128 Specific Stuff, note initilised anyway regardless of Model Type in use */
 
 extern RomConfigFile RomConfig;
-extern char RomPath[_MAX_PATH];
-extern char RomFile[_MAX_PATH];
+extern char RomPath[MAX_PATH];
+extern char RomFile[MAX_PATH];
 
-extern char HardDrivePath[_MAX_PATH]; // JGH
+extern char HardDrivePath[MAX_PATH]; // JGH
 
 unsigned char BeebReadMem(int Address);
 void BeebWriteMem(int Address, unsigned char Value);

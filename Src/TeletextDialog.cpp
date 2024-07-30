@@ -213,8 +213,8 @@ INT_PTR TeletextDialog::OnCommand(int Notification, int nCommandID)
 
 void TeletextDialog::SelectFile(int Channel)
 {
-	char DefaultPath[_MAX_PATH];
-	char FileName[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	strcpy(DefaultPath, m_DiscsPath.c_str());

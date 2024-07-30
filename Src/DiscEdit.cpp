@@ -348,7 +348,7 @@ bool dfs_import_file(const char *szDiscFile,
 {
 	bool success = true;
 
-	char infname[_MAX_PATH];
+	char infname[MAX_PATH];
 	char dfsname[DFS_MAX_NAME_LEN + 3];
 	int startSector = 0;
 	int catIndex = 0;

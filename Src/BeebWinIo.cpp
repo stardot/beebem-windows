@@ -130,7 +130,7 @@ void BeebWin::EjectDiscImage(int Drive)
 
 bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* Filter =
@@ -141,7 +141,7 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		"Single Sided Disc (*.*)\0*.*\0"
 		"Double Sided Disc (*.*)\0*.*\0";
 
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	DefaultPath[0] = '\0';
 
 	m_Preferences.GetStringValue(CFG_DISCS_PATH, DefaultPath);
@@ -364,7 +364,7 @@ bool BeebWin::Load8271DiscImage(const char *FileName, int Drive, int Tracks, Dis
 
 void BeebWin::LoadTape(void)
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* Filter =
@@ -372,7 +372,7 @@ void BeebWin::LoadTape(void)
 		"UEF Tape File (*.uef)\0*.uef\0"
 		"CSW Tape File (*.csw)\0*.csw\0";
 
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	DefaultPath[0] = '\0';
 
 	m_Preferences.GetStringValue(CFG_TAPES_PATH, DefaultPath);
@@ -424,7 +424,7 @@ bool BeebWin::LoadTape(const char *FileName)
 
 bool BeebWin::NewTapeImage(char *FileName, int Size)
 {
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	const char* filter = "UEF Tape File (*.uef)\0*.uef\0";
 
 	m_Preferences.GetStringValue(CFG_TAPES_PATH, DefaultPath);
@@ -454,7 +454,7 @@ bool BeebWin::NewTapeImage(char *FileName, int Size)
 
 void BeebWin::SelectFDC()
 {
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	char FileName[256];
 	FileName[0] = '\0';
 
@@ -491,7 +491,7 @@ void BeebWin::NewDiscImage(int Drive)
 		"ADFS M (80 Track) Disc (*.adf)\0*.adf\0"
 		"ADFS L (160 Track) Disc (*.adl)\0*.adl\0";
 
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	DefaultPath[0] = '\0';
 
 	m_Preferences.GetStringValue(CFG_DISCS_PATH, DefaultPath);
@@ -503,7 +503,7 @@ void BeebWin::NewDiscImage(int Drive)
 	if ((MachineType != Model::Master128 && MachineType != Model::MasterET) && NativeFDC && FilterIndex >= 5)
 		FilterIndex = 1;
 
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, Filter);
@@ -620,12 +620,12 @@ void BeebWin::CreateDFSDiscImage(const char *FileName, int Drive,
 /****************************************************************************/
 void BeebWin::SaveState()
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* Filter = "UEF State File (*.uefstate)\0*.uefstate\0";
 
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	DefaultPath[0] = '\0';
 
 	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
@@ -655,12 +655,12 @@ void BeebWin::SaveState()
 /****************************************************************************/
 void BeebWin::RestoreState()
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* filter = "UEF State File (*.uefstate; *.uef)\0*.uefstate;*.uef\0";
 
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	DefaultPath[0] = '\0';
 
 	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
@@ -822,8 +822,8 @@ void BeebWin::UpdatePrinterPortMenu()
 
 bool BeebWin::GetPrinterFileName()
 {
-	char StartPath[_MAX_PATH];
-	char FileName[_MAX_PATH];
+	char StartPath[MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* Filter = "Printer Output (*.*)\0*.*\0";
@@ -1016,8 +1016,8 @@ void BeebWin::UpdateVideoCaptureFrameSkipMenu()
 
 void BeebWin::CaptureVideo()
 {
-	char DefaultPath[_MAX_PATH];
-	char FileName[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* filter = "AVI File (*.avi)\0*.avi\0";
@@ -1150,7 +1150,7 @@ bool BeebWin::IsCapturing() const
 /****************************************************************************/
 void BeebWin::QuickLoad()
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	strcpy(FileName, m_UserDataPath);
 	strcat(FileName, "BeebState\\quicksave.uefstate");
 
@@ -1169,8 +1169,8 @@ void BeebWin::QuickLoad()
 
 void BeebWin::QuickSave()
 {
-	char FileName1[_MAX_PATH];
-	char FileName2[_MAX_PATH];
+	char FileName1[MAX_PATH];
+	char FileName2[MAX_PATH];
 
 	// Bump old quicksave files down
 	for (int i = 1; i <= 9; ++i)
@@ -1327,7 +1327,7 @@ void BeebWin::LoadFDC(char *DLLName, bool save)
 
 	if (strcmp(DLLName, "None") != 0)
 	{
-		char path[_MAX_PATH];
+		char path[MAX_PATH];
 		strcpy(path, DLLName);
 		GetDataPath(m_AppPath, path);
 
@@ -1476,7 +1476,7 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 /****************************************************************************/
 void BeebWin::GetDataPath(const char *folder, char *path)
 {
-	char newPath[_MAX_PATH];
+	char newPath[MAX_PATH];
 
 	// If path is absolute then use it
 	if (path[0] == '\\' || path[0] == '/' ||
@@ -1496,7 +1496,7 @@ void BeebWin::GetDataPath(const char *folder, char *path)
 /****************************************************************************/
 void BeebWin::LoadUserKeyMap()
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
@@ -1512,7 +1512,7 @@ void BeebWin::LoadUserKeyMap()
 /****************************************************************************/
 void BeebWin::SaveUserKeyMap()
 {
-	char FileName[_MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
@@ -1893,8 +1893,8 @@ void BeebWin::ImportDiscFiles(int menuId)
 
 void BeebWin::SelectHardDriveFolder()
 {
-	char DefaultPath[_MAX_PATH];
-	char FileName[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
+	char FileName[MAX_PATH];
 	FileName[0] = '\0';
 
 	const char* filter =
@@ -2092,7 +2092,7 @@ bool BeebWin::GetImageFile(char *FileName, int Size)
 
 	FileName[0] = '\0';
 
-	char DefaultPath[_MAX_PATH];
+	char DefaultPath[MAX_PATH];
 	m_Preferences.GetStringValue(CFG_IMAGE_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 

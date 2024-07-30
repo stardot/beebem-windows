@@ -263,16 +263,16 @@ BeebWin::BeebWin()
 	// File paths
 
 	// Get the applications path - used for non-user files
-	char AppPath[_MAX_PATH];
+	char AppPath[MAX_PATH];
 	char AppDrive[_MAX_DRIVE];
 	char AppDir[_MAX_DIR];
-	GetModuleFileName(nullptr, AppPath, _MAX_PATH);
+	GetModuleFileName(nullptr, AppPath, MAX_PATH);
 	_splitpath(AppPath, AppDrive, AppDir, nullptr, nullptr);
 	_makepath(m_AppPath, AppDrive, AppDir, nullptr, nullptr);
 
 	// Read user data path from registry
 	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "UserDataFolder",
-	                       m_UserDataPath, _MAX_PATH))
+	                       m_UserDataPath, MAX_PATH))
 	{
 		// Default user data path to a sub-directory in My Docs
 		if (SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, m_UserDataPath) == NOERROR)
@@ -393,12 +393,12 @@ bool BeebWin::Initialise()
 
 	// Read disc images path from registry
 	if (!RegGetStringValue(HKEY_CURRENT_USER, CFG_REG_KEY, "DiscsPath",
-	                       m_DiscPath, _MAX_PATH))
+	                       m_DiscPath, MAX_PATH))
 	{
 		// Default disc images path to a sub-directory of UserData path
 		strcpy(m_DiscPath, m_UserDataPath);
 
-		char DefaultPath[_MAX_PATH];
+		char DefaultPath[MAX_PATH];
 		m_Preferences.GetStringValue("DiscsPath", DefaultPath);
 		GetDataPath(m_DiscPath, DefaultPath);
 		strcpy(m_DiscPath, DefaultPath);
@@ -483,7 +483,7 @@ bool BeebWin::Initialise()
 		}
 	}
 
-	char fontFilename[_MAX_PATH];
+	char fontFilename[MAX_PATH];
 	strcpy(fontFilename, GetAppPath());
 	strcat(fontFilename, "teletext.fnt");
 
@@ -525,7 +525,7 @@ void BeebWin::ApplyPrefs()
 	}
 	else if (PathIsRelative(EconetCfgPath))
 	{
-		char Filename[_MAX_PATH];
+		char Filename[MAX_PATH];
 		strcpy(Filename, EconetCfgPath);
 		strcpy(EconetCfgPath, m_UserDataPath);
 		strcat(EconetCfgPath, Filename);
@@ -538,7 +538,7 @@ void BeebWin::ApplyPrefs()
 	}
 	else if (PathIsRelative(AUNMapPath))
 	{
-		char Filename[_MAX_PATH];
+		char Filename[MAX_PATH];
 		strcpy(Filename, AUNMapPath);
 		strcpy(AUNMapPath, m_UserDataPath);
 		strcat(AUNMapPath, Filename);
@@ -546,13 +546,13 @@ void BeebWin::ApplyPrefs()
 
 	strcpy(RomPath, m_UserDataPath);
 
-	char Path[_MAX_PATH];
+	char Path[MAX_PATH];
 	m_Preferences.GetStringValue("HardDrivePath", Path);
 	GetDataPath(m_UserDataPath, Path);
 	strcpy(HardDrivePath, Path);
 
 	// Load key maps
-	char KeyMapPath[_MAX_PATH];
+	char KeyMapPath[MAX_PATH];
 	strcpy(KeyMapPath, "Logical.kmap");
 	GetDataPath(m_UserDataPath, KeyMapPath);
 	ReadKeyMap(KeyMapPath, &LogicalKeyMap);
@@ -680,8 +680,9 @@ void BeebWin::Shutdown()
 
 	WSACleanup();
 
-	if (m_WriteInstructionCounts) {
-		char FileName[_MAX_PATH];
+	if (m_WriteInstructionCounts)
+	{
+		char FileName[MAX_PATH];
 		strcpy(FileName, m_UserDataPath);
 		strcat(FileName, "InstructionCounts.txt");
 
@@ -5225,11 +5226,11 @@ void BeebWin::ParseCommandLine()
 				// Assume it's a file name
 				if (m_CommandLineFileName1[0] == '\0')
 				{
-					strncpy(m_CommandLineFileName1, __argv[i], _MAX_PATH);
+					strncpy(m_CommandLineFileName1, __argv[i], MAX_PATH);
 				}
 				else if (m_CommandLineFileName2[0] == '\0')
 				{
-					strncpy(m_CommandLineFileName2, __argv[i], _MAX_PATH);
+					strncpy(m_CommandLineFileName2, __argv[i], MAX_PATH);
 				}
 			}
 
@@ -5251,7 +5252,7 @@ void BeebWin::CheckForLocalPrefs(const char *path, bool bLoadPrefs)
 	if (path[0] == '\0')
 		return;
 
-	char file[_MAX_PATH];
+	char file[MAX_PATH];
 	char drive[_MAX_DRIVE];
 	char dir[_MAX_DIR];
 
@@ -5594,7 +5595,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 	bool success = true;
 	bool copy_user_files = false;
 	bool store_user_data_path = false;
-	char path[_MAX_PATH];
+	char path[MAX_PATH];
 
 	// Change all '/' to '\'
 	MakePreferredPath(m_UserDataPath);
@@ -5696,7 +5697,7 @@ bool BeebWin::CheckUserDataPath(bool Persist)
 	{
 		// Get fully qualified user data path
 		char *f;
-		if (GetFullPathName(m_UserDataPath, _MAX_PATH, path, &f) != 0)
+		if (GetFullPathName(m_UserDataPath, MAX_PATH, path, &f) != 0)
 			strcpy(m_UserDataPath, path);
 	}
 

@@ -237,7 +237,7 @@ void ExportFileDialog::ExportSelectedFiles()
 
 		if (FileExists(LocalFileName.c_str()))
 		{
-			char FileName[_MAX_PATH];
+			char FileName[MAX_PATH];
 			const char* Filter = "All Files (*.*)\0*.*\0";
 
 			strcpy(FileName, Entry->HostFileName.c_str());

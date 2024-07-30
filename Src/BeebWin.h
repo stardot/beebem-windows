@@ -725,7 +725,7 @@ public:
 	KeyboardMappingType m_KeyboardMapping;
 	bool m_KeyMapAS;
 	bool m_KeyMapFunc;
-	char m_UserKeyMapPath[_MAX_PATH];
+	char m_UserKeyMapPath[MAX_PATH];
 	bool m_DisableKeysWindows;
 	bool m_DisableKeysBreak;
 	bool m_DisableKeysEscape;
@@ -735,10 +735,10 @@ public:
 	int m_vkeyPressed[256][2][2];
 
 	// File paths
-	char m_AppPath[_MAX_PATH];
-	char m_UserDataPath[_MAX_PATH];
+	char m_AppPath[MAX_PATH];
+	char m_UserDataPath[MAX_PATH];
 	bool m_CustomData;
-	char m_DiscPath[_MAX_PATH]; // JGH
+	char m_DiscPath[MAX_PATH]; // JGH
 	bool m_WriteProtectDisc[2];
 	bool m_WriteProtectOnLoad;
 
@@ -772,8 +772,8 @@ public:
 	std::string m_SerialPort;
 
 	// Command line
-	char m_CommandLineFileName1[_MAX_PATH];
-	char m_CommandLineFileName2[_MAX_PATH];
+	char m_CommandLineFileName1[MAX_PATH];
+	char m_CommandLineFileName2[MAX_PATH];
 	std::string m_DebugScriptFileName;
 	std::string m_DebugLabelsFileName;
 	bool m_HasCommandLineModel;

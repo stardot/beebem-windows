@@ -262,7 +262,7 @@ void TapeControlRecord()
 	if (!TapeState.Recording)
 	{
 		// Query for new file name
-		char FileName[_MAX_PATH];
+		char FileName[MAX_PATH];
 		FileName[0] = '\0';
 
 		if (mainWin->NewTapeImage(FileName, sizeof(FileName)))
