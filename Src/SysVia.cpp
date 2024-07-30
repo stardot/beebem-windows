@@ -731,6 +731,8 @@ unsigned char SysVIARead(int Address)
 		case 1:
 			SysVIAState.ifr &= 0xfc;
 			UpdateIFRTopBit();
+			// Fall through...
+
 		case 15:
 			// slow data bus read
 			tmp = SlowDataBusRead();

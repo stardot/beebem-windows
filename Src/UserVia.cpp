@@ -356,6 +356,8 @@ unsigned char UserVIARead(int Address)
 		case 1:
 			UserVIAState.ifr &= 0xfc;
 			UpdateIFRTopBit();
+			// Fall through...
+
 		case 15:
 			tmp = 255;
 			break;
