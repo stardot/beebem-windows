@@ -50,7 +50,7 @@ extern double SoundTuning;
 void SoundInit();
 void SoundReset();
 
-// Called in sysvia.cpp when a write to one of the 76489's registers occurs
+// Called in SysVia.cpp when a write to one of the 76489's registers occurs
 void Sound_RegWrite(int Value);
 void ClickRelay(bool RelayState);
 

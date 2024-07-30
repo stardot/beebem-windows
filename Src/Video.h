@@ -24,6 +24,7 @@ Boston, MA  02110-1301, USA.
 
 #ifndef VIDEO_HEADER
 #define VIDEO_HEADER
+
 #include <stdio.h>
 
 extern int VideoTriggerCount;
