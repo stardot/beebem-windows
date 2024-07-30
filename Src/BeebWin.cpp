@@ -109,8 +109,6 @@ using std::max;
 #include "Z80mem.h"
 #include "Z80.h"
 
-using namespace Gdiplus;
-
 // Some LED based constants
 constexpr int LED_COL_BASE = 64;
 
@@ -441,8 +439,9 @@ bool BeebWin::Initialise()
 		return false;
 	}
 
-	GdiplusStartupInput gdiplusStartupInput;
-	if (GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL) != Status::Ok)
+	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+
+	if (Gdiplus::GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL) != Gdiplus::Status::Ok)
 	{
 		return false;
 	}
