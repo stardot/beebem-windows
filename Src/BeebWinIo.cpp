@@ -1045,7 +1045,7 @@ void BeebWin::CaptureVideo()
 		// Close AVI file if currently capturing
 		EndVideo();
 
-		aviWriter = new AVIWriter();
+		aviWriter = new AviWriter();
 
 		WAVEFORMATEX wf;
 		WAVEFORMATEX *wfp = nullptr;
