@@ -131,6 +131,10 @@ const char DefaultBlurIntensities[8] = { 100, 88, 75, 62, 50, 38, 25, 12 };
 
 /****************************************************************************/
 
+static int CentreMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);
+
+/****************************************************************************/
+
 BeebWin::BeebWin()
 {
 	// Main window
@@ -5921,9 +5925,6 @@ void BeebWin::OpenDebugWindow()
 
 /****************************************************************************/
 
-static HHOOK hCBTHook = nullptr;
-static LRESULT CALLBACK CBTMessageBox(int Message, WPARAM wParam, LPARAM lParam);
-
 MessageResult BeebWin::Report(MessageType type, const char *format, ...)
 {
 	va_list args;
@@ -5975,12 +5976,7 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 				break;
 		}
 
-		hCBTHook = SetWindowsHookEx(WH_CBT, CBTMessageBox, nullptr, GetCurrentThreadId());
-
-		int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
-
-		UnhookWindowsHookEx(hCBTHook);
-		hCBTHook = nullptr;
+		int ID = CentreMessageBox(m_hWnd, buffer, WindowTitle, Type);
 
 		if (type == MessageType::Question)
 		{
@@ -6013,7 +6009,12 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 
 /****************************************************************************/
 
-LRESULT CALLBACK CBTMessageBox(int nCode, WPARAM wParam, LPARAM lParam)
+static HHOOK hCBTHook = nullptr;
+static LRESULT CALLBACK CBTMessageBox(int Message, WPARAM wParam, LPARAM lParam);
+
+/****************************************************************************/
+
+static LRESULT CALLBACK CBTMessageBox(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	if (nCode == HCBT_ACTIVATE)
 	{
@@ -6023,6 +6024,18 @@ LRESULT CALLBACK CBTMessageBox(int nCode, WPARAM wParam, LPARAM lParam)
 	}
 
 	return CallNextHookEx(hCBTHook, nCode, wParam, lParam);
+}
+
+/****************************************************************************/
+
+static int CentreMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType)
+{
+	hCBTHook = SetWindowsHookEx(WH_CBT, CBTMessageBox, nullptr, GetCurrentThreadId());
+
+	int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
+
+	UnhookWindowsHookEx(hCBTHook);
+	hCBTHook = nullptr;
 }
 
 /****************************************************************************/
