@@ -30,6 +30,8 @@ Offset  Description                 Access
 +03     write irq enable            W
 */
 
+#include <windows.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 

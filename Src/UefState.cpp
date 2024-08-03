@@ -21,6 +21,8 @@ Boston, MA  02110-1301, USA.
 
 // UEF savestate code.
 
+#include <windows.h>
+
 #include <functional>
 
 #include "UefState.h"

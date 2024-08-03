@@ -125,7 +125,7 @@ const char DefaultBlurIntensities[8] = { 100, 88, 75, 62, 50, 38, 25, 12 };
 
 /****************************************************************************/
 
-static int CentreMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);
+static int CentreMessageBox(HWND hWnd, LPCTSTR pszText, LPCTSTR pszCaption, UINT Type);
 
 /****************************************************************************/
 
@@ -646,7 +646,7 @@ BeebWin::~BeebWin()
 	if (m_hDCBitmap != NULL)
 		DeleteDC(m_hDCBitmap);
 
-	GdiplusShutdown(m_gdiplusToken);
+	Gdiplus::GdiplusShutdown(m_gdiplusToken);
 
 	CoUninitialize();
 }
@@ -6028,14 +6028,16 @@ static LRESULT CALLBACK CBTMessageBox(int nCode, WPARAM wParam, LPARAM lParam)
 
 /****************************************************************************/
 
-static int CentreMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType)
+static int CentreMessageBox(HWND hWnd, LPCTSTR pszText, LPCTSTR pszCaption, UINT Type)
 {
 	hCBTHook = SetWindowsHookEx(WH_CBT, CBTMessageBox, nullptr, GetCurrentThreadId());
 
-	int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
+	int Result = MessageBox(hWnd, pszText, pszCaption, Type);
 
 	UnhookWindowsHookEx(hCBTHook);
 	hCBTHook = nullptr;
+
+	return Result;
 }
 
 /****************************************************************************/

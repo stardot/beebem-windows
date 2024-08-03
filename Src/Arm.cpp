@@ -25,6 +25,8 @@ Boston, MA  02110-1301, USA.
 // http://www.davidsharp.com
 //////////////////////////////////////////////////////////////////////
 
+#include <windows.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
