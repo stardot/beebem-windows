@@ -42,7 +42,8 @@ enum class PALRomType {
     presabep,
     watqst,
     watwap,
-    watted
+    watted,
+    wwplusii
 };
 
 constexpr int PALROM_32K = 32768;

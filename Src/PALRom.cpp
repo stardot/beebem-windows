@@ -181,6 +181,17 @@ static uint8_t wapted_device(int ROMSEL, int offset)
     }
 }
 
+static uint8_t wwplusii_device(int ROMSEL, int offset)
+{
+    switch (offset & 0x3fe0)
+    {
+        case 0x3f80: PALRom[ROMSEL].Bank = 0; break;
+        case 0x3fa0: PALRom[ROMSEL].Bank = 1; break;
+    }
+
+    return PALRom[ROMSEL].Rom[(offset & 0x3fff) | (PALRom[ROMSEL].Bank << 14)];
+}
+
 uint8_t PALRomRead(int ROMSEL, int offset)
 {
     switch (PALRom[ROMSEL].Type)
@@ -215,6 +226,9 @@ uint8_t PALRomRead(int ROMSEL, int offset)
 
         case PALRomType::watted:
             return wapted_device(ROMSEL, offset);
+
+        case PALRomType::wwplusii:
+            return wwplusii_device(ROMSEL, offset);
     }
 }
 
@@ -273,6 +287,14 @@ PALRomType GuessRomType(uint8_t *Rom, uint32_t Size)
     else if (strstr(RomName, "CONQUEST") && Size == PALROM_32K && Crc == 0xF9634ECE)
     {
         return PALRomType::watqst;
+    }
+    else if (strstr(RomName, "WORDWISE-P") && Size == PALROM_32K && Crc == 0x1F560E1F)
+    {
+        return PALRomType::wwplusii;
+    }
+    else if (strstr(RomName, "MASTER ROM") && Size == PALROM_32K && Crc == 0x6F0CB588)
+    {
+        return PALRomType::wwplusii;
     }
 
     return PALRomType::none;
