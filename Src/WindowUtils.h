@@ -1,6 +1,6 @@
 /****************************************************************
 BeebEm - BBC Micro and Master 128 Emulator
-Copyright (C) 2023 Chris Needham
+Copyright (C) 2024 Chris Needham
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -18,50 +18,13 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
-#ifndef DIALOG_HEADER
-#define DIALOG_HEADER
+#ifndef WINDOW_UTILS_HEADER
+#define WINDOW_UTILS_HEADER
 
-#include <string>
+void InitWindowUtils();
+void ExitWindowUtils();
 
-class Dialog
-{
-	public:
-		Dialog(
-			HINSTANCE hInstance,
-			HWND hwndParent,
-			int DialogID
-		);
-
-	public:
-		bool DoModal();
-
-	private:
-		static INT_PTR CALLBACK sDlgProc(
-			HWND   hwnd,
-			UINT   nMessage,
-			WPARAM wParam,
-			LPARAM lParam
-		);
-
-		virtual INT_PTR DlgProc(
-			UINT   nMessage,
-			WPARAM wParam,
-			LPARAM lParam
-		) = 0;
-
-	protected:
-		std::string GetDlgItemText(int nID);
-		void SetDlgItemText(int nID, const std::string& str);
-		bool IsDlgItemChecked(int nID);
-		void SetDlgItemChecked(int nID, bool bChecked);
-		void SetDlgItemFocus(int nID);
-		void EnableDlgItem(int nID, bool bEnable);
-
-	protected:
-		HINSTANCE m_hInstance;
-		HWND m_hwndParent;
-		int m_DialogID;
-		HWND m_hwnd;
-};
+void CentreWindow(HWND hWndParent, HWND hWnd);
+void DisableRoundedCorners(HWND hWnd);
 
 #endif

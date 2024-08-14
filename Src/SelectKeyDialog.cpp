@@ -29,6 +29,7 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Messages.h"
 #include "Resource.h"
+#include "WindowUtils.h"
 
 /****************************************************************************/
 
@@ -76,6 +77,8 @@ bool SelectKeyDialog::Open()
 
 	if (m_hwnd != nullptr)
 	{
+		DisableRoundedCorners(m_hwnd);
+
 		EnableWindow(m_hwndParent, FALSE);
 
 		return true;

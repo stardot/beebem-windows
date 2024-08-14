@@ -106,6 +106,7 @@ using std::max;
 #include "UserVia.h"
 #include "Version.h"
 #include "Video.h"
+#include "WindowUtils.h"
 #include "Z80mem.h"
 #include "Z80.h"
 
@@ -374,6 +375,8 @@ BeebWin::BeebWin()
 
 bool BeebWin::Initialise()
 {
+	InitWindowUtils();
+
 	// Parse command line
 	ParseCommandLine();
 	bool bFound = FindCommandLineFile(m_CommandLineFileName1);
@@ -700,6 +703,8 @@ void BeebWin::Shutdown()
 
 	// Release FDC DLL.
 	Ext1770Reset();
+
+	ExitWindowUtils();
 }
 
 /****************************************************************************/
@@ -1236,6 +1241,9 @@ bool BeebWin::CreateBeebWindow()
 		return false;
 	}
 
+	// Windows 11 draws windows with rounded corners by default,
+	// so we disable them so the Beeb video image isn't affected.
+	// See https://stardot.org.uk/forums/viewtopic.php?f=4&t=26874
 	DisableRoundedCorners(m_hWnd);
 
 	ShowWindow(m_hWnd, nCmdShow); // Show the window
@@ -1244,45 +1252,6 @@ bool BeebWin::CreateBeebWindow()
 	SetWindowAttributes(false);
 
 	return true;
-}
-
-/****************************************************************************/
-
-// Windows 11 draws windows with rounded corners by default, so this function
-// disables them, so the Beeb video image isn't affected.
-//
-// See https://stardot.org.uk/forums/viewtopic.php?f=4&t=26874
-
-void BeebWin::DisableRoundedCorners(HWND hWnd)
-{
-	HMODULE hDwmApi = LoadLibrary("dwmapi.dll");
-
-	if (hDwmApi == nullptr)
-	{
-		return;
-	}
-
-	typedef HRESULT (STDAPICALLTYPE* DWM_SET_WINDOW_ATTRIBUTE)(HWND, DWORD, LPCVOID, DWORD);
-
-	DWM_SET_WINDOW_ATTRIBUTE DwmSetWindowAttribute = reinterpret_cast<DWM_SET_WINDOW_ATTRIBUTE>(
-		GetProcAddress(hDwmApi, "DwmSetWindowAttribute")
-	);
-
-	if (DwmSetWindowAttribute != nullptr)
-	{
-		const DWORD DWMWCP_DONOTROUND = 1;
-		const DWORD DWMWA_WINDOW_CORNER_PREFERENCE = 33;
-		const DWORD CornerPreference = DWMWCP_DONOTROUND;
-
-		DwmSetWindowAttribute(
-			hWnd,
-			DWMWA_WINDOW_CORNER_PREFERENCE,
-			&CornerPreference,
-			sizeof(CornerPreference)
-		);
-	}
-
-	FreeLibrary(hDwmApi);
 }
 
 /****************************************************************************/
@@ -6020,7 +5989,9 @@ static LRESULT CALLBACK CBTMessageBox(int nCode, WPARAM wParam, LPARAM lParam)
 	{
 		HWND hWnd = (HWND)wParam;
 
-		CenterDialog(mainWin->GethWnd(), hWnd);
+		DisableRoundedCorners(hWnd);
+
+		CentreWindow(mainWin->GethWnd(), hWnd);
 	}
 
 	return CallNextHookEx(hCBTHook, nCode, wParam, lParam);

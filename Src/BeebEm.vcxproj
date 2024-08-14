@@ -246,6 +246,7 @@
     <ClCompile Include="UserVia.cpp" />
     <ClCompile Include="Via.cpp" />
     <ClCompile Include="Video.cpp" />
+    <ClCompile Include="WindowUtils.cpp" />
     <ClCompile Include="XAudio2Streamer.cpp" />
     <ClCompile Include="Z80.cpp" />
     <ClCompile Include="Z80dis.cpp" />
@@ -418,6 +419,7 @@
     <ClInclude Include="Version.h" />
     <ClInclude Include="Via.h" />
     <ClInclude Include="Video.h" />
+    <ClInclude Include="WindowUtils.h" />
     <ClInclude Include="XAudio2Streamer.h" />
     <ClInclude Include="Z80.h" />
     <ClInclude Include="Z80mem.h" />

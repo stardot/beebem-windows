@@ -23,6 +23,7 @@ Boston, MA  02110-1301, USA.
 #include <vector>
 
 #include "Dialog.h"
+#include "WindowUtils.h"
 
 /****************************************************************************/
 
@@ -65,7 +66,9 @@ INT_PTR CALLBACK Dialog::sDlgProc(HWND   hwnd,
 		dialog = reinterpret_cast<Dialog*>(lParam);
 		dialog->m_hwnd = hwnd;
 
-		CenterDialog(dialog->m_hwndParent, hwnd);
+		DisableRoundedCorners(hwnd);
+
+		CentreWindow(dialog->m_hwndParent, hwnd);
 	}
 	else
 	{
@@ -131,38 +134,6 @@ void Dialog::SetDlgItemFocus(int nID)
 void Dialog::EnableDlgItem(int nID, bool bEnable)
 {
 	EnableWindow(GetDlgItem(m_hwnd, nID), bEnable);
-}
-
-/****************************************************************************/
-
-void CenterDialog(HWND hWndParent, HWND hWnd)
-{
-	RECT rcParent;
-	GetWindowRect(hWndParent, &rcParent);
-
-	RECT rcDialog;
-	GetWindowRect(hWnd, &rcDialog);
-
-	RECT rc;
-	CopyRect(&rc, &rcParent);
-
-	// Offset the owner and dialog box rectangles so that right and bottom
-	// values represent the width and height, and then offset the owner again
-	// to discard space taken up by the dialog box.
-
-	OffsetRect(&rcDialog, -rcDialog.left, -rcDialog.top);
-	OffsetRect(&rc, -rc.left, -rc.top);
-	OffsetRect(&rc, -rcDialog.right, -rcDialog.bottom);
-
-	// The new position is the sum of half the remaining space and the owner's
-	// original position.
-
-	SetWindowPos(hWnd,
-	             HWND_TOP,
-	             rcParent.left + (rc.right / 2),
-	             rcParent.top + (rc.bottom / 2),
-	             0, 0, // Ignores size arguments.
-	             SWP_NOSIZE);
 }
 
 /****************************************************************************/

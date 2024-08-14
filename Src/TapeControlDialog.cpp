@@ -27,6 +27,7 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Resource.h"
 #include "Serial.h"
+#include "WindowUtils.h"
 
 // Tape control dialog box variables
 std::vector<TapeMapEntry> TapeMap;
@@ -48,6 +49,8 @@ void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 		hwndTapeControl = CreateDialog(hinst, MAKEINTRESOURCE(IDD_TAPECONTROL),
 		                               NULL, TapeControlDlgProc);
 		hCurrentDialog = hwndTapeControl;
+
+		DisableRoundedCorners(hwndTapeControl);
 		ShowWindow(hwndTapeControl, SW_SHOW);
 
 		hwndMap = GetDlgItem(hwndTapeControl, IDC_TAPE_CONTROL_MAP);

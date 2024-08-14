@@ -48,6 +48,7 @@ Boston, MA  02110-1301, USA.
 #include "Serial.h"
 #include "StringUtils.h"
 #include "Tube.h"
+#include "WindowUtils.h"
 #include "Z80mem.h"
 #include "Z80.h"
 
@@ -1026,6 +1027,8 @@ void DebugOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
 
 	hCurrentDialog = hwndDebug;
 	hCurrentAccelTable = haccelDebug;
+
+	DisableRoundedCorners(hwndDebug);
 	ShowWindow(hwndDebug, SW_SHOW);
 
 	hwndInfo = GetDlgItem(hwndDebug, IDC_DEBUGINFO);

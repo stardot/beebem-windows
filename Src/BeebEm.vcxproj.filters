@@ -264,6 +264,9 @@
     <ClCompile Include="Video.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WindowUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="XAudio2Streamer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -570,6 +573,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Video.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="XAudio2Streamer.h">

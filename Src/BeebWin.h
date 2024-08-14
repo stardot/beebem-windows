@@ -402,7 +402,6 @@ public:
 	bool InitClass();
 	void UpdateOptionsMenu();
 	bool CreateBeebWindow();
-	void DisableRoundedCorners(HWND hWnd);
 	void FlashWindow();
 	void CreateBitmap(void);
 	void InitMenu();
