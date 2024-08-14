@@ -1305,63 +1305,84 @@ bool BeebWin::LoadCSWTape(const char *FileName)
 }
 
 /****************************************************************************/
-// if DLLName is NULL then FDC setting is read from the registry
-// else the named DLL is read in
-// if save is true then DLL selection is saved in registry
 
-void BeebWin::LoadFDC(char *DLLName, bool save)
+// If DLLName is NULL then FDC setting is read from Preferences.cfg
+// else the named DLL is read in
+// If Save is true then DLL selection is saved to Preferences.cfg
+
+bool BeebWin::LoadFDC(char *DLLName, bool Save)
 {
-	char CfgName[20];
-	sprintf(CfgName, "FDCDLL%d", static_cast<int>(MachineType));
+	Ext1770Result Result = Ext1770Result::Success;
 
 	Ext1770Reset();
-
 	NativeFDC = true;
+
+	char CfgName[20];
+	sprintf(CfgName, "FDCDLL%d", static_cast<int>(MachineType));
 
 	if (DLLName == nullptr)
 	{
 		if (!m_Preferences.GetStringValue(CfgName, FDCDLL))
+		{
 			strcpy(FDCDLL, "None");
+		}
+
 		DLLName = FDCDLL;
 	}
 
 	if (strcmp(DLLName, "None") != 0)
 	{
-		char path[MAX_PATH];
-		strcpy(path, DLLName);
-		GetDataPath(m_AppPath, path);
+		char DLLPath[MAX_PATH];
+		strcpy(DLLPath, DLLName);
+		GetDataPath(m_AppPath, DLLPath);
 
-		Ext1770Result Result = Ext1770Init(path);
+		Result = Ext1770Init(DLLPath);
 
 		if (Result == Ext1770Result::Success)
 		{
 			NativeFDC = false; // at last, a working DLL!
 		}
-		else if (Result == Ext1770Result::LoadFailed)
+		else
 		{
-			Report(MessageType::Error, "Unable to load FDD Extension Board DLL\nReverting to native 8271");
-			strcpy(DLLName, "None");
-		}
-		else // if (Result == InvalidDLL)
-		{
-			Report(MessageType::Error, "Invalid FDD Extension Board DLL\nReverting to native 8271");
-			strcpy(DLLName, "None");
-		}
-	}
+			if (Result == Ext1770Result::LoadFailed)
+			{
+				Report(MessageType::Error, "Unable to load FDD Extension Board DLL\nReverting to native 8271");
+			}
+			else // if (Result == InvalidDLL)
+			{
+				Report(MessageType::Error, "Invalid FDD Extension Board DLL\nReverting to native 8271");
+			}
 
-	if (save)
-	{
-		m_Preferences.SetStringValue(CfgName, DLLName);
+			strcpy(DLLName, "None");
+		}
 	}
 
 	// Set menu options
 	CheckMenuItem(IDM_8271, NativeFDC);
 	CheckMenuItem(IDM_FDC_DLL, !NativeFDC);
 
-	DisplayCycles = 7000000;
+	if (Result == Ext1770Result::Success)
+	{
+		if (Save)
+		{
+			m_Preferences.SetStringValue(CfgName, DLLName);
+		}
 
-	if (NativeFDC || MachineType == Model::Master128)
-		DisplayCycles = 0;
+		if (NativeFDC || MachineType == Model::Master128)
+		{
+			DisplayCycles = 0;
+		}
+		else
+		{
+			DisplayCycles = 7000000;
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void BeebWin::SetDriveControl(unsigned char Value)
