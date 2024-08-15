@@ -1573,8 +1573,10 @@ void BeebWin::OnCopy()
 	TogglePrinter(); // Turn printer back on
 	UpdatePrinterPortMenu();
 
-	m_PrinterBuffer.resize(5);
+	m_PrinterBuffer.clear();
 
+	m_ClipboardBuffer.resize(5);
+	m_ClipboardLength = 5;
 	m_ClipboardBuffer[0] = 2;
 	m_ClipboardBuffer[1] = 'L';
 	m_ClipboardBuffer[2] = '.';
