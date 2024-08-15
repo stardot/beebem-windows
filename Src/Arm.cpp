@@ -1215,7 +1215,7 @@ void CArm::run()
 			{
 				uint rn = getField(currentInstruction, 16, 19); // base address register
 				uint rd = getField(currentInstruction, 12, 15); // get register to store
-				performDataTransferStoreWord(getRegister(rn) - getDataTransferValueImmediate(), (uint8)getRegisterWithPSRAndPipelining(rd));
+				performDataTransferStoreWord(getRegister(rn) - getDataTransferValueImmediate(), getRegisterWithPSRAndPipelining(rd));
 				break;
 			}
 			// ldr rd, [rn, -imm]
