@@ -306,8 +306,8 @@ void BeebWin::LoadPreferences()
 		       m_PrefsFileName.c_str());
 	}
 
-	LoadHardwarePreferences();
-	LoadTubePreferences();
+	LoadHardwarePreferences(Version);
+	LoadTubePreferences(Version);
 	LoadWindowPosPreferences(Version);
 	LoadTimingPreferences(Version);
 	LoadDisplayPreferences(Version);
@@ -334,13 +334,44 @@ void BeebWin::LoadPreferences()
 
 /****************************************************************************/
 
-void BeebWin::LoadHardwarePreferences()
+void BeebWin::LoadHardwarePreferences(int Version)
 {
-	std::string Value;
 
-	m_Preferences.GetStringValue(CFG_MACHINE_TYPE, Value, MachineTypeStr[0]);
+	if (Version >= 3)
+	{
+		std::string Value;
 
-	MachineType = static_cast<Model>(FindEnum(Value, MachineTypeStr, 0));
+		m_Preferences.GetStringValue(CFG_MACHINE_TYPE, Value, MachineTypeStr[0]);
+
+		MachineType = static_cast<Model>(FindEnum(Value, MachineTypeStr, 0));
+	}
+	else
+	{
+		unsigned char Type = 0;
+
+		if (m_Preferences.GetBinaryValue(CFG_MACHINE_TYPE, &Type, 1))
+		{
+			switch (Type)
+			{
+				case 0:
+				default:
+					MachineType = Model::B;
+					break;
+
+				case 1:
+					MachineType = Model::IntegraB;
+					break;
+
+				case 2:
+					MachineType = Model::BPlus;
+					break;
+
+				case 3:
+					MachineType = Model::Master128;
+					break;
+			}
+		}
+	}
 
 	if (!m_Preferences.GetBoolValue(CFG_BASIC_HARDWARE_ONLY, BasicHardwareOnly, false))
 	{
@@ -361,52 +392,94 @@ void BeebWin::LoadHardwarePreferences()
 
 /****************************************************************************/
 
-void BeebWin::LoadTubePreferences()
+void BeebWin::LoadTubePreferences(int Version)
 {
 	std::string Value;
 
-	if (m_Preferences.GetStringValue(CFG_TUBE_TYPE, Value, TubeDeviceStr[0]))
+	if (Version >= 3)
 	{
-		TubeType = static_cast<TubeDevice>(FindEnum(Value, TubeDeviceStr, 0));
+		if (m_Preferences.GetStringValue(CFG_TUBE_TYPE, Value, TubeDeviceStr[0]))
+		{
+			TubeType = static_cast<TubeDevice>(FindEnum(Value, TubeDeviceStr, 0));
+		}
 	}
 	else
 	{
-		// For backwards compatibility with BeebEm 4.14 or earlier.
-		bool TubeEnabled;
-		bool AcornZ80;
-		bool TorchTube;
-		bool Tube186Enabled;
-		bool ArmTube;
+		unsigned char Type = 0;
 
-		m_Preferences.GetBoolValue(CFG_TUBE_ENABLED_OLD, TubeEnabled, false);
-		m_Preferences.GetBoolValue(CFG_TUBE_ACORN_Z80_OLD, AcornZ80, false);
-		m_Preferences.GetBoolValue(CFG_TUBE_TORCH_Z80_OLD, TorchTube, false);
-		m_Preferences.GetBoolValue(CFG_TUBE_186_OLD, Tube186Enabled, false);
-		m_Preferences.GetBoolValue(CFG_TUBE_ARM_OLD, ArmTube, false);
+		if (m_Preferences.GetBinaryValue(CFG_TUBE_TYPE, &Type, 1))
+		{
+			switch (Type)
+			{
+				case 0:
+				default:
+					TubeType = TubeDevice::None;
+					break;
 
-		if (TubeEnabled)
-		{
-			TubeType = TubeDevice::Acorn65C02;
-		}
-		else if (AcornZ80)
-		{
-			TubeType = TubeDevice::AcornZ80;
-		}
-		else if (TorchTube)
-		{
-			TubeType = TubeDevice::TorchZ80;
-		}
-		else if (Tube186Enabled)
-		{
-			TubeType = TubeDevice::Master512CoPro;
-		}
-		else if (ArmTube)
-		{
-			TubeType = TubeDevice::AcornArm;
+				case 1:
+					TubeType = TubeDevice::Acorn65C02;
+					break;
+
+				case 2:
+					TubeType = TubeDevice::Master512CoPro;
+					break;
+
+				case 3:
+					TubeType = TubeDevice::AcornZ80;
+					break;
+
+				case 4:
+					TubeType = TubeDevice::TorchZ80;
+					break;
+
+				case 5:
+					TubeType = TubeDevice::AcornArm;
+					break;
+
+				case 6:
+					TubeType = TubeDevice::SprowArm;
+					break;
+			}
 		}
 		else
 		{
-			TubeType = TubeDevice::None;
+			// For backwards compatibility with BeebEm 4.14 or earlier.
+			bool TubeEnabled;
+			bool AcornZ80;
+			bool TorchTube;
+			bool Tube186Enabled;
+			bool ArmTube;
+
+			m_Preferences.GetBoolValue(CFG_TUBE_ENABLED_OLD, TubeEnabled, false);
+			m_Preferences.GetBoolValue(CFG_TUBE_ACORN_Z80_OLD, AcornZ80, false);
+			m_Preferences.GetBoolValue(CFG_TUBE_TORCH_Z80_OLD, TorchTube, false);
+			m_Preferences.GetBoolValue(CFG_TUBE_186_OLD, Tube186Enabled, false);
+			m_Preferences.GetBoolValue(CFG_TUBE_ARM_OLD, ArmTube, false);
+
+			if (TubeEnabled)
+			{
+				TubeType = TubeDevice::Acorn65C02;
+			}
+			else if (AcornZ80)
+			{
+				TubeType = TubeDevice::AcornZ80;
+			}
+			else if (TorchTube)
+			{
+				TubeType = TubeDevice::TorchZ80;
+			}
+			else if (Tube186Enabled)
+			{
+				TubeType = TubeDevice::Master512CoPro;
+			}
+			else if (ArmTube)
+			{
+				TubeType = TubeDevice::AcornArm;
+			}
+			else
+			{
+				TubeType = TubeDevice::None;
+			}
 		}
 	}
 }

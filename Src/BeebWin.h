@@ -580,8 +580,8 @@ public:
 
 	// Preferences
 	void LoadPreferences();
-	void LoadHardwarePreferences();
-	void LoadTubePreferences();
+	void LoadHardwarePreferences(int Version);
+	void LoadTubePreferences(int Version);
 	void LoadWindowPosPreferences(int Version);
 	void LoadTimingPreferences(int Version);
 	void LoadDisplayPreferences(int Version);
