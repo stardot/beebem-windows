@@ -72,26 +72,17 @@ typedef unsigned int Reg;
 typedef unsigned int Word;
 typedef unsigned char Byte;
 
-// dynamic profiling options
-constexpr bool dynamicProfilingExceptionFreq = false;
-constexpr bool dynamicProfilingRegisterUse = false;
-constexpr bool dynamicProfilingConditionalExecution = false;
-constexpr bool dynamicProfilingCoprocessorUse = true;
-
 class CArm
 {
 public:
-	enum class InitResult {
+	enum class InitResult
+	{
 		Success,
 		FileNotFound
 	};
 
 // functions
 public:
-	void dynamicProfilingCoprocessorUsage(uint32 currentInstruction);
-	void dynamicProfilingExceptionFrequencyReport();
-	void dynamicProfilingExceptionFrequency(const char *exceptionName, uint32& counter);
-
 	uint32 pc;
 	inline void performBranch();
 
@@ -212,54 +203,26 @@ public:
 	void LoadState(FILE* SUEF);
 
 private:
-	uint32 lastCopro;				// num of instructions executed since last copro instruction profiled
-	void dynamicProfilingConditionalExe(uint32 currentInstruction);
-	void dynamicProfilingConditionalExeReport();
-	void dynamicProfilingRegisterUsageReport();
-	void dynamicProfilingRegisterUsage(uint regNumber, bool get);
-	
 	// variables
-	uint processorMode;				// in bits 0-1
-	uint interruptDisableFlag;		// in bit 26
-	uint fastInterruptDisableFlag;	// in bit 27
-	uint conditionFlags;			// store NZCV flags in bits 0-3
-	uint trace;
+	uint processorMode; // in bits 0-1
+	uint interruptDisableFlag; // in bit 26
+	uint fastInterruptDisableFlag; // in bit 27
+	uint conditionFlags; // store NZCV flags in bits 0-3
 	
-	bool	prefetchInvalid;
-	uint32	prefetchInstruction;
-	uint32	currentInstruction;
-	uint32	r[16];					// current bank of registers
-	uint32	usrR[16];				// user mode registers
-	uint32	svcR[16];				// supervisor mode registers
-	uint32	irqR[16];				// interrupt mode registers
-	uint32	fiqR[16];				// fast interrupt mode registers
-	uint32	*curR[4];				// pointer to current mode's registers
+	bool prefetchInvalid;
+	uint32 prefetchInstruction;
+	uint32 currentInstruction;
+	uint32 r[16]; // current bank of registers
+	uint32 usrR[16]; // user mode registers
+	uint32 svcR[16]; // supervisor mode registers
+	uint32 irqR[16]; // interrupt mode registers
+	uint32 fiqR[16]; // fast interrupt mode registers
+	uint32 *curR[4]; // pointer to current mode's registers
 
 	// look up tables
 	uint32 immediateCarry[4096];
 	uint32 immediateValue[4096];
 	
-	// TEST ENVIRONMENT VARIABLES
-	uint8 romMemory[0x4000];		// 16 KBytes of rom memory
-	uint8 ramMemory[0x400000];		// 4 MBytes of ram memory
-	bool keepRunning;				// keep calling run()
-//	CArmDecoder decoder;			// create instance of disassembler
-	uint32 executionCount;
-	uint32 previousProcessorMode;
-	uint32 modeCounter;
-	uint32 modeTotal[4];
-	uint32 resetCounter;
-	uint32 undefCounter;
-	uint32 swiCounter;
-	uint32 prefAbortCounter;
-	uint32 dataAbortCounter;
-	uint32 addrExcepCounter;
-	uint32 irqCounter;
-	uint32 fiqCounter;
-	uint32 exceptionLastExecutionCount;
-	uint32 registerSetCounter[16];
-	uint32 registerGotCounter[16];
-	uint32 conditionallyExecuted[16];
-	uint32 conditionallyNotExecuted[16];
-	// END OF TEST ENVIRONMENT VARIABLES
+	uint8 romMemory[0x4000]; // 16 KBytes of rom memory
+	uint8 ramMemory[0x400000]; // 4 MBytes of ram memory
 };
