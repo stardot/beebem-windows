@@ -2536,12 +2536,17 @@ Disc8271Result LoadFSDDiscImage(const char *FileName, int DriveNum)
 		unsigned char Info[5];
 		Input.read((char *)Info, sizeof(Info));
 
+		#if DEBUG_8271
 		const int Day = Info[0] >> 3;
 		const int Month = Info[2] & 0x0F;
 		const int Year = ((Info[0] & 0x07) << 8) | Info[1];
 
 		const int CreatorID = Info[2] >> 4;
 		const int Release = ((Info[4] >> 6) << 8) | Info[3];
+
+		DebugTrace("8271: FSD File: %s, Day: %d, Month: %d, Year, %d, CreatorID: %d, Release: %d\n",
+		           FileName, Day, Month, Year, CreatorID, Release);
+		#endif
 
 		std::string DiscTitle;
 		char TitleChar = 1;
@@ -2562,7 +2567,8 @@ Disc8271Result LoadFSDDiscImage(const char *FileName, int DriveNum)
 
 		for (int Track = 0; Track < DiscStatus[DriveNum].TotalTracks; Track++)
 		{
-			/* unsigned char TrackNumber = */(unsigned char)Input.get(); // Read current track details
+			// unsigned char TrackNumber = (unsigned char)Input.get();
+			Input.get(); // Read current track details
 			unsigned char SectorsPerTrack = (unsigned char)Input.get(); // Read number of sectors on track
 			DiscStatus[DriveNum].Tracks[Head][Track].LogicalSectors = SectorsPerTrack;
 
