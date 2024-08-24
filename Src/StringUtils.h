@@ -29,5 +29,6 @@ char ToHexDigit(int Value);
 bool StringEndsWith(const std::string& str, const std::string& suffix);
 std::string WStr2Str(const std::wstring& str);
 std::wstring Str2WStr(const std::string& str);
+int StrCaseCmp(const char *str1, const char *str2);
 
 #endif

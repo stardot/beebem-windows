@@ -46,6 +46,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Speech.h"
 #include "6502core.h"
 #include "BeebWin.h"
+#include "FileUtils.h"
 #include "Log.h"
 #include "Main.h"
 #include "Sound.h"
@@ -1394,7 +1395,7 @@ bool SpeechInit()
 	// This section rewritten for V.1.32 to take account of roms.cfg file.
 	char Path[MAX_PATH];
 	strcpy(Path, mainWin->GetUserDataPath());
-	strcat(Path, "Phroms.cfg");
+	AppendPath(Path, "Phroms.cfg");
 
 	FILE *RomCfg = fopen(Path, "rt");
 
@@ -1418,11 +1419,11 @@ bool SpeechInit()
 		char PhromPath[MAX_PATH];
 		strcpy(PhromPath, RomName);
 
-		if (RomName[0] != '\\' && RomName[1] != ':')
+		if (IsRelativePath(RomName))
 		{
 			strcpy(PhromPath, mainWin->GetUserDataPath());
-			strcat(PhromPath, "Phroms\\");
-			strcat(PhromPath, RomName);
+			AppendPath(PhromPath, "Phroms");
+			AppendPath(PhromPath, RomName);
 		}
 
 		if (strncmp(RomName, "EMPTY", 5) != 0)

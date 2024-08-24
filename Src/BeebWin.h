@@ -363,12 +363,13 @@ public:
 	bool FindCommandLineFile(char *FileName);
 	void HandleCommandLineFile(int Drive, const char *FileName);
 	bool CheckUserDataPath(bool Persist);
+	bool CopyFiles(const char* SourceFileSpec, const char* DestPath);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
 	bool NewTapeImage(char *FileName, int Size);
 	const char *GetAppPath() const { return m_AppPath; }
 	const char *GetUserDataPath() const { return m_UserDataPath; }
-	void GetDataPath(const char *folder, char *path);
+	void GetDataPath(const char *Folder, char *Path);
 	void QuickLoad();
 	void QuickSave();
 	void LoadUEFState(const char *FileName);

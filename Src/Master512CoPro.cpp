@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #include "Master512CoPro.h"
+#include "FileUtils.h"
 #include "Main.h"
 #include "Log.h"
 #include "Tube.h"
@@ -3757,11 +3758,12 @@ void Master512CoPro::LoadBIOS()
 {
 	memset(m_Memory, 0, 0x100000);
 
-	char path[256];
-	strcpy(path, mainWin->GetUserDataPath());
-	strcat(path, "BeebFile/BIOS.rom");
+	char PathName[MAX_PATH];
+	strcpy(PathName, mainWin->GetUserDataPath());
+	AppendPath(PathName, "BeebFile");
+	AppendPath(PathName, "BIOS.rom");
 
-	FILE* f = fopen(path, "rb");
+	FILE* f = fopen(PathName, "rb");
 
 	if (f != nullptr)
 	{
@@ -3773,7 +3775,7 @@ void Master512CoPro::LoadBIOS()
 	}
 	else
 	{
-		mainWin->Report(MessageType::Error, "Could not open BIOS image file:\n %s", path);
+		mainWin->Report(MessageType::Error, "Could not open BIOS image file:\n %s", PathName);
 	}
 }
 

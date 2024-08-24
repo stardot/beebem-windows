@@ -26,6 +26,7 @@ Boston, MA  02110-1301, USA.
 #include <stdio.h>
 
 #include "Log.h"
+#include "FileUtils.h"
 #include "Main.h"
 
 static FILE *LogFile = nullptr;
@@ -39,11 +40,11 @@ void OpenLog()
 {
 	LogFile = nullptr;
 
-	char Path[256];
-	strcpy(Path, mainWin->GetUserDataPath());
-	strcat(Path, "BeebEm.log");
+	char PathName[MAX_PATH];
+	strcpy(PathName, mainWin->GetUserDataPath());
+	AppendPath(PathName, "BeebEm.log");
 
-	// LogFile = fopen(Path, "wt");
+	// LogFile = fopen(PathName, "wt");
 }
 
 void CloseLog()

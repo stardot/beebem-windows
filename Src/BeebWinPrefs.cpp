@@ -933,17 +933,26 @@ void BeebWin::LoadInputPreferences(int Version)
 
 	if (m_Preferences.GetStringValue(CFG_OPTIONS_USER_KEY_MAP_FILE, m_UserKeyMapPath))
 	{
-		strcpy(Path, m_UserKeyMapPath);
-		GetDataPath(m_UserDataPath, Path);
+		if (IsRelativePath(m_UserKeyMapPath))
+		{
+			strcpy(Path, m_UserDataPath);
+			AppendPath(Path, m_UserKeyMapPath);
+		}
+		else
+		{
+			strcpy(Path, m_UserKeyMapPath);
+		}
+
 		if (ReadKeyMap(Path, &UserKeyMap))
+		{
 			ReadDefault = false;
+		}
 	}
 
 	if (ReadDefault)
 	{
-		strcpy(m_UserKeyMapPath, "DefaultUser.kmap");
-		strcpy(Path, m_UserKeyMapPath);
-		GetDataPath(m_UserDataPath, Path);
+		strcpy(Path, m_UserDataPath);
+		AppendPath(Path, "DefaultUser.kmap");
 		ReadKeyMap(Path, &UserKeyMap);
 	}
 }

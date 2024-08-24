@@ -36,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "Log.h"
 #include "Main.h"
 #include "Sound.h"
+#include "StringUtils.h"
 #include "SysVia.h"
 #include "Tube.h"
 #include "UefState.h"
@@ -2956,11 +2957,11 @@ void Load8271UEF(FILE *SUEF, int Version)
 
 		const char *ext = strrchr(FileName, '.');
 
-		if (ext != nullptr && _stricmp(ext + 1, "dsd") == 0)
+		if (ext != nullptr && StrCaseCmp(ext + 1, "dsd") == 0)
 		{
 			LoadSuccess = mainWin->Load8271DiscImage(FileName, 0, 80, DiscType::DSD);
 		}
-		else if (Version >= 14 && ext != nullptr && _stricmp(ext + 1, "fsd") == 0)
+		else if (Version >= 14 && ext != nullptr && StrCaseCmp(ext + 1, "fsd") == 0)
 		{
 			LoadSuccess = mainWin->Load8271DiscImage(FileName, 0, 80, DiscType::FSD);
 		}
@@ -2988,11 +2989,11 @@ void Load8271UEF(FILE *SUEF, int Version)
 
 		const char *ext = strrchr(FileName, '.');
 
-		if (ext != nullptr && _stricmp(ext + 1, "dsd") == 0)
+		if (ext != nullptr && StrCaseCmp(ext + 1, "dsd") == 0)
 		{
 			LoadSuccess = mainWin->Load8271DiscImage(FileName, 1, 80, DiscType::DSD);
 		}
-		else if (Version >= 14 && ext != nullptr && _stricmp(ext + 1, "fsd") == 0)
+		else if (Version >= 14 && ext != nullptr && StrCaseCmp(ext + 1, "fsd") == 0)
 		{
 			LoadSuccess = mainWin->Load8271DiscImage(FileName, 1, 80, DiscType::FSD);
 		}

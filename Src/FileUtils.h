@@ -33,6 +33,8 @@ std::string ReplaceFileExt(const std::string& FileName, const char* Ext);
 void GetPathFromFileName(const char* FileName, char* Path, size_t Size);
 void MakeFileName(char* Path, size_t Size, const char* DirName, const char* FileName, ...);
 void MakePreferredPath(char* PathName);
+void AppendPath(char* pszPath, const char* pszPathToAppend);
+bool IsRelativePath(const char* pszPath);
 
 /*----------------------------------------------------------------------------*/
 

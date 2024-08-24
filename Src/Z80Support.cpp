@@ -27,6 +27,7 @@ Boston, MA  02110-1301, USA.
 #include "Z80.h"
 #include "BeebMem.h"
 #include "Debug.h"
+#include "FileUtils.h"
 #include "Log.h"
 #include "Tube.h"
 #include "UefState.h"
@@ -232,16 +233,17 @@ void z80_execute()
 
 void init_z80()
 {
-	char path[256];
+	char PathName[MAX_PATH];
 
 	WriteLog("init_z80()\n");
 
 	if (TubeType == TubeDevice::AcornZ80)
 	{
-		strcpy(path, RomPath);
-		strcat(path, "BeebFile/Z80.rom");
+		strcpy(PathName, RomPath);
+		AppendPath(PathName, "BeebFile");
+		AppendPath(PathName, "Z80.rom");
 
-		FILE *f = fopen(path, "rb");
+		FILE *f = fopen(PathName, "rb");
 		if (f != nullptr)
 		{
 			fread(z80_rom, 4096, 1, f);
@@ -250,10 +252,11 @@ void init_z80()
 	}
 	else // Tube::TorchZ80
 	{
-		strcpy(path, RomPath);
-		strcat(path, "BeebFile/CCPN102.rom");
+		strcpy(PathName, RomPath);
+		AppendPath(PathName, "BeebFile");
+		AppendPath(PathName, "CCPN102.rom");
 
-		FILE *f = fopen(path, "rb");
+		FILE *f = fopen(PathName, "rb");
 		if (f != nullptr)
 		{
 			size_t addr = 0;

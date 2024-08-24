@@ -728,31 +728,33 @@ static void FiddleACCCON(unsigned char newValue) {
 }
 
 /*----------------------------------------------------------------------------*/
-static void RomWriteThrough(int Address, unsigned char Value) {
-	int bank = 0;
+
+static void RomWriteThrough(int Address, unsigned char Value)
+{
+	int Bank = 0;
 
 	// SW RAM board - bank to write to is selected by User VIA
 	if (SWRAMBoardEnabled)
 	{
-		bank = (UserVIAState.orb & UserVIAState.ddrb) & 0xf;
+		Bank = (UserVIAState.orb & UserVIAState.ddrb) & 0xf;
 
-		if (!RomWritable[bank])
+		if (!RomWritable[Bank])
 		{
-			bank = ROM_BANK_COUNT;
+			Bank = ROM_BANK_COUNT;
 		}
 	}
 	else
 	{
 		// Find first writable bank
-		while (bank < ROM_BANK_COUNT && !RomWritable[bank])
+		while (Bank < ROM_BANK_COUNT && !RomWritable[Bank])
 		{
-			++bank;
+			++Bank;
 		}
 	}
 
-	if (bank < ROM_BANK_COUNT)
+	if (Bank < ROM_BANK_COUNT)
 	{
-		Roms[bank][Address - 0x8000] = Value;
+		Roms[Bank][Address - 0x8000] = Value;
 	}
 }
 
@@ -1185,13 +1187,15 @@ char *ReadRomTitle(int bank, char *Title, int BufSize)
 
 static std::string GetRomFileName(const std::string& RomName)
 {
-	if (RomName[0] != '\\' && RomName[1] != ':')
+	if (IsRelativePath(RomName.c_str()))
 	{
-		std::string RomFileName = RomPath;
-		RomFileName += "BeebFile\\";
-		RomFileName += RomName;
+		char PathName[MAX_PATH];
+		strcpy(PathName, mainWin->GetUserDataPath());
+		AppendPath(PathName, "BeebFile");
+		AppendPath(PathName, RomName.c_str());
+		MakePreferredPath(PathName);
 
-		return RomFileName;
+		return PathName;
 	}
 	else
 	{

@@ -38,6 +38,7 @@ Boston, MA  02110-1301, USA.
 #include "Arm.h"
 #include "BeebMem.h"
 #include "Debug.h"
+#include "FileUtils.h"
 #include "Log.h"
 #include "Main.h"
 #include "SprowCoPro.h"
@@ -1532,8 +1533,10 @@ static void Reset65C02()
   //The fun part, the tube OS is copied from ROM to tube RAM before the processor starts processing
   //This makes the OS "ROM" writable in effect, but must be restored on each reset.
   char TubeRomName[MAX_PATH];
-  strcpy(TubeRomName,RomPath);
-  strcat(TubeRomName,"BeebFile/6502Tube.rom");
+  strcpy(TubeRomName, RomPath);
+  AppendPath(TubeRomName, "BeebFile");
+  AppendPath(TubeRomName, "6502Tube.rom");
+
   FILE *TubeRom = fopen(TubeRomName,"rb");
   if (TubeRom != nullptr)
   {

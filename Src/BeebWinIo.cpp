@@ -58,6 +58,7 @@ using std::max;
 #include "Resource.h"
 #include "Serial.h"
 #include "Sound.h"
+#include "StringUtils.h"
 #include "TapeControlDialog.h"
 #include "Tube.h"
 #include "UefState.h"
@@ -171,6 +172,7 @@ bool BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		switch (Dialog.GetFilterIndex())
 		{
 			case 1:
+			default:
 				Type = GetFileTypeFromExtension(FileName);
 				break;
 
@@ -430,9 +432,9 @@ bool BeebWin::NewTapeImage(char *FileName, int Size)
 	m_Preferences.GetStringValue(CFG_TAPES_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog fileDialog(m_hWnd, FileName, Size, DefaultPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, Size, DefaultPath, filter);
 
-	bool Result = fileDialog.Save();
+	bool Result = Dialog.Save();
 
 	if (Result)
 	{
@@ -463,8 +465,9 @@ void BeebWin::SelectFDC()
 	strcpy(DefaultPath, m_AppPath);
 	strcat(DefaultPath, "Hardware");
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-	if (fileDialog.Open())
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+
+	if (Dialog.Open())
 	{
 		// Make path relative to app path
 		if (_strnicmp(FileName, m_AppPath, strlen(m_AppPath)) == 0)
@@ -797,7 +800,7 @@ void BeebWin::UpdatePrinterPortMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_PrinterPort == MenuItems[i].PrinterPort)
 		{
@@ -972,7 +975,7 @@ void BeebWin::UpdateVideoCaptureResolutionMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_VideoCaptureResolution == MenuItems[i].Resolution)
 		{
@@ -999,7 +1002,7 @@ void BeebWin::UpdateVideoCaptureFrameSkipMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_AviFrameSkip == MenuItems[i].FrameSkip)
 		{
@@ -1152,7 +1155,8 @@ void BeebWin::QuickLoad()
 {
 	char FileName[MAX_PATH];
 	strcpy(FileName, m_UserDataPath);
-	strcat(FileName, "BeebState\\quicksave.uefstate");
+	AppendPath(FileName, "BeebState");
+	AppendPath(FileName, "quicksave.uefstate");
 
 	if (FileExists(FileName))
 	{
@@ -1162,7 +1166,8 @@ void BeebWin::QuickLoad()
 	{
 		// For backwards compatiblity with existing quicksave files:
 		strcpy(FileName, m_UserDataPath);
-		strcat(FileName, "BeebState\\quicksave.uef");
+		AppendPath(FileName, "BeebState");
+		AppendPath(FileName, "quicksave.uef");
 		LoadUEFState(FileName);
 	}
 }
@@ -1175,15 +1180,26 @@ void BeebWin::QuickSave()
 	// Bump old quicksave files down
 	for (int i = 1; i <= 9; ++i)
 	{
-		sprintf(FileName1, "%sBeebState\\quicksave%d.uefstate", m_UserDataPath, i);
+		char FileName[100];
+		sprintf(FileName, "quicksave%d.uefstate", i);
+
+		strcpy(FileName1, m_UserDataPath);
+		AppendPath(FileName1, "BeebState");
+		AppendPath(FileName1, FileName);
 
 		if (i == 9)
 		{
-			sprintf(FileName2, "%sBeebState\\quicksave.uefstate", m_UserDataPath);
+			strcpy(FileName2, m_UserDataPath);
+			AppendPath(FileName2, "BeebState");
+			AppendPath(FileName2, "quicksave.uefstate");
 		}
 		else
 		{
-			sprintf(FileName2, "%sBeebState\\quicksave%d.uefstate", m_UserDataPath, i + 1);
+			sprintf(FileName, "quicksave%d.uefstate", i);
+
+			strcpy(FileName2, m_UserDataPath);
+			AppendPath(FileName2, "BeebState");
+			AppendPath(FileName2, FileName);
 		}
 
 		MoveFileEx(FileName2, FileName1, MOVEFILE_REPLACE_EXISTING);
@@ -1495,26 +1511,25 @@ void BeebWin::LoadEmuUEF(FILE *SUEF, int Version)
 }
 
 /****************************************************************************/
-void BeebWin::GetDataPath(const char *folder, char *path)
-{
-	char newPath[MAX_PATH];
 
-	// If path is absolute then use it
-	if (path[0] == '\\' || path[0] == '/' ||
-		(strlen(path) > 2 && path[1] == ':' && (path[2] == '\\' || path[2] == '/')))
+void BeebWin::GetDataPath(const char *Folder, char *Path)
+{
+	char NewPath[MAX_PATH];
+
+	if (IsRelativePath(Path))
 	{
-		// Absolute path - just use it as is
+		strcpy(NewPath, Folder);
+		AppendPath(NewPath, Path);
+		strcpy(Path, NewPath);
 	}
 	else
 	{
-		// Relative path
-		strcpy(newPath, folder);
-		strcat(newPath, path);
-		strcpy(path, newPath);
+		// Absolute path - just use it as is
 	}
 }
 
 /****************************************************************************/
+
 void BeebWin::LoadUserKeyMap()
 {
 	char FileName[MAX_PATH];
@@ -1522,8 +1537,9 @@ void BeebWin::LoadUserKeyMap()
 
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
-	if (fileDialog.Open())
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
+
+	if (Dialog.Open())
 	{
 		if (ReadKeyMap(FileName, &UserKeyMap))
 			strcpy(m_UserKeyMapPath, FileName);
@@ -1531,6 +1547,7 @@ void BeebWin::LoadUserKeyMap()
 }
 
 /****************************************************************************/
+
 void BeebWin::SaveUserKeyMap()
 {
 	char FileName[MAX_PATH];
@@ -1538,9 +1555,9 @@ void BeebWin::SaveUserKeyMap()
 
 	const char* filter = "Key Map File (*.kmap)\0*.kmap\0";
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), m_UserDataPath, filter);
 
-	if (fileDialog.Save())
+	if (Dialog.Save())
 	{
 		if (!HasFileExt(FileName, ".kmap"))
 		{
@@ -1846,7 +1863,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 		char baseName[MAX_PATH];
 		strcpy(baseName, fileName);
 		int Len = (int)strlen(baseName);
-		if (Len > 4 && _stricmp(baseName + Len - 4, ".inf") == 0)
+		if (Len > 4 && StrCaseCmp(baseName + Len - 4, ".inf") == 0)
 			baseName[Len - 4] = 0;
 
 		// Check for duplicate
@@ -1854,7 +1871,7 @@ void BeebWin::ImportDiscFiles(int menuId)
 
 		for (i = 0; i < numFiles; ++i)
 		{
-			if (_stricmp(baseName, fileNames[i]) == 0)
+			if (StrCaseCmp(baseName, fileNames[i]) == 0)
 				break;
 		}
 
@@ -1927,9 +1944,9 @@ void BeebWin::SelectHardDriveFolder()
 	m_Preferences.GetStringValue(CFG_HARD_DRIVE_PATH, DefaultPath);
 	GetDataPath(m_UserDataPath, DefaultPath);
 
-	FileDialog fileDialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
 
-	if (fileDialog.Open())
+	if (Dialog.Open())
 	{
 		unsigned int PathLength = (unsigned int)(strrchr(FileName, '\\') - FileName);
 		strncpy(DefaultPath, FileName, PathLength);
@@ -1971,7 +1988,7 @@ void BeebWin::UpdateBitmapCaptureFormatMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_BitmapCaptureFormat == MenuItems[i].Format)
 		{
@@ -2002,7 +2019,7 @@ void BeebWin::UpdateBitmapCaptureResolutionMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_BitmapCaptureResolution == MenuItems[i].Resolution)
 		{

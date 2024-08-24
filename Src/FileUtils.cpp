@@ -19,10 +19,12 @@ Boston, MA  02110-1301, USA.
 ****************************************************************/
 
 #include <windows.h>
+#include <shlwapi.h>
 
 #include <stdarg.h>
 
 #include "FileUtils.h"
+#include "StringUtils.h"
 
 /****************************************************************************/
 
@@ -77,7 +79,7 @@ bool HasFileExt(const char* FileName, const char* Ext)
 	const size_t FileNameLen = strlen(FileName);
 
 	return FileNameLen >= ExtLen &&
-	       _stricmp(FileName + FileNameLen - ExtLen, Ext) == 0;
+	       StrCaseCmp(FileName + FileNameLen - ExtLen, Ext) == 0;
 }
 
 /****************************************************************************/
@@ -150,6 +152,48 @@ void MakePreferredPath(char* PathName)
 			PathName[i] = DIR_SEPARATOR;
 		}
 	}
+}
+
+/****************************************************************************/
+
+void AppendPath(char* pszPath, const char* pszPathToAppend)
+{
+	size_t Len = strlen(pszPath);
+
+	if (Len > 0)
+	{
+		if (pszPath[Len - 1] != DIR_SEPARATOR)
+		{
+			pszPath[Len] = DIR_SEPARATOR;
+			pszPath[++Len] = '\0';
+		}
+	}
+
+	if (Len > 0 && pszPathToAppend[0] == DIR_SEPARATOR)
+	{
+		strcpy(&pszPath[Len], pszPathToAppend + 1);
+	}
+	else
+	{
+		strcpy(&pszPath[Len], pszPathToAppend);
+	}
+
+	MakePreferredPath(pszPath);
+}
+
+/****************************************************************************/
+
+bool IsRelativePath(const char* pszPath)
+{
+	#ifdef WIN32
+
+	return !!PathIsRelative(pszPath);
+
+	#else
+
+	return pszPath[0] != '/';
+
+	#endif
 }
 
 /****************************************************************************/
