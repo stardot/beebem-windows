@@ -1059,6 +1059,9 @@ bool TMS5220::ParseFrame(bool first_frame)
 		bits = m_fifo_count * 8 - m_fifo_bits_taken;
 	}
 
+	int rep_flag;
+	int indx;
+
 	// Attempt to extract the energy index
 	if (m_speak_external)
 	{
@@ -1067,7 +1070,7 @@ bool TMS5220::ParseFrame(bool first_frame)
 			goto ranout;
 	}
 
-	int indx = ExtractBits(4);
+	indx = ExtractBits(4);
 	m_new_energy = energytable[indx] >> 6;
 
 	// If the index is 0 or 15, we're done
@@ -1095,7 +1098,7 @@ bool TMS5220::ParseFrame(bool first_frame)
 			goto ranout;
 	}
 
-	int rep_flag = ExtractBits(1);
+	rep_flag = ExtractBits(1);
 
 	// Attempt to extract the pitch
 	if (m_speak_external)

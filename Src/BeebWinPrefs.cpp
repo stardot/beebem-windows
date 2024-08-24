@@ -1175,11 +1175,11 @@ void BeebWin::LoadSerialPortPreferences(int Version)
 		    isxdigit(m_SerialPort[0]) &&
 		    isxdigit(m_SerialPort[1]))
 		{
-			int Port;
+			unsigned int Port;
 			sscanf(m_SerialPort.c_str(), "%x", &Port);
 
 			char PortName[20];
-			sprintf(PortName, "COM%d", Port);
+			sprintf(PortName, "COM%u", Port);
 			m_SerialPort = PortName;
 		}
 	}
@@ -1378,7 +1378,7 @@ void BeebWin::LoadTeletextAdapterPreferences(int Version)
 
 			m_Preferences.GetDWORDValue(key, Value, TELETEXT_BASE_PORT + ch);
 
-			if (Value >= 0 && Value <= 65535)
+			if (Value <= 65535)
 			{
 				TeletextPort[ch] = (u_short)Value;
 			}

@@ -1076,6 +1076,7 @@ void DebugCloseDialog()
 }
 
 //*******************************************************************
+
 void DebugDisplayInfoF(const char *format, ...)
 {
 	va_list args;
@@ -1979,7 +1980,7 @@ static void DebugExecuteCommand()
 
 void DebugInitMemoryMaps()
 {
-	for(int i = 0; i < _countof(MemoryMaps); i++)
+	for (size_t i = 0; i < _countof(MemoryMaps); i++)
 	{
 		MemoryMaps[i].clear();
 	}
@@ -2016,7 +2017,7 @@ bool DebugLoadMemoryMap(const char* filename, int bank)
 			char desc[256];
 			memset(desc, 0, sizeof(desc));
 
-			int result = sscanf(buf, "%x %x %99c", &entry.start, &entry.end, desc);
+			int result = sscanf(buf, "%x %x %99c", (unsigned int*)&entry.start, (unsigned int*)&entry.end, desc);
 
 			if (result >= 2 && strlen(desc) > 0)
 			{

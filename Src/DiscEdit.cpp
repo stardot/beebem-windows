@@ -385,9 +385,10 @@ bool dfs_import_file(const char *szDiscFile,
 	int fileLen = -1;
 
 	FILE* filefd = fopen(infname, "rb");
+
 	if (filefd != NULL)
 	{
-		if (fscanf(filefd, "%9s %X %X", dfsname, &loadAddr, &execAddr) < 1)
+		if (fscanf(filefd, "%9s %X %X", dfsname, (unsigned int*)&loadAddr, (unsigned int*)&execAddr) < 1)
 		{
 			sprintf(szErrStr, "Failed to read file attributes from:\n  %s", infname);
 			success = false;

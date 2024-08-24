@@ -1169,7 +1169,7 @@ void BeebWin::UpdateMotionBlurMenu()
 
 	UINT SelectedMenuItemID = 0;
 
-	for (int i = 0; i < _countof(MenuItems); i++)
+	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
 		if (m_MotionBlur == MenuItems[i].MotionBlur)
 		{

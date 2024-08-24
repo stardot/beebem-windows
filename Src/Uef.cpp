@@ -491,7 +491,7 @@ void UEFFileReader::CreateTapeMap(std::vector<TapeMapEntry>& TapeMap)
 {
 	bool done = false;
 	int blk = 0;
-	char block[500];
+	unsigned char block[500];
 	bool std_last_block = true;
 
 	// SetClock(TapeClockSpeed);
