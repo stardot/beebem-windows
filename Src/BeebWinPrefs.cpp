@@ -1459,9 +1459,9 @@ void BeebWin::LoadCapturePreferences(int Version)
 
 		switch (Value)
 		{
-			case 40185:          m_VideoCaptureResolution = VideoCaptureResolution::Display;
-			case 40186: default: m_VideoCaptureResolution = VideoCaptureResolution::_640x512;
-			case 40187:          m_VideoCaptureResolution = VideoCaptureResolution::_320x256;
+			case 40185:          m_VideoCaptureResolution = VideoCaptureResolution::Display; break;
+			case 40186: default: m_VideoCaptureResolution = VideoCaptureResolution::_640x512; break;
+			case 40187:          m_VideoCaptureResolution = VideoCaptureResolution::_320x256; break;
 		}
 	}
 
