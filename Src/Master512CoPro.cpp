@@ -2673,7 +2673,8 @@ void Master512CoPro::Execute(int Cycles)
 						break;
 					}
 				}
-				// through to default
+				// Fall through...
+
 			default:
 				if (!common_op(op))
 				{
