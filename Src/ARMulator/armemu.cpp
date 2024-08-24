@@ -63,8 +63,6 @@ static long ui_loop_hook_counter = UI_LOOP_POLL_INTERVAL;
 extern int (*deprecated_ui_loop_hook) (int);
 #endif /* NEED_UI_LOOP_HOOK */
 
-extern int stop_simulator;
-
 /* Short-hand macros for LDR/STR.  */
 
 /* Store post decrement writeback.  */
@@ -498,7 +496,7 @@ ARMul_Emulate26 (ARMul_State * state)
     ARMword lhs;		/* Almost the ABus and BBus.  */
     ARMword rhs;
     ARMword decoded = 0;	/* Instruction pipeline.  */
-    ARMword loaded = 0;	
+    ARMword loaded = 0;
 
     /* Execute the next instruction.  */
 
@@ -509,7 +507,7 @@ ARMul_Emulate26 (ARMul_State * state)
         pc = state->pc;
     }
 
-    do
+    for (;;)
     {
         /* Just keep going.  */
         isize = INSN_SIZE;
@@ -794,10 +792,14 @@ ARMul_Emulate26 (ARMul_State * state)
 
                 if (cp14r0 & ARMul_CP14_R0_CCD)
                 {
-                    if (state->CP14R0_CCD == -1)
+                    if (state->CP14R0_CCD == (ARMword)-1)
+                    {
                         state->CP14R0_CCD = (ARMword)newcycles;
+                    }
                     else
+                    {
                         state->CP14R0_CCD += newcycles;
+                    }
 
                     if (state->CP14R0_CCD >= 64)
                     {
@@ -963,9 +965,13 @@ mainswitch:
                         state->Reg[MULDESTReg] = 0;
                     }
                     else if (MULDESTReg != 15)
+                    {
                         state->Reg[MULDESTReg] = state->Reg[MULLHSReg] * rhs;
+                    }
                     else
+                    {
                         UNDEF_MULPCDest;
+                    }
 
                     for (dest = 0, temp = 0; dest < 32; dest ++)
                         if (rhs & (1L << dest))
@@ -1009,7 +1015,9 @@ mainswitch:
                         state->Reg[MULDESTReg] = dest;
                     }
                     else
+                    {
                         UNDEF_MULPCDest;
+                    }
 
                     for (dest = 0, temp = 0; dest < 32; dest ++)
                         if (rhs & (1L << dest))
@@ -1037,7 +1045,8 @@ mainswitch:
                 }
 #endif
                 if (BITS (4, 7) == 9)
-                {		/* MLA */
+                {
+                    /* MLA */
                     rhs = state->Reg[MULRHSReg];
                     if (MULLHSReg == MULDESTReg)
                     {
@@ -1045,10 +1054,14 @@ mainswitch:
                         state->Reg[MULDESTReg] = state->Reg[MULACCReg];
                     }
                     else if (MULDESTReg != 15)
+                    {
                         state->Reg[MULDESTReg] =
                         state->Reg[MULLHSReg] * rhs + state->Reg[MULACCReg];
+                    }
                     else
+                    {
                         UNDEF_MULPCDest;
+                    }
 
                     for (dest = 0, temp = 0; dest < 32; dest ++)
                         if (rhs & (1L << dest))
@@ -1092,7 +1105,9 @@ mainswitch:
                         state->Reg[MULDESTReg] = dest;
                     }
                     else
+                    {
                         UNDEF_MULPCDest;
+                    }
 
                     for (dest = 0, temp = 0; dest < 32; dest ++)
                         if (rhs & (1L << dest))
@@ -1680,8 +1695,10 @@ mainswitch:
                         Thumb mode it does).  So intercept the instruction here
                         and generate a breakpoint SWI instead.  */
 #ifndef BEEBEM
-                        if (! SWI_vector_installed)
+                        if (!SWI_vector_installed)
+                        {
                             ARMul_OSHandleSWI (state, SWI_Breakpoint);
+                        }
                         else
                         {
                             /* BKPT - normally this will cause an abort, but on the
@@ -1708,8 +1725,9 @@ mainswitch:
                     ARMul_FixCPSR (state, instr, temp);
                 }
                 else
+                {
                     UNDEF_Test;
-
+                }
                 break;
 
             case 0x13:		/* TEQP reg */
@@ -1838,8 +1856,9 @@ mainswitch:
                     DEST = GETSPSR (state->Bank);
                 }
                 else
+                {
                     UNDEF_Test;
-
+                }
                 break;
 
             case 0x15:		/* CMPP reg.  */
@@ -2353,15 +2372,19 @@ mainswitch:
                 }
                 break;
 
-            case 0x32:		/* TEQ immed and MSR immed to CPSR */
+            case 0x32: /* TEQ immed and MSR immed to CPSR */
                 if (DESTReg == 15)
+                {
                     /* MSR immed to CPSR.  */
                     ARMul_FixCPSR (state, instr, DPImmRHS);
+                }
                 else
+                {
                     UNDEF_Test;
+                }
                 break;
 
-            case 0x33:		/* TEQP immed */
+            case 0x33: /* TEQP immed */
                 if (DESTReg == 15)
                 {
                     /* TEQP immed.  */
@@ -2421,9 +2444,13 @@ mainswitch:
 
             case 0x36:		/* CMN immed and MSR immed to SPSR */
                 if (DESTReg == 15)
+                {
                     ARMul_FixSPSR (state, instr, DPImmRHS);
+                }
                 else
+                {
                     UNDEF_Test;
+                }
                 break;
 
             case 0x37:		/* CMNP immed.  */
@@ -3541,12 +3568,12 @@ mainswitch:
                     }
                     else
                         /* FIXME: Not sure what to do for other v5 processors.  */
-                        ARMul_UndefInstr (state, instr);		    
+                        ARMul_UndefInstr (state, instr);
                     break;
                 }
-                /* Drop through.  */
+                /* Fall through.  */
 
-            case 0xc0:		/* Store , No WriteBack , Post Dec.  */
+            case 0xc0: /* Store , No WriteBack , Post Dec.  */
                 ARMul_STC (state, instr, LHS);
                 break;
 
@@ -3589,7 +3616,7 @@ mainswitch:
                         ARMul_UndefInstr (state, instr);
                     break;
                 }
-                /* Drop through.  */
+                /* Fall through. */
 
             case 0xc1:		/* Load , No WriteBack , Post Dec.  */
                 ARMul_LDC (state, instr, LHS);
@@ -3776,7 +3803,7 @@ mainswitch:
                     default:
                         break;
                 }
-                /* Drop through.  */
+                /* Fall through.  */
 
             case 0xe0:
             case 0xe4:
@@ -3888,7 +3915,6 @@ donext:
         else if (state->Emulate != RUN)
             break;
     }
-    while (!stop_simulator);
 
     state->decoded = decoded;
     state->loaded = loaded;
@@ -4386,7 +4412,7 @@ Handle_Load_Double (ARMul_State * state, ARMword instr)
     ARMword addr_reg;
     ARMword write_back  = BIT (21);
     ARMword immediate   = BIT (22);
-    ARMword add_to_base = BIT (23);        
+    ARMword add_to_base = BIT (23);
     ARMword pre_indexed = BIT (24);
     ARMword offset;
     ARMword addr;
@@ -4493,7 +4519,7 @@ Handle_Store_Double (ARMul_State * state, ARMword instr)
     ARMword addr_reg;
     ARMword write_back  = BIT (21);
     ARMword immediate   = BIT (22);
-    ARMword add_to_base = BIT (23);        
+    ARMword add_to_base = BIT (23);
     ARMword pre_indexed = BIT (24);
     ARMword offset;
     ARMword addr;
@@ -5167,7 +5193,7 @@ Multiply64 (ARMul_State * state, ARMword instr, int msigned, int scc)
     unsigned multiply, and what bits are clear in the multiplier.  */
     if (msigned && (Rm & ((unsigned) 1 << 31)))
         /* Invert the bits to make the check against zero.  */
-        Rm = ~Rm;			
+        Rm = ~Rm;
 
     if ((Rm & 0xFFFFFF00) == 0)
         scount = 1;

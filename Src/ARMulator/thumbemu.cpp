@@ -5,12 +5,12 @@
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
- 
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
- 
+
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. */
@@ -56,7 +56,7 @@ handle_v6_thumb_insn (ARMul_State * state,
     case 0xba40: /* rev16 */
     case 0xbac0: /* revsh */
     case 0xb650: /* setend */
-    default:  
+    default:
       printf ("Unhandled v6 thumb insn: %04x\n", tinstr);
       * pvalid = t_undefined;
       return;
@@ -270,7 +270,7 @@ ARMul_ThumbDecode (ARMul_State * state,
 		    | ((tinstr & 0x0078) >> 3);	/* Rd */
 		  break;
 		}
-	      /* Drop through.  */
+	      /* Fall through.  */
 	    case 0x0:		/* UNDEFINED */
 	    case 0x4:		/* UNDEFINED */
 	    case 0x8:		/* UNDEFINED */
@@ -412,14 +412,14 @@ ARMul_ThumbDecode (ARMul_State * state,
 	case 0x0e00:
 	  if (state->is_v5)
 	    {
-	      /* This is normally an undefined instruction.  The v5t architecture 
+	      /* This is normally an undefined instruction.  The v5t architecture
 		 defines this particular pattern as a BKPT instruction, for
 		 hardware assisted debugging.  We map onto the arm BKPT
 		 instruction.  */
 	      * ainstr = 0xE1200070 | ((tinstr & 0xf0) << 4) | (tinstr & 0xf);
 	      break;
 	    }
-	  /* Drop through.  */
+	  /* Fall through.  */
 	default:
 	  /* Everything else is an undefined instruction.  */
 	  handle_v6_thumb_insn (state, tinstr, & valid);
@@ -533,7 +533,7 @@ ARMul_ThumbDecode (ARMul_State * state,
 	      break;
 	    }
 	  /* Drop through.  */
-	  
+
 	  /* Format 19 */
 	  /* There is no single ARM instruction equivalent for this
 	     instruction. Also, it should only ever be matched with the

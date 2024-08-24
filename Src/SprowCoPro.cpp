@@ -22,7 +22,6 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 #include <stdio.h>
-
 #include <stdlib.h>
 
 #include <map>
@@ -159,9 +158,11 @@ For the new test suite Abort between 8 Mbytes and 26 Mbytes */
 
 int SWI_vector_installed = FALSE;
 int tenval = 1;
+
 #define PRIMEPIPE     4
 #define RESUME        8
 #define FLUSHPIPE state->NextInstr |= PRIMEPIPE
+
 unsigned
 ARMul_OSHandleSWI (ARMul_State * state, ARMword number)
 {
@@ -424,7 +425,7 @@ PutWord (ARMul_State * state, ARMword address, ARMword data, int /* check */)
 \***************************************************************************/
 
 unsigned
-ARMul_MemoryInit (ARMul_State * state, ARMword initmemsize)
+ARMul_MemoryInit (ARMul_State * state, unsigned long initmemsize)
 {
     if (initmemsize)
         state->MemSize = initmemsize;
@@ -796,7 +797,6 @@ ARMul_Ccycles (ARMul_State * state, unsigned number, ARMword /* address */)
     state->NumCcycles += number;
     ARMul_CLEARABORT;
 }
-
 
 /* Read a byte.  Do not check for alignment or access errors.  */
 

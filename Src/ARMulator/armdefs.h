@@ -292,7 +292,7 @@ extern void ARMul_Abort (ARMul_State * state, ARMword address);
 *              Definitons of things in the memory interface                 *
 \***************************************************************************/
 
-extern unsigned ARMul_MemoryInit (ARMul_State * state, ARMword initmemsize);
+extern unsigned ARMul_MemoryInit (ARMul_State * state, unsigned long initmemsize);
 extern void ARMul_MemoryExit (ARMul_State * state);
 
 extern ARMword ARMul_LoadInstrS (ARMul_State * state, ARMword address,
