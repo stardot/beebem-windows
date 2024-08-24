@@ -392,7 +392,7 @@ static void DrawBorder(HDC hDC, RECT rect, BOOL Depressed)
 		DrawSides(hDC, rect, 0x00000000, 0x00FFFFFF);
 	else
 		DrawSides(hDC, rect, 0x00FFFFFF, 0x00000000);
-	
+
 	// Draw inner border.
 	rect.top++;
 	rect.left++;

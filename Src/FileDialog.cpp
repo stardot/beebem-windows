@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 FileDialog::FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength,
                        LPCTSTR initialFolder, LPCTSTR filter)
 {
-	memset(&m_ofn, 0, sizeof(m_ofn));
+	ZeroMemory(&m_ofn, sizeof(m_ofn));
 
 	m_ofn.lStructSize = sizeof(OPENFILENAME);
 	m_ofn.hwndOwner = hwndOwner;

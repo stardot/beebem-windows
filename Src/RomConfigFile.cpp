@@ -20,15 +20,15 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 
+#include <fstream>
+#include <string>
+#include <stdio.h>
+
 #include "RomConfigFile.h"
 #include "BeebWin.h"
 #include "FileUtils.h"
 #include "Main.h"
 #include "StringUtils.h"
-
-#include <stdio.h>
-#include <fstream>
-#include <string>
 
 /****************************************************************************/
 

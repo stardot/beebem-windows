@@ -882,13 +882,15 @@ void Poll1770(int NCycles) {
 		NMIStatus |= 1 << nmi_floppy;
 	}
 
-	if (FDCommand == 10) {
+	if (FDCommand == 10)
+	{
 		Status &= ~(WD1770_STATUS_WRITE_PROTECT |
 		            WD1770_STATUS_SPIN_UP_COMPLETE |
 		            WD1770_STATUS_RECORD_NOT_FOUND |
 		            WD1770_STATUS_BUSY);
 
-		if (NextFDCommand == 255) {
+		if (NextFDCommand == 255)
+		{
 			// Error during access
 			UpdateTR00Status();
 
@@ -896,6 +898,7 @@ void Poll1770(int NCycles) {
 			Status &= ~WD1770_STATUS_CRC_ERROR;
 
 		}
+
 		NMIStatus |= 1 << nmi_floppy;
 		FDCommand = 12;
 		LoadingCycles = SPIN_DOWN_TIME; // Spin-down delay
@@ -1223,11 +1226,15 @@ void Close1770Disc(int Drive)
 	}
 }
 
-#define BPUT(a) fputc(a, file); CheckSum = (CheckSum + a) & 0xff
+#define BPUT(a) \
+	do { \
+		fputc(a, file); CheckSum = (CheckSum + (a)) & 0xff; \
+	} while (0)
 
 // This function creates a blank ADFS disc image.
 
-bool CreateADFSImage(const char *FileName, int Tracks) {
+bool CreateADFSImage(const char *FileName, int Tracks)
+{
 	int ent;
 	const int sectors = (Tracks * 16);
 	FILE *file = fopen(FileName, "wb");
@@ -1357,7 +1364,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 	DiscInfo[1].Type = static_cast<DiscType>(UEFRead8(SUEF));
 
 	char FileName[256];
-	memset(FileName, 0, sizeof(FileName));
+	ZeroMemory(FileName, sizeof(FileName));
 
 	if (Version >= 14)
 	{
@@ -1377,7 +1384,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 			LoadFailed = true;
 	}
 
-	memset(FileName, 0, sizeof(FileName));
+	ZeroMemory(FileName, sizeof(FileName));
 
 	if (Version >= 14)
 	{
@@ -1445,7 +1452,7 @@ void Load1770UEF(FILE *SUEF, int Version)
 		SelectedDensity = UEFReadBool(SUEF);
 		RotSect = UEFRead8(SUEF);
 
-		memset(FDCDLL, 0, sizeof(FDCDLL));
+		ZeroMemory(FDCDLL, sizeof(FDCDLL));
 
 		if (Version >= 14)
 		{
@@ -1462,4 +1469,3 @@ void Load1770UEF(FILE *SUEF, int Version)
 		}
 	}
 }
-

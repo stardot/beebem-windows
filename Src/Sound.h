@@ -76,7 +76,7 @@ void SetSound(SoundState state);
 struct AudioType {
 	char Signal; // Signal type: data, gap, or tone.
 	char BytePos; // Position in data byte
-	bool Enabled; // Enable state of audio deooder
+	bool Enabled; // Enable state of audio decoder
 	int Data; // The actual data itself
 	int Samples; // Samples counted in current pattern till changepoint
 	char CurrentBit; // Current bit in data being processed
