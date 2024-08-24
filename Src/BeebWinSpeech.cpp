@@ -1007,8 +1007,8 @@ void BeebWin::TextViewSetCursorPos(int line, int col)
 void BeebWin::TextViewSyncWithBeebCursor()
 {
 	// Move speech cursor to Beeb's cursor pos
-	int CurAddr = CRTC_CursorPosLow + (((CRTC_CursorPosHigh ^ 0x20) + 0x74 & 0xff) << 8);
-	int ScrAddr = CRTC_ScreenStartLow + (((CRTC_ScreenStartHigh ^ 0x20) + 0x74 & 0xff) << 8);
+	int CurAddr = CRTC_CursorPosLow + ((((CRTC_CursorPosHigh ^ 0x20) + 0x74) & 0xff) << 8);
+	int ScrAddr = CRTC_ScreenStartLow + ((((CRTC_ScreenStartHigh ^ 0x20) + 0x74) & 0xff) << 8);
 	int RelAddr = CurAddr - ScrAddr;
 
 	m_SpeechLine = RelAddr / CRTC_HorizontalDisplayed;
