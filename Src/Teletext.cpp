@@ -60,6 +60,7 @@ Control latch:
 #include "Debug.h"
 #include "Log.h"
 #include "Main.h"
+#include "Socket.h"
 
 #define ENABLE_LOG 0
 
@@ -100,6 +101,24 @@ static char TeletextSocketBuff[4][672*2] = {0}; // hold one frame of t42 data (2
 static bool TeletextConnect(int ch);
 static void CloseTeletextSocket(int Index);
 
+bool ConnectSocket(SOCKET Socket, const sockaddr* Name, int Length)
+{
+    #ifdef WIN32
+
+    if (connect(Socket, Name, Length) == SOCKET_ERROR)
+    {
+        return WSAGetLastError() != WSAEWOULDBLOCK; // WSAEWOULDBLOCK is expected
+    }
+
+    #else
+
+    return connect(Socket, Name, Length) == EAGAIN;
+
+    #endif
+
+    return false;
+}
+
 /*--------------------------------------------------------------------------*/
 
 // Initiate connection on socket
@@ -127,29 +146,25 @@ static bool TeletextConnect(int ch)
                            "Teletext: socket %d created, connecting to server", ch);
     }
 
-    u_long iMode = 1;
-    ioctlsocket(TeletextSocket[ch], FIONBIO, &iMode); // non blocking
+    SetSocketBlocking(TeletextSocket[ch], false); // non blocking
 
     struct sockaddr_in teletext_serv_addr;
     teletext_serv_addr.sin_family = AF_INET; // address family Internet
     teletext_serv_addr.sin_port = htons(TeletextPort[ch]); // Port to connect on
     teletext_serv_addr.sin_addr.s_addr = inet_addr(TeletextIP[ch].c_str()); // Target IP
 
-    if (connect(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)) == SOCKET_ERROR)
+    if (!ConnectSocket(TeletextSocket[ch], (SOCKADDR *)&teletext_serv_addr, sizeof(teletext_serv_addr)))
     {
-        if (WSAGetLastError() != WSAEWOULDBLOCK) // WSAEWOULDBLOCK is expected
+        if (DebugEnabled)
         {
-            if (DebugEnabled)
-            {
-                DebugDisplayTraceF(DebugType::Teletext, true,
-                                   "Teletext: Socket %d unable to connect to server %s:%d %d",
-                                   ch, TeletextIP[ch].c_str(), TeletextPort[ch],
-                                   WSAGetLastError());
-            }
-
-            CloseTeletextSocket(ch);
-            return false;
+            DebugDisplayTraceF(DebugType::Teletext, true,
+                                "Teletext: Socket %d unable to connect to server %s:%d %d",
+                                ch, TeletextIP[ch].c_str(), TeletextPort[ch],
+                                GetLastSocketError());
         }
+
+        CloseTeletextSocket(ch);
+        return false;
     }
 
     // How long should we wait (in emulated video fields) for a connection
@@ -163,7 +178,7 @@ static bool TeletextConnect(int ch)
 
 static void CloseTeletextSocket(int Index)
 {
-    closesocket(TeletextSocket[Index]);
+    CloseSocket(TeletextSocket[Index]);
     TeletextSocket[Index] = INVALID_SOCKET;
     TeletextConnectTimeout[Index] = 0;
 }
@@ -373,7 +388,7 @@ void TeletextAdapterUpdate()
             if (TeletextSource == TeletextSourceType::IP)
             {
                 char tmpBuff[672*20]; // big enough to hold 20 fields of data
-                
+
                 if (!(TeletextCurrentField&1)) // an even field
                 {
                     for (int i = 0; i < TELETEXT_CHANNEL_COUNT; i++)
@@ -386,13 +401,13 @@ void TeletextAdapterUpdate()
                             unsigned long n;
                             if (ioctlsocket(TeletextSocket[i], FIONREAD, &n) == SOCKET_ERROR)
                             {
-                                int err = WSAGetLastError();
+                                int Error = GetLastSocketError();
 
                                 if (DebugEnabled)
                                 {
                                     DebugDisplayTraceF(DebugType::Teletext, true,
                                                        "Teletext: FIONREAD error %d. Closing socket %d",
-                                                       err, i);
+                                                       Error, i);
                                 }
 
                                 CloseTeletextSocket(i);
@@ -419,13 +434,13 @@ void TeletextAdapterUpdate()
                                 if (result != (672*20))
                                 {
                                     // read failed, probably fatal.
-                                    int err = WSAGetLastError();
+                                    int Error = GetLastSocketError();
 
                                     if (DebugEnabled)
                                     {
                                         DebugDisplayTraceF(DebugType::Teletext, true,
                                                            "Teletext: discard recv error %d. Closing socket %d",
-                                                           err, i);
+                                                           Error, i);
                                     }
 
                                     CloseTeletextSocket(i);
@@ -442,15 +457,16 @@ void TeletextAdapterUpdate()
 
                                 if (result == 0 || result == SOCKET_ERROR)
                                 {
-                                    int err = WSAGetLastError();
+                                    int Error = GetLastSocketError();
 
-                                    if (err == WSAEWOULDBLOCK)
+                                    if (WouldBlock(Error))
                                     {
                                         if (DebugEnabled)
                                         {
                                             DebugDisplayTraceF(DebugType::Teletext, true,
                                                                "Teletext: WSAEWOULDBLOCK in socket %d. Skipping field",i);
                                         }
+
                                         if (TeletextConnectTimeout[i] > 0)
                                         {
                                             TeletextConnectTimeout[i]--;
@@ -462,7 +478,7 @@ void TeletextAdapterUpdate()
                                     {
                                         DebugDisplayTraceF(DebugType::Teletext, true,
                                                            "Teletext: recv error %d. Closing socket %d",
-                                                           err, i);
+                                                           Error, i);
                                     }
 
                                     CloseTeletextSocket(i);
@@ -518,7 +534,7 @@ void TeletextAdapterUpdate()
                         }
                     }
                 }
-                
+
                 TeletextCurrentField ^= 1; // toggle field
             }
             else

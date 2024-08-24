@@ -225,6 +225,7 @@
     <ClCompile Include="Serial.cpp" />
     <ClCompile Include="SerialPort.cpp" />
     <ClCompile Include="SerialPortDialog.cpp" />
+    <ClCompile Include="Socket.cpp" />
     <ClCompile Include="Sound.cpp" />
     <ClCompile Include="SoundStreamer.cpp" />
     <ClCompile Include="Speech.cpp" />
@@ -396,6 +397,7 @@
     <ClInclude Include="Serial.h" />
     <ClInclude Include="SerialPort.h" />
     <ClInclude Include="SerialPortDialog.h" />
+    <ClInclude Include="Socket.h" />
     <ClInclude Include="Sound.h" />
     <ClInclude Include="SoundStreamer.h" />
     <ClInclude Include="Speech.h" />

@@ -44,6 +44,7 @@ Boston, MA  02110-1301, USA.
 #include "DebugTrace.h"
 #include "Main.h"
 #include "Rtc.h"
+#include "Socket.h"
 #include "StringUtils.h"
 
 // Emulated 6854 ADLC control registers.
@@ -381,7 +382,7 @@ static void EconetError(const char *Format, ...);
 static const char* IpAddressStr(unsigned long inet_addr)
 {
 	in_addr in;
-	in.S_un.S_addr = inet_addr;
+	IN_ADDR(in) = inet_addr;
 
 	return inet_ntoa(in);
 }
@@ -423,7 +424,7 @@ static ECOLAN* FindHost(sockaddr_in* pAddress)
 	for (int i = 0; i < networkp; i++)
 	{
 		if (pAddress->sin_port == htons(network[i].port) &&
-		    pAddress->sin_addr.s_addr == network[i].inet_addr)
+		    S_ADDR(*pAddress) == network[i].inet_addr)
 		{
 			return &network[i];
 		}
@@ -517,10 +518,10 @@ void EconetReset()
 	{
 		if (!SingleSocket)
 		{
-			closesocket(SendSocket);
+			CloseSocket(SendSocket);
 		}
 
-		closesocket(ListenSocket);
+		CloseSocket(ListenSocket);
 		ReceiverSocketsOpen = false;
 	}
 
@@ -535,7 +536,7 @@ void EconetReset()
 	// Create a SOCKET for listening for incoming connection requests.
 	ListenSocket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ListenSocket == INVALID_SOCKET) {
-		EconetError("Econet: Failed to open listening socket (error %ld)", WSAGetLastError());
+		EconetError("Econet: Failed to open listening socket (error %ld)", GetLastSocketError());
 		return;
 	}
 
@@ -565,12 +566,12 @@ void EconetReset()
 		}
 
 		service.sin_port = htons(EconetListenPort);
-		service.sin_addr.s_addr = EconetListenIP;
+		S_ADDR(service) = EconetListenIP;
 
 		if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
 		{
-			EconetError("Econet: Failed to bind to port %d (error %ld)", EconetListenPort, WSAGetLastError());
-			closesocket(ListenSocket);
+			EconetError("Econet: Failed to bind to port %d (error %ld)", EconetListenPort, GetLastSocketError());
+			CloseSocket(ListenSocket);
 			ListenSocket = INVALID_SOCKET;
 			return;
 		}
@@ -595,10 +596,10 @@ void EconetReset()
 					memcpy(&localaddr, host->h_addr_list[a], sizeof(struct in_addr));
 
 					if (network[i].inet_addr == inet_addr("127.0.0.1") ||
-					    network[i].inet_addr == localaddr.S_un.S_addr)
+					    network[i].inet_addr == IN_ADDR(localaddr))
 					{
 						service.sin_port = htons(network[i].port);
-						service.sin_addr.s_addr = network[i].inet_addr;
+						S_ADDR(service) = network[i].inet_addr;
 
 						if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0)
 						{
@@ -626,17 +627,17 @@ void EconetReset()
 							struct in_addr localaddr;
 							memcpy(&localaddr, host->h_addr_list[a], sizeof(struct in_addr));
 
-							if (aunnet[j].inet_addr == (localaddr.S_un.S_addr & 0x00FFFFFF))
+							if (aunnet[j].inet_addr == (IN_ADDR(localaddr) & 0x00FFFFFF))
 							{
 								service.sin_port = htons(DEFAULT_AUN_PORT);
-								service.sin_addr.s_addr = localaddr.S_un.S_addr;
+								S_ADDR(service) = IN_ADDR(localaddr);
 
 								if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0)
 								{
 									myaunnet = j;
-									network[networkp].inet_addr = EconetListenIP = localaddr.S_un.S_addr;
+									network[networkp].inet_addr = EconetListenIP = IN_ADDR(localaddr);
 									network[networkp].port = EconetListenPort = DEFAULT_AUN_PORT;
-									network[networkp].station = EconetStationID = localaddr.S_un.S_addr >> 24;
+									network[networkp].station = EconetStationID = IN_ADDR(localaddr) >> 24;
 									network[networkp].network = aunnet[j].network;
 									networkp++;
 								}
@@ -682,8 +683,8 @@ void EconetReset()
 		SendSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 		if (SendSocket == INVALID_SOCKET) {
-			EconetError("Econet: Failed to open sending socket (error %ld)", WSAGetLastError());
-			closesocket(ListenSocket);
+			EconetError("Econet: Failed to open sending socket (error %ld)", GetLastSocketError());
+			CloseSocket(ListenSocket);
 			ListenSocket = INVALID_SOCKET;
 			return;
 		}
@@ -694,8 +695,8 @@ void EconetReset()
 
 	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1)
 	{
-		EconetError("Econet: Failed to set socket for broadcasts (error %ld)", WSAGetLastError());
-		closesocket(ListenSocket);
+		EconetError("Econet: Failed to set socket for broadcasts (error %ld)", GetLastSocketError());
+		CloseSocket(ListenSocket);
 		ListenSocket = INVALID_SOCKET;
 		return;
 	}
@@ -1368,7 +1369,7 @@ bool EconetPoll_real() // return NMI status
 						// TODO lookup destnet in aunnet() and use proper ip address!
 						RecvAddr.sin_family = AF_INET;
 						RecvAddr.sin_port = htons(DEFAULT_AUN_PORT);
-						RecvAddr.sin_addr.s_addr = INADDR_BROADCAST; // ((EconetListenIP & 0x00FFFFFF) | 0xFF000000);
+						S_ADDR(RecvAddr) = INADDR_BROADCAST; // ((EconetListenIP & 0x00FFFFFF) | 0xFF000000);
 						SendMe = true;
 					}
 					else
@@ -1426,7 +1427,7 @@ bool EconetPoll_real() // return NMI status
 
 						RecvAddr.sin_family = AF_INET;
 						RecvAddr.sin_port = htons(network[i].port);
-						RecvAddr.sin_addr.s_addr = network[i].inet_addr;
+						S_ADDR(RecvAddr) = network[i].inet_addr;
 					}
 
 					//if (DebugEnabled)
@@ -1436,7 +1437,7 @@ bool EconetPoll_real() // return NMI status
 						                   BeebTx.Pointer,
 						                   (unsigned int)BeebTx.eh.destnet,
 						                   (unsigned int)BeebTx.eh.deststn,
-						                   IpAddressStr(RecvAddr.sin_addr.s_addr),
+						                   IpAddressStr(S_ADDR(RecvAddr)),
 						                   (unsigned int)htons(RecvAddr.sin_port));
 
 						std::string str = "Econet: Packet data:" + BytesToString(BeebTx.buff, BeebTx.Pointer);
@@ -1711,7 +1712,7 @@ bool EconetPoll_real() // return NMI status
 						FD_ZERO(&ReadFds);
 						FD_SET(ListenSocket, &ReadFds);
 
-						static const timeval TimeOut = {0, 0};
+						timeval TimeOut = {0, 0};
 
 						int RetVal = select((int)ListenSocket + 1, &ReadFds, NULL, NULL, &TimeOut);
 
@@ -1738,7 +1739,7 @@ bool EconetPoll_real() // return NMI status
 									DebugDisplayTraceF(DebugType::Econet, true,
 									                   "EconetPoll: Packet received: %u bytes from %s port %u",
 									                   (int)RetVal,
-									                   IpAddressStr(RecvAddr.sin_addr.s_addr),
+									                   IpAddressStr(S_ADDR(RecvAddr)),
 									                   htons(RecvAddr.sin_port));
 
 									std::string str = "EconetPoll: Packet data:" + BytesToString(AUNMode ? EconetRx.raw : BeebRx.buff, RetVal);
@@ -1878,7 +1879,8 @@ bool EconetPoll_real() // return NMI status
 
 										case FourWayStage::DataSent:
 											// we sent block of data, awaiting final ack..
-											if (EconetRx.ah.type == AUNType::Ack || EconetRx.ah.type == AUNType::NAck) {
+											if (EconetRx.ah.type == AUNType::Ack || EconetRx.ah.type == AUNType::NAck)
+											{
 												// are we expecting a (N)ACK ?
 												// TODO check it is a (n)ack for packet we just sent!!, deal with naks!
 												// construct a final ack for the beeb
@@ -1938,7 +1940,7 @@ bool EconetPoll_real() // return NMI status
 							}
 							else if (RetVal == SOCKET_ERROR && !SingleSocket)
 							{
-								EconetError("Econet: Failed to receive packet (error %ld)", WSAGetLastError());
+								EconetError("Econet: Failed to receive packet (error %ld)", GetLastSocketError());
 							}
 						}
 						else if (RetVal == SOCKET_ERROR)

@@ -45,6 +45,7 @@ Boston, MA  02110-1301, USA.
 #include "Messages.h"
 #include "RingBuffer.h"
 #include "Serial.h"
+#include "Socket.h"
 #include "StringUtils.h"
 #include "Thread.h"
 
@@ -205,11 +206,11 @@ void IP232Close()
 		if (DebugEnabled)
 			DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Closing socket");
 
-		int Result = closesocket(EthernetSocket);
+		int Result = CloseSocket(EthernetSocket);
 
 		if (Result == SOCKET_ERROR)
 		{
-			DebugTrace("closesocket() returned error %d\n", WSAGetLastError());
+			DebugTrace("closesocket() returned error %d\n", GetLastSocketError());
 		}
 
 		EthernetSocket = INVALID_SOCKET;
@@ -307,7 +308,7 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 			{
 				fd_set fds;
 				FD_ZERO(&fds);
-				static const timeval TimeOut = {0, 0};
+				timeval TimeOut = {0, 0};
 
 				FD_SET(EthernetSocket, &fds);
 
@@ -315,7 +316,7 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 
 				if (NumReady == SOCKET_ERROR)
 				{
-					DebugTrace("Read Select Error %d\n", WSAGetLastError());
+					DebugTrace("Read Select Error %d\n", GetLastSocketError());
 
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Select error on read");
@@ -336,7 +337,7 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 						Close = true;
 
 						// Should really check what the error was ...
-						int Error = WSAGetLastError();
+						int Error = GetLastSocketError();
 
 						DebugTrace("Read error %d, remote session disconnected\n", Error);
 
@@ -366,7 +367,7 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 
 				fd_set fds;
 				FD_ZERO(&fds);
-				static const timeval TimeOut = {0, 0};
+				timeval TimeOut = {0, 0};
 
 				FD_SET(EthernetSocket, &fds);
 
@@ -374,7 +375,7 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 
 				if (NumReady == SOCKET_ERROR)
 				{
-					DebugTrace("Write Select Error %d\n", WSAGetLastError());
+					DebugTrace("Write Select Error %d\n", GetLastSocketError());
 
 					if (DebugEnabled)
 						DebugDisplayTrace(DebugType::RemoteServer, true, "IP232: Select error on write");
@@ -388,7 +389,7 @@ unsigned int EthernetPortReadThread::ThreadFunc()
 						Close = true;
 
 						// Should really check what the error was ...
-						int Error = WSAGetLastError();
+						int Error = GetLastSocketError();
 
 						DebugTrace("Send Error %i, Error %d\n", BytesSent, Error);
 
