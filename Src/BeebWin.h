@@ -43,8 +43,10 @@ Boston, MA  02110-1301, USA.
 #include "DiscType.h"
 #include "KeyMap.h"
 #include "Model.h"
+#include "MonitorType.h"
 #include "Port.h"
 #include "Preferences.h"
+#include "SoundStreamerType.h"
 #include "Tube.h"
 #include "Video.h"
 
@@ -141,25 +143,11 @@ enum class MessageResult
 	Cancel
 };
 
-enum class MonitorType
-{
-	RGB,
-	BW,
-	Amber,
-	Green
-};
-
 enum class DisplayRendererType
 {
 	GDI,
 	DirectDraw,
 	DirectX9
-};
-
-enum class SoundStreamerType
-{
-	XAudio2,
-	DirectSound
 };
 
 enum class JoystickOption

@@ -380,6 +380,7 @@
     <ClInclude Include="Messages.h" />
     <ClInclude Include="ML675001.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="MonitorType.h" />
     <ClInclude Include="Music5000.h" />
     <ClInclude Include="PALRom.h" />
     <ClInclude Include="Port.h" />
@@ -400,6 +401,7 @@
     <ClInclude Include="Socket.h" />
     <ClInclude Include="Sound.h" />
     <ClInclude Include="SoundStreamer.h" />
+    <ClInclude Include="SoundStreamerType.h" />
     <ClInclude Include="Speech.h" />
     <ClInclude Include="SprowCoPro.h" />
     <ClInclude Include="StringUtils.h" />

@@ -461,6 +461,9 @@
     <ClInclude Include="Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MonitorType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Music5000.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -516,6 +519,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SoundStreamer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundStreamerType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Speech.h">
