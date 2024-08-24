@@ -651,56 +651,15 @@ static void DoFastTable() {
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-#define BEEB_DOTIME_SAMPLESIZE 50
 
-static void VideoStartOfFrame(void) {
-#ifdef BEEB_DOTIME
-  static int Have_GotTime=0;
-  static struct tms previous,now;
-  static int Time_FrameCount=0;
-
-  double frametime;
-  static CycleCountT OldCycles=0;
-
-  if (!Have_GotTime) {
-    times(&previous);
-    Time_FrameCount=-1;
-    Have_GotTime=1;
-  }
-
-  if (Time_FrameCount==(BEEB_DOTIME_SAMPLESIZE-1)) {
-    times(&now);
-    frametime=now.tms_utime-previous.tms_utime;
-#ifndef SUNOS
-#ifndef HPUX
-                frametime/=(double)CLOCKS_PER_SEC;
-#else
-                frametime/=(double)sysconf(_SC_CLK_TCK);
-#endif
-#else
-                frametime/=(double)HZ;
-#endif
-    frametime/=(double)BEEB_DOTIME_SAMPLESIZE;
-    cerr << "Frametime: " << frametime << "s fps=" << (1/frametime) << "Total cycles=" << TotalCycles << "Cycles in last unit=" << (TotalCycles-OldCycles) << "\n";
-    OldCycles=TotalCycles;
-    previous=now;
-    Time_FrameCount=0;
-  } else Time_FrameCount++;
-
-#endif
-
+static void VideoStartOfFrame()
+{
   /* FrameNum is determined by the window handler */
   if (VideoState.IsNewTVFrame)	// RTW - only calibrate timing once per frame
   {
     VideoState.IsNewTVFrame = false;
-#ifdef WIN32
+
     FrameNum = mainWin->StartOfFrame();
-#else
-    /* If FrameNum hits 0 we actually refresh */
-    if (FrameNum--==0) {
-      FrameNum=Video_RefreshFrequency-1;
-    }
-#endif
 
     CursorFieldCount--;
     Mode7FlashTrigger--;
