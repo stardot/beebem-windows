@@ -146,7 +146,7 @@ Boston, MA  02110-1301, USA.
 // | 63 | 3F |                                                                 |
 // +----+----+-----------------------------------------------------------------+
 
-// Master 128 MC146818AP Real-Time Clock and RAM
+// Offset from PC clock (seconds)
 static time_t RTCTimeOffset = 0;
 
 struct CMOSType
@@ -218,6 +218,10 @@ unsigned char* pCMOS = nullptr;
 
 /*-------------------------------------------------------------------------*/
 
+// Convert the contents of the RTC registers to a time_t, applying a
+// correction based on the PC clock because the RTC only stores a two-digit
+// year.
+
 static time_t RTCConvertClock()
 {
 	struct tm Base;
@@ -238,19 +242,48 @@ static time_t RTCConvertClock()
 		Base.tm_hour  = BCDToBin(pCMOS[4]);
 		Base.tm_mday  = BCDToBin(pCMOS[7]);
 		Base.tm_mon   = BCDToBin(pCMOS[8]) - 1;
-		Base.tm_year  = BCDToBin(pCMOS[9]);
+		Base.tm_year  = BCDToBin(pCMOS[9]); // Years since 1900
 	}
 
 	Base.tm_wday  = -1;
 	Base.tm_yday  = -1;
 	Base.tm_isdst = -1;
 
+	// Add the century from the PC clock.
 	time_t SysTime;
 	time(&SysTime);
 	struct tm *CurTime = localtime(&SysTime);
 	Base.tm_year += (CurTime->tm_year / 100) * 100;
 
 	return mktime(&Base);
+}
+
+/*-------------------------------------------------------------------------*/
+
+static void RTCSetTimeAndDateRegisters(const struct tm* pTime)
+{
+	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
+	{
+		// Update with current time values in binary format
+		pCMOS[0] = static_cast<unsigned char>(pTime->tm_sec);
+		pCMOS[2] = static_cast<unsigned char>(pTime->tm_min);
+		pCMOS[4] = static_cast<unsigned char>(pTime->tm_hour);
+		pCMOS[6] = static_cast<unsigned char>(pTime->tm_wday + 1);
+		pCMOS[7] = static_cast<unsigned char>(pTime->tm_mday);
+		pCMOS[8] = static_cast<unsigned char>(pTime->tm_mon + 1);
+		pCMOS[9] = static_cast<unsigned char>(pTime->tm_year % 100);
+	}
+	else
+	{
+		// Update with current time values in BCD format
+		pCMOS[0] = BCD(static_cast<unsigned char>(pTime->tm_sec));
+		pCMOS[2] = BCD(static_cast<unsigned char>(pTime->tm_min));
+		pCMOS[4] = BCD(static_cast<unsigned char>(pTime->tm_hour));
+		pCMOS[6] = BCD(static_cast<unsigned char>(pTime->tm_wday + 1));
+		pCMOS[7] = BCD(static_cast<unsigned char>(pTime->tm_mday));
+		pCMOS[8] = BCD(static_cast<unsigned char>(pTime->tm_mon + 1));
+		pCMOS[9] = BCD(static_cast<unsigned char>(pTime->tm_year % 100));
+	}
 }
 
 /*-------------------------------------------------------------------------*/
@@ -279,28 +312,11 @@ void RTCInit()
 	time(&SysTime);
 	struct tm *CurTime = localtime(&SysTime);
 
-	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
-	{
-		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
-		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
-		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
-		pCMOS[6] = static_cast<unsigned char>(CurTime->tm_wday + 1);
-		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
-		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
-		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
-	}
-	else
-	{
-		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-		pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
-	}
+	RTCSetTimeAndDateRegisters(CurTime);
 
 	RTCTimeOffset = SysTime - RTCConvertClock();
+
+	DebugTrace("RTCInit: RTCTimeOffset set to %d\n", (int)RTCTimeOffset);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -312,28 +328,7 @@ static void RTCUpdate()
 	SysTime -= RTCTimeOffset;
 	struct tm *CurTime = localtime(&SysTime);
 
-	if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
-	{
-		// Update with current time values in binary format
-		pCMOS[0] = static_cast<unsigned char>(CurTime->tm_sec);
-		pCMOS[2] = static_cast<unsigned char>(CurTime->tm_min);
-		pCMOS[4] = static_cast<unsigned char>(CurTime->tm_hour);
-		pCMOS[6] = static_cast<unsigned char>(CurTime->tm_wday + 1);
-		pCMOS[7] = static_cast<unsigned char>(CurTime->tm_mday);
-		pCMOS[8] = static_cast<unsigned char>(CurTime->tm_mon + 1);
-		pCMOS[9] = static_cast<unsigned char>(CurTime->tm_year % 100);
-	}
-	else
-	{
-		// Update with current time values in BCD format
-		pCMOS[0] = BCD(static_cast<unsigned char>(CurTime->tm_sec));
-		pCMOS[2] = BCD(static_cast<unsigned char>(CurTime->tm_min));
-		pCMOS[4] = BCD(static_cast<unsigned char>(CurTime->tm_hour));
-		pCMOS[6] = BCD(static_cast<unsigned char>(CurTime->tm_wday + 1));
-		pCMOS[7] = BCD(static_cast<unsigned char>(CurTime->tm_mday));
-		pCMOS[8] = BCD(static_cast<unsigned char>(CurTime->tm_mon + 1));
-		pCMOS[9] = BCD(static_cast<unsigned char>(CurTime->tm_year % 100));
-	}
+	RTCSetTimeAndDateRegisters(CurTime);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -342,6 +337,8 @@ void RTCChipEnable(bool Enable)
 {
 	CMOS.ChipEnable = Enable;
 }
+
+/*-------------------------------------------------------------------------*/
 
 bool RTCIsChipEnable()
 {
@@ -365,9 +362,9 @@ void RTCWriteData(unsigned char Value)
 
 	if (DebugEnabled)
 	{
-	  DebugDisplayTraceF(DebugType::CMOS, true,
-	                     "CMOS: Write address %X value %02X",
-	                     CMOS.Address, Value);
+		DebugDisplayTraceF(DebugType::CMOS, true,
+		                   "CMOS: Write address %X value %02X",
+		                   CMOS.Address, Value);
 	}
 
 	// Many thanks to Tom Lees for supplying me with info on the 146818 registers
@@ -375,6 +372,7 @@ void RTCWriteData(unsigned char Value)
 	if (CMOS.Address <= 0x9)
 	{
 		// Clock registers
+		DebugTrace("RTCWriteData: Set register %d to %02X\n", CMOS.Address, Value);
 
 		// BCD or binary format?
 		if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
@@ -405,6 +403,8 @@ void RTCWriteData(unsigned char Value)
 			time_t SysTime;
 			time(&SysTime);
 			RTCTimeOffset = SysTime - RTCConvertClock();
+
+			DebugTrace("RTCWriteData: RTCTimeOffset set to %d\n", (int)RTCTimeOffset);
 		}
 
 		// Write the value to CMOS anyway
@@ -434,9 +434,9 @@ unsigned char RTCReadData()
 
 	if (DebugEnabled)
 	{
-	  DebugDisplayTraceF(DebugType::CMOS, true,
-	                     "CMOS: Read address %X value %02X",
-	                     CMOS.Address, Value);
+		DebugDisplayTraceF(DebugType::CMOS, true,
+		                   "CMOS: Read address %X value %02X",
+		                   CMOS.Address, Value);
 	}
 
 	DebugTrace("RTC: Read address %02X value %02X\n", CMOS.Address, Value);
@@ -470,6 +470,8 @@ unsigned char RTCGetData(Model model, unsigned char Address)
 	return CMOS.Register[Index][Address];
 }
 
+/*-------------------------------------------------------------------------*/
+
 const unsigned char* RTCGetCMOSData(Model model)
 {
 	const int Index = model == Model::Master128 ? 0 : 1;
@@ -477,9 +479,13 @@ const unsigned char* RTCGetCMOSData(Model model)
 	return &CMOS.Register[Index][14];
 }
 
+/*-------------------------------------------------------------------------*/
+
 void RTCSetCMOSData(Model model, const unsigned char* pData, int Size)
 {
 	const int Index = model == Model::Master128 ? 0 : 1;
 
 	memcpy(&CMOS.Register[Index][14], pData, Size);
 }
+
+/*-------------------------------------------------------------------------*/
