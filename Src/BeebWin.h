@@ -284,23 +284,23 @@ public:
 	}
 
 	void doUHorizLine(int Colour, int y, int sx, int width) {
-		if (TeletextEnabled) y/=TeletextStyle;
-		if (y>500) return;
-		memset(m_screen+ (y* 800) + sx, Colour, width);
+		if (TeletextEnabled) y /= TeletextStyle;
+		if (y > 500) return;
+		memset(m_screen + (y * 800) + sx, Colour, width);
 	}
 
 	EightUChars *GetLinePtr(int y) {
-		int d = (y*800)+ScreenAdjust;
-		if (d > (MAX_VIDEO_SCAN_LINES*800))
-			return((EightUChars *)(m_screen+(MAX_VIDEO_SCAN_LINES*800)));
-		return((EightUChars *)(m_screen + d));
+		int d = (y * 800) + ScreenAdjust;
+		if (d > MAX_VIDEO_SCAN_LINES * 800)
+			return (EightUChars *)(m_screen + MAX_VIDEO_SCAN_LINES * 800);
+		return (EightUChars *)(m_screen + d);
 	}
 
 	SixteenUChars *GetLinePtr16(int y) {
-		int d = (y*800)+ScreenAdjust;
-		if (d > (MAX_VIDEO_SCAN_LINES*800))
-			return((SixteenUChars *)(m_screen+(MAX_VIDEO_SCAN_LINES*800)));
-		return((SixteenUChars *)(m_screen + d));
+		int d = (y * 800) + ScreenAdjust;
+		if (d > MAX_VIDEO_SCAN_LINES * 800)
+			return (SixteenUChars *)(m_screen + MAX_VIDEO_SCAN_LINES * 800);
+		return (SixteenUChars *)(m_screen + d);
 	}
 
 	HWND GethWnd() { return m_hWnd; }
