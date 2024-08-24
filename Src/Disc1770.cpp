@@ -940,7 +940,13 @@ void Poll1770(int NCycles) {
 			Status |= WD1770_STATUS_SPIN_UP_COMPLETE;
 		}
 
-		if (LoadingCycles <= 0) FDCommand = 10; NextFDCommand = 255; // Go to spin down, but report error.
+		if (LoadingCycles <= 0)
+		{
+			// Go to spin down, but report error.
+			FDCommand = 10;
+			NextFDCommand = 255;
+		}
+
 		SpinDown[CurrentDrive] = SPIN_DOWN_TIME;
 		LightsOn[CurrentDrive] = true;
 		return;
