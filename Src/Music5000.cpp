@@ -33,7 +33,7 @@ Boston, MA  02110-1301, USA.
 #include "UefState.h"
 
 bool Music5000Enabled = false;
-UINT8 JimPageSelectRegister;
+unsigned char JimPageSelectRegister;
 extern int SoundVolume;
 
 #define RAM_SIZE              2048
@@ -58,44 +58,44 @@ extern int SoundVolume;
 
 struct CHANNELREGS
 {
-	UINT8 FreqLo[NUM_CHANNELS];
-	UINT8 FreqMed[NUM_CHANNELS];
-	UINT8 FreqHi[NUM_CHANNELS];
-	UINT8 Unused1[NUM_CHANNELS];
-	UINT8 Unused2[NUM_CHANNELS];
-	UINT8 WaveformReg[NUM_CHANNELS];
-	UINT8 AmplitudeReg[NUM_CHANNELS];
-	UINT8 ControlReg[NUM_CHANNELS];
+	unsigned char FreqLo[NUM_CHANNELS];
+	unsigned char FreqMed[NUM_CHANNELS];
+	unsigned char FreqHi[NUM_CHANNELS];
+	unsigned char Unused1[NUM_CHANNELS];
+	unsigned char Unused2[NUM_CHANNELS];
+	unsigned char WaveformReg[NUM_CHANNELS];
+	unsigned char AmplitudeReg[NUM_CHANNELS];
+	unsigned char ControlReg[NUM_CHANNELS];
 };
 
 struct WAVERAM
 {
-	UINT8 WaveTable[WAVE_TABLES][WAVE_TABLE_SIZE];
+	unsigned char WaveTable[WAVE_TABLES][WAVE_TABLE_SIZE];
 	CHANNELREGS ChannelRegs[NUM_REG_SETS];  // Normal & Alt
 };
 
-static UINT8 WaveRam[RAM_SIZE];
+static unsigned char WaveRam[RAM_SIZE];
 static WAVERAM* pWaveRam = (WAVERAM*)WaveRam;
-static UINT32 PhaseRam[NUM_CHANNELS];
+static unsigned int PhaseRam[NUM_CHANNELS];
 
 static const double ChordBase[8] = { 0, 8.25, 24.75, 57.75, 123.75, 255.75, 519.75, 1047.75 };
 static const double StepInc[8] = { 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0 };
-static INT D2ATable[128];
+static int D2ATable[128];
 
-static const INT StereoLeft[16]  = {   0,  0,  0,  0,  0,  0,  0,  0,100,100,100, 83, 67, 50, 33, 17 };
-static const INT StereoRight[16] = { 100,100,100,100,100,100,100,100,  0,  0,  0, 17, 33, 50, 67, 83 };
+static const int StereoLeft[16]  = {   0,  0,  0,  0,  0,  0,  0,  0,100,100,100, 83, 67, 50, 33, 17 };
+static const int StereoRight[16] = { 100,100,100,100,100,100,100,100,  0,  0,  0, 17, 33, 50, 67, 83 };
 
 // 6MHz clock, 128 cycles to update all channels
-static UINT CycleCount = 0;
+static unsigned int CycleCount = 0;
 
-static INT16 *SampleBuf = nullptr;
-static UINT32 SampleBufSize = 0;
-static UINT32 SampleWritePtr = 0;
+static short *SampleBuf = nullptr;
+static unsigned int SampleBufSize = 0;
+static unsigned int SampleWritePtr = 0;
 
-static UINT CurCh;
-static UINT ActiveRegSet;
-static INT SampleLeft;
-static INT SampleRight;
+static unsigned int CurCh;
+static unsigned int ActiveRegSet;
+static int SampleLeft;
+static int SampleRight;
 
 static SoundStreamer *pSoundStreamer = nullptr;
 
@@ -103,8 +103,8 @@ void Music5000Init()
 {
 	static_assert(sizeof(WAVERAM) == RAM_SIZE, "WAVERAM size");
 
-	memset(WaveRam, 0, sizeof(WaveRam));
-	memset(PhaseRam, 0, sizeof(PhaseRam));
+	ZeroMemory(WaveRam, sizeof(WaveRam));
+	ZeroMemory(PhaseRam, sizeof(PhaseRam));
 	CycleCount = 0;
 	CurCh = 0;
 	ActiveRegSet = REG_SET_NORMAL;
@@ -138,10 +138,10 @@ void Music5000Init()
 	else
 	{
 		pSoundStreamer->Play();
-		SampleBufSize = (UINT32)pSoundStreamer->BufferSize();
+		SampleBufSize = (unsigned int)pSoundStreamer->BufferSize();
 		if (SampleBuf)
 			free(SampleBuf);
-		SampleBuf = (INT16*)malloc(SampleBufSize * 4);
+		SampleBuf = (short*)malloc(SampleBufSize * 4);
 		if (SampleBuf == nullptr)
 		{
 			Music5000Enabled = false;
@@ -213,15 +213,15 @@ bool Music5000Read(int address, unsigned char *value)
 void Music5000Update(UINT cycles)
 {
 	CHANNELREGS *pChRegs;
-	UINT32 freq;
-	UINT c4d;
-	UINT wavetable, offset;
-	UINT amplitude;
-	UINT control;
-	UINT data;
-	UINT sign;
-	UINT pos;
-	INT sample;
+	unsigned int freq;
+	unsigned int c4d;
+	unsigned int wavetable, offset;
+	unsigned int amplitude;
+	unsigned int control;
+	unsigned int data;
+	unsigned int sign;
+	unsigned int pos;
+	int sample;
 
 	// Convert 2MHz 6502 cycles to 6MHz Music5000 cycles
 	CycleCount += cycles * 3;
@@ -303,8 +303,8 @@ void Music5000Update(UINT cycles)
 			else if (SampleRight > 32767)
 				SampleRight = 32767;
 
-			SampleBuf[SampleWritePtr++] = (INT16)SampleLeft;
-			SampleBuf[SampleWritePtr++] = (INT16)SampleRight;
+			SampleBuf[SampleWritePtr++] = (short)SampleLeft;
+			SampleBuf[SampleWritePtr++] = (short)SampleRight;
 
 			if (SampleWritePtr/2 >= SampleBufSize)
 			{
