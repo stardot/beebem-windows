@@ -27,31 +27,31 @@
 struct Opcodes {
   u32 mask;
   u32 cval;
-  char *mnemonic;
+  const char *mnemonic;
 };
 
-const char hdig[] = "0123456789abcdef";
+static const char hdig[] = "0123456789abcdef";
 
-const char *decVals[16] = {
+static const char *decVals[16] = {
   "0","1","2","3","4","5","6","7","8",
   "9","10","11","12","13","14","15"
 };
 
-const char *regs[16] = {
+static const char *regs[16] = {
   "r0","r1","r2","r3","r4","r5","r6","r7",
   "r8","r9","r10","r11","r12","sp","lr","pc"
 };
 
-const char *conditions[16] = {
+static const char *conditions[16] = {
   "eq","ne","cs","cc","mi","pl","vs","vc",
   "hi","ls","ge","lt","gt","le","","nv"
 };
 
-const char *shifts[5] = {
+static const char *shifts[5] = {
   "lsl","lsr","asr","ror","rrx"
 };
 
-const char *armMultLoadStore[12] = {
+static const char *armMultLoadStore[12] = {
   // non-stack
   "da","ia","db","ib",
   // stack store
@@ -60,7 +60,7 @@ const char *armMultLoadStore[12] = {
   "fa","fd","ea","ed"
 };
 
-const Opcodes thumbOpcodes[] = {
+static const Opcodes thumbOpcodes[] = {
   // Format 1
   {0xf800, 0x0000, "lsl %r0, %r3, %o"},
   {0xf800, 0x0800, "lsr %r0, %r3, %o"},
@@ -123,11 +123,11 @@ const Opcodes thumbOpcodes[] = {
   // Format 13
   {0xff00, 0xb000, "add sp, %s"},
   // Format 14
-  {0xffff, 0xb500, "push {lr}"},  
+  {0xffff, 0xb500, "push {lr}"},
   {0xff00, 0xb400, "push {%l}"},
   {0xff00, 0xb500, "push {%l,lr}"},
   {0xffff, 0xbd00, "pop {pc}"},
-  {0xff00, 0xbd00, "pop {%l,pc}"},  
+  {0xff00, 0xbd00, "pop {%l,pc}"},
   {0xff00, 0xbc00, "pop {%l}"},
   // Format 15
   {0xf800, 0xc000, "stmia %r8!, {%l}"},
@@ -221,7 +221,7 @@ char* addHex(char *dest, int siz, u32 val){
 int disArm(ARMul_State * state, u32 offset, char *dest, int flags)
 {
   u32 opcode = ARMul_ReadWord(state, offset);
-        
+
   const Opcodes *sp = armOpcodes;
   while( sp->cval != (opcode & sp->mask) )
     sp++;
@@ -235,8 +235,9 @@ int disArm(ARMul_State * state, u32 offset, char *dest, int flags)
     *dest++ = ' ';
   }
 
-  char *src = sp->mnemonic;
-  while (*src){
+  const char *src = sp->mnemonic;
+
+  while (*src) {
     if (*src!='%')
       *dest++ = *src++;
     else{
@@ -420,7 +421,7 @@ int disArm(ARMul_State * state, u32 offset, char *dest, int flags)
           if(opcode & 0x00100000)
             dest = addStr(dest, armMultLoadStore[8+((opcode>>23)&3)]);
           else
-            dest = addStr(dest, armMultLoadStore[4+((opcode>>23)&3)]);      
+            dest = addStr(dest, armMultLoadStore[4+((opcode>>23)&3)]);
         } else
           dest = addStr(dest, armMultLoadStore[(opcode>>23)&3]);
         break;
@@ -529,19 +530,19 @@ int disArm(ARMul_State * state, u32 offset, char *dest, int flags)
     }
   }
   *dest++ = 0;
-        
+
   return 4;
 }
 
 int disThumb(ARMul_State * state, u32 offset, char *dest, int flags)
 {
   u32 opcode = ARMul_ReadWord(state, offset);
-        
+
   const Opcodes *sp = thumbOpcodes;
   int ret = 2;
   while( sp->cval != (opcode & sp->mask) )
     sp++;
-        
+
   if (flags&DIS_VIEW_ADDRESS){
     dest = addHex(dest, 32, offset);
     *dest++ = ' ';
@@ -550,9 +551,10 @@ int disThumb(ARMul_State * state, u32 offset, char *dest, int flags)
     dest = addHex(dest, 16, opcode);
     *dest++ = ' ';
   }
-        
-  char *src = sp->mnemonic;
-  while (*src){
+
+  const char *src = sp->mnemonic;
+
+  while (*src) {
     if (*src!='%')
       *dest++ = *src++;
     else {
@@ -626,7 +628,7 @@ int disThumb(ARMul_State * state, u32 offset, char *dest, int flags)
           if(*s) {
             *dest++ = ' ';
             dest = addStr(dest, s);
-          }   */       
+          }   */
         }
         break;
       case 'b':
