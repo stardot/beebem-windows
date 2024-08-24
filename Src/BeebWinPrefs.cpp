@@ -336,7 +336,6 @@ void BeebWin::LoadPreferences()
 
 void BeebWin::LoadHardwarePreferences(int Version)
 {
-
 	if (Version >= 3)
 	{
 		std::string Value;

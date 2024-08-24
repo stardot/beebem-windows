@@ -18,6 +18,9 @@ Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA  02110-1301, USA.
 ****************************************************************/
 
+#ifndef ARMDISASSEMBLER_HEADER
+#define ARMDISASSEMBLER_HEADER
+
 //////////////////////////////////////////////////////////////////////
 // ArmDisassembler.h: declarations for the CArmDisassembler class.
 // Part of Tarmac
@@ -28,22 +31,5 @@ Boston, MA  02110-1301, USA.
 #include "TarmacGlobals.h"
 
 char *Arm_disassemble(uint32 address, uint32 instruction, char *buff);
-const char *decodeRegisterList(uint32 instruction);
-char *decodeSingleDataSwap(uint32 address, uint32 instruction, char *buff);
-char *decodeMultiply(uint32 address, uint32 instruction, char *buff);
-const char *decodeConditionCode(uint32 instruction);
-char *decodeSoftwareInterrupt(uint32 address, uint32 instruction, char *buff);
-char *decodeCoProRegTransferOrDataOperation(uint32 address, uint32 instruction, char *buff);
-char *decodeCoProDTPostIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeCoProDTPreIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeBranchWithLink(uint32 address, uint32 instruction, char *buff);
-char *decodeBranch(uint32 address, uint32 instruction, char *buff);
-char *decodeBlockDTPreIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeBlockDTPostIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeSingleDTRegOffsetPreIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeSingleDTRegOffsetPostIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeSingleDTImmOffsetPreIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeSingleDTImmOffsetPostIndex(uint32 address, uint32 instruction, char *buff);
-char *decodeDataProcessing(uint32 address, uint32 instruction, char *buff);
-char *decodeSingleDataSwapOrDataProcessing(uint32 address, uint32 instruction, char *buff);
-char *decodeMultiplyOrDataProcessing(uint32 address, uint32 instruction, char *buff);
+
+#endif

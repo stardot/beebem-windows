@@ -286,7 +286,7 @@ UEFStateResult SaveUEFState(const char *FileName)
 		fprintf(UEFState,"UEF File!");
 		fputc(0, UEFState); // UEF Header
 
-		const unsigned char UEFMinorVersion = 14;
+		const unsigned char UEFMinorVersion = 15;
 		const unsigned char UEFMajorVersion = 0;
 
 		fputc(UEFMinorVersion, UEFState);
@@ -506,7 +506,7 @@ UEFStateResult LoadUEFState(const char *FileName)
 					break;
 
 				case 0x0479:
-					arm->LoadState(UEFState);
+					arm->LoadState(UEFState, Version);
 					break;
 
 				case 0x047A:

@@ -1012,19 +1012,25 @@ void BeebWin::CreateArmCoPro()
 
 	CArm::InitResult Result = arm->init(ArmROMPath);
 
-	switch (Result) {
-		case CArm::InitResult::FileNotFound:
-			Report(MessageType::Error, "ARM co-processor ROM file not found:\n  %s",
-			       ArmROMPath);
+	if (Result != CArm::InitResult::Success)
+	{
+		DestroyArmCoPro();
 
-			DestroyArmCoPro();
+		TubeType = TubeDevice::None;
+		UpdateTubeMenu();
 
-			TubeType = TubeDevice::None;
-			UpdateTubeMenu();
-			break;
+		switch (Result)
+		{
+			case CArm::InitResult::FileNotFound:
+				Report(MessageType::Error, "ARM co-processor ROM file not found:\n  %s",
+				       ArmROMPath);
+				break;
 
-		case CArm::InitResult::Success:
-			break;
+			case CArm::InitResult::InvalidROM:
+				Report(MessageType::Error, "Invalid ARM co-processor ROM file (expected 4096 bytes):\n  %s",
+				       ArmROMPath);
+				break;
+		}
 	}
 }
 

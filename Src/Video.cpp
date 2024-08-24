@@ -1711,7 +1711,7 @@ void LoadVideoUEF(FILE *SUEF, int Version)
 	if (VideoULA_ControlReg & 2) HSyncModifier=12;
 
 	if (Version >= 13)
-    {
+	{
 		VideoState.Addr = UEFRead32(SUEF);
 		VideoState.StartAddr = UEFRead32(SUEF);
 		VideoState.PixmapLine = UEFRead32(SUEF);

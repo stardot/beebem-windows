@@ -32,7 +32,7 @@ Boston, MA  02110-1301, USA.
 #include <string.h>
 
 #include "Arm.h"
-#include "ArmDisassembler.h"	// gives access to disassembler
+#include "ArmDisassembler.h" // gives access to disassembler
 #include "BeebMem.h"
 #include "DebugTrace.h"
 #include "Tube.h"
@@ -46,8 +46,14 @@ CArm::CArm()
 {
 }
 
+CArm::~CArm()
+{
+}
+
 CArm::InitResult CArm::init(const char *ROMPath)
 {
+	armModel = 1; // Emulate ARM1 instructions only.
+
 	// set up pointers to each bank of registers
 	curR[USR_MODE] = usrR;
 	curR[SVC_MODE] = svcR;
@@ -86,27 +92,32 @@ CArm::InitResult CArm::init(const char *ROMPath)
 	// set up test environment
 	/////////////////////////////
 
-	processorMode = USR_MODE;
 	processorMode = SVC_MODE;
 	r[15] = 0;
 	prefetchInvalid = true;
 	conditionFlags = 0;
 
-	// load file into test memory
+	// load ROM file into memory
 	FILE *ROMFile = fopen(ROMPath, "rb");
 
 	if (ROMFile != nullptr)
 	{
-		fread(romMemory, 0x4000, 1, ROMFile);
+		size_t BytesRead = fread(romMemory, 1, ROM_SIZE, ROMFile);
+
 		fclose(ROMFile);
+
+		if (BytesRead != ROM_SIZE)
+		{
+			return InitResult::InvalidROM;
+		}
 	}
 	else
 	{
 		return InitResult::FileNotFound;
 	}
 
-	memset(ramMemory, 0, 0x400000);
-	memcpy(ramMemory, romMemory, 0x4000);
+	memset(ramMemory, 0, RAM_SIZE);
+	memcpy(ramMemory, romMemory, ROM_SIZE);
 
 	return InitResult::Success;
 }
@@ -156,10 +167,6 @@ void CArm::exec(int count)
 	}
 }
 
-CArm::~CArm()
-{
-}
-
 void CArm::run()
 {
 	// note, if the while(true) loop is placed inside run() as it may need to be for speed
@@ -205,7 +212,7 @@ void CArm::run()
 			// mul rd, rm, rs
 			case 0x00:
 			{
-				if( isExtendedInstruction(currentInstruction) )
+				if (armModel >= 2 && isExtendedInstruction(currentInstruction))
 				{
 					// mul rd, rm, rs
 					performMul();
@@ -221,7 +228,7 @@ void CArm::run()
 			// mulS rd, rm, rs
 			case 0x01:
 			{
-				if( isExtendedInstruction(currentInstruction) )
+				if (armModel >= 2 && isExtendedInstruction(currentInstruction))
 				{
 					// mulS rd, rm, rs
 					performMulS();
@@ -237,7 +244,7 @@ void CArm::run()
 			// mla rd, rm, rs
 			case 0x02:
 			{
-				if( isExtendedInstruction(currentInstruction) )
+				if (armModel >= 2 && isExtendedInstruction(currentInstruction))
 				{
 					// mla rd, rm, rs
 					performMla();
@@ -253,7 +260,7 @@ void CArm::run()
 			// mlaS rd, rm, rs
 			case 0x03:
 			{
-				if( isExtendedInstruction(currentInstruction) )
+				if (armModel >= 2 && isExtendedInstruction(currentInstruction))
 				{
 					// mlaS rd, rm, rs
 					performMlaS();
@@ -342,7 +349,7 @@ void CArm::run()
 			// swp rd, rn, rm
 			case 0x10:
 			{
-				if( isExtendedInstruction(currentInstruction) )
+				if (armModel >= 3 && isExtendedInstruction(currentInstruction))
 				{
 					// swp rd, rn, rm
 					performSingleDataSwapWord();
@@ -402,7 +409,7 @@ void CArm::run()
 			// cmp rd, rn, rm - NOP
 			case 0x14:
 			{
-				if( isExtendedInstruction(currentInstruction) )
+				if (armModel >= 3 && isExtendedInstruction(currentInstruction))
 				{
 					// swp rd, rn, rm
 					performSingleDataSwapByte();
@@ -630,6 +637,7 @@ void CArm::run()
 					// tst rn, imm
 					(void)andOperatorS( getDataProcessingImmediateOperand1(), getDataProcessingImmediateOperand2S() );
 				}
+				break;
 			}
 			// teq rd, rn, imm
 			case 0x32:
@@ -2550,7 +2558,6 @@ void CArm::run()
 					coprocessorDataOperation();
 				}
 				break;
-				break;
 			}
 
 			// software interrupt
@@ -2658,7 +2665,7 @@ void CArm::run()
 // instruction templates
 //////////////////////////////////////////////////////////////////////
 
-// tests for bit patter 1001 in bits 4-7 to determine the difference
+// tests for bit pattern 1001 in bits 4-7 to determine the difference
 // between a data processing instruction and a MUL or SWP instruction
 inline bool CArm::isExtendedInstruction(uint32 instruction)
 {
@@ -4692,9 +4699,11 @@ void CArm::SaveState(FILE* SUEF)
 	}
 
 	UEFWriteBuf(ramMemory, sizeof(ramMemory), SUEF);
+
+	UEFWrite8((unsigned char)armModel, SUEF);
 }
 
-void CArm::LoadState(FILE* SUEF)
+void CArm::LoadState(FILE* SUEF, int Version)
 {
 	pc = UEFRead32(SUEF);
 	processorMode = UEFRead8(SUEF);
@@ -4726,4 +4735,13 @@ void CArm::LoadState(FILE* SUEF)
 	}
 
 	UEFReadBuf(ramMemory, sizeof(ramMemory), SUEF);
+
+	if (Version >= 15)
+	{
+		armModel = UEFRead8(SUEF);
+	}
+	else
+	{
+		armModel = 1;
+	}
 }

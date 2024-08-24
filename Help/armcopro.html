@@ -57,17 +57,26 @@
         Processor</span> on the <span class="ui">Hardware &rarr; Second
         Processor</span> menu. The ARM Second Processor has no operating system
         but relies on a sideways ROM to provide a command line prompt to the
-        user. Once you see the <span class="cmd">A*</span> prompt, type <span
+        user.
+      </p>
+
+      <p>
+        Once you see the <span class="cmd">A*</span> prompt, type <span
         class="cmd">*HELP SUPERVISOR</span> to see what in-built commands are
         available.
       </p>
 
       <p>
         The ARM Evaluation System came with 6 discs full of software. Disc 3 is
-        included in the 'DiscIms' folder which contains ARM Basic. Load the
-        armdisc3.adl disc image (ensuring you are in ADFS mode), type <span
-        class="cmd">*MOUNT 4</span> and <span class="cmd">*AB</span> to load
-        ARM Basic. The remaining disc images plus a hard disc image containing
+        included in the <span class="file">DiscIms</span> folder which contains
+        ARM Basic. Load the <span class="file">armdisc3.adl</span> disc image
+        (ensuring you are in ADFS mode), type <span class="cmd">*MOUNT 4</span>
+        and <span class="cmd">*AB</span> to load ARM Basic. Type <span
+        class="cmd">HELP .</span> to list all BASIC commands.
+      </p>
+
+      <p>
+        The remaining disc images plus a hard disc image containing
         all 6 disc images can be downloaded from Jon Welch's website:
         <a href="http://www.g7jjf.com/acornArm_disc_images.htm">Acorn ARM
         Discs</a>.
@@ -91,6 +100,47 @@
         You will also find some manuals for the ARM Second Processor on Jon's
         site as well. If you have any manuals or other disc images that Jon
         does not have feel free to send them to Jon to add to the library.
+      </p>
+
+      <p>To use the hard disc image:</p>
+
+      <ul>
+        <li>
+          While BeebEm is not running,
+          <a href="https://www.g7jjf.com/acornArm_disc_images.htm">download</a>
+          the hard disc image and copy the file <span class="file">scsi1.dat</span>
+          to your <span class="file">DiscIms</span> folder.
+        </li>
+        <li>
+          Start BeebEm.
+        </li>
+        <li>
+          Type <span class="cmd">CONFIGURE TUBE</span> to use the ARM
+          co-processor by default.
+        </li>
+        <li>
+          Type <span class="cmd">CONFIGURE FILE 13</span> to make ADFS the
+          default filing system (so you can read the disc image).
+        </li>
+        <li>
+          Type <span class="cmd">CONFIGURE MODE 0</span> to switch to a
+          screen mode with smaller font.
+        </li>
+        <li>
+          Press <kbd>Ctrl</kbd> + <kbd>F12</kbd> to reset the machine so
+          configuration changes take effect (presses <kbd>Ctrl</kbd> +
+          <kbd>Break</kbd> in the emulator).
+        </li>
+        <li>
+          Type <span class="cmd">MOUNT 1</span> to mount the hard disc image
+          as drive 1.
+        </li>
+      </ul>
+
+      <p>
+        To make sure all your settings are saved for next time so you don't
+        have to repeat the process, select the <span class="ui">Options &rarr;
+        Save Preferences</span> menu item.
       </p>
     </main>
 
