@@ -819,39 +819,39 @@ static void ReadEconetConfigFile()
 
 			try
 			{
-				if (_stricmp(Key.c_str(), "AUNMODE") == 0)
+				if (StrCaseCmp(Key.c_str(), "AUNMODE") == 0)
 				{
 					AUNMode = std::stoi(Value) != 0;
 				}
-				else if (_stricmp(Key.c_str(), "LEARN") == 0)
+				else if (StrCaseCmp(Key.c_str(), "LEARN") == 0)
 				{
 					LearnMode = std::stoi(Value) != 0;
 				}
-				else if (_stricmp(Key.c_str(), "AUNSTRICT") == 0)
+				else if (StrCaseCmp(Key.c_str(), "AUNSTRICT") == 0)
 				{
 					StrictAUNMode = std::stoi(Value) != 0;
 				}
-				else if (_stricmp(Key.c_str(), "SINGLESOCKET") == 0)
+				else if (StrCaseCmp(Key.c_str(), "SINGLESOCKET") == 0)
 				{
 					SingleSocket = std::stoi(Value) != 0;
 				}
-				else if (_stricmp(Key.c_str(), "FLAGFILLTIMEOUT") == 0)
+				else if (StrCaseCmp(Key.c_str(), "FLAGFILLTIMEOUT") == 0)
 				{
 					EconetFlagFillTimeout = std::stoi(Value);
 				}
-				else if (_stricmp(Key.c_str(), "SCACKTIMEOUT") == 0)
+				else if (StrCaseCmp(Key.c_str(), "SCACKTIMEOUT") == 0)
 				{
 					EconetSCACKtimeout = std::stoi(Value);
 				}
-				else if (_stricmp(Key.c_str(), "TIMEBETWEENBYTES") == 0)
+				else if (StrCaseCmp(Key.c_str(), "TIMEBETWEENBYTES") == 0)
 				{
 					TimeBetweenBytes = std::stoi(Value);
 				}
-				else if (_stricmp(Key.c_str(), "FOURWAYTIMEOUT") == 0)
+				else if (StrCaseCmp(Key.c_str(), "FOURWAYTIMEOUT") == 0)
 				{
 					FourWayStageTimeout = std::stoi(Value);
 				}
-				else if (_stricmp(Key.c_str(), "MASSAGENETS") == 0)
+				else if (StrCaseCmp(Key.c_str(), "MASSAGENETS") == 0)
 				{
 					MassageNetworks = std::stoi(Value) != 0;
 				}
@@ -908,7 +908,7 @@ static void ReadAUNConfigFile()
 
 		ParseConfigLine(Line, Tokens);
 
-		if (Tokens.size() == 3 && _stricmp("ADDMAP", Tokens[0].c_str()) == 0)
+		if (Tokens.size() == 3 && StrCaseCmp("ADDMAP", Tokens[0].c_str()) == 0)
 		{
 			if (aunnetp < AUN_TABLE_LENGTH)
 			{
