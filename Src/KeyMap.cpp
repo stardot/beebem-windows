@@ -90,7 +90,7 @@ bool ReadKeyMap(const char *filename, KeyMap *keymap)
 		{
 			fgets(buf, 255, infile);
 
-			for (int i = 0; i < 256; ++i)
+			for (int i = 0; i < KEYMAP_SIZE; ++i)
 			{
 				if (fgets(buf, 255, infile) == NULL)
 				{
