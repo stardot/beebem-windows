@@ -1280,15 +1280,25 @@ void BeebReadRoms()
 
 	if (InFile != nullptr)
 	{
-		fread(WholeRam + 0xc000, 1, MAX_ROM_SIZE, InFile);
+		size_t BytesRead = fread(WholeRam + 0xc000, 1, MAX_ROM_SIZE, InFile);
+
 		fclose(InFile);
+
+		if (BytesRead != MAX_ROM_SIZE)
+		{
+			mainWin->Report(MessageType::Error,
+			                "OS ROM has wrong file size (expected %d bytes):\n %s",
+			                OSRomFileName.c_str(),
+			                MAX_ROM_SIZE);
+		}
 
 		// Try to read OS ROM memory map:
 		std::string MapFileName = ReplaceFileExt(OSRomFileName, ".map");
 
 		DebugLoadMemoryMap(MapFileName.c_str(), 16);
 	}
-	else {
+	else
+	{
 		mainWin->Report(MessageType::Error,
 		                "Cannot open specified OS ROM:\n %s", OSRomFileName.c_str());
 	}
