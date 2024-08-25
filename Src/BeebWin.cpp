@@ -5131,7 +5131,8 @@ void BeebWin::ParseCommandLine()
 					}
 				}
 
-				if (CustomData) {
+				if (CustomData)
+				{
 					m_CustomData = true;
 				}
 			}
@@ -5210,11 +5211,25 @@ void BeebWin::ParseCommandLine()
 				// Assume it's a file name
 				if (m_CommandLineFileName1[0] == '\0')
 				{
-					strncpy(m_CommandLineFileName1, __argv[i], MAX_PATH);
+					if (strlen(__argv[i]) < MAX_PATH)
+					{
+						strcpy(m_CommandLineFileName1, __argv[i]);
+					}
+					else
+					{
+						invalid = true;
+					}
 				}
 				else if (m_CommandLineFileName2[0] == '\0')
 				{
-					strncpy(m_CommandLineFileName2, __argv[i], MAX_PATH);
+					if (strlen(__argv[i]) < MAX_PATH)
+					{
+						strcpy(m_CommandLineFileName2, __argv[i]);
+					}
+					else
+					{
+						invalid = true;
+					}
 				}
 			}
 
