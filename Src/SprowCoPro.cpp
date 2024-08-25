@@ -50,15 +50,28 @@ CSprowCoPro::CSprowCoPro()
 
 CSprowCoPro::InitResult CSprowCoPro::Init(const char* ROMPath)
 {
-    FILE *testFile = fopen(ROMPath, "rb");
+    FILE * ROMFile = fopen(ROMPath, "rb");
 
-    if (testFile != nullptr)
+    if (ROMFile != nullptr)
     {
-        fseek(testFile, 0, SEEK_END);
-        long length = ftell(testFile);
-        fseek(testFile, 0, SEEK_SET);
-        fread(m_ROMMemory, length, 1, testFile);
-        fclose(testFile);
+        fseek(ROMFile, 0, SEEK_END);
+        long Length = ftell(ROMFile);
+        fseek(ROMFile, 0, SEEK_SET);
+
+        if (Length != ROM_SIZE)
+        {
+            fclose(ROMFile);
+            return InitResult::InvalidROM;
+        }
+
+        size_t BytesRead = fread(m_ROMMemory, 1, ROM_SIZE, ROMFile);
+
+        fclose(ROMFile);
+
+        if (BytesRead != ROM_SIZE)
+        {
+            return InitResult::InvalidROM;
+        }
     }
     else
     {

@@ -1057,21 +1057,29 @@ void BeebWin::CreateSprowCoPro()
 	AppendPath(SprowROMPath, "Sprow.rom");
 
 	sprow = new CSprowCoPro();
+
 	CSprowCoPro::InitResult Result = sprow->Init(SprowROMPath);
 
-	switch (Result) {
-		case CSprowCoPro::InitResult::FileNotFound:
-			Report(MessageType::Error, "ARM7TDMI co-processor ROM file not found:\n  %s",
-			       SprowROMPath);
+	if (Result != CSprowCoPro::InitResult::Success)
+	{
+		DestroySprowCoPro();
 
-			DestroySprowCoPro();
+		TubeType = TubeDevice::None;
+		UpdateTubeMenu();
 
-			TubeType = TubeDevice::None;
-			UpdateTubeMenu();
-			break;
+		switch (Result)
+		{
+			case CSprowCoPro::InitResult::FileNotFound:
+				Report(MessageType::Error, "ARM7TDMI co-processor ROM file not found:\n  %s",
+				       SprowROMPath);
 
-		case CSprowCoPro::InitResult::Success:
-			break;
+				break;
+
+			case CSprowCoPro::InitResult::InvalidROM:
+				Report(MessageType::Error, "Invalid ARM7TDMI co-processor ROM file (expected 524,288 bytes):\n  %s",
+				       SprowROMPath);
+				break;
+		}
 	}
 }
 

@@ -102,6 +102,16 @@ CArm::InitResult CArm::init(const char *ROMPath)
 
 	if (ROMFile != nullptr)
 	{
+		fseek(ROMFile, 0, SEEK_END);
+		long Length = ftell(ROMFile);
+		fseek(ROMFile, 0, SEEK_SET);
+
+		if (Length != ROM_SIZE)
+		{
+			fclose(ROMFile);
+			return InitResult::InvalidROM;
+		}
+
 		size_t BytesRead = fread(romMemory, 1, ROM_SIZE, ROMFile);
 
 		fclose(ROMFile);

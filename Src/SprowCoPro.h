@@ -25,9 +25,11 @@ Boston, MA  02110-1301, USA.
 class CSprowCoPro
 {
 	public:
-		enum class InitResult {
+		enum class InitResult
+		{
 			Success,
-			FileNotFound
+			FileNotFound,
+			InvalidROM
 		};
 
 	public:
@@ -44,7 +46,9 @@ class CSprowCoPro
 		void LoadState(FILE* SUEF);
 
 	private:
-		unsigned char m_ROMMemory[0x80000]; // 512 KBytes of rom memory
+		static constexpr int ROM_SIZE = 0x80000; // 512 KBytes of rom memory
+
+		unsigned char m_ROMMemory[ROM_SIZE];
 		ARMul_State *m_State;
 		// bool keepRunning; // keep calling run()
 		int m_CycleCount;
