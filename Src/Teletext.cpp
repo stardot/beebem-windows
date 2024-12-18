@@ -105,9 +105,13 @@ bool ConnectSocket(SOCKET Socket, const sockaddr* Name, int Length)
 {
     #ifdef WIN32
 
-    if (connect(Socket, Name, Length) == SOCKET_ERROR)
+    if (connect(Socket, Name, Length) == 0)
     {
-        return WSAGetLastError() != WSAEWOULDBLOCK; // WSAEWOULDBLOCK is expected
+        return true;
+    }
+    else
+    {
+        return WSAGetLastError() == WSAEWOULDBLOCK; // WSAEWOULDBLOCK is expected
     }
 
     #else
@@ -115,8 +119,6 @@ bool ConnectSocket(SOCKET Socket, const sockaddr* Name, int Length)
     return connect(Socket, Name, Length) == EAGAIN;
 
     #endif
-
-    return false;
 }
 
 /*--------------------------------------------------------------------------*/
