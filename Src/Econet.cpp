@@ -2135,7 +2135,7 @@ bool EconetPoll_real() // return NMI status
 	// and then set the status bit if the line is high! (status bit stays
 	// up until cpu tries to clear it) (& still stays up if cts line still high)
 
-	if (!(ADLC.control1 && CONTROL_REG1_TX_RESET) && ADLC.cts) // TODO: is && right here?
+	if (!(ADLC.control1 & CONTROL_REG1_RX_RESET) && ADLC.cts)
 	{
 		ADLC.status1 |= STATUS_REG1_CTS; // set CTS now
 	}

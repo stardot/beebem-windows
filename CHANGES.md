@@ -5,7 +5,8 @@ Unreleased changes
 ------------
 
 Contributors: Chris Needham, Mauro Varischetti, Bill Carr, Daniel Beardsmore,
-Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher, Martin Mather, Tom Seddon
+Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher, Martin Mather, Tom Seddon,
+Andrew Hague
 
 * Added support for FSD format disk images. This currently only works
   with the 8271 and not the 1770 disk controller.
@@ -25,6 +26,7 @@ Steve Inglis, Alistair Cree, Ken Lowe, Mark Usher, Martin Mather, Tom Seddon
   - Fixed potential buffer overflow bug.
   - Added support for immediate operations, used by the *VIEW and *NOTIFY
     commands. These currently only work under Master series emulation.
+  - Fixed CTS status bit.
 * Added Master ET support.
 * ROM config files (e.g., Roms.cfg) can now include comments. Note that
   files with comments are not backwards compatible with older BeebEm
