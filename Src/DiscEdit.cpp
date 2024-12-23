@@ -35,7 +35,6 @@ Boston, MA  02110-1301, USA.
 
 #include "DiscEdit.h"
 #include "DiscInfo.h"
-#include "FileDialog.h"
 #include "FileUtils.h"
 
 static int DFS_LENGTH_TO_SECTORS(int Length)
@@ -641,7 +640,7 @@ bool dfs_import_file(const char *szDiscFile,
 					success = false;
 				}
 				else if (fwrite(buffer, 1, DFS_SECTOR_SIZE * numSectors, discfd) !=
-				         (DFS_SECTOR_SIZE * numSectors))
+				         (size_t)(DFS_SECTOR_SIZE * numSectors))
 				{
 					sprintf(szErrStr, "Failed to write catalogue to:\n  %s", szDiscFile);
 					success = false;

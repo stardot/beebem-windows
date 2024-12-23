@@ -281,8 +281,8 @@ bool SerialPort::SetBaudRate(int BaudRate)
 /*--------------------------------------------------------------------------*/
 
 bool SerialPort::Configure(unsigned char DataBits,
-                                unsigned char StopBits,
-                                unsigned char Parity)
+                           unsigned char StopBits,
+                           unsigned char Parity)
 {
 	DebugTrace("SerialPort::Configure DataBits=%d StopBits=%d Parity=%d\n", DataBits, StopBits, Parity);
 

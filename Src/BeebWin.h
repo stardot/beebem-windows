@@ -598,9 +598,9 @@ public:
 	int FindEnum(const std::string& Value, const char* const* Names, int Default);
 
 	// Timers
-	const int TIMER_KEYBOARD       = 1;
-	const int TIMER_AUTOBOOT_DELAY = 2;
-	const int TIMER_PRINTER        = 3;
+	const UINT TIMER_KEYBOARD       = 1;
+	const UINT TIMER_AUTOBOOT_DELAY = 2;
+	const UINT TIMER_PRINTER        = 3;
 
 	// Main window
 	HWND m_hWnd;
