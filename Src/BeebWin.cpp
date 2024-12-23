@@ -1024,17 +1024,15 @@ void BeebWin::CreateArmCoPro()
 		TubeType = TubeDevice::None;
 		UpdateTubeMenu();
 
-		switch (Result)
+		if (Result == CArm::InitResult::FileNotFound)
 		{
-			case CArm::InitResult::FileNotFound:
-				Report(MessageType::Error, "ARM co-processor ROM file not found:\n  %s",
-				       ArmROMPath);
-				break;
-
-			case CArm::InitResult::InvalidROM:
-				Report(MessageType::Error, "Invalid ARM co-processor ROM file (expected 4096 bytes):\n  %s",
-				       ArmROMPath);
-				break;
+			Report(MessageType::Error, "ARM co-processor ROM file not found:\n  %s",
+			       ArmROMPath);
+		}
+		else if (Result == CArm::InitResult::InvalidROM)
+		{
+			Report(MessageType::Error, "Invalid ARM co-processor ROM file (expected 4096 bytes):\n  %s",
+			       ArmROMPath);
 		}
 	}
 }
@@ -1067,18 +1065,15 @@ void BeebWin::CreateSprowCoPro()
 		TubeType = TubeDevice::None;
 		UpdateTubeMenu();
 
-		switch (Result)
+		if (Result == CSprowCoPro::InitResult::FileNotFound)
 		{
-			case CSprowCoPro::InitResult::FileNotFound:
-				Report(MessageType::Error, "ARM7TDMI co-processor ROM file not found:\n  %s",
-				       SprowROMPath);
-
-				break;
-
-			case CSprowCoPro::InitResult::InvalidROM:
-				Report(MessageType::Error, "Invalid ARM7TDMI co-processor ROM file (expected 524,288 bytes):\n  %s",
-				       SprowROMPath);
-				break;
+			Report(MessageType::Error, "ARM7TDMI co-processor ROM file not found:\n  %s",
+			       SprowROMPath);
+		}
+		else if (Result == CSprowCoPro::InitResult::InvalidROM)
+		{
+			Report(MessageType::Error, "Invalid ARM7TDMI co-processor ROM file (expected 524,288 bytes):\n  %s",
+			       SprowROMPath);
 		}
 	}
 }
@@ -3129,11 +3124,8 @@ void BeebWin::AdjustSpeed(bool Up)
 		10
 	};
 
-	int Index = 0;
-
 	if (m_TimingType == TimingType::FixedFPS)
 	{
-		Index = 8;
 		m_TimingType = TimingType::FixedSpeed;
 	}
 	else
@@ -5329,7 +5321,7 @@ bool BeebWin::FindCommandLineFile(char *FileName)
 	}
 
 	char TmpPath[MAX_PATH];
-	strncpy(TmpPath, FileName, MAX_PATH);
+	strcpy(TmpPath, FileName);
 
 	bool Found = false;
 

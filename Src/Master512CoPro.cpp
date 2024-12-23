@@ -3778,11 +3778,18 @@ void Master512CoPro::LoadBIOS()
 
 	if (f != nullptr)
 	{
-		fread(m_Memory + 0xf0000, 0x4000, 1, f);
+		size_t BytesRead = fread(m_Memory + 0xf0000, 1, 0x4000, f);
+
+		fclose(f);
+
+		if (BytesRead != 0x4000)
+		{
+			mainWin->Report(MessageType::Error, "Failed to read BIOS image file:\n %s", PathName);
+		}
+
 		memcpy(m_Memory + 0xf4000, m_Memory + 0xf0000, 0x4000);
 		memcpy(m_Memory + 0xf8000, m_Memory + 0xf0000, 0x4000);
 		memcpy(m_Memory + 0xfc000, m_Memory + 0xf0000, 0x4000);
-		fclose(f);
 	}
 	else
 	{

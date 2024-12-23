@@ -43,6 +43,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
+#include <fstream>
+
 #include "Speech.h"
 #include "6502core.h"
 #include "BeebWin.h"
@@ -50,6 +52,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "Log.h"
 #include "Main.h"
 #include "Sound.h"
+#include "StringUtils.h"
 
 #if ENABLE_SPEECH
 
@@ -1394,15 +1397,16 @@ void TMS5220StreamState::Update(unsigned char *buff, int length)
 
 bool SpeechInit()
 {
-	// Read all ROM files in the BeebFile directory
-	// This section rewritten for V.1.32 to take account of roms.cfg file.
+	memset(phrom_rom, 0, sizeof(phrom_rom));
+
+	// Read the PHROM files listed in Phroms.cfg.
 	char Path[MAX_PATH];
 	strcpy(Path, mainWin->GetUserDataPath());
 	AppendPath(Path, "Phroms.cfg");
 
-	FILE *RomCfg = fopen(Path, "rt");
+	std::ifstream RomCfg(Path);
 
-	if (RomCfg == nullptr)
+	if (!RomCfg)
 	{
 		mainWin->Report(MessageType::Error, "Cannot open PHROM configuration file:\n  %s", Path);
 		return false;
@@ -1411,42 +1415,72 @@ bool SpeechInit()
 	bool Success = true;
 
 	// Read phroms
-	for (int romslot = 15; romslot >= 0; romslot--)
-	{
-		char RomName[80];
-		fgets(RomName, 80, RomCfg);
+	int RomSlot = 15;
 
-		if (strchr(RomName, 13)) *strchr(RomName, 13) = 0;
-		if (strchr(RomName, 10)) *strchr(RomName, 10) = 0;
+	std::string Line;
+
+	while (std::getline(RomCfg, Line))
+	{
+		trim(Line);
+
+		// Skip blank lines and comments
+		if (Line.empty() || Line[0] == '#')
+		{
+			continue;
+		}
+
+		if (Line == "EMPTY")
+		{
+			continue;
+		}
+
+		if (Line.size() >= MAX_PATH)
+		{
+			mainWin->Report(MessageType::Error, "Invalid PHROM configuration file:\n  %s", Path);
+			Success = false;
+			break;
+		}
 
 		char PhromPath[MAX_PATH];
-		strcpy(PhromPath, RomName);
+		strcpy(PhromPath, Line.c_str());
 
-		if (IsRelativePath(RomName))
+		if (IsRelativePath(Line.c_str()))
 		{
 			strcpy(PhromPath, mainWin->GetUserDataPath());
 			AppendPath(PhromPath, "Phroms");
-			AppendPath(PhromPath, RomName);
+			AppendPath(PhromPath, Line.c_str());
 		}
 
-		if (strncmp(RomName, "EMPTY", 5) != 0)
-		{
-			FILE *InFile = fopen(PhromPath, "rb");
+		FILE *InFile = fopen(PhromPath, "rb");
 
-			if (InFile != nullptr)
+		if (InFile != nullptr)
+		{
+			size_t BytesRead = fread(phrom_rom[RomSlot], 1, 16384, InFile);
+
+			fclose(InFile);
+
+			if (BytesRead == 0 || BytesRead % 1024 != 0)
 			{
-				fread(phrom_rom[romslot], 1, 16384, InFile);
-				fclose(InFile);
+				mainWin->Report(MessageType::Error,
+				                "Invalid PHROM file size:\n  %s",
+				                PhromPath);
 			}
-			else
-			{
-				mainWin->Report(MessageType::Error, "Cannot open specified PHROM:\n\n%s", PhromPath);
-				Success = false;
-			}
+		}
+		else
+		{
+			mainWin->Report(MessageType::Error, "Cannot open specified PHROM:\n\n%s", PhromPath);
+			Success = false;
+		}
+
+		if (RomSlot == 0)
+		{
+			break;
+		}
+		else
+		{
+			RomSlot--;
 		}
 	}
-
-	fclose(RomCfg);
 
 	return Success;
 }

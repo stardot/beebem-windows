@@ -1532,21 +1532,30 @@ static void Reset65C02()
 
   //The fun part, the tube OS is copied from ROM to tube RAM before the processor starts processing
   //This makes the OS "ROM" writable in effect, but must be restored on each reset.
-  char TubeRomName[MAX_PATH];
-  strcpy(TubeRomName, RomPath);
-  AppendPath(TubeRomName, "BeebFile");
-  AppendPath(TubeRomName, "6502Tube.rom");
+  char TubeRomPath[MAX_PATH];
+  strcpy(TubeRomPath, RomPath);
+  AppendPath(TubeRomPath, "BeebFile");
+  AppendPath(TubeRomPath, "6502Tube.rom");
 
-  FILE *TubeRom = fopen(TubeRomName,"rb");
+  FILE *TubeRom = fopen(TubeRomPath, "rb");
+
   if (TubeRom != nullptr)
   {
-    fread(TubeRam+0xf800,1,2048,TubeRom);
+    size_t BytesRead = fread(TubeRam + 0xf800, 1, 2048, TubeRom);
+
     fclose(TubeRom);
+
+    if (BytesRead != 2048)
+    {
+      mainWin->Report(MessageType::Error,
+                      "Invalid Tube ROM file (expected 2,048 bytes):\n  %s",
+                      TubeRomPath);
+    }
   }
   else
   {
     mainWin->Report(MessageType::Error,
-                    "Cannot open ROM:\n %s", TubeRomName);
+                    "Cannot open ROM:\n %s", TubeRomPath);
   }
 
   TubeProgramCounter = TubeReadMem(0xfffc);
