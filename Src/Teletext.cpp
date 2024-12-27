@@ -80,7 +80,6 @@ static unsigned char TeletextStatus = 0x0f;
 static bool TeletextInts = false;
 static bool TeletextEnable = false;
 static int TeletextChannel = 0;
-static int rowPtrOffset = 0x00;
 static int rowPtr = 0x00;
 static int colPtr = 0x00;
 
@@ -551,6 +550,7 @@ void TeletextAdapterUpdate()
                     }
 
                     fseek(TeletextFile[TeletextChannel], TeletextCurrentField * TELETEXT_FIELD_SIZE + 3L * 43L, SEEK_SET);
+
                     fread(buff, 16 * 43, 1, TeletextFile[TeletextChannel]);
                 }
 

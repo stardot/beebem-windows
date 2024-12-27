@@ -22,7 +22,9 @@ Boston, MA  02110-1301, USA.
 
 #include <assert.h>
 #include <fstream>
+#include <limits>
 #include <string>
+#include <string.h>
 
 #include "Preferences.h"
 #include "StringUtils.h"

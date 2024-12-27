@@ -77,7 +77,7 @@ bool SetSocketBlocking(SOCKET Socket, bool Blocking)
 	}
 	else
 	{
-		Flags |= O_NONBLOCK
+		Flags |= O_NONBLOCK;
 	}
 
 	return fcntl(Socket, F_SETFL, Flags) == 0;
@@ -89,15 +89,16 @@ bool SetSocketBlocking(SOCKET Socket, bool Blocking)
 
 bool WouldBlock(int Error)
 {
-#ifdef WIN32
+
+	#ifdef WIN32
 
 	return Error == WSAEWOULDBLOCK;
 
-#else
+	#else
 
 	return Error == EWOULDBLOCK; // TODO: EAGAIN?
 
-#endif
+	#endif
 }
 
 /****************************************************************************/
