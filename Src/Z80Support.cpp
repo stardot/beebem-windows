@@ -272,32 +272,28 @@ void init_z80()
 		AppendPath(PathName, "CCPN102.rom");
 
 		FILE *f = fopen(PathName, "rb");
+
 		if (f != nullptr)
 		{
-			size_t addr = 0;
-			fseek(f, 0, SEEK_END);
-			long count = ftell(f);
-			if (count > 4096) {
-				fseek(f, 0, SEEK_SET);
-				addr=addr+fread(z80_rom+0, 8192, 1, f);
-			} else {
-				if (count > 2048) {
-					fseek(f, 0, SEEK_SET);
-					addr=addr+fread(z80_rom+0, 4096, 1, f);
-					fseek(f, 0, SEEK_SET);
-					addr=addr+fread(z80_rom+4096, 4096, 1, f);
-				} else {
-					fseek(f, 0, SEEK_SET);
-					addr=addr+fread(z80_rom+0, 2048, 1, f);
-					fseek(f, 0, SEEK_SET);
-					addr=addr+fread(z80_rom+2048, 2048, 1, f);
-					fseek(f, 0, SEEK_SET);
-					addr=addr+fread(z80_rom+4096, 2048, 1, f);
-					fseek(f, 0, SEEK_SET);
-					addr=addr+fread(z80_rom+6144, 2048, 1, f);
-				}
+			size_t BytesRead = fread(z80_rom, 1, 8192, f);
+
+			if (BytesRead <= 2048)
+			{
+				memcpy(z80_rom + 2048, z80_rom, 2048);
+				memcpy(z80_rom + 4096, z80_rom, 2048);
+				memcpy(z80_rom + 6144, z80_rom, 2048);
 			}
+			else if (BytesRead <= 4096)
+			{
+				memcpy(z80_rom + 4096, z80_rom, 4096);
+			}
+
 			fclose(f);
+		}
+		else
+		{
+			mainWin->Report(MessageType::Error,
+			                "Cannot open ROM:\n %s", PathName);
 		}
 	}
 
