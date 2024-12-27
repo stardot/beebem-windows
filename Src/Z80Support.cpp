@@ -29,6 +29,7 @@ Boston, MA  02110-1301, USA.
 #include "Debug.h"
 #include "FileUtils.h"
 #include "Log.h"
+#include "Main.h"
 #include "Tube.h"
 #include "UefState.h"
 
@@ -244,10 +245,24 @@ void init_z80()
 		AppendPath(PathName, "Z80.rom");
 
 		FILE *f = fopen(PathName, "rb");
+
 		if (f != nullptr)
 		{
-			fread(z80_rom, 4096, 1, f);
+			size_t BytesRead = fread(z80_rom, 1, 4096, f);
+
 			fclose(f);
+
+			if (BytesRead != 4096)
+			{
+				mainWin->Report(MessageType::Error,
+				                "Failed to read ROM file:\n  %s",
+				                PathName);
+			}
+		}
+		else
+		{
+			mainWin->Report(MessageType::Error,
+			                "Cannot open ROM:\n %s", PathName);
 		}
 	}
 	else // Tube::TorchZ80
