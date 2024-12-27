@@ -1304,6 +1304,11 @@ bool BeebWin::LoadCSWTape(const char *FileName)
 		case CSWResult::Success:
 			return true;
 
+		case CSWResult::ReadFailed:
+			Report(MessageType::Error, "Failed to read CSW file:\n  %s",
+			       FileName);
+			return false;
+
 		case CSWResult::InvalidCSWFile:
 			Report(MessageType::Error, "The file selected is not a CSW file:\n  %s",
 			       FileName);
@@ -1332,6 +1337,7 @@ bool BeebWin::LoadFDC(char *DLLName, bool Save)
 	Ext1770Result Result = Ext1770Result::Success;
 
 	Ext1770Reset();
+
 	NativeFDC = true;
 
 	char CfgName[20];
@@ -1365,7 +1371,7 @@ bool BeebWin::LoadFDC(char *DLLName, bool Save)
 			{
 				Report(MessageType::Error, "Unable to load FDD Extension Board DLL\nReverting to native 8271");
 			}
-			else // if (Result == InvalidDLL)
+			else // if (Result == Ext1770Result::InvalidDLL)
 			{
 				Report(MessageType::Error, "Invalid FDD Extension Board DLL\nReverting to native 8271");
 			}

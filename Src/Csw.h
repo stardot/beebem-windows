@@ -30,6 +30,7 @@ Boston, MA  02110-1301, USA.
 enum class CSWResult {
 	Success,
 	OpenFailed,
+	ReadFailed,
 	InvalidCSWFile,
 	InvalidHeaderExtension
 };
