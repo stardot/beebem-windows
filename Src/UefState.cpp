@@ -47,6 +47,10 @@ Boston, MA  02110-1301, USA.
 
 /*-------------------------------------------------------------------------*/
 
+const unsigned char UEFSTATE_VERSION = 15;
+
+/*-------------------------------------------------------------------------*/
+
 void UEFWrite64(uint64_t Value, FILE *pFile)
 {
 	for (int Shift = 0; Shift < 64; Shift += 8)
@@ -286,7 +290,7 @@ UEFStateResult SaveUEFState(const char *FileName)
 		fprintf(UEFState,"UEF File!");
 		fputc(0, UEFState); // UEF Header
 
-		const unsigned char UEFMinorVersion = 15;
+		const unsigned char UEFMinorVersion = UEFSTATE_VERSION;
 		const unsigned char UEFMajorVersion = 0;
 
 		fputc(UEFMinorVersion, UEFState);
@@ -389,9 +393,9 @@ UEFStateResult LoadUEFState(const char *FileName)
 		char UEFId[10];
 		UEFId[0] = '\0';
 
-		fread(UEFId, sizeof(UEFId), 1, UEFState);
+		size_t BytesRead = fread(UEFId, 1, sizeof(UEFId), UEFState);
 
-		if (strcmp(UEFId, "UEF File!") != 0)
+		if (BytesRead != sizeof(UEFId) || strcmp(UEFId, "UEF File!") != 0)
 		{
 			fclose(UEFState);
 			return UEFStateResult::InvalidUEFFile;
@@ -399,7 +403,7 @@ UEFStateResult LoadUEFState(const char *FileName)
 
 		const int Version = UEFRead16(UEFState);
 
-		if (Version > 14)
+		if (Version > UEFSTATE_VERSION)
 		{
 			fclose(UEFState);
 			return UEFStateResult::InvalidUEFVersion;
@@ -410,6 +414,12 @@ UEFStateResult LoadUEFState(const char *FileName)
 			unsigned int Block = UEFRead16(UEFState);
 			unsigned int Length = UEFRead32(UEFState);
 			long CPos = ftell(UEFState);
+
+			if (CPos == -1)
+			{
+				fclose(UEFState);
+				return UEFStateResult::ReadFailed;
+			}
 
 			switch (Block)
 			{
@@ -535,6 +545,8 @@ UEFStateResult LoadUEFState(const char *FileName)
 	}
 	catch (UEFStateResult Result)
 	{
+		fclose(UEFState);
+
 		return Result;
 	}
 }
@@ -550,9 +562,10 @@ bool IsUEFSaveState(const char* FileName)
 	if (file != nullptr)
 	{
 		char buf[14];
-		fread(buf, sizeof(buf), 1, file);
+		size_t BytesRead = fread(buf, 1, sizeof(buf), file);
 
-		if (strcmp(buf, "UEF File!") == 0 && buf[12] == 0x6c && buf[13] == 0x04)
+		if (BytesRead == sizeof(buf) && strcmp(buf, "UEF File!") == 0 &&
+		    buf[12] == 0x6c && buf[13] == 0x04)
 		{
 			IsSaveState = true;
 		}
