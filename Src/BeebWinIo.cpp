@@ -739,7 +739,7 @@ void BeebWin::SetPrinterPort(PrinterPortType PrinterPort)
 			// disable it before changing file
 			if (PrinterEnabled)
 			{
-				TogglePrinter();
+				EnablePrinter(false);
 			}
 
 			// Add file name to menu
@@ -759,7 +759,7 @@ void BeebWin::SetPrinterPort(PrinterPortType PrinterPort)
 	{
 		if (PrinterEnabled)
 		{
-			TogglePrinter();
+			EnablePrinter(false);
 		}
 
 		m_PrinterPort = PrinterPort;
@@ -774,7 +774,7 @@ void BeebWin::SetPrinterPort(PrinterPortType PrinterPort)
 			// disable it before changing file
 			if (PrinterEnabled)
 			{
-				TogglePrinter();
+				EnablePrinter(false);
 			}
 
 			m_PrinterPort = PrinterPort;
@@ -861,15 +861,11 @@ bool BeebWin::GetPrinterFileName()
 
 /****************************************************************************/
 
-bool BeebWin::TogglePrinter()
+bool BeebWin::EnablePrinter(bool Enable)
 {
 	bool Success = true;
 
-	if (PrinterEnabled)
-	{
-		PrinterDisable();
-	}
-	else
+	if (Enable)
 	{
 		m_PrinterBuffer.clear();
 		KillTimer(m_hWnd, TIMER_PRINTER);
@@ -895,9 +891,14 @@ bool BeebWin::TogglePrinter()
 			Success = PrinterEnable(m_PrinterDevice.c_str());
 		}
 	}
+	else
+	{
+		PrinterDisable();
+	}
 
 	if (Success)
 	{
+		PrinterEnabled = Enable;
 		CheckMenuItem(IDM_PRINTERONOFF, PrinterEnabled);
 	}
 
@@ -1581,13 +1582,13 @@ void BeebWin::OnCopy()
 {
 	if (PrinterEnabled)
 	{
-		TogglePrinter();
+		EnablePrinter(false);
 	}
 
 	m_PrinterPort = PrinterPortType::Clipboard;
 
 	TranslatePrinterPort();
-	TogglePrinter(); // Turn printer back on
+	EnablePrinter(true); // Turn printer back on
 	UpdatePrinterPortMenu();
 
 	m_PrinterBuffer.clear();

@@ -502,7 +502,7 @@ public:
 	void SetPrinterPort(PrinterPortType PrinterPort);
 	void UpdatePrinterPortMenu();
 	bool GetPrinterFileName();
-	bool TogglePrinter();
+	bool EnablePrinter(bool Enable);
 	void TranslatePrinterPort();
 
 	// AVI recording

@@ -586,14 +586,7 @@ void BeebWin::ApplyPrefs()
 	InitTextView();
 
 	// Initialise printer
-	if (PrinterEnabled)
-	{
-		PrinterEnable(m_PrinterDevice.c_str());
-	}
-	else
-	{
-		PrinterDisable();
-	}
+	EnablePrinter(PrinterEnabled);
 
 	// Joysticks can only be initialised after the window is created (needs hwnd)
 	if (m_JoystickOption == JoystickOption::Joystick)
@@ -1284,6 +1277,7 @@ void BeebWin::FlashWindow()
 }
 
 /****************************************************************************/
+
 void BeebWin::ShowMenu(bool on)
 {
 	if (m_DisableMenu)
@@ -3807,7 +3801,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 		break;
 
 	case IDM_PRINTERONOFF:
-		TogglePrinter();
+		EnablePrinter(!PrinterEnabled);
 		break;
 
 	case IDM_SERIAL:
