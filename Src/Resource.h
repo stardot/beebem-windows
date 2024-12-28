@@ -313,8 +313,8 @@
 #define IDM_MODELBINT                   40105
 #define IDM_MODELBPLUS                  40106
 #define IDM_MASTER128                   40107
-#define IDM_MASTER_ET                   40327
-#define IDM_LOADTAPE                    40108
+#define IDM_MASTER_ET                   40108
+#define IDM_LOADTAPE                    40109
 #define IDM_REWINDTAPE                  40116
 #define IDM_SFX_RELAY                   40117
 #define IDM_TUBE_NONE                   40118
