@@ -308,7 +308,7 @@ void WriteTorchTubeFromHostSide(int IOAddr,unsigned char IOData)
 	case 0x0c :
 		if (IOData == 0xaa)
 		{
-			init_z80();
+			Z80Init();
 		}
 		break;
 

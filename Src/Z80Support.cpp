@@ -199,7 +199,7 @@ void out(unsigned int addr, unsigned char value)
 	}
 }
 
-void z80_execute()
+void Z80Execute()
 {
 	if (trace_z80)
 	{
@@ -232,11 +232,11 @@ void z80_execute()
 	}
 }
 
-void init_z80()
+void Z80Init()
 {
 	char PathName[MAX_PATH];
 
-	WriteLog("init_z80()\n");
+	WriteLog("Z80Init()\n");
 
 	if (TubeType == TubeDevice::AcornZ80)
 	{

@@ -793,7 +793,7 @@ void BeebWin::ResetBeebSystem(Model NewModelType, bool LoadRoms)
 	{
 		R1Status = 0;
 		ResetTube();
-		init_z80();
+		Z80Init();
 	}
 	else if (TubeType == TubeDevice::AcornArm)
 	{
@@ -939,7 +939,7 @@ void BeebWin::Break()
 	{
 		R1Status = 0;
 		ResetTube();
-		init_z80();
+		Z80Init();
 	}
 	else if (TubeType == TubeDevice::AcornArm)
 	{

@@ -84,8 +84,8 @@ extern void out(unsigned int, unsigned char);
 #endif
 
 
-void z80_execute();
-void init_z80();
+void Z80Execute();
+void Z80Init();
 void Debug_Z80();
 int Z80_Disassemble(int adr, char *s);
 void PrintHex(int PC);

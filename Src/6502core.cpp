@@ -3249,7 +3249,7 @@ void Exec6502Instruction()
 
 			case TubeDevice::AcornZ80: // TODO: 6MHz
 			case TubeDevice::TorchZ80: // TODO: 4MHz
-				z80_execute();
+				Z80Execute();
 				break;
 
 			case TubeDevice::AcornArm: // TODO: 8MHz
