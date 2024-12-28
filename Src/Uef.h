@@ -47,7 +47,10 @@ enum class UEFResult
 	Success,
 	NotUEF,
 	NotTape,
-	NoFile
+	NoFile,
+	ReadFailed,
+	WriteFailed,
+	EndOfFile
 };
 
 struct UEFChunkInfo
@@ -63,49 +66,39 @@ struct UEFChunkInfo
 	int end_time;
 };
 
-class UEFFileWriter
+class UEFTapeImage
 {
 	public:
-		UEFFileWriter();
-		~UEFFileWriter();
+		UEFTapeImage();
+		~UEFTapeImage();
+		UEFTapeImage(const UEFTapeImage&) = delete;
+		UEFTapeImage& operator=(const UEFTapeImage&) = delete;
 
 	public:
+		void New();
 		UEFResult Open(const char *FileName);
-		UEFResult PutData(int Data, int Time);
+		UEFResult Save(const char* FileName);
 		void Close();
-
-	private:
-		UEFResult WriteChunk();
-
-	private:
-		std::string m_FileName;
-		gzFile m_OutputFile;
-		int m_LastPutData;
-		UEFChunkInfo m_Chunk;
-};
-
-class UEFFileReader
-{
-	public:
-		UEFFileReader();
-		~UEFFileReader();
-
-	public:
-		UEFResult Open(const char *FileName);
-		void Close();
+		void Reset();
 
 		// Setup
 		void SetClock(int Speed);
 		void SetUnlock(bool Unlock);
+		void SetChunkClock();
 
 		// Poll mode
 		int GetData(int Time);
 
 		void CreateTapeMap(std::vector<TapeMapEntry>& TapeMap);
 
+		// Writing
+		UEFResult PutData(int Data, int Time);
+		bool IsModified() const;
+
 	private:
 		UEFResult LoadData(const char *FileName);
 		const UEFChunkInfo* FindChunk(int Time);
+		UEFResult WriteChunk();
 
 	private:
 		std::string m_FileName;
@@ -113,6 +106,9 @@ class UEFFileReader
 		int m_ClockSpeed;
 		const UEFChunkInfo *m_LastChunk;
 		bool m_Unlock;
+		int m_LastPutData;
+		bool m_Modified;
+		UEFChunkInfo m_Chunk;
 };
 
 #endif

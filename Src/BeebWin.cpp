@@ -3198,7 +3198,6 @@ void BeebWin::TranslateKeyMapping()
 		default:
 			transTable = &DefaultKeyMap;
 			break;
-
 	}
 }
 

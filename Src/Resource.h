@@ -208,6 +208,7 @@
 #define IDC_UNLOCK                      1119
 #define IDC_TAPE_CONTROL_UNLOCK         1119
 #define IDC_TELETEXT_SOURCE             1120
+#define IDC_TAPE_CONTROL_NEW_TAPE       1120
 #define IDC_FILE1                       1121
 #define IDC_FILE2                       1122
 #define IDC_FILE3                       1123
@@ -471,12 +472,12 @@
 #define IDM_SELECT_TELETEXT_DATA_SOURCE 40326
 
 // Next default values for new objects
-//
+// 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        122
-#define _APS_NEXT_COMMAND_VALUE         40328
+#define _APS_NEXT_COMMAND_VALUE         40327
 #define _APS_NEXT_CONTROL_VALUE         1145
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

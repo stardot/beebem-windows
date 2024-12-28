@@ -32,6 +32,7 @@ Boston, MA  02110-1301, USA.
 
 #include <process.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <algorithm>
 #include <string>
@@ -59,8 +60,7 @@ SerialType SerialDestination;
 
 static bool FirstReset = true;
 
-static UEFFileReader UEFReader;
-static UEFFileWriter UEFWriter;
+UEFTapeImage UEFFile;
 
 char TapeFileName[MAX_PATH]; // Filename of current tape file
 
@@ -554,12 +554,12 @@ void SerialPoll(int Cycles)
 				if (SerialACIA.TxD > 0)
 				{
 					// Writing data
-					if (UEFWriter.PutData(SerialACIA.TDR | UEF_DATA, TapeState.Clock) != UEFResult::Success)
+					if (UEFFile.PutData(SerialACIA.TDR | UEF_DATA, TapeState.Clock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", TapeFileName);
 
-						SerialStopTapeRecording(true);
+						SerialStopTapeRecording();
 					}
 
 					SerialACIA.TxD = 0;
@@ -580,12 +580,12 @@ void SerialPoll(int Cycles)
 				else
 				{
 					// Tone
-					if (UEFWriter.PutData(UEF_CARRIER_TONE, TapeState.Clock) != UEFResult::Success)
+					if (UEFFile.PutData(UEF_CARRIER_TONE, TapeState.Clock) != UEFResult::Success)
 					{
 						mainWin->Report(MessageType::Error,
 						                "Error writing to UEF file:\n  %s", TapeFileName);
 
-						SerialStopTapeRecording(true);
+						SerialStopTapeRecording();
 					}
 
 					TapeAudio.Signal  = 2;
@@ -621,7 +621,7 @@ void SerialPoll(int Cycles)
 				{
 					if (TapeState.Clock != TapeState.OldClock)
 					{
-						TapeState.UEFBuf = UEFReader.GetData(TapeState.Clock);
+						TapeState.UEFBuf = UEFFile.GetData(TapeState.Clock);
 						TapeState.OldClock = TapeState.Clock;
 					}
 
@@ -873,12 +873,12 @@ void SerialPoll(int Cycles)
 
 /*--------------------------------------------------------------------------*/
 
-static void CloseUEFFile()
+void CloseUEFFile()
 {
 	if (UEFFileOpen)
 	{
-		SerialStopTapeRecording(false);
-		UEFReader.Close();
+		SerialStopTapeRecording();
+		UEFFile.Close();
 		UEFFileOpen = false;
 	}
 }
@@ -972,10 +972,10 @@ UEFResult LoadUEFTape(const char *FileName)
 	// Clock values:
 	// 5600 - Normal speed - anything higher is a bit slow
 	// 750 - Recommended minimum setting, fastest reliable load
-	UEFReader.SetClock(TapeState.ClockSpeed);
+	UEFFile.SetClock(TapeState.ClockSpeed);
 	SetUnlockTape(TapeState.Unlock);
 
-	UEFResult Result = UEFReader.Open(FileName);
+	UEFResult Result = UEFFile.Open(FileName);
 
 	if (Result == UEFResult::Success)
 	{
@@ -992,9 +992,7 @@ UEFResult LoadUEFTape(const char *FileName)
 
 		SetTrigger(TAPECYCLES, TapeTrigger);
 
-		UEFReader.CreateTapeMap(TapeMap);
-
-		TapeState.Clock = 0;
+		UEFFile.CreateTapeMap(TapeMap);
 
 		if (TapeControlEnabled)
 		{
@@ -1028,12 +1026,13 @@ void CloseTape()
 
 void RewindTape()
 {
-	SerialStopTapeRecording(true);
+	SerialStopTapeRecording();
 
 	TapeState.UEFBuf = 0;
 	TapeState.OldUEFBuf = 0;
 	TapeState.Clock = 0;
 	TapeState.OldClock = 0;
+
 	SerialULA.TapeCarrier = false;
 	SerialULA.CarrierCycleCount = 0;
 
@@ -1069,7 +1068,7 @@ void SetTapeSpeed(int Speed)
 
 void SetUnlockTape(bool Unlock)
 {
-	UEFReader.SetUnlock(Unlock);
+	UEFFile.SetUnlock(Unlock);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1100,24 +1099,66 @@ void SerialPlayTape()
 
 /*--------------------------------------------------------------------------*/
 
-bool SerialRecordTape(const char* FileName)
+void SerialNewTape()
 {
-	// Create file
-	if (UEFWriter.Open(FileName) == UEFResult::Success)
-	{
-		strcpy(TapeFileName, FileName);
-		UEFFileOpen = true;
+	UEFFile.New();
 
-		TapeState.Recording = true;
-		TapeState.Playing = false;
-		TapeAudio.Enabled = SerialULA.CassetteRelay;
-		return true;
+	TapeState.Recording = false;
+	TapeState.Playing = true;
+	TapeAudio.Enabled = SerialULA.CassetteRelay;
+
+	UEFFileOpen = true;
+}
+
+/*--------------------------------------------------------------------------*/
+
+void SerialRecordTape()
+{
+	assert(UEFFileOpen);
+	assert(!CSWFileOpen);
+
+	TapeState.Recording = true;
+	TapeState.Playing = false;
+	TapeAudio.Enabled = SerialULA.CassetteRelay;
+}
+
+/*--------------------------------------------------------------------------*/
+
+bool SerialTapeIsModified()
+{
+	if (CSWFileOpen)
+	{
+		return false;
+	}
+	else if (UEFFileOpen)
+	{
+		return UEFFile.IsModified();
 	}
 	else
 	{
-		TapeFileName[0] = '\0';
 		return false;
 	}
+}
+
+/*--------------------------------------------------------------------------*/
+
+bool SerialTapeIsUef()
+{
+	if (CSWFileOpen)
+	{
+		return false;
+	}
+	else
+	{
+		return UEFFileOpen;
+	}
+}
+
+/*--------------------------------------------------------------------------*/
+
+void SerialUpdateTapeClock()
+{
+	UEFFile.SetChunkClock();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1130,21 +1171,13 @@ void SerialStopTape()
 
 /*--------------------------------------------------------------------------*/
 
-void SerialStopTapeRecording(bool ReloadTape)
+void SerialStopTapeRecording()
 {
 	if (TapeState.Recording)
 	{
-		UEFWriter.PutData(UEF_EOF, 0);
-		UEFWriter.Close();
+		UEFFile.PutData(UEF_EOF, 0);
 
 		TapeState.Recording = false;
-
-		if (ReloadTape)
-		{
-			std::string FileName = TapeFileName;
-
-			LoadUEFTape(FileName.c_str());
-		}
 	}
 }
 

@@ -364,7 +364,7 @@ bool BeebWin::Load8271DiscImage(const char *FileName, int Drive, int Tracks, Dis
 
 /****************************************************************************/
 
-void BeebWin::LoadTape(void)
+void BeebWin::LoadTape()
 {
 	char FileName[MAX_PATH];
 	FileName[0] = '\0';
@@ -424,7 +424,7 @@ bool BeebWin::LoadTape(const char *FileName)
 
 /****************************************************************************/
 
-bool BeebWin::NewTapeImage(char *FileName, int Size)
+bool BeebWin::NewTape(char *FileName, int Size)
 {
 	char DefaultPath[MAX_PATH];
 	const char* filter = "UEF Tape File (*.uef)\0*.uef\0";
@@ -434,22 +434,21 @@ bool BeebWin::NewTapeImage(char *FileName, int Size)
 
 	FileDialog Dialog(m_hWnd, FileName, Size, DefaultPath, filter);
 
-	bool Result = Dialog.Save();
-
-	if (Result)
-	{
-		/* Add a file extension if the user did not specify one */
-		if (strchr(FileName, '.') == NULL)
-		{
-			strcat(FileName, ".uef");
-		}
-	}
-	else
+	if (!Dialog.Save())
 	{
 		FileName[0] = '\0';
+		return false;
 	}
 
-	return Result;
+	// Add a file extension if the user did not specify one
+	if (strchr(FileName, '.') == NULL)
+	{
+		strcat(FileName, ".uef");
+	}
+
+	SerialNewTape();
+
+	return UEFFile.Save(FileName) == UEFResult::Success;
 }
 
 /*******************************************************************/
@@ -1283,6 +1282,11 @@ bool BeebWin::LoadUEFTape(const char *FileName)
 		case UEFResult::NotUEF:
 		case UEFResult::NotTape:
 			Report(MessageType::Error, "The file selected is not a UEF tape image:\n  %s",
+			       FileName);
+			return false;
+
+		case UEFResult::ReadFailed:
+			Report(MessageType::Error, "Failed to read UEF file:\n  %s",
 			       FileName);
 			return false;
 

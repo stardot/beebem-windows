@@ -33,7 +33,6 @@ Boston, MA  02110-1301, USA.
 #include "Log.h"
 #include "Serial.h"
 #include "Sound.h"
-#include "TapeMap.h"
 #include "Uef.h"
 #include "UefState.h"
 
@@ -135,7 +134,7 @@ CSWResult CSWOpen(const char *FileName)
 		return CSWResult::ReadFailed;
 	}
 
-	long sourcesize = pos - end + 1;
+	long sourcesize = pos - end;
 
 	if (fseek(csw_file, end, SEEK_SET) == -1)
 	{

@@ -41,8 +41,10 @@
 
       <p>
         BeebEm emulates a cassette recorder. You can load a tape image file
-        using the <span class="ui">File</span> menu in BeebEm. There are lots of
-        tape image files available on the <a
+        using the <span class="ui">File</span> menu. BeebEm supports loading either
+        <a href="http://electrem.emuunlim.com/UEFSpecs.html">UEF</a> or
+        <a href="https://acorn.huininga.nl/pub/unsorted/software/pc/CSW/csw.html">CSW</a>
+        format tape images. There are lots of tape image files available on the <a
         href="https://www.stairwaytohell.com/bbc/index.html?page=tapeimages">Starway
         to Hell</a> website.
       </p>
@@ -128,8 +130,15 @@
         need to move the tape position back to retry the block.
       </p>
 
+      <p>
+        The <span class="ui">State</span> indicator at the bottom of the window
+        shows whether the emulated tape recorder is playing, recording, or stopped.
+        Use the <span class="ui">Play</span>, <span class="ui">Stop</span>,
+        and <span class="ui">Record</span> buttons to change state.
+      </p>
+
       <figure>
-        <img src="tape.png" alt="BeebEm Tape Control dialog box" width="379" height="528">
+        <img src="tape.png" alt="BeebEm Tape Control window" width="379" height="528">
       </figure>
 
       <h2>Writing to Tape Images</h2>
@@ -140,9 +149,10 @@
         Control</span> window. If you have a tape loaded then pressing
         <span class="ui">Record</span> will append saved files to the end of the
         tape image. If you want to create a new tape image then eject the
-        current tape and press <span class="ui">Record</span>. The tape block
+        current tape and press <span class="ui">New Tape</span>. The tape block
         list will be updated when recording finishes (press
-        <span class="ui">Stop</span> when the save completes).
+        <span class="ui">Stop</span> when the save completes). Note that saving
+        files is only supported for UEF and not CSW format tape images.
       </p>
     </main>
 

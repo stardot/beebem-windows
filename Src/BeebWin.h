@@ -354,7 +354,6 @@ public:
 	bool CopyFiles(const char* SourceFileSpec, const char* DestPath);
 	void SelectUserDataPath(void);
 	void StoreUserDataPath(void);
-	bool NewTapeImage(char *FileName, int Size);
 	const char *GetAppPath() const { return m_AppPath; }
 	const char *GetUserDataPath() const { return m_UserDataPath; }
 	void GetDataPath(const char *Folder, char *Path);
@@ -472,8 +471,11 @@ public:
 	bool ReadDisc(int Drive, bool bCheckForPrefs);
 	bool Load1770DiscImage(const char *FileName, int Drive, DiscType Type);
 	bool Load8271DiscImage(const char *FileName, int Drive, int Tracks, DiscType Type);
+
+	// Tape
 	void LoadTape();
 	bool LoadTape(const char *FileName);
+	bool NewTape(char* FileName, int Size);
 
 	void SetJoystickOption(JoystickOption Option);
 	void UpdateJoystickMenu();
