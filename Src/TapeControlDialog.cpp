@@ -40,14 +40,14 @@ static void UpdateState(HWND hwndDlg);
 
 static INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-void TapeControlOpenDialog(HINSTANCE hinst, HWND /* hwndMain */)
+void TapeControlOpenDialog(HINSTANCE hinst, HWND hwndMain)
 {
 	TapeControlEnabled = true;
 
 	if (!IsWindow(hwndTapeControl))
 	{
 		hwndTapeControl = CreateDialog(hinst, MAKEINTRESOURCE(IDD_TAPECONTROL),
-		                               NULL, TapeControlDlgProc);
+		                               hwndMain, TapeControlDlgProc);
 		hCurrentDialog = hwndTapeControl;
 
 		DisableRoundedCorners(hwndTapeControl);
