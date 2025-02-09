@@ -194,6 +194,8 @@ static void UpdateState(HWND hwndDlg)
 			break;
 	}
 
+	mainWin->EnableSaveState(State != SerialTapeState::Recording);
+
 	CheckRadioButton(hwndDlg,
 	                 IDC_PLAYING,
 	                 IDC_STOPPED,
@@ -285,6 +287,8 @@ INT_PTR CALLBACK TapeControlDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, L
 				case IDC_TAPE_CONTROL_NEW_TAPE:
 					TapeControlNewTape();
 					TapeControlSetFileName("(Untitled)");
+					UEFFile.CreateTapeMap(TapeMap);
+					TapeControlAddMapLines();
 					UpdateState(hwndDlg);
 					return TRUE;
 

@@ -258,7 +258,8 @@ void UEFTapeImage::New()
 
 	UEFChunkInfo OriginInfoChunk{};
 	OriginInfoChunk.type = 0;
-	OriginInfoChunk.data.resize(CreatedBy.size() + 1);
+	OriginInfoChunk.len = CreatedBy.size() + 1;
+	OriginInfoChunk.data.resize(OriginInfoChunk.len);
 	memcpy(&OriginInfoChunk.data[0], CreatedBy.c_str(), CreatedBy.size() + 1);
 
 	m_Chunks.push_back(OriginInfoChunk);

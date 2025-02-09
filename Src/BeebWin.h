@@ -357,10 +357,7 @@ public:
 	const char *GetAppPath() const { return m_AppPath; }
 	const char *GetUserDataPath() const { return m_UserDataPath; }
 	void GetDataPath(const char *Folder, char *Path);
-	void QuickLoad();
-	void QuickSave();
-	void LoadUEFState(const char *FileName);
-	void SaveUEFState(const char *FileName);
+
 	bool LoadUEFTape(const char *FileName);
 	bool LoadCSWTape(const char *FileName);
 
@@ -482,8 +479,15 @@ public:
 	void InitJoystick();
 	void ResetJoystick();
 
-	void RestoreState(void);
-	void SaveState(void);
+	// Save/Restore State
+	void RestoreState();
+	void SaveState();
+	void QuickLoad();
+	void QuickSave();
+	void LoadUEFState(const char* FileName);
+	void SaveUEFState(const char* FileName);
+	void EnableSaveState(bool Enable);
+
 	void NewDiscImage(int Drive);
 	void CreateDFSDiscImage(const char *FileName, int Drive, int Heads, int Tracks);
 	void EjectDiscImage(int Drive);

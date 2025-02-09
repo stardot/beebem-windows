@@ -620,73 +620,6 @@ void BeebWin::CreateDFSDiscImage(const char *FileName, int Drive,
 }
 
 /****************************************************************************/
-void BeebWin::SaveState()
-{
-	char FileName[MAX_PATH];
-	FileName[0] = '\0';
-
-	const char* Filter = "UEF State File (*.uefstate)\0*.uefstate\0";
-
-	char DefaultPath[MAX_PATH];
-	DefaultPath[0] = '\0';
-
-	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
-	GetDataPath(m_UserDataPath, DefaultPath);
-
-	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, Filter);
-
-	if (Dialog.Save())
-	{
-		if (m_AutoSavePrefsFolders)
-		{
-			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
-
-			m_Preferences.SetStringValue(CFG_STATES_PATH, DefaultPath);
-		}
-
-		// Add UEF extension if not already set and is UEF
-		if (!HasFileExt(FileName, ".uefstate"))
-		{
-			strcat(FileName, ".uefstate");
-		}
-
-		SaveUEFState(FileName);
-	}
-}
-
-/****************************************************************************/
-void BeebWin::RestoreState()
-{
-	char FileName[MAX_PATH];
-	FileName[0] = '\0';
-
-	const char* filter = "UEF State File (*.uefstate; *.uef)\0*.uefstate;*.uef\0";
-
-	char DefaultPath[MAX_PATH];
-	DefaultPath[0] = '\0';
-
-	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
-	GetDataPath(m_UserDataPath, DefaultPath);
-
-	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
-
-	if (Dialog.Open())
-	{
-		// Check for file specific preferences files
-		CheckForLocalPrefs(FileName, true);
-
-		if (m_AutoSavePrefsFolders)
-		{
-			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
-
-			m_Preferences.SetStringValue(CFG_STATES_PATH, DefaultPath);
-		}
-
-		LoadUEFState(FileName);
-	}
-}
-
-/****************************************************************************/
 
 void BeebWin::ToggleWriteProtect(int Drive)
 {
@@ -1151,6 +1084,76 @@ bool BeebWin::IsCapturing() const
 }
 
 /****************************************************************************/
+
+void BeebWin::RestoreState()
+{
+	char FileName[MAX_PATH];
+	FileName[0] = '\0';
+
+	const char* filter = "UEF State File (*.uefstate; *.uef)\0*.uefstate;*.uef\0";
+
+	char DefaultPath[MAX_PATH];
+	DefaultPath[0] = '\0';
+
+	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
+	GetDataPath(m_UserDataPath, DefaultPath);
+
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
+
+	if (Dialog.Open())
+	{
+		// Check for file specific preferences files
+		CheckForLocalPrefs(FileName, true);
+
+		if (m_AutoSavePrefsFolders)
+		{
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
+			m_Preferences.SetStringValue(CFG_STATES_PATH, DefaultPath);
+		}
+
+		LoadUEFState(FileName);
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::SaveState()
+{
+	char FileName[MAX_PATH];
+	FileName[0] = '\0';
+
+	const char* Filter = "UEF State File (*.uefstate)\0*.uefstate\0";
+
+	char DefaultPath[MAX_PATH];
+	DefaultPath[0] = '\0';
+
+	m_Preferences.GetStringValue(CFG_STATES_PATH, DefaultPath);
+	GetDataPath(m_UserDataPath, DefaultPath);
+
+	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, Filter);
+
+	if (Dialog.Save())
+	{
+		if (m_AutoSavePrefsFolders)
+		{
+			GetPathFromFileName(FileName, DefaultPath, sizeof(DefaultPath));
+
+			m_Preferences.SetStringValue(CFG_STATES_PATH, DefaultPath);
+		}
+
+		// Add UEF extension if not already set and is UEF
+		if (!HasFileExt(FileName, ".uefstate"))
+		{
+			strcat(FileName, ".uefstate");
+		}
+
+		SaveUEFState(FileName);
+	}
+}
+
+/****************************************************************************/
+
 void BeebWin::QuickLoad()
 {
 	char FileName[MAX_PATH];
@@ -1171,6 +1174,8 @@ void BeebWin::QuickLoad()
 		LoadUEFState(FileName);
 	}
 }
+
+/****************************************************************************/
 
 void BeebWin::QuickSave()
 {
@@ -1266,6 +1271,14 @@ void BeebWin::SaveUEFState(const char *FileName)
 		default:
 			break;
 	}
+}
+
+/****************************************************************************/
+
+void BeebWin::EnableSaveState(bool Enable)
+{
+	EnableMenuItem(IDM_SAVESTATE, Enable);
+	EnableMenuItem(IDM_QUICKSAVE, Enable);
 }
 
 /****************************************************************************/
