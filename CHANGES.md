@@ -42,8 +42,10 @@ Andrew Hague
 * Tape emulation improvements:
   - Improved tape input data carrier detect emulation.
   - Tape state is now preserved when loading and saving savestate files,
-    for both UEF and CSW files.
+    for both UEF and CSW files. Saving state is disabled while the tape
+	is recording.
   - Fixed loading CSW files from the command line.
+  - Fixed recording (appending) to existing tape image files.
 * Improved serial port emulation, and fixed data loss when using
   serial over a TCP connection.
 * Rewrote the Windows serial port implementation. Received characters
