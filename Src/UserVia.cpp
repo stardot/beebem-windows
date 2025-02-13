@@ -622,7 +622,7 @@ bool PrinterEnable(const char *FileName)
 
 	PrinterFileName = FileName;
 
-	PrinterFileHandle = fopen(PrinterFileName.c_str(), "wb");
+	PrinterFileHandle = fopen(PrinterFileName.c_str(), "ab");
 
 	if (PrinterFileHandle == nullptr)
 	{
