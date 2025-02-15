@@ -122,6 +122,29 @@ void GetPathFromFileName(const char* FileName, char* Path, size_t Size)
 
 /****************************************************************************/
 
+const char* GetFileNameFromPath(const char* PathName)
+{
+	const char* FileName = strrchr(PathName, '\\');
+
+	if (FileName == nullptr)
+	{
+		FileName = strrchr(PathName, '/');
+	}
+
+	if (FileName == nullptr)
+	{
+		FileName = PathName;
+	}
+	else
+	{
+		FileName++;
+	}
+
+	return FileName;
+}
+
+/****************************************************************************/
+
 void MakeFileName(char* Path, size_t /* Size */, const char* DirName, const char* FileName, ...)
 {
 	va_list args;
@@ -147,7 +170,7 @@ void MakePreferredPath(char* PathName)
 {
 	for (size_t i = 0; i < strlen(PathName); ++i)
 	{
-		if (PathName[i] == '/')
+		if (PathName[i] == '\\' || PathName[i] == '/')
 		{
 			PathName[i] = DIR_SEPARATOR;
 		}

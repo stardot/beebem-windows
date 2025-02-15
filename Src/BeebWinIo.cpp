@@ -77,16 +77,11 @@ void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType Type)
 
 	const int maxMenuItemLen = 100;
 	char menuStr[maxMenuItemLen+1];
-	char *fname = strrchr(DiscInfo[Drive].FileName, '\\');
-	if (fname == NULL)
-		fname = strrchr(DiscInfo[Drive].FileName, '/');
-	if (fname == NULL)
-		fname = DiscInfo[Drive].FileName;
-	else
-		fname++;
+
+	const char* FileName = GetFileNameFromPath(DiscInfo[Drive].FileName);
 
 	sprintf(menuStr, "Eject Disc %d: ", Drive);
-	strncat(menuStr, fname, maxMenuItemLen-strlen(menuStr));
+	strncat(menuStr, FileName, maxMenuItemLen-strlen(menuStr));
 	menuStr[maxMenuItemLen] = '\0';
 
 	MENUITEMINFO mii = {0};
@@ -94,6 +89,7 @@ void BeebWin::SetImageName(const char *DiscName, int Drive, DiscType Type)
 	mii.fMask = MIIM_STRING;
 	mii.fType = MFT_STRING;
 	mii.dwTypeData = menuStr;
+
 	SetMenuItemInfo(m_hMenu, Drive == 0 ? IDM_EJECTDISC0 : IDM_EJECTDISC1, FALSE, &mii);
 }
 
