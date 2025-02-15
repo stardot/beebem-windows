@@ -23,31 +23,77 @@ Boston, MA  02110-1301, USA.
 
 #include "FileDialog.h"
 
-FileDialog::FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength,
-                       LPCTSTR initialFolder, LPCTSTR filter)
+/****************************************************************************/
+
+FileDialog::FileDialog(HWND hwndOwner, LPTSTR Result, DWORD ResultLength,
+                       LPCTSTR InitialFolder, LPCTSTR Filter)
 {
 	ZeroMemory(&m_ofn, sizeof(m_ofn));
 
 	m_ofn.lStructSize = sizeof(OPENFILENAME);
 	m_ofn.hwndOwner = hwndOwner;
-	m_ofn.lpstrFilter = filter;
+	m_ofn.lpstrFilter = Filter;
 	m_ofn.nFilterIndex = 1;
-	m_ofn.lpstrFile = result;
-	m_ofn.nMaxFile = resultLength;
-	m_ofn.lpstrInitialDir = initialFolder;
-	m_ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	m_ofn.lpstrFile = Result;
+	m_ofn.nMaxFile = ResultLength;
+	m_ofn.lpstrInitialDir = InitialFolder;
+	m_ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY |
+	              OFN_OVERWRITEPROMPT;
 }
 
-bool FileDialog::ShowDialog(bool open)
+/****************************************************************************/
+
+void FileDialog::SetFilterIndex(DWORD Index)
 {
-	if (open)
+	m_ofn.nFilterIndex = Index;
+}
+
+void FileDialog::AllowMultiSelect()
+{
+	m_ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+}
+
+void FileDialog::NoOverwritePrompt()
+{
+	m_ofn.Flags &= ~OFN_OVERWRITEPROMPT;
+}
+
+void FileDialog::SetTitle(LPCTSTR Title)
+{
+	m_ofn.lpstrTitle = Title;
+}
+
+/****************************************************************************/
+
+bool FileDialog::Open()
+{
+	return ShowDialog(true);
+}
+
+bool FileDialog::Save()
+{
+	return ShowDialog(false);
+}
+
+/****************************************************************************/
+
+DWORD FileDialog::GetFilterIndex() const
+{
+	return m_ofn.nFilterIndex;
+}
+
+/****************************************************************************/
+
+bool FileDialog::ShowDialog(bool Open)
+{
+	if (Open)
 	{
 		return GetOpenFileName(&m_ofn) != 0;
 	}
 	else
 	{
-		m_ofn.Flags |= OFN_OVERWRITEPROMPT;
-
 		return GetSaveFileName(&m_ofn) != 0;
 	}
 }
+
+/****************************************************************************/

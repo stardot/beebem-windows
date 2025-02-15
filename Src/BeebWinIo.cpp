@@ -780,15 +780,17 @@ bool BeebWin::GetPrinterFileName()
 	}
 
 	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), StartPath, Filter);
+	Dialog.SetTitle("Select printer output file");
+	Dialog.NoOverwritePrompt();
 
-	bool changed = Dialog.Save();
+	bool Success = Dialog.Save();
 
-	if (changed)
+	if (Success)
 	{
 		m_PrinterFileName = FileName;
 	}
 
-	return changed;
+	return Success;
 }
 
 /****************************************************************************/

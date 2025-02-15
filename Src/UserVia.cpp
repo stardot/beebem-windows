@@ -619,22 +619,24 @@ bool PrinterEnable(const char *FileName)
 		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
 		return true;
 	}
-
-	PrinterFileName = FileName;
-
-	PrinterFileHandle = fopen(PrinterFileName.c_str(), "ab");
-
-	if (PrinterFileHandle == nullptr)
-	{
-		mainWin->Report(MessageType::Error,
-		                "Failed to open printer:\n  %s", PrinterFileName.c_str());
-		return false;
-	}
 	else
 	{
-		PrinterEnabled = true;
-		SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
-		return true;
+		PrinterFileName = FileName;
+
+		PrinterFileHandle = fopen(PrinterFileName.c_str(), "ab");
+
+		if (PrinterFileHandle == nullptr)
+		{
+			mainWin->Report(MessageType::Error,
+			                "Failed to open printer:\n  %s", PrinterFileName.c_str());
+			return false;
+		}
+		else
+		{
+			PrinterEnabled = true;
+			SetTrigger(PRINTER_TRIGGER, PrinterTrigger);
+			return true;
+		}
 	}
 }
 

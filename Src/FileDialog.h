@@ -29,49 +29,30 @@ Boston, MA  02110-1301, USA.
 
 class FileDialog
 {
-public:
-	FileDialog(HWND hwndOwner, LPTSTR result, DWORD resultLength,
-	           LPCTSTR initialFolder, LPCTSTR filter);
-	FileDialog(const FileDialog&) = delete;
-	FileDialog& operator=(FileDialog&) = delete;
+	public:
+		FileDialog(HWND hwndOwner, LPTSTR Result, DWORD ResultLength,
+		           LPCTSTR InitialFolder, LPCTSTR Filter);
+		FileDialog(const FileDialog&) = delete;
+		FileDialog& operator=(FileDialog&) = delete;
 
-	// Prepare dialog
-	void SetFilterIndex(DWORD index)
-	{
-		m_ofn.nFilterIndex = index;
-	}
+	public:
+		// Prepare dialog
+		void SetFilterIndex(DWORD Index);
+		void AllowMultiSelect();
+		void NoOverwritePrompt();
+		void SetTitle(LPCTSTR Title);
 
-	void AllowMultiSelect()
-	{
-		m_ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
-	}
+		// Show dialog
+		bool Open();
+		bool Save();
 
-	void SetTitle(LPCTSTR title)
-	{
-		m_ofn.lpstrTitle = title;
-	}
+		// Get results
+		DWORD GetFilterIndex() const;
 
-	// Show dialog
-	bool Open()
-	{
-		return ShowDialog(true);
-	}
+	private:
+		OPENFILENAME m_ofn;
 
-	bool Save()
-	{
-		return ShowDialog(false);
-	}
-
-	// Get results
-	DWORD GetFilterIndex() const
-	{
-		return m_ofn.nFilterIndex;
-	}
-
-private:
-	OPENFILENAME m_ofn;
-
-	bool ShowDialog(bool open);
+		bool ShowDialog(bool Open);
 };
 
 #endif
