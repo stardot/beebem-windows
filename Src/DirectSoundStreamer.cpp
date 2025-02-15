@@ -96,7 +96,7 @@ bool DirectSoundStreamer::Init(std::size_t rate,
 	memset(&BufferDesc, 0, sizeof(BufferDesc));
 
 	BufferDesc.dwSize          = sizeof(DSBUFFERDESC);
-	BufferDesc.dwFlags         = DSBCAPS_GETCURRENTPOSITION2;
+	BufferDesc.dwFlags         = DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_GLOBALFOCUS;
 	BufferDesc.dwBufferBytes   = (DWORD)m_physical;
 	BufferDesc.lpwfxFormat     = &wfx;
 	BufferDesc.guid3DAlgorithm = DS3DALG_DEFAULT;
@@ -206,10 +206,12 @@ void DirectSoundStreamer::Stream(const void *pSamples)
 
 	memcpy(ps[0], pSamples,  sizes[0]);
 
-	if (ps[1])
-		memcpy( ps[1], static_cast< char const * >( pSamples ) + sizes[0], std::size_t( sizes[1] ) );
+	if (ps[1] != nullptr)
+	{
+		memcpy(ps[1], static_cast<const char*>(pSamples) + sizes[0], (std::size_t)sizes[1]);
+	}
 
-	m_pDirectSoundBuffer->Unlock( ps[0], sizes[0], ps[1], sizes[1] );
+	m_pDirectSoundBuffer->Unlock(ps[0], sizes[0], ps[1], sizes[1]);
 
 	// Select next buffer
 	m_begin = end % m_physical;
