@@ -87,8 +87,11 @@ Andrew Hague
   rendering after the host PC resumes from being suspended or in some cases
   enter a loop continually resetting the screen mode on entering full screen.
 * Fixed sound register reinitialisation after changing the sound sample rate.
+* Fixed sound muting when the BeebEm window loses focus.
+* Fixed teletext mode character alignment.
 * Fixed printing to the Windows clipboard, which would previously cause the
   emulator to slow down or stall.
+* When printing to file, the file is now appended to, not overwritten.
 * Lots of help documentation improvements.
 
 Version 4.19 (1 May 2023)
