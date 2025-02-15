@@ -214,9 +214,9 @@ bool BuildMode7Font(const char *filename)
 
 			Bitmap |= Value << 8;
 
-			Mode7Font[0][Character - 32][y] = Bitmap << 2; // Text bank
-			Mode7Font[1][Character - 32][y] = Bitmap << 2; // Contiguous graphics bank
-			Mode7Font[2][Character - 32][y] = Bitmap << 2; // Separated graphics bank
+			Mode7Font[0][Character - 32][y] = Bitmap; // Text bank
+			Mode7Font[1][Character - 32][y] = Bitmap; // Contiguous graphics bank
+			Mode7Font[2][Character - 32][y] = Bitmap; // Separated graphics bank
 		}
 	}
 
