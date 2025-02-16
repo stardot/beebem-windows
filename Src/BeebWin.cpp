@@ -528,27 +528,27 @@ void BeebWin::ApplyPrefs()
 	if (EconetCfgPath[0] == '\0')
 	{
 		strcpy(EconetCfgPath, m_UserDataPath);
-		strcat(EconetCfgPath, "Econet.cfg");
+		AppendPath(EconetCfgPath, "Econet.cfg");
 	}
 	else if (IsRelativePath(EconetCfgPath))
 	{
 		char Filename[MAX_PATH];
 		strcpy(Filename, EconetCfgPath);
 		strcpy(EconetCfgPath, m_UserDataPath);
-		strcat(EconetCfgPath, Filename);
+		AppendPath(EconetCfgPath, Filename);
 	}
 
 	if (AUNMapPath[0] == '\0')
 	{
 		strcpy(AUNMapPath, m_UserDataPath);
-		strcat(AUNMapPath, "AUNMap");
+		AppendPath(AUNMapPath, "AUNMap");
 	}
 	else if (IsRelativePath(AUNMapPath))
 	{
 		char Filename[MAX_PATH];
 		strcpy(Filename, AUNMapPath);
 		strcpy(AUNMapPath, m_UserDataPath);
-		strcat(AUNMapPath, Filename);
+		AppendPath(AUNMapPath, Filename);
 	}
 
 	strcpy(RomPath, m_UserDataPath);
@@ -5066,7 +5066,7 @@ void BeebWin::UserKeyboardDialogClosed()
 
 void BeebWin::ParseCommandLine()
 {
-	bool invalid;
+	bool Invalid;
 
 	m_CommandLineFileName1[0] = '\0';
 	m_CommandLineFileName2[0] = '\0';
@@ -5100,33 +5100,42 @@ void BeebWin::ParseCommandLine()
 		}
 		else // Params with additional arguments
 		{
-			invalid = false;
+			Invalid = false;
 
 			const bool Data       = StrCaseCmp(__argv[i], "-Data") == 0;
 			const bool CustomData = StrCaseCmp(__argv[i], "-CustomData") == 0;
 
 			if (Data || CustomData)
 			{
-				strcpy(m_UserDataPath, __argv[++i]);
+				++i;
 
-				if (strcmp(m_UserDataPath, "-") == 0)
+				if (strlen(__argv[i]) < MAX_PATH)
 				{
-					// Use app path
-					strcpy(m_UserDataPath, m_AppPath);
-					strcat(m_UserDataPath, "UserData\\");
+					strcpy(m_UserDataPath, __argv[++i]);
+
+					if (strcmp(m_UserDataPath, "-") == 0)
+					{
+						// Use app path
+						strcpy(m_UserDataPath, m_AppPath);
+						strcat(m_UserDataPath, "UserData\\");
+					}
+					else
+					{
+						if (m_UserDataPath[strlen(m_UserDataPath) - 1] != '\\' &&
+							m_UserDataPath[strlen(m_UserDataPath) - 1] != '/')
+						{
+							strcat(m_UserDataPath, "\\");
+						}
+					}
+
+					if (CustomData)
+					{
+						m_CustomData = true;
+					}
 				}
 				else
 				{
-					if (m_UserDataPath[strlen(m_UserDataPath) - 1] != '\\' &&
-					    m_UserDataPath[strlen(m_UserDataPath) - 1] != '/')
-					{
-						strcat(m_UserDataPath, "\\");
-					}
-				}
-
-				if (CustomData)
-				{
-					m_CustomData = true;
+					Invalid = true;
 				}
 			}
 			else if (StrCaseCmp(__argv[i], "-Prefs") == 0)
@@ -5135,33 +5144,68 @@ void BeebWin::ParseCommandLine()
 			}
 			else if (StrCaseCmp(__argv[i], "-Roms") == 0)
 			{
-				strcpy(RomFile, __argv[++i]);
+				++i;
+
+				if (strlen(__argv[i]) < MAX_PATH)
+				{
+					strcpy(RomFile, __argv[i]);
+				}
+				else
+				{
+					Invalid = true;
+				}
 			}
 			else if (StrCaseCmp(__argv[i], "-EconetCfg") == 0)
 			{
-				strcpy(EconetCfgPath, __argv[++i]);
+				++i;
+
+				if (strlen(__argv[i]) < MAX_PATH)
+				{
+					strcpy(EconetCfgPath, __argv[i]);
+				}
+				else
+				{
+					Invalid = true;
+				}
 			}
 			else if (StrCaseCmp(__argv[i], "-AUNMap") == 0)
 			{
-				strcpy(AUNMapPath, __argv[++i]);
+				++i;
+
+				if (strlen(__argv[i]) < MAX_PATH)
+				{
+					strcpy(AUNMapPath, __argv[i]);
+				}
+				else
+				{
+					Invalid = true;
+				}
 			}
 			else if (StrCaseCmp(__argv[i], "-EcoStn") == 0)
 			{
-				int a = atoi(__argv[++i]);
+				int Value = atoi(__argv[++i]);
 
-				if (a < 1 || a > 254)
-					invalid = true;
+				if (Value < 1 || Value > 254)
+				{
+					Invalid = true;
+				}
 				else
-					EconetStationID = static_cast<unsigned char>(a);
+				{
+					EconetStationID = static_cast<unsigned char>(Value);
+				}
 			}
 			else if (StrCaseCmp(__argv[i], "-EcoFF") == 0)
 			{
-				int a = atoi(__argv[++i]);
+				int Value = atoi(__argv[++i]);
 
-				if (a < 1)
-					invalid = true;
+				if (Value < 1)
+				{
+					Invalid = true;
+				}
 				else
-					EconetFlagFillTimeout = a;
+				{
+					EconetFlagFillTimeout = Value;
+				}
 			}
 			else if (StrCaseCmp(__argv[i], "-KbdCmd") == 0)
 			{
@@ -5177,12 +5221,16 @@ void BeebWin::ParseCommandLine()
 			}
 			else if (StrCaseCmp(__argv[i], "-AutoBootDelay") == 0)
 			{
-				int a = atoi(__argv[++i]);
+				int Value = atoi(__argv[++i]);
 
-				if (a < 1)
-					invalid = true;
+				if (Value < 1)
+				{
+					Invalid = true;
+				}
 				else
-					m_AutoBootDelay = a;
+				{
+					m_AutoBootDelay = Value;
+				}
 			}
 			else if (StrCaseCmp(__argv[i], "-Model") == 0)
 			{
@@ -5196,7 +5244,7 @@ void BeebWin::ParseCommandLine()
 			}
 			else if (__argv[i][0] == '-')
 			{
-				invalid = true;
+				Invalid = true;
 				++i;
 			}
 			else
@@ -5210,7 +5258,7 @@ void BeebWin::ParseCommandLine()
 					}
 					else
 					{
-						invalid = true;
+						Invalid = true;
 					}
 				}
 				else if (m_CommandLineFileName2[0] == '\0')
@@ -5221,12 +5269,12 @@ void BeebWin::ParseCommandLine()
 					}
 					else
 					{
-						invalid = true;
+						Invalid = true;
 					}
 				}
 			}
 
-			if (invalid)
+			if (Invalid)
 			{
 				Report(MessageType::Error, "Invalid command line parameter:\n  %s %s",
 				       __argv[i-1], __argv[i]);

@@ -343,8 +343,8 @@ static int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 i
 static unsigned char irqcause;   // flag to indicate cause of irq sr1b7
 static unsigned char sr1b2cause; // flag to indicate cause of irq sr1b2
 
-char EconetCfgPath[512];
-char AUNMapPath[512];
+char EconetCfgPath[MAX_PATH];
+char AUNMapPath[MAX_PATH];
 
 // A receiving station goes into flag fill mode while it is processing
 // a message.  This stops other stations sending messages that may interfere
