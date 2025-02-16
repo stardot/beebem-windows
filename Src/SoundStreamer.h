@@ -24,7 +24,7 @@ Boston, MA  02110-1301, USA.
 #ifndef SOUND_STREAMER_HEADER
 #define SOUND_STREAMER_HEADER
 
-#include <list>
+#include <vector>
 
 class SoundStreamer
 {
@@ -47,7 +47,7 @@ class SoundStreamer
 		static void PauseAll();
 
 	private:
-		static std::list<SoundStreamer*> m_streamers;
+		static std::vector<SoundStreamer*> m_streamers;
 };
 
 SoundStreamer *CreateSoundStreamer(int samplerate, int bits_per_sample, int channels);
