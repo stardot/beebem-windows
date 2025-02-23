@@ -399,6 +399,8 @@ public:
 	void UpdateSerialMenu();
 	void OnIP232Error(int Error);
 
+	// Econet
+	void ToggleEconet();
 	void UpdateEconetMenu();
 
 	void UpdateSFXMenu();

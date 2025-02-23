@@ -3648,11 +3648,32 @@ void BeebWin::OnIP232Error(int Error)
 	       "Lost connection. Serial port has been disabled");
 }
 
-//Rob
+/****************************************************************************/
+
+void BeebWin::ToggleEconet()
+{
+	EconetEnabled = !EconetEnabled;
+
+	if (EconetEnabled)
+	{
+		// Need hard reset for DNFS to detect econet HW
+		ResetBeebSystem(MachineType, false);
+		EconetStateChanged = true;
+	}
+	else
+	{
+		EconetReset();
+	}
+
+	UpdateEconetMenu();
+}
+
 void BeebWin::UpdateEconetMenu()
 {
 	CheckMenuItem(IDM_ECONET, EconetEnabled);
 }
+
+/****************************************************************************/
 
 void BeebWin::UpdateLEDMenu()
 {
@@ -3813,18 +3834,7 @@ void BeebWin::HandleCommand(UINT MenuID)
 
 	//Rob
 	case IDM_ECONET:
-		EconetEnabled = !EconetEnabled;
-		if (EconetEnabled)
-		{
-			// Need hard reset for DNFS to detect econet HW
-			ResetBeebSystem(MachineType, false);
-			EconetStateChanged = true;
-		}
-		else
-		{
-			EconetReset();
-		}
-		UpdateEconetMenu();
+		ToggleEconet();
 		break;
 
 	case IDM_DISPGDI:
