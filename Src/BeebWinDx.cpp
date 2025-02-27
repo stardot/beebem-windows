@@ -67,34 +67,34 @@ static void D3DMatrixIdentity(D3DMATRIX *pMatrix)
 
 void BeebWin::InitDX()
 {
-	HRESULT hr = E_FAIL;
+	HRESULT hResult = E_FAIL;
 
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		hr = InitD3DDevice();
+		hResult = InitD3DDevice();
 
-		if (hr != D3D_OK)
+		if (FAILED(hResult))
 		{
 			Report(MessageType::Error, "DirectX9 initialisation failed\nFailure code %X\nTrying DirectDraw",
-			       hr);
+			       hResult);
 
 			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPDDRAW, 0);
 		}
 	}
 	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		hr = InitDirectDraw();
+		hResult = InitDirectDraw();
 
-		if (hr != D3D_OK)
+		if (FAILED(hResult))
 		{
 			Report(MessageType::Error, "DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI",
-			       hr);
+			       hResult);
 
 			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 		}
 	}
 
-	if (hr == D3D_OK)
+	if (SUCCEEDED(hResult))
 	{
 		m_CurrentDisplayRenderer = m_DisplayRenderer;
 	}
@@ -133,21 +133,21 @@ void BeebWin::ReinitDX()
 	DebugTrace("BeebWin::ReinitDX\n");
 	#endif
 
-	HRESULT hr = DD_OK;
+	HRESULT hResult = DD_OK;
 
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		hr = InitD3DDevice();
+		hResult = InitD3DDevice();
 	}
 	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		hr = InitSurfaces();
+		hResult = InitSurfaces();
 	}
 
-	if (hr != DD_OK)
+	if (FAILED(hResult))
 	{
 		Report(MessageType::Error, "DirectX failure re-initialising\nFailure code %X\nSwitching to GDI",
-		       hr);
+		       hResult);
 
 		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 	}
@@ -191,7 +191,7 @@ void BeebWin::ExitDX()
 
 HRESULT BeebWin::InitDirectDraw()
 {
-	HRESULT ddrval = DDERR_GENERIC;
+	HRESULT hResult = DDERR_GENERIC;
 
 	m_hInstDDraw = nullptr;
 	m_DD = nullptr;
@@ -206,68 +206,80 @@ HRESULT BeebWin::InitDirectDraw()
 
 	if (m_hInstDDraw != nullptr)
 	{
-		LPDIRECTDRAWCREATE pDDCreate = (LPDIRECTDRAWCREATE)GetProcAddress(m_hInstDDraw, "DirectDrawCreate");
+		LPDIRECTDRAWCREATE DirectDrawCreate = (LPDIRECTDRAWCREATE)GetProcAddress(m_hInstDDraw, "DirectDrawCreate");
 
-		if (pDDCreate != nullptr)
+		if (DirectDrawCreate != nullptr)
 		{
-			ddrval = pDDCreate(nullptr, &m_DD, nullptr);
+			hResult = DirectDrawCreate(nullptr, &m_DD, nullptr);
 
-			if (ddrval == DD_OK)
+			if (SUCCEEDED(hResult))
 			{
-				ddrval = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID *)&m_DD2);
+				hResult = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID*)&m_DD2);
 			}
 
-			if (ddrval == DD_OK)
+			if (SUCCEEDED(hResult))
 			{
-				ddrval = InitSurfaces();
+				hResult = InitSurfaces();
 			}
 		}
 	}
 
-	return ddrval;
+	return hResult;
 }
 
 /****************************************************************************/
 
 HRESULT BeebWin::InitSurfaces()
 {
-	HRESULT ddrval;
+	HRESULT hResult;
 
 	if (m_FullScreen)
 	{
-		ddrval = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
+		hResult = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
 	}
 	else
 	{
-		ddrval = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);
+		hResult = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);
 	}
 
-	if (ddrval == DD_OK)
+	if (SUCCEEDED(hResult))
 	{
 		if (m_FullScreen)
 		{
-			ddrval = m_DD2->SetDisplayMode(m_XDXSize, m_YDXSize, 32, 0, 0);
+			hResult = m_DD2->SetDisplayMode(m_XDXSize, m_YDXSize, 32, 0, 0);
 		}
 	}
 
-	if (ddrval == DD_OK)
+	if (SUCCEEDED(hResult))
 	{
 		DDSURFACEDESC ddsd;
 		ddsd.dwSize = sizeof(ddsd);
 		ddsd.dwFlags = DDSD_CAPS;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSPrimary, nullptr);
+		hResult = m_DD2->CreateSurface(&ddsd, &m_DDSPrimary, nullptr);
 	}
 
-	if (ddrval == DD_OK)
-		ddrval = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2Primary);
-	if (ddrval == DD_OK)
-		ddrval = m_DD2->CreateClipper(0, &m_Clipper, NULL);
-	if (ddrval == DD_OK)
-		ddrval = m_Clipper->SetHWnd(0, m_hWnd);
-	if (ddrval == DD_OK)
-		ddrval = m_DDS2Primary->SetClipper(m_Clipper);
-	if (ddrval == DD_OK)
+	if (SUCCEEDED(hResult))
+	{
+		hResult = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID*)&m_DDS2Primary);
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		hResult = m_DD2->CreateClipper(0, &m_Clipper, NULL);
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		hResult = m_Clipper->SetHWnd(0, m_hWnd);
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		hResult = m_DDS2Primary->SetClipper(m_Clipper);
+	}
+
+	if (SUCCEEDED(hResult))
 	{
 		DDSURFACEDESC ddsd;
 		ZeroMemory(&ddsd, sizeof(ddsd));
@@ -280,20 +292,20 @@ HRESULT BeebWin::InitSurfaces()
 			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 		ddsd.dwWidth = 800;
 		ddsd.dwHeight = 512;
-		ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, nullptr);
+		hResult = m_DD2->CreateSurface(&ddsd, &m_DDSOne, nullptr);
 	}
 
-	if (ddrval == DD_OK)
+	if (SUCCEEDED(hResult))
 	{
-		ddrval = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
+		hResult = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
 	}
 
-	if (ddrval == DD_OK)
+	if (SUCCEEDED(hResult))
 	{
 		m_DXInit = true;
 	}
 
-	return ddrval;
+	return hResult;
 }
 
 /****************************************************************************/
@@ -473,7 +485,7 @@ HRESULT BeebWin::InitD3DDevice()
 	                               &d3dpp,
 	                               &m_pd3dDevice);
 
-	if (hResult != D3D_OK)
+	if (FAILED(hResult))
 	{
 		#ifdef DEBUG_DX9
 		DebugTrace("CreateDevice failed %08X\n", hResult);
@@ -506,7 +518,7 @@ HRESULT BeebWin::InitD3DDevice()
 		                                       &m_pVB,
 		                                       nullptr);
 
-	if (hResult != D3D_OK)
+	if (FAILED(hResult))
 	{
 		#ifdef DEBUG_DX9
 		DebugTrace("CreateVertexBuffer failed %08X\n", hResult);
@@ -519,7 +531,7 @@ HRESULT BeebWin::InitD3DDevice()
 	// coordinates, which range from 0.0 to 1.0
 	hResult = m_pVB->Lock(0, 0, (void**)&pVertices, 0);
 
-	if (hResult != D3D_OK)
+	if (FAILED(hResult))
 	{
 		#ifdef DEBUG_DX9
 		DebugTrace("VertexBuffer Lock failed %08X\n", hResult);
@@ -584,7 +596,7 @@ HRESULT BeebWin::InitD3DDevice()
 	                                      &m_pTexture,
 	                                      nullptr);
 
-	if (hResult != D3D_OK)
+	if (FAILED(hResult))
 	{
 		#ifdef DEBUG_DX9
 		DebugTrace("CreateTexture failed %08X\n", hResult);
@@ -637,36 +649,50 @@ void BeebWin::CloseD3DDevice()
 void BeebWin::RenderDX9()
 {
 	// Clear the backbuffer
-	HRESULT hr = m_pd3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET,
-	                                 D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
+	HRESULT hResult = m_pd3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET,
+	                                      D3DCOLOR_XRGB(0,0,0), 1.0f, 0);
 
 	// Begin the scene
-	hr = m_pd3dDevice->BeginScene();
+	hResult = m_pd3dDevice->BeginScene();
 
-	if(hr == D3D_OK)
+	if (SUCCEEDED(hResult))
 	{
-		hr = m_pd3dDevice->SetStreamSource(0, m_pVB, 0, sizeof(CUSTOMVERTEX));
-		if (hr == D3D_OK)
-			hr = m_pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
-		if (hr == D3D_OK)
-			hr = m_pd3dDevice->SetTexture(0, m_pTexture);
-		if (hr == D3D_OK)
-			hr = m_pd3dDevice->SetTransform(D3DTS_WORLD, &m_TextureMatrix);
-		if (hr == D3D_OK)
-			hr = m_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 4);
+		hResult = m_pd3dDevice->SetStreamSource(0, m_pVB, 0, sizeof(CUSTOMVERTEX));
+
+		if (SUCCEEDED(hResult))
+		{
+			hResult = m_pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
+		}
+
+		if (SUCCEEDED(hResult))
+		{
+			hResult = m_pd3dDevice->SetTexture(0, m_pTexture);
+		}
+
+		if (SUCCEEDED(hResult))
+		{
+			hResult = m_pd3dDevice->SetTransform(D3DTS_WORLD, &m_TextureMatrix);
+		}
+
+		if (SUCCEEDED(hResult))
+		{
+			hResult = m_pd3dDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 4);
+		}
 
 		// End the scene
-		if (hr == D3D_OK)
-			hr = m_pd3dDevice->EndScene();
+		if (SUCCEEDED(hResult))
+		{
+			hResult = m_pd3dDevice->EndScene();
+		}
 	}
 
 	// Present the backbuffer contents to the display
-	if (hr == D3D_OK)
+	if (SUCCEEDED(hResult))
 	{
-		hr = m_pd3dDevice->Present(NULL, NULL, NULL, NULL);
+		hResult = m_pd3dDevice->Present(NULL, NULL, NULL, NULL);
 	}
 
-	if (hr == D3DERR_DEVICELOST)
+	if (hResult == D3DERR_DEVICELOST)
 	{
 		#ifdef DEBUG_DX9
 		DebugTrace("BeebWin::RenderDX9 - D3DERR_DEVICELOST\n");
@@ -838,14 +864,14 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 			if (m_DXDeviceLost) return;
 
 			IDirect3DSurface9 *pSurface;
-			HRESULT ddrval = m_pTexture->GetSurfaceLevel(0, &pSurface);
+			HRESULT hResult = m_pTexture->GetSurfaceLevel(0, &pSurface);
 
-			if (ddrval == D3D_OK)
+			if (SUCCEEDED(hResult))
 			{
 				HDC hdc;
-				ddrval = pSurface->GetDC(&hdc);
+				hResult = pSurface->GetDC(&hdc);
 
-				if (ddrval == D3D_OK)
+				if (SUCCEEDED(hResult))
 				{
 					BitBlt(hdc, 0, 0, 800, NLines, m_hDCBitmap, 0, StartY, SRCCOPY);
 					DisplayClientAreaText(hdc);
@@ -880,10 +906,10 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 				RenderDX9();
 			}
 
-			if (ddrval != D3D_OK)
+			if (FAILED(hResult))
 			{
 				Report(MessageType::Error, "DirectX failure while updating screen\nFailure code %X\nSwitching to GDI",
-				       ddrval);
+				       hResult);
 
 				PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 			}
@@ -892,17 +918,19 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 		{
 			// Blit the beeb bitmap onto the secondary buffer
 			HDC hdc;
-			HRESULT ddrval = m_DDS2One->GetDC(&hdc);
+			HRESULT hResult = m_DDS2One->GetDC(&hdc);
 
-			if (ddrval == DDERR_SURFACELOST)
+			if (hResult == DDERR_SURFACELOST)
 			{
-				ddrval = m_DDS2One->Restore();
+				hResult = m_DDS2One->Restore();
 
-				if (ddrval == DD_OK)
-					ddrval = m_DDS2One->GetDC(&hdc);
+				if (SUCCEEDED(hResult))
+				{
+					hResult = m_DDS2One->GetDC(&hdc);
+				}
 			}
 
-			if (ddrval == DD_OK)
+			if (SUCCEEDED(hResult))
 			{
 				BitBlt(hdc, 0, 0, 800, NLines, m_hDCBitmap, 0, StartY, SRCCOPY);
 				DisplayClientAreaText(hdc);
@@ -934,16 +962,20 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 				srcRect.right  = TeletextEnabled ? 552 : ActualScreenWidth;
 				srcRect.bottom = TeletextEnabled ? TeletextLines : NLines;
 
-				ddrval = m_DDS2Primary->Blt(&destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
-				if (ddrval == DDERR_SURFACELOST)
+				hResult = m_DDS2Primary->Blt(&destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
+
+				if (hResult == DDERR_SURFACELOST)
 				{
-					ddrval = m_DDS2Primary->Restore();
-					if (ddrval == DD_OK)
-						ddrval = m_DDS2Primary->Blt(&destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
+					hResult = m_DDS2Primary->Restore();
+
+					if (SUCCEEDED(hResult))
+					{
+						hResult = m_DDS2Primary->Blt(&destRect, m_DDS2One, &srcRect, DDBLT_ASYNC, NULL);
+					}
 				}
 			}
 
-			if (ddrval != DD_OK && ddrval != DDERR_WASSTILLDRAWING)
+			if (FAILED(hResult) && hResult != DDERR_WASSTILLDRAWING)
 			{
 				// Ignore DX errors for now - swapping between full screen and windowed DX
 				// apps causes an error while transitioning between display modes.
@@ -962,9 +994,9 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 		           TeletextEnabled ? TeletextLines : NLines,
 		           SRCCOPY);
 
-		HRESULT hr = aviWriter->WriteVideo((BYTE*)m_AviScreen);
+		HRESULT hResult = aviWriter->WriteVideo((BYTE*)m_AviScreen);
 
-		if (FAILED(hr) && hr != E_UNEXPECTED)
+		if (FAILED(hResult) && hResult != E_UNEXPECTED)
 		{
 			Report(MessageType::Error, "Failed to write video to AVI file");
 
@@ -1114,13 +1146,13 @@ void BeebWin::UpdateSmoothing()
 	}
 	else
 	{
-		if (m_DDS2One)
+		if (m_DDS2One != nullptr)
 		{
 			m_DDS2One->Release();
 			m_DDS2One = nullptr;
 		}
 
-		if (m_DDSOne)
+		if (m_DDSOne != nullptr)
 		{
 			m_DDSOne->Release();
 			m_DDSOne = nullptr;
@@ -1133,17 +1165,22 @@ void BeebWin::UpdateSmoothing()
 		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
 
 		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
+		{
 			ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
+		}
 		else
+		{
 			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
+		}
+
 		ddsd.dwWidth = 800;
 		ddsd.dwHeight = 512;
 
-		HRESULT ddrval = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
+		HRESULT hResult = m_DD2->CreateSurface(&ddsd, &m_DDSOne, NULL);
 
-		if (ddrval == DD_OK)
+		if (SUCCEEDED(hResult))
 		{
-			ddrval = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
+			hResult = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
 		}
 	}
 }
