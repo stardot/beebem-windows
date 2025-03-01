@@ -203,9 +203,7 @@ void UserPortRTCWrite(unsigned char Value)
 						break;
 				}
 
-				DebugTrace("UserPortRTC Write cmd : 0x%03x, reg : 0x%02x, data = 0x%02x, wrapped = 0x%02x\n", RTC_cmd, Register, (unsigned char)(RTC_cmd >> 4), Data);
-
-				UserPortRTCRegisters[Register] = Data;
+				DebugTrace("UserPortRTC Write cmd: 0x%03x, reg: 0x%02x, data: 0x%02x, wrapped: 0x%02x\n", RTC_cmd, Register, Data, UserPortRTCRegisters[Register]);
 			}
 			else
 			{
@@ -217,7 +215,7 @@ void UserPortRTCWrite(unsigned char Value)
 				switch ((RTC_cmd & 0x0f) >> 1)
 				{
 					case 0: // Month counter (1-12)
-						RTC_data = BCD((unsigned char)(Time.wMonth));
+						RTC_data = BCD((unsigned char)Time.wMonth);
 						break;
 
 					case 1: // Month register (alarm)
@@ -249,7 +247,7 @@ void UserPortRTCWrite(unsigned char Value)
 						break;
 				}
 
-				DebugTrace("UserPortRTC Read cmd : 0x%03x, reg : 0x%02x, data : 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
+				DebugTrace("UserPortRTC Read cmd: 0x%03x, reg: 0x%02x, data: 0x%02x\n", RTC_cmd, (RTC_cmd & 0x0f) >> 1, RTC_data);
 			}
 		}
 	}
