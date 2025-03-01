@@ -3364,7 +3364,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		AdjustWindowRect(&Rect, Style, TRUE);
 
 		SetWindowPos(m_hWnd,
-		             HWND_TOP,
+		             HWND_NOTOPMOST,
 		             m_XWinPos,
 		             m_YWinPos,
 		             Rect.right - Rect.left,
