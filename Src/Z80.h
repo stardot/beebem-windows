@@ -1,7 +1,6 @@
 /* Header file for the instruction set simulator.
    Copyright (C) 1995  Frank D. Cringle.
    Modifications for MMU and CP/M 3.1 Copyright (C) 2000/2003 by Andreas Gerlich
-   
 
 This file is part of yaze-ag - yet another Z80 emulator by ag.
 
@@ -36,6 +35,7 @@ extern struct ddregs {
 	WORD de;
 	WORD hl;
 } regs[2];
+
 extern int regs_sel;
 
 extern WORD ir;
@@ -72,17 +72,8 @@ extern FASTWORK simz80(FASTREG PC);
       line RAM, GetBYTE, GetWORD, PutBYTE, PutWORD, .... 
 */
 
-#ifndef BIOS
-extern unsigned char in(unsigned int);
-extern void out(unsigned int, unsigned char);
-#define Input(port) in(port)
-#define Output(port, value) out(port,value)
-#else
-/* Define these as macros or functions if you really want to simulate I/O */
-#define Input(port)	0
-#define Output(port, value)
-#endif
-
+extern unsigned char Z80ReadIO(unsigned int port);
+extern void Z80WriteIO(unsigned int port, unsigned char value);
 
 void Z80Execute();
 void Z80Init();

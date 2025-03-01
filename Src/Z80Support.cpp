@@ -148,7 +148,7 @@ void disp_regs()
 	WriteLog("%s\n", str);
 }
 
-unsigned char in(unsigned int addr)
+unsigned char Z80ReadIO(unsigned int addr)
 {
 	unsigned char value = 0xff;
 
@@ -180,7 +180,7 @@ unsigned char in(unsigned int addr)
 	return value;
 }
 
-void out(unsigned int addr, unsigned char value)
+void Z80WriteIO(unsigned int addr, unsigned char value)
 {
 	addr &= 255;
 

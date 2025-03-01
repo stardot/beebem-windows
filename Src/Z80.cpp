@@ -1342,7 +1342,7 @@ FASTWORK simz80(FASTREG PC)
 		JPC(!TSTFLAG(C));
 		break;
 	case 0xD3:			/* OUT (nn),A */
-		Output(GetBYTE_pp(PC) | (hreg(AF)<<8), hreg(AF));
+		Z80WriteIO(GetBYTE_pp(PC) | (hreg(AF)<<8), hreg(AF));
 		break;
 	case 0xD4:			/* CALL NC,nnnn */
 		CALLC(!TSTFLAG(C));
@@ -1379,7 +1379,7 @@ FASTWORK simz80(FASTREG PC)
 		JPC(TSTFLAG(C));
 		break;
 	case 0xDB:			/* IN A,(nn) */
-		Sethreg(AF, Input(GetBYTE_pp(PC) | (hreg(AF)<<8)));
+		Sethreg(AF, Z80ReadIO(GetBYTE_pp(PC) | (hreg(AF)<<8)));
 		break;
 	case 0xDC:			/* CALL C,nnnn */
 		CALLC(TSTFLAG(C));
@@ -1985,14 +1985,14 @@ FASTWORK simz80(FASTREG PC)
 	case 0xED:			/* ED prefix */
 		switch (op = GetBYTE_pp(PC)) {
 		case 0x40:			/* IN B,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Sethreg(BC, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x41:			/* OUT (C),B */
-			Output(BC, hreg(BC));
+			Z80WriteIO(BC, hreg(BC));
 			break;
 		case 0x42:			/* SBC HL,BC */
 			HL &= 0xffff;
@@ -2045,14 +2045,14 @@ FASTWORK simz80(FASTREG PC)
 			ir = (ir & 255) | (AF & ~255);
 			break;
 		case 0x48:			/* IN C,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Setlreg(BC, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x49:			/* OUT (C),C */
-			Output(BC, lreg(BC));
+			Z80WriteIO(BC, lreg(BC));
 			break;
 		case 0x4A:			/* ADC HL,BC */
 			HL &= 0xffff;
@@ -2074,14 +2074,14 @@ FASTWORK simz80(FASTREG PC)
 			ir = (ir & ~255) | ((AF >> 8) & 255);
 			break;
 		case 0x50:			/* IN D,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Sethreg(DE, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x51:			/* OUT (C),D */
-			Output(BC, hreg(DE));
+			Z80WriteIO(BC, hreg(DE));
 			break;
 		case 0x52:			/* SBC HL,DE */
 			HL &= 0xffff;
@@ -2107,14 +2107,14 @@ FASTWORK simz80(FASTREG PC)
 			AF = (AF & 0x29) | (ir & ~255) | ((ir >> 8) & 0x80) | (((ir & ~255) == 0) << 6) | ((IFF2) << 2);
 			break;
 		case 0x58:			/* IN E,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Setlreg(DE, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x59:			/* OUT (C),E */
-			Output(BC, lreg(DE));
+			Z80WriteIO(BC, lreg(DE));
 			break;
 		case 0x5A:			/* ADC HL,DE */
 			HL &= 0xffff;
@@ -2141,14 +2141,14 @@ FASTWORK simz80(FASTREG PC)
             ir = (ir + 1) & 255;
             break;
 		case 0x60:			/* IN H,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Sethreg(HL, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x61:			/* OUT (C),H */
-			Output(BC, hreg(HL));
+			Z80WriteIO(BC, hreg(HL));
 			break;
 		case 0x62:			/* SBC HL,HL */
 			HL &= 0xffff;
@@ -2174,14 +2174,14 @@ FASTWORK simz80(FASTREG PC)
 				partab[acu] | (AF & 1);
 			break;
 		case 0x68:			/* IN L,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Setlreg(HL, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x69:			/* OUT (C),L */
-			Output(BC, lreg(HL));
+			Z80WriteIO(BC, lreg(HL));
 			break;
 		case 0x6A:			/* ADC HL,HL */
 			HL &= 0xffff;
@@ -2207,14 +2207,14 @@ FASTWORK simz80(FASTREG PC)
 				partab[acu] | (AF & 1);
 			break;
 		case 0x70:			/* IN F,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Setlreg(temp, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x71:			/* OUT (C),0 */
-			Output(BC, 0);
+			Z80WriteIO(BC, 0);
 			break;
 		case 0x72:			/* SBC HL,SP */
 			HL &= 0xffff;
@@ -2233,14 +2233,14 @@ FASTWORK simz80(FASTREG PC)
 			PC += 2;
 			break;
 		case 0x78:			/* IN A,(C) */
-			temp = Input(BC);
+			temp = Z80ReadIO(BC);
 			Sethreg(AF, temp);
 			AF = (AF & ~0xfe) | (temp & 0xa8) |
 				(((temp & 0xff) == 0) << 6) |
 				parity(temp);
 			break;
 		case 0x79:			/* OUT (C),A */
-			Output(BC, hreg(AF));
+			Z80WriteIO(BC, hreg(AF));
 			break;
 		case 0x7A:			/* ADC HL,SP */
 			HL &= 0xffff;
@@ -2278,7 +2278,7 @@ FASTWORK simz80(FASTREG PC)
 				AF &= ~8;
 			break;
 		case 0xA2:			/* INI */
-			PutBYTE(HL, Input(BC)); ++HL;
+			PutBYTE(HL, Z80ReadIO(BC)); ++HL;
 			Sethreg(BC, hreg(BC) - 1);
 //			SETFLAG(N, 1);
 //			SETFLAG(Z, hreg(BC) == 0);
@@ -2288,7 +2288,7 @@ FASTWORK simz80(FASTREG PC)
 				((temp == 0x7f) << 2);	// Not exact, but close
 			break;
 		case 0xA3:			/* OUTI */
-			Output(BC, GetBYTE(HL)); ++HL;
+			Z80WriteIO(BC, GetBYTE(HL)); ++HL;
 			Sethreg(BC, hreg(BC) - 1);
 //			SETFLAG(N, 1);
 //			SETFLAG(Z, hreg(BC) == 0);
@@ -2317,7 +2317,7 @@ FASTWORK simz80(FASTREG PC)
 				AF &= ~8;
 			break;
 		case 0xAA:			/* IND */
-			PutBYTE(HL, Input(BC)); --HL;
+			PutBYTE(HL, Z80ReadIO(BC)); --HL;
 			Sethreg(BC, hreg(BC) - 1);
 //			SETFLAG(N, 1);
 //			SETFLAG(Z, lreg(BC) == 0);
@@ -2327,7 +2327,7 @@ FASTWORK simz80(FASTREG PC)
 				((temp == 0x7f) << 2);	// Not exact, but close
 			break;
 		case 0xAB:			/* OUTD */
-			Output(BC, GetBYTE(HL)); --HL;
+			Z80WriteIO(BC, GetBYTE(HL)); --HL;
 			Sethreg(BC, hreg(BC) - 1);
 //			SETFLAG(N, 1);
 //			SETFLAG(Z, lreg(BC) == 0);
@@ -2367,7 +2367,7 @@ FASTWORK simz80(FASTREG PC)
 			temp = hreg(BC);
 			if (temp == 0) temp |= 0x100;
 			do {
-				PutBYTE(HL, Input(BC)); ++HL; BC-=0x100;
+				PutBYTE(HL, Z80ReadIO(BC)); ++HL; BC-=0x100;
 			} while (--temp);
 //			Sethreg(BC, 0);
 //			SETFLAG(N, 1);
@@ -2378,7 +2378,7 @@ FASTWORK simz80(FASTREG PC)
 			temp = hreg(BC);
 			if (temp == 0) temp |= 0x100;
 			do {
-				Output(BC, GetBYTE(HL)); ++HL; BC-=0x100;
+				Z80WriteIO(BC, GetBYTE(HL)); ++HL; BC-=0x100;
 			} while (--temp);
 //			Sethreg(BC, 0);
 //			SETFLAG(N, 1);
@@ -2416,7 +2416,7 @@ FASTWORK simz80(FASTREG PC)
 			temp = hreg(BC);
 			if (temp == 0) temp |= 0x100;
 			do {
-				PutBYTE(HL, Input(BC)); --HL; BC-=0x100;
+				PutBYTE(HL, Z80ReadIO(BC)); --HL; BC-=0x100;
 			} while (--temp);
 //			Sethreg(BC, 0);
 //			SETFLAG(N, 1);
@@ -2427,7 +2427,7 @@ FASTWORK simz80(FASTREG PC)
 			temp = hreg(BC);
 			if (temp == 0) temp |= 0x100;
 			do {
-				Output(BC, GetBYTE(HL)); --HL; BC-=0x100;
+				Z80WriteIO(BC, GetBYTE(HL)); --HL; BC-=0x100;
 			} while (--temp);
 //			Sethreg(BC, 0);
 //			SETFLAG(N, 1);
