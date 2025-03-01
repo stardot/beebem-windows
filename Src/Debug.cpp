@@ -116,10 +116,10 @@ typedef std::vector<AddrInfo> MemoryMap;
 
 static MemoryMap MemoryMaps[17];
 
-INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
-
 std::deque<std::string> DebugHistory;
 int DebugHistoryIndex = 0;
+
+INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 static void DebugParseCommand(char *command);
 static void DebugWriteMem(int addr, bool host, unsigned char data);
@@ -2402,28 +2402,29 @@ static bool DebugCmdGoto(const char* args)
 
 static bool DebugCmdFile(const char* args)
 {
-	char mode;
-	int addr = 0;
-	unsigned char buffer[MAX_BUFFER];
-	int count = MAX_BUFFER;
-	char filename[MAX_PATH];
-	memset(filename, 0, MAX_PATH);
+	char Mode;
+	int StartAddress = 0;
+	unsigned char Buffer[MAX_BUFFER];
+	int Count = MAX_BUFFER;
+	char FileName[MAX_PATH];
+	memset(FileName, 0, MAX_PATH);
 
-	int result = sscanf(args,"%c %x %u %259c", &mode, &addr, &count, filename);
+	int Result = sscanf(args,"%c %x %u %259c", &Mode, &StartAddress, &Count, FileName);
 
-	if (result < 3) {
-		sscanf(args,"%c %x %259c", &mode, &addr, filename);
+	if (Result < 3)
+	{
+		sscanf(args,"%c %x %259c", &Mode, &StartAddress, FileName);
 	}
 
-	mode = static_cast<char>(tolower(mode));
+	Mode = static_cast<char>(tolower(Mode));
 
-	if (filename[0] == '\0')
+	if (FileName[0] == '\0')
 	{
-		const char* filter = "Memory Dump Files (*.dat)\0*.dat\0" "All Files (*.*)\0*.*\0";
+		const char* Filter = "Memory Dump Files (*.dat)\0*.dat\0" "All Files (*.*)\0*.*\0";
 
-		FileDialog Dialog(hwndDebug, filename, MAX_PATH, nullptr, filter);
+		FileDialog Dialog(hwndDebug, FileName, MAX_PATH, nullptr, Filter);
 
-		if (mode == 'w')
+		if (Mode == 'w')
 		{
 			if (!Dialog.Save())
 			{
@@ -2431,9 +2432,9 @@ static bool DebugCmdFile(const char* args)
 			}
 
 			// Add a file extension if the user did not specify one
-			if (strchr(filename, '.') == nullptr)
+			if (strchr(FileName, '.') == nullptr)
 			{
-				strcat(filename, ".dat");
+				strcat(FileName, ".dat");
 			}
 		}
 		else
@@ -2445,55 +2446,78 @@ static bool DebugCmdFile(const char* args)
 		}
 	}
 
-	if (filename[0] != '\0')
+	if (FileName[0] != '\0')
 	{
-		addr &= 0xFFFF;
+		StartAddress &= 0xFFFF;
 
-		if (mode == 'r')
+		if (Mode == 'r')
 		{
-			FILE *fd = fopen(filename, "rb");
-			if (fd)
+			FILE *pFile = fopen(FileName, "rb");
+
+			if (pFile != nullptr)
 			{
-				if(count > MAX_BUFFER)
-					count = MAX_BUFFER;
-				count = (int)fread(buffer, 1, count, fd);
-				fclose(fd);
+				if (Count > MAX_BUFFER)
+				{
+					Count = MAX_BUFFER;
+				}
 
-				for (int i = 0; i < count; ++i)
-					BeebWriteMem((addr + i) & 0xffff, buffer[i] & 0xff);
+				size_t BytesRead = fread(Buffer, 1, Count, pFile);
 
-				DebugDisplayInfoF("Read %d bytes from %s to address 0x%04X", count,filename, addr);
+				fclose(pFile);
+
+				size_t i = 0;
+				int Address = StartAddress;
+
+				while (i < BytesRead && Address < 0x10000)
+				{
+					BeebWriteMem(Address, Buffer[i]);
+
+					i++;
+					Address++;
+				}
+
+				DebugDisplayInfoF("Read %u bytes from %s to address 0x%04X", i, FileName, StartAddress);
 
 				DebugUpdateWatches(true);
 			}
 			else
 			{
-				DebugDisplayInfoF("Failed to open file: %s", filename);
+				DebugDisplayInfoF("Failed to open file: %s", FileName);
 			}
 
 			return true;
 		}
-		else if (mode == 'w')
+		else if (Mode == 'w')
 		{
-			FILE *fd = fopen(filename, "wb");
+			FILE *pFile = fopen(FileName, "wb");
 
-			if (fd)
+			if (pFile != nullptr)
 			{
-				if (count + addr > MAX_BUFFER)
+				if (StartAddress + Count > MAX_BUFFER)
 				{
-					count = MAX_BUFFER - addr;
+					Count = MAX_BUFFER - StartAddress;
 				}
 
-				for (int i = 0; i < count; ++i)
-					buffer[i] = DebugReadMem((addr + i) & 0xffff, true);
+				int i = 0;
+				int Address = StartAddress;
 
-				count = (int)fwrite(buffer, 1, count, fd);
-				fclose(fd);
-				DebugDisplayInfoF("Wrote %d bytes from address 0x%04X to %s", count, addr,filename);
+				while (i < Count && Address < 0x10000)
+				{
+					Buffer[i] = DebugReadMem(Address, true);
+
+					i++;
+					Address++;
+				}
+
+				size_t BytesWritten = fwrite(Buffer, 1, i, pFile);
+
+				fclose(pFile);
+
+				DebugDisplayInfoF("Wrote %u bytes from address 0x%04X to %s", BytesWritten, StartAddress, FileName);
 			}
 			else
 			{
-				DebugDisplayInfoF("Failed to open file: %s", filename);
+				DebugDisplayInfoF("Failed to open file: %s", FileName);
 			}
 
 			return true;
