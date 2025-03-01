@@ -121,7 +121,7 @@ int DebugHistoryIndex = 0;
 
 INT_PTR CALLBACK DebugDlgProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-static void DebugParseCommand(char *command);
+static void DebugParseCommand(const char *command);
 static void DebugWriteMem(int addr, bool host, unsigned char data);
 static int DebugDisassembleCommand(int addr, int count, bool host);
 static void DebugMemoryDump(int addr, int count, bool host);
@@ -130,7 +130,7 @@ static void DebugToggleRun();
 static void DebugUpdateWatches(bool all);
 static bool DebugLookupAddress(int addr, AddrInfo* addrInfo);
 static void DebugHistoryMove(int delta);
-static void DebugHistoryAdd(char* command);
+static void DebugHistoryAdd(const char* command);
 static void DebugSetCommandString(const char* str);
 static void DebugChompString(char* str);
 
@@ -2083,26 +2083,23 @@ void DebugLoadLabels(const char* filename)
 	}
 }
 
-void DebugRunScript(const char* filename)
+void DebugRunScript(const char* FileName)
 {
-	FILE *infile = fopen(filename,"r");
-	if (infile == NULL)
+	std::ifstream Input(FileName);
+
+	if (!Input)
 	{
-		DebugDisplayInfoF("Failed to read script file:\n  %s", filename);
+		DebugDisplayInfoF("Failed to read script file:\n  %s", FileName);
+		return;
 	}
-	else
+
+	DebugDisplayInfoF("Running script %s", FileName);
+
+	std::string Line;
+
+	while (std::getline(Input, Line))
 	{
-		DebugDisplayInfoF("Running script %s",filename);
-
-		char buf[1024];
-
-		while(fgets(buf, _countof(buf), infile) != NULL)
-		{
-			DebugChompString(buf);
-			if(strlen(buf) > 0)
-				DebugParseCommand(buf);
-		}
-		fclose(infile);
+		DebugParseCommand(Line.c_str());
 	}
 }
 
@@ -2226,7 +2223,7 @@ int DebugParseLabel(char *label)
 	return it != Labels.end() ? it->addr : -1;
 }
 
-static void DebugHistoryAdd(char *command)
+static void DebugHistoryAdd(const char *command)
 {
 	// Do nothing if this is the same as the last command
 
@@ -2293,76 +2290,92 @@ static void DebugSetCommandString(const char* str)
 	}
 }
 
-static void DebugParseCommand(char *command)
+static void DebugParseCommand(const char *command)
 {
-	char label[65], addrStr[6];
-	char info[MAX_PATH + 100];
-
-	while(command[0] == '\n' || command[0] == '\r' || command[0] == '\t' || command[0] == ' ')
+	while (isspace(command[0]))
+	{
 		command++;
+	}
 
 	if (command[0] == '\0' || command[0] == '/' || command[0] == ';' || command[0] == '#')
+	{
 		return;
+	}
 
 	DebugHistoryAdd(command);
 
+	char info[MAX_PATH + 100];
 	info[0] = '\0';
-	char *args = strchr(command, ' ');
-	if(args == NULL)
+
+	const char *p = command;
+
+	std::string cmd;
+
+	while (!isspace(*p) && *p != '\0')
 	{
-		args = "";
+		cmd.push_back(*p);
+		p++;
 	}
-	else
+
+	const char *args = p;
+
+	// Resolve labels:
+	while (args[0] != '\0')
 	{
-		char* commandEnd = args;
-		// Resolve labels:
-		while(args[0] != '\0')
+		if (isspace(args[0]) && args[1] == '.')
 		{
-			if(args[0] == ' ' && args[1] == '.')
+			char label[65];
+
+			if (sscanf(&args[2], "%64s", label) == 1)
 			{
-				if(sscanf(&args[2], "%64s", label) == 1)
+				// Try to resolve label:
+				int addr = DebugParseLabel(label);
+
+				if (addr == -1)
 				{
-					// Try to resolve label:
-					int addr = DebugParseLabel(label);
-					if(addr == -1)
-					{
-						DebugDisplayInfoF("Error: Label %s not found", label);
-						return;
-					}
-					sprintf(addrStr, " %04X", addr);
-					strncat(info, addrStr, _countof(addrStr));
-					args += strnlen(label,_countof(label)) + 1;
+					DebugDisplayInfoF("Error: Label %s not found", label);
+					return;
 				}
+
+				char addrStr[6];
+				sprintf(addrStr, " %04X", addr);
+				strncat(info, addrStr, _countof(addrStr));
+				args += strnlen(label,_countof(label)) + 1;
 			}
-			else
-			{
-				size_t end = strnlen(info, _countof(info));
-				info[end] = args[0];
-				info[end+1] = '\0';
-			}
-			args++;
+		}
+		else
+		{
+			size_t end = strnlen(info, _countof(info));
+			info[end] = args[0];
+			info[end + 1] = '\0';
 		}
 
-		args = info;
-		while(args[0] == ' ')
-			args++;
+		args++;
+	}
 
-		commandEnd[0] = '\0';
+	args = info;
+
+	while (isspace(args[0]))
+	{
+		args++;
 	}
 
 	SetDlgItemText(hwndDebug, IDC_DEBUGCOMMAND, "");
 
-	for(int i = 0; i < _countof(DebugCmdTable); i++)
+	for (int i = 0; i < _countof(DebugCmdTable); i++)
 	{
-		if(_stricmp(DebugCmdTable[i].name, command) == 0)
+		if (_stricmp(DebugCmdTable[i].name, cmd.c_str()) == 0)
 		{
-			if(!DebugCmdTable[i].handler(args))
+			if (!DebugCmdTable[i].handler(args))
+			{
 				DebugCmdHelp(command);
+			}
+
 			return;
 		}
 	}
 
-	DebugDisplayInfoF("Invalid command %s - try 'help'",command);
+	DebugDisplayInfoF("Invalid command %s - try 'help'", command);
 }
 
 /**************************************************************
