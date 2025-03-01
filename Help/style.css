@@ -60,6 +60,10 @@ main table td {
     padding: 0.2em 0.4em 0.2em 0.4em;
 }
 
+main table.debugger td:nth-child(1) {
+    white-space: nowrap;
+}
+
 main figure {
     text-align: center;
 }

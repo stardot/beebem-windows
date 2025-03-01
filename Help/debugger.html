@@ -128,12 +128,6 @@
       </table>
 
       <p>
-        To get a list of the debug commands available type ? into the
-        <span class="ui">Execute Command</span> box. Note that all values are
-        specified in hex!
-      </p>
-
-      <p>
         The disassembler shows the following information:
       </p>
 
@@ -144,6 +138,198 @@
       <p>
         Parasite instructions are shifted right so it's easier to follow both
         host and parasite when debugging tube code.
+      </p>
+
+      <h2>Debugger Commands</h2>
+
+      <p>
+        Parameters in <span class="cmd">[]</span> are optional.
+        <span class="cmd">p</span> can be specified in some commands to specify
+        the parasite processor. Words preceded with a <span class="cmd">.</span>
+        are interpreted as labels and may be used in place of addresses.
+      </p>
+
+
+      <table class="debugger">
+        <tr>
+          <th>Command</th>
+          <th>Aliases</th>
+          <th>Description</th>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">breakpoint &lt;start&gt;[-&lt;end&gt;] [&lt;name&gt;]</span></td>
+          <td><span class="cmd">b</span>, <span class="cmd">bp</span></td>
+          <td>
+            Set or clear a breakpoint or break range
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">labels &lt;load|show&gt; [filename]</span></td>
+          <td><span class="cmd">l</span></td>
+          <td>
+            Load labels from VICE file, or display known labels
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">help &lt;item&gt;</span></td>
+          <td><span class="cmd">?</span>, <span class="cmd">q</span></td>
+          <td>
+            Display help for the specified command or memory address 
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">break</span></td>
+          <td><span class="cmd">.</span></td>
+          <td>
+            Break or continue
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">set &lt;option&gt; &lt;on|off&gt; </span></td>
+          <td></td>
+          <td>
+            Turn various UI checkboxes on or off. The <span class="cmd">option</span>
+            parameter should be one of the following:
+            <span class="cmd">host</span>,
+            <span class="cmd">parasite</span>,
+            <span class="cmd">rom</span>,
+            <span class="cmd">os</span>,
+            <span class="cmd">endian</span>,
+            <span class="cmd">breakpoints</span>,
+            <span class="cmd">decimal</span>,
+            <span class="cmd">brk</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">next [&lt;count&gt;]</span></td>
+          <td><span class="cmd">n</span></td>
+          <td>
+            Execute the specified number instructions, default 1
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">over</span></td>
+          <td><span class="cmd">o</span></td>
+          <td>
+            Step over JSR (host only)
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">peek [p] [&lt;start&gt;] [&lt;count&gt;]</span></td>
+          <td><span class="cmd">m</span></td>
+          <td>
+            Dump memory to the console
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">code [p] [&lt;start&gt;] [&lt;count&gt;]</span></td>
+          <td><span class="cmd">d</span></td>
+          <td>
+            Disassemble the specified memory range
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">watch [p] &lt;addr&gt; [&lt;b|w|d&gt;] [&lt;name&gt;]</span></td>
+          <td><span class="cmd">e</span></td>
+          <td>
+            Set or clear a byte, word, or dword memory watch at a given address
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">state &lt;device&gt;</span></td>
+          <td><span class="cmd">s</span></td>
+          <td>
+            Display device state. The <span class="cmd">device</span> option is
+            one of:
+            <span class="cmd">v</span> (video),
+            <span class="cmd">u</span> (user VIA),
+            <span class="cmd">s</span> (system VIA),
+            <span class="cmd">e</span> (serial),
+            <span class="cmd">t</span> (Tube),
+            <span class="cmd">m</span> (memory),
+            <span class="cmd">r</span> (ROMs)
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">save [&lt;count&gt;] [&lt;filename&gt;]</span></td>
+          <td><span class="cmd">w</span></td>
+          <td>
+            Write console lines to file. If <span class="cmd">filename</span>
+            is not given, a file prompt is shown
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">poke [p] &lt;start&gt; &lt;byte&gt; [&lt;byte&gt; ...]</span></td>
+          <td><span class="cmd">c</span></td>
+          <td>
+            Write bytes to memory
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">goto [p] &lt;addr&gt;</span></td>
+          <td><span class="cmd">g</span></td>
+          <td>
+            Jump to address
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">file &lt;r|w&gt; &lt;addr&gt; [&lt;count&gt;] [&lt;filename&gt;]</span></td>
+          <td><span class="cmd">f</span></td>
+          <td>
+            Read or write memory at address from/to file. If <span
+            class="cmd">filename</span> is not given, a file prompt is shown
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">echo &lt;string&gt;</span></td>
+          <td><span class="cmd">!</span></td>
+          <td>
+            Write the given string to the console
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">script [&lt;filename&gt;]</span></td>
+          <td></td>
+          <td>
+            Execute a debugger script. If <span
+            class="cmd">filename</span> is not given, a file prompt is shown
+          </td>
+        </tr>
+
+        <tr>
+          <td><span class="cmd">clear</span></td>
+          <td></td>
+          <td>
+            Clear the console
+          </td>
+        </tr>
+      </table>
+
+      <h2>Scripting</h2>
+
+      <p>
+        Batches of debugger commands can be executed from script files, using
+        the <span class="cmd">script</span> command or the
+        <a href="commandline.html"><span class="cmd">-DebugScript</span></a>
+        command line option. Script files can contain comments, preceded by
+        either <span class="cmd">#</span> or <span class="cmd">;</span>.
       </p>
     </main>
 
