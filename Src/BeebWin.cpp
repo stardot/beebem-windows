@@ -1269,6 +1269,20 @@ bool BeebWin::CreateBeebWindow()
 
 /****************************************************************************/
 
+DWORD BeebWin::SetWindowStyle(DWORD StylesToAdd, DWORD StylesToClear)
+{
+	DWORD Style = GetWindowLong(m_hWnd, GWL_STYLE);
+
+	Style &= ~StylesToClear;
+	Style |= StylesToAdd;
+
+	SetWindowLong(m_hWnd, GWL_STYLE, Style);
+
+	return Style;
+}
+
+/****************************************************************************/
+
 void BeebWin::FlashWindow()
 {
 	::FlashWindow(m_hWnd, TRUE);
@@ -3306,10 +3320,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 			m_YWinSize = m_YDXSize;
 			CalcAspectRatioAdjustment(m_XDXSize, m_YDXSize);
 
-			DWORD dwStyle = GetWindowLong(m_hWnd, GWL_STYLE);
-			dwStyle &= ~WS_OVERLAPPEDWINDOW;
-			dwStyle |= WS_POPUP;
-			SetWindowLong(m_hWnd, GWL_STYLE, dwStyle);
+			SetWindowStyle(WS_POPUP, WS_OVERLAPPEDWINDOW);
 
 			if (m_DXInit)
 			{
@@ -3320,10 +3331,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		{
 			CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
 
-			DWORD dwStyle = GetWindowLong(m_hWnd, GWL_STYLE);
-			dwStyle &= ~WS_POPUP;
-			dwStyle |= WS_OVERLAPPEDWINDOW;
-			SetWindowLong(m_hWnd, GWL_STYLE, dwStyle);
+			SetWindowStyle(WS_OVERLAPPEDWINDOW, WS_POPUP);
 
 			ShowWindow(m_hWnd, SW_MAXIMIZE);
 		}
@@ -3350,13 +3358,10 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		m_XWinSize = xs;
 		m_YWinSize = ys;
 
-		DWORD dwStyle = GetWindowLong(m_hWnd, GWL_STYLE);
-		dwStyle &= ~WS_POPUP;
-		dwStyle |= WS_OVERLAPPEDWINDOW;
-		SetWindowLong(m_hWnd, GWL_STYLE, dwStyle);
+		DWORD Style = SetWindowStyle(WS_OVERLAPPEDWINDOW, WS_POPUP);
 
 		RECT Rect{ 0, 0, m_XWinSize, m_YWinSize };
-		AdjustWindowRect(&Rect, dwStyle, TRUE);
+		AdjustWindowRect(&Rect, Style, TRUE);
 
 		SetWindowPos(m_hWnd,
 		             HWND_TOP,

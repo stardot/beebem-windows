@@ -385,8 +385,10 @@ public:
 	void LoadEmuUEF(FILE *SUEF,int Version);
 
 	bool InitClass();
-	void UpdateOptionsMenu();
 	bool CreateBeebWindow();
+	DWORD SetWindowStyle(DWORD StylesToAdd, DWORD StylesToClear);
+
+	void UpdateOptionsMenu();
 	void FlashWindow();
 	void CreateBitmap(void);
 	void InitMenu();
