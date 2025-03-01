@@ -684,7 +684,7 @@ void BeebWin::Shutdown()
 	{
 		char FileName[MAX_PATH];
 		strcpy(FileName, m_UserDataPath);
-		strcat(FileName, "InstructionCounts.txt");
+		AppendPath(FileName, "InstructionCounts.txt");
 
 		WriteInstructionCounts(FileName);
 	}

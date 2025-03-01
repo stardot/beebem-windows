@@ -458,7 +458,7 @@ void BeebWin::SelectFDC()
 	const char* filter = "FDC Extension Board Plugin DLL (*.dll)\0*.dll\0";
 
 	strcpy(DefaultPath, m_AppPath);
-	strcat(DefaultPath, "Hardware");
+	AppendPath(DefaultPath, "Hardware");
 
 	FileDialog Dialog(m_hWnd, FileName, sizeof(FileName), DefaultPath, filter);
 
@@ -2212,13 +2212,13 @@ void BeebWin::CaptureBitmap(int SourceX,
 
 		char AutoName[MAX_PATH];
 
-		sprintf(AutoName, "\\BeebEm_%04d%02d%02d_%02d%02d%02d_%d%s",
+		sprintf(AutoName, "BeebEm_%04d%02d%02d_%02d%02d%02d_%d%s",
 		        systemTime.wYear, systemTime.wMonth,  systemTime.wDay,
 		        systemTime.wHour, systemTime.wMinute, systemTime.wSecond,
 		        systemTime.wMilliseconds / 100,
 		        fileExt);
 
-		strcat(m_CaptureFileName, AutoName);
+		AppendPath(m_CaptureFileName, AutoName);
 	}
 
 	int BitmapWidth, BitmapHeight;
