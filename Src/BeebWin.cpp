@@ -1292,26 +1292,26 @@ void BeebWin::FlashWindow()
 
 /****************************************************************************/
 
-void BeebWin::ShowMenu(bool on)
+void BeebWin::ShowMenu(bool Show)
 {
 	if (m_DisableMenu)
 	{
-		on = false;
+		Show = false;
 	}
 
-	if (on != m_MenuOn)
+	if (Show != m_MenuOn)
 	{
-		SetMenu(m_hWnd, on ? m_hMenu : nullptr);
+		SetMenu(m_hWnd, Show ? m_hMenu : nullptr);
 	}
 
-	m_MenuOn = on;
+	m_MenuOn = Show;
 }
 
-void BeebWin::HideMenu(bool hide)
+void BeebWin::HideMenu(bool Hide)
 {
 	if (m_HideMenuEnabled)
 	{
-		ShowMenu(!hide);
+		ShowMenu(!Hide);
 	}
 }
 
@@ -4455,6 +4455,8 @@ void BeebWin::HandleCommand(UINT MenuID)
 	case IDM_HIDEMENU:
 		m_HideMenuEnabled = !m_HideMenuEnabled;
 		CheckMenuItem(IDM_HIDEMENU, m_HideMenuEnabled);
+
+		HideMenu(m_HideMenuEnabled);
 		break;
 
 	case IDM_RED_LEDS:

@@ -341,8 +341,8 @@ public:
 	void EditRomConfig();
 	void OpenUserKeyboardDialog();
 	void UserKeyboardDialogClosed();
-	void ShowMenu(bool on);
-	void HideMenu(bool hide);
+	void ShowMenu(bool Show);
+	void HideMenu(bool Hide);
 	bool IsFullScreen() const { return m_FullScreen; }
 	void ResetTiming(void);
 	int TranslateKey(int vkey, bool keyUp, int &row, int &col);
