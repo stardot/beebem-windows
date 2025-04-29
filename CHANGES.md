@@ -71,6 +71,9 @@ Andrew Hague
     been paused.
   - Added a dialog box to configure the file names or IP address and port
     to connect to.
+  - The emulated teletext adapter now continues to update its state at the
+    correct frame rate so that teletext sockets are serviced correctly when
+	a source is disabled.
 * The "Freeze when inactive" option is now automatically switched off
   when opening the Debugger window, to ensure the emulation keeps running
   while the Debugger window is active.
@@ -88,6 +91,8 @@ Andrew Hague
   enter a loop continually resetting the screen mode on entering full screen.
 * Fixed sound register reinitialisation after changing the sound sample rate.
 * Fixed sound muting when the BeebEm window loses focus.
+* Fixed BeebEm window so that it's no longer always on top after exiting
+  full screen mode.
 * Fixed teletext mode character alignment.
 * Fixed printing to the Windows clipboard, which would previously cause the
   emulator to slow down or stall.
