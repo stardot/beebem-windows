@@ -320,7 +320,7 @@ void TeletextWrite(int Address, int Value)
 unsigned char TeletextRead(int Address)
 {
     if (!TeletextAdapterEnabled)
-        return 0xff;
+        return 0x00;
 
     unsigned char data = 0x00;
 
