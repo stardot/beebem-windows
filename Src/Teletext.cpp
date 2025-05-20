@@ -372,6 +372,13 @@ void TeletextAdapterUpdate()
     {
         default:
         case TTXFIELD: // transition to FSYNC state
+            if ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] == INVALID_SOCKET) || (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] == nullptr))
+            {
+                // no teletext source - consider channel de-tuned
+                IncTrigger(40000, TeletextAdapterTrigger); // come back and try again next field
+                break;
+            }
+            
             // (SAA5030 FS goes high around 40us after the true field sync point)
             TeletextState = TTXFSYNC;
             TeletextStatus |= 0x10; // latch FSYNC
