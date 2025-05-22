@@ -328,7 +328,9 @@ unsigned char TeletextRead(int Address)
     {
     case 0x00:          // Status Register
         data = TeletextStatus;
-        if (TeletextState == TTXDEW)
+        if (TeletextState == TTXDEW && 
+            ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
+            (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr)))
             data |= 0x20; // raise DEW bit
         break;
 
@@ -374,17 +376,29 @@ void TeletextAdapterUpdate()
         case TTXFIELD: // transition to FSYNC state
             // (SAA5030 FS goes high around 40us after the true field sync point)
             TeletextState = TTXFSYNC;
-            TeletextStatus |= 0x10; // latch FSYNC
+            
+            if ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
+                (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr))
+            {
+                TeletextStatus |= 0x10; // latch FSYNC
+            }
+            
             // DEW goes high approximately 290us after FSYNC on an even field, or 320us after FSYNC on an odd field
             IncTrigger((TeletextCurrentField&1)?640:580, TeletextAdapterTrigger); // wait appropriately depending on field
             break;
 
         case TTXFSYNC: // transition to DEW state
-            TeletextStatus &= 0xBF;
-            TeletextStatus |= ((TeletextStatus & 0x80) >> 1); // latch INT into DOR
+            TeletextState = TTXDEW;
+            
+            if ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
+                (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr))
+            {
+                TeletextStatus &= 0xBF;
+                TeletextStatus |= ((TeletextStatus & 0x80) >> 1); // latch INT into DOR
+            }
+            
             // the DEW signal remains high for 17 video lines (17 * 128 cycles)
             IncTrigger(2176, TeletextAdapterTrigger); // wait for approximately 17 video lines
-            TeletextState = TTXDEW;
 
             if (TeletextSource == TeletextSourceType::IP)
             {
@@ -522,23 +536,28 @@ void TeletextAdapterUpdate()
                     }
                 }
 
-                if (TeletextEnable)
+                if (TeletextSocket[TeletextChannel] != INVALID_SOCKET)
                 {
-                    // Copy received packets from the TeletextSocketBuff to the teletext adapter's memory
-                    for (int i = 0; i < 16; ++i)
+                    if (TeletextEnable)
                     {
-                        int j = i + ((TeletextCurrentField&1)?16:0); // offset odd fields within frame buffer
-                        if (TeletextSocketBuff[TeletextChannel][j * 42] != 0)
+                        // Copy received packets from the TeletextSocketBuff to the teletext adapter's memory
+                        for (int i = 0; i < 16; ++i)
                         {
-                            row[i][0] = 0x27;
-                            memcpy(&(row[i][1]), TeletextSocketBuff[TeletextChannel] + j * 42, 42);
+                            int j = i + ((TeletextCurrentField&1)?16:0); // offset odd fields within frame buffer
+                            if (TeletextSocketBuff[TeletextChannel][j * 42] != 0)
+                            {
+                                row[i][0] = 0x27;
+                                memcpy(&(row[i][1]), TeletextSocketBuff[TeletextChannel] + j * 42, 42);
+                            }
                         }
                     }
+                    rowPtr = 0x00;
+                    colPtr = 0x00;
                 }
 
                 TeletextCurrentField ^= 1; // toggle field
             }
-            else
+            else // TeletextSourceType::File
             {
                 char buff[16 * 43] = {0};
 
@@ -552,38 +571,45 @@ void TeletextAdapterUpdate()
                     fseek(TeletextFile[TeletextChannel], TeletextCurrentField * TELETEXT_FIELD_SIZE + 3L * 43L, SEEK_SET);
 
                     fread(buff, 16 * 43, 1, TeletextFile[TeletextChannel]);
-                }
 
-                if (TeletextEnable)
-                {
-                    for (int i = 0; i < 16; ++i)
+                    if (TeletextEnable)
                     {
-                        if (buff[i*43] != 0)
+                        for (int i = 0; i < 16; ++i)
                         {
-                            row[i][0] = 0x27;
-                            memcpy(&(row[i][1]), buff + i * 43, 42);
+                            if (buff[i*43] != 0)
+                            {
+                                row[i][0] = 0x27;
+                                memcpy(&(row[i][1]), buff + i * 43, 42);
+                            }
                         }
                     }
+
+                    
+                    
+                    rowPtr = 0x00;
+                    colPtr = 0x00;
                 }
 
                 TeletextCurrentField++;
             }
-
-            rowPtr = 0x00;
-            colPtr = 0x00;
             break;
 
         case TTXDEW: // transition to field state
-            TeletextStatus |= 0x80; // latch INT
+            TeletextState = TTXFIELD;
+            
+            if ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
+                (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr))
+            {
+                TeletextStatus |= 0x80; // latch INT
+                if (TeletextInts)
+                    intStatus |= 1 << teletext; // raise the interrupt
+            }
+            
             // FSYNC raises every 20000us. Field duration is 40000 cycles minus 17 lines of DEW and the delay between start of FSYNC and DEW
             // even: 40000 - ((128 * 17) - 640) = 37244
             // odd:  40000 - ((128 * 17) - 580) = 37184
             // TeletextCurrentField has updated in TTXDEW!
             IncTrigger((!(TeletextCurrentField&1))?37184:37244, TeletextAdapterTrigger);
-            TeletextState = TTXFIELD;
-
-            if (TeletextInts)
-                intStatus |= 1 << teletext; // raise the interrupt
             break;
     }
 }
