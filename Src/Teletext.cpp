@@ -550,9 +550,9 @@ void TeletextAdapterUpdate()
                                 memcpy(&(row[i][1]), TeletextSocketBuff[TeletextChannel] + j * 42, 42);
                             }
                         }
+                        rowPtr = 0x00;
+                        colPtr = 0x00;
                     }
-                    rowPtr = 0x00;
-                    colPtr = 0x00;
                 }
 
                 TeletextCurrentField ^= 1; // toggle field
@@ -582,12 +582,9 @@ void TeletextAdapterUpdate()
                                 memcpy(&(row[i][1]), buff + i * 43, 42);
                             }
                         }
+                        rowPtr = 0x00;
+                        colPtr = 0x00;
                     }
-
-                    
-                    
-                    rowPtr = 0x00;
-                    colPtr = 0x00;
                 }
 
                 TeletextCurrentField++;
