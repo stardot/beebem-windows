@@ -97,9 +97,6 @@ static char TeletextSocketBuff[4][672*2] = {0}; // hold one frame of t42 data (2
 
 /*--------------------------------------------------------------------------*/
 
-static bool TeletextConnect(int ch);
-static void CloseTeletextSocket(int Index);
-
 bool ConnectSocket(SOCKET Socket, const sockaddr* Name, int Length)
 {
     #ifdef WIN32
@@ -118,6 +115,15 @@ bool ConnectSocket(SOCKET Socket, const sockaddr* Name, int Length)
     return connect(Socket, Name, Length) == EAGAIN;
 
     #endif
+}
+
+/*--------------------------------------------------------------------------*/
+
+static void CloseTeletextSocket(int Index)
+{
+    CloseSocket(TeletextSocket[Index]);
+    TeletextSocket[Index] = INVALID_SOCKET;
+    TeletextConnectTimeout[Index] = 0;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -173,15 +179,6 @@ static bool TeletextConnect(int ch)
     TeletextConnectTimeout[ch] = 50; // allow a full second
 
     return true;
-}
-
-/*--------------------------------------------------------------------------*/
-
-static void CloseTeletextSocket(int Index)
-{
-    CloseSocket(TeletextSocket[Index]);
-    TeletextSocket[Index] = INVALID_SOCKET;
-    TeletextConnectTimeout[Index] = 0;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -268,6 +265,14 @@ void TeletextClose()
 
 /*--------------------------------------------------------------------------*/
 
+static bool IsTeletextChannelOpen(int Channel)
+{
+    return (TeletextSource == TeletextSourceType::IP && TeletextSocket[Channel] != INVALID_SOCKET) ||
+           (TeletextSource == TeletextSourceType::File && TeletextFile[Channel] != nullptr);
+}
+
+/*--------------------------------------------------------------------------*/
+
 void TeletextWrite(int Address, int Value)
 {
     if (!TeletextAdapterEnabled)
@@ -328,10 +333,11 @@ unsigned char TeletextRead(int Address)
     {
     case 0x00:          // Status Register
         data = TeletextStatus;
-        if (TeletextState == TTXDEW && 
-            ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
-            (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr)))
+
+        if (TeletextState == TTXDEW && IsTeletextChannelOpen(TeletextChannel))
+        {
             data |= 0x20; // raise DEW bit
+        }
         break;
 
     case 0x01:          // Row Register
@@ -377,8 +383,7 @@ void TeletextAdapterUpdate()
             // (SAA5030 FS goes high around 40us after the true field sync point)
             TeletextState = TTXFSYNC;
             
-            if ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
-                (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr))
+            if (IsTeletextChannelOpen(TeletextChannel))
             {
                 TeletextStatus |= 0x10; // latch FSYNC
             }
@@ -390,8 +395,7 @@ void TeletextAdapterUpdate()
         case TTXFSYNC: // transition to DEW state
             TeletextState = TTXDEW;
             
-            if ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
-                (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr))
+            if (IsTeletextChannelOpen(TeletextChannel))
             {
                 TeletextStatus &= 0xBF;
                 TeletextStatus |= ((TeletextStatus & 0x80) >> 1); // latch INT into DOR
@@ -404,7 +408,7 @@ void TeletextAdapterUpdate()
             {
                 char tmpBuff[672*20]; // big enough to hold 20 fields of data
 
-                if (!(TeletextCurrentField&1)) // an even field
+                if (!(TeletextCurrentField & 1)) // an even field
                 {
                     for (int i = 0; i < TELETEXT_CHANNEL_COUNT; i++)
                     {
@@ -582,6 +586,7 @@ void TeletextAdapterUpdate()
                                 memcpy(&(row[i][1]), buff + i * 43, 42);
                             }
                         }
+
                         rowPtr = 0x00;
                         colPtr = 0x00;
                     }
@@ -594,10 +599,10 @@ void TeletextAdapterUpdate()
         case TTXDEW: // transition to field state
             TeletextState = TTXFIELD;
             
-            if ((TeletextSource == TeletextSourceType::IP && TeletextSocket[TeletextChannel] != INVALID_SOCKET) ||
-                (TeletextSource == TeletextSourceType::File && TeletextFile[TeletextChannel] != nullptr))
+            if (IsTeletextChannelOpen(TeletextChannel))
             {
                 TeletextStatus |= 0x80; // latch INT
+
                 if (TeletextInts)
                     intStatus |= 1 << teletext; // raise the interrupt
             }
@@ -606,7 +611,7 @@ void TeletextAdapterUpdate()
             // even: 40000 - ((128 * 17) - 640) = 37244
             // odd:  40000 - ((128 * 17) - 580) = 37184
             // TeletextCurrentField has updated in TTXDEW!
-            IncTrigger((!(TeletextCurrentField&1))?37184:37244, TeletextAdapterTrigger);
+            IncTrigger((!(TeletextCurrentField & 1)) ? 37184 : 37244, TeletextAdapterTrigger);
             break;
     }
 }
