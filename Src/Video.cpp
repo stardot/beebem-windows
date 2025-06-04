@@ -803,7 +803,8 @@ static void DoMode7Row(void) {
   unsigned int ForegroundPending=Foreground;
   unsigned int ActualForeground;
   unsigned int Background = 0;
-  bool Flash = false; // i.e. steady
+  bool Flash;
+  bool NextFlash = false; // i.e. steady
   bool DoubleHeight = false; // Normal
   bool Graphics;
   bool NextGraphics = false; // i.e. alpha
@@ -837,6 +838,7 @@ static void DoMode7Row(void) {
     HoldGraphChar=NextHoldGraphChar;
     HoldSeparated=NextHoldSeparated;
     Graphics=NextGraphics;
+    Flash=NextFlash;
     byte=CurrentPtr[CurrentChar];
     if (byte<32) byte+=128; // fix for naughty programs that use 7-bit control codes - Richard Gellman
     if ((byte & 32) && Graphics) {
@@ -859,19 +861,33 @@ static void DoMode7Row(void) {
           break;
 
         case 136: // Flash
-          Flash = true;
+          NextFlash = true;
           break;
 
         case 137: // Steady
+          NextFlash = false;
           Flash = false;
           break;
 
         case 140: // Normal height
+          if (DoubleHeight)
+          {
+              NextHoldGraphChar=32;
+              HoldGraphChar=NextHoldGraphChar;
+          }
           DoubleHeight = false;
           break;
 
         case 141: // Double height
           if (!CurrentLineBottom) NextLineBottom = true;
+
+          // This is supposed to be set-after, but the SAA5050 seems to do
+          // set-at, at least in terms of how it clears the HoldGraphChar.
+          if (!DoubleHeight)
+          {
+              NextHoldGraphChar=32;
+              HoldGraphChar=NextHoldGraphChar;
+          }
           DoubleHeight = true;
           break;
 
