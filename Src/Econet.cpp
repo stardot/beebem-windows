@@ -1602,12 +1602,15 @@ bool EconetPoll_real() // return NMI status
 								break;
 							}
 
-							if (sendto(SendSocket, (char *)&EconetTx, SendLen, 0,
-							           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
+							if (SendMe)
 							{
-								EconetError("Econet: Failed to send packet to station %d (%s port %u)",
-								            (unsigned int)network[i].station,
-								            IpAddressStr(network[i].inet_addr), (unsigned int)network[i].port);
+								if (sendto(SendSocket, (char *)&EconetTx, SendLen, 0,
+								           (SOCKADDR *)&RecvAddr, sizeof(RecvAddr)) == SOCKET_ERROR)
+								{
+									EconetError("Econet: Failed to send packet to station %d (%s port %u)",
+									            (unsigned int)network[i].station,
+									            IpAddressStr(network[i].inet_addr), (unsigned int)network[i].port);
+								}
 							}
 						}
 						else
