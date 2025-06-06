@@ -1802,7 +1802,7 @@ bool EconetPoll_real() // return NMI status
 											{
 												case AUNType::Broadcast:
 													BeebRx.eh.deststn = 255; // wasn't just for us..
-													BeebRx.eh.destnet = 0; // TODO check if not net 0.. does it make a difference?
+													BeebRx.eh.destnet = 255;
 													j = 6;
 													for (unsigned int i = 0; i < RetVal - sizeof(EconetRx.ah); i++, j++) {
 														BeebRx.buff[j] = EconetRx.buff[i];
