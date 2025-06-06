@@ -329,15 +329,24 @@ struct NetStn {
 	unsigned char station;
 };
 
+struct GATEWAYTAB {
+	unsigned long inet_addr;
+	unsigned char network;
+	u_short baseport;
+};
+
 static NetStn LastError;
 
 const int NETWORK_TABLE_LENGTH = 512; // total number of hosts we can know about
 const int AUN_TABLE_LENGTH = 128; // number of disparate network in AUNMap
+const int GATEWAY_TABLE_LENGTH = 128; // number of gateway bridges we can know
 static ECOLAN network[NETWORK_TABLE_LENGTH]; // list of my friends! :-)
 static AUNTAB aunnet[AUN_TABLE_LENGTH]; // AUNMap file for guess mode.
+static GATEWAYTAB gateway[GATEWAY_TABLE_LENGTH];
 
 static int networkp = 0; // how many friends do I have?
 static int aunnetp = 0;  // now many networks do i know about?
+static int gatewayp = 0; // how many gateway bridges do I know?
 static int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 is valid..
 
 static unsigned char irqcause;   // flag to indicate cause of irq sr1b7
@@ -787,30 +796,63 @@ static void ReadEconetConfigFile()
 
 		if (Tokens.size() == 4)
 		{
-			if (networkp < NETWORK_TABLE_LENGTH)
+			const std::string& Station = Tokens[1];
+			if (StrCaseCmp(Station.c_str(), "*") == 0)
 			{
-				try
+				if (gatewayp < GATEWAY_TABLE_LENGTH)
 				{
-					network[networkp].network   = (unsigned char)std::stoi(Tokens[0]);
-					network[networkp].station   = (unsigned char)std::stoi(Tokens[1]);
-					network[networkp].inet_addr = inet_addr(Tokens[2].c_str());
-					network[networkp].port      = (u_short)std::stoi(Tokens[3]);
-
-					DebugDisplayTraceF(DebugType::Econet, true,
-					                   "Econet: ConfigFile Net %i Stn %i IP %s Port %i",
-					                   network[networkp].network, network[networkp].station,
-					                   IpAddressStr(network[networkp].inet_addr), network[networkp].port);
-
-					networkp++;
+					try
+					{
+						unsigned long addr = inet_addr(Tokens[2].c_str());
+						if ((addr >> 24) == 0 || (addr >> 24) == 0xff)
+						{
+							EconetError("Invalid gateway ip in Econet config file:\n  %s", EconetCfgPath);
+						}
+						
+						gateway[gatewayp].network   = (unsigned char)std::stoi(Tokens[0]);
+						gateway[gatewayp].inet_addr = addr;
+						gateway[gatewayp].baseport  = (u_short)std::stoi(Tokens[3]);
+						DebugDisplayTraceF(DebugType::Econet, true,
+										   "Econet: ConfigFile Net %i IP %s Port %i",
+										   gateway[gatewayp].network, IpAddressStr(gateway[gatewayp].inet_addr), gateway[gatewayp].baseport);
+						gatewayp++;
+					}
+					catch (const std::exception&)
+					{
+						EconetError("Invalid value in Econet config file:\n  %s", EconetCfgPath);
+					}
 				}
-				catch (const std::exception&)
+				else
 				{
-					EconetError("Invalid value in Econet config file:\n  %s", EconetCfgPath);
+					EconetError("Too many gateway entries in Econet config file:\n  %s", EconetCfgPath);
 				}
 			}
-			else
+			else 
 			{
-				EconetError("Too many network entries in Econet config file:\n  %s", EconetCfgPath);
+				if (networkp < NETWORK_TABLE_LENGTH)
+				{
+					try
+					{
+						network[networkp].network   = (unsigned char)std::stoi(Tokens[0]);
+						network[networkp].station   = (unsigned char)std::stoi(Tokens[1]);
+						network[networkp].inet_addr = inet_addr(Tokens[2].c_str());
+						network[networkp].port      = (u_short)std::stoi(Tokens[3]);
+
+						DebugDisplayTraceF(DebugType::Econet, true,
+										   "Econet: ConfigFile Net %i Stn %i IP %s Port %i",
+										   network[networkp].network, network[networkp].station,
+										   IpAddressStr(network[networkp].inet_addr), network[networkp].port);
+							networkp++;
+						}
+						catch (const std::exception&)
+						{
+							EconetError("Invalid value in Econet config file:\n  %s", EconetCfgPath);
+						}
+				}
+				else
+				{
+					EconetError("Too many network entries in Econet config file:\n  %s", EconetCfgPath);
+				}
 			}
 		}
 		else if (Tokens.size() == 2)
@@ -869,6 +911,7 @@ static void ReadEconetConfigFile()
 	}
 
 	network[networkp].station = 0;
+	gateway[gatewayp].network = 0;
 }
 
 //---------------------------------------------------------------------------
@@ -959,6 +1002,9 @@ static void ReadNetwork()
 {
 	networkp = 0;
 	network[0].station = 0;
+	
+	gatewayp = 0;
+	gateway[0].network = 0;
 
 	ReadEconetConfigFile();
 
@@ -1390,38 +1436,57 @@ bool EconetPoll_real() // return NMI status
 							i++;
 						} while (i < networkp);
 
-						// guess address if not found in table
-						if (!SendMe && StrictAUNMode) // didn't find it and allowed to guess
+						if (!SendMe && BeebTx.eh.destnet > 0 && (networkp < NETWORK_TABLE_LENGTH))
 						{
-							//if (DebugEnabled)
-								DebugDisplayTrace(DebugType::Econet, true, "Econet: Send to unknown host; make assumptions & add entry!");
-
-							if (BeebTx.eh.destnet == 0 || BeebTx.eh.destnet == aunnet[myaunnet].network)
+							// address not found in table
+							// check for gateways for networks > 0
+							int j = 0;
+							do {
+								if (gateway[j].network == BeebTx.eh.destnet && BeebTx.eh.destnet)
+								{
+									network[i].inet_addr = gateway[j].inet_addr;
+									network[i].port = gateway[j].baseport + (BeebTx.eh.destnet * 256) + BeebTx.eh.deststn;
+									network[i].network = BeebTx.eh.destnet;
+									network[i].station = BeebTx.eh.deststn;
+									SendMe = true;
+									network[++networkp].station = 0;
+									break;
+								}
+								j++;
+							} while (j < gatewayp);
+							
+							if (!SendMe && StrictAUNMode) // didn't find it and allowed to guess
 							{
-								network[i].inet_addr = aunnet[myaunnet].inet_addr | (BeebTx.eh.deststn << 24);
-								network[i].port = DEFAULT_AUN_PORT;
-								network[i].network = BeebTx.eh.destnet;
-								network[i].station = BeebTx.eh.deststn;
-								SendMe = true;
-								network[++networkp].station = 0;
-							}
-							else
-							{
-								int j = 0;
+								//if (DebugEnabled)
+									DebugDisplayTrace(DebugType::Econet, true, "Econet: Send to unknown host; make assumptions & add entry!");
 
-								do {
-									if (aunnet[j].network == BeebTx.eh.destnet)
-									{
-										network[i].inet_addr = aunnet[j].inet_addr | (BeebTx.eh.deststn << 24);
-										network[i].port = DEFAULT_AUN_PORT;
-										network[i].network = BeebTx.eh.destnet;
-										network[i].station = BeebTx.eh.deststn;
-										SendMe = true;
-										network[++networkp].station = 0;
-										break;
-									}
-									j++;
-								} while (j < aunnetp);
+								if (BeebTx.eh.destnet == 0 || BeebTx.eh.destnet == aunnet[myaunnet].network)
+								{
+									network[i].inet_addr = aunnet[myaunnet].inet_addr | (BeebTx.eh.deststn << 24);
+									network[i].port = DEFAULT_AUN_PORT;
+									network[i].network = BeebTx.eh.destnet;
+									network[i].station = BeebTx.eh.deststn;
+									SendMe = true;
+									network[++networkp].station = 0;
+								}
+								else
+								{
+									int j = 0;
+
+									do {
+										if (aunnet[j].network == BeebTx.eh.destnet)
+										{
+											network[i].inet_addr = aunnet[j].inet_addr | (BeebTx.eh.deststn << 24);
+											network[i].port = DEFAULT_AUN_PORT;
+											network[i].network = BeebTx.eh.destnet;
+											network[i].station = BeebTx.eh.deststn;
+											SendMe = true;
+											network[++networkp].station = 0;
+											break;
+										}
+										j++;
+									} while (j < aunnetp);
+								}
 							}
 						}
 
