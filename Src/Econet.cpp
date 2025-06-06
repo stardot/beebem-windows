@@ -1381,7 +1381,7 @@ bool EconetPoll_real() // return NMI status
 							// aunnet wont be populated if not in aun mode, but we don't need to not check
 							// it because it won't matter..
 							if ((network[i].network == BeebTx.eh.destnet ||
-							     network[i].network == aunnet[myaunnet].network) &&
+							    (network[i].network == aunnet[myaunnet].network && network[i].network != 0)) &&
 							    network[i].station == BeebTx.eh.deststn)
 							{
 								SendMe = true;
