@@ -318,7 +318,7 @@ struct EconetPacket
 static EconetPacket BeebTx;
 static EconetPacket BeebRx;
 
-static unsigned char BeebTxCopy[6]; // size of LongEconetPacket structure
+static unsigned char BeebTxCopy[sizeof(LongEconetPacket)];
 
 // Holds data from Econet.cfg file
 struct ECOLAN { // What do we need to find a beeb?
