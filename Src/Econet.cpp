@@ -644,9 +644,14 @@ void EconetReset()
 								if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == 0)
 								{
 									myaunnet = j;
-									network[networkp].inet_addr = EconetListenIP = IN_ADDR(localaddr);
-									network[networkp].port = EconetListenPort = DEFAULT_AUN_PORT;
-									network[networkp].station = EconetStationID = IN_ADDR(localaddr) >> 24;
+
+									EconetListenIP = IN_ADDR(localaddr);
+									EconetListenPort = DEFAULT_AUN_PORT;
+									EconetStationID = IN_ADDR(localaddr) >> 24;
+
+									network[networkp].inet_addr = EconetListenIP;
+									network[networkp].port = EconetListenPort;
+									network[networkp].station = EconetStationID;
 									network[networkp].network = aunnet[j].network;
 									networkp++;
 								}
