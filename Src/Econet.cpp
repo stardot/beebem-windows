@@ -136,13 +136,22 @@ const unsigned char STATUS_REG2_RX_DATA_AVAILABLE              = 0x80;
 
 // Configuration Options.
 // These, among others, are overridden in Econet.cfg, see ReadNetwork()
+const bool DEFAULT_AUN_MODE = false;
+const bool DEFAULT_LEARN_MODE = false;
+const bool DEFAULT_STRICT_AUN_MODE = false;
+const bool DEFAULT_SINGLE_SOCKET = true;
+const int DEFAULT_FLAG_FILL_TIMEOUT = 500000;
+const int DEFAULT_SCOUT_ACK_TIMEOUT = 500;
+const unsigned int DEFAULT_TIME_BETWEEN_BYTES = 128;
+const unsigned int DEFAULT_FOUR_WAY_STAGE_TIMEOUT = 500000;
+const bool DEFAULT_MASSAGE_NETWORKS = false;
 
-static bool AUNMode = false; // Use AUN style networking
-static bool LearnMode = false; // Add receipts from unknown hosts to network table
-static bool StrictAUNMode = false; // Assume network ip=stn number when sending to unknown hosts
-static bool SingleSocket = true; // Use same socket for Send and receive
-static unsigned int FourWayStageTimeout = 500000;
-static bool MassageNetworks = false;  // massage network numbers on send/receive (add/sub 128)
+static bool AUNMode = DEFAULT_AUN_MODE; // Use AUN style networking
+static bool LearnMode = DEFAULT_LEARN_MODE; // Add receipts from unknown hosts to network table
+static bool StrictAUNMode = DEFAULT_STRICT_AUN_MODE; // Assume network ip=stn number when sending to unknown hosts
+static bool SingleSocket = DEFAULT_SINGLE_SOCKET; // Use same socket for Send and receive
+static unsigned int FourWayStageTimeout = DEFAULT_FOUR_WAY_STAGE_TIMEOUT;
+static bool MassageNetworks = DEFAULT_MASSAGE_NETWORKS; // Massage network numbers on send/receive (add/sub 128)
 
 static int inmask, outmask;
 
@@ -162,7 +171,7 @@ static const unsigned char powers[4] = { 1, 2, 4, 8 };
 // during data transmission - more than 5 are flags or errors)
 // 6854 datasheet has max clock frequency of 1.5MHz for the B version.
 // 64 cycles seems to be a bit fast for 'netmon' prog to keep up - set to 128.
-static unsigned int TimeBetweenBytes = 128;
+static unsigned int TimeBetweenBytes = DEFAULT_TIME_BETWEEN_BYTES;
 
 // Station Configuration settings:
 // You specify station number on command line.
@@ -361,9 +370,9 @@ char AUNMapPath[MAX_PATH];
 
 static bool FlagFillActive; // Flag fill state
 int EconetFlagFillTimeoutTrigger; // Trigger point for flag fill
-int EconetFlagFillTimeout = 500000; // Cycles for flag fill timeout // added cfg file to override this
+int EconetFlagFillTimeout = DEFAULT_FLAG_FILL_TIMEOUT; // Cycles for flag fill timeout // added cfg file to override this
 static int EconetSCACKtrigger; // Trigger point for scout ack
-static int EconetSCACKtimeout = 500; // Cycles to delay before sending ack to scout (aun mode only)
+static int EconetSCACKtimeout = DEFAULT_SCOUT_ACK_TIMEOUT; // Cycles to delay before sending ack to scout (aun mode only)
 static int Econet4Wtrigger;
 
 // Device and temp copy!
