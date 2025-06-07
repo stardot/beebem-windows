@@ -24,10 +24,10 @@ Boston, MA  02110-1301, USA.
 // Mike Wyatt - further development, Dec 2005
 // AUN by Rob Jun/Jul 2009
 //
-//
 // Search TODO for some issues that need addressing.
 //
-//
+// Resources:
+// * http://www.riscos.com/support/developers/prm/aun.html
 
 #include <windows.h>
 
@@ -146,7 +146,7 @@ const unsigned int DEFAULT_TIME_BETWEEN_BYTES = 128;
 const unsigned int DEFAULT_FOUR_WAY_STAGE_TIMEOUT = 500000;
 const bool DEFAULT_MASSAGE_NETWORKS = false;
 
-static bool AUNMode = DEFAULT_AUN_MODE; // Use AUN style networking
+static bool AUNMode = DEFAULT_AUN_MODE; // Use Acorn Universal Networking (AUN) style networking
 static bool LearnMode = DEFAULT_LEARN_MODE; // Add receipts from unknown hosts to network table
 static bool StrictAUNMode = DEFAULT_STRICT_AUN_MODE; // Assume network ip=stn number when sending to unknown hosts
 static bool SingleSocket = DEFAULT_SINGLE_SOCKET; // Use same socket for Send and receive
@@ -176,8 +176,8 @@ static unsigned int TimeBetweenBytes = DEFAULT_TIME_BETWEEN_BYTES;
 // Station Configuration settings:
 // You specify station number on command line.
 // This allows multiple different instances of the emulator to be run and
-// to communicate with each other.  Note that you STILL need to have them
-// all listed in Econet.cfg so each one knows where the other area.
+// to communicate with each other. Note that you STILL need to have them
+// all listed in Econet.cfg so each one knows where the others are.
 unsigned char EconetStationID = 0; // default Station ID
 static u_short EconetListenPort = 0; // default Listen port
 static unsigned long EconetListenIP = 0x0100007f;
@@ -190,15 +190,15 @@ const u_short DEFAULT_AUN_PORT = 32768;
 
 // Written in 2004:
 // we will be using Econet over Ethernet as per AUN,
-// however I've not got a real acorn ethernet machine to see how
-// it actually works!  The only details I can find is it is:
+// however I've not got a real Acorn ethernet machine to see how
+// it actually works! The only details I can find is it is:
 // "standard econet encpsulated in UDP to port 32768" and that
 // Addressing defaults to "1.0.net.stn" where net >= 128 for ethernet.
 // but can be overridden, so we won't worry about that.
 
 // 2009: Now I come back to this, I know the format ... :-)
 // and sure enough, it's pretty simple.
-// It's translating the different protocols that was harder..
+// It's translating the different protocols that was harder.
 
 enum class AUNType : unsigned char {
 	Broadcast = 1,
@@ -263,7 +263,7 @@ struct LongEconetPacket
 // before transmission starts. Data is sent immediately it's put into
 // the first slot.
 
-// Does econet send multiple packets for big transfers, or just one huge
+// Does Econet send multiple packets for big transfers, or just one huge
 // packet?
 // What's MTU on econet? Depends on clock speed but its big (e.g. 100K).
 // As we are using UDP, we will construct a 2048 byte buffer, accept data
@@ -271,11 +271,11 @@ struct LongEconetPacket
 // similarly, and dribble it back into the emulated 68B54.
 // We should thus never suffer underrun errors....
 // --we do actually flag an underrun, if data exceeds the size of the buffer.
-// -- sniffed AUN between live arcs seems to max out at 1288 bytes (1280+header)
-// --- bigger packers ARE possible - UDP fragments & reassembles transparently.. doh..
+// -- sniffed AUN between live Arcs seems to max out at 1288 bytes (1280+header)
+// --- bigger packets ARE possible - UDP fragments & reassembles transparently.. doh..
 
 // 64K max.. can't see any transfers being needed larger than this too often!
-// (and that's certainly larger than acorn bridges can cope with.)
+// (and that's certainly larger than Acorn bridges can cope with.)
 const int ETHERNET_BUFFER_SIZE = 65536;
 
 struct EthernetPacket
@@ -298,11 +298,11 @@ struct EthernetPacket
 	unsigned int destnet;
 };
 
-// buffers used to construct packets for sending out via UDP
+// Buffers used to construct packets for sending out via UDP
 static EthernetPacket EconetRx;
 static EthernetPacket EconetTx;
 
-// buffers used to construct packets sent to/received from bbc micro
+// Buffers used to construct packets sent to/received from BBC micro
 
 struct EconetPacket
 {
@@ -321,7 +321,7 @@ static EconetPacket BeebRx;
 static unsigned char BeebTxCopy[6]; // size of LongEconetPacket structure
 
 // Holds data from Econet.cfg file
-struct ECOLAN { // what we we need to find a beeb?
+struct ECOLAN { // What do we need to find a beeb?
 	unsigned char station;
 	unsigned char network;
 	unsigned long inet_addr;
@@ -340,14 +340,14 @@ struct NetStn {
 
 static NetStn LastError;
 
-const int NETWORK_TABLE_LENGTH = 512; // total number of hosts we can know about
-const int AUN_TABLE_LENGTH = 128; // number of disparate network in AUNMap
-static ECOLAN network[NETWORK_TABLE_LENGTH]; // list of my friends! :-)
+const int NETWORK_TABLE_LENGTH = 512; // Total number of hosts we can know about
+const int AUN_TABLE_LENGTH = 128; // number of disparate networkS in AUNMap
+static ECOLAN network[NETWORK_TABLE_LENGTH]; // List of my friends! :-)
 static AUNTAB aunnet[AUN_TABLE_LENGTH]; // AUNMap file for guess mode.
 
-static int networkp = 0; // how many friends do I have?
-static int aunnetp = 0;  // now many networks do i know about?
-static int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 is valid..
+static int networkp = 0; // How many friends do I have?
+static int aunnetp = 0;  // How many networks do i know about?
+static int myaunnet = 0; // aunnet table entry that I match. should be -1 as 0 is valid
 
 static unsigned char irqcause;   // flag to indicate cause of irq sr1b7
 static unsigned char sr1b2cause; // flag to indicate cause of irq sr1b2
@@ -622,7 +622,7 @@ void EconetReset()
 
 			if (EconetListenPort == 0)
 			{
-				// still can't find one ... strict mode?
+				// Still can't find one ... strict mode?
 
 				if (AUNMode && StrictAUNMode && networkp < NETWORK_TABLE_LENGTH)
 				{
@@ -704,7 +704,7 @@ void EconetReset()
 		}
 	}
 
-	// this call is what allows broadcast packets to be sent:
+	// This call is what allows broadcast packets to be sent:
 	const char broadcast = '1';
 
 	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1)
@@ -939,7 +939,7 @@ static void ReadAUNConfigFile()
 						                   aunnet[aunnetp].network, aunnet[aunnetp].inet_addr);
 					}
 
-					// note which network we are a part of.. this wont work on first run as listenip not set!
+					// Note which network we are a part of. This won't work on first run as EconetListenIP not set!
 					if (aunnet[aunnetp].inet_addr == (EconetListenIP & 0x00FFFFFF))
 					{
 						myaunnet = aunnetp;
@@ -1399,11 +1399,11 @@ bool EconetPoll_real() // return NMI status
 					else
 					{
 						do {
-							// does the packet match this network table entry?
+							// Does the packet match this network table entry?
 							// SendMe = false;
 							// // check for 0.stn and mynet.stn.
-							// aunnet wont be populated if not in aun mode, but we don't need to not check
-							// it because it won't matter..
+							// aunnet won't be populated if not in AUN mode, but we don't need to not check
+							// it because it won't matter.
 							if ((network[i].network == BeebTx.eh.destnet ||
 							    (network[i].network == aunnet[myaunnet].network && network[i].network != 0)) &&
 							    network[i].station == BeebTx.eh.deststn)
@@ -1722,7 +1722,7 @@ bool EconetPoll_real() // return NMI status
 			{
 				int j = 0;
 
-				// still nothing in buffers (and thus nothing in Econetrx buffer)
+				// still nothing in buffers (and thus nothing in EconetRx buffer)
 				ADLC.control1 &= ~CONTROL_REG1_RX_FRAME_DISCONTINUE; // reset discontinue flag
 
 				// wait for cpu to clear FV flag from last frame received
