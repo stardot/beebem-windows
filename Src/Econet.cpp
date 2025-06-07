@@ -966,6 +966,16 @@ static void ReadAUNConfigFile()
 
 static void ReadNetwork()
 {
+	AUNMode = DEFAULT_AUN_MODE;
+	LearnMode = DEFAULT_LEARN_MODE;
+	StrictAUNMode = DEFAULT_STRICT_AUN_MODE;
+	SingleSocket = DEFAULT_SINGLE_SOCKET;
+	EconetFlagFillTimeout = DEFAULT_FLAG_FILL_TIMEOUT;
+	EconetSCACKtimeout = DEFAULT_SCOUT_ACK_TIMEOUT;
+	TimeBetweenBytes = DEFAULT_TIME_BETWEEN_BYTES;
+	FourWayStageTimeout = DEFAULT_FOUR_WAY_STAGE_TIMEOUT;
+	MassageNetworks = DEFAULT_MASSAGE_NETWORKS;
+
 	networkp = 0;
 	network[0].station = 0;
 
