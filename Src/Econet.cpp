@@ -381,7 +381,7 @@ static MC6854 ADLCtemp;
 
 //---------------------------------------------------------------------------
 
-static void ReadNetwork();
+static bool ReadNetwork();
 static bool EconetPoll_real();
 static void DebugDumpADLC();
 static void EconetError(const char *Format, ...);
@@ -536,12 +536,16 @@ void EconetReset()
 
 	// Stop here if not enabled
 	if (!EconetEnabled)
+	{
 		return;
+	}
 
-	// Read in Econet.cfg and AUNMap.  Done here so can refresh it on Break.
-	ReadNetwork();
+	// Read in Econet.cfg and AUNMap. Done here so can refresh it on Break.
+	if (!ReadNetwork())
+	{
+		return;
+	}
 
-	//----------------------
 	// Create a SOCKET for listening for incoming connection requests.
 	ListenSocket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ListenSocket == INVALID_SOCKET) {
@@ -549,7 +553,6 @@ void EconetReset()
 		return;
 	}
 
-	//----------------------
 	// The sockaddr_in structure specifies the address family,
 	// IP address, and port for the socket that is being bound.
 	sockaddr_in service;
@@ -754,22 +757,27 @@ static void ParseConfigLine(const std::string& Line, std::vector<std::string>& T
 
 // Read Econet.cfg file into network table
 
-static void ReadEconetConfigFile()
+static bool ReadEconetConfigFile()
 {
 	std::ifstream Input(EconetCfgPath);
 
 	if (!Input)
 	{
 		EconetError("Econet: Failed to open configuration file:\n  %s", EconetCfgPath);
-		return;
+		return false;
 	}
+
+	bool Success = true;
 
 	networkp = 0;
 
 	std::string Line;
+	int LineCounter = 0;
 
 	while (std::getline(Input, Line))
 	{
+		LineCounter++;
+
 		trim(Line);
 
 		// Skip blank lines and comments
@@ -819,12 +827,16 @@ static void ReadEconetConfigFile()
 				}
 				catch (const std::exception&)
 				{
-					EconetError("Invalid value in Econet config file:\n  %s", EconetCfgPath);
+					EconetError("Invalid value in Econet config file:\n  %s (Line %d)", EconetCfgPath, LineCounter);
+					Success = false;
+					break;
 				}
 			}
 			else
 			{
-				EconetError("Too many network entries in Econet config file:\n  %s", EconetCfgPath);
+				EconetError("Too many network entries in Econet config file:\n  %s (Line %d)", EconetCfgPath, LineCounter);
+				Success = false;
+				break;
 			}
 		}
 		else if (Tokens.size() == 2)
@@ -872,37 +884,46 @@ static void ReadEconetConfigFile()
 				}
 				else
 				{
-					EconetError("Unknown entry in Econet config file: %s\n  %s", Key.c_str(), EconetCfgPath);
+					EconetError("Unknown entry in Econet config file: %s\n  %s (Line %d)", Key.c_str(), EconetCfgPath, LineCounter);
 				}
 			}
 			catch (const std::exception&)
 			{
-				EconetError("Invalid value in Econet config file: %s\n  %s", Value.c_str(), EconetCfgPath);
+				EconetError("Invalid value in Econet config file: %s\n  %s (Line %d)", Value.c_str(), EconetCfgPath, LineCounter);
+				Success = false;
+				break;
 			}
 		}
 	}
 
 	network[networkp].station = 0;
+
+	return Success;
 }
 
 //---------------------------------------------------------------------------
 
-static void ReadAUNConfigFile()
+static bool ReadAUNConfigFile()
 {
 	std::ifstream Input(AUNMapPath);
 
 	if (!Input)
 	{
 		EconetError("Econet: Failed to open configuration file:\n  %s", AUNMapPath);
-		return;
+		return false;
 	}
+
+	bool Success = true;
 
 	aunnetp = 0;
 
 	std::string Line;
+	int LineCounter = 0;
 
 	while (std::getline(Input, Line))
 	{
+		LineCounter++;
+
 		trim(Line);
 
 		// Skip blank lines and comments
@@ -954,22 +975,28 @@ static void ReadAUNConfigFile()
 				}
 				catch (const std::exception&)
 				{
-					EconetError("Invalid value in Econet config file:\n  %s", EconetCfgPath);
+					EconetError("Invalid value in Econet config file:\n  %s (Line %d)", EconetCfgPath, LineCounter);
+					Success = false;
+					break;
 				}
 			}
 			else
 			{
-				EconetError("Too many entries in Econet config file:\n  %s", EconetCfgPath);
+				EconetError("Too many entries in Econet config file:\n  %s (Line %d)", EconetCfgPath, LineCounter);
+				Success = false;
+				break;
 			}
 		}
 	}
 
 	aunnet[aunnetp].network = 0; // terminate table. 0 is always local so should not be in file.
+
+	return Success;
 }
 
 //---------------------------------------------------------------------------
 
-static void ReadNetwork()
+static bool ReadNetwork()
 {
 	AUNMode = DEFAULT_AUN_MODE;
 	LearnMode = DEFAULT_LEARN_MODE;
@@ -984,7 +1011,10 @@ static void ReadNetwork()
 	networkp = 0;
 	network[0].station = 0;
 
-	ReadEconetConfigFile();
+	if (!ReadEconetConfigFile())
+	{
+		return false;
+	}
 
 	if (MassageNetworks)
 	{
@@ -1003,8 +1033,10 @@ static void ReadNetwork()
 	// Don't bother reading file if not using AUN.
 	if (AUNMode)
 	{
-		ReadAUNConfigFile();
+		return ReadAUNConfigFile();
 	}
+
+	return true;
 }
 
 //---------------------------------------------------------------------------
