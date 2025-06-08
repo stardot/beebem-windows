@@ -371,8 +371,8 @@ char AUNMapPath[MAX_PATH];
 static bool FlagFillActive; // Flag fill state
 int EconetFlagFillTimeoutTrigger; // Trigger point for flag fill
 int EconetFlagFillTimeout = DEFAULT_FLAG_FILL_TIMEOUT; // Cycles for flag fill timeout // added cfg file to override this
-static int EconetSCACKtrigger; // Trigger point for scout ack
-static int EconetSCACKtimeout = DEFAULT_SCOUT_ACK_TIMEOUT; // Cycles to delay before sending ack to scout (aun mode only)
+static int EconetScoutAckTrigger; // Trigger point for scout ack
+static int EconetScoutAckTimeout = DEFAULT_SCOUT_ACK_TIMEOUT; // Cycles to delay before sending ack to scout (AUN mode only)
 static int Econet4Wtrigger;
 
 // Device and temp copy!
@@ -856,7 +856,7 @@ static void ReadEconetConfigFile()
 				}
 				else if (StrCaseCmp(Key.c_str(), "SCACKTIMEOUT") == 0)
 				{
-					EconetSCACKtimeout = std::stoi(Value);
+					EconetScoutAckTimeout = std::stoi(Value);
 				}
 				else if (StrCaseCmp(Key.c_str(), "TIMEBETWEENBYTES") == 0)
 				{
@@ -976,7 +976,7 @@ static void ReadNetwork()
 	StrictAUNMode = DEFAULT_STRICT_AUN_MODE;
 	SingleSocket = DEFAULT_SINGLE_SOCKET;
 	EconetFlagFillTimeout = DEFAULT_FLAG_FILL_TIMEOUT;
-	EconetSCACKtimeout = DEFAULT_SCOUT_ACK_TIMEOUT;
+	EconetScoutAckTimeout = DEFAULT_SCOUT_ACK_TIMEOUT;
 	TimeBetweenBytes = DEFAULT_TIME_BETWEEN_BYTES;
 	FourWayStageTimeout = DEFAULT_FOUR_WAY_STAGE_TIMEOUT;
 	MassageNetworks = DEFAULT_MASSAGE_NETWORKS;
@@ -1563,7 +1563,7 @@ bool EconetPoll_real() // return NMI status
 									//if (DebugEnabled)
 									DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCOUTSENT");
 									// dont send anything but set wait anyway
-									SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
+									SetTrigger(EconetScoutAckTimeout, EconetScoutAckTrigger);
 									//if (DebugEnabled)
 									DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
 								} // else BROADCAST !!!!
@@ -1574,7 +1574,7 @@ bool EconetPoll_real() // return NMI status
 								fourwaystage = FourWayStage::ScoutAckSent;
 								//if (DebugEnabled)
 								DebugDisplayTrace(DebugType::Econet, true, "Econet: Set FWS_SCACKSENT");
-								SetTrigger(EconetSCACKtimeout, EconetSCACKtrigger);
+								SetTrigger(EconetScoutAckTimeout, EconetScoutAckTrigger);
 								//if (DebugEnabled)
 								DebugDisplayTrace(DebugType::Econet, true, "Econet: SCACKtimer set");
 								break;
@@ -1978,7 +1978,7 @@ bool EconetPoll_real() // return NMI status
 
 					// this bit fakes the bits of the 4-way handshake that AUN doesn't do.
 
-					if (AUNMode && EconetSCACKtrigger > TotalCycles)
+					if (AUNMode && EconetScoutAckTrigger > TotalCycles)
 					{
 						switch (fourwaystage) {
 						case FourWayStage::ScoutSent:
@@ -2075,12 +2075,12 @@ bool EconetPoll_real() // return NMI status
 		&& BeebRx.BytesInBuffer == 0
 		&& ADLC.rxfptr == 0
 		&& ADLC.txfptr == 0 // ??
-		// && EconetSCACKtrigger > TotalCycles
+		// && EconetScoutAckTrigger > TotalCycles
 		)
 	{
 		fourwaystage = FourWayStage::Idle;
 		Econet4Wtrigger = 0;
-		EconetSCACKtrigger = 0;
+		EconetScoutAckTrigger = 0;
 		FlagFillActive = false;
 	}
 
@@ -2092,7 +2092,7 @@ bool EconetPoll_real() // return NMI status
 	}
 	else if (Econet4Wtrigger <= TotalCycles)
 	{
-		EconetSCACKtrigger = 0;
+		EconetScoutAckTrigger = 0;
 		Econet4Wtrigger = 0;
 		fourwaystage = FourWayStage::Idle;
 
