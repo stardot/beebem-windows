@@ -373,7 +373,7 @@ int EconetFlagFillTimeoutTrigger; // Trigger point for flag fill
 int EconetFlagFillTimeout = DEFAULT_FLAG_FILL_TIMEOUT; // Cycles for flag fill timeout // added cfg file to override this
 static int EconetScoutAckTrigger; // Trigger point for scout ack
 static int EconetScoutAckTimeout = DEFAULT_SCOUT_ACK_TIMEOUT; // Cycles to delay before sending ack to scout (AUN mode only)
-static int Econet4Wtrigger;
+static int EconetFourWayTrigger;
 
 // Device and temp copy!
 static MC6854 ADLC;
@@ -2079,21 +2079,23 @@ bool EconetPoll_real() // return NMI status
 		)
 	{
 		fourwaystage = FourWayStage::Idle;
-		Econet4Wtrigger = 0;
+		EconetFourWayTrigger = 0;
 		EconetScoutAckTrigger = 0;
 		FlagFillActive = false;
 	}
 
 	// timeout four way handshake - for when we get lost..
-	if (Econet4Wtrigger == 0)
+	if (EconetFourWayTrigger == 0)
 	{
 		if (fourwaystage != FourWayStage::Idle)
-			SetTrigger(FourWayStageTimeout, Econet4Wtrigger);
+		{
+			SetTrigger(FourWayStageTimeout, EconetFourWayTrigger);
+		}
 	}
-	else if (Econet4Wtrigger <= TotalCycles)
+	else if (EconetFourWayTrigger <= TotalCycles)
 	{
 		EconetScoutAckTrigger = 0;
-		Econet4Wtrigger = 0;
+		EconetFourWayTrigger = 0;
 		fourwaystage = FourWayStage::Idle;
 
 		//if (DebugEnabled)
