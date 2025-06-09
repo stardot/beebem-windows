@@ -388,6 +388,13 @@ static void EconetError(const char *Format, ...);
 
 //---------------------------------------------------------------------------
 
+static bool IsBroadcastStation(unsigned int Station)
+{
+	return Station == 0 || Station == 255;
+}
+
+//---------------------------------------------------------------------------
+
 static const char* IpAddressStr(unsigned long inet_addr)
 {
 	in_addr in;
@@ -1430,7 +1437,7 @@ bool EconetPoll_real() // return NMI status
 					int SendLen = 0;
 					int i = 0;
 
-					if (AUNMode && (BeebTx.eh.deststn == 255 || BeebTx.eh.deststn ==  0)) // broadcast!
+					if (AUNMode && IsBroadcastStation(BeebTx.eh.deststn))
 					{
 						// TODO something
 						// Somewhere that I cannot now find suggested that
@@ -1449,7 +1456,6 @@ bool EconetPoll_real() // return NMI status
 					{
 						do {
 							// Does the packet match this network table entry?
-							// SendMe = false;
 							// // check for 0.stn and mynet.stn.
 							// aunnet won't be populated if not in AUN mode, but we don't need to not check
 							// it because it won't matter.
@@ -1587,7 +1593,7 @@ bool EconetPoll_real() // return NMI status
 
 								EconetTx.Pointer = j;
 
-								if (EconetTx.deststn == 255 || EconetTx.deststn == 0)
+								if (IsBroadcastStation(EconetTx.deststn))
 								{
 									EconetTx.ah.type = AUNType::Broadcast;
 									fourwaystage = FourWayStage::WaitForIdle; // no response to broadcasts...
@@ -1990,9 +1996,10 @@ bool EconetPoll_real() // return NMI status
 									BeebRx.Pointer = 0;
 								}
 
-								if ((BeebRx.eh.deststn == EconetStationID ||
-								    BeebRx.eh.deststn == 255 ||
-								    BeebRx.eh.deststn == 0) && BeebRx.BytesInBuffer > 0)
+
+
+								if ((BeebRx.eh.deststn == EconetStationID || IsBroadcastStation(BeebRx.eh.deststn)) &&
+								    BeebRx.BytesInBuffer > 0)
 								{
 									// Peer sent us packet - no longer in flag fill
 									FlagFillActive = false;
