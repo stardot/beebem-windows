@@ -26,7 +26,7 @@ Boston, MA  02110-1301, USA.
 #ifndef ECONET_HEADER
 #define ECONET_HEADER
 
-void EconetReset();
+bool EconetReset();
 unsigned char EconetRead(unsigned char Register);
 void EconetWrite(unsigned char Register, unsigned char Value);
 unsigned char EconetReadStationID();

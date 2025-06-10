@@ -473,7 +473,28 @@ static ECOLAN* AddHost(sockaddr_in* pAddress)
 
 //---------------------------------------------------------------------------
 
-void EconetReset()
+static void EconetCloseSockets()
+{
+	// In single socket mode, SendSocket == ListenSocket
+	if (SendSocket != INVALID_SOCKET && SendSocket != ListenSocket)
+	{
+		CloseSocket(SendSocket);
+	}
+
+	if (ListenSocket != INVALID_SOCKET)
+	{
+		CloseSocket(ListenSocket);
+	}
+
+	SendSocket = INVALID_SOCKET;
+	ListenSocket = INVALID_SOCKET;
+
+	ReceiverSocketsOpen = false;
+}
+
+//---------------------------------------------------------------------------
+
+bool EconetReset()
 {
 	if (DebugEnabled)
 	{
@@ -522,35 +543,28 @@ void EconetReset()
 	FlagFillActive = false;
 	EconetFlagFillTimeoutTrigger = 0;
 
-	// kill anything that was in use
-	if (ReceiverSocketsOpen)
-	{
-		if (!SingleSocket)
-		{
-			CloseSocket(SendSocket);
-		}
-
-		CloseSocket(ListenSocket);
-		ReceiverSocketsOpen = false;
-	}
+	// Kill anything that was in use
+	EconetCloseSockets();
 
 	// Stop here if not enabled
 	if (!EconetEnabled)
 	{
-		return;
+		return true;
 	}
 
 	// Read in Econet.cfg and AUNMap. Done here so can refresh it on Break.
 	if (!ReadNetwork())
 	{
-		return;
+		goto Fail;
 	}
 
 	// Create a SOCKET for listening for incoming connection requests.
 	ListenSocket = socket(AF_INET, SOCK_DGRAM, 0);
-	if (ListenSocket == INVALID_SOCKET) {
+
+	if (ListenSocket == INVALID_SOCKET)
+	{
 		EconetError("Econet: Failed to open listening socket (error %ld)", GetLastSocketError());
-		return;
+		goto Fail;
 	}
 
 	// The sockaddr_in structure specifies the address family,
@@ -574,7 +588,7 @@ void EconetReset()
 		else
 		{
 			EconetError("Econet: Failed to find station %d in Econet.cfg", EconetStationID);
-			return;
+			goto Fail;
 		}
 
 		service.sin_port = htons(EconetListenPort);
@@ -583,9 +597,7 @@ void EconetReset()
 		if (bind(ListenSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
 		{
 			EconetError("Econet: Failed to bind to port %d (error %ld)", EconetListenPort, GetLastSocketError());
-			CloseSocket(ListenSocket);
-			ListenSocket = INVALID_SOCKET;
-			return;
+			goto Fail;
 		}
 	}
 	else
@@ -666,14 +678,14 @@ void EconetReset()
 				if (EconetStationID == 0)
 				{
 					EconetError("Econet: Failed to find free station/port to bind to");
-					return;
+					goto Fail;
 				}
 			}
 		}
 		else
 		{
 			EconetError("Econet: Failed to resolve local IP address");
-			return;
+			goto Fail;
 		}
 	}
 
@@ -699,11 +711,10 @@ void EconetReset()
 	{
 		SendSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-		if (SendSocket == INVALID_SOCKET) {
+		if (SendSocket == INVALID_SOCKET)
+		{
 			EconetError("Econet: Failed to open sending socket (error %ld)", GetLastSocketError());
-			CloseSocket(ListenSocket);
-			ListenSocket = INVALID_SOCKET;
-			return;
+			goto Fail;
 		}
 	}
 
@@ -713,9 +724,7 @@ void EconetReset()
 	if (setsockopt(SendSocket, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) == -1)
 	{
 		EconetError("Econet: Failed to set socket for broadcasts (error %ld)", GetLastSocketError());
-		CloseSocket(ListenSocket);
-		ListenSocket = INVALID_SOCKET;
-		return;
+		goto Fail;
 	}
 
 	ReceiverSocketsOpen = true;
@@ -724,6 +733,14 @@ void EconetReset()
 	SetTrigger(TimeBetweenBytes, EconetTrigger);
 
 	EconetStateChanged = true;
+
+	return true;
+
+Fail:
+	EconetCloseSockets();
+
+	EconetEnabled = false;
+	return false;
 }
 
 //---------------------------------------------------------------------------
