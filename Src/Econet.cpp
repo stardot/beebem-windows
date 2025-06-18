@@ -890,7 +890,8 @@ static bool ReadEconetConfigFile()
 				{
 					EconetFlagFillTimeout = std::stoi(Value);
 				}
-				else if (StrCaseCmp(Key.c_str(), "SCACKTIMEOUT") == 0)
+				else if (StrCaseCmp(Key.c_str(), "SCACKTIMEOUT") == 0 ||
+				         StrCaseCmp(Key.c_str(), "SCOUTACKTIMEOUT") == 0)
 				{
 					EconetScoutAckTimeout = std::stoi(Value);
 				}
