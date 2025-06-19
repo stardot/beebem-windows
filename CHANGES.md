@@ -27,6 +27,8 @@ Andrew Hague
   - Added support for immediate operations, used by the *VIEW and *NOTIFY
     commands. These currently only work under Master series emulation.
   - Fixed CTS status bit.
+  - Fixed broadcast packet destination to be 255.255.
+
 * Added Master ET support.
 * ROM config files (e.g., Roms.cfg) can now include comments. Note that
   files with comments are not backwards compatible with older BeebEm
@@ -94,6 +96,7 @@ Andrew Hague
 * Fixed BeebEm window so that it's no longer always on top after exiting
   full screen mode.
 * Fixed teletext mode character alignment.
+* Fixed teletext mode hold character and flash/steady and double height.
 * Fixed printing to the Windows clipboard, which would previously cause the
   emulator to slow down or stall.
 * When printing to file, the file is now appended to, not overwritten.
