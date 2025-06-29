@@ -57,13 +57,13 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 		return 1;
 	}
 
+	OpenLog();
+
 	if (!mainWin->Initialise())
 	{
 		delete mainWin;
 		return 1;
 	}
-
-	OpenLog();
 
 	for (;;)
 	{
@@ -113,9 +113,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 		}
 	}
 
-	CloseLog();
-
 	delete mainWin;
+
+	CloseLog();
 
 	return 0;
 }
