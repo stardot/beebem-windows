@@ -472,7 +472,7 @@ bool BeebWin::Initialise()
 	m_hDC = GetDC(m_hWnd);
 
 	RomConfig.Load(RomFile);
-	ApplyPrefs();
+	ApplyPreferences();
 
 	if (!m_DebugScriptFileName.empty())
 	{
@@ -520,7 +520,7 @@ bool BeebWin::Initialise()
 
 /****************************************************************************/
 
-void BeebWin::ApplyPrefs()
+void BeebWin::ApplyPreferences()
 {
 	// Set up paths
 
@@ -5905,7 +5905,7 @@ void BeebWin::SelectUserDataPath()
 
 				// Load and apply prefs
 				LoadPreferences();
-				ApplyPrefs();
+				ApplyPreferences();
 			}
 			break;
 

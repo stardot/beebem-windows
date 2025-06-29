@@ -237,7 +237,7 @@ public:
 	~BeebWin();
 
 	bool Initialise();
-	void ApplyPrefs();
+	void ApplyPreferences();
 	void Shutdown();
 
 	static LRESULT CALLBACK WndProc(HWND hWnd,
