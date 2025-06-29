@@ -2404,15 +2404,15 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_ACTIVATE:
-			Activate(wParam != WA_INACTIVE);
+			OnActivate(wParam != WA_INACTIVE);
 			break;
 
 		case WM_SETFOCUS:
-			Focus(true);
+			OnSetFocus(true);
 			break;
 
 		case WM_KILLFOCUS:
-			Focus(false);
+			OnSetFocus(false);
 			break;
 
 		case WM_SETCURSOR:
@@ -4874,7 +4874,7 @@ void BeebWin::SetSoundMenu()
 	CheckMenuItem(IDM_MUSIC5000, Music5000Enabled);
 }
 
-void BeebWin::Activate(bool Active)
+void BeebWin::OnActivate(bool Active)
 {
 	if (Active)
 	{
@@ -4901,7 +4901,7 @@ void BeebWin::Activate(bool Active)
 	}
 }
 
-void BeebWin::Focus(bool Focus)
+void BeebWin::OnSetFocus(bool Focus)
 {
 	if (Focus)
 	{

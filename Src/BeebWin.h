@@ -332,8 +332,8 @@ public:
 	void ChangeAMXPosition(int deltaX, int deltaY);
 	void CaptureMouse();
 	void ReleaseMouse();
-	void Activate(bool Active);
-	void Focus(bool Focus);
+	void OnActivate(bool Active);
+	void OnSetFocus(bool Focus);
 	void OnSize(WPARAM ResizeType, int Width, int Height);
 	bool IsFrozen() const;
 	void TogglePause();
