@@ -655,7 +655,7 @@ void BeebWin::RenderDX9()
 
 /****************************************************************************/
 
-void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
+void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 {
 	static bool LastTeletextEnabled = false;
 	static bool First = true;

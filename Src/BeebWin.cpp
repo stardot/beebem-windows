@@ -2199,7 +2199,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 		case WM_PAINT: {
 			PAINTSTRUCT ps;
 			HDC hDC = BeginPaint(m_hWnd, &ps);
-			updateLines(hDC, 0, 0);
+			UpdateLines(hDC, 0, 0);
 			EndPaint(m_hWnd, &ps);
 
 			if (m_DXResetPending)

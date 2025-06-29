@@ -260,10 +260,10 @@ public:
 	void UpdateLEDMenu();
 	void SetDriveControl(unsigned char value);
 	unsigned char GetDriveControl(void);
-	void doLED(int sx,bool on);
-	void updateLines(HDC hDC, int StartY, int NLines);
-	void updateLines(int StartY, int NLines) {
-		updateLines(m_hDC, StartY, NLines);
+	void doLED(int sx, bool on);
+	void UpdateLines(HDC hDC, int StartY, int NLines);
+	void UpdateLines(int StartY, int NLines) {
+		UpdateLines(m_hDC, StartY, NLines);
 	}
 
 	void doHorizLine(int Colour, int y, int sx, int width) {

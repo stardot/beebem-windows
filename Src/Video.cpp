@@ -1157,7 +1157,8 @@ void VideoDoScanLine(void) {
         // Clear rest of screen below virtical total
         for (l=VideoState.PixmapLine; l<500/TeletextStyle; ++l)
           mainWin->doHorizLine(0, l, -36, 800);
-        mainWin->updateLines(0,(500/TeletextStyle));
+
+        mainWin->UpdateLines(0, 500 / TeletextStyle);
       }
       VideoState.IsNewTVFrame = true;
       VideoStartOfFrame();
@@ -1262,7 +1263,7 @@ void VideoDoScanLine(void) {
           startLine = 40;
         }
 
-        mainWin->updateLines(startLine, 256);
+        mainWin->UpdateLines(startLine, 256);
       }
       VideoStartOfFrame();
       AdjustVideo();
