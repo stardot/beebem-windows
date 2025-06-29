@@ -3295,14 +3295,14 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		// Get the monitor that the BeebEm window is on to account for multiple monitors
 		if (m_DDFullScreenMode == DirectXFullScreenMode::ScreenResolution)
 		{
-			HMONITOR monitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-			MONITORINFO info;
-			info.cbSize = sizeof(MONITORINFO);
-			GetMonitorInfo(monitor, &info);
+			HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+			MONITORINFO MonitorInfo;
+			MonitorInfo.cbSize = sizeof(MONITORINFO);
+			GetMonitorInfo(hMonitor, &MonitorInfo);
 
 			// Get current resolution of the monitor
-			m_XDXSize = info.rcMonitor.right - info.rcMonitor.left;
-			m_YDXSize = info.rcMonitor.bottom - info.rcMonitor.top;
+			m_XDXSize = MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left;
+			m_YDXSize = MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top;
 		}
 
 		if (!wasFullScreen)
