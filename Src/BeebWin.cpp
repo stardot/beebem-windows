@@ -2246,7 +2246,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			}
 			else if (wParam == VK_RETURN && AltPressed) // Alt+Enter
 			{
-				HandleCommand(IDM_FULLSCREEN);
+				ToggleFullScreen();
 				break;
 			}
 			else if (wParam == VK_F4 && AltPressed) // Alt+F4
@@ -2256,7 +2256,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			}
 			else if (wParam == VK_F5 && AltPressed) // Alt+F5
 			{
-				HandleCommand(IDM_PAUSE);
+				TogglePause();
 				break;
 			}
 
@@ -2991,9 +2991,10 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 
 void BeebWin::ToggleFullScreen()
 {
+	const bool WasFullScreen = m_FullScreen;
 	m_FullScreen = !m_FullScreen;
 	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
-	SetWindowAttributes(!m_FullScreen);
+	SetWindowAttributes(WasFullScreen);
 
 	if (m_MouseCaptured)
 	{
@@ -3007,7 +3008,7 @@ void BeebWin::SetWindowSize(int Width, int Height)
 {
 	if (m_FullScreen)
 	{
-		HandleCommand(IDM_FULLSCREEN);
+		ToggleFullScreen();
 	}
 
 	m_XWinSize = Width;
