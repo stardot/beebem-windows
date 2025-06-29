@@ -783,8 +783,8 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 					// D3DXMatrixScaling(&m_TextureMatrix,
 					//                   800.0f / (float)width, 512.0f / (float)height, 1.0f);
 					D3DMatrixIdentity(&m_TextureMatrix);
-					m_TextureMatrix._11 = 800.0f/(float)width;
-					m_TextureMatrix._22 = 512.0f/(float)height;
+					m_TextureMatrix._11 = 800.0f / (float)width;
+					m_TextureMatrix._22 = 512.0f / (float)height;
 
 					if (m_FullScreen && m_MaintainAspectRatio)
 					{
@@ -840,9 +840,9 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 				RECT destRect;
 				RECT srcRect;
 				POINT pt;
-				GetClientRect( m_hWnd, &destRect );
+				GetClientRect(m_hWnd, &destRect);
 				pt.x = pt.y = 0;
-				ClientToScreen( m_hWnd, &pt );
+				ClientToScreen(m_hWnd, &pt);
 				OffsetRect(&destRect, pt.x, pt.y);
 
 				if (m_FullScreen && m_MaintainAspectRatio)

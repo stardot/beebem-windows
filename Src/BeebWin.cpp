@@ -589,7 +589,9 @@ void BeebWin::ApplyPreferences()
 
 	// Joysticks can only be initialised after the window is created (needs hwnd)
 	if (m_JoystickOption == JoystickOption::Joystick)
+	{
 		InitJoystick();
+	}
 
 	LoadFDC(NULL, true);
 	RTCInit();
@@ -636,12 +638,20 @@ BeebWin::~BeebWin()
 
 	ReleaseDC(m_hWnd, m_hDC);
 
-	if (m_hOldObj != NULL)
+	if (m_hOldObj != nullptr)
+	{
 		SelectObject(m_hDCBitmap, m_hOldObj);
-	if (m_hBitmap != NULL)
+	}
+
+	if (m_hBitmap != nullptr)
+	{
 		DeleteObject(m_hBitmap);
-	if (m_hDCBitmap != NULL)
+	}
+
+	if (m_hDCBitmap != nullptr)
+	{
 		DeleteDC(m_hDCBitmap);
+	}
 
 	Gdiplus::GdiplusShutdown(m_gdiplusToken);
 
