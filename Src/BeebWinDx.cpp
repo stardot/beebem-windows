@@ -37,7 +37,7 @@ Boston, MA  02110-1301, USA.
 
 // #define DEBUG_DX9
 
-typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter);
+typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID* pGUID, IDirectDraw** ppDirectDraw, IUnknown* pUnkOuter);
 
 /****************************************************************************/
 

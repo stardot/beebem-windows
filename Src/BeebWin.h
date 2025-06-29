@@ -687,21 +687,21 @@ public:
 
 	// DirectDraw stuff
 	HINSTANCE m_hInstDDraw;
-	LPDIRECTDRAW m_DD; // DirectDraw object
-	LPDIRECTDRAW2 m_DD2; // DirectDraw object
-	LPDIRECTDRAWSURFACE m_DDSPrimary; // DirectDraw primary surface
-	LPDIRECTDRAWSURFACE2 m_DDS2Primary; // DirectDraw primary surface
-	LPDIRECTDRAWSURFACE m_DDSOne; // Offscreen surface 1
-	LPDIRECTDRAWSURFACE2 m_DDS2One; // Offscreen surface 1
+	IDirectDraw* m_DD; // DirectDraw object
+	IDirectDraw2* m_DD2; // DirectDraw object
+	IDirectDrawSurface* m_DDSPrimary; // DirectDraw primary surface
+	IDirectDrawSurface2* m_DDS2Primary; // DirectDraw primary surface
+	IDirectDrawSurface* m_DDSOne; // Offscreen surface 1
+	IDirectDrawSurface2* m_DDS2One; // Offscreen surface 1
+	IDirectDrawClipper* m_Clipper; // clipper for primary
 	bool m_DXSmoothing;
 	bool m_DXSmoothMode7Only;
-	LPDIRECTDRAWCLIPPER m_Clipper; // clipper for primary
 
 	// Direct3D9 stuff
-	LPDIRECT3D9 m_pD3D;
-	LPDIRECT3DDEVICE9 m_pd3dDevice;
-	LPDIRECT3DVERTEXBUFFER9 m_pVB;
-	LPDIRECT3DTEXTURE9 m_pTexture;
+	IDirect3D9* m_pD3D;
+	IDirect3DDevice9* m_pd3dDevice;
+	IDirect3DVertexBuffer9* m_pVB;
+	IDirect3DTexture9* m_pTexture;
 	D3DXMATRIX m_TextureMatrix;
 
 	// Joystick input
