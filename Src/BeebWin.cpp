@@ -3845,20 +3845,14 @@ void BeebWin::HandleCommand(UINT MenuID)
 		m_DXSmoothing = !m_DXSmoothing;
 		CheckMenuItem(IDM_DXSMOOTHING, m_DXSmoothing);
 
-		if (m_DisplayRenderer != DisplayRendererType::GDI)
-		{
-			UpdateSmoothing();
-		}
+		UpdateSmoothing();
 		break;
 
 	case IDM_DXSMOOTHMODE7ONLY:
 		m_DXSmoothMode7Only = !m_DXSmoothMode7Only;
 		CheckMenuItem(IDM_DXSMOOTHMODE7ONLY, m_DXSmoothMode7Only);
 
-		if (m_DisplayRenderer != DisplayRendererType::GDI)
-		{
-			UpdateSmoothing();
-		}
+		UpdateSmoothing();
 		break;
 
 	case IDM_320X256:
