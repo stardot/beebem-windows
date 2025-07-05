@@ -36,6 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "BeebWin.h"
 #include "Debug.h"
 #include "DebugTrace.h"
+#include "Log.h"
 #include "Main.h"
 #include "Sound.h"
 #include "SysVia.h"
@@ -102,7 +103,6 @@ bool TeletextEnabled = false;
 char TeletextStyle = 1; // Defines whether teletext will skip intermediate lines in order to speed up
 bool TeletextHalfMode = false; // set true to use half-mode (TeletextStyle=1 all the time)
 int CurY=-1;
-FILE *crtclog;
 
 int ova,ovn; // mem ptr buffers
 
@@ -167,6 +167,8 @@ static void LowLevelDoScanLineWideNot4Bytes();
 static void VideoAddCursor(void);
 void AdjustVideo();
 void VideoAddLEDs(void);
+
+#define ENABLE_LOG 0
 
 /*-------------------------------------------------------------------------------------------------------------*/
 
@@ -1307,16 +1309,20 @@ void VideoInit(void) {
   VideoState.IsNewTVFrame = false;
   CurY=-1;
   //AdjustVideo();
-//  crtclog=fopen("/crtc.log","wb");
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-void CRTCWrite(int Address, unsigned char Value) {
-  if (Address & 1) {
-    // if (CRTCControlReg<14) { fputc(CRTCControlReg,crtclog); fputc(Value,crtclog); }
-    // if (CRTCControlReg<14) {
-    //     fprintf(crtclog,"%d (%02X) Written to register %d from %04X\n",Value,Value,CRTCControlReg,ProgramCounter);
-    // }
+
+void CRTCWrite(int Address, unsigned char Value)
+{
+  if (Address & 1)
+  {
+    #if ENABLE_LOG
+    if (CRTCControlReg < 14)
+    {
+      WriteLog("CRTC: Write register 0x%X value 0x%02X (%d) from PC=%04X\n", CRTCControlReg, Value, Value, PrePC);
+    }
+    #endif
 
     if (DebugEnabled && CRTCControlReg < 14)
     {
@@ -1325,7 +1331,8 @@ void CRTCWrite(int Address, unsigned char Value) {
                            (int)CRTCControlReg, Value);
     }
 
-    switch (CRTCControlReg) {
+    switch (CRTCControlReg)
+    {
       case 0:
         CRTC_HorizontalTotal = Value;
         AdjustVideo();
@@ -1347,7 +1354,10 @@ void CRTCWrite(int Address, unsigned char Value) {
       case 3:
         CRTC_SyncWidth = Value;
         AdjustVideo();
-        // fprintf(crtclog,"V Sync width: %d\n",(Value>>4)&15);
+
+        #if ENABLE_LOG
+        WriteLog("CRTC: V Sync width: %d\n", (Value >> 4) & 15);
+        #endif
         break;
 
       case 4:
@@ -1357,7 +1367,11 @@ void CRTCWrite(int Address, unsigned char Value) {
 
       case 5:
         CRTC_VerticalTotalAdjust = Value & 0x1f;  // 5 bit register
-        // fprintf(crtclog,"Vertical Total Adjust: %d\n",Value);
+
+        #if ENABLE_LOG
+        WriteLog("CRTC: Vertical Total Adjust: %d\n", Value);
+        #endif
+
         AdjustVideo();
         break;
 
@@ -1389,12 +1403,18 @@ void CRTCWrite(int Address, unsigned char Value) {
 
       case 12:
         CRTC_ScreenStartHigh = Value;
-        // fprintf(crtclog,"Screen now at &%02x%02x\n",Value,CRTC_ScreenStartLow);
+
+        #if ENABLE_LOG
+        WriteLog("CRTC: Screen now at &%02x%02x\n", Value, CRTC_ScreenStartLow);
+        #endif
         break;
 
       case 13:
         CRTC_ScreenStartLow = Value;
-        // fprintf(crtclog,"Screen now at &%02x%02x\n",CRTC_ScreenStartHigh,Value);
+
+        #if ENABLE_LOG
+        WriteLog("CRTC: Screen now at &%02x%02x\n", CRTC_ScreenStartHigh, Value);
+        #endif
         break;
 
       case 14:
@@ -1408,8 +1428,11 @@ void CRTCWrite(int Address, unsigned char Value) {
       default: /* In case the user wrote a duff control register value */
         break;
     }
+
     // DebugTrace("CRTCWrite RegNum=%d Value=%02X\n", CRTCControlReg, Value);
-  } else {
+  }
+  else
+  {
     CRTCControlReg = Value & 0x1f;
   }
 }
