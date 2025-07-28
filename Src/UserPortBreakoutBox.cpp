@@ -198,7 +198,7 @@ INT_PTR UserPortBreakoutDialog::DlgProc(
 	switch (nMessage)
 	{
 	case WM_INITDIALOG:
-		for (size_t i = 0; i < _countof(BitKeyButtonIDs); i++)
+		for (int i = 0; i < (int)_countof(BitKeyButtonIDs); i++)
 		{
 			ShowBitKey(i, BitKeyButtonIDs[i]);
 		}

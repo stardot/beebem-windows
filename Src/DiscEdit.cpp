@@ -246,10 +246,10 @@ bool dfs_export_file(const char *szDiscFile,
 			}
 
 			// Read next sector
-			size_t n = len < DFS_SECTOR_SIZE ? len : DFS_SECTOR_SIZE;
+			int n = len < DFS_SECTOR_SIZE ? len : DFS_SECTOR_SIZE;
 
 			if (fseek(discfd, offset, SEEK_SET) != 0 ||
-			    fread(buffer, 1, n, discfd) != n)
+			    fread(buffer, 1, (size_t)n, discfd) != n)
 			{
 				sprintf(szErrStr, "Failed to read data from:\n  %s", szDiscFile);
 				success = false;
@@ -257,7 +257,7 @@ bool dfs_export_file(const char *szDiscFile,
 			else
 			{
 				// Export to file
-				if (fwrite(buffer, 1, n, filefd) != n)
+				if (fwrite(buffer, 1, (size_t)n, filefd) != n)
 				{
 					sprintf(szErrStr, "Failed to write data to:\n  %s", szLocalFileName);
 					success = false;
@@ -556,8 +556,10 @@ bool dfs_import_file(const char *szDiscFile,
 
 				// Read next sector
 				memset(buffer, 0, DFS_SECTOR_SIZE);
-				size_t n = len < DFS_SECTOR_SIZE ? len : DFS_SECTOR_SIZE;
-				if (fread(buffer, 1, n, filefd) != n)
+
+				int n = len < DFS_SECTOR_SIZE ? len : DFS_SECTOR_SIZE;
+
+				if (fread(buffer, 1, (size_t)n, filefd) != n)
 				{
 					sprintf(szErrStr, "Failed to read data from:\n  %s", filename);
 					success = false;

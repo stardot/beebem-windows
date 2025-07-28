@@ -214,8 +214,8 @@ UEFResult UEFTapeImage::Save(const char* FileName)
 		for (const UEFChunkInfo& Chunk : m_Chunks)
 		{
 			gzput16(UEFFile, Chunk.type);
-			gzput32(UEFFile, Chunk.data.size());
-			gzwrite(UEFFile, &Chunk.data[0], Chunk.data.size());
+			gzput32(UEFFile, (int)Chunk.data.size());
+			gzwrite(UEFFile, &Chunk.data[0], (unsigned int)Chunk.data.size());
 		}
 
 		gzclose(UEFFile);
@@ -258,7 +258,7 @@ void UEFTapeImage::New()
 
 	UEFChunkInfo OriginInfoChunk{};
 	OriginInfoChunk.type = 0;
-	OriginInfoChunk.len = CreatedBy.size() + 1;
+	OriginInfoChunk.len = (int)CreatedBy.size() + 1;
 	OriginInfoChunk.data.resize(OriginInfoChunk.len);
 	memcpy(&OriginInfoChunk.data[0], CreatedBy.c_str(), CreatedBy.size() + 1);
 
