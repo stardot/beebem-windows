@@ -678,7 +678,7 @@ public:
 	bool m_MaintainAspectRatio;
 	DisplayRendererType m_DisplayRenderer;
 	DisplayRendererType m_CurrentDisplayRenderer;
-	DirectXFullScreenMode m_DDFullScreenMode;
+	DirectXFullScreenMode m_DirectXFullScreenMode;
 	LEDColour m_DiscLedColour;
 
 	// DirectX stuff

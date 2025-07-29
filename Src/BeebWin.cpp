@@ -200,7 +200,7 @@ BeebWin::BeebWin()
 	m_MaintainAspectRatio = true;
 	m_DisplayRenderer = DisplayRendererType::DirectX9;
 	m_CurrentDisplayRenderer = DisplayRendererType::GDI;
-	m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution;
+	m_DirectXFullScreenMode = DirectXFullScreenMode::ScreenResolution;
 	m_DiscLedColour = LEDColour::Red;
 
 	// DirectX stuff
@@ -2863,7 +2863,7 @@ void BeebWin::SetDirectXFullScreenMode(DirectXFullScreenMode Mode)
 	// Ignore IDM_VIEW_DD_SCREENRES if already in full screen mode
 	if ((Mode != DirectXFullScreenMode::ScreenResolution) || !m_FullScreen)
 	{
-		m_DDFullScreenMode = Mode;
+		m_DirectXFullScreenMode = Mode;
 
 		TranslateDDSize();
 
@@ -2878,7 +2878,7 @@ void BeebWin::SetDirectXFullScreenMode(DirectXFullScreenMode Mode)
 
 void BeebWin::TranslateDDSize()
 {
-	switch (m_DDFullScreenMode)
+	switch (m_DirectXFullScreenMode)
 	{
 		case DirectXFullScreenMode::_640x480:
 			m_XDXSize = 640;
@@ -2978,7 +2978,7 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 
 	for (size_t i = 0; i < _countof(MenuItems); i++)
 	{
-		if (m_DDFullScreenMode == MenuItems[i].Mode)
+		if (m_DirectXFullScreenMode == MenuItems[i].Mode)
 		{
 			SelectedMenuItemID = MenuItems[i].ID;
 			break;
@@ -3293,7 +3293,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 	if (m_FullScreen)
 	{
 		// Get the monitor that the BeebEm window is on to account for multiple monitors
-		if (m_DDFullScreenMode == DirectXFullScreenMode::ScreenResolution)
+		if (m_DirectXFullScreenMode == DirectXFullScreenMode::ScreenResolution)
 		{
 			HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
 			MONITORINFO MonitorInfo;

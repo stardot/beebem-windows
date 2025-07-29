@@ -679,7 +679,7 @@ void BeebWin::LoadDisplayPreferences(int Version)
 
 		m_Preferences.GetStringValue(CFG_DX_FULL_SCREEN_MODE, Value, DirectXFullScreenModeStr[0]);
 
-		m_DDFullScreenMode = static_cast<DirectXFullScreenMode>(FindEnum(Value, DirectXFullScreenModeStr, 0));
+		m_DirectXFullScreenMode = static_cast<DirectXFullScreenMode>(FindEnum(Value, DirectXFullScreenModeStr, 0));
 	}
 	else
 	{
@@ -690,20 +690,20 @@ void BeebWin::LoadDisplayPreferences(int Version)
 
 		switch (Value)
 		{
-			case 40102: default: m_DDFullScreenMode = DirectXFullScreenMode::ScreenResolution; break;
-			case 40099:          m_DDFullScreenMode = DirectXFullScreenMode::_640x480; break;
-			case 40279:          m_DDFullScreenMode = DirectXFullScreenMode::_720x576; break;
-			case 40280:          m_DDFullScreenMode = DirectXFullScreenMode::_800x600; break;
-			case 40100:          m_DDFullScreenMode = DirectXFullScreenMode::_1024x768; break;
-			case 40288:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x720; break;
-			case 40101:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x1024; break;
-			case 40221:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x768; break;
-			case 40222:          m_DDFullScreenMode = DirectXFullScreenMode::_1280x960; break;
-			case 40223:          m_DDFullScreenMode = DirectXFullScreenMode::_1440x900; break;
-			case 40224:          m_DDFullScreenMode = DirectXFullScreenMode::_1600x1200; break;
-			case 40289:          m_DDFullScreenMode = DirectXFullScreenMode::_1920x1080; break;
-			case 40294:          m_DDFullScreenMode = DirectXFullScreenMode::_2560x1440; break;
-			case 40295:          m_DDFullScreenMode = DirectXFullScreenMode::_3840x2160; break;
+			case 40102: default: m_DirectXFullScreenMode = DirectXFullScreenMode::ScreenResolution; break;
+			case 40099:          m_DirectXFullScreenMode = DirectXFullScreenMode::_640x480; break;
+			case 40279:          m_DirectXFullScreenMode = DirectXFullScreenMode::_720x576; break;
+			case 40280:          m_DirectXFullScreenMode = DirectXFullScreenMode::_800x600; break;
+			case 40100:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1024x768; break;
+			case 40288:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1280x720; break;
+			case 40101:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1280x1024; break;
+			case 40221:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1280x768; break;
+			case 40222:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1280x960; break;
+			case 40223:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1440x900; break;
+			case 40224:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1600x1200; break;
+			case 40289:          m_DirectXFullScreenMode = DirectXFullScreenMode::_1920x1080; break;
+			case 40294:          m_DirectXFullScreenMode = DirectXFullScreenMode::_2560x1440; break;
+			case 40295:          m_DirectXFullScreenMode = DirectXFullScreenMode::_3840x2160; break;
 		}
 	}
 
@@ -1736,7 +1736,7 @@ void BeebWin::SavePreferences(bool saveAll)
 		// Display
 		m_Preferences.SetStringValue(CFG_DISPLAY_RENDERER, DisplayRendererTypeStr[(int)m_DisplayRenderer]);
 		m_Preferences.SetBoolValue(CFG_FULL_SCREEN, m_FullScreen);
-		m_Preferences.SetStringValue(CFG_DX_FULL_SCREEN_MODE, DirectXFullScreenModeStr[(int)m_DDFullScreenMode]);
+		m_Preferences.SetStringValue(CFG_DX_FULL_SCREEN_MODE, DirectXFullScreenModeStr[(int)m_DirectXFullScreenMode]);
 		m_Preferences.EraseValue(CFG_DX_FULL_SCREEN_MODE_OLD);
 		m_Preferences.SetBoolValue(CFG_MAINTAIN_ASPECT_RATIO, m_MaintainAspectRatio);
 		m_Preferences.SetBoolValue(CFG_DX_SMOOTHING, m_DXSmoothing);
