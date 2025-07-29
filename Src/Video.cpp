@@ -713,12 +713,18 @@ static void VideoStartOfFrame()
     }
   }
 
-  const int IL_Multiplier = (CRTC_InterlaceAndDelay & 1) ? 2 : 1;
+  // Increment VideoTriggerCount by the number of 2MHz cycles until another
+  // scanline needs doing.
 
-  if (VideoState.InterlaceFrame) {
-    IncTrigger((IL_Multiplier*(CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
-  } else {
-    IncTrigger(((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2)),VideoTriggerCount); /* Number of 2MHz cycles until another scanline needs doing */
+  if (VideoState.InterlaceFrame)
+  {
+    const int InterlaceMultiplier = (CRTC_InterlaceAndDelay & 1) ? 2 : 1;
+
+    IncTrigger((InterlaceMultiplier * (CRTC_HorizontalTotal + 1) * ((VideoULA_ControlReg & 16) ? 1 : 2)), VideoTriggerCount);
+  }
+  else
+  {
+    IncTrigger(((CRTC_HorizontalTotal + 1) * ((VideoULA_ControlReg & 16) ? 1 : 2)), VideoTriggerCount);
   }
 }
 
@@ -1176,8 +1182,10 @@ void VideoDoScanLine(void) {
     // Handle VSync
     // RTW - this was moved to the top so that we can correctly set R7=0,
     // i.e. we can catch it before the line counters are incremented
-    if (VideoState.VSyncState) {
-      if (!(--VideoState.VSyncState)) {
+    if (VideoState.VSyncState > 0)
+    {
+      if (--VideoState.VSyncState == 0)
+      {
         SysVIATriggerCA1Int(0);
       }
     }
@@ -1267,8 +1275,12 @@ void VideoDoScanLine(void) {
       }
       VideoStartOfFrame();
       AdjustVideo();
-    } else {
-      IncTrigger((CRTC_HorizontalTotal+1)*((VideoULA_ControlReg & 16)?1:2),VideoTriggerCount);
+    }
+	else
+	{
+      // Increment VideoTriggerCount by the number of 2MHz cycles until another
+      // scanline needs doing.
+      IncTrigger((CRTC_HorizontalTotal + 1) * ((VideoULA_ControlReg & 16) ? 1 : 2), VideoTriggerCount);
     }
   } /* Teletext if */
 }
