@@ -35,6 +35,8 @@ Boston, MA  02110-1301, USA.
 #include "Main.h"
 #include "Model.h"
 
+// #define DEBUG_RTC
+
 /*-------------------------------------------------------------------------*/
 
 // The Acorn Master Series uses a HD146818. This provides a RTC (Real Time
@@ -316,7 +318,9 @@ void RTCInit()
 
 	RTCTimeOffset = SysTime - RTCConvertClock();
 
+	#ifdef DEBUG_RTC
 	DebugTrace("RTCInit: RTCTimeOffset set to %d\n", (int)RTCTimeOffset);
+	#endif
 }
 
 /*-------------------------------------------------------------------------*/
@@ -349,7 +353,9 @@ bool RTCIsChipEnable()
 
 void RTCWriteAddress(unsigned char Address)
 {
+	#ifdef DEBUG_RTC
 	DebugTrace("RTC: Write address %02X\n", Address);
+	#endif
 
 	CMOS.Address = Address;
 }
@@ -358,7 +364,9 @@ void RTCWriteAddress(unsigned char Address)
 
 void RTCWriteData(unsigned char Value)
 {
+	#ifdef DEBUG_RTC
 	DebugTrace("RTC: Write data: address %02X value %02X\n", CMOS.Address, Value);
+	#endif
 
 	if (DebugEnabled)
 	{
@@ -372,7 +380,9 @@ void RTCWriteData(unsigned char Value)
 	if (CMOS.Address <= 0x9)
 	{
 		// Clock registers
+		#ifdef DEBUG_RTC
 		DebugTrace("RTCWriteData: Set register %d to %02X\n", CMOS.Address, Value);
+		#endif
 
 		// BCD or binary format?
 		if (pCMOS[RTC146818_REG_B] & RTC146818_REG_B_BINARY)
@@ -404,7 +414,9 @@ void RTCWriteData(unsigned char Value)
 			time(&SysTime);
 			RTCTimeOffset = SysTime - RTCConvertClock();
 
+			#ifdef DEBUG_RTC
 			DebugTrace("RTCWriteData: RTCTimeOffset set to %d\n", (int)RTCTimeOffset);
+			#endif
 		}
 
 		// Write the value to CMOS anyway
@@ -439,7 +451,9 @@ unsigned char RTCReadData()
 		                   CMOS.Address, Value);
 	}
 
+	#ifdef DEBUG_RTC
 	DebugTrace("RTC: Read address %02X value %02X\n", CMOS.Address, Value);
+	#endif
 
 	return Value;
 }
