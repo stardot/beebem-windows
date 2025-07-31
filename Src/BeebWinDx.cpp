@@ -1044,7 +1044,7 @@ void BeebWin::UpdateSmoothing()
 			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 		}
 	}
-	else
+	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		if (m_DDS2One != nullptr)
 		{
