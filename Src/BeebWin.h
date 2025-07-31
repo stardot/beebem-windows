@@ -413,6 +413,7 @@ public:
 
 	void SetDisplayRenderer(DisplayRendererType DisplayRenderer);
 	void UpdateDisplayRendererMenu();
+	void UpdateDisplayRendererOptionsMenu();
 
 	void SetSoundStreamer(SoundStreamerType StreamerType);
 	void UpdateSoundStreamerMenu();
