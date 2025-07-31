@@ -2562,20 +2562,7 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_TIMER:
-			if (wParam == TIMER_KEYBOARD)
-			{
-				HandleKeyboardTimer();
-			}
-			else if (wParam == TIMER_AUTOBOOT_DELAY) // Handle timer for automatic disc boot delay
-			{
-				KillBootDiscTimer();
-				DoShiftBreak();
-			}
-			else if (wParam == TIMER_PRINTER)
-			{
-				KillTimer(m_hWnd, TIMER_PRINTER);
-				CopyPrinterBufferToClipboard();
-			}
+			OnTimer(wParam);
 			break;
 
 		case WM_USER_KEYBOARD_DIALOG_CLOSED:
@@ -5599,6 +5586,8 @@ bool BeebWin::HasKbdCmd() const
 	return !m_KbdCmd.empty();
 }
 
+/****************************************************************************/
+
 void BeebWin::SetKeyboardTimer()
 {
 	SetTimer(m_hWnd, TIMER_KEYBOARD, 1000, NULL);
@@ -5609,13 +5598,29 @@ void BeebWin::SetBootDiscTimer()
 	SetTimer(m_hWnd, TIMER_AUTOBOOT_DELAY, m_AutoBootDelay, NULL);
 }
 
-void BeebWin::KillBootDiscTimer()
+void BeebWin::OnTimer(UINT_PTR TimerID)
 {
-	m_BootDiscTimerElapsed = true;
-	KillTimer(m_hWnd, TIMER_AUTOBOOT_DELAY);
+	if (TimerID == TIMER_KEYBOARD)
+	{
+		HandleKeyboardTimer();
+	}
+	else if (TimerID == TIMER_AUTOBOOT_DELAY) // Handle timer for automatic disc boot delay
+	{
+		m_BootDiscTimerElapsed = true;
+		KillTimer(m_hWnd, TIMER_AUTOBOOT_DELAY);
+
+		DoShiftBreak();
+	}
+	else if (TimerID == TIMER_PRINTER)
+	{
+		KillTimer(m_hWnd, TIMER_PRINTER);
+
+		CopyPrinterBufferToClipboard();
+	}
 }
 
 /****************************************************************************/
+
 bool BeebWin::RebootSystem()
 {
 	HANDLE hToken;

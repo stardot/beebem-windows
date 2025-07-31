@@ -379,7 +379,7 @@ public:
 	bool HasKbdCmd() const;
 	void SetKeyboardTimer();
 	void SetBootDiscTimer();
-	void KillBootDiscTimer();
+	void OnTimer(UINT_PTR TimerID);
 
 	void SaveBeebEmID(FILE *SUEF);
 	void SaveEmuUEF(FILE *SUEF);
@@ -606,9 +606,9 @@ public:
 	int FindEnum(const std::string& Value, const char* const* Names, int Default);
 
 	// Timers
-	const UINT TIMER_KEYBOARD       = 1;
-	const UINT TIMER_AUTOBOOT_DELAY = 2;
-	const UINT TIMER_PRINTER        = 3;
+	const UINT_PTR TIMER_KEYBOARD       = 1;
+	const UINT_PTR TIMER_AUTOBOOT_DELAY = 2;
+	const UINT_PTR TIMER_PRINTER        = 3;
 
 	// Main window
 	HWND m_hWnd;
