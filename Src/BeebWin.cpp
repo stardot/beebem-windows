@@ -1098,14 +1098,22 @@ void BeebWin::DestroySprowCoPro()
 
 void BeebWin::CreateBitmap()
 {
-	if (m_hBitmap != NULL)
+	if (m_hBitmap != nullptr)
+	{
 		DeleteObject(m_hBitmap);
-	if (m_hDCBitmap != NULL)
-		DeleteDC(m_hDCBitmap);
-	if (m_screen_blur != NULL)
-		free(m_screen_blur);
+	}
 
-	m_hDCBitmap = CreateCompatibleDC(NULL);
+	if (m_hDCBitmap != nullptr)
+	{
+		DeleteDC(m_hDCBitmap);
+	}
+
+	if (m_screen_blur != nullptr)
+	{
+		free(m_screen_blur);
+	}
+
+	m_hDCBitmap = CreateCompatibleDC(nullptr);
 
 	m_bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	m_bmi.bmiHeader.biWidth = 800;
@@ -1346,6 +1354,8 @@ void BeebWin::EnableMenuItem(UINT id, bool Enabled)
 	::EnableMenuItem(m_hMenu, id, Enabled ? MF_ENABLED : MF_GRAYED);
 }
 
+/****************************************************************************/
+
 void BeebWin::InitMenu(void)
 {
 	// File -> Video Options
@@ -1492,6 +1502,8 @@ void BeebWin::SetDisplayRenderer(DisplayRendererType DisplayRenderer)
 	EnableMenuItem(IDM_DXSMOOTHING, DirectXEnabled);
 	EnableMenuItem(IDM_DXSMOOTHMODE7ONLY, DirectXEnabled);
 }
+
+/****************************************************************************/
 
 void BeebWin::UpdateDisplayRendererMenu()
 {
