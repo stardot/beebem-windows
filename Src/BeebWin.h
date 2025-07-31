@@ -37,6 +37,7 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 #include <d3d9.h>
+#include <d3dx9math.h>
 #include <ddraw.h>
 #include <sapi.h>
 
@@ -443,15 +444,12 @@ public:
 	// DirectDraw
 	HRESULT InitDirectDraw();
 	HRESULT InitSurfaces();
-	void CloseSurfaces();
+	void ResetSurfaces();
 
 	// DirectX9
-	bool InitDX9();
-	void CloseDX9();
-	HRESULT InitD3DDevice();
-	void CloseD3DDevice();
+	HRESULT InitDX9();
+	void ExitDX9();
 	void RenderDX9();
-	void OnDeviceLost();
 
 	void SetWindowSize(int Width, int Height);
 	void UpdateWindowSizeMenu();
@@ -686,7 +684,6 @@ public:
 	// DirectX stuff
 	bool m_DXInit;
 	bool m_DXResetPending;
-	bool m_DXDeviceLost;
 
 	// DirectDraw stuff
 	HINSTANCE m_hInstDDraw;
@@ -705,7 +702,7 @@ public:
 	LPDIRECT3DDEVICE9 m_pd3dDevice;
 	LPDIRECT3DVERTEXBUFFER9 m_pVB;
 	LPDIRECT3DTEXTURE9 m_pTexture;
-	D3DMATRIX m_TextureMatrix;
+	D3DXMATRIX m_TextureMatrix;
 
 	// Joystick input
 	bool m_JoystickCaptured;

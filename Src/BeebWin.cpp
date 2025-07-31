@@ -206,7 +206,6 @@ BeebWin::BeebWin()
 	// DirectX stuff
 	m_DXInit = false;
 	m_DXResetPending = false;
-	m_DXDeviceLost = false;
 
 	// DirectDraw stuff
 	m_hInstDDraw = nullptr;
@@ -634,8 +633,6 @@ BeebWin::~BeebWin()
 {
 	if (m_DisplayRenderer != DisplayRendererType::GDI)
 		ExitDX();
-
-	CloseDX9();
 
 	ReleaseDC(m_hWnd, m_hDC);
 
@@ -2588,10 +2585,6 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 		case WM_USER_PORT_BREAKOUT_DIALOG_CLOSED:
 			delete userPortBreakoutDialog;
 			userPortBreakoutDialog = nullptr;
-			break;
-
-		case WM_DIRECTX9_DEVICE_LOST:
-			OnDeviceLost();
 			break;
 
 		case WM_IP232_ERROR:

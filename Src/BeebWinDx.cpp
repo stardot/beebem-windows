@@ -22,6 +22,7 @@ Boston, MA  02110-1301, USA.
 
 #include <windows.h>
 #include <ddraw.h>
+#include <d3dx9math.h>
 
 #include <stdio.h>
 
@@ -71,7 +72,7 @@ void BeebWin::InitDX()
 
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		hResult = InitD3DDevice();
+		hResult = InitDX9();
 
 		if (FAILED(hResult))
 		{
@@ -112,7 +113,7 @@ void BeebWin::ResetDX()
 
 	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		CloseD3DDevice();
+		ExitDX9();
 
 		// Need to let message loop run before re-initialising DX otherwise
 		// odd artifacts are seen when changing window size.
@@ -120,7 +121,7 @@ void BeebWin::ResetDX()
 	}
 	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		CloseSurfaces();
+		ResetSurfaces();
 		ReinitDX();
 	}
 }
@@ -137,7 +138,7 @@ void BeebWin::ReinitDX()
 
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		hResult = InitD3DDevice();
+		hResult = InitDX9();
 	}
 	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
@@ -161,11 +162,11 @@ void BeebWin::ExitDX()
 {
 	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		CloseD3DDevice();
+		ExitDX9();
 	}
 	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		CloseSurfaces();
+		ResetSurfaces();
 
 		if (m_DD2 != nullptr)
 		{
@@ -310,7 +311,7 @@ HRESULT BeebWin::InitSurfaces()
 
 /****************************************************************************/
 
-void BeebWin::CloseSurfaces()
+void BeebWin::ResetSurfaces()
 {
 	if (m_Clipper)
 	{
@@ -347,280 +348,215 @@ void BeebWin::CloseSurfaces()
 
 /****************************************************************************/
 
-bool BeebWin::InitDX9()
+HRESULT BeebWin::InitDX9()
 {
 	#ifdef DEBUG_DX9
 	DebugTrace("BeebWin::InitDX9\n");
 	#endif
+
+	CUSTOMVERTEX * pVertices = nullptr;
+	HRESULT hResult = D3D_OK;
+
+	m_pD3D = nullptr;
+	m_pd3dDevice = nullptr;
+	m_pVB = nullptr;
+	m_pTexture = nullptr;
 
 	// Create the D3D object.
 	m_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
 
 	if (m_pD3D == nullptr)
 	{
-		return false;
+		hResult = E_FAIL;
 	}
 
-	#ifdef DEBUG_DX9
+#if 0
 
-	D3DDISPLAYMODE d3dMode;
-	UINT nModes = m_pD3D->GetAdapterModeCount(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8);
-	for (UINT Mode = 0; Mode < nModes; ++Mode)
+	if (SUCCEEDED(hResult))
 	{
-		m_pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8,
-		                         Mode, &d3dMode);
-		DebugTrace("D3D Mode: %d x %d, refresh %d\n",
-		           d3dMode.Width, d3dMode.Height, d3dMode.RefreshRate);
-	}
-
-	#endif
-
-	return true;
-}
-
-/****************************************************************************/
-
-void BeebWin::CloseDX9()
-{
-	#ifdef DEBUG_DX9
-	DebugTrace("BeebWin::CloseDX9\n");
-	#endif
-
-	if (m_pD3D != nullptr)
-	{
-		m_pD3D->Release();
-		m_pD3D = nullptr;
-	}
-}
-
-/****************************************************************************/
-
-HRESULT BeebWin::InitD3DDevice()
-{
-	#ifdef DEBUG_DX9
-	DebugTrace("BeebWin::InitD3DDevice\n");
-	#endif
-
-	HRESULT hResult = D3D_OK;
-
-	CUSTOMVERTEX* pVertices = nullptr;
-	m_pd3dDevice = nullptr;
-	m_pVB = nullptr;
-	m_pTexture = nullptr;
-
-	D3DMATRIX Ortho2D;
-	D3DMATRIX Ident;
-
-	// Create the D3D object on first use.
-	if (m_pD3D == nullptr)
-	{
-		if (!InitDX9())
+		D3DDISPLAYMODE d3dMode;
+		UINT nModes = m_pD3D->GetAdapterModeCount(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8);
+		for (UINT Mode = 0; Mode < nModes; ++Mode)
 		{
-			hResult = E_FAIL;
-			goto Fail;
+			hResult = m_pD3D->EnumAdapterModes(D3DADAPTER_DEFAULT, D3DFMT_X8R8G8B8,
+			                                   Mode, &d3dMode);
+			DebugTrace("D3D Mode: %d x %d, refresh %d\n",
+			           d3dMode.Width, d3dMode.Height, d3dMode.RefreshRate);
 		}
 	}
 
-	// Find the monitor index based on the window BeebEm is currently on
-	// as needed to pass to CreateDevice().
-	HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+#endif
 
-	UINT Adapter = D3DADAPTER_DEFAULT;
-	UINT AdapterCount = m_pD3D->GetAdapterCount();
-
-	for (UINT i = 0; i < AdapterCount; i++)
+	if (SUCCEEDED(hResult))
 	{
-		if (hMonitor == m_pD3D->GetAdapterMonitor(i))
+		// Find the monitor index based on the window BeebEm is currently on
+		// as needed to pass to CreateDevice().
+		HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+
+		UINT Adapter = D3DADAPTER_DEFAULT;
+		UINT AdapterCount = m_pD3D->GetAdapterCount();
+
+		for (UINT i = 0; i < AdapterCount; i++)
 		{
-			Adapter = i;
-			break;
+			if (hMonitor == m_pD3D->GetAdapterMonitor(i))
+			{
+				Adapter = i;
+				break;
+			}
 		}
+
+		D3DDISPLAYMODE DisplayMode;
+		m_pD3D->GetAdapterDisplayMode(Adapter, &DisplayMode);
+
+		// Set up the structure used to create the D3DDevice.
+		D3DPRESENT_PARAMETERS d3dpp;
+		ZeroMemory(&d3dpp, sizeof(d3dpp));
+
+		d3dpp.Windowed = m_FullScreen ? FALSE : TRUE;
+
+		if (d3dpp.Windowed)
+		{
+			d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+		}
+		else
+		{
+			d3dpp.BackBufferWidth = m_XDXSize;
+			d3dpp.BackBufferHeight = m_YDXSize;
+			d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
+			d3dpp.FullScreen_RefreshRateInHz = DisplayMode.RefreshRate;
+		}
+
+		d3dpp.BackBufferCount = 1;
+		d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+		d3dpp.hDeviceWindow = m_hWnd;
+		d3dpp.EnableAutoDepthStencil = FALSE;
+
+		// Create the D3DDevice
+		hResult = m_pD3D->CreateDevice(Adapter,
+		                               D3DDEVTYPE_HAL,
+		                               m_hWnd, // hFocusWindow
+		                               D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+		                               &d3dpp,
+		                               &m_pd3dDevice);
 	}
 
-	D3DCAPS9 DeviceCaps;
-	m_pD3D->GetDeviceCaps(Adapter, D3DDEVTYPE_HAL, &DeviceCaps);
-
-	D3DDISPLAYMODE DisplayMode;
-    m_pD3D->GetAdapterDisplayMode(Adapter, &DisplayMode);
-
-	// Set up the structure used to create the D3DDevice.
-	D3DPRESENT_PARAMETERS d3dpp;
-	ZeroMemory(&d3dpp, sizeof(d3dpp));
-
-	d3dpp.Windowed = m_FullScreen ? FALSE : TRUE;
-
-	if (d3dpp.Windowed)
+	if (SUCCEEDED(hResult))
 	{
-		d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+		// Turn off D3D lighting
+		m_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+
+		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
+		{
+			// Turn on bilinear interpolation so image is smoothed
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+			m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		}
+
+		// Just display a texture
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+		m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+
+		// Create the vertex buffer.
+		hResult = m_pd3dDevice->CreateVertexBuffer(4 * sizeof(CUSTOMVERTEX),
+		                                           0, // Usage
+		                                           D3DFVF_CUSTOMVERTEX,
+		                                           D3DPOOL_MANAGED,
+		                                           &m_pVB,
+		                                           nullptr);
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		// Fill the vertex buffer. We are setting the tu and tv texture
+		// coordinates, which range from 0.0 to 1.0
+		hResult = m_pVB->Lock(0, 0, (void**)&pVertices, 0);
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		pVertices[0].position = D3DXVECTOR3(0.0f, -511.0f, 0.0f);
+		pVertices[0].color = 0x00ffffff;
+		pVertices[0].tu = 0.0f;
+		pVertices[0].tv = 1.0f;
+
+		pVertices[1].position = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		pVertices[1].color = 0x00ffffff;
+		pVertices[1].tu = 0.0f;
+		pVertices[1].tv = 0.0f;
+
+		pVertices[2].position = D3DXVECTOR3(799.0f, -511.0f, 0.0f);
+		pVertices[2].color = 0x00ffffff;
+		pVertices[2].tu = 1.0f;
+		pVertices[2].tv = 1.0f;
+
+		pVertices[3].position = D3DXVECTOR3(799.0f, 0.0f, 0.0f);
+		pVertices[3].color = 0x00ffffff;
+		pVertices[3].tu = 1.0f;
+		pVertices[3].tv = 0.0f;
+
+		m_pVB->Unlock();
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		// Set up matrices
+		D3DXMATRIX Ortho2D;
+		//D3DXMatrixOrthoOffCenterLH(&Ortho2D, 0.0f, 800.0f, -512.0f, 0.0f, 0.0f, 1.0f);
+		D3DXMatrixIdentity(&Ortho2D);
+		// float l = 0.0f;
+		float r = 800.0f;
+		float b = -512.0f;
+		float t = 0.0f;
+		float zn = 0.0f;
+		float zf = 1.0f;
+		Ortho2D._11 = 2.0f / (r - 1.0f);
+		Ortho2D._22 = 2.0f / (t - b);
+		Ortho2D._33 = 1.0f / (zf - zn);
+		Ortho2D._41 = (1.0f + r) / (1.0f - r);
+		Ortho2D._42 = (t + b) / (b - t);
+		Ortho2D._43 = zn / (zn - zf);
+
+		m_pd3dDevice->SetTransform(D3DTS_PROJECTION, &Ortho2D);
+
+		D3DXMATRIX Ident;
+		D3DXMatrixIdentity(&Ident);
+		m_pd3dDevice->SetTransform(D3DTS_VIEW, &Ident);
+		m_pd3dDevice->SetTransform(D3DTS_WORLD, &Ident);
+
+		// Identity matrix will fill window with our texture
+		D3DXMatrixIdentity(&m_TextureMatrix);
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		hResult = m_pd3dDevice->CreateTexture(800,
+		                                      512,
+		                                      1, // Levels
+		                                      0, // Usage
+		                                      D3DFMT_X8R8G8B8,
+		                                      D3DPOOL_MANAGED,
+		                                      &m_pTexture,
+		                                      nullptr);
+	}
+
+	if (SUCCEEDED(hResult))
+	{
+		m_DXInit = true;
 	}
 	else
 	{
-		d3dpp.BackBufferWidth = m_XDXSize;
-		d3dpp.BackBufferHeight = m_YDXSize;
-		d3dpp.BackBufferFormat = D3DFMT_X8R8G8B8;
-		d3dpp.FullScreen_RefreshRateInHz = DisplayMode.RefreshRate;
+		ExitDX9();
 	}
-
-	d3dpp.BackBufferCount = 1;
-	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp.hDeviceWindow = m_hWnd;
-	d3dpp.EnableAutoDepthStencil = FALSE;
-
-	DWORD BehaviourFlags = 0;
-
-	if (DeviceCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT)
-	{
-		BehaviourFlags |= D3DCREATE_HARDWARE_VERTEXPROCESSING;
-	}
-	else
-	{
-		BehaviourFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-	}
-
-	// Create the D3DDevice
-	hResult = m_pD3D->CreateDevice(Adapter,
-	                               D3DDEVTYPE_HAL,
-	                               m_hWnd, // hFocusWindow
-	                               BehaviourFlags,
-	                               &d3dpp,
-	                               &m_pd3dDevice);
-
-	if (FAILED(hResult))
-	{
-		#ifdef DEBUG_DX9
-		DebugTrace("CreateDevice failed %08X\n", hResult);
-		#endif
-
-		goto Fail;
-	}
-
-	// Turn off D3D lighting
-	m_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-
-	if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
-	{
-		// Turn on bilinear interpolation so image is smoothed
-		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-		m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-	}
-
-	// Just display a texture
-	m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-	m_pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-
-	DebugTrace("m_pD3D->CreateVertexBuffer\n");
-
-	// Create the vertex buffer.
-	hResult = m_pd3dDevice->CreateVertexBuffer(4 * sizeof(CUSTOMVERTEX),
-		                                       0, // Usage
-		                                       D3DFVF_CUSTOMVERTEX,
-		                                       D3DPOOL_MANAGED,
-		                                       &m_pVB,
-		                                       nullptr);
-
-	if (FAILED(hResult))
-	{
-		#ifdef DEBUG_DX9
-		DebugTrace("CreateVertexBuffer failed %08X\n", hResult);
-		#endif
-
-		goto Fail;
-	}
-
-	// Fill the vertex buffer. We are setting the tu and tv texture
-	// coordinates, which range from 0.0 to 1.0
-	hResult = m_pVB->Lock(0, 0, (void**)&pVertices, 0);
-
-	if (FAILED(hResult))
-	{
-		#ifdef DEBUG_DX9
-		DebugTrace("VertexBuffer Lock failed %08X\n", hResult);
-		#endif
-
-		goto Fail;
-	}
-
-	pVertices[0].position = {0.0f, -511.0f, 0.0f};
-	pVertices[0].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
-	pVertices[0].tu       = 0.0f;
-	pVertices[0].tv       = 1.0f;
-
-	pVertices[1].position = {0.0f, 0.0f, 0.0f};
-	pVertices[1].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
-	pVertices[1].tu       = 0.0f;
-	pVertices[1].tv       = 0.0f;
-
-	pVertices[2].position = {799.0f, -511.0f, 0.0f};
-	pVertices[2].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
-	pVertices[2].tu       = 1.0f;
-	pVertices[2].tv       = 1.0f;
-
-	pVertices[3].position = {799.0f, 0.0f, 0.0f};
-	pVertices[3].color    = D3DCOLOR_RGBA(255, 255, 255, 0);
-	pVertices[3].tu       = 1.0f;
-	pVertices[3].tv       = 0.0f;
-
-	m_pVB->Unlock();
-
-	// Set up matrices
-	//D3DXMatrixOrthoOffCenterLH(&Ortho2D, 0.0f, 800.0f, -512.0f, 0.0f, 0.0f, 1.0f);
-	D3DMatrixIdentity(&Ortho2D);
-	// const float l = 0.0f;
-	const float r = 800.0f;
-	const float b = -512.0f;
-	const float t = 0.0f;
-	const float zn = 0.0f;
-	const float zf = 1.0f;
-	Ortho2D._11 = 2.0f / (r - 1.0f);
-	Ortho2D._22 = 2.0f / (t - b);
-	Ortho2D._33 = 1.0f / (zf - zn);
-	Ortho2D._41 = (1.0f + r) / (1.0f - r);
-	Ortho2D._42 = (t + b) / (b - t);
-	Ortho2D._43 = zn / (zn - zf);
-
-	m_pd3dDevice->SetTransform(D3DTS_PROJECTION, &Ortho2D);
-
-	D3DMatrixIdentity(&Ident);
-	m_pd3dDevice->SetTransform(D3DTS_VIEW, &Ident);
-	m_pd3dDevice->SetTransform(D3DTS_WORLD, &Ident);
-
-	// Identity matrix will fill window with our texture
-	D3DMatrixIdentity(&m_TextureMatrix);
-
-	hResult = m_pd3dDevice->CreateTexture(800,
-	                                      512,
-	                                      1, // Levels
-	                                      0, // Usage
-	                                      D3DFMT_X8R8G8B8,
-	                                      D3DPOOL_MANAGED,
-	                                      &m_pTexture,
-	                                      nullptr);
-
-	if (FAILED(hResult))
-	{
-		#ifdef DEBUG_DX9
-		DebugTrace("CreateTexture failed %08X\n", hResult);
-		#endif
-
-		goto Fail;
-	}
-
-	m_DXInit = true;
-
-	return hResult;
-
-Fail:
-	CloseD3DDevice();
 
 	return hResult;
 }
 
 /****************************************************************************/
 
-void BeebWin::CloseD3DDevice()
+void BeebWin::ExitDX9()
 {
 	#ifdef DEBUG_DX9
-	DebugTrace("BeebWin::CloseD3DDevice\n");
+	DebugTrace("BeebWin::ExitDX9\n");
 	#endif
 
 	if (m_pTexture != nullptr)
@@ -639,6 +575,12 @@ void BeebWin::CloseD3DDevice()
 	{
 		m_pd3dDevice->Release();
 		m_pd3dDevice = nullptr;
+	}
+
+	if (m_pD3D != nullptr)
+	{
+		m_pD3D->Release();
+		m_pD3D = nullptr;
 	}
 
 	m_DXInit = false;
@@ -698,56 +640,16 @@ void BeebWin::RenderDX9()
 		DebugTrace("BeebWin::RenderDX9 - D3DERR_DEVICELOST\n");
 		#endif
 
-		// Can be generated when switching in/out of fullscreen - need to reset
-		m_DXDeviceLost = true;
-		PostMessage(m_hWnd, WM_DIRECTX9_DEVICE_LOST, 0, 0);
+		ResetDX();
+		hResult = D3D_OK;
 	}
-}
 
-/****************************************************************************/
-
-// WM_DIRECTX9_DEVICE_LOST message handler.
-
-void BeebWin::OnDeviceLost()
-{
-	#ifdef DEBUG_DX9
-	DebugTrace("BeebWin::OnDeviceLost\n");
-	#endif
-
-	if (m_pd3dDevice != nullptr)
+	if (hResult != D3D_OK)
 	{
-		HRESULT hResult = m_pd3dDevice->TestCooperativeLevel();
+		Report(MessageType::Error, "DirectX9 renderer failed\nFailure code %X\nSwitching to GDI",
+		       hResult);
 
-		if (hResult == D3DERR_DEVICELOST)
-		{
-			#ifdef DEBUG_DX9
-			DebugTrace("D3DERR_DEVICELOST\n");
-			#endif
-
-			// The device has been lost but cannot be reset at this time.
-			// Therefore, rendering is not possible.
-			::Sleep(100);
-			PostMessage(m_hWnd, WM_DIRECTX9_DEVICE_LOST, 0, 0);
-		}
-		else if (hResult == D3DERR_DEVICENOTRESET)
-		{
-			#ifdef DEBUG_DX9
-			DebugTrace("D3DERR_DEVICENOTRESET\n");
-			#endif
-
-			// The device has been lost but can be reset at this time.
-			m_DXDeviceLost = false;
-			ResetDX();
-			ResetTiming();
-		}
-		else if (hResult == D3DERR_DRIVERINTERNALERROR)
-		{
-			#ifdef DEBUG_DX9
-			DebugTrace("D3DERR_DRIVERINTERNALERROR\n");
-			#endif
-
-			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
-		}
+		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 	}
 }
 
@@ -861,8 +763,6 @@ void BeebWin::updateLines(HDC hDC, int StartY, int NLines)
 
 		if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 		{
-			if (m_DXDeviceLost) return;
-
 			IDirect3DSurface9 *pSurface;
 			HRESULT hResult = m_pTexture->GetSurfaceLevel(0, &pSurface);
 

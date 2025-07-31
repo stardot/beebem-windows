@@ -28,7 +28,6 @@ Andrew Hague
     commands. These currently only work under Master series emulation.
   - Fixed CTS status bit.
   - Fixed broadcast packet destination to be 255.255.
-
 * Added Master ET support.
 * ROM config files (e.g., Roms.cfg) can now include comments. Note that
   files with comments are not backwards compatible with older BeebEm
@@ -88,9 +87,6 @@ Andrew Hague
 * Rewrote the Master 146818 RTC and CMOS emulation.
 * Improved the User Port real time clock (SAF3019P) emulation. Thanks to
   Ian Wolstenholme for confirming the register write behaviour.
-* Fixed the DirectX9 graphics renderer, where BeebEm would revert to GDI
-  rendering after the host PC resumes from being suspended or in some cases
-  enter a loop continually resetting the screen mode on entering full screen.
 * Fixed sound register reinitialisation after changing the sound sample rate.
 * Fixed sound muting when the BeebEm window loses focus.
 * Fixed BeebEm window so that it's no longer always on top after exiting
