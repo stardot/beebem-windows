@@ -195,14 +195,14 @@ HRESULT BeebWin::InitDirectDraw()
 {
 	HRESULT hResult = DDERR_GENERIC;
 
-	m_hInstDDraw = nullptr;
-	m_DD = nullptr;
-	m_DD2 = nullptr;
-	m_Clipper = nullptr;
-	m_DDS2One = nullptr;
-	m_DDSOne = nullptr;
-	m_DDS2Primary = nullptr;
-	m_DDSPrimary = nullptr;
+	assert(m_hInstDDraw == nullptr);
+	assert(m_DD == nullptr);
+	assert(m_DD2 == nullptr);
+	assert(m_Clipper == nullptr);
+	assert(m_DDS2One == nullptr);
+	assert(m_DDSOne == nullptr);
+	assert(m_DDS2Primary == nullptr);
+	assert(m_DDSPrimary == nullptr);
 
 	m_hInstDDraw = LoadLibrary("ddraw.dll");
 
