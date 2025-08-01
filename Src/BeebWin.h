@@ -682,7 +682,6 @@ public:
 	bool m_DXInit;
 	bool m_DXResetPending;
 	enum class DX9State { Uninitialised, OK, DeviceLost } m_DX9State;
-	int m_DX9DeviceLostCount;
 
 	// DirectDraw stuff
 	HINSTANCE m_hInstDDraw;

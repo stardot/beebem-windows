@@ -672,18 +672,9 @@ void BeebWin::OnDeviceLost()
 		DebugTrace("TestCooperativeLevel returned D3DERR_DEVICELOST\n");
 		#endif
 
-		m_DX9DeviceLostCount++;
-
-		if (m_DX9DeviceLostCount < 20)
-		{
-			// The device has been lost but cannot be reset at this time.
-			// Therefore, rendering is not possible. Wait a while and try again.
-			SetTimer(m_hWnd, TIMER_DEVICE_LOST, 500, nullptr);
-		}
-		else
-		{
-			DirectX9Failed(hResult);
-		}
+		// The device has been lost but cannot be reset at this time.
+		// Therefore, rendering is not possible. Wait a while and try again.
+		SetTimer(m_hWnd, TIMER_DEVICE_LOST, 500, nullptr);
 	}
 	else if (hResult == D3DERR_DEVICENOTRESET)
 	{
@@ -705,10 +696,10 @@ void BeebWin::OnDeviceLost()
 			DirectX9Failed(hResult);
 		}
 	}
-	else if (hResult == D3DERR_DRIVERINTERNALERROR)
+	else
 	{
 		#ifdef DEBUG_DX9
-		DebugTrace("TestCooperativeLevel returned D3DERR_DRIVERINTERNALERROR\n");
+		DebugTrace("TestCooperativeLevel returned %08X\n", hResult);
 		#endif
 
 		DirectX9Failed(hResult);
@@ -892,7 +883,6 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 
 				m_DX9State = DX9State::DeviceLost;
 				m_Frozen = true;
-				m_DX9DeviceLostCount = 0;
 				PostMessage(m_hWnd, WM_DIRECTX9_DEVICE_LOST, 0, 0);
 			}
 		}

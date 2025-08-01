@@ -206,7 +206,6 @@ BeebWin::BeebWin()
 	m_DXInit = false;
 	m_DXResetPending = false;
 	m_DX9State = DX9State::Uninitialised;
-	m_DX9DeviceLostCount = 0;
 
 	// DirectDraw stuff
 	m_hInstDDraw = nullptr;
