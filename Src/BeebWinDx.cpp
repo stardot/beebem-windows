@@ -36,7 +36,7 @@ Boston, MA  02110-1301, USA.
 #include "Messages.h"
 #include "Resource.h"
 
-// #define DEBUG_DX9
+#define DEBUG_DX9
 
 typedef HRESULT (WINAPI* LPDIRECTDRAWCREATE)(GUID* pGUID, IDirectDraw** ppDirectDraw, IUnknown* pUnkOuter);
 
@@ -112,7 +112,7 @@ void BeebWin::ResetDX()
 
 		// Need to let message loop run before re-initialising DX otherwise
 		// odd artifacts are seen when changing window size.
-		PostMessage(m_hWnd, WM_REINITDX, 0, 0);
+		PostMessage(m_hWnd, WM_DIRECTX9_REINITIALIZE, 0, 0);
 	}
 	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
@@ -433,6 +433,10 @@ HRESULT BeebWin::InitDX9()
 
 	if (FAILED(hResult))
 	{
+		#ifdef DEBUG_DX9
+		DebugTrace("IDirect3D9::CreateDevice failed\n");
+		#endif
+
 		goto Fail;
 	}
 
@@ -460,6 +464,10 @@ HRESULT BeebWin::InitDX9()
 
 	if (FAILED(hResult))
 	{
+		#ifdef DEBUG_DX9
+		DebugTrace("IDirect3D9::CreateVertexBuffer failed\n");
+		#endif
+
 		goto Fail;
 	}
 
@@ -469,6 +477,10 @@ HRESULT BeebWin::InitDX9()
 
 	if (FAILED(hResult))
 	{
+		#ifdef DEBUG_DX9
+		DebugTrace("IDirect3DVertexBuffer9::Lock failed\n");
+		#endif
+
 		goto Fail;
 	}
 
@@ -530,10 +542,15 @@ HRESULT BeebWin::InitDX9()
 
 	if (FAILED(hResult))
 	{
+		#ifdef DEBUG_DX9
+		DebugTrace("IDirect3D9::CreateTexture failed\n");
+		#endif
+
 		goto Fail;
 	}
 
 	m_DXInit = true;
+	m_DX9State = DX9State::OK;
 
 	return S_OK;
 
@@ -632,17 +649,81 @@ void BeebWin::RenderDX9()
 		DebugTrace("BeebWin::RenderDX9 - D3DERR_DEVICELOST\n");
 		#endif
 
-		ResetDX();
-		hResult = D3D_OK;
+		m_DX9State = DX9State::DeviceLost;
+		PostMessage(m_hWnd, WM_DIRECTX9_DEVICE_LOST, 0, 0);
 	}
+}
 
-	if (hResult != D3D_OK)
+/****************************************************************************/
+
+void BeebWin::OnDeviceLost()
+{
+	#ifdef DEBUG_DX9
+	DebugTrace("BeebWin::OnDeviceLost\n");
+	#endif
+
+	assert(m_pd3dDevice != nullptr);
+
+	HRESULT hResult = m_pd3dDevice->TestCooperativeLevel();
+
+	if (hResult == D3DERR_DEVICELOST)
 	{
-		Report(MessageType::Error, "DirectX9 renderer failed\nFailure code %X\nSwitching to GDI",
-		       hResult);
+		#ifdef DEBUG_DX9
+		DebugTrace("TestCooperativeLevel returned D3DERR_DEVICELOST\n");
+		#endif
 
-		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
+		m_DX9DeviceLostCount++;
+
+		if (m_DX9DeviceLostCount < 20)
+		{
+			// The device has been lost but cannot be reset at this time.
+			// Therefore, rendering is not possible. Wait a while and try again.
+			SetTimer(m_hWnd, TIMER_DEVICE_LOST, 500, nullptr);
+		}
+		else
+		{
+			DirectX9Failed(hResult);
+		}
 	}
+	else if (hResult == D3DERR_DEVICENOTRESET)
+	{
+		#ifdef DEBUG_DX9
+		DebugTrace("TestCooperativeLevel returned D3DERR_DEVICENOTRESET\n");
+		#endif
+
+		ExitDX9();
+
+		hResult = InitDX9();
+
+		if (SUCCEEDED(hResult))
+		{
+			m_Frozen = false;
+			m_DX9State = DX9State::OK;
+		}
+		else
+		{
+			DirectX9Failed(hResult);
+		}
+	}
+	else if (hResult == D3DERR_DRIVERINTERNALERROR)
+	{
+		#ifdef DEBUG_DX9
+		DebugTrace("TestCooperativeLevel returned D3DERR_DRIVERINTERNALERROR\n");
+		#endif
+
+		DirectX9Failed(hResult);
+	}
+}
+
+/****************************************************************************/
+
+void BeebWin::DirectX9Failed(HRESULT hResult)
+{
+	Report(MessageType::Error,
+	       "DirectX9 renderer failed\nFailure code %X\nSwitching to GDI",
+	       hResult);
+
+	PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
 }
 
 /****************************************************************************/
@@ -755,6 +836,11 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 
 		if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 		{
+			if (m_DX9State != DX9State::OK)
+			{
+				return;
+			}
+
 			IDirect3DSurface9 *pSurface;
 			HRESULT hResult = m_pTexture->GetSurfaceLevel(0, &pSurface);
 
@@ -800,10 +886,14 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 
 			if (FAILED(hResult))
 			{
-				Report(MessageType::Error, "DirectX failure while updating screen\nFailure code %X\nSwitching to GDI",
-				       hResult);
+				#ifdef DEBUG_DX9
+				DebugTrace("RenderDX9 returned %08X\n", hResult);
+				#endif
 
-				PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
+				m_DX9State = DX9State::DeviceLost;
+				m_Frozen = true;
+				m_DX9DeviceLostCount = 0;
+				PostMessage(m_hWnd, WM_DIRECTX9_DEVICE_LOST, 0, 0);
 			}
 		}
 		else

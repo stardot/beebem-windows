@@ -451,6 +451,8 @@ public:
 	HRESULT InitDX9();
 	void ExitDX9();
 	void RenderDX9();
+	void OnDeviceLost();
+	void DirectX9Failed(HRESULT hResult);
 
 	void SetWindowSize(int Width, int Height);
 	void UpdateWindowSizeMenu();
@@ -610,6 +612,7 @@ public:
 	const UINT_PTR TIMER_KEYBOARD       = 1;
 	const UINT_PTR TIMER_AUTOBOOT_DELAY = 2;
 	const UINT_PTR TIMER_PRINTER        = 3;
+	const UINT_PTR TIMER_DEVICE_LOST    = 4;
 
 	// Main window
 	HWND m_hWnd;
@@ -684,6 +687,8 @@ public:
 	// DirectX stuff
 	bool m_DXInit;
 	bool m_DXResetPending;
+	enum class DX9State { Uninitialised, OK, DeviceLost } m_DX9State;
+	int m_DX9DeviceLostCount;
 
 	// DirectDraw stuff
 	HINSTANCE m_hInstDDraw;

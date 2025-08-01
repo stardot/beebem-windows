@@ -205,6 +205,8 @@ BeebWin::BeebWin()
 	// DirectX stuff
 	m_DXInit = false;
 	m_DXResetPending = false;
+	m_DX9State = DX9State::Uninitialised;
+	m_DX9DeviceLostCount = 0;
 
 	// DirectDraw stuff
 	m_hInstDDraw = nullptr;
@@ -2584,9 +2586,12 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			SetSound(SoundState::Unmuted);
 			break;
 
-		case WM_REINITDX:
-			DebugTrace("WM_REINITDX\n");
+		case WM_DIRECTX9_REINITIALIZE:
 			ReinitDX();
+			break;
+
+		case WM_DIRECTX9_DEVICE_LOST:
+			OnDeviceLost();
 			break;
 
 		case WM_TIMER:
@@ -5639,6 +5644,11 @@ void BeebWin::OnTimer(UINT_PTR TimerID)
 		KillTimer(m_hWnd, TIMER_PRINTER);
 
 		CopyPrinterBufferToClipboard();
+	}
+	else if (TimerID == TIMER_DEVICE_LOST)
+	{
+		KillTimer(m_hWnd, TIMER_DEVICE_LOST);
+		OnDeviceLost();
 	}
 }
 
