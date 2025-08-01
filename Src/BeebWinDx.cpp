@@ -69,36 +69,30 @@ static void D3DMatrixIdentity(D3DMATRIX *pMatrix)
 
 void BeebWin::InitDX()
 {
-	HRESULT hResult = E_FAIL;
-
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		hResult = InitDX9();
+		HRESULT hResult = InitDX9();
 
 		if (FAILED(hResult))
 		{
 			Report(MessageType::Error, "DirectX9 initialisation failed\nFailure code %X\nTrying DirectDraw",
 			       hResult);
 
-			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPDDRAW, 0);
+			m_DisplayRenderer = DisplayRendererType::DirectDraw;
 		}
 	}
-	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
+
+	if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		hResult = InitDirectDraw();
+		HRESULT hResult = InitDirectDraw();
 
 		if (FAILED(hResult))
 		{
 			Report(MessageType::Error, "DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI",
 			       hResult);
 
-			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
+			m_DisplayRenderer = DisplayRendererType::GDI;
 		}
-	}
-
-	if (SUCCEEDED(hResult))
-	{
-		m_CurrentDisplayRenderer = m_DisplayRenderer;
 	}
 }
 
@@ -112,7 +106,7 @@ void BeebWin::ResetDX()
 
 	m_DXResetPending = false;
 
-	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
+	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		ExitDX9();
 
@@ -120,7 +114,7 @@ void BeebWin::ResetDX()
 		// odd artifacts are seen when changing window size.
 		PostMessage(m_hWnd, WM_REINITDX, 0, 0);
 	}
-	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
+	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		ResetSurfaces();
 		ReinitDX();
@@ -151,21 +145,19 @@ void BeebWin::ReinitDX()
 		Report(MessageType::Error, "DirectX failure re-initialising\nFailure code %X\nSwitching to GDI",
 		       hResult);
 
-		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
+		m_DisplayRenderer = DisplayRendererType::GDI;
 	}
-
-	m_CurrentDisplayRenderer = m_DisplayRenderer;
 }
 
 /****************************************************************************/
 
 void BeebWin::ExitDX()
 {
-	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
+	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		ExitDX9();
 	}
-	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
+	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		ResetSurfaces();
 
