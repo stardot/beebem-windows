@@ -1508,6 +1508,11 @@ void BeebWin::UpdateDisplayRendererMenu()
 		{ IDM_DISPDX9,   DisplayRendererType::DirectX9 }
 	};
 
+	for (size_t i = 0; i < _countof(MenuItems); i++)
+	{
+		EnableMenuItem(MenuItems[i].ID, !m_FullScreen);
+	}
+
 	UINT SelectedMenuItemID = 0;
 
 	for (size_t i = 0; i < _countof(MenuItems); i++)
@@ -3017,6 +3022,8 @@ void BeebWin::ToggleFullScreen()
 	const bool WasFullScreen = m_FullScreen;
 	m_FullScreen = !m_FullScreen;
 	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
+	UpdateDisplayRendererMenu();
+
 	SetWindowAttributes(WasFullScreen);
 
 	if (m_MouseCaptured)
