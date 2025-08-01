@@ -608,12 +608,6 @@ public:
 
 	int FindEnum(const std::string& Value, const char* const* Names, int Default);
 
-	// Timers
-	const UINT_PTR TIMER_KEYBOARD       = 1;
-	const UINT_PTR TIMER_AUTOBOOT_DELAY = 2;
-	const UINT_PTR TIMER_PRINTER        = 3;
-	const UINT_PTR TIMER_DEVICE_LOST    = 4;
-
 	// Main window
 	HWND m_hWnd;
 	char m_szTitle[256];
@@ -840,6 +834,12 @@ public:
 	WNDPROC m_TextViewPrevWndProc;
 	static const int MAX_TEXTVIEW_SCREEN_LEN = 128 * 32;
 	char m_TextViewScreen[MAX_TEXTVIEW_SCREEN_LEN + 1];
+
+	// Timers
+	static const UINT_PTR TIMER_KEYBOARD       = 1;
+	static const UINT_PTR TIMER_AUTOBOOT_DELAY = 2;
+	static const UINT_PTR TIMER_PRINTER        = 3;
+	static const UINT_PTR TIMER_DEVICE_LOST    = 4;
 
 	// Debug
 	bool m_WriteInstructionCounts;

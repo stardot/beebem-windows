@@ -5635,27 +5635,29 @@ void BeebWin::SetBootDiscTimer()
 
 void BeebWin::OnTimer(UINT_PTR TimerID)
 {
-	if (TimerID == TIMER_KEYBOARD)
+	switch (TimerID)
 	{
-		HandleKeyboardTimer();
-	}
-	else if (TimerID == TIMER_AUTOBOOT_DELAY) // Handle timer for automatic disc boot delay
-	{
-		m_BootDiscTimerElapsed = true;
-		KillTimer(m_hWnd, TIMER_AUTOBOOT_DELAY);
+		case TIMER_KEYBOARD:
+			HandleKeyboardTimer();
+			break;
 
-		DoShiftBreak();
-	}
-	else if (TimerID == TIMER_PRINTER)
-	{
-		KillTimer(m_hWnd, TIMER_PRINTER);
+		case TIMER_AUTOBOOT_DELAY: // Handle timer for automatic disc boot delay
+			m_BootDiscTimerElapsed = true;
+			KillTimer(m_hWnd, TIMER_AUTOBOOT_DELAY);
 
-		CopyPrinterBufferToClipboard();
-	}
-	else if (TimerID == TIMER_DEVICE_LOST)
-	{
-		KillTimer(m_hWnd, TIMER_DEVICE_LOST);
-		OnDeviceLost();
+			DoShiftBreak();
+			break;
+
+		case TIMER_PRINTER:
+			KillTimer(m_hWnd, TIMER_PRINTER);
+
+			CopyPrinterBufferToClipboard();
+			break;
+
+		case TIMER_DEVICE_LOST:
+			KillTimer(m_hWnd, TIMER_DEVICE_LOST);
+			OnDeviceLost();
+			break;
 	}
 }
 
