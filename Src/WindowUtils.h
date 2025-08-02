@@ -26,5 +26,6 @@ void ExitWindowUtils();
 
 void CentreWindow(HWND hWndParent, HWND hWnd);
 void DisableRoundedCorners(HWND hWnd);
+bool SetWindowClientSize(HWND hWnd, int Width, int Height);
 
 #endif

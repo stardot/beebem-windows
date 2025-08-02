@@ -111,3 +111,58 @@ void DisableRoundedCorners(HWND hWnd)
 }
 
 /****************************************************************************/
+
+// Resizes a window to a given client area width and height.
+// Returns true if the window was resized to the given client area width and
+// height, or false otherwise. The return value may be false if the menu now
+// has a different number of rows, the client area size may not be right,
+// so call SetWindowClientSize() again.
+
+bool SetWindowClientSize(HWND hWnd, int Width, int Height)
+{
+	// Get current client area size.
+	RECT ClientRect;
+	GetClientRect(hWnd, &ClientRect);
+
+	int ClientWidth = ClientRect.right - ClientRect.left;
+	int ClientHeight = ClientRect.bottom - ClientRect.top;
+
+	if (ClientWidth == Width && ClientHeight == Height)
+	{
+		return true; // Nothing to do.
+	}
+
+	// Get window size.
+	RECT WindowRect;
+	GetWindowRect(hWnd, &WindowRect);
+
+	int WindowWidth = WindowRect.right - WindowRect.left;
+	int WindowHeight = WindowRect.bottom - WindowRect.top;
+
+	// Compute the difference (non-client area)
+	int ExtraWidth = WindowWidth - ClientWidth;
+	int ExtraHeight = WindowHeight - ClientHeight;
+
+	// Compute new window size to match desired client area
+	int NewWindowWidth = Width + ExtraWidth;
+	int NewWindowHeight = Height + ExtraHeight;
+
+	// Resize the window
+	SetWindowPos(hWnd,
+	             HWND_NOTOPMOST,
+	             WindowRect.left,
+	             WindowRect.top,
+	             NewWindowWidth,
+	             NewWindowHeight,
+	             SWP_NOZORDER | SWP_NOACTIVATE);
+
+	// Now check to see if the target client area size was achieved.
+	GetClientRect(hWnd, &ClientRect);
+
+	ClientWidth = ClientRect.right - ClientRect.left;
+	ClientHeight = ClientRect.bottom - ClientRect.top;
+
+	return ClientWidth == Width && ClientHeight == Height;
+}
+
+/****************************************************************************/

@@ -502,7 +502,7 @@ public:
 	void ToggleWriteProtect(int Drive);
 	void SetDiscWriteProtect(int Drive, bool WriteProtect);
 	void SetDiscWriteProtects();
-	void SetWindowAttributes(bool wasFullScreen);
+	void SetWindowAttributes(bool WasFullScreen);
 
 	void SetAMXSize(AMXSizeType Size);
 	void UpdateAMXSizeMenu();
@@ -647,7 +647,7 @@ public:
 	bool m_Frozen;
 
 	// Window size
-	int m_XWinSize;
+	int m_XWinSize; // Client area size
 	int m_YWinSize;
 	int m_XLastWinSize;
 	int m_YLastWinSize;

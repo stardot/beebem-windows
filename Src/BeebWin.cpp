@@ -1257,14 +1257,23 @@ bool BeebWin::CreateBeebWindow()
 		dwStyle = WS_OVERLAPPEDWINDOW;
 	}
 
+	const int Width = m_XWinSize;
+	const int Height = m_YWinSize;
+
+	RECT Rect{ 0, 0, Width, Height };
+
+	// Estimate initial window size. This won't be correct if the menu bar
+	// spans multiple rows. We handle this in WM_SET_WINDOW_CLIENT_SIZE.
+	AdjustWindowRect(&Rect, dwStyle, TRUE);
+
 	m_hWnd = CreateWindow(
 		"BEEBWIN",  // See RegisterClass() call.
 		m_szTitle,  // Text for window title bar.
 		dwStyle,    // Window style
 		x,
 		y,
-		m_XWinSize, // See SetWindowAttributes()
-		m_YWinSize,
+		Rect.right - Rect.left,
+		Rect.bottom - Rect.top,
 		nullptr,    // Overlapped windows have no parent.
 		nullptr,    // Use the window class menu.
 		hInst,      // This instance owns this window.
@@ -1285,6 +1294,11 @@ bool BeebWin::CreateBeebWindow()
 	UpdateWindow(m_hWnd); // Sends WM_PAINT message
 
 	SetWindowAttributes(false);
+
+	PostMessage(m_hWnd,
+	            WM_SET_WINDOW_CLIENT_SIZE,
+	            MAKEWPARAM(Width, Height),
+	            0);
 
 	return true;
 }
@@ -2247,6 +2261,19 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			OnSize(wParam, LOWORD(lParam), HIWORD(lParam));
 			break;
 
+		case WM_SET_WINDOW_CLIENT_SIZE: {
+			const int Width = (int)LOWORD(wParam);
+			const int Height = (int)HIWORD(wParam);
+
+			if (!SetWindowClientSize(m_hWnd, Width, Height))
+			{
+				SetWindowClientSize(m_hWnd, Width, Height);
+			}
+
+			UpdateWindowSizeMenu();
+			break;
+		}
+
 		case WM_SYSKEYDOWN: {
 			// DebugTrace("SysKeyD: %d, 0x%X, 0x%X\n", wParam, wParam, lParam);
 
@@ -3046,7 +3073,10 @@ void BeebWin::SetWindowSize(int Width, int Height)
 	m_XLastWinSize = m_XWinSize;
 	m_YLastWinSize = m_YWinSize;
 
-	UpdateWindowSizeMenu();
+	PostMessage(m_hWnd,
+	            WM_SET_WINDOW_CLIENT_SIZE,
+	            MAKEWPARAM(Width, Height),
+	            0);
 
 	SetWindowAttributes(m_FullScreen);
 }
@@ -3315,7 +3345,7 @@ void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
 
 /****************************************************************************/
 
-void BeebWin::SetWindowAttributes(bool wasFullScreen)
+void BeebWin::SetWindowAttributes(bool WasFullScreen)
 {
 	if (m_FullScreen)
 	{
@@ -3332,8 +3362,9 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 			m_YDXSize = MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top;
 		}
 
-		if (!wasFullScreen)
+		if (!WasFullScreen)
 		{
+			// Remember window position, so we can restore it when exiting fullscreen.
 			RECT Rect;
 			GetWindowRect(m_hWnd, &Rect);
 
@@ -3370,20 +3401,22 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 	{
 		CalcAspectRatioAdjustment(0, 0);
 
-		if (wasFullScreen)
+		if (WasFullScreen)
+		{
 			ShowWindow(m_hWnd, SW_RESTORE);
+		}
 
 		// Note: Window size gets lost in DDraw mode when DD is reset
-		int xs = m_XLastWinSize;
-		int ys = m_YLastWinSize;
+		int Width = m_XLastWinSize;
+		int Height = m_YLastWinSize;
 
 		if (m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
 		{
 			ResetDX();
 		}
 
-		m_XWinSize = xs;
-		m_YWinSize = ys;
+		m_XWinSize = Width;
+		m_YWinSize = Height;
 
 		DWORD Style = SetWindowStyle(WS_OVERLAPPEDWINDOW, WS_POPUP);
 
@@ -3396,7 +3429,7 @@ void BeebWin::SetWindowAttributes(bool wasFullScreen)
 		             m_YWinPos,
 		             Rect.right - Rect.left,
 		             Rect.bottom - Rect.top,
-		             !wasFullScreen ? SWP_NOMOVE : 0);
+		             !WasFullScreen ? SWP_NOMOVE : 0);
 
 		// Experiment: hide menu in full screen
 		HideMenu(false);

@@ -30,6 +30,7 @@ constexpr UINT WM_USER_PORT_BREAKOUT_DIALOG_CLOSED = WM_APP + 3;
 constexpr UINT WM_IP232_ERROR                      = WM_APP + 4;
 constexpr UINT WM_DIRECTX9_DEVICE_LOST             = WM_APP + 5;
 constexpr UINT WM_DIRECTX9_REINITIALIZE            = WM_APP + 6;
+constexpr UINT WM_SET_WINDOW_CLIENT_SIZE           = WM_APP + 7;
 
 // Menu item IDs
 constexpr UINT IDM_TEXT_TO_SPEECH_VOICE_BASE = 50000;
