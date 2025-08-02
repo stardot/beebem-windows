@@ -688,7 +688,6 @@ void BeebWin::OnDeviceLost()
 
 		if (SUCCEEDED(hResult))
 		{
-			m_Frozen = false;
 			m_DX9State = DX9State::OK;
 		}
 		else
@@ -882,7 +881,6 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 				#endif
 
 				m_DX9State = DX9State::DeviceLost;
-				m_Frozen = true;
 				PostMessage(m_hWnd, WM_DIRECTX9_DEVICE_LOST, 0, 0);
 			}
 		}
