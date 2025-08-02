@@ -442,10 +442,16 @@
   <ItemGroup>
     <Image Include="..\Help\bbcmicro.png" />
     <Image Include="..\Help\beeb.gif" />
+    <Image Include="..\Help\export.png" />
     <Image Include="..\Help\keyboard.jpg" />
-    <Image Include="..\Help\startup.jpg" />
+    <Image Include="..\Help\links.png" />
+    <Image Include="..\Help\roms.png" />
+    <Image Include="..\Help\rs423.png" />
+    <Image Include="..\Help\startup.png" />
+    <Image Include="..\Help\tape.png" />
     <Image Include="..\Help\teletext-files.png" />
     <Image Include="..\Help\teletext-ip.png" />
+    <Image Include="..\Help\user-port-rtc.jpg" />
     <Image Include="res\ADF.ico" />
     <Image Include="res\ADL.ico" />
     <Image Include="res\ADM.ico" />
@@ -501,6 +507,7 @@
     <None Include="..\Help\harddisks.html" />
     <None Include="..\Help\index.html" />
     <None Include="..\Help\keyboard.html" />
+    <None Include="..\Help\links.html" />
     <None Include="..\Help\m5000.html" />
     <None Include="..\Help\mastercopro.html" />
     <None Include="..\Help\menus.html" />

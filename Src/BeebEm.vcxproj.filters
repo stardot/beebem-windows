@@ -664,10 +664,34 @@
     <Image Include="..\Help\beeb.gif">
       <Filter>Help Files</Filter>
     </Image>
+    <Image Include="..\Help\export.png">
+      <Filter>Help Files</Filter>
+    </Image>
     <Image Include="..\Help\keyboard.jpg">
       <Filter>Help Files</Filter>
     </Image>
-    <Image Include="..\Help\startup.jpg">
+    <Image Include="..\Help\teletext-files.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\teletext-ip.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\links.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\roms.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\rs423.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\startup.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\tape.png">
+      <Filter>Help Files</Filter>
+    </Image>
+    <Image Include="..\Help\user-port-rtc.jpg">
       <Filter>Help Files</Filter>
     </Image>
     <Image Include="res\ADF.ico">
@@ -699,12 +723,6 @@
     </Image>
     <Image Include="res\UEF.ico">
       <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="..\Help\teletext-files.png">
-      <Filter>Help Files</Filter>
-    </Image>
-    <Image Include="..\Help\teletext-ip.png">
-      <Filter>Help Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
@@ -748,6 +766,9 @@
       <Filter>Help Files</Filter>
     </None>
     <None Include="..\Help\keyboard.html">
+      <Filter>Help Files</Filter>
+    </None>
+    <None Include="..\Help\links.html">
       <Filter>Help Files</Filter>
     </None>
     <None Include="..\Help\m5000.html">
