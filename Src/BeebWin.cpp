@@ -199,6 +199,7 @@ BeebWin::BeebWin()
 	memcpy(m_BlurIntensities, DefaultBlurIntensities, sizeof(m_BlurIntensities));
 	m_MaintainAspectRatio = true;
 	m_DisplayRenderer = DisplayRendererType::DirectX9;
+	m_CurrentDisplayRenderer = DisplayRendererType::GDI;
 	m_DirectXFullScreenMode = DirectXFullScreenMode::ScreenResolution;
 	m_DiscLedColour = LEDColour::Red;
 

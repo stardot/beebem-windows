@@ -675,6 +675,7 @@ public:
 	char m_BlurIntensities[8];
 	bool m_MaintainAspectRatio;
 	DisplayRendererType m_DisplayRenderer;
+	DisplayRendererType m_CurrentDisplayRenderer;
 	DirectXFullScreenMode m_DirectXFullScreenMode;
 	LEDColour m_DiscLedColour;
 
