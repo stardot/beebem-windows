@@ -6157,7 +6157,7 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 				break;
 		}
 
-		int ID = CentreMessageBox(m_hWnd, buffer, WindowTitle, Type);
+		int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
 
 		if (type == MessageType::Question)
 		{
