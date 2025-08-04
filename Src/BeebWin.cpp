@@ -3107,6 +3107,10 @@ void BeebWin::UpdateWindowSizeMenu()
 	{
 		CheckMenuRadioItem(IDM_320X256, IDM_1600X1200, SelectedMenuItemID);
 	}
+	else
+	{
+		CheckMenuRadioItem(IDM_320X256, IDM_1600X1200, (UINT)-1);
+	}
 }
 
 /****************************************************************************/
@@ -3451,6 +3455,9 @@ void BeebWin::OnSize(WPARAM ResizeType, int Width, int Height)
 	{
 		m_XWinSize = Width;
 		m_YWinSize = Height;
+
+		UpdateWindowSizeMenu();
+
 		CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
 
 		if (ResizeType != SIZE_MINIMIZED && m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
