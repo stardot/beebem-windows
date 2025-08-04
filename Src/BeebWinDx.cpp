@@ -98,29 +98,35 @@ void BeebWin::InitDX()
 
 /****************************************************************************/
 
-void BeebWin::ResetDX()
+HRESULT BeebWin::ResetDX()
 {
 	#ifdef DEBUG_DX9
 	DebugTrace("BeebWin::ResetDX\n");
 	#endif
+
+	HRESULT hResult = S_OK;
 
 	m_DXResetPending = false;
 
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		ExitDX9();
-		ReinitDX();
+
+		hResult = ReinitDX();
 	}
 	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		ResetSurfaces();
-		ReinitDX();
+
+		hResult = ReinitDX();
 	}
+
+	return hResult;
 }
 
 /****************************************************************************/
 
-void BeebWin::ReinitDX()
+HRESULT BeebWin::ReinitDX()
 {
 	#ifdef DEBUG_DX9
 	DebugTrace("BeebWin::ReinitDX\n");
@@ -144,6 +150,8 @@ void BeebWin::ReinitDX()
 
 		m_DisplayRenderer = DisplayRendererType::GDI;
 	}
+
+	return hResult;
 }
 
 /****************************************************************************/

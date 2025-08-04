@@ -434,8 +434,8 @@ public:
 
 	// DirectX - calls DDraw or DX9 fn
 	void InitDX();
-	void ResetDX();
-	void ReinitDX();
+	HRESULT ResetDX();
+	HRESULT ReinitDX();
 	void ExitDX();
 	void UpdateSmoothing();
 
