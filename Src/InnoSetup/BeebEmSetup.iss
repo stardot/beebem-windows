@@ -119,7 +119,11 @@ Source: ..\Release\BeebEm.exe;             DestDir: {app};                      
 Source: ..\Release\Hardware\Acorn1770.dll; DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
 Source: ..\Release\Hardware\OpusDDOS.dll;  DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
 Source: ..\Release\Hardware\Watford.dll;   DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
-Source: ..\..\Documents\*;                 DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Documents\Econet.zip;        DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Documents\FSDFileFormat.txt; DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Documents\Ibos.txt;          DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Documents\Integra-B.zip;     DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Documents\KeyMapInfo.txt;    DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\Help\65c02copro.html;        DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\Help\accessibility.html;     DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\Help\armcopro.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
