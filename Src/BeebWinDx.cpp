@@ -109,10 +109,7 @@ void BeebWin::ResetDX()
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		ExitDX9();
-
-		// Need to let message loop run before re-initialising DX otherwise
-		// odd artifacts are seen when changing window size.
-		PostMessage(m_hWnd, WM_DIRECTX9_REINITIALIZE, 0, 0);
+		ReinitDX();
 	}
 	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{

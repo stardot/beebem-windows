@@ -2617,10 +2617,6 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			SetSound(SoundState::Unmuted);
 			break;
 
-		case WM_DIRECTX9_REINITIALIZE:
-			ReinitDX();
-			break;
-
 		case WM_DIRECTX9_DEVICE_LOST:
 			OnDeviceLost();
 			break;
