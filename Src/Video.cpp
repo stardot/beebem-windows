@@ -42,16 +42,6 @@ Boston, MA  02110-1301, USA.
 #include "SysVia.h"
 #include "UefState.h"
 
-#ifdef BEEB_DOTIME
-#include <sys/times.h>
-#ifdef SUNOS
-#include <sys/param.h>
-#endif
-#ifdef HPUX
-#include <unistd.h>
-#endif
-#endif
-
 /* Bit assignments in control reg:
    0 - Flash colour (0=first colour, 1=second)
    1 - Teletext select (0=on chip serialiser, 1=teletext)
@@ -1477,7 +1467,7 @@ unsigned char CRTCRead(int Address)
     return 0;
   }
 
-  return 0; // Keeep MSVC happy $NRM
+  return 0; // Keep MSVC happy $NRM
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
