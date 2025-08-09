@@ -119,55 +119,55 @@ Source: ..\Release\BeebEm.exe;             DestDir: {app};                      
 Source: ..\Release\Hardware\Acorn1770.dll; DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
 Source: ..\Release\Hardware\OpusDDOS.dll;  DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
 Source: ..\Release\Hardware\Watford.dll;   DestDir: {app}\Hardware;                                                                      Flags: ignoreversion
-Source: ..\..\Documents\Econet.zip;        DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Documents\FSDFileFormat.txt; DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Documents\Ibos.txt;          DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Documents\Integra-B.zip;     DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Documents\KeyMapInfo.txt;    DestDir: {app}\Documents;                                                                     Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\65c02copro.html;        DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\accessibility.html;     DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\armcopro.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\bbcmicro.png;           DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\beeb.gif;               DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\commandline.html;       DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\contents.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\debugger.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\disks.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\econet.html;            DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\emulation.html;         DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\export.png;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\faq.html;               DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\gettingstarted.html;    DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\harddisks.html;         DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\index.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\keyboard.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\keyboard.jpg;           DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\links.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\links.png;              DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\m5000.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\mastercopro.html;       DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\menus.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\roms.html;              DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\roms.png;               DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\rs423.png;              DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\rtc.html;               DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\serial.html;            DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\sources.html;           DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\speech.html;            DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\sprowcopro.html;        DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\startup.png;            DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\state.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\style.css;              DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\tape.png;               DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\tapes.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\teletext-files.png;     DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\teletext-ip.png;        DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\teletext.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\troubleshooting.html;   DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\uninstall.html;         DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\user-port-rtc.jpg;      DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\z80copro.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ..\..\Help\z80torch.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ..\..\Documents\Econet.zip;        DestDir: {app}\Documents;                                                                     Flags: ignoreversion
+Source: ..\..\Documents\FSDFileFormat.txt; DestDir: {app}\Documents;                                                                     Flags: ignoreversion
+Source: ..\..\Documents\Ibos.txt;          DestDir: {app}\Documents;                                                                     Flags: ignoreversion
+Source: ..\..\Documents\Integra-B.zip;     DestDir: {app}\Documents;                                                                     Flags: ignoreversion
+Source: ..\..\Documents\KeyMapInfo.txt;    DestDir: {app}\Documents;                                                                     Flags: ignoreversion
+Source: ..\..\Help\65c02copro.html;        DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\accessibility.html;     DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\armcopro.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\bbcmicro.png;           DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\beeb.gif;               DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\commandline.html;       DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\contents.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\debugger.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\disks.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\econet.html;            DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\emulation.html;         DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\export.png;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\faq.html;               DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\gettingstarted.html;    DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\harddisks.html;         DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\index.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\keyboard.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\keyboard.jpg;           DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\links.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\links.png;              DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\m5000.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\mastercopro.html;       DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\menus.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\roms.html;              DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\roms.png;               DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\rs423.png;              DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\rtc.html;               DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\serial.html;            DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\sources.html;           DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\speech.html;            DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\sprowcopro.html;        DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\startup.png;            DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\state.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\style.css;              DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\tape.png;               DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\tapes.html;             DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\teletext-files.png;     DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\teletext-ip.png;        DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\teletext.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\troubleshooting.html;   DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\uninstall.html;         DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\user-port-rtc.jpg;      DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\z80copro.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion
+Source: ..\..\Help\z80torch.html;          DestDir: {app}\Help;                                                                          Flags: ignoreversion
 Source: ..\..\UserData\*;                  DestDir: {app}\UserData;                                                                      Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ..\..\BeebEmLocal.vbs;             DestDir: {app};                                                                               Flags: ignoreversion
 Source: ..\..\BeebEmTorch.vbs;             DestDir: {app};                                                                               Flags: ignoreversion
