@@ -175,25 +175,7 @@ void BeebWin::ExitDX()
 	}
 	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		ResetSurfaces();
-
-		if (m_DD2 != nullptr)
-		{
-			m_DD2->Release();
-			m_DD2 = nullptr;
-		}
-
-		if (m_DD != nullptr)
-		{
-			m_DD->Release();
-			m_DD = nullptr;
-		}
-
-		if (m_hInstDDraw != nullptr)
-		{
-			FreeLibrary(m_hInstDDraw);
-			m_hInstDDraw = nullptr;
-		}
+		ExitDirectDraw();
 	}
 }
 
@@ -235,6 +217,31 @@ HRESULT BeebWin::InitDirectDraw()
 	}
 
 	return hResult;
+}
+
+/****************************************************************************/
+
+void BeebWin::ExitDirectDraw()
+{
+	ResetSurfaces();
+
+	if (m_DD2 != nullptr)
+	{
+		m_DD2->Release();
+		m_DD2 = nullptr;
+	}
+
+	if (m_DD != nullptr)
+	{
+		m_DD->Release();
+		m_DD = nullptr;
+	}
+
+	if (m_hInstDDraw != nullptr)
+	{
+		FreeLibrary(m_hInstDDraw);
+		m_hInstDDraw = nullptr;
+	}
 }
 
 /****************************************************************************/

@@ -444,6 +444,7 @@ public:
 
 	// DirectDraw
 	HRESULT InitDirectDraw();
+	void ExitDirectDraw();
 	HRESULT InitSurfaces();
 	void ResetSurfaces();
 
