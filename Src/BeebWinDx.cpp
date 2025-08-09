@@ -196,25 +196,43 @@ HRESULT BeebWin::InitDirectDraw()
 
 	m_hInstDDraw = LoadLibrary("ddraw.dll");
 
-	if (m_hInstDDraw != nullptr)
+	if (m_hInstDDraw == nullptr)
 	{
-		LPDIRECTDRAWCREATE DirectDrawCreate = (LPDIRECTDRAWCREATE)GetProcAddress(m_hInstDDraw, "DirectDrawCreate");
-
-		if (DirectDrawCreate != nullptr)
-		{
-			hResult = DirectDrawCreate(nullptr, &m_DD, nullptr);
-
-			if (SUCCEEDED(hResult))
-			{
-				hResult = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID*)&m_DD2);
-			}
-
-			if (SUCCEEDED(hResult))
-			{
-				hResult = InitSurfaces();
-			}
-		}
+		goto Fail;
 	}
+
+	LPDIRECTDRAWCREATE DirectDrawCreate = (LPDIRECTDRAWCREATE)GetProcAddress(m_hInstDDraw, "DirectDrawCreate");
+
+	if (DirectDrawCreate == nullptr)
+	{
+		goto Fail;
+	}
+
+	hResult = DirectDrawCreate(nullptr, &m_DD, nullptr);
+
+	if (FAILED(hResult))
+	{
+		goto Fail;
+	}
+
+	hResult = m_DD->QueryInterface(IID_IDirectDraw2, (LPVOID*)&m_DD2);
+
+	if (FAILED(hResult))
+	{
+		goto Fail;
+	}
+
+	hResult = InitSurfaces();
+
+	if (FAILED(hResult))
+	{
+		goto Fail;
+	}
+
+	return hResult;
+
+Fail:
+	ExitDirectDraw();
 
 	return hResult;
 }
