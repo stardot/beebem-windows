@@ -572,8 +572,11 @@ void BeebWin::ApplyPreferences()
 	ShowMenu(true);
 
 	ExitDX();
+
 	if (m_DisplayRenderer != DisplayRendererType::GDI)
+	{
 		InitDX();
+	}
 
 	InitTextToSpeechVoices();
 	InitVoiceMenu();
@@ -1498,7 +1501,13 @@ void BeebWin::SetDisplayRenderer(DisplayRendererType DisplayRenderer)
 	ExitDX();
 
 	m_DisplayRenderer = DisplayRenderer;
-	SetWindowAttributes(m_FullScreen);
+
+	HRESULT hResult = SetWindowAttributes(m_FullScreen);
+
+	if (FAILED(hResult))
+	{
+		m_DisplayRenderer = DisplayRendererType::GDI;
+	}
 
 	bool DirectXEnabled = m_DisplayRenderer != DisplayRendererType::GDI;
 
@@ -2253,7 +2262,15 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 
 			if (m_DXResetPending)
 			{
-				ResetDX();
+				HRESULT hResult = ResetDX();
+
+				if (FAILED(hResult))
+				{
+					Report(MessageType::Error, "DirectX failure re-initialising\nFailure code %X\nSwitching to GDI",
+					       hResult);
+
+					PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
+				}
 			}
 			break;
 		}
@@ -2639,6 +2656,13 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			OnIP232Error((int)wParam);
 			break;
 
+		case WM_REPORT_ERROR: {
+			char* Buffer = reinterpret_cast<char*>(lParam);
+			Report(MessageType::Error, Buffer);
+			free(Buffer);
+			break;
+		}
+
 		default: // Passes it on if unprocessed
 			return DefWindowProc(m_hWnd, nMessage, wParam, lParam);
 	}
@@ -2917,7 +2941,12 @@ void BeebWin::SetDirectXFullScreenMode(DirectXFullScreenMode Mode)
 
 		if (m_FullScreen && m_DisplayRenderer != DisplayRendererType::GDI)
 		{
-			SetWindowAttributes(m_FullScreen);
+			HRESULT hResult = SetWindowAttributes(m_FullScreen);
+
+			if (FAILED(hResult))
+			{
+				// TODO
+			}
 		}
 
 		UpdateDirectXFullScreenModeMenu();
@@ -3042,12 +3071,42 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 
 void BeebWin::ToggleFullScreen()
 {
-	const bool WasFullScreen = m_FullScreen;
+	bool WasFullScreen = m_FullScreen;
 	m_FullScreen = !m_FullScreen;
+
+	HRESULT hResult = SetWindowAttributes(WasFullScreen);
+
+	if (FAILED(hResult))
+	{
+		WasFullScreen = m_FullScreen;
+		m_FullScreen = false;
+
+		bool DirectXEnabled = m_DisplayRenderer != DisplayRendererType::GDI;
+
+		if (DirectXEnabled)
+		{
+			InitDX();
+		}
+
+		SetWindowAttributes(WasFullScreen);
+
+		if (WasFullScreen)
+		{
+			const char* Format = "Unable to enter full screen mode. Failure code %X";
+
+			// Calculate required length, +1 is for NUL terminator
+			const int length = _scprintf(Format, hResult) + 1;
+
+			char* Buffer = (char*)malloc(length);
+
+			sprintf(Buffer, Format, hResult);
+
+			PostMessage(m_hWnd, WM_REPORT_ERROR, 0, reinterpret_cast<LPARAM>(Buffer));
+		}
+	}
+
 	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
 	UpdateDisplayRendererMenu();
-
-	SetWindowAttributes(WasFullScreen);
 
 	if (m_MouseCaptured)
 	{
@@ -3346,7 +3405,7 @@ void BeebWin::CalcAspectRatioAdjustment(int DisplayWidth, int DisplayHeight)
 
 /****************************************************************************/
 
-void BeebWin::SetWindowAttributes(bool WasFullScreen)
+HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 {
 	if (m_FullScreen)
 	{
@@ -3383,7 +3442,14 @@ void BeebWin::SetWindowAttributes(bool WasFullScreen)
 
 			if (m_DXInit)
 			{
-				ResetDX();
+				HRESULT hResult = ResetDX();
+
+				if (FAILED(hResult))
+				{
+					DebugTrace("BeebWin::SetWindowAttributes ResetDX failed %08X\n", hResult);
+
+					return hResult;
+				}
 			}
 		}
 		else
@@ -3411,9 +3477,19 @@ void BeebWin::SetWindowAttributes(bool WasFullScreen)
 		int Width = m_XLastWinSize;
 		int Height = m_YLastWinSize;
 
-		if (m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
+		if (m_DisplayRenderer != DisplayRendererType::GDI)
 		{
-			ResetDX();
+			if (m_DXInit)
+			{
+				HRESULT hResult = ResetDX();
+
+				if (FAILED(hResult))
+				{
+					DebugTrace("BeebWin::SetWindowAttributes ResetDX failed %08X\n", hResult);
+
+					return hResult;
+				}
+			}
 		}
 
 		m_XWinSize = Width;
@@ -3440,6 +3516,8 @@ void BeebWin::SetWindowAttributes(bool WasFullScreen)
 	RECT Rect;
 	GetClientRect(m_hWnd, &Rect);
 	InvalidateRect(m_hWnd, &Rect, TRUE);
+
+	return S_OK;
 }
 
 /*****************************************************************************/
@@ -6157,7 +6235,7 @@ MessageResult BeebWin::ReportV(MessageType type, const char *format, va_list arg
 				break;
 		}
 
-		int ID = MessageBox(m_hWnd, buffer, WindowTitle, Type);
+		int ID = CentreMessageBox(m_hWnd, buffer, WindowTitle, Type);
 
 		if (type == MessageType::Question)
 		{

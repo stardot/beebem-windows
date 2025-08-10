@@ -503,7 +503,7 @@ public:
 	void ToggleWriteProtect(int Drive);
 	void SetDiscWriteProtect(int Drive, bool WriteProtect);
 	void SetDiscWriteProtects();
-	void SetWindowAttributes(bool WasFullScreen);
+	HRESULT SetWindowAttributes(bool WasFullScreen);
 
 	void SetAMXSize(AMXSizeType Size);
 	void UpdateAMXSizeMenu();

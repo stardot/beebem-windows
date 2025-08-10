@@ -69,39 +69,33 @@ static void D3DMatrixIdentity(D3DMATRIX *pMatrix)
 
 void BeebWin::InitDX()
 {
-	HRESULT hResult = D3D_OK;
-
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
-		hResult = InitDX9();
+		HRESULT hResult = InitDX9();
 
 		if (FAILED(hResult))
 		{
 			Report(MessageType::Error, "DirectX9 initialisation failed\nFailure code %X\nTrying DirectDraw",
 			       hResult);
 
-			// m_DisplayRenderer = DisplayRendererType::DirectDraw;
-			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPDDRAW, 0);
+			m_DisplayRenderer = DisplayRendererType::DirectDraw;
 		}
 	}
-	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
+
+	if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		hResult = InitDirectDraw();
+		HRESULT hResult = InitDirectDraw();
 
 		if (FAILED(hResult))
 		{
 			Report(MessageType::Error, "DirectDraw initialisation failed\nFailure code %X\nSwitching to GDI",
 			       hResult);
 
-			// m_DisplayRenderer = DisplayRendererType::GDI;
-			PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
+			m_DisplayRenderer = DisplayRendererType::GDI;
 		}
 	}
 
-	if (hResult == D3D_OK)
-	{
-		m_CurrentDisplayRenderer = m_DisplayRenderer;
-	}
+	m_CurrentDisplayRenderer = m_DisplayRenderer;
 }
 
 /****************************************************************************/
@@ -124,7 +118,7 @@ HRESULT BeebWin::ResetDX()
 	}
 	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		ResetSurfaces();
+		ExitDirectDraw();
 
 		hResult = ReinitDX();
 	}
@@ -140,7 +134,7 @@ HRESULT BeebWin::ReinitDX()
 	DebugTrace("BeebWin::ReinitDX\n");
 	#endif
 
-	HRESULT hResult = DD_OK;
+	HRESULT hResult = S_OK;
 
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
@@ -148,16 +142,7 @@ HRESULT BeebWin::ReinitDX()
 	}
 	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
-		hResult = InitSurfaces();
-	}
-
-	if (FAILED(hResult))
-	{
-		Report(MessageType::Error, "DirectX failure re-initialising\nFailure code %X\nSwitching to GDI",
-		       hResult);
-
-		// m_DisplayRenderer = DisplayRendererType::GDI;
-		PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
+		hResult = InitDirectDraw();
 	}
 
 	m_CurrentDisplayRenderer = m_DisplayRenderer;
@@ -229,6 +214,8 @@ HRESULT BeebWin::InitDirectDraw()
 		goto Fail;
 	}
 
+	m_DXInit = true;
+
 	return hResult;
 
 Fail:
@@ -260,6 +247,8 @@ void BeebWin::ExitDirectDraw()
 		FreeLibrary(m_hInstDDraw);
 		m_hInstDDraw = nullptr;
 	}
+
+	m_DXInit = false;
 }
 
 /****************************************************************************/
@@ -335,11 +324,6 @@ HRESULT BeebWin::InitSurfaces()
 		hResult = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
 	}
 
-	if (SUCCEEDED(hResult))
-	{
-		m_DXInit = true;
-	}
-
 	return hResult;
 }
 
@@ -376,8 +360,6 @@ void BeebWin::ResetSurfaces()
 		m_DDSPrimary->Release();
 		m_DDSPrimary = nullptr;
 	}
-
-	m_DXInit = false;
 }
 
 /****************************************************************************/
