@@ -2932,22 +2932,11 @@ bool BeebWin::UpdateTiming()
 
 void BeebWin::SetDirectXFullScreenMode(DirectXFullScreenMode Mode)
 {
-	// Ignore IDM_VIEW_DD_SCREENRES if already in full screen mode
-	if ((Mode != DirectXFullScreenMode::ScreenResolution) || !m_FullScreen)
+	if (!m_FullScreen)
 	{
 		m_DirectXFullScreenMode = Mode;
 
 		TranslateDDSize();
-
-		if (m_FullScreen && m_DisplayRenderer != DisplayRendererType::GDI)
-		{
-			HRESULT hResult = SetWindowAttributes(m_FullScreen);
-
-			if (FAILED(hResult))
-			{
-				// TODO
-			}
-		}
 
 		UpdateDirectXFullScreenModeMenu();
 	}
@@ -3051,6 +3040,11 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 		{ IDM_VIEW_DD_3840X2160, DirectXFullScreenMode::_3840x2160 }
 	};
 
+	for (size_t i = 0; i < _countof(MenuItems); i++)
+	{
+		EnableMenuItem(MenuItems[i].ID, !m_FullScreen);
+	}
+
 	UINT SelectedMenuItemID = 0;
 
 	for (size_t i = 0; i < _countof(MenuItems); i++)
@@ -3107,6 +3101,7 @@ void BeebWin::ToggleFullScreen()
 
 	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
 	UpdateDisplayRendererMenu();
+	UpdateDirectXFullScreenModeMenu();
 
 	if (m_MouseCaptured)
 	{
@@ -3446,8 +3441,6 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 
 				if (FAILED(hResult))
 				{
-					DebugTrace("BeebWin::SetWindowAttributes ResetDX failed %08X\n", hResult);
-
 					return hResult;
 				}
 			}
@@ -3485,8 +3478,6 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 
 				if (FAILED(hResult))
 				{
-					DebugTrace("BeebWin::SetWindowAttributes ResetDX failed %08X\n", hResult);
-
 					return hResult;
 				}
 			}
