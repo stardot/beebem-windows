@@ -266,63 +266,91 @@ HRESULT BeebWin::InitSurfaces()
 		hResult = m_DD2->SetCooperativeLevel(m_hWnd, DDSCL_NORMAL);
 	}
 
-	if (SUCCEEDED(hResult))
+	if (FAILED(hResult))
 	{
-		if (m_FullScreen)
+		goto Fail;
+	}
+
+	if (m_FullScreen)
+	{
+		hResult = m_DD2->SetDisplayMode(m_XDXSize, m_YDXSize, 32, 0, 0);
+
+		if (FAILED(hResult))
 		{
-			hResult = m_DD2->SetDisplayMode(m_XDXSize, m_YDXSize, 32, 0, 0);
+			goto Fail;
 		}
 	}
 
-	if (SUCCEEDED(hResult))
+	DDSURFACEDESC ddsd;
+	ddsd.dwSize = sizeof(ddsd);
+	ddsd.dwFlags = DDSD_CAPS;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+	hResult = m_DD2->CreateSurface(&ddsd, &m_DDSPrimary, nullptr);
+
+	if (FAILED(hResult))
 	{
-		DDSURFACEDESC ddsd;
-		ddsd.dwSize = sizeof(ddsd);
-		ddsd.dwFlags = DDSD_CAPS;
-		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-		hResult = m_DD2->CreateSurface(&ddsd, &m_DDSPrimary, nullptr);
+		goto Fail;
 	}
 
-	if (SUCCEEDED(hResult))
+	hResult = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID*)&m_DDS2Primary);
+
+	if (FAILED(hResult))
 	{
-		hResult = m_DDSPrimary->QueryInterface(IID_IDirectDrawSurface2, (LPVOID*)&m_DDS2Primary);
+		goto Fail;
 	}
 
-	if (SUCCEEDED(hResult))
+	hResult = m_DD2->CreateClipper(0, &m_Clipper, NULL);
+
+	if (FAILED(hResult))
 	{
-		hResult = m_DD2->CreateClipper(0, &m_Clipper, NULL);
+		goto Fail;
 	}
 
-	if (SUCCEEDED(hResult))
+	hResult = m_Clipper->SetHWnd(0, m_hWnd);
+
+	if (FAILED(hResult))
 	{
-		hResult = m_Clipper->SetHWnd(0, m_hWnd);
+		goto Fail;
 	}
 
-	if (SUCCEEDED(hResult))
+	hResult = m_DDS2Primary->SetClipper(m_Clipper);
+
+	ZeroMemory(&ddsd, sizeof(ddsd));
+
+	ddsd.dwSize = sizeof(ddsd);
+	ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
+	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
+
+	if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
 	{
-		hResult = m_DDS2Primary->SetClipper(m_Clipper);
+		ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
+	}
+	else
+	{
+		ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 	}
 
-	if (SUCCEEDED(hResult))
+	ddsd.dwWidth = 800;
+	ddsd.dwHeight = 512;
+
+	hResult = m_DD2->CreateSurface(&ddsd, &m_DDSOne, nullptr);
+
+	if (FAILED(hResult))
 	{
-		DDSURFACEDESC ddsd;
-		ZeroMemory(&ddsd, sizeof(ddsd));
-		ddsd.dwSize = sizeof(ddsd);
-		ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-		ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-		if (m_DXSmoothing && (!m_DXSmoothMode7Only || TeletextEnabled))
-			ddsd.ddsCaps.dwCaps |= DDSCAPS_VIDEOMEMORY;
-		else
-			ddsd.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
-		ddsd.dwWidth = 800;
-		ddsd.dwHeight = 512;
-		hResult = m_DD2->CreateSurface(&ddsd, &m_DDSOne, nullptr);
+		goto Fail;
 	}
 
-	if (SUCCEEDED(hResult))
+	hResult = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
+
+	if (FAILED(hResult))
 	{
-		hResult = m_DDSOne->QueryInterface(IID_IDirectDrawSurface2, (LPVOID *)&m_DDS2One);
+		goto Fail;
 	}
+
+	return hResult;
+
+Fail:
+	ExitDirectDraw();
 
 	return hResult;
 }
