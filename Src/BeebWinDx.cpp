@@ -959,11 +959,12 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 
 				// Work out where on screen to blit image
 				RECT destRect;
-				RECT srcRect;
-				POINT pt;
 				GetClientRect(m_hWnd, &destRect);
+
+				POINT pt;
 				pt.x = pt.y = 0;
 				ClientToScreen(m_hWnd, &pt);
+
 				OffsetRect(&destRect, pt.x, pt.y);
 
 				if (m_FullScreen && m_MaintainAspectRatio)
@@ -978,6 +979,7 @@ void BeebWin::UpdateLines(HDC hDC, int StartY, int NLines)
 				}
 
 				// Blit the whole of the secondary buffer onto the screen
+				RECT srcRect;
 				srcRect.left   = 0;
 				srcRect.top    = 0;
 				srcRect.right  = TeletextEnabled ? 552 : ActualScreenWidth;
