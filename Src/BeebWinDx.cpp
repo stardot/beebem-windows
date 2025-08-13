@@ -94,8 +94,6 @@ void BeebWin::InitDX()
 			m_DisplayRenderer = DisplayRendererType::GDI;
 		}
 	}
-
-	m_CurrentDisplayRenderer = m_DisplayRenderer;
 }
 
 /****************************************************************************/
@@ -110,13 +108,13 @@ HRESULT BeebWin::ResetDX()
 
 	m_DXResetPending = false;
 
-	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
+	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		ExitDX9();
 
 		hResult = ReinitDX();
 	}
-	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
+	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		ExitDirectDraw();
 
@@ -145,8 +143,6 @@ HRESULT BeebWin::ReinitDX()
 		hResult = InitDirectDraw();
 	}
 
-	m_CurrentDisplayRenderer = m_DisplayRenderer;
-
 	return hResult;
 }
 
@@ -154,11 +150,11 @@ HRESULT BeebWin::ReinitDX()
 
 void BeebWin::ExitDX()
 {
-	if (m_CurrentDisplayRenderer == DisplayRendererType::DirectX9)
+	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		ExitDX9();
 	}
-	else if (m_CurrentDisplayRenderer == DisplayRendererType::DirectDraw)
+	else if (m_DisplayRenderer == DisplayRendererType::DirectDraw)
 	{
 		ExitDirectDraw();
 	}
