@@ -26,6 +26,32 @@ void ExitWindowUtils();
 
 void CentreWindow(HWND hWndParent, HWND hWnd);
 void DisableRoundedCorners(HWND hWnd);
-bool SetWindowClientSize(HWND hWnd, int Width, int Height);
+
+struct WindowPos
+{
+	int ClientWidth;
+	int ClientHeight;
+	int WindowX;
+	int WindowY;
+	bool UseCurrentWindowPos;
+
+	WindowPos(int Width, int Height) :
+		ClientWidth(Width),
+		ClientHeight(Height),
+		UseCurrentWindowPos(true)
+	{
+	}
+
+	WindowPos(int Width, int Height, int X, int Y) :
+		ClientWidth(Width),
+		ClientHeight(Height),
+		WindowX(X),
+		WindowY(Y),
+		UseCurrentWindowPos(false)
+	{
+	}
+};
+
+bool SetWindowClientSize(HWND hWnd, const WindowPos* pWindowPos);
 
 #endif

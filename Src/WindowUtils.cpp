@@ -112,13 +112,15 @@ void DisableRoundedCorners(HWND hWnd)
 
 /****************************************************************************/
 
-// Resizes a window to a given client area width and height.
+// Resizes a window to a given client area width and height, and optionally
+// sets the window position.
+//
 // Returns true if the window was resized to the given client area width and
 // height, or false otherwise. The return value may be false if the menu now
 // has a different number of rows, the client area size may not be right,
 // so call SetWindowClientSize() again.
 
-bool SetWindowClientSize(HWND hWnd, int Width, int Height)
+bool SetWindowClientSize(HWND hWnd, const WindowPos* pWindowPos)
 {
 	// Get current client area size.
 	RECT ClientRect;
@@ -127,9 +129,13 @@ bool SetWindowClientSize(HWND hWnd, int Width, int Height)
 	int ClientWidth = ClientRect.right - ClientRect.left;
 	int ClientHeight = ClientRect.bottom - ClientRect.top;
 
-	if (ClientWidth == Width && ClientHeight == Height)
+	if (pWindowPos->UseCurrentWindowPos)
 	{
-		return true; // Nothing to do.
+		if (ClientWidth == pWindowPos->ClientWidth &&
+		    ClientHeight == pWindowPos->ClientHeight)
+		{
+			return true; // Nothing to do.
+		}
 	}
 
 	// Get window size.
@@ -144,14 +150,17 @@ bool SetWindowClientSize(HWND hWnd, int Width, int Height)
 	int ExtraHeight = WindowHeight - ClientHeight;
 
 	// Compute new window size to match desired client area
-	int NewWindowWidth = Width + ExtraWidth;
-	int NewWindowHeight = Height + ExtraHeight;
+	int NewWindowWidth = pWindowPos->ClientWidth + ExtraWidth;
+	int NewWindowHeight = pWindowPos->ClientHeight + ExtraHeight;
+
+	int WindowX = pWindowPos->UseCurrentWindowPos ? WindowRect.left : pWindowPos->WindowX;
+	int WindowY = pWindowPos->UseCurrentWindowPos ? WindowRect.top : pWindowPos->WindowY;
 
 	// Resize the window
 	SetWindowPos(hWnd,
 	             HWND_NOTOPMOST,
-	             WindowRect.left,
-	             WindowRect.top,
+	             WindowX,
+	             WindowY,
 	             NewWindowWidth,
 	             NewWindowHeight,
 	             SWP_NOZORDER | SWP_NOACTIVATE);
@@ -162,7 +171,8 @@ bool SetWindowClientSize(HWND hWnd, int Width, int Height)
 	ClientWidth = ClientRect.right - ClientRect.left;
 	ClientHeight = ClientRect.bottom - ClientRect.top;
 
-	return ClientWidth == Width && ClientHeight == Height;
+	return ClientWidth == pWindowPos->ClientWidth &&
+	       ClientHeight == pWindowPos->ClientHeight;
 }
 
 /****************************************************************************/

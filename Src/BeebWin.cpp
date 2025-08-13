@@ -1260,10 +1260,7 @@ bool BeebWin::CreateBeebWindow()
 		dwStyle = WS_OVERLAPPEDWINDOW;
 	}
 
-	const int Width = m_XWinSize;
-	const int Height = m_YWinSize;
-
-	RECT Rect{ 0, 0, Width, Height };
+	RECT Rect{ 0, 0, m_XWinSize, m_YWinSize };
 
 	// Estimate initial window size. This won't be correct if the menu bar
 	// spans multiple rows. We handle this in WM_SET_WINDOW_CLIENT_SIZE.
@@ -1298,10 +1295,12 @@ bool BeebWin::CreateBeebWindow()
 
 	SetWindowAttributes(false);
 
+	WindowPos* pWindowPos = new WindowPos(m_XWinSize, m_YWinSize);
+
 	PostMessage(m_hWnd,
 	            WM_SET_WINDOW_CLIENT_SIZE,
-	            MAKEWPARAM(Width, Height),
-	            0);
+	            0,
+	            reinterpret_cast<LPARAM>(pWindowPos));
 
 	return true;
 }
@@ -2279,13 +2278,14 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_SET_WINDOW_CLIENT_SIZE: {
-			const int Width = (int)LOWORD(wParam);
-			const int Height = (int)HIWORD(wParam);
+			const WindowPos* pWindowPos = reinterpret_cast<WindowPos*>(lParam);
 
-			if (!SetWindowClientSize(m_hWnd, Width, Height))
+			if (!SetWindowClientSize(m_hWnd, pWindowPos))
 			{
-				SetWindowClientSize(m_hWnd, Width, Height);
+				SetWindowClientSize(m_hWnd, pWindowPos);
 			}
+
+			delete pWindowPos;
 
 			UpdateWindowSizeMenu();
 			break;
@@ -3062,6 +3062,8 @@ void BeebWin::UpdateDirectXFullScreenModeMenu()
 	);
 }
 
+/****************************************************************************/
+
 void BeebWin::ToggleFullScreen()
 {
 	bool WasFullScreen = m_FullScreen;
@@ -3123,10 +3125,12 @@ void BeebWin::SetWindowSize(int Width, int Height)
 	m_XLastWinSize = m_XWinSize;
 	m_YLastWinSize = m_YWinSize;
 
+	WindowPos* pWindowPos = new WindowPos(Width, Height);
+
 	PostMessage(m_hWnd,
 	            WM_SET_WINDOW_CLIENT_SIZE,
-	            MAKEWPARAM(Width, Height),
-	            0);
+	            0,
+	            reinterpret_cast<LPARAM>(pWindowPos));
 
 	SetWindowAttributes(m_FullScreen);
 }
@@ -3485,21 +3489,16 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 		m_XWinSize = Width;
 		m_YWinSize = Height;
 
-		DWORD Style = SetWindowStyle(WS_OVERLAPPEDWINDOW, WS_POPUP);
-
-		RECT Rect{ 0, 0, m_XWinSize, m_YWinSize };
-		AdjustWindowRect(&Rect, Style, TRUE);
-
-		SetWindowPos(m_hWnd,
-		             HWND_NOTOPMOST,
-		             m_XWinPos,
-		             m_YWinPos,
-		             Rect.right - Rect.left,
-		             Rect.bottom - Rect.top,
-		             !WasFullScreen ? SWP_NOMOVE : 0);
-
 		// Experiment: hide menu in full screen
 		HideMenu(false);
+
+		WindowPos* pWindowPos = new WindowPos(Width, Height,
+		                                      m_XWinPos, m_YWinPos);
+
+		PostMessage(m_hWnd,
+		            WM_SET_WINDOW_CLIENT_SIZE,
+		            0,
+		            reinterpret_cast<LPARAM>(pWindowPos));
 	}
 
 	// Clear unused areas of screen
