@@ -3489,6 +3489,8 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 		m_XWinSize = Width;
 		m_YWinSize = Height;
 
+		SetWindowStyle(WS_OVERLAPPEDWINDOW, WS_POPUP);
+
 		// Experiment: hide menu in full screen
 		HideMenu(false);
 
