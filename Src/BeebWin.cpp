@@ -1260,7 +1260,10 @@ bool BeebWin::CreateBeebWindow()
 		dwStyle = WS_OVERLAPPEDWINDOW;
 	}
 
-	RECT Rect{ 0, 0, m_XWinSize, m_YWinSize };
+	const int Width = m_XWinSize;
+	const int Height = m_YWinSize;
+
+	RECT Rect{ 0, 0, Width, Height };
 
 	// Estimate initial window size. This won't be correct if the menu bar
 	// spans multiple rows. We handle this in WM_SET_WINDOW_CLIENT_SIZE.
@@ -1295,7 +1298,7 @@ bool BeebWin::CreateBeebWindow()
 
 	SetWindowAttributes(false);
 
-	WindowPos* pWindowPos = new WindowPos(m_XWinSize, m_YWinSize);
+	WindowPos* pWindowPos = new WindowPos(Width, Height);
 
 	PostMessage(m_hWnd,
 	            WM_SET_WINDOW_CLIENT_SIZE,
@@ -3464,9 +3467,23 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 	{
 		CalcAspectRatioAdjustment(0, 0);
 
+		int WindowPosX;
+		int WindowPosY;
+
 		if (WasFullScreen)
 		{
 			ShowWindow(m_hWnd, SW_RESTORE);
+
+			WindowPosX = m_XWinPos;
+			WindowPosY = m_YWinPos;
+		}
+		else
+		{
+			RECT Rect;
+			GetWindowRect(m_hWnd, &Rect);
+
+			WindowPosX = Rect.left;
+			WindowPosY = Rect.top;
 		}
 
 		// Note: Window size gets lost in DDraw mode when DD is reset
@@ -3495,7 +3512,7 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 		HideMenu(false);
 
 		WindowPos* pWindowPos = new WindowPos(Width, Height,
-		                                      m_XWinPos, m_YWinPos);
+		                                      WindowPosX, WindowPosY);
 
 		PostMessage(m_hWnd,
 		            WM_SET_WINDOW_CLIENT_SIZE,
