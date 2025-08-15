@@ -91,6 +91,10 @@ Andrew Hague
 * Fixed sound muting when the BeebEm window loses focus.
 * Fixed BeebEm window so that it's no longer always on top after exiting
   full screen mode.
+* Fixed "DirectX9 renderer failed. Switching to GDI" errors in fullscreen
+  mode.
+* Fixed the WindowsSizes menu options to allow for the menu bar occupying
+  multiple rows, e.g., when at 320x256.
 * Fixed teletext mode character alignment.
 * Fixed teletext mode hold character and flash/steady and double height.
 * Fixed printing to the Windows clipboard, which would previously cause the
