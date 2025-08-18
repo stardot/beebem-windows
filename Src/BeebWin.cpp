@@ -3091,6 +3091,7 @@ void BeebWin::ToggleFullScreen()
 
 	CheckMenuItem(IDM_FULLSCREEN, m_FullScreen);
 	UpdateDisplayRendererMenu();
+	UpdateWindowSizeMenu();
 	UpdateDirectXFullScreenModeMenu();
 
 	if (m_MouseCaptured)
@@ -3103,11 +3104,6 @@ void BeebWin::ToggleFullScreen()
 
 void BeebWin::SetWindowSize(int Width, int Height)
 {
-	if (m_FullScreen)
-	{
-		ToggleFullScreen();
-	}
-
 	m_XWinSize = Width;
 	m_YWinSize = Height;
 
@@ -3137,6 +3133,11 @@ void BeebWin::UpdateWindowSizeMenu()
 		{ IDM_1440X1080, 1440, 1080 },
 		{ IDM_1600X1200, 1600, 1200 }
 	};
+
+	for (size_t i = 0; i < _countof(MenuItems); i++)
+	{
+		EnableMenuItem(MenuItems[i].ID, !m_FullScreen);
+	}
 
 	int SelectedMenuItemID = 0;
 
