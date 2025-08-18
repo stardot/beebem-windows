@@ -38,6 +38,8 @@ struct WindowPos
 	WindowPos(int Width, int Height) :
 		ClientWidth(Width),
 		ClientHeight(Height),
+		WindowX(0),
+		WindowY(0),
 		UseCurrentWindowPos(true)
 	{
 	}

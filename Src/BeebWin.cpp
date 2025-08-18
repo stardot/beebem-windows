@@ -3459,8 +3459,6 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 
 		if (WasFullScreen)
 		{
-			ShowWindow(m_hWnd, SW_RESTORE);
-
 			WindowPosX = m_XWinPos;
 			WindowPosY = m_YWinPos;
 		}
@@ -3505,6 +3503,11 @@ HRESULT BeebWin::SetWindowAttributes(bool WasFullScreen)
 		            WM_SET_WINDOW_CLIENT_SIZE,
 		            0,
 		            reinterpret_cast<LPARAM>(pWindowPos));
+
+		PostMessage(m_hWnd,
+		            WM_SETICON,
+		            ICON_BIG,
+		            (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_BEEBEM)));
 	}
 
 	// Clear unused areas of screen

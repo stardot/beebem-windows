@@ -163,7 +163,7 @@ bool SetWindowClientSize(HWND hWnd, const WindowPos* pWindowPos)
 	             WindowY,
 	             NewWindowWidth,
 	             NewWindowHeight,
-	             0);
+	             SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
 	// Now check to see if the target client area size was achieved.
 	GetClientRect(hWnd, &ClientRect);
