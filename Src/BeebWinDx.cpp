@@ -106,8 +106,6 @@ HRESULT BeebWin::ResetDX()
 
 	HRESULT hResult = S_OK;
 
-	m_DXResetPending = false;
-
 	if (m_DisplayRenderer == DisplayRendererType::DirectX9)
 	{
 		ExitDX9();

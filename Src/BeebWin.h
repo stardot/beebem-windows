@@ -681,7 +681,6 @@ public:
 
 	// DirectX stuff
 	bool m_DXInit;
-	bool m_DXResetPending;
 	enum class DX9State { Uninitialised, OK, DeviceLost } m_DX9State;
 
 	// DirectDraw stuff

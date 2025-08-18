@@ -204,7 +204,6 @@ BeebWin::BeebWin()
 
 	// DirectX stuff
 	m_DXInit = false;
-	m_DXResetPending = false;
 	m_DX9State = DX9State::Uninitialised;
 
 	// DirectDraw stuff
@@ -2260,19 +2259,6 @@ LRESULT BeebWin::WndProc(UINT nMessage, WPARAM wParam, LPARAM lParam)
 			HDC hDC = BeginPaint(m_hWnd, &ps);
 			UpdateLines(hDC, 0, 0);
 			EndPaint(m_hWnd, &ps);
-
-			if (m_DXResetPending)
-			{
-				HRESULT hResult = ResetDX();
-
-				if (FAILED(hResult))
-				{
-					Report(MessageType::Error, "DirectX failure re-initialising\nFailure code %X\nSwitching to GDI",
-					       hResult);
-
-					PostMessage(m_hWnd, WM_COMMAND, IDM_DISPGDI, 0);
-				}
-			}
 			break;
 		}
 
@@ -3546,11 +3532,6 @@ void BeebWin::OnSize(WPARAM ResizeType, int Width, int Height)
 		UpdateWindowSizeMenu();
 
 		CalcAspectRatioAdjustment(m_XWinSize, m_YWinSize);
-
-		if (ResizeType != SIZE_MINIMIZED && m_DisplayRenderer != DisplayRendererType::GDI && m_DXInit)
-		{
-			m_DXResetPending = true;
-		}
 	}
 
 	if (!m_FullScreen)
